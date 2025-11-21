@@ -1,0 +1,80 @@
+<link rel="icon" href="/favicon.ico">
+<style>
+  /* Responsive header text sizing and overflow protection */
+  .navbar .brand { white-space:nowrap; font-weight:700; font-size:clamp(16px,2.2vw,20px); }
+  .nav-links { display:flex; gap:8px; align-items:center; overflow-x:auto; }
+  /* Desktop: push the primary nav links to the right side so they appear at the end of the header row. */
+  @media (min-width:1025px) {
+    .nav-links > a:first-of-type { margin-left:auto !important; }
+  }
+  /* Force nav link labels to always display fully for Japanese text */
+  .nav-links a {
+    display:inline-block !important;
+    white-space:nowrap !important;
+    overflow:visible !important;
+    text-overflow:clip !important;
+    font-size:clamp(13px,1.6vw,15px) !important;
+    max-width:none !important;
+    padding:6px 10px !important;
+  }
+  .header-actions, #header-auth-area { white-space:nowrap; font-size:clamp(13px,1.6vw,15px); }
+  /* Ensure buttons show full text and don't collapse to single-character width */
+  .nav-links .btn, .header-actions .btn, .searchbar--compact .btn, #header-notifs-btn {
+    white-space:nowrap !important;
+    overflow:visible !important;
+    word-break:normal !important;
+    writing-mode:horizontal-tb !important;
+    text-orientation:mixed !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    flex:0 0 auto !important;
+    min-width:36px !important;
+  }
+  .nav-links .btn * { white-space:nowrap !important; }
+  /* Prevent auth link collapsing */
+  #header-auth-area, #header-auth-area a { white-space:nowrap !important; display:inline-block !important; }
+  .searchbar--compact { gap:8px; align-items:center; }
+  .searchbar--compact input { min-width:0; flex:1; font-size:clamp(13px,1.8vw,15px); }
+  /* reduce badge size on very small screens */
+  #header-notifs-badge { font-size:clamp(10px,1.8vw,12px); min-width:auto; padding:2px 6px; }
+  @media (max-width:560px){
+    .nav-links a { font-size:13px; }
+    .navbar .brand { font-size:18px; }
+  }
+  /* logo sizing: reduced to half of previous setting per user request; preserve aspect ratio */
+  .brand.logo img{height:clamp(48px,6.75vw,72px);max-height:84px;width:auto;display:block}
+  .navbar .brand{display:inline-flex;align-items:center}
+</style>
+<div class="navbar">
+  <div class="container navbar-inner">
+   <a class="brand logo" href="/">
+     <img src="/assets/images/fineme-logo-text.png" alt="Fineme" class="logo-img">
+   </a>
+    <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="メニュー">
+      ☰
+    </button>
+  <div class="nav-group" id="nav-menu">
+  <nav class="nav-links">
+      <a href="/pages/search.html" style="white-space:nowrap;display:inline-block">検索</a>
+      <a href="/pages/about.html" style="white-space:nowrap;display:inline-block">私たちについて</a>
+      <a href="/pages/feature.html" style="white-space:nowrap;display:inline-block">特集</a>
+  <div class="header-actions" style="display:inline-flex;align-items:center;gap:8px;white-space:nowrap;">
+        <div id="header-notifs" style="position:relative">
+          <button id="header-notifs-btn" class="btn btn-ghost" type="button" aria-label="通知">
+            🔔 <span id="header-notifs-badge" style="display:inline-block;min-width:18px;padding:2px 6px;border-radius:999px;background:#ef4444;color:#fff;font-size:12px;margin-left:6px;" hidden>0</span>
+          </button>
+          <div id="header-notifs-dropdown" style="position:absolute;right:0;top:36px;min-width:280px;background:#fff;border:1px solid #eee;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.06);display:none;z-index:1200;padding:8px">
+            <div id="header-notifs-list" style="max-height:240px;overflow:auto"></div>
+            <div style="text-align:right;margin-top:8px"><button id="header-notifs-clear" class="btn btn-ghost">すべて既読</button></div>
+          </div>
+        </div>
+  <a id="header-diagnosis-btn" class="btn" href="/diagnosis/index.html" style="white-space:nowrap;color:#fff !important;background:linear-gradient(90deg,var(--primary,#2563eb),#0e3760) !important;border:none !important;padding:8px 10px;border-radius:8px;">診断する</a>
+        <span id="header-auth-area" style="white-space:nowrap;">
+          <a id="header-login-link" href="/pages/user/login.html" style="white-space:nowrap;display:inline-block">ログイン</a>
+        </span>
+      </div>
+    </nav>
+    </div>
+  </div>
+</div>

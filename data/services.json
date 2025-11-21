@@ -1,0 +1,42 @@
+[
+  {
+    "id": "svc-001",
+    "slug": "tokyo-mens-makeup-shibuya",
+    "name": "メンズメイクスタジオ 渋谷",
+    "region": "tokyo",
+    "category": "makeup",
+    "priceFrom": 8000,
+    "image": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=1400&auto=format&fit=crop",
+    "tags": ["第一印象", "清潔感", "撮影前"]
+  },
+  {
+    "id": "svc-002",
+    "slug": "osaka-personal-gym-umeda",
+    "name": "パーソナルジム 梅田",
+    "region": "osaka",
+    "category": "gym",
+    "priceFrom": 12000,
+    "image": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1400&auto=format&fit=crop",
+    "tags": ["ボディメイク", "ダイエット"]
+  },
+  {
+    "id": "svc-003",
+    "slug": "tokyo-app-photo-shinjuku",
+    "name": "マッチングアプリ写真 新宿",
+    "region": "tokyo",
+    "category": "photo",
+    "priceFrom": 15000,
+    "image": "https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?q=80&w=1400&auto=format&fit=crop",
+    "tags": ["写真", "プロフィール", "映え"]
+  },
+  {
+    "id": "svc-004",
+    "slug": "tokyo-personal-color-omotesando",
+    "name": "パーソナルカラー診断 表参道",
+    "region": "tokyo",
+    "category": "diagnosis",
+    "priceFrom": 10000,
+    "image": "https://images.unsplash.com/photo-1520975916090-3105956dac38?q=80&w=1400&auto=format&fit=crop",
+    "tags": ["カラー", "骨格", "似合う"]
+  }
+]

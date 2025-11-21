@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>プロフィール編集 | Fineme</title>
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <link rel="stylesheet" href="../../assets/styles/components.css" />
+  <style>
+    /* Align labels and inputs horizontally on wider screens */
+    #user-profile-form .stack label{ display:grid; grid-template-columns:160px 1fr; align-items:center; gap:12px; }
+    #user-profile-form .stack label > input,
+    #user-profile-form .stack label > textarea{ grid-column:2; width:100%; min-width:0; }
+    #profile-message{ grid-column:2; }
+    @media (max-width:640px){
+      #user-profile-form .stack label{ grid-template-columns:1fr; }
+      #profile-message{ grid-column:auto; }
+    }
+  </style>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="section">
+    <div class="container mypage-layout">
+      <aside id="mypage-sidenav"></aside>
+      <section class="stack">
+        <h1 class="section-title">プロフィール編集</h1>
+        <form id="user-profile-form" class="card" style="padding:24px; max-width:640px;">
+          <div class="stack">
+            <label>名前<input id="profile-displayName" name="displayName" type="text" placeholder="山田太郎" /></label>
+            <label>メール<input id="profile-email" name="email" type="email" placeholder="you@example.com" /></label>
+            <label>自己紹介<textarea id="profile-bio" name="bio" rows="4" placeholder="自己紹介を入力"></textarea></label>
+            <div class="row" style="gap:12px;align-items:center">
+              <button class="btn" type="submit">保存</button>
+              <span id="profile-message" class="muted" aria-live="polite"></span>
+            </div>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+  <footer id="site-footer"></footer>
+  <script src="../../scripts/main.js" type="module"></script>
+  <script src="../../scripts/partials.js" type="module"></script>
+  <script type="module">
+    import { requireUserAuth } from '../../scripts/user-auth.js';
+    requireUserAuth();
+  </script>
+  <script src="../../scripts/mypage-profile.js" type="module"></script>
+</body>
+</html>

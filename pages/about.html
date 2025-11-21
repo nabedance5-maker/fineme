@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>私たちについて | Fineme</title>
+  <link rel="stylesheet" href="../assets/styles/style.css">
+  <link rel="stylesheet" href="../assets/styles/components.css">
+  <style>
+    /* About page visuals: persona card, value cards, before/after sample */
+  .value-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .value-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .value-card{background:linear-gradient(180deg,#ffffff,#fbfbff);border-radius:10px;padding:14px;border:1px solid rgba(15,23,42,0.04);box-shadow:0 4px 10px rgba(2,6,23,0.03)}
+    .value-card h4{margin:0 0 6px 0;font-size:15px}
+    .before-after{display:flex;gap:12px;align-items:center;margin-top:20px}
+    .ba-item{flex:1;background:#fff;border-radius:10px;overflow:hidden;border:1px solid rgba(15,23,42,0.06);box-shadow:0 6px 18px rgba(15,23,42,0.04)}
+    .ba-item img{width:100%;height:220px;object-fit:cover;display:block}
+    .ba-label{padding:10px;font-weight:700;color:#0f172a;background:linear-gradient(90deg,rgba(255,255,255,0.6),rgba(255,255,255,0.2));}
+    @media(max-width:900px){ .visual-grid{grid-template-columns:1fr; } .value-grid{grid-template-columns:1fr 1fr} .ba-item img{height:160px} }
+    /* Page spacing and hero */
+  /* reduced spacing so hero and first content sit closer */
+  .about-section{padding:32px 0}
+  .about-hero{background:linear-gradient(180deg,#f8fbff,#ffffff);padding:40px 32px;border-radius:12px;margin-bottom:6px}
+    .about-hero .hero-inner{display:flex;gap:28px;align-items:center}
+    .about-hero h1{font-size:clamp(28px,5.2vw,48px);line-height:1.02;margin:0 0 12px}
+    .about-hero p.lead{font-size:18px;color:#475569;margin:0 0 18px}
+  @media(max-width:880px){ .about-hero .hero-inner{flex-direction:column} .about-hero .hero-image{width:100%;} }
+
+  /* --- Animations, hover effects, typography tweaks --- */
+    /* subtle moving background in hero */
+    .about-hero{background-size:200% 200%;animation:bgShift 18s linear infinite alternate}
+    @keyframes bgShift{from{background-position:0% 50%}to{background-position:100% 50%}}
+
+    /* CTA button in hero: lift on hover + gentle pulse on load */
+    .about-hero .btn{transition:transform .18s cubic-bezier(.2,.9,.2,1),box-shadow .18s;will-change:transform}
+    .about-hero .btn:hover{transform:translateY(-6px);box-shadow:0 14px 34px rgba(2,6,23,0.12)}
+    .about-hero .btn:active{transform:translateY(-2px)}
+    .about-hero .btn:first-of-type{animation:ctaPulse 4s ease-in-out 0.6s infinite}
+    @keyframes ctaPulse{0%{transform:translateY(0)}50%{transform:translateY(-3px)}100%{transform:translateY(0)}}
+
+    /* cards: lift + stronger shadow on hover */
+    .value-card{transition:transform .22s cubic-bezier(.2,.9,.2,1),box-shadow .22s;border-radius:12px}
+    .value-card:hover{transform:translateY(-10px);box-shadow:0 20px 40px rgba(2,6,23,0.12)}
+
+    /* hero image gentle scale on hover for desktop */
+    .hero-image img{transition:transform .45s cubic-bezier(.2,.9,.2,1)}
+    .hero-image:hover img{transform:scale(1.03)}
+
+    /* typography adjustments to approach iKyū tone */
+  .about-hero h1{font-weight:800;letter-spacing:-0.01em}
+  /* prominent brand styling */
+  .hero-brand{font-size:clamp(48px,9vw,120px);line-height:0.9;color:#0f172a;font-weight:900;letter-spacing:-0.02em}
+    .about-section h2{font-weight:700;font-size:clamp(20px,3vw,28px);margin-bottom:12px}
+    .about-section h3{font-weight:700}
+    .about-section p, .about-section li{font-size:16px;line-height:1.75;color:#475569}
+    .value-card h4{font-weight:700}
+  </style>
+</head>
+<body>
+  <!-- Prominent Hero placed at top of page -->
+  <section class="about-section about-hero" style="margin:0">
+    <div class="hero-inner">
+      <div style="flex:1;min-width:280px">
+        <h1 class="hero-brand" style="margin:0 0 8px">Fineme</h1>
+        <h2 style="font-weight:600;margin:0 0 12px;font-size:20px;color:#334155">外見の第一歩を、あなたへ</h2>
+        <p class="lead">外見に自信がないあなたが気軽に始められて、続けられるように。検索・比較・予約を一つの場所で提供します。</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+          <a class="btn" href="/pages/search.html" style="background:linear-gradient(90deg,var(--primary,#2563eb),#0e3760);color:#fff;padding:12px 16px;border-radius:12px;">サービスを探す</a>
+          <a class="btn btn-ghost" href="/diagnosis/index.html" style="padding:12px 16px;border-radius:12px;">まずは診断</a>
+        </div>
+      </div>
+      <div class="hero-image" style="flex:0 0 420px;min-width:220px">
+        <div style="border-radius:12px;overflow:hidden;border:1px solid rgba(2,6,23,0.06);box-shadow:0 12px 34px rgba(2,6,23,0.06)">
+          <img src="../assets/images/hero-combined.jpg" alt="Fineme" style="width:100%;height:320px;object-fit:cover;display:block">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <header id="site-header"></header>
+  <main class="section">
+    <div class="container">
+    <section class="about-section">
+      <h2>目的</h2>
+      <p>このサービスの目的は、外見に悩みやコンプレックスを抱える男女（特に20〜30代男性）に対し、
+      「外見磨きの最初の一歩」を後押しすることです。美容室・眉毛サロン・メイク・パーソナルカラー診断・ファッション・姿勢・ジムなど、
+      外見改善につながる各種サービスをワンストップで検索・比較・予約できる仕組みを提供します。</p>
+  </section>
+
+    <section class="about-section">
+      <h2>コンセプト・存在意義（Why）</h2>
+      <p>Finemeが存在する理由は、外見を磨くことを通じて「自信」を得てほしいからです。自分に自信を持つことができれば心の余裕が生まれ、
+      恋愛や人間関係もうまくいくようになります。最終的には「自分を愛し、他人を愛せる人」が増えることで、社会全体の幸福度が高まると考えています。</p>
+      <p><strong>理念：</strong>外見を磨くことは、内面を磨くことの第一歩。外見とは「内面の一番外側」──Finemeはその磨きを後押しする場所です。</p>
+      <p><strong>役割：</strong>「変わりたいけど、何から始めればいいかわからない」という人に対して、
+      ・自分に合った方法を“見つける発見” ・努力を“始めるきっかけ” ・努力を“継続できる環境” を提供するプラットフォームです。</p>
+  </section>
+
+    
+
+    <!-- Services quick cards (icons) -->
+    <section class="about-section" style="margin-top:18px">
+      <h2>まず始めやすいサービス</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:12px">
+        <a class="value-card" href="/pages/search.html?category=hair" style="display:block;text-decoration:none;color:inherit;padding:14px;">
+          <img src="../assets/placeholders/placeholder-hair.svg" alt="hair" style="width:64px;height:64px;display:block;margin:0 auto 8px">
+          <div style="text-align:center;font-weight:700">ヘア</div>
+        </a>
+        <a class="value-card" href="/pages/search.html?category=eyebrow" style="display:block;text-decoration:none;color:inherit;padding:14px;">
+          <img src="../assets/placeholders/placeholder-makeup.svg" alt="眉" style="width:64px;height:64px;display:block;margin:0 auto 8px">
+          <div style="text-align:center;font-weight:700">眉・メイク</div>
+        </a>
+        <a class="value-card" href="/pages/search.html?category=fashion" style="display:block;text-decoration:none;color:inherit;padding:14px;">
+          <img src="../assets/placeholders/placeholder-fashion.svg" alt="fashion" style="width:64px;height:64px;display:block;margin:0 auto 8px">
+          <div style="text-align:center;font-weight:700">ファッション</div>
+        </a>
+        <a class="value-card" href="/pages/search.html?category=gym" style="display:block;text-decoration:none;color:inherit;padding:14px;">
+          <img src="../assets/placeholders/placeholder-gym.svg" alt="gym" style="width:64px;height:64px;display:block;margin:0 auto 8px">
+          <div style="text-align:center;font-weight:700">ジム</div>
+        </a>
+      </div>
+  </section>
+
+    <!-- Visual/value highlight area -->
+    <section class="about-section" style="margin-top:24px;background:linear-gradient(180deg,rgba(15,23,42,0.02),transparent);padding:18px;border-radius:10px">
+      <h2>Finemeができること（ビジュアルで見る）</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px">
+        <div class="value-card">
+          <h4>見つける</h4>
+          <p style="margin:6px 0;color:#475569">あなたに合うサービスをキーワードや写真から発見できます。</p>
+        </div>
+        <div class="value-card">
+          <h4>試す</h4>
+          <p style="margin:6px 0;color:#475569">初めての人でも安心の体験プランや口コミで選べます。</p>
+        </div>
+        <div class="value-card">
+          <h4>続ける</h4>
+          <p style="margin:6px 0;color:#475569">経過記録とビフォー・アフターで成果を実感できます。</p>
+        </div>
+        <div class="value-card">
+          <h4>次へ進む</h4>
+          <p style="margin:6px 0;color:#475569">自信を得た先の目標設定や次の提案までサポートします。</p>
+        </div>
+      </div>
+  </section>
+
+    <!-- Key values (visual cards) -->
+    <section class="about-section" style="margin-top:18px">
+      <h3 style="margin-top:0">Finemeが提供する価値（要点）</h3>
+      <div class="value-grid" style="margin-top:12px">
+        <div class="value-card">
+          <h4>発見</h4>
+          <p style="margin:0;color:#475569;font-size:14px">自分に合ったサービスを提案・発見できる検索とレコメンド。</p>
+        </div>
+        <div class="value-card">
+          <h4>体験</h4>
+          <p style="margin:0;color:#475569;font-size:14px">予約しやすい UI と初回体験の安心感で行動を後押し。</p>
+        </div>
+        <div class="value-card">
+          <h4>継続支援</h4>
+          <p style="margin:0;color:#475569;font-size:14px">ビフォー・アフターや口コミで成果を見える化し、継続を支援。</p>
+        </div>
+        <div class="value-card">
+          <h4>次の一歩</h4>
+          <p style="margin:0;color:#475569;font-size:14px">自信を得た後の、恋愛・仕事・SNS発信への導線を提供。</p>
+        </div>
+      </div>
+  </section>
+
+    <section class="about-section">
+      <h2>Finemeが提供する価値（Value Proposition）</h2>
+      <p>ユーザーの変化のフェーズごとに、抱える課題とFinemeが提供する価値を整理しています。</p>
+      <ul>
+        <li><strong>Before（何をどう変えたらいいか分からない）</strong>：自分に合った外見磨きサービスを提案・発見できる。</li>
+        <li><strong>Start（行動する勇気が出ない）</strong>：気軽に予約・体験できる UI と安心感を提供。</li>
+        <li><strong>Continue（継続するモチベーションが続かない）</strong>：成果を実感できる仕組み（ビフォーアフターや口コミ）で継続を支援。</li>
+        <li><strong>After（自信を持てたが次の目標がない）</strong>：次のステップ（恋愛・仕事・SNS発信）への導線を提供。</li>
+      </ul>
+  </section>
+    
+    <!-- Before / After slider -->
+    <section class="about-section" style="margin-top:22px">
+      <h2>ビフォー・アフター（インタラクティブサンプル）</h2>
+      <div style="margin-top:12px;background:#fff;padding:12px;border-radius:12px;border:1px solid rgba(2,6,23,0.04)">
+        <div style="position:relative;max-width:900px;margin:0 auto">
+          <img src="../assets/placeholders/placeholder-default.svg" alt="before" style="width:100%;display:block;border-radius:8px;" />
+          <div id="ba-overlay" style="position:absolute;left:0;top:0;height:100%;width:50%;overflow:hidden;border-radius:8px">
+            <img src="../assets/placeholders/placeholder-default.svg" alt="after" style="width:100%;height:auto;display:block;object-fit:cover;" />
+          </div>
+          <input id="ba-range" type="range" min="0" max="100" value="50" style="width:100%;margin-top:12px">
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:13px;color:#64748b">
+          <div>Before</div>
+          <div>After</div>
+        </div>
+      </div>
+      <script>
+        (function(){
+          const range = document.getElementById('ba-range');
+          const overlay = document.getElementById('ba-overlay');
+          if(range && overlay){
+            const update = ()=>{ overlay.style.width = (parseInt(range.value,10) || 0) + '%'; };
+            range.addEventListener('input', update);
+            update();
+          }
+        })();
+      </script>
+    </section>
+    </div>
+  </main>
+  <footer id="site-footer"></footer>
+  <script src="../scripts/main.js" type="module"></script>
+</body>
+</html>

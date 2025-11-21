@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>予約リクエスト | Fineme</title>
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <link rel="stylesheet" href="../../assets/styles/components.css" />
+  <style>
+    /* simple modal styles (reuse pattern) */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);display:block;z-index:999}
+    .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;z-index:1000}
+    .modal[hidden], .modal-backdrop[hidden]{display:none}
+    #decision-backdrop{opacity:0;transition:opacity .2s ease}
+    #decision-backdrop.is-open{opacity:1}
+    #decision-modal .modal-content{opacity:0;transform:translateY(8px) scale(.98);transition:opacity .2s ease, transform .2s ease;width:min(100%,520px)}
+    #decision-modal.is-open .modal-content{opacity:1;transform:none}
+  </style>
+</head>
+<body>
+  <div id="provider-navbar"></div>
+  <main class="section">
+    <div class="container stack" style="max-width:1000px">
+      <h1 class="section-title">予約リクエスト</h1>
+      <p class="muted">ユーザーからの予約リクエストを確認し、承認/辞退を選択できます（ブラウザ保存・デモ）。</p>
+
+      <div class="card" style="padding:16px">
+        <div class="cluster" style="justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <div class="cluster" style="gap:8px;align-items:center">
+            <label class="muted">表示フィルター</label>
+            <select id="req-filter">
+              <option value="pending">未処理（保留）</option>
+              <option value="all">すべて</option>
+            </select>
+          </div>
+          <div class="cluster" style="gap:8px; flex-wrap:wrap">
+            <label for="requests-import-input" class="btn btn-ghost" style="margin:0">インポート</label>
+            <input id="requests-import-input" type="file" accept="application/json" style="display:none" />
+          </div>
+          <label class="cluster" style="align-items:center; gap:8px">
+            <input id="requests-auto-export" type="checkbox" />
+            <span class="muted">保存時に自動バックアップ（ダウンロード）</span>
+          </label>
+          <span id="req-message" class="muted" aria-live="polite"></span>
+        </div>
+      </div>
+
+      <div class="card" style="padding:0">
+        <div class="table-responsive">
+          <table class="table responsive" style="width:100%">
+            <thead>
+              <tr>
+                <th>受付日時</th>
+                <th>サービス</th>
+                <th>希望日時</th>
+                <th>お客様</th>
+                <th>連絡先</th>
+                <th>メモ</th>
+                <th>店舗コメント</th>
+                <th>状態</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="req-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+  <!-- decision modal -->
+  <div id="decision-backdrop" class="modal-backdrop" hidden></div>
+  <div id="decision-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="decision-title" hidden>
+    <div class="modal-content card" style="padding:20px">
+      <div class="cluster" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h2 id="decision-title" style="margin:0">対応</h2>
+        <button id="decision-close" class="btn btn-ghost" type="button" aria-label="閉じる">×</button>
+      </div>
+      <div class="stack" style="gap:12px">
+        <p class="muted" id="decision-summary"></p>
+        <label>コメント（任意）
+          <textarea id="decision-comment" rows="4" placeholder="お客様に伝える補足があれば入力してください"></textarea>
+        </label>
+        <div class="cluster" style="justify-content:flex-end">
+          <button id="decision-cancel" class="btn btn-ghost" type="button">キャンセル</button>
+          <button id="decision-confirm" class="btn" type="button" data-action="">確定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="provider-footer"></div>
+  <script src="../../scripts/partials.js" type="module"></script>
+  <script type="module">
+    import { requireProviderAuth, signOutProvider } from '../../scripts/auth.js';
+    const session = requireProviderAuth();
+    if(session){
+      const area = document.getElementById('provider-session-area');
+      if(area){
+        area.innerHTML = `
+          <span class="muted">${session.name} でログイン中</span>
+          <button class="btn btn-ghost" id="provider-logout-btn">ログアウト</button>
+        `;
+        area.addEventListener('click', (e)=>{
+          if(e.target && e.target.id === 'provider-logout-btn'){
+            signOutProvider();
+          }
+        });
+      }
+    }
+  </script>
+  <script src="../../scripts/provider-requests.js" type="module"></script>
+</body>
+</html>

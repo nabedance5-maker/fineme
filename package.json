@@ -1,0 +1,31 @@
+{
+  "name": "fineme-portal",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "gen-srcset": "node scripts/gen-srcset.js",
+    "line-server": "node server/line-server.js"
+  },
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "18.3.1",
+  "react-dom": "18.3.1",
+  "@aws-sdk/client-s3": "^3.520.0",
+  "@aws-sdk/s3-request-presigner": "^3.520.0"
+  },
+  "devDependencies": {
+    "sqlite3": "^5.1.6",
+    "jsonwebtoken": "^9.0.0",
+    "@types/node": "24.9.1",
+    "@types/react": "19.2.2",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "sharp": "^0.32.6",
+    "typescript": "5.9.3"
+  }
+}

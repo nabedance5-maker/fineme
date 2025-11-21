@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>オプション管理 | Fineme</title>
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <link rel="stylesheet" href="../../assets/styles/components.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="section">
+    <div class="container" style="max-width:900px">
+      <h1 class="section-title">オプション管理</h1>
+      <div class="cluster" style="justify-content:space-between; align-items:center">
+        <button id="open-option-modal" class="btn">新しいオプションを追加</button>
+      </div>
+
+      <div class="card" style="padding:16px; margin-top:12px">
+        <table class="table" style="width:100%">
+          <thead>
+            <tr><th>名前</th><th>価格</th><th>説明</th><th>有効</th><th>操作</th></tr>
+          </thead>
+          <tbody id="options-tbody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div id="option-modal" class="modal" role="dialog" aria-modal="true" hidden style="display:none;">
+    <div class="modal-content card" style="padding:16px; max-width:640px; margin:40px auto">
+      <h2 id="option-modal-title">オプションを編集</h2>
+      <form id="option-form" style="display:flex;flex-direction:column;gap:8px;align-items:stretch">
+        <input type="hidden" id="option-id" />
+        <label style="display:block">名称
+          <input id="option-name" required style="width:100%" />
+        </label>
+        <label style="display:block">価格（円、空白可）
+          <input id="option-price" type="number" min="0" step="1" style="width:160px" />
+        </label>
+        <label style="display:block">説明
+          <textarea id="option-desc" rows="3" style="width:100%"></textarea>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px"><input id="option-active" type="checkbox" checked /> 有効</label>
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:6px">
+          <button id="option-save" class="btn" type="submit">保存</button>
+          <button id="option-cancel" class="btn btn-ghost" type="button">キャンセル</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="../../scripts/admin-options.js"></script>
+</body>
+</html>

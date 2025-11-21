@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>スケジュール選択 | Fineme</title>
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <link rel="stylesheet" href="../../assets/styles/components.css" />
+  <style>
+    .sched-wrap{max-width:960px;margin:0 auto}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+    .cal-cell{padding:10px;background:#fff;border:1px solid #eee;border-radius:8px}
+    .cal-head{background:#f8fafc;font-weight:600;text-align:center}
+    .cal-day{cursor:pointer;position:relative;transition:transform .12s ease, box-shadow .12s ease}
+    .cal-day:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.06)}
+    .cal-badge{position:absolute;right:8px;bottom:8px;background:#eef2ff;color:#4338ca;border-radius:999px;padding:2px 8px;font-size:12px}
+    .slot-card{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #eee;border-radius:8px;background:#fff}
+    .slot-card.is-closed{opacity:.6}
+  /* Time-grid (〇/✕) */
+  .time-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+  .time-cell{padding:12px;border:1px solid var(--color-border);border-radius:8px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
+  .time-cell .time{font-weight:700;margin-bottom:6px}
+  .time-cell .symbol{font-size:20px;line-height:1}
+  .time-cell.available{background:linear-gradient(90deg,var(--primary),#0e3760);color:#fff}
+  .time-cell.unavailable{opacity:0.6;background:#fff;color:var(--color-muted);cursor:not-allowed}
+  /* Week matrix style (time x day) */
+  .calendar-matrix{overflow:auto}
+  .matrix-table{border-collapse:collapse;width:100%;min-width:720px}
+  .matrix-table th,.matrix-table td{border:1px solid var(--color-border);padding:8px;text-align:center;vertical-align:middle}
+  .matrix-table th{background:#f8fafc;font-weight:700}
+  .time-label{width:80px;background:#fff;border-right:1px solid var(--color-border);font-weight:600}
+  .matrix-cell{height:56px;padding:6px;cursor:pointer}
+  .matrix-cell.available{background:linear-gradient(90deg,var(--primary),#0e3760);color:#fff}
+  .matrix-cell.unavailable{background:#fff;color:var(--color-muted);opacity:.6;cursor:not-allowed}
+  .matrix-day-title{font-size:13px;font-weight:700}
+    /* modal */
+    body.modal-open{ overflow:hidden; }
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);display:block;z-index:999}
+    .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;z-index:1000}
+    .modal[hidden], .modal-backdrop[hidden]{display:none}
+    #req-modal-backdrop{opacity:0;transition:opacity .2s ease}
+    #req-modal-backdrop.is-open{opacity:1}
+    #req-modal .modal-content{opacity:0;transform:translateY(8px) scale(.98);transition:opacity .2s ease, transform .2s ease;width:min(100%,560px);max-height:min(90vh, 640px);overflow:auto}
+    #req-modal.is-open .modal-content{opacity:1;transform:none}
+    /* Request form: horizontal label/input alignment (PC & mobile) */
+    #req-form label{display:grid;grid-template-columns:220px 1fr;align-items:center;gap:12px}
+    #req-form label > input,
+    #req-form label > textarea,
+    #req-form label > select{grid-column:2;width:100%;min-width:0}
+  /* Form validation */
+  #req-form .is-invalid{border-color:#ef4444;box-shadow:0 0 0 2px rgba(239,68,68,.08)}
+  #req-form .input-error{grid-column:2;color:#ef4444;font-size:12px;margin-top:4px}
+    /* Keep slot summary separated with small spacing */
+    #req-slot-summary{margin-bottom:6px}
+    @media (max-width: 768px){
+      #req-form label{grid-template-columns:minmax(100px,1fr) 2fr;gap:8px}
+      #req-form .cluster{flex-wrap:wrap}
+      #req-form .cluster .btn{padding:10px 12px}
+    }
+  </style>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="section">
+    <div class="container sched-wrap stack">
+      <h1 class="section-title" id="title">スケジュール選択</h1>
+      <p class="muted" id="subtitle"></p>
+      <div class="card" style="padding:16px">
+        <div class="cluster" style="justify-content:space-between;align-items:center">
+          <div class="cluster" style="gap:8px;align-items:center">
+            <button id="prev-month" class="btn btn-ghost" type="button">← 前月</button>
+            <strong id="cal-title"></strong>
+            <button id="next-month" class="btn btn-ghost" type="button">次月 →</button>
+          </div>
+          <div class="cluster" style="gap:8px; align-items:center; flex-wrap:wrap">
+            <div class="cluster" role="group" aria-label="表示切替" style="gap:4px">
+              <button id="view-month" class="btn btn-ghost" type="button" aria-pressed="true">月</button>
+              <button id="view-week" class="btn btn-ghost" type="button" aria-pressed="false">週</button>
+              <button id="view-day" class="btn btn-ghost" type="button" aria-pressed="false">日</button>
+            </div>
+            <button id="today-btn" class="btn btn-ghost" type="button">今日</button>
+          </div>
+        </div>
+        <div id="calendar" class="stack" style="margin-top:12px"></div>
+      </div>
+      <div class="card" style="padding:16px">
+        <div class="cluster" style="justify-content:space-between;align-items:center">
+          <div class="cluster" style="gap:8px;align-items:center">
+            <label>選択日 <input id="selected-date" type="date" /></label>
+          </div>
+        </div>
+        <div id="slots-list" class="stack" style="margin-top:12px;gap:8px"></div>
+        <div style="margin-top:8px">
+          <button id="request-other" class="btn btn-ghost" type="button">別の時間をリクエストする</button>
+        </div>
+      </div>
+      <!-- Modal: Booking Request -->
+      <div id="req-modal-backdrop" class="modal-backdrop" hidden></div>
+      <div id="req-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="req-modal-title" hidden>
+        <div class="modal-content card" style="padding:20px">
+          <div class="cluster" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h2 id="req-modal-title" style="margin:0">予約リクエスト</h2>
+            <button id="req-modal-close" class="btn btn-ghost" type="button" aria-label="閉じる">×</button>
+          </div>
+          <form id="req-form" class="stack" style="gap:12px">
+            <input type="hidden" id="req-serviceId" />
+            <input type="hidden" id="req-slotId" />
+              <div class="stack">
+              <div id="req-slot-summary" class="muted"></div>
+              <!-- Custom request fields (hidden unless requesting another time) -->
+              <div id="req-custom-fields" hidden>
+                <label>希望日<input id="req-custom-date" type="date" /></label>
+                <label>開始時間<input id="req-custom-start" type="time" /></label>
+                <label>終了時間<input id="req-custom-end" type="time" /></label>
+              </div>
+              <label>お名前<input id="req-name" type="text" placeholder="例）山田 太郎" required /></label>
+              <label>連絡先（メールまたは電話）<input id="req-contact" type="text" placeholder="例）sample@example.com / 090-xxxx-xxxx" required /></label>
+              <label>ご要望（任意）<textarea id="req-note" rows="3" placeholder="事前に伝えておきたいことがあれば"></textarea></label>
+              <div class="cluster">
+                <button id="req-submit" class="btn" type="submit">送信</button>
+                <button id="req-cancel" class="btn btn-ghost" type="button">キャンセル</button>
+                <span id="req-msg" class="muted" aria-live="polite"></span>
+              </div>
+            </div>
+              <!-- Modal: Auth prompt for unauthenticated users -->
+          <div id="auth-prompt-backdrop" class="modal-backdrop" hidden style="z-index:11000"></div>
+          <div id="auth-prompt-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="auth-prompt-title" hidden style="z-index:11001">
+                <div class="modal-content card" style="padding:20px; width:min(100%,440px);">
+                  <div class="cluster" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <h2 id="auth-prompt-title" style="margin:0">ログインまたは新規登録してください</h2>
+                    <button id="auth-prompt-close" class="btn btn-ghost" type="button" aria-label="閉じる">×</button>
+                  </div>
+                  <p class="muted">予約を行うにはログインが必要です。続行するにはログインまたは新規登録をしてください。</p>
+                  <div class="cluster" style="justify-content:flex-end;margin-top:12px;gap:8px">
+                    <a id="auth-prompt-register" class="btn btn-ghost" href="/pages/user/login.html">新規登録</a>
+                    <a id="auth-prompt-login" class="btn" href="/pages/user/login.html">ログイン</a>
+                  </div>
+                </div>
+              </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module" src="../../scripts/main.js"></script>
+  <script type="module">
+  import { getUserSession } from '../../scripts/user-auth.js';
+  import { addNotification } from '../../scripts/notifications.js';
+    const SERVICES_KEY = 'glowup:services';
+    const SLOTS_KEY = 'glowup:slots';
+    const REQUESTS_KEY = 'glowup:requests';
+
+    function qs(s,el=document){return el.querySelector(s);} 
+    function getParam(name){ return new URL(location.href).searchParams.get(name) || ''; }
+    function loadServices(){ try{ const raw=localStorage.getItem(SERVICES_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch{ return []; } }
+    function loadSlots(){ try{ const raw=localStorage.getItem(SLOTS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch{ return []; } }
+  function pad2(n){ return String(n).padStart(2,'0'); }
+    function fmtDate(y,m,d){ return `${y}-${pad2(m+1)}-${pad2(d)}`; }
+    function endOfMonth(date){ return new Date(date.getFullYear(), date.getMonth()+1, 0); }
+  function saveRequests(list){ localStorage.setItem(REQUESTS_KEY, JSON.stringify(list)); }
+  function loadRequests(){ try{ const raw=localStorage.getItem(REQUESTS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch{ return []; } }
+  function uuid(){ return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);}); }
+ 
+  let viewYear, viewMonth; // for month view
+  let viewDate; // Date cursor for week/day view
+  let calView = 'month'; // 'month' | 'week' | 'day'
+  const weekNames = ['日','月','火','水','木','金','土'];
+
+  function startOfWeek(d){ const x = new Date(d); x.setDate(x.getDate() - x.getDay()); x.setHours(0,0,0,0); return x; }
+  function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+  function setSelectedDate(iso){ const inp = qs('#selected-date'); if(inp){ inp.value = iso; } }
+
+    function renderCalendar(){
+      const cont = qs('#calendar'); const title = qs('#cal-title');
+  cont.innerHTML = '';
+      if(calView === 'month'){
+        const first = new Date(viewYear, viewMonth, 1); const last = endOfMonth(first);
+        title.textContent = `${viewYear}年 ${viewMonth+1}月`;
+        const startWeekday = first.getDay(); const days = last.getDate();
+        let html = '<div class="cal-grid">';
+        html += weekNames.map(w=>`<div class="cal-cell cal-head">${w}</div>`).join('');
+        for(let i=0;i<startWeekday;i++) html += '<div class="cal-cell"></div>';
+        for(let d=1; d<=days; d++){
+          const ds = fmtDate(viewYear, viewMonth, d);
+          html += `<button class="cal-cell cal-day" data-date="${ds}"><span>${d}</span></button>`;
+        }
+        html += '</div>';
+        cont.innerHTML = html;
+      } else if(calView === 'week'){
+        const ws = startOfWeek(viewDate || new Date());
+        const we = addDays(ws, 6);
+        title.textContent = `${ws.getFullYear()}年 ${ws.getMonth()+1}月 ${ws.getDate()}日 〜 ${we.getMonth()+1}月 ${we.getDate()}日`;
+        let html = '<div class="cal-grid">';
+        html += weekNames.map((w,i)=>`<div class="cal-cell cal-head">${w}</div>`).join('');
+        for(let i=0;i<7;i++){
+          const d = addDays(ws, i);
+          const ds = d.toISOString().slice(0,10);
+          html += `<button class="cal-cell cal-day" data-date="${ds}"><span>${d.getDate()}</span></button>`;
+        }
+        html += '</div>';
+        cont.innerHTML = html;
+      } else {
+        // day view
+        const d = viewDate || new Date();
+        title.textContent = `${d.getFullYear()}年 ${d.getMonth()+1}月 ${d.getDate()}日（${weekNames[d.getDay()]}）`;
+        const ds = d.toISOString().slice(0,10);
+        cont.innerHTML = `<div class="card" style="padding:12px;">選択日: <strong>${ds}</strong></div>`;
+      }
+      // common click handler (Textノード経由でも安全に)
+      cont.addEventListener('click', (e)=>{
+        const t = e.target;
+        const el = (t && t instanceof Element) ? t.closest('.cal-day') : null;
+        if(!el) return;
+        setSelectedDate(el.getAttribute('data-date'));
+        renderSlotsList();
+      });
+    }
+
+    function renderSlotsList(){
+      const serviceId = getParam('serviceId');
+      const date = qs('#selected-date')?.value; const host = qs('#slots-list'); if(!serviceId || !date || !host){ return; }
+      const requests = loadRequests();
+      // Week matrix mode
+      if(calView === 'week'){
+        const ws = startOfWeek(viewDate || new Date());
+        const days = Array.from({length:7}, (_,i)=> addDays(ws, i));
+        // Collect slots per day
+        const slotsByDay = days.map(d=> loadSlots().filter(s=> s.serviceId===serviceId && s.date === d.toISOString().slice(0,10)));
+        // gather unique time labels (start-end) across the week
+        const timeSet = new Set();
+        for(const daySlots of slotsByDay){ for(const s of daySlots){ timeSet.add(`${s.start}-${s.end}`); } }
+        const times = Array.from(timeSet).sort((a,b)=> a.localeCompare(b));
+        if(times.length === 0){ host.innerHTML = '<p class="muted">今週の予約枠はありません。</p>'; return; }
+        // build table header
+        let html = '<div class="calendar-matrix"><table class="matrix-table"><thead><tr><th class="time-label"></th>' + days.map(d=>`<th class="matrix-day-title">${d.getMonth()+1}/${d.getDate()}<br>${weekNames[d.getDay()]}</th>`).join('') + '</tr></thead><tbody>';
+        // populate rows
+        for(const t of times){
+          const [start,end] = t.split('-');
+          html += `<tr><td class="time-label">${start} - ${end}</td>`;
+          for(let di=0; di<7; di++){
+            const day = days[di]; const dayStr = day.toISOString().slice(0,10);
+            const daySlots = slotsByDay[di] || [];
+            const s = daySlots.find(x=> `${x.start}-${x.end}` === t);
+            if(!s){ html += `<td class="matrix-cell"></td>`; continue; }
+            // count requests for this slot
+            const cnt = requests.filter(r=> r.slotId === s.id).length;
+            const taken = (cnt >= (s.cap||0));
+            const cls = taken ? 'matrix-cell unavailable' : 'matrix-cell available';
+            const content = taken ? '✕' : '〇';
+            html += `<td class="${cls}" data-id="${s.id}" data-start="${s.start}" data-end="${s.end}" data-date="${s.date}">${content}</td>`;
+          }
+          html += '</tr>';
+        }
+        html += '</tbody></table></div>';
+        host.innerHTML = html;
+        // attach click handlers for available cells
+        host.querySelectorAll('.matrix-cell.available').forEach(cell=> cell.addEventListener('click', ()=>{
+          const id = cell.getAttribute('data-id');
+          const start = cell.getAttribute('data-start');
+          const end = cell.getAttribute('data-end');
+          const date = cell.getAttribute('data-date');
+          openReqModal({ slotId: id, start, end, date });
+        }));
+        return;
+      }
+      // day view (default grid/list)
+      const allSlots = loadSlots().filter(s=> s.serviceId === serviceId && s.date === date);
+      if(allSlots.length === 0){ host.innerHTML = '<p class="muted">この日の予約枠はありません。</p>'; return; }
+      // Determine existing requests per slot
+      const slotMap = new Map();
+      for(const s of allSlots){ slotMap.set(s.id, Object.assign({}, s)); }
+      for(const r of requests){ if(r.slotId && slotMap.has(r.slotId)){ const s = slotMap.get(r.slotId); s._reqCount = (s._reqCount||0) + 1; slotMap.set(r.slotId, s); } }
+      const slots = Array.from(slotMap.values()).sort((a,b)=> a.start.localeCompare(b.start));
+      // Render as time-grid
+      host.innerHTML = '<div class="time-grid">' + slots.map(s=>{
+        const taken = (s._reqCount||0) >= (s.cap||0);
+        const cls = taken ? 'time-cell unavailable' : 'time-cell available';
+        const sym = taken ? '✕' : '〇';
+        return `<div class="${cls}" data-id="${s.id}" data-start="${s.start}" data-end="${s.end}" data-date="${s.date}"><div class="time">${s.start} - ${s.end}</div><div class="symbol">${sym}</div></div>`;
+      }).join('') + '</div>';
+      // click handling
+      host.querySelectorAll('.time-cell').forEach(cell=>{
+        cell.addEventListener('click', (e)=>{
+          const id = cell.getAttribute('data-id');
+          const start = cell.getAttribute('data-start');
+          const end = cell.getAttribute('data-end');
+          const date = cell.getAttribute('data-date');
+          const sObj = slots.find(x=> x.id === id) || {};
+          const taken = (sObj._reqCount||0) >= (sObj.cap||0);
+          if(taken) return; // not clickable when full
+          openReqModal({ slotId: id, start, end, date });
+        });
+      });
+    }
+
+    (function init(){
+      const serviceId = getParam('serviceId');
+      const svc = loadServices().find(s=> s.id === serviceId);
+      if(svc){
+        qs('#title').textContent = `スケジュール選択 - ${svc.name}`;
+        qs('#subtitle').textContent = `カテゴリ: ${svc.category} / 地域: ${svc.region}`;
+      }
+      const now = new Date(); viewYear = now.getFullYear(); viewMonth = now.getMonth(); viewDate = new Date(now);
+      // nav buttons work per current view
+      qs('#prev-month')?.addEventListener('click', ()=>{
+        if(calView==='month'){ if(--viewMonth<0){viewMonth=11;viewYear--;} }
+        else if(calView==='week'){ viewDate = addDays(viewDate, -7); setSelectedDate(viewDate.toISOString().slice(0,10)); renderSlotsList(); }
+        else { viewDate = addDays(viewDate, -1); setSelectedDate(viewDate.toISOString().slice(0,10)); renderSlotsList(); }
+        renderCalendar();
+      });
+      qs('#next-month')?.addEventListener('click', ()=>{
+        if(calView==='month'){ if(++viewMonth>11){viewMonth=0;viewYear++;} }
+        else if(calView==='week'){ viewDate = addDays(viewDate, 7); setSelectedDate(viewDate.toISOString().slice(0,10)); renderSlotsList(); }
+        else { viewDate = addDays(viewDate, 1); setSelectedDate(viewDate.toISOString().slice(0,10)); renderSlotsList(); }
+        renderCalendar();
+      });
+      qs('#today-btn')?.addEventListener('click', ()=>{ const n=new Date(); viewYear=n.getFullYear(); viewMonth=n.getMonth(); viewDate=new Date(n); setSelectedDate(n.toISOString().slice(0,10)); renderCalendar(); renderSlotsList(); });
+  // view toggles
+  function setView(v){ calView=v; ['#view-month','#view-week','#view-day'].forEach(sel=>{ const b=qs(sel); if(b){ const on = (sel==='#view-'+v); b.setAttribute('aria-pressed', on?'true':'false'); } }); renderCalendar(); }
+      qs('#view-month')?.addEventListener('click', ()=> setView('month'));
+      qs('#view-week')?.addEventListener('click', ()=> setView('week'));
+      qs('#view-day')?.addEventListener('click', ()=> setView('day'));
+  // 初期ビュー: URLの ?view=month|week|day を優先、未指定は month
+  const v = (getParam('view')||'month').toLowerCase();
+  setView((v==='week'||v==='day')? v : 'month');
+      renderCalendar();
+      qs('#selected-date').value = new Date().toISOString().slice(0,10);
+      renderSlotsList();
+      // If this page was opened with resume params, auto-open the booking modal
+      try{
+        const params = new URL(location.href).searchParams;
+        if(params.get('resume') === '1'){
+          const info = {};
+          if(params.get('resumeSlotId')){
+            info.slotId = params.get('resumeSlotId');
+            info.start = params.get('resumeStart') || '';
+            info.end = params.get('resumeEnd') || '';
+            info.date = params.get('resumeDate') || '';
+          } else if(params.get('resumeCustom')){
+            info.custom = true;
+            info.date = params.get('resumeDate') || '';
+            info.start = params.get('resumeStart') || '';
+            info.end = params.get('resumeEnd') || '';
+          }
+          // slight delay to ensure DOM is ready
+          setTimeout(()=>{ openReqModal(info); }, 200);
+        }
+      }catch(e){ console.warn && console.warn('resume check failed', e); }
+      // modal wiring
+      qs('#req-cancel')?.addEventListener('click', closeReqModal);
+      qs('#req-modal-close')?.addEventListener('click', closeReqModal);
+      qs('#req-form')?.addEventListener('submit', onSubmitReq);
+      // open custom-request modal
+      qs('#request-other')?.addEventListener('click', ()=>{
+        // keep selected date in sync
+        const sel = qs('#selected-date')?.value || new Date().toISOString().slice(0,10);
+        setSelectedDate(sel);
+        openReqModal({ custom: true, date: sel });
+      });
+    })();
+
+    function openReqModal(info){
+      // debug: log invocation so we can verify this function runs when user clicks
+      try{ console.log('DEBUG openReqModal called', info); }catch(_){}
+      // If user is not logged in, show auth prompt instead of opening booking modal
+      try{
+        // Try multiple ways to obtain session to be robust across module injection
+        let session = null;
+        if(typeof getUserSession === 'function'){
+          session = getUserSession();
+        } else if(window && typeof window.getUserSession === 'function'){
+          session = window.getUserSession();
+        } else {
+          // last-resort check reading sessionStorage directly
+          try{ const raw = sessionStorage.getItem('glowup:userSession'); session = raw ? JSON.parse(raw) : null; }catch(er){ session = null; }
+        }
+        // debug helper: expose to console when troubleshooting
+  try{ console.log && console.log('openReqModal session:', !!session, session); }catch(_){}
+        if(!session){
+          console.log && console.log('openReqModal: no session -> showing auth prompt');
+          showAuthPrompt(info);
+          return;
+        } else {
+          console.log && console.log('openReqModal: session present, opening booking modal');
+        }
+      }catch(e){
+        // fall back to showing prompt on error
+        try{ console.warn('openReqModal auth-check failed', e); }catch(_){}
+        showAuthPrompt();
+        return;
+      }
+      const sid = getParam('serviceId');
+      qs('#req-serviceId').value = sid;
+      const customFields = qs('#req-custom-fields');
+      if(info && info.custom){
+        qs('#req-slotId').value = '';
+        if(customFields) customFields.hidden = false;
+        qs('#req-slot-summary').textContent = `別の時間をリクエスト: ${info.date || ''}`;
+        // prefill custom date if provided
+        const cd = qs('#req-custom-date'); if(cd && info.date) cd.value = info.date;
+        const cs = qs('#req-custom-start'); if(cs && info.start) cs.value = info.start;
+        const ce = qs('#req-custom-end'); if(ce && info.end) ce.value = info.end;
+      } else {
+        qs('#req-slotId').value = info.slotId;
+        qs('#req-slot-summary').textContent = `選択枠: ${info.date} ${info.start} - ${info.end}`;
+        if(customFields) customFields.hidden = true;
+      }
+      // Prefill from user session if logged-in
+      try{
+        const s = getUserSession && getUserSession();
+        if(s){
+          const nameEl = qs('#req-name');
+          const contactEl = qs('#req-contact');
+          if(nameEl) nameEl.value = (s.displayName || s.loginId || '');
+          if(contactEl) contactEl.value = (s.loginId || '');
+        }
+      }catch{}
+      const modal = qs('#req-modal'); const bd = qs('#req-modal-backdrop');
+      if(modal){ modal.hidden=false; requestAnimationFrame(()=> modal.classList.add('is-open')); }
+      if(bd){ bd.hidden=false; requestAnimationFrame(()=> bd.classList.add('is-open')); }
+      document.body.classList.add('modal-open');
+    }
+    // Global click logger to help debug why auth prompt isn't showing
+    // It reports clicks on relevant interactive elements so we can see whether events fire.
+    document.addEventListener('click', (e)=>{
+      try{
+        const t = e.target;
+        if(t instanceof Element){
+          const tc = t.closest('.time-cell');
+          const mc = t.closest('.matrix-cell');
+          const ro = t.closest('#request-other');
+          if(tc) console.log('DEBUG click on .time-cell', { id: tc.getAttribute('data-id'), start: tc.getAttribute('data-start'), date: tc.getAttribute('data-date') });
+          if(mc) console.log('DEBUG click on .matrix-cell', { id: mc.getAttribute('data-id'), start: mc.getAttribute('data-start'), date: mc.getAttribute('data-date') });
+          if(ro) console.log('DEBUG click on #request-other');
+        }
+      }catch(_){}
+    });
+    function showAuthPrompt(info){
+      console.log && console.log('showAuthPrompt called', info);
+      const modal = qs('#auth-prompt-modal'); const bd = qs('#auth-prompt-backdrop');
+      if(!modal || !bd){ console.warn && console.warn('auth prompt elements missing'); return; }
+      // Ensure elements are attached to body to avoid clipping by parent overflow
+      try{
+        if(bd.parentNode !== document.body) document.body.appendChild(bd);
+        if(modal.parentNode !== document.body) document.body.appendChild(modal);
+      }catch(e){ console.warn && console.warn('append modal to body failed', e); }
+      // Make visible and place above other content
+      modal.hidden = false; bd.hidden = false;
+      modal.style.zIndex = '12001'; modal.style.display = 'flex'; modal.style.visibility = 'visible';
+      bd.style.zIndex = '12000'; bd.style.display = 'block'; bd.style.background = 'rgba(0,0,0,0.45)';
+      requestAnimationFrame(()=>{ modal.classList.add('is-open'); bd.classList.add('is-open'); });
+      document.body.classList.add('modal-open');
+      // close wiring
+      qs('#auth-prompt-close')?.addEventListener('click', closeAuthPrompt);
+      // Build a `next` URL so after login the user returns and the booking flow resumes.
+      try{
+        const cur = new URL(location.href);
+        cur.searchParams.set('resume', '1');
+        if(info){
+          if(info.slotId){ cur.searchParams.set('resumeSlotId', info.slotId); }
+          if(info.start) cur.searchParams.set('resumeStart', info.start);
+          if(info.end) cur.searchParams.set('resumeEnd', info.end);
+          if(info.date) cur.searchParams.set('resumeDate', info.date);
+          if(info.custom) cur.searchParams.set('resumeCustom', '1');
+        }
+        const next = encodeURIComponent(cur.toString());
+        const loginLink = qs('#auth-prompt-login');
+        const regLink = qs('#auth-prompt-register');
+        if(loginLink) loginLink.setAttribute('href', '/pages/user/login.html?next=' + next);
+        if(regLink) regLink.setAttribute('href', '/pages/user/login.html?next=' + next + '#register');
+      }catch(e){ console.warn && console.warn('failed to build next url', e); }
+      // If user navigates to login/register via the provided links, the page will navigate away.
+    }
+    function closeAuthPrompt(){
+      const modal = qs('#auth-prompt-modal'); const bd = qs('#auth-prompt-backdrop');
+      if(modal) modal.classList.remove('is-open');
+      if(bd) bd.classList.remove('is-open');
+      setTimeout(()=>{ if(modal) modal.hidden=true; if(bd) bd.hidden=true; }, 180);
+      document.body.classList.remove('modal-open');
+      // cleanup inline styles set when opened
+      try{
+        if(modal){ modal.style.display=''; modal.style.visibility=''; modal.style.zIndex=''; }
+        if(bd){ bd.style.display=''; bd.style.background=''; bd.style.zIndex=''; }
+      }catch(_){}
+    }
+    function closeReqModal(){
+      const modal = qs('#req-modal'); const bd = qs('#req-modal-backdrop');
+      if(modal) modal.classList.remove('is-open');
+      if(bd) bd.classList.remove('is-open');
+      setTimeout(()=>{ if(modal) modal.hidden=true; if(bd) bd.hidden=true; }, 180);
+      document.body.classList.remove('modal-open');
+      const form = qs('#req-form'); if(form) form.reset();
+      const msg = qs('#req-msg'); if(msg) msg.textContent='';
+    }
+    function onSubmitReq(e){
+      e.preventDefault();
+      const sid = qs('#req-serviceId')?.value || '';
+      const slotId = qs('#req-slotId')?.value || '';
+      const customDate = qs('#req-custom-date')?.value || '';
+      const customStart = qs('#req-custom-start')?.value || '';
+      const customEnd = qs('#req-custom-end')?.value || '';
+      const nameEl = qs('#req-name');
+      const contactEl = qs('#req-contact');
+      const name = nameEl?.value.trim();
+      const contact = contactEl?.value.trim();
+      const note = qs('#req-note')?.value || '';
+      const msg = qs('#req-msg');
+      // --- validation helpers ---
+      function clearErrors(){
+        [nameEl, contactEl].forEach(el=>{
+          if(!el) return;
+          el.classList.remove('is-invalid');
+          el.removeAttribute('aria-invalid');
+          const lab = el.closest('label');
+          if(lab){ const old = lab.querySelector('.input-error'); if(old) old.remove(); }
+        });
+        if(msg) msg.textContent='';
+      }
+      function showFieldError(el, message){
+        if(!el) return;
+        el.classList.add('is-invalid');
+        el.setAttribute('aria-invalid','true');
+        const lab = el.closest('label');
+        const err = document.createElement('div');
+        err.className = 'input-error';
+        err.textContent = message;
+        if(lab){ lab.appendChild(err); el.setAttribute('aria-describedby', (el.id||'') + '-error'); }
+      }
+      function isEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+      function isPhone(v){ const d=v.replace(/\D/g,''); return d.length>=10; }
+
+      clearErrors();
+      let hasError = false;
+      if(!sid){ hasError = true; }
+      // either an existing slotId or all custom fields must be provided
+      const isCustom = !slotId;
+      if(isCustom){ if(!(customDate && customStart && customEnd)){ hasError = true; } }
+      if(!name){ showFieldError(nameEl, 'お名前を入力してください'); hasError = true; }
+      if(!contact){ showFieldError(contactEl, '連絡先を入力してください'); hasError = true; }
+      else if(!(isEmail(contact) || isPhone(contact))){ showFieldError(contactEl, 'メールアドレスまたは電話番号の形式で入力してください'); hasError = true; }
+      if(hasError){ if(msg) msg.textContent='入力内容をご確認ください。'; return; }
+      const services = loadServices();
+      const slots = loadSlots();
+      const svc = services.find(s=> s.id===sid);
+      const slot = slotId ? slots.find(s=> s.id===slotId) : null;
+      if(!svc || (slotId && !slot)){ if(msg) msg.textContent='選択した枠が見つかりません。'; return; }
+      let userInfo = null;
+      try{ userInfo = getUserSession && getUserSession(); }catch{}
+      const list = loadRequests();
+      // Build request payload: either from slot or custom fields
+      const req = {
+        id: uuid(), status: 'pending',
+        providerId: svc.providerId, serviceId: sid,
+        slotId: slotId || null,
+        date: slot ? slot.date : customDate,
+        start: slot ? slot.start : customStart,
+        end: slot ? slot.end : customEnd,
+        userId: userInfo?.id || null,
+        userLoginId: userInfo?.loginId || null,
+        userDisplayName: userInfo?.displayName || null,
+        userName: name, contact, note,
+        createdAt: new Date().toISOString()
+      };
+      list.push(req);
+      saveRequests(list);
+      // Create notifications: one for provider, one for user
+      try{
+        const providerNotif = {
+          toType: 'provider', toId: svc.providerId,
+          title: '新しい予約リクエスト',
+          body: `${svc.name} に対して ${req.date} ${req.start} - ${req.end} の予約リクエストが届きました（依頼者: ${name} / ${contact}）。`,
+          data: { requestId: req.id }
+        };
+        addNotification(providerNotif);
+      }catch(e){ console.warn('notify provider failed', e); }
+      try{
+        const userNotif = {
+          toType: 'user', toId: userInfo?.id || null,
+          title: '予約リクエストを送信しました',
+          body: `${svc.name} へ ${req.date} ${req.start} - ${req.end} のリクエストを送信しました。店舗からの連絡をお待ちください。`,
+          data: { requestId: req.id }
+        };
+        addNotification(userNotif);
+      }catch(e){ console.warn('notify user failed', e); }
+      if(msg) msg.textContent='予約リクエストを送信しました。店舗からの連絡をお待ちください。';
+      setTimeout(()=>{ closeReqModal(); }, 800);
+    }
+    // live validation: remove error style on input
+    ['#req-name','#req-contact'].forEach(sel=>{
+      const el = qs(sel);
+      if(el){ el.addEventListener('input', ()=>{
+        el.classList.remove('is-invalid');
+        el.removeAttribute('aria-invalid');
+        const lab = el.closest('label');
+        if(lab){ const old = lab.querySelector('.input-error'); if(old) old.remove(); }
+      }); }
+    });
+  </script>
+</body>
+</html>

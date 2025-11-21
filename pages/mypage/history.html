@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>閲覧履歴 | Fineme</title>
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <link rel="stylesheet" href="../../assets/styles/components.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="section">
+    <div class="container mypage-layout">
+      <aside id="mypage-sidenav"></aside>
+      <section class="stack">
+        <h1 class="section-title">閲覧履歴</h1>
+        <div class="cluster" style="justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <p id="hist-msg" class="muted" aria-live="polite" style="margin:0;"></p>
+          <div class="cluster" style="gap:8px;">
+            <button id="hist-clear" class="btn btn-ghost" type="button">全て削除</button>
+          </div>
+        </div>
+        <div id="hist-empty" class="muted">まだ閲覧履歴はありません。</div>
+        <div id="hist-list" class="features-grid"></div>
+      </section>
+    </div>
+  </main>
+  <footer id="site-footer"></footer>
+  <script src="../../scripts/main.js" type="module"></script>
+  <script src="../../scripts/partials.js" type="module"></script>
+  <script type="module">
+  import { requireUserAuth, getUserSession } from '../../scripts/user-auth.js';
+  import { loadHistory, removeHistory, clearHistory } from '../../scripts/history.js';
+  import { addReview } from '../../scripts/reviews.js';
+  import { isNicknameAllowed } from '../../scripts/validation.js';
+  requireUserAuth();
+    const list = document.getElementById('hist-list');
+    const empty = document.getElementById('hist-empty');
+    const msg = document.getElementById('hist-msg');
+    const btnClear = document.getElementById('hist-clear');
+    function labelRegion(key){
+      const map = { hokkaido:'北海道', aomori:'青森県', iwate:'岩手県', miyagi:'宮城県', akita:'秋田県', yamagata:'山形県', fukushima:'福島県', ibaraki:'茨城県', tochigi:'栃木県', gunma:'群馬県', saitama:'埼玉県', chiba:'千葉県', tokyo:'東京都', kanagawa:'神奈川県', niigata:'新潟県', toyama:'富山県', ishikawa:'石川県', fukui:'福井県', yamanashi:'山梨県', nagano:'長野県', gifu:'岐阜県', shizuoka:'静岡県', aichi:'愛知県', mie:'三重県', shiga:'滋賀県', kyoto:'京都府', osaka:'大阪府', hyogo:'兵庫県', nara:'奈良県', wakayama:'和歌山県', tottori:'鳥取県', shimane:'島根県', okayama:'岡山県', hiroshima:'広島県', yamaguchi:'山口県', tokushima:'徳島県', kagawa:'香川県', ehime:'愛媛県', kochi:'高知県', fukuoka:'福岡県', saga:'佐賀県', nagasaki:'長崎県', kumamoto:'熊本県', oita:'大分県', miyazaki:'宮崎県', kagoshima:'鹿児島県', okinawa:'沖縄県' };
+      if(!key) return '全国';
+      return map[key] || key;
+    }
+    function labelCategory(key){
+  const map={consulting:'外見トータルサポート',gym:'パーソナルジム',makeup:'メイクアップ',hair:'ヘア',diagnosis:'カラー/骨格診断',fashion:'コーデ提案',photo:'写真撮影（アプリ等）',marriage:'結婚相談所'};
+      return map[key]||key;
+    }
+    function render(){
+      const arr = loadHistory().sort((a,b)=> new Date(b.viewedAt||0).getTime() - new Date(a.viewedAt||0).getTime());
+      console.debug('history.render run, items=', arr.length);
+      list.textContent = '';
+      if(!arr.length){ empty.style.display='block'; return; }
+      empty.style.display='none';
+      const frag = document.createDocumentFragment();
+      for(const f of arr){
+        // Use a focusable div.card as the container so we can include interactive
+        // controls (削除 / レビュー) inside the card without nesting anchors.
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.setAttribute('role','link');
+        card.setAttribute('tabindex','0');
+        card.dataset.href = f.href;
+        const title = f.providerName || f.name || '';
+        const placeholder = '../../assets/placeholders/placeholder-default.svg';
+        const img = (f.image && f.image.trim()) ? f.image : placeholder;
+        const regionLine = `<p class="card-meta">${labelRegion(f.region||'')}</p>`;
+        const categoryLine = `<p class="card-meta">${labelCategory(f.category||'')}</p>`;
+  const priceLine = f.priceFrom? `<p class="card-meta">¥${Number(f.priceFrom).toLocaleString()}</p>` : '';
+        const storeLink = f.providerId ? `<p class="card-meta"><a href="../store.html?providerId=${encodeURIComponent(f.providerId)}">店舗詳細</a></p>` : '';
+        const when = f.viewedAt? new Date(f.viewedAt).toLocaleString() : '';
+        card.innerHTML = `
+          <img class="service-thumb" src="${img}" alt="${title}">
+          <div class="card-body">
+            <div class="cluster" style="justify-content:space-between; align-items:center; gap:8px;">
+              <h3 class="card-title" style="margin:0;">${title}</h3>
+              <div class="cluster" style="gap:8px;">
+                <button type="button" class="btn btn-ghost btn-remove" title="この履歴を削除">削除</button>
+                <button type="button" class="btn btn--sm btn-review" title="このサービスのレビューを開く">レビュー</button>
+              </div>
+            </div>
+            ${regionLine}
+            ${categoryLine}
+            ${priceLine}
+            ${storeLink}
+            ${when ? `<p class=\"muted\" style=\"font-size:12px\">閲覧: ${when}</p>` : ''}
+          </div>`;
+        // Delete button: prevent navigation and remove the history item
+        const delBtn = card.querySelector('.btn-remove');
+        if(delBtn){ delBtn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); removeHistory(f.href); render(); }); }
+        // Review button: open an inline review editor when possible
+        const revBtn = card.querySelector('.btn-review');
+        if(revBtn){ revBtn.addEventListener('click', (e)=>{
+          e.preventDefault(); e.stopPropagation();
+          try{
+            console.debug('Review button clicked, href=', f.href);
+            // Resolve href and parse query for localId or slug to build serviceKey
+            const u = new URL(f.href, location.href);
+            const params = u.searchParams;
+            let serviceKey = '';
+            if(params.has('localId')){
+              serviceKey = `local:${params.get('localId')}`;
+            } else if(params.has('slug')){
+              serviceKey = `slug:${params.get('slug')}`;
+            }
+            // If we can build a serviceKey, open an inline editor; otherwise fall back to opening detail page
+            if(serviceKey){
+              openInlineReview(serviceKey, f.name || f.providerName || 'サービス');
+            } else {
+              // fallback: open detail page (with hash) in same tab
+              if(!u.hash || !u.hash.includes('reviews')) u.hash = (u.hash || '') + '#reviews';
+              window.location.href = u.toString();
+            }
+          }catch(err){
+            console.error('Failed to open inline review editor', err);
+            window.location.href = f.href;
+          }
+        }); }
+        // Card click navigates to the saved href
+        card.addEventListener('click', ()=>{ window.location.href = f.href; });
+        // Keyboard accessibility: Enter activates navigation
+        card.addEventListener('keydown', (ev)=>{ if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); window.location.href = f.href; } });
+        frag.appendChild(card);
+      }
+      list.appendChild(frag);
+    }
+    render();
+  // expose debug helpers to manually trigger modal or rerender from console
+  window.__hist_openInlineReview = openInlineReview;
+  window.__hist_render = render;
+    if(btnClear){ btnClear.addEventListener('click', ()=>{ if(confirm('閲覧履歴をすべて削除しますか？')){ clearHistory(); render(); if(msg) msg.textContent='閲覧履歴を削除しました。'; } }); }
+
+    // --- Inline review editor helper ---
+    function openInlineReview(serviceKey, svcName){
+      // ensure previous overlay removed
+      const prev = document.getElementById('hist-review-overlay');
+      if(prev) prev.remove();
+
+      // overlay
+      const overlay = document.createElement('div');
+      overlay.id = 'hist-review-overlay';
+      Object.assign(overlay.style, {
+        position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.45)', zIndex: '2147483647', padding: '20px'
+      });
+
+      // dialog
+      const dialog = document.createElement('div');
+      dialog.setAttribute('role','dialog');
+      dialog.setAttribute('aria-modal','true');
+      dialog.style.width = '720px';
+      dialog.style.maxWidth = '100%';
+      dialog.style.background = '#fff';
+      dialog.style.borderRadius = '12px';
+      dialog.style.boxShadow = '0 12px 40px rgba(0,0,0,0.35)';
+      dialog.style.padding = '18px';
+      dialog.style.maxHeight = '90vh';
+      dialog.style.overflow = 'auto';
+
+      // header
+      const header = document.createElement('div');
+      header.className = 'cluster';
+      header.style.justifyContent = 'space-between';
+      header.style.alignItems = 'center';
+      header.innerHTML = `<strong>レビュー投稿 - ${escapeHtml(svcName)}</strong>`;
+      const closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'btn btn-ghost';
+      closeBtn.textContent = '閉じる';
+      closeBtn.addEventListener('click', ()=> overlay.remove());
+      header.appendChild(closeBtn);
+
+      // form
+      const form = document.createElement('form');
+      form.id = 'hist-review-form';
+      form.className = 'cluster';
+      form.style.gap = '12px';
+      form.style.display = 'flex';
+      form.style.alignItems = 'center';
+
+      const label = document.createElement('label');
+      label.textContent = '評価 ';
+      const select = document.createElement('select');
+      select.name = 'rating';
+      select.required = true;
+      [5,4,3,2,1].forEach(v => { const o = document.createElement('option'); o.value = String(v); o.text = String(v); select.appendChild(o); });
+      label.appendChild(select);
+
+  const nickInput = document.createElement('input');
+  nickInput.name = 'nick';
+  nickInput.placeholder = '投稿時のニックネーム（必須）';
+  nickInput.setAttribute('aria-required', 'true');
+  nickInput.required = true;
+  nickInput.maxLength = 20;
+  nickInput.style.width = '220px';
+  nickInput.style.marginRight = '8px';
+
+  const input = document.createElement('input');
+  input.name = 'comment';
+  input.placeholder = 'よかった点・改善点など（任意）';
+  input.style.flex = '1';
+  input.style.minWidth = '120px';
+
+      const submitWrap = document.createElement('div');
+      submitWrap.style.display = 'flex';
+      submitWrap.style.gap = '8px';
+      submitWrap.style.alignItems = 'center';
+      const submitBtn = document.createElement('button');
+      submitBtn.className = 'btn';
+      submitBtn.type = 'submit';
+      submitBtn.textContent = '投稿';
+      submitWrap.appendChild(submitBtn);
+
+  form.appendChild(label);
+  form.appendChild(nickInput);
+  form.appendChild(input);
+  form.appendChild(submitWrap);
+
+      const note = document.createElement('p');
+      note.className = 'muted';
+      note.style.margin = '0';
+      note.style.fontSize = '12px';
+      note.textContent = 'レビューは当サイトの利用規約に従って投稿されます。';
+
+      dialog.appendChild(header);
+      dialog.appendChild(form);
+      dialog.appendChild(note);
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+
+      // close on overlay click (but not when clicking inside dialog)
+      overlay.addEventListener('click', (ev)=>{ if(ev.target === overlay) overlay.remove(); });
+
+      // focus management
+      submitBtn.focus();
+
+      form.addEventListener('submit', async (ev)=>{
+        ev.preventDefault();
+        const rating = select.value;
+        const comment = (input.value||'').toString();
+        let nickname = (nickInput.value||'').toString().trim();
+        if(nickname.length > 20) nickname = nickname.slice(0,20);
+        if(!nickname){
+          nickInput.setCustomValidity('ニックネームを入力してください');
+          nickInput.reportValidity();
+          nickInput.setCustomValidity('');
+          nickInput.focus();
+          return;
+        }
+        // validate nickname against badwords/patterns
+        try{
+          const valid = await isNicknameAllowed(nickname);
+          if(!valid.ok){ alert(valid.reason || 'ニックネームが不正です'); nickInput.focus(); return; }
+        }catch(e){ console.error('validation error', e); }
+        const user = getUserSession();
+        if(!user){ alert('ログインが必要です。'); return; }
+        // allow overriding display name with nickname if provided
+        const userForReview = Object.assign({}, user, { name: nickname || (user.name || 'ユーザー') });
+        try{
+          addReview({ serviceKey, rating, comment, user: userForReview });
+          // show success then close
+          dialog.innerHTML = '<div class="card" style="padding:12px;"><p>レビューを投稿しました。ありがとうございます。</p></div>';
+          setTimeout(()=> overlay.remove(), 1200);
+        }catch(err){ console.error('addReview failed', err); alert('レビューの投稿に失敗しました'); }
+      });
+    }
+  </script>
+</body>
+</html>

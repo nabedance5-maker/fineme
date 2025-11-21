@@ -1,0 +1,15 @@
+{
+  "root": true,
+  "extends": ["next/core-web-vitals", "eslint:recommended"],
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2021": true
+  },
+  "rules": {
+    "no-eval": "error",
+    "no-implied-eval": "error",
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-inner-declarations": "error"
+  }
+}

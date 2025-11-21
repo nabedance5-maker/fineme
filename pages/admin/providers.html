@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>掲載者管理 | Fineme</title>
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <link rel="stylesheet" href="../../assets/styles/components.css" />
+  <style>
+    .admin-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
+    /* modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);display:block;z-index:999}
+    .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;z-index:1000}
+    .modal[hidden], .modal-backdrop[hidden]{display:none}
+    #provider-profile-modal-backdrop{opacity:0;transition:opacity .2s ease}
+    #provider-profile-modal-backdrop.is-open{opacity:1}
+    #provider-profile-modal .modal-content{opacity:0;transform:translateY(8px) scale(.98);transition:opacity .2s ease, transform .2s ease;width:min(100%,720px);max-height:min(90vh,720px);overflow:auto}
+    #provider-profile-modal.is-open .modal-content{opacity:1;transform:none}
+  </style>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="section">
+    <div class="container admin-grid">
+      <aside id="admin-sidebar"></aside>
+      <section class="stack">
+        <h1 class="section-title">掲載者管理</h1>
+        <p class="muted">掲載者アカウントの作成・基本情報の登録/変更（ローカル保存のデモ）。</p>
+
+        <div class="grid" style="grid-template-columns:1fr;gap:16px">
+          <form id="provider-create-form" class="card" style="padding:16px;max-width:560px">
+            <div class="stack">
+              <h2 style="margin:0">アカウント作成</h2>
+              <label>掲載名（店舗名/担当者名）
+                <input type="text" name="name" placeholder="例）メンズサロン TOKYO" required />
+              </label>
+              <label>ログインID（メール推奨）
+                <input type="text" name="loginId" placeholder="you@example.com" required />
+              </label>
+              <label>パスワード
+                <input type="password" name="password" minlength="4" required />
+              </label>
+              <div class="cluster">
+                <button class="btn" type="submit">作成する</button>
+                <span id="provider-create-message" class="muted" aria-live="polite"></span>
+              </div>
+            </div>
+          </form>
+
+          <div class="card" style="padding:16px">
+            <div class="stack">
+              <div class="space-between" style="display:flex; align-items:center">
+                <h2 style="margin:0">掲載者一覧</h2>
+                <div class="cluster">
+                  <button type="button" id="providers-export" class="btn btn-ghost">エクスポート</button>
+                  <label for="providers-import-input" class="btn btn-ghost" style="margin:0">インポート</label>
+                  <input id="providers-import-input" type="file" accept="application/json" style="display:none" />
+                  <button type="button" id="providers-seed" class="btn btn-ghost">サンプル読み込み</button>
+                  <button type="button" id="providers-restore" class="btn btn-ghost">復元（推奨セット）</button>
+                </div>
+              </div>
+              <div class="cluster" style="align-items:flex-end; gap:8px; flex-wrap:wrap">
+                <label style="display:flex; flex-direction:column; gap:6px">
+                  <span class="muted">ログインIDで復元</span>
+                  <input id="providers-restore-by-login" type="email" placeholder="you@example.com" value="nabedance5@gmail.com" style="min-width:280px" />
+                </label>
+                <button type="button" id="providers-restore-by-login-btn" class="btn">このアカウントを復元</button>
+                <span class="muted">静的データに一致するログインIDの掲載者を復元します</span>
+              </div>
+              <div class="cluster" style="align-items:center; gap:12px; flex-wrap:wrap">
+                <label style="display:inline-flex; align-items:center; gap:8px">
+                  <input id="providers-auto-export" type="checkbox" />
+                  <span>保存時に自動バックアップ（ダウンロード）</span>
+                </label>
+                <span class="muted">変更保存のたびにバックアップJSONを端末へ保存します</span>
+              </div>
+              <div class="table-responsive">
+                <table class="table" style="width:100%">
+                  <thead>
+                    <tr>
+                      <th style="text-align:left">掲載名</th>
+                      <th style="text-align:left">店舗名</th>
+                      <th style="text-align:left">ログインID</th>
+                      <th style="text-align:left">作成日</th>
+                      <th style="text-align:left">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="providers-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <div id="admin-options-section" class="card" style="padding:16px">
+            <div class="stack">
+              <div class="space-between" style="display:flex; align-items:center">
+                <h2 style="margin:0">オプション管理</h2>
+                <div class="cluster">
+                  <button type="button" id="open-admin-options" class="btn">新規オプションを追加</button>
+                </div>
+              </div>
+              <p class="muted">サイト全体で使うオプション（例：指名料、延長料など）。ここから作成・編集できます。</p>
+              <div class="table-responsive">
+                <table class="table" style="width:100%">
+                  <thead><tr><th>名前</th><th>価格</th><th>説明</th><th>有効</th><th>操作</th></tr></thead>
+                  <tbody id="options-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+            <!-- Options Modal -->
+            <div id="option-modal" class="modal" role="dialog" aria-modal="true" hidden style="display:none">
+              <div class="modal-content card" style="padding:16px; max-width:640px; margin:40px auto">
+                <h2 id="option-modal-title">オプションを編集</h2>
+                <form id="option-form" style="display:flex;flex-direction:column;gap:8px;align-items:stretch">
+                  <input type="hidden" id="option-id" />
+                  <label style="display:block">名称
+                    <input id="option-name" required style="width:100%" />
+                  </label>
+                  <label style="display:block">価格（円、空白可）
+                    <input id="option-price" type="number" min="0" step="1" style="width:160px" />
+                  </label>
+                  <label style="display:block">説明
+                    <textarea id="option-desc" rows="3" style="width:100%"></textarea>
+                  </label>
+                  <label style="display:flex;align-items:center;gap:8px"><input id="option-active" type="checkbox" checked /> 有効</label>
+                  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:6px">
+                    <button id="option-save" class="btn" type="submit">保存</button>
+                    <button id="option-cancel" class="btn btn-ghost" type="button">キャンセル</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+            </div>
+          </div>
+          <!-- Profile Modal -->
+          <div id="provider-profile-modal-backdrop" class="modal-backdrop" hidden></div>
+          <div id="provider-profile-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="provider-profile-title" hidden>
+            <div class="modal-content card" style="padding:20px">
+              <div class="cluster" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+                <h2 id="provider-profile-title" style="margin:0">掲載者プロフィール</h2>
+                <button id="provider-profile-close" class="btn btn-ghost" type="button" aria-label="閉じる">×</button>
+              </div>
+              <form id="provider-profile-form">
+                <input type="hidden" id="profile-provider-id" name="providerId" />
+                <div class="stack">
+                  <label>掲載名（一覧に表示される名称）
+                    <input id="profile-name" name="name" type="text" placeholder="例）メンズサロン TOKYO" />
+                  </label>
+                  <div>
+                    <label>店舗名
+                      <input id="profile-storeName" name="storeName" type="text" placeholder="例）Fineme 表参道店" />
+                    </label>
+                    <label>住所
+                      <input id="profile-address" name="address" type="text" placeholder="例）東京都渋谷区○○ 1-2-3" />
+                    </label>
+                    <label>営業時間
+                      <input id="profile-businessHours" name="businessHours" type="text" placeholder="例）平日 10:00-20:00 / 土日祝 10:00-18:00" />
+                    </label>
+                    <div class="cluster">
+                      <label style="flex:1">電話番号
+                        <input id="profile-phone" name="phone" type="tel" placeholder="例）03-1234-5678" />
+                      </label>
+                      <label style="flex:1">Webサイト
+                        <input id="profile-website" name="website" type="url" placeholder="https://example.com" />
+                      </label>
+                    </div>
+                  </div>
+                  <label>紹介文
+                    <textarea id="profile-description" name="description" rows="4" placeholder="店舗/掲載者の紹介文"></textarea>
+                  </label>
+                  <div class="cluster">
+                    <button class="btn" type="submit">保存</button>
+                    <button id="provider-profile-cancel" class="btn btn-ghost" type="button">キャンセル</button>
+                    <span id="provider-profile-message" class="muted" aria-live="polite"></span>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <footer id="site-footer"></footer>
+  <script src="../../scripts/main.js" type="module"></script>
+  <script src="../../scripts/partials.js" type="module"></script>
+  <script src="../../scripts/admin-providers.js" type="module"></script>
+  <script src="../../scripts/admin-options.js" type="module"></script>
+</body>
+</html>

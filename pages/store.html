@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>店舗詳細 | Fineme</title>
+  <link rel="stylesheet" href="../assets/styles/style.css" />
+  <link rel="stylesheet" href="../assets/styles/components.css" />
+  <meta name="description" content="掲載店舗の詳細情報ページ" />
+  <meta name="robots" content="noindex" />
+  <style>
+    .store-header{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
+    .store-cover{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;border:1px solid var(--color-border)}
+    .store-info p{margin:6px 0}
+    .info-list{list-style:none;padding:0;margin:0}
+    .info-list li{display:flex;gap:10px;padding:6px 0;border-bottom:1px dashed var(--color-border);align-items:flex-start;flex-wrap:wrap}
+    .info-list strong{min-width:120px;color:#334155}
+    .services-section{margin-top:32px}
+    .staff-section{margin-top:32px}
+    .staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--sp-5)}
+    .staff-card{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--color-border);border-radius:var(--radius);padding:var(--sp-4);background:#fff;box-shadow:var(--shadow-sm)}
+    .staff-avatar{width:64px;height:64px;border-radius:50%;object-fit:cover;background:#f3f4f6}
+    .staff-name{margin:0;font-weight:700}
+    .staff-role{margin:2px 0 8px;color:var(--color-muted);font-size:14px}
+    .staff-bio{margin:0}
+    @media (max-width: 900px){
+      .store-header{grid-template-columns:1fr}
+      .info-list strong{min-width:100px}
+    }
+    @media (max-width: 640px){
+      .info-list li{flex-direction:column;gap:4px}
+      .info-list strong{min-width:0}
+    }
+  </style>
+  </head>
+<body>
+  <header id="site-header"></header>
+  <main class="section">
+    <div class="container" style="max-width:1000px">
+      <div id="store-root" class="stack"></div>
+    </div>
+  </main>
+  <footer id="site-footer"></footer>
+  <script src="../scripts/main.js" type="module"></script>
+  <script src="../scripts/store.js" type="module"></script>
+</body>
+</html>

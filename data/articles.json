@@ -1,0 +1,16 @@
+[
+  {
+    "slug": "first-impression-makeover",
+    "title": "第一印象を変える外見磨きの基本",
+    "excerpt": "清潔感・髪・肌・服の優先順位を把握して、最短で結果を出す。",
+    "image": "https://images.unsplash.com/photo-1519340241574-2cec6aef0c01?q=80&w=1400&auto=format&fit=crop",
+    "tags": ["特集", "初心者向け"]
+  },
+  {
+    "slug": "dating-app-photo-tips",
+    "title": "マッチング率が上がる写真の撮り方",
+    "excerpt": "光・構図・服装の3ポイントで魅力を最大化する。",
+    "image": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1400&auto=format&fit=crop",
+    "tags": ["撮影", "恋愛"]
+  }
+]

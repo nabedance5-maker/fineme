@@ -1,0 +1,8 @@
+[
+  {"slug":"attractive-looks","title":"モテる外見特集","excerpt":"第一印象に効くプロのコツ","image":"./images/feature-1.webp"},
+  {"slug":"date-ready","title":"デート前に整える","excerpt":"前日までのチェックリスト","image":"./images/feature-2.webp"},
+  {"slug":"cleanliness-up","title":"清潔感アップ","excerpt":"肌・髪・服のベーシック","image":"./images/feature-3.webp"},
+  {"slug":"odor-care-for-men-30s","title":"アラサー男性必見のニオイケア｜清潔感を保つための完全ガイド","excerpt":"体臭・口臭・衣類のケアまで、今日からできる清潔感アップ術。","image":"https://images.unsplash.com/photo-1594702688940-2f7aa1d67608?q=80&w=1400&auto=format&fit=crop"},
+  {"slug":"looks-to-attract-men","title":"男性がモテるために変えるべき見た目｜第一印象で勝負を決める５つのポイント","excerpt":"清潔感、髪型、肌、服装、姿勢。最短で差がつく基本の見直し。","image":"https://images.unsplash.com/photo-1516826957135-700dedea698c?q=80&w=1400&auto=format&fit=crop"},
+  {"slug":"test-feature","title":"テスト","excerpt":"動作確認用の特集カードです。","image":"https://images.unsplash.com/photo-1513759565286-20e9c5fad06b?q=80&w=1400&auto=format&fit=crop"}
+]

@@ -1,0 +1,8 @@
+
+{
+	"name": "fineme-upload-server",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Local upload server for Fineme (dev)",
+	"main": "upload-server.js"
+}

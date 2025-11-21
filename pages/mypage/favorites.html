@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>お気に入り | Fineme</title>
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <link rel="stylesheet" href="../../assets/styles/components.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="section">
+    <div class="container mypage-layout">
+      <aside id="mypage-sidenav"></aside>
+      <section class="stack">
+  <h1 class="section-title">お気に入り</h1>
+  <div id="fav-empty" class="muted">まだお気に入りはありません。</div>
+  <div id="fav-list" class="features-grid"></div>
+      </section>
+    </div>
+  </main>
+  <footer id="site-footer"></footer>
+  <script src="../../scripts/main.js" type="module"></script>
+  <script src="../../scripts/partials.js" type="module"></script>
+  <script type="module">
+    import { requireUserAuth } from '../../scripts/user-auth.js';
+    import { loadFavorites, removeFavorite } from '../../scripts/favorites.js';
+    requireUserAuth();
+    function labelRegion(key){
+      const map = { hokkaido:'北海道', aomori:'青森県', iwate:'岩手県', miyagi:'宮城県', akita:'秋田県', yamagata:'山形県', fukushima:'福島県', ibaraki:'茨城県', tochigi:'栃木県', gunma:'群馬県', saitama:'埼玉県', chiba:'千葉県', tokyo:'東京都', kanagawa:'神奈川県', niigata:'新潟県', toyama:'富山県', ishikawa:'石川県', fukui:'福井県', yamanashi:'山梨県', nagano:'長野県', gifu:'岐阜県', shizuoka:'静岡県', aichi:'愛知県', mie:'三重県', shiga:'滋賀県', kyoto:'京都府', osaka:'大阪府', hyogo:'兵庫県', nara:'奈良県', wakayama:'和歌山県', tottori:'鳥取県', shimane:'島根県', okayama:'岡山県', hiroshima:'広島県', yamaguchi:'山口県', tokushima:'徳島県', kagawa:'香川県', ehime:'愛媛県', kochi:'高知県', fukuoka:'福岡県', saga:'佐賀県', nagasaki:'長崎県', kumamoto:'熊本県', oita:'大分県', miyazaki:'宮崎県', kagoshima:'鹿児島県', okinawa:'沖縄県' };
+      if(!key) return '全国';
+      return map[key] || key;
+    }
+    function labelCategory(key){
+      const map={consulting:'外見トータルサポート',gym:'パーソナルジム',makeup:'メイクアップ',hair:'ヘア',diagnosis:'カラー/骨格診断',fashion:'コーデ提案',photo:'写真撮影（アプリ等）',marriage:'結婚相談所'};
+      return map[key]||key;
+    }
+    const list = document.getElementById('fav-list');
+    const empty = document.getElementById('fav-empty');
+    function render(){
+      const favs = loadFavorites().sort((a,b)=> new Date(b.addedAt||0).getTime() - new Date(a.addedAt||0).getTime());
+      list.textContent = '';
+      if(!favs.length){ empty.style.display='block'; return; }
+      empty.style.display='none';
+      const frag = document.createDocumentFragment();
+      for(const f of favs){
+        const a = document.createElement('a');
+        a.className = 'card';
+        a.href = f.href;
+        const title = f.providerName || f.name || '';
+        const placeholder = '../../assets/placeholders/placeholder-default.svg';
+        const img = (f.image && f.image.trim()) ? f.image : placeholder;
+        const regionLine = `<p class="card-meta">${labelRegion(f.region||'')}</p>`;
+        const categoryLine = `<p class="card-meta">${labelCategory(f.category||'')}</p>`;
+  const priceLine = f.priceFrom? `<p class="card-meta">¥${Number(f.priceFrom).toLocaleString()}</p>` : '';
+        const storeLink = f.providerId ? `<p class="card-meta"><a href="../store.html?providerId=${encodeURIComponent(f.providerId)}">店舗詳細</a></p>` : '';
+        a.innerHTML = `
+          <img class="service-thumb" src="${img}" alt="${title}">
+          <div class="card-body">
+            <div class="cluster" style="justify-content:space-between; align-items:center; gap:8px;">
+              <h3 class="card-title" style="margin:0;">${title}</h3>
+              <button type="button" class="btn btn-ghost btn-remove" title="お気に入りから削除">削除</button>
+            </div>
+            ${regionLine}
+            ${categoryLine}
+            ${priceLine}
+            ${storeLink}
+          </div>`;
+        const btn = a.querySelector('.btn-remove');
+        if(btn){ btn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); removeFavorite(f.href); render(); }); }
+        frag.appendChild(a);
+      }
+      list.appendChild(frag);
+    }
+    render();
+  </script>
+</body>
+</html>

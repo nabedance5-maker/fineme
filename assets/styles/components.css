@@ -1,0 +1,72 @@
+/* Service thumbnails: calm, consistent look */
+.service-thumb{
+	width: 100%;
+	aspect-ratio: 16/9;
+	object-fit: cover;
+	border-radius: 12px;
+	box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+	filter: saturate(0.92) contrast(0.98) brightness(0.98);
+	transition: filter 180ms ease, transform 180ms ease;
+}
+.card:hover .service-thumb{
+	filter: saturate(0.96) contrast(1.0) brightness(1.0);
+	transform: translateY(-1px);
+}
+/* Components: header, footer, cards */
+.header{position:sticky;top:0;border-bottom:1px solid var(--color-border);background:rgba(255,255,255,.8);backdrop-filter:saturate(180%) blur(10px);z-index:10}
+.header-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{font-weight:800}
+
+.footer{margin-top:var(--sp-8);padding:var(--sp-7) 0;border-top:1px solid var(--color-border);color:var(--color-muted);font-size:14px}
+
+.card{border:1px solid var(--color-border);border-radius:var(--radius);overflow:hidden;background:#fff;box-shadow:var(--shadow-sm)}
+.card-body{padding:var(--sp-4)}
+.card-title{font-weight:600;margin:0 0 var(--sp-2)}
+.card-meta{color:var(--color-muted);font-size:14px}
+
+/* Auth: password show/hide toggle */
+label.has-pw-toggle{ position: relative; }
+label.has-pw-toggle > input[type="password"],
+label.has-pw-toggle > input[type="text"]{ padding-right: 64px; }
+.pw-toggle-btn{
+	position:absolute; right:8px; top:50%; transform: translateY(-50%);
+	padding:6px 10px; border:1px solid var(--color-border); border-radius:8px; background:#fff; color:#374151;
+	font-size:12px; line-height:1; cursor:pointer;
+}
+.pw-toggle-btn:hover{ background:#f3f4f6 }
+
+/* Badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid transparent;line-height:1.6}
+.badge--pending{color:#92400e;background:#fef3c7;border-color:#f59e0b33}
+.badge--approved{color:#065f46;background:#d1fae5;border-color:#10b98133}
+.badge--rejected{color:#991b1b;background:#fee2e2;border-color:#ef444433}
+.badge--neutral{color:#374151;background:#f3f4f6;border-color:#e5e7eb}
+
+/* MyPage: reservation service link */
+.svc-link{ color:#2563eb; text-decoration: underline; text-underline-offset: 2px; }
+.svc-link:hover{ color:#1d4ed8; }
+
+/* Rich Text Editor */
+.rte{border:1px solid var(--color-border); border-radius:12px; overflow:hidden}
+.rte-toolbar{display:flex; align-items:center; gap:8px; padding:8px; background:#f9fafb; border-bottom:1px solid var(--color-border); position:sticky; top:64px; z-index:10}
+.rte-toolbar select{padding:6px 8px; border:1px solid var(--color-border); border-radius:8px; background:#fff}
+.rte-btn{padding:6px 10px; border:1px solid var(--color-border); background:#fff; border-radius:8px; font-size:14px}
+.rte-btn:hover{background:#f3f4f6}
+.rte-btn.is-active{background:#e5e7eb; border-color:#cbd5e1}
+.rte-sep{width:1px; height:20px; background:var(--color-border); margin:0 4px}
+.rte-editor{min-height:260px; padding:12px; outline:none}
+.rte{background:#fff}
+.rte-editor:empty:before{content:attr(aria-label); color:var(--color-muted)}
+.rte-editor h2{font-size:22px; margin:20px 0 8px}
+.rte-editor h3{font-size:18px; margin:16px 0 6px}
+.rte-editor h4{font-size:16px; margin:12px 0 6px}
+.rte-editor p{line-height:1.9}
+.rte-editor ul, .rte-editor ol{padding-left:22px}
+.rte-editor blockquote{border-left:4px solid #e5e7eb; padding-left:12px; color:#4b5563; margin:8px 0}
+
+/* Admin features table UX */
+#features-table-body tr[data-id]{cursor:pointer}
+#features-table-body tr[data-id]:hover{background:#f9fafb}
+
+/* Generic error text for auth messages */
+.error{ color: #b91c1c; font-weight: 600; }

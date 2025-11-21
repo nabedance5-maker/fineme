@@ -1,0 +1,99 @@
+[
+  {
+    "id": "prov-001",
+    "name": "メンズサロン TOKYO",
+    "loginId": "tokyo@example.com",
+    "passwordHash": "demo",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "profile": {
+      "storeName": "Fineme 表参道店",
+      "address": "東京都渋谷区神宮前1-2-3",
+      "businessHours": "平日 10:00-20:00 / 土日祝 10:00-18:00",
+      "access": "表参道駅 A1 出口 徒歩5分",
+      "phone": "03-1234-5678",
+      "website": "https://example.com",
+      "description": "清潔感と垢抜けをテーマに、男性向けトータルケアを提供します。",
+      "staffs": [
+        {
+          "id": "stf-001",
+          "name": "佐藤 太郎",
+          "role": "スタイリスト",
+          "oneLiner": "あなたの第一印象を最大化",
+          "intro": "ヘアとメイクの両面からサポートします。",
+          "history": "都内有名サロン勤務を経て現職",
+          "experienceYear": 2016,
+          "photo": ""
+        }
+      ]
+    }
+  },
+  {
+    "id": "prov-002",
+    "name": "パーソナルジム 梅田",
+    "loginId": "umeda@example.com",
+    "passwordHash": "demo",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "profile": {
+      "storeName": "Fineme 梅田店",
+      "address": "大阪府大阪市北区梅田1-2-3",
+      "businessHours": "9:00-21:00",
+      "access": "梅田駅 徒歩3分",
+      "phone": "06-1234-5678",
+      "website": "https://example.com/gym",
+      "description": "科学的アプローチで最短ボディメイク。",
+      "staffs": [
+        {
+          "id": "stf-002",
+          "name": "田中 健",
+          "role": "トレーナー",
+          "oneLiner": "継続できる仕組み作り",
+          "intro": "ダイエットから増量まで幅広く対応。",
+          "history": "大手ジムでの指導経験あり",
+          "experienceYear": 2018,
+          "photo": ""
+        }
+      ]
+    }
+  }
+  ,
+  {
+    "id": "prov-deo",
+    "name": "deo外見改善サロン",
+    "loginId": "nabedance5@gmail.com",
+    "passwordHash": "demo",
+    "createdAt": "2025-10-15T00:00:00.000Z",
+    "profile": {
+      "storeName": "deo外見改善サロン",
+      "address": "",
+      "businessHours": "",
+      "access": "",
+      "phone": "05012345678",
+      "website": "https://www.instagram.com/o_o_de_o/",
+      "description": "",
+      "staffs": [
+        {
+          "id": "8e417de6-6b74-4b1a-9a66-774ffc6361e1",
+          "name": "山田 太郎",
+          "role": "スタイリスト",
+          "oneLiner": "第一印象を最大化するスタイリング",
+          "intro": "ヘア・ファッション・メイクのトータルプロデュースを行います。",
+          "history": "都内サロン勤務を経て独立。多数のメディア掲載経験あり。",
+          "experienceYear": 2015,
+          "photo": ""
+        }
+      ]
+    }
+    ,
+    "stores": [
+      {
+        "id": "prov-deo-umeda",
+        "storeName": "deo外見磨きサロン 大阪梅田店",
+        "address": "大阪府大阪市北区梅田1-2-3",
+        "access": "梅田駅 徒歩4分",
+        "phone": "05012345678",
+        "businessHours": "10:00-20:00",
+        "website": "https://www.instagram.com/o_o_de_o/"
+      }
+    ]
+  }
+]

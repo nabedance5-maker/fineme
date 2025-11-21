@@ -1,0 +1,17 @@
+.diagnosis-page { padding: 32px 0; }
+.diagnosis-title { font-size: 28px; margin-bottom:8px; }
+.diagnosis-lead { color: #374151; margin-bottom:20px; }
+.diagnosis-chat .chat-window { background: #fff; padding:18px; border-radius:12px; box-shadow:0 6px 20px rgba(2,6,23,0.06); max-width:800px; margin:0 auto; }
+.chat-question { font-weight:700; margin-bottom:12px; }
+.chat-input-row { display:flex; gap:8px; }
+.chat-input-row input { flex:1; padding:10px 12px; border-radius:8px; border:1px solid #e5e7eb; }
+.chat-input-row .btn { padding:10px 14px; }
+.muted { color:#6b7280; margin-top:10px; }
+.error { color:#b91c1c; margin-top:10px; }
+.result-card { background:#fff; padding:18px; border-radius:12px; box-shadow:0 6px 20px rgba(2,6,23,0.06); max-width:720px; margin:0 auto; }
+.result-header { display:flex; align-items:baseline; gap:12px; }
+.result-title { font-size:22px; margin:0; }
+.result-desc { color:#374151; margin:12px 0; }
+.result-reco { font-weight:600; margin-bottom:12px; }
+.result-actions { display:flex; gap:12px; align-items:center; }
+.share-buttons .btn-ghost { background:transparent; border:1px solid #e5e7eb; }

@@ -1,0 +1,39 @@
+[
+  {
+    "id": "res_demo_1",
+    "status": "pending",
+    "service": "メンズカット",
+    "store": "Fineme 表参道店",
+    "start": "2025-11-02T15:00:00+09:00",
+    "address": "東京都渋谷区神宮前1-1-1",
+    "access": "表参道駅 B2 徒歩5分",
+    "storeUrl": "https://example.com/store/fineme-omotesando",
+    "userId": "demo_user_1",
+    "userName": "山田 太郎",
+    "contact": "+81-90-0000-0000",
+    "contactConsent": true,
+    "createdAt": "2025-10-30T12:00:00+09:00",
+    "notified": {
+      "72h": true,
+      "12h": false,
+      "4h": false,
+      "24h": false
+    }
+  },
+  {
+    "id": "r-test-004",
+    "status": "pending",
+    "createdAt": "2025-10-31T04:35:23.201Z",
+    "notified": {
+      "72h": false,
+      "12h": false,
+      "4h": false,
+      "24h": false
+    },
+    "time": "2025-10-31T13:35:15.5033289+09:00",
+    "providerLoginId": "provider-1",
+    "userLoginId": "testuser",
+    "shopId": "shop-123",
+    "notes": "?????"
+  }
+]

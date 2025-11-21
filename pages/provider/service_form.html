@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>サービス登録・編集 | Fineme</title>
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <link rel="stylesheet" href="../../assets/styles/components.css" />
+  <style>
+    /* Scroll lock when modal open */
+    body.modal-open{ overflow:hidden; }
+
+    /* Base layers */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);display:block;z-index:999}
+    .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;z-index:1000}
+    .modal[hidden], .modal-backdrop[hidden]{display:none}
+
+    /* Animations */
+    #service-modal-backdrop{opacity:0;transition:opacity .2s ease;}
+    #service-modal-backdrop.is-open{opacity:1;}
+    #service-modal .modal-content{opacity:0;transform:translateY(8px) scale(.98);transition:opacity .2s ease, transform .2s ease;}
+    #service-modal.is-open .modal-content{opacity:1;transform:none;}
+
+    /* Responsive container */
+    #service-modal .modal-content{width:min(100%, 800px);max-height:min(90vh, 720px);overflow:auto}
+
+    @media (max-width: 640px){
+      #service-modal{padding:12px}
+      #service-modal .modal-content{width:100%;max-height:92vh}
+    }
+  </style>
+</head>
+<body>
+  <div id="provider-navbar"></div>
+  <main class="section">
+    <div class="container stack" style="max-width:800px">
+      <h1 class="section-title">サービス</h1>
+      <div class="cluster" style="justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap">
+        <div class="cluster" style="gap:8px; flex-wrap:wrap">
+          <button id="open-service-modal-btn" class="btn" type="button">新規サービスを追加</button>
+          <label for="services-import-input" class="btn btn-ghost" style="margin:0">インポート</label>
+          <input id="services-import-input" type="file" accept="application/json" style="display:none" />
+          <button id="open-options-list-btn" class="btn">オプション一覧</button>
+          <button id="open-option-modal-top" class="btn btn-ghost">新規オプションを追加</button>
+        </div>
+        <label class="cluster" style="align-items:center; gap:8px">
+          <input id="services-auto-export" type="checkbox" />
+          <span class="muted">保存時に自動バックアップ（ダウンロード）</span>
+        </label>
+      </div>
+
+      <!-- Modal: Service Form -->
+      <div id="service-modal-backdrop" class="modal-backdrop" hidden></div>
+      <div id="service-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="service-modal-title" hidden>
+        <div class="modal-content card" style="padding:24px;max-width:800px;width:100%">
+          <div class="cluster" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h2 id="service-modal-title" style="margin:0">サービス登録・編集</h2>
+            <button id="service-modal-close" class="btn btn-ghost" type="button" aria-label="閉じる">×</button>
+          </div>
+          <form id="provider-service-form">
+            <div class="stack">
+              <input type="hidden" id="serviceId" name="serviceId" />
+              <label>サービス名<input id="serviceName" name="serviceName" type="text" placeholder="サービス名" required /></label>
+              <label>地域
+                <select id="region" name="region" required>
+                  <option value="hokkaido">北海道</option>
+                  <option value="aomori">青森県</option>
+                  <option value="iwate">岩手県</option>
+                  <option value="miyagi">宮城県</option>
+                  <option value="akita">秋田県</option>
+                  <option value="yamagata">山形県</option>
+                  <option value="fukushima">福島県</option>
+                  <option value="ibaraki">茨城県</option>
+                  <option value="tochigi">栃木県</option>
+                  <option value="gunma">群馬県</option>
+                  <option value="saitama">埼玉県</option>
+                  <option value="chiba">千葉県</option>
+                  <option value="tokyo">東京都</option>
+                  <option value="kanagawa">神奈川県</option>
+                  <option value="niigata">新潟県</option>
+                  <option value="toyama">富山県</option>
+                  <option value="ishikawa">石川県</option>
+                  <option value="fukui">福井県</option>
+                  <option value="yamanashi">山梨県</option>
+                  <option value="nagano">長野県</option>
+                  <option value="gifu">岐阜県</option>
+                  <option value="shizuoka">静岡県</option>
+                  <option value="aichi">愛知県</option>
+                  <option value="mie">三重県</option>
+                  <option value="shiga">滋賀県</option>
+                  <option value="kyoto">京都府</option>
+                  <option value="osaka">大阪府</option>
+                  <option value="hyogo">兵庫県</option>
+                  <option value="nara">奈良県</option>
+                  <option value="wakayama">和歌山県</option>
+                  <option value="tottori">鳥取県</option>
+                  <option value="shimane">島根県</option>
+                  <option value="okayama">岡山県</option>
+                  <option value="hiroshima">広島県</option>
+                  <option value="yamaguchi">山口県</option>
+                  <option value="tokushima">徳島県</option>
+                  <option value="kagawa">香川県</option>
+                  <option value="ehime">愛媛県</option>
+                  <option value="kochi">高知県</option>
+                  <option value="fukuoka">福岡県</option>
+                  <option value="saga">佐賀県</option>
+                  <option value="nagasaki">長崎県</option>
+                  <option value="kumamoto">熊本県</option>
+                  <option value="oita">大分県</option>
+                  <option value="miyazaki">宮崎県</option>
+                  <option value="kagoshima">鹿児島県</option>
+                  <option value="okinawa">沖縄県</option>
+                </select>
+              </label>
+              <!-- 店舗はプロバイダに紐づく単一ストアに統合されたため、選択欄を削除しました -->
+              <label>カテゴリ
+                <select id="category" name="category" required>
+                  <option value="consulting">外見トータルサポート</option>
+                  <option value="gym">パーソナルジム</option>
+                  <option value="makeup">メイクアップ</option>
+                  <option value="hair">ヘア</option>
+                  <option value="diagnosis">カラー/骨格診断</option>
+                  <option value="fashion">コーデ提案</option>
+                  <option value="photo">写真撮影（アプリ等）</option>
+                  <option value="marriage">結婚相談所</option>
+                  <option value="eyebrow">眉毛</option>
+                  <option value="hairremoval">脱毛</option>
+                  <option value="esthetic">エステ</option>
+                  <option value="whitening">ホワイトニング</option>
+                  <option value="orthodontics">歯科矯正</option>
+                  <option value="nail">ネイル</option>
+                </select>
+              </label>
+              <label>目的（任意）
+                <select id="purpose" name="purpose">
+                  <option value="">選択しない</option>
+                  <option value="first_impression">第一印象を変えたい</option>
+                  <option value="profile_photo">プロフィール写真を良くしたい</option>
+                  <option value="confidence">恋愛で自信を持ちたい</option>
+                  <option value="body_shape">体を整えたい</option>
+                  <option value="know_what_suits">自分に似合うものを知りたい</option>
+                  <option value="total_update">トータルで磨く</option>
+                </select>
+              </label>
+              <label>料金<input id="price" name="price" type="number" min="0" step="1" placeholder="0" required /></label>
+              <label>キャッチコピー
+                <input id="catchcopy" name="catchcopy" type="text" placeholder="例）初回限定！プロが外見をトータルサポート" maxlength="80" />
+              </label>
+              <label>サービス詳細
+                <textarea id="description" name="description" rows="5" placeholder="サービスの内容、所要時間、持ち物などを詳しく記載してください"></textarea>
+              </label>
+              <!-- メニュー編集は非表示（サービスページが単一サービスのため、管理画面からは編集不可） -->
+              <!-- Gallery (multiple images) -->
+              <div class="stack">
+                <label>ギャラリー（複数画像）
+                  <input id="gallery" name="gallery" type="file" accept="image/*" multiple />
+                </label>
+                <div id="gallery-preview" class="cluster" style="gap:8px; flex-wrap:wrap;"></div>
+                <p class="muted">複数の写真をアップロードして、サービスページにギャラリー表示できます（推奨最大長辺1200px）。</p>
+              </div>
+              <div class="stack" style="gap:6px;">
+                <label>担当者（複数選択可・スタッフから選択）</label>
+                <div id="staff-checkboxes" class="stack" style="gap:6px; max-height:176px; overflow:auto; border:1px solid var(--color-border); border-radius:8px; padding:8px 12px; background:#fff;"></div>
+                <p class="muted">チェックボックスで複数の担当者を選択できます。スタッフの登録・編集は「スタッフプロフィール」タブから行えます。</p>
+              </div>
+              <div class="stack" style="gap:6px;">
+                <label>利用可能なオプション（管理画面で登録されたオプション）</label>
+                <div id="options-checkboxes" class="stack" style="gap:6px; max-height:176px; overflow:auto; border:1px solid var(--color-border); border-radius:8px; padding:8px 12px; background:#fff;"></div>
+                <p class="muted">チェックでこのサービスに紐づけます。</p>
+              </div>
+
+              <!-- Provider-side Options Management: visible list + new button -->
+              <div class="card" style="padding:12px; margin-top:12px">
+                <div class="space-between" style="display:flex; align-items:center">
+                  <h3 style="margin:0">オプション管理</h3>
+                  <div class="cluster">
+                    <button id="open-option-modal" class="btn">新しいオプションを追加</button>
+                    <button id="open-admin-options" class="btn btn-ghost" style="display:none">編集</button>
+                  </div>
+                </div>
+                <p class="muted">ここでオプションを作成・編集できます。作成したオプションはこのページのチェックボックスに反映されます。</p>
+                <div class="table-responsive" style="margin-top:8px">
+                  <table class="table" style="width:100%">
+                    <thead><tr><th>名前</th><th>価格</th><th>説明</th><th>有効</th><th>操作</th></tr></thead>
+                    <tbody id="options-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="stack">
+                <label>写真
+                  <input id="photo" name="photo" type="file" accept="image/*" />
+                </label>
+                <div class="cluster" style="align-items:flex-start">
+                  <img id="photo-preview" alt="写真プレビュー" style="max-width:200px;max-height:150px;display:none;border-radius:8px" />
+                  <button id="photo-clear" type="button" class="btn btn-ghost">写真をクリア</button>
+                </div>
+                <p class="muted">画像は自動的に縮小（最大1200px）して保存されます。大きな画像は読み込みに時間がかかる場合があります。</p>
+              </div>
+              <label class="cluster" style="align-items:center">
+                <input id="published" name="published" type="checkbox" />
+                <span>公開する</span>
+              </label>
+              <div class="cluster">
+                <button id="service-submit" class="btn" type="submit">保存</button>
+                <button id="service-cancel" class="btn btn-ghost" type="button">編集をキャンセル</button>
+                <span id="service-message" class="muted" aria-live="polite"></span>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card" style="padding:24px">
+        <div class="stack">
+          <h2 style="margin:0">登録済みサービス一覧</h2>
+          <div class="table-responsive">
+            <table class="table responsive" style="width:100%">
+              <thead>
+                <tr>
+                  <th style="text-align:left">サービス名</th>
+                  <th style="text-align:left">地域</th>
+                  <th style="text-align:left">カテゴリ</th>
+                  <th style="text-align:left">目的</th>
+                  <th style="text-align:left">料金</th>
+                  <th style="text-align:left">公開</th>
+                  <th style="text-align:left">作成日</th>
+                  <th style="text-align:left">操作</th>
+                </tr>
+              </thead>
+              <tbody id="provider-services-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <div id="provider-footer"></div>
+  <!-- Options modal (reused from admin options) -->
+  <div id="option-modal" class="modal" role="dialog" aria-modal="true" hidden style="display:none;">
+    <div class="modal-content card" style="padding:16px; max-width:640px; margin:40px auto">
+      <h2 id="option-modal-title">オプションを編集</h2>
+      <form id="option-form" style="display:flex;flex-direction:column;gap:8px;align-items:stretch">
+        <input type="hidden" id="option-id" />
+        <label style="display:block">名称
+          <input id="option-name" required style="width:100%" />
+        </label>
+        <label style="display:block">価格（円、空白可）
+          <input id="option-price" type="number" min="0" step="1" style="width:160px" />
+        </label>
+        <label style="display:block">説明
+          <textarea id="option-desc" rows="3" style="width:100%"></textarea>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px"><input id="option-active" type="checkbox" checked /> 有効</label>
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:6px">
+          <button id="option-save" class="btn" type="submit">保存</button>
+          <button id="option-cancel" class="btn btn-ghost" type="button">キャンセル</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script src="../../scripts/partials.js" type="module"></script>
+  <script src="../../scripts/admin-options.js" type="module"></script>
+  <script src="../../scripts/provider-options-list.js" type="module"></script>
+    <!-- Options List Modal -->
+    <div id="options-list-modal" class="modal" role="dialog" aria-modal="true" hidden style="display:none">
+      <div class="modal-content card" style="padding:16px; max-width:840px; margin:40px auto; width:calc(100% - 48px)">
+        <div class="space-between" style="display:flex;align-items:center">
+          <h2 style="margin:0">オプション一覧</h2>
+          <div class="cluster">
+            <button id="options-list-close" class="btn btn-ghost">閉じる</button>
+          </div>
+        </div>
+        <p class="muted">登録済みのオプションを一覧できます。編集ボタンを押すと下に編集フォームが展開します。</p>
+        <div class="table-responsive" style="margin-top:8px">
+          <table class="table" style="width:100%">
+            <thead><tr><th>名前</th><th>価格</th><th>説明</th><th>有効</th><th>操作</th></tr></thead>
+            <tbody id="options-list-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  <script type="module">
+    import { requireProviderAuth, getProviderSession, signOutProvider } from '../../scripts/auth.js';
+    const session = requireProviderAuth();
+    if(session){
+      const area = document.getElementById('provider-session-area');
+      if(area){
+        area.innerHTML = `
+          <span class="muted">${session.name} でログイン中</span>
+          <button class="btn btn-ghost" id="provider-logout-btn">ログアウト</button>
+        `;
+        area.addEventListener('click', (e)=>{
+          if(e.target && e.target.id === 'provider-logout-btn'){
+            signOutProvider();
+          }
+        });
+      }
+    }
+  </script>
+  <script src="../../scripts/provider-services.js" type="module"></script>
+</body>
+</html>

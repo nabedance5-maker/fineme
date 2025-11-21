@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>掲載者ダッシュボード | Fineme</title>
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <link rel="stylesheet" href="../../assets/styles/components.css" />
+</head>
+<body>
+  <div id="provider-navbar"></div>
+  <main class="section">
+    <div class="container stack">
+      <h1 class="section-title">掲載者ダッシュボード</h1>
+      <p class="muted">サービス登録・写真設定・スケジュール管理が行えます（ダミー）。</p>
+      <section class="stack" style="margin-top:24px;">
+        <h2 class="section-title">レビュー管理</h2>
+        <p class="muted">ユーザーが投稿したレビューを確認し、表示/非表示を切り替えられます。</p>
+        <div id="provider-reviews-host" class="stack">
+          <div class="cluster" style="gap:8px; align-items:center">
+            <label>フィルタ
+              <select id="prov-reviews-filter">
+                <option value="all">全て</option>
+                <option value="visible">表示中</option>
+                <option value="hidden">非表示</option>
+              </select>
+            </label>
+            <label>サービス
+              <select id="prov-reviews-service">
+                <option value="all">全てのサービス</option>
+              </select>
+            </label>
+          </div>
+          <div id="prov-reviews-list" style="margin-top:12px"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <div id="provider-footer"></div>
+  <script src="../../scripts/partials.js" type="module"></script>
+  <script type="module">
+    import { requireProviderAuth, getProviderSession, signOutProvider } from '../../scripts/auth.js';
+    import '../../scripts/provider-reviews.js';
+    const session = requireProviderAuth();
+    if(session){
+      const area = document.getElementById('provider-session-area');
+      if(area){
+        // Append session info without removing existing children (notifications may be present)
+        const info = document.createElement('div');
+        info.style.display='inline-flex'; info.style.gap='8px'; info.style.alignItems='center';
+        info.innerHTML = `<span class="muted">${session.name} でログイン中</span><button class="btn btn-ghost" id="provider-logout-btn">ログアウト</button>`;
+        area.appendChild(info);
+        area.addEventListener('click', (e)=>{
+          if(e.target && e.target.id === 'provider-logout-btn'){
+            signOutProvider();
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>

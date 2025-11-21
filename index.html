@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fineme | 恋愛を変える、外見磨きの入口</title>
+  <meta name="description" content="恋愛に悩む男性向けの外見磨きポータル。検索・比較・予約がワンストップ。" />
+  <link rel="stylesheet" href="./assets/styles/style.css" />
+  <link rel="stylesheet" href="./assets/styles/components.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <main>
+  <section class="hero hero--visual" style="padding:64px 0 48px; --hero-left: url('../images/hero-combined.jpg'); --hero-right: url('../images/hero-combined.jpg');">
+  <div class="container stack" style="border-radius:32px; width:100vw; max-width:100vw; min-width:0; overflow-x:auto; background:transparent; box-shadow:none;">
+    <div class="hero-bg-fog"></div>
+    <div class="hero-warm-overlay"></div>
+  <h1 class="hero-title" style="font-size:clamp(32px,6vw,54px); font-family:'Montserrat','Noto Sans JP',sans-serif; font-weight:800; color:#222; margin-bottom:24px; text-shadow:0 2px 16px #e3f2fd; text-align:center;">Find New Me<br><span style="font-size:22px; font-weight:500; color:var(--color-muted); text-align:center; display:inline-block; width:100%;">見た目も恋もアプデする、垢抜けサービス予約サイト。</span></h1>
+        <div style="display:flex; gap:32px; flex-wrap:wrap; align-items:center; justify-content:space-between; margin-bottom:32px;">
+          <div style="width:100%; max-width:900px; margin:0 auto; text-align:center;">
+            <p class="hero-sub" style="font-size:16px; color:#222; margin-bottom:34px; font-weight:500; text-align:center; max-width:540px; margin-left:auto; margin-right:auto;">眉を整える。肌を整える。髪を変える。服を見直す。写真を撮る。<br>外見を磨くすべての一歩を、Finemeで検索・比較・予約。<br>自分を好きになるきっかけが、ここにある。</p>
+            <form class="searchbar" action="./pages/search.html" method="get" style="background:rgba(255,255,255,0.97); box-shadow:0 2px 8px rgba(140,160,179,0.08); border-radius:24px; display:flex; flex-wrap:wrap; gap:12px; padding:18px 16px; justify-content:center;">
+              <input name="keyword" placeholder="何を探しますか？（例：メンズメイク、第一印象、撮影）" style="font-size:18px; padding:16px 20px; border-radius:14px; border:1px solid var(--color-border); flex:2 1 220px; min-width:180px;" />
+              <select name="region" style="font-size:18px; padding:14px 16px; border-radius:14px; border:1px solid var(--color-border); flex:1 1 140px; min-width:120px;">
+                <option value="">全国</option>
+                <option value="hokkaido">北海道</option>
+                <option value="aomori">青森県</option>
+                <option value="iwate">岩手県</option>
+                <option value="miyagi">宮城県</option>
+                <option value="akita">秋田県</option>
+                <option value="yamagata">山形県</option>
+                <option value="fukushima">福島県</option>
+                <option value="ibaraki">茨城県</option>
+                <option value="tochigi">栃木県</option>
+                <option value="gunma">群馬県</option>
+                <option value="saitama">埼玉県</option>
+                <option value="chiba">千葉県</option>
+                <option value="tokyo">東京都</option>
+                <option value="kanagawa">神奈川県</option>
+                <option value="niigata">新潟県</option>
+                <option value="toyama">富山県</option>
+                <option value="ishikawa">石川県</option>
+                <option value="fukui">福井県</option>
+                <option value="yamanashi">山梨県</option>
+                <option value="nagano">長野県</option>
+                <option value="gifu">岐阜県</option>
+                <option value="shizuoka">静岡県</option>
+                <option value="aichi">愛知県</option>
+                <option value="mie">三重県</option>
+                <option value="shiga">滋賀県</option>
+                <option value="kyoto">京都府</option>
+                <option value="osaka">大阪府</option>
+                <option value="hyogo">兵庫県</option>
+                <option value="nara">奈良県</option>
+                <option value="wakayama">和歌山県</option>
+                <option value="tottori">鳥取県</option>
+                <option value="shimane">島根県</option>
+                <option value="okayama">岡山県</option>
+                <option value="hiroshima">広島県</option>
+                <option value="yamaguchi">山口県</option>
+                <option value="tokushima">徳島県</option>
+                <option value="kagawa">香川県</option>
+                <option value="ehime">愛媛県</option>
+                <option value="kochi">高知県</option>
+                <option value="fukuoka">福岡県</option>
+                <option value="saga">佐賀県</option>
+                <option value="nagasaki">長崎県</option>
+                <option value="kumamoto">熊本県</option>
+                <option value="oita">大分県</option>
+                <option value="miyazaki">宮崎県</option>
+                <option value="kagoshima">鹿児島県</option>
+                <option value="okinawa">沖縄県</option>
+              </select>
+              <select name="purpose" title="検索の目的を選択" style="font-size:18px; padding:14px 16px; border-radius:14px; border:1px solid var(--color-border); flex:1 1 160px; min-width:140px;">
+                <option value="">目的で絞り込む（任意）</option>
+                <option value="first_impression" data-subtext="対面や写真で好印象に見せたい人向け。見た目の“印象”を手早く改善" title="第一印象を変えたい">第一印象を変えたい</option>
+                <option value="profile_photo" data-subtext="マッチングやSNSで映える写真が欲しい人向け" title="プロフィール写真を良くしたい">プロフィール写真を良くしたい</option>
+                <option value="confidence" data-subtext="恋愛での成功確率を上げたい・デートで印象を残したい人向け" title="恋愛で自信を持ちたい">恋愛で自信を持ちたい</option>
+                <option value="body_shape" data-subtext="姿勢・筋肉・体型で見た目の印象を根本から変えたい人向け" title="体を整えたい">体を整えたい</option>
+                <option value="know_what_suits" data-subtext="何が自分に合うか客観的に知りたい人向け" title="似合うを知りたい">似合うを知りたい</option>
+                <option value="total_update" data-subtext="診断→施術→撮影まで一気に整えたい人向けのワンストップ" title="トータルで磨く">トータルで磨く</option>
+              </select>
+              <select name="category" style="font-size:18px; padding:14px 16px; border-radius:14px; border:1px solid var(--color-border); flex:1 1 140px; min-width:120px;">
+                <option value="">すべてのカテゴリ</option>
+                <option value="consulting">外見トータルサポート</option>
+                <option value="gym">パーソナルジム</option>
+                <option value="makeup">メイクアップ</option>
+                <option value="hair">ヘア</option>
+                <option value="diagnosis">カラー/骨格診断</option>
+                <option value="fashion">コーデ提案</option>
+                <option value="photo">写真撮影（アプリ等）</option>
+                <option value="marriage">結婚相談所</option>
+                <!-- 新規カテゴリ -->
+                <option value="eyebrow">眉毛</option>
+                <option value="hairremoval">脱毛</option>
+                <option value="esthetic">エステ</option>
+                <option value="whitening">ホワイトニング</option>
+                <option value="orthodontics">歯科矯正</option>
+                <option value="nail">ネイル</option>
+              </select>
+              <button class="btn" type="submit" style="font-size:20px; border-radius:16px; min-width:140px; flex:1 1 120px;">検索</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- カテゴリ紹介（トップ入口） -->
+    <section class="home-categories">
+      <div class="container">
+        <div class="cluster space-between" style="margin-bottom:16px">
+          <h2 class="section-title">何を変えたい？</h2>
+          <a class="btn btn-ghost" href="./pages/search.html">全カテゴリを見る</a>
+        </div>
+        <div class="categories-grid">
+          <!-- 14カテゴリ（仮アイコン：絵文字） -->
+          <div class="category-card"><a href="./pages/search.html?category=hair"><div class="category-icon">💇‍♂️</div><div class="category-label">ヘア</div><div class="category-sub">髪型・カット・パーマ</div></a></div>
+          <div class="category-card"><a href="./pages/search.html?category=eyebrow"><div class="category-icon">✂️</div><div class="category-label">眉毛</div><div class="category-sub">眉カット・デザイン</div></a></div>
+          <div class="category-card"><a href="./pages/search.html?category=esthetic"><div class="category-icon">💆‍♂️</div><div class="category-label">肌・エステ</div><div class="category-sub">フェイシャル・スキンケア</div></a></div>
+          <div class="category-card"><a href="./pages/search.html?category=fashion"><div class="category-icon">👔</div><div class="category-label">服・コーデ</div><div class="category-sub">パーソナルスタイリング</div></a></div>
+          <div class="category-card"><a href="./pages/search.html?category=gym"><div class="category-icon">🏋️‍♂️</div><div class="category-label">体・ジム</div><div class="category-sub">ボディメイク・トレーニング</div></a></div>
+          <div class="category-card"><a href="./pages/search.html?category=orthodontics"><div class="category-icon">🦷</div><div class="category-label">歯科矯正</div><div class="category-sub">噛み合わせ・見た目改善</div></a></div>
+          <div class="category-card"><a href="./pages/search.html?category=makeup"><div class="category-icon">💄</div><div class="category-label">メイク</div><div class="category-sub">男性向けメイクレッスン</div></a></div>
+          <div class="category-card"><a href="./pages/search.html?category=nail"><div class="category-icon">💅</div><div class="category-label">ネイル</div><div class="category-sub">ケア・デザイン</div></a></div>
+          <div class="category-card"><a href="./pages/search.html?category=photo"><div class="category-icon">📸</div><div class="category-label">写真撮影</div><div class="category-sub">プロフィール写真・撮影</div></a></div>
+          <div class="category-card"><a href="./pages/search.html?category=diagnosis"><div class="category-icon">🔍</div><div class="category-label">診断</div><div class="category-sub">カラー・骨格診断</div></a></div>
+          <div class="category-card"><a href="./pages/search.html?category=consulting"><div class="category-icon">🧑‍⚕️</div><div class="category-label">外見トータルサポート</div><div class="category-sub">トータルコンサルティング</div></a></div>
+          <div class="category-card"><a href="./pages/search.html?category=marriage"><div class="category-icon">💍</div><div class="category-label">結婚相談</div><div class="category-sub">婚活・相談所</div></a></div>
+          <div class="category-card"><a href="./pages/search.html?category=hairremoval"><div class="category-icon">🪒</div><div class="category-label">脱毛</div><div class="category-sub">永久脱毛・光脱毛</div></a></div>
+          <div class="category-card"><a href="./pages/search.html?category=whitening"><div class="category-icon">✨</div><div class="category-label">ホワイトニング</div><div class="category-sub">歯の美白</div></a></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container stack">
+        <div class="cluster space-between">
+          <h2 class="section-title">おすすめサービス</h2>
+          <a class="btn btn-ghost" href="./pages/search.html">もっと見る</a>
+        </div>
+        <div class="features-grid">
+          <div id="top-reco"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 最近閲覧（ログイン中かつ履歴ありの時のみJSで表示） -->
+    <section class="section" id="recent-section" style="display:none">
+      <div class="container stack">
+        <div class="cluster space-between">
+          <h2 class="section-title">最近閲覧したサービス</h2>
+          <a class="btn btn-ghost" href="./pages/mypage/history.html">履歴を見る</a>
+        </div>
+        <div class="features-grid">
+          <div id="top-recent"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container stack">
+        <div class="cluster space-between">
+          <h2 class="section-title">特集</h2>
+          <a class="btn btn-ghost" href="./pages/feature.html">特集一覧</a>
+        </div>
+
+        <div class="features-grid">
+          <div id="top-features"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer"></footer>
+  <script src="./scripts/main.js" type="module"></script>
+  <script src="./scripts/home-reco.js?v=20251016" type="module"></script>
+  <script src="./scripts/home-features.js?v=20251015" type="module"></script>
+  <script src="./scripts/home-recent.js?v=20251016" type="module"></script>
+</body>
+</html>

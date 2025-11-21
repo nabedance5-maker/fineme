@@ -1,0 +1,910 @@
+/* Design Tokens */
+:root{
+	/* Theme tokens: tuned for a premium reservation look */
+	--color-bg: #ffffff; /* clean white */
+	--color-fg: #0f1724; /* deep slate */
+	--color-muted: #6b7280; /* subdued gray */
+	--color-border: #e6e6e8; /* subtle border */
+	--radius: 12px;
+	--shadow-sm: 0 6px 18px rgba(15,23,36,0.06);
+	--shadow-md: 0 12px 40px rgba(15,23,36,0.08);
+	--container: 1200px;
+	--sp-1: 8px;
+	--sp-2: 12px;
+	--sp-3: 20px;
+	--sp-4: 28px;
+	--sp-5: 44px;
+	--sp-6: 64px;
+	--sp-7: 96px;
+	--sp-8: 128px;
+	--primary: #0b2640; /* deep navy */
+	--accent: #b98f3b; /* warm gold */
+	--link: var(--primary);
+	--link-hover: #0d3a61;
+	--link-visited: #4b5563;
+	--muted-accent: rgba(185,143,59,0.06);
+}
+*{box-sizing:border-box}
+body{
+	margin:0;
+	color:var(--color-fg);
+	background:var(--color-bg);
+	font-family:'Noto Sans JP', 'Montserrat', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+	letter-spacing: 0.02em;
+	line-height: 1.7;
+}
+img{max-width:100%;display:block}
+/* Accessible default link styling */
+a{color:var(--link);text-decoration:underline;text-underline-offset:2px}
+a:hover{color:var(--link-hover)}
+a:visited{color:var(--link-visited)}
+/* Exceptions: button-like and brand/nav links keep their own styles */
+a.btn,.btn a{text-decoration:none}
+.nav-links a{ text-decoration:none }
+a.brand,a.logo{ text-decoration:none; color:inherit }
+a.card{ text-decoration:none; color:inherit }
+a.card-media{ text-decoration:none; color:inherit }
+.container{width:100%;max-width:var(--container);margin:0 auto;padding:0 var(--sp-5)}
+.stack>*+*{margin-top:var(--sp-5)}.cluster{display:flex;gap:var(--sp-4);align-items:center;flex-wrap:wrap}.space-between{justify-content:space-between}
+.section{padding:var(--sp-8) 0}.section-title{margin:0;font-size:clamp(22px,3.2vw,28px)}.muted{color:var(--color-muted)}
+
+/* Header */
+.navbar{position:fixed;top:0;left:0;right:0;width:100%;background:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,250,0.95));border-bottom:1px solid var(--color-border);box-shadow:0 6px 18px rgba(11,38,64,0.03);z-index:50}
+.navbar-inner{display:flex;align-items:center;justify-content:space-between;height:72px}
+.has-fixed-header body, body{padding-top:72px}
+.brand{font-weight:700;letter-spacing:0.6px;font-size:18px;color:var(--primary)}
+.nav-links a{color:var(--primary);padding:10px 14px;border-radius:8px}
+.nav-links a:hover{background:var(--muted-accent)}
+.navbar .nav-links a:not(.brand):not(.searchbar--compact a){ font-size:15px; }
+.navbar .nav-links a.btn{ font-size:15px; }
+.navbar .nav-links a, .navbar .nav-links .btn, #site-header .nav-links a, #site-header .nav-links .btn{
+	color: var(--primary) !important;
+}
+
+/* Keep nav items on a single row and allow horizontal scrolling when cramped */
+.nav-links{
+	display:flex;flex-wrap:nowrap;gap:8px;align-items:center;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch;position:relative;padding-bottom:4px
+}
+.nav-links a{flex:0 0 auto;white-space:nowrap;font-size:clamp(13px,1.2vw,15px);padding:clamp(6px,8px,10px) clamp(8px,12px,14px);}
+.nav-links::-webkit-scrollbar{height:6px}
+
+/* Make brand/search shrink gracefully */
+.brand{flex:0 0 auto;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.searchbar--compact{flex:1 1 240px;min-width:120px;max-width:520px}
+
+/* Subtle visual hint for horizontal scroll (appears at right edge) */
+/* Removed static gradient hint to avoid visually covering buttons; optional JS-driven hint can be added later */
+.header-actions{ z-index:1202; }
+
+/* Stronger fallbacks to prevent nav collapse: ensure nav group and links are visible and sized
+	 Only apply these high-specificity fallbacks on wider viewports — they previously forced
+	 the desktop header on small screens and overrode the mobile menu behavior. */
+@media (min-width: 1025px) {
+	.nav-group{ display:flex !important; flex:1 1 auto; min-width:0; }
+	.nav-links{ display:flex !important; flex:1 1 auto !important; flex-basis:auto !important; min-width:60px !important; width:auto !important; align-items:center; }
+	.nav-links a{ display:inline-block !important; }
+	.nav-links > .header-actions{ margin-left:auto; flex:0 0 auto; display:inline-flex; align-items:center; gap:8px; }
+	.searchbar--compact{ min-width:0 !important; flex:0 1 240px !important; }
+}
+
+/* Mobile nav toggle & menu */
+.nav-toggle{display:none;margin-left:auto;font-size:22px;line-height:1;border:none;background:transparent;padding:8px 10px;border-radius:8px}
+.nav-toggle:focus{outline:2px solid #93c5fd;outline-offset:2px}
+
+@media (max-width: 768px){
+	.navbar-inner{height:auto;align-items:stretch}
+	.nav-toggle{display:block}
+	/* Hide menu by default on mobile */
+	.nav-group{display:none;position:absolute;top:64px;left:0;right:0;background:#fff;border-bottom:1px solid var(--color-border);box-shadow:var(--shadow-sm);padding:12px}
+	.nav-group.is-open{display:block}
+	.nav-group .searchbar--compact{display:grid;grid-template-columns:1fr;gap:8px;border-radius:12px}
+	.nav-group .searchbar--compact select{border:1px solid var(--color-border);background:#fff;border-radius:10px}
+	.nav-group .searchbar--compact input{border:1px solid var(--color-border);background:#fff;border-radius:10px}
+	.nav-group .nav-links{display:flex;flex-direction:column;margin-top:8px}
+	.nav-group .nav-links a{padding:10px;border-radius:10px}
+	/* Provider nav actions: wrap nicely on small screens */
+	#prov-nav-menu .nav-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+	#prov-nav-menu{font-size:15px;}
+}
+
+/* Additional responsive rules: prevent header overflow on intermediate widths */
+@media (max-width: 1024px){
+	/* Tablet & small screens: hide the desktop nav and show hamburger menu.
+	   The menu opens when .nav-group.is-open is added (JS toggles this). */
+	.navbar-inner{flex-wrap:nowrap;align-items:center}
+	.brand{flex:0 0 auto;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+	.nav-toggle{display:block}
+	/* Hide the full nav by default on tablet/smaller; open state uses .is-open */
+	.nav-group{display:none;position:fixed;top:64px;left:0;right:0;background:#fff;border-bottom:1px solid var(--color-border);box-shadow:var(--shadow-sm);padding:12px;z-index:60;max-height:80vh;overflow:auto}
+	.nav-group.is-open{display:block}
+	.nav-group .searchbar--compact{display:grid;grid-template-columns:1fr;gap:8px;border-radius:12px}
+	.nav-group .searchbar--compact select{border:1px solid var(--color-border);background:#fff;border-radius:10px}
+	.nav-group .searchbar--compact input{border:1px solid var(--color-border);background:#fff;border-radius:10px}
+	.nav-group .nav-links{display:flex;flex-direction:column;margin-top:8px;gap:8px}
+	.nav-group .nav-links a{padding:10px;border-radius:10px}
+}
+
+/* Desktop: keep header strictly one row */
+@media (min-width: 1025px){
+	.nav-toggle{display:none !important}
+	.navbar-inner{flex-wrap:nowrap;align-items:center}
+	.nav-group{display:flex !important;position:static;flex:1 1 auto;align-items:center;gap:12px;min-width:0}
+	.nav-group .searchbar--compact{flex:0 1 320px;min-width:0;max-width:520px}
+	.nav-links{display:flex;flex-wrap:nowrap;gap:8px;align-items:center;flex:1 1 auto;overflow-x:auto;padding-bottom:2px}
+	.nav-links a{flex:0 0 auto}
+}
+
+/* Provider navbar layout fixes: prevent text overlapping/line-breaks by controlling flex shrink and wrapping */
+#provider-navbar .navbar-inner{align-items:center;min-height:64px}
+#provider-navbar .brand{white-space:nowrap;flex:0 0 auto;margin-right:12px}
+#provider-navbar .nav-group{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:16px}
+#provider-navbar .nav-links{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0;overflow:hidden}
+#provider-navbar .nav-links a{white-space:nowrap}
+#provider-navbar .nav-actions{margin-left:auto;flex:0 0 auto;display:flex;gap:8px;align-items:center}
+
+/* Enforce single-line provider header */
+#provider-navbar .navbar-inner{flex-wrap:nowrap}
+#provider-navbar .brand{display:inline-block;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+#provider-navbar .nav-group{overflow:hidden}
+#provider-navbar .nav-links{flex:1 1 auto;display:flex;gap:8px;align-items:center;white-space:nowrap;overflow-x:auto;padding-bottom:2px}
+#provider-navbar .nav-links::-webkit-scrollbar{height:6px}
+#provider-navbar .nav-links a{flex:0 0 auto}
+#provider-navbar .nav-actions{flex:0 0 auto;margin-left:12px}
+
+/* Provider sidebar layout */
+body.has-provider-sidebar{padding-top:0}
+.provider-sidebar{position:fixed;left:0;top:0;bottom:0;width:260px;background:#fff;border-right:1px solid var(--color-border);box-shadow:var(--shadow-sm);z-index:20;overflow:auto}
+.provider-sidebar-inner{padding:20px;display:flex;flex-direction:column;gap:12px}
+.provider-brand{font-weight:700;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.provider-nav{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.provider-nav a{padding:10px 12px;border-radius:8px;color:var(--link);text-decoration:none}
+.provider-nav a:hover{background:#f3f4f6}
+.provider-session{margin-top:auto}
+
+/* Push main content to the right when sidebar present; pages using .container should adapt */
+@media (min-width: 800px){
+	/* Keep sidebar fixed and ensure main content fits the remaining viewport width
+		 by reducing the container's max-width so it doesn't cause horizontal overflow. */
+	body.has-provider-sidebar main{margin-left:260px}
+	body.has-provider-sidebar .container{max-width: calc(var(--container) - 260px); width:100%;}
+}
+	@media (min-width: 800px){
+		body.has-provider-sidebar main{max-width: calc(100vw - 260px); overflow-x:hidden}
+	}
+
+	/* Tighten horizontal spacing for provider pages */
+	@media (min-width: 800px){
+		body.has-provider-sidebar .container{padding-left:8px; padding-right:8px}
+		body.has-provider-sidebar main.section{padding-left:12px; padding-right:12px}
+	}
+@media (max-width: 799px){
+	/* On small screens, collapse sidebar to top fixed bar and keep original header behavior */
+	.provider-sidebar{position:relative;width:100%;height:auto;border-right:none;box-shadow:none}
+	body.has-provider-sidebar main, body.has-provider-sidebar .container{margin-left:0}
+}
+
+/* Search */
+.searchbar{display:grid;grid-template-columns:1.6fr 1fr auto;gap:var(--sp-3);padding:var(--sp-4);background:#fff;border:1px solid var(--color-border);border-radius:28px;box-shadow:var(--shadow-sm);align-items:center}
+.searchbar input,.searchbar select{padding:12px 14px;border:1px solid var(--color-border);border-radius:20px}
+.searchbar--compact{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:var(--sp-3);padding:8px 10px;border-radius:999px;border:1px solid var(--color-border);background:#fff;box-shadow:var(--shadow-sm);min-width:0}
+.searchbar--compact input{border:none;padding:8px 12px;background:transparent;outline:none;min-width:0}
+.searchbar--compact select{border:none;padding:8px 10px;background:transparent;outline:none}
+.searchbar--compact .btn{padding:8px 12px;line-height:1}
+
+.btn{padding:12px 18px;border-radius:12px;border:1px solid rgba(11,38,64,0.08);background:#fff;color:var(--primary);box-shadow:var(--shadow-sm);font-weight:600}
+.btn-ghost{background:transparent;color:var(--primary)}
+.btn:not(.btn-ghost){background:linear-gradient(90deg,var(--primary), #0e3760); color:#fff; border:none}
+.btn--outline-danger{background:transparent;color:#b91c1c;border-color:#ef4444}
+.btn-ghost, a.btn-ghost, a.btn.btn-ghost:link, a.btn.btn-ghost:visited, a.btn.btn-ghost:hover, a.btn.btn-ghost:active, a.btn.btn-ghost:focus{ color:#111827 !important }
+/* Footer: make provider login button white text for better contrast */
+.footer .provider-login, .footer .provider-login:link, .footer .provider-login:visited, .footer .provider-login:hover, .footer .provider-login:active, .footer .provider-login:focus{
+	color:#fff !important;
+	background: linear-gradient(90deg,var(--primary), #0e3760) !important;
+	border: none !important;
+	padding:8px 12px !important;
+	border-radius:8px !important;
+}
+/* Ensure anchor-styled buttons keep white text in all states */
+a.btn:not(.btn-ghost), a.btn:not(.btn-ghost):link, a.btn:not(.btn-ghost):visited, a.btn:not(.btn-ghost):hover, a.btn:not(.btn-ghost):active, a.btn:not(.btn-ghost):focus{ color:#fff !important }
+/* Button variants */
+.btn--sm{padding:8px 12px;font-size:14px}
+
+/* Pagination */
+.pagination{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:var(--sp-5)}
+.pagination .pager-btn{padding:6px 10px;border:1px solid var(--color-border);border-radius:8px;background:#fff;cursor:pointer}
+.pagination .pager-btn:hover{box-shadow:var(--shadow-sm)}
+.pagination .pager-btn.is-current{background:#111827;color:#fff;border-color:#111827}
+.pagination .pager-btn:disabled{opacity:.5;cursor:not-allowed}
+.pagination .pager-ellipsis{color:var(--color-muted)}
+
+/* Storage health banner */
+#storage-health-banner{position:sticky;top:64px;z-index:11;background:#fff3cd;color:#663c00;border-bottom:1px solid #ffe69c;padding:10px 16px;display:flex;gap:12px;align-items:center}
+#storage-health-banner .storage-health-text{line-height:1.3}
+#storage-health-banner .storage-health-dismiss{margin-left:auto;padding:6px 10px;border:1px solid var(--color-border);border-radius:8px;background:#fff;cursor:pointer}
+#storage-health-banner .storage-health-dismiss:hover{box-shadow:var(--shadow-sm)}
+.btn--outline-danger{background:transparent;color:#b91c1c;border-color:#ef4444}
+.btn--outline-danger:hover{background:#ef4444;color:#fff}
+.btn--outline-danger:disabled{opacity:.5;cursor:not-allowed}
+.btn__icon{margin-right:6px;vertical-align:-2px}
+
+/* Header nav button visibility fix */
+/* Ensure buttons placed inside .nav-links keep high-contrast text color */
+.nav-links .btn{color:#111827;background:#fff;border-color:#d1d5db}
+.nav-links .btn:hover{background:#f3f4f6}
+
+/* Fix: make reservation button text visible when rendered inside the service detail (#detail)
+	 Some global rules force anchor-styled buttons to white text; ensure buttons injected
+	 into #detail remain readable on a white background. */
+/* Keep legacy behavior for generic buttons inside #detail, but allow explicit primary variant */
+#detail a.btn:not(.btn-ghost){
+	color: #111827 !important;
+	background: #fff !important;
+	border-color: #d1d5db !important;
+}
+
+/* Primary button variant: gradient + white text (same as search button). Use higher specificity to override #detail rules */
+a.btn.btn--primary, button.btn.btn--primary, .btn--primary{
+	background: linear-gradient(90deg,var(--primary), #0e3760) !important;
+	color: #fff !important;
+	border: none !important;
+	box-shadow: var(--shadow-sm) !important;
+}
+
+/* On detail page we want to swap the colors for primary and ghost buttons
+   - Make .btn--primary show white background with primary colored text
+   - Make .btn-ghost show the primary gradient with white text
+*/
+#detail a.btn.btn--primary, #detail button.btn.btn--primary, #detail .btn--primary{
+	background: #fff !important;
+	color: var(--primary) !important;
+	border: 1px solid var(--color-border) !important;
+	box-shadow: none !important;
+}
+
+#detail a.btn-ghost, #detail button.btn-ghost, #detail .btn-ghost{
+	background: linear-gradient(90deg,var(--primary), #0e3760) !important;
+	color: #fff !important;
+	border: none !important;
+	box-shadow: var(--shadow-sm) !important;
+}
+
+/* Ensure the reservation button uses primary gradient + white text (explicit) */
+#detail a.btn--inverted, #detail button.btn--inverted, #detail .btn--inverted{
+	background: linear-gradient(90deg,var(--primary), #0e3760) !important;
+	color: #fff !important;
+	border: none !important;
+	box-shadow: var(--shadow-sm) !important;
+}
+
+/* No adjacent ghost override here — both reservation and reservation-history
+   should use the same primary gradient + white text when btn--inverted is applied. */
+
+/* Hero */
+.hero--visual{padding:clamp(48px,8vw,96px) 0; background: transparent !important}
+
+/* Hero dual-background support: two overlapping photos with soft fog fade */
+.hero--visual{
+	position:relative;
+	overflow:hidden;
+	--hero-left: url('../images/hero-left.svg');
+	--hero-right: url('../images/hero-right.svg');
+}
+.hero--visual::before,
+.hero--visual::after{
+	content: '';
+	position:absolute;
+	top:0;left:0;right:0;bottom:0;
+	background-position:center;
+	background-size:cover;
+	background-repeat:no-repeat;
+	transform:translateZ(0);
+}
+.hero--visual::before{
+	/* left image: sample from left side of combined photo */
+	background-image: var(--hero-left);
+	background-position: left center;
+		opacity:1;
+		/* keep sharp for main subject */
+		filter: saturate(1.04) contrast(1.06);
+		z-index:0;
+}
+.hero--visual::after{
+	/* right image: sample from right side of combined photo */
+	background-image: var(--hero-right);
+	background-position: right center;
+	opacity:0.98;
+	mix-blend-mode:normal;
+	/* slight blur for depth */
+	filter: blur(1.2px) saturate(0.98) contrast(.995);
+	z-index:1;
+}
+/* gradient fog masks to softly blend the two images towards center */
+.hero--visual .hero-bg-fog{
+	position:absolute; inset:0; z-index:2; pointer-events:none;
+	/* disabled fog/frame to allow image to show without pale edges */
+	background: transparent;
+	opacity: 0; /* ensure it's fully invisible */
+}
+.hero--visual > .container{position:relative; z-index:4}
+/* warm overlay to tint images with sunset tones */
+.hero--visual .hero-warm-overlay{
+	position:absolute; inset:0; z-index:2; pointer-events:none;
+	/* softened warm tint so text remains readable (further reduced) */
+	background: linear-gradient(120deg, rgba(255,160,110,0.06) 0%, rgba(255,120,85,0.03) 50%, rgba(255,90,60,0.02) 100%);
+	mix-blend-mode: overlay;
+}
+/* Improve text contrast on hero: force lighter text and add a stronger shadow */
+.hero--visual > .container { 
+	background: transparent !important;
+	box-shadow: none !important;
+	border: none !important;
+}
+.hero--visual .hero-title,
+.hero--visual .hero-sub{
+	color: #ffffff !important;
+	text-shadow: 0 6px 28px rgba(0,0,0,0.6) !important;
+}
+
+/* Use text outline (stroke + multi-shadow) for readability instead of a dark pill background */
+.hero--visual h1 span{
+	color: #ffffff !important;
+	/* remove outline; use a single soft drop shadow instead */
+	-webkit-text-stroke: 0px !important;
+	text-shadow: 0 6px 20px rgba(0,0,0,0.38) !important;
+	display:inline;
+	padding:0;
+	border-radius:0;
+	font-weight:700;
+}
+
+/* Apply a lighter outline to the sub text as well */
+.hero--visual .hero-sub{
+	color: #ffffff !important;
+	-webkit-text-stroke: 0px !important;
+	text-shadow: 0 3px 10px rgba(0,0,0,0.32) !important;
+	background:none;
+	padding:0;
+	display:block; /* allow vertical margins */
+	margin-bottom:34px !important;
+}
+.hero-kicker{font-weight:600;letter-spacing:.08em;color:#4b5563;text-transform:uppercase;font-size:12px}
+.hero-title{margin:0;font-size:clamp(30px,5.4vw,48px);line-height:1.1}
+.hero-sub{color:var(--color-muted);max-width:60ch}
+
+/* Features */
+.features-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--sp-5)}
+/* スマホ横スクロールカード */
+@media (max-width: 640px) {
+	.features-grid {
+		display: flex;
+		overflow-x: auto;
+		gap: 20px;
+		scroll-snap-type: x mandatory;
+		padding: 0 12px 8px;
+	}
+		.feature-card, .features-grid > .card {
+			min-width: 95vw;
+			max-width: 95vw;
+			flex: 0 0 95vw;
+			scroll-snap-align: center;
+			margin-right: 0;
+			border-radius: 20px;
+			box-shadow: 0 2px 12px rgba(140,160,179,0.10);
+			background: rgba(255,255,255,0.95);
+			transition: box-shadow .2s;
+		}
+	.feature-card:last-child, .features-grid > .card:last-child {
+		margin-right: 12px;
+	}
+}
+.features-grid > #top-features{grid-column:1 / -1}
+/* container-wide for reco block */
+.features-grid > #top-reco{grid-column:1 / -1}
+.features-grid > #top-recent{grid-column:1 / -1}
+.feature-card{grid-column:span 12;border:1px solid var(--color-border);border-radius:var(--radius);overflow:hidden;background:#fff;box-shadow:var(--shadow-sm);transition:transform .2s ease,box-shadow .2s ease}
+.feature-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.feature-media{aspect-ratio:16/9;width:100%;object-fit:cover}
+.feature-body{padding:var(--sp-5)}
+.feature-title{margin:0 0 var(--sp-2);font-weight:700;font-size:18px}
+.feature-meta{color:var(--color-muted);font-size:14px}
+
+@media (max-width:900px){.searchbar{grid-template-columns:1fr}.feature-card{grid-column:span 12}}
+
+/* Make the searchbar in the hero slightly smaller and tighter for better visual balance */
+.hero--visual .searchbar{
+	padding: 10px 12px !important;
+	gap: 10px !important;
+	border-radius: 18px !important;
+	justify-content: center;
+}
+.hero--visual .searchbar input,
+.hero--visual .searchbar select{
+	padding: 10px 12px !important;
+	font-size: 15px !important;
+	border-radius: 12px !important;
+}
+.hero--visual .searchbar input{
+	flex: 2 1 160px !important;
+	min-width: 140px !important;
+}
+.hero--visual .searchbar select{
+	flex: 1 1 110px !important;
+	min-width: 100px !important;
+}
+.hero--visual .searchbar .btn{
+	padding: 10px 12px !important;
+	min-width: 110px !important;
+	font-size: 15px !important;
+	border-radius: 12px !important;
+}
+
+/* Search Results Grid */
+#results.features-grid > .card{grid-column:span 4; display:flex; flex-direction:column}
+#results.features-grid > .card img{aspect-ratio:4/3; width:100%; object-fit:cover}
+@media (max-width: 1024px){ #results.features-grid > .card{grid-column:span 6} }
+@media (max-width: 640px){ #results.features-grid > .card{grid-column:span 12} }
+
+/* Feature list grid (public page) same as services */
+#feature-list.features-grid > .card{grid-column:span 4; display:flex; flex-direction:column}
+#feature-list.features-grid > .card img{aspect-ratio:4/3; width:100%; object-fit:cover}
+@media (max-width: 1024px){ #feature-list.features-grid > .card{grid-column:span 6} }
+@media (max-width: 640px){ #feature-list.features-grid > .card{grid-column:span 12} }
+
+/* Store page Services Grid: same layout as search results */
+/* Home: 特集（横スクロール 1 行・両端チラ見せ） */
+#top-features{ --peek: 56px; --gap: var(--sp-5); --card-w: calc((100% - 2*var(--peek) - 2*var(--gap)) / 3); display:flex; gap:var(--gap); overflow-x:auto; padding: 0 var(--peek) 4px; scroll-snap-type:x mandatory; scroll-padding-inline: var(--peek); }
+#top-features::-webkit-scrollbar{height:8px}
+#top-features::-webkit-scrollbar-thumb{background:var(--color-border); border-radius:999px}
+#top-features > .card{flex: 0 0 var(--card-w); scroll-snap-align:center; display:flex; flex-direction:column; transition: opacity .2s ease}
+#top-features > .card.is-dimmed{opacity:.6}
+#top-features > .card img{aspect-ratio:4/3; width:100%; object-fit:cover}
+@media (max-width: 1024px){ #top-features{ --peek: 32px; --card-w: calc((100% - 2*var(--peek) - 1*var(--gap)) / 2) } }
+@media (max-width: 640px){ #top-features{ --peek: 16px; --card-w: calc(100% - 2*var(--peek)) } }
+
+/* Home: おすすめサービス（横スクロール 1 行・両端にチラ見せ） */
+#top-reco{ --peek: 56px; --gap: var(--sp-5); --card-w: calc((100% - 2*var(--peek) - 2*var(--gap)) / 3); display:flex; gap:var(--gap); overflow-x:auto; padding: 0 var(--peek) 4px; scroll-snap-type:x mandatory; scroll-padding-inline: var(--peek); }
+#top-reco::-webkit-scrollbar{height:8px}
+#top-reco::-webkit-scrollbar-thumb{background:var(--color-border); border-radius:999px}
+#top-reco > .card{flex: 0 0 var(--card-w); scroll-snap-align:center; display:flex; flex-direction:column; transition: opacity .2s ease}
+#top-reco > .card.is-dimmed{opacity:.6}
+#top-reco > .card img{aspect-ratio:4/3; width:100%; object-fit:cover}
+@media (max-width: 1024px){ #top-reco{ --peek: 32px; --card-w: calc((100% - 2*var(--peek) - 1*var(--gap)) / 2) } }
+@media (max-width: 640px){ #top-reco{ --peek: 16px; --card-w: calc(100% - 2*var(--peek)) } }
+#top-recent{ --peek: 56px; --gap: var(--sp-5); --card-w: calc((100% - 2*var(--peek) - 2*var(--gap)) / 3); display:flex; gap:var(--gap); overflow-x:auto; padding: 0 var(--peek) 4px; scroll-snap-type:x mandatory; scroll-padding-inline: var(--peek); }
+#top-recent::-webkit-scrollbar{height:8px}
+#top-recent::-webkit-scrollbar-thumb{background:var(--color-border); border-radius:999px}
+#top-recent > .card{flex: 0 0 var(--card-w); scroll-snap-align:center; display:flex; flex-direction:column; transition: opacity .2s ease}
+#top-recent > .card.is-dimmed{opacity:.6}
+#top-recent > .card img{aspect-ratio:4/3; width:100%; object-fit:cover}
+@media (max-width: 1024px){ #top-recent{ --peek: 32px; --card-w: calc((100% - 2*var(--peek) - 1*var(--gap)) / 2) } }
+@media (max-width: 640px){ #top-recent{ --peek: 16px; --card-w: calc(100% - 2*var(--peek)) } }
+#top-features:empty::after{content:'特集がまだありません'; color:var(--color-muted)}
+
+#store-services.features-grid > .card{grid-column:span 4; display:flex; flex-direction:column}
+#store-services.features-grid > .card img{aspect-ratio:4/3; width:100%; object-fit:cover}
+@media (max-width: 1024px){ #store-services.features-grid > .card{grid-column:span 6} }
+@media (max-width: 640px){ #store-services.features-grid > .card{grid-column:span 12} }
+
+/* MyPage: improve button text contrast for signout and local actions */
+.mypage-layout .btn, .mypage-layout button.btn, .mypage-layout a.btn{
+	color: #0f1724 !important; /* deep slate for strong contrast */
+	background: #ffffff !important;
+	border-color: #e5e7eb !important;
+	box-shadow: var(--shadow-sm);
+}
+.mypage-layout .btn-ghost, .mypage-layout button.btn-ghost{
+	background: transparent !important;
+	color: #0f1724 !important;
+	border-color: transparent !important;
+	}
+
+/* Home: Categories grid (top-level entry points) */
+.home-categories{padding:32px 0;background:linear-gradient(180deg, rgba(246,248,250,0.6), rgba(255,255,255,0.6));border-top:1px solid var(--color-border);border-bottom:1px solid var(--color-border)}
+.home-categories .container{display:block}
+.categories-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:18px;align-items:stretch}
+.category-card{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;background:#fff;border:1px solid var(--color-border);border-radius:12px;box-shadow:var(--shadow-sm);text-align:center;transition:transform .12s ease, box-shadow .12s ease}
+.category-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
+.category-card a{display:flex;flex-direction:column;align-items:center;text-decoration:none;color:inherit}
+.category-icon{width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg, rgba(11,38,64,0.04), rgba(185,143,59,0.04));display:flex;align-items:center;justify-content:center;margin-bottom:8px;font-size:20px}
+.category-label{font-weight:800;font-size:13px;color:var(--color-fg);line-height:1}
+.category-sub{display:none}
+
+@media (max-width: 1200px){ .categories-grid{grid-template-columns:repeat(5,1fr)} }
+@media (max-width: 900px){ .categories-grid{grid-template-columns:repeat(4,1fr)} }
+@media (max-width: 640px){ 
+	.categories-grid{grid-template-columns:repeat(3,1fr);gap:8px}
+	.category-icon{width:40px;height:40px;font-size:16px}
+	.category-card{padding:6px}
+	.category-label{font-size:12px}
+}
+
+/* Category modal styles */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:120}
+.modal-sheet{background:#fff;border-radius:12px;padding:20px;max-width:720px;width:94%;box-shadow:0 12px 40px rgba(2,6,23,0.3);}
+.modal-close{float:right;border:none;background:transparent;font-size:20px;line-height:1;padding:6px;cursor:pointer}
+.modal-body{padding-top:8px}
+.modal-title{margin:0 0 8px 0;font-size:20px;font-weight:800}
+.modal-text{line-height:1.7;color:var(--color-fg);margin-bottom:14px;white-space:pre-wrap}
+.modal-search-form{margin-bottom:12px}
+.modal-search-row{display:flex;gap:10px;align-items:center}
+.modal-search-input{flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--color-border);font-size:15px}
+.modal-actions{display:flex;justify-content:flex-end}
+.modal-actions .btn{padding:10px 14px;border-radius:10px}
+ .modal-search-select{padding:10px 12px;border-radius:10px;border:1px solid var(--color-border);background:#fff;font-size:14px}
+ .modal-search-row-selects{display:flex;gap:10px;margin-bottom:10px}
+ .modal-search-row-keyword{display:flex;gap:10px;align-items:center}
+ .modal-search-row .btn{white-space:nowrap}
+
+@media (max-width:640px){
+	.modal-sheet{padding:14px;width:96%;}
+	.modal-title{font-size:18px}
+	.modal-text{font-size:14px;line-height:1.6}
+	.modal-actions{justify-content:center}
+	.modal-search-row{flex-direction:column;align-items:stretch}
+	.modal-search-input{width:100%}
+	.modal-search-row .btn{width:100%}
+ 	.modal-search-row-selects{flex-direction:column}
+ 	.modal-search-select{width:100%}
+}
+#mypage-signout{
+	color: #0f1724 !important;
+	background: #ffffff !important;
+	border-color: #e5e7eb !important;
+}
+
+/* Header: ensure the top-right 'マイページ' button displays white text (overrides header link color rules) */
+#site-header .nav-links a.btn[href="/pages/mypage/index.html"]{
+	color: #ffffff !important;
+}
+
+/* Desktop: force header/nav links to dark text for readability (exclude brand) */
+@media (min-width: 769px){
+	.navbar .nav-links a:not(.brand),
+	.navbar .nav-links .btn,
+	#site-header .nav-links a:not(.brand),
+	#site-header .nav-links .btn{
+		color: #0f1724 !important; /* deep slate / near-black */
+	}
+}
+
+/* Staff page Services Grid: same layout as search/store */
+#staff-services.features-grid > .card{grid-column:span 4; display:flex; flex-direction:column}
+#staff-services.features-grid > .card img{aspect-ratio:4/3; width:100%; object-fit:cover}
+@media (max-width: 1024px){ #staff-services.features-grid > .card{grid-column:span 6} }
+@media (max-width: 640px){ #staff-services.features-grid > .card{grid-column:span 12} }
+
+/* Store staff card: role + experience on one row */
+
+/* MyPage Favorites: same card sizing as search results (3 columns on desktop) */
+#fav-list.features-grid > .card{grid-column:span 4; display:flex; flex-direction:column}
+#fav-list.features-grid > .card img{aspect-ratio:4/3; width:100%; object-fit:cover}
+@media (max-width: 1024px){ #fav-list.features-grid > .card{grid-column:span 6} }
+@media (max-width: 640px){ #fav-list.features-grid > .card{grid-column:span 12} }
+
+/* MyPage History: align with favorites/search (3/2/1 columns) */
+#hist-list.features-grid > .card{grid-column:span 4; display:flex; flex-direction:column}
+#hist-list.features-grid > .card img{aspect-ratio:4/3; width:100%; object-fit:cover}
+@media (max-width: 1024px){ #hist-list.features-grid > .card{grid-column:span 6} }
+@media (max-width: 640px){ #hist-list.features-grid > .card{grid-column:span 12} }
+.staff-role-row{display:flex;align-items:baseline;gap:8px;margin:2px 0 6px}
+.staff-role{margin:0}
+.staff-exp{color:var(--color-muted);font-size:14px;white-space:nowrap;margin-left:auto}
+.staff-role-row .staff-role,.staff-role-row .staff-exp{line-height:1.4}
+
+/* RTE/editor and article image sizing */
+.rte-editor img{max-width:100%;height:auto;display:block;margin:12px 0}
+.rte-editor img[data-size="sm"], #feature-article img[data-size="sm"]{max-width:320px}
+.rte-editor img[data-size="md"], #feature-article img[data-size="md"]{max-width:560px}
+.rte-editor img[data-size="lg"], #feature-article img[data-size="lg"]{max-width:800px}
+#feature-article img{max-width:100%;height:auto;display:block;margin:16px auto}
+#feature-article img[data-size="full"]{width:100%;max-width:none}
+
+/* Mobile-first safety overrides: ensure pages fit viewport width and avoid horizontal scroll */
+@media (max-width: 640px){
+	:root{ --sp-5: 20px; }
+	/* Make container fill viewport with small side padding */
+	.container{padding-left:12px; padding-right:12px; max-width:100%;}
+	body, html{overflow-x:hidden}
+	img, .feature-media, .card img, .service-thumb{max-width:100%;height:auto}
+	/* Tighten hero and searchbar for small screens */
+	.hero--visual{padding-top:28px;padding-bottom:28px}
+	.hero--visual .searchbar{padding:8px;gap:8px}
+	.hero--visual .searchbar input,.hero--visual .searchbar select{padding:8px}
+		/* Restore overlay behavior for mobile hamburger menu */
+		.nav-group{display:none;position:fixed;inset:64px 0 0 0;background:rgba(255,255,255,0.98);border-bottom:none;box-shadow:var(--shadow-sm);padding:12px;z-index:60}
+		.nav-group.is-open{display:block;max-height:80vh;overflow:auto}
+		.nav-links{display:flex;flex-direction:column;margin-top:8px;gap:8px}
+		.nav-links a{padding:10px;border-radius:10px}
+	/* Reduce card border-radius and spacing to show more content */
+	.feature-card, .card{border-radius:12px}
+	/* Ensure provider sidebar doesn't force horizontal scroll on small screens */
+	.provider-sidebar{position:relative; width:100%; box-shadow:none; border-right:none}
+	body.has-provider-sidebar main, body.has-provider-sidebar .container{margin-left:0}
+}
+
+/* Extra small screens: further tighten paddings */
+@media (max-width: 420px){
+	.container{padding-left:8px;padding-right:8px}
+	.hero--visual{padding-top:18px;padding-bottom:18px}
+	.hero-title{font-size:clamp(20px,8vw,28px)}
+	.searchbar--compact input{padding:6px}
+	.searchbar--compact select{padding:6px}
+	.btn{padding:8px 10px}
+}
+
+/* Article text alignment via data-align attribute (persistent through sanitizer) */
+#feature-article [data-align="center"], #feature-article [data-align="center"] *{text-align:center}
+#feature-article [data-align="right"],  #feature-article [data-align="right"] *{text-align:right}
+#feature-article [data-align="left"],   #feature-article [data-align="left"] *{text-align:left}
+/* Show similar alignment in editor preview */
+.rte-editor [data-align="center"], .rte-editor [data-align="center"] *{text-align:center}
+.rte-editor [data-align="right"],  .rte-editor [data-align="right"] *{text-align:right}
+.rte-editor [data-align="left"],   .rte-editor [data-align="left"] *{text-align:left}
+
+/* Center aligned images: keep them centered with auto margins */
+.rte-editor [data-align="center"] img{margin-left:auto;margin-right:auto}
+#feature-article [data-align="center"] img{margin-left:auto;margin-right:auto}
+
+/* MyPage layout */
+.mypage-layout{display:grid; grid-template-columns: 240px 1fr; gap:24px; align-items:start}
+.mypage-layout > #mypage-sidenav > .card{min-width:0}
+@media (max-width: 900px){
+	.mypage-layout{grid-template-columns: 1fr}
+	.mypage-layout > #mypage-sidenav{order:2}
+	.mypage-layout > section{order:1}
+}
+
+/* Responsive table (cards on mobile) */
+.table{width:100%; border-collapse: collapse}
+.table th, .table td{padding:10px; border-bottom:1px solid var(--color-border); text-align:left; vertical-align:top}
+.table thead th{font-weight:600; color:#374151}
+@media (max-width: 768px){
+	.table.responsive thead{display:none}
+	.table.responsive tbody tr{display:block; padding:12px 0; border-bottom:1px solid var(--color-border)}
+	.table.responsive tbody tr:last-child{border-bottom:none}
+	.table.responsive tbody td{display:flex; gap:8px; padding:6px 0; border:none; align-items:flex-start}
+	.table.responsive tbody td::before{
+		content: attr(data-label);
+		flex: 0 0 120px;
+		color: var(--color-muted);
+		font-size: 12px;
+	}
+	/* 操作ボタンが折り返しても見やすく */
+	.table.responsive tbody td[data-label="操作"]{flex-wrap:wrap}
+	.table.responsive tbody td[data-label="操作"] .btn{padding:8px 10px; font-size:13px}
+}
+
+/* Provider: 店舗プロフィール 編集フォーム（PC/全幅でも横並び） */
+#provider-profile-form label{
+	display:grid;
+	grid-template-columns: 220px 1fr; /* 左: ラベル / 右: 入力 */
+	align-items:center;
+	gap:12px;
+}
+#provider-profile-form label > input,
+#provider-profile-form label > textarea,
+#provider-profile-form label > select{
+	grid-column: 2;
+	width:100%;
+	min-width:0;
+}
+/* 電話番号/サイトの2カラムブロック内も同様に横並び */
+#provider-profile-form .cluster{align-items:stretch}
+#provider-profile-form .cluster > label{
+	display:grid;
+	grid-template-columns: 180px 1fr;
+	align-items:center;
+	gap:10px;
+}
+#provider-profile-form .cluster > label > input,
+#provider-profile-form .cluster > label > select,
+#provider-profile-form .cluster > label > textarea{
+	grid-column:2;
+	width:100%;
+	min-width:0;
+}
+
+/* Provider: 店舗プロフィール 編集フォーム（スマホ時のラベル/入力横並び） */
+@media (max-width: 768px){
+	#provider-profile-form .cluster{display:block}
+	#provider-profile-form label{
+		display:grid;
+		grid-template-columns: minmax(100px, 1fr) 2fr;
+		align-items:center;
+		gap:8px;
+	}
+	#provider-profile-form label > input,
+	#provider-profile-form label > textarea,
+	#provider-profile-form label > select{
+		grid-column: 2;
+		width:100%;
+		min-width:0;
+	}
+		/* cluster 内の2カラム label にも同じルールを適用 */
+		#provider-profile-form .cluster > label{display:grid; grid-template-columns: minmax(100px,1fr) 2fr; align-items:center; gap:8px}
+		#provider-profile-form .cluster > label > input,
+		#provider-profile-form .cluster > label > select,
+		#provider-profile-form .cluster > label > textarea{grid-column:2; width:100%; min-width:0}
+}
+
+/* Provider: サービス登録フォーム（ラベル/入力 横並び） */
+#provider-service-form label{
+  display:grid;
+  grid-template-columns: 220px 1fr; /* 左: ラベル / 右: 入力 */
+  align-items:center;
+  gap:12px;
+}
+#provider-service-form label > input,
+#provider-service-form label > select,
+#provider-service-form label > textarea{
+  grid-column:2;
+  width:100%;
+  min-width:0;
+}
+/* 2カラムの内部 cluster は横並び継続、モバイルでは縦に */
+#provider-service-form .cluster{ align-items:stretch }
+#provider-service-form .cluster > label{
+  display:grid;
+  grid-template-columns: 180px 1fr;
+  align-items:center;
+  gap:10px;
+}
+#provider-service-form .cluster > label > input,
+#provider-service-form .cluster > label > select,
+#provider-service-form .cluster > label > textarea{ grid-column:2; width:100%; min-width:0 }
+@media (max-width: 768px){
+  #provider-service-form label{ grid-template-columns: minmax(120px,1fr) 2fr; gap:8px }
+  #provider-service-form .cluster{ display:block }
+  #provider-service-form .cluster > label{ grid-template-columns: minmax(100px,1fr) 2fr }
+}
+
+/* Provider: サービス登録フォーム 公開チェック行の整列（横並び＋入力列に揃える） */
+#provider-service-form label.cluster{
+	display:flex; align-items:center; gap:8px;
+	padding-left: 220px; /* ラベル列ぶんのインデントで他入力と開始位置を揃える */
+	min-height: 44px; /* 他の入力行と高さを揃える */
+}
+#provider-service-form label.cluster > input[type="checkbox"]{
+	margin-right:8px;
+	width: 18px; height: 18px; /* テキスト入力と視覚的バランスを合わせる */
+	accent-color: #111827;
+}
+#provider-service-form label.cluster > span{ line-height: 1; }
+@media (max-width: 768px){
+	#provider-service-form label.cluster{ padding-left: 0 }
+}
+
+/* Admin: 掲載者管理 アカウント作成フォーム（ラベル/入力の横並び） */
+#provider-create-form label{
+  display:grid;
+  grid-template-columns: 220px 1fr; /* 左: ラベル / 右: 入力 */
+  align-items:center;
+  gap:12px;
+}
+#provider-create-form label > input,
+#provider-create-form label > select,
+#provider-create-form label > textarea{
+  grid-column: 2;
+  width:100%;
+  min-width:0;
+}
+/* 2カラムのクラスタも横並び継続 */
+#provider-create-form .cluster > label{
+  display:grid;
+  grid-template-columns: 180px 1fr;
+  align-items:center;
+  gap:10px;
+}
+#provider-create-form .cluster > label > input,
+#provider-create-form .cluster > label > select,
+#provider-create-form .cluster > label > textarea{
+  grid-column:2;
+  width:100%;
+  min-width:0;
+}
+@media (max-width: 768px){
+  #provider-create-form label{ grid-template-columns: minmax(120px,1fr) 2fr; gap:8px }
+  #provider-create-form .cluster{display:block}
+  #provider-create-form .cluster > label{ grid-template-columns: minmax(100px,1fr) 2fr }
+}
+
+/* Provider: 掲載者ログイン（ラベル/入力の横並び） */
+#login-form label{
+  display:grid;
+  grid-template-columns: 140px 1fr; /* 左: ラベル / 右: 入力 */
+  align-items:center;
+  gap:12px;
+}
+#login-form label > input{
+  grid-column: 2;
+  width:100%;
+  min-width:0;
+}
+@media (max-width: 480px){
+  #login-form label{
+    grid-template-columns: minmax(100px,1fr) 2fr;
+  }
+}
+
+/* ========= Ikkyu-like premium theme overrides (safe, non-destructive) ========= */
+/* These rules intentionally live at the end of the file to override earlier tokens */
+:root{
+	--ik-primary: #0b2742; /* deep navy */
+	--ik-accent: #b98f3b; /* warm gold */
+	--ik-muted: #6b7280;
+}
+
+/* Typography tweaks */
+body{ color:var(--color-fg); font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+h1, .section-title { font-family: 'Noto Serif JP', serif; color:var(--ik-primary); }
+
+/* Header subtle refinement */
+.navbar{background:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,250,0.98)); border-bottom-color: rgba(11,38,64,0.06)}
+.brand{color:var(--ik-primary)}
+
+/* Buttons: primary gold accent for CTAs */
+.btn{border-radius:10px; font-weight:600}
+.btn:not(.btn-ghost){ background: linear-gradient(90deg, var(--ik-primary), #0f3a63); color: #fff }
+.btn.primary-accent{ background: linear-gradient(90deg, var(--ik-accent), #9a7630); color:#fff }
+
+/* Cards: softer corners and lifted shadow */
+.card{ border-radius:12px; box-shadow: 0 8px 24px rgba(15,23,36,0.06); border:1px solid rgba(15,23,36,0.04) }
+
+/* Feature grid card adjustments */
+.feature-card{ border-radius:14px; overflow:hidden }
+.feature-body{ padding:18px }
+
+/* Hero: stronger typographic presence */
+.hero--visual h1{ font-family: 'Noto Serif JP', serif; font-weight:700; letter-spacing:0.01em }
+.hero--visual .hero-sub{ font-size:18px; color:var(--ik-muted) }
+
+/* Badges */
+.badge{ background:var(--ik-primary); color:#fff; padding:6px 10px; border-radius:999px; font-weight:700 }
+
+/* Small screens: keep spacing comfortable */
+@media (max-width: 900px){
+	.container{ padding-left:20px; padding-right:20px }
+	.hero--visual{ padding-top:40px; padding-bottom:40px }
+}
+
+/* End Ikkyu-like overrides */
+
+/* === Store detail immersive enhancements === */
+/* Full-bleed hero */
+.store-hero-fullbleed{ position:relative; width:100%; margin:0; padding:0; overflow:hidden; }
+.store-hero-fullbleed .hero-inner{ position:relative; width:100%; height:56vh; min-height:360px; display:flex; align-items:flex-end; justify-content:flex-start; }
+.store-hero-fullbleed img.cover{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform-origin:center; transition:transform 12s ease; will-change:transform; }
+.store-hero-fullbleed .hero-overlay{ position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.45) 45%, rgba(0,0,0,0.6) 100%); mix-blend-mode:multiply; pointer-events:none; }
+.store-hero-fullbleed .hero-content{ position:relative; z-index:6; padding:32px; color:#fff; max-width:980px; }
+.store-hero-fullbleed .hero-title{ color:#fff; font-size:clamp(28px,6vw,56px); line-height:1.02; text-shadow:0 6px 30px rgba(0,0,0,0.5); margin:0 0 8px 0; }
+.store-hero-fullbleed .hero-kicker{ color:rgba(255,255,255,0.9); font-weight:700; letter-spacing:0.06em; }
+.store-hero-fullbleed .hero-cta{ margin-top:12px; }
+
+/* subtle slow zoom on hero image while visible */
+.store-hero-fullbleed.is-zooming img.cover{ transform:scale(1.06); }
+
+/* sticky booking bar that appears after scrolling */
+.sticky-booking{ position:fixed; left:50%; transform:translateX(-50%); bottom:18px; z-index:1700; background:linear-gradient(90deg, rgba(255,255,255,0.98), rgba(255,255,255,0.96)); box-shadow:0 10px 30px rgba(12,12,15,0.18); padding:10px 16px; border-radius:999px; display:flex; gap:10px; align-items:center; min-width:280px; max-width:calc(100% - 40px); }
+.sticky-booking .btn{ font-weight:700; }
+.sticky-booking.hidden{ opacity:0; transform:translateX(-50%) translateY(12px); pointer-events:none; transition:all 220ms ease; }
+.sticky-booking.visible{ opacity:1; transform:translateX(-50%) translateY(0); transition:all 320ms cubic-bezier(.2,.9,.2,1); }
+
+/* gallery modal transitions */
+.gallery-modal.fade-enter{ display:flex; animation:fadeInBg .22s ease forwards; }
+.gallery-modal.fade-exit{ animation:fadeOutBg .18s ease forwards; }
+.gallery-modal img{ transition:opacity .22s ease, transform .32s cubic-bezier(.2,.9,.2,1); opacity:0; transform:scale(.98); }
+.gallery-modal.open img{ opacity:1; transform:scale(1); }
+
+@keyframes fadeInBg{ from{ background:rgba(0,0,0,0) } to{ background:rgba(0,0,0,0.85) } }
+@keyframes fadeOutBg{ from{ background:rgba(0,0,0,0.85) } to{ background:rgba(0,0,0,0) } }
+
+/* section entrance animation for immersive feel */
+.section-entrance{ opacity:0; transform:translateY(8px); transition:opacity .48s ease, transform .48s ease; }
+.section-entrance.in-view{ opacity:1; transform:translateY(0); }
+
+/* Parallax & video cover helpers */
+.cover-parallax{ will-change: transform; transform-origin: center; }
+.store-hero-fullbleed video.cover-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.store-hero-fullbleed .cover-poster{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+
+

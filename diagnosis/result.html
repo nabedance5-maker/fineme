@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>見た目診断 - 結果</title>
+  <link rel="stylesheet" href="/assets/styles/style.css">
+  <style>
+    .diag-container{max-width:900px;margin:36px auto;padding:20px}
+    .diag-card{background:#fff;padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.06)}
+    .result-title{font-size:22px;font-weight:800}
+    .muted{color:#6b7280}
+    .btn{display:inline-block;padding:8px 12px;border-radius:8px;background:#111;color:#fff;text-decoration:none}
+  /* result article styling */
+  .result-article{background:linear-gradient(180deg,#ffffff 0%,#fbfcfe 100%);padding:22px;border-radius:14px;border:1px solid rgba(2,6,23,0.04);box-shadow:0 18px 60px rgba(2,6,23,0.06);transition:transform .36s ease}
+  .result-article:hover{transform:translateY(-6px)}
+  .type-hero{display:block;margin:12px auto 18px auto;max-width:520px;width:100%;border-radius:12px;box-shadow:0 18px 40px rgba(2,6,23,0.14);object-fit:cover}
+  .result-article h2{font-size:24px;margin-bottom:6px}
+  .result-article h3{margin-top:14px;margin-bottom:6px}
+  .result-label{color:#374151;margin-top:6px;font-size:14px}
+  .badge-emoji{display:inline-block;width:44px;height:44px;border-radius:999px;background:linear-gradient(135deg,#fff 0%,#fffbeb 100%);box-shadow:0 6px 18px rgba(2,6,23,0.08);display:flex;align-items:center;justify-content:center;font-size:20px;margin-right:10px}
+  .result-header{display:flex;align-items:center;gap:8px}
+  .result-actions{display:flex;gap:8px;margin-top:12px}
+  .btn-ghost{background:transparent;border:1px solid rgba(0,0,0,0.06);color:#111}
+  .toast{position:fixed;right:20px;bottom:20px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s}
+  .toast.show{opacity:1;transform:translateY(0)}
+  @keyframes floatUp { from { transform: translateY(8px); opacity:0 } to { transform: translateY(0); opacity:1 } }
+  </style>
+</head>
+<body>
+  <header id="site-header">
+    <!-- inlined header for static demo result page -->
+    <link rel="icon" href="/favicon.ico">
+    <style>
+      .navbar .brand { white-space:nowrap; font-weight:700; font-size:clamp(16px,2.2vw,20px); }
+      .nav-links { display:flex; gap:8px; align-items:center; overflow-x:auto; }
+      .nav-links a { display:inline-block !important; white-space:nowrap !important; }
+      .header-actions { display:inline-flex; align-items:center; gap:8px; }
+      @media (min-width:1025px) { .nav-links > a:first-of-type { margin-left:auto !important; } }
+    </style>
+    <div class="navbar">
+      <div class="container navbar-inner">
+        <a class="brand logo" href="/">Fineme</a>
+        <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="メニュー">☰</button>
+        <div class="nav-group" id="nav-menu">
+          <nav class="nav-links">
+            <a href="/pages/search.html">検索</a>
+            <a href="/pages/about.html">私たちについて</a>
+            <a href="/pages/feature.html">特集</a>
+            <div class="header-actions">
+              <div id="header-notifs" style="position:relative">
+                <button id="header-notifs-btn" class="btn btn-ghost" type="button" aria-label="通知">🔔 <span id="header-notifs-badge" style="display:inline-block;min-width:18px;padding:2px 6px;border-radius:999px;background:#ef4444;color:#fff;font-size:12px;margin-left:6px;" hidden>0</span></button>
+                <div id="header-notifs-dropdown" style="position:absolute;right:0;top:36px;min-width:280px;background:#fff;border:1px solid #eee;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.06);display:none;z-index:1200;padding:8px">
+                  <div id="header-notifs-list" style="max-height:240px;overflow:auto"></div>
+                  <div style="text-align:right;margin-top:8px"><button id="header-notifs-clear" class="btn btn-ghost">すべて既読</button></div>
+                </div>
+              </div>
+              <a id="header-diagnosis-btn" class="btn" href="/diagnosis/index.html">診断する</a>
+              <span id="header-auth-area"><a id="header-login-link" href="/pages/user/login.html">ログイン</a></span>
+            </div>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="diag-container">
+      <div class="diag-card">
+        <h1>診断結果</h1>
+        <div id="result-root">
+          <div id="loading">結果を読み込み中…</div>
+        </div>
+        <p style="margin-top:12px;"><button id="retryBtn" class="btn">もう一度診断する</button></p>
+      </div>
+    </div>
+  </main>
+  <script>
+    (function(){
+      const STORAGE_KEY = 'fineme:diagnosis:latest';
+      const TYPES_URL = '/data/types.json';
+      const root = document.getElementById('result-root');
+      const loading = document.getElementById('loading');
+      const retryBtn = document.getElementById('retryBtn');
+
+      function renderNotFound(){ loading.textContent = '診断結果が見つかりません。最初からやり直してください。'; }
+
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw){ renderNotFound(); }
+      else{
+        try{
+          const obj = JSON.parse(raw);
+          const gender = obj.gender || 'male';
+          const typeId = obj.type_id || 't01';
+          fetch(TYPES_URL).then(r=>r.json()).then(typesData=>{
+            const bucket = typesData[gender] || {};
+            const entry = bucket[typeId];
+            if(!entry){ loading.textContent = '該当タイプの説明が見つかりません。'; return; }
+            // build HTML (render only the reader-friendly article below —
+            // do not show the short technical summary block)
+            root.innerHTML = '';
+            root.appendChild(document.createElement('hr'));
+
+            // --- user-friendly formatted result ---
+            const article = document.createElement('article'); article.className = 'result-article'; article.style.marginTop = '12px'; article.style.lineHeight = '1.7';
+
+            // Title area with badge + name + label
+            const headerWrap = document.createElement('div'); headerWrap.className = 'result-header';
+            const badge = document.createElement('div'); badge.className = 'badge-emoji'; badge.textContent = '💫'; headerWrap.appendChild(badge);
+            const titleWrap = document.createElement('div');
+            const title = document.createElement('h2'); title.style.fontSize = '22px'; title.style.margin = '0'; title.textContent = entry.name || '';
+            const labelLine = document.createElement('div'); labelLine.className = 'result-label'; labelLine.textContent = '— ' + (entry.label || '');
+            titleWrap.appendChild(title); titleWrap.appendChild(labelLine);
+            headerWrap.appendChild(titleWrap);
+            article.appendChild(headerWrap);
+
+            // Catchphrase
+            if(entry.catch){ const catchEl = document.createElement('p'); catchEl.style.margin = '8px 0 12px 0'; catchEl.style.fontWeight = '600'; catchEl.textContent = entry.catch; article.appendChild(catchEl);
+              // hero image under the catchphrase (use safeUrl if available, fallback to placeholder)
+              if(entry.image){ const heroWrap = document.createElement('div'); heroWrap.style.textAlign='center'; const hero = document.createElement('img'); hero.className = 'type-hero';
+                const imgSrc = (typeof safeUrl === 'function') ? (safeUrl(entry.image) || '/assets/placeholders/placeholder-diagnosis.svg') : (entry.image || '/assets/placeholders/placeholder-diagnosis.svg');
+                hero.src = imgSrc; hero.alt = entry.name || ''; hero.onerror = ()=>{ hero.style.display='none'; hero.src = '/assets/placeholders/placeholder-diagnosis.svg'; };
+                hero.style.animation = 'floatUp .6s ease both'; heroWrap.appendChild(hero); article.appendChild(heroWrap); }
+            }
+
+            // Helper: split description into sentences by '。'
+            const sentences = (entry.description || '').split('。').map(s=>s.trim()).filter(Boolean);
+            const firstImpr = sentences.slice(0,2).join('。') + (sentences.slice(0,2).length>0 ? '。' : '');
+            const innerImpr = sentences.slice(2,5).join('。') + (sentences.slice(2,5).length>0 ? '。' : '');
+
+            // 第一印象
+            if(firstImpr){ const h1 = document.createElement('h3'); h1.textContent = '🌟 第一印象'; h1.style.margin = '10px 0 6px 0'; article.appendChild(h1);
+              const p1 = document.createElement('p'); p1.textContent = firstImpr; article.appendChild(p1); }
+
+            // 内面
+            if(innerImpr){ const h2i = document.createElement('h3'); h2i.textContent = '💭 内面の印象'; h2i.style.margin = '10px 0 6px 0'; article.appendChild(h2i);
+              const p2 = document.createElement('p'); p2.textContent = innerImpr; article.appendChild(p2); }
+
+            // モテポイント (derive short point from catch or first sentence)
+            const motePoint = entry.catch || sentences[0] || '';
+            if(motePoint){ const h3m = document.createElement('h3'); h3m.textContent = '💘 モテポイント'; h3m.style.margin = '10px 0 6px 0'; article.appendChild(h3m);
+              const pm = document.createElement('p'); pm.textContent = motePoint; article.appendChild(pm); }
+
+            // 垢抜けアドバイス
+            if(entry.advice){ const h3a = document.createElement('h3'); h3a.textContent = '🪞 垢抜けアドバイス'; h3a.style.margin = '10px 0 6px 0'; article.appendChild(h3a);
+              const pa = document.createElement('p'); pa.textContent = entry.advice; article.appendChild(pa); }
+
+            // Compatibility: group matches by gender and display friendlier lines
+            const femaleMatches = [];
+            const maleMatches = [];
+            (entry.matches || []).forEach(mid=>{
+              if(typesData.female && typesData.female[mid]) femaleMatches.push(typesData.female[mid]);
+              else if(typesData.male && typesData.male[mid]) maleMatches.push(typesData.male[mid]);
+              else {
+                // fallback: try same bucket
+                const other = (bucket[mid] || null);
+                if(other && (obj.gender === 'female')) femaleMatches.push(other); else if(other) maleMatches.push(other);
+              }
+            });
+
+            if(femaleMatches.length || maleMatches.length){ const h3c = document.createElement('h3'); h3c.textContent = '💞 相性タイプ'; h3c.style.margin = '10px 0 6px 0'; article.appendChild(h3c);
+              const listWrap = document.createElement('div'); listWrap.style.marginBottom = '8px';
+              if(femaleMatches.length){ const ftitle = document.createElement('div'); ftitle.textContent = '女性タイプ：'; ftitle.style.fontWeight='600'; listWrap.appendChild(ftitle);
+                femaleMatches.forEach(m=>{ const row = document.createElement('div'); row.style.margin = '4px 0'; row.textContent = m.name + ' — ' + (m.catch||''); listWrap.appendChild(row); }); }
+              if(maleMatches.length){ const mtitle = document.createElement('div'); mtitle.textContent = '男性タイプ：'; mtitle.style.fontWeight='600'; mtitle.style.marginTop='8px'; listWrap.appendChild(mtitle);
+                maleMatches.forEach(m=>{ const row = document.createElement('div'); row.style.margin = '4px 0'; row.textContent = m.name + ' — ' + (m.catch||''); listWrap.appendChild(row); }); }
+              article.appendChild(listWrap);
+            }
+
+            // actions: share + retry
+            const actions = document.createElement('div'); actions.className = 'result-actions';
+            const shareBtn = document.createElement('button'); shareBtn.className = 'btn'; shareBtn.textContent = '結果をコピー';
+            shareBtn.addEventListener('click', ()=>{
+              const text = entry.name + ' — ' + (entry.label||'') + '\n\n' + (entry.catch||'') + '\n\n' + (entry.advice||'');
+              try{ navigator.clipboard.writeText(text); showToast('結果をクリップボードにコピーしました'); }catch(e){ showToast('コピーに失敗しました'); }
+            });
+            const shareGhost = document.createElement('button'); shareGhost.className = 'btn btn-ghost'; shareGhost.textContent = 'ツイートする';
+            shareGhost.addEventListener('click', ()=>{
+              const t = encodeURIComponent(entry.name + ' — ' + (entry.label||'') + '\n' + (entry.catch||''));
+              window.open('https://twitter.com/intent/tweet?text='+t,'_blank');
+            });
+            actions.appendChild(shareBtn); actions.appendChild(shareGhost);
+            article.appendChild(actions);
+
+            root.appendChild(article);
+
+            // toast element
+            const toast = document.createElement('div'); toast.className = 'toast'; toast.id = 'result-toast'; toast.textContent = '';
+            document.body.appendChild(toast);
+            function showToast(msg){ const t = document.getElementById('result-toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+          }).catch(e=>{ console.error(e); loading.textContent = 'タイプデータの読み込みに失敗しました'; });
+        }catch(e){ console.error(e); renderNotFound(); }
+      }
+
+      retryBtn.addEventListener('click', ()=>{ window.location.href = 'index.html'; });
+    })();
+  </script>
+</body>
+</html>

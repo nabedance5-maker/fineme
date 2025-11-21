@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>店舗プロフィール | Fineme</title>
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <link rel="stylesheet" href="../../assets/styles/components.css" />
+  <style id="fineme-chip-styles-profile">
+    .chip{ display:inline-block; background:#f6f7f8; color:var(--muted); padding:6px 10px; border-radius:16px; font-size:13px; border:1px solid rgba(0,0,0,0.04); white-space:nowrap; }
+    @media(max-width:480px){ .chip{ font-size:12px; padding:5px 8px } }
+  </style>
+</head>
+<body>
+  <div id="provider-navbar"></div>
+  <main class="section">
+    <div class="container stack" style="max-width:840px">
+  <h1 class="section-title">店舗プロフィール</h1>
+  <p class="muted">店舗の基本情報を編集します。管理画面と同じ情報が保存され、検索や詳細に反映可能です。</p>
+      <div class="card" style="padding:24px">
+        <form id="provider-profile-form">
+          <div class="stack">
+            <label>掲載名（一覧に表示される名称）
+              <input id="profile-name" name="name" type="text" placeholder="例）メンズサロン TOKYO" />
+            </label>
+            <div>
+              <label>店舗名
+                <input id="profile-storeName" name="storeName" type="text" placeholder="例）Fineme 表参道店" />
+              </label>
+              <label>電話番号
+                <input id="profile-phone" name="phone" type="text" placeholder="例）03-1234-5678" />
+              </label>
+              <label>住所
+                <input id="profile-address" name="address" type="text" placeholder="例）東京都渋谷区神宮前1-1-1" />
+              </label>
+              <label>郵便番号
+                <div style="display:flex;gap:8px;align-items:center">
+                  <input id="profile-postal" name="postal" type="text" placeholder="例）150-0001" />
+                  <button id="postal-lookup-btn" type="button" class="btn btn-ghost">住所を自動補完</button>
+                  <span id="postal-lookup-msg" class="muted" style="font-size:13px"></span>
+                </div>
+              </label>
+              <label>営業時間 (曜日別)</label>
+              <div id="business-hours-structured" style="display:flex;flex-direction:column;gap:6px">
+                <!-- For each day: time inputs and closed checkbox -->
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                  <div style="width:80px">月 (Mon)</div>
+                  <input type="time" id="bh-mon-open" name="bh_mon_open" style="width:110px;height:34px;padding:4px;box-sizing:border-box;vertical-align:middle" />
+                  <span>〜</span>
+                  <input type="time" id="bh-mon-close" name="bh_mon_close" style="width:110px;height:34px;padding:4px;box-sizing:border-box;vertical-align:middle" />
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="bh-mon-closed" name="bh_mon_closed" class="bh-closed-checkbox" aria-label="月曜日は定休日" /> <span style="line-height:1;white-space:nowrap;writing-mode:horizontal-tb">定休日</span></label>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                  <div style="width:80px">火 (Tue)</div>
+                  <input type="time" id="bh-tue-open" name="bh_tue_open" style="width:110px;height:34px;padding:4px;box-sizing:border-box;vertical-align:middle" />
+                  <span>〜</span>
+                  <input type="time" id="bh-tue-close" name="bh_tue_close" style="width:110px;height:34px;padding:4px;box-sizing:border-box;vertical-align:middle" />
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="bh-tue-closed" name="bh_tue_closed" class="bh-closed-checkbox" aria-label="火曜日は定休日" /> <span style="line-height:1;white-space:nowrap;writing-mode:horizontal-tb">定休日</span></label>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                  <div style="width:80px">水 (Wed)</div>
+                  <input type="time" id="bh-wed-open" name="bh_wed_open" style="width:110px;height:34px;padding:4px;box-sizing:border-box;vertical-align:middle" />
+                  <span>〜</span>
+                  <input type="time" id="bh-wed-close" name="bh_wed_close" style="width:110px;height:34px;padding:4px;box-sizing:border-box;vertical-align:middle" />
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="bh-wed-closed" name="bh_wed_closed" class="bh-closed-checkbox" aria-label="水曜日は定休日" /> <span style="line-height:1;white-space:nowrap;writing-mode:horizontal-tb">定休日</span></label>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                  <div style="width:80px">木 (Thu)</div>
+                  <input type="time" id="bh-thu-open" name="bh_thu_open" style="width:110px;height:34px;padding:4px;box-sizing:border-box;vertical-align:middle" />
+                  <span>〜</span>
+                  <input type="time" id="bh-thu-close" name="bh_thu_close" style="width:110px;height:34px;padding:4px;box-sizing:border-box;vertical-align:middle" />
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="bh-thu-closed" name="bh_thu_closed" class="bh-closed-checkbox" aria-label="木曜日は定休日" /> <span style="line-height:1;white-space:nowrap;writing-mode:horizontal-tb">定休日</span></label>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                  <div style="width:80px">金 (Fri)</div>
+                  <input type="time" id="bh-fri-open" name="bh_fri_open" style="width:110px;height:34px;padding:4px;box-sizing:border-box;vertical-align:middle" />
+                  <span>〜</span>
+                  <input type="time" id="bh-fri-close" name="bh_fri_close" style="width:110px;height:34px;padding:4px;box-sizing:border-box;vertical-align:middle" />
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="bh-fri-closed" name="bh_fri_closed" class="bh-closed-checkbox" aria-label="金曜日は定休日" /> <span style="line-height:1;white-space:nowrap;writing-mode:horizontal-tb">定休日</span></label>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                  <div style="width:80px">土 (Sat)</div>
+                  <input type="time" id="bh-sat-open" name="bh_sat_open" style="width:110px;height:34px;padding:4px;box-sizing:border-box;vertical-align:middle" />
+                  <span>〜</span>
+                  <input type="time" id="bh-sat-close" name="bh_sat_close" style="width:110px;height:34px;padding:4px;box-sizing:border-box;vertical-align:middle" />
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="bh-sat-closed" name="bh_sat_closed" class="bh-closed-checkbox" aria-label="土曜日は定休日" /> <span style="line-height:1;white-space:nowrap;writing-mode:horizontal-tb">定休日</span></label>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                  <div style="width:80px">日 (Sun)</div>
+                  <input type="time" id="bh-sun-open" name="bh_sun_open" style="width:110px;height:34px;padding:4px;box-sizing:border-box;vertical-align:middle" />
+                  <span>〜</span>
+                  <input type="time" id="bh-sun-close" name="bh_sun_close" style="width:110px;height:34px;padding:4px;box-sizing:border-box;vertical-align:middle" />
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="bh-sun-closed" name="bh_sun_closed" class="bh-closed-checkbox" aria-label="日曜日は定休日" /> <span style="line-height:1;white-space:nowrap;writing-mode:horizontal-tb">定休日</span></label>
+                </div>
+                <p class="muted">保存すると「営業時間」欄に要約文字列が生成されます（既存の単一行入力とは互換性あり）。</p>
+              </div>
+              <label>価格目安（最安値）
+                <input id="profile-priceFrom" name="priceFrom" type="number" min="0" step="1" placeholder="例）3800" />
+              </label>
+              <div style="display:block;">
+                <label style="display:block">最寄り駅
+                  <div style="display:flex;gap:8px;align-items:center">
+                    <input id="profile-access-station" name="accessStation" type="text" placeholder="駅名を入力して候補を検索（例: 表参道）" />
+                    <button id="station-search-btn" type="button" class="btn btn-ghost">駅を検索</button>
+                  </div>
+                  <div id="station-search-results" style="margin-top:6px"></div>
+                  <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+                    <label style="display:flex;align-items:center;gap:6px">出口
+                      <input id="profile-access-exit" name="accessExit" type="text" placeholder="例）B2" style="width:120px" />
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px">徒歩分
+                      <input id="profile-access-walk" name="accessWalk" type="number" min="0" step="1" placeholder="例）5" style="width:80px" />
+                    </label>
+                  </div>
+                </label>
+              </div>
+              <div>
+                <label>設備・サービス（複数選択可）</label>
+                <div id="profile-amenities" class="cluster" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="parking" /> <span class="chip">駐車場</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="private_room" /> <span class="chip">個室</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="wheelchair" /> <span class="chip">バリアフリー</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="wifi" /> <span class="chip">Wi‑Fi</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="credit_card" /> <span class="chip">クレジットカード可</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="child_friendly" /> <span class="chip">子連れ可</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="women_only" /> <span class="chip">女性専用</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="priority_reservation" /> <span class="chip">予約優先</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="same_day" /> <span class="chip">当日予約可</span></label>
+                </div>
+              </div>
+              <div style="margin-top:12px">
+                <label>支払方法（複数選択可）</label>
+                <div id="profile-payment-methods" class="cluster" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="cash" /> <span class="chip">現金</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="credit_card" /> <span class="chip">クレジットカード</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="paypay" /> <span class="chip">PayPay</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="linepay" /> <span class="chip">LINE Pay</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="applepay" /> <span class="chip">Apple Pay</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="googlepay" /> <span class="chip">Google Pay</span></label>
+                </div>
+              </div>
+              <label>Webサイト
+                <input id="profile-website" name="website" type="text" placeholder="https://example.com" />
+              </label>
+              <label>カバー画像 srcset（任意・コンマ区切り）
+                <input id="profile-coverSrcset" name="coverSrcset" type="text" placeholder="例: /assets/cover-320.jpg 320w, /assets/cover-640.jpg 640w" style="display:block;width:100%;max-width:100%;box-sizing:border-box;padding:8px" />
+                <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+                  <label style="display:flex;align-items:center;gap:8px">
+                    <span style="font-size:13px">アップロード方式：</span>
+                    <select id="profile-uploadStrategy" name="uploadStrategy">
+                      <option value="server">サーバで処理（デフォルト・推奨）</option>
+                      <option value="direct">クライアント→S3 (presign)（帯域優先）</option>
+                    </select>
+                  </label>
+                  <span class="muted" style="font-size:12px">大量アップロードやモバイルでは「サーバで処理」を推奨します。presign はクライアント帯域を優先するオプションです。</span>
+                </div>
+                <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                  <input id="profile-coverUpload" name="coverUpload" type="file" accept="image/*" />
+                  <!-- Video upload for cover hero -->
+                  <input id="profile-coverVideoUpload" name="coverVideoUpload" type="file" accept="video/*" />
+                  <span class="muted" style="font-size:12px">画像をアップロードすると自動で複数サイズが生成され、srcset が自動挿入されます（ローカルサーバが必要）。</span>
+                </div>
+                <div style="margin-top:8px;">
+                  <label>カバー動画 URL（自動入力されます）
+                    <input id="profile-coverVideo" name="coverVideo" type="text" placeholder="動画 URL が入ります" style="display:block;width:100%;max-width:100%;box-sizing:border-box;padding:8px" />
+                  </label>
+                </div>
+                <div style="margin-top:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                  <img id="profile-coverPreview" alt="cover preview" style="width:180px;height:120px;object-fit:cover;border:1px solid var(--color-border);border-radius:6px;display:none" />
+                  <video id="profile-coverVideoPreview" style="width:240px;height:140px;object-fit:cover;border:1px solid var(--color-border);border-radius:6px;display:none" controls muted loop playsinline></video>
+                  <div style="display:flex;flex-direction:column;gap:6px">
+                    <progress id="profile-coverProgress" max="100" value="0" style="display:none;width:180px"></progress>
+                    <div id="profile-coverUploadStatus" class="muted" style="font-size:13px"></div>
+                  </div>
+                </div>
+                <div style="margin-top:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                  <progress id="profile-coverVideoProgress" max="100" value="0" style="display:none;width:240px"></progress>
+                  <div id="profile-coverVideoUploadStatus" class="muted" style="font-size:13px"></div>
+                </div>
+                <div class="muted" style="font-size:12px">複数解像度を指定するとヒーローで srcset を使用します（LCP 向上）。</div>
+              </label>
+              <label>ギャラリー画像 URL（1行に1つ）
+                <textarea id="profile-gallery" name="gallery" rows="3" placeholder="各行に画像URLを入力"></textarea>
+                <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                  <input id="profile-galleryUpload" name="galleryUpload" type="file" accept="image/*" multiple />
+                  <span class="muted" style="font-size:12px">複数画像を選択してアップロードできます。生成された URL はギャラリーに追加されます。</span>
+                </div>
+                <div style="margin-top:8px">
+                  <div id="profile-gallery-preview" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+                  <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px">
+                    <progress id="profile-galleryProgress" max="100" value="0" style="display:none;width:240px"></progress>
+                    <div id="profile-galleryUploadStatus" class="muted" style="font-size:13px"></div>
+                  </div>
+                </div>
+                <div class="muted" style="font-size:12px">プロフィールとサービスの画像を合わせてギャラリーを構成します。</div>
+              </label>
+            </div>
+            <label>紹介文
+              <textarea id="profile-description" name="description" rows="4" placeholder="店舗/掲載者の紹介文"></textarea>
+            </label>
+            <div class="cluster">
+              <button class="btn" type="submit">保存</button>
+              <button id="provider-profile-reset" class="btn btn-ghost" type="button">キャンセル</button>
+              <span id="provider-profile-message" class="muted" aria-live="polite"></span>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+  <div id="provider-footer"></div>
+  <script src="../../scripts/partials.js" type="module"></script>
+  <script type="module">
+    import { requireProviderAuth, signOutProvider } from '../../scripts/auth.js';
+    const session = requireProviderAuth();
+    if(session){
+      const area = document.getElementById('provider-session-area');
+      if(area){
+        area.innerHTML = `
+          <span class="muted">${session.name} でログイン中</span>
+          <button class="btn btn-ghost" id="provider-logout-btn">ログアウト</button>
+        `;
+        area.addEventListener('click', (e)=>{
+          if(e.target && e.target.id === 'provider-logout-btn'){
+            signOutProvider();
+          }
+        });
+      }
+    }
+  </script>
+  <script src="../../scripts/provider-profile.js" type="module"></script>
+</body>
+</html>

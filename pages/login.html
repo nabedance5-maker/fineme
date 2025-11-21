@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ログイン（掲載者） | Fineme</title>
+  <link rel="stylesheet" href="../assets/styles/style.css" />
+  <link rel="stylesheet" href="../assets/styles/components.css" />
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="section">
+    <div class="container stack">
+      <h1 class="section-title">掲載者ログイン（仮）</h1>
+      <form class="card" id="login-form" style="padding:24px;max-width:480px">
+        <div class="stack">
+          <label>メール
+            <input id="email" name="email" type="email" placeholder="you@example.com" required />
+          </label>
+          <label>パスワード
+            <input id="password" name="password" type="password" required />
+          </label>
+          <button class="btn" type="submit">ログイン</button>
+          <button id="line-login-btn-prov" type="button" class="btn btn--outline-danger">LINEでログイン</button>
+          <p id="login-message" class="muted" aria-live="polite"></p>
+        </div>
+      </form>
+      <div class="cluster" style="margin-top:16px">
+        <span class="muted">運営の方はこちら</span>
+        <a class="btn btn-ghost" href="/pages/admin/index.html">運営管理画面へ</a>
+      </div>
+    </div>
+  </main>
+  <footer id="site-footer"></footer>
+  <script src="../scripts/main.js" type="module"></script>
+  <script src="../scripts/login.js" type="module"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const btn = document.getElementById('line-login-btn-prov');
+      if(btn) btn.addEventListener('click', ()=>{ const returnTo = encodeURIComponent(location.pathname + location.search + location.hash); window.location.href = `/line/login?returnTo=${returnTo}&provider=1`; });
+      try{ const params = new URLSearchParams(location.search); const lineId = params.get('line_user_id'); if(lineId){ sessionStorage.setItem('pendingLineLink', lineId); const msg = document.getElementById('login-message'); if(msg) msg.textContent = 'LINE ログイン成功。ログイン後にアカウントに紐づけできます。'; } }catch(e){}
+    });
+  </script>
+</body>
+</html>

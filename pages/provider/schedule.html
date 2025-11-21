@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>予約枠・スケジュール管理 | Fineme</title>
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <link rel="stylesheet" href="../../assets/styles/components.css" />
+</head>
+<body>
+  <div id="provider-navbar"></div>
+  <main class="section">
+    <div class="container stack">
+      <h1 class="section-title">予約枠・スケジュール管理</h1>
+      <div class="cluster" style="justify-content:flex-end; align-items:center; gap:12px; flex-wrap:wrap">
+        <div class="cluster" style="gap:8px; flex-wrap:wrap">
+          <label for="slots-import-input" class="btn btn-ghost" style="margin:0">インポート</label>
+          <input id="slots-import-input" type="file" accept="application/json" style="display:none" />
+        </div>
+        <label class="cluster" style="align-items:center; gap:8px">
+          <input id="slots-auto-export" type="checkbox" />
+          <span class="muted">保存時に自動バックアップ（ダウンロード）</span>
+        </label>
+      </div>
+      <p class="muted">このページで予約可能枠を管理できます（ブラウザ内保存・デモ）。</p>
+
+      <div class="grid" style="gap: 24px; align-items: start;">
+        <section class="card col-6" style="padding:16px;">
+          <header class="cluster" style="justify-content: space-between; align-items:center; margin-bottom:12px;">
+            <div class="cluster" style="gap:8px;">
+              <button class="btn btn-ghost" id="prev-month">◀</button>
+              <h3 id="cal-title" style="margin:0;font-size:16px;">2025年 10月</h3>
+              <button class="btn btn-ghost" id="next-month">▶</button>
+            </div>
+            <div class="cluster" style="gap:8px; align-items:center; flex-wrap:wrap">
+              <div class="cluster" role="group" aria-label="表示切替" style="gap:4px">
+                <button id="view-month" class="btn btn-ghost" type="button" aria-pressed="true">月</button>
+                <button id="view-week" class="btn btn-ghost" type="button" aria-pressed="false">週</button>
+                <button id="view-day" class="btn btn-ghost" type="button" aria-pressed="false">日</button>
+              </div>
+              <button class="btn btn-ghost" id="today-btn">今日</button>
+            </div>
+          </header>
+          <div id="calendar" class="calendar"></div>
+        </section>
+
+        <section class="card col-6 stack" style="padding:16px; gap:16px;">
+          <div class="stack" style="gap:8px;">
+            <label class="muted">対象サービス</label>
+            <select id="service-select"></select>
+          </div>
+
+          <div class="stack" style="gap:8px;">
+            <label class="muted">選択日</label>
+            <input id="selected-date" type="date" />
+          </div>
+
+          <div class="stack" style="gap:8px;">
+            <label class="muted">この日の枠</label>
+            <div id="slots-list" class="stack"></div>
+          </div>
+
+          <div class="stack" style="gap:8px;">
+            <label class="muted">枠を追加</label>
+            <div class="cluster" style="gap:8px; align-items:end; flex-wrap:wrap;">
+              <div class="stack">
+                <label class="muted" for="slot-start">開始</label>
+                <input id="slot-start" type="time" />
+              </div>
+              <div class="stack">
+                <label class="muted" for="slot-end">終了</label>
+                <input id="slot-end" type="time" />
+              </div>
+              <div class="stack">
+                <label class="muted" for="slot-cap">定員</label>
+                <input id="slot-cap" type="number" min="1" value="1" style="width:100px;" />
+              </div>
+              <button class="btn" id="add-slot">追加</button>
+            </div>
+            <p class="muted" id="slot-msg"></p>
+          </div>
+
+          <details>
+            <summary>一括生成（平日/土日）</summary>
+            <div class="stack" style="gap:8px; margin-top:8px;">
+              <div class="cluster" style="gap:8px; flex-wrap:wrap;">
+                <div class="stack">
+                  <label class="muted" for="bulk-from">開始日</label>
+                  <input id="bulk-from" type="date" />
+                </div>
+                <div class="stack">
+                  <label class="muted" for="bulk-to">終了日</label>
+                  <input id="bulk-to" type="date" />
+                </div>
+                <div class="stack">
+                  <label class="muted" for="bulk-days">対象</label>
+                  <select id="bulk-days">
+                    <option value="weekdays">平日のみ</option>
+                    <option value="weekends">土日のみ</option>
+                    <option value="all">全日</option>
+                  </select>
+                </div>
+              </div>
+              <div class="cluster" style="gap:8px; flex-wrap:wrap; align-items:end;">
+                <div class="stack">
+                  <label class="muted" for="bulk-start">開始</label>
+                  <input id="bulk-start" type="time" value="10:00" />
+                </div>
+                <div class="stack">
+                  <label class="muted" for="bulk-end">終了</label>
+                  <input id="bulk-end" type="time" value="19:00" />
+                </div>
+                <div class="stack">
+                  <label class="muted" for="bulk-interval">間隔(分)</label>
+                  <input id="bulk-interval" type="number" min="15" step="15" value="60" style="width:110px;" />
+                </div>
+                <div class="stack">
+                  <label class="muted" for="bulk-cap">定員</label>
+                  <input id="bulk-cap" type="number" min="1" value="1" style="width:100px;" />
+                </div>
+                <button class="btn" id="bulk-generate">一括生成</button>
+              </div>
+              <p class="muted" id="bulk-msg"></p>
+            </div>
+          </details>
+
+          <details>
+            <summary>テンプレート（保存/適用/削除）</summary>
+            <div class="stack" style="gap:8px; margin-top:8px;">
+              <div class="cluster" style="gap:8px; flex-wrap:wrap; align-items:end;">
+                <div class="stack">
+                  <label class="muted">テンプレ名</label>
+                  <input id="tpl-name" type="text" placeholder="例）平日 10-19:00 60分" />
+                </div>
+                <button class="btn" id="tpl-save">この日の枠を保存</button>
+              </div>
+              <div class="cluster" style="gap:8px; flex-wrap:wrap; align-items:end;">
+                <div class="stack">
+                  <label class="muted">テンプレ選択</label>
+                  <select id="tpl-select"></select>
+                </div>
+                <button class="btn" id="tpl-apply">選択日に適用</button>
+                <button class="btn btn-ghost" id="tpl-delete">削除</button>
+                <span class="muted" id="tpl-msg"></span>
+              </div>
+            </div>
+          </details>
+        </section>
+      </div>
+    </div>
+  </main>
+  <div id="provider-footer"></div>
+  <script src="../../scripts/partials.js" type="module"></script>
+  <script src="../../scripts/provider-schedule.js" type="module"></script>
+  <script type="module">
+    import { requireProviderAuth, getProviderSession, signOutProvider } from '../../scripts/auth.js';
+    const session = requireProviderAuth();
+    if(session){
+      const area = document.getElementById('provider-session-area');
+      if(area){
+        area.innerHTML = `
+          <span class="muted">${session.name} でログイン中</span>
+          <button class="btn btn-ghost" id="provider-logout-btn">ログアウト</button>
+        `;
+        area.addEventListener('click', (e)=>{
+          if(e.target && e.target.id === 'provider-logout-btn'){
+            signOutProvider();
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>

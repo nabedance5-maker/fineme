@@ -1,0 +1,40 @@
+/* Layout helpers */
+.section { padding: var(--sp-8) 0; }
+.section-title { margin: 0; font-size: clamp(22px, 3.2vw, 28px); }
+.muted { color: var(--color-muted); }
+.hide-mobile { display: none; }
+
+@media (min-width: 900px) {
+  .hide-mobile { display: initial; }
+}
+
+/* Header with compact search */
+.navbar-inner { gap: var(--sp-4); }
+.navbar-search { flex: 1 1 auto; display: none; }
+
+@media (min-width: 900px) {
+  .navbar-search { display: block; max-width: 720px; }
+}
+
+.searchbar--compact { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-3); padding: var(--sp-3); border-radius: 999px; border: 1px solid var(--color-border); background: #fff; box-shadow: var(--shadow-sm); }
+.searchbar--compact input { border: none; padding: 10px 14px; background: transparent; outline: none; }
+.searchbar--compact .btn { border-radius: 999px; padding: 10px 16px; }
+
+/* Hero visual */
+.hero--visual { padding: clamp(48px, 8vw, 96px) 0; background: linear-gradient(180deg, #f9fafb 0%, #ffffff 60%); }
+.hero-kicker { font-weight: 600; letter-spacing: .08em; color: #4b5563; text-transform: uppercase; font-size: 12px; }
+.hero-title { margin: 0; font-size: clamp(30px, 5.4vw, 48px); line-height: 1.1; }
+.hero-sub { color: var(--color-muted); max-width: 60ch; }
+
+/* Features */
+.features-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--sp-5); }
+.feature-card { grid-column: span 12; border: 1px solid var(--color-border); border-radius: var(--radius); overflow: hidden; background: #fff; box-shadow: var(--shadow-sm); transition: transform .2s ease, box-shadow .2s ease; }
+.feature-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.feature-media { aspect-ratio: 16 / 9; width: 100%; object-fit: cover; }
+.feature-body { padding: var(--sp-5); }
+.feature-title { margin: 0 0 var(--sp-2); font-weight: 700; font-size: 18px; }
+.feature-meta { color: var(--color-muted); font-size: 14px; }
+
+@media (min-width: 900px) {
+  .feature-card { grid-column: span 4; }
+}
