@@ -25,24 +25,39 @@ async function inject(selector, relativePath){
       if(typeof sanitizeHtml === 'function'){
         host.innerHTML = sanitizeHtml(html);
       } else {
-        // Fallback: parse and append nodes while stripping scripts and inline event handlers.
+        // Fallback: parse and append nodes; strip risky content only outside GitHub Pages.
         try{
           const dp = new DOMParser();
           const doc = dp.parseFromString(html, 'text/html');
-          // remove script elements
-          Array.from(doc.querySelectorAll('script')).forEach(s=> s.remove());
-          // remove inline event handlers and javascript: href/src
-          Array.from(doc.querySelectorAll('*')).forEach(el=>{
-            // remove on* attributes
-            Array.from(el.attributes || []).forEach(attr=>{
+          // Prefix root-relative asset links for GitHub Pages
+          if(PROJECT_BASE){
+            Array.from(doc.querySelectorAll('[src^="/"], [href^="/"]')).forEach(el=>{
               try{
-                const name = attr.name || '';
-                const val = attr.value || '';
-                if(/^on/i.test(name)) el.removeAttribute(name);
-                if((name === 'href' || name === 'src') && /^javascript:/i.test(val)) el.removeAttribute(name);
+                if(el.hasAttribute('src')){
+                  const v = el.getAttribute('src'); if(v && v.startsWith('/')) el.setAttribute('src', PROJECT_BASE + v);
+                }
+                if(el.hasAttribute('href')){
+                  const v = el.getAttribute('href'); if(v && v.startsWith('/')) el.setAttribute('href', PROJECT_BASE + v);
+                }
               }catch(e){}
             });
-          });
+          }
+          if(!PROJECT_BASE){
+            // remove script elements
+            Array.from(doc.querySelectorAll('script')).forEach(s=> s.remove());
+            // remove inline event handlers and javascript: href/src
+            Array.from(doc.querySelectorAll('*')).forEach(el=>{
+              // remove on* attributes
+              Array.from(el.attributes || []).forEach(attr=>{
+                try{
+                  const name = attr.name || '';
+                  const val = attr.value || '';
+                  if(/^on/i.test(name)) el.removeAttribute(name);
+                  if((name === 'href' || name === 'src') && /^javascript:/i.test(val)) el.removeAttribute(name);
+                }catch(e){}
+              });
+            });
+          }
           // import nodes into a fragment to avoid replacing host if injection fails
           const frag = document.createDocumentFragment();
           Array.from(doc.body.childNodes).forEach(n=> frag.appendChild(document.importNode(n, true)));
@@ -64,12 +79,26 @@ async function inject(selector, relativePath){
           try{
             const dp = new DOMParser();
             const doc = dp.parseFromString(raw2, 'text/html');
-            Array.from(doc.querySelectorAll('script')).forEach(s=> s.remove());
-            Array.from(doc.querySelectorAll('*')).forEach(el=>{
-              Array.from(el.attributes || []).forEach(attr=>{
-                try{ const name = attr.name||''; const val = attr.value||''; if(/^on/i.test(name)) el.removeAttribute(name); if((name==='href'||name==='src') && /^javascript:/i.test(val)) el.removeAttribute(name); }catch(e){}
+            if(PROJECT_BASE){
+              Array.from(doc.querySelectorAll('[src^="/"], [href^="/"]')).forEach(el=>{
+                try{
+                  if(el.hasAttribute('src')){
+                    const v = el.getAttribute('src'); if(v && v.startsWith('/')) el.setAttribute('src', PROJECT_BASE + v);
+                  }
+                  if(el.hasAttribute('href')){
+                    const v = el.getAttribute('href'); if(v && v.startsWith('/')) el.setAttribute('href', PROJECT_BASE + v);
+                  }
+                }catch(e){}
               });
-            });
+            }
+            if(!PROJECT_BASE){
+              Array.from(doc.querySelectorAll('script')).forEach(s=> s.remove());
+              Array.from(doc.querySelectorAll('*')).forEach(el=>{
+                Array.from(el.attributes || []).forEach(attr=>{
+                  try{ const name = attr.name||''; const val = attr.value||''; if(/^on/i.test(name)) el.removeAttribute(name); if((name==='href'||name==='src') && /^javascript:/i.test(val)) el.removeAttribute(name); }catch(e){}
+                });
+              });
+            }
             const frag = document.createDocumentFragment(); Array.from(doc.body.childNodes).forEach(n=> frag.appendChild(document.importNode(n, true))); host.appendChild(frag);
           }catch(e2){ host.textContent = ''; }
         }
@@ -90,6 +119,16 @@ async function inject(selector, relativePath){
         });
         document.querySelectorAll('form[action^="/"]').forEach(f=>{
           const act = f.getAttribute('action'); if(!act) return; f.setAttribute('action', PROJECT_BASE + act);
+        });
+        // Also prefix root-relative assets
+        document.querySelectorAll('img[src^="/"]').forEach(img=>{
+          const src = img.getAttribute('src'); if(!src) return; img.setAttribute('src', PROJECT_BASE + src);
+        });
+        document.querySelectorAll('script[src^="/"]').forEach(s=>{
+          const src = s.getAttribute('src'); if(!src) return; s.setAttribute('src', PROJECT_BASE + src);
+        });
+        document.querySelectorAll('link[href^="/"]').forEach(l=>{
+          const href = l.getAttribute('href'); if(!href) return; l.setAttribute('href', PROJECT_BASE + href);
         });
       });
     }
@@ -139,7 +178,12 @@ async function inject(selector, relativePath){
     return origin + path;
   }
   function absoluteUrl(path){
-    try{ if(/^https?:\/\//i.test(path)) return path; return new URL(path, location.origin).href; }catch{ return path; }
+    try{
+      if(!path) return path;
+      if(/^https?:\/\//i.test(path)) return path;
+      if(path.startsWith('/') && PROJECT_BASE){ path = PROJECT_BASE + path; }
+      return new URL(path, location.origin).href;
+    }catch{ return path; }
   }
   function firstText(el, sel){ const n = el.querySelector(sel); return n ? (n.textContent||'').trim() : ''; }
   function firstImg(el){ const im = el.querySelector('img'); return im && im.getAttribute('src'); }
@@ -158,6 +202,8 @@ async function inject(selector, relativePath){
       desc = p ? (p.textContent||'').trim().slice(0, 160) : 'Finemeは美容・パーソナルサービスの検索と予約をサポートします。';
     }
     setMeta('description', desc);
+    // On GitHub Pages, enforce noindex,nofollow across all pages
+    if(PROJECT_BASE){ setMeta('robots', 'noindex,nofollow'); }
     // canonical
     setLink('canonical', canonicalUrlFromLocation());
     // OGP
