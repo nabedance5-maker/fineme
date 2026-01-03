@@ -200,6 +200,13 @@ function loadLocalServices(){
   heroImg.addEventListener('error', ()=>{ try{ heroImg.onerror = null; heroImg.src = placeholder; }catch{} });
   stack.appendChild(heroImg);
   if(providerId && providerName){ const p = document.createElement('p'); p.className = 'card-meta'; const a = document.createElement('a'); a.href = `${storeBase()}?providerId=${encodeURIComponent(providerId)}`; a.textContent = providerName; p.appendChild(document.createTextNode('店舗: ')); p.appendChild(a); stack.appendChild(p); }
+  // Guard: hide reservation CTA if provider onboarding not completed
+  let providerIsPublic = true;
+  try{
+    const PROVIDERS_KEY = 'glowup:providers';
+    const raw = localStorage.getItem(PROVIDERS_KEY); const arr = raw? JSON.parse(raw):[]; const prov = Array.isArray(arr)? arr.find(p=> p.id===providerId): null;
+    providerIsPublic = !!(prov && prov.onboarding && prov.onboarding.completed);
+  }catch(_){ providerIsPublic = true; }
   // provider access block
   if(providerAddress || providerPhone || providerBusinessHours || safeSite){
     const da = document.createElement('div'); da.className = 'detail-access';
@@ -216,7 +223,48 @@ function loadLocalServices(){
   // description with line breaks
   if(svc.description){ const p = document.createElement('p'); p.id = 'svc-description'; const parts = String(svc.description).split('\n'); parts.forEach((line, idx)=>{ p.appendChild(document.createTextNode(line)); if(idx < parts.length-1) p.appendChild(document.createElement('br')); }); stack.appendChild(p); }
   if(svc.staff){ const p = document.createElement('p'); p.textContent = `担当者: ${svc.staff}`; stack.appendChild(p); }
-  if(svc.id){ const a = document.createElement('a'); a.id = 'detail-reserve-btn'; a.className = 'btn btn--primary btn--inverted'; a.href = `/pages/user/schedule.html?serviceId=${svc.id}`; a.textContent = '予約へ進む'; stack.appendChild(a); }
+  if(svc.id){
+    if(providerIsPublic){ const a = document.createElement('a'); a.id = 'detail-reserve-btn'; a.className = 'btn btn--primary btn--inverted'; a.href = `/pages/user/schedule.html?serviceId=${svc.id}&origin=detail`; a.textContent = '予約へ進む'; stack.appendChild(a); }
+    else { const warn = document.createElement('div'); warn.className='card'; warn.style.padding='12px'; const strong=document.createElement('strong'); strong.textContent='この店舗は準備中です（非公開）'; warn.appendChild(strong); const p=document.createElement('p'); p.className='muted'; p.textContent='オンボーディング未完了のため予約できません。'; warn.appendChild(p); stack.appendChild(warn); }
+  }
+  // Compatibility block (診断ベース相性表示)
+  try{
+    if(providerId){
+      const matchMod = await import('./matching.js');
+      const m = await matchMod.computeMatchForProvider(providerId);
+      if(m){
+        const card = document.createElement('div'); card.className='card'; card.style.padding='12px'; card.style.marginTop='10px';
+        const title = document.createElement('div'); title.className='cluster'; title.style.justifyContent='space-between'; title.style.alignItems='center';
+        const strong = document.createElement('strong'); strong.textContent = 'あなたとの相性'; title.appendChild(strong);
+        // ゾーン文言（A–D＋Eの距離から近似）
+        try{
+          const raw = localStorage.getItem('fineme:diagnosis:latest');
+          const diag = raw ? JSON.parse(raw) : null;
+          const matchMod = await import('./matching.js');
+          const user = matchMod.getUserAxesFromDiagnosis(diag);
+          // providerIdから店舗取得（静的/ローカル）
+          const provRaw = localStorage.getItem('glowup:providers');
+          const arr = provRaw ? JSON.parse(provRaw) : [];
+          const provider = Array.isArray(arr) ? arr.find(p=> p.id===providerId) : null;
+          const shop = provider ? matchMod.getShopScoresFromProvider(provider) : { A:2,B:2,C:2,D:2,E_tags:[] };
+          const comp = matchMod.computeCompatibilityAxes(user, shop);
+          const zoneLabel = (function(adj){
+            if(adj <= 2.0) return 'とても相性がいい';
+            if(adj <= 3.0) return '相性がいい';
+            if(adj <= 4.0) return '合いそう';
+            return '選択肢として表示';
+          })(Number(comp.adjusted||999));
+          const badge = document.createElement('span'); badge.className='badge'; badge.textContent = zoneLabel; title.appendChild(badge);
+        }catch{}
+        card.appendChild(title);
+        if(Array.isArray(m.reasons) && m.reasons.length){ const ul=document.createElement('ul'); ul.style.margin='8px 0 0'; ul.style.padding='0 0 0 18px'; for(const r of m.reasons.slice(0,3)){ const li=document.createElement('li'); li.textContent=String(r); ul.appendChild(li); } card.appendChild(ul); }
+        const ctaWrap = document.createElement('div'); ctaWrap.className='cluster'; ctaWrap.style.justifyContent='flex-end'; ctaWrap.style.marginTop='10px';
+        const a2 = document.createElement('a'); a2.className='btn btn--primary'; a2.href = `/pages/user/schedule.html?serviceId=${svc.id}&origin=detail`; a2.textContent = '予約へ進む'; ctaWrap.appendChild(a2);
+        card.appendChild(ctaWrap);
+        stack.appendChild(card);
+      }
+    }
+  }catch(e){ /* optional */ }
   stack.appendChild(document.createElement('hr'));
   // reviews section
   const reviewsSection = document.createElement('section'); reviewsSection.id = 'reviews'; reviewsSection.className = 'stack';

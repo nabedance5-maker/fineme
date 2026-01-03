@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>掲載者オンボーディング | Fineme</title>
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <link rel="stylesheet" href="../../assets/styles/components.css" />
+  <style>
+    .ob-wrap{ max-width: 920px; margin: 0 auto }
+    .ob-step{ background:#fff; border:1px solid var(--color-border); border-radius:12px; padding:16px; box-shadow: var(--shadow-sm) }
+    .ob-step h2{ margin:0 0 8px; }
+    .ob-nav{ display:flex; gap:8px; justify-content:space-between; align-items:center }
+    .ob-steps{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-bottom:12px }
+    .ob-steps .dot{ height:6px; border-radius:999px; background:#e5e7eb }
+    .ob-steps .dot.is-active{ background:linear-gradient(90deg,var(--primary),#0e3760) }
+    .ob-note{ color:var(--color-muted) }
+    .muted{ color:var(--color-muted) }
+    .ob-checklist{ list-style: none; padding:0; margin:8px 0 }
+    .ob-checklist li{ display:flex; align-items:flex-start; gap:8px; margin:6px 0 }
+    .ob-card{ background:#fff; border:1px solid var(--color-border); border-radius:8px; padding:12px }
+    .ob-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px }
+    textarea{ width:100%; min-height: 90px }
+  </style>
+</head>
+<body>
+  <div id="provider-navbar"></div>
+  <main class="section">
+    <div class="container ob-wrap stack">
+      <h1 class="section-title">掲載者オンボーディング</h1>
+      <p class="muted">Finemeの思想理解と、診断に対応したプロフィール入力を進めます。完了まで店舗は非公開です。</p>
+      <div class="ob-steps" aria-hidden="true">
+        <div class="dot" id="dot-0"></div>
+        <div class="dot" id="dot-1"></div>
+        <div class="dot" id="dot-2"></div>
+        <div class="dot" id="dot-3"></div>
+        <div class="dot" id="dot-4"></div>
+      </div>
+      <div id="ob-host" class="stack" style="gap:12px"></div>
+      <div class="ob-actions">
+        <button id="prev" class="btn btn-ghost" type="button">戻る</button>
+        <button id="next" class="btn" type="button">次へ</button>
+      </div>
+    </div>
+  </main>
+  <div id="provider-footer"></div>
+  <script>
+    // 再編集モードの可視マーカー（モジュール読み込み前でも表示）
+    (function(){
+      try{
+        if((location.hash||'').toLowerCase().includes('reedit')){
+          var host = document.getElementById('ob-host');
+          if(host){
+            var note = document.createElement('div');
+            note.className = 'ob-step';
+            note.style.border = '1px dashed var(--color-border)';
+            note.style.background = '#f9fafb';
+            note.innerHTML = '<strong>再編集モードを起動しています…</strong><p class="muted">診断体験と思想入力を同時表示します。</p>';
+            host.appendChild(note);
+          }
+        }
+      }catch(e){}
+    })();
+  </script>
+  <script type="module" src="../../scripts/partials.js"></script>
+  <script type="module" src="../../scripts/provider-onboarding.js"></script>
+</body>
+</html>

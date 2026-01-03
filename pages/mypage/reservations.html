@@ -6,6 +6,10 @@
   <title>予約履歴 | Fineme</title>
   <link rel="stylesheet" href="../../assets/styles/style.css" />
   <link rel="stylesheet" href="../../assets/styles/components.css" />
+  <style>
+    .status-pending{ color:#92400e }
+    .status-visited{ color:#065f46 }
+  </style>
 </head>
 <body>
   <header id="site-header"></header>
@@ -41,6 +45,20 @@
   </main>
   <footer id="site-footer"></footer>
   <script src="../../scripts/main.js" type="module"></script>
+  <script type="module">
+    import { listReservations } from '../../scripts/points.js';
+    const host = document.getElementById('reservations-list');
+    if(host){
+      const arr = listReservations();
+      if(!arr.length){ const p=document.createElement('p'); p.className='muted'; p.textContent='予約履歴がありません。'; host.appendChild(p); }
+      arr.forEach(r=>{
+        const li = document.createElement('li');
+        const st = (r.status==='visited')? '来店確認済み（ポイント付与完了）' : '来店確認中（店舗が確認するとポイントが付与されます）';
+        li.innerHTML = `<strong>${r.title}</strong> - ${new Date(r.visitDate).toLocaleString('ja-JP')} - <span class="${r.status==='visited'?'status-visited':'status-pending'}">${st}</span>`;
+        host.appendChild(li);
+      });
+    }
+  </script>
   <script src="../../scripts/partials.js" type="module"></script>
   <script src="../../scripts/mypage-reservations.js" type="module"></script>
   <script type="module">

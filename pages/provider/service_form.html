@@ -149,6 +149,23 @@
               <label>サービス詳細
                 <textarea id="description" name="description" rows="5" placeholder="サービスの内容、所要時間、持ち物などを詳しく記載してください"></textarea>
               </label>
+              <!-- 具体性補強フィールド（初回の流れ／リスク方針／Q&A） -->
+              <div class="stack">
+                <h3 style="margin:8px 0 4px">具体性の補強（推奨）</h3>
+                <label>初回の進め方（80〜150字推奨）
+                  <textarea id="firstSessionPlan" name="firstSessionPlan" rows="3" placeholder="例：初回は目的を言語化し、選択肢を整理。納得できるまで説明→提案→確認を1〜2回繰り返した後、施術/サービスに入ります。"></textarea>
+                </label>
+                <label>失敗リスクへの向き合い方（60字以上推奨）
+                  <textarea id="riskPolicy" name="riskPolicy" rows="3" placeholder="例：初回は大きな変化を避け、確認・修正の余地を残します。数字や写真で合意を取り、万一のズレは無償で調整します。"></textarea>
+                </label>
+                <div class="stack">
+                  <label class="cluster" style="justify-content:space-between;align-items:center">
+                    <span>Q&A（よくある不安への回答を2件以上が目安）</span>
+                    <button id="qa-add-btn" class="btn btn-ghost" type="button">Q&Aを追加</button>
+                  </label>
+                  <div id="qa-list" class="stack" style="gap:8px"></div>
+                </div>
+              </div>
               <!-- メニュー編集は非表示（サービスページが単一サービスのため、管理画面からは編集不可） -->
               <!-- Gallery (multiple images) -->
               <div class="stack">

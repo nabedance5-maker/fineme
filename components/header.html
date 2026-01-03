@@ -1,7 +1,7 @@
 <link rel="icon" href="/favicon.ico">
 <style>
   /* Responsive header text sizing and overflow protection */
-  .navbar .brand { white-space:nowrap; font-weight:700; font-size:clamp(16px,2.2vw,20px); }
+  .navbar .brand { white-space:nowrap; font-weight:700; font-size:clamp(14px,1.8vw,18px); }
   .nav-links { display:flex; gap:8px; align-items:center; overflow-x:auto; }
   /* Desktop: push the primary nav links to the right side so they appear at the end of the header row. */
   @media (min-width:1025px) {
@@ -42,8 +42,8 @@
     .nav-links a { font-size:13px; }
     .navbar .brand { font-size:18px; }
   }
-  /* logo sizing: reduced to half of previous setting per user request; preserve aspect ratio */
-  .brand.logo img{height:clamp(48px,6.75vw,72px);max-height:84px;width:auto;display:block}
+  /* logo sizing: ~65–70% of original, preserve aspect ratio */
+  .brand.logo img{height:clamp(32px,4.8vw,50px);max-height:60px;width:auto;display:block}
   .navbar .brand{display:inline-flex;align-items:center}
 </style>
 <div class="navbar">
@@ -60,6 +60,10 @@
       <a href="/pages/about.html" style="white-space:nowrap;display:inline-block">私たちについて</a>
       <a href="/pages/feature.html" style="white-space:nowrap;display:inline-block">特集</a>
   <div class="header-actions" style="display:inline-flex;align-items:center;gap:8px;white-space:nowrap;">
+        <div id="header-points" style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap" hidden>
+          <span style="font-size:14px;color:#374151">ポイント</span>
+          <span id="header-points-badge" style="display:inline-block;min-width:18px;padding:4px 8px;border-radius:999px;background:#111;color:#fff;font-size:12px;">0pt</span>
+        </div>
         <div id="header-notifs" style="position:relative">
           <button id="header-notifs-btn" class="btn btn-ghost" type="button" aria-label="通知">
             🔔 <span id="header-notifs-badge" style="display:inline-block;min-width:18px;padding:2px 6px;border-radius:999px;background:#ef4444;color:#fff;font-size:12px;margin-left:6px;" hidden>0</span>

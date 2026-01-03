@@ -1,4 +1,4 @@
-Fineme 見た目診断 AI チャット (MVP)
+Fineme 印象アップ診断 AI チャット (MVP)
 
 セットアップ
 1. このディレクトリは Next.js アプリの pages 構成を仮定しています。すでに Next.js プロジェクトであれば、`pages/diagnosis` と `pages/api/diagnosis.ts` を配置してください。

@@ -1,3 +1,5 @@
+
+
 <!doctype html>
 <html lang="ja">
 <head>
@@ -5,6 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fineme | 恋愛を変える、外見磨きの入口</title>
   <meta name="description" content="恋愛に悩む男性向けの外見磨きポータル。検索・比較・予約がワンストップ。" />
+  <meta name="robots" content="noindex,nofollow" />
   <link rel="stylesheet" href="./assets/styles/style.css" />
   <link rel="stylesheet" href="./assets/styles/components.css" />
 </head>
@@ -12,95 +15,206 @@
   <header id="site-header"></header>
 
   <main>
-  <section class="hero hero--visual" style="padding:64px 0 48px; --hero-left: url('../images/hero-combined.jpg'); --hero-right: url('../images/hero-combined.jpg');">
+  <section class="hero hero--visual" style="padding:72px 0 56px; --hero-left: url('../images/hero-combined.jpg'); --hero-right: url('../images/hero-combined.jpg');">
   <div class="container stack" style="border-radius:32px; width:100vw; max-width:100vw; min-width:0; overflow-x:auto; background:transparent; box-shadow:none;">
     <div class="hero-bg-fog"></div>
     <div class="hero-warm-overlay"></div>
-  <h1 class="hero-title" style="font-size:clamp(32px,6vw,54px); font-family:'Montserrat','Noto Sans JP',sans-serif; font-weight:800; color:#222; margin-bottom:24px; text-shadow:0 2px 16px #e3f2fd; text-align:center;">Find New Me<br><span style="font-size:22px; font-weight:500; color:var(--color-muted); text-align:center; display:inline-block; width:100%;">見た目も恋もアプデする、垢抜けサービス予約サイト。</span></h1>
-        <div style="display:flex; gap:32px; flex-wrap:wrap; align-items:center; justify-content:space-between; margin-bottom:32px;">
+  <h1 class="hero-title" style="font-size:clamp(32px,6vw,54px); font-family:'Montserrat','Noto Sans JP',sans-serif; font-weight:800; color:#222; margin-bottom:18px; text-shadow:0 2px 16px #e3f2fd; text-align:center;">Find New Me<br><span style="font-size:22px; font-weight:500; color:var(--color-muted); text-align:center; display:inline-block; width:100%;">見た目も恋もアプデする、垢抜けサービス予約サイト。</span></h1>
+        <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:center; justify-content:center; margin-bottom:8px;">
           <div style="width:100%; max-width:900px; margin:0 auto; text-align:center;">
-            <p class="hero-sub" style="font-size:16px; color:#222; margin-bottom:34px; font-weight:500; text-align:center; max-width:540px; margin-left:auto; margin-right:auto;">眉を整える。肌を整える。髪を変える。服を見直す。写真を撮る。<br>外見を磨くすべての一歩を、Finemeで検索・比較・予約。<br>自分を好きになるきっかけが、ここにある。</p>
-            <form class="searchbar" action="./pages/search.html" method="get" style="background:rgba(255,255,255,0.97); box-shadow:0 2px 8px rgba(140,160,179,0.08); border-radius:24px; display:flex; flex-wrap:wrap; gap:12px; padding:18px 16px; justify-content:center;">
-              <input name="keyword" placeholder="何を探しますか？（例：メンズメイク、第一印象、撮影）" style="font-size:18px; padding:16px 20px; border-radius:14px; border:1px solid var(--color-border); flex:2 1 220px; min-width:180px;" />
-              <select name="region" style="font-size:18px; padding:14px 16px; border-radius:14px; border:1px solid var(--color-border); flex:1 1 140px; min-width:120px;">
-                <option value="">全国</option>
-                <option value="hokkaido">北海道</option>
-                <option value="aomori">青森県</option>
-                <option value="iwate">岩手県</option>
-                <option value="miyagi">宮城県</option>
-                <option value="akita">秋田県</option>
-                <option value="yamagata">山形県</option>
-                <option value="fukushima">福島県</option>
-                <option value="ibaraki">茨城県</option>
-                <option value="tochigi">栃木県</option>
-                <option value="gunma">群馬県</option>
-                <option value="saitama">埼玉県</option>
-                <option value="chiba">千葉県</option>
-                <option value="tokyo">東京都</option>
-                <option value="kanagawa">神奈川県</option>
-                <option value="niigata">新潟県</option>
-                <option value="toyama">富山県</option>
-                <option value="ishikawa">石川県</option>
-                <option value="fukui">福井県</option>
-                <option value="yamanashi">山梨県</option>
-                <option value="nagano">長野県</option>
-                <option value="gifu">岐阜県</option>
-                <option value="shizuoka">静岡県</option>
-                <option value="aichi">愛知県</option>
-                <option value="mie">三重県</option>
-                <option value="shiga">滋賀県</option>
-                <option value="kyoto">京都府</option>
-                <option value="osaka">大阪府</option>
-                <option value="hyogo">兵庫県</option>
-                <option value="nara">奈良県</option>
-                <option value="wakayama">和歌山県</option>
-                <option value="tottori">鳥取県</option>
-                <option value="shimane">島根県</option>
-                <option value="okayama">岡山県</option>
-                <option value="hiroshima">広島県</option>
-                <option value="yamaguchi">山口県</option>
-                <option value="tokushima">徳島県</option>
-                <option value="kagawa">香川県</option>
-                <option value="ehime">愛媛県</option>
-                <option value="kochi">高知県</option>
-                <option value="fukuoka">福岡県</option>
-                <option value="saga">佐賀県</option>
-                <option value="nagasaki">長崎県</option>
-                <option value="kumamoto">熊本県</option>
-                <option value="oita">大分県</option>
-                <option value="miyazaki">宮崎県</option>
-                <option value="kagoshima">鹿児島県</option>
-                <option value="okinawa">沖縄県</option>
-              </select>
-              <select name="purpose" title="検索の目的を選択" style="font-size:18px; padding:14px 16px; border-radius:14px; border:1px solid var(--color-border); flex:1 1 160px; min-width:140px;">
-                <option value="">目的で絞り込む（任意）</option>
-                <option value="first_impression" data-subtext="対面や写真で好印象に見せたい人向け。見た目の“印象”を手早く改善" title="第一印象を変えたい">第一印象を変えたい</option>
-                <option value="profile_photo" data-subtext="マッチングやSNSで映える写真が欲しい人向け" title="プロフィール写真を良くしたい">プロフィール写真を良くしたい</option>
-                <option value="confidence" data-subtext="恋愛での成功確率を上げたい・デートで印象を残したい人向け" title="恋愛で自信を持ちたい">恋愛で自信を持ちたい</option>
-                <option value="body_shape" data-subtext="姿勢・筋肉・体型で見た目の印象を根本から変えたい人向け" title="体を整えたい">体を整えたい</option>
-                <option value="know_what_suits" data-subtext="何が自分に合うか客観的に知りたい人向け" title="似合うを知りたい">似合うを知りたい</option>
-                <option value="total_update" data-subtext="診断→施術→撮影まで一気に整えたい人向けのワンストップ" title="トータルで磨く">トータルで磨く</option>
-              </select>
-              <select name="category" style="font-size:18px; padding:14px 16px; border-radius:14px; border:1px solid var(--color-border); flex:1 1 140px; min-width:120px;">
-                <option value="">すべてのカテゴリ</option>
-                <option value="consulting">外見トータルサポート</option>
-                <option value="gym">パーソナルジム</option>
-                <option value="makeup">メイクアップ</option>
-                <option value="hair">ヘア</option>
-                <option value="diagnosis">カラー/骨格診断</option>
-                <option value="fashion">コーデ提案</option>
-                <option value="photo">写真撮影（アプリ等）</option>
-                <option value="marriage">結婚相談所</option>
-                <!-- 新規カテゴリ -->
-                <option value="eyebrow">眉毛</option>
-                <option value="hairremoval">脱毛</option>
-                <option value="esthetic">エステ</option>
-                <option value="whitening">ホワイトニング</option>
-                <option value="orthodontics">歯科矯正</option>
-                <option value="nail">ネイル</option>
-              </select>
-              <button class="btn" type="submit" style="font-size:20px; border-radius:16px; min-width:140px; flex:1 1 120px;">検索</button>
-            </form>
+            <p style="font-size:15px; color:#1f2937; margin:0 0 16px; font-weight:600;">選ばなくていい。まずはあなたを教えてください。</p>
+            <a class="btn" href="/diagnosis/index.html" style="font-size:20px; padding:14px 22px; border-radius:14px; background:linear-gradient(90deg,var(--primary,#2563eb),#0e3760); color:#fff; border:none; display:inline-flex; align-items:center; gap:10px; box-shadow:0 6px 18px rgba(37,99,235,0.18);">無料で診断する（3分）</a>
+            <div style="margin-top:14px; display:flex; gap:16px; flex-wrap:wrap; align-items:center; justify-content:center; color:#374151;">
+              <span style="display:inline-flex; align-items:center; gap:8px; font-size:13px; background:rgba(255,255,255,0.9); padding:6px 10px; border-radius:999px; border:1px solid #e5e7eb;">⏱️ <strong style="font-weight:700">3分で完了</strong></span>
+              <span style="display:inline-flex; align-items:center; gap:8px; font-size:13px; background:rgba(255,255,255,0.9); padding:6px 10px; border-radius:999px; border:1px solid #e5e7eb;">🙅‍♂️ 予約なし・営業なし</span>
+              <span style="display:inline-flex; align-items:center; gap:8px; font-size:13px; background:rgba(255,255,255,0.9); padding:6px 10px; border-radius:999px; border:1px solid #e5e7eb;">🫱 正解・不正解はありません</span>
+              <span style="display:inline-flex; align-items:center; gap:8px; font-size:13px; background:rgba(255,255,255,0.9); padding:6px 10px; border-radius:999px; border:1px solid #e5e7eb;">🕶️ 登録不要・匿名</span>
+            </div>
+            <p class="hero-sub" style="font-size:15px; color:#4b5563; margin:22px 0 10px; font-weight:500; text-align:center; max-width:640px; margin-left:auto; margin-right:auto;">眉を整える。肌を整える。髪を変える。服を見直す。</p>
+            <p style="font-size:15px; color:#1f2937; margin:0 0 18px; font-weight:600; text-align:center; max-width:640px; margin-left:auto; margin-right:auto;">外見を磨くすべての一歩を、Finemeが“迷わせず”つなぎます。</p>
+            <div style="margin-top:10px">
+              <a href="./pages/search.html" class="btn" style="font-size:14px; color:#111827 !important; background:#ffffff !important; border:1px solid #e5e7eb !important; border-radius:10px; padding:10px 14px; box-shadow:0 3px 10px rgba(0,0,0,0.08);">診断せずに探す</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ヒーロー直下：軸ミニ解説＋タイプ別候補＋保存導線 -->
+    <section class="section" id="under-hero">
+      <div class="container stack" style="gap:18px">
+        <!-- 軸ミニ解説 -->
+        <div class="card" style="padding:16px">
+          <div class="cluster space-between" style="align-items:center">
+            <h2 class="section-title" style="margin:0">選び方の軸（数値ではなく考え方）</h2>
+          </div>
+          <!-- あなたの診断傾向（上位2をハイライト） / 未ログイン時は中立表示に切替 -->
+          <div class="cluster" id="axes-chips" style="gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0">
+            <span class="muted axes-personal-label">あなたの診断傾向:</span>
+            <span class="muted axes-neutral-label" style="display:none;">選び方の軸（考え方）</span>
+            <button class="axes-chip" type="button" data-axis="A" aria-pressed="false">納得</button>
+            <button class="axes-chip" type="button" data-axis="B" aria-pressed="false">寄り添い</button>
+            <button class="axes-chip" type="button" data-axis="C" aria-pressed="false">最短</button>
+            <button class="axes-chip" type="button" data-axis="D" aria-pressed="false">進め方</button>
+            <button class="axes-chip" type="button" data-axis="V" aria-pressed="false">世界観</button>
+          </div>
+          <!-- 軸の説明（順序は診断で並び替え） -->
+          <div class="features-grid" id="axes-grid" style="grid-template-columns:repeat(4,1fr); gap:10px">
+            <div class="card axes-card" data-axis="A" style="padding:12px">
+              <div class="cluster" style="align-items:center; gap:8px">
+                <span class="axes-icon">🧠</span>
+                <strong>納得</strong>
+                <button class="btn btn-ghost btn-info" type="button" aria-label="詳しく">i</button>
+              </div>
+              <ul class="muted axes-points">
+                <li>理由が分かる進め方</li>
+                <li>説明→提案→確認の反復</li>
+                <li>「分かった」を重視</li>
+              </ul>
+            </div>
+            <div class="card axes-card" data-axis="B" style="padding:12px">
+              <div class="cluster" style="align-items:center; gap:8px">
+                <span class="axes-icon">🤝</span>
+                <strong>寄り添い</strong>
+                <button class="btn btn-ghost btn-info" type="button" aria-label="詳しく">i</button>
+              </div>
+              <ul class="muted axes-points">
+                <li>不安を聞き切る姿勢</li>
+                <li>押し売りなし・合意形成</li>
+                <li>「安心感」を重視</li>
+              </ul>
+            </div>
+            <div class="card axes-card" data-axis="C" style="padding:12px">
+              <div class="cluster" style="align-items:center; gap:8px">
+                <span class="axes-icon">🏁</span>
+                <strong>最短</strong>
+                <button class="btn btn-ghost btn-info" type="button" aria-label="詳しく">i</button>
+              </div>
+              <ul class="muted axes-points">
+                <li>ゴール明確に設計</li>
+                <li>無理を避けて近づく</li>
+                <li>「成果」を重視</li>
+              </ul>
+            </div>
+            <div class="card axes-card" data-axis="D" style="padding:12px">
+              <div class="cluster" style="align-items:center; gap:8px">
+                <span class="axes-icon">🧭</span>
+                <strong>進め方</strong>
+                <button class="btn btn-ghost btn-info" type="button" aria-label="詳しく">i</button>
+              </div>
+              <ul class="muted axes-points">
+                <li>段取りが分かる</li>
+                <li>見通しと調整の余地</li>
+                <li>「迷わなさ」を重視</li>
+              </ul>
+            </div>
+            <div class="card axes-card" data-axis="V" style="padding:12px">
+              <div class="cluster" style="align-items:center; gap:8px">
+                <span class="axes-icon">🔭</span>
+                <strong>世界観</strong>
+                <button class="btn btn-ghost btn-info" type="button" aria-label="詳しく">i</button>
+              </div>
+              <ul class="muted axes-points">
+                <li>価値観の合致</li>
+                <li>安心/理論/センス/実績</li>
+                <li>「相性」を重視</li>
+              </ul>
+            </div>
+          </div>
+          <!-- 未ログイン時の中立コンテンツ（おすすめの仕組み） -->
+          <div class="features-grid" id="axes-neutral-info" style="grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px;">
+            <article class="card" style="padding:12px">
+              <div class="card-body">
+                <h3 class="card-title">🔍 おすすめの観点</h3>
+                <p class="card-meta">Finemeは、選びやすさのために次の観点を使います。</p>
+                <ul class="muted">
+                  <li>考え方の軸で整理（納得/寄り添い/最短/進め方/世界観）</li>
+                  <li>カテゴリとの相性・提供側の得意分野</li>
+                  <li>具体性（メニューの明確さ）と信頼（プロフィールの充実）</li>
+                </ul>
+              </div>
+            </article>
+            <article class="card" style="padding:12px">
+              <div class="card-body">
+                <h3 class="card-title">🛡️ 安心の仕掛け</h3>
+                <p class="card-meta">はじめやすさと不安の解消を意識します。</p>
+                <ul class="muted">
+                  <li>初回の流れの要約を先に確認</li>
+                  <li>Q&Aやリスク方針の有無を見える化</li>
+                  <li>予約導線は明確に（いつ/どこ/いくら）</li>
+                </ul>
+              </div>
+            </article>
+            <article class="card" style="padding:12px">
+              <div class="card-body">
+                <h3 class="card-title">🚀 さらに合いやすく</h3>
+                <p class="card-meta">ログインすると診断に基づき上位の軸をハイライト。</p>
+                <ul class="muted">
+                  <li>「自分に近い」理由をカードに表示</li>
+                  <li>候補の並びがあなたに合う順に</li>
+                  <li>保存で後から比較も簡単</li>
+                </ul>
+                <div class="cluster" style="gap:8px; margin-top:8px;">
+                  <a class="btn" href="/pages/user/login.html">ログイン</a>
+                  <a class="btn btn-ghost" href="/pages/user/login.html#register">新規登録</a>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <!-- 未ログイン時：ミニプレビュー＋診断CTA（視覚的に誘導） -->
+          <div id="axes-mini-preview" class="card" style="margin-top:12px; padding:16px; border-radius:14px; background:linear-gradient(135deg, #f8fafc, #eef2ff);">
+            <div class="cluster space-between" style="align-items:center; margin-bottom:8px;">
+              <div class="cluster" style="gap:8px; align-items:center;">
+                <span class="axes-icon">🧭</span>
+                <strong>3分で自分の軸を見つけよう</strong>
+              </div>
+              <div class="cluster" style="gap:6px; align-items:center; color:#6b7280;">
+                <span id="axes-dot-1" style="width:8px; height:8px; border-radius:999px; background:#2563eb;"></span>
+                <span id="axes-dot-2" style="width:8px; height:8px; border-radius:999px; background:#cbd5e1;"></span>
+                <span id="axes-dot-3" style="width:8px; height:8px; border-radius:999px; background:#cbd5e1;"></span>
+              </div>
+            </div>
+            <div class="features-grid" style="grid-template-columns:repeat(2,1fr); gap:10px;">
+              <div class="card" style="padding:12px;">
+                <p class="card-meta" style="margin:0 0 8px">今はどちらが近い？</p>
+                <div class="cluster" style="gap:8px; flex-wrap:wrap;">
+                  <button class="axes-chip" type="button" data-q="1" data-axis="A" aria-pressed="false">🧠 納得</button>
+                  <button class="axes-chip" type="button" data-q="1" data-axis="C" aria-pressed="false">⚡ 最短</button>
+                </div>
+              </div>
+              <div class="card" style="padding:12px;">
+                <p class="card-meta" style="margin:0 0 8px">不安と迷い、どちらが大きい？</p>
+                <div class="cluster" style="gap:8px; flex-wrap:wrap;">
+                  <button class="axes-chip" type="button" data-q="2" data-axis="B" aria-pressed="false">🤝 寄り添い</button>
+                  <button class="axes-chip" type="button" data-q="2" data-axis="D" aria-pressed="false">🧭 進め方</button>
+                </div>
+              </div>
+            </div>
+            <div class="cluster" style="gap:8px; margin-top:10px; align-items:center;">
+              <a id="axes-mini-cta" class="btn" href="/diagnosis/index.html?from=axes">無料で診断する（3分）</a>
+              <p id="axes-mini-status" class="muted" aria-live="polite" style="margin:0;">2つ選ぶと診断にヒントを渡します</p>
+              <div class="cluster" style="gap:8px; color:#64748b;">
+                <span style="display:inline-flex; align-items:center; gap:6px; font-size:12px; background:#fff; padding:6px 10px; border-radius:999px; border:1px solid #e5e7eb;">🕶️ 匿名・登録不要</span>
+                <span style="display:inline-flex; align-items:center; gap:6px; font-size:12px; background:#fff; padding:6px 10px; border-radius:999px; border:1px solid #e5e7eb;">🙅‍♂️ 営業なし</span>
+                <span style="display:inline-flex; align-items:center; gap:6px; font-size:12px; background:#fff; padding:6px 10px; border-radius:999px; border:1px solid #e5e7eb;">⏱️ 約3分</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- あなたに近い候補（タイプ連動） -->
+        <div class="card" style="padding:16px" id="type-candidates">
+          <div class="cluster space-between" style="align-items:center">
+            <h2 class="section-title" id="type-candidates-title" style="margin:0">あなたに近い候補</h2>
+            <a class="btn btn-ghost" href="./pages/search.html?diag=1&origin=home">もっと見る</a>
+          </div>
+          <p class="muted" id="type-candidates-lead" style="margin:8px 0">診断のタイプに合わせて、「今の自分に合う」候補を優先表示します。</p>
+          <!-- 候補カード一覧（JSで差し込み） -->
+          <div class="features-grid" id="type-candidates-list"></div>
+          <div class="cluster" style="gap:8px; margin-top:10px">
+            <a class="btn" href="./pages/search.html?diag=1&origin=home">今の自分に合う選択肢を見る</a>
+            <a id="save-diagnosis-btn" class="btn btn-ghost" href="./pages/mypage/diagnosis.html">少し考えるために保存する</a>
           </div>
         </div>
       </div>
@@ -132,6 +246,34 @@
         </div>
       </div>
     </section>
+
+    <script>
+      // 保存ボタンで現在の診断スナップショットを保存してからマイページへ
+      (function(){
+        try{
+          const btn = document.getElementById('save-diagnosis-btn');
+          if(!btn) return;
+          btn.addEventListener('click', function(e){
+            try{
+              const raw = localStorage.getItem('fineme:diagnosis:latest');
+              if(!raw) return; // 診断がなければ何もしない
+              const obj = JSON.parse(raw);
+              const typeId = obj?.step2?.classification?.type_id || obj?.intent?.type_id || '';
+              const typeName = obj?.step2?.classification?.type_name || obj?.intent?.type_name || '';
+              const snap = { typeId, typeName, savedAt: new Date().toISOString(), data: { intent: obj?.intent||{}, step2: obj?.step2||{} } };
+              const key = 'fineme:saved:diagnoses';
+              let arr = [];
+              try{ const r = localStorage.getItem(key); arr = r? JSON.parse(r): []; if(!Array.isArray(arr)) arr = []; }catch{ arr = []; }
+              arr.unshift(snap);
+              // 上限50件で切り詰め
+              if(arr.length > 50) arr = arr.slice(0,50);
+              localStorage.setItem(key, JSON.stringify(arr));
+              sessionStorage.setItem('fineme:saved:just','1');
+            }catch{}
+          }, false);
+        }catch{}
+      })();
+    </script>
 
     <section class="section">
       <div class="container stack">
@@ -174,8 +316,24 @@
 
   <footer id="site-footer"></footer>
   <script src="./scripts/main.js" type="module"></script>
+  <script type="module">
+    // ヒーロー直下のタイプ文言を診断結果に合わせて最適化
+    try{
+      const raw = localStorage.getItem('fineme:diagnosis:latest');
+      const obj = raw ? JSON.parse(raw) : null;
+      if(obj && obj.step2 && obj.step2.classification && obj.step2.classification.type_name){
+        const name = obj.step2.classification.type_name;
+        const ttl = document.getElementById('type-candidates-title');
+        const lead = document.getElementById('type-candidates-lead');
+        if(ttl) ttl.textContent = `あなたに近い候補（${name}）`;
+        if(lead) lead.textContent = 'あなたのタイプに近い掲載者から順に表示します。価格ではなく「合う可能性」で並びます。';
+      }
+    }catch{}
+  </script>
   <script src="./scripts/home-reco.js?v=20251016" type="module"></script>
   <script src="./scripts/home-features.js?v=20251015" type="module"></script>
   <script src="./scripts/home-recent.js?v=20251016" type="module"></script>
+  <script src="./scripts/axes.js?v=20260101" type="module"></script>
+  <script src="./scripts/home-type-candidates.js?v=20260101" type="module"></script>
 </body>
 </html>

@@ -3,10 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>アクセス分析 | Fineme</title>
+  <title>簡易CVRダッシュボード | Fineme</title>
   <link rel="stylesheet" href="../../assets/styles/style.css" />
   <link rel="stylesheet" href="../../assets/styles/components.css" />
-  <style>.admin-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}</style>
+  <style>.admin-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
+    table{border-collapse:collapse;width:100%}
+    th,td{border:1px solid var(--color-border);padding:8px;text-align:center}
+    th{background:#f8fafc;font-weight:700}
+  </style>
 </head>
 <body>
   <header id="site-header"></header>
@@ -14,9 +18,14 @@
     <div class="container admin-grid">
       <aside id="admin-sidebar"></aside>
       <section class="stack">
-        <h1 class="section-title">アクセス分析</h1>
-        <div class="card" style="padding:24px">
-          <p>グラフ/指標（ダミー）</p>
+        <h1 class="section-title">簡易CVRダッシュボード</h1>
+        <div class="card" style="padding:16px">
+          <h2 style="margin-top:0">起点別ファネル</h2>
+          <div id="funnel-host" class="stack" style="gap:8px"></div>
+        </div>
+        <div class="card" style="padding:16px">
+          <h2 style="margin-top:0">イベント一覧（直近）</h2>
+          <div id="events-host" class="stack" style="gap:8px"></div>
         </div>
       </section>
     </div>
@@ -24,5 +33,6 @@
   <footer id="site-footer"></footer>
   <script src="../../scripts/main.js" type="module"></script>
   <script src="../../scripts/partials.js" type="module"></script>
+  <script src="../../scripts/analytics-dashboard.js" type="module"></script>
 </body>
 </html>

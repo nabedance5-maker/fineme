@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>診断結果 | Fineme</title>
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <link rel="stylesheet" href="../../assets/styles/components.css" />
+  <style>
+    /* このページ限定でボタンを濃色にして視認性を確保 */
+    .card .btn{ background:#111 !important; color:#fff !important; border:none !important; box-shadow:0 6px 16px rgba(0,0,0,0.16) }
+    .card .btn-ghost{ background:transparent !important; color:#111 !important; border:1px solid #111 !important }
+  </style>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="section">
+    <div class="container mypage-layout">
+      <aside id="mypage-sidenav"></aside>
+      <section class="stack">
+        <h1 class="section-title">診断結果</h1>
+        <div id="diag-host" class="stack"></div>
+      </section>
+    </div>
+  </main>
+  <footer id="site-footer"></footer>
+  <script src="../../scripts/main.js" type="module"></script>
+  <script src="../../scripts/partials.js" type="module"></script>
+  <script type="module">
+    import { requireUserAuth } from '../../scripts/user-auth.js';
+    requireUserAuth();
+  </script>
+  <script>
+  (function(){
+    const STORAGE_KEY = 'fineme:diagnosis:latest';
+    const SAVED_KEY = 'fineme:saved:diagnoses';
+    const TYPES_URL = '/data/intent-types.json';
+    const host = document.getElementById('diag-host');
+    function showToast(msg){ try{ const t = document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); requestAnimationFrame(()=>{ t.classList.add('show'); setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=> t.remove(), 300); }, 1800); }); }catch{} }
+    function emptyState(){
+      const card = document.createElement('div'); card.className='card'; card.style.padding='16px';
+      const p = document.createElement('p'); p.className='muted'; p.textContent='診断結果が見つかりません。過去に診断を完了していないか、保存されていない可能性があります。';
+      const actions = document.createElement('div'); actions.className='cluster'; actions.style.gap='8px';
+      const a1 = document.createElement('a'); a1.className='btn'; a1.href='/diagnosis/index.html'; a1.textContent='無料で診断する（3分）';
+      const a2 = document.createElement('a'); a2.className='btn btn-ghost'; a2.href='/pages/search.html'; a2.textContent='診断せずに探す';
+      actions.appendChild(a1); actions.appendChild(a2);
+      card.appendChild(p); card.appendChild(actions);
+      host.appendChild(card);
+    }
+    function fmtDate(ts){ try{ const d=new Date(ts); return d.toLocaleString('ja-JP'); }catch{ return ''; } }
+    function loadSaved(){ try{ const raw = localStorage.getItem(SAVED_KEY); const arr = raw? JSON.parse(raw): []; return Array.isArray(arr)? arr: []; }catch{ return []; } }
+    function saveListCard(){
+      const arr = loadSaved();
+      const card = document.createElement('div'); card.className='card'; card.style.padding='16px';
+      const h2 = document.createElement('h2'); h2.textContent = '保存した診断'; h2.style.margin='0 0 8px'; card.appendChild(h2);
+      if(!arr.length){ const p=document.createElement('p'); p.className='muted'; p.textContent='まだ保存はありません。結果ページやトップから「保存」を押すと表示されます。'; card.appendChild(p); host.appendChild(card); return; }
+      const list = document.createElement('div'); list.className='stack'; list.style.gap='8px';
+      arr.forEach((it, idx)=>{
+        const row = document.createElement('div'); row.className='cluster'; row.style.justifyContent='space-between'; row.style.alignItems='center';
+        const left = document.createElement('div'); const t=document.createElement('strong'); t.textContent = it.typeName || '(不明なタイプ)'; left.appendChild(t); const s=document.createElement('span'); s.className='muted'; s.style.marginLeft='8px'; s.textContent = fmtDate(it.savedAt); left.appendChild(s);
+        const right = document.createElement('div'); const open=document.createElement('a'); open.className='btn btn-ghost'; open.href='/diagnosis/result.html'; open.textContent='詳しく見る'; const del=document.createElement('button'); del.className='btn btn-ghost'; del.textContent='削除'; del.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); try{ const arr2 = loadSaved().filter((x,i)=> i!==idx); localStorage.setItem(SAVED_KEY, JSON.stringify(arr2)); showToast('保存を削除しました'); card.remove(); saveListCard(); }catch{} }); right.appendChild(open); right.appendChild(del);
+        row.appendChild(left); row.appendChild(right); list.appendChild(row);
+      });
+      card.appendChild(list); host.appendChild(card);
+    }
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw){ emptyState(); return; }
+      const obj = JSON.parse(raw);
+      const typeId = obj?.intent?.type_id;
+      const typeName = (obj?.step2?.classification?.type_name) || (obj?.intent?.type_name) || '';
+      const updated = obj?.at ? fmtDate(obj.at) : '';
+      const top = document.createElement('div'); top.className='card'; top.style.padding='16px';
+      const h = document.createElement('h2'); h.textContent = typeName ? `あなたは「${typeName}」です` : '診断結果'; top.appendChild(h);
+      if(updated){ const small = document.createElement('p'); small.className='muted'; small.textContent = `最終更新: ${updated}`; top.appendChild(small); }
+      const actions = document.createElement('div'); actions.className='cluster'; actions.style.gap='8px';
+      const re = document.createElement('a'); re.href='/diagnosis/index.html'; re.className='btn'; re.textContent='診断をやり直す'; re.style.color = '#111'; re.style.setProperty('color','#111','important'); actions.appendChild(re);
+      const see = document.createElement('a'); see.href='/diagnosis/result.html'; see.className='btn btn-ghost'; see.textContent='結果ページで詳しく見る'; actions.appendChild(see);
+      top.appendChild(actions);
+      host.appendChild(top);
+      saveListCard();
+      try{ const just = sessionStorage.getItem('fineme:saved:just') === '1'; if(just){ showToast('診断を保存しました'); sessionStorage.removeItem('fineme:saved:just'); } }catch{}
+      if(!typeId){ return; }
+      fetch(TYPES_URL).then(r=>r.json()).then(types=>{
+        const entry = types[typeId]; if(!entry) return;
+        const card = document.createElement('div'); card.className='card'; card.style.padding='16px';
+        const p1 = document.createElement('p'); p1.textContent = entry.catch || ''; card.appendChild(p1);
+        if(entry.advice){ const h3 = document.createElement('h3'); h3.textContent = 'あなたに合う、外見の整え方'; card.appendChild(h3); const p2=document.createElement('p'); p2.textContent = entry.advice; card.appendChild(p2); }
+        const link = document.createElement('a'); link.className='btn'; link.href='/pages/search.html'; link.textContent='このタイプに合う人を見てみる'; card.appendChild(link);
+        host.appendChild(card);
+      }).catch(()=>{});
+    }catch(e){ emptyState(); }
+  })();
+  </script>
+</body>
+</html>

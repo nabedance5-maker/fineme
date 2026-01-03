@@ -401,6 +401,7 @@ a.btn.btn--primary, button.btn.btn--primary, .btn--primary{
 /* container-wide for reco block */
 .features-grid > #top-reco{grid-column:1 / -1}
 .features-grid > #top-recent{grid-column:1 / -1}
+.features-grid > #type-candidates-list{grid-column:1 / -1}
 .feature-card{grid-column:span 12;border:1px solid var(--color-border);border-radius:var(--radius);overflow:hidden;background:#fff;box-shadow:var(--shadow-sm);transition:transform .2s ease,box-shadow .2s ease}
 .feature-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
 .feature-media{aspect-ratio:16/9;width:100%;object-fit:cover}
@@ -479,6 +480,30 @@ a.btn.btn--primary, button.btn.btn--primary, .btn--primary{
 @media (max-width: 1024px){ #top-recent{ --peek: 32px; --card-w: calc((100% - 2*var(--peek) - 1*var(--gap)) / 2) } }
 @media (max-width: 640px){ #top-recent{ --peek: 16px; --card-w: calc(100% - 2*var(--peek)) } }
 #top-features:empty::after{content:'特集がまだありません'; color:var(--color-muted)}
+
+/* Home: あなたに近い候補（横スクロール 1 行・PCで4枚・両端チラ見せ） */
+#type-candidates-list{ --peek: 56px; --gap: var(--sp-5); --card-w: calc((100% - 2*var(--peek) - 2*var(--gap)) / 3); display:flex; gap:var(--gap); overflow-x:auto; padding: 0 var(--peek) 4px; scroll-snap-type:x mandatory; scroll-padding-inline: var(--peek); height: var(--cand-list-h, auto); }
+#type-candidates-list::-webkit-scrollbar{height:8px}
+#type-candidates-list::-webkit-scrollbar-thumb{background:var(--color-border); border-radius:999px}
+#type-candidates-list > .card{flex: 0 0 var(--card-w); scroll-snap-align:center; display:flex; flex-direction:column; transition: opacity .2s ease; height: var(--card-h, auto); overflow: hidden}
+#type-candidates-list > .card.is-dimmed{opacity:.6}
+#type-candidates-list > .card img{aspect-ratio:4/3; width:100%; object-fit:cover; height: var(--cand-img-h, auto)}
+/* Body scroll within fixed-height card */
+#type-candidates-list > .card .card-body{flex: 1 1 auto; overflow: auto; -webkit-overflow-scrolling: touch; max-height: calc(var(--card-h, 0px) - var(--cand-img-h, 0px) - 24px)}
+
+/* Skeleton state for cards during image loading */
+#type-candidates-list > .card.skeleton .service-thumb,
+#top-reco > .card.skeleton .service-thumb{
+	background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 37%, #f3f4f6 63%);
+	background-size: 400% 100%;
+	animation: shimmer 1.2s ease-in-out infinite;
+}
+@keyframes shimmer{ 0%{ background-position: 100% 0 } 100%{ background-position: 0 0 } }
+
+/* Focus ring for keyboard navigation */
+#type-candidates-list:focus, #top-reco:focus{ outline: 2px solid var(--primary, #2563eb); outline-offset: 2px; }
+@media (max-width: 1024px){ #type-candidates-list{ --peek: 32px; --card-w: calc((100% - 2*var(--peek) - 1*var(--gap)) / 2) } }
+@media (max-width: 640px){ #type-candidates-list{ --peek: 16px; --card-w: calc(100% - 2*var(--peek)) } }
 
 #store-services.features-grid > .card{grid-column:span 4; display:flex; flex-direction:column}
 #store-services.features-grid > .card img{aspect-ratio:4/3; width:100%; object-fit:cover}

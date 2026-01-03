@@ -50,7 +50,13 @@ function loadProviders(){
   try{ fetch('http://localhost:4015/api/sync-user', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ loginId: found.loginId, displayName: found.name, email: found.loginId, passwordHash: found.passwordHash }) }).catch(()=>{}); }catch(_){ }
       // If pending LINE link exists, attach it
   try{ const pending = sessionStorage.getItem('pendingLineLink'); if(pending){ fetch('http://localhost:4015/api/link-line', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ loginId: found.loginId, lineUserId: pending }) }).then(()=> sessionStorage.removeItem('pendingLineLink')).catch(()=>{}); } }catch(e){}
-      location.href = '/pages/provider/index.html';
+      // redirect: returnTo が指定されていれば優先
+      try{
+        const u = new URL(location.href);
+        const rt = u.searchParams.get('returnTo');
+        if(rt){ location.href = rt; }
+        else { location.href = '/pages/provider/index.html'; }
+      }catch{ location.href = '/pages/provider/index.html'; }
     } catch (e) {
       if(msg) msg.textContent = '予期せぬエラーが発生しました。';
     }

@@ -15,6 +15,14 @@
       <section class="stack">
         <h1 class="section-title">マイページ</h1>
         <p class="muted">予約履歴・お気に入り・閲覧履歴・プロフィール編集が利用できます。</p>
+        <div class="card" style="padding:16px">
+          <h2>あなたのポイント</h2>
+          <p id="mypage-points-line" class="muted">読み込み中…</p>
+          <div class="cluster" style="gap:8px">
+            <a href="/pages/search.html" class="btn" style="color:#111 !important">次の一歩を探す</a>
+            <a href="/pages/mypage/reservations.html" class="btn btn-ghost">予約履歴を見る</a>
+          </div>
+        </div>
         <div>
           <button id="mypage-signout" class="btn btn-ghost">ログアウト</button>
         </div>
@@ -26,6 +34,17 @@
   <script src="../../scripts/partials.js" type="module"></script>
   <script type="module">
     import { requireUserAuth, signOutUser, getUserSession } from '../../scripts/user-auth.js';
+    import { updateHeaderPointsBadge } from '../../scripts/points.js';
+    import { listReservations } from '../../scripts/points.js';
+    const ptsRaw = localStorage.getItem('fineme:points:state');
+    try{
+      const obj = ptsRaw? JSON.parse(ptsRaw): { points:0, visits:0 };
+      const visits = Number(obj.visits||0);
+      const rate = (visits>=11)?5:(visits>=4?4:3);
+      const line = document.getElementById('mypage-points-line');
+      if(line){ line.textContent = `${Number(obj.points||0)}pt / 現在の還元率: ${rate}%（あと${Math.max(0, visits<4?(4-visits):(visits<11?(11-visits):0))}回で次の段階）`; }
+      updateHeaderPointsBadge();
+    }catch{}
     const s = requireUserAuth();
     const btn = document.getElementById('mypage-signout');
     if(btn) btn.addEventListener('click', ()=> signOutUser());

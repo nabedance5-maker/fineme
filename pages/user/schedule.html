@@ -65,6 +65,7 @@
     <div class="container sched-wrap stack">
       <h1 class="section-title" id="title">スケジュール選択</h1>
       <p class="muted" id="subtitle"></p>
+      <div id="match-host" class="card" style="padding:12px;" hidden></div>
       <div class="card" style="padding:16px">
         <div class="cluster" style="justify-content:space-between;align-items:center">
           <div class="cluster" style="gap:8px;align-items:center">
@@ -87,6 +88,13 @@
         <div class="cluster" style="justify-content:space-between;align-items:center">
           <div class="cluster" style="gap:8px;align-items:center">
             <label>選択日 <input id="selected-date" type="date" /></label>
+          </div>
+          <div class="cluster" style="gap:8px;align-items:center">
+            <label>サービス
+              <select id="service-select" style="min-width:240px">
+                <option value="">未選択（選択してください）</option>
+              </select>
+            </label>
           </div>
         </div>
         <div id="slots-list" class="stack" style="margin-top:12px;gap:8px"></div>
@@ -111,7 +119,6 @@
               <div id="req-custom-fields" hidden>
                 <label>希望日<input id="req-custom-date" type="date" /></label>
                 <label>開始時間<input id="req-custom-start" type="time" /></label>
-                <label>終了時間<input id="req-custom-end" type="time" /></label>
               </div>
               <label>お名前<input id="req-name" type="text" placeholder="例）山田 太郎" required /></label>
               <label>連絡先（メールまたは電話）<input id="req-contact" type="text" placeholder="例）sample@example.com / 090-xxxx-xxxx" required /></label>
@@ -147,6 +154,7 @@
   <script type="module">
   import { getUserSession } from '../../scripts/user-auth.js';
   import { addNotification } from '../../scripts/notifications.js';
+  import { computeMatchForProvider } from '../../scripts/matching.js';
     const SERVICES_KEY = 'glowup:services';
     const SLOTS_KEY = 'glowup:slots';
     const REQUESTS_KEY = 'glowup:requests';
@@ -161,6 +169,18 @@
   function saveRequests(list){ localStorage.setItem(REQUESTS_KEY, JSON.stringify(list)); }
   function loadRequests(){ try{ const raw=localStorage.getItem(REQUESTS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch{ return []; } }
   function uuid(){ return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);}); }
+ 
+  // --- simple analytics logger ---
+  function logEvent(type, data){
+    try{
+      const key='fineme:analytics';
+      const raw=localStorage.getItem(key);
+      const arr=raw?JSON.parse(raw):[];
+      const evt=Object.assign({ type, ts:new Date().toISOString() }, data||{});
+      arr.push(evt);
+      localStorage.setItem(key, JSON.stringify(arr));
+    }catch{}
+  }
  
   let viewYear, viewMonth; // for month view
   let viewDate; // Date cursor for week/day view
@@ -219,7 +239,10 @@
 
     function renderSlotsList(){
       const serviceId = getParam('serviceId');
-      const date = qs('#selected-date')?.value; const host = qs('#slots-list'); if(!serviceId || !date || !host){ return; }
+      const date = qs('#selected-date')?.value; const host = qs('#slots-list');
+      if(!host) return;
+      if(!serviceId){ host.innerHTML = '<p class="muted">まず上部のサービスから選択してください。</p>'; return; }
+      if(!date){ host.innerHTML = '<p class="muted">日付を選択してください。</p>'; return; }
       const requests = loadRequests();
       // Week matrix mode
       if(calView === 'week'){
@@ -296,10 +319,35 @@
 
     (function init(){
       const serviceId = getParam('serviceId');
+      const providerId = getParam('providerId');
+      const origin = getParam('origin') || '';
+      try{ if(origin){ logEvent('view_schedule', { origin, serviceId: serviceId||'' }); } }catch{}
       const svc = loadServices().find(s=> s.id === serviceId);
       if(svc){
         qs('#title').textContent = `スケジュール選択 - ${svc.name}`;
         qs('#subtitle').textContent = `カテゴリ: ${svc.category} / 地域: ${svc.region}`;
+        const sel = qs('#service-select'); if(sel){ sel.value = serviceId; sel.disabled = true; }
+        // sync hidden input
+        const hid = qs('#req-serviceId'); if(hid) hid.value = serviceId;
+        // render match reasons for selected service's provider
+        try{ renderMatch(svc.providerId); }catch{}
+      } else {
+        // populate selector (filtered by provider if available)
+        const sel = qs('#service-select');
+        if(sel){
+          const services = loadServices();
+          const filtered = providerId ? services.filter(s=> String(s.providerId) === String(providerId)) : services;
+          filtered.forEach(s=>{ const opt = document.createElement('option'); opt.value = s.id; opt.textContent = `${s.name}（¥${Number((s.price!=null?s.price:s.priceMin)||0).toLocaleString()}）`; sel.appendChild(opt); });
+          sel.addEventListener('change', ()=>{
+            const val = sel.value;
+            const u = new URL(location.href); if(val) u.searchParams.set('serviceId', val); else u.searchParams.delete('serviceId'); history.replaceState({}, '', u.toString());
+            const svc2 = loadServices().find(x=> x.id === val);
+            if(svc2){ qs('#title').textContent = `スケジュール選択 - ${svc2.name}`; qs('#subtitle').textContent = `カテゴリ: ${svc2.category} / 地域: ${svc2.region}`; }
+            const hid2 = qs('#req-serviceId'); if(hid2) hid2.value = val || '';
+            try{ renderMatch(svc2?.providerId||''); }catch{}
+            renderSlotsList();
+          });
+        }
       }
       const now = new Date(); viewYear = now.getFullYear(); viewMonth = now.getMonth(); viewDate = new Date(now);
       // nav buttons work per current view
@@ -359,6 +407,22 @@
         openReqModal({ custom: true, date: sel });
       });
     })();
+
+    async function renderMatch(providerId){
+      try{
+        const host = qs('#match-host'); if(!host) return;
+        if(!providerId){ host.hidden=true; host.innerHTML=''; return; }
+        const m = await computeMatchForProvider(providerId);
+        if(!m){ host.hidden=true; host.innerHTML=''; return; }
+        host.innerHTML='';
+        const title = document.createElement('div'); title.className='cluster'; title.style.justifyContent='space-between'; title.style.alignItems='center';
+        const strong = document.createElement('strong'); strong.textContent='あなたとの相性'; title.appendChild(strong);
+        const badge = document.createElement('span'); badge.className='badge'; badge.textContent = `${m.score}点`; title.appendChild(badge);
+        host.appendChild(title);
+        if(Array.isArray(m.reasons) && m.reasons.length){ const ul=document.createElement('ul'); ul.style.margin='8px 0 0'; ul.style.padding='0 0 0 18px'; for(const r of m.reasons.slice(0,3)){ const li=document.createElement('li'); li.textContent=String(r); ul.appendChild(li); } host.appendChild(ul); }
+        host.hidden=false;
+      }catch(e){ /* optional */ }
+    }
 
     function openReqModal(info){
       // debug: log invocation so we can verify this function runs when user clicks
@@ -535,7 +599,7 @@
       if(!sid){ hasError = true; }
       // either an existing slotId or all custom fields must be provided
       const isCustom = !slotId;
-      if(isCustom){ if(!(customDate && customStart && customEnd)){ hasError = true; } }
+      if(isCustom){ if(!(customDate && customStart)){ hasError = true; } }
       if(!name){ showFieldError(nameEl, 'お名前を入力してください'); hasError = true; }
       if(!contact){ showFieldError(contactEl, '連絡先を入力してください'); hasError = true; }
       else if(!(isEmail(contact) || isPhone(contact))){ showFieldError(contactEl, 'メールアドレスまたは電話番号の形式で入力してください'); hasError = true; }
@@ -564,6 +628,7 @@
       };
       list.push(req);
       saveRequests(list);
+      try{ const originParam = getParam('origin') || ''; logEvent('submit_request', { origin: originParam||'', serviceId: sid||'', slotId: slotId||'' }); }catch{}
       // Create notifications: one for provider, one for user
       try{
         const providerNotif = {

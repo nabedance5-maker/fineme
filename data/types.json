@@ -354,5 +354,183 @@
       "image": "/images/type_t16.webp",
       "matches": ["t15","t14","t12","t08"]
     }
+  },
+  "common": {
+    "t01": {
+      "type_id": "t01",
+      "name": "ルーミナイト",
+      "label": "Soft × Simple × Calm × Natural",
+      "traits": ["Soft","Simple","Calm","Natural"],
+      "catch": "光を抑えて、静かに輝く。深みの中に知性が宿る、夜空のような存在。",
+      "description": "一見すると静かで落ち着いていて、何を考えているのか掴めないような不思議な魅力があります。派手さはないのに存在感があるタイプ。無駄のない装いと整った髪から、知的さや美意識の高さが感じられます。外からはクールに見えても、実は心の中では感情の振れ幅が大きく、好きなことにはとことんのめり込む集中力を持っています。",
+      "advice": "完璧すぎる印象を少し崩すのが垢抜けのコツ。シャツをラフに着崩したり、柔らかいフレームの眼鏡を試すなど。“整いすぎず、整っている”くらいを目指して。表情に余白をつくると親しみが増します。",
+      "image": "/images/type_t01.webp",
+      "matches": ["t02","t03","t05","t09"]
+    },
+    "t02": {
+      "type_id": "t02",
+      "name": "ソリッドリンク",
+      "label": "Soft × Simple × Bright × Natural",
+      "traits": ["Soft","Simple","Bright","Natural"],
+      "catch": "無駄を削ぎ落とした美しさ。静かに惹きつける、洗練のバランサー。",
+      "description": "街の空気に自然と溶け込むような洗練さがあり、どこか“できる人”のオーラをまとっています。清潔感がありながら無駄がなく、TPOに合わせたコーディネートがしっかりハマるタイプです。",
+      "advice": "抜け感を少し取り入れて堅すぎない印象に。セットアップにスニーカーを合わせる、腕時計やアクセで個性を添えるなどが有効です。",
+      "image": "/images/type_t02.webp",
+      "matches": ["t01","t04","t06","t10"]
+    },
+    "t03": {
+      "type_id": "t03",
+      "name": "モカシル",
+      "label": "Hard × Simple × Calm × Natural",
+      "traits": ["Hard","Simple","Calm","Natural"],
+      "catch": "柔らかさは、あなたの最大の強さ。誠実さで人の心を温める、ナチュラルバランサー。",
+      "description": "どこか人当たりの良さを感じさせる穏やかな雰囲気が魅力。清潔感のある穏やかな印象で、癒し系の要素を持ちます。内面も誠実で、人の話を丁寧に聞ける人です。",
+      "advice": "シンプルな装いに一点濃いめの色を取り入れたり、眼鏡をフレーム付きにするなど“芯”を感じさせる小物をひとつ加えると印象が引き締まります。",
+      "image": "/images/type_t03.webp",
+      "matches": ["t04","t01","t07","t11"]
+    },
+    "t04": {
+      "type_id": "t04",
+      "name": "フォルネ",
+      "label": "Hard × Simple × Calm × Mode",
+      "traits": ["Hard","Simple","Calm","Mode"],
+      "catch": "透明感は、静かな強さ。繊細でありながら、どんな場所でも自分を整えていける人。",
+      "description": "清潔感と中性的な魅力を持ち、細部にこだわる繊細さが魅力。外見の繊細さから内面も穏やかで、周囲を安心させるタイプです。",
+      "advice": "完璧さの中に少しラフな要素を。ジャケットの中に白Tを入れる、髪に無造作な動きを作るなど“余白”を作ると好印象です。",
+      "image": "/images/type_t04.webp",
+      "matches": ["t03","t02","t08","t12"]
+    },
+    "t05": {
+      "type_id": "t05",
+      "name": "ノアグリ",
+      "label": "Soft × Glam × Calm × Natural",
+      "traits": ["Soft","Glam","Calm","Natural"],
+      "catch": "無駄をそぎ落とすほど、深みが増す。静かに惹きつける“余白の美学”。",
+      "description": "渋みと落ち着きのある雰囲気が魅力。シンプルで整った装いを好み、落ち着いた色味や素材感で深みを出します。内面は穏やかで誠実、信頼感を与えるタイプです。",
+      "advice": "素材感のあるアイテムで深みを出すのが効果的。リネンやスウェード、ウールなどを取り入れ、色は深めにまとめると渋みが引き立ちます。",
+      "image": "/images/type_t05.webp",
+      "matches": ["t06","t07","t01","t13"]
+    },
+    "t06": {
+      "type_id": "t06",
+      "name": "リゼット",
+      "label": "Soft × Glam × Bright × Natural",
+      "traits": ["Soft","Glam","Bright","Natural"],
+      "catch": "やわらかく整う、心のクッション。穏やかさの中に品の光を宿す人。",
+      "description": "穏やかで上品な印象を持ち、包容力のある雰囲気が魅力。人を安心させる柔らかさがあり、清潔感と品を両立します。",
+      "advice": "上質なベーシックを揃えることで垢抜けます。素材感や光沢のある小物を取り入れると品が増します。",
+      "image": "/images/type_t06.webp",
+      "matches": ["t05","t08","t02","t14"]
+    },
+    "t07": {
+      "type_id": "t07",
+      "name": "ティノール",
+      "label": "Soft × Simple × Calm × Mode",
+      "traits": ["Soft","Simple","Calm","Mode"],
+      "catch": "動けば光る。笑えば惹かれる。太陽のようなエネルギーで人を明るくするタイプ。",
+      "description": "アクティブで爽やかな印象。健康的な雰囲気と前向きなエネルギーが魅力で、周囲に元気を与えます。",
+      "advice": "サイズ感や質感で差をつけると垢抜けます。腕時計やスニーカーなどの小物で統一感を出すとより洗練されます。",
+      "image": "/images/type_t07.webp",
+      "matches": ["t08","t05","t03","t15"]
+    },
+    "t08": {
+      "type_id": "t08",
+      "name": "ミロワット",
+      "label": "Soft × Simple × Bright × Mode",
+      "traits": ["Soft","Simple","Bright","Mode"],
+      "catch": "言葉よりも、眼差しで伝わる。静けさの中に確かな熱を灯す人。",
+      "description": "静かで深みのある雰囲気が魅力。観察力や感受性に優れ、控えめながらも印象に残るタイプです。",
+      "advice": "素材感や清潔感を大切にしつつ、ナチュラルなヘアと繊細なアクセで垢抜けを狙いましょう。",
+      "image": "/images/type_t08.webp",
+      "matches": ["t07","t06","t04","t16"]
+    },
+    "t09": {
+      "type_id": "t09",
+      "name": "カフェール",
+      "label": "Hard × Glam × Calm × Mode",
+      "traits": ["Hard","Glam","Calm","Mode"],
+      "catch": "飾らない優しさが、いちばん心に残る。自然体の温かさが魅力。",
+      "description": "親しみやすさと清潔感を兼ね備えたタイプ。自然体で人を和ませる雰囲気を持ち、信頼されやすい存在です。",
+      "advice": "ベースをナチュラルに保ちつつ、質感やサイズ感で洗練さを出すと垢抜けます。香りや小物で軽くアクセントを。",
+      "image": "/images/type_t09.webp",
+      "matches": ["t10","t11","t12","t01"]
+    },
+    "t10": {
+      "type_id": "t10",
+      "name": "シュヴェル",
+      "label": "Hard × Glam × Bright × Mode",
+      "traits": ["Hard","Glam","Bright","Mode"],
+      "catch": "美意識が、あなたそのもの。雰囲気で魅せるアーティストタイプ。",
+      "description": "独自の世界観とセンスで人を惹きつけるタイプ。表現力や感性の高さが魅力で、個性的なスタイルを楽しめます。",
+      "advice": "ベースの清潔感を保ちながら、差し色や質感で個性を洗練させるとさらに魅力的になります。",
+      "image": "/images/type_t10.webp",
+      "matches": ["t09","t12","t11","t02"]
+    },
+    "t11": {
+      "type_id": "t11",
+      "name": "ネイバンス",
+      "label": "Hard × Simple × Calm × Mode",
+      "traits": ["Hard","Simple","Calm","Mode"],
+      "catch": "“肩の力を抜いたかっこよさ”こそ、最強の武器。ラフで洗練された象徴。",
+      "description": "ラフでありながら洗練されたセンスが魅力。自然体でおしゃれに見えるタイプで、距離感の取り方が上手です。",
+      "advice": "抜け感を残しつつも素材やシルエットで上質さを出すと垢抜けます。眉やスキンケアなどの“さりげない整え”も重要です。",
+      "image": "/images/type_t11.webp",
+      "matches": ["t12","t09","t10","t03"]
+    },
+    "t12": {
+      "type_id": "t12",
+      "name": "クローヴォ",
+      "label": "Hard × Simple × Bright × Natural",
+      "traits": ["Hard","Simple","Bright","Natural"],
+      "catch": "言葉より、背中で語る。クールでワイルドな孤高の魅力。",
+      "description": "無口でクール、だが内に熱を秘めるタイプ。静かな自信がにじみ出る装いが似合います。",
+      "advice": "“無骨×清潔感”のバランスを意識。黒やカーキを基調に素材で深みを出し、手入れの行き届いた肌と眉で印象を整えましょう。",
+      "image": "/images/type_t12.webp",
+      "matches": ["t11","t10","t09","t04"]
+    },
+    "t13": {
+      "type_id": "t13",
+      "name": "サーブル",
+      "label": "Hard × Simple × Bright × Mode",
+      "traits": ["Hard","Simple","Bright","Mode"],
+      "catch": "無骨なのにどこかあったかい。力強さの中に優しさが息づくタイプ。",
+      "description": "頼りがいのある存在感を持ち、無骨ながらも誠実さを感じさせます。仲間や家族を大切にする姿勢が魅力。",
+      "advice": "ワークやミリタリーテイストを今風に取り入れつつ、サイズ感を整えることで洗練されます。保湿などのケアも怠らずに。",
+      "image": "/images/type_t13.webp",
+      "matches": ["t14","t15","t09","t05"]
+    },
+    "t14": {
+      "type_id": "t14",
+      "name": "フェリオン",
+      "label": "Soft × Simple × Calm × Mode",
+      "traits": ["Soft","Simple","Calm","Mode"],
+      "catch": "軽やかで、気づけば周りが笑顔に。明るさの奥に静かな優しさがあるタイプ。",
+      "description": "明るくフレッシュな印象で、人を惹きつける軽やかさがあるタイプ。ポジティブなエネルギーが魅力です。",
+      "advice": "清潔感×軽やかさを意識した色選びと髪で垢抜けます。動きのあるスタイルや軽やかなテクスチャを取り入れて。",
+      "image": "/images/type_t14.webp",
+      "matches": ["t13","t16","t10","t06"]
+    },
+    "t15": {
+      "type_id": "t15",
+      "name": "リーヴァ",
+      "label": "Hard × Simple × Calm × Natural",
+      "traits": ["Hard","Simple","Calm","Natural"],
+      "catch": "余白のある美しさは、静けさの中に。控えめだが芯の強さを感じる人。",
+      "description": "静けさと上品さを併せ持ち、派手さはないが目を引く存在感があります。感受性が高く繊細な一面も持っています。",
+      "advice": "無彩色を基調に素材感で差をつけるなど、質感を意識した選び方で洗練されます。髪や肌のトーンを整えるだけでも印象が上がります。",
+      "image": "/images/type_t15.webp",
+      "matches": ["t16","t13","t11","t07"]
+    },
+    "t16": {
+      "type_id": "t16",
+      "name": "グラント",
+      "label": "Hard × Glam × Calm × Natural",
+      "traits": ["Hard","Glam","Calm","Natural"],
+      "catch": "誰よりも静かに、誰よりも印象に残る。大人のエレガンスをまとった存在。",
+      "description": "成熟した魅力と品格を兼ね備えたタイプ。落ち着きと余裕が外見から伝わり、信頼感を与えます。",
+      "advice": "シンプルで質の高い定番を揃えること。ジャケットやセットアップなど、完成度の高いアイテムでまとめ、短めで清潔感のあるヘアを意識すると完成度が上がります。",
+      "image": "/images/type_t16.webp",
+      "matches": ["t15","t14","t12","t08"]
+    }
   }
 }

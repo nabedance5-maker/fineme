@@ -80,7 +80,7 @@ function categoryPhotoFor(category){
 }
 
 // 検索結果カード（安全なハイライトを使用）
-function card({name, region, category, priceFrom, image, href, providerName, address, providerId, storeName, storeId, serviceId, slug}, opts={}){
+function card({name, region, category, priceFrom, image, href, providerName, address, providerId, storeName, storeId, serviceId, slug, _reason}, opts={}){
   const q = (opts && opts.q) || '';
   const a = document.createElement('a');
   a.className = 'card';
@@ -111,8 +111,8 @@ function card({name, region, category, priceFrom, image, href, providerName, add
   const reserveHref = (function(){
     try{ if(typeof slug === 'string' && slug.trim()) return `${resolvePrefix()}/booking/${encodeURIComponent(slug)}`; }catch(e){}
     if(typeof serviceId !== 'undefined' && serviceId){
-      try{ if(location.pathname && location.pathname.indexOf('/pages/') !== -1) return `./user/schedule.html?serviceId=${encodeURIComponent(serviceId)}`; }catch{};
-      return `./pages/user/schedule.html?serviceId=${encodeURIComponent(serviceId)}`;
+      try{ if(location.pathname && location.pathname.indexOf('/pages/') !== -1) return `./user/schedule.html?serviceId=${encodeURIComponent(serviceId)}&origin=affinity`; }catch{};
+      return `./pages/user/schedule.html?serviceId=${encodeURIComponent(serviceId)}&origin=affinity`;
     }
     return (typeof href === 'string') ? (href + '?reserve=1') : '#';
   })();
@@ -125,12 +125,35 @@ function card({name, region, category, priceFrom, image, href, providerName, add
     img.addEventListener('error', ()=>{ try{ img.onerror = null; img.src = placeholder; }catch{} });
 
     const body = document.createElement('div'); body.className = 'card-body';
+    // 相性コメント（1行）
+    if(_reason && String(_reason).trim()){
+      const pReason = document.createElement('p'); pReason.style.fontWeight='600'; pReason.style.margin='0 0 6px 0'; pReason.textContent = String(_reason).trim();
+      body.appendChild(pReason);
+    }
     const topCluster = document.createElement('div'); topCluster.className = 'cluster'; topCluster.style.justifyContent = 'space-between'; topCluster.style.alignItems = 'center'; topCluster.style.gap = '8px';
     const h3 = document.createElement('h3'); h3.className = 'card-title'; h3.style.margin = '0';
     // titleHTML may contain <mark> tags from highlightSafe (safe), so set as innerHTML
     try{ h3.innerHTML = titleHTML; }catch{ h3.textContent = name || providerName || ''; }
     const favBtn = document.createElement('button'); favBtn.type = 'button'; favBtn.className = 'btn btn-ghost btn-fav'; favBtn.setAttribute('aria-pressed','false'); favBtn.title = 'お気に入りに保存'; favBtn.textContent = '♡';
-    topCluster.appendChild(h3); topCluster.appendChild(favBtn);
+    // 相性理由タグ（診断結果に基づく簡易バッジ）
+    const tagsWrap = document.createElement('div'); tagsWrap.className = 'cluster'; tagsWrap.style.gap = '6px'; tagsWrap.style.flexWrap = 'wrap'; tagsWrap.style.alignItems = 'center';
+    try{
+      // 診断の最新結果から理由タグを導出
+      const raw = localStorage.getItem('fineme:diagnosis:latest');
+      const diag = raw ? JSON.parse(raw) : null;
+      const reasons = deriveReasons(diag);
+      if(reasons.length){
+        for(const r of reasons.slice(0,3)){
+          const b = document.createElement('span');
+          b.className = 'badge';
+          b.textContent = r;
+          tagsWrap.appendChild(b);
+        }
+      }
+    }catch{ /* silent */ }
+    const rightCluster = document.createElement('div'); rightCluster.className='cluster'; rightCluster.style.gap='8px'; rightCluster.style.alignItems='center';
+    rightCluster.appendChild(tagsWrap); rightCluster.appendChild(favBtn);
+    topCluster.appendChild(h3); topCluster.appendChild(rightCluster);
     body.appendChild(topCluster);
 
     // service line: store link or provider name
@@ -199,6 +222,44 @@ function card({name, region, category, priceFrom, image, href, providerName, add
   return a;
 }
 
+// 診断結果から相性理由タグを作る（STEP2の軸スコアとタイプから）
+function deriveReasons(diag){
+  const out = [];
+  try{
+    if(!diag) return out;
+    // タイプ由来の共通ラベル
+    const typeId = String(diag?.intent?.type_id || '');
+    const TYPE_LABELS = {
+      // w01〜w08の例示（辞書に合わせる）
+      w01: '説明が丁寧',
+      w02: '自然な変化',
+      w03: '背中を押してくれる',
+      w04: '一緒に決める',
+      w05: 'ベーシック重視',
+      w06: 'トレンドに強い',
+      w07: '写真映え',
+      w08: '清潔感アップ'
+    };
+    if(TYPE_LABELS[typeId]) out.push(TYPE_LABELS[typeId]);
+    // STEP2の軸スコアから上位軸を理由化
+    const axes = (diag?.step2?.scores?.axes) || {};
+    const pairs = Object.keys(axes).map(k=> ({ key:k, val: Number(axes[k]||0) }));
+    pairs.sort((a,b)=> b.val - a.val);
+    const AXIS_LABELS = {
+      guidance: '導線がわかりやすい',
+      gentle: '優しく進める',
+      natural: '自然体でいける',
+      evidence: '根拠が明確',
+      customization: 'あなた用に調整'
+    };
+    for(const p of pairs.slice(0,2)){
+      if(AXIS_LABELS[p.key]) out.push(AXIS_LABELS[p.key]);
+    }
+  }catch{ /* ignore */ }
+  // 重複除去
+  return Array.from(new Set(out));
+}
+
 function labelRegion(key){
   const map = {
     hokkaido:'北海道', aomori:'青森県', iwate:'岩手県', miyagi:'宮城県', akita:'秋田県', yamagata:'山形県', fukushima:'福島県',
@@ -230,6 +291,50 @@ function labelCategory(key){
     nail:'ネイル'
   };
   return map[key]||key;
+}
+
+// ---- おすすめカテゴリ推奨スコア ----
+function recommendCategories(diag){
+  // base: type -> prioritized categories
+  const typeId = String(diag?.intent?.type_id || '');
+  const TYPE_BASE = {
+    w01: ['consulting','eyebrow','hair','diagnosis'], // 説明が丁寧 → 導き型
+    w02: ['hair','eyebrow','esthetic','fashion'], // 自然な変化
+    w03: ['consulting','photo','marriage','gym'], // 背中を押す
+    w04: ['fashion','makeup','photo','consulting'], // 一緒に決める
+    w05: ['diagnosis','fashion','hair','makeup'], // ベーシック重視
+    w06: ['fashion','makeup','hair','photo'], // トレンド強め
+    w07: ['photo','makeup','fashion','hair'], // 写真映え
+    w08: ['eyebrow','whitening','orthodontics','hairremoval'] // 清潔感アップ
+  };
+  const baseList = TYPE_BASE[typeId] || [];
+  const baseBoost = (cat)=>{
+    const idx = baseList.indexOf(cat);
+    if(idx===0) return 60; if(idx===1) return 40; if(idx===2) return 25; if(idx>=3) return 15; return 10;
+  };
+  // axes -> category weights (simple mapping)
+  const axes = (diag?.step2?.scores?.axes) || {};
+  const AXIS_WEIGHTS = {
+    natural: { hair:0.25, eyebrow:0.2, esthetic:0.2, fashion:0.15 },
+    evidence: { diagnosis:0.35, orthodontics:0.25, whitening:0.25 },
+    guidance: { consulting:0.35, marriage:0.25 },
+    customization: { fashion:0.3, makeup:0.25, nail:0.2 },
+    gentle: { esthetic:0.25, makeup:0.2, nail:0.2 }
+  };
+  const CATS_ALL = ['consulting','gym','makeup','hair','diagnosis','fashion','photo','marriage','eyebrow','hairremoval','esthetic','whitening','orthodontics','nail'];
+  const scores = {};
+  for(const c of CATS_ALL){
+    let s = baseBoost(c);
+    for(const ax in AXIS_WEIGHTS){
+      const v = Number(axes[ax]||0); // 0..100 想定
+      const w = AXIS_WEIGHTS[ax][c] || 0;
+      s += v * w; // 軸値×重み（最大加点 ~35程度）
+    }
+    scores[c] = Math.max(0, Math.min(100, Math.round(s)));
+  }
+  // sort with score desc
+  const sorted = Object.keys(scores).sort((a,b)=> scores[b]-scores[a]);
+  return { scores, sorted };
 }
 
 // 目的 -> カテゴリの紐づけ
@@ -457,7 +562,7 @@ function sortItems(items, sort){
 }
 
 (async function init(){
-  const { q='', region='', category='', purpose='', page:pageStr, per:perStr } = parseParams();
+  const { q='', region='', category='', purpose='', page:pageStr, per:perStr, diag:diagMode='' } = parseParams();
   const list = qs('#results');
   const qLower = (q||'').toLowerCase();
 
@@ -566,6 +671,20 @@ function sortItems(items, sort){
     for(let i=0;i<staticItems.length;i++) staticItems[i] = enrich(staticItems[i]);
   }catch(e){ console.warn('failed to enrich providers/stores', e); }
   const all = [...staticItems, ...localItems];
+  // Exclude services whose provider onboarding is not completed (非公開)
+  try{
+    const provsLocal = loadProviders();
+    const provsStaticAll = await loadStaticProviders();
+    const allProvs = Array.isArray(provsLocal) ? provsLocal.slice() : [];
+    if(Array.isArray(provsStaticAll)){
+      for(const sp of provsStaticAll){ if(!allProvs.find(p=> p.id===sp.id)) allProvs.push(sp); }
+    }
+    const provMap = Object.fromEntries(allProvs.map(p=> [p.id, p]));
+    for(let i=0;i<all.length;i++){
+      const it = all[i]; const p = provMap[it.providerId];
+      if(p && (!p.onboarding || !p.onboarding.completed)){ all.splice(i,1); i--; }
+    }
+  }catch(_){ }
 
   const filtered = all.filter(s=>{
     const mq = qLower ? (
@@ -581,7 +700,178 @@ function sortItems(items, sort){
     })() : true;
     return mq && mr && mc && mp;
   });
-  const sorted = sortItems(filtered, getSortKey());
+  // 診断に基づく「おすすめカテゴリ」タブの表示
+  try{
+    const diag = loadDiagnosis();
+    const { scores, sorted: catSorted } = recommendCategories(diag);
+    const topCats = catSorted.slice(0, 6);
+    const tabs = document.createElement('div'); tabs.className='cluster'; tabs.style.flexWrap='wrap'; tabs.style.gap='8px'; tabs.style.margin='0 0 12px 0';
+    const makeTab = (label, onClick, isPrimary=false)=>{
+      const b = document.createElement('button'); b.type='button'; b.className = isPrimary? 'btn' : 'btn btn-ghost'; b.textContent = label; b.addEventListener('click', onClick); return b;
+    };
+    const u0 = new URL(location.href);
+    const primary = makeTab('おすすめ', ()=>{ const u=new URL(location.href); u.searchParams.delete('category'); u.searchParams.set('diag','1'); location.href = u.toString(); }, true);
+    tabs.appendChild(primary);
+    for(const c of topCats){
+      const b = makeTab(labelCategory(c), ()=>{ const u=new URL(location.href); u.searchParams.set('category', c); location.href = u.toString(); });
+      // スコアバッジ
+      const badge = document.createElement('span'); badge.className='badge'; badge.textContent = String(scores[c])+'%'; badge.style.marginLeft='6px';
+      const wrap = document.createElement('span'); wrap.className='cluster'; wrap.style.gap='4px'; wrap.appendChild(b); wrap.appendChild(badge);
+      tabs.appendChild(wrap);
+    }
+    const container = qs('.container.stack') || qs('.section .container') || document.body;
+    if(container) container.insertBefore(tabs, container.querySelector('.results-meta'));
+  }catch(e){ console.warn('failed to render recommendation tabs', e); }
+  // --- 診断タイプに合う順（初期状態のみ適用） ---
+  async function buildProvMap(){
+    try{
+      const provsLocal = loadProviders();
+      const provsStaticAll = await loadStaticProviders();
+      const allProvs = Array.isArray(provsLocal) ? provsLocal.slice() : [];
+      if(Array.isArray(provsStaticAll)){
+        for(const sp of provsStaticAll){ if(!allProvs.find(p=> p.id===sp.id)) allProvs.push(sp); }
+      }
+      return Object.fromEntries(allProvs.map(p=> [p.id, p]));
+    }catch{ return {}; }
+  }
+
+  function loadDiagnosis(){ try{ const raw = localStorage.getItem('fineme:diagnosis:latest'); return raw? JSON.parse(raw): null; }catch{ return null; } }
+
+  function getCompatScoreForItem(it, provMap, diag){
+    try{
+      if(!diag || !diag.intent || !diag.intent.type_id) return 0;
+      const typeId = String(diag.intent.type_id);
+      const p = provMap[it.providerId];
+      if(!p) return 0;
+      // profile.whatTypes（最大2つ想定）に一致すれば高スコア
+      const whatTypes = (p.onboarding && p.onboarding.profile && Array.isArray(p.onboarding.profile.whatTypes)) ? p.onboarding.profile.whatTypes : [];
+      if(whatTypes.includes(typeId)) return 100;
+      // 近似や未設定は控えめスコア
+      if(whatTypes.length>0) return 60;
+      return 40;
+    }catch{ return 0; }
+  }
+
+  const hasExplicitFilters = Boolean(q || region || category || purpose || getSortKey());
+  const diag = loadDiagnosis();
+  const shouldCompatSort = (!hasExplicitFilters) && (!!diag) && (String(diagMode) !== '0');
+
+  let sorted;
+  if(shouldCompatSort){
+    const provMap = await buildProvMap();
+    const scored = filtered.map(it=> ({ it, score: getCompatScoreForItem(it, provMap, diag) }));
+    scored.sort((a,b)=> b.score - a.score);
+    sorted = scored.map(s=> s.it);
+    // バナー表示: 「診断タイプ◯◯に合う順で表示中」
+    try{
+      const header = document.createElement('div');
+      header.className = 'search-purpose-summary';
+      const p = document.createElement('p'); p.style.margin='0 0 8px 0'; p.style.fontWeight='600';
+      const t = document.createTextNode('診断タイプに合う順で表示中: ');
+      const strong = document.createElement('span'); strong.style.fontWeight='700';
+      const step2name = (diag?.step2?.classification?.type_name) || '';
+      strong.textContent = String(step2name || diag?.intent?.type_name || '');
+      p.appendChild(t); p.appendChild(strong); header.appendChild(p);
+      if(list && list.parentNode) list.parentNode.insertBefore(header, list);
+    }catch{}
+  }else{
+    // 診断あり × カテゴリ指定あり → A-D＋E距離でゾーン表示
+    if(category && diag && String(diagMode) !== '0'){
+      const provMap = await buildProvMap();
+      const matcher = await import('./matching.js').catch(()=>null);
+      // 互換性距離（小さいほど相性が高い）
+      function computeDistance(it){
+        try{
+          if(!matcher) return { adjusted: 999, reason:'' };
+          const user = matcher.getUserAxesFromDiagnosis(diag);
+          const shop = matcher.getShopScoresFromProvider(provMap[it.providerId]);
+          const comp = matcher.computeCompatibilityAxes(user, shop);
+          const reason = matcher.computeReasonLine(user, shop, comp);
+          return { adjusted: Number(comp.adjusted||999), reason };
+        }catch{ return { adjusted: 999, reason:'' }; }
+      }
+      function clamp01(n){ n = Number(n)||0; if(n<0) return 0; if(n>1) return 1; return n; }
+      function computeTrust01(providerId){
+        try{
+          const RESV_KEY = 'glowup:reservations'; const VISIT_KEY = 'glowup:visits';
+          const rRaw = localStorage.getItem(RESV_KEY); const vRaw = localStorage.getItem(VISIT_KEY);
+          const reservations = rRaw? JSON.parse(rRaw):[]; const visits = vRaw? JSON.parse(vRaw):[];
+          const myRes = Array.isArray(reservations)? reservations.filter(x=> x && x.providerId===providerId):[];
+          const myVis = Array.isArray(visits)? visits.filter(x=> x && x.providerId===providerId):[];
+          const totalRes = myRes.length; const completed = myRes.filter(x=> x.status==='visited' || x.status==='completed').length;
+          // repeat users ratio
+          const map = new Map(); for(const v of myVis){ const uid = v.userId||''; map.set(uid, (map.get(uid)||0)+1); }
+          let rep=0; for(const cnt of map.values()){ if(cnt>=2) rep++; }
+          const totalUsers = map.size || 1; const repeatRate = (rep/totalUsers); // 0..1
+          const visitRate = totalRes? (completed/totalRes) : 0; // 0..1
+          // completionRate from provider profile if available
+          let completion = 0.5; try{ const p = provMap[providerId]; completion = clamp01((Number(p?.profile?.completionRate||50))/100); }catch{}
+          // weight: visit 0.5, repeat 0.3, completion 0.2
+          const trust = clamp01((visitRate*0.5) + (repeatRate*0.3) + (completion*0.2));
+          // map to 0.6..1.0
+          return 0.6 + (0.4 * trust);
+        }catch{ return 0.7; }
+      }
+      function computeDiversityBoost(providerId, provMap){
+        try{
+          const p = provMap[providerId];
+          const completedAt = p?.onboarding?.completedAt ? new Date(p.onboarding.completedAt).getTime() : 0;
+          const now = Date.now(); const days = completedAt? ((now - completedAt)/86400000) : 999;
+          const recentBoost = days <= 30 ? 0.08 : 0.0; // up to +8%
+          // mild jitter based on providerId hash
+          let hash = 0; for(let i=0;i<providerId.length;i++){ hash = ((hash<<5)-hash) + providerId.charCodeAt(i); hash|=0; }
+          const jitter = ((hash % 100)/10000); // -? we're fine with tiny positive
+          const boost = 1.0 + recentBoost + jitter;
+          return Math.max(0.9, Math.min(1.1, boost));
+        }catch{ return 1.0; }
+      }
+      // 計算＆ソート（距離の昇順）
+      const scored = filtered.map(it=>{
+        const r = computeDistance(it);
+        let spec = 0, trust = 0;
+        try{ spec = matcher.scoreServiceSpecificity(it)||0; }catch{}
+        try{ trust = matcher.scoreProfileTrust(provMap[it.providerId])||0; }catch{}
+        return { it: { ...it, _reason: r.reason }, dist: r.adjusted, spec, trust };
+      });
+      scored.sort((a,b)=> a.dist - b.dist);
+      // ゾーン割当（割合ベース）
+      let zones = [];
+      try{ zones = matcher.assignZonesByPercent(scored); }catch{ zones = scored.map((_,i)=> i<Math.ceil(scored.length*0.1)?'A': (i<Math.ceil(scored.length*0.3)?'B': (i<Math.ceil(scored.length*0.6)?'C':'D'))); }
+      const visible = scored.map((s,i)=> ({ ...s, zone: zones[i], tb: (s.spec*0.7 + s.trust*0.3) }));
+      // ゾーンごとの並び調整（同ゾーン内のみ：具体性・信頼で降順）
+      const orderZone = (arr)=> arr.sort((a,b)=> (b.tb - a.tb));
+      const zoneA = orderZone(visible.filter(s=> s.zone==='A'));
+      const zoneB = orderZone(visible.filter(s=> s.zone==='B'));
+      const zoneC = orderZone(visible.filter(s=> s.zone==='C'));
+      const zoneD = orderZone(visible.filter(s=> s.zone==='D'));
+      // 説明ブロック
+      try{
+        const header = document.createElement('div'); header.className='search-purpose-summary';
+        const h = document.createElement('h3'); h.textContent='この並びについて'; h.style.margin='0 0 6px 0'; header.appendChild(h);
+        const p = document.createElement('p'); p.textContent='あなたの診断結果と、各店舗のスタイル・強みをもとに相性の高い順で表示しています。'; p.style.margin='0 0 4px 0'; header.appendChild(p);
+        const p2 = document.createElement('p'); p2.className='muted'; p2.style.margin='0'; p2.textContent='同じゾーン内の並びは、サービスの具体性やプロフィールの充実度で調整しています。'; header.appendChild(p2);
+        if(list && list.parentNode) list.parentNode.insertBefore(header, list);
+      }catch{}
+      // レンダリング（ゾーン見出し付き）
+      if(list){ list.textContent=''; }
+      function renderZone(title, items){
+        if(!items.length) return;
+        const zWrap = document.createElement('div'); zWrap.className='stack'; zWrap.style.margin='12px 0';
+        const zTitle = document.createElement('h4'); zTitle.textContent = title; zTitle.style.margin='0 0 8px 0'; zWrap.appendChild(zTitle);
+        const frag = document.createDocumentFragment(); items.forEach(s=> frag.appendChild(card(s.it, { q })) );
+        const grid = document.createElement('div'); grid.className='features-grid'; grid.appendChild(frag); zWrap.appendChild(grid);
+        list.appendChild(zWrap);
+      }
+      renderZone('今のあなたと、特に相性が良い', zoneA);
+      renderZone('相性が良い', zoneB);
+      renderZone('合いそう', zoneC);
+      renderZone('選択肢として表示', zoneD);
+      updateCount(zoneA.length + zoneB.length + zoneC.length + zoneD.length);
+      sorted = visible.map(s=> s.it); // for pager fallback if needed
+    }else{
+      sorted = sortItems(filtered, getSortKey());
+    }
+  }
 
   // 一旦クリア
   if(list) list.textContent = '';

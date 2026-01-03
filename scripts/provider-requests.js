@@ -77,7 +77,7 @@ function renderList(){
       const tdStatus = document.createElement('td'); tdStatus.appendChild(createStatusBadge(r.status)); tr.appendChild(tdStatus);
       const tdDate = document.createElement('td'); tdDate.textContent = String(r.date || ''); tr.appendChild(tdDate);
       const tdAct = document.createElement('td');
-      const btnAccept = document.createElement('button'); btnAccept.className = 'btn btn-ghost'; btnAccept.setAttribute('data-action','accept'); btnAccept.setAttribute('data-id', r.id); btnAccept.textContent = '承認';
+      const btnAccept = document.createElement('button'); btnAccept.className = 'btn btn-ghost'; btnAccept.setAttribute('data-action','approve'); btnAccept.setAttribute('data-id', r.id); btnAccept.textContent = '承認';
       const btnReject = document.createElement('button'); btnReject.className = 'btn btn-ghost'; btnReject.setAttribute('data-action','reject'); btnReject.setAttribute('data-id', r.id); btnReject.textContent = '却下';
       tdAct.appendChild(btnAccept); tdAct.appendChild(btnReject); tr.appendChild(tdAct);
       tbody.appendChild(tr);
@@ -112,7 +112,10 @@ function onTableClick(e){
   if(act==='approve' || act==='reject' || act==='cancel'){
     const r = reqs[idx];
     const title = act==='approve' ? '承認' : act==='reject' ? '辞退' : 'キャンセル';
-    openDecisionModal({ id, action: act, summary: `${r.date} ${r.start}-${r.end} / ${serviceName(r.serviceId)} / ${r.userName} 様` });
+    {
+      const timeStr = r.end ? `${r.start}-${r.end}` : `${r.start}`;
+      openDecisionModal({ id, action: act, summary: `${r.date} ${timeStr} / ${serviceName(r.serviceId)} / ${r.userName} 様` });
+    }
     const t = document.getElementById('decision-title'); if(t) t.textContent = title;
   }
 }

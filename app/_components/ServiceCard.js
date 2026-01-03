@@ -15,7 +15,7 @@ export default function ServiceCard({ service }) {
   const storeBase = (typeof window !== 'undefined' && location && location.pathname && location.pathname.indexOf('/pages/') !== -1) ? './store.html' : './pages/store.html';
   const storeHref = `${storeBase}?providerId=${encodeURIComponent(providerId||'')}${storeId? `&storeId=${encodeURIComponent(storeId)}` : ''}&tab=menu&serviceId=${encodeURIComponent(serviceKey)}`;
   const scheduleBase = (typeof window !== 'undefined' && location && location.pathname && location.pathname.indexOf('/pages/') !== -1) ? './user/schedule.html' : './pages/user/schedule.html';
-  const reserveHref = slug ? `/booking/${encodeURIComponent(slug)}` : (serviceKey ? `${scheduleBase}?serviceId=${encodeURIComponent(serviceKey)}` : '#');
+  const reserveHref = slug ? `/booking/${encodeURIComponent(slug)}?origin=detail` : (serviceKey ? `${scheduleBase}?serviceId=${encodeURIComponent(serviceKey)}&origin=detail` : '#');
   return (
     <article className="card col-4" style={{position:'relative'}}>
       <img className="service-thumb" src={imgSrc} alt={name} />

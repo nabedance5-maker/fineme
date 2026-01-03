@@ -90,47 +90,6 @@
               </div>
             </div>
           </div>
-          
-          <div id="admin-options-section" class="card" style="padding:16px">
-            <div class="stack">
-              <div class="space-between" style="display:flex; align-items:center">
-                <h2 style="margin:0">オプション管理</h2>
-                <div class="cluster">
-                  <button type="button" id="open-admin-options" class="btn">新規オプションを追加</button>
-                </div>
-              </div>
-              <p class="muted">サイト全体で使うオプション（例：指名料、延長料など）。ここから作成・編集できます。</p>
-              <div class="table-responsive">
-                <table class="table" style="width:100%">
-                  <thead><tr><th>名前</th><th>価格</th><th>説明</th><th>有効</th><th>操作</th></tr></thead>
-                  <tbody id="options-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-            <!-- Options Modal -->
-            <div id="option-modal" class="modal" role="dialog" aria-modal="true" hidden style="display:none">
-              <div class="modal-content card" style="padding:16px; max-width:640px; margin:40px auto">
-                <h2 id="option-modal-title">オプションを編集</h2>
-                <form id="option-form" style="display:flex;flex-direction:column;gap:8px;align-items:stretch">
-                  <input type="hidden" id="option-id" />
-                  <label style="display:block">名称
-                    <input id="option-name" required style="width:100%" />
-                  </label>
-                  <label style="display:block">価格（円、空白可）
-                    <input id="option-price" type="number" min="0" step="1" style="width:160px" />
-                  </label>
-                  <label style="display:block">説明
-                    <textarea id="option-desc" rows="3" style="width:100%"></textarea>
-                  </label>
-                  <label style="display:flex;align-items:center;gap:8px"><input id="option-active" type="checkbox" checked /> 有効</label>
-                  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:6px">
-                    <button id="option-save" class="btn" type="submit">保存</button>
-                    <button id="option-cancel" class="btn btn-ghost" type="button">キャンセル</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-            </div>
           </div>
           <!-- Profile Modal -->
           <div id="provider-profile-modal-backdrop" class="modal-backdrop" hidden></div>
@@ -185,6 +144,5 @@
   <script src="../../scripts/main.js" type="module"></script>
   <script src="../../scripts/partials.js" type="module"></script>
   <script src="../../scripts/admin-providers.js" type="module"></script>
-  <script src="../../scripts/admin-options.js" type="module"></script>
 </body>
 </html>

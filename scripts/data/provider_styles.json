@@ -1,0 +1,50 @@
+[
+  {
+    "providerId": "prov-001",
+    "how": {
+      "need_reason": 0.8,
+      "prefer_consult": 0.9,
+      "try_first": 0.5,
+      "need_companion": 0.85
+    },
+    "why": {
+      "focus_issue": 0.7,
+      "express_issue": 0.85,
+      "miss_chance": 0.6,
+      "want_change": 0.8,
+      "believe_change": 0.7
+    }
+  },
+  {
+    "providerId": "prov-002",
+    "how": {
+      "need_reason": 0.9,
+      "prefer_consult": 0.7,
+      "try_first": 0.8,
+      "need_companion": 0.7
+    },
+    "why": {
+      "focus_issue": 0.6,
+      "express_issue": 0.6,
+      "miss_chance": 0.7,
+      "want_change": 0.75,
+      "believe_change": 0.8
+    }
+  },
+  {
+    "providerId": "prov-deo",
+    "how": {
+      "need_reason": 0.7,
+      "prefer_consult": 0.85,
+      "try_first": 0.7,
+      "need_companion": 0.9
+    },
+    "why": {
+      "focus_issue": 0.8,
+      "express_issue": 0.8,
+      "miss_chance": 0.7,
+      "want_change": 0.85,
+      "believe_change": 0.75
+    }
+  }
+]

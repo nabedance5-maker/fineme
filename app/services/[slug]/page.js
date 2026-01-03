@@ -10,7 +10,7 @@ export default function ServiceDetail({ params }) {
       <h1 style={{ margin: 0 }}>{svc.name}</h1>
   <img className="service-thumb" src={(svc.image && svc.image.trim()) ? svc.image : (categoryPhotoFor(svc.category) || placeholderFor(svc.category))} alt={svc.name} />
   <p className="card-meta">地域: {svc.region} / カテゴリ: {svc.category} / 価格: ¥{svc.priceFrom.toLocaleString()}</p>
-  <a className="btn btn--primary btn--inverted" href={`/booking/${svc.slug}`}>予約へ進む</a>
+  <a className="btn btn--primary btn--inverted" href={`/booking/${svc.slug}?origin=detail`}>予約へ進む</a>
     </div>
   );
 }

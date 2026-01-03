@@ -124,6 +124,14 @@ export { loadServices, loadProviders };
     root.appendChild(pNo);
     return;
   }
+  // Hide provider page if onboarding is not completed
+  if(!(provider.onboarding && provider.onboarding.completed)){
+    const card = document.createElement('div'); card.className='card'; card.style.padding='12px';
+    const h = document.createElement('strong'); h.textContent = 'この店舗は準備中です（非公開）'; card.appendChild(h);
+    const p = document.createElement('p'); p.className='muted'; p.textContent='オンボーディング未完了のため、一般公開されていません。'; card.appendChild(p);
+    root.appendChild(card);
+    return;
+  }
   const prof = provider.profile || {};
   const publishedServices = services.filter(s=> s.providerId === provider.id && s.published);
   const cover = publishedServices.find(s=> s.photo)?.photo || '';
@@ -245,8 +253,66 @@ export { loadServices, loadProviders };
   if(address){ const pAddr = document.createElement('p'); pAddr.className = 'card-meta'; pAddr.textContent = prof.address || ''; info.appendChild(pAddr); }
   const metaRow = document.createElement('div'); metaRow.style.marginTop = '8px'; metaRow.style.display = 'flex'; metaRow.style.gap = '8px'; metaRow.style.flexWrap = 'wrap'; metaRow.style.alignItems = 'center';
   if(publishedServices && publishedServices.length){ const svc = publishedServices[0]; const cat = svc.category || ''; const dur = svc.duration || svc.time || svc.minutes || ''; if(cat){ const chip = document.createElement('span'); chip.className = 'chip'; chip.textContent = `🗂 ${cat}`; metaRow.appendChild(chip); } if(dur){ const chip2 = document.createElement('span'); chip2.className = 'chip'; chip2.textContent = `⏱ ${dur}分`; metaRow.appendChild(chip2); } }
-  const reserveLink = document.createElement('a'); reserveLink.className = 'btn btn--primary hero-reserve'; reserveLink.href = buildStoreLink({ providerId: provider.id }); reserveLink.style.marginLeft = 'auto'; reserveLink.textContent = '予約する'; metaRow.appendChild(reserveLink);
+  const reserveLink = document.createElement('a'); reserveLink.className = 'btn btn--primary hero-reserve';
+  // Navigate directly to schedule page (no serviceId); include providerId to help filter
+  reserveLink.href = (location.pathname.includes('/pages/')) ? `./user/schedule.html?providerId=${encodeURIComponent(provider.id)}&origin=detail` : `./pages/user/schedule.html?providerId=${encodeURIComponent(provider.id)}&origin=detail`;
+  reserveLink.style.marginLeft = 'auto'; reserveLink.setAttribute('aria-label','予約へ進む'); reserveLink.textContent = '予約へ進む'; metaRow.appendChild(reserveLink);
   info.appendChild(metaRow);
+  // Compatibility card (診断ベース相性表示)
+  try{
+    const matchMod = await import('./matching.js');
+    const m = await matchMod.computeMatchForProvider(provider.id);
+    if(m){
+      const card = document.createElement('div'); card.className = 'card'; card.style.padding='12px'; card.style.marginTop='10px';
+      const title = document.createElement('div'); title.className='cluster'; title.style.justifyContent='space-between'; title.style.alignItems='center';
+      const strong = document.createElement('strong'); strong.textContent = 'あなたとの相性'; title.appendChild(strong);
+      // ゾーン文言（A–D＋Eの距離から近似）
+      try{
+        const raw = localStorage.getItem('fineme:diagnosis:latest');
+        const diag = raw ? JSON.parse(raw) : null;
+        const user = matchMod.getUserAxesFromDiagnosis(diag);
+        const shop = matchMod.getShopScoresFromProvider(provider);
+        const comp = matchMod.computeCompatibilityAxes(user, shop);
+        const zoneLabel = (function(adj){
+          if(adj <= 2.0) return 'とても相性がいい';
+          if(adj <= 3.0) return '相性がいい';
+          if(adj <= 4.0) return '合いそう';
+          return '選択肢として表示';
+        })(Number(comp.adjusted||999));
+        const badge = document.createElement('span'); badge.className='badge'; badge.textContent = zoneLabel; title.appendChild(badge);
+      }catch{}
+      card.appendChild(title);
+      if(Array.isArray(m.reasons) && m.reasons.length){
+        const ul = document.createElement('ul'); ul.style.margin='8px 0 0'; ul.style.padding='0 0 0 18px';
+        for(const r of m.reasons.slice(0,3)){ const li=document.createElement('li'); li.textContent=String(r); ul.appendChild(li); }
+        card.appendChild(ul);
+      }
+      const ctaWrap = document.createElement('div'); ctaWrap.className='cluster'; ctaWrap.style.justifyContent='flex-end'; ctaWrap.style.marginTop='10px';
+      const a = document.createElement('a'); a.className='btn btn--primary'; a.href = reserveLink.href; a.textContent = '予約へ進む'; ctaWrap.appendChild(a);
+      card.appendChild(ctaWrap);
+      info.appendChild(card);
+    }
+  }catch(e){ /* optional */ }
+  // Response-to-your-type section (STEP3入力を反映)
+  try{
+    const diagRaw = localStorage.getItem('fineme:diagnosis:latest');
+    const diag = diagRaw ? JSON.parse(diagRaw) : null;
+    const prof = (provider && provider.onboarding && provider.onboarding.profile) ? provider.onboarding.profile : null;
+    const userTypeName = (diag?.step2?.classification?.type_name) || (diag?.intent?.type_name) || '';
+    if(diag && prof){
+      const mod = await import('./compatibility.js');
+      const comp = await mod.generateCompatibility(diag, provider);
+      if(comp){
+        const cardHost = document.createElement('div'); cardHost.className='stack';
+        const head = document.createElement('div'); head.className='cluster'; head.style.justifyContent='space-between'; head.style.alignItems='center';
+        const title = document.createElement('strong'); title.textContent = `あなたの診断結果「${userTypeName}」への応え方`;
+        head.appendChild(title);
+        cardHost.appendChild(head);
+        mod.renderCompatibilityCard(cardHost, comp);
+        info.appendChild(cardHost);
+      }
+    }
+  }catch(_){ }
   if(address){ const pAddr2 = document.createElement('p'); pAddr2.className = 'card-meta'; pAddr2.textContent = prof.address || ''; info.appendChild(pAddr2); }
   const ul = document.createElement('ul'); ul.className = 'info-list'; if(phone){ const li = document.createElement('li'); const strong = document.createElement('strong'); strong.textContent = '電話番号'; const span = document.createElement('span'); span.textContent = prof.phone || ''; li.appendChild(strong); li.appendChild(span); ul.appendChild(li); } if(access){ const li2 = document.createElement('li'); const strong2 = document.createElement('strong'); strong2.textContent = 'アクセス'; const span2 = document.createElement('span'); span2.textContent = accessRaw || ''; li2.appendChild(strong2); li2.appendChild(span2); ul.appendChild(li2); } info.appendChild(ul);
   if(amenities.length){ const wrap = document.createElement('div'); wrap.style.marginTop = '10px'; wrap.style.display='flex'; wrap.style.gap='8px'; wrap.style.flexWrap='wrap'; for(const a of amenities){ const sp = document.createElement('span'); sp.className='chip'; sp.textContent = AMENITY_LABELS[a] || a; wrap.appendChild(sp); } info.appendChild(wrap); }
@@ -457,9 +523,10 @@ export { loadServices, loadProviders };
       const a = document.createElement('a');
       a.id = stickyId;
       a.className = 'btn btn--primary';
-      a.href = buildStoreLink({ providerId: provider.id });
+      // sticky CTA goes to schedule page (provider filter)
+      a.href = (location.pathname.includes('/pages/')) ? `./user/schedule.html?providerId=${encodeURIComponent(provider.id)}&origin=detail` : `./pages/user/schedule.html?providerId=${encodeURIComponent(provider.id)}&origin=detail`;
       a.setAttribute('aria-label','予約へ進む');
-      a.textContent = '予約する';
+      a.textContent = '予約へ進む';
       a.style.position = 'fixed';
       a.style.right = '16px';
       a.style.bottom = '18px';
@@ -467,10 +534,8 @@ export { loadServices, loadProviders };
       a.style.borderRadius = '28px';
       a.style.padding = '12px 14px';
       a.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
-      // on click, open the menu tab instead of full navigation (keeps SPA feel)
-      a.addEventListener('click', (ev)=>{
-        try{ ev.preventDefault(); activateTab('menu'); const u = new URL(a.href, location.href); u.searchParams.set('tab','menu'); history.replaceState({}, '', u.toString()); const host = qs('#tab-menu'); if(host) host.scrollIntoView({ behavior: 'smooth', block: 'start' }); }catch(e){}
-      });
+      // 以前はメニュータブへスクロールする挙動にしていましたが、要件に合わせて
+      // クリック時はカレンダーページへ通常遷移させます（イベントを介入しない）。
       document.body.appendChild(a);
     }
   }catch(e){}
@@ -529,15 +594,11 @@ export { loadServices, loadProviders };
   try{
     const heroBtn = qs('.hero-reserve');
     if(heroBtn){
-      heroBtn.addEventListener('click', (ev)=>{
-        try{ ev.preventDefault(); trackEvent('reserve_click', { source:'hero' }); activateTab('menu'); const u = new URL(heroBtn.href, location.href); u.searchParams.set('tab','menu'); history.replaceState({}, '', u.toString()); const host = qs('#tab-menu'); if(host) host.scrollIntoView({ behavior: 'smooth', block: 'start' }); }catch(e){}
-      });
+        // 予約CTAはカレンダーページへ通常遷移する（横取りしない）
     }
     const sticky = document.getElementById('fineme-sticky-reserve');
     if(sticky){
-      sticky.addEventListener('click', (ev)=>{
-        try{ ev.preventDefault(); trackEvent('reserve_click', { source:'sticky' }); activateTab('menu'); const u = new URL(sticky.href, location.href); u.searchParams.set('tab','menu'); history.replaceState({}, '', u.toString()); const host = qs('#tab-menu'); if(host) host.scrollIntoView({ behavior: 'smooth', block: 'start' }); }catch(e){}
-      });
+            // 予約CTAはカレンダーページへ通常遷移する（横取りしない）
     }
   }catch(e){}
 
@@ -629,7 +690,7 @@ export { loadServices, loadProviders };
           if(!sticky){
             sticky = document.createElement('div'); sticky.id = 'fineme-sticky-booking'; sticky.className = 'sticky-booking hidden';
             const txt = document.createElement('div'); txt.style.fontWeight='700'; txt.style.fontSize='14px'; txt.textContent = 'この店舗を予約';
-            const cta = document.createElement('a'); cta.className = 'btn btn--primary'; cta.style.padding='8px 12px'; cta.href = heroBtn.href; cta.textContent = '予約する';
+            const cta = document.createElement('a'); cta.className = 'btn btn--primary'; cta.style.padding='8px 12px'; cta.href = heroBtn.href; cta.setAttribute('aria-label','予約へ進む'); cta.textContent = '予約へ進む';
             sticky.appendChild(txt); sticky.appendChild(cta); document.body.appendChild(sticky);
           }
           // sync href when heroBtn changes
@@ -852,7 +913,7 @@ export { loadServices, loadProviders };
     // Reserve link
     const reserveWrap = document.createElement('div'); reserveWrap.style.marginTop = '12px';
     const reserveLink = document.createElement('a'); reserveLink.id = 'svc-reserve-btn'; reserveLink.className = 'btn btn--primary';
-    reserveLink.href = svc.slug ? `./booking/${encodeURIComponent(svc.slug)}` : (location.pathname && location.pathname.indexOf('/pages/') !== -1 ? `./user/schedule.html?serviceId=${encodeURIComponent(svc.id||'')}` : `./pages/user/schedule.html?serviceId=${encodeURIComponent(svc.id||'')}`);
+    reserveLink.href = svc.slug ? `./booking/${encodeURIComponent(svc.slug)}?origin=detail` : (location.pathname && location.pathname.indexOf('/pages/') !== -1 ? `./user/schedule.html?serviceId=${encodeURIComponent(svc.id||'')}&origin=detail` : `./pages/user/schedule.html?serviceId=${encodeURIComponent(svc.id||'')}&origin=detail`);
     reserveLink.setAttribute('aria-label', `予約へ進む - ${svc.name || ''}`);
     reserveLink.textContent = '予約へ進む';
     reserveWrap.appendChild(reserveLink);

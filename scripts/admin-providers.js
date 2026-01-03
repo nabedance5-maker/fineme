@@ -295,37 +295,7 @@ function collectProfileStores(){
     }
   }catch{}
   renderTable();
-  // If the page was opened with a hash to the options section, focus it for accessibility
-  try{
-    if(location && location.hash && location.hash === '#admin-options-section'){
-      // Defer to next frame so layout is ready
-      requestAnimationFrame(()=> focusAdminOptionsSection());
-    }
-  }catch(e){}
 })();
-
-// Accessibility helper: focus the admin options section when navigated via anchor
-function focusAdminOptionsSection(){
-  const el = document.getElementById('admin-options-section');
-  if(!el) return;
-  try{
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }catch(e){ el.scrollIntoView(); }
-  // Ensure there's a focusable target: prefer the H2 inside, else the section itself
-  const h2 = el.querySelector('h2');
-  if(h2){
-    // give it temporary tabindex if not focusable
-    const prevTab = h2.getAttribute('tabindex');
-    if(prevTab === null) h2.setAttribute('tabindex','-1');
-    h2.focus({ preventScroll: true });
-    // clean up tabindex after a short delay
-    setTimeout(()=>{ if(prevTab === null) h2.removeAttribute('tabindex'); }, 1000);
-  }else{
-    // fallback: focus the section container
-    if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','-1');
-    el.focus();
-  }
-}
 
 // ===== Backup / Restore =====
 function downloadBlob(content, filename, type='application/json'){

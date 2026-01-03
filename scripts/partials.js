@@ -24,18 +24,16 @@ async function injectInto(selector, relPath){
       console.debug('[partials] fetch', url, 'status', res.status);
       if(!res.ok) throw new Error(String(res.status));
   const text = await res.text();
-  // sanitize injected partials if sanitizer is available; otherwise avoid injecting raw HTML
+  // sanitize injected partials if sanitizer is available; otherwise allow trusted components HTML
   try{
     if(typeof sanitizeHtml === 'function'){
       host.innerHTML = sanitizeHtml(text);
     } else {
-      // Fallback: do not assign raw HTML to innerHTML when sanitizer is unavailable.
-      // Show the fetched partial as text to avoid executing any HTML/JS.
-      host.textContent = text;
+      // Trust first-party components under /components/ and render as HTML
+      const isTrusted = (relPath && relPath.indexOf('components/') === 0) || (url && url.indexOf('/components/') !== -1);
+      if(isTrusted){ host.innerHTML = text; } else { host.textContent = text; }
     }
-  }catch(e){
-    host.textContent = text;
-  }
+  }catch(e){ host.innerHTML = text; }
       console.info('[partials] injected', url, 'into', selector);
       return true;
     }catch(e){ console.debug('[partials] fetch failed', url, e && e.message); /* try next */ }
@@ -49,7 +47,6 @@ async function injectInto(selector, relPath){
     const links = [
       ['/pages/admin/index.html','ダッシュボード'],
       ['/pages/admin/providers.html','掲載者管理'],
-      ['/pages/admin/providers.html#admin-options-section','オプション管理'],
       ['/pages/admin/features.html','特集作成・編集'],
       ['/pages/admin/analytics.html','アクセス分析']
     ];
@@ -62,11 +59,15 @@ async function injectInto(selector, relPath){
 (function init(){
   injectInto('#mypage-sidenav', 'components/mypage-sidenav.html');
   const provNav = injectInto('#provider-navbar', 'components/provider-navbar.html');
+  // グローバルに準備完了のPromiseを公開
+  try{ window.finemePartials = window.finemePartials || {}; window.finemePartials.provNavReady = provNav; }catch{}
   injectInto('#provider-footer', 'components/provider-footer.html');
   injectInto('#admin-sidebar', 'components/admin-sidebar.html');
   // Provider navbar が注入されたら、ボディクラス付与とモバイルメニューの開閉を配線
   provNav.then((injected) => {
     if(!injected) return;
+    // 注入完了イベントを通知
+    try{ document.dispatchEvent(new CustomEvent('fineme:provNavReady')); }catch{}
     document.body.classList.add('has-provider-sidebar');
     const pToggle = document.getElementById('prov-nav-toggle');
     const pMenu = document.getElementById('prov-nav-menu');

@@ -12,7 +12,33 @@
   <main class="section">
     <div class="container stack">
       <h1 class="section-title">掲載者ダッシュボード</h1>
-      <p class="muted">サービス登録・写真設定・スケジュール管理が行えます（ダミー）。</p>
+      <p class="muted">順位は出しません。意味で納得し、行動に変わるための管理画面です。</p>
+      <!-- ステータスサマリー -->
+      <section id="status-summary" class="card" style="padding:12px;">
+        <strong>あなたの店舗の現在地</strong>
+        <div class="grid" style="display:grid;grid-template-columns:1fr;gap:10px;margin-top:8px">
+          <div><span class="muted">相性ゾーン：</span> <span id="sum-zone">—</span></div>
+          <div><span class="muted">今、特に合いやすいユーザータイプ：</span> <span id="sum-type">—</span></div>
+          <div><span class="muted">今月の予約数：</span> <span id="sum-resv">—</span></div>
+        </div>
+      </section>
+      <!-- Fineme的メッセージ（思想UI） -->
+      <section class="card" style="padding:12px;">
+        <blockquote style="margin:0 0 8px 0;">
+          <p style="margin:0">Finemeでは、「たくさん見られる」より「合う人に届く」ことを大切にしています。</p>
+        </blockquote>
+        <a class="btn btn-ghost" href="/pages/provider/philosophy.html">Finemeの考え方を見る</a>
+      </section>
+      <!-- 次の一手ガイド（行動誘導） -->
+      <section class="card" style="padding:12px;">
+        <strong>相性をさらに高めるために</strong>
+        <ul class="stack" style="margin-top:8px">
+          <li><label class="cluster" style="gap:8px; align-items:center"><input type="checkbox" id="todo-counsel" /> <span>カウンセリング説明文をもう少し詳しく</span></label></li>
+          <li><label class="cluster" style="gap:8px; align-items:center"><input type="checkbox" id="todo-target" /> <span>「どんな人に向いているか」を明確に</span></label></li>
+          <li><label class="cluster" style="gap:8px; align-items:center"><input type="checkbox" id="todo-bna" /> <span>Before / After の考え方を言語化</span></label></li>
+        </ul>
+        <div style="margin-top:8px"><a class="btn btn-ghost" href="/pages/provider/compatibility.html">改善するとどうなる？</a></div>
+      </section>
       <section class="stack" style="margin-top:24px;">
         <h2 class="section-title">レビュー管理</h2>
         <p class="muted">ユーザーが投稿したレビューを確認し、表示/非表示を切り替えられます。</p>
@@ -40,22 +66,340 @@
   <script src="../../scripts/partials.js" type="module"></script>
   <script type="module">
     import { requireProviderAuth, getProviderSession, signOutProvider } from '../../scripts/auth.js';
+    const PROVIDERS_KEY = 'glowup:providers';
+    function loadProviders(){ try{ const raw=localStorage.getItem(PROVIDERS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch{ return []; } }
     import '../../scripts/provider-reviews.js';
     const session = requireProviderAuth();
-    if(session){
-      const area = document.getElementById('provider-session-area');
-      if(area){
-        // Append session info without removing existing children (notifications may be present)
-        const info = document.createElement('div');
-        info.style.display='inline-flex'; info.style.gap='8px'; info.style.alignItems='center';
-        info.innerHTML = `<span class="muted">${session.name} でログイン中</span><button class="btn btn-ghost" id="provider-logout-btn">ログアウト</button>`;
-        area.appendChild(info);
-        area.addEventListener('click', (e)=>{
-          if(e.target && e.target.id === 'provider-logout-btn'){
-            signOutProvider();
+    if(!session){
+      // requireProviderAuth 内でログインにリダイレクトされます
+    } else {
+      // provider ナビ注入完了後にセッションUIとカードを組み立てる
+      const boot = () => {
+        try{
+          const me = loadProviders().find(p=> p.id===session.id);
+          if(!me || !me.onboarding || !me.onboarding.completed){
+            location.href = '/pages/provider/onboarding.html';
+            return;
           }
-        });
-      }
+        }catch(_){ /* ignore */ }
+
+        const area = document.getElementById('provider-session-area');
+        if(area){
+          const info = document.createElement('div');
+          info.style.display='inline-flex'; info.style.gap='8px'; info.style.alignItems='center';
+          info.innerHTML = `<span class="muted">${session.name} でログイン中</span><button class="btn btn-ghost" id="provider-logout-btn">ログアウト</button>`;
+          area.appendChild(info);
+          area.addEventListener('click', (e)=>{
+            const t = e.target;
+            if(t && t.id === 'provider-logout-btn'){
+              signOutProvider();
+            }
+          });
+        }
+        try{
+          const container = document.querySelector('.container.stack');
+          if(container){
+            // 可視化カード：ゾーン／表示機会指数／距離／変化量
+            const viz = document.createElement('div'); viz.className='card'; viz.style.padding='12px'; viz.style.marginTop='12px';
+            const head = document.createElement('div'); head.className='cluster'; head.style.justifyContent='space-between'; head.style.alignItems='center';
+            const hstrong = document.createElement('strong'); hstrong.textContent='表示ポジション（安全表示）'; head.appendChild(hstrong);
+            viz.appendChild(head);
+            const body = document.createElement('div'); body.className='stack'; body.style.marginTop='8px';
+            const idxEl = document.createElement('div'); idxEl.textContent='表示機会指数：—'; body.appendChild(idxEl);
+            const zoneEl = document.createElement('div'); zoneEl.textContent='現在ゾーン：—'; body.appendChild(zoneEl);
+            const distEl = document.createElement('div'); distEl.textContent='次ゾーンまで：—'; body.appendChild(distEl);
+            const diffEl = document.createElement('div'); diffEl.textContent='前回比：—'; body.appendChild(diffEl);
+            viz.appendChild(body);
+            container.insertBefore(viz, container.children[1] || null);
+            // 仮スコア（MVP）：プロフ充実度・来店率・診断一致度から擬似合成
+            import('../../scripts/zones.js').then(zone => {
+              try{
+                const me = loadProviders().find(p=> p.id===session.id) || {};
+                // ---- 実値化: 予約/来店MVPとプロフィール完成度を反映 ----
+                const RESV_KEY = 'glowup:reservations';
+                const VISIT_KEY = 'glowup:visits';
+                let reservations = []; let visits = [];
+                try{ const rawR=localStorage.getItem(RESV_KEY); reservations = rawR? JSON.parse(rawR):[]; }catch{}
+                try{ const rawV=localStorage.getItem(VISIT_KEY); visits = rawV? JSON.parse(rawV):[]; }catch{}
+                // provider単位で集計
+                const myRes = Array.isArray(reservations)? reservations.filter(r=> r && r.providerId===session.id):[];
+                const myVisits = Array.isArray(visits)? visits.filter(v=> v && v.providerId===session.id):[];
+                const totalRes = myRes.length;
+                const completed = myRes.filter(r=> r.status==='visited' || r.status==='completed').length;
+                const repeatedUsers = (function(){
+                  const map = new Map();
+                  for(const v of myVisits){
+                    const uid = v.userId||''; map.set(uid, (map.get(uid)||0)+1);
+                  }
+                  let rep=0; for(const cnt of map.values()){ if(cnt>=2) rep++; }
+                  const totalUsers = map.size || 1;
+                  return Math.round((rep/totalUsers)*100);
+                })();
+                const visitRate = totalRes? Math.round((completed/totalRes)*100) : 0; // %
+                const repeatRate = repeatedUsers; // %
+                const completion = Number(me.profile?.completionRate||0); // 0-100
+                const trust = Math.round((visitRate * 0.5) + (repeatRate * 0.3) + (completion * 0.2));
+                // 診断一致度: whatTypesとユーザー診断intent.type_idの一致
+                let affinity = 40;
+                try{
+                  const raw = localStorage.getItem('fineme:diagnosis:latest');
+                  const diag = raw? JSON.parse(raw): null;
+                  const typeId = String(diag?.intent?.type_id||'');
+                  const what = (me.onboarding?.profile?.whatTypes)||[];
+                  if(typeId){
+                    if(Array.isArray(what) && what.includes(typeId)) affinity = 90;
+                    else if(Array.isArray(what) && what.length>0) affinity = 60;
+                    else affinity = 50;
+                  }
+                }catch{}
+                // 補正: 店舗写真や説明の充実度（簡易に completion を再使用）
+                const correction = Math.round(completion);
+                // 総合スコア（重み: 相性0.5 補正0.3 信頼0.2）
+                const Si = Math.round((affinity * 0.5) + (correction * 0.3) + (trust * 0.2));
+                const Smin = 20; const Smax = 95; // 仮定（タイプ内分布）
+                const prevNi = Number(localStorage.getItem('fineme:zone:lastNi')||'');
+                const NiRaw = zone.normalizeScore(Si, Smin, Smax);
+                const Ni = zone.smooth(Number.isFinite(prevNi)? prevNi : undefined, NiRaw, 0.3);
+                localStorage.setItem('fineme:zone:lastNi', String(Ni));
+                const z = zone.zoneOf(Ni);
+                const dist = zone.distanceToNextZone(Ni);
+                idxEl.textContent = `表示機会指数：${Ni} / 100`;
+                zoneEl.textContent = `現在ゾーン：${z.name}`;
+                distEl.textContent = `次ゾーンまで：+${dist}pt`;
+                const diff = (Number.isFinite(prevNi) ? (Ni - prevNi) : 0);
+                diffEl.textContent = `前回比：${diff>=0?'+':''}${diff}`;
+
+                // ステータスサマリーの更新
+                try{
+                  const sumZone = document.getElementById('sum-zone');
+                  const sumType = document.getElementById('sum-type');
+                  const sumResv = document.getElementById('sum-resv');
+                  if(sumZone){
+                    // ゾーン名称→相性文言に変換
+                    const map = { '上位表示ゾーン':'とても相性がいい', '標準表示ゾーン':'相性がいい', '成長中ゾーン':'合いそう', '準備中ゾーン':'選択肢として表示' };
+                    sumZone.textContent = `${map[z.name]||z.name}（${z.name}）`;
+                  }
+                  // タイプ推定（A–D＋Eから近いタイプ名を推定）
+                  function classifyTypeFromScores(sc){
+                    try{
+                      const A=Number(sc.A||2),B=Number(sc.B||2),C=Number(sc.C||2),D=Number(sc.D||2),E=String((sc.E_tags||[])[0]||'');
+                      const ideal={
+                        t01:{ name:'慎重・納得重視タイプ', vec:{A:3,B:3,C:2,D:2}, bonus:['理論・根拠'] },
+                        t02:{ name:'安心・寄り添い重視タイプ', vec:{A:2,B:4,C:1,D:1}, bonus:['安心感'] },
+                        t03:{ name:'効率・最短重視タイプ', vec:{A:2,B:1,C:3,D:3}, bonus:['実績'] },
+                        t04:{ name:'変化・アップデート重視タイプ', vec:{A:4,B:1,C:4,D:2}, bonus:['センス'] },
+                        t05:{ name:'直感・フィーリング重視タイプ', vec:{A:2,B:2,C:2,D:2}, bonus:['センス'] },
+                        t06:{ name:'伴走・共同決定重視タイプ', vec:{A:3,B:2,C:2,D:2}, bonus:['安心感','理論・根拠'] }
+                      };
+                      const entries = Object.values(ideal).map(meta=>{ const v=meta.vec; let d=Math.abs(A-v.A)+Math.abs(B-v.B)+Math.abs(C-v.C)+Math.abs(D-v.D); if(E && meta.bonus.includes(E)) d -= 0.6; return { name:meta.name, dist:d }; });
+                      entries.sort((a,b)=> a.dist-b.dist); return entries[0]?.name || '';
+                    }catch{ return ''; }
+                  }
+                  if(sumType){
+                    const sc = (loadProviders().find(p=> p.id===session.id)?.onboarding?.scores) || {};
+                    const name = classifyTypeFromScores(sc);
+                    sumType.textContent = name || '—';
+                  }
+                  if(sumResv){
+                    // 今月の予約数と先月比
+                    const now = new Date(); const ym = `${now.getFullYear()}-${now.getMonth()+1}`;
+                    const last = new Date(now.getFullYear(), now.getMonth()-1, 1); const yml = `${last.getFullYear()}-${last.getMonth()+1}`;
+                    function ymKey(d){ const dd=new Date(d); return `${dd.getFullYear()}-${dd.getMonth()+1}`; }
+                    const cur = myRes.filter(r=> ymKey(r.visitDate)===ym).length;
+                    const prev = myRes.filter(r=> ymKey(r.visitDate)===yml).length;
+                    const diffTxt = (cur-prev>=0?'+':'') + String(cur-prev);
+                    sumResv.textContent = `${cur}件（先月比 ${diffTxt}）`;
+                  }
+                }catch{}
+              }catch(e){ /* silent */ }
+            }).catch(()=>{});
+            const card = document.createElement('div'); card.className='card'; card.style.padding='12px'; card.style.marginTop='12px';
+            const title = document.createElement('div'); title.className='cluster'; title.style.justifyContent='space-between'; title.style.alignItems='center';
+            const strong = document.createElement('strong'); strong.textContent='オンボーディング'; title.appendChild(strong);
+            const btn = document.createElement('a'); btn.className='btn btn-ghost'; btn.href='/pages/provider/onboarding.html#reedit'; btn.textContent='再体験・再編集'; title.appendChild(btn);
+            card.appendChild(title);
+            const p = document.createElement('p'); p.className='muted'; p.style.margin='8px 0 0'; p.textContent='診断の思想・プロフィール入力はいつでも見直せます。'; card.appendChild(p);
+            container.insertBefore(card, container.children[1] || null);
+            // 相性可視化UI：相性マップ（5軸、非数値）+ ゾーン表示（育成/安定/強化）
+            try{
+              const me = loadProviders().find(p=> p.id===session.id) || {};
+              const sc = (me.onboarding && me.onboarding.scores) ? me.onboarding.scores : { A:2, B:2, C:2, D:2, E_tags:[] };
+              const prof = (me.onboarding && me.onboarding.profile) ? me.onboarding.profile : {};
+              function level3(val){ return val>=3? 'green' : (val===2? 'yellow' : 'none'); }
+              const axes = [
+                { key:'motivation', label:'動機の深さ', lvl: level3(Number(sc.A||2)) },
+                { key:'anxiety', label:'不安への向き合い方', lvl: level3(Number(sc.B||2)) },
+                { key:'change', label:'変化の強さ', lvl: level3(Number(sc.C||2)) },
+                { key:'style', label:'進め方スタイル', lvl: (Number(sc.D||2)===2? 'green' : 'yellow') },
+                { key:'values', label:'大切にしている価値観', lvl: (Array.isArray(sc.E_tags) && sc.E_tags.length>=2? 'green' : (Array.isArray(sc.E_tags) && sc.E_tags.length===1? 'yellow' : 'none')) }
+              ];
+              const greens = axes.filter(a=> a.lvl==='green').length;
+              const zoneName = greens>=3? '🔥 強化ゾーン' : (greens===2? '🌿 安定ゾーン' : '🌱 育成ゾーン');
+              const compat = document.createElement('div'); compat.className='card'; compat.style.padding='12px'; compat.style.marginTop='12px';
+              const header = document.createElement('div'); header.className='cluster'; header.style.justifyContent='space-between'; header.style.alignItems='center';
+              const title = document.createElement('strong'); title.textContent='相性マップ（非数値）'; header.appendChild(title);
+              const link = document.createElement('a'); link.className='btn btn-ghost'; link.href='/pages/provider/compatibility.html'; link.textContent='詳しく見る'; header.appendChild(link);
+              compat.appendChild(header);
+              const copy = document.createElement('p'); copy.className='muted'; copy.style.margin='8px 0'; copy.textContent='このマップは良し悪しではなく、今のプロフィールがどんな人に届いているかの到達度表示です。'; compat.appendChild(copy);
+              const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='1fr 1fr'; grid.style.gap='8px';
+              function badge(axisKey, label, lvl){
+                const b = document.createElement('button'); b.type='button'; b.style.display='flex'; b.style.justifyContent='space-between'; b.style.alignItems='center'; b.style.padding='8px 10px'; b.style.border='1px solid #e5e7eb'; b.style.borderRadius='10px'; b.style.cursor='pointer'; b.style.background='#fff'; b.setAttribute('aria-label', label+' の改善提案を開く');
+                const name = document.createElement('span'); name.textContent = label; b.appendChild(name);
+                const tag = document.createElement('span'); tag.style.borderRadius='999px'; tag.style.fontSize='12px'; tag.style.padding='2px 10px';
+                if(lvl==='green'){ tag.textContent='よく届いている'; tag.style.background='#10b981'; tag.style.color='#fff'; }
+                else if(lvl==='yellow'){ tag.textContent='もう少しで届く'; tag.style.background='#f59e0b'; tag.style.color='#fff'; }
+                else { tag.textContent='まだ伝わっていない'; tag.style.background='#e5e7eb'; tag.style.color='#111827'; }
+                b.appendChild(tag);
+                b.addEventListener('click', ()=> openAxisPopup(axisKey, label, lvl));
+                return b;
+              }
+              // 軸ポップアップ
+              function openAxisPopup(key, label, lvl){
+                const backdrop = document.createElement('div'); backdrop.id='axis-modal-backdrop'; backdrop.style.position='fixed'; backdrop.style.inset='0'; backdrop.style.background='rgba(0,0,0,0.35)'; backdrop.style.backdropFilter='blur(2px)'; backdrop.style.zIndex='999';
+                const modal = document.createElement('div'); modal.id='axis-modal'; modal.style.position='fixed'; modal.style.inset='0'; modal.style.display='flex'; modal.style.alignItems='center'; modal.style.justifyContent='center'; modal.style.padding='24px'; modal.style.zIndex='1000';
+                const card = document.createElement('div'); card.className='card'; card.style.maxWidth='560px'; card.style.width='100%'; card.style.padding='16px'; card.style.borderRadius='12px';
+                const head = document.createElement('div'); head.className='cluster'; head.style.justifyContent='space-between'; head.style.alignItems='center';
+                const h = document.createElement('strong'); h.textContent = `【${label}】改善提案`; head.appendChild(h);
+                const close = document.createElement('button'); close.className='btn btn-ghost'; close.type='button'; close.textContent='閉じる'; close.addEventListener('click', removeModal); head.appendChild(close);
+                card.appendChild(head);
+                const p = document.createElement('p'); p.className='muted'; p.style.margin='8px 0';
+                const actionsWrap = document.createElement('div'); actionsWrap.className='stack'; actionsWrap.style.marginTop='8px'; actionsWrap.style.gap='6px';
+                // 軸別の具体アクション（実フィールド対応）
+                const map = {
+                  motivation: {
+                    intro:'「どんな悩みの男性に向き合ってきたか」を具体化すると、動機が伝わりやすくなります。',
+                    actions:[
+                      {text:'オンボ｜どんな悩みを追記', href:'/pages/provider/onboarding.html#reedit&focus=ob-q-problems'}
+                    ]
+                  },
+                  anxiety: {
+                    intro:'初回での不安解消の姿勢が伝わると、この軸は上がります。',
+                    actions:[
+                      {text:'オンボ｜初めての人への寄り添い', href:'/pages/provider/onboarding.html#reedit&focus=ob-q-first'},
+                      {text:'サービス｜失敗リスクへの向き合い方', href:'/pages/provider/service_form.html?select=auto&focus=riskPolicy'},
+                      {text:'サービス｜Q&Aに不安への回答を追加', href:'/pages/provider/service_form.html?select=auto&focus=qa-list'}
+                    ]
+                  },
+                  change: {
+                    intro:'提供する変化レンジ（少し整える〜別人レベル）を明記しましょう。',
+                    actions:[
+                      {text:'サービス｜初回の進め方に変化レンジ', href:'/pages/provider/service_form.html?select=auto&focus=firstSessionPlan'},
+                      {text:'オンボ｜提供スタンス（C）を見直す', href:'/pages/provider/onboarding.html#reedit&focus=ob-c-group'}
+                    ]
+                  },
+                  style: {
+                    intro:'意思決定の関わり方（相談/提案/委ねる）を言語化しましょう。',
+                    actions:[
+                      {text:'オンボ｜意思決定の関わり方（D）', href:'/pages/provider/onboarding.html#reedit&focus=ob-d-group'},
+                      {text:'オンボ｜初めての人への寄り添い', href:'/pages/provider/onboarding.html#reedit&focus=ob-q-first'}
+                    ]
+                  },
+                  values: {
+                    intro:'価値観タグ（安心・理論・センス・実績）を2つ以上＋何で選ばれたいかを補足しましょう。',
+                    actions:[
+                      {text:'オンボ｜価値観タグを選ぶ', href:'/pages/provider/onboarding.html#reedit&focus=ob-e-group'},
+                      {text:'オンボ｜価格ではなく何で選ばれたいか', href:'/pages/provider/onboarding.html#reedit&focus=ob-q-beyond'}
+                    ]
+                  }
+                };
+                const tip = map[key] || { intro:'プロフィールに具体的な言葉を増やしてください。', actions:[{text:'オンボへ', href:'/pages/provider/onboarding.html#reedit'}] };
+                p.textContent = tip.intro;
+                card.appendChild(p);
+                // アクションリンク群
+                tip.actions.forEach(act=>{
+                  const a = document.createElement('a'); a.className='btn btn-ghost'; a.href=act.href; a.textContent=act.text; actionsWrap.appendChild(a);
+                });
+                card.appendChild(actionsWrap);
+                modal.appendChild(card);
+                function removeModal(){ try{ document.body.removeChild(backdrop); document.body.removeChild(modal); }catch{} }
+                backdrop.addEventListener('click', removeModal);
+                document.body.appendChild(backdrop); document.body.appendChild(modal);
+              }
+              axes.forEach(a=> grid.appendChild(badge(a.key, a.label, a.lvl)));
+              compat.appendChild(grid);
+              const zone = document.createElement('div'); zone.style.marginTop='10px'; zone.innerHTML = `<strong>現在のゾーン：</strong> ${zoneName}`; compat.appendChild(zone);
+              const hint = document.createElement('p'); hint.className='muted'; hint.style.margin='6px 0 0'; hint.textContent='各軸を強化するには、プロフィールに具体的な言葉を増やしてください（初回の向き合い方・価値観・得意な変化など）。'; compat.appendChild(hint);
+              container.insertBefore(compat, container.children[2] || null);
+            }catch(_){ }
+            // 改善提案カード（どこに何を書けば上がるか）
+            try{
+              const SERVICES_KEY = 'glowup:services';
+              const loadServices = ()=>{ try{ const raw=localStorage.getItem(SERVICES_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch{ return []; } };
+              const myServices = loadServices().filter(s=> s && s.providerId===session.id);
+              const tips = [];
+              // 集計：不足に応じて提案を作成
+              for(const svc of myServices){
+                const name = svc.name || 'サービス';
+                const fsLen = (svc.firstSessionPlan||'').length;
+                const rpLen = (svc.riskPolicy||'').length;
+                const qaCnt = Array.isArray(svc.qaList)? svc.qaList.filter(it=> it&&it.q&&it.a).length : 0;
+                const descLen = (svc.description||'').length;
+                if(fsLen < 80){ tips.push({ k:'fs', text:`「${name}」の初回の進め方：80〜150字で具体化（例・手順/所要時間/合意の取り方）`, href:'/pages/provider/service_form.html' }); }
+                if(rpLen < 60){ tips.push({ k:'rp', text:`「${name}」の失敗リスクへの向き合い方：60字以上で補足（確認・修正・保証）`, href:'/pages/provider/service_form.html' }); }
+                if(qaCnt < 2){ tips.push({ k:'qa', text:`「${name}」のQ&A：よくある不安への回答を2件以上追加`, href:'/pages/provider/service_form.html' }); }
+                if(descLen < 150){ tips.push({ k:'desc', text:`「${name}」の本文：150字以上で具体化（内容/所要時間/持ち物）`, href:'/pages/provider/service_form.html' }); }
+              }
+              // 重複キーを除去して上位3件だけ表示
+              const seen = new Set(); const dedup = [];
+              for(const t of tips){ if(seen.has(t.k)) continue; seen.add(t.k); dedup.push(t); if(dedup.length>=3) break; }
+              if(dedup.length){
+                const sugg = document.createElement('div'); sugg.className='card'; sugg.style.padding='12px'; sugg.style.marginTop='12px';
+                const title = document.createElement('div'); title.className='cluster'; title.style.justifyContent='space-between'; title.style.alignItems='center';
+                const strong = document.createElement('strong'); strong.textContent='改善提案（どこに何を書くと上がるか）'; title.appendChild(strong);
+                const link = document.createElement('a'); link.className='btn btn-ghost'; link.href='/pages/provider/service_form.html'; link.textContent='サービス編集へ'; title.appendChild(link);
+                sugg.appendChild(title);
+                const ul = document.createElement('ul'); ul.className='stack'; ul.style.marginTop='8px';
+                for(const t of dedup){ const li=document.createElement('li'); const a=document.createElement('a'); a.href=t.href; a.className='btn btn-ghost'; a.textContent='編集'; li.appendChild(document.createTextNode(t.text)); li.appendChild(document.createTextNode(' ')); li.appendChild(a); ul.appendChild(li); }
+                sugg.appendChild(ul);
+                container.insertBefore(sugg, container.children[2] || null);
+              }
+            }catch(e){ /* ignore */ }
+
+            // 相性経由率カード（順位の代替指標）
+            try{
+              const ratioCard = document.createElement('div'); ratioCard.className='card'; ratioCard.style.padding='12px'; ratioCard.style.marginTop='12px';
+              const head = document.createElement('div'); head.className='cluster'; head.style.justifyContent='space-between'; head.style.alignItems='center';
+              const h = document.createElement('strong'); h.textContent='📊 相性経由率（今月）'; head.appendChild(h);
+              ratioCard.appendChild(head);
+              const desc = document.createElement('p'); desc.className='muted'; desc.style.margin='8px 0'; desc.textContent='Finemeの診断ロジックにより「今の状態に合う」と判断されて来店した割合の目安です（順位の代わりに使う指標）。'; ratioCard.appendChild(desc);
+              const val = document.createElement('div'); val.style.fontWeight='700'; val.style.fontSize='16px'; val.textContent='—%'; ratioCard.appendChild(val);
+              const copy = document.createElement('p'); copy.className='muted'; copy.style.margin='6px 0 0'; ratioCard.appendChild(copy);
+              // 集計（暫定ロジック）：当月訪問のうち、診断あり＋相性軸が3本以上届いている（緑）を「相性経由」とみなす
+              const ptsRaw = localStorage.getItem('fineme:reservations:list');
+              const reservations = ptsRaw ? JSON.parse(ptsRaw) : [];
+              const now = new Date(); const ym = `${now.getFullYear()}-${now.getMonth()+1}`;
+              const mine = Array.isArray(reservations) ? reservations.filter(r=> String(r.storeId||'') === String(session.id)) : [];
+              function ymKey(iso){ try{ const d=new Date(iso); return `${d.getFullYear()}-${d.getMonth()+1}`; }catch{ return ''; } }
+              const monthVisits = mine.filter(r=> ymKey(r.visitDate)===ym && r.status==='visited');
+              // 診断の存在（簡易）
+              let diagExists = false; try{ const raw=localStorage.getItem('fineme:diagnosis:latest'); const obj=raw?JSON.parse(raw):null; diagExists = !!(obj && obj.intent && obj.how && obj.why); }catch{}
+              // 軸緑数
+              const sc = (loadProviders().find(p=> p.id===session.id)?.onboarding?.scores) || { A:2,B:2,C:2,D:2,E_tags:[] };
+              const greens = [Number(sc.A||2)>=3, Number(sc.B||2)>=3, Number(sc.C||2)>=3, Number(sc.D||2)===2, Array.isArray(sc.E_tags)&&sc.E_tags.length>=2].filter(Boolean).length;
+              const affinityVisits = monthVisits.filter(r=> String(r.origin||'') === 'affinity').length;
+              const totalVisits = monthVisits.length || 0;
+              const ratio = totalVisits ? Math.round((affinityVisits/totalVisits)*100) : 0;
+              val.textContent = `${ratio}%`;
+              // 状態別コピー
+              if(ratio <= 20){ copy.textContent = '現在は検索・カテゴリ起点の来店が中心です。プロフィールの言語化で「相性起点」の選択が増えます。'; }
+              else if(ratio <= 40){ copy.textContent = '「理解」で選ばれる来店が増え始めています。相性起点の割合が高まっています。'; }
+              else if(ratio <= 60){ copy.textContent = '来店の多くが相性を起点にしています。リピート率・満足度が安定しやすい状態です。'; }
+              else { copy.textContent = 'あなたのページは「今の状態に合う選択肢」として機能しています。Finemeが目指す理想的な掲載状態です。'; }
+              container.insertBefore(ratioCard, container.children[3] || null);
+            }catch(_){ }
+          }
+        }catch(_){ }
+      };
+      // partials.js が公開する準備完了に合わせる
+      try{
+        if(window.finemePartials && window.finemePartials.provNavReady){
+          window.finemePartials.provNavReady.then(() => boot());
+        } else {
+          document.addEventListener('fineme:provNavReady', () => boot(), { once: true });
+          // 念のためタイムアウトフォールバック
+          setTimeout(boot, 500);
+        }
+      }catch{ boot(); }
     }
   </script>
 </body>

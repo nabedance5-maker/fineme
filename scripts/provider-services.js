@@ -144,6 +144,20 @@ function renderList(){
   }
 }
 
+// 改善余地スコアを算出（不足が多いほど高スコア）
+function improvementScore(s){
+  let score = 0;
+  const fsLen = String(s.firstSessionPlan||'').length;
+  const rpLen = String(s.riskPolicy||'').length;
+  const qaCnt = Array.isArray(s.qaList) ? s.qaList.filter(it=> it&&it.q&&it.a).length : 0;
+  const descLen = String(s.description||'').length;
+  if(fsLen < 80) score += 3;
+  if(rpLen < 60) score += 2;
+  if(qaCnt === 0) score += 3; else if(qaCnt < 2) score += 2;
+  if(descLen < 150) score += 2;
+  return score;
+}
+
 function getStoreName(providerId, storeId){
   try{
     const provs = getProviders();
@@ -214,6 +228,8 @@ function onSubmit(e){
   const price = Number(fd.get('price')||0);
   const catchcopy = (fd.get('catchcopy')||'').toString().trim();
   const description = (fd.get('description')||'').toString();
+  const firstSessionPlan = (fd.get('firstSessionPlan')||'').toString();
+  const riskPolicy = (fd.get('riskPolicy')||'').toString();
   // collect menus and gallery will be resolved below
   // 複数選択の担当者（チェックボックスから収集）
   const staffIds = Array.from(document.querySelectorAll('#staff-checkboxes input[type="checkbox"]:checked')).map(el=> (el instanceof HTMLInputElement ? el.value : '')).filter(Boolean);
@@ -240,19 +256,33 @@ function onSubmit(e){
 
   // menus are intentionally not collected from the form (管理画面からは編集不可)
 
+  // collect Q&A list from DOM
+  function collectQaList(){
+    const host = document.getElementById('qa-list'); if(!host) return [];
+    const items = Array.from(host.querySelectorAll('.qa-item'));
+    const out = [];
+    for(const it of items){
+      const qEl = it.querySelector('.qa-q'); const aEl = it.querySelector('.qa-a');
+      const q = (qEl && (qEl instanceof HTMLInputElement)) ? qEl.value.trim() : '';
+      const a = (aEl && (aEl instanceof HTMLTextAreaElement)) ? aEl.value.trim() : '';
+      if(q && a){ out.push({ q, a }); }
+    }
+    return out;
+  }
+
   const handleSave = (photoDataUrl, galleryUrls)=>{
     const all = loadServices();
       if(id){
         const idx = all.findIndex(s => s.id === id && s.providerId === session.id);
       if(idx === -1){ if(msg) msg.textContent = '編集対象が見つかりません。'; return; }
-      all[idx] = { ...all[idx], name, region, category, purpose, price, catchcopy, description, staffIds, staffNames, published, optionIds };
+      all[idx] = { ...all[idx], name, region, category, purpose, price, catchcopy, description, firstSessionPlan, riskPolicy, qaList: collectQaList(), staffIds, staffNames, published, optionIds };
       if(photoDataUrl !== undefined){ all[idx].photo = photoDataUrl; }
       if(Array.isArray(galleryUrls)) all[idx].gallery = galleryUrls;
     }else{
       const newItem = {
         id: uuid(),
         providerId: session.id,
-      name, region, category, purpose, price, catchcopy, description, staffIds, staffNames,
+      name, region, category, purpose, price, catchcopy, description, firstSessionPlan, riskPolicy, qaList: collectQaList(), staffIds, staffNames,
         published,
         optionIds,
         photo: photoDataUrl || '',
@@ -336,6 +366,8 @@ function loadToForm(item){
   $('#price').value = (item.price!=null?item.price:item.priceMin)||0;
   $('#catchcopy').value = item.catchcopy || '';
   $('#description').value = item.description || '';
+  $('#firstSessionPlan').value = item.firstSessionPlan || '';
+  $('#riskPolicy').value = item.riskPolicy || '';
   // メニュー行の自動挿入は無効（管理画面から編集不可）
   // フォームに複数担当者を反映
   const ids = Array.isArray(item.staffIds) ? item.staffIds : (item.staffId ? [item.staffId] : []);
@@ -356,6 +388,14 @@ function loadToForm(item){
     }
   }
   $('#published').checked = !!item.published;
+  // populate Q&A list
+  try{
+    const host = document.getElementById('qa-list'); if(host){
+      host.textContent='';
+      const arr = Array.isArray(item.qaList) ? item.qaList : [];
+      for(const qa of arr){ addQaItem(host, qa.q||'', qa.a||''); }
+    }
+  }catch{}
   // preview photo
   const prev = document.getElementById('photo-preview');
   if(prev && prev instanceof HTMLImageElement){
@@ -403,6 +443,7 @@ function resetForm(){
   if(msg) msg.textContent = '';
   const prev2 = document.getElementById('photo-preview');
   if(prev2 && prev2 instanceof HTMLImageElement){ prev2.src = ''; prev2.style.display = 'none'; }
+  const qaHost = document.getElementById('qa-list'); if(qaHost) qaHost.textContent='';
 }
 
 (function init(){
@@ -496,6 +537,46 @@ function resetForm(){
   const backdrop = document.getElementById('service-modal-backdrop');
   if(backdrop){ backdrop.addEventListener('click', closeServiceModal); }
   document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape'){ closeServiceModal(); }});
+  // QA add button
+  const qaAdd = document.getElementById('qa-add-btn'); const qaHost = document.getElementById('qa-list');
+  if(qaAdd && qaHost){ qaAdd.addEventListener('click', ()=> addQaItem(qaHost)); }
+  // 自動選択＆フォーカス誘導：?select=auto|{id} と focus（クエリ or ハッシュ）を解釈
+  try{
+    const url = new URL(location.href);
+    const sel = url.searchParams.get('select');
+    const focusParam = url.searchParams.get('focus');
+    const hash = String(location.hash||'');
+    const mHash = hash.match(/focus=([^&]+)/);
+    const focusTarget = focusParam || (mHash ? decodeURIComponent(mHash[1]) : '');
+    if(sel){
+      const session = getSession(); const all = loadServices();
+      const mine = session ? all.filter(s=> s.providerId===session.id) : [];
+      let targetService = null;
+      if(sel === 'auto'){
+        // 最大スコアかつ作成日が古いものを優先
+        targetService = mine.sort((a,b)=>{
+          const sa = improvementScore(a), sb = improvementScore(b);
+          if(sb!==sa) return sb-sa;
+          const ta = new Date(a.createdAt||0).getTime();
+          const tb = new Date(b.createdAt||0).getTime();
+          return ta - tb;
+        })[0] || null;
+      }else{
+        targetService = mine.find(s=> String(s.id) === String(sel)) || null;
+      }
+      // 開く・読み込む・フォーカス
+      openServiceModal();
+      if(targetService){ loadToForm(targetService); }
+      if(focusTarget){
+        if(focusTarget === 'qa-list'){
+          const host = document.getElementById('qa-list'); if(host){ addQaItem(host); const firstQ = host.querySelector('.qa-item .qa-q'); if(firstQ && firstQ instanceof HTMLElement){ firstQ.focus(); } }
+        }else{
+          const el = document.getElementById(focusTarget);
+          if(el){ el.scrollIntoView({behavior:'smooth', block:'center'}); if(el instanceof HTMLElement){ try{ el.focus(); }catch{} el.style.outline='2px solid var(--primary)'; setTimeout(()=>{ el.style.outline=''; }, 2000); } }
+        }
+      }
+    }
+  }catch{}
 })();
 
 function openServiceModal(){
@@ -564,6 +645,9 @@ async function importServicesFile(e){
           price: Number(s.price!=null ? s.price : (s.priceMin!=null ? s.priceMin : 0)) || 0,
           catchcopy: String(s.catchcopy||'').toString(),
           description: String(s.description||'').toString(),
+          firstSessionPlan: String(s.firstSessionPlan||'').toString(),
+          riskPolicy: String(s.riskPolicy||'').toString(),
+          qaList: Array.isArray(s.qaList)? s.qaList.filter(it=> it && it.q && it.a) : [],
           staffIds: Array.isArray(s.staffIds) ? s.staffIds : (s.staffId ? [s.staffId] : []),
           staffNames: Array.isArray(s.staffNames) ? s.staffNames : [],
           photo: String(s.photo||'').toString(),
@@ -655,3 +739,17 @@ function populateOptionCheckboxes(){
 }
 
 // store select removed: services now belong to provider-level single store
+
+// --- Q&A item helpers ---
+function addQaItem(host, qInit='', aInit=''){
+  try{
+    const item = document.createElement('div'); item.className='qa-item card'; item.style.padding='8px';
+    const q = document.createElement('input'); q.type='text'; q.className='qa-q'; q.placeholder='質問（例：初回の所要時間は？）'; q.value = qInit;
+    const a = document.createElement('textarea'); a.rows=3; a.className='qa-a'; a.placeholder='回答（例：初回は60〜90分。目的整理→説明→提案→確認を行います。）'; a.value = aInit;
+    const ops = document.createElement('div'); ops.className='cluster'; ops.style.justifyContent='flex-end';
+    const del = document.createElement('button'); del.type='button'; del.className='btn btn-ghost'; del.textContent='削除'; del.addEventListener('click', ()=> item.remove());
+    ops.appendChild(del);
+    item.appendChild(q); item.appendChild(a); item.appendChild(ops);
+    host.appendChild(item);
+  }catch{}
+}

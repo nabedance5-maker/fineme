@@ -1,3 +1,6 @@
+// Detect GitHub Pages project base prefix
+const PROJECT_BASE = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
+
 // Compute a relative prefix to project root regardless of nesting depth
 function resolvePrefix(){
   const segs = (location.pathname || '/').split('/').filter(Boolean);
@@ -48,9 +51,9 @@ async function inject(selector, relativePath){
       }
     }catch(e){ host.textContent = ''; }
   } catch (e) {
-    // Fallback: try absolute path when served at project root
+    // Fallback: try absolute path; on GitHub Pages, prefix with project base
     try {
-      const abs = `/${relativePath}`;
+      const abs = PROJECT_BASE ? `${PROJECT_BASE}/${relativePath}` : `/${relativePath}`;
       const res2 = await fetch(abs);
       if(!res2.ok) throw new Error(`Failed to fetch ${abs}: ${res2.status}`);
         try{
@@ -78,6 +81,19 @@ async function inject(selector, relativePath){
 }
 
 (function init(){
+  // Apply project base prefix to absolute links when hosted under GitHub Pages
+  try{
+    if(PROJECT_BASE){
+      document.addEventListener('DOMContentLoaded', ()=>{
+        document.querySelectorAll('a[href^="/"]').forEach(a=>{
+          const href = a.getAttribute('href'); if(!href) return; a.setAttribute('href', PROJECT_BASE + href);
+        });
+        document.querySelectorAll('form[action^="/"]').forEach(f=>{
+          const act = f.getAttribute('action'); if(!act) return; f.setAttribute('action', PROJECT_BASE + act);
+        });
+      });
+    }
+  }catch(e){}
   // --- SEO helpers ---
   function escapeHtml(str){
     return String(str)
@@ -238,8 +254,8 @@ async function inject(selector, relativePath){
   }
 
   Promise.all([
-    inject('#site-header','components/header.html'),
-    inject('#site-footer','components/footer.html')
+    inject('#site-header','components/header.html?v=20251126'),
+    inject('#site-footer','components/footer.html?v=20251126')
   ]).then(() => {
   const y = document.querySelector('[data-year]');
   if(y) y.textContent = String(new Date().getFullYear());
@@ -281,6 +297,29 @@ async function inject(selector, relativePath){
     }catch{}
   // Apply base SEO (OGP/meta/JSON-LD)
   try{ applySEOBase(); }catch{}
+    // Points badge: show only when user is logged in
+    try{
+      const container = document.getElementById('header-points');
+      const badge = document.getElementById('header-points-badge');
+      if(container){
+        import('./user-auth.js').then(mod => {
+          const sess = mod.getUserSession && mod.getUserSession();
+          if(!sess){ container.hidden = true; return; }
+          container.hidden = false;
+          if(badge){
+            let pts = 0, visits = 0, cnt = 0;
+            try{
+              const raw = localStorage.getItem('fineme:points:state');
+              if(raw){ const obj = JSON.parse(raw)||{}; pts = Number(obj.points||0)||0; visits = Number(obj.visits||0)||0; cnt = Number(obj.reservations||0)||0; }
+            }catch{}
+            const ladder = (visits>0?visits:cnt);
+            const rate = (ladder>=11)?5:(ladder>=4?4:3);
+            badge.textContent = `${pts}pt / ${rate}%`;
+            badge.title = `現在の還元率: ${rate}%`;
+          }
+        }).catch(()=>{ try{ container.hidden = true; }catch{} });
+      }
+    }catch{}
     // Mobile nav toggle
     const toggle = document.getElementById('nav-toggle');
     const menu = document.getElementById('nav-menu');

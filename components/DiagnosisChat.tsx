@@ -27,6 +27,7 @@ const QUESTIONS = [
   ] }
 ];
 
+const AX_LABEL: Record<string,string> = { A:'納得', B:'寄り添い', C:'最短', D:'進め方' };
 const DiagnosisChat: React.FC = () => {
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string,string>>({});
@@ -35,6 +36,18 @@ const DiagnosisChat: React.FC = () => {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string| null>(null);
   const router = useRouter();
+  const [hintAxes, setHintAxes] = useState<string[]>([]);
+
+  React.useEffect(()=>{
+    try{
+      const q = router.query || {} as any;
+      const raw = typeof q.hint === 'string' ? q.hint : (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('hint') : null);
+      const axes = (raw||'').split(',').map(s=> s.trim().toUpperCase()).filter(s=> ['A','B','C','D'].includes(s));
+      setHintAxes(axes);
+      // persist for result page reference
+      if(axes.length){ try{ sessionStorage.setItem('fineme:diagnosis:hintAxes', JSON.stringify(axes)); }catch{} }
+    }catch{}
+  },[router.query]);
 
   function submitAnswer(){
     const key = QUESTIONS[idx].key;
@@ -61,7 +74,7 @@ const DiagnosisChat: React.FC = () => {
     setLoading(true); setError(null);
     // final client-side validation before sending
     try{
-      const allowedKeys = new Set(['gender','age','height','personal_color','fashion','impression','prep_time','want_impression','oneword','category']);
+      const allowedKeys = new Set(['gender','age','height','personal_color','fashion','impression','prep_time','want_impression','oneword','category','axes_hint']);
       const sanitized: Record<string,string> = {};
       for(const [k,v] of Object.entries(finalAnswers)){
         if(!allowedKeys.has(k)) continue;
@@ -79,6 +92,8 @@ const DiagnosisChat: React.FC = () => {
           sanitized[k] = s;
         }
       }
+      // attach hint axes for server to consider
+      if(hintAxes.length){ sanitized['axes_hint'] = hintAxes.join(','); }
       finalAnswers = sanitized;
     }catch(e:any){ setLoading(false); setError(e.message || '入力エラー'); return; }
 
@@ -105,6 +120,11 @@ const DiagnosisChat: React.FC = () => {
   return (
     <div className="diagnosis-chat">
       <div className="chat-window">
+        {hintAxes.length>0 && (
+          <div className="muted" style={{marginBottom:8}}>
+            事前選択: {hintAxes.map(ax=> AX_LABEL[ax]||ax).join(' + ')}（診断に反映します）
+          </div>
+        )}
         <div className="chat-question">{QUESTIONS[idx].q}</div>
         <div className="chat-input-row">
           {q.type === 'single' ? (

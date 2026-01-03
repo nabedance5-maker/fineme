@@ -3,14 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>見た目診断 - 結果</title>
-  <link rel="stylesheet" href="/assets/styles/style.css">
+  <title>印象アップ診断 - 結果</title>
+  <link rel="stylesheet" href="../assets/styles/style.css">
+  <link rel="stylesheet" href="../assets/styles/components.css">
   <style>
     .diag-container{max-width:900px;margin:36px auto;padding:20px}
     .diag-card{background:#fff;padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.06)}
     .result-title{font-size:22px;font-weight:800}
     .muted{color:#6b7280}
-    .btn{display:inline-block;padding:8px 12px;border-radius:8px;background:#111;color:#fff;text-decoration:none}
+  .btn{display:inline-block;padding:8px 12px;border-radius:8px;background:#111;color:#fff;text-decoration:none}
   /* result article styling */
   .result-article{background:linear-gradient(180deg,#ffffff 0%,#fbfcfe 100%);padding:22px;border-radius:14px;border:1px solid rgba(2,6,23,0.04);box-shadow:0 18px 60px rgba(2,6,23,0.06);transition:transform .36s ease}
   .result-article:hover{transform:translateY(-6px)}
@@ -25,44 +26,43 @@
   .toast{position:fixed;right:20px;bottom:20px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s}
   .toast.show{opacity:1;transform:translateY(0)}
   @keyframes floatUp { from { transform: translateY(8px); opacity:0 } to { transform: translateY(0); opacity:1 } }
+  /* block cards */
+  .blocks-grid{display:grid;grid-template-columns:1fr;gap:12px;margin:8px 0 16px}
+  .block{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+  .block-title{font-weight:700;margin-bottom:6px}
+
+  /* highlight chips */
+  .highlights{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
+  .chip{background:#fff;border:1px solid #e5e7eb;border-radius:999px;padding:4px 10px;font-size:12px}
+
+  /* horizontal slider */
+  .result-slider{position:relative;margin-top:8px}
+  .slider-controls{position:absolute;right:8px;top:-32px;display:flex;gap:8px}
+  .slider-track{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;-webkit-overflow-scrolling:touch}
+  .slider-track::-webkit-scrollbar{height:8px}
+  .slider-track::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:8px}
+  .slide-card{flex:0 0 auto;width:200px;scroll-snap-align:start;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 4px 12px rgba(2,6,23,0.06);text-decoration:none;color:#111827}
+  .slide-card:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(2,6,23,0.08);transition:all .2s ease}
+  .slide-image-wrap{display:flex;align-items:center;justify-content:center;height:120px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;border-top-left-radius:12px;border-top-right-radius:12px}
+  .slide-image-wrap img{max-width:72px;height:auto}
+  .slide-label{padding:10px;font-weight:600}
+  /* slide emoji badge */
+  .slide-emoji{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:999px;background:linear-gradient(135deg,#fff 0%,#fef3c7 100%);box-shadow:0 6px 18px rgba(2,6,23,0.08);font-size:20px;margin:10px}
+  /* info button & popover */
+  .info-btn{background:transparent;border:1px solid #e5e7eb;color:#111;padding:6px 8px;border-radius:8px}
+  .popover{position:absolute;right:8px;top:8px;z-index:30;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 12px 32px rgba(2,6,23,0.12);padding:12px;max-width:320px;display:none}
+  .popover.show{display:block}
+  .popover-title{font-weight:700;margin-bottom:6px}
+  .popover p{color:#374151;font-size:14px;margin:6px 0}
+
+  /* 強制コントラスト（このページ内限定） */
+  .result-article .btn{ background:#111 !important; color:#fff !important; border:none !important; box-shadow:0 8px 18px rgba(2,6,23,0.18) }
+  .result-article .btn-ghost{ background:transparent !important; color:#111 !important; border:1px solid #111 !important }
+  .diag-card .btn{ background:#111 !important; color:#fff !important; border:none !important }
   </style>
 </head>
 <body>
-  <header id="site-header">
-    <!-- inlined header for static demo result page -->
-    <link rel="icon" href="/favicon.ico">
-    <style>
-      .navbar .brand { white-space:nowrap; font-weight:700; font-size:clamp(16px,2.2vw,20px); }
-      .nav-links { display:flex; gap:8px; align-items:center; overflow-x:auto; }
-      .nav-links a { display:inline-block !important; white-space:nowrap !important; }
-      .header-actions { display:inline-flex; align-items:center; gap:8px; }
-      @media (min-width:1025px) { .nav-links > a:first-of-type { margin-left:auto !important; } }
-    </style>
-    <div class="navbar">
-      <div class="container navbar-inner">
-        <a class="brand logo" href="/">Fineme</a>
-        <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="メニュー">☰</button>
-        <div class="nav-group" id="nav-menu">
-          <nav class="nav-links">
-            <a href="/pages/search.html">検索</a>
-            <a href="/pages/about.html">私たちについて</a>
-            <a href="/pages/feature.html">特集</a>
-            <div class="header-actions">
-              <div id="header-notifs" style="position:relative">
-                <button id="header-notifs-btn" class="btn btn-ghost" type="button" aria-label="通知">🔔 <span id="header-notifs-badge" style="display:inline-block;min-width:18px;padding:2px 6px;border-radius:999px;background:#ef4444;color:#fff;font-size:12px;margin-left:6px;" hidden>0</span></button>
-                <div id="header-notifs-dropdown" style="position:absolute;right:0;top:36px;min-width:280px;background:#fff;border:1px solid #eee;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.06);display:none;z-index:1200;padding:8px">
-                  <div id="header-notifs-list" style="max-height:240px;overflow:auto"></div>
-                  <div style="text-align:right;margin-top:8px"><button id="header-notifs-clear" class="btn btn-ghost">すべて既読</button></div>
-                </div>
-              </div>
-              <a id="header-diagnosis-btn" class="btn" href="/diagnosis/index.html">診断する</a>
-              <span id="header-auth-area"><a id="header-login-link" href="/pages/user/login.html">ログイン</a></span>
-            </div>
-          </nav>
-        </div>
-      </div>
-    </div>
-  </header>
+  <header id="site-header"></header>
 
   <main>
     <div class="diag-container">
@@ -71,118 +71,400 @@
         <div id="result-root">
           <div id="loading">結果を読み込み中…</div>
         </div>
-        <p style="margin-top:12px;"><button id="retryBtn" class="btn">もう一度診断する</button></p>
+  <p style="margin-top:12px;"><button id="retryBtn" class="btn">診断をやり直す</button></p>
       </div>
     </div>
   </main>
+  <footer id="site-footer"></footer>
+  <script src="../scripts/main.js" type="module"></script>
   <script>
     (function(){
       const STORAGE_KEY = 'fineme:diagnosis:latest';
-      const TYPES_URL = '/data/types.json';
+      const INTENT_TYPES_URL = '/data/intent-types.json';
       const root = document.getElementById('result-root');
       const loading = document.getElementById('loading');
       const retryBtn = document.getElementById('retryBtn');
+      // 新6タイプ（ストレート表記）
+      const TYPE6_COPY = {
+        t01: {
+          name:'慎重・納得重視タイプ',
+          state:'変わりたい気持ちはあるのに、失敗したくない思いが先に立ち、一歩目を慎重に選ぼうとしている状態です。',
+          strength:'表面的な変化では満足せず、理由と根拠を大切にできる人です。',
+          fit:[
+            '理由を言語化し、プロセスが見える小さな変化',
+            '押し売りせず、質問に丁寧に答えてくれる関わり方',
+            '試してから調整できる進め方'
+          ],
+          empathy:'「なんとなく」では動かず、理由と納得が揃ったときに満足できるタイプです。',
+          logic:'説明が丁寧で、考え方やプロセスを言語化できる店舗と相性が良いと判断しています。'
+        },
+        t02: {
+          name:'安心・寄り添い重視タイプ',
+          state:'興味はあるけれど「何が正解かわからない」不安が大きく、伴走や説明があると進みやすい状態です。',
+          strength:'人の話を素直に聞けて、相談しながら決められる人です。',
+          fit:[
+            '全部任せられる環境での小さな前進',
+            '手順を一つずつ示す進め方',
+            'こまめな確認と安心の提供'
+          ],
+          empathy:'強い売りより、寄り添いと安心感があると満足します。',
+          logic:'無理をさせない進め方で、相談しながら決められる店舗を優先して表示しています。'
+        },
+        t03: {
+          name:'効率・最短重視タイプ',
+          state:'今の自分に飽きや焦りがあり、結果が見えるなら一歩を早く踏み出したい状態です。',
+          strength:'行動力があり、要点を掴むのが得意です。',
+          fit:[
+            '実績と結果が明確な提案',
+            '短い試行と改善のサイクル',
+            'ゴールと計画がはっきりした関わり方'
+          ],
+          empathy:'遠回りが苦手で、結局どうなるかが明確だと安心できます。',
+          logic:'要点を押さえ、実績と結果を示せる店舗を上位に表示します。'
+        },
+        t04: {
+          name:'変化・アップデート重視タイプ',
+          state:'新しい自分にワクワクしており、挑戦を前向きに受け入れられる状態です。',
+          strength:'変化を楽しめる柔軟さがあります。',
+          fit:[
+            '提案力があり背中を押してくれる関わり方',
+            '安全網を用意した無理のない挑戦',
+            '変化の意図を共有しながら進める'
+          ],
+          empathy:'多少の挑戦でも、変われるなら一歩を選べるタイプです。',
+          logic:'変化の提案力があり、背中を押してくれる店舗を優先します。'
+        },
+        t05: {
+          name:'直感・フィーリング重視タイプ',
+          state:'雰囲気や世界観の合致が何より大事で、腑に落ちる相手となら踏み出せる状態です。',
+          strength:'自分の感覚を大切にし、それを継続力に変えられる人です。',
+          fit:[
+            '世界観とスタイルが明確な相手',
+            '事例でイメージできる提案',
+            'まずは小さく試せる一歩'
+          ],
+          empathy:'世界観や空気感に納得できると満足するタイプです。',
+          logic:'スタイルや思想が明確で、感覚が合う店舗を優先します。'
+        },
+        t06: {
+          name:'伴走・共同決定重視タイプ',
+          state:'一緒に考えながら納得して進みたい、主導権を共有したい状態です。',
+          strength:'対話を通じて意思決定できる人です。',
+          fit:[
+            '選択肢を提示し、共同で決める進め方',
+            '振り返りと調整を前提にした設計',
+            'メモや記録を共有しながら進める'
+          ],
+          empathy:'一緒に考え、納得しながら進めたいタイプです。',
+          logic:'提案と対話のバランスが良く、共同で決めていける店舗を上位に表示します。'
+        }
+      };
 
-      function renderNotFound(){ loading.textContent = '診断結果が見つかりません。最初からやり直してください。'; }
+  function renderNotFound(){
+    const wrap = document.createElement('div');
+    const msg = document.createElement('p'); msg.textContent = '診断結果が見つかりません。最初からやり直してください。';
+    const a = document.createElement('a'); a.href = '/diagnosis/index.html'; a.className = 'btn'; a.textContent = '診断をやり直す';
+    wrap.appendChild(msg); wrap.appendChild(a);
+    root.innerHTML = ''; root.appendChild(wrap);
+  }
 
       const raw = localStorage.getItem(STORAGE_KEY);
       if(!raw){ renderNotFound(); }
       else{
         try{
           const obj = JSON.parse(raw);
-          const gender = obj.gender || 'male';
-          const typeId = obj.type_id || 't01';
-          fetch(TYPES_URL).then(r=>r.json()).then(typesData=>{
-            const bucket = typesData[gender] || {};
-            const entry = bucket[typeId];
-            if(!entry){ loading.textContent = '該当タイプの説明が見つかりません。'; return; }
-            // build HTML (render only the reader-friendly article below —
-            // do not show the short technical summary block)
+          const step2 = obj.step2 || {};
+          const cls = step2.classification || { type_id:'t01', type_name:'慎重・納得重視タイプ' };
+          const copy = TYPE6_COPY[cls.type_id] || TYPE6_COPY.t01;
+          // typesData（旧第2階層）は任意画像などに使う。なくても進行。
+          fetch(INTENT_TYPES_URL).then(r=>r.json()).then(typesData=>{
+            const entry = typesData[obj?.intent?.type_id || ''] || {};
+            // 新MVP構成で描画
             root.innerHTML = '';
-            root.appendChild(document.createElement('hr'));
 
-            // --- user-friendly formatted result ---
             const article = document.createElement('article'); article.className = 'result-article'; article.style.marginTop = '12px'; article.style.lineHeight = '1.7';
 
-            // Title area with badge + name + label
+            // ① タイトル：今のあなたの状態（判定感を避ける）
             const headerWrap = document.createElement('div'); headerWrap.className = 'result-header';
             const badge = document.createElement('div'); badge.className = 'badge-emoji'; badge.textContent = '💫'; headerWrap.appendChild(badge);
             const titleWrap = document.createElement('div');
-            const title = document.createElement('h2'); title.style.fontSize = '22px'; title.style.margin = '0'; title.textContent = entry.name || '';
-            const labelLine = document.createElement('div'); labelLine.className = 'result-label'; labelLine.textContent = '— ' + (entry.label || '');
-            titleWrap.appendChild(title); titleWrap.appendChild(labelLine);
-            headerWrap.appendChild(titleWrap);
-            article.appendChild(headerWrap);
+            const title = document.createElement('h2'); title.style.fontSize = '22px'; title.style.margin = '0';
+            title.textContent = '今のあなたの状態';
+            titleWrap.appendChild(title);
+            const label = document.createElement('div'); label.className='result-label';
+            label.textContent = '「現時点では」こう見えています。焦らなくて大丈夫。';
+            titleWrap.appendChild(label);
+            headerWrap.appendChild(titleWrap); article.appendChild(headerWrap);
 
-            // Catchphrase
-            if(entry.catch){ const catchEl = document.createElement('p'); catchEl.style.margin = '8px 0 12px 0'; catchEl.style.fontWeight = '600'; catchEl.textContent = entry.catch; article.appendChild(catchEl);
-              // hero image under the catchphrase (use safeUrl if available, fallback to placeholder)
-              if(entry.image){ const heroWrap = document.createElement('div'); heroWrap.style.textAlign='center'; const hero = document.createElement('img'); hero.className = 'type-hero';
-                const imgSrc = (typeof safeUrl === 'function') ? (safeUrl(entry.image) || '/assets/placeholders/placeholder-diagnosis.svg') : (entry.image || '/assets/placeholders/placeholder-diagnosis.svg');
-                hero.src = imgSrc; hero.alt = entry.name || ''; hero.onerror = ()=>{ hero.style.display='none'; hero.src = '/assets/placeholders/placeholder-diagnosis.svg'; };
-                hero.style.animation = 'floatUp .6s ease both'; heroWrap.appendChild(hero); article.appendChild(heroWrap); }
-            }
+            if(entry.image){ const heroWrap = document.createElement('div'); heroWrap.style.textAlign='center'; const hero = document.createElement('img'); hero.className = 'type-hero'; hero.src = entry.image; hero.alt = entry.name||''; hero.onerror = ()=>{ hero.style.display='none'; }; hero.style.animation='floatUp .6s ease both'; heroWrap.appendChild(hero); article.appendChild(heroWrap); }
 
-            // Helper: split description into sentences by '。'
-            const sentences = (entry.description || '').split('。').map(s=>s.trim()).filter(Boolean);
-            const firstImpr = sentences.slice(0,2).join('。') + (sentences.slice(0,2).length>0 ? '。' : '');
-            const innerImpr = sentences.slice(2,5).join('。') + (sentences.slice(2,5).length>0 ? '。' : '');
+            // ② 状態の言語化（コアコピー）
+            const stateP = document.createElement('p'); stateP.style.margin='8px 0 12px 0'; stateP.textContent = copy.state || copy.empathy || '';
+            article.appendChild(stateP);
 
-            // 第一印象
-            if(firstImpr){ const h1 = document.createElement('h3'); h1.textContent = '🌟 第一印象'; h1.style.margin = '10px 0 6px 0'; article.appendChild(h1);
-              const p1 = document.createElement('p'); p1.textContent = firstImpr; article.appendChild(p1); }
+            // ③ 強みの再定義（自己否定を防ぐ）
+            const strongH = document.createElement('h3'); strongH.textContent = 'これは「悪い」ではなく、あなたの強みです'; article.appendChild(strongH);
+            const strongP = document.createElement('p'); strongP.textContent = copy.strength || 'あなたは自分に合う進め方を選べる人です。'; article.appendChild(strongP);
 
-            // 内面
-            if(innerImpr){ const h2i = document.createElement('h3'); h2i.textContent = '💭 内面の印象'; h2i.style.margin = '10px 0 6px 0'; article.appendChild(h2i);
-              const p2 = document.createElement('p'); p2.textContent = innerImpr; article.appendChild(p2); }
+            // ③-2 強みハイライト（チップ化）
+            (function(){
+              const highlightsWrap = document.createElement('div'); highlightsWrap.className='highlights';
+              try{
+                const text = (copy.strength || '').toString();
+                const parts = text.split(/[、。・\n]/).map(s=> s.trim()).filter(s=> s.length>0 && s.length<=30);
+                const uniq = [];
+                for(const p of parts){ if(!uniq.includes(p)) uniq.push(p); }
+                (uniq.slice(0,3)).forEach(h=>{ const span = document.createElement('span'); span.className='chip'; span.textContent=h; highlightsWrap.appendChild(span); });
+              }catch{}
+              if(!highlightsWrap.children.length){ const span = document.createElement('span'); span.className='muted'; span.textContent='要点を抽出しています'; highlightsWrap.appendChild(span); }
+              article.appendChild(highlightsWrap);
+            })();
 
-            // モテポイント (derive short point from catch or first sentence)
-            const motePoint = entry.catch || sentences[0] || '';
-            if(motePoint){ const h3m = document.createElement('h3'); h3m.textContent = '💘 モテポイント'; h3m.style.margin = '10px 0 6px 0'; article.appendChild(h3m);
-              const pm = document.createElement('p'); pm.textContent = motePoint; article.appendChild(pm); }
+            // ④ この見立てになった理由（STEP2の答え合わせ）→ ブロック＋横スライダー
+            (function(){
+              const whyBlock = document.createElement('div'); whyBlock.className='block';
+              const whyTitle = document.createElement('div'); whyTitle.className='block-title'; whyTitle.textContent='この見立てになった理由'; whyBlock.appendChild(whyTitle);
+              const items = [];
+              try{
+                const stored = JSON.parse(localStorage.getItem('fineme:diagnosis:latest')||'{}');
+                const axes = stored?.step2?.scores?.axes || {};
+                const topAxes = Object.entries(axes).filter(([k,v])=> typeof v==='number').sort((a,b)=> (b[1]||0) - (a[1]||0)).slice(0,4);
+                topAxes.forEach(([code])=>{
+                  const map = {
+                    motivation:['変わりたい理由が明確（深さがある）','🎯'],
+                    support:['サポートを必要とする度合いが高い','🤝'],
+                    change:['求める変化の強さが高い','🔄'],
+                    control:['主導権を自分で持ちたい（または共同で）','🧠'],
+                  };
+                  const pair = map[code];
+                  items.push({ label: (pair? pair[0]: ('選び方軸('+code+')を重視する')), emoji: (pair? pair[1]: '🧭') });
+                });
+                if(axes.value){ items.push({ label:'価値観は「'+ String(axes.value) +'」が近いと感じています', emoji:'💎' }); }
+              }catch{}
+              if(!items.length){ items.push({ label:'あなたの選択に基づいて導かれた結果です', emoji:'🧭' }); }
 
-            // 垢抜けアドバイス
-            if(entry.advice){ const h3a = document.createElement('h3'); h3a.textContent = '🪞 垢抜けアドバイス'; h3a.style.margin = '10px 0 6px 0'; article.appendChild(h3a);
-              const pa = document.createElement('p'); pa.textContent = entry.advice; article.appendChild(pa); }
+              const slider = document.createElement('div'); slider.className='result-slider';
+              const controls = document.createElement('div'); controls.className='slider-controls';
+              const btnPrev = document.createElement('button'); btnPrev.className='btn btn-ghost'; btnPrev.setAttribute('aria-label','前へ'); btnPrev.textContent='‹';
+              const btnNext = document.createElement('button'); btnNext.className='btn btn-ghost'; btnNext.setAttribute('aria-label','次へ'); btnNext.textContent='›';
+              controls.appendChild(btnPrev); controls.appendChild(btnNext); slider.appendChild(controls);
+              const track = document.createElement('div'); track.className='slider-track';
+              items.forEach(it=>{
+                const card = document.createElement('div'); card.className='slide-card';
+                const emoji = document.createElement('div'); emoji.className='slide-emoji'; emoji.textContent = it.emoji || '✨'; card.appendChild(emoji);
+                const lab = document.createElement('div'); lab.className='slide-label'; lab.textContent=it.label; card.appendChild(lab);
+                track.appendChild(card);
+              });
+              slider.appendChild(track);
+              whyBlock.appendChild(slider);
 
-            // Compatibility: group matches by gender and display friendlier lines
-            const femaleMatches = [];
-            const maleMatches = [];
-            (entry.matches || []).forEach(mid=>{
-              if(typesData.female && typesData.female[mid]) femaleMatches.push(typesData.female[mid]);
-              else if(typesData.male && typesData.male[mid]) maleMatches.push(typesData.male[mid]);
-              else {
-                // fallback: try same bucket
-                const other = (bucket[mid] || null);
-                if(other && (obj.gender === 'female')) femaleMatches.push(other); else if(other) maleMatches.push(other);
+              function onArrow(dir){ try{ const delta = dir==='next' ? Math.floor(track.clientWidth*0.8) : -Math.floor(track.clientWidth*0.8); track.scrollBy({ left: delta, behavior:'smooth' }); }catch{} }
+              btnPrev.addEventListener('click', ()=> onArrow('prev'));
+              btnNext.addEventListener('click', ()=> onArrow('next'));
+
+              article.appendChild(whyBlock);
+            })();
+
+            // ⑤ 今の段階で向いている変化 → ブロック＋横スライダー
+            (function(){
+              const fitBlock = document.createElement('div'); fitBlock.className='block';
+              const fitTitle = document.createElement('div'); fitTitle.className='block-title'; fitTitle.textContent='今の段階で向いている変化'; fitBlock.appendChild(fitTitle);
+              const rawItems = (copy.fit||[]).slice(0,6);
+              if(!rawItems.length){ rawItems.push(copy.logic || 'あなたに合う進め方を優先して表示しています。'); }
+              const items = rawItems.map(t=>{
+                const s = String(t);
+                let emoji = '✨';
+                if(/試|小さ|テスト/.test(s)) emoji = '🧪';
+                else if(/相談|伴走|寄り添|確認/.test(s)) emoji = '🤝';
+                else if(/変化|アップデート|挑戦/.test(s)) emoji = '🔄';
+                else if(/計画|ゴール|手順/.test(s)) emoji = '🗺️';
+                else if(/実績|結果|上位/.test(s)) emoji = '📈';
+                return { label: s, emoji };
+              });
+
+              const slider = document.createElement('div'); slider.className='result-slider';
+              const controls = document.createElement('div'); controls.className='slider-controls';
+              const btnPrev = document.createElement('button'); btnPrev.className='btn btn-ghost'; btnPrev.setAttribute('aria-label','前へ'); btnPrev.textContent='‹';
+              const btnNext = document.createElement('button'); btnNext.className='btn btn-ghost'; btnNext.setAttribute('aria-label','次へ'); btnNext.textContent='›';
+              controls.appendChild(btnPrev); controls.appendChild(btnNext); slider.appendChild(controls);
+              const track = document.createElement('div'); track.className='slider-track';
+              items.forEach(it=>{
+                const card = document.createElement('div'); card.className='slide-card';
+                const emoji = document.createElement('div'); emoji.className='slide-emoji'; emoji.textContent = it.emoji || '✨'; card.appendChild(emoji);
+                const lab = document.createElement('div'); lab.className='slide-label'; lab.textContent=it.label; card.appendChild(lab);
+                track.appendChild(card);
+              });
+              slider.appendChild(track);
+              fitBlock.appendChild(slider);
+
+              function onArrow(dir){ try{ const delta = dir==='next' ? Math.floor(track.clientWidth*0.8) : -Math.floor(track.clientWidth*0.8); track.scrollBy({ left: delta, behavior:'smooth' }); }catch{} }
+              btnPrev.addEventListener('click', ()=> onArrow('prev'));
+              btnNext.addEventListener('click', ()=> onArrow('next'));
+
+              article.appendChild(fitBlock);
+            })();
+
+            // ⑥ 次の一手（最大2つ）
+            const nextActions = document.createElement('div'); nextActions.className='result-actions';
+            const goSearch = document.createElement('a'); goSearch.href='/pages/search.html'; goSearch.className='btn'; goSearch.textContent='今の自分に合う選択肢を見る'; nextActions.appendChild(goSearch);
+            const goMypage = document.createElement('a'); goMypage.href='/pages/mypage/diagnosis.html'; goMypage.className='btn'; goMypage.textContent='少し考えるために保存する'; nextActions.appendChild(goMypage);
+            article.appendChild(nextActions);
+
+            // ⑥-2 提案カードスライダー（横スクロール）→ 絵文字化＆タイプ/軸で並び替え
+            (function(){
+              function baseSuggestions(){
+                return [
+                  { label: 'ヘアカット/カラー', emoji: '💇‍♀️', href: '/pages/search.html?keyword=ヘア' },
+                  { label: 'メイク相談', emoji: '💄', href: '/pages/search.html?keyword=メイク' },
+                  { label: 'ファッション相談', emoji: '👗', href: '/pages/search.html?keyword=ファッション' },
+                  { label: '写真撮影', emoji: '📸', href: '/pages/search.html?keyword=写真' },
+                  { label: 'ボディメイク', emoji: '🏋️', href: '/pages/search.html?keyword=ジム' },
+                  { label: '婚活サポート', emoji: '💍', href: '/pages/search.html?keyword=婚活' },
+                ];
               }
-            });
 
-            if(femaleMatches.length || maleMatches.length){ const h3c = document.createElement('h3'); h3c.textContent = '💞 相性タイプ'; h3c.style.margin = '10px 0 6px 0'; article.appendChild(h3c);
-              const listWrap = document.createElement('div'); listWrap.style.marginBottom = '8px';
-              if(femaleMatches.length){ const ftitle = document.createElement('div'); ftitle.textContent = '女性タイプ：'; ftitle.style.fontWeight='600'; listWrap.appendChild(ftitle);
-                femaleMatches.forEach(m=>{ const row = document.createElement('div'); row.style.margin = '4px 0'; row.textContent = m.name + ' — ' + (m.catch||''); listWrap.appendChild(row); }); }
-              if(maleMatches.length){ const mtitle = document.createElement('div'); mtitle.textContent = '男性タイプ：'; mtitle.style.fontWeight='600'; mtitle.style.marginTop='8px'; listWrap.appendChild(mtitle);
-                maleMatches.forEach(m=>{ const row = document.createElement('div'); row.style.margin = '4px 0'; row.textContent = m.name + ' — ' + (m.catch||''); listWrap.appendChild(row); }); }
-              article.appendChild(listWrap);
-            }
+              function scoreSuggestions(typeId, axes){
+                const list = baseSuggestions();
+                const score = Object.fromEntries(list.map(s=> [s.label, 0]));
+                // タイプ別の初期重み付け
+                const byType = {
+                  t01: ['メイク相談','ヘアカット/カラー','ファッション相談','写真撮影','ボディメイク','婚活サポート'], // 慎重・納得
+                  t02: ['メイク相談','ファッション相談','ヘアカット/カラー','写真撮影','婚活サポート','ボディメイク'], // 寄り添い
+                  t03: ['写真撮影','ボディメイク','ヘアカット/カラー','メイク相談','ファッション相談','婚活サポート'], // 最短
+                  t04: ['ファッション相談','ヘアカット/カラー','写真撮影','メイク相談','ボディメイク','婚活サポート'], // 変化
+                  t05: ['写真撮影','ファッション相談','メイク相談','ヘアカット/カラー','婚活サポート','ボディメイク'], // 直感/世界観
+                  t06: ['メイク相談','ファッション相談','写真撮影','ヘアカット/カラー','婚活サポート','ボディメイク'], // 伴走
+                };
+                (byType[typeId]||list.map(s=> s.label)).forEach((lab, i)=>{ score[lab] += (list.length - i); });
 
-            // actions: share + retry
+                // 軸スコアによる微調整
+                try{
+                  const ax = axes || {};
+                  if(Number(ax.support) > 0){ score['メイク相談'] += 3; score['ファッション相談'] += 2; }
+                  if(Number(ax.change) > 0){ score['写真撮影'] += 3; score['ボディメイク'] += 2; }
+                  if(Number(ax.control) > 0){ score['ファッション相談'] += 2; score['ヘアカット/カラー'] += 2; }
+                  if(Number(ax.motivation) > 0){ score['ヘアカット/カラー'] += 2; }
+                }catch{}
+
+                return list.sort((a,b)=> (score[b.label]||0) - (score[a.label]||0));
+              }
+
+              // 入力（タイプID/軸）
+              let typeId = 't01'; let axes = {};
+              try{
+                const stored = JSON.parse(localStorage.getItem('fineme:diagnosis:latest')||'{}');
+                typeId = (stored?.step2?.classification?.type_id) || typeId;
+                axes = stored?.step2?.scores?.axes || {};
+              }catch{}
+
+              let suggestions = scoreSuggestions(typeId, axes);
+              // 各リンクにタイプ名を付与して検索精度を向上
+              const typeName = copy?.name || '';
+              suggestions = suggestions.map(s=> ({ ...s, href: `${s.href}%20${encodeURIComponent(typeName)}` }));
+
+              const slider = document.createElement('div'); slider.className='result-slider';
+              const controls = document.createElement('div'); controls.className='slider-controls';
+              const btnPrev = document.createElement('button'); btnPrev.className='btn btn-ghost'; btnPrev.setAttribute('aria-label','前へ'); btnPrev.textContent='‹';
+              const btnNext = document.createElement('button'); btnNext.className='btn btn-ghost'; btnNext.setAttribute('aria-label','次へ'); btnNext.textContent='›';
+              const btnInfo = document.createElement('button'); btnInfo.className='info-btn'; btnInfo.setAttribute('aria-label','並びの理由'); btnInfo.textContent='並びの理由';
+              controls.appendChild(btnPrev); controls.appendChild(btnNext); controls.appendChild(btnInfo); slider.appendChild(controls);
+
+              const track = document.createElement('div'); track.className='slider-track';
+              suggestions.forEach(s=>{
+                const a = document.createElement('a'); a.className='slide-card'; a.href=s.href;
+                a.addEventListener('click', ()=>{
+                  try{ window.dispatchEvent(new CustomEvent('fineme:analytics', { detail: { event:'result_slide_click', label: s.label, type: copy.name } })); }catch{}
+                });
+                const emoji = document.createElement('div'); emoji.className='slide-emoji'; emoji.textContent = s.emoji || '✨'; a.appendChild(emoji);
+                const lab = document.createElement('div'); lab.className='slide-label'; lab.textContent=s.label; a.appendChild(lab);
+                track.appendChild(a);
+              });
+              slider.appendChild(track);
+              // ポップオーバー内容
+              const pop = document.createElement('div'); pop.className='popover';
+              const popTitle = document.createElement('div'); popTitle.className='popover-title'; popTitle.textContent='この並びになっている理由'; pop.appendChild(popTitle);
+              const pType = document.createElement('p'); pType.textContent = `タイプ：${typeName}`; pop.appendChild(pType);
+              try{
+                const reasons = [];
+                const ax = axes || {};
+                const pairs = [
+                  ['support', ax.support, '寄り添い/相談が欲しい傾向'],
+                  ['change', ax.change, '変化を強く求める傾向'],
+                  ['control', ax.control, '主導権を持ちたい/共同決定の傾向'],
+                  ['motivation', ax.motivation, '変わりたい理由が明確な傾向']
+                ];
+                pairs.sort((a,b)=> (Number(b[1])||0) - (Number(a[1])||0)).slice(0,2).forEach(([,val,desc])=>{ if(Number(val)>0){ reasons.push(desc); } });
+                const pAx = document.createElement('p'); pAx.textContent = reasons.length? `重視した軸：${reasons.join('、')}` : '重視した軸：回答に基づく総合評価'; pop.appendChild(pAx);
+              }catch{}
+              const pLead = document.createElement('p'); pLead.textContent = '上ほど今のあなたに取り組みやすい選択肢です。必要に応じて並びは調整されます。'; pop.appendChild(pLead);
+              slider.appendChild(pop);
+              // ポップオーバー開閉
+              btnInfo.addEventListener('click', ()=>{ pop.classList.toggle('show'); });
+              document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ pop.classList.remove('show'); } });
+              document.addEventListener('click', (e)=>{ if(!pop.contains(e.target) && e.target!==btnInfo){ pop.classList.remove('show'); } });
+              article.appendChild(slider);
+
+              function onArrow(dir){ try{ const delta = dir==='next' ? Math.floor(track.clientWidth*0.8) : -Math.floor(track.clientWidth*0.8); track.scrollBy({ left: delta, behavior:'smooth' }); }catch{} }
+              btnPrev.addEventListener('click', ()=> onArrow('prev'));
+              btnNext.addEventListener('click', ()=> onArrow('next'));
+            })();
+
+            // ⑦ 急がなくていい理由（成長前提）
+            const gentle = document.createElement('p'); gentle.className='muted'; gentle.style.marginTop='8px'; gentle.textContent = 'これは「今のあなた」の鏡です。行動や経験で変わっていきます。後で戻ってきても大丈夫。';
+            article.appendChild(gentle);
+
+            // ④ Finemeが約束すること
+            const promh = document.createElement('h3'); promh.textContent='Finemeは、あなたをこう扱います'; article.appendChild(promh);
+            const ul = document.createElement('ul');
+            ['無理に流行を押しつけません','価格より“相性”を優先します','あなたのペースを尊重します'].forEach(t=>{ const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+            article.appendChild(ul);
+
+            // ⑤ 並び順の見方（相性順の意味づけ）
+            const readh = document.createElement('h3'); readh.textContent='並び順の見方'; article.appendChild(readh);
+            const readp = document.createElement('p'); readp.textContent = '上の店舗ほど、あなたの「選び方」に近い傾向があります。価格ではなく「納得のしやすさ」「寄り添い」「最短で進める力」「世界観の合致」といった軸を優先しています。'; article.appendChild(readp);
+
+            // ⑥ 次の一歩
             const actions = document.createElement('div'); actions.className = 'result-actions';
-            const shareBtn = document.createElement('button'); shareBtn.className = 'btn'; shareBtn.textContent = '結果をコピー';
-            shareBtn.addEventListener('click', ()=>{
-              const text = entry.name + ' — ' + (entry.label||'') + '\n\n' + (entry.catch||'') + '\n\n' + (entry.advice||'');
-              try{ navigator.clipboard.writeText(text); showToast('結果をクリップボードにコピーしました'); }catch(e){ showToast('コピーに失敗しました'); }
+            const seeBtn = document.createElement('a'); seeBtn.href = '/pages/search.html?diag=1'; seeBtn.className = 'btn'; seeBtn.textContent = 'このタイプに合う人を見てみる';
+            const retryLink = document.createElement('a'); retryLink.href = '/diagnosis/index.html'; retryLink.className = 'btn'; retryLink.textContent = '診断をやり直す';
+            const saveBtn = document.createElement('button'); saveBtn.className = 'btn btn-ghost'; saveBtn.textContent = '結果をコピー';
+            saveBtn.addEventListener('click', ()=>{
+              const text = `${entry.name}\n${entry.catch||''}\n\n${entry.advice||''}`; try{ navigator.clipboard.writeText(text); showToast('結果をクリップボードにコピーしました'); }catch(e){ showToast('コピーに失敗しました'); }
             });
-            const shareGhost = document.createElement('button'); shareGhost.className = 'btn btn-ghost'; shareGhost.textContent = 'ツイートする';
-            shareGhost.addEventListener('click', ()=>{
-              const t = encodeURIComponent(entry.name + ' — ' + (entry.label||'') + '\n' + (entry.catch||''));
-              window.open('https://twitter.com/intent/tweet?text='+t,'_blank');
-            });
-            actions.appendChild(shareBtn); actions.appendChild(shareGhost);
-            article.appendChild(actions);
+            actions.appendChild(seeBtn); actions.appendChild(retryLink); actions.appendChild(saveBtn); article.appendChild(actions);
 
             root.appendChild(article);
+
+              // Optional: providerIdがクエリにある場合、店舗プロフィール×診断で相性説明文を生成して表示
+              try{
+                const u = new URL(location.href);
+                const providerId = u.searchParams.get('providerId') || '';
+                if(providerId){
+                  (async function(){
+                    async function loadProviders(){
+                      try{ const raw = localStorage.getItem('glowup:providers'); const arr = raw? JSON.parse(raw):[]; return Array.isArray(arr)? arr:[]; }catch{ return []; }
+                    }
+                    async function loadStaticProviders(){
+                      try{ const r = await fetch('/scripts/data/providers.json', { cache:'no-store' }); if(!r.ok) throw new Error(String(r.status)); const j = await r.json(); return Array.isArray(j)? j:[]; }catch(e){ return []; }
+                    }
+                    const mod = await import('/scripts/compatibility.js');
+                    let providers = await loadProviders();
+                    if(!providers.length){ providers = await loadStaticProviders(); }
+                    const provider = providers.find(p=> p.id === providerId);
+                    if(provider){
+                      const comp = await mod.generateCompatibility(obj, provider);
+                      if(comp){
+                        const host = document.createElement('div'); host.className = 'diag-card'; host.style.marginTop = '14px';
+                        const head = document.createElement('div'); head.className='stack';
+                        const strong = document.createElement('strong'); strong.textContent = 'あなたとの相性説明（店舗別）'; head.appendChild(strong);
+                        host.appendChild(head);
+                        mod.renderCompatibilityCard(host, comp);
+                        root.appendChild(host);
+                      }
+                    }
+                  })();
+                }
+              }catch(e){ /* optional */ }
 
             // toast element
             const toast = document.createElement('div'); toast.className = 'toast'; toast.id = 'result-toast'; toast.textContent = '';
@@ -192,7 +474,7 @@
         }catch(e){ console.error(e); renderNotFound(); }
       }
 
-      retryBtn.addEventListener('click', ()=>{ window.location.href = 'index.html'; });
+  retryBtn.addEventListener('click', ()=>{ window.location.href = '/diagnosis/index.html'; });
     })();
   </script>
 </body>

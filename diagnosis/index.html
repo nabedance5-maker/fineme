@@ -3,91 +3,82 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Fineme - 見た目診断</title>
-  <link rel="stylesheet" href="/assets/styles/style.css">
+  <title>Fineme - 印象アップ診断</title>
+  <link rel="stylesheet" href="../assets/styles/style.css">
+  <link rel="stylesheet" href="../assets/styles/components.css">
   <style>
-    .diag-container{max-width:900px;margin:36px auto;padding:20px}
-    .diag-card{background:#fff;padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.06)}
-    .diag-q{font-weight:700;margin-bottom:12px}
-  .diag-input{display:flex;gap:8px;justify-content:flex-start}
-  /* only style text-like inputs; don't apply flex to radios */
-  .diag-input input[type="text"], .diag-input input[type="search"], .diag-input textarea{flex:1;padding:10px;border-radius:8px;border:1px solid #e5e7eb}
-  /* ensure radio/option labels are left-aligned */
-  .diag-input label{display:flex;align-items:center;gap:10px;justify-content:flex-start;width:100%}
-  .diag-input label span{display:inline-block;text-align:left}
-    .diag-result{margin-top:16px}
-    .result-title{font-size:22px;font-weight:800}
-    .muted{color:#6b7280}
+  .diag-container{max-width:900px;margin:36px auto;padding:20px}
+  .diag-card{background:#fff;padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.06)}
+  .diag-q{font-weight:800;margin-bottom:12px;font-size:20px}
+  .muted{color:#6b7280}
+  .tip{font-size:12px;color:#6b7280}
+  /* cards */
+  .card-grid{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:680px){.card-grid{grid-template-columns:1fr 1fr}}
+  .option-card{display:flex;flex-direction:column;gap:6px;border:1px solid #e5e7eb;border-radius:12px;padding:12px;background:#fff;cursor:pointer;transition:box-shadow .2s, transform .05s}
+  .option-card:hover{box-shadow:0 10px 24px rgba(2,6,23,0.06)}
+  .option-card[aria-checked="true"]{outline:2px solid #2563eb; box-shadow:0 10px 28px rgba(37,99,235,.16)}
+  .option-title{font-weight:700}
+  .option-desc{font-size:13px;color:#4b5563}
+  .radio{display:none}
+  /* vertical list for Q3 */
+  .vlist{display:flex;flex-direction:column;gap:10px}
+  /* intro badge row */
+  .assure{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  .assure span{display:inline-flex;align-items:center;gap:6px;font-size:12px;background:#fff;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;color:#374151}
   </style>
 </head>
 <body>
-  <header id="site-header">
-    <!-- inlined header for static demo to avoid relying on runtime injection -->
-    <link rel="icon" href="/favicon.ico">
-    <style>
-      .navbar .brand { white-space:nowrap; font-weight:700; font-size:clamp(16px,2.2vw,20px); }
-      .nav-links { display:flex; gap:8px; align-items:center; overflow-x:auto; }
-      .nav-links a { display:inline-block !important; white-space:nowrap !important; }
-      .header-actions { display:inline-flex; align-items:center; gap:8px; }
-      @media (min-width:1025px) { .nav-links > a:first-of-type { margin-left:auto !important; } }
-    </style>
-    <div class="navbar">
-      <div class="container navbar-inner">
-        <a class="brand logo" href="/">Fineme</a>
-        <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="メニュー">☰</button>
-        <div class="nav-group" id="nav-menu">
-          <nav class="nav-links">
-            <a href="/pages/search.html">検索</a>
-            <a href="/pages/about.html">私たちについて</a>
-            <a href="/pages/feature.html">特集</a>
-            <div class="header-actions">
-              <div id="header-notifs" style="position:relative">
-                <button id="header-notifs-btn" class="btn btn-ghost" type="button" aria-label="通知">🔔 <span id="header-notifs-badge" style="display:inline-block;min-width:18px;padding:2px 6px;border-radius:999px;background:#ef4444;color:#fff;font-size:12px;margin-left:6px;" hidden>0</span></button>
-                <div id="header-notifs-dropdown" style="position:absolute;right:0;top:36px;min-width:280px;background:#fff;border:1px solid #eee;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.06);display:none;z-index:1200;padding:8px">
-                  <div id="header-notifs-list" style="max-height:240px;overflow:auto"></div>
-                  <div style="text-align:right;margin-top:8px"><button id="header-notifs-clear" class="btn btn-ghost">すべて既読</button></div>
-                </div>
-              </div>
-              <a id="header-diagnosis-btn" class="btn" href="/diagnosis/index.html">診断する</a>
-              <span id="header-auth-area"><a id="header-login-link" href="/pages/user/login.html">ログイン</a></span>
-            </div>
-          </nav>
-        </div>
-      </div>
-    </div>
-  </header>
+  <header id="site-header"></header>
   <main>
     <div class="diag-container">
       <div class="diag-card">
-        <h1>見た目診断</h1>
-        <p class="muted">性別を選択して、全16問にお答えください。診断結果はブラウザにのみ保存されます。</p>
+        <h1>印象アップ診断</h1>
         <div id="chat-root">
           <div id="progress" style="height:10px;background:#eef2ff;border-radius:6px;margin-bottom:12px;overflow:hidden"><div id="progress-bar" style="height:100%;background:linear-gradient(90deg,#6d28d9,#2563eb);width:0%"></div></div>
-          <div id="step-meta" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div id="step-label">準備</div><div id="step-count" class="muted">0 / 16</div></div>
-          <div id="question" class="diag-q">読み込み中…</div>
-          <div id="controls" class="diag-input">
-            <!-- dynamic controls (radio buttons) will be rendered here -->
+          <div id="step-meta" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div id="step-label">準備</div><div id="step-count" class="muted">0 / 3</div></div>
+          <div id="question" class="diag-q">これは、あなたを評価する診断ではありません。</div>
+          <div id="controls" class="stack" style="gap:10px">
+            <!-- dynamic controls will be rendered here -->
           </div>
           <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
             <button id="prevBtn" class="btn btn-ghost" disabled>戻る</button>
             <button id="nextBtn" class="btn">次へ</button>
           </div>
         </div>
-        <div id="result" class="diag-result" hidden></div>
       </div>
     </div>
   </main>
   <footer id="site-footer"></footer>
+  <script src="../scripts/main.js" type="module"></script>
   <script>
-    // New diagnosis logic per spec
-    const QUESTIONS_URL = '/data/questions.json';
-    const TYPES_URL = '/data/types.json';
+    // 新フロー：導入 → Q1（動機） → Q2（タイプ） → Q3（関わり方）
     const STORAGE_KEY = 'fineme:diagnosis:latest';
 
-    let questionsFlat = []; // ordered array of {axis, id, question, options[2]}
-    let answers = {}; // index -> selected option index (0 or 1)
-    let gender = null;
-    let current = 0;
+    const Q1 = [
+      { id:'r01', title:'自信を持ちたい', desc:'人と話すとき、恋愛、仕事で「堂々としていたい」' },
+      { id:'r02', title:'周りからの見られ方を変えたい', desc:'なめられたくない／ちゃんとして見られたい' },
+      { id:'r03', title:'今の自分を少し好きになりたい', desc:'自己肯定感を上げたい／気分を変えたい' },
+      { id:'r04', title:'何かを変えたいけど、何をすればいいか分からない', desc:'とにかく今のままは嫌' },
+      { id:'r05', title:'特別なきっかけがあった', desc:'恋愛・仕事・環境の変化など' }
+    ];
+
+    const Q2 = [
+      { id:'w01', name:'清潔感タイプ', title:'ちゃんとして見られたい', desc:'だらしない・疲れて見える印象をなくしたい' },
+      { id:'w02', name:'自然体タイプ', title:'無理してない感じで好印象になりたい', desc:'作り込みすぎず、雰囲気をよくしたい' },
+      { id:'w03', name:'大人落ち着きタイプ', title:'余裕があって信頼される印象になりたい', desc:'年相応・落ち着いた魅力を出したい' },
+      { id:'w04', name:'男らしさタイプ', title:'頼もしさを強めたい', desc:'清潔×サイズ感で過剰に誇張しない' },
+      { id:'w05', name:'選ばれる恋愛タイプ', title:'近距離で好印象になりたい', desc:'親近感×清潔感×少しの色気' },
+      { id:'w06', name:'自信醸成タイプ', title:'できる自分を実感したい', desc:'見た目の習慣化で自信を積み上げる' },
+      { id:'w07', name:'第一印象変化タイプ', title:'はっきり変えたい', desc:'髪・眉・輪郭・色で別人級に' },
+      { id:'w08', name:'節目変化タイプ', title:'節目にふさわしく整えたい', desc:'就職・転職・結婚などに合わせて' }
+    ];
+
+    const Q3 = [
+      { id:'s01', name:'理由や根拠をしっかり知りたいタイプ', title:'「なぜそうなるのか」を理解しながら進めたい', desc:'納得してから変わりたい' },
+      { id:'s02', name:'プロに任せたいタイプ', title:'細かいことはいいから、似合うようにしてほしい', desc:'自分で考えるのは正直苦手' },
+      { id:'s03', name:'一緒に相談しながら決めたいタイプ', title:'話しながら方向性をすり合わせたい', desc:'自分の意見も尊重してほしい' }
+    ];
 
     const qEl = document.getElementById('question');
     const ctrl = document.getElementById('controls');
@@ -97,99 +88,127 @@
     const stepLabel = document.getElementById('step-label');
     const stepCount = document.getElementById('step-count');
 
+    // phase: -1=intro, 0=Q1,1=Q2,2=Q3
+    let phase = -1;
+    const total = 3;
+    const answers = { q1:null, q2:null, q3:null };
+
     function setProgress(){
-      const pct = Math.round((current / (questionsFlat.length)) * 100);
+      const current = Math.max(0, phase+1); // intro -> 0
+      const pct = Math.round((current / total) * 100);
       progressBar.style.width = pct + '%';
-      stepCount.textContent = (Math.min(current+1, questionsFlat.length)) + ' / ' + questionsFlat.length;
+      stepCount.textContent = (current) + ' / ' + total;
     }
 
-    function renderGenderSelection(){
-      qEl.textContent = '性別を選択してください';
+    function renderIntro(){
+      stepLabel.textContent = '準備';
+      qEl.textContent = 'これは、あなたを評価する診断ではありません。';
       ctrl.innerHTML = '';
-      const wrap = document.createElement('div'); wrap.style.display='flex'; wrap.style.gap='12px';
-      ['male','female'].forEach(g=>{
-        const btn = document.createElement('button'); btn.type='button'; btn.className='btn'; btn.textContent = g === 'male' ? '男性' : '女性';
-        btn.addEventListener('click', ()=>{ gender = g; answers = {}; current = 0; renderQuestion(); });
-        wrap.appendChild(btn);
-      });
-      ctrl.appendChild(wrap);
-      prevBtn.disabled = true; nextBtn.disabled = true; stepLabel.textContent = '性別選択'; stepCount.textContent = '0 / 16'; progressBar.style.width='0%';
-    }
-
-    function renderQuestion(){
-      if(!gender){ renderGenderSelection(); return; }
-      if(questionsFlat.length === 0){ qEl.textContent = '質問が読み込まれていません'; ctrl.innerHTML=''; nextBtn.disabled=true; return; }
-      // show current question
-  const q = questionsFlat[current];
-  qEl.textContent = q.question || '質問文が見つかりません。別の選択肢を選んでください。';
-      ctrl.innerHTML = '';
-      const list = document.createElement('div'); list.style.display='flex'; list.style.flexDirection='column'; list.style.gap='8px';
-      q.options = q.options || ['A','B'];
-      q.options.forEach((opt, i)=>{
-        const id = `opt_${current}_${i}`;
-        const label = document.createElement('label'); label.style.display='flex'; label.style.alignItems='center'; label.style.gap='10px';
-        const radio = document.createElement('input'); radio.type='radio'; radio.name='diag_opt'; radio.id=id; radio.value=i;
-        if(answers[current] === i) radio.checked = true;
-        radio.addEventListener('change', ()=>{ answers[current] = i; nextBtn.disabled = false; });
-        const span = document.createElement('span'); span.textContent = opt;
-        label.appendChild(radio); label.appendChild(span); list.appendChild(label);
-      });
-      ctrl.appendChild(list);
-      prevBtn.disabled = current === 0;
-      nextBtn.disabled = answers[current] === undefined;
-      nextBtn.textContent = current < questionsFlat.length-1 ? '次へ' : '診断する';
+      const p1 = document.createElement('p'); p1.textContent = '今のあなたが「どんな人か」を決めるためではなく、これから「どう変わっていけそうか」を見つけるための診断です。'; ctrl.appendChild(p1);
+      const p2 = document.createElement('p'); p2.textContent = '正解も、不正解もありません。今の気持ちに一番近いものを選んでください。'; ctrl.appendChild(p2);
+      const assure = document.createElement('div'); assure.className='assure';
+      assure.innerHTML = '<span>⏱️ 約3分</span><span>🕶️ 登録・課金なし</span><span>🗂️ 結果はいつでも見返せます</span>';
+      ctrl.appendChild(assure);
+      prevBtn.disabled = true;
+      nextBtn.textContent = '診断をはじめる';
+      nextBtn.disabled = false;
       setProgress();
-      stepLabel.textContent = q.axis || '';
     }
 
-    prevBtn.addEventListener('click', ()=>{ if(current>0){ current--; renderQuestion(); }});
+    function renderQ1(){
+      stepLabel.textContent = 'Q1｜動機（WHY）';
+      qEl.textContent = 'あなたが「外見を変えたい」と思った一番の理由は、今どれに一番近いですか？';
+      ctrl.innerHTML = '';
+      const tip = document.createElement('div'); tip.className='tip'; tip.textContent = '迷ったら、今の気持ちに一番近いものを選んでください。'; ctrl.appendChild(tip);
+      const grid = document.createElement('div'); grid.className='card-grid';
+      Q1.forEach((opt, idx)=>{
+        const card = document.createElement('button'); card.type='button'; card.className='option-card'; card.setAttribute('aria-checked', answers.q1===opt.id?'true':'false');
+        const h = document.createElement('div'); h.className='option-title'; h.textContent = opt.title; card.appendChild(h);
+        const d = document.createElement('div'); d.className='option-desc'; d.textContent = opt.desc; card.appendChild(d);
+        card.addEventListener('click', ()=>{ answers.q1 = opt.id; [...grid.children].forEach(c=>c.setAttribute('aria-checked','false')); card.setAttribute('aria-checked','true'); nextBtn.disabled = false; });
+        grid.appendChild(card);
+      });
+      ctrl.appendChild(grid);
+      // Q1では前の導入画面（phase=-1）へ戻れるように、
+      // 戻るボタンは導入時のみ無効化し、Q1では有効化する
+      prevBtn.disabled = (phase<=-1);
+      nextBtn.textContent = '次へ';
+      nextBtn.disabled = !answers.q1;
+      setProgress();
+    }
+
+    function renderQ2(){
+      stepLabel.textContent = 'Q2｜なりたい印象（WHAT）';
+      qEl.textContent = 'もし「第一印象」を一つだけアップデートできるとしたら、あなたはどれを一番優先したいですか？';
+      ctrl.innerHTML = '';
+      const tip = document.createElement('div'); tip.className='tip'; tip.textContent = 'いちばん「こう見られたい」に近いものを選んでください。'; ctrl.appendChild(tip);
+      const grid = document.createElement('div'); grid.className='card-grid';
+      Q2.forEach(opt=>{
+        const card = document.createElement('button'); card.type='button'; card.className='option-card'; card.setAttribute('aria-checked', answers.q2===opt.id?'true':'false');
+        const h = document.createElement('div'); h.className='option-title'; h.textContent = opt.name; card.appendChild(h);
+        const t = document.createElement('div'); t.style.fontSize='13px'; t.style.color='#111827'; t.textContent = '— ' + opt.title; card.appendChild(t);
+        const d = document.createElement('div'); d.className='option-desc'; d.textContent = opt.desc; card.appendChild(d);
+        card.addEventListener('click', ()=>{ answers.q2 = opt.id; [...grid.children].forEach(c=>c.setAttribute('aria-checked','false')); card.setAttribute('aria-checked','true'); nextBtn.disabled = false; });
+        grid.appendChild(card);
+      });
+      ctrl.appendChild(grid);
+      prevBtn.disabled = false;
+      nextBtn.textContent = '次へ';
+      nextBtn.disabled = !answers.q2;
+      setProgress();
+    }
+
+    function renderQ3(){
+      stepLabel.textContent = 'Q3｜関わり方（HOW）';
+      qEl.textContent = '見た目を変えるとき、あなたはどんな関わり方を求めますか？';
+      ctrl.innerHTML = '';
+      const tip = document.createElement('div'); tip.className='tip'; tip.textContent = '正解はありません。一番しっくりくるものを選んでください。'; ctrl.appendChild(tip);
+      const vlist = document.createElement('div'); vlist.className='vlist';
+      Q3.forEach(opt=>{
+        const card = document.createElement('button'); card.type='button'; card.className='option-card'; card.style.textAlign='left'; card.setAttribute('aria-checked', answers.q3===opt.id?'true':'false');
+        const h = document.createElement('div'); h.className='option-title'; h.textContent = opt.name; card.appendChild(h);
+        const t = document.createElement('div'); t.style.fontSize='13px'; t.style.color='#111827'; t.textContent = opt.title; card.appendChild(t);
+        const d = document.createElement('div'); d.className='option-desc'; d.textContent = opt.desc; card.appendChild(d);
+        card.addEventListener('click', ()=>{ answers.q3 = opt.id; [...vlist.children].forEach(c=>c.setAttribute('aria-checked','false')); card.setAttribute('aria-checked','true'); nextBtn.disabled = false; });
+        vlist.appendChild(card);
+      });
+      ctrl.appendChild(vlist);
+      prevBtn.disabled = false;
+      nextBtn.textContent = '提案を見る';
+      nextBtn.disabled = !answers.q3;
+      setProgress();
+    }
+
+    function render(){
+      if(phase === -1) return renderIntro();
+      if(phase === 0) return renderQ1();
+      if(phase === 1) return renderQ2();
+      return renderQ3();
+    }
+
+    prevBtn.addEventListener('click', ()=>{
+      if(phase <= -1) return;
+      phase -= 1;
+      render();
+    });
 
     nextBtn.addEventListener('click', ()=>{
-      if(!gender){ return; }
-      if(answers[current] === undefined) return;
-      if(current < questionsFlat.length-1){ current++; renderQuestion(); return; }
-      // compute per-axis scores
-      const axisMap = { 'Soft-Hard': {left:'Soft',right:'Hard'}, 'Simple-Glam':{left:'Simple',right:'Glam'}, 'Calm-Bright':{left:'Calm',right:'Bright'}, 'Natural-Mode':{left:'Natural',right:'Mode'} };
-      const axisScores = { 'Soft-Hard':0,'Simple-Glam':0,'Calm-Bright':0,'Natural-Mode':0 };
-      // questionsFlat contains questions in axis order; assume each axis has 4 questions
-      questionsFlat.forEach((q, idx)=>{
-        const sel = answers[idx]; if(sel === undefined) return;
-        // assume option index 1 indicates right-side
-        if(sel === 1) axisScores[q.axis] = (axisScores[q.axis] || 0) + 1;
-      });
-      // determine direction per axis
-      const directions = {};
-      Object.keys(axisScores).forEach(ax=>{ const v = axisScores[ax]||0; directions[ax] = (v >=3) ? axisMap[ax].right : axisMap[ax].left; });
-      // build bitmask: Soft-Hard (msb), Simple-Glam, Calm-Bright, Natural-Mode (lsb)
-      const bits = [ directions['Soft-Hard'].startsWith('Hard') ? 1:0, directions['Simple-Glam'].startsWith('Glam')?1:0, directions['Calm-Bright'].startsWith('Bright')?1:0, directions['Natural-Mode'].startsWith('Mode')?1:0 ];
-      const val = (bits[0]<<3) | (bits[1]<<2) | (bits[2]<<1) | (bits[3]<<0);
-      const typeId = 't' + String(val+1).padStart(2,'0');
-      const resultObj = { at: Date.now(), gender, type_id: typeId, directions, axisScores, answers };
-      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(resultObj)); }catch(e){ console.warn('localStorage set failed', e); }
-      window.location.href = 'result.html';
+      if(phase < 2){ phase += 1; render(); return; }
+      // 保存フォーマット（互換性維持）：intent(type_id/name) + why/how のラベル
+      const type = Q2.find(x=> x.id === answers.q2) || Q2[0];
+      const style = Q3.find(x=> x.id === answers.q3) || Q3[0];
+      const out = {
+        at: Date.now(), version:'v3',
+        intent: { type_id: type.id, type_name: type.name },
+        why: { reason_id: answers.q1 },
+        how: { style_id: style.id, style_name: style.name }
+      };
+      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(out)); }catch(e){ /* ignore */ }
+  window.location.href = 'step1.html';
     });
 
-    // load questions.json and initialize questionsFlat
-    fetch(QUESTIONS_URL).then(r=>r.json()).then(data=>{
-      // expected structure: { "Soft-Hard": [...], "Simple-Glam": [...], ... }
-      const axes = ['Soft-Hard','Simple-Glam','Calm-Bright','Natural-Mode'];
-      axes.forEach(ax=>{
-        const qlist = (data && data[ax]) ? data[ax] : [];
-        // ensure exactly 4 questions per axis; if missing, fill placeholders
-        for(let i=0;i<4;i++){
-    const q = qlist[i] || { id: `${ax}_${i+1}`, question: `${ax} に関する質問${i+1}`, options: ['左の特徴に近い','右の特徴に近い'] };
-    questionsFlat.push({ axis: ax, id: q.id || `${ax}_${i+1}`, question: q.question || `${ax} の質問${i+1}`, options: q.options || ['左の特徴に近い','右の特徴に近い'] });
-        }
-      });
-      // initialize UI
-      renderGenderSelection();
-    }).catch(err=>{
-      console.error('questions load error', err);
-      // fallback: generate 16 placeholder questions
-      const axes = ['Soft-Hard','Simple-Glam','Calm-Bright','Natural-Mode'];
-  axes.forEach(ax=>{ for(let i=0;i<4;i++) questionsFlat.push({ axis:ax, id:`${ax}_${i+1}`, question:`${ax} に関する質問${i+1}`, options:['左の特徴に近い','右の特徴に近い'] }); });
-      renderGenderSelection();
-    });
+    // 初期描画
+    render();
   </script>
 </body>
 </html>

@@ -78,8 +78,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const answers = body?.answers || {};
 
     // Validate & sanitize allowed keys
-    const allowedKeys = new Set(['gender','age','height','personal_color','fashion','impression','prep_time','want_impression','oneword','category']);
+    const allowedKeys = new Set(['gender','age','height','personal_color','fashion','impression','prep_time','want_impression','oneword','category','axes_hint']);
     const sanitized: Record<string,string> = {};
+    const AX_MAP: Record<string,string> = { A:'納得', B:'寄り添い', C:'最短', D:'進め方' };
+    let axesHintLabels: string[] = [];
     for(const [k,v] of Object.entries(answers)){
       if(!allowedKeys.has(k)) continue;
       if(k === 'age'){
@@ -90,6 +92,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const n = Number(v);
         if(Number.isNaN(n) || n < 50 || n > 260) return res.status(400).json({ error: 'Invalid height' });
         sanitized[k] = String(Math.floor(n));
+      }else if(k === 'axes_hint'){
+        const raw = String(v||'');
+        const parts = raw.split(',').map(s=> s.trim().toUpperCase()).filter(s=> ['A','B','C','D'].includes(s));
+        const unique = Array.from(new Set(parts));
+        sanitized[k] = unique.join(',');
+        axesHintLabels = unique.map(code=> AX_MAP[code]).filter(Boolean);
       }else if(k === 'personal_color'){
         const allowed = ['春','夏','秋','冬','わからない','spring','summer','autumn','winter'];
         const s = String(v).trim();
@@ -102,7 +110,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Build prompt safely (JSON-encode values)
     const userData = JSON.stringify(sanitized);
-    const prompt = `あなたは「Fineme」という外見診断サービスのAIアシスタントです。\n以下のユーザー回答(JSON)をもとに、32タイプのうち最も適切な1つを判定してください。\n出力は必ず厳密なJSONのみで行ってください。\n\n入力(JSON):\n${userData}\n\n出力フォーマット：\n{\n  "type_name": "(タイプ名)",\n  "type_description": "(2〜3行の説明)",\n  "recommendation": "(おすすめ施策・カテゴリへの一言誘導)"\n}\n\n注意：余分な説明や注釈を付けず、必ず JSON のみ返してください。`;
+    const hintText = axesHintLabels.length ? `\n事前選択された軸（軽く考慮）: ${axesHintLabels.join(', ')}` : '';
+    const prompt = `あなたは「Fineme」という外見診断サービスのAIアシスタントです。\n以下のユーザー回答(JSON)をもとに、32タイプのうち最も適切な1つを判定してください。${hintText}\n出力は必ず厳密なJSONのみで行ってください。\n\n入力(JSON):\n${userData}\n\n出力フォーマット：\n{\n  "type_name": "(タイプ名)",\n  "type_description": "(2〜3行の説明)",\n  "recommendation": "(おすすめ施策・カテゴリへの一言誘導)"\n}\n\n方針：事前選択された軸は“軽く”考慮し、整合性と妥当性を最優先してください。\n注意：余分な説明や注釈を付けず、必ず JSON のみ返してください。`;
 
     const content = await callOpenAI(prompt);
     // extract JSON safely
