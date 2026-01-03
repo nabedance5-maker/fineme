@@ -24,13 +24,14 @@ function loadFeatures(){
 
 function sanitizeHtml(html){
   // Keep in sync with admin-features sanitizer
-  const allowedTags = new Set(['P','H2','H3','H4','UL','OL','LI','STRONG','EM','U','A','BLOCKQUOTE','IMG','BR','DIV']);
+  const allowedTags = new Set(['P','H2','H3','H4','UL','OL','LI','STRONG','EM','U','A','BLOCKQUOTE','IMG','BR','DIV','SECTION','ASIDE','FIGURE','FIGCAPTION','SPAN']);
   const allowedAttrs = {
-    'A': ['href','target','rel'], 'IMG': ['src','alt','data-size'],
-    'P': ['data-align'], 'H2': ['data-align'], 'H3': ['data-align'], 'H4': ['data-align'],
-    'LI': ['data-align'], 'UL': ['data-align'], 'OL': ['data-align'], 'BLOCKQUOTE': ['data-align']
+    'A': ['href','target','rel','class'], 'IMG': ['src','alt','data-size','class'],
+    'P': ['data-align','class'], 'H2': ['data-align','class'], 'H3': ['data-align','class'], 'H4': ['data-align','class'],
+    'LI': ['data-align','class'], 'UL': ['data-align','class'], 'OL': ['data-align','class'], 'BLOCKQUOTE': ['data-align','class'],
+    'DIV': ['data-align','class','data-x','data-y','data-w','data-h','data-role','data-type'],
+    'SECTION': ['class'], 'ASIDE': ['class'], 'FIGURE': ['class'], 'FIGCAPTION': ['class'], 'SPAN': ['class']
   };
-  allowedAttrs['DIV'] = ['data-align'];
   const tmp = document.createElement('div');
   tmp.innerHTML = html || '';
   const walker = document.createTreeWalker(tmp, NodeFilter.SHOW_ELEMENT, null);
@@ -121,6 +122,8 @@ function renderArticle(item){
   t.textContent = item.title || '';
   s.textContent = item.summary || '';
   b.innerHTML = sanitizeHtml(item.body||'');
+  // initialize feature builder for advanced layout blocks
+  try{ import('./feature-builder.js').then(mod => { try{ mod.initFeatureBuilder(b); }catch{} }).catch(()=>{}); }catch{}
   art.hidden = false;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
