@@ -135,6 +135,16 @@
                     <button type="button" class="rte-btn" id="rte-insert-image-block" title="画像ブロック">Image+</button>
                   </div>
                   <div id="feature-body-editor" class="rte-editor" contenteditable="true" aria-label="本文エディタ" style="padding-top:8px"></div>
+                  <details class="muted" style="margin-top:8px">
+                    <summary>編集ヘルプ</summary>
+                    <ul style="margin:8px 0 0; padding-left:20px">
+                      <li>「挿入」ボタンから Grid/Card/Block/Slider/Image+ を追加できます。</li>
+                      <li>画像は「Img」または「Img(端末)」で挿入、サイズは「画像サイズ」で調整できます。</li>
+                      <li>公開ページで URL の末尾に <code>#edit</code> を付けると簡易配置モードで確認できます。</li>
+                      <li>配置は <code>data-x/y/w/h</code> の値で制御（12列グリッド）。</li>
+                      <li>保存時は安全なサニタイズが適用されます（必要な class や data 属性は保持）。</li>
+                    </ul>
+                  </details>
                   <textarea id="feature-body" name="body" hidden></textarea>
                 </div>
               <div class="cluster" style="align-items:center; gap:12px">
