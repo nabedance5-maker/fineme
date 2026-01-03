@@ -1,4 +1,5 @@
 // User auth guard and session helpers (localStorage/sessionStorage demo)
+const BASE_PREFIX = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
 const USER_SESSION_KEY = 'glowup:userSession';
 const USERS_KEY = 'glowup:users';
 
@@ -9,7 +10,7 @@ export function getUserSession(){
 export function requireUserAuth(){
   const session = getUserSession();
   if(!session){
-    location.href = '/pages/user/login.html';
+    location.href = BASE_PREFIX + '/pages/user/login.html';
     return null;
   }
   return session;
@@ -17,7 +18,7 @@ export function requireUserAuth(){
 
 export function signOutUser(){
   try{ sessionStorage.removeItem(USER_SESSION_KEY); }catch{}
-  location.href = '/pages/user/login.html';
+  location.href = BASE_PREFIX + '/pages/user/login.html';
 }
 
 export function loadUsers(){

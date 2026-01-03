@@ -1,4 +1,5 @@
 // Provider auth guard and session helpers
+const BASE_PREFIX = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
 const PROVIDER_SESSION_KEY = 'glowup:providerSession';
 
 export function getProviderSession(){
@@ -9,7 +10,7 @@ export function requireProviderAuth(){
   const session = getProviderSession();
   if(!session){
     // not logged-in -> redirect to login page
-    location.href = '/pages/login.html';
+    location.href = BASE_PREFIX + '/pages/login.html';
     return null;
   }
   return session;
@@ -18,5 +19,5 @@ export function requireProviderAuth(){
 export function signOutProvider(){
   sessionStorage.removeItem('glowup:providerLoggedIn');
   sessionStorage.removeItem(PROVIDER_SESSION_KEY);
-  location.href = '/pages/login.html';
+  location.href = BASE_PREFIX + '/pages/login.html';
 }

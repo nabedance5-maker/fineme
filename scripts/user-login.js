@@ -1,4 +1,5 @@
 import { loadUsers, saveUsers, uuid } from './user-auth.js';
+const BASE_PREFIX = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
 
 function qs(s, root=document){ return root.querySelector(s); }
 
@@ -35,15 +36,16 @@ function onLoginSubmit(e){
   }
   setUserSession(found);
   // Sync user to server DB for PoC
-  try{ fetch('http://localhost:4015/api/sync-user', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ loginId: found.loginId, displayName: found.displayName, email: found.email, passwordHash: found.passwordHash }) }).catch(()=>{}); }catch(_){ }
+  // Skip server sync on GitHub Pages
+  try{ if(!/github\.io$/i.test(location.hostname)) fetch('http://localhost:4015/api/sync-user', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ loginId: found.loginId, displayName: found.displayName, email: found.email, passwordHash: found.passwordHash }) }).catch(()=>{}); }catch(_){ }
   // after login, if a `next` param exists, redirect there to resume booking
   try{
     const next = new URLSearchParams(location.search).get('next');
     if(next){ location.replace(decodeURIComponent(next)); return; }
   }catch(_){}
   // after login, if a pending LINE link exists, attempt to link by calling server
-  try{ const pending = sessionStorage.getItem('pendingLineLink'); if(pending){ fetch('http://localhost:4015/api/link-line', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ loginId: found.loginId, lineUserId: pending }) }).then(()=>{ sessionStorage.removeItem('pendingLineLink'); }).catch(()=>{}); } }catch(_){ }
-  location.href = '/pages/mypage/index.html';
+  try{ const pending = sessionStorage.getItem('pendingLineLink'); if(pending && !/github\.io$/i.test(location.hostname)){ fetch('http://localhost:4015/api/link-line', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ loginId: found.loginId, lineUserId: pending }) }).then(()=>{ sessionStorage.removeItem('pendingLineLink'); }).catch(()=>{}); } }catch(_){ }
+  location.href = BASE_PREFIX + '/pages/mypage/index.html';
 }
 
 function onRegisterSubmit(e){
@@ -68,12 +70,12 @@ function onRegisterSubmit(e){
   saveUsers(users);
   setUserSession(user);
   // Sync newly registered user to server DB
-  try{ fetch('http://localhost:4015/api/sync-user', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ loginId: user.loginId, displayName: user.displayName, email: user.email, passwordHash: user.passwordHash }) }).catch(()=>{}); }catch(_){ }
+  try{ if(!/github\.io$/i.test(location.hostname)) fetch('http://localhost:4015/api/sync-user', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ loginId: user.loginId, displayName: user.displayName, email: user.email, passwordHash: user.passwordHash }) }).catch(()=>{}); }catch(_){ }
   try{
     const next = new URLSearchParams(location.search).get('next');
     if(next){ location.replace(decodeURIComponent(next)); return; }
   }catch(_){}
-  location.href = '/pages/mypage/index.html';
+  location.href = BASE_PREFIX + '/pages/mypage/index.html';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
