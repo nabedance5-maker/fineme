@@ -7,6 +7,7 @@
   <link rel="icon" href="/favicon.ico" />
   <link rel="stylesheet" href="../../assets/styles/style.css" />
   <link rel="stylesheet" href="../../assets/styles/components.css" />
+  <link rel="stylesheet" href="../../assets/styles/feature-builder.css" />
   <style>
     /* Force sticky toolbar within modal content (override global top offset) */
     #feature-modal .modal-content .rte-toolbar{position:sticky !important; top:0 !important; z-index:10; background:#fff}
@@ -125,6 +126,13 @@
                     </label>
                     <span class="rte-sep"></span>
                     <button type="button" class="rte-btn" data-cmd="removeFormat" title="書式クリア">Clear</button>
+                    <span class="rte-sep"></span>
+                    <span class="muted">挿入:</span>
+                    <button type="button" class="rte-btn" id="rte-insert-grid" title="グリッド">Grid</button>
+                    <button type="button" class="rte-btn" id="rte-insert-card" title="カード">Card</button>
+                    <button type="button" class="rte-btn" id="rte-insert-block" title="ブロック">Block</button>
+                    <button type="button" class="rte-btn" id="rte-insert-slider" title="スライダー">Slider</button>
+                    <button type="button" class="rte-btn" id="rte-insert-image-block" title="画像ブロック">Image+</button>
                   </div>
                   <div id="feature-body-editor" class="rte-editor" contenteditable="true" aria-label="本文エディタ" style="padding-top:8px"></div>
                   <textarea id="feature-body" name="body" hidden></textarea>

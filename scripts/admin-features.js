@@ -326,6 +326,90 @@ function onTableClick(e){
         if(url){ document.execCommand('insertImage', false, url); }
         return;
       }
+      // Feature Builder quick inserts
+      if(btn.id === 'rte-insert-grid'){
+        const html = [
+          '<div class="fb-grid">',
+          '  <div class="fb-card fb-item" data-x="1" data-y="1" data-w="6" data-h="1">',
+          '    <h3 class="fb-heading">カードタイトル</h3>',
+          '    <p class="fb-text">説明文をここに。</p>',
+          '    <img class="fb-image" src="" alt="" />',
+          '  </div>',
+          '  <div class="fb-block fb-item" data-x="7" data-y="1" data-w="6" data-h="1">',
+          '    <h3 class="fb-heading">ブロック見出し</h3>',
+          '    <p class="fb-text">テキストブロック。</p>',
+          '  </div>',
+          '</div>'
+        ].join('\n');
+        document.execCommand('insertHTML', false, html);
+        const ed = document.getElementById('feature-body-editor');
+        const ta = document.getElementById('feature-body');
+        if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); }
+        refreshToolbarState();
+        return;
+      }
+      if(btn.id === 'rte-insert-card'){
+        const html = [
+          '<div class="fb-card fb-item" data-x="1" data-y="1" data-w="6" data-h="1">',
+          '  <h3 class="fb-heading">カードタイトル</h3>',
+          '  <p class="fb-text">カード説明。</p>',
+          '  <img class="fb-image" src="" alt="" />',
+          '</div>'
+        ].join('\n');
+        document.execCommand('insertHTML', false, html);
+        const ed = document.getElementById('feature-body-editor');
+        const ta = document.getElementById('feature-body');
+        if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); }
+        refreshToolbarState();
+        return;
+      }
+      if(btn.id === 'rte-insert-block'){
+        const html = [
+          '<div class="fb-block fb-item" data-x="1" data-y="1" data-w="12" data-h="1">',
+          '  <h3 class="fb-heading">ブロック見出し</h3>',
+          '  <p class="fb-text">本文テキスト。</p>',
+          '</div>'
+        ].join('\n');
+        document.execCommand('insertHTML', false, html);
+        const ed = document.getElementById('feature-body-editor');
+        const ta = document.getElementById('feature-body');
+        if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); }
+        refreshToolbarState();
+        return;
+      }
+      if(btn.id === 'rte-insert-slider'){
+        const html = [
+          '<div class="fb-slider fb-item" data-x="1" data-y="1" data-w="12" data-h="1">',
+          '  <div class="fb-slide fb-card">',
+          '    <h3 class="fb-heading">スライド1</h3>',
+          '    <p class="fb-text">説明1</p>',
+          '  </div>',
+          '  <div class="fb-slide fb-card">',
+          '    <h3 class="fb-heading">スライド2</h3>',
+          '    <p class="fb-text">説明2</p>',
+          '  </div>',
+          '</div>'
+        ].join('\n');
+        document.execCommand('insertHTML', false, html);
+        const ed = document.getElementById('feature-body-editor');
+        const ta = document.getElementById('feature-body');
+        if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); }
+        refreshToolbarState();
+        return;
+      }
+      if(btn.id === 'rte-insert-image-block'){
+        const html = [
+          '<div class="fb-item" data-x="1" data-y="1" data-w="12" data-h="1">',
+          '  <img class="fb-image" src="" alt="" />',
+          '</div>'
+        ].join('\n');
+        document.execCommand('insertHTML', false, html);
+        const ed = document.getElementById('feature-body-editor');
+        const ta = document.getElementById('feature-body');
+        if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); }
+        refreshToolbarState();
+        return;
+      }
       if(btn.id === 'rte-align-left'){
         document.execCommand('justifyLeft', false, null);
         const ed = document.getElementById('feature-body-editor');
@@ -484,14 +568,17 @@ window.__featureBack = function(){ showList(); };
 
 // Simple sanitizer to allow limited tags/attrs suitable for SEO-friendly article markup
 function sanitizeHtml(html){
-  const allowedTags = new Set(['P','H2','H3','H4','UL','OL','LI','STRONG','EM','U','A','BLOCKQUOTE','IMG','BR','DIV']);
+  const allowedTags = new Set(['P','H2','H3','H4','UL','OL','LI','STRONG','EM','U','A','BLOCKQUOTE','IMG','BR','DIV','SECTION','FIGURE','SPAN']);
   const allowedAttrs = {
-    'A': ['href','target','rel'],
-    'IMG': ['src','alt','data-size'],
-    'P': ['data-align'], 'H2': ['data-align'], 'H3': ['data-align'], 'H4': ['data-align'],
-    'LI': ['data-align'], 'UL': ['data-align'], 'OL': ['data-align'], 'BLOCKQUOTE': ['data-align']
+    'A': ['href','target','rel','class'],
+    'IMG': ['src','alt','data-size','class','data-x','data-y','data-w','data-h'],
+    'P': ['data-align','class'], 'H2': ['data-align','class'], 'H3': ['data-align','class'], 'H4': ['data-align','class'],
+    'LI': ['data-align','class'], 'UL': ['data-align','class'], 'OL': ['data-align','class'], 'BLOCKQUOTE': ['data-align','class'],
+    'DIV': ['data-align','class','data-x','data-y','data-w','data-h'],
+    'SECTION': ['class','data-x','data-y','data-w','data-h'],
+    'FIGURE': ['class','data-x','data-y','data-w','data-h'],
+    'SPAN': ['class']
   };
-  allowedAttrs['DIV'] = ['data-align'];
   const tmp = document.createElement('div');
   tmp.innerHTML = html || '';
   const walker = document.createTreeWalker(tmp, NodeFilter.SHOW_ELEMENT, null);
