@@ -9,6 +9,7 @@ function resolvePrefix(){
   return '../'.repeat(segs.length - 1).replace(/\/$/, '');
 }
 
+function getSanitize(){ try{ const fn = window && window['sanitizeHtml']; return (typeof fn === 'function') ? fn : null; }catch{ return null; } }
 async function inject(selector, relativePath){
   const host = document.querySelector(selector);
   if(!host) return;
@@ -21,9 +22,10 @@ async function inject(selector, relativePath){
     if(!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
     const html = await res.text();
     try{
+      const sanitize = getSanitize();
       // If a sanitizer is available, use it before inserting HTML.
-      if(typeof sanitizeHtml === 'function'){
-        host.innerHTML = sanitizeHtml(html);
+      if(sanitize){
+        host.innerHTML = sanitize(html);
       } else {
         // Fallback: parse and append nodes; strip risky content only outside GitHub Pages.
         try{
@@ -73,8 +75,9 @@ async function inject(selector, relativePath){
       if(!res2.ok) throw new Error(`Failed to fetch ${abs}: ${res2.status}`);
         try{
         const raw2 = await res2.text();
-        if(typeof sanitizeHtml === 'function'){
-          host.innerHTML = sanitizeHtml(raw2);
+        const sanitize2 = getSanitize();
+        if(sanitize2){
+          host.innerHTML = sanitize2(raw2);
         } else {
           try{
             const dp = new DOMParser();
