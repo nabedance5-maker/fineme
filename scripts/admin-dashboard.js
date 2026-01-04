@@ -4,7 +4,7 @@ import { getSummary, seedDemo } from './metrics.js';
 function $(s, root=document){ return root.querySelector(s); }
 function loadFeatures(){ try{ const raw = localStorage.getItem('glowup:features'); const arr = raw? JSON.parse(raw):[]; return Array.isArray(arr)? arr: []; }catch{ return []; } }
 
-function sparklineSVG(seriesList, { width=600, height=80, colors=['#2563eb','#10b981','#f59e0b'] }={}){
+function sparklineSVG(seriesList, { width=600, height=80, colors=['#2563eb','#10b981','#f59e0b'], labels=[], seriesNames=[] }={}){
   const n = seriesList[0]?.length || 0; if(n===0) return '';
   const flat = seriesList.flat();
   const rawMax = flat.length? Math.max(...flat) : 0;
@@ -21,7 +21,13 @@ function sparklineSVG(seriesList, { width=600, height=80, colors=['#2563eb','#10
     const d = arr.map((v,i)=> `${i===0?'M':'L'} ${i*step} ${toY(v)}`).join(' ');
     return `<path d="${d}" fill="none" stroke="${colors[idx%colors.length]}" stroke-width="2" />`;
   }).join('');
-  return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}">${paths}</svg>`;
+  const segW = width / Math.max(1,n);
+  const overlays = Array.from({length:n}).map((_,i)=>{
+    const parts = seriesList.map((arr, j)=> `${seriesNames[j]||`S${j+1}`}: ${arr[i]||0}`).join(' / ');
+    const title = `${labels[i]||''} ${parts}`.trim();
+    return `<rect x="${i*segW}" y="0" width="${segW}" height="${height}" fill="transparent"><title>${title}</title></rect>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}">${paths}<g>${overlays}</g></svg>`;
 }
 
 function render(){
@@ -102,7 +108,8 @@ function render(){
     const s = daily.map(d=> d.search||0);
     const a = daily.map(d=> d.adoption||0);
     const r = daily.map(d=> d.revisit||0);
-    mount.innerHTML = sparklineSVG([s,a,r], { width:600, height:80, colors:['#2563eb','#10b981','#f59e0b'] });
+    const labels = daily.map(d=> d.day||'');
+    mount.innerHTML = sparklineSVG([s,a,r], { width:600, height:80, colors:['#2563eb','#10b981','#f59e0b'], labels, seriesNames:['検索','採用','再訪'] });
   }
   // Tasks: drafts count
   const drafts = features.filter(f=> f.status==='draft').length;

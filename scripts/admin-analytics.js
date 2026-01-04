@@ -5,7 +5,7 @@ function $(s, root=document){ return root.querySelector(s); }
 function loadFeatures(){ try{ const raw = localStorage.getItem('glowup:features'); const arr = raw? JSON.parse(raw):[]; return Array.isArray(arr)? arr: []; }catch{ return []; } }
 function loadMetrics(){ try{ const raw = localStorage.getItem(METRICS_KEY); return raw? JSON.parse(raw): {}; }catch{ return {}; } }
 
-function sparklineSVG(seriesList, { width=800, height=120, colors=['#2563eb','#10b981','#f59e0b'] }={}){
+function sparklineSVG(seriesList, { width=800, height=120, colors=['#2563eb','#10b981','#f59e0b'], labels=[], seriesNames=[] }={}){
   const n = seriesList[0]?.length || 0; if(n===0) return '';
   const flat = seriesList.flat(); const rawMax = flat.length? Math.max(...flat):0;
   if(rawMax === 0){
@@ -20,7 +20,13 @@ function sparklineSVG(seriesList, { width=800, height=120, colors=['#2563eb','#1
     const d = arr.map((v,i)=> `${i===0?'M':'L'} ${i*step} ${toY(v)}`).join(' ');
     return `<path d="${d}" fill="none" stroke="${colors[idx%colors.length]}" stroke-width="2" />`;
   }).join('');
-  return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}">${paths}</svg>`;
+  const segW = width / Math.max(1, (seriesList[0]?.length||0));
+  const overlays = Array.from({length:(seriesList[0]?.length||0)}).map((_,i)=>{
+    const parts = seriesList.map((arr, j)=> `${seriesNames[j]||`S${j+1}`}: ${arr[i]||0}`).join(' / ');
+    const title = `${labels[i]||''} ${parts}`.trim();
+    return `<rect x="${i*segW}" y="0" width="${segW}" height="${height}" fill="transparent"><title>${title}</title></rect>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}">${paths}<g>${overlays}</g></svg>`;
 }
 
 function withinDays(tsISO, days){ const t = new Date(tsISO).getTime(); const now = Date.now(); const cutoff = now - days*24*60*60*1000; return t >= cutoff; }
@@ -96,7 +102,7 @@ function render(){
     const dayKeys = []; const now = new Date(); for(let i=days-1;i>=0;i--){ const d = new Date(now); d.setDate(now.getDate()-i); dayKeys.push(d.toISOString().slice(0,10)); }
     const map = new Map(cur.daysArr.map(r=> [r.day, r])); const sArr = [], aArr = [], rArr = [];
     dayKeys.forEach(k=>{ const row = map.get(k)||{search:0,adoption:0,revisit:0}; sArr.push(row.search||0); aArr.push(row.adoption||0); rArr.push(row.revisit||0); });
-    mount.innerHTML = sparklineSVG([sArr, aArr, rArr], { width:800, height:120 });
+    mount.innerHTML = sparklineSVG([sArr, aArr, rArr], { width:800, height:120, labels: dayKeys, seriesNames:['検索','採用','再訪'] });
   }
   // Heatmap
   renderHeatmap(cur.byHour);
