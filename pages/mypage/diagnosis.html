@@ -85,8 +85,14 @@
         const entry = types[typeId]; if(!entry) return;
         const card = document.createElement('div'); card.className='card'; card.style.padding='16px';
         const p1 = document.createElement('p'); p1.textContent = entry.catch || ''; card.appendChild(p1);
-        if(entry.advice){ const h3 = document.createElement('h3'); h3.textContent = 'あなたに合う、外見の整え方'; card.appendChild(h3); const p2=document.createElement('p'); p2.textContent = entry.advice; card.appendChild(p2); }
-        const link = document.createElement('a'); link.className='btn'; link.href='/pages/search.html'; link.textContent='このタイプに合う人を見てみる'; card.appendChild(link);
+        if(entry.advice){
+          const h3 = document.createElement('h3'); h3.textContent = 'あなたらしく整えるヒント'; card.appendChild(h3);
+          const disclaimer = document.createElement('p'); disclaimer.className='muted'; disclaimer.textContent = 'この提案は一般的な指針です。顔立ち・体型・目的によって最適は異なります。小さく試して、観察→調整していきましょう。'; card.appendChild(disclaimer);
+          const p2 = document.createElement('p'); p2.textContent = entry.advice; card.appendChild(p2);
+        }
+        const link = document.createElement('a'); link.className='btn';
+        const q = typeName ? `?keyword=${encodeURIComponent(typeName)}` : '';
+        link.href = `/pages/search.html${q}`; link.textContent='このタイプに合う人を見てみる'; card.appendChild(link);
         host.appendChild(card);
       }).catch(()=>{});
     }catch(e){ emptyState(); }

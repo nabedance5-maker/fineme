@@ -79,7 +79,11 @@
 
         if(entry.catch){ const catchEl = document.createElement('p'); catchEl.style.margin='8px 0 12px 0'; catchEl.style.fontWeight='600'; catchEl.textContent = entry.catch; article.appendChild(catchEl); }
         if(entry.description){ const p = document.createElement('p'); p.textContent = entry.description; article.appendChild(p); }
-        if(entry.advice){ const advh = document.createElement('h3'); advh.textContent='この印象に近づくコツ'; article.appendChild(advh); const advp = document.createElement('p'); advp.textContent = entry.advice; article.appendChild(advp); }
+        if(entry.advice){
+          const advh = document.createElement('h3'); advh.textContent='あなたらしく整えるヒント'; article.appendChild(advh);
+          const disclaimer = document.createElement('p'); disclaimer.className='muted'; disclaimer.textContent='この提案は一般的な指針です。最適解は顔立ち・体型・目的で変わります。小さく試して、観察→調整する進め方をおすすめします。'; article.appendChild(disclaimer);
+          const advp = document.createElement('p'); advp.textContent = entry.advice; article.appendChild(advp);
+        }
 
         // あなたの選択（WHY/HOWの要約）
         const selh = document.createElement('h3'); selh.textContent='あなたの選択（STEP1）'; article.appendChild(selh);

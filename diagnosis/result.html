@@ -197,6 +197,9 @@
             headerWrap.appendChild(titleWrap); article.appendChild(headerWrap);
 
             if(entry.image){ const heroWrap = document.createElement('div'); heroWrap.style.textAlign='center'; const hero = document.createElement('img'); hero.className = 'type-hero'; hero.src = entry.image; hero.alt = entry.name||''; hero.onerror = ()=>{ hero.style.display='none'; }; hero.style.animation='floatUp .6s ease both'; heroWrap.appendChild(hero); article.appendChild(heroWrap); }
+            // 共通の但し書き（一般指針であることを明示）
+            const disclaimerTop = document.createElement('p'); disclaimerTop.className='muted'; disclaimerTop.textContent = 'この提案は一般的な指針です。顔立ち・体型・目的によって最適は異なります。小さく試して、観察→調整していきましょう。';
+            article.appendChild(disclaimerTop);
 
             // ② 状態の言語化（コアコピー）
             const stateP = document.createElement('p'); stateP.style.margin='8px 0 12px 0'; stateP.textContent = copy.state || copy.empathy || '';
@@ -425,7 +428,9 @@
 
             // ⑥ 次の一歩
             const actions = document.createElement('div'); actions.className = 'result-actions';
-            const seeBtn = document.createElement('a'); seeBtn.href = '/pages/search.html?diag=1'; seeBtn.className = 'btn'; seeBtn.textContent = 'このタイプに合う人を見てみる';
+            const seeBtn = document.createElement('a');
+            const typeQuery = (entry?.name) ? `?diag=1&keyword=${encodeURIComponent(entry.name)}` : '?diag=1';
+            seeBtn.href = `/pages/search.html${typeQuery}`; seeBtn.className = 'btn'; seeBtn.textContent = 'このタイプに合う人を見てみる';
             const retryLink = document.createElement('a'); retryLink.href = '/diagnosis/index.html'; retryLink.className = 'btn'; retryLink.textContent = '診断をやり直す';
             const saveBtn = document.createElement('button'); saveBtn.className = 'btn btn-ghost'; saveBtn.textContent = '結果をコピー';
             saveBtn.addEventListener('click', ()=>{
