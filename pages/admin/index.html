@@ -3,11 +3,19 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>運営管理ダッシュボード | Fineme</title>
+  <title>ダッシュボード | Fineme</title>
+  <link rel="icon" href="/favicon.ico" />
   <link rel="stylesheet" href="../../assets/styles/style.css" />
   <link rel="stylesheet" href="../../assets/styles/components.css" />
+  <link rel="stylesheet" href="../../assets/styles/feature-builder.css" />
   <style>
     .admin-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .kpi-card{padding:16px;border:1px solid var(--color-border);border-radius:12px;background:#fff}
+    .kpi-label{color:#6b7280;font-size:12px}
+    .kpi-value{font-weight:800;font-size:24px}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media (max-width: 960px){ .kpi-grid{grid-template-columns:repeat(2,1fr)} .two-col{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
@@ -16,13 +24,58 @@
     <div class="container admin-grid">
       <aside id="admin-sidebar"></aside>
       <section class="stack">
-        <h1 class="section-title">運営管理ダッシュボード</h1>
-        <p class="muted">掲載者管理・特集作成・アクセス分析（ダミー）。</p>
+        <h1 class="section-title">ダッシュボード</h1>
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-label">今週の相談（検索）</div><div id="kpi-searches" class="kpi-value">0</div></div>
+          <div class="kpi-card"><div class="kpi-label">提案採用率</div><div id="kpi-adoption" class="kpi-value">0%</div></div>
+          <div class="kpi-card"><div class="kpi-label">再指名率</div><div id="kpi-revisit" class="kpi-value">0%</div></div>
+          <div class="kpi-card"><div class="kpi-label">今週の特集閲覧</div><div id="kpi-feature-views" class="kpi-value">0</div></div>
+        </div>
+        <div class="two-col">
+          <div class="card" style="padding:12px">
+            <div class="space-between" style="display:flex;align-items:center">
+              <h2 class="section-title" style="font-size:18px;margin:0">コンテンツ性能（上位）</h2>
+              <button type="button" class="btn btn-ghost" id="dash-open-features">特集を管理</button>
+            </div>
+            <table style="width:100%; border-collapse:collapse; margin-top:8px">
+              <thead><tr>
+                <th style="text-align:left; padding:8px; border-bottom:1px solid var(--color-border)">特集</th>
+                <th style="text-align:right; padding:8px; border-bottom:1px solid var(--color-border)">閲覧</th>
+              </tr></thead>
+              <tbody id="dash-top-features"><tr><td style="padding:8px" colspan="2" class="muted">データがありません</td></tr></tbody>
+            </table>
+          </div>
+          <div class="card" style="padding:12px">
+            <div class="space-between" style="display:flex;align-items:center">
+              <h2 class="section-title" style="font-size:18px;margin:0">検索インサイト</h2>
+              <button type="button" class="btn btn-ghost" id="dash-open-analytics">分析へ</button>
+            </div>
+            <table style="width:100%; border-collapse:collapse; margin-top:8px">
+              <thead><tr>
+                <th style="text-align:left; padding:8px; border-bottom:1px solid var(--color-border)">キーワード</th>
+                <th style="text-align:right; padding:8px; border-bottom:1px solid var(--color-border)">回数</th>
+              </tr></thead>
+              <tbody id="dash-top-queries"><tr><td style="padding:8px" colspan="2" class="muted">データがありません</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card" style="padding:12px">
+          <div class="space-between" style="display:flex;align-items:center">
+            <h2 class="section-title" style="font-size:18px;margin:0">運用タスク</h2>
+            <div class="cluster">
+              <button type="button" class="btn btn-ghost" id="dash-new-feature">特集を作成</button>
+              <button type="button" class="btn btn-ghost" id="dash-seed-demo">デモデータ投入</button>
+            </div>
+          </div>
+          <ul class="stack" id="dash-tasks" style="margin-top:8px"></ul>
+        </div>
       </section>
     </div>
   </main>
   <footer id="site-footer"></footer>
   <script src="../../scripts/main.js" type="module"></script>
   <script src="../../scripts/partials.js" type="module"></script>
+  <script src="../../scripts/metrics.js" type="module"></script>
+  <script src="../../scripts/admin-dashboard.js" type="module"></script>
 </body>
 </html>
