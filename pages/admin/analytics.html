@@ -3,13 +3,19 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>簡易CVRダッシュボード | Fineme</title>
+  <title>分析 | Fineme</title>
   <link rel="stylesheet" href="../../assets/styles/style.css" />
   <link rel="stylesheet" href="../../assets/styles/components.css" />
-  <style>.admin-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
+  <style>
+    .admin-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .kpi-card{padding:16px;border:1px solid var(--color-border);border-radius:12px;background:#fff}
+    .kpi-label{color:#6b7280;font-size:12px}
+    .kpi-value{font-weight:800;font-size:24px}
     table{border-collapse:collapse;width:100%}
-    th,td{border:1px solid var(--color-border);padding:8px;text-align:center}
-    th{background:#f8fafc;font-weight:700}
+    th,td{border-bottom:1px solid var(--color-border);padding:8px;text-align:left}
+    th{text-align:left}
+    @media (max-width: 960px){ .kpi-grid{grid-template-columns:repeat(2,1fr)} }
   </style>
 </head>
 <body>
@@ -18,14 +24,65 @@
     <div class="container admin-grid">
       <aside id="admin-sidebar"></aside>
       <section class="stack">
-        <h1 class="section-title">簡易CVRダッシュボード</h1>
-        <div class="card" style="padding:16px">
-          <h2 style="margin-top:0">起点別ファネル</h2>
-          <div id="funnel-host" class="stack" style="gap:8px"></div>
+        <h1 class="section-title">分析</h1>
+        <div class="card" style="padding:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <label class="muted">期間</label>
+          <select id="ana-range" class="input" style="width:auto">
+            <option value="7">直近7日</option>
+            <option value="30">直近30日</option>
+            <option value="90">直近90日</option>
+          </select>
+          <div class="spacer"></div>
+          <button class="btn btn-ghost" id="ana-seed">デモデータ投入</button>
         </div>
-        <div class="card" style="padding:16px">
-          <h2 style="margin-top:0">イベント一覧（直近）</h2>
-          <div id="events-host" class="stack" style="gap:8px"></div>
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-label">相談（検索）</div><div id="ana-kpi-searches" class="kpi-value">0</div></div>
+          <div class="kpi-card"><div class="kpi-label">提案採用率</div><div id="ana-kpi-adoption" class="kpi-value">0%</div></div>
+          <div class="kpi-card"><div class="kpi-label">再指名率</div><div id="ana-kpi-revisit" class="kpi-value">0%</div></div>
+          <div class="kpi-card"><div class="kpi-label">特集閲覧</div><div id="ana-kpi-fv" class="kpi-value">0</div></div>
+        </div>
+        <div class="card" style="padding:12px">
+          <div class="space-between" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <h2 class="section-title" style="font-size:18px;margin:0">トレンド</h2>
+            <div class="muted" style="display:flex;gap:12px;align-items:center;font-size:12px">
+              <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:9999px;background:#2563eb;display:inline-block"></span>検索</span>
+              <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:9999px;background:#10b981;display:inline-block"></span>採用</span>
+              <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:9999px;background:#f59e0b;display:inline-block"></span>再訪</span>
+            </div>
+          </div>
+          <div id="ana-trend" style="margin-top:8px; width:100%; overflow:hidden"></div>
+        </div>
+        <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card" style="padding:12px">
+            <h2 class="section-title" style="font-size:18px;margin:0">トップ検索</h2>
+            <table style="width:100%; margin-top:8px">
+              <thead><tr><th>キーワード</th><th style="text-align:right">回数</th></tr></thead>
+              <tbody id="ana-top-queries"><tr><td style="padding:8px" colspan="2" class="muted">データがありません</td></tr></tbody>
+            </table>
+            <h3 class="section-title" style="font-size:16px;margin:12px 0 4px">無結果ワード</h3>
+            <table style="width:100%; margin-top:4px">
+              <thead><tr><th>キーワード</th><th style="text-align:right">回数</th></tr></thead>
+              <tbody id="ana-noresult-queries"><tr><td style="padding:8px" colspan="2" class="muted">データがありません</td></tr></tbody>
+            </table>
+          </div>
+          <div class="card" style="padding:12px">
+            <h2 class="section-title" style="font-size:18px;margin:0">特集性能</h2>
+            <table style="width:100%; margin-top:8px">
+              <thead><tr><th>特集</th><th style="text-align:right">閲覧</th></tr></thead>
+              <tbody id="ana-top-features"><tr><td style="padding:8px" colspan="2" class="muted">データがありません</td></tr></tbody>
+            </table>
+            <h3 class="section-title" style="font-size:16px;margin:12px 0 4px">要改善（閲覧が少ない）</h3>
+            <table style="width:100%; margin-top:4px">
+              <thead><tr><th>特集</th><th style="text-align:right">閲覧</th></tr></thead>
+              <tbody id="ana-low-features"><tr><td style="padding:8px" colspan="2" class="muted">データがありません</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card" style="padding:12px">
+          <div class="space-between" style="display:flex;align-items:center">
+            <h2 class="section-title" style="font-size:18px;margin:0">最近のイベント</h2>
+          </div>
+          <div id="ana-events" class="stack" style="gap:6px; margin-top:8px"></div>
         </div>
       </section>
     </div>
@@ -33,6 +90,7 @@
   <footer id="site-footer"></footer>
   <script src="../../scripts/main.js" type="module"></script>
   <script src="../../scripts/partials.js" type="module"></script>
-  <script src="../../scripts/analytics-dashboard.js" type="module"></script>
+  <script src="../../scripts/metrics.js" type="module"></script>
+  <script src="../../scripts/admin-analytics.js" type="module"></script>
 </body>
 </html>
