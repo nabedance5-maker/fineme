@@ -121,7 +121,32 @@ function render(){
   // Funnel
   renderFunnel(cur.counts);
   // Recent events (period)
-  const list = document.getElementById('ana-events'); if(list){ const store = loadMetrics(); const evs = Array.isArray(store.events)? store.events: []; const recent = evs.filter(e=> e.t && withinDays(e.t, days)).slice(-100).reverse(); list.textContent=''; if(!recent.length){ const p=document.createElement('p'); p.className='muted'; p.textContent='イベントがありません'; list.appendChild(p);} else { recent.forEach(e=>{ const p=document.createElement('p'); p.className='muted'; p.textContent = `${e.t||''} | ${e.type||''}` + (e.query? ` | q=${e.query}`:'') + (e.featureId? ` | feature=${e.featureId}`:''); list.appendChild(p); }); } }
+  const list = document.getElementById('ana-events');
+  if(list){
+    const store = loadMetrics();
+    const evs = Array.isArray(store.events)? store.events: [];
+    const recent = evs.filter(e=> e.t && withinDays(e.t, days)).slice(-100).reverse();
+    list.textContent='';
+    if(!recent.length){
+      const p=document.createElement('p'); p.className='muted'; p.textContent='イベントがありません'; list.appendChild(p);
+    } else {
+      const top = recent.slice(0,10);
+      const rest = recent.slice(10);
+      const topList = document.createElement('div'); topList.className='stack'; topList.style.gap='6px';
+      top.forEach(e=>{ const p=document.createElement('p'); p.className='muted'; p.textContent = `${e.t||''} | ${e.type||''}` + (e.query? ` | q=${e.query}`:'') + (e.featureId? ` | feature=${e.featureId}`:''); topList.appendChild(p); });
+      list.appendChild(topList);
+      if(rest.length){
+        const details = document.createElement('details');
+        details.style.marginTop = '6px';
+        const summary = document.createElement('summary'); summary.textContent = `さらに表示（${rest.length}件）`;
+        details.appendChild(summary);
+        const more = document.createElement('div'); more.className='stack'; more.style.gap='6px'; more.style.marginTop='6px';
+        rest.forEach(e=>{ const p=document.createElement('p'); p.className='muted'; p.textContent = `${e.t||''} | ${e.type||''}` + (e.query? ` | q=${e.query}`:'') + (e.featureId? ` | feature=${e.featureId}`:''); more.appendChild(p); });
+        details.appendChild(more);
+        list.appendChild(details);
+      }
+    }
+  }
   // Exports
   const btnQ = document.getElementById('ana-export-queries'); if(btnQ){ btnQ.onclick = ()=>{ const csv = toCSV(cur.topQueries, ['query','count']); downloadCSV(`queries_${days}d.csv`, csv); } };
   const btnN = document.getElementById('ana-export-noresult'); if(btnN){ btnN.onclick = ()=>{ const csv = toCSV(cur.topNoResult, ['query','count']); downloadCSV(`noresult_${days}d.csv`, csv); } };
