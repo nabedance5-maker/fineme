@@ -1,5 +1,6 @@
 // mark as module for TS to avoid global redeclare across files
 export {};
+import { recordEvent } from './metrics.js';
 // Resolve runtime helpers (may be provided as globals by helper scripts)
 // Prefer globalThis.safeUrl when available; this creates a local const so static
 // analyzers/TypeScript won't flag undefined global references.
@@ -565,6 +566,7 @@ function sortItems(items, sort){
   const { q='', region='', category='', purpose='', page:pageStr, per:perStr, diag:diagMode='' } = parseParams();
   const list = qs('#results');
   const qLower = (q||'').toLowerCase();
+  try{ if(q && q.trim()){ recordEvent('search', { query: q.trim(), region: region||'', category: category||'', purpose: purpose||'' }); } }catch{}
 
   const staticData = await loadStaticServices();
   const staticItems = staticData.map(s => ({

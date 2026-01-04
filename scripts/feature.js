@@ -1,5 +1,6 @@
 // @ts-nocheck
 // Public Features: list and article render from localStorage managed by admin-features.js
+import { recordEvent } from './metrics.js';
 // Data key: 'glowup:features' with items: { id, title, summary, body, status, createdAt, updatedAt }
 
 const FEATURES_KEY = 'glowup:features';
@@ -183,6 +184,7 @@ function sortItems(items, mode){
     // id指定があればステータスに関わらずプレビュー表示（非公開/下書きは注意喚起）
     if(item){
       renderArticle(item);
+      try{ recordEvent('feature_view', { featureId: String(id) }); }catch{}
       // 非公開や下書きの場合の注意文をsummaryに付加（上書きしない）
       if(item.status !== 'published'){
         const s = document.getElementById('article-summary');
