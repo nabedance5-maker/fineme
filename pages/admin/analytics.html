@@ -42,6 +42,10 @@
           <div class="kpi-card"><div class="kpi-label">特集閲覧</div><div id="ana-kpi-fv" class="kpi-value">0</div></div>
         </div>
         <div class="card" style="padding:12px">
+          <h2 class="section-title" style="font-size:18px;margin:0">コンバージョンファネル</h2>
+          <div id="ana-funnel" class="stack" style="gap:8px;margin-top:8px"></div>
+        </div>
+        <div class="card" style="padding:12px">
           <div class="space-between" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <h2 class="section-title" style="font-size:18px;margin:0">トレンド</h2>
             <div class="muted" style="display:flex;gap:12px;align-items:center;font-size:12px">
@@ -52,14 +56,27 @@
           </div>
           <div id="ana-trend" style="margin-top:8px; width:100%; overflow:hidden"></div>
         </div>
+        <div class="card" style="padding:12px">
+          <div class="space-between" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <h2 class="section-title" style="font-size:18px;margin:0">時間帯ヒートマップ（検索）</h2>
+          </div>
+          <div id="ana-heatmap" style="display:grid;grid-template-columns:repeat(24,1fr);gap:4px;margin-top:8px"></div>
+          <div class="muted" style="font-size:12px;margin-top:6px">0時〜23時の合計件数を色の濃さで表示</div>
+        </div>
         <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div class="card" style="padding:12px">
             <h2 class="section-title" style="font-size:18px;margin:0">トップ検索</h2>
+            <div class="space-between" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap; margin-top:4px">
+              <button class="btn btn-ghost" id="ana-export-queries">CSVエクスポート</button>
+            </div>
             <table style="width:100%; margin-top:8px">
               <thead><tr><th>キーワード</th><th style="text-align:right">回数</th></tr></thead>
               <tbody id="ana-top-queries"><tr><td style="padding:8px" colspan="2" class="muted">データがありません</td></tr></tbody>
             </table>
             <h3 class="section-title" style="font-size:16px;margin:12px 0 4px">無結果ワード</h3>
+            <div class="space-between" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap; margin-top:4px">
+              <button class="btn btn-ghost" id="ana-export-noresult">CSVエクスポート</button>
+            </div>
             <table style="width:100%; margin-top:4px">
               <thead><tr><th>キーワード</th><th style="text-align:right">回数</th></tr></thead>
               <tbody id="ana-noresult-queries"><tr><td style="padding:8px" colspan="2" class="muted">データがありません</td></tr></tbody>
@@ -67,6 +84,9 @@
           </div>
           <div class="card" style="padding:12px">
             <h2 class="section-title" style="font-size:18px;margin:0">特集性能</h2>
+            <div class="space-between" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap; margin-top:4px">
+              <button class="btn btn-ghost" id="ana-export-features">CSVエクスポート</button>
+            </div>
             <table style="width:100%; margin-top:8px">
               <thead><tr><th>特集</th><th style="text-align:right">閲覧</th></tr></thead>
               <tbody id="ana-top-features"><tr><td style="padding:8px" colspan="2" class="muted">データがありません</td></tr></tbody>
