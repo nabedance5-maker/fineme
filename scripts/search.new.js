@@ -177,6 +177,11 @@ function card({name, region, category, priceFrom, image, href, providerName, add
     const pPrice = document.createElement('p'); pPrice.className = 'card-meta'; pPrice.textContent = `料金：¥${safePrice.toLocaleString()}`;
     const controls = document.createElement('div'); controls.className = 'cluster'; controls.style.marginTop = '8px'; controls.style.gap = '8px';
     const reserveA = document.createElement('a'); reserveA.className = 'btn'; reserveA.href = reserveHref; reserveA.textContent = '予約へ進む';
+    try{
+      reserveA.addEventListener('click', ()=>{
+        try{ recordEvent('revisit', { providerId, storeId, serviceId, slug }); }catch{}
+      });
+    }catch{}
     controls.appendChild(reserveA);
 
     // append children
@@ -216,6 +221,7 @@ function card({name, region, category, priceFrom, image, href, providerName, add
           }
         }catch{}
         const on = toggleFavorite(snapshot);
+        try{ if(on){ recordEvent('adoption', { providerId, storeId, serviceId, slug, href }); } }catch{}
         updateVisual();
       });
     }).catch(()=>{});
