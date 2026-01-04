@@ -104,7 +104,22 @@ function readForm(){
 function renderTable(){
   const tbody = $('#features-table-body');
   if(!tbody) return;
-  const list = loadFeatures().sort((a,b)=> new Date(b.updatedAt||b.createdAt).getTime() - new Date(a.updatedAt||a.createdAt).getTime());
+  // Read filters (keyword + status)
+  const qEl = document.getElementById('features-filter-query');
+  const sEl = document.getElementById('features-filter-status');
+  const q = (qEl && 'value' in qEl ? String(qEl.value||'').toLowerCase().trim() : '');
+  const status = (sEl && 'value' in sEl ? String(sEl.value||'') : '');
+  // Build filtered list
+  const list = loadFeatures()
+    .filter(f => {
+      if(status && f.status !== status) return false;
+      if(q){
+        const text = [f.title||'', f.summary||'', String(f.body||'').replace(/<[^>]*>/g,' ')].join(' ').toLowerCase();
+        if(!text.includes(q)) return false;
+      }
+      return true;
+    })
+    .sort((a,b)=> new Date(b.updatedAt||b.createdAt).getTime() - new Date(a.updatedAt||a.createdAt).getTime());
   tbody.textContent = '';
   for(const f of list){
     const tr = document.createElement('tr');
@@ -124,6 +139,8 @@ function renderTable(){
     tr.appendChild(tdTitle); tr.appendChild(tdStatus); tr.appendChild(tdDate); tr.appendChild(tdOps);
     tbody.appendChild(tr);
   }
+  // Update result count label
+  try{ const info = document.getElementById('features-filter-result'); if(info){ info.textContent = `検索結果: ${list.length}件`; } }catch{}
   // Explicit listeners to avoid CSP/Delegation issues
   // Row click fallback remains, but primary nav is via anchors
   const rows = tbody.querySelectorAll('tr[data-id]');
@@ -277,6 +294,17 @@ function onTableClick(e){
   if(tbody){ tbody.addEventListener('click', onTableClick); }
   const btnCreate = $('#features-create');
   if(btnCreate){ btnCreate.addEventListener('click', ()=>{ onNew(); updateUrlForEdit('new'); showEditor(); }); }
+  // Filters wiring
+  try{
+    const qEl = document.getElementById('features-filter-query');
+    const sEl = document.getElementById('features-filter-status');
+    const cEl = document.getElementById('features-filter-clear');
+    const kq = 'glowup:features:filter:q';
+    const ks = 'glowup:features:filter:status';
+    if(qEl && 'value' in qEl){ const savedQ = localStorage.getItem(kq); if(savedQ !== null) qEl.value = savedQ; qEl.addEventListener('input', ()=>{ localStorage.setItem(kq, String(qEl.value||'')); renderTable(); }); }
+    if(sEl && 'value' in sEl){ const savedS = localStorage.getItem(ks); if(savedS !== null) sEl.value = savedS; sEl.addEventListener('change', ()=>{ localStorage.setItem(ks, String(sEl.value||'')); renderTable(); }); }
+    if(cEl){ cEl.addEventListener('click', ()=>{ if(qEl && 'value' in qEl) qEl.value=''; if(sEl && 'value' in sEl) sEl.value=''; localStorage.removeItem(kq); localStorage.removeItem(ks); renderTable(); }); }
+  }catch{}
   // auto export toggle default OFF
   try{
     const key = 'glowup:features:autoExport';

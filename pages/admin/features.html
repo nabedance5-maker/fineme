@@ -48,6 +48,22 @@
                 <input id="features-auto-export" type="checkbox" />
                 <span class="muted">保存時に自動バックアップ（ダウンロード）</span>
               </label>
+              <span class="rte-sep"></span>
+              <label class="cluster" style="align-items:center; gap:8px">
+                <span class="muted">検索</span>
+                <input id="features-filter-query" type="search" placeholder="タイトル・概要・本文" style="min-width:220px" />
+              </label>
+              <label class="cluster" style="align-items:center; gap:8px">
+                <span class="muted">ステータス</span>
+                <select id="features-filter-status">
+                  <option value="">全て</option>
+                  <option value="draft">下書き</option>
+                  <option value="published">公開</option>
+                  <option value="private">非公開</option>
+                </select>
+              </label>
+              <button type="button" id="features-filter-clear" class="btn btn-ghost">クリア</button>
+              <span id="features-filter-result" class="muted" style="margin-left:8px"></span>
             </div>
           </div>
           <div class="card" style="overflow:auto">
