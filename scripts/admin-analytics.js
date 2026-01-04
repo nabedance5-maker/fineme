@@ -82,6 +82,8 @@ function renderFunnel(counts){ const host = document.getElementById('ana-funnel'
 
 function toCSV(rows, headers){ const esc = s=> '"'+String(s??'').replace(/"/g,'""')+'"'; const head = headers.map(esc).join(','); const body = rows.map(r=> headers.map(h=> esc(r[h])).join(',')).join('\n'); return head+'\n'+body; }
 function downloadCSV(filename, csv){ const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
+function sortRows(rows, type, keyLabel='query'){ const arr = rows.slice(); if(type==='count-asc'){ arr.sort((a,b)=> (a.count||0)-(b.count||0)); } else if(type==='alpha'){ arr.sort((a,b)=> String(a[keyLabel]||'').localeCompare(String(b[keyLabel]||''), 'ja')); } else { arr.sort((a,b)=> (b.count||0)-(a.count||0)); } return arr; }
+function renderTableCollapsed(tbodyId, rows, columns, maxFirst=10){ const host=document.getElementById(tbodyId); if(!host) return; host.textContent=''; if(!rows.length){ const tr=document.createElement('tr'); tr.innerHTML='<td style="padding:8px" colspan="2" class="muted">データがありません</td>'; host.appendChild(tr); return; } const top = rows.slice(0,maxFirst), rest = rows.slice(maxFirst); const renderRow=(r)=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td style=\"padding:8px; border-bottom:1px solid var(--color-border)\">${r[columns[0]]}</td>`+`<td style=\"padding:8px; border-bottom:1px solid var(--color-border); text-align:right\">${r[columns[1]]}</td>`; return tr; }; top.forEach(r=> host.appendChild(renderRow(r))); if(rest.length){ const details = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 2; const det = document.createElement('details'); const sum = document.createElement('summary'); sum.textContent = `さらに表示（${rest.length}件）`; det.appendChild(sum); const inner = document.createElement('div'); inner.className='stack'; inner.style.gap='4px'; inner.style.marginTop='6px'; rest.forEach(r=> inner.appendChild(renderRow(r))); det.appendChild(inner); td.appendChild(det); details.appendChild(td); host.appendChild(details); } }
 
 function render(){
   const days = Number($('#ana-range')?.value || 7);
@@ -106,16 +108,18 @@ function render(){
   }
   // Heatmap
   renderHeatmap(cur.byHour);
-  // Top queries (period)
-  const tq = document.getElementById('ana-top-queries'); if(tq){ tq.textContent=''; const rows = cur.topQueries; if(!rows.length){ const tr=document.createElement('tr'); tr.innerHTML='<td style="padding:8px" colspan="2" class="muted">データがありません</td>'; tq.appendChild(tr);} else { rows.forEach(q=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td style=\"padding:8px; border-bottom:1px solid var(--color-border)\">${q.query}</td>`+
-    `<td style=\"padding:8px; border-bottom:1px solid var(--color-border); text-align:right\">${q.count}</td>`; tq.appendChild(tr); }); } }
-  // No-result queries (period)
-  const tnr = document.getElementById('ana-noresult-queries'); if(tnr){ tnr.textContent=''; const rows = cur.topNoResult; if(!rows.length){ const tr=document.createElement('tr'); tr.innerHTML='<td style="padding:8px" colspan="2" class="muted">データがありません</td>'; tnr.appendChild(tr);} else { rows.forEach(q=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td style=\"padding:8px; border-bottom:1px solid var(--color-border)\">${q.query}</td>`+
-    `<td style=\"padding:8px; border-bottom:1px solid var(--color-border); text-align:right\">${q.count}</td>`; tnr.appendChild(tr); }); } }
+  // Top queries (period) with sort + collapse
+  const orderQ = (document.getElementById('ana-sort-queries')?.value)||'count-desc';
+  renderTableCollapsed('ana-top-queries', sortRows(cur.topQueries, orderQ, 'query'), ['query','count']);
+  // No-result queries (period) with sort + collapse
+  const orderNR = (document.getElementById('ana-sort-noresult')?.value)||'count-desc';
+  renderTableCollapsed('ana-noresult-queries', sortRows(cur.topNoResult, orderNR, 'query'), ['query','count']);
   // Features (period counts from events)
   const feats = loadFeatures(); const mapTitle = new Map(feats.map(f=> [f.id, f.title||'(無題)']));
-  const tf = document.getElementById('ana-top-features'); if(tf){ tf.textContent=''; const rows = cur.topFeatures; if(!rows.length){ const tr=document.createElement('tr'); tr.innerHTML='<td style="padding:8px" colspan="2" class="muted">データがありません</td>'; tf.appendChild(tr);} else { rows.forEach(item=>{ const tr=document.createElement('tr'); const nm = mapTitle.get(item.id) || item.id; tr.innerHTML = `<td style=\"padding:8px; border-bottom:1px solid var(--color-border)\">${nm}</td>`+
-    `<td style=\"padding:8px; border-bottom:1px solid var(--color-border); text-align:right\">${item.count}</td>`; tf.appendChild(tr); }); } }
+  // Top features (period) with sort + collapse
+  const orderF = (document.getElementById('ana-sort-features')?.value)||'count-desc';
+  const rowsF = cur.topFeatures.map(it=> ({ title:(mapTitle.get(it.id)||it.id), count: it.count }));
+  renderTableCollapsed('ana-top-features', (orderF==='alpha'? rowsF.sort((a,b)=> String(a.title).localeCompare(String(b.title),'ja')): (orderF==='count-asc'? rowsF.sort((a,b)=> a.count-b.count): rowsF.sort((a,b)=> b.count-a.count))), ['title','count']);
   const low = document.getElementById('ana-low-features'); if(low){ low.textContent=''; const pubs = feats.filter(f=> f.status==='published'); const rows = pubs.map(f=> ({ id:f.id, title:f.title||'(無題)', count:Number(cur.featureViewsMap?.[f.id]||0) })).sort((a,b)=> a.count-b.count).slice(0, Math.min(10, pubs.length)); if(!rows.length){ const tr=document.createElement('tr'); tr.innerHTML='<td style="padding:8px" colspan="2" class="muted">データがありません</td>'; low.appendChild(tr);} else { rows.forEach(it=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td style=\"padding:8px; border-bottom:1px solid var(--color-border)\">${it.title}</td>`+
     `<td style=\"padding:8px; border-bottom:1px solid var(--color-border); text-align:right\">${it.count}</td>`; low.appendChild(tr); }); } }
   // Funnel
@@ -156,6 +160,9 @@ function render(){
 function wire(){
   const range = $('#ana-range'); if(range){ range.addEventListener('change', render); }
   const seed = $('#ana-seed'); if(seed){ seed.addEventListener('click', ()=>{ seedDemo(); render(); }); }
+  const sortQ = document.getElementById('ana-sort-queries'); if(sortQ){ sortQ.addEventListener('change', render); }
+  const sortNR = document.getElementById('ana-sort-noresult'); if(sortNR){ sortNR.addEventListener('change', render); }
+  const sortF = document.getElementById('ana-sort-features'); if(sortF){ sortF.addEventListener('change', render); }
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{ wire(); render(); });

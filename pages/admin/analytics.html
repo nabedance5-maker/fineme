@@ -67,6 +67,12 @@
           <div class="card" style="padding:12px">
             <h2 class="section-title" style="font-size:18px;margin:0">トップ検索</h2>
             <div class="space-between" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap; margin-top:4px">
+              <label class="muted">並び替え</label>
+              <select id="ana-sort-queries" class="input" style="width:auto">
+                <option value="count-desc">件数降順</option>
+                <option value="count-asc">件数昇順</option>
+                <option value="alpha">五十音順</option>
+              </select>
               <button class="btn btn-ghost" id="ana-export-queries">CSVエクスポート</button>
             </div>
             <table style="width:100%; margin-top:8px">
@@ -75,6 +81,12 @@
             </table>
             <h3 class="section-title" style="font-size:16px;margin:12px 0 4px">無結果ワード</h3>
             <div class="space-between" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap; margin-top:4px">
+              <label class="muted">並び替え</label>
+              <select id="ana-sort-noresult" class="input" style="width:auto">
+                <option value="count-desc">件数降順</option>
+                <option value="count-asc">件数昇順</option>
+                <option value="alpha">五十音順</option>
+              </select>
               <button class="btn btn-ghost" id="ana-export-noresult">CSVエクスポート</button>
             </div>
             <table style="width:100%; margin-top:4px">
@@ -85,6 +97,12 @@
           <div class="card" style="padding:12px">
             <h2 class="section-title" style="font-size:18px;margin:0">特集性能</h2>
             <div class="space-between" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap; margin-top:4px">
+              <label class="muted">並び替え</label>
+              <select id="ana-sort-features" class="input" style="width:auto">
+                <option value="count-desc">閲覧降順</option>
+                <option value="count-asc">閲覧昇順</option>
+                <option value="alpha">五十音順</option>
+              </select>
               <button class="btn btn-ghost" id="ana-export-features">CSVエクスポート</button>
             </div>
             <table style="width:100%; margin-top:8px">
