@@ -1,5 +1,6 @@
 // @ts-nocheck
 // Admin Features (特集) Management
+import { initFeatureBuilder } from './feature-builder.js';
 export {};
 // Data model (localStorage key: 'glowup:features')
 // Feature: { id, title, summary, body, status: 'draft'|'published'|'private', createdAt, updatedAt, thumbnail? }
@@ -82,9 +83,10 @@ function fillForm(f){
         }
       }catch(e){ ed.textContent = html; }
       try{ refreshToolbarState(); }catch(e){}
+      try{ const ta = document.getElementById('feature-body'); if(ta){ ta.value = sanitizeHtml(ed.innerHTML); } updatePreview(); }catch{}
     });
   }
-  $('#feature-body').value = html;
+  try{ const ta = document.getElementById('feature-body'); if(ta){ ta.value = sanitizeHtml(html); } }catch{}
   $('#feature-status').value = f?.status || 'draft';
 }
 
@@ -302,7 +304,7 @@ function onTableClick(e){
   const ta = $('#feature-body');
   if(ed && ta){
     // Sync on input
-    ed.addEventListener('input', ()=>{ ta.value = sanitizeHtml(ed.innerHTML); });
+    ed.addEventListener('input', ()=>{ ta.value = sanitizeHtml(ed.innerHTML); updatePreview(); });
     // Heading select
     const sel = $('#rte-heading');
     if(sel){ sel.addEventListener('change', ()=>{
@@ -318,12 +320,12 @@ function onTableClick(e){
       if(cmd === 'formatBlock' && val){ document.execCommand(cmd, false, val); return; }
       if(btn.id === 'rte-link'){
         const url = prompt('リンクURLを入力');
-        if(url){ document.execCommand('createLink', false, url); }
+        if(url){ document.execCommand('createLink', false, url); const ed = document.getElementById('feature-body-editor'); const ta = document.getElementById('feature-body'); if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); updatePreview(); } }
         return;
       }
       if(btn.id === 'rte-image'){
         const url = prompt('画像URLを入力');
-        if(url){ document.execCommand('insertImage', false, url); }
+        if(url){ document.execCommand('insertImage', false, url); const ed = document.getElementById('feature-body-editor'); const ta = document.getElementById('feature-body'); if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); updatePreview(); } }
         return;
       }
       // Feature Builder quick inserts
@@ -414,6 +416,7 @@ function onTableClick(e){
         document.execCommand('justifyLeft', false, null);
         const ed = document.getElementById('feature-body-editor');
         if(ed){ normalizeAlignAttributes(ed); }
+        { const ta = document.getElementById('feature-body'); if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); updatePreview(); } }
         refreshToolbarState();
         return;
       }
@@ -421,6 +424,7 @@ function onTableClick(e){
         document.execCommand('justifyCenter', false, null);
         const ed = document.getElementById('feature-body-editor');
         if(ed){ normalizeAlignAttributes(ed); }
+        { const ta = document.getElementById('feature-body'); if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); updatePreview(); } }
         refreshToolbarState();
         return;
       }
@@ -428,6 +432,7 @@ function onTableClick(e){
         document.execCommand('justifyRight', false, null);
         const ed = document.getElementById('feature-body-editor');
         if(ed){ normalizeAlignAttributes(ed); }
+        { const ta = document.getElementById('feature-body'); if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); updatePreview(); } }
         refreshToolbarState();
         return;
       }
@@ -437,7 +442,8 @@ function onTableClick(e){
         return;
       }
       if(cmd){ document.execCommand(cmd, false, null); }
-      // after command, refresh toolbar state
+      // after command, sync and refresh toolbar state
+      { const ed = document.getElementById('feature-body-editor'); const ta = document.getElementById('feature-body'); if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); updatePreview(); } }
       refreshToolbarState();
     });
     // On submit ensure sync
@@ -465,7 +471,7 @@ function onTableClick(e){
       // sync textarea
       const ed = document.getElementById('feature-body-editor');
       const ta = document.getElementById('feature-body');
-      if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); }
+      if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); updatePreview(); }
     });
   }
   // RTE: device image -> compress -> insert as data URL (note: may increase storage usage)
@@ -480,7 +486,7 @@ function onTableClick(e){
         // sync textarea after insertion
         const ed = document.getElementById('feature-body-editor');
         const ta = document.getElementById('feature-body');
-        if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); }
+        if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); updatePreview(); }
       }catch{
         const reader = new FileReader();
         reader.onload = ()=>{
@@ -488,7 +494,7 @@ function onTableClick(e){
           document.execCommand('insertImage', false, dataUrl);
           const ed = document.getElementById('feature-body-editor');
           const ta = document.getElementById('feature-body');
-          if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); }
+          if(ed && ta){ ta.value = sanitizeHtml(ed.innerHTML); updatePreview(); }
         };
         reader.readAsDataURL(f);
       }finally{
@@ -924,5 +930,18 @@ function normalizeAlignAttributes(root){
         else{ el.removeAttribute('style'); }
       }
     });
+  }catch{}
+}
+
+// Live preview (editor-only): render sanitized HTML into a separate container
+function updatePreview(){
+  try{
+    const pv = document.getElementById('feature-preview');
+    const ta = document.getElementById('feature-body');
+    const ed = document.getElementById('feature-body-editor');
+    if(!pv || !ta || !ed) return;
+    const html = ta.value || sanitizeHtml(ed.innerHTML || '');
+    pv.innerHTML = html;
+    initFeatureBuilder(pv);
   }catch{}
 }

@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="../../assets/styles/feature-builder.css" />
   <style>
     /* Force sticky toolbar within modal content (override global top offset) */
-    #feature-modal .modal-content .rte-toolbar{position:sticky !important; top:0 !important; z-index:10; background:#fff}
+    #feature-modal .modal-content .rte-toolbar{position:sticky !important; top:0 !important; z-index:10; background:#fff; display:flex; flex-wrap:wrap; gap:8px}
     /* Scroll lock when modal open */
     body.modal-open{ overflow:hidden; }
     .admin-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
@@ -22,7 +22,7 @@
     #feature-modal-backdrop.is-open{opacity:1}
   #feature-modal .modal-content{position:relative;opacity:0;transform:translateY(8px) scale(.98);transition:opacity .2s ease, transform .2s ease;width:min(100%,960px);max-height:min(90vh,820px);overflow:auto}
     #feature-modal.is-open .modal-content{opacity:1;transform:none}
-  .rte-toolbar{position:sticky; top:0; z-index:2; background:#fff; border-bottom:1px solid var(--color-border)}
+  .rte-toolbar{position:sticky; top:0; z-index:2; background:#fff; border-bottom:1px solid var(--color-border); display:flex; flex-wrap:wrap; gap:8px}
     /* Optional: ensure editor area has enough height for comfortable editing */
     .rte-editor{min-height:320px}
   </style>
@@ -146,6 +146,13 @@
                     </ul>
                   </details>
                   <textarea id="feature-body" name="body" hidden></textarea>
+                  <div class="card" style="margin-top:12px; padding:12px">
+                    <div class="space-between" style="display:flex;align-items:center">
+                      <strong>プレビュー（編集用）</strong>
+                      <span class="muted">保存前の見た目を確認できます</span>
+                    </div>
+                    <div id="feature-preview" style="margin-top:8px"></div>
+                  </div>
                 </div>
               <div class="cluster" style="align-items:center; gap:12px">
                 <label>ステータス
