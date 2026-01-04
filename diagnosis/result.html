@@ -201,6 +201,22 @@
             const disclaimerTop = document.createElement('p'); disclaimerTop.className='muted'; disclaimerTop.textContent = 'この提案は一般的な指針です。顔立ち・体型・目的によって最適は異なります。小さく試して、観察→調整していきましょう。';
             article.appendChild(disclaimerTop);
 
+            // 色選びの進め方（パーソナルカラー非判定の前提でのテスト手順）
+            (function(){
+              const colorBlock = document.createElement('div'); colorBlock.className='block';
+              const colorTitle = document.createElement('div'); colorTitle.className='block-title'; colorTitle.textContent='色選びの進め方（テスト）'; colorBlock.appendChild(colorTitle);
+              const ul = document.createElement('ul');
+              const tips = [
+                '自然光に近い環境で、顔まわりに色を当てて観察する',
+                '2〜3案を小さく試し、明るさ・影・肌の見え方を比較する',
+                '目が疲れない、肌が均一に見える方向へ寄せていく'
+              ];
+              tips.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); });
+              const note = document.createElement('p'); note.className='muted'; note.textContent='※ 本診断ではパーソナルカラーの判定は行いません。色はテスト→観察→調整で精度を上げる進め方を推奨します。';
+              colorBlock.appendChild(ul); colorBlock.appendChild(note);
+              article.appendChild(colorBlock);
+            })();
+
             // ② 状態の言語化（コアコピー）
             const stateP = document.createElement('p'); stateP.style.margin='8px 0 12px 0'; stateP.textContent = copy.state || copy.empathy || '';
             article.appendChild(stateP);
