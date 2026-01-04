@@ -201,18 +201,64 @@
             const disclaimerTop = document.createElement('p'); disclaimerTop.className='muted'; disclaimerTop.textContent = 'この提案は一般的な指針です。顔立ち・体型・目的によって最適は異なります。小さく試して、観察→調整していきましょう。';
             article.appendChild(disclaimerTop);
 
-            // 色選びの進め方（パーソナルカラー非判定の前提でのテスト手順）
+            // 色の合わせ方（タイプ別のテスト観点）
             (function(){
-              const colorBlock = document.createElement('div'); colorBlock.className='block';
-              const colorTitle = document.createElement('div'); colorTitle.className='block-title'; colorTitle.textContent='色選びの進め方（テスト）'; colorBlock.appendChild(colorTitle);
-              const ul = document.createElement('ul');
-              const tips = [
-                '自然光に近い環境で、顔まわりに色を当てて観察する',
-                '2〜3案を小さく試し、明るさ・影・肌の見え方を比較する',
-                '目が疲れない、肌が均一に見える方向へ寄せていく'
+              const intentId = obj?.intent?.type_id || '';
+              const typeName = entry?.name || '';
+              const COLOR_TIPS = {
+                w01: [
+                  '高明度と中明度を比較して、肌の均一さを観察する',
+                  '低コントラストと中コントラストで、疲れにくさを比べる',
+                  'ニュートラル寄りとわずかな色みで、清潔感の見え方を確認する'
+                ],
+                w02: [
+                  'くすみ〜中間トーンとニュートラルを比較して、柔らかさを観察する',
+                  '低コントラスト同士で、顔まわりの馴染み具合を確認する',
+                  '艶ポイント有無で、自然さと垢抜けのバランスを比べる'
+                ],
+                w03: [
+                  '低彩度と低コントラストの組み合わせで、落ち着きの見え方を比較する',
+                  '濃淡の強弱で、重たくならない範囲を見つける',
+                  '素材の質感差で、深みの出方を確認する'
+                ],
+                w04: [
+                  '中〜低コントラストで、輪郭の整いが際立つかを比較する',
+                  '明るさの違いで、安心感の伝わり方を確認する',
+                  '強い要素の有無で、過不足のないポイントの範囲を探る'
+                ],
+                w05: [
+                  '柔らかな配色と少しコントラストをつけた配色で、近距離の心地よさを比べる',
+                  '中間トーン同士で、肌の見え方が均一になる方向へ寄せる',
+                  '艶の強弱で、自然さと清潔感の両立度合いを確認する'
+                ],
+                w06: [
+                  '自分のルール化に沿った色幅で、再現性の高い範囲を見つける',
+                  '朝の光と室内照明で、見え方のブレが少ない案を選ぶ',
+                  '写真で振り返り、習慣化しやすい配色を確認する'
+                ],
+                w07: [
+                  'トップスのコントラスト強弱で、第一印象の変化度合いを比較する',
+                  'ポイント色の有無で、やりすぎない更新の範囲を探る',
+                  '写真でビフォー/アフターを並べ、納得感が高い案を選ぶ'
+                ],
+                w08: [
+                  'TPOに合わせて、フォーマル度に合うコントラストを比較する',
+                  '写真での映えと実物の見え方を両面で確認する',
+                  '長持ちする組み合わせ（靴・バッグ含む）の再現性をチェックする'
+                ]
+              };
+
+              const tips = COLOR_TIPS[intentId] || [
+                '自然光で顔まわりに当てて、肌の見え方を観察する',
+                '2〜3案を同条件で比較して、疲れにくさを確認する',
+                '写真で振り返り、納得感が高い案へ寄せる'
               ];
-              tips.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); });
-              const note = document.createElement('p'); note.className='muted'; note.textContent='※ 本診断ではパーソナルカラーの判定は行いません。色はテスト→観察→調整で精度を上げる進め方を推奨します。';
+
+              const colorBlock = document.createElement('div'); colorBlock.className='block';
+              const titleText = typeName ? `色の合わせ方（${typeName}向け）` : '色の合わせ方（タイプ別）';
+              const colorTitle = document.createElement('div'); colorTitle.className='block-title'; colorTitle.textContent = titleText; colorBlock.appendChild(colorTitle);
+              const ul = document.createElement('ul'); tips.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); });
+              const note = document.createElement('p'); note.className='muted'; note.textContent='※ 本診断はパーソナルカラーの判定を行いません。色はテスト→観察→調整で精度を上げる進め方を推奨します。';
               colorBlock.appendChild(ul); colorBlock.appendChild(note);
               article.appendChild(colorBlock);
             })();
