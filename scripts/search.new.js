@@ -890,6 +890,7 @@ function sortItems(items, sort){
     p.textContent='該当するサービスが見つかりませんでした。';
     if(list) list.appendChild(p);
     updateCount(0);
+    try{ if(q && q.trim()){ recordEvent('search_noresult', { query: q.trim(), region, category, purpose }); } }catch{}
     console.info('[search] static:', staticItems.length, 'local:', localItems.length, 'filters:', {q,region,category,purpose});
     return;
   }

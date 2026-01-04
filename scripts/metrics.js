@@ -28,6 +28,11 @@ export function recordEvent(type, payload={}){
       const q = String(payload.query||'').toLowerCase().trim();
       if(q){ store.queries[q] = (store.queries[q]||0) + 1; }
     }
+    if(type === 'search_noresult' && payload.query){
+      store.noresult = store.noresult || {};
+      const q = String(payload.query||'').toLowerCase().trim();
+      if(q){ store.noresult[q] = (store.noresult[q]||0) + 1; }
+    }
     if(type === 'feature_view' && payload.featureId){
       store.featureViews = store.featureViews || {};
       const id = String(payload.featureId);
@@ -53,13 +58,17 @@ export function getSummary({ days=7 }={}){
   // Top queries
   const topQueries = Object.entries(store.queries||{})
     .sort((a,b)=> b[1]-a[1]).slice(0,10).map(([k,v])=>({ query:k, count:v }));
+  const topNoResult = Object.entries(store.noresult||{})
+    .sort((a,b)=> b[1]-a[1]).slice(0,10).map(([k,v])=>({ query:k, count:v }));
   // Top features by views
   const topFeatures = Object.entries(store.featureViews||{})
     .sort((a,b)=> b[1]-a[1]).slice(0,10).map(([id,count])=>({ id, count }));
   // Ratios (naive placeholder)
   const adoptionRate = totals.searches? Math.round((totals.adoptions/Math.max(1,totals.searches))*100): 0;
   const revisitRate = Math.round((totals.revisits/Math.max(1, totals.featureViews))*100);
-  return { totals, daily, topQueries, topFeatures, adoptionRate, revisitRate };
+  // Return maps for detail rendering (e.g., low-performing features)
+  const featureViewsMap = store.featureViews || {};
+  return { totals, daily, topQueries, topNoResult, topFeatures, adoptionRate, revisitRate, featureViewsMap };
 }
 
 export function seedDemo(){
