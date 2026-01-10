@@ -34,7 +34,7 @@
   (function(){
     const STORAGE_KEY = 'fineme:diagnosis:latest';
     const SAVED_KEY = 'fineme:saved:diagnoses';
-    const TYPES_URL = '/data/intent-types.json';
+    const TYPES_URL = '../../data/intent-types.json';
     const host = document.getElementById('diag-host');
     function showToast(msg){ try{ const t = document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); requestAnimationFrame(()=>{ t.classList.add('show'); setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=> t.remove(), 300); }, 1800); }); }catch{} }
     function emptyState(){

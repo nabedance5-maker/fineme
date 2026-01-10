@@ -80,7 +80,7 @@
   <script>
     (function(){
       const STORAGE_KEY = 'fineme:diagnosis:latest';
-      const INTENT_TYPES_URL = '/data/intent-types.json';
+      const INTENT_TYPES_URL = '../data/intent-types.json';
       const root = document.getElementById('result-root');
       const loading = document.getElementById('loading');
       const retryBtn = document.getElementById('retryBtn');
@@ -163,7 +163,7 @@
   function renderNotFound(){
     const wrap = document.createElement('div');
     const msg = document.createElement('p'); msg.textContent = '診断結果が見つかりません。最初からやり直してください。';
-    const a = document.createElement('a'); a.href = '/diagnosis/index.html'; a.className = 'btn'; a.textContent = '診断をやり直す';
+    const a = document.createElement('a'); a.href = './index.html'; a.className = 'btn'; a.textContent = '診断をやり直す';
     wrap.appendChild(msg); wrap.appendChild(a);
     root.innerHTML = ''; root.appendChild(wrap);
   }

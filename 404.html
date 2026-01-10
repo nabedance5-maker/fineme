@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ページが見つかりません | Fineme</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <style>
+    body{font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP",sans-serif; background:#f8fafc; color:#111827;}
+    .wrap{max-width:760px; margin:40px auto; background:#fff; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 8px 30px rgba(2,6,23,0.06); padding:18px}
+    h1{font-size:22px; margin:0 0 8px}
+    p.muted{color:#6b7280}
+    .btn{display:inline-block; padding:8px 12px; border-radius:8px; background:#111; color:#fff; text-decoration:none}
+    .btn-ghost{background:transparent; border:1px solid #111; color:#111}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>ページが見つかりませんでした</h1>
+    <p class="muted" id="msg">自動的に正しいページへ案内します。少しお待ちください…</p>
+    <div class="cluster" style="display:flex; gap:8px; margin-top:10px">
+      <a id="top-link" class="btn" href="./index.html">トップへ戻る</a>
+      <a id="search-link" class="btn btn-ghost" href="./pages/search.html">診断せずに探す</a>
+    </div>
+  </div>
+  <script>
+  (function(){
+    try{
+      var path = location.pathname || '/';
+      var base = path.indexOf('/fineme/') >= 0 ? '/fineme' : '';
+      // Update visible links to include base
+      try{
+        document.getElementById('top-link').setAttribute('href', base + '/index.html');
+        document.getElementById('search-link').setAttribute('href', base + '/pages/search.html');
+      }catch{}
+      var candidates = [];
+      function push(p){ if(p && candidates.indexOf(p)<0) candidates.push(p); }
+      // If not requesting a specific html file, try index.html under the folder
+      if(!/\.html$/i.test(path)){
+        var normalized = path.replace(/\/$/, '');
+        push(normalized + '/index.html');
+      }
+      // Common folder shortcuts
+      var map = [
+        ['/diagnosis', '/diagnosis/index.html'],
+        ['/pages/admin', '/pages/admin/index.html'],
+        ['/pages/mypage', '/pages/mypage/index.html'],
+        ['/pages/provider', '/pages/provider/index.html'],
+        ['/pages/user', '/pages/user/login.html']
+      ];
+      for(var i=0;i<map.length;i++){
+        var prefix = map[i][0], target = map[i][1];
+        if(path.indexOf(prefix) === 0 || path.indexOf(base + prefix) === 0){ push(target); }
+      }
+      // Fallbacks
+      push('/index.html');
+      // Try redirects in order using HEAD requests
+      function tryRedirect(i){
+        if(i >= candidates.length){ return; }
+        var t = candidates[i];
+        var url = base + t;
+        fetch(url, { method:'HEAD' }).then(function(res){
+          if(res && res.ok){ location.replace(url); }
+          else { tryRedirect(i+1); }
+        }).catch(function(){ tryRedirect(i+1); });
+      }
+      tryRedirect(0);
+    }catch{}
+  })();
+  </script>
+</body>
+</html>
