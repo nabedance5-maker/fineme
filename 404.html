@@ -40,9 +40,12 @@
         var normalized = path.replace(/\/$/, '');
         push(normalized + '/index.html');
       }
-      // Common folder shortcuts
+      // Common folder shortcuts and specific admin pages
       var map = [
         ['/diagnosis', '/diagnosis/index.html'],
+        ['/pages/admin/providers', '/pages/admin/providers.html'],
+        ['/pages/admin/features', '/pages/admin/features.html'],
+        ['/pages/admin/analytics', '/pages/admin/analytics.html'],
         ['/pages/admin', '/pages/admin/index.html'],
         ['/pages/mypage', '/pages/mypage/index.html'],
         ['/pages/provider', '/pages/provider/index.html'],
@@ -52,7 +55,7 @@
         var prefix = map[i][0], target = map[i][1];
         if(path.indexOf(prefix) === 0 || path.indexOf(base + prefix) === 0){ push(target); }
       }
-      // Fallbacks
+      // Final fallback (site top)
       push('/index.html');
       // Try redirects in order using HEAD requests
       function tryRedirect(i){
