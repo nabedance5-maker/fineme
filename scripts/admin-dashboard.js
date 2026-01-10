@@ -2,6 +2,8 @@
 import { getSummary, seedDemo } from './metrics.js';
 // GitHub Pages project base prefix
 const PROJECT_BASE = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
+// Prefer relative navigation when already under /pages/admin/
+const ADMIN_BASE = (location.pathname && location.pathname.includes('/pages/admin/')) ? '.' : ((PROJECT_BASE || '') + '/pages/admin');
 
 function $(s, root=document){ return root.querySelector(s); }
 function loadFeatures(){ try{ const raw = localStorage.getItem('glowup:features'); const arr = raw? JSON.parse(raw):[]; return Array.isArray(arr)? arr: []; }catch{ return []; } }
@@ -171,11 +173,11 @@ function wire(){
   const btnSeed = document.getElementById('dash-seed-demo');
   if(btnSeed){ btnSeed.addEventListener('click', ()=>{ seedDemo(); render(); }); }
   const btnNew = document.getElementById('dash-new-feature');
-  if(btnNew){ btnNew.addEventListener('click', ()=>{ location.href = (PROJECT_BASE || '') + '/pages/admin/features.html?id=new'; }); }
+  if(btnNew){ btnNew.addEventListener('click', ()=>{ location.href = ADMIN_BASE + '/features.html?id=new'; }); }
   const btnF = document.getElementById('dash-open-features');
-  if(btnF){ btnF.addEventListener('click', ()=>{ location.href = (PROJECT_BASE || '') + '/pages/admin/features.html'; }); }
+  if(btnF){ btnF.addEventListener('click', ()=>{ location.href = ADMIN_BASE + '/features.html'; }); }
   const btnA = document.getElementById('dash-open-analytics');
-  if(btnA){ btnA.addEventListener('click', ()=>{ location.href = (PROJECT_BASE || '') + '/pages/admin/analytics.html'; }); }
+  if(btnA){ btnA.addEventListener('click', ()=>{ location.href = ADMIN_BASE + '/analytics.html'; }); }
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{ wire(); render(); });
