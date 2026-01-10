@@ -121,8 +121,15 @@
             if(/習慣化|振り返り|継続/.test(L)) return s*2 + m;
             return 0;
           }
-          const choose = (chooseMap[typeId] || chooseMap.t01).slice().sort((a,b)=> labelWeight(b) - labelWeight(a));
-          const cH = document.createElement('h4'); cH.textContent='選び方'; wrap.appendChild(cH); wrap.appendChild(toList(choose));
+          const baseChoose = (chooseMap[typeId] || chooseMap.t01).slice();
+          const sortedChoose = baseChoose.slice().sort((a,b)=> labelWeight(b) - labelWeight(a));
+          const chooseWeights = sortedChoose.map(x=> labelWeight(x));
+          const chooseSpread = (chooseWeights.length? (Math.max(...chooseWeights)-Math.min(...chooseWeights)): 0);
+          const sumAxes = ['support','change','control','motivation'].map(k=> Number((axes||{})[k])||0).reduce((p,c)=> p+c, 0);
+          const showChooseRanks = chooseSpread > 0.5 && sumAxes > 0;
+          const cH = document.createElement('h4'); cH.textContent='選び方'; wrap.appendChild(cH);
+          const chooseUl = document.createElement('ul'); sortedChoose.forEach((t,i)=>{ const li=document.createElement('li'); li.textContent=t; if(showChooseRanks){ const b=document.createElement('span'); b.textContent=` 優先度 ${i+1}`; b.style.marginLeft='6px'; b.style.padding='2px 6px'; b.style.border='1px solid var(--color-border)'; b.style.borderRadius='999px'; b.style.fontSize='12px'; li.appendChild(b); } chooseUl.appendChild(li); }); wrap.appendChild(chooseUl);
+          if(!showChooseRanks){ const note=document.createElement('p'); note.className='muted'; note.textContent='※ 軸の差が小さいため、選び方の順位付けは行っていません（同程度）。'; wrap.appendChild(note); }
           // 根拠注釈
           try{
             const pairs = [['support','寄り添い/相談'],['change','変化の強さ'],['control','主導権/共同決定'],['motivation','目的の明確さ']]
@@ -173,9 +180,12 @@
           ];
           const strat = candidates.slice().sort((a,b)=> strategyWeight(b) - strategyWeight(a)).slice(0,4);
           const sH = document.createElement('h4'); sH.textContent='進め方'; wrap.appendChild(sH);
-          // 最優先ラベル
-          const topStrat = strat.slice().sort((a,b)=> strategyWeight(b)-strategyWeight(a))[0]||'';
-          const stratUl = document.createElement('ul'); strat.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; if(t===topStrat){ const b=document.createElement('span'); b.textContent=' 最優先'; b.style.marginLeft='6px'; b.style.padding='2px 6px'; b.style.border='1px solid var(--color-border)'; b.style.borderRadius='999px'; b.style.fontSize='12px'; li.appendChild(b); } stratUl.appendChild(li); }); wrap.appendChild(stratUl);
+          const stratWeights = strat.map(x=> strategyWeight(x));
+          const stratSpread = (stratWeights.length? (Math.max(...stratWeights)-Math.min(...stratWeights)): 0);
+          const pref = inferStrategyPreference();
+          const showStratRanks = stratSpread > 0.5 && ((pref.s||0) > 2 || (pref.a||0) > 1);
+          const stratUl = document.createElement('ul'); strat.forEach((t,i)=>{ const li=document.createElement('li'); li.textContent=t; if(showStratRanks){ const b=document.createElement('span'); b.textContent=` 優先度 ${i+1}`; b.style.marginLeft='6px'; b.style.padding='2px 6px'; b.style.border='1px solid var(--color-border)'; b.style.borderRadius='999px'; b.style.fontSize='12px'; li.appendChild(b); } stratUl.appendChild(li); }); wrap.appendChild(stratUl);
+          if(!showStratRanks){ const note=document.createElement('p'); note.className='muted'; note.textContent='※ 行動データが少ないため、進め方の順位付けは行っていません（同程度）。'; wrap.appendChild(note); }
           card.appendChild(wrap);
         })();
         const link = document.createElement('a'); link.className='btn';
