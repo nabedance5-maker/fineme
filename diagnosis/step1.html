@@ -84,6 +84,7 @@
           const wrap = document.createElement('div'); wrap.className='result-article'; wrap.style.marginTop='12px';
           const title = document.createElement('h3'); title.textContent='進め方の視点（STEP1）'; wrap.appendChild(title);
           const how = (obj?.how?.style_name || '').toString();
+          const whyId = (obj?.why?.reason_id || '').toString();
           const listChoose = [];
           if(/寄り添|相談|伴走/.test(how)) listChoose.push('相談/チェックのある人・お店を選ぶ');
           if(/慎重|納得|説明/.test(how)) listChoose.push('事前説明や比較検討ができる相手を選ぶ');
@@ -94,7 +95,41 @@
           const chooseH = document.createElement('h4'); chooseH.textContent='選び方'; wrap.appendChild(chooseH);
           const chooseUl = document.createElement('ul'); listChoose.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; chooseUl.appendChild(li); }); wrap.appendChild(chooseUl);
           const stratH = document.createElement('h4'); stratH.textContent='進め方'; wrap.appendChild(stratH);
-          const stratUl = document.createElement('ul'); stratUl.appendChild((()=>{ const li=document.createElement('li'); li.textContent='小さく試す→観察→調整で納得度を高める'; return li; })()); wrap.appendChild(stratUl);
+          // 進め方候補（STEP1用）
+          const candidates = [
+            '即効性のある小さな変更を試す（写真や比較で検証）',
+            '短いスプリントで試す（1〜2週間）',
+            '時間をかけて習慣化する（ルール化/定期振り返り）',
+            '定期チェックインを設ける（相談/確認）',
+            '目的を明文化し評価指標を決める',
+            '意思決定の透明性を確保し、比較検討する'
+          ];
+          function stratWeight(lab){
+            const L = String(lab);
+            let w = 0;
+            if(/最短|効率|短期|即/.test(how)){
+              if(/即効|小さな変更|写真|比較|スプリント/.test(L)) w += 3;
+            }
+            if(/寄り添|相談|伴走|慎重|納得/.test(how)){
+              if(/習慣|ルール化|定期|振り返り|チェックイン/.test(L)) w += 3;
+            }
+            if(/説明|可視化|透明/.test(how)){
+              if(/目的|評価指標|明文化|透明性|比較検討/.test(L)) w += 2;
+            }
+            if(whyId==='r05'){ // 特別なきっかけ
+              if(/即効|スプリント/.test(L)) w += 2;
+            }
+            if(whyId==='r04'){ // 何をすれば良いか分からない
+              if(/明文化|評価指標|チェックイン|透明性/.test(L)) w += 2;
+            }
+            return w;
+          }
+          const ranked = candidates.slice().sort((a,b)=> stratWeight(b) - stratWeight(a));
+          const weights = ranked.map(x=> stratWeight(x));
+          const spread = weights.length? (Math.max(...weights) - Math.min(...weights)) : 0;
+          const showRanks = spread > 0.5 && (/最短|効率|短期|即|寄り添|相談|伴走|慎重|納得|説明|可視化|透明/.test(how) || whyId);
+          const stratUl = document.createElement('ul'); ranked.slice(0,4).forEach((t,i)=>{ const li=document.createElement('li'); li.textContent=t; if(showRanks){ const b=document.createElement('span'); b.textContent=` 優先度 ${i+1}`; b.style.marginLeft='6px'; b.style.padding='2px 6px'; b.style.border='1px solid var(--color-border)'; b.style.borderRadius='999px'; b.style.fontSize='12px'; li.appendChild(b); } stratUl.appendChild(li); }); wrap.appendChild(stratUl);
+          if(!showRanks){ const note=document.createElement('p'); note.className='muted'; note.textContent='※ STEP1の回答からは順位差が僅少のため、進め方の順位付けは行っていません（同程度）。'; wrap.appendChild(note); }
           const note = document.createElement('p'); note.className='muted'; note.textContent='※ この視点は STEP1 の選択（WHY/HOW）に基づいて生成しています。'; wrap.appendChild(note);
           article.appendChild(wrap);
         })();
