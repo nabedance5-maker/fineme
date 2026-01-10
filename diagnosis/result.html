@@ -336,29 +336,44 @@
                   return { fast: fastPref, habit: habitPref };
                 }catch{ return { fast:false, habit:false }; }
               }
-              function strategyTips(){
-                const base = [];
-                const fastAxis = Number(axes.change)>0 || ['t03','t04'].includes(typeId);
-                const habitAxis = Number(axes.support)>0 || ['t01','t06'].includes(typeId);
+              function strategyWeight(lab){
+                const ax = axes || {};
+                const s = Number(ax.support)||0, c = Number(ax.change)||0, m = Number(ax.motivation)||0, ctrl = Number(ax.control)||0;
                 const pref = inferStrategyPreference();
-                const fastTip = '即効性のある小さな変更を試す（写真や比較で検証）';
-                const habitTip = '時間をかけて習慣化する（ルール化/定期振り返り）';
-                const neutral = '小さく試す→観察→調整で納得度を高める';
-                if(pref.fast || fastAxis) base.push(fastTip);
-                if(pref.habit || habitAxis) base.push(habitTip);
-                if(!base.length) base.push(neutral);
-                // reorder if both present based on preference
-                if(base.length===2){
-                  if(pref.habit && !pref.fast){ base.sort((a,b)=> (a===habitTip? -1: 1)); }
-                  else if(pref.fast && !pref.habit){ base.sort((a,b)=> (a===fastTip? -1: 1)); }
-                }
-                return base;
+                const L = String(lab);
+                let w = 0;
+                if(/即効|小さな変更|写真|比較|スプリント/.test(L)) w += (pref.fast? 3: 0) + c*2 + m;
+                if(/習慣|ルール化|定期|振り返り|チェックイン/.test(L)) w += (pref.habit? 3: 0) + s*2 + m;
+                if(/目的|評価指標|明文化/.test(L)) w += m*2 + ctrl;
+                if(/透明性|意思決定|比較検討/.test(L)) w += ctrl*2 + m;
+                return w;
+              }
+              function strategyTips(){
+                const tips = [
+                  '即効性のある小さな変更を試す（写真や比較で検証）',
+                  '短いスプリントで試す（1〜2週間）',
+                  '時間をかけて習慣化する（ルール化/定期振り返り）',
+                  '定期チェックインを設ける（相談/確認）',
+                  '目的を明文化し評価指標を決める',
+                  '意思決定の透明性を確保し、比較検討する'
+                ];
+                const uniq = []; tips.forEach(t=>{ if(!uniq.includes(t)) uniq.push(t); });
+                return uniq.sort((a,b)=> strategyWeight(b) - strategyWeight(a)).slice(0,4);
               }
               const wrap = document.createElement('div'); wrap.className='block';
               const title = document.createElement('div'); title.className='block-title'; title.textContent='進め方の視点'; wrap.appendChild(title);
               const cols = [ ['考え方の特徴',mindsetTips()], ['選び方（お店/人）', choosingTips()], ['進め方（即効性/習慣）', strategyTips()] ];
               const grid = document.createElement('div'); grid.className='stack'; grid.style.gap='10px';
-              cols.forEach(([h, arr])=>{ const box=document.createElement('div'); const sh=document.createElement('h4'); sh.textContent=h; box.appendChild(sh); const ul=document.createElement('ul'); arr.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); }); box.appendChild(ul); grid.appendChild(box); });
+              cols.forEach(([h, arr])=>{
+                const box=document.createElement('div'); const sh=document.createElement('h4'); sh.textContent=h; box.appendChild(sh);
+                const ul=document.createElement('ul');
+                // determine priority per list
+                let topLabel = '';
+                if(/選び方/.test(h)){ const sorted = arr.slice().sort((a,b)=> labelWeight(b)-labelWeight(a)); topLabel = sorted[0]||''; }
+                if(/進め方/.test(h)){ const sorted = arr.slice().sort((a,b)=> strategyWeight(b)-strategyWeight(a)); topLabel = sorted[0]||''; }
+                arr.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; if(topLabel && t===topLabel){ const b=document.createElement('span'); b.textContent=' 最優先'; b.style.marginLeft='6px'; b.style.padding='2px 6px'; b.style.border='1px solid var(--color-border)'; b.style.borderRadius='999px'; b.style.fontSize='12px'; li.appendChild(b); } ul.appendChild(li); });
+                box.appendChild(ul); grid.appendChild(box);
+              });
               wrap.appendChild(grid);
               // 根拠を表示（上位軸）
               try{

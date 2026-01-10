@@ -154,21 +154,28 @@
               return { fast: fastPref, habit: habitPref };
             }catch{ return { fast:false, habit:false }; }
           }
-          const strat = [];
-          const fastAxis = Number(axes.change)>0 || ['t03','t04'].includes(typeId);
-          const habitAxis = Number(axes.support)>0 || ['t01','t06'].includes(typeId);
-          const pref = inferStrategyPreference();
-          const fastTip = '即効性のある小さな変更を試す（写真や比較で検証）';
-          const habitTip = '時間をかけて習慣化する（ルール化/定期振り返り）';
-          const neutral = '小さく試す→観察→調整で納得度を高める';
-          if(pref.fast || fastAxis) strat.push(fastTip);
-          if(pref.habit || habitAxis) strat.push(habitTip);
-          if(!strat.length) strat.push(neutral);
-          if(strat.length===2){
-            if(pref.habit && !pref.fast){ strat.sort((a,b)=> (a===habitTip? -1: 1)); }
-            else if(pref.fast && !pref.habit){ strat.sort((a,b)=> (a===fastTip? -1: 1)); }
+          function strategyWeight(lab){
+            const s = Number(axes.support)||0, c = Number(axes.change)||0, m = Number(axes.motivation)||0, ctrl = Number(axes.control)||0;
+            const pref = inferStrategyPreference(); const L=String(lab); let w=0;
+            if(/即効|小さな変更|写真|比較|スプリント/.test(L)) w += (pref.fast? 3: 0) + c*2 + m;
+            if(/習慣|ルール化|定期|振り返り|チェックイン/.test(L)) w += (pref.habit? 3: 0) + s*2 + m;
+            if(/目的|評価指標|明文化/.test(L)) w += m*2 + ctrl;
+            if(/透明性|意思決定|比較検討/.test(L)) w += ctrl*2 + m;
+            return w;
           }
-          const sH = document.createElement('h4'); sH.textContent='進め方'; wrap.appendChild(sH); wrap.appendChild(toList(strat));
+          const candidates = [
+            '即効性のある小さな変更を試す（写真や比較で検証）',
+            '短いスプリントで試す（1〜2週間）',
+            '時間をかけて習慣化する（ルール化/定期振り返り）',
+            '定期チェックインを設ける（相談/確認）',
+            '目的を明文化し評価指標を決める',
+            '意思決定の透明性を確保し、比較検討する'
+          ];
+          const strat = candidates.slice().sort((a,b)=> strategyWeight(b) - strategyWeight(a)).slice(0,4);
+          const sH = document.createElement('h4'); sH.textContent='進め方'; wrap.appendChild(sH);
+          // 最優先ラベル
+          const topStrat = strat.slice().sort((a,b)=> strategyWeight(b)-strategyWeight(a))[0]||'';
+          const stratUl = document.createElement('ul'); strat.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; if(t===topStrat){ const b=document.createElement('span'); b.textContent=' 最優先'; b.style.marginLeft='6px'; b.style.padding='2px 6px'; b.style.border='1px solid var(--color-border)'; b.style.borderRadius='999px'; b.style.fontSize='12px'; li.appendChild(b); } stratUl.appendChild(li); }); wrap.appendChild(stratUl);
           card.appendChild(wrap);
         })();
         const link = document.createElement('a'); link.className='btn';
