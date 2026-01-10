@@ -190,7 +190,9 @@
         })();
         const link = document.createElement('a'); link.className='btn';
         const q = typeName ? `?keyword=${encodeURIComponent(typeName)}` : '';
-        link.href = `/pages/search.html${q}`; link.textContent='このタイプに合う人を見てみる'; card.appendChild(link);
+        link.href = `/pages/search.html${q}`; link.textContent='このタイプに合う人を見てみる';
+        try{ link.style.setProperty('color','#111','important'); }catch{}
+        card.appendChild(link);
         host.appendChild(card);
       }).catch(()=>{});
     }catch(e){ emptyState(); }
