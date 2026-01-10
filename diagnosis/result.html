@@ -267,6 +267,48 @@
             const stateP = document.createElement('p'); stateP.style.margin='8px 0 12px 0'; stateP.textContent = copy.state || copy.empathy || '';
             article.appendChild(stateP);
 
+            // ②-2 視点ブロック（考え方/選び方/進め方）
+            (function(){
+              const axes = (obj?.step2?.scores?.axes) || {};
+              const typeId = (obj?.step2?.classification?.type_id) || 't01';
+              function mindsetTips(){
+                const tips = [];
+                if(Number(axes.motivation)>0) tips.push('変わりたい理由が明確。目的と再現性を重視');
+                if(Number(axes.support)>0) tips.push('伴走や確認を重視。納得できる説明が安心');
+                if(Number(axes.control)>0) tips.push('主導権を持って進めたい。透明性と比較を重視');
+                if(Number(axes.change)>0) tips.push('変化の実感を早めたい。小さなビフォー/アフターで検証');
+                if(!tips.length) tips.push('今の自分に合う進め方を選ぶことを重視');
+                return tips;
+              }
+              function choosingTips(){
+                const map = {
+                  t01:['事前説明やプロセスの可視化がある','レビューや事例が豊富','比較検討の余地がある'],
+                  t02:['相談/チェックの伴走がある','柔軟に調整できる','納得が得られるコミュニケーション'],
+                  t03:['短期プランや明確な成果指標','写真で比較できる事例','早い仮説検証を支援'],
+                  t04:['更新提案やチャレンジを支援','小さく試して調整できる','変化の実感を可視化'],
+                  t05:['ポートフォリオの世界観が一貫','事例写真が豊富','相性の合う雰囲気'],
+                  t06:['継続サポートや習慣化の仕組み','定期的な振り返り','無理のない調整']
+                };
+                return map[typeId] || map.t01;
+              }
+              function strategyTips(){
+                const out = [];
+                const fast = Number(axes.change)>0 || ['t03','t04'].includes(typeId);
+                const habit = Number(axes.support)>0 || ['t01','t06'].includes(typeId);
+                if(fast) out.push('即効性のある小さな変更を試す（写真や比較で検証）');
+                if(habit) out.push('時間をかけて習慣化する（ルール化/定期振り返り）');
+                if(!out.length) out.push('小さく試す→観察→調整で納得度を高める');
+                return out;
+              }
+              const wrap = document.createElement('div'); wrap.className='block';
+              const title = document.createElement('div'); title.className='block-title'; title.textContent='進め方の視点'; wrap.appendChild(title);
+              const cols = [ ['考え方の特徴',mindsetTips()], ['選び方（お店/人）', choosingTips()], ['進め方（即効性/習慣）', strategyTips()] ];
+              const grid = document.createElement('div'); grid.className='stack'; grid.style.gap='10px';
+              cols.forEach(([h, arr])=>{ const box=document.createElement('div'); const sh=document.createElement('h4'); sh.textContent=h; box.appendChild(sh); const ul=document.createElement('ul'); arr.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); }); box.appendChild(ul); grid.appendChild(box); });
+              wrap.appendChild(grid);
+              article.appendChild(wrap);
+            })();
+
             // ③ 強みの再定義（自己否定を防ぐ）
             const strongH = document.createElement('h3'); strongH.textContent = 'これは「悪い」ではなく、あなたの強みです'; article.appendChild(strongH);
             const strongP = document.createElement('p'); strongP.textContent = copy.strength || 'あなたは自分に合う進め方を選べる人です。'; article.appendChild(strongP);

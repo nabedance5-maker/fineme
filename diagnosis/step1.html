@@ -79,11 +79,24 @@
 
         if(entry.catch){ const catchEl = document.createElement('p'); catchEl.style.margin='8px 0 12px 0'; catchEl.style.fontWeight='600'; catchEl.textContent = entry.catch; article.appendChild(catchEl); }
         if(entry.description){ const p = document.createElement('p'); p.textContent = entry.description; article.appendChild(p); }
-        if(entry.advice){
-          const advh = document.createElement('h3'); advh.textContent='あなたらしく整えるヒント'; article.appendChild(advh);
-          const disclaimer = document.createElement('p'); disclaimer.className='muted'; disclaimer.textContent='この提案は一般的な指針です。最適解は顔立ち・体型・目的で変わります。小さく試して、観察→調整する進め方をおすすめします。'; article.appendChild(disclaimer);
-          const advp = document.createElement('p'); advp.textContent = entry.advice; article.appendChild(advp);
-        }
+        // 視点ブロック（STEP1の WHY/HOW をもとに）
+        (function(){
+          const wrap = document.createElement('div'); wrap.className='result-article'; wrap.style.marginTop='12px';
+          const title = document.createElement('h3'); title.textContent='進め方の視点（STEP1）'; wrap.appendChild(title);
+          const how = (obj?.how?.style_name || '').toString();
+          const listChoose = [];
+          if(/寄り添|相談|伴走/.test(how)) listChoose.push('相談/チェックのある人・お店を選ぶ');
+          if(/慎重|納得|説明/.test(how)) listChoose.push('事前説明や比較検討ができる相手を選ぶ');
+          if(/最短|効率|短期/.test(how)) listChoose.push('短期プランや成果指標が明確な相手を選ぶ');
+          if(/変化|更新/.test(how)) listChoose.push('小さく試して更新提案がある相手を選ぶ');
+          if(/世界観|直感|雰囲気/.test(how)) listChoose.push('ポートフォリオの世界観が合う相手を選ぶ');
+          if(!listChoose.length) listChoose.push('相性の良い進め方（説明/伴走/短期）を確認して選ぶ');
+          const chooseH = document.createElement('h4'); chooseH.textContent='選び方'; wrap.appendChild(chooseH);
+          const chooseUl = document.createElement('ul'); listChoose.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; chooseUl.appendChild(li); }); wrap.appendChild(chooseUl);
+          const stratH = document.createElement('h4'); stratH.textContent='進め方'; wrap.appendChild(stratH);
+          const stratUl = document.createElement('ul'); stratUl.appendChild((()=>{ const li=document.createElement('li'); li.textContent='小さく試す→観察→調整で納得度を高める'; return li; })()); wrap.appendChild(stratUl);
+          article.appendChild(wrap);
+        })();
 
         // あなたの選択（WHY/HOWの要約）
         const selh = document.createElement('h3'); selh.textContent='あなたの選択（STEP1）'; article.appendChild(selh);

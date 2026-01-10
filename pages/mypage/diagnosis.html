@@ -85,11 +85,37 @@
         const entry = types[typeId]; if(!entry) return;
         const card = document.createElement('div'); card.className='card'; card.style.padding='16px';
         const p1 = document.createElement('p'); p1.textContent = entry.catch || ''; card.appendChild(p1);
-        if(entry.advice){
-          const h3 = document.createElement('h3'); h3.textContent = 'あなたらしく整えるヒント'; card.appendChild(h3);
-          const disclaimer = document.createElement('p'); disclaimer.className='muted'; disclaimer.textContent = 'この提案は一般的な指針です。顔立ち・体型・目的によって最適は異なります。小さく試して、観察→調整していきましょう。'; card.appendChild(disclaimer);
-          const p2 = document.createElement('p'); p2.textContent = entry.advice; card.appendChild(p2);
-        }
+        // 視点ブロック（保存データから軸を利用）
+        (function(){
+          const axes = (obj?.step2?.scores?.axes) || {};
+          const typeId = (obj?.step2?.classification?.type_id) || 't01';
+          function toList(arr){ const ul=document.createElement('ul'); arr.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); }); return ul; }
+          const wrap = document.createElement('div'); wrap.className='stack'; wrap.style.gap='8px';
+          const title = document.createElement('h3'); title.textContent='進め方の視点'; wrap.appendChild(title);
+          const mindset = [];
+          if(Number(axes.motivation)>0) mindset.push('目的と再現性を重視');
+          if(Number(axes.support)>0) mindset.push('伴走や確認を重視');
+          if(Number(axes.control)>0) mindset.push('主導権/共同決定を重視');
+          if(Number(axes.change)>0) mindset.push('変化の実感を早めたい');
+          if(!mindset.length) mindset.push('自分に合う進め方を選ぶ');
+          const mH = document.createElement('h4'); mH.textContent='考え方の特徴'; wrap.appendChild(mH); wrap.appendChild(toList(mindset));
+          const chooseMap = {
+            t01:['事前説明/比較検討ができる','レビューや事例が豊富'],
+            t02:['相談/チェックの伴走がある','柔軟な調整ができる'],
+            t03:['短期プラン/成果指標が明確','写真で比較できる事例'],
+            t04:['更新提案/小さなテストができる'],
+            t05:['世界観が合うポートフォリオ','事例写真が豊富'],
+            t06:['継続サポート/習慣化の仕組み','定期的な振り返り']
+          };
+          const choose = chooseMap[typeId] || chooseMap.t01;
+          const cH = document.createElement('h4'); cH.textContent='選び方'; wrap.appendChild(cH); wrap.appendChild(toList(choose));
+          const strat = [];
+          if(Number(axes.change)>0 || ['t03','t04'].includes(typeId)) strat.push('即効性のある小さな変更を試す（写真や比較で検証）');
+          if(Number(axes.support)>0 || ['t01','t06'].includes(typeId)) strat.push('時間をかけて習慣化する（ルール化/定期振り返り）');
+          if(!strat.length) strat.push('小さく試す→観察→調整で納得度を高める');
+          const sH = document.createElement('h4'); sH.textContent='進め方'; wrap.appendChild(sH); wrap.appendChild(toList(strat));
+          card.appendChild(wrap);
+        })();
         const link = document.createElement('a'); link.className='btn';
         const q = typeName ? `?keyword=${encodeURIComponent(typeName)}` : '';
         link.href = `/pages/search.html${q}`; link.textContent='このタイプに合う人を見てみる'; card.appendChild(link);
