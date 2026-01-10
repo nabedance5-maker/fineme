@@ -120,6 +120,49 @@ function render(){
     li1.innerHTML = `<a class="svc-link" href="/pages/admin/features.html">下書き ${drafts} 件を確認する</a>`;
     tasks.appendChild(li1);
   }
+
+  // Type × Preference (fast/habit) mini card
+  (function(){
+    const mount = document.getElementById('dash-type-pref'); if(!mount) return;
+    mount.textContent = '';
+    // read latest diagnosis
+    let typeId = ''; let typeName = '';
+    try{ const raw = localStorage.getItem('fineme:diagnosis:latest'); const obj = raw? JSON.parse(raw):{}; typeId = obj?.step2?.classification?.type_id || obj?.intent?.type_id || ''; typeName = obj?.step2?.classification?.type_name || obj?.intent?.type_name || ''; }catch{}
+    // infer preference from events
+    function inferPref(){
+      try{
+        const raw = localStorage.getItem('glowup:metrics'); const store = raw? JSON.parse(raw):{}; const events = Array.isArray(store?.events)? store.events: [];
+        const recent = events.slice(-500);
+        const searches = recent.filter(e=> e.type==='search');
+        const adoptions = recent.filter(e=> e.type==='adoption');
+        if(!searches.length || !adoptions.length) return { fast:false, habit:false, medianMs:null, s:0, a:0 };
+        const adTimes = adoptions.map(e=> new Date(e.t).getTime()).sort((a,b)=> a-b);
+        const deltas = []; for(const s of searches){ const st=new Date(s.t).getTime(); const a=adTimes.find(t=> t>=st); if(a){ deltas.push(a-st); } }
+        if(!deltas.length) return { fast:false, habit:false, medianMs:null, s:searches.length, a:adoptions.length };
+        const median = deltas.sort((a,b)=> a-b)[Math.floor(deltas.length/2)];
+        const oneDay = 24*60*60*1000;
+        const fastPref = median <= oneDay;
+        const qTokens = searches.map(s=> String(s.query||'').toLowerCase());
+        const fastWords = qTokens.filter(q=> /短期|即|早|最短|プラン/.test(q)).length;
+        const habitWords = qTokens.filter(q=> /習慣|続け|ルーティン|週次|継続/.test(q)).length;
+        const habitPref = (!fastPref && habitWords>fastWords) || (median>oneDay);
+        return { fast: fastPref, habit: habitPref, medianMs: median, s: searches.length, a: adoptions.length };
+      }catch{ return { fast:false, habit:false, medianMs:null, s:0, a:0 }; }
+    }
+    const pref = inferPref();
+    const badge = (text, color)=>{ const b=document.createElement('span'); b.textContent=text; b.style.display='inline-block'; b.style.padding='6px 10px'; b.style.borderRadius='999px'; b.style.fontSize='12px'; b.style.fontWeight='600'; b.style.background=color; b.style.color='#fff'; return b; };
+    const row = document.createElement('div'); row.style.display='flex'; row.style.gap='8px'; row.style.alignItems='center';
+    if(typeName){ row.appendChild(badge(typeName, '#111')); } else { const m=document.createElement('span'); m.className='muted'; m.textContent='タイプ未設定（診断未保存）'; row.appendChild(m); }
+    let prefLabel = 'バランス型'; let prefColor = '#64748b';
+    if(pref.fast && !pref.habit){ prefLabel='即効性寄り'; prefColor='#10b981'; }
+    else if(pref.habit && !pref.fast){ prefLabel='習慣化寄り'; prefColor='#2563eb'; }
+    row.appendChild(badge(prefLabel, prefColor));
+    mount.appendChild(row);
+    const stats = document.createElement('div'); stats.className='muted'; stats.style.fontSize='12px';
+    const medianText = (pref.medianMs!=null)? (()=>{ const d = Math.round(pref.medianMs/86400000); const h = Math.round(pref.medianMs/3600000); return d>0? `${d}日以内の採用中央値` : `${h}時間以内の採用中央値`; })() : '学習中（十分なイベントがありません）';
+    stats.textContent = `${medianText}／検索 ${pref.s} ／ 採用 ${pref.a}`;
+    mount.appendChild(stats);
+  })();
 }
 
 function wire(){
