@@ -1,5 +1,7 @@
 // @ts-nocheck
 // Load per-section partials: mypage sidenav, provider navbar/footer, admin sidebar
+// Detect GitHub Pages project base prefix
+const PROJECT_BASE = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
 function resolvePrefix(){
   const segs = (location.pathname || '/').split('/').filter(Boolean);
   if(segs.length <= 1) return './';
@@ -23,35 +25,97 @@ async function injectInto(selector, relPath){
       const res = await fetch(url, { cache: 'no-store' });
       console.debug('[partials] fetch', url, 'status', res.status);
       if(!res.ok) throw new Error(String(res.status));
-  const text = await res.text();
-  // sanitize injected partials if sanitizer is available; otherwise allow trusted components HTML
-  try{
-    if(typeof sanitizeHtml === 'function'){
-      host.innerHTML = sanitizeHtml(text);
-    } else {
-      // Trust first-party components under /components/ and render as HTML
-      const isTrusted = (relPath && relPath.indexOf('components/') === 0) || (url && url.indexOf('/components/') !== -1);
-      if(isTrusted){ host.innerHTML = text; } else { host.textContent = text; }
-    }
-  }catch(e){ host.innerHTML = text; }
+      const text = await res.text();
+      // sanitize injected partials if sanitizer is available; otherwise allow trusted components HTML
+      let applied = false;
+      try{
+        if(typeof sanitizeHtml === 'function'){
+          host.innerHTML = sanitizeHtml(text);
+          applied = true;
+        }
+      }catch(e){ /* ignore */ }
+      if(!applied){
+        try{
+          // Parse and adjust absolute links for GitHub Pages
+          const dp = new DOMParser();
+          const doc = dp.parseFromString(text, 'text/html');
+          if(PROJECT_BASE){
+            Array.from(doc.querySelectorAll('[href^="/"], [src^="/"]')).forEach(el=>{
+              try{
+                if(el.hasAttribute('href')){ const v = el.getAttribute('href'); if(v && v.startsWith('/')) el.setAttribute('href', PROJECT_BASE + v); }
+                if(el.hasAttribute('src')){ const v = el.getAttribute('src'); if(v && v.startsWith('/')) el.setAttribute('src', PROJECT_BASE + v); }
+              }catch{}
+            });
+          }
+          const frag = document.createDocumentFragment();
+          Array.from(doc.body.childNodes).forEach(n=> frag.appendChild(document.importNode(n, true)));
+          host.textContent = '';
+          host.appendChild(frag);
+          applied = true;
+        }catch(e){ /* fallback below */ }
+      }
+      if(!applied){
+        // Trust first-party components under /components/ and render as HTML (with optional prefix pass)
+        const isTrusted = (relPath && relPath.indexOf('components/') === 0) || (url && url.indexOf('/components/') !== -1);
+        if(isTrusted){ host.innerHTML = text; } else { host.textContent = text; }
+        try{
+          if(PROJECT_BASE){
+            Array.from(host.querySelectorAll('[href^="/"], [src^="/"]')).forEach(el=>{
+              try{
+                if(el.hasAttribute('href')){ const v = el.getAttribute('href'); if(v && v.startsWith('/')) el.setAttribute('href', PROJECT_BASE + v); }
+                if(el.hasAttribute('src')){ const v = el.getAttribute('src'); if(v && v.startsWith('/')) el.setAttribute('src', PROJECT_BASE + v); }
+              }catch{}
+            });
+          }
+        }catch{}
+      }
       console.info('[partials] injected', url, 'into', selector);
       return true;
     }catch(e){ console.debug('[partials] fetch failed', url, e && e.message); /* try next */ }
   }
   console.warn('Partial injection failed for all candidates:', relPath, candidates);
-  // Fallback: provide a minimal inline admin sidebar so the admin pages remain navigable
+  // Fallback: provide minimal inline partials per context
   try{
-    // build minimal admin sidebar DOM safely
-    const aside = document.createElement('aside'); aside.className = 'card'; aside.style.padding = '12px';
-    const nav = document.createElement('nav'); const ul = document.createElement('ul'); ul.style.listStyle='none'; ul.style.padding='0'; ul.style.margin='0';
-    const links = [
-      ['/pages/admin/index.html','ダッシュボード'],
-      ['/pages/admin/providers.html','掲載者管理'],
-      ['/pages/admin/features.html','特集作成・編集'],
-      ['/pages/admin/analytics.html','アクセス分析']
-    ];
-    links.forEach(([href,text])=>{ const li = document.createElement('li'); const a = document.createElement('a'); a.href = href; a.textContent = text; li.appendChild(a); ul.appendChild(li); });
-    nav.appendChild(ul); aside.appendChild(nav); host.appendChild(aside);
+    const mkLink = (href, text) => { const a = document.createElement('a'); a.href = PROJECT_BASE ? (PROJECT_BASE + href) : href; a.textContent = text; return a; };
+    if(selector === '#mypage-sidenav'){
+      const nav = document.createElement('nav'); nav.className='card'; nav.style.padding='16px';
+      const ul = document.createElement('ul'); ul.className='stack'; ul.style.listStyle='none'; ul.style.padding='0'; ul.style.margin='0';
+      const links = [
+        ['/pages/mypage/index.html','マイページトップ'],
+        ['/pages/mypage/profile.html','プロフィール編集'],
+        ['/pages/mypage/favorites.html','お気に入り'],
+        ['/pages/mypage/history.html','閲覧履歴'],
+        ['/pages/mypage/diagnosis.html','診断結果'],
+        ['/pages/mypage/reservations.html','予約履歴']
+      ];
+      links.forEach(([href,text])=>{ const li = document.createElement('li'); li.appendChild(mkLink(href,text)); ul.appendChild(li); });
+      nav.appendChild(ul); host.appendChild(nav);
+    } else if(selector === '#admin-sidebar'){
+      const aside = document.createElement('aside'); aside.className = 'card'; aside.style.padding = '12px';
+      const nav = document.createElement('nav'); const ul = document.createElement('ul'); ul.style.listStyle='none'; ul.style.padding='0'; ul.style.margin='0';
+      const links = [
+        ['/pages/admin/index.html','ダッシュボード'],
+        ['/pages/admin/providers.html','掲載者管理'],
+        ['/pages/admin/features.html','特集作成・編集'],
+        ['/pages/admin/analytics.html','アクセス分析']
+      ];
+      links.forEach(([href,text])=>{ const li = document.createElement('li'); li.appendChild(mkLink(href,text)); ul.appendChild(li); });
+      nav.appendChild(ul); aside.appendChild(nav); host.appendChild(aside);
+    } else if(selector === '#provider-navbar'){
+      const wrap = document.createElement('div'); wrap.className='card'; wrap.style.padding='12px';
+      const ul = document.createElement('ul'); ul.style.listStyle='none'; ul.style.padding='0'; ul.style.margin='0';
+      const links = [
+        ['/pages/provider/index.html','ダッシュボード'],
+        ['/pages/provider/service_form.html','サービス'],
+        ['/pages/provider/photo_settings.html','写真'],
+        ['/pages/provider/profile.html','店舗プロフィール'],
+        ['/pages/provider/staff.html','スタッフプロフィール'],
+        ['/pages/provider/schedule.html','スケジュール'],
+        ['/pages/provider/reservations.html','予約一覧']
+      ];
+      links.forEach(([href,text])=>{ const li = document.createElement('li'); li.appendChild(mkLink(href,text)); ul.appendChild(li); });
+      wrap.appendChild(ul); host.appendChild(wrap);
+    }
   }catch(e){}
   return false;
 }
