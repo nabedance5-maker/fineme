@@ -15,6 +15,7 @@ async function injectInto(selector, relPath){
   // try multiple candidate URLs to be tolerant of different hosting/relative path layouts
   const prefix = resolvePrefix();
   const candidates = [
+    PROJECT_BASE ? `${PROJECT_BASE}/${relPath}` : '',
     `${prefix}${relPath}`,
     `/${relPath}`,
     relPath
@@ -27,6 +28,14 @@ async function injectInto(selector, relPath){
       if(!res.ok) throw new Error(String(res.status));
       const text = await res.text();
       // sanitize injected partials if sanitizer is available; otherwise allow trusted components HTML
+      // Guard against wrong-file injection: ensure context matches expected links
+      const isMypage = selector === '#mypage-sidenav';
+      const isAdmin = selector === '#admin-sidebar';
+      const isProvider = selector === '#provider-navbar';
+      const looksAdminMenu = /\/pages\/admin\//.test(text);
+      const looksMypageMenu = /\/pages\/mypage\//.test(text);
+      if(isMypage && looksAdminMenu && !looksMypageMenu){ throw new Error('wrong menu content for mypage'); }
+      if(isAdmin && looksMypageMenu && !looksAdminMenu){ throw new Error('wrong menu content for admin'); }
       let applied = false;
       try{
         if(typeof sanitizeHtml === 'function'){
