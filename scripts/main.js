@@ -428,18 +428,18 @@ async function inject(selector, relativePath){
           signout.textContent = 'ログアウト';
           const mp = document.createElement('a');
           mp.className = 'btn';
-          mp.href = '/pages/mypage/index.html';
+          mp.href = PROJECT_BASE ? (PROJECT_BASE + '/pages/mypage/index.html') : '/pages/mypage/index.html';
           mp.textContent = 'マイページ';
           area.appendChild(signout);
           area.appendChild(document.createTextNode(' '));
           area.appendChild(mp);
           const so = signout;
-          if(so){ so.addEventListener('click', (e)=>{ e.preventDefault(); try{ if(typeof window['signOutUser'] === 'function'){ window['signOutUser'](); return; } }catch{} try{ sessionStorage.removeItem('glowup:userSession'); }catch{} location.href = '/'; }); }
+          if(so){ so.addEventListener('click', (e)=>{ e.preventDefault(); try{ if(typeof window['signOutUser'] === 'function'){ window['signOutUser'](); return; } }catch{} try{ sessionStorage.removeItem('glowup:userSession'); }catch{} location.href = PROJECT_BASE ? (PROJECT_BASE + '/') : '/'; }); }
         }else{
           area.textContent = '';
           const loginA = document.createElement('a');
           loginA.id = 'header-login-link';
-          loginA.href = '/pages/user/login.html';
+          loginA.href = PROJECT_BASE ? (PROJECT_BASE + '/pages/user/login.html') : '/pages/user/login.html';
           loginA.textContent = 'ログイン';
           area.appendChild(loginA);
         }
@@ -664,7 +664,7 @@ async function inject(selector, relativePath){
     if(!body) return;
     // Render a simplified, safe search form using DOM APIs
     const title = document.createElement('h3'); title.className = 'modal-title'; title.textContent = '検索';
-    const form = document.createElement('form'); form.className = 'modal-search-form'; form.action = '/pages/search.html'; form.method = 'get';
+    const form = document.createElement('form'); form.className = 'modal-search-form'; form.action = PROJECT_BASE ? (PROJECT_BASE + '/pages/search.html') : '/pages/search.html'; form.method = 'get';
 
     const rowKw = document.createElement('div'); rowKw.className = 'modal-search-row modal-search-row-keyword';
     const inputKw = document.createElement('input'); inputKw.name = 'keyword'; inputKw.type = 'text'; inputKw.className = 'modal-search-input'; inputKw.placeholder = '何を探しますか？（例: メンズメイク、撮影）'; inputKw.setAttribute('aria-label','キーワード');
@@ -732,7 +732,7 @@ async function inject(selector, relativePath){
     (String(data.body || '')).split('\n').forEach((line, idx) => { txt.appendChild(document.createTextNode(line)); if(idx < (String(data.body||'').split('\n').length - 1)) txt.appendChild(document.createElement('br')); });
     body.appendChild(txt);
 
-    const form = document.createElement('form'); form.className = 'modal-search-form'; form.action = '/pages/search.html'; form.method = 'get';
+    const form = document.createElement('form'); form.className = 'modal-search-form'; form.action = PROJECT_BASE ? (PROJECT_BASE + '/pages/search.html') : '/pages/search.html'; form.method = 'get';
     const hid = document.createElement('input'); hid.type = 'hidden'; hid.name = 'category'; hid.value = key; form.appendChild(hid);
     const selectsRow = document.createElement('div'); selectsRow.className = 'modal-search-row modal-search-row-selects';
     const regionSelect = document.createElement('select'); regionSelect.name = 'region'; regionSelect.className = 'modal-search-select'; regionSelect.setAttribute('aria-label','都道府県');
