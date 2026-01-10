@@ -280,6 +280,21 @@
                 if(!tips.length) tips.push('今の自分に合う進め方を選ぶことを重視');
                 return tips;
               }
+              function labelWeight(lab){
+                const ax = axes || {};
+                const s = Number(ax.support)||0, c = Number(ax.change)||0, m = Number(ax.motivation)||0, ctrl = Number(ax.control)||0;
+                const L = String(lab);
+                if(/相談|チェック|伴走/.test(L)) return s*2 + m;
+                if(/可視化|事前説明|納得|透明/.test(L)) return m*2 + ctrl;
+                if(/比較検討/.test(L)) return ctrl*2 + m;
+                if(/短期|成果指標|早い|仮説検証/.test(L)) return c*2 + m;
+                if(/写真/.test(L)) return c*1.5 + m;
+                if(/更新提案|チャレンジ|小さく試/.test(L)) return c*2 + s;
+                if(/柔軟|調整/.test(L)) return s*2 + ctrl;
+                if(/世界観|雰囲気/.test(L)) return 0.5;
+                if(/習慣化|振り返り|継続/.test(L)) return s*2 + m;
+                return 0;
+              }
               function choosingTips(){
                 const map = {
                   t01:['事前説明やプロセスの可視化がある','レビューや事例が豊富','比較検討の余地がある'],
@@ -289,7 +304,8 @@
                   t05:['ポートフォリオの世界観が一貫','事例写真が豊富','相性の合う雰囲気'],
                   t06:['継続サポートや習慣化の仕組み','定期的な振り返り','無理のない調整']
                 };
-                return map[typeId] || map.t01;
+                const arr = (map[typeId] || map.t01).slice();
+                return arr.sort((a,b)=> labelWeight(b) - labelWeight(a));
               }
               function inferStrategyPreference(){
                 try{
@@ -344,6 +360,14 @@
               const grid = document.createElement('div'); grid.className='stack'; grid.style.gap='10px';
               cols.forEach(([h, arr])=>{ const box=document.createElement('div'); const sh=document.createElement('h4'); sh.textContent=h; box.appendChild(sh); const ul=document.createElement('ul'); arr.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); }); box.appendChild(ul); grid.appendChild(box); });
               wrap.appendChild(grid);
+              // 根拠を表示（上位軸）
+              try{
+                const pairs = [['support','寄り添い/相談'],['change','変化の強さ'],['control','主導権/共同決定'],['motivation','目的の明確さ']]
+                  .map(([k,lab])=>({ k, lab, v: Number((axes||{})[k])||0 }))
+                  .sort((a,b)=> b.v - a.v).slice(0,2);
+                const note = document.createElement('p'); note.className='muted'; note.textContent = pairs.length? `※ あなたの回答（軸：${pairs.map(p=> p.lab).join('・')}）に基づいて並びを調整しています。` : '※ あなたの回答に基づいて表示しています。';
+                wrap.appendChild(note);
+              }catch{}
               article.appendChild(wrap);
             })();
 

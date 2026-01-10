@@ -95,6 +95,7 @@
           const chooseUl = document.createElement('ul'); listChoose.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; chooseUl.appendChild(li); }); wrap.appendChild(chooseUl);
           const stratH = document.createElement('h4'); stratH.textContent='進め方'; wrap.appendChild(stratH);
           const stratUl = document.createElement('ul'); stratUl.appendChild((()=>{ const li=document.createElement('li'); li.textContent='小さく試す→観察→調整で納得度を高める'; return li; })()); wrap.appendChild(stratUl);
+          const note = document.createElement('p'); note.className='muted'; note.textContent='※ この視点は STEP1 の選択（WHY/HOW）に基づいて生成しています。'; wrap.appendChild(note);
           article.appendChild(wrap);
         })();
 

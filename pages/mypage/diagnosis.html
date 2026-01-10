@@ -107,8 +107,30 @@
             t05:['世界観が合うポートフォリオ','事例写真が豊富'],
             t06:['継続サポート/習慣化の仕組み','定期的な振り返り']
           };
-          const choose = chooseMap[typeId] || chooseMap.t01;
+          function labelWeight(lab){
+            const s = Number(axes.support)||0, c = Number(axes.change)||0, m = Number(axes.motivation)||0, ctrl = Number(axes.control)||0;
+            const L = String(lab);
+            if(/相談|チェック|伴走/.test(L)) return s*2 + m;
+            if(/可視化|事前説明|納得|透明/.test(L)) return m*2 + ctrl;
+            if(/比較検討/.test(L)) return ctrl*2 + m;
+            if(/短期|成果指標|早い|仮説検証/.test(L)) return c*2 + m;
+            if(/写真/.test(L)) return c*1.5 + m;
+            if(/更新提案|チャレンジ|小さく試/.test(L)) return c*2 + s;
+            if(/柔軟|調整/.test(L)) return s*2 + ctrl;
+            if(/世界観|雰囲気/.test(L)) return 0.5;
+            if(/習慣化|振り返り|継続/.test(L)) return s*2 + m;
+            return 0;
+          }
+          const choose = (chooseMap[typeId] || chooseMap.t01).slice().sort((a,b)=> labelWeight(b) - labelWeight(a));
           const cH = document.createElement('h4'); cH.textContent='選び方'; wrap.appendChild(cH); wrap.appendChild(toList(choose));
+          // 根拠注釈
+          try{
+            const pairs = [['support','寄り添い/相談'],['change','変化の強さ'],['control','主導権/共同決定'],['motivation','目的の明確さ']]
+              .map(([k,lab])=>({ k, lab, v: Number((axes||{})[k])||0 }))
+              .sort((a,b)=> b.v - a.v).slice(0,2);
+            const note = document.createElement('p'); note.className='muted'; note.textContent = pairs.length? `※ あなたの回答（軸：${pairs.map(p=> p.lab).join('・')}）に基づいて並びを調整しています。` : '※ あなたの回答に基づいて表示しています。';
+            wrap.appendChild(note);
+          }catch{}
           function inferStrategyPreference(){
             try{
               const raw = localStorage.getItem('glowup:metrics');
