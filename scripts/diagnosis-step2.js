@@ -140,8 +140,8 @@ function complete(){
   localStorage.setItem(DIAG_STORAGE_KEY, JSON.stringify(obj));
     }
   }catch{}
-  // go to result
-  location.href = '/diagnosis/result.html';
+  // go to result (relative to diagnosis folder for GH Pages)
+  location.href = './result.html';
 }
 
 prev.addEventListener('click', ()=>{ if(state.idx>0){ state.idx--; renderQuestion(); } else { state.idx=-1; renderIntro(); } });
