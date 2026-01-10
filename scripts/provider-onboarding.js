@@ -40,7 +40,7 @@ try{
         <div class="stack">
           <p>ユーザー向け診断をそのまま受けてください。診断はラベルではなく“納得のための道しるべ”です。</p>
           <div class="cluster" style="gap:8px">
-            <a class="btn" href="/diagnosis/index.html" target="_blank" rel="noopener">診断ページを開く</a>
+            <a class="btn" href="../../diagnosis/index.html" target="_blank" rel="noopener">診断ページを開く</a>
             <button id="ob-import-diag" class="btn btn-ghost" type="button">診断結果を読み込む</button>
           </div>
           ${resultLine}
@@ -78,8 +78,8 @@ try{
       card3.appendChild(title3); card3.appendChild(help3); card3.appendChild(block1); card3.appendChild(block2); card3.appendChild(block3); card3.appendChild(block4); card3.appendChild(block5);
       const note = document.createElement('p'); note.className='muted'; note.textContent='良い例 / 悪い例を参照し、感情・考え・姿勢が伝わる文章を重視してください。この文章は診断結果と一緒に表示され、相性判断にも使われます。'; card3.appendChild(note);
       const cta = document.createElement('div'); cta.className='cluster'; cta.style.gap='8px'; cta.style.justifyContent='flex-end';
-      const start = document.createElement('a'); start.className='btn'; start.href='/pages/provider/profile.html'; start.textContent='この考え方で掲載をはじめる';
-      const more = document.createElement('a'); more.className='btn btn-ghost'; more.href='/pages/about.html'; more.textContent='考え方をもう少し知る';
+      const start = document.createElement('a'); start.className='btn'; start.href='./profile.html'; start.textContent='この考え方で掲載をはじめる';
+      const more = document.createElement('a'); more.className='btn btn-ghost'; more.href='../about.html'; more.textContent='考え方をもう少し知る';
       cta.appendChild(start); cta.appendChild(more); card3.appendChild(cta);
       wrap.appendChild(card3);
       host.innerHTML=''; host.appendChild(wrap);
@@ -125,14 +125,14 @@ try{
               <strong>STEP1：診断体験（掲載者自身が受ける）</strong>
               <p>ユーザー向け診断をそのまま受けてください。診断は“納得のための道しるべ”。</p>
               <div class="cluster" style="gap:8px">
-                <a class="btn" href="/diagnosis/index.html" target="_blank" rel="noopener">診断ページを開く</a>
+                <a class="btn" href="../../diagnosis/index.html" target="_blank" rel="noopener">診断ページを開く</a>
               </div>
             </div>
             <div class="ob-card">
               <strong>STEP3：掲載者プロフィールの思想入力（重要）</strong>
               <p>「誰に・どんな変化を届けるのか」を言語化してください。</p>
               <div class="cluster" style="gap:8px">
-                <a class="btn" href="/pages/provider/profile.html">プロフィール入力へ</a>
+                <a class="btn" href="./profile.html">プロフィール入力へ</a>
               </div>
             </div>
             <p class="muted">ログイン後は進行管理と保存が有効になり、全STEPが表示されます。</p>
@@ -194,7 +194,7 @@ function render(){
       <div class="stack">
         <p>ユーザー向け診断をそのまま受けてください。診断はラベルではなく“納得のための道しるべ”です。</p>
         <div class="cluster" style="gap:8px">
-          <a class="btn" href="/diagnosis/index.html" target="_blank" rel="noopener">診断ページを開く</a>
+          <a class="btn" href="../../diagnosis/index.html" target="_blank" rel="noopener">診断ページを開く</a>
           <button id="ob-import-diag" class="btn btn-ghost" type="button">診断結果を読み込む</button>
         </div>
         ${resultLine}
@@ -233,7 +233,7 @@ function render(){
             <li>次の予約につながる</li>
           </ol>
           <p class="muted">来店が確認された時だけ、価値が発生します。</p>
-          <p><a class="btn btn-ghost" href="/pages/provider/reservations.html">来店確認ボタンを見る</a></p>
+          <p><a class="btn btn-ghost" href="./reservations.html">来店確認ボタンを見る</a></p>
         </div>
         <label class="cluster" style="align-items:center; gap:8px"><input type="checkbox" id="ob-ack-2" /> <span>3階層構造と公開範囲を理解しました</span></label>
       </div>`;
@@ -286,8 +286,8 @@ function render(){
     const E_OPTS = ['安心感','理論・根拠','センス','実績']; const E_sel = new Set(scores.E_tags||[]);
     E_OPTS.forEach(t=>{ const lab=document.createElement('label'); lab.className='chip'; const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=E_sel.has(t); cb.addEventListener('change',()=>{ if(cb.checked) E_sel.add(t); else E_sel.delete(t); scores.E_tags = Array.from(E_sel); persist(me); }); lab.appendChild(cb); lab.appendChild(document.createTextNode(' '+t)); q5wrap.appendChild(lab); }); q5.appendChild(q5wrap); stBlock.appendChild(q5);
   const cta = document.createElement('div'); cta.className='cluster'; cta.style.gap='8px'; cta.style.justifyContent='flex-end';
-  const start = document.createElement('a'); start.className='btn'; start.href='/pages/provider/profile.html'; start.textContent='この考え方で掲載をはじめる';
-  const more = document.createElement('a'); more.className='btn btn-ghost'; more.href='/pages/about.html'; more.textContent='考え方をもう少し知る';
+  const start = document.createElement('a'); start.className='btn'; start.href='./profile.html'; start.textContent='この考え方で掲載をはじめる';
+  const more = document.createElement('a'); more.className='btn btn-ghost'; more.href='../about.html'; more.textContent='考え方をもう少し知る';
   cta.appendChild(start); cta.appendChild(more); card.appendChild(cta);
   // フォーカス誘導（#focus=...）
   try{
@@ -318,7 +318,7 @@ function render(){
       me.onboarding.completedAt = new Date().toISOString();
       persist(me);
       alert('オンボーディングを完了しました。ダッシュボードに移動します。');
-      location.href = '/pages/provider/index.html';
+      location.href = './index.html';
     });
   }
 }

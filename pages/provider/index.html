@@ -27,7 +27,7 @@
         <blockquote style="margin:0 0 8px 0;">
           <p style="margin:0">Finemeでは、「たくさん見られる」より「合う人に届く」ことを大切にしています。</p>
         </blockquote>
-        <a class="btn btn-ghost" href="/pages/provider/philosophy.html">Finemeの考え方を見る</a>
+        <a class="btn btn-ghost" href="./philosophy.html">Finemeの考え方を見る</a>
       </section>
       <!-- 次の一手ガイド（行動誘導） -->
       <section class="card" style="padding:12px;">
@@ -37,7 +37,7 @@
           <li><label class="cluster" style="gap:8px; align-items:center"><input type="checkbox" id="todo-target" /> <span>「どんな人に向いているか」を明確に</span></label></li>
           <li><label class="cluster" style="gap:8px; align-items:center"><input type="checkbox" id="todo-bna" /> <span>Before / After の考え方を言語化</span></label></li>
         </ul>
-        <div style="margin-top:8px"><a class="btn btn-ghost" href="/pages/provider/compatibility.html">改善するとどうなる？</a></div>
+        <div style="margin-top:8px"><a class="btn btn-ghost" href="./compatibility.html">改善するとどうなる？</a></div>
       </section>
       <section class="stack" style="margin-top:24px;">
         <h2 class="section-title">レビュー管理</h2>
@@ -78,7 +78,7 @@
         try{
           const me = loadProviders().find(p=> p.id===session.id);
           if(!me || !me.onboarding || !me.onboarding.completed){
-            location.href = '/pages/provider/onboarding.html';
+            location.href = './onboarding.html';
             return;
           }
         }catch(_){ /* ignore */ }
@@ -216,7 +216,7 @@
             const card = document.createElement('div'); card.className='card'; card.style.padding='12px'; card.style.marginTop='12px';
             const title = document.createElement('div'); title.className='cluster'; title.style.justifyContent='space-between'; title.style.alignItems='center';
             const strong = document.createElement('strong'); strong.textContent='オンボーディング'; title.appendChild(strong);
-            const btn = document.createElement('a'); btn.className='btn btn-ghost'; btn.href='/pages/provider/onboarding.html#reedit'; btn.textContent='再体験・再編集'; title.appendChild(btn);
+            const btn = document.createElement('a'); btn.className='btn btn-ghost'; btn.href='./onboarding.html#reedit'; btn.textContent='再体験・再編集'; title.appendChild(btn);
             card.appendChild(title);
             const p = document.createElement('p'); p.className='muted'; p.style.margin='8px 0 0'; p.textContent='診断の思想・プロフィール入力はいつでも見直せます。'; card.appendChild(p);
             container.insertBefore(card, container.children[1] || null);
@@ -238,7 +238,7 @@
               const compat = document.createElement('div'); compat.className='card'; compat.style.padding='12px'; compat.style.marginTop='12px';
               const header = document.createElement('div'); header.className='cluster'; header.style.justifyContent='space-between'; header.style.alignItems='center';
               const title = document.createElement('strong'); title.textContent='相性マップ（非数値）'; header.appendChild(title);
-              const link = document.createElement('a'); link.className='btn btn-ghost'; link.href='/pages/provider/compatibility.html'; link.textContent='詳しく見る'; header.appendChild(link);
+              const link = document.createElement('a'); link.className='btn btn-ghost'; link.href='./compatibility.html'; link.textContent='詳しく見る'; header.appendChild(link);
               compat.appendChild(header);
               const copy = document.createElement('p'); copy.className='muted'; copy.style.margin='8px 0'; copy.textContent='このマップは良し悪しではなく、今のプロフィールがどんな人に届いているかの到達度表示です。'; compat.appendChild(copy);
               const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='1fr 1fr'; grid.style.gap='8px';
@@ -269,40 +269,40 @@
                   motivation: {
                     intro:'「どんな悩みの男性に向き合ってきたか」を具体化すると、動機が伝わりやすくなります。',
                     actions:[
-                      {text:'オンボ｜どんな悩みを追記', href:'/pages/provider/onboarding.html#reedit&focus=ob-q-problems'}
+                      {text:'オンボ｜どんな悩みを追記', href:'./onboarding.html#reedit&focus=ob-q-problems'}
                     ]
                   },
                   anxiety: {
                     intro:'初回での不安解消の姿勢が伝わると、この軸は上がります。',
                     actions:[
-                      {text:'オンボ｜初めての人への寄り添い', href:'/pages/provider/onboarding.html#reedit&focus=ob-q-first'},
-                      {text:'サービス｜失敗リスクへの向き合い方', href:'/pages/provider/service_form.html?select=auto&focus=riskPolicy'},
-                      {text:'サービス｜Q&Aに不安への回答を追加', href:'/pages/provider/service_form.html?select=auto&focus=qa-list'}
+                      {text:'オンボ｜初めての人への寄り添い', href:'./onboarding.html#reedit&focus=ob-q-first'},
+                      {text:'サービス｜失敗リスクへの向き合い方', href:'./service_form.html?select=auto&focus=riskPolicy'},
+                      {text:'サービス｜Q&Aに不安への回答を追加', href:'./service_form.html?select=auto&focus=qa-list'}
                     ]
                   },
                   change: {
                     intro:'提供する変化レンジ（少し整える〜別人レベル）を明記しましょう。',
                     actions:[
-                      {text:'サービス｜初回の進め方に変化レンジ', href:'/pages/provider/service_form.html?select=auto&focus=firstSessionPlan'},
-                      {text:'オンボ｜提供スタンス（C）を見直す', href:'/pages/provider/onboarding.html#reedit&focus=ob-c-group'}
+                      {text:'サービス｜初回の進め方に変化レンジ', href:'./service_form.html?select=auto&focus=firstSessionPlan'},
+                      {text:'オンボ｜提供スタンス（C）を見直す', href:'./onboarding.html#reedit&focus=ob-c-group'}
                     ]
                   },
                   style: {
                     intro:'意思決定の関わり方（相談/提案/委ねる）を言語化しましょう。',
                     actions:[
-                      {text:'オンボ｜意思決定の関わり方（D）', href:'/pages/provider/onboarding.html#reedit&focus=ob-d-group'},
-                      {text:'オンボ｜初めての人への寄り添い', href:'/pages/provider/onboarding.html#reedit&focus=ob-q-first'}
+                      {text:'オンボ｜意思決定の関わり方（D）', href:'./onboarding.html#reedit&focus=ob-d-group'},
+                      {text:'オンボ｜初めての人への寄り添い', href:'./onboarding.html#reedit&focus=ob-q-first'}
                     ]
                   },
                   values: {
                     intro:'価値観タグ（安心・理論・センス・実績）を2つ以上＋何で選ばれたいかを補足しましょう。',
                     actions:[
-                      {text:'オンボ｜価値観タグを選ぶ', href:'/pages/provider/onboarding.html#reedit&focus=ob-e-group'},
-                      {text:'オンボ｜価格ではなく何で選ばれたいか', href:'/pages/provider/onboarding.html#reedit&focus=ob-q-beyond'}
+                      {text:'オンボ｜価値観タグを選ぶ', href:'./onboarding.html#reedit&focus=ob-e-group'},
+                      {text:'オンボ｜価格ではなく何で選ばれたいか', href:'./onboarding.html#reedit&focus=ob-q-beyond'}
                     ]
                   }
                 };
-                const tip = map[key] || { intro:'プロフィールに具体的な言葉を増やしてください。', actions:[{text:'オンボへ', href:'/pages/provider/onboarding.html#reedit'}] };
+                const tip = map[key] || { intro:'プロフィールに具体的な言葉を増やしてください。', actions:[{text:'オンボへ', href:'./onboarding.html#reedit'}] };
                 p.textContent = tip.intro;
                 card.appendChild(p);
                 // アクションリンク群
@@ -334,10 +334,10 @@
                 const rpLen = (svc.riskPolicy||'').length;
                 const qaCnt = Array.isArray(svc.qaList)? svc.qaList.filter(it=> it&&it.q&&it.a).length : 0;
                 const descLen = (svc.description||'').length;
-                if(fsLen < 80){ tips.push({ k:'fs', text:`「${name}」の初回の進め方：80〜150字で具体化（例・手順/所要時間/合意の取り方）`, href:'/pages/provider/service_form.html' }); }
-                if(rpLen < 60){ tips.push({ k:'rp', text:`「${name}」の失敗リスクへの向き合い方：60字以上で補足（確認・修正・保証）`, href:'/pages/provider/service_form.html' }); }
-                if(qaCnt < 2){ tips.push({ k:'qa', text:`「${name}」のQ&A：よくある不安への回答を2件以上追加`, href:'/pages/provider/service_form.html' }); }
-                if(descLen < 150){ tips.push({ k:'desc', text:`「${name}」の本文：150字以上で具体化（内容/所要時間/持ち物）`, href:'/pages/provider/service_form.html' }); }
+                if(fsLen < 80){ tips.push({ k:'fs', text:`「${name}」の初回の進め方：80〜150字で具体化（例・手順/所要時間/合意の取り方）`, href:'./service_form.html' }); }
+                if(rpLen < 60){ tips.push({ k:'rp', text:`「${name}」の失敗リスクへの向き合い方：60字以上で補足（確認・修正・保証）`, href:'./service_form.html' }); }
+                if(qaCnt < 2){ tips.push({ k:'qa', text:`「${name}」のQ&A：よくある不安への回答を2件以上追加`, href:'./service_form.html' }); }
+                if(descLen < 150){ tips.push({ k:'desc', text:`「${name}」の本文：150字以上で具体化（内容/所要時間/持ち物）`, href:'./service_form.html' }); }
               }
               // 重複キーを除去して上位3件だけ表示
               const seen = new Set(); const dedup = [];
@@ -346,7 +346,7 @@
                 const sugg = document.createElement('div'); sugg.className='card'; sugg.style.padding='12px'; sugg.style.marginTop='12px';
                 const title = document.createElement('div'); title.className='cluster'; title.style.justifyContent='space-between'; title.style.alignItems='center';
                 const strong = document.createElement('strong'); strong.textContent='改善提案（どこに何を書くと上がるか）'; title.appendChild(strong);
-                const link = document.createElement('a'); link.className='btn btn-ghost'; link.href='/pages/provider/service_form.html'; link.textContent='サービス編集へ'; title.appendChild(link);
+                const link = document.createElement('a'); link.className='btn btn-ghost'; link.href='./service_form.html'; link.textContent='サービス編集へ'; title.appendChild(link);
                 sugg.appendChild(title);
                 const ul = document.createElement('ul'); ul.className='stack'; ul.style.marginTop='8px';
                 for(const t of dedup){ const li=document.createElement('li'); const a=document.createElement('a'); a.href=t.href; a.className='btn btn-ghost'; a.textContent='編集'; li.appendChild(document.createTextNode(t.text)); li.appendChild(document.createTextNode(' ')); li.appendChild(a); ul.appendChild(li); }
