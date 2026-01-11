@@ -448,8 +448,8 @@
 
             // ⑥ 次の一手（最大2つ）
             const nextActions = document.createElement('div'); nextActions.className='result-actions';
-            const goSearch = document.createElement('a'); goSearch.href='/pages/search.html'; goSearch.className='btn'; goSearch.textContent='今の自分に合う選択肢を見る'; nextActions.appendChild(goSearch);
-            const goMypage = document.createElement('a'); goMypage.href='/pages/mypage/diagnosis.html'; goMypage.className='btn'; goMypage.textContent='少し考えるために保存する'; nextActions.appendChild(goMypage);
+            const goSearch = document.createElement('a'); goSearch.href='../pages/search.html'; goSearch.className='btn'; goSearch.textContent='今の自分に合う選択肢を見る'; nextActions.appendChild(goSearch);
+            const goMypage = document.createElement('a'); goMypage.href='../pages/mypage/diagnosis.html'; goMypage.className='btn'; goMypage.textContent='少し考えるために保存する'; nextActions.appendChild(goMypage);
             article.appendChild(nextActions);
 
             
@@ -458,12 +458,12 @@
             (function(){
               function baseSuggestions(){
                 return [
-                  { label: 'ヘアカット/カラー', emoji: '💇‍♀️', href: '/pages/search.html?keyword=ヘア' },
-                  { label: 'メイク相談', emoji: '💄', href: '/pages/search.html?keyword=メイク' },
-                  { label: 'ファッション相談', emoji: '👗', href: '/pages/search.html?keyword=ファッション' },
-                  { label: '写真撮影', emoji: '📸', href: '/pages/search.html?keyword=写真' },
-                  { label: 'ボディメイク', emoji: '🏋️', href: '/pages/search.html?keyword=ジム' },
-                  { label: '婚活サポート', emoji: '💍', href: '/pages/search.html?keyword=婚活' },
+                  { label: 'ヘアカット/カラー', emoji: '💇‍♀️', href: '../pages/search.html?keyword=ヘア' },
+                  { label: 'メイク相談', emoji: '💄', href: '../pages/search.html?keyword=メイク' },
+                  { label: 'ファッション相談', emoji: '👗', href: '../pages/search.html?keyword=ファッション' },
+                  { label: '写真撮影', emoji: '📸', href: '../pages/search.html?keyword=写真' },
+                  { label: 'ボディメイク', emoji: '🏋️', href: '../pages/search.html?keyword=ジム' },
+                  { label: '婚活サポート', emoji: '💍', href: '../pages/search.html?keyword=婚活' },
                 ];
               }
 
