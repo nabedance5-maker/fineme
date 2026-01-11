@@ -578,8 +578,13 @@ a.btn.btn--primary, button.btn.btn--primary, .btn--primary{
 	border-color: #e5e7eb !important;
 }
 
-/* Header: ensure the top-right 'マイページ' button displays white text (overrides header link color rules) */
-#site-header .nav-links a.btn[href="/pages/mypage/index.html"]{
+/* Header: ensure the top-right 'マイページ' button displays white text (works with GitHub Pages base path) */
+#site-header .nav-links a.btn[href$="/pages/mypage/index.html"]{
+	color: #ffffff !important;
+}
+#site-header .nav-links a.btn[href$="/pages/mypage/index.html"]:hover,
+#site-header .nav-links a.btn[href$="/pages/mypage/index.html"]:focus,
+#site-header .nav-links a.btn[href$="/pages/mypage/index.html"]:active{
 	color: #ffffff !important;
 }
 
