@@ -22,6 +22,7 @@
   .badge-emoji{display:inline-block;width:44px;height:44px;border-radius:999px;background:linear-gradient(135deg,#fff 0%,#fffbeb 100%);box-shadow:0 6px 18px rgba(2,6,23,0.08);display:flex;align-items:center;justify-content:center;font-size:20px;margin-right:10px}
   .result-header{display:flex;align-items:center;gap:8px}
   .result-actions{display:flex;gap:8px;margin-top:12px}
+  .result-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
   .btn-ghost{background:transparent;border:1px solid rgba(0,0,0,0.06);color:#111}
   .toast{position:fixed;right:20px;bottom:20px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s}
   .toast.show{opacity:1;transform:translateY(0)}
@@ -30,6 +31,7 @@
   .blocks-grid{display:grid;grid-template-columns:1fr;gap:12px;margin:8px 0 16px}
   .block{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
   .block-title{font-weight:700;margin-bottom:6px}
+  .space-y{margin-top:16px}
 
   /* highlight chips */
   .highlights{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
@@ -463,6 +465,23 @@
               }
             }catch{}
             article.appendChild(nextActions);
+
+            // ページ最下部にも同CTAを配置（未ログイン時のみ）
+            try{
+              const BASE_PREFIX = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
+              const sessionRaw = sessionStorage.getItem('glowup:userSession');
+              const isLoggedIn = !!(sessionRaw);
+              if(!isLoggedIn){
+                const bottomActions = document.createElement('div'); bottomActions.className='result-actions space-y';
+                const loginBtn2 = document.createElement('a');
+                const nextUrl2 = BASE_PREFIX + '/pages/mypage/diagnosis.html';
+                loginBtn2.href = BASE_PREFIX + '/pages/user/login.html?next=' + encodeURIComponent(nextUrl2);
+                loginBtn2.className = 'btn btn-ghost';
+                loginBtn2.textContent = 'ログインして結果を保存する';
+                bottomActions.appendChild(loginBtn2);
+                article.appendChild(bottomActions);
+              }
+            }catch{}
 
             // ⑥-2 提案カードスライダー（横スクロール）→ 絵文字化＆タイプ/軸で並び替え
             (function(){
