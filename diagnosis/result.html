@@ -448,6 +448,20 @@
             const nextActions = document.createElement('div'); nextActions.className='result-actions';
             const goSearch = document.createElement('a'); goSearch.href='/pages/search.html'; goSearch.className='btn'; goSearch.textContent='今の自分に合う選択肢を見る'; nextActions.appendChild(goSearch);
             const goMypage = document.createElement('a'); goMypage.href='/pages/mypage/diagnosis.html'; goMypage.className='btn'; goMypage.textContent='少し考えるために保存する'; nextActions.appendChild(goMypage);
+            // 未ログイン時の保存導線（ユーザーログインへ）
+            try{
+              const BASE_PREFIX = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
+              const sessionRaw = sessionStorage.getItem('glowup:userSession');
+              const isLoggedIn = !!(sessionRaw);
+              if(!isLoggedIn){
+                const loginBtn = document.createElement('a');
+                const nextUrl = BASE_PREFIX + '/pages/mypage/diagnosis.html';
+                loginBtn.href = BASE_PREFIX + '/pages/user/login.html?next=' + encodeURIComponent(nextUrl);
+                loginBtn.className = 'btn btn-ghost';
+                loginBtn.textContent = 'ログインして結果を保存する';
+                nextActions.appendChild(loginBtn);
+              }
+            }catch{}
             article.appendChild(nextActions);
 
             // ⑥-2 提案カードスライダー（横スクロール）→ 絵文字化＆タイプ/軸で並び替え
