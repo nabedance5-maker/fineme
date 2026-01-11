@@ -1,5 +1,14 @@
-// Detect GitHub Pages project base prefix
-const PROJECT_BASE = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
+// Detect GitHub Pages project base prefix (avoid redeclaration across multiple script loads)
+// Use var to allow re-use across bundles without redeclaration errors
+/* eslint-disable no-var */
+// If already defined in another bundle, don't redeclare; otherwise initialize once.
+// Initialize PROJECT_BASE via window namespace to avoid const reassignment/redeclaration issues
+try{
+  const base = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
+  if(typeof window !== 'undefined'){
+    if(typeof window['PROJECT_BASE'] === 'undefined'){ window['PROJECT_BASE'] = base; }
+  }
+}catch{}
 
 // Compute a relative prefix to project root regardless of nesting depth
 function resolvePrefix(){
@@ -12,12 +21,13 @@ function resolvePrefix(){
 function getSanitize(){ try{ const fn = window && window['sanitizeHtml']; return (typeof fn === 'function') ? fn : null; }catch{ return null; } }
 function prefixAbsWithin(root){
   try{
-    if(!PROJECT_BASE || !root) return;
+  const BASE = (typeof window !== 'undefined' && window['PROJECT_BASE']) ? window['PROJECT_BASE'] : '';
+  if(!BASE || !root) return;
     const scope = (root instanceof Element) ? root : document;
     scope.querySelectorAll('a[href^="/"], img[src^="/"], link[href^="/"], script[src^="/"]').forEach(el=>{
       try{
-        if(el.hasAttribute('href')){ const v = el.getAttribute('href'); if(v && v.startsWith('/')) el.setAttribute('href', PROJECT_BASE + v); }
-        if(el.hasAttribute('src')){ const v = el.getAttribute('src'); if(v && v.startsWith('/')) el.setAttribute('src', PROJECT_BASE + v); }
+    if(el.hasAttribute('href')){ const v = el.getAttribute('href'); if(v && v.startsWith('/')) el.setAttribute('href', BASE + v); }
+    if(el.hasAttribute('src')){ const v = el.getAttribute('src'); if(v && v.startsWith('/')) el.setAttribute('src', BASE + v); }
       }catch{}
     });
   }catch{}
@@ -44,19 +54,20 @@ async function inject(selector, relativePath){
           const dp = new DOMParser();
           const doc = dp.parseFromString(html, 'text/html');
           // Prefix root-relative asset links for GitHub Pages
-          if(PROJECT_BASE){
+    const BASE = (typeof window !== 'undefined' && window['PROJECT_BASE']) ? window['PROJECT_BASE'] : '';
+    if(BASE){
             Array.from(doc.querySelectorAll('[src^="/"], [href^="/"]')).forEach(el=>{
               try{
                 if(el.hasAttribute('src')){
-                  const v = el.getAttribute('src'); if(v && v.startsWith('/')) el.setAttribute('src', PROJECT_BASE + v);
+      const v = el.getAttribute('src'); if(v && v.startsWith('/')) el.setAttribute('src', BASE + v);
                 }
                 if(el.hasAttribute('href')){
-                  const v = el.getAttribute('href'); if(v && v.startsWith('/')) el.setAttribute('href', PROJECT_BASE + v);
+      const v = el.getAttribute('href'); if(v && v.startsWith('/')) el.setAttribute('href', BASE + v);
                 }
               }catch(e){}
             });
           }
-          if(!PROJECT_BASE){
+    if(!BASE){
             // remove script elements
             Array.from(doc.querySelectorAll('script')).forEach(s=> s.remove());
             // remove inline event handlers and javascript: href/src
@@ -130,23 +141,24 @@ async function inject(selector, relativePath){
 (function init(){
   // Apply project base prefix to absolute links when hosted under GitHub Pages
   try{
-    if(PROJECT_BASE){
+  const BASE = (typeof window !== 'undefined' && window['PROJECT_BASE']) ? window['PROJECT_BASE'] : '';
+  if(BASE){
       document.addEventListener('DOMContentLoaded', ()=>{
         document.querySelectorAll('a[href^="/"]').forEach(a=>{
-          const href = a.getAttribute('href'); if(!href) return; a.setAttribute('href', PROJECT_BASE + href);
+      const href = a.getAttribute('href'); if(!href) return; a.setAttribute('href', BASE + href);
         });
         document.querySelectorAll('form[action^="/"]').forEach(f=>{
-          const act = f.getAttribute('action'); if(!act) return; f.setAttribute('action', PROJECT_BASE + act);
+      const act = f.getAttribute('action'); if(!act) return; f.setAttribute('action', BASE + act);
         });
         // Also prefix root-relative assets
         document.querySelectorAll('img[src^="/"]').forEach(img=>{
-          const src = img.getAttribute('src'); if(!src) return; img.setAttribute('src', PROJECT_BASE + src);
+      const src = img.getAttribute('src'); if(!src) return; img.setAttribute('src', BASE + src);
         });
         document.querySelectorAll('script[src^="/"]').forEach(s=>{
-          const src = s.getAttribute('src'); if(!src) return; s.setAttribute('src', PROJECT_BASE + src);
+      const src = s.getAttribute('src'); if(!src) return; s.setAttribute('src', BASE + src);
         });
         document.querySelectorAll('link[href^="/"]').forEach(l=>{
-          const href = l.getAttribute('href'); if(!href) return; l.setAttribute('href', PROJECT_BASE + href);
+      const href = l.getAttribute('href'); if(!href) return; l.setAttribute('href', BASE + href);
         });
       });
     }
