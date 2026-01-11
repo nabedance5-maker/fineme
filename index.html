@@ -10,12 +10,23 @@
   <meta name="robots" content="noindex,nofollow" />
   <link rel="stylesheet" href="./assets/styles/style.css" />
   <link rel="stylesheet" href="./assets/styles/components.css" />
+  <style>
+    /* Mobile: show left half of hero background */
+    @media (max-width: 640px){
+      .hero.hero--visual{
+        background-image: url('./assets/images/hero-combined.jpg');
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: left center;
+      }
+    }
+  </style>
 </head>
 <body>
   <header id="site-header"></header>
 
   <main>
-  <section class="hero hero--visual" style="padding:72px 0 56px; --hero-left: url('../images/hero-combined.jpg'); --hero-right: url('../images/hero-combined.jpg');">
+  <section class="hero hero--visual" style="padding:72px 0 56px; --hero-left: url('./assets/images/hero-combined.jpg'); --hero-right: url('./assets/images/hero-combined.jpg');">
   <div class="container stack" style="border-radius:32px; width:100vw; max-width:100vw; min-width:0; overflow-x:auto; background:transparent; box-shadow:none;">
     <div class="hero-bg-fog"></div>
     <div class="hero-warm-overlay"></div>
