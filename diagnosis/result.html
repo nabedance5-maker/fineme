@@ -572,7 +572,7 @@
             const seeBtn = document.createElement('a');
             const typeQuery = (entry?.name) ? `?diag=1&keyword=${encodeURIComponent(entry.name)}` : '?diag=1';
             seeBtn.href = `../pages/search.html${typeQuery}`; seeBtn.className = 'btn'; seeBtn.textContent = 'このタイプに合う人を見てみる';
-            try{ seeBtn.style.setProperty('color','#111','important'); }catch{}
+            try{ seeBtn.style.setProperty('color','#fff','important'); }catch{}
             const retryLink = document.createElement('a'); retryLink.href = './index.html'; retryLink.className = 'btn'; retryLink.textContent = '診断をやり直す';
             const saveBtn = document.createElement('button'); saveBtn.className = 'btn btn-ghost'; saveBtn.textContent = '結果をコピー';
             saveBtn.addEventListener('click', ()=>{
@@ -588,6 +588,7 @@
                 const nextUrl3 = BASE_PREFIX + '/pages/mypage/diagnosis.html';
                 loginBtnBottom.href = BASE_PREFIX + '/pages/user/login.html?next=' + encodeURIComponent(nextUrl3);
                 loginBtnBottom.className = 'btn btn-ghost';
+                try{ loginBtnBottom.style.setProperty('color','#fff','important'); }catch{}
                 loginBtnBottom.textContent = 'ログインして結果を保存する';
                 actions.appendChild(loginBtnBottom);
               }
