@@ -1,5 +1,5 @@
-export {};
 // @ts-nocheck
+export {};
 import { getSummary, seedDemo } from './metrics.js';
 // GitHub Pages project base prefix
 const PROJECT_BASE = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';

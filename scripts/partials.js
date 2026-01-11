@@ -1,5 +1,5 @@
-export {};
 // @ts-nocheck
+export {};
 // Load per-section partials: mypage sidenav, provider navbar/footer, admin sidebar
 // Detect GitHub Pages project base prefix
 const PROJECT_BASE = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
@@ -13,6 +13,7 @@ async function injectInto(selector, relPath){
   const host = document.querySelector(selector);
   if(!host) return Promise.resolve(false);
   console.debug('[partials] injectInto', { selector, relPath });
+  function getSanitize(){ try{ const fn = (window).sanitizeHtml; return (typeof fn === 'function') ? fn : null; }catch{ return null; } }
   // try multiple candidate URLs to be tolerant of different hosting/relative path layouts
   const prefix = resolvePrefix();
   const candidates = [
@@ -39,8 +40,9 @@ async function injectInto(selector, relPath){
       if(isAdmin && looksMypageMenu && !looksAdminMenu){ throw new Error('wrong menu content for admin'); }
       let applied = false;
       try{
-        if(typeof sanitizeHtml === 'function'){
-          host.innerHTML = sanitizeHtml(text);
+        const sanitize = getSanitize();
+        if(sanitize){
+          host.innerHTML = sanitize(text);
           applied = true;
         }
       }catch(e){ /* ignore */ }
@@ -153,11 +155,12 @@ async function injectInto(selector, relPath){
         (pToggle.getAttribute('aria-expanded') === 'true') ? close() : open();
       });
       document.addEventListener('click', (e)=>{
+        const tgt = e.target;
         if(!pMenu.classList.contains('is-open')) return;
-        if(!(pMenu.contains(e.target) || pToggle.contains(e.target))) close();
+        if(!(tgt && tgt instanceof Node && (pMenu.contains(tgt) || pToggle.contains(tgt)))) close();
       });
       document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') close(); });
-      pMenu.addEventListener('click', (e)=>{ if(e.target.closest('a')) close(); });
+      pMenu.addEventListener('click', (e)=>{ const t=e.target; if(t && t instanceof Element && t.closest('a')) close(); });
     }
     // Provider notifications: display unread count and quick list in provider session area
     try{

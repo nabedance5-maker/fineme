@@ -9,5 +9,9 @@ declare global {
     signOutUser?: () => void;
     // GitHub Pages project base (e.g. '/fineme')
     finemeBase?: string;
+    // Optional sanitizer injected by site
+    sanitizeHtml?: (html: string) => string;
+    // Partials readiness signals
+    finemePartials?: { provNavReady?: Promise<boolean> };
   }
 }
