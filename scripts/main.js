@@ -22,12 +22,20 @@ function getSanitize(){ try{ const fn = window && window['sanitizeHtml']; return
 function prefixAbsWithin(root){
   try{
   const BASE = (typeof window !== 'undefined' && window['PROJECT_BASE']) ? window['PROJECT_BASE'] : '';
+    const relPrefix = resolvePrefix();
   if(!BASE || !root) return;
     const scope = (root instanceof Element) ? root : document;
     scope.querySelectorAll('a[href^="/"], img[src^="/"], link[href^="/"], script[src^="/"]').forEach(el=>{
       try{
     if(el.hasAttribute('href')){ const v = el.getAttribute('href'); if(v && v.startsWith('/')) el.setAttribute('href', BASE + v); }
     if(el.hasAttribute('src')){ const v = el.getAttribute('src'); if(v && v.startsWith('/')) el.setAttribute('src', BASE + v); }
+      }catch{}
+    });
+    // Normalize relative asset paths like 'assets/...'
+    scope.querySelectorAll('img[src^="assets/"], link[href^="assets/"], script[src^="assets/"]').forEach(el=>{
+      try{
+        if(el.hasAttribute('src')){ const v = el.getAttribute('src'); if(v && v.startsWith('assets/')) el.setAttribute('src', (BASE? BASE: relPrefix) + '/' + v); }
+        if(el.hasAttribute('href')){ const v = el.getAttribute('href'); if(v && v.startsWith('assets/')) el.setAttribute('href', (BASE? BASE: relPrefix) + '/' + v); }
       }catch{}
     });
   }catch{}
