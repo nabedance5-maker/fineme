@@ -29,6 +29,15 @@
         </blockquote>
         <a class="btn btn-ghost" href="./philosophy.html">Finemeの考え方を見る</a>
       </section>
+      <!-- 公開設定（店舗全体） -->
+      <section id="visibility-card" class="card" style="padding:12px;">
+        <div class="cluster" style="justify-content:space-between; align-items:center">
+          <strong>店舗の公開設定</strong>
+          <button id="toggle-visibility-btn" class="btn btn-ghost" type="button">読み込み中…</button>
+        </div>
+        <p class="muted" style="margin:8px 0 0">店舗を「非公開」にすると、個別サービスが公開設定でもサイト上に表示されません。</p>
+        <p class="muted" style="margin:6px 0 0; font-size:12px">※ 非公開設定でも月額料金の請求は継続します。</p>
+      </section>
       <!-- 次の一手ガイド（行動誘導） -->
       <section class="card" style="padding:12px;">
         <strong>相性をさらに高めるために</strong>
@@ -99,6 +108,32 @@
         try{
           const container = document.querySelector('.container.stack');
           if(container){
+            // 店舗の公開設定トグル
+            (function(){
+              const card = document.getElementById('visibility-card');
+              const btn = document.getElementById('toggle-visibility-btn');
+              const PROVIDERS_KEY = 'glowup:providers';
+              function loadProviders(){ try{ const raw=localStorage.getItem(PROVIDERS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch{ return []; } }
+              function saveProviders(list){ try{ localStorage.setItem(PROVIDERS_KEY, JSON.stringify(list)); }catch{} }
+              const list = loadProviders();
+              const meIdx = list.findIndex(p=> p.id===session.id);
+              if(meIdx>=0){
+                const me = list[meIdx];
+                me.visibility = me.visibility || 'public';
+                btn.textContent = (me.visibility==='public') ? '現在: 公開（クリックで非公開）' : '現在: 非公開（クリックで公開）';
+                btn.addEventListener('click', ()=>{
+                  try{
+                    const cur = me.visibility==='public' ? 'hidden' : 'public';
+                    me.visibility = cur;
+                    list[meIdx] = me;
+                    saveProviders(list);
+                    btn.textContent = (cur==='public') ? '現在: 公開（クリックで非公開）' : '現在: 非公開（クリックで公開）';
+                  }catch{}
+                });
+              } else {
+                btn.textContent = '設定不可（店舗情報が見つかりません）'; btn.disabled = true;
+              }
+            })();
             // 可視化カード：ゾーン／表示機会指数／距離／変化量
             const viz = document.createElement('div'); viz.className='card'; viz.style.padding='12px'; viz.style.marginTop='12px';
             const head = document.createElement('div'); head.className='cluster'; head.style.justifyContent='space-between'; head.style.alignItems='center';

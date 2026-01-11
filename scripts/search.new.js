@@ -679,7 +679,7 @@ function sortItems(items, sort){
     for(let i=0;i<staticItems.length;i++) staticItems[i] = enrich(staticItems[i]);
   }catch(e){ console.warn('failed to enrich providers/stores', e); }
   const all = [...staticItems, ...localItems];
-  // Exclude services whose provider onboarding is not completed (非公開)
+  // Exclude services whose provider onboarding is not completed or provider visibility is hidden（店舗全体の非公開）
   try{
     const provsLocal = loadProviders();
     const provsStaticAll = await loadStaticProviders();
@@ -690,7 +690,7 @@ function sortItems(items, sort){
     const provMap = Object.fromEntries(allProvs.map(p=> [p.id, p]));
     for(let i=0;i<all.length;i++){
       const it = all[i]; const p = provMap[it.providerId];
-      if(p && (!p.onboarding || !p.onboarding.completed)){ all.splice(i,1); i--; }
+      if(p && ((!p.onboarding || !p.onboarding.completed) || (p.visibility === 'hidden'))){ all.splice(i,1); i--; }
     }
   }catch(_){ }
 
