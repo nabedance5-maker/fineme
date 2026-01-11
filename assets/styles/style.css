@@ -286,8 +286,9 @@ a.btn.btn--primary, button.btn.btn--primary, .btn--primary{
 .hero--visual{
 	position:relative;
 	overflow:hidden;
-	--hero-left: url('../images/hero-left.svg');
-	--hero-right: url('../images/hero-right.svg');
+	/* Use a single combined photo for both layers to ensure consistent display across GitHub Pages */
+	--hero-left: url('../images/hero-combined.jpg');
+	--hero-right: url('../images/hero-combined.jpg');
 }
 .hero--visual::before,
 .hero--visual::after{
@@ -305,17 +306,17 @@ a.btn.btn--primary, button.btn.btn--primary, .btn--primary{
 	background-position: left center;
 		opacity:1;
 		/* keep sharp for main subject */
-		filter: saturate(1.04) contrast(1.06);
+		filter: saturate(1.02) contrast(1.04);
 		z-index:0;
 }
 .hero--visual::after{
 	/* right image: sample from right side of combined photo */
 	background-image: var(--hero-right);
 	background-position: right center;
-	opacity:0.98;
+	opacity:1;
 	mix-blend-mode:normal;
 	/* slight blur for depth */
-	filter: blur(1.2px) saturate(0.98) contrast(.995);
+	filter: blur(1px) saturate(0.98) contrast(.995);
 	z-index:1;
 }
 /* gradient fog masks to softly blend the two images towards center */
