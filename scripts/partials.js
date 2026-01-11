@@ -90,12 +90,12 @@ async function injectInto(selector, relPath){
       const nav = document.createElement('nav'); nav.className='card'; nav.style.padding='16px';
       const ul = document.createElement('ul'); ul.className='stack'; ul.style.listStyle='none'; ul.style.padding='0'; ul.style.margin='0';
       const links = [
-        ['/pages/mypage/index.html','マイページトップ'],
-        ['/pages/mypage/profile.html','プロフィール編集'],
-        ['/pages/mypage/favorites.html','お気に入り'],
-        ['/pages/mypage/history.html','閲覧履歴'],
-        ['/pages/mypage/diagnosis.html','診断結果'],
-        ['/pages/mypage/reservations.html','予約履歴']
+        ['./index.html','マイページトップ'],
+        ['./profile.html','プロフィール編集'],
+        ['./favorites.html','お気に入り'],
+        ['./history.html','閲覧履歴'],
+        ['./diagnosis.html','診断結果'],
+        ['./reservations.html','予約履歴']
       ];
       links.forEach(([href,text])=>{ const li = document.createElement('li'); li.appendChild(mkLink(href,text)); ul.appendChild(li); });
       nav.appendChild(ul); host.appendChild(nav);
