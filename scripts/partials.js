@@ -1,3 +1,4 @@
+export {};
 // @ts-nocheck
 // Load per-section partials: mypage sidenav, provider navbar/footer, admin sidebar
 // Detect GitHub Pages project base prefix

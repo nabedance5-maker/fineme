@@ -1,3 +1,4 @@
+export {};
 // @ts-nocheck
 import { getSummary, seedDemo } from './metrics.js';
 // GitHub Pages project base prefix

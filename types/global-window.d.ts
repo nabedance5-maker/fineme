@@ -7,5 +7,7 @@ declare global {
     getUserSession?: () => any;
     // signs out the current user
     signOutUser?: () => void;
+    // GitHub Pages project base (e.g. '/fineme')
+    finemeBase?: string;
   }
 }

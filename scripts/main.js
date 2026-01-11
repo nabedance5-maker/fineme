@@ -1,3 +1,4 @@
+export {};
 // Detect GitHub Pages project base prefix
 const PROJECT_BASE = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
 // Expose for other scripts when needed
