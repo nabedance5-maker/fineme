@@ -450,38 +450,9 @@
             const nextActions = document.createElement('div'); nextActions.className='result-actions';
             const goSearch = document.createElement('a'); goSearch.href='/pages/search.html'; goSearch.className='btn'; goSearch.textContent='今の自分に合う選択肢を見る'; nextActions.appendChild(goSearch);
             const goMypage = document.createElement('a'); goMypage.href='/pages/mypage/diagnosis.html'; goMypage.className='btn'; goMypage.textContent='少し考えるために保存する'; nextActions.appendChild(goMypage);
-            // 未ログイン時の保存導線（ユーザーログインへ）
-            try{
-              const BASE_PREFIX = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
-              const sessionRaw = sessionStorage.getItem('glowup:userSession');
-              const isLoggedIn = !!(sessionRaw);
-              if(!isLoggedIn){
-                const loginBtn = document.createElement('a');
-                const nextUrl = BASE_PREFIX + '/pages/mypage/diagnosis.html';
-                loginBtn.href = BASE_PREFIX + '/pages/user/login.html?next=' + encodeURIComponent(nextUrl);
-                loginBtn.className = 'btn btn-ghost';
-                loginBtn.textContent = 'ログインして結果を保存する';
-                nextActions.appendChild(loginBtn);
-              }
-            }catch{}
             article.appendChild(nextActions);
 
-            // ページ最下部にも同CTAを配置（未ログイン時のみ）
-            try{
-              const BASE_PREFIX = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
-              const sessionRaw = sessionStorage.getItem('glowup:userSession');
-              const isLoggedIn = !!(sessionRaw);
-              if(!isLoggedIn){
-                const bottomActions = document.createElement('div'); bottomActions.className='result-actions space-y';
-                const loginBtn2 = document.createElement('a');
-                const nextUrl2 = BASE_PREFIX + '/pages/mypage/diagnosis.html';
-                loginBtn2.href = BASE_PREFIX + '/pages/user/login.html?next=' + encodeURIComponent(nextUrl2);
-                loginBtn2.className = 'btn btn-ghost';
-                loginBtn2.textContent = 'ログインして結果を保存する';
-                bottomActions.appendChild(loginBtn2);
-                article.appendChild(bottomActions);
-              }
-            }catch{}
+            
 
             // ⑥-2 提案カードスライダー（横スクロール）→ 絵文字化＆タイプ/軸で並び替え
             (function(){
@@ -607,6 +578,20 @@
             saveBtn.addEventListener('click', ()=>{
               const text = `${entry.name}\n${entry.catch||''}\n\n${entry.advice||''}`; try{ navigator.clipboard.writeText(text); showToast('結果をクリップボードにコピーしました'); }catch(e){ showToast('コピーに失敗しました'); }
             });
+            // 最下部のアクション群に未ログイン時の保存導線を統合
+            try{
+              const BASE_PREFIX = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
+              const sessionRaw = sessionStorage.getItem('glowup:userSession');
+              const isLoggedIn = !!(sessionRaw);
+              if(!isLoggedIn){
+                const loginBtnBottom = document.createElement('a');
+                const nextUrl3 = BASE_PREFIX + '/pages/mypage/diagnosis.html';
+                loginBtnBottom.href = BASE_PREFIX + '/pages/user/login.html?next=' + encodeURIComponent(nextUrl3);
+                loginBtnBottom.className = 'btn btn-ghost';
+                loginBtnBottom.textContent = 'ログインして結果を保存する';
+                actions.appendChild(loginBtnBottom);
+              }
+            }catch{}
             actions.appendChild(seeBtn); actions.appendChild(retryLink); actions.appendChild(saveBtn); article.appendChild(actions);
 
             root.appendChild(article);
