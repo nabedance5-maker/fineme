@@ -39,6 +39,9 @@
       if(!/\.html$/i.test(path)){
         var normalized = path.replace(/\/$/, '');
         push(normalized + '/index.html');
+        // Also try appending .html to the last segment (e.g., /pages/admin/providers -> providers.html)
+        var lastHtml = normalized + '.html';
+        push(lastHtml);
       }
       // Common folder shortcuts and specific admin pages
       var map = [

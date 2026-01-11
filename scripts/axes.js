@@ -142,7 +142,11 @@ function wireMiniPreview(){
     state[q===1||q==='1'? 'q1':'q2'] = axis;
     try{
       const hint = [state.q1, state.q2].filter(Boolean).join(',');
-      if(cta){ const base = '/diagnosis/index.html?from=axes'; cta.href = hint? `${base}&hint=${encodeURIComponent(hint)}` : base; }
+      if(cta){
+        const PROJECT_BASE = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
+        const base = `${PROJECT_BASE}/diagnosis/index.html?from=axes`;
+        cta.href = hint ? `${base}&hint=${encodeURIComponent(hint)}` : base;
+      }
     }catch{}
     render();
   };

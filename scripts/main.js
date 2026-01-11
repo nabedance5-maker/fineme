@@ -1,5 +1,7 @@
 // Detect GitHub Pages project base prefix
 const PROJECT_BASE = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
+// Expose for other scripts when needed
+try{ window.finemeBase = PROJECT_BASE; }catch{}
 
 // Compute a relative prefix to project root regardless of nesting depth
 function resolvePrefix(){
