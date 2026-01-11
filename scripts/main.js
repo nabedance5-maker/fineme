@@ -10,6 +10,18 @@ function resolvePrefix(){
 }
 
 function getSanitize(){ try{ const fn = window && window['sanitizeHtml']; return (typeof fn === 'function') ? fn : null; }catch{ return null; } }
+function prefixAbsWithin(root){
+  try{
+    if(!PROJECT_BASE || !root) return;
+    const scope = (root instanceof Element) ? root : document;
+    scope.querySelectorAll('a[href^="/"], img[src^="/"], link[href^="/"], script[src^="/"]').forEach(el=>{
+      try{
+        if(el.hasAttribute('href')){ const v = el.getAttribute('href'); if(v && v.startsWith('/')) el.setAttribute('href', PROJECT_BASE + v); }
+        if(el.hasAttribute('src')){ const v = el.getAttribute('src'); if(v && v.startsWith('/')) el.setAttribute('src', PROJECT_BASE + v); }
+      }catch{}
+    });
+  }catch{}
+}
 async function inject(selector, relativePath){
   const host = document.querySelector(selector);
   if(!host) return;
@@ -64,6 +76,8 @@ async function inject(selector, relativePath){
           const frag = document.createDocumentFragment();
           Array.from(doc.body.childNodes).forEach(n=> frag.appendChild(document.importNode(n, true)));
           host.appendChild(frag);
+          // Immediately prefix any root-relative paths inside injected header/footer
+          prefixAbsWithin(host);
         }catch(e){ host.textContent = ''; }
       }
     }catch(e){ host.textContent = ''; }
@@ -103,6 +117,7 @@ async function inject(selector, relativePath){
               });
             }
             const frag = document.createDocumentFragment(); Array.from(doc.body.childNodes).forEach(n=> frag.appendChild(document.importNode(n, true))); host.appendChild(frag);
+            prefixAbsWithin(host);
           }catch(e2){ host.textContent = ''; }
         }
       }catch(e2){ host.textContent = ''; }
