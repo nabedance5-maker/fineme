@@ -4,6 +4,19 @@ const PROJECT_BASE = (location.hostname && /github\.io$/i.test(location.hostname
 // Expose for other scripts when needed
 try{ window.finemeBase = PROJECT_BASE; }catch{}
 
+// Auto-redirect to project base when accessed without prefix on GitHub Pages
+try{
+  if(PROJECT_BASE && /github\.io$/i.test(location.hostname)){
+    const path = location.pathname || '/';
+    // If not already under /fineme, redirect preserving query/hash
+    if(!path.startsWith(PROJECT_BASE)){
+      const target = `${PROJECT_BASE}${path}${location.search||''}${location.hash||''}`;
+      // Use replace to avoid polluting history
+      location.replace(target);
+    }
+  }
+}catch{}
+
 // Compute a relative prefix to project root regardless of nesting depth
 function resolvePrefix(){
   const segs = (location.pathname || '/').split('/').filter(Boolean);
