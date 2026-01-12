@@ -1,6 +1,7 @@
 // Provider side: booking requests management (localStorage demo)
 export {};
 import { addNotification } from './notifications.js';
+import { createReservation } from './points.js';
 const REQUESTS_KEY = 'glowup:requests';
 const SERVICES_KEY = 'glowup:services';
 const SLOTS_KEY = 'glowup:slots';
@@ -24,6 +25,15 @@ function loadServices(){ try{ const raw=localStorage.getItem(SERVICES_KEY); cons
 function loadSlots(){ try{ const raw=localStorage.getItem(SLOTS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch{ return []; } }
 function saveSlots(list){ localStorage.setItem(SLOTS_KEY, JSON.stringify(list)); }
 function getSession(){ try{ const raw=sessionStorage.getItem(PROVIDER_SESSION_KEY); return raw?JSON.parse(raw):null; }catch{ return null; } }
+function loadProviders(){ try{ const raw=localStorage.getItem('glowup:providers'); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch{ return []; } }
+function getProviderPlanMeta(providerId){
+  try{
+    const p = loadProviders().find(x=> x && x.id===providerId);
+    const fee = p && p.plan && typeof p.plan.feeRate === 'number' ? Math.round(p.plan.feeRate * 100) : 7; // default 7%
+    return { commissionRate: fee };
+  }catch{ return { commissionRate: 7 }; }
+}
+function getServicePrice(serviceId){ try{ const s = loadServices().find(x=> x && x.id===serviceId); return Number(s && (s.price!=null ? s.price : (s.priceMin!=null ? s.priceMin : 0))) || 0; }catch{ return 0; } }
 
 function serviceName(id){ const s = loadServices().find(x=> x.id===id); return s? s.name : '不明'; }
 
@@ -144,6 +154,15 @@ function escapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,
       const sidx = slots.findIndex(s=> s.id===reqs[idx].slotId && s.providerId===session.id);
       if(sidx!==-1){ slots[sidx].open = false; saveSlots(slots); }
       saveRequests(reqs);
+      // Create reservation entry for provider reservations list (points system)
+      try{
+        const r = reqs[idx];
+        const { commissionRate } = getProviderPlanMeta(session.id);
+        const price = getServicePrice(r.serviceId);
+        const title = r.serviceName || serviceName(r.serviceId);
+        const visitDate = (()=>{ try{ const d = new Date(`${r.date}T${(r.start||'00:00')}:00`); return d.toISOString(); }catch{ return new Date().toISOString(); } })();
+        createReservation({ userId: String(r.userId||'user'), storeId: String(session.id), title, price, commissionRate, visitDate, origin: 'detail' });
+      }catch(e){ console.warn('create reservation entry failed', e); }
       // Notify user of approval (local notifications)
       try{
         const r = reqs[idx];
