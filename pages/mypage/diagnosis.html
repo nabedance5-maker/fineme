@@ -41,8 +41,8 @@
       const card = document.createElement('div'); card.className='card'; card.style.padding='16px';
       const p = document.createElement('p'); p.className='muted'; p.textContent='診断結果が見つかりません。過去に診断を完了していないか、保存されていない可能性があります。';
       const actions = document.createElement('div'); actions.className='cluster'; actions.style.gap='8px';
-      const a1 = document.createElement('a'); a1.className='btn'; a1.href='/diagnosis/index.html'; a1.textContent='無料で診断する（3分）';
-      const a2 = document.createElement('a'); a2.className='btn btn-ghost'; a2.href='/pages/search.html'; a2.textContent='診断せずに探す';
+        const a1 = document.createElement('a'); a1.className='btn'; a1.href='../../diagnosis/index.html'; a1.textContent='無料で診断する（3分）';
+        const a2 = document.createElement('a'); a2.className='btn btn-ghost'; a2.href='../search.html'; a2.textContent='診断せずに探す';
       actions.appendChild(a1); actions.appendChild(a2);
       card.appendChild(p); card.appendChild(actions);
       host.appendChild(card);
@@ -58,8 +58,8 @@
       arr.forEach((it, idx)=>{
         const row = document.createElement('div'); row.className='cluster'; row.style.justifyContent='space-between'; row.style.alignItems='center';
         const left = document.createElement('div'); const t=document.createElement('strong'); t.textContent = it.typeName || '(不明なタイプ)'; left.appendChild(t); const s=document.createElement('span'); s.className='muted'; s.style.marginLeft='8px'; s.textContent = fmtDate(it.savedAt); left.appendChild(s);
-        const right = document.createElement('div'); const open=document.createElement('a'); open.className='btn btn-ghost'; open.href='/diagnosis/result.html'; open.textContent='詳しく見る'; const del=document.createElement('button'); del.className='btn btn-ghost'; del.textContent='削除'; del.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); try{ const arr2 = loadSaved().filter((x,i)=> i!==idx); localStorage.setItem(SAVED_KEY, JSON.stringify(arr2)); showToast('保存を削除しました'); card.remove(); saveListCard(); }catch{} }); right.appendChild(open); right.appendChild(del);
-        row.appendChild(left); row.appendChild(right); list.appendChild(row);
+        const right = document.createElement('div'); const open=document.createElement('a'); open.className='btn btn-ghost'; open.href='../../diagnosis/result.html'; open.textContent='詳しく見る'; const del=document.createElement('button'); del.className='btn btn-ghost'; del.textContent='削除'; del.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); try{ const arr2 = loadSaved().filter((x,i)=> i!==idx); localStorage.setItem(SAVED_KEY, JSON.stringify(arr2)); showToast('保存を削除しました'); card.remove(); saveListCard(); }catch{} }); right.appendChild(open); right.appendChild(del);
+          row.appendChild(left); row.appendChild(right); list.appendChild(row);
       });
       card.appendChild(list); host.appendChild(card);
     }
@@ -74,8 +74,8 @@
       const h = document.createElement('h2'); h.textContent = typeName ? `あなたは「${typeName}」です` : '診断結果'; top.appendChild(h);
       if(updated){ const small = document.createElement('p'); small.className='muted'; small.textContent = `最終更新: ${updated}`; top.appendChild(small); }
       const actions = document.createElement('div'); actions.className='cluster'; actions.style.gap='8px';
-      const re = document.createElement('a'); re.href='/diagnosis/index.html'; re.className='btn'; re.textContent='診断をやり直す'; re.style.color = '#111'; re.style.setProperty('color','#111','important'); actions.appendChild(re);
-      const see = document.createElement('a'); see.href='/diagnosis/result.html'; see.className='btn btn-ghost'; see.textContent='結果ページで詳しく見る'; actions.appendChild(see);
+        const re = document.createElement('a'); re.href='../../diagnosis/index.html'; re.className='btn'; re.textContent='診断をやり直す'; re.style.color = '#111'; re.style.setProperty('color','#111','important'); actions.appendChild(re);
+        const see = document.createElement('a'); see.href='../../diagnosis/result.html'; see.className='btn btn-ghost'; see.textContent='結果ページで詳しく見る'; actions.appendChild(see);
       top.appendChild(actions);
       host.appendChild(top);
       saveListCard();
