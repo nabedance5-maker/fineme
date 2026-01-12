@@ -450,6 +450,38 @@ async function inject(selector, relativePath){
       // Initialize notifications UI (if available)
       try{
         import('./notifications.js').then(mod => {
+          // Auto-create upcoming reservation reminders for the logged-in user (24h before start)
+          try{
+            const s = (typeof window['getUserSession'] === 'function') ? window['getUserSession']() : null;
+            if(s){
+              const REQUESTS_KEY = 'glowup:requests';
+              const SERVICES_KEY = 'glowup:services';
+              const loadJson = (key)=>{ try{ const raw = localStorage.getItem(key); const arr = raw? JSON.parse(raw): []; return Array.isArray(arr)? arr: []; }catch{ return []; } };
+              const saveJson = (key, val)=>{ try{ localStorage.setItem(key, JSON.stringify(val)); }catch{} };
+              const services = loadJson(SERVICES_KEY);
+              const serviceName = (id)=>{ const svc = services.find(x=> x.id===id); return svc? (svc.name||''): ''; };
+              const toStartDateTime = (req)=>{ try{ return new Date(`${req.date}T${(req.start||'00:00')}:00`); }catch{ return null; } };
+              const now = new Date().getTime();
+              const dayMs = 24*60*60*1000;
+              const reqs = loadJson(REQUESTS_KEY);
+              let changed=false;
+              for(const r of reqs){
+                if(!r || r.status!=='approved') continue;
+                if(r.userId && r.userId !== s.id) continue;
+                const st = toStartDateTime(r); if(!st) continue;
+                const diff = st.getTime() - now;
+                if(diff > 0 && diff <= dayMs && !r.userNotified24h){
+                  const title = '予約の24時間前通知';
+                  const name = r.serviceName || serviceName(r.serviceId) || '予約';
+                  const timeStr = r.end ? `${r.start}-${r.end}` : `${r.start}`;
+                  const body = `${name} / ${r.date} ${timeStr} の予約が近づいています。`;
+                  try{ if(typeof mod.addNotification === 'function'){ mod.addNotification({ toType:'user', toId: s.id, title, body, data:{ requestId: r.id } }); } }catch{}
+                  r.userNotified24h = true; changed = true;
+                }
+              }
+              if(changed) saveJson(REQUESTS_KEY, reqs);
+            }
+          }catch{}
           const updateBadge = ()=>{
             try{
               // Only show user notifications when a user session exists
