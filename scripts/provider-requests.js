@@ -157,6 +157,14 @@ function escapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,
       reqs[idx].status = 'rejected';
       reqs[idx].providerComment = comment;
       saveRequests(reqs);
+      // Notify user of rejection
+      try{
+        const r = reqs[idx];
+        const title = '予約が辞退されました';
+        const timeStr = r.end ? `${r.start}-${r.end}` : `${r.start}`;
+        const body = `${r.serviceName || serviceName(r.serviceId)} / ${r.date} ${timeStr} の予約が辞退されました。別の枠・サービスをご検討ください。`;
+        addNotification({ toType:'user', toId: r.userId || null, title, body, data:{ requestId: r.id } });
+      }catch(e){ console.warn('notify user rejection failed', e); }
       const msg = $('#req-message'); if(msg) msg.textContent = 'リクエストを辞退しました。';
     } else if(action === 'cancel'){
       // Allow provider to cancel approved (and pending) reservations if before start time
@@ -173,6 +181,14 @@ function escapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,
       r.providerComment = comment;
       r.providerCanceledAt = new Date().toISOString();
       saveRequests(reqs);
+      // Notify user of cancellation
+      try{
+        const title = '予約がキャンセルされました';
+        const timeStr = r.end ? `${r.start}-${r.end}` : `${r.start}`;
+        let body = `${r.serviceName || serviceName(r.serviceId)} / ${r.date} ${timeStr} の予約がキャンセルされました。`;
+        if(comment){ body += ` 理由: ${escapeHtml(comment)}`; }
+        addNotification({ toType:'user', toId: r.userId || null, title, body, data:{ requestId: r.id } });
+      }catch(e){ console.warn('notify user cancel failed', e); }
       if(wasApproved){
         const slots = loadSlots();
         const sidx = slots.findIndex(s=> s.id===r.slotId && s.providerId===session.id);
