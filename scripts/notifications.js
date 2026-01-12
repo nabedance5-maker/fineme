@@ -73,11 +73,12 @@ export function showNotificationModal(notif, opts={}){
     if(metaEl) metaEl.textContent = notif.createdAt ? new Date(notif.createdAt).toLocaleString() : '';
     if(actionEl){
       if(notif.data && notif.data.requestId){
-        // link based on target type
+        // link based on target type; respect GitHub Pages base path
         const toType = notif.toType || (opts.toType||'user');
+        const BASE = (/** @type {any} */(window)).finemeBase || '';
         const href = toType === 'provider'
-          ? `/pages/provider/requests.html?requestId=${encodeURIComponent(notif.data.requestId)}`
-          : `/pages/mypage/reservations.html?requestId=${encodeURIComponent(notif.data.requestId)}`;
+          ? `${BASE}/pages/provider/requests.html?requestId=${encodeURIComponent(notif.data.requestId)}`
+          : `${BASE}/pages/mypage/reservations.html?requestId=${encodeURIComponent(notif.data.requestId)}`;
         actionEl.setAttribute('href', href);
         actionEl.style.display = 'inline-block';
       } else { actionEl.style.display = 'none'; }

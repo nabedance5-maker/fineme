@@ -1,5 +1,6 @@
 // Provider side: booking requests management (localStorage demo)
 export {};
+import { addNotification } from './notifications.js';
 const REQUESTS_KEY = 'glowup:requests';
 const SERVICES_KEY = 'glowup:services';
 const SLOTS_KEY = 'glowup:slots';
@@ -143,6 +144,14 @@ function escapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,
       const sidx = slots.findIndex(s=> s.id===reqs[idx].slotId && s.providerId===session.id);
       if(sidx!==-1){ slots[sidx].open = false; saveSlots(slots); }
       saveRequests(reqs);
+      // Notify user of approval (local notifications)
+      try{
+        const r = reqs[idx];
+        const title = '予約が承認されました';
+        const timeStr = r.end ? `${r.start}-${r.end}` : `${r.start}`;
+        const body = `${r.serviceName || serviceName(r.serviceId)} / ${r.date} ${timeStr} の予約が承認されました。詳細をご確認ください。`;
+        addNotification({ toType:'user', toId: r.userId || null, title, body, data:{ requestId: r.id } });
+      }catch(e){ console.warn('notify user approval failed', e); }
       const msg = $('#req-message'); if(msg) msg.textContent = 'リクエストを承認しました。該当枠を受付停止にしました。';
     } else if(action === 'reject'){
       reqs[idx].status = 'rejected';
