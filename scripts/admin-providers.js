@@ -7,6 +7,14 @@ function $all(s, root=document){ return Array.from(root.querySelectorAll(s)); }
 const STORAGE_KEY = 'glowup:providers';
 function resolvePrefix(){ return location.pathname.includes('/pages/') ? '..' : '.'; }
 
+// Plan options metadata
+const PLAN_OPTIONS = {
+  p5000: { id:'p5000', price:5000, feeRate:0.08, label:'5,000円プラン（予約手数料8％）' },
+  p7000: { id:'p7000', price:7000, feeRate:0.07, label:'7,000円プラン（予約手数料7％）' },
+  p10000:{ id:'p10000', price:10000, feeRate:0.06, label:'10,000円プラン（予約手数料6％）' }
+};
+function planLabel(p){ try{ if(!p) return ''; const meta = PLAN_OPTIONS[p.id] || PLAN_OPTIONS[p]; return meta ? meta.label : ''; }catch{ return ''; } }
+
 function loadProviders(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -49,13 +57,14 @@ function renderTable(){
     const tdName = document.createElement('td'); tdName.textContent = p.name || '';
     const tdStore = document.createElement('td'); tdStore.textContent = p.profile?.storeName || '';
     const tdLogin = document.createElement('td'); tdLogin.textContent = p.loginId || '';
+    const tdPlan = document.createElement('td'); tdPlan.textContent = planLabel(p.plan) || '—';
     const tdCreated = document.createElement('td'); tdCreated.textContent = new Date(p.createdAt).toLocaleString();
     const tdOps = document.createElement('td'); tdOps.className = 'cluster';
     const btnProfile = document.createElement('button'); btnProfile.className = 'btn btn-ghost'; btnProfile.setAttribute('data-action','profile'); btnProfile.setAttribute('data-id', p.id); btnProfile.textContent = 'プロフィール編集';
     const btnReset = document.createElement('button'); btnReset.className = 'btn btn-ghost'; btnReset.setAttribute('data-action','reset'); btnReset.setAttribute('data-id', p.id); btnReset.textContent = '初期化(パス)';
     const btnDelete = document.createElement('button'); btnDelete.className = 'btn btn-ghost danger'; btnDelete.setAttribute('data-action','delete'); btnDelete.setAttribute('data-id', p.id); btnDelete.textContent = '削除';
     tdOps.appendChild(btnProfile); tdOps.appendChild(btnReset); tdOps.appendChild(btnDelete);
-    tr.appendChild(tdName); tr.appendChild(tdStore); tr.appendChild(tdLogin); tr.appendChild(tdCreated); tr.appendChild(tdOps);
+    tr.appendChild(tdName); tr.appendChild(tdStore); tr.appendChild(tdLogin); tr.appendChild(tdPlan); tr.appendChild(tdCreated); tr.appendChild(tdOps);
     tbody.appendChild(tr);
   }
 }
@@ -93,7 +102,9 @@ function onCreateSubmit(e){
     name,
     loginId,
     passwordHash: password, // demo only; do NOT store plain text in production
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    // default plan at account creation
+    plan: { id:'p7000', price:7000, feeRate:0.07 }
   };
   list.push(provider);
   saveProviders(list);
@@ -152,6 +163,14 @@ function openProfileModal(provider){
   $('#profile-phone').value = provider.profile?.phone || '';
   $('#profile-website').value = provider.profile?.website || '';
   $('#profile-description').value = provider.profile?.description || '';
+  // plan selection
+  try{
+    const sel = /** @type {HTMLSelectElement} */ (document.getElementById('profile-planId'));
+    if(sel){
+      const cur = (provider.plan && provider.plan.id) ? provider.plan.id : 'p7000';
+      sel.value = PLAN_OPTIONS[cur] ? cur : 'p7000';
+    }
+  }catch{}
 
   const modal = document.getElementById('provider-profile-modal');
   const bd = document.getElementById('provider-profile-modal-backdrop');
@@ -188,6 +207,12 @@ function onProfileSubmit(e){
     website: (fd.get('website')||'').toString().trim(),
     description: (fd.get('description')||'').toString()
   };
+  // Save plan selection
+  try{
+    const planId = (fd.get('planId')||'').toString() || 'p7000';
+    const meta = PLAN_OPTIONS[planId] || PLAN_OPTIONS.p7000;
+    list[idx].plan = { id: meta.id, price: meta.price, feeRate: meta.feeRate };
+  }catch{}
   saveProviders(list);
   $('#provider-profile-message').textContent = '保存しました。';
   renderTable();

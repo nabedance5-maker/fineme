@@ -81,6 +81,7 @@
                       <th style="text-align:left">掲載名</th>
                       <th style="text-align:left">店舗名</th>
                       <th style="text-align:left">ログインID</th>
+                      <th style="text-align:left">プラン</th>
                       <th style="text-align:left">作成日</th>
                       <th style="text-align:left">操作</th>
                     </tr>
@@ -127,6 +128,16 @@
                   <label>紹介文
                     <textarea id="profile-description" name="description" rows="4" placeholder="店舗/掲載者の紹介文"></textarea>
                   </label>
+                  <div>
+                    <label>掲載プラン
+                      <select id="profile-planId" name="planId">
+                        <option value="p5000">5,000円プラン（予約手数料８％）</option>
+                        <option value="p7000">7,000円プラン（予約手数料７％）</option>
+                        <option value="p10000">10,000円プラン（予約手数料６％）</option>
+                      </select>
+                    </label>
+                    <p class="muted" style="margin:6px 0 0;font-size:12px">※ プランは請求・手数料計算に利用します（デモ用ローカル保存）。</p>
+                  </div>
                   <div class="cluster">
                     <button class="btn" type="submit">保存</button>
                     <button id="provider-profile-cancel" class="btn btn-ghost" type="button">キャンセル</button>

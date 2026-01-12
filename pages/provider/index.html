@@ -130,6 +130,29 @@
                     btn.textContent = (cur==='public') ? '現在: 公開（クリックで非公開）' : '現在: 非公開（クリックで公開）';
                   }catch{}
                 });
+                // 加入プランカードの表示
+                try{
+                  const plan = me.plan || null;
+                  const metaMap = {
+                    p5000: { label:'5,000円プラン（予約手数料8％）', price:5000, feeRate:0.08 },
+                    p7000: { label:'7,000円プラン（予約手数料7％）', price:7000, feeRate:0.07 },
+                    p10000:{ label:'10,000円プラン（予約手数料6％）', price:10000, feeRate:0.06 }
+                  };
+                  const meta = plan && plan.id ? (metaMap[plan.id] || { label:'未設定', price:0, feeRate:0 }) : { label:'未設定', price:0, feeRate:0 };
+                  const planCard = document.createElement('section');
+                  planCard.className = 'card';
+                  planCard.style.padding='12px';
+                  const head = document.createElement('div'); head.className='cluster'; head.style.justifyContent='space-between'; head.style.alignItems='center';
+                  const strong = document.createElement('strong'); strong.textContent='加入中の掲載プラン'; head.appendChild(strong);
+                  planCard.appendChild(head);
+                  const body = document.createElement('div'); body.className='stack'; body.style.marginTop='8px';
+                  const cur = document.createElement('div'); cur.innerHTML = `<span class="muted">現在のプラン：</span> ${meta.label}`; body.appendChild(cur);
+                  const fee = document.createElement('div'); fee.innerHTML = `<span class="muted">月額：</span> ¥${meta.price.toLocaleString()} ／ <span class="muted">予約手数料：</span> ${(Math.round(meta.feeRate*1000)/10)}%`; body.appendChild(fee);
+                  const note = document.createElement('p'); note.className='muted'; note.style.margin='6px 0 0'; note.textContent='※ プラン変更は管理者による編集で行われます（デモ）。'; body.appendChild(note);
+                  planCard.appendChild(body);
+                  // visibilityカードの直後に挿入
+                  card.parentElement && card.parentElement.insertBefore(planCard, card.nextSibling);
+                }catch{}
               } else {
                 btn.textContent = '設定不可（店舗情報が見つかりません）'; btn.disabled = true;
               }
