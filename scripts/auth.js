@@ -10,7 +10,12 @@ export function requireProviderAuth(){
   const session = getProviderSession();
   if(!session){
     // not logged-in -> redirect to login page
-    location.href = BASE_PREFIX + '/pages/login.html';
+    try{
+      const current = (location.pathname||'/') + (location.search||'') + (location.hash||'');
+      location.href = BASE_PREFIX + '/pages/login.html?returnTo=' + encodeURIComponent(current);
+    }catch{
+      location.href = BASE_PREFIX + '/pages/login.html';
+    }
     return null;
   }
   return session;
