@@ -40,7 +40,7 @@
     try{
       const obj = ptsRaw? JSON.parse(ptsRaw): { points:0, visits:0 };
       const visits = Number(obj.visits||0);
-      const rate = (visits>=11)?5:(visits>=4?4:3);
+      const rate = (visits>=11)?3:(visits>=4?2:1);
       const line = document.getElementById('mypage-points-line');
       if(line){ line.textContent = `${Number(obj.points||0)}pt / 現在の還元率: ${rate}%（あと${Math.max(0, visits<4?(4-visits):(visits<11?(11-visits):0))}回で次の段階）`; }
       updateHeaderPointsBadge();

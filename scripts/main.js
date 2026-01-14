@@ -378,7 +378,7 @@ async function inject(selector, relativePath){
               if(raw){ const obj = JSON.parse(raw)||{}; pts = Number(obj.points||0)||0; visits = Number(obj.visits||0)||0; cnt = Number(obj.reservations||0)||0; }
             }catch{}
             const ladder = (visits>0?visits:cnt);
-            const rate = (ladder>=11)?5:(ladder>=4?4:3);
+            const rate = (ladder>=11)?3:(ladder>=4?2:1);
             badge.textContent = `${pts}pt / ${rate}%`;
             badge.title = `現在の還元率: ${rate}%`;
           }

@@ -26,8 +26,8 @@ function loadReservations(){
 function saveReservations(arr){ try{ localStorage.setItem(STORE_KEYS.reservations, JSON.stringify(arr||[])); }catch{} }
 function genId(){ return 'r_' + Math.random().toString(36).slice(2,10); }
 
-// Rate ladder from total visits
-function rateForVisits(visits){ return (visits>=11)?5:(visits>=4?4:3); }
+// Rate ladder from total visits (1–3%)
+function rateForVisits(visits){ return (visits>=11)?3:(visits>=4?2:1); }
 
 function loadPoints(){ try{ const raw=localStorage.getItem(STORE_KEYS.points); return raw? JSON.parse(raw): { points:0, reservations:0, visits:0 }; }catch{ return { points:0, reservations:0, visits:0 }; } }
 function savePoints(obj){ try{ localStorage.setItem(STORE_KEYS.points, JSON.stringify(obj||{ points:0, reservations:0, visits:0 })); }catch{} }
