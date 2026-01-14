@@ -259,12 +259,15 @@
                     sumType.textContent = name || '—';
                   }
                   if(sumResv){
-                    // 今月の予約数と先月比
+                    // 今月の予約数（承認済み）と先月比
                     const now = new Date(); const ym = `${now.getFullYear()}-${now.getMonth()+1}`;
                     const last = new Date(now.getFullYear(), now.getMonth()-1, 1); const yml = `${last.getFullYear()}-${last.getMonth()+1}`;
-                    function ymKey(d){ const dd=new Date(d); return `${dd.getFullYear()}-${dd.getMonth()+1}`; }
-                    const cur = myRes.filter(r=> ymKey(r.visitDate)===ym).length;
-                    const prev = myRes.filter(r=> ymKey(r.visitDate)===yml).length;
+                    function ymKey(d){ try{ const dd=new Date(d); return `${dd.getFullYear()}-${dd.getMonth()+1}`; }catch{ return ''; } }
+                    let reservations = []; try{ const raw=localStorage.getItem('fineme:reservations:list'); reservations = raw? JSON.parse(raw): []; }catch{}
+                    const mine = Array.isArray(reservations) ? reservations.filter(r=> String(r.storeId||'')===String(session.id)) : [];
+                    const approvedSet = new Set(['reserved','visit_pending','visited']);
+                    const cur = mine.filter(r=> approvedSet.has(String(r.status||'')) && ymKey(r.visitDate)===ym).length;
+                    const prev = mine.filter(r=> approvedSet.has(String(r.status||'')) && ymKey(r.visitDate)===yml).length;
                     const diffTxt = (cur-prev>=0?'+':'') + String(cur-prev);
                     sumResv.textContent = `${cur}件（先月比 ${diffTxt}）`;
                   }
@@ -412,6 +415,81 @@
                 container.insertBefore(sugg, container.children[2] || null);
               }
             }catch(e){ /* ignore */ }
+
+            // 今月の指標カード（予約数・アクセス数・人気サービス・今月の手数料）
+            try{
+              const metricsCard = document.createElement('div'); metricsCard.className='card'; metricsCard.style.padding='12px'; metricsCard.style.marginTop='12px';
+              const head = document.createElement('div'); head.className='cluster'; head.style.justifyContent='space-between'; head.style.alignItems='center';
+              const h = document.createElement('strong'); h.textContent='📈 今月の指標'; head.appendChild(h);
+              metricsCard.appendChild(head);
+              const wrap = document.createElement('div'); wrap.className='stack'; wrap.style.marginTop='8px';
+
+              function ymKey(iso){ try{ const d=new Date(iso); return `${d.getFullYear()}-${d.getMonth()+1}`; }catch{ return ''; } }
+              const now = new Date(); const ym = `${now.getFullYear()}-${now.getMonth()+1}`;
+              const last = new Date(now.getFullYear(), now.getMonth()-1, 1); const yml = `${last.getFullYear()}-${last.getMonth()+1}`;
+
+              // 予約と手数料（points/reservationsベース）
+              let reservations = []; try{ const raw=localStorage.getItem('fineme:reservations:list'); reservations = raw? JSON.parse(raw): []; }catch{}
+              const mine = Array.isArray(reservations) ? reservations.filter(r=> String(r.storeId||'')===String(session.id)) : [];
+              const effectiveStatuses = new Set(['reserved','visit_pending','visited']);
+              const curResv = mine.filter(r=> effectiveStatuses.has(String(r.status||'')) && ymKey(r.visitDate)===ym);
+              const prevResv = mine.filter(r=> effectiveStatuses.has(String(r.status||'')) && ymKey(r.visitDate)===yml);
+              const resvCount = curResv.length;
+              const resvDiff = resvCount - prevResv.length;
+              const visitedThisMonth = mine.filter(r=> String(r.status||'')==='visited' && ymKey(r.visitDate)===ym);
+              const feeThisMonth = visitedThisMonth.reduce((sum, r)=> sum + (Number(r.price||0) * (Number(r.commissionRate||0)/100)), 0);
+
+              // アクセス数・人気サービス（viewHistoryベース）
+              let history = []; try{ const raw=localStorage.getItem('glowup:viewHistory'); history = raw? JSON.parse(raw): []; }catch{}
+              const myHist = Array.isArray(history) ? history.filter(h=> String(h.providerId||'')===String(session.id)) : [];
+              const curAccess = myHist.filter(h=> ymKey(h.viewedAt||h.createdAt||Date.now())===ym).length;
+              const prevAccess = myHist.filter(h=> ymKey(h.viewedAt||h.createdAt||Date.now())===yml).length;
+              const accessDiff = curAccess - prevAccess;
+
+              // 人気サービス上位3（今月）
+              function pickServiceKey(href){
+                try{
+                  const u = new URL(href, location.origin);
+                  const sid = u.searchParams.get('serviceId');
+                  return sid ? `sid:${sid}` : `href:${u.pathname}${u.search}`;
+                }catch{ return String(href||''); }
+              }
+              const curHist = myHist.filter(h=> ymKey(h.viewedAt||h.createdAt||Date.now())===ym);
+              const counts = new Map(); const names = new Map();
+              for(const it of curHist){ const key = pickServiceKey(it.href||''); counts.set(key, (counts.get(key)||0)+1); if(!names.has(key)) names.set(key, it.name||'サービス'); }
+              const top = Array.from(counts.entries()).map(([k,v])=>({ key:k, count:v, name:names.get(k)||'サービス' })).sort((a,b)=> b.count-a.count).slice(0,3);
+
+              // レイアウト
+              const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='repeat(auto-fit, minmax(180px, 1fr))'; grid.style.gap='10px';
+              function metric(label, value, diff){
+                const box = document.createElement('div'); box.style.border='1px solid #e5e7eb'; box.style.borderRadius='10px'; box.style.padding='10px'; box.style.background='#fff';
+                const l = document.createElement('div'); l.className='muted'; l.textContent = label; box.appendChild(l);
+                const v = document.createElement('div'); v.style.fontSize='18px'; v.style.fontWeight='700'; v.textContent = value; box.appendChild(v);
+                if(typeof diff === 'number'){
+                  const d = document.createElement('div'); d.className='muted'; d.style.fontSize='12px'; d.style.marginTop='2px'; d.textContent = `先月比 ${diff>=0?'+':''}${diff}`; box.appendChild(d);
+                }
+                return box;
+              }
+              grid.appendChild(metric('予約数（今月）', `${resvCount}件`, resvDiff));
+              grid.appendChild(metric('アクセス数（今月）', `${curAccess}回`, accessDiff));
+              grid.appendChild(metric('今月の手数料', `¥${Math.round(feeThisMonth).toLocaleString()}`));
+              wrap.appendChild(grid);
+
+              // 人気サービス
+              const popular = document.createElement('div'); popular.className='stack'; popular.style.marginTop='8px';
+              const ph = document.createElement('div'); ph.className='muted'; ph.textContent='アクセスが多いサービス（今月）'; popular.appendChild(ph);
+              if(top.length){
+                const ul = document.createElement('ul'); ul.className='stack'; ul.style.marginTop='6px';
+                for(const t of top){ const li=document.createElement('li'); li.textContent = `${t.name}：${t.count}回`; ul.appendChild(li); }
+                popular.appendChild(ul);
+              } else {
+                const empty = document.createElement('div'); empty.className='muted'; empty.textContent='— データがありません'; popular.appendChild(empty);
+              }
+              wrap.appendChild(popular);
+
+              metricsCard.appendChild(wrap);
+              container.insertBefore(metricsCard, container.children[3] || null);
+            }catch(_){ }
 
             // 相性経由率カード（順位の代替指標）
             try{
