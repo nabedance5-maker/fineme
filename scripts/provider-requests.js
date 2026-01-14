@@ -134,7 +134,12 @@ function onTableClick(e){
 function escapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 
 (function init(){
-  const filter = document.getElementById('req-filter'); if(filter){ filter.addEventListener('change', renderList); }
+  const filter = document.getElementById('req-filter');
+  if(filter){
+    // Force default to 'all' on first load
+    try{ if(filter instanceof HTMLSelectElement) filter.value = 'all'; }catch{}
+    filter.addEventListener('change', renderList);
+  }
   const tbody = document.getElementById('req-tbody'); if(tbody){ tbody.addEventListener('click', onTableClick); }
   // Import wiring
   const importInput = document.getElementById('requests-import-input');
