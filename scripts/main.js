@@ -668,6 +668,10 @@ async function inject(selector, relativePath){
     whitening: {
       title: 'ホワイトニング',
       body: `歯が白くなると、顔全体がパッと明るく見える。第一印象で“爽やか”や“信頼できそう”と思われる人は、たいてい歯がキレイ。手軽なケアで、笑顔に自信を持てるようになる。“印象が変わる”のは、実はたった数トーンの違いから。`
+    },
+    aga: {
+      title: 'AGA',
+      body: `薄毛の悩みは“見た目の自信”に直結します。専門クリニックでの診療や、継続的なケアで、今の自分に合った改善方法が見つかる。早く始めるほど効果が期待できるから、“悩みを放置しない”が正解。自分に合う方法を相談してみよう。`
     }
   };
   function ensureSearchModal(){
@@ -733,7 +737,7 @@ async function inject(selector, relativePath){
 
     // category select (short list)
     const categorySelect = document.createElement('select'); categorySelect.name = 'category'; categorySelect.className = 'modal-search-select'; categorySelect.setAttribute('aria-label','カテゴリ');
-    const cats = [['','すべてのカテゴリ'],['consulting','外見トータルサポート'],['gym','パーソナルジム'],['makeup','メイクアップ'],['hair','ヘア'],['diagnosis','カラー/骨格診断'],['fashion','コーデ提案'],['photo','写真撮影（アプリ等）'],['marriage','結婚相談所'],['eyebrow','眉毛'],['hairremoval','脱毛'],['esthetic','エステ'],['whitening','ホワイトニング'],['orthodontics','歯科矯正'],['nail','ネイル']];
+    const cats = [['','すべてのカテゴリ'],['consulting','外見トータルサポート'],['gym','パーソナルジム'],['makeup','メイクアップ'],['hair','ヘア'],['diagnosis','カラー/骨格診断'],['fashion','コーデ提案'],['photo','写真撮影（アプリ等）'],['marriage','結婚相談所'],['eyebrow','眉毛'],['hairremoval','脱毛'],['esthetic','エステ'],['whitening','ホワイトニング'],['orthodontics','歯科矯正'],['nail','ネイル'],['aga','AGA']];
     cats.forEach(c=>{ const opt=document.createElement('option'); opt.value=c[0]; opt.textContent=c[1]; categorySelect.appendChild(opt); });
 
     rowSelects.appendChild(regionSelect); rowSelects.appendChild(purposeSelect); rowSelects.appendChild(categorySelect);

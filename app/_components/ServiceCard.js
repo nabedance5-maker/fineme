@@ -54,7 +54,8 @@ function labelFromCategory(key) {
     esthetic: 'エステ',
     whitening: 'ホワイトニング',
     orthodontics: '歯科矯正',
-    nail: 'ネイル'
+    nail: 'ネイル',
+    aga: 'AGA'
   };
   return map[key] || key;
 }
