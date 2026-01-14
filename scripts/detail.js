@@ -21,6 +21,8 @@ function placeholderFor(category){
     fashion: `${prefix}/assets/placeholders/placeholder-fashion.svg`,
     photo: `${prefix}/assets/placeholders/placeholder-photo.svg`,
     marriage: `${prefix}/assets/placeholders/placeholder-marriage.svg`,
+    // AGA は専用プレースホルダ未提供のためデフォルトへフォールバック
+    aga: `${prefix}/assets/placeholders/placeholder-default.svg`,
   };
   return map[category] || `${prefix}/assets/placeholders/placeholder-default.svg`;
 }
@@ -33,9 +35,19 @@ function categoryPhotoFor(category){
     diagnosis: 'https://images.unsplash.com/photo-1520975916090-3105956dac38?q=80&w=1400&auto=format&fit=crop',
     fashion: 'https://images.unsplash.com/photo-1520975657288-4e3b66f3c54a?q=80&w=1400&auto=format&fit=crop',
     photo: 'https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?q=80&w=1400&auto=format&fit=crop',
-    marriage: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1400&auto=format&fit=crop'
+    marriage: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1400&auto=format&fit=crop',
+    // 医療系の文脈に近い中立的な写真
+    aga: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?q=80&w=1400&auto=format&fit=crop'
   };
   return map[category] || '';
+}
+function categoryLabel(v){
+  const map = {
+    consulting:'外見トータルサポート', gym:'パーソナルジム', makeup:'メイクアップ', hair:'ヘア',
+    diagnosis:'カラー/骨格診断', fashion:'コーデ提案', photo:'写真撮影（アプリ等）', marriage:'結婚相談所',
+    eyebrow:'眉毛', hairremoval:'脱毛', esthetic:'エステ', whitening:'ホワイトニング', orthodontics:'歯科矯正', nail:'ネイル', aga:'AGA'
+  };
+  return map[v] || v;
 }
 function loadProviders(){
   try{
@@ -216,7 +228,7 @@ function loadLocalServices(){
     if(safeSite){ const p = document.createElement('p'); const strong = document.createElement('strong'); strong.textContent = 'Web'; const a = document.createElement('a'); a.href = safeSite; a.target = '_blank'; a.rel = 'noopener'; a.textContent = '店舗サイト'; p.appendChild(strong); p.appendChild(document.createTextNode('： ')); p.appendChild(a); da.appendChild(p); }
     stack.appendChild(da);
   }
-  const metaP = document.createElement('p'); metaP.className = 'card-meta'; metaP.textContent = `地域: ${svc.region || ''} / カテゴリ: ${svc.category || ''} / 価格: ¥${Number(svc.priceFrom||0).toLocaleString()}`; stack.appendChild(metaP);
+  const metaP = document.createElement('p'); metaP.className = 'card-meta'; metaP.textContent = `地域: ${svc.region || ''} / カテゴリ: ${categoryLabel(svc.category||'')} / 価格: ¥${Number(svc.priceFrom||0).toLocaleString()}`; stack.appendChild(metaP);
   if(svc.catchcopy){ const p = document.createElement('p'); p.className = 'muted'; p.textContent = svc.catchcopy; stack.appendChild(p); }
   // gallery
   if(Array.isArray(svc.gallery) && svc.gallery.length){ const gwrap = document.createElement('div'); gwrap.className = 'stack'; const h3 = document.createElement('h3'); h3.style.margin = '0'; h3.textContent = 'ギャラリー'; gwrap.appendChild(h3); const galleryDiv = document.createElement('div'); galleryDiv.className = 'detail-gallery'; galleryDiv.setAttribute('role','list'); for(const u of svc.gallery){ try{ const src = (typeof safeUrl === 'function' ? (safeUrl(u) || placeholder) : (u || placeholder)); const im = document.createElement('img'); im.className = 'detail-thumb'; im.setAttribute('role','listitem'); im.src = src; im.setAttribute('data-full', src); im.alt = svc.name || ''; im.addEventListener('error', ()=>{ try{ im.onerror=null; im.src = placeholder; }catch{} }); galleryDiv.appendChild(im); }catch{} } gwrap.appendChild(galleryDiv); stack.appendChild(gwrap); }
