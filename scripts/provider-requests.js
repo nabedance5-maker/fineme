@@ -75,7 +75,7 @@ function renderList(){
   const tbody = $('#req-tbody'); if(!tbody) return;
   // auto-cancel pending requests past start time
   const expiredCount = sweepExpiredRequests();
-  const filter = $('#req-filter')?.value || 'pending';
+  const filter = $('#req-filter')?.value || 'all';
   const all = loadRequests().filter(r=> r.providerId === session.id);
   const list = (filter==='pending') ? all.filter(r=> r.status==='pending') : all;
     tbody.textContent = '';
