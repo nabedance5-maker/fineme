@@ -145,6 +145,25 @@ function cancelRequest(reqId){
   r.status = 'cancelled';
   r.userCanceledAt = new Date().toISOString();
   save(REQUESTS_KEY, all);
+  // Reflect cancellation into reservation record if exists (points system)
+  try{
+    const key = 'fineme:reservations:list';
+    const raw = localStorage.getItem(key);
+    const arr = raw ? JSON.parse(raw) : [];
+    let changed = false;
+    if(r.reservationId){
+      const rx = arr.find(x=> x && x.id === r.reservationId);
+      if(rx){ rx.status = 'canceled'; rx.updatedAt = Date.now(); changed = true; }
+    }
+    if(!changed){
+      const visitIso = (()=>{ try{ const d = new Date(`${r.date}T${(r.start||'00:00')}:00`); return d.toISOString(); }catch{ return ''; } })();
+      const sid = String(r.providerId||'');
+      const uid = String(r.userId||'');
+      const cand = arr.find(x=> String(x.storeId||'')===sid && String(x.userId||'')===uid && String(x.visitDate||'')===visitIso && String(x.status||'')!=='canceled');
+      if(cand){ cand.status = 'canceled'; cand.updatedAt = Date.now(); changed = true; }
+    }
+    if(changed){ localStorage.setItem(key, JSON.stringify(arr)); }
+  }catch(_){ }
   // If it was approved, reopen the slot for booking
   if(wasApproved){
     const slots = load(SLOTS_KEY);

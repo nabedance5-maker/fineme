@@ -166,7 +166,15 @@ function escapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,
         const price = getServicePrice(r.serviceId);
         const title = r.serviceName || serviceName(r.serviceId);
         const visitDate = (()=>{ try{ const d = new Date(`${r.date}T${(r.start||'00:00')}:00`); return d.toISOString(); }catch{ return new Date().toISOString(); } })();
-        createReservation({ userId: String(r.userId||'user'), storeId: String(session.id), title, price, commissionRate, visitDate, origin: 'detail' });
+        const created = createReservation({ userId: String(r.userId||'user'), storeId: String(session.id), title, price, commissionRate, visitDate, origin: 'detail' });
+        if(created && created.id){
+          // Link reservation to request for later updates (e.g., cancellation)
+          r.reservationId = created.id;
+          // Persist the linkage
+          const reqs2 = loadRequests();
+          const j = reqs2.findIndex(x=> x.id===r.id);
+          if(j!==-1){ reqs2[j] = r; saveRequests(reqs2); }
+        }
       }catch(e){ console.warn('create reservation entry failed', e); }
       // Notify user of approval (local notifications)
       try{
@@ -213,6 +221,27 @@ function escapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,
         if(comment){ body += ` 理由: ${escapeHtml(comment)}`; }
         addNotification({ toType:'user', toId: r.userId || null, title, body, data:{ requestId: r.id } });
       }catch(e){ console.warn('notify user cancel failed', e); }
+      // Reflect cancellation into reservation record if exists
+      try{
+        const key = 'fineme:reservations:list';
+        const raw = localStorage.getItem(key);
+        const arr = raw ? JSON.parse(raw) : [];
+        let changed = false;
+        // Prefer direct linkage by reservationId
+        if(r.reservationId){
+          const rx = arr.find(x=> x && x.id === r.reservationId);
+          if(rx){ rx.status = 'canceled'; rx.updatedAt = Date.now(); changed = true; }
+        }
+        // Fallback: match by storeId/userId/visitDate
+        if(!changed){
+          const visitIso = (()=>{ try{ const d = new Date(`${r.date}T${(r.start||'00:00')}:00`); return d.toISOString(); }catch{ return ''; } })();
+          const sid = String(session.id);
+          const uid = String(r.userId||'');
+          const cand = arr.find(x=> String(x.storeId||'')===sid && String(x.userId||'')===uid && String(x.visitDate||'')===visitIso && String(x.status||'')!=='canceled');
+          if(cand){ cand.status = 'canceled'; cand.updatedAt = Date.now(); changed = true; }
+        }
+        if(changed){ localStorage.setItem(key, JSON.stringify(arr)); }
+      }catch(e){ console.warn('reflect reservation cancel failed', e); }
       if(wasApproved){
         const slots = loadSlots();
         const sidx = slots.findIndex(s=> s.id===r.slotId && s.providerId===session.id);
