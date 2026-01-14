@@ -59,9 +59,9 @@ export function confirmVisited(id){
   r.status='visited'; r.updatedAt=Date.now(); saveReservations(arr);
   // grant points based on current visits count
   const pts = loadPoints(); const visits = Number(pts.visits||0) + 1; const rate = rateForVisits(visits);
-  const commissionValue = Math.round((r.price * (r.commissionRate/100)));
-  const grant = commissionValue; // 100% of commission as points (can adjust later)
-  const add = Math.round(grant); // points in whole units
+  // User cashback points are independent from store commission.
+  // Grant = price * user-based rate ladder (%), rounded to integer points.
+  const add = Math.round(Number(r.price||0) * (rate/100));
   pts.points = Number(pts.points||0) + add;
   pts.visits = visits;
   savePoints(pts);
