@@ -212,6 +212,15 @@
                   line.textContent = `見立て：${name}`;
                 }
                 titleWrap.appendChild(line);
+                  // 参考：ハイブリッドラベル（表示のみ）
+                  if(currentTypeName && initialTypeName && currentTypeName !== initialTypeName){
+                    const hybrid = document.createElement('div');
+                    hybrid.className = 'muted';
+                    hybrid.style.fontSize = '12px';
+                    hybrid.style.marginTop = '2px';
+                    hybrid.textContent = `ハイブリッドタイプ：${initialTypeName} × ${currentTypeName}`;
+                    titleWrap.appendChild(hybrid);
+                  }
               }
             }catch{}
             headerWrap.appendChild(titleWrap); article.appendChild(headerWrap);
