@@ -196,6 +196,18 @@
             const label = document.createElement('div'); label.className='result-label';
             label.textContent = '「現時点では」こう見えています。焦らなくて大丈夫。';
             titleWrap.appendChild(label);
+            // STEP1で表示したタイプ名（初期推定）も併記して可視化
+            try{
+              const initialTypeName = String(obj?.intent?.type_name || (typesData[obj?.intent?.type_id||'']?.name) || '').trim();
+              if(initialTypeName){
+                const initLine = document.createElement('div');
+                initLine.className = 'muted';
+                initLine.style.fontSize = '13px';
+                initLine.style.marginTop = '4px';
+                initLine.textContent = `STEP1の推定タイプ：${initialTypeName}`;
+                titleWrap.appendChild(initLine);
+              }
+            }catch{}
             headerWrap.appendChild(titleWrap); article.appendChild(headerWrap);
 
             if(entry.image){ const heroWrap = document.createElement('div'); heroWrap.style.textAlign='center'; const hero = document.createElement('img'); hero.className = 'type-hero'; hero.src = entry.image; hero.alt = entry.name||''; hero.onerror = ()=>{ hero.style.display='none'; }; hero.style.animation='floatUp .6s ease both'; heroWrap.appendChild(hero); article.appendChild(heroWrap); }
