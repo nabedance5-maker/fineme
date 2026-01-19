@@ -565,6 +565,51 @@ function loadLocalServices(){
   }catch{ return []; }
 }
 
+// Load provider slots from localStorage (used by quick=today|weekend filtering)
+function loadSlots(){
+  try{
+    const raw = localStorage.getItem('glowup:slots');
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  }catch{ return []; }
+}
+
+function todayYmd(){ const d = new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const dd=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${dd}`; }
+function upcomingWeekendSet(){
+  const out = new Set();
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun
+  // Find next Saturday and Sunday (including today if weekend)
+  const addDate = (offset)=>{ const d=new Date(now); d.setDate(d.getDate()+offset); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const dd=String(d.getDate()).padStart(2,'0'); out.add(`${y}-${m}-${dd}`); };
+  if(day === 6){ addDate(0); addDate(1); }
+  else if(day === 0){ addDate(0); }
+  else{
+    const toSat = 6 - day; const toSun = 7 - day;
+    addDate(toSat); addDate(toSun);
+  }
+  return out;
+}
+
+function matchesQuickSlot(it, quick, slots){
+  try{
+    if(!quick) return true;
+    if(!Array.isArray(slots) || slots.length===0) return true; // no slot data → do not over-filter
+    const targetDates = quick==='today' ? new Set([todayYmd()]) : upcomingWeekendSet();
+    const sid = String(it.serviceId||it.slug||'');
+    const pid = String(it.providerId||'');
+    for(const s of slots){
+      if(!s || !s.open) continue;
+      const sd = String(s.date||'');
+      if(!targetDates.has(sd)) continue;
+      const spid = String(s.providerId||'');
+      const ssid = String(s.serviceId||'');
+      // match by service or provider
+      if((ssid && sid && ssid===sid) || (spid && pid && spid===pid)) return true;
+    }
+    return false;
+  }catch{ return true; }
+}
+
 function updateCount(n){
   const el = qs('#results-count');
   if(el){
@@ -787,7 +832,10 @@ function sortItems(items, sort){
     // expertise filter (any-of)
     const expAll = Array.isArray(parseParams().expertiseAll) ? parseParams().expertiseAll : [];
     const mexp = expAll.length ? expAll.some(x=> Array.isArray(s._expertise) && s._expertise.includes(x)) : true;
-    return mq && mr && mc && mp && mtier && mpace && mexp;
+    const quick = (parseParams().quick||'').toString();
+    const slots = loadSlots();
+    const mquick = quick ? matchesQuickSlot(s, quick, slots) : true;
+    return mq && mr && mc && mp && mtier && mpace && mexp && mquick;
   });
   // 診断に基づく「おすすめカテゴリ」タブの表示
   try{
@@ -860,6 +908,7 @@ function sortItems(items, sort){
       try{
         const header2 = document.createElement('div'); header2.className='search-purpose-summary';
         const h = document.createElement('h3'); h.textContent = 'タイプに合うスターター'; h.style.margin='0 0 6px 0'; header2.appendChild(h);
+        const pHint = document.createElement('p'); pHint.className='muted'; pHint.style.margin='0 0 8px 0'; pHint.textContent = '診断タイプに合いやすい入門・試しやすい選択肢を先頭に表示しています。'; header2.appendChild(pHint);
         const grid = document.createElement('div'); grid.className='features-grid';
         const frag = document.createDocumentFragment(); pinned.forEach(s=> {
           const full = {
@@ -1058,6 +1107,32 @@ function sortItems(items, sort){
           const p = document.createElement('p'); p.className = 'muted'; p.textContent = `目的: ${pname} （該当カテゴリ: ${linked}）`; header.appendChild(p); list.parentNode.insertBefore(header, list);
         }
       }catch(e){ console.warn('failed to render purpose header', e); }
+    }
+    // カテゴリが選択されている場合、カテゴリガイドを表示
+    if(category){
+      try{
+        const header = document.createElement('div'); header.className='search-purpose-summary';
+        const labels = {
+          consulting:'外見全体の方向性を決め、優先度整理と伴走を受けられます。',
+          gym:'体型改善や姿勢改善を目指すトレーニングです。',
+          makeup:'好印象な基礎〜目的別のメイクを学べます。',
+          hair:'髪型相談・カット/セットで印象を整えます。',
+          diagnosis:'パーソナルカラー/骨格など「似合う」の基準を知れます。',
+          fashion:'シーン別の服選び・コーデ提案で「外さない」を作ります。',
+          photo:'プロフィール写真や宣材など、伝わる印象の写真を撮ります。',
+          marriage:'婚活に特化したサポートで戦略と見た目を整えます。',
+          eyebrow:'眉の形・濃さ調整で印象をアップします。',
+          hairremoval:'ムダ毛対処で清潔感を上げます。',
+          esthetic:'肌や毛穴、むくみなどのケアで整えます。',
+          whitening:'歯の色味改善で笑顔の印象を良くします。',
+          orthodontics:'歯並び改善で長期的な印象を高めます。',
+          nail:'爪の清潔感・手元の印象を整えます。'
+        };
+        const cLabel = labelCategory(category);
+        const p = document.createElement('p'); p.style.margin='0 0 6px 0'; p.style.fontWeight='600'; p.textContent = `カテゴリ: ${cLabel}`; header.appendChild(p);
+        const p2 = document.createElement('p'); p2.className='muted'; p2.style.margin='0'; p2.textContent = labels[category] || 'このカテゴリの中から、あなたの目的に合う選択肢を探せます。'; header.appendChild(p2);
+        list.parentNode.insertBefore(header, list);
+      }catch(e){ console.warn('failed to render category guide', e); }
     }
     renderPagination({
       total,

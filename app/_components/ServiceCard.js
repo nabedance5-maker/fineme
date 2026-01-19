@@ -28,6 +28,16 @@ export default function ServiceCard({ service }) {
             <span className="badge">{typeof priceFrom === 'number' ? `¥${priceFrom.toLocaleString()}` : '要問合せ'}</span>
           </div>
         </div>
+        {/* Optional provider tags (price tier, pace, expertise) if present */}
+        <div className="cluster" style={{gap:6, flexWrap:'wrap', marginTop:8}}>
+          {service._priceTier && (<span className="badge">{labelFromTier(service._priceTier)}</span>)}
+          {typeof service._pace === 'number' && service._pace>=1 && service._pace<=3 && (
+            <span className="badge">{labelFromPace(service._pace)}</span>
+          )}
+          {Array.isArray(service._expertise) && service._expertise.map((x,i)=>(
+            <span key={i} className="chip">{labelFromExpertise(x)}</span>
+          ))}
+        </div>
         {primaryStore ? <p className="card-meta" style={{marginTop:8}}><a href={storeHref}>{primaryStore}</a></p> : null}
         {access ? <p className="card-meta">アクセス：{access}</p> : null}
         <div className="cluster" style={{marginTop:12}}>
@@ -98,4 +108,26 @@ function categoryPhotoFor(category){
     nail: 'https://images.unsplash.com/photo-1503342452485-86a5f6d8e2b6?q=80&w=1400&auto=format&fit=crop'
   };
   return map[category] || '';
+}
+
+function labelFromTier(tier){
+  const map = { low:'価格感：お手頃', mid:'価格感：バランス', high:'価格感：こだわり' };
+  return map[String(tier)] || String(tier);
+}
+function labelFromPace(pace){
+  const map = { 1:'提案ペース：ゆっくり', 2:'提案ペース：バランス', 3:'提案ペース：テンポ良く' };
+  return map[Number(pace)] || '';
+}
+function labelFromExpertise(x){
+  const map = {
+    makeover:'メイク/ヘア等の印象改善',
+    styling:'服・コーデの提案',
+    photo:'写真/撮影サポート',
+    training:'体づくり/姿勢トレーニング',
+    color:'パーソナルカラー',
+    skeleton:'骨格診断',
+    skin:'肌/スキンケア',
+    dental:'歯/ホワイトニング'
+  };
+  return map[String(x)] || String(x);
 }
