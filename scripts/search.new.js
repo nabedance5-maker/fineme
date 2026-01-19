@@ -181,6 +181,27 @@ function card({name, region, category, priceFrom, image, href, providerName, add
             tagsWrap.appendChild(b);
           }
         }
+        // Availability badges based on local provider slots (today/weekend)
+        try{
+          const slots = loadSlots();
+          let todayCount = 0, weekendCount = 0;
+          const sid = String(serviceId||slug||'');
+          const pid = String(providerId||'');
+          const today = todayYmd();
+          const weekendSet = upcomingWeekendSet();
+          for(const s of slots){
+            if(!s || !s.open) continue;
+            const sd = String(s.date||'');
+            const spid = String(s.providerId||'');
+            const ssid = String(s.serviceId||'');
+            const isMatch = ((ssid && sid && ssid===sid) || (spid && pid && spid===pid));
+            if(!isMatch) continue;
+            if(sd === today) todayCount++;
+            if(weekendSet.has(sd)) weekendCount++;
+          }
+          if(todayCount>0){ const b = document.createElement('span'); b.className='badge'; b.textContent = '当日空きあり'; tagsWrap.appendChild(b); }
+          if(weekendCount>0){ const b = document.createElement('span'); b.className='badge'; b.textContent = `週末${weekendCount}枠`; tagsWrap.appendChild(b); }
+        }catch{}
       }catch(e){ /* ignore badge enrich errors */ }
     }catch{ /* silent */ }
     const rightCluster = document.createElement('div'); rightCluster.className='cluster'; rightCluster.style.gap='8px'; rightCluster.style.alignItems='center';
