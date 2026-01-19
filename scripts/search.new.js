@@ -1392,15 +1392,17 @@ function sortItems(items, sort){
           nail:'爪の清潔感・手元の印象を整えます。'
         };
         const cLabel = labelCategory(category);
-        const p = document.createElement('p'); p.style.margin='0 0 6px 0'; p.style.fontWeight='600'; p.textContent = `カテゴリ: ${cLabel}`; header.appendChild(p);
+        const h = document.createElement('h3'); h.style.margin='0 0 6px 0'; h.textContent = `カテゴリ: ${cLabel}`; header.appendChild(h);
         const p2 = document.createElement('p'); p2.className='muted'; p2.style.margin='0'; p2.textContent = labels[category] || 'このカテゴリの中から、あなたの目的に合う選択肢を探せます。'; header.appendChild(p2);
         list.parentNode.insertBefore(header, list);
       }catch(e){ console.warn('failed to render category guide', e); }
+      // アクティブフィルターとクイックトグルを先に表示
+      try{ renderActiveFilters(list.parentNode, list); }catch{}
       // 詳しいガイド/CTA（詳細セクション）
       try{ renderCategoryGuide(category, list.parentNode, list); }catch{ }
     }
-    // アクティブフィルターとクイックトグルを表示
-    try{ renderActiveFilters(list.parentNode, list); }catch{}
+    // カテゴリ未選択でも、フィルターチップは表示（あれば）
+    if(!category){ try{ renderActiveFilters(list.parentNode, list); }catch{} }
     renderPagination({
       total,
       page: safePage,
