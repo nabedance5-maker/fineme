@@ -518,6 +518,68 @@ function renderCategoryGuide(category, container, resultsList){
   }catch(e){ console.warn('failed to render detailed guide', e); }
 }
 
+// Render active filter chips and quick toggle (today/weekend)
+function renderActiveFilters(container, resultsList){
+  try{
+    const ent = parseParams();
+    const chips = [];
+    const preserve = (u)=>{
+      if(ent.category) u.searchParams.set('category', ent.category);
+      if(getSortKey()) u.searchParams.set('sort', getSortKey());
+      if(ent.region) u.searchParams.set('region', String(ent.region));
+      if(ent.keyword || ent.q) u.searchParams.set('keyword', String(ent.keyword || ent.q));
+    };
+    const labelTier = (t)=> t==='low'?'価格帯:低':(t==='mid'?'価格帯:中':(t==='high'?'価格帯:高':`価格帯:${t}`));
+    const labelPace = (p)=>({ '1':'提案ペース:ゆっくり', '2':'提案ペース:バランス', '3':'提案ペース:テンポ良く' }[String(p)] || `提案ペース:${p}`);
+    const labelQuick = (q)=> q==='today'?'今日行ける':(q==='weekend'?'週末行ける':`quick:${q}`);
+    const labelExpertise = (e)=> ({
+      makeover:'メイク系', color:'カラー診断', skeleton:'骨格診断', styling:'スタイリング', photo:'写真/撮影'
+    }[String(e)] || String(e));
+
+    if(ent.priceTier){ chips.push({ label: labelTier(ent.priceTier), remove: (u)=> u.searchParams.delete('priceTier') }); }
+    if(ent.pace){ chips.push({ label: labelPace(ent.pace), remove: (u)=> u.searchParams.delete('pace') }); }
+    const exps = Array.isArray(ent.expertiseAll) ? ent.expertiseAll : [];
+    for(const e of exps){ chips.push({ label: `専門:${labelExpertise(e)}`, remove: (u)=>{
+      const remain = exps.filter(v=> v!==e);
+      u.searchParams.delete('expertise');
+      for(const r of remain){ u.searchParams.append('expertise', r); }
+    }}); }
+    if(ent.quick){ chips.push({ label: labelQuick(ent.quick), remove: (u)=> u.searchParams.delete('quick') }); }
+
+    // Build container UI only if something is active OR always show quick toggles
+    const wrap = document.createElement('div'); wrap.className='search-active-filters'; wrap.style.margin='8px 0';
+    const row = document.createElement('div'); row.className='cluster'; row.style.gap='8px'; row.style.flexWrap='wrap';
+    if(chips.length){
+      const title = document.createElement('span'); title.className='muted'; title.textContent='現在の条件:'; row.appendChild(title);
+      for(const c of chips){
+        const b = document.createElement('button'); b.type='button'; b.className='badge'; b.textContent=c.label+' ✕';
+        b.addEventListener('click', ()=>{ const u=new URL(location.href); preserve(u); try{ c.remove(u); }catch{} location.href=u.toString(); });
+        row.appendChild(b);
+      }
+    }
+    // Quick toggle buttons
+    const toggles = document.createElement('div'); toggles.className='cluster'; toggles.style.gap='8px';
+    const mkToggle = (label, val)=>{
+      const btn = document.createElement('button'); btn.type='button'; btn.className='btn btn-ghost'; btn.textContent=label;
+      if(ent.quick === val) btn.classList.add('is-active');
+      btn.addEventListener('click', ()=>{
+        const u = new URL(location.href); preserve(u);
+        if(ent.quick === val){ u.searchParams.delete('quick'); } else { u.searchParams.set('quick', val); }
+        // pace implicit mapping already happens in parseParams for quick
+        location.href = u.toString();
+      });
+      return btn;
+    };
+    toggles.appendChild(mkToggle('今日行ける', 'today'));
+    toggles.appendChild(mkToggle('週末行ける', 'weekend'));
+    // Attach toggles either alone or following chips
+    wrap.appendChild(row);
+    wrap.appendChild(toggles);
+
+    if(container && resultsList){ container.insertBefore(wrap, resultsList); }
+  }catch(e){ console.warn('failed to render active filters', e); }
+}
+
 // ---- おすすめカテゴリ推奨スコア ----
 function recommendCategories(diag){
   // base: type -> prioritized categories
@@ -1322,6 +1384,8 @@ function sortItems(items, sort){
       // 詳しいガイド/CTA（詳細セクション）
       try{ renderCategoryGuide(category, list.parentNode, list); }catch{ }
     }
+    // アクティブフィルターとクイックトグルを表示
+    try{ renderActiveFilters(list.parentNode, list); }catch{}
     renderPagination({
       total,
       page: safePage,
