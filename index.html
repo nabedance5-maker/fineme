@@ -353,6 +353,8 @@
     // 目的が保存されていれば、続きやすいCTAを表示
     (function(){
       try{
+        const isLoggedIn = (function(){ try{ return !!sessionStorage.getItem('glowup:userSession'); }catch{ return false; } })();
+        if(!isLoggedIn) return; // 未ログイン時は表示しない
         const saved = localStorage.getItem('fineme:goal:category');
         if(!saved) return;
         const map = { consulting:'コンサル/相談', gym:'パーソナルジム', makeup:'メイク', hair:'美容室', diagnosis:'診断', fashion:'ファッション', photo:'写真/撮影', marriage:'婚活/印象', eyebrow:'眉', hairremoval:'脱毛', esthetic:'エステ', whitening:'ホワイトニング', orthodontics:'矯正', nail:'ネイル' };
