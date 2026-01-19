@@ -353,6 +353,154 @@ function labelCategory(key){
   return map[key]||key;
 }
 
+// Render detailed category guide + CTAs
+function renderCategoryGuide(category, container, resultsList){
+  try{
+    const GUIDE = {
+      consulting: {
+        initial: ['現状の課題を整理','目的・期限・予算の優先度決め','最初の一歩を一緒に決める'],
+        price: '目安：¥5,000〜¥15,000（初回相談）／継続は別途',
+        flow: ['予約（オンライン可）','ヒアリング・方針提案','計画と次アクション確定'],
+        ctas: [
+          { label:'価格感：お手頃のみ', mutate:(u)=> u.searchParams.set('priceTier','low') },
+          { label:'テンポ良く進めたい', mutate:(u)=> u.searchParams.set('pace','3') },
+        ]
+      },
+      gym: {
+        initial: ['体の悩み（体脂肪・姿勢など）を共有','目標期間と頻度をすり合わせ','体験トレーニングで相性確認'],
+        price: '目安：¥6,000〜¥12,000（体験1回）／月額は店舗により異なる',
+        flow: ['体験予約','カウンセリング＋体験','プラン選択・開始'],
+        ctas: [
+          { label:'当日予約可を優先', mutate:(u)=> u.searchParams.set('quick','today') },
+          { label:'テンポ良く提案（D=3）', mutate:(u)=> u.searchParams.set('pace','3') },
+        ]
+      },
+      makeup: {
+        initial: ['現状の肌・目的（写真/面接等）共有','ベース〜ポイントの基礎習得','必要な道具の提案'],
+        price: '目安：¥5,000〜¥10,000（レッスン1回）',
+        flow: ['予約','カウンセリング・実演','自分で再現の練習'],
+        ctas: [
+          { label:'専門：メイク系を優先', mutate:(u)=> u.searchParams.append('expertise','makeover') },
+          { label:'週末の空き枠', mutate:(u)=> u.searchParams.set('quick','weekend') },
+        ]
+      },
+      hair: {
+        initial: ['似合わせの方向性共有','カット/セットで印象調整','スタイリングの再現方法習得'],
+        price: '目安：¥4,000〜¥8,000（カット）',
+        flow: ['予約','カウンセリング・施術','再現ポイント確認'],
+        ctas: [
+          { label:'価格感：お手頃', mutate:(u)=> u.searchParams.set('priceTier','low') },
+          { label:'清潔感重視の提案', mutate:(u)=> u.searchParams.append('expertise','makeover') },
+        ]
+      },
+      diagnosis: {
+        initial: ['目的（服/写真/仕事等）共有','パーソナルカラー/骨格の計測','似合うの方向性確認'],
+        price: '目安：¥8,000〜¥18,000（カラー/骨格セットで変動）',
+        flow: ['予約','計測・判定','結果の活用提案'],
+        ctas: [
+          { label:'カラー診断強め', mutate:(u)=> u.searchParams.append('expertise','color') },
+          { label:'骨格診断強め', mutate:(u)=> u.searchParams.append('expertise','skeleton') },
+        ]
+      },
+      fashion: {
+        initial: ['シーン（デート/仕事等）の想定共有','服の方向性・サイズ感決定','買い足し候補の提案'],
+        price: '目安：¥6,000〜¥12,000（同行/提案の時間で変動）',
+        flow: ['予約','ヒアリング・提案','試着・購入支援'],
+        ctas: [
+          { label:'専門：スタイリング系', mutate:(u)=> u.searchParams.append('expertise','styling') },
+          { label:'価格感：バランス', mutate:(u)=> u.searchParams.set('priceTier','mid') },
+        ]
+      },
+      photo: {
+        initial: ['使途（アプリ/仕事等）共有','衣装/場所/雰囲気を決定','ポーズ・表情練習'],
+        price: '目安：¥8,000〜¥20,000（時間/納品枚数で変動）',
+        flow: ['予約','撮影（現地）','納品・セレクト'],
+        ctas: [
+          { label:'専門：写真/撮影', mutate:(u)=> u.searchParams.append('expertise','photo') },
+          { label:'当日予約可', mutate:(u)=> u.searchParams.set('quick','today') },
+        ]
+      },
+      eyebrow: {
+        initial: ['形の要望共有','デザイン決定（太さ/角度）','仕上げと維持方法確認'],
+        price: '目安：¥4,000〜¥7,000',
+        flow: ['予約','施術','仕上げ確認'],
+        ctas: [ { label:'価格感：お手頃', mutate:(u)=> u.searchParams.set('priceTier','low') } ]
+      },
+      hairremoval: {
+        initial: ['部位と目的共有','回数・期間の目安確認','肌状態の確認'],
+        price: '目安：¥5,000〜（部位/回数で変動）',
+        flow: ['予約','施術','経過確認'],
+        ctas: [ { label:'価格感：お手頃', mutate:(u)=> u.searchParams.set('priceTier','low') } ]
+      },
+      esthetic: {
+        initial: ['肌悩み共有（毛穴/乾燥等）','施術内容確認','ホームケア提案'],
+        price: '目安：¥6,000〜¥12,000',
+        flow: ['予約','施術','ケア指導'],
+        ctas: [ { label:'優しく進めたい', mutate:(u)=> u.searchParams.set('pace','1') } ]
+      },
+      whitening: {
+        initial: ['色味の目標共有','施術方式確認（ホーム/オフィス）','回数と注意点確認'],
+        price: '目安：¥5,000〜¥15,000',
+        flow: ['予約','施術','経過確認'],
+        ctas: [ { label:'当日予約可', mutate:(u)=> u.searchParams.set('quick','today') } ]
+      },
+      orthodontics: {
+        initial: ['現状の歯並び相談','方式（ワイヤー/マウスピース）確認','期間・費用の概算'],
+        price: '目安：要相談（長期治療のため）',
+        flow: ['相談予約','検査と提案','治療開始'],
+        ctas: [ { label:'説明が丁寧な店舗', mutate:(u)=> u.searchParams.set('pace','1') } ]
+      },
+      nail: {
+        initial: ['要望共有（長さ/清潔感重視）','施術内容確認','維持・ケア確認'],
+        price: '目安：¥4,000〜¥8,000',
+        flow: ['予約','施術','仕上げ確認'],
+        ctas: [ { label:'価格感：お手頃', mutate:(u)=> u.searchParams.set('priceTier','low') } ]
+      },
+      marriage: {
+        initial: ['目標（時期/条件）共有','戦略と外見プランの設計','必要施策の優先度決定'],
+        price: '目安：要相談（プランにより異なる）',
+        flow: ['相談予約','プラン提案','活動開始'],
+        ctas: [ { label:'テンポ良く進めたい', mutate:(u)=> u.searchParams.set('pace','3') } ]
+      }
+    };
+    const cfg = GUIDE[category]; if(!cfg) return;
+    const wrap = document.createElement('div'); wrap.className='card'; wrap.style.margin='8px 0 12px 0';
+    const inner = document.createElement('div'); inner.className='card-body';
+    const h = document.createElement('h3'); h.textContent = 'カテゴリガイド'; h.style.margin = '0 0 8px 0'; inner.appendChild(h);
+    const makeList = (title, items)=>{
+      const sec = document.createElement('div'); sec.className='stack'; sec.style.margin='8px 0';
+      const sh = document.createElement('h4'); sh.textContent = title; sh.style.margin='0 0 6px 0'; sec.appendChild(sh);
+      const ul = document.createElement('ul'); ul.style.margin='0'; ul.style.paddingLeft='18px';
+      for(const it of items){ const li = document.createElement('li'); li.textContent = String(it); ul.appendChild(li); }
+      sec.appendChild(ul); return sec;
+    };
+    inner.appendChild(makeList('初回にやるべきこと', cfg.initial || []));
+    const priceP = document.createElement('p'); priceP.className='muted'; priceP.style.margin='0 0 8px 0'; priceP.textContent = cfg.price || ''; inner.appendChild(priceP);
+    inner.appendChild(makeList('予約の流れ', cfg.flow || []));
+    // CTAs
+    if(Array.isArray(cfg.ctas) && cfg.ctas.length){
+      const cta = document.createElement('div'); cta.className='cluster'; cta.style.gap='8px'; cta.style.flexWrap='wrap';
+      for(const b of cfg.ctas){
+        const btn = document.createElement('button'); btn.type='button'; btn.className='btn btn-ghost'; btn.textContent = b.label;
+        btn.addEventListener('click', ()=>{
+          const u = new URL(location.href);
+          // preserve existing params
+          if(category) u.searchParams.set('category', category);
+          if(getSortKey()) u.searchParams.set('sort', getSortKey());
+          if(parseParams().region) u.searchParams.set('region', String(parseParams().region));
+          if(parseParams().keyword) u.searchParams.set('keyword', String(parseParams().keyword));
+          try{ b.mutate(u); }catch{}
+          location.href = u.toString();
+        });
+        cta.appendChild(btn);
+      }
+      inner.appendChild(cta);
+    }
+    wrap.appendChild(inner);
+    if(container && resultsList){ container.insertBefore(wrap, resultsList); }
+  }catch(e){ console.warn('failed to render detailed guide', e); }
+}
+
 // ---- おすすめカテゴリ推奨スコア ----
 function recommendCategories(diag){
   // base: type -> prioritized categories
@@ -1154,6 +1302,8 @@ function sortItems(items, sort){
         const p2 = document.createElement('p'); p2.className='muted'; p2.style.margin='0'; p2.textContent = labels[category] || 'このカテゴリの中から、あなたの目的に合う選択肢を探せます。'; header.appendChild(p2);
         list.parentNode.insertBefore(header, list);
       }catch(e){ console.warn('failed to render category guide', e); }
+      // 詳しいガイド/CTA（詳細セクション）
+      try{ renderCategoryGuide(category, list.parentNode, list); }catch{ }
     }
     renderPagination({
       total,
