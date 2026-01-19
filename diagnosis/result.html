@@ -196,16 +196,22 @@
             const label = document.createElement('div'); label.className='result-label';
             label.textContent = '「現時点では」こう見えています。焦らなくて大丈夫。';
             titleWrap.appendChild(label);
-            // STEP1で表示したタイプ名（初期推定）も併記して可視化
+            // 最新の見立て（STEP2）とSTEP1結果の併記
             try{
+              const currentTypeName = String(cls?.type_name || '').trim();
               const initialTypeName = String(obj?.intent?.type_name || (typesData[obj?.intent?.type_id||'']?.name) || '').trim();
-              if(initialTypeName){
-                const initLine = document.createElement('div');
-                initLine.className = 'muted';
-                initLine.style.fontSize = '13px';
-                initLine.style.marginTop = '4px';
-                initLine.textContent = `STEP1の推定タイプ：${initialTypeName}`;
-                titleWrap.appendChild(initLine);
+              if(currentTypeName || initialTypeName){
+                const line = document.createElement('div');
+                line.className = 'muted';
+                line.style.fontSize = '13px';
+                line.style.marginTop = '4px';
+                if(currentTypeName && initialTypeName && currentTypeName !== initialTypeName){
+                  line.textContent = `最新の見立て：${currentTypeName}（STEP1の結果：${initialTypeName}）`;
+                } else {
+                  const name = currentTypeName || initialTypeName;
+                  line.textContent = `見立て：${name}`;
+                }
+                titleWrap.appendChild(line);
               }
             }catch{}
             headerWrap.appendChild(titleWrap); article.appendChild(headerWrap);
