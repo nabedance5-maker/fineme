@@ -59,7 +59,7 @@
 
   /* 強制コントラスト（このページ内限定） */
   .result-article .btn{ background:#111 !important; color:#fff !important; border:none !important; box-shadow:0 8px 18px rgba(2,6,23,0.18) }
-  .result-article .btn-ghost{ background:transparent !important; color:#111 !important; border:1px solid #111 !important }
+  .result-article .btn-ghost{ background:transparent !important; color:#fff !important; border:1px solid #fff !important }
   .diag-card .btn{ background:#111 !important; color:#fff !important; border:none !important }
   </style>
 </head>
@@ -530,6 +530,7 @@
               const wrap = document.createElement('div'); wrap.className='block';
               const title = document.createElement('div'); title.className='block-title'; title.textContent='次にやるなら'; wrap.appendChild(title);
               const grid = document.createElement('div'); grid.className='stack'; grid.style.gap='10px';
+              const BASE_PREFIX = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
               // 左：目的が決まっている（カテゴリから探す）
               const left = document.createElement('div');
               const lh = document.createElement('h4'); lh.textContent='目的が決まっている（カテゴリから探す）'; left.appendChild(lh);
@@ -539,7 +540,7 @@
               const catWrap = document.createElement('div'); catWrap.className='cluster'; catWrap.style.flexWrap='wrap'; catWrap.style.gap='8px';
               allCats.forEach(c=>{
                 const btn=document.createElement('a'); btn.className='btn btn-ghost'; btn.textContent=labelCategory(c);
-                const u=new URL(location.href); u.pathname = (location.pathname.includes('/diagnosis/')? '../pages/search.html' : 'pages/search.html'); u.search = ''; u.searchParams.set('category', c); btn.href = u.toString();
+                const u=new URL(BASE_PREFIX + '/pages/search.html', location.origin); u.searchParams.set('category', c); btn.href = u.toString();
                 // ハイライト（おすすめ）
                 if(topSet.has(c)){
                   const wrap=document.createElement('span'); wrap.className='cluster'; wrap.style.gap='6px';
@@ -558,8 +559,8 @@
               const actWrap = document.createElement('div'); actWrap.className='cluster'; actWrap.style.flexWrap='wrap'; actWrap.style.gap='8px';
               const btnReco = document.createElement('a'); btnReco.className='btn'; btnReco.textContent='タイプに合うスターター3選';
               try{ btnReco.style.setProperty('color','#fff','important'); }catch{}
-              { const u=new URL(location.href); u.pathname = (location.pathname.includes('/diagnosis/')? '../pages/search.html' : 'pages/search.html'); u.search = ''; u.searchParams.set('diag','1'); btnReco.href = u.toString(); }
-              const btnGuide = document.createElement('a'); btnGuide.className='btn btn-ghost'; btnGuide.textContent='垢抜けガイドを見る'; { const u=new URL(location.href); u.pathname = (location.pathname.includes('/diagnosis/')? '../pages/feature.html' : 'pages/feature.html'); btnGuide.href = u.toString(); }
+              { const u=new URL(BASE_PREFIX + '/pages/search.html', location.origin); u.searchParams.set('diag','1'); u.searchParams.set('top','3'); btnReco.href = u.toString(); }
+              const btnGuide = document.createElement('a'); btnGuide.className='btn btn-ghost'; btnGuide.textContent='垢抜けガイドを見る'; { const u=new URL(BASE_PREFIX + '/pages/feature.html', location.origin); btnGuide.href = u.toString(); }
               actWrap.appendChild(btnReco); actWrap.appendChild(btnGuide);
               right.appendChild(actWrap);
               grid.appendChild(left); grid.appendChild(right);
