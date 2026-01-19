@@ -203,6 +203,49 @@
               <button id="provider-profile-reset" class="btn btn-ghost" type="button">キャンセル</button>
               <span id="provider-profile-message" class="muted" aria-live="polite"></span>
             </div>
+            <hr style="margin:24px 0" />
+            <div class="stack" style="gap:12px">
+              <h2 class="section-title" style="font-size:18px">診断連動タグ（相性表示に活用）</h2>
+              <div class="cluster">
+                <label style="flex:1">変化幅（C軸）
+                  <select id="profile-change-range" name="changeRange">
+                    <option value="1">小さめ（控えめな変化）</option>
+                    <option value="2">やや小さめ</option>
+                    <option value="3">標準</option>
+                    <option value="4">大きめ（しっかり変える）</option>
+                  </select>
+                </label>
+                <label style="flex:1">提案スタイル / ペース（D軸）
+                  <select id="profile-pace" name="pace">
+                    <option value="1">保守（慎重に進める）</option>
+                    <option value="2">標準（バランスよく）</option>
+                    <option value="3">攻め（テンポ良く進める）</option>
+                  </select>
+                </label>
+              </div>
+              <div class="cluster">
+                <label style="flex:1">価格帯
+                  <select id="profile-priceTier" name="priceTier">
+                    <option value="low">低め</option>
+                    <option value="mid" selected>中くらい</option>
+                    <option value="high">高め</option>
+                  </select>
+                </label>
+              </div>
+              <div>
+                <label>得意領域（複数選択可）</label>
+                <div id="profile-expertise" class="cluster" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="eyebrow" /> <span class="chip">眉</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="hairremoval" /> <span class="chip">脱毛</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="esthetic" /> <span class="chip">エステ</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="whitening" /> <span class="chip">ホワイトニング</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="orthodontics" /> <span class="chip">矯正</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="aga" /> <span class="chip">AGA</span></label>
+                  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="nail" /> <span class="chip">ネイル</span></label>
+                </div>
+              </div>
+              <p class="muted">C/D軸はユーザー診断の相性計算に使われます。価格帯・得意領域は検索やカードの補助タグとして使用します。</p>
+            </div>
           </div>
         </form>
       </div>

@@ -68,6 +68,16 @@ function loadToForm(){
   }catch(e){/* ignore */}
   $('#profile-website').value = p.profile?.website || '';
   $('#profile-description').value = p.profile?.description || '';
+  // Axes & tags (onboarding.scores and profile extras)
+  try{
+    const scores = (p.onboarding && p.onboarding.scores) ? p.onboarding.scores : {};
+    const cEl = document.getElementById('profile-change-range');
+    const dEl = document.getElementById('profile-pace');
+    if(cEl && cEl instanceof HTMLSelectElement){ const C = Number(scores?.C||0); cEl.value = (C>=1 && C<=4) ? String(C) : '3'; }
+    if(dEl && dEl instanceof HTMLSelectElement){ const D = Number(scores?.D||0); dEl.value = (D>=1 && D<=3) ? String(D) : '2'; }
+    const tierEl = document.getElementById('profile-priceTier'); if(tierEl && tierEl instanceof HTMLSelectElement){ tierEl.value = p.profile?.priceTier || 'mid'; }
+    const expHost = document.getElementById('profile-expertise'); if(expHost){ const arr = Array.isArray(p.profile?.expertise) ? p.profile.expertise : []; Array.from(expHost.querySelectorAll('input[type=checkbox]')).forEach(el=>{ if(el instanceof HTMLInputElement){ el.checked = arr.includes(el.value); } }); }
+  }catch(e){ }
   // load new optional fields
   if($('#profile-coverSrcset')) $('#profile-coverSrcset').value = p.profile?.coverSrcset || '';
   if($('#profile-gallery')) $('#profile-gallery').value = Array.isArray(p.profile?.gallery) ? p.profile.gallery.join('\n') : '';
@@ -125,6 +135,15 @@ function onSubmit(e){
     // paymentMethods: collect checkboxes inside #profile-payment-methods
     paymentMethods: (function(){ const host = document.getElementById('profile-payment-methods'); if(!host) return []; return Array.from(host.querySelectorAll('input[type=checkbox]')).map(el=> el instanceof HTMLInputElement ? el : null).filter(Boolean).filter((c)=> c.checked).map(c=> c.value); })()
   };
+  // Save onboarding scores (C/D) and profile priceTier/expertise
+  try{
+    const C = Number((fd.get('changeRange')||'').toString()) || 3;
+    const D = Number((fd.get('pace')||'').toString()) || 2;
+    list[idx].onboarding = { ...(list[idx].onboarding||{}), scores: { ...(list[idx].onboarding?.scores||{}), C, D } };
+    list[idx].profile.priceTier = (fd.get('priceTier')||'mid').toString();
+    const expHost = document.getElementById('profile-expertise');
+    list[idx].profile.expertise = (function(){ if(!expHost) return []; return Array.from(expHost.querySelectorAll('input[type=checkbox]')).map(el=> el instanceof HTMLInputElement ? el : null).filter(Boolean).filter(c=> c.checked).map(c=> c.value); })();
+  }catch(e){ }
   saveProviders(list);
   const msg = $('#provider-profile-message');
   if(msg){ msg.textContent = '保存しました。'; }
