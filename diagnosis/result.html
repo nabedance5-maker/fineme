@@ -533,9 +533,24 @@
               // 左：目的が決まっている（カテゴリから探す）
               const left = document.createElement('div');
               const lh = document.createElement('h4'); lh.textContent='目的が決まっている（カテゴリから探す）'; left.appendChild(lh);
-              const cats = recommendCategories(diag).sorted.slice(0,6);
+              const rec = recommendCategories(diag);
+              const allCats = ['consulting','gym','makeup','hair','diagnosis','fashion','photo','marriage','eyebrow','hairremoval','esthetic','whitening','orthodontics','nail'];
+              const topSet = new Set(rec.sorted.slice(0,6));
               const catWrap = document.createElement('div'); catWrap.className='cluster'; catWrap.style.flexWrap='wrap'; catWrap.style.gap='8px';
-              cats.forEach(c=>{ const btn=document.createElement('a'); btn.className='btn btn-ghost'; btn.textContent=labelCategory(c); const u=new URL(location.href); u.pathname = (location.pathname.includes('/diagnosis/')? '../pages/search.html' : 'pages/search.html'); u.search = ''; u.searchParams.set('category', c); btn.href = u.toString(); catWrap.appendChild(btn); });
+              allCats.forEach(c=>{
+                const btn=document.createElement('a'); btn.className='btn btn-ghost'; btn.textContent=labelCategory(c);
+                const u=new URL(location.href); u.pathname = (location.pathname.includes('/diagnosis/')? '../pages/search.html' : 'pages/search.html'); u.search = ''; u.searchParams.set('category', c); btn.href = u.toString();
+                // ハイライト（おすすめ）
+                if(topSet.has(c)){
+                  const wrap=document.createElement('span'); wrap.className='cluster'; wrap.style.gap='6px';
+                  const badge=document.createElement('span'); badge.className='badge'; badge.textContent='おすすめ';
+                  wrap.appendChild(btn); wrap.appendChild(badge); catWrap.appendChild(wrap);
+                } else {
+                  catWrap.appendChild(btn);
+                }
+                // 選択の保存（次回の行動促進に利用）
+                btn.addEventListener('click', ()=>{ try{ localStorage.setItem('fineme:goal:category', c); }catch{} });
+              });
               left.appendChild(catWrap);
               // 右：まだ決めていない（タイプに合うスターター）
               const right = document.createElement('div');
