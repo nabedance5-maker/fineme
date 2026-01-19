@@ -128,6 +128,50 @@
                   <label>紹介文
                     <textarea id="profile-description" name="description" rows="4" placeholder="店舗/掲載者の紹介文"></textarea>
                   </label>
+                  <div class="stack" style="border-top:1px solid var(--color-border); padding-top:12px; margin-top:8px">
+                    <h3 style="margin:0 0 6px 0; font-size:16px">診断連動タグ</h3>
+                    <div class="cluster" style="gap:8px; flex-wrap:wrap">
+                      <label>変化の幅（C軸）
+                        <select id="profile-change-range" name="changeRange">
+                          <option value="1">控えめ（小さく）</option>
+                          <option value="2">やや控えめ</option>
+                          <option value="3">標準（バランス）</option>
+                          <option value="4">しっかり（大きく）</option>
+                        </select>
+                      </label>
+                      <label>提案スタイル（ペース / D軸）
+                        <select id="profile-pace" name="pace">
+                          <option value="1">ゆっくり</option>
+                          <option value="2">バランス</option>
+                          <option value="3">テンポ良く</option>
+                        </select>
+                      </label>
+                      <label>価格帯
+                        <select id="profile-priceTier" name="priceTier">
+                          <option value="low">低</option>
+                          <option value="mid">中</option>
+                          <option value="high">高</option>
+                        </select>
+                      </label>
+                    </div>
+                    <fieldset style="border:0; padding:0; margin:6px 0 0 0">
+                      <legend class="muted" style="font-size:12px; margin-bottom:4px">得意領域（複数選択可）</legend>
+                      <div id="profile-expertise" class="cluster" style="flex-wrap:wrap; gap:8px">
+                        <label><input type="checkbox" value="eyebrow" /> 眉毛</label>
+                        <label><input type="checkbox" value="hairremoval" /> 脱毛</label>
+                        <label><input type="checkbox" value="esthetic" /> エステ</label>
+                        <label><input type="checkbox" value="whitening" /> ホワイトニング</label>
+                        <label><input type="checkbox" value="orthodontics" /> 歯科矯正</label>
+                        <label><input type="checkbox" value="nail" /> ネイル</label>
+                        <label><input type="checkbox" value="aga" /> AGA</label>
+                        <label><input type="checkbox" value="hair" /> ヘア</label>
+                        <label><input type="checkbox" value="makeup" /> メイク</label>
+                        <label><input type="checkbox" value="diagnosis" /> 診断</label>
+                        <label><input type="checkbox" value="fashion" /> ファッション</label>
+                        <label><input type="checkbox" value="photo" /> 撮影</label>
+                      </div>
+                    </fieldset>
+                  </div>
                   <div>
                     <label>掲載プラン
                       <select id="profile-planId" name="planId">

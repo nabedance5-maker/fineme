@@ -84,6 +84,83 @@ const host = document.getElementById('controls');
 const prev = document.getElementById('prev');
 const next = document.getElementById('next');
 
+// Boost mode: follow-ups only (triggered from result page when confidence is low)
+const BOOST_MODE = (()=>{ try{ const u=new URL(location.href); return u.searchParams.get('boost')==='1'; }catch{ return false; } })();
+// If BOOST_MODE, preload existing axes and build follow-up-only queue
+if(BOOST_MODE){
+  try{
+    const raw = localStorage.getItem(DIAG_STORAGE_KEY);
+    const obj = raw? JSON.parse(raw): null;
+    const axes = obj?.step2?.scores?.axes || null;
+    if(axes && typeof axes==='object'){
+      state.scores.axes = { ...state.scores.axes, ...axes };
+      // compute followups based on current axes (reuse logic)
+      const followups = (function(){
+        try{
+          const A = Number(state.scores.axes.motivation||0);
+          const B = Number(state.scores.axes.support||0);
+          const C = Number(state.scores.axes.change||0);
+          const D = Number(state.scores.axes.control||0);
+          const E = String(state.scores.axes.value||'');
+          const ideal = {
+            t01:{ vec:{A:3,B:3,C:2,D:2}, bonus:['理論・根拠'] },
+            t02:{ vec:{A:2,B:4,C:1,D:1}, bonus:['安心感'] },
+            t03:{ vec:{A:2,B:1,C:3,D:3}, bonus:['実績'] },
+            t04:{ vec:{A:4,B:1,C:4,D:2}, bonus:['センス'] },
+            t05:{ vec:{A:2,B:2,C:2,D:2}, bonus:['センス'] },
+            t06:{ vec:{A:3,B:2,C:2,D:2}, bonus:['安心感','理論・根拠'] }
+          };
+          const entries = Object.entries(ideal).map(([id,meta])=>{
+            const v = meta.vec;
+            let dist = Math.abs(A - v.A) + Math.abs(B - v.B) + Math.abs(C - v.C) + Math.abs(D - v.D);
+            if(meta.bonus.includes(E)) dist -= 0.8;
+            return { id, dist, vec: v };
+          }).sort((a,b)=> a.dist - b.dist);
+          const best = entries[0]; const second = entries[1] || entries[0];
+          const diffs = [
+            { k:'motivation', d: Math.abs((best.vec?.A||0) - (second.vec?.A||0)) },
+            { k:'support',    d: Math.abs((best.vec?.B||0) - (second.vec?.B||0)) },
+            { k:'change',     d: Math.abs((best.vec?.C||0) - (second.vec?.C||0)) },
+            { k:'control',    d: Math.abs((best.vec?.D||0) - (second.vec?.D||0)) }
+          ].sort((a,b)=> b.d - a.d).filter(x=> x.d > 0).slice(0,2).map(x=> x.k);
+          const FU = {
+            motivation: { id:'fq_m', title:'今回の動機の強さ（近いもの）', choices:[
+              { id:'fq_m1', text:'軽く気分を変えたい', axes:{ motivation: 1 } },
+              { id:'fq_m2', text:'悩み/外圧を減らしたい', axes:{ motivation: 2 } },
+              { id:'fq_m3', text:'自信を積み上げたい', axes:{ motivation: 3 } },
+              { id:'fq_m4', text:'節目に合わせて変えたい', axes:{ motivation: 4 } }
+            ]},
+            support: { id:'fq_s', title:'伴走や相談の必要度（近いもの）', choices:[
+              { id:'fq_s1', text:'ほぼ不要', axes:{ support: 1 } },
+              { id:'fq_s2', text:'あった方が良い', axes:{ support: 2 } },
+              { id:'fq_s3', text:'しっかり欲しい', axes:{ support: 3 } },
+              { id:'fq_s4', text:'とても必要', axes:{ support: 4 } }
+            ]},
+            change: { id:'fq_c', title:'今回の変化の強さ（近いもの）', choices:[
+              { id:'fq_c1', text:'少し整える', axes:{ change: 1 } },
+              { id:'fq_c2', text:'印象を変える', axes:{ change: 2 } },
+              { id:'fq_c3', text:'気づかれるレベル', axes:{ change: 3 } },
+              { id:'fq_c4', text:'別人級に変える', axes:{ change: 4 } }
+            ]},
+            control: { id:'fq_d', title:'主導権の持ち方（近いもの）', choices:[
+              { id:'fq_d1', text:'提案してほしい', axes:{ control: 1 } },
+              { id:'fq_d2', text:'一緒に決めたい', axes:{ control: 2 } },
+              { id:'fq_d3', text:'自分で決めたい', axes:{ control: 3 } }
+            ]}
+          };
+          return diffs.map(k=> FU[k]).filter(Boolean);
+        }catch{ return []; }
+      })();
+      if(followups && followups.length){
+        state.queue = followups.slice();
+      } else {
+        // No followups needed; go back to result
+        try{ location.href = './result.html'; }catch{}
+      }
+    }
+  }catch{}
+}
+
 function setProgress(){
   const total = state.queue.length;
   const current = Math.max(0, state.idx+1);
@@ -94,11 +171,17 @@ function setProgress(){
 
 function renderIntro(){
   label.textContent = '準備';
-  qEl.textContent = 'ここからは、外見磨きで「つまずきやすいポイント」を一緒に見つけるための質問です。終わりが見えるので、安心して進んでください。';
   host.innerHTML = '';
-  const tip = document.createElement('p'); tip.className='muted'; tip.textContent = 'このまま進むと、避けるべきポイントや、合う人の傾向が分かります。'; host.appendChild(tip);
+  if(BOOST_MODE){
+    qEl.textContent = '追加の確認質問に答えると、見立ての確度が上がります。1〜2問のみです。';
+    const tip = document.createElement('p'); tip.className='muted'; tip.textContent = '今の回答に基づいて、曖昧な軸をピンポイントで確認します。'; host.appendChild(tip);
+    next.textContent = 'はじめる（約30秒）';
+  } else {
+    qEl.textContent = 'ここからは、外見磨きで「つまずきやすいポイント」を一緒に見つけるための質問です。終わりが見えるので、安心して進んでください。';
+    const tip = document.createElement('p'); tip.className='muted'; tip.textContent = 'このまま進むと、避けるべきポイントや、合う人の傾向が分かります。'; host.appendChild(tip);
+    next.textContent = '精度を上げる（約60秒）';
+  }
   if(prev instanceof HTMLButtonElement){ prev.disabled = true; }
-  next.textContent = '精度を上げる（約60秒）';
   setProgress();
 }
 
@@ -153,14 +236,19 @@ next.addEventListener('click', ()=>{
   else if(state.idx < state.queue.length-1){ state.idx++; renderQuestion(); }
   else {
     // ベース質問終了時、必要に応じて追質問を挿入
-    if(maybeEnqueueFollowUps()){
-      state.idx++; renderQuestion();
-    } else {
+    if(BOOST_MODE){
       complete();
+    } else {
+      if(maybeEnqueueFollowUps()){
+        state.idx++; renderQuestion();
+      } else {
+        complete();
+      }
     }
   }
 });
 
+// init
 // init
 renderIntro();
 

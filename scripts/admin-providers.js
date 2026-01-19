@@ -163,6 +163,16 @@ function openProfileModal(provider){
   $('#profile-phone').value = provider.profile?.phone || '';
   $('#profile-website').value = provider.profile?.website || '';
   $('#profile-description').value = provider.profile?.description || '';
+  // Load diagnosis-linked tags (C/D, priceTier, expertise)
+  try{
+    const scores = (provider.onboarding && provider.onboarding.scores) ? provider.onboarding.scores : {};
+    const cEl = document.getElementById('profile-change-range');
+    const dEl = document.getElementById('profile-pace');
+    if(cEl && cEl instanceof HTMLSelectElement){ const C = Number(scores?.C||0); cEl.value = (C>=1 && C<=4) ? String(C) : '3'; }
+    if(dEl && dEl instanceof HTMLSelectElement){ const D = Number(scores?.D||0); dEl.value = (D>=1 && D<=3) ? String(D) : '2'; }
+    const tierEl = document.getElementById('profile-priceTier'); if(tierEl && tierEl instanceof HTMLSelectElement){ tierEl.value = provider.profile?.priceTier || 'mid'; }
+    const expHost = document.getElementById('profile-expertise'); if(expHost){ const arr = Array.isArray(provider.profile?.expertise) ? provider.profile.expertise : []; Array.from(expHost.querySelectorAll('input[type=checkbox]')).forEach(el=>{ if(el instanceof HTMLInputElement){ el.checked = arr.includes(el.value); } }); }
+  }catch{}
   // plan selection
   try{
     const sel = /** @type {HTMLSelectElement} */ (document.getElementById('profile-planId'));
@@ -207,6 +217,15 @@ function onProfileSubmit(e){
     website: (fd.get('website')||'').toString().trim(),
     description: (fd.get('description')||'').toString()
   };
+  // Save onboarding scores (C/D) and profile priceTier/expertise
+  try{
+    const C = Number((fd.get('changeRange')||'').toString()) || 3;
+    const D = Number((fd.get('pace')||'').toString()) || 2;
+    list[idx].onboarding = { ...(list[idx].onboarding||{}), scores: { ...(list[idx].onboarding?.scores||{}), C, D } };
+    list[idx].profile.priceTier = (fd.get('priceTier')||'mid').toString();
+    const expHost = document.getElementById('profile-expertise');
+    list[idx].profile.expertise = (function(){ if(!expHost) return []; return Array.from(expHost.querySelectorAll('input[type=checkbox]')).map(el=> el instanceof HTMLInputElement ? el : null).filter(Boolean).filter(c=> c.checked).map(c=> c.value); })();
+  }catch{}
   // Save plan selection
   try{
     const planId = (fd.get('planId')||'').toString() || 'p7000';

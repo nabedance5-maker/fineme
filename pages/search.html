@@ -65,6 +65,18 @@
           <option value="kagoshima">鹿児島県</option>
           <option value="okinawa">沖縄県</option>
         </select>
+        <select name="priceTier" title="価格帯で絞り込み">
+          <option value="">価格帯（任意）</option>
+          <option value="low">低</option>
+          <option value="mid">中</option>
+          <option value="high">高</option>
+        </select>
+        <select name="pace" title="提案スタイル（ペース）で絞り込み">
+          <option value="">提案スタイル（任意）</option>
+          <option value="1">ゆっくり</option>
+          <option value="2">バランス</option>
+          <option value="3">テンポ良く</option>
+        </select>
         <select name="purpose" title="検索の目的を選択">
           <option value="">目的で絞り込む（任意）</option>
           <option value="first_impression">第一印象を変えたい</option>
@@ -92,6 +104,23 @@
           <option value="nail">ネイル</option>
           <option value="aga">AGA</option>
         </select>
+        <fieldset style="border:0;padding:0;margin:0">
+          <legend class="muted" style="font-size:12px;margin-bottom:4px">得意領域（任意・複数可）</legend>
+          <div class="cluster" id="expertise-filter" style="flex-wrap:wrap;gap:8px">
+            <label><input type="checkbox" name="expertise" value="eyebrow" /> 眉毛</label>
+            <label><input type="checkbox" name="expertise" value="hairremoval" /> 脱毛</label>
+            <label><input type="checkbox" name="expertise" value="esthetic" /> エステ</label>
+            <label><input type="checkbox" name="expertise" value="whitening" /> ホワイトニング</label>
+            <label><input type="checkbox" name="expertise" value="orthodontics" /> 歯科矯正</label>
+            <label><input type="checkbox" name="expertise" value="nail" /> ネイル</label>
+            <label><input type="checkbox" name="expertise" value="aga" /> AGA</label>
+            <label><input type="checkbox" name="expertise" value="hair" /> ヘア</label>
+            <label><input type="checkbox" name="expertise" value="makeup" /> メイク</label>
+            <label><input type="checkbox" name="expertise" value="diagnosis" /> 診断</label>
+            <label><input type="checkbox" name="expertise" value="fashion" /> ファッション</label>
+            <label><input type="checkbox" name="expertise" value="photo" /> 撮影</label>
+          </div>
+        </fieldset>
         <select name="sort" aria-label="並べ替え">
           <option value="">おすすめ順</option>
           <option value="price_asc">料金が安い順</option>
@@ -122,6 +151,8 @@
     const q = u.searchParams.get('q') || u.searchParams.get('keyword') || '';
     const region = u.searchParams.get('region') || '';
     const category = u.searchParams.get('category') || '';
+    const priceTier = u.searchParams.get('priceTier') || '';
+    const pace = u.searchParams.get('pace') || '';
   const purpose = u.searchParams.get('purpose') || '';
     const sort = u.searchParams.get('sort') || '';
     const per = u.searchParams.get('per') || '12';
@@ -130,9 +161,17 @@
       const kw = form.querySelector('input[name="keyword"]'); if(kw) kw.value = q;
       const rg = form.querySelector('select[name="region"]'); if(rg) rg.value = region;
       const ct = form.querySelector('select[name="category"]'); if(ct) ct.value = category;
+      const ti = form.querySelector('select[name="priceTier"]'); if(ti) ti.value = priceTier;
+      const pc = form.querySelector('select[name="pace"]'); if(pc) pc.value = pace;
   const pu = form.querySelector('select[name="purpose"]'); if(pu) pu.value = purpose;
       const st = form.querySelector('select[name="sort"]'); if(st) st.value = sort;
       const ps = form.querySelector('select[name="per"]'); if(ps) ps.value = per;
+      // expertise checkboxes
+      try{
+        const expVals = u.searchParams.getAll('expertise');
+        const host = document.getElementById('expertise-filter');
+        if(host){ Array.from(host.querySelectorAll('input[type=checkbox]')).forEach(el=>{ if(el instanceof HTMLInputElement){ el.checked = expVals.includes(el.value); } }); }
+      }catch{}
       // ソート変更時に即時検索
       const sortSel = form.querySelector('select[name="sort"]');
       if(sortSel){

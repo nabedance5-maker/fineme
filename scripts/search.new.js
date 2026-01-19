@@ -81,7 +81,7 @@ function categoryPhotoFor(category){
 }
 
 // 検索結果カード（安全なハイライトを使用）
-function card({name, region, category, priceFrom, image, href, providerName, address, providerId, storeName, storeId, serviceId, slug, _reason}, opts={}){
+function card({name, region, category, priceFrom, image, href, providerName, address, providerId, storeName, storeId, serviceId, slug, _reason, _priceTier, _expertise, _pace}, opts={}){
   const q = (opts && opts.q) || '';
   const a = document.createElement('a');
   a.className = 'card';
@@ -151,6 +151,37 @@ function card({name, region, category, priceFrom, image, href, providerName, add
           tagsWrap.appendChild(b);
         }
       }
+      // Providerタグ由来のバッジ（価格帯・提案ペース・得意領域）
+      try{
+        // Prefer enriched fields on item; fallback to local provider lookup
+        let tier = String(_priceTier||'');
+        let pace = Number(_pace||0);
+        let exp = Array.isArray(_expertise) ? _expertise : [];
+        if(!tier || !pace || !exp.length){
+          const provsRaw = localStorage.getItem(PROVIDERS_KEY);
+          const provs = provsRaw ? JSON.parse(provsRaw) : [];
+          const p = Array.isArray(provs) ? provs.find(x=> x && x.id === providerId) : null;
+          if(p){
+            tier = tier || String(p?.profile?.priceTier||'');
+            if(!pace){ const D = Number(p?.onboarding?.scores?.D||0); pace = (D>=1 && D<=3) ? D : 0; }
+            if(!exp.length){ exp = Array.isArray(p?.profile?.expertise) ? p.profile.expertise : []; }
+          }
+        }
+        if(tier){
+          const lbl = tier==='low' ? '価格帯：低' : (tier==='mid' ? '価格帯：中' : (tier==='high' ? '価格帯：高' : '価格帯'));
+          const b = document.createElement('span'); b.className='badge'; b.textContent = lbl; tagsWrap.appendChild(b);
+        }
+        if(pace>=1 && pace<=3){
+          const paceLblMap = { 1:'提案ペース：ゆっくり', 2:'提案ペース：バランス', 3:'提案ペース：テンポ良く' };
+          const b = document.createElement('span'); b.className='badge'; b.textContent = paceLblMap[pace]; tagsWrap.appendChild(b);
+        }
+        if(exp.length){
+          for(const v of exp.slice(0,2)){
+            const b = document.createElement('span'); b.className='badge'; b.textContent = labelCategory(v);
+            tagsWrap.appendChild(b);
+          }
+        }
+      }catch(e){ /* ignore badge enrich errors */ }
     }catch{ /* silent */ }
     const rightCluster = document.createElement('div'); rightCluster.className='cluster'; rightCluster.style.gap='8px'; rightCluster.style.alignItems='center';
     rightCluster.appendChild(tagsWrap); rightCluster.appendChild(favBtn);
@@ -363,6 +394,8 @@ function parseParams(){
   const ent = {};
   // URLSearchParams#forEach is widely supported
   u.searchParams.forEach((value, key) => { ent[key] = value; });
+  // Multi-value params: expertise (checkboxes)
+  try{ ent.expertiseAll = u.searchParams.getAll('expertise'); }catch{ ent.expertiseAll = []; }
   // accept both q and keyword
   if(!ent.q && ent.keyword) ent.q = ent.keyword;
   return ent;
@@ -672,6 +705,13 @@ function sortItems(items, sort){
         plain.storeAddress = st.address || '';
         if(plain.storeAddress) plain.address = plain.storeAddress;
       }
+      // Attach provider-level tags for badges/filters
+      try{
+        plain._priceTier = (p.profile && p.profile.priceTier) ? String(p.profile.priceTier) : '';
+        plain._expertise = (p.profile && Array.isArray(p.profile.expertise)) ? p.profile.expertise.slice() : [];
+        const D = Number(p?.onboarding?.scores?.D||0);
+        plain._pace = (D>=1 && D<=3) ? D : 0;
+      }catch(e){ plain._priceTier=''; plain._expertise=[]; plain._pace=0; }
       return plain;
     };
 
@@ -707,7 +747,17 @@ function sortItems(items, sort){
       if(!allowed || allowed.length===0) return true;
       return allowed.includes(s.category);
     })() : true;
-    return mq && mr && mc && mp;
+    // priceTier filter
+    const tierParam = (parseParams().priceTier||'').toString();
+    const mtier = tierParam ? (String(s._priceTier||'')===tierParam) : true;
+    // pace filter (D: 1..3)
+    const paceParamRaw = (parseParams().pace||'').toString();
+    const paceParam = paceParamRaw ? Number(paceParamRaw) : 0;
+    const mpace = paceParam ? (Number(s._pace||0) === paceParam) : true;
+    // expertise filter (any-of)
+    const expAll = Array.isArray(parseParams().expertiseAll) ? parseParams().expertiseAll : [];
+    const mexp = expAll.length ? expAll.some(x=> Array.isArray(s._expertise) && s._expertise.includes(x)) : true;
+    return mq && mr && mc && mp && mtier && mpace && mexp;
   });
   // 診断に基づく「おすすめカテゴリ」タブの表示
   try{

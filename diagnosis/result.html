@@ -220,6 +220,17 @@
                 const block = document.createElement('div'); block.className='block';
                 const title = document.createElement('div'); title.className='block-title'; title.textContent='信頼度'; block.appendChild(title);
                 const p = document.createElement('p'); p.textContent = `信頼度：${level}（${desc}）`; block.appendChild(p);
+                // 低信頼度のときのみ、追質問への導線ボタンを表示
+                if(dist >= 4){
+                  const btn = document.createElement('a');
+                  btn.href = './step2.html?boost=1';
+                  btn.className = 'btn';
+                  btn.textContent = '精度を上げる（1〜2問）';
+                  try{ btn.style.setProperty('color','#fff','important'); }catch{}
+                  const note = document.createElement('p'); note.className='muted'; note.textContent='※ 追質問に答えることで、提案の精度が上がります。';
+                  block.appendChild(btn);
+                  block.appendChild(note);
+                }
                 article.appendChild(block);
               }catch{}
             })();
