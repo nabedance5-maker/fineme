@@ -490,6 +490,68 @@
               article.appendChild(wrap);
             })();
 
+            // ⑥ 次にやるなら（行動促進：両ニーズ対応）
+            (function(){
+              const diag = (function(){ try{ return JSON.parse(localStorage.getItem('fineme:diagnosis:latest')||'{}'); }catch{ return {}; } })();
+              function recommendCategories(diag){
+                const typeId = String(diag?.intent?.type_id || diag?.step2?.classification?.type_id || '');
+                const TYPE_BASE = {
+                  w01: ['consulting','eyebrow','hair','diagnosis'],
+                  w02: ['hair','eyebrow','esthetic','fashion'],
+                  w03: ['consulting','photo','marriage','gym'],
+                  w04: ['fashion','makeup','photo','consulting'],
+                  w05: ['diagnosis','fashion','hair','makeup'],
+                  w06: ['fashion','makeup','hair','photo'],
+                  w07: ['photo','makeup','fashion','hair'],
+                  w08: ['eyebrow','whitening','orthodontics','hairremoval']
+                };
+                const baseList = TYPE_BASE[typeId] || [];
+                const baseBoost = (cat)=>{ const idx = baseList.indexOf(cat); if(idx===0) return 60; if(idx===1) return 40; if(idx===2) return 25; if(idx>=3) return 15; return 10; };
+                const axes = (diag?.step2?.scores?.axes) || {};
+                const AXIS_WEIGHTS = {
+                  natural: { hair:0.25, eyebrow:0.2, esthetic:0.2, fashion:0.15 },
+                  evidence: { diagnosis:0.35, orthodontics:0.25, whitening:0.25 },
+                  guidance: { consulting:0.35, marriage:0.25 },
+                  customization: { fashion:0.3, makeup:0.25, nail:0.2 },
+                  gentle: { esthetic:0.25, makeup:0.2, nail:0.2 }
+                };
+                const CATS_ALL = ['consulting','gym','makeup','hair','diagnosis','fashion','photo','marriage','eyebrow','hairremoval','esthetic','whitening','orthodontics','nail'];
+                const scores = {};
+                for(const c of CATS_ALL){ let s = baseBoost(c); for(const ax in AXIS_WEIGHTS){ const v = Number(axes[ax]||0); const w = AXIS_WEIGHTS[ax][c] || 0; s += v * w; } scores[c] = Math.max(0, Math.min(100, Math.round(s))); }
+                const sorted = Object.keys(scores).sort((a,b)=> scores[b]-scores[a]);
+                return { scores, sorted };
+              }
+              function labelCategory(cat){
+                const map = {
+                  consulting:'コンサル/相談', gym:'パーソナルジム', makeup:'メイク', hair:'美容室', diagnosis:'診断', fashion:'ファッション', photo:'写真/撮影', marriage:'婚活/印象', eyebrow:'眉', hairremoval:'脱毛', esthetic:'エステ', whitening:'ホワイトニング', orthodontics:'矯正', nail:'ネイル'
+                };
+                return map[cat] || cat;
+              }
+              const wrap = document.createElement('div'); wrap.className='block';
+              const title = document.createElement('div'); title.className='block-title'; title.textContent='次にやるなら'; wrap.appendChild(title);
+              const grid = document.createElement('div'); grid.className='stack'; grid.style.gap='10px';
+              // 左：目的が決まっている（カテゴリから探す）
+              const left = document.createElement('div');
+              const lh = document.createElement('h4'); lh.textContent='目的が決まっている（カテゴリから探す）'; left.appendChild(lh);
+              const cats = recommendCategories(diag).sorted.slice(0,6);
+              const catWrap = document.createElement('div'); catWrap.className='cluster'; catWrap.style.flexWrap='wrap'; catWrap.style.gap='8px';
+              cats.forEach(c=>{ const btn=document.createElement('a'); btn.className='btn btn-ghost'; btn.textContent=labelCategory(c); const u=new URL(location.href); u.pathname = (location.pathname.includes('/diagnosis/')? '../pages/search.html' : 'pages/search.html'); u.search = ''; u.searchParams.set('category', c); btn.href = u.toString(); catWrap.appendChild(btn); });
+              left.appendChild(catWrap);
+              // 右：まだ決めていない（タイプに合うスターター）
+              const right = document.createElement('div');
+              const rh = document.createElement('h4'); rh.textContent='まだ決めていない（タイプに合うスターター）'; right.appendChild(rh);
+              const actWrap = document.createElement('div'); actWrap.className='cluster'; actWrap.style.flexWrap='wrap'; actWrap.style.gap='8px';
+              const btnReco = document.createElement('a'); btnReco.className='btn'; btnReco.textContent='タイプに合うスターター3選';
+              try{ btnReco.style.setProperty('color','#fff','important'); }catch{}
+              { const u=new URL(location.href); u.pathname = (location.pathname.includes('/diagnosis/')? '../pages/search.html' : 'pages/search.html'); u.search = ''; u.searchParams.set('diag','1'); btnReco.href = u.toString(); }
+              const btnGuide = document.createElement('a'); btnGuide.className='btn btn-ghost'; btnGuide.textContent='垢抜けガイドを見る'; { const u=new URL(location.href); u.pathname = (location.pathname.includes('/diagnosis/')? '../pages/feature.html' : 'pages/feature.html'); btnGuide.href = u.toString(); }
+              actWrap.appendChild(btnReco); actWrap.appendChild(btnGuide);
+              right.appendChild(actWrap);
+              grid.appendChild(left); grid.appendChild(right);
+              wrap.appendChild(grid);
+              article.appendChild(wrap);
+            })();
+
             // ⑤ 今の段階で向いている変化 → ブロック＋横スライダー
             (function(){
               const fitBlock = document.createElement('div'); fitBlock.className='block';
