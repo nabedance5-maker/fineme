@@ -1100,9 +1100,11 @@ function sortItems(items, sort){
     const mquick = quick ? matchesQuickSlot(s, quick, slots) : true;
     return mq && mr && mc && mp && mtier && mpace && mexp && mquick;
   });
-  // 診断に基づく「おすすめカテゴリ」タブの表示
+  // 診断に基づく「おすすめカテゴリ」タブの表示（ログイン時のみ）
   try{
     const diag = loadDiagnosis();
+    const isLoggedInTab = (function(){ try{ return !!sessionStorage.getItem('glowup:userSession'); }catch{ return false; } })();
+    if(!isLoggedInTab || !diag || !diag.step2){ throw new Error('no diag or not logged in'); }
     const { scores, sorted: catSorted } = recommendCategories(diag);
     const topCats = catSorted.slice(0, 6);
     const tabs = document.createElement('div'); tabs.className='cluster'; tabs.style.flexWrap='wrap'; tabs.style.gap='8px'; tabs.style.margin='0 0 12px 0';
@@ -1121,7 +1123,7 @@ function sortItems(items, sort){
     }
     const container = qs('.container.stack') || qs('.section .container') || document.body;
     if(container) container.insertBefore(tabs, container.querySelector('.results-meta'));
-  }catch(e){ console.warn('failed to render recommendation tabs', e); }
+  }catch(e){ /* skip tabs when not logged in or no diag */ }
   // --- 診断タイプに合う順（初期状態のみ適用） ---
   async function buildProvMap(){
     try{
@@ -1154,7 +1156,8 @@ function sortItems(items, sort){
 
   const hasExplicitFilters = Boolean(q || region || category || purpose || getSortKey());
   const diag = loadDiagnosis();
-  const shouldCompatSort = (!hasExplicitFilters) && (!!diag) && (String(diagMode) !== '0');
+  const isLoggedIn = (function(){ try{ return !!sessionStorage.getItem('glowup:userSession'); }catch{ return false; } })();
+  const shouldCompatSort = (!hasExplicitFilters) && isLoggedIn && (!!diag) && (String(diagMode) !== '0');
   let pinned = [];
 
   let sorted;
@@ -1213,7 +1216,7 @@ function sortItems(items, sort){
     }catch{}
   }else{
     // 診断あり × カテゴリ指定あり → A-D＋E距離でゾーン表示
-    if(category && diag && String(diagMode) !== '0'){
+    if(category && isLoggedIn && diag && String(diagMode) !== '0'){
       const provMap = await buildProvMap();
       const matcher = await import('./matching.js').catch(()=>null);
       // 互換性距離（小さいほど相性が高い）

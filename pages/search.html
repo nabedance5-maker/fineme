@@ -104,23 +104,6 @@
           <option value="nail">ネイル</option>
           <option value="aga">AGA</option>
         </select>
-        <fieldset style="border:0;padding:0;margin:0">
-          <legend class="muted" style="font-size:12px;margin-bottom:4px">得意領域（任意・複数可）</legend>
-          <div class="cluster" id="expertise-filter" style="flex-wrap:wrap;gap:8px">
-            <label><input type="checkbox" name="expertise" value="eyebrow" /> 眉毛</label>
-            <label><input type="checkbox" name="expertise" value="hairremoval" /> 脱毛</label>
-            <label><input type="checkbox" name="expertise" value="esthetic" /> エステ</label>
-            <label><input type="checkbox" name="expertise" value="whitening" /> ホワイトニング</label>
-            <label><input type="checkbox" name="expertise" value="orthodontics" /> 歯科矯正</label>
-            <label><input type="checkbox" name="expertise" value="nail" /> ネイル</label>
-            <label><input type="checkbox" name="expertise" value="aga" /> AGA</label>
-            <label><input type="checkbox" name="expertise" value="hair" /> ヘア</label>
-            <label><input type="checkbox" name="expertise" value="makeup" /> メイク</label>
-            <label><input type="checkbox" name="expertise" value="diagnosis" /> 診断</label>
-            <label><input type="checkbox" name="expertise" value="fashion" /> ファッション</label>
-            <label><input type="checkbox" name="expertise" value="photo" /> 撮影</label>
-          </div>
-        </fieldset>
         <select name="sort" aria-label="並べ替え">
           <option value="">おすすめ順</option>
           <option value="price_asc">料金が安い順</option>
@@ -166,12 +149,7 @@
   const pu = form.querySelector('select[name="purpose"]'); if(pu) pu.value = purpose;
       const st = form.querySelector('select[name="sort"]'); if(st) st.value = sort;
       const ps = form.querySelector('select[name="per"]'); if(ps) ps.value = per;
-      // expertise checkboxes
-      try{
-        const expVals = u.searchParams.getAll('expertise');
-        const host = document.getElementById('expertise-filter');
-        if(host){ Array.from(host.querySelectorAll('input[type=checkbox]')).forEach(el=>{ if(el instanceof HTMLInputElement){ el.checked = expVals.includes(el.value); } }); }
-      }catch{}
+      // expertise UI removed
       // ソート変更時に即時検索
       const sortSel = form.querySelector('select[name="sort"]');
       if(sortSel){
