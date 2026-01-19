@@ -40,6 +40,19 @@
       </div>
     </section>
 
+    <!-- あなたの目的（続きやすいCTA） -->
+    <section class="section" id="goal-next-section" style="display:none">
+      <div class="container stack">
+        <div class="cluster space-between" style="margin-bottom:8px">
+          <h2 class="section-title">あなたの目的</h2>
+          <a class="btn btn-ghost" href="./pages/search.html">他のカテゴリを見る</a>
+        </div>
+        <div class="card" style="padding:16px">
+          <div id="goal-next-content" class="cluster" style="gap:8px;flex-wrap:wrap"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- ヒーロー直下：軸ミニ解説＋タイプ別候補＋保存導線 -->
     <section class="section" id="under-hero">
       <div class="container stack" style="gap:18px">
@@ -336,5 +349,23 @@
   <script src="./scripts/home-recent.js?v=20251016" type="module"></script>
   <script src="./scripts/axes.js?v=20260101" type="module"></script>
   <script src="./scripts/home-type-candidates.js?v=20260101" type="module"></script>
+  <script type="module">
+    // 目的が保存されていれば、続きやすいCTAを表示
+    (function(){
+      try{
+        const saved = localStorage.getItem('fineme:goal:category');
+        if(!saved) return;
+        const map = { consulting:'コンサル/相談', gym:'パーソナルジム', makeup:'メイク', hair:'美容室', diagnosis:'診断', fashion:'ファッション', photo:'写真/撮影', marriage:'婚活/印象', eyebrow:'眉', hairremoval:'脱毛', esthetic:'エステ', whitening:'ホワイトニング', orthodontics:'矯正', nail:'ネイル' };
+        const label = map[saved] || saved;
+        const sec = document.getElementById('goal-next-section'); if(sec) sec.style.display = 'block';
+        const host = document.getElementById('goal-next-content'); if(!host) return;
+        const ttl = document.createElement('div'); ttl.className='muted'; ttl.textContent = `保存された目的：${label}`; host.appendChild(ttl);
+        const btnGo = document.createElement('a'); btnGo.className='btn'; btnGo.textContent = `${label}で探す`;
+        try{ btnGo.style.setProperty('color','#fff','important'); }catch{}
+        btnGo.href = `./pages/search.html?category=${encodeURIComponent(saved)}`; host.appendChild(btnGo);
+        const btnStarter = document.createElement('a'); btnStarter.className='btn btn-ghost'; btnStarter.textContent = 'タイプに合うスターター3選'; btnStarter.href = './pages/search.html?diag=1&origin=home'; host.appendChild(btnStarter);
+      }catch{}
+    })();
+  </script>
 </body>
 </html>
