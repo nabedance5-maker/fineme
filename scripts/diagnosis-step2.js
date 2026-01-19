@@ -94,7 +94,7 @@ if(BOOST_MODE){
     const axes = obj?.step2?.scores?.axes || null;
     if(axes && typeof axes==='object'){
       state.scores.axes = { ...state.scores.axes, ...axes };
-      // compute followups based on current axes (reuse logic)
+      // compute followups (boost) as binary micro-adjustments (±1) on ambiguous axes
       const followups = (function(){
         try{
           const A = Number(state.scores.axes.motivation||0);
@@ -123,38 +123,30 @@ if(BOOST_MODE){
             { k:'change',     d: Math.abs((best.vec?.C||0) - (second.vec?.C||0)) },
             { k:'control',    d: Math.abs((best.vec?.D||0) - (second.vec?.D||0)) }
           ].sort((a,b)=> b.d - a.d).filter(x=> x.d > 0).slice(0,2).map(x=> x.k);
-          const FU = {
-            motivation: { id:'fq_m', title:'今回の動機の強さ（近いもの）', choices:[
-              { id:'fq_m1', text:'軽く気分を変えたい', axes:{ motivation: 1 } },
-              { id:'fq_m2', text:'悩み/外圧を減らしたい', axes:{ motivation: 2 } },
-              { id:'fq_m3', text:'自信を積み上げたい', axes:{ motivation: 3 } },
-              { id:'fq_m4', text:'節目に合わせて変えたい', axes:{ motivation: 4 } }
+          const BF = {
+            motivation: { id:'bf_m', title:'より近いのはどちらですか？（動機）', choices:[
+              { id:'bf_m_low',  text:'気分を軽く変えたい（控えめ）', axes:{ motivation: -1 } },
+              { id:'bf_m_high', text:'自信をしっかり積み上げたい（強め）', axes:{ motivation: +1 } }
             ]},
-            support: { id:'fq_s', title:'伴走や相談の必要度（近いもの）', choices:[
-              { id:'fq_s1', text:'ほぼ不要', axes:{ support: 1 } },
-              { id:'fq_s2', text:'あった方が良い', axes:{ support: 2 } },
-              { id:'fq_s3', text:'しっかり欲しい', axes:{ support: 3 } },
-              { id:'fq_s4', text:'とても必要', axes:{ support: 4 } }
+            support: { id:'bf_s', title:'より近いのはどちらですか？（相談/伴走）', choices:[
+              { id:'bf_s_low',  text:'ほぼ不要（自力で進めたい）', axes:{ support: -1 } },
+              { id:'bf_s_high', text:'しっかり欲しい（相談しながら）', axes:{ support: +1 } }
             ]},
-            change: { id:'fq_c', title:'今回の変化の強さ（近いもの）', choices:[
-              { id:'fq_c1', text:'少し整える', axes:{ change: 1 } },
-              { id:'fq_c2', text:'印象を変える', axes:{ change: 2 } },
-              { id:'fq_c3', text:'気づかれるレベル', axes:{ change: 3 } },
-              { id:'fq_c4', text:'別人級に変える', axes:{ change: 4 } }
+            change: { id:'bf_c', title:'より近いのはどちらですか？（変化の強さ）', choices:[
+              { id:'bf_c_low',  text:'目立たない範囲で変えたい（控えめ）', axes:{ change: -1 } },
+              { id:'bf_c_high', text:'周囲が気づくレベルでも良い（強め）', axes:{ change: +1 } }
             ]},
-            control: { id:'fq_d', title:'主導権の持ち方（近いもの）', choices:[
-              { id:'fq_d1', text:'提案してほしい', axes:{ control: 1 } },
-              { id:'fq_d2', text:'一緒に決めたい', axes:{ control: 2 } },
-              { id:'fq_d3', text:'自分で決めたい', axes:{ control: 3 } }
+            control: { id:'bf_d', title:'より近いのはどちらですか？（主導権）', choices:[
+              { id:'bf_d_low',  text:'提案に乗って進めたい（任せたい）', axes:{ control: -1 } },
+              { id:'bf_d_high', text:'一緒に/自分で決めたい（主体的）', axes:{ control: +1 } }
             ]}
           };
-          return diffs.map(k=> FU[k]).filter(Boolean);
+          return diffs.map(k=> BF[k]).filter(Boolean);
         }catch{ return []; }
       })();
       if(followups && followups.length){
         state.queue = followups.slice();
       } else {
-        // No followups needed; go back to result
         try{ location.href = './result.html'; }catch{}
       }
     }
@@ -197,7 +189,20 @@ function renderQuestion(){
     card.addEventListener('click', ()=>{
       state.answers[q.id] = ch.id;
       // axes
-      if(ch.axes){ Object.entries(ch.axes).forEach(([k,v])=>{ state.scores.axes[k] = (state.scores.axes[k]||0) + v; }); }
+      if(ch.axes){
+        Object.entries(ch.axes).forEach(([k,v])=>{
+          const cur = Number(state.scores.axes[k]||0) || 0;
+          const next = cur + Number(v||0);
+          // clamp ranges
+          if(k==='control'){
+            state.scores.axes[k] = Math.max(1, Math.min(3, next));
+          } else if(k==='motivation' || k==='support' || k==='change'){
+            state.scores.axes[k] = Math.max(1, Math.min(4, next));
+          } else {
+            state.scores.axes[k] = next;
+          }
+        });
+      }
       // UI: select and proceed
   Array.from(vlist.children).forEach(c=> c.setAttribute('aria-checked','false'));
       card.setAttribute('aria-checked','true');
