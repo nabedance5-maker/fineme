@@ -209,6 +209,21 @@
             const stateP = document.createElement('p'); stateP.style.margin='8px 0 12px 0'; stateP.textContent = copy.state || copy.empathy || '';
             article.appendChild(stateP);
 
+            // ②-1 信頼度メーター（タイプ距離の簡易可視化）
+            (function(){
+              try{
+                const stored = JSON.parse(localStorage.getItem('fineme:diagnosis:latest')||'{}');
+                const dist = Number(stored?.step2?.classification?.dist || 0);
+                let level = '中'; let desc = '回答の整合性は標準的です';
+                if(dist <= 2){ level = '高'; desc = '回答が一貫しており、見立ての確度は高めです'; }
+                else if(dist >= 4){ level = '低'; desc = '軸が拮抗しています。少し追質問するとさらに確度が上がります'; }
+                const block = document.createElement('div'); block.className='block';
+                const title = document.createElement('div'); title.className='block-title'; title.textContent='信頼度'; block.appendChild(title);
+                const p = document.createElement('p'); p.textContent = `信頼度：${level}（${desc}）`; block.appendChild(p);
+                article.appendChild(block);
+              }catch{}
+            })();
+
             // ②-2 視点ブロック（考え方/選び方/進め方）
             (function(){
               const axes = (obj?.step2?.scores?.axes) || {};
@@ -405,6 +420,36 @@
               btnNext.addEventListener('click', ()=> onArrow('next'));
 
               article.appendChild(whyBlock);
+            })();
+
+            // ④-2 代替案タブ（保守/標準/攻め）
+            (function(){
+              const wrap = document.createElement('div'); wrap.className='block';
+              const title = document.createElement('div'); title.className='block-title'; title.textContent='別の見方（保守/標準/攻め）'; wrap.appendChild(title);
+              const tabs = document.createElement('div'); tabs.style.display='flex'; tabs.style.gap='8px'; tabs.style.margin='8px 0';
+              const btnConservative = document.createElement('button'); btnConservative.className='btn btn-ghost'; btnConservative.textContent='保守';
+              const btnStandard = document.createElement('button'); btnStandard.className='btn btn-ghost'; btnStandard.textContent='標準';
+              const btnAggressive = document.createElement('button'); btnAggressive.className='btn btn-ghost'; btnAggressive.textContent='攻め';
+              tabs.appendChild(btnConservative); tabs.appendChild(btnStandard); tabs.appendChild(btnAggressive); wrap.appendChild(tabs);
+              const list = document.createElement('div'); list.className='highlights'; wrap.appendChild(list);
+              function setItems(kind){
+                const items = [];
+                if(kind==='保守'){
+                  items.push('小さな変更を試す（🧪）'); items.push('写真で比較して納得（📸）'); items.push('再調整前提で進める（🔁）');
+                }else if(kind==='攻め'){
+                  items.push('変化を実感できる提案（🔄）'); items.push('短いスプリントで更新（🏃）'); items.push('安全網を用意した挑戦（🛡️）');
+                }else{
+                  items.push('目的を明文化して進める（🗺️）'); items.push('相談/確認の伴走（🤝）'); items.push('世界観が合う相手を選ぶ（✨）');
+                }
+                list.innerHTML='';
+                items.forEach(t=>{ const span=document.createElement('span'); span.className='chip'; span.textContent=t; list.appendChild(span); });
+              }
+              // 初期表示：標準
+              setItems('標準');
+              btnConservative.addEventListener('click', ()=> setItems('保守'));
+              btnStandard.addEventListener('click', ()=> setItems('標準'));
+              btnAggressive.addEventListener('click', ()=> setItems('攻め'));
+              article.appendChild(wrap);
             })();
 
             // ⑤ 今の段階で向いている変化 → ブロック＋横スライダー
