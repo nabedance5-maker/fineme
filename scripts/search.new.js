@@ -494,6 +494,23 @@ function renderCategoryGuide(category, container, resultsList){
         });
         cta.appendChild(btn);
       }
+      // Reset filters button
+      const reset = document.createElement('button'); reset.type='button'; reset.className='btn'; reset.textContent='フィルターを解除';
+      reset.addEventListener('click', ()=>{
+        const u = new URL(location.href);
+        // preserve essential params
+        if(category) u.searchParams.set('category', category);
+        if(getSortKey()) u.searchParams.set('sort', getSortKey());
+        if(parseParams().region) u.searchParams.set('region', String(parseParams().region));
+        if(parseParams().keyword) u.searchParams.set('keyword', String(parseParams().keyword));
+        // clear filter params
+        u.searchParams.delete('priceTier');
+        u.searchParams.delete('pace');
+        u.searchParams.delete('expertise');
+        u.searchParams.delete('quick');
+        location.href = u.toString();
+      });
+      cta.appendChild(reset);
       inner.appendChild(cta);
     }
     wrap.appendChild(inner);
