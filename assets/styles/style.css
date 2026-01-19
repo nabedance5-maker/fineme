@@ -322,11 +322,9 @@ a.btn.btn--primary, button.btn.btn--primary, .btn--primary{
 /* gradient fog masks to softly blend the two images towards center */
 .hero--visual .hero-bg-fog{
 		position:absolute; inset:0; z-index:2; pointer-events:none;
-		/* subtle dark gradient overlay to improve text contrast across images */
-		background:
-			linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.22) 30%, rgba(0,0,0,0.16) 60%, rgba(0,0,0,0.12) 100%),
-			radial-gradient(1200px 400px at 50% 20%, rgba(0,0,0,0.20), transparent 70%);
-		opacity: 1;
+		/* remove dark overlays so background image remains visible */
+		background: transparent;
+		opacity: 0;
 }
 .hero--visual > .container{position:relative; z-index:4}
 /* warm overlay to tint images with sunset tones */
