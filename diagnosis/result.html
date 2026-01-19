@@ -547,23 +547,22 @@
               const lh = document.createElement('h4'); lh.textContent='目的が決まっている（カテゴリから探す）'; left.appendChild(lh);
               const rec = recommendCategories(diag);
               const allCats = ['consulting','gym','makeup','hair','diagnosis','fashion','photo','marriage','eyebrow','hairremoval','esthetic','whitening','orthodontics','nail'];
-              const topSet = new Set(rec.sorted.slice(0,6));
-              const catWrap = document.createElement('div'); catWrap.className='cluster'; catWrap.style.flexWrap='wrap'; catWrap.style.gap='8px';
+              const iconMap = { hair:'💇‍♂️', eyebrow:'✂️', esthetic:'💆‍♂️', fashion:'👔', gym:'🏋️‍♂️', orthodontics:'🦷', makeup:'💄', nail:'💅', photo:'📸', diagnosis:'🔍', consulting:'🧑‍⚕️', marriage:'💍', hairremoval:'🪒', whitening:'✨' };
+              const subMap = { hair:'髪型・カット・パーマ', eyebrow:'眉カット・デザイン', esthetic:'フェイシャル・スキンケア', fashion:'パーソナルスタイリング', gym:'ボディメイク・トレーニング', orthodontics:'噛み合わせ・見た目改善', makeup:'男性向けメイクレッスン', nail:'ケア・デザイン', photo:'プロフィール写真・撮影', diagnosis:'カラー・骨格診断', consulting:'トータルコンサルティング', marriage:'婚活・相談所', hairremoval:'永久脱毛・光脱毛', whitening:'歯の美白' };
+              const catGrid = document.createElement('div'); catGrid.className='categories-grid';
               allCats.forEach(c=>{
-                const btn=document.createElement('a'); btn.className='btn btn-ghost'; btn.textContent=labelCategory(c);
-                const u=new URL(BASE_PREFIX + '/pages/search.html', location.origin); u.searchParams.set('category', c); btn.href = u.toString();
-                // ハイライト（おすすめ）
-                if(topSet.has(c)){
-                  const wrap=document.createElement('span'); wrap.className='cluster'; wrap.style.gap='6px';
-                  const badge=document.createElement('span'); badge.className='badge'; badge.textContent='おすすめ';
-                  wrap.appendChild(btn); wrap.appendChild(badge); catWrap.appendChild(wrap);
-                } else {
-                  catWrap.appendChild(btn);
-                }
-                // 選択の保存（次回の行動促進に利用）
-                btn.addEventListener('click', ()=>{ try{ localStorage.setItem('fineme:goal:category', c); }catch{} });
+                const card = document.createElement('div'); card.className='category-card';
+                const a = document.createElement('a');
+                const u=new URL(BASE_PREFIX + '/pages/search.html', location.origin); u.searchParams.set('category', c); a.href = u.toString();
+                const icon = document.createElement('div'); icon.className='category-icon'; icon.textContent = iconMap[c] || '✨';
+                const label = document.createElement('div'); label.className='category-label'; label.textContent = labelCategory(c);
+                const sub = document.createElement('div'); sub.className='category-sub'; sub.textContent = subMap[c] || '';
+                a.appendChild(icon); a.appendChild(label); a.appendChild(sub);
+                card.appendChild(a);
+                catGrid.appendChild(card);
+                a.addEventListener('click', ()=>{ try{ localStorage.setItem('fineme:goal:category', c); }catch{} });
               });
-              left.appendChild(catWrap);
+              left.appendChild(catGrid);
               // 右：まだ決めていない（タイプに合うスターター）
               const right = document.createElement('div');
               const rh = document.createElement('h4'); rh.textContent='まだ決めていない（タイプに合うスターター）'; right.appendChild(rh);
