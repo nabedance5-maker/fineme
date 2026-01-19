@@ -533,7 +533,9 @@ function renderActiveFilters(container, resultsList){
     const labelPace = (p)=>({ '1':'提案ペース:ゆっくり', '2':'提案ペース:バランス', '3':'提案ペース:テンポ良く' }[String(p)] || `提案ペース:${p}`);
     const labelQuick = (q)=> q==='today'?'今日行ける':(q==='weekend'?'週末行ける':`quick:${q}`);
     const labelExpertise = (e)=> ({
-      makeover:'メイク系', color:'カラー診断', skeleton:'骨格診断', styling:'スタイリング', photo:'写真/撮影'
+      makeover:'メイク系', color:'カラー診断', skeleton:'骨格診断', styling:'スタイリング', photo:'写真/撮影',
+      hair:'ヘア', eyebrow:'眉', hairremoval:'脱毛', esthetic:'エステ', whitening:'ホワイトニング', orthodontics:'矯正', nail:'ネイル',
+      marriage:'婚活', gym:'トレーニング', fashion:'ファッション', diagnosis:'診断', consulting:'外見コンサル'
     }[String(e)] || String(e));
 
     if(ent.priceTier){ chips.push({ label: labelTier(ent.priceTier), remove: (u)=> u.searchParams.delete('priceTier') }); }
@@ -553,15 +555,28 @@ function renderActiveFilters(container, resultsList){
       const title = document.createElement('span'); title.className='muted'; title.textContent='現在の条件:'; row.appendChild(title);
       for(const c of chips){
         const b = document.createElement('button'); b.type='button'; b.className='badge'; b.textContent=c.label+' ✕';
+        b.setAttribute('aria-label', `条件を解除: ${c.label}`);
         b.addEventListener('click', ()=>{ const u=new URL(location.href); preserve(u); try{ c.remove(u); }catch{} location.href=u.toString(); });
         row.appendChild(b);
       }
+      // 全て解除ボタン
+      const reset = document.createElement('button'); reset.type='button'; reset.className='btn btn-ghost'; reset.textContent='全て解除';
+      reset.setAttribute('aria-label', 'すべての条件を解除');
+      reset.addEventListener('click', ()=>{
+        const u = new URL(location.href); preserve(u);
+        u.searchParams.delete('priceTier');
+        u.searchParams.delete('pace');
+        u.searchParams.delete('expertise');
+        u.searchParams.delete('quick');
+        location.href = u.toString();
+      });
+      row.appendChild(reset);
     }
     // Quick toggle buttons
     const toggles = document.createElement('div'); toggles.className='cluster'; toggles.style.gap='8px';
     const mkToggle = (label, val)=>{
       const btn = document.createElement('button'); btn.type='button'; btn.className='btn btn-ghost'; btn.textContent=label;
-      if(ent.quick === val) btn.classList.add('is-active');
+      if(ent.quick === val){ btn.classList.add('is-active'); btn.setAttribute('aria-pressed', 'true'); } else { btn.setAttribute('aria-pressed', 'false'); }
       btn.addEventListener('click', ()=>{
         const u = new URL(location.href); preserve(u);
         if(ent.quick === val){ u.searchParams.delete('quick'); } else { u.searchParams.set('quick', val); }
