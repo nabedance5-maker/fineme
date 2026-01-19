@@ -94,7 +94,7 @@ if(BOOST_MODE){
     const axes = obj?.step2?.scores?.axes || null;
     if(axes && typeof axes==='object'){
       state.scores.axes = { ...state.scores.axes, ...axes };
-      // compute followups (boost) as binary micro-adjustments (±1) on ambiguous axes
+      // compute followups (boost): contextual questions respecting user's preference
       const followups = (function(){
         try{
           const A = Number(state.scores.axes.motivation||0);
@@ -122,26 +122,49 @@ if(BOOST_MODE){
             { k:'support',    d: Math.abs((best.vec?.B||0) - (second.vec?.B||0)) },
             { k:'change',     d: Math.abs((best.vec?.C||0) - (second.vec?.C||0)) },
             { k:'control',    d: Math.abs((best.vec?.D||0) - (second.vec?.D||0)) }
-          ].sort((a,b)=> b.d - a.d).filter(x=> x.d > 0).slice(0,2).map(x=> x.k);
+          ].sort((a,b)=> b.d - a.d).filter(x=> x.d > 0);
+          const diffsPicked = (diffs.length? [diffs[0].k] : []);
+          const Q_VALUE = {
+            id:'bf_value',
+            title:'今は何を一番重視したいですか？',
+            choices:[
+              { id:'bf_v1', text:'安心感（寄り添い・確認）', axes:{ value: '安心感' } },
+              { id:'bf_v2', text:'理論・根拠（説明と再現性）', axes:{ value: '理論・根拠' } },
+              { id:'bf_v3', text:'センス（世界観・スタイル）', axes:{ value: 'センス' } },
+              { id:'bf_v4', text:'実績（結果・事例）', axes:{ value: '実績' } },
+              { id:'bf_v0', text:'今は十分（変更しない）', axes:{} }
+            ]
+          };
           const BF = {
-            motivation: { id:'bf_m', title:'より近いのはどちらですか？（動機）', choices:[
-              { id:'bf_m_low',  text:'気分を軽く変えたい（控えめ）', axes:{ motivation: -1 } },
-              { id:'bf_m_high', text:'自信をしっかり積み上げたい（強め）', axes:{ motivation: +1 } }
+            motivation: { id:'bf_m', title:'今の目的に一番近いのは？', choices:[
+              { id:'bf_m1', text:'軽く気分を変えたい', axes:{ motivation: 1 } },
+              { id:'bf_m2', text:'悩み/外圧を減らしたい', axes:{ motivation: 2 } },
+              { id:'bf_m3', text:'自信を積み上げたい', axes:{ motivation: 3 } },
+              { id:'bf_m4', text:'節目に合わせて変えたい', axes:{ motivation: 4 } },
+              { id:'bf_m0', text:'今は十分（変更しない）', axes:{} }
             ]},
-            support: { id:'bf_s', title:'より近いのはどちらですか？（相談/伴走）', choices:[
-              { id:'bf_s_low',  text:'ほぼ不要（自力で進めたい）', axes:{ support: -1 } },
-              { id:'bf_s_high', text:'しっかり欲しい（相談しながら）', axes:{ support: +1 } }
+            support: { id:'bf_s', title:'進める上で、何があると安心できますか？', choices:[
+              { id:'bf_s1', text:'説明と比較がしっかりある', axes:{ support: +1 } },
+              { id:'bf_s2', text:'定期的な確認・相談ができる', axes:{ support: +1 } },
+              { id:'bf_s3', text:'任せられる仕組みがある', axes:{ support: -1 } },
+              { id:'bf_s0', text:'今は十分（変更しない）', axes:{} }
             ]},
-            change: { id:'bf_c', title:'より近いのはどちらですか？（変化の強さ）', choices:[
-              { id:'bf_c_low',  text:'目立たない範囲で変えたい（控えめ）', axes:{ change: -1 } },
-              { id:'bf_c_high', text:'周囲が気づくレベルでも良い（強め）', axes:{ change: +1 } }
+            change: { id:'bf_c', title:'今回、どこまで試せますか？', choices:[
+              { id:'bf_c1', text:'まずは小さく試す', axes:{ change: 1 } },
+              { id:'bf_c2', text:'印象が変わるくらい', axes:{ change: 2 } },
+              { id:'bf_c3', text:'気づかれるレベルでも良い', axes:{ change: 3 } },
+              { id:'bf_c4', text:'思い切って変える', axes:{ change: 4 } },
+              { id:'bf_c0', text:'今は十分（変更しない）', axes:{} }
             ]},
-            control: { id:'bf_d', title:'より近いのはどちらですか？（主導権）', choices:[
-              { id:'bf_d_low',  text:'提案に乗って進めたい（任せたい）', axes:{ control: -1 } },
-              { id:'bf_d_high', text:'一緒に/自分で決めたい（主体的）', axes:{ control: +1 } }
+            control: { id:'bf_d', title:'決め方は、どれが気楽ですか？', choices:[
+              { id:'bf_d1', text:'提案に乗って進めたい', axes:{ control: 1 } },
+              { id:'bf_d2', text:'一緒に相談しながら決めたい', axes:{ control: 2 } },
+              { id:'bf_d3', text:'自分で決めたい', axes:{ control: 3 } },
+              { id:'bf_d0', text:'今は十分（変更しない）', axes:{} }
             ]}
           };
-          return diffs.map(k=> BF[k]).filter(Boolean);
+          const picked = diffsPicked.map(k=> BF[k]).filter(Boolean);
+          return [Q_VALUE, ...picked];
         }catch{ return []; }
       })();
       if(followups && followups.length){
@@ -191,15 +214,23 @@ function renderQuestion(){
       // axes
       if(ch.axes){
         Object.entries(ch.axes).forEach(([k,v])=>{
-          const cur = Number(state.scores.axes[k]||0) || 0;
-          const next = cur + Number(v||0);
-          // clamp ranges
-          if(k==='control'){
-            state.scores.axes[k] = Math.max(1, Math.min(3, next));
-          } else if(k==='motivation' || k==='support' || k==='change'){
-            state.scores.axes[k] = Math.max(1, Math.min(4, next));
+          if(typeof v === 'string'){
+            state.scores.axes[k] = v;
+            return;
+          }
+          const num = Number(v);
+          if(!Number.isFinite(num)) return;
+          if(k==='motivation' || k==='support' || k==='change'){
+            const isAbsolute = (Math.floor(num)===num) && num>=1 && num<=4;
+            const candidate = isAbsolute ? num : ((Number(state.scores.axes[k]||0) || 0) + num);
+            state.scores.axes[k] = Math.max(1, Math.min(4, candidate));
+          } else if(k==='control'){
+            const isAbsolute = (Math.floor(num)===num) && num>=1 && num<=3;
+            const candidate = isAbsolute ? num : ((Number(state.scores.axes[k]||0) || 0) + num);
+            state.scores.axes[k] = Math.max(1, Math.min(3, candidate));
           } else {
-            state.scores.axes[k] = next;
+            const cur = Number(state.scores.axes[k]||0) || 0;
+            state.scores.axes[k] = cur + num;
           }
         });
       }
