@@ -608,7 +608,30 @@ function sortItems(items, sort){
   const qLower = (q||'').toLowerCase();
   try{ if(q && q.trim()){ recordEvent('search', { query: q.trim(), region: region||'', category: category||'', purpose: purpose||'' }); } }catch{}
 
+  /**
+   * @typedef {Object} ServiceItem
+   * @property {string} name
+   * @property {string} [region]
+   * @property {string} [category]
+   * @property {number} [priceFrom]
+   * @property {string} [image]
+   * @property {string} href
+   * @property {string} [serviceId]
+   * @property {string} [slug]
+   * @property {string} [providerId]
+   * @property {string} [storeId]
+   * @property {string} [providerName]
+   * @property {string} [address]
+   * @property {string} [_searchText]
+   * @property {string} [storeName]
+   * @property {string} [storeAddress]
+   * @property {string} [_priceTier]
+   * @property {number} [_pace]
+   * @property {string[]} [_expertise]
+   */
+
   const staticData = await loadStaticServices();
+  /** @type {ServiceItem[]} */
   const staticItems = staticData.map(s => ({
     name: s.name,
     region: s.region,
@@ -625,6 +648,7 @@ function sortItems(items, sort){
     _searchText: ''
   }));
 
+  /** @type {ServiceItem[]} */
   let localItems = loadLocalServices();
   // If local providers are missing (after cache clear), enrich localItems with static providers map
   if(localItems.some(it=> !it.providerName || !it.address)){
@@ -719,6 +743,7 @@ function sortItems(items, sort){
     // also enrich static items (they may reference providerId/storeId)
     for(let i=0;i<staticItems.length;i++) staticItems[i] = enrich(staticItems[i]);
   }catch(e){ console.warn('failed to enrich providers/stores', e); }
+  /** @type {ServiceItem[]} */
   const all = [...staticItems, ...localItems];
   // Exclude services whose provider onboarding is not completed or provider visibility is hidden（店舗全体の非公開）
   try{
