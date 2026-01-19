@@ -60,6 +60,17 @@
   /* 強制コントラスト（このページ内限定） */
   .result-article .btn{ background:#111 !important; color:#fff !important; border:none !important; box-shadow:0 8px 18px rgba(2,6,23,0.18) }
   .result-article .btn-ghost{ background:transparent !important; color:#fff !important; border:1px solid #fff !important }
+  /* Anchor state overrides to defeat global link color rules */
+  .result-article a.btn:link,
+  .result-article a.btn:visited,
+  .result-article a.btn:hover,
+  .result-article a.btn:active,
+  .result-article a.btn:focus{ color:#fff !important }
+  .result-article a.btn-ghost:link,
+  .result-article a.btn-ghost:visited,
+  .result-article a.btn-ghost:hover,
+  .result-article a.btn-ghost:active,
+  .result-article a.btn-ghost:focus{ color:#fff !important; border-color:#fff !important }
   .diag-card .btn{ background:#111 !important; color:#fff !important; border:none !important }
   </style>
 </head>
