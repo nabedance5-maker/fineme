@@ -398,6 +398,10 @@ function parseParams(){
   try{ ent.expertiseAll = u.searchParams.getAll('expertise'); }catch{ ent.expertiseAll = []; }
   // accept both q and keyword
   if(!ent.q && ent.keyword) ent.q = ent.keyword;
+  // normalize numeric params
+  if(ent.top){ const n = parseInt(String(ent.top), 10); ent.top = Number.isFinite(n) ? String(n) : ''; }
+  // quick booking presets: map to fast pace internally
+  if(ent.quick && !ent.pace){ ent.pace = '3'; }
   return ent;
 }
 
@@ -628,6 +632,7 @@ function sortItems(items, sort){
    * @property {string} [_priceTier]
    * @property {number} [_pace]
    * @property {string[]} [_expertise]
+   * @property {string} [_reason]
    */
 
   const staticData = await loadStaticServices();
@@ -839,6 +844,7 @@ function sortItems(items, sort){
   const hasExplicitFilters = Boolean(q || region || category || purpose || getSortKey());
   const diag = loadDiagnosis();
   const shouldCompatSort = (!hasExplicitFilters) && (!!diag) && (String(diagMode) !== '0');
+  let pinned = [];
 
   let sorted;
   if(shouldCompatSort){
@@ -846,6 +852,41 @@ function sortItems(items, sort){
     const scored = filtered.map(it=> ({ it, score: getCompatScoreForItem(it, provMap, diag) }));
     scored.sort((a,b)=> b.score - a.score);
     sorted = scored.map(s=> s.it);
+    // Pin top-N starters if requested
+    const topN = (function(){ const v = parseInt(String(parseParams().top||''),10); return (Number.isFinite(v) && v>0) ? Math.min(v, sorted.length) : 0; })();
+    if(topN && !category){
+      pinned = sorted.slice(0, topN);
+      sorted = sorted.slice(topN);
+      try{
+        const header2 = document.createElement('div'); header2.className='search-purpose-summary';
+        const h = document.createElement('h3'); h.textContent = 'タイプに合うスターター'; h.style.margin='0 0 6px 0'; header2.appendChild(h);
+        const grid = document.createElement('div'); grid.className='features-grid';
+        const frag = document.createDocumentFragment(); pinned.forEach(s=> {
+          const full = {
+            name: s.name,
+            region: s.region||'',
+            category: s.category||'',
+            priceFrom: Number(s.priceFrom||0),
+            image: s.image||'',
+            href: s.href,
+            providerName: s.providerName||'',
+            address: s.address||'',
+            providerId: s.providerId||'',
+            storeName: s.storeName||'',
+            storeId: s.storeId||'',
+            serviceId: s.serviceId||'',
+            slug: s.slug||'',
+            _reason: s._reason||'',
+            _priceTier: s._priceTier||'',
+            _expertise: Array.isArray(s._expertise)? s._expertise.slice():[],
+            _pace: Number(s._pace||0)
+          };
+          frag.appendChild(card(full, { q }));
+        });
+        grid.appendChild(frag); header2.appendChild(grid);
+        if(list && list.parentNode) list.parentNode.insertBefore(header2, list);
+      }catch{}
+    }
     // バナー表示: 「診断タイプ◯◯に合う順で表示中」
     try{
       const header = document.createElement('div');
@@ -972,7 +1013,7 @@ function sortItems(items, sort){
   }
   const per = toInt(perStr, 12);
   const page = toInt(pageStr, 1);
-  const total = sorted.length;
+  const total = sorted.length + pinned.length;
   const totalPages = Math.ceil(total / per);
   const safePage = Math.min(Math.max(1, page), Math.max(totalPages, 1));
   const start = (safePage - 1) * per;
@@ -1032,6 +1073,11 @@ function sortItems(items, sort){
         if(region) u.searchParams.set('region', region);
         if(category) u.searchParams.set('category', category);
         if(getSortKey()) u.searchParams.set('sort', getSortKey());
+        // keep diagnosis/top/quick flags
+        const ent = parseParams();
+        if(ent.diag) u.searchParams.set('diag', String(ent.diag));
+        if(ent.top) u.searchParams.set('top', String(ent.top));
+        if(ent.quick) u.searchParams.set('quick', String(ent.quick));
         location.href = u.toString();
       }
     });

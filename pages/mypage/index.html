@@ -61,7 +61,9 @@
         const label = map[saved] || saved;
         const ttl = document.createElement('div'); ttl.className='muted'; ttl.textContent = `保存された目的：${label}`; host.appendChild(ttl);
         const btnGo = document.createElement('a'); btnGo.className='btn'; btnGo.textContent = `${label}で探す`; btnGo.href = `/pages/search.html?category=${encodeURIComponent(saved)}`; host.appendChild(btnGo);
-        const btnStarter = document.createElement('a'); btnStarter.className='btn btn-ghost'; btnStarter.textContent = 'タイプに合うスターター3選'; btnStarter.href = '/pages/search.html?diag=1&origin=mypage'; host.appendChild(btnStarter);
+        const btnStarter = document.createElement('a'); btnStarter.className='btn btn-ghost'; btnStarter.textContent = 'タイプに合うスターター3選'; btnStarter.href = '/pages/search.html?diag=1&top=3&origin=mypage'; host.appendChild(btnStarter);
+        const btnQuickToday = document.createElement('a'); btnQuickToday.className='btn btn-ghost'; btnQuickToday.textContent = '今日行ける'; btnQuickToday.href = '/pages/search.html?quick=today'; host.appendChild(btnQuickToday);
+        const btnQuickWeekend = document.createElement('a'); btnQuickWeekend.className='btn btn-ghost'; btnQuickWeekend.textContent = '週末行ける'; btnQuickWeekend.href = '/pages/search.html?quick=weekend'; host.appendChild(btnQuickWeekend);
       }
     }catch{}
   </script>
