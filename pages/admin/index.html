@@ -94,6 +94,20 @@
           <div id="dash-spark" style="margin-top:8px; width:100%; overflow:hidden"></div>
         </div>
         <div class="card" style="padding:12px">
+          <div class="space-between" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <h2 class="section-title" style="font-size:18px;margin:0">診断サマリー</h2>
+            <span class="muted" style="font-size:12px">ローカル保存ベース</span>
+          </div>
+          <div class="kpi-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-top:8px">
+            <div class="kpi-card"><div class="kpi-label">今週の診断保存</div><div id="kpi-diag-week" class="kpi-value">0</div></div>
+            <div class="kpi-card"><div class="kpi-label">累計診断保存</div><div id="kpi-diag-total" class="kpi-value">0</div></div>
+          </div>
+          <div class="stack" style="gap:6px; margin-top:12px">
+            <div class="muted" style="font-size:12px">タイプ分布</div>
+            <div id="diag-type-dist" class="stack" style="gap:8px"></div>
+          </div>
+        </div>
+        <div class="card" style="padding:12px">
           <div class="space-between" style="display:flex;align-items:center">
             <h2 class="section-title" style="font-size:18px;margin:0">運用タスク</h2>
             <div class="cluster">

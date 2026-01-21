@@ -116,6 +116,51 @@ function render(){
     const labels = daily.map(d=> d.day||'');
     mount.innerHTML = sparklineSVG([s,a,r], { width:600, height:80, colors:['#2563eb','#10b981','#f59e0b'], labels, seriesNames:['検索','採用','再訪'] });
   }
+
+  // Diagnosis summary (saved snapshots)
+  (function(){
+    function loadSaved(){ try{ const raw = localStorage.getItem('fineme:saved:diagnoses'); const arr = raw? JSON.parse(raw): []; return Array.isArray(arr)? arr: []; }catch{ return []; } }
+    function getLatest(){ try{ const raw = localStorage.getItem('fineme:diagnosis:latest'); return raw? JSON.parse(raw): null; }catch{ return null; } }
+    const saved = loadSaved();
+    const now = new Date();
+    const start = new Date(now); start.setDate(now.getDate()-6); start.setHours(0,0,0,0);
+    const weekCount = saved.filter(x=>{ const t = new Date(x.savedAt||0).getTime(); return t && t >= start.getTime(); }).length;
+    const total = saved.length;
+    // If nothing saved but latest exists, show as ephemeral current-only stats
+    let distMap = new Map();
+    if(total>0){
+      for(const x of saved){ const id = String(x.typeId||''); if(!id) continue; const prev = distMap.get(id)||{ id, name: String(x.typeName||id), count:0 }; prev.count++; distMap.set(id, prev); }
+    } else {
+      const latest = getLatest();
+      const id = String(latest?.step2?.classification?.type_id || latest?.intent?.type_id || '');
+      const name = String(latest?.step2?.classification?.type_name || latest?.intent?.type_name || id);
+      if(id){ distMap.set(id, { id, name, count: 1 }); }
+    }
+    const dist = Array.from(distMap.values()).sort((a,b)=> b.count - a.count);
+
+    const set = (id, v)=>{ const el = document.getElementById(id); if(el) el.textContent = v; };
+    set('kpi-diag-week', String(weekCount));
+    set('kpi-diag-total', String(total));
+
+    const mount = document.getElementById('diag-type-dist');
+    if(mount){
+      mount.textContent='';
+      if(!dist.length){ const div=document.createElement('div'); div.className='muted'; div.textContent='データがありません'; mount.appendChild(div); }
+      else{
+        const max = Math.max(...dist.map(d=> d.count), 1);
+        for(const row of dist){
+          const line = document.createElement('div'); line.style.display='flex'; line.style.alignItems='center'; line.style.gap='8px';
+          const label = document.createElement('div'); label.className='muted'; label.style.width='140px'; label.style.whiteSpace='nowrap'; label.textContent = `${row.name}`;
+          const barWrap = document.createElement('div'); barWrap.style.flex='1'; barWrap.style.height='8px'; barWrap.style.background='#f3f4f6'; barWrap.style.borderRadius='9999px'; barWrap.style.overflow='hidden';
+          const bar = document.createElement('div'); bar.style.height='100%'; bar.style.width = `${Math.round((row.count/max)*100)}%`; bar.style.background='#111';
+          barWrap.appendChild(bar);
+          const cnt = document.createElement('div'); cnt.style.width='40px'; cnt.style.textAlign='right'; cnt.style.fontVariantNumeric='tabular-nums'; cnt.textContent = String(row.count);
+          line.appendChild(label); line.appendChild(barWrap); line.appendChild(cnt);
+          mount.appendChild(line);
+        }
+      }
+    }
+  })();
   // Tasks: drafts count
   const drafts = features.filter(f=> f.status==='draft').length;
   const tasks = document.getElementById('dash-tasks');

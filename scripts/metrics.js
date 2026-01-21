@@ -78,6 +78,25 @@ export function seedDemo(){
   const featureIds = Object.keys(store.featureViews||{}); // existing
   const demoFeatures = featureIds.length? featureIds: ['demo-1','demo-2','demo-3'];
   const sampleQueries = ['前髪','小顔','就活','面接','婚活','垢抜け','透明感','眉','カット','メイク'];
+  // also seed diagnosis snapshots (saved)
+  try{
+    const key = 'fineme:saved:diagnoses';
+    const existingRaw = localStorage.getItem(key);
+    let arr = existingRaw? JSON.parse(existingRaw): [];
+    if(!Array.isArray(arr)) arr = [];
+    const typeIds = ['t01','t02','t03','t04','t05','t06'];
+    const addN = 24 + Math.floor(Math.random()*16); // 24-40 items
+    for(let n=0;n<addN;n++){
+      const offset = Math.floor(Math.random()*30); // last 30 days
+      const d = new Date(today); d.setDate(today.getDate()-offset);
+      const tid = typeIds[Math.floor(Math.random()*typeIds.length)];
+      arr.push({ typeId: tid, typeName: tid, savedAt: d.toISOString(), data: { intent:{ type_id: tid }, step2:{ classification:{ type_id: tid } } } });
+    }
+    // keep the most recent 50
+    arr.sort((a,b)=> new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
+    if(arr.length>50) arr = arr.slice(0,50);
+    localStorage.setItem(key, JSON.stringify(arr));
+  }catch{}
   for(let i=0;i<10;i++){
     const d = new Date(today); d.setDate(today.getDate()-i);
     const ds = dayStr(d);
