@@ -76,6 +76,7 @@
       const actions = document.createElement('div'); actions.className='cluster'; actions.style.gap='8px';
         const re = document.createElement('a'); re.href='../../diagnosis/index.html'; re.className='btn'; re.textContent='診断をやり直す'; re.style.color = '#111'; re.style.setProperty('color','#111','important'); actions.appendChild(re);
         const see = document.createElement('a'); see.href='../../diagnosis/result.html'; see.className='btn btn-ghost'; see.textContent='結果ページで詳しく見る'; actions.appendChild(see);
+        const guide = document.createElement('a'); guide.href='../glowup-guide.html'; guide.className='btn btn-ghost'; guide.textContent='垢抜けガイドを見る'; actions.appendChild(guide);
       top.appendChild(actions);
       host.appendChild(top);
       saveListCard();
