@@ -248,6 +248,7 @@
           <div class="category-card"><a href="./pages/search.html?category=hair"><div class="category-icon">💇‍♂️</div><div class="category-label">ヘア</div><div class="category-sub">髪型・カット・パーマ</div></a></div>
           <div class="category-card"><a href="./pages/search.html?category=eyebrow"><div class="category-icon">✂️</div><div class="category-label">眉毛</div><div class="category-sub">眉カット・デザイン</div></a></div>
           <div class="category-card"><a href="./pages/search.html?category=esthetic"><div class="category-icon">💆‍♂️</div><div class="category-label">肌・エステ</div><div class="category-sub">フェイシャル・スキンケア</div></a></div>
+          <div class="category-card"><a href="./pages/search.html?category=cosmetic"><div class="category-icon">🏥</div><div class="category-label">美容外科・美容クリニック</div><div class="category-sub">外科/美容医療</div></a></div>
           <div class="category-card"><a href="./pages/search.html?category=fashion"><div class="category-icon">👔</div><div class="category-label">服・コーデ</div><div class="category-sub">パーソナルスタイリング</div></a></div>
           <div class="category-card"><a href="./pages/search.html?category=gym"><div class="category-icon">🏋️‍♂️</div><div class="category-label">体・ジム</div><div class="category-sub">ボディメイク・トレーニング</div></a></div>
           <div class="category-card"><a href="./pages/search.html?category=orthodontics"><div class="category-icon">🦷</div><div class="category-label">歯科矯正</div><div class="category-sub">噛み合わせ・見た目改善</div></a></div>
@@ -360,7 +361,7 @@
         if(!isLoggedIn) return; // 未ログイン時は表示しない
         const saved = localStorage.getItem('fineme:goal:category');
         if(!saved) return;
-        const map = { consulting:'コンサル/相談', gym:'パーソナルジム', makeup:'メイク', hair:'美容室', diagnosis:'診断', fashion:'ファッション', photo:'写真/撮影', marriage:'婚活/印象', eyebrow:'眉', hairremoval:'脱毛', esthetic:'エステ', whitening:'ホワイトニング', orthodontics:'矯正', nail:'ネイル' };
+        const map = { consulting:'コンサル/相談', gym:'パーソナルジム', makeup:'メイク', hair:'美容室', diagnosis:'診断', fashion:'ファッション', photo:'写真/撮影', marriage:'婚活/印象', eyebrow:'眉', hairremoval:'脱毛', esthetic:'エステ', cosmetic:'美容外科・美容クリニック', whitening:'ホワイトニング', orthodontics:'矯正', nail:'ネイル' };
         const label = map[saved] || saved;
         const sec = document.getElementById('goal-next-section'); if(sec) sec.style.display = 'block';
         const host = document.getElementById('goal-next-content'); if(!host) return;

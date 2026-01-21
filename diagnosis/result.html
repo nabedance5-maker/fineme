@@ -579,7 +579,7 @@
               }
               function labelCategory(cat){
                 const map = {
-                  consulting:'コンサル/相談', gym:'パーソナルジム', makeup:'メイク', hair:'美容室', diagnosis:'診断', fashion:'ファッション', photo:'写真/撮影', marriage:'婚活/印象', eyebrow:'眉', hairremoval:'脱毛', esthetic:'エステ', whitening:'ホワイトニング', orthodontics:'矯正', nail:'ネイル'
+                  consulting:'コンサル/相談', gym:'パーソナルジム', makeup:'メイク', hair:'美容室', diagnosis:'診断', fashion:'ファッション', photo:'写真/撮影', marriage:'婚活/印象', eyebrow:'眉', hairremoval:'脱毛', esthetic:'エステ', cosmetic:'美容外科・美容クリニック', whitening:'ホワイトニング', orthodontics:'矯正', nail:'ネイル'
                 };
                 return map[cat] || cat;
               }
@@ -591,9 +591,9 @@
               const left = document.createElement('div');
               const lh = document.createElement('h4'); lh.textContent='目的が決まっている（カテゴリから探す）'; left.appendChild(lh);
               const rec = recommendCategories(diag);
-              const allCats = ['consulting','gym','makeup','hair','diagnosis','fashion','photo','marriage','eyebrow','hairremoval','esthetic','whitening','orthodontics','nail'];
-              const iconMap = { hair:'💇‍♂️', eyebrow:'✂️', esthetic:'💆‍♂️', fashion:'👔', gym:'🏋️‍♂️', orthodontics:'🦷', makeup:'💄', nail:'💅', photo:'📸', diagnosis:'🔍', consulting:'🧑‍⚕️', marriage:'💍', hairremoval:'🪒', whitening:'✨' };
-              const subMap = { hair:'髪型・カット・パーマ', eyebrow:'眉カット・デザイン', esthetic:'フェイシャル・スキンケア', fashion:'パーソナルスタイリング', gym:'ボディメイク・トレーニング', orthodontics:'噛み合わせ・見た目改善', makeup:'男性向けメイクレッスン', nail:'ケア・デザイン', photo:'プロフィール写真・撮影', diagnosis:'カラー・骨格診断', consulting:'トータルコンサルティング', marriage:'婚活・相談所', hairremoval:'永久脱毛・光脱毛', whitening:'歯の美白' };
+              const allCats = ['consulting','gym','makeup','hair','diagnosis','fashion','photo','marriage','eyebrow','hairremoval','esthetic','cosmetic','whitening','orthodontics','nail'];
+              const iconMap = { hair:'💇‍♂️', eyebrow:'✂️', esthetic:'💆‍♂️', cosmetic:'🏥', fashion:'👔', gym:'🏋️‍♂️', orthodontics:'🦷', makeup:'💄', nail:'💅', photo:'📸', diagnosis:'🔍', consulting:'🧑‍⚕️', marriage:'💍', hairremoval:'🪒', whitening:'✨' };
+              const subMap = { hair:'髪型・カット・パーマ', eyebrow:'眉カット・デザイン', esthetic:'フェイシャル・スキンケア', cosmetic:'外科/美容医療', fashion:'パーソナルスタイリング', gym:'ボディメイク・トレーニング', orthodontics:'噛み合わせ・見た目改善', makeup:'男性向けメイクレッスン', nail:'ケア・デザイン', photo:'プロフィール写真・撮影', diagnosis:'カラー・骨格診断', consulting:'トータルコンサルティング', marriage:'婚活・相談所', hairremoval:'永久脱毛・光脱毛', whitening:'歯の美白' };
               const catGrid = document.createElement('div'); catGrid.className='categories-grid';
               allCats.forEach(c=>{
                 const card = document.createElement('div'); card.className='category-card';

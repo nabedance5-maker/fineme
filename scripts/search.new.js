@@ -58,6 +58,7 @@ function placeholderFor(category){
     eyebrow: `${prefix}/assets/placeholders/placeholder-eyebrow.svg`,
     hairremoval: `${prefix}/assets/placeholders/placeholder-hairremoval.svg`,
     esthetic: `${prefix}/assets/placeholders/placeholder-esthetic.svg`,
+    cosmetic: `${prefix}/assets/placeholders/placeholder-esthetic.svg`,
     whitening: `${prefix}/assets/placeholders/placeholder-whitening.svg`,
     orthodontics: `${prefix}/assets/placeholders/placeholder-orthodontics.svg`,
     nail: `${prefix}/assets/placeholders/placeholder-nail.svg`,
@@ -75,7 +76,8 @@ function categoryPhotoFor(category){
     diagnosis: 'https://images.unsplash.com/photo-1520975916090-3105956dac38?q=80&w=1400&auto=format&fit=crop', // カラー/布見本
     fashion: 'https://images.unsplash.com/photo-1520975657288-4e3b66f3c54a?q=80&w=1400&auto=format&fit=crop', // コーデ
     photo: 'https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?q=80&w=1400&auto=format&fit=crop', // 撮影
-    marriage: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1400&auto=format&fit=crop' // 結婚相談
+    marriage: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1400&auto=format&fit=crop', // 結婚相談
+    cosmetic: 'https://images.unsplash.com/photo-1504439468489-c8920d796a29?q=80&w=1400&auto=format&fit=crop' // クリニック/院内
   };
   return map[category] || '';
 }
@@ -345,6 +347,7 @@ function labelCategory(key){
     eyebrow:'眉毛',
     hairremoval:'脱毛',
     esthetic:'エステ',
+    cosmetic:'美容外科・美容クリニック',
     whitening:'ホワイトニング',
     orthodontics:'歯科矯正',
     nail:'ネイル',
@@ -449,6 +452,15 @@ function renderCategoryGuide(category, container, resultsList){
         price: '目安：要相談（長期治療のため）',
         flow: ['相談予約','検査と提案','治療開始'],
         ctas: [ { label:'説明が丁寧な店舗', mutate:(u)=> u.searchParams.set('pace','1') } ]
+      },
+      cosmetic: {
+        initial: ['悩みと目的の明確化（形・輪郭・肌質など）','適応とリスク・ダウンタイムの説明を理解','必要ならセカンドオピニオンを検討'],
+        price: '目安：内容により大きく変動（カウンセリングは無料/有料の院あり）',
+        flow: ['カウンセリング予約（オンライン可）','適応・副作用・ダウンタイムの説明','同意の上で施術日程を決定（焦らず検討）','非外科の選択肢も比較検討（眉/メイク/エステ/ジム/診断/撮影）'],
+        ctas: [
+          { label:'説明が丁寧な院を優先', mutate:(u)=> u.searchParams.set('pace','1') },
+          { label:'まずは非外科も比較', mutate:(u)=> { u.searchParams.delete('category'); } }
+        ]
       },
       nail: {
         initial: ['要望共有（長さ/清潔感重視）','施術内容確認','維持・ケア確認'],

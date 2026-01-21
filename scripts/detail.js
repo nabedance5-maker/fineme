@@ -21,6 +21,8 @@ function placeholderFor(category){
     fashion: `${prefix}/assets/placeholders/placeholder-fashion.svg`,
     photo: `${prefix}/assets/placeholders/placeholder-photo.svg`,
     marriage: `${prefix}/assets/placeholders/placeholder-marriage.svg`,
+    esthetic: `${prefix}/assets/placeholders/placeholder-esthetic.svg`,
+    cosmetic: `${prefix}/assets/placeholders/placeholder-esthetic.svg`,
     // AGA は専用プレースホルダ未提供のためデフォルトへフォールバック
     aga: `${prefix}/assets/placeholders/placeholder-default.svg`,
   };
@@ -37,6 +39,7 @@ function categoryPhotoFor(category){
     photo: 'https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?q=80&w=1400&auto=format&fit=crop',
     marriage: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1400&auto=format&fit=crop',
     // 医療系の文脈に近い中立的な写真
+    cosmetic: 'https://images.unsplash.com/photo-1504439468489-c8920d796a29?q=80&w=1400&auto=format&fit=crop',
     aga: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?q=80&w=1400&auto=format&fit=crop'
   };
   return map[category] || '';
@@ -45,7 +48,7 @@ function categoryLabel(v){
   const map = {
     consulting:'外見トータルサポート', gym:'パーソナルジム', makeup:'メイクアップ', hair:'ヘア',
     diagnosis:'カラー/骨格診断', fashion:'コーデ提案', photo:'写真撮影（アプリ等）', marriage:'結婚相談所',
-    eyebrow:'眉毛', hairremoval:'脱毛', esthetic:'エステ', whitening:'ホワイトニング', orthodontics:'歯科矯正', nail:'ネイル', aga:'AGA'
+    eyebrow:'眉毛', hairremoval:'脱毛', esthetic:'エステ', cosmetic:'美容外科・美容クリニック', whitening:'ホワイトニング', orthodontics:'歯科矯正', nail:'ネイル', aga:'AGA'
   };
   return map[v] || v;
 }
