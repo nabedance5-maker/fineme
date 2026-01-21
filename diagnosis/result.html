@@ -615,7 +615,7 @@
               const btnReco = document.createElement('a'); btnReco.className='btn'; btnReco.textContent='タイプに合うスターター3選';
               try{ btnReco.style.setProperty('color','#fff','important'); }catch{}
               { const u=new URL(BASE_PREFIX + '/pages/search.html', location.origin); u.searchParams.set('diag','1'); u.searchParams.set('top','3'); btnReco.href = u.toString(); }
-              const btnGuide = document.createElement('a'); btnGuide.className='btn btn-ghost'; btnGuide.textContent='垢抜けガイドを見る'; { const u=new URL(BASE_PREFIX + '/pages/feature.html', location.origin); btnGuide.href = u.toString(); }
+              const btnGuide = document.createElement('a'); btnGuide.className='btn btn-ghost'; btnGuide.textContent='垢抜けガイドを見る'; { const u=new URL(BASE_PREFIX + '/pages/glowup-guide.html', location.origin); btnGuide.href = u.toString(); }
               actWrap.appendChild(btnReco); actWrap.appendChild(btnGuide);
               right.appendChild(actWrap);
               grid.appendChild(left); grid.appendChild(right);
