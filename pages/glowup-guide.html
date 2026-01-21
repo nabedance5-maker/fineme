@@ -34,7 +34,8 @@
     .starter{background:linear-gradient(180deg,#ffffff,#fbfbff);border:1px solid rgba(15,23,42,0.06);border-radius:12px;padding:14px}
     .starter h4{margin:0 0 8px;font-size:16px}
     .muted{color:#64748b}
-    .chip{display:inline-block;padding:4px 8px;border:1px solid #e5e7eb;border-radius:999px;font-size:12px;color:#64748b;background:#fff;margin-right:6px}
+    .chip{display:inline-block;padding:4px 8px;border:1px solid #e5e7eb;border-radius:999px;font-size:12px;color:#64748b;background:#fff;margin-right:6px;opacity:0;transform:translateY(4px);transition:opacity .5s ease, transform .5s ease}
+    .chip.visible{opacity:1;transform:none}
     @media (max-width:720px){ .guide-wrap{padding:0 14px} .guide-section{padding:16px} }
   </style>
 </head>
@@ -172,7 +173,7 @@
         </div>
         <div class="road-step">
           <h4>Step 3: 写真で「見え方」を最適化</h4>
-          <p class="muted">光・角度・背景を味方に。プロフィールで伝わる印象が変わります。</p>
+          <p class="muted">光・角度・背景を味方に。プロフィールで伝わる印象が変わります。記録・振り返りに活用すると、変化の実感と成功体験の蓄積につながります。</p>
         </div>
         <div class="road-step">
           <h4>Step 4: 継続・アップデート</h4>
@@ -229,5 +230,23 @@
 
   <footer id="site-footer"></footer>
   <script src="../scripts/main.js" type="module"></script>
+  <script>
+    (function(){
+      try{
+        const chips = Array.from(document.querySelectorAll('.chip'));
+        if(!chips.length){ return; }
+        if(!('IntersectionObserver' in window)){
+          chips.forEach(c=> c.classList.add('visible'));
+          return;
+        }
+        const io = new IntersectionObserver((entries)=>{
+          entries.forEach(e=>{
+            if(e.isIntersecting){ e.target.classList.add('visible'); io.unobserve(e.target); }
+          });
+        }, { threshold: 0.2 });
+        chips.forEach(c=> io.observe(c));
+      }catch{}
+    })();
+  </script>
 </body>
 </html>
