@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>紹介制度の詳細 | Fineme</title>
+  <link rel="icon" href="../../favicon.ico" />
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <style>
+    .section{ padding:40px 0; }
+    .hero{ padding:64px 0; background:linear-gradient(120deg, rgba(14,165,233,.15), rgba(99,102,241,.15)); }
+    .card{ background:#fff; border:1px solid var(--color-border); border-radius:12px; padding:16px; box-shadow:0 8px 24px rgba(17,24,39,.08); }
+    .grid-2{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .grid-3{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+    .muted{ color:#6b7280; }
+    .badge{ display:inline-block; padding:4px 8px; font-size:12px; border-radius:999px; background:#111; color:#fff; }
+    @media (max-width: 960px){ .grid-2{ grid-template-columns:1fr; } .grid-3{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main>
+    <section class="hero">
+      <div class="container stack">
+        <h1 class="section-title">紹介制度の詳細</h1>
+        <p class="muted">Finemeに共感する事業者同士が、お互いの「合う可能性」をユーザーに橋渡しする仕組みです。</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container stack">
+        <h2 class="section-title">仕組み</h2>
+        <div class="grid-3">
+          <div class="card"><span class="badge">相互紹介</span><p class="muted">あなたのユーザーに対して「この分野ならこの人が良い」と紹介できる掲載者を選び、紹介リンクを発行します。</p></div>
+          <div class="card"><span class="badge">紹介トラッキング</span><p class="muted">紹介リンク経由の閲覧・予約はトラッキングされ、紹介ポイントが加算されます。</p></div>
+          <div class="card"><span class="badge">ポイント精算</span><p class="muted">月次で紹介ポイントを精算。掲載料から差し引く（実質無料）またはプラス分をキャッシュバックします。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container stack">
+        <h2 class="section-title">条件</h2>
+        <div class="grid-2">
+          <div class="card"><h3>参加要件</h3><ul class="muted"><li>Finemeの理念に共感していること</li><li>プロフィールが丁寧に言語化されていること</li><li>紹介先の品質に責任を持つ意思があること</li></ul></div>
+          <div class="card"><h3>NG事項</h3><ul class="muted"><li>数集め目的の乱暴な紹介</li><li>価格勝負を助長する紹介</li><li>虚偽・誇大な表現</li></ul></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container stack">
+        <h2 class="section-title">事例（シミュレーション）</h2>
+        <div class="grid-2">
+          <div class="card"><h3>掲載料が実質無料に</h3><p class="muted">あなたの紹介から月5件の予約が成立。紹介ポイントが月額7,000円を上回り、掲載料が実質無料に。</p></div>
+          <div class="card"><h3>プラスのキャッシュバック</h3><p class="muted">紹介ポイントが掲載料を超過した場合、翌月に差額分をキャッシュバックします。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container stack">
+        <h2 class="section-title">参加の流れ</h2>
+        <ol class="muted" style="padding-left:18px">
+          <li>制度説明を受ける（オンライン）</li>
+          <li>紹介パートナーを選定する</li>
+          <li>紹介リンクの発行・掲出</li>
+          <li>月次精算（掲載料充当またはキャッシュバック）</li>
+        </ol>
+        <div class="cluster">
+          <a class="btn" href="./onboarding.html">資料請求・相談</a>
+          <a class="btn btn-ghost" href="./join.html">募集LPへ戻る</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer"></footer>
+  <script src="../../scripts/main.js" type="module"></script>
+  <script src="../../scripts/partials.js" type="module"></script>
+</body>
+</html>
