@@ -43,6 +43,15 @@ function render(){
   set('kpi-feature-views', String(totals.featureViews||0));
   set('kpi-adoption', `${adoptionRate||0}%`);
   set('kpi-revisit', `${revisitRate||0}%`);
+  // Pending inquiries (localStorage)
+  try{
+    const raw = localStorage.getItem('fineme:provider:inquiries');
+    const arr = raw ? JSON.parse(raw) : [];
+    const pending = Array.isArray(arr) ? arr.filter(it=> (it?.status||'new') !== 'done').length : 0;
+    set('kpi-inquiries-pending', String(pending));
+  }catch{
+    set('kpi-inquiries-pending', '0');
+  }
   // Top features table (map id -> title from features storage)
   const features = loadFeatures();
   const map = new Map(features.map(f=> [f.id, f.title||'(無題)']));

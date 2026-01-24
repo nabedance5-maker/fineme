@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="../../assets/styles/feature-builder.css" />
   <style>
     .admin-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
-    .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .kpi-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
     .kpi-card{padding:16px;border:1px solid var(--color-border);border-radius:12px;background:#fff}
     .kpi-label{color:#6b7280;font-size:12px}
     .kpi-value{font-weight:800;font-size:24px}
@@ -27,6 +27,7 @@
         <h1 class="section-title">ダッシュボード</h1>
         <div class="kpi-grid">
           <div class="kpi-card"><div class="kpi-label">今週の相談（検索）</div><div id="kpi-searches" class="kpi-value">0</div></div>
+          <div class="kpi-card"><div class="kpi-label">未対応問い合わせ</div><div id="kpi-inquiries-pending" class="kpi-value">0</div></div>
           <div class="kpi-card"><div class="kpi-label">提案採用率</div><div id="kpi-adoption" class="kpi-value">0%</div></div>
           <div class="kpi-card"><div class="kpi-label">再指名率</div><div id="kpi-revisit" class="kpi-value">0%</div></div>
           <div class="kpi-card"><div class="kpi-label">今週の特集閲覧</div><div id="kpi-feature-views" class="kpi-value">0</div></div>

@@ -112,18 +112,29 @@
       </div>
     </section>
 
-    <!-- ⑥ 紹介制度 -->
+    <!-- ⑥ 副収益制度（紹介制度の進化版） -->
     <section class="section">
       <div class="container stack">
-        <h2 class="lp-title">掲載料が、実質無料になる仕組み</h2>
+        <h2 class="lp-title">Finemeで副収益を作れる制度</h2>
         <div class="grid-2">
-          <div class="card reveal"><p class="muted">Finemeでは、掲載者同士が「合う事業者」を紹介し合う仕組みを用意。うまく活用すると、<strong>掲載料が実質無料</strong>に、場合によっては<strong>プラス</strong>になる可能性もあります。</p></div>
-          <div class="card reveal"><p class="muted">ただしこれは数集めの制度ではありません。Finemeの思想に共感し、「この人ならユーザーに紹介できる」と思える事業者とだけ、つながってほしい。</p></div>
+          <div class="card reveal">
+            <h3 style="margin:0 0 6px">ここが他ポータルとの決定的な違い</h3>
+            <p class="muted">一般的なポータルは、<strong>掲載料を支払い</strong>→<strong>集客</strong>→<strong>売上で掲載料を払い続ける</strong>という循環です。Finemeはそれに加えて、<strong>毎月の副収益</strong>を作れる仕組みを用意しています。</p>
+            <ul class="stack" style="gap:6px; margin-top:8px">
+              <li>✅ 合う事業者を紹介・育てることで、<strong>紹介報酬</strong>が発生</li>
+              <li>✅ うまく運用すると、<strong>掲載料相当を相殺</strong>、場合によっては<strong>プラス</strong>へ</li>
+              <li>✅ 単なる数集めではなく、<strong>相性主導</strong>の健全なエコシステム</li>
+            </ul>
+          </div>
+          <div class="card reveal">
+            <h3 style="margin:0 0 6px">誠実運用のガイドライン</h3>
+            <p class="muted">強引な勧誘やミスマッチな紹介は推奨しません。Finemeの思想に共感し、<strong>「この人ならユーザーに紹介できる」</strong>と思える事業者のみ、丁寧につないでください。</p>
+            <p class="muted" style="margin-top:6px">報酬条件や上限、開始手順などの詳細は、資料請求・個別相談でご説明します。</p>
+          </div>
         </div>
-        <p class="muted">詳細は資料請求・個別相談でご説明します。</p>
         <div class="cta">
           <a class="btn" href="./onboarding.html">資料請求・相談</a>
-          <a class="btn btn-ghost" href="./referral.html">紹介制度の詳細を見る</a>
+          <a class="btn btn-ghost" href="./referral.html">制度の詳細を見る</a>
         </div>
       </div>
     </section>
@@ -161,6 +172,71 @@
       </div>
     </section>
 
+    <!-- ⑧.5 簡易問い合わせフォーム -->
+    <section class="section" id="inquiry">
+      <div class="container stack">
+        <h2 class="lp-title">簡易問い合わせフォーム</h2>
+        <p class="lp-lead">最短で相談したい方向け。2分で完了。</p>
+        <form id="provider-inquiry-form" class="stack" style="gap:12px" novalidate>
+          <div class="grid-2">
+            <div class="stack">
+              <label for="bizName">会社名・屋号<span style="color:#b91c1c"> *</span></label>
+              <input type="text" id="bizName" name="bizName" required placeholder="例: 株式会社〇〇 / サロン△△" />
+            </div>
+            <div class="stack">
+              <label for="contactName">ご担当者名<span style="color:#b91c1c"> *</span></label>
+              <input type="text" id="contactName" name="contactName" required placeholder="例: 山田 太郎" />
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="stack">
+              <label for="email">メールアドレス<span style="color:#b91c1c"> *</span></label>
+              <input type="email" id="email" name="email" required placeholder="例: you@example.com" />
+            </div>
+            <div class="stack">
+              <label for="phone">電話番号（任意）</label>
+              <input type="tel" id="phone" name="phone" placeholder="例: 090-1234-5678" />
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="stack">
+              <label for="category">掲載カテゴリ（目安）</label>
+              <select id="category" name="category">
+                <option value="">未選択</option>
+                <option value="hair">美容室・ヘアサロン</option>
+                <option value="esthetic">エステ・痩身</option>
+                <option value="nails">ネイル</option>
+                <option value="makeup">メイク・顔分析</option>
+                <option value="eyelash">まつ毛・アイブロウ</option>
+                <option value="cosmetic">美容外科・美容クリニック</option>
+              </select>
+            </div>
+            <div class="stack">
+              <label for="contactPref">希望連絡方法</label>
+              <select id="contactPref" name="contactPref">
+                <option value="email">メールでの返信希望</option>
+                <option value="phone">電話での連絡希望</option>
+                <option value="either">どちらでも</option>
+              </select>
+            </div>
+          </div>
+          <div class="stack">
+            <label for="message">ご相談内容（自由記入）</label>
+            <textarea id="message" name="message" rows="5" placeholder="例: 掲載プランの詳細を知りたい / 資料を送付してほしい など"></textarea>
+          </div>
+          <div class="cluster" style="align-items:center; gap:8px">
+            <input type="checkbox" id="consent" required />
+            <label for="consent" class="muted">プライバシーポリシーに同意します（個人情報は問い合わせ対応の目的でのみ使用）</label>
+          </div>
+          <div class="cta">
+            <button type="submit" class="btn btn-primary">問い合わせを送信</button>
+            <button type="button" id="copyInquiry" class="btn btn-ghost">内容をコピー</button>
+          </div>
+          <p class="muted" id="inquiryStatus" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
     <!-- ⑨ CTA -->
     <section class="section">
       <div class="container center">
@@ -185,6 +261,98 @@
           try{ recordEvent('lp_cta_click', { page:'provider_join', href:a.getAttribute('href')||'' }); }catch{}
         });
       });
+    }catch{}
+  </script>
+  <script type="module">
+    // 問い合わせフォーム: バリデーション/保存/コピー
+    try{
+      const form = document.getElementById('provider-inquiry-form');
+      const statusEl = document.getElementById('inquiryStatus');
+      const copyBtn = document.getElementById('copyInquiry');
+      const saveInquiry = (data)=>{
+        const k = 'fineme:provider:inquiries';
+        const arr = JSON.parse(localStorage.getItem(k)||'[]');
+        arr.push({ ...data, createdAt: new Date().toISOString() });
+        localStorage.setItem(k, JSON.stringify(arr));
+      };
+      function mapCategoryLabel(v){
+        const map = {
+          hair: '美容室・ヘアサロン',
+          esthetic: 'エステ・痩身',
+          nails: 'ネイル',
+          makeup: 'メイク・顔分析',
+          eyelash: 'まつ毛・アイブロウ',
+          cosmetic: '美容外科・美容クリニック'
+        };
+        return map[v] || '未選択';
+      }
+      function summarize(data){
+        return [
+          `【会社/屋号】${data.bizName}`,
+          `【担当者】${data.contactName}`,
+          `【メール】${data.email}`,
+          data.phone ? `【電話】${data.phone}` : '',
+          data.category ? `【カテゴリ】${mapCategoryLabel(data.category)}` : '',
+          `【連絡希望】${data.contactPref}`,
+          `【内容】${(data.message||'').trim()}`
+        ].filter(Boolean).join('\n');
+      }
+      if(form){
+        form.addEventListener('submit', async (e)=>{
+          e.preventDefault();
+          const fd = new FormData(form);
+          const data = {
+            bizName: fd.get('bizName')?.toString().trim(),
+            contactName: fd.get('contactName')?.toString().trim(),
+            email: fd.get('email')?.toString().trim(),
+            phone: fd.get('phone')?.toString().trim(),
+            category: fd.get('category')?.toString(),
+            contactPref: fd.get('contactPref')?.toString(),
+            message: fd.get('message')?.toString()
+          };
+          const consent = document.getElementById('consent')?.checked;
+          if(!data.bizName || !data.contactName || !data.email || !consent){
+            statusEl.textContent = '必須項目が未入力です（会社名・担当者・メール・同意）';
+            statusEl.style.color = '#b91c1c';
+            return;
+          }
+          try{
+            saveInquiry(data);
+            statusEl.textContent = '送信を受け付けました。担当よりご連絡します。';
+            statusEl.style.color = '#111827';
+            try{
+              const { recordEvent } = await import('../../scripts/metrics.js');
+              recordEvent('lp_inquiry_submit', { page:'provider_join', category: data.category || '' });
+            }catch{}
+            form.reset();
+          }catch(err){
+            statusEl.textContent = '保存に失敗しました。再度お試しください。';
+            statusEl.style.color = '#b91c1c';
+          }
+        });
+      }
+      if(copyBtn && form){
+        copyBtn.addEventListener('click', ()=>{
+          const fd = new FormData(form);
+          const data = {
+            bizName: fd.get('bizName')?.toString().trim() || '',
+            contactName: fd.get('contactName')?.toString().trim() || '',
+            email: fd.get('email')?.toString().trim() || '',
+            phone: fd.get('phone')?.toString().trim() || '',
+            category: fd.get('category')?.toString() || '',
+            contactPref: fd.get('contactPref')?.toString() || '',
+            message: fd.get('message')?.toString() || ''
+          };
+          const text = summarize(data);
+          navigator.clipboard.writeText(text).then(()=>{
+            statusEl.textContent = '内容をクリップボードにコピーしました。';
+            statusEl.style.color = '#111827';
+          }).catch(()=>{
+            statusEl.textContent = 'コピーに失敗しました。';
+            statusEl.style.color = '#b91c1c';
+          });
+        });
+      }
     }catch{}
   </script>
   <script>
