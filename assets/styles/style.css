@@ -319,6 +319,23 @@ a.btn.btn--primary, button.btn.btn--primary, .btn--primary{
 	filter: blur(1px) saturate(0.98) contrast(.995);
 	z-index:1;
 }
+/* Mobile / portrait: use vertical combined image and adjust positions */
+@media (max-width: 640px){
+	.hero--visual{ 
+		--hero-left: url('../images/hero-combined-mobile.png');
+		--hero-right: url('../images/hero-combined-mobile.png');
+	}
+	.hero--visual::before{ background-position: center top; }
+	.hero--visual::after{ background-position: center bottom; filter: blur(1.5px) saturate(0.98) contrast(.995); }
+}
+@media (orientation: portrait){
+	.hero--visual{ 
+		--hero-left: url('../images/hero-combined-mobile.png');
+		--hero-right: url('../images/hero-combined-mobile.png');
+	}
+	.hero--visual::before{ background-position: center top; }
+	.hero--visual::after{ background-position: center bottom; }
+}
 /* gradient fog masks to softly blend the two images towards center */
 .hero--visual .hero-bg-fog{
 		position:absolute; inset:0; z-index:2; pointer-events:none;
