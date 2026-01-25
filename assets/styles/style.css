@@ -287,8 +287,8 @@ a.btn.btn--primary, button.btn.btn--primary, .btn--primary{
 	position:relative;
 	overflow:hidden;
 	/* Use a single combined photo for both layers to ensure consistent display across GitHub Pages */
-	--hero-left: url('../images/hero-combined.jpg');
-	--hero-right: url('../images/hero-combined.jpg');
+	--hero-left: url('../images/hero-combined.png');
+	--hero-right: url('../images/hero-combined.png');
 }
 .hero--visual::before,
 .hero--visual::after{
