@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>外見タイプ診断 | Fineme</title>
+  <link rel="stylesheet" href="../assets/styles/style.css">
+  <link rel="stylesheet" href="../assets/styles/components.css">
+  <style>
+    .diag-wrap {
+      min-height: calc(100vh - 72px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 80px;
+      background: linear-gradient(180deg, #f4f7fb 0%, #ffffff 100%);
+    }
+    .diag-progress {
+      width: 100%;
+      max-width: 560px;
+      margin-bottom: 32px;
+    }
+    .diag-progress-bar {
+      height: 4px;
+      background: var(--color-border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .diag-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+    .diag-progress-text {
+      font-size: 12px;
+      color: var(--color-muted);
+      margin-top: 6px;
+      text-align: right;
+    }
+    .diag-screen {
+      display: none;
+      width: 100%;
+      max-width: 560px;
+      animation: fadeIn 0.3s ease;
+    }
+    .diag-screen.is-active { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Landing */
+    .diag-landing { text-align: center; padding: 20px 0; }
+    .diag-landing-icon { font-size: 56px; margin-bottom: 16px; line-height: 1; }
+    .diag-landing h1 {
+      font-size: clamp(22px, 5vw, 32px);
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1.3;
+      margin: 0 0 12px;
+    }
+    .diag-landing p {
+      color: var(--color-muted);
+      font-size: 15px;
+      line-height: 1.7;
+      margin: 0 0 28px;
+    }
+    .diag-info-tags {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+    .diag-info-tag {
+      font-size: 13px;
+      color: var(--primary);
+      background: rgba(11,38,64,0.06);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-weight: 600;
+    }
+
+    /* Question header */
+    .diag-q-number {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .diag-q-text {
+      font-size: clamp(17px, 3.5vw, 22px);
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1.4;
+      margin: 0 0 6px;
+    }
+    .diag-q-sub {
+      font-size: 14px;
+      color: var(--color-muted);
+      margin: 0 0 22px;
+    }
+
+    /* Option cards */
+    .diag-options { display: flex; flex-direction: column; gap: 10px; }
+    .diag-option {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      background: #fff;
+      border: 2px solid var(--color-border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      text-align: left;
+    }
+    .diag-option:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 16px rgba(185,143,59,0.12);
+      transform: translateY(-2px);
+    }
+    .diag-option.is-selected {
+      border-color: var(--primary);
+      background: linear-gradient(135deg, rgba(11,38,64,0.04), rgba(11,38,64,0.02));
+      box-shadow: 0 4px 20px rgba(11,38,64,0.10);
+    }
+    .diag-option-icon { font-size: 24px; flex-shrink: 0; width: 40px; text-align: center; }
+    .diag-option-body { flex: 1; }
+    .diag-option-label { font-weight: 700; font-size: 15px; color: var(--primary); display: block; margin-bottom: 2px; }
+    .diag-option-desc { font-size: 13px; color: var(--color-muted); }
+    .diag-option-check {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 2px solid var(--color-border); flex-shrink: 0;
+      transition: all 0.18s ease;
+    }
+    .diag-option.is-selected .diag-option-check {
+      background: var(--primary); border-color: var(--primary);
+    }
+
+    /* Current state batch */
+    .diag-state-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+    .diag-state-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 18px;
+      background: #fff;
+      border: 2px solid var(--color-border);
+      border-radius: 12px;
+    }
+    .diag-state-item-left { display: flex; align-items: center; gap: 12px; }
+    .diag-state-item-icon { font-size: 22px; width: 32px; text-align: center; }
+    .diag-state-item-label { font-weight: 600; font-size: 14px; color: var(--primary); }
+    .diag-toggle-group {
+      display: flex;
+      border: 2px solid var(--color-border);
+      border-radius: 8px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .diag-toggle-btn {
+      padding: 7px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      color: var(--color-muted);
+    }
+    .diag-toggle-btn.is-active-yes { background: #059669; color: #fff; }
+    .diag-toggle-btn.is-active-no  { background: #dc2626; color: #fff; }
+
+    /* Buttons */
+    .diag-next-btn {
+      width: 100%;
+      margin-top: 20px;
+      padding: 16px;
+      background: linear-gradient(90deg, var(--primary), #0e3760);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.18s, transform 0.18s;
+    }
+    .diag-next-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .diag-next-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(11,38,64,0.2); }
+    .diag-back-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: none; border: none; color: var(--color-muted);
+      font-size: 14px; cursor: pointer; padding: 8px 0; margin-bottom: 20px;
+    }
+    .diag-back-btn:hover { color: var(--primary); }
+
+    /* Area select */
+    .diag-select {
+      width: 100%;
+      padding: 14px 42px 14px 16px;
+      border: 2px solid var(--color-border);
+      border-radius: 12px;
+      font-size: 16px;
+      background: #fff;
+      color: var(--primary);
+      font-family: inherit;
+      margin-bottom: 20px;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      cursor: pointer;
+    }
+    .diag-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(11,38,64,0.08); }
+
+    /* Budget grid */
+    .diag-options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .diag-options-grid .diag-option {
+      flex-direction: column; text-align: center;
+      gap: 6px; padding: 18px 12px; align-items: center;
+    }
+    .diag-options-grid .diag-option-check { display: none; }
+
+    /* ===== RESULT ===== */
+    .result-hero { text-align: center; padding: 32px 0 24px; }
+    .result-type-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, var(--primary), #0e3760);
+      color: #fff; padding: 10px 22px; border-radius: 100px;
+      font-weight: 800; font-size: 15px; margin-bottom: 12px;
+    }
+    .result-type-badge .type-letter { font-size: 22px; font-weight: 900; }
+    .result-hero h2 { font-size: clamp(20px, 4.5vw, 28px); font-weight: 800; color: var(--primary); margin: 0 0 8px; }
+    .result-hero p { font-size: 15px; color: var(--color-muted); margin: 0; line-height: 1.6; }
+
+    .result-section {
+      background: #fff; border-radius: 14px; padding: 20px;
+      margin-bottom: 16px; border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);
+    }
+    .result-section h3 {
+      font-size: 12px; font-weight: 700; color: var(--color-muted);
+      letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 14px;
+    }
+
+    /* Gap list */
+    .gap-list { display: flex; flex-direction: column; gap: 10px; }
+    .gap-item { display: flex; align-items: center; gap: 12px; }
+    .gap-icon { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
+    .gap-label { flex: 1; font-size: 14px; font-weight: 600; color: var(--primary); }
+    .gap-priority { font-size: 11px; color: var(--accent); font-weight: 700; }
+    .gap-status { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+    .gap-status.is-gap { background: #fef2f2; color: #b91c1c; }
+    .gap-status.is-ok  { background: #f0fdf4; color: #059669; }
+
+    /* Priority cards */
+    .priority-card {
+      background: linear-gradient(135deg, rgba(11,38,64,0.04), rgba(185,143,59,0.04));
+      border: 2px solid var(--primary); border-radius: 12px; padding: 16px;
+    }
+    .priority-card + .priority-card { margin-top: 10px; border-color: var(--color-border); background: #fff; }
+    .priority-rank { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+    .priority-title { font-size: 17px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+    .priority-reason { font-size: 13px; color: var(--color-muted); line-height: 1.5; }
+
+    /* Quick win */
+    .quick-win-card {
+      background: linear-gradient(135deg, #fefce8, #fffbeb);
+      border: 2px solid var(--accent); border-radius: 12px; padding: 16px;
+    }
+    .quick-win-label { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+    .quick-win-title { font-size: 15px; font-weight: 700; color: #92400e; }
+    .quick-win-text { font-size: 13px; color: #78350f; margin-top: 4px; line-height: 1.55; }
+
+    /* Next steps */
+    .next-steps-list { display: flex; flex-direction: column; gap: 10px; }
+    .next-step-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      background: linear-gradient(90deg, var(--primary), #0e3760);
+      color: #fff; border-radius: 12px; text-decoration: none;
+      font-weight: 700; font-size: 15px;
+      transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .next-step-link:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(11,38,64,0.2); color: #fff; }
+    .next-step-link .step-icon { font-size: 20px; }
+    .next-step-link .step-text { flex: 1; }
+    .next-step-link .step-arrow { font-size: 16px; opacity: 0.7; }
+
+    /* Waitlist */
+    .waitlist-section {
+      text-align: center; padding: 24px 20px;
+      background: linear-gradient(135deg, #f8fbff, #fff);
+      border: 1px solid rgba(11,38,64,0.1); border-radius: 14px; margin-bottom: 16px;
+    }
+    .waitlist-section h3 { font-size: 16px; font-weight: 700; color: var(--primary); margin: 0 0 8px; }
+    .waitlist-section p { font-size: 13px; color: var(--color-muted); margin: 0 0 16px; }
+    .waitlist-section .wl-btn {
+      display: inline-block; padding: 12px 28px;
+      background: linear-gradient(90deg, var(--primary), #0e3760);
+      color: #fff; border-radius: 12px; font-weight: 700;
+      text-decoration: none; font-size: 15px;
+    }
+
+    .retry-btn {
+      width: 100%; padding: 14px; background: none;
+      border: 2px solid var(--color-border); border-radius: 12px;
+      color: var(--color-muted); font-size: 14px; font-weight: 600;
+      cursor: pointer; margin-top: 8px;
+    }
+    .retry-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+    @media (max-width: 520px) {
+      .diag-wrap { padding: 24px 16px 60px; }
+      .diag-state-item-label { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main>
+    <div class="diag-wrap">
+
+      <!-- Progress bar -->
+      <div class="diag-progress" id="diag-progress" style="display:none">
+        <div class="diag-progress-bar">
+          <div class="diag-progress-fill" id="diag-progress-fill" style="width:0%"></div>
+        </div>
+        <div class="diag-progress-text" id="diag-progress-text"></div>
+      </div>
+
+      <!-- ===== SCREEN 0: Landing ===== -->
+      <div class="diag-screen is-active" id="screen-0">
+        <div class="diag-landing">
+          <div class="diag-landing-icon">🔍</div>
+          <h1>あなたに合った<br>外見の変え方を、<br>3分で見つける</h1>
+          <p>9つの質問に答えるだけ。<br>あなたの「今の状態」と「目指す方向性」から、<br>最初に取り組むべきことを教えます。</p>
+          <div class="diag-info-tags">
+            <span class="diag-info-tag">⏱ 約3分</span>
+            <span class="diag-info-tag">📋 9問</span>
+            <span class="diag-info-tag">✨ 無料</span>
+          </div>
+          <button class="diag-next-btn" onclick="startDiag()">診断を始める →</button>
+        </div>
+      </div>
+
+      <!-- ===== Q1: 動機 ===== -->
+      <div class="diag-screen" id="screen-q1">
+        <button class="diag-back-btn" onclick="goBack('screen-q1')">← 戻る</button>
+        <div class="diag-q-number">Q1 / 9</div>
+        <div class="diag-q-text">今、外見を変えたいと<br>思っているのはなぜですか？</div>
+        <div class="diag-q-sub">いちばん近いものを選んでください</div>
+        <div class="diag-options" id="opts-q1">
+          <div class="diag-option" onclick="selectOption('q1','match',this)">
+            <div class="diag-option-icon">💘</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">マッチングアプリで成果を出したい</span>
+              <span class="diag-option-desc">写真・第一印象・実際の出会い</span>
+            </div>
+            <div class="diag-option-check"></div>
+          </div>
+          <div class="diag-option" onclick="selectOption('q1','partner',this)">
+            <div class="diag-option-icon">💑</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">好きな人・気になる人に好印象を与えたい</span>
+              <span class="diag-option-desc">特定の相手への意識</span>
+            </div>
+            <div class="diag-option-check"></div>
+          </div>
+          <div class="diag-option" onclick="selectOption('q1','confidence',this)">
+            <div class="diag-option-icon">👥</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">周りと比べて自信がない</span>
+              <span class="diag-option-desc">自己肯定感・コンプレックス</span>
+            </div>
+            <div class="diag-option-check"></div>
+          </div>
+          <div class="diag-option" onclick="selectOption('q1','work',this)">
+            <div class="diag-option-icon">💼</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">仕事・社会的な場面での印象を変えたい</span>
+              <span class="diag-option-desc">ビジネス・面接・クライアント対応</span>
+            </div>
+            <div class="diag-option-check"></div>
+          </div>
+          <div class="diag-option" onclick="selectOption('q1','general',this)">
+            <div class="diag-option-icon">🌱</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">なんとなく、変わりたい</span>
+              <span class="diag-option-desc">具体的な理由はないけど変化したい</span>
+            </div>
+            <div class="diag-option-check"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Q2: 方向性 ===== -->
+      <div class="diag-screen" id="screen-q2">
+        <button class="diag-back-btn" onclick="goBack('screen-q2')">← 戻る</button>
+        <div class="diag-q-number">Q2 / 9</div>
+        <div class="diag-q-text">どんな印象の男性に<br>なりたいですか？</div>
+        <div class="diag-q-sub">ピンとくるものを選んでください</div>
+        <div class="diag-options" id="opts-q2">
+          <div class="diag-option" onclick="selectOption('q2','A',this)">
+            <div class="diag-option-icon">✨</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">清潔感があって爽やかな印象</span>
+              <span class="diag-option-desc">誰からも好感を持たれる、安心感のある外見</span>
+            </div>
+            <div class="diag-option-check"></div>
+          </div>
+          <div class="diag-option" onclick="selectOption('q2','B',this)">
+            <div class="diag-option-icon">📚</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">落ち着いた知的な雰囲気</span>
+              <span class="diag-option-desc">信頼感・大人らしさ・洗練された佇まい</span>
+            </div>
+            <div class="diag-option-check"></div>
+          </div>
+          <div class="diag-option" onclick="selectOption('q2','C',this)">
+            <div class="diag-option-icon">💪</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">健康的・スポーティなスタイル</span>
+              <span class="diag-option-desc">活力・男らしさ・アクティブなイメージ</span>
+            </div>
+            <div class="diag-option-check"></div>
+          </div>
+          <div class="diag-option" onclick="selectOption('q2','D',this)">
+            <div class="diag-option-icon">🎨</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">おしゃれでセンスを感じさせる</span>
+              <span class="diag-option-desc">個性・ファッション・スタイルへのこだわり</span>
+            </div>
+            <div class="diag-option-check"></div>
+          </div>
+          <div class="diag-option" onclick="selectOption('q2','E',this)">
+            <div class="diag-option-icon">🤔</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">まだわからない / 場面によって違う</span>
+              <span class="diag-option-desc">次の質問で絞り込みます</span>
+            </div>
+            <div class="diag-option-check"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Q2b: 場面（E選択時のみ） ===== -->
+      <div class="diag-screen" id="screen-q2b">
+        <button class="diag-back-btn" onclick="goBack('screen-q2b')">← 戻る</button>
+        <div class="diag-q-number">Q2b / 9</div>
+        <div class="diag-q-text">どんな場面での印象を<br>いちばん変えたいですか？</div>
+        <div class="diag-q-sub">目的に近いものを選んでください</div>
+        <div class="diag-options" id="opts-q2b">
+          <div class="diag-option" onclick="selectOption('q2b','A',this)">
+            <div class="diag-option-icon">💕</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">マッチングアプリ・初対面・デート</span>
+              <span class="diag-option-desc">第一印象・清潔感が最重要な場面</span>
+            </div>
+            <div class="diag-option-check"></div>
+          </div>
+          <div class="diag-option" onclick="selectOption('q2b','B',this)">
+            <div class="diag-option-icon">💼</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">職場・仕事・フォーマルな場</span>
+              <span class="diag-option-desc">信頼感・知的さ・大人らしさが求められる場面</span>
+            </div>
+            <div class="diag-option-check"></div>
+          </div>
+          <div class="diag-option" onclick="selectOption('q2b','C',this)">
+            <div class="diag-option-icon">🏃</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">趣味・スポーツ・アウトドア</span>
+              <span class="diag-option-desc">健康的・アクティブなイメージを出したい</span>
+            </div>
+            <div class="diag-option-check"></div>
+          </div>
+          <div class="diag-option" onclick="selectOption('q2b','D',this)">
+            <div class="diag-option-icon">🛍️</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">普段・街中・友人との時間</span>
+              <span class="diag-option-desc">日常でおしゃれ・センスを感じさせたい</span>
+            </div>
+            <div class="diag-option-check"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Q3〜Q7: 現状バッチ ===== -->
+      <div class="diag-screen" id="screen-q3">
+        <button class="diag-back-btn" onclick="goBack('screen-q3')">← 戻る</button>
+        <div class="diag-q-number">Q3〜Q7 / 9</div>
+        <div class="diag-q-text">今の自分について<br>教えてください</div>
+        <div class="diag-q-sub">それぞれ「できてる / まだ」で答えてください</div>
+        <div class="diag-state-list">
+          <div class="diag-state-item">
+            <div class="diag-state-item-left">
+              <div class="diag-state-item-icon">✂️</div>
+              <div class="diag-state-item-label">眉毛を定期的に整えている</div>
+            </div>
+            <div class="diag-toggle-group">
+              <button class="diag-toggle-btn" onclick="toggleState('eyebrow','yes',this)">できてる</button>
+              <button class="diag-toggle-btn" onclick="toggleState('eyebrow','no',this)">まだ</button>
+            </div>
+          </div>
+          <div class="diag-state-item">
+            <div class="diag-state-item-left">
+              <div class="diag-state-item-icon">🏋️</div>
+              <div class="diag-state-item-label">体型（体重・筋肉）に満足している</div>
+            </div>
+            <div class="diag-toggle-group">
+              <button class="diag-toggle-btn" onclick="toggleState('body','yes',this)">できてる</button>
+              <button class="diag-toggle-btn" onclick="toggleState('body','no',this)">まだ</button>
+            </div>
+          </div>
+          <div class="diag-state-item">
+            <div class="diag-state-item-left">
+              <div class="diag-state-item-icon">💆</div>
+              <div class="diag-state-item-label">基本的なスキンケアをしている</div>
+            </div>
+            <div class="diag-toggle-group">
+              <button class="diag-toggle-btn" onclick="toggleState('skin','yes',this)">できてる</button>
+              <button class="diag-toggle-btn" onclick="toggleState('skin','no',this)">まだ</button>
+            </div>
+          </div>
+          <div class="diag-state-item">
+            <div class="diag-state-item-left">
+              <div class="diag-state-item-icon">👔</div>
+              <div class="diag-state-item-label">自分の服装に自信がある</div>
+            </div>
+            <div class="diag-toggle-group">
+              <button class="diag-toggle-btn" onclick="toggleState('fashion','yes',this)">できてる</button>
+              <button class="diag-toggle-btn" onclick="toggleState('fashion','no',this)">まだ</button>
+            </div>
+          </div>
+          <div class="diag-state-item">
+            <div class="diag-state-item-left">
+              <div class="diag-state-item-icon">💈</div>
+              <div class="diag-state-item-label">髪型を定期的にカットしている</div>
+            </div>
+            <div class="diag-toggle-group">
+              <button class="diag-toggle-btn" onclick="toggleState('hair','yes',this)">できてる</button>
+              <button class="diag-toggle-btn" onclick="toggleState('hair','no',this)">まだ</button>
+            </div>
+          </div>
+        </div>
+        <button class="diag-next-btn" id="btn-q3-next" onclick="showScreen('screen-q4')" disabled>次へ →</button>
+      </div>
+
+      <!-- ===== Q8: 予算 ===== -->
+      <div class="diag-screen" id="screen-q4">
+        <button class="diag-back-btn" onclick="goBack('screen-q4')">← 戻る</button>
+        <div class="diag-q-number">Q8 / 9</div>
+        <div class="diag-q-text">外見磨きに使える<br>月の予算はどのくらいですか？</div>
+        <div class="diag-q-sub">最初のひと月のイメージで大丈夫です</div>
+        <div class="diag-options diag-options-grid" id="opts-q4">
+          <div class="diag-option" onclick="selectOption('q4','low',this)">
+            <div class="diag-option-icon">🪙</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">¥3,000未満</span>
+              <span class="diag-option-desc">まずコスト低く</span>
+            </div>
+          </div>
+          <div class="diag-option" onclick="selectOption('q4','mid',this)">
+            <div class="diag-option-icon">💴</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">¥3,000〜10,000</span>
+              <span class="diag-option-desc">月1回サービス利用</span>
+            </div>
+          </div>
+          <div class="diag-option" onclick="selectOption('q4','high',this)">
+            <div class="diag-option-icon">💳</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">¥10,000〜30,000</span>
+              <span class="diag-option-desc">月複数回・本格的に</span>
+            </div>
+          </div>
+          <div class="diag-option" onclick="selectOption('q4','premium',this)">
+            <div class="diag-option-icon">💎</div>
+            <div class="diag-option-body">
+              <span class="diag-option-label">¥30,000以上</span>
+              <span class="diag-option-desc">短期集中で変えたい</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Q9: エリア ===== -->
+      <div class="diag-screen" id="screen-q5">
+        <button class="diag-back-btn" onclick="goBack('screen-q5')">← 戻る</button>
+        <div class="diag-q-number">Q9 / 9</div>
+        <div class="diag-q-text">お住まいのエリアを<br>教えてください</div>
+        <div class="diag-q-sub">近くのサービスを優先してご案内します</div>
+        <select class="diag-select" id="area-select" onchange="selectArea(this.value)">
+          <option value="">── 選んでください ──</option>
+          <optgroup label="東京・関東">
+            <option value="tokyo">東京都（23区）</option>
+            <option value="tokyo-w">東京都（多摩・その他）</option>
+            <option value="yokohama">神奈川県（横浜・川崎）</option>
+            <option value="saitama">埼玉県（大宮・浦和）</option>
+            <option value="chiba">千葉県（千葉市・船橋）</option>
+            <option value="kanagawa-other">神奈川県（その他）</option>
+          </optgroup>
+          <optgroup label="その他の地域">
+            <option value="osaka">大阪府</option>
+            <option value="aichi">愛知県（名古屋）</option>
+            <option value="fukuoka">福岡県</option>
+            <option value="other">その他</option>
+          </optgroup>
+        </select>
+        <button class="diag-next-btn" id="btn-q5-next" onclick="showResult()" disabled>結果を見る →</button>
+      </div>
+
+      <!-- ===== RESULT ===== -->
+      <div class="diag-screen" id="screen-result">
+        <div class="result-hero">
+          <div class="result-type-badge">
+            <span class="type-letter" id="result-type-letter">A</span>
+            <span id="result-type-label">清潔感タイプ</span>
+          </div>
+          <h2 id="result-heading"></h2>
+          <p id="result-subtext"></p>
+        </div>
+
+        <div class="result-section" id="result-style-section">
+          <h3>あなたの方向性</h3>
+          <div id="result-style-content"></div>
+        </div>
+
+        <div class="result-section">
+          <h3>現状ギャップ分析</h3>
+          <div class="gap-list" id="result-gap-list"></div>
+        </div>
+
+        <div class="result-section">
+          <h3>最初に取り組むべきこと</h3>
+          <div id="result-priorities"></div>
+        </div>
+
+        <div id="result-quickwin-wrap" style="display:none;margin-bottom:16px">
+          <div class="quick-win-card" id="result-quickwin"></div>
+        </div>
+
+        <div class="result-section">
+          <h3>サービスを探す</h3>
+          <div class="next-steps-list" id="result-next-steps"></div>
+        </div>
+
+        <div class="waitlist-section">
+          <h3>📋 掲載情報は順次追加中です</h3>
+          <p>あなたのエリア・タイプに合ったサービスを<br>優先的にお知らせします。</p>
+          <a href="/pages/provider-register.html" class="wl-btn">掲載情報を受け取る</a>
+        </div>
+
+        <button class="retry-btn" onclick="retryDiag()">← もう一度診断する</button>
+      </div>
+
+    </div><!-- /.diag-wrap -->
+  </main>
+  <footer id="site-footer"></footer>
+  <script src="../scripts/main.js" type="module"></script>
+  <script>
+    // ===== STATE =====
+    const state = {
+      q1: null,
+      q2: null,
+      q2b: null,
+      direction: null,
+      gaps: { eyebrow: null, body: null, skin: null, fashion: null, hair: null },
+      budget: null,
+      area: null
+    };
+
+    // ===== DATA =====
+    const PRIORITY = {
+      A: { eyebrow:5, skin:4, hair:3, fashion:3, body:2 },
+      B: { fashion:5, skin:4, eyebrow:3, hair:3, body:2 },
+      C: { body:5, eyebrow:3, hair:3, fashion:3, skin:2 },
+      D: { fashion:5, hair:4, eyebrow:3, skin:3, body:2 }
+    };
+
+    const CAT_META = {
+      eyebrow: { label:'眉毛サロン',              icon:'✂️',  url:'/pages/search.html?category=eyebrow',  effect:'quick' },
+      body:    { label:'パーソナルジム',            icon:'🏋️', url:'/pages/search.html?category=gym',      effect:'slow'  },
+      skin:    { label:'スキンケア・美容',          icon:'💆',  url:'/pages/search.html?category=skin',     effect:'quick' },
+      fashion: { label:'スタイリング・ファッション', icon:'👔',  url:'/pages/search.html?category=fashion',  effect:'quick' },
+      hair:    { label:'ヘアサロン',               icon:'💈',  url:'/pages/search.html?category=hair',     effect:'quick' }
+    };
+
+    const DIR_META = {
+      A: {
+        label: '清潔感タイプ', emoji: '✨',
+        heading: '清潔感から始める、<br>あなたの変容ルート',
+        subtext: '誰からも好かれる「清潔感・爽やかさ」をベースに、変容の旅をスタートします。',
+        guide: '<p style="font-size:15px;color:#0f172a;line-height:1.7;margin:0 0 10px"><strong>清潔感タイプ</strong>の外見変容は、<strong>細部の整え</strong>から始まります。眉毛・肌・ヘアの基本が整うだけで、第一印象が劇的に変わります。</p><p style="font-size:13px;color:#64748b;line-height:1.6;margin:0">目指す姿：髪は清潔感のある長さ・スタイルで、眉はきちんと整えられ、肌にテカリや荒れがない。服装は奇抜でなくていい。「清潔で整った人」という印象がベース。</p>'
+      },
+      B: {
+        label: '知的・洗練タイプ', emoji: '📚',
+        heading: '洗練された印象で、<br>信頼と知性を纏う',
+        subtext: '落ち着き・上品さ・大人らしさを軸に、外見を整えていきます。',
+        guide: '<p style="font-size:15px;color:#0f172a;line-height:1.7;margin:0 0 10px"><strong>知的・洗練タイプ</strong>は、<strong>ファッションと肌</strong>の質感が印象を決めます。服のシルエット・素材感・色使いがアップすると、一気に「大人の男性」に見えます。</p><p style="font-size:13px;color:#64748b;line-height:1.6;margin:0">目指す姿：モノトーン・ネイビーなどのシンプルな色使いで、フィット感のある服。肌のコンディションが整い、眉は自然に整えられている。</p>'
+      },
+      C: {
+        label: 'アクティブ・健康タイプ', emoji: '💪',
+        heading: '体から変わる、<br>活力ある男性像へ',
+        subtext: '健康的・スポーティな活力を外見に反映させていきます。',
+        guide: '<p style="font-size:15px;color:#0f172a;line-height:1.7;margin:0 0 10px"><strong>アクティブタイプ</strong>は、<strong>体型・フィジカル</strong>が印象の核になります。パーソナルジムで体を変えると、着る服も変わり、立ち振る舞いも変わります。</p><p style="font-size:13px;color:#64748b;line-height:1.6;margin:0">目指す姿：筋肉がほどよくついたすっきりした体型。眉や髪を整えることで、活力ある顔つきに。</p>'
+      },
+      D: {
+        label: 'おしゃれ・スタイルタイプ', emoji: '🎨',
+        heading: 'スタイルで語る、<br>センスある男性像へ',
+        subtext: 'ファッション・ヘアを軸に、「おしゃれ」という印象を作り上げます。',
+        guide: '<p style="font-size:15px;color:#0f172a;line-height:1.7;margin:0 0 10px"><strong>おしゃれタイプ</strong>は、<strong>ファッションとヘアスタイル</strong>が最大の武器です。スタイリストや美容師との出会いが、一段上の自分を引き出します。</p><p style="font-size:13px;color:#64748b;line-height:1.6;margin:0">目指す姿：トレンドを押さえつつ、自分らしさのあるコーデ。ヘアスタイルもキャラクターの一部。「あの人おしゃれだな」と言われる外見。</p>'
+      }
+    };
+
+    const PRIORITY_REASONS = {
+      eyebrow: {
+        A: '眉毛は清潔感の基盤。1回サロンに行くだけで第一印象が別人のように変わります。',
+        B: '整った眉毛が知的な顔つきを作ります。全方向に効果が高い施策です。',
+        C: '眉毛を整えると顔が引き締まり、アクティブな印象が増します。コスパ最強。',
+        D: '眉毛はスタイル全体の完成度を左右します。おしゃれな人ほど眉に気を使っています。'
+      },
+      body: {
+        A: '体型が整うと、どんな服も清潔感よく見えます。効果は出るまで時間がかかりますが、基礎投資として重要です。',
+        B: '姿勢と体型は知的な印象に直結します。体の使い方・佇まいが変わります。',
+        C: '体型はアクティブタイプの最優先課題です。ここを変えると外見全体が変わります。',
+        D: '体型が変わると着られる服の幅が広がります。ファッションの楽しさが倍増します。'
+      },
+      skin: {
+        A: '肌の清潔感は外見全体の印象を左右します。テカリ・荒れをケアするだけで印象が上がります。',
+        B: '肌の質感が洗練された印象を作ります。スキンケアは短期間で効果が出やすい施策です。',
+        C: '清潔な肌は健康的な印象を強化します。基本のスキンケアから始めましょう。',
+        D: 'おしゃれな人の肌はきれいです。スキンケアは外見磨きの基礎です。'
+      },
+      fashion: {
+        A: '服装に清潔感が出ると、全体の印象が一段上がります。シンプルで清潔なスタイルから。',
+        B: 'ファッションは知的な印象を最も直接的に作れる領域です。投資効果が高い。',
+        C: 'スポーティな服装が自分のスタイルと合うと、雰囲気が整います。',
+        D: 'ファッションはおしゃれタイプの核心です。スタイリストと方向性を作りましょう。'
+      },
+      hair: {
+        A: '髪は清潔感の最重要要素の一つ。定期的なカットで印象が安定します。',
+        B: '髪型が整うと全体の洗練度が上がります。似合う髪型の発見が鍵です。',
+        C: '清潔感のある髪型がアクティブな印象を引き立てます。',
+        D: 'ヘアスタイルはおしゃれタイプの差別化ポイントです。美容師との出会いを大切に。'
+      }
+    };
+
+    // ===== NAVIGATION =====
+    let currentScreen = 'screen-0';
+
+    function showScreen(id) {
+      document.getElementById(currentScreen).classList.remove('is-active');
+      document.getElementById(id).classList.add('is-active');
+      currentScreen = id;
+      updateProgress();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateProgress() {
+      const progressEl = document.getElementById('diag-progress');
+      const fillEl    = document.getElementById('diag-progress-fill');
+      const textEl    = document.getElementById('diag-progress-text');
+      if (currentScreen === 'screen-0') { progressEl.style.display = 'none'; return; }
+      progressEl.style.display = 'block';
+      const stepMap = { 'screen-q1':1, 'screen-q2':2, 'screen-q2b':2, 'screen-q3':3, 'screen-q4':4, 'screen-q5':5, 'screen-result':5 };
+      const step = stepMap[currentScreen] || 0;
+      fillEl.style.width = Math.min(100, Math.round(step / 5 * 100)) + '%';
+      textEl.textContent = currentScreen === 'screen-result' ? '診断完了 ✓' : 'STEP ' + step + ' / 5';
+    }
+
+    const BACK_MAP = {
+      'screen-q1':  'screen-0',
+      'screen-q2':  'screen-q1',
+      'screen-q2b': 'screen-q2',
+      'screen-q3':  null, // resolved dynamically
+      'screen-q4':  'screen-q3',
+      'screen-q5':  'screen-q4'
+    };
+
+    function startDiag() { showScreen('screen-q1'); }
+
+    function goBack(from) {
+      let target = BACK_MAP[from];
+      if (from === 'screen-q3') target = state.q2 === 'E' ? 'screen-q2b' : 'screen-q2';
+      if (target) showScreen(target);
+    }
+
+    function retryDiag() {
+      state.q1 = null; state.q2 = null; state.q2b = null; state.direction = null;
+      state.gaps = { eyebrow:null, body:null, skin:null, fashion:null, hair:null };
+      state.budget = null; state.area = null;
+      document.querySelectorAll('.diag-option.is-selected').forEach(el => el.classList.remove('is-selected'));
+      document.querySelectorAll('.diag-toggle-btn').forEach(el => el.classList.remove('is-active-yes','is-active-no'));
+      document.getElementById('area-select').value = '';
+      document.getElementById('btn-q3-next').disabled = true;
+      document.getElementById('btn-q5-next').disabled = true;
+      showScreen('screen-0');
+    }
+
+    // ===== INTERACTIONS =====
+    function selectOption(q, val, el) {
+      el.parentElement.querySelectorAll('.diag-option').forEach(o => o.classList.remove('is-selected'));
+      el.classList.add('is-selected');
+      if (q === 'q1') {
+        state.q1 = val;
+        setTimeout(() => showScreen('screen-q2'), 280);
+      } else if (q === 'q2') {
+        state.q2 = val;
+        if (val === 'E') {
+          setTimeout(() => showScreen('screen-q2b'), 280);
+        } else {
+          state.direction = val;
+          setTimeout(() => showScreen('screen-q3'), 280);
+        }
+      } else if (q === 'q2b') {
+        state.q2b = val;
+        state.direction = val;
+        setTimeout(() => showScreen('screen-q3'), 280);
+      } else if (q === 'q4') {
+        state.budget = val;
+        setTimeout(() => showScreen('screen-q5'), 280);
+      }
+    }
+
+    function toggleState(cat, val, btn) {
+      const group = btn.parentElement;
+      group.querySelectorAll('.diag-toggle-btn').forEach(b => b.classList.remove('is-active-yes','is-active-no'));
+      btn.classList.add(val === 'yes' ? 'is-active-yes' : 'is-active-no');
+      state.gaps[cat] = (val === 'yes');
+      const answered = Object.values(state.gaps).filter(v => v !== null).length;
+      document.getElementById('btn-q3-next').disabled = (answered < 5);
+    }
+
+    function selectArea(val) {
+      state.area = val;
+      document.getElementById('btn-q5-next').disabled = !val;
+    }
+
+    // ===== RESULT =====
+    function showResult() {
+      computeResult();
+      showScreen('screen-result');
+    }
+
+    function computeResult() {
+      const dir      = state.direction;
+      const meta     = DIR_META[dir];
+      const priority = PRIORITY[dir];
+      const cats     = ['eyebrow','body','skin','fashion','hair'];
+
+      // Header
+      document.getElementById('result-type-letter').textContent = dir;
+      document.getElementById('result-type-label').textContent  = meta.label;
+      document.getElementById('result-heading').innerHTML        = meta.heading;
+      document.getElementById('result-subtext').textContent      = meta.subtext;
+      document.getElementById('result-style-content').innerHTML  = meta.guide;
+
+      // Gap analysis
+      document.getElementById('result-gap-list').innerHTML = cats.map(cat => {
+        const isGap = state.gaps[cat] === false;
+        const m     = CAT_META[cat];
+        const stars = isGap ? '★'.repeat(priority[cat]) : '';
+        return `<div class="gap-item">
+          <div class="gap-icon">${m.icon}</div>
+          <div class="gap-label">${m.label}</div>
+          ${isGap ? `<div class="gap-priority">${stars}</div>` : ''}
+          <div class="gap-status ${isGap ? 'is-gap' : 'is-ok'}">${isGap ? 'ギャップあり' : 'OK'}</div>
+        </div>`;
+      }).join('');
+
+      // Sorted gaps
+      const gaps = cats
+        .filter(cat => state.gaps[cat] === false)
+        .map(cat => ({ cat, score: priority[cat] }))
+        .sort((a, b) => b.score - a.score);
+
+      // Priority recommendations
+      if (gaps.length === 0) {
+        document.getElementById('result-priorities').innerHTML = `<div class="priority-card">
+          <div class="priority-rank">すべてOK</div>
+          <div class="priority-title">🎉 現状はすでに整っています</div>
+          <div class="priority-reason">引き続きメンテナンスを続けつつ、さらなるレベルアップを目指しましょう。</div>
+        </div>`;
+      } else {
+        document.getElementById('result-priorities').innerHTML = gaps.slice(0, 2).map((g, i) => {
+          const m = CAT_META[g.cat];
+          return `<div class="priority-card" ${i > 0 ? 'style="border-color:var(--color-border);background:#fff"' : ''}>
+            <div class="priority-rank">${i === 0 ? '最優先' : '次のステップ'}</div>
+            <div class="priority-title">${m.icon} ${m.label}</div>
+            <div class="priority-reason">${PRIORITY_REASONS[g.cat][dir]}</div>
+          </div>`;
+        }).join('');
+      }
+
+      // Quick win: top gap is body AND eyebrow is also a gap
+      const topGap = gaps[0];
+      const qwWrap = document.getElementById('result-quickwin-wrap');
+      if (topGap && topGap.cat === 'body' && state.gaps.eyebrow === false) {
+        qwWrap.style.display = 'block';
+        document.getElementById('result-quickwin').innerHTML = `
+          <div class="quick-win-label">⚡ クイックウィン</div>
+          <div class="quick-win-title">✂️ 眉毛を先に整えよう</div>
+          <div class="quick-win-text">ジムの成果が出るまで数ヶ月かかりますが、眉毛サロンなら1回で劇的に変わります。並行して始めることで、今すぐ変化を実感できます。</div>`;
+      } else {
+        qwWrap.style.display = 'none';
+      }
+
+      // Next steps
+      const nextCats = gaps.slice(0, 3);
+      document.getElementById('result-next-steps').innerHTML = nextCats.length === 0
+        ? `<a class="next-step-link" href="/pages/search.html"><span class="step-icon">🔍</span><span class="step-text">すべてのサービスを探す</span><span class="step-arrow">→</span></a>`
+        : nextCats.map(g => {
+            const m = CAT_META[g.cat];
+            return `<a class="next-step-link" href="${m.url}"><span class="step-icon">${m.icon}</span><span class="step-text">${m.label}を探す</span><span class="step-arrow">→</span></a>`;
+          }).join('');
+    }
+  </script>
+</body>
+</html>
