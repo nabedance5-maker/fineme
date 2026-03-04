@@ -40,7 +40,7 @@ try{
         <div class="stack">
           <p>ユーザー向け診断をそのまま受けてください。診断はラベルではなく“納得のための道しるべ”です。</p>
           <div class="cluster" style="gap:8px">
-            <a class="btn" href="../../diagnosis/index.html" target="_blank" rel="noopener">診断ページを開く</a>
+            <a class="btn" href="../../pages/diagnosis.html" target="_blank" rel="noopener">診断ページを開く</a>
             <button id="ob-import-diag" class="btn btn-ghost" type="button">診断結果を読み込む</button>
           </div>
           ${resultLine}
@@ -94,14 +94,17 @@ try{
       // 診断読み込みボタンを有効化
       qs('#ob-import-diag')?.addEventListener('click', ()=>{
         try{
-          const raw = localStorage.getItem('fineme:diagnosis:latest');
-          const obj = raw? JSON.parse(raw): null;
-          if(obj && obj.intent){
+          const rawV2 = localStorage.getItem('fineme:diagnosis:v2');
+          const rawLegacy = localStorage.getItem('fineme:diagnosis:latest');
+          const obj = rawV2 ? JSON.parse(rawV2) : (rawLegacy ? JSON.parse(rawLegacy) : null);
+          if(obj && (obj.direction || obj.intent)){
             if(me && me.onboarding){ me.onboarding.diag = {
-              intent_type_id: obj.intent.type_id,
-              intent_type_name: (obj.step2?.classification?.type_name) || obj.intent.type_name,
-              why_avg: (obj.why?.avg)||null,
-              how_scores: (obj.how?.scores)||[]
+              direction: obj.direction || null,
+              directionLabel: obj.directionLabel || null,
+              intent_type_id: obj.intent?.type_id || ('dir-' + obj.direction) || null,
+              intent_type_name: obj.directionLabel || obj.step2?.classification?.type_name || obj.intent?.type_name || null,
+              why_avg: obj.why?.avg || null,
+              how_scores: obj.how?.scores || []
             }; persist(me); }
             // 再描画
             init();
@@ -125,7 +128,7 @@ try{
               <strong>STEP1：診断体験（掲載者自身が受ける）</strong>
               <p>ユーザー向け診断をそのまま受けてください。診断は“納得のための道しるべ”。</p>
               <div class="cluster" style="gap:8px">
-                <a class="btn" href="../../diagnosis/index.html" target="_blank" rel="noopener">診断ページを開く</a>
+                <a class="btn" href="../../pages/diagnosis.html" target="_blank" rel="noopener">診断ページを開く</a>
               </div>
             </div>
             <div class="ob-card">
@@ -194,7 +197,7 @@ function render(){
       <div class="stack">
         <p>ユーザー向け診断をそのまま受けてください。診断はラベルではなく“納得のための道しるべ”です。</p>
         <div class="cluster" style="gap:8px">
-          <a class="btn" href="../../diagnosis/index.html" target="_blank" rel="noopener">診断ページを開く</a>
+          <a class="btn" href="../../pages/diagnosis.html" target="_blank" rel="noopener">診断ページを開く</a>
           <button id="ob-import-diag" class="btn btn-ghost" type="button">診断結果を読み込む</button>
         </div>
         ${resultLine}
@@ -253,6 +256,28 @@ function render(){
     const list = document.createElement('div'); list.className='stack'; list.style.gap='8px';
     const title = document.createElement('h2'); title.textContent='STEP3：掲載者プロフィールの思想入力（重要）'; card.appendChild(title);
     const help = document.createElement('p'); help.textContent='「誰に・どんな変化を届けるのか」を言語化してください。実績や肩書のみの入力は禁止です。'; card.appendChild(help);
+    // 得意な外見方向性（新診断システムのA/B/C/D）
+    const dirBlock = document.createElement('div'); dirBlock.className='ob-card';
+    dirBlock.innerHTML = '<strong>あなたのサービスが特に合う「外見タイプ」（複数選択可）</strong><p class="muted" style="font-size:13px;margin:4px 0 8px">ユーザーの診断タイプと照合して表示順位に影響します。</p>';
+    const DIR_LIST = [
+      { id:'A', name:'✨ 清潔感タイプ', desc:'清潔感・爽やかさを求めるユーザー' },
+      { id:'B', name:'📚 知的・洗練タイプ', desc:'落ち着き・大人らしさを求めるユーザー' },
+      { id:'C', name:'💪 アクティブ・健康タイプ', desc:'体型・健康的な印象を求めるユーザー' },
+      { id:'D', name:'🎨 おしゃれ・スタイルタイプ', desc:'ファッション・センスを求めるユーザー' }
+    ];
+    const dirSelected = new Set(Array.isArray(prof.directionTypes) ? prof.directionTypes : []);
+    const dirWrap = document.createElement('div'); dirWrap.className='cluster'; dirWrap.style.flexWrap='wrap'; dirWrap.style.gap='8px';
+    DIR_LIST.forEach(d => {
+      const lab = document.createElement('label'); lab.className='chip'; lab.title = d.desc;
+      const cb = document.createElement('input'); cb.type='checkbox'; cb.checked = dirSelected.has(d.id);
+      cb.addEventListener('change', () => {
+        if(cb.checked) dirSelected.add(d.id); else dirSelected.delete(d.id);
+        prof.directionTypes = Array.from(dirSelected); persist(me);
+      });
+      lab.appendChild(cb); lab.appendChild(document.createTextNode(' ' + d.name)); dirWrap.appendChild(lab);
+    });
+    dirBlock.appendChild(dirWrap); card.appendChild(dirBlock);
+
     const block1 = document.createElement('div'); block1.className='ob-card'; block1.innerHTML='<strong>最も力になれる第2階層タイプ（複数選択可）</strong>'; card.appendChild(block1);
     const wrap = document.createElement('div'); wrap.className='cluster'; wrap.style.flexWrap='wrap'; wrap.style.gap='8px';
     whatList.forEach(w=>{ const lab=document.createElement('label'); lab.className='chip'; const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=selected.has(w.id); cb.addEventListener('change',()=>{ if(cb.checked) selected.add(w.id); else selected.delete(w.id); prof.whatTypes = Array.from(selected); persist(me); }); lab.appendChild(cb); lab.appendChild(document.createTextNode(' '+w.name)); wrap.appendChild(lab); });

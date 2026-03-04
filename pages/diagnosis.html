@@ -854,6 +854,25 @@
       const priority = PRIORITY[dir];
       const cats     = ['eyebrow','body','skin','fashion','hair'];
 
+      // ===== Save to localStorage =====
+      const saveData = {
+        direction: dir,
+        directionLabel: meta.label,
+        gaps: state.gaps,
+        budget: state.budget,
+        area: state.area,
+        timestamp: new Date().toISOString()
+      };
+      try { localStorage.setItem('fineme:diagnosis:v2', JSON.stringify(saveData)); } catch {}
+      // Legacy format for existing home-reco.js / search.new.js / onboarding.js
+      try {
+        localStorage.setItem('fineme:diagnosis:latest', JSON.stringify({
+          ...saveData,
+          intent: { type_id: 'dir-' + dir, type_name: meta.label },
+          step2: { classification: { type_name: meta.label }, scores: { axes: {} } }
+        }));
+      } catch {}
+
       // Header
       document.getElementById('result-type-letter').textContent = dir;
       document.getElementById('result-type-label').textContent  = meta.label;

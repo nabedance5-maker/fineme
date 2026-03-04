@@ -141,9 +141,10 @@ function card({name, region, category, priceFrom, image, href, providerName, add
     // 相性理由タグ（診断結果に基づく簡易バッジ）
     const tagsWrap = document.createElement('div'); tagsWrap.className = 'cluster'; tagsWrap.style.gap = '6px'; tagsWrap.style.flexWrap = 'wrap'; tagsWrap.style.alignItems = 'center';
     try{
-      // 診断の最新結果から理由タグを導出
-      const raw = localStorage.getItem('fineme:diagnosis:latest');
-      const diag = raw ? JSON.parse(raw) : null;
+      // 診断の最新結果から理由タグを導出（新フォーマット優先）
+      const rawV2 = localStorage.getItem('fineme:diagnosis:v2');
+      const rawLegacy = localStorage.getItem('fineme:diagnosis:latest');
+      const diag = rawV2 ? JSON.parse(rawV2) : (rawLegacy ? JSON.parse(rawLegacy) : null);
       const reasons = deriveReasons(diag);
       if(reasons.length){
         for(const r of reasons.slice(0,3)){
@@ -283,41 +284,26 @@ function card({name, region, category, priceFrom, image, href, providerName, add
   return a;
 }
 
-// 診断結果から相性理由タグを作る（STEP2の軸スコアとタイプから）
+// 診断結果から相性理由タグを作る
 function deriveReasons(diag){
   const out = [];
   try{
     if(!diag) return out;
-    // タイプ由来の共通ラベル
+    // 新フォーマット（v2）: direction フィールド
+    const dir = String(diag?.direction || '');
+    const DIR_LABELS = { A:'清潔感タイプにおすすめ', B:'知的タイプにおすすめ', C:'アクティブタイプにおすすめ', D:'おしゃれタイプにおすすめ' };
+    if(DIR_LABELS[dir]) out.push(DIR_LABELS[dir]);
+    // レガシーフォーマット: typeId
     const typeId = String(diag?.intent?.type_id || '');
-    const TYPE_LABELS = {
-      // w01〜w08の例示（辞書に合わせる）
-      w01: '説明が丁寧',
-      w02: '自然な変化',
-      w03: '背中を押してくれる',
-      w04: '一緒に決める',
-      w05: 'ベーシック重視',
-      w06: 'トレンドに強い',
-      w07: '写真映え',
-      w08: '清潔感アップ'
-    };
+    const TYPE_LABELS = { w01:'説明が丁寧', w02:'自然な変化', w03:'背中を押してくれる', w04:'一緒に決める', w05:'ベーシック重視', w06:'トレンドに強い', w07:'写真映え', w08:'清潔感アップ' };
     if(TYPE_LABELS[typeId]) out.push(TYPE_LABELS[typeId]);
-    // STEP2の軸スコアから上位軸を理由化
+    // STEP2の軸スコアから上位軸
     const axes = (diag?.step2?.scores?.axes) || {};
     const pairs = Object.keys(axes).map(k=> ({ key:k, val: Number(axes[k]||0) }));
     pairs.sort((a,b)=> b.val - a.val);
-    const AXIS_LABELS = {
-      guidance: '導線がわかりやすい',
-      gentle: '優しく進める',
-      natural: '自然体でいける',
-      evidence: '根拠が明確',
-      customization: 'あなた用に調整'
-    };
-    for(const p of pairs.slice(0,2)){
-      if(AXIS_LABELS[p.key]) out.push(AXIS_LABELS[p.key]);
-    }
+    const AXIS_LABELS = { guidance:'導線がわかりやすい', gentle:'優しく進める', natural:'自然体でいける', evidence:'根拠が明確', customization:'あなた用に調整' };
+    for(const p of pairs.slice(0,2)){ if(AXIS_LABELS[p.key]) out.push(AXIS_LABELS[p.key]); }
   }catch{ /* ignore */ }
-  // 重複除去
   return Array.from(new Set(out));
 }
 
