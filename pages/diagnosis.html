@@ -379,8 +379,8 @@
       <div class="diag-screen is-active" id="screen-0">
         <div class="diag-landing">
           <div class="diag-landing-icon">🔍</div>
-          <h1>あなたに合った<br>外見の変え方を、<br>3分で見つける</h1>
-          <p>10の質問に答えるだけ。<br>「なぜ変わりたいか」「何を変えたいか」「どう変わりたいか」の3つを合わせて、あなただけの優先順位と変わり方を導き出します。</p>
+          <h1>変わりたいと思っている。<br>その気持ちを、<br>最初の一歩に変えよう。</h1>
+          <p>10の質問を通じて今の自分を知り、どこへ向かうかを明確にする。<br>Finemeが、あなたの地図と羅針盤になります。</p>
           <div class="diag-info-tags">
             <span class="diag-info-tag">⏱ 約3分</span>
             <span class="diag-info-tag">📋 10問</span>
@@ -394,46 +394,38 @@
       <div class="diag-screen" id="screen-q1">
         <button class="diag-back-btn" onclick="goBack('screen-q1')">← 戻る</button>
         <div class="diag-q-number">Q1 / 10</div>
-        <div class="diag-q-text">今、外見を変えたいと<br>思っているのはなぜですか？</div>
-        <div class="diag-q-sub">いちばん近いものを選んでください（内部スコアに使用）</div>
+        <div class="diag-q-text">外見を変えたいと思ったのは、<br>どんなことがきっかけですか？</div>
+        <div class="diag-q-sub">いちばん近い状況を選んでください</div>
         <div class="diag-options" id="opts-q1">
           <div class="diag-option" onclick="selectOption('q1','match',this)">
             <div class="diag-option-icon">💘</div>
             <div class="diag-option-body">
-              <span class="diag-option-label">マッチングアプリで成果を出したい</span>
-              <span class="diag-option-desc">写真・第一印象・実際の出会いで差をつけたい</span>
+              <span class="diag-option-label">マッチングアプリで、相手に選ばれていない</span>
+              <span class="diag-option-desc">写真を見ても自信がないし、マッチしても続かない</span>
             </div>
             <div class="diag-option-check"></div>
           </div>
           <div class="diag-option" onclick="selectOption('q1','partner',this)">
             <div class="diag-option-icon">💑</div>
             <div class="diag-option-body">
-              <span class="diag-option-label">気になる人・好きな人に好印象を与えたい</span>
-              <span class="diag-option-desc">特定の相手に「いい男だ」と思ってほしい</span>
+              <span class="diag-option-label">好きな人の前で、自信が持てなかった</span>
+              <span class="diag-option-desc">外見のせいで、一歩引いてしまう自分がいる</span>
             </div>
             <div class="diag-option-check"></div>
           </div>
           <div class="diag-option" onclick="selectOption('q1','confidence',this)">
-            <div class="diag-option-icon">👥</div>
+            <div class="diag-option-icon">🪞</div>
             <div class="diag-option-body">
-              <span class="diag-option-label">外見への自信をつけたい</span>
-              <span class="diag-option-desc">周りと比べて引け目を感じている・自己肯定感を上げたい</span>
-            </div>
-            <div class="diag-option-check"></div>
-          </div>
-          <div class="diag-option" onclick="selectOption('q1','work',this)">
-            <div class="diag-option-icon">💼</div>
-            <div class="diag-option-body">
-              <span class="diag-option-label">仕事・ビジネスでの印象を変えたい</span>
-              <span class="diag-option-desc">面接・職場・クライアント対応での評価を上げたい</span>
+              <span class="diag-option-label">鏡を見るたびに、なんか違う気がする</span>
+              <span class="diag-option-desc">理想の自分とのズレをずっと感じている</span>
             </div>
             <div class="diag-option-check"></div>
           </div>
           <div class="diag-option" onclick="selectOption('q1','general',this)">
             <div class="diag-option-icon">🌱</div>
             <div class="diag-option-body">
-              <span class="diag-option-label">なんとなく、変わりたい</span>
-              <span class="diag-option-desc">具体的な理由はないけど、このままでいたくない</span>
+              <span class="diag-option-label">このままでいていいのか、ふと思った</span>
+              <span class="diag-option-desc">特定の出来事はないけど、なんとなく変わりたい</span>
             </div>
             <div class="diag-option-check"></div>
           </div>
@@ -701,6 +693,7 @@
       <!-- ===== RESULT ===== -->
       <div class="diag-screen" id="screen-result">
         <div class="result-hero">
+          <p style="font-size:13px;color:var(--accent);font-weight:700;letter-spacing:0.08em;margin:0 0 16px;text-transform:uppercase;">これが、今日からのあなたの地図です。</p>
           <div class="result-type-badge">
             <span class="type-letter" id="result-type-letter">A</span>
             <span id="result-type-label">清潔感タイプ</span>
@@ -722,6 +715,7 @@
 
         <div class="result-section">
           <h3>現状ギャップ分析</h3>
+          <p id="result-gap-narrative" style="font-size:14px;color:#0f172a;line-height:1.7;margin:0 0 14px;"></p>
           <div class="gap-list" id="result-gap-list"></div>
         </div>
 
@@ -732,6 +726,11 @@
 
         <div id="result-quickwin-wrap" style="display:none;margin-bottom:16px">
           <div class="quick-win-card" id="result-quickwin"></div>
+        </div>
+
+        <div style="background:linear-gradient(135deg,#0b2640,#0e3760);border-radius:14px;padding:20px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;color:#b98f3b;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px">今日の第一歩</div>
+          <div id="result-first-step" style="font-size:15px;font-weight:700;color:#fff;line-height:1.6;"></div>
         </div>
 
         <div class="result-section">
@@ -768,11 +767,10 @@
 
     // ===== WHY Labels =====
     const WHY_LABELS = {
-      match:      'マッチングアプリで成果を出したい',
-      partner:    '気になる人に好印象を与えたい',
-      confidence: '外見への自信をつけたい',
-      work:       '仕事・ビジネスでの印象を変えたい',
-      general:    '変わりたい（理由はまだ曖昧）',
+      match:      'マッチングアプリで、相手に選ばれていない',
+      partner:    '好きな人の前で、自信が持てなかった',
+      confidence: '鏡を見るたびに、なんか違う気がする',
+      general:    'このままでいていいのか、ふと思った',
     };
 
     // ===== HOW Meta =====
@@ -827,12 +825,6 @@
         C: '体から変わると、<br>自信は内側から生まれてくる',
         D: 'ファッションで自分を表現できると、<br>毎日の自己肯定感が変わる',
       },
-      work: {
-        A: '職場・ビジネスで信頼される<br>清潔感のある外見へ',
-        B: '仕事で信頼と知性を伝える、<br>洗練された印象を作る',
-        C: '健康的な活力と姿勢が、<br>仕事の場での存在感を作る',
-        D: '仕事の場でも「センスある人」と<br>思われるスタイルへ',
-      },
       general: {
         A: 'まずは清潔感から。<br>確実に変われる最初の一歩を踏み出す',
         B: '洗練された印象に向けて、<br>自分らしい変容のルートを歩む',
@@ -860,12 +852,6 @@
         B: '洗練された印象は、自己肯定感と直結します。「自分はこういう人間だ」という軸が外見から生まれます。',
         C: '体型を変えることで、立ち振る舞い・姿勢・自信が根本から変わります。フィジカルは最強の自信の土台です。',
         D: '好きな服を着られること・好きなスタイルを持てることが、自分を好きになる第一歩です。',
-      },
-      work: {
-        A: 'ビジネスの場では「清潔感・誠実さ」が信頼の基本です。眉・肌・服の清潔感が整うだけで、職場での評価が変わります。',
-        B: '仕事での知的な印象は、ファッションと肌の質感で作られます。洗練された外見が、クライアントや上司の評価を変えます。',
-        C: '健康的な活力は、職場での存在感・エネルギーに直結します。フィジカルが整うと、声の通り方・姿勢まで変わります。',
-        D: '「センスある人」という印象は、仕事相手への信頼感にもなります。スタイルで、職場での立ち位置を変えましょう。',
       },
       general: {
         A: '外見を変えるなら、清潔感が最初の一歩。コスパが高く、誰でも確実に変われる王道ルートです。',
@@ -895,12 +881,6 @@
         C: '体型への自信は、すべての自信の土台になります。体が変わると、着られる服が増え、姿勢が変わり、声の出し方まで変わります。パーソナルジムで計画的に変えることで、3ヶ月後の自分が確実に変わっています。',
         D: '「好きな服が着られる・好きなスタイルを持てる」ことが、自己表現の自信につながります。ファッションは内側の自分を外に出す手段です。スタイリストと一度出会い、「自分らしさ」の方向性を見つけましょう。',
       },
-      work: {
-        A: 'ビジネスの場では、清潔感が「信頼できる人」という第一印象を作ります。眉毛・肌・服の清潔感が整っているだけで、職場での評価が変わります。特に初対面・面接・クライアント対応前に整えることが最大効果を生みます。',
-        B: '仕事での「知的・洗練された」印象は、ファッションと肌の質感で作られます。服のシルエット・素材・色使いが整うと、「デキる人」という印象が自然に生まれます。スタイリストに方向性を相談することが最短ルートです。',
-        C: '健康的な体型・活力・良い姿勢は、仕事での存在感を作ります。「エネルギーある人」という印象は、職場でのリーダーシップや信頼感にもつながります。パーソナルジムで計画的に変えながら、仕事でのパフォーマンスも上げていきましょう。',
-        D: '仕事の場でも「センスある人」と思われることは、あなたの価値を高めます。服装・小物・ヘアスタイルに個性と洗練さが出ると、クライアントや同僚から「この人はこだわりがある」という好印象を得られます。',
-      },
       general: {
         A: '外見を変えるなら、清潔感から始めるのが最もコスパが高く、確実に変われます。眉毛・肌・ヘアの基本を整えるだけで、第一印象が劇的に変わります。まず1つのサロンに行くことで、変化を実感してください。',
         B: '洗練された印象を目指すことは、生き方全体を整えることにつながります。ファッションを変え、肌を整え、眉を揃えることで「こういう人間でいたい」という自己像が外見に宿り始めます。',
@@ -915,36 +895,101 @@
         match:      'マッチングアプリの写真では眉毛が印象の大半を決めます。1回のサロンで、プロフィール写真が別人のように変わります。',
         partner:    '気になる相手との初対面で、整った眉毛は「自己管理ができている男性だ」という信頼感を生みます。',
         confidence: '眉毛を整えるだけで鏡の自分が変わります。外見の自信をつける最短・最安のコースです。',
-        work:       'ビジネスの場で整った眉毛は「きちんとした人」という第一印象を作ります。面接前・商談前に特に有効です。',
         general:    '眉毛整えはコスパ最強の外見改善。1回のサロンで確実に変化を実感できる入口です。',
       },
       body: {
         match:      'プロフィール写真・リアルでの雰囲気は体型に大きく左右されます。パーソナルジムで計画的に変え、マッチング後の自信も作りましょう。',
         partner:    '健康的な体型は自然な魅力を生みます。気になる相手との距離を縮める「雰囲気」が体型の変化と共に変わります。',
         confidence: '体型を変えることは、外見の自信を根底から変えます。着られる服が増え、姿勢が変わり、すべてが変わります。',
-        work:       '健康的な体型と姿勢は、仕事でのエネルギーや存在感に直結します。パーソナルジムで計画的に変えましょう。',
         general:    'ジムは外見変容の最大投資。時間はかかりますが、全方向の印象が変わる根本的な変化です。',
       },
       skin: {
         match:      'マッチングアプリの写真で肌の状態は正直に出ます。テカリ・荒れをケアするだけで、写真の印象が大幅に改善します。',
         partner:    '清潔感のある肌は、相手への「自己管理ができている」という好印象につながります。スキンケアの基本から始めましょう。',
         confidence: '肌が整うと毎朝の鏡の印象が変わります。小さな積み重ねが、自己肯定感の大きな変化につながります。',
-        work:       'ビジネスで清潔感のある肌は「誠実さ・清潔さ」の象徴です。基本のスキンケアから始めるだけで評価が変わります。',
         general:    'スキンケアは外見改善の基礎。肌が整うと全体的な印象が一段上がります。',
       },
       fashion: {
         match:      'マッチングアプリで服装は「センス・生活水準・自己管理」として読まれます。スタイリストと一度出会えば方向性が決まります。',
         partner:    'あの人との特別な場面で「この人おしゃれだな」と思われる服装が、印象を固定します。スタイリストに相談しましょう。',
         confidence: '好きな服を着られることが、自己表現の自信になります。スタイリストと「自分に似合う方向性」を見つけましょう。',
-        work:       'ビジネスの場では服装が「信頼感・洗練度」を決めます。スタイリストとの出会いが最大の投資効果を生みます。',
         general:    'ファッションは最も即効性の高い外見改善の一つ。スタイリストと1回出会えば方向性が決まります。',
       },
       hair: {
         match:      'マッチングアプリの写真で髪型は「清潔感・センス」の最重要パーツです。定期的なカットで、印象を安定させましょう。',
         partner:    '気になる相手との場面で、似合う髪型は印象を決定的に高めます。美容師との出会いを大切にしてください。',
         confidence: '似合う髪型を見つけると、毎日の自己肯定感が変わります。「この髪型の自分が好き」という感覚が自信の土台になります。',
-        work:       'ビジネスでも通用する清潔感のある髪型が、職場での評価を支えます。定期的なカットで印象を安定させましょう。',
         general:    '定期的な髪型のカットは清潔感の基本。まずここから始めるのが最もシンプルな第一歩です。',
+      },
+    };
+
+    // ===== HOW: ガイドテキストへの追記（WHY別） =====
+    const HOW_GUIDE_SUFFIX = {
+      sprint: {
+        match:      'マッチングアプリの結果を今すぐ変えたいなら、今月中に最優先の1点に集中投資するのが最短ルートです。迷っている時間がいちばんの損失です。',
+        partner:    '次に「会う機会」までが勝負です。今すぐ最優先を1点だけ着手してください。その変化が相手への自信になります。',
+        confidence: '変化を実感するには「1点に集中する」ことが鍵です。半月後に鏡の自分が変わっている体験が、次の自信を生みます。',
+        general:    '変わりたい気持ちは今がいちばん強い。最優先の1点を今月中に着手することで、その勢いを実際の変化に変えましょう。',
+      },
+      steady: {
+        match:      '月に1つずつ着実に整えていけば、3ヶ月後には見違えるプロフィールになります。焦らず順番に取り組みましょう。',
+        partner:    '急がなくていい。1ヶ月1ステップのペースで整えていけば、次の出会いまでに確実に変わっています。',
+        confidence: '自信は積み重ねから生まれます。1つずつ着実に変えていく過程そのものが、あなたの自信の土台になります。',
+        general:    '変容は短距離走ではなくマラソンです。1ヶ月1つのペースで続けることで、半年後に確実に変わっています。',
+      },
+      guided: {
+        match:      'プロに一任することで「何から始めるか」の迷いが消えます。まず1つのサロンを予約するだけで、あとはプロが導いてくれます。',
+        partner:    'プロのアドバイスを受けることで、自分では気づかない「刺さる印象」の作り方がわかります。まず1回相談してみましょう。',
+        confidence: 'プロに任せることで、失敗なく変化を実感できます。「自分だけでやろう」とせず、まず1人のプロと出会うことから始めましょう。',
+        general:    'プロに相談することは、最短で変わるための最善策です。自己流で迷い続けるより、1回のカウンセリングの方がずっと価値があります。',
+      },
+      learn: {
+        match:      '「なぜこれで印象が変わるか」を理解することが武器になります。知識を持つと、今後も自力で管理・改善できます。',
+        partner:    '知識を持って変わることで、表面的な変化ではなく「本質的な魅力」として定着します。学びながら変えていきましょう。',
+        confidence: '「なぜこれが効くのか」を知って取り組むと、変化が定着しやすくなります。知識が自信の根拠になります。',
+        general:    '外見改善の知識を持つことは、一生使える資産になります。学びながら変えることで、長期的な自走力が生まれます。',
+      },
+    };
+
+    // ===== 予算: ギャップスコア補正 =====
+    const BUDGET_SCORE_MODIFIER = {
+      low:     { eyebrow:+2, skin:+1, hair:+1, fashion:-1, body:-2 },
+      mid:     { eyebrow:+1, skin:+1, hair:+1, fashion: 0, body:-1 },
+      high:    { eyebrow: 0, skin: 0, hair: 0, fashion: 0, body: 0 },
+      premium: { body:+2, fashion:+2, eyebrow: 0, skin: 0, hair: 0 },
+    };
+
+    // ===== 今日の第一歩（TOP GAP × HOW → 具体的1アクション） =====
+    const FIRST_STEP_TEXT = {
+      eyebrow: {
+        sprint:  '今週中に眉毛サロンを予約する。1回3,000〜5,000円で、写真の印象が別人のように変わります。',
+        steady:  '今月中に眉毛サロンに1回だけ行く。まず体験コースから試してみましょう。',
+        guided:  '近くの眉毛サロンに「お任せで整えてほしい」と伝えて予約を入れる。プロが顔型に合った眉を設計してくれます。',
+        learn:   '眉毛サロンで施術を受けながら、「なぜこの形なのか」を美容師に聞いてみる。次回からは自分でも維持できます。',
+      },
+      body: {
+        sprint:  '今週中にパーソナルジムの無料体験を1件予約する。話を聞くだけでいい。その1歩が全てを変えます。',
+        steady:  '今月中にパーソナルジムの体験を受ける。目標とペースを確認してから、継続プランを選ぶ。',
+        guided:  'パーソナルジムにカウンセリング予約を入れる。目標・予算・スケジュールをプロと一緒に決める。',
+        learn:   'パーソナルジムの体験を受け、食事管理・運動のメカニズムを理解する。知識が継続の力になります。',
+      },
+      skin: {
+        sprint:  '今週中にメンズスキンケアサロンか美容皮膚科に相談予約を入れる。プロの目で今の肌状態を把握する。',
+        steady:  '今月中に基本の洗顔・保湿ルーティンを確立し、1回サロンで状態チェックを受ける。',
+        guided:  'スキンケアサロンに「自分の肌に合ったケアをお任せしたい」と伝えてカウンセリングを受ける。',
+        learn:   'メンズスキンケアが学べるサロンで、自分の肌タイプと正しいケア方法を理解する。',
+      },
+      fashion: {
+        sprint:  '今週中にパーソナルスタイリストに相談する。1回のセッションで「自分の方向性」が決まります。',
+        steady:  '今月中にスタイリストに相談し、「自分に似合う色・シルエット」を把握することから始める。',
+        guided:  'スタイリストにトータルコーディネートを依頼する。一任することで最短でセンスが身につく。',
+        learn:   'スタイリストに「なぜこれが似合うか」の理由を教えてもらいながら、自分の「似合う軸」を学ぶ。',
+      },
+      hair: {
+        sprint:  '今週中に「印象を変えたい、お任せで」と伝えてヘアサロンを予約する。',
+        steady:  '今月中に美容師に「自分の雰囲気に合う髪型を相談したい」と伝えて予約を入れる。',
+        guided:  '「顔型・雰囲気に合わせて完全にお任せ」と伝えてヘアサロンに予約を入れる。',
+        learn:   'ヘアサロンで「なぜこのスタイルが似合うか」を美容師に解説してもらいながら施術を受ける。',
       },
     };
 
@@ -1074,12 +1119,20 @@
     }
 
     function computeResult() {
-      const dir  = state.direction;
-      const why  = state.q1 || 'general';
-      const how  = state.how || 'guided';
-      const meta = DIR_META[dir];
-      const priority = PRIORITY[dir];
-      const cats = ['eyebrow','body','skin','fashion','hair'];
+      const dir    = state.direction;
+      const why    = state.q1 || 'general';
+      const how    = state.how || 'guided';
+      const budget = state.budget || 'mid';
+      const meta   = DIR_META[dir];
+      const cats   = ['eyebrow','body','skin','fashion','hair'];
+
+      // 予算補正込みの優先度スコア算出
+      const basePriority = PRIORITY[dir];
+      const modifier = BUDGET_SCORE_MODIFIER[budget] || {};
+      const priority = {};
+      cats.forEach(cat => {
+        priority[cat] = (basePriority[cat] || 0) + (modifier[cat] || 0);
+      });
 
       // ===== Save to localStorage (3-layer) =====
       const saveData = {
@@ -1125,10 +1178,34 @@
         <span class="rp-val">${r.val}</span>
       </div>`).join('');
 
-      // ── 方向性ガイド（WHY × WHAT で個別化） ──
+      // ── 方向性ガイド（WHY × WHAT + HOW suffix で個別化） ──
       const guideText = (GUIDE[why]?.[dir] || GUIDE.general[dir]);
+      const howSuffix = (HOW_GUIDE_SUFFIX[how]?.[why] || HOW_GUIDE_SUFFIX.guided.general);
       document.getElementById('result-style-content').innerHTML =
-        `<p style="font-size:14px;color:#0f172a;line-height:1.75;margin:0">${guideText}</p>`;
+        `<p style="font-size:14px;color:#0f172a;line-height:1.75;margin:0 0 12px">${guideText}</p>` +
+        `<p style="font-size:13px;color:#374151;line-height:1.7;margin:0;padding:12px;background:rgba(11,38,64,0.04);border-radius:8px;border-left:3px solid var(--accent)">${howSuffix}</p>`;
+
+      // ── ギャップ ナラティブ（概要文） ──
+      const gapCount = cats.filter(cat => state.gaps[cat] === false).length;
+      const topGapCat = cats
+        .filter(cat => state.gaps[cat] === false)
+        .map(cat => ({ cat, score: priority[cat] }))
+        .sort((a, b) => b.score - a.score)[0];
+      const topLabel = topGapCat ? CAT_META[topGapCat.cat].label : '';
+      let narrative = '';
+      if (gapCount === 0) {
+        narrative = 'すでに5つの基礎がすべて整っています。次は各カテゴリをさらに高いレベルへ引き上げることが目標です。';
+      } else if (gapCount === 1) {
+        narrative = `5つの課題のうち、<strong>${topLabel}</strong>の1点にギャップがあります。ここを整えるだけで、印象は大きく変わります。`;
+      } else if (gapCount === 2) {
+        const labels2 = cats.filter(cat => state.gaps[cat] === false)
+          .map(cat => ({ cat, score: priority[cat] })).sort((a,b) => b.score-a.score)
+          .map(g => CAT_META[g.cat].label).join('と');
+        narrative = `5つのうち<strong>${labels2}</strong>の2点にギャップがあります。まず<strong>${topLabel}</strong>から着手することを勧めます。`;
+      } else {
+        narrative = `5つのうち<strong>${gapCount}つ</strong>のギャップが見つかりました。まず<strong>${topLabel}</strong>から着手することで、最も早く変化を実感できます。`;
+      }
+      document.getElementById('result-gap-narrative').innerHTML = narrative;
 
       // ── ギャップ分析 ──
       document.getElementById('result-gap-list').innerHTML = cats.map(cat => {
@@ -1169,22 +1246,72 @@
         }).join('');
       }
 
-      // ── クイックウィン（体型最優先かつ眉毛未着手） ──
+      // ── クイックウィン（最優先ギャップ別に展開） ──
       const topGap = gaps[0];
       const qwWrap = document.getElementById('result-quickwin-wrap');
-      if (topGap && topGap.cat === 'body' && state.gaps.eyebrow === false) {
-        qwWrap.style.display = 'block';
-        const qwReason = why === 'match'
-          ? 'ジムの成果が出るまで数ヶ月かかりますが、眉毛サロンなら1回で写真の印象が劇的に変わります。マッチングアプリの結果を今すぐ変えるなら、眉毛を先に。'
-          : why === 'confidence'
-          ? 'ジムを続けながら、眉毛を整えることで今すぐ変化を実感できます。「変わっている」という実感が継続の力になります。'
-          : 'ジムの成果が出るまで数ヶ月かかりますが、眉毛サロンなら1回で劇的に変わります。並行して始めることで、今すぐ変化を実感できます。';
-        document.getElementById('result-quickwin').innerHTML = `
-          <div class="quick-win-label">⚡ クイックウィン</div>
-          <div class="quick-win-title">✂️ 眉毛を先に整えよう</div>
-          <div class="quick-win-text">${qwReason}</div>`;
+      const QW_DATA = {
+        body: {
+          title: '✂️ 眉毛を並行して先に整えよう',
+          text: {
+            match:      'ジムの成果が出るまで数ヶ月かかります。眉毛サロンなら1回で写真の印象が別人のように変わります。マッチングの結果を今すぐ変えるなら、眉毛を先に。',
+            confidence: 'ジムを続けながら、眉毛を整えることで今すぐ変化を実感できます。「変わっている」という実感が継続の力になります。',
+            default:    'ジムの成果が出るまで数ヶ月かかります。眉毛サロンなら1回で劇的に変わります。並行して始めることで、今すぐ変化を実感できます。',
+          },
+          condition: (gaps) => gaps.some(g => g.cat === 'eyebrow'),
+        },
+        fashion: {
+          title: '🪞 まず鏡の前で「今の自分」を記録しよう',
+          text: {
+            default: 'スタイリスト相談の前に、今の全身写真を1枚撮っておく。「変わる前」の記録が、変化の実感と継続の力になります。',
+          },
+          condition: () => true,
+        },
+        skin: {
+          title: '✂️ 眉毛も同時に整えると相乗効果が高い',
+          text: {
+            default: '肌ケアと眉毛整えは「清潔感」を構成する2大要素です。並行して着手することで、印象改善の速度が2倍になります。',
+          },
+          condition: (gaps) => gaps.some(g => g.cat === 'eyebrow'),
+        },
+        hair: {
+          title: '✂️ 眉毛と髪を同日に整えると最大効率',
+          text: {
+            default: '眉毛サロンとヘアサロンを同じ日に予約すると、1日で清潔感の印象が劇的に変わります。予約をまとめることで時間の節約にもなります。',
+          },
+          condition: (gaps) => gaps.some(g => g.cat === 'eyebrow'),
+        },
+        eyebrow: {
+          title: '📅 定期的なメンテナンスが「清潔感の維持」につながる',
+          text: {
+            default: '眉毛は整えたあとの「維持」が大切です。最初のサロンで「次回はいつ来ればいいか」を必ず聞いておきましょう。',
+          },
+          condition: () => true,
+        },
+      };
+      if (topGap) {
+        const qw = QW_DATA[topGap.cat];
+        const condOk = qw && qw.condition(gaps);
+        if (condOk) {
+          qwWrap.style.display = 'block';
+          const qwText = qw.text[why] || qw.text.default;
+          document.getElementById('result-quickwin').innerHTML = `
+            <div class="quick-win-label">⚡ クイックウィン</div>
+            <div class="quick-win-title">${qw.title}</div>
+            <div class="quick-win-text">${qwText}</div>`;
+        } else {
+          qwWrap.style.display = 'none';
+        }
       } else {
         qwWrap.style.display = 'none';
+      }
+
+      // ── 今日の第一歩 ──
+      const firstStepCat = topGap ? topGap.cat : (gaps.length === 0 ? null : gaps[0].cat);
+      const firstStepEl = document.getElementById('result-first-step');
+      if (firstStepCat && FIRST_STEP_TEXT[firstStepCat]) {
+        firstStepEl.textContent = FIRST_STEP_TEXT[firstStepCat][how] || FIRST_STEP_TEXT[firstStepCat].guided;
+      } else {
+        firstStepEl.textContent = 'Finemeで自分のエリア・カテゴリのサービスを検索してみましょう。';
       }
 
       // ── HOW別 CTA（サービス探しの入口を個別化） ──
