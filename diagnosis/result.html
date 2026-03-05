@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>印象アップ診断 - 結果</title>
+  <title>あなたの変容タイプ | Fineme</title>
   <link rel="stylesheet" href="../assets/styles/style.css">
   <link rel="stylesheet" href="../assets/styles/components.css">
   <style>
@@ -80,11 +80,11 @@
   <main>
     <div class="diag-container">
       <div class="diag-card">
-        <h1>診断結果</h1>
+        <h1>あなたの「Find New Me」が見つかりました</h1>
         <div id="result-root">
           <div id="loading">結果を読み込み中…</div>
         </div>
-  <p style="margin-top:12px;"><button id="retryBtn" class="btn">診断をやり直す</button></p>
+  <p style="margin-top:12px;"><button id="retryBtn" class="btn">もう一度診断する</button></p>
       </div>
     </div>
   </main>
@@ -100,78 +100,102 @@
       // 新6タイプ（ストレート表記）
       const TYPE6_COPY = {
         t01: {
-          name:'慎重・納得重視タイプ',
-          state:'変わりたい気持ちはあるのに、失敗したくない思いが先に立ち、一歩目を慎重に選ぼうとしている状態です。',
-          strength:'表面的な変化では満足せず、理由と根拠を大切にできる人です。',
+          name:'納得してから動く人',
+          state:'「変わりたい」という気持ちは本物です。ただ、理由なく動くのが性に合わないだけ。それは弱さではなく、自分の選択に責任を持てる人間である証拠です。根拠が揃った瞬間に、あなたは誰より深く変わっていける。',
+          strength:'表面的な変化では満足しない。理由と根拠を持って変わるから、ブレない。',
           fit:[
-            '理由を言語化し、プロセスが見える小さな変化',
-            '押し売りせず、質問に丁寧に答えてくれる関わり方',
-            '試してから調整できる進め方'
+            'なぜそうなるかを説明してくれる関わり方',
+            '試してから調整できる進め方',
+            '押し売りせず、質問に丁寧に答えてくれる人'
           ],
-          empathy:'「なんとなく」では動かず、理由と納得が揃ったときに満足できるタイプです。',
-          logic:'説明が丁寧で、考え方やプロセスを言語化できる店舗と相性が良いと判断しています。'
+          empathy:'根拠が揃ったとき、あなたは誰より確実に動ける人です。',
+          logic:'説明が丁寧で、プロセスを言語化できる店舗と相性が良いと判断しています。'
         },
         t02: {
-          name:'安心・寄り添い重視タイプ',
-          state:'興味はあるけれど「何が正解かわからない」不安が大きく、伴走や説明があると進みやすい状態です。',
-          strength:'人の話を素直に聞けて、相談しながら決められる人です。',
+          name:'伴走してもらいながら変わる人',
+          state:'一人で全部決めなくていい。相談しながら、確認しながら進んでいける環境があれば、あなたは必ず変われます。「わからない」が弱さではなく、素直に聞ける力があることが最大の武器です。',
+          strength:'人の話を素直に聞ける。相談しながら決められる。それが継続力の源になる。',
           fit:[
-            '全部任せられる環境での小さな前進',
-            '手順を一つずつ示す進め方',
-            'こまめな確認と安心の提供'
+            '一緒に考えてくれる関わり方',
+            '手順を一つずつ示してくれる進め方',
+            'こまめな確認と安心を提供してくれる人'
           ],
-          empathy:'強い売りより、寄り添いと安心感があると満足します。',
+          empathy:'寄り添いと安心感がある環境で、あなたは最大限に変われる人です。',
           logic:'無理をさせない進め方で、相談しながら決められる店舗を優先して表示しています。'
         },
         t03: {
-          name:'効率・最短重視タイプ',
-          state:'今の自分に飽きや焦りがあり、結果が見えるなら一歩を早く踏み出したい状態です。',
-          strength:'行動力があり、要点を掴むのが得意です。',
+          name:'結果が見えたら動ける人',
+          state:'遠回りや待ちが苦手なのではなく、ゴールが明確でないと信じられないだけ。見通しが立った瞬間に、誰より速く、誰より深く動けます。今必要なのは、最初の「これだ」という確信です。',
+          strength:'要点を掴むのが速い。動き出したら止まらない。結果にコミットできる。',
           fit:[
             '実績と結果が明確な提案',
             '短い試行と改善のサイクル',
             'ゴールと計画がはっきりした関わり方'
           ],
-          empathy:'遠回りが苦手で、結局どうなるかが明確だと安心できます。',
-          logic:'要点を押さえ、実績と結果を示せる店舗を上位に表示します。'
+          empathy:'ゴールが見えた瞬間に、あなたは誰より速く変われる人です。',
+          logic:'実績と結果を明示できる店舗を上位に表示します。'
         },
         t04: {
-          name:'変化・アップデート重視タイプ',
-          state:'新しい自分にワクワクしており、挑戦を前向きに受け入れられる状態です。',
-          strength:'変化を楽しめる柔軟さがあります。',
+          name:'変化を楽しめる人',
+          state:'新しい自分を試せることを、どこかワクワクできる。それはすごく稀な感覚です。多くの人は変化を怖れる中で、あなたはその感覚を武器に変えられる。背中を押してくれる人と出会えば、一気に変われる。',
+          strength:'変化に抵抗がない。新しい自分を試せるしなやかさがある。',
           fit:[
-            '提案力があり背中を押してくれる関わり方',
-            '安全網を用意した無理のない挑戦',
-            '変化の意図を共有しながら進める'
+            '提案力があり、背中を押してくれる関わり方',
+            '安全網を用意した、無理のない挑戦',
+            '変化の実感を一緒に確認してくれる人'
           ],
-          empathy:'多少の挑戦でも、変われるなら一歩を選べるタイプです。',
+          empathy:'変われると信じた瞬間に、誰より大きく変われる人です。',
           logic:'変化の提案力があり、背中を押してくれる店舗を優先します。'
         },
         t05: {
-          name:'直感・フィーリング重視タイプ',
-          state:'雰囲気や世界観の合致が何より大事で、腑に落ちる相手となら踏み出せる状態です。',
-          strength:'自分の感覚を大切にし、それを継続力に変えられる人です。',
+          name:'感覚が合えば進める人',
+          state:'理論より雰囲気。スペックより世界観。あなたが「これだ」と感じた瞬間に、誰より深く変わっていく人です。その感覚は正しい。Finemeはあなたの「これだ」を見つけるための場所です。',
+          strength:'自分の感覚を信じられる。一度「これだ」と思ったものへの継続力が高い。',
           fit:[
             '世界観とスタイルが明確な相手',
-            '事例でイメージできる提案',
+            '事例や写真でイメージできる提案',
             'まずは小さく試せる一歩'
           ],
-          empathy:'世界観や空気感に納得できると満足するタイプです。',
+          empathy:'「これだ」と感じた瞬間に、誰より本気で変われる人です。',
           logic:'スタイルや思想が明確で、感覚が合う店舗を優先します。'
         },
         t06: {
-          name:'伴走・共同決定重視タイプ',
-          state:'一緒に考えながら納得して進みたい、主導権を共有したい状態です。',
-          strength:'対話を通じて意思決定できる人です。',
+          name:'一緒に作り上げる人',
+          state:'自分だけで決めるのでも、全部任せるのでもなく、対話しながら最善を選びたい。その姿勢は、変化の質を高めます。押し付けではなく、あなたと一緒に考えてくれる人と出会えば、変容は加速します。',
+          strength:'対話を通じて意思決定できる。自分の意見を持ちながら、柔軟に修正できる。',
           fit:[
             '選択肢を提示し、共同で決める進め方',
             '振り返りと調整を前提にした設計',
-            'メモや記録を共有しながら進める'
+            '話しながら方向性をすり合わせられる人'
           ],
-          empathy:'一緒に考え、納得しながら進めたいタイプです。',
+          empathy:'一緒に考えながら進んでいける環境で、あなたは最高のパフォーマンスを発揮します。',
           logic:'提案と対話のバランスが良く、共同で決めていける店舗を上位に表示します。'
         }
       };
+
+  // 物語生成マップ（WHY + WHAT + HOW → ユーザー固有の一段落ストーリー）
+  const WHY_STORY = {
+    r01: 'デートや出会いで、もっと堂々とした自分でいたいと思っているあなたは',
+    r02: '「また同じ結果」を終わらせたいと思い続けてきたあなたは',
+    r03: '誰かより先に、まず自分のことを少し好きになりたいと思っているあなたは',
+    r04: '変わりたい気持ちはある。でも最初の一手がずっと見えなかったあなたは',
+    r05: '何かが変わるタイミングが来ていると感じているあなたは',
+  };
+  const TYPE_STORY = {
+    w01: '「静かに選ばれる人」になる道を、自分で選んだ',
+    w02: '「力を抜いて好かれる人」になる道を、自分で選んだ',
+    w03: '「余裕が滲み出る人」になる道を、自分で選んだ',
+    w04: '「頼もしさを持つ人」になる道を、自分で選んだ',
+    w05: '「近距離で輝く人」になる道を、自分で選んだ',
+    w06: '「習慣が自信をつくる人」になる道を、自分で選んだ',
+    w07: '「別人になる覚悟がある人」の道を、自分で選んだ',
+    w08: '「節目で脱皮する人」の道を、自分で選んだ',
+  };
+  const HOW_STORY = {
+    s01: 'Finemeは、あなたが納得できる理由を確かめながら進んでいけるよう、最初の地図を渡します。',
+    s02: 'Finemeは、あなたがプロに委ねる覚悟を持って最短距離で変われるよう、最初の地図を渡します。',
+    s03: 'Finemeは、あなたが誰かと一緒に考えながら自分だけの答えを作れるよう、最初の地図を渡します。',
+  };
 
   function renderNotFound(){
     const wrap = document.createElement('div');
@@ -197,15 +221,15 @@
 
             const article = document.createElement('article'); article.className = 'result-article'; article.style.marginTop = '12px'; article.style.lineHeight = '1.7';
 
-            // ① タイトル：今のあなたの状態（判定感を避ける）
+            // ① タイトル：物語として提示
             const headerWrap = document.createElement('div'); headerWrap.className = 'result-header';
-            const badge = document.createElement('div'); badge.className = 'badge-emoji'; badge.textContent = '💫'; headerWrap.appendChild(badge);
+            const badge = document.createElement('div'); badge.className = 'badge-emoji'; badge.textContent = '🧭'; headerWrap.appendChild(badge);
             const titleWrap = document.createElement('div');
             const title = document.createElement('h2'); title.style.fontSize = '22px'; title.style.margin = '0';
-            title.textContent = '今のあなたの状態';
+            title.textContent = 'あなたの変容タイプ';
             titleWrap.appendChild(title);
             const label = document.createElement('div'); label.className='result-label';
-            label.textContent = '「現時点では」こう見えています。焦らなくて大丈夫。';
+            label.textContent = 'これはあなたの評価ではなく、変容への地図の最初の一枚です。';
             titleWrap.appendChild(label);
             // 最新の見立て（STEP2）とSTEP1結果の併記
             try{
@@ -237,9 +261,24 @@
             headerWrap.appendChild(titleWrap); article.appendChild(headerWrap);
 
             if(entry.image){ const heroWrap = document.createElement('div'); heroWrap.style.textAlign='center'; const hero = document.createElement('img'); hero.className = 'type-hero'; hero.src = entry.image; hero.alt = entry.name||''; hero.onerror = ()=>{ hero.style.display='none'; }; hero.style.animation='floatUp .6s ease both'; heroWrap.appendChild(hero); article.appendChild(heroWrap); }
-            // 共通の但し書き（一般指針であることを明示）
-            const disclaimerTop = document.createElement('p'); disclaimerTop.className='muted'; disclaimerTop.textContent = 'この提案は一般的な指針です。顔立ち・体型・目的によって最適は異なります。小さく試して、観察→調整していきましょう。';
-            article.appendChild(disclaimerTop);
+            // あなたの物語（WHY + WHAT + HOW の個人化ストーリー）
+            try{
+              const whyId = obj?.why?.reason_id || '';
+              const typeId = obj?.intent?.type_id || '';
+              const howId = obj?.how?.style_id || '';
+              const ws = WHY_STORY[whyId];
+              const ts = TYPE_STORY[typeId];
+              const hs = HOW_STORY[howId];
+              if(ws && ts && hs){
+                const storyWrap = document.createElement('div');
+                storyWrap.style.cssText = 'background:linear-gradient(135deg,#0f0f0f 0%,#1a1a2e 100%);color:#fff;padding:20px 24px;border-radius:14px;margin:12px 0;line-height:1.9;';
+                const storyP = document.createElement('p');
+                storyP.style.cssText = 'margin:0;font-size:15px;';
+                storyP.textContent = `${ws}、${ts}。${hs}`;
+                storyWrap.appendChild(storyP);
+                article.appendChild(storyWrap);
+              }
+            }catch{}
 
             
 
@@ -453,8 +492,8 @@
               article.appendChild(wrap);
             })();
 
-            // ③ 強みの再定義（自己否定を防ぐ）
-            const strongH = document.createElement('h3'); strongH.textContent = 'これは「悪い」ではなく、あなたの強みです'; article.appendChild(strongH);
+            // ③ 強みの定義
+            const strongH = document.createElement('h3'); strongH.textContent = 'あなたが持っている変容の力'; article.appendChild(strongH);
             const strongP = document.createElement('p'); strongP.textContent = copy.strength || 'あなたは自分に合う進め方を選べる人です。'; article.appendChild(strongP);
 
             // ③-2 強みハイライト（チップ化）
@@ -519,7 +558,7 @@
             // ④-2 代替案タブ（保守/標準/攻め）
             (function(){
               const wrap = document.createElement('div'); wrap.className='block';
-              const title = document.createElement('div'); title.className='block-title'; title.textContent='別の見方（保守/標準/攻め）'; wrap.appendChild(title);
+              const title = document.createElement('div'); title.className='block-title'; title.textContent='どのテンポで変わっていきたいか'; wrap.appendChild(title);
               const tabs = document.createElement('div'); tabs.style.display='flex'; tabs.style.gap='8px'; tabs.style.margin='8px 0';
               const btnConservative = document.createElement('button'); btnConservative.className='btn btn-ghost'; btnConservative.textContent='保守';
               const btnStandard = document.createElement('button'); btnStandard.className='btn btn-ghost'; btnStandard.textContent='標準';
@@ -589,7 +628,7 @@
               const BASE_PREFIX = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
               // 左：目的が決まっている（カテゴリから探す）
               const left = document.createElement('div');
-              const lh = document.createElement('h4'); lh.textContent='目的が決まっている（カテゴリから探す）'; left.appendChild(lh);
+              const lh = document.createElement('h4'); lh.textContent='変わりたい領域から探す'; left.appendChild(lh);
               const rec = recommendCategories(diag);
               const allCats = ['consulting','gym','makeup','hair','diagnosis','fashion','photo','marriage','eyebrow','hairremoval','esthetic','cosmetic','whitening','orthodontics','nail'];
               const iconMap = { hair:'💇‍♂️', eyebrow:'✂️', esthetic:'💆‍♂️', cosmetic:'🏥', fashion:'👔', gym:'🏋️‍♂️', orthodontics:'🦷', makeup:'💄', nail:'💅', photo:'📸', diagnosis:'🔍', consulting:'🧑‍⚕️', marriage:'💍', hairremoval:'🪒', whitening:'✨' };
@@ -610,9 +649,9 @@
               left.appendChild(catGrid);
               // 右：まだ決めていない（タイプに合うスターター）
               const right = document.createElement('div');
-              const rh = document.createElement('h4'); rh.textContent='まだ決めていない（タイプに合うスターター）'; right.appendChild(rh);
+              const rh = document.createElement('h4'); rh.textContent='何から始めるか迷ったら'; right.appendChild(rh);
               const actWrap = document.createElement('div'); actWrap.className='cluster'; actWrap.style.flexWrap='wrap'; actWrap.style.gap='8px';
-              const btnReco = document.createElement('a'); btnReco.className='btn'; btnReco.textContent='タイプに合うスターター3選';
+              const btnReco = document.createElement('a'); btnReco.className='btn'; btnReco.textContent='あなたに合うサービスを見る';
               try{ btnReco.style.setProperty('color','#fff','important'); }catch{}
               { const u=new URL(BASE_PREFIX + '/pages/search.html', location.origin); u.searchParams.set('diag','1'); u.searchParams.set('top','3'); btnReco.href = u.toString(); }
               const btnGuide = document.createElement('a'); btnGuide.className='btn btn-ghost'; btnGuide.textContent='垢抜けガイドを見る'; { const u=new URL(BASE_PREFIX + '/pages/glowup-guide.html', location.origin); btnGuide.href = u.toString(); }
@@ -664,8 +703,8 @@
 
             // ⑥ 次の一手（最大2つ）
             const nextActions = document.createElement('div'); nextActions.className='result-actions';
-            const goSearch = document.createElement('a'); goSearch.href='../pages/search.html'; goSearch.className='btn'; goSearch.textContent='今の自分に合う選択肢を見る'; nextActions.appendChild(goSearch);
-            const goMypage = document.createElement('a'); goMypage.href='../pages/mypage/diagnosis.html'; goMypage.className='btn'; goMypage.textContent='少し考えるために保存する'; nextActions.appendChild(goMypage);
+            const goSearch = document.createElement('a'); goSearch.href='../pages/search.html'; goSearch.className='btn'; goSearch.textContent='最初の一歩を踏み出す'; nextActions.appendChild(goSearch);
+            const goMypage = document.createElement('a'); goMypage.href='../pages/mypage/diagnosis.html'; goMypage.className='btn btn-ghost'; goMypage.textContent='結果を保存する'; nextActions.appendChild(goMypage);
             article.appendChild(nextActions);
 
             

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>印象アップ診断 - STEP1結果</title>
+  <title>あなたのタイプ診断結果 | Fineme</title>
   <link rel="stylesheet" href="../assets/styles/style.css">
   <link rel="stylesheet" href="../assets/styles/components.css">
   <style>
@@ -24,8 +24,8 @@
   <main>
     <div class="diag-container">
       <div class="diag-card">
-        <h1>STEP1 の結果</h1>
-        <p class="muted">第1段階（3問）の選択に基づく「なりたい印象（WHAT）」の結果です。必要なら、この時点で見直しもできます。</p>
+        <h1>あなたのタイプが決まりました</h1>
+        <p class="muted">3つの問いへの回答をもとに、あなたの「変容タイプ」を導き出しました。これは評価ではなく、あなたの変容の地図の最初の一枚です。</p>
         <div id="result-root"><div id="loading">結果を読み込み中…</div></div>
       </div>
     </div>
@@ -73,7 +73,7 @@
         // ヘッダー：STEP1結果
         const headerWrap = document.createElement('div'); headerWrap.className = 'result-header';
         const badge = document.createElement('div'); badge.className='badge-emoji'; badge.textContent='🔎'; headerWrap.appendChild(badge);
-        const title = document.createElement('h2'); title.style.fontSize='22px'; title.style.margin='0'; title.textContent = `第1段階の結果：「${entry.name}」`;
+        const title = document.createElement('h2'); title.style.fontSize='22px'; title.style.margin='0'; title.textContent = `あなたは「${entry.name}」`;
         headerWrap.appendChild(title);
         article.appendChild(headerWrap);
 
@@ -82,7 +82,7 @@
         // 視点ブロック（STEP1の WHY/HOW をもとに）
         (function(){
           const wrap = document.createElement('div'); wrap.className='result-article'; wrap.style.marginTop='12px';
-          const title = document.createElement('h3'); title.textContent='進め方の視点（STEP1）'; wrap.appendChild(title);
+          const title = document.createElement('h3'); title.textContent='あなたに合う変わり方'; wrap.appendChild(title);
           const how = (obj?.how?.style_name || '').toString();
           const whyId = (obj?.why?.reason_id || '').toString();
           const listChoose = [];
@@ -130,20 +130,20 @@
           const showRanks = spread > 0.5 && (/最短|効率|短期|即|寄り添|相談|伴走|慎重|納得|説明|可視化|透明/.test(how) || whyId);
           const stratUl = document.createElement('ul'); ranked.slice(0,4).forEach((t,i)=>{ const li=document.createElement('li'); li.textContent=t; if(showRanks){ const b=document.createElement('span'); b.textContent=` 優先度 ${i+1}`; b.style.marginLeft='6px'; b.style.padding='2px 6px'; b.style.border='1px solid var(--color-border)'; b.style.borderRadius='999px'; b.style.fontSize='12px'; li.appendChild(b); } stratUl.appendChild(li); }); wrap.appendChild(stratUl);
           if(!showRanks){ const note=document.createElement('p'); note.className='muted'; note.textContent='※ STEP1の回答からは順位差が僅少のため、進め方の順位付けは行っていません（同程度）。'; wrap.appendChild(note); }
-          const note = document.createElement('p'); note.className='muted'; note.textContent='※ この視点は STEP1 の選択（WHY/HOW）に基づいて生成しています。'; wrap.appendChild(note);
+          const note = document.createElement('p'); note.className='muted'; note.textContent='※ あなたの「動機」と「スタイル」の回答をもとに生成しています。'; wrap.appendChild(note);
           article.appendChild(wrap);
         })();
 
         // あなたの選択（WHY/HOWの要約）
-        const selh = document.createElement('h3'); selh.textContent='あなたの選択（STEP1）'; article.appendChild(selh);
+        const selh = document.createElement('h3'); selh.textContent='あなたが選んだ答え'; article.appendChild(selh);
         const ul = document.createElement('ul');
         const li1 = document.createElement('li'); li1.textContent = `動機（WHY）：${WHY_MAP[whyId] || '—'}`; ul.appendChild(li1);
         const li2 = document.createElement('li'); li2.textContent = `関わり方（HOW）：${howName || '—'}`; ul.appendChild(li2);
         article.appendChild(ul);
 
         const actions = document.createElement('div'); actions.className='result-actions';
-        const goStep2 = document.createElement('a'); goStep2.href='./step2.html'; goStep2.className='btn'; goStep2.textContent='精度を上げる（STEP2へ）';
-        const retry = document.createElement('a'); retry.href='./index.html'; retry.className='btn btn-ghost'; retry.textContent='STEP1をやり直す';
+        const goStep2 = document.createElement('a'); goStep2.href='./step2.html'; goStep2.className='btn'; goStep2.textContent='サービスを見つける（次へ）';
+        const retry = document.createElement('a'); retry.href='./index.html'; retry.className='btn btn-ghost'; retry.textContent='もう一度診断する';
         actions.appendChild(goStep2); actions.appendChild(retry);
         article.appendChild(actions);
 
