@@ -1115,7 +1115,8 @@
     // ===== RESULT =====
     function showResult() {
       computeResult();
-      showScreen('screen-result');
+      // 統一結果ページへリダイレクト
+      window.location.href = '../diagnosis/result.html';
     }
 
     function computeResult() {
