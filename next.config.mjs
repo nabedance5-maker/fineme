@@ -6,6 +6,12 @@ const nextConfig = {
   experimental: {
     typedRoutes: false
   },
+  async rewrites() {
+    return [
+      // ルート `/` を static index.html に向ける（App Router page.js を削除したため）
+      { source: '/', destination: '/index.html' },
+    ];
+  },
   async headers() {
     return [
       // API routes: CORS（静的HTMLページからの fetch を許可）

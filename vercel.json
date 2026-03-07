@@ -1,7 +1,7 @@
 {
-  "buildCommand": null,
-  "outputDirectory": ".",
-  "framework": null,
+  "framework": "nextjs",
+  "buildCommand": "node scripts/copy-static.js && next build",
+  "outputDirectory": ".next",
   "headers": [
     {
       "source": "/api/:path*",
