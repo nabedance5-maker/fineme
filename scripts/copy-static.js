@@ -13,8 +13,8 @@ const { resolve, join } = require('path');
 const ROOT = resolve(__dirname, '..');
 const PUBLIC = resolve(ROOT, 'public');
 
-// assets, components, data は丸ごとコピー
-const FULL_COPY = ['assets', 'components', 'data', 'styles'];
+// assets, components, data, scripts, feature, diagnosis は丸ごとコピー
+const FULL_COPY = ['assets', 'components', 'data', 'styles', 'scripts', 'feature', 'diagnosis'];
 for (const dir of FULL_COPY) {
   const src = resolve(ROOT, dir);
   if (!existsSync(src)) continue;
