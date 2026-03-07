@@ -325,45 +325,13 @@ function init() {
       return;
     }
 
-    // 旧形式の診断データ（fineme:diagnosis:latest）が存在する場合 → 再診断プロンプトを表示
-    const oldRaw = localStorage.getItem('fineme:diagnosis:latest');
-    if (oldRaw) {
-      if (roadmapEl) roadmapEl.style.display = '';
-      if (sampleEl)  sampleEl.style.display  = 'none';
-      renderRediagnoseBanner();
-      return;
-    }
-
-    // 未診断
+    // 未診断（旧形式データがあっても、トップページではサンプル表示）
     if (roadmapEl) roadmapEl.style.display = 'none';
     if (sampleEl)  sampleEl.style.display  = '';
     renderSamples();
   } catch (e) {
     console.error('[home-roadmap]', e);
   }
-}
-
-function renderRediagnoseBanner() {
-  const roadmapEl = document.getElementById('roadmap-section');
-  if (!roadmapEl) return;
-  roadmapEl.innerHTML = `
-    <section class="container" style="padding:40px 0;">
-      <div class="card" style="padding:28px 24px;text-align:center;max-width:520px;margin:0 auto;
-        border-top:3px solid #4f46e5;">
-        <div style="font-size:28px;margin-bottom:12px;">🗺️</div>
-        <h2 style="font-size:18px;font-weight:800;margin:0 0 8px;color:#111827;">
-          ロードマップを更新してください
-        </h2>
-        <p style="font-size:14px;color:#6b7280;line-height:1.7;margin:0 0 20px;">
-          以前の診断データは旧形式のため、スコアを読み込めません。<br>
-          もう一度診断すると、あなた専用のロードマップが表示されます。
-        </p>
-        <a href="./pages/diagnosis.html" class="btn"
-          style="font-size:14px;padding:10px 28px;display:inline-block;">
-          診断をやり直す（1分）
-        </a>
-      </div>
-    </section>`;
 }
 
 document.addEventListener('DOMContentLoaded', init);
