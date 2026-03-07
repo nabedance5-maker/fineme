@@ -322,6 +322,13 @@ function init() {
       if (roadmapEl) roadmapEl.style.display = '';
       if (sampleEl)  sampleEl.style.display  = 'none';
       renderDiagnosed(diag);
+      // マイページ「ロードマップを見る」経由の場合、ロードマップ箇所にスクロール
+      if (new URLSearchParams(location.search).get('scrollTo') === 'roadmap') {
+        setTimeout(() => {
+          const el = document.getElementById('roadmap-section');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+      }
       return;
     }
 

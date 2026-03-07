@@ -271,10 +271,11 @@
       text-decoration: none;
       font-size: 14px;
       font-weight: 700;
-      color: #fff;
+      color: #fff !important;
       background: linear-gradient(120deg, #4f46e5, #7c3aed);
       transition: opacity .15s, transform .15s;
     }
+    .service-link-btn:visited { color: #fff !important; }
     .service-link-btn:hover { opacity: .9; transform: translateY(-1px); }
     .service-link-btn .arrow { font-size: 18px; }
 
@@ -320,7 +321,7 @@
   </style>
 </head>
 <body>
-  <div id="site-header"></div>
+  <header id="site-header"></header>
 
   <div class="diag-wrap">
     <!-- Progress bar -->
@@ -456,8 +457,9 @@
       </div>
 
       <div class="result-share">
+        <button class="btn" id="save-to-mypage-btn" onclick="saveDiagToMypage()">マイページに保存する</button>
         <button class="btn btn-ghost" onclick="shareResult()">結果をシェアする</button>
-        <a href="/pages/search.html" class="btn">すべてのサービスを見る</a>
+        <a href="/pages/search.html" class="btn btn-ghost">すべてのサービスを見る</a>
       </div>
     </div>
 
@@ -1036,12 +1038,35 @@
     showScreen('screen-0');
   }
 
-  // Header
-  fetch('../components/header.html').then(r => r.text()).then(h => {
-    document.getElementById('site-header').innerHTML = h;
-  }).catch(() => {});
+  // =========================================================
+  // SAVE TO MYPAGE
+  // =========================================================
+  function saveDiagToMypage() {
+    try {
+      const btn = document.getElementById('save-to-mypage-btn');
+      const diag = state.result;
+      if (!diag) return;
+      const snap = {
+        badge:     diag.badge || '',
+        heading:   diag.heading || '',
+        savedAt:   new Date().toISOString(),
+        data:      { scores: state.scores, drills: state.drills, context: state.context, result: diag },
+      };
+      const key = 'fineme:saved:diagnoses';
+      let arr = [];
+      try { const r = localStorage.getItem(key); arr = r ? JSON.parse(r) : []; if (!Array.isArray(arr)) arr = []; } catch { arr = []; }
+      arr.unshift(snap);
+      if (arr.length > 50) arr = arr.slice(0, 50);
+      localStorage.setItem(key, JSON.stringify(arr));
+      sessionStorage.setItem('fineme:saved:just', '1');
+      if (btn) { btn.textContent = '保存しました ✓'; btn.disabled = true; }
+      setTimeout(() => { location.href = '/pages/mypage/diagnosis.html'; }, 800);
+    } catch(e) {}
+  }
 
   updateProgress();
   </script>
+  <script src="../scripts/main.js" type="module"></script>
+  <script src="../scripts/partials.js" type="module"></script>
 </body>
 </html>

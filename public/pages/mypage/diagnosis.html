@@ -137,7 +137,6 @@
       const { scores, result, savedAt } = diag;
       const currentPhase = getCurrentPhase();
 
-      // ── ヘッダーカード ──
       const card1 = document.createElement('div');
       card1.className = 'card';
       card1.style.padding = '20px';
@@ -167,7 +166,6 @@
         card1.appendChild(ts);
       }
 
-      // ── スコア一覧 ──
       if (scores && Object.keys(scores).length > 0) {
         const scoreTitle = document.createElement('p');
         scoreTitle.style.cssText = 'font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:0 0 8px;';
@@ -191,7 +189,6 @@
         card1.appendChild(grid);
       }
 
-      // ── フェーズ状況 ──
       const phaseSummary = document.createElement('div');
       phaseSummary.className = 'phase-summary';
       phaseSummary.innerHTML = `
@@ -204,7 +201,6 @@
 
       host.appendChild(card1);
 
-      // ── 優先取り組みTOP3 ──
       const priorities = result?.priorities;
       if (priorities && priorities.length > 0) {
         const card2 = document.createElement('div');
@@ -232,12 +228,11 @@
         host.appendChild(card2);
       }
 
-      // ── アクション ──
       const card3 = document.createElement('div');
       card3.className = 'card';
       card3.style.cssText = 'padding:20px;display:flex;flex-wrap:wrap;gap:10px;';
       card3.innerHTML = `
-        <a href="../../index.html" class="btn" style="flex:1;min-width:160px;text-align:center;">
+        <a href="../../index.html?scrollTo=roadmap" class="btn btn-ghost" style="flex:1;min-width:160px;text-align:center;">
           ロードマップを見る
         </a>
         <a href="../diagnosis.html" class="btn btn-ghost" style="flex:1;min-width:160px;text-align:center;">
@@ -261,7 +256,7 @@
           もう一度診断すると、スコア・ロードマップがすべて表示されます。
         </p>
         <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
-          <a href="../diagnosis.html" class="btn" style="font-size:14px;padding:10px 28px;">
+          <a href="../diagnosis.html" class="btn btn-ghost" style="font-size:14px;padding:10px 28px;">
             診断をやり直す（1分）
           </a>
           <a href="../search.html" class="btn btn-ghost" style="font-size:14px;padding:10px 28px;">
@@ -282,7 +277,7 @@
           診断を完了すると、あなた専用のロードマップとスコアがここに表示されます。
         </p>
         <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
-          <a href="../diagnosis.html" class="btn" style="font-size:14px;padding:10px 28px;">
+          <a href="../diagnosis.html" class="btn btn-ghost" style="font-size:14px;padding:10px 28px;">
             無料で診断する（1分）
           </a>
           <a href="../search.html" class="btn btn-ghost" style="font-size:14px;padding:10px 28px;">

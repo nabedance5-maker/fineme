@@ -5,7 +5,7 @@
  * - APIリクエスト (localhost:3001): Network First → 失敗時はキャッシュ
  * - 画像: Stale While Revalidate → 高速表示 + バックグラウンド更新
  */
-const CACHE_NAME = 'fineme-v3';
+const CACHE_NAME = 'fineme-v4';
 const SHELL_URLS = [
   '/',
   '/pages/search.html',
@@ -47,13 +47,19 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // HTML ドキュメント → Network First（常に最新を返す、オフライン時はキャッシュ）
+  if (request.destination === 'document') {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
   // 画像 → Stale While Revalidate
   if (request.destination === 'image') {
     event.respondWith(staleWhileRevalidate(request));
     return;
   }
 
-  // その他 (HTML/CSS/JS/fonts) → Cache First
+  // CSS/JS/fonts → Cache First
   event.respondWith(cacheFirst(request));
 });
 
