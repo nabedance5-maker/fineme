@@ -154,20 +154,17 @@
       sub.className = 'diag-result-sub';
       sub.textContent = result?.sub || '';
 
+      card1.appendChild(badge);
+      card1.appendChild(heading);
+      card1.appendChild(sub);
+
       if (savedAt) {
         const ts = document.createElement('p');
         ts.className = 'muted';
         ts.style.fontSize = '12px';
         ts.style.marginBottom = '16px';
         ts.textContent = `診断日時: ${fmtDate(savedAt)}`;
-        card1.appendChild(badge);
-        card1.appendChild(heading);
-        card1.appendChild(sub);
         card1.appendChild(ts);
-      } else {
-        card1.appendChild(badge);
-        card1.appendChild(heading);
-        card1.appendChild(sub);
       }
 
       // ── スコア一覧 ──
