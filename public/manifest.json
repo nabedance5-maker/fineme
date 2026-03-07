@@ -1,0 +1,57 @@
+{
+  "name": "Fineme | 外見を起点に、自信を再設計する",
+  "short_name": "Fineme",
+  "description": "変わりたい男性のための外見磨きサービス検索ポータル。パーソナルトレーナー・眉毛サロン・外見コンサルなど、あなたの変容をサポートするプロを探せる。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111111",
+  "orientation": "portrait-primary",
+  "lang": "ja",
+  "scope": "/",
+  "categories": ["lifestyle", "health", "beauty"],
+  "icons": [
+    {
+      "src": "/assets/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "サービスを探す",
+      "short_name": "検索",
+      "url": "/pages/search.html",
+      "icons": [{ "src": "/assets/images/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "外見診断",
+      "short_name": "診断",
+      "url": "/pages/diagnosis.html",
+      "icons": [{ "src": "/assets/images/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/images/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Fineme トップページ"
+    },
+    {
+      "src": "/assets/images/screenshot-narrow.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Fineme モバイル検索"
+    }
+  ]
+}

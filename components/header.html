@@ -1,4 +1,10 @@
 <link rel="icon" href="/favicon.ico">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#111111">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fineme">
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}</script>
 <style>
   /* Responsive header text sizing and overflow protection */
   .navbar .brand { white-space:nowrap; font-weight:700; font-size:clamp(14px,1.8vw,18px); }

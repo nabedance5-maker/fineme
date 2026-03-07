@@ -17,6 +17,7 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const { sendPush, buildTextMessage, formatReservationForUser, formatReservationForProvider } = require('./line-service');
 const dbModule = require('./db');
+const { internalRouter, billingRouter } = require('./stripe-handlers');
 
 const DATA_FILE = path.join(__dirname, 'data', 'reservations.json');
 const PORT = process.env.LINE_SERVER_PORT || 4015;
@@ -49,6 +50,10 @@ function passesCsrfCheck(req){
 
 // mount LINE oauth router (provides /line/login and /line/callback)
 try{ app.use('/line', require('./line-oauth')); }catch(e){ console.warn('could not mount line-oauth', e); }
+
+// Stripe 内部Webhook処理 + 管理者向け課金API
+app.use('/internal', internalRouter);
+app.use('/api/billing', billingRouter);
 
 // create reservation (simulate user request). Body: { service, store, start, address, access, storeUrl, userId, userName, contact, contactConsent }
 app.post('/line/reservations', (req,res)=>{

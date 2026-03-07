@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>課金・報酬 | Fineme 掲載者</title>
+  <link rel="icon" href="../../favicon.ico" />
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <link rel="stylesheet" href="../../assets/styles/components.css" />
+  <style>
+    .provider-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
+    .kpi-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .kpi-card{padding:20px;border:1px solid var(--color-border);border-radius:14px;background:#fff}
+    .kpi-label{color:#6b7280;font-size:12px;margin-bottom:4px}
+    .kpi-value{font-weight:800;font-size:26px}
+    .kpi-sub{font-size:11px;color:#9ca3af;margin-top:2px}
+    .status-hero{padding:24px;border-radius:14px;display:flex;align-items:center;gap:20px}
+    .status-hero.active{background:linear-gradient(120deg,#d1fae5,#a7f3d0)}
+    .status-hero.trialing{background:linear-gradient(120deg,#dbeafe,#bfdbfe)}
+    .status-hero.pending{background:linear-gradient(120deg,#fef3c7,#fde68a)}
+    .status-icon{font-size:40px;flex-shrink:0}
+    .badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}
+    .badge-active{background:#065f46;color:#fff}
+    .badge-trialing{background:#1e40af;color:#fff}
+    .badge-pending{background:#92400e;color:#fff}
+    .badge-paid{background:#d1fae5;color:#065f46}
+    .badge-referral{background:#ede9fe;color:#5b21b6}
+    .referral-list{display:flex;flex-direction:column;gap:8px}
+    .referral-item{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border:1px solid var(--color-border);border-radius:10px;background:#fff}
+    .referral-item-name{font-weight:600;font-size:14px}
+    .referral-item-status{font-size:12px;color:#6b7280}
+    .timeline{display:flex;flex-direction:column;gap:0}
+    .timeline-item{display:flex;gap:16px;padding-bottom:20px;position:relative}
+    .timeline-item:not(:last-child)::before{content:'';position:absolute;left:11px;top:24px;bottom:0;width:2px;background:#e5e7eb}
+    .timeline-dot{width:24px;height:24px;border-radius:50%;background:#e5e7eb;border:3px solid #fff;box-shadow:0 0 0 2px #e5e7eb;flex-shrink:0;margin-top:2px}
+    .timeline-dot.done{background:#111}
+    .timeline-dot.current{background:var(--color-primary,#111);animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 2px rgba(17,24,39,.3)}50%{box-shadow:0 0 0 6px rgba(17,24,39,.1)}}
+    .copy-btn{font-size:11px;padding:4px 10px;border:1px solid var(--color-border);border-radius:6px;background:#f9fafb;cursor:pointer;transition:background .15s}
+    .copy-btn:hover{background:#e5e7eb}
+    @media(max-width:960px){.provider-grid{grid-template-columns:1fr}.kpi-row{grid-template-columns:1fr 1fr}}
+    @media(max-width:540px){.kpi-row{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="section">
+    <div class="container provider-grid">
+      <aside id="provider-sidebar"></aside>
+      <section class="stack">
+        <h1 class="section-title">課金・報酬</h1>
+
+        <!-- 課金ステータスヒーロー -->
+        <div id="status-hero" class="status-hero trialing">
+          <div class="status-icon" id="status-icon">⏳</div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <span id="status-badge" class="badge badge-trialing">初回予約待ち</span>
+            </div>
+            <div id="status-title" style="font-weight:700;font-size:18px">初回予約が入ったら課金開始</div>
+            <div id="status-desc" class="muted" style="font-size:14px;margin-top:4px">
+              Fineme経由で最初の予約が入った月から月額¥3,000の課金が始まります。
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI行 -->
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-label">今月の掲載料</div>
+            <div id="kpi-monthly" class="kpi-value">¥0</div>
+            <div id="kpi-monthly-sub" class="kpi-sub">課金開始後 ¥3,000/月</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">紹介報酬（今月）</div>
+            <div id="kpi-reward" class="kpi-value">¥0</div>
+            <div class="kpi-sub">紹介した掲載者の課金×¥500</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">実質負担額</div>
+            <div id="kpi-net" class="kpi-value">¥0</div>
+            <div class="kpi-sub">掲載料 − 紹介報酬</div>
+          </div>
+        </div>
+
+        <!-- 課金ステップ -->
+        <div class="card" style="padding:20px">
+          <h2 style="margin:0 0 16px">課金の流れ</h2>
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-dot done"></div>
+              <div>
+                <div style="font-weight:600">Finemeに掲載登録</div>
+                <div class="muted" style="font-size:13px">プロフィール・サービスを公開済み</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div id="step2-dot" class="timeline-dot current"></div>
+              <div>
+                <div style="font-weight:600">Fineme経由で初回予約が入る</div>
+                <div class="muted" style="font-size:13px">この瞬間から課金カウントが開始。その月から月額¥3,000が発生します。</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div>
+                <div style="font-weight:600">毎月自動請求</div>
+                <div class="muted" style="font-size:13px">登録のカードへ毎月自動引き落とし。領収書はメールで届きます。</div>
+              </div>
+            </div>
+            <div class="timeline-item" style="padding-bottom:0">
+              <div class="timeline-dot"></div>
+              <div>
+                <div style="font-weight:600">紹介報酬が積み上がる</div>
+                <div class="muted" style="font-size:13px">あなたが紹介した掲載者の課金が続くかぎり ¥500/月が毎月報酬として積み上がります。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 決済履歴 -->
+        <div class="card" style="padding:20px">
+          <h2 style="margin:0 0 16px">決済履歴</h2>
+          <div id="payments-empty" class="muted" style="padding:24px;text-align:center">
+            まだ決済履歴がありません。初回予約が入ると課金が始まります。
+          </div>
+          <div id="payments-table" style="display:none">
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <thead>
+                  <tr style="border-bottom:2px solid var(--color-border)">
+                    <th style="padding:8px;text-align:left;font-weight:600;color:#374151">月</th>
+                    <th style="padding:8px;text-align:left;font-weight:600;color:#374151">金額</th>
+                    <th style="padding:8px;text-align:left;font-weight:600;color:#374151">ステータス</th>
+                    <th style="padding:8px;text-align:left;font-weight:600;color:#374151">決済日</th>
+                  </tr>
+                </thead>
+                <tbody id="payments-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 紹介コード -->
+        <div class="card" style="padding:20px">
+          <h2 style="margin:0 0 8px">紹介コード</h2>
+          <p class="muted" style="font-size:14px;margin-bottom:16px">
+            このリンクから掲載申込みしてもらうと、その掲載者が課金を開始するたびに<strong>¥500/月</strong>があなたの報酬として積み上がります。
+          </p>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <input id="referral-link" type="text" readonly
+              style="flex:1;min-width:240px;background:#f9fafb;color:#374151"
+              value="読み込み中..." />
+            <button class="copy-btn" onclick="copyReferralLink()">コピー</button>
+            <button class="btn btn-ghost" onclick="shareReferralLink()">シェア</button>
+          </div>
+          <div style="margin-top:20px">
+            <h3 style="margin:0 0 10px;font-size:15px">紹介した掲載者</h3>
+            <div id="referred-list" class="referral-list">
+              <div class="muted" style="font-size:13px;text-align:center;padding:16px">まだ紹介実績がありません</div>
+            </div>
+            <div id="referred-total" class="muted" style="font-size:12px;text-align:right;margin-top:8px"></div>
+          </div>
+        </div>
+
+        <!-- 支払い方法 -->
+        <div class="card" style="padding:20px">
+          <h2 style="margin:0 0 4px">支払い方法</h2>
+          <p class="muted" style="font-size:14px;margin-bottom:12px">クレジットカード（Stripe）で管理しています。</p>
+          <button class="btn btn-ghost" onclick="openBillingPortal()">カード情報を変更・確認する</button>
+          <p class="muted" style="font-size:12px;margin-top:8px">Stripeのセキュアな決済ページへ遷移します。</p>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <script src="../../assets/scripts/header.js" defer></script>
+  <script>
+  // Vercel本番: /api/billing (Next.js routes) / ローカル開発: Next.js devサーバー経由
+  const API = '/api/billing';
+
+  // ---- セッション取得 ----
+  function getSession() {
+    try { return JSON.parse(sessionStorage.getItem('glowup:providerSession') || 'null'); } catch { return null; }
+  }
+
+  // ---- ステータス表示 ----
+  function renderStatus(status) {
+    const hero = document.getElementById('status-hero');
+    const icon = document.getElementById('status-icon');
+    const badge = document.getElementById('status-badge');
+    const title = document.getElementById('status-title');
+    const desc = document.getElementById('status-desc');
+    const step2 = document.getElementById('step2-dot');
+    hero.className = `status-hero ${status || 'trialing'}`;
+    const map = {
+      active: {
+        icon: '✅', badgeCls: 'badge-active', badgeLabel: '課金中',
+        title: '掲載料が発生中です',
+        desc: '毎月自動引き落とし。紹介報酬は自動的に差し引かれます。',
+        step2Done: true,
+      },
+      trialing: {
+        icon: '⏳', badgeCls: 'badge-trialing', badgeLabel: '初回予約待ち',
+        title: '初回予約が入ったら課金開始',
+        desc: 'Fineme経由で最初の予約が入った月から月額¥3,000の課金が始まります。',
+        step2Done: false,
+      },
+      pending: {
+        icon: '📋', badgeCls: 'badge-pending', badgeLabel: '設定未完了',
+        title: 'Stripe連携が未完了です',
+        desc: '管理者にお問い合わせください。',
+        step2Done: false,
+      },
+    };
+    const cfg = map[status] || map.trialing;
+    icon.textContent = cfg.icon;
+    badge.className = `badge ${cfg.badgeCls}`;
+    badge.textContent = cfg.badgeLabel;
+    title.textContent = cfg.title;
+    desc.textContent = cfg.desc;
+    if (cfg.step2Done) { step2.className = 'timeline-dot done'; }
+  }
+
+  // ---- KPI ----
+  function renderKPI(monthly, reward) {
+    document.getElementById('kpi-monthly').textContent = `¥${monthly.toLocaleString()}`;
+    document.getElementById('kpi-reward').textContent = `¥${reward.toLocaleString()}`;
+    document.getElementById('kpi-net').textContent = `¥${Math.max(0, monthly - reward).toLocaleString()}`;
+    if (monthly === 0) {
+      document.getElementById('kpi-monthly-sub').textContent = '初回予約後に課金開始';
+    }
+  }
+
+  // ---- 決済履歴 ----
+  function renderPayments(payments) {
+    if (!payments || payments.length === 0) return;
+    document.getElementById('payments-empty').style.display = 'none';
+    document.getElementById('payments-table').style.display = '';
+    const tbody = document.getElementById('payments-tbody');
+    tbody.innerHTML = payments.map(p => `
+      <tr style="border-bottom:1px solid var(--color-border)">
+        <td style="padding:10px 8px">${p.paidAt ? p.paidAt.slice(0,7) : '-'}</td>
+        <td style="padding:10px 8px">¥${(p.amount||0).toLocaleString()}</td>
+        <td style="padding:10px 8px">
+          <span class="badge badge-paid">成功</span>
+        </td>
+        <td style="padding:10px 8px;color:#6b7280;font-size:12px">${p.paidAt ? p.paidAt.slice(0,10) : '-'}</td>
+      </tr>
+    `).join('');
+  }
+
+  // ---- 紹介リスト ----
+  function renderReferred(referrals) {
+    const el = document.getElementById('referred-list');
+    if (!referrals || !referrals.length) return;
+    const total = referrals.reduce((s, r) => s + (r.rewardAmount || 0), 0);
+    el.innerHTML = referrals.map(r => `
+      <div class="referral-item">
+        <div>
+          <div class="referral-item-name">${esc(r.referredName || '-')}</div>
+          <div class="referral-item-status">${r.periodYearMonth || ''}</div>
+        </div>
+        <span class="badge badge-referral">¥${(r.rewardAmount||0).toLocaleString()}/月</span>
+      </div>
+    `).join('');
+    document.getElementById('referred-total').textContent =
+      `累計報酬: ¥${total.toLocaleString()}`;
+  }
+
+  // ---- 紹介コード ----
+  function initReferralLink(session) {
+    const code = session?.id || session?.loginId || 'unknown';
+    const url = `${location.origin}/pages/provider/join.html?ref=${encodeURIComponent(code)}`;
+    document.getElementById('referral-link').value = url;
+  }
+  function copyReferralLink() {
+    const val = document.getElementById('referral-link').value;
+    navigator.clipboard.writeText(val).then(() => {
+      showToast('紹介リンクをコピーしました');
+    });
+  }
+  function shareReferralLink() {
+    const val = document.getElementById('referral-link').value;
+    if (navigator.share) {
+      navigator.share({ title: 'Fineme 掲載者になりませんか', url: val });
+    } else {
+      copyReferralLink();
+    }
+  }
+
+  // ---- Stripe Billing Portal ----
+  async function openBillingPortal() {
+    const session = getSession();
+    if (!session) { alert('ログインが必要です'); return; }
+    try {
+      const res = await fetch(`${API}/portal-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ providerId: session.id }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else alert('ポータルの取得に失敗しました: ' + (data.error || '不明なエラー'));
+    } catch(e) {
+      alert('サーバーに接続できません。管理者にお問い合わせください。');
+    }
+  }
+
+  // ---- トースト ----
+  function showToast(msg) {
+    const t = document.createElement('div');
+    t.textContent = msg;
+    Object.assign(t.style, {
+      position:'fixed', bottom:'24px', right:'24px', background:'#111', color:'#fff',
+      padding:'10px 18px', borderRadius:'8px', fontSize:'14px', zIndex:9999,
+      opacity:'0', transition:'opacity .2s', pointerEvents:'none',
+    });
+    document.body.appendChild(t);
+    requestAnimationFrame(() => { t.style.opacity = '1'; });
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 250); }, 2500);
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ---- 初期化 ----
+  async function init() {
+    const session = getSession();
+    if (!session) {
+      location.href = '/pages/login.html';
+      return;
+    }
+    initReferralLink(session);
+
+    // サーバーから情報を取得
+    try {
+      const [provRes, payRes, refRes] = await Promise.all([
+        fetch(`${API}/providers`),
+        fetch(`${API}/payments`),
+        fetch(`${API}/referrals`),
+      ]);
+      const providers = await provRes.json();
+      const payments = await payRes.json();
+      const referrals = await refRes.json();
+
+      // 自分のデータを絞り込む
+      const me = providers.find(p =>
+        p.loginId === session.loginId || p.id === session.id
+      );
+      if (me) {
+        renderStatus(me.subscriptionStatus);
+        const isActive = me.subscriptionStatus === 'active';
+        renderKPI(isActive ? (me.planAmount || 3000) : 0, 0);
+      }
+
+      // 自分の決済履歴
+      const myPayments = payments.filter(p =>
+        p.providerEmail === session.email || p.providerId === session.id
+      );
+      renderPayments(myPayments);
+
+      // 自分が紹介した掲載者の報酬
+      const myReferrals = referrals.filter(r =>
+        r.referrerId === session.id || r.referrerEmail === session.email
+      );
+      // 今月の報酬合計
+      const thisMonth = new Date().toISOString().slice(0,7);
+      const monthReward = myReferrals
+        .filter(r => r.periodYearMonth === thisMonth)
+        .reduce((s,r) => s + (r.rewardAmount || 0), 0);
+      if (me) {
+        const isActive = me.subscriptionStatus === 'active';
+        renderKPI(isActive ? (me.planAmount || 3000) : 0, monthReward);
+      }
+      renderReferred(myReferrals);
+    } catch(e) {
+      console.warn('server offline, showing demo view');
+      // オフライン時はデモ表示
+      renderStatus('trialing');
+      renderKPI(0, 0);
+    }
+  }
+
+  init();
+
+  // サイドバー
+  fetch('../../components/provider-sidebar.html').then(r=>r.text()).then(h=>{
+    document.getElementById('provider-sidebar').innerHTML = h;
+    document.querySelectorAll('#provider-sidebar a').forEach(a => {
+      if (a.href.includes('billing')) a.style.fontWeight = '700';
+    });
+  }).catch(() => {});
+  </script>
+</body>
+</html>

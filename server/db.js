@@ -70,6 +70,88 @@ function init(){
       success INTEGER,
       createdAt TEXT
     )`);
+    // providers: Fineme掲載者マスタ（Stripe連携込み）
+    db.run(`CREATE TABLE IF NOT EXISTS providers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      loginId TEXT UNIQUE,
+      displayName TEXT,
+      email TEXT,
+      passwordHash TEXT,
+      category TEXT,
+      stripeCustomerId TEXT UNIQUE,
+      stripeSubscriptionId TEXT UNIQUE,
+      subscriptionStatus TEXT DEFAULT 'pending',
+      billingStartDate TEXT,
+      referredByProviderId INTEGER,
+      planAmount INTEGER DEFAULT 3000,
+      createdAt TEXT,
+      FOREIGN KEY(referredByProviderId) REFERENCES providers(id)
+    )`);
+    // subscriptions: Stripe課金ログ（Webhookで書き込み）
+    db.run(`CREATE TABLE IF NOT EXISTS subscriptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      providerId INTEGER NOT NULL,
+      stripeSubscriptionId TEXT UNIQUE,
+      stripeCustomerId TEXT,
+      status TEXT,
+      currentPeriodStart TEXT,
+      currentPeriodEnd TEXT,
+      amount INTEGER,
+      currency TEXT DEFAULT 'jpy',
+      createdAt TEXT,
+      updatedAt TEXT,
+      FOREIGN KEY(providerId) REFERENCES providers(id)
+    )`);
+    // payments: 決済履歴
+    db.run(`CREATE TABLE IF NOT EXISTS payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      providerId INTEGER NOT NULL,
+      stripePaymentIntentId TEXT UNIQUE,
+      stripeInvoiceId TEXT,
+      amount INTEGER,
+      currency TEXT DEFAULT 'jpy',
+      status TEXT,
+      description TEXT,
+      paidAt TEXT,
+      createdAt TEXT,
+      FOREIGN KEY(providerId) REFERENCES providers(id)
+    )`);
+    // referral_rewards: 紹介報酬ストック（¥500/月）
+    db.run(`CREATE TABLE IF NOT EXISTS referral_rewards (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      referrerProviderId INTEGER NOT NULL,
+      referredProviderId INTEGER NOT NULL,
+      rewardAmount INTEGER DEFAULT 500,
+      status TEXT DEFAULT 'pending',
+      periodYearMonth TEXT,
+      paidAt TEXT,
+      createdAt TEXT,
+      FOREIGN KEY(referrerProviderId) REFERENCES providers(id),
+      FOREIGN KEY(referredProviderId) REFERENCES providers(id)
+    )`);
+    // stories: 体験談投稿（4問＋タグ、審査フロー付き）
+    db.run(`CREATE TABLE IF NOT EXISTS stories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      q1 TEXT,
+      q2 TEXT,
+      q3 TEXT,
+      q4 TEXT,
+      tags TEXT,
+      status TEXT DEFAULT 'pending',
+      reviewedAt TEXT,
+      createdAt TEXT
+    )`);
+    // bookings: 予約ログ（初回予約検知→課金開始トリガー）
+    db.run(`CREATE TABLE IF NOT EXISTS bookings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      providerId INTEGER NOT NULL,
+      userId INTEGER,
+      bookingDate TEXT,
+      status TEXT DEFAULT 'confirmed',
+      isFirstBooking INTEGER DEFAULT 0,
+      createdAt TEXT,
+      FOREIGN KEY(providerId) REFERENCES providers(id)
+    )`);
   });
   return db;
 }
