@@ -310,10 +310,15 @@ window.roadmapCompletePhase = function(phaseNum) {
 // ── 初期化 ────────────────────────────────────────────────────────────
 function init() {
   try {
+    // ログイン中のユーザーのみロードマップを表示
+    const isLoggedIn = (() => {
+      try { return !!sessionStorage.getItem('glowup:userSession'); } catch { return false; }
+    })();
+
     const raw    = localStorage.getItem(DIAG_KEY);
     const diag   = raw ? JSON.parse(raw) : null;
     // スコアが1つ以上あれば有効（>= 8 は厳しすぎるため緩和）
-    const hasDiag = diag && diag.scores && Object.keys(diag.scores).length >= 1;
+    const hasDiag = isLoggedIn && diag && diag.scores && Object.keys(diag.scores).length >= 1;
 
     const roadmapEl = document.getElementById('roadmap-section');
     const sampleEl  = document.getElementById('sample-section');
