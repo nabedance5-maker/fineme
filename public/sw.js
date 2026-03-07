@@ -5,7 +5,7 @@
  * - APIリクエスト (localhost:3001): Network First → 失敗時はキャッシュ
  * - 画像: Stale While Revalidate → 高速表示 + バックグラウンド更新
  */
-const CACHE_NAME = 'fineme-v2';
+const CACHE_NAME = 'fineme-v3';
 const SHELL_URLS = [
   '/',
   '/pages/search.html',
