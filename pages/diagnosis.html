@@ -887,6 +887,17 @@
         <span class="arrow">→</span>
       </a>
     `).join('');
+
+    // トップページのロードマップ用に診断結果を保存
+    try {
+      localStorage.setItem('fineme:diagnosis:v2', JSON.stringify({
+        scores:  state.scores,
+        drills:  state.drills,
+        context: state.context,
+        result:  result,
+        savedAt: new Date().toISOString(),
+      }));
+    } catch(e) {}
   }
 
   // =========================================================
