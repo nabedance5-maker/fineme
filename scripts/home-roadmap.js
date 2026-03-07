@@ -347,3 +347,6 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+// bfcache（ブラウザの戻る/進む）で復元された場合も再チェック
+// → ログアウト後に「戻る」で戻ってきた時にロードマップが残らないようにする
+window.addEventListener('pageshow', e => { if (e.persisted) init(); });
