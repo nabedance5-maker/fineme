@@ -149,29 +149,37 @@ function renderPhaseBlock(elId, items, phaseNum, currentPhase, progress) {
 
   const statusClass = isDone ? 'done' : isActive ? 'active' : 'locked';
   const statusText  = isDone ? '完了' : isActive ? '進行中' : '解放待ち';
-  const clickedInPhase = progress.clicks?.[phaseNum] || [];
+  const clickedInPhase = progress.clicks?.[phaseNum]  || [];
+  const checkedInPhase = progress.checked?.[phaseNum] || [];
 
   const itemsHtml = items.length === 0
     ? '<p style="font-size:13px;color:#6b7280;margin:8px 0;">この段階の課題はありません。</p>'
     : items.map(item => {
         const isClicked = clickedInPhase.includes(item.key);
+        const isChecked = checkedInPhase.includes(item.key);
         const copyText  = item.copy || ITEM_COPY[item.key]?.(item.score) || '';
         const searchUrl = `./pages/search.html?category=${item.searchParam}`;
         return `
-        <div class="roadmap-item${isClicked ? ' is-visited' : ''}${isLocked ? ' is-locked' : ''}">
+        <div class="roadmap-item${isChecked ? ' is-checked' : isClicked ? ' is-visited' : ''}${isLocked ? ' is-locked' : ''}">
           <span class="roadmap-item-icon">${item.icon}</span>
           <div class="roadmap-item-body">
             <div class="roadmap-item-label">
               ${item.label}
               ${item.score != null ? `<span class="roadmap-item-score">${item.score}点</span>` : ''}
-              ${isClicked ? '<span class="roadmap-item-visited">確認済</span>' : ''}
+              ${isChecked ? '<span class="roadmap-item-checked-badge">完了</span>' : isClicked ? '<span class="roadmap-item-visited">確認済</span>' : ''}
             </div>
             <div class="roadmap-item-copy">${copyText}</div>
           </div>
-          ${!isLocked
-            ? `<a class="btn btn-ghost roadmap-item-btn" href="${searchUrl}"
-                onclick="roadmapTrackClick('${item.key}',${phaseNum})">サービスを見る</a>`
-            : ''}
+          ${!isLocked ? `
+            <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+              <a class="btn btn-ghost roadmap-item-btn" href="${searchUrl}"
+                style="font-size:12px;padding:4px 10px;white-space:nowrap;"
+                onclick="roadmapTrackClick('${item.key}',${phaseNum})">サービスを見る</a>
+              <button class="roadmap-check-btn${isChecked ? ' is-done' : ''}"
+                onclick="roadmapCheckItem('${item.key}',${phaseNum})">
+                ${isChecked ? '✓ やった' : 'やった'}
+              </button>
+            </div>` : ''}
         </div>`;
       }).join('');
 
@@ -290,6 +298,79 @@ function renderSamples() {
     </div>`).join('');
 }
 
+// ── UI ヘルパー ───────────────────────────────────────────────────────
+function injectRoadmapStyles() {
+  if (document.getElementById('rm-styles')) return;
+  const s = document.createElement('style');
+  s.id = 'rm-styles';
+  s.textContent = `
+    .roadmap-item.is-checked { background:#f0fdf4 !important; }
+    .roadmap-item-checked-badge { display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;background:#16a34a;color:#fff;border-radius:99px;margin-left:6px;vertical-align:middle; }
+    .roadmap-check-btn { display:block;font-size:12px;padding:4px 10px;border-radius:6px;cursor:pointer;font-weight:600;white-space:nowrap;border:1.5px solid #d1d5db;background:#fff;color:#374151;line-height:1.4; }
+    .roadmap-check-btn.is-done { background:#111;color:#fff;border-color:#111; }
+    .rm-toast { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:99px;font-size:14px;font-weight:600;z-index:9999;white-space:nowrap;pointer-events:none;transition:opacity .4s; }
+    .rm-overlay { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px; }
+    .rm-modal { background:#fff;border-radius:16px;padding:28px 24px;max-width:360px;width:100%;text-align:center; }
+  `;
+  document.head.appendChild(s);
+}
+
+const _ITEM_LABELS_ALL = {
+  eyebrow:'眉', hair:'髪', body:'体型', skin:'肌', hair_removal:'ムダ毛',
+  teeth:'歯', nail:'爪', makeup:'メイク',
+  consultant:'外見コンサル', photo:'プロフィール写真', marriage:'婚活・出会いの場',
+};
+
+function showToast(itemKey) {
+  document.querySelector('.rm-toast')?.remove();
+  const label = _ITEM_LABELS_ALL[itemKey] || itemKey;
+  const el = document.createElement('div');
+  el.className = 'rm-toast';
+  el.textContent = `✓ ${label}、チェックしました`;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; }, 1800);
+  setTimeout(() => el.remove(), 2200);
+}
+
+function showInlineError(phaseNum) {
+  const block = document.getElementById(`roadmap-phase-${phaseNum}`);
+  if (!block || block.querySelector('.rm-inline-err')) return;
+  const el = document.createElement('div');
+  el.className = 'rm-inline-err';
+  el.style.cssText = 'font-size:12px;color:#ef4444;padding:8px 12px;background:#fef2f2;border-radius:6px;margin-top:8px;';
+  el.textContent = '1つ以上「やった」にチェックを付けてから進んでください';
+  block.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function showPhaseCompleteModal(phaseNum) {
+  const DATA = {
+    1: { icon: '🎉', title: 'Phase 2 解放！', sub: '清潔感の土台が整いました。次は「印象を引き上げる」段階へ。' },
+    2: { icon: '🏆', title: 'Phase 3 解放！', sub: '印象アップが完了。いよいよ外見全体を統合する最終段階です。' },
+  };
+  const d = DATA[phaseNum];
+  if (!d) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'rm-overlay';
+  overlay.innerHTML = `
+    <div class="rm-modal">
+      <div style="font-size:40px;margin-bottom:12px;">${d.icon}</div>
+      <h2 style="font-size:20px;font-weight:800;margin:0 0 8px;">${d.title}</h2>
+      <p style="font-size:14px;color:#6b7280;line-height:1.7;margin:0 0 16px;">${d.sub}</p>
+      <div style="background:#f4f4ff;border-radius:10px;padding:12px;margin-bottom:20px;">
+        <p style="font-size:13px;font-weight:700;color:#4f46e5;margin:0 0 4px;">取り組みの成果を確認しましょう</p>
+        <p style="font-size:12px;color:#6b7280;margin:0;">再診断でスコアが上がれば、次のフェーズが自動で解放されます。</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <a href="./pages/diagnosis.html" class="btn" style="text-align:center;">再診断してスコアを更新する</a>
+        <button class="btn btn-ghost rm-modal-close" style="text-align:center;">このまま続ける</button>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  overlay.querySelector('.rm-modal-close').addEventListener('click', () => overlay.remove());
+  document.body.appendChild(overlay);
+}
+
 // ── ゲーミフィケーション ──────────────────────────────────────────────
 window.roadmapTrackClick = function(itemKey, phaseNum) {
   try {
@@ -314,20 +395,40 @@ window.roadmapRevertPhase = function(phaseNum) {
   } catch {}
 };
 
+window.roadmapCheckItem = function(itemKey, phaseNum) {
+  try {
+    const progress = loadProgress();
+    if (!progress.checked) progress.checked = {};
+    if (!progress.checked[phaseNum]) progress.checked[phaseNum] = [];
+    const arr = progress.checked[phaseNum];
+    const idx = arr.indexOf(itemKey);
+    if (idx === -1) { arr.push(itemKey); showToast(itemKey); }
+    else arr.splice(idx, 1);
+    saveProgress(progress);
+    init();
+  } catch {}
+};
+
 window.roadmapCompletePhase = function(phaseNum) {
   try {
     const progress = loadProgress();
+    if ((progress.checked?.[phaseNum] || []).length === 0) {
+      showInlineError(phaseNum);
+      return;
+    }
     if (phaseNum === 1) progress.phase1_complete = true;
     if (phaseNum === 2) progress.phase2_complete = true;
     progress.lastUpdated = new Date().toISOString();
     saveProgress(progress);
-    init(); // 再レンダリング
+    init();
+    showPhaseCompleteModal(phaseNum);
   } catch {}
 };
 
 // ── 初期化 ────────────────────────────────────────────────────────────
 function init() {
   try {
+    injectRoadmapStyles();
     // ログイン中のユーザーのみロードマップを表示
     const isLoggedIn = (() => {
       try { return !!sessionStorage.getItem('glowup:userSession'); } catch { return false; }
