@@ -183,6 +183,13 @@ function renderPhaseBlock(elId, items, phaseNum, currentPhase, progress) {
       </div>`
     : '';
 
+  const revertHint = isActive && phaseNum > 1
+    ? `<div class="roadmap-unlock-hint" style="margin-top:8px;">
+        <button class="btn btn-ghost" style="font-size:12px;padding:4px 12px;color:#6b7280;"
+          onclick="roadmapRevertPhase(${phaseNum})">← Phase ${phaseNum - 1} に戻す</button>
+      </div>`
+    : '';
+
   block.innerHTML = `
     <div class="roadmap-phase-header">
       <div class="roadmap-phase-num ${statusClass}">
@@ -198,7 +205,7 @@ function renderPhaseBlock(elId, items, phaseNum, currentPhase, progress) {
       ${isLocked ? '<span style="font-size:20px;color:#9ca3af;flex-shrink:0;">&#x1F512;</span>' : ''}
     </div>
     <div class="roadmap-items">${itemsHtml}</div>
-    ${unlockHint}`;
+    ${unlockHint}${revertHint}`;
 }
 
 function renderTop3(result, p1, p2, scores) {
@@ -293,6 +300,17 @@ window.roadmapTrackClick = function(itemKey, phaseNum) {
       progress.clicks[phaseNum].push(itemKey);
     }
     saveProgress(progress);
+  } catch {}
+};
+
+window.roadmapRevertPhase = function(phaseNum) {
+  try {
+    const progress = loadProgress();
+    if (phaseNum === 2) delete progress.phase1_complete;
+    if (phaseNum === 3) delete progress.phase2_complete;
+    progress.lastUpdated = new Date().toISOString();
+    saveProgress(progress);
+    init();
   } catch {}
 };
 
