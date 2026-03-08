@@ -503,15 +503,13 @@ window.roadmapCompletePhase = function(phaseNum) {
 function init() {
   try {
     injectRoadmapStyles();
-    // ログイン中のユーザーのみロードマップを表示
-    const isLoggedIn = (() => {
-      try { return !!sessionStorage.getItem('glowup:userSession'); } catch { return false; }
-    })();
+    // 診断データがあればロードマップを表示（ログイン不要）
+    // ※旧 glowup:userSession はSupabase移行済みのため参照しない
 
     const raw    = localStorage.getItem(DIAG_KEY);
     const diag   = raw ? JSON.parse(raw) : null;
     // スコアが1つ以上あれば有効（>= 8 は厳しすぎるため緩和）
-    const hasDiag = isLoggedIn && diag && diag.scores && Object.keys(diag.scores).length >= 1;
+    const hasDiag = diag && diag.scores && Object.keys(diag.scores).length >= 1;
 
     const roadmapEl = document.getElementById('roadmap-section');
     const sampleEl  = document.getElementById('sample-section');

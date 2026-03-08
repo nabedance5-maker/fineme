@@ -274,7 +274,15 @@
     // 目的が保存されていれば、続きやすいCTAを表示
     (function(){
       try{
-        const isLoggedIn = (function(){ try{ return !!sessionStorage.getItem('glowup:userSession'); }catch{ return false; } })();
+        // Supabase Auth: sb-{ref}-auth-token が存在すればログイン済み
+        const isLoggedIn = (function(){
+          try{
+            const raw = localStorage.getItem('sb-qsfpzlvucqzmjldshwwd-auth-token');
+            if(!raw) return false;
+            const d = JSON.parse(raw);
+            return !!(d?.user) && (!d.expires_at || d.expires_at * 1000 > Date.now());
+          }catch{ return false; }
+        })();
         if(!isLoggedIn) return; // 未ログイン時は表示しない
         const saved = localStorage.getItem('fineme:goal:category');
         if(!saved) return;
