@@ -48,6 +48,23 @@ const ITEM_COPY = {
     : `メイクが${s}点。素の清潔感を最大化するメイクを1つ覚えると、全体が揃います。`,
 };
 
+// ── ⑤予約連携用: サービスカテゴリ → ロードマップitemKeyマッピング ────
+// 将来、予約システムから「category: 'gym'」が届いたとき、
+// このマップで 'body' アイテムにチェックを入れる。
+const CATEGORY_TO_ITEM = {
+  eyebrow:      'eyebrow',
+  hair:         'hair',
+  gym:          'body',
+  skin:         'skin',
+  hair_removal: 'hair_removal',
+  whitening:    'teeth',
+  nail:         'nail',
+  makeup:       'makeup',
+  consulting:   'consultant',
+  photo:        'photo',
+  marriage:     'marriage',
+};
+
 // Phase 3 固定サービス（外見の「統合・活用」フェーズ）
 const FINISH_ITEMS = [
   {
