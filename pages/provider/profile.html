@@ -142,42 +142,26 @@
               <label>Webサイト
                 <input id="profile-website" name="website" type="text" placeholder="https://example.com" />
               </label>
-              <label>カバー画像 srcset（任意・コンマ区切り）
-                <input id="profile-coverSrcset" name="coverSrcset" type="text" placeholder="例: /assets/cover-320.jpg 320w, /assets/cover-640.jpg 640w" style="display:block;width:100%;max-width:100%;box-sizing:border-box;padding:8px" />
-                <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
-                  <label style="display:flex;align-items:center;gap:8px">
-                    <span style="font-size:13px">アップロード方式：</span>
-                    <select id="profile-uploadStrategy" name="uploadStrategy">
-                      <option value="server">サーバで処理（デフォルト・推奨）</option>
-                      <option value="direct">クライアント→S3 (presign)（帯域優先）</option>
-                    </select>
-                  </label>
-                  <span class="muted" style="font-size:12px">大量アップロードやモバイルでは「サーバで処理」を推奨します。presign はクライアント帯域を優先するオプションです。</span>
-                </div>
-                <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <label>カバー画像
+                <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                   <input id="profile-coverUpload" name="coverUpload" type="file" accept="image/*" />
-                  <!-- Video upload for cover hero -->
-                  <input id="profile-coverVideoUpload" name="coverVideoUpload" type="file" accept="video/*" />
-                  <span class="muted" style="font-size:12px">画像をアップロードすると自動で複数サイズが生成され、srcset が自動挿入されます（ローカルサーバが必要）。</span>
-                </div>
-                <div style="margin-top:8px;">
-                  <label>カバー動画 URL（自動入力されます）
-                    <input id="profile-coverVideo" name="coverVideo" type="text" placeholder="動画 URL が入ります" style="display:block;width:100%;max-width:100%;box-sizing:border-box;padding:8px" />
-                  </label>
+                  <span class="muted" style="font-size:12px">JPG・PNG・WebP 対応。推奨サイズ: 1200×630px</span>
                 </div>
                 <div style="margin-top:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
                   <img id="profile-coverPreview" alt="cover preview" style="width:180px;height:120px;object-fit:cover;border:1px solid var(--color-border);border-radius:6px;display:none" />
-                  <video id="profile-coverVideoPreview" style="width:240px;height:140px;object-fit:cover;border:1px solid var(--color-border);border-radius:6px;display:none" controls muted loop playsinline></video>
                   <div style="display:flex;flex-direction:column;gap:6px">
                     <progress id="profile-coverProgress" max="100" value="0" style="display:none;width:180px"></progress>
                     <div id="profile-coverUploadStatus" class="muted" style="font-size:13px"></div>
                   </div>
                 </div>
-                <div style="margin-top:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-                  <progress id="profile-coverVideoProgress" max="100" value="0" style="display:none;width:240px"></progress>
-                  <div id="profile-coverVideoUploadStatus" class="muted" style="font-size:13px"></div>
-                </div>
-                <div class="muted" style="font-size:12px">複数解像度を指定するとヒーローで srcset を使用します（LCP 向上）。</div>
+                <!-- 技術詳細フィールド（非表示・スクリプトからのみ利用） -->
+                <input id="profile-coverSrcset" name="coverSrcset" type="hidden" />
+                <input id="profile-uploadStrategy" name="uploadStrategy" type="hidden" value="server" />
+                <input id="profile-coverVideo" name="coverVideo" type="hidden" />
+                <input id="profile-coverVideoUpload" name="coverVideoUpload" type="hidden" />
+                <video id="profile-coverVideoPreview" style="display:none" muted></video>
+                <progress id="profile-coverVideoProgress" max="100" value="0" style="display:none"></progress>
+                <div id="profile-coverVideoUploadStatus" style="display:none"></div>
               </label>
               <label>ギャラリー画像 URL（1行に1つ）
                 <textarea id="profile-gallery" name="gallery" rows="3" placeholder="各行に画像URLを入力"></textarea>
@@ -244,7 +228,7 @@
                   <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" value="nail" /> <span class="chip">ネイル</span></label>
                 </div>
               </div>
-              <p class="muted">C/D軸はユーザー診断の相性計算に使われます。価格帯・得意領域は検索やカードの補助タグとして使用します。</p>
+              <p class="muted">得意領域はユーザーの診断スコアとの検索マッチングに直接影響します。正確に設定するほど、合うユーザーへの表示機会が増えます。</p>
             </div>
           </div>
         </form>

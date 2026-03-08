@@ -48,6 +48,10 @@
   <main class="section">
     <div class="container">
       <h1 class="section-title">ログイン / 新規登録</h1>
+      <div id="diag-save-hint" style="display:none;margin-bottom:16px;padding:12px 14px;background:#eff6ff;border-radius:10px;border-left:4px solid #3b82f6;font-size:14px;max-width:520px">
+        <strong>診断結果をマイページに保存できます</strong>
+        <p style="margin:4px 0 0;color:#1e40af;font-size:13px">ログインまたは新規登録すると、診断スコアとおすすめサービスがマイページに保存されます。</p>
+      </div>
       <div class="card auth-card">
         <div class="tabs" role="tablist">
           <button id="tab-login" class="is-active" type="button" role="tab" aria-selected="true">ログイン</button>
@@ -98,5 +102,14 @@
     </div>
   </main>
   <footer id="site-footer"></footer>
+  <script>
+    try{
+      const hasDiag = !!localStorage.getItem('fineme:diagnosis:v2') || !!localStorage.getItem('fineme:diagnosis:latest');
+      if(hasDiag){
+        const el = document.getElementById('diag-save-hint');
+        if(el) el.style.display = 'block';
+      }
+    }catch{}
+  </script>
 </body>
 </html>

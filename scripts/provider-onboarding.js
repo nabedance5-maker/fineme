@@ -97,14 +97,13 @@ try{
           const rawV2 = localStorage.getItem('fineme:diagnosis:v2');
           const rawLegacy = localStorage.getItem('fineme:diagnosis:latest');
           const obj = rawV2 ? JSON.parse(rawV2) : (rawLegacy ? JSON.parse(rawLegacy) : null);
-          if(obj && (obj.direction || obj.intent)){
+          if(obj && (obj.scores || obj.direction || obj.intent)){
             if(me && me.onboarding){ me.onboarding.diag = {
-              direction: obj.direction || null,
-              directionLabel: obj.directionLabel || null,
-              intent_type_id: obj.intent?.type_id || ('dir-' + obj.direction) || null,
-              intent_type_name: obj.directionLabel || obj.step2?.classification?.type_name || obj.intent?.type_name || null,
-              why_avg: obj.why?.avg || null,
-              how_scores: obj.how?.scores || []
+              badge: obj.result?.badge || obj.step2?.classification?.type_name || obj.intent?.type_name || null,
+              priorities: obj.result?.priorities || [],
+              scores: obj.scores || null,
+              intent_type_id: obj.intent?.type_id || null,
+              intent_type_name: obj.step2?.classification?.type_name || obj.intent?.type_name || null
             }; persist(me); }
             // 再描画
             init();
@@ -191,28 +190,33 @@ function render(){
       </div>`;
   } else if(step===1){ // STEP1 診断体験
     const diag = me.onboarding?.diag || {};
-    const resultLine = (diag.intent_type_name) ? `<p class="muted">あなたの診断結果（第2階層）: <strong>${diag.intent_type_name}</strong></p>` : `<p class="muted">まだ診断結果が読み込まれていません。</p>`;
+    const badgeLabel = diag.badge || diag.intent_type_name || null;
+    const resultLine = badgeLabel
+      ? `<p class=”muted”>読み込み済み: <strong>${badgeLabel}</strong></p>`
+      : `<p class=”muted”>まだ診断結果が読み込まれていません。</p>`;
     card.innerHTML = `
       <h2>STEP1：診断体験（掲載者自身が受ける）</h2>
-      <div class="stack">
-        <p>ユーザー向け診断をそのまま受けてください。診断はラベルではなく“納得のための道しるべ”です。</p>
-        <div class="cluster" style="gap:8px">
-          <a class="btn" href="../../pages/diagnosis.html" target="_blank" rel="noopener">診断ページを開く</a>
-          <button id="ob-import-diag" class="btn btn-ghost" type="button">診断結果を読み込む</button>
+      <div class=”stack”>
+        <p>ユーザー向け診断をそのまま受けてください。診断はラベルではなく”納得のための道しるべ”です。</p>
+        <div class=”cluster” style=”gap:8px”>
+          <a class=”btn” href=”../../pages/diagnosis.html” target=”_blank” rel=”noopener”>診断ページを開く</a>
+          <button id=”ob-import-diag” class=”btn btn-ghost” type=”button”>診断結果を読み込む</button>
         </div>
         ${resultLine}
-        <p class="muted">ユーザーはこの視点（第2階層タイプ）であなたを探します。</p>
+        <p class=”muted”>ユーザーはこの診断結果（外見スコア）を基にあなたのサービスを探します。受けてみることでユーザー視点が掴めます。</p>
       </div>`;
     qs('#ob-import-diag')?.addEventListener('click', ()=>{
       try{
-        const raw = localStorage.getItem('fineme:diagnosis:latest');
-        const obj = raw? JSON.parse(raw): null;
-        if(obj && obj.intent){
+        const rawV2 = localStorage.getItem('fineme:diagnosis:v2');
+        const rawLegacy = localStorage.getItem('fineme:diagnosis:latest');
+        const obj = rawV2 ? JSON.parse(rawV2) : (rawLegacy ? JSON.parse(rawLegacy) : null);
+        if(obj && (obj.scores || obj.intent)){
           me.onboarding.diag = {
-            intent_type_id: obj.intent.type_id,
-            intent_type_name: (obj.step2?.classification?.type_name) || obj.intent.type_name,
-            why_avg: (obj.why?.avg)||null,
-            how_scores: (obj.how?.scores)||[]
+            badge: obj.result?.badge || obj.step2?.classification?.type_name || obj.intent?.type_name || null,
+            priorities: obj.result?.priorities || [],
+            scores: obj.scores || null,
+            intent_type_id: obj.intent?.type_id || null,
+            intent_type_name: obj.step2?.classification?.type_name || obj.intent?.type_name || null
           };
           persist(me);
           render();
@@ -223,9 +227,16 @@ function render(){
     card.innerHTML = `
       <h2>STEP2：診断ロジックの説明（理解フェーズ）</h2>
       <div class="stack">
-        <p>診断は3階層構造です。第1階層：動機（WHY）、第2階層：変化軸（WHAT）、第3階層：支援スタイル（HOW）。ユーザーには第2階層のみ表示され、第1・第3階層は相性の精度向上に使われます。</p>
-        <div class="ob-card"><p>フローチャート（簡略）</p><p class="muted">ユーザー回答 → WHAT決定 → WHY/HOWで相性補正 → 表示順位</p></div>
-        <p>この構造は「自分が選ばれる理由」を言語化できるよう設計されています。</p>
+        <p>ユーザーは<strong>8軸の外見スコア診断</strong>を受けます。眉・髪・体・肌・脱毛・歯・爪・メイクの各項目でスコアが算出され、「今どこを整えると最も変われるか」が可視化されます。</p>
+        <div class="ob-card">
+          <strong>検索マッチングの仕組み</strong>
+          <p class="muted">ユーザーのスコアが低い項目（＝課題が大きい項目）ほど、その領域が「得意」な掲載者との相性スコアが高くなります。</p>
+          <p class="muted">例：眉スコアが低いユーザー → 眉・顔周りを得意とする掲載者が上位表示</p>
+        </div>
+        <div class="ob-card">
+          <strong>掲載者がすべきことはシンプル</strong>
+          <p class="muted">「得意な施術カテゴリ（得意領域）」を正確に設定することが、検索への表示機会を増やす直接的な方法です。次のSTEPで入力できます。</p>
+        </div>
         <div class="ob-card">
           <strong>来店確認で価値が発生する流れ</strong>
           <ol>
@@ -238,50 +249,38 @@ function render(){
           <p class="muted">来店が確認された時だけ、価値が発生します。</p>
           <p><a class="btn btn-ghost" href="./reservations.html">来店確認ボタンを見る</a></p>
         </div>
-        <label class="cluster" style="align-items:center; gap:8px"><input type="checkbox" id="ob-ack-2" /> <span>3階層構造と公開範囲を理解しました</span></label>
+        <label class="cluster" style="align-items:center; gap:8px"><input type="checkbox" id="ob-ack-2" /> <span>8軸スコア診断と得意領域マッチングの仕組みを理解しました</span></label>
       </div>`;
   } else if(step===3){ // STEP3 思想入力
     const prof = me.onboarding?.profile || (me.onboarding.profile={});
-    const whatList = [
-      { id:'w01', name:'清潔感タイプ' },
-      { id:'w02', name:'自然体タイプ' },
-      { id:'w03', name:'大人落ち着きタイプ' },
-      { id:'w04', name:'男らしさタイプ' },
-      { id:'w05', name:'選ばれる恋愛タイプ' },
-      { id:'w06', name:'自信醸成タイプ' },
-      { id:'w07', name:'第一印象変化タイプ' },
-      { id:'w08', name:'節目変化タイプ' }
-    ];
-    const selected = Array.isArray(prof.whatTypes)? new Set(prof.whatTypes): new Set();
     const list = document.createElement('div'); list.className='stack'; list.style.gap='8px';
     const title = document.createElement('h2'); title.textContent='STEP3：掲載者プロフィールの思想入力（重要）'; card.appendChild(title);
     const help = document.createElement('p'); help.textContent='「誰に・どんな変化を届けるのか」を言語化してください。実績や肩書のみの入力は禁止です。'; card.appendChild(help);
-    // 得意な外見方向性（新診断システムのA/B/C/D）
-    const dirBlock = document.createElement('div'); dirBlock.className='ob-card';
-    dirBlock.innerHTML = '<strong>あなたのサービスが特に合う「外見タイプ」（複数選択可）</strong><p class="muted" style="font-size:13px;margin:4px 0 8px">ユーザーの診断タイプと照合して表示順位に影響します。</p>';
-    const DIR_LIST = [
-      { id:'A', name:'✨ 清潔感タイプ', desc:'清潔感・爽やかさを求めるユーザー' },
-      { id:'B', name:'📚 知的・洗練タイプ', desc:'落ち着き・大人らしさを求めるユーザー' },
-      { id:'C', name:'💪 アクティブ・健康タイプ', desc:'体型・健康的な印象を求めるユーザー' },
-      { id:'D', name:'🎨 おしゃれ・スタイルタイプ', desc:'ファッション・センスを求めるユーザー' }
+    // 得意領域（検索マッチングに直結する最重要項目）
+    const expBlock = document.createElement('div'); expBlock.className='ob-card';
+    expBlock.innerHTML = '<strong>得意な施術カテゴリ（複数選択可）★ 検索に直接影響します</strong><p class="muted" style="font-size:13px;margin:4px 0 8px">ユーザーの診断スコアと照合して表示順位が決まります。正確に選んでください。</p>';
+    const EXP_LIST = [
+      { id:'eyebrow', name:'眉毛サロン' }, { id:'hairremoval', name:'脱毛' },
+      { id:'esthetic', name:'エステ' }, { id:'whitening', name:'ホワイトニング' },
+      { id:'orthodontics', name:'矯正歯科' }, { id:'aga', name:'AGA' },
+      { id:'hair', name:'ヘアサロン' }, { id:'nail', name:'ネイル' },
+      { id:'makeup', name:'メイク' }, { id:'fashion', name:'ファッション' },
+      { id:'diagnosis', name:'外見診断' }, { id:'gym', name:'ジム・フィットネス' },
+      { id:'cosmetic', name:'美容皮膚科' }, { id:'consulting', name:'スタイリング相談' }
     ];
-    const dirSelected = new Set(Array.isArray(prof.directionTypes) ? prof.directionTypes : []);
-    const dirWrap = document.createElement('div'); dirWrap.className='cluster'; dirWrap.style.flexWrap='wrap'; dirWrap.style.gap='8px';
-    DIR_LIST.forEach(d => {
-      const lab = document.createElement('label'); lab.className='chip'; lab.title = d.desc;
-      const cb = document.createElement('input'); cb.type='checkbox'; cb.checked = dirSelected.has(d.id);
+    if(!me.profile) me.profile = {};
+    const expSelected = new Set(Array.isArray(me.profile.expertise) ? me.profile.expertise : []);
+    const expWrap = document.createElement('div'); expWrap.className='cluster'; expWrap.style.flexWrap='wrap'; expWrap.style.gap='8px';
+    EXP_LIST.forEach(e => {
+      const lab = document.createElement('label'); lab.className='chip';
+      const cb = document.createElement('input'); cb.type='checkbox'; cb.checked = expSelected.has(e.id);
       cb.addEventListener('change', () => {
-        if(cb.checked) dirSelected.add(d.id); else dirSelected.delete(d.id);
-        prof.directionTypes = Array.from(dirSelected); persist(me);
+        if(cb.checked) expSelected.add(e.id); else expSelected.delete(e.id);
+        me.profile.expertise = Array.from(expSelected); persist(me);
       });
-      lab.appendChild(cb); lab.appendChild(document.createTextNode(' ' + d.name)); dirWrap.appendChild(lab);
+      lab.appendChild(cb); lab.appendChild(document.createTextNode(' ' + e.name)); expWrap.appendChild(lab);
     });
-    dirBlock.appendChild(dirWrap); card.appendChild(dirBlock);
-
-    const block1 = document.createElement('div'); block1.className='ob-card'; block1.innerHTML='<strong>最も力になれる第2階層タイプ（複数選択可）</strong>'; card.appendChild(block1);
-    const wrap = document.createElement('div'); wrap.className='cluster'; wrap.style.flexWrap='wrap'; wrap.style.gap='8px';
-    whatList.forEach(w=>{ const lab=document.createElement('label'); lab.className='chip'; const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=selected.has(w.id); cb.addEventListener('change',()=>{ if(cb.checked) selected.add(w.id); else selected.delete(w.id); prof.whatTypes = Array.from(selected); persist(me); }); lab.appendChild(cb); lab.appendChild(document.createTextNode(' '+w.name)); wrap.appendChild(lab); });
-    block1.appendChild(wrap);
+    expBlock.appendChild(expWrap); card.appendChild(expBlock);
     const block2 = document.createElement('div'); block2.className='ob-card'; block2.innerHTML='<strong>どんな悩みを持つ男性と向き合ってきたか</strong>'; const ta2=document.createElement('textarea'); ta2.id='ob-q-problems'; ta2.placeholder='例：第一印象に自信が持てず、恋愛や仕事で一歩踏み出せない男性...'; ta2.value = prof.problems||''; ta2.addEventListener('input',()=>{ prof.problems=ta2.value; persist(me); }); block2.appendChild(ta2); card.appendChild(block2);
     const block3 = document.createElement('div'); block3.className='ob-card'; block3.innerHTML='<strong>初めての人にどう寄り添うか</strong>'; const ta3=document.createElement('textarea'); ta3.id='ob-q-first'; ta3.placeholder='例：理由を言語化しながら伴走します。納得できるまで説明と提案を繰り返します...'; ta3.value=prof.first||''; ta3.addEventListener('input',()=>{ prof.first=ta3.value; persist(me); }); block3.appendChild(ta3); card.appendChild(block3);
     const block4 = document.createElement('div'); block4.className='ob-card'; block4.innerHTML='<strong>結果が出るまでに大切にしていること</strong>'; const ta4=document.createElement('textarea'); ta4.id='ob-q-values'; ta4.placeholder='例：習慣化の仕組み化、レビューと改善の反復...'; ta4.value=prof.values||''; ta4.addEventListener('input',()=>{ prof.values=ta4.value; persist(me); }); block4.appendChild(ta4); card.appendChild(block4);
@@ -289,7 +288,7 @@ function render(){
     const note = document.createElement('p'); note.className='muted'; note.textContent='良い例 / 悪い例を参照し、感情・考え・姿勢が伝わる文章を重視してください。この文章は診断結果と一緒に表示され、相性判断にも使われます。'; card.appendChild(note);
     // 提供スタンス（A-D + E）入力
     const scores = me.onboarding.scores || (me.onboarding.scores = { A:2, B:2, C:2, D:2, E_tags:[] });
-    const stBlock = document.createElement('div'); stBlock.className='ob-card'; stBlock.innerHTML = '<strong>あなたの店舗が大切にしていること（診断と同じ軸で）</strong>'; card.appendChild(stBlock);
+    const stBlock = document.createElement('div'); stBlock.className='ob-card'; stBlock.innerHTML = '<strong>あなたの店舗が大切にしていること（スタイルプロフィール）</strong><p class="muted" style="font-size:12px;margin:4px 0 8px">※ この設定は「相性マップ」の参考表示に使われます。検索マッチングは上記の得意領域が基準です。</p>'; card.appendChild(stBlock);
     // Q1 A（複数選択 → 重み付け）
     const q1 = document.createElement('div'); q1.className='stack'; q1.id='ob-a-group'; q1.innerHTML = '<em>Q1｜どんな理由で来る人に一番向き合いたいですか？（複数選択可）</em>'; const q1wrap=document.createElement('div'); q1wrap.className='cluster'; q1wrap.style.flexWrap='wrap'; q1wrap.style.gap='8px';
     const A_OPTS = [ '自信を持てるように', '周囲の目を気にせず一歩', '人生の節目の変化', '明確な目的（恋愛・仕事）' ]; const A_sel=new Set();
@@ -351,12 +350,14 @@ function render(){
 function onNext(){
   const me = getMe(); if(!me) return;
   if(step===0){ const ack=qs('#ob-ack-0'); if(!ack || !ack.checked){ alert('「理解した上で進む」にチェックしてください。'); return; } me.onboarding.steps.step0=true; persist(me); step++; render(); return; }
-  if(step===1){ if(!me.onboarding?.diag?.intent_type_id){ alert('診断結果を読み込んでください。'); return; } me.onboarding.steps.step1=true; persist(me); step++; render(); return; }
+  if(step===1){ if(!me.onboarding?.diag?.badge && !me.onboarding?.diag?.intent_type_id){ alert('診断結果を読み込んでください。'); return; } me.onboarding.steps.step1=true; persist(me); step++; render(); return; }
   if(step===2){ const ack=qs('#ob-ack-2'); if(!ack || !ack.checked){ alert('3階層構造の理解にチェックしてください。'); return; } me.onboarding.steps.step2=true; persist(me); step++; render(); return; }
   if(step===3){
     const prof=me.onboarding?.profile||{}; const sc=me.onboarding?.scores||{};
-    const ok = Array.isArray(prof.whatTypes) && prof.whatTypes.length>0 && (prof.problems||'').trim() && (prof.first||'').trim() && (prof.values||'').trim() && (prof.beyond||'').trim() && Number(sc.A)>=1 && Number(sc.B)>=1 && Number(sc.C)>=1 && Number(sc.D)>=1 && Array.isArray(sc.E_tags);
-    if(!ok){ alert('タイプ選択・4つの文章・提供スタンス（A-D＋価値観）をすべて入力してください。'); return; }
+    const me2 = getMe() || me;
+    const expertiseOk = Array.isArray(me2.profile?.expertise) && me2.profile.expertise.length > 0;
+    const ok = expertiseOk && (prof.problems||'').trim() && (prof.first||'').trim() && (prof.values||'').trim() && (prof.beyond||'').trim() && Number(sc.A)>=1 && Number(sc.B)>=1 && Number(sc.C)>=1 && Number(sc.D)>=1 && Array.isArray(sc.E_tags);
+    if(!ok){ alert('得意領域・4つの文章・提供スタンス（A-D＋価値観）をすべて入力してください。'); return; }
     me.onboarding.steps.step3=true; persist(me); step++; render(); return;
   }
   if(step===4){ /* handled by complete button */ }

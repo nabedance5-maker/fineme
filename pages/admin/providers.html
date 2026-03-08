@@ -83,6 +83,7 @@
                       <th style="text-align:left">ログインID</th>
                       <th style="text-align:left">プラン</th>
                       <th style="text-align:left">作成日</th>
+                      <th style="text-align:left">ステータス</th>
                       <th style="text-align:left">操作</th>
                     </tr>
                   </thead>
@@ -129,23 +130,9 @@
                     <textarea id="profile-description" name="description" rows="4" placeholder="店舗/掲載者の紹介文"></textarea>
                   </label>
                   <div class="stack" style="border-top:1px solid var(--color-border); padding-top:12px; margin-top:8px">
-                    <h3 style="margin:0 0 6px 0; font-size:16px">診断連動タグ</h3>
+                    <h3 style="margin:0 0 6px 0; font-size:16px">検索・表示設定</h3>
+                    <p class="muted" style="margin:0 0 8px 0; font-size:12px">得意領域は検索マッチングに直接影響します。ユーザーの診断スコアと照合し、表示順位を決定します。</p>
                     <div class="cluster" style="gap:8px; flex-wrap:wrap">
-                      <label>変化の幅（C軸）
-                        <select id="profile-change-range" name="changeRange">
-                          <option value="1">控えめ（小さく）</option>
-                          <option value="2">やや控えめ</option>
-                          <option value="3">標準（バランス）</option>
-                          <option value="4">しっかり（大きく）</option>
-                        </select>
-                      </label>
-                      <label>提案スタイル（ペース / D軸）
-                        <select id="profile-pace" name="pace">
-                          <option value="1">ゆっくり</option>
-                          <option value="2">バランス</option>
-                          <option value="3">テンポ良く</option>
-                        </select>
-                      </label>
                       <label>価格帯
                         <select id="profile-priceTier" name="priceTier">
                           <option value="low">低</option>

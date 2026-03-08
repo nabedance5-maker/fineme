@@ -1,81 +1,103 @@
-import { loadUsers, saveUsers, uuid } from './user-auth.js';
+// ユーザーログイン / 新規登録 — Supabase Auth 対応版
+import { supabase } from './supabase.js';
+
 const BASE_PREFIX = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
 
-function qs(s, root=document){ return root.querySelector(s); }
+function qs(s, root = document) { return root.querySelector(s); }
 
-function switchTab(which){
+function switchTab(which) {
   const loginTab = qs('#tab-login');
   const regTab = qs('#tab-register');
   const loginForm = qs('#login-form');
   const regForm = qs('#register-form');
   const isLogin = which === 'login';
-  loginTab.classList.toggle('is-active', isLogin);
-  regTab.classList.toggle('is-active', !isLogin);
-  loginTab.setAttribute('aria-selected', String(isLogin));
-  regTab.setAttribute('aria-selected', String(!isLogin));
-  loginForm.style.display = isLogin ? '' : 'none';
-  regForm.style.display = isLogin ? 'none' : '';
+  if (loginTab) { loginTab.classList.toggle('is-active', isLogin); loginTab.setAttribute('aria-selected', String(isLogin)); }
+  if (regTab) { regTab.classList.toggle('is-active', !isLogin); regTab.setAttribute('aria-selected', String(!isLogin)); }
+  if (loginForm) loginForm.style.display = isLogin ? '' : 'none';
+  if (regForm) regForm.style.display = isLogin ? 'none' : '';
 }
 
-function setUserSession(user){
-  const session = { id: user.id, loginId: user.loginId, displayName: user.displayName || user.loginId, signedInAt: Date.now() };
-  sessionStorage.setItem('glowup:userSession', JSON.stringify(session));
-}
-
-function onLoginSubmit(e){
+async function onLoginSubmit(e) {
   e.preventDefault();
   const fd = new FormData(e.currentTarget);
-  const loginId = (fd.get('loginId')||'').toString().trim();
-  const password = (fd.get('password')||'').toString();
+  const email = (fd.get('loginId') || '').toString().trim();
+  const password = (fd.get('password') || '').toString();
   const msg = qs('#login-message');
-  const users = loadUsers();
-  const found = users.find(u => (u.loginId||'').toLowerCase() === loginId.toLowerCase());
-  if(!found || found.passwordHash !== password){
-    if(msg){ msg.textContent = 'ID またはパスワードが正しくありません。'; msg.classList.add('error'); }
+  if (msg) { msg.textContent = ''; msg.classList.remove('error'); }
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    if (msg) { msg.textContent = 'メールアドレスまたはパスワードが正しくありません。'; msg.classList.add('error'); }
     return;
   }
-  setUserSession(found);
-  // Sync user to server DB for PoC
-  // Skip server sync on GitHub Pages
-  try{ if(!/github\.io$/i.test(location.hostname)) fetch('http://localhost:4015/api/sync-user', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ loginId: found.loginId, displayName: found.displayName, email: found.email, passwordHash: found.passwordHash }) }).catch(()=>{}); }catch(_){ }
-  // after login, if a `next` param exists, redirect there to resume booking
-  try{
+
+  // 診断結果があればSupabaseに保存
+  try { await _syncDiagnosisToSupabase(); } catch {}
+
+  try {
     const next = new URLSearchParams(location.search).get('next');
-    if(next){ location.replace(decodeURIComponent(next)); return; }
-  }catch(_){}
-  // after login, if a pending LINE link exists, attempt to link by calling server
-  try{ const pending = sessionStorage.getItem('pendingLineLink'); if(pending && !/github\.io$/i.test(location.hostname)){ fetch('http://localhost:4015/api/link-line', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ loginId: found.loginId, lineUserId: pending }) }).then(()=>{ sessionStorage.removeItem('pendingLineLink'); }).catch(()=>{}); } }catch(_){ }
+    if (next) { location.replace(decodeURIComponent(next)); return; }
+  } catch {}
   location.href = BASE_PREFIX + '/pages/mypage/index.html';
 }
 
-function onRegisterSubmit(e){
+async function onRegisterSubmit(e) {
   e.preventDefault();
   const fd = new FormData(e.currentTarget);
-  const displayName = (fd.get('displayName')||'').toString().trim();
-  const loginId = (fd.get('loginId')||'').toString().trim();
-  const password = (fd.get('password')||'').toString();
+  const displayName = (fd.get('displayName') || '').toString().trim();
+  const email = (fd.get('loginId') || '').toString().trim();
+  const password = (fd.get('password') || '').toString();
   const msg = qs('#register-message');
-  if(!displayName || !loginId || !password){
-    if(msg) msg.textContent = '必須項目が未入力です。';
+  if (msg) { msg.textContent = ''; msg.classList.remove('error'); }
+
+  if (!displayName || !email || !password) {
+    if (msg) msg.textContent = '必須項目が未入力です。';
     return;
   }
-  const users = loadUsers();
-  if(users.some(u => (u.loginId||'').toLowerCase() === loginId.toLowerCase())){
-    if(msg) msg.textContent = 'そのログインIDは既に使用されています。';
+
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { display_name: displayName } },
+  });
+
+  if (error) {
+    if (msg) {
+      msg.textContent = error.message.includes('already registered')
+        ? 'そのメールアドレスは既に登録されています。'
+        : `登録に失敗しました: ${error.message}`;
+      msg.classList.add('error');
+    }
     return;
   }
-  // loginId をメールとして扱うため、初期 email にも保存
-  const user = { id: uuid(), displayName, loginId, email: loginId, passwordHash: password, createdAt: new Date().toISOString() };
-  users.push(user);
-  saveUsers(users);
-  setUserSession(user);
-  // Sync newly registered user to server DB
-  try{ if(!/github\.io$/i.test(location.hostname)) fetch('http://localhost:4015/api/sync-user', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ loginId: user.loginId, displayName: user.displayName, email: user.email, passwordHash: user.passwordHash }) }).catch(()=>{}); }catch(_){ }
-  try{
+
+  // 確認メール送信の場合はメッセージ表示
+  if (msg) msg.textContent = '確認メールを送信しました。メールのリンクをクリックしてください。';
+
+  // 診断結果があればSupabaseに保存
+  try { await _syncDiagnosisToSupabase(); } catch {}
+
+  try {
     const next = new URLSearchParams(location.search).get('next');
-    if(next){ location.replace(decodeURIComponent(next)); return; }
-  }catch(_){}
+    if (next) { location.replace(decodeURIComponent(next)); return; }
+  } catch {}
+  // 登録後は診断ページへ（新規ユーザーは診断が先）
   location.href = BASE_PREFIX + '/pages/diagnosis.html';
+}
+
+// ローカルの診断結果をSupabaseに同期する
+async function _syncDiagnosisToSupabase() {
+  const raw = localStorage.getItem('fineme:diagnosis:v2') || localStorage.getItem('fineme:diagnosis:latest');
+  if (!raw) return;
+  const diagData = JSON.parse(raw);
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return;
+  await supabase.from('diagnosis_results').upsert({
+    user_id: session.user.id,
+    scores: diagData.scores || null,
+    result: diagData.result || null,
+    raw_data: diagData,
+  }, { onConflict: 'user_id' });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -83,12 +105,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const regTab = qs('#tab-register');
   const loginForm = qs('#login-form');
   const regForm = qs('#register-form');
-  if(loginTab) loginTab.addEventListener('click', () => switchTab('login'));
-  if(regTab) regTab.addEventListener('click', () => switchTab('register'));
-  if(loginForm) loginForm.addEventListener('submit', onLoginSubmit);
-  if(regForm) regForm.addEventListener('submit', onRegisterSubmit);
-  // If the URL hash is #register, open the register tab automatically
-  if(location.hash === '#register'){
-    try{ switchTab('register'); }catch(_){}
+  if (loginTab) loginTab.addEventListener('click', () => switchTab('login'));
+  if (regTab) regTab.addEventListener('click', () => switchTab('register'));
+  if (loginForm) loginForm.addEventListener('submit', onLoginSubmit);
+  if (regForm) regForm.addEventListener('submit', onRegisterSubmit);
+  if (location.hash === '#register') {
+    try { switchTab('register'); } catch {}
   }
 });

@@ -1067,6 +1067,8 @@ function sortItems(items, sort){
     const provMap = Object.fromEntries(allProvs.map(p=> [p.id, p]));
     for(let i=0;i<all.length;i++){
       const it = all[i]; const p = provMap[it.providerId];
+      // statusが明示的にpendingまたはsuspendedなら非表示（未設定=旧データはそのまま表示）
+      if(p && p.status && p.status !== 'approved'){ all.splice(i,1); i--; continue; }
       if(p && ((!p.onboarding || !p.onboarding.completed) || (p.visibility === 'hidden'))){ all.splice(i,1); i--; }
     }
   }catch(_){ }
@@ -1135,18 +1137,51 @@ function sortItems(items, sort){
     }catch{ return {}; }
   }
 
-  function loadDiagnosis(){ try{ const raw = localStorage.getItem('fineme:diagnosis:latest'); return raw? JSON.parse(raw): null; }catch{ return null; } }
+  // v2形式（fineme:diagnosis:v2）を優先、なければ旧形式にフォールバック
+  function loadDiagnosis(){
+    try{
+      const rawV2 = localStorage.getItem('fineme:diagnosis:v2');
+      if(rawV2){ const obj = JSON.parse(rawV2); if(obj && obj.scores) return obj; }
+      const rawLegacy = localStorage.getItem('fineme:diagnosis:latest');
+      return rawLegacy ? JSON.parse(rawLegacy) : null;
+    }catch{ return null; }
+  }
+
+  // 得意領域→診断スコアキーのマッピング（検索ソート・バッジ共通）
+  const EXP_TO_SCORE_MAP = {
+    eyebrow:['eyebrow'], hair:['hair'], aga:['hair'],
+    gym:['body'], esthetic:['skin'], cosmetic:['skin'],
+    hairremoval:['hair_removal'], whitening:['teeth'], orthodontics:['teeth'],
+    nail:['nail'], makeup:['makeup'], fashion:['makeup'],
+    diagnosis:['eyebrow','hair','body','skin'],
+    consulting:['eyebrow','hair','body','skin']
+  };
 
   function getCompatScoreForItem(it, provMap, diag){
     try{
+      // v2形式: scoresオブジェクト（8軸）+ expertiseで相性計算
+      const scores = diag?.scores;
+      if(scores){
+        const p = provMap[it.providerId];
+        if(!p) return 40;
+        const expertise = Array.isArray(p.profile?.expertise) ? p.profile.expertise : [];
+        if(!expertise.length) return 40;
+        let totalNeed = 0; let cnt = 0;
+        for(const exp of expertise){
+          const keys = EXP_TO_SCORE_MAP[exp] || [];
+          for(const k of keys){
+            if(scores[k] != null){ totalNeed += (10 - Number(scores[k])); cnt++; }
+          }
+        }
+        return cnt > 0 ? Math.round(20 + (totalNeed / cnt / 10) * 80) : 40;
+      }
+      // 旧形式フォールバック: intent.type_id + whatTypes
       if(!diag || !diag.intent || !diag.intent.type_id) return 0;
       const typeId = String(diag.intent.type_id);
       const p = provMap[it.providerId];
       if(!p) return 0;
-      // profile.whatTypes（最大2つ想定）に一致すれば高スコア
       const whatTypes = (p.onboarding && p.onboarding.profile && Array.isArray(p.onboarding.profile.whatTypes)) ? p.onboarding.profile.whatTypes : [];
       if(whatTypes.includes(typeId)) return 100;
-      // 近似や未設定は控えめスコア
       if(whatTypes.length>0) return 60;
       return 40;
     }catch{ return 0; }
@@ -1205,10 +1240,10 @@ function sortItems(items, sort){
       const header = document.createElement('div');
       header.className = 'search-purpose-summary';
       const p = document.createElement('p'); p.style.margin='0 0 8px 0'; p.style.fontWeight='600';
-      const t = document.createTextNode('診断タイプに合う順で表示中: ');
+      const t = document.createTextNode('あなたの診断結果に合う順で表示中: ');
       const strong = document.createElement('span'); strong.style.fontWeight='700';
-      const step2name = (diag?.step2?.classification?.type_name) || '';
-      strong.textContent = String(step2name || diag?.intent?.type_name || '');
+      const badgeLabel = diag?.result?.badge || diag?.step2?.classification?.type_name || diag?.intent?.type_name || '';
+      strong.textContent = String(badgeLabel);
       p.appendChild(t); p.appendChild(strong); header.appendChild(p);
       if(list && list.parentNode) list.parentNode.insertBefore(header, list);
     }catch{}
@@ -1231,10 +1266,10 @@ function sortItems(items, sort){
       function clamp01(n){ n = Number(n)||0; if(n<0) return 0; if(n>1) return 1; return n; }
       function computeTrust01(providerId){
         try{
-          const RESV_KEY = 'glowup:reservations'; const VISIT_KEY = 'glowup:visits';
+          const RESV_KEY = 'fineme:reservations:list'; const VISIT_KEY = 'glowup:visits';
           const rRaw = localStorage.getItem(RESV_KEY); const vRaw = localStorage.getItem(VISIT_KEY);
           const reservations = rRaw? JSON.parse(rRaw):[]; const visits = vRaw? JSON.parse(vRaw):[];
-          const myRes = Array.isArray(reservations)? reservations.filter(x=> x && x.providerId===providerId):[];
+          const myRes = Array.isArray(reservations)? reservations.filter(x=> x && String(x.storeId||'')===String(providerId)):[];
           const myVis = Array.isArray(visits)? visits.filter(x=> x && x.providerId===providerId):[];
           const totalRes = myRes.length; const completed = myRes.filter(x=> x.status==='visited' || x.status==='completed').length;
           // repeat users ratio

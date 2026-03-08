@@ -280,6 +280,7 @@
 </head>
 <body>
   <header id="site-header"></header>
+  <!-- このページはユーザー向けサービス追加通知（ウェイトリスト）ページです。掲載者登録ではありません。 -->
 
   <!-- Hero -->
   <section class="wl-hero">
@@ -431,11 +432,13 @@
       diagData = rawV2 ? JSON.parse(rawV2) : (rawLegacy ? JSON.parse(rawLegacy) : null);
     } catch {}
 
-    // タイプバッジ表示
+    // タイプバッジ表示（v2: result.badge / legacy: direction）
     const badgeWrap = document.getElementById('type-badge-wrap');
-    if(diagData && diagData.direction && DIR_META[diagData.direction]){
-      const meta = DIR_META[diagData.direction];
-      badgeWrap.innerHTML = `<div class="type-badge"><span class="dot"></span>${meta.label}</div>`;
+    const badgeLabel = diagData?.result?.badge
+      || (diagData?.direction && DIR_META[diagData.direction] ? DIR_META[diagData.direction].label : null)
+      || null;
+    if(badgeLabel){
+      badgeWrap.innerHTML = `<div class="type-badge"><span class="dot"></span>${badgeLabel}</div>`;
     } else {
       badgeWrap.innerHTML = '<div class="type-badge"><span class="dot"></span>Fineme ユーザー</div>';
     }
