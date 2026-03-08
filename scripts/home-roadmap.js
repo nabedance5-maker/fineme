@@ -101,6 +101,7 @@ function saveProgress(data) {
   try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(data)); } catch {}
 }
 function getCurrentPhase(progress) {
+  if (progress.all_complete)    return 4; // 全フェーズ完了
   if (progress.phase2_complete) return 3;
   if (progress.phase1_complete) return 2;
   return 1;
@@ -120,13 +121,17 @@ function renderDiagnosed(diag) {
     : `すべての土台が整っています。次は、外見全体を「武器」に仕上げる段階です。`;
 
   const el = id => document.getElementById(id);
-  if (el('roadmap-sub'))          el('roadmap-sub').textContent = subText;
-  if (el('roadmap-badge-text'))   el('roadmap-badge-text').textContent = result?.badge || '診断済み';
+  if (el('roadmap-sub'))        el('roadmap-sub').textContent = currentPhase === 4
+    ? '外見の第一章が完了しました。次は、それを人生に活かす番です。'
+    : subText;
+  if (el('roadmap-badge-text')) el('roadmap-badge-text').textContent = result?.badge || '診断済み';
   const phaseLabels = { 1: '清潔感の土台を作る段階', 2: '印象を引き上げる段階', 3: '全体を仕上げる段階' };
   if (el('roadmap-current-phase'))
-    el('roadmap-current-phase').textContent = `Phase ${currentPhase} — ${phaseLabels[currentPhase]}`;
+    el('roadmap-current-phase').textContent = currentPhase === 4
+      ? '変容の第一章、完了'
+      : `Phase ${currentPhase} — ${phaseLabels[currentPhase]}`;
 
-  // 進捗ドット更新
+  // 進捗ドット更新（currentPhase=4 のとき全ドットが完了）
   for (let i = 1; i <= 3; i++) {
     const dot  = el(`phase-dot-${i}`);
     const conn = el(`phase-conn-${i}`);
@@ -142,6 +147,27 @@ function renderDiagnosed(diag) {
   renderPhaseBlock('roadmap-phase-2', p2, 2, currentPhase, progress);
   renderPhaseBlock('roadmap-phase-3', p3, 3, currentPhase, progress);
   renderTop3(result, p1, p2, scores);
+
+  // 全フェーズ完了バナー
+  const phase3Block = document.getElementById('roadmap-phase-3');
+  const existingBanner = document.getElementById('rm-all-done-banner');
+  if (currentPhase === 4 && phase3Block && !existingBanner) {
+    const banner = document.createElement('div');
+    banner.id = 'rm-all-done-banner';
+    banner.style.cssText = 'background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:20px;margin-top:16px;text-align:center;';
+    banner.innerHTML = `
+      <p style="font-size:16px;font-weight:800;margin:0 0 6px;color:#15803d;">✓ 変容の第一章、完了</p>
+      <p style="font-size:13px;color:#6b7280;line-height:1.7;margin:0 0 16px;">
+        外見が変わった。次は3ヶ月後にスコアを確認して、<br>変化を自分の目で確かめましょう。
+      </p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">
+        <a href="./pages/diagnosis.html" class="btn" style="font-size:13px;">3ヶ月後に再診断する</a>
+        <a href="./pages/mypage/index.html" class="btn btn-ghost" style="font-size:13px;">マイページへ</a>
+      </div>`;
+    phase3Block.insertAdjacentElement('afterend', banner);
+  } else if (currentPhase !== 4 && existingBanner) {
+    existingBanner.remove();
+  }
 }
 
 function renderPhaseBlock(elId, items, phaseNum, currentPhase, progress) {
@@ -205,6 +231,12 @@ function renderPhaseBlock(elId, items, phaseNum, currentPhase, progress) {
         この段階に着手したら、Phase ${phaseNum + 1} に進んでください。
         <button class="btn btn-ghost" style="font-size:12px;padding:4px 12px;margin-left:6px;"
           onclick="roadmapCompletePhase(${phaseNum})">Phase ${phaseNum} 完了 →</button>
+      </div>`
+    : isActive && phaseNum === 3
+    ? `<div class="roadmap-unlock-hint">
+        全ての項目に取り組んだら、変容の第一章を完了しましょう。
+        <button class="btn btn-ghost" style="font-size:12px;padding:4px 12px;margin-left:6px;"
+          onclick="roadmapCompletePhase(3)">変容の第一章を完了する ✨</button>
       </div>`
     : '';
 
@@ -364,9 +396,11 @@ function showPhaseCompleteModal(phaseNum) {
   const DATA = {
     1: { icon: '🎉', title: 'Phase 2 解放！', sub: '清潔感の土台が整いました。次は「印象を引き上げる」段階へ。' },
     2: { icon: '🏆', title: 'Phase 3 解放！', sub: '印象アップが完了。いよいよ外見全体を統合する最終段階です。' },
+    3: { icon: '✨', title: '変容の第一章、完了。', sub: '外見が変わった。それは自分への投資が積み重なった証拠です。3ヶ月後にスコアを確認して、変化を自分の目で確かめましょう。' },
   };
   const d = DATA[phaseNum];
   if (!d) return;
+  const isAllDone = phaseNum === 3;
   const overlay = document.createElement('div');
   overlay.className = 'rm-overlay';
   overlay.innerHTML = `
@@ -374,17 +408,26 @@ function showPhaseCompleteModal(phaseNum) {
       <div style="font-size:40px;margin-bottom:12px;">${d.icon}</div>
       <h2 style="font-size:20px;font-weight:800;margin:0 0 8px;">${d.title}</h2>
       <p style="font-size:14px;color:#6b7280;line-height:1.7;margin:0 0 16px;">${d.sub}</p>
-      <div style="background:#f4f4ff;border-radius:10px;padding:12px;margin-bottom:20px;">
-        <p style="font-size:13px;font-weight:700;color:#4f46e5;margin:0 0 4px;">取り組みの成果を確認しましょう</p>
-        <p style="font-size:12px;color:#6b7280;margin:0;">再診断でスコアが上がれば、次のフェーズが自動で解放されます。</p>
-      </div>
+      ${isAllDone
+        ? `<div style="background:#f0fdf4;border-radius:10px;padding:12px;margin-bottom:20px;">
+            <p style="font-size:13px;font-weight:700;color:#15803d;margin:0 0 4px;">3ヶ月後に再診断しよう</p>
+            <p style="font-size:12px;color:#6b7280;margin:0;">外見の変化は時間をかけて現れます。定期的なスコア確認で、成長を見える化しましょう。</p>
+          </div>`
+        : `<div style="background:#f4f4ff;border-radius:10px;padding:12px;margin-bottom:20px;">
+            <p style="font-size:13px;font-weight:700;color:#4f46e5;margin:0 0 4px;">取り組みの成果を確認しましょう</p>
+            <p style="font-size:12px;color:#6b7280;margin:0;">再診断でスコアが上がれば、次のフェーズが自動で解放されます。</p>
+          </div>`
+      }
       <div style="display:flex;flex-direction:column;gap:8px;">
-        <a href="./pages/diagnosis.html" class="btn" style="text-align:center;">再診断してスコアを更新する</a>
-        <button class="btn btn-ghost rm-modal-close" style="text-align:center;">このまま続ける</button>
+        <a href="./pages/diagnosis.html" class="btn" style="text-align:center;">${isAllDone ? '3ヶ月後に再診断する' : '再診断してスコアを更新する'}</a>
+        <button class="btn btn-ghost rm-modal-close" style="text-align:center;">${isAllDone ? 'マイページへ' : 'このまま続ける'}</button>
       </div>
     </div>`;
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-  overlay.querySelector('.rm-modal-close').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('.rm-modal-close').addEventListener('click', () => {
+    overlay.remove();
+    if (isAllDone) location.href = './pages/mypage/index.html';
+  });
   document.body.appendChild(overlay);
 }
 
@@ -435,6 +478,7 @@ window.roadmapCompletePhase = function(phaseNum) {
     }
     if (phaseNum === 1) progress.phase1_complete = true;
     if (phaseNum === 2) progress.phase2_complete = true;
+    if (phaseNum === 3) progress.all_complete = true;
     progress.lastUpdated = new Date().toISOString();
     saveProgress(progress);
     init();

@@ -75,7 +75,7 @@ function onRegisterSubmit(e){
     const next = new URLSearchParams(location.search).get('next');
     if(next){ location.replace(decodeURIComponent(next)); return; }
   }catch(_){}
-  location.href = BASE_PREFIX + '/pages/mypage/index.html';
+  location.href = BASE_PREFIX + '/pages/diagnosis.html';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
