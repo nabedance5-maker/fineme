@@ -902,6 +902,15 @@
       }));
     } catch(e) {}
 
+    // スコア履歴に追記（定期的な変化の可視化用）
+    try {
+      const HISTORY_KEY = 'fineme:diagnosis:history';
+      const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+      history.push({ scores: state.scores, savedAt: new Date().toISOString() });
+      if (history.length > 12) history.splice(0, history.length - 12); // 直近12回まで保持
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    } catch(e) {}
+
     // 新スコアに合わせてロードマップ進捗を再計算
     // Phase 1: ≤5点, Phase 2: 6-8点, Phase 3: 9-10点
     try {

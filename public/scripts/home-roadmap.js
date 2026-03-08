@@ -116,8 +116,8 @@ function renderDiagnosed(diag) {
   // パーソナライズされたサブコピー
   const topItem = [...p1, ...p2].sort((a, b) => a.score - b.score)[0];
   const subText = topItem
-    ? `${topItem.label}が${topItem.score}点。まずここから。それだけで、今日から見た目は変わりはじめます。`
-    : `すべての土台が整っています。次は、外見全体を「武器」に仕上げる段階です。`;
+    ? `${topItem.label}が${topItem.score}点。まずここだけ片付けろ。それだけで、周囲の反応が変わり始める。`
+    : `土台は整った。次は外見全体を武器に変える段階だ。`;
 
   const el = id => document.getElementById(id);
   if (el('roadmap-sub'))          el('roadmap-sub').textContent = subText;
@@ -159,9 +159,14 @@ function renderPhaseBlock(elId, items, phaseNum, currentPhase, progress) {
     3: '全体を仕上げる',
   };
   const DESCS = {
-    1: 'ここが揃わないと、どんな努力も表面に出てきません。スコアの低い項目から、着実に着手します。',
-    2: '土台が整ったら、次は「印象をコントロールする」段階へ。細部の積み重ねが、全体の差になります。',
-    3: '個々のパーツを超えて、外見全体を統合します。写真・コンサル・出会いの場へ進みます。',
+    1: '「なんか垢抜けない」の原因は、ほぼここにある。1つ片付けるだけで、何も変えていないのに周囲の反応が変わり始める。',
+    2: '清潔感は出た。次は「なぜか気になる人」になる段階だ。ここを越えると、自分への自信の持ち方が変わる。',
+    3: '一人でできる限界は、ここまでやり切った。プロに仕上げてもらう。整った外見で出会いの場に出たとき、それ以前とは別次元の体験になる。',
+  };
+  const PHASE_META = {
+    1: '目安 1〜3ヶ月',
+    2: '目安 2〜4ヶ月',
+    3: '目安 1〜2ヶ月',
   };
 
   const statusClass = isDone ? 'done' : isActive ? 'active' : 'locked';
@@ -221,6 +226,13 @@ function renderPhaseBlock(elId, items, phaseNum, currentPhase, progress) {
       </div>`
     : '';
 
+  const lockedTeaser = isLocked && phaseNum === 3
+    ? `<div style="margin-top:12px;padding:12px 14px;background:#f5f3ff;border-radius:8px;border-left:3px solid #4f46e5;">
+        <p style="font-size:11px;font-weight:700;color:#4f46e5;margin:0 0 4px;text-transform:uppercase;letter-spacing:.05em;">Phase 3 を越えた人の世界</p>
+        <p style="font-size:12px;color:#374151;margin:0;line-height:1.8;">眉・歯・肌を整え、外見コンサルを受け、プロフィール写真を撮った。<br>それだけで、出会いの場での反応は別次元になる。</p>
+      </div>`
+    : '';
+
   block.innerHTML = `
     <div class="roadmap-phase-header">
       <div class="roadmap-phase-num ${statusClass}">
@@ -230,13 +242,14 @@ function renderPhaseBlock(elId, items, phaseNum, currentPhase, progress) {
         <div class="roadmap-phase-name">
           ${NAMES[phaseNum]}
           <span class="roadmap-status ${statusClass}">${statusText}</span>
+          ${!isDone ? `<span style="font-size:11px;font-weight:400;color:#9ca3af;margin-left:6px;">${PHASE_META[phaseNum]}</span>` : ''}
         </div>
         <div class="roadmap-phase-desc">${DESCS[phaseNum]}</div>
       </div>
       ${isLocked ? '<span style="font-size:20px;color:#9ca3af;flex-shrink:0;">&#x1F512;</span>' : ''}
     </div>
     <div class="roadmap-items">${itemsHtml}</div>
-    ${unlockHint}${revertHint}`;
+    ${lockedTeaser}${unlockHint}${revertHint}`;
 }
 
 function renderTop3(result, p1, p2, scores) {
@@ -370,7 +383,7 @@ function showPhaseCompleteModal(phaseNum) {
   const DATA = {
     1: { icon: '🎉', title: 'Phase 2 解放！', sub: '清潔感の土台が整いました。次は「印象を引き上げる」段階へ。' },
     2: { icon: '🏆', title: 'Phase 3 解放！', sub: '印象アップが完了。いよいよ外見全体を統合する最終段階です。' },
-    3: { icon: '✨', title: '変容の第一章、完了。', sub: '外見が変わった。それは自分への投資が積み重なった証拠です。3ヶ月後にスコアを確認して、変化を自分の目で確かめましょう。' },
+    3: { icon: '✨', title: '変容の第一章、完了。', sub: '外見が変わった。これは維持するものだ。放置すれば崩れる。3ヶ月後に再診断して、今日の自分を基準点にしろ。' },
   };
   const d = DATA[phaseNum];
   if (!d) return;
