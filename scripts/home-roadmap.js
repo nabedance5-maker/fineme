@@ -173,6 +173,69 @@ const FINISH_ITEMS = [
   },
 ];
 
+// ── v4用: 部位ごとのStep定義 ────────────────────────────────────────
+const AREA_DEFINITIONS = [
+  { key:'eyebrow', label:'眉毛', icon:'✂️', searchParam:'eyebrow',
+    step1:'眉毛サロンで初回整形。プロに形を決めてもらう。1回で顔の印象が変わる。',
+    step2:'月1〜2回のメンテで形を維持する。放置すると崩れる。',
+    step3:'自分の顔型に最適な形を深化させる。セルフでも整えられるようになる。' },
+  { key:'hair', label:'髪型', icon:'💈', searchParam:'hair',
+    step1:'美容師に「垢抜けて見える髪型にしたい」と伝える。一度プロに形を決めてもらう。',
+    step2:'毎日のスタイリングを習慣化。ヘアケアで状態を維持する。',
+    step3:'自分の骨格・顔型に最適なスタイルを深化させる。' },
+  { key:'skin', label:'肌ケア', icon:'🧴', searchParam:'esthetic',
+    step1:'洗顔・保湿の習慣から始める。スキンケアの基礎を整える。',
+    step2:'肌の状態に合わせたケアを深化させる。エステや美容医療で専門的に対処。',
+    step3:'肌の状態を安定的に維持する。トラブルが出たら早期対処できる状態にする。' },
+  { key:'body', label:'体型', icon:'💪', searchParam:'gym',
+    step1:'パーソナルトレーナーに現状を見てもらい、何から始めるかを決める。',
+    step2:'週2〜3回のトレーニングを習慣化。食事の意識も変える。',
+    step3:'目標体型に向けて最終調整。維持できる習慣として定着させる。' },
+  { key:'fashion', label:'服・コーデ', icon:'👔', searchParam:'fashion',
+    step1:'今持っている服のサイズ感を見直す。合わないサイズの服を手放す。',
+    step2:'パーソナルスタイリストに自分に合うスタイルを見立ててもらう。',
+    step3:'自分のスタイルの軸を固める。場面ごとのコーデを確立する。' },
+  { key:'hair_removal', label:'ムダ毛', icon:'⚡', searchParam:'hairremoval',
+    step1:'脱毛サロンの初回体験に行く。どのエリアから始めるか決める。',
+    step2:'コースを継続し、処理が完了したエリアから清潔感が変わり始める。',
+    step3:'全エリアの処理を完了。日々のケアが不要になる状態を目指す。' },
+  { key:'teeth', label:'歯', icon:'😁', searchParam:'whitening',
+    step1:'まず歯科でクリーニングを受ける。歯石・着色を取り除く。',
+    step2:'ホワイトニングで白さを整える。笑顔に自信が持てるようになる。',
+    step3:'定期メンテで状態を維持。清潔感の高い状態をキープする。' },
+  { key:'nail', label:'爪', icon:'💅', searchParam:'nail',
+    step1:'爪を清潔に整える習慣をつける。形を揃え、甘皮を処理する。',
+    step2:'ネイルサロンでプロにケアしてもらう。手元の印象を格上げする。',
+    step3:'定期的なケアを習慣化。手元の清潔感を維持する。' },
+  { key:'makeup', label:'メイク', icon:'✨', searchParam:'makeup',
+    step1:'BBクリームや眉マスカラなど、まず1アイテムから試す。',
+    step2:'メイクレッスンを受けて、自分に合う方法を学ぶ。',
+    step3:'場面に合わせたメイクを使い分けられるようになる。' },
+];
+
+// v4用フェーズ分類: 気になり度に応じてstepを各フェーズに振り分ける
+function classifyPhasesV4(concernLevels) {
+  const p1 = [], p2 = [], p3 = [];
+
+  AREA_DEFINITIONS.forEach(area => {
+    const level = concernLevels[area.key] ?? 0;
+    if (level >= 3) {
+      // かなり/すごく → Phase1から始まり全Stepで継続
+      p1.push({ ...area, key: area.key + '_s1', baseKey: area.key, copy: area.step1, stepLabel: '基礎' });
+      p2.push({ ...area, key: area.key + '_s2', baseKey: area.key, copy: area.step2, stepLabel: '定着' });
+      p3.push({ ...area, key: area.key + '_s3', baseKey: area.key, copy: area.step3, stepLabel: '深化' });
+    } else if (level >= 1) {
+      // 少し/そこそこ → Phase2から始まりPhase3で継続
+      p2.push({ ...area, key: area.key + '_s1', baseKey: area.key, copy: area.step1, stepLabel: '基礎' });
+      p3.push({ ...area, key: area.key + '_s2', baseKey: area.key, copy: area.step2, stepLabel: '定着' });
+    }
+    // 全然(0) → ロードマップには含めない
+  });
+
+  p3.push(...FINISH_ITEMS);
+  return { p1, p2, p3 };
+}
+
 // ── フェーズ分類 ──────────────────────────────────────────────────────
 function classifyPhases(scores) {
   const p1 = [], p2 = [], p3 = [];
@@ -204,7 +267,8 @@ function renderDiagnosed(diag) {
   const { scores, result } = diag;
   const isV4 = diag._v4 === true;
   const concernLevels = diag._concern_levels || {};
-  const { p1, p2, p3 }    = classifyPhases(scores);
+  // v4は気になり度ベースの新分類、v2は従来のスコアベース分類
+  const { p1, p2, p3 } = isV4 ? classifyPhasesV4(concernLevels) : classifyPhases(scores);
   const progress           = loadProgress();
   const currentPhase       = getCurrentPhase(progress);
 
@@ -213,9 +277,13 @@ function renderDiagnosed(diag) {
   let subText;
   if (topItem) {
     if (isV4) {
-      const level = concernLevels[topItem.key];
+      const baseKey = topItem.baseKey || topItem.key.replace(/_s[123]$/, '');
+      const level = concernLevels[baseKey];
       const levelLabel = level !== undefined ? V4_LEVEL_LABELS[level] : 'かなり気になっている';
-      subText = `${topItem.label}が${levelLabel}状態。まずここだけ片付けろ。それだけで、周囲の反応が変わり始める。`;
+      const topArea = AREA_DEFINITIONS.find(a => a.key === baseKey);
+      subText = topArea
+        ? `${topArea.label}が${levelLabel}状態。まず基礎を作るところから始める。`
+        : `最も気になっている部分から始める。まず基礎を作ることが先決だ。`;
     } else {
       subText = `${topItem.label}が${topItem.score}点。まずここだけ片付けろ。それだけで、周囲の反応が変わり始める。`;
     }
@@ -335,7 +403,7 @@ function renderPhaseBlock(elId, items, phaseNum, currentPhase, progress, diag) {
           <div class="roadmap-item-body">
             <div class="roadmap-item-label">
               ${item.label}
-              ${scoreLabel}
+              ${item.stepLabel ? `<span class="roadmap-item-score">${item.stepLabel}</span>` : scoreLabel}
               ${isChecked ? '<span class="roadmap-item-checked-badge">完了</span>' : isClicked ? '<span class="roadmap-item-visited">確認済</span>' : ''}
             </div>
             <div class="roadmap-item-copy">${copyText}</div>
