@@ -10,27 +10,25 @@
   <style>
     .result-wrap { max-width: 680px; margin: 0 auto; padding: 32px 20px 80px; }
 
+    /* Hero */
     .result-hero {
       padding: 32px 24px 28px;
       background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-      border-radius: 20px;
-      margin-bottom: 20px;
+      border-radius: 20px; margin-bottom: 20px;
     }
     .result-badge {
       display: inline-block; font-size: 11px; font-weight: 700;
-      padding: 4px 14px; background: rgba(255,255,255,.18);
-      color: #fff !important;
-      border-radius: 99px; margin-bottom: 14px; letter-spacing: .06em;
+      padding: 4px 14px; background: rgba(255,255,255,.2);
+      color: #fff !important; border-radius: 99px;
+      margin-bottom: 14px; letter-spacing: .06em;
     }
     .result-hero h1 {
       font-size: clamp(18px,4vw,24px); font-weight: 800; margin: 0 0 10px;
       line-height: 1.45; color: #ffffff !important;
     }
-    .result-hero p {
-      font-size: 14px; color: rgba(255,255,255,0.75) !important;
-      margin: 0; line-height: 1.7;
-    }
+    .result-hero p { font-size: 14px; color: rgba(255,255,255,.78) !important; margin: 0; line-height: 1.7; }
 
+    /* Card */
     .result-card {
       background: #fff; border: 1px solid #e5e7eb; border-radius: 16px;
       padding: 24px; margin-bottom: 16px;
@@ -41,33 +39,48 @@
       display: flex; align-items: center; gap: 8px;
     }
 
-    /* Analysis sections */
-    .analysis-block { margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid #f3f4f6; }
-    .analysis-block:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-    .analysis-label {
-      font-size: 11px; font-weight: 700; color: #6366f1;
-      text-transform: uppercase; letter-spacing: .06em; margin: 0 0 6px;
+    /* Type badge */
+    .type-badge-wrap { text-align: center; padding: 12px 0 16px; }
+    .type-badge {
+      display: inline-block; font-size: 13px; font-weight: 800;
+      padding: 8px 20px; background: #111; color: #fff;
+      border-radius: 99px; margin-bottom: 10px;
     }
-    .analysis-text { font-size: 15px; font-weight: 700; color: #111; line-height: 1.6; margin: 0 0 4px; }
-    .analysis-sub { font-size: 13px; color: #6b7280; line-height: 1.6; margin: 0; }
+    .type-desc { font-size: 14px; color: #374151; line-height: 1.7; text-align: left; }
 
-    /* Priority item */
+    /* Insights grid */
+    .insight-list { display: flex; flex-direction: column; gap: 12px; }
+    .insight-item {
+      padding: 14px 16px; border-radius: 12px;
+      border-left: 4px solid #2563eb; background: #f8faff;
+    }
+    .insight-label { font-size: 11px; font-weight: 700; color: #2563eb; margin: 0 0 4px; text-transform: uppercase; letter-spacing: .05em; }
+    .insight-text { font-size: 14px; font-weight: 700; color: #111; margin: 0 0 3px; line-height: 1.5; }
+    .insight-sub { font-size: 13px; color: #6b7280; margin: 0; line-height: 1.5; }
+
+    /* Priority box */
     .priority-box {
       background: linear-gradient(135deg, #eff6ff, #eef2ff);
-      border: 1.5px solid #bfdbfe;
-      border-radius: 14px; padding: 20px;
-      margin-bottom: 14px;
+      border: 1.5px solid #bfdbfe; border-radius: 14px; padding: 20px; margin-bottom: 16px;
     }
     .priority-label { font-size: 11px; font-weight: 700; color: #2563eb; letter-spacing: .06em; margin: 0 0 6px; }
-    .priority-main { font-size: 17px; font-weight: 800; color: #111; margin: 0 0 6px; }
+    .priority-main { font-size: 18px; font-weight: 800; color: #111; margin: 0 0 6px; }
     .priority-reason { font-size: 13px; color: #374151; line-height: 1.6; margin: 0; }
 
     /* Concern bars */
     .concern-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-    .concern-bar-label { font-size: 12px; width: 72px; flex-shrink: 0; color: #374151; display: flex; align-items: center; gap: 4px; }
+    .concern-bar-label { font-size: 12px; width: 76px; flex-shrink: 0; color: #374151; display: flex; align-items: center; gap: 4px; }
     .concern-bar-track { flex: 1; height: 8px; background: #f3f4f6; border-radius: 99px; overflow: hidden; }
     .concern-bar-fill { height: 100%; border-radius: 99px; transition: width .8s ease .2s; }
-    .concern-bar-value { font-size: 12px; font-weight: 700; width: 40px; text-align: right; flex-shrink: 0; }
+    .concern-bar-value { font-size: 12px; font-weight: 700; width: 44px; text-align: right; flex-shrink: 0; }
+
+    /* Provider traits */
+    .trait-list { display: flex; flex-direction: column; gap: 8px; }
+    .trait-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 14px; color: #374151; line-height: 1.5;
+    }
+    .trait-check { color: #2563eb; font-weight: 800; flex-shrink: 0; margin-top: 1px; }
 
     /* Recommend cards */
     .recommend-card {
@@ -84,22 +97,30 @@
     .recommend-card-reason { font-size: 12px; color: #6b7280; }
     .recommend-card-badge { font-size: 11px; font-weight: 700; padding: 3px 8px; background: #dbeafe; color: #1d4ed8; border-radius: 99px; white-space: nowrap; }
 
-    /* Provider match hint */
-    .match-hint {
-      background: #f9fafb; border-radius: 12px; padding: 16px;
-      font-size: 13px; color: #374151; line-height: 1.6;
+    /* CTA buttons */
+    .cta-section { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+    .cta-btn-primary {
+      display: block; text-align: center; padding: 15px 20px;
+      background: #111; color: #fff !important; font-size: 16px; font-weight: 700;
+      border-radius: 12px; text-decoration: none;
+      transition: opacity .15s;
     }
-    .match-hint strong { color: #111; }
-
-    /* CTA */
-    .cta-block { text-align: center; padding: 8px 0; }
-    .cta-block .btn { font-size: 17px; padding: 15px 32px; display: inline-block; }
+    .cta-btn-primary:hover { opacity: .85; }
+    .cta-btn-secondary {
+      display: block; text-align: center; padding: 13px 20px;
+      background: #fff; color: #111 !important; font-size: 15px; font-weight: 700;
+      border: 1.5px solid #e5e7eb; border-radius: 12px; text-decoration: none;
+      transition: border-color .12s;
+    }
+    .cta-btn-secondary:hover { border-color: #2563eb; }
+    .cta-btn-ghost {
+      display: block; text-align: center; padding: 10px 20px;
+      color: #9ca3af !important; font-size: 13px; text-decoration: none;
+    }
+    .cta-btn-ghost:hover { color: #374151 !important; }
 
     /* Stage 2 prompt */
-    .stage2-prompt {
-      border: 1.5px solid #e0e7ff; background: #f5f7ff;
-      border-radius: 14px; padding: 20px;
-    }
+    .stage2-prompt { border: 1.5px solid #e0e7ff; background: #f5f7ff; border-radius: 14px; padding: 20px; }
     .stage2-prompt h3 { font-size: 15px; font-weight: 800; color: #4f46e5; margin: 0 0 8px; }
     .stage2-prompt p { font-size: 13px; color: #6b7280; margin: 0 0 14px; line-height: 1.6; }
   </style>
@@ -126,165 +147,161 @@
       return;
     }
     let p;
-    try{ p = JSON.parse(raw); }catch(e){ root.innerHTML = '<div style="text-align:center;padding:60px 20px"><p>エラーが発生しました。</p><a href="./diagnosis.html" class="btn" style="margin-top:16px;display:inline-block">再診断する</a></div>'; return; }
-
-    // ── 分析エンジン ──────────────────────────────────────────────────
-
-    // 1. 現状の核心（trigger × scene → 状況の言語化）
-    function getCoreSituation(){
-      const t = p.trigger, s = p.scene;
-      if(t==='matching_app' && s==='photo') return {
-        text:'マッチングアプリで写真が不利になっている。',
-        sub:'外見そのものより「写真映り」の問題の可能性が高い。今の状態を整えたうえで、プロに撮ってもらうことで解決するケースが多い。'
-      };
-      if(t==='matching_app' && s==='first_impression') return {
-        text:'マッチングアプリでマッチングしても、会った瞬間に差がつく。',
-        sub:'写真で伝わらない「実物の印象」を上げることが課題。清潔感・全体感を整えることで、会った瞬間の第一印象が変わる。'
-      };
-      if(t==='matching_app') return {
-        text:'マッチングアプリで結果が出ていない状態。外見が足を引っ張っている可能性がある。',
-        sub:'顔の印象・清潔感・写真映りのどこかに改善できる点があるはず。診断した気になり度の高い部分から着手することで、最短で変化を出せる。'
-      };
-      if(t==='love' && s==='first_impression') return {
-        text:'好きな人がいて、第一印象で良く思われたい。',
-        sub:'恋愛における外見の役割は、「好意を生む」より「障壁をなくす」こと。印象を下げている要因を一つ取り除くだけで、相手との距離感が変わる。'
-      };
-      if(t==='love') return {
-        text:'好きな人がいる、または関係を進めたいという明確な動機がある。',
-        sub:'動機がある今が、変わるための最大のチャンス。この気持ちが薄れないうちに、最初の一歩を踏み出すことが大事。'
-      };
-      if(t==='career') return {
-        text:'大事な場面に向けて、外見を整えておく必要がある。',
-        sub:'面接・転職・節目といった場面は、外見への意識が一番高まるタイミング。この機会を使って、その後も通用する外見の土台を作ることができる。'
-      };
-      if(t==='word') return {
-        text:'何かの一言が引っかかっている。その感覚は正しい。',
-        sub:'「なんか違う」という違和感は、変われるサインだ。その一言が指している部分を特定して、そこだけ変えればいい。全部変えなくていい。'
-      };
-      return {
-        text:'ずっと気になっていたことが、今動くきっかけになっている。',
-        sub:'「いつかやろう」が「今やる」に変わった瞬間を、ムダにしないことが大事。まず一点だけ変えると、次が見えてくる。'
-      };
+    try{ p = JSON.parse(raw); }catch(e){
+      root.innerHTML = '<div style="text-align:center;padding:60px 20px"><p>エラーが発生しました。</p><a href="./diagnosis.html" class="btn" style="margin-top:16px;display:inline-block">再診断する</a></div>';
+      return;
     }
 
-    // 2. 壁の分析（failure_pattern × style → なぜ変われなかったか）
-    function getBarrierAnalysis(){
-      const f = p.failure_pattern, s = p.style;
-      if(!f) return null;
-      if(f==='lost_direction') return {
-        text:'「何をすればいいかわからない」状態で止まる傾向がある。',
-        sub:'これは意志の問題ではなく、プログラムの設計の問題。週ごとの目標が明確で、次のステップが常に見えているプロと組むことで、この壁は乗り越えられる。',
-        condition: '明確な構造を持った、ステップバイステップで進めてくれるプロ'
-      };
-      if(f==='no_continuation') return {
-        text:'効果を感じながらも、続かなかった経験がある。',
-        sub:'続かない理由の多くは「ハードルが高すぎる」か「一人でやろうとした」ことにある。月1〜2回でも継続できる環境と、定期的に関わってくれるプロが解決策になる。',
-        condition: '負担が小さく始められて、継続サポートが得意なプロ'
-      };
-      if(f==='cost') return {
-        text:'コストや時間の面で続けられなかった経験がある。',
-        sub:'費用対効果の高い始め方をすることが鍵。まず1点だけ変える。その変化が実感できたら次に進む。一気に全部やろうとすると、コストで詰まる。',
-        condition: '小さく始められる体験メニューがある、または単価が明確なプロ'
-      };
-      if(f==='awkward') return {
-        text:'プロとの関係性でつまずいた経験がある。',
-        sub:'押し付けられる感覚・空気感・やり取りの違和感がストレスになって離れるパターンは多い。「相性」を最初から重視できるプロを選ぶことが、今回の最優先事項。',
-        condition: '押し売りせず、こちらのペースを尊重してくれるプロ'
-      };
-      if(f==='no_result') return {
-        text:'変化が感じられずに諦めた経験がある。',
-        sub:'変化が見えない理由は、「合っていないサービスを選んでいた」か「評価方法を知らなかった」かのどちらかが多い。今回の診断で、あなたに合うカテゴリを先に絞ることで、これを回避する。',
-        condition: 'before/afterが明確で、変化を可視化してくれるプロ'
-      };
-      if(f==='ongoing') return {
-        text:'今も継続中。さらに深化させる段階にいる。',
-        sub:'基礎は出来ている。次はそれを「統合」する段階。バラバラに磨いてきたパーツを全体として活かす外見コンサルや、出会いの場への活用が次のステップになる。',
-        condition: '総合的な外見プロデュースができるプロ'
-      };
-      return null;
-    }
+    // ────────────────────────────────────────────────────────────────
+    // 分析エンジン
+    // ────────────────────────────────────────────────────────────────
 
-    // 3. 優先取り組み（気になり度の最高部位 × urgency）
-    function getPriorityAction(){
-      const areas = p.concern_areas || {};
-      const ICONS = { hair:'💇‍♂️', skin:'✨', eyebrow:'✂️', body:'💪', fashion:'👔', photo:'📸', overall:'🪞' };
-      const NAMES = { hair:'髪型・髪', skin:'肌・ニキビ', eyebrow:'眉毛', body:'体型・体', fashion:'服・コーデ', photo:'写真写り', overall:'全体の雰囲気' };
-      const CATS = { hair:'hair', skin:'esthetic', eyebrow:'eyebrow', body:'gym', fashion:'fashion', photo:'photo', overall:'consulting' };
-      const COPY = {
-        hair:'髪型は第一印象の30%を占める。ここを変えると、すれ違っただけで「なんかいい感じ」に見える。',
-        skin:'肌の状態は近距離で一番差が出る。清潔感の土台であり、ここを整えると全体の印象が底上げされる。',
-        eyebrow:'眉毛は顔の印象を一番早く変えられる。1回のサロンで、別人のような第一印象になる。',
-        body:'体型は服の見え方を全部変える。ここが変わると、持っている服がすべて「ちゃんとして見える」ようになる。',
-        fashion:'服・コーデは「清潔感があるかどうか」の差がすべて。サイズ感と色を整えるだけで、印象が大きく変わる。',
-        photo:'写真映りの問題は、実物がどれだけよくても解決しない。プロに撮ってもらうことで、マッチングの結果が変わる。',
-        overall:'パーツ単位で見ても改善しにくい状態。外見コンサルで全体像を把握してから動くのが一番効率的。',
-      };
-      const sorted = Object.entries(areas).filter(([,v])=>v>0).sort(([,a],[,b])=>b-a);
-      if(sorted.length === 0) return null;
-      const [topId, topLevel] = sorted[0];
-      const urgencyNote = p.urgency === 'high' ? '締め切りがある今、ここが最短ルート。' : '';
-      return {
-        icon: ICONS[topId] || '🎯',
-        name: NAMES[topId] || topId,
-        copy: (COPY[topId] || '') + (urgencyNote ? ' ' + urgencyNote : ''),
-        cat: CATS[topId] || 'consulting',
-        level: topLevel
-      };
-    }
-
-    // 4. 合うプロの特徴（style × relationship × failure_pattern）
-    function getProviderProfile(){
-      const s = p.style, r = p.relationship, f = p.failure_pattern;
-      const traits = [];
-      if(s==='explanation') traits.push('「なぜそうするのか」を丁寧に説明してくれる');
-      if(s==='consultation') traits.push('こちらの意見を聞きながら一緒に進めてくれる');
-      if(s==='delegate') traits.push('任せたら確実に結果を出してくれる・無駄な話が少ない');
-      if(s==='cautious') traits.push('小さく始められる体験メニューがある');
-      if(r==='continuity') traits.push('毎回前回の続きから始めてくれる・記録してくれる');
-      if(r==='directive') traits.push('やることをはっきり指示してくれる');
-      if(r==='accessibility') traits.push('予約以外でも気軽に相談できる（LINE等）');
-      if(r==='autonomy') traits.push('押し売りしない・こちらのペースを尊重する');
-      if(f==='lost_direction') traits.push('プログラムが明確・週ごとの目標がある');
-      if(f==='no_continuation') traits.push('無理なく続けられるペースを提案してくれる');
-      if(f==='awkward') traits.push('空気感がよく、話しやすい');
-      return [...new Set(traits)].slice(0, 4);
-    }
-
-    // 5. おすすめカテゴリ（気になり度TOP3）
-    function getRecommendations(){
-      const areas = p.concern_areas || {};
-      const MAP = {
-        hair: { icon:'💇‍♂️', label:'ヘア・美容院', cat:'hair', why:'髪型が気になっている' },
-        skin: { icon:'💆‍♂️', label:'肌・エステ', cat:'esthetic', why:'肌の状態が気になっている' },
-        eyebrow: { icon:'✂️', label:'眉毛サロン', cat:'eyebrow', why:'眉毛・顔まわりが気になっている' },
-        body: { icon:'🏋️‍♂️', label:'パーソナルジム', cat:'gym', why:'体型・体のつくりが気になっている' },
-        fashion: { icon:'👔', label:'ファッション', cat:'fashion', why:'服・コーデを見直したい' },
-        photo: { icon:'📸', label:'プロフィール写真', cat:'photo', why:'写真写りを改善したい' },
-        overall: { icon:'🧑‍⚕️', label:'外見トータルサポート', cat:'consulting', why:'全体的な垢抜けを目指している' }
-      };
-      return Object.entries(areas).filter(([,v])=>v>0).sort(([,a],[,b])=>b-a).slice(0,3).map(([id])=>MAP[id]).filter(Boolean);
-    }
-
-    // 6. 気になり度バーのグラデーション
-    function levelColor(level){
-      const colors = ['#e5e7eb','#93c5fd','#60a5fa','#3b82f6','#2563eb'];
-      return colors[level] || colors[0];
-    }
+    const areas = p.concern_areas || {};
     const LEVEL_TEXT = ['全然','少し','そこそこ','かなり','すごく'];
     const CONCERN_ICONS = { hair:'💇‍♂️', skin:'✨', eyebrow:'✂️', body:'💪', fashion:'👔', photo:'📸', overall:'🪞' };
     const CONCERN_NAMES = { hair:'髪型・髪', skin:'肌・ニキビ', eyebrow:'眉毛', body:'体型・体', fashion:'服・コーデ', photo:'写真写り', overall:'全体の雰囲気' };
 
-    // ── 生成 ────────────────────────────────────────────────────────────
+    // 1. 気になりタイプ判定
+    function getConcernType(){
+      const high = Object.entries(areas).filter(([,v])=>v>=3);
+      const facial = ['eyebrow','skin','photo'].filter(k=>(areas[k]||0)>=3);
+      const bodyStyle = ['body','fashion'].filter(k=>(areas[k]||0)>=3);
+      const hasOverall = (areas.overall||0)>=2;
+      const topArea = [...Object.entries(areas)].sort(([,a],[,b])=>b-a)[0];
+
+      if(high.length===0 && Object.values(areas).every(v=>v<=1)) return {
+        type:'メンテナンス型',
+        desc:'大きな問題点はなく、細部の質を上げていく段階。一点一点の完成度を高めることで「なんかあの人いつも整ってる」という印象が定着する。',
+        color:'#059669', bg:'#f0fdf4', border:'#a7f3d0'
+      };
+      if(hasOverall && high.length>=3) return {
+        type:'全面リニューアル型',
+        desc:'複数の部分がまんべんなく気になっている状態。どこから手をつければいいかわからなくなりやすい。まず外見コンサルで優先順位を整理することが最も効率的。',
+        color:'#7c3aed', bg:'#f5f3ff', border:'#c4b5fd'
+      };
+      if(facial.length>=2) return {
+        type:'第一印象・顔まわり集中型',
+        desc:'眉毛・肌・写真映りなど顔まわりへの気になり度が高い。会ったとき・写真・鏡を見たときに強く感じるタイプ。顔まわりを一つ整えるだけで変化を感じやすく、コストパフォーマンスが最も高いゾーン。',
+        color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe'
+      };
+      if(bodyStyle.length>=2) return {
+        type:'ボディ×スタイル型',
+        desc:'体型と服・着こなしへの気になり度が高い。「なんかスタイルよく見える」という印象は体型と服の組み合わせで作られる。どちらか一方だけ変えても効果が出にくく、両方の方向を同時に考えることが重要。',
+        color:'#d97706', bg:'#fffbeb', border:'#fde68a'
+      };
+      if((areas.hair||0)>=3 && facial.length>=1) return {
+        type:'清潔感底上げ型',
+        desc:'髪と顔まわりへの気になり度が高い。この2点が整うだけで「なんか清潔感ある」という印象になる。コストと時間のパフォーマンスが最も高い変化のゾーン。',
+        color:'#0891b2', bg:'#ecfeff', border:'#a5f3fc'
+      };
+      if(topArea && topArea[1]>=3){
+        const [id] = topArea;
+        const typeMap = {
+          hair:    { type:'髪型特化型', desc:'髪型への気になり度が突出している。ここを変えるだけで「あの人なんか雰囲気変わった？」という反応が来やすい。美容院1回で体感できる変化がある。', color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe' },
+          skin:    { type:'肌ケア特化型', desc:'肌への気になり度が高い。肌は近距離で一番見られる部分。清潔感の土台であり、ここを改善すると全体の印象が底上げされる。スキンケアとエステで確実に変えられる。', color:'#0891b2', bg:'#ecfeff', border:'#a5f3fc' },
+          eyebrow: { type:'眉毛特化型', desc:'眉毛への気になり度が高い。眉は顔の印象を決める最重要パーツ。1回のサロンで、別人のような印象になる可能性がある。変化のコストパフォーマンスが最も高い部位。', color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe' },
+          body:    { type:'ボディメイク型', desc:'体型への気になり度が高い。ここが変わると服の見え方がすべて変わる。継続が鍵になるため、続けやすい入口のあるパーソナルトレーナーから始めることが重要。', color:'#d97706', bg:'#fffbeb', border:'#fde68a' },
+          fashion: { type:'スタイリング型', desc:'服・着こなしへの気になり度が高い。体型ではなく「サイズ感と色の選び方」だけで印象は大きく変わる。一度パーソナルスタイリストに見てもらうと、自分に合う軸ができる。', color:'#7c3aed', bg:'#f5f3ff', border:'#c4b5fd' },
+          photo:   { type:'写真映り特化型', desc:'写真映りへの気になり度が高い。マッチングアプリやSNSでの印象を変えたい状態。外見を整えたうえでプロに撮ってもらうことが最短解。', color:'#0891b2', bg:'#ecfeff', border:'#a5f3fc' },
+          overall: { type:'全体印象型', desc:'全体的な雰囲気への気になり度が高い。パーツ単位で変えようとするより、外見コンサルで全体像を把握してから優先順位をつけて動く方が効率的。', color:'#7c3aed', bg:'#f5f3ff', border:'#c4b5fd' },
+        };
+        return typeMap[id] || { type:'変容準備型', desc:'気になる部分から一歩踏み出す段階。最初の一点を変えることで、変化のサイクルが始まる。', color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe' };
+      }
+      return { type:'変容準備型', desc:'今の自分を変えていく段階にいる。まず一番気になっている部分から始めることで変化のサイクルが始まる。', color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe' };
+    }
+
+    // 2. 現状の核心（trigger × scene）
+    function getCoreSituation(){
+      const t=p.trigger, s=p.scene;
+      if(t==='matching_app'&&s==='photo') return { text:'マッチングアプリの写真で差がついている。', sub:'外見そのものより「写真映り」の問題の可能性が高い。今の状態を整えたうえでプロ撮影を活用することで、マッチング数が変わる。' };
+      if(t==='matching_app'&&s==='first_impression') return { text:'マッチングアプリでマッチングしても、会った瞬間に差がつく。', sub:'写真で伝わらない「実物の印象」を上げることが課題。清潔感・全体感を整えることで、会った瞬間の壁がなくなる。' };
+      if(t==='matching_app') return { text:'マッチングアプリで外見が結果を左右している状態。', sub:'顔の印象・清潔感・写真映りのどこかに改善できる点がある。診断した気になり度の高い部分から着手することが最短ルート。' };
+      if(t==='love'&&s==='first_impression') return { text:'好きな人がいて、第一印象で良く思われたい。', sub:'恋愛における外見の役割は「好意を生む」より「障壁をなくす」こと。印象を下げている要因を一つ取り除くだけで、相手との距離感が変わる。' };
+      if(t==='love') return { text:'好きな人がいる、または関係を進めたいという明確な動機がある。', sub:'動機がある今が変わるための最大のチャンス。この気持ちが薄れないうちに最初の一歩を踏み出すことが大事。' };
+      if(t==='career') return { text:'大事な場面に向けて、外見を整えておく必要がある。', sub:'この機会を使って、その後も通用する外見の土台を作ることができる。節目は外見への意識が最も高まるタイミング。' };
+      if(t==='word') return { text:'何かの一言が引っかかっている。その感覚は正しい。', sub:'「なんか違う」という違和感は変われるサインだ。その一言が指している部分を特定して、そこだけ変えればいい。全部変えなくていい。' };
+      return { text:'ずっと気になっていたことが、今動くきっかけになっている。', sub:'「いつかやろう」が「今やる」に変わった瞬間をムダにしないことが大事。まず一点だけ変えると次が見えてくる。' };
+    }
+
+    // 3. 壁の分析（failure_pattern）
+    function getBarrierAnalysis(){
+      const f=p.failure_pattern;
+      if(!f) return null;
+      const map = {
+        lost_direction: { text:'「何をすればいいかわからない」状態で止まる傾向がある。', sub:'これは意志の問題ではなく、プログラムの設計の問題。週ごとの目標が明確で次のステップが常に見えているプロと組むことで、この壁は乗り越えられる。', condition:'明確な構造を持ち、ステップバイステップで進めてくれるプロ' },
+        no_continuation: { text:'効果を感じながらも、続かなかった経験がある。', sub:'続かない理由の多くは「ハードルが高すぎる」か「一人でやろうとした」こと。月1〜2回でも継続できる環境と定期的に関わってくれるプロが解決策になる。', condition:'負担が小さく始められて継続サポートが得意なプロ' },
+        cost: { text:'コストや時間の面で続けられなかった経験がある。', sub:'一気に全部やろうとするとコストで詰まる。まず1点だけ変える。変化が実感できたら次に進む。この順序が鍵。', condition:'小さく始められる体験メニューがある、または単価が明確なプロ' },
+        awkward: { text:'プロとの関係性でつまずいた経験がある。', sub:'押し付け感・空気感・やり取りの違和感がストレスになって離れるパターンは多い。「相性」を最初から重視できるプロを選ぶことが今回の最優先事項。', condition:'押し売りせず、こちらのペースを尊重してくれるプロ' },
+        no_result: { text:'変化が感じられずに諦めた経験がある。', sub:'変化が見えない理由は「合っていないサービスを選んでいた」か「評価方法を知らなかった」かのどちらかが多い。今回の診断で合うカテゴリを先に絞ることで、これを回避する。', condition:'before/afterが明確で変化を可視化してくれるプロ' },
+        ongoing: { text:'今も継続中。さらに深化させる段階にいる。', sub:'基礎は出来ている。次はバラバラに磨いてきたパーツを全体として活かす「統合」の段階。外見コンサルや写真・出会いの場への活用が次のステップ。', condition:'総合的な外見プロデュースができるプロ' },
+      };
+      return map[f] || null;
+    }
+
+    // 4. 優先取り組み
+    function getPriorityAction(){
+      const sorted = Object.entries(areas).filter(([,v])=>v>0).sort(([,a],[,b])=>b-a);
+      if(sorted.length===0) return null;
+      const [topId, topLevel] = sorted[0];
+      const ICONS = { hair:'💇‍♂️', skin:'✨', eyebrow:'✂️', body:'💪', fashion:'👔', photo:'📸', overall:'🧑‍⚕️' };
+      const NAMES = { hair:'髪型・髪', skin:'肌・ニキビ', eyebrow:'眉毛', body:'体型・体', fashion:'服・コーデ', photo:'写真写り', overall:'外見コンサル' };
+      const COPY = {
+        hair:'髪型は第一印象の30%を占める。ここを変えると「なんかいい感じ」に見える。美容院1回で体感できる変化がある。',
+        skin:'肌は近距離で一番差が出る。清潔感の土台であり、ここを整えると全体の印象が底上げされる。',
+        eyebrow:'眉毛は顔の印象を一番早く変えられる。1回のサロンで、別人のような第一印象になる可能性がある。',
+        body:'体型が変わると服の見え方がすべて変わる。継続が鍵なので、続けやすい入口から始めることが重要。',
+        fashion:'サイズ感と色を整えるだけで印象は別物になる。体型より「選び方」で変えられる部分。',
+        photo:'写真映りの問題は実物がどれだけ良くても解決しない。プロに撮ってもらうことがマッチング結果を変える最短解。',
+        overall:'パーツ単位で見ても改善しにくい状態。外見コンサルで全体像を把握してから動くのが最も効率的。',
+      };
+      const CATS = { hair:'hair', skin:'esthetic', eyebrow:'eyebrow', body:'gym', fashion:'fashion', photo:'photo', overall:'consulting' };
+      const urgencyNote = p.urgency==='high' ? ' 締め切りがある今、ここが最短ルート。' : '';
+      return {
+        icon: ICONS[topId]||'🎯', name: NAMES[topId]||topId,
+        copy: (COPY[topId]||'') + urgencyNote,
+        cat: CATS[topId]||'consulting', level: topLevel
+      };
+    }
+
+    // 5. 合うプロの特徴
+    function getProviderTraits(){
+      const traits = [];
+      const styleMap = { explanation:'「なぜそうするのか」を丁寧に説明してくれる', consultation:'こちらの意見を聞きながら一緒に進めてくれる', delegate:'任せたら確実に結果を出してくれる', cautious:'小さく始められる体験メニューがある' };
+      const relMap = { continuity:'毎回前回の続きから始めてくれる（記録してくれる）', directive:'やることをはっきり指示してくれる', accessibility:'予約以外でも気軽に相談できる（LINE等）', autonomy:'押し売りせず、こちらのペースを尊重する' };
+      const failMap = { lost_direction:'プログラムが明確で週ごとの目標がある', no_continuation:'無理なく続けられるペースを提案してくれる', awkward:'空気感がよく、話しやすい', no_result:'before/afterが明確で変化を可視化してくれる' };
+      if(p.style && styleMap[p.style]) traits.push(styleMap[p.style]);
+      if(p.relationship && relMap[p.relationship]) traits.push(relMap[p.relationship]);
+      if(p.failure_pattern && failMap[p.failure_pattern]) traits.push(failMap[p.failure_pattern]);
+      return [...new Set(traits)].slice(0,4);
+    }
+
+    // 6. おすすめカテゴリ
+    function getRecommendations(){
+      const MAP = {
+        hair:    { icon:'💇‍♂️', label:'ヘア・美容院', cat:'hair' },
+        skin:    { icon:'💆‍♂️', label:'肌・エステ', cat:'esthetic' },
+        eyebrow: { icon:'✂️', label:'眉毛サロン', cat:'eyebrow' },
+        body:    { icon:'🏋️‍♂️', label:'パーソナルジム', cat:'gym' },
+        fashion: { icon:'👔', label:'ファッション', cat:'fashion' },
+        photo:   { icon:'📸', label:'プロフィール写真', cat:'photo' },
+        overall: { icon:'🧑‍⚕️', label:'外見トータルサポート', cat:'consulting' }
+      };
+      return Object.entries(areas).filter(([,v])=>v>0).sort(([,a],[,b])=>b-a).slice(0,3).map(([id])=>MAP[id]).filter(Boolean);
+    }
+
+    // 7. 気になり度バーの色
+    function levelColor(l){ return ['#e5e7eb','#93c5fd','#60a5fa','#3b82f6','#2563eb'][l]||'#e5e7eb'; }
+
+    // ────────────────────────────────────────────────────────────────
+    // HTML生成
+    // ────────────────────────────────────────────────────────────────
     const situation = getCoreSituation();
     const barrier = getBarrierAnalysis();
     const priority = getPriorityAction();
-    const providerTraits = getProviderProfile();
+    const traits = getProviderTraits();
     const recs = getRecommendations();
-    const concerns = Object.entries(p.concern_areas||{}).filter(([,v])=>v>=0).sort(([,a],[,b])=>b-a);
-
-    const heroSub = barrier
-      ? `${barrier.text.replace('。','')}\u3002あなたに合う条件のプロを優先して表示します。`
-      : `診断結果をもとに、合う可能性の高いサービスを優先して表示します。`;
+    const concernType = getConcernType();
+    const concernSorted = Object.entries(areas).sort(([,a],[,b])=>b-a);
 
     const html = `
       <div class="result-hero">
@@ -300,56 +317,62 @@
         <div class="priority-reason">${priority.copy}</div>
       </div>` : ''}
 
+      <div class="result-card">
+        <div class="result-card-title">🔬 あなたの外見タイプ分析</div>
+        <div class="type-badge-wrap">
+          <div class="type-badge" style="background:${concernType.color}">${concernType.type}</div>
+        </div>
+        <div style="background:${concernType.bg};border:1.5px solid ${concernType.border};border-radius:12px;padding:16px;margin-bottom:16px">
+          <div class="type-desc">${concernType.desc}</div>
+        </div>
+        ${concernSorted.filter(([,v])=>v>0).length > 0 ? `
+        <div style="margin-top:4px">
+          ${concernSorted.map(([id,level])=>`
+            <div class="concern-bar-row">
+              <div class="concern-bar-label">${CONCERN_ICONS[id]||''} ${CONCERN_NAMES[id]||id}</div>
+              <div class="concern-bar-track">
+                <div class="concern-bar-fill" style="width:${Math.round((level/4)*100)}%;background:${levelColor(level)}"></div>
+              </div>
+              <div class="concern-bar-value" style="color:${levelColor(level)}">${LEVEL_TEXT[level]||''}</div>
+            </div>
+          `).join('')}
+        </div>` : ''}
+      </div>
+
       ${barrier ? `
       <div class="result-card">
         <div class="result-card-title">🔍 変われなかった理由と、変わるための条件</div>
-        <div class="analysis-block">
-          <div class="analysis-label">パターン</div>
-          <div class="analysis-text">${barrier.text}</div>
-          <div class="analysis-sub">${barrier.sub}</div>
-        </div>
-        ${barrier.condition ? `
-        <div class="match-hint">
-          今回おすすめするのは：<strong>${barrier.condition}</strong>
-        </div>` : ''}
-      </div>` : ''}
-
-      ${concerns.length > 0 ? `
-      <div class="result-card">
-        <div class="result-card-title">📊 気になり度マップ</div>
-        ${concerns.map(([id, level]) => `
-          <div class="concern-bar-row">
-            <div class="concern-bar-label">
-              ${CONCERN_ICONS[id]||''} ${CONCERN_NAMES[id]||id}
-            </div>
-            <div class="concern-bar-track">
-              <div class="concern-bar-fill" style="width:${Math.round((level/4)*100)}%;background:${levelColor(level)}"></div>
-            </div>
-            <div class="concern-bar-value" style="color:${levelColor(level)}">${LEVEL_TEXT[level]||''}</div>
+        <div class="insight-list">
+          <div class="insight-item">
+            <div class="insight-label">パターン</div>
+            <div class="insight-text">${barrier.text}</div>
+            <div class="insight-sub">${barrier.sub}</div>
           </div>
-        `).join('')}
+          ${barrier.condition ? `
+          <div class="insight-item" style="border-left-color:#059669;background:#f0fdf4">
+            <div class="insight-label" style="color:#059669">今回優先するプロの条件</div>
+            <div class="insight-text">${barrier.condition}</div>
+          </div>` : ''}
+        </div>
       </div>` : ''}
 
-      ${providerTraits.length > 0 ? `
+      ${traits.length > 0 ? `
       <div class="result-card">
         <div class="result-card-title">🤝 あなたに合うプロの特徴</div>
-        ${providerTraits.map(t => `
-          <div class="analysis-block">
-            <div class="analysis-text" style="font-size:14px">✓ ${t}</div>
-          </div>
-        `).join('')}
-        <p style="font-size:12px;color:#9ca3af;margin:10px 0 0">掲載者のページでこの条件との一致度を表示します。</p>
+        <div class="trait-list">
+          ${traits.map(t=>`<div class="trait-item"><span class="trait-check">✓</span><span>${t}</span></div>`).join('')}
+        </div>
+        <p style="font-size:12px;color:#9ca3af;margin:12px 0 0">掲載者ページでこの条件との一致度を表示します。</p>
       </div>` : ''}
 
       ${recs.length > 0 ? `
       <div class="result-card">
         <div class="result-card-title">🎯 おすすめカテゴリ</div>
-        ${recs.map((r,i) => `
+        ${recs.map((r,i)=>`
           <a href="./search.html?category=${r.cat}&diag=1" class="recommend-card${i===0?' top':''}">
             <span class="recommend-card-icon">${r.icon}</span>
             <span class="recommend-card-body">
-              <div class="recommend-card-title">${r.label}</div>
-              <div class="recommend-card-reason">${r.why}</div>
+              <span class="recommend-card-title">${r.label}</span>
             </span>
             ${i===0?'<span class="recommend-card-badge">最優先</span>':''}
           </a>
@@ -359,20 +382,36 @@
       ${!p.stage2_completed ? `
       <div class="stage2-prompt">
         <h3>💡 精度をもっと上げませんか？</h3>
-        <p>過去の試みや理想の関係性まで答えると、「なぜ変われなかったか」の分析が加わり、さらに的確なプロを提案できます。</p>
+        <p>過去の試みや理想の関係性まで答えると、「変われなかった理由」の分析が加わり、さらに的確なプロを提案できます。</p>
         <a href="./diagnosis.html" class="btn" style="display:inline-block;font-size:14px">続きを答える（あと4問）</a>
       </div>` : ''}
 
-      <div class="cta-block" style="margin-top:20px">
-        <p style="font-size:14px;color:#6b7280;margin:0 0 14px">あなたに合うサービスを探す</p>
-        <a href="./search.html?diag=1" class="btn">サービスをすべて見る</a>
-      </div>
-      <div style="text-align:center;margin-top:14px">
-        <a href="/" style="font-size:13px;color:#9ca3af">トップページへ戻る（変容ロードマップを見る）</a>
+      <div class="cta-section">
+        <a href="/?scrollTo=roadmap" class="cta-btn-primary">変容ロードマップを見る</a>
+        <a href="./search.html?diag=1" class="cta-btn-secondary">サービスをすべて見る</a>
+        <a href="./diagnosis.html" class="cta-btn-ghost">もう一度診断する</a>
       </div>
     `;
 
     root.innerHTML = html;
+
+    // マイページへの保存ボタンがあればロジックを付与
+    const saveBtn = document.getElementById('btn-save-mypage');
+    if(saveBtn){
+      saveBtn.addEventListener('click',()=>{
+        try{
+          const snap = { savedAt: new Date().toISOString(), profile: p };
+          const key = 'fineme:saved:diagnoses';
+          const arr = JSON.parse(localStorage.getItem(key)||'[]');
+          arr.unshift(snap);
+          if(arr.length>20) arr.length=20;
+          localStorage.setItem(key, JSON.stringify(arr));
+          saveBtn.textContent = '保存しました ✓';
+          saveBtn.style.opacity = '.6';
+          saveBtn.style.pointerEvents = 'none';
+        }catch(e){}
+      });
+    }
   })();
   </script>
 </body>

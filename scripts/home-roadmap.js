@@ -15,15 +15,22 @@ function adaptV4toDiag(v4) {
   // concern_areas の気になり度（0-4）をスコア（1-10）に変換
   // すごく(4)→1点, かなり(3)→3点, そこそこ(2)→5点, 少し(1)→7点, 全然(0)→10点
   const levelToScore = [10, 7, 5, 3, 1];
+  // ⚠️ v4にない項目はデフォルト10（Phase3=気にしていない）にする
+  // デフォルト5にすると未回答項目がすべてPhase1に出てしまうバグを防ぐ
+  const ALL_KEYS = ['eyebrow','hair','body','skin','hair_removal','teeth','nail','makeup','fashion'];
   const scores = {};
-  const areaMap = { hair:'hair', skin:'skin', eyebrow:'eyebrow', body:'body', fashion:'fashion', photo:'photo', overall:'overall' };
+  ALL_KEYS.forEach(k => { scores[k] = 10; }); // 全項目をまず「気にしていない」で初期化
+  const areaMap = { hair:'hair', skin:'skin', eyebrow:'eyebrow', body:'body', fashion:'fashion' };
+  // photo/overallはFINISH_ITEMSに任せるためITEMSに含めない
   for (const [area, level] of Object.entries(v4.concern_areas || {})) {
     const key = areaMap[area];
-    if (key) scores[key] = levelToScore[level] ?? 5;
+    if (key) scores[key] = levelToScore[level] ?? 10;
   }
-  // urgencyが高い場合、全スコアを1〜2点下げてPhase1に寄せる
+  // urgencyが高い場合、気になり度が高い項目のみスコアを下げてPhase1に集中
   if (v4.urgency === 'high') {
-    for (const k in scores) scores[k] = Math.max(1, scores[k] - 2);
+    for (const k in scores) {
+      if (scores[k] <= 5) scores[k] = Math.max(1, scores[k] - 2);
+    }
   }
   // バッジテキスト
   const triggerBadge = {
@@ -51,6 +58,7 @@ const ITEMS = [
   { key: 'teeth',        label: '歯',     icon: '😁', searchParam: 'whitening'    },
   { key: 'nail',         label: '爪',     icon: '💅', searchParam: 'nail'         },
   { key: 'makeup',       label: 'メイク', icon: '✨', searchParam: 'makeup'       },
+  { key: 'fashion',     label: '服・コーデ', icon: '👔', searchParam: 'fashion'   },
 ];
 
 // ── スコア×項目ごとのパーソナライズコピー ──────────────────────────────
@@ -80,6 +88,9 @@ const ITEM_COPY = {
   makeup: s => s <= 3
     ? `メイクが${s}点。男性のメイクは「整って見える」だけで十分です。自然な仕上がりが武器になります。`
     : `メイクが${s}点。素の清潔感を最大化するメイクを1つ覚えると、全体が揃います。`,
+  fashion: s => s <= 3
+    ? `服・コーデが気になっている。サイズ感と色だけで、印象は別物になります。体型より「選び方」で変えられます。`
+    : `服・コーデを整える段階。パーソナルスタイリストに1度見てもらうと、自分に合う軸ができます。`,
 };
 
 // ── ⑤予約連携用: サービスカテゴリ → ロードマップitemKeyマッピング ────
