@@ -48,24 +48,6 @@
         </ul>
         <div style="margin-top:8px"><a class="btn btn-ghost" href="./compatibility.html">改善するとどうなる？</a></div>
       </section>
-      <script>
-        // 次の一手チェックボックスの永続化
-        (function(){
-          const TODO_KEY = 'fineme:provider:todos';
-          const IDS = ['todo-counsel','todo-target','todo-bna'];
-          function load(){ try{ return JSON.parse(localStorage.getItem(TODO_KEY)||'{}'); }catch{ return {}; } }
-          function save(state){ try{ localStorage.setItem(TODO_KEY, JSON.stringify(state)); }catch{} }
-          document.addEventListener('DOMContentLoaded', function(){
-            const state = load();
-            IDS.forEach(id=>{
-              const el = document.getElementById(id);
-              if(!el) return;
-              if(state[id]) el.checked = true;
-              el.addEventListener('change', ()=>{ const s=load(); s[id]=el.checked; save(s); });
-            });
-          });
-        })();
-      </script>
       <section class="stack" style="margin-top:24px;">
         <h2 class="section-title">レビュー管理</h2>
         <p class="muted">ユーザーが投稿したレビューを確認し、表示/非表示を切り替えられます。</p>
@@ -126,30 +108,6 @@
         try{
           const container = document.querySelector('.container.stack');
           if(container){
-            // 掲載ステータスバナー（pending/suspendedは目立つ警告を最上部に表示）
-            try{
-              const me = loadProviders().find(p=> p.id===session.id);
-              const st = me?.status;
-              if(st === 'pending' || st === 'suspended'){
-                const banner = document.createElement('div');
-                const isPending = st === 'pending';
-                banner.style.cssText = `padding:14px 16px;border-radius:10px;display:flex;align-items:flex-start;gap:12px;border-left:4px solid ${isPending?'#d97706':'#dc2626'};background:${isPending?'#fffbeb':'#fef2f2'};`;
-                const icon = document.createElement('span'); icon.style.fontSize='20px'; icon.textContent = isPending ? '🕐' : '🚫'; banner.appendChild(icon);
-                const body = document.createElement('div');
-                const title = document.createElement('div'); title.style.cssText='font-weight:700;font-size:14px;'; title.textContent = isPending ? '掲載審査中です' : '掲載が停止されています'; body.appendChild(title);
-                const sub = document.createElement('div'); sub.style.cssText='font-size:13px;color:#6b7280;margin-top:4px;';
-                sub.textContent = isPending ? '運営による承認後、検索・一覧に表示されます。承認までしばらくお待ちください。' : '運営により掲載が一時停止されています。お心当たりがある場合は運営にお問い合わせください。';
-                body.appendChild(sub);
-                banner.appendChild(body);
-                container.insertBefore(banner, container.children[1] || null);
-              } else {
-                // 公開中バッジ（小さく）
-                const badge = document.createElement('div');
-                badge.style.cssText='display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#16a34a;padding:4px 10px;border:1px solid #bbf7d0;border-radius:99px;background:#f0fdf4;';
-                badge.innerHTML = '✅ 公開中';
-                container.insertBefore(badge, container.children[1] || null);
-              }
-            }catch(_){}
             // 店舗の公開設定トグル
             (function(){
               const card = document.getElementById('visibility-card');
@@ -216,13 +174,13 @@
               try{
                 const me = loadProviders().find(p=> p.id===session.id) || {};
                 // ---- 実値化: 予約/来店MVPとプロフィール完成度を反映 ----
-                const RESV_KEY = 'fineme:reservations:list';
+                const RESV_KEY = 'glowup:reservations';
                 const VISIT_KEY = 'glowup:visits';
                 let reservations = []; let visits = [];
                 try{ const rawR=localStorage.getItem(RESV_KEY); reservations = rawR? JSON.parse(rawR):[]; }catch{}
                 try{ const rawV=localStorage.getItem(VISIT_KEY); visits = rawV? JSON.parse(rawV):[]; }catch{}
-                // provider単位で集計（storeIdベース）
-                const myRes = Array.isArray(reservations)? reservations.filter(r=> r && String(r.storeId||'')===String(session.id)):[];
+                // provider単位で集計
+                const myRes = Array.isArray(reservations)? reservations.filter(r=> r && r.providerId===session.id):[];
                 const myVisits = Array.isArray(visits)? visits.filter(v=> v && v.providerId===session.id):[];
                 const totalRes = myRes.length;
                 const completed = myRes.filter(r=> r.status==='visited' || r.status==='completed').length;
@@ -239,12 +197,19 @@
                 const repeatRate = repeatedUsers; // %
                 const completion = Number(me.profile?.completionRate||0); // 0-100
                 const trust = Math.round((visitRate * 0.5) + (repeatRate * 0.3) + (completion * 0.2));
-                // 表示カバレッジ: 得意領域の設定数で判定（掲載者自身の診断は無関係）
-                // 個人診断スコアをここに使うと「診断を受けると指数が変動」という誤動作になるため使わない
-                const expertiseForCoverage = Array.isArray(me.profile?.expertise) ? me.profile.expertise : [];
-                let affinity = expertiseForCoverage.length >= 3 ? 75
-                             : expertiseForCoverage.length >= 1 ? 55
-                             : 30; // 得意領域未設定=表示機会ほぼなし
+                // 診断一致度: whatTypesとユーザー診断intent.type_idの一致
+                let affinity = 40;
+                try{
+                  const raw = localStorage.getItem('fineme:diagnosis:latest');
+                  const diag = raw? JSON.parse(raw): null;
+                  const typeId = String(diag?.intent?.type_id||'');
+                  const what = (me.onboarding?.profile?.whatTypes)||[];
+                  if(typeId){
+                    if(Array.isArray(what) && what.includes(typeId)) affinity = 90;
+                    else if(Array.isArray(what) && what.length>0) affinity = 60;
+                    else affinity = 50;
+                  }
+                }catch{}
                 // 補正: 店舗写真や説明の充実度（簡易に completion を再使用）
                 const correction = Math.round(completion);
                 // 総合スコア（重み: 相性0.5 補正0.3 信頼0.2）
@@ -272,23 +237,26 @@
                     const map = { '上位表示ゾーン':'とても相性がいい', '標準表示ゾーン':'相性がいい', '成長中ゾーン':'合いそう', '準備中ゾーン':'選択肢として表示' };
                     sumZone.textContent = `${map[z.name]||z.name}（${z.name}）`;
                   }
-                  // 得意領域から「合いやすいユーザー像」を生成（v2診断準拠）
+                  // タイプ推定（A–D＋Eから近いタイプ名を推定）
+                  function classifyTypeFromScores(sc){
+                    try{
+                      const A=Number(sc.A||2),B=Number(sc.B||2),C=Number(sc.C||2),D=Number(sc.D||2),E=String((sc.E_tags||[])[0]||'');
+                      const ideal={
+                        t01:{ name:'慎重・納得重視タイプ', vec:{A:3,B:3,C:2,D:2}, bonus:['理論・根拠'] },
+                        t02:{ name:'安心・寄り添い重視タイプ', vec:{A:2,B:4,C:1,D:1}, bonus:['安心感'] },
+                        t03:{ name:'効率・最短重視タイプ', vec:{A:2,B:1,C:3,D:3}, bonus:['実績'] },
+                        t04:{ name:'変化・アップデート重視タイプ', vec:{A:4,B:1,C:4,D:2}, bonus:['センス'] },
+                        t05:{ name:'直感・フィーリング重視タイプ', vec:{A:2,B:2,C:2,D:2}, bonus:['センス'] },
+                        t06:{ name:'伴走・共同決定重視タイプ', vec:{A:3,B:2,C:2,D:2}, bonus:['安心感','理論・根拠'] }
+                      };
+                      const entries = Object.values(ideal).map(meta=>{ const v=meta.vec; let d=Math.abs(A-v.A)+Math.abs(B-v.B)+Math.abs(C-v.C)+Math.abs(D-v.D); if(E && meta.bonus.includes(E)) d -= 0.6; return { name:meta.name, dist:d }; });
+                      entries.sort((a,b)=> a.dist-b.dist); return entries[0]?.name || '';
+                    }catch{ return ''; }
+                  }
                   if(sumType){
-                    const EXP_LABELS = {
-                      eyebrow:'眉毛', hairremoval:'脱毛', esthetic:'エステ',
-                      whitening:'ホワイトニング', orthodontics:'矯正歯科', aga:'AGA',
-                      hair:'ヘアサロン', nail:'ネイル', makeup:'メイク',
-                      fashion:'ファッション', diagnosis:'外見診断', gym:'ジム',
-                      cosmetic:'美容皮膚科', consulting:'スタイリング相談'
-                    };
-                    const me2 = loadProviders().find(p=> p.id===session.id) || {};
-                    const exp2 = Array.isArray(me2.profile?.expertise) ? me2.profile.expertise : [];
-                    if(exp2.length > 0){
-                      const labels = exp2.slice(0,3).map(e=> EXP_LABELS[e]||e).join('・');
-                      sumType.textContent = `${labels} に課題を感じているユーザー`;
-                    } else {
-                      sumType.textContent = '—（プロフィールで得意領域を設定してください）';
-                    }
+                    const sc = (loadProviders().find(p=> p.id===session.id)?.onboarding?.scores) || {};
+                    const name = classifyTypeFromScores(sc);
+                    sumType.textContent = name || '—';
                   }
                   if(sumResv){
                     // 今月の予約数（承認済み）と先月比
@@ -330,11 +298,10 @@
               const zoneName = greens>=3? '🔥 強化ゾーン' : (greens===2? '🌿 安定ゾーン' : '🌱 育成ゾーン');
               const compat = document.createElement('div'); compat.className='card'; compat.style.padding='12px'; compat.style.marginTop='12px';
               const header = document.createElement('div'); header.className='cluster'; header.style.justifyContent='space-between'; header.style.alignItems='center';
-              const title = document.createElement('strong'); title.textContent='スタイルプロフィール（参考）'; header.appendChild(title);
+              const title = document.createElement('strong'); title.textContent='相性マップ（非数値）'; header.appendChild(title);
               const link = document.createElement('a'); link.className='btn btn-ghost'; link.href='./compatibility.html'; link.textContent='詳しく見る'; header.appendChild(link);
               compat.appendChild(header);
-              const warn = document.createElement('div'); warn.style.cssText='font-size:12px;padding:6px 10px;background:#fef9c3;border-radius:6px;margin:6px 0 4px;color:#713f12;'; warn.textContent='※ このマップは検索順位に影響しません。検索への表示機会を増やすには「得意領域（プロフィール設定）」が重要です。'; compat.appendChild(warn);
-              const copy = document.createElement('p'); copy.className='muted'; copy.style.margin='4px 0 8px'; copy.style.fontSize='13px'; copy.textContent='あなたのサービス姿勢がどんなユーザーに届きやすいかの傾向表示です（スタイルプロフィール基準）。'; compat.appendChild(copy);
+              const copy = document.createElement('p'); copy.className='muted'; copy.style.margin='8px 0'; copy.textContent='このマップは良し悪しではなく、今のプロフィールがどんな人に届いているかの到達度表示です。'; compat.appendChild(copy);
               const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='1fr 1fr'; grid.style.gap='8px';
               function badge(axisKey, label, lvl){
                 const b = document.createElement('button'); b.type='button'; b.style.display='flex'; b.style.justifyContent='space-between'; b.style.alignItems='center'; b.style.padding='8px 10px'; b.style.border='1px solid #e5e7eb'; b.style.borderRadius='10px'; b.style.cursor='pointer'; b.style.background='#fff'; b.setAttribute('aria-label', label+' の改善提案を開く');
@@ -413,9 +380,6 @@
               compat.appendChild(grid);
               const zone = document.createElement('div'); zone.style.marginTop='10px'; zone.innerHTML = `<strong>現在のゾーン：</strong> ${zoneName}`; compat.appendChild(zone);
               const hint = document.createElement('p'); hint.className='muted'; hint.style.margin='6px 0 0'; hint.textContent='各軸を強化するには、プロフィールに具体的な言葉を増やしてください（初回の向き合い方・価値観・得意な変化など）。'; compat.appendChild(hint);
-              const searchHint = document.createElement('div'); searchHint.style.marginTop='10px'; searchHint.style.padding='8px 10px'; searchHint.style.background='#f0fdf4'; searchHint.style.borderRadius='8px'; searchHint.style.fontSize='13px';
-              searchHint.innerHTML = '💡 <strong>検索への表示機会を増やすには：</strong> 得意領域（プロフィール設定）を充実させると、ユーザーの診断スコアとマッチしやすくなります。 → <a href="./profile.html" style="color:var(--color-primary)">プロフィール編集</a>';
-              compat.appendChild(searchHint);
               container.insertBefore(compat, container.children[2] || null);
             }catch(_){ }
             // 改善提案カード（どこに何を書けば上がるか）
@@ -544,7 +508,7 @@
               function ymKey(iso){ try{ const d=new Date(iso); return `${d.getFullYear()}-${d.getMonth()+1}`; }catch{ return ''; } }
               const monthVisits = mine.filter(r=> ymKey(r.visitDate)===ym && r.status==='visited');
               // 診断の存在（簡易）
-              let diagExists = false; try{ const raw=localStorage.getItem('fineme:diagnosis:v2'); const obj=raw?JSON.parse(raw):null; diagExists = !!(obj && obj.scores && Object.keys(obj.scores).length > 0); }catch{}
+              let diagExists = false; try{ const raw=localStorage.getItem('fineme:diagnosis:latest'); const obj=raw?JSON.parse(raw):null; diagExists = !!(obj && obj.intent && obj.how && obj.why); }catch{}
               // 軸緑数
               const sc = (loadProviders().find(p=> p.id===session.id)?.onboarding?.scores) || { A:2,B:2,C:2,D:2,E_tags:[] };
               const greens = [Number(sc.A||2)>=3, Number(sc.B||2)>=3, Number(sc.C||2)>=3, Number(sc.D||2)===2, Array.isArray(sc.E_tags)&&sc.E_tags.length>=2].filter(Boolean).length;

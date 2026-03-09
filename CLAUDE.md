@@ -1,0 +1,143 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## 事業概要
+
+Fineme は「恋愛に悩む男性向けの外見磨きサービス検索サイト」。ジム・メイク・ヘア・骨格診断・アプリ写真撮影などのサービスを検索・比較・予約できるポータル（MVP 段階）。
+
+---
+
+## コマンド
+
+```bash
+npm run dev          # Next.js 開発サーバー起動 → http://localhost:3000
+npm run build        # 本番ビルド
+npm start            # 本番サーバー起動
+npm run lint         # ESLint（Next.js 標準）
+npm run line-server  # LINE OAuth + S3 アップロード用 Express サーバー起動（別プロセス）
+npm run gen-srcset   # scripts/gen-srcset.js で画像の srcset HTML を生成
+```
+
+---
+
+## アーキテクチャ：デュアルスタック構成
+
+このプロジェクトは **2 つの異なる技術スタックが共存** している移行途中のコードベース。
+
+### 1. Next.js App Router（新スタック）
+
+```
+app/
+├── layout.js          # 全ページ共通レイアウト（Navbar + Footer）
+├── page.js            # トップページ
+├── globals.css        # デザイントークン（CSS カスタムプロパティ）
+├── _components/       # Navbar, Footer, SearchBar, ServiceCard
+├── search/page.js     # 検索結果ページ（searchParams でフィルタ）
+├── services/[slug]/   # サービス詳細（動的ルーティング）
+├── articles/          # 特集・記事
+├── booking/           # 予約フロー
+├── admin/             # 管理画面（Next.js 版）
+└── dashboard/         # プロバイダーダッシュボード
+```
+
+- データは `data/*.json` を直接 import して Server Component でフィルタリング
+- `SearchBar` は `dynamic({ ssr: false })` でクライアント専用（URLパラメータを読む）
+
+### 2. 静的 HTML + バニラ JS（レガシースタック）
+
+```
+pages/          # 静的 HTML ファイル群（admin/, provider/, user/, mypage/）
+scripts/        # 各 HTML ページに対応するバニラ JS（1対1に近い対応）
+```
+
+主要な pages/ ↔ scripts/ の対応：
+
+| HTML | JS |
+|------|----|
+| pages/admin/features.html | scripts/admin-features.js |
+| pages/admin/providers.html | scripts/admin-providers.js |
+| pages/provider/index.html | scripts/provider-services.js, provider-staff.js 等 |
+| pages/store.html | scripts/store.js |
+| pages/user/reservations.html | scripts/mypage-reservations.js |
+
+### 3. Express サーバー（別プロセス）
+
+```
+server/
+├── line-server.js    # LINE Login OAuth 2.0 エンドポイント
+├── upload-server.js  # S3 へのプレサインド URL 発行
+├── db.js             # SQLite（sqlite3）
+└── line-service.js   # LINE Messaging API ラッパー
+```
+
+`npm run line-server` で Next.js とは別ポートで起動。本番では環境変数が必要（後述）。
+
+---
+
+## データ層
+
+### data/*.json（モックデータ）
+
+| ファイル | 内容 |
+|----------|------|
+| `data/services.json` | サービス一覧（id, slug, name, region, category, priceFrom, tags） |
+| `data/articles.json` | 特集・記事 |
+| `data/types.json` | 外見タイプ診断結果（male/female/common × 16タイプ） |
+| `data/questions.json` | 診断質問 |
+| `data/intent-types.json` | インテントタイプ定義 |
+
+### localStorage（レガシースタックのデータストア）
+
+レガシー HTML ページは全データを `glowup:*` 名前空間の localStorage に保存している：
+
+```
+glowup:services      # 掲載サービス
+glowup:providers     # プロバイダー情報
+glowup:requests      # 予約リクエスト
+glowup:notifications # 通知
+glowup:features      # 特集（管理画面から編集）
+```
+
+> **重要**: localStorage は 5〜10MB 上限あり。base64 画像を大量に保存するとすぐ溢れる。画像は外部 URL 参照を推奨。
+
+---
+
+## サービスカテゴリ一覧
+
+consulting / gym / makeup / hair / diagnosis / fashion / photo / marriage / eyebrow / hairremoval / esthetic / whitening / orthodontics / nail / aga
+
+カテゴリ追加時は `data/services.json`、`app/search/page.js` の `labelFromCategory()`、`app/services/[slug]/page.js` の `placeholderFor()` / `categoryPhotoFor()` を同時に更新する。
+
+---
+
+## 既知の技術的負債と注意点
+
+1. **innerHTML の XSS リスク**: レガシー scripts/ の多くが innerHTML で DOM を書き換えている。`scripts/escape-html.js`・`scripts/sanitize-html.js`・`scripts/safe-url.js` が存在するが全箇所に適用されているわけではない。レガシー JS を編集する際は必ずこれらを使う。
+
+2. **移行方針**: pages/ の静的 HTML を段階的に `app/` の React コンポーネントに移植していく計画。新機能は必ず Next.js 側で実装する。
+
+3. **CSP**: `next.config.mjs` で `unsafe-inline` / `unsafe-eval` を許可中（レガシーインラインスクリプトのため）。レガシー JS を React 化するにつれて段階的に厳格化する。
+
+4. **画像圧縮**: 管理画面でのアップロード画像は Canvas API でクライアント圧縮後 base64 → localStorage。実装は `scripts/admin-features.js`（max 1280px/WebP）、`scripts/provider-services.js`（max 1200px/JPEG）、`scripts/provider-staff.js`（max 1200px/JPEG）。
+
+---
+
+## 環境変数（本番・server/ で必要）
+
+```
+LINE_LOGIN_CHANNEL_ID
+LINE_LOGIN_CHANNEL_SECRET
+LINE_CHANNEL_ACCESS_TOKEN
+UPLOAD_API_KEY
+UPLOAD_S3_BUCKET
+AWS_REGION
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+```
+
+---
+
+## 推奨デプロイ先
+
+Vercel（Next.js との親和性が高い）。`server/` は別途 Railway や Fly.io 等にデプロイし、環境変数を設定する。

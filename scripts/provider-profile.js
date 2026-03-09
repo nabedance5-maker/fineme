@@ -144,24 +144,6 @@ function onSubmit(e){
     const expHost = document.getElementById('profile-expertise');
     list[idx].profile.expertise = (function(){ if(!expHost) return []; return Array.from(expHost.querySelectorAll('input[type=checkbox]')).map(el=> el instanceof HTMLInputElement ? el : null).filter(Boolean).filter(c=> c.checked).map(c=> c.value); })();
   }catch(e){ }
-  // completionRate自動計算（0〜100）: プロフィールの充実度をスコア化
-  try{
-    const pr = list[idx].profile || {};
-    let score = 0;
-    if((pr.storeName||'').trim()) score += 15;
-    if((pr.address||'').trim()) score += 15;
-    if((pr.description||'').length >= 50) score += 20;
-    else if((pr.description||'').trim()) score += 10;
-    if((pr.phone||'').trim()) score += 5;
-    if((pr.website||'').trim()) score += 5;
-    if((pr.priceFrom||'').toString().trim()) score += 5;
-    if((pr.access?.station||'').trim()) score += 10;
-    if((pr.businessHours||'').trim()) score += 5;
-    if(Array.isArray(pr.amenities) && pr.amenities.length > 0) score += 5;
-    if(Array.isArray(pr.paymentMethods) && pr.paymentMethods.length > 0) score += 5;
-    if(Array.isArray(pr.expertise) && pr.expertise.length > 0) score += 10;
-    list[idx].profile.completionRate = Math.min(100, score);
-  }catch(e){}
   saveProviders(list);
   const msg = $('#provider-profile-message');
   if(msg){ msg.textContent = '保存しました。'; }

@@ -83,9 +83,7 @@ function toCardSnapshot(s){
     storeId: s.storeId || '',
     storeName: s.storeName || '',
     slug: s.slug || '',
-    serviceId: s.id || s.slug || '',
-    direction: Array.isArray(s.direction) ? s.direction : [],
-    gapCategory: s.gapCategory || ''
+    serviceId: s.id || s.slug || ''
   };
 }
 async function renderReco(items){
@@ -117,28 +115,13 @@ async function renderReco(items){
     try{
       let diag = null;
       try{
-        // 新フォーマット優先、ログイン不要で読み込む
-        const rawV2 = localStorage.getItem('fineme:diagnosis:v2');
-        const rawLegacy = localStorage.getItem('fineme:diagnosis:latest');
-        diag = rawV2 ? JSON.parse(rawV2) : (rawLegacy ? JSON.parse(rawLegacy) : null);
-      }catch{}
-      // 方向性バッジ（ログイン不要・サービスのdirectionと照合）
-      if(diag && diag.direction && it.direction && it.direction.length){
-        if(it.direction.includes(diag.direction)){
-          const DIR_LABELS = { A:'清潔感タイプに合う', B:'知的タイプに合う', C:'アクティブタイプに合う', D:'おしゃれタイプに合う' };
-          const b = document.createElement('span'); b.className='badge';
-          b.textContent = DIR_LABELS[diag.direction] || 'あなたのタイプに合う';
-          b.style.cssText = 'background:#0b2640;color:#fff;font-weight:700';
-          tagsWrap.appendChild(b);
+        const mod = await import('./user-auth.js').catch(()=>null);
+        const sess = mod && typeof mod.getUserSession === 'function' ? mod.getUserSession() : null;
+        if(sess && (sess.id || sess.userId || sess.email)){
+          const raw = localStorage.getItem('fineme:diagnosis:latest');
+          diag = raw ? JSON.parse(raw) : null;
         }
-      }
-      // ギャップカテゴリ一致バッジ
-      if(diag && diag.gaps && it.gapCategory && diag.gaps[it.gapCategory] === false){
-        const b = document.createElement('span'); b.className='badge';
-        b.textContent = 'あなたの課題に対応';
-        b.style.cssText = 'background:#b98f3b;color:#fff;font-weight:700';
-        tagsWrap.appendChild(b);
-      }
+      }catch{}
       if(diag && it.providerId){
         const matchMod = await import('./matching.js').catch(()=>null);
         if(matchMod){
@@ -280,25 +263,13 @@ async function renderReco(items){
   const stat = await loadStaticServices();
   const all = [...local, ...stat];
   if(all.length === 0){ return; }
-  // 診断結果を読み込んでスコアブースト
-  let userDiag = null;
-  try{
-    const rawV2 = localStorage.getItem('fineme:diagnosis:v2');
-    const rawLeg = localStorage.getItem('fineme:diagnosis:latest');
-    userDiag = rawV2 ? JSON.parse(rawV2) : (rawLeg ? JSON.parse(rawLeg) : null);
-  }catch{}
-  // score: rating avg, then count, then has photo, then recent updated/created, then direction match
+  // score: rating avg, then count, then has photo, then recent updated/created
   const scored = [];
   for(const s of all){
     const { avg, count } = await ratingForService(s);
     const hasPhoto = (s.photo||s.image)? 1: 0;
     const ts = new Date(s.updatedAt||s.createdAt||0).getTime() || 0;
-    let dirBoost = 0;
-    if(userDiag){
-      if(userDiag.direction && Array.isArray(s.direction) && s.direction.includes(userDiag.direction)) dirBoost += 10;
-      if(userDiag.gaps && s.gapCategory && userDiag.gaps[s.gapCategory] === false) dirBoost += 5;
-    }
-    const score = avg*100 + count*2 + hasPhoto + (ts/1e13) + dirBoost;
+    const score = avg*100 + count*2 + hasPhoto + (ts/1e13); // scale time small
     scored.push({ s, score, avg, count });
   }
   scored.sort((a,b)=> b.score - a.score);

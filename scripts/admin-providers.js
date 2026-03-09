@@ -46,11 +46,6 @@ function uuid(){
   });
 }
 
-const STATUS_LABELS = { pending:'審査中', approved:'公開中', suspended:'停止中' };
-const STATUS_COLORS = { pending:'#d97706', approved:'#16a34a', suspended:'#dc2626' };
-function statusLabel(s){ return STATUS_LABELS[s] || '公開中'; }
-function statusColor(s){ return STATUS_COLORS[s] || STATUS_COLORS.approved; }
-
 function renderTable(){
   const tbody = $('#providers-table-body');
   if(!tbody) return;
@@ -64,28 +59,12 @@ function renderTable(){
     const tdLogin = document.createElement('td'); tdLogin.textContent = p.loginId || '';
     const tdPlan = document.createElement('td'); tdPlan.textContent = planLabel(p.plan) || '—';
     const tdCreated = document.createElement('td'); tdCreated.textContent = new Date(p.createdAt).toLocaleString();
-    // ステータス列
-    const tdStatus = document.createElement('td');
-    const badge = document.createElement('span');
-    badge.textContent = statusLabel(p.status);
-    badge.style.cssText = `font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;color:#fff;background:${statusColor(p.status)};`;
-    tdStatus.appendChild(badge);
     const tdOps = document.createElement('td'); tdOps.className = 'cluster';
     const btnProfile = document.createElement('button'); btnProfile.className = 'btn btn-ghost'; btnProfile.setAttribute('data-action','profile'); btnProfile.setAttribute('data-id', p.id); btnProfile.textContent = 'プロフィール編集';
     const btnReset = document.createElement('button'); btnReset.className = 'btn btn-ghost'; btnReset.setAttribute('data-action','reset'); btnReset.setAttribute('data-id', p.id); btnReset.textContent = '初期化(パス)';
-    // 承認/停止ボタン（ステータスに応じて切り替え）
-    const curStatus = p.status || 'approved';
-    if(curStatus !== 'approved'){
-      const btnApprove = document.createElement('button'); btnApprove.className = 'btn btn-ghost'; btnApprove.style.color='#16a34a'; btnApprove.setAttribute('data-action','approve'); btnApprove.setAttribute('data-id', p.id); btnApprove.textContent = '承認';
-      tdOps.appendChild(btnApprove);
-    }
-    if(curStatus !== 'suspended'){
-      const btnSuspend = document.createElement('button'); btnSuspend.className = 'btn btn-ghost'; btnSuspend.style.color='#dc2626'; btnSuspend.setAttribute('data-action','suspend'); btnSuspend.setAttribute('data-id', p.id); btnSuspend.textContent = '停止';
-      tdOps.appendChild(btnSuspend);
-    }
     const btnDelete = document.createElement('button'); btnDelete.className = 'btn btn-ghost danger'; btnDelete.setAttribute('data-action','delete'); btnDelete.setAttribute('data-id', p.id); btnDelete.textContent = '削除';
     tdOps.appendChild(btnProfile); tdOps.appendChild(btnReset); tdOps.appendChild(btnDelete);
-    tr.appendChild(tdName); tr.appendChild(tdStore); tr.appendChild(tdLogin); tr.appendChild(tdPlan); tr.appendChild(tdCreated); tr.appendChild(tdStatus); tr.appendChild(tdOps);
+    tr.appendChild(tdName); tr.appendChild(tdStore); tr.appendChild(tdLogin); tr.appendChild(tdPlan); tr.appendChild(tdCreated); tr.appendChild(tdOps);
     tbody.appendChild(tr);
   }
 }
@@ -124,7 +103,6 @@ function onCreateSubmit(e){
     loginId,
     passwordHash: password, // demo only; do NOT store plain text in production
     createdAt: new Date().toISOString(),
-    status: 'pending', // pending | approved | suspended
     // default plan at account creation
     plan: { id:'p7000', price:7000, feeRate:0.07 }
   };
@@ -143,16 +121,7 @@ function onTableClick(e){
   const list = loadProviders();
   const idx = list.findIndex(p=> p.id === id);
   if(idx === -1) return;
-  if(action === 'approve'){
-    list[idx].status = 'approved';
-    saveProviders(list);
-    renderTable();
-  }else if(action === 'suspend'){
-    if(!confirm('この掲載者を停止しますか？停止中は検索・一覧に表示されなくなります。')) return;
-    list[idx].status = 'suspended';
-    saveProviders(list);
-    renderTable();
-  }else if(action === 'delete'){
+  if(action === 'delete'){
     if(!confirm('この掲載者アカウントを削除しますか？')) return;
     list.splice(idx,1);
     saveProviders(list);
@@ -194,8 +163,13 @@ function openProfileModal(provider){
   $('#profile-phone').value = provider.profile?.phone || '';
   $('#profile-website').value = provider.profile?.website || '';
   $('#profile-description').value = provider.profile?.description || '';
-  // Load search/display settings (priceTier, expertise)
+  // Load diagnosis-linked tags (C/D, priceTier, expertise)
   try{
+    const scores = (provider.onboarding && provider.onboarding.scores) ? provider.onboarding.scores : {};
+    const cEl = document.getElementById('profile-change-range');
+    const dEl = document.getElementById('profile-pace');
+    if(cEl && cEl instanceof HTMLSelectElement){ const C = Number(scores?.C||0); cEl.value = (C>=1 && C<=4) ? String(C) : '3'; }
+    if(dEl && dEl instanceof HTMLSelectElement){ const D = Number(scores?.D||0); dEl.value = (D>=1 && D<=3) ? String(D) : '2'; }
     const tierEl = document.getElementById('profile-priceTier'); if(tierEl && tierEl instanceof HTMLSelectElement){ tierEl.value = provider.profile?.priceTier || 'mid'; }
     const expHost = document.getElementById('profile-expertise'); if(expHost){ const arr = Array.isArray(provider.profile?.expertise) ? provider.profile.expertise : []; Array.from(expHost.querySelectorAll('input[type=checkbox]')).forEach(el=>{ if(el instanceof HTMLInputElement){ el.checked = arr.includes(el.value); } }); }
   }catch{}
@@ -243,8 +217,11 @@ function onProfileSubmit(e){
     website: (fd.get('website')||'').toString().trim(),
     description: (fd.get('description')||'').toString()
   };
-  // Save search/display settings (priceTier, expertise)
+  // Save onboarding scores (C/D) and profile priceTier/expertise
   try{
+    const C = Number((fd.get('changeRange')||'').toString()) || 3;
+    const D = Number((fd.get('pace')||'').toString()) || 2;
+    list[idx].onboarding = { ...(list[idx].onboarding||{}), scores: { ...(list[idx].onboarding?.scores||{}), C, D } };
     list[idx].profile.priceTier = (fd.get('priceTier')||'mid').toString();
     const expHost = document.getElementById('profile-expertise');
     list[idx].profile.expertise = (function(){ if(!expHost) return []; return Array.from(expHost.querySelectorAll('input[type=checkbox]')).map(el=> el instanceof HTMLInputElement ? el : null).filter(Boolean).filter(c=> c.checked).map(c=> c.value); })();

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Find New Me 診断 | Fineme</title>
+  <title>Fineme - 印象アップ診断</title>
   <link rel="stylesheet" href="../assets/styles/style.css">
   <link rel="stylesheet" href="../assets/styles/components.css">
   <style>
@@ -33,7 +33,7 @@
   <main>
     <div class="diag-container">
       <div class="diag-card">
-        <h1>あなたの「Find New Me」を見つける</h1>
+        <h1>印象アップ診断</h1>
         <div id="chat-root">
           <div id="progress" style="height:10px;background:#eef2ff;border-radius:6px;margin-bottom:12px;overflow:hidden"><div id="progress-bar" style="height:100%;background:linear-gradient(90deg,#6d28d9,#2563eb);width:0%"></div></div>
           <div id="step-meta" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div id="step-label">準備</div><div id="step-count" class="muted">0 / 3</div></div>
@@ -56,28 +56,28 @@
     const STORAGE_KEY = 'fineme:diagnosis:latest';
 
     const Q1 = [
-      { id:'r01', title:'デートや出会いで、もっと堂々としていたい', desc:'緊張する・印象が薄い・うまく話せない気がする' },
-      { id:'r02', title:'「また同じ結果」を終わらせたい', desc:'マッチングがうまくいかない・選ばれた記憶があまりない' },
-      { id:'r03', title:'まず、自分のことを少し好きになりたい', desc:'外見より先に、自己肯定感の問題かもしれない' },
-      { id:'r04', title:'何から始めればいいか、全然わからない', desc:'変わりたい気持ちはある。でも最初の一手が見えない' },
-      { id:'r05', title:'今が、変わりどきだと思っている', desc:'失恋・転職・マッチングを始めた・節目が来た' }
+      { id:'r01', title:'自信を持ちたい', desc:'人と話すとき、恋愛、仕事で「堂々としていたい」' },
+      { id:'r02', title:'周りからの見られ方を変えたい', desc:'なめられたくない／ちゃんとして見られたい' },
+      { id:'r03', title:'今の自分を少し好きになりたい', desc:'自己肯定感を上げたい／気分を変えたい' },
+      { id:'r04', title:'何かを変えたいけど、何をすればいいか分からない', desc:'とにかく今のままは嫌' },
+      { id:'r05', title:'特別なきっかけがあった', desc:'恋愛・仕事・環境の変化など' }
     ];
 
     const Q2 = [
-      { id:'w01', name:'静かに選ばれる人', title:'だらしなさや疲れた印象を、まず消す', desc:'清潔感だけで、世界が変わる。まだ知らないだけ。' },
-      { id:'w02', name:'力を抜いて好かれる人', title:'作り込みすぎず、自然な雰囲気から始める', desc:'飾らないのに、なぜか印象がいい。そんな人になりたい。' },
-      { id:'w03', name:'余裕が滲み出る人', title:'落ち着きと信頼感を、静かに纏いたい', desc:'年相応の渋みと余裕が、一番の武器になる。' },
-      { id:'w04', name:'頼もしさを持つ人', title:'清潔感×フィット感で、存在感を出す', desc:'無理せず、男らしさを静かに出したい。' },
-      { id:'w05', name:'近距離で輝く人', title:'親近感と清潔感と少しの色気を同時に', desc:'デートの席で、好印象が生まれる距離感を持ちたい。' },
-      { id:'w06', name:'習慣が自信をつくる人', title:'見た目の積み重ねが、自己肯定感になっていく', desc:'小さな変化が、いつか大きな自信になることを知っている。' },
-      { id:'w07', name:'別人になる覚悟がある人', title:'今すぐ、はっきり変わりたい', desc:'髪・眉・輪郭・色。全部変えて、新しい自分になる。' },
-      { id:'w08', name:'節目で脱皮する人', title:'この節目にふさわしい自分になりたい', desc:'転職・恋愛・年齢の変わり目に、見た目も更新したい。' }
+      { id:'w01', name:'清潔感タイプ', title:'ちゃんとして見られたい', desc:'だらしない・疲れて見える印象をなくしたい' },
+      { id:'w02', name:'自然体タイプ', title:'無理してない感じで好印象になりたい', desc:'作り込みすぎず、雰囲気をよくしたい' },
+      { id:'w03', name:'大人落ち着きタイプ', title:'余裕があって信頼される印象になりたい', desc:'年相応・落ち着いた魅力を出したい' },
+      { id:'w04', name:'男らしさタイプ', title:'頼もしさを強めたい', desc:'清潔×サイズ感で過剰に誇張しない' },
+      { id:'w05', name:'選ばれる恋愛タイプ', title:'近距離で好印象になりたい', desc:'親近感×清潔感×少しの色気' },
+      { id:'w06', name:'自信醸成タイプ', title:'できる自分を実感したい', desc:'見た目の習慣化で自信を積み上げる' },
+      { id:'w07', name:'第一印象変化タイプ', title:'はっきり変えたい', desc:'髪・眉・輪郭・色で別人級に' },
+      { id:'w08', name:'節目変化タイプ', title:'節目にふさわしく整えたい', desc:'就職・転職・結婚などに合わせて' }
     ];
 
     const Q3 = [
-      { id:'s01', name:'納得してから動くタイプ', title:'「なぜそうなるか」を理解してから変わりたい', desc:'根拠を知れば、自分で判断できると思っている。' },
-      { id:'s02', name:'プロに委ねるタイプ', title:'細かいことより、正解を出してほしい', desc:'迷う時間を最小化したい。正解だけ教えてほしい。' },
-      { id:'s03', name:'一緒に作り上げるタイプ', title:'話しながら、自分の答えを見つけたい', desc:'押しつけられるより、一緒に考えたい。' }
+      { id:'s01', name:'理由や根拠をしっかり知りたいタイプ', title:'「なぜそうなるのか」を理解しながら進めたい', desc:'納得してから変わりたい' },
+      { id:'s02', name:'プロに任せたいタイプ', title:'細かいことはいいから、似合うようにしてほしい', desc:'自分で考えるのは正直苦手' },
+      { id:'s03', name:'一緒に相談しながら決めたいタイプ', title:'話しながら方向性をすり合わせたい', desc:'自分の意見も尊重してほしい' }
     ];
 
     const qEl = document.getElementById('question');
@@ -104,20 +104,20 @@
       stepLabel.textContent = '準備';
       qEl.textContent = 'これは、あなたを評価する診断ではありません。';
       ctrl.innerHTML = '';
-      const p1 = document.createElement('p'); p1.textContent = '「何をすればいいか分からない」まま時間が過ぎていく。この診断は、その迷いに答えを出すためではなく、あなたが最初の一歩を踏み出すための地図を渡すためにあります。'; ctrl.appendChild(p1);
-      const p2 = document.createElement('p'); p2.textContent = '正解も不正解もありません。今の気持ちに一番近いものを選んでください。'; ctrl.appendChild(p2);
+      const p1 = document.createElement('p'); p1.textContent = '今のあなたが「どんな人か」を決めるためではなく、これから「どう変わっていけそうか」を見つけるための診断です。'; ctrl.appendChild(p1);
+      const p2 = document.createElement('p'); p2.textContent = '正解も、不正解もありません。今の気持ちに一番近いものを選んでください。'; ctrl.appendChild(p2);
       const assure = document.createElement('div'); assure.className='assure';
-      assure.innerHTML = '<span>⏱️ 約3分</span><span>🕶️ 登録・課金なし</span><span>🧭 変容の地図を手に入れる</span>';
+      assure.innerHTML = '<span>⏱️ 約3分</span><span>🕶️ 登録・課金なし</span><span>🗂️ 結果はいつでも見返せます</span>';
       ctrl.appendChild(assure);
       prevBtn.disabled = true;
-      nextBtn.textContent = '自分の地図を見つける';
+      nextBtn.textContent = '診断をはじめる';
       nextBtn.disabled = false;
       setProgress();
     }
 
     function renderQ1(){
       stepLabel.textContent = 'Q1｜動機（WHY）';
-      qEl.textContent = 'あなたが「変わりたい」と思った理由、今の気持ちに一番近いのはどれですか？';
+      qEl.textContent = 'あなたが「外見を変えたい」と思った一番の理由は、今どれに一番近いですか？';
       ctrl.innerHTML = '';
       const tip = document.createElement('div'); tip.className='tip'; tip.textContent = '迷ったら、今の気持ちに一番近いものを選んでください。'; ctrl.appendChild(tip);
       const grid = document.createElement('div'); grid.className='card-grid';
@@ -139,9 +139,9 @@
 
     function renderQ2(){
       stepLabel.textContent = 'Q2｜なりたい印象（WHAT）';
-      qEl.textContent = 'あなたがなりたい「自分像」に最も近いのはどれですか？';
+      qEl.textContent = 'もし「第一印象」を一つだけアップデートできるとしたら、あなたはどれを一番優先したいですか？';
       ctrl.innerHTML = '';
-      const tip = document.createElement('div'); tip.className='tip'; tip.textContent = 'ピンときたもので大丈夫です。これがあなたのタイプになります。'; ctrl.appendChild(tip);
+      const tip = document.createElement('div'); tip.className='tip'; tip.textContent = 'いちばん「こう見られたい」に近いものを選んでください。'; ctrl.appendChild(tip);
       const grid = document.createElement('div'); grid.className='card-grid';
       Q2.forEach(opt=>{
         const card = document.createElement('button'); card.type='button'; card.className='option-card'; card.setAttribute('aria-checked', answers.q2===opt.id?'true':'false');
@@ -160,7 +160,7 @@
 
     function renderQ3(){
       stepLabel.textContent = 'Q3｜関わり方（HOW）';
-      qEl.textContent = '変わっていくプロセス、あなたはどんなスタイルで進みたいですか？';
+      qEl.textContent = '見た目を変えるとき、あなたはどんな関わり方を求めますか？';
       ctrl.innerHTML = '';
       const tip = document.createElement('div'); tip.className='tip'; tip.textContent = '正解はありません。一番しっくりくるものを選んでください。'; ctrl.appendChild(tip);
       const vlist = document.createElement('div'); vlist.className='vlist';

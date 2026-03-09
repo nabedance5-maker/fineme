@@ -1,153 +1,134 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import Anthropic from '@anthropic-ai/sdk';
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001';
+type Answers = { [k: string]: string };
 
-// ---- Rate limiter ----
-const RATE_LIMIT_MAP = new Map<string, { count: number; resetAt: number }>();
-function getIp(req: NextApiRequest) {
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o';
+
+// Simple in-memory rate limiter (per IP). For production use a shared store (Redis).
+const RATE_LIMIT_MAP = new Map<string, { count: number, resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX = 20; // allow 20 requests per minute per IP
+
+function getIp(req: NextApiRequest){
   const xf = req.headers['x-forwarded-for'];
-  if (typeof xf === 'string') return xf.split(',')[0].trim();
-  if (Array.isArray(xf)) return xf[0];
-  return req.socket?.remoteAddress || 'unknown';
+  if(typeof xf === 'string') return xf.split(',')[0].trim();
+  if(Array.isArray(xf)) return xf[0];
+  return req.socket.remoteAddress || 'unknown';
 }
-function rateLimit(req: NextApiRequest) {
+
+function rateLimit(req: NextApiRequest){
   const ip = getIp(req);
   const now = Date.now();
-  const rec = RATE_LIMIT_MAP.get(ip) || { count: 0, resetAt: now + 60_000 };
-  if (now > rec.resetAt) { rec.count = 0; rec.resetAt = now + 60_000; }
+  const rec = RATE_LIMIT_MAP.get(ip) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
+  if(now > rec.resetAt){ rec.count = 0; rec.resetAt = now + RATE_LIMIT_WINDOW_MS; }
   rec.count++;
   RATE_LIMIT_MAP.set(ip, rec);
-  return rec.count <= 20;
+  return rec.count <= RATE_LIMIT_MAX;
 }
 
-// ---- Allowed keys ----
-const ALLOWED_SCORE_KEYS = new Set([
-  'eyebrow', 'hair', 'body', 'skin', 'hair_removal', 'teeth', 'nail', 'makeup',
-]);
-const ITEM_LABELS: Record<string, string> = {
-  eyebrow: '眉', hair: '髪', body: '体型', skin: '肌',
-  hair_removal: 'ムダ毛', teeth: '歯', nail: '爪', makeup: 'メイク',
-};
-const VAGUE_LABEL = 'なんとなく気になるけど、何が問題かわからない';
-
-function sanitize(s: unknown, max = 200): string {
-  if (typeof s !== 'string') s = String(s ?? '');
-  return (s as string).replace(/[\x00-\x1F\x7F]/g, '').trim().slice(0, max);
+function sanitizeText(s: any, max = 300){
+  if(typeof s !== 'string') s = String(s || '');
+  // strip control characters
+  s = s.replace(/[\x00-\x1F\x7F]/g, '');
+  s = s.trim();
+  if(s.length > max) s = s.slice(0, max);
+  return s;
 }
 
-function buildPrompt(payload: Record<string, unknown>): string {
-  const scores = payload.scores as Record<string, number> ?? {};
-  const drills = payload.drills as Record<string, string[]> ?? {};
-  const context = payload.context as { reasons?: string[]; budget?: string; area?: string } ?? {};
-  const vagueItems = payload.vagueItems as string[] ?? [];
-
-  const scoreLines = Object.entries(scores)
-    .filter(([k]) => ALLOWED_SCORE_KEYS.has(k))
-    .map(([k, v]) => {
-      const score = Math.max(1, Math.min(10, Math.round(Number(v) || 5)));
-      return `- ${ITEM_LABELS[k] ?? k}: ${score}/10`;
-    }).join('\n');
-
-  const drillLines = Object.entries(drills)
-    .filter(([k]) => ALLOWED_SCORE_KEYS.has(k))
-    .map(([k, opts]) => {
-      const safe = (Array.isArray(opts) ? opts : [])
-        .map(o => sanitize(o, 100)).filter(Boolean).slice(0, 6);
-      return `- ${ITEM_LABELS[k] ?? k}の悩み: ${safe.join(' / ')}`;
-    }).filter(line => !line.endsWith(': ')).join('\n');
-
-  const vagueNote = vagueItems.length
-    ? `\n※ 言語化できない漠然とした不満がある項目: ${vagueItems.map(k => ITEM_LABELS[k] ?? k).join('、')}`
-    : '';
-
-  const contextNote = [
-    context.reasons?.length ? `変えたい理由: ${context.reasons.slice(0, 4).map(r => sanitize(r, 40)).join('、')}` : '',
-    context.budget ? `予算: ${sanitize(context.budget, 30)}` : '',
-    context.area ? `エリア: ${sanitize(context.area, 30)}` : '',
-  ].filter(Boolean).join('\n');
-
-  return `あなたは「Fineme」という外見磨きサービス検索ポータルの、パーソナル外見コンサルタントAIです。
-Finemeのミッションは「外見を起点に、自信を再設計する人を増やす」ことです。
-
-ユーザーが8項目について自己採点した結果と、各項目の具体的な悩みをもとに、
-このユーザー専用の「変容ロードマップ」を生成してください。
-
-【現状スコア（1〜10点）】
-${scoreLines}
-
-【各項目の具体的な悩み】
-${drillLines || '（回答なし）'}
-${vagueNote}
-
-【文脈情報】
-${contextNote || '（回答なし）'}
-
-【出力形式】
-以下の厳密なJSONのみを返してください。前後に余分なテキストを含めないこと。
-
-{
-  "badge": "ユーザーの現状を一言で表す称号（20文字以内）",
-  "heading": "診断結果の見出し（最大課題に触れ前向きに、30文字以内）",
-  "sub": "見出しを補足する一文（40文字以内）",
-  "priorities": [
-    { "title": "優先課題1（30文字以内）", "desc": "具体的アドバイス（80文字以内）" },
-    { "title": "優先課題2（30文字以内）", "desc": "具体的アドバイス（80文字以内）" },
-    { "title": "優先課題3（30文字以内）", "desc": "具体的アドバイス（80文字以内）" }
-  ],
-  "scenario": "3ヶ月後のシナリオ。取り組んだ先の変化を感情に響く言葉で（150文字以内）",
-  "serviceKeys": ["eyebrow","hair","body","skin","hair_removal","teeth","nail","makeup","consultant","photo" から最大3つ選んで配列で返す]
+async function callOpenAI(prompt: string){
+  const url = 'https://api.openai.com/v1/chat/completions';
+  const controller = new AbortController();
+  const timeout = setTimeout(()=> controller.abort(), 25_000); // 25s timeout
+  try{
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        messages: [
+          { role: 'system', content: 'You are Fineme assistant that MUST return strict JSON only, no extra commentary.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.6,
+        max_tokens: 400
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    if(!res.ok){
+      const t = await res.text();
+      throw new Error(`OpenAI error: ${res.status}`);
+    }
+    const data = await res.json();
+    const content = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || '';
+    return String(content);
+  }finally{ clearTimeout(timeout); }
 }
 
-【重要ルール】
-- vagueItems（言語化できない不満）がある場合は serviceKeys に必ず "consultant" を含めること
-- スコアが低い項目を優先しつつ、文脈（理由・予算・エリア）も考慮する
-- 一般論を避け「このユーザーのための答え」を出すこと
-- 温かく背中を押す口調で。批判的・否定的な表現は避けること`;
-}
+export default async function handler(req: NextApiRequest, res: NextApiResponse){
+  if(req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if(!OPENAI_API_KEY) return res.status(500).json({ error: 'Server not configured: OPENAI_API_KEY missing' });
+  if(!rateLimit(req)) return res.status(429).json({ error: 'Rate limit exceeded' });
+  try{
+    const body = req.body as { answers?: Answers };
+    const answers = body?.answers || {};
 
-async function callClaude(prompt: string): Promise<string> {
-  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
-  const msg = await client.messages.create({
-    model: MODEL,
-    max_tokens: 700,
-    messages: [{ role: 'user', content: prompt }],
-  });
-  const block = msg.content[0];
-  return block.type === 'text' ? block.text : '';
-}
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY が設定されていません' });
-  if (!rateLimit(req)) return res.status(429).json({ error: 'しばらくしてからお試しください' });
-
-  try {
-    const body = req.body as Record<string, unknown>;
-    const scores = body?.scores as Record<string, unknown> ?? {};
-    if (!Object.keys(scores).some(k => ALLOWED_SCORE_KEYS.has(k))) {
-      return res.status(400).json({ error: 'スコアデータが不足しています' });
+    // Validate & sanitize allowed keys
+    const allowedKeys = new Set(['gender','age','height','personal_color','fashion','impression','prep_time','want_impression','oneword','category','axes_hint']);
+    const sanitized: Record<string,string> = {};
+    const AX_MAP: Record<string,string> = { A:'納得', B:'寄り添い', C:'最短', D:'進め方' };
+    let axesHintLabels: string[] = [];
+    for(const [k,v] of Object.entries(answers)){
+      if(!allowedKeys.has(k)) continue;
+      if(k === 'age'){
+        const n = Number(v);
+        if(Number.isNaN(n) || n < 6 || n > 120) return res.status(400).json({ error: 'Invalid age' });
+        sanitized[k] = String(Math.floor(n));
+      }else if(k === 'height'){
+        const n = Number(v);
+        if(Number.isNaN(n) || n < 50 || n > 260) return res.status(400).json({ error: 'Invalid height' });
+        sanitized[k] = String(Math.floor(n));
+      }else if(k === 'axes_hint'){
+        const raw = String(v||'');
+        const parts = raw.split(',').map(s=> s.trim().toUpperCase()).filter(s=> ['A','B','C','D'].includes(s));
+        const unique = Array.from(new Set(parts));
+        sanitized[k] = unique.join(',');
+        axesHintLabels = unique.map(code=> AX_MAP[code]).filter(Boolean);
+      }else if(k === 'personal_color'){
+        const allowed = ['春','夏','秋','冬','わからない','spring','summer','autumn','winter'];
+        const s = String(v).trim();
+        if(!allowed.includes(s) && s.length>50) return res.status(400).json({ error: 'Invalid personal_color' });
+        sanitized[k] = sanitizeText(s, 50);
+      }else{
+        sanitized[k] = sanitizeText(v, 300);
+      }
     }
 
-    const prompt = buildPrompt(body);
-    const content = await callClaude(prompt);
+    // Build prompt safely (JSON-encode values)
+    const userData = JSON.stringify(sanitized);
+    const hintText = axesHintLabels.length ? `\n事前選択された軸（軽く考慮）: ${axesHintLabels.join(', ')}` : '';
+    const prompt = `あなたは「Fineme」という外見診断サービスのAIアシスタントです。\n以下のユーザー回答(JSON)をもとに、32タイプのうち最も適切な1つを判定してください。${hintText}\n出力は必ず厳密なJSONのみで行ってください。\n\n入力(JSON):\n${userData}\n\n出力フォーマット：\n{\n  "type_name": "(タイプ名)",\n  "type_description": "(2〜3行の説明)",\n  "recommendation": "(おすすめ施策・カテゴリへの一言誘導)"\n}\n\n方針：事前選択された軸は“軽く”考慮し、整合性と妥当性を最優先してください。\n注意：余分な説明や注釈を付けず、必ず JSON のみ返してください。`;
 
+    const content = await callOpenAI(prompt);
+    // extract JSON safely
     const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return res.status(502).json({ error: 'AIの応答が不正です' });
-
-    let parsed: Record<string, unknown>;
-    try { parsed = JSON.parse(jsonMatch[0]); }
-    catch { return res.status(502).json({ error: 'JSONパースに失敗しました' }); }
-
-    if (!parsed.heading || !Array.isArray(parsed.priorities)) {
-      return res.status(502).json({ error: 'AIの応答が不完全です' });
+    if(!jsonMatch){
+      return res.status(502).json({ error: 'Invalid response from AI', raw: content.slice(0,1000) });
     }
-
+    let parsed;
+    try{ parsed = JSON.parse(jsonMatch[0]); }catch(e){
+      return res.status(502).json({ error: 'Failed to parse JSON from AI', raw: jsonMatch[0].slice(0,1000) });
+    }
+    // Basic output validation
+    if(!parsed?.type_name || !parsed?.type_description) return res.status(502).json({ error: 'AI returned incomplete data' });
     return res.status(200).json({ result: parsed });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error('[diagnosis API]', msg);
-    return res.status(500).json({ error: 'サーバーエラーが発生しました' });
+  }catch(err:any){
+    // avoid leaking internal error details or secrets
+    console.error('diagnosis api error', err?.message || err);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }

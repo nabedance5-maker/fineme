@@ -141,10 +141,9 @@ function card({name, region, category, priceFrom, image, href, providerName, add
     // 相性理由タグ（診断結果に基づく簡易バッジ）
     const tagsWrap = document.createElement('div'); tagsWrap.className = 'cluster'; tagsWrap.style.gap = '6px'; tagsWrap.style.flexWrap = 'wrap'; tagsWrap.style.alignItems = 'center';
     try{
-      // 診断の最新結果から理由タグを導出（新フォーマット優先）
-      const rawV2 = localStorage.getItem('fineme:diagnosis:v2');
-      const rawLegacy = localStorage.getItem('fineme:diagnosis:latest');
-      const diag = rawV2 ? JSON.parse(rawV2) : (rawLegacy ? JSON.parse(rawLegacy) : null);
+      // 診断の最新結果から理由タグを導出
+      const raw = localStorage.getItem('fineme:diagnosis:latest');
+      const diag = raw ? JSON.parse(raw) : null;
       const reasons = deriveReasons(diag);
       if(reasons.length){
         for(const r of reasons.slice(0,3)){
@@ -284,26 +283,41 @@ function card({name, region, category, priceFrom, image, href, providerName, add
   return a;
 }
 
-// 診断結果から相性理由タグを作る
+// 診断結果から相性理由タグを作る（STEP2の軸スコアとタイプから）
 function deriveReasons(diag){
   const out = [];
   try{
     if(!diag) return out;
-    // 新フォーマット（v2）: direction フィールド
-    const dir = String(diag?.direction || '');
-    const DIR_LABELS = { A:'清潔感タイプにおすすめ', B:'知的タイプにおすすめ', C:'アクティブタイプにおすすめ', D:'おしゃれタイプにおすすめ' };
-    if(DIR_LABELS[dir]) out.push(DIR_LABELS[dir]);
-    // レガシーフォーマット: typeId
+    // タイプ由来の共通ラベル
     const typeId = String(diag?.intent?.type_id || '');
-    const TYPE_LABELS = { w01:'説明が丁寧', w02:'自然な変化', w03:'背中を押してくれる', w04:'一緒に決める', w05:'ベーシック重視', w06:'トレンドに強い', w07:'写真映え', w08:'清潔感アップ' };
+    const TYPE_LABELS = {
+      // w01〜w08の例示（辞書に合わせる）
+      w01: '説明が丁寧',
+      w02: '自然な変化',
+      w03: '背中を押してくれる',
+      w04: '一緒に決める',
+      w05: 'ベーシック重視',
+      w06: 'トレンドに強い',
+      w07: '写真映え',
+      w08: '清潔感アップ'
+    };
     if(TYPE_LABELS[typeId]) out.push(TYPE_LABELS[typeId]);
-    // STEP2の軸スコアから上位軸
+    // STEP2の軸スコアから上位軸を理由化
     const axes = (diag?.step2?.scores?.axes) || {};
     const pairs = Object.keys(axes).map(k=> ({ key:k, val: Number(axes[k]||0) }));
     pairs.sort((a,b)=> b.val - a.val);
-    const AXIS_LABELS = { guidance:'導線がわかりやすい', gentle:'優しく進める', natural:'自然体でいける', evidence:'根拠が明確', customization:'あなた用に調整' };
-    for(const p of pairs.slice(0,2)){ if(AXIS_LABELS[p.key]) out.push(AXIS_LABELS[p.key]); }
+    const AXIS_LABELS = {
+      guidance: '導線がわかりやすい',
+      gentle: '優しく進める',
+      natural: '自然体でいける',
+      evidence: '根拠が明確',
+      customization: 'あなた用に調整'
+    };
+    for(const p of pairs.slice(0,2)){
+      if(AXIS_LABELS[p.key]) out.push(AXIS_LABELS[p.key]);
+    }
   }catch{ /* ignore */ }
+  // 重複除去
   return Array.from(new Set(out));
 }
 
@@ -1067,8 +1081,6 @@ function sortItems(items, sort){
     const provMap = Object.fromEntries(allProvs.map(p=> [p.id, p]));
     for(let i=0;i<all.length;i++){
       const it = all[i]; const p = provMap[it.providerId];
-      // statusが明示的にpendingまたはsuspendedなら非表示（未設定=旧データはそのまま表示）
-      if(p && p.status && p.status !== 'approved'){ all.splice(i,1); i--; continue; }
       if(p && ((!p.onboarding || !p.onboarding.completed) || (p.visibility === 'hidden'))){ all.splice(i,1); i--; }
     }
   }catch(_){ }
@@ -1137,51 +1149,18 @@ function sortItems(items, sort){
     }catch{ return {}; }
   }
 
-  // v2形式（fineme:diagnosis:v2）を優先、なければ旧形式にフォールバック
-  function loadDiagnosis(){
-    try{
-      const rawV2 = localStorage.getItem('fineme:diagnosis:v2');
-      if(rawV2){ const obj = JSON.parse(rawV2); if(obj && obj.scores) return obj; }
-      const rawLegacy = localStorage.getItem('fineme:diagnosis:latest');
-      return rawLegacy ? JSON.parse(rawLegacy) : null;
-    }catch{ return null; }
-  }
-
-  // 得意領域→診断スコアキーのマッピング（検索ソート・バッジ共通）
-  const EXP_TO_SCORE_MAP = {
-    eyebrow:['eyebrow'], hair:['hair'], aga:['hair'],
-    gym:['body'], esthetic:['skin'], cosmetic:['skin'],
-    hairremoval:['hair_removal'], whitening:['teeth'], orthodontics:['teeth'],
-    nail:['nail'], makeup:['makeup'], fashion:['makeup'],
-    diagnosis:['eyebrow','hair','body','skin'],
-    consulting:['eyebrow','hair','body','skin']
-  };
+  function loadDiagnosis(){ try{ const raw = localStorage.getItem('fineme:diagnosis:latest'); return raw? JSON.parse(raw): null; }catch{ return null; } }
 
   function getCompatScoreForItem(it, provMap, diag){
     try{
-      // v2形式: scoresオブジェクト（8軸）+ expertiseで相性計算
-      const scores = diag?.scores;
-      if(scores){
-        const p = provMap[it.providerId];
-        if(!p) return 40;
-        const expertise = Array.isArray(p.profile?.expertise) ? p.profile.expertise : [];
-        if(!expertise.length) return 40;
-        let totalNeed = 0; let cnt = 0;
-        for(const exp of expertise){
-          const keys = EXP_TO_SCORE_MAP[exp] || [];
-          for(const k of keys){
-            if(scores[k] != null){ totalNeed += (10 - Number(scores[k])); cnt++; }
-          }
-        }
-        return cnt > 0 ? Math.round(20 + (totalNeed / cnt / 10) * 80) : 40;
-      }
-      // 旧形式フォールバック: intent.type_id + whatTypes
       if(!diag || !diag.intent || !diag.intent.type_id) return 0;
       const typeId = String(diag.intent.type_id);
       const p = provMap[it.providerId];
       if(!p) return 0;
+      // profile.whatTypes（最大2つ想定）に一致すれば高スコア
       const whatTypes = (p.onboarding && p.onboarding.profile && Array.isArray(p.onboarding.profile.whatTypes)) ? p.onboarding.profile.whatTypes : [];
       if(whatTypes.includes(typeId)) return 100;
+      // 近似や未設定は控えめスコア
       if(whatTypes.length>0) return 60;
       return 40;
     }catch{ return 0; }
@@ -1240,10 +1219,10 @@ function sortItems(items, sort){
       const header = document.createElement('div');
       header.className = 'search-purpose-summary';
       const p = document.createElement('p'); p.style.margin='0 0 8px 0'; p.style.fontWeight='600';
-      const t = document.createTextNode('あなたの診断結果に合う順で表示中: ');
+      const t = document.createTextNode('診断タイプに合う順で表示中: ');
       const strong = document.createElement('span'); strong.style.fontWeight='700';
-      const badgeLabel = diag?.result?.badge || diag?.step2?.classification?.type_name || diag?.intent?.type_name || '';
-      strong.textContent = String(badgeLabel);
+      const step2name = (diag?.step2?.classification?.type_name) || '';
+      strong.textContent = String(step2name || diag?.intent?.type_name || '');
       p.appendChild(t); p.appendChild(strong); header.appendChild(p);
       if(list && list.parentNode) list.parentNode.insertBefore(header, list);
     }catch{}
@@ -1266,10 +1245,10 @@ function sortItems(items, sort){
       function clamp01(n){ n = Number(n)||0; if(n<0) return 0; if(n>1) return 1; return n; }
       function computeTrust01(providerId){
         try{
-          const RESV_KEY = 'fineme:reservations:list'; const VISIT_KEY = 'glowup:visits';
+          const RESV_KEY = 'glowup:reservations'; const VISIT_KEY = 'glowup:visits';
           const rRaw = localStorage.getItem(RESV_KEY); const vRaw = localStorage.getItem(VISIT_KEY);
           const reservations = rRaw? JSON.parse(rRaw):[]; const visits = vRaw? JSON.parse(vRaw):[];
-          const myRes = Array.isArray(reservations)? reservations.filter(x=> x && String(x.storeId||'')===String(providerId)):[];
+          const myRes = Array.isArray(reservations)? reservations.filter(x=> x && x.providerId===providerId):[];
           const myVis = Array.isArray(visits)? visits.filter(x=> x && x.providerId===providerId):[];
           const totalRes = myRes.length; const completed = myRes.filter(x=> x.status==='visited' || x.status==='completed').length;
           // repeat users ratio

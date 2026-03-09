@@ -124,17 +124,6 @@ export { loadServices, loadProviders };
     root.appendChild(pNo);
     return;
   }
-  // 承認ステータスチェック（pending/suspendedはユーザーに非表示）
-  if(provider.status === 'pending' || provider.status === 'suspended'){
-    const card = document.createElement('div'); card.className='card'; card.style.cssText='padding:24px;text-align:center;';
-    const icon = document.createElement('div'); icon.style.cssText='font-size:32px;margin-bottom:12px;'; icon.textContent = provider.status === 'suspended' ? '🚫' : '🕐'; card.appendChild(icon);
-    const h = document.createElement('strong'); h.style.cssText='display:block;margin-bottom:8px;font-size:16px;';
-    h.textContent = provider.status === 'suspended' ? 'この店舗は現在停止中です' : 'この店舗は審査中です'; card.appendChild(h);
-    const p = document.createElement('p'); p.className='muted'; p.style.fontSize='14px';
-    p.textContent = provider.status === 'suspended' ? '運営により一時的に掲載が停止されています。' : '掲載承認の審査中につき、現在は公開されていません。'; card.appendChild(p);
-    root.appendChild(card);
-    return;
-  }
   // Hide provider page if onboarding is not completed
   if(!(provider.onboarding && provider.onboarding.completed)){
     const card = document.createElement('div'); card.className='card'; card.style.padding='12px';

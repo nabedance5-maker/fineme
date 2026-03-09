@@ -126,31 +126,24 @@ function render(){
     mount.innerHTML = sparklineSVG([s,a,r], { width:600, height:80, colors:['#2563eb','#10b981','#f59e0b'], labels, seriesNames:['検索','採用','再訪'] });
   }
 
-  // Diagnosis summary (fineme:diagnosis:history ベース — v2形式)
+  // Diagnosis summary (saved snapshots)
   (function(){
-    // 診断履歴から集計（fineme:diagnosis:history: Array<{scores, savedAt}>）
-    const ITEM_LABELS = { eyebrow:'眉', hair:'髪', body:'体型', skin:'肌', hair_removal:'ムダ毛', teeth:'歯', nail:'爪', makeup:'メイク' };
-    function loadHistory(){ try{ const raw = localStorage.getItem('fineme:diagnosis:history'); const arr = raw? JSON.parse(raw):[]; return Array.isArray(arr)? arr:[]; }catch{ return []; } }
-    const history = loadHistory();
+    function loadSaved(){ try{ const raw = localStorage.getItem('fineme:saved:diagnoses'); const arr = raw? JSON.parse(raw): []; return Array.isArray(arr)? arr: []; }catch{ return []; } }
+    function getLatest(){ try{ const raw = localStorage.getItem('fineme:diagnosis:latest'); return raw? JSON.parse(raw): null; }catch{ return null; } }
+    const saved = loadSaved();
     const now = new Date();
     const start = new Date(now); start.setDate(now.getDate()-6); start.setHours(0,0,0,0);
-    const weekCount = history.filter(x=>{ const t = new Date(x.savedAt||0).getTime(); return t && t >= start.getTime(); }).length;
-    // 最新の診断がある場合はそれも含めて表示
-    let baseHistory = history.slice();
-    if(!baseHistory.length){
-      try{ const raw = localStorage.getItem('fineme:diagnosis:v2'); const obj = raw? JSON.parse(raw):null; if(obj && obj.scores) baseHistory = [obj]; }catch{}
-    }
-    const total = baseHistory.length;
-    // タイプ分布 → 各診断で最もスコアが低い項目（= 最優先改善項目）の分布
+    const weekCount = saved.filter(x=>{ const t = new Date(x.savedAt||0).getTime(); return t && t >= start.getTime(); }).length;
+    const total = saved.length;
+    // If nothing saved but latest exists, show as ephemeral current-only stats
     let distMap = new Map();
-    for(const x of baseHistory){
-      const sc = x.scores || {};
-      const entries = Object.entries(sc).filter(([,v])=> v != null);
-      if(!entries.length) continue;
-      const [minKey] = entries.reduce((a,b)=> Number(a[1]) <= Number(b[1]) ? a : b);
-      const label = ITEM_LABELS[minKey] || minKey;
-      const prev = distMap.get(minKey)||{ id:minKey, name:label, count:0 };
-      prev.count++; distMap.set(minKey, prev);
+    if(total>0){
+      for(const x of saved){ const id = String(x.typeId||''); if(!id) continue; const prev = distMap.get(id)||{ id, name: String(x.typeName||id), count:0 }; prev.count++; distMap.set(id, prev); }
+    } else {
+      const latest = getLatest();
+      const id = String(latest?.step2?.classification?.type_id || latest?.intent?.type_id || '');
+      const name = String(latest?.step2?.classification?.type_name || latest?.intent?.type_name || id);
+      if(id){ distMap.set(id, { id, name, count: 1 }); }
     }
     const dist = Array.from(distMap.values()).sort((a,b)=> b.count - a.count);
 
@@ -191,16 +184,9 @@ function render(){
   (function(){
     const mount = document.getElementById('dash-type-pref'); if(!mount) return;
     mount.textContent = '';
-    // fineme:diagnosis:v2から最低スコア項目を「タイプ」として表示
-    const ITEM_LABELS_ADMIN = { eyebrow:'眉', hair:'髪', body:'体型', skin:'肌', hair_removal:'ムダ毛', teeth:'歯', nail:'爪', makeup:'メイク' };
+    // read latest diagnosis
     let typeId = ''; let typeName = '';
-    try{
-      const raw = localStorage.getItem('fineme:diagnosis:v2'); const obj = raw? JSON.parse(raw):null;
-      if(obj && obj.scores){
-        const entries = Object.entries(obj.scores).filter(([,v])=> v!=null);
-        if(entries.length){ const [k] = entries.reduce((a,b)=> Number(a[1])<=Number(b[1])?a:b); typeId=k; typeName=`最優先: ${ITEM_LABELS_ADMIN[k]||k}(${obj.scores[k]}点)`; }
-      }
-    }catch{}
+    try{ const raw = localStorage.getItem('fineme:diagnosis:latest'); const obj = raw? JSON.parse(raw):{}; typeId = obj?.step2?.classification?.type_id || obj?.intent?.type_id || ''; typeName = obj?.step2?.classification?.type_name || obj?.intent?.type_name || ''; }catch{}
     // infer preference from events
     function inferPref(){
       try{

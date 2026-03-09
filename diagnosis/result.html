@@ -3,399 +3,857 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>あなたの変容タイプ | Fineme</title>
+  <title>印象アップ診断 - 結果</title>
   <link rel="stylesheet" href="../assets/styles/style.css">
   <link rel="stylesheet" href="../assets/styles/components.css">
   <style>
-    /* ── Layout ── */
-    .result-wrap{max-width:640px;margin:0 auto;padding:24px 20px 80px}
+    .diag-container{max-width:900px;margin:36px auto;padding:20px}
+    .diag-card{background:#fff;padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.06)}
+    .result-title{font-size:22px;font-weight:800}
     .muted{color:#6b7280}
+  .btn{display:inline-block;padding:8px 12px;border-radius:8px;background:#111;color:#fff;text-decoration:none}
+  /* result article styling */
+  .result-article{background:linear-gradient(180deg,#ffffff 0%,#fbfcfe 100%);padding:22px;border-radius:14px;border:1px solid rgba(2,6,23,0.04);box-shadow:0 18px 60px rgba(2,6,23,0.06);transition:transform .36s ease}
+  .result-article:hover{transform:translateY(-6px)}
+  .type-hero{display:block;margin:12px auto 18px auto;max-width:520px;width:100%;border-radius:12px;box-shadow:0 18px 40px rgba(2,6,23,0.14);object-fit:cover}
+  .result-article h2{font-size:24px;margin-bottom:6px}
+  .result-article h3{margin-top:14px;margin-bottom:6px}
+  .result-label{color:#374151;margin-top:6px;font-size:14px}
+  .badge-emoji{display:inline-block;width:44px;height:44px;border-radius:999px;background:linear-gradient(135deg,#fff 0%,#fffbeb 100%);box-shadow:0 6px 18px rgba(2,6,23,0.08);display:flex;align-items:center;justify-content:center;font-size:20px;margin-right:10px}
+  .result-header{display:flex;align-items:center;gap:8px}
+  .result-actions{display:flex;gap:8px;margin-top:12px}
+  .result-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .btn-ghost{background:transparent;border:1px solid rgba(0,0,0,0.06);color:#111}
+  .toast{position:fixed;right:20px;bottom:20px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s}
+  .toast.show{opacity:1;transform:translateY(0)}
+  @keyframes floatUp { from { transform: translateY(8px); opacity:0 } to { transform: translateY(0); opacity:1 } }
+  /* block cards */
+  .blocks-grid{display:grid;grid-template-columns:1fr;gap:12px;margin:8px 0 16px}
+  .block{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+  .block-title{font-weight:700;margin-bottom:6px}
+  .space-y{margin-top:16px}
 
-    /* ── Hero ── */
-    .result-hero{text-align:center;padding:24px 0 16px}
-    .result-type-badge{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#0b2640,#0e3760);color:#fff;padding:10px 22px;border-radius:100px;font-weight:800;font-size:15px;margin-bottom:12px}
-    .result-type-badge .type-letter{font-size:22px;font-weight:900}
-    .result-hero h1{font-size:clamp(20px,4.5vw,28px);font-weight:800;color:#0b2640;margin:0 0 8px;line-height:1.3}
-    .result-hero .hero-sub{font-size:15px;color:#6b7280;margin:0;line-height:1.6}
+  /* highlight chips */
+  .highlights{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
+  .chip{background:#fff;border:1px solid #e5e7eb;border-radius:999px;padding:4px 10px;font-size:12px}
 
-    /* ── Story card ── */
-    .story-card{background:linear-gradient(135deg,#0f0f0f 0%,#1a1a2e 100%);color:#fff;padding:20px 24px;border-radius:14px;margin:12px 0 16px;line-height:1.9}
-    .story-card p{margin:0;font-size:15px}
+  /* horizontal slider */
+  .result-slider{position:relative;margin-top:8px}
+  .slider-controls{position:absolute;right:8px;top:-32px;display:flex;gap:8px}
+  .slider-track{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;-webkit-overflow-scrolling:touch}
+  .slider-track::-webkit-scrollbar{height:8px}
+  .slider-track::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:8px}
+  .slide-card{flex:0 0 auto;width:200px;scroll-snap-align:start;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 4px 12px rgba(2,6,23,0.06);text-decoration:none;color:#111827}
+  .slide-card:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(2,6,23,0.08);transition:all .2s ease}
+  .slide-image-wrap{display:flex;align-items:center;justify-content:center;height:120px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;border-top-left-radius:12px;border-top-right-radius:12px}
+  .slide-image-wrap img{max-width:72px;height:auto}
+  .slide-label{padding:10px;font-weight:600}
+  /* slide emoji badge */
+  .slide-emoji{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:999px;background:linear-gradient(135deg,#fff 0%,#fef3c7 100%);box-shadow:0 6px 18px rgba(2,6,23,0.08);font-size:20px;margin:10px}
+  /* info button & popover */
+  .info-btn{background:transparent;border:1px solid #e5e7eb;color:#111;padding:6px 8px;border-radius:8px}
+  .popover{position:absolute;right:8px;top:8px;z-index:30;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 12px 32px rgba(2,6,23,0.12);padding:12px;max-width:320px;display:none}
+  .popover.show{display:block}
+  .popover-title{font-weight:700;margin-bottom:6px}
+  .popover p{color:#374151;font-size:14px;margin:6px 0}
 
-    /* ── Profile card ── */
-    .result-profile-card{background:linear-gradient(135deg,rgba(11,38,64,.05),rgba(185,143,59,.04));border:1.5px solid rgba(11,38,64,.14);border-radius:14px;padding:16px 18px;margin-bottom:16px}
-    .result-profile-title{font-size:11px;font-weight:700;color:#b98f3b;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
-    .result-profile-rows{display:flex;flex-direction:column;gap:8px}
-    .result-profile-row{display:flex;align-items:flex-start;gap:10px;font-size:14px}
-    .result-profile-row .rp-key{flex-shrink:0;width:110px;color:#6b7280;font-size:12px;padding-top:1px}
-    .result-profile-row .rp-val{font-weight:600;color:#0b2640;line-height:1.4}
-
-    /* ── Section ── */
-    .result-section{background:#fff;border-radius:14px;padding:20px;margin-bottom:16px;border:1px solid #e5e7eb;box-shadow:0 2px 8px rgba(2,6,23,.04)}
-    .result-section-label{font-size:11px;font-weight:700;color:#6b7280;letter-spacing:.08em;text-transform:uppercase;margin:0 0 12px}
-
-    /* ── Gap analysis ── */
-    .gap-list{display:flex;flex-direction:column;gap:10px}
-    .gap-item{display:flex;align-items:center;gap:12px}
-    .gap-icon{font-size:20px;width:28px;text-align:center;flex-shrink:0}
-    .gap-label{flex:1;font-size:14px;font-weight:600;color:#0b2640}
-    .gap-priority{font-size:11px;color:#b98f3b;font-weight:700}
-    .gap-status{font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px}
-    .gap-status.is-gap{background:#fef2f2;color:#b91c1c}
-    .gap-status.is-ok{background:#f0fdf4;color:#059669}
-
-    /* ── Priority cards ── */
-    .priority-card{background:linear-gradient(135deg,rgba(11,38,64,.04),rgba(185,143,59,.04));border:2px solid #0b2640;border-radius:12px;padding:16px}
-    .priority-card+.priority-card{margin-top:10px;border-color:#e5e7eb;background:#fff}
-    .priority-rank{font-size:11px;font-weight:700;color:#b98f3b;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
-    .priority-title{font-size:17px;font-weight:800;color:#0b2640;margin-bottom:4px}
-    .priority-reason{font-size:13px;color:#6b7280;line-height:1.5}
-
-    /* ── Quick win ── */
-    .quick-win-card{background:linear-gradient(135deg,#fefce8,#fffbeb);border:2px solid #b98f3b;border-radius:12px;padding:16px;margin-bottom:16px}
-    .quick-win-label{font-size:11px;font-weight:700;color:#b98f3b;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
-    .quick-win-title{font-size:15px;font-weight:700;color:#92400e}
-    .quick-win-text{font-size:13px;color:#78350f;margin-top:4px;line-height:1.55}
-
-    /* ── First step ── */
-    .first-step-card{background:linear-gradient(135deg,#0b2640,#0e3760);border-radius:14px;padding:20px;margin-bottom:16px}
-    .first-step-label{font-size:11px;font-weight:700;color:#b98f3b;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
-    .first-step-text{font-size:15px;font-weight:700;color:#fff;line-height:1.6}
-
-    /* ── HOW CTA ── */
-    .how-cta-card{background:linear-gradient(135deg,#f0fdf4,#f7fee7);border:2px solid #16a34a;border-radius:12px;padding:16px;margin-bottom:10px}
-    .how-cta-label{font-size:11px;font-weight:700;color:#15803d;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
-    .how-cta-title{font-size:15px;font-weight:800;color:#14532d;margin-bottom:4px}
-    .how-cta-note{font-size:13px;color:#166534;line-height:1.55;margin-bottom:12px}
-    .how-cta-link{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:linear-gradient(90deg,#15803d,#16a34a);color:#fff!important;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;transition:transform .15s,box-shadow .15s}
-    .how-cta-link:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(21,128,61,.3)}
-
-    /* ── Next step links ── */
-    .next-step-link{display:flex;align-items:center;gap:12px;padding:14px 16px;background:linear-gradient(90deg,#0b2640,#0e3760);color:#fff!important;border-radius:12px;text-decoration:none;font-weight:700;font-size:15px;margin-bottom:8px;transition:transform .18s,box-shadow .18s}
-    .next-step-link:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(11,38,64,.2)}
-    .next-step-link .step-icon{font-size:20px}
-    .next-step-link .step-text{flex:1}
-    .next-step-link .step-arrow{font-size:16px;opacity:.7}
-
-    /* ── Block ── */
-    .block{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin-bottom:12px}
-    .block-title{font-weight:700;margin-bottom:8px}
-
-    /* ── Chips ── */
-    .highlights{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px}
-    .chip{background:#fff;border:1px solid #e5e7eb;border-radius:999px;padding:4px 10px;font-size:12px}
-
-    /* ── Slider ── */
-    .result-slider{position:relative;margin-top:8px;margin-bottom:16px}
-    .slider-controls{position:absolute;right:8px;top:-32px;display:flex;gap:8px}
-    .slider-track{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;-webkit-overflow-scrolling:touch}
-    .slider-track::-webkit-scrollbar{height:8px}
-    .slider-track::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:8px}
-    .slide-card{flex:0 0 auto;width:200px;scroll-snap-align:start;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 4px 12px rgba(2,6,23,.06);text-decoration:none;color:#111827}
-    .slide-card:hover{transform:translateY(-2px);transition:all .2s ease}
-    .slide-emoji{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:999px;background:linear-gradient(135deg,#fff 0%,#fef3c7 100%);box-shadow:0 6px 18px rgba(2,6,23,.08);font-size:20px;margin:10px}
-    .slide-label{padding:10px;font-weight:600}
-
-    /* ── Buttons ── */
-    .btn{display:inline-block;padding:10px 16px;border-radius:8px;background:#111;color:#fff!important;text-decoration:none;font-weight:700;font-size:14px;cursor:pointer;border:none}
-    .btn-ghost{background:transparent!important;border:1px solid rgba(0,0,0,.1);color:#111!important}
-    .result-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-    .retry-btn{width:100%;padding:14px;background:none;border:2px solid #e5e7eb;border-radius:12px;color:#6b7280;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px}
-    .retry-btn:hover{border-color:#0b2640;color:#0b2640}
-
-    /* ── Waitlist ── */
-    .waitlist-section{text-align:center;padding:24px 20px;background:linear-gradient(135deg,#f8fbff,#fff);border:1px solid rgba(11,38,64,.1);border-radius:14px;margin-bottom:16px}
-    .waitlist-section h3{font-size:16px;font-weight:700;color:#0b2640;margin:0 0 8px}
-    .waitlist-section p{font-size:13px;color:#6b7280;margin:0 0 16px}
-    .waitlist-section .wl-btn{display:inline-block;padding:12px 28px;background:linear-gradient(90deg,#0b2640,#0e3760);color:#fff!important;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px}
-
-    /* ── Toast ── */
-    .toast{position:fixed;right:20px;bottom:20px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;z-index:9999}
-    .toast.show{opacity:1;transform:translateY(0)}
-
-    @keyframes floatUp{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
-    @media(max-width:520px){.result-profile-row .rp-key{width:90px}}
+  /* 強制コントラスト（このページ内限定） */
+  .result-article .btn{ background:#111 !important; color:#fff !important; border:none !important; box-shadow:0 8px 18px rgba(2,6,23,0.18) }
+  .result-article .btn-ghost{ background:transparent !important; color:#fff !important; border:1px solid #fff !important }
+  /* Anchor state overrides to defeat global link color rules */
+  .result-article a.btn:link,
+  .result-article a.btn:visited,
+  .result-article a.btn:hover,
+  .result-article a.btn:active,
+  .result-article a.btn:focus{ color:#fff !important }
+  .result-article a.btn-ghost:link,
+  .result-article a.btn-ghost:visited,
+  .result-article a.btn-ghost:hover,
+  .result-article a.btn-ghost:active,
+  .result-article a.btn-ghost:focus{ color:#fff !important; border-color:#fff !important }
+  .diag-card .btn{ background:#111 !important; color:#fff !important; border:none !important }
   </style>
 </head>
 <body>
   <header id="site-header"></header>
+
   <main>
-    <div class="result-wrap">
-      <div id="result-root">
-        <div id="loading">結果を読み込み中…</div>
+    <div class="diag-container">
+      <div class="diag-card">
+        <h1>診断結果</h1>
+        <div id="result-root">
+          <div id="loading">結果を読み込み中…</div>
+        </div>
+  <p style="margin-top:12px;"><button id="retryBtn" class="btn">診断をやり直す</button></p>
       </div>
     </div>
   </main>
   <footer id="site-footer"></footer>
   <script src="../scripts/main.js" type="module"></script>
   <script>
-  (function(){
-    const STORAGE_KEY    = 'fineme:diagnosis:latest'; // v3（3問フロー + step2）
-    const STORAGE_V2_KEY = 'fineme:diagnosis:v2';     // v2（10問フロー）
-    const INTENT_TYPES_URL = '../data/intent-types.json';
-    const root = document.getElementById('result-root');
-
-    /* ===== TYPE6_COPY ===== */
-    const TYPE6_COPY = {
-      t01:{name:'納得してから動く人',state:'「変わりたい」という気持ちは本物です。ただ、理由なく動くのが性に合わないだけ。それは弱さではなく、自分の選択に責任を持てる人間である証拠です。根拠が揃った瞬間に、あなたは誰より深く変わっていける。',strength:'表面的な変化では満足しない。理由と根拠を持って変わるから、ブレない。',fit:['なぜそうなるかを説明してくれる関わり方','試してから調整できる進め方','押し売りせず、質問に丁寧に答えてくれる人'],empathy:'根拠が揃ったとき、あなたは誰より確実に動ける人です。',logic:'説明が丁寧で、プロセスを言語化できる店舗と相性が良いと判断しています。'},
-      t02:{name:'伴走してもらいながら変わる人',state:'一人で全部決めなくていい。相談しながら、確認しながら進んでいける環境があれば、あなたは必ず変われます。「わからない」が弱さではなく、素直に聞ける力があることが最大の武器です。',strength:'人の話を素直に聞ける。相談しながら決められる。それが継続力の源になる。',fit:['一緒に考えてくれる関わり方','手順を一つずつ示してくれる進め方','こまめな確認と安心を提供してくれる人'],empathy:'寄り添いと安心感がある環境で、あなたは最大限に変われる人です。',logic:'無理をさせない進め方で、相談しながら決められる店舗を優先して表示しています。'},
-      t03:{name:'結果が見えたら動ける人',state:'遠回りや待ちが苦手なのではなく、ゴールが明確でないと信じられないだけ。見通しが立った瞬間に、誰より速く、誰より深く動けます。今必要なのは、最初の「これだ」という確信です。',strength:'要点を掴むのが速い。動き出したら止まらない。結果にコミットできる。',fit:['実績と結果が明確な提案','短い試行と改善のサイクル','ゴールと計画がはっきりした関わり方'],empathy:'ゴールが見えた瞬間に、あなたは誰より速く変われる人です。',logic:'実績と結果を明示できる店舗を上位に表示します。'},
-      t04:{name:'変化を楽しめる人',state:'新しい自分を試せることを、どこかワクワクできる。それはすごく稀な感覚です。多くの人は変化を怖れる中で、あなたはその感覚を武器に変えられる。背中を押してくれる人と出会えば、一気に変われる。',strength:'変化に抵抗がない。新しい自分を試せるしなやかさがある。',fit:['提案力があり、背中を押してくれる関わり方','安全網を用意した、無理のない挑戦','変化の実感を一緒に確認してくれる人'],empathy:'変われると信じた瞬間に、誰より大きく変われる人です。',logic:'変化の提案力があり、背中を押してくれる店舗を優先します。'},
-      t05:{name:'感覚が合えば進める人',state:'理論より雰囲気。スペックより世界観。あなたが「これだ」と感じた瞬間に、誰より深く変わっていく人です。その感覚は正しい。Finemeはあなたの「これだ」を見つけるための場所です。',strength:'自分の感覚を信じられる。一度「これだ」と思ったものへの継続力が高い。',fit:['世界観とスタイルが明確な相手','事例や写真でイメージできる提案','まずは小さく試せる一歩'],empathy:'「これだ」と感じた瞬間に、誰より本気で変われる人です。',logic:'スタイルや思想が明確で、感覚が合う店舗を優先します。'},
-      t06:{name:'一緒に作り上げる人',state:'自分だけで決めるのでも、全部任せるのでもなく、対話しながら最善を選びたい。その姿勢は、変化の質を高めます。押し付けではなく、あなたと一緒に考えてくれる人と出会えば、変容は加速します。',strength:'対話を通じて意思決定できる。自分の意見を持ちながら、柔軟に修正できる。',fit:['選択肢を提示し、共同で決める進め方','振り返りと調整を前提にした設計','話しながら方向性をすり合わせられる人'],empathy:'一緒に考えながら進んでいける環境で、あなたは最高のパフォーマンスを発揮します。',logic:'提案と対話のバランスが良く、共同で決めていける店舗を上位に表示します。'}
-    };
-
-    /* ===== 物語生成マップ ===== */
-    const WHY_STORY={r01:'デートや出会いで、もっと堂々とした自分でいたいと思っているあなたは',r02:'「また同じ結果」を終わらせたいと思い続けてきたあなたは',r03:'誰かより先に、まず自分のことを少し好きになりたいと思っているあなたは',r04:'変わりたい気持ちはある。でも最初の一手がずっと見えなかったあなたは',r05:'何かが変わるタイミングが来ていると感じているあなたは'};
-    const TYPE_STORY={w01:'「静かに選ばれる人」になる道を、自分で選んだ',w02:'「力を抜いて好かれる人」になる道を、自分で選んだ',w03:'「余裕が滲み出る人」になる道を、自分で選んだ',w04:'「頼もしさを持つ人」になる道を、自分で選んだ',w05:'「近距離で輝く人」になる道を、自分で選んだ',w06:'「習慣が自信をつくる人」になる道を、自分で選んだ',w07:'「別人になる覚悟がある人」の道を、自分で選んだ',w08:'「節目で脱皮する人」の道を、自分で選んだ'};
-    const HOW_STORY={s01:'Finemeは、あなたが納得できる理由を確かめながら進んでいけるよう、最初の地図を渡します。',s02:'Finemeは、あなたがプロに委ねる覚悟を持って最短距離で変われるよう、最初の地図を渡します。',s03:'Finemeは、あなたが誰かと一緒に考えながら自分だけの答えを作れるよう、最初の地図を渡します。'};
-
-    /* ===== 10問フロー用データ ===== */
-    const WHY_LABELS={match:'マッチングアプリで、相手に選ばれていない',partner:'好きな人の前で、自信が持てなかった',confidence:'鏡を見るたびに、なんか違う気がする',general:'このままでいていいのか、ふと思った'};
-    const DIR_META={A:{label:'清潔感タイプ',emoji:'✨'},B:{label:'知的・洗練タイプ',emoji:'📚'},C:{label:'アクティブ・健康タイプ',emoji:'💪'},D:{label:'おしゃれ・スタイルタイプ',emoji:'🎨'}};
-    const HOW_META={sprint:{label:'短期集中型 🚀',cta:'3ヶ月以内に変わるサービスを探す',note:'優先度の高い施策に絞って集中することが、最短で変わるための鍵です。まず最高優先度の1つから、プロと一緒に計画を立てましょう。'},steady:{label:'コツコツ継続型 🌱',cta:'まず1回だけ試せるサービスを探す',note:'無理なく続けるためには「小さく始める」ことが鍵。体験・初回コースから入れるサービスを優先してご案内します。'},guided:{label:'おまかせ型 🤝',cta:'プロに相談・一任できるサービスを探す',note:'プロに導いてもらうことで、迷わず最短ルートを歩めます。カウンセリング込みのサービスや、担当者が継続フォローするサービスを優先します。'},learn:{label:'学習型 📖',cta:'セルフケアも学べるサービスを探す',note:'知識を身につけながら変わることで、サロンに頼り切りにならない「自走力」が生まれます。施術後のホームケア指導があるサービスを優先します。'}};
-    const HEADING={match:{A:'マッチングアプリで「会いたい」と<br>思われる清潔感を、今すぐ作る',B:'知的な第一印象が、<br>マッチング精度を一段上げる',C:'プロフィール写真で差がつく<br>体型・活力を今日から作り始める',D:'センスある外見が、<br>マッチングアプリでの印象を決定的に変える'},partner:{A:'気になるあの人に「清潔感がある」と<br>思われる外見を手に入れる',B:'知的で落ち着いた大人の印象が、<br>あの人の記憶に刻まれる',C:'健康的な活力が、<br>特定の相手に自然な魅力として伝わる',D:'自分らしいスタイルが、<br>あの人の印象に残る男性を作る'},confidence:{A:'周りに引けを取らない<br>清潔感のある外見を、確実に作る',B:'洗練された印象が、<br>自分を好きになれる外見をつくる',C:'体から変わると、<br>自信は内側から生まれてくる',D:'ファッションで自分を表現できると、<br>毎日の自己肯定感が変わる'},general:{A:'まずは清潔感から。<br>確実に変われる最初の一歩を踏み出す',B:'洗練された印象に向けて、<br>自分らしい変容のルートを歩む',C:'アクティブな体を作ることから始める、<br>変容の旅',D:'ファッション・スタイルを変えることから始める、<br>おしゃれな自分への変容'}};
-    const SUBTEXT={match:{A:'マッチングアプリで結果を変えるのは、写真の印象・初対面の清潔感です。眉毛・肌・ヘアの基本が整うだけで、マッチ率が別次元になります。',B:'写真で伝わる知的さ・大人の落ち着きは、マッチング後の関係の質にも影響します。洗練された印象が、あなたを「選ぶ側」に変えます。',C:'体型・活力・フィジカルは、プロフィール写真の「雰囲気」に直結します。一段上の体型は、マッチ率だけでなく自信そのものを変えます。',D:'ファッションのセンスは、他の候補との差別化になります。スタイルで「この人に会いたい」と思わせましょう。'},partner:{A:'特定の相手への第一印象を変えるには、清潔感の基本が最短ルートです。眉・肌・髪が整うだけで、相手の見る目が変わります。',B:'知的で落ち着いた大人の印象は、特定の相手に「一緒にいたい人」と感じさせます。',C:'健康的でアクティブな印象は、自然な魅力として伝わります。体から変わる変化は、振る舞いにも表れます。',D:'センスあるスタイルは「こだわりのある人」という印象を作ります。記憶に残る男性になれます。'},confidence:{A:'外見の自信は「清潔感の積み重ね」から生まれます。周りに引けを取らない基本から、一つずつ整えていきましょう。',B:'洗練された印象は、自己肯定感と直結します。「自分はこういう人間だ」という軸が外見から生まれます。',C:'体型を変えることで、立ち振る舞い・姿勢・自信が根本から変わります。フィジカルは最強の自信の土台です。',D:'好きな服を着られること・好きなスタイルを持てることが、自分を好きになる第一歩です。'},general:{A:'外見を変えるなら、清潔感が最初の一歩。コスパが高く、誰でも確実に変われる王道ルートです。',B:'洗練された外見を目指すことは、生き方全体を整えることにつながります。',C:'アクティブな体を作ることは、外見だけでなく内側からの変化をもたらします。',D:'ファッションを変えることは、自己表現の手段を持つことです。'}};
-    const GUIDE={match:{A:'マッチングアプリの写真・初対面で「清潔感のある男性だ」と思われるには、眉毛・肌・ヘアの3点が特に重要です。この3点が整うと、写真の印象が劇的に変わり、マッチ後のリアルでも「あ、写真と同じだ」という安心感を相手に与えられます。プロフィール写真の撮影前にサロンを使うのが最も費用対効果の高い戦略です。',B:'マッチングアプリでは「大人の余裕・知性」が他の候補と差をつけます。服の質感・シルエット・肌のコンディションが整うと、「この人は生活水準が高そう」「話が合いそう」という印象を写真から伝えられます。ファッションと肌を同時に整えることが最短ルートです。',C:'プロフィール写真で「健康的でエネルギーある男性」に見えることは、マッチングで強力な差別化になります。体型・姿勢・活力が伝わる写真は、他の候補と比べて圧倒的な存在感を持ちます。パーソナルジムで計画的に変えながら、写真映えを意識した撮影に臨みましょう。',D:'マッチングアプリで「センスある男性だ」という印象は、他の候補との決定的な差別化になります。服装・ヘアスタイル・写真の雰囲気で「この人と会ってみたい」と思わせる。スタイリストと一度出会えば、方向性が決まります。'},partner:{A:'特定の相手に好印象を与えるには、「清潔感という安心感」が最も確実な武器です。眉毛・肌・髪を整えることで、「自己管理ができている人」という印象が自然に伝わります。特別な日の前にサロンを使うと、効果が最大化します。',B:'気になる相手への知的な印象は、服装の質感と肌の清潔感で作られます。「この人は大人だな」「落ち着いていて信頼できそう」という印象を外見で体現することが、関係を深める土台になります。',C:'特定の相手に「健康的・活力ある男性」として記憶されることは、強い印象づけになります。体型・姿勢・立ち振る舞いの変化は、相手との距離を自然に縮める雰囲気を生みます。',D:'記憶に残る外見は、センスと自分らしさから生まれます。ファッション・ヘアスタイルに個性が出ると「あの人のスタイルが好きだ」という感情的な印象を残せます。'},confidence:{A:'自己肯定感を上げるための外見改善は、「清潔感の基本を揃えること」から始まるのが最も確実です。眉毛・肌・髪を整えた瞬間、鏡に映る自分が変わります。その変化が自信の芽になります。',B:'自信は「自分はこうありたい」という像を外見で体現できたときに生まれます。洗練された印象を目指すことは、自分の内側にある基準を外に表現する作業です。',C:'体型への自信は、すべての自信の土台になります。体が変わると、着られる服が増え、姿勢が変わり、声の出し方まで変わります。パーソナルジムで計画的に変えることで、3ヶ月後の自分が確実に変わっています。',D:'「好きな服が着られる・好きなスタイルを持てる」ことが、自己表現の自信につながります。ファッションは内側の自分を外に出す手段です。スタイリストと一度出会い、「自分らしさ」の方向性を見つけましょう。'},general:{A:'外見を変えるなら、清潔感から始めるのが最もコスパが高く、確実に変われます。眉毛・肌・ヘアの基本を整えるだけで、第一印象が劇的に変わります。まず1つのサロンに行くことで、変化を実感してください。',B:'洗練された印象を目指すことは、生き方全体を整えることにつながります。ファッションを変え、肌を整え、眉を揃えることで「こういう人間でいたい」という自己像が外見に宿り始めます。',C:'体から変えることは、外見と内側の両方を変える最もパワフルな選択です。パーソナルジムで体を変えることは、単なる外見改善ではなく、生活全体を変えるきっかけになります。',D:'ファッションを変えることは、自己表現の手段を持つことです。スタイリストに一度相談するだけで、今まで気づかなかった自分の「似合う」方向性が見えてきます。'}};
-    const HOW_GUIDE_SUFFIX={sprint:{match:'マッチングアプリの結果を今すぐ変えたいなら、今月中に最優先の1点に集中投資するのが最短ルートです。迷っている時間がいちばんの損失です。',partner:'次に「会う機会」までが勝負です。今すぐ最優先を1点だけ着手してください。その変化が相手への自信になります。',confidence:'変化を実感するには「1点に集中する」ことが鍵です。半月後に鏡の自分が変わっている体験が、次の自信を生みます。',general:'変わりたい気持ちは今がいちばん強い。最優先の1点を今月中に着手することで、その勢いを実際の変化に変えましょう。'},steady:{match:'月に1つずつ着実に整えていけば、3ヶ月後には見違えるプロフィールになります。焦らず順番に取り組みましょう。',partner:'急がなくていい。1ヶ月1ステップのペースで整えていけば、次の出会いまでに確実に変わっています。',confidence:'自信は積み重ねから生まれます。1つずつ着実に変えていく過程そのものが、あなたの自信の土台になります。',general:'変容は短距離走ではなくマラソンです。1ヶ月1つのペースで続けることで、半年後に確実に変わっています。'},guided:{match:'プロに一任することで「何から始めるか」の迷いが消えます。まず1つのサロンを予約するだけで、あとはプロが導いてくれます。',partner:'プロのアドバイスを受けることで、自分では気づかない「刺さる印象」の作り方がわかります。まず1回相談してみましょう。',confidence:'プロに任せることで、失敗なく変化を実感できます。「自分だけでやろう」とせず、まず1人のプロと出会うことから始めましょう。',general:'プロに相談することは、最短で変わるための最善策です。自己流で迷い続けるより、1回のカウンセリングの方がずっと価値があります。'},learn:{match:'「なぜこれで印象が変わるか」を理解することが武器になります。知識を持つと、今後も自力で管理・改善できます。',partner:'知識を持って変わることで、表面的な変化ではなく「本質的な魅力」として定着します。学びながら変えていきましょう。',confidence:'「なぜこれが効くのか」を知って取り組むと、変化が定着しやすくなります。知識が自信の根拠になります。',general:'外見改善の知識を持つことは、一生使える資産になります。学びながら変えることで、長期的な自走力が生まれます。'}};
-    const PRIORITY={A:{eyebrow:5,skin:4,hair:3,fashion:3,body:2},B:{fashion:5,skin:4,eyebrow:3,hair:3,body:2},C:{body:5,eyebrow:3,hair:3,fashion:3,skin:2},D:{fashion:5,hair:4,eyebrow:3,skin:3,body:2}};
-    const BUDGET_MOD={low:{eyebrow:+2,skin:+1,hair:+1,fashion:-1,body:-2},mid:{eyebrow:+1,skin:+1,hair:+1,fashion:0,body:-1},high:{},premium:{body:+2,fashion:+2}};
-    const CAT_META={eyebrow:{label:'眉毛サロン',icon:'✂️',url:'../pages/search.html?category=eyebrow'},body:{label:'パーソナルジム',icon:'🏋️',url:'../pages/search.html?category=gym'},skin:{label:'スキンケア・美容',icon:'💆',url:'../pages/search.html?category=skin'},fashion:{label:'スタイリング・ファッション',icon:'👔',url:'../pages/search.html?category=fashion'},hair:{label:'ヘアサロン',icon:'💈',url:'../pages/search.html?category=hair'}};
-    const PRIORITY_REASONS={eyebrow:{match:'マッチングアプリの写真では眉毛が印象の大半を決めます。1回のサロンで、プロフィール写真が別人のように変わります。',partner:'気になる相手との初対面で、整った眉毛は「自己管理ができている男性だ」という信頼感を生みます。',confidence:'眉毛を整えるだけで鏡の自分が変わります。外見の自信をつける最短・最安のコースです。',general:'眉毛整えはコスパ最強の外見改善。1回のサロンで確実に変化を実感できる入口です。'},body:{match:'プロフィール写真・リアルでの雰囲気は体型に大きく左右されます。パーソナルジムで計画的に変え、マッチング後の自信も作りましょう。',partner:'健康的な体型は自然な魅力を生みます。気になる相手との距離を縮める「雰囲気」が体型の変化と共に変わります。',confidence:'体型を変えることは、外見の自信を根底から変えます。着られる服が増え、姿勢が変わり、すべてが変わります。',general:'ジムは外見変容の最大投資。時間はかかりますが、全方向の印象が変わる根本的な変化です。'},skin:{match:'マッチングアプリの写真で肌の状態は正直に出ます。テカリ・荒れをケアするだけで、写真の印象が大幅に改善します。',partner:'清潔感のある肌は、相手への「自己管理ができている」という好印象につながります。スキンケアの基本から始めましょう。',confidence:'肌が整うと毎朝の鏡の印象が変わります。小さな積み重ねが、自己肯定感の大きな変化につながります。',general:'スキンケアは外見改善の基礎。肌が整うと全体的な印象が一段上がります。'},fashion:{match:'マッチングアプリで服装は「センス・生活水準・自己管理」として読まれます。スタイリストと一度出会えば方向性が決まります。',partner:'あの人との特別な場面で「この人おしゃれだな」と思われる服装が、印象を固定します。スタイリストに相談しましょう。',confidence:'好きな服を着られることが、自己表現の自信になります。スタイリストと「自分に似合う方向性」を見つけましょう。',general:'ファッションは最も即効性の高い外見改善の一つ。スタイリストと1回出会えば方向性が決まります。'},hair:{match:'マッチングアプリの写真で髪型は「清潔感・センス」の最重要パーツです。定期的なカットで、印象を安定させましょう。',partner:'気になる相手との場面で、似合う髪型は印象を決定的に高めます。美容師との出会いを大切にしてください。',confidence:'似合う髪型を見つけると、毎日の自己肯定感が変わります。「この髪型の自分が好き」という感覚が自信の土台になります。',general:'定期的な髪型のカットは清潔感の基本。まずここから始めるのが最もシンプルな第一歩です。'}};
-    const FIRST_STEP={eyebrow:{sprint:'今週中に眉毛サロンを予約する。1回3,000〜5,000円で、写真の印象が別人のように変わります。',steady:'今月中に眉毛サロンに1回だけ行く。まず体験コースから試してみましょう。',guided:'近くの眉毛サロンに「お任せで整えてほしい」と伝えて予約を入れる。プロが顔型に合った眉を設計してくれます。',learn:'眉毛サロンで施術を受けながら、「なぜこの形なのか」を美容師に聞いてみる。次回からは自分でも維持できます。'},body:{sprint:'今週中にパーソナルジムの無料体験を1件予約する。話を聞くだけでいい。その1歩が全てを変えます。',steady:'今月中にパーソナルジムの体験を受ける。目標とペースを確認してから、継続プランを選ぶ。',guided:'パーソナルジムにカウンセリング予約を入れる。目標・予算・スケジュールをプロと一緒に決める。',learn:'パーソナルジムの体験を受け、食事管理・運動のメカニズムを理解する。知識が継続の力になります。'},skin:{sprint:'今週中にメンズスキンケアサロンか美容皮膚科に相談予約を入れる。プロの目で今の肌状態を把握する。',steady:'今月中に基本の洗顔・保湿ルーティンを確立し、1回サロンで状態チェックを受ける。',guided:'スキンケアサロンに「自分の肌に合ったケアをお任せしたい」と伝えてカウンセリングを受ける。',learn:'メンズスキンケアが学べるサロンで、自分の肌タイプと正しいケア方法を理解する。'},fashion:{sprint:'今週中にパーソナルスタイリストに相談する。1回のセッションで「自分の方向性」が決まります。',steady:'今月中にスタイリストに相談し、「自分に似合う色・シルエット」を把握することから始める。',guided:'スタイリストにトータルコーディネートを依頼する。一任することで最短でセンスが身につく。',learn:'スタイリストに「なぜこれが似合うか」の理由を教えてもらいながら、自分の「似合う軸」を学ぶ。'},hair:{sprint:'今週中に「印象を変えたい、お任せで」と伝えてヘアサロンを予約する。',steady:'今月中に美容師に「自分の雰囲気に合う髪型を相談したい」と伝えて予約を入れる。',guided:'「顔型・雰囲気に合わせて完全にお任せ」と伝えてヘアサロンに予約を入れる。',learn:'ヘアサロンで「なぜこのスタイルが似合うか」を美容師に解説してもらいながら施術を受ける。'}};
-    const QW_DATA={body:{title:'✂️ 眉毛を並行して先に整えよう',text:{match:'ジムの成果が出るまで数ヶ月かかります。眉毛サロンなら1回で写真の印象が別人のように変わります。マッチングの結果を今すぐ変えるなら、眉毛を先に。',confidence:'ジムを続けながら、眉毛を整えることで今すぐ変化を実感できます。「変わっている」という実感が継続の力になります。',_:'ジムの成果が出るまで数ヶ月かかります。眉毛サロンなら1回で劇的に変わります。並行して始めることで、今すぐ変化を実感できます。'},cond:(gs)=>gs.some(g=>g.cat==='eyebrow')},fashion:{title:'🪞 まず鏡の前で「今の自分」を記録しよう',text:{_:'スタイリスト相談の前に、今の全身写真を1枚撮っておく。「変わる前」の記録が、変化の実感と継続の力になります。'},cond:()=>true},skin:{title:'✂️ 眉毛も同時に整えると相乗効果が高い',text:{_:'肌ケアと眉毛整えは「清潔感」を構成する2大要素です。並行して着手することで、印象改善の速度が2倍になります。'},cond:(gs)=>gs.some(g=>g.cat==='eyebrow')},hair:{title:'✂️ 眉毛と髪を同日に整えると最大効率',text:{_:'眉毛サロンとヘアサロンを同じ日に予約すると、1日で清潔感の印象が劇的に変わります。予約をまとめることで時間の節約にもなります。'},cond:(gs)=>gs.some(g=>g.cat==='eyebrow')},eyebrow:{title:'📅 定期的なメンテナンスが「清潔感の維持」につながる',text:{_:'眉毛は整えたあとの「維持」が大切です。最初のサロンで「次回はいつ来ればいいか」を必ず聞いておきましょう。'},cond:()=>true}};
-
-    /* ===== データ読み込み ===== */
-    let v3=null, v2=null;
-    try{ v3=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null'); }catch{}
-    try{ v2=JSON.parse(localStorage.getItem(STORAGE_V2_KEY)||'null'); }catch{}
-
-    function renderNotFound(){
-      root.innerHTML='';
-      const wrap=document.createElement('div');
-      const msg=document.createElement('p'); msg.textContent='診断結果が見つかりません。最初からやり直してください。';
-      const a=document.createElement('a'); a.href='./index.html'; a.className='btn'; a.textContent='診断をやり直す';
-      wrap.appendChild(msg); wrap.appendChild(a);
-      root.appendChild(wrap);
-    }
-
-    if(!v3 && !v2){ renderNotFound(); return; }
-
-    /* ===== データ導出 ===== */
-    const step2cls = v3?.step2?.classification || {};
-    const axes     = v3?.step2?.scores?.axes || {};
-    const typeId   = step2cls.type_id || 't01';
-    const copy     = TYPE6_COPY[typeId] || TYPE6_COPY.t01;
-    const whyId    = v3?.why?.reason_id || '';
-    const intentId = v3?.intent?.type_id || '';
-    const howStyleId = v3?.how?.style_id || '';
-
-    const dir    = v2?.direction || null;
-    const v2why  = v2?.why || 'general';
-    const v2how  = v2?.how || 'guided';
-    const rawGaps = v2?.gaps || null;
-
-    // ギャップ優先順位を計算（v2）
-    let gapsAll=null, gapsSorted=null;
-    if(rawGaps && dir){
-      const cats=['eyebrow','body','skin','fashion','hair'];
-      const base=PRIORITY[dir]||{};
-      const mod=BUDGET_MOD[v2?.budget||'mid']||{};
-      gapsAll=cats.map(cat=>({ cat, ok:rawGaps[cat]===true, gap:rawGaps[cat]===false, score:(base[cat]||0)+(mod[cat]||0) }));
-      gapsSorted=gapsAll.filter(g=>g.gap).sort((a,b)=>b.score-a.score);
-    }
-
-    /* ===== fetch + render ===== */
-    fetch(INTENT_TYPES_URL).then(r=>r.json()).then(typesData=>{
-      renderAll(typesData[intentId]||{});
-    }).catch(()=>renderAll({}));
-
-    function renderAll(entry){
-      root.innerHTML='';
-      const BASE=location.hostname&&/github\.io$/i.test(location.hostname)?'/fineme':'';
-
-      /* ①ヒーロー */
-      const hero=document.createElement('div'); hero.className='result-hero';
-      if(v2&&dir){
-        const meta=DIR_META[dir];
-        const badge=document.createElement('div'); badge.className='result-type-badge';
-        const lt=document.createElement('span'); lt.className='type-letter'; lt.textContent=dir; badge.appendChild(lt);
-        const lb=document.createElement('span'); lb.textContent=meta.label; badge.appendChild(lb);
-        hero.appendChild(badge);
-        const h1=document.createElement('h1'); h1.innerHTML=(HEADING[v2why]?.[dir]||HEADING.general[dir]); hero.appendChild(h1);
-        const sub=document.createElement('p'); sub.className='hero-sub'; sub.textContent=SUBTEXT[v2why]?.[dir]||SUBTEXT.general[dir]; hero.appendChild(sub);
-      } else {
-        const badge=document.createElement('div'); badge.className='result-type-badge';
-        const em=document.createElement('span'); em.textContent='🧭'; badge.appendChild(em);
-        const lb=document.createElement('span'); lb.textContent=entry.name||copy.name||'あなたの変容タイプ'; badge.appendChild(lb);
-        hero.appendChild(badge);
-        const h1=document.createElement('h1'); h1.textContent='あなたの「Find New Me」が見つかりました'; hero.appendChild(h1);
-        const sub=document.createElement('p'); sub.className='hero-sub'; sub.textContent='これは評価ではなく、あなたの変容の地図の最初の一枚です。'; hero.appendChild(sub);
-      }
-      root.appendChild(hero);
-
-      /* ②物語カード（v3） */
-      try{
-        const ws=WHY_STORY[whyId], ts=TYPE_STORY[intentId], hs=HOW_STORY[howStyleId];
-        if(ws&&ts&&hs){
-          const card=document.createElement('div'); card.className='story-card';
-          const p=document.createElement('p'); p.textContent=`${ws}、${ts}。${hs}`; card.appendChild(p);
-          root.appendChild(card);
+    (function(){
+      const STORAGE_KEY = 'fineme:diagnosis:latest';
+      const INTENT_TYPES_URL = '../data/intent-types.json';
+      const root = document.getElementById('result-root');
+      const loading = document.getElementById('loading');
+      const retryBtn = document.getElementById('retryBtn');
+      // 新6タイプ（ストレート表記）
+      const TYPE6_COPY = {
+        t01: {
+          name:'慎重・納得重視タイプ',
+          state:'変わりたい気持ちはあるのに、失敗したくない思いが先に立ち、一歩目を慎重に選ぼうとしている状態です。',
+          strength:'表面的な変化では満足せず、理由と根拠を大切にできる人です。',
+          fit:[
+            '理由を言語化し、プロセスが見える小さな変化',
+            '押し売りせず、質問に丁寧に答えてくれる関わり方',
+            '試してから調整できる進め方'
+          ],
+          empathy:'「なんとなく」では動かず、理由と納得が揃ったときに満足できるタイプです。',
+          logic:'説明が丁寧で、考え方やプロセスを言語化できる店舗と相性が良いと判断しています。'
+        },
+        t02: {
+          name:'安心・寄り添い重視タイプ',
+          state:'興味はあるけれど「何が正解かわからない」不安が大きく、伴走や説明があると進みやすい状態です。',
+          strength:'人の話を素直に聞けて、相談しながら決められる人です。',
+          fit:[
+            '全部任せられる環境での小さな前進',
+            '手順を一つずつ示す進め方',
+            'こまめな確認と安心の提供'
+          ],
+          empathy:'強い売りより、寄り添いと安心感があると満足します。',
+          logic:'無理をさせない進め方で、相談しながら決められる店舗を優先して表示しています。'
+        },
+        t03: {
+          name:'効率・最短重視タイプ',
+          state:'今の自分に飽きや焦りがあり、結果が見えるなら一歩を早く踏み出したい状態です。',
+          strength:'行動力があり、要点を掴むのが得意です。',
+          fit:[
+            '実績と結果が明確な提案',
+            '短い試行と改善のサイクル',
+            'ゴールと計画がはっきりした関わり方'
+          ],
+          empathy:'遠回りが苦手で、結局どうなるかが明確だと安心できます。',
+          logic:'要点を押さえ、実績と結果を示せる店舗を上位に表示します。'
+        },
+        t04: {
+          name:'変化・アップデート重視タイプ',
+          state:'新しい自分にワクワクしており、挑戦を前向きに受け入れられる状態です。',
+          strength:'変化を楽しめる柔軟さがあります。',
+          fit:[
+            '提案力があり背中を押してくれる関わり方',
+            '安全網を用意した無理のない挑戦',
+            '変化の意図を共有しながら進める'
+          ],
+          empathy:'多少の挑戦でも、変われるなら一歩を選べるタイプです。',
+          logic:'変化の提案力があり、背中を押してくれる店舗を優先します。'
+        },
+        t05: {
+          name:'直感・フィーリング重視タイプ',
+          state:'雰囲気や世界観の合致が何より大事で、腑に落ちる相手となら踏み出せる状態です。',
+          strength:'自分の感覚を大切にし、それを継続力に変えられる人です。',
+          fit:[
+            '世界観とスタイルが明確な相手',
+            '事例でイメージできる提案',
+            'まずは小さく試せる一歩'
+          ],
+          empathy:'世界観や空気感に納得できると満足するタイプです。',
+          logic:'スタイルや思想が明確で、感覚が合う店舗を優先します。'
+        },
+        t06: {
+          name:'伴走・共同決定重視タイプ',
+          state:'一緒に考えながら納得して進みたい、主導権を共有したい状態です。',
+          strength:'対話を通じて意思決定できる人です。',
+          fit:[
+            '選択肢を提示し、共同で決める進め方',
+            '振り返りと調整を前提にした設計',
+            'メモや記録を共有しながら進める'
+          ],
+          empathy:'一緒に考え、納得しながら進めたいタイプです。',
+          logic:'提案と対話のバランスが良く、共同で決めていける店舗を上位に表示します。'
         }
-      }catch{}
+      };
 
-      /* ③プロフィールカード */
-      (function(){
-        const card=document.createElement('div'); card.className='result-profile-card';
-        const title=document.createElement('div'); title.className='result-profile-title'; title.textContent='📍 あなたの診断プロフィール'; card.appendChild(title);
-        const rows=document.createElement('div'); rows.className='result-profile-rows';
-        const addRow=(key,val)=>{ if(!val) return; const row=document.createElement('div'); row.className='result-profile-row'; const k=document.createElement('span'); k.className='rp-key'; k.textContent=key; const v=document.createElement('span'); v.className='rp-val'; v.textContent=val; row.appendChild(k); row.appendChild(v); rows.appendChild(row); };
-        const WHY_MAP_V3={r01:'自信を持ちたい',r02:'周りからの見られ方を変えたい',r03:'今の自分を少し好きになりたい',r04:'何をすれば良いか分からない',r05:'特別なきっかけがあった'};
-        if(v2) addRow('💘 きっかけ', WHY_LABELS[v2why]||'—');
-        else if(whyId) addRow('💘 動機', WHY_MAP_V3[whyId]||'—');
-        if(v2&&dir) addRow(`${DIR_META[dir].emoji} 目指す方向`, `${DIR_META[dir].label} (${dir})`);
-        else if(v3?.intent?.type_name) addRow('🎯 なりたい印象', v3.intent.type_name);
-        if(v2) addRow('🧭 変わり方', HOW_META[v2how]?.label||'—');
-        else if(v3?.how?.style_name) addRow('🧭 進め方', v3.how.style_name);
-        if(step2cls.type_name) addRow('📊 見立て', step2cls.type_name);
-        const AREA={'tokyo':'東京23区','tokyo-w':'東京（多摩）','yokohama':'神奈川（横浜・川崎）','saitama':'埼玉','chiba':'千葉','osaka':'大阪','aichi':'愛知（名古屋）','fukuoka':'福岡','other':'その他'};
-        if(v2?.area) addRow('📍 エリア', AREA[v2.area]||v2.area);
-        card.appendChild(rows);
-        root.appendChild(card);
-      })();
+  function renderNotFound(){
+    const wrap = document.createElement('div');
+    const msg = document.createElement('p'); msg.textContent = '診断結果が見つかりません。最初からやり直してください。';
+    const a = document.createElement('a'); a.href = './index.html'; a.className = 'btn'; a.textContent = '診断をやり直す';
+    wrap.appendChild(msg); wrap.appendChild(a);
+    root.innerHTML = ''; root.appendChild(wrap);
+  }
 
-      /* ④変容タイプ説明 */
-      const stateP=document.createElement('p'); stateP.style.cssText='margin:0 0 16px;font-size:15px;line-height:1.8;padding:16px;background:#f9fafb;border-radius:12px;border-left:3px solid #0b2640;'; stateP.textContent=copy.state||''; root.appendChild(stateP);
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw){ renderNotFound(); }
+      else{
+        try{
+          const obj = JSON.parse(raw);
+          const step2 = obj.step2 || {};
+          const cls = step2.classification || { type_id:'t01', type_name:'慎重・納得重視タイプ' };
+          const copy = TYPE6_COPY[cls.type_id] || TYPE6_COPY.t01;
+          // typesData（旧第2階層）は任意画像などに使う。なくても進行。
+          fetch(INTENT_TYPES_URL).then(r=>r.json()).then(typesData=>{
+            const entry = typesData[obj?.intent?.type_id || ''] || {};
+            // 新MVP構成で描画
+            root.innerHTML = '';
 
-      /* ⑤スタイルガイド（v2のみ） */
-      if(v2&&dir){
-        const sec=document.createElement('div'); sec.className='result-section';
-        const lbl=document.createElement('div'); lbl.className='result-section-label'; lbl.textContent='あなたへのアドバイス'; sec.appendChild(lbl);
-        const guideText=GUIDE[v2why]?.[dir]||GUIDE.general[dir]||'';
-        const howSuffix=HOW_GUIDE_SUFFIX[v2how]?.[v2why]||HOW_GUIDE_SUFFIX.guided?.general||'';
-        const p1=document.createElement('p'); p1.style.cssText='font-size:14px;color:#0f172a;line-height:1.75;margin:0 0 12px'; p1.textContent=guideText;
-        const p2=document.createElement('p'); p2.style.cssText='font-size:13px;color:#374151;line-height:1.7;margin:0;padding:12px;background:rgba(11,38,64,.04);border-radius:8px;border-left:3px solid #b98f3b'; p2.textContent=howSuffix;
-        sec.appendChild(p1); sec.appendChild(p2); root.appendChild(sec);
+            const article = document.createElement('article'); article.className = 'result-article'; article.style.marginTop = '12px'; article.style.lineHeight = '1.7';
+
+            // ① タイトル：今のあなたの状態（判定感を避ける）
+            const headerWrap = document.createElement('div'); headerWrap.className = 'result-header';
+            const badge = document.createElement('div'); badge.className = 'badge-emoji'; badge.textContent = '💫'; headerWrap.appendChild(badge);
+            const titleWrap = document.createElement('div');
+            const title = document.createElement('h2'); title.style.fontSize = '22px'; title.style.margin = '0';
+            title.textContent = '今のあなたの状態';
+            titleWrap.appendChild(title);
+            const label = document.createElement('div'); label.className='result-label';
+            label.textContent = '「現時点では」こう見えています。焦らなくて大丈夫。';
+            titleWrap.appendChild(label);
+            // 最新の見立て（STEP2）とSTEP1結果の併記
+            try{
+              const currentTypeName = String(cls?.type_name || '').trim();
+              const initialTypeName = String(obj?.intent?.type_name || (typesData[obj?.intent?.type_id||'']?.name) || '').trim();
+              if(currentTypeName || initialTypeName){
+                const line = document.createElement('div');
+                line.className = 'muted';
+                line.style.fontSize = '13px';
+                line.style.marginTop = '4px';
+                if(currentTypeName && initialTypeName && currentTypeName !== initialTypeName){
+                  line.textContent = `最新の見立て：${currentTypeName}（STEP1の結果：${initialTypeName}）`;
+                } else {
+                  const name = currentTypeName || initialTypeName;
+                  line.textContent = `見立て：${name}`;
+                }
+                titleWrap.appendChild(line);
+                  // 参考：ハイブリッドラベル（表示のみ）
+                  if(currentTypeName && initialTypeName && currentTypeName !== initialTypeName){
+                    const hybrid = document.createElement('div');
+                    hybrid.className = 'muted';
+                    hybrid.style.fontSize = '12px';
+                    hybrid.style.marginTop = '2px';
+                    hybrid.textContent = `ハイブリッドタイプ：${initialTypeName} × ${currentTypeName}`;
+                    titleWrap.appendChild(hybrid);
+                  }
+              }
+            }catch{}
+            headerWrap.appendChild(titleWrap); article.appendChild(headerWrap);
+
+            if(entry.image){ const heroWrap = document.createElement('div'); heroWrap.style.textAlign='center'; const hero = document.createElement('img'); hero.className = 'type-hero'; hero.src = entry.image; hero.alt = entry.name||''; hero.onerror = ()=>{ hero.style.display='none'; }; hero.style.animation='floatUp .6s ease both'; heroWrap.appendChild(hero); article.appendChild(heroWrap); }
+            // 共通の但し書き（一般指針であることを明示）
+            const disclaimerTop = document.createElement('p'); disclaimerTop.className='muted'; disclaimerTop.textContent = 'この提案は一般的な指針です。顔立ち・体型・目的によって最適は異なります。小さく試して、観察→調整していきましょう。';
+            article.appendChild(disclaimerTop);
+
+            
+
+            // ② 状態の言語化（コアコピー）
+            const stateP = document.createElement('p'); stateP.style.margin='8px 0 12px 0'; stateP.textContent = copy.state || copy.empathy || '';
+            article.appendChild(stateP);
+
+            // ②-1 信頼度メーター（タイプ距離の簡易可視化）
+            (function(){
+              try{
+                const stored = JSON.parse(localStorage.getItem('fineme:diagnosis:latest')||'{}');
+                const dist = Number(stored?.step2?.classification?.dist || 0);
+                let level = '中'; let desc = '回答の整合性は標準的です';
+                if(dist <= 2){ level = '高'; desc = '回答が一貫しており、見立ての確度は高めです'; }
+                else if(dist >= 4){ level = '低'; desc = '軸が拮抗しています。少し追質問するとさらに確度が上がります'; }
+                const block = document.createElement('div'); block.className='block';
+                const title = document.createElement('div'); title.className='block-title'; title.textContent='信頼度'; block.appendChild(title);
+                const p = document.createElement('p'); p.textContent = `信頼度：${level}（${desc}）`; block.appendChild(p);
+                // 低信頼度のときのみ、追質問への導線ボタンを表示
+                if(dist >= 4){
+                  const btn = document.createElement('a');
+                  btn.href = './step2.html?boost=1';
+                  btn.className = 'btn';
+                  btn.textContent = '精度を上げる（1〜2問）';
+                  try{ btn.style.setProperty('color','#fff','important'); }catch{}
+                  const note = document.createElement('p'); note.className='muted'; note.textContent='※ 追質問に答えることで、提案の精度が上がります。';
+                  block.appendChild(btn);
+                  block.appendChild(note);
+                }
+                article.appendChild(block);
+              }catch{}
+            })();
+
+            // ②-2 視点ブロック（考え方/選び方/進め方）
+            (function(){
+              const axes = (obj?.step2?.scores?.axes) || {};
+              const typeId = (obj?.step2?.classification?.type_id) || 't01';
+              function mindsetTips(){
+                const tips = [];
+                if(Number(axes.motivation)>0) tips.push('変わりたい理由が明確。目的と再現性を重視');
+                if(Number(axes.support)>0) tips.push('伴走や確認を重視。納得できる説明が安心');
+                if(Number(axes.control)>0) tips.push('主導権を持って進めたい。透明性と比較を重視');
+                if(Number(axes.change)>0) tips.push('変化の実感を早めたい。小さなビフォー/アフターで検証');
+                if(!tips.length) tips.push('今の自分に合う進め方を選ぶことを重視');
+                return tips;
+              }
+              function labelWeight(lab){
+                const ax = axes || {};
+                const s = Number(ax.support)||0, c = Number(ax.change)||0, m = Number(ax.motivation)||0, ctrl = Number(ax.control)||0;
+                const L = String(lab);
+                if(/相談|チェック|伴走/.test(L)) return s*2 + m;
+                if(/可視化|事前説明|納得|透明/.test(L)) return m*2 + ctrl;
+                if(/比較検討/.test(L)) return ctrl*2 + m;
+                if(/短期|成果指標|早い|仮説検証/.test(L)) return c*2 + m;
+                if(/写真/.test(L)) return c*1.5 + m;
+                if(/更新提案|チャレンジ|小さく試/.test(L)) return c*2 + s;
+                if(/柔軟|調整/.test(L)) return s*2 + ctrl;
+                if(/世界観|雰囲気/.test(L)) return 0.5;
+                if(/習慣化|振り返り|継続/.test(L)) return s*2 + m;
+                return 0;
+              }
+              function choosingTips(){
+                const map = {
+                  t01:['事前説明やプロセスの可視化がある','レビューや事例が豊富','比較検討の余地がある'],
+                  t02:['相談/チェックの伴走がある','柔軟に調整できる','納得が得られるコミュニケーション'],
+                  t03:['短期プランや明確な成果指標','写真で比較できる事例','早い仮説検証を支援'],
+                  t04:['更新提案やチャレンジを支援','小さく試して調整できる','変化の実感を可視化'],
+                  t05:['ポートフォリオの世界観が一貫','事例写真が豊富','相性の合う雰囲気'],
+                  t06:['継続サポートや習慣化の仕組み','定期的な振り返り','無理のない調整']
+                };
+                const arr = (map[typeId] || map.t01).slice();
+                return arr.sort((a,b)=> labelWeight(b) - labelWeight(a));
+              }
+              function inferStrategyPreference(){
+                try{
+                  const raw = localStorage.getItem('glowup:metrics');
+                  const store = raw? JSON.parse(raw):{};
+                  const events = Array.isArray(store?.events)? store.events: [];
+                  // find deltas between search and subsequent adoption in recent window
+                  const recent = events.slice(-300);
+                  const searches = recent.filter(e=> e.type==='search');
+                  const adoptions = recent.filter(e=> e.type==='adoption');
+                  if(!searches.length || !adoptions.length) return { fast:false, habit:false, s:searches.length||0, a:adoptions.length||0, medianMs:null };
+                  const adTimes = adoptions.map(e=> new Date(e.t).getTime()).sort((a,b)=> a-b);
+                  const deltas = [];
+                  for(const s of searches){
+                    const st = new Date(s.t).getTime();
+                    const a = adTimes.find(t=> t>=st);
+                    if(a){ deltas.push(a-st); }
+                  }
+                  if(!deltas.length) return { fast:false, habit:false, s:searches.length||0, a:adoptions.length||0, medianMs:null };
+                  const median = deltas.sort((a,b)=> a-b)[Math.floor(deltas.length/2)];
+                  const oneDay = 24*60*60*1000;
+                  const fastPref = median <= oneDay; // adoptionが概ね1日以内
+                  // query語彙で補強
+                  const qTokens = searches.map(s=> String(s.query||'').toLowerCase());
+                  const fastWords = qTokens.filter(q=> /短期|即|早|最短|プラン/.test(q)).length;
+                  const habitWords = qTokens.filter(q=> /習慣|続け|ルーティン|週次|継続/.test(q)).length;
+                  const habitPref = (!fastPref && habitWords>fastWords) || (median>oneDay);
+                  return { fast: fastPref, habit: habitPref, s:searches.length||0, a:adoptions.length||0, medianMs: median };
+                }catch{ return { fast:false, habit:false, s:0, a:0, medianMs:null }; }
+              }
+              function strategyWeight(lab){
+                const ax = axes || {};
+                const s = Number(ax.support)||0, c = Number(ax.change)||0, m = Number(ax.motivation)||0, ctrl = Number(ax.control)||0;
+                const pref = inferStrategyPreference();
+                const L = String(lab);
+                let w = 0;
+                if(/即効|小さな変更|写真|比較|スプリント/.test(L)) w += (pref.fast? 3: 0) + c*2 + m;
+                if(/習慣|ルール化|定期|振り返り|チェックイン/.test(L)) w += (pref.habit? 3: 0) + s*2 + m;
+                if(/目的|評価指標|明文化/.test(L)) w += m*2 + ctrl;
+                if(/透明性|意思決定|比較検討/.test(L)) w += ctrl*2 + m;
+                return w;
+              }
+              function strategyTips(){
+                const map = {
+                  // t01: 納得（理由・透明性・検証重視）
+                  t01:[
+                    '理解→提案→確認の反復（プロセスを可視化）',
+                    '目的を明文化し評価指標を決める',
+                    '小さな変更を写真や比較で検証',
+                    '意思決定の透明性を確保し、比較検討する'
+                  ],
+                  // t02: 寄り添い（伴走・合意形成・柔軟調整）
+                  t02:[
+                    '定期チェックインを設ける（相談/確認）',
+                    '不安の共有→合意形成のプロセスを重視',
+                    '柔軟に調整し、負担を最小化する',
+                    '習慣化の仕組みで安心して続ける'
+                  ],
+                  // t03: 最短（短期スプリント・即効性・成果指標）
+                  t03:[
+                    '短いスプリントで試す（1〜2週間）',
+                    '即効性のある小さな変更を試す（写真で比較）',
+                    '成果指標で評価し、素早く再調整',
+                    '次の仮説検証へ素早く移る'
+                  ],
+                  // t04: 進め方（チャレンジ・更新提案・段階的）
+                  t04:[
+                    '小さく試す→更新提案の反復',
+                    '段階的に挑戦し、可視化で変化を確認',
+                    '柔軟に軌道修正できる余地を確保',
+                    '定期振り返りで次の一歩を決める'
+                  ],
+                  // t05: 世界観（相性・イメージ共有・体験の積み重ね）
+                  t05:[
+                    '事前にイメージと世界観を共有',
+                    '小さな「合致体験」を積み重ねる',
+                    '写真や事例で方向性をすり合わせ',
+                    '余白を残して調整できる進め方'
+                  ],
+                  // t06: 継続（習慣化・ルール化・チェックイン）
+                  t06:[
+                    'ルール化して習慣にする（定期実施）',
+                    '定期振り返りとチェックインで継続',
+                    '無理のないペース設計で負担を軽減',
+                    '目的を確認しながら長期で育てる'
+                  ]
+                };
+                const base = [
+                  '即効性のある小さな変更を試す（写真や比較で検証）',
+                  '短いスプリントで試す（1〜2週間）',
+                  '時間をかけて習慣化する（ルール化/定期振り返り）',
+                  '定期チェックインを設ける（相談/確認）',
+                  '目的を明文化し評価指標を決める',
+                  '意思決定の透明性を確保し、比較検討する'
+                ];
+                const tips = (map[typeId] || base).slice();
+                const uniq = []; tips.forEach(t=>{ if(!uniq.includes(t)) uniq.push(t); });
+                return uniq.sort((a,b)=> strategyWeight(b) - strategyWeight(a)).slice(0,4);
+              }
+              const wrap = document.createElement('div'); wrap.className='block';
+              const title = document.createElement('div'); title.className='block-title'; title.textContent='進め方の視点'; wrap.appendChild(title);
+              const cols = [ ['考え方の特徴',mindsetTips()], ['選び方（お店/人）', choosingTips()], ['進め方（即効性/習慣）', strategyTips()] ];
+              const grid = document.createElement('div'); grid.className='stack'; grid.style.gap='10px';
+              cols.forEach(([h, arr])=>{
+                const box=document.createElement('div'); const sh=document.createElement('h4'); sh.textContent=h; box.appendChild(sh);
+                const ul=document.createElement('ul');
+                // ranking or reason
+                let sorted = arr.slice(); let weights = [];
+                let showRanks = false; let reasonText = '';
+                if(/選び方/.test(h)){
+                  sorted = arr.slice().sort((a,b)=> labelWeight(b)-labelWeight(a));
+                  weights = sorted.map(x=> labelWeight(x));
+                  const sumAxes = ['support','change','control','motivation'].map(k=> Number((axes||{})[k])||0).reduce((p,c)=> p+c, 0);
+                  const spread = (weights.length? (Math.max(...weights)-Math.min(...weights)): 0);
+                  showRanks = spread > 0.5 && sumAxes > 0;
+                  if(!showRanks){ reasonText = sumAxes===0? '※ 軸の差が小さいため、選び方の順位付けは行っていません（同程度）。' : '※ 軸差が僅差のため、順位は参考程度（同程度）。'; }
+                }
+                if(/進め方/.test(h)){
+                  sorted = arr.slice().sort((a,b)=> strategyWeight(b)-strategyWeight(a));
+                  weights = sorted.map(x=> strategyWeight(x));
+                  const pref = inferStrategyPreference();
+                  const spread = (weights.length? (Math.max(...weights)-Math.min(...weights)): 0);
+                  showRanks = spread > 0.5 && ((pref.s||0) > 2 || (pref.a||0) > 1);
+                  if(!showRanks){ reasonText = '※ 行動データが少ないため、進め方の順位付けは行っていません（同程度）。'; }
+                }
+                sorted.forEach((t,i)=>{ const li=document.createElement('li'); li.textContent=t; if(showRanks){ const b=document.createElement('span'); b.textContent=` 優先度 ${i+1}`; b.style.marginLeft='6px'; b.style.padding='2px 6px'; b.style.border='1px solid var(--color-border)'; b.style.borderRadius='999px'; b.style.fontSize='12px'; li.appendChild(b); } ul.appendChild(li); });
+                if(!showRanks && reasonText){ const p=document.createElement('p'); p.className='muted'; p.textContent=reasonText; box.appendChild(p); }
+                box.appendChild(ul); grid.appendChild(box);
+              });
+              wrap.appendChild(grid);
+              // 根拠を表示（上位軸）
+              try{
+                const pairs = [['support','寄り添い/相談'],['change','変化の強さ'],['control','主導権/共同決定'],['motivation','目的の明確さ']]
+                  .map(([k,lab])=>({ k, lab, v: Number((axes||{})[k])||0 }))
+                  .sort((a,b)=> b.v - a.v).slice(0,2);
+                const note = document.createElement('p'); note.className='muted'; note.textContent = pairs.length? `※ あなたの回答（軸：${pairs.map(p=> p.lab).join('・')}）に基づいて並びを調整しています。` : '※ あなたの回答に基づいて表示しています。';
+                wrap.appendChild(note);
+              }catch{}
+              article.appendChild(wrap);
+            })();
+
+            // ③ 強みの再定義（自己否定を防ぐ）
+            const strongH = document.createElement('h3'); strongH.textContent = 'これは「悪い」ではなく、あなたの強みです'; article.appendChild(strongH);
+            const strongP = document.createElement('p'); strongP.textContent = copy.strength || 'あなたは自分に合う進め方を選べる人です。'; article.appendChild(strongP);
+
+            // ③-2 強みハイライト（チップ化）
+            (function(){
+              const highlightsWrap = document.createElement('div'); highlightsWrap.className='highlights';
+              try{
+                const text = (copy.strength || '').toString();
+                const parts = text.split(/[、。・\n]/).map(s=> s.trim()).filter(s=> s.length>0 && s.length<=30);
+                const uniq = [];
+                for(const p of parts){ if(!uniq.includes(p)) uniq.push(p); }
+                (uniq.slice(0,3)).forEach(h=>{ const span = document.createElement('span'); span.className='chip'; span.textContent=h; highlightsWrap.appendChild(span); });
+              }catch{}
+              if(!highlightsWrap.children.length){ const span = document.createElement('span'); span.className='muted'; span.textContent='要点を抽出しています'; highlightsWrap.appendChild(span); }
+              article.appendChild(highlightsWrap);
+            })();
+
+            // ④ この見立てになった理由（STEP2の答え合わせ）→ ブロック＋横スライダー
+            (function(){
+              const whyBlock = document.createElement('div'); whyBlock.className='block';
+              const whyTitle = document.createElement('div'); whyTitle.className='block-title'; whyTitle.textContent='この見立てになった理由'; whyBlock.appendChild(whyTitle);
+              const items = [];
+              try{
+                const stored = JSON.parse(localStorage.getItem('fineme:diagnosis:latest')||'{}');
+                const axes = stored?.step2?.scores?.axes || {};
+                const topAxes = Object.entries(axes).filter(([k,v])=> typeof v==='number').sort((a,b)=> (b[1]||0) - (a[1]||0)).slice(0,4);
+                topAxes.forEach(([code])=>{
+                  const map = {
+                    motivation:['変わりたい理由が明確（深さがある）','🎯'],
+                    support:['サポートを必要とする度合いが高い','🤝'],
+                    change:['求める変化の強さが高い','🔄'],
+                    control:['主導権を自分で持ちたい（または共同で）','🧠'],
+                  };
+                  const pair = map[code];
+                  items.push({ label: (pair? pair[0]: ('選び方軸('+code+')を重視する')), emoji: (pair? pair[1]: '🧭') });
+                });
+                if(axes.value){ items.push({ label:'価値観は「'+ String(axes.value) +'」が近いと感じています', emoji:'💎' }); }
+              }catch{}
+              if(!items.length){ items.push({ label:'あなたの選択に基づいて導かれた結果です', emoji:'🧭' }); }
+
+              const slider = document.createElement('div'); slider.className='result-slider';
+              const controls = document.createElement('div'); controls.className='slider-controls';
+              const btnPrev = document.createElement('button'); btnPrev.className='btn btn-ghost'; btnPrev.setAttribute('aria-label','前へ'); btnPrev.textContent='‹';
+              const btnNext = document.createElement('button'); btnNext.className='btn btn-ghost'; btnNext.setAttribute('aria-label','次へ'); btnNext.textContent='›';
+              controls.appendChild(btnPrev); controls.appendChild(btnNext); slider.appendChild(controls);
+              const track = document.createElement('div'); track.className='slider-track';
+              items.forEach(it=>{
+                const card = document.createElement('div'); card.className='slide-card';
+                const emoji = document.createElement('div'); emoji.className='slide-emoji'; emoji.textContent = it.emoji || '✨'; card.appendChild(emoji);
+                const lab = document.createElement('div'); lab.className='slide-label'; lab.textContent=it.label; card.appendChild(lab);
+                track.appendChild(card);
+              });
+              slider.appendChild(track);
+              whyBlock.appendChild(slider);
+
+              function onArrow(dir){ try{ const delta = dir==='next' ? Math.floor(track.clientWidth*0.8) : -Math.floor(track.clientWidth*0.8); track.scrollBy({ left: delta, behavior:'smooth' }); }catch{} }
+              btnPrev.addEventListener('click', ()=> onArrow('prev'));
+              btnNext.addEventListener('click', ()=> onArrow('next'));
+
+              article.appendChild(whyBlock);
+            })();
+
+            // ④-2 代替案タブ（保守/標準/攻め）
+            (function(){
+              const wrap = document.createElement('div'); wrap.className='block';
+              const title = document.createElement('div'); title.className='block-title'; title.textContent='別の見方（保守/標準/攻め）'; wrap.appendChild(title);
+              const tabs = document.createElement('div'); tabs.style.display='flex'; tabs.style.gap='8px'; tabs.style.margin='8px 0';
+              const btnConservative = document.createElement('button'); btnConservative.className='btn btn-ghost'; btnConservative.textContent='保守';
+              const btnStandard = document.createElement('button'); btnStandard.className='btn btn-ghost'; btnStandard.textContent='標準';
+              const btnAggressive = document.createElement('button'); btnAggressive.className='btn btn-ghost'; btnAggressive.textContent='攻め';
+              tabs.appendChild(btnConservative); tabs.appendChild(btnStandard); tabs.appendChild(btnAggressive); wrap.appendChild(tabs);
+              const list = document.createElement('div'); list.className='highlights'; wrap.appendChild(list);
+              function setItems(kind){
+                const items = [];
+                if(kind==='保守'){
+                  items.push('小さな変更を試す（🧪）'); items.push('写真で比較して納得（📸）'); items.push('再調整前提で進める（🔁）');
+                }else if(kind==='攻め'){
+                  items.push('変化を実感できる提案（🔄）'); items.push('短いスプリントで更新（🏃）'); items.push('安全網を用意した挑戦（🛡️）');
+                }else{
+                  items.push('目的を明文化して進める（🗺️）'); items.push('相談/確認の伴走（🤝）'); items.push('世界観が合う相手を選ぶ（✨）');
+                }
+                list.innerHTML='';
+                items.forEach(t=>{ const span=document.createElement('span'); span.className='chip'; span.textContent=t; list.appendChild(span); });
+              }
+              // 初期表示：標準
+              setItems('標準');
+              btnConservative.addEventListener('click', ()=> setItems('保守'));
+              btnStandard.addEventListener('click', ()=> setItems('標準'));
+              btnAggressive.addEventListener('click', ()=> setItems('攻め'));
+              article.appendChild(wrap);
+            })();
+
+            // ⑥ 次にやるなら（行動促進：両ニーズ対応）
+            (function(){
+              const diag = (function(){ try{ return JSON.parse(localStorage.getItem('fineme:diagnosis:latest')||'{}'); }catch{ return {}; } })();
+              function recommendCategories(diag){
+                const typeId = String(diag?.intent?.type_id || diag?.step2?.classification?.type_id || '');
+                const TYPE_BASE = {
+                  w01: ['consulting','eyebrow','hair','diagnosis'],
+                  w02: ['hair','eyebrow','esthetic','fashion'],
+                  w03: ['consulting','photo','marriage','gym'],
+                  w04: ['fashion','makeup','photo','consulting'],
+                  w05: ['diagnosis','fashion','hair','makeup'],
+                  w06: ['fashion','makeup','hair','photo'],
+                  w07: ['photo','makeup','fashion','hair'],
+                  w08: ['eyebrow','whitening','orthodontics','hairremoval']
+                };
+                const baseList = TYPE_BASE[typeId] || [];
+                const baseBoost = (cat)=>{ const idx = baseList.indexOf(cat); if(idx===0) return 60; if(idx===1) return 40; if(idx===2) return 25; if(idx>=3) return 15; return 10; };
+                const axes = (diag?.step2?.scores?.axes) || {};
+                const AXIS_WEIGHTS = {
+                  natural: { hair:0.25, eyebrow:0.2, esthetic:0.2, fashion:0.15 },
+                  evidence: { diagnosis:0.35, orthodontics:0.25, whitening:0.25 },
+                  guidance: { consulting:0.35, marriage:0.25 },
+                  customization: { fashion:0.3, makeup:0.25, nail:0.2 },
+                  gentle: { esthetic:0.25, makeup:0.2, nail:0.2 }
+                };
+                const CATS_ALL = ['consulting','gym','makeup','hair','diagnosis','fashion','photo','marriage','eyebrow','hairremoval','esthetic','whitening','orthodontics','nail'];
+                const scores = {};
+                for(const c of CATS_ALL){ let s = baseBoost(c); for(const ax in AXIS_WEIGHTS){ const v = Number(axes[ax]||0); const w = AXIS_WEIGHTS[ax][c] || 0; s += v * w; } scores[c] = Math.max(0, Math.min(100, Math.round(s))); }
+                const sorted = Object.keys(scores).sort((a,b)=> scores[b]-scores[a]);
+                return { scores, sorted };
+              }
+              function labelCategory(cat){
+                const map = {
+                  consulting:'コンサル/相談', gym:'パーソナルジム', makeup:'メイク', hair:'美容室', diagnosis:'診断', fashion:'ファッション', photo:'写真/撮影', marriage:'婚活/印象', eyebrow:'眉', hairremoval:'脱毛', esthetic:'エステ', cosmetic:'美容外科・美容クリニック', whitening:'ホワイトニング', orthodontics:'矯正', nail:'ネイル'
+                };
+                return map[cat] || cat;
+              }
+              const wrap = document.createElement('div'); wrap.className='block';
+              const title = document.createElement('div'); title.className='block-title'; title.textContent='次にやるなら'; wrap.appendChild(title);
+              const grid = document.createElement('div'); grid.className='stack'; grid.style.gap='10px';
+              const BASE_PREFIX = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
+              // 左：目的が決まっている（カテゴリから探す）
+              const left = document.createElement('div');
+              const lh = document.createElement('h4'); lh.textContent='目的が決まっている（カテゴリから探す）'; left.appendChild(lh);
+              const rec = recommendCategories(diag);
+              const allCats = ['consulting','gym','makeup','hair','diagnosis','fashion','photo','marriage','eyebrow','hairremoval','esthetic','cosmetic','whitening','orthodontics','nail'];
+              const iconMap = { hair:'💇‍♂️', eyebrow:'✂️', esthetic:'💆‍♂️', cosmetic:'🏥', fashion:'👔', gym:'🏋️‍♂️', orthodontics:'🦷', makeup:'💄', nail:'💅', photo:'📸', diagnosis:'🔍', consulting:'🧑‍⚕️', marriage:'💍', hairremoval:'🪒', whitening:'✨' };
+              const subMap = { hair:'髪型・カット・パーマ', eyebrow:'眉カット・デザイン', esthetic:'フェイシャル・スキンケア', cosmetic:'外科/美容医療', fashion:'パーソナルスタイリング', gym:'ボディメイク・トレーニング', orthodontics:'噛み合わせ・見た目改善', makeup:'男性向けメイクレッスン', nail:'ケア・デザイン', photo:'プロフィール写真・撮影', diagnosis:'カラー・骨格診断', consulting:'トータルコンサルティング', marriage:'婚活・相談所', hairremoval:'永久脱毛・光脱毛', whitening:'歯の美白' };
+              const catGrid = document.createElement('div'); catGrid.className='categories-grid';
+              allCats.forEach(c=>{
+                const card = document.createElement('div'); card.className='category-card';
+                const a = document.createElement('a');
+                const u=new URL(BASE_PREFIX + '/pages/search.html', location.origin); u.searchParams.set('category', c); a.href = u.toString();
+                const icon = document.createElement('div'); icon.className='category-icon'; icon.textContent = iconMap[c] || '✨';
+                const label = document.createElement('div'); label.className='category-label'; label.textContent = labelCategory(c);
+                const sub = document.createElement('div'); sub.className='category-sub'; sub.textContent = subMap[c] || '';
+                a.appendChild(icon); a.appendChild(label); a.appendChild(sub);
+                card.appendChild(a);
+                catGrid.appendChild(card);
+                a.addEventListener('click', ()=>{ try{ localStorage.setItem('fineme:goal:category', c); }catch{} });
+              });
+              left.appendChild(catGrid);
+              // 右：まだ決めていない（タイプに合うスターター）
+              const right = document.createElement('div');
+              const rh = document.createElement('h4'); rh.textContent='まだ決めていない（タイプに合うスターター）'; right.appendChild(rh);
+              const actWrap = document.createElement('div'); actWrap.className='cluster'; actWrap.style.flexWrap='wrap'; actWrap.style.gap='8px';
+              const btnReco = document.createElement('a'); btnReco.className='btn'; btnReco.textContent='タイプに合うスターター3選';
+              try{ btnReco.style.setProperty('color','#fff','important'); }catch{}
+              { const u=new URL(BASE_PREFIX + '/pages/search.html', location.origin); u.searchParams.set('diag','1'); u.searchParams.set('top','3'); btnReco.href = u.toString(); }
+              const btnGuide = document.createElement('a'); btnGuide.className='btn btn-ghost'; btnGuide.textContent='垢抜けガイドを見る'; { const u=new URL(BASE_PREFIX + '/pages/glowup-guide.html', location.origin); btnGuide.href = u.toString(); }
+              actWrap.appendChild(btnReco); actWrap.appendChild(btnGuide);
+              right.appendChild(actWrap);
+              grid.appendChild(left); grid.appendChild(right);
+              wrap.appendChild(grid);
+              article.appendChild(wrap);
+            })();
+
+            // ⑤ 今の段階で向いている変化 → ブロック＋横スライダー
+            (function(){
+              const fitBlock = document.createElement('div'); fitBlock.className='block';
+              const fitTitle = document.createElement('div'); fitTitle.className='block-title'; fitTitle.textContent='今の段階で向いている変化'; fitBlock.appendChild(fitTitle);
+              const rawItems = (copy.fit||[]).slice(0,6);
+              if(!rawItems.length){ rawItems.push(copy.logic || 'あなたに合う進め方を優先して表示しています。'); }
+              const items = rawItems.map(t=>{
+                const s = String(t);
+                let emoji = '✨';
+                if(/試|小さ|テスト/.test(s)) emoji = '🧪';
+                else if(/相談|伴走|寄り添|確認/.test(s)) emoji = '🤝';
+                else if(/変化|アップデート|挑戦/.test(s)) emoji = '🔄';
+                else if(/計画|ゴール|手順/.test(s)) emoji = '🗺️';
+                else if(/実績|結果|上位/.test(s)) emoji = '📈';
+                return { label: s, emoji };
+              });
+
+              const slider = document.createElement('div'); slider.className='result-slider';
+              const controls = document.createElement('div'); controls.className='slider-controls';
+              const btnPrev = document.createElement('button'); btnPrev.className='btn btn-ghost'; btnPrev.setAttribute('aria-label','前へ'); btnPrev.textContent='‹';
+              const btnNext = document.createElement('button'); btnNext.className='btn btn-ghost'; btnNext.setAttribute('aria-label','次へ'); btnNext.textContent='›';
+              controls.appendChild(btnPrev); controls.appendChild(btnNext); slider.appendChild(controls);
+              const track = document.createElement('div'); track.className='slider-track';
+              items.forEach(it=>{
+                const card = document.createElement('div'); card.className='slide-card';
+                const emoji = document.createElement('div'); emoji.className='slide-emoji'; emoji.textContent = it.emoji || '✨'; card.appendChild(emoji);
+                const lab = document.createElement('div'); lab.className='slide-label'; lab.textContent=it.label; card.appendChild(lab);
+                track.appendChild(card);
+              });
+              slider.appendChild(track);
+              fitBlock.appendChild(slider);
+
+              function onArrow(dir){ try{ const delta = dir==='next' ? Math.floor(track.clientWidth*0.8) : -Math.floor(track.clientWidth*0.8); track.scrollBy({ left: delta, behavior:'smooth' }); }catch{} }
+              btnPrev.addEventListener('click', ()=> onArrow('prev'));
+              btnNext.addEventListener('click', ()=> onArrow('next'));
+
+              article.appendChild(fitBlock);
+            })();
+
+            // ⑥ 次の一手（最大2つ）
+            const nextActions = document.createElement('div'); nextActions.className='result-actions';
+            const goSearch = document.createElement('a'); goSearch.href='../pages/search.html'; goSearch.className='btn'; goSearch.textContent='今の自分に合う選択肢を見る'; nextActions.appendChild(goSearch);
+            const goMypage = document.createElement('a'); goMypage.href='../pages/mypage/diagnosis.html'; goMypage.className='btn'; goMypage.textContent='少し考えるために保存する'; nextActions.appendChild(goMypage);
+            article.appendChild(nextActions);
+
+            
+
+            // ⑥-2 提案カードスライダー（横スクロール）→ 絵文字化＆タイプ/軸で並び替え
+            (function(){
+              function baseSuggestions(){
+                return [
+                  { label: 'ヘアカット/カラー', emoji: '💇‍♀️', href: '../pages/search.html?keyword=ヘア' },
+                  { label: 'メイク相談', emoji: '💄', href: '../pages/search.html?keyword=メイク' },
+                  { label: 'ファッション相談', emoji: '👗', href: '../pages/search.html?keyword=ファッション' },
+                  { label: '写真撮影', emoji: '📸', href: '../pages/search.html?keyword=写真' },
+                  { label: 'ボディメイク', emoji: '🏋️', href: '../pages/search.html?keyword=ジム' },
+                  { label: '婚活サポート', emoji: '💍', href: '../pages/search.html?keyword=婚活' },
+                ];
+              }
+
+              function scoreSuggestions(typeId, axes){
+                const list = baseSuggestions();
+                const score = Object.fromEntries(list.map(s=> [s.label, 0]));
+                // タイプ別の初期重み付け
+                const byType = {
+                  t01: ['メイク相談','ヘアカット/カラー','ファッション相談','写真撮影','ボディメイク','婚活サポート'], // 慎重・納得
+                  t02: ['メイク相談','ファッション相談','ヘアカット/カラー','写真撮影','婚活サポート','ボディメイク'], // 寄り添い
+                  t03: ['写真撮影','ボディメイク','ヘアカット/カラー','メイク相談','ファッション相談','婚活サポート'], // 最短
+                  t04: ['ファッション相談','ヘアカット/カラー','写真撮影','メイク相談','ボディメイク','婚活サポート'], // 変化
+                  t05: ['写真撮影','ファッション相談','メイク相談','ヘアカット/カラー','婚活サポート','ボディメイク'], // 直感/世界観
+                  t06: ['メイク相談','ファッション相談','写真撮影','ヘアカット/カラー','婚活サポート','ボディメイク'], // 伴走
+                };
+                (byType[typeId]||list.map(s=> s.label)).forEach((lab, i)=>{ score[lab] += (list.length - i); });
+
+                // 軸スコアによる微調整
+                try{
+                  const ax = axes || {};
+                  if(Number(ax.support) > 0){ score['メイク相談'] += 3; score['ファッション相談'] += 2; }
+                  if(Number(ax.change) > 0){ score['写真撮影'] += 3; score['ボディメイク'] += 2; }
+                  if(Number(ax.control) > 0){ score['ファッション相談'] += 2; score['ヘアカット/カラー'] += 2; }
+                  if(Number(ax.motivation) > 0){ score['ヘアカット/カラー'] += 2; }
+                }catch{}
+
+                return list.sort((a,b)=> (score[b.label]||0) - (score[a.label]||0));
+              }
+
+              // 入力（タイプID/軸）
+              let typeId = 't01'; let axes = {};
+              try{
+                const stored = JSON.parse(localStorage.getItem('fineme:diagnosis:latest')||'{}');
+                typeId = (stored?.step2?.classification?.type_id) || typeId;
+                axes = stored?.step2?.scores?.axes || {};
+              }catch{}
+
+              let suggestions = scoreSuggestions(typeId, axes);
+              // 各リンクにタイプ名を付与して検索精度を向上
+              const typeName = copy?.name || '';
+              suggestions = suggestions.map(s=> ({ ...s, href: `${s.href}%20${encodeURIComponent(typeName)}` }));
+
+              const slider = document.createElement('div'); slider.className='result-slider';
+              const controls = document.createElement('div'); controls.className='slider-controls';
+              const btnPrev = document.createElement('button'); btnPrev.className='btn btn-ghost'; btnPrev.setAttribute('aria-label','前へ'); btnPrev.textContent='‹';
+              const btnNext = document.createElement('button'); btnNext.className='btn btn-ghost'; btnNext.setAttribute('aria-label','次へ'); btnNext.textContent='›';
+              const btnInfo = document.createElement('button'); btnInfo.className='info-btn'; btnInfo.setAttribute('aria-label','並びの理由'); btnInfo.textContent='並びの理由';
+              controls.appendChild(btnPrev); controls.appendChild(btnNext); controls.appendChild(btnInfo); slider.appendChild(controls);
+
+              const track = document.createElement('div'); track.className='slider-track';
+              suggestions.forEach(s=>{
+                const a = document.createElement('a'); a.className='slide-card'; a.href=s.href;
+                a.addEventListener('click', ()=>{
+                  try{ window.dispatchEvent(new CustomEvent('fineme:analytics', { detail: { event:'result_slide_click', label: s.label, type: copy.name } })); }catch{}
+                });
+                const emoji = document.createElement('div'); emoji.className='slide-emoji'; emoji.textContent = s.emoji || '✨'; a.appendChild(emoji);
+                const lab = document.createElement('div'); lab.className='slide-label'; lab.textContent=s.label; a.appendChild(lab);
+                track.appendChild(a);
+              });
+              slider.appendChild(track);
+              // ポップオーバー内容
+              const pop = document.createElement('div'); pop.className='popover';
+              const popTitle = document.createElement('div'); popTitle.className='popover-title'; popTitle.textContent='この並びになっている理由'; pop.appendChild(popTitle);
+              const pType = document.createElement('p'); pType.textContent = `タイプ：${typeName}`; pop.appendChild(pType);
+              try{
+                const reasons = [];
+                const ax = axes || {};
+                const pairs = [
+                  ['support', ax.support, '寄り添い/相談が欲しい傾向'],
+                  ['change', ax.change, '変化を強く求める傾向'],
+                  ['control', ax.control, '主導権を持ちたい/共同決定の傾向'],
+                  ['motivation', ax.motivation, '変わりたい理由が明確な傾向']
+                ];
+                pairs.sort((a,b)=> (Number(b[1])||0) - (Number(a[1])||0)).slice(0,2).forEach(([,val,desc])=>{ if(Number(val)>0){ reasons.push(desc); } });
+                const pAx = document.createElement('p'); pAx.textContent = reasons.length? `重視した軸：${reasons.join('、')}` : '重視した軸：回答に基づく総合評価'; pop.appendChild(pAx);
+              }catch{}
+              const pLead = document.createElement('p'); pLead.textContent = '上ほど今のあなたに取り組みやすい選択肢です。必要に応じて並びは調整されます。'; pop.appendChild(pLead);
+              slider.appendChild(pop);
+              // ポップオーバー開閉
+              btnInfo.addEventListener('click', ()=>{ pop.classList.toggle('show'); });
+              document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ pop.classList.remove('show'); } });
+              document.addEventListener('click', (e)=>{ if(!pop.contains(e.target) && e.target!==btnInfo){ pop.classList.remove('show'); } });
+              article.appendChild(slider);
+
+              function onArrow(dir){ try{ const delta = dir==='next' ? Math.floor(track.clientWidth*0.8) : -Math.floor(track.clientWidth*0.8); track.scrollBy({ left: delta, behavior:'smooth' }); }catch{} }
+              btnPrev.addEventListener('click', ()=> onArrow('prev'));
+              btnNext.addEventListener('click', ()=> onArrow('next'));
+            })();
+
+            // ⑦ 急がなくていい理由（成長前提）
+            const gentle = document.createElement('p'); gentle.className='muted'; gentle.style.marginTop='8px'; gentle.textContent = 'これは「今のあなた」の鏡です。行動や経験で変わっていきます。後で戻ってきても大丈夫。';
+            article.appendChild(gentle);
+
+            // ④ Finemeが約束すること
+            const promh = document.createElement('h3'); promh.textContent='Finemeは、あなたをこう扱います'; article.appendChild(promh);
+            const ul = document.createElement('ul');
+            ['無理に流行を押しつけません','価格より“相性”を優先します','あなたのペースを尊重します'].forEach(t=>{ const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+            article.appendChild(ul);
+
+            // ⑤ 並び順の見方（相性順の意味づけ）
+            const readh = document.createElement('h3'); readh.textContent='並び順の見方'; article.appendChild(readh);
+            const readp = document.createElement('p'); readp.textContent = '上の店舗ほど、あなたの「選び方」に近い傾向があります。価格ではなく「納得のしやすさ」「寄り添い」「最短で進める力」「世界観の合致」といった軸を優先しています。'; article.appendChild(readp);
+
+            // ⑥ 次の一歩
+            const actions = document.createElement('div'); actions.className = 'result-actions';
+            const seeBtn = document.createElement('a');
+            const typeQuery = (entry?.name) ? `?diag=1&keyword=${encodeURIComponent(entry.name)}` : '?diag=1';
+            seeBtn.href = `../pages/search.html${typeQuery}`; seeBtn.className = 'btn'; seeBtn.textContent = 'このタイプに合う人を見てみる';
+            try{ seeBtn.style.setProperty('color','#fff','important'); }catch{}
+            const retryLink = document.createElement('a'); retryLink.href = './index.html'; retryLink.className = 'btn'; retryLink.textContent = '診断をやり直す';
+            const saveBtn = document.createElement('button'); saveBtn.className = 'btn btn-ghost'; saveBtn.textContent = '結果をコピー';
+            saveBtn.addEventListener('click', ()=>{
+              const text = `${entry.name}\n${entry.catch||''}\n\n${entry.advice||''}`; try{ navigator.clipboard.writeText(text); showToast('結果をクリップボードにコピーしました'); }catch(e){ showToast('コピーに失敗しました'); }
+            });
+            // 最下部のアクション群に未ログイン時の保存導線を統合
+            try{
+              const BASE_PREFIX = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
+              const sessionRaw = sessionStorage.getItem('glowup:userSession');
+              const isLoggedIn = !!(sessionRaw);
+              if(!isLoggedIn){
+                const loginBtnBottom = document.createElement('a');
+                const nextUrl3 = BASE_PREFIX + '/pages/mypage/diagnosis.html';
+                loginBtnBottom.href = BASE_PREFIX + '/pages/user/login.html?next=' + encodeURIComponent(nextUrl3);
+                loginBtnBottom.className = 'btn btn-ghost';
+                try{ loginBtnBottom.style.setProperty('color','#fff','important'); }catch{}
+                loginBtnBottom.textContent = 'ログインして結果を保存する';
+                actions.appendChild(loginBtnBottom);
+              }
+            }catch{}
+            actions.appendChild(seeBtn); actions.appendChild(retryLink); actions.appendChild(saveBtn); article.appendChild(actions);
+
+            root.appendChild(article);
+
+              // Optional: providerIdがクエリにある場合、店舗プロフィール×診断で相性説明文を生成して表示
+              try{
+                const u = new URL(location.href);
+                const providerId = u.searchParams.get('providerId') || '';
+                if(providerId){
+                  (async function(){
+                    async function loadProviders(){
+                      try{ const raw = localStorage.getItem('glowup:providers'); const arr = raw? JSON.parse(raw):[]; return Array.isArray(arr)? arr:[]; }catch{ return []; }
+                    }
+                    async function loadStaticProviders(){
+                      try{ const r = await fetch('../scripts/data/providers.json', { cache:'no-store' }); if(!r.ok) throw new Error(String(r.status)); const j = await r.json(); return Array.isArray(j)? j:[]; }catch(e){ return []; }
+                    }
+                    const mod = await import('../scripts/compatibility.js');
+                    let providers = await loadProviders();
+                    if(!providers.length){ providers = await loadStaticProviders(); }
+                    const provider = providers.find(p=> p.id === providerId);
+                    if(provider){
+                      const comp = await mod.generateCompatibility(obj, provider);
+                      if(comp){
+                        const host = document.createElement('div'); host.className = 'diag-card'; host.style.marginTop = '14px';
+                        const head = document.createElement('div'); head.className='stack';
+                        const strong = document.createElement('strong'); strong.textContent = 'あなたとの相性説明（店舗別）'; head.appendChild(strong);
+                        host.appendChild(head);
+                        mod.renderCompatibilityCard(host, comp);
+                        root.appendChild(host);
+                      }
+                    }
+                  })();
+                }
+              }catch(e){ /* optional */ }
+
+            // toast element
+            const toast = document.createElement('div'); toast.className = 'toast'; toast.id = 'result-toast'; toast.textContent = '';
+            document.body.appendChild(toast);
+            function showToast(msg){ const t = document.getElementById('result-toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+          }).catch(e=>{ console.error(e); loading.textContent = 'タイプデータの読み込みに失敗しました'; });
+        }catch(e){ console.error(e); renderNotFound(); }
       }
 
-      /* ⑥ギャップ分析（v2のみ） */
-      if(gapsAll&&gapsAll.length){
-        // ギャップ一覧
-        const sec=document.createElement('div'); sec.className='result-section';
-        const lbl=document.createElement('div'); lbl.className='result-section-label'; lbl.textContent='現状ギャップ分析'; sec.appendChild(lbl);
-        const gapCount=gapsSorted.length;
-        const topLabel=gapCount>0?CAT_META[gapsSorted[0].cat].label:'';
-        let narr=''; if(gapCount===0) narr='すでに5つの基礎がすべて整っています。次は各カテゴリをさらに高いレベルへ引き上げることが目標です。'; else if(gapCount===1) narr=`5つの課題のうち、<strong>${topLabel}</strong>の1点にギャップがあります。ここを整えるだけで、印象は大きく変わります。`; else if(gapCount===2) narr=`5つのうち<strong>${gapsSorted.map(g=>CAT_META[g.cat].label).join('と')}</strong>の2点にギャップがあります。まず<strong>${topLabel}</strong>から着手することを勧めます。`; else narr=`5つのうち<strong>${gapCount}つ</strong>のギャップが見つかりました。まず<strong>${topLabel}</strong>から着手することで、最も早く変化を実感できます。`;
-        const narrEl=document.createElement('p'); narrEl.style.cssText='font-size:14px;color:#0f172a;line-height:1.7;margin:0 0 14px'; narrEl.innerHTML=narr; sec.appendChild(narrEl);
-        const gapList=document.createElement('div'); gapList.className='gap-list';
-        gapsAll.forEach(g=>{ const m=CAT_META[g.cat]; const row=document.createElement('div'); row.className='gap-item'; const icon=document.createElement('div'); icon.className='gap-icon'; icon.textContent=m.icon; const label=document.createElement('div'); label.className='gap-label'; label.textContent=m.label; const status=document.createElement('div'); status.className='gap-status '+(g.gap?'is-gap':'is-ok'); status.textContent=g.gap?'ギャップあり':'OK'; row.appendChild(icon); row.appendChild(label); if(g.gap){ const pri=document.createElement('div'); pri.className='gap-priority'; pri.textContent='★'.repeat(g.score); row.appendChild(pri); } row.appendChild(status); gapList.appendChild(row); });
-        sec.appendChild(gapList); root.appendChild(sec);
-
-        // 優先カード
-        if(gapsSorted.length>0){
-          const prioSec=document.createElement('div'); prioSec.className='result-section';
-          const prioLbl=document.createElement('div'); prioLbl.className='result-section-label'; prioLbl.textContent='最初に取り組むべきこと'; prioSec.appendChild(prioLbl);
-          gapsSorted.slice(0,2).forEach((g,i)=>{ const m=CAT_META[g.cat]; const card=document.createElement('div'); card.className='priority-card'; if(i>0) card.style.cssText='border-color:#e5e7eb;background:#fff;margin-top:10px'; const rank=document.createElement('div'); rank.className='priority-rank'; rank.textContent=i===0?'最優先':'次のステップ'; const ptitle=document.createElement('div'); ptitle.className='priority-title'; ptitle.textContent=`${m.icon} ${m.label}`; const preason=document.createElement('div'); preason.className='priority-reason'; preason.textContent=PRIORITY_REASONS[g.cat]?.[v2why]||''; card.appendChild(rank); card.appendChild(ptitle); card.appendChild(preason); prioSec.appendChild(card); });
-          root.appendChild(prioSec);
-        }
-
-        // クイックウィン
-        const topGap=gapsSorted[0];
-        if(topGap){ const qw=QW_DATA[topGap.cat]; if(qw&&qw.cond(gapsSorted)){ const qwCard=document.createElement('div'); qwCard.className='quick-win-card'; const qwLabel=document.createElement('div'); qwLabel.className='quick-win-label'; qwLabel.textContent='⚡ クイックウィン'; const qwTitle=document.createElement('div'); qwTitle.className='quick-win-title'; qwTitle.textContent=qw.title; const qwText=document.createElement('div'); qwText.className='quick-win-text'; qwText.textContent=qw.text[v2why]||qw.text._||''; qwCard.appendChild(qwLabel); qwCard.appendChild(qwTitle); qwCard.appendChild(qwText); root.appendChild(qwCard); } }
-
-        // 今日の第一歩
-        const topCat=gapsSorted[0]?.cat||null;
-        if(topCat&&FIRST_STEP[topCat]){ const fsCard=document.createElement('div'); fsCard.className='first-step-card'; const fsLabel=document.createElement('div'); fsLabel.className='first-step-label'; fsLabel.textContent='今日の第一歩'; const fsText=document.createElement('div'); fsText.className='first-step-text'; fsText.textContent=FIRST_STEP[topCat][v2how]||FIRST_STEP[topCat].guided; fsCard.appendChild(fsLabel); fsCard.appendChild(fsText); root.appendChild(fsCard); }
-      }
-
-      /* ⑦強み */
-      const strongBlock=document.createElement('div'); strongBlock.className='block';
-      const strongTitle=document.createElement('div'); strongTitle.className='block-title'; strongTitle.textContent='あなたが持っている変容の力'; strongBlock.appendChild(strongTitle);
-      const strongP=document.createElement('p'); strongP.textContent=copy.strength||'あなたは自分に合う進め方を選べる人です。'; strongBlock.appendChild(strongP);
-      const chips=document.createElement('div'); chips.className='highlights';
-      try{ const parts=(copy.strength||'').split(/[、。・\n]/).map(s=>s.trim()).filter(s=>s.length>0&&s.length<=30); const uniq=[]; for(const p of parts){ if(!uniq.includes(p)) uniq.push(p); } uniq.slice(0,3).forEach(h=>{ const span=document.createElement('span'); span.className='chip'; span.textContent=h; chips.appendChild(span); }); }catch{}
-      if(chips.children.length) strongBlock.appendChild(chips);
-      root.appendChild(strongBlock);
-
-      /* ⑧進め方の視点 */
-      (function(){
-        const tid=step2cls.type_id||'t01';
-        function mindsetTips(){ const t=[]; if(Number(axes.motivation)>0) t.push('変わりたい理由が明確。目的と再現性を重視'); if(Number(axes.support)>0) t.push('伴走や確認を重視。納得できる説明が安心'); if(Number(axes.control)>0) t.push('主導権を持って進めたい。透明性と比較を重視'); if(Number(axes.change)>0) t.push('変化の実感を早めたい。小さなビフォー/アフターで検証'); if(!t.length) t.push('今の自分に合う進め方を選ぶことを重視'); return t; }
-        function lw(lab){ const s=Number(axes.support)||0,c=Number(axes.change)||0,m=Number(axes.motivation)||0,ctrl=Number(axes.control)||0,L=String(lab); if(/相談|チェック|伴走/.test(L)) return s*2+m; if(/可視化|事前説明|納得|透明/.test(L)) return m*2+ctrl; if(/比較検討/.test(L)) return ctrl*2+m; if(/短期|成果指標|早い|仮説検証/.test(L)) return c*2+m; if(/写真/.test(L)) return c*1.5+m; if(/更新提案|チャレンジ|小さく試/.test(L)) return c*2+s; if(/習慣化|振り返り|継続/.test(L)) return s*2+m; return 0; }
-        function choosingTips(){ const map={t01:['事前説明やプロセスの可視化がある','レビューや事例が豊富','比較検討の余地がある'],t02:['相談/チェックの伴走がある','柔軟に調整できる','納得が得られるコミュニケーション'],t03:['短期プランや明確な成果指標','写真で比較できる事例','早い仮説検証を支援'],t04:['更新提案やチャレンジを支援','小さく試して調整できる','変化の実感を可視化'],t05:['ポートフォリオの世界観が一貫','事例写真が豊富','相性の合う雰囲気'],t06:['継続サポートや習慣化の仕組み','定期的な振り返り','無理のない調整']}; return (map[tid]||map.t01).slice().sort((a,b)=>lw(b)-lw(a)); }
-        function strategyTips(){ const map={t01:['理解→提案→確認の反復（プロセスを可視化）','目的を明文化し評価指標を決める','小さな変更を写真や比較で検証','意思決定の透明性を確保し、比較検討する'],t02:['定期チェックインを設ける（相談/確認）','不安の共有→合意形成のプロセスを重視','柔軟に調整し、負担を最小化する','習慣化の仕組みで安心して続ける'],t03:['短いスプリントで試す（1〜2週間）','即効性のある小さな変更を試す（写真で比較）','成果指標で評価し、素早く再調整','次の仮説検証へ素早く移る'],t04:['小さく試す→更新提案の反復','段階的に挑戦し、可視化で変化を確認','柔軟に軌道修正できる余地を確保','定期振り返りで次の一歩を決める'],t05:['事前にイメージと世界観を共有','小さな「合致体験」を積み重ねる','写真や事例で方向性をすり合わせ','余白を残して調整できる進め方'],t06:['ルール化して習慣にする（定期実施）','定期振り返りとチェックインで継続','無理のないペース設計で負担を軽減','目的を確認しながら長期で育てる']}; return (map[tid]||map.t01).slice(0,4); }
-        const wrap=document.createElement('div'); wrap.className='block';
-        const wt=document.createElement('div'); wt.className='block-title'; wt.textContent='進め方の視点'; wrap.appendChild(wt);
-        [['考え方の特徴',mindsetTips()],['選び方（お店/人）',choosingTips()],['進め方',strategyTips()]].forEach(([h,arr])=>{ const box=document.createElement('div'); const sh=document.createElement('h4'); sh.textContent=h; box.appendChild(sh); const ul=document.createElement('ul'); arr.slice(0,4).forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); }); box.appendChild(ul); wrap.appendChild(box); });
-        const sumAxes=['support','change','control','motivation'].map(k=>Number(axes[k]||0)).reduce((p,c)=>p+c,0);
-        const note=document.createElement('p'); note.className='muted'; note.textContent=sumAxes>0?'※ あなたの回答に基づいて並びを調整しています。':'※ あなたの変容タイプに基づいて表示しています。'; wrap.appendChild(note);
-        root.appendChild(wrap);
-      })();
-
-      /* ⑨どのテンポで変わっていきたいか */
-      (function(){
-        const wrap=document.createElement('div'); wrap.className='block';
-        const wt=document.createElement('div'); wt.className='block-title'; wt.textContent='どのテンポで変わっていきたいか'; wrap.appendChild(wt);
-        const tabs=document.createElement('div'); tabs.style.cssText='display:flex;gap:8px;margin:8px 0';
-        const btnC=document.createElement('button'); btnC.className='btn btn-ghost'; btnC.style.fontSize='13px'; btnC.textContent='保守';
-        const btnS=document.createElement('button'); btnS.className='btn btn-ghost'; btnS.style.fontSize='13px'; btnS.textContent='標準';
-        const btnA=document.createElement('button'); btnA.className='btn btn-ghost'; btnA.style.fontSize='13px'; btnA.textContent='攻め';
-        tabs.appendChild(btnC); tabs.appendChild(btnS); tabs.appendChild(btnA); wrap.appendChild(tabs);
-        const list=document.createElement('div'); list.className='highlights'; wrap.appendChild(list);
-        function setItems(kind){ const items=kind==='保守'?['小さな変更を試す（🧪）','写真で比較して納得（📸）','再調整前提で進める（🔁）']:kind==='攻め'?['変化を実感できる提案（🔄）','短いスプリントで更新（🏃）','安全網を用意した挑戦（🛡️）']:['目的を明文化して進める（🗺️）','相談/確認の伴走（🤝）','世界観が合う相手を選ぶ（✨）']; list.innerHTML=''; items.forEach(t=>{ const span=document.createElement('span'); span.className='chip'; span.textContent=t; list.appendChild(span); }); }
-        setItems('標準');
-        btnC.addEventListener('click',()=>setItems('保守')); btnS.addEventListener('click',()=>setItems('標準')); btnA.addEventListener('click',()=>setItems('攻め'));
-        root.appendChild(wrap);
-      })();
-
-      /* ⑩HOW CTA + 次のステップリンク（v2） */
-      if(v2&&dir){
-        const howM=HOW_META[v2how];
-        if(howM){ const ctaCard=document.createElement('div'); ctaCard.className='how-cta-card'; const cl=document.createElement('div'); cl.className='how-cta-label'; cl.textContent=`あなたのスタイル: ${howM.label}`; const ct=document.createElement('div'); ct.className='how-cta-title'; ct.textContent=howM.cta; const cn=document.createElement('p'); cn.className='how-cta-note'; cn.textContent=howM.note; const ca=document.createElement('a'); ca.className='how-cta-link'; ca.href=`../pages/search.html?direction=${dir}`; ca.textContent=`${howM.cta} →`; ctaCard.appendChild(cl); ctaCard.appendChild(ct); ctaCard.appendChild(cn); ctaCard.appendChild(ca); root.appendChild(ctaCard); }
-        if(gapsSorted&&gapsSorted.length>0){ const nlDiv=document.createElement('div'); nlDiv.style.marginBottom='16px'; gapsSorted.slice(0,3).forEach(g=>{ const m=CAT_META[g.cat]; const link=document.createElement('a'); link.className='next-step-link'; link.href=m.url; const ico=document.createElement('span'); ico.className='step-icon'; ico.textContent=m.icon; const txt=document.createElement('span'); txt.className='step-text'; txt.textContent=`${m.label}を探す`; const arr=document.createElement('span'); arr.className='step-arrow'; arr.textContent='→'; link.appendChild(ico); link.appendChild(txt); link.appendChild(arr); nlDiv.appendChild(link); }); root.appendChild(nlDiv); }
-      }
-
-      /* ⑪変わりたい領域から探す */
-      (function(){
-        const wrap=document.createElement('div'); wrap.className='block';
-        const wt=document.createElement('div'); wt.className='block-title'; wt.textContent='変わりたい領域から探す'; wrap.appendChild(wt);
-        const allCats=['consulting','gym','makeup','hair','diagnosis','fashion','photo','marriage','eyebrow','hairremoval','esthetic','whitening','orthodontics','nail'];
-        const iconMap={hair:'💇‍♂️',eyebrow:'✂️',esthetic:'💆‍♂️',fashion:'👔',gym:'🏋️‍♂️',orthodontics:'🦷',makeup:'💄',nail:'💅',photo:'📸',diagnosis:'🔍',consulting:'🧑‍⚕️',marriage:'💍',hairremoval:'🪒',whitening:'✨'};
-        const labelMap={consulting:'コンサル/相談',gym:'パーソナルジム',makeup:'メイク',hair:'美容室',diagnosis:'診断',fashion:'ファッション',photo:'写真/撮影',marriage:'婚活/印象',eyebrow:'眉',hairremoval:'脱毛',esthetic:'エステ',whitening:'ホワイトニング',orthodontics:'矯正',nail:'ネイル'};
-        const grid=document.createElement('div'); grid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px';
-        allCats.forEach(c=>{ const a=document.createElement('a'); const u=new URL(BASE+'/pages/search.html',location.origin); u.searchParams.set('category',c); a.href=u.toString(); a.style.cssText='display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;text-decoration:none;font-size:12px;color:#0b2640;font-weight:600;text-align:center;'; const ico=document.createElement('span'); ico.style.fontSize='20px'; ico.textContent=iconMap[c]||'✨'; const lbl=document.createElement('span'); lbl.textContent=labelMap[c]||c; a.appendChild(ico); a.appendChild(lbl); grid.appendChild(a); a.addEventListener('click',()=>{ try{ localStorage.setItem('fineme:goal:category',c); }catch{} }); });
-        wrap.appendChild(grid); root.appendChild(wrap);
-      })();
-
-      /* ⑫Finemeの約束 */
-      const promBlock=document.createElement('div'); promBlock.className='block';
-      const promTitle=document.createElement('div'); promTitle.className='block-title'; promTitle.textContent='Finemeは、あなたをこう扱います'; promBlock.appendChild(promTitle);
-      const promUl=document.createElement('ul'); ['無理に流行を押しつけません','価格より"相性"を優先します','あなたのペースを尊重します'].forEach(t=>{ const li=document.createElement('li'); li.textContent=t; promUl.appendChild(li); }); promBlock.appendChild(promUl);
-      root.appendChild(promBlock);
-
-      /* ⑬ウェイトリスト */
-      const wlSec=document.createElement('div'); wlSec.className='waitlist-section';
-      const wlH=document.createElement('h3'); wlH.textContent='📋 掲載情報は順次追加中です'; wlSec.appendChild(wlH);
-      const wlP=document.createElement('p'); wlP.textContent='あなたのエリア・タイプに合ったサービスを優先的にお知らせします。'; wlSec.appendChild(wlP);
-      const wlA=document.createElement('a'); wlA.href='../pages/provider-register.html'; wlA.className='wl-btn'; wlA.textContent='掲載情報を受け取る'; wlSec.appendChild(wlA);
-      root.appendChild(wlSec);
-
-      /* ⑭CTA */
-      const actions=document.createElement('div'); actions.className='result-actions';
-      const searchBtn=document.createElement('a');
-      const tq=entry?.name?`?diag=1&keyword=${encodeURIComponent(entry.name)}`:'?diag=1';
-      searchBtn.href=`../pages/search.html${tq}`; searchBtn.className='btn'; searchBtn.textContent='最初の一歩を踏み出す';
-      const retryA=document.createElement('a'); retryA.href='./index.html'; retryA.className='btn btn-ghost'; retryA.textContent='もう一度診断する';
-      actions.appendChild(searchBtn); actions.appendChild(retryA);
-      root.appendChild(actions);
-
-      /* もう一度ボタン（bottom） */
-      const retryBtn=document.createElement('button'); retryBtn.className='retry-btn'; retryBtn.textContent='← もう一度診断する'; retryBtn.addEventListener('click',()=>{ window.location.href='./index.html'; }); root.appendChild(retryBtn);
-    }
-
-    /* Toast */
-    const toast=document.createElement('div'); toast.className='toast'; document.body.appendChild(toast);
-  })();
+  retryBtn.addEventListener('click', ()=>{ window.location.href = './index.html'; });
+    })();
   </script>
 </body>
 </html>
