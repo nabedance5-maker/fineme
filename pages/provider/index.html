@@ -6,537 +6,294 @@
   <title>掲載者ダッシュボード | Fineme</title>
   <link rel="stylesheet" href="../../assets/styles/style.css" />
   <link rel="stylesheet" href="../../assets/styles/components.css" />
+  <style>
+    .tab-nav { display: flex; gap: 0; border-bottom: 2px solid #e5e7eb; margin-bottom: 24px; overflow-x: auto; }
+    .tab-btn { padding: 10px 20px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 600; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: color .15s; }
+    .tab-btn.active { color: #111; border-bottom-color: #111; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .form-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .form-field label { font-size: 12px; font-weight: 700; color: #374151; }
+    .form-field input, .form-field textarea, .form-field select { padding: 10px 12px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14px; width: 100%; box-sizing: border-box; }
+    .form-field textarea { min-height: 100px; resize: vertical; }
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
+    .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+    .stat-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; text-align: center; }
+    .stat-value { font-size: 32px; font-weight: 800; color: #111; }
+    .stat-label { font-size: 12px; color: #6b7280; margin-top: 2px; }
+    .publish-toggle { display: flex; align-items: center; gap: 12px; padding: 16px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; }
+    .toggle-switch { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; inset: 0; background: #d1d5db; border-radius: 26px; cursor: pointer; transition: background .2s; }
+    .toggle-slider:before { content:''; position: absolute; width: 18px; height: 18px; left: 4px; bottom: 4px; background: #fff; border-radius: 50%; transition: transform .2s; }
+    .toggle-switch input:checked + .toggle-slider { background: #111; }
+    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); }
+    .referral-code-box { padding: 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; font-family: monospace; font-size: 18px; font-weight: 800; text-align: center; letter-spacing: 2px; }
+  </style>
 </head>
 <body>
   <div id="provider-navbar"></div>
   <main class="section">
-    <div class="container stack">
-      <h1 class="section-title">掲載者ダッシュボード</h1>
-      <p class="muted">順位は出しません。意味で納得し、行動に変わるための管理画面です。</p>
-      <!-- ステータスサマリー -->
-      <section id="status-summary" class="card" style="padding:12px;">
-        <strong>あなたの店舗の現在地</strong>
-        <div class="grid" style="display:grid;grid-template-columns:1fr;gap:10px;margin-top:8px">
-          <div><span class="muted">相性ゾーン：</span> <span id="sum-zone">—</span></div>
-          <div><span class="muted">今、特に合いやすいユーザータイプ：</span> <span id="sum-type">—</span></div>
-          <div><span class="muted">今月の予約数：</span> <span id="sum-resv">—</span></div>
+    <div class="container" style="max-width: 800px">
+
+      <!-- ダッシュボードヘッダー -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:24px">
+        <div>
+          <h1 class="section-title" style="margin:0 0 4px" id="provider-name-header">掲載者ダッシュボード</h1>
+          <p class="muted" id="provider-page-link" style="margin:0"></p>
         </div>
-      </section>
-      <!-- Fineme的メッセージ（思想UI） -->
-      <section class="card" style="padding:12px;">
-        <blockquote style="margin:0 0 8px 0;">
-          <p style="margin:0">Finemeでは、「たくさん見られる」より「合う人に届く」ことを大切にしています。</p>
-        </blockquote>
-        <a class="btn btn-ghost" href="./philosophy.html">Finemeの考え方を見る</a>
-      </section>
-      <!-- 公開設定（店舗全体） -->
-      <section id="visibility-card" class="card" style="padding:12px;">
-        <div class="cluster" style="justify-content:space-between; align-items:center">
-          <strong>店舗の公開設定</strong>
-          <button id="toggle-visibility-btn" class="btn btn-ghost" type="button">読み込み中…</button>
+        <a id="view-page-btn" href="#" target="_blank" class="btn btn-ghost" style="font-size:13px">自分のページを見る ↗</a>
+      </div>
+
+      <!-- タブナビ -->
+      <div class="tab-nav">
+        <button class="tab-btn active" data-tab="stats">📊 概況</button>
+        <button class="tab-btn" data-tab="profile">プロフィール</button>
+        <button class="tab-btn" data-tab="service">サービス設定</button>
+        <button class="tab-btn" data-tab="publish">公開設定</button>
+        <button class="tab-btn" data-tab="billing">課金・プラン</button>
+      </div>
+
+      <!-- タブ①：概況 -->
+      <div class="tab-pane active" id="tab-stats">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+          <div class="stat-card"><div class="stat-value" id="stat-views">—</div><div class="stat-label">今月のページ閲覧数</div></div>
+          <div class="stat-card"><div class="stat-value" id="stat-inquiries">—</div><div class="stat-label">今月の問い合わせ数</div></div>
+          <div class="stat-card"><div class="stat-value" id="stat-referrals">—</div><div class="stat-label">紹介報酬（今月）</div></div>
         </div>
-        <p class="muted" style="margin:8px 0 0">店舗を「非公開」にすると、個別サービスが公開設定でもサイト上に表示されません。</p>
-  <p class="muted" style="margin:6px 0 0; font-size:12px">※ 非公開設定でも月額料金の請求は継続します。月額を停止したい場合は、別途「休会」または「退会」の手続きが必要です。</p>
-      </section>
-      <!-- 次の一手ガイド（行動誘導） -->
-      <section class="card" style="padding:12px;">
-        <strong>相性をさらに高めるために</strong>
-        <ul class="stack" style="margin-top:8px">
-          <li><label class="cluster" style="gap:8px; align-items:center"><input type="checkbox" id="todo-counsel" /> <span>カウンセリング説明文をもう少し詳しく</span></label></li>
-          <li><label class="cluster" style="gap:8px; align-items:center"><input type="checkbox" id="todo-target" /> <span>「どんな人に向いているか」を明確に</span></label></li>
-          <li><label class="cluster" style="gap:8px; align-items:center"><input type="checkbox" id="todo-bna" /> <span>Before / After の考え方を言語化</span></label></li>
-        </ul>
-        <div style="margin-top:8px"><a class="btn btn-ghost" href="./compatibility.html">改善するとどうなる？</a></div>
-      </section>
-      <section class="stack" style="margin-top:24px;">
-        <h2 class="section-title">レビュー管理</h2>
-        <p class="muted">ユーザーが投稿したレビューを確認し、表示/非表示を切り替えられます。</p>
-        <div id="provider-reviews-host" class="stack">
-          <div class="cluster" style="gap:8px; align-items:center">
-            <label>フィルタ
-              <select id="prov-reviews-filter">
-                <option value="all">全て</option>
-                <option value="visible">表示中</option>
-                <option value="hidden">非表示</option>
+        <div class="card" style="padding:20px">
+          <h3 style="margin:0 0 10px;font-size:15px">Finemeからのメッセージ</h3>
+          <p class="muted" style="margin:0;line-height:1.7">順位は出しません。「合う人に届く」ことを大切にしています。プロフィールを丁寧に書くほど、あなたと合うユーザーが来やすくなります。</p>
+          <a href="./philosophy.html" class="btn btn-ghost" style="font-size:13px;margin-top:12px;display:inline-block">Finemeの考え方を見る</a>
+        </div>
+      </div>
+
+      <!-- タブ②：プロフィール -->
+      <div class="tab-pane" id="tab-profile">
+        <div class="card" style="padding:24px">
+          <h2 style="margin:0 0 16px;font-size:16px">基本情報</h2>
+          <form id="profile-form">
+            <div class="form-field"><label>掲載名 *</label><input name="name" required /></div>
+            <div class="form-field"><label>キャッチコピー（一言で表すと？）</label><input name="catchphrase" placeholder="初デートで堂々としていたい男性のための3ヶ月プログラム" /></div>
+            <div class="form-field"><label>こんな人に向いています</label><textarea name="target_desc" placeholder="どんな悩みを持つ方に向いているか、具体的に書いてください"></textarea></div>
+            <div class="form-field"><label>このサービスが大切にしていること（哲学）</label><textarea name="philosophy" placeholder="あなたのサービスの考え方・スタイル・強みを自分の言葉で"></textarea></div>
+            <div class="form-field"><label>写真URL</label><input name="photo_url" type="url" placeholder="https://..." /></div>
+            <button type="submit" class="btn" style="margin-top:8px">保存する</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- タブ③：サービス設定 -->
+      <div class="tab-pane" id="tab-service">
+        <div class="card" style="padding:24px">
+          <h2 style="margin:0 0 16px;font-size:16px">サービス・診断マッチング設定</h2>
+          <form id="service-form">
+            <div class="form-field"><label>サービス説明文（料金・メニューなど）</label><textarea name="description" placeholder="提供するサービスの詳細をここに書いてください"></textarea></div>
+            <div class="form-field"><label>エリア</label><input name="area" placeholder="東京・渋谷" /></div>
+            <div class="form-field"><label>最低価格（円）</label><input name="price_from" type="number" placeholder="10000" /></div>
+            <div class="form-field"><label>外部予約URL（Phase 0）</label><input name="booking_url" type="url" placeholder="https://..." /><small class="muted">あなたの予約ページ・問い合わせページのURLを入力してください</small></div>
+            <div class="form-field">
+              <label>提供スタイル（診断との連動）</label>
+              <select name="provider_style">
+                <option value="">選択してください</option>
+                <option value="explanation">納得してから動く人向け（理由を丁寧に説明するスタイル）</option>
+                <option value="consultation">相談しながら進めたい人向け</option>
+                <option value="delegate">任せて結果を出してほしい人向け</option>
+                <option value="cautious">小さく試したい人向け</option>
               </select>
+              <small class="muted">これが診断タイプとの一致計算に使われます</small>
+            </div>
+            <div class="form-field">
+              <label>得意なきっかけ（複数選択可）</label>
+              <div class="checkbox-group">
+                <label class="checkbox-item"><input type="checkbox" name="suitable_triggers" value="matching_app">マッチングアプリ</label>
+                <label class="checkbox-item"><input type="checkbox" name="suitable_triggers" value="love">恋愛・告白前</label>
+                <label class="checkbox-item"><input type="checkbox" name="suitable_triggers" value="career">就職・転職前</label>
+                <label class="checkbox-item"><input type="checkbox" name="suitable_triggers" value="word">一言が刺さった</label>
+                <label class="checkbox-item"><input type="checkbox" name="suitable_triggers" value="vague">ずっと気になっていた</label>
+              </div>
+            </div>
+            <div class="form-field">
+              <label>得意な失敗パターン対応（複数選択可）</label>
+              <div class="checkbox-group">
+                <label class="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="lost_direction">方向を見失った方</label>
+                <label class="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_continuation">続かなかった方</label>
+                <label class="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="cost">コストで断念した方</label>
+                <label class="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="awkward">関係性で悩んだ方</label>
+                <label class="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_result">変化が感じられなかった方</label>
+              </div>
+            </div>
+            <button type="submit" class="btn" style="margin-top:8px">保存する</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- タブ④：公開設定 -->
+      <div class="tab-pane" id="tab-publish">
+        <div class="card stack" style="padding:24px;gap:16px">
+          <h2 style="margin:0;font-size:16px">公開設定</h2>
+          <div class="publish-toggle">
+            <label class="toggle-switch">
+              <input type="checkbox" id="publish-toggle-input">
+              <span class="toggle-slider"></span>
             </label>
-            <label>サービス
-              <select id="prov-reviews-service">
-                <option value="all">全てのサービス</option>
-              </select>
-            </label>
+            <div>
+              <div style="font-weight:700;font-size:15px" id="publish-label">非公開</div>
+              <p class="muted" style="margin:2px 0 0;font-size:13px">非公開中はサイトに表示されませんが、月額費用は継続します。サービス内容の変更中や一時的に受付を止めたい場合にご利用ください。</p>
+            </div>
           </div>
-          <div id="prov-reviews-list" style="margin-top:12px"></div>
+          <p class="muted" style="font-size:12px;margin:0">※ 掲載を完全に停止（解約）したい場合は「課金・プラン」タブからお手続きください。</p>
         </div>
-      </section>
+      </div>
+
+      <!-- タブ⑤：課金・プラン -->
+      <div class="tab-pane" id="tab-billing">
+        <div class="card stack" style="padding:24px;gap:16px">
+          <h2 style="margin:0;font-size:16px">課金・プラン</h2>
+          <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:16px">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:4px">現在のプラン</div>
+            <div style="font-size:22px;font-weight:800;color:#111" id="billing-plan">読み込み中…</div>
+            <div style="font-size:13px;color:#6b7280;margin-top:4px" id="billing-status"></div>
+          </div>
+          <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:16px">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:8px;font-weight:700">紹介報酬制度</div>
+            <p class="muted" style="font-size:13px;margin:0 0 10px">あなたの紹介コードを共有すると、紹介した方が掲載を継続している限り¥500/月の報酬を受け取れます。</p>
+            <div class="referral-code-box" id="referral-code">—</div>
+            <button class="btn btn-ghost" style="font-size:13px;margin-top:10px;width:100%" id="copy-referral">コードをコピー</button>
+          </div>
+          <a href="#" class="btn btn-ghost" id="billing-portal-btn" style="text-align:center">プラン変更・解約はこちら（Stripe カスタマーポータル）</a>
+        </div>
+      </div>
+
     </div>
   </main>
-  <div id="provider-footer"></div>
+  <footer id="site-footer"></footer>
+  <script src="../../scripts/main.js" type="module"></script>
   <script src="../../scripts/partials.js" type="module"></script>
-  <script type="module">
-    import { requireProviderAuth, getProviderSession, signOutProvider } from '../../scripts/auth.js';
-    const PROVIDERS_KEY = 'glowup:providers';
-    function loadProviders(){ try{ const raw=localStorage.getItem(PROVIDERS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch{ return []; } }
-    import '../../scripts/provider-reviews.js';
-    const session = requireProviderAuth();
-    if(!session){
-      // requireProviderAuth 内でログインにリダイレクトされます
-    } else {
-      // provider ナビ注入完了後にセッションUIとカードを組み立てる
-      const boot = () => {
-        try{
-          const me = loadProviders().find(p=> p.id===session.id);
-          if(!me || !me.onboarding || !me.onboarding.completed){
-            location.href = './onboarding.html';
-            return;
-          }
-        }catch(_){ /* ignore */ }
+  <script>
+  (function(){
+    // タブ切り替え
+    document.querySelectorAll('.tab-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+      });
+    });
 
-        const area = document.getElementById('provider-session-area');
-        if(area){
-          const info = document.createElement('div');
-          info.style.display='inline-flex'; info.style.gap='8px'; info.style.alignItems='center';
-          info.innerHTML = `<span class="muted">${session.name} でログイン中</span><button class="btn btn-ghost" id="provider-logout-btn">ログアウト</button>`;
-          area.appendChild(info);
-          area.addEventListener('click', (e)=>{
-            const t = e.target;
-            if(t && t.id === 'provider-logout-btn'){
-              signOutProvider();
-            }
-          });
-        }
-        try{
-          const container = document.querySelector('.container.stack');
-          if(container){
-            // 店舗の公開設定トグル
-            (function(){
-              const card = document.getElementById('visibility-card');
-              const btn = document.getElementById('toggle-visibility-btn');
-              const PROVIDERS_KEY = 'glowup:providers';
-              function loadProviders(){ try{ const raw=localStorage.getItem(PROVIDERS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch{ return []; } }
-              function saveProviders(list){ try{ localStorage.setItem(PROVIDERS_KEY, JSON.stringify(list)); }catch{} }
-              const list = loadProviders();
-              const meIdx = list.findIndex(p=> p.id===session.id);
-              if(meIdx>=0){
-                const me = list[meIdx];
-                me.visibility = me.visibility || 'public';
-                btn.textContent = (me.visibility==='public') ? '現在: 公開（クリックで非公開）' : '現在: 非公開（クリックで公開）';
-                btn.addEventListener('click', ()=>{
-                  try{
-                    const cur = me.visibility==='public' ? 'hidden' : 'public';
-                    me.visibility = cur;
-                    list[meIdx] = me;
-                    saveProviders(list);
-                    btn.textContent = (cur==='public') ? '現在: 公開（クリックで非公開）' : '現在: 非公開（クリックで公開）';
-                  }catch{}
-                });
-                // 加入プランカードの表示
-                try{
-                  const plan = me.plan || null;
-                  const metaMap = {
-                    p5000: { label:'5,000円プラン（予約手数料8％）', price:5000, feeRate:0.08 },
-                    p7000: { label:'7,000円プラン（予約手数料7％）', price:7000, feeRate:0.07 },
-                    p10000:{ label:'10,000円プラン（予約手数料6％）', price:10000, feeRate:0.06 }
-                  };
-                  const meta = plan && plan.id ? (metaMap[plan.id] || { label:'未設定', price:0, feeRate:0 }) : { label:'未設定', price:0, feeRate:0 };
-                  const planCard = document.createElement('section');
-                  planCard.className = 'card';
-                  planCard.style.padding='12px';
-                  const head = document.createElement('div'); head.className='cluster'; head.style.justifyContent='space-between'; head.style.alignItems='center';
-                  const strong = document.createElement('strong'); strong.textContent='加入中の掲載プラン'; head.appendChild(strong);
-                  planCard.appendChild(head);
-                  const body = document.createElement('div'); body.className='stack'; body.style.marginTop='8px';
-                  const cur = document.createElement('div'); cur.innerHTML = `<span class="muted">現在のプラン：</span> ${meta.label}`; body.appendChild(cur);
-                  const fee = document.createElement('div'); fee.innerHTML = `<span class="muted">月額：</span> ¥${meta.price.toLocaleString()} ／ <span class="muted">予約手数料：</span> ${(Math.round(meta.feeRate*1000)/10)}%`; body.appendChild(fee);
-                  const note = document.createElement('p'); note.className='muted'; note.style.margin='6px 0 0'; note.textContent='※ プラン変更は管理者による編集で行われます（デモ）。'; body.appendChild(note);
-                  planCard.appendChild(body);
-                  // visibilityカードの直後に挿入
-                  card.parentElement && card.parentElement.insertBefore(planCard, card.nextSibling);
-                }catch{}
-              } else {
-                btn.textContent = '設定不可（店舗情報が見つかりません）'; btn.disabled = true;
-              }
-            })();
-            // 可視化カード：ゾーン／表示機会指数／距離／変化量
-            const viz = document.createElement('div'); viz.className='card'; viz.style.padding='12px'; viz.style.marginTop='12px';
-            const head = document.createElement('div'); head.className='cluster'; head.style.justifyContent='space-between'; head.style.alignItems='center';
-            const hstrong = document.createElement('strong'); hstrong.textContent='表示ポジション（安全表示）'; head.appendChild(hstrong);
-            viz.appendChild(head);
-            const body = document.createElement('div'); body.className='stack'; body.style.marginTop='8px';
-            const idxEl = document.createElement('div'); idxEl.textContent='表示機会指数：—'; body.appendChild(idxEl);
-            const zoneEl = document.createElement('div'); zoneEl.textContent='現在ゾーン：—'; body.appendChild(zoneEl);
-            const distEl = document.createElement('div'); distEl.textContent='次ゾーンまで：—'; body.appendChild(distEl);
-            const diffEl = document.createElement('div'); diffEl.textContent='前回比：—'; body.appendChild(diffEl);
-            viz.appendChild(body);
-            container.insertBefore(viz, container.children[1] || null);
-            // 仮スコア（MVP）：プロフ充実度・来店率・診断一致度から擬似合成
-            import('../../scripts/zones.js').then(zone => {
-              try{
-                const me = loadProviders().find(p=> p.id===session.id) || {};
-                // ---- 実値化: 予約/来店MVPとプロフィール完成度を反映 ----
-                const RESV_KEY = 'glowup:reservations';
-                const VISIT_KEY = 'glowup:visits';
-                let reservations = []; let visits = [];
-                try{ const rawR=localStorage.getItem(RESV_KEY); reservations = rawR? JSON.parse(rawR):[]; }catch{}
-                try{ const rawV=localStorage.getItem(VISIT_KEY); visits = rawV? JSON.parse(rawV):[]; }catch{}
-                // provider単位で集計
-                const myRes = Array.isArray(reservations)? reservations.filter(r=> r && r.providerId===session.id):[];
-                const myVisits = Array.isArray(visits)? visits.filter(v=> v && v.providerId===session.id):[];
-                const totalRes = myRes.length;
-                const completed = myRes.filter(r=> r.status==='visited' || r.status==='completed').length;
-                const repeatedUsers = (function(){
-                  const map = new Map();
-                  for(const v of myVisits){
-                    const uid = v.userId||''; map.set(uid, (map.get(uid)||0)+1);
-                  }
-                  let rep=0; for(const cnt of map.values()){ if(cnt>=2) rep++; }
-                  const totalUsers = map.size || 1;
-                  return Math.round((rep/totalUsers)*100);
-                })();
-                const visitRate = totalRes? Math.round((completed/totalRes)*100) : 0; // %
-                const repeatRate = repeatedUsers; // %
-                const completion = Number(me.profile?.completionRate||0); // 0-100
-                const trust = Math.round((visitRate * 0.5) + (repeatRate * 0.3) + (completion * 0.2));
-                // 診断一致度: whatTypesとユーザー診断intent.type_idの一致
-                let affinity = 40;
-                try{
-                  const raw = localStorage.getItem('fineme:diagnosis:latest');
-                  const diag = raw? JSON.parse(raw): null;
-                  const typeId = String(diag?.intent?.type_id||'');
-                  const what = (me.onboarding?.profile?.whatTypes)||[];
-                  if(typeId){
-                    if(Array.isArray(what) && what.includes(typeId)) affinity = 90;
-                    else if(Array.isArray(what) && what.length>0) affinity = 60;
-                    else affinity = 50;
-                  }
-                }catch{}
-                // 補正: 店舗写真や説明の充実度（簡易に completion を再使用）
-                const correction = Math.round(completion);
-                // 総合スコア（重み: 相性0.5 補正0.3 信頼0.2）
-                const Si = Math.round((affinity * 0.5) + (correction * 0.3) + (trust * 0.2));
-                const Smin = 20; const Smax = 95; // 仮定（タイプ内分布）
-                const prevNi = Number(localStorage.getItem('fineme:zone:lastNi')||'');
-                const NiRaw = zone.normalizeScore(Si, Smin, Smax);
-                const Ni = zone.smooth(Number.isFinite(prevNi)? prevNi : undefined, NiRaw, 0.3);
-                localStorage.setItem('fineme:zone:lastNi', String(Ni));
-                const z = zone.zoneOf(Ni);
-                const dist = zone.distanceToNextZone(Ni);
-                idxEl.textContent = `表示機会指数：${Ni} / 100`;
-                zoneEl.textContent = `現在ゾーン：${z.name}`;
-                distEl.textContent = `次ゾーンまで：+${dist}pt`;
-                const diff = (Number.isFinite(prevNi) ? (Ni - prevNi) : 0);
-                diffEl.textContent = `前回比：${diff>=0?'+':''}${diff}`;
+    // 掲載者データをlocalStorageから取得（ログインセッション）
+    // Phase 0: ログイン済み掲載者のIDをセッションから取得し、APIで自分のデータを取得
+    // 今はデモ: localStorageのglowup:providersから読む
+    const PROVIDER_KEY = 'fineme:provider:current';
 
-                // ステータスサマリーの更新
-                try{
-                  const sumZone = document.getElementById('sum-zone');
-                  const sumType = document.getElementById('sum-type');
-                  const sumResv = document.getElementById('sum-resv');
-                  if(sumZone){
-                    // ゾーン名称→相性文言に変換
-                    const map = { '上位表示ゾーン':'とても相性がいい', '標準表示ゾーン':'相性がいい', '成長中ゾーン':'合いそう', '準備中ゾーン':'選択肢として表示' };
-                    sumZone.textContent = `${map[z.name]||z.name}（${z.name}）`;
-                  }
-                  // タイプ推定（A–D＋Eから近いタイプ名を推定）
-                  function classifyTypeFromScores(sc){
-                    try{
-                      const A=Number(sc.A||2),B=Number(sc.B||2),C=Number(sc.C||2),D=Number(sc.D||2),E=String((sc.E_tags||[])[0]||'');
-                      const ideal={
-                        t01:{ name:'慎重・納得重視タイプ', vec:{A:3,B:3,C:2,D:2}, bonus:['理論・根拠'] },
-                        t02:{ name:'安心・寄り添い重視タイプ', vec:{A:2,B:4,C:1,D:1}, bonus:['安心感'] },
-                        t03:{ name:'効率・最短重視タイプ', vec:{A:2,B:1,C:3,D:3}, bonus:['実績'] },
-                        t04:{ name:'変化・アップデート重視タイプ', vec:{A:4,B:1,C:4,D:2}, bonus:['センス'] },
-                        t05:{ name:'直感・フィーリング重視タイプ', vec:{A:2,B:2,C:2,D:2}, bonus:['センス'] },
-                        t06:{ name:'伴走・共同決定重視タイプ', vec:{A:3,B:2,C:2,D:2}, bonus:['安心感','理論・根拠'] }
-                      };
-                      const entries = Object.values(ideal).map(meta=>{ const v=meta.vec; let d=Math.abs(A-v.A)+Math.abs(B-v.B)+Math.abs(C-v.C)+Math.abs(D-v.D); if(E && meta.bonus.includes(E)) d -= 0.6; return { name:meta.name, dist:d }; });
-                      entries.sort((a,b)=> a.dist-b.dist); return entries[0]?.name || '';
-                    }catch{ return ''; }
-                  }
-                  if(sumType){
-                    const sc = (loadProviders().find(p=> p.id===session.id)?.onboarding?.scores) || {};
-                    const name = classifyTypeFromScores(sc);
-                    sumType.textContent = name || '—';
-                  }
-                  if(sumResv){
-                    // 今月の予約数（承認済み）と先月比
-                    const now = new Date(); const ym = `${now.getFullYear()}-${now.getMonth()+1}`;
-                    const last = new Date(now.getFullYear(), now.getMonth()-1, 1); const yml = `${last.getFullYear()}-${last.getMonth()+1}`;
-                    function ymKey(d){ try{ const dd=new Date(d); return `${dd.getFullYear()}-${dd.getMonth()+1}`; }catch{ return ''; } }
-                    let reservations = []; try{ const raw=localStorage.getItem('fineme:reservations:list'); reservations = raw? JSON.parse(raw): []; }catch{}
-                    const mine = Array.isArray(reservations) ? reservations.filter(r=> String(r.storeId||'')===String(session.id)) : [];
-                    const approvedSet = new Set(['reserved','visit_pending','visited']);
-                    const cur = mine.filter(r=> approvedSet.has(String(r.status||'')) && ymKey(r.visitDate)===ym).length;
-                    const prev = mine.filter(r=> approvedSet.has(String(r.status||'')) && ymKey(r.visitDate)===yml).length;
-                    const diffTxt = (cur-prev>=0?'+':'') + String(cur-prev);
-                    sumResv.textContent = `${cur}件（先月比 ${diffTxt}）`;
-                  }
-                }catch{}
-              }catch(e){ /* silent */ }
-            }).catch(()=>{});
-            const card = document.createElement('div'); card.className='card'; card.style.padding='12px'; card.style.marginTop='12px';
-            const title = document.createElement('div'); title.className='cluster'; title.style.justifyContent='space-between'; title.style.alignItems='center';
-            const strong = document.createElement('strong'); strong.textContent='オンボーディング'; title.appendChild(strong);
-            const btn = document.createElement('a'); btn.className='btn btn-ghost'; btn.href='./onboarding.html#reedit'; btn.textContent='再体験・再編集'; title.appendChild(btn);
-            card.appendChild(title);
-            const p = document.createElement('p'); p.className='muted'; p.style.margin='8px 0 0'; p.textContent='診断の思想・プロフィール入力はいつでも見直せます。'; card.appendChild(p);
-            container.insertBefore(card, container.children[1] || null);
-            // 相性可視化UI：相性マップ（5軸、非数値）+ ゾーン表示（育成/安定/強化）
-            try{
-              const me = loadProviders().find(p=> p.id===session.id) || {};
-              const sc = (me.onboarding && me.onboarding.scores) ? me.onboarding.scores : { A:2, B:2, C:2, D:2, E_tags:[] };
-              const prof = (me.onboarding && me.onboarding.profile) ? me.onboarding.profile : {};
-              function level3(val){ return val>=3? 'green' : (val===2? 'yellow' : 'none'); }
-              const axes = [
-                { key:'motivation', label:'動機の深さ', lvl: level3(Number(sc.A||2)) },
-                { key:'anxiety', label:'不安への向き合い方', lvl: level3(Number(sc.B||2)) },
-                { key:'change', label:'変化の強さ', lvl: level3(Number(sc.C||2)) },
-                { key:'style', label:'進め方スタイル', lvl: (Number(sc.D||2)===2? 'green' : 'yellow') },
-                { key:'values', label:'大切にしている価値観', lvl: (Array.isArray(sc.E_tags) && sc.E_tags.length>=2? 'green' : (Array.isArray(sc.E_tags) && sc.E_tags.length===1? 'yellow' : 'none')) }
-              ];
-              const greens = axes.filter(a=> a.lvl==='green').length;
-              const zoneName = greens>=3? '🔥 強化ゾーン' : (greens===2? '🌿 安定ゾーン' : '🌱 育成ゾーン');
-              const compat = document.createElement('div'); compat.className='card'; compat.style.padding='12px'; compat.style.marginTop='12px';
-              const header = document.createElement('div'); header.className='cluster'; header.style.justifyContent='space-between'; header.style.alignItems='center';
-              const title = document.createElement('strong'); title.textContent='相性マップ（非数値）'; header.appendChild(title);
-              const link = document.createElement('a'); link.className='btn btn-ghost'; link.href='./compatibility.html'; link.textContent='詳しく見る'; header.appendChild(link);
-              compat.appendChild(header);
-              const copy = document.createElement('p'); copy.className='muted'; copy.style.margin='8px 0'; copy.textContent='このマップは良し悪しではなく、今のプロフィールがどんな人に届いているかの到達度表示です。'; compat.appendChild(copy);
-              const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='1fr 1fr'; grid.style.gap='8px';
-              function badge(axisKey, label, lvl){
-                const b = document.createElement('button'); b.type='button'; b.style.display='flex'; b.style.justifyContent='space-between'; b.style.alignItems='center'; b.style.padding='8px 10px'; b.style.border='1px solid #e5e7eb'; b.style.borderRadius='10px'; b.style.cursor='pointer'; b.style.background='#fff'; b.setAttribute('aria-label', label+' の改善提案を開く');
-                const name = document.createElement('span'); name.textContent = label; b.appendChild(name);
-                const tag = document.createElement('span'); tag.style.borderRadius='999px'; tag.style.fontSize='12px'; tag.style.padding='2px 10px';
-                if(lvl==='green'){ tag.textContent='よく届いている'; tag.style.background='#10b981'; tag.style.color='#fff'; }
-                else if(lvl==='yellow'){ tag.textContent='もう少しで届く'; tag.style.background='#f59e0b'; tag.style.color='#fff'; }
-                else { tag.textContent='まだ伝わっていない'; tag.style.background='#e5e7eb'; tag.style.color='#111827'; }
-                b.appendChild(tag);
-                b.addEventListener('click', ()=> openAxisPopup(axisKey, label, lvl));
-                return b;
-              }
-              // 軸ポップアップ
-              function openAxisPopup(key, label, lvl){
-                const backdrop = document.createElement('div'); backdrop.id='axis-modal-backdrop'; backdrop.style.position='fixed'; backdrop.style.inset='0'; backdrop.style.background='rgba(0,0,0,0.35)'; backdrop.style.backdropFilter='blur(2px)'; backdrop.style.zIndex='999';
-                const modal = document.createElement('div'); modal.id='axis-modal'; modal.style.position='fixed'; modal.style.inset='0'; modal.style.display='flex'; modal.style.alignItems='center'; modal.style.justifyContent='center'; modal.style.padding='24px'; modal.style.zIndex='1000';
-                const card = document.createElement('div'); card.className='card'; card.style.maxWidth='560px'; card.style.width='100%'; card.style.padding='16px'; card.style.borderRadius='12px';
-                const head = document.createElement('div'); head.className='cluster'; head.style.justifyContent='space-between'; head.style.alignItems='center';
-                const h = document.createElement('strong'); h.textContent = `【${label}】改善提案`; head.appendChild(h);
-                const close = document.createElement('button'); close.className='btn btn-ghost'; close.type='button'; close.textContent='閉じる'; close.addEventListener('click', removeModal); head.appendChild(close);
-                card.appendChild(head);
-                const p = document.createElement('p'); p.className='muted'; p.style.margin='8px 0';
-                const actionsWrap = document.createElement('div'); actionsWrap.className='stack'; actionsWrap.style.marginTop='8px'; actionsWrap.style.gap='6px';
-                // 軸別の具体アクション（実フィールド対応）
-                const map = {
-                  motivation: {
-                    intro:'「どんな悩みの男性に向き合ってきたか」を具体化すると、動機が伝わりやすくなります。',
-                    actions:[
-                      {text:'オンボ｜どんな悩みを追記', href:'./onboarding.html#reedit&focus=ob-q-problems'}
-                    ]
-                  },
-                  anxiety: {
-                    intro:'初回での不安解消の姿勢が伝わると、この軸は上がります。',
-                    actions:[
-                      {text:'オンボ｜初めての人への寄り添い', href:'./onboarding.html#reedit&focus=ob-q-first'},
-                      {text:'サービス｜失敗リスクへの向き合い方', href:'./service_form.html?select=auto&focus=riskPolicy'},
-                      {text:'サービス｜Q&Aに不安への回答を追加', href:'./service_form.html?select=auto&focus=qa-list'}
-                    ]
-                  },
-                  change: {
-                    intro:'提供する変化レンジ（少し整える〜別人レベル）を明記しましょう。',
-                    actions:[
-                      {text:'サービス｜初回の進め方に変化レンジ', href:'./service_form.html?select=auto&focus=firstSessionPlan'},
-                      {text:'オンボ｜提供スタンス（C）を見直す', href:'./onboarding.html#reedit&focus=ob-c-group'}
-                    ]
-                  },
-                  style: {
-                    intro:'意思決定の関わり方（相談/提案/委ねる）を言語化しましょう。',
-                    actions:[
-                      {text:'オンボ｜意思決定の関わり方（D）', href:'./onboarding.html#reedit&focus=ob-d-group'},
-                      {text:'オンボ｜初めての人への寄り添い', href:'./onboarding.html#reedit&focus=ob-q-first'}
-                    ]
-                  },
-                  values: {
-                    intro:'価値観タグ（安心・理論・センス・実績）を2つ以上＋何で選ばれたいかを補足しましょう。',
-                    actions:[
-                      {text:'オンボ｜価値観タグを選ぶ', href:'./onboarding.html#reedit&focus=ob-e-group'},
-                      {text:'オンボ｜価格ではなく何で選ばれたいか', href:'./onboarding.html#reedit&focus=ob-q-beyond'}
-                    ]
-                  }
-                };
-                const tip = map[key] || { intro:'プロフィールに具体的な言葉を増やしてください。', actions:[{text:'オンボへ', href:'./onboarding.html#reedit'}] };
-                p.textContent = tip.intro;
-                card.appendChild(p);
-                // アクションリンク群
-                tip.actions.forEach(act=>{
-                  const a = document.createElement('a'); a.className='btn btn-ghost'; a.href=act.href; a.textContent=act.text; actionsWrap.appendChild(a);
-                });
-                card.appendChild(actionsWrap);
-                modal.appendChild(card);
-                function removeModal(){ try{ document.body.removeChild(backdrop); document.body.removeChild(modal); }catch{} }
-                backdrop.addEventListener('click', removeModal);
-                document.body.appendChild(backdrop); document.body.appendChild(modal);
-              }
-              axes.forEach(a=> grid.appendChild(badge(a.key, a.label, a.lvl)));
-              compat.appendChild(grid);
-              const zone = document.createElement('div'); zone.style.marginTop='10px'; zone.innerHTML = `<strong>現在のゾーン：</strong> ${zoneName}`; compat.appendChild(zone);
-              const hint = document.createElement('p'); hint.className='muted'; hint.style.margin='6px 0 0'; hint.textContent='各軸を強化するには、プロフィールに具体的な言葉を増やしてください（初回の向き合い方・価値観・得意な変化など）。'; compat.appendChild(hint);
-              container.insertBefore(compat, container.children[2] || null);
-            }catch(_){ }
-            // 改善提案カード（どこに何を書けば上がるか）
-            try{
-              const SERVICES_KEY = 'glowup:services';
-              const loadServices = ()=>{ try{ const raw=localStorage.getItem(SERVICES_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch{ return []; } };
-              const myServices = loadServices().filter(s=> s && s.providerId===session.id);
-              const tips = [];
-              // 集計：不足に応じて提案を作成
-              for(const svc of myServices){
-                const name = svc.name || 'サービス';
-                const fsLen = (svc.firstSessionPlan||'').length;
-                const rpLen = (svc.riskPolicy||'').length;
-                const qaCnt = Array.isArray(svc.qaList)? svc.qaList.filter(it=> it&&it.q&&it.a).length : 0;
-                const descLen = (svc.description||'').length;
-                if(fsLen < 80){ tips.push({ k:'fs', text:`「${name}」の初回の進め方：80〜150字で具体化（例・手順/所要時間/合意の取り方）`, href:'./service_form.html' }); }
-                if(rpLen < 60){ tips.push({ k:'rp', text:`「${name}」の失敗リスクへの向き合い方：60字以上で補足（確認・修正・保証）`, href:'./service_form.html' }); }
-                if(qaCnt < 2){ tips.push({ k:'qa', text:`「${name}」のQ&A：よくある不安への回答を2件以上追加`, href:'./service_form.html' }); }
-                if(descLen < 150){ tips.push({ k:'desc', text:`「${name}」の本文：150字以上で具体化（内容/所要時間/持ち物）`, href:'./service_form.html' }); }
-              }
-              // 重複キーを除去して上位3件だけ表示
-              const seen = new Set(); const dedup = [];
-              for(const t of tips){ if(seen.has(t.k)) continue; seen.add(t.k); dedup.push(t); if(dedup.length>=3) break; }
-              if(dedup.length){
-                const sugg = document.createElement('div'); sugg.className='card'; sugg.style.padding='12px'; sugg.style.marginTop='12px';
-                const title = document.createElement('div'); title.className='cluster'; title.style.justifyContent='space-between'; title.style.alignItems='center';
-                const strong = document.createElement('strong'); strong.textContent='改善提案（どこに何を書くと上がるか）'; title.appendChild(strong);
-                const link = document.createElement('a'); link.className='btn btn-ghost'; link.href='./service_form.html'; link.textContent='サービス編集へ'; title.appendChild(link);
-                sugg.appendChild(title);
-                const ul = document.createElement('ul'); ul.className='stack'; ul.style.marginTop='8px';
-                for(const t of dedup){ const li=document.createElement('li'); const a=document.createElement('a'); a.href=t.href; a.className='btn btn-ghost'; a.textContent='編集'; li.appendChild(document.createTextNode(t.text)); li.appendChild(document.createTextNode(' ')); li.appendChild(a); ul.appendChild(li); }
-                sugg.appendChild(ul);
-                container.insertBefore(sugg, container.children[2] || null);
-              }
-            }catch(e){ /* ignore */ }
-
-            // 今月の指標カード（予約数・アクセス数・人気サービス・今月の手数料）
-            try{
-              const metricsCard = document.createElement('div'); metricsCard.className='card'; metricsCard.style.padding='12px'; metricsCard.style.marginTop='12px';
-              const head = document.createElement('div'); head.className='cluster'; head.style.justifyContent='space-between'; head.style.alignItems='center';
-              const h = document.createElement('strong'); h.textContent='📈 今月の指標'; head.appendChild(h);
-              metricsCard.appendChild(head);
-              const wrap = document.createElement('div'); wrap.className='stack'; wrap.style.marginTop='8px';
-
-              function ymKey(iso){ try{ const d=new Date(iso); return `${d.getFullYear()}-${d.getMonth()+1}`; }catch{ return ''; } }
-              const now = new Date(); const ym = `${now.getFullYear()}-${now.getMonth()+1}`;
-              const last = new Date(now.getFullYear(), now.getMonth()-1, 1); const yml = `${last.getFullYear()}-${last.getMonth()+1}`;
-
-              // 予約と手数料（points/reservationsベース）
-              let reservations = []; try{ const raw=localStorage.getItem('fineme:reservations:list'); reservations = raw? JSON.parse(raw): []; }catch{}
-              const mine = Array.isArray(reservations) ? reservations.filter(r=> String(r.storeId||'')===String(session.id)) : [];
-              const effectiveStatuses = new Set(['reserved','visit_pending','visited']);
-              const curResv = mine.filter(r=> effectiveStatuses.has(String(r.status||'')) && ymKey(r.visitDate)===ym);
-              const prevResv = mine.filter(r=> effectiveStatuses.has(String(r.status||'')) && ymKey(r.visitDate)===yml);
-              const resvCount = curResv.length;
-              const resvDiff = resvCount - prevResv.length;
-              const visitedThisMonth = mine.filter(r=> String(r.status||'')==='visited' && ymKey(r.visitDate)===ym);
-              const feeThisMonth = visitedThisMonth.reduce((sum, r)=> sum + (Number(r.price||0) * (Number(r.commissionRate||0)/100)), 0);
-
-              // アクセス数・人気サービス（viewHistoryベース）
-              let history = []; try{ const raw=localStorage.getItem('glowup:viewHistory'); history = raw? JSON.parse(raw): []; }catch{}
-              const myHist = Array.isArray(history) ? history.filter(h=> String(h.providerId||'')===String(session.id)) : [];
-              const curAccess = myHist.filter(h=> ymKey(h.viewedAt||h.createdAt||Date.now())===ym).length;
-              const prevAccess = myHist.filter(h=> ymKey(h.viewedAt||h.createdAt||Date.now())===yml).length;
-              const accessDiff = curAccess - prevAccess;
-
-              // 人気サービス上位3（今月）
-              function pickServiceKey(href){
-                try{
-                  const u = new URL(href, location.origin);
-                  const sid = u.searchParams.get('serviceId');
-                  return sid ? `sid:${sid}` : `href:${u.pathname}${u.search}`;
-                }catch{ return String(href||''); }
-              }
-              const curHist = myHist.filter(h=> ymKey(h.viewedAt||h.createdAt||Date.now())===ym);
-              const counts = new Map(); const names = new Map();
-              for(const it of curHist){ const key = pickServiceKey(it.href||''); counts.set(key, (counts.get(key)||0)+1); if(!names.has(key)) names.set(key, it.name||'サービス'); }
-              const top = Array.from(counts.entries()).map(([k,v])=>({ key:k, count:v, name:names.get(k)||'サービス' })).sort((a,b)=> b.count-a.count).slice(0,3);
-
-              // レイアウト
-              const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='repeat(auto-fit, minmax(180px, 1fr))'; grid.style.gap='10px';
-              function metric(label, value, diff){
-                const box = document.createElement('div'); box.style.border='1px solid #e5e7eb'; box.style.borderRadius='10px'; box.style.padding='10px'; box.style.background='#fff';
-                const l = document.createElement('div'); l.className='muted'; l.textContent = label; box.appendChild(l);
-                const v = document.createElement('div'); v.style.fontSize='18px'; v.style.fontWeight='700'; v.textContent = value; box.appendChild(v);
-                if(typeof diff === 'number'){
-                  const d = document.createElement('div'); d.className='muted'; d.style.fontSize='12px'; d.style.marginTop='2px'; d.textContent = `先月比 ${diff>=0?'+':''}${diff}`; box.appendChild(d);
-                }
-                return box;
-              }
-              grid.appendChild(metric('予約数（今月）', `${resvCount}件`, resvDiff));
-              grid.appendChild(metric('アクセス数（今月）', `${curAccess}回`, accessDiff));
-              grid.appendChild(metric('今月の手数料', `¥${Math.round(feeThisMonth).toLocaleString()}`));
-              wrap.appendChild(grid);
-
-              // 人気サービス
-              const popular = document.createElement('div'); popular.className='stack'; popular.style.marginTop='8px';
-              const ph = document.createElement('div'); ph.className='muted'; ph.textContent='アクセスが多いサービス（今月）'; popular.appendChild(ph);
-              if(top.length){
-                const ul = document.createElement('ul'); ul.className='stack'; ul.style.marginTop='6px';
-                for(const t of top){ const li=document.createElement('li'); li.textContent = `${t.name}：${t.count}回`; ul.appendChild(li); }
-                popular.appendChild(ul);
-              } else {
-                const empty = document.createElement('div'); empty.className='muted'; empty.textContent='— データがありません'; popular.appendChild(empty);
-              }
-              wrap.appendChild(popular);
-
-              metricsCard.appendChild(wrap);
-              container.insertBefore(metricsCard, container.children[3] || null);
-            }catch(_){ }
-
-            // 相性経由率カード（順位の代替指標）
-            try{
-              const ratioCard = document.createElement('div'); ratioCard.className='card'; ratioCard.style.padding='12px'; ratioCard.style.marginTop='12px';
-              const head = document.createElement('div'); head.className='cluster'; head.style.justifyContent='space-between'; head.style.alignItems='center';
-              const h = document.createElement('strong'); h.textContent='📊 相性経由率（今月）'; head.appendChild(h);
-              ratioCard.appendChild(head);
-              const desc = document.createElement('p'); desc.className='muted'; desc.style.margin='8px 0'; desc.textContent='Finemeの診断ロジックにより「今の状態に合う」と判断されて来店した割合の目安です（順位の代わりに使う指標）。'; ratioCard.appendChild(desc);
-              const val = document.createElement('div'); val.style.fontWeight='700'; val.style.fontSize='16px'; val.textContent='—%'; ratioCard.appendChild(val);
-              const copy = document.createElement('p'); copy.className='muted'; copy.style.margin='6px 0 0'; ratioCard.appendChild(copy);
-              // 集計（暫定ロジック）：当月訪問のうち、診断あり＋相性軸が3本以上届いている（緑）を「相性経由」とみなす
-              const ptsRaw = localStorage.getItem('fineme:reservations:list');
-              const reservations = ptsRaw ? JSON.parse(ptsRaw) : [];
-              const now = new Date(); const ym = `${now.getFullYear()}-${now.getMonth()+1}`;
-              const mine = Array.isArray(reservations) ? reservations.filter(r=> String(r.storeId||'') === String(session.id)) : [];
-              function ymKey(iso){ try{ const d=new Date(iso); return `${d.getFullYear()}-${d.getMonth()+1}`; }catch{ return ''; } }
-              const monthVisits = mine.filter(r=> ymKey(r.visitDate)===ym && r.status==='visited');
-              // 診断の存在（簡易）
-              let diagExists = false; try{ const raw=localStorage.getItem('fineme:diagnosis:latest'); const obj=raw?JSON.parse(raw):null; diagExists = !!(obj && obj.intent && obj.how && obj.why); }catch{}
-              // 軸緑数
-              const sc = (loadProviders().find(p=> p.id===session.id)?.onboarding?.scores) || { A:2,B:2,C:2,D:2,E_tags:[] };
-              const greens = [Number(sc.A||2)>=3, Number(sc.B||2)>=3, Number(sc.C||2)>=3, Number(sc.D||2)===2, Array.isArray(sc.E_tags)&&sc.E_tags.length>=2].filter(Boolean).length;
-              const affinityVisits = monthVisits.filter(r=> String(r.origin||'') === 'affinity').length;
-              const totalVisits = monthVisits.length || 0;
-              const ratio = totalVisits ? Math.round((affinityVisits/totalVisits)*100) : 0;
-              val.textContent = `${ratio}%`;
-              // 状態別コピー
-              if(ratio <= 20){ copy.textContent = '現在は検索・カテゴリ起点の来店が中心です。プロフィールの言語化で「相性起点」の選択が増えます。'; }
-              else if(ratio <= 40){ copy.textContent = '「理解」で選ばれる来店が増え始めています。相性起点の割合が高まっています。'; }
-              else if(ratio <= 60){ copy.textContent = '来店の多くが相性を起点にしています。リピート率・満足度が安定しやすい状態です。'; }
-              else { copy.textContent = 'あなたのページは「今の状態に合う選択肢」として機能しています。Finemeが目指す理想的な掲載状態です。'; }
-              container.insertBefore(ratioCard, container.children[3] || null);
-            }catch(_){ }
-          }
-        }catch(_){ }
-      };
-      // partials.js が公開する準備完了に合わせる
+    function loadProviderData(){
       try{
-        if(window.finemePartials && window.finemePartials.provNavReady){
-          window.finemePartials.provNavReady.then(() => boot());
-        } else {
-          document.addEventListener('fineme:provNavReady', () => boot(), { once: true });
-          // 念のためタイムアウトフォールバック
-          setTimeout(boot, 500);
-        }
-      }catch{ boot(); }
+        const raw = localStorage.getItem(PROVIDER_KEY);
+        return raw ? JSON.parse(raw) : null;
+      }catch{ return null; }
     }
+
+    const provider = loadProviderData();
+    const PLAN_LABELS = { A:'ライト（¥5,000/月）', B:'スタンダード（¥7,000/月）', C:'プレミアム（¥10,000/月）' };
+
+    if(provider){
+      document.getElementById('provider-name-header').textContent = provider.name || '掲載者ダッシュボード';
+      const slug = provider.slug || '';
+      if(slug){
+        document.getElementById('provider-page-link').textContent = `fineme.me/provider/${slug}`;
+        document.getElementById('view-page-btn').href = `/provider/${slug}`;
+      }
+      // 課金情報
+      document.getElementById('billing-plan').textContent = PLAN_LABELS[provider.plan||'A'] || 'プランA';
+      document.getElementById('billing-status').textContent = provider.billing_started ? 'Fineme経由の予約が発生し、課金が始まっています' : '課金はまだ始まっていません（初回予約発生後に開始）';
+      // 紹介コード
+      document.getElementById('referral-code').textContent = provider.referral_code || slug || '—';
+      // 公開設定
+      document.getElementById('publish-toggle-input').checked = !!provider.published;
+      document.getElementById('publish-label').textContent = provider.published ? '公開中' : '非公開';
+      // フォームに初期値
+      ['name','catchphrase','target_desc','philosophy','photo_url'].forEach(k=>{
+        const el = document.getElementById('profile-form').elements[k];
+        if(el) el.value = provider[k] || '';
+      });
+      ['description','area','price_from','booking_url','provider_style'].forEach(k=>{
+        const el = document.getElementById('service-form').elements[k];
+        if(el) el.value = provider[k] || '';
+      });
+      document.querySelectorAll('[name=suitable_triggers]').forEach(cb=>{ cb.checked = (provider.suitable_triggers||[]).includes(cb.value); });
+      document.querySelectorAll('[name=handles_failure_patterns]').forEach(cb=>{ cb.checked = (provider.handles_failure_patterns||[]).includes(cb.value); });
+    } else {
+      // データなし：概況タブに案内
+      document.getElementById('tab-stats').innerHTML = `
+        <div class="card" style="padding:20px;text-align:center">
+          <p class="muted">掲載者データが見つかりません。</p>
+          <p style="font-size:13px;color:#6b7280">運営側より登録が完了次第、こちらに情報が表示されます。</p>
+        </div>
+      `;
+    }
+
+    // アクセス統計はPhase 1以降で実装
+    document.getElementById('stat-views').textContent = '準備中';
+    document.getElementById('stat-inquiries').textContent = '準備中';
+    document.getElementById('stat-referrals').textContent = '準備中';
+
+    // 公開設定トグル
+    document.getElementById('publish-toggle-input').addEventListener('change', async function(){
+      document.getElementById('publish-label').textContent = this.checked ? '公開中' : '非公開';
+      // 実際のAPI更新は、掲載者のJWT認証が実装されてから
+      // Phase 0: localStorageを更新
+      try{
+        const raw = localStorage.getItem(PROVIDER_KEY);
+        if(raw){ const d = JSON.parse(raw); d.published = this.checked; localStorage.setItem(PROVIDER_KEY, JSON.stringify(d)); }
+      }catch{}
+    });
+
+    // フォーム保存（Phase 0: localStorageに保存 + API更新は将来）
+    function saveToLocal(updates){
+      try{
+        const raw = localStorage.getItem(PROVIDER_KEY);
+        const d = raw ? JSON.parse(raw) : {};
+        Object.assign(d, updates);
+        localStorage.setItem(PROVIDER_KEY, JSON.stringify(d));
+        showToast('保存しました');
+      }catch{ showToast('保存に失敗しました'); }
+    }
+
+    function showToast(msg){ try{ const t=document.createElement('div'); t.style.cssText='position:fixed;bottom:20px;right:20px;background:#111;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:999'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2000); }catch{} }
+
+    document.getElementById('profile-form').addEventListener('submit',e=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      saveToLocal(Object.fromEntries(fd));
+    });
+
+    document.getElementById('service-form').addEventListener('submit',e=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const data = Object.fromEntries(fd);
+      data.suitable_triggers = [...e.target.querySelectorAll('[name=suitable_triggers]:checked')].map(el=>el.value);
+      data.handles_failure_patterns = [...e.target.querySelectorAll('[name=handles_failure_patterns]:checked')].map(el=>el.value);
+      if(data.price_from) data.price_from = Number(data.price_from);
+      saveToLocal(data);
+    });
+
+    // 紹介コードコピー
+    document.getElementById('copy-referral').addEventListener('click',()=>{
+      const code = document.getElementById('referral-code').textContent;
+      navigator.clipboard.writeText(code).then(()=>showToast('コードをコピーしました')).catch(()=>{});
+    });
+
+    // カスタマーポータル
+    document.getElementById('billing-portal-btn').addEventListener('click',async e=>{
+      e.preventDefault();
+      try{
+        const res = await fetch('/api/billing/portal-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({providerId: provider?.id||''})});
+        const {url} = await res.json();
+        if(url) window.location.href = url;
+      }catch{ showToast('ポータルへのアクセスに失敗しました'); }
+    });
+  })();
   </script>
 </body>
 </html>
