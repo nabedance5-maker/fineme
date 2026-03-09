@@ -39,8 +39,42 @@
       <div id="store-root" class="stack"></div>
     </div>
   </main>
+  <!-- 体験談セクション（store.jsのrender後に注入） -->
+  <div id="stories-section" class="section" style="display:none">
+    <div class="container" style="max-width:1000px">
+      <h2 class="section-title" style="margin-bottom:4px">変容体験談</h2>
+      <p class="muted" style="margin-bottom:16px;font-size:14px">このサービスを利用したユーザーのリアルな体験談です。</p>
+      <div id="stories-list" class="stack"></div>
+    </div>
+  </div>
   <footer id="site-footer"></footer>
   <script src="../scripts/main.js" type="module"></script>
   <script src="../scripts/store.js" type="module"></script>
+  <script>
+  (async function loadStories(){
+    try{
+      const p = new URLSearchParams(location.search);
+      const providerId = p.get('id') || p.get('storeId') || p.get('providerId') || '';
+      if(!providerId) return;
+      const res = await fetch(`/api/stories?providerId=${encodeURIComponent(providerId)}&status=approved`);
+      const stories = await res.json();
+      if(!Array.isArray(stories) || !stories.length) return;
+      const section = document.getElementById('stories-section');
+      const list = document.getElementById('stories-list');
+      if(!section || !list) return;
+      section.style.display = '';
+      function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+      list.innerHTML = stories.map(s => {
+        const tags = Array.isArray(s.tags) ? s.tags : (s.tags||'').split(',').filter(Boolean);
+        return `<div class="card" style="padding:20px">
+          <div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:#9ca3af;margin-bottom:4px">利用前の悩み</div><div style="font-size:14px;line-height:1.7">${esc(s.concern_before)}</div></div>
+          <div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:#9ca3af;margin-bottom:4px">どんな変化があったか</div><div style="font-size:14px;line-height:1.7">${esc(s.change_after)}</div></div>
+          ${s.love_impact?`<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:#9ca3af;margin-bottom:4px">恋愛・人間関係への影響</div><div style="font-size:14px;line-height:1.7">${esc(s.love_impact)}</div></div>`:''}
+          ${tags.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${tags.map(t=>`<span style="padding:3px 10px;border-radius:99px;font-size:11px;background:#ede9fe;color:#5b21b6">${esc(t)}</span>`).join('')}</div>`:''}
+        </div>`;
+      }).join('');
+    }catch(e){ console.warn('[stories]', e); }
+  })();
+  </script>
 </body>
 </html>

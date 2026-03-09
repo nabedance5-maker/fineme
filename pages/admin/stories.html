@@ -110,7 +110,7 @@
   function renderStories() {
     const tagFilter = document.getElementById('tag-filter').value.toLowerCase();
     const filtered = tagFilter
-      ? allStories.filter(s => (s.tags || '').toLowerCase().includes(tagFilter))
+      ? allStories.filter(s => (Array.isArray(s.tags) ? s.tags.join(',') : (s.tags||'')).toLowerCase().includes(tagFilter))
       : allStories;
 
     const grid = document.getElementById('story-grid');
@@ -122,22 +122,25 @@
     const LABELS = ['外見を変える前の悩み', 'どんな変化があったか', '恋愛・人間関係への影響', 'おすすめしたい人'];
 
     grid.innerHTML = filtered.map(s => {
-      const tags = (s.tags || '').split(',').filter(Boolean);
-      const answers = [s.q1, s.q2, s.q3, s.q4];
+      // Supabase新フィールド対応
+      const tags = Array.isArray(s.tags) ? s.tags : (s.tags||'').split(',').filter(Boolean);
+      const answers = [s.concern_before||s.q1, s.change_after||s.q2, s.love_impact||s.q3, s.recommend_to||s.q4];
       const statusBadge = {
         pending: '<span class="badge badge-pending">審査待ち</span>',
         approved: '<span class="badge badge-approved">公開中</span>',
         rejected: '<span class="badge badge-rejected">却下</span>',
       }[s.status] || '';
+      const dateStr = (s.created_at||s.createdAt||'').slice(0,10);
 
       return `
         <div class="story-card" id="story-${s.id}">
           <div class="story-card-header">
             <div style="display:flex;align-items:center;gap:10px">
               ${statusBadge}
-              <span class="muted" style="font-size:12px">${s.createdAt ? s.createdAt.slice(0,10) : '-'}</span>
+              <span class="muted" style="font-size:12px">${dateStr}</span>
+              ${s.provider_id ? `<span class="muted" style="font-size:11px">掲載者: ${esc(s.provider_id)}</span>` : ''}
             </div>
-            <span class="muted" style="font-size:11px">#${s.id}</span>
+            <span class="muted" style="font-size:11px">#${String(s.id).slice(0,8)}</span>
           </div>
           <div class="story-card-body">
             ${answers.map((a, i) => a ? `
@@ -154,17 +157,17 @@
           </div>
           <div class="story-actions">
             ${s.status !== 'approved' ? `
-              <button class="btn" style="font-size:13px" onclick="updateStatus(${s.id},'approved')">
+              <button class="btn" style="font-size:13px" onclick="updateStatus('${s.id}','approved')">
                 ✅ 承認・公開する
               </button>
             ` : ''}
             ${s.status !== 'rejected' ? `
-              <button class="btn btn-ghost" style="font-size:13px;color:#ef4444" onclick="updateStatus(${s.id},'rejected')">
+              <button class="btn btn-ghost" style="font-size:13px;color:#ef4444" onclick="updateStatus('${s.id}','rejected')">
                 却下する
               </button>
             ` : ''}
             ${s.status !== 'pending' ? `
-              <button class="btn btn-ghost" style="font-size:13px" onclick="updateStatus(${s.id},'pending')">
+              <button class="btn btn-ghost" style="font-size:13px" onclick="updateStatus('${s.id}','pending')">
                 審査待ちに戻す
               </button>
             ` : ''}

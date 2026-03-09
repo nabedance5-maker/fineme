@@ -308,6 +308,18 @@
     `;
   }
 
+  // ---- URLパラメータ取得（来店後メールリンク経由） ----
+  const _params = new URLSearchParams(location.search);
+  const _reservationId = _params.get('reservationId') || '';
+  const _providerId = _params.get('providerId') || '';
+
+  function _getUserId() {
+    try {
+      const raw = localStorage.getItem('sb-qsfpzlvucqzmjldshwwd-auth-token');
+      return raw ? JSON.parse(raw)?.user?.id || null : null;
+    } catch { return null; }
+  }
+
   // ---- 投稿 ----
   async function submitStory() {
     const btn = document.getElementById('submit-btn');
@@ -315,25 +327,20 @@
     btn.disabled = true;
     label.textContent = '送信中...';
 
-    const payload = {
-      answers: [1,2,3,4].map(n => document.getElementById(`ans-${n}`)?.value || ''),
-      tags: [...selectedTags],
-      submittedAt: new Date().toISOString(),
-    };
-
     try {
-      // 内部APIがあればPOST、なければlocalStorageに保存
-      const saved = JSON.parse(localStorage.getItem('fineme:stories') || '[]');
-      saved.push({ ...payload, id: Date.now() });
-      localStorage.setItem('fineme:stories', JSON.stringify(saved));
-
-      // サーバーへ送信試行
-      await fetch('http://localhost:3001/api/stories', {
+      const res = await fetch('/api/stories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }).catch(() => {/* offline OK */});
-
+        body: JSON.stringify({
+          answers: [1,2,3,4].map(n => document.getElementById(`ans-${n}`)?.value || ''),
+          tags: [...selectedTags],
+          reservationId: _reservationId || null,
+          providerId: _providerId || null,
+          userId: _getUserId(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '送信エラー');
       showDone();
     } catch(e) {
       btn.disabled = false;
