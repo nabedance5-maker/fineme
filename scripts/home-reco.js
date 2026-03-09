@@ -262,7 +262,10 @@ async function renderReco(items){
   const local = loadLocalServices().filter(s=> s && s.published);
   const stat = await loadStaticServices();
   const all = [...local, ...stat];
-  if(all.length === 0){ return; }
+  if(all.length === 0){
+    try{ const h = document.getElementById('top-reco'); if(h){ const sec = h.closest('section'); if(sec) sec.style.display='none'; } }catch{}
+    return;
+  }
   // score: rating avg, then count, then has photo, then recent updated/created
   const scored = [];
   for(const s of all){

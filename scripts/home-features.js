@@ -101,6 +101,10 @@ async function fetchStaticFallback(){
     renderTop(items);
   }else{
     const fallback = await fetchStaticFallback();
-    renderTop(fallback);
+    if(fallback.length){
+      renderTop(fallback);
+    }else{
+      try{ const h = document.getElementById('top-features'); if(h){ const sec = h.closest('section'); if(sec) sec.style.display='none'; } }catch{}
+    }
   }
 })();
