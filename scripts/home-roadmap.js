@@ -14,7 +14,8 @@ function adaptV4toDiag(v4) {
   if (!v4 || v4.version !== 'v4') return null;
   // concern_areas の気になり度（0-4）をスコア（1-10）に変換
   // すごく(4)→1点, かなり(3)→3点, そこそこ(2)→5点, 少し(1)→7点, 全然(0)→10点
-  const levelToScore = [10, 7, 5, 3, 1];
+  // 全然(0)→P3, 少し(1)→P2, そこそこ(2)→P2, かなり(3)→P1, すごく(4)→P1
+  const levelToScore = [10, 8, 6, 3, 1];
   // ⚠️ v4にない項目はデフォルト10（Phase3=気にしていない）にする
   // デフォルト5にすると未回答項目がすべてPhase1に出てしまうバグを防ぐ
   const ALL_KEYS = ['eyebrow','hair','body','skin','hair_removal','teeth','nail','makeup','fashion'];
