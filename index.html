@@ -10,6 +10,28 @@
   <meta name="robots" content="index,follow" />
   <link rel="stylesheet" href="./assets/styles/style.css" />
   <link rel="stylesheet" href="./assets/styles/components.css" />
+  <style>
+    .roadmap-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;}
+    .roadmap-dot.is-done{background:#111;color:#fff;}
+    .roadmap-dot.is-current{background:#2563eb;color:#fff;box-shadow:0 0 0 5px rgba(37,99,235,.15);}
+    .roadmap-dot.is-locked{background:#e5e7eb;color:#9ca3af;}
+    .roadmap-conn{flex:1;height:2px;background:#e5e7eb;transition:background .3s;}
+    .roadmap-conn.is-done{background:#111;}
+    .roadmap-phase-block{padding:16px;border-radius:14px;border:1.5px solid #e5e7eb;transition:all .3s;}
+    .roadmap-phase-block.is-active{border-color:#2563eb;background:#f0f7ff;}
+    .roadmap-phase-block.is-done{border-color:#10b981;background:#f0fdf4;}
+    .roadmap-phase-block.is-locked{background:#fafafa;opacity:.65;}
+    .roadmap-phase-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;}
+    .roadmap-phase-num{font-size:11px;font-weight:800;padding:4px 12px;border-radius:99px;white-space:nowrap;}
+    .roadmap-phase-num.active{background:#2563eb;color:#fff;}
+    .roadmap-phase-num.done{background:#10b981;color:#fff;}
+    .roadmap-phase-num.locked{background:#e5e7eb;color:#9ca3af;}
+    .roadmap-phase-name{font-weight:700;font-size:15px;margin-bottom:3px;}
+    .roadmap-phase-desc{font-size:13px;color:#6b7280;line-height:1.6;}
+    .roadmap-status{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;margin-left:6px;}
+    .roadmap-status.active{background:#dbeafe;color:#1d4ed8;}
+    .roadmap-status.done{background:#d1fae5;color:#065f46;}
+  </style>
 </head>
 <body>
   <header id="site-header"></header>
@@ -36,6 +58,56 @@
               <a href="./pages/search.html" class="btn" style="font-size:14px; color:#111827 !important; background:#ffffff !important; border:1px solid #e5e7eb !important; border-radius:10px; padding:10px 14px; box-shadow:0 3px 10px rgba(0,0,0,0.08);">診断せずに探す</a>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 変容ロードマップ（診断済みユーザー向け） -->
+    <section class="section" id="roadmap-section" style="display:none">
+      <div class="container stack" style="gap:20px">
+        <div>
+          <span style="display:inline-block;font-size:11px;font-weight:800;padding:3px 10px;
+            background:#111;color:#fff;border-radius:99px;margin-bottom:10px;"
+            id="roadmap-badge-text">診断済み</span>
+          <h2 class="section-title" style="margin:0 0 8px">あなたの変容ロードマップ</h2>
+          <p class="muted" id="roadmap-sub" style="font-size:15px;line-height:1.7;margin:0 0 4px;"></p>
+          <p style="font-size:13px;color:#6b7280;margin:0;" id="roadmap-current-phase"></p>
+        </div>
+        <div style="display:flex;align-items:center;gap:0;padding:0 4px;">
+          <div class="roadmap-dot is-locked" id="phase-dot-1">1</div>
+          <div class="roadmap-conn" id="phase-conn-1"></div>
+          <div class="roadmap-dot is-locked" id="phase-dot-2">2</div>
+          <div class="roadmap-conn" id="phase-conn-2"></div>
+          <div class="roadmap-dot is-locked" id="phase-dot-3">3</div>
+        </div>
+        <div class="roadmap-phase-block" id="roadmap-phase-1"></div>
+        <div class="roadmap-phase-block" id="roadmap-phase-2"></div>
+        <div class="roadmap-phase-block" id="roadmap-phase-3"></div>
+        <div class="card" style="padding:20px">
+          <h3 style="font-size:17px;font-weight:800;margin:0 0 4px;">今すぐ着手するTop3</h3>
+          <p class="muted" style="font-size:13px;margin:0 0 16px;">診断結果から、最も優先度が高い3つを厳選しました。</p>
+          <div id="roadmap-top3-list"></div>
+          <div class="cluster" style="margin-top:16px;gap:10px;flex-wrap:wrap;">
+            <a href="./pages/search.html?diag=1&origin=roadmap" class="btn">候補サービスをすべて見る</a>
+            <a href="./pages/diagnosis.html" class="btn btn-ghost" style="font-size:13px;">診断をやり直す</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 診断結果サンプル（未診断ユーザー向け） -->
+    <section class="section" id="sample-section" style="display:none">
+      <div class="container stack" style="gap:20px">
+        <div>
+          <p class="muted" style="font-size:12px;font-weight:700;text-transform:uppercase;
+            letter-spacing:.08em;margin:0 0 6px;">診断するとこうなります</p>
+          <h2 class="section-title" style="margin:0 0 8px">あなたの「変容ロードマップ」が、<br>3分で出てきます。</h2>
+          <p class="muted" style="font-size:14px;line-height:1.7;margin:0;">以下はサンプルです。実際の診断ではあなたのスコアに基づいた、もっと具体的な内容が出ます。</p>
+        </div>
+        <div class="features-grid" id="sample-grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;"></div>
+        <div style="text-align:center;">
+          <a href="./pages/diagnosis.html" class="btn" style="font-size:16px;padding:14px 28px;">無料で自分の結果を見る（3分）</a>
+          <p class="muted" style="font-size:12px;margin:10px 0 0;">匿名・登録不要 / 営業なし / 約3分</p>
         </div>
       </div>
     </section>
@@ -155,6 +227,7 @@
 
   <footer id="site-footer"></footer>
   <script src="./scripts/main.js" type="module"></script>
+  <script src="./scripts/home-roadmap.js?v=20260308" type="module"></script>
   <script type="module">
     // ヒーロー直下のタイプ文言を診断結果に合わせて最適化
     try{
