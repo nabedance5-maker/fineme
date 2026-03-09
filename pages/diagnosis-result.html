@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>診断結果 | Fineme</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="../assets/styles/style.css">
+  <link rel="stylesheet" href="../assets/styles/components.css">
+  <style>
+    .result-wrap { max-width: 680px; margin: 0 auto; padding: 40px 20px 80px; }
+    .result-hero {
+      text-align: center;
+      padding: 32px 24px 24px;
+      background: linear-gradient(135deg, #111 0%, #1e1b4b 100%);
+      border-radius: 20px;
+      color: #fff;
+      margin-bottom: 24px;
+    }
+    .result-badge {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      padding: 4px 14px; background: rgba(255,255,255,.15);
+      border-radius: 99px; margin-bottom: 12px; letter-spacing: .06em;
+    }
+    .result-hero h1 { font-size: clamp(20px,4vw,26px); font-weight: 800; margin: 0 0 8px; line-height: 1.3; }
+    .result-hero p { font-size: 14px; opacity: .8; margin: 0; line-height: 1.6; }
+
+    .result-card {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 16px;
+      padding: 24px; margin-bottom: 16px;
+      box-shadow: 0 2px 12px rgba(2,6,23,.05);
+    }
+    .result-card h2 { font-size: 16px; font-weight: 800; margin: 0 0 14px; }
+
+    .profile-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #f3f4f6; gap: 12px; }
+    .profile-row:last-child { border-bottom: none; }
+    .profile-label { font-size: 12px; color: #9ca3af; font-weight: 700; white-space: nowrap; }
+    .profile-value { font-size: 14px; font-weight: 700; color: #111; text-align: right; }
+
+    .concern-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .concern-bar-label { font-size: 13px; width: 80px; flex-shrink: 0; color: #374151; display: flex; align-items: center; gap: 4px; }
+    .concern-bar-track { flex: 1; height: 8px; background: #f3f4f6; border-radius: 99px; overflow: hidden; }
+    .concern-bar-fill { height: 100%; background: linear-gradient(90deg, #2563eb, #6366f1); border-radius: 99px; transition: width .6s ease; }
+    .concern-bar-value { font-size: 12px; font-weight: 700; color: #6366f1; width: 36px; text-align: right; flex-shrink: 0; }
+
+    .recommend-card {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 16px; border: 1.5px solid #e5e7eb; border-radius: 12px;
+      margin-bottom: 10px; text-decoration: none; color: inherit;
+      transition: border-color .12s, background .12s;
+    }
+    .recommend-card:hover { border-color: #2563eb; background: rgba(37,99,235,.03); }
+    .recommend-card-icon { font-size: 28px; flex-shrink: 0; }
+    .recommend-card-body { flex: 1; }
+    .recommend-card-title { font-size: 15px; font-weight: 700; margin: 0 0 2px; }
+    .recommend-card-reason { font-size: 12px; color: #6b7280; }
+    .recommend-card-badge { font-size: 11px; font-weight: 700; padding: 3px 8px; background: #dbeafe; color: #1d4ed8; border-radius: 99px; white-space: nowrap; }
+
+    .cta-block { text-align: center; padding: 8px 0; }
+    .cta-block .btn { font-size: 16px; padding: 14px 28px; display: inline-block; }
+  </style>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main>
+    <div class="result-wrap">
+      <div id="result-root">
+        <div style="text-align:center;padding:60px 20px;color:#6b7280">
+          <p>診断結果を読み込み中…</p>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer id="site-footer"></footer>
+  <script src="../scripts/main.js" type="module"></script>
+  <script>
+  (function(){
+    const STORAGE_KEY = 'fineme:diagnosis:latest';
+    const root = document.getElementById('result-root');
+
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw){
+      root.innerHTML = '<div style="text-align:center;padding:60px 20px"><p>診断データが見つかりませんでした。</p><a href="./diagnosis.html" class="btn" style="margin-top:16px;display:inline-block">診断する</a></div>';
+      return;
+    }
+
+    let profile;
+    try{ profile = JSON.parse(raw); }catch(e){
+      root.innerHTML = '<div style="text-align:center;padding:60px 20px"><p>データの読み込みに失敗しました。</p><a href="./diagnosis.html" class="btn" style="margin-top:16px;display:inline-block">もう一度診断する</a></div>';
+      return;
+    }
+
+    // Maps
+    const TRIGGER_MAP = {
+      matching_app:'マッチングアプリで結果を出したい', love:'好きな人ができた・関係を進めたい',
+      career:'就職・転職・大事な場面が控えている', word:'何かの一言が刺さった', vague:'ずっと気になっていた'
+    };
+    const SCENE_MAP = {
+      first_impression:'初対面のとき（デート・面接）', photo:'写真に映った自分を見たとき',
+      fashion:'好きな服が似合わないとき', mirror:'鏡を見た朝', comparison:'他の人と比べたとき'
+    };
+    const STYLE_MAP = {
+      explanation:'納得してから動くタイプ（理由重視）',
+      consultation:'相談しながら決めるタイプ',
+      delegate:'任せてしっかり結果を出してほしいタイプ',
+      cautious:'小さく試してから続けるタイプ'
+    };
+    const URGENCY_MAP = {
+      high:'1ヶ月以内に変化を感じたい', mid:'2〜3ヶ月で少しずつ',
+      low:'半年〜1年で根本から', continuous:'継続できるものがいい'
+    };
+    const FAILURE_MAP = {
+      no_continuation:'続かなかった', lost_direction:'方向がわからなくなった',
+      cost:'コストが続かなかった', awkward:'関係性がうまくいかなかった',
+      no_result:'変化が感じられなかった', ongoing:'今も継続中'
+    };
+    const BUDGET_MAP = {
+      low:'〜¥5,000/月', mid:'¥5,000〜¥15,000/月',
+      high:'¥15,000〜¥30,000/月', premium:'¥30,000以上/月'
+    };
+    const CONCERN_ICONS = {
+      hair:'💇‍♂️', skin:'✨', eyebrow:'✂️', body:'💪',
+      fashion:'👔', photo:'📸', overall:'🪞'
+    };
+    const CONCERN_NAMES = {
+      hair:'髪型・髪', skin:'肌・ニキビ', eyebrow:'眉毛',
+      body:'体型・体', fashion:'服・コーデ', photo:'写真写り', overall:'全体の雰囲気'
+    };
+    const CONCERN_LABELS = ['全然','少し','そこそこ','かなり','すごく'];
+
+    // Category recommendations based on concern areas
+    const CATEGORY_MAP = {
+      hair: { icon:'💇‍♂️', label:'ヘア', cat:'hair', reason:'髪型・髪の状態が気になっている' },
+      skin: { icon:'💆‍♂️', label:'肌・エステ', cat:'esthetic', reason:'肌の状態が気になっている' },
+      eyebrow: { icon:'✂️', label:'眉毛サロン', cat:'eyebrow', reason:'眉毛・顔まわりの印象が気になっている' },
+      body: { icon:'🏋️‍♂️', label:'パーソナルジム', cat:'gym', reason:'体型・体のつくりが気になっている' },
+      fashion: { icon:'👔', label:'ファッション', cat:'fashion', reason:'服・コーデ全体を見直したい' },
+      photo: { icon:'📸', label:'写真撮影', cat:'photo', reason:'写真写り・第一印象を改善したい' },
+      overall: { icon:'🧑‍⚕️', label:'外見トータルサポート', cat:'consulting', reason:'全体的な垢抜けを目指している' }
+    };
+
+    // Generate recommendations from concern areas
+    function getRecommendations(){
+      const areas = profile.concern_areas || {};
+      const sorted = Object.entries(areas)
+        .filter(([,v]) => v > 0)
+        .sort(([,a],[,b]) => b - a)
+        .slice(0, 3);
+      if(sorted.length === 0) return [];
+      return sorted.map(([id]) => CATEGORY_MAP[id]).filter(Boolean);
+    }
+
+    // Headline copy based on trigger + style
+    function getHeadline(){
+      const t = profile.trigger;
+      const s = profile.style;
+      if(t === 'matching_app') return 'マッチングアプリで結果を出すための、外見の変え方が見えてきました。';
+      if(t === 'love') return 'あの人に伝わる第一印象をつくるための、次の一歩が見えてきました。';
+      if(t === 'career') return '大事な場面で自信を持って臨むための、外見の整え方が見えてきました。';
+      if(t === 'word') return 'その一言が気になっているうちが、変わるチャンスです。';
+      return 'あなただけの変容ルートが見えてきました。';
+    }
+
+    function getSubtext(){
+      const f = profile.failure_pattern;
+      if(f === 'no_continuation') return 'これまで続かなかった理由も、今回の診断に反映されています。';
+      if(f === 'lost_direction') return '何をすればいいかわからなくなった経験も、今回の選定に活かされています。';
+      if(f === 'no_result') return '変化が感じられなかった経験をもとに、結果が出やすいサービスを優先します。';
+      if(!profile.stage2_completed) return '過去の試みや関係性まで答えると、さらに精度が上がります。';
+      return 'あなたの変容プロファイルに合わせて、サービスを優先表示します。';
+    }
+
+    const recs = getRecommendations();
+    const concerns = Object.entries(profile.concern_areas || {}).sort(([,a],[,b]) => b - a);
+
+    // Build HTML
+    const html = `
+      <div class="result-hero">
+        <div class="result-badge">診断完了</div>
+        <h1>${getHeadline()}</h1>
+        <p>${getSubtext()}</p>
+      </div>
+
+      ${concerns.length > 0 ? `
+      <div class="result-card">
+        <h2>📊 気になり度マップ</h2>
+        ${concerns.map(([id, level]) => `
+          <div class="concern-bar-row">
+            <div class="concern-bar-label">
+              <span>${CONCERN_ICONS[id] || ''}</span>
+              <span>${CONCERN_NAMES[id] || id}</span>
+            </div>
+            <div class="concern-bar-track">
+              <div class="concern-bar-fill" style="width:${Math.round((level/4)*100)}%"></div>
+            </div>
+            <div class="concern-bar-value">${CONCERN_LABELS[level] || ''}</div>
+          </div>
+        `).join('')}
+      </div>` : ''}
+
+      <div class="result-card">
+        <h2>🧭 あなたのプロファイル</h2>
+        ${profile.trigger ? `<div class="profile-row"><span class="profile-label">きっかけ</span><span class="profile-value">${TRIGGER_MAP[profile.trigger] || profile.trigger}</span></div>` : ''}
+        ${profile.scene ? `<div class="profile-row"><span class="profile-label">一番の場面</span><span class="profile-value">${SCENE_MAP[profile.scene] || profile.scene}</span></div>` : ''}
+        ${profile.style ? `<div class="profile-row"><span class="profile-label">進め方</span><span class="profile-value">${STYLE_MAP[profile.style] || profile.style}</span></div>` : ''}
+        ${profile.urgency ? `<div class="profile-row"><span class="profile-label">タイムライン</span><span class="profile-value">${URGENCY_MAP[profile.urgency] || profile.urgency}</span></div>` : ''}
+        ${profile.failure_pattern ? `<div class="profile-row"><span class="profile-label">過去のパターン</span><span class="profile-value">${FAILURE_MAP[profile.failure_pattern] || profile.failure_pattern}</span></div>` : ''}
+        ${profile.budget ? `<div class="profile-row"><span class="profile-label">月の投資感覚</span><span class="profile-value">${BUDGET_MAP[profile.budget] || profile.budget}</span></div>` : ''}
+      </div>
+
+      ${recs.length > 0 ? `
+      <div class="result-card">
+        <h2>🎯 あなたにおすすめのカテゴリ</h2>
+        ${recs.map((r, i) => `
+          <a href="./search.html?category=${r.cat}&diag=1" class="recommend-card">
+            <span class="recommend-card-icon">${r.icon}</span>
+            <span class="recommend-card-body">
+              <div class="recommend-card-title">${r.label}</div>
+              <div class="recommend-card-reason">${r.reason}</div>
+            </span>
+            ${i === 0 ? '<span class="recommend-card-badge">最優先</span>' : ''}
+          </a>
+        `).join('')}
+      </div>` : ''}
+
+      ${!profile.stage2_completed ? `
+      <div class="result-card" style="border-color:#e0e7ff;background:#f5f7ff">
+        <h2 style="color:#4f46e5">💡 精度をもっと上げませんか？</h2>
+        <p style="font-size:14px;color:#6b7280;margin:0 0 14px">過去の試みや理想の関係性まで答えると、さらに「合う理由」が明確になります。</p>
+        <a href="./diagnosis.html" class="btn" style="display:inline-block">続きを答える（あと4問）</a>
+      </div>` : ''}
+
+      <div class="cta-block">
+        <p style="font-size:14px;color:#6b7280;margin:0 0 16px">あなたのプロファイルに合うサービスを見る</p>
+        <a href="./search.html?diag=1" class="btn" style="font-size:17px;padding:16px 32px">サービスを探す</a>
+      </div>
+
+      <div style="text-align:center;margin-top:16px">
+        <a href="./diagnosis.html" style="font-size:13px;color:#9ca3af">もう一度診断する</a>
+      </div>
+    `;
+
+    root.innerHTML = html;
+
+    // Animate bars
+    setTimeout(() => {
+      root.querySelectorAll('.concern-bar-fill').forEach(bar => {
+        bar.style.width = bar.style.width; // trigger reflow
+      });
+    }, 100);
+
+  })();
+  </script>
+</body>
+</html>

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>外見パーソナル診断 | Fineme</title>
-  <meta name="description" content="8項目の現状スコアと悩みの深堀りから、あなただけの変容ロードマップを生成します。">
+  <title>変容プロファイル診断 | Fineme</title>
+  <meta name="description" content="あなたの変わりたい理由・過去の試み・スタイルから、最も合うサービスとロードマップを提案します。">
   <link rel="stylesheet" href="../assets/styles/style.css">
   <link rel="stylesheet" href="../assets/styles/components.css">
   <style>
@@ -15,1083 +15,887 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 40px 20px 100px;
-      background: linear-gradient(180deg, #f4f7fb 0%, #fff 100%);
+      padding: 32px 20px 100px;
+      background: linear-gradient(180deg, #f4f7fb 0%, #fff 60%);
     }
 
     /* Progress */
     .diag-progress {
       width: 100%;
       max-width: var(--diag-max);
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
     .diag-progress-bar {
       height: 4px;
-      background: var(--color-border, #e5e7eb);
+      background: #e5e7eb;
       border-radius: 2px;
       overflow: hidden;
     }
     .diag-progress-fill {
       height: 100%;
-      background: linear-gradient(90deg, #111, #6366f1);
+      background: linear-gradient(90deg, #2563eb, #6366f1);
       border-radius: 2px;
       transition: width .4s ease;
     }
     .diag-progress-text {
       font-size: 12px;
-      color: #6b7280;
+      color: #9ca3af;
       margin-top: 6px;
       text-align: right;
     }
 
-    /* Screens */
-    .diag-screen { display: none; width: 100%; max-width: var(--diag-max); animation: fadeUp .3s ease; }
+    /* Screen */
+    .diag-screen { display: none; width: 100%; max-width: var(--diag-max); animation: fadeUp .25s ease; }
     .diag-screen.is-active { display: block; }
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(10px); }
+      from { opacity: 0; transform: translateY(8px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* Back button */
+    /* Back */
     .diag-back-btn {
       background: none; border: none; cursor: pointer;
-      font-size: 13px; color: #6b7280; padding: 0 0 16px;
+      font-size: 13px; color: #9ca3af; padding: 0 0 16px;
       display: flex; align-items: center; gap: 4px;
     }
-    .diag-back-btn:hover { color: #111; }
-
-    /* Landing */
-    .diag-landing { text-align: center; padding: 20px 0; }
-    .diag-landing h1 {
-      font-size: clamp(22px, 5vw, 30px);
-      font-weight: 800;
-      line-height: 1.3;
-      margin: 0 0 12px;
-    }
-    .diag-landing p { color: #6b7280; font-size: 15px; line-height: 1.7; margin: 0 0 28px; }
-    .diag-tag {
-      display: inline-block; font-size: 12px; padding: 4px 12px;
-      background: rgba(99,102,241,.1); color: #4f46e5;
-      border-radius: 99px; margin: 4px;
-    }
+    .diag-back-btn:hover { color: #374151; }
 
     /* Card */
     .diag-card {
       background: #fff;
       border: 1px solid #e5e7eb;
-      border-radius: 16px;
-      padding: 28px;
+      border-radius: 18px;
+      padding: 28px 24px;
       margin-bottom: 16px;
+      box-shadow: 0 4px 24px rgba(2,6,23,.05);
     }
-    .diag-card h2 { font-size: 18px; font-weight: 700; margin: 0 0 6px; }
-    .diag-card .hint { font-size: 13px; color: #6b7280; margin: 0 0 20px; line-height: 1.6; }
+    .diag-step-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      color: #6366f1;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+    }
+    .diag-q {
+      font-size: clamp(17px, 4vw, 20px);
+      font-weight: 800;
+      line-height: 1.4;
+      margin: 0 0 6px;
+      color: #111;
+    }
+    .diag-hint {
+      font-size: 13px;
+      color: #6b7280;
+      margin: 0 0 20px;
+      line-height: 1.6;
+    }
 
-    /* ── Step 1: Score grid ── */
-    .score-grid { display: flex; flex-direction: column; gap: 14px; }
-    .score-row {
+    /* Choice options */
+    .diag-options { display: flex; flex-direction: column; gap: 10px; }
+    .diag-option {
       display: flex;
-      align-items: center;
-      gap: 12px;
+      align-items: flex-start;
+      gap: 14px;
       padding: 14px 16px;
       border: 2px solid #e5e7eb;
       border-radius: 12px;
       cursor: pointer;
-      transition: border-color .15s;
+      transition: border-color .12s, background .12s;
+      text-align: left;
+      background: #fff;
+      width: 100%;
     }
-    .score-row:hover { border-color: #a5b4fc; }
-    .score-row.has-value { border-color: #6366f1; background: rgba(99,102,241,.04); }
-    .score-row-label {
-      width: 72px;
-      flex-shrink: 0;
-      font-size: 14px;
-      font-weight: 700;
-      color: #111;
+    .diag-option:hover { border-color: #a5b4fc; background: rgba(99,102,241,.03); }
+    .diag-option.selected { border-color: #2563eb; background: rgba(37,99,235,.05); }
+    .diag-option-icon { font-size: 20px; flex-shrink: 0; line-height: 1.3; }
+    .diag-option-body { flex: 1; }
+    .diag-option-title { font-size: 15px; font-weight: 700; color: #111; line-height: 1.4; }
+    .diag-option-desc { font-size: 13px; color: #6b7280; margin-top: 2px; line-height: 1.5; }
+
+    /* Multi-select options */
+    .diag-option.multi .diag-check {
+      width: 18px; height: 18px; border: 2px solid #d1d5db; border-radius: 4px;
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      margin-top: 2px; transition: all .12s;
     }
-    .score-row-icon { font-size: 20px; flex-shrink: 0; }
-    .score-btns {
+    .diag-option.multi.selected .diag-check { background: #2563eb; border-color: #2563eb; color: #fff; font-size: 11px; }
+
+    /* Concern level (Q5) */
+    .concern-grid { display: flex; flex-direction: column; gap: 12px; }
+    .concern-row {
       display: flex;
-      gap: 3px;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 12px;
+      transition: border-color .12s;
+    }
+    .concern-row.has-value { border-color: #6366f1; background: rgba(99,102,241,.03); }
+    .concern-label { display: flex; align-items: center; gap: 6px; width: 100px; flex-shrink: 0; }
+    .concern-label-icon { font-size: 18px; }
+    .concern-label-text { font-size: 13px; font-weight: 700; color: #374151; }
+    .concern-btns { display: flex; gap: 4px; flex: 1; }
+    .concern-btn {
       flex: 1;
-      flex-wrap: wrap;
-    }
-    .score-btn {
-      width: 30px;
-      height: 30px;
-      border: 1.5px solid #d1d5db;
-      border-radius: 6px;
+      padding: 6px 2px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
       background: #fff;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
+      color: #9ca3af;
       cursor: pointer;
       transition: all .12s;
-      color: #6b7280;
-      flex-shrink: 0;
-    }
-    .score-btn:hover { border-color: #6366f1; color: #6366f1; }
-    .score-btn.selected { background: #111; border-color: #111; color: #fff; }
-    .score-row-value {
-      width: 28px;
       text-align: center;
-      font-size: 18px;
-      font-weight: 800;
-      color: #6366f1;
-      flex-shrink: 0;
+      white-space: nowrap;
     }
+    .concern-btn:hover { border-color: #a5b4fc; color: #4f46e5; }
+    .concern-btn.selected { background: #111; border-color: #111; color: #fff; }
 
-    /* ── Step 2: Drill-down ── */
-    .drill-section { margin-bottom: 20px; }
-    .drill-section-title {
-      font-size: 15px; font-weight: 700; margin: 0 0 10px;
-      display: flex; align-items: center; gap: 8px;
+    /* Stage divider */
+    .diag-stage-divider {
+      text-align: center;
+      padding: 20px 0;
+      max-width: var(--diag-max);
+      width: 100%;
     }
-    .drill-section-score {
-      font-size: 12px; font-weight: 600;
-      padding: 2px 8px; border-radius: 99px;
-      background: #fef3c7; color: #92400e;
-    }
-    .drill-options { display: flex; flex-direction: column; gap: 8px; }
-    .drill-option {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      border: 2px solid #e5e7eb;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: border-color .15s, background .15s;
-      font-size: 14px;
-      color: #374151;
-    }
-    .drill-option:hover { border-color: #a5b4fc; background: rgba(99,102,241,.03); }
-    .drill-option.selected { border-color: #6366f1; background: rgba(99,102,241,.07); font-weight: 600; color: #111; }
-    .drill-option.vague { border-style: dashed; color: #6b7280; font-style: italic; }
-    .drill-option.vague.selected { border-style: solid; background: rgba(251,191,36,.1); border-color: #f59e0b; color: #92400e; font-style: normal; }
-    .drill-check {
-      width: 18px; height: 18px;
-      border: 2px solid #d1d5db;
-      border-radius: 4px;
-      flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      transition: all .12s;
-    }
-    .drill-option.selected .drill-check {
-      background: #6366f1; border-color: #6366f1; color: #fff;
-    }
-    .drill-option.vague.selected .drill-check {
-      background: #f59e0b; border-color: #f59e0b;
-    }
-
-    /* ── Step 3: Context ── */
-    .context-options { display: flex; flex-wrap: wrap; gap: 8px; }
-    .ctx-chip {
-      padding: 8px 16px;
-      border: 2px solid #e5e7eb;
-      border-radius: 99px;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all .12s;
-      background: #fff;
-    }
-    .ctx-chip:hover { border-color: #a5b4fc; }
-    .ctx-chip.selected { border-color: #6366f1; background: rgba(99,102,241,.08); font-weight: 600; color: #111; }
-
-    /* Nav */
-    .diag-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 24px;
-      gap: 12px;
-    }
-    .diag-next-btn {
-      padding: 14px 28px;
+    .diag-stage-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 14px;
       background: #111;
       color: #fff;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity .15s;
+      border-radius: 99px;
+      margin-bottom: 8px;
     }
-    .diag-next-btn:disabled { opacity: .35; cursor: not-allowed; }
-    .diag-next-btn:not(:disabled):hover { opacity: .8; }
+    .diag-stage-title { font-size: 20px; font-weight: 800; margin: 0 0 6px; }
+    .diag-stage-desc { font-size: 14px; color: #6b7280; margin: 0 0 16px; line-height: 1.6; }
 
-    /* ── Result ── */
-    .result-hero {
-      text-align: center;
-      padding: 24px 0 20px;
-    }
-    .result-hero h2 { font-size: clamp(20px,4vw,26px); font-weight: 800; margin: 0 0 8px; }
-    .result-hero p { color: #6b7280; font-size: 14px; margin: 0; line-height: 1.6; }
-
-    /* Radar chart placeholder → JS canvas */
-    #radar-canvas { display: block; margin: 0 auto 8px; }
-
-    .priority-list { display: flex; flex-direction: column; gap: 10px; }
-    .priority-item {
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-      padding: 16px;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      background: #fff;
-    }
-    .priority-num {
-      width: 28px; height: 28px;
-      background: #111; color: #fff;
-      border-radius: 50%;
-      font-size: 12px; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .priority-item.is-2 .priority-num { background: #4b5563; }
-    .priority-item.is-3 .priority-num { background: #9ca3af; }
-    .priority-body h4 { margin: 0 0 4px; font-size: 15px; font-weight: 700; }
-    .priority-body p { margin: 0; font-size: 13px; color: #6b7280; line-height: 1.6; }
-
-    .scenario-text {
-      font-size: 15px;
-      line-height: 1.9;
-      color: #374151;
-      background: linear-gradient(135deg, rgba(99,102,241,.06), rgba(168,85,247,.06));
-      border-radius: 12px;
-      padding: 20px;
-      border-left: 3px solid #6366f1;
+    /* Landing */
+    .diag-landing { text-align: center; padding: 16px 0 4px; }
+    .diag-landing h1 { font-size: clamp(22px, 5vw, 28px); font-weight: 800; line-height: 1.3; margin: 0 0 12px; }
+    .diag-landing p { font-size: 15px; color: #6b7280; line-height: 1.7; margin: 0 0 6px; }
+    .diag-badges { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 16px 0 24px; }
+    .diag-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; background: #f3f4f6; padding: 6px 12px;
+      border-radius: 99px; color: #374151;
     }
 
-    .service-links { display: flex; flex-direction: column; gap: 10px; }
-    .service-link-btn {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px;
-      border-radius: 12px;
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 700;
-      color: #fff !important;
-      background: linear-gradient(120deg, #4f46e5, #7c3aed);
-      transition: opacity .15s, transform .15s;
+    /* Nav */
+    .diag-nav { display: flex; gap: 10px; align-items: center; max-width: var(--diag-max); width: 100%; }
+    .diag-nav-next {
+      flex: 1; padding: 14px 20px; background: #111; color: #fff;
+      border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
+      cursor: pointer; transition: opacity .15s;
     }
-    .service-link-btn:visited { color: #fff !important; }
-    .service-link-btn:hover { opacity: .9; transform: translateY(-1px); }
-    .service-link-btn .arrow { font-size: 18px; }
-
-    .result-share {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 8px;
+    .diag-nav-next:disabled { opacity: .35; cursor: not-allowed; }
+    .diag-nav-next:not(:disabled):hover { opacity: .85; }
+    .diag-nav-skip {
+      font-size: 13px; color: #9ca3af; background: none; border: none;
+      cursor: pointer; white-space: nowrap; padding: 8px;
     }
-
-    /* Special flow */
-    .special-card {
-      text-align: center;
-      padding: 32px 24px;
-    }
-    .special-icon { font-size: 56px; margin-bottom: 12px; }
-    .special-services { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-    .special-service-item {
-      display: flex; gap: 14px; align-items: center;
-      padding: 14px 16px; border: 1px solid #e5e7eb; border-radius: 12px;
-      text-decoration: none; color: #111;
-      transition: box-shadow .15s;
-    }
-    .special-service-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,.1); }
-
-    /* Loading */
-    .diag-loading { text-align: center; padding: 48px 0; }
-    .diag-spinner {
-      width: 40px; height: 40px;
-      border: 3px solid #e5e7eb;
-      border-top-color: #6366f1;
-      border-radius: 50%;
-      animation: spin .8s linear infinite;
-      margin: 0 auto 16px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    @media (max-width: 480px) {
-      .score-btn { width: 26px; height: 26px; font-size: 11px; }
-      .diag-card { padding: 20px 16px; }
-    }
+    .diag-nav-skip:hover { color: #374151; }
   </style>
 </head>
 <body>
   <header id="site-header"></header>
+  <main>
+    <div class="diag-wrap">
 
-  <div class="diag-wrap">
-    <!-- Progress bar -->
-    <div class="diag-progress" id="diag-progress" style="display:none">
-      <div class="diag-progress-bar">
-        <div class="diag-progress-fill" id="progress-fill" style="width:0%"></div>
-      </div>
-      <div class="diag-progress-text" id="progress-text"></div>
-    </div>
-
-    <!-- ===== Step 0: Landing ===== -->
-    <div class="diag-screen is-active" id="screen-0">
-      <div class="diag-landing">
-        <div style="font-size:52px;margin-bottom:16px">🪞</div>
-        <h1>あなたの外見、<br>本当に知っていますか？</h1>
-        <p>8項目の現状スコアと、悩みの深堀りから<br>あなただけの<strong>変容ロードマップ</strong>を生成します。</p>
-        <div style="margin-bottom:28px">
-          <span class="diag-tag">所要時間 約3分</span>
-          <span class="diag-tag">AIが個別分析</span>
-          <span class="diag-tag">無料</span>
+      <!-- Progress bar -->
+      <div class="diag-progress" id="diag-progress" style="display:none">
+        <div class="diag-progress-bar">
+          <div class="diag-progress-fill" id="diag-progress-fill" style="width:0%"></div>
         </div>
-        <button class="diag-next-btn" onclick="startDiag()">診断をはじめる →</button>
-      </div>
-    </div>
-
-    <!-- ===== Step 1: Score input ===== -->
-    <div class="diag-screen" id="screen-s1">
-      <button class="diag-back-btn" onclick="goBack('screen-s1')">← 戻る</button>
-      <div class="diag-card">
-        <h2>今の自分を正直に評価する</h2>
-        <p class="hint">それぞれの項目について、現在の状態を <strong>1〜10点</strong> で選んでください。<br>1 = 全然できていない、10 = まったく問題ない</p>
-        <div class="score-grid" id="score-grid"></div>
-      </div>
-      <div class="diag-nav">
-        <span></span>
-        <button class="diag-next-btn" id="btn-s1-next" onclick="finishScores()" disabled>次へ →</button>
-      </div>
-    </div>
-
-    <!-- ===== Step 2: Drill-down ===== -->
-    <div class="diag-screen" id="screen-s2">
-      <button class="diag-back-btn" onclick="goBack('screen-s2')">← 戻る</button>
-      <div class="diag-card">
-        <h2>もう少し詳しく教えてください</h2>
-        <p class="hint">スコアが低かった項目について、どんな悩みがあるか選んでください。<strong>複数選択OK</strong>。</p>
-        <div id="drill-container"></div>
-      </div>
-      <div class="diag-nav">
-        <span></span>
-        <button class="diag-next-btn" onclick="finishDrill()">次へ →</button>
-      </div>
-    </div>
-
-    <!-- ===== Step 3: Context ===== -->
-    <div class="diag-screen" id="screen-s3">
-      <button class="diag-back-btn" onclick="goBack('screen-s3')">← 戻る</button>
-      <div class="diag-card">
-        <h2>最後に教えてください</h2>
-        <div style="margin-bottom:20px">
-          <p class="hint" style="margin-bottom:10px">外見を変えたい一番の理由（複数可）</p>
-          <div class="context-options" id="ctx-reason"></div>
-        </div>
-        <div style="margin-bottom:20px">
-          <p class="hint" style="margin-bottom:10px">月にかけられる予算感</p>
-          <div class="context-options" id="ctx-budget"></div>
-        </div>
-        <div>
-          <p class="hint" style="margin-bottom:10px">お住まいのエリア</p>
-          <select id="ctx-area" style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px">
-            <option value="">── 選んでください ──</option>
-            <optgroup label="東京・関東">
-              <option value="tokyo">東京都（23区）</option>
-              <option value="tokyo-w">東京都（多摩・その他）</option>
-              <option value="yokohama">神奈川県（横浜・川崎）</option>
-              <option value="saitama">埼玉県</option>
-              <option value="chiba">千葉県</option>
-            </optgroup>
-            <optgroup label="その他の地域">
-              <option value="osaka">大阪府</option>
-              <option value="aichi">愛知県（名古屋）</option>
-              <option value="fukuoka">福岡県</option>
-              <option value="online">オンライン希望</option>
-              <option value="other">その他</option>
-            </optgroup>
-          </select>
-        </div>
-      </div>
-      <div class="diag-nav">
-        <span></span>
-        <button class="diag-next-btn" id="btn-s3-next" onclick="submitDiag()">診断結果を見る ✨</button>
-      </div>
-    </div>
-
-    <!-- ===== Loading ===== -->
-    <div class="diag-screen" id="screen-loading">
-      <div class="diag-loading">
-        <div class="diag-spinner"></div>
-        <p style="font-weight:700;font-size:16px">あなたの変容ロードマップを生成中...</p>
-        <p id="loading-msg" style="color:#6b7280;font-size:13px;margin-top:8px">AIが回答を分析しています</p>
-      </div>
-    </div>
-
-    <!-- ===== Result ===== -->
-    <div class="diag-screen" id="screen-result">
-      <div class="result-hero">
-        <div id="result-badge" style="display:inline-block;padding:6px 16px;border-radius:99px;font-size:12px;font-weight:700;background:#111;color:#fff;margin-bottom:12px"></div>
-        <h2 id="result-heading"></h2>
-        <p id="result-sub"></p>
+        <div class="diag-progress-text" id="diag-progress-text">0 / 9</div>
       </div>
 
-      <!-- Radar chart -->
-      <div class="diag-card" style="padding:20px">
-        <h3 style="margin:0 0 12px;font-size:15px">現状スコア</h3>
-        <canvas id="radar-canvas" width="320" height="320"></canvas>
-      </div>
-
-      <!-- Priority list -->
-      <div class="diag-card">
-        <h3 style="margin:0 0 16px;font-size:15px">まず取り組むべきこと</h3>
-        <div class="priority-list" id="priority-list"></div>
-      </div>
-
-      <!-- 3-month scenario -->
-      <div class="diag-card">
-        <h3 style="margin:0 0 12px;font-size:15px">3ヶ月後のあなたへ</h3>
-        <div class="scenario-text" id="scenario-text"></div>
-      </div>
-
-      <!-- Service links -->
-      <div class="diag-card">
-        <h3 style="margin:0 0 16px;font-size:15px">あなたに合うサービスを探す</h3>
-        <div class="service-links" id="service-links"></div>
-      </div>
-
-      <div class="result-share">
-        <button class="btn" id="save-to-mypage-btn" onclick="saveDiagToMypage()">マイページに保存する</button>
-        <a href="/?scrollTo=roadmap" class="btn btn-ghost">ロードマップを見る</a>
-        <button class="btn btn-ghost" onclick="shareResult()">結果をシェアする</button>
-        <a href="/pages/search.html" class="btn btn-ghost">すべてのサービスを見る</a>
-      </div>
-    </div>
-
-    <!-- ===== Special flow (all high scores) ===== -->
-    <div class="diag-screen" id="screen-special">
-      <div class="diag-card special-card">
-        <div class="special-icon">🏆</div>
-        <h2 style="font-size:20px;font-weight:800;margin:0 0 8px">外見への意識が高いあなたへ</h2>
-        <p style="color:#6b7280;font-size:14px;line-height:1.7;margin:0">
-          基本的な外見は整っています。<br>
-          次のステップは「磨き込み」と「戦略的な活用」です。
-        </p>
-        <div class="special-services">
-          <a href="/pages/search.html?category=consultant" class="special-service-item">
-            <span style="font-size:28px">🧭</span>
-            <div>
-              <div style="font-weight:700">外見コンサルテーション</div>
-              <div style="font-size:12px;color:#6b7280">プロの目で見えていない課題を発見・整理する</div>
+      <!-- ── SCREEN: Landing ── -->
+      <div class="diag-screen is-active" id="screen-landing">
+        <div class="diag-card">
+          <div class="diag-landing">
+            <p style="font-size:12px;font-weight:700;color:#6366f1;letter-spacing:.06em;text-transform:uppercase;margin:0 0 10px">Find New Me</p>
+            <h1>変容プロファイル診断</h1>
+            <p>「なぜ変わりたいのか」「何に躓いてきたのか」まで聞きます。<br>その答えが、あなたに本当に合うサービスへの道になります。</p>
+            <p style="font-size:13px;color:#9ca3af">評価や採点ではありません。正解も不正解もありません。</p>
+            <div class="diag-badges">
+              <span class="diag-badge">⏱️ 約5〜8分</span>
+              <span class="diag-badge">🕶️ 登録不要</span>
+              <span class="diag-badge">🙅‍♂️ 営業なし</span>
             </div>
-            <span style="margin-left:auto;color:#6b7280">→</span>
-          </a>
-          <a href="/pages/search.html?category=photo" class="special-service-item">
-            <span style="font-size:28px">📸</span>
-            <div>
-              <div style="font-weight:700">プロフィール写真撮影</div>
-              <div style="font-size:12px;color:#6b7280">第一印象を最大化。マッチングアプリ・就活・SNSに</div>
-            </div>
-            <span style="margin-left:auto;color:#6b7280">→</span>
-          </a>
-          <a href="/pages/search.html?category=konkatsu" class="special-service-item">
-            <span style="font-size:28px">💍</span>
-            <div>
-              <div style="font-weight:700">婚活・結婚相談所</div>
-              <div style="font-size:12px;color:#6b7280">整った外見を武器に、本格的な婚活をスタート</div>
-            </div>
-            <span style="margin-left:auto;color:#6b7280">→</span>
-          </a>
-        </div>
-        <div class="result-share" style="margin-top:24px">
-          <button class="btn btn-ghost" onclick="restartDiag()">もう一度診断する</button>
-          <a href="/pages/search.html" class="btn">サービス一覧を見る</a>
+            <button class="diag-nav-next" id="btn-start" style="width:100%;font-size:18px;padding:16px">診断をはじめる</button>
+          </div>
         </div>
       </div>
+
+      <!-- ── SCREEN Q1: トリガー ── -->
+      <div class="diag-screen" id="screen-q1">
+        <button class="diag-back-btn" data-back>← 戻る</button>
+        <div class="diag-card">
+          <p class="diag-step-label">Q1｜きっかけ</p>
+          <h2 class="diag-q">外見を変えようと思ったのは、<br>最近何かきっかけがありましたか？</h2>
+          <p class="diag-hint">今の気持ちに一番近いものを選んでください。</p>
+          <div class="diag-options" id="opts-q1">
+            <button class="diag-option" data-value="matching_app">
+              <span class="diag-option-icon">📱</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">マッチングアプリを始めたが、なかなか結果が出ていない</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="love">
+              <span class="diag-option-icon">❤️</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">好きな人ができた、または関係を進めたい</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="career">
+              <span class="diag-option-icon">💼</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">就職・転職・大事な場面が控えている</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="word">
+              <span class="diag-option-icon">💬</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">何かの一言が、ふと刺さった</span>
+                <span class="diag-option-desc">誰かの発言、鏡を見たとき、写真を見たとき</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="vague">
+              <span class="diag-option-icon">🌫️</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">特別なきっかけはないけど、ずっと気になっていた</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SCREEN Q2: シーン ── -->
+      <div class="diag-screen" id="screen-q2">
+        <button class="diag-back-btn" data-back>← 戻る</button>
+        <div class="diag-card">
+          <p class="diag-step-label">Q2｜場面</p>
+          <h2 class="diag-q">「このままじゃ嫌だ」と<br>一番感じる場面はどれですか？</h2>
+          <p class="diag-hint">最もリアルに刺さるものを選んでください。</p>
+          <div class="diag-options" id="opts-q2">
+            <button class="diag-option" data-value="first_impression">
+              <span class="diag-option-icon">👥</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">初対面の人と会うとき（デート・面接など）</span>
+                <span class="diag-option-desc">第一印象が気になる</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="photo">
+              <span class="diag-option-icon">📸</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">写真に映った自分を見たとき</span>
+                <span class="diag-option-desc">SNSや証明写真、自撮り</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="fashion">
+              <span class="diag-option-icon">👔</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">好きな服が似合わないと感じたとき</span>
+                <span class="diag-option-desc">着たいのに、なんか違う</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="mirror">
+              <span class="diag-option-icon">🪞</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">鏡を見た朝、気分が上がらない</span>
+                <span class="diag-option-desc">毎日のこととして積み重なっている</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="comparison">
+              <span class="diag-option-icon">😔</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">他の人と比べてしまったとき</span>
+                <span class="diag-option-desc">SNSや周りを見て、落ち込む</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SCREEN Q3: スタイル ── -->
+      <div class="diag-screen" id="screen-q3">
+        <button class="diag-back-btn" data-back>← 戻る</button>
+        <div class="diag-card">
+          <p class="diag-step-label">Q3｜進め方</p>
+          <h2 class="diag-q">変わるとしたら、<br>どんな進め方が合っていますか？</h2>
+          <p class="diag-hint">「理想」ではなく「実際の自分」に近いものを選んでください。</p>
+          <div class="diag-options" id="opts-q3">
+            <button class="diag-option" data-value="explanation">
+              <span class="diag-option-icon">🧠</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">「なぜそうするのか」を理解してから動きたい</span>
+                <span class="diag-option-desc">納得してから行動する。理由が分かると安心できる</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="consultation">
+              <span class="diag-option-icon">🤝</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">一緒に相談しながら方向を決めていきたい</span>
+                <span class="diag-option-desc">答えを押し付けられたくない。自分の意見も大事にしたい</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="delegate">
+              <span class="diag-option-icon">🏁</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">とにかく任せるから、結果を出してほしい</span>
+                <span class="diag-option-desc">細かいことはいい。プロに全部お任せしたい</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="cautious">
+              <span class="diag-option-icon">🌱</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">まず小さく試して、合えば続けたい</span>
+                <span class="diag-option-desc">いきなり大きくコミットするのは不安。様子を見ながら進めたい</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SCREEN Q4: タイムライン ── -->
+      <div class="diag-screen" id="screen-q4">
+        <button class="diag-back-btn" data-back>← 戻る</button>
+        <div class="diag-card">
+          <p class="diag-step-label">Q4｜タイムライン</p>
+          <h2 class="diag-q">いつ頃までに<br>変化を実感したいですか？</h2>
+          <p class="diag-hint">あくまで目安として、今の気持ちに近いものを。</p>
+          <div class="diag-options" id="opts-q4">
+            <button class="diag-option" data-value="high">
+              <span class="diag-option-icon">⚡</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">できれば1ヶ月以内</span>
+                <span class="diag-option-desc">具体的な予定や締め切りがある</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="mid">
+              <span class="diag-option-icon">📅</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">2〜3ヶ月で少しずつ</span>
+                <span class="diag-option-desc">焦らず、でも確実に変わっていきたい</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="low">
+              <span class="diag-option-icon">🌿</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">半年〜1年で根本から変えたい</span>
+                <span class="diag-option-desc">じっくり、土台から作り直したい</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="continuous">
+              <span class="diag-option-icon">♾️</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">期限はないが、ずっと続けられるものがいい</span>
+                <span class="diag-option-desc">ライフスタイルとして定着させたい</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SCREEN Q5: 気になり度 ── -->
+      <div class="diag-screen" id="screen-q5">
+        <button class="diag-back-btn" data-back>← 戻る</button>
+        <div class="diag-card">
+          <p class="diag-step-label">Q5｜現在地の確認</p>
+          <h2 class="diag-q">今、それぞれどのくらい<br>気になっていますか？</h2>
+          <p class="diag-hint">品質の採点ではありません。「気になり度」を直感で選んでください。</p>
+          <div class="concern-grid" id="concern-grid">
+            <!-- JSで生成 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SCREEN: Stage 2 intro ── -->
+      <div class="diag-screen" id="screen-stage2-intro">
+        <div class="diag-stage-divider">
+          <div class="diag-stage-badge">ここから深掘り</div>
+          <h2 class="diag-stage-title">あと4問で、精度が格段に上がります</h2>
+          <p class="diag-stage-desc">過去に何を試したか、どこで躓いたか——<br>その答えが「なぜ今まで変われなかったか」を解明し、<br>本当に合うサービスへ最短で繋げます。</p>
+        </div>
+        <div class="diag-card" style="padding:20px 24px">
+          <p style="font-size:13px;color:#6b7280;margin:0 0 12px">ここで止めることもできます。その場合は今の回答で結果を表示します。</p>
+          <button class="diag-nav-next" id="btn-continue-stage2" style="width:100%;margin-bottom:10px">続けて精度を上げる</button>
+          <button class="diag-nav-skip" id="btn-skip-stage2" style="width:100%">今の回答で結果を見る</button>
+        </div>
+      </div>
+
+      <!-- ── SCREEN Q6: 過去の試み ── -->
+      <div class="diag-screen" id="screen-q6">
+        <button class="diag-back-btn" data-back>← 戻る</button>
+        <div class="diag-card">
+          <p class="diag-step-label">Q6｜これまでの試み</p>
+          <h2 class="diag-q">外見について、<br>これまでに試したことはありますか？</h2>
+          <p class="diag-hint">当てはまるものをすべて選んでください。（複数選択可）</p>
+          <div class="diag-options" id="opts-q6">
+            <button class="diag-option multi" data-value="gym">
+              <span class="diag-check">✓</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">ジム・筋トレを試したことがある</span>
+              </span>
+            </button>
+            <button class="diag-option multi" data-value="skincare">
+              <span class="diag-check">✓</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">スキンケアや美容を変えたことがある</span>
+              </span>
+            </button>
+            <button class="diag-option multi" data-value="fashion">
+              <span class="diag-check">✓</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">服・ファッションを見直したことがある</span>
+              </span>
+            </button>
+            <button class="diag-option multi" data-value="hair">
+              <span class="diag-check">✓</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">髪型・美容院を変えたことがある</span>
+              </span>
+            </button>
+            <button class="diag-option multi" data-value="other">
+              <span class="diag-check">✓</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">その他（眉毛・歯・脱毛など）試したことがある</span>
+              </span>
+            </button>
+            <button class="diag-option multi" data-value="none">
+              <span class="diag-check">✓</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">まだほとんど何もしたことがない</span>
+                <span class="diag-option-desc">ここが出発点です</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SCREEN Q7: どうなったか ── -->
+      <div class="diag-screen" id="screen-q7">
+        <button class="diag-back-btn" data-back>← 戻る</button>
+        <div class="diag-card">
+          <p class="diag-step-label">Q7｜その後</p>
+          <h2 class="diag-q">試してみて、<br>その後どうなりましたか？</h2>
+          <p class="diag-hint">正直に選んでください。これが最も大切な答えです。</p>
+          <div class="diag-options" id="opts-q7">
+            <button class="diag-option" data-value="no_continuation">
+              <span class="diag-option-icon">📉</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">効果はあったけど、途中で続かなくなった</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="lost_direction">
+              <span class="diag-option-icon">🧭</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">何をすればいいかわからなくなってしまった</span>
+                <span class="diag-option-desc">迷子になって、やめてしまった</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="cost">
+              <span class="diag-option-icon">💸</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">お金・時間が続かなかった</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="awkward">
+              <span class="diag-option-icon">😶</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">なんとなく気まずくなって行けなくなった</span>
+                <span class="diag-option-desc">プロとの関係がうまくいかなかった</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="no_result">
+              <span class="diag-option-icon">😞</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">変化が感じられなくて諦めた</span>
+                <span class="diag-option-desc">やったけど、手応えがなかった</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="ongoing">
+              <span class="diag-option-icon">✅</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">今も継続している</span>
+                <span class="diag-option-desc">さらに深化させたい</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SCREEN Q8: 理想の関係性 ── -->
+      <div class="diag-screen" id="screen-q8">
+        <button class="diag-back-btn" data-back>← 戻る</button>
+        <div class="diag-card">
+          <p class="diag-step-label">Q8｜関係性</p>
+          <h2 class="diag-q">理想のプロとの関係って、<br>どんなイメージですか？</h2>
+          <p class="diag-hint">「あったらいいな」ではなく「これがないと続かない」に近いものを。</p>
+          <div class="diag-options" id="opts-q8">
+            <button class="diag-option" data-value="continuity">
+              <span class="diag-option-icon">🔄</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">毎回前回の続きから始めてくれる</span>
+                <span class="diag-option-desc">「あのとき言ってた件ですが」と覚えていてくれる関係</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="autonomy">
+              <span class="diag-option-icon">🗣️</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">こちらの意図や好みを大事にしてくれる</span>
+                <span class="diag-option-desc">押し付けがなく、自分の意見を尊重してくれる</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="directive">
+              <span class="diag-option-icon">📌</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">「これをやれ」とハッキリ言ってくれる</span>
+                <span class="diag-option-desc">迷わせず、明確な指示をくれる方が動ける</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="accessibility">
+              <span class="diag-option-icon">💬</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">予約以外でも気軽に相談できる</span>
+                <span class="diag-option-desc">LINEやメッセージで質問できる関係</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SCREEN Q9: 投資感覚 ── -->
+      <div class="diag-screen" id="screen-q9">
+        <button class="diag-back-btn" data-back>← 戻る</button>
+        <div class="diag-card">
+          <p class="diag-step-label">Q9｜投資感覚</p>
+          <h2 class="diag-q">変化のために、<br>月にどのくらい使えそうですか？</h2>
+          <p class="diag-hint">合う人が見つかれば予算を上げることもあります。今の感覚で選んでください。</p>
+          <div class="diag-options" id="opts-q9">
+            <button class="diag-option" data-value="low">
+              <span class="diag-option-icon">🌱</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">〜¥5,000</span>
+                <span class="diag-option-desc">まずは試してみたい</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="mid">
+              <span class="diag-option-icon">💪</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">¥5,000〜¥15,000</span>
+                <span class="diag-option-desc">効果があるなら続けたい</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="high">
+              <span class="diag-option-icon">🎯</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">¥15,000〜¥30,000</span>
+                <span class="diag-option-desc">ちゃんとやるなら投資する</span>
+              </span>
+            </button>
+            <button class="diag-option" data-value="premium">
+              <span class="diag-option-icon">🏆</span>
+              <span class="diag-option-body">
+                <span class="diag-option-title">¥30,000以上</span>
+                <span class="diag-option-desc">本気でやるなら惜しまない</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="diag-nav" id="diag-nav" style="display:none">
+        <button class="diag-nav-next" id="btn-next" disabled>次へ</button>
+      </div>
+
     </div>
-
-  </div><!-- .diag-wrap -->
-
-  <script>
-  // =========================================================
-  // DATA
-  // =========================================================
-  const ITEMS = [
-    { key:'eyebrow', label:'眉', icon:'✏️' },
-    { key:'hair',    label:'髪', icon:'💈' },
-    { key:'body',    label:'体型', icon:'💪' },
-    { key:'skin',    label:'肌', icon:'🧴' },
-    { key:'hair_removal', label:'ムダ毛', icon:'⚡' },
-    { key:'teeth',   label:'歯', icon:'😁' },
-    { key:'nail',    label:'爪', icon:'💅' },
-    { key:'makeup',  label:'メイク', icon:'✨' },
-  ];
-
-  const VAGUE = 'なんとなく気になるけど、何が問題かわからない';
-
-  const DRILLS = {
-    eyebrow: [
-      '自己流で整えているがうまくいかない',
-      '自分に合う形がわからない',
-      '毛量が薄い・まばら',
-      'アートメイクに興味がある',
-      VAGUE,
-    ],
-    hair: [
-      'ヘアセットが毎朝うまくいかない',
-      '自分に合う髪型がわからない',
-      'AGA・薄毛が気になり始めた',
-      'カラーリングが決まらない',
-      'くせ毛・広がりが気になる',
-      VAGUE,
-    ],
-    body: [
-      '全体的に痩せたい',
-      '筋肉をつけてがっしりしたい',
-      '姿勢が悪い・猫背が気になる',
-      'お腹まわりが特に気になる',
-      VAGUE,
-    ],
-    skin: [
-      'ニキビ・吹き出物が繰り返す',
-      'くすみ・黒ずみが気になる',
-      '毛穴が目立つ',
-      'シェービング後に荒れる・赤みが出る',
-      '乾燥・テカリのムラがある',
-      VAGUE,
-    ],
-    hair_removal: [
-      'ひげ処理が毎日面倒・時間がかかる',
-      '体毛（胸・腕・脚など）が気になる',
-      '処理後の肌トラブルが多い（埋没毛・赤みなど）',
-      '将来的に永久脱毛を考えている',
-      VAGUE,
-    ],
-    teeth: [
-      '黄ばみ・くすみが気になる',
-      '歯並びが気になる',
-      '口臭が気になる',
-      VAGUE,
-    ],
-    nail: [
-      '清潔感が出ていない気がする',
-      'ケア方法がわからない',
-      '噛む・むしる癖がある',
-      VAGUE,
-    ],
-    makeup: [
-      'BBクリームやコンシーラーを使ってみたい',
-      'まず眉だけでも整えたい',
-      '自分に合うメイクがわからない',
-      'スキンケアとの組み合わせがわからない',
-      VAGUE,
-    ],
-  };
-
-  // カテゴリ→検索URL
-  const CATEGORY_URLS = {
-    eyebrow:      '/pages/search.html?category=eyebrow',
-    hair:         '/pages/search.html?category=hair',
-    body:         '/pages/search.html?category=gym',
-    skin:         '/pages/search.html?category=skin',
-    hair_removal: '/pages/search.html?category=hair_removal',
-    teeth:        '/pages/search.html?category=whitening',
-    nail:         '/pages/search.html?category=nail',
-    makeup:       '/pages/search.html?category=makeup',
-    consultant:   '/pages/search.html?category=consultant',
-    photo:        '/pages/search.html?category=photo',
-  };
-
-  const CATEGORY_LABELS = {
-    eyebrow: '眉毛サロン・アートメイク',
-    hair: 'ヘアサロン',
-    body: 'パーソナルジム',
-    skin: 'スキンケアカウンセリング',
-    hair_removal: '脱毛・ヒゲ処理',
-    teeth: 'ホワイトニング・歯科矯正',
-    nail: 'メンズネイルケア',
-    makeup: 'メンズメイク',
-    consultant: '外見コンサルタント',
-    photo: 'プロフィール写真撮影',
-  };
-
-  // =========================================================
-  // STATE
-  // =========================================================
-  const state = {
-    scores: {},   // { eyebrow: 7, hair: 4, ... }
-    drills: {},   // { hair: ['AGA', 'vague'], ... }
-    context: {
-      reasons: [],
-      budget: '',
-      area: '',
-    },
-    result: null,
-  };
-
-  let currentScreen = 'screen-0';
-  const BACK_MAP = {
-    'screen-s1': 'screen-0',
-    'screen-s2': 'screen-s1',
-    'screen-s3': 'screen-s2',
-  };
-
-  // =========================================================
-  // NAVIGATION
-  // =========================================================
-  function showScreen(id) {
-    document.querySelectorAll('.diag-screen').forEach(s => s.classList.remove('is-active'));
-    document.getElementById(id).classList.add('is-active');
-    currentScreen = id;
-    updateProgress();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function goBack(from) {
-    const target = BACK_MAP[from];
-    if (target) showScreen(target);
-  }
-
-  function updateProgress() {
-    const prog = document.getElementById('diag-progress');
-    const fill = document.getElementById('progress-fill');
-    const text = document.getElementById('progress-text');
-    const stepMap = { 'screen-0':0, 'screen-s1':1, 'screen-s2':2, 'screen-s3':3, 'screen-loading':4, 'screen-result':4, 'screen-special':4 };
-    const step = stepMap[currentScreen] ?? 0;
-    if (step === 0) { prog.style.display = 'none'; return; }
-    prog.style.display = '';
-    fill.style.width = Math.round(step / 4 * 100) + '%';
-    const labels = ['', 'STEP 1 / 3 現状スコア', 'STEP 2 / 3 悩みの深堀り', 'STEP 3 / 3 最後の質問', '診断完了 ✓'];
-    text.textContent = labels[step] || '';
-  }
-
-  // =========================================================
-  // STEP 1: Build score grid
-  // =========================================================
-  function buildScoreGrid() {
-    const grid = document.getElementById('score-grid');
-    grid.innerHTML = ITEMS.map(item => `
-      <div class="score-row" id="row-${item.key}">
-        <span class="score-row-icon">${item.icon}</span>
-        <span class="score-row-label">${item.label}</span>
-        <div class="score-btns">
-          ${[1,2,3,4,5,6,7,8,9,10].map(n => `
-            <button class="score-btn" data-key="${item.key}" data-val="${n}" onclick="selectScore('${item.key}',${n})">${n}</button>
-          `).join('')}
-        </div>
-        <span class="score-row-value" id="val-${item.key}">-</span>
-      </div>
-    `).join('');
-  }
-
-  function selectScore(key, val) {
-    state.scores[key] = val;
-    document.querySelectorAll(`.score-btn[data-key="${key}"]`).forEach(b => {
-      b.classList.toggle('selected', parseInt(b.dataset.val) === val);
-    });
-    document.getElementById(`val-${key}`).textContent = val;
-    document.getElementById(`row-${key}`).classList.add('has-value');
-    // enable next if all scored
-    const allScored = ITEMS.every(i => state.scores[i.key] !== undefined);
-    document.getElementById('btn-s1-next').disabled = !allScored;
-  }
-
-  function startDiag() {
-    buildScoreGrid();
-    buildContextOptions();
-    showScreen('screen-s1');
-  }
-
-  // =========================================================
-  // STEP 2: Drill-down
-  // =========================================================
-  const DRILL_THRESHOLD = 8; // スコア8以下でドリルダウン発動
-
-  function finishScores() {
-    // 全項目 9〜10 → 特別フロー
-    const allHigh = ITEMS.every(i => (state.scores[i.key] || 0) >= 9);
-    if (allHigh) { showScreen('screen-special'); return; }
-
-    buildDrillContainer();
-    showScreen('screen-s2');
-  }
-
-  function buildDrillContainer() {
-    const lowItems = ITEMS.filter(i => (state.scores[i.key] || 0) <= DRILL_THRESHOLD);
-    const container = document.getElementById('drill-container');
-    container.innerHTML = lowItems.map(item => `
-      <div class="drill-section" id="drill-${item.key}">
-        <div class="drill-section-title">
-          ${item.icon} ${item.label}
-          <span class="drill-section-score">${state.scores[item.key]}点</span>
-        </div>
-        <div class="drill-options">
-          ${DRILLS[item.key].map((opt, idx) => {
-            const isVague = opt === VAGUE;
-            return `
-              <label class="drill-option${isVague ? ' vague' : ''}" id="drill-${item.key}-${idx}">
-                <div class="drill-check">✓</div>
-                <span>${isVague ? '💭 ' : ''}${opt}</span>
-                <input type="checkbox" style="display:none"
-                  onchange="toggleDrill('${item.key}',${idx},this.checked)"
-                  data-opt="${opt.replace(/"/g,'&quot;')}" />
-              </label>
-            `;
-          }).join('')}
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function toggleDrill(key, idx, checked) {
-    const label = document.getElementById(`drill-${key}-${idx}`);
-    label.classList.toggle('selected', checked);
-    if (!state.drills[key]) state.drills[key] = [];
-    const opt = label.querySelector('input').dataset.opt;
-    if (checked) {
-      if (!state.drills[key].includes(opt)) state.drills[key].push(opt);
-    } else {
-      state.drills[key] = state.drills[key].filter(o => o !== opt);
-    }
-  }
-
-  function finishDrill() {
-    showScreen('screen-s3');
-  }
-
-  // =========================================================
-  // STEP 3: Context options
-  // =========================================================
-  function buildContextOptions() {
-    const reasons = [
-      '恋愛・マッチングアプリ', '好きな人への自信', '職場・仕事の印象',
-      '自分の自信のため', '友人・趣味の場', 'ふと気になった',
-    ];
-    const budgets = [
-      '¥3,000未満', '¥3,000〜10,000', '¥10,000〜30,000', '¥30,000以上',
-    ];
-
-    document.getElementById('ctx-reason').innerHTML = reasons.map(r => `
-      <div class="ctx-chip" onclick="toggleCtx(this,'reason','${r}')">${r}</div>
-    `).join('');
-
-    document.getElementById('ctx-budget').innerHTML = budgets.map(b => `
-      <div class="ctx-chip" onclick="toggleCtx(this,'budget','${b}')">${b}</div>
-    `).join('');
-  }
-
-  function toggleCtx(el, type, val) {
-    if (type === 'reason') {
-      el.classList.toggle('selected');
-      const idx = state.context.reasons.indexOf(val);
-      if (idx === -1) state.context.reasons.push(val);
-      else state.context.reasons.splice(idx, 1);
-    } else {
-      document.querySelectorAll('#ctx-budget .ctx-chip').forEach(c => c.classList.remove('selected'));
-      el.classList.add('selected');
-      state.context.budget = val;
-    }
-  }
-
-  // =========================================================
-  // SUBMIT → API
-  // =========================================================
-  async function submitDiag() {
-    state.context.area = document.getElementById('ctx-area').value;
-    showScreen('screen-loading');
-
-    const loadingMsgs = [
-      'スコアを分析しています...',
-      '悩みのパターンを照合中...',
-      'あなた専用のロードマップを生成中...',
-    ];
-    let msgIdx = 0;
-    const msgEl = document.getElementById('loading-msg');
-    const msgInterval = setInterval(() => {
-      msgIdx = (msgIdx + 1) % loadingMsgs.length;
-      msgEl.textContent = loadingMsgs[msgIdx];
-    }, 1800);
-
-    try {
-      const payload = buildPayload();
-      const res = await fetch('/api/diagnosis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      clearInterval(msgInterval);
-
-      if (!res.ok) throw new Error(`API ${res.status}`);
-      const data = await res.json();
-      state.result = data.result;
-      renderResult(state.result);
-      showScreen('screen-result');
-    } catch (err) {
-      clearInterval(msgInterval);
-      console.error(err);
-      // フォールバック: ルールベース結果を生成
-      state.result = buildFallbackResult();
-      renderResult(state.result);
-      showScreen('screen-result');
-    }
-  }
-
-  function buildPayload() {
-    // スコアの低い順TOP3を算出
-    const sorted = ITEMS
-      .map(i => ({ key: i.key, label: i.label, score: state.scores[i.key] || 5 }))
-      .sort((a, b) => a.score - b.score);
-
-    // 迷い項目を選んでいるかどうか
-    const vagueKeys = Object.entries(state.drills)
-      .filter(([, opts]) => opts.includes(VAGUE))
-      .map(([key]) => key);
-
-    return {
-      scores: state.scores,
-      drills: state.drills,
-      context: state.context,
-      sortedByScore: sorted.map(i => ({ key: i.key, label: i.label, score: i.score, drills: state.drills[i.key] || [] })),
-      vagueItems: vagueKeys,
-    };
-  }
-
-  // =========================================================
-  // RENDER RESULT
-  // =========================================================
-  function renderResult(result) {
-    // Badge & heading
-    document.getElementById('result-badge').textContent = result.badge || '診断結果';
-    document.getElementById('result-heading').textContent = result.heading || 'あなたの変容ロードマップ';
-    document.getElementById('result-sub').textContent = result.sub || '';
-
-    // Radar chart
-    drawRadar();
-
-    // Priority list
-    const pList = document.getElementById('priority-list');
-    const priorities = result.priorities || buildFallbackPriorities();
-    pList.innerHTML = priorities.slice(0, 3).map((p, i) => `
-      <div class="priority-item is-${i + 1}">
-        <div class="priority-num">${i + 1}</div>
-        <div class="priority-body">
-          <h4>${p.title}</h4>
-          <p>${p.desc}</p>
-        </div>
-      </div>
-    `).join('');
-
-    // Scenario
-    document.getElementById('scenario-text').textContent =
-      result.scenario || '回答内容をもとに、3ヶ月間集中して取り組むことで大きな変化が期待できます。';
-
-    // Service links
-    const sLinks = document.getElementById('service-links');
-    const links = result.serviceKeys || buildFallbackServiceKeys();
-    sLinks.innerHTML = links.slice(0, 3).map(key => `
-      <a href="${CATEGORY_URLS[key] || '/pages/search.html'}" class="service-link-btn">
-        <span>${CATEGORY_LABELS[key] || key}</span>
-        <span class="arrow">→</span>
-      </a>
-    `).join('');
-
-    // トップページのロードマップ用に診断結果を保存
-    try {
-      localStorage.setItem('fineme:diagnosis:v2', JSON.stringify({
-        scores:  state.scores,
-        drills:  state.drills,
-        context: state.context,
-        result:  result,
-        savedAt: new Date().toISOString(),
-      }));
-    } catch(e) {}
-
-    // スコア履歴に追記（定期的な変化の可視化用）
-    try {
-      const HISTORY_KEY = 'fineme:diagnosis:history';
-      const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-      history.push({ scores: state.scores, savedAt: new Date().toISOString() });
-      if (history.length > 12) history.splice(0, history.length - 12); // 直近12回まで保持
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-    } catch(e) {}
-
-    // 新スコアに合わせてロードマップ進捗を再計算
-    // Phase 1: ≤5点, Phase 2: 6-8点, Phase 3: 9-10点
-    try {
-      const scoreVals = Object.values(state.scores);
-      const progress = {};
-      if (scoreVals.length > 0) {
-        const hasPhase1 = scoreVals.some(s => s <= 5);
-        const hasPhase2 = scoreVals.some(s => s >= 6 && s <= 8);
-        if (!hasPhase1) progress.phase1_complete = true;           // Phase 1項目なし → Phase 2以上から
-        if (!hasPhase1 && !hasPhase2) progress.phase2_complete = true; // Phase 1/2項目なし → Phase 3から
-      }
-      progress.lastUpdated = new Date().toISOString();
-      localStorage.setItem('fineme:roadmap:progress', JSON.stringify(progress));
-    } catch(e) {}
-  }
-
-  // =========================================================
-  // RADAR CHART (canvas)
-  // =========================================================
-  function drawRadar() {
-    const canvas = document.getElementById('radar-canvas');
-    const ctx = canvas.getContext('2d');
-    const cx = 160, cy = 160, r = 120;
-    const n = ITEMS.length;
-    ctx.clearRect(0, 0, 320, 320);
-
-    // Grid rings
-    ctx.strokeStyle = '#e5e7eb';
-    ctx.lineWidth = 1;
-    for (let ring = 1; ring <= 5; ring++) {
-      ctx.beginPath();
-      for (let i = 0; i < n; i++) {
-        const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
-        const rad = r * ring / 5;
-        const x = cx + rad * Math.cos(angle);
-        const y = cy + rad * Math.sin(angle);
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-      }
-      ctx.closePath();
-      ctx.stroke();
-    }
-
-    // Axes & labels
-    ctx.strokeStyle = '#d1d5db';
-    ITEMS.forEach((item, i) => {
-      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + r * Math.cos(angle), cy + r * Math.sin(angle));
-      ctx.stroke();
-      // label
-      const lx = cx + (r + 18) * Math.cos(angle);
-      const ly = cy + (r + 18) * Math.sin(angle);
-      ctx.fillStyle = '#374151';
-      ctx.font = '11px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(item.label, lx, ly);
-    });
-
-    // Data polygon
-    ctx.beginPath();
-    ITEMS.forEach((item, i) => {
-      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
-      const score = (state.scores[item.key] || 1);
-      const rad = r * score / 10;
-      const x = cx + rad * Math.cos(angle);
-      const y = cy + rad * Math.sin(angle);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    });
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(99,102,241,0.2)';
-    ctx.fill();
-    ctx.strokeStyle = '#6366f1';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Dots
-    ctx.fillStyle = '#6366f1';
-    ITEMS.forEach((item, i) => {
-      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
-      const score = (state.scores[item.key] || 1);
-      const rad = r * score / 10;
-      ctx.beginPath();
-      ctx.arc(cx + rad * Math.cos(angle), cy + rad * Math.sin(angle), 4, 0, Math.PI * 2);
-      ctx.fill();
-    });
-  }
-
-  // =========================================================
-  // FALLBACK RESULT (APIエラー時)
-  // =========================================================
-  function buildFallbackResult() {
-    const sorted = ITEMS
-      .map(i => ({ key: i.key, label: i.label, score: state.scores[i.key] || 5 }))
-      .sort((a, b) => a.score - b.score);
-    const top3 = sorted.slice(0, 3);
-    const hasVague = Object.values(state.drills).some(opts => opts.includes(VAGUE));
-
-    return {
-      badge: 'あなたの診断結果',
-      heading: `${top3[0].label}から始める変容ロードマップ`,
-      sub: '回答をもとに、最優先で取り組む課題を特定しました。',
-      priorities: buildFallbackPriorities(),
-      scenario: `まず${top3[0].label}の改善に集中することで、1ヶ月で周囲からの印象が変わりはじめます。3ヶ月後には、以前の自分と比べて鏡を見るのが楽しくなっているはずです。`,
-      serviceKeys: buildFallbackServiceKeys(),
-    };
-  }
-
-  function buildFallbackPriorities() {
-    const sorted = ITEMS
-      .map(i => ({ key: i.key, label: i.label, score: state.scores[i.key] || 5, icon: i.icon }))
-      .sort((a, b) => a.score - b.score);
-    return sorted.slice(0, 3).map(item => ({
-      title: `${item.icon} ${item.label}を整える（現状 ${item.score}/10）`,
-      desc: (state.drills[item.key] || []).filter(o => o !== VAGUE).slice(0, 2).join('、') || 'まずプロに相談してみましょう。',
-    }));
-  }
-
-  function buildFallbackServiceKeys() {
-    const hasVague = Object.values(state.drills).some(opts => opts.includes(VAGUE));
-    const sorted = ITEMS
-      .map(i => ({ key: i.key, score: state.scores[i.key] || 5 }))
-      .sort((a, b) => a.score - b.score);
-    const keys = sorted.slice(0, 2).map(i => i.key);
-    if (hasVague) keys.push('consultant');
-    return [...new Set(keys)].slice(0, 3);
-  }
-
-  // =========================================================
-  // SHARE
-  // =========================================================
-  function shareResult() {
-    const text = 'Finemeの外見パーソナル診断を受けました。変容ロードマップが出た！';
-    const url = location.origin + '/pages/diagnosis.html';
-    if (navigator.share) {
-      navigator.share({ text, url });
-    } else {
-      navigator.clipboard.writeText(`${text} ${url}`).then(() => alert('コピーしました'));
-    }
-  }
-
-  function restartDiag() {
-    Object.keys(state.scores).forEach(k => delete state.scores[k]);
-    Object.keys(state.drills).forEach(k => delete state.drills[k]);
-    state.context.reasons = [];
-    state.context.budget = '';
-    state.context.area = '';
-    state.result = null;
-    showScreen('screen-0');
-  }
-
-  // =========================================================
-  // SAVE TO MYPAGE
-  // =========================================================
-  function saveDiagToMypage() {
-    try {
-      const btn = document.getElementById('save-to-mypage-btn');
-      const diag = state.result;
-      if (!diag) return;
-      const snap = {
-        badge:     diag.badge || '',
-        heading:   diag.heading || '',
-        savedAt:   new Date().toISOString(),
-        data:      { scores: state.scores, drills: state.drills, context: state.context, result: diag },
-      };
-      const key = 'fineme:saved:diagnoses';
-      let arr = [];
-      try { const r = localStorage.getItem(key); arr = r ? JSON.parse(r) : []; if (!Array.isArray(arr)) arr = []; } catch { arr = []; }
-      arr.unshift(snap);
-      if (arr.length > 50) arr = arr.slice(0, 50);
-      localStorage.setItem(key, JSON.stringify(arr));
-      sessionStorage.setItem('fineme:saved:just', '1');
-      if (btn) { btn.textContent = '保存しました ✓'; btn.disabled = true; }
-      setTimeout(() => { location.href = '/pages/mypage/diagnosis.html'; }, 800);
-    } catch(e) {}
-  }
-
-  updateProgress();
-  </script>
+  </main>
+  <footer id="site-footer"></footer>
   <script src="../scripts/main.js" type="module"></script>
-  <script src="../scripts/partials.js" type="module"></script>
+  <script>
+  (function(){
+    const STORAGE_KEY = 'fineme:diagnosis:latest';
+
+    // Concern areas definition
+    const CONCERN_AREAS = [
+      { id:'hair',    icon:'💇‍♂️', label:'髪型・髪' },
+      { id:'skin',    icon:'✨',   label:'肌・ニキビ' },
+      { id:'eyebrow', icon:'✂️',  label:'眉毛' },
+      { id:'body',    icon:'💪',  label:'体型・体' },
+      { id:'fashion', icon:'👔',  label:'服・コーデ' },
+      { id:'photo',   icon:'📸',  label:'写真写り' },
+      { id:'overall', icon:'🪞',  label:'全体の雰囲気' }
+    ];
+    const CONCERN_LABELS = ['全然','少し','そこそこ','かなり','すごく'];
+
+    // State
+    const state = {
+      trigger: null,
+      scene: null,
+      style: null,
+      urgency: null,
+      concern_areas: {},
+      past_attempts: [],
+      failure_pattern: null,
+      relationship: null,
+      budget: null,
+      stage2_skipped: false
+    };
+
+    // Screen order (base)
+    const SCREENS_S1 = ['landing','q1','q2','q3','q4','q5','stage2-intro'];
+    const SCREENS_S2 = ['q6','q7','q8','q9'];
+    let currentScreen = 'landing';
+    let screenHistory = ['landing'];
+
+    // DOM refs
+    const progressWrap = document.getElementById('diag-progress');
+    const progressFill = document.getElementById('diag-progress-fill');
+    const progressText = document.getElementById('diag-progress-text');
+    const navEl = document.getElementById('diag-nav');
+    const btnNext = document.getElementById('btn-next');
+
+    function showScreen(id){
+      document.querySelectorAll('.diag-screen').forEach(s => s.classList.remove('is-active'));
+      const el = document.getElementById('screen-' + id);
+      if(el) el.classList.add('is-active');
+      currentScreen = id;
+      updateProgress();
+      updateNav();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateProgress(){
+      const allSteps = ['q1','q2','q3','q4','q5','q6','q7','q8','q9'];
+      const totalSteps = state.stage2_skipped ? 5 : 9;
+      const idx = allSteps.indexOf(currentScreen);
+      const isMain = idx !== -1;
+      progressWrap.style.display = isMain ? '' : 'none';
+      if(!isMain) return;
+      const done = idx;
+      const pct = Math.round((done / totalSteps) * 100);
+      progressFill.style.width = pct + '%';
+      progressText.textContent = (done) + ' / ' + totalSteps;
+    }
+
+    function updateNav(){
+      const noNavScreens = ['landing','stage2-intro'];
+      if(noNavScreens.includes(currentScreen)){
+        navEl.style.display = 'none';
+        return;
+      }
+      navEl.style.display = 'flex';
+      updateNextBtn();
+    }
+
+    function updateNextBtn(){
+      let enabled = false;
+      if(currentScreen === 'q1') enabled = !!state.trigger;
+      else if(currentScreen === 'q2') enabled = !!state.scene;
+      else if(currentScreen === 'q3') enabled = !!state.style;
+      else if(currentScreen === 'q4') enabled = !!state.urgency;
+      else if(currentScreen === 'q5') enabled = Object.keys(state.concern_areas).length > 0;
+      else if(currentScreen === 'q6') enabled = state.past_attempts.length > 0;
+      else if(currentScreen === 'q7') enabled = !!state.failure_pattern;
+      else if(currentScreen === 'q8') enabled = !!state.relationship;
+      else if(currentScreen === 'q9') enabled = !!state.budget;
+      btnNext.disabled = !enabled;
+      btnNext.textContent = currentScreen === 'q9' ? '結果を見る' : '次へ';
+    }
+
+    function goNext(){
+      const flow = state.stage2_skipped
+        ? SCREENS_S1.slice(0, -1) // skip stage2-intro if already handled
+        : [...SCREENS_S1, ...SCREENS_S2];
+      const idx = flow.indexOf(currentScreen);
+      if(currentScreen === 'q5'){
+        // Always go to stage2-intro after q5
+        screenHistory.push('stage2-intro');
+        showScreen('stage2-intro');
+        return;
+      }
+      // Skip q7 if past_attempts is only 'none'
+      if(currentScreen === 'q6' && state.past_attempts.length === 1 && state.past_attempts[0] === 'none'){
+        screenHistory.push('q8');
+        showScreen('q8');
+        return;
+      }
+      if(idx !== -1 && idx < flow.length - 1){
+        const next = flow[idx + 1];
+        screenHistory.push(next);
+        showScreen(next);
+      } else {
+        saveAndFinish();
+      }
+    }
+
+    function goBack(){
+      if(screenHistory.length > 1){
+        screenHistory.pop();
+        showScreen(screenHistory[screenHistory.length - 1]);
+      }
+    }
+
+    function saveAndFinish(){
+      const profile = {
+        version: 'v4',
+        at: Date.now(),
+        trigger: state.trigger,
+        scene: state.scene,
+        style: state.style,
+        urgency: state.urgency,
+        concern_areas: state.concern_areas,
+        past_attempts: state.past_attempts,
+        failure_pattern: state.failure_pattern,
+        relationship: state.relationship,
+        budget: state.budget,
+        stage2_completed: !state.stage2_skipped
+      };
+      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); }catch(e){}
+      // 履歴に追記
+      try{
+        const histKey = 'fineme:diagnosis:history';
+        const raw = localStorage.getItem(histKey);
+        const arr = raw ? JSON.parse(raw) : [];
+        arr.push({ at: profile.at, version: profile.version, profile });
+        if(arr.length > 20) arr.splice(0, arr.length - 20);
+        localStorage.setItem(histKey, JSON.stringify(arr));
+      }catch(e){}
+      window.location.href = './diagnosis-result.html';
+    }
+
+    // Build concern grid
+    (function buildConcernGrid(){
+      const grid = document.getElementById('concern-grid');
+      CONCERN_AREAS.forEach(area => {
+        const row = document.createElement('div');
+        row.className = 'concern-row';
+        row.id = 'concern-row-' + area.id;
+        const labelDiv = document.createElement('div');
+        labelDiv.className = 'concern-label';
+        labelDiv.innerHTML = `<span class="concern-label-icon">${area.icon}</span><span class="concern-label-text">${area.label}</span>`;
+        const btnsDiv = document.createElement('div');
+        btnsDiv.className = 'concern-btns';
+        CONCERN_LABELS.forEach((lbl, i) => {
+          const btn = document.createElement('button');
+          btn.className = 'concern-btn';
+          btn.type = 'button';
+          btn.textContent = lbl;
+          btn.dataset.area = area.id;
+          btn.dataset.level = i;
+          btn.addEventListener('click', () => {
+            btnsDiv.querySelectorAll('.concern-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            state.concern_areas[area.id] = i;
+            row.classList.add('has-value');
+            updateNextBtn();
+          });
+          btnsDiv.appendChild(btn);
+        });
+        row.appendChild(labelDiv);
+        row.appendChild(btnsDiv);
+        grid.appendChild(row);
+      });
+    })();
+
+    // Single choice handlers
+    function bindSingleChoice(containerId, stateKey){
+      const container = document.getElementById(containerId);
+      if(!container) return;
+      container.querySelectorAll('.diag-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          container.querySelectorAll('.diag-option').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          state[stateKey] = btn.dataset.value;
+          updateNextBtn();
+        });
+      });
+    }
+    bindSingleChoice('opts-q1','trigger');
+    bindSingleChoice('opts-q2','scene');
+    bindSingleChoice('opts-q3','style');
+    bindSingleChoice('opts-q4','urgency');
+    bindSingleChoice('opts-q7','failure_pattern');
+    bindSingleChoice('opts-q8','relationship');
+    bindSingleChoice('opts-q9','budget');
+
+    // Multi-choice handler (Q6)
+    (function(){
+      const container = document.getElementById('opts-q6');
+      if(!container) return;
+      container.querySelectorAll('.diag-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = btn.dataset.value;
+          if(val === 'none'){
+            // Deselect all others
+            container.querySelectorAll('.diag-option').forEach(b => {
+              b.classList.remove('selected');
+              const i = state.past_attempts.indexOf(b.dataset.value);
+              if(i > -1) state.past_attempts.splice(i,1);
+            });
+            btn.classList.add('selected');
+            state.past_attempts = ['none'];
+          } else {
+            // Deselect 'none' if selecting something else
+            const noneBtn = container.querySelector('[data-value="none"]');
+            if(noneBtn){ noneBtn.classList.remove('selected'); }
+            const ni = state.past_attempts.indexOf('none');
+            if(ni > -1) state.past_attempts.splice(ni,1);
+
+            if(btn.classList.contains('selected')){
+              btn.classList.remove('selected');
+              const i = state.past_attempts.indexOf(val);
+              if(i > -1) state.past_attempts.splice(i,1);
+            } else {
+              btn.classList.add('selected');
+              state.past_attempts.push(val);
+            }
+          }
+          updateNextBtn();
+        });
+      });
+    })();
+
+    // Stage 2 intro buttons
+    document.getElementById('btn-continue-stage2').addEventListener('click', () => {
+      screenHistory.push('q6');
+      showScreen('q6');
+    });
+    document.getElementById('btn-skip-stage2').addEventListener('click', () => {
+      state.stage2_skipped = true;
+      saveAndFinish();
+    });
+
+    // Start button
+    document.getElementById('btn-start').addEventListener('click', () => {
+      screenHistory.push('q1');
+      showScreen('q1');
+    });
+
+    // Next button
+    btnNext.addEventListener('click', () => {
+      if(currentScreen === 'q9'){
+        saveAndFinish();
+      } else {
+        goNext();
+      }
+    });
+
+    // Back buttons
+    document.querySelectorAll('[data-back]').forEach(btn => {
+      btn.addEventListener('click', goBack);
+    });
+
+    // Init
+    showScreen('landing');
+  })();
+  </script>
 </body>
 </html>
