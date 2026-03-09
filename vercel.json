@@ -2,6 +2,14 @@
   "framework": "nextjs",
   "buildCommand": "node scripts/copy-static.js && next build",
   "outputDirectory": ".next",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "finemenextjs.vercel.app" }],
+      "destination": "https://fineme.me/:path*",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/api/:path*",
