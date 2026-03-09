@@ -629,25 +629,44 @@
       list.push(req);
       saveRequests(list);
       try{ const originParam = getParam('origin') || ''; logEvent('submit_request', { origin: originParam||'', serviceId: sid||'', slotId: slotId||'' }); }catch{}
-      // Create notifications: one for provider, one for user
+
+      // ── Supabase API に同期（メール通知もここで発火） ──
+      const providers = (()=>{ try{ return JSON.parse(localStorage.getItem('glowup:providers')||'[]'); }catch{ return []; } })();
+      const providerObj = providers.find(p=> p.id === svc.providerId || p.profile?.id === svc.providerId);
+      const providerEmail = providerObj?.profile?.email || providerObj?.email || '';
+      const providerName = providerObj?.profile?.name || providerObj?.name || '';
+      fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userInfo?.id || null,
+          user_name: name,
+          user_contact: contact,
+          note,
+          provider_id: String(svc.providerId),
+          service_id: String(sid),
+          service_name: svc.name || '',
+          price: svc.price || 0,
+          commission_rate: svc.commissionRate || 0.08,
+          reserved_date: slot ? slot.date : customDate,
+          start_time: slot ? slot.start : customStart,
+          end_time: slot ? slot.end : customEnd,
+          origin: getParam('origin') || 'direct',
+          provider_email: providerEmail,
+          provider_name: providerName,
+        }),
+      }).catch(e => console.warn('[reservation API]', e));
+
+      // ローカル通知（後方互換）
       try{
-        const providerNotif = {
-          toType: 'provider', toId: svc.providerId,
-          title: '新しい予約リクエスト',
-          body: `${svc.name} に対して ${req.date} ${req.start} - ${req.end} の予約リクエストが届きました（依頼者: ${name} / ${contact}）。`,
-          data: { requestId: req.id }
-        };
-        addNotification(providerNotif);
-      }catch(e){ console.warn('notify provider failed', e); }
+        addNotification({ toType:'provider', toId: svc.providerId, title:'新しい予約リクエスト',
+          body:`${svc.name} に ${req.date} ${req.start} のリクエストが届きました（${name}）`, data:{ requestId: req.id } });
+      }catch(e){}
       try{
-        const userNotif = {
-          toType: 'user', toId: userInfo?.id || null,
-          title: '予約リクエストを送信しました',
-          body: `${svc.name} へ ${req.date} ${req.start} - ${req.end} のリクエストを送信しました。店舗からの連絡をお待ちください。`,
-          data: { requestId: req.id }
-        };
-        addNotification(userNotif);
-      }catch(e){ console.warn('notify user failed', e); }
+        addNotification({ toType:'user', toId: userInfo?.id || null, title:'予約リクエストを送信しました',
+          body:`${svc.name} へ ${req.date} ${req.start} のリクエストを送信しました。`, data:{ requestId: req.id } });
+      }catch(e){}
+
       if(msg) msg.textContent='予約リクエストを送信しました。店舗からの連絡をお待ちください。';
       setTimeout(()=>{ closeReqModal(); }, 800);
     }

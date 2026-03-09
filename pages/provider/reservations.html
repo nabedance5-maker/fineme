@@ -40,18 +40,41 @@
         right.appendChild(status);
         if(r.status !== 'visited'){
           const btn = document.createElement('button'); btn.className='btn'; btn.textContent='来店確認';
-          btn.addEventListener('click', ()=>{
-            const ok = confirm('このユーザーが来店したことを確認しますか？\n※ 確認後、ポイントが付与されます');
+          btn.addEventListener('click', async ()=>{
+            const ok = confirm('このユーザーが来店したことを確認しますか？\n※ 確認後、体験談依頼メールが自動送信されます');
             if(!ok) return;
+            // ローカル処理（ポイント付与）
             const res = confirmVisited(r.id);
             if(res.ok){
               status.textContent = 'visited';
               render();
               updateHeaderPointsBadge();
-              alert(`来店が確認されました。+${res.granted}pt 付与。現在の還元率: ${res.rate}%`);
-            } else {
-              alert('来店確認に失敗しました');
             }
+            // Supabase API に来店確認を同期（体験談依頼メール発火）
+            try{
+              // user_contactがメールかどうか確認するためSupabaseの予約を検索
+              const apiRes = await fetch(`/api/reservations?providerId=${r.storeId}`);
+              const apiList = await apiRes.json();
+              const match = (apiList||[]).find(x=>
+                x.provider_id === String(r.storeId) && x.status === 'approved' &&
+                Math.abs(new Date(x.reserved_date) - new Date(r.visitDate)) < 86400000
+              );
+              if(match){
+                const userEmail = (match.user_contact||'').includes('@') ? match.user_contact : '';
+                await fetch(`/api/reservations/${match.id}`, {
+                  method: 'PATCH',
+                  headers: {'Content-Type':'application/json'},
+                  body: JSON.stringify({
+                    action: 'visited',
+                    user_email: userEmail,
+                    user_name: match.user_name,
+                    provider_name: match.provider_id,
+                    service_name: match.service_name || r.title,
+                  }),
+                });
+              }
+            }catch(e){ console.warn('[visited API]', e); }
+            alert(`来店確認しました。体験談依頼メールを送信しました。`);
           });
           right.appendChild(btn);
         }

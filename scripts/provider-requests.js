@@ -184,6 +184,36 @@ function escapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,
         const body = `${r.serviceName || serviceName(r.serviceId)} / ${r.date} ${timeStr} の予約が承認されました。詳細をご確認ください。`;
         addNotification({ toType:'user', toId: r.userId || null, title, body, data:{ requestId: r.id } });
       }catch(e){ console.warn('notify user approval failed', e); }
+      // ── Supabase API に承認を同期（メールも発火） ──
+      try{
+        const r = reqs[idx];
+        // リクエストのcontactがメールアドレスなら渡す
+        const userEmail = (r.contact||'').includes('@') ? r.contact : '';
+        // Supabase reservations テーブルのIDを取得（user_id×provider_id×created近い順）
+        fetch(`/api/reservations?providerId=${session.id}`)
+          .then(res=> res.json())
+          .then(list=>{
+            const match = (list||[]).find(x=>
+              x.provider_id === String(session.id) &&
+              x.user_name === r.userName &&
+              x.status === 'pending'
+            );
+            if(match){
+              fetch(`/api/reservations/${match.id}`, {
+                method: 'PATCH',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({
+                  action: 'approve',
+                  provider_comment: comment,
+                  user_email: userEmail,
+                  user_name: r.userName,
+                  provider_name: session.displayName || session.loginId || '',
+                  service_name: r.serviceName || serviceName(r.serviceId),
+                }),
+              }).catch(e=> console.warn('[approve API]', e));
+            }
+          }).catch(e=> console.warn('[fetch reservations]', e));
+      }catch(e){ console.warn('[approve sync]', e); }
       const msg = $('#req-message'); if(msg) msg.textContent = 'リクエストを承認しました。該当枠を受付停止にしました。';
     } else if(action === 'reject'){
       reqs[idx].status = 'rejected';
