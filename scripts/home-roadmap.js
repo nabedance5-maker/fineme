@@ -37,8 +37,20 @@ function adaptV4toDiag(v4) {
     matching_app:'マッチングアプリ向け', love:'恋愛向け',
     career:'キャリア向け', word:'気になり解消', vague:'外見磨き中'
   };
+  // 各アイテムキーに対応する元の気になりレベル（0-4）も保持する
+  const concernLevels = {};
+  const areaToKey = { hair:'hair', skin:'skin', eyebrow:'eyebrow', body:'body', fashion:'fashion' };
+  for (const [area, level] of Object.entries(v4.concern_areas || {})) {
+    const key = areaToKey[area];
+    if (key) concernLevels[key] = level;
+  }
+
   return {
     scores,
+    _v4: true,                          // v4モードフラグ
+    _concern_levels: concernLevels,     // 気になり度（0-4）をキー別で保持
+    _trigger: v4.trigger,
+    _urgency: v4.urgency,
     result: {
       badge: triggerBadge[v4.trigger] || '診断済み',
       trigger: v4.trigger,
@@ -48,6 +60,40 @@ function adaptV4toDiag(v4) {
     }
   };
 }
+
+// v4用: 気になり度ラベル
+const V4_LEVEL_LABELS = ['全然気にならない','少し気になる','そこそこ気になる','かなり気になる','すごく気になる'];
+
+// v4用: 気になり度ベースのコピー（スコアではなくレベルで語りかける）
+const ITEM_COPY_V4 = {
+  eyebrow: l => l >= 3
+    ? `眉毛がかなり気になっている。顔の輪郭を決めているのは眉です。1回のサロンで、別人のような印象になります。`
+    : `眉毛を整えることで「なんか清潔感ある」と思われる顔への近道になります。`,
+  hair: l => l >= 3
+    ? `髪がかなり気になっている。「垢抜けない」と感じる原因の多くはここにあります。まずここだけ片付けろ。`
+    : `髪型を整えることで、全体の印象が引き上がります。`,
+  body: l => l >= 3
+    ? `体型がかなり気になっている。ここが変わると、持っている服の見え方がすべて変わります。`
+    : `体型を整えることで、着こなしの幅が大きく広がります。`,
+  skin: l => l >= 3
+    ? `肌がかなり気になっている。近づいた時の印象が別物になります。清潔感の土台はここです。`
+    : `肌を整えることで、清潔感の底上げがひとつ完成します。`,
+  hair_removal: l => l >= 3
+    ? `ムダ毛がかなり気になっている。これだけで「なぜか清潔感がある人」になります。`
+    : `ムダ毛を処理することで、全体の清潔感がひとつに揃います。`,
+  teeth: l => l >= 3
+    ? `歯がかなり気になっている。笑顔に自信が持てると、会話の質が変わります。`
+    : `歯を整えることで、笑った瞬間の印象が別物になります。`,
+  nail: l => l >= 3
+    ? `爪がかなり気になっている。手元は自分が思っているより10倍見られています。`
+    : `爪を整えることで「丁寧さ」が相手に伝わります。`,
+  makeup: l => l >= 3
+    ? `メイクアップが気になっている。男性のメイクは「整って見える」だけで十分です。`
+    : `素の清潔感を最大化するメイクを1つ覚えると、全体が揃います。`,
+  fashion: l => l >= 3
+    ? `服・コーデがかなり気になっている。サイズ感と色だけで、印象は別物になります。`
+    : `服・着こなしを整えることで「なんかちゃんとしてる」に変わります。`,
+};
 
 const ITEMS = [
   { key: 'eyebrow',      label: '眉',     icon: '✏️', searchParam: 'eyebrow'      },
@@ -155,15 +201,26 @@ function getCurrentPhase(progress) {
 // ── 診断済みユーザー向けレンダリング ────────────────────────────────
 function renderDiagnosed(diag) {
   const { scores, result } = diag;
+  const isV4 = diag._v4 === true;
+  const concernLevels = diag._concern_levels || {};
   const { p1, p2, p3 }    = classifyPhases(scores);
   const progress           = loadProgress();
   const currentPhase       = getCurrentPhase(progress);
 
-  // パーソナライズされたサブコピー
+  // パーソナライズされたサブコピー（v4は気になり度の言葉で語る）
   const topItem = [...p1, ...p2].sort((a, b) => a.score - b.score)[0];
-  const subText = topItem
-    ? `${topItem.label}が${topItem.score}点。まずここだけ片付けろ。それだけで、周囲の反応が変わり始める。`
-    : `土台は整った。次は外見全体を武器に変える段階だ。`;
+  let subText;
+  if (topItem) {
+    if (isV4) {
+      const level = concernLevels[topItem.key];
+      const levelLabel = level !== undefined ? V4_LEVEL_LABELS[level] : 'かなり気になっている';
+      subText = `${topItem.label}が${levelLabel}状態。まずここだけ片付けろ。それだけで、周囲の反応が変わり始める。`;
+    } else {
+      subText = `${topItem.label}が${topItem.score}点。まずここだけ片付けろ。それだけで、周囲の反応が変わり始める。`;
+    }
+  } else {
+    subText = `土台は整った。次は外見全体を武器に変える段階だ。`;
+  }
 
   const el = id => document.getElementById(id);
   if (el('roadmap-sub'))        el('roadmap-sub').textContent = currentPhase === 4
@@ -188,9 +245,9 @@ function renderDiagnosed(diag) {
     if (conn) conn.className = `roadmap-conn${i < currentPhase ? ' is-done' : ''}`;
   }
 
-  renderPhaseBlock('roadmap-phase-1', p1, 1, currentPhase, progress);
-  renderPhaseBlock('roadmap-phase-2', p2, 2, currentPhase, progress);
-  renderPhaseBlock('roadmap-phase-3', p3, 3, currentPhase, progress);
+  renderPhaseBlock('roadmap-phase-1', p1, 1, currentPhase, progress, diag);
+  renderPhaseBlock('roadmap-phase-2', p2, 2, currentPhase, progress, diag);
+  renderPhaseBlock('roadmap-phase-3', p3, 3, currentPhase, progress, diag);
   renderTop3(result, p1, p2, scores);
 
   // 全フェーズ完了バナー
@@ -215,7 +272,9 @@ function renderDiagnosed(diag) {
   }
 }
 
-function renderPhaseBlock(elId, items, phaseNum, currentPhase, progress) {
+function renderPhaseBlock(elId, items, phaseNum, currentPhase, progress, diag) {
+  const isV4 = diag && diag._v4 === true;
+  const concernLevels = (diag && diag._concern_levels) || {};
   const block = document.getElementById(elId);
   if (!block) return;
 
@@ -250,7 +309,24 @@ function renderPhaseBlock(elId, items, phaseNum, currentPhase, progress) {
     : items.map(item => {
         const isClicked = clickedInPhase.includes(item.key);
         const isChecked = checkedInPhase.includes(item.key);
-        const copyText  = item.copy || ITEM_COPY[item.key]?.(item.score) || '';
+        // v4モードはITEM_COPY_V4、それ以外はITEM_COPYを使用
+        let copyText;
+        if (item.copy) {
+          copyText = item.copy;
+        } else if (isV4 && ITEM_COPY_V4[item.key]) {
+          const level = concernLevels[item.key] ?? 3;
+          copyText = ITEM_COPY_V4[item.key](level);
+        } else {
+          copyText = ITEM_COPY[item.key]?.(item.score) || '';
+        }
+        // スコアラベル: v4は気になり度、v2は点数
+        let scoreLabel = '';
+        if (isV4 && concernLevels[item.key] !== undefined) {
+          const lvl = concernLevels[item.key];
+          if (lvl > 0) scoreLabel = `<span class="roadmap-item-score">${V4_LEVEL_LABELS[lvl]}</span>`;
+        } else if (!isV4 && item.score != null) {
+          scoreLabel = `<span class="roadmap-item-score">${item.score}点</span>`;
+        }
         const searchUrl = `./pages/search.html?category=${item.searchParam}`;
         return `
         <div class="roadmap-item${isChecked ? ' is-checked' : isClicked ? ' is-visited' : ''}${isLocked ? ' is-locked' : ''}">
@@ -258,7 +334,7 @@ function renderPhaseBlock(elId, items, phaseNum, currentPhase, progress) {
           <div class="roadmap-item-body">
             <div class="roadmap-item-label">
               ${item.label}
-              ${item.score != null ? `<span class="roadmap-item-score">${item.score}点</span>` : ''}
+              ${scoreLabel}
               ${isChecked ? '<span class="roadmap-item-checked-badge">完了</span>' : isClicked ? '<span class="roadmap-item-visited">確認済</span>' : ''}
             </div>
             <div class="roadmap-item-copy">${copyText}</div>
