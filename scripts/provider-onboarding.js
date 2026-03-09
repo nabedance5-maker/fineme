@@ -40,7 +40,7 @@ try{
         <div class="stack">
           <p>ユーザー向け診断をそのまま受けてください。診断はラベルではなく“納得のための道しるべ”です。</p>
           <div class="cluster" style="gap:8px">
-            <a class="btn" href="../../diagnosis/index.html" target="_blank" rel="noopener">診断ページを開く</a>
+            <a class="btn" href="../../pages/diagnosis.html" target="_blank" rel="noopener">診断ページを開く</a>
             <button id="ob-import-diag" class="btn btn-ghost" type="button">診断結果を読み込む</button>
           </div>
           ${resultLine}
@@ -125,7 +125,7 @@ try{
               <strong>STEP1：診断体験（掲載者自身が受ける）</strong>
               <p>ユーザー向け診断をそのまま受けてください。診断は“納得のための道しるべ”。</p>
               <div class="cluster" style="gap:8px">
-                <a class="btn" href="../../diagnosis/index.html" target="_blank" rel="noopener">診断ページを開く</a>
+                <a class="btn" href="../../pages/diagnosis.html" target="_blank" rel="noopener">診断ページを開く</a>
               </div>
             </div>
             <div class="ob-card">
@@ -194,7 +194,7 @@ function render(){
       <div class="stack">
         <p>ユーザー向け診断をそのまま受けてください。診断はラベルではなく“納得のための道しるべ”です。</p>
         <div class="cluster" style="gap:8px">
-          <a class="btn" href="../../diagnosis/index.html" target="_blank" rel="noopener">診断ページを開く</a>
+          <a class="btn" href="../../pages/diagnosis.html" target="_blank" rel="noopener">診断ページを開く</a>
           <button id="ob-import-diag" class="btn btn-ghost" type="button">診断結果を読み込む</button>
         </div>
         ${resultLine}
