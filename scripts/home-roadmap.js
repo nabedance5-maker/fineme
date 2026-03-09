@@ -5,8 +5,42 @@
  * - 未診断ユーザー   → 診断結果サンプル3パターン
  */
 
-const DIAG_KEY     = 'fineme:diagnosis:v2';
+const DIAG_KEY_V2  = 'fineme:diagnosis:v2';
+const DIAG_KEY_V4  = 'fineme:diagnosis:latest';
 const PROGRESS_KEY = 'fineme:roadmap:progress';
+
+// v4形式（変容プロファイル）をv2形式のscores/resultに変換
+function adaptV4toDiag(v4) {
+  if (!v4 || v4.version !== 'v4') return null;
+  // concern_areas の気になり度（0-4）をスコア（1-10）に変換
+  // すごく(4)→1点, かなり(3)→3点, そこそこ(2)→5点, 少し(1)→7点, 全然(0)→10点
+  const levelToScore = [10, 7, 5, 3, 1];
+  const scores = {};
+  const areaMap = { hair:'hair', skin:'skin', eyebrow:'eyebrow', body:'body', fashion:'fashion', photo:'photo', overall:'overall' };
+  for (const [area, level] of Object.entries(v4.concern_areas || {})) {
+    const key = areaMap[area];
+    if (key) scores[key] = levelToScore[level] ?? 5;
+  }
+  // urgencyが高い場合、全スコアを1〜2点下げてPhase1に寄せる
+  if (v4.urgency === 'high') {
+    for (const k in scores) scores[k] = Math.max(1, scores[k] - 2);
+  }
+  // バッジテキスト
+  const triggerBadge = {
+    matching_app:'マッチングアプリ向け', love:'恋愛向け',
+    career:'キャリア向け', word:'気になり解消', vague:'外見磨き中'
+  };
+  return {
+    scores,
+    result: {
+      badge: triggerBadge[v4.trigger] || '診断済み',
+      trigger: v4.trigger,
+      style: v4.style,
+      urgency: v4.urgency,
+      failure_pattern: v4.failure_pattern,
+    }
+  };
+}
 
 const ITEMS = [
   { key: 'eyebrow',      label: '眉',     icon: '✏️', searchParam: 'eyebrow'      },
@@ -506,9 +540,20 @@ function init() {
     // 診断データがあればロードマップを表示（ログイン不要）
     // ※旧 glowup:userSession はSupabase移行済みのため参照しない
 
-    const raw    = localStorage.getItem(DIAG_KEY);
-    const diag   = raw ? JSON.parse(raw) : null;
-    // スコアが1つ以上あれば有効（>= 8 は厳しすぎるため緩和）
+    // v4（最新）→ v2（旧形式）の順で読み込み
+    let diag = null;
+    const rawV4 = localStorage.getItem(DIAG_KEY_V4);
+    if (rawV4) {
+      try {
+        const v4 = JSON.parse(rawV4);
+        if (v4.version === 'v4') diag = adaptV4toDiag(v4);
+        else if (v4.scores) diag = v4; // 旧形式がlatest keyに入っている場合
+      } catch {}
+    }
+    if (!diag) {
+      const rawV2 = localStorage.getItem(DIAG_KEY_V2);
+      if (rawV2) { try { diag = JSON.parse(rawV2); } catch {} }
+    }
     const hasDiag = diag && diag.scores && Object.keys(diag.scores).length >= 1;
 
     const roadmapEl = document.getElementById('roadmap-section');
