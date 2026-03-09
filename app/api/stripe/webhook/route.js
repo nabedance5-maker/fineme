@@ -1,27 +1,27 @@
+// POST /api/stripe/webhook
+// Stripeイベントを受信してSupabaseを更新する
 import Stripe from 'stripe';
+import { createClient } from '@supabase/supabase-js';
+import { getPlanByPriceId } from '@/lib/stripe-plans';
+import { sendReservationCreatedEmails } from '@/lib/email';
 
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) return null;
   return new Stripe(process.env.STRIPE_SECRET_KEY);
 }
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-/**
- * POST /api/stripe/webhook
- * Stripeからのイベントを受信してDBを更新する
- *
- * 処理するイベント:
- * - customer.subscription.updated  → subscriptions テーブル更新
- * - customer.subscription.deleted  → status = cancelled
- * - invoice.payment_succeeded      → payments テーブルに記録
- * - invoice.payment_failed         → providers の subscriptionStatus を past_due に
- */
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
 export async function POST(request) {
   const stripe = getStripe();
   if (!stripe) return new Response('Stripe is not configured', { status: 503 });
 
   const body = await request.text();
   const sig = request.headers.get('stripe-signature');
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   let event;
   try {
@@ -33,80 +33,97 @@ export async function POST(request) {
 
   try {
     switch (event.type) {
-      case 'customer.subscription.updated':
-      case 'customer.subscription.created': {
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated': {
         const sub = event.data.object;
-        await upsertSubscription(sub);
+        const providerId = sub.metadata?.fineme_provider_id;
+        if (!providerId) break;
+
+        const priceId = sub.items?.data?.[0]?.price?.id;
+        const plan = getPlanByPriceId(priceId);
+
+        await supabaseAdmin.from('providers').upsert({
+          id: providerId,
+          stripe_subscription_id: sub.id,
+          stripe_customer_id: sub.customer,
+          billing_status: sub.status,
+          plan: plan ? Object.keys({ A: true }).find(k => plan === k) || 'A' : 'A',
+        }, { onConflict: 'id' });
+
+        console.log(`[webhook] subscription ${sub.status} for provider ${providerId}`);
         break;
       }
+
       case 'customer.subscription.deleted': {
         const sub = event.data.object;
-        await upsertSubscription({ ...sub, status: 'cancelled' });
+        const providerId = sub.metadata?.fineme_provider_id;
+        if (!providerId) break;
+        await supabaseAdmin.from('providers')
+          .update({ billing_status: 'cancelled' })
+          .eq('id', providerId);
         break;
       }
+
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object;
-        await recordPayment(invoice, 'paid');
+        const providerId = invoice.subscription_details?.metadata?.fineme_provider_id
+          || invoice.metadata?.fineme_provider_id;
+        if (!providerId) break;
+
+        // 課金成功 → providers テーブルを active に更新
+        await supabaseAdmin.from('providers')
+          .update({ billing_status: 'active' })
+          .eq('id', providerId);
+
+        // 紹介報酬を計算・記録（月次）
+        const yearMonth = new Date().toISOString().slice(0, 7);
+        await recordReferralReward(providerId, yearMonth);
+
+        console.log(`[webhook] payment succeeded for provider ${providerId}: ¥${invoice.amount_paid}`);
         break;
       }
+
       case 'invoice.payment_failed': {
         const invoice = event.data.object;
-        await recordPayment(invoice, 'failed');
+        const providerId = invoice.subscription_details?.metadata?.fineme_provider_id;
+        if (!providerId) break;
+        await supabaseAdmin.from('providers')
+          .update({ billing_status: 'past_due' })
+          .eq('id', providerId);
         break;
       }
-      default:
-        // ignore
     }
   } catch (err) {
     console.error(`[webhook] handler error for ${event.type}:`, err);
-    // 200を返してStripeのリトライを止める（ログ済み）
   }
 
   return new Response('ok', { status: 200 });
 }
 
-async function upsertSubscription(sub) {
-  // DBアクセスはサーバーサイド（Next.js API Route）からは直接SQLiteを叩かず、
-  // Express server のエンドポイント経由 or server-actions で処理する設計。
-  // ここでは console.log + TODO コメントで実装の骨格を示す。
-  // TODO: server/db.js の open() を使って subscriptions テーブルを更新する
-  const providerId = sub.metadata?.fineme_provider_id;
-  console.log(`[webhook] subscription ${sub.status} for provider ${providerId}: ${sub.id}`);
+// 紹介報酬の月次記録
+async function recordReferralReward(referredId, yearMonth) {
+  try {
+    // この掲載者を紹介した人を探す
+    const { data: referral } = await supabaseAdmin
+      .from('referrals')
+      .select('referrer_id, reward_per_month')
+      .eq('referred_id', referredId)
+      .eq('status', 'active')
+      .single();
 
-  // 内部APIを叩いてDB更新（Express serverが立ち上がっている場合）
-  const serverUrl = process.env.INTERNAL_SERVER_URL || 'http://localhost:3001';
-  await fetch(`${serverUrl}/internal/subscriptions/upsert`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-internal-key': process.env.INTERNAL_API_KEY || '' },
-    body: JSON.stringify({
-      providerId,
-      stripeSubscriptionId: sub.id,
-      stripeCustomerId: sub.customer,
-      status: sub.status,
-      currentPeriodStart: new Date(sub.current_period_start * 1000).toISOString(),
-      currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
-      amount: sub.items?.data?.[0]?.price?.unit_amount || 0,
-    }),
-  }).catch(e => console.warn('[webhook] internal upsert failed:', e.message));
-}
+    if (!referral) return;
 
-async function recordPayment(invoice, status) {
-  const providerId = invoice.subscription_details?.metadata?.fineme_provider_id
-    || invoice.metadata?.fineme_provider_id;
-  console.log(`[webhook] payment ${status} for provider ${providerId}: ${invoice.id}`);
+    // 月次報酬を記録（重複は UNIQUE制約でスキップ）
+    await supabaseAdmin.from('referral_rewards').upsert({
+      referrer_id: referral.referrer_id,
+      referred_id: referredId,
+      year_month: yearMonth,
+      amount: referral.reward_per_month || 500,
+      paid: false,
+    }, { onConflict: 'referrer_id,referred_id,year_month', ignoreDuplicates: true });
 
-  const serverUrl = process.env.INTERNAL_SERVER_URL || 'http://localhost:3001';
-  await fetch(`${serverUrl}/internal/payments/record`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-internal-key': process.env.INTERNAL_API_KEY || '' },
-    body: JSON.stringify({
-      providerId,
-      stripeInvoiceId: invoice.id,
-      stripePaymentIntentId: invoice.payment_intent,
-      amount: invoice.amount_paid || invoice.amount_due,
-      currency: invoice.currency,
-      status,
-      paidAt: status === 'paid' ? new Date().toISOString() : null,
-    }),
-  }).catch(e => console.warn('[webhook] internal payment record failed:', e.message));
+    console.log(`[webhook] referral reward recorded: ${referral.referrer_id} ← ${referredId} (${yearMonth})`);
+  } catch (e) {
+    console.warn('[webhook] referral reward error:', e.message);
+  }
 }
