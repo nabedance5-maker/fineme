@@ -192,6 +192,7 @@
                 ${p.admin_hidden?'強制非公開解除':p.published?'非公開にする':'公開する'}
               </button>
               ${!p.admin_hidden?`<button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-force-hide="${p.id}">強制非公開</button>`:''}
+              <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-delete="${p.id}" data-name="${esc(p.name)}">削除</button>
             </div>
           </div>
         `;
@@ -206,6 +207,12 @@
       listEl.querySelectorAll('[data-force-hide]').forEach(btn=>btn.addEventListener('click',async()=>{
         if(!confirm('強制非公開にしますか？')) return;
         await fetch(`/api/admin/providers/${btn.dataset.forceHide}`,{method:'PATCH',headers:h(),body:JSON.stringify({admin_hidden:true})}); load();
+      }));
+      listEl.querySelectorAll('[data-delete]').forEach(btn=>btn.addEventListener('click',async()=>{
+        if(!confirm(`「${btn.dataset.name}」を完全に削除しますか？\nこの操作は元に戻せません。`)) return;
+        const res = await fetch(`/api/admin/providers/${btn.dataset.delete}`,{method:'DELETE',headers:h()});
+        if(res.ok){ load(); }
+        else{ const err=await res.json(); alert('削除エラー: '+(err.error||'不明')); }
       }));
     }
 
