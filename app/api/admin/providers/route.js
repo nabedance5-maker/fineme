@@ -33,7 +33,7 @@ export async function POST(request) {
     const body = await request.json();
     const { slug, name, catchphrase, description, target_desc, philosophy,
             main_category, sub_categories, area, price_from, booking_url,
-            photo_url, plan, referral_code, referred_by,
+            photo_url, plan, referral_code, referred_by, email, line_user_id,
             suitable_triggers, handles_failure_patterns, provider_style } = body;
 
     if (!slug || !name || !main_category) {
@@ -46,7 +46,8 @@ export async function POST(request) {
         slug, name, catchphrase, description, target_desc, philosophy,
         main_category, sub_categories: sub_categories || [],
         area, price_from: price_from ? Number(price_from) : null,
-        booking_url, photo_url,
+        booking_url, photo_url, email: email || null,
+        line_user_id: line_user_id || null,
         plan: plan || 'A', published: false,
         referral_code: referral_code || slug,
         referred_by: referred_by || null,
