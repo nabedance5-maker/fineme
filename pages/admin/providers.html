@@ -60,7 +60,7 @@
       <form id="pform" class="stack">
         <div class="form-grid">
           <div class="form-field"><label>掲載名 *</label><input name="name" required placeholder="パーソナルジム TOKYO" /></div>
-          <div class="form-field"><label>URLスラッグ（任意・未入力で自動生成）</label><input name="slug" placeholder="tokyo-gym-yamada（空欄可）" /></div>
+          <input type="hidden" name="slug" value="" />
           <div class="form-field"><label>メインカテゴリ *</label>
             <select name="main_category" required>
               <option value="">選択</option>
