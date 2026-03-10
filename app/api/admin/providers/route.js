@@ -9,6 +9,20 @@ const supabase = createClient(
 
 const ADMIN_KEY = process.env.ADMIN_API_KEY || process.env.UPLOAD_API_KEY || '';
 
+// 読みやすい初期パスワードを生成（12文字）
+function generatePassword() {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower = 'abcdefghjkmnpqrstuvwxyz';
+  const digits = '23456789';
+  const symbols = '!@#';
+  const all = upper + lower + digits + symbols;
+  const rand = (s) => s[Math.floor(Math.random() * s.length)];
+  // 各種類を最低1文字保証
+  const pw = [rand(upper), rand(lower), rand(digits), rand(symbols),
+    ...Array.from({length: 8}, () => rand(all))];
+  return pw.sort(() => Math.random() - 0.5).join('');
+}
+
 function checkAdmin(request) {
   const key = request.headers.get('x-admin-key') || request.headers.get('x-internal-key');
   return key && key === ADMIN_KEY;
@@ -64,22 +78,41 @@ export async function POST(request) {
 
     if (error) return Response.json({ error: error.message }, { status: 500 });
 
-    // Supabase Authに招待メールを送信（掲載者ダッシュボードへのリダイレクト付き）
-    // 既存アカウントがある場合はスキップ
+    // 初期パスワードを自動生成してSupabaseアカウントを作成
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://fineme.me';
+    const initPassword = generatePassword();
+    let authCreated = false;
     try {
-      const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
-        redirectTo: `${siteUrl}/pages/auth/callback.html`,
-        data: { provider_id: data.id, role: 'provider' },
+      const { error: createError } = await supabase.auth.admin.createUser({
+        email,
+        password: initPassword,
+        email_confirm: true,
       });
-      if (inviteError) {
-        // 既存ユーザーのエラーは無視（ログインすれば自動で紐付く）
-        if (!inviteError.message?.includes('already')) {
-          console.warn('[invite] failed:', inviteError.message);
-        }
+      if (!createError) {
+        authCreated = true;
+      } else if (createError.message?.includes('already')) {
+        // 既存アカウントは初期パスワード送信不要
+        authCreated = false;
+      } else {
+        console.warn('[createUser] failed:', createError.message);
       }
     } catch (e) {
-      console.warn('[invite] exception:', e);
+      console.warn('[createUser] exception:', e);
+    }
+
+    // 初期パスワードをメールで送信
+    if (authCreated) {
+      try {
+        const { sendProviderCredentialsEmail } = await import('@/lib/email');
+        await sendProviderCredentialsEmail({
+          email,
+          providerName: name,
+          password: initPassword,
+          loginUrl: `${siteUrl}/pages/login.html`,
+        });
+      } catch (e) {
+        console.error('[credentials email]', e);
+      }
     }
 
     return Response.json({

@@ -192,6 +192,13 @@
           </div>
           <a href="#" class="btn btn-ghost" id="billing-portal-btn" style="text-align:center">プラン変更・解約はこちら（Stripe カスタマーポータル）</a>
         </div>
+        <div class="card stack" style="padding:24px;gap:14px">
+          <h2 style="margin:0;font-size:16px">パスワード変更</h2>
+          <div class="form-field"><label>新しいパスワード（8文字以上）</label><input type="password" id="new-pw1" /></div>
+          <div class="form-field"><label>新しいパスワード（確認）</label><input type="password" id="new-pw2" /></div>
+          <p id="pw-change-msg" style="font-size:13px;margin:0;display:none"></p>
+          <button class="btn" id="pw-change-btn" style="align-self:flex-start">パスワードを変更する</button>
+        </div>
       </div>
 
     </div>
@@ -443,6 +450,27 @@
     document.getElementById('copy-referral').addEventListener('click',()=>{
       const code = document.getElementById('referral-code').textContent;
       navigator.clipboard.writeText(code).then(()=>showToast('コードをコピーしました')).catch(()=>{});
+    });
+
+    // パスワード変更
+    document.getElementById('pw-change-btn').addEventListener('click', async()=>{
+      const pw1 = document.getElementById('new-pw1').value;
+      const pw2 = document.getElementById('new-pw2').value;
+      const msg = document.getElementById('pw-change-msg');
+      msg.style.display='none';
+      if(pw1.length < 8){ msg.textContent='パスワードは8文字以上で入力してください'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
+      if(pw1 !== pw2){ msg.textContent='パスワードが一致しません'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
+      try{
+        const key = Object.keys(localStorage).find(k=>k.startsWith('sb-')&&k.endsWith('-auth-token'));
+        const session = key ? JSON.parse(localStorage.getItem(key)) : null;
+        if(!session?.access_token){ msg.textContent='ログインセッションが見つかりません。再ログインしてください。'; msg.style.color='#ef4444'; msg.style.display='block'; return; }
+        const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+        const sb = createClient('https://qsfpzlvucqzmjldshwwd.supabase.co', SUPABASE_ANON);
+        const { error } = await sb.auth.updateUser({ password: pw1 });
+        if(error){ msg.textContent='エラー: '+error.message; msg.style.color='#ef4444'; }
+        else{ msg.textContent='パスワードを変更しました'; msg.style.color='#059669'; document.getElementById('new-pw1').value=''; document.getElementById('new-pw2').value=''; }
+        msg.style.display='block';
+      }catch(e){ msg.textContent='エラーが発生しました'; msg.style.color='#ef4444'; msg.style.display='block'; }
     });
 
     // カスタマーポータル
