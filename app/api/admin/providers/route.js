@@ -108,7 +108,7 @@ export async function POST(request) {
         email,
         providerName: name,
         password: initPassword,
-        loginUrl: `${siteUrl}/pages/login.html`,
+        loginUrl: 'https://fineme.me/pages/login.html',
       });
       console.log('[email] credentials sent to:', email);
     } catch (e) {
