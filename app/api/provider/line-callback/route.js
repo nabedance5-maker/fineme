@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://fineme.me';
+const SITE_URL = 'https://fineme.me';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);

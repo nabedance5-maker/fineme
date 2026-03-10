@@ -14,7 +14,7 @@ export async function GET(request) {
   }
 
   const state = Buffer.from(JSON.stringify({ provider_id: providerId, ts: Date.now() })).toString('base64url');
-  const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://fineme.me'}/api/provider/line-callback`;
+  const callbackUrl = 'https://fineme.me/api/provider/line-callback';
 
   const lineAuthUrl = new URL('https://access.line.me/oauth2/v2.1/authorize');
   lineAuthUrl.searchParams.set('response_type', 'code');
