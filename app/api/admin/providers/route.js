@@ -91,9 +91,14 @@ export async function POST(request) {
       });
       if (!createError) {
         authCreated = true;
-      } else if (createError.message?.includes('already')) {
-        // 既存アカウントは初期パスワード送信不要
-        authCreated = false;
+      } else if (createError.message?.includes('already registered') || createError.message?.includes('already been registered')) {
+        // 既存アカウント → パスワードをリセットして新しい初期パスワードを送信
+        const { data: users } = await supabase.auth.admin.listUsers();
+        const existingUser = users?.users?.find(u => u.email === email);
+        if (existingUser) {
+          await supabase.auth.admin.updateUserById(existingUser.id, { password: initPassword });
+          authCreated = true; // パスワードを更新したのでメール送信する
+        }
       } else {
         console.warn('[createUser] failed:', createError.message);
       }

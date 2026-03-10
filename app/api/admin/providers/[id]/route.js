@@ -1,5 +1,5 @@
 // PATCH /api/admin/providers/[id] - 掲載者情報更新（運営用）
-// DELETE /api/admin/providers/[id] - 掲載者削除（運営用）
+// DELETE /api/admin/providers/[id] - 掲載者削除（運営用・Supabase認証ユーザーも削除）
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -20,7 +20,6 @@ export async function PATCH(request, { params }) {
   const { id } = params;
   const body = await request.json();
 
-  // 更新可能フィールドのホワイトリスト
   const allowed = ['name','slug','catchphrase','description','target_desc','philosophy',
     'main_category','sub_categories','area','price_from','booking_url','photo_url',
     'email','line_user_id',
@@ -48,7 +47,30 @@ export async function DELETE(request, { params }) {
   if (!checkAdmin(request)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = params;
+
+  // メールアドレスを先に取得（Supabase認証ユーザー削除のため）
+  const { data: provider } = await supabase
+    .from('providers')
+    .select('email')
+    .eq('id', id)
+    .single();
+
+  // providersテーブルから削除
   const { error } = await supabase.from('providers').delete().eq('id', id);
   if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  // Supabase認証ユーザーも削除（メールが一致するユーザーを探して削除）
+  if (provider?.email) {
+    try {
+      const { data: users } = await supabase.auth.admin.listUsers();
+      const authUser = users?.users?.find(u => u.email === provider.email);
+      if (authUser) {
+        await supabase.auth.admin.deleteUser(authUser.id);
+      }
+    } catch (e) {
+      console.warn('[delete auth user]', e);
+    }
+  }
+
   return Response.json({ success: true });
 }
