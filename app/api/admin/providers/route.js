@@ -51,9 +51,11 @@ export async function POST(request) {
             photo_url, plan, referral_code, referred_by, email, line_user_id,
             suitable_triggers, handles_failure_patterns, provider_style } = body;
 
-    if (!slug || !name || !main_category) {
-      return Response.json({ error: 'slug, name, main_category は必須です' }, { status: 400 });
+    if (!name || !main_category) {
+      return Response.json({ error: 'name, main_category は必須です' }, { status: 400 });
     }
+    // slugが未入力なら空文字（トリガーで自動生成）
+    const resolvedSlug = (slug || '').trim() || null;
     if (!email) {
       return Response.json({ error: 'メールアドレスは必須です（掲載者ログインに使用します）' }, { status: 400 });
     }
@@ -62,13 +64,13 @@ export async function POST(request) {
     const { data, error } = await supabase
       .from('providers')
       .insert([{
-        slug, name, catchphrase, description, target_desc, philosophy,
+        slug: resolvedSlug, name, catchphrase, description, target_desc, philosophy,
         main_category, sub_categories: sub_categories || [],
         area, price_from: price_from ? Number(price_from) : null,
         photo_url, email,
         line_user_id: line_user_id || null,
         plan: plan || 'A', published: false,
-        referral_code: referral_code || slug,
+        referral_code: referral_code || null, // nullならトリガーで自動生成
         referred_by: referred_by || null,
         suitable_triggers: suitable_triggers || [],
         handles_failure_patterns: handles_failure_patterns || [],

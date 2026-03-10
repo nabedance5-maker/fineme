@@ -60,7 +60,7 @@
       <form id="pform" class="stack">
         <div class="form-grid">
           <div class="form-field"><label>掲載名 *</label><input name="name" required placeholder="パーソナルジム TOKYO" /></div>
-          <div class="form-field"><label>スラッグ * (英数字・ハイフン)</label><input name="slug" required placeholder="tokyo-gym-yamada" /></div>
+          <div class="form-field"><label>URLスラッグ（任意・未入力で自動生成）</label><input name="slug" placeholder="tokyo-gym-yamada（空欄可）" /></div>
           <div class="form-field"><label>メインカテゴリ *</label>
             <select name="main_category" required>
               <option value="">選択</option>
@@ -126,8 +126,8 @@
               <label class="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_result">変化が見えなかった</label>
             </div>
           </div>
-          <div class="form-field"><label>紹介コード</label><input name="referral_code" placeholder="空欄→スラッグで自動設定" /></div>
-          <div class="form-field"><label>紹介者コード</label><input name="referred_by" placeholder="紹介者のコード" /></div>
+          <div class="form-field"><label>紹介者コード（この掲載者を紹介した人のFN番号）</label><input name="referred_by" placeholder="例: FN001" /></div>
+          <input type="hidden" name="referral_code" value="" />
         </div>
         <input type="hidden" name="_id" />
         <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
@@ -175,6 +175,7 @@
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
             <div>
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                ${p.referral_code?`<span style="font-size:13px;font-weight:800;padding:3px 10px;background:#111;color:#fff;border-radius:99px">${esc(p.referral_code)}</span>`:''}
                 <strong style="font-size:15px">${esc(p.name)}</strong>
                 <span class="badge ${statusClass}">${statusLabel}</span>
                 <span class="badge badge-gray">${catLabel(p.main_category)}</span>

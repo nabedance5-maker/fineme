@@ -39,7 +39,10 @@
       <!-- ダッシュボードヘッダー -->
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:24px">
         <div>
-          <h1 class="section-title" style="margin:0 0 4px" id="provider-name-header">掲載者ダッシュボード</h1>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span id="provider-number-badge" style="display:none;font-size:13px;font-weight:800;padding:3px 12px;background:#111;color:#fff;border-radius:99px"></span>
+            <h1 class="section-title" style="margin:0 0 4px" id="provider-name-header">掲載者ダッシュボード</h1>
+          </div>
           <p class="muted" id="provider-page-link" style="margin:0"></p>
         </div>
         <a id="view-page-btn" href="#" target="_blank" class="btn btn-ghost" style="font-size:13px">自分のページを見る ↗</a>
@@ -263,7 +266,11 @@
 
     if(provider){
       document.getElementById('provider-name-header').textContent = provider.name || '掲載者ダッシュボード';
-      const slug = provider.slug || '';
+      // FN番号バッジ
+      const fnCode = provider.referral_code || '';
+      const badge = document.getElementById('provider-number-badge');
+      if(badge && fnCode){ badge.textContent = fnCode; badge.style.display = 'inline'; }
+      const slug = provider.slug || fnCode.toLowerCase() || '';
       if(slug){
         document.getElementById('provider-page-link').textContent = `fineme.me/provider/${slug}`;
         document.getElementById('view-page-btn').href = `/provider/${slug}`;
@@ -271,8 +278,8 @@
       // 課金情報
       document.getElementById('billing-plan').textContent = PLAN_LABELS[provider.plan||'A'] || 'プランA';
       document.getElementById('billing-status').textContent = provider.billing_started ? 'Fineme経由の予約が発生し、課金が始まっています' : '課金はまだ始まっていません（初回予約発生後に開始）';
-      // 紹介コード
-      document.getElementById('referral-code').textContent = provider.referral_code || slug || '—';
+      // 紹介コード（FN番号）
+      document.getElementById('referral-code').textContent = fnCode || slug || '—';
       // 公開設定
       document.getElementById('publish-toggle-input').checked = !!provider.published;
       document.getElementById('publish-label').textContent = provider.published ? '公開中' : '非公開';
