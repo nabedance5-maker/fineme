@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>認証処理中 | Fineme</title>
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <style>
+    .callback-wrap { max-width: 440px; margin: 80px auto; padding: 0 20px; }
+    .callback-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 18px; padding: 32px; box-shadow: 0 4px 24px rgba(2,6,23,.06); }
+    .form-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .form-field label { font-size: 12px; font-weight: 700; color: #374151; }
+    .form-field input { padding: 12px 14px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 15px; width: 100%; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="callback-wrap">
+      <div class="callback-card">
+        <div id="content">
+          <p style="text-align:center;color:#6b7280">処理中…</p>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const SUPABASE_URL = 'https://qsfpzlvucqzmjldshwwd.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0NzU5MDgsImV4cCI6MjA1NzA1MTkwOH0.Cg_1p5s8KtKJDdM3t-QiHGFnWXH3Q5hvuEuOAXEMD8E';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+    const content = document.getElementById('content');
+
+    async function init() {
+      // URLのハッシュまたはクエリからトークンを処理
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (session) {
+        // 掲載者かチェック
+        const res = await fetch('/api/provider/me', {
+          headers: { 'Authorization': `Bearer ${session.access_token}` }
+        });
+        if (res.ok) {
+          // 掲載者として登録済み → パスワード設定を促す
+          showPasswordForm(session);
+        } else {
+          // 一般ユーザー → マイページへ
+          window.location.href = '/pages/mypage/index.html';
+        }
+        return;
+      }
+
+      // セッションがない場合はログインへ
+      content.innerHTML = `
+        <h2 style="margin:0 0 8px;font-size:18px">リンクが無効です</h2>
+        <p class="muted" style="margin:0 0 20px">リンクの有効期限が切れているか、すでに使用済みです。</p>
+        <a href="/pages/user/login.html" class="btn" style="display:block;text-align:center">ログインページへ</a>
+      `;
+    }
+
+    function showPasswordForm(session) {
+      content.innerHTML = `
+        <h2 style="margin:0 0 6px;font-size:20px;font-weight:800">パスワードを設定してください</h2>
+        <p class="muted" style="margin:0 0 20px;font-size:14px">掲載者ダッシュボードへのログインに使用します。</p>
+        <div class="form-field">
+          <label>新しいパスワード（8文字以上）</label>
+          <input type="password" id="pw1" placeholder="••••••••" minlength="8" />
+        </div>
+        <div class="form-field">
+          <label>パスワード（確認）</label>
+          <input type="password" id="pw2" placeholder="••••••••" minlength="8" />
+        </div>
+        <p id="pw-error" style="color:#ef4444;font-size:13px;margin:0 0 12px;display:none"></p>
+        <button id="pw-btn" class="btn" style="width:100%;font-size:16px;padding:14px">パスワードを設定して開始する</button>
+      `;
+
+      document.getElementById('pw-btn').addEventListener('click', async () => {
+        const pw1 = document.getElementById('pw1').value;
+        const pw2 = document.getElementById('pw2').value;
+        const errEl = document.getElementById('pw-error');
+        errEl.style.display = 'none';
+
+        if (pw1.length < 8) { errEl.textContent = 'パスワードは8文字以上で入力してください'; errEl.style.display = 'block'; return; }
+        if (pw1 !== pw2) { errEl.textContent = 'パスワードが一致しません'; errEl.style.display = 'block'; return; }
+
+        document.getElementById('pw-btn').textContent = '設定中…';
+        document.getElementById('pw-btn').disabled = true;
+
+        const { error } = await supabase.auth.updateUser({ password: pw1 });
+        if (error) {
+          errEl.textContent = 'エラー: ' + error.message;
+          errEl.style.display = 'block';
+          document.getElementById('pw-btn').textContent = 'パスワードを設定して開始する';
+          document.getElementById('pw-btn').disabled = false;
+          return;
+        }
+        // 成功 → ダッシュボードへ
+        window.location.href = '/pages/provider/index.html';
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>

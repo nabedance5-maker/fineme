@@ -69,7 +69,7 @@ export async function POST(request) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://fineme.me';
     try {
       const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
-        redirectTo: `${siteUrl}/pages/provider/index.html`,
+        redirectTo: `${siteUrl}/pages/auth/callback.html`,
         data: { provider_id: data.id, role: 'provider' },
       });
       if (inviteError) {
