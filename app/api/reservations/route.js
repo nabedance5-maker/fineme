@@ -88,8 +88,8 @@ export async function POST(request) {
     catch (e) { console.error('[reservation line]', e); }
   }
 
-  // 初回予約なら課金開始（billing_started = false の場合）
-  if (provider && !provider.billing_started) {
+  // 初回予約なら課金開始（無料プランは除く）
+  if (provider && !provider.billing_started && provider.plan !== 'free') {
     try {
       await supabase
         .from('providers')
