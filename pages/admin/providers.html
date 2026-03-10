@@ -81,7 +81,7 @@
           </div>
           <div class="form-field"><label>エリア</label><input name="area" placeholder="東京・渋谷" /></div>
           <div class="form-field"><label>最低価格（円）</label><input name="price_from" type="number" placeholder="10000" /></div>
-          <div class="form-field"><label>メールアドレス（通知用）</label><input name="email" type="email" placeholder="provider@example.com" /></div>
+          <div class="form-field form-field-full"><label>メールアドレス * （ログイン・通知用）</label><input name="email" type="email" required placeholder="provider@example.com" /><small style="color:#6b7280;font-size:11px">登録すると掲載者にパスワード設定メールが自動送信されます</small></div>
           <div class="form-field"><label>LINE User ID（通知用）</label><input name="line_user_id" placeholder="Uxxxxxxxxxxxxxxxxx" /><small style="color:#6b7280;font-size:11px">掲載者のLINE User IDを入力するとLINE通知が届きます</small></div>
           <div class="form-field"><label>写真URL</label><input name="photo_url" type="url" placeholder="https://..." /></div>
           <div class="form-field"><label>プラン</label>
@@ -235,7 +235,11 @@
       if(data.price_from) data.price_from = Number(data.price_from);
       const id = data._id; delete data._id;
       const res = await fetch(id?`/api/admin/providers/${id}`:'/api/admin/providers',{method:id?'PATCH':'POST',headers:h(),body:JSON.stringify(data)});
-      if(res.ok){ modal.style.display='none'; load(); }
+      if(res.ok){
+        modal.style.display='none';
+        load();
+        if(!id) alert('登録完了！\n掲載者のメールアドレスにパスワード設定メールが送信されました。\nメールを確認してパスワードを設定するよう伝えてください。');
+      }
       else{ const err=await res.json(); alert('エラー: '+(err.error||'不明')); }
     });
 
