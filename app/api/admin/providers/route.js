@@ -79,45 +79,40 @@ export async function POST(request) {
 
     if (error) return Response.json({ error: error.message }, { status: 500 });
 
-    // 初期パスワードを自動生成してSupabaseアカウントを作成
+    // 初期パスワードを自動生成
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://fineme.me';
     const initPassword = generatePassword();
-    let authCreated = false;
-    try {
-      const { error: createError } = await supabase.auth.admin.createUser({
-        email,
-        password: initPassword,
-        email_confirm: true,
-      });
-      if (!createError) {
-        authCreated = true;
-      } else if (createError.message?.includes('already registered') || createError.message?.includes('already been registered')) {
-        // 既存アカウント → パスワードをリセットして新しい初期パスワードを送信
-        const { data: users } = await supabase.auth.admin.listUsers();
-        const existingUser = users?.users?.find(u => u.email === email);
-        if (existingUser) {
-          await supabase.auth.admin.updateUserById(existingUser.id, { password: initPassword });
-          authCreated = true; // パスワードを更新したのでメール送信する
-        }
-      } else {
-        console.warn('[createUser] failed:', createError.message);
-      }
-    } catch (e) {
-      console.warn('[createUser] exception:', e);
-    }
 
-    // 初期パスワードをメールで送信
-    if (authCreated) {
-      try {
-        await sendProviderCredentialsEmail({
+    try {
+      // 既存ユーザーを検索
+      const { data: listData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+      const existingUser = listData?.users?.find(u => u.email === email);
+
+      if (existingUser) {
+        // 既存ユーザー → パスワードをリセット
+        await supabase.auth.admin.updateUserById(existingUser.id, { password: initPassword });
+        console.log('[auth] password reset for existing user:', email);
+      } else {
+        // 新規ユーザーを作成
+        const { error: createError } = await supabase.auth.admin.createUser({
           email,
-          providerName: name,
           password: initPassword,
-          loginUrl: `${siteUrl}/pages/login.html`,
+          email_confirm: true,
         });
-      } catch (e) {
-        console.error('[credentials email]', e);
+        if (createError) console.warn('[auth] createUser error:', createError.message);
+        else console.log('[auth] created new user:', email);
       }
+
+      // 初期パスワードをメールで送信
+      await sendProviderCredentialsEmail({
+        email,
+        providerName: name,
+        password: initPassword,
+        loginUrl: `${siteUrl}/pages/login.html`,
+      });
+      console.log('[email] credentials sent to:', email);
+    } catch (e) {
+      console.error('[provider setup error]', e.message || e);
     }
 
     return Response.json({
