@@ -10,17 +10,17 @@ const supabase = createClient(
 
 const ADMIN_KEY = process.env.ADMIN_API_KEY || process.env.UPLOAD_API_KEY || '';
 
-// 読みやすい初期パスワードを生成（12文字）
+// 読みやすい初期パスワードを生成（12文字・英数字のみ・紛らわしい文字除外）
 function generatePassword() {
-  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  // 0/O/l/1/I など紛らわしい文字を除外
+  const upper = 'ABCDEFGHJKMNPQRSTUVWXYZ';
   const lower = 'abcdefghjkmnpqrstuvwxyz';
   const digits = '23456789';
-  const symbols = '!@#';
-  const all = upper + lower + digits + symbols;
+  const all = upper + lower + digits;
   const rand = (s) => s[Math.floor(Math.random() * s.length)];
   // 各種類を最低1文字保証
-  const pw = [rand(upper), rand(lower), rand(digits), rand(symbols),
-    ...Array.from({length: 8}, () => rand(all))];
+  const pw = [rand(upper), rand(lower), rand(digits),
+    ...Array.from({length: 9}, () => rand(all))];
   return pw.sort(() => Math.random() - 0.5).join('');
 }
 
@@ -118,6 +118,7 @@ export async function POST(request) {
     return Response.json({
       ...data,
       invite_sent: !!email,
+      _init_password: initPassword, // 管理画面での表示用（一回限り）
     }, { status: 201 });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 400 });

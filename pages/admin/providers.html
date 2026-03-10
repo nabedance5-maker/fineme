@@ -243,9 +243,14 @@
       const id = data._id; delete data._id;
       const res = await fetch(id?`/api/admin/providers/${id}`:'/api/admin/providers',{method:id?'PATCH':'POST',headers:h(),body:JSON.stringify(data)});
       if(res.ok){
+        const result = await res.json();
         modal.style.display='none';
         load();
-        if(!id) alert('登録完了！\n掲載者のメールアドレスにパスワード設定メールが送信されました。\nメールを確認してパスワードを設定するよう伝えてください。');
+        if(!id && result._init_password){
+          alert(`登録完了！\n\n初期パスワード：\n${result._init_password}\n\nこのパスワードをメモしておいてください。\nメールにも同じパスワードが送信されています。`);
+        } else if(!id){
+          alert('登録完了！\nパスワード情報メールが送信されました。');
+        }
       }
       else{ const err=await res.json(); alert('エラー: '+(err.error||'不明')); }
     });
