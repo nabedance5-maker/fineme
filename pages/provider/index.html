@@ -48,6 +48,7 @@
       <!-- タブナビ -->
       <div class="tab-nav">
         <button class="tab-btn active" data-tab="stats">📊 概況</button>
+        <button class="tab-btn" data-tab="requests">📬 予約リクエスト <span id="requests-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:10px;padding:1px 6px;margin-left:4px"></span></button>
         <button class="tab-btn" data-tab="profile">プロフィール</button>
         <button class="tab-btn" data-tab="service">サービス設定</button>
         <button class="tab-btn" data-tab="publish">公開設定</button>
@@ -68,7 +69,15 @@
         </div>
       </div>
 
-      <!-- タブ②：プロフィール -->
+      <!-- タブ②：予約リクエスト -->
+      <div class="tab-pane" id="tab-requests">
+        <div class="card" style="padding:20px">
+          <h2 style="margin:0 0 14px;font-size:16px">予約リクエスト</h2>
+          <div id="requests-list"><p class="muted">読み込み中…</p></div>
+        </div>
+      </div>
+
+      <!-- タブ③：プロフィール -->
       <div class="tab-pane" id="tab-profile">
         <div class="card" style="padding:24px">
           <h2 style="margin:0 0 16px;font-size:16px">基本情報</h2>
@@ -277,6 +286,81 @@
       if(data.price_from) data.price_from = Number(data.price_from);
       saveToLocal(data);
     });
+
+    // ── 予約リクエスト管理 ────────────────────────────────────
+    const STATUS_LABELS = { pending:'返答待ち', approved:'承認済み', rejected:'お断り', counter_proposed:'代替提案済み', visited:'来店確認済み' };
+    const STATUS_COLORS = { pending:'#f59e0b', approved:'#10b981', rejected:'#ef4444', counter_proposed:'#6366f1', visited:'#059669' };
+
+    async function loadRequests(){
+      const providerId = provider?.id || loadProviderData()?.id;
+      if(!providerId){ document.getElementById('requests-list').innerHTML='<p class="muted">掲載者IDが見つかりません。</p>'; return; }
+      const res = await fetch(`/api/reservations?providerId=${providerId}`);
+      if(!res.ok){ document.getElementById('requests-list').innerHTML='<p class="muted" style="color:#ef4444">取得エラー</p>'; return; }
+      const items = await res.json();
+      const pending = items.filter(r=>r.status==='pending').length;
+      if(pending>0){ const b=document.getElementById('requests-badge'); if(b){ b.textContent=pending; b.style.display='inline'; } }
+      renderRequests(items);
+    }
+
+    function renderRequests(items){
+      const el = document.getElementById('requests-list');
+      if(!items.length){ el.innerHTML='<p class="muted">まだリクエストはありません。</p>'; return; }
+      el.innerHTML='';
+      items.forEach(r=>{
+        const card = document.createElement('div');
+        card.style.cssText='border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:10px;background:#fff';
+        const statusColor = STATUS_COLORS[r.status]||'#6b7280';
+        const statusLabel = STATUS_LABELS[r.status]||r.status;
+        card.innerHTML=`
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <strong style="font-size:15px">${esc(r.user_name)}</strong>
+                <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${statusColor}20;color:${statusColor}">${statusLabel}</span>
+              </div>
+              <div style="font-size:13px;color:#6b7280">
+                📅 ${r.preferred_date} ${r.preferred_time} ・ 連絡先: ${esc(r.user_contact)}
+              </div>
+              ${r.message?`<div style="font-size:13px;color:#374151;margin-top:6px;padding:8px 12px;background:#f9fafb;border-radius:8px">${esc(r.message)}</div>`:''}
+              ${r.counter_proposal?`<div style="font-size:13px;color:#6366f1;margin-top:6px">代替提案: ${esc(r.counter_proposal)}</div>`:''}
+            </div>
+            ${r.status==='pending'?`
+            <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+              <button class="btn" style="font-size:12px;padding:5px 12px;background:#10b981" onclick="approveRequest('${r.id}')">承認する</button>
+              <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="rejectRequest('${r.id}')">お断り/代替提案</button>
+            </div>`:r.status==='approved'?`
+            <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="markVisited('${r.id}')">来店確認</button>`:''}
+          </div>
+        `;
+        el.appendChild(card);
+      });
+    }
+
+    function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    window.approveRequest = async function(id){
+      await fetch(`/api/reservations/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved'})});
+      loadRequests(); showToast('承認しました');
+    };
+    window.rejectRequest = async function(id){
+      const msg = prompt('お断りの場合はそのまま「OK」、代替日時を提案する場合は内容を入力してください（例: 10月15日 14時はいかがでしょうか）:');
+      if(msg===null) return;
+      const status = msg.trim() ? 'counter_proposed' : 'rejected';
+      await fetch(`/api/reservations/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status, counter_proposal:msg.trim()||null})});
+      loadRequests(); showToast(status==='counter_proposed'?'代替提案を送りました':'お断りを送りました');
+    };
+    window.markVisited = async function(id){
+      if(!confirm('来店を確認しますか？（体験談依頼メールが送信されます）')) return;
+      await fetch(`/api/reservations/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'visited'})});
+      loadRequests(); showToast('来店を確認しました');
+    };
+
+    // 予約タブを開いたときにロード
+    document.querySelectorAll('[data-tab="requests"]').forEach(btn=>{
+      btn.addEventListener('click', loadRequests, {once:false});
+    });
+    // 初回ロード（バッジ更新のため）
+    if(provider?.id || loadProviderData()?.id) setTimeout(loadRequests, 500);
 
     // 紹介コードコピー
     document.getElementById('copy-referral').addEventListener('click',()=>{

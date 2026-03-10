@@ -1,79 +1,101 @@
-// /api/reservations
-// GET  ?userId=xxx  → ユーザーの予約一覧
-// GET  ?providerId=xxx → 掲載者宛の予約一覧（service_role必要）
-// POST → 予約作成（ユーザー認証済み or ゲスト）
+// POST /api/reservations  - 予約リクエスト作成
+// GET  /api/reservations  - 一覧取得（providerId or userId で絞り込み）
 import { createClient } from '@supabase/supabase-js';
 import { sendReservationCreatedEmails } from '@/lib/email';
+import { sendLinePush } from '@/lib/line-push';
 
-const supabaseAdmin = createClient(
+const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const userId = searchParams.get('userId');
   const providerId = searchParams.get('providerId');
+  const userId = searchParams.get('userId');
 
-  if (!userId && !providerId) {
-    return Response.json({ error: 'userId or providerId required' }, { status: 400 });
+  if (!providerId && !userId) {
+    return Response.json({ error: 'providerId または userId が必要です' }, { status: 400 });
   }
 
-  let query = supabaseAdmin.from('reservations').select('*').order('created_at', { ascending: false });
+  let query = supabase
+    .from('reservations')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-  if (userId)     query = query.eq('user_id', userId);
   if (providerId) query = query.eq('provider_id', providerId);
+  if (userId) query = query.eq('user_id', userId);
 
   const { data, error } = await query;
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json(data);
+  return Response.json(data || []);
 }
 
 export async function POST(request) {
   const body = await request.json();
-  const {
-    user_id, user_name, user_contact, note,
-    provider_id, service_id, service_name, price, commission_rate,
-    reserved_date, start_time, end_time, origin,
-    // 掲載者のメールアドレス（通知用・Supabaseには保存しない）
-    provider_email, provider_name,
-  } = body;
+  const { provider_id, user_name, user_contact, preferred_date, preferred_time, message, user_id } = body;
 
-  if (!user_name || !user_contact || !provider_id || !reserved_date || !start_time) {
+  if (!provider_id || !user_name || !user_contact || !preferred_date || !preferred_time) {
     return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
   }
 
-  const { data, error } = await supabaseAdmin
+  // 予約をSupabaseに保存
+  const { data, error } = await supabase
     .from('reservations')
     .insert({
+      provider_id,
       user_id: user_id || null,
       user_name,
       user_contact,
-      note: note || '',
-      provider_id,
-      service_id: service_id || null,
-      service_name: service_name || null,
-      price: price || 0,
-      commission_rate: commission_rate || 0.08,
-      reserved_date,
-      start_time,
-      end_time: end_time || '',
-      origin: origin || 'direct',
+      preferred_date,
+      preferred_time,
+      message: message || '',
+      status: 'pending',
     })
     .select()
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // メール通知（失敗しても予約自体は成功扱い）
+  // 掲載者情報を取得（通知用）
+  const { data: provider } = await supabase
+    .from('providers')
+    .select('name, email, line_user_id, billing_started, id')
+    .eq('id', provider_id)
+    .single();
+
+  // 通知（失敗しても予約は成功扱い）
   try {
     await sendReservationCreatedEmails({
       reservation: data,
-      providerEmail: provider_email,
-      providerName: provider_name,
+      providerEmail: provider?.email,
+      providerName: provider?.name,
     });
-  } catch (e) {
-    console.error('[reservation email]', e);
+  } catch (e) { console.error('[reservation email]', e); }
+
+  // LINE通知（掲載者にline_user_idがある場合）
+  if (provider?.line_user_id) {
+    const lineMsg = [
+      '【Fineme】新規予約リクエスト',
+      `お客様: ${user_name}`,
+      `希望日: ${preferred_date} ${preferred_time}`,
+      `連絡先: ${user_contact}`,
+      message ? `メッセージ: ${message}` : '',
+      '管理画面から対応してください。',
+    ].filter(Boolean).join('\n');
+
+    try { await sendLinePush(provider.line_user_id, lineMsg); }
+    catch (e) { console.error('[reservation line]', e); }
+  }
+
+  // 初回予約なら課金開始（billing_started = false の場合）
+  if (provider && !provider.billing_started) {
+    try {
+      await supabase
+        .from('providers')
+        .update({ billing_started: true })
+        .eq('id', provider_id);
+    } catch (e) { console.error('[billing activate]', e); }
   }
 
   return Response.json(data, { status: 201 });

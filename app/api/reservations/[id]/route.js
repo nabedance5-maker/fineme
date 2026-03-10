@@ -1,57 +1,34 @@
-// /api/reservations/[id]
-// PATCH → ステータス更新（approve/cancel/visited）
+// PATCH /api/reservations/[id] - 掲載者が承認/拒否/代替提案
+// GET  /api/reservations/[id] - 予約詳細取得
 import { createClient } from '@supabase/supabase-js';
-import { sendReservationApprovedEmail, sendVisitConfirmedEmail } from '@/lib/email';
+import { sendReservationStatusEmail, sendVisitConfirmedEmail } from '@/lib/email';
+import { sendLinePush } from '@/lib/line-push';
 
-const supabaseAdmin = createClient(
+const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+export async function GET(request, { params }) {
+  const { id } = await params;
+  const { data, error } = await supabase.from('reservations').select('*').eq('id', id).single();
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json(data);
+}
+
 export async function PATCH(request, { params }) {
   const { id } = await params;
   const body = await request.json();
-  const { action, provider_comment, user_email, user_name, provider_name, service_name } = body;
+  const { status, counter_proposal, action } = body;
 
-  // 現在の予約を取得
-  const { data: current, error: fetchErr } = await supabaseAdmin
-    .from('reservations')
-    .select('*')
-    .eq('id', id)
-    .single();
-  if (fetchErr || !current) return Response.json({ error: '予約が見つかりません' }, { status: 404 });
+  // 旧action形式との後方互換
+  const newStatus = status || (action === 'approve' ? 'approved' : action === 'cancel_provider' ? 'rejected' : action === 'visited' ? 'visited' : null);
+  if (!newStatus) return Response.json({ error: '無効なステータスです' }, { status: 400 });
 
-  let updates = {};
-  const now = new Date().toISOString();
+  const updates = { status: newStatus };
+  if (counter_proposal) updates.counter_proposal = counter_proposal;
 
-  switch (action) {
-    case 'approve':
-      if (current.status !== 'pending') {
-        return Response.json({ error: 'この予約は承認できない状態です' }, { status: 400 });
-      }
-      updates = { status: 'approved', approved_at: now, provider_comment: provider_comment || '' };
-      break;
-
-    case 'cancel_user':
-      updates = { status: 'cancelled', user_cancelled_at: now };
-      break;
-
-    case 'cancel_provider':
-      updates = { status: 'cancelled', provider_cancelled_at: now, provider_comment: provider_comment || '' };
-      break;
-
-    case 'visited':
-      if (current.status !== 'approved') {
-        return Response.json({ error: '承認済みの予約のみ来店確認できます' }, { status: 400 });
-      }
-      updates = { status: 'visited', visited_at: now };
-      break;
-
-    default:
-      return Response.json({ error: '不明なアクション' }, { status: 400 });
-  }
-
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await supabase
     .from('reservations')
     .update(updates)
     .eq('id', id)
@@ -60,40 +37,47 @@ export async function PATCH(request, { params }) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // メール通知
-  try {
-    if (action === 'approve' && user_email) {
-      await sendReservationApprovedEmail({
+  // 掲載者情報取得（通知用）
+  const { data: provider } = await supabase
+    .from('providers')
+    .select('name, line_user_id')
+    .eq('id', data.provider_id)
+    .single();
+
+  // ユーザーへのメール通知
+  const notifyStatuses = ['approved', 'rejected', 'counter_proposed'];
+  if (notifyStatuses.includes(newStatus)) {
+    try {
+      await sendReservationStatusEmail({
         reservation: data,
-        userEmail: user_email,
-        userName: user_name,
-        providerName: provider_name,
-        serviceComment: provider_comment,
+        status: newStatus,
+        counterProposal: counter_proposal || body.provider_comment,
+        providerName: provider?.name || body.provider_name,
       });
-    }
-    if (action === 'visited' && user_email) {
-      await sendVisitConfirmedEmail({
-        reservation: data,
-        userEmail: user_email,
-        userName: user_name,
-        providerName: provider_name,
-        serviceName: service_name,
-      });
-    }
-  } catch (e) {
-    console.error('[reservation email]', e);
+    } catch (e) { console.error('[status email]', e); }
   }
 
-  return Response.json(data);
-}
+  // 来店確認時の体験談メール
+  if (newStatus === 'visited' && data.user_contact?.includes('@')) {
+    try {
+      await sendVisitConfirmedEmail({
+        reservation: data,
+        userEmail: data.user_contact,
+        userName: data.user_name,
+        providerName: provider?.name,
+      });
+    } catch (e) { console.error('[visit email]', e); }
+  }
 
-export async function GET(request, { params }) {
-  const { id } = await params;
-  const { data, error } = await supabaseAdmin
-    .from('reservations')
-    .select('*')
-    .eq('id', id)
-    .single();
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  // 掲載者へのLINE確認通知
+  if (provider?.line_user_id && newStatus === 'approved') {
+    try {
+      await sendLinePush(
+        provider.line_user_id,
+        `【Fineme】${data.user_name}様の予約を承認しました。\n日時: ${data.preferred_date} ${data.preferred_time}`
+      );
+    } catch (e) { console.error('[status line]', e); }
+  }
+
   return Response.json(data);
 }
