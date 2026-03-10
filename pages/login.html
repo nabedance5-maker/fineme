@@ -95,7 +95,8 @@
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
-        errEl.textContent = 'メールアドレスまたはパスワードが正しくありません';
+        console.error('[login error]', error.message, error);
+        errEl.textContent = `ログインエラー: ${error.message}`;
         errEl.style.display = 'block';
         btn.disabled = false; btn.textContent = 'ログイン';
         return;
