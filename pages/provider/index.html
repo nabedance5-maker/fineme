@@ -107,7 +107,16 @@
             <div class="form-field"><label>キャッチコピー（一言で表すと？）</label><input name="catchphrase" placeholder="初デートで堂々としていたい男性のための3ヶ月プログラム" /></div>
             <div class="form-field"><label>こんな人に向いています</label><textarea name="target_desc" placeholder="どんな悩みを持つ方に向いているか、具体的に書いてください"></textarea></div>
             <div class="form-field"><label>このサービスが大切にしていること（哲学）</label><textarea name="philosophy" placeholder="あなたのサービスの考え方・スタイル・強みを自分の言葉で"></textarea></div>
-            <div class="form-field"><label>写真URL</label><input name="photo_url" type="url" placeholder="https://..." /></div>
+            <div class="form-field">
+              <label>プロフィール写真</label>
+              <div id="photo-preview-wrap" style="margin-bottom:8px;display:none">
+                <img id="photo-preview" src="" alt="現在の写真" style="width:120px;height:120px;object-fit:cover;border-radius:12px;border:1px solid #e5e7eb" />
+              </div>
+              <input type="file" id="photo-file-input" accept="image/jpeg,image/png,image/webp" style="display:none" />
+              <button type="button" id="photo-upload-btn" class="btn btn-ghost" style="font-size:13px">📷 写真を選択・変更（5MB以内・jpg/png/webp）</button>
+              <p id="photo-upload-msg" class="muted" style="font-size:12px;margin:4px 0 0;display:none"></p>
+              <input type="hidden" name="photo_url" />
+            </div>
             <button type="submit" class="btn" style="margin-top:8px">保存する</button>
           </form>
         </div>
@@ -115,13 +124,68 @@
 
       <!-- タブ③：サービス設定 -->
       <div class="tab-pane" id="tab-service">
+        <!-- サービス（メニュー）一覧 -->
+        <div class="card" style="padding:24px;margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <h2 style="margin:0;font-size:16px">サービス・メニュー</h2>
+            <button type="button" class="btn" id="btn-add-service" style="font-size:13px;padding:7px 14px">＋ 追加</button>
+          </div>
+          <div id="services-list"><p class="muted">読み込み中…</p></div>
+        </div>
+        <!-- サービス追加・編集フォーム -->
+        <div class="card" id="service-edit-card" style="padding:24px;margin-bottom:16px;display:none">
+          <h3 style="margin:0 0 14px;font-size:15px" id="service-edit-title">サービスを追加</h3>
+          <form id="service-edit-form">
+            <div class="form-field"><label>サービス名 *</label><input name="name" required placeholder="例: 初回体験コース 60分" /></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="form-field"><label>価格（円）*</label><input name="price" type="number" required placeholder="5000" /></div>
+              <div class="form-field"><label>所要時間</label><input name="duration" placeholder="例: 60分" /></div>
+            </div>
+            <div class="form-field"><label>説明</label><textarea name="description" placeholder="このサービスの内容・特徴"></textarea></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+              <input type="checkbox" name="is_featured" id="is_featured" />
+              <label for="is_featured" style="margin:0;font-size:13px;font-weight:400">看板メニューとして表示する</label>
+            </div>
+            <input type="hidden" name="_service_id" />
+            <div style="display:flex;gap:8px">
+              <button type="submit" class="btn" id="service-save-btn">保存</button>
+              <button type="button" class="btn btn-ghost" id="service-cancel-btn">キャンセル</button>
+            </div>
+          </form>
+        </div>
         <div class="card" style="padding:24px">
-          <h2 style="margin:0 0 16px;font-size:16px">サービス・診断マッチング設定</h2>
+          <h2 style="margin:0 0 16px;font-size:16px">診断マッチング設定</h2>
           <form id="service-form">
             <div class="form-field"><label>サービス説明文（料金・メニューなど）</label><textarea name="description" placeholder="提供するサービスの詳細をここに書いてください"></textarea></div>
-            <div class="form-field"><label>エリア</label><input name="area" placeholder="東京・渋谷" /></div>
+            <div class="form-field">
+              <label>エリア</label>
+              <select name="area">
+                <option value="">選択してください</option>
+                <optgroup label="東京">
+                  <option value="東京・渋谷">渋谷</option>
+                  <option value="東京・新宿">新宿</option>
+                  <option value="東京・表参道">表参道・青山</option>
+                  <option value="東京・銀座">銀座・有楽町</option>
+                  <option value="東京・恵比寿">恵比寿・代官山</option>
+                  <option value="東京・六本木">六本木</option>
+                  <option value="東京・品川">品川</option>
+                  <option value="東京・池袋">池袋</option>
+                  <option value="東京・上野">上野・秋葉原</option>
+                  <option value="東京・吉祥寺">吉祥寺・三鷹</option>
+                  <option value="東京・その他">東京（その他）</option>
+                </optgroup>
+                <optgroup label="神奈川">
+                  <option value="横浜">横浜</option>
+                  <option value="川崎">川崎</option>
+                </optgroup>
+                <optgroup label="埼玉・千葉">
+                  <option value="大宮・さいたま">大宮・さいたま</option>
+                  <option value="千葉市">千葉市</option>
+                </optgroup>
+                <option value="オンライン">オンライン</option>
+              </select>
+            </div>
             <div class="form-field"><label>最低価格（円）</label><input name="price_from" type="number" placeholder="10000" /></div>
-            <div class="form-field"><label>外部予約URL（Phase 0）</label><input name="booking_url" type="url" placeholder="https://..." /><small class="muted">あなたの予約ページ・問い合わせページのURLを入力してください</small></div>
             <div class="form-field">
               <label>提供スタイル（診断との連動）</label>
               <select name="provider_style">
@@ -193,7 +257,11 @@
             <div class="referral-code-box" id="referral-code">—</div>
             <button class="btn btn-ghost" style="font-size:13px;margin-top:10px;width:100%" id="copy-referral">コードをコピー</button>
           </div>
-          <a href="#" class="btn btn-ghost" id="billing-portal-btn" style="text-align:center">プラン変更・解約はこちら（Stripe カスタマーポータル）</a>
+          <div style="padding:14px 16px;border:1.5px solid #e5e7eb;border-radius:12px;background:#f9fafb;text-align:center">
+            <p style="font-size:14px;color:#374151;margin:0 0 8px;font-weight:700">プラン変更・解約について</p>
+            <p class="muted" style="font-size:13px;margin:0">プランの変更や解約は、運営（Fineme）への申請が必要です。<br>下記よりご連絡ください。</p>
+            <a href="mailto:contact@fineme.me?subject=プラン変更・解約申請" class="btn btn-ghost" style="margin-top:12px;display:inline-block;font-size:13px">contact@fineme.me に連絡する</a>
+          </div>
         </div>
         <div class="card stack" style="padding:24px;gap:14px">
           <h2 style="margin:0;font-size:16px">パスワード変更</h2>
@@ -213,14 +281,20 @@
   <script>
   (function(){
     // タブ切り替え
+    function switchTab(tabId){
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+      const btn = document.querySelector(`[data-tab="${tabId}"]`);
+      const pane = document.getElementById('tab-'+tabId);
+      if(btn) btn.classList.add('active');
+      if(pane) pane.classList.add('active');
+    }
     document.querySelectorAll('.tab-btn').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-        document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
-      });
+      btn.addEventListener('click',()=> switchTab(btn.dataset.tab));
     });
+    // URLクエリパラメータでタブを開く（左メニューからのリンク対応）
+    const tabParam = new URLSearchParams(location.search).get('tab');
+    if(tabParam) switchTab(tabParam);
 
     const PROVIDER_KEY = 'fineme:provider:current';
     const SUPABASE_URL = 'https://qsfpzlvucqzmjldshwwd.supabase.co';
@@ -263,7 +337,7 @@
         if(data) location.reload(); // データ取得後にリロードして初期化
       });
     }
-    const PLAN_LABELS = { A:'ライト（¥5,000/月）', B:'スタンダード（¥7,000/月）', C:'プレミアム（¥10,000/月）' };
+    const PLAN_LABELS = { A:'ライト（¥5,000/月）', B:'スタンダード（¥7,000/月）', C:'プレミアム（¥10,000/月）', free:'特例（無料）' };
 
     if(provider){
       document.getElementById('provider-name-header').textContent = provider.name || '掲載者ダッシュボード';
@@ -289,7 +363,7 @@
         const el = document.getElementById('profile-form').elements[k];
         if(el) el.value = provider[k] || '';
       });
-      ['description','area','price_from','booking_url','provider_style'].forEach(k=>{
+      ['description','area','price_from','provider_style'].forEach(k=>{
         const el = document.getElementById('service-form').elements[k];
         if(el) el.value = provider[k] || '';
       });
@@ -313,23 +387,39 @@
     // 公開設定トグル
     document.getElementById('publish-toggle-input').addEventListener('change', async function(){
       document.getElementById('publish-label').textContent = this.checked ? '公開中' : '非公開';
-      // 実際のAPI更新は、掲載者のJWT認証が実装されてから
-      // Phase 0: localStorageを更新
-      try{
-        const raw = localStorage.getItem(PROVIDER_KEY);
-        if(raw){ const d = JSON.parse(raw); d.published = this.checked; localStorage.setItem(PROVIDER_KEY, JSON.stringify(d)); }
-      }catch{}
+      await saveToLocal({ published: this.checked });
     });
 
-    // フォーム保存（Phase 0: localStorageに保存 + API更新は将来）
-    function saveToLocal(updates){
+    // フォーム保存: localStorageとSupabase APIの両方に保存
+    async function saveToLocal(updates){
+      // localStorageに保存（即時反映用キャッシュ）
       try{
         const raw = localStorage.getItem(PROVIDER_KEY);
         const d = raw ? JSON.parse(raw) : {};
         Object.assign(d, updates);
         localStorage.setItem(PROVIDER_KEY, JSON.stringify(d));
+      }catch{}
+      // Supabase APIに保存（永続化）
+      const token = getSupabaseToken();
+      if(token){
+        try{
+          const res = await fetch('/api/provider/profile',{
+            method:'PATCH',
+            headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(updates)
+          });
+          if(res.ok){
+            const updated = await res.json();
+            // キャッシュを最新データで更新
+            localStorage.setItem(PROVIDER_KEY, JSON.stringify(updated));
+            showToast('保存しました');
+          } else {
+            showToast('保存しました（オフライン）');
+          }
+        }catch{ showToast('保存しました（オフライン）'); }
+      } else {
         showToast('保存しました');
-      }catch{ showToast('保存に失敗しました'); }
+      }
     }
 
     function showToast(msg){ try{ const t=document.createElement('div'); t.style.cssText='position:fixed;bottom:20px;right:20px;background:#111;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:999'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2000); }catch{} }
@@ -349,6 +439,128 @@
       if(data.price_from) data.price_from = Number(data.price_from);
       saveToLocal(data);
     });
+
+    // ── サービス（メニュー）管理 ──────────────────────────────
+    (function setupServices(){
+      const token = getSupabaseToken();
+      if(!token) return;
+      const listEl = document.getElementById('services-list');
+      const editCard = document.getElementById('service-edit-card');
+      const editForm = document.getElementById('service-edit-form');
+      const editTitle = document.getElementById('service-edit-title');
+
+      function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+      async function loadServices(){
+        if(!listEl) return;
+        const res = await fetch('/api/provider/services',{ headers:{'Authorization':`Bearer ${token}`} });
+        if(!res.ok){ listEl.innerHTML='<p class="muted" style="color:#ef4444">取得エラー</p>'; return; }
+        const items = await res.json();
+        if(!items.length){ listEl.innerHTML='<p class="muted">まだサービスがありません。「＋ 追加」から登録してください。</p>'; return; }
+        listEl.innerHTML='';
+        items.forEach(s=>{
+          const row = document.createElement('div');
+          row.style.cssText='display:flex;justify-content:space-between;align-items:flex-start;padding:12px 0;border-bottom:1px solid #f3f4f6;gap:10px';
+          row.innerHTML=`
+            <div>
+              <div style="font-weight:700;font-size:14px">${esc(s.name)} ${s.is_featured?'<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:99px">看板</span>':''}</div>
+              <div style="font-size:13px;color:#6b7280">¥${Number(s.price).toLocaleString()}${s.duration?' · '+esc(s.duration):''}</div>
+              ${s.description?`<div style="font-size:12px;color:#9ca3af;margin-top:2px">${esc(s.description)}</div>`:''}
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" data-edit="${s.id}">編集</button>
+              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px;color:#ef4444" data-del="${s.id}">削除</button>
+            </div>`;
+          listEl.appendChild(row);
+        });
+        listEl.querySelectorAll('[data-edit]').forEach(btn=>btn.addEventListener('click',()=>{
+          const s = items.find(x=>x.id===btn.dataset.edit); if(!s) return;
+          editTitle.textContent='サービスを編集'; editCard.style.display='block';
+          editForm.elements['name'].value=s.name||''; editForm.elements['price'].value=s.price||'';
+          editForm.elements['duration'].value=s.duration||''; editForm.elements['description'].value=s.description||'';
+          editForm.elements['is_featured'].checked=!!s.is_featured; editForm.elements['_service_id'].value=s.id;
+          editCard.scrollIntoView({behavior:'smooth'});
+        }));
+        listEl.querySelectorAll('[data-del]').forEach(btn=>btn.addEventListener('click',async()=>{
+          if(!confirm('このサービスを削除しますか？')) return;
+          await fetch(`/api/provider/services/${btn.dataset.del}`,{method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});
+          loadServices();
+        }));
+      }
+
+      document.getElementById('btn-add-service')?.addEventListener('click',()=>{
+        editTitle.textContent='サービスを追加'; editCard.style.display='block';
+        editForm.reset(); editForm.elements['_service_id'].value='';
+        editCard.scrollIntoView({behavior:'smooth'});
+      });
+      document.getElementById('service-cancel-btn')?.addEventListener('click',()=>{
+        editCard.style.display='none'; editForm.reset();
+      });
+
+      editForm?.addEventListener('submit', async e=>{
+        e.preventDefault();
+        const fd = new FormData(editForm);
+        const id = fd.get('_service_id');
+        const body = { name:fd.get('name'), price:Number(fd.get('price')), duration:fd.get('duration')||null, description:fd.get('description')||null, is_featured:!!editForm.elements['is_featured'].checked };
+        const url = id ? `/api/provider/services/${id}` : '/api/provider/services';
+        const res = await fetch(url,{method:id?'PATCH':'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify(body)});
+        if(res.ok){ editCard.style.display='none'; editForm.reset(); loadServices(); showToast('保存しました'); }
+        else{ const err=await res.json(); showToast('エラー: '+(err.error||'不明')); }
+      });
+
+      // サービスタブを開いた時にロード
+      document.querySelectorAll('[data-tab="service"]').forEach(btn=>btn.addEventListener('click',loadServices,{once:false}));
+      // URLでserviceタブが開かれた場合も対応
+      if(new URLSearchParams(location.search).get('tab')==='service') loadServices();
+    })();
+
+    // ── 写真アップロード ─────────────────────────────────────
+    (function setupPhotoUpload(){
+      const btn = document.getElementById('photo-upload-btn');
+      const input = document.getElementById('photo-file-input');
+      const preview = document.getElementById('photo-preview');
+      const previewWrap = document.getElementById('photo-preview-wrap');
+      const msg = document.getElementById('photo-upload-msg');
+      const hiddenUrl = document.querySelector('[name=photo_url]');
+
+      // 現在の写真を表示
+      if(provider?.photo_url){ preview.src = provider.photo_url; previewWrap.style.display='block'; }
+      if(hiddenUrl && provider?.photo_url) hiddenUrl.value = provider.photo_url;
+
+      if(btn) btn.addEventListener('click',()=> input?.click());
+      if(!input) return;
+
+      input.addEventListener('change', async()=>{
+        const file = input.files?.[0];
+        if(!file) return;
+        const token = getSupabaseToken();
+        if(!token){ showToast('ログインが必要です'); return; }
+
+        msg.textContent = 'アップロード中…'; msg.style.display='block'; btn.disabled=true;
+
+        const fd = new FormData();
+        fd.append('photo', file);
+        try{
+          const res = await fetch('/api/provider/upload-photo',{
+            method:'POST',
+            headers:{ 'Authorization': `Bearer ${token}` },
+            body: fd
+          });
+          const data = await res.json();
+          if(res.ok && data.url){
+            preview.src = data.url; previewWrap.style.display='block';
+            if(hiddenUrl) hiddenUrl.value = data.url;
+            // localStorageのキャッシュも更新
+            try{ const raw=localStorage.getItem(PROVIDER_KEY); if(raw){ const d=JSON.parse(raw); d.photo_url=data.url; localStorage.setItem(PROVIDER_KEY,JSON.stringify(d)); } }catch{}
+            msg.textContent = '✓ 写真を更新しました'; msg.style.color='#059669';
+          } else {
+            msg.textContent = 'エラー: ' + (data.error||'不明'); msg.style.color='#ef4444';
+          }
+        }catch(e){ msg.textContent='通信エラーが発生しました'; msg.style.color='#ef4444'; }
+        btn.disabled=false;
+        input.value='';
+      });
+    })();
 
     // ── 予約リクエスト管理 ────────────────────────────────────
     const STATUS_LABELS = { pending:'返答待ち', approved:'承認済み', rejected:'お断り', counter_proposed:'代替提案済み', visited:'来店確認済み' };

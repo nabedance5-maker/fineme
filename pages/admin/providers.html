@@ -79,7 +79,15 @@
               <option value="marriage">結婚相談所</option>
             </select>
           </div>
-          <div class="form-field"><label>エリア</label><input name="area" placeholder="東京・渋谷" /></div>
+          <div class="form-field"><label>エリア</label>
+            <select name="area">
+              <option value="">選択してください</option>
+              <optgroup label="東京"><option value="東京・渋谷">渋谷</option><option value="東京・新宿">新宿</option><option value="東京・表参道">表参道・青山</option><option value="東京・銀座">銀座</option><option value="東京・恵比寿">恵比寿・代官山</option><option value="東京・六本木">六本木</option><option value="東京・品川">品川</option><option value="東京・池袋">池袋</option><option value="東京・上野">上野・秋葉原</option><option value="東京・吉祥寺">吉祥寺・三鷹</option><option value="東京・その他">東京（その他）</option></optgroup>
+              <optgroup label="神奈川"><option value="横浜">横浜</option><option value="川崎">川崎</option></optgroup>
+              <optgroup label="埼玉・千葉"><option value="大宮・さいたま">大宮・さいたま</option><option value="千葉市">千葉市</option></optgroup>
+              <option value="オンライン">オンライン</option>
+            </select>
+          </div>
           <div class="form-field"><label>最低価格（円）</label><input name="price_from" type="number" placeholder="10000" /></div>
           <div class="form-field form-field-full"><label>メールアドレス * （ログイン・通知用）</label><input name="email" type="email" required placeholder="provider@example.com" /><small style="color:#6b7280;font-size:11px">登録すると掲載者にパスワード設定メールが自動送信されます</small></div>
           <div class="form-field"><label>LINE User ID（通知用）</label><input name="line_user_id" placeholder="Uxxxxxxxxxxxxxxxxx" /><small style="color:#6b7280;font-size:11px">掲載者のLINE User IDを入力するとLINE通知が届きます</small></div>

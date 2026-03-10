@@ -117,13 +117,12 @@ async function injectInto(selector, relPath){
       const wrap = document.createElement('div'); wrap.className='card'; wrap.style.padding='12px';
       const ul = document.createElement('ul'); ul.style.listStyle='none'; ul.style.padding='0'; ul.style.margin='0';
       const links = [
-        ['/pages/provider/index.html','ダッシュボード'],
-        ['/pages/provider/service_form.html','サービス'],
-        ['/pages/provider/photo_settings.html','写真'],
-        ['/pages/provider/profile.html','店舗プロフィール'],
-        ['/pages/provider/staff.html','スタッフプロフィール'],
-        ['/pages/provider/schedule.html','スケジュール'],
-        ['/pages/provider/reservations.html','予約一覧']
+        ['/pages/provider/index.html','📊 ダッシュボード'],
+        ['/pages/provider/index.html?tab=requests','📬 予約リクエスト'],
+        ['/pages/provider/index.html?tab=profile','👤 プロフィール'],
+        ['/pages/provider/index.html?tab=service','⚙️ サービス設定'],
+        ['/pages/provider/index.html?tab=publish','🔓 公開設定'],
+        ['/pages/provider/index.html?tab=billing','💳 課金・プラン'],
       ];
       links.forEach(([href,text])=>{ const li = document.createElement('li'); li.appendChild(mkLink(href,text)); ul.appendChild(li); });
       wrap.appendChild(ul); host.appendChild(wrap);
