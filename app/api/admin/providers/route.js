@@ -1,6 +1,7 @@
 // GET /api/admin/providers - 全掲載者一覧（運営用）
 // POST /api/admin/providers - 掲載者新規登録（Supabase招待メール自動送信）
 import { createClient } from '@supabase/supabase-js';
+import { sendProviderCredentialsEmail } from '@/lib/email';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -103,7 +104,6 @@ export async function POST(request) {
     // 初期パスワードをメールで送信
     if (authCreated) {
       try {
-        const { sendProviderCredentialsEmail } = await import('@/lib/email');
         await sendProviderCredentialsEmail({
           email,
           providerName: name,
