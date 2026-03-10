@@ -211,19 +211,47 @@
       });
     });
 
-    // 掲載者データをlocalStorageから取得（ログインセッション）
-    // Phase 0: ログイン済み掲載者のIDをセッションから取得し、APIで自分のデータを取得
-    // 今はデモ: localStorageのglowup:providersから読む
     const PROVIDER_KEY = 'fineme:provider:current';
+    const SUPABASE_URL = 'https://qsfpzlvucqzmjldshwwd.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0NzU5MDgsImV4cCI6MjA1NzA1MTkwOH0.Cg_1p5s8KtKJDdM3t-QiHGFnWXH3Q5hvuEuOAXEMD8E';
 
     function loadProviderData(){
+      try{ const raw = localStorage.getItem(PROVIDER_KEY); return raw ? JSON.parse(raw) : null; }catch{ return null; }
+    }
+
+    // Supabaseセッションからトークンを取得
+    function getSupabaseToken(){
       try{
-        const raw = localStorage.getItem(PROVIDER_KEY);
-        return raw ? JSON.parse(raw) : null;
+        const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+        if(!key) return null;
+        const session = JSON.parse(localStorage.getItem(key));
+        return session?.access_token || null;
       }catch{ return null; }
     }
 
-    const provider = loadProviderData();
+    // ログイン中ユーザーのメールで掲載者データを自動取得してlocalStorageに保存
+    async function fetchAndCacheProviderData(){
+      const token = getSupabaseToken();
+      if(!token) return null;
+      try{
+        const res = await fetch('/api/provider/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if(!res.ok) return null;
+        const data = await res.json();
+        localStorage.setItem(PROVIDER_KEY, JSON.stringify(data));
+        return data;
+      }catch{ return null; }
+    }
+
+    // キャッシュ済みデータがあればそれを使い、なければAPIから取得
+    let provider = loadProviderData();
+    if(!provider){
+      // 非同期で取得してページを初期化し直す
+      fetchAndCacheProviderData().then(data => {
+        if(data) location.reload(); // データ取得後にリロードして初期化
+      });
+    }
     const PLAN_LABELS = { A:'ライト（¥5,000/月）', B:'スタンダード（¥7,000/月）', C:'プレミアム（¥10,000/月）' };
 
     if(provider){
