@@ -24,6 +24,19 @@ export function middleware(request) {
     return NextResponse.redirect(url, { status: 302 })
   }
 
+  // 旧マイページ → /my-reservations に統合
+  const legacyMypage = [
+    '/pages/mypage/reservations.html',
+    '/pages/mypage/index.html',
+    '/pages/mypage/',
+    '/pages/mypage',
+  ]
+  if (legacyMypage.includes(request.nextUrl.pathname)) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/my-reservations'
+    return NextResponse.redirect(url, { status: 301 })
+  }
+
   return NextResponse.next()
 }
 
