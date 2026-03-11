@@ -30,13 +30,14 @@ export async function GET(request) {
 
 export async function POST(request) {
   const body = await request.json();
+  // preferred_date/preferred_time/message はフロントからの名前。DB上は reserved_date/start_time/note
   const { provider_id, user_name, user_contact, preferred_date, preferred_time, message, user_id } = body;
 
   if (!provider_id || !user_name || !user_contact || !preferred_date || !preferred_time) {
     return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
   }
 
-  // 予約をSupabaseに保存
+  // 予約をSupabaseに保存（v2スキーマのカラム名に合わせる）
   const { data, error } = await supabase
     .from('reservations')
     .insert({
@@ -44,9 +45,9 @@ export async function POST(request) {
       user_id: user_id || null,
       user_name,
       user_contact,
-      preferred_date,
-      preferred_time,
-      message: message || '',
+      reserved_date: preferred_date,
+      start_time: preferred_time,
+      note: message || '',
       status: 'pending',
     })
     .select()
@@ -64,7 +65,7 @@ export async function POST(request) {
   // 通知（失敗しても予約は成功扱い）
   try {
     await sendReservationCreatedEmails({
-      reservation: data,
+      reservation: { ...data, preferred_date, preferred_time, message },
       providerEmail: provider?.email,
       providerName: provider?.name,
     });

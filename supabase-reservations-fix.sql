@@ -1,22 +1,20 @@
 -- ============================================================
--- reservations テーブル修正
+-- reservations テーブル修正（supabase-reservations-fix.sql）
 -- Supabase ダッシュボード > SQL Editor で実行してください
 -- ============================================================
 
--- ① 不足カラムを追加
+-- ① 前回誤って追加したカラムを削除（存在する場合のみ）
 alter table public.reservations
-  add column if not exists user_name     text,
-  add column if not exists user_contact  text,
-  add column if not exists preferred_date date,
-  add column if not exists preferred_time text,
-  add column if not exists message       text;
+  drop column if exists preferred_date,
+  drop column if exists preferred_time,
+  drop column if exists message;
 
--- ② RLS: 誰でも予約リクエストを作成できるようにする（非ログインユーザーも可）
+-- ② RLS: 未ログインユーザーも予約リクエストを作成できるようにする
+-- （v2スキーマのポリシーは auth.uid() = user_id が必須 → 未ログインで失敗するため差し替え）
 drop policy if exists "自分の予約のみ作成" on public.reservations;
+drop policy if exists "予約を作成" on public.reservations;
+drop policy if exists "予約リクエストは誰でも作成可能" on public.reservations;
 
 create policy "予約リクエストは誰でも作成可能"
   on public.reservations for insert
   with check (true);
-
--- ③ RLS: 掲載者は自分宛の予約を閲覧できる（service_roleでバイパス済みだが念のため）
--- ※ 運営・掲載者ダッシュボードは service_role キーを使うためRLS不要
