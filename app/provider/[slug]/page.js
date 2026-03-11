@@ -2,6 +2,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+// anon キー（公開前提・RLSで保護）
+const supabaseAnon = createClient(
+  'https://qsfpzlvucqzmjldshwwd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODM1MzIsImV4cCI6MjA4ODU1OTUzMn0.9mBlP8-0l9jotex_UkX7Ba8ZodYtailaxoK_RIy3Kq8'
+);
 
 const CATEGORY_LABELS = {
   gym:'パーソナルジム', eyebrow:'眉毛サロン', hair:'美容院・ヘア',
@@ -209,6 +216,23 @@ function ReservationTab({ provider, services, selectedService, onServiceSelect, 
   const [formState, setFormState] = useState({ name: '', contact: '', date: '', time: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  const [userPrefilled, setUserPrefilled] = useState(false);
+
+  // ログイン中ユーザーの情報を自動入力
+  useEffect(() => {
+    supabaseAnon.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) return;
+      const u = session.user;
+      const name = u.user_metadata?.display_name || u.user_metadata?.full_name || '';
+      const contact = u.email || '';
+      setFormState(prev => ({
+        ...prev,
+        name: prev.name || name,
+        contact: prev.contact || contact,
+      }));
+      if (name || contact) setUserPrefilled(true);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (submitted) {
@@ -266,9 +290,14 @@ function ReservationTab({ provider, services, selectedService, onServiceSelect, 
 
   return (
     <div style={{ maxWidth: '520px' }}>
-      <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 24px', lineHeight: '1.7' }}>
+      <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 16px', lineHeight: '1.7' }}>
         希望日時とご連絡先を送ると、掲載者から返答が届きます。
       </p>
+      {userPrefilled && (
+        <div style={{ padding: '10px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', marginBottom: '20px', fontSize: '13px', color: '#15803d' }}>
+          ✓ ログイン中のアカウント情報を自動入力しました
+        </div>
+      )}
 
       {/* メニュー選択 */}
       {services && services.length > 0 && (
