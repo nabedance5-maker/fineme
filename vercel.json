@@ -10,6 +10,11 @@
   ],
   "redirects": [
     {
+      "source": "/account",
+      "destination": "/my-reservations",
+      "permanent": false
+    },
+    {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "finemenextjs.vercel.app" }],
       "destination": "https://fineme.me/:path*",
