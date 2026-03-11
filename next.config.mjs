@@ -6,6 +6,12 @@ const nextConfig = {
   experimental: {
     typedRoutes: false
   },
+  async redirects() {
+    return [
+      // /index.html → / に 301 リダイレクト（重複コンテンツ対策）
+      { source: '/index.html', destination: '/', permanent: true },
+    ];
+  },
   async rewrites() {
     return [
       // ルート `/` を static index.html に向ける（App Router page.js を削除したため）
