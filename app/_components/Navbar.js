@@ -15,6 +15,7 @@ export default function Navbar() {
         <nav className="nav-links">
           <Link href="/search">検索</Link>
           <Link href="/articles">特集</Link>
+          <Link href="/my-reservations">予約履歴</Link>
           <Link href="/account">マイページ</Link>
         </nav>
       </div>
