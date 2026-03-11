@@ -3,83 +3,42 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>診断結果 | Fineme</title>
+  <title>診断結果 | Fineme マイページ</title>
   <link rel="stylesheet" href="../../assets/styles/style.css" />
   <link rel="stylesheet" href="../../assets/styles/components.css" />
   <style>
-    .diag-badge {
-      display: inline-block;
-      font-size: 12px; font-weight: 800;
-      padding: 4px 14px;
-      background: #111; color: #fff;
-      border-radius: 99px;
-      margin-bottom: 10px;
+    .result-hero {
+      padding: 24px; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      border-radius: 16px; margin-bottom: 16px;
     }
-    .diag-result-heading {
-      font-size: clamp(18px, 4vw, 24px);
-      font-weight: 800;
-      line-height: 1.4;
-      margin: 0 0 8px;
+    .result-hero h2 { font-size: 18px; font-weight: 800; color: #fff !important; margin: 0 0 6px; line-height: 1.4; }
+    .result-hero p { font-size: 13px; color: rgba(255,255,255,.75) !important; margin: 0; line-height: 1.6; }
+    .result-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 12px; background: rgba(255,255,255,.2); color: #fff !important; border-radius: 99px; margin-bottom: 10px; }
+    .type-badge { display: inline-block; font-size: 13px; font-weight: 800; padding: 6px 16px; border-radius: 99px; margin-bottom: 10px; color: #fff !important; }
+    .analysis-block { padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+    .analysis-block:last-child { border-bottom: none; }
+    .analysis-label { font-size: 11px; font-weight: 700; color: #6366f1; text-transform: uppercase; letter-spacing: .05em; margin: 0 0 4px; }
+    .analysis-text { font-size: 14px; font-weight: 700; color: #111; margin: 0 0 2px; line-height: 1.5; }
+    .analysis-sub { font-size: 13px; color: #6b7280; margin: 0; line-height: 1.5; }
+    .concern-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .concern-bar-label { font-size: 12px; width: 70px; flex-shrink: 0; color: #374151; }
+    .concern-bar-track { flex: 1; height: 6px; background: #f3f4f6; border-radius: 99px; overflow: hidden; }
+    .concern-bar-fill { height: 100%; border-radius: 99px; }
+    .concern-bar-value { font-size: 11px; font-weight: 700; width: 40px; text-align: right; flex-shrink: 0; }
+    .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f3f4f6; gap: 8px; }
+    .history-item:last-child { border-bottom: none; }
+    .history-date { font-size: 12px; color: #9ca3af; }
+    .history-type { font-size: 13px; font-weight: 700; color: #374151; }
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media(max-width:480px){ .action-grid { grid-template-columns: 1fr; } }
+    .action-btn {
+      display: block; text-align: center; padding: 13px 16px;
+      border-radius: 12px; font-size: 14px; font-weight: 700;
+      text-decoration: none; transition: opacity .15s;
     }
-    .diag-result-sub {
-      font-size: 14px;
-      color: #6b7280;
-      line-height: 1.7;
-      margin: 0 0 20px;
-    }
-    .score-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-    @media (max-width: 480px) {
-      .score-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    .score-cell {
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 10px 8px;
-      text-align: center;
-    }
-    .score-cell-label { font-size: 11px; color: #6b7280; margin-bottom: 4px; }
-    .score-cell-val {
-      font-size: 22px; font-weight: 800; color: #111;
-      line-height: 1;
-    }
-    .score-cell-val.is-low { color: #4f46e5; }
-    .score-cell-sub { font-size: 10px; color: #9ca3af; margin-top: 2px; }
-
-    .priority-list { list-style: none; padding: 0; margin: 0; }
-    .priority-item {
-      display: flex; gap: 12px; align-items: flex-start;
-      padding: 12px 0;
-      border-bottom: 1px solid #f3f4f6;
-    }
-    .priority-item:last-child { border-bottom: none; }
-    .priority-num {
-      width: 24px; height: 24px; min-width: 24px;
-      border-radius: 50%;
-      background: #111; color: #fff;
-      font-size: 12px; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .priority-title { font-size: 14px; font-weight: 700; margin: 0 0 4px; }
-    .priority-desc  { font-size: 13px; color: #6b7280; line-height: 1.6; margin: 0; }
-
-    .phase-summary {
-      display: flex; gap: 8px; align-items: center;
-      padding: 12px 16px;
-      background: #f4f4ff;
-      border-radius: 10px;
-      border-left: 3px solid #4f46e5;
-      margin-bottom: 0;
-    }
-    .phase-summary-icon { font-size: 20px; }
-    .phase-summary-text { font-size: 14px; font-weight: 600; color: #1e1b4b; }
-    .phase-summary-sub  { font-size: 12px; color: #6b7280; margin-top: 2px; }
+    .action-btn:hover { opacity: .85; }
+    .action-btn-primary { background: #111; color: #fff !important; }
+    .action-btn-secondary { background: #fff; color: #111 !important; border: 1.5px solid #e5e7eb; }
   </style>
 </head>
 <body>
@@ -102,252 +61,156 @@
   </script>
   <script>
   (function(){
-    const DIAG_KEY     = 'fineme:diagnosis:v2';
-    const OLD_KEY      = 'fineme:diagnosis:latest';
-    const PROGRESS_KEY = 'fineme:roadmap:progress';
-    const host         = document.getElementById('diag-host');
-
-    const ITEM_LABELS = {
-      eyebrow: '眉', hair: '髪', body: '体型', skin: '肌',
-      hair_removal: 'ムダ毛', teeth: '歯', nail: '爪', makeup: 'メイク',
-    };
-    const ITEM_ICONS = {
-      eyebrow: '✏️', hair: '💈', body: '💪', skin: '🧴',
-      hair_removal: '⚡', teeth: '😁', nail: '💅', makeup: '✨',
-    };
-    const PHASE_LABELS = {
-      1: 'Phase 1 — 清潔感の土台を作る段階',
-      2: 'Phase 2 — 印象を引き上げる段階',
-      3: 'Phase 3 — 全体を仕上げる段階',
-      4: '変容の第一章、完了',
-    };
+    const STORAGE_KEY = 'fineme:diagnosis:latest';
     const HISTORY_KEY = 'fineme:diagnosis:history';
+    const host = document.getElementById('diag-host');
 
-    function fmtDate(ts) {
-      try { return new Date(ts).toLocaleString('ja-JP'); } catch { return ''; }
-    }
-    function getCurrentPhase() {
-      try {
-        const p = JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {};
-        if (p.all_complete)    return 4;
-        if (p.phase2_complete) return 3;
-        if (p.phase1_complete) return 2;
-        return 1;
-      } catch { return 1; }
-    }
+    const LEVEL_TEXT = ['全然','少し','そこそこ','かなり','すごく'];
+    const CONCERN_ICONS = { hair:'💇‍♂️', skin:'✨', eyebrow:'✂️', body:'💪', fashion:'👔', photo:'📸', overall:'🪞' };
+    const CONCERN_NAMES = { hair:'髪型・髪', skin:'肌・ニキビ', eyebrow:'眉毛', body:'体型・体', fashion:'服・コーデ', photo:'写真写り', overall:'全体の雰囲気' };
 
-    function renderNew(diag) {
-      const { scores, result, savedAt } = diag;
-      const currentPhase = getCurrentPhase();
+    function levelColor(l){ return ['#e5e7eb','#93c5fd','#60a5fa','#3b82f6','#2563eb'][l]||'#e5e7eb'; }
 
-      const card1 = document.createElement('div');
-      card1.className = 'card';
-      card1.style.padding = '20px';
-
-      const badge = document.createElement('div');
-      badge.className = 'diag-badge';
-      badge.textContent = result?.badge || '診断済み';
-
-      const heading = document.createElement('h2');
-      heading.className = 'diag-result-heading';
-      heading.textContent = result?.heading || '外見診断が完了しています';
-
-      const sub = document.createElement('p');
-      sub.className = 'diag-result-sub';
-      sub.textContent = result?.sub || '';
-
-      card1.appendChild(badge);
-      card1.appendChild(heading);
-      card1.appendChild(sub);
-
-      if (savedAt) {
-        const ts = document.createElement('p');
-        ts.className = 'muted';
-        ts.style.fontSize = '12px';
-        ts.style.marginBottom = '16px';
-        ts.textContent = `診断日時: ${fmtDate(savedAt)}`;
-        card1.appendChild(ts);
+    function getConcernType(areas){
+      const high = Object.entries(areas).filter(([,v])=>v>=3);
+      const facial = ['eyebrow','skin','photo'].filter(k=>(areas[k]||0)>=3);
+      const bodyStyle = ['body','fashion'].filter(k=>(areas[k]||0)>=3);
+      const hasOverall = (areas.overall||0)>=2;
+      const topArea = [...Object.entries(areas)].sort(([,a],[,b])=>b-a)[0];
+      if(high.length===0 && Object.values(areas).every(v=>v<=1)) return { type:'メンテナンス型', color:'#059669' };
+      if(hasOverall && high.length>=3) return { type:'全面リニューアル型', color:'#7c3aed' };
+      if(facial.length>=2) return { type:'第一印象・顔まわり集中型', color:'#2563eb' };
+      if(bodyStyle.length>=2) return { type:'ボディ×スタイル型', color:'#d97706' };
+      if((areas.hair||0)>=3 && facial.length>=1) return { type:'清潔感底上げ型', color:'#0891b2' };
+      if(topArea && topArea[1]>=3){
+        const map = { hair:{type:'髪型特化型',color:'#2563eb'}, skin:{type:'肌ケア特化型',color:'#0891b2'}, eyebrow:{type:'眉毛特化型',color:'#2563eb'}, body:{type:'ボディメイク型',color:'#d97706'}, fashion:{type:'スタイリング型',color:'#7c3aed'}, photo:{type:'写真映り特化型',color:'#0891b2'}, overall:{type:'全体印象型',color:'#7c3aed'} };
+        return map[topArea[0]] || { type:'変容準備型', color:'#2563eb' };
       }
+      return { type:'変容準備型', color:'#2563eb' };
+    }
 
-      if (scores && Object.keys(scores).length > 0) {
-        const scoreTitle = document.createElement('p');
-        scoreTitle.style.cssText = 'font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:0 0 8px;';
-        scoreTitle.textContent = '現在のスコア';
-        card1.appendChild(scoreTitle);
+    function getTriggerLabel(t){ return {matching_app:'マッチングアプリで結果を出したい',love:'好きな人ができた',career:'就職・転職・大事な場面',word:'何かの一言が刺さった',vague:'ずっと気になっていた'}[t]||t||'—'; }
+    function getStyleLabel(s){ return {explanation:'納得してから動くタイプ',consultation:'相談しながら進めるタイプ',delegate:'任せて結果を出してほしいタイプ',cautious:'小さく試してから続けるタイプ'}[s]||s||'—'; }
+    function getUrgencyLabel(u){ return {high:'1ヶ月以内に変化を感じたい',mid:'2〜3ヶ月で',low:'半年〜1年で',continuous:'継続できるものがいい'}[u]||u||'—'; }
+    function getFailureLabel(f){ return {lost_direction:'方向がわからなくなった',no_continuation:'続かなかった',cost:'コストが続かなかった',awkward:'関係性がうまくいかなかった',no_result:'変化が感じられなかった',ongoing:'今も継続中'}[f]||f||'—'; }
 
-        const grid = document.createElement('div');
-        grid.className = 'score-grid';
-        const keys = ['eyebrow','hair','body','skin','hair_removal','teeth','nail','makeup'];
-        keys.forEach(k => {
-          const val = scores[k];
-          if (val == null) return;
-          const cell = document.createElement('div');
-          cell.className = 'score-cell';
-          cell.innerHTML = `
-            <div class="score-cell-label">${ITEM_ICONS[k] || ''} ${ITEM_LABELS[k] || k}</div>
-            <div class="score-cell-val${val <= 5 ? ' is-low' : ''}">${val}</div>
-            <div class="score-cell-sub">/10</div>`;
-          grid.appendChild(cell);
+    function fmtDate(ts){ try{ return new Date(ts).toLocaleString('ja-JP',{year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}); }catch{ return ''; } }
+
+    function renderV4(p){
+      const areas = p.concern_areas || {};
+      const concernType = getConcernType(areas);
+      const concernSorted = Object.entries(areas).sort(([,a],[,b])=>b-a);
+
+      // Hero
+      const hero = document.createElement('div');
+      hero.className = 'result-hero';
+      hero.innerHTML = `
+        <div class="result-badge">最新の診断結果</div>
+        <div><span class="type-badge" style="background:${concernType.color}">${concernType.type}</span></div>
+        <p>${fmtDate(p.at)} 実施 ${p.stage2_completed ? '（詳細版）' : '（簡易版）'}</p>
+      `;
+      host.appendChild(hero);
+
+      // 気になり度
+      if(concernSorted.filter(([,v])=>v>0).length > 0){
+        const card = document.createElement('div'); card.className='card'; card.style.padding='20px';
+        const h2 = document.createElement('h2'); h2.textContent='📊 気になり度マップ'; h2.style.margin='0 0 14px'; card.appendChild(h2);
+        concernSorted.forEach(([id,level])=>{
+          const row = document.createElement('div'); row.className='concern-bar-row';
+          row.innerHTML = `
+            <div class="concern-bar-label">${CONCERN_ICONS[id]||''} ${CONCERN_NAMES[id]||id}</div>
+            <div class="concern-bar-track"><div class="concern-bar-fill" style="width:${Math.round((level/4)*100)}%;background:${levelColor(level)}"></div></div>
+            <div class="concern-bar-value" style="color:${levelColor(level)}">${LEVEL_TEXT[level]||''}</div>
+          `;
+          card.appendChild(row);
         });
-        card1.appendChild(grid);
+        host.appendChild(card);
       }
 
-      const phaseSummary = document.createElement('div');
-      phaseSummary.className = 'phase-summary';
-      phaseSummary.innerHTML = `
-        <div class="phase-summary-icon">🗺️</div>
-        <div>
-          <div class="phase-summary-text">${PHASE_LABELS[currentPhase]}</div>
-          <div class="phase-summary-sub">現在取り組むべき段階です</div>
-        </div>`;
-      card1.appendChild(phaseSummary);
+      // プロファイル
+      const profileCard = document.createElement('div'); profileCard.className='card'; profileCard.style.padding='20px';
+      const ph2 = document.createElement('h2'); ph2.textContent='🧭 あなたのプロファイル'; ph2.style.margin='0 0 14px'; profileCard.appendChild(ph2);
+      const rows = [
+        p.trigger && ['きっかけ', getTriggerLabel(p.trigger)],
+        p.style && ['進め方', getStyleLabel(p.style)],
+        p.urgency && ['タイムライン', getUrgencyLabel(p.urgency)],
+        p.failure_pattern && ['過去のパターン', getFailureLabel(p.failure_pattern)],
+      ].filter(Boolean);
+      rows.forEach(([label, value])=>{
+        const block = document.createElement('div'); block.className='analysis-block';
+        block.innerHTML = `<div class="analysis-label">${label}</div><div class="analysis-text">${value}</div>`;
+        profileCard.appendChild(block);
+      });
+      host.appendChild(profileCard);
 
-      host.appendChild(card1);
-
-      const priorities = result?.priorities;
-      if (priorities && priorities.length > 0) {
-        const card2 = document.createElement('div');
-        card2.className = 'card';
-        card2.style.padding = '20px';
-        const h3 = document.createElement('h3');
-        h3.style.cssText = 'font-size:15px;font-weight:800;margin:0 0 12px;';
-        h3.textContent = '今すぐ取り組む TOP 3';
-        card2.appendChild(h3);
-
-        const ul = document.createElement('ul');
-        ul.className = 'priority-list';
-        priorities.slice(0, 3).forEach((p, i) => {
-          const li = document.createElement('li');
-          li.className = 'priority-item';
-          li.innerHTML = `
-            <div class="priority-num">${i + 1}</div>
-            <div>
-              <p class="priority-title">${p.title || ''}</p>
-              <p class="priority-desc">${p.desc || ''}</p>
-            </div>`;
-          ul.appendChild(li);
-        });
-        card2.appendChild(ul);
-        host.appendChild(card2);
-      }
-
-      const card3 = document.createElement('div');
-      card3.className = 'card';
-      card3.style.cssText = 'padding:20px;display:flex;flex-wrap:wrap;gap:10px;';
-      card3.innerHTML = `
-        <a href="../../index.html?scrollTo=roadmap" class="btn btn-ghost" style="flex:1;min-width:160px;text-align:center;">
-          ロードマップを見る
-        </a>
-        <a href="../diagnosis.html" class="btn btn-ghost" style="flex:1;min-width:160px;text-align:center;">
-          診断をやり直す
-        </a>
-        <a href="../search.html" class="btn btn-ghost" style="flex:1;min-width:160px;text-align:center;">
-          サービスを探す
-        </a>`;
-      host.appendChild(card3);
-
-      // ── スコア履歴 ──
-      try {
-        const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-        if (history.length >= 2) {
-          const SCORE_KEYS = ['eyebrow','hair','body','skin','hair_removal','teeth','nail','makeup'];
-          const cardH = document.createElement('div');
-          cardH.className = 'card';
-          cardH.style.padding = '20px';
-          const hTitle = document.createElement('p');
-          hTitle.style.cssText = 'font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:0 0 12px;';
-          hTitle.textContent = 'スコアの推移';
-          cardH.appendChild(hTitle);
-
-          const table = document.createElement('div');
-          table.style.cssText = 'overflow-x:auto;';
-          const recent = history.slice(-5);
-          const rows = SCORE_KEYS.map(k => {
-            const vals = recent.map(h => h.scores?.[k]);
-            if (vals.every(v => v == null)) return null;
-            const latest = vals[vals.length - 1];
-            const prev   = vals[vals.length - 2];
-            const diff = (latest != null && prev != null) ? latest - prev : null;
-            const arrow = diff == null ? '' : diff > 0 ? `<span style="color:#16a34a">▲${diff}</span>` : diff < 0 ? `<span style="color:#ef4444">▼${Math.abs(diff)}</span>` : `<span style="color:#9ca3af">→</span>`;
-            const histCells = recent.map(h => `<td style="text-align:center;padding:6px 8px;font-size:13px;">${h.scores?.[k] ?? '—'}</td>`).join('');
-            return `<tr>
-              <td style="padding:6px 8px;font-size:12px;color:#6b7280;white-space:nowrap;">${ITEM_ICONS[k] || ''} ${ITEM_LABELS[k] || k}</td>
-              ${histCells}
-              <td style="text-align:center;padding:6px 8px;font-size:12px;font-weight:700;">${arrow}</td>
-            </tr>`;
-          }).filter(Boolean);
-
-          const dateRow = recent.map(h => {
-            try { return `<th style="text-align:center;padding:4px 8px;font-size:10px;color:#9ca3af;font-weight:400;">${new Date(h.savedAt).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})}</th>`; }
-            catch { return '<th>—</th>'; }
-          }).join('');
-
-          table.innerHTML = `<table style="width:100%;border-collapse:collapse;">
-            <thead><tr><th></th>${dateRow}<th style="padding:4px 8px;font-size:10px;color:#9ca3af;font-weight:400;">前回比</th></tr></thead>
-            <tbody>${rows.join('')}</tbody>
-          </table>`;
-          cardH.appendChild(table);
-          host.appendChild(cardH);
-        }
-      } catch(e) {}
+      // アクション
+      const actionCard = document.createElement('div'); actionCard.className='card'; actionCard.style.padding='20px';
+      actionCard.innerHTML = `
+        <div class="action-grid">
+          <a href="../../index.html?scrollTo=roadmap" class="action-btn action-btn-primary">変容ロードマップを見る</a>
+          <a href="../search.html?diag=1" class="action-btn action-btn-secondary">サービスを探す</a>
+          <a href="../diagnosis.html" class="action-btn action-btn-secondary">再診断する</a>
+          <a href="../diagnosis-result.html" class="action-btn action-btn-secondary">詳細な結果を見る</a>
+        </div>
+      `;
+      host.appendChild(actionCard);
     }
 
-    function renderRediagnose() {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.style.cssText = 'padding:24px;text-align:center;';
-      card.innerHTML = `
-        <div style="font-size:32px;margin-bottom:12px;">🗺️</div>
-        <h2 style="font-size:17px;font-weight:800;margin:0 0 8px;">診断データを更新してください</h2>
-        <p class="muted" style="font-size:14px;line-height:1.7;margin:0 0 20px;">
-          以前の診断データは旧形式のため、詳細なスコアを読み込めません。<br>
-          もう一度診断すると、スコア・ロードマップがすべて表示されます。
-        </p>
-        <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
-          <a href="../diagnosis.html" class="btn btn-ghost" style="font-size:14px;padding:10px 28px;">
-            診断をやり直す（1分）
-          </a>
-          <a href="../search.html" class="btn btn-ghost" style="font-size:14px;padding:10px 28px;">
-            診断せずに探す
-          </a>
-        </div>`;
+    function renderHistory(){
+      const raw = localStorage.getItem(HISTORY_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      if(!Array.isArray(arr) || arr.length < 2) return;
+      const histArr = arr.slice().reverse();
+      const card = document.createElement('div'); card.className='card'; card.style.padding='20px';
+      const h2 = document.createElement('h2'); h2.textContent='📅 診断履歴'; h2.style.margin='0 0 14px'; card.appendChild(h2);
+      histArr.slice(0, 10).forEach((item, i)=>{
+        const p = item.profile || item;
+        const areas = p.concern_areas || {};
+        const ct = getConcernType(areas);
+        const row = document.createElement('div'); row.className='history-item';
+        row.innerHTML = `
+          <div>
+            <div class="history-type">${ct.type}</div>
+            <div class="history-date">${fmtDate(p.at || item.at)}</div>
+          </div>
+          ${i===0 ? '<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#dbeafe;color:#1d4ed8;border-radius:99px">最新</span>' : ''}
+        `;
+        card.appendChild(row);
+      });
       host.appendChild(card);
     }
 
-    function renderEmpty() {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.style.cssText = 'padding:24px;text-align:center;';
+    function renderEmpty(){
+      const card = document.createElement('div'); card.className='card'; card.style.padding='20px';
       card.innerHTML = `
-        <div style="font-size:32px;margin-bottom:12px;">📋</div>
-        <h2 style="font-size:17px;font-weight:800;margin:0 0 8px;">診断がまだ完了していません</h2>
-        <p class="muted" style="font-size:14px;line-height:1.7;margin:0 0 20px;">
-          診断を完了すると、あなた専用のロードマップとスコアがここに表示されます。
-        </p>
-        <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
-          <a href="../diagnosis.html" class="btn btn-ghost" style="font-size:14px;padding:10px 28px;">
-            無料で診断する（1分）
-          </a>
-          <a href="../search.html" class="btn btn-ghost" style="font-size:14px;padding:10px 28px;">
-            診断せずに探す
-          </a>
-        </div>`;
+        <p class="muted">診断結果がまだありません。</p>
+        <div class="action-grid" style="margin-top:14px">
+          <a href="../diagnosis.html" class="action-btn action-btn-primary">診断する（5〜8分）</a>
+          <a href="../search.html" class="action-btn action-btn-secondary">診断せずに探す</a>
+        </div>
+      `;
       host.appendChild(card);
     }
 
-    try {
-      const raw = localStorage.getItem(DIAG_KEY);
-      const diag = raw ? JSON.parse(raw) : null;
-      const hasNew = diag && diag.scores && Object.keys(diag.scores).length >= 1;
-
-      if (hasNew) {
-        renderNew(diag);
-      } else if (localStorage.getItem(OLD_KEY)) {
-        renderRediagnose();
+    // メイン
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw){ renderEmpty(); return; }
+      const p = JSON.parse(raw);
+      if(p.version === 'v4'){
+        renderV4(p);
+        renderHistory();
       } else {
-        renderEmpty();
+        // 古い形式のデータがある場合はv4再診断を促す
+        const card = document.createElement('div'); card.className='card'; card.style.padding='20px';
+        card.innerHTML = `
+          <p style="font-weight:700;margin:0 0 8px">診断データが古い形式です</p>
+          <p class="muted" style="margin:0 0 14px">新しい変容プロファイル診断を受けると、より詳細な分析が表示されます。</p>
+          <a href="../diagnosis.html" class="action-btn action-btn-primary" style="display:inline-block;padding:12px 24px">新しい診断を受ける</a>
+        `;
+        host.appendChild(card);
       }
-    } catch(e) {
+    }catch(e){
       renderEmpty();
     }
   })();
