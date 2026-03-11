@@ -329,6 +329,34 @@
     .cta-divider {
       height: 1px; background: #f3f4f6; margin: 4px 0;
     }
+
+    /* ─── Provider Match Cards ────────────── */
+    .provider-match-card {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 16px;
+      border: 1.5px solid #e5e7eb; border-radius: 14px;
+      margin-bottom: 10px; text-decoration: none; color: inherit;
+      transition: border-color .12s, box-shadow .12s;
+    }
+    .provider-match-card:hover { border-color: #2563eb; box-shadow: 0 2px 12px rgba(37,99,235,.1); }
+    .provider-match-card.top { border-color: #bfdbfe; background: #eff6ff; }
+    .pmc-photo {
+      width: 52px; height: 52px; border-radius: 50%;
+      overflow: hidden; flex-shrink: 0;
+      background: #f3f4f6; display: flex; align-items: center; justify-content: center;
+    }
+    .pmc-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .pmc-photo-icon { font-size: 24px; }
+    .pmc-body { flex: 1; min-width: 0; }
+    .pmc-name { font-size: 15px; font-weight: 700; color: #111; margin: 0 0 2px; }
+    .pmc-catch { font-size: 12px; color: #6b7280; margin: 0 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pmc-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 5px; }
+    .pmc-tag {
+      font-size: 10px; font-weight: 700; padding: 2px 8px;
+      background: #dbeafe; color: #1d4ed8; border-radius: 99px;
+    }
+    .pmc-meta { font-size: 11px; color: #9ca3af; }
+    .pmc-arrow { font-size: 14px; color: #9ca3af; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -707,9 +735,12 @@
         <p style="font-size:12px;color:#9ca3af;margin:14px 0 0;padding-left:2px">掲載者ページでこの条件との一致度を確認できます。</p>
       </div>` : ''}
 
-      <!-- ── おすすめカテゴリ ── -->
+      <!-- ── マッチした掲載者（非同期で注入） ── -->
+      <div id="match-providers-slot"></div>
+
+      <!-- ── おすすめカテゴリ（掲載者なし時のフォールバック） ── -->
       ${recs.length > 0 ? `
-      <p class="section-label" style="margin-top:28px">Recommendations</p>
+      <p class="section-label" id="recs-label" style="margin-top:28px">Recommendations</p>
       <div class="result-card">
         <div class="result-card-header">
           <div class="result-card-title">🎯 気になり度の高い順カテゴリ</div>
@@ -768,6 +799,86 @@
     `;
 
     root.innerHTML = html;
+
+    // ────────────────────────────────────────────────────────────────
+    // 診断プロファイル × 掲載者マッチング（非同期）
+    // ────────────────────────────────────────────────────────────────
+    (async function loadMatchedProviders(){
+      const slot = document.getElementById('match-providers-slot');
+      if(!slot) return;
+
+      function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+      function calcMatch(prov){
+        let score = 0;
+        const tags = [];
+        if(p.trigger && (prov.suitable_triggers||[]).includes(p.trigger)){
+          score += 2;
+          tags.push('あなたのきっかけをよく知っている');
+        }
+        if(p.failure_pattern && p.failure_pattern !== 'ongoing' && (prov.handles_failure_patterns||[]).includes(p.failure_pattern)){
+          score += 2;
+          tags.push('あなたの失敗パターンを得意とする');
+        }
+        if(p.style && prov.provider_style === p.style){
+          score += 1;
+          tags.push('進め方があなたに合っている');
+        }
+        return { score, tags };
+      }
+
+      try{
+        const res = await fetch('/api/providers');
+        if(!res.ok) return;
+        const providers = await res.json();
+        if(!providers || providers.length === 0){ slot.style.display='none'; return; }
+
+        const scored = providers
+          .map(prov => ({ ...prov, ...calcMatch(prov) }))
+          .sort((a,b) => b.score - a.score)
+          .slice(0,3);
+
+        const hasMatch = scored[0]?.score > 0;
+
+        // マッチした掲載者がいれば「おすすめカテゴリ」ラベルを非表示
+        if(hasMatch){
+          const recsLabel = document.getElementById('recs-label');
+          if(recsLabel) recsLabel.style.display = 'none';
+        }
+
+        const title = hasMatch ? 'あなたのプロファイルに一致するプロ' : '掲載中のプロ';
+        const subtitle = hasMatch
+          ? 'きっかけ・失敗パターン・進め方の一致から自動マッチングしました'
+          : '現在掲載中のプロをご覧ください';
+
+        slot.innerHTML = `
+          <p class="section-label" style="margin-top:28px">Pro Match</p>
+          <div class="result-card">
+            <div class="result-card-header">
+              <div class="result-card-title">✨ ${esc(title)}</div>
+              <div class="result-card-subtitle">${esc(subtitle)}</div>
+            </div>
+            ${scored.map((prov,i) => `
+              <a href="/provider/${esc(prov.slug)}" class="provider-match-card${i===0&&hasMatch?' top':''}">
+                <div class="pmc-photo">${prov.photo_url
+                  ? `<img src="${esc(prov.photo_url)}" alt="${esc(prov.name)}" loading="lazy">`
+                  : '<span class="pmc-photo-icon">🧑</span>'
+                }</div>
+                <div class="pmc-body">
+                  <div class="pmc-name">${esc(prov.name)}</div>
+                  ${prov.catchphrase ? `<div class="pmc-catch">${esc(prov.catchphrase)}</div>` : ''}
+                  ${prov.tags&&prov.tags.length>0 ? `<div class="pmc-tags">${prov.tags.map(t=>`<span class="pmc-tag">${esc(t)}</span>`).join('')}</div>` : ''}
+                  <div class="pmc-meta">${esc(prov.area||'')}${prov.price_from?` ・ ¥${Number(prov.price_from).toLocaleString()}〜`:''}</div>
+                </div>
+                <div class="pmc-arrow">→</div>
+              </a>
+            `).join('')}
+          </div>
+        `;
+      }catch(e){
+        slot.style.display = 'none';
+      }
+    })();
 
     // 保存ボタン
     const saveBtn = document.getElementById('btn-save-mypage');
