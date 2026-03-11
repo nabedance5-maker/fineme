@@ -17,6 +17,13 @@ export function middleware(request) {
     return NextResponse.redirect(url, { status: 301 })
   }
 
+  // /account → /my-reservations
+  if (request.nextUrl.pathname === '/account') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/my-reservations'
+    return NextResponse.redirect(url, { status: 302 })
+  }
+
   return NextResponse.next()
 }
 
