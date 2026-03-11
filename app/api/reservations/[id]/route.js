@@ -35,6 +35,14 @@ export async function PATCH(request, context) {
     if (counter_time)     updates.counter_time = counter_time;
     if (confirmed_date)   updates.confirmed_date = confirmed_date;
     if (confirmed_time)   updates.confirmed_time = confirmed_time;
+    // 代替提案時：24時間の回答期限を設定
+    if (newStatus === 'counter_proposed') {
+      updates.counter_expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    }
+    // 承認・キャンセル時：期限をクリア
+    if (['approved', 'rejected', 'cancelled'].includes(newStatus)) {
+      updates.counter_expires_at = null;
+    }
 
     const db = getSupabase();
     const { data, error } = await db

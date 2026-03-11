@@ -48,6 +48,15 @@
 
     function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function fmtDate(d){ if(!d) return ''; try{ return new Date(d).toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'}); }catch{ return String(d); } }
+    function fmtRemaining(expiresAt) {
+      if (!expiresAt) return '';
+      const diff = new Date(expiresAt) - new Date();
+      if (diff <= 0) return '期限切れ';
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      if (h >= 1) return '残り ' + h + '時間' + (m > 0 ? m + '分' : '');
+      return '残り ' + m + '分';
+    }
 
     let currentContact = '';
 
@@ -87,10 +96,14 @@
         }
 
         if (r.status==='counter_proposed') {
+          var remaining = fmtRemaining(r.counter_expires_at);
+          var isUrgent = r.counter_expires_at && (new Date(r.counter_expires_at) - new Date()) < 3 * 3600000;
+          var remainHtml = remaining ? '<p style="font-size:12px;font-weight:700;color:'+(isUrgent?'#ef4444':'#6b7280')+';margin:0 0 10px">⏰ '+ remaining +'に自動キャンセル</p>' : '';
           extraHtml += '<div style="padding:14px 16px;background:#eef2ff;border:1.5px solid #818cf8;border-radius:10px;margin-top:12px">'
             + '<p style="font-size:12px;font-weight:700;color:#4f46e5;margin:0 0 6px">📋 掲載者から代替日時の提案があります</p>'
             + '<p style="font-size:16px;font-weight:800;color:#4f46e5;margin:0 0 8px">' + fmtDate(r.counter_date) + ' ' + esc(r.counter_time||'') + '</p>'
-            + (r.provider_comment ? '<p style="font-size:13px;color:#374151;margin:0 0 12px">' + esc(r.provider_comment) + '</p>' : '')
+            + (r.provider_comment ? '<p style="font-size:13px;color:#374151;margin:0 0 8px">' + esc(r.provider_comment) + '</p>' : '')
+            + remainHtml
             + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
             + '<button style="padding:10px 20px;background:#4f46e5;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer" data-action="accept" data-id="' + r.id + '" data-cdate="' + esc(r.counter_date||'') + '" data-ctime="' + esc(r.counter_time||'') + '">この日時で承認する</button>'
             + '<button style="padding:10px 16px;background:#fff;color:#6b7280;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;cursor:pointer" data-action="cancel" data-id="' + r.id + '">キャンセル</button>'

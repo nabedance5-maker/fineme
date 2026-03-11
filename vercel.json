@@ -2,6 +2,12 @@
   "framework": "nextjs",
   "buildCommand": "node scripts/copy-static.js && next build",
   "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/cron/expire-counters",
+      "schedule": "0 * * * *"
+    }
+  ],
   "redirects": [
     {
       "source": "/:path*",

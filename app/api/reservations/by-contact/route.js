@@ -11,7 +11,7 @@ export async function GET(request) {
   const db = getSupabase();
   const { data, error } = await db
     .from('reservations')
-    .select('id,provider_id,user_name,user_contact,status,reserved_date,start_time,note,provider_comment,counter_date,counter_time,confirmed_date,confirmed_time,created_at')
+    .select('id,provider_id,user_name,user_contact,status,reserved_date,start_time,note,provider_comment,counter_date,counter_time,confirmed_date,confirmed_time,counter_expires_at,created_at')
     .eq('user_contact', contact)
     .order('created_at', { ascending: false });
 
@@ -28,11 +28,20 @@ export async function GET(request) {
     (providers || []).forEach(p => { providerMap[p.id] = p; });
   }
 
-  const result = (data || []).map(r => ({
-    ...r,
-    provider_name: providerMap[r.provider_id]?.name || '',
-    provider_slug: providerMap[r.provider_id]?.slug || '',
-  }));
+  const now = new Date();
+  const result = (data || []).map(r => {
+    // 期限切れ counter_proposed はクライアント側でも expired 扱い
+    let status = r.status;
+    if (status === 'counter_proposed' && r.counter_expires_at && new Date(r.counter_expires_at) < now) {
+      status = 'expired';
+    }
+    return {
+      ...r,
+      status,
+      provider_name: providerMap[r.provider_id]?.name || '',
+      provider_slug: providerMap[r.provider_id]?.slug || '',
+    };
+  });
 
   return Response.json(result);
 }
