@@ -213,7 +213,7 @@ function ServiceCard({ service, onReserve, featured }) {
 /* ── 予約タブ ── */
 function ReservationTab({ provider, services, selectedService, onServiceSelect, submitted, setSubmitted }) {
   const today = new Date().toISOString().split('T')[0];
-  const [formState, setFormState] = useState({ name: '', contact: '', date: '', time: '', message: '' });
+  const [formState, setFormState] = useState({ name: '', contact: '', date: '', time: '', date2: '', time2: '', date3: '', time3: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [userPrefilled, setUserPrefilled] = useState(false);
@@ -248,16 +248,19 @@ function ReservationTab({ provider, services, selectedService, onServiceSelect, 
     }
     setSubmitting(true); setFormError('');
     try {
+      const noteParts = [
+        selectedService ? `【メニュー】${selectedService.name}（¥${selectedService.price.toLocaleString()}）` : '',
+        formState.date2 ? `【第2希望】${formState.date2} ${formState.time2}` : '',
+        formState.date3 ? `【第3希望】${formState.date3} ${formState.time3}` : '',
+        formState.message,
+      ].filter(Boolean);
       const body = {
         provider_id: provider.id,
         user_name: formState.name,
         user_contact: formState.contact,
         preferred_date: formState.date,
         preferred_time: formState.time,
-        message: [
-          selectedService ? `【メニュー】${selectedService.name}（¥${selectedService.price.toLocaleString()}）` : '',
-          formState.message,
-        ].filter(Boolean).join('\n'),
+        message: noteParts.join('\n'),
       };
       const res = await fetch('/api/reservations', {
         method: 'POST',
@@ -342,27 +345,35 @@ function ReservationTab({ provider, services, selectedService, onServiceSelect, 
             required
           />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', display: 'block', marginBottom: '4px' }}>希望日 *</label>
-            <input
-              type="date"
-              value={formState.date}
-              min={today}
-              onChange={e => setFormState(p => ({ ...p, date: e.target.value }))}
-              style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}
-              required
-            />
+        {/* 第1希望 */}
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', display: 'block', marginBottom: '6px' }}>希望日時（第1希望）*</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <input type="date" value={formState.date} min={today} onChange={e => setFormState(p => ({ ...p, date: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #111', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} required />
+            <select value={formState.time} onChange={e => setFormState(p => ({ ...p, time: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #111', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} required>
+              <option value="">時間を選択</option>
+              {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
           </div>
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', display: 'block', marginBottom: '4px' }}>希望時間 *</label>
-            <select
-              value={formState.time}
-              onChange={e => setFormState(p => ({ ...p, time: e.target.value }))}
-              style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}
-              required
-            >
-              <option value="">選択</option>
+        </div>
+        {/* 第2希望 */}
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', display: 'block', marginBottom: '6px' }}>希望日時（第2希望）<span style={{ fontWeight: '400', color: '#9ca3af' }}>任意</span></label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <input type="date" value={formState.date2} min={today} onChange={e => setFormState(p => ({ ...p, date2: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} />
+            <select value={formState.time2} onChange={e => setFormState(p => ({ ...p, time2: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}>
+              <option value="">時間を選択</option>
+              {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+        {/* 第3希望 */}
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', display: 'block', marginBottom: '6px' }}>希望日時（第3希望）<span style={{ fontWeight: '400', color: '#9ca3af' }}>任意</span></label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <input type="date" value={formState.date3} min={today} onChange={e => setFormState(p => ({ ...p, date3: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} />
+            <select value={formState.time3} onChange={e => setFormState(p => ({ ...p, time3: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}>
+              <option value="">時間を選択</option>
               {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>

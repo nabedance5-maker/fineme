@@ -23,7 +23,7 @@ export async function PATCH(request, { params }) {
   if (!newStatus) return Response.json({ error: '無効なステータスです' }, { status: 400 });
 
   const updates = { status: newStatus };
-  if (counter_proposal) updates.counter_proposal = counter_proposal;
+  if (counter_proposal) updates.provider_comment = counter_proposal;
 
   const { data, error } = await supabase
     .from('reservations')
@@ -71,7 +71,7 @@ export async function PATCH(request, { params }) {
     try {
       await sendLinePush(
         provider.line_user_id,
-        `【Fineme】${data.user_name}様の予約を承認しました。\n日時: ${data.preferred_date} ${data.preferred_time}`
+        `【Fineme】${data.user_name}様の予約を承認しました。\n日時: ${data.reserved_date} ${data.start_time}`
       );
     } catch (e) { console.error('[status line]', e); }
   }
