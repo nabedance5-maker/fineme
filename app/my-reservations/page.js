@@ -101,7 +101,19 @@ function ReservationCard({ r, onRefresh }) {
           <p style={{ fontSize: '16px', fontWeight: '800', color: '#4f46e5', margin: '0 0 8px' }}>
             {fmtDate(r.counter_date)} {r.counter_time}
           </p>
-          {r.provider_comment && <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 12px' }}>{r.provider_comment}</p>}
+          {r.provider_comment && <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 8px' }}>{r.provider_comment}</p>}
+          {r.counter_expires_at ? (
+            (() => {
+              const diff = new Date(r.counter_expires_at) - new Date();
+              const h = Math.floor(diff / 3600000);
+              const m = Math.floor((diff % 3600000) / 60000);
+              const txt = diff <= 0 ? '期限切れ' : h >= 1 ? `残り${h}時間${m > 0 ? m + '分' : ''}` : `残り${m}分`;
+              const urgent = diff > 0 && diff < 3 * 3600000;
+              return <p style={{ fontSize: '12px', fontWeight: '700', color: urgent ? '#ef4444' : '#6b7280', margin: '0 0 12px' }}>⏰ {txt}に自動キャンセル</p>;
+            })()
+          ) : (
+            <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 12px' }}>⏰ お早めにご返答ください（24時間以内推奨）</p>
+          )}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={() => patchStatus('approved', { confirmed_date: r.counter_date, confirmed_time: r.counter_time })}

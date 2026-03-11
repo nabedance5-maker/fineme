@@ -98,7 +98,9 @@
         if (r.status==='counter_proposed') {
           var remaining = fmtRemaining(r.counter_expires_at);
           var isUrgent = r.counter_expires_at && (new Date(r.counter_expires_at) - new Date()) < 3 * 3600000;
-          var remainHtml = remaining ? '<p style="font-size:12px;font-weight:700;color:'+(isUrgent?'#ef4444':'#6b7280')+';margin:0 0 10px">⏰ '+ remaining +'に自動キャンセル</p>' : '';
+          var remainHtml = r.counter_expires_at
+            ? '<p style="font-size:12px;font-weight:700;color:'+(isUrgent?'#ef4444':'#6b7280')+';margin:0 0 10px">⏰ '+ remaining +'に自動キャンセル</p>'
+            : '<p style="font-size:12px;color:#6b7280;margin:0 0 10px">⏰ お早めにご返答ください（24時間以内推奨）</p>';
           extraHtml += '<div style="padding:14px 16px;background:#eef2ff;border:1.5px solid #818cf8;border-radius:10px;margin-top:12px">'
             + '<p style="font-size:12px;font-weight:700;color:#4f46e5;margin:0 0 6px">📋 掲載者から代替日時の提案があります</p>'
             + '<p style="font-size:16px;font-weight:800;color:#4f46e5;margin:0 0 8px">' + fmtDate(r.counter_date) + ' ' + esc(r.counter_time||'') + '</p>'
