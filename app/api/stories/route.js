@@ -1,11 +1,8 @@
 // GET /api/stories?providerId=xxx&tag=xxx&status=approved
+import { getSupabase } from '@/lib/supabase';
 // POST /api/stories → 体験談を投稿（pending状態）
-import { createClient } from '@supabase/supabase-js';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabaseAdmin = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);

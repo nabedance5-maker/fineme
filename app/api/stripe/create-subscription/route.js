@@ -1,8 +1,8 @@
 // POST /api/stripe/create-subscription
+import { getSupabase } from '@/lib/supabase';
 // 掲載者登録時にStripe Customer + Subscription（trial）を作成
 // 初回予約まで課金は発生しない（trial_end を遠い未来に設定）
 import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
 import { PLANS } from '@/lib/stripe-plans';
 
 function getStripe() {
@@ -10,10 +10,7 @@ function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY);
 }
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabaseAdmin = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 export async function POST(request) {
   const stripe = getStripe();

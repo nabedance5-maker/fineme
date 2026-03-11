@@ -1,11 +1,8 @@
 // PATCH /api/admin/providers/[id] - 掲載者情報更新（運営用）
 // DELETE /api/admin/providers/[id] - 掲載者削除（運営用・Supabase認証ユーザーも削除）
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 const ADMIN_KEY = process.env.ADMIN_API_KEY || process.env.UPLOAD_API_KEY || '';
 

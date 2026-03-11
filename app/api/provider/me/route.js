@@ -1,11 +1,8 @@
 // GET /api/provider/me
 // ログイン中のユーザーのメールアドレスで掲載者レコードを取得
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 export async function GET(request) {
   const authHeader = request.headers.get('Authorization');

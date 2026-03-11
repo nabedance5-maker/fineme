@@ -1,7 +1,7 @@
 // POST /api/stripe/webhook
+import { getSupabase } from '@/lib/supabase';
 // Stripeイベントを受信してSupabaseを更新する
 import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
 import { getPlanByPriceId } from '@/lib/stripe-plans';
 import { sendReservationCreatedEmails } from '@/lib/email';
 
@@ -10,10 +10,7 @@ function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY);
 }
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabaseAdmin = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 export async function POST(request) {
   const stripe = getStripe();

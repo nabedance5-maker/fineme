@@ -1,11 +1,8 @@
 // PATCH /api/provider/services/[id] - サービス更新
 // DELETE /api/provider/services/[id] - サービス削除
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderFromToken(token) {
   const { data: { user } } = await supabase.auth.getUser(token);

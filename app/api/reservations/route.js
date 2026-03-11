@@ -1,13 +1,10 @@
 // POST /api/reservations  - 予約リクエスト作成
 // GET  /api/reservations  - 一覧取得（providerId or userId で絞り込み）
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 import { sendReservationCreatedEmails } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);

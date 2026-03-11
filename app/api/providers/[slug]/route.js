@@ -1,10 +1,7 @@
 // GET /api/providers/[slug] - 掲載者詳細（公開ページ用）
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 export async function GET(request, { params }) {
   const { slug } = params;

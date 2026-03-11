@@ -1,12 +1,9 @@
 // GET /api/admin/providers - 全掲載者一覧（運営用）
 // POST /api/admin/providers - 掲載者新規登録（Supabase招待メール自動送信）
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 import { sendProviderCredentialsEmail } from '@/lib/email';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 const ADMIN_KEY = process.env.ADMIN_API_KEY || process.env.UPLOAD_API_KEY || '';
 

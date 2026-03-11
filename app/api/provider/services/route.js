@@ -1,11 +1,8 @@
 // GET /api/provider/services - 自分のサービス一覧
 // POST /api/provider/services - サービス追加
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderFromToken(token) {
   const { data: { user } } = await supabase.auth.getUser(token);

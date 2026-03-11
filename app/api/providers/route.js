@@ -1,10 +1,7 @@
 // GET /api/providers - 公開中の掲載者一覧
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
