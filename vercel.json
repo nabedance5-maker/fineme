@@ -10,11 +10,6 @@
   ],
   "redirects": [
     {
-      "source": "/index.html",
-      "destination": "/",
-      "permanent": true
-    },
-    {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "finemenextjs.vercel.app" }],
       "destination": "https://fineme.me/:path*",

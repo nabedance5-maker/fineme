@@ -81,7 +81,8 @@ copyHtml(path.resolve(ROOT, 'pages'), path.resolve(PUBLIC, 'pages'));
 console.log('Copied pages/**/*.html → public/pages/**/*.html');
 
 // ルート直下の静的 HTML
-const ROOT_HTMLS = ['index.html', '404.html', 'result.html', 'robots.txt', 'sitemap.xml', 'favicon.ico'];
+// index.html は _root.html として配置（/index.html というURLを存在させない＝重複コンテンツ対策）
+const ROOT_HTMLS = ['404.html', 'result.html', 'robots.txt', 'sitemap.xml', 'favicon.ico'];
 for (const file of ROOT_HTMLS) {
   const src = path.resolve(ROOT, file);
   const dest = path.resolve(PUBLIC, file);
@@ -89,6 +90,13 @@ for (const file of ROOT_HTMLS) {
     safeCopy(src, dest);
     console.log(`Copied ${file} → public/${file}`);
   }
+}
+// index.html → public/_root.html（/index.html URLを消してリダイレクト不要にする）
+const indexSrc = path.resolve(ROOT, 'index.html');
+const indexDest = path.resolve(PUBLIC, '_root.html');
+if (fs.existsSync(indexSrc)) {
+  safeCopy(indexSrc, indexDest);
+  console.log('Copied index.html → public/_root.html');
 }
 
 console.log(`Static copy complete. ${copied} files copied, ${errors} errors.`);

@@ -6,16 +6,10 @@ const nextConfig = {
   experimental: {
     typedRoutes: false
   },
-  async redirects() {
-    return [
-      // /index.html → / に 301 リダイレクト（重複コンテンツ対策）
-      { source: '/index.html', destination: '/', permanent: true },
-    ];
-  },
   async rewrites() {
     return [
-      // ルート `/` を static index.html に向ける（App Router page.js を削除したため）
-      { source: '/', destination: '/index.html' },
+      // ルート `/` を _root.html に向ける（/index.html URLを消して重複コンテンツ対策）
+      { source: '/', destination: '/_root.html' },
     ];
   },
   async headers() {
