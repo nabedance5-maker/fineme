@@ -56,6 +56,7 @@
         <button class="tab-btn" data-tab="service">サービス設定</button>
         <button class="tab-btn" data-tab="publish">公開設定</button>
         <button class="tab-btn" data-tab="billing">課金・プラン</button>
+        <button class="tab-btn" data-tab="referral">紹介報酬</button>
       </div>
 
       <!-- タブ①：概況 -->
@@ -280,6 +281,40 @@
           <div class="form-field"><label>新しいパスワード（確認）</label><input type="password" id="new-pw2" /></div>
           <p id="pw-change-msg" style="font-size:13px;margin:0;display:none"></p>
           <button class="btn" id="pw-change-btn" style="align-self:flex-start">パスワードを変更する</button>
+        </div>
+      </div>
+
+      <!-- タブ⑦：紹介報酬 -->
+      <div class="tab-pane" id="tab-referral">
+        <div class="card stack" style="padding:24px;gap:16px">
+          <h2 style="margin:0;font-size:16px">紹介報酬</h2>
+          <p class="muted" style="font-size:13px;margin:0;line-height:1.7">
+            あなたの紹介コードを使ってFinemeに登録した掲載者が月額課金を継続している間、毎月¥500の報酬が発生します。
+          </p>
+
+          <!-- 自分の紹介コード -->
+          <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:16px">
+            <div style="font-size:12px;color:#6b7280;font-weight:700;margin-bottom:8px">あなたの紹介コード</div>
+            <div class="referral-code-box" id="referral-code-tab">—</div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <button class="btn btn-ghost" style="font-size:13px;flex:1" id="copy-referral-code-btn">コードをコピー</button>
+              <button class="btn btn-ghost" style="font-size:13px;flex:1" id="copy-referral-url-btn">紹介URLをコピー</button>
+            </div>
+          </div>
+
+          <!-- サマリーカード -->
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px" id="referral-summary-grid">
+            <div class="stat-card"><div class="stat-value" id="ref-total-referred">—</div><div class="stat-label">紹介人数（合計）</div></div>
+            <div class="stat-card"><div class="stat-value" id="ref-active-count">—</div><div class="stat-label">課金中の紹介者</div></div>
+            <div class="stat-card"><div class="stat-value" id="ref-pending-month" style="color:#6366f1">—</div><div class="stat-label">今月の見込み報酬</div></div>
+            <div class="stat-card"><div class="stat-value" id="ref-total-earned">—</div><div class="stat-label">累計報酬額</div></div>
+          </div>
+
+          <!-- 紹介一覧テーブル -->
+          <div>
+            <h3 style="font-size:14px;font-weight:700;margin:0 0 10px;color:#374151">紹介パートナー一覧</h3>
+            <div id="referral-list"><p class="muted">読み込み中…</p></div>
+          </div>
         </div>
       </div>
 
@@ -829,11 +864,95 @@
       if(btn) btn.href = `/api/provider/line-connect?provider_id=${encodeURIComponent(providerId)}`;
     })();
 
-    // 紹介コードコピー
+    // 紹介コードコピー（課金タブ内）
     document.getElementById('copy-referral').addEventListener('click',()=>{
       const code = document.getElementById('referral-code').textContent;
       navigator.clipboard.writeText(code).then(()=>showToast('コードをコピーしました')).catch(()=>{});
     });
+
+    // ── 紹介報酬タブ ─────────────────────────────────────────────
+    (function setupReferralTab(){
+      function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+      // 紹介コード表示を同期
+      const fnCode = provider?.referral_code || '';
+      const codeEl = document.getElementById('referral-code-tab');
+      if(codeEl) codeEl.textContent = fnCode || '—';
+
+      // コードコピー
+      document.getElementById('copy-referral-code-btn')?.addEventListener('click',()=>{
+        if(!fnCode){ showToast('紹介コードが設定されていません'); return; }
+        navigator.clipboard.writeText(fnCode).then(()=>showToast('コードをコピーしました')).catch(()=>{});
+      });
+
+      // 紹介URLコピー
+      document.getElementById('copy-referral-url-btn')?.addEventListener('click',()=>{
+        if(!fnCode){ showToast('紹介コードが設定されていません'); return; }
+        const url = `https://www.fineme.me/pages/provider/join.html?ref=${encodeURIComponent(fnCode)}`;
+        navigator.clipboard.writeText(url).then(()=>showToast('紹介URLをコピーしました')).catch(()=>{});
+      });
+
+      async function loadReferrals(){
+        const pid = provider?.id || loadProviderData()?.id;
+        const listEl = document.getElementById('referral-list');
+        if(!pid){ if(listEl) listEl.innerHTML='<p class="muted">掲載者IDが見つかりません。</p>'; return; }
+
+        try{
+          const res = await fetch(`/api/billing/referrals?provider_id=${encodeURIComponent(pid)}`);
+          if(!res.ok){ if(listEl) listEl.innerHTML='<p class="muted" style="color:#ef4444">取得エラーが発生しました。</p>'; return; }
+          const data = await res.json();
+          const { referrals, summary } = data;
+
+          // サマリー更新
+          const el = (id) => document.getElementById(id);
+          if(el('ref-total-referred')) el('ref-total-referred').textContent = summary.total_referred;
+          if(el('ref-active-count')) el('ref-active-count').textContent = summary.active_count;
+          if(el('ref-pending-month')) el('ref-pending-month').textContent = '¥' + (summary.pending_this_month||0).toLocaleString();
+          if(el('ref-total-earned')) el('ref-total-earned').textContent = '¥' + (summary.total_earned_all_time||0).toLocaleString();
+
+          // 一覧表示
+          if(!listEl) return;
+          if(!referrals.length){
+            listEl.innerHTML='<p class="muted">まだ紹介した掲載者がいません。紹介URLを共有して報酬を獲得しましょう。</p>';
+            return;
+          }
+          listEl.innerHTML='';
+          referrals.forEach(r=>{
+            const row = document.createElement('div');
+            row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px;gap:12px;flex-wrap:wrap;background:#fff';
+            const statusBadge = r.status==='active'
+              ? '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#d1fae5;color:#065f46">課金中</span>'
+              : '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#f3f4f6;color:#6b7280">未課金</span>';
+            const billingDate = r.billing_started
+              ? `<span style="font-size:11px;color:#9ca3af">課金開始: ${esc(r.billing_started.slice(0,10))}</span>`
+              : '<span style="font-size:11px;color:#9ca3af">まだ課金なし</span>';
+            row.innerHTML=`
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+                  <strong style="font-size:14px">${esc(r.referred_name)}</strong>
+                  ${statusBadge}
+                </div>
+                ${billingDate}
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:13px;font-weight:700;color:${r.status==='active'?'#6366f1':'#9ca3af'}">¥500/月</div>
+                <div style="font-size:11px;color:#6b7280">累計: ¥${(r.total_earned||0).toLocaleString()}</div>
+              </div>
+            `;
+            listEl.appendChild(row);
+          });
+        }catch(e){
+          if(listEl) listEl.innerHTML='<p class="muted" style="color:#ef4444">通信エラーが発生しました。</p>';
+        }
+      }
+
+      // 紹介報酬タブを開いた時にロード
+      document.querySelectorAll('[data-tab="referral"]').forEach(btn=>{
+        btn.addEventListener('click', loadReferrals, {once:false});
+      });
+      // URLでreferralタブが開かれた場合も対応
+      if(new URLSearchParams(location.search).get('tab')==='referral') loadReferrals();
+    })();
 
     // パスワード変更
     document.getElementById('pw-change-btn').addEventListener('click', async()=>{

@@ -28,8 +28,33 @@
   .msg-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;font-size:14px;color:#15803d;line-height:1.8}
   .flex{display:flex;gap:12px;flex-wrap:wrap}
   .flex>*{flex:1;min-width:200px}
-  @media print{body{background:#fff}.page{padding:20px}}
+  /* ── Print / PDF ── */
+  .print-btn{
+    position:fixed;bottom:24px;right:24px;
+    display:flex;align-items:center;gap:8px;
+    padding:12px 20px;background:#111;color:#fff;
+    border:none;border-radius:99px;font-size:14px;font-weight:700;
+    cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.18);
+    transition:opacity .15s;z-index:100;
+  }
+  .print-btn:hover{opacity:.85}
+  @media print{
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{background:#fff;font-size:13px}
+    .page{max-width:100%;padding:12px 20px 20px}
+    .print-btn{display:none}
+    h1{font-size:22px}
+    h2{font-size:15px;margin:24px 0 10px}
+    h3{font-size:13px}
+    .card{break-inside:avoid;border-radius:10px;padding:16px;margin-bottom:10px;box-shadow:none}
+    .flex>*{flex:1 1 30%;min-width:160px}
+    table td,table th{padding:7px 10px;font-size:12px}
+    .warn{break-inside:avoid}
+    .msg-box{break-inside:avoid}
+    .step{break-inside:avoid}
+  }
 </style>
+<button class="print-btn" onclick="window.print()">🖨️ PDFで保存</button>
 </head>
 <body>
 <div class="page">

@@ -194,6 +194,7 @@
                 ${p.area?`📍 ${esc(p.area)} `:''}${p.price_from?`¥${Number(p.price_from).toLocaleString()}〜 `:''}
                 <a href="/provider/${esc(p.slug)}" target="_blank" style="color:#6366f1">/provider/${esc(p.slug)}</a>
               </div>
+              ${p.referred_by?`<div style="font-size:11px;margin-top:4px;color:#6366f1"><span style="background:#eef2ff;padding:1px 7px;border-radius:99px;font-weight:700">紹介: ${esc(p.referred_by)}</span></div>`:''}
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
               <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-edit="${p.id}">編集</button>
