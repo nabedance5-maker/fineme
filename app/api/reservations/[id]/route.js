@@ -1,7 +1,7 @@
 // PATCH /api/reservations/[id] - 掲載者が承認/拒否/代替提案
 // GET  /api/reservations/[id] - 予約詳細取得
 import { getSupabase } from '@/lib/supabase';
-import { sendReservationStatusEmail, sendVisitConfirmedEmail } from '@/lib/email';
+import { sendReservationStatusEmail, sendVisitConfirmedEmail, sendCancelledByUserEmail } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
 
 export async function GET(request, context) {
@@ -72,6 +72,21 @@ export async function PATCH(request, context) {
       try {
         await sendVisitConfirmedEmail({ reservation: data, userEmail: data.user_contact, userName: data.user_name, providerName: provider?.name });
       } catch (e) { console.error('[visit email]', e); }
+    }
+
+    // ユーザーがキャンセルした場合：掲載者に通知
+    if (newStatus === 'cancelled') {
+      if (provider?.email) {
+        try {
+          await sendCancelledByUserEmail({ reservation: data, providerEmail: provider.email, providerName: provider.name });
+        } catch (e) { console.error('[cancel email]', e); }
+      }
+      if (provider?.line_user_id) {
+        try {
+          const lineMsg = `【Fineme】${data.user_name}様が予約をキャンセルしました。\n元の希望日: ${data.reserved_date} ${data.start_time || ''}`;
+          await sendLinePush(provider.line_user_id, lineMsg);
+        } catch (e) { console.error('[cancel line]', e); }
+      }
     }
 
     if (provider?.line_user_id) {
