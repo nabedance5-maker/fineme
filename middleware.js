@@ -31,6 +31,13 @@ export function middleware(request) {
     return NextResponse.redirect(url, { status: 301 })
   }
 
+  // 旧検索ページ → Next.js /search に統合（Supabaseデータを表示）
+  if (request.nextUrl.pathname === '/pages/search.html') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/search'
+    return NextResponse.redirect(url, { status: 301 })
+  }
+
   return NextResponse.next()
 }
 

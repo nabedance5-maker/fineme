@@ -137,7 +137,14 @@ function SearchContent() {
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState(() => sp.get('keyword') || sp.get('q') || '');
   const [category, setCategory] = useState(() => sp.get('category') || '');
-  const [area, setArea] = useState(() => sp.get('area') || sp.get('region') || '');
+  const [area, setArea] = useState(() => {
+    const a = sp.get('area');
+    if (a) return a;
+    // 旧 pages/search.html の region（英語コード）→ 日本語エリアに変換
+    const regionMap = { tokyo: '東京', osaka: '大阪', kanagawa: '神奈川', aichi: '愛知', fukuoka: '福岡', saitama: '埼玉', chiba: '千葉', kyoto: '京都', hyogo: '兵庫', hokkaido: '北海道' };
+    const r = sp.get('region') || '';
+    return regionMap[r] || '';
+  });
 
   const fetchProviders = useCallback(async (cat, ar) => {
     setLoading(true);
