@@ -1,7 +1,11 @@
 {
   "permissions": {
     "additionalDirectories": [
-      "c:\\Users\\nabed\\OneDrive\\デスクトップ\\Fineme\\app\\api\\provider\\services"
+      "c:\\Users\\nabed\\OneDrive\\デスクトップ\\Fineme\\app\\api\\provider\\services",
+      "c:\\Users\\nabed\\OneDrive\\デスクトップ\\Fineme\\app\\search"
+    ],
+    "allow": [
+      "Bash(npm run:*)"
     ]
   }
 }

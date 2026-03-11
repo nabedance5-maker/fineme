@@ -565,6 +565,21 @@
     // ── 予約リクエスト管理 ────────────────────────────────────
     const STATUS_LABELS = { pending:'返答待ち', approved:'承認済み', rejected:'お断り', counter_proposed:'代替提案済み', visited:'来店確認済み' };
     const STATUS_COLORS = { pending:'#f59e0b', approved:'#10b981', rejected:'#ef4444', counter_proposed:'#6366f1', visited:'#059669' };
+    const TIME_OPTIONS = ['9:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
+
+    // noteから第2・第3希望を抽出
+    function parseDateChoices(r) {
+      const choices = [{ date: r.reserved_date||'', time: r.start_time||'', label:'第1希望' }];
+      const note = r.note || '';
+      const m2 = note.match(/【第2希望】(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2})/);
+      const m3 = note.match(/【第3希望】(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2})/);
+      if (m2) choices.push({ date: m2[1], time: m2[2], label:'第2希望' });
+      if (m3) choices.push({ date: m3[1], time: m3[2], label:'第3希望' });
+      return choices;
+    }
+    function noteWithoutChoices(note) {
+      return (note||'').replace(/【第[23]希望】\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{2}/g,'').replace(/【メニュー】[^\n]*/g,'').trim();
+    }
 
     async function loadRequests(){
       const providerId = provider?.id || loadProviderData()?.id;
@@ -573,7 +588,8 @@
       if(!res.ok){ document.getElementById('requests-list').innerHTML='<p class="muted" style="color:#ef4444">取得エラー</p>'; return; }
       const items = await res.json();
       const pending = items.filter(r=>r.status==='pending').length;
-      if(pending>0){ const b=document.getElementById('requests-badge'); if(b){ b.textContent=pending; b.style.display='inline'; } }
+      const b=document.getElementById('requests-badge');
+      if(b){ b.textContent=pending||''; b.style.display=pending>0?'inline':'none'; }
       renderRequests(items);
     }
 
@@ -582,29 +598,45 @@
       if(!items.length){ el.innerHTML='<p class="muted">まだリクエストはありません。</p>'; return; }
       el.innerHTML='';
       items.forEach(r=>{
-        const card = document.createElement('div');
-        card.style.cssText='border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:10px;background:#fff';
+        const choices = parseDateChoices(r);
+        const menuMatch = (r.note||'').match(/【メニュー】([^\n]+)/);
+        const menuText = menuMatch ? menuMatch[1] : '';
+        const userMsg = noteWithoutChoices(r.note);
         const statusColor = STATUS_COLORS[r.status]||'#6b7280';
         const statusLabel = STATUS_LABELS[r.status]||r.status;
+
+        // 希望日時の選択肢HTML（pending時のみ選択可）
+        const choicesHtml = r.status==='pending' ? choices.map((c,i)=>`
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;cursor:pointer;margin-bottom:4px">
+            <input type="radio" name="choice-${r.id}" value="${i}" ${i===0?'checked':''} style="accentColor:#10b981">
+            <span style="font-size:13px;font-weight:700;color:#374151">${c.label}:</span>
+            <span style="font-size:13px;color:#374151">${c.date} ${c.time}</span>
+          </label>
+        `).join('') : `<p style="font-size:13px;color:#6b7280">第1希望: ${choices[0].date} ${choices[0].time}${r.confirmed_date?` → 確定: ${r.confirmed_date} ${r.confirmed_time||''}`:''}</p>`;
+
+        const card = document.createElement('div');
+        card.style.cssText='border:1.5px solid #e5e7eb;border-radius:14px;padding:18px;margin-bottom:12px;background:#fff';
         card.innerHTML=`
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
-            <div>
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
                 <strong style="font-size:15px">${esc(r.user_name)}</strong>
-                <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${statusColor}20;color:${statusColor}">${statusLabel}</span>
+                <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${statusColor}20;color:${statusColor}">${statusLabel}</span>
               </div>
-              <div style="font-size:13px;color:#6b7280">
-                📅 第1希望: ${r.reserved_date||''} ${r.start_time||''} ・ 連絡先: ${esc(r.user_contact)}
-              </div>
-              ${r.note?`<div style="font-size:13px;color:#374151;margin-top:6px;padding:8px 12px;background:#f9fafb;border-radius:8px;white-space:pre-wrap">${esc(r.note)}</div>`:''}
-              ${r.provider_comment?`<div style="font-size:13px;color:#6366f1;margin-top:6px;padding:8px 12px;background:#eef2ff;border-radius:8px">掲載者コメント: ${esc(r.provider_comment)}</div>`:''}
+              <p style="font-size:12px;color:#9ca3af;margin:0 0 10px">連絡先: ${esc(r.user_contact)}</p>
+              ${menuText?`<p style="font-size:13px;color:#374151;margin:0 0 8px;font-weight:700">🎯 ${esc(menuText)}</p>`:''}
+              <div style="margin-bottom:8px">${choicesHtml}</div>
+              ${userMsg?`<div style="font-size:13px;color:#374151;padding:8px 12px;background:#f9fafb;border-radius:8px;margin-bottom:8px">${esc(userMsg)}</div>`:''}
+              ${r.provider_comment?`<div style="font-size:13px;color:#6366f1;padding:8px 12px;background:#eef2ff;border-radius:8px">掲載者コメント: ${esc(r.provider_comment)}</div>`:''}
+              ${r.counter_date?`<div style="font-size:13px;color:#6366f1;padding:8px 12px;background:#eef2ff;border-radius:8px;margin-top:6px">代替提案日時: ${r.counter_date} ${r.counter_time||''}</div>`:''}
             </div>
             ${r.status==='pending'?`
-            <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-              <button class="btn" style="font-size:12px;padding:5px 12px;background:#10b981" onclick="approveRequest('${r.id}')">承認する</button>
-              <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="rejectRequest('${r.id}')">お断り/代替提案</button>
+            <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;min-width:120px">
+              <button class="btn" style="font-size:12px;padding:8px 14px;background:#10b981;white-space:nowrap" onclick="approveRequest('${r.id}')">✓ 承認する</button>
+              <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap" onclick="showCounterModal('${r.id}')">代替提案を送る</button>
+              <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;color:#ef4444;white-space:nowrap" onclick="rejectRequest('${r.id}')">お断り</button>
             </div>`:r.status==='approved'?`
-            <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="markVisited('${r.id}')">来店確認</button>`:''}
+            <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px" onclick="markVisited('${r.id}')">来店確認</button>`:''}
           </div>
         `;
         el.appendChild(card);
@@ -613,24 +645,87 @@
 
     function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-    window.approveRequest = async function(id){
-      const res = await fetch(`/api/reservations/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved'})});
-      if(!res.ok){ const e=await res.json().catch(()=>{}); showToast('エラー: '+(e?.error||res.status)); return; }
+    // 選択した日時を取得
+    function getSelectedChoice(id) {
+      const sel = document.querySelector(`input[name="choice-${id}"]:checked`);
+      const idx = sel ? parseInt(sel.value) : 0;
+      const card = sel ? sel.closest('[style]') : null;
+      // Re-parse from DOM data
+      const labels = card ? card.querySelectorAll('label') : [];
+      const choiceLabel = labels[idx];
+      if (!choiceLabel) return null;
+      const spans = choiceLabel.querySelectorAll('span');
+      if (spans.length < 2) return null;
+      const parts = spans[1].textContent.trim().split(' ');
+      return { date: parts[0], time: parts[1] || '' };
+    }
+
+    window.approveRequest = async function(id) {
+      const choice = getSelectedChoice(id);
+      const body = { status: 'approved' };
+      if (choice) { body.confirmed_date = choice.date; body.confirmed_time = choice.time; }
+      const res = await fetch(`/api/reservations/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      if (!res.ok) { const e=await res.json().catch(()=>{}); showToast('エラー: '+(e?.error||res.status)); return; }
       await loadRequests(); showToast('承認しました');
     };
-    window.rejectRequest = async function(id){
-      const msg = prompt('お断りの場合はそのまま「OK」、代替日時を提案する場合は内容を入力してください（例: 10月15日 14時はいかがでしょうか）:');
-      if(msg===null) return;
-      const status = msg.trim() ? 'counter_proposed' : 'rejected';
-      const res = await fetch(`/api/reservations/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status, counter_proposal:msg.trim()||null})});
-      if(!res.ok){ const e=await res.json().catch(()=>{}); showToast('エラー: '+(e?.error||res.status)); return; }
-      await loadRequests(); showToast(status==='counter_proposed'?'代替提案を送りました':'お断りを送りました');
+
+    window.rejectRequest = async function(id) {
+      if (!confirm('このリクエストをお断りしますか？（ユーザーへ通知されます）')) return;
+      const res = await fetch(`/api/reservations/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:'rejected'}) });
+      if (!res.ok) { const e=await res.json().catch(()=>{}); showToast('エラー: '+(e?.error||res.status)); return; }
+      await loadRequests(); showToast('お断りを送りました');
     };
-    window.markVisited = async function(id){
-      if(!confirm('来店を確認しますか？（体験談依頼メールが送信されます）')) return;
-      const res = await fetch(`/api/reservations/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'visited'})});
-      if(!res.ok){ const e=await res.json().catch(()=>{}); showToast('エラー: '+(e?.error||res.status)); return; }
+
+    window.markVisited = async function(id) {
+      if (!confirm('来店を確認しますか？')) return;
+      const res = await fetch(`/api/reservations/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:'visited'}) });
+      if (!res.ok) { const e=await res.json().catch(()=>{}); showToast('エラー: '+(e?.error||res.status)); return; }
       await loadRequests(); showToast('来店を確認しました');
+    };
+
+    // 代替提案モーダル
+    window.showCounterModal = function(id) {
+      const existing = document.getElementById('counter-modal-overlay');
+      if (existing) existing.remove();
+      const today = new Date().toISOString().split('T')[0];
+      const timeOpts = TIME_OPTIONS.map(t=>`<option value="${t}">${t}</option>`).join('');
+      const overlay = document.createElement('div');
+      overlay.id = 'counter-modal-overlay';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
+      overlay.innerHTML = `
+        <div style="background:#fff;border-radius:18px;padding:28px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto">
+          <h2 style="font-size:16px;font-weight:800;margin:0 0 6px">代替日時を提案する</h2>
+          <p style="font-size:13px;color:#6b7280;margin:0 0 20px">希望に沿えない場合、別の日時を提案してください。ユーザーへメールで通知されます。</p>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px">提案日 *</label>
+          <input id="counter-date-input" type="date" min="${today}" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:12px">
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px">提案時間 *</label>
+          <select id="counter-time-input" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:12px">
+            <option value="">選択</option>${timeOpts}
+          </select>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px">メッセージ（任意）</label>
+          <textarea id="counter-msg-input" rows="3" placeholder="ご都合が合えばこちらの日時はいかがでしょうか" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;resize:vertical;margin-bottom:16px"></textarea>
+          <div style="display:flex;gap:8px">
+            <button onclick="submitCounter('${id}')" style="flex:1;padding:12px;background:#6366f1;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">提案を送る</button>
+            <button onclick="document.getElementById('counter-modal-overlay').remove()" style="padding:12px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:14px;cursor:pointer">キャンセル</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+    };
+
+    window.submitCounter = async function(id) {
+      const date = document.getElementById('counter-date-input').value;
+      const time = document.getElementById('counter-time-input').value;
+      const msg = document.getElementById('counter-msg-input').value;
+      if (!date || !time) { showToast('日付と時間を選択してください'); return; }
+      const res = await fetch(`/api/reservations/${id}`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ status:'counter_proposed', counter_date:date, counter_time:time, counter_proposal:msg||null })
+      });
+      if (!res.ok) { const e=await res.json().catch(()=>{}); showToast('エラー: '+(e?.error||res.status)); return; }
+      document.getElementById('counter-modal-overlay').remove();
+      await loadRequests(); showToast('代替提案を送りました');
     };
 
     // 予約タブを開いたときにロード

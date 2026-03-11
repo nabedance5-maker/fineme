@@ -4,77 +4,83 @@ import { getSupabase } from '@/lib/supabase';
 import { sendReservationStatusEmail, sendVisitConfirmedEmail } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
 
-const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
-
-export async function GET(request, { params }) {
-  const { id } = await params;
-  const { data, error } = await supabase.from('reservations').select('*').eq('id', id).single();
-  if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json(data);
+export async function GET(request, context) {
+  try {
+    const id = context.params.id;
+    const db = getSupabase();
+    const { data, error } = await db.from('reservations').select('*').eq('id', id).single();
+    if (error) return Response.json({ error: error.message }, { status: 500 });
+    return Response.json(data);
+  } catch (e) {
+    return Response.json({ error: e.message }, { status: 500 });
+  }
 }
 
-export async function PATCH(request, { params }) {
-  const { id } = await params;
-  const body = await request.json();
-  const { status, counter_proposal, action } = body;
+export async function PATCH(request, context) {
+  try {
+    const id = context.params.id;
+    const body = await request.json();
+    const { status, action, counter_proposal, counter_date, counter_time, confirmed_date, confirmed_time } = body;
 
-  // 旧action形式との後方互換
-  const newStatus = status || (action === 'approve' ? 'approved' : action === 'cancel_provider' ? 'rejected' : action === 'visited' ? 'visited' : null);
-  if (!newStatus) return Response.json({ error: '無効なステータスです' }, { status: 400 });
+    const newStatus = status || (
+      action === 'approve' ? 'approved' :
+      action === 'cancel_provider' ? 'rejected' :
+      action === 'visited' ? 'visited' : null
+    );
+    if (!newStatus) return Response.json({ error: '無効なステータスです' }, { status: 400 });
 
-  const updates = { status: newStatus };
-  if (counter_proposal) updates.provider_comment = counter_proposal;
+    const updates = { status: newStatus };
+    if (counter_proposal) updates.provider_comment = counter_proposal;
+    if (counter_date)     updates.counter_date = counter_date;
+    if (counter_time)     updates.counter_time = counter_time;
+    if (confirmed_date)   updates.confirmed_date = confirmed_date;
+    if (confirmed_time)   updates.confirmed_time = confirmed_time;
 
-  const { data, error } = await supabase
-    .from('reservations')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
+    const db = getSupabase();
+    const { data, error } = await db
+      .from('reservations').update(updates).eq('id', id).select().single();
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+    if (error) return Response.json({ error: error.message, hint: error.hint }, { status: 500 });
 
-  // 掲載者情報取得（通知用）
-  const { data: provider } = await supabase
-    .from('providers')
-    .select('name, line_user_id')
-    .eq('id', data.provider_id)
-    .single();
+    const { data: provider } = await db
+      .from('providers').select('name, email, line_user_id').eq('id', data.provider_id).single();
 
-  // ユーザーへのメール通知
-  const notifyStatuses = ['approved', 'rejected', 'counter_proposed'];
-  if (notifyStatuses.includes(newStatus)) {
-    try {
-      await sendReservationStatusEmail({
-        reservation: data,
-        status: newStatus,
-        counterProposal: counter_proposal || body.provider_comment,
-        providerName: provider?.name || body.provider_name,
-      });
-    } catch (e) { console.error('[status email]', e); }
+    const notifyStatuses = ['approved', 'rejected', 'counter_proposed'];
+    if (notifyStatuses.includes(newStatus)) {
+      try {
+        await sendReservationStatusEmail({
+          reservation: data, status: newStatus,
+          counterProposal: counter_proposal || data.provider_comment,
+          counterDate: counter_date || data.counter_date,
+          counterTime: counter_time || data.counter_time,
+          confirmedDate: confirmed_date || data.confirmed_date,
+          confirmedTime: confirmed_time || data.confirmed_time,
+          providerName: provider?.name,
+        });
+      } catch (e) { console.error('[status email]', e); }
+    }
+
+    if (newStatus === 'visited' && data.user_contact?.includes('@')) {
+      try {
+        await sendVisitConfirmedEmail({ reservation: data, userEmail: data.user_contact, userName: data.user_name, providerName: provider?.name });
+      } catch (e) { console.error('[visit email]', e); }
+    }
+
+    if (provider?.line_user_id) {
+      try {
+        let lineMsg = '';
+        if (newStatus === 'approved') {
+          lineMsg = `【Fineme】${data.user_name}様の予約を承認しました。\n確定日時: ${confirmed_date || data.reserved_date} ${confirmed_time || data.start_time}`;
+        } else if (newStatus === 'counter_proposed') {
+          lineMsg = `【Fineme】${data.user_name}様へ代替提案を送りました。\n提案日時: ${counter_date} ${counter_time}`;
+        }
+        if (lineMsg) await sendLinePush(provider.line_user_id, lineMsg);
+      } catch (e) { console.error('[status line]', e); }
+    }
+
+    return Response.json(data);
+  } catch (e) {
+    console.error('[PATCH /api/reservations]', e);
+    return Response.json({ error: e.message }, { status: 500 });
   }
-
-  // 来店確認時の体験談メール
-  if (newStatus === 'visited' && data.user_contact?.includes('@')) {
-    try {
-      await sendVisitConfirmedEmail({
-        reservation: data,
-        userEmail: data.user_contact,
-        userName: data.user_name,
-        providerName: provider?.name,
-      });
-    } catch (e) { console.error('[visit email]', e); }
-  }
-
-  // 掲載者へのLINE確認通知
-  if (provider?.line_user_id && newStatus === 'approved') {
-    try {
-      await sendLinePush(
-        provider.line_user_id,
-        `【Fineme】${data.user_name}様の予約を承認しました。\n日時: ${data.reserved_date} ${data.start_time}`
-      );
-    } catch (e) { console.error('[status line]', e); }
-  }
-
-  return Response.json(data);
 }
