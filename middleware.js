@@ -9,6 +9,14 @@ export function middleware(request) {
     url.port = ''
     return NextResponse.redirect(url, { status: 301 })
   }
+
+  // /index.html → / に 301 リダイレクト（重複コンテンツ対策）
+  if (request.nextUrl.pathname === '/index.html') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/'
+    return NextResponse.redirect(url, { status: 301 })
+  }
+
   return NextResponse.next()
 }
 
