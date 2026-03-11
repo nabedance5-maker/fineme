@@ -142,6 +142,16 @@
               <div class="form-field"><label>所要時間</label><input name="duration" placeholder="例: 60分" /></div>
             </div>
             <div class="form-field"><label>説明</label><textarea name="description" placeholder="このサービスの内容・特徴"></textarea></div>
+            <div class="form-field">
+              <label>サービス画像</label>
+              <div id="service-img-preview-wrap" style="margin-bottom:8px;display:none">
+                <img id="service-img-preview" src="" alt="サービス画像" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;border:1px solid #e5e7eb" />
+              </div>
+              <input type="file" id="service-img-input" accept="image/jpeg,image/png,image/webp" style="display:none" />
+              <button type="button" id="service-img-btn" class="btn btn-ghost" style="font-size:13px">📷 サービス画像を設定（任意）</button>
+              <p id="service-img-msg" class="muted" style="font-size:12px;margin:4px 0 0;display:none"></p>
+              <input type="hidden" name="image_url" id="service-image-url" />
+            </div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
               <input type="checkbox" name="is_featured" id="is_featured" />
               <label for="is_featured" style="margin:0;font-size:13px;font-weight:400">看板メニューとして表示する</label>
@@ -480,6 +490,12 @@
           editForm.elements['name'].value=s.name||''; editForm.elements['price'].value=s.price||'';
           editForm.elements['duration'].value=s.duration||''; editForm.elements['description'].value=s.description||'';
           editForm.elements['is_featured'].checked=!!s.is_featured; editForm.elements['_service_id'].value=s.id;
+          // サービス画像プレビュー
+          const sImgPreview = document.getElementById('service-img-preview');
+          const sImgPreviewWrap = document.getElementById('service-img-preview-wrap');
+          const sImgUrl = document.getElementById('service-image-url');
+          if(s.image_url){ if(sImgPreview) sImgPreview.src=s.image_url; if(sImgPreviewWrap) sImgPreviewWrap.style.display='block'; if(sImgUrl) sImgUrl.value=s.image_url; }
+          else { if(sImgPreviewWrap) sImgPreviewWrap.style.display='none'; if(sImgUrl) sImgUrl.value=''; }
           editCard.scrollIntoView({behavior:'smooth'});
         }));
         listEl.querySelectorAll('[data-del]').forEach(btn=>btn.addEventListener('click',async()=>{
@@ -489,20 +505,26 @@
         }));
       }
 
+      function resetServiceImgPreview(){
+        const w=document.getElementById('service-img-preview-wrap'); if(w) w.style.display='none';
+        const u=document.getElementById('service-image-url'); if(u) u.value='';
+        const m=document.getElementById('service-img-msg'); if(m){m.style.display='none';m.textContent='';}
+      }
       document.getElementById('btn-add-service')?.addEventListener('click',()=>{
         editTitle.textContent='サービスを追加'; editCard.style.display='block';
         editForm.reset(); editForm.elements['_service_id'].value='';
+        resetServiceImgPreview();
         editCard.scrollIntoView({behavior:'smooth'});
       });
       document.getElementById('service-cancel-btn')?.addEventListener('click',()=>{
-        editCard.style.display='none'; editForm.reset();
+        editCard.style.display='none'; editForm.reset(); resetServiceImgPreview();
       });
 
       editForm?.addEventListener('submit', async e=>{
         e.preventDefault();
         const fd = new FormData(editForm);
         const id = fd.get('_service_id');
-        const body = { name:fd.get('name'), price:Number(fd.get('price')), duration:fd.get('duration')||null, description:fd.get('description')||null, is_featured:!!editForm.elements['is_featured'].checked };
+        const body = { name:fd.get('name'), price:Number(fd.get('price')), duration:fd.get('duration')||null, description:fd.get('description')||null, is_featured:!!editForm.elements['is_featured'].checked, image_url:fd.get('image_url')||null };
         const url = id ? `/api/provider/services/${id}` : '/api/provider/services';
         const res = await fetch(url,{method:id?'PATCH':'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify(body)});
         if(res.ok){ editCard.style.display='none'; editForm.reset(); loadServices(); showToast('保存しました'); }
@@ -554,6 +576,48 @@
             // localStorageのキャッシュも更新
             try{ const raw=localStorage.getItem(PROVIDER_KEY); if(raw){ const d=JSON.parse(raw); d.photo_url=data.url; localStorage.setItem(PROVIDER_KEY,JSON.stringify(d)); } }catch{}
             msg.textContent = '✓ 写真を更新しました'; msg.style.color='#059669';
+          } else {
+            msg.textContent = 'エラー: ' + (data.error||'不明'); msg.style.color='#ef4444';
+          }
+        }catch(e){ msg.textContent='通信エラーが発生しました'; msg.style.color='#ef4444'; }
+        btn.disabled=false;
+        input.value='';
+      });
+    })();
+
+    // ── サービス画像アップロード ──────────────────────────────
+    (function setupServiceImageUpload(){
+      const btn = document.getElementById('service-img-btn');
+      const input = document.getElementById('service-img-input');
+      const preview = document.getElementById('service-img-preview');
+      const previewWrap = document.getElementById('service-img-preview-wrap');
+      const msg = document.getElementById('service-img-msg');
+      const hiddenUrl = document.getElementById('service-image-url');
+
+      if(btn) btn.addEventListener('click',()=> input?.click());
+      if(!input) return;
+
+      input.addEventListener('change', async()=>{
+        const file = input.files?.[0];
+        if(!file) return;
+        const token = getSupabaseToken();
+        if(!token){ showToast('ログインが必要です'); return; }
+
+        msg.textContent = 'アップロード中…'; msg.style.display='block'; btn.disabled=true;
+
+        const fd = new FormData();
+        fd.append('photo', file);
+        try{
+          const res = await fetch('/api/provider/upload-photo',{
+            method:'POST',
+            headers:{ 'Authorization': `Bearer ${token}` },
+            body: fd
+          });
+          const data = await res.json();
+          if(res.ok && data.url){
+            preview.src = data.url; previewWrap.style.display='block';
+            if(hiddenUrl) hiddenUrl.value = data.url;
+            msg.textContent = '✓ 画像を設定しました'; msg.style.color='#059669';
           } else {
             msg.textContent = 'エラー: ' + (data.error||'不明'); msg.style.color='#ef4444';
           }

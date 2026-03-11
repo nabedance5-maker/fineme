@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fineme 創業パートナー制度 | 設計書</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Hiragino Kaku Gothic Pro','Noto Sans JP',sans-serif;background:#f8f9fa;color:#111;line-height:1.7;font-size:15px}
+  .page{max-width:800px;margin:0 auto;padding:40px 24px 80px}
+  h1{font-size:28px;font-weight:800;margin-bottom:6px}
+  h2{font-size:18px;font-weight:800;margin:36px 0 14px;padding-bottom:8px;border-bottom:2px solid #e5e7eb}
+  h3{font-size:15px;font-weight:700;margin:20px 0 8px}
+  .badge{display:inline-block;padding:4px 14px;background:#111;color:#fff;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:.05em}
+  .badge-blue{background:#2563eb}
+  .badge-green{background:#059669}
+  .card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px;margin-bottom:16px}
+  .card-highlight{background:#fafbff;border:1.5px solid #818cf8}
+  .tag{font-size:11px;padding:2px 10px;background:#f3f4f6;color:#374151;border-radius:99px;display:inline-block}
+  table{width:100%;border-collapse:collapse;margin:12px 0}
+  th{text-align:left;padding:10px 14px;background:#f3f4f6;font-size:13px;font-weight:700;color:#374151}
+  td{padding:10px 14px;border-bottom:1px solid #e5e7eb;font-size:14px}
+  td:first-child{color:#6b7280;font-weight:600;width:160px}
+  .step{display:flex;gap:16px;align-items:flex-start;padding:14px 0;border-bottom:1px solid #f3f4f6}
+  .step:last-child{border:none}
+  .step-num{width:32px;height:32px;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;margin-top:2px}
+  .warn{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 16px;font-size:13px;color:#c2410c;margin:12px 0}
+  .msg-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;font-size:14px;color:#15803d;line-height:1.8}
+  .flex{display:flex;gap:12px;flex-wrap:wrap}
+  .flex>*{flex:1;min-width:200px}
+  @media print{body{background:#fff}.page{padding:20px}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ヘッダー -->
+  <p style="font-size:12px;color:#9ca3af;margin-bottom:8px">INTERNAL DOCUMENT — Fineme 創業パートナー制度 設計書 v1.0</p>
+  <h1>創業パートナー（Founding Partner）制度</h1>
+  <p style="color:#6b7280;margin-top:6px;font-size:14px">掲載者と一緒にFinemeを育てる「運営に近い」存在を作る制度</p>
+
+  <div style="display:flex;gap:8px;margin:16px 0 32px">
+    <span class="badge">3〜5社限定</span>
+    <span class="badge badge-blue">カテゴリ横断</span>
+    <span class="badge badge-green">Phase 0 即時開始</span>
+  </div>
+
+  <!-- 制度の目的 -->
+  <div class="card card-highlight">
+    <h3 style="margin-top:0">この制度が解決する問題</h3>
+    <p style="font-size:14px;color:#374151">オーナー1人では補えない「掲載者側の視点」を取り込みながら、FinemeのPhase 0（掲載者0→5件）を突破するための起点を作る。<br><br>創業パートナーは単なる「掲載者」ではなく、<strong>Finemeというプロダクトを一緒に作る共同設計者</strong>として関わる。</p>
+  </div>
+
+  <!-- 提供する価値 -->
+  <h2>創業パートナーに提供する価値</h2>
+
+  <div class="flex">
+    <div class="card" style="text-align:center;padding:20px">
+      <p style="font-size:32px;margin-bottom:8px">💳</p>
+      <p style="font-weight:800;margin-bottom:4px">月額費用の免除</p>
+      <p style="font-size:13px;color:#6b7280">月1回Zoom参加で<br>その月の掲載料（¥5,000）を無料</p>
+    </div>
+    <div class="card" style="text-align:center;padding:20px">
+      <p style="font-size:32px;margin-bottom:8px">🏅</p>
+      <p style="font-weight:800;margin-bottom:4px">創業パートナーバッジ</p>
+      <p style="font-size:13px;color:#6b7280">掲載ページに永続表示<br>（制度終了後も残る）</p>
+    </div>
+    <div class="card" style="text-align:center;padding:20px">
+      <p style="font-size:32px;margin-bottom:8px">📊</p>
+      <p style="font-weight:800;margin-bottom:4px">月次インサイド情報</p>
+      <p style="font-size:13px;color:#6b7280">ユーザー動向・検索傾向を<br>一般掲載者より先行共有</p>
+    </div>
+  </div>
+
+  <!-- オーナーが得るもの -->
+  <h2>Fineme（オーナー）が得るもの</h2>
+  <div class="card">
+    <table>
+      <tr><td>掲載者視点のフィードバック</td><td>「ユーザーからよく聞く声」「使いにくい点」を月次でインプット → プロダクト改善の根拠になる</td></tr>
+      <tr><td>紹介営業（自然発生）</td><td>「Finemeを使っている」という同業者への会話が、次の掲載者獲得に直結する</td></tr>
+      <tr><td>ブランドストーリー</td><td>「○○代表・田中氏が創業から関わっている」という事実が、次の掲載者交渉の最強の社会的証明になる</td></tr>
+      <tr><td>継続エンゲージメント</td><td>Zoomで繋がり続けることで「使い続ける理由」が生まれる</td></tr>
+    </table>
+  </div>
+
+  <!-- 条件・ルール -->
+  <h2>条件と義務（確定版）</h2>
+  <div class="card">
+    <table>
+      <tr><th>項目</th><th>内容</th></tr>
+      <tr><td>参加人数</td><td>3〜5社（カテゴリや業種で絞らず、「Finemeの思想に共鳴している人」で選ぶ）</td></tr>
+      <tr><td>掲載費用</td><td>月1回Zoom（30分）に参加した月 → 掲載料¥5,000を無料<br>参加しなかった月 → 通常プランA（¥5,000/月）として課金</td></tr>
+      <tr><td>初回予約まで</td><td>無料（通常掲載者と同条件）</td></tr>
+      <tr><td>Zoom参加の条件</td><td>参加 + その月の「気づき・ユーザーの声」を1件LINEで報告（5行でも可）</td></tr>
+      <tr><td>紹介義務</td><td>義務なし（努力目標として「在籍中に最低1社に紹介活動を行う」ことを期待する旨を伝える）</td></tr>
+      <tr><td>制度の上限期間</td><td>3年間（2026〜2028年）。以降は通常プランに移行するが、創業パートナーバッジと称号は永続）</td></tr>
+      <tr><td>申請方法</td><td>オーナーからの個別招待のみ（公募なし）</td></tr>
+    </table>
+  </div>
+
+  <div class="warn">
+    ⚠️ 「参加すれば無料」という構造のため、参加の実態が伴わない「形式参加」を防ぐことが重要。<br>
+    「気づき1件のLINE報告」を条件に含めることで、名ばかりの参加を防ぐ。
+  </div>
+
+  <!-- 月次ミーティング設計 -->
+  <h2>月次ミーティング（Zoom 30分）の設計</h2>
+  <div class="card">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div>
+        <p style="font-weight:700;margin-bottom:4px">Finemeからの報告（5分）</p>
+        <p style="font-size:13px;color:#6b7280">今月のユーザー動向・検索されたカテゴリ・よくある悩み。「あなたの掲載ページへの流入は〇〇件でした」も含める。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div>
+        <p style="font-weight:700;margin-bottom:4px">パートナーからの報告（5〜10分）</p>
+        <p style="font-size:13px;color:#6b7280">今月印象に残ったユーザーの声・使ってみて気になった点・改善してほしいこと。LINEで送ってもらったレポートをベースに話す。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div>
+        <p style="font-weight:700;margin-bottom:4px">ディスカッション（10分）</p>
+        <p style="font-size:13px;color:#6b7280">次のFinemeの方向性・新機能の相談。「こういう機能があったらどう思いますか？」という形でフィードバックを取る。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div>
+        <p style="font-weight:700;margin-bottom:4px">次月の約束（5分）</p>
+        <p style="font-size:13px;color:#6b7280">「来月の気づきレポートのテーマ」を1つ決めて終わる（任意だが設定すると動きやすい）。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- LINEアプローチ文 -->
+  <h2>LINEアプローチ文テンプレート</h2>
+  <p style="font-size:13px;color:#6b7280;margin-bottom:12px">既存の知人・温かいリードに送る場合のテンプレート。</p>
+
+  <div class="card" style="margin-bottom:16px">
+    <p style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:10px">【パターンA：PTの知人など、Finemeを知っている人向け】</p>
+    <div class="msg-box">
+      ちょっと相談があるんだけど、Finemeって今掲載者を少しずつ集め始めてるんだよね。<br><br>
+      その中で「創業パートナー」として、数人だけ特別な形で一緒に動いてくれる人を探してて。<br><br>
+      具体的には、月1回30分のZoomで使ってみた感想や気になることを話してもらうだけ。その月の掲載料はゼロになる。あとFinemeが育ってきたときに「最初から関わっていた」というポジションが残る。<br><br>
+      もし興味あれば、もう少し詳しく話せる機会もらえる？
+    </div>
+  </div>
+
+  <div class="card">
+    <p style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:10px">【パターンB：初対面・Instagram DM後の返信がある人向け】</p>
+    <div class="msg-box">
+      ありがとうございます！ちなみにFinemeでは今、数社だけ「創業パートナー」として特別に関わっていただける方を探していて。<br><br>
+      月1回30分のオンラインミーティングで現場の声を聞かせてもらうだけで、その月の掲載料がかからない仕組みです。Finemeがある程度育ってきたとき、「最初から一緒に作った」という関係で長く付き合いたいと思っています。<br><br>
+      もし興味あれば詳しくお話しできますか？
+    </div>
+  </div>
+
+  <!-- よくある質問（想定） -->
+  <h2>想定Q&amp;A（パートナー候補への説明用）</h2>
+  <div class="card">
+    <h3 style="margin-top:0">Q. Zoom参加を忘れた月はどうなりますか？</h3>
+    <p style="font-size:14px;color:#374151">その月は通常の掲載料（¥5,000）が発生します。翌月また参加すれば無料に戻ります。ペナルティはありません。</p>
+
+    <h3>Q. 紹介しないとダメですか？</h3>
+    <p style="font-size:14px;color:#374151">義務ではありません。ただ「在籍中に誰かに話す機会があれば」という期待はお伝えしています。紹介報酬（¥500/月）は通常掲載者と同様に適用されます。</p>
+
+    <h3>Q. 3年後はどうなりますか？</h3>
+    <p style="font-size:14px;color:#374151">通常プランに移行します。「創業パートナー」のバッジと称号は掲載ページに永続的に残ります。Finemeが成長していれば、その実績が御社の信頼性にもつながると思います。</p>
+
+    <h3>Q. どんな情報を共有するのですか？</h3>
+    <p style="font-size:14px;color:#374151">ユーザーが検索しているカテゴリの傾向、よく来る悩みのパターン、掲載ページへのアクセス数などです。競合他社の具体的な情報はお伝えしません。</p>
+  </div>
+
+  <!-- 内部メモ -->
+  <h2>内部メモ（オーナーのみ）</h2>
+  <div class="warn" style="background:#faf5ff;border-color:#e9d5ff;color:#7c3aed">
+    <strong>選定基準（重要）：</strong><br>
+    カテゴリバランスより「Finemeの思想に共鳴しているか」を優先する。「ユーザーが変わること」に価値を感じている人でないと、フィードバックが表面的になる。<br><br>
+    PTの知人はすでに条件に合致。次の候補は「外見コンサル」か「眉毛サロン」の個人経営者が優先度高い。
+  </div>
+
+  <div style="margin-top:32px;padding-top:24px;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af;text-align:center">
+    Fineme 創業パートナー制度 設計書 v1.0 &nbsp;|&nbsp; 更新: 2026-03-11 &nbsp;|&nbsp; 内部資料・配布禁止
+  </div>
+
+</div>
+</body>
+</html>

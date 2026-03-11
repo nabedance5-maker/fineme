@@ -186,25 +186,29 @@ function ServiceCard({ service, onReserve, featured }) {
   return (
     <div style={{
       background: '#fff', border: featured ? '1.5px solid #fcd34d' : '1.5px solid #e5e7eb',
-      borderRadius: '14px', padding: '18px 20px',
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap',
+      borderRadius: '14px', overflow: 'hidden',
     }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-          <h3 style={{ fontSize: '15px', fontWeight: '800', margin: 0, color: '#111' }}>{service.name}</h3>
-          {featured && <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 8px', background: '#fef3c7', color: '#d97706', borderRadius: '99px', flexShrink: 0 }}>看板</span>}
+      {service.image_url && (
+        <img src={service.image_url} alt={service.name} style={{ width: '100%', height: '180px', objectFit: 'cover', display: 'block' }} />
+      )}
+      <div style={{ padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', margin: 0, color: '#111' }}>{service.name}</h3>
+            {featured && <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 8px', background: '#fef3c7', color: '#d97706', borderRadius: '99px', flexShrink: 0 }}>看板</span>}
+          </div>
+          {service.duration && <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 6px' }}>⏱ {service.duration}</p>}
+          {service.description && <p style={{ fontSize: '13px', color: '#6b7280', margin: 0, lineHeight: '1.6' }}>{service.description}</p>}
         </div>
-        {service.duration && <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 6px' }}>⏱ {service.duration}</p>}
-        {service.description && <p style={{ fontSize: '13px', color: '#6b7280', margin: 0, lineHeight: '1.6' }}>{service.description}</p>}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px', flexShrink: 0 }}>
-        <span style={{ fontSize: '18px', fontWeight: '800', color: '#111' }}>¥{service.price.toLocaleString()}</span>
-        <button
-          onClick={() => onReserve(service)}
-          style={{ padding: '8px 18px', background: '#111', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}
-        >
-          このメニューで予約
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px', flexShrink: 0 }}>
+          <span style={{ fontSize: '18px', fontWeight: '800', color: '#111' }}>¥{service.price.toLocaleString()}</span>
+          <button
+            onClick={() => onReserve(service)}
+            style={{ padding: '8px 18px', background: '#111', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >
+            このメニューで予約
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -415,6 +419,7 @@ function ProviderPageContent() {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [selectedService, setSelectedService] = useState(null);
   const [submitted, setSubmitted] = useState(false);
+  const [stories, setStories] = useState([]);
 
   useEffect(() => {
     if (!slug) return;
@@ -436,6 +441,14 @@ function ProviderPageContent() {
   useEffect(() => {
     if (provider && diagnosis) setMatchScore(calcMatch(provider, diagnosis));
   }, [provider, diagnosis]);
+
+  useEffect(() => {
+    if (!provider?.id) return;
+    fetch(`/api/stories?providerId=${provider.id}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setStories(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, [provider?.id]);
 
   // メニューから予約へ（サービスを選択した状態で予約タブへ）
   const handleReserveFromMenu = useCallback((service) => {
@@ -462,40 +475,38 @@ function ProviderPageContent() {
     <div style={{ maxWidth: '780px', margin: '0 auto', padding: '32px 20px 80px' }}>
 
       {/* ヒーロー */}
-      {provider.photo_url && (
-        <img
-          src={provider.photo_url}
-          alt={provider.name}
-          style={{ width: '100%', maxHeight: '360px', objectFit: 'cover', borderRadius: '18px', border: '1px solid #e5e7eb', marginBottom: '24px' }}
-        />
-      )}
-      <div style={{ marginBottom: '28px' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
-          <span style={{ fontSize: '12px', fontWeight: '700', padding: '4px 12px', background: '#111', color: '#fff', borderRadius: '99px' }}>{catLabel}</span>
-          {provider.area && <span style={{ fontSize: '12px', padding: '4px 12px', background: '#f3f4f6', color: '#374151', borderRadius: '99px' }}>📍 {provider.area}</span>}
-        </div>
-        <h1 style={{ fontSize: 'clamp(22px,4vw,30px)', fontWeight: '800', margin: '0 0 10px', lineHeight: '1.3' }}>{provider.name}</h1>
-        {provider.catchphrase && <p style={{ fontSize: '17px', color: '#374151', margin: '0 0 20px', lineHeight: '1.6', fontWeight: '600' }}>{provider.catchphrase}</p>}
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-          {provider.price_from && (
-            <span style={{ padding: '10px 18px', border: '1.5px solid #e5e7eb', borderRadius: '12px', fontSize: '15px', fontWeight: '700', color: '#374151' }}>
-              ¥{provider.price_from.toLocaleString()}〜
-            </span>
-          )}
-          <button
-            onClick={() => setActiveTab('reservation')}
-            style={{ padding: '12px 24px', background: '#111', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}
-          >
-            予約・相談リクエストを送る
-          </button>
-          {services && services.length > 0 && (
-            <button
-              onClick={() => setActiveTab('menu')}
-              style={{ padding: '12px 20px', background: '#fff', color: '#111', border: '1.5px solid #e5e7eb', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}
-            >
-              メニューを見る
+      <div style={{
+        position: 'relative', borderRadius: '18px', overflow: 'hidden',
+        marginBottom: '28px', minHeight: '320px',
+        background: provider.photo_url
+          ? `url(${provider.photo_url}) center/cover no-repeat`
+          : 'linear-gradient(135deg, #111 0%, #374151 100%)',
+      }}>
+        {/* グラデーションオーバーレイ */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0.72) 100%)' }} />
+        {/* テキスト */}
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minHeight: '320px', padding: '28px 28px 32px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
+            <span style={{ fontSize: '12px', fontWeight: '700', padding: '4px 12px', background: 'rgba(255,255,255,0.2)', color: '#fff', borderRadius: '99px', backdropFilter: 'blur(4px)' }}>{catLabel}</span>
+            {provider.area && <span style={{ fontSize: '12px', padding: '4px 12px', background: 'rgba(255,255,255,0.15)', color: '#fff', borderRadius: '99px' }}>📍 {provider.area}</span>}
+          </div>
+          <h1 style={{ fontSize: 'clamp(22px,4vw,30px)', fontWeight: '800', margin: '0 0 8px', lineHeight: '1.3', color: '#fff' }}>{provider.name}</h1>
+          {provider.catchphrase && <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.88)', margin: '0 0 20px', lineHeight: '1.6', fontWeight: '600' }}>{provider.catchphrase}</p>}
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {provider.price_from && (
+              <span style={{ padding: '10px 18px', border: '1.5px solid rgba(255,255,255,0.4)', borderRadius: '12px', fontSize: '15px', fontWeight: '700', color: '#fff', backdropFilter: 'blur(4px)', background: 'rgba(255,255,255,0.1)' }}>
+                ¥{provider.price_from.toLocaleString()}〜
+              </span>
+            )}
+            <button onClick={() => setActiveTab('reservation')} style={{ padding: '12px 24px', background: '#fff', color: '#111', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
+              予約・相談リクエストを送る
             </button>
-          )}
+            {services && services.length > 0 && (
+              <button onClick={() => setActiveTab('menu')} style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.4)', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
+                メニューを見る
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -520,13 +531,31 @@ function ProviderPageContent() {
         />
       )}
 
-      {/* 体験談（空状態） */}
+      {/* 体験談 */}
       {activeTab === 'overview' && (
-        <div style={{ background: '#f9fafb', border: '1px dashed #d1d5db', borderRadius: '16px', padding: '24px', marginTop: '16px', textAlign: 'center' }}>
-          <p style={{ fontSize: '14px', color: '#9ca3af', margin: 0 }}>
-            まだ体験談はありません。<br />
-            <span style={{ fontSize: '13px' }}>このサービスを利用した方が最初の体験談を投稿できます。</span>
-          </p>
+        <div style={{ marginTop: '16px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: '800', margin: '0 0 14px' }}>体験談</h2>
+          {stories.length === 0 ? (
+            <div style={{ background: '#f9fafb', border: '1px dashed #d1d5db', borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
+              <p style={{ fontSize: '14px', color: '#9ca3af', margin: 0 }}>まだ体験談はありません。</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {stories.map(s => (
+                <div key={s.id} style={{ padding: '18px 20px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '14px' }}>
+                  <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px', fontWeight: '700' }}>Q. 外見を変える前の悩み</p>
+                  <p style={{ fontSize: '14px', color: '#374151', margin: '0 0 12px', lineHeight: '1.7' }}>{s.concern_before}</p>
+                  <p style={{ fontSize: '12px', color: '#059669', margin: '0 0 8px', fontWeight: '700' }}>→ どんな変化があったか</p>
+                  <p style={{ fontSize: '14px', color: '#374151', margin: '0 0 12px', lineHeight: '1.7' }}>{s.change_after}</p>
+                  {s.tags && s.tags.length > 0 && (
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {s.tags.map(t => <span key={t} style={{ fontSize: '11px', padding: '3px 10px', background: '#f3f4f6', color: '#374151', borderRadius: '99px' }}>#{t}</span>)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

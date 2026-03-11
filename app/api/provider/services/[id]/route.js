@@ -19,7 +19,7 @@ export async function PATCH(request, { params }) {
 
   const { id } = params;
   const body = await request.json();
-  const allowed = ['name','description','price','duration','is_featured','sort_order'];
+  const allowed = ['name','description','price','duration','is_featured','sort_order','image_url'];
   const updates = {};
   for (const k of allowed) { if (body[k] !== undefined) updates[k] = body[k]; }
   if (updates.price) updates.price = Number(updates.price);

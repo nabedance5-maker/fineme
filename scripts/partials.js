@@ -109,6 +109,7 @@ async function injectInto(selector, relPath){
         ['/pages/admin/index.html','ダッシュボード'],
         ['/pages/admin/providers.html','掲載者管理'],
         ['/pages/admin/features.html','特集作成・編集'],
+        ['/pages/admin/stories.html','体験談管理'],
         ['/pages/admin/analytics.html','アクセス分析']
       ];
       links.forEach(([href,text])=>{ const li = document.createElement('li'); li.appendChild(mkLink(href,text)); ul.appendChild(li); });

@@ -32,12 +32,12 @@ export async function POST(request) {
   const provider = await getProviderFromToken(token);
   if (!provider) return Response.json({ error: 'Not found' }, { status: 404 });
 
-  const { name, description, price, duration, is_featured, sort_order } = await request.json();
+  const { name, description, price, duration, is_featured, sort_order, image_url } = await request.json();
   if (!name || !price) return Response.json({ error: 'name, price は必須です' }, { status: 400 });
 
   const { data, error } = await supabase
     .from('provider_services')
-    .insert({ provider_id: provider.id, name, description, price: Number(price), duration, is_featured: !!is_featured, sort_order: Number(sort_order)||0 })
+    .insert({ provider_id: provider.id, name, description, price: Number(price), duration, is_featured: !!is_featured, sort_order: Number(sort_order)||0, image_url: image_url || null })
     .select().single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
