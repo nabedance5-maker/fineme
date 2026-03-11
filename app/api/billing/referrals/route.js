@@ -58,7 +58,7 @@ export async function GET(request) {
   try {
     let rewardsQuery = sb
       .from('referral_rewards')
-      .select('referrer_id, referred_id, month, amount, status');
+      .select('referrer_id, referred_id, reward_month, amount, status');
 
     if (referrerId) {
       rewardsQuery = rewardsQuery.eq('referrer_id', referrerId);
