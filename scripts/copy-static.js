@@ -2,25 +2,38 @@
  * copy-static.js
  * Vercel ビルド前に実行: 静的HTML/CSS/JS/JSON を public/ にコピーして
  * Next.js の CDN 配信対象にする。
- *
- * ディレクトリ構造を保持するため相対パスは壊れない:
- *   pages/admin/providers.html  →  public/pages/admin/providers.html
- *   assets/styles/style.css     →  public/assets/styles/style.css
  */
-const { cpSync, mkdirSync, existsSync, readdirSync, statSync } = require('fs');
-const { resolve, join } = require('path');
+const fs = require('fs');
+const path = require('path');
 
-const ROOT = resolve(__dirname, '..');
-const PUBLIC = resolve(ROOT, 'public');
+const ROOT = path.resolve(__dirname, '..');
+const PUBLIC = path.resolve(ROOT, 'public');
+
+let copied = 0;
+let errors = 0;
+
+function safeCopy(src, dest) {
+  try {
+    fs.copyFileSync(src, dest);
+    copied++;
+  } catch (e) {
+    console.error(`[copy-static] FAILED: ${src} → ${dest}: ${e.message}`);
+    errors++;
+  }
+}
 
 // assets, components, data, scripts, feature, diagnosis は丸ごとコピー
 const FULL_COPY = ['assets', 'components', 'data', 'styles', 'scripts', 'feature', 'diagnosis'];
 for (const dir of FULL_COPY) {
-  const src = resolve(ROOT, dir);
-  if (!existsSync(src)) continue;
-  const dest = resolve(PUBLIC, dir);
-  cpSync(src, dest, { recursive: true, force: true });
-  console.log(`Copied ${dir}/ → public/${dir}/`);
+  const src = path.resolve(ROOT, dir);
+  if (!fs.existsSync(src)) continue;
+  const dest = path.resolve(PUBLIC, dir);
+  try {
+    fs.cpSync(src, dest, { recursive: true, force: true });
+    console.log(`Copied ${dir}/ → public/${dir}/`);
+  } catch (e) {
+    console.error(`[copy-static] cpSync failed for ${dir}: ${e.message}`);
+  }
 }
 
 // pages/ は .html のみコピー（_app.tsx, api/ などの Next.js ソースは除外）
@@ -28,37 +41,57 @@ const EXCLUDE_DIRS = new Set(['api', 'node_modules']);
 const EXCLUDE_EXTS = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs']);
 
 function copyHtml(srcDir, destDir) {
-  if (!existsSync(srcDir)) return;
-  mkdirSync(destDir, { recursive: true });
+  if (!fs.existsSync(srcDir)) return;
+  try {
+    fs.mkdirSync(destDir, { recursive: true });
+  } catch (e) {
+    console.error(`[copy-static] mkdirSync failed: ${destDir}: ${e.message}`);
+    return;
+  }
 
-  for (const entry of readdirSync(srcDir)) {
-    const srcPath = join(srcDir, entry);
-    const destPath = join(destDir, entry);
-    const stat = statSync(srcPath);
+  let entries;
+  try {
+    entries = fs.readdirSync(srcDir);
+  } catch (e) {
+    console.error(`[copy-static] readdirSync failed: ${srcDir}: ${e.message}`);
+    return;
+  }
 
-    if (stat.isDirectory()) {
-      if (!EXCLUDE_DIRS.has(entry)) copyHtml(srcPath, destPath);
-    } else {
-      const ext = entry.slice(entry.lastIndexOf('.'));
-      if (!EXCLUDE_EXTS.has(ext)) {
-        cpSync(srcPath, destPath, { force: true });
+  for (const entry of entries) {
+    const srcPath = path.join(srcDir, entry);
+    const destPath = path.join(destDir, entry);
+    try {
+      const stat = fs.statSync(srcPath);
+      if (stat.isDirectory()) {
+        if (!EXCLUDE_DIRS.has(entry)) copyHtml(srcPath, destPath);
+      } else {
+        const ext = entry.slice(entry.lastIndexOf('.'));
+        if (!EXCLUDE_EXTS.has(ext)) {
+          safeCopy(srcPath, destPath);
+        }
       }
+    } catch (e) {
+      console.error(`[copy-static] stat failed: ${srcPath}: ${e.message}`);
+      errors++;
     }
   }
 }
 
-copyHtml(resolve(ROOT, 'pages'), resolve(PUBLIC, 'pages'));
+copyHtml(path.resolve(ROOT, 'pages'), path.resolve(PUBLIC, 'pages'));
 console.log('Copied pages/**/*.html → public/pages/**/*.html');
 
-// ルート直下の静的 HTML (index.html, 404.html など)
-const ROOT_HTMLS = ['index.html', '404.html', 'result.html',
-                    'robots.txt', 'sitemap.xml', 'favicon.ico'];
+// ルート直下の静的 HTML
+const ROOT_HTMLS = ['index.html', '404.html', 'result.html', 'robots.txt', 'sitemap.xml', 'favicon.ico'];
 for (const file of ROOT_HTMLS) {
-  const src = resolve(ROOT, file);
-  if (existsSync(src)) {
-    cpSync(src, resolve(PUBLIC, file), { force: true });
+  const src = path.resolve(ROOT, file);
+  const dest = path.resolve(PUBLIC, file);
+  if (fs.existsSync(src)) {
+    safeCopy(src, dest);
     console.log(`Copied ${file} → public/${file}`);
   }
 }
 
-console.log('Static copy complete.');
+console.log(`Static copy complete. ${copied} files copied, ${errors} errors.`);
+if (errors > 0) {
+  console.error(`[copy-static] ${errors} file(s) failed to copy. Check logs above.`);
+}
