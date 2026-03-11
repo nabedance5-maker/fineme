@@ -364,8 +364,8 @@
     const areas = p.concern_areas || {};
     const LEVEL_TEXT  = ['全然','少し','そこそこ','かなり','すごく'];
     const LEVEL_TEXT_FULL = ['気にならない','少し気になる','そこそこ気になる','かなり気になる','すごく気になる'];
-    const CONCERN_ICONS = { hair:'💇‍♂️', skin:'✨', eyebrow:'✂️', body:'💪', fashion:'👔', photo:'📸', overall:'🪞' };
-    const CONCERN_NAMES = { hair:'髪型・髪', skin:'肌・ニキビ', eyebrow:'眉毛', body:'体型・体', fashion:'服・コーデ', photo:'写真映り', overall:'全体の雰囲気' };
+    const CONCERN_ICONS = { hair:'💇‍♂️', skin:'✨', eyebrow:'✂️', body:'💪', fashion:'👔', photo:'📸', overall:'🪞', beard:'💈', teeth:'😁', posture:'🚶' };
+    const CONCERN_NAMES = { hair:'髪型・髪', skin:'肌・ニキビ', eyebrow:'眉毛', body:'体型・体', fashion:'服・コーデ', photo:'写真映り', overall:'全体の雰囲気', beard:'ひげ・無精ひげ', teeth:'歯・口元', posture:'姿勢・雰囲気' };
 
     // ────────────────────────────────────────────────────────────────
     // 1. ヒーロー文（深化版）trigger × scene 全組み合わせ
@@ -550,8 +550,8 @@
       const sorted = Object.entries(areas).filter(([,v])=>v>0).sort(([,a],[,b])=>b-a);
       if(sorted.length===0) return null;
       const [topId, topLevel] = sorted[0];
-      const ICONS = { hair:'💇‍♂️', skin:'✨', eyebrow:'✂️', body:'💪', fashion:'👔', photo:'📸', overall:'🧑‍⚕️' };
-      const NAMES = { hair:'髪型・髪', skin:'肌・ニキビ', eyebrow:'眉毛', body:'体型・体', fashion:'服・コーデ', photo:'写真写り', overall:'外見コンサル' };
+      const ICONS = { hair:'💇‍♂️', skin:'✨', eyebrow:'✂️', body:'💪', fashion:'👔', photo:'📸', overall:'🧑‍⚕️', beard:'💈', teeth:'😁', posture:'🚶' };
+      const NAMES = { hair:'髪型・髪', skin:'肌・ニキビ', eyebrow:'眉毛', body:'体型・体', fashion:'服・コーデ', photo:'写真写り', overall:'外見コンサル', beard:'ひげ・無精ひげ', teeth:'歯・口元', posture:'姿勢・雰囲気' };
       const COPY = {
         hair:'髪型は第一印象の30%を占める。ここを変えると「なんかいい感じ」に見える。美容院1回で体感できる変化がある。',
         skin:'肌は近距離で一番差が出る。清潔感の土台であり、ここを整えると全体の印象が底上げされる。',
@@ -560,8 +560,11 @@
         fashion:'サイズ感と色を整えるだけで印象は別物になる。体型より「選び方」で変えられる部分。',
         photo:'写真映りの問題は実物がどれだけ良くても解決しない。プロに撮ってもらうことがマッチング結果を変える最短解。',
         overall:'パーツ単位で見ても改善しにくい状態。外見コンサルで全体像を把握してから動くのが最も効率的。',
+        beard:'ひげは清潔感を左右する最大の要因のひとつ。毎日剃る手間を含め、脱毛で根本解決するのが長期的に最も合理的。',
+        teeth:'歯・口元は笑顔と第一印象の核心。ここが整うと自信が外に出やすくなる。ホワイトニングから始めることで即効性もある。',
+        posture:'姿勢と歩き方は「存在感」を作る。外見のパーツを変えても姿勢が悪いと印象は変わらない。外見コンサルで全体像から診てもらうのが近道。',
       };
-      const CATS = { hair:'hair', skin:'esthetic', eyebrow:'eyebrow', body:'gym', fashion:'fashion', photo:'photo', overall:'consulting' };
+      const CATS = { hair:'hair', skin:'esthetic', eyebrow:'eyebrow', body:'gym', fashion:'fashion', photo:'photo', overall:'consulting', beard:'hairremoval', teeth:'whitening', posture:'consulting' };
       const urgencyNote = p.urgency==='high' ? ' 締め切りがある今、ここが最短ルート。' : '';
       return {
         icon: ICONS[topId]||'🎯', name: NAMES[topId]||topId,
@@ -595,7 +598,10 @@
         body:    { icon:'🏋️‍♂️', label:'パーソナルジム', reason:'体型が服の見え方を変える', cat:'gym' },
         fashion: { icon:'👔', label:'ファッション', reason:'サイズ感と色で別人になれる', cat:'fashion' },
         photo:   { icon:'📸', label:'プロフィール写真', reason:'アプリ結果を直接変える', cat:'photo' },
-        overall: { icon:'🧑‍⚕️', label:'外見トータルサポート', reason:'優先順位を整理できる', cat:'consulting' }
+        overall: { icon:'🧑‍⚕️', label:'外見トータルサポート', reason:'優先順位を整理できる', cat:'consulting' },
+        beard:   { icon:'💈', label:'ひげ脱毛', reason:'清潔感を根本から変える', cat:'hairremoval' },
+        teeth:   { icon:'😁', label:'歯のホワイトニング', reason:'笑顔と口元の印象を変える', cat:'whitening' },
+        posture: { icon:'🚶', label:'外見トータルサポート', reason:'姿勢・雰囲気は全体から整える', cat:'consulting' }
       };
       return Object.entries(areas).filter(([,v])=>v>0).sort(([,a],[,b])=>b-a).slice(0,3).map(([id])=>MAP[id]).filter(Boolean);
     }
