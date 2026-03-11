@@ -2,17 +2,15 @@
   <div class="provider-sidebar-inner">
     <div class="provider-brand">Fineme Provider</div>
     <nav class="provider-nav">
-      <a href="/pages/provider/index.html">ダッシュボード</a>
-      <a href="/pages/provider/service_form.html">サービス</a>
-      <a href="/pages/provider/photo_settings.html">写真</a>
-      <a href="/pages/provider/profile.html">店舗プロフィール</a>
-      <a href="/pages/provider/staff.html">スタッフプロフィール</a>
-      <a href="/pages/provider/schedule.html">スケジュール</a>
-      <a href="/pages/provider/reservations.html">予約一覧</a>
-      <a href="/pages/provider/compatibility.html">相性の見え方</a>
-      <a href="/pages/provider/philosophy.html">Finemeの考え方</a>
-  <a href="/pages/provider/requests.html" id="prov-requests-link">予約リクエスト</a>
-  <span id="prov-notifs-inline-badge" style="display:inline-block;margin-left:8px;min-width:22px;padding:2px 8px;border-radius:999px;background:#ef4444;color:#fff;font-size:12px;vertical-align:middle;" hidden></span>
+      <a href="/pages/provider/index.html">📊 ダッシュボード</a>
+      <a href="/pages/provider/index.html?tab=requests" id="prov-requests-link">
+        📬 予約リクエスト
+        <span id="prov-notifs-inline-badge" style="display:inline-block;margin-left:6px;min-width:20px;padding:1px 7px;border-radius:999px;background:#ef4444;color:#fff;font-size:11px;vertical-align:middle;" hidden></span>
+      </a>
+      <a href="/pages/provider/index.html?tab=profile">🧑 プロフィール</a>
+      <a href="/pages/provider/index.html?tab=service">📋 サービス設定</a>
+      <a href="/pages/provider/index.html?tab=publish">🌐 公開設定</a>
+      <a href="/pages/provider/index.html?tab=billing">💳 課金・プラン</a>
     </nav>
     <div class="provider-session" id="provider-session-area">
       <!-- セッション情報（ログイン名）とログアウトボタンをJSで注入 -->

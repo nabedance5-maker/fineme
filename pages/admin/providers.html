@@ -188,7 +188,7 @@
                 <span class="badge ${statusClass}">${statusLabel}</span>
                 <span class="badge badge-gray">${catLabel(p.main_category)}</span>
                 ${p.billing_started?'<span class="badge badge-green">課金中</span>':''}
-                ${p.plan?`<span class="badge badge-gray">プラン${p.plan}</span>`:''}
+                ${p.plan?`<span class="badge badge-gray">${{A:'プランA',B:'プランB',C:'プランC',free:'特例（無料）'}[p.plan]||p.plan}</span>`:''}
               </div>
               <div style="font-size:12px;color:#6b7280;margin-top:4px">
                 ${p.area?`📍 ${esc(p.area)} `:''}${p.price_from?`¥${Number(p.price_from).toLocaleString()}〜 `:''}
