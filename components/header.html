@@ -24,6 +24,16 @@
     white-space:nowrap !important;
     text-decoration:none !important;
   }
+  .points-badge {
+    display:inline-flex; align-items:center;
+    font-size:12px; font-weight:700;
+    background:#f0fdf4; color:#15803d;
+    padding:4px 10px; border-radius:99px;
+    border:1px solid #bbf7d0;
+    white-space:nowrap;
+  }
+  #header-auth-area { display:inline-flex; align-items:center; gap:8px; }
+  #header-auth-area a { white-space:nowrap; }
 </style>
 <div class="navbar">
   <div class="container navbar-inner">
@@ -34,9 +44,13 @@
     <div class="nav-group" id="nav-menu">
       <nav class="nav-links">
         <a href="/search">検索</a>
+        <a href="/pages/about.html">Finemeとは？</a>
         <a href="/articles">特集</a>
-        <a href="/pages/mypage/index.html">マイページ</a>
+        <span id="header-points" hidden>
+          <span id="header-points-badge" class="points-badge"></span>
+        </span>
         <a href="/pages/diagnosis.html" class="btn-diagnosis">診断する</a>
+        <span id="header-auth-area"></span>
       </nav>
     </div>
   </div>
