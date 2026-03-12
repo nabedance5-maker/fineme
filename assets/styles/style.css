@@ -991,5 +991,6 @@ h1, .section-title { font-family: 'Noto Serif JP', serif; color:var(--ik-primary
   display:block;
 }
 @media (min-width:1025px) {
-  #site-header .nav-links > a:first-of-type { margin-left:auto !important; }
+  #site-header .nav-links > a:first-of-type,
+  .navbar .nav-links > a:first-child { margin-left:auto !important; }
 }
