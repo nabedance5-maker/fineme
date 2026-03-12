@@ -319,7 +319,7 @@ async function inject(selector, relativePath){
   }
 
   Promise.all([
-    inject('#site-header','components/header.html?v=20251126'),
+    inject('#site-header','components/header.html?v=20260312'),
     inject('#site-footer','components/footer.html?v=20251126')
   ]).then(() => {
   const y = document.querySelector('[data-year]');
