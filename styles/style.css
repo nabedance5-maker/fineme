@@ -50,3 +50,30 @@
   .search-active-filters .badge { padding: 4px 8px; font-size: 12px; }
   .search-active-filters .btn { padding: 8px 10px; font-size: 13px; }
 }
+
+/* ── ヘッダー固有スタイル（Navbar.js用） ───────────────── */
+.btn-diagnosis {
+  background: linear-gradient(90deg, #2563eb, #0e3760) !important;
+  color: #fff !important;
+  padding: 7px 14px !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  white-space: nowrap !important;
+  text-decoration: none !important;
+  display: inline-block !important;
+}
+.btn-diagnosis:hover { opacity: .88 !important; color: #fff !important; }
+.points-badge {
+  display: inline-flex; align-items: center;
+  font-size: 12px; font-weight: 700;
+  background: #f0fdf4; color: #15803d;
+  padding: 4px 10px; border-radius: 99px;
+  border: 1px solid #bbf7d0;
+  white-space: nowrap;
+}
+#header-auth-area { display: inline-flex; align-items: center; gap: 8px; }
+@media (min-width: 1025px) {
+  .navbar .nav-links > a:first-child,
+  #site-header .nav-links > a:first-of-type { margin-left: auto !important; }
+}
