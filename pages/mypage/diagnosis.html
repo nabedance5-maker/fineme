@@ -66,8 +66,26 @@
     const host = document.getElementById('diag-host');
 
     const LEVEL_TEXT = ['全然','少し','そこそこ','かなり','すごく'];
-    const CONCERN_ICONS = { hair:'💇‍♂️', skin:'✨', eyebrow:'✂️', body:'💪', fashion:'👔', photo:'📸', overall:'🪞' };
-    const CONCERN_NAMES = { hair:'髪型・髪', skin:'肌・ニキビ', eyebrow:'眉毛', body:'体型・体', fashion:'服・コーデ', photo:'写真写り', overall:'全体の雰囲気' };
+    const CONCERN_ICONS = {
+      hair:'💇‍♂️', skin:'✨', eyebrow:'✂️', body:'💪', fashion:'👔',
+      beard:'💈', teeth_whitening:'🦷', teeth_alignment:'😬', teeth_odor:'💨',
+      posture:'🚶', overall:'🪞'
+    };
+    const CONCERN_NAMES = {
+      hair:'髪型・髪', skin:'肌・ニキビ', eyebrow:'眉毛', body:'体型・体', fashion:'服・コーデ',
+      beard:'ひげ', teeth_whitening:'歯の黄ばみ', teeth_alignment:'歯並び', teeth_odor:'口臭',
+      posture:'姿勢', overall:'トータルで整えたい'
+    };
+
+    // v8（care_levels形式）→ concern_areas に変換
+    function careLevelsToConcernAreas(careLevels){
+      const map = { concerned:4, self:3, pro:2 };
+      const out = {};
+      Object.entries(careLevels||{}).forEach(([id,lv])=>{
+        if(map[lv]) out[id] = map[lv];
+      });
+      return out;
+    }
 
     function levelColor(l){ return ['#e5e7eb','#93c5fd','#60a5fa','#3b82f6','#2563eb'][l]||'#e5e7eb'; }
 
@@ -89,7 +107,15 @@
       return { type:'変容準備型', color:'#2563eb' };
     }
 
-    function getTriggerLabel(t){ return {matching_app:'マッチングアプリで結果を出したい',love:'好きな人ができた',career:'就職・転職・大事な場面',word:'何かの一言が刺さった',vague:'ずっと気になっていた'}[t]||t||'—'; }
+    function getTriggerLabel(t){ return {
+      matching_app:'マッチングアプリで結果を出したい',
+      matching_photo:'マッチングアプリで写真が原因で損している',
+      matching_date:'マッチングはできるが会うと続かない',
+      love:'好きな人ができた',love_now:'好きな人ができた・次に会う時に印象を変えたい',
+      career:'就職・転職・大事な場面',mirror:'毎朝鏡を見るたびに気分が上がらない',
+      word:'誰かの一言が頭から離れない',comparison:'同世代と並んだとき差を感じた',
+      vague:'ずっと気になっていた'
+    }[t]||t||'—'; }
     function getStyleLabel(s){ return {explanation:'納得してから動くタイプ',consultation:'相談しながら進めるタイプ',delegate:'任せて結果を出してほしいタイプ',cautious:'小さく試してから続けるタイプ'}[s]||s||'—'; }
     function getUrgencyLabel(u){ return {high:'1ヶ月以内に変化を感じたい',mid:'2〜3ヶ月で',low:'半年〜1年で',continuous:'継続できるものがいい'}[u]||u||'—'; }
     function getFailureLabel(f){ return {lost_direction:'方向がわからなくなった',no_continuation:'続かなかった',cost:'コストが続かなかった',awkward:'関係性がうまくいかなかった',no_result:'変化が感じられなかった',ongoing:'今も継続中'}[f]||f||'—'; }
@@ -197,14 +223,21 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if(!raw){ renderEmpty(); return; }
       const p = JSON.parse(raw);
-      if(p.version === 'v4'){
+      // v5〜v8（care_levels形式）はconcern_areasに変換して表示
+      if(['v5','v6','v7','v8'].includes(p.version)){
+        if(!p.concern_areas || Object.keys(p.concern_areas).length === 0){
+          p.concern_areas = careLevelsToConcernAreas(p.care_levels);
+        }
+        renderV4(p);
+        renderHistory();
+      } else if(p.version === 'v4'){
         renderV4(p);
         renderHistory();
       } else {
-        // 古い形式のデータがある場合はv4再診断を促す
+        // 本当に古い形式（v1〜v3）
         const card = document.createElement('div'); card.className='card'; card.style.padding='20px';
         card.innerHTML = `
-          <p style="font-weight:700;margin:0 0 8px">診断データが古い形式です</p>
+          <p style="font-weight:700;margin:0 0 8px">診断データを更新してください</p>
           <p class="muted" style="margin:0 0 14px">新しい変容プロファイル診断を受けると、より詳細な分析が表示されます。</p>
           <a href="../diagnosis.html" class="action-btn action-btn-primary" style="display:inline-block;padding:12px 24px">新しい診断を受ける</a>
         `;

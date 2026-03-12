@@ -47,7 +47,7 @@
       letter-spacing: .08em;
       position: relative; z-index: 1;
     }
-    .result-badge::before { content: '●'; font-size: 7px; color: #4ade80; }
+    .result-badge::before { content: '🗺️'; font-size: 13px; }
     .result-hero h1 {
       font-size: clamp(18px,4.5vw,26px);
       font-weight: 900;
@@ -94,19 +94,22 @@
     .priority-card {
       background: #fff;
       border-radius: 18px;
-      padding: 24px;
+      padding: 36px 24px 24px;
       margin-bottom: 16px;
+      margin-top: 20px;
       box-shadow: 0 4px 24px rgba(37,99,235,.12), 0 1px 4px rgba(2,6,23,.06);
       border: 1.5px solid #bfdbfe;
       position: relative;
-      overflow: hidden;
+      overflow: visible;
     }
     .priority-card::before {
-      content: '';
+      content: '📍';
       position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, #2563eb, #6366f1);
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 28px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.2));
     }
     .priority-card-eyebrow {
       font-size: 11px; font-weight: 700;
@@ -329,6 +332,32 @@
     .cta-divider {
       height: 1px; background: #f3f4f6; margin: 4px 0;
     }
+
+    /* ─── Map Next Section ───────────────────── */
+    .map-next-section {
+      margin: 32px 0;
+      padding: 24px;
+      background: linear-gradient(135deg, #0f172a, #1e1b4b);
+      border-radius: 18px;
+    }
+    .map-next-label {
+      font-size: 12px; font-weight: 700; color: #a5b4fc;
+      letter-spacing: .08em; text-transform: uppercase; margin-bottom: 16px;
+    }
+    .map-next-options { display: flex; flex-direction: column; gap: 12px; }
+    .map-next-btn {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 18px; border-radius: 14px;
+      text-decoration: none; transition: opacity .15s;
+    }
+    .map-next-btn:hover { opacity: .9; }
+    .map-next-primary { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.2); }
+    .map-next-secondary { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); }
+    .map-next-icon { font-size: 24px; flex-shrink: 0; }
+    .map-next-body { flex: 1; }
+    .map-next-title { display: block; font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 3px; }
+    .map-next-desc { display: block; font-size: 12px; color: rgba(255,255,255,.6); line-height: 1.5; }
+    .map-next-arrow { font-size: 18px; color: rgba(255,255,255,.5); flex-shrink: 0; }
 
     /* ─── Provider Match Cards ────────────── */
     .provider-match-card {
@@ -734,27 +763,29 @@
     const html = `
       <!-- ── Hero ── -->
       <div class="result-hero">
-        <div class="result-badge">診断完了</div>
+        <p style="font-size:10px;font-weight:800;letter-spacing:.14em;color:rgba(255,255,255,.3);margin:0 0 12px;position:relative;z-index:1;text-transform:uppercase">MAP 01</p>
+        <div class="result-badge">あなたの変容プロファイル</div>
         <h1>${situation.h1}</h1>
         <div class="result-hero-divider"></div>
+        <p style="font-size:11px;color:rgba(255,255,255,.45);margin:0 0 10px;position:relative;z-index:1;letter-spacing:.06em">— 今日、あなたの地図が描かれました —</p>
         <p class="result-hero-sub">${situation.sub}</p>
       </div>
 
-      <!-- ── 今すぐ取り組むべき1点 ── -->
+      <!-- ── 最初の分岐点 ── -->
       ${priority ? `
-      <p class="section-label">Priority Action</p>
+      <p class="section-label">FIRST STEP</p>
       <div class="priority-card">
-        <div class="priority-card-eyebrow">今すぐ取り組むべき1点</div>
+        <div class="priority-card-eyebrow">🏁 最初の分岐点</div>
         <div class="priority-card-main">${priority.icon} ${priority.name}</div>
         <div class="priority-card-reason">${priority.copy}</div>
         <a href="./search.html?category=${priority.cat}&diag=1" class="priority-card-cta">このカテゴリのサービスを見る</a>
       </div>` : ''}
 
-      <!-- ── 外見タイプ分析 ── -->
-      <p class="section-label" style="margin-top:28px">Type Analysis</p>
+      <!-- ── 地形マップ ── -->
+      <p class="section-label" style="margin-top:28px">TERRAIN MAP</p>
       <div class="result-card">
         <div class="result-card-header">
-          <div class="result-card-title">🔬 あなたの外見タイプ分析</div>
+          <div class="result-card-title">🧭 あなたの地形マップ</div>
           <div class="result-card-subtitle">気になり度のパターンから、最も効率よく変わる道筋が見える</div>
         </div>
         <div class="type-badge-wrap">
@@ -777,12 +808,12 @@
         </div>` : ''}
       </div>
 
-      <!-- ── 変われなかった理由と条件 ── -->
+      <!-- ── これまでの道にあった障壁 ── -->
       ${barrier ? `
-      <p class="section-label" style="margin-top:28px">Root Cause</p>
+      <p class="section-label" style="margin-top:28px">YOUR ROAD</p>
       <div class="result-card">
         <div class="result-card-header">
-          <div class="result-card-title">🔍 変われなかった理由と、変わるための条件</div>
+          <div class="result-card-title">🪨 これまでの道にあった障壁</div>
           <div class="result-card-subtitle">過去のパターンを知ることが、次に勝つための準備になる</div>
         </div>
         <div class="insight-list">
@@ -799,12 +830,12 @@
         </div>
       </div>` : ''}
 
-      <!-- ── 合うプロの特徴 ── -->
+      <!-- ── この旅に合うガイドの条件 ── -->
       ${traits.length > 0 ? `
       <p class="section-label" style="margin-top:28px">Pro Matching</p>
       <div class="result-card">
         <div class="result-card-header">
-          <div class="result-card-title">🤝 あなたに合うプロの特徴</div>
+          <div class="result-card-title">🧭 この旅に合うガイドの条件</div>
           <div class="result-card-subtitle">この条件を持つプロとの相性がいい。サービス選びの判断軸にしてほしい</div>
         </div>
         <div class="trait-list">
@@ -876,15 +907,35 @@
         </div>
       </div>
 
-      <!-- ── 次のステップ CTA ── -->
-      <div class="cta-block" style="margin-top:28px">
-        <div class="cta-block-title">次のステップへ</div>
-        <div class="cta-block-desc">診断結果を活かして、最初の一歩を踏み出そう。</div>
+      <!-- ── 次の行き先 ── -->
+      <div class="map-next-section">
+        <div class="map-next-label">🗺️ 次の行き先</div>
+        <div class="map-next-options">
+          <a href="./diagnosis-stage2.html" class="map-next-btn map-next-primary">
+            <span class="map-next-icon">🔭</span>
+            <span class="map-next-body">
+              <span class="map-next-title">地図をさらに詳しくする</span>
+              <span class="map-next-desc">あなたの部位について2〜3問答えると、AIが地図を描き直します</span>
+            </span>
+            <span class="map-next-arrow">→</span>
+          </a>
+          <a href="../index.html?scrollTo=roadmap" class="map-next-btn map-next-secondary">
+            <span class="map-next-icon">🗺️</span>
+            <span class="map-next-body">
+              <span class="map-next-title">変容ロードマップを見る</span>
+              <span class="map-next-desc">3つのフェーズで、変わるための道順を確認する</span>
+            </span>
+            <span class="map-next-arrow">→</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- ── 保存・再診断 ── -->
+      <div class="cta-block" style="margin-top:8px">
         <div class="cta-section">
-          <a href="./search.html?diag=1" class="cta-btn-primary">あなたに合うサービスを探す</a>
-          <button id="btn-save-mypage" class="cta-btn-secondary" type="button">診断結果を保存する</button>
+          <button id="btn-save-mypage" class="cta-btn-secondary" type="button">この地図を保存する</button>
           <div class="cta-divider"></div>
-          <a href="./diagnosis.html" class="cta-btn-ghost">もう一度診断する</a>
+          <a href="./diagnosis.html" class="cta-btn-ghost">地図を更新する（再診断）</a>
         </div>
       </div>
     `;

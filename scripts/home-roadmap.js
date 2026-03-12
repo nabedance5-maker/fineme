@@ -689,6 +689,47 @@ window.roadmapCompletePhase = function(phaseNum) {
   } catch {}
 };
 
+// v5〜v8（care_levels形式）→ ロードマップ用データに変換
+function adaptV8toDiag(v) {
+  const careLevels = v.care_levels || {};
+  const levelMap = { concerned: 4, self: 3, pro: 2 };
+  const AREA_KEY_MAP = {
+    hair: 'hair', skin: 'skin', eyebrow: 'eyebrow', body: 'body',
+    fashion: 'fashion', beard: 'hair_removal',
+    teeth_whitening: 'teeth', teeth_alignment: 'teeth', teeth_odor: 'teeth',
+    posture: 'body', overall: null
+  };
+  const concernLevels = {};
+  Object.entries(careLevels).forEach(([id, lv]) => {
+    if (lv === 'none' || !lv) return;
+    const key = AREA_KEY_MAP[id];
+    if (!key) return;
+    const num = levelMap[lv] || 0;
+    if (!concernLevels[key] || num > concernLevels[key]) concernLevels[key] = num;
+  });
+  const levelToScore = { 4: 1, 3: 3, 2: 6 };
+  const scores = {};
+  ['eyebrow','hair','body','skin','hair_removal','teeth','nail','makeup','fashion'].forEach(k => { scores[k] = 10; });
+  Object.entries(concernLevels).forEach(([k, lv]) => { if (levelToScore[lv]) scores[k] = levelToScore[lv]; });
+  if (v.urgency === 'high') {
+    for (const k in scores) { if (scores[k] <= 5) scores[k] = Math.max(1, scores[k] - 2); }
+  }
+  const triggerBadge = {
+    matching_photo:'アプリ写真改善向け', matching_date:'デート印象向け',
+    love_now:'恋愛向け', career:'キャリア向け', mirror:'外見磨き中',
+    word:'気になり解消', comparison:'印象アップ', vague:'外見磨き中',
+    matching_app:'マッチングアプリ向け', love:'恋愛向け'
+  };
+  return {
+    scores, _v4: true, _concern_levels: concernLevels,
+    _trigger: v.trigger, _urgency: v.urgency,
+    result: {
+      badge: triggerBadge[v.trigger] || '診断済み',
+      trigger: v.trigger, urgency: v.urgency, failure_pattern: v.failure_pattern
+    }
+  };
+}
+
 // ── 初期化 ────────────────────────────────────────────────────────────
 function init() {
   try {
@@ -696,14 +737,15 @@ function init() {
     // 診断データがあればロードマップを表示（ログイン不要）
     // ※旧 glowup:userSession はSupabase移行済みのため参照しない
 
-    // v4（最新）→ v2（旧形式）の順で読み込み
+    // v8〜v5 → v4 → v2 の順で読み込み
     let diag = null;
     const rawV4 = localStorage.getItem(DIAG_KEY_V4);
     if (rawV4) {
       try {
-        const v4 = JSON.parse(rawV4);
-        if (v4.version === 'v4') diag = adaptV4toDiag(v4);
-        else if (v4.scores) diag = v4; // 旧形式がlatest keyに入っている場合
+        const v = JSON.parse(rawV4);
+        if (['v5','v6','v7','v8'].includes(v.version)) diag = adaptV8toDiag(v);
+        else if (v.version === 'v4') diag = adaptV4toDiag(v);
+        else if (v.scores) diag = v;
       } catch {}
     }
     if (!diag) {
