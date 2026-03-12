@@ -357,6 +357,84 @@
     }
     .pmc-meta { font-size: 11px; color: #9ca3af; }
     .pmc-arrow { font-size: 14px; color: #9ca3af; flex-shrink: 0; }
+
+    /* ── Stage 2 CTA ── */
+    .s2-cta-card {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+      border-radius: 18px;
+      padding: 28px 24px;
+      margin: 24px 0;
+      display: none; /* JSで表示 */
+      text-align: center;
+    }
+    .s2-cta-icon { font-size: 36px; margin-bottom: 12px; }
+    .s2-cta-title { font-size: 20px; font-weight: 800; color: #fff; margin: 0 0 10px; }
+    .s2-cta-desc { font-size: 14px; color: #a5b4fc; line-height: 1.7; margin: 0 0 16px; }
+    .s2-cta-areas { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 20px; }
+    .s2-area-badge {
+      background: rgba(255,255,255,.15); color: #e0e7ff;
+      padding: 5px 12px; border-radius: 99px; font-size: 13px; font-weight: 600;
+    }
+    .s2-cta-btn {
+      background: #fff; color: #1e1b4b;
+      border: none; border-radius: 12px;
+      padding: 14px 28px; font-size: 16px; font-weight: 800;
+      cursor: pointer; transition: opacity .15s; width: 100%;
+    }
+    .s2-cta-btn:hover { opacity: .9; }
+
+    /* ── AI 地図セクション ── */
+    .ai-map-section { margin: 32px 0; display: none; }
+    .ai-map-header { text-align: center; margin-bottom: 20px; }
+    .ai-map-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff; padding: 6px 16px; border-radius: 99px;
+      font-size: 12px; font-weight: 700; letter-spacing: .05em;
+      margin-bottom: 10px;
+    }
+    .ai-map-title { font-size: 22px; font-weight: 800; color: #111; margin: 0; }
+
+    /* Loading */
+    .ai-map-loading { text-align: center; padding: 40px 20px; }
+    .ai-map-drawing { font-size: 40px; animation: mapPulse 1.5s ease-in-out infinite; }
+    @keyframes mapPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: .7; }
+    }
+    .ai-map-loading-text { font-size: 15px; color: #6b7280; margin: 12px 0; }
+    .ai-map-progress-bar {
+      width: 100%; max-width: 280px; height: 4px;
+      background: #e5e7eb; border-radius: 2px; margin: 0 auto;
+    }
+    .ai-map-progress-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      border-radius: 2px; transition: width .3s ease;
+    }
+
+    /* Result cards */
+    .ai-map-result { display: flex; flex-direction: column; gap: 16px; }
+    .ai-map-card {
+      border-radius: 16px; padding: 20px;
+      border: 1px solid #e5e7eb;
+    }
+    .ai-card-position { background: linear-gradient(135deg, #eff6ff, #f5f3ff); border-color: #c7d2fe; }
+    .ai-card-insight  { background: linear-gradient(135deg, #fefce8, #fff7ed); border-color: #fde68a; }
+    .ai-card-step     { background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border-color: #a7f3d0; }
+    .ai-card-warning  { background: linear-gradient(135deg, #fff1f2, #fff5f5); border-color: #fecaca; }
+    .ai-card-guide    { background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-color: #e2e8f0; }
+    .ai-card-label {
+      font-size: 12px; font-weight: 700; color: #6366f1;
+      letter-spacing: .05em; margin-bottom: 10px;
+    }
+    .ai-card-text { font-size: 15px; color: #111; line-height: 1.8; margin: 0; font-weight: 500; }
+    .ai-guide-list { margin: 0; padding: 0 0 0 4px; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .ai-guide-list li {
+      font-size: 14px; color: #374151; line-height: 1.6;
+      padding-left: 16px; position: relative;
+    }
+    .ai-guide-list li::before { content: '✓'; position: absolute; left: 0; color: #6366f1; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -785,6 +863,19 @@
         <a href="./diagnosis.html" class="btn" style="display:inline-block;font-size:14px;font-weight:700">続きを答える（あと4問）→</a>
       </div>` : ''}
 
+      <!-- ── Stage 2 CTA ── -->
+      <div class="s2-cta-card" id="s2-cta-card">
+        <div class="s2-cta-inner">
+          <div class="s2-cta-icon">🗺️</div>
+          <h3 class="s2-cta-title">この地図をもっと詳しくする</h3>
+          <p class="s2-cta-desc">あなたが選んだ部分について、もう少し教えてください。<br>地図がより鮮明になり、具体的な一手が見えてきます。</p>
+          <div class="s2-cta-areas" id="s2-cta-areas"><!-- JSで生成 --></div>
+          <button class="s2-cta-btn" onclick="window.location.href='./diagnosis-stage2.html'">
+            地図をさらに詳しくする →
+          </button>
+        </div>
+      </div>
+
       <!-- ── 次のステップ CTA ── -->
       <div class="cta-block" style="margin-top:28px">
         <div class="cta-block-title">次のステップへ</div>
@@ -799,6 +890,50 @@
     `;
 
     root.innerHTML = html;
+
+    // AI地図セクションをヒーローの直後・既存カードの前に挿入
+    (function insertAIMapSection(){
+      const aiMapHTML = `
+        <div class="ai-map-section" id="ai-map-section" style="display:none">
+          <div class="ai-map-header">
+            <span class="ai-map-badge">✨ AI地図</span>
+            <h2 class="ai-map-title">あなただけの変容プロファイル</h2>
+          </div>
+          <div class="ai-map-loading" id="ai-map-loading">
+            <div class="ai-map-drawing">🗺️</div>
+            <p class="ai-map-loading-text">地図を描いています...</p>
+            <div class="ai-map-progress-bar"><div class="ai-map-progress-fill" id="ai-map-progress-fill"></div></div>
+          </div>
+          <div class="ai-map-result" id="ai-map-result" style="display:none">
+            <div class="ai-map-card ai-card-position">
+              <div class="ai-card-label">📍 あなたの現在地</div>
+              <p class="ai-card-text" id="ai-current-position"></p>
+            </div>
+            <div class="ai-map-card ai-card-insight">
+              <div class="ai-card-label">🔍 変われなかった本当の理由</div>
+              <p class="ai-card-text" id="ai-core-insight"></p>
+            </div>
+            <div class="ai-map-card ai-card-step">
+              <div class="ai-card-label">🚀 最初の一手</div>
+              <p class="ai-card-text" id="ai-first-step"></p>
+            </div>
+            <div class="ai-map-card ai-card-warning">
+              <div class="ai-card-label">⚠️ あなた特有のリスク</div>
+              <p class="ai-card-text" id="ai-warning"></p>
+            </div>
+            <div class="ai-map-card ai-card-guide">
+              <div class="ai-card-label">🧭 合うプロの条件</div>
+              <ul class="ai-guide-list" id="ai-guide-criteria"></ul>
+            </div>
+          </div>
+        </div>
+      `;
+      // ヒーローdivの直後に挿入
+      const hero = root.querySelector('.result-hero');
+      if(hero){
+        hero.insertAdjacentHTML('afterend', aiMapHTML);
+      }
+    })();
 
     // ────────────────────────────────────────────────────────────────
     // 診断プロファイル × 掲載者マッチング（非同期）
@@ -898,6 +1033,176 @@
       });
     }
   })();
+
+  // ────────────────────────────────────────────────────────────────
+  // Stage 2 CTA セットアップ
+  // ────────────────────────────────────────────────────────────────
+  function setupStage2CTA() {
+    const profile = JSON.parse(localStorage.getItem('fineme:diagnosis:latest') || 'null');
+    if(!profile) return;
+
+    const careLevels = profile.care_levels || {};
+    let activeAreas = Object.entries(careLevels).filter(([, v]) => v && v !== 'none');
+
+    // care_levelsがない旧バージョンはconcern_areasのキー数で判断
+    if(Object.keys(careLevels).length === 0) {
+      const concernAreas = profile.concern_areas || {};
+      activeAreas = Object.entries(concernAreas).filter(([, v]) => v > 0);
+    }
+
+    if(activeAreas.length === 0) return;
+
+    const card = document.getElementById('s2-cta-card');
+    if(!card) return;
+    card.style.display = '';
+
+    const AREA_DEFS = {
+      hair:'💇‍♂️髪', skin:'✨肌', eyebrow:'✂️眉毛', body:'💪体型',
+      fashion:'👔服', photo:'📸写真', overall:'🪞雰囲気',
+      beard:'💈ひげ', teeth:'😁歯', posture:'🚶姿勢'
+    };
+    const container = document.getElementById('s2-cta-areas');
+    if(!container) return;
+    activeAreas.slice(0, 5).forEach(([id]) => {
+      const span = document.createElement('span');
+      span.className = 's2-area-badge';
+      span.textContent = AREA_DEFS[id] || id;
+      container.appendChild(span);
+    });
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  // AI地図の取得・表示
+  // ────────────────────────────────────────────────────────────────
+  function showAIResult(result) {
+    const loadingEl = document.getElementById('ai-map-loading');
+    const resultEl  = document.getElementById('ai-map-result');
+    const sectionEl = document.getElementById('ai-map-section');
+    const fillEl    = document.getElementById('ai-map-progress-fill');
+
+    if(loadingEl) loadingEl.style.display = 'none';
+    if(resultEl)  resultEl.style.display  = '';
+    if(sectionEl) sectionEl.style.display = '';
+    if(fillEl)    fillEl.style.width      = '100%';
+
+    const setText = (id, val) => {
+      const el = document.getElementById(id);
+      if(el) el.textContent = val || '';
+    };
+    setText('ai-current-position', result.current_position);
+    setText('ai-core-insight',     result.core_insight);
+    setText('ai-first-step',       result.first_step);
+    setText('ai-warning',          result.warning);
+
+    const list = document.getElementById('ai-guide-criteria');
+    if(list) {
+      list.innerHTML = '';
+      (result.guide_criteria || []).forEach(c => {
+        const li = document.createElement('li');
+        li.textContent = c;
+        list.appendChild(li);
+      });
+    }
+
+    if(sectionEl) sectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  async function loadAIMap() {
+    const params    = new URLSearchParams(window.location.search);
+    const isStage2  = params.get('stage2') === '1';
+    const cached    = localStorage.getItem('fineme:diagnosis:ai_result');
+    const profile   = JSON.parse(localStorage.getItem('fineme:diagnosis:latest') || 'null');
+
+    if(!profile) return;
+
+    // キャッシュがあれば即表示（同じプロファイルバージョンのもの）
+    if(cached) {
+      try {
+        const cachedData = JSON.parse(cached);
+        if(cachedData.profile_at === profile.at) {
+          showAIResult(cachedData.result);
+          return;
+        }
+      } catch(e) {}
+    }
+
+    if(!isStage2) return; // stage2=1でない場合はAPIを呼ばない
+
+    // AI地図セクションを表示（ローディング状態）
+    const sectionEl  = document.getElementById('ai-map-section');
+    const loadingEl  = document.getElementById('ai-map-loading');
+    const ctaCard    = document.getElementById('s2-cta-card');
+
+    if(sectionEl)  sectionEl.style.display  = '';
+    if(loadingEl)  loadingEl.style.display  = '';
+    if(ctaCard)    ctaCard.style.display    = 'none';
+
+    const stage2 = JSON.parse(localStorage.getItem('fineme:diagnosis:stage2') || 'null');
+
+    try {
+      const response = await fetch('/api/diagnosis/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile, stage2 })
+      });
+
+      if(!response.ok) throw new Error('API error');
+
+      const reader   = response.body.getReader();
+      const decoder  = new TextDecoder();
+      let buffer     = '';
+      let progressValue = 0;
+
+      // プログレスアニメーション
+      const progressInterval = setInterval(() => {
+        progressValue = Math.min(progressValue + 2, 90);
+        const fill = document.getElementById('ai-map-progress-fill');
+        if(fill) fill.style.width = progressValue + '%';
+      }, 150);
+
+      while(true) {
+        const { done, value } = await reader.read();
+        if(done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for(const line of lines) {
+          if(!line.startsWith('data: ')) continue;
+          try {
+            const data = JSON.parse(line.slice(6));
+            if(data.done && data.result) {
+              clearInterval(progressInterval);
+              // キャッシュ保存
+              localStorage.setItem('fineme:diagnosis:ai_result', JSON.stringify({
+                profile_at: profile.at,
+                result: data.result,
+                at: Date.now()
+              }));
+              showAIResult(data.result);
+              return;
+            }
+          } catch(e) {}
+        }
+      }
+    } catch(err) {
+      // エラー時はAIセクションを非表示
+      const sEl = document.getElementById('ai-map-section');
+      const cEl = document.getElementById('s2-cta-card');
+      if(sEl) sEl.style.display = 'none';
+      if(cEl) cEl.style.display = '';
+      console.error('AI map generation failed:', err);
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  // 初期化（DOMContentLoaded）
+  // ────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function() {
+    setupStage2CTA();
+    loadAIMap();
+  });
   </script>
 </body>
 </html>
