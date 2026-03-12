@@ -1,4 +1,26 @@
-<link rel="icon" href="/favicon.ico">
+<div class="navbar">
+  <div class="container navbar-inner">
+    <a class="brand logo" href="/">
+      <img src="/assets/images/fineme-logo-text.png" alt="Fineme" loading="eager">
+    </a>
+    <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="メニュー">☰</button>
+    <div class="nav-group" id="nav-menu">
+      <nav class="nav-links">
+        <a href="/search">検索</a>
+        <a href="/pages/about.html">Finemeとは？</a>
+        <a href="/articles">特集</a>
+        <span id="header-points" hidden>
+          <span id="header-points-badge" class="points-badge"></span>
+        </span>
+        <button id="header-notifs-btn" class="header-notifs-btn" aria-label="通知" hidden>
+          🔔<span id="header-notifs-badge" class="notifs-badge" hidden></span>
+        </button>
+        <a href="/pages/diagnosis.html" class="btn-diagnosis">診断する</a>
+        <span id="header-auth-area"></span>
+      </nav>
+    </div>
+  </div>
+</div>
 <style>
   .navbar .brand { white-space:nowrap; font-weight:700; }
   .nav-links { display:flex; gap:8px; align-items:center; overflow-x:auto; }
@@ -34,24 +56,14 @@
   }
   #header-auth-area { display:inline-flex; align-items:center; gap:8px; }
   #header-auth-area a { white-space:nowrap; }
+  .header-notifs-btn {
+    background:none; border:none; cursor:pointer;
+    font-size:18px; padding:4px 6px; position:relative;
+    line-height:1; vertical-align:middle;
+  }
+  .notifs-badge {
+    position:absolute; top:0; right:0;
+    width:8px; height:8px; background:#ef4444; border-radius:50%;
+    display:block;
+  }
 </style>
-<div class="navbar">
-  <div class="container navbar-inner">
-    <a class="brand logo" href="/">
-      <img src="/assets/images/fineme-logo-text.png" alt="Fineme" loading="eager">
-    </a>
-    <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="メニュー">☰</button>
-    <div class="nav-group" id="nav-menu">
-      <nav class="nav-links">
-        <a href="/search">検索</a>
-        <a href="/pages/about.html">Finemeとは？</a>
-        <a href="/articles">特集</a>
-        <span id="header-points" hidden>
-          <span id="header-points-badge" class="points-badge"></span>
-        </span>
-        <a href="/pages/diagnosis.html" class="btn-diagnosis">診断する</a>
-        <span id="header-auth-area"></span>
-      </nav>
-    </div>
-  </div>
-</div>
