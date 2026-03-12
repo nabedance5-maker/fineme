@@ -128,6 +128,14 @@
       border-bottom: 1px solid #f1f5f9;
     }
     .care-level-item:last-child { border-bottom: none; margin-bottom: 0; }
+    .care-overall-wrap {
+      display: flex; align-items: center; gap: 12px; cursor: pointer;
+      padding: 14px 16px; border: 2px solid #e5e7eb; border-radius: 12px;
+      transition: border-color .12s, background .12s;
+    }
+    .care-overall-wrap:hover { border-color: #a5b4fc; background: rgba(99,102,241,.03); }
+    .care-overall-wrap.selected { border-color: #6366f1; background: rgba(99,102,241,.06); }
+    .care-overall-text { display: flex; align-items: center; gap: 10px; flex: 1; }
     .care-level-label {
       display: flex; align-items: center; gap: 8px;
       font-size: 15px; font-weight: 700; color: #111;
@@ -347,6 +355,19 @@
           <h2 class="diag-q">それぞれについて、<br>今のあなたの状態を教えてください</h2>
           <p class="diag-hint">「気にしていない」も大切な情報です。全て正直に教えてください。</p>
           <div id="care-level-grid"><!-- JSで生成 --></div>
+          <!-- overall: トータルで整えたい（特別チェックボックス） -->
+          <div style="margin-top:20px;padding-top:16px;border-top:2px dashed #e5e7eb">
+            <label class="care-overall-wrap" id="care-overall-wrap">
+              <input type="checkbox" id="care-overall-check" style="width:20px;height:20px;accent-color:#6366f1;flex-shrink:0;cursor:pointer">
+              <span class="care-overall-text">
+                <span style="font-size:18px">🪞</span>
+                <span>
+                  <strong style="display:block;font-size:14px;color:#111">上記の複数をまとめてトータルで整えたい</strong>
+                  <span style="font-size:12px;color:#6b7280">スタイル・外見全体を一緒に考えてほしい</span>
+                </span>
+              </span>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -354,7 +375,7 @@
       <div class="diag-screen" id="screen-q5">
         <button class="diag-back-btn" data-back>← 戻る</button>
         <div class="diag-card">
-          <p class="diag-step-label">Q5｜これまでの試み</p>
+          <p class="diag-step-label">Q4｜これまでの試み</p>
           <h2 class="diag-q">外見について、<br>これまでに試したことはありますか？</h2>
           <p class="diag-hint">当てはまるものをすべて選んでください。（複数選択可）</p>
           <div class="diag-options" id="opts-q5">
@@ -399,88 +420,11 @@
         </div>
       </div>
 
-      <!-- ── SCREEN Q5step2: 過去の試み深掘り ── -->
-      <div class="diag-screen" id="screen-q5step2">
-        <button class="diag-back-btn" data-back>← 戻る</button>
-        <div class="diag-card">
-          <p class="diag-step-label">Q5｜過去の経路</p>
-          <h2 class="diag-q">最後に試みたのは<br>いつ頃のことですか？</h2>
-          <p class="diag-hint">一番最近の取り組みについて教えてください。</p>
-          <div class="diag-options" id="opts-q5timing">
-            <button class="diag-option" data-value="recently_3m">
-              <span class="diag-option-icon">🔥</span>
-              <span class="diag-option-body">
-                <span class="diag-option-title">最近（3ヶ月以内）</span>
-                <span class="diag-option-desc">まだ記憶が新しい</span>
-              </span>
-            </button>
-            <button class="diag-option" data-value="half_year">
-              <span class="diag-option-icon">📅</span>
-              <span class="diag-option-body">
-                <span class="diag-option-title">半年〜1年前</span>
-              </span>
-            </button>
-            <button class="diag-option" data-value="year_ago">
-              <span class="diag-option-icon">🗓️</span>
-              <span class="diag-option-body">
-                <span class="diag-option-title">1〜3年前</span>
-              </span>
-            </button>
-            <button class="diag-option" data-value="long_ago">
-              <span class="diag-option-icon">⏳</span>
-              <span class="diag-option-body">
-                <span class="diag-option-title">3年以上前</span>
-                <span class="diag-option-desc">かなり前のこと</span>
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SCREEN Q5step2b: どのくらい続けたか ── -->
-      <div class="diag-screen" id="screen-q5step2b">
-        <button class="diag-back-btn" data-back>← 戻る</button>
-        <div class="diag-card">
-          <p class="diag-step-label">Q5｜継続の記録</p>
-          <h2 class="diag-q">そのとき、どのくらい<br>続けましたか？</h2>
-          <div class="diag-options" id="opts-q5duration">
-            <button class="diag-option" data-value="once">
-              <span class="diag-option-icon">1️⃣</span>
-              <span class="diag-option-body">
-                <span class="diag-option-title">1〜2回だけ試した</span>
-                <span class="diag-option-desc">始める前に諦めた、または合わなかった</span>
-              </span>
-            </button>
-            <button class="diag-option" data-value="under_month">
-              <span class="diag-option-icon">📆</span>
-              <span class="diag-option-body">
-                <span class="diag-option-title">1ヶ月未満</span>
-                <span class="diag-option-desc">始めたが、すぐに続かなくなった</span>
-              </span>
-            </button>
-            <button class="diag-option" data-value="under_3m">
-              <span class="diag-option-icon">📊</span>
-              <span class="diag-option-body">
-                <span class="diag-option-title">1〜3ヶ月</span>
-                <span class="diag-option-desc">少し続いたが、途中で止まった</span>
-              </span>
-            </button>
-            <button class="diag-option" data-value="over_3m">
-              <span class="diag-option-icon">🏆</span>
-              <span class="diag-option-body">
-                <span class="diag-option-title">3ヶ月以上続いた</span>
-                <span class="diag-option-desc">続けたが、満足できなかった</span>
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-
       <!-- ── SCREEN Q5b: 失敗パターン（条件付き） ── -->
       <div class="diag-screen" id="screen-q5b">
         <button class="diag-back-btn" data-back>← 戻る</button>
         <div class="diag-card">
-          <p class="diag-step-label">Q5｜その後</p>
+          <p class="diag-step-label">Q4｜その後</p>
           <h2 class="diag-q">試してみて、<br>その後どうなりましたか？</h2>
           <p class="diag-hint">正直に選んでください。これが最も大切な答えです。</p>
           <div class="diag-options" id="opts-q5b">
@@ -540,7 +484,7 @@
       <div class="diag-screen" id="screen-q6">
         <button class="diag-back-btn" data-back>← 戻る</button>
         <div class="diag-card">
-          <p class="diag-step-label">Q6｜理想の関係</p>
+          <p class="diag-step-label">Q5｜理想の関係</p>
           <h2 class="diag-q">プロと一緒に変わるとしたら、<br>どんな関係が理想ですか？</h2>
           <p class="diag-hint">当てはまるものを全て選んでください。（複数選択可）</p>
           <div class="diag-options" id="opts-q6">
@@ -580,7 +524,7 @@
       <div class="diag-screen" id="screen-q6b">
         <button class="diag-back-btn" data-back>← 戻る</button>
         <div class="diag-card">
-          <p class="diag-step-label">Q6｜最優先</p>
+          <p class="diag-step-label">Q5｜最優先</p>
           <h2 class="diag-q">その中で、一番大事なのは<br>どれですか？</h2>
           <div class="diag-options" id="opts-q6b"><!-- JSで動的生成 --></div>
         </div>
@@ -590,7 +534,7 @@
       <div class="diag-screen" id="screen-q7">
         <button class="diag-back-btn" data-back>← 戻る</button>
         <div class="diag-card">
-          <p class="diag-step-label">Q7｜タイムライン</p>
+          <p class="diag-step-label">Q6｜タイムライン</p>
           <h2 class="diag-q">いつ頃までに<br>変化を感じたいですか？</h2>
           <p class="diag-hint">あくまで目安として、今の気持ちに近いものを。</p>
           <div class="diag-options" id="opts-q7">
@@ -630,7 +574,7 @@
       <div class="diag-screen" id="screen-q8">
         <button class="diag-back-btn" data-back>← 戻る</button>
         <div class="diag-card">
-          <p class="diag-step-label">Q8｜投資感覚（任意）</p>
+          <p class="diag-step-label">Q7｜投資感覚（任意）</p>
           <h2 class="diag-q">変化のために、<br>月にどのくらい使えそうですか？</h2>
           <p class="diag-hint">合う人が見つかれば予算を上げることもあります。今の感覚で選んでください。</p>
           <div class="diag-options" id="opts-q8">
@@ -681,17 +625,18 @@
 
     // Concern areas definition
     const CONCERN_AREAS = [
-      { id:'hair',    icon:'💇‍♂️', label:'髪型・髪' },
-      { id:'skin',    icon:'✨',   label:'肌・ニキビ' },
-      { id:'eyebrow', icon:'✂️',  label:'眉毛' },
-      { id:'body',    icon:'💪',  label:'体型・体' },
-      { id:'fashion', icon:'👔',  label:'服・コーデ' },
-      { id:'photo',   icon:'📸',  label:'写真写り' },
-      { id:'overall', icon:'🪞',  label:'全体の雰囲気' },
-      { id:'beard',   icon:'💈',  label:'ひげ・無精ひげ' },
-      { id:'teeth',   icon:'😁',  label:'歯・口元' },
-      { id:'posture', icon:'🚶',  label:'姿勢・雰囲気' }
+      { id:'hair',             icon:'💇‍♂️', label:'髪型・髪' },
+      { id:'skin',             icon:'✨',   label:'肌・ニキビ' },
+      { id:'eyebrow',          icon:'✂️',  label:'眉毛' },
+      { id:'body',             icon:'💪',  label:'体型・体' },
+      { id:'fashion',          icon:'👔',  label:'服・コーデ' },
+      { id:'beard',            icon:'💈',  label:'ひげ・無精ひげ' },
+      { id:'teeth_whitening',  icon:'🦷',  label:'歯の黄ばみ・色' },
+      { id:'teeth_alignment',  icon:'😬',  label:'歯並び・歯の形' },
+      { id:'teeth_odor',       icon:'💨',  label:'口臭・口の中の清潔感' },
+      { id:'posture',          icon:'🚶',  label:'姿勢・体の動き' }
     ];
+    // overall（トータルで整えたい）は別途チェックボックスで処理
 
     // style_relationship mapping
     const STYLE_MAP = {
@@ -706,10 +651,8 @@
       trigger: null,
       scene: null,
       care_levels: {},             // { id: 'none'|'concerned'|'self'|'pro' }
-      past_attempts: [],           // Q5
-      past_attempt_timing: null,   // Q5 Step2a
-      past_attempt_duration: null, // Q5 Step2b
-      failure_pattern: null,       // Q5b（条件付き）
+      past_attempts: [],           // Q4
+      failure_pattern: null,       // Q4b（条件付き）
       style_priorities: [],        // Q6 複数選択
       style_priority_top: null,    // Q6 最優先
       urgency: null,               // Q7
@@ -744,7 +687,7 @@
     }
 
     function updateProgress(){
-      const subScreenMap = { 'q5b':'q5', 'q5step2':'q5', 'q5step2b':'q5', 'q6b':'q6' };
+      const subScreenMap = { 'q5b':'q5', 'q6b':'q6' };
       const baseScreen = subScreenMap[currentScreen] || currentScreen;
       const isMain = MAIN_SCREENS.includes(baseScreen);
       progressWrap.style.display = isMain ? '' : 'none';
@@ -773,10 +716,8 @@
         case 'q1':       enabled = !!state.trigger; break;
         case 'q2':       enabled = !!state.scene; break;
         case 'q3':       enabled = Object.values(state.care_levels).some(v => v && v !== ''); break;
-        case 'q5':       enabled = state.past_attempts.length > 0; break;
-        case 'q5step2':  enabled = !!state.past_attempt_timing; break;
-        case 'q5step2b': enabled = !!state.past_attempt_duration; break;
-        case 'q5b':      enabled = !!state.failure_pattern; break;
+        case 'q5':  enabled = state.past_attempts.length > 0; break;
+        case 'q5b': enabled = !!state.failure_pattern; break;
         case 'q6':       enabled = state.style_priorities.length > 0; break;
         case 'q6b':      enabled = !!state.style_priority_top; break;
         case 'q7':       enabled = !!state.urgency; break;
@@ -798,14 +739,12 @@
         case 'q3': next = 'q5'; break;
         case 'q5':
           if(state.past_attempts.length > 0 && !(state.past_attempts.length === 1 && state.past_attempts[0] === 'none')){
-            next = 'q5step2';
+            next = 'q5b';
           } else {
             next = 'q6';
           }
           break;
-        case 'q5step2':  next = 'q5step2b'; break;
-        case 'q5step2b': next = 'q5b'; break;
-        case 'q5b':      next = 'q6'; break;
+        case 'q5b': next = 'q6'; break;
         case 'q6':
           if(state.style_priorities.length >= 2){
             buildQ6b();
@@ -866,7 +805,7 @@
       const styleRel = STYLE_MAP[state.style_priority_top] || { style: null, relationship: null };
 
       const profile = {
-        version: 'v7',
+        version: 'v8',
         at: Date.now(),
         trigger: state.trigger,
         scene: state.scene,
@@ -875,8 +814,6 @@
         concern_priority: priority,
         behavior_baseline: behaviorBaseline,
         past_attempts: state.past_attempts,
-        past_attempt_timing: state.past_attempt_timing,
-        past_attempt_duration: state.past_attempt_duration,
         failure_pattern: state.failure_pattern,
         style_priorities: state.style_priorities,
         style_priority_top: state.style_priority_top,
@@ -952,6 +889,18 @@
         wrap.appendChild(optGroup);
         grid.appendChild(wrap);
       });
+
+      // overall チェックボックス
+      const overallCheck = document.getElementById('care-overall-check');
+      const overallWrap  = document.getElementById('care-overall-wrap');
+      if(overallCheck) {
+        overallCheck.addEventListener('change', function(){
+          state.care_levels['overall'] = this.checked ? 'concerned' : undefined;
+          if(!this.checked) delete state.care_levels['overall'];
+          overallWrap.classList.toggle('selected', this.checked);
+          updateNextBtn();
+        });
+      }
     })();
 
     /* ─────────────────────────────────────────── */
