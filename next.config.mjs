@@ -14,6 +14,27 @@ const nextConfig = {
   },
   async headers() {
     return [
+      // 静的HTMLページ: ブラウザキャッシュを無効化（デプロイ後も即反映）
+      {
+        source: '/(.*).html',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, must-revalidate' },
+        ],
+      },
+      // ルートページも同様
+      {
+        source: '/',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, must-revalidate' },
+        ],
+      },
+      // JS/CSSなどの静的アセット: バージョンクエリで管理するので長期キャッシュOK
+      {
+        source: '/assets/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
       // API routes: CORS（静的HTMLページからの fetch を許可）
       {
         source: '/api/:path*',
