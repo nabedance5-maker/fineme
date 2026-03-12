@@ -1,11 +1,22 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(find c:UsersnabedOneDriveデスクトップFinemepublic -name *.png)",
+      "Bash(find C:UsersnabedOneDriveデスクトップFineme -type f -name *diagnosis* -o -name *quiz* -o -name *intent*)",
+      "Bash(git -C c:UsersnabedOneDriveデスクトップFineme show HEAD:app/layout.js)",
+      "Bash(find c:UsersnabedOneDriveデスクトップFinemepublic -name *.html)",
+      "Bash(grep \"\\\\.html$\")",
+      "Bash(xargs sed:*)",
+      "Bash(sed -i \"s|src=\"\"../../scripts/main\\\\.js\"\">|src=\"\"../../scripts/main.js?v=20260312\"\">|g; s|src=\"\"../scripts/main\\\\.js\"\">|src=\"\"../scripts/main.js?v=20260312\"\">|g; s|src=\"\"./scripts/main\\\\.js\"\">|src=\"\"./scripts/main.js?v=20260312\"\">|g\" pages/user/login.html pages/user/schedule.html)",
+      "Bash(grep -rn scripts/main.js pages/ --include=*.html)",
+      "Bash(\"c:\\\\Users\\\\nabed\\\\OneDrive\\\\デスクトップ\\\\Fineme\\\\assets\\\\styles\\\\style.css\":*)",
+      "Bash(grep -rl assets/styles/style.css c:UsersnabedOneDriveデスクトップFinemepages c:UsersnabedOneDriveデスクトップFinemeindex.html --include=*.html)"
+    ],
     "additionalDirectories": [
       "c:\\Users\\nabed\\OneDrive\\デスクトップ\\Fineme\\app\\api\\provider\\services",
-      "c:\\Users\\nabed\\OneDrive\\デスクトップ\\Fineme\\app\\search"
-    ],
-    "allow": [
-      "Bash(npm run:*)"
+      "c:\\Users\\nabed\\OneDrive\\デスクトップ\\Fineme\\app\\search",
+      "C:\\Users\\nabed\\.claude\\projects\\c--Users-nabed-OneDrive--------Fineme\\memory"
     ]
   }
 }

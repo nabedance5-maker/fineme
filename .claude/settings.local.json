@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node scripts/copy-static.js)",
+      "Bash(vercel --version)"
+    ]
+  }
+}

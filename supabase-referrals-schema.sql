@@ -1,6 +1,8 @@
 -- referral_rewards テーブル
 -- 紹介報酬の月次記録。referrer_id が紹介した掲載者、referred_id が紹介された掲載者。
-CREATE TABLE IF NOT EXISTS referral_rewards (
+-- ※ 既存テーブルを削除して再作成（month→reward_month リネーム対応）
+DROP TABLE IF EXISTS referral_rewards;
+CREATE TABLE referral_rewards (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   referrer_id uuid REFERENCES providers(id) ON DELETE CASCADE,  -- 紹介した掲載者
   referred_id uuid REFERENCES providers(id) ON DELETE CASCADE,  -- 紹介された掲載者
