@@ -1,0 +1,156 @@
+export const metadata = {
+  title: 'About Fineme | 理念',
+  description: 'Finemeの思想・使命・提供価値・ビジョン',
+};
+
+export default function AboutFinemePage() {
+  return (
+    <>
+      <style>{`
+        .manifesto-hero{
+          padding:88px 24px;
+          background:
+            radial-gradient(1000px 360px at 50% 0%, rgba(2,6,23,0.035), transparent 70%),
+            linear-gradient(180deg,#ffffff,#f8fafc);
+        }
+        .manifesto-hero .title{
+          font-size:clamp(32px,6.4vw,56px);
+          font-weight:800;
+          text-align:center;
+          margin:0;
+          color:#0f172a;
+          letter-spacing:-0.01em;
+          text-shadow:0 1px 0 rgba(255,255,255,0.7);
+        }
+        .manifesto-hero .subtitle{
+          font-size:18px;
+          text-align:center;
+          color:#64748b;
+          margin-top:10px;
+        }
+        .manifesto{
+          max-width:980px;
+          margin:56px auto;
+          padding:0 24px;
+        }
+        .manifesto-section{
+          margin:38px 0;
+          padding:24px;
+          background:linear-gradient(180deg,#ffffff,#fbfbff);
+          border:1px solid rgba(15,23,42,0.06);
+          border-radius:16px;
+          box-shadow:0 10px 28px rgba(15,23,42,0.04);
+        }
+        .manifesto-section h2{
+          font-size:clamp(24px,3.8vw,32px);
+          font-weight:800;
+          margin:0 0 12px;
+          color:#0f172a;
+          letter-spacing:-0.01em;
+        }
+        .manifesto-section .en{font-size:14px;color:#64748b;margin-left:8px}
+        .manifesto-section p{font-size:18px;line-height:1.95;color:#334155;margin:12px 0}
+        .manifesto-section .poem{
+          padding:18px 16px;
+          background:linear-gradient(180deg,#f8fafc,#eef2ff);
+          border-left:4px solid var(--primary,#2563eb);
+          border-radius:12px;
+        }
+        .manifesto-section .poem p{font-size:20px;line-height:2;color:#111827;margin:8px 0}
+        .manifesto-section .list{margin:12px 0 0 0;padding-left:18px}
+        .manifesto-section .list li{font-size:18px;line-height:1.9;color:#334155;margin:4px 0}
+        .manifesto-callout{
+          background:linear-gradient(135deg,#f8fafc,#eef2ff);
+          border:1px solid #e5e7eb;
+          border-radius:16px;
+          padding:18px;
+          margin:22px 0;
+          box-shadow:0 8px 22px rgba(2,6,23,0.06);
+        }
+        @media (max-width:720px){
+          .manifesto{margin:36px auto; padding:0 16px}
+          .manifesto-section{margin:28px 0; padding:18px}
+          .manifesto-section h2{margin-bottom:10px}
+          .manifesto-section p{font-size:17px; line-height:1.9}
+          .manifesto-section .poem p{font-size:19px}
+        }
+      `}</style>
+
+      <section className="manifesto-hero">
+        <h1 className="title">About Fineme</h1>
+        <p className="subtitle">このサービスの理念</p>
+      </section>
+
+      <main className="manifesto">
+        <section className="manifesto-section">
+          <h2>思想<span className="en">｜Philosophy</span></h2>
+          <div className="poem">
+            <p>外見を整えることで生まれる小さな自信が、<br />
+            人に優しくなれる余白をつくり、<br />
+            その優しさが連鎖することで、<br />
+            世界は少しずつ愛で満たされていく。</p>
+            <p>Finemeは、そう信じています。</p>
+            <p>見た目を整えることは、<br />
+            誰かに勝つためでも、取り繕うためでもありません。<br />
+            鏡の前で、自分を嫌いにならずに済むこと。<br />
+            ほんの少し背筋が伸びること。<br />
+            その小さな変化が、心に余裕を生み、<br />
+            人との関係や選択を、静かに変えていきます。</p>
+            <p>外見は目的ではなく、きっかけ。</p>
+            <p>Finemeは、外見を通じて「自分を大切にする感覚」を社会に広げていくためのプラットフォームです。</p>
+          </div>
+        </section>
+
+        <section className="manifesto-section">
+          <h2>使命<span className="en">｜Mission</span></h2>
+          <p>外見を起点に、自信を再設計する人を増やす。</p>
+          <p>男性が見た目を変えることで人生を変えられると、頭ではわかっていても<br />
+          どこへ行けばいいのか。<br />
+          何から始めればいいのか。<br />
+          自分には何が合っているのか。<br />
+          その 地図と羅針盤が、社会にはまだ用意されていません。</p>
+          <p>だから、<br />
+          「変わりたい」と思った人が、迷わず一歩を踏み出せる環境をつくること<br />
+          不安や遠慮、情報の多さに足を取られることなく、自分に合った選択ができる状態をつくること<br />
+          これが、Fineme の使命です。</p>
+        </section>
+
+        <section className="manifesto-section">
+          <h2>提供価値<span className="en">｜Value</span></h2>
+          <p>Finemeが提供するのは、「外見を変えたい人と、その変化を支える人が、同じ地図を見ながら一歩を踏み出せる環境」です。</p>
+          <p>見た目を整えることは、単なる施術やサービスの受け取りではありません。<br />
+          そこには、不安も、期待も、勇気も混ざっています。</p>
+          <p>Finemeはその揺らぎを言葉にし、整理し、「自分は今、どこに向かっているのか」を見える形にします。</p>
+          <ul className="list">
+            <li>変わりたい理由。</li>
+            <li>求めている変化の大きさ。</li>
+            <li>任せたい度合い。</li>
+            <li>大切にしたい価値観。</li>
+          </ul>
+          <p>それらを共有したうえで出会うことで、<br />
+          選択は偶然ではなくなり、関係は消費ではなくなります。</p>
+          <div className="manifesto-callout">
+            <p style={{margin:0}}>納得して選び、<br />
+            納得して応え、<br />
+            納得して前に進める。</p>
+          </div>
+          <p>Finemeは、人が自分の変化に責任を持てる状態をつくり、その変化に本気で向き合える出会いを生み出します。</p>
+        </section>
+
+        <section className="manifesto-section">
+          <h2>ビジョン<span className="en">｜Vision</span></h2>
+          <p>外見を理由に、人生を諦めなくていい世界をつくる。</p>
+          <p>見た目が原因で、<br />
+          挑戦をやめた人。<br />
+          声をかけるのをやめた人。<br />
+          自分を出すのをやめた人。</p>
+          <p>Finemeは、<br />
+          「仕方ない」で片づけられてきたその諦めに、もう一度、進路を選び直せる余白をつくる。</p>
+          <p>外見は、運命じゃない。<br />
+          正しい地図と羅針盤があれば、誰でも更新できる。<br />
+          その一歩目を、当たり前に選べる世界へ。</p>
+        </section>
+      </main>
+    </>
+  );
+}

@@ -6,6 +6,21 @@ const nextConfig = {
   experimental: {
     typedRoutes: false
   },
+  async redirects() {
+    return [
+      { source: '/pages/login.html', destination: '/login', permanent: true },
+      { source: '/pages/user/login.html', destination: '/login', permanent: true },
+      { source: '/pages/auth/callback.html', destination: '/auth/callback', permanent: true },
+      { source: '/pages/privacy.html', destination: '/privacy', permanent: true },
+      { source: '/pages/terms.html', destination: '/terms', permanent: true },
+      { source: '/pages/terms-provider.html', destination: '/terms-provider', permanent: true },
+      { source: '/pages/tokusho.html', destination: '/tokusho', permanent: true },
+      { source: '/pages/about.html', destination: '/about', permanent: true },
+      { source: '/pages/about-fineme.html', destination: '/about-fineme', permanent: true },
+      { source: '/pages/glowup-guide.html', destination: '/guide', permanent: true },
+      { source: '/pages/notifications.html', destination: '/notifications', permanent: true },
+    ];
+  },
   async rewrites() {
     return [
       // ルート `/` を _root.html に向ける（/index.html URLを消して重複コンテンツ対策）
