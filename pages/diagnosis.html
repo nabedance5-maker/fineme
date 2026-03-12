@@ -121,53 +121,55 @@
     }
     .diag-option.multi.selected .diag-check { background: #2563eb; border-color: #2563eb; color: #fff; font-size: 11px; }
 
-    /* Q3a: concern area checkboxes */
-    .concern-check-group {
+
+    /* ── Q3: 2軸チェックグリッド ── */
+    .dual-check-hint {
+      font-size: 12px; color: #9ca3af; margin: 0 0 14px;
+      padding: 8px 12px; background: #f9fafb; border-radius: 8px;
+    }
+    .dual-check-header {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      grid-template-columns: 1fr 100px 100px;
+      padding: 6px 4px 8px;
+      font-size: 11px; font-weight: 700; color: #9ca3af;
+      letter-spacing: .05em; text-transform: uppercase;
+      border-bottom: 2px solid #f1f5f9;
+      margin-bottom: 2px;
     }
-    .concern-check-item {
-      display: flex;
+    .dual-check-header-empty { }
+    .dual-check-header-col { text-align: center; }
+    .dual-check-row {
+      display: grid;
+      grid-template-columns: 1fr 100px 100px;
       align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border: 2px solid #e5e7eb;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: border-color .12s, background .12s;
-      background: #fff;
-      user-select: none;
+      padding: 11px 4px;
+      border-bottom: 1px solid #f9fafb;
+      transition: background .1s;
+      border-radius: 8px;
     }
-    .concern-check-item:hover { border-color: #a5b4fc; background: rgba(99,102,241,.03); }
-    .concern-check-item.selected { border-color: #2563eb; background: rgba(37,99,235,.05); }
-    .concern-check-item.disabled { opacity: .4; cursor: not-allowed; pointer-events: none; }
-    .concern-check-icon { font-size: 18px; flex-shrink: 0; }
-    .concern-check-label { font-size: 13px; font-weight: 700; color: #374151; line-height: 1.3; }
-    .concern-check-box {
-      width: 18px; height: 18px; border: 2px solid #d1d5db; border-radius: 4px;
-      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-      margin-left: auto; transition: all .12s;
+    .dual-check-row:hover { background: #fafbff; }
+    .dual-check-row.has-concern { background: rgba(37,99,235,.04); }
+    .dual-check-row.has-doing   { background: rgba(5,150,105,.04); }
+    .dual-check-row.has-both    { background: rgba(99,102,241,.05); }
+    .dual-check-label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 14px; font-weight: 600; color: #374151;
     }
-    .concern-check-item.selected .concern-check-box { background: #2563eb; border-color: #2563eb; color: #fff; font-size: 11px; }
-
-    /* 最大3つ制限フィードバック */
-    .concern-limit-notice {
-      font-size: 12px;
-      color: #ef4444;
-      font-weight: 700;
-      margin-top: 10px;
-      display: none;
+    .dual-check-label-icon { font-size: 18px; line-height: 1; }
+    .dual-check-cell {
+      display: flex; justify-content: center; align-items: center;
     }
-    .concern-limit-notice.visible { display: block; }
-    .concern-count-text {
-      font-size: 12px;
-      color: #9ca3af;
-      margin-top: 8px;
-      text-align: right;
+    .dual-check-cell input[type="checkbox"] {
+      width: 22px; height: 22px; cursor: pointer;
+      accent-color: #2563eb; flex-shrink: 0;
+    }
+    .dual-check-cell.cell-doing input[type="checkbox"] { accent-color: #059669; }
+    @media (max-width: 480px) {
+      .dual-check-header { grid-template-columns: 1fr 80px 80px; }
+      .dual-check-row    { grid-template-columns: 1fr 80px 80px; }
+      .dual-check-label  { font-size: 13px; }
     }
 
-    /* Q4: behavior baseline checkboxes (same as multi) */
     /* Q8: skip link */
     .diag-skip-link {
       font-size: 13px;
@@ -329,80 +331,19 @@
         </div>
       </div>
 
-      <!-- ── SCREEN Q3a: 気になる部分（選択） ── -->
-      <div class="diag-screen" id="screen-q3a">
+      <!-- ── SCREEN Q3: 気になり×行動の2軸チェック ── -->
+      <div class="diag-screen" id="screen-q3">
         <button class="diag-back-btn" data-back>← 戻る</button>
         <div class="diag-card">
-          <p class="diag-step-label">Q3｜気になる部分</p>
-          <h2 class="diag-q">今、気になっている部分を<br>選んでください（最大3つ）</h2>
-          <p class="diag-hint">気になるものをすべて選んでください。3つまで選べます。</p>
-          <div class="concern-check-group" id="concern-check-group">
-            <!-- JSで生成 -->
+          <p class="diag-step-label">Q3｜現在地の把握</p>
+          <h2 class="diag-q">それぞれについて、<br>今のあなたの状態を教えてください</h2>
+          <p class="dual-check-hint">💡「気になっていない」も大切な情報です。全て正直に教えてください。</p>
+          <div class="dual-check-header">
+            <span class="dual-check-header-empty"></span>
+            <span class="dual-check-header-col" style="color:#2563eb">気になっている</span>
+            <span class="dual-check-header-col" style="color:#059669">今やっている</span>
           </div>
-          <div class="concern-count-text" id="concern-count-text">0 / 3 選択中</div>
-          <div class="concern-limit-notice" id="concern-limit-notice">3つまで選択できます。変更する場合は選択を外してから選び直してください。</div>
-        </div>
-      </div>
-
-      <!-- ── SCREEN Q3b: 気になる部分（優先度） ── -->
-      <div class="diag-screen" id="screen-q3b">
-        <button class="diag-back-btn" data-back>← 戻る</button>
-        <div class="diag-card">
-          <p class="diag-step-label">Q3｜最優先</p>
-          <h2 class="diag-q">その中で、一番気になっているのは<br>どれですか？</h2>
-          <p class="diag-hint">変容の起点になる部分を一つだけ選んでください。</p>
-          <div class="diag-options" id="opts-q3b">
-            <!-- JSで動的生成 -->
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SCREEN Q4: 行動ベースライン ── -->
-      <div class="diag-screen" id="screen-q4">
-        <button class="diag-back-btn" data-back>← 戻る</button>
-        <div class="diag-card">
-          <p class="diag-step-label">Q4｜現在地の確認</p>
-          <h2 class="diag-q">今、外見のために定期的に<br>やっていることを教えてください</h2>
-          <p class="diag-hint">当てはまるものをすべて選んでください。（複数選択可）</p>
-          <div class="diag-options" id="opts-q4">
-            <button class="diag-option multi" data-value="barbershop">
-              <span class="diag-check">✓</span>
-              <span class="diag-option-body">
-                <span class="diag-option-title">美容院・理容室に月1回以上通っている</span>
-              </span>
-            </button>
-            <button class="diag-option multi" data-value="skincare">
-              <span class="diag-check">✓</span>
-              <span class="diag-option-body">
-                <span class="diag-option-title">スキンケアを毎日している</span>
-              </span>
-            </button>
-            <button class="diag-option multi" data-value="eyebrow_care">
-              <span class="diag-check">✓</span>
-              <span class="diag-option-body">
-                <span class="diag-option-title">眉毛を整えている（サロンまたは自分で）</span>
-              </span>
-            </button>
-            <button class="diag-option multi" data-value="fashion_conscious">
-              <span class="diag-check">✓</span>
-              <span class="diag-option-body">
-                <span class="diag-option-title">ファッションを意識して服を選んでいる</span>
-              </span>
-            </button>
-            <button class="diag-option multi" data-value="exercise">
-              <span class="diag-check">✓</span>
-              <span class="diag-option-body">
-                <span class="diag-option-title">ジムや運動を続けている</span>
-              </span>
-            </button>
-            <button class="diag-option multi" data-value="none">
-              <span class="diag-check">✓</span>
-              <span class="diag-option-body">
-                <span class="diag-option-title">ほとんど何もやっていない</span>
-                <span class="diag-option-desc">ここが出発点です</span>
-              </span>
-            </button>
-          </div>
+          <div id="dual-check-grid"><!-- JSで生成 --></div>
         </div>
       </div>
 
@@ -667,10 +608,8 @@
     const state = {
       trigger: null,
       scene: null,
-      concern_areas: {},        // { id: level }
-      concern_selected: [],     // 選択した部位のid配列（最大3）
-      concern_priority: null,   // 一番気になる部位のid
-      behavior_baseline: [],    // Q4
+      concern_flags: {},        // { id: true/false } 気になっているか
+      behavior_flags: {},       // { id: true/false } 今やっているか
       past_attempts: [],        // Q5
       failure_pattern: null,    // Q5b（条件付き）
       style_relationship: null, // Q6
@@ -679,11 +618,9 @@
     };
 
     // Screen order
-    // Q3b / Q5b は条件付きサブ画面（プログレスカウントしない）
-    // メイン画面は 9 問: q1,q2,q3a,q4,q5,q6,q7,q8
-    // 実際には q3b と q5b が間に入ることがある
-    const MAIN_SCREENS = ['q1','q2','q3a','q4','q5','q6','q7','q8'];
-    const TOTAL_STEPS = 8; // q3bとq5bはサブ画面扱い → 表示上は8問+任意1問=9問相当
+    // Q5b は条件付きサブ画面（プログレスカウントしない）
+    const MAIN_SCREENS = ['q1','q2','q3','q5','q6','q7','q8'];
+    const TOTAL_STEPS = 7;
 
     let currentScreen = 'landing';
     let screenHistory = ['landing'];
@@ -710,18 +647,17 @@
     }
 
     function updateProgress(){
-      const isMain = MAIN_SCREENS.includes(currentScreen) || currentScreen === 'q3b' || currentScreen === 'q5b';
+      const isMain = MAIN_SCREENS.includes(currentScreen) || currentScreen === 'q5b';
       progressWrap.style.display = isMain ? '' : 'none';
       if(!isMain) return;
 
-      // プログレスはメイン8問のインデックスで計算（q3b/q5bはサブ扱い）
-      const baseScreen = currentScreen === 'q3b' ? 'q3a' : currentScreen === 'q5b' ? 'q5' : currentScreen;
+      // プログレスはメイン7問のインデックスで計算（q5bはサブ扱い）
+      const baseScreen = currentScreen === 'q5b' ? 'q5' : currentScreen;
       const idx = MAIN_SCREENS.indexOf(baseScreen);
       if(idx === -1) return;
-      const done = idx;
-      const pct = Math.round((done / TOTAL_STEPS) * 100);
+      const pct = Math.round((idx / TOTAL_STEPS) * 100);
       progressFill.style.width = pct + '%';
-      progressText.textContent = done + ' / ' + TOTAL_STEPS;
+      progressText.textContent = idx + ' / ' + TOTAL_STEPS;
     }
 
     function updateNav(){
@@ -739,14 +675,13 @@
     function updateNextBtn(){
       let enabled = false;
       switch(currentScreen){
-        case 'q1':   enabled = !!state.trigger; break;
-        case 'q2':   enabled = !!state.scene; break;
-        case 'q3a':  enabled = state.concern_selected.length > 0; break;
-        case 'q3b':  enabled = !!state.concern_priority; break;
-        case 'q4':   enabled = state.behavior_baseline.length > 0; break;
-        case 'q5':   enabled = state.past_attempts.length > 0; break;
-        case 'q5b':  enabled = !!state.failure_pattern; break;
-        case 'q6':   enabled = !!state.style_relationship; break;
+        case 'q1':  enabled = !!state.trigger; break;
+        case 'q2':  enabled = !!state.scene; break;
+        case 'q3':  enabled = Object.values(state.concern_flags).some(v=>v) ||
+                               Object.values(state.behavior_flags).some(v=>v); break;
+        case 'q5':  enabled = state.past_attempts.length > 0; break;
+        case 'q5b': enabled = !!state.failure_pattern; break;
+        case 'q6':  enabled = !!state.style_relationship; break;
         case 'q7':   enabled = !!state.urgency; break;
         case 'q8':   enabled = !!state.budget; break;
       }
@@ -761,21 +696,9 @@
       let next = null;
 
       switch(currentScreen){
-        case 'q1':  next = 'q2'; break;
-        case 'q2':  next = 'q3a'; break;
-        case 'q3a':
-          // Q3bは2つ以上選択した場合のみ
-          if(state.concern_selected.length >= 2){
-            buildQ3b();
-            next = 'q3b';
-          } else {
-            // 1つだけ選んだ場合はそれが優先
-            state.concern_priority = state.concern_selected[0] || null;
-            next = 'q4';
-          }
-          break;
-        case 'q3b': next = 'q4'; break;
-        case 'q4':  next = 'q5'; break;
+        case 'q1': next = 'q2'; break;
+        case 'q2': next = 'q3'; break;
+        case 'q3': next = 'q5'; break;
         case 'q5':
           // Q5bはnone以外を選んだ場合のみ
           if(state.past_attempts.length > 0 && !(state.past_attempts.length === 1 && state.past_attempts[0] === 'none')){
@@ -809,24 +732,35 @@
     /*  Save & Finish                              */
     /* ─────────────────────────────────────────── */
     function saveAndFinish(){
-      // concern_areasを構築: priorityはlevel=4、それ以外はlevel=3
+      // concern_areasを構築:
+      //   気になっている & 取り組んでいない → level 4（最優先）
+      //   気になっている & 取り組んでいる  → level 3（継続中）
       const concernAreas = {};
-      state.concern_selected.forEach(id => {
-        concernAreas[id] = (id === state.concern_priority) ? 4 : 3;
+      Object.entries(state.concern_flags).forEach(([id, concerned]) => {
+        if(concerned) concernAreas[id] = state.behavior_flags[id] ? 3 : 4;
       });
+
+      // behavior_baseline を導出（やっていると回答した全項目）
+      const behaviorBaseline = Object.entries(state.behavior_flags)
+        .filter(([,v]) => v).map(([id]) => id);
+
+      // concern_priority を導出:
+      //   気になっている & 取り組んでいない の最初の項目
+      //   なければ気になっている最初の項目
+      const concernedOrder = CONCERN_AREAS.map(a => a.id).filter(id => state.concern_flags[id]);
+      const priority = concernedOrder.find(id => !state.behavior_flags[id]) || concernedOrder[0] || null;
 
       // style_relationship から style と relationship を導出
       const styleRel = STYLE_MAP[state.style_relationship] || { style: null, relationship: null };
 
       const profile = {
-        version: 'v5',
+        version: 'v6',
         at: Date.now(),
         trigger: state.trigger,
         scene: state.scene,
         concern_areas: concernAreas,
-        concern_selected: state.concern_selected,
-        concern_priority: state.concern_priority,
-        behavior_baseline: state.behavior_baseline,
+        concern_priority: priority,
+        behavior_baseline: behaviorBaseline,
         past_attempts: state.past_attempts,
         failure_pattern: state.failure_pattern,
         style_relationship: state.style_relationship,
@@ -852,93 +786,53 @@
     }
 
     /* ─────────────────────────────────────────── */
-    /*  Q3a: concern area checkboxes               */
+    /*  Q3: dual-check grid (concern × behavior)   */
     /* ─────────────────────────────────────────── */
-    (function buildConcernCheckGroup(){
-      const group = document.getElementById('concern-check-group');
-      const countText = document.getElementById('concern-count-text');
-      const limitNotice = document.getElementById('concern-limit-notice');
+    (function buildDualCheckGrid(){
+      const grid = document.getElementById('dual-check-grid');
 
       CONCERN_AREAS.forEach(area => {
-        const item = document.createElement('div');
-        item.className = 'concern-check-item';
-        item.id = 'concern-item-' + area.id;
-        item.dataset.id = area.id;
-        item.innerHTML =
-          '<span class="concern-check-icon">' + area.icon + '</span>' +
-          '<span class="concern-check-label">' + area.label + '</span>' +
-          '<span class="concern-check-box">✓</span>';
+        const row = document.createElement('div');
+        row.className = 'dual-check-row';
+        row.id = 'dual-row-' + area.id;
 
-        item.addEventListener('click', function(){
-          const id = area.id;
-          const isSelected = item.classList.contains('selected');
+        const cbConcernId = 'cb-concern-' + area.id;
+        const cbDoingId   = 'cb-doing-'   + area.id;
 
-          if(isSelected){
-            // 選択解除
-            item.classList.remove('selected');
-            const idx = state.concern_selected.indexOf(id);
-            if(idx > -1) state.concern_selected.splice(idx, 1);
-          } else {
-            // 選択追加（最大3つ）
-            if(state.concern_selected.length >= 3){
-              limitNotice.classList.add('visible');
-              return;
-            }
-            item.classList.add('selected');
-            state.concern_selected.push(id);
-          }
+        row.innerHTML =
+          '<div class="dual-check-label">' +
+            '<span class="dual-check-label-icon">' + area.icon + '</span>' +
+            '<span>' + area.label + '</span>' +
+          '</div>' +
+          '<div class="dual-check-cell">' +
+            '<input type="checkbox" id="' + cbConcernId + '" data-id="' + area.id + '" data-type="concern">' +
+          '</div>' +
+          '<div class="dual-check-cell cell-doing">' +
+            '<input type="checkbox" id="' + cbDoingId + '" data-id="' + area.id + '" data-type="doing">' +
+          '</div>';
 
-          limitNotice.classList.remove('visible');
-
-          // 3つ達したら残りをdisable
-          const reached = state.concern_selected.length >= 3;
-          group.querySelectorAll('.concern-check-item').forEach(el => {
-            if(!el.classList.contains('selected')){
-              if(reached){
-                el.classList.add('disabled');
-              } else {
-                el.classList.remove('disabled');
-              }
-            }
-          });
-
-          // カウント表示更新
-          countText.textContent = state.concern_selected.length + ' / 3 選択中';
+        row.querySelector('#' + cbConcernId).addEventListener('change', function(){
+          state.concern_flags[area.id] = this.checked;
+          updateRowStyle(row, area.id);
+          updateNextBtn();
+        });
+        row.querySelector('#' + cbDoingId).addEventListener('change', function(){
+          state.behavior_flags[area.id] = this.checked;
+          updateRowStyle(row, area.id);
           updateNextBtn();
         });
 
-        group.appendChild(item);
+        grid.appendChild(row);
       });
+
+      function updateRowStyle(row, id){
+        const c = !!state.concern_flags[id];
+        const d = !!state.behavior_flags[id];
+        row.classList.toggle('has-both',    c && d);
+        row.classList.toggle('has-concern', c && !d);
+        row.classList.toggle('has-doing',   !c && d);
+      }
     })();
-
-    /* ─────────────────────────────────────────── */
-    /*  Q3b: priority radio (dynamic build)        */
-    /* ─────────────────────────────────────────── */
-    function buildQ3b(){
-      const container = document.getElementById('opts-q3b');
-      container.innerHTML = '';
-      state.concern_priority = null; // リセット
-
-      state.concern_selected.forEach(id => {
-        const area = CONCERN_AREAS.find(a => a.id === id);
-        if(!area) return;
-        const btn = document.createElement('button');
-        btn.className = 'diag-option';
-        btn.dataset.value = id;
-        btn.innerHTML =
-          '<span class="diag-option-icon">' + area.icon + '</span>' +
-          '<span class="diag-option-body">' +
-            '<span class="diag-option-title">' + area.label + '</span>' +
-          '</span>';
-        btn.addEventListener('click', function(){
-          container.querySelectorAll('.diag-option').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          state.concern_priority = id;
-          updateNextBtn();
-        });
-        container.appendChild(btn);
-      });
-    }
 
     /* ─────────────────────────────────────────── */
     /*  Single choice handlers                     */
