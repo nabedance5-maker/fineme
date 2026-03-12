@@ -1,11 +1,62 @@
 "use client";
 import Link from 'next/link';
 import Image from 'next/image';
-import dynamic from 'next/dynamic';
-
-const SearchBar = dynamic(() => import('./SearchBar'), { ssr: false });
+import { useState, useEffect } from 'react';
 
 export default function Navbar() {
+  const [authState, setAuthState] = useState(null); // null=loading, false=guest, object=user
+  const [points, setPoints] = useState(null);
+
+  useEffect(() => {
+    try {
+      // Supabase auth token チェック
+      const sbKey = Object.keys(localStorage).find(
+        k => k.startsWith('sb-') && k.endsWith('-auth-token')
+      );
+      if (sbKey) {
+        const raw = localStorage.getItem(sbKey);
+        if (raw) {
+          const obj = JSON.parse(raw);
+          const user = obj?.user;
+          if (user?.id) {
+            setAuthState({ id: user.id, email: user.email || '' });
+            // ポイント取得
+            try {
+              const pr = localStorage.getItem('fineme:points:state');
+              if (pr) {
+                const po = JSON.parse(pr);
+                const pts = Number(po.points || 0);
+                const visits = Number(po.visits || 0);
+                const cnt = Number(po.reservations || 0);
+                const ladder = visits > 0 ? visits : cnt;
+                const rate = ladder >= 11 ? 3 : ladder >= 4 ? 2 : 1;
+                setPoints({ pts, rate });
+              }
+            } catch {}
+            return;
+          }
+        }
+      }
+      // レガシー sessionStorage チェック
+      const raw = sessionStorage.getItem('glowup:userSession');
+      if (raw) { setAuthState(JSON.parse(raw)); return; }
+      setAuthState(false);
+    } catch {
+      setAuthState(false);
+    }
+  }, []);
+
+  const handleSignOut = () => {
+    try {
+      const sbKey = Object.keys(localStorage).find(
+        k => k.startsWith('sb-') && k.endsWith('-auth-token')
+      );
+      if (sbKey) localStorage.removeItem(sbKey);
+      sessionStorage.removeItem('glowup:userSession');
+    } catch {}
+    window.location.href = '/';
+  };
+
   return (
     <header className="navbar">
       <div className="container navbar-inner">
@@ -19,27 +70,27 @@ export default function Navbar() {
             priority
           />
         </Link>
-        <div className="navbar-search hide-mobile">
-          <SearchBar compact={true} />
-        </div>
         <nav className="nav-links">
           <Link href="/search">検索</Link>
+          <Link href="/pages/about.html">Finemeとは？</Link>
           <Link href="/articles">特集</Link>
-          <Link href="/pages/mypage/index.html">マイページ</Link>
-          <Link
-            href="/pages/diagnosis.html"
-            style={{
-              background: 'linear-gradient(90deg,#2563eb,#0e3760)',
-              color: '#fff',
-              padding: '7px 14px',
-              borderRadius: '8px',
-              fontWeight: '700',
-              fontSize: '13px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            診断する
-          </Link>
+          {authState && points && (
+            <span className="points-badge">{points.pts}pt / {points.rate}%</span>
+          )}
+          <Link href="/pages/diagnosis.html" className="btn-diagnosis">診断する</Link>
+          {authState === null ? null : authState ? (
+            <>
+              <a href="#" onClick={(e) => { e.preventDefault(); handleSignOut(); }}
+                style={{ whiteSpace: 'nowrap' }}>ログアウト</a>
+              <Link href="/pages/mypage/index.html" className="btn"
+                style={{ background: '#111', color: '#fff', padding: '7px 14px',
+                         borderRadius: '8px', fontWeight: 700, fontSize: '13px' }}>
+                マイページ
+              </Link>
+            </>
+          ) : (
+            <Link href="/pages/login.html" style={{ whiteSpace: 'nowrap' }}>ログイン</Link>
+          )}
         </nav>
       </div>
     </header>
