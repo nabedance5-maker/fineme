@@ -432,7 +432,7 @@ async function inject(selector, relativePath){
           area.textContent = '';
           const loginA = document.createElement('a');
           loginA.id = 'header-login-link';
-          loginA.href = PROJECT_BASE ? (PROJECT_BASE + '/pages/user/login.html') : '/pages/user/login.html';
+          loginA.href = '/login?next=/mypage';
           loginA.textContent = 'ログイン';
           area.appendChild(loginA);
         }

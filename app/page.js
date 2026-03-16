@@ -1,9 +1,31 @@
 'use client';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import Script from 'next/script';
 
 export default function HomePage() {
+  // ホームページ用スクリプトをDOMContentLoadedが発火済みでも動くよう動的ロード
+  useEffect(() => {
+    const srcs = [
+      '/scripts/home-roadmap.js?v=20260316',
+      '/scripts/home-reco.js?v=20251016',
+      '/scripts/home-features.js?v=20251015',
+      '/scripts/home-recent.js?v=20251016',
+    ];
+    let loaded = 0;
+    srcs.forEach(src => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = () => {
+        loaded++;
+        // 全スクリプトのロード完了後に1回だけDOMContentLoadedを発火
+        if (loaded === srcs.length) {
+          document.dispatchEvent(new Event('DOMContentLoaded'));
+        }
+      };
+      document.body.appendChild(s);
+    });
+  }, []);
+
   useEffect(() => {
     // 目的セクション（保存済みゴールがあれば表示）
     try {
@@ -217,10 +239,6 @@ export default function HomePage() {
         </section>
       </main>
 
-      <Script src="/scripts/home-roadmap.js?v=20260316" strategy="afterInteractive" />
-      <Script src="/scripts/home-reco.js?v=20251016" strategy="afterInteractive" />
-      <Script src="/scripts/home-features.js?v=20251015" strategy="afterInteractive" />
-      <Script src="/scripts/home-recent.js?v=20251016" strategy="afterInteractive" />
     </>
   );
 }

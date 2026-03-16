@@ -65,14 +65,14 @@ export default function Navbar() {
             <>
               <a href="#" onClick={(e) => { e.preventDefault(); handleSignOut(); }}
                 style={{ whiteSpace: 'nowrap' }}>ログアウト</a>
-              <Link href="/pages/mypage/index.html" className="btn"
+              <Link href="/mypage" className="btn"
                 style={{ background: '#111', color: '#fff', padding: '7px 14px',
                          borderRadius: '8px', fontWeight: 700, fontSize: '13px' }}>
                 マイページ
               </Link>
             </>
           ) : (
-            <Link href="/pages/login.html" style={{ whiteSpace: 'nowrap' }}>ログイン</Link>
+            <Link href="/login?next=/mypage" style={{ whiteSpace: 'nowrap' }}>ログイン</Link>
           )}
         </nav>
       </div>

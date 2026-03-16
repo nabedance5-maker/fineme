@@ -36,14 +36,21 @@ export default function LoginPage() {
       setLoginLoading(false);
       return;
     }
-    // 掲載者かチェック
+    // ?next= パラメータがあればそこへ（ユーザー側ログイン）
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get('next');
+    if (next) {
+      window.location.href = next;
+      return;
+    }
+    // 掲載者かチェック（直接 /login アクセス時は掲載者ダッシュボードへ）
     const res = await fetch('/api/provider/me', {
       headers: { 'Authorization': `Bearer ${data.session.access_token}` },
     });
     if (res.ok) {
-      window.location.href = '/pages/provider/index.html';
+      window.location.href = '/provider/dashboard';
     } else {
-      window.location.href = '/pages/mypage/index.html';
+      window.location.href = '/mypage';
     }
     setLoginLoading(false);
   }
