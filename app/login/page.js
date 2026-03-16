@@ -84,7 +84,7 @@ export default function LoginPage() {
         {/* ログインフォーム */}
         {view === 'login' && (
           <div>
-            <h1 style={{ fontSize: '22px', fontWeight: '800', margin: '0 0 6px' }}>掲載者ログイン</h1>
+            <h1 style={{ fontSize: '22px', fontWeight: '800', margin: '0 0 6px' }}>ログイン</h1>
             <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 24px' }}>
               登録されたメールアドレスとパスワードを入力してください
             </p>

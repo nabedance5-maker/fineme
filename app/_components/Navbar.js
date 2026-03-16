@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 
 export default function Navbar() {
   const [authState, setAuthState] = useState(null); // null=loading, false=guest, object=user
-  const [points, setPoints] = useState(null);
 
   useEffect(() => {
     try {
@@ -20,19 +19,6 @@ export default function Navbar() {
           const user = obj?.user;
           if (user?.id) {
             setAuthState({ id: user.id, email: user.email || '' });
-            // ポイント取得
-            try {
-              const pr = localStorage.getItem('fineme:points:state');
-              if (pr) {
-                const po = JSON.parse(pr);
-                const pts = Number(po.points || 0);
-                const visits = Number(po.visits || 0);
-                const cnt = Number(po.reservations || 0);
-                const ladder = visits > 0 ? visits : cnt;
-                const rate = ladder >= 11 ? 3 : ladder >= 4 ? 2 : 1;
-                setPoints({ pts, rate });
-              }
-            } catch {}
             return;
           }
         }
@@ -74,9 +60,6 @@ export default function Navbar() {
           <Link href="/search">検索</Link>
           <Link href="/pages/about.html">Finemeとは？</Link>
           <Link href="/articles">特集</Link>
-          {authState && points && (
-            <span className="points-badge">{points.pts}pt / {points.rate}%</span>
-          )}
           <Link href="/pages/diagnosis.html" className="btn-diagnosis">診断する</Link>
           {authState === null ? null : authState ? (
             <>

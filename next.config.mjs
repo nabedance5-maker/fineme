@@ -66,12 +66,6 @@ const nextConfig = {
       { source: '/pages/user/schedule.html', destination: '/booking/schedule', permanent: true },
     ];
   },
-  async rewrites() {
-    return [
-      // ルート `/` を _root.html に向ける（/index.html URLを消して重複コンテンツ対策）
-      { source: '/', destination: '/_root.html' },
-    ];
-  },
   async headers() {
     return [
       // 静的HTMLページ: ブラウザキャッシュを無効化（デプロイ後も即反映）

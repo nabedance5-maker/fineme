@@ -9,6 +9,9 @@ const DIAG_KEY_V2  = 'fineme:diagnosis:v2';
 const DIAG_KEY_V4  = 'fineme:diagnosis:latest';
 const PROGRESS_KEY = 'fineme:roadmap:progress';
 
+// 各フェーズのアイテム数（renderPhaseBlock時に設定）
+const _phaseItemCounts = {};
+
 // v4形式（変容プロファイル）をv2形式のscores/resultに変換
 function adaptV4toDiag(v4) {
   if (!v4 || v4.version !== 'v4') return null;
@@ -342,6 +345,7 @@ function renderDiagnosed(diag) {
 }
 
 function renderPhaseBlock(elId, items, phaseNum, currentPhase, progress, diag) {
+  _phaseItemCounts[phaseNum] = items.length;
   const isV4 = diag && diag._v4 === true;
   const concernLevels = (diag && diag._concern_levels) || {};
   const block = document.getElementById(elId);
@@ -669,6 +673,16 @@ window.roadmapCheckItem = function(itemKey, phaseNum) {
     else arr.splice(idx, 1);
     saveProgress(progress);
     init();
+    // 全アイテムチェック済みで未完了なら自動Phase完了
+    const total = _phaseItemCounts[phaseNum] || 0;
+    const checked = (loadProgress().checked?.[phaseNum] || []).length;
+    if (total > 0 && checked >= total) {
+      const p = loadProgress();
+      const alreadyDone = (phaseNum === 1 && p.phase1_complete)
+        || (phaseNum === 2 && p.phase2_complete)
+        || (phaseNum === 3 && p.all_complete);
+      if (!alreadyDone) { window.roadmapCompletePhase(phaseNum); }
+    }
   } catch {}
 };
 

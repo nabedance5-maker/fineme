@@ -52,13 +52,14 @@ export async function POST(request) {
         recommend_to: clean[3] || null,
         tags: Array.isArray(tags) ? tags.slice(0, 5) : [],
         rating: 5,
-        status: 'pending',
+        status: 'approved',
+        published_at: new Date().toISOString(),
       })
       .select('id')
       .single();
 
     if (error) throw error;
-    return Response.json({ ok: true, id: data.id, message: '投稿を受け付けました。審査後に公開されます。' });
+    return Response.json({ ok: true, id: data.id, message: '投稿が公開されました。' });
   } catch (err) {
     console.error('[stories POST]', err);
     return Response.json({ error: '送信に失敗しました' }, { status: 500 });

@@ -362,29 +362,6 @@ async function inject(selector, relativePath){
     }catch{}
   // Apply base SEO (OGP/meta/JSON-LD)
   try{ applySEOBase(); }catch{}
-    // Points badge: show only when user is logged in
-    try{
-      const container = document.getElementById('header-points');
-      const badge = document.getElementById('header-points-badge');
-      if(container){
-        import('./user-auth.js').then(mod => {
-          const sess = mod.getUserSession && mod.getUserSession();
-          if(!sess){ container.hidden = true; return; }
-          container.hidden = false;
-          if(badge){
-            let pts = 0, visits = 0, cnt = 0;
-            try{
-              const raw = localStorage.getItem('fineme:points:state');
-              if(raw){ const obj = JSON.parse(raw)||{}; pts = Number(obj.points||0)||0; visits = Number(obj.visits||0)||0; cnt = Number(obj.reservations||0)||0; }
-            }catch{}
-            const ladder = (visits>0?visits:cnt);
-            const rate = (ladder>=11)?3:(ladder>=4?2:1);
-            badge.textContent = `${pts}pt / ${rate}%`;
-            badge.title = `現在の還元率: ${rate}%`;
-          }
-        }).catch(()=>{ try{ container.hidden = true; }catch{} });
-      }
-    }catch{}
     // Mobile nav toggle
     const toggle = document.getElementById('nav-toggle');
     const menu = document.getElementById('nav-menu');

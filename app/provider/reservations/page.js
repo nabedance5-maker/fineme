@@ -8,7 +8,6 @@ export default function ProviderReservationsPage() {
     if (initialized.current) return;
     initialized.current = true;
 
-    // --- points helpers (inlined from points.js) ---
     function listReservations() {
       try {
         const raw = localStorage.getItem('fineme:reservations:list');
@@ -27,14 +26,6 @@ export default function ProviderReservationsPage() {
         localStorage.setItem(key, JSON.stringify(arr));
         return { ok: true };
       } catch { return { ok: false }; }
-    }
-    function updateHeaderPointsBadge() {
-      try {
-        const badge = document.getElementById('header-points-badge');
-        if (!badge) return;
-        const raw = localStorage.getItem('fineme:points');
-        badge.textContent = raw ? String(JSON.parse(raw).total || 0) : '0';
-      } catch {}
     }
 
     const host = document.getElementById('reservations-host');
@@ -87,7 +78,6 @@ export default function ProviderReservationsPage() {
             if (res.ok) {
               status.textContent = 'visited';
               render();
-              updateHeaderPointsBadge();
             }
             try {
               const apiRes = await fetch(`/api/reservations?providerId=${r.storeId}`);
@@ -136,7 +126,7 @@ export default function ProviderReservationsPage() {
     <main className="section">
       <div className="container stack" style={{ maxWidth: '1000px' }}>
         <h1 className="section-title">予約一覧（掲載者向け）</h1>
-        <p className="muted">来店確認は、来店したユーザーにのみポイントを付与するための重要な操作です。</p>
+        <p className="muted">来店確認を行うと、体験談依頼メールが自動送信されます。</p>
         <div id="reservations-host" className="stack"></div>
       </div>
     </main>
