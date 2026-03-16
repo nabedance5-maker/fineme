@@ -62,6 +62,8 @@ const nextConfig = {
       { source: '/pages/provider/schedule.html', destination: '/provider/schedule', permanent: true },
       { source: '/pages/provider/service_form.html', destination: '/provider/service-form', permanent: true },
       { source: '/pages/provider/staff.html', destination: '/provider/staff', permanent: true },
+      { source: '/pages/store.html', destination: '/search', permanent: true },
+      { source: '/pages/user/schedule.html', destination: '/booking/schedule', permanent: true },
     ];
   },
   async rewrites() {
