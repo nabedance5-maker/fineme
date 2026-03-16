@@ -11,12 +11,24 @@
       "Bash(sed -i \"s|src=\"\"../../scripts/main\\\\.js\"\">|src=\"\"../../scripts/main.js?v=20260312\"\">|g; s|src=\"\"../scripts/main\\\\.js\"\">|src=\"\"../scripts/main.js?v=20260312\"\">|g; s|src=\"\"./scripts/main\\\\.js\"\">|src=\"\"./scripts/main.js?v=20260312\"\">|g\" pages/user/login.html pages/user/schedule.html)",
       "Bash(grep -rn scripts/main.js pages/ --include=*.html)",
       "Bash(\"c:\\\\Users\\\\nabed\\\\OneDrive\\\\デスクトップ\\\\Fineme\\\\assets\\\\styles\\\\style.css\":*)",
-      "Bash(grep -rl assets/styles/style.css c:UsersnabedOneDriveデスクトップFinemepages c:UsersnabedOneDriveデスクトップFinemeindex.html --include=*.html)"
+      "Bash(grep -rl assets/styles/style.css c:UsersnabedOneDriveデスクトップFinemepages c:UsersnabedOneDriveデスクトップFinemeindex.html --include=*.html)",
+      "Bash(head -10 grep -n \"Navbar\\\\|import\\\\|header\" c:UsersnabedOneDriveデスクトップFinemeappprovider[slug]page.js)",
+      "Bash(do)",
+      "Bash(echo \"=== $f.html ===\")",
+      "Read(//c/Users/nabed/OneDrive/デスクトップ/Fineme/**)",
+      "Bash(for dir:*)",
+      "Bash(echo \"=== app/$dir ===\")",
+      "Bash(wc -l c:/Users/nabed/OneDrive/デスクトップ/Fineme/pages/admin/*.html c:/Users/nabed/OneDrive/デスクトップ/Fineme/pages/provider/*.html)",
+      "Bash(grep -l provider c:/Users/nabed/OneDrive/デスクトップ/Fineme/scripts/*.js)",
+      "Bash(xargs wc:*)",
+      "Bash(grep -l \"detail\\\\|feature\\\\|staff\" c:/Users/nabed/OneDrive/デスクトップ/Fineme/scripts/*.js)",
+      "Bash(grep -rn \"cdn.jsdelivr\\\\|from ''https://\" \"c:/Users/nabed/OneDrive/デスクトップ/Fineme/app/\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\nabed\\OneDrive\\デスクトップ\\Fineme\\app\\api\\provider\\services",
       "c:\\Users\\nabed\\OneDrive\\デスクトップ\\Fineme\\app\\search",
-      "C:\\Users\\nabed\\.claude\\projects\\c--Users-nabed-OneDrive--------Fineme\\memory"
+      "C:\\Users\\nabed\\.claude\\projects\\c--Users-nabed-OneDrive--------Fineme\\memory",
+      "c:\\Users\\nabed\\OneDrive\\デスクトップ\\Fineme\\app\\provider"
     ]
   }
 }

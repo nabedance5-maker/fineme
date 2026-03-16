@@ -648,7 +648,7 @@ export default function ProviderDashboardPage() {
         const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
         const session = key ? JSON.parse(localStorage.getItem(key)) : null;
         if (!session?.access_token) { msg.textContent = 'ログインセッションが見つかりません。再ログインしてください。'; msg.style.color = '#ef4444'; msg.style.display = 'block'; return; }
-        const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+        const { createClient } = await import('@supabase/supabase-js');
         const sb = createClient('https://qsfpzlvucqzmjldshwwd.supabase.co', SUPABASE_ANON);
         const { error } = await sb.auth.updateUser({ password: pw1 });
         if (error) { msg.textContent = 'エラー: ' + error.message; msg.style.color = '#ef4444'; }

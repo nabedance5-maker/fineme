@@ -19,6 +19,13 @@ const nextConfig = {
       { source: '/pages/about-fineme.html', destination: '/about-fineme', permanent: true },
       { source: '/pages/glowup-guide.html', destination: '/guide', permanent: true },
       { source: '/pages/notifications.html', destination: '/notifications', permanent: true },
+      { source: '/pages/mypage/index.html', destination: '/mypage', permanent: true },
+      { source: '/pages/mypage/diagnosis.html', destination: '/mypage/diagnosis', permanent: true },
+      { source: '/pages/mypage/profile.html', destination: '/mypage/profile', permanent: true },
+      { source: '/pages/mypage/favorites.html', destination: '/mypage/favorites', permanent: true },
+      { source: '/pages/mypage/history.html', destination: '/mypage/history', permanent: true },
+      { source: '/pages/mypage/reservations.html', destination: '/my-reservations', permanent: true },
+      { source: '/pages/user/story-submit.html', destination: '/story-submit', permanent: true },
     ];
   },
   async rewrites() {
