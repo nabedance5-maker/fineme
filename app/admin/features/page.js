@@ -12,7 +12,6 @@ export default function AdminFeaturesPage() {
     style.textContent = `
       #feature-modal .modal-content .rte-toolbar{position:sticky !important; top:0 !important; z-index:10; background:#fff; display:flex; flex-wrap:wrap; gap:8px}
       body.modal-open{ overflow:hidden; }
-      .admin-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
       .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);display:block;z-index:999}
       .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;z-index:1000}
       .modal[hidden], .modal-backdrop[hidden]{display:none}
@@ -453,7 +452,7 @@ export default function AdminFeaturesPage() {
 
   return (
     <main className="section">
-      <div className="container admin-grid">
+      <div>
         <section className="stack">
           <h1 className="section-title">特集管理</h1>
           <section id="features-list-section" className="stack">

@@ -10,8 +10,6 @@ export default function AdminProvidersPage() {
 
     const style = document.createElement('style');
     style.textContent = `
-      .admin-grid { display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-items: start; }
-      @media(max-width:768px){ .admin-grid { grid-template-columns: 1fr; } }
       .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
       .badge-green { background: #d1fae5; color: #065f46; }
       .badge-gray { background: #f3f4f6; color: #6b7280; }
@@ -156,7 +154,7 @@ export default function AdminProvidersPage() {
 
   return (
     <main className="section">
-      <div className="container admin-grid">
+      <div>
         <section className="stack">
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'12px'}}>
             <h1 className="section-title" style={{margin:'0'}}>掲載者管理</h1>

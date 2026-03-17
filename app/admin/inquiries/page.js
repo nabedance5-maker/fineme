@@ -10,7 +10,6 @@ export default function AdminInquiriesPage() {
 
     const style = document.createElement('style');
     style.textContent = `
-      .admin-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
       .table th, .table td { padding:8px; border-bottom:1px solid var(--color-border) }
       .badge { display:inline-block; padding:2px 8px; font-size:12px; border-radius:999px; background:#111; color:#fff }
       .row-note{ color:#6b7280; font-size:12px }
@@ -18,7 +17,6 @@ export default function AdminInquiriesPage() {
       .filters { display:flex; gap:8px; flex-wrap:wrap; align-items:end }
       .status-new { background:#111; color:#fff }
       .status-done { background:#16a34a; color:#fff }
-      @media(max-width:960px){ .admin-grid{grid-template-columns:1fr} }
     `;
     document.head.appendChild(style);
 
@@ -159,7 +157,7 @@ export default function AdminInquiriesPage() {
 
   return (
     <main className="section">
-      <div className="container admin-grid">
+      <div>
         <section className="stack">
           <h1 className="section-title">問い合わせ一覧</h1>
           <p className="muted">LPの簡易問い合わせフォームから保存された内容（ローカル保存）を表示します。</p>

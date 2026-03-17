@@ -10,7 +10,6 @@ export default function AdminAnalyticsPage() {
 
     const style = document.createElement('style');
     style.textContent = `
-      .admin-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
       .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
       .kpi-card{padding:16px;border:1px solid var(--color-border);border-radius:12px;background:#fff}
       .kpi-label{color:#6b7280;font-size:12px}
@@ -18,6 +17,7 @@ export default function AdminAnalyticsPage() {
       table{border-collapse:collapse;width:100%}
       th,td{border-bottom:1px solid var(--color-border);padding:8px;text-align:left}
       @media (max-width: 960px){ .kpi-grid{grid-template-columns:repeat(2,1fr)} }
+
     `;
     document.head.appendChild(style);
 
@@ -233,7 +233,7 @@ export default function AdminAnalyticsPage() {
 
   return (
     <main className="section">
-      <div className="container admin-grid">
+      <div>
         <section className="stack">
           <h1 className="section-title">分析</h1>
           <div className="card" style={{padding:'12px',display:'flex',gap:'12px',alignItems:'center',flexWrap:'wrap'}}>

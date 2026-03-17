@@ -10,7 +10,6 @@ export default function AdminPaymentsPage() {
 
     const style = document.createElement('style');
     style.textContent = `
-      .admin-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
       .kpi-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
       .kpi-card{padding:16px;border:1px solid var(--color-border);border-radius:12px;background:#fff}
       .kpi-label{color:#6b7280;font-size:12px;margin-bottom:4px}
@@ -36,7 +35,7 @@ export default function AdminPaymentsPage() {
       .table th{font-weight:600;color:#374151;background:#f9fafb}
       .table tbody tr:hover{background:#f9fafb}
       .referral-chain{font-size:12px;color:#6b7280}
-      @media(max-width:960px){.admin-grid{grid-template-columns:1fr}.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+      @media(max-width:960px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
     `;
     document.head.appendChild(style);
 
@@ -202,7 +201,7 @@ export default function AdminPaymentsPage() {
 
   return (
     <main className="section">
-      <div className="container admin-grid">
+      <div>
         <section className="stack">
           <h1 className="section-title">課金・サブスク管理</h1>
           <p className="muted">掲載者の課金状況・決済履歴・紹介報酬を管理します。</p>

@@ -10,7 +10,6 @@ export default function AdminStoriesPage() {
 
     const style = document.createElement('style');
     style.textContent = `
-      .admin-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
       .badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600}
       .badge-pending{background:#fef3c7;color:#92400e}
       .badge-approved{background:#d1fae5;color:#065f46}
@@ -31,7 +30,6 @@ export default function AdminStoriesPage() {
       .kpi-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;text-align:center}
       .kpi-value{font-size:28px;font-weight:800;color:#111}
       .kpi-label{font-size:12px;color:#6b7280;margin-top:2px}
-      @media(max-width:960px){.admin-grid{grid-template-columns:1fr}}
     `;
     document.head.appendChild(style);
 
@@ -149,7 +147,7 @@ export default function AdminStoriesPage() {
 
   return (
     <main className="section">
-      <div className="container admin-grid">
+      <div>
         <section className="stack">
           <h1 className="section-title">体験談管理</h1>
           <p className="muted">投稿された体験談の審査・承認/却下を行います。</p>

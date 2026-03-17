@@ -10,7 +10,6 @@ export default function AdminDashboardPage() {
 
     const style = document.createElement('style');
     style.textContent = `
-      .admin-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
       .kpi-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
       .kpi-card{padding:16px;border:1px solid var(--color-border);border-radius:12px;background:#fff}
       .kpi-label{color:#6b7280;font-size:12px}
@@ -303,7 +302,7 @@ export default function AdminDashboardPage() {
 
   return (
     <main className="section">
-      <div className="container admin-grid">
+      <div>
         <section className="stack">
           <h1 className="section-title">ダッシュボード</h1>
           <div className="kpi-grid">
