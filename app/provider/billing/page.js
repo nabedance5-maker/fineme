@@ -364,7 +364,24 @@ export default function BillingPage() {
         <div className="card" style={{ padding: '20px' }}>
           <h2 style={{ margin: '0 0 4px' }}>支払い方法</h2>
           <p className="muted" style={{ fontSize: '14px', marginBottom: '12px' }}>クレジットカード（Stripe）で管理しています。</p>
-          <button id="billing-portal-btn" className="btn btn-ghost">カード情報を変更・確認する</button>
+          <button
+            className="btn btn-ghost"
+            onClick={async () => {
+              try {
+                const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+                const token = key ? JSON.parse(localStorage.getItem(key) || 'null')?.access_token : null;
+                if (!token) { alert('ログインが必要です'); return; }
+                const res = await fetch('/api/billing/portal-session', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                  body: JSON.stringify({}),
+                });
+                const data = await res.json();
+                if (data.url) { window.location.href = data.url; }
+                else { alert('エラー: ' + (data.error || '不明なエラー')); }
+              } catch (e) { alert('通信エラー: ' + e.message); }
+            }}
+          >カード情報を変更・確認する</button>
           <p className="muted" style={{ fontSize: '12px', marginTop: '8px' }}>Stripeのセキュアな決済ページへ遷移します。</p>
         </div>
       </div>
