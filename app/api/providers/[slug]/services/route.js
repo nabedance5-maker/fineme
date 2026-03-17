@@ -19,7 +19,7 @@ export async function GET(request, { params }) {
 
   const { data, error } = await supabase
     .from('provider_services')
-    .select('id,name,description,price,duration,is_featured,sort_order')
+    .select('id,name,description,price,duration,is_featured,sort_order,image_url')
     .eq('provider_id', provider.id)
     .order('sort_order')
     .order('created_at');

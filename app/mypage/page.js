@@ -121,7 +121,7 @@ export default function MypagePage() {
               </div>
             )}
             <div className="cluster" style={{ gap: '8px', marginTop: '12px' }}>
-              <Link href="/search" className="btn" style={{ color: '#111' }}>サービスを探す</Link>
+              <Link href="/search" className="btn">サービスを探す</Link>
               <Link href="/my-reservations" className="btn btn-ghost">予約履歴を見る</Link>
             </div>
           </div>

@@ -52,7 +52,6 @@ export default function AboutPage() {
             <p style={{fontSize:'18px',color:'#475569',margin:'0 0 18px'}}>外見に自信がないあなたが気軽に始められて、続けられるように。検索・比較・予約を一つの場所で提供します。</p>
             <div style={{display:'flex',gap:'12px',flexWrap:'wrap',marginTop:'8px'}}>
               <Link href="/search" className="about-btn-primary">サービスを探す</Link>
-              <Link href="/diagnosis" className="about-btn-ghost">まずは診断</Link>
               <Link href="/guide" className="about-btn-ghost">垢抜けガイドを見る</Link>
             </div>
           </div>

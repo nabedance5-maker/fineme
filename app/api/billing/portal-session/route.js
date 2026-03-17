@@ -1,5 +1,8 @@
+// POST /api/billing/portal-session - Stripe Customer Portalセッション生成
 import Stripe from 'stripe';
-import { queryOne } from '@/lib/db-server';
+import { getSupabase } from '@/lib/supabase';
+
+const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) return null;
@@ -12,28 +15,41 @@ export async function POST(request) {
     return Response.json({ error: 'Stripe は未設定です' }, { status: 503 });
   }
 
-  try {
-    const { providerId } = await request.json();
-    if (!providerId) {
-      return Response.json({ error: 'providerId は必須です' }, { status: 400 });
-    }
+  // Supabase Bearer token 認証
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const token = authHeader.replace('Bearer ', '');
 
-    const provider = await queryOne(
-      'SELECT stripeCustomerId FROM providers WHERE id=?',
-      [providerId]
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return Response.json({ error: 'Invalid token' }, { status: 401 });
+  }
+
+  // メールで掲載者を特定 → stripe_customer_id を取得
+  const { data: provider, error: provError } = await supabase
+    .from('providers')
+    .select('id, stripe_customer_id')
+    .eq('email', user.email)
+    .single();
+
+  if (provError || !provider) {
+    return Response.json({ error: 'Provider not found' }, { status: 404 });
+  }
+
+  if (!provider.stripe_customer_id) {
+    return Response.json(
+      { error: 'Stripe Customer ID が見つかりません。管理者にお問い合わせください。' },
+      { status: 404 }
     );
+  }
 
-    if (!provider?.stripeCustomerId) {
-      return Response.json(
-        { error: 'Stripe Customer ID が見つかりません。管理者にお問い合わせください。' },
-        { status: 404 }
-      );
-    }
-
-    const returnUrl = `${request.headers.get('origin') || 'https://fineme.jp'}/pages/provider/billing.html`;
+  try {
+    const origin = request.headers.get('origin') || 'https://fineme.me';
     const session = await stripe.billingPortal.sessions.create({
-      customer: provider.stripeCustomerId,
-      return_url: returnUrl,
+      customer: provider.stripe_customer_id,
+      return_url: `${origin}/provider/billing`,
     });
 
     return Response.json({ url: session.url });

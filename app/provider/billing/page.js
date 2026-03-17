@@ -47,14 +47,19 @@ export default function BillingPage() {
 
     const API = '/api/billing';
 
-    // ---- Session ----
-    function getSession() {
-      try { return JSON.parse(sessionStorage.getItem('glowup:providerSession') || 'null'); } catch { return null; }
+    // ---- Supabase token ----
+    function getSupabaseToken() {
+      try {
+        const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+        if (!key) return null;
+        const obj = JSON.parse(localStorage.getItem(key) || 'null');
+        return obj?.access_token || null;
+      } catch { return null; }
     }
 
     // ---- Auth guard ----
-    const session = getSession();
-    if (!session) { location.href = '/pages/login.html'; return; }
+    const sbToken = getSupabaseToken();
+    if (!sbToken) { location.href = '/login?next=/provider/billing'; return; }
 
     // ---- Escape helper ----
     function esc(s) {
@@ -164,10 +169,14 @@ export default function BillingPage() {
       else window.__billingCopyReferralLink();
     };
     window.__billingOpenBillingPortal = async function () {
-      const sess = getSession();
-      if (!sess) { alert('ログインが必要です'); return; }
+      const token = getSupabaseToken();
+      if (!token) { alert('ログインが必要です'); return; }
       try {
-        const res = await fetch(`${API}/portal-session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ providerId: sess.id }) });
+        const res = await fetch(`${API}/portal-session`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({}),
+        });
         const data = await res.json();
         if (data.url) window.location.href = data.url;
         else alert('ポータルの取得に失敗しました: ' + (data.error || '不明なエラー'));

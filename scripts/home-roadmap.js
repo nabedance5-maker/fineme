@@ -744,12 +744,22 @@ function adaptV8toDiag(v) {
   };
 }
 
+// Supabase セッションの有無をlocalStorageから直接確認（import不要）
+function _hasSupabaseSession() {
+  try {
+    const raw = localStorage.getItem('sb-qsfpzlvucqzmjldshwwd-auth-token');
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    return !!(parsed && parsed.access_token);
+  } catch { return false; }
+}
+
 // ── 初期化 ────────────────────────────────────────────────────────────
 function init() {
   try {
     injectRoadmapStyles();
-    // 診断データがあればロードマップを表示（ログイン不要）
-    // ※旧 glowup:userSession はSupabase移行済みのため参照しない
+    // ログイン済みの場合のみロードマップを表示
+    // 未ログイン時はサンプルを表示（ログアウト後にロードマップが残らないようにする）
 
     // v8〜v5 → v4 → v2 の順で読み込み
     let diag = null;
@@ -767,11 +777,12 @@ function init() {
       if (rawV2) { try { diag = JSON.parse(rawV2); } catch {} }
     }
     const hasDiag = diag && diag.scores && Object.keys(diag.scores).length >= 1;
+    const loggedIn = _hasSupabaseSession();
 
     const roadmapEl = document.getElementById('roadmap-section');
     const sampleEl  = document.getElementById('sample-section');
 
-    if (hasDiag) {
+    if (hasDiag && loggedIn) {
       if (roadmapEl) roadmapEl.style.display = '';
       if (sampleEl)  sampleEl.style.display  = 'none';
       renderDiagnosed(diag);

@@ -102,7 +102,13 @@ export default function ProviderDashboardPage() {
         document.getElementById('view-page-btn').href = `/provider/${slug}`;
       }
       document.getElementById('billing-plan').textContent = PLAN_LABELS[provider.plan || 'A'] || 'プランA';
-      document.getElementById('billing-status').textContent = provider.billing_started ? 'Fineme経由の予約が発生し、課金が始まっています' : '課金はまだ始まっていません（初回予約発生後に開始）';
+      if (provider.plan === 'free') {
+        document.getElementById('billing-status').textContent = '';
+        const billingStatusEl = document.getElementById('billing-status');
+        if (billingStatusEl) billingStatusEl.style.display = 'none';
+      } else {
+        document.getElementById('billing-status').textContent = provider.billing_started ? '課金中' : '課金はまだ始まっていません（初回予約発生後に開始）';
+      }
       document.getElementById('referral-code').textContent = fnCode || slug || '—';
       document.getElementById('publish-toggle-input').checked = !!provider.published;
       document.getElementById('publish-label').textContent = provider.published ? '公開中' : '非公開';
@@ -342,7 +348,7 @@ export default function ProviderDashboardPage() {
         const fd = new FormData();
         fd.append('photo', file);
         try {
-          const res = await fetch('/api/provider/upload-photo', {
+          const res = await fetch('/api/provider/upload-service-image', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: fd

@@ -434,7 +434,7 @@ function ProviderPageContent() {
 
     try {
       const raw = localStorage.getItem('fineme:diagnosis:latest');
-      if (raw) { const d = JSON.parse(raw); if (d.version === 'v4') setDiagnosis(d); }
+      if (raw) { const d = JSON.parse(raw); if (d.version) setDiagnosis(d); }
     } catch {}
   }, [slug]);
 

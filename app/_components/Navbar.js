@@ -58,9 +58,9 @@ export default function Navbar() {
         </Link>
         <nav className="nav-links">
           <Link href="/search">検索</Link>
-          <Link href="/pages/about.html">Finemeとは？</Link>
+          <Link href="/about">Finemeとは？</Link>
           <Link href="/articles">特集</Link>
-          <Link href="/pages/diagnosis.html" className="btn-diagnosis">診断する</Link>
+          <Link href="/diagnosis" className="btn-diagnosis">診断する</Link>
           {authState === null ? null : authState ? (
             <>
               <a href="#" onClick={(e) => { e.preventDefault(); handleSignOut(); }}
