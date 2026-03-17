@@ -432,10 +432,35 @@ function ProviderPageContent() {
       setLoading(false);
     }).catch(() => setLoading(false));
 
-    try {
-      const raw = localStorage.getItem('fineme:diagnosis:latest');
-      if (raw) { const d = JSON.parse(raw); if (d.version) setDiagnosis(d); }
-    } catch {}
+    // localStorage から診断データ取得。なければSupabaseから取得（他デバイス対応）
+    (async () => {
+      try {
+        const raw = localStorage.getItem('fineme:diagnosis:latest');
+        if (raw) {
+          const d = JSON.parse(raw);
+          if (d.version) { setDiagnosis(d); return; }
+        }
+      } catch {}
+      // localStorageになければSupabaseから取得
+      try {
+        const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+        if (!sbKey) return;
+        const sbObj = JSON.parse(localStorage.getItem(sbKey) || 'null');
+        const token = sbObj?.access_token;
+        if (!token) return;
+        const res = await fetch('/api/me/diagnosis', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const d = await res.json();
+          if (d?.version) {
+            // 取得できたらlocalStorageにも復元
+            try { localStorage.setItem('fineme:diagnosis:latest', JSON.stringify(d)); } catch {}
+            setDiagnosis(d);
+          }
+        }
+      } catch {}
+    })();
   }, [slug]);
 
   useEffect(() => {

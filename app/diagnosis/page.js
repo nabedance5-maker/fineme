@@ -259,6 +259,22 @@ export default function DiagnosisPage() {
         localStorage.setItem(histKey, JSON.stringify(arr));
       } catch (e) {}
 
+      // ログイン済みの場合はSupabaseにも保存（他デバイス・localStorage消去後の復元用）
+      try {
+        const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+        if (sbKey) {
+          const sbObj = JSON.parse(localStorage.getItem(sbKey) || 'null');
+          const token = sbObj?.access_token;
+          if (token) {
+            fetch('/api/me/diagnosis', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({ raw_data: profile }),
+            }).catch(() => {});
+          }
+        }
+      } catch (e) {}
+
       window.location.href = '/diagnosis/result';
     }
 
