@@ -86,13 +86,14 @@ function calcScore({ provider, services, staffCount, trigger, failure, compassAx
     const hasAfter  = (svc.after_text  || '').trim().length >= 50;
     if (hasBefore && hasAfter) score += 6;
     if (svc.before_image_url && svc.after_image_url) score += 8;
-    score += textScore(svc.benefit_list_text, [[1,2],[50,4]]);
+    score += textScore((svc.benefit_list || []).join(' '), [[1,2],[50,4]]);
   }
 
   return { score, tags };
 }
 
 export async function GET(request) {
+  try {
   const { searchParams } = new URL(request.url);
   const category    = searchParams.get('category');
   const area        = searchParams.get('area');
@@ -129,7 +130,7 @@ export async function GET(request) {
   const [{ data: services }, { data: staffData }] = await Promise.all([
     supabase
       .from('provider_services')
-      .select('provider_id,transformation_promise,before_text,after_text,before_image_url,after_image_url,target_axis,suitable_path_types,benefit_list_text')
+      .select('provider_id,transformation_promise,before_text,after_text,before_image_url,after_image_url,target_axis,suitable_path_types,benefit_list')
       .in('provider_id', providerIds),
     supabase
       .from('provider_staff')
@@ -180,4 +181,8 @@ export async function GET(request) {
   const result = scored.map(({ philosophy, guide_message, unique_strengths, target_desc, facility_photo_1, facility_photo_2, facility_photo_3, ...rest }) => rest);
 
   return Response.json(result);
+  } catch (err) {
+    console.error('[/api/providers] unexpected error:', err);
+    return Response.json([], { status: 200 });
+  }
 }
