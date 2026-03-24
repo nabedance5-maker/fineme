@@ -1371,7 +1371,7 @@ export default function ProviderDashboardPage() {
           </div>
           <div className="card" style={{ padding: '20px' }}>
             <h3 style={{ margin: '0 0 10px', fontSize: '15px' }}>Finemeからのメッセージ</h3>
-            <p className="muted" style={{ margin: '0', lineHeight: '1.7' }}>順位は出しません。「合う人に届く」ことを大切にしています。<br />Finemeのマッチングは、<strong>「きっかけ」</strong>と<strong>「失敗パターン」</strong>の2項目を軸にスコアリングしています。ユーザーの診断結果と、あなたが「公開設定」タブで設定した「どんなきっかけのユーザーに向いているか」「どんな失敗パターンを持つユーザーを得意とするか」が近いほど、あなたのページが届きやすくなります。</p>
+            <p className="muted" style={{ margin: '0', lineHeight: '1.7' }}>順位は出しません。「合う人に届く」ことを大切にしています。<br />Finemeのマッチングは、<strong>AIがあなたのプロフィール文章を読み取り</strong>、ユーザーの診断結果と照合してスコアリングしています。「サービス設定」タブの<strong>「AIマッチングプロフィール」</strong>に実際の顧客のことを具体的に書いて「AIで分析する」ボタンを押すほど、合う人に届きやすくなります。</p>
             <a href="/provider/philosophy" className="btn btn-ghost" style={{ fontSize: '13px', marginTop: '12px', display: 'inline-block' }}>Finemeの考え方を見る</a>
           </div>
 
