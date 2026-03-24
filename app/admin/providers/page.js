@@ -56,7 +56,7 @@ export default function AdminProvidersPage() {
         providers = await res.json();
         const kpiTotal = document.getElementById('kpi-total'); if (kpiTotal) kpiTotal.textContent = providers.length;
         const kpiPub = document.getElementById('kpi-pub'); if (kpiPub) kpiPub.textContent = providers.filter(p => p.published && !p.admin_hidden).length;
-        const kpiBilling = document.getElementById('kpi-billing'); if (kpiBilling) kpiBilling.textContent = providers.filter(p => p.billing_started).length;
+        const kpiBilling = document.getElementById('kpi-billing'); if (kpiBilling) kpiBilling.textContent = providers.filter(p => p.billing_started && p.plan !== 'free').length;
         if (!providers.length) { listEl.innerHTML = '<p class="muted">掲載者がいません。「掲載者を登録」から追加してください。</p>'; return; }
         listEl.innerHTML = '';
         providers.forEach(p => {
@@ -71,7 +71,7 @@ export default function AdminProvidersPage() {
                   <strong style="font-size:15px">${esc(p.name)}</strong>
                   <span class="badge ${statusClass}">${statusLabel}</span>
                   <span class="badge badge-gray">${catLabel(p.main_category)}</span>
-                  ${p.billing_started ? '<span class="badge badge-green">課金中</span>' : ''}
+                  ${p.billing_started && p.plan !== 'free' ? '<span class="badge badge-green">課金中</span>' : ''}
                   ${p.plan ? `<span class="badge badge-gray">${{ A: 'プランA', B: 'プランB', C: 'プランC', free: '特例（無料）' }[p.plan] || p.plan}</span>` : ''}
                 </div>
                 <div style="font-size:12px;color:#6b7280;margin-top:4px">
@@ -134,7 +134,11 @@ export default function AdminProvidersPage() {
       const data = Object.fromEntries(fd);
       data.suitable_triggers = [...form.querySelectorAll('[name=suitable_triggers]:checked')].map(el => el.value);
       data.handles_failure_patterns = [...form.querySelectorAll('[name=handles_failure_patterns]:checked')].map(el => el.value);
-      if (data.price_from) data.price_from = Number(data.price_from);
+      // price_from: 空文字はnullに（Supabase integer型エラー対策）
+      data.price_from = data.price_from ? Number(data.price_from) : null;
+      // plan: select要素から明示的に取得（FormData取りこぼし対策）
+      const planEl = form.querySelector('select[name="plan"]');
+      if (planEl) data.plan = planEl.value || 'A';
       const id = data._id; delete data._id;
       const res = await fetch(id ? `/api/admin/providers/${id}` : '/api/admin/providers', { method: id ? 'PATCH' : 'POST', headers: h(), body: JSON.stringify(data) });
       if (res.ok) {
@@ -250,13 +254,13 @@ export default function AdminProvidersPage() {
                 </div>
               </div>
               <div className="form-field form-field-full">
-                <label>得意な失敗パターン対応（複数選択可）</label>
+                <label>得意な「来た道」の類型（New Me Map連動・複数選択可）</label>
                 <div className="checkbox-group">
-                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="lost_direction" />方向を見失った</label>
-                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_continuation" />続かなかった</label>
-                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="cost" />コストで断念</label>
+                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="lost_direction" />再開タイプ（以前やっていた）</label>
+                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_continuation" />継続タイプ（続かなかった）</label>
+                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_result" />非客観視タイプ（やっているが評価がない）</label>
+                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="cost" />コスト断念</label>
                   <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="awkward" />関係性の問題</label>
-                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_result" />変化が見えなかった</label>
                 </div>
               </div>
               <div className="form-field"><label>紹介者コード（この掲載者を紹介した人のFN番号）</label><input name="referred_by" placeholder="例: FN001" /></div>

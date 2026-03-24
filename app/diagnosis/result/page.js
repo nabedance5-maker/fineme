@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import Link from 'next/link';
 
 export default function DiagnosisResultPage() {
   const initialized = useRef(false);
@@ -11,685 +12,744 @@ export default function DiagnosisResultPage() {
     // ─── ページ固有スタイル ───
     const style = document.createElement('style');
     style.textContent = `
-      .result-wrap { max-width: 680px; margin: 0 auto; padding: 32px 20px 80px; }
-      .result-hero { padding: 40px 28px 36px; background: linear-gradient(145deg, #0f172a 0%, #1e1b4b 60%, #0f2354 100%); border-radius: 22px; margin-bottom: 24px; position: relative; overflow: hidden; }
-      .result-hero::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(99,102,241,.18) 0%, transparent 70%); border-radius: 50%; }
-      .result-hero::after { content: ''; position: absolute; bottom: -40px; left: -40px; width: 160px; height: 160px; background: radial-gradient(circle, rgba(37,99,235,.12) 0%, transparent 70%); border-radius: 50%; }
-      .result-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 5px 14px; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.2); color: #fff !important; border-radius: 99px; margin-bottom: 18px; letter-spacing: .08em; position: relative; z-index: 1; }
-      .result-badge::before { content: '🗺️'; font-size: 13px; }
-      .result-hero h1 { font-size: clamp(18px,4.5vw,26px); font-weight: 900; margin: 0 0 14px; line-height: 1.4; color: #ffffff !important; letter-spacing: -.01em; position: relative; z-index: 1; }
-      .result-hero h1 em { font-style: normal; color: #a5b4fc !important; }
-      .result-hero-sub { font-size: 14px; color: rgba(255,255,255,.75) !important; margin: 0; line-height: 1.75; position: relative; z-index: 1; }
-      .result-hero-sub strong { color: rgba(255,255,255,.95) !important; font-weight: 700; }
-      .result-hero-divider { width: 40px; height: 2px; background: linear-gradient(90deg, #6366f1, transparent); margin: 16px 0; position: relative; z-index: 1; }
-      .section-label { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #9ca3af; margin: 0 0 20px; padding-left: 2px; }
-      .priority-card { background: #fff; border-radius: 18px; padding: 36px 24px 24px; margin-bottom: 16px; margin-top: 20px; box-shadow: 0 4px 24px rgba(37,99,235,.12), 0 1px 4px rgba(2,6,23,.06); border: 1.5px solid #bfdbfe; position: relative; overflow: visible; }
-      .priority-card::before { content: '📍'; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.2)); }
-      .priority-card-eyebrow { font-size: 11px; font-weight: 700; color: #2563eb; letter-spacing: .08em; margin: 0 0 10px; display: flex; align-items: center; gap: 6px; }
-      .priority-card-eyebrow::before { content: ''; display: inline-block; width: 6px; height: 6px; background: #2563eb; border-radius: 50%; }
-      .priority-card-main { font-size: 22px; font-weight: 900; color: #111; margin: 0 0 10px; display: flex; align-items: center; gap: 10px; }
-      .priority-card-reason { font-size: 14px; color: #374151; line-height: 1.7; margin: 0; }
-      .priority-card-cta { display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; padding: 10px 18px; background: #111; color: #fff !important; border-radius: 10px; font-size: 13px; font-weight: 700; text-decoration: none; transition: opacity .15s; }
-      .priority-card-cta:hover { opacity: .82; }
-      .result-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 18px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(2,6,23,.05); }
-      .result-card-header { margin: 0 0 6px; }
-      .result-card-title { font-size: 16px; font-weight: 800; color: #111; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
-      .result-card-subtitle { font-size: 12px; color: #6b7280; margin: 0 0 18px; line-height: 1.5; }
-      .type-badge-wrap { margin-bottom: 14px; }
-      .type-badge { display: inline-block; font-size: 13px; font-weight: 800; padding: 8px 20px; color: #fff; border-radius: 99px; margin-bottom: 12px; }
-      .type-desc-box { border-radius: 12px; padding: 16px 18px; font-size: 14px; color: #374151; line-height: 1.75; }
-      .concern-bars { margin-top: 18px; display: flex; flex-direction: column; gap: 11px; }
-      .concern-bar-row { display: flex; align-items: center; gap: 12px; }
-      .concern-bar-label { font-size: 12px; font-weight: 600; width: 82px; flex-shrink: 0; color: #374151; display: flex; align-items: center; gap: 5px; }
-      .concern-bar-track { flex: 1; height: 10px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
-      .concern-bar-fill { height: 100%; border-radius: 99px; transition: width 1s cubic-bezier(.4,0,.2,1) .3s; }
-      .concern-bar-value { font-size: 12px; font-weight: 700; width: 46px; text-align: right; flex-shrink: 0; }
+      .map-wrap { max-width: 680px; margin: 0 auto; padding: 32px 20px 80px; }
+
+      /* ── Hero ── */
+      .map-hero { padding: 44px 28px 40px; background: linear-gradient(rgba(10,15,30,0.78), rgba(10,15,30,0.88)), url('/assets/images/hero-bg.webp') center / cover no-repeat; border-radius: 14px; margin-bottom: 24px; position: relative; overflow: hidden; border: 1px solid rgba(201,168,76,0.2); }
+      .map-hero::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(201,168,76,.1) 0%, transparent 70%); border-radius: 50%; }
+      .map-hero::after { content: ''; position: absolute; bottom: -40px; left: -40px; width: 160px; height: 160px; background: radial-gradient(circle, rgba(201,168,76,.07) 0%, transparent 70%); border-radius: 50%; }
+      .map-hero-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .18em; color: rgba(201,168,76,0.55); margin: 0 0 12px; position: relative; z-index: 1; text-transform: uppercase; }
+      .map-hero-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 5px 14px; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); color: #c9a84c; border-radius: 3px; margin-bottom: 18px; letter-spacing: .08em; position: relative; z-index: 1; }
+      .map-hero h1 { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(18px,4.5vw,24px); font-weight: 700; margin: 0 0 14px; line-height: 1.6; color: #fff; letter-spacing: -.01em; position: relative; z-index: 1; }
+      .map-hero h1 em { font-style: normal; color: #c9a84c; }
+      .map-hero-divider { width: 40px; height: 1px; background: linear-gradient(90deg, #c9a84c, transparent); margin: 16px 0; position: relative; z-index: 1; }
+      .map-hero-sub { font-family: 'Noto Serif JP', Georgia, serif; font-size: 14px; color: rgba(255,255,255,.72); margin: 0; line-height: 1.9; position: relative; z-index: 1; }
+      .map-hero-sub strong { color: rgba(255,255,255,.92); font-weight: 500; }
+
+      /* ── Section label ── */
+      .sec-label { display: flex; align-items: center; gap: 10px; font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(201,168,76,0.7); margin: 28px 0 16px; padding-left: 0; }
+      .sec-label::before { content: ''; width: 18px; height: 1.5px; background: #c9a84c; border-radius: 1px; flex-shrink: 0; }
+      .sec-label::after { content: ''; flex: 1; height: 1px; background: repeating-linear-gradient(90deg, rgba(201,168,76,0.45) 0, rgba(201,168,76,0.45) 5px, transparent 5px, transparent 11px); }
+
+      /* ── Compass (最初の一手) ── */
+      .compass-card { background: var(--color-bg-dark, #0a0f1e); border: 1.5px solid rgba(201,168,76,0.4); border-radius: 14px; padding: 36px 24px 24px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(201,168,76,.12), 0 1px 4px rgba(0,0,0,.2); position: relative; overflow: visible; }
+      .compass-card::before { content: '🧭'; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 32px; filter: drop-shadow(0 2px 8px rgba(201,168,76,.4)); }
+      .compass-eyebrow { font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.7); letter-spacing: .1em; margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
+      .compass-eyebrow::before { content: ''; display: inline-block; width: 6px; height: 6px; background: #c9a84c; border-radius: 50%; }
+      .compass-main { font-size: 24px; font-weight: 900; color: #fff; margin: 0 0 12px; display: flex; align-items: center; gap: 10px; }
+      .compass-reason { font-size: 14px; color: rgba(255,255,255,.75); line-height: 1.85; margin: 0; }
+      .compass-cta { display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; padding: 10px 20px; border: 1.5px solid #c9a84c; color: #c9a84c; background: transparent; border-radius: 6px; font-size: 13px; font-weight: 700; text-decoration: none; transition: background .18s, color .18s; }
+      .compass-cta:hover { background: #c9a84c; color: #0a0f1e; }
+      .compass-override-chip { padding: 7px 14px; border-radius: 99px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1.5px solid rgba(201,168,76,0.3); background: rgba(201,168,76,0.08); color: rgba(255,255,255,0.75); transition: all .15s; }
+      .compass-override-chip:hover { background: rgba(201,168,76,0.2); border-color: rgba(201,168,76,0.65); color: #fff; transform: translateY(-1px); }
+      .compass-override-chip.active { background: #c9a84c; color: #0a0f1e; border-color: #c9a84c; box-shadow: 0 2px 10px rgba(201,168,76,0.4); }
+
+      /* ── Radar chart card ── */
+      .radar-card { background: var(--color-bg-parchment, #f5f0e8); border: 1px solid rgba(201,168,76,0.3); border-radius: 14px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.05); }
+      .radar-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: 16px; font-weight: 700; color: var(--color-fg, #0a0f1e); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+      .radar-subtitle { font-size: 12px; color: var(--color-muted, #7a6e65); margin: 0 0 20px; }
+      .radar-legend { display: flex; align-items: center; gap: 20px; justify-content: center; margin-top: 16px; }
+      .radar-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-muted, #7a6e65); }
+      .radar-legend-dot { width: 12px; height: 4px; border-radius: 2px; }
+
+      /* ── Vector cards (priority categories) ── */
+      .vector-list { display: flex; flex-direction: column; gap: 12px; }
+      .vector-item { background: #fff; border: 1px solid rgba(201,168,76,0.25); border-radius: 12px; padding: 16px 18px; }
+      .vector-item.priority-1 { border-color: rgba(201,168,76,0.5); background: var(--color-bg-dark, #0a0f1e); }
+      .vector-item.priority-1 .vector-item-name { color: #fff; }
+      .vector-item.priority-1 .vector-bar-label { color: rgba(255,255,255,.5); }
+      .vector-item.priority-1 .vector-bar-labels { color: rgba(255,255,255,.4); }
+      .vector-item-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+      .vector-item-name { font-size: 15px; font-weight: 800; color: var(--color-fg, #0a0f1e); display: flex; align-items: center; gap: 8px; }
+      .vector-tier-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+      .tier-1 { background: rgba(201,168,76,0.15); color: #c9a84c; border: 1px solid rgba(201,168,76,.3); }
+      .tier-2 { background: #d1fae5; color: #065f46; }
+      .tier-3 { background: #fef3c7; color: #92400e; }
+      .tier-4 { background: #f3f4f6; color: #374151; }
+      .vector-bar-wrap { display: flex; align-items: center; gap: 10px; }
+      .vector-bar-label { font-size: 11px; color: var(--color-muted, #7a6e65); width: 36px; text-align: right; flex-shrink: 0; }
+      .vector-bar-track { flex: 1; height: 8px; background: rgba(10,15,30,0.08); border-radius: 99px; overflow: hidden; position: relative; }
+      .vector-bar-current { height: 100%; border-radius: 99px; background: var(--color-bg-dark, #0a0f1e); transition: width 1s cubic-bezier(.4,0,.2,1) .3s; }
+      .vector-bar-ideal-marker { position: absolute; top: 0; height: 100%; width: 3px; background: #c9a84c; border-radius: 1px; transform: translateX(-50%); }
+      .vector-bar-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--color-muted, #7a6e65); margin-top: 4px; }
+      .vector-gap-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: rgba(201,168,76,0.15); color: #c9a84c; border: 1px solid rgba(201,168,76,.3); flex-shrink: 0; }
+      .vector-gap-badge.small { background: #fef3c7; color: #92400e; border: none; }
+      .vector-gap-badge.none { background: #d1fae5; color: #065f46; border: none; }
+
+      /* ── Goal card ── */
+      .goal-card { background: var(--color-bg-dark, #0a0f1e); border: 1.5px solid rgba(201,168,76,0.25); border-radius: 14px; padding: 24px; margin-bottom: 16px; }
+      .goal-card-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: 15px; font-weight: 700; color: #c9a84c; margin: 0 0 16px; }
+      .goal-layers { display: flex; flex-direction: column; gap: 10px; }
+      .goal-layer { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; border: 1px solid rgba(201,168,76,0.15); }
+      .goal-layer-icon { width: 36px; height: 36px; background: rgba(201,168,76,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+      .goal-layer-body { flex: 1; }
+      .goal-layer-label { font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.7); margin: 0 0 3px; letter-spacing: .06em; }
+      .goal-layer-text { font-size: 14px; font-weight: 700; color: rgba(255,255,255,.88); margin: 0; line-height: 1.5; }
+
+      /* ── Barrier card ── */
+      .result-card { background: #fff; border: 1px solid rgba(201,168,76,0.25); border-radius: 14px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
+      .result-card-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: 16px; font-weight: 700; color: var(--color-fg, #0a0f1e); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+      .result-card-subtitle { font-size: 12px; color: var(--color-muted, #7a6e65); margin: 0 0 18px; line-height: 1.5; }
       .insight-list { display: flex; flex-direction: column; gap: 12px; }
-      .insight-item { padding: 16px 18px; border-radius: 12px; border-left: 4px solid #2563eb; background: #f8faff; }
-      .insight-label { font-size: 10px; font-weight: 800; color: #2563eb; margin: 0 0 5px; text-transform: uppercase; letter-spacing: .08em; }
-      .insight-text { font-size: 14px; font-weight: 800; color: #111; margin: 0 0 4px; line-height: 1.5; }
-      .insight-sub { font-size: 13px; color: #6b7280; margin: 0; line-height: 1.65; }
+      .insight-item { padding: 16px 18px; border-radius: 10px; border-left: 4px solid #c9a84c; background: rgba(201,168,76,0.05); }
+      .insight-label { font-size: 10px; font-weight: 800; color: #c9a84c; margin: 0 0 5px; text-transform: uppercase; letter-spacing: .1em; }
+      .insight-text { font-size: 14px; font-weight: 800; color: var(--color-fg, #0a0f1e); margin: 0 0 4px; line-height: 1.5; }
+      .insight-sub { font-size: 13px; color: var(--color-muted, #7a6e65); margin: 0; line-height: 1.7; }
       .trait-list { display: flex; flex-direction: column; gap: 10px; }
-      .trait-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: #374151; line-height: 1.55; padding: 12px 14px; background: #f9fafb; border-radius: 10px; }
-      .trait-check { width: 20px; height: 20px; background: #dbeafe; color: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; flex-shrink: 0; margin-top: 1px; }
-      .recommend-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1.5px solid #e5e7eb; border-radius: 14px; margin-bottom: 10px; text-decoration: none; color: inherit; transition: border-color .12s, box-shadow .12s, background .12s; }
-      .recommend-card:hover { border-color: #2563eb; box-shadow: 0 2px 12px rgba(37,99,235,.1); }
-      .recommend-card.top { border-color: #bfdbfe; background: #eff6ff; }
-      .recommend-card-icon { font-size: 28px; flex-shrink: 0; }
-      .recommend-card-body { flex: 1; }
-      .recommend-card-title { font-size: 15px; font-weight: 700; margin: 0 0 2px; }
-      .recommend-card-reason { font-size: 12px; color: #6b7280; }
-      .recommend-card-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; background: #2563eb; color: #fff; border-radius: 99px; white-space: nowrap; }
-      .deepdive-section { background: linear-gradient(135deg, #f5f7ff 0%, #eef2ff 100%); border: 1.5px solid #e0e7ff; border-radius: 18px; padding: 24px; margin-bottom: 16px; }
-      .deepdive-title { font-size: 15px; font-weight: 800; color: #4f46e5; margin: 0 0 6px; }
-      .deepdive-desc { font-size: 13px; color: #6b7280; margin: 0 0 18px; line-height: 1.65; }
-      .deepdive-items { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
-      .deepdive-item { background: #fff; border-radius: 12px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; border: 1px solid #e0e7ff; }
-      .deepdive-item-icon { width: 36px; height: 36px; background: #eef2ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-      .deepdive-item-body { flex: 1; }
-      .deepdive-item-if { font-size: 11px; font-weight: 700; color: #6366f1; margin: 0 0 3px; letter-spacing: .04em; }
-      .deepdive-item-then { font-size: 13px; font-weight: 700; color: #111; margin: 0; line-height: 1.45; }
-      .deepdive-arrow { font-size: 11px; font-weight: 800; color: #6366f1; white-space: nowrap; flex-shrink: 0; margin-top: 11px; }
-      .cta-block { background: #fff; border: 1px solid #e5e7eb; border-radius: 18px; padding: 28px 24px; margin-top: 8px; box-shadow: 0 2px 12px rgba(2,6,23,.05); }
-      .cta-block-title { font-size: 16px; font-weight: 800; color: #111; margin: 0 0 4px; }
-      .cta-block-desc { font-size: 13px; color: #6b7280; margin: 0 0 20px; line-height: 1.6; }
-      .cta-section { display: flex; flex-direction: column; gap: 10px; }
-      .cta-btn-primary { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px 20px; background: #111; color: #fff !important; font-size: 16px; font-weight: 700; border-radius: 14px; text-decoration: none; transition: opacity .15s; }
-      .cta-btn-primary:hover { opacity: .85; }
-      .cta-btn-primary::after { content: '→'; font-weight: 900; }
-      .cta-btn-secondary { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; background: #fff; color: #111 !important; font-size: 15px; font-weight: 700; border: 1.5px solid #e5e7eb; border-radius: 14px; text-decoration: none; transition: border-color .12s; cursor: pointer; }
-      .cta-btn-secondary:hover { border-color: #2563eb; }
-      .cta-btn-ghost { display: block; text-align: center; padding: 10px 20px; color: #9ca3af !important; font-size: 13px; text-decoration: none; }
-      .cta-btn-ghost:hover { color: #374151 !important; }
-      .cta-divider { height: 1px; background: #f3f4f6; margin: 4px 0; }
-      .map-next-section { margin: 32px 0; padding: 24px; background: linear-gradient(135deg, #0f172a, #1e1b4b); border-radius: 18px; }
-      .map-next-label { font-size: 12px; font-weight: 700; color: #a5b4fc; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 16px; }
-      .map-next-options { display: flex; flex-direction: column; gap: 12px; }
-      .map-next-btn { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 14px; text-decoration: none; transition: opacity .15s; }
-      .map-next-btn:hover { opacity: .9; }
-      .map-next-primary { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.2); }
-      .map-next-secondary { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); }
-      .map-next-icon { font-size: 24px; flex-shrink: 0; }
-      .map-next-body { flex: 1; }
-      .map-next-title { display: block; font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 3px; }
-      .map-next-desc { display: block; font-size: 12px; color: rgba(255,255,255,.6); line-height: 1.5; }
-      .map-next-arrow { font-size: 18px; color: rgba(255,255,255,.5); flex-shrink: 0; }
-      .provider-match-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1.5px solid #e5e7eb; border-radius: 14px; margin-bottom: 10px; text-decoration: none; color: inherit; transition: border-color .12s, box-shadow .12s; }
-      .provider-match-card:hover { border-color: #2563eb; box-shadow: 0 2px 12px rgba(37,99,235,.1); }
-      .provider-match-card.top { border-color: #bfdbfe; background: #eff6ff; }
+      .trait-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--color-fg, #0a0f1e); line-height: 1.55; padding: 12px 14px; background: var(--color-bg-parchment, #f5f0e8); border-radius: 10px; }
+      .trait-check { width: 20px; height: 20px; background: rgba(201,168,76,0.2); color: #c9a84c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; flex-shrink: 0; margin-top: 1px; }
+
+      /* ── Provider match ── */
+      .pmc-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1.5px solid rgba(201,168,76,0.25); border-radius: 12px; margin-bottom: 10px; text-decoration: none; color: inherit; transition: border-color .12s, box-shadow .12s; }
+      .pmc-card:hover { border-color: #c9a84c; box-shadow: 0 2px 12px rgba(201,168,76,.15); }
+      .pmc-card.top { border-color: rgba(201,168,76,0.5); background: rgba(201,168,76,0.04); }
       .pmc-photo { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: #f3f4f6; display: flex; align-items: center; justify-content: center; }
       .pmc-photo img { width: 100%; height: 100%; object-fit: cover; }
       .pmc-photo-icon { font-size: 24px; }
       .pmc-body { flex: 1; min-width: 0; }
-      .pmc-name { font-size: 15px; font-weight: 700; color: #111; margin: 0 0 2px; }
-      .pmc-catch { font-size: 12px; color: #6b7280; margin: 0 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .pmc-name { font-size: 15px; font-weight: 700; color: var(--color-fg, #0a0f1e); margin: 0 0 2px; }
+      .pmc-catch { font-size: 12px; color: var(--color-muted, #7a6e65); margin: 0 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .pmc-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 5px; }
-      .pmc-tag { font-size: 10px; font-weight: 700; padding: 2px 8px; background: #dbeafe; color: #1d4ed8; border-radius: 99px; }
-      .pmc-meta { font-size: 11px; color: #9ca3af; }
-      .pmc-arrow { font-size: 14px; color: #9ca3af; flex-shrink: 0; }
-      .s2-cta-card { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); border-radius: 18px; padding: 28px 24px; margin: 24px 0; display: none; text-align: center; }
-      .s2-cta-icon { font-size: 36px; margin-bottom: 12px; }
-      .s2-cta-title { font-size: 20px; font-weight: 800; color: #fff; margin: 0 0 10px; }
-      .s2-cta-desc { font-size: 14px; color: #a5b4fc; line-height: 1.7; margin: 0 0 16px; }
-      .s2-cta-areas { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 20px; }
-      .s2-area-badge { background: rgba(255,255,255,.15); color: #e0e7ff; padding: 5px 12px; border-radius: 99px; font-size: 13px; font-weight: 600; }
-      .s2-cta-btn { background: #fff; color: #1e1b4b; border: none; border-radius: 12px; padding: 14px 28px; font-size: 16px; font-weight: 800; cursor: pointer; transition: opacity .15s; width: 100%; }
-      .s2-cta-btn:hover { opacity: .9; }
-      .ai-map-section { margin: 32px 0; display: none; }
-      .ai-map-header { text-align: center; margin-bottom: 20px; }
-      .ai-map-badge { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; padding: 6px 16px; border-radius: 99px; font-size: 12px; font-weight: 700; letter-spacing: .05em; margin-bottom: 10px; }
-      .ai-map-title { font-size: 22px; font-weight: 800; color: #111; margin: 0; }
-      .ai-map-loading { text-align: center; padding: 40px 20px; }
-      .ai-map-drawing { font-size: 40px; animation: mapPulse 1.5s ease-in-out infinite; }
-      @keyframes mapPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: .7; } }
-      .ai-map-loading-text { font-size: 15px; color: #6b7280; margin: 12px 0; }
-      .ai-map-progress-bar { width: 100%; max-width: 280px; height: 4px; background: #e5e7eb; border-radius: 2px; margin: 0 auto; }
-      .ai-map-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius: 2px; transition: width .3s ease; }
-      .ai-map-result { display: flex; flex-direction: column; gap: 16px; }
-      .ai-map-card { border-radius: 16px; padding: 20px; border: 1px solid #e5e7eb; }
-      .ai-card-position { background: linear-gradient(135deg, #eff6ff, #f5f3ff); border-color: #c7d2fe; }
-      .ai-card-insight  { background: linear-gradient(135deg, #fefce8, #fff7ed); border-color: #fde68a; }
-      .ai-card-step     { background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border-color: #a7f3d0; }
-      .ai-card-warning  { background: linear-gradient(135deg, #fff1f2, #fff5f5); border-color: #fecaca; }
-      .ai-card-guide    { background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-color: #e2e8f0; }
-      .ai-card-label { font-size: 12px; font-weight: 700; color: #6366f1; letter-spacing: .05em; margin-bottom: 10px; }
-      .ai-card-text { font-size: 15px; color: #111; line-height: 1.8; margin: 0; font-weight: 500; }
-      .ai-guide-list { margin: 0; padding: 0 0 0 4px; list-style: none; display: flex; flex-direction: column; gap: 8px; }
-      .ai-guide-list li { font-size: 14px; color: #374151; line-height: 1.6; padding-left: 16px; position: relative; }
-      .ai-guide-list li::before { content: '✓'; position: absolute; left: 0; color: #6366f1; font-weight: 700; }
+      .pmc-tag { font-size: 10px; font-weight: 700; padding: 2px 8px; background: rgba(201,168,76,0.12); color: #c9a84c; border-radius: 99px; border: 1px solid rgba(201,168,76,.25); }
+      .pmc-meta { font-size: 11px; color: var(--color-muted, #7a6e65); }
+      .pmc-arrow { font-size: 14px; color: var(--color-muted, #7a6e65); flex-shrink: 0; }
+
+      /* ── Next step section ── */
+      .navi-section { margin: 32px 0; padding: 28px 24px; background: var(--color-bg-dark, #0a0f1e); border-radius: 14px; border: 1px solid rgba(201,168,76,0.2); }
+      .navi-section-label { font-size: 12px; font-weight: 700; color: rgba(201,168,76,0.6); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 16px; }
+      .navi-btn { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 10px; text-decoration: none; transition: opacity .15s; margin-bottom: 12px; }
+      .navi-btn:last-child { margin-bottom: 0; }
+      .navi-btn:hover { opacity: .9; }
+      .navi-btn-primary { background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.35); }
+      .navi-btn-secondary { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); }
+      .navi-btn-icon { font-size: 24px; flex-shrink: 0; }
+      .navi-btn-body { flex: 1; }
+      .navi-btn-title { display: block; font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 3px; }
+      .navi-btn-desc { display: block; font-size: 12px; color: rgba(255,255,255,.55); line-height: 1.5; }
+      .navi-btn-arrow { font-size: 18px; color: rgba(201,168,76,0.5); flex-shrink: 0; }
+
+      /* ── Bottom CTA ── */
+      .cta-block { background: #fff; border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 24px; margin-top: 8px; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
+      .cta-section { display: flex; flex-direction: column; gap: 10px; }
+      .cta-btn-secondary { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; background: #fff; color: var(--color-fg, #0a0f1e); font-size: 15px; font-weight: 700; border: 1.5px solid rgba(201,168,76,0.3); border-radius: 10px; text-decoration: none; transition: border-color .12s; cursor: pointer; }
+      .cta-btn-secondary:hover { border-color: #c9a84c; }
+      .cta-divider { height: 1px; background: rgba(201,168,76,0.1); margin: 4px 0; }
+      .cta-btn-ghost { display: block; text-align: center; padding: 10px 20px; color: var(--color-muted, #7a6e65); font-size: 13px; text-decoration: none; }
+      .cta-btn-ghost:hover { color: var(--color-fg, #0a0f1e); }
+
+      /* ── Save map CTA (non-logged-in) ── */
+      .save-map-cta { display: flex; gap: 16px; align-items: flex-start; padding: 22px 24px; background: linear-gradient(135deg, rgba(201,168,76,0.08) 0%, rgba(79,70,229,0.06) 100%); border: 1.5px solid rgba(201,168,76,0.35); border-radius: 14px; margin: 0 0 16px; }
+      .save-map-cta-icon { font-size: 36px; flex-shrink: 0; }
+      .save-map-cta-title { font-size: 16px; font-weight: 800; color: var(--color-fg, #0a0f1e); margin: 0 0 6px; }
+      .save-map-cta-desc { font-size: 13px; color: var(--color-muted, #7a6e65); line-height: 1.8; margin: 0 0 14px; }
+      .save-map-cta-btn { display: inline-flex; align-items: center; gap: 6px; padding: 11px 22px; background: #c9a84c; color: #0a0f1e; font-size: 14px; font-weight: 800; border-radius: 6px; text-decoration: none; transition: opacity .15s; }
+      .save-map-cta-btn:hover { opacity: .88; }
+      .save-map-cta-note { font-size: 11px; color: var(--color-muted, #7a6e65); margin: 10px 0 0; line-height: 1.7; }
+
+      /* ── Voyage route connector ── */
+      .v-route { display: flex; flex-direction: column; align-items: center; height: 28px; margin: -4px auto 0; width: 16px; }
+      .v-route-line { flex: 1; width: 1px; background: repeating-linear-gradient(to bottom, rgba(201,168,76,0.55) 0, rgba(201,168,76,0.55) 4px, transparent 4px, transparent 9px); }
+      .v-route-dot { width: 7px; height: 7px; background: rgba(201,168,76,0.7); border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(201,168,76,0.4); }
     `;
     document.head.appendChild(style);
 
-    // ─── メインロジック ───
+    // ─── ユーティリティ ───
+    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    // ─── データ読み込み（Supabase優先 → localStorage fallback）───
+    ;(async () => {
     const STORAGE_KEY = 'fineme:diagnosis:latest';
     const root = document.getElementById('result-root');
-
+    let isLoggedIn = false;
+    let authToken = null;
+    try {
+      const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (sbKey) {
+        const sbObj = JSON.parse(localStorage.getItem(sbKey) || 'null');
+        const token = sbObj?.access_token;
+        if (token) {
+          isLoggedIn = true;
+          authToken = token;
+          const res = await fetch('/api/me/diagnosis', { headers: { 'Authorization': `Bearer ${token}` } });
+          if (res.ok) { const data = await res.json(); if (data) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {} } }
+        }
+      }
+    } catch {}
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      root.innerHTML = '<div style="text-align:center;padding:60px 20px"><p style="color:#6b7280">診断データが見つかりませんでした。</p><a href="/diagnosis" class="btn" style="margin-top:16px;display:inline-block">診断する</a></div>';
+      root.innerHTML = '<div style="text-align:center;padding:60px 20px"><p style="color:#6b7280">診断データが見つかりませんでした。</p><a href="/diagnosis" class="btn" style="margin-top:16px;display:inline-block">Me Scanを受ける</a></div>';
       return;
     }
     let p;
-    try { p = JSON.parse(raw); } catch (e) {
-      root.innerHTML = '<div style="text-align:center;padding:60px 20px"><p>エラーが発生しました。</p><a href="/diagnosis" class="btn" style="margin-top:16px;display:inline-block">再診断する</a></div>';
+    try { p = JSON.parse(raw); } catch {
+      root.innerHTML = '<div style="text-align:center;padding:60px 20px"><p>エラーが発生しました。</p><a href="/diagnosis" class="btn" style="margin-top:16px;display:inline-block">再スキャンする</a></div>';
       return;
     }
 
-    const areas = p.concern_areas || {};
-    const LEVEL_TEXT  = ['全然','少し','そこそこ','かなり','すごく'];
-    const CONCERN_ICONS = { hair:'💇‍♂️', skin:'✨', eyebrow:'✂️', body:'💪', fashion:'👔', photo:'📸', overall:'🪞', beard:'💈', teeth:'😁', posture:'🚶' };
-    const CONCERN_NAMES = { hair:'髪型・髪', skin:'肌・ニキビ', eyebrow:'眉毛', body:'体型・体', fashion:'服・コーデ', photo:'写真映り', overall:'全体の雰囲気', beard:'ひげ・無精ひげ', teeth:'歯・口元', posture:'姿勢・雰囲気' };
-
-    function getCoreSituation() {
-      const t = p.trigger;
-      const s = p.scene;
-      if (t === 'matching_app' && s === 'photo') return { h1: '<em>頑張っているのに、結果が変わらない。</em><br>その理由は、もう見えている。', sub: '写真の中の自分が、あなたの魅力を正確に伝えていない。外見の問題ではなく「<strong>写し方</strong>」の問題だ。実物を整えて、プロに撮ってもらう。たった2ステップで、マッチング数は変わる。' };
-      if (t === 'matching_app' && s === 'first_impression') return { h1: '<em>マッチングできても、会った瞬間に終わる。</em><br>その壁は、取り除ける。', sub: '写真でOKが出ても実物で冷める——それは「見た目の差」ではなく「<strong>清潔感の積み重ね</strong>」の差だ。顔まわりと全体感を整えると、会った瞬間の空気が変わる。' };
-      if (t === 'matching_app' && s === 'fashion') return { h1: '<em>努力しているのに、評価されない。</em><br>見せ方が、すべてを決めている。', sub: 'スペックは問題ない。変えるべきは「<strong>外見が発しているシグナル</strong>」だ。着こなしが整うと、写真の雰囲気が変わり、マッチング率に直結する。' };
-      if (t === 'matching_app' && s === 'mirror') return { h1: '<em>鏡の中の自分が、アプリの結果を作っている。</em>', sub: '毎朝感じているその違和感は、正しい危機感だ。朝の自分が変わると、写真が変わり、アプリの結果が変わる。<strong>スタートは今日、鏡の前から始まる。</strong>' };
-      if (t === 'matching_app' && s === 'comparison') return { h1: '<em>あの人はなぜうまくいって、自分はうまくいかないのか。</em><br>差の正体がわかった。', sub: '比べるたびに諦めていたものの正体は「<strong>外見の積み重ねの差</strong>」だ。相手はある日突然変わったのではなく、何かを変えた。今日がその日になれる。' };
-      if (t === 'matching_app') return { h1: '<em>頑張っているのに、変わらない。</em><br>その焦りには、根拠がある。', sub: '努力が結果に変わらない理由は「<strong>変えるべき場所を変えていない</strong>」からだ。今回の診断は、その場所を特定するためにある。' };
-      if (t === 'love' && s === 'first_impression') return { h1: '<em>好きな人がいる。でも、一歩が踏み出せない。</em><br>外見への自信が、距離を作っている。', sub: '恋愛で外見が果たす役割は「好意を生む」ことではなく、「<strong>自分が引き寄せた障壁を取り除く</strong>」ことだ。印象を下げている1点を変えるだけで、あの人との距離感が変わる。' };
-      if (t === 'love' && s === 'photo') return { h1: '<em>好きな人がいる。でも、画面の中の自分が足を引っ張っている。</em>', sub: '気持ちは本物なのに、写真の自分が台無しにしている——その感覚は正しい。<strong>実物を整え、プロに撮ってもらう</strong>だけで、相手への印象は別物になる。' };
-      if (t === 'love' && s === 'fashion') return { h1: '<em>好きな人の前で、自分が「なんかダサい」と思ってしまう。</em><br>その毎日の小さな敗北感を、終わらせよう。', sub: '着たいものが似合わない、何を着ればいいかわからない——それは才能の問題ではなく「<strong>軸を持っていない</strong>」問題だ。一度整理すれば、毎朝の選択が変わる。' };
-      if (t === 'love' && s === 'mirror') return { h1: '<em>好きな人がいる。でも鏡の自分を見るたびに、気持ちが下がる。</em>', sub: 'その積み重ねが、一歩を踏み出せない原因になっている。好きな人への行動より先に、<strong>自分が自分を見て下がる理由</strong>を一つ取り除くことが鍵だ。' };
-      if (t === 'love' && s === 'comparison') return { h1: '<em>好きな人の周りの「あいつ」と、自分を比べてしまう。</em><br>その差の正体を、今日分解する。', sub: '比べるたびに何かを諦めてきた。でもその差の多くは「<strong>積み重ねた習慣の差</strong>」だ。一点変えると、諦めの連鎖が断ち切られる。' };
-      if (t === 'love') return { h1: '<em>好きな人がいる。外見への自信のなさが、<br>その人との距離を縮めることを邪魔している。</em>', sub: '動機は今が最大だ。<strong>この気持ちが薄れないうちに</strong>、最初の一点を変えることが大事。行動の先に自信があるのではなく、変えた先に自信が生まれる。' };
-      if (t === 'career' && s === 'first_impression') return { h1: '<em>大事な場面が控えている。<br>第一印象で後悔を持ち込みたくない。</em>', sub: '人生の節目に、外見への後悔は要らない。その場だけのための変化ではなく、<strong>その後も使い続ける外見の土台</strong>をここで作る。今がベストタイミングだ。' };
-      if (t === 'career' && s === 'photo') return { h1: '<em>節目の写真が、この先ずっと残る。<br>今の自分を、ベストな状態で記録したい。</em>', sub: '写真は証拠として残る。整えた状態でプロに撮ってもらうことは、<strong>節目の準備として最も費用対効果が高い投資</strong>だ。' };
-      if (t === 'career') return { h1: '<em>大事な場面が控えている。<br>外見への準備が、結果を左右する。</em>', sub: '節目は外見への意識が最も高まるタイミングだ。この機会を使って<strong>その後も通用する外見の土台</strong>を作ることができる。今動くことに意味がある。' };
-      if (t === 'word' && s === 'mirror') return { h1: '<em>言われた一言が、鏡を見るたびに蘇る。</em><br>その感覚が指している場所は、変えられる。', sub: '誰かの言葉と、鏡の中の自分が一致してしまった瞬間がある。それは傷ではなく「<strong>変わるための地図</strong>」だ。指している場所だけを変えればいい。全部変える必要はない。' };
-      if (t === 'word' && s === 'comparison') return { h1: '<em>他人と比べてしまう。その差を、誰かに言語化された。</em><br>怒りか諦めか、どちらにするかはあなたが決める。', sub: 'ずっと気にしていたことが、外から言葉になった。それを諦めに変えるか、動力に変えるかが分岐点だ。<strong>その感覚は正しい。そして、変えられる。</strong>' };
-      if (t === 'word') return { h1: '<em>誰かの一言が、ずっと引っかかっている。<br>その違和感は、変われるサインだ。</em>', sub: '「なんか違う」という感覚は裏切らない。その一言が指している部分を特定して、<strong>そこだけ変えればいい</strong>。全部変えなくていい。一点変えると連鎖が始まる。' };
-      if (t === 'vague' && s === 'mirror') return { h1: '<em>特別なきっかけはない。でも、朝の鏡で<br>ずっと何かを諦めていた。</em>', sub: '毎朝少しずつ積み重なってきた「まあいっか」が、今動くきっかけになった。その諦めは習慣だ。<strong>一点変えると、習慣が崩れ始める。</strong>' };
-      if (t === 'vague' && s === 'comparison') return { h1: '<em>特別な理由はない。でも、誰かと比べるたびに<br>何かを手放してきた気がする。</em>', sub: 'その「気がする」は正確だ。比べて諦める、という回路が定着している。<strong>その回路を断ち切る最初の行動</strong>が、今日ここにある。' };
-      if (t === 'vague') return { h1: '<em>特別なきっかけはない。でも、ずっとどこかで<br>諦めていた。今がその諦めを手放すタイミングだ。</em>', sub: '「いつかやろう」が「今やる」に変わった瞬間をムダにしないことが大事。<strong>まず一点だけ変えると次が見えてくる。</strong>完璧に準備してから始めなくていい。' };
-      return { h1: '<em>ずっと気になっていたことが、今動くきっかけになっている。</em>', sub: '「いつかやろう」が「今やる」に変わった瞬間をムダにしないことが大事。<strong>まず一点だけ変えると次が見えてくる。</strong>' };
+    // 旧フォーマット検出（transform_vectorsがない場合）
+    if (!p.transform_vectors) {
+      root.innerHTML = `<div style="text-align:center;padding:60px 20px">
+        <p style="font-size:32px;margin-bottom:16px">🗺️</p>
+        <h2 style="font-size:20px;font-weight:800;margin:0 0 10px">新しいMe Scanで地図を生成しよう</h2>
+        <p style="color:#6b7280;font-size:14px;line-height:1.75;margin:0 0 24px">診断をアップデートしました。<br>新しいMe Scanで、あなただけの変容マップを作成します。</p>
+        <a href="/diagnosis" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px">Me Scanを受ける（新版）</a>
+      </div>`;
+      return;
     }
 
-    function getConcernType() {
-      const high = Object.entries(areas).filter(([, v]) => v >= 3);
-      const facial = ['eyebrow','skin','photo'].filter(k => (areas[k] || 0) >= 3);
-      const bodyStyle = ['body','fashion'].filter(k => (areas[k] || 0) >= 3);
-      const hasOverall = (areas.overall || 0) >= 2;
-      const topArea = [...Object.entries(areas)].sort(([, a], [, b]) => b - a)[0];
-      if (high.length === 0 && Object.values(areas).every(v => v <= 1)) return { type:'メンテナンス型', desc:'大きな問題点はなく、細部の質を上げていく段階。一点一点の完成度を高めることで「なんかあの人いつも整ってる」という印象が定着する。', color:'#059669', bg:'#f0fdf4', border:'#a7f3d0' };
-      if (hasOverall && high.length >= 3) return { type:'全面リニューアル型', desc:'複数の部分がまんべんなく気になっている状態。どこから手をつければいいかわからなくなりやすい。まず外見コンサルで優先順位を整理することが最も効率的。', color:'#7c3aed', bg:'#f5f3ff', border:'#c4b5fd' };
-      if (facial.length >= 2) return { type:'第一印象・顔まわり集中型', desc:'眉毛・肌・写真映りなど顔まわりへの気になり度が高い。会ったとき・写真・鏡を見たときに強く感じるタイプ。顔まわりを一つ整えるだけで変化を感じやすく、コストパフォーマンスが最も高いゾーン。', color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe' };
-      if (bodyStyle.length >= 2) return { type:'ボディ×スタイル型', desc:'体型と服・着こなしへの気になり度が高い。「なんかスタイルよく見える」という印象は体型と服の組み合わせで作られる。どちらか一方だけ変えても効果が出にくく、両方の方向を同時に考えることが重要。', color:'#d97706', bg:'#fffbeb', border:'#fde68a' };
-      if ((areas.hair || 0) >= 3 && facial.length >= 1) return { type:'清潔感底上げ型', desc:'髪と顔まわりへの気になり度が高い。この2点が整うだけで「なんか清潔感ある」という印象になる。コストと時間のパフォーマンスが最も高い変化のゾーン。', color:'#0891b2', bg:'#ecfeff', border:'#a5f3fc' };
-      if (topArea && topArea[1] >= 3) {
-        const [id] = topArea;
-        const typeMap = {
-          hair:    { type:'髪型特化型', desc:'髪型への気になり度が突出している。ここを変えるだけで「あの人なんか雰囲気変わった？」という反応が来やすい。美容院1回で体感できる変化がある。', color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe' },
-          skin:    { type:'肌ケア特化型', desc:'肌への気になり度が高い。肌は近距離で一番見られる部分。清潔感の土台であり、ここを改善すると全体の印象が底上げされる。スキンケアとエステで確実に変えられる。', color:'#0891b2', bg:'#ecfeff', border:'#a5f3fc' },
-          eyebrow: { type:'眉毛特化型', desc:'眉毛への気になり度が高い。眉は顔の印象を決める最重要パーツ。1回のサロンで、別人のような印象になる可能性がある。変化のコストパフォーマンスが最も高い部位。', color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe' },
-          body:    { type:'ボディメイク型', desc:'体型への気になり度が高い。ここが変わると服の見え方がすべて変わる。継続が鍵になるため、続けやすい入口のあるパーソナルトレーナーから始めることが重要。', color:'#d97706', bg:'#fffbeb', border:'#fde68a' },
-          fashion: { type:'スタイリング型', desc:'服・着こなしへの気になり度が高い。体型ではなく「サイズ感と色の選び方」だけで印象は大きく変わる。一度パーソナルスタイリストに見てもらうと、自分に合う軸ができる。', color:'#7c3aed', bg:'#f5f3ff', border:'#c4b5fd' },
-          photo:   { type:'写真映り特化型', desc:'写真映りへの気になり度が高い。マッチングアプリやSNSでの印象を変えたい状態。外見を整えたうえでプロに撮ってもらうことが最短解。', color:'#0891b2', bg:'#ecfeff', border:'#a5f3fc' },
-          overall: { type:'全体印象型', desc:'全体的な雰囲気への気になり度が高い。パーツ単位で変えようとするより、外見コンサルで全体像を把握してから優先順位をつけて動く方が効率的。', color:'#7c3aed', bg:'#f5f3ff', border:'#c4b5fd' },
-        };
-        return typeMap[id] || { type:'変容準備型', desc:'気になる部分から一歩踏み出す段階。最初の一点を変えることで、変化のサイクルが始まる。', color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe' };
-      }
-      return { type:'変容準備型', desc:'今の自分を変えていく段階にいる。まず一番気になっている部分から始めることで変化のサイクルが始まる。', color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe' };
-    }
+    // ─── 定数・マッピング ───
+    const AREA_DEFS = {
+      body:    { icon:'💪', label:'体型', catLink:'gym',          tier:1 },
+      eyebrow: { icon:'✂️', label:'眉',   catLink:'eyebrow',     tier:1 },
+      fashion: { icon:'👔', label:'服',   catLink:'fashion',      tier:1 },
+      hair:    { icon:'💇', label:'髪',   catLink:'hair',         tier:1 },
+      skin:    { icon:'✨', label:'肌',   catLink:'esthetic',     tier:2 },
+      teeth:   { icon:'🦷', label:'歯',   catLink:'whitening',    tier:3 },
+      nail:    { icon:'💅', label:'爪',   catLink:'nail',         tier:4 },
+    };
+    const TIER_LABELS = { 1:'基盤', 2:'深化', 3:'補完', 4:'磨き込み' };
+    const PATH_LABELS = { virgin:'未経験', quit:'試したが続かない', blind:'非客観視', lapsed:'以前やっていた' };
+    const PATH_COLORS = { virgin:'rgba(201,168,76,0.12):#c9a84c', quit:'#fee2e2:#b91c1c', blind:'#f5f0e8:#7a6e65', lapsed:'#d1fae5:#065f46' };
+    const VIEW_ALERTS = {
+      worse:   '⚠️ 他者評価が自己評価より低い可能性',
+      unknown: '💡 客観的フィードバックを得たことがない',
+    };
 
-    function getBarrierAnalysis() {
-      const f = p.failure_pattern;
-      if (!f) return null;
-      const map = {
-        lost_direction: { text:'「何をすればいいかわからない」状態で止まる傾向がある。', sub:'これは意志の問題ではなく、プログラムの設計の問題。週ごとの目標が明確で次のステップが常に見えているプロと組むことで、この壁は乗り越えられる。', condition:'明確な構造を持ち、ステップバイステップで進めてくれるプロ' },
-        no_continuation: { text:'効果を感じながらも、続かなかった経験がある。', sub:'続かない理由の多くは「ハードルが高すぎる」か「一人でやろうとした」こと。月1〜2回でも継続できる環境と定期的に関わってくれるプロが解決策になる。', condition:'負担が小さく始められて継続サポートが得意なプロ' },
-        cost: { text:'コストや時間の面で続けられなかった経験がある。', sub:'一気に全部やろうとするとコストで詰まる。まず1点だけ変える。変化が実感できたら次に進む。この順序が鍵。', condition:'小さく始められる体験メニューがある、または単価が明確なプロ' },
-        awkward: { text:'プロとの関係性でつまずいた経験がある。', sub:'押し付け感・空気感・やり取りの違和感がストレスになって離れるパターンは多い。「相性」を最初から重視できるプロを選ぶことが今回の最優先事項。', condition:'押し売りせず、こちらのペースを尊重してくれるプロ' },
-        no_result: { text:'変化が感じられずに諦めた経験がある。', sub:'変化が見えない理由は「合っていないサービスを選んでいた」か「評価方法を知らなかった」かのどちらかが多い。今回の診断で合うカテゴリを先に絞ることで、これを回避する。', condition:'before/afterが明確で変化を可視化してくれるプロ' },
-        ongoing: { text:'今も継続中。さらに深化させる段階にいる。', sub:'基礎は出来ている。次はバラバラに磨いてきたパーツを全体として活かす「統合」の段階。外見コンサルや写真・出会いの場への活用が次のステップ。', condition:'総合的な外見プロデュースができるプロ' },
+    const tv = p.transform_vectors || {};
+    const priorityOrder = p.priority_order || [];
+    const compassCalculated = p.compass_first || priorityOrder[0] || 'body';
+    const compassOverride = localStorage.getItem('fineme:compass:override');
+    const isOverrideActive = !!(compassOverride && AREA_DEFS[compassOverride]);
+    const compassFirst = isOverrideActive ? compassOverride : compassCalculated;
+
+    // ─── Hero headline ───
+    function getHeroContent() {
+      const gc = p.goal_change;
+      const gv = p.goal_vision;
+      const t  = p.trigger;
+      const CHANGE_HEADLINES = {
+        others_perception: { h1: '<em>「あの人、変わった」と言わせる地図が、<br>今できた。</em>', sub: '他の人からの見られ方を変えたい。その動機は正しい。外見は「自分が思っているより他者に見られている」。変えるべき場所を変えれば、<strong>あの人の目が変わる。</strong>' },
+        self_confidence:   { h1: '<em>自分が自分を好きになる——<br>その旅の出発点がここにある。</em>', sub: '他人の目より先に、自分が自分を認める。そのためにまず「変えられる場所を変える」ことが必要だ。<strong>鏡の中の自分が少しずつ変わると、何かが変わり始める。</strong>' },
+        action_ease:       { h1: '<em>外見が足を引っ張らなくなれば、<br>もっと動ける。その通りだ。</em>', sub: '行動できない理由を外見に帰属している限り、変わらない。逆に外見への引っかかりが消えると、<strong>驚くほど動けるようになる。</strong>' },
+        life_options:      { h1: '<em>外見を理由に、諦めることを<br>一つずつ減らしていく地図。</em>', sub: '「どうせ自分なんて」という言葉を頭から消すために、変えられる場所を変える。<strong>諦めの連鎖を断ち切る最初の一点</strong>がここに示されている。' },
       };
-      return map[f] || null;
-    }
-
-    function getPriorityAction() {
-      const sorted = Object.entries(areas).filter(([, v]) => v > 0).sort(([, a], [, b]) => b - a);
-      if (sorted.length === 0) return null;
-      const [topId] = sorted[0];
-      const ICONS = { hair:'💇‍♂️', skin:'✨', eyebrow:'✂️', body:'💪', fashion:'👔', photo:'📸', overall:'🧑‍⚕️', beard:'💈', teeth:'😁', posture:'🚶' };
-      const NAMES = { hair:'髪型・髪', skin:'肌・ニキビ', eyebrow:'眉毛', body:'体型・体', fashion:'服・コーデ', photo:'写真写り', overall:'外見コンサル', beard:'ひげ・無精ひげ', teeth:'歯・口元', posture:'姿勢・雰囲気' };
-      const COPY = {
-        hair:'髪型は第一印象の30%を占める。ここを変えると「なんかいい感じ」に見える。美容院1回で体感できる変化がある。',
-        skin:'肌は近距離で一番差が出る。清潔感の土台であり、ここを整えると全体の印象が底上げされる。',
-        eyebrow:'眉毛は顔の印象を一番早く変えられる。1回のサロンで、別人のような第一印象になる可能性がある。',
-        body:'体型が変わると服の見え方がすべて変わる。継続が鍵なので、続けやすい入口から始めることが重要。',
-        fashion:'サイズ感と色を整えるだけで印象は別物になる。体型より「選び方」で変えられる部分。',
-        photo:'写真映りの問題は実物がどれだけ良くても解決しない。プロに撮ってもらうことがマッチング結果を変える最短解。',
-        overall:'パーツ単位で見ても改善しにくい状態。外見コンサルで全体像を把握してから動くのが最も効率的。',
-        beard:'ひげは清潔感を左右する最大の要因のひとつ。毎日剃る手間を含め、脱毛で根本解決するのが長期的に最も合理的。',
-        teeth:'歯・口元は笑顔と第一印象の核心。ここが整うと自信が外に出やすくなる。ホワイトニングから始めることで即効性もある。',
-        posture:'姿勢と歩き方は「存在感」を作る。外見のパーツを変えても姿勢が悪いと印象は変わらない。外見コンサルで全体像から診てもらうのが近道。',
+      const TRIGGER_FALLBACK = {
+        matching_app: { h1: '<em>頑張っているのに変わらない。<br>その理由は、もう見えている。</em>', sub: '努力が結果に変わらない理由は「<strong>変えるべき場所を変えていない</strong>」からだ。今回のスキャンで、その場所が特定された。' },
+        love:         { h1: '<em>好きな人がいる。外見への自信が<br>その距離を作っている。</em>', sub: '動機は今が最大だ。<strong>この気持ちが薄れないうちに</strong>、最初の一点を変えることが大事。変えた先に自信が生まれる。' },
+        career:       { h1: '<em>大事な場面が控えている。<br>外見への準備が、結果を左右する。</em>', sub: '節目は外見への意識が最も高まるタイミングだ。<strong>その後も通用する外見の土台</strong>をここで作る。' },
+        word:         { h1: '<em>誰かの一言が、ずっと引っかかっている。<br>その違和感は、変われるサインだ。</em>', sub: '「なんか違う」という感覚は裏切らない。<strong>そこだけ変えればいい。</strong>全部変えなくていい。一点変えると連鎖が始まる。' },
+        vague:        { h1: '<em>特別なきっかけはなくていい。<br>「今やる」に変わった瞬間がすべてだ。</em>', sub: '「いつかやろう」が「今やる」に変わった。<strong>まず一点だけ変えると次が見えてくる。</strong>' },
       };
-      const CATS = { hair:'hair', skin:'esthetic', eyebrow:'eyebrow', body:'gym', fashion:'fashion', photo:'photo', overall:'consulting', beard:'hairremoval', teeth:'whitening', posture:'consulting' };
-      const urgencyNote = p.urgency === 'high' ? ' 締め切りがある今、ここが最短ルート。' : '';
-      return { icon: ICONS[topId] || '🎯', name: NAMES[topId] || topId, copy: (COPY[topId] || '') + urgencyNote, cat: CATS[topId] || 'consulting' };
+      if (gc && CHANGE_HEADLINES[gc]) return CHANGE_HEADLINES[gc];
+      if (t && TRIGGER_FALLBACK[t]) return TRIGGER_FALLBACK[t];
+      return { h1: '<em>あなただけの変容プロファイルが、<br>今完成した。</em>', sub: '全カテゴリの現在地と理想を測定した。Fineme Compassが指す方角から始めよう。' };
     }
 
-    function getProviderTraits() {
-      const traits = [];
-      const styleMap = { explanation:'「なぜそうするのか」を丁寧に説明してくれる', consultation:'こちらの意見を聞きながら一緒に進めてくれる', delegate:'任せたら確実に結果を出してくれる', cautious:'小さく始められる体験メニューがある' };
-      const relMap = { continuity:'毎回前回の続きから始めてくれる（記録してくれる）', directive:'やることをはっきり指示してくれる', accessibility:'予約以外でも気軽に相談できる（LINE等）', autonomy:'押し売りせず、こちらのペースを尊重する' };
-      const failMap = { lost_direction:'プログラムが明確で週ごとの目標がある', no_continuation:'無理なく続けられるペースを提案してくれる', awkward:'空気感がよく、話しやすい', no_result:'before/afterが明確で変化を可視化してくれる' };
-      if (p.style && styleMap[p.style]) traits.push(styleMap[p.style]);
-      if (p.relationship && relMap[p.relationship]) traits.push(relMap[p.relationship]);
-      if (p.failure_pattern && failMap[p.failure_pattern]) traits.push(failMap[p.failure_pattern]);
-      return [...new Set(traits)].slice(0, 4);
-    }
-
-    function getRecommendations() {
-      const MAP = {
-        hair:    { icon:'💇‍♂️', label:'ヘア・美容院', reason:'第一印象に直結する', cat:'hair' },
-        skin:    { icon:'💆‍♂️', label:'肌・エステ', reason:'清潔感の土台', cat:'esthetic' },
-        eyebrow: { icon:'✂️', label:'眉毛サロン', reason:'顔印象を最速で変える', cat:'eyebrow' },
-        body:    { icon:'🏋️‍♂️', label:'パーソナルジム', reason:'体型が服の見え方を変える', cat:'gym' },
-        fashion: { icon:'👔', label:'ファッション', reason:'サイズ感と色で別人になれる', cat:'fashion' },
-        photo:   { icon:'📸', label:'プロフィール写真', reason:'アプリ結果を直接変える', cat:'photo' },
-        overall: { icon:'🧑‍⚕️', label:'外見トータルサポート', reason:'優先順位を整理できる', cat:'consulting' },
-        beard:   { icon:'💈', label:'ひげ脱毛', reason:'清潔感を根本から変える', cat:'hairremoval' },
-        teeth:   { icon:'😁', label:'歯のホワイトニング', reason:'笑顔と口元の印象を変える', cat:'whitening' },
-        posture: { icon:'🚶', label:'外見トータルサポート', reason:'姿勢・雰囲気は全体から整える', cat:'consulting' }
+    // ─── ゴール4層テキスト ───
+    function buildGoalLayers() {
+      const SCENE_MAP = {
+        first_impression: '初対面の瞬間、相手の反応が変わる',
+        date_confidence:  '好きな人といる時間、外見を気にせず相手に集中できる',
+        photo_self:       '写真や動画の自分が、気にならなくなる',
+        morning_mirror:   '毎朝鏡を見て、気分が上がる',
+        approach:         '自分から積極的に動けるようになる',
       };
-      return Object.entries(areas).filter(([, v]) => v > 0).sort(([, a], [, b]) => b - a).slice(0, 3).map(([id]) => MAP[id]).filter(Boolean);
-    }
-
-    function levelColor(l) {
-      return ['#e5e7eb','#93c5fd','#60a5fa','#3b82f6','#1d4ed8'][l] || '#e5e7eb';
-    }
-
-    const situation   = getCoreSituation();
-    const barrier     = getBarrierAnalysis();
-    const priority    = getPriorityAction();
-    const traits      = getProviderTraits();
-    const recs        = getRecommendations();
-    const concernType = getConcernType();
-    const concernSorted = Object.entries(areas).sort(([, a], [, b]) => b - a);
-    const hasAnyConcern = concernSorted.some(([, v]) => v > 0);
-
-    const html = `
-      <div class="result-hero">
-        <p style="font-size:10px;font-weight:800;letter-spacing:.14em;color:rgba(255,255,255,.3);margin:0 0 12px;position:relative;z-index:1;text-transform:uppercase">MAP 01</p>
-        <div class="result-badge">あなたの変容プロファイル</div>
-        <h1>${situation.h1}</h1>
-        <div class="result-hero-divider"></div>
-        <p style="font-size:11px;color:rgba(255,255,255,.45);margin:0 0 10px;position:relative;z-index:1;letter-spacing:.06em">— 今日、あなたの地図が描かれました —</p>
-        <p class="result-hero-sub">${situation.sub}</p>
-      </div>
-
-      ${priority ? `
-      <p class="section-label">FIRST STEP</p>
-      <div class="priority-card">
-        <div class="priority-card-eyebrow">🏁 最初の分岐点</div>
-        <div class="priority-card-main">${priority.icon} ${priority.name}</div>
-        <div class="priority-card-reason">${priority.copy}</div>
-        <a href="/search?category=${priority.cat}&diag=1" class="priority-card-cta">このカテゴリのサービスを見る</a>
-      </div>` : ''}
-
-      <p class="section-label" style="margin-top:28px">TERRAIN MAP</p>
-      <div class="result-card">
-        <div class="result-card-header">
-          <div class="result-card-title">🧭 あなたの地形マップ</div>
-          <div class="result-card-subtitle">気になり度のパターンから、最も効率よく変わる道筋が見える</div>
-        </div>
-        <div class="type-badge-wrap">
-          <div class="type-badge" style="background:${concernType.color}">${concernType.type}</div>
-          <div class="type-desc-box" style="background:${concernType.bg};border:1.5px solid ${concernType.border}">${concernType.desc}</div>
-        </div>
-        ${hasAnyConcern ? `
-        <div class="concern-bars">
-          ${concernSorted.map(([id, level]) => `
-            <div class="concern-bar-row">
-              <div class="concern-bar-label">${CONCERN_ICONS[id] || ''} ${CONCERN_NAMES[id] || id}</div>
-              <div class="concern-bar-track">
-                <div class="concern-bar-fill" style="width:${Math.round((level/4)*100)}%;background:${levelColor(level)}"></div>
+      const CHANGE_MAP = {
+        others_perception: '他の人からの見られ方・評価が変わる',
+        self_confidence:   '自分の気持ち・自己肯定感が変わる',
+        action_ease:       '行動のしやすさ・動けるようになること',
+        life_options:      '外見を理由に諦めることが減ること',
+      };
+      const VISION_MAP = {
+        love_active:      '恋愛で、躊躇せず動けるようになっている',
+        no_give_up:       '外見を理由に何かを諦めることが減っている',
+        like_self:        '自分のことを、もう少し好きになっている',
+        natural_confident:'自信が「自然な状態」になっている',
+      };
+      const layers = [];
+      if (p.goal_scene && SCENE_MAP[p.goal_scene])
+        layers.push({ icon:'🎬', label:'Layer 2 — 場面・行動のゴール', text: SCENE_MAP[p.goal_scene] });
+      if (p.goal_change && CHANGE_MAP[p.goal_change])
+        layers.push({ icon:'🔥', label:'Layer 3 — 感情・状態のゴール', text: CHANGE_MAP[p.goal_change] });
+      if (p.goal_vision && VISION_MAP[p.goal_vision])
+        layers.push({ icon:'🌱', label:'Layer 4 — あり方のゴール（変容の先）', text: VISION_MAP[p.goal_vision] });
+      if (!layers.length) return '';
+      return `
+        <p class="sec-label" style="margin-top:28px">Your Goal</p>
+        <div class="goal-card">
+          <div class="goal-card-title">🎯 あなたが目指す場所</div>
+          <div class="goal-layers">
+            ${layers.map(l => `
+              <div class="goal-layer">
+                <div class="goal-layer-icon">${l.icon}</div>
+                <div class="goal-layer-body">
+                  <div class="goal-layer-label">${esc(l.label)}</div>
+                  <div class="goal-layer-text">${esc(l.text)}</div>
+                </div>
               </div>
-              <div class="concern-bar-value" style="color:${levelColor(level)}">${LEVEL_TEXT[level] || ''}</div>
-            </div>
-          `).join('')}
-        </div>` : ''}
-      </div>
-
-      ${barrier ? `
-      <p class="section-label" style="margin-top:28px">YOUR ROAD</p>
-      <div class="result-card">
-        <div class="result-card-header">
-          <div class="result-card-title">🪨 これまでの道にあった障壁</div>
-          <div class="result-card-subtitle">過去のパターンを知ることが、次に勝つための準備になる</div>
-        </div>
-        <div class="insight-list">
-          <div class="insight-item">
-            <div class="insight-label">過去のパターン</div>
-            <div class="insight-text">${barrier.text}</div>
-            <div class="insight-sub">${barrier.sub}</div>
-          </div>
-          ${barrier.condition ? `
-          <div class="insight-item" style="border-left-color:#059669;background:#f0fdf4">
-            <div class="insight-label" style="color:#059669">今回優先するプロの条件</div>
-            <div class="insight-text">${barrier.condition}</div>
-          </div>` : ''}
-        </div>
-      </div>` : ''}
-
-      ${traits.length > 0 ? `
-      <p class="section-label" style="margin-top:28px">Pro Matching</p>
-      <div class="result-card">
-        <div class="result-card-header">
-          <div class="result-card-title">🧭 この旅に合うガイドの条件</div>
-          <div class="result-card-subtitle">この条件を持つプロとの相性がいい。サービス選びの判断軸にしてほしい</div>
-        </div>
-        <div class="trait-list">
-          ${traits.map(t => `<div class="trait-item"><div class="trait-check">✓</div><span>${t}</span></div>`).join('')}
-        </div>
-        <p style="font-size:12px;color:#9ca3af;margin:14px 0 0;padding-left:2px">掲載者ページでこの条件との一致度を確認できます。</p>
-      </div>` : ''}
-
-      <div id="match-providers-slot"></div>
-
-      ${recs.length > 0 ? `
-      <p class="section-label" id="recs-label" style="margin-top:28px">Recommendations</p>
-      <div class="result-card">
-        <div class="result-card-header">
-          <div class="result-card-title">🎯 気になり度の高い順カテゴリ</div>
-          <div class="result-card-subtitle">最上位のカテゴリから手をつけるのが最短ルート</div>
-        </div>
-        ${recs.map((r, i) => `
-          <a href="/search?category=${r.cat}&diag=1" class="recommend-card${i === 0 ? ' top' : ''}">
-            <span class="recommend-card-icon">${r.icon}</span>
-            <span class="recommend-card-body">
-              <span class="recommend-card-title">${r.label}</span>
-              <span class="recommend-card-reason" style="display:block">${r.reason}</span>
-            </span>
-            ${i === 0 ? '<span class="recommend-card-badge">最優先</span>' : ''}
-          </a>
-        `).join('')}
-      </div>` : ''}
-
-      ${!p.stage2_completed ? `
-      <p class="section-label" style="margin-top:28px">Go Deeper</p>
-      <div class="deepdive-section">
-        <div class="deepdive-title">続きを答えると、ここまでわかる</div>
-        <div class="deepdive-desc">あと数問答えるだけで、診断の精度が大幅に上がる。今の結果は「入口」に過ぎない。</div>
-        <div class="deepdive-items">
-          <div class="deepdive-item">
-            <div class="deepdive-item-icon">📖</div>
-            <div class="deepdive-item-body">
-              <div class="deepdive-item-if">過去に試みたことを教えると</div>
-              <div class="deepdive-item-then">あなたが変われなかった本当の理由がわかる</div>
-            </div>
-            <div class="deepdive-arrow">→</div>
-          </div>
-          <div class="deepdive-item">
-            <div class="deepdive-item-icon">🤝</div>
-            <div class="deepdive-item-body">
-              <div class="deepdive-item-if">理想のプロとの関係性を教えると</div>
-              <div class="deepdive-item-then">相性の良いプロが絞り込まれる</div>
-            </div>
-            <div class="deepdive-arrow">→</div>
-          </div>
-        </div>
-        <a href="/diagnosis/stage2" class="btn" style="display:inline-block;font-size:14px;font-weight:700">地図をさらに詳しくする →</a>
-      </div>` : ''}
-
-      <div class="s2-cta-card" id="s2-cta-card">
-        <div class="s2-cta-inner">
-          <div class="s2-cta-icon">🗺️</div>
-          <h3 class="s2-cta-title">この地図をもっと詳しくする</h3>
-          <p class="s2-cta-desc">あなたが選んだ部分について、もう少し教えてください。<br>地図がより鮮明になり、具体的な一手が見えてきます。</p>
-          <div class="s2-cta-areas" id="s2-cta-areas"></div>
-          <button class="s2-cta-btn" onclick="window.location.href='/diagnosis/stage2'">地図をさらに詳しくする →</button>
-        </div>
-      </div>
-
-      <div class="map-next-section">
-        <div class="map-next-label">🗺️ 次の行き先</div>
-        <div class="map-next-options">
-          <a href="/diagnosis/stage2" class="map-next-btn map-next-primary">
-            <span class="map-next-icon">🔭</span>
-            <span class="map-next-body">
-              <span class="map-next-title">地図をさらに詳しくする</span>
-              <span class="map-next-desc">あなたの部位について2〜3問答えると、AIが地図を描き直します</span>
-            </span>
-            <span class="map-next-arrow">→</span>
-          </a>
-          <a href="/?scrollTo=roadmap" class="map-next-btn map-next-secondary">
-            <span class="map-next-icon">🗺️</span>
-            <span class="map-next-body">
-              <span class="map-next-title">変容ロードマップを見る</span>
-              <span class="map-next-desc">3つのフェーズで、変わるための道順を確認する</span>
-            </span>
-            <span class="map-next-arrow">→</span>
-          </a>
-        </div>
-      </div>
-
-      <div class="cta-block" style="margin-top:8px">
-        <div class="cta-section">
-          <button id="btn-save-mypage" class="cta-btn-secondary" type="button">この地図を保存する</button>
-          <div class="cta-divider"></div>
-          <a href="/diagnosis" class="cta-btn-ghost">地図を更新する（再診断）</a>
-        </div>
-      </div>
-    `;
-
-    root.innerHTML = html;
-
-    // AI地図セクションをヒーローの直後に挿入
-    (function insertAIMapSection() {
-      const aiMapHTML = `
-        <div class="ai-map-section" id="ai-map-section" style="display:none">
-          <div class="ai-map-header">
-            <span class="ai-map-badge">✨ AI地図</span>
-            <h2 class="ai-map-title">あなただけの変容プロファイル</h2>
-          </div>
-          <div class="ai-map-loading" id="ai-map-loading">
-            <div class="ai-map-drawing">🗺️</div>
-            <p class="ai-map-loading-text">地図を描いています...</p>
-            <div class="ai-map-progress-bar"><div class="ai-map-progress-fill" id="ai-map-progress-fill"></div></div>
-          </div>
-          <div class="ai-map-result" id="ai-map-result" style="display:none">
-            <div class="ai-map-card ai-card-position">
-              <div class="ai-card-label">📍 あなたの現在地</div>
-              <p class="ai-card-text" id="ai-current-position"></p>
-            </div>
-            <div class="ai-map-card ai-card-insight">
-              <div class="ai-card-label">🔍 変われなかった本当の理由</div>
-              <p class="ai-card-text" id="ai-core-insight"></p>
-            </div>
-            <div class="ai-map-card ai-card-step">
-              <div class="ai-card-label">🚀 最初の一手</div>
-              <p class="ai-card-text" id="ai-first-step"></p>
-            </div>
-            <div class="ai-map-card ai-card-warning">
-              <div class="ai-card-label">⚠️ あなた特有のリスク</div>
-              <p class="ai-card-text" id="ai-warning"></p>
-            </div>
-            <div class="ai-map-card ai-card-guide">
-              <div class="ai-card-label">🧭 合うプロの条件</div>
-              <ul class="ai-guide-list" id="ai-guide-criteria"></ul>
-            </div>
+            `).join('')}
           </div>
         </div>
       `;
-      const hero = root.querySelector('.result-hero');
-      if (hero) hero.insertAdjacentHTML('afterend', aiMapHTML);
-    })();
+    }
 
-    // 掲載者マッチング（非同期）
-    (async function loadMatchedProviders() {
+    // ─── SVGレーダーチャート ───
+    function buildRadarChart() {
+      const areas = ['body','eyebrow','fashion','hair','skin','teeth','nail'];
+      const labels = { body:'体型', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
+      const icons  = { body:'💪', eyebrow:'✂️', fashion:'👔', hair:'💇', skin:'✨', teeth:'🦷', nail:'💅' };
+      const cx = 150, cy = 150, R = 90;
+
+      // Grid
+      let grid = '';
+      for (let lv = 1; lv <= 5; lv++) {
+        const pts = areas.map((_, i) => {
+          const a = -Math.PI/2 + (2*Math.PI*i/7);
+          const r = (lv/5)*R;
+          return `${(cx+r*Math.cos(a)).toFixed(1)},${(cy+r*Math.sin(a)).toFixed(1)}`;
+        }).join(' ');
+        grid += `<polygon points="${pts}" fill="none" stroke="rgba(201,168,76,0.15)" stroke-width="${lv===5?1.5:1}"/>`;
+      }
+
+      // Axis lines
+      let axes = '';
+      areas.forEach((_, i) => {
+        const a = -Math.PI/2 + (2*Math.PI*i/7);
+        axes += `<line x1="${cx}" y1="${cy}" x2="${(cx+R*Math.cos(a)).toFixed(1)}" y2="${(cy+R*Math.sin(a)).toFixed(1)}" stroke="rgba(201,168,76,0.12)" stroke-width="1"/>`;
+      });
+
+      // Ideal polygon (dashed gold)
+      const idealPts = areas.map((id, i) => {
+        const score = Math.min(tv[id]?.ideal || 3, 5);
+        const a = -Math.PI/2 + (2*Math.PI*i/7);
+        const r = (score/5)*R;
+        return `${(cx+r*Math.cos(a)).toFixed(1)},${(cy+r*Math.sin(a)).toFixed(1)}`;
+      }).join(' ');
+
+      // Current polygon (filled navy)
+      const currentPts = areas.map((id, i) => {
+        const score = Math.min(tv[id]?.current || 1, 5);
+        const a = -Math.PI/2 + (2*Math.PI*i/7);
+        const r = (score/5)*R;
+        return `${(cx+r*Math.cos(a)).toFixed(1)},${(cy+r*Math.sin(a)).toFixed(1)}`;
+      }).join(' ');
+
+      // Labels
+      let labelsSvg = '';
+      areas.forEach((id, i) => {
+        const a = -Math.PI/2 + (2*Math.PI*i/7);
+        const lr = R + 24;
+        const lx = (cx + lr*Math.cos(a)).toFixed(1);
+        const ly = (cy + lr*Math.sin(a) + 4).toFixed(1);
+        labelsSvg += `<text x="${lx}" y="${ly}" text-anchor="middle" font-size="10" font-weight="700" fill="#0a0f1e">${icons[id]}${labels[id]}</text>`;
+      });
+
+      return `
+        <svg viewBox="0 0 300 300" width="100%" style="max-width:300px;display:block;margin:0 auto">
+          ${grid}${axes}
+          <polygon points="${idealPts}" fill="rgba(201,168,76,0.08)" stroke="#c9a84c" stroke-width="1.5" stroke-dasharray="4,3"/>
+          <polygon points="${currentPts}" fill="rgba(10,15,30,.22)" stroke="#0a0f1e" stroke-width="2"/>
+          ${labelsSvg}
+          <circle cx="${cx}" cy="${cy}" r="4" fill="#c9a84c"/>
+        </svg>
+        <div class="radar-legend">
+          <div class="radar-legend-item"><div class="radar-legend-dot" style="background:#0a0f1e"></div>現在地</div>
+          <div class="radar-legend-item"><div class="radar-legend-dot" style="background:#c9a84c;opacity:.8"></div>理想</div>
+        </div>
+      `;
+    }
+
+    // ─── Fineme Compass ───
+    function buildCompass() {
+      const def = AREA_DEFS[compassFirst];
+      if (!def) return '';
+      const v = tv[compassFirst] || {};
+      const gap = v.gap || 0;
+      const COMPASS_REASONS = {
+        body:    '体型が変わると服の見え方がすべて変わる。他の軸の効果を最大化する「土台」だ。',
+        eyebrow: '顔の印象を最も短時間・低コストで変えられる部位。1回のサロンで別人のような印象になれる。',
+        fashion: 'サイズ感と色を整えるだけで印象は別物になる。体型より「選び方」で変えられる。変化が即日見える。',
+        hair:    '髪型は第一印象の30%を占める。美容院1回で「なんかいい感じ」という変化が体感できる。',
+        skin:    '肌は近距離で一番差が出る。清潔感の土台であり、ここを整えると全体の印象が底上げされる。',
+        teeth:   '笑顔と口元は第一印象の核心。ここが整うと自信が外に出やすくなる。',
+        nail:    '細部の仕上がりが「全体の質感」を決める。磨き込みの段階にある証拠だ。',
+      };
+      const urgencyNote = p.urgency === 'high' ? '<br><strong>締め切りがある今、ここが最短ルート。</strong>' : '';
+      const pathType = tv[compassFirst]?.path_type;
+      const PATH_ACTION = {
+        virgin: '→ まず知識・入門から始める一手',
+        quit:   '→ 継続できる仕組みを先に設計する',
+        blind:  '→ 客観的なフィードバックを得ることから始める',
+        lapsed: '→ 再開のハードルを最小化する',
+      };
+      const pathActionNote = pathType ? `<br><span style="font-size:12px;color:#c9a84c;font-weight:700">${PATH_ACTION[pathType]||''}</span>` : '';
+      const overrideChips = Object.entries(AREA_DEFS).map(([id, d]) => {
+        const isActive = id === compassFirst;
+        return `<button class="compass-override-chip${isActive ? ' active' : ''}" data-axis="${id}">${esc(d.icon)} ${esc(d.label)}</button>`;
+      }).join('');
+      const overrideNote = isOverrideActive
+        ? `<p style="font-size:11px;color:#c9a84c;font-weight:700;margin:4px 0 0">🧭 あなたが選んだ方角 — <button id="compass-reset-btn" style="background:none;border:none;color:#c9a84c;font-size:11px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline">診断の推奨に戻す</button></p>`
+        : `<p style="font-size:11px;color:#6b7280;margin:4px 0 0">診断が算出した最初の一手</p>`;
+      return `
+        <p class="sec-label" style="margin-top:28px">Fineme Compass</p>
+        <div class="compass-card">
+          <div class="compass-eyebrow">今向くべき方角</div>
+          <div class="compass-main">${esc(def.icon)} ${esc(def.label)}</div>
+          ${overrideNote}
+          <div class="compass-reason" style="margin-top:12px">${COMPASS_REASONS[compassFirst] || ''}${urgencyNote}${pathActionNote}</div>
+          <a href="/mypage/navi" class="compass-cta">変容ロードマップを見る →</a>
+          <a href="/search?category=${esc(def.catLink)}&diag=1" style="display:inline-block;margin-top:8px;font-size:12px;color:#6b7280;text-decoration:none;" onmouseover="this.style.color='#c9a84c'" onmouseout="this.style.color='#6b7280'">このカテゴリのプロを探すなら →</a>
+
+          <div style="margin-top:20px;padding-top:18px;border-top:1px solid rgba(201,168,76,0.2);">
+            <p style="font-size:12px;font-weight:800;color:rgba(201,168,76,0.8);margin:0 0 10px;letter-spacing:.06em;display:flex;align-items:center;gap:6px"><span>🔄</span> 最初の一手を自分で選ぶ</p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">${overrideChips}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ─── 変容ベクトルリスト ───
+    function buildVectorList() {
+      if (!priorityOrder.length) return '';
+      const topAreas = priorityOrder.filter(id => AREA_DEFS[id]).slice(0, 5);
+      if (!topAreas.length) return '';
+
+      const CARE_LABELS = { none:'未着手', concerned:'気になっている', self:'自己ケア中', pro:'プロ通い中' };
+
+      const rows = topAreas.map((id, idx) => {
+        const def = AREA_DEFS[id];
+        const v   = tv[id] || { current:1, ideal:3, gap:2, tier:def.tier };
+        const currentPct = ((v.current / 5) * 100).toFixed(1);
+        const idealPct   = ((v.ideal   / 5) * 100).toFixed(1);
+        const gapClass   = v.gap >= 3 ? '' : v.gap >= 1 ? ' small' : ' none';
+        const gapLabel   = v.gap > 0 ? `ギャップ${v.gap}` : '達成済み';
+        const tierLabel  = TIER_LABELS[def.tier] || '';
+        const careLabel  = CARE_LABELS[v.care_type] || '';
+        const pathLabel  = PATH_LABELS[v.path_type] || '';
+        const pathColStr = PATH_COLORS[v.path_type] || '';
+        const [pathBg, pathFg] = pathColStr ? pathColStr.split(':') : ['#f3f4f6','#374151'];
+        const viewAlert  = v.self_view ? VIEW_ALERTS[v.self_view] || '' : '';
+        return `
+          <div class="vector-item${idx === 0 ? ' priority-1' : ''}">
+            <div class="vector-item-header">
+              <div class="vector-item-name">${esc(def.icon)} ${esc(def.label)}</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span class="vector-tier-badge tier-${def.tier}">${tierLabel}</span>
+                <span class="vector-gap-badge${gapClass}">${esc(gapLabel)}</span>
+              </div>
+            </div>
+            ${pathLabel ? `<div style="margin-bottom:8px"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;background:${pathBg};color:${pathFg}">来た道：${esc(pathLabel)}</span>${viewAlert ? `<span style="font-size:10px;color:#92400e;margin-left:8px">${esc(viewAlert)}</span>` : ''}</div>` : ''}
+            <div class="vector-bar-wrap">
+              <div class="vector-bar-label" style="font-size:10px">${esc(careLabel)}</div>
+              <div style="flex:1">
+                <div class="vector-bar-track">
+                  <div class="vector-bar-current" style="width:${currentPct}%"></div>
+                  <div class="vector-bar-ideal-marker" style="left:${idealPct}%"></div>
+                </div>
+                <div class="vector-bar-labels"><span>現在地</span><span>理想 ★</span></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <p class="sec-label" style="margin-top:28px">Transform Vector</p>
+        <div class="result-card">
+          <div class="result-card-title">📐 変容ベクトル</div>
+          <div class="result-card-subtitle">現在地と理想のギャップ。ギャップが大きいほど変化の余地が大きい</div>
+          <div class="vector-list">${rows}</div>
+        </div>
+      `;
+    }
+
+    // ─── 来た道の障壁分析 ───
+    function buildBarrier() {
+      const f = p.failure_pattern;
+      if (!f) return '';
+      const MAP = {
+        lost_direction: { text:'「何をすればいいかわからない」状態で止まる傾向がある。', sub:'意志の問題ではなく、プログラム設計の問題。週ごとの目標が明確で次のステップが常に見えているプロと組むことで、この壁は乗り越えられる。', condition:'ステップバイステップで進めてくれるプロ' },
+        no_continuation:{ text:'効果を感じながらも、続かなかった経験がある。', sub:'続かない理由の多くは「ハードルが高すぎる」か「一人でやろうとした」こと。月1〜2回でも継続できる環境が解決策になる。', condition:'負担が小さく継続サポートが得意なプロ' },
+        cost:           { text:'コストや時間の面で続けられなかった経験がある。', sub:'まず1点だけ変える。変化が実感できたら次に進む。この順序が鍵。', condition:'小さく始められる体験メニューがある、または単価が明確なプロ' },
+        awkward:        { text:'プロとの関係性でつまずいた経験がある。', sub:'押し付け感・空気感・やり取りの違和感がストレスになる。「相性」を最初から重視できるプロを選ぶことが今回の最優先事項。', condition:'押し売りせず、こちらのペースを尊重してくれるプロ' },
+        no_result:      { text:'変化が感じられずに諦めた経験がある。', sub:'変化が見えない理由は「合っていないサービスを選んでいた」か「評価方法を知らなかった」かのどちらかが多い。', condition:'before/afterが明確で変化を可視化してくれるプロ' },
+        ongoing:        { text:'今も継続中。さらに深化させる段階にいる。', sub:'基礎は出来ている。次はバラバラに磨いてきたパーツを全体として活かす「統合」の段階。', condition:'総合的な外見プロデュースができるプロ' },
+      };
+      const b = MAP[f];
+      if (!b) return '';
+      return `
+        <p class="sec-label" style="margin-top:28px">Your Road</p>
+        <div class="result-card">
+          <div class="result-card-title">🪨 これまでの道にあった障壁</div>
+          <div class="result-card-subtitle">過去のパターンを知ることが、次に勝つための準備になる</div>
+          <div class="insight-list">
+            <div class="insight-item">
+              <div class="insight-label">過去のパターン</div>
+              <div class="insight-text">${esc(b.text)}</div>
+              <div class="insight-sub">${esc(b.sub)}</div>
+            </div>
+            ${b.condition ? `<div class="insight-item" style="border-left-color:#059669;background:#f0fdf4">
+              <div class="insight-label" style="color:#059669">今回優先するプロの条件</div>
+              <div class="insight-text">${esc(b.condition)}</div>
+            </div>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // ─── プロの条件 ───
+    function buildTraits() {
+      const traits = [];
+      const failMap = {
+        lost_direction: 'プログラムが明確で週ごとの目標がある',
+        no_continuation:'無理なく続けられるペースを提案してくれる',
+        awkward:        '空気感がよく、話しやすい',
+        no_result:      'before/afterが明確で変化を可視化してくれる',
+      };
+      if (p.failure_pattern && failMap[p.failure_pattern]) traits.push(failMap[p.failure_pattern]);
+      const urgencyMap = {
+        high:   '短期で変化が出やすいプログラムを持っている',
+        low:    '長期継続のサポート体制が整っている',
+        medium: '月1〜2回のペースで継続できる',
+      };
+      if (p.urgency && urgencyMap[p.urgency]) traits.push(urgencyMap[p.urgency]);
+      if (p.aga_concern === 'yes') traits.push('AGAや薄毛に詳しい、または連携先を知っている');
+      const unique = [...new Set(traits)].slice(0, 4);
+      if (!unique.length) return '';
+      return `
+        <p class="sec-label" style="margin-top:28px">Pro Matching</p>
+        <div class="result-card">
+          <div class="result-card-title">🧭 この旅に合うガイドの条件</div>
+          <div class="result-card-subtitle">この条件を持つプロとの相性がいい。サービス選びの判断軸にしてほしい</div>
+          <div class="trait-list">
+            ${unique.map(t => `<div class="trait-item"><div class="trait-check">✓</div><span>${esc(t)}</span></div>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // ─── 掲載者マッチング ───
+    async function loadMatchedProviders() {
       const slot = document.getElementById('match-providers-slot');
       if (!slot) return;
-      function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-      function calcMatch(prov) {
-        let score = 0; const tags = [];
-        if (p.trigger && (prov.suitable_triggers || []).includes(p.trigger)) { score += 2; tags.push('あなたのきっかけをよく知っている'); }
-        if (p.failure_pattern && p.failure_pattern !== 'ongoing' && (prov.handles_failure_patterns || []).includes(p.failure_pattern)) { score += 2; tags.push('あなたの失敗パターンを得意とする'); }
-        if (p.style && prov.provider_style === p.style) { score += 1; tags.push('進め方があなたに合っている'); }
-        return { score, tags };
-      }
       try {
-        const res = await fetch('/api/providers');
+        // Me Scan データをクエリパラメーターで渡してサーバー側で総合スコアリング
+        const params = new URLSearchParams();
+        if (p.trigger) params.set('trigger', p.trigger);
+        if (p.failure_pattern && p.failure_pattern !== 'ongoing') params.set('failure', p.failure_pattern);
+        if (compassFirst) params.set('compass', compassFirst);
+        if (priorityOrder?.length) params.set('axes', priorityOrder.join(','));
+        const res = await fetch(`/api/providers?${params}`);
         if (!res.ok) return;
         const providers = await res.json();
-        if (!providers || providers.length === 0) { slot.style.display = 'none'; return; }
-        const scored = providers.map(prov => ({ ...prov, ...calcMatch(prov) })).sort((a, b) => b.score - a.score).slice(0, 3);
-        const hasMatch = scored[0]?.score > 0;
-        if (hasMatch) { const recsLabel = document.getElementById('recs-label'); if (recsLabel) recsLabel.style.display = 'none'; }
-        const title = hasMatch ? 'あなたのプロファイルに一致するプロ' : '掲載中のプロ';
-        const subtitle = hasMatch ? 'きっかけ・失敗パターン・進め方の一致から自動マッチングしました' : '現在掲載中のプロをご覧ください';
+        if (!providers?.length) return;
+        const top3 = providers.slice(0, 3);
+        const hasMatch = (top3[0]?.match_score || 0) > 0;
+        const title    = hasMatch ? 'あなたのプロファイルに一致するプロ' : '掲載中のプロ';
+        const subtitle = hasMatch ? 'スキャン結果・変容軸・プロフィール充実度から自動マッチング' : '現在掲載中のプロをご覧ください';
         slot.innerHTML = `
-          <p class="section-label" style="margin-top:28px">Pro Match</p>
+          <p class="sec-label" style="margin-top:28px">Pro Match</p>
           <div class="result-card">
-            <div class="result-card-header">
-              <div class="result-card-title">✨ ${esc(title)}</div>
-              <div class="result-card-subtitle">${esc(subtitle)}</div>
-            </div>
-            ${scored.map((prov, i) => `
-              <a href="/provider/${esc(prov.slug)}" class="provider-match-card${i === 0 && hasMatch ? ' top' : ''}">
+            <div class="result-card-title">✨ ${esc(title)}</div>
+            <div class="result-card-subtitle">${esc(subtitle)}</div>
+            ${top3.map((prov, i) => `
+              <a href="/provider/${esc(prov.slug)}" class="pmc-card${i===0&&hasMatch?' top':''}">
                 <div class="pmc-photo">${prov.photo_url ? `<img src="${esc(prov.photo_url)}" alt="${esc(prov.name)}" loading="lazy">` : '<span class="pmc-photo-icon">🧑</span>'}</div>
                 <div class="pmc-body">
                   <div class="pmc-name">${esc(prov.name)}</div>
                   ${prov.catchphrase ? `<div class="pmc-catch">${esc(prov.catchphrase)}</div>` : ''}
-                  ${prov.tags && prov.tags.length > 0 ? `<div class="pmc-tags">${prov.tags.map(t => `<span class="pmc-tag">${esc(t)}</span>`).join('')}</div>` : ''}
-                  <div class="pmc-meta">${esc(prov.area || '')}${prov.price_from ? ` ・ ¥${Number(prov.price_from).toLocaleString()}〜` : ''}</div>
+                  ${prov.match_tags?.length ? `<div class="pmc-tags">${prov.match_tags.map(t => `<span class="pmc-tag">${esc(t)}</span>`).join('')}</div>` : ''}
+                  <div class="pmc-meta">${esc(prov.area||'')}${prov.price_from?` ・ ¥${Number(prov.price_from).toLocaleString()}〜`:''}</div>
                 </div>
                 <div class="pmc-arrow">→</div>
               </a>
             `).join('')}
           </div>
         `;
-      } catch (e) { slot.style.display = 'none'; }
-    })();
+      } catch {}
+    }
+
+    // ─── HTML組み立て ───
+    const hero = getHeroContent();
+    const compassFirstDef = AREA_DEFS[compassFirst] || {};
+
+    const html = `
+      <div class="map-hero">
+        <p class="map-hero-eyebrow">New Me Map</p>
+        <div class="map-hero-badge">🗺️ あなたの変容プロファイル</div>
+        <h1>${hero.h1}</h1>
+        <div class="map-hero-divider"></div>
+        <p style="font-size:11px;color:rgba(255,255,255,.4);margin:0 0 10px;position:relative;z-index:1;letter-spacing:.06em">— 今日、あなたの地図が描かれました —</p>
+        <p class="map-hero-sub">${hero.sub}</p>
+        <svg viewBox="0 0 80 80" width="68" height="68" style="position:absolute;top:14px;right:14px;z-index:1;opacity:0.17" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="37" fill="none" stroke="#c9a84c" stroke-width="0.8"/><circle cx="40" cy="40" r="28" fill="none" stroke="#c9a84c" stroke-width="0.4"/><line x1="40" y1="3" x2="40" y2="77" stroke="#c9a84c" stroke-width="0.8"/><line x1="3" y1="40" x2="77" y2="40" stroke="#c9a84c" stroke-width="0.8"/><line x1="14" y1="14" x2="66" y2="66" stroke="#c9a84c" stroke-width="0.5"/><line x1="66" y1="14" x2="14" y2="66" stroke="#c9a84c" stroke-width="0.5"/><polygon points="40,4 37,23 40,19 43,23" fill="#c9a84c"/><polygon points="40,76 37,57 40,61 43,57" fill="#c9a84c" opacity="0.4"/><polygon points="76,40 57,37 61,40 57,43" fill="#c9a84c" opacity="0.4"/><polygon points="4,40 23,37 19,40 23,43" fill="#c9a84c" opacity="0.4"/><circle cx="40" cy="40" r="5" fill="none" stroke="#c9a84c" stroke-width="1.2"/><circle cx="40" cy="40" r="2" fill="#c9a84c"/></svg>
+        <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(201,168,76,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
+      </div>
+
+      <div class="v-route"><div class="v-route-line"></div><div class="v-route-dot"></div><div class="v-route-line"></div></div>
+
+      ${buildCompass()}
+
+      <p class="sec-label" style="margin-top:28px">Radar Map</p>
+      <div class="radar-card">
+        <div class="radar-title">📡 7軸変容レーダー</div>
+        <div class="radar-subtitle">現在地（紺）と理想（金点線）。面積の差が変容の余白</div>
+        ${buildRadarChart()}
+      </div>
+
+      <div class="v-route"><div class="v-route-line"></div><div class="v-route-dot"></div><div class="v-route-line"></div></div>
+      ${buildVectorList()}
+      ${buildGoalLayers()}
+      ${buildBarrier()}
+      ${buildTraits()}
+
+      <div id="match-providers-slot"></div>
+
+      ${!isLoggedIn ? `
+      <div class="save-map-cta">
+        <div class="save-map-cta-icon">🧬</div>
+        <div class="save-map-cta-body">
+          <div class="save-map-cta-title">この変容プロファイルを保存する</div>
+          <div class="save-map-cta-desc">今このページを閉じると、あなたの地図は消えます。<br>無料登録すれば、どこからでも続きを見られます。</div>
+          <a href="/login?mode=signup&next=/diagnosis/result" class="save-map-cta-btn">無料アカウントを作って保存する →</a>
+          <p class="save-map-cta-note">登録すると診断データがクラウドに同期され、スマホ・PCどこからでも閲覧できます</p>
+        </div>
+      </div>
+      ` : ''}
+
+      <div class="navi-section">
+        <div class="navi-section-label">🗺️ 次の行き先</div>
+        <a href="/mypage/navi" class="navi-btn navi-btn-primary">
+          <span class="navi-btn-icon">🧭</span>
+          <span class="navi-btn-body">
+            <span class="navi-btn-title">New Me Naviを見る</span>
+            <span class="navi-btn-desc">7軸それぞれの変容トラックと、今向くべき方角が常に見える</span>
+          </span>
+          <span class="navi-btn-arrow">→</span>
+        </a>
+        <a href="/guide" class="navi-btn navi-btn-secondary">
+          <span class="navi-btn-icon">🗺️</span>
+          <span class="navi-btn-body">
+            <span class="navi-btn-title">7軸変容ガイドを読む</span>
+            <span class="navi-btn-desc">各軸の意味・始め方・来た道別アドバイス</span>
+          </span>
+          <span class="navi-btn-arrow">→</span>
+        </a>
+      </div>
+
+      <div class="cta-block">
+        <div class="cta-section">
+          <button id="btn-save-map" class="cta-btn-secondary" type="button">この地図を保存する</button>
+          <div class="cta-divider"></div>
+          <a href="/diagnosis" class="cta-btn-ghost">地図を更新する（Me Scan 再スキャン）</a>
+        </div>
+      </div>
+    `;
+
+    root.innerHTML = html;
+
+    // Compass override チップ
+    document.querySelectorAll('.compass-override-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const axis = btn.dataset.axis;
+        if (!axis || !AREA_DEFS[axis]) return;
+        localStorage.setItem('fineme:compass:override', axis);
+        // 診断データにも反映（New Me Naviが読む用）
+        try {
+          const raw = localStorage.getItem('fineme:diagnosis:latest');
+          if (raw) {
+            const d = JSON.parse(raw);
+            d.compass_first = axis;
+            localStorage.setItem('fineme:diagnosis:latest', JSON.stringify(d));
+          }
+        } catch {}
+        location.reload();
+      });
+    });
+    document.getElementById('compass-reset-btn')?.addEventListener('click', () => {
+      localStorage.removeItem('fineme:compass:override');
+      // 診断データのcompass_firstを元の計算値に戻す
+      try {
+        const raw = localStorage.getItem('fineme:diagnosis:latest');
+        if (raw) {
+          const d = JSON.parse(raw);
+          d.compass_first = compassCalculated;
+          localStorage.setItem('fineme:diagnosis:latest', JSON.stringify(d));
+        }
+      } catch {}
+      location.reload();
+    });
 
     // 保存ボタン
-    const saveBtn = document.getElementById('btn-save-mypage');
+    const saveBtn = document.getElementById('btn-save-map');
     if (saveBtn) {
       saveBtn.addEventListener('click', () => {
         try {
-          const snap = { savedAt: new Date().toISOString(), profile: p };
-          const key = 'fineme:saved:diagnoses';
-          const arr = JSON.parse(localStorage.getItem(key) || '[]');
-          arr.unshift(snap);
+          const arr = JSON.parse(localStorage.getItem('fineme:saved:diagnoses') || '[]');
+          arr.unshift({ savedAt: new Date().toISOString(), profile: p });
           if (arr.length > 20) arr.length = 20;
-          localStorage.setItem(key, JSON.stringify(arr));
+          localStorage.setItem('fineme:saved:diagnoses', JSON.stringify(arr));
           saveBtn.textContent = '保存しました ✓';
           saveBtn.style.opacity = '.6';
           saveBtn.style.pointerEvents = 'none';
-        } catch (e) {}
+        } catch {}
       });
     }
 
-    // Stage 2 CTA
-    function setupStage2CTA() {
-      const profile = JSON.parse(localStorage.getItem('fineme:diagnosis:latest') || 'null');
-      if (!profile) return;
-      const careLevels = profile.care_levels || {};
-      let activeAreas = Object.entries(careLevels).filter(([, v]) => v && v !== 'none');
-      if (Object.keys(careLevels).length === 0) {
-        const concernAreas = profile.concern_areas || {};
-        activeAreas = Object.entries(concernAreas).filter(([, v]) => v > 0);
-      }
-      if (activeAreas.length === 0) return;
-      const card = document.getElementById('s2-cta-card');
-      if (!card) return;
-      card.style.display = '';
-      const AREA_DEFS = { hair:'💇‍♂️髪', skin:'✨肌', eyebrow:'✂️眉毛', body:'💪体型', fashion:'👔服', photo:'📸写真', overall:'🪞雰囲気', beard:'💈ひげ', teeth:'😁歯', posture:'🚶姿勢' };
-      const container = document.getElementById('s2-cta-areas');
-      if (!container) return;
-      activeAreas.slice(0, 5).forEach(([id]) => {
-        const span = document.createElement('span');
-        span.className = 's2-area-badge';
-        span.textContent = AREA_DEFS[id] || id;
-        container.appendChild(span);
-      });
+    loadMatchedProviders();
+
+    // LINEリマインド登録（ログイン済み・LINE連携済みユーザーのみ有効）
+    if (isLoggedIn && authToken) {
+      fetch('/api/me/line-diagnosis-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+        body: JSON.stringify({ compass_first: p?.compass_first || null }),
+      }).catch(() => {});
     }
 
-    // AI地図の取得・表示
-    function showAIResult(result) {
-      const loadingEl = document.getElementById('ai-map-loading');
-      const resultEl  = document.getElementById('ai-map-result');
-      const sectionEl = document.getElementById('ai-map-section');
-      const fillEl    = document.getElementById('ai-map-progress-fill');
-      if (loadingEl) loadingEl.style.display = 'none';
-      if (resultEl)  resultEl.style.display  = '';
-      if (sectionEl) sectionEl.style.display = '';
-      if (fillEl)    fillEl.style.width      = '100%';
-      const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || ''; };
-      setText('ai-current-position', result.current_position);
-      setText('ai-core-insight',     result.core_insight);
-      setText('ai-first-step',       result.first_step);
-      setText('ai-warning',          result.warning);
-      const list = document.getElementById('ai-guide-criteria');
-      if (list) {
-        list.innerHTML = '';
-        (result.guide_criteria || []).forEach(c => { const li = document.createElement('li'); li.textContent = c; list.appendChild(li); });
-      }
-      if (sectionEl) sectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    })(); // async IIFE end
 
-    async function loadAIMap() {
-      const params   = new URLSearchParams(window.location.search);
-      const isStage2 = params.get('stage2') === '1';
-      const cached   = localStorage.getItem('fineme:diagnosis:ai_result');
-      const profile  = JSON.parse(localStorage.getItem('fineme:diagnosis:latest') || 'null');
-      if (!profile) return;
-      if (cached) {
-        try {
-          const cachedData = JSON.parse(cached);
-          if (cachedData.profile_at === profile.at) { showAIResult(cachedData.result); return; }
-        } catch (e) {}
-      }
-      if (!isStage2) return;
-      const sectionEl = document.getElementById('ai-map-section');
-      const loadingEl = document.getElementById('ai-map-loading');
-      const ctaCard   = document.getElementById('s2-cta-card');
-      if (sectionEl)  sectionEl.style.display  = '';
-      if (loadingEl)  loadingEl.style.display  = '';
-      if (ctaCard)    ctaCard.style.display    = 'none';
-      const stage2 = JSON.parse(localStorage.getItem('fineme:diagnosis:stage2') || 'null');
-      try {
-        const response = await fetch('/api/diagnosis/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ profile, stage2 })
-        });
-        if (!response.ok) throw new Error('API error');
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-        let progressValue = 0;
-        const progressInterval = setInterval(() => {
-          progressValue = Math.min(progressValue + 2, 90);
-          const fill = document.getElementById('ai-map-progress-fill');
-          if (fill) fill.style.width = progressValue + '%';
-        }, 150);
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop();
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.done && data.result) {
-                clearInterval(progressInterval);
-                localStorage.setItem('fineme:diagnosis:ai_result', JSON.stringify({ profile_at: profile.at, result: data.result, at: Date.now() }));
-                showAIResult(data.result);
-                return;
-              }
-            } catch (e) {}
-          }
-        }
-      } catch (err) {
-        const sEl = document.getElementById('ai-map-section');
-        const cEl = document.getElementById('s2-cta-card');
-        if (sEl) sEl.style.display = 'none';
-        if (cEl) cEl.style.display = '';
-        console.error('AI map generation failed:', err);
-      }
-    }
-
-    setupStage2CTA();
-    loadAIMap();
-
-    return () => {
-      document.head.removeChild(style);
-    };
+    return () => { document.head.removeChild(style); };
   }, []);
 
   return (
-    <main>
-      <div className="result-wrap">
-        <div id="result-root">
-          <p style={{textAlign:'center',padding:'60px 20px',color:'#9ca3af'}}>読み込み中…</p>
+    <>
+      <style>{`
+        .result-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
+        .result-sidenav { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        .result-sidenav .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: #374151; text-decoration: none; transition: background .15s; }
+        .result-sidenav .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
+        .result-sidenav .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
+        @media (max-width: 640px) {
+          .result-layout { grid-template-columns: 1fr; padding: 16px 16px 60px; }
+          .result-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
+          .result-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; }
+          .result-sidenav nav::-webkit-scrollbar { display: none; }
+          .result-sidenav nav > * { margin-top: 0 !important; }
+          .result-sidenav .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; }
+          .map-wrap { padding: 0 0 40px !important; }
+        }
+      `}</style>
+      <main>
+        <div className="result-layout">
+          <aside className="result-sidenav">
+            <nav className="stack" style={{ gap: '4px' }}>
+              <Link href="/mypage" className="sidenav-link">ホーム</Link>
+              <Link href="/diagnosis/result" className="sidenav-link sidenav-link--active">New Me Map</Link>
+              <Link href="/mypage/navi" className="sidenav-link">New Me Navi</Link>
+              <Link href="/mypage/favorites" className="sidenav-link">お気に入り</Link>
+              <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
+              <Link href="/my-reservations" className="sidenav-link">予約履歴</Link>
+              <Link href="/mypage/story-submit" className="sidenav-link">体験談を書く</Link>
+              <Link href="/mypage/profile" className="sidenav-link">プロフィール編集</Link>
+            </nav>
+          </aside>
+          <div>
+            <div id="result-root">
+              <p style={{textAlign:'center',padding:'60px 20px',color:'#9ca3af'}}>読み込み中…</p>
+            </div>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }

@@ -1,29 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- TODO: ここを本番ドメインに置換してください -->
+
+  <!-- トップページ -->
   <url>
-    <loc>https://example.com/</loc>
+    <loc>https://www.fineme.me/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- 診断 -->
+  <url>
+    <loc>https://www.fineme.me/diagnosis</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.fineme.me/diagnosis/types</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- 検索 -->
+  <url>
+    <loc>https://www.fineme.me/search</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
+
+  <!-- ガイド -->
   <url>
-    <loc>https://example.com/pages/search.html</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <loc>https://www.fineme.me/guide</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
+
+  <!-- 特集 -->
   <url>
-    <loc>https://example.com/pages/feature.html</loc>
+    <loc>https://www.fineme.me/feature</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
+
+  <!-- Finemeについて -->
   <url>
-    <loc>https://example.com/pages/mypage/index.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.4</priority>
-  </url>
-  <url>
-    <loc>https://example.com/pages/login.html</loc>
+    <loc>https://www.fineme.me/about-fineme</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.2</priority>
+    <priority>0.6</priority>
   </url>
+  <url>
+    <loc>https://www.fineme.me/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- 掲載者向け -->
+  <url>
+    <loc>https://www.fineme.me/provider/join</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.fineme.me/provider/philosophy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- 法律・規約 -->
+  <url>
+    <loc>https://www.fineme.me/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.fineme.me/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.fineme.me/terms-provider</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.fineme.me/tokusho</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
 </urlset>

@@ -75,11 +75,13 @@ export default function MypageFavoritesPage() {
         <aside className="mypage-sidenav">
           <nav className="stack" style={{ gap: '4px' }}>
             <Link href="/mypage" className="sidenav-link">ホーム</Link>
-            <Link href="/mypage/diagnosis" className="sidenav-link">診断結果</Link>
-            <Link href="/mypage/profile" className="sidenav-link">プロフィール編集</Link>
+            <Link href="/diagnosis/result" className="sidenav-link">New Me Map</Link>
+            <Link href="/mypage/navi" className="sidenav-link">New Me Navi</Link>
             <Link href="/mypage/favorites" className="sidenav-link sidenav-link--active">お気に入り</Link>
             <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
             <Link href="/my-reservations" className="sidenav-link">予約履歴</Link>
+            <Link href="/mypage/story-submit" className="sidenav-link">体験談を書く</Link>
+            <Link href="/mypage/profile" className="sidenav-link">プロフィール編集</Link>
           </nav>
         </aside>
 
@@ -88,33 +90,32 @@ export default function MypageFavoritesPage() {
           {favorites.length === 0 ? (
             <p className="muted">まだお気に入りはありません。</p>
           ) : (
-            <div className="features-grid">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '20px' }}>
               {favorites.map(f => {
                 const title = f.providerName || f.name || '';
-                const img = (f.image && f.image.trim()) ? f.image : '/assets/placeholders/placeholder-default.svg';
+                const img = f.image?.trim() || null;
                 return (
-                  <a key={f.href} className="card" href={f.href}>
-                    <img className="service-thumb" src={img} alt={title} />
-                    <div className="card-body">
-                      <div className="cluster" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                        <h3 className="card-title" style={{ margin: 0 }}>{title}</h3>
-                        <button
-                          type="button"
-                          className="btn btn-ghost"
-                          title="お気に入りから削除"
-                          onClick={e => { e.preventDefault(); e.stopPropagation(); handleRemove(f.href); }}
-                        >
-                          削除
-                        </button>
+                  <a key={f.href} href={f.href} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <div
+                      style={{ border: '1.5px solid #e5e7eb', borderRadius: '16px', overflow: 'hidden', background: '#fff', display: 'flex', flexDirection: 'column', height: '100%', transition: 'box-shadow .15s' }}
+                      onMouseEnter={e => e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,.10)'}
+                      onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+                    >
+                      <div style={{ height: '200px', overflow: 'hidden', background: '#f3f4f6', flexShrink: 0 }}>
+                        {img && <img src={img} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                       </div>
-                      <p className="card-meta">{labelRegion(f.region || '')}</p>
-                      <p className="card-meta">{labelCategory(f.category || '')}</p>
-                      {f.priceFrom && <p className="card-meta">¥{Number(f.priceFrom).toLocaleString()}</p>}
-                      {f.providerId && (
-                        <p className="card-meta">
-                          <a href={`/store?providerId=${encodeURIComponent(f.providerId)}`}>店舗詳細</a>
-                        </p>
-                      )}
+                      <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                          <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, lineHeight: '1.3' }}>{title}</h3>
+                          <button
+                            type="button"
+                            onClick={e => { e.preventDefault(); e.stopPropagation(); handleRemove(f.href); }}
+                            style={{ fontSize: '12px', color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, padding: '2px 6px' }}
+                          >✕</button>
+                        </div>
+                        {f.category && <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', background: '#111', color: '#fff', borderRadius: '99px', alignSelf: 'flex-start' }}>{labelCategory(f.category)}</span>}
+                        {f.region && <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>📍 {labelRegion(f.region)}</p>}
+                      </div>
                     </div>
                   </a>
                 );
@@ -126,10 +127,11 @@ export default function MypageFavoritesPage() {
 
       <style>{`
         .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
-        @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; margin-bottom: 8px; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; } }
+        .mypage-sidenav { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav > * { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
         .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: #374151; text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: #f3f4f6; }
-        .sidenav-link--active { background: #f3f4f6; font-weight: 700; color: #111; }
+        .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
+        .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
       `}</style>
     </main>
   );

@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fineme セットアップガイド — 掲載者向け</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Hiragino Mincho Pro','Noto Serif JP',Georgia,serif;
+    background-color:#060c1a;
+    background-image:
+      linear-gradient(rgba(6,12,26,0.93),rgba(6,12,26,0.93)),
+      url('../public/assets/images/bg-parchment.webp');
+    background-size:auto, 500px auto;
+    color:#c4bfb5;line-height:1.8;font-size:15px;
+  }
+  .page{max-width:860px;margin:0 auto;padding:0 0 120px}
+
+  /* ── HERO ── */
+  .hero{
+    position:relative;overflow:hidden;
+    padding:72px 40px 60px;
+    background:
+      linear-gradient(rgba(6,12,26,0.72), rgba(10,15,30,0.90)),
+      url('../public/assets/images/hero-bg.webp') center / cover no-repeat;
+    border-bottom:1px solid rgba(201,168,76,.2);
+  }
+  .hero::before{
+    content:'';position:absolute;top:-60px;right:-60px;
+    width:380px;height:380px;border-radius:50%;
+    background:radial-gradient(circle,rgba(201,168,76,.1) 0%,transparent 70%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;max-width:640px}
+  .hero-badge{
+    display:inline-block;font-size:10px;font-weight:700;letter-spacing:.14em;
+    color:rgba(201,168,76,.65);font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    text-transform:uppercase;margin-bottom:18px;
+    border:1px solid rgba(201,168,76,.25);padding:4px 14px;border-radius:99px;
+    background:rgba(201,168,76,.06);
+  }
+  .hero h1{
+    font-size:34px;font-weight:800;line-height:1.35;letter-spacing:.01em;color:#f0ece4;
+    margin-bottom:20px;
+  }
+  .hero-sub{font-size:15px;color:#b0aaa2;line-height:1.95;max-width:520px}
+  .hero-sub strong{color:#c9a84c}
+
+  /* ── Section wrapper ── */
+  .section{
+    padding:52px 40px;
+    border-bottom:1px solid rgba(255,255,255,.04);
+    position:relative;
+  }
+  .section:nth-child(even){
+    background:
+      linear-gradient(rgba(8,14,28,0.97),rgba(8,14,28,0.97)),
+      url('../public/assets/images/bg-parchment.webp') center / 400px auto;
+  }
+
+  /* ── Section header ── */
+  .sec-num{
+    font-size:110px;font-weight:900;color:rgba(201,168,76,.04);
+    position:absolute;top:16px;right:32px;line-height:1;
+    font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    pointer-events:none;user-select:none;
+  }
+  .sec-label{display:inline-flex;align-items:center;gap:8px;margin-bottom:14px}
+  .sec-label-line{width:24px;height:1.5px;background:#c9a84c;opacity:.55}
+  .sec-label-text{
+    font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    color:rgba(201,168,76,.7);font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+  }
+  .lead{
+    font-size:22px;font-weight:800;line-height:1.5;color:#f0ece4;
+    margin-bottom:22px;max-width:580px;
+  }
+  .lead-sub{font-size:14px;color:#b0aaa2;line-height:1.9;margin-bottom:24px}
+
+  /* ── Body text ── */
+  p{color:#c4bfb5;font-size:14px;line-height:2}
+  p+p{margin-top:10px}
+  ul,ol{padding-left:0;list-style:none}
+  li{color:#c4bfb5;font-size:14px;line-height:2}
+  strong{color:#e8e2d4;font-weight:700}
+
+  /* ── Access card ── */
+  .access-card{
+    background:rgba(201,168,76,.06);
+    border:1px solid rgba(201,168,76,.22);
+    border-radius:14px;padding:22px 26px;margin-top:20px;
+  }
+  .access-label{font-size:11px;font-weight:700;letter-spacing:.1em;color:rgba(201,168,76,.6);text-transform:uppercase;font-family:'Hiragino Kaku Gothic Pro',sans-serif;margin-bottom:8px}
+  .access-url{font-size:18px;font-weight:800;color:#c9a84c;font-family:'Hiragino Kaku Gothic Pro',sans-serif;word-break:break-all;margin-bottom:14px}
+  .access-steps{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+  .access-step{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:#b0aaa2;line-height:1.7}
+  .access-step .num{
+    width:20px;height:20px;border-radius:50%;
+    background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);
+    color:#c9a84c;font-size:11px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;margin-top:1px;font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+  }
+
+  /* ── Dashboard overview ── */
+  .dash-overview{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    gap:12px;margin-top:20px;
+  }
+  .dash-box{
+    background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);
+    border-radius:12px;padding:16px;text-align:center;
+  }
+  .dash-icon{font-size:22px;display:block;margin-bottom:8px}
+  .dash-title{font-size:12px;font-weight:700;color:#e8e2d4;font-family:'Hiragino Kaku Gothic Pro',sans-serif;margin-bottom:4px}
+  .dash-desc{font-size:11px;color:#a09890;line-height:1.6}
+
+  /* ── Priority banner ── */
+  .priority-banner{
+    background:
+      linear-gradient(135deg,rgba(10,15,30,0.9) 0%,rgba(6,12,26,0.95) 100%),
+      url('../public/assets/images/bg-parchment.webp') center / 300px auto;
+    border:1.5px solid rgba(201,168,76,.4);
+    border-radius:16px;padding:28px 30px;margin-bottom:24px;
+    box-shadow:0 0 32px rgba(201,168,76,.08),inset 0 1px 0 rgba(201,168,76,.12);
+    position:relative;
+  }
+  .priority-banner::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,transparent,rgba(201,168,76,.6),transparent);
+    border-radius:16px 16px 0 0;
+  }
+  .priority-head{
+    font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    color:rgba(201,168,76,.7);font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    margin-bottom:10px;display:flex;align-items:center;gap:8px;
+  }
+  .priority-head::before{
+    content:'';width:6px;height:6px;border-radius:50%;background:#c9a84c;
+    box-shadow:0 0 8px rgba(201,168,76,.6);
+  }
+  .priority-lead{font-size:16px;font-weight:800;color:#f0ece4;margin-bottom:6px;line-height:1.5}
+  .priority-desc{font-size:13px;color:#b0aaa2;line-height:1.85}
+
+  /* ── Field cards (trigger / failure) ── */
+  .field-card{
+    background:rgba(255,255,255,.025);
+    border:1px solid rgba(255,255,255,.07);
+    border-radius:14px;padding:24px 26px;margin-bottom:14px;
+  }
+  .field-card.gold{
+    background:rgba(201,168,76,.05);
+    border-color:rgba(201,168,76,.2);
+  }
+  .field-head{
+    display:flex;align-items:center;gap:12px;margin-bottom:16px;
+  }
+  .field-badge{
+    background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);
+    color:#c9a84c;font-size:11px;font-weight:800;padding:3px 12px;
+    border-radius:99px;font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    letter-spacing:.05em;white-space:nowrap;flex-shrink:0;
+  }
+  .field-title{font-size:16px;font-weight:800;color:#e8e2d4}
+  .field-what{
+    font-size:13px;color:#b0aaa2;line-height:1.8;margin-bottom:16px;
+    border-left:2px solid rgba(201,168,76,.3);padding-left:14px;
+  }
+  .eg-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+  .eg-box{border-radius:10px;padding:14px 16px}
+  .eg-box.good{background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.15)}
+  .eg-box.bad{background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.12)}
+  .eg-head{
+    font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    font-family:'Hiragino Kaku Gothic Pro',sans-serif;margin-bottom:8px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .eg-box.good .eg-head{color:#4ade80}
+  .eg-box.bad .eg-head{color:#f87171}
+  .eg-item{font-size:13px;color:#c4bfb5;line-height:1.75;padding:3px 0}
+  .eg-item::before{content:'・';color:#a09890}
+  .ng-note{font-size:12px;color:#a09890;margin-top:6px;line-height:1.65;font-style:italic}
+
+  /* ── Checklist ── */
+  .checklist{display:flex;flex-direction:column;gap:8px;margin-top:20px}
+  .check-item{
+    display:flex;align-items:flex-start;gap:14px;
+    background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);
+    border-radius:11px;padding:14px 18px;
+    transition:border-color .2s;
+  }
+  .check-item.star{
+    background:rgba(201,168,76,.04);
+    border-color:rgba(201,168,76,.18);
+  }
+  .check-box{
+    width:22px;height:22px;border-radius:6px;
+    border:1.5px solid rgba(201,168,76,.35);
+    background:rgba(201,168,76,.06);
+    flex-shrink:0;margin-top:1px;
+  }
+  .check-num{
+    font-size:11px;font-weight:800;color:rgba(201,168,76,.5);
+    font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    min-width:22px;margin-top:2px;
+  }
+  .check-body{flex:1}
+  .check-title{font-size:14px;font-weight:700;color:#e8e2d4;margin-bottom:2px}
+  .check-title .star-mark{color:#c9a84c;margin-left:6px;font-size:12px}
+  .check-desc{font-size:12px;color:#a09890;line-height:1.65}
+
+  /* ── Publish section ── */
+  .publish-flow{
+    display:flex;flex-direction:column;gap:0;margin-top:20px;
+  }
+  .publish-step{
+    display:flex;gap:18px;align-items:flex-start;
+    padding:16px 0;border-bottom:1px dashed rgba(255,255,255,.07);
+  }
+  .publish-step:last-child{border-bottom:none}
+  .publish-icon{
+    width:42px;height:42px;border-radius:50%;
+    background:rgba(201,168,76,.08);border:1.5px solid rgba(201,168,76,.3);
+    color:#c9a84c;font-size:18px;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .publish-body .p-title{font-size:14px;font-weight:700;color:#e8e2d4;margin-bottom:3px}
+  .publish-body .p-desc{font-size:13px;color:#a09890;line-height:1.75}
+
+  /* ── KPI cards ── */
+  .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px}
+  .kpi-card{
+    background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);
+    border-radius:14px;padding:20px;
+  }
+  .kpi-icon{font-size:26px;display:block;margin-bottom:10px}
+  .kpi-title{font-size:13px;font-weight:700;color:#e8e2d4;margin-bottom:6px;line-height:1.45;font-family:'Hiragino Kaku Gothic Pro',sans-serif}
+  .kpi-desc{font-size:12px;color:#a09890;line-height:1.65}
+  .kpi-note{
+    font-size:13px;color:#b0aaa2;line-height:1.9;
+    margin-top:20px;padding:16px 20px;
+    background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);
+    border-radius:10px;border-left:2px solid rgba(201,168,76,.3);
+  }
+
+  /* ── FAQ ── */
+  .faq-list{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+  .faq-item{
+    background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);
+    border-radius:12px;overflow:hidden;
+  }
+  .faq-q{
+    padding:16px 20px;
+    display:flex;align-items:flex-start;gap:12px;
+  }
+  .faq-q-mark{
+    font-size:14px;font-weight:900;color:#c9a84c;
+    font-family:'Hiragino Kaku Gothic Pro',sans-serif;flex-shrink:0;margin-top:1px;
+  }
+  .faq-q-text{font-size:14px;font-weight:700;color:#e8e2d4;line-height:1.6}
+  .faq-a{
+    padding:0 20px 16px 46px;
+    display:flex;align-items:flex-start;gap:12px;
+  }
+  .faq-a-mark{
+    font-size:13px;font-weight:800;color:#a09890;
+    font-family:'Hiragino Kaku Gothic Pro',sans-serif;flex-shrink:0;margin-top:1px;
+  }
+  .faq-a-text{font-size:13px;color:#b0aaa2;line-height:1.8}
+
+  /* ── Footer ── */
+  .footer{
+    padding:48px 40px 0;
+    border-top:1px solid rgba(255,255,255,.06);
+    text-align:center;
+  }
+  .footer-contact{
+    display:inline-flex;align-items:center;gap:10px;
+    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+    border-radius:99px;padding:10px 24px;margin-bottom:24px;
+    font-size:13px;color:#b0aaa2;
+  }
+  .footer-contact a{color:#c9a84c;text-decoration:none;font-weight:700}
+  .footer-contact a:hover{text-decoration:underline}
+  .footer-logo{font-size:18px;font-weight:800;color:#e8e2d4;margin-bottom:8px;letter-spacing:.02em}
+  .footer-tagline{font-size:12px;color:#a09890;letter-spacing:.06em}
+
+  /* ── Print button ── */
+  .print-btn{
+    position:fixed;bottom:24px;right:24px;
+    display:flex;align-items:center;gap:8px;
+    padding:11px 20px;
+    background:linear-gradient(135deg,#c9a84c,#e6c96e);
+    color:#0a0f1e;border:none;border-radius:99px;
+    font-size:13px;font-weight:800;font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    cursor:pointer;box-shadow:0 4px 20px rgba(201,168,76,.4);
+    letter-spacing:.04em;z-index:100;
+    text-decoration:none;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width:640px){
+    .hero{padding:48px 24px 44px}
+    .hero h1{font-size:26px}
+    .section{padding:40px 24px}
+    .sec-num{font-size:80px;right:16px}
+    .eg-wrap{grid-template-columns:1fr}
+    .dash-overview{grid-template-columns:1fr}
+    .kpi-grid{grid-template-columns:1fr}
+    .footer{padding:36px 24px 0}
+  }
+  @media (max-width:480px){
+    .access-url{font-size:14px}
+  }
+
+  /* ── Print ── */
+  @media print{
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{
+      background-color:#060c1a !important;
+      background-image:none !important;
+      color:#c4bfb5;
+    }
+    .page{background-color:#060c1a !important}
+    .hero{background-color:#0a0f1e !important;background-image:none !important}
+    .section{background-color:#060c1a;background-image:none !important;border-color:rgba(255,255,255,.05)}
+    .section:nth-child(even){background-color:#080e1c !important;background-image:none !important}
+    .lead{color:#f0ece4}
+    p,li{color:#c4bfb5}
+    strong{color:#e8e2d4}
+    .priority-banner{background:#0d1528 !important;background-image:none !important;border-color:rgba(201,168,76,.4)}
+    .field-card{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.08)}
+    .field-card.gold{background:rgba(201,168,76,.06) !important;border-color:rgba(201,168,76,.2)}
+    .access-card{background:rgba(201,168,76,.06) !important;border-color:rgba(201,168,76,.22)}
+    .check-item{background:rgba(255,255,255,.02);border-color:rgba(255,255,255,.06)}
+    .check-item.star{background:rgba(201,168,76,.04) !important;border-color:rgba(201,168,76,.18)}
+    .kpi-card,.dash-box,.faq-item{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.07)}
+    .eg-box.good{background:rgba(74,222,128,.04);border-color:rgba(74,222,128,.15)}
+    .eg-box.bad{background:rgba(239,68,68,.04);border-color:rgba(239,68,68,.12)}
+    .footer{border-top-color:rgba(255,255,255,.06)}
+    .print-btn{display:none}
+    .sec-num{color:rgba(201,168,76,.04)}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── HERO ── -->
+  <header class="hero">
+    <div class="hero-inner">
+      <span class="hero-badge">掲載者向け ／ セットアップガイド</span>
+      <h1>Finemeへようこそ。<br>最初の10分でやること。</h1>
+      <p class="hero-sub">このガイド1枚で、マッチングが始まるまでの<strong>すべてがわかります</strong>。<br>手順通りに進めるだけで、あなたのページはすぐに公開できます。</p>
+    </div>
+  </header>
+
+  <!-- ── STEP 1: アクセス ── -->
+  <section class="section">
+    <span class="sec-num">1</span>
+    <div class="sec-label">
+      <span class="sec-label-line"></span>
+      <span class="sec-label-text">STEP 1</span>
+    </div>
+    <p class="lead">ダッシュボードにアクセスする</p>
+    <p class="lead-sub">まず下記URLからダッシュボードを開いてください。ここがあなたの活動拠点になります。</p>
+
+    <div class="access-card">
+      <div class="access-label">ダッシュボードURL</div>
+      <div class="access-url">https://www.fineme.me/provider/dashboard</div>
+      <div class="access-steps">
+        <div class="access-step">
+          <span class="num">1</span>
+          上記URLにアクセスする
+        </div>
+        <div class="access-step">
+          <span class="num">2</span>
+          「メールアドレス」と「パスワード」を入力してログインする
+        </div>
+        <div class="access-step">
+          <span class="num">3</span>
+          ダッシュボードのホーム画面が表示されたら完了
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-overview">
+      <div class="dash-box">
+        <span class="dash-icon">📊</span>
+        <div class="dash-title">統計・KPI</div>
+        <div class="dash-desc">閲覧数・問い合わせ数・紹介報酬をひと目で確認できます</div>
+      </div>
+      <div class="dash-box">
+        <span class="dash-icon">⚙️</span>
+        <div class="dash-title">プロフィール設定</div>
+        <div class="dash-desc">事業紹介・マッチング設定・サービス・スタッフを管理します</div>
+      </div>
+      <div class="dash-box">
+        <span class="dash-icon">📩</span>
+        <div class="dash-title">問い合わせ</div>
+        <div class="dash-desc">ユーザーからの問い合わせをここで受け取ります</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── STEP 2: 最重要2項目 ── -->
+  <section class="section">
+    <span class="sec-num">2</span>
+    <div class="sec-label">
+      <span class="sec-label-line"></span>
+      <span class="sec-label-text">STEP 2 — 最重要</span>
+    </div>
+    <p class="lead">まず最初にやること</p>
+
+    <div class="priority-banner">
+      <div class="priority-head">マッチングスコアの起点となる2項目</div>
+      <div class="priority-lead">「きっかけ」と「失敗パターン」はユーザーの診断データと直接照合されます。まずここから始めてください。</div>
+      <div class="priority-desc">
+        Finemeはユーザーの診断結果（Me Scan）と、あなたのページに書かれた<strong>すべての情報</strong>を照合して総合スコアを算出します。<br>
+        「きっかけ」「失敗パターン」はスコアへの影響が特に大きい項目ですが、哲学・ビフォーアフター・サービス内容・写真など、<strong>ページ全体の充実度が積み重なってスコアが決まります。</strong><br>
+        テキトーに2項目だけ設定しても、上位には出ません。丁寧に書かれたページが、合う人に届く設計です。
+      </div>
+    </div>
+
+    <!-- きっかけ -->
+    <div class="field-card gold">
+      <div class="field-head">
+        <span class="field-badge">① きっかけ</span>
+        <span class="field-title">suitable_triggers</span>
+      </div>
+      <p class="field-what">「どんなきっかけで来る人があなたのサービスに向いているか」を書く項目です。<br>ユーザーが診断時に入力した「変わりたいきっかけ」と照合されます。具体的であればあるほど、合う人に届きます。</p>
+      <div class="eg-wrap">
+        <div class="eg-box good">
+          <div class="eg-head">◎ 良い例</div>
+          <div class="eg-item">マッチングアプリで写真に自信がない</div>
+          <div class="eg-item">元交際相手に外見で傷ついた経験がある</div>
+          <div class="eg-item">就活の面接で第一印象を指摘された</div>
+          <div class="eg-item">好きな人ができたが、自分を変えたい</div>
+        </div>
+        <div class="eg-box bad">
+          <div class="eg-head">✕ NG例</div>
+          <div class="eg-item">外見を改善したい方</div>
+          <div class="eg-item">美容に興味がある方</div>
+          <div class="eg-item">どなたでも大歓迎</div>
+          <p class="ng-note">漠然としすぎるとスコアに反映されません。「誰に来てほしいか」を具体的な場面で書いてください。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 失敗パターン -->
+    <div class="field-card gold">
+      <div class="field-head">
+        <span class="field-badge">② 失敗パターン</span>
+        <span class="field-title">handles_failure_patterns</span>
+      </div>
+      <p class="field-what">「過去に挫折・うまくいかなかった経験を持つ人を得意とするか」を書く項目です。<br>ユーザーの「過去の失敗パターン」と照合されます。あなたが特に力を発揮できる人の「過去」を書いてください。</p>
+      <div class="eg-wrap">
+        <div class="eg-box good">
+          <div class="eg-head">◎ 良い例</div>
+          <div class="eg-item">何度やっても続かなかった人</div>
+          <div class="eg-item">自己流でやって逆効果になった人</div>
+          <div class="eg-item">プロに頼む勇気がなかった人</div>
+          <div class="eg-item">情報が多すぎて何から始めるか迷った人</div>
+        </div>
+        <div class="eg-box bad">
+          <div class="eg-head">✕ NG例</div>
+          <div class="eg-item">初心者の方歓迎</div>
+          <div class="eg-item">どんな方でもお気軽に</div>
+          <div class="eg-item">経験者・未経験者問わず</div>
+          <p class="ng-note">「失敗パターン」は「初心者かどうか」ではなく「過去の経験・挫折の文脈」で書くと効果的です。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── STEP 3: プロフィール設定 ── -->
+  <section class="section">
+    <span class="sec-num">3</span>
+    <div class="sec-label">
+      <span class="sec-label-line"></span>
+      <span class="sec-label-text">STEP 3</span>
+    </div>
+    <p class="lead">プロフィールを順番に設定する</p>
+    <p class="lead-sub">ダッシュボードの「プロフィール設定」タブを開いて、以下の順番で進めてください。</p>
+
+    <div class="checklist">
+
+      <div class="check-item">
+        <div class="check-num">1</div>
+        <div class="check-box"></div>
+        <div class="check-body">
+          <div class="check-title">基本情報</div>
+          <div class="check-desc">事業名・カテゴリ・エリア・電話番号を入力します。公開ページの最上部に表示されます。</div>
+        </div>
+      </div>
+
+      <div class="check-item">
+        <div class="check-num">2</div>
+        <div class="check-box"></div>
+        <div class="check-body">
+          <div class="check-title">事業紹介文</div>
+          <div class="check-desc">どんなサービスか、ガイドとして何を提供するかを書きます。「このサービスを通じてユーザーはどう変わるか」という視点で書くと響きます。</div>
+        </div>
+      </div>
+
+      <div class="check-item star">
+        <div class="check-num">3</div>
+        <div class="check-box"></div>
+        <div class="check-body">
+          <div class="check-title">きっかけ（suitable_triggers）<span class="star-mark">★ 高優先</span></div>
+          <div class="check-desc">STEP 2の内容を参考に設定してください。ユーザーの診断データと直接照合される高スコア項目です。</div>
+        </div>
+      </div>
+
+      <div class="check-item star">
+        <div class="check-num">4</div>
+        <div class="check-box"></div>
+        <div class="check-body">
+          <div class="check-title">失敗パターン（handles_failure_patterns）<span class="star-mark">★ 高優先</span></div>
+          <div class="check-desc">STEP 2の内容を参考に設定してください。ユーザーの診断データと直接照合される高スコア項目です。</div>
+        </div>
+      </div>
+
+      <div class="check-item">
+        <div class="check-num">5</div>
+        <div class="check-box"></div>
+        <div class="check-body">
+          <div class="check-title">カバー画像</div>
+          <div class="check-desc">推奨サイズ：1200×600px。第一印象を決める最重要の視覚要素です。店舗・施術・スタッフが写っているものが効果的です。</div>
+        </div>
+      </div>
+
+      <div class="check-item">
+        <div class="check-num">6</div>
+        <div class="check-box"></div>
+        <div class="check-body">
+          <div class="check-title">サービスを登録する</div>
+          <div class="check-desc">メニュー名・価格・所要時間を登録します。1つからでも公開可能です。</div>
+        </div>
+      </div>
+
+      <div class="check-item">
+        <div class="check-num">7</div>
+        <div class="check-box"></div>
+        <div class="check-body">
+          <div class="check-title">スタッフを登録する</div>
+          <div class="check-desc">名前・一言紹介・写真を登録します。顔が見えることでユーザーの安心感が高まります。</div>
+        </div>
+      </div>
+
+      <div class="check-item">
+        <div class="check-num">8</div>
+        <div class="check-box"></div>
+        <div class="check-body">
+          <div class="check-title">施設写真</div>
+          <div class="check-desc">3枚以上推奨。外観・内観・施術空間など、雰囲気が伝わる写真を選んでください。</div>
+        </div>
+      </div>
+
+      <div class="check-item">
+        <div class="check-num">9</div>
+        <div class="check-box"></div>
+        <div class="check-body">
+          <div class="check-title">Before / After（任意）</div>
+          <div class="check-desc">あれば強力なマッチング補助になります。変容を視覚的に示すことで、ユーザーの「自分も変われる」という確信を後押しします。</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── STEP 4: 公開 ── -->
+  <section class="section">
+    <span class="sec-num">4</span>
+    <div class="sec-label">
+      <span class="sec-label-line"></span>
+      <span class="sec-label-text">STEP 4</span>
+    </div>
+    <p class="lead">公開する</p>
+    <p class="lead-sub">プロフィールの設定が完了したら、ダッシュボード右上の「<strong>公開する</strong>」ボタンを押してください。</p>
+
+    <div class="publish-flow">
+      <div class="publish-step">
+        <div class="publish-icon">🔓</div>
+        <div class="publish-body">
+          <div class="p-title">公開ボタンを押す</div>
+          <div class="p-desc">ダッシュボード右上の「公開する」ボタンをクリックします。いつでも非公開に戻せます。</div>
+        </div>
+      </div>
+      <div class="publish-step">
+        <div class="publish-icon">🧭</div>
+        <div class="publish-body">
+          <div class="p-title">Me Scanのマッチング対象に入る</div>
+          <div class="p-desc">ユーザーが外見診断（Me Scan）を受けると、その結果との相性スコアが計算されます。あなたのページはスコアの高さに応じて表示されます。</div>
+        </div>
+      </div>
+      <div class="publish-step">
+        <div class="publish-icon">🗺️</div>
+        <div class="publish-body">
+          <div class="p-title">Fineme Compassに表示される</div>
+          <div class="p-desc">ユーザーの「最初の一手」として提示される Fineme Compass の候補に入ります。診断結果と一致したとき、あなたのページへ直接案内されます。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── STEP 5: ダッシュボードの見方 ── -->
+  <section class="section">
+    <span class="sec-num">5</span>
+    <div class="sec-label">
+      <span class="sec-label-line"></span>
+      <span class="sec-label-text">STEP 5</span>
+    </div>
+    <p class="lead">公開後のダッシュボードの見方</p>
+    <p class="lead-sub">公開後は3つのKPIで活動状況を確認できます。</p>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-icon">👁️</span>
+        <div class="kpi-title">今月のページ閲覧数</div>
+        <div class="kpi-desc">あなたの公開ページが何回閲覧されたかを示します。1セッション1カウントで重複を除外しています。</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">📩</span>
+        <div class="kpi-title">今月の問い合わせ数</div>
+        <div class="kpi-desc">ユーザーからの問い合わせ（予約リクエスト）が届いた件数です。ダッシュボードの「問い合わせ」タブで詳細を確認できます。</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">💰</span>
+        <div class="kpi-title">紹介報酬（今月）</div>
+        <div class="kpi-desc">あなたのFN番号を通じて掲載した事業者が継続している間、毎月¥500の報酬が発生します。今月の累計額です。</div>
+      </div>
+    </div>
+
+    <div class="kpi-note">
+      数字はすぐには動きません。まず<strong>2週間は様子を見てください</strong>。<br>
+      この間にプロフィールを見直したり、「きっかけ」「失敗パターン」の表現を磨くことが、長期的なマッチング改善につながります。
+    </div>
+  </section>
+
+  <!-- ── STEP 6: FAQ ── -->
+  <section class="section">
+    <span class="sec-num">6</span>
+    <div class="sec-label">
+      <span class="sec-label-line"></span>
+      <span class="sec-label-text">STEP 6</span>
+    </div>
+    <p class="lead">よくある質問</p>
+
+    <div class="faq-list">
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-mark">Q</span>
+          <span class="faq-q-text">きっかけや失敗パターンは後から変更できますか？</span>
+        </div>
+        <div class="faq-a">
+          <span class="faq-a-mark">A</span>
+          <span class="faq-a-text">はい、いつでもダッシュボードから変更できます。公開後も随時見直してください。最初から完璧な表現でなくても大丈夫です。実際にユーザーからの反応を見ながら調整していくのがおすすめです。</span>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-mark">Q</span>
+          <span class="faq-q-text">写真は何枚まで登録できますか？</span>
+        </div>
+        <div class="faq-a">
+          <span class="faq-a-mark">A</span>
+          <span class="faq-a-text">施設写真は複数枚登録できます（3枚以上推奨）。スタッフ写真は1人につき1枚登録できます。</span>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-mark">Q</span>
+          <span class="faq-q-text">問い合わせはいつから来ますか？</span>
+        </div>
+        <div class="faq-a">
+          <span class="faq-a-mark">A</span>
+          <span class="faq-a-text">ユーザー数は増加中です。まず2〜4週間はプロフィールを充実させることに集中してください。「きっかけ」「失敗パターン」の質が、最初の問い合わせを左右します。</span>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-mark">Q</span>
+          <span class="faq-q-text">サービスのカテゴリは何を選べばいいですか？</span>
+        </div>
+        <div class="faq-a">
+          <span class="faq-a-mark">A</span>
+          <span class="faq-a-text">最も得意とするメインカテゴリを1つ選んでください。ジム・メイク・ヘア・骨格診断・眉・ファッション・写真撮影・美容・ホワイトニング・矯正など、あなたの強みを最もよく表すカテゴリを選びます。</span>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">
+          <span class="faq-q-mark">Q</span>
+          <span class="faq-q-text">問い合わせが来たらどうすればいいですか？</span>
+        </div>
+        <div class="faq-a">
+          <span class="faq-a-mark">A</span>
+          <span class="faq-a-text">ダッシュボードの「問い合わせ」タブから内容を確認し、登録した連絡先（電話番号またはメール）に直接返信してください。できるだけ24時間以内の返信が、ユーザーの信頼につながります。</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer class="footer">
+    <div class="footer-contact">
+      困ったときは →&nbsp;
+      <a href="https://www.fineme.me/provider/inquiry">fineme.me/provider/inquiry</a>
+      &nbsp;からご連絡ください
+    </div>
+    <div class="footer-logo">Fineme（ファインミ）</div>
+    <div class="footer-tagline">外見を起点に、自信を再設計する人を増やす</div>
+    <p style="color:#605c56;font-size:12px;margin-top:20px;padding-bottom:48px">© Fineme. All rights reserved.</p>
+  </footer>
+
+</div>
+
+<!-- 印刷ボタン -->
+<button class="print-btn" onclick="window.print()">
+  🖨 印刷 / PDF保存
+</button>
+
+</body>
+</html>

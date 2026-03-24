@@ -1,4 +1,5 @@
 // GET /api/providers/[slug]/services - 掲載者のサービス一覧（公開用）
+export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -19,7 +20,7 @@ export async function GET(request, { params }) {
 
   const { data, error } = await supabase
     .from('provider_services')
-    .select('id,name,description,price,duration,is_featured,sort_order,image_url')
+    .select('id,name,description,price,duration,is_featured,sort_order,image_url,suitable_path_types,transformation_promise,target_axis,before_text,after_text,before_image_url,after_image_url,benefit_list')
     .eq('provider_id', provider.id)
     .order('sort_order')
     .order('created_at');

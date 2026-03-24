@@ -32,12 +32,12 @@ export async function POST(request) {
   const provider = await getProviderFromToken(token);
   if (!provider) return Response.json({ error: 'Not found' }, { status: 404 });
 
-  const { name, description, price, duration, is_featured, sort_order, image_url } = await request.json();
+  const { name, description, price, duration, is_featured, sort_order, image_url, suitable_path_types, transformation_promise, target_axis, before_text, after_text, before_image_url, after_image_url, benefit_list, category } = await request.json();
   if (!name || !price) return Response.json({ error: 'name, price は必須です' }, { status: 400 });
 
   const { data, error } = await supabase
     .from('provider_services')
-    .insert({ provider_id: provider.id, name, description, price: Number(price), duration, is_featured: !!is_featured, sort_order: Number(sort_order)||0, image_url: image_url || null })
+    .insert({ provider_id: provider.id, name, description, price: Number(price), duration, is_featured: !!is_featured, sort_order: Number(sort_order)||0, image_url: image_url || null, suitable_path_types: suitable_path_types || null, transformation_promise: transformation_promise || null, target_axis: target_axis || null, before_text: before_text || null, after_text: after_text || null, before_image_url: before_image_url || null, after_image_url: after_image_url || null, benefit_list: benefit_list || null, category: category || null })
     .select().single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });

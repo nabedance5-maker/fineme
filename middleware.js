@@ -31,6 +31,17 @@ export function middleware(request) {
     return NextResponse.redirect(url, { status: 301 })
   }
 
+  // business/ ディレクトリは管理者のみアクセス可
+  if (request.nextUrl.pathname.startsWith('/business/')) {
+    const adminCookie = request.cookies.get('fineme_admin')
+    if (!adminCookie?.value) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/admin'
+      url.search = ''
+      return NextResponse.redirect(url, { status: 302 })
+    }
+  }
+
   return NextResponse.next()
 }
 

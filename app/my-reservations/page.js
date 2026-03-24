@@ -194,7 +194,36 @@ function MyReservationsContent() {
   }
 
   return (
-    <div style={{ maxWidth: '680px', margin: '0 auto', padding: '40px 20px 80px' }}>
+    <>
+    <style>{`
+      .resv-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; max-width: 980px; margin: 0 auto; padding: 40px 20px 80px; }
+      .resv-sidenav { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+      .resv-sidenav .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: #374151; text-decoration: none; transition: background .15s; }
+      .resv-sidenav .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
+      .resv-sidenav .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
+      @media (max-width: 640px) {
+        .resv-layout { grid-template-columns: 1fr; padding: 16px 16px 60px; }
+        .resv-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
+        .resv-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; }
+        .resv-sidenav nav::-webkit-scrollbar { display: none; }
+        .resv-sidenav nav > * { margin-top: 0 !important; }
+        .resv-sidenav .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; }
+      }
+    `}</style>
+    <div className="resv-layout">
+      <aside className="resv-sidenav">
+        <nav>
+          <Link href="/mypage" className="sidenav-link">ホーム</Link>
+          <Link href="/diagnosis/result" className="sidenav-link">New Me Map</Link>
+          <Link href="/mypage/navi" className="sidenav-link">New Me Navi</Link>
+          <Link href="/mypage/favorites" className="sidenav-link">お気に入り</Link>
+          <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
+          <Link href="/my-reservations" className="sidenav-link sidenav-link--active">予約履歴</Link>
+          <Link href="/mypage/story-submit" className="sidenav-link">体験談を書く</Link>
+          <Link href="/mypage/profile" className="sidenav-link">プロフィール編集</Link>
+        </nav>
+      </aside>
+    <div style={{ maxWidth: '680px', margin: '0 auto', padding: '0' }}>
       <h1 style={{ fontSize: 'clamp(20px,4vw,26px)', fontWeight: '800', margin: '0 0 8px' }}>予約履歴</h1>
       <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 28px' }}>
         予約リクエストの状況を確認できます。代替提案への回答もこちらから行えます。
@@ -245,6 +274,8 @@ function MyReservationsContent() {
         <Link href="/search" style={{ fontSize: '14px', color: '#6b7280', textDecoration: 'none' }}>← サービスを探す</Link>
       </div>
     </div>
+    </div>
+    </>
   );
 }
 

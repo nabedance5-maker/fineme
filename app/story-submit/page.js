@@ -15,6 +15,23 @@ const TAG_OPTIONS = [
   '仕事・職場', '30代の変容', '20代の変容',
 ];
 
+const AXIS_OPTIONS = [
+  { id: 'body',    icon: '💪', label: '体型' },
+  { id: 'eyebrow', icon: '✂️', label: '眉毛' },
+  { id: 'fashion', icon: '👔', label: '服・コーデ' },
+  { id: 'hair',    icon: '💇', label: '髪・ヘア' },
+  { id: 'skin',    icon: '✨', label: '肌' },
+  { id: 'teeth',   icon: '🦷', label: '歯・口元' },
+  { id: 'nail',    icon: '💅', label: '爪' },
+];
+
+const PATH_OPTIONS = [
+  { id: 'virgin', label: '🌱 初挑戦' },
+  { id: 'quit',   label: '🔄 リスタート' },
+  { id: 'blind',  label: '🤔 客観化' },
+  { id: 'lapsed', label: '😴 再開' },
+];
+
 const MAX_STEP = 5;
 
 export default function StorySubmitPage() {
@@ -24,6 +41,9 @@ export default function StorySubmitPage() {
   const [tagError, setTagError] = useState(false);
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [axisId, setAxisId] = useState('');
+  const [pathType, setPathType] = useState('');
+  const [milestoneReached, setMilestoneReached] = useState('');
 
   // URLパラメータ（来店後メールリンク経由）
   const reservationId = useRef('');
@@ -33,6 +53,20 @@ export default function StorySubmitPage() {
     const params = new URLSearchParams(window.location.search);
     reservationId.current = params.get('reservationId') || '';
     providerId.current = params.get('providerId') || '';
+
+    // Me Scanデータから変容軸・来た道を自動補完
+    try {
+      const raw = localStorage.getItem('fineme:diagnosis:latest');
+      if (raw) {
+        const profile = JSON.parse(raw);
+        if (profile.compass_first) {
+          setAxisId(profile.compass_first);
+          if (profile.path_types && profile.path_types[profile.compass_first]) {
+            setPathType(profile.path_types[profile.compass_first]);
+          }
+        }
+      }
+    } catch {}
 
     const s = document.createElement('style');
     s.textContent = storyCSS;
@@ -94,6 +128,9 @@ export default function StorySubmitPage() {
           reservationId: reservationId.current || null,
           providerId: providerId.current || null,
           userId: getUserId(),
+          axisId: axisId || null,
+          pathType: pathType || null,
+          milestoneReached: milestoneReached || null,
         }),
       });
       const data = await res.json();
@@ -216,6 +253,47 @@ export default function StorySubmitPage() {
                       タグを1つ以上選んでください
                     </div>
                   )}
+                  {/* 変容トラック（任意・New Me Map連動） */}
+                  <div style={{ marginTop: '20px', padding: '14px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '12px' }}>
+                    <p style={{ fontSize: '12px', fontWeight: 700, color: '#0369a1', margin: '0 0 10px' }}>🗺 変容トラック（任意）— New Me Map 連動</p>
+                    <div style={{ marginBottom: '10px' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', margin: '0 0 6px' }}>この変容は主にどの軸でしたか？</p>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {AXIS_OPTIONS.map(a => (
+                          <div
+                            key={a.id}
+                            onClick={() => setAxisId(prev => prev === a.id ? '' : a.id)}
+                            style={{ padding: '5px 12px', borderRadius: '99px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', border: '1.5px solid', borderColor: axisId === a.id ? '#0ea5e9' : '#e5e7eb', background: axisId === a.id ? '#e0f2fe' : '#fff', color: axisId === a.id ? '#0c4a6e' : '#374151' }}
+                          >{a.icon} {a.label}</div>
+                        ))}
+                      </div>
+                    </div>
+                    {axisId && (
+                      <div style={{ marginBottom: '10px' }}>
+                        <p style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', margin: '0 0 6px' }}>この軸に対する「来た道」は？</p>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {PATH_OPTIONS.map(p => (
+                            <div
+                              key={p.id}
+                              onClick={() => setPathType(prev => prev === p.id ? '' : p.id)}
+                              style={{ padding: '5px 12px', borderRadius: '99px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', border: '1.5px solid', borderColor: pathType === p.id ? '#6366f1' : '#e5e7eb', background: pathType === p.id ? '#eef2ff' : '#fff', color: pathType === p.id ? '#3730a3' : '#374151' }}
+                            >{p.label}</div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <p style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', margin: '0 0 4px' }}>変化のターニングポイントは？（任意）</p>
+                      <input
+                        type="text"
+                        value={milestoneReached}
+                        onChange={e => setMilestoneReached(e.target.value)}
+                        maxLength={200}
+                        placeholder="例）3ヶ月で-5kg、初めて鏡を見て笑顔になれた"
+                        style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -246,6 +324,16 @@ export default function StorySubmitPage() {
                   {[...selectedTags].map(t => <span key={t} className="confirm-tag">{t}</span>)}
                 </div>
               </div>
+              {(axisId || milestoneReached) && (
+                <div className="confirm-item">
+                  <div className="confirm-q">変容トラック</div>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
+                    {axisId && <span style={{ padding: '3px 10px', borderRadius: '99px', fontSize: '12px', background: '#dbeafe', color: '#1e40af', fontWeight: 700 }}>{AXIS_OPTIONS.find(a => a.id === axisId)?.icon} {AXIS_OPTIONS.find(a => a.id === axisId)?.label}</span>}
+                    {pathType && <span style={{ padding: '3px 10px', borderRadius: '99px', fontSize: '12px', background: '#f0fdf4', color: '#166534', fontWeight: 600 }}>{PATH_OPTIONS.find(p => p.id === pathType)?.label}</span>}
+                  </div>
+                  {milestoneReached && <div style={{ fontSize: '13px', marginTop: '6px', color: '#6366f1' }}>🏆 {milestoneReached}</div>}
+                </div>
+              )}
             </div>
             <div style={{ marginTop: '20px', padding: '14px', background: '#f9fafb', borderRadius: '10px', fontSize: '13px', color: '#6b7280' }}>
               ※ 投稿内容は運営が確認後、Finemeのストーリーページに掲載されます。個人を特定できる情報は自動的に編集される場合があります。

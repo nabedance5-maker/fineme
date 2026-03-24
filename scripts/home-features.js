@@ -104,7 +104,10 @@ async function fetchStaticFallback(){
     if(fallback.length){
       renderTop(fallback);
     }else{
-      try{ const h = document.getElementById('top-features'); if(h){ const sec = h.closest('section'); if(sec) sec.style.display='none'; } }catch{}
+      try{
+        const h = document.getElementById('top-features');
+        if(h){ h.innerHTML = '<div style="text-align:center;padding:32px 16px;color:#9ca3af;font-size:14px;">🚧 Coming Soon — 特集記事を準備中です</div>'; }
+      }catch{}
     }
   }
 })();

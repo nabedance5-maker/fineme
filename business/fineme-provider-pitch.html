@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fineme 掲載のご案内</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Hiragino Mincho Pro','Noto Serif JP',Georgia,serif;
+    background-color:#060c1a;
+    background-image:
+      linear-gradient(rgba(6,12,26,0.93),rgba(6,12,26,0.93)),
+      url('../public/assets/images/bg-parchment.webp');
+    background-size:auto, 500px auto;
+    color:#e8e2d4;line-height:1.8;font-size:15px;
+  }
+  .page{max-width:860px;margin:0 auto;padding:0 0 120px}
+
+  /* ── HERO ── */
+  .hero{
+    position:relative;overflow:hidden;
+    padding:72px 40px 64px;
+    background:
+      linear-gradient(rgba(6,12,26,0.72), rgba(10,15,30,0.88)),
+      url('../public/assets/images/hero-bg.webp') center / cover no-repeat;
+    border-bottom:1px solid rgba(201,168,76,.2);
+  }
+  .hero::before{
+    content:'';position:absolute;top:-60px;right:-60px;
+    width:380px;height:380px;border-radius:50%;
+    background:radial-gradient(circle,rgba(201,168,76,.1) 0%,transparent 70%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;max-width:600px}
+  .hero-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.12em;color:rgba(201,168,76,.5);font-family:'Hiragino Kaku Gothic Pro',sans-serif;text-transform:uppercase;margin-bottom:20px}
+  .hero h1{font-size:38px;font-weight:800;line-height:1.3;letter-spacing:.01em;color:#f0ece4}
+  .hero-sub{font-size:15px;color:#b0aaa2;line-height:2;margin:20px 0 28px;max-width:520px}
+  .hero-sub strong{color:#c9a84c}
+  .badges{display:flex;gap:8px;flex-wrap:wrap}
+  .badge{display:inline-block;padding:4px 14px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.06em;font-family:'Hiragino Kaku Gothic Pro',sans-serif}
+  .badge-gold{background:rgba(201,168,76,.12);color:#c9a84c;border:1px solid rgba(201,168,76,.3)}
+  .badge-green{background:rgba(74,222,128,.08);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+
+  /* ── Compass SVG wrapper ── */
+  .hero-compass{
+    position:absolute;right:32px;top:50%;transform:translateY(-50%);
+    width:220px;height:220px;opacity:.18;
+    pointer-events:none;
+  }
+
+  /* ── Section wrapper ── */
+  .section{padding:56px 40px;border-bottom:1px solid rgba(255,255,255,.04);position:relative}
+  .section:nth-child(even){
+    background:
+      linear-gradient(rgba(8,14,28,0.96),rgba(8,14,28,0.96)),
+      url('../public/assets/images/bg-parchment.webp') center / 400px auto;
+  }
+
+  /* ── Section header ── */
+  .sec-num{font-size:120px;font-weight:900;color:rgba(201,168,76,.05);position:absolute;top:20px;right:32px;line-height:1;font-family:'Hiragino Kaku Gothic Pro',sans-serif;pointer-events:none;user-select:none}
+  .sec-label{display:inline-flex;align-items:center;gap:8px;margin-bottom:16px}
+  .sec-label-line{width:24px;height:1.5px;background:#c9a84c;opacity:.6}
+  .sec-label-text{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(201,168,76,.7);font-family:'Hiragino Kaku Gothic Pro',sans-serif}
+  .lead{font-size:22px;font-weight:800;line-height:1.55;color:#f0ece4;margin-bottom:24px;max-width:560px}
+
+  /* ── Body text ── */
+  p{color:#c4bfb5;font-size:14px;line-height:2}
+  p+p{margin-top:10px}
+  ul,ol{padding-left:0;list-style:none}
+  li{color:#c4bfb5;font-size:14px;line-height:2}
+  strong{color:#e8e2d4;font-weight:700}
+
+  /* ── Journey timeline ── */
+  .journey{position:relative;margin:24px 0;padding-left:20px}
+  .journey::before{content:'';position:absolute;left:19px;top:28px;bottom:28px;width:1.5px;background:linear-gradient(to bottom,rgba(201,168,76,.4),rgba(201,168,76,.1))}
+  .j-step{display:flex;gap:20px;margin-bottom:0;position:relative}
+  .j-step+.j-step{margin-top:4px}
+  .j-icon{width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(201,168,76,.45);background:rgba(201,168,76,.08);color:#c9a84c;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;font-family:'Hiragino Kaku Gothic Pro',sans-serif;letter-spacing:.04em;position:relative;z-index:1}
+  .j-body{padding:10px 0 24px}
+  .j-title{font-size:15px;font-weight:700;color:#e8e2d4;margin-bottom:3px}
+  .j-desc{font-size:13px;color:#a09890;line-height:1.75}
+
+  /* ── Flow diagram ── */
+  .flow-wrap{background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:28px 24px;margin:24px 0}
+  .flow-row{display:flex;align-items:center;gap:0}
+  .flow-box{flex:1;text-align:center;padding:16px 8px}
+  .flow-box-inner{background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:14px 10px}
+  .flow-box-inner.active{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.45);box-shadow:0 0 20px rgba(201,168,76,.1)}
+  .flow-icon{font-size:22px;display:block;margin-bottom:6px}
+  .flow-title{font-size:12px;font-weight:800;color:#c9a84c;font-family:'Hiragino Kaku Gothic Pro',sans-serif}
+  .flow-sub{font-size:11px;color:#b0aaa2;margin-top:3px;line-height:1.5}
+  .flow-arr{color:rgba(201,168,76,.35);font-size:22px;padding:0 4px;flex-shrink:0}
+  .flow-note{text-align:center;margin-top:16px;font-size:13px;color:#a09890;font-style:italic}
+
+  /* ── Quote ── */
+  .big-quote{position:relative;padding:24px 28px;margin:24px 0;background:rgba(201,168,76,.05);border-radius:12px;border:1px solid rgba(201,168,76,.12)}
+  .big-quote::before{content:'❝';position:absolute;top:-10px;left:20px;font-size:36px;color:rgba(201,168,76,.25);line-height:1;font-family:Georgia,serif}
+  .big-quote p{font-size:15px;color:#c4bfb5;line-height:1.95;font-style:italic}
+
+  /* ── Insight ── */
+  .insight{background:rgba(201,168,76,.06);border-left:3px solid #c9a84c;border-radius:0 10px 10px 0;padding:14px 20px;margin:20px 0;font-size:14px;color:#c4bfb5;line-height:1.85}
+  .warn{background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:14px 20px;font-size:13px;color:#f87171;margin:14px 0}
+
+  /* ── Cards ── */
+  .card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:22px;margin-bottom:12px}
+  .card-gold{
+    background:
+      linear-gradient(rgba(8,14,28,0.86),rgba(8,14,28,0.86)),
+      url('../public/assets/images/bg-parchment.webp') center / 300px auto;
+    border:1px solid rgba(201,168,76,.22);border-radius:14px;padding:22px;margin-bottom:12px;
+  }
+  .card-dark{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:18px;margin-bottom:10px}
+
+  /* ── Two-column ── */
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+
+  /* ── Check/Cross lists ── */
+  .check-list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+  .check-item{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:#c4bfb5}
+  .check-item .ic{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:2px}
+  .ic-yes{background:rgba(74,222,128,.1);color:#4ade80}
+  .ic-no{background:rgba(239,68,68,.1);color:#f87171}
+
+  /* ── Match cards ── */
+  .match-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+  .match-card{border-radius:14px;padding:22px}
+  .match-card.yes{background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.2)}
+  .match-card.no{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07)}
+  .match-head{font-size:13px;font-weight:700;font-family:'Hiragino Kaku Gothic Pro',sans-serif;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+  /* ── Plan card ── */
+  .plan-wrap{position:relative;margin:24px 0}
+  .plan-card{
+    background:
+      linear-gradient(135deg,rgba(8,14,28,0.82) 0%,rgba(6,12,26,0.88) 100%),
+      url('../public/assets/images/bg-parchment.webp') center / 400px auto;
+    border:1.5px solid rgba(201,168,76,.4);border-radius:20px;
+    padding:36px 32px;text-align:center;
+    box-shadow:0 0 40px rgba(201,168,76,.1),inset 0 1px 0 rgba(201,168,76,.15);
+  }
+  .plan-price{font-size:52px;font-weight:900;color:#c9a84c;line-height:1;margin:10px 0 4px;font-family:'Hiragino Kaku Gothic Pro',sans-serif}
+  .plan-unit{font-size:13px;color:#b0aaa2;margin-bottom:20px}
+  .plan-features{display:flex;flex-direction:column;gap:8px;text-align:left;margin-top:20px;padding-top:20px;border-top:1px solid rgba(201,168,76,.15)}
+  .plan-feat{display:flex;align-items:center;gap:10px;font-size:13px;color:#c4bfb5}
+  .feat-dot{width:6px;height:6px;border-radius:50%;background:#c9a84c;flex-shrink:0}
+
+  /* ── Step list ── */
+  .step-list{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+  .step-item{display:flex;gap:16px;align-items:flex-start;padding:18px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:14px}
+  .step-num{width:36px;height:36px;border-radius:50%;background:rgba(201,168,76,.1);border:1.5px solid rgba(201,168,76,.35);color:#c9a84c;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;font-family:'Hiragino Kaku Gothic Pro',sans-serif}
+  .step-title{font-size:15px;font-weight:700;color:#e8e2d4;margin-bottom:3px}
+  .step-desc{font-size:13px;color:#a09890;line-height:1.7}
+
+  /* ── Print button ── */
+  .print-btn{
+    position:fixed;bottom:24px;right:24px;
+    display:flex;align-items:center;gap:8px;
+    padding:11px 20px;
+    background:linear-gradient(135deg,#c9a84c,#e6c96e);
+    color:#0a0f1e;border:none;border-radius:99px;
+    font-size:13px;font-weight:800;font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    cursor:pointer;box-shadow:0 4px 20px rgba(201,168,76,.4);
+    letter-spacing:.04em;z-index:100;
+  }
+
+  /* ── Footer ── */
+  .footer{padding:40px 40px 0;text-align:center}
+
+  /* ── Print ── */
+  @media print{
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{background-color:#060c1a !important;background-image:none !important;color:#e8e2d4}
+    .page{background-color:#060c1a}
+    .hero{background:#0a0f1e !important;background-image:none !important}
+    .section{background-color:#060c1a;background-image:none !important;border-color:rgba(255,255,255,.05)}
+    .section:nth-child(even){background-color:#080e1c !important;background-image:none !important}
+    .lead{color:#f0ece4}
+    p,li{color:#c4bfb5}
+    .j-desc,.flow-sub,.step-desc,.flow-note{color:#a09890}
+    .j-title,.step-title{color:#e8e2d4}
+    .j-icon,.step-num{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.4);color:#c9a84c}
+    .journey::before{background:rgba(201,168,76,.35)}
+    .sec-label-line{background:#c9a84c}
+    .sec-label-text{color:rgba(201,168,76,.7)}
+    .sec-num{color:rgba(201,168,76,.05)}
+    .card{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08)}
+    .card-dark{background:rgba(0,0,0,.3);border-color:rgba(255,255,255,.06)}
+    .card-gold,.match-card.yes{background:#0d1528 !important;background-image:none !important;border-color:rgba(201,168,76,.22)}
+    .match-card.no{background:rgba(255,255,255,.02);border-color:rgba(255,255,255,.07)}
+    .flow-wrap{background:rgba(0,0,0,.2);border-color:rgba(255,255,255,.06)}
+    .flow-box-inner{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.2)}
+    .flow-box-inner.active{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.45)}
+    .flow-title{color:#c9a84c}
+    .flow-arr{color:rgba(201,168,76,.4)}
+    .plan-card{background:#0d1528 !important;background-image:none !important;border-color:rgba(201,168,76,.4);box-shadow:none}
+    .plan-price{color:#c9a84c}
+    .plan-feat{color:#c4bfb5}
+    .big-quote{background:rgba(201,168,76,.06);border-color:rgba(201,168,76,.15)}
+    .big-quote p{color:#c4bfb5}
+    .insight{background:rgba(201,168,76,.07);border-color:#c9a84c;color:#c4bfb5}
+    .warn{background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.2);color:#f87171}
+    .ic-yes{background:rgba(74,222,128,.1);color:#4ade80}
+    .ic-no{background:rgba(239,68,68,.1);color:#f87171}
+    .check-item{color:#c4bfb5}
+    .step-item{background:rgba(255,255,255,.025);border-color:rgba(255,255,255,.06)}
+    .badge-gold{background:rgba(201,168,76,.12);color:#c9a84c;border-color:rgba(201,168,76,.3)}
+    .badge-green{background:rgba(74,222,128,.08);color:#4ade80}
+    .hero-compass{display:none}
+    .hero::before{display:none}
+    .print-btn{display:none}
+    .footer{border-top:1px solid rgba(255,255,255,.05)}
+    .grid-2,.match-grid{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:640px){
+    .hero,.section,.footer{padding-left:20px;padding-right:20px}
+    .hero h1{font-size:26px}
+    .lead{font-size:18px}
+    .grid-2,.match-grid,.flow-row{grid-template-columns:1fr}
+    .flow-row{flex-direction:column;align-items:stretch}
+    .flow-arr{transform:rotate(90deg);text-align:center;font-size:16px}
+    .sec-num{font-size:80px}
+    .hero-compass{display:none}
+    .plan-price{font-size:42px}
+  }
+</style>
+<button class="print-btn" onclick="window.print()">🖨️ PDF保存</button>
+</head>
+<body>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<div class="hero">
+
+  <!-- Compass SVG -->
+  <div class="hero-compass">
+    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="100" cy="100" r="92" stroke="#c9a84c" stroke-width="1"/>
+      <circle cx="100" cy="100" r="70" stroke="#c9a84c" stroke-width=".5" stroke-dasharray="4 6"/>
+      <circle cx="100" cy="100" r="10" fill="#c9a84c" fill-opacity=".4"/>
+      <circle cx="100" cy="100" r="4" fill="#c9a84c"/>
+      <!-- N -->
+      <polygon points="100,8 106,90 100,100 94,90" fill="#c9a84c" fill-opacity=".9"/>
+      <!-- S -->
+      <polygon points="100,192 106,110 100,100 94,110" fill="#c9a84c" fill-opacity=".4"/>
+      <!-- E -->
+      <polygon points="192,100 110,94 100,100 110,106" fill="#c9a84c" fill-opacity=".4"/>
+      <!-- W -->
+      <polygon points="8,100 90,94 100,100 90,106" fill="#c9a84c" fill-opacity=".4"/>
+      <!-- NE -->
+      <polygon points="163,37 112,88 100,100 88,88 137,37" fill="#c9a84c" fill-opacity=".15"/>
+      <!-- NW -->
+      <polygon points="37,37 88,88 100,100 112,88 63,37" fill="#c9a84c" fill-opacity=".15"/>
+      <!-- SE -->
+      <polygon points="163,163 112,112 100,100 88,112 137,163" fill="#c9a84c" fill-opacity=".1"/>
+      <!-- SW -->
+      <polygon points="37,163 88,112 100,100 112,112 63,163" fill="#c9a84c" fill-opacity=".1"/>
+      <!-- tick marks -->
+      <line x1="100" y1="18" x2="100" y2="26" stroke="#c9a84c" stroke-width="1.5" opacity=".6"/>
+      <line x1="100" y1="174" x2="100" y2="182" stroke="#c9a84c" stroke-width="1" opacity=".3"/>
+      <line x1="18" y1="100" x2="26" y2="100" stroke="#c9a84c" stroke-width="1" opacity=".3"/>
+      <line x1="174" y1="100" x2="182" y2="100" stroke="#c9a84c" stroke-width="1" opacity=".3"/>
+      <!-- N label -->
+      <text x="100" y="46" text-anchor="middle" fill="#c9a84c" font-size="11" font-weight="bold" font-family="Georgia,serif" opacity=".7">N</text>
+    </svg>
+  </div>
+
+  <div class="hero-inner">
+    <div class="hero-badge">Confidential ／ Fineme 掲載者向け資料 v2.0 ／ 2026年3月</div>
+    <h1>変わりたいのに、<br>どこへ行けばいいか<br>わからない男性がいます。</h1>
+    <p class="hero-sub">
+      その男性に必要なのは、<strong>地図と羅針盤</strong>です。<br>
+      Finemeはその地図と羅針盤であり、<br>
+      あなたはその地図に載る<strong>ガイド（道案内人）</strong>です。
+    </p>
+    <div class="badges">
+      <span class="badge badge-gold">地図と羅針盤のプラットフォーム</span>
+      <span class="badge badge-gold">恋愛・外見磨き特化</span>
+      <span class="badge badge-green">初期ガイド 募集中</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ 00 ： PERSONA ═══════════════ -->
+<div class="section">
+  <div class="sec-num">00</div>
+  <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">この男性を知っていますか</div></div>
+  <div class="lead">恋愛で傷ついた経験が、<br>外見を変えるきっかけになる。</div>
+
+  <div class="journey">
+
+    <div class="j-step">
+      <div class="j-icon">今</div>
+      <div class="j-body">
+        <div class="j-title">田中 誠（仮名）29歳・営業職</div>
+        <div class="j-desc">マッチングアプリで3ヶ月、マッチングが1件もない。友人に「なんか暗いね」と言われた。外見を変えたいが、<em>何から手をつければいいかわからない。</em></div>
+      </div>
+    </div>
+
+    <div class="j-step">
+      <div class="j-icon">診断</div>
+      <div class="j-body">
+        <div class="j-title">Me Scan（10分）を受ける</div>
+        <div class="j-desc">体型・眉・服・髪・肌・歯・爪の7軸を測定。「なぜ変わりたいか」「何がうまくいかなかったか」も記録される。</div>
+      </div>
+    </div>
+
+    <div class="j-step">
+      <div class="j-icon">地図</div>
+      <div class="j-body">
+        <div class="j-title">New Me Map ── 変容の地図が生成される</div>
+        <div class="j-desc">「眉のギャップが最大。ここから変えると一番変化が大きい」という地図が渡される。</div>
+      </div>
+    </div>
+
+    <div class="j-step">
+      <div class="j-icon">羅針盤</div>
+      <div class="j-body">
+        <div class="j-title">Fineme Compass ── 最初の一手が決まる</div>
+        <div class="j-desc">「まず眉から。次に体型」という順番が示される。その推奨カテゴリに掲載されているガイドが表示される。</div>
+      </div>
+    </div>
+
+    <div class="j-step">
+      <div class="j-icon">あなた</div>
+      <div class="j-body">
+        <div class="j-title">あなたのページへたどり着く</div>
+        <div class="j-desc">彼はすでに「自分に何が必要か」を知っている状態で来ます。迷子ではなく、<strong>「準備ができた人」として。</strong></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="insight">
+    💡 Finemeに来るユーザーは、地図を持ち、羅針盤に従って、<strong>あなたを目指して来ます。</strong>「とりあえず探している人」とは、来る動機が根本的に異なります。
+  </div>
+</div>
+
+
+<!-- ═══════════════ 01 ： WHY ═══════════════ -->
+<div class="section">
+  <div class="sec-num">01</div>
+  <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">なぜ、地図と羅針盤が必要なのか</div></div>
+  <div class="lead">男性が外見を変えて<br>人生を変えられると分かっていても、<br>進むための地図と羅針盤が、<br>社会にまだ存在しない。</div>
+
+  <p>恋愛、仕事、人間関係——マッチングアプリの普及で、自分の「見た目」に向き合う機会は急増した。しかし「どこから始めるか」を教えてくれる場所は、驚くほど少ない。</p>
+
+  <div class="big-quote" style="margin-top:24px">
+    <p>「HOT PEPPERは『今すぐ予約したい人』の場所。<br>Finemeは『変わりたいが、どこへ行けばいいかわからない人』の場所。<br>提供するものが、そもそも違います。」</p>
+  </div>
+
+  <p style="margin-top:4px">外見が変わり、自信が変わり、人との関わり方が変わる。Finemeはその<strong>「入口」</strong>として機能するプラットフォームです。あなたはその入口の先にいるガイドです。</p>
+</div>
+
+
+<!-- ═══════════════ 02 ： HOW ═══════════════ -->
+<div class="section">
+  <div class="sec-num">02</div>
+  <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">地図と羅針盤のフロー</div></div>
+  <div class="lead">ユーザーは検索ではなく、<br>診断から旅を始めます。</div>
+
+  <div class="flow-wrap">
+    <div class="flow-row">
+      <div class="flow-box">
+        <div class="flow-box-inner">
+          <span class="flow-icon">🧭</span>
+          <div class="flow-title">Me Scan</div>
+          <div class="flow-sub">10分の問診<br>7軸を測定</div>
+        </div>
+      </div>
+      <div class="flow-arr">→</div>
+      <div class="flow-box">
+        <div class="flow-box-inner">
+          <span class="flow-icon">🗺️</span>
+          <div class="flow-title">New Me Map</div>
+          <div class="flow-sub">変容の地図<br>ギャップを可視化</div>
+        </div>
+      </div>
+      <div class="flow-arr">→</div>
+      <div class="flow-box">
+        <div class="flow-box-inner">
+          <span class="flow-icon">🧿</span>
+          <div class="flow-title">Fineme Compass</div>
+          <div class="flow-sub">羅針盤<br>最初の一手を決定</div>
+        </div>
+      </div>
+      <div class="flow-arr">→</div>
+      <div class="flow-box">
+        <div class="flow-box-inner active">
+          <span class="flow-icon">🙋</span>
+          <div class="flow-title">ガイド（あなた）</div>
+          <div class="flow-sub">道案内人<br>変容の入口</div>
+        </div>
+      </div>
+    </div>
+    <p class="flow-note">クーポンも広告費も口コミ数も関係ない。診断結果との相性だけが、あなたへの経路を決めます。</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════ 03 ： MATCHING ═══════════════ -->
+<div class="section">
+  <div class="sec-num">03</div>
+  <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">マッチングの仕組み</div></div>
+  <div class="lead">「それっぽく書いただけ」では<br>上位に出ない設計。</div>
+
+  <div class="insight">
+    📌 ユーザーの診断データと、あなたのページの<strong>すべての情報</strong>を照合してスコアを出します。丁寧に書かれたページが、合う人に届く仕組みです。
+  </div>
+
+  <div style="margin-top:24px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.12em;color:rgba(201,168,76,.6);margin-bottom:14px;text-transform:uppercase">Score Components</div>
+
+    <!-- ユーザーデータとの一致（最高優先） -->
+    <div style="margin-bottom:10px;padding:16px 18px;border:1.5px solid rgba(201,168,76,.35);border-radius:12px;background:rgba(201,168,76,.04)">
+      <div style="font-size:12px;font-weight:800;color:#c9a84c;letter-spacing:.08em;margin-bottom:8px">USER MATCH — ユーザーの診断結果との照合</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#b0aaa2">
+          <span>⚡ きっかけ一致（suitable_triggers）</span><span style="color:#c9a84c;font-weight:700">+8</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#b0aaa2">
+          <span>🔁 失敗パターン一致（handles_failure_patterns）</span><span style="color:#c9a84c;font-weight:700">+8</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#b0aaa2">
+          <span>🧭 Compassの軸 × 対応カテゴリー一致</span><span style="color:#c9a84c;font-weight:700">+12</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#b0aaa2">
+          <span>📊 ユーザーの優先変容軸 × サービス対象軸</span><span style="color:#c9a84c;font-weight:700">最大+15</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- プロフィール充実度 -->
+    <div style="margin-bottom:10px;padding:16px 18px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.03)">
+      <div style="font-size:12px;font-weight:800;color:rgba(255,255,255,.5);letter-spacing:.08em;margin-bottom:8px">PROFILE QUALITY — プロフィールの充実度</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <div style="font-size:12px;color:#9d9890;line-height:1.7">
+          ガイド哲学・変容ビジョン・強み・ターゲット像・キャッチコピー<br>
+          カバー写真・施設写真（3枚）・スタッフ紹介<br>
+          <span style="color:rgba(255,255,255,.4)">—— 各項目の記入密度（文字数・写真枚数）でスコアが変わります</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- サービス内容の充実度 -->
+    <div style="padding:16px 18px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.03)">
+      <div style="font-size:12px;font-weight:800;color:rgba(255,255,255,.5);letter-spacing:.08em;margin-bottom:8px">SERVICE QUALITY — サービスの中身</div>
+      <div style="font-size:12px;color:#9d9890;line-height:1.7">
+        変容の約束（transformation_promise）・Before/Afterテキスト・Before/After画像・特典内容<br>
+        <span style="color:rgba(255,255,255,.4)">—— 「変わる前」「変わった後」が具体的なサービスほど高スコア</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:18px;padding:14px 16px;border-left:3px solid #c9a84c;background:rgba(201,168,76,.05);border-radius:0 8px 8px 0">
+    <p style="font-size:13px;margin:0;color:#b0aaa2;line-height:1.8">「きっかけ」と「失敗パターン」は特にスコアが高く、ユーザーの診断データと直接照合されます。しかし<strong style="color:#e8e2d4">すべての項目が積み重なってスコアを決める</strong>設計です——テキトーに2項目入れただけでは上位には出ません。</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════ 04 ： PLAN ═══════════════ -->
+<div class="section">
+  <div class="sec-num">04</div>
+  <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">掲載プラン</div></div>
+  <div class="lead">広告費ではなく、<br>「合う人に届く仕組み」への月額投資。</div>
+
+  <div class="plan-wrap">
+    <div class="plan-card">
+      <p style="font-size:11px;color:rgba(201,168,76,.5);letter-spacing:.1em;font-weight:700;font-family:'Hiragino Kaku Gothic Pro',sans-serif;text-transform:uppercase">Standard Plan</p>
+      <div class="plan-price">¥5,000</div>
+      <p class="plan-unit">/ 月（税別）+ 予約成約手数料</p>
+      <div class="plan-features">
+        <div class="plan-feat"><div class="feat-dot"></div>プロフィール・スタッフ紹介・施設写真・Before/After 掲載</div>
+        <div class="plan-feat"><div class="feat-dot"></div>ダッシュボード（閲覧数・問い合わせ数・紹介報酬の確認）</div>
+        <div class="plan-feat"><div class="feat-dot"></div>体験談の管理・表示/非表示の設定</div>
+        <div class="plan-feat"><div class="feat-dot"></div>Fineme Compassによるマッチング対象に自動で入る</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card-dark">
+      <p style="font-size:13px;color:#b0aaa2"><strong style="color:#e8e2d4;display:block;margin-bottom:6px">💴 月1件で回収できます</strong>客単価¥10,000〜¥30,000なら、月1〜3件の来店で元が取れます。</p>
+    </div>
+    <div class="card-dark">
+      <p style="font-size:13px;color:#b0aaa2"><strong style="color:#e8e2d4;display:block;margin-bottom:6px">🔗 紹介報酬制度あり</strong>紹介した事業者が掲載を開始すると月次報酬が発生。掲載料を実質ゼロ以下にできます。</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ 05 ： FIT ═══════════════ -->
+<div class="section">
+  <div class="sec-num">05</div>
+  <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">向いている人 ／ 向いていない人</div></div>
+
+  <div class="match-grid">
+    <div class="match-card yes">
+      <div class="match-head">
+        <span style="font-size:18px">✅</span>
+        <span style="color:#c9a84c">向いている人</span>
+      </div>
+      <ul class="check-list">
+        <li class="check-item"><div class="ic ic-yes">✓</div><span>自分の仕事に<strong>誇り</strong>がある</span></li>
+        <li class="check-item"><div class="ic ic-yes">✓</div><span>合う人と<strong>長く関係を築きたい</strong></span></li>
+        <li class="check-item"><div class="ic ic-yes">✓</div><span>選ばれる理由を<strong>言語化したい</strong></span></li>
+        <li class="check-item"><div class="ic ic-yes">✓</div><span>値引きではなく<strong>価値で勝負</strong>したい</span></li>
+        <li class="check-item"><div class="ic ic-yes">✓</div><span>「恋愛・自信・人生」の文脈に<strong>共感できる</strong></span></li>
+      </ul>
+    </div>
+
+    <div class="match-card no">
+      <div class="match-head">
+        <span style="font-size:18px">❌</span>
+        <span style="color:#a09890">向いていない人</span>
+      </div>
+      <ul class="check-list">
+        <li class="check-item"><div class="ic ic-no">✕</div><span>クーポン・値引きで集客したい</span></li>
+        <li class="check-item"><div class="ic ic-no">✕</div><span>とにかく数だけを追いたい</span></li>
+        <li class="check-item"><div class="ic ic-no">✕</div><span>仕組みを理解せずに使いたい</span></li>
+        <li class="check-item"><div class="ic ic-no">✕</div><span>HOT PEPPERの「安い代替」として考えている</span></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ 06 ： TIMING ═══════════════ -->
+<div class="section">
+  <div class="sec-num">06</div>
+  <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">今参加することの意味</div></div>
+  <div class="lead">地図が描かれていない場所に、<br>最初に名前を刻む。</div>
+
+  <div class="warn">
+    ⚠️ <strong>正直に：</strong>現在、ユーザー数はまだ少ないMVP段階です。掲載した翌日から予約が殺到することはお約束できません。
+  </div>
+
+  <div class="card-gold" style="margin-top:16px">
+    <p style="color:#c4bfb5">あるジャンルが「これを知りたければここを見ればいい」という場所になるとき、<strong>最初からそこにいた人が「基準」になります。</strong></p>
+    <p style="margin-top:12px;color:#c4bfb5">HOT PEPPERはすでに「完成した市場」の競争。Finemeはまだ「地図が描かれていない場所」です。今参加するのは、その地図に最初に名前を刻むことです。</p>
+
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:28px;height:28px;border-radius:7px;background:rgba(201,168,76,.15);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🏅</div>
+        <span style="font-size:14px;color:#b8b3ab"><strong>草創期ガイド</strong>のバッジ・ストーリーが永続表示</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:28px;height:28px;border-radius:7px;background:rgba(201,168,76,.15);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">💬</div>
+        <span style="font-size:14px;color:#b8b3ab">Finemeの設計・改善に<strong>直接フィードバック</strong>できる</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:28px;height:28px;border-radius:7px;background:rgba(201,168,76,.15);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">📈</div>
+        <span style="font-size:14px;color:#b8b3ab">ユーザーが増えるにつれ、<strong>先行者としての実績が蓄積</strong>される</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ 07 ： NEXT ═══════════════ -->
+<div class="section">
+  <div class="sec-num">07</div>
+  <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">次のステップ</div></div>
+  <div class="lead">まず話しましょう。<br>質問・懸念点はこの段階で何でも。</div>
+
+  <div class="step-list">
+    <div class="step-item">
+      <div class="step-num">1</div>
+      <div>
+        <div class="step-title">個別相談</div>
+        <div class="step-desc"><a href="https://www.fineme.me/provider/inquiry" style="color:#c9a84c;text-decoration:underline;text-underline-offset:3px" target="_blank">fineme.me/provider/inquiry</a> から相談フォームへ。または担当者より直接ご連絡します。</div>
+      </div>
+    </div>
+
+    <div class="step-item">
+      <div class="step-num">2</div>
+      <div>
+        <div class="step-title">プロフィール作成</div>
+        <div class="step-desc">ダッシュボードから、きっかけ・失敗パターン・施設写真・Before/Afterを記入。サポートが必要であればお手伝いします。</div>
+      </div>
+    </div>
+
+    <div class="step-item">
+      <div class="step-num">3</div>
+      <div>
+        <div class="step-title">公開 → マッチング開始</div>
+        <div class="step-desc">Me Scanを受けたユーザーのマッチング対象に入ります。Fineme Compassがあなたを推奨し始めます。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<div class="footer">
+  <p style="font-size:18px;color:#c9a84c;font-weight:700;letter-spacing:.04em;margin-bottom:6px">Fineme（ファインミ）</p>
+  <p style="font-size:13px;color:#a09890">外見を起点に、自信を再設計する人を増やす</p>
+  <p style="font-size:13px;color:#a09890;margin-top:6px">
+    <strong style="color:#c9a84c">www.fineme.me</strong>
+    ／ 相談：<a href="https://www.fineme.me/provider/inquiry" style="color:#c9a84c" target="_blank">fineme.me/provider/inquiry</a>
+  </p>
+  <p style="font-size:11px;color:#8a8480;margin-top:14px">この資料は社外秘です。掲載候補者以外への転送はご遠慮ください。</p>
+</div>
+
+</div>
+</body>
+</html>

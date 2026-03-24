@@ -1,5 +1,11 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const _sb = createClient(
+  'https://qsfpzlvucqzmjldshwwd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODM1MzIsImV4cCI6MjA4ODU1OTUzMn0.9mBlP8-0l9jotex_UkX7Ba8ZodYtailaxoK_RIy3Kq8'
+);
 
 export default function BillingPage() {
   const initialized = useRef(false);
@@ -47,19 +53,10 @@ export default function BillingPage() {
 
     const API = '/api/billing';
 
-    // ---- Supabase token ----
-    function getSupabaseToken() {
-      try {
-        const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-        if (!key) return null;
-        const obj = JSON.parse(localStorage.getItem(key) || 'null');
-        return obj?.access_token || null;
-      } catch { return null; }
-    }
-
-    // ---- Auth guard ----
-    const sbToken = getSupabaseToken();
-    if (!sbToken) { location.href = '/login?next=/provider/billing'; return; }
+    // ---- Main (async to support getSession) ----
+    (async () => {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) { location.href = '/login?type=provider&next=/provider/billing'; return; }
 
     // ---- Escape helper ----
     function esc(s) {
@@ -168,31 +165,16 @@ export default function BillingPage() {
       if (navigator.share) { navigator.share({ title: 'Fineme 掲載者になりませんか', url: el.value }); }
       else window.__billingCopyReferralLink();
     };
-    window.__billingOpenBillingPortal = async function () {
-      const token = getSupabaseToken();
-      if (!token) { alert('ログインが必要です'); return; }
-      try {
-        const res = await fetch(`${API}/portal-session`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({}),
-        });
-        const data = await res.json();
-        if (data.url) window.location.href = data.url;
-        else alert('ポータルの取得に失敗しました: ' + (data.error || '不明なエラー'));
-      } catch { alert('サーバーに接続できません。管理者にお問い合わせください。'); }
-    };
-
-    // Attach button event listeners (avoids global onclick)
+    // Attach button event listeners
     const copyBtn = document.querySelector('.copy-btn');
     if (copyBtn) copyBtn.addEventListener('click', window.__billingCopyReferralLink);
     const shareBtn = document.getElementById('share-referral-btn');
     if (shareBtn) shareBtn.addEventListener('click', window.__billingShareReferralLink);
-    const portalBtn = document.getElementById('billing-portal-btn');
-    if (portalBtn) portalBtn.addEventListener('click', window.__billingOpenBillingPortal);
 
     // ---- Init ----
-    initReferralLink(session);
+    const userId = session.user?.id;
+    const userEmail = session.user?.email;
+    initReferralLink({ id: userId, loginId: userId });
 
     (async () => {
       try {
@@ -205,17 +187,17 @@ export default function BillingPage() {
         const payments = await payRes.json();
         const referrals = await refRes.json();
 
-        const me = providers.find(p => p.loginId === session.loginId || p.id === session.id);
+        const me = providers.find(p => p.email === userEmail);
         if (me) {
           renderStatus(me.subscriptionStatus);
           const isActive = me.subscriptionStatus === 'active';
           renderKPI(isActive ? (me.planAmount || 3000) : 0, 0);
         }
 
-        const myPayments = payments.filter(p => p.providerEmail === session.email || p.providerId === session.id);
+        const myPayments = payments.filter(p => p.providerEmail === userEmail);
         renderPayments(myPayments);
 
-        const myReferrals = referrals.filter(r => r.referrerId === session.id || r.referrerEmail === session.email);
+        const myReferrals = referrals.filter(r => r.referrerEmail === userEmail);
         const thisMonth = new Date().toISOString().slice(0, 7);
         const monthReward = myReferrals.filter(r => r.periodYearMonth === thisMonth).reduce((s, r) => s + (r.rewardAmount || 0), 0);
         if (me) {
@@ -229,6 +211,8 @@ export default function BillingPage() {
         renderKPI(0, 0);
       }
     })();
+
+    })(); // end main async IIFE
 
     return () => { try { document.head.removeChild(style); } catch {} };
   }, []);
@@ -368,8 +352,8 @@ export default function BillingPage() {
             className="btn btn-ghost"
             onClick={async () => {
               try {
-                const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-                const token = key ? JSON.parse(localStorage.getItem(key) || 'null')?.access_token : null;
+                const { data: { session } } = await _sb.auth.getSession();
+                const token = session?.access_token;
                 if (!token) { alert('ログインが必要です'); return; }
                 const res = await fetch('/api/billing/portal-session', {
                   method: 'POST',

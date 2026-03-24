@@ -508,49 +508,75 @@ function renderTop3(result, p1, p2, scores) {
     </div>`).join('');
 }
 
-// ── 未診断ユーザー向けサンプル ────────────────────────────────────────
+// ── 未診断ユーザー向けサンプル（Me Scanスタイル）────────────────────────────
 function renderSamples() {
   const grid = document.getElementById('sample-grid');
   if (!grid) return;
 
-  // 「これ自分だ」と感じるパターン設計
+  // Me Scanでどんな結果が出るかを示すサンプルパターン
   const PATTERNS = [
     {
-      badge: '全体的に低め',
+      badge: 'サンプルA',
+      compass: '眉毛',
+      compassIcon: '✂️',
       tagline: '「なんか垢抜けない」が口癖になっているタイプ。',
-      phase1: ['眉(3点)', '歯(3点)', '肌(4点)', '髪(4点)'],
-      phase1Copy: '眉・歯・肌の順に着手。3ヶ月で、周囲の反応が変わります。',
+      axes: [
+        { icon:'✂️', label:'眉毛', gap:3, tier:1 },
+        { icon:'💇', label:'髪・ヘア', gap:2, tier:1 },
+        { icon:'✨', label:'肌', gap:2, tier:2 },
+      ],
+      copy: '眉→髪の順に着手。Tier1の2軸を整えるだけで、3ヶ月で周囲の反応が変わります。',
       accent: '#4f46e5',
     },
     {
-      badge: '部分的に引っかかる',
-      tagline: '他はそこそこ整っているのに、特定の部分だけ気になる。',
-      phase1: ['体型(4点)', '歯(5点)'],
-      phase1Copy: '体型と歯を片付けると、土台が整って全体のバランスが取れます。',
+      badge: 'サンプルB',
+      compass: '体型・ボディ',
+      compassIcon: '💪',
+      tagline: '体型が気になって、着こなしに自信が持てないタイプ。',
+      axes: [
+        { icon:'💪', label:'体型', gap:3, tier:1 },
+        { icon:'👔', label:'服・コーデ', gap:2, tier:1 },
+        { icon:'🦷', label:'歯・口元', gap:1, tier:3 },
+      ],
+      copy: 'コンパスは体型。まずパーソナルジムで基礎を作り、並走で服のスタイリングを整える。',
       accent: '#0891b2',
     },
     {
-      badge: '土台は整っているが...',
-      tagline: '見た目は悪くないのに、なぜか恋愛につながっていない。',
-      phase1: ['外見コンサル', 'プロフィール写真', '婚活・出会いの場'],
-      phase1Copy: '土台は十分。コンサルで全体を統合し、出会いの場に活かす段階です。',
+      badge: 'サンプルC',
+      compass: '髪・ヘア',
+      compassIcon: '💇',
+      tagline: '肌も眉も整えているのに「なぜか垢抜けない」と感じるタイプ。',
+      axes: [
+        { icon:'💇', label:'髪・ヘア', gap:4, tier:1 },
+        { icon:'✨', label:'肌', gap:1, tier:2 },
+        { icon:'✂️', label:'眉毛', gap:1, tier:1 },
+      ],
+      copy: '盲点は髪。自己流で整えているが客観評価がない状態。プロに1度見てもらうだけで変わる。',
       accent: '#059669',
     },
   ];
 
   grid.innerHTML = PATTERNS.map(p => `
     <div class="card" style="padding:18px;border-top:3px solid ${p.accent};">
-      <div style="display:inline-block;font-size:11px;font-weight:800;padding:3px 10px;
-        background:${p.accent};color:#fff;border-radius:99px;margin-bottom:10px;">${p.badge}</div>
-      <p style="font-size:14px;font-weight:600;margin:0 0 10px;line-height:1.5;">${p.tagline}</p>
-      <div style="margin-bottom:12px;">
-        <p style="font-size:11px;font-weight:700;color:#9ca3af;margin:0 0 4px;
-          text-transform:uppercase;letter-spacing:.06em;">Phase 1 — 着手項目</p>
-        ${p.phase1.map(item => `<div style="font-size:13px;padding:3px 0;color:#374151;">&#9654; ${item}</div>`).join('')}
+      <div style="display:inline-block;font-size:10px;font-weight:800;padding:2px 8px;
+        background:${p.accent}22;color:${p.accent};border-radius:99px;margin-bottom:8px;border:1px solid ${p.accent}44;">${p.badge}</div>
+      <p style="font-size:14px;font-weight:600;margin:0 0 12px;line-height:1.5;color:#0f172a;">${p.tagline}</p>
+      <div style="background:#f8fafc;border-radius:10px;padding:10px 12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:800;color:#9ca3af;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;">🧭 Finemeコンパス</div>
+        <div style="font-size:17px;font-weight:800;color:#0f172a;">${p.compassIcon} ${p.compass}</div>
       </div>
-      <p style="font-size:13px;color:#6b7280;line-height:1.6;margin:0 0 14px;">${p.phase1Copy}</p>
-      <a href="./pages/diagnosis.html" class="btn btn-ghost"
-        style="font-size:13px;width:100%;text-align:center;display:block;">自分の結果を見る</a>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">
+        ${p.axes.map((ax,i) => `
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+            <span style="font-size:15px;">${ax.icon}</span>
+            <span style="font-weight:700;color:#374151;flex:1;">${ax.label}</span>
+            <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:${ax.tier===1?'#dbeafe':ax.tier===2?'#d1fae5':'#fef3c7'};color:${ax.tier===1?'#1d4ed8':ax.tier===2?'#065f46':'#92400e'};">Tier${ax.tier}</span>
+            <span style="font-size:12px;font-weight:700;color:#dc2626;">+${ax.gap}</span>
+          </div>`).join('')}
+      </div>
+      <p style="font-size:12px;color:#6b7280;line-height:1.6;margin:0 0 14px;">${p.copy}</p>
+      <a href="/diagnosis" class="btn btn-ghost"
+        style="font-size:13px;width:100%;text-align:center;display:block;">自分のNew Me Mapを作る →</a>
     </div>`).join('');
 }
 
@@ -744,6 +770,60 @@ function adaptV8toDiag(v) {
   };
 }
 
+// ── v9_me_scan ユーザー向け変容ダッシュボードプレビュー ────────────────────
+function renderV9(v) {
+  const compassFirst = v.compass_first;
+  const tv = v.transform_vectors || {};
+  const compassVec = tv[compassFirst] || {};
+  const AXIS_ICONS   = { body:'💪', eyebrow:'✂️', fashion:'👔', hair:'💇', skin:'✨', teeth:'🦷', nail:'💅' };
+  const AXIS_LABELS  = { body:'体型・ボディ', eyebrow:'眉毛', fashion:'服・コーデ', hair:'髪・ヘア', skin:'肌・エステ', teeth:'歯・口元', nail:'爪' };
+  const AXIS_TO_CAT  = { body:'gym', eyebrow:'eyebrow', fashion:'fashion', hair:'hair', skin:'esthetic', teeth:'whitening', nail:'nail' };
+  const compassLabel    = AXIS_LABELS[compassFirst] || compassFirst || '—';
+  const compassIcon     = AXIS_ICONS[compassFirst]  || '🧭';
+  const compassCategory = AXIS_TO_CAT[compassFirst];
+  const goalText = v.goal_change ? String(v.goal_change).slice(0, 60) + (String(v.goal_change).length > 60 ? '…' : '') : null;
+
+  const roadmapEl = document.getElementById('roadmap-section');
+  if (!roadmapEl) return;
+  const container = roadmapEl.querySelector('.container');
+  if (!container) return;
+
+  const gapBadge = (compassVec.gap > 0)
+    ? `<span style="font-size:12px;color:#4f46e5;">ギャップ +${compassVec.gap}（現在地 ${compassVec.current} → 理想 ${compassVec.ideal}）</span>`
+    : '';
+
+  const goalHtml = goalText
+    ? `<div style="background:rgba(255,255,255,.7);border-left:3px solid #6366f1;padding:10px 14px;border-radius:0 8px 8px 0;margin-bottom:16px;font-size:13px;color:#1e1b4b;line-height:1.6;">"${goalText}"</div>`
+    : '';
+
+  container.innerHTML = `
+    <div>
+      <span style="display:inline-block;font-size:11px;font-weight:800;padding:3px 10px;background:#6366f1;color:#fff;border-radius:99px;margin-bottom:10px;">Me Scan済み</span>
+      <h2 style="font-size:clamp(18px,4vw,24px);font-weight:800;margin:0 0 4px;">変容ダッシュボード</h2>
+      <p style="font-size:13px;color:#6b7280;margin:0 0 16px;">あなたのNew Me Mapが生成されています。続きの旅へ。</p>
+    </div>
+    <div style="background:linear-gradient(135deg,#eff6ff,#eef2ff);border:1.5px solid #a5b4fc;border-radius:18px;padding:22px 22px;">
+      <div style="font-size:11px;font-weight:800;color:#6366f1;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;">🧭 Finemeコンパス — 最初の一手</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <span style="font-size:36px;line-height:1;">${compassIcon}</span>
+        <div>
+          <div style="font-size:22px;font-weight:900;color:#0f172a;line-height:1.2;">${compassLabel}</div>
+          ${gapBadge}
+        </div>
+      </div>
+      ${goalHtml}
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">
+        <a href="/diagnosis/result" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#1d4ed8;color:#fff;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">🗺️ New Me Mapを見る</a>
+        <a href="/mypage/navi" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">🧭 New Me Naviへ</a>
+        ${compassCategory ? `<a href="/search?category=${compassCategory}" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">${compassIcon} ガイドを探す</a>` : ''}
+      </div>
+    </div>
+    <p style="font-size:12px;color:#9ca3af;text-align:right;margin-top:8px;">
+      <a href="/diagnosis" style="color:#6366f1;text-decoration:none;font-weight:600;">再スキャンする →</a>
+    </p>
+  `;
+}
+
 // Supabase セッションの有無をlocalStorageから直接確認（import不要）
 function _hasSupabaseSession() {
   try {
@@ -761,13 +841,14 @@ function init() {
     // ログイン済みの場合のみロードマップを表示
     // 未ログイン時はサンプルを表示（ログアウト後にロードマップが残らないようにする）
 
-    // v8〜v5 → v4 → v2 の順で読み込み
+    // v9 → v8〜v5 → v4 → v2 の順で読み込み
     let diag = null;
     const rawV4 = localStorage.getItem(DIAG_KEY_V4);
     if (rawV4) {
       try {
         const v = JSON.parse(rawV4);
-        if (['v5','v6','v7','v8'].includes(v.version)) diag = adaptV8toDiag(v);
+        if (v.version === 'v9_me_scan') diag = { _v9: true, raw: v };
+        else if (['v5','v6','v7','v8'].includes(v.version)) diag = adaptV8toDiag(v);
         else if (v.version === 'v4') diag = adaptV4toDiag(v);
         else if (v.scores) diag = v;
       } catch {}
@@ -776,7 +857,7 @@ function init() {
       const rawV2 = localStorage.getItem(DIAG_KEY_V2);
       if (rawV2) { try { diag = JSON.parse(rawV2); } catch {} }
     }
-    const hasDiag = diag && diag.scores && Object.keys(diag.scores).length >= 1;
+    const hasDiag = diag && (diag._v9 ? true : (diag.scores && Object.keys(diag.scores).length >= 1));
     const loggedIn = _hasSupabaseSession();
 
     const roadmapEl = document.getElementById('roadmap-section');
@@ -785,6 +866,7 @@ function init() {
     if (hasDiag && loggedIn) {
       if (roadmapEl) roadmapEl.style.display = '';
       if (sampleEl)  sampleEl.style.display  = 'none';
+      if (diag._v9) { renderV9(diag.raw); return; }
       renderDiagnosed(diag);
       // マイページ「ロードマップを見る」経由の場合、ロードマップ箇所にスクロール
       if (new URLSearchParams(location.search).get('scrollTo') === 'roadmap') {

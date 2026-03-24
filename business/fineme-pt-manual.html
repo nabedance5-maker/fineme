@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fineme — PT 業務マニュアル</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Hiragino Mincho Pro','Noto Serif JP',Georgia,serif;
+    background-color:#060c1a;
+    background-image:
+      linear-gradient(rgba(6,12,26,0.93),rgba(6,12,26,0.93)),
+      url('../public/assets/images/bg-parchment.webp');
+    background-size:auto, 500px auto;
+    color:#c4bfb5;line-height:1.8;font-size:15px;
+  }
+  .page{max-width:860px;margin:0 auto;padding:0 0 120px}
+
+  /* ── HERO ── */
+  .hero{
+    position:relative;overflow:hidden;
+    padding:72px 40px 60px;
+    background:
+      linear-gradient(rgba(6,12,26,0.72), rgba(10,15,30,0.90)),
+      url('../public/assets/images/hero-bg.webp') center / cover no-repeat;
+    border-bottom:1px solid rgba(201,168,76,.2);
+  }
+  .hero::before{
+    content:'';position:absolute;top:-60px;right:-60px;
+    width:380px;height:380px;border-radius:50%;
+    background:radial-gradient(circle,rgba(201,168,76,.1) 0%,transparent 70%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;max-width:600px}
+  .hero-badge{
+    display:inline-block;font-size:10px;font-weight:700;letter-spacing:.14em;
+    color:rgba(201,168,76,.65);font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    text-transform:uppercase;margin-bottom:18px;
+    border:1px solid rgba(201,168,76,.25);padding:4px 14px;border-radius:99px;
+    background:rgba(201,168,76,.06);
+  }
+  .hero h1{font-size:36px;font-weight:800;line-height:1.35;letter-spacing:.01em;color:#f0ece4;margin-bottom:16px}
+  .hero-sub{font-size:15px;color:#b0aaa2;line-height:2;max-width:520px}
+  .hero-sub strong{color:#c9a84c}
+
+  /* ── Section ── */
+  .section{padding:52px 40px;border-bottom:1px solid rgba(255,255,255,.04);position:relative}
+  .section:nth-child(even){
+    background:
+      linear-gradient(rgba(8,14,28,0.97),rgba(8,14,28,0.97)),
+      url('../public/assets/images/bg-parchment.webp') center / 400px auto;
+  }
+  .sec-num{font-size:110px;font-weight:900;color:rgba(201,168,76,.04);position:absolute;top:16px;right:32px;line-height:1;font-family:'Hiragino Kaku Gothic Pro',sans-serif;pointer-events:none;user-select:none}
+  .sec-label{display:inline-flex;align-items:center;gap:8px;margin-bottom:14px}
+  .sec-label-line{width:24px;height:1.5px;background:#c9a84c;opacity:.55}
+  .sec-label-text{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(201,168,76,.7);font-family:'Hiragino Kaku Gothic Pro',sans-serif}
+  .lead{font-size:22px;font-weight:800;line-height:1.5;color:#f0ece4;margin-bottom:20px;max-width:580px}
+  .lead-sub{font-size:14px;color:#b0aaa2;line-height:1.9;margin-bottom:24px}
+
+  p{color:#c4bfb5;font-size:14px;line-height:2}
+  p+p{margin-top:10px}
+  ul,ol{padding-left:0;list-style:none}
+  li{color:#c4bfb5;font-size:14px;line-height:2}
+  strong{color:#e8e2d4;font-weight:700}
+
+  /* ── Cards ── */
+  .card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:22px;margin-bottom:12px}
+  .card-gold{background:linear-gradient(rgba(8,14,28,0.88),rgba(8,14,28,0.88)),url('../public/assets/images/bg-parchment.webp') center/300px auto;border:1px solid rgba(201,168,76,.22);border-radius:14px;padding:22px;margin-bottom:12px}
+  .card-title{font-size:15px;font-weight:800;color:#e8e2d4;margin-bottom:8px;font-family:'Hiragino Kaku Gothic Pro',sans-serif}
+  .card-sub{font-size:13px;color:#a09890;line-height:1.75}
+
+  /* ── Insight / Warn ── */
+  .insight{background:rgba(201,168,76,.06);border-left:3px solid #c9a84c;border-radius:0 10px 10px 0;padding:14px 20px;margin:20px 0;font-size:14px;color:#c4bfb5;line-height:1.85}
+  .warn{background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:14px 20px;font-size:13px;color:#f87171;margin:14px 0}
+  .tip{background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.15);border-radius:10px;padding:14px 20px;font-size:13px;color:#86efac;margin:14px 0}
+
+  /* ── Journey ── */
+  .journey{position:relative;margin:24px 0;padding-left:20px}
+  .journey::before{content:'';position:absolute;left:19px;top:28px;bottom:28px;width:1.5px;background:linear-gradient(to bottom,rgba(201,168,76,.4),rgba(201,168,76,.1))}
+  .j-step{display:flex;gap:20px;position:relative}
+  .j-step+.j-step{margin-top:4px}
+  .j-icon{width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(201,168,76,.45);background:rgba(201,168,76,.08);color:#c9a84c;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;font-family:'Hiragino Kaku Gothic Pro',sans-serif;letter-spacing:.04em;position:relative;z-index:1}
+  .j-body{padding:10px 0 24px}
+  .j-title{font-size:15px;font-weight:700;color:#e8e2d4;margin-bottom:3px}
+  .j-desc{font-size:13px;color:#a09890;line-height:1.75}
+  .j-tag{display:inline-block;padding:2px 10px;border-radius:99px;font-size:10px;font-weight:700;font-family:'Hiragino Kaku Gothic Pro',sans-serif;margin-left:8px;vertical-align:middle}
+  .j-tag-gold{background:rgba(201,168,76,.12);color:#c9a84c;border:1px solid rgba(201,168,76,.3)}
+  .j-tag-green{background:rgba(74,222,128,.08);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+
+  /* ── Table ── */
+  .tbl{width:100%;border-collapse:collapse;margin:18px 0;font-size:13px}
+  .tbl th{background:rgba(201,168,76,.08);color:#c9a84c;font-weight:700;padding:10px 14px;text-align:left;border:1px solid rgba(201,168,76,.15);font-family:'Hiragino Kaku Gothic Pro',sans-serif;letter-spacing:.04em}
+  .tbl td{padding:10px 14px;border:1px solid rgba(255,255,255,.06);color:#c4bfb5;vertical-align:top;line-height:1.75}
+  .tbl tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+
+  /* ── Tools grid ── */
+  .tools-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}
+  .tool-item{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px 18px}
+  .tool-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(201,168,76,.6);font-family:'Hiragino Kaku Gothic Pro',sans-serif;margin-bottom:6px}
+  .tool-name{font-size:14px;font-weight:700;color:#e8e2d4;margin-bottom:4px}
+  .tool-url{font-size:12px;color:#c9a84c;font-family:'Hiragino Kaku Gothic Pro',sans-serif;word-break:break-all}
+  .tool-desc{font-size:12px;color:#a09890;margin-top:4px;line-height:1.65}
+
+  /* ── FAQ ── */
+  .faq-item{border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:18px 20px;margin-bottom:10px;background:rgba(255,255,255,.02)}
+  .faq-q{font-size:14px;font-weight:700;color:#e8e2d4;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
+  .faq-q::before{content:'Q';color:#c9a84c;font-weight:900;font-family:'Hiragino Kaku Gothic Pro',sans-serif;flex-shrink:0}
+  .faq-a{font-size:13px;color:#b0aaa2;line-height:1.85;padding-left:22px}
+
+  /* ── Reward box ── */
+  .reward-box{background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.2);border-radius:16px;padding:28px 28px;margin:20px 0;text-align:center}
+  .reward-formula{font-size:22px;font-weight:800;color:#c9a84c;font-family:'Hiragino Kaku Gothic Pro',sans-serif;letter-spacing:.04em;margin-bottom:6px}
+  .reward-note{font-size:13px;color:#a09890}
+  .reward-example{display:flex;justify-content:center;gap:24px;margin-top:20px;flex-wrap:wrap}
+  .reward-eg{background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 20px;text-align:center;min-width:120px}
+  .reward-eg-num{font-size:11px;color:#a09890;margin-bottom:4px}
+  .reward-eg-val{font-size:18px;font-weight:800;color:#e8e2d4;font-family:'Hiragino Kaku Gothic Pro',sans-serif}
+
+  /* ── Print ── */
+  .print-btn{position:fixed;bottom:24px;right:24px;background:linear-gradient(135deg,#c9a84c,#e6c96e);color:#0a0f1e;border:none;border-radius:99px;padding:12px 22px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.04em;font-family:'Hiragino Kaku Gothic Pro',sans-serif;box-shadow:0 4px 20px rgba(201,168,76,.35);z-index:100}
+  .print-btn:hover{opacity:.9}
+  @media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact} .print-btn{display:none}}
+
+  @media(max-width:600px){
+    .hero{padding:48px 20px 40px}
+    .hero h1{font-size:26px}
+    .section{padding:40px 20px}
+    .tools-grid{grid-template-columns:1fr}
+    .reward-example{gap:12px}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge">Fineme — Internal Document</div>
+      <h1>PT 業務マニュアル</h1>
+      <p class="hero-sub">
+        掲載者部門統括としての役割・報酬・業務フローをまとめた内部資料です。<br>
+        <strong>疑問が出たらこのドキュメントを最初に確認してください。</strong>
+      </p>
+    </div>
+  </div>
+
+  <!-- 01 役割定義 -->
+  <div class="section">
+    <div class="sec-num">01</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Role</div></div>
+    <div class="lead">あなたは「掲載者部門統括」です</div>
+    <p class="lead-sub">Finemeの事業成長は掲載者数に直結します。その掲載者を集め・管理し・育てる部門を統括するのがこの役割です。</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px">
+      <div class="card-gold">
+        <div class="card-title">📋 掲載者管理・営業統括</div>
+        <div class="card-sub">掲載者の獲得（紹介・声がけ）から登録・稼働・フォローアップまでを担う。オーナーと週次/隔週で進捗を共有する。</div>
+      </div>
+      <div class="card-gold">
+        <div class="card-title">🪞 掲載者として自ら参画</div>
+        <div class="card-sub">自分自身も掲載者として登録・運用する。掲載者目線での課題・改善要望をフィードバックする役割も持つ。</div>
+      </div>
+    </div>
+
+    <div class="insight">
+      Finemeは「外見を起点に自信を再設計するプラットフォーム」です。掲載者は単なる出品者ではなく<strong>「変容の旅の道案内人（ガイド）」</strong>として位置づけています。その価値観を掲載者と共有することが営業の核心です。
+    </div>
+  </div>
+
+  <!-- 02 報酬体系 -->
+  <div class="section">
+    <div class="sec-num">02</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Reward</div></div>
+    <div class="lead">報酬体系</div>
+
+    <div class="reward-box">
+      <div class="reward-formula">¥500 × 有料掲載者数 / 月</div>
+      <div class="reward-note">最低保証 ¥10,000 / 月（掲載者数に関わらず保証）</div>
+      <div class="reward-example">
+        <div class="reward-eg"><div class="reward-eg-num">掲載者 20社</div><div class="reward-eg-val">¥10,000</div></div>
+        <div class="reward-eg"><div class="reward-eg-num">掲載者 30社</div><div class="reward-eg-val">¥15,000</div></div>
+        <div class="reward-eg"><div class="reward-eg-num">掲載者 60社</div><div class="reward-eg-val">¥30,000</div></div>
+        <div class="reward-eg"><div class="reward-eg-num">掲載者 100社</div><div class="reward-eg-val">¥50,000</div></div>
+      </div>
+    </div>
+
+    <table class="tbl">
+      <tr><th>項目</th><th>内容</th></tr>
+      <tr><td><strong>カウント対象</strong></td><td>その月に課金が発生している有料掲載者数（無料期間中はカウント外）</td></tr>
+      <tr><td><strong>課金開始タイミング</strong></td><td>Fineme経由で初回予約が入った月から。それまでは掲載しても課金なし</td></tr>
+      <tr><td><strong>支払いタイミング</strong></td><td>毎月末締め→翌月15日払い（別途確認）</td></tr>
+      <tr><td><strong>最低保証の適用</strong></td><td>有料掲載者数×¥500が¥10,000を下回る月は¥10,000を支払う</td></tr>
+    </table>
+
+    <div class="tip">
+      掲載者が増えるほどあなたの収入も増えます。Phase 1目標の10社到達で最低保証を超えます。20社で¥10,000、60社で¥30,000。フライホイールを回すことがそのまま自分の収益につながる設計です。
+    </div>
+  </div>
+
+  <!-- 03 ツール・資料 -->
+  <div class="section">
+    <div class="sec-num">03</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Tools &amp; Materials</div></div>
+    <div class="lead">使うツール・資料一覧</div>
+    <p class="lead-sub">営業・管理・フォローアップで使うURLと用途をまとめています。</p>
+
+    <div class="tools-grid">
+      <div class="tool-item">
+        <div class="tool-label">営業資料</div>
+        <div class="tool-name">掲載のご案内</div>
+        <div class="tool-url">fineme.me/business/fineme-provider-pitch.html</div>
+        <div class="tool-desc">掲載者に最初に見せる提案資料。Finemeの仕組み・掲載メリット・スコアリング・プラン説明が入っている。</div>
+      </div>
+      <div class="tool-item">
+        <div class="tool-label">登録ガイド</div>
+        <div class="tool-name">セットアップガイド</div>
+        <div class="tool-url">fineme.me/business/fineme-onboarding-guide.html</div>
+        <div class="tool-desc">掲載者が登録後にプロフィールを充実させるための手順書。「何を入力すればマッチングに効くか」を解説。</div>
+      </div>
+      <div class="tool-item">
+        <div class="tool-label">掲載者登録ページ</div>
+        <div class="tool-name">掲載者申し込みフォーム</div>
+        <div class="tool-url">fineme.me/provider/join</div>
+        <div class="tool-desc">掲載者が実際にアカウント登録するページ。営業後にこのURLを共有する。</div>
+      </div>
+      <div class="tool-item">
+        <div class="tool-label">管理画面</div>
+        <div class="tool-name">運営管理ダッシュボード</div>
+        <div class="tool-url">fineme.me/admin</div>
+        <div class="tool-desc">掲載者一覧・予約・問い合わせ・課金状況を確認できる。管理者キーが必要（オーナーから共有）。</div>
+      </div>
+      <div class="tool-item">
+        <div class="tool-label">掲載者ダッシュボード</div>
+        <div class="tool-name">掲載者が使う管理画面</div>
+        <div class="tool-url">fineme.me/provider/dashboard</div>
+        <div class="tool-desc">掲載者自身が予約・プロフィール・統計を管理する画面。サポート時に参照する。</div>
+      </div>
+      <div class="tool-item">
+        <div class="tool-label">診断ロジック解説</div>
+        <div class="tool-name">Me Scan の仕組み</div>
+        <div class="tool-url">fineme.me/business/fineme-diagnosis-logic.html</div>
+        <div class="tool-desc">Finemeの診断がどう掲載者マッチングに繋がるかを解説。掲載者から「なぜFinemeか？」と聞かれたときに使う。</div>
+      </div>
+    </div>
+
+    <div class="warn">
+      <strong>⚠️ business/ 配下のURLは管理者ログイン後のみ閲覧可能です。</strong>掲載者への共有は fineme-provider-pitch.html と fineme-onboarding-guide.html のみとし、他の内部資料のご共有はお控えいただきますようお願いいたします。
+    </div>
+  </div>
+
+  <!-- 04 掲載者獲得フロー -->
+  <div class="section">
+    <div class="sec-num">04</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Sales Flow</div></div>
+    <div class="lead">掲載者獲得フロー</div>
+    <p class="lead-sub">ターゲットを見つけてから有料掲載が始まるまでの標準フローです。</p>
+
+    <div class="journey">
+      <div class="j-step">
+        <div class="j-icon">01</div>
+        <div class="j-body">
+          <div class="j-title">ターゲット選定 <span class="j-tag j-tag-gold">優先度高</span></div>
+          <div class="j-desc">
+            個人運営のパーソナルトレーナー・ネイリスト・ヘアスタイリスト・メイクアップアーティスト等。チェーン店より個人PT・フリーランス系が意思決定が早い。知人ネットワーク・SNS（Instagram / TikTok）で見つける。
+          </div>
+        </div>
+      </div>
+      <div class="j-step">
+        <div class="j-icon">02</div>
+        <div class="j-body">
+          <div class="j-title">初回アプローチ</div>
+          <div class="j-desc">
+            直接声がけ or DMで「外見磨きの男性向けポータルに掲載しませんか」と連絡。最初は長文説明より「一度見てほしいページがある」がベター。掲載のご案内（fineme-provider-pitch.html）のURLを共有する。
+          </div>
+        </div>
+      </div>
+      <div class="j-step">
+        <div class="j-icon">03</div>
+        <div class="j-body">
+          <div class="j-title">資料説明 &amp; 質問対応</div>
+          <div class="j-desc">
+            資料を見た反応に対して質問に答える。「費用はいつから？」→ Fineme経由で初回予約が入った月から。「何を登録すればいい？」→ セットアップガイドを共有。よくある質問はセクション08（FAQ）を参照。
+          </div>
+        </div>
+      </div>
+      <div class="j-step">
+        <div class="j-icon">04</div>
+        <div class="j-body">
+          <div class="j-title">アカウント登録 <span class="j-tag j-tag-green">掲載者が自分で実施</span></div>
+          <div class="j-desc">
+            fineme.me/provider/join から登録。メールアドレスとパスワードで作成。登録後はダッシュボードからプロフィール・サービス・スタッフ情報を入力する。
+          </div>
+        </div>
+      </div>
+      <div class="j-step">
+        <div class="j-icon">05</div>
+        <div class="j-body">
+          <div class="j-title">プロフィール充実サポート <span class="j-tag j-tag-gold">ここが差をつけるポイント</span></div>
+          <div class="j-desc">
+            セットアップガイドを渡して自分で入力してもらう。特に「きっかけ（suitable_triggers）」「失敗パターン（handles_failure_patterns）」の2項目がマッチングスコアに最も影響する。ここを埋めてもらえるかが勝負。
+          </div>
+        </div>
+      </div>
+      <div class="j-step">
+        <div class="j-icon">06</div>
+        <div class="j-body">
+          <div class="j-title">初回予約・課金開始 <span class="j-tag j-tag-green">報酬カウント開始</span></div>
+          <div class="j-desc">
+            Fineme経由で初回予約が入ると自動的に課金が始まる。その月から報酬カウント対象になる。掲載者への通知は自動送信（メール）。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight">
+      <strong>創業パートナー制度</strong>（3〜5社限定）の掲載者には、月1回Zoomフィードバック + LINEレポートに参加してもらうことでその月の掲載料¥5,000が無料になる特典があります。初期の掲載者獲得では積極的に活用してください。資料: fineme-founding-partner.html（内部資料のため外部への共有はお控えください）
+    </div>
+  </div>
+
+  <!-- 05 管理方法 -->
+  <div class="section">
+    <div class="sec-num">05</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Management</div></div>
+    <div class="lead">管理画面でできること</div>
+    <p class="lead-sub">fineme.me/admin（管理者キー必要）から掲載者・予約・問い合わせを一元管理できます。</p>
+
+    <table class="tbl">
+      <tr><th>機能</th><th>できること</th><th>主な用途</th></tr>
+      <tr>
+        <td><strong>掲載者管理</strong></td>
+        <td>掲載者一覧・プラン・課金状況・承認/非承認の切り替え</td>
+        <td>登録確認・課金状態の把握</td>
+      </tr>
+      <tr>
+        <td><strong>問い合わせ管理</strong></td>
+        <td>ユーザーからの予約リクエスト一覧・ステータス管理</td>
+        <td>未対応の問い合わせを見落とさないため</td>
+      </tr>
+      <tr>
+        <td><strong>体験談管理</strong></td>
+        <td>ユーザー投稿の体験談一覧・承認</td>
+        <td>不適切なコンテンツのチェック</td>
+      </tr>
+      <tr>
+        <td><strong>統計・ページビュー</strong></td>
+        <td>各掲載者のページ閲覧数・予約数の確認</td>
+        <td>掲載者へのフィードバック根拠として使う</td>
+      </tr>
+    </table>
+
+    <div class="warn">
+      管理者キーはオーナーからお伝えします。第三者への共有はセキュリティ上お控えいただきますようお願いいたします。business/ 配下の内部資料へのアクセスにも同じキーを使います。
+    </div>
+  </div>
+
+  <!-- 06 課金ルール -->
+  <div class="section">
+    <div class="sec-num">06</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Billing Rules</div></div>
+    <div class="lead">課金ルール（掲載者への説明用）</div>
+
+    <div class="card-gold">
+      <div class="card-title">課金開始トリガー：Fineme経由の初回予約が入った月から</div>
+      <div class="card-sub" style="margin-top:8px">
+        登録しただけでは課金されない。成果が出るまで費用は発生しない設計。<br>
+        「無料で使えるもの」ではなく「成果連動の有料掲載」というスタンスで伝える。
+      </div>
+    </div>
+
+    <table class="tbl" style="margin-top:16px">
+      <tr><th>プラン</th><th>月額</th><th>予約手数料</th><th>特徴</th></tr>
+      <tr><td><strong>A</strong></td><td>¥5,000</td><td>8.3%</td><td>スタンダード</td></tr>
+      <tr><td><strong>B</strong></td><td>¥7,000</td><td>7.0%</td><td>手数料を抑えたい場合</td></tr>
+      <tr><td><strong>C</strong></td><td>¥10,000</td><td>5.5%</td><td>予約単価が高い掲載者向け</td></tr>
+    </table>
+
+    <div class="insight">
+      プランの選び方の目安：平均予約単価が¥7,000以下ならA、¥10,000以上ならCがお得になります。迷ったらAを勧めてOKです。
+    </div>
+  </div>
+
+  <!-- 07 報告ルール -->
+  <div class="section">
+    <div class="sec-num">07</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Reporting</div></div>
+    <div class="lead">報告・連絡のルール</div>
+
+    <table class="tbl">
+      <tr><th>頻度</th><th>内容</th><th>方法</th></tr>
+      <tr>
+        <td><strong>隔週</strong></td>
+        <td>進捗共有（アプローチ数・登録数・課金開始数）・課題・フィードバック</td>
+        <td>Zoom or 対面（30分程度）</td>
+      </tr>
+      <tr>
+        <td><strong>随時</strong></td>
+        <td>掲載者からのクレーム・トラブル・イレギュラーな問い合わせ</td>
+        <td>LINE でオーナーに即連絡</td>
+      </tr>
+      <tr>
+        <td><strong>月次</strong></td>
+        <td>有料掲載者数の確定・報酬額の確認</td>
+        <td>月末に管理画面から数字を確認してLINE共有</td>
+      </tr>
+    </table>
+
+    <div class="tip">
+      「問題が起きてから報告」より「怪しいと感じた段階でLINE共有」のほうが対応をスムーズに進められます。特にキャンセル・クレーム・悪い口コミは早期の共有でダメージを最小化できますので、ぜひ気軽にご連絡ください。
+    </div>
+  </div>
+
+  <!-- 08 FAQ -->
+  <div class="section">
+    <div class="sec-num">08</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">FAQ</div></div>
+    <div class="lead">よくある質問と回答</div>
+
+    <div class="faq-item">
+      <div class="faq-q">「本当に費用はかからないの？」</div>
+      <div class="faq-a">Fineme経由で予約が入るまで一切費用は発生しません。登録してプロフィールを作るだけなら完全無料です。「成果が出たら払う」という設計になっています。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">「ホットペッパービューティーとどう違うの？」</div>
+      <div class="faq-a">ホットペッパーは「サービスを探す人が来るポータル」ですが、Finemeは「恋愛・自信・外見改善に悩んでいる男性が診断を受けた後にマッチングされる仕組み」です。来る人の動機が強く、購買意欲が高い状態でプロフィールに来ます。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">「どんな情報を登録すればいい？」</div>
+      <div class="faq-a">セットアップガイド（fineme.me/business/fineme-onboarding-guide.html）を見てもらうのが一番です。特に「どんな人の悩みを得意とするか（きっかけ）」と「どんな失敗パターンを持つ人を助けてきたか」が最もマッチングに影響します。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">「掲載者から「予約が来ない」と言われたら？」</div>
+      <div class="faq-a">まずプロフィールの充実度を確認してください。特に「きっかけ」「失敗パターン」が空白のままだとマッチングスコアが低くなります。次に管理画面でページビューを確認し、閲覧はあるが予約に繋がっていないのか、そもそも閲覧が少ないのかを判断してください。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">「掲載者がやめたいと言ってきたら？」</div>
+      <div class="faq-a">まず理由をヒアリングしていただき、一度オーナーにご共有ください。課金停止・退会の最終判断はオーナーが行いますので、退会手続きを単独で進めていただかないようお願いいたします。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">「創業パートナー制度って何？」</div>
+      <div class="faq-a">初期3〜5社限定の特別制度です。月1回Zoom30分参加 + LINEレポート1件を条件に、その月の掲載料¥5,000が無料になります。初期掲載者獲得の際に活用してください。詳細はオーナーにご確認ください（内部資料のため掲載者への直接共有はお控えいただけますと幸いです）。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">「何かトラブルが起きたら誰に連絡する？」</div>
+      <div class="faq-a">オーナーにLINEでご連絡ください。特にユーザーからのクレーム・個人情報に関わる問題・Stripeの課金トラブルはオーナーと一緒に対応しますので、単独での判断はせずまずご連絡いただけると助かります。</div>
+    </div>
+  </div>
+
+</div>
+<button class="print-btn" onclick="window.print()">🖨 PDF保存</button>
+</body>
+</html>

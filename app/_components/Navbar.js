@@ -4,11 +4,11 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
 export default function Navbar() {
-  const [authState, setAuthState] = useState(null); // null=loading, false=guest, object=user
+  const [authState, setAuthState] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     try {
-      // Supabase auth token チェック
       const sbKey = Object.keys(localStorage).find(
         k => k.startsWith('sb-') && k.endsWith('-auth-token')
       );
@@ -23,7 +23,6 @@ export default function Navbar() {
           }
         }
       }
-      // レガシー sessionStorage チェック
       const raw = sessionStorage.getItem('glowup:userSession');
       if (raw) { setAuthState(JSON.parse(raw)); return; }
       setAuthState(false);
@@ -43,36 +42,61 @@ export default function Navbar() {
     window.location.href = '/';
   };
 
+  const closeMenu = () => setMenuOpen(false);
+
   return (
     <header className="navbar">
-      <div className="container navbar-inner">
-        <Link href="/" className="brand logo" style={{ display: 'inline-flex', alignItems: 'center' }}>
+      <style>{`
+        .nav-links { display: flex; align-items: center; gap: 4px; }
+        .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 8px; }
+        .hamburger span { display: block; width: 22px; height: 2px; background: #111; margin: 5px 0; border-radius: 2px; transition: all .2s; }
+        @media (max-width: 768px) {
+          .nav-links { display: none; }
+          .nav-links.is-open {
+            display: flex; flex-direction: column; align-items: stretch; gap: 0;
+            position: absolute; top: 64px; left: 0; right: 0;
+            background: rgba(245,240,232,0.97); border-bottom: 1px solid rgba(201,168,76,0.2);
+            padding: 8px 16px 16px; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+          }
+          .nav-links a { padding: 12px 8px; border-bottom: 1px solid #f3f4f6; font-size: 15px; }
+          .nav-links a:last-child { border-bottom: none; }
+          .btn-diagnosis { text-align: center; margin-top: 4px; }
+          .hamburger { display: block; }
+        }
+      `}</style>
+      <div className="container navbar-inner" style={{ position: 'relative' }}>
+        <Link href="/" className="brand logo" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>
           <Image
-            src="/assets/images/fineme-logo-text.png"
+            src="/assets/images/fineme-logo-v2.png"
             alt="Fineme"
-            height={36}
-            width={120}
-            style={{ height: 'clamp(28px,4vw,40px)', width: 'auto', objectFit: 'contain' }}
+            width={220}
+            height={72}
+            style={{ height: 'clamp(52px, 7vw, 68px)', width: 'auto', objectFit: 'contain' }}
             priority
           />
         </Link>
-        <nav className="nav-links">
-          <Link href="/search">検索</Link>
-          <Link href="/about">Finemeとは？</Link>
-          <Link href="/articles">特集</Link>
-          <Link href="/diagnosis" className="btn-diagnosis">診断する</Link>
+        <button className="hamburger" onClick={() => setMenuOpen(o => !o)} aria-label="メニュー">
+          <span />
+          <span />
+          <span />
+        </button>
+        <nav className={`nav-links${menuOpen ? ' is-open' : ''}`}>
+          <Link href="/search" onClick={closeMenu}>検索</Link>
+          <Link href="/about" onClick={closeMenu}>Finemeとは？</Link>
+          <Link href="/guide" onClick={closeMenu}>変容ガイド</Link>
+          <Link href="/diagnosis" className="btn-diagnosis" onClick={closeMenu}>診断する</Link>
           {authState === null ? null : authState ? (
             <>
-              <a href="#" onClick={(e) => { e.preventDefault(); handleSignOut(); }}
-                style={{ whiteSpace: 'nowrap' }}>ログアウト</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); handleSignOut(); }}>ログアウト</a>
               <Link href="/mypage" className="btn"
                 style={{ background: '#111', color: '#fff', padding: '7px 14px',
-                         borderRadius: '8px', fontWeight: 700, fontSize: '13px' }}>
+                         borderRadius: '8px', fontWeight: 700, fontSize: '13px', textAlign: 'center' }}
+                onClick={closeMenu}>
                 マイページ
               </Link>
             </>
           ) : (
-            <Link href="/login?next=/mypage" style={{ whiteSpace: 'nowrap' }}>ログイン</Link>
+            <Link href="/login?next=/mypage" onClick={closeMenu}>ログイン</Link>
           )}
         </nav>
       </div>

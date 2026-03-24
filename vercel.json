@@ -6,6 +6,10 @@
     {
       "path": "/api/cron/expire-counters",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/line-reminder",
+      "schedule": "0 15 * * *"
     }
   ],
   "redirects": [

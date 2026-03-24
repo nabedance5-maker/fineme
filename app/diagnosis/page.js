@@ -16,55 +16,71 @@ export default function DiagnosisPage() {
         min-height: calc(100vh - 72px);
         display: flex; flex-direction: column; align-items: center;
         padding: 32px 20px 100px;
-        background: linear-gradient(180deg, #f4f7fb 0%, #fff 60%);
+        background: transparent;
       }
       .diag-progress { width: 100%; max-width: var(--diag-max); margin-bottom: 24px; }
-      .diag-progress-bar { height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden; }
-      .diag-progress-fill { height: 100%; background: linear-gradient(90deg, #2563eb, #6366f1); border-radius: 2px; transition: width .4s ease; }
-      .diag-progress-text { font-size: 12px; color: #9ca3af; margin-top: 6px; text-align: right; }
+      .diag-progress-bar { height: 4px; background: rgba(201,168,76,0.2); border-radius: 2px; overflow: hidden; }
+      .diag-progress-fill { height: 100%; background: linear-gradient(90deg, #c9a84c, #e8c86a); border-radius: 2px; transition: width .4s ease; }
+      .diag-progress-text { font-size: 12px; color: #7a6e65; margin-top: 6px; text-align: right; font-weight: 600; }
       .diag-screen { display: none; width: 100%; max-width: var(--diag-max); animation: fadeUp .25s ease; }
       .diag-screen.is-active { display: block; }
       @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-      .diag-back-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: #9ca3af; padding: 0 0 16px; display: flex; align-items: center; gap: 4px; }
-      .diag-back-btn:hover { color: #374151; }
-      .diag-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 18px; padding: 28px 24px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(2,6,23,.05); }
-      .diag-step-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: #6366f1; text-transform: uppercase; margin: 0 0 8px; }
-      .diag-q { font-size: clamp(17px, 4vw, 20px); font-weight: 800; line-height: 1.4; margin: 0 0 6px; color: #111; }
-      .diag-hint { font-size: 13px; color: #6b7280; margin: 0 0 20px; line-height: 1.6; }
+      .diag-back-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: #7a6e65; padding: 0 0 16px; display: flex; align-items: center; gap: 4px; font-weight: 600; }
+      .diag-back-btn:hover { color: #0a0f1e; }
+      .diag-card { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(201,168,76,0.25); border-radius: 18px; padding: 28px 24px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(10,15,30,.06); }
+      .diag-step-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: rgba(201,168,76,0.8); text-transform: uppercase; margin: 0 0 8px; }
+      .diag-q { font-size: clamp(17px, 4vw, 20px); font-weight: 800; line-height: 1.4; margin: 0 0 6px; color: #0a0f1e; }
+      .diag-hint { font-size: 13px; color: #5a4e45; margin: 0 0 20px; line-height: 1.6; }
       .diag-options { display: flex; flex-direction: column; gap: 10px; }
-      .diag-option { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border: 2px solid #e5e7eb; border-radius: 12px; cursor: pointer; transition: border-color .12s, background .12s; text-align: left; background: #fff; width: 100%; }
-      .diag-option:hover { border-color: #a5b4fc; background: rgba(99,102,241,.03); }
-      .diag-option.selected { border-color: #2563eb; background: rgba(37,99,235,.05); }
+      .diag-option { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border: 2px solid rgba(201,168,76,0.2); border-radius: 12px; cursor: pointer; transition: border-color .12s, background .12s; text-align: left; background: rgba(255,255,255,0.72); width: 100%; }
+      .diag-option:hover { border-color: rgba(201,168,76,0.55); background: rgba(245,240,232,0.85); }
+      .diag-option.selected { border-color: #c9a84c; background: rgba(201,168,76,0.08); }
       .diag-option-icon { font-size: 20px; flex-shrink: 0; line-height: 1.3; }
       .diag-option-body { flex: 1; }
-      .diag-option-title { font-size: 15px; font-weight: 700; color: #111; line-height: 1.4; display: block; }
-      .diag-option-desc { font-size: 13px; color: #6b7280; margin-top: 2px; line-height: 1.5; display: block; }
-      .diag-option.multi .diag-check { width: 18px; height: 18px; border: 2px solid #d1d5db; border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all .12s; }
-      .diag-option.multi.selected .diag-check { background: #2563eb; border-color: #2563eb; color: #fff; font-size: 11px; }
-      .care-level-item { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9; }
+      .diag-option-title { font-size: 15px; font-weight: 700; color: #0a0f1e; line-height: 1.4; display: block; }
+      .diag-option-desc { font-size: 13px; color: #5a4e45; margin-top: 2px; line-height: 1.5; display: block; }
+      .diag-option.multi .diag-check { width: 18px; height: 18px; border: 2px solid rgba(201,168,76,0.3); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all .12s; }
+      .diag-option.multi.selected .diag-check { background: #c9a84c; border-color: #c9a84c; color: #0a0f1e; font-size: 11px; font-weight: 900; }
+      .care-level-item { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(201,168,76,0.12); }
       .care-level-item:last-child { border-bottom: none; margin-bottom: 0; }
-      .care-overall-wrap { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 14px 16px; border: 2px solid #e5e7eb; border-radius: 12px; transition: border-color .12s, background .12s; }
-      .care-overall-wrap:hover { border-color: #a5b4fc; background: rgba(99,102,241,.03); }
-      .care-overall-wrap.selected { border-color: #6366f1; background: rgba(99,102,241,.06); }
+      .care-overall-wrap { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 14px 16px; border: 2px solid rgba(201,168,76,0.2); border-radius: 12px; transition: border-color .12s, background .12s; background: rgba(255,255,255,0.72); }
+      .care-overall-wrap:hover { border-color: rgba(201,168,76,0.55); background: rgba(245,240,232,0.85); }
+      .care-overall-wrap.selected { border-color: #c9a84c; background: rgba(201,168,76,0.08); }
       .care-overall-text { display: flex; align-items: center; gap: 10px; flex: 1; }
-      .care-level-label { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: #111; margin-bottom: 10px; }
+      .care-level-label { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: #0a0f1e; margin-bottom: 10px; }
       .care-level-icon { font-size: 18px; }
       .care-level-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-      .care-level-opt { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 10px; cursor: pointer; transition: border-color .12s, background .12s; background: #fff; user-select: none; }
-      .care-level-opt:hover { border-color: #a5b4fc; background: rgba(99,102,241,.03); }
-      .care-level-opt.selected { border-color: #2563eb; background: rgba(37,99,235,.06); }
+      .care-level-opt { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border: 2px solid rgba(201,168,76,0.2); border-radius: 10px; cursor: pointer; transition: border-color .12s, background .12s; background: rgba(255,255,255,0.72); user-select: none; }
+      .care-level-opt:hover { border-color: rgba(201,168,76,0.55); background: rgba(245,240,232,0.85); }
+      .care-level-opt.selected { border-color: #c9a84c; background: rgba(201,168,76,0.08); }
       .care-level-opt input[type="radio"] { display: none; }
       .care-level-opt-text { font-size: 12px; font-weight: 600; color: #374151; line-height: 1.4; }
       @media (max-width: 480px) { .care-level-opts { grid-template-columns: 1fr; } }
       .diag-nav { display: flex; gap: 10px; align-items: center; max-width: var(--diag-max); width: 100%; }
-      .diag-nav-next { flex: 1; padding: 14px 20px; background: #111; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity .15s; }
+      .diag-nav-next { flex: 1; padding: 14px 20px; background: #0a0f1e; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity .15s, background .15s; }
       .diag-nav-next:disabled { opacity: .35; cursor: not-allowed; }
-      .diag-nav-next:not(:disabled):hover { opacity: .85; }
+      .diag-nav-next:not(:disabled):hover { background: #c9a84c; color: #0a0f1e; }
       .diag-landing { text-align: center; padding: 16px 0 4px; }
-      .diag-landing h1 { font-size: clamp(22px, 5vw, 28px); font-weight: 800; line-height: 1.3; margin: 0 0 12px; }
-      .diag-landing p { font-size: 15px; color: #6b7280; line-height: 1.7; margin: 0 0 6px; }
+      .diag-landing h1 { font-size: clamp(22px, 5vw, 28px); font-weight: 800; line-height: 1.3; margin: 0 0 12px; color: #0a0f1e; }
+      .diag-landing p { font-size: 15px; color: #5a4e45; line-height: 1.7; margin: 0 0 6px; }
       .diag-badges { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 16px 0 24px; }
-      .diag-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; background: #f3f4f6; padding: 6px 12px; border-radius: 99px; color: #374151; }
+      .diag-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; background: rgba(201,168,76,0.1); padding: 6px 12px; border-radius: 99px; color: #7a6e65; border: 1px solid rgba(201,168,76,0.25); }
+      /* Phase 3 intro */
+      .q3-intro-card { text-align: center; padding: 8px 0; }
+      .q3-intro-axes { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 20px 0 24px; }
+      .q3-intro-axis { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+      .q3-intro-axis-icon { width: 44px; height: 44px; border-radius: 50%; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.25); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+      .q3-intro-axis-label { font-size: 10px; color: #7a6e65; font-weight: 600; }
+      /* Category complete card */
+      .cat-complete-overlay { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(201,168,76,0.25); border-radius: 18px; padding: 28px 24px; text-align: center; animation: fadeUp .25s ease; cursor: pointer; }
+      .cat-dots-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 14px 0 0; }
+      .cat-dot { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+      .cat-dot--done { background: rgba(201,168,76,0.18); }
+      .cat-dot--pending { background: rgba(10,15,30,0.06); opacity: .45; }
+      /* Echo back banner */
+      .cat-echo-banner { background: rgba(201,168,76,0.07); border-left: 3px solid #c9a84c; padding: 10px 14px; border-radius: 0 8px 8px 0; margin-bottom: 16px; font-size: 12px; color: #7a6e65; line-height: 1.5; }
+      /* Goal framing banner */
+      .goal-frame-banner { background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.25); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; }
     `;
     document.head.appendChild(style);
 
@@ -72,16 +88,13 @@ export default function DiagnosisPage() {
     const STORAGE_KEY = 'fineme:diagnosis:latest';
 
     const CONCERN_AREAS = [
-      { id:'hair',             icon:'💇‍♂️', label:'髪型・髪' },
-      { id:'skin',             icon:'✨',   label:'肌・ニキビ' },
-      { id:'eyebrow',          icon:'✂️',  label:'眉毛' },
-      { id:'body',             icon:'💪',  label:'体型・体' },
-      { id:'fashion',          icon:'👔',  label:'服・コーデ' },
-      { id:'beard',            icon:'💈',  label:'ひげ・無精ひげ' },
-      { id:'teeth_whitening',  icon:'🦷',  label:'歯の黄ばみ・色' },
-      { id:'teeth_alignment',  icon:'😬',  label:'歯並び・歯の形' },
-      { id:'teeth_odor',       icon:'💨',  label:'口臭・口の中の清潔感' },
-      { id:'posture',          icon:'🚶',  label:'姿勢・体の動き' }
+      { id:'body',    icon:'💪',  label:'体型・ボディ',        tier:1 },
+      { id:'eyebrow', icon:'✂️', label:'眉毛',                tier:1 },
+      { id:'fashion', icon:'👔',  label:'服・コーデ',           tier:1 },
+      { id:'hair',    icon:'💇‍♂️', label:'髪・ヘア',        tier:1, hasAga:true },
+      { id:'skin',    icon:'✨',   label:'肌・エステ・脱毛',    tier:2 },
+      { id:'teeth',   icon:'🦷',  label:'歯・口元',            tier:3 },
+      { id:'nail',    icon:'💅',  label:'爪',                  tier:4 },
     ];
 
     const STYLE_MAP = {
@@ -91,10 +104,174 @@ export default function DiagnosisPage() {
       cautious_continuity:        { style: 'cautious',     relationship: 'continuity' }
     };
 
+    const CATEGORY_PHASE3 = [
+      { id:'body',    icon:'💪', label:'体型・ボディ',
+        path_q:'体型について、これまでどんな道を歩いてきた？',
+        path_opts:[
+          {v:'virgin', t:'🌱 ほとんど何もしてこなかった',          d:'「どうせ変わらない」という気持ちがあったかも'},
+          {v:'quit',   t:'🔄 試したが、続かなかった',              d:'筋トレ・食事制限など、途中で止まった'},
+          {v:'blind',  t:'🤔 自分なりにやっているが、効果が不明',   d:'やり方が正しいか、客観的な評価を受けたことがない'},
+          {v:'lapsed', t:'😴 以前はやっていたが、今は後回し',       d:'できていた時期があったが、疎かになっている'},
+        ],
+        view_q:'他の人から見た自分の体型、実際どう見えていると思う？',
+        view_opts:[
+          {v:'better',   t:'自分が思っているより良く見えていると思う'},
+          {v:'accurate', t:'自分の認識通りだと思う'},
+          {v:'worse',    t:'実は自分より悪く見えているかもしれない'},
+          {v:'unknown',  t:'正直わからない（聞いたことがない）'},
+        ],
+        love_q:'体型への不安が、恋愛や出会いの場面で影響したことは？',
+        love_opts:[
+          {v:'often',    t:'よくある（意識するとどこかで引いてしまう）'},
+          {v:'sometimes',t:'たまにある'},
+          {v:'rarely',   t:'あまりない'},
+        ], has_love:true },
+      { id:'eyebrow', icon:'✂️', label:'眉毛',
+        path_q:'眉毛について、これまでどんな道を歩いてきた？',
+        path_opts:[
+          {v:'virgin', t:'🌱 整えたことがない / ずっと自己流',      d:'眉毛サロンやプロに頼んだことがない'},
+          {v:'quit',   t:'🔄 サロンに行ったが続いていない',         d:'一度は試したが、習慣にならなかった'},
+          {v:'blind',  t:'🤔 自分で整えているが、似合っているか不安',d:'鏡では確認しているが、第三者の目がわからない'},
+          {v:'lapsed', t:'😴 以前は通っていたが、最近サボっている',  d:'できていた時期があったが、間隔が空いている'},
+        ],
+        view_q:'自分の眉って、他の人から見てどう見えていると思う？',
+        view_opts:[
+          {v:'better',   t:'整って見えていると思う'},
+          {v:'accurate', t:'普通 / 特に気にされないと思う'},
+          {v:'worse',    t:'実はちょっと気になられているかもしれない'},
+          {v:'unknown',  t:'まったくわからない'},
+        ],
+        love_q:'眉や顔まわりの印象が、初対面や出会いの場面で気になったことは？',
+        love_opts:[
+          {v:'often',    t:'よくある'},
+          {v:'sometimes',t:'たまにある'},
+          {v:'rarely',   t:'あまりない'},
+        ], has_love:true },
+      { id:'fashion', icon:'👔', label:'服・コーデ',
+        path_q:'服・コーデについて、これまでどんな道を歩いてきた？',
+        path_opts:[
+          {v:'virgin', t:'🌱 あまり考えてこなかった',              d:'いつも同じ系統のものを何となく買っている'},
+          {v:'quit',   t:'🔄 変えようとしたが、しっくりこなかった', d:'試みたことはあるが、自分に合うかわからなかった'},
+          {v:'blind',  t:'🤔 自分なりにこだわっているが、客観評価なし',d:'気を使っているが、外から見てどうかわからない'},
+          {v:'lapsed', t:'😴 以前は気を使っていたが、最近は後回し',  d:'できていた時期があったが、今は惰性になっている'},
+        ],
+        view_q:'自分の着こなしって、他の人から見てどう見えていると思う？',
+        view_opts:[
+          {v:'better',   t:'整って見えていると思う'},
+          {v:'accurate', t:'普通 / 特に印象に残らないと思う'},
+          {v:'worse',    t:'実はちょっと気になられているかもしれない'},
+          {v:'unknown',  t:'まったくわからない'},
+        ],
+        love_q:'服や着こなしへの自信が、デートや出会いの場面で影響したことは？',
+        love_opts:[
+          {v:'often',    t:'よくある（「ダサいと思われたら」が頭をよぎる）'},
+          {v:'sometimes',t:'たまにある'},
+          {v:'rarely',   t:'あまりない'},
+        ], has_love:true },
+      { id:'hair', icon:'💇', label:'髪・ヘア',
+        path_q:'髪・ヘアについて、これまでどんな道を歩いてきた？',
+        path_opts:[
+          {v:'virgin', t:'🌱 特に気を使ってこなかった',             d:'安いところに行くだけで、スタイリングもほぼしない'},
+          {v:'quit',   t:'🔄 変えようとしたが、思い通りにならなかった',d:'オーダーがうまく伝わらない、また同じスタイルに戻る'},
+          {v:'blind',  t:'🤔 定期的に行っているが、似合っているか不安',d:'美容院には通っているが、「これでいい」か正直わからない'},
+          {v:'lapsed', t:'😴 以前は意識していたが、最近は間隔が空いている',d:'できていた時期があったが、なんとなく後回し'},
+        ],
+        view_q:'自分の髪型って、他の人から見てどう見えていると思う？',
+        view_opts:[
+          {v:'better',   t:'整って見えていると思う'},
+          {v:'accurate', t:'普通 / 特に気にされないと思う'},
+          {v:'worse',    t:'実はちょっと気になられているかもしれない'},
+          {v:'unknown',  t:'まったくわからない'},
+        ],
+        love_q:'髪型への不安が、初対面や出会いの場面で気になったことは？',
+        love_opts:[
+          {v:'often',    t:'よくある'},
+          {v:'sometimes',t:'たまにある'},
+          {v:'rarely',   t:'あまりない'},
+        ], has_love:true },
+      { id:'skin', icon:'✨', label:'肌・エステ・脱毛',
+        path_q:'肌・スキンケアについて、これまでどんな道を歩いてきた？',
+        path_opts:[
+          {v:'virgin', t:'🌱 洗顔以外ほとんど何もしてこなかった',    d:'スキンケアのことをあまり考えてこなかった'},
+          {v:'quit',   t:'🔄 スキンケアを始めたことはあるが続かなかった',d:'少し試みたが、習慣にならなかった'},
+          {v:'blind',  t:'🤔 スキンケアは習慣だが、効果が実感できない',d:'やっているが、本当に改善しているか正直わからない'},
+          {v:'lapsed', t:'😴 以前はちゃんとやっていたが、最近は手を抜いている',d:'できていた時期があったが、今は惰性'},
+        ],
+        view_q:'自分の肌って、他の人から見てどう見えていると思う？',
+        view_opts:[
+          {v:'better',   t:'清潔感があると思われていると思う'},
+          {v:'accurate', t:'普通 / 特に印象に残らないと思う'},
+          {v:'worse',    t:'実はちょっと気になられているかもしれない'},
+          {v:'unknown',  t:'まったくわからない'},
+        ],
+        love_q:'肌への不安が、近距離での会話や出会いの場面で気になったことは？',
+        love_opts:[
+          {v:'often',    t:'よくある（近づかれると気になる）'},
+          {v:'sometimes',t:'たまにある'},
+          {v:'rarely',   t:'あまりない'},
+        ], has_love:true },
+      { id:'teeth', icon:'🦷', label:'歯・口元',
+        path_q:'歯・口元について、これまでどんな道を歩いてきた？',
+        path_opts:[
+          {v:'virgin', t:'🌱 歯科検診以外、特に何もしてこなかった',   d:'ホワイトニングや矯正などは考えたことがなかった'},
+          {v:'quit',   t:'🔄 検討したことはあるが、踏み出せていない',  d:'興味はあるが、まだアクションを起こせていない'},
+          {v:'blind',  t:'🤔 ケアはしているが、外から見てどうかわからない',d:'気を使っているが、人からどう見えているか不安'},
+          {v:'lapsed', t:'😴 以前は気を使っていたが、最近は後回し',    d:'できていた時期があったが、今は惰性'},
+        ],
+        view_q:'自分の歯・口元って、他の人から見てどう見えていると思う？',
+        view_opts:[
+          {v:'better',   t:'清潔感があると思われていると思う'},
+          {v:'accurate', t:'普通 / 特に気にされないと思う'},
+          {v:'worse',    t:'実はちょっと気になられているかもしれない'},
+          {v:'unknown',  t:'まったくわからない'},
+        ],
+        love_q:'笑顔や口元への不安が、恋愛や出会いの場面で影響したことは？',
+        love_opts:[
+          {v:'often',    t:'よくある（笑顔を隠したくなる、口元が気になる）'},
+          {v:'sometimes',t:'たまにある'},
+          {v:'rarely',   t:'あまりない'},
+        ], has_love:true },
+      { id:'nail', icon:'💅', label:'爪',
+        path_q:'爪のケアについて、これまでどんな道を歩いてきた？',
+        path_opts:[
+          {v:'virgin', t:'🌱 切るだけで、ケアらしいことはしてこなかった',d:'ネイルケアを意識したことがほとんどなかった'},
+          {v:'quit',   t:'🔄 ネイルサロンなど試したことはあるが続かなかった',d:'少し試みたが、習慣にならなかった'},
+          {v:'blind',  t:'🤔 一応ケアしているが、基準がわからない',    d:'やっているが、これで十分かどうか判断できない'},
+          {v:'lapsed', t:'😴 以前はちゃんとやっていたが、今は後回し',   d:'できていた時期があったが、今は疎かになっている'},
+        ],
+        view_q:'自分の爪・手元って、他の人から見てどう見えていると思う？',
+        view_opts:[
+          {v:'better',   t:'整って見えていると思う'},
+          {v:'accurate', t:'普通 / 特に気にされないと思う'},
+          {v:'worse',    t:'実はちょっと気になられているかもしれない'},
+          {v:'unknown',  t:'まったくわからない'},
+        ],
+        has_love:false },
+    ];
+
+    const PATH_LABELS = {
+      virgin: 'ほとんどしてこなかった',
+      quit:   '試したが続かなかった',
+      blind:  '自分なりにやっているが客観評価なし',
+      lapsed: '以前はやっていたが後回し',
+    };
+
     const state = {
       trigger: null,
+      // ゴール深掘り（Layer 2→3→4）
+      goal_scene: null,
+      goal_change: null,
+      goal_vision: null,
       scene: null,
       care_levels: {},
+      ideal_levels: {},   // 各カテゴリの理想スコア（1〜5）
+      aga_concern: null,
+      aga_status: null,
+      // Phase 3: カテゴリ別来た道・客観視・恋愛
+      path_types: {},     // { body: 'virgin'|'quit'|'blind'|'lapsed', ... }
+      self_views: {},     // { body: 'better'|'accurate'|'worse'|'unknown', ... }
+      love_impact: {},    // { body: 'often'|'sometimes'|'rarely', ... }
+      currentCatIdx: 0,   // Phase3でのカテゴリ進捗
       past_attempts: [],
       failure_pattern: null,
       style_priorities: [],
@@ -103,8 +280,8 @@ export default function DiagnosisPage() {
       budget: null
     };
 
-    const MAIN_SCREENS = ['q1','q2','q3','q5','q6','q7','q8'];
-    const TOTAL_STEPS = 7;
+    const MAIN_SCREENS = ['q1','q_goal_a','q_goal_b','q_goal_c','q2','q3','q3_cat','q5b','q6','q6b','q7','q8'];
+    const TOTAL_STEPS = 19; // q3_catは7カテゴリ×内部3問を含む
 
     let currentScreen = 'landing';
     let screenHistory = ['landing'];
@@ -126,20 +303,28 @@ export default function DiagnosisPage() {
     }
 
     function updateProgress() {
-      const subScreenMap = { 'q5b':'q5', 'q6b':'q6' };
+      const subScreenMap = { 'q5b':'q5b', 'q6b':'q6b' };
       const baseScreen = subScreenMap[currentScreen] || currentScreen;
       const isMain = MAIN_SCREENS.includes(baseScreen);
       progressWrap.style.display = isMain ? '' : 'none';
       if (!isMain) return;
-      const idx = MAIN_SCREENS.indexOf(baseScreen);
-      if (idx === -1) return;
-      const pct = Math.round((idx / TOTAL_STEPS) * 100);
+      let pct;
+      if (baseScreen === 'q3_cat') {
+        // q3_catは7カテゴリ分をMAIN_SCREENSの1スロットに収める。サブ進捗を計算
+        const catIdx = MAIN_SCREENS.indexOf('q3_cat');
+        const subPct = state.currentCatIdx / CATEGORY_PHASE3.length;
+        pct = Math.round(((catIdx + subPct) / TOTAL_STEPS) * 100);
+      } else {
+        const idx = MAIN_SCREENS.indexOf(baseScreen);
+        if (idx === -1) return;
+        pct = Math.round((idx / TOTAL_STEPS) * 100);
+      }
       progressFill.style.width = pct + '%';
-      progressText.textContent = idx + ' / ' + TOTAL_STEPS;
+      progressText.textContent = 'マップ ' + pct + '% 完成';
     }
 
     function updateNav() {
-      const noNavScreens = ['landing'];
+      const noNavScreens = ['landing', 'q3_intro'];
       if (noNavScreens.includes(currentScreen)) {
         navEl.style.display = 'none';
         return;
@@ -151,32 +336,66 @@ export default function DiagnosisPage() {
     function updateNextBtn() {
       let enabled = false;
       switch (currentScreen) {
-        case 'q1':  enabled = !!state.trigger; break;
-        case 'q2':  enabled = !!state.scene; break;
-        case 'q3':  enabled = Object.values(state.care_levels).some(v => v && v !== ''); break;
-        case 'q5':  enabled = state.past_attempts.length > 0; break;
-        case 'q5b': enabled = !!state.failure_pattern; break;
-        case 'q6':  enabled = state.style_priorities.length > 0; break;
-        case 'q6b': enabled = !!state.style_priority_top; break;
-        case 'q7':  enabled = !!state.urgency; break;
-        case 'q8':  enabled = !!state.budget; break;
+        case 'q1':       enabled = !!state.trigger; break;
+        case 'q_goal_a': enabled = !!state.goal_scene; break;
+        case 'q_goal_b': enabled = !!state.goal_change; break;
+        case 'q_goal_c': enabled = !!state.goal_vision; break;
+        case 'q2':       enabled = !!state.scene; break;
+        case 'q3':     enabled = Object.values(state.care_levels).some(v => v && v !== ''); break;
+        case 'q3_aga': enabled = !!state.aga_status; break;
+        case 'q3_cat': {
+          const cat = CATEGORY_PHASE3[state.currentCatIdx];
+          if (!cat) { enabled = true; break; }
+          const pathOk = !!state.path_types[cat.id];
+          const viewOk = !!state.self_views[cat.id];
+          const loveOk = !cat.has_love || !!state.love_impact[cat.id];
+          enabled = pathOk && viewOk && loveOk;
+          break;
+        }
+        case 'q5b':    enabled = !!state.failure_pattern; break;
+        case 'q6':       enabled = state.style_priorities.length > 0; break;
+        case 'q6b':      enabled = !!state.style_priority_top; break;
+        case 'q7':       enabled = !!state.urgency; break;
+        case 'q8':       enabled = !!state.budget; break;
       }
       btnNext.disabled = !enabled;
-      btnNext.textContent = (currentScreen === 'q8') ? '結果を見る' : '次へ';
+      const isLastCat = currentScreen === 'q3_cat' && state.currentCatIdx >= CATEGORY_PHASE3.length - 1;
+      btnNext.textContent = (currentScreen === 'q8') ? 'New Me Mapを生成する'
+        : (currentScreen === 'q3_cat' && !isLastCat) ? `次のカテゴリへ (${state.currentCatIdx + 1}/${CATEGORY_PHASE3.length})`
+        : '次へ';
     }
 
     function goNext() {
       let next = null;
       switch (currentScreen) {
-        case 'q1': next = 'q2'; break;
-        case 'q2': next = 'q3'; break;
-        case 'q3': next = 'q5'; break;
-        case 'q5':
-          if (state.past_attempts.length > 0 && !(state.past_attempts.length === 1 && state.past_attempts[0] === 'none')) {
-            next = 'q5b';
+        case 'q1':       next = 'q_goal_a'; break;
+        case 'q_goal_a': next = 'q_goal_b'; break;
+        case 'q_goal_b': next = 'q_goal_c'; break;
+        case 'q_goal_c': next = 'q2'; break;
+        case 'q2':       next = 'q3'; break;
+        case 'q3':
+          if (state.aga_concern === 'yes') {
+            next = 'q3_aga';
           } else {
-            next = 'q6';
+            next = 'q3_intro';
           }
+          break;
+        case 'q3_aga':
+          next = 'q3_intro';
+          break;
+        case 'q3_cat':
+          if (state.currentCatIdx < CATEGORY_PHASE3.length - 1) {
+            const completedIdx = state.currentCatIdx;
+            state.currentCatIdx++;
+            showCategoryCompleteCard(completedIdx, function() {
+              renderCategoryScreen(state.currentCatIdx);
+              updateNextBtn();
+              updateProgress();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+            return;
+          }
+          next = 'q5b';
           break;
         case 'q5b': next = 'q6'; break;
         case 'q6':
@@ -201,10 +420,187 @@ export default function DiagnosisPage() {
     }
 
     function goBack() {
+      if (currentScreen === 'q3_cat' && state.currentCatIdx > 0) {
+        state.currentCatIdx--;
+        renderCategoryScreen(state.currentCatIdx);
+        updateNextBtn();
+        updateProgress();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
       if (screenHistory.length > 1) {
         screenHistory.pop();
         showScreen(screenHistory[screenHistory.length - 1]);
       }
+    }
+
+    function buildMiniRadarSVG(doneUpTo) {
+      const n = CONCERN_AREAS.length;
+      const cx = 80, cy = 80, r = 62, SIZE = 160;
+      const AXIS_COLORS = ['#3b82f6','#8b5cf6','#f59e0b','#10b981','#ec4899','#f97316','#6366f1'];
+
+      function ptStr(val, i) {
+        const angle = -Math.PI / 2 + i * (2 * Math.PI / n);
+        const rv = r * (Math.max(val, 0.12) / 5);
+        return `${(cx + rv * Math.cos(angle)).toFixed(1)},${(cy + rv * Math.sin(angle)).toFixed(1)}`;
+      }
+      function ptXY(scale, i) {
+        const angle = -Math.PI / 2 + i * (2 * Math.PI / n);
+        return { x: cx + r * scale * Math.cos(angle), y: cy + r * scale * Math.sin(angle) };
+      }
+
+      const gridLines = [1, 2, 3, 4, 5].map(v =>
+        `<polygon points="${CONCERN_AREAS.map((_, i) => ptStr(v, i)).join(' ')}" fill="none" stroke="#f1f5f9" stroke-width="1"/>`
+      ).join('');
+
+      const axisLines = CONCERN_AREAS.map((area, i) => {
+        const ep = ptXY(1, i);
+        const done = i <= doneUpTo;
+        return `<line x1="${cx}" y1="${cy}" x2="${ep.x.toFixed(1)}" y2="${ep.y.toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>` +
+               `<circle cx="${ep.x.toFixed(1)}" cy="${ep.y.toFixed(1)}" r="5" fill="${done ? AXIS_COLORS[i] : '#e5e7eb'}"/>`;
+      }).join('');
+
+      const currentVals = CONCERN_AREAS.map((area, i) => {
+        const level = state.care_levels[area.id] || 'none';
+        const v = { none: 1, concerned: 2, self: 3, pro: 4 }[level] || 1;
+        return i <= doneUpTo ? v : 1;
+      });
+
+      const idealVals = CONCERN_AREAS.map((area, i) => {
+        const v = parseInt(state.ideal_levels[area.id] || '3', 10);
+        return i <= doneUpTo ? v : 1;
+      });
+
+      const currentPts = currentVals.map((v, i) => ptStr(v, i)).join(' ');
+      const idealPts = idealVals.map((v, i) => ptStr(v, i)).join(' ');
+
+      return `<svg viewBox="0 0 ${SIZE} ${SIZE}" width="${SIZE}" height="${SIZE}" style="display:block;margin:0 auto">
+        ${gridLines}
+        ${axisLines}
+        <polygon points="${idealPts}" fill="rgba(99,102,241,.1)" stroke="#a5b4fc" stroke-width="1.5" stroke-linejoin="round"/>
+        <polygon points="${currentPts}" fill="rgba(37,99,235,.22)" stroke="#2563eb" stroke-width="2" stroke-linejoin="round"/>
+      </svg>`;
+    }
+
+    function showCategoryCompleteCard(completedIdx, callback) {
+      const container = document.getElementById('q3_cat_content');
+      if (!container) { callback(); return; }
+
+      const cat = CATEGORY_PHASE3[completedIdx];
+      const nextCat = CATEGORY_PHASE3[completedIdx + 1];
+      const done = completedIdx + 1;
+      const total = CATEGORY_PHASE3.length;
+
+      const pathVal = state.path_types[cat.id];
+      const pathLabel = PATH_LABELS[pathVal] || pathVal || '';
+
+      const gaps = [];
+      const level = state.care_levels[cat.id] || 'none';
+      const current = { none: 1, concerned: 2, self: 3, pro: 4 }[level] || 1;
+      const ideal = parseInt(state.ideal_levels[cat.id] || '3', 10);
+      const gap = Math.max(0, ideal - current);
+      if (gap > 0) gaps.push(`現在地 ${current} → 理想 ${ideal}（ギャップ +${gap}）`);
+
+      const dots = CATEGORY_PHASE3.map((c, i) => {
+        const cls = i <= completedIdx ? 'cat-dot cat-dot--done' : 'cat-dot cat-dot--pending';
+        return `<div class="${cls}" title="${c.label}">${c.icon}</div>`;
+      }).join('');
+
+      const radarSVG = buildMiniRadarSVG(completedIdx);
+
+      container.innerHTML = `
+        <div class="diag-card cat-complete-overlay" id="cat-complete-card">
+          <div style="font-size:32px;margin-bottom:6px">✅</div>
+          <p style="font-size:11px;font-weight:700;color:#10b981;margin:0 0 6px;letter-spacing:.06em;text-transform:uppercase">RECORDED</p>
+          <h3 style="font-size:17px;font-weight:800;color:#111;margin:0 0 4px">${cat.icon} ${cat.label}トラック — 記録しました</h3>
+          ${pathLabel ? `<p style="font-size:12px;color:#6b7280;margin:0 0 2px">来た道: ${pathLabel}</p>` : ''}
+          ${gaps.length ? `<p style="font-size:12px;color:#6b7280;margin:0 0 16px">${gaps[0]}</p>` : '<div style="margin-bottom:16px"></div>'}
+          <div style="margin:0 auto 14px">${radarSVG}</div>
+          <p style="font-size:11px;color:#9ca3af;margin:0 0 6px">${done} / ${total} 完了</p>
+          <div class="cat-dots-row">${dots}</div>
+          ${nextCat ? `<p style="font-size:13px;color:#374151;font-weight:600;margin:14px 0 4px">次: ${nextCat.icon} ${nextCat.label}</p>` : ''}
+          <p style="font-size:11px;color:#9ca3af;margin:8px 0 0">タップで続ける</p>
+        </div>
+      `;
+
+      btnNext.disabled = true;
+      btnNext.textContent = '記録中…';
+
+      const timer = setTimeout(callback, 2500);
+      const card = document.getElementById('cat-complete-card');
+      if (card) card.addEventListener('click', function() { clearTimeout(timer); callback(); });
+    }
+
+    function renderCategoryScreen(idx) {
+      const cat = CATEGORY_PHASE3[idx];
+      const container = document.getElementById('q3_cat_content');
+      if (!container || !cat) return;
+      const catTotal = CATEGORY_PHASE3.length;
+
+      // B: Echo back — 前のカテゴリの回答をヒントとして表示
+      let echoHtml = '';
+      if (idx > 0) {
+        const prevCat = CATEGORY_PHASE3[idx - 1];
+        const prevPath = state.path_types[prevCat.id];
+        if (prevPath && PATH_LABELS[prevPath]) {
+          echoHtml = `<div class="cat-echo-banner">📝 ${prevCat.label}では「${PATH_LABELS[prevPath]}」と答えてくれました。${cat.label}についてはどうでしょう？</div>`;
+        }
+      }
+
+      function opt(arr, stateKey, type) {
+        return arr.map(o => `
+          <button class="diag-option${state[stateKey]?.[cat.id] === o.v ? ' selected' : ''}" data-value="${o.v}" data-type="${type}">
+            <span class="diag-option-body">
+              <span class="diag-option-title">${o.t}</span>
+              ${o.d ? `<span class="diag-option-desc">${o.d}</span>` : ''}
+            </span>
+          </button>`).join('');
+      }
+      const pathAnswered = !!state.path_types[cat.id];
+      const viewAnswered = !!state.self_views[cat.id];
+      container.innerHTML = `
+        ${echoHtml}
+        <div class="diag-card">
+          <p class="diag-step-label">${cat.icon} ${cat.label}｜来た道</p>
+          <p style="font-size:11px;color:#9ca3af;margin:0 0 8px">カテゴリ ${idx + 1} / ${catTotal}</p>
+          <h2 class="diag-q">${cat.path_q}</h2>
+          <div class="diag-options" id="opts-cat-path">${opt(cat.path_opts, 'path_types', 'path')}</div>
+        </div>
+        <div class="diag-card" id="cat-view-section" style="${pathAnswered ? '' : 'display:none'}">
+          <p class="diag-step-label">${cat.icon} ${cat.label}｜客観視</p>
+          <h2 class="diag-q">${cat.view_q}</h2>
+          <p class="diag-hint">正直な直感で選んでください。</p>
+          <div class="diag-options" id="opts-cat-view">${opt(cat.view_opts, 'self_views', 'view')}</div>
+        </div>
+        ${cat.has_love ? `
+        <div class="diag-card" id="cat-love-section" style="${viewAnswered ? '' : 'display:none'}">
+          <p class="diag-step-label">${cat.icon} ${cat.label}｜恋愛場面</p>
+          <h2 class="diag-q">${cat.love_q}</h2>
+          <div class="diag-options" id="opts-cat-love">${opt(cat.love_opts, 'love_impact', 'love')}</div>
+        </div>` : ''}
+      `;
+      container.querySelectorAll('.diag-option').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const val = this.dataset.value;
+          const type = this.dataset.type;
+          this.closest('.diag-options').querySelectorAll('.diag-option').forEach(b => b.classList.remove('selected'));
+          this.classList.add('selected');
+          if (type === 'path') {
+            state.path_types[cat.id] = val;
+            const viewSec = document.getElementById('cat-view-section');
+            if (viewSec) viewSec.style.display = '';
+          } else if (type === 'view') {
+            state.self_views[cat.id] = val;
+            if (cat.has_love) {
+              const loveSec = document.getElementById('cat-love-section');
+              if (loveSec) loveSec.style.display = '';
+            }
+          } else if (type === 'love') {
+            state.love_impact[cat.id] = val;
+          }
+          updateNextBtn();
+        });
+      });
     }
 
     function saveAndFinish() {
@@ -219,21 +615,68 @@ export default function DiagnosisPage() {
         .filter(([, v]) => v === 'self' || v === 'pro')
         .map(([id]) => id);
 
-      const priorityOrder = ['concerned', 'self', 'pro'];
+      const careLevelOrder = ['concerned', 'self', 'pro'];
       let priority = null;
-      for (const pLevel of priorityOrder) {
+      for (const pLevel of careLevelOrder) {
         priority = CONCERN_AREAS.map(a => a.id).find(id => state.care_levels[id] === pLevel);
         if (priority) break;
       }
 
       const styleRel = STYLE_MAP[state.style_priority_top] || { style: null, relationship: null };
 
+      // 変容ベクトル：理想スコア - 現状スコア = ギャップ
+      const transformVectors = {};
+      CONCERN_AREAS.forEach(area => {
+        const currentScore = { none:1, concerned:2, self:3, pro:4 }[state.care_levels[area.id]] || 1;
+        const idealScore = parseInt(state.ideal_levels[area.id] || '3', 10);
+        transformVectors[area.id] = {
+          current: currentScore,
+          ideal: idealScore,
+          gap: Math.max(0, idealScore - currentScore),
+          tier: area.tier,
+          care_type: state.care_levels[area.id] || 'none',
+          path_type:   state.path_types[area.id]  || null,
+          self_view:   state.self_views[area.id]  || null,
+          love_impact: state.love_impact[area.id] || null,
+        };
+      });
+
+      // 優先順位：tier → gap → 速効性
+      const SPEED = { eyebrow:5, fashion:5, hair:4, body:3, skin:3, teeth:2, nail:2 };
+      const priorityOrder = Object.entries(transformVectors)
+        .filter(([, v]) => v.gap > 0)
+        .sort((a, b) => {
+          if (a[1].tier !== b[1].tier) return a[1].tier - b[1].tier;
+          if (b[1].gap !== a[1].gap) return b[1].gap - a[1].gap;
+          return (SPEED[b[0]] || 3) - (SPEED[a[0]] || 3);
+        })
+        .map(([id]) => id);
+
       const profile = {
-        version: 'v8',
+        version: 'v9_me_scan',
         at: Date.now(),
+        // 文脈
         trigger: state.trigger,
+        // ゴール（Layer 2→4）
+        goal_scene: state.goal_scene,
+        goal_change: state.goal_change,
+        goal_vision: state.goal_vision,
+        // 場面
         scene: state.scene,
+        // 7軸スコア
+        transform_vectors: transformVectors,
+        priority_order: priorityOrder,
+        compass_first: priorityOrder[0] || null,
+        // 来た道（カテゴリ別 Phase 3）
         care_levels: state.care_levels,
+        ideal_levels: state.ideal_levels,
+        path_types: state.path_types,
+        self_views: state.self_views,
+        love_impact: state.love_impact,
+        // AGA
+        aga_concern: state.aga_concern,
+        aga_status: state.aga_status,
+        // 旧互換フィールド（結果ページが参照）
         concern_areas: concernAreas,
         concern_priority: priority,
         behavior_baseline: behaviorBaseline,
@@ -241,7 +684,6 @@ export default function DiagnosisPage() {
         failure_pattern: state.failure_pattern,
         style_priorities: state.style_priorities,
         style_priority_top: state.style_priority_top,
-        style_relationship: state.style_priority_top,
         style: styleRel.style,
         relationship: styleRel.relationship,
         urgency: state.urgency,
@@ -284,11 +726,13 @@ export default function DiagnosisPage() {
       if (!grid) return;
 
       const CARE_OPTIONS = [
-        { value: 'none',      label: '気にしていない',                       color: '#9ca3af' },
-        { value: 'concerned', label: '気になっているが、まだ何もしていない',  color: '#f59e0b' },
+        { value: 'none',      label: '気にしていない',                        color: '#9ca3af' },
+        { value: 'concerned', label: '気になっているが、まだ何もしていない',   color: '#f59e0b' },
         { value: 'self',      label: '自分なりにやっている（自己流・不定期）', color: '#3b82f6' },
-        { value: 'pro',       label: 'プロ・サロンに定期的に任せている',      color: '#10b981' }
+        { value: 'pro',       label: 'プロ・サロンに定期的に任せている',       color: '#10b981' }
       ];
+
+      const IDEAL_LABELS = ['1','2','3','4','5'];
 
       CONCERN_AREAS.forEach(area => {
         const wrap = document.createElement('div');
@@ -300,6 +744,7 @@ export default function DiagnosisPage() {
         labelEl.innerHTML = '<span class="care-level-icon">' + area.icon + '</span><span>' + area.label + '</span>';
         wrap.appendChild(labelEl);
 
+        // 現在地（来た道）
         const optGroup = document.createElement('div');
         optGroup.className = 'care-level-opts';
 
@@ -316,13 +761,76 @@ export default function DiagnosisPage() {
             state.care_levels[area.id] = opt.value;
             wrap.querySelectorAll('.care-level-opt').forEach(el => el.classList.remove('selected'));
             optEl.classList.add('selected');
+            // AGAトグル表示制御
+            if (area.hasAga) {
+              const agaRow = document.getElementById('aga-row');
+              if (agaRow) agaRow.style.display = (opt.value !== 'none') ? 'flex' : 'none';
+            }
             updateNextBtn();
           });
 
           optGroup.appendChild(optEl);
         });
-
         wrap.appendChild(optGroup);
+
+        // 理想スコア（変えたい度 1〜5）
+        const idealWrap = document.createElement('div');
+        idealWrap.style.cssText = 'margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;';
+        idealWrap.innerHTML = '<span style="font-size:11px;font-weight:700;color:#6b7280;white-space:nowrap;">変えたい度:</span>';
+        const idealBtns = document.createElement('div');
+        idealBtns.style.cssText = 'display:flex;gap:4px;';
+        IDEAL_LABELS.forEach(v => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = v;
+          btn.dataset.v = v;
+          btn.style.cssText = 'width:32px;height:32px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-weight:700;background:#fff;cursor:pointer;color:#374151;transition:all .12s;';
+          btn.addEventListener('click', function () {
+            idealBtns.querySelectorAll('button').forEach(b => {
+              b.style.background = '#fff';
+              b.style.borderColor = '#e5e7eb';
+              b.style.color = '#374151';
+            });
+            btn.style.background = '#2563eb';
+            btn.style.borderColor = '#2563eb';
+            btn.style.color = '#fff';
+            state.ideal_levels[area.id] = v;
+          });
+          idealBtns.appendChild(btn);
+        });
+        idealWrap.appendChild(idealBtns);
+        const idealHint = document.createElement('span');
+        idealHint.style.cssText = 'font-size:10px;color:#9ca3af;margin-left:4px;';
+        idealHint.textContent = '低←→高';
+        idealWrap.appendChild(idealHint);
+        wrap.appendChild(idealWrap);
+
+        // AGA分岐（髪カテゴリのみ）
+        if (area.hasAga) {
+          const agaRow = document.createElement('div');
+          agaRow.id = 'aga-row';
+          agaRow.style.cssText = 'display:none;margin-top:12px;padding:12px;background:#fefce8;border:1px solid #fde68a;border-radius:10px;align-items:flex-start;gap:10px;flex-direction:column;';
+          agaRow.innerHTML = '<p style="font-size:13px;font-weight:700;color:#854d0e;margin:0 0 8px;">髪の量・薄さについて気になることはありますか？</p>';
+          const agaOpts = document.createElement('div');
+          agaOpts.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+          [{ v:'yes', label:'気になっている' }, { v:'no', label:'特にない' }].forEach(opt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = opt.label;
+            btn.style.cssText = 'padding:8px 16px;border:1.5px solid #d97706;border-radius:8px;font-size:13px;font-weight:700;background:#fff;cursor:pointer;color:#92400e;transition:all .12s;';
+            btn.addEventListener('click', function () {
+              agaOpts.querySelectorAll('button').forEach(b => { b.style.background='#fff'; b.style.color='#92400e'; });
+              btn.style.background = '#d97706';
+              btn.style.color = '#fff';
+              state.aga_concern = opt.v;
+              updateNextBtn();
+            });
+            agaOpts.appendChild(btn);
+          });
+          agaRow.appendChild(agaOpts);
+          wrap.appendChild(agaRow);
+        }
+
         grid.appendChild(wrap);
       });
 
@@ -380,7 +888,11 @@ export default function DiagnosisPage() {
       });
     }
     bindSingleChoice('opts-q1', 'trigger');
+    bindSingleChoice('opts-q_goal_a', 'goal_scene');
+    bindSingleChoice('opts-q_goal_b', 'goal_change');
+    bindSingleChoice('opts-q_goal_c', 'goal_vision');
     bindSingleChoice('opts-q2', 'scene');
+    bindSingleChoice('opts-q3_aga', 'aga_status');
     bindSingleChoice('opts-q5b', 'failure_pattern');
     bindSingleChoice('opts-q7', 'urgency');
     bindSingleChoice('opts-q8', 'budget');
@@ -434,6 +946,16 @@ export default function DiagnosisPage() {
       btn.addEventListener('click', goBack);
     });
 
+    const introStartBtn = document.getElementById('btn-q3-intro-start');
+    if (introStartBtn) {
+      introStartBtn.addEventListener('click', function() {
+        state.currentCatIdx = 0;
+        renderCategoryScreen(0);
+        screenHistory.push('q3_cat');
+        showScreen('q3_cat');
+      });
+    }
+
     showScreen('landing');
 
     return () => {
@@ -458,15 +980,15 @@ export default function DiagnosisPage() {
           <div className="diag-card">
             <div className="diag-landing">
               <p style={{fontSize:'12px',fontWeight:'700',color:'#6366f1',letterSpacing:'.06em',textTransform:'uppercase',margin:'0 0 10px'}}>Find New Me</p>
-              <h1>変容プロファイル診断</h1>
-              <p>外見ではなく、あなたの状況を聞きます。<br />3分で、今のあなたに一番必要なことがわかります。</p>
-              <p style={{fontSize:'13px',color:'#9ca3af'}}>「なぜ変われないか」まで聞くから、答えが本物になる。</p>
+              <h1>Me Scan</h1>
+              <p>今のあなたを丁寧にスキャンして、<br />あなただけの変容マップを生成します。</p>
+              <p style={{fontSize:'13px',color:'#9ca3af'}}>外見より先に、「あなたの状況」を聞きます。<br />だから答えが、本物になる。</p>
               <div className="diag-badges">
-                <span className="diag-badge">⏱️ 約5〜8分</span>
+                <span className="diag-badge">⏱️ 約12〜18分</span>
                 <span className="diag-badge">🕶️ 登録不要</span>
-                <span className="diag-badge">🙅‍♂️ 営業なし</span>
+                <span className="diag-badge">🗺️ New Me Map生成</span>
               </div>
-              <button className="diag-nav-next" id="btn-start" style={{width:'100%',fontSize:'18px',padding:'16px'}}>診断をはじめる</button>
+              <button className="diag-nav-next" id="btn-start" style={{width:'100%',fontSize:'18px',padding:'16px'}}>Me Scanをはじめる</button>
             </div>
           </div>
         </div>
@@ -533,6 +1055,137 @@ export default function DiagnosisPage() {
                 <span className="diag-option-body">
                   <span className="diag-option-title">明確なきっかけはないが、このままでいいとは思っていない</span>
                   <span className="diag-option-desc">漠然とした「変わりたい」気持ちが、ずっとある</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* SCREEN Q_GOAL_A: ゴール深掘り①（Layer 2：行動・場面のゴール） */}
+        <div className="diag-screen" id="screen-q_goal_a">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div className="goal-frame-banner">
+            <p style={{fontSize:'12px',fontWeight:'700',color:'#2563eb',margin:'0 0 4px'}}>🗺 あなたの地図の「目的地」を設定します</p>
+            <p style={{fontSize:'13px',color:'#1e40af',margin:'0',lineHeight:'1.6'}}>まず、ここに来た理由を聞かせてください。<br/>この3問の答えが、あなただけの変容マップの目的地になります。</p>
+          </div>
+          <div className="diag-card">
+            <p className="diag-step-label">ゴール｜場面</p>
+            <h2 className="diag-q">外見が変わったとき、<br />どんな場面で一番感じたいですか？</h2>
+            <p className="diag-hint">変わったことを実感したい瞬間を選んでください。</p>
+            <div className="diag-options" id="opts-q_goal_a">
+              <button className="diag-option" data-value="first_impression">
+                <span className="diag-option-icon">🫀</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">初対面の瞬間、相手の反応が変わる</span>
+                  <span className="diag-option-desc">会った瞬間の空気感、目の動き、表情</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="date_confidence">
+                <span className="diag-option-icon">💫</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">好きな人といる時間、自信を持って振る舞える</span>
+                  <span className="diag-option-desc">外見を気にせず、相手に集中できる</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="photo_self">
+                <span className="diag-option-icon">📸</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">写真や動画の自分が、気にならなくなる</span>
+                  <span className="diag-option-desc">映った自分を見て、下がらなくなる</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="morning_mirror">
+                <span className="diag-option-icon">🌅</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">毎朝鏡を見て、気分が上がる</span>
+                  <span className="diag-option-desc">一日のスタートが変わる</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="approach">
+                <span className="diag-option-icon">🚀</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">自分から積極的に動けるようになる</span>
+                  <span className="diag-option-desc">外見への不安が、行動の邪魔をしなくなる</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* SCREEN Q_GOAL_B: ゴール深掘り②（Layer 3：感情・状態のゴール） */}
+        <div className="diag-screen" id="screen-q_goal_b">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div className="diag-card">
+            <p className="diag-step-label">ゴール｜変化</p>
+            <h2 className="diag-q">外見が変わったとき、<br />最も変わってほしいのは何ですか？</h2>
+            <p className="diag-hint">一番近いものを1つ選んでください。</p>
+            <div className="diag-options" id="opts-q_goal_b">
+              <button className="diag-option" data-value="others_perception">
+                <span className="diag-option-icon">👁️</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">他の人からの見られ方・評価</span>
+                  <span className="diag-option-desc">「あの人、なんか変わった」と気づかれたい</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="self_confidence">
+                <span className="diag-option-icon">🔥</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">自分の気持ち・自己肯定感</span>
+                  <span className="diag-option-desc">他人の目より、自分が自分を好きになりたい</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="action_ease">
+                <span className="diag-option-icon">⚡</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">行動のしやすさ・動けるようになること</span>
+                  <span className="diag-option-desc">外見が足を引っ張らなくなれば、動ける</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="life_options">
+                <span className="diag-option-icon">🗺️</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">人生で選べる選択肢の広さ</span>
+                  <span className="diag-option-desc">外見を理由に、諦めることを減らしたい</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* SCREEN Q_GOAL_C: ゴール深掘り③（Layer 3→4への橋渡し） */}
+        <div className="diag-screen" id="screen-q_goal_c">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div className="diag-card">
+            <p className="diag-step-label">ゴール｜未来</p>
+            <h2 className="diag-q">外見に自信が持てたとき、<br />今と何が変わっていると思いますか？</h2>
+            <p className="diag-hint">正直な直感で選んでください。</p>
+            <div className="diag-options" id="opts-q_goal_c">
+              <button className="diag-option" data-value="love_active">
+                <span className="diag-option-icon">❤️</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">恋愛で、躊躇せず動けるようになっている</span>
+                  <span className="diag-option-desc">告白も、連絡も、誘いも、外見を理由に止まらない</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="no_give_up">
+                <span className="diag-option-icon">🌱</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">外見を理由に何かを諦めることが減っている</span>
+                  <span className="diag-option-desc">「どうせ自分なんて」という言葉が頭に浮かばなくなる</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="like_self">
+                <span className="diag-option-icon">🪞</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">自分のことを、もう少し好きになっている</span>
+                  <span className="diag-option-desc">鏡を見て、下がらなくなっている</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="natural_confident">
+                <span className="diag-option-icon">✨</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">自信が「自然な状態」になっている</span>
+                  <span className="diag-option-desc">頑張って出す自信ではなく、あって当たり前の自信</span>
                 </span>
               </button>
             </div>
@@ -623,8 +1276,73 @@ export default function DiagnosisPage() {
           </div>
         </div>
 
-        {/* SCREEN Q5: 過去の試み */}
-        <div className="diag-screen" id="screen-q5">
+        {/* SCREEN Q3_AGA: AGA深掘り（髪分岐） */}
+        <div className="diag-screen" id="screen-q3_aga">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div className="diag-card">
+            <p className="diag-step-label">髪｜AGA</p>
+            <h2 className="diag-q">薄毛・抜け毛について、<br />今どう向き合っていますか？</h2>
+            <p className="diag-hint">正直に教えてください。この情報が経路を変えます。</p>
+            <div className="diag-options" id="opts-q3_aga">
+              <button className="diag-option" data-value="no_action">
+                <span className="diag-option-body">
+                  <span className="diag-option-title">まだ放置している・何をすればいいかわからない</span>
+                  <span className="diag-option-desc">気になっているが、最初の一歩が踏み出せていない</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="self_care">
+                <span className="diag-option-body">
+                  <span className="diag-option-title">市販のシャンプーや育毛剤を試している</span>
+                  <span className="diag-option-desc">自己流で対処している段階</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="consulted">
+                <span className="diag-option-body">
+                  <span className="diag-option-title">皮膚科やクリニックに相談したことがある</span>
+                  <span className="diag-option-desc">専門家のアドバイスは受けている</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="ongoing">
+                <span className="diag-option-body">
+                  <span className="diag-option-title">治療・ケアを継続中</span>
+                  <span className="diag-option-desc">クリニックや薬で対処しながら進めている</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* SCREEN Q3_INTRO: Phase 3 入口カード */}
+        <div className="diag-screen" id="screen-q3_intro">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div className="diag-card">
+            <div className="q3-intro-card">
+              <p style={{fontSize:'11px',fontWeight:'700',color:'#6366f1',letterSpacing:'.06em',textTransform:'uppercase',margin:'0 0 12px'}}>Phase 3 ｜ 軸別スキャン</p>
+              <h2 style={{fontSize:'clamp(18px,4vw,22px)',fontWeight:'800',lineHeight:'1.35',margin:'0 0 12px'}}>ここからは、7つの軸を<br />一つひとつ聞いていきます</h2>
+              <p style={{fontSize:'14px',color:'#6b7280',lineHeight:'1.7',margin:'0 0 6px'}}>各軸で「来た道」「他者からの見え方」「恋愛への影響」<br />の3つを聞きます。</p>
+              <p style={{fontSize:'13px',color:'#9ca3af',margin:'0 0 4px'}}>この7つの答えが、あなたの変容マップの「現在地」になります。</p>
+              <p style={{fontSize:'12px',color:'#a78bfa',fontWeight:'600',margin:'0 0 20px'}}>正直な答えほど、精度の高いマップになります。</p>
+              <div className="q3-intro-axes">
+                {[['💪','体型'],['✂️','眉毛'],['👔','服'],['💇','髪'],['✨','肌'],['🦷','歯'],['💅','爪']].map(([icon, label], i) => (
+                  <div key={i} className="q3-intro-axis">
+                    <div className="q3-intro-axis-icon">{icon}</div>
+                    <span className="q3-intro-axis-label">{label}</span>
+                  </div>
+                ))}
+              </div>
+              <button className="diag-nav-next" id="btn-q3-intro-start" style={{width:'100%',fontSize:'16px'}}>7軸スキャンを始める →</button>
+            </div>
+          </div>
+        </div>
+
+        {/* SCREEN Q3_CAT: Phase 3 カテゴリ別来た道・客観視・恋愛 */}
+        <div className="diag-screen" id="screen-q3_cat">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div id="q3_cat_content"></div>
+        </div>
+
+        {/* SCREEN Q5: 過去の試み（フローからは除外、後方互換で残す） */}
+        <div className="diag-screen" id="screen-q5" style={{display:'none'}}>
           <button className="diag-back-btn" data-back="">← 戻る</button>
           <div className="diag-card">
             <p className="diag-step-label">Q4｜これまでの試み</p>
@@ -672,60 +1390,61 @@ export default function DiagnosisPage() {
           </div>
         </div>
 
-        {/* SCREEN Q5b: 失敗パターン */}
+        {/* SCREEN Q5b: 壁の正体（横断的メタ認知） */}
         <div className="diag-screen" id="screen-q5b">
           <button className="diag-back-btn" data-back="">← 戻る</button>
           <div className="diag-card">
-            <p className="diag-step-label">Q4｜その後</p>
-            <h2 className="diag-q">試してみて、<br />その後どうなりましたか？</h2>
-            <p className="diag-hint">正直に選んでください。これが最も大切な答えです。</p>
+            <p className="diag-step-label">Q4｜壁の正体</p>
+            <h2 className="diag-q">外見を変えようとするとき、<br />一番の壁になってきたのは何だと思う？</h2>
+            <p className="diag-hint">カテゴリは関係なく、あなた自身の「傾向」を振り返ってください。正直な答えが、あなたに合うガイドを見つけます。</p>
             <div className="diag-options" id="opts-q5b">
-              <button className="diag-option" data-value="no_continuation">
+              <button className="diag-option" data-value="cost">
+                <span className="diag-option-icon">💸</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">効果は感じたが、気づいたら続いていなかった</span>
-                  <span className="diag-option-desc">継続の仕組みが作れなかった</span>
+                  <span className="diag-option-title">お金・コスト</span>
+                  <span className="diag-option-desc">費用面でいつも躊躇する、または続けられなくなる</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="no_continuation">
+                <span className="diag-option-icon">⏰</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">時間・習慣化</span>
+                  <span className="diag-option-desc">続けようとしても、生活の中に組み込めない</span>
                 </span>
               </button>
               <button className="diag-option" data-value="lost_direction">
+                <span className="diag-option-icon">🧭</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">何をすればいいか、途中でわからなくなった</span>
-                  <span className="diag-option-desc">正解がなく、迷子になった</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="no_trust">
-                <span className="diag-option-body">
-                  <span className="diag-option-title">担当の人と合わなかった、または信頼できなかった</span>
-                  <span className="diag-option-desc">関係性が作れなかった</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="cost_money">
-                <span className="diag-option-body">
-                  <span className="diag-option-title">お金が続かなかった</span>
-                  <span className="diag-option-desc">費用対効果に迷いが生まれた</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="cost_time">
-                <span className="diag-option-body">
-                  <span className="diag-option-title">時間が続かなかった（忙しくなった）</span>
-                  <span className="diag-option-desc">生活リズムの中に組み込めなかった</span>
+                  <span className="diag-option-title">方向・知識</span>
+                  <span className="diag-option-desc">何から始めるか、何が正解かわからなくなる</span>
                 </span>
               </button>
               <button className="diag-option" data-value="no_result">
+                <span className="diag-option-icon">📉</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">やってみたが、変化が感じられなかった</span>
-                  <span className="diag-option-desc">頑張ったのに、鏡を見ても変わらなかった</span>
+                  <span className="diag-option-title">実感・モチベーション</span>
+                  <span className="diag-option-desc">やっても変わった気がしない、続ける理由が見えなくなる</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="awkward">
+                <span className="diag-option-icon">🤝</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">サポート・関係性</span>
+                  <span className="diag-option-desc">一人では難しく、プロとの相性もなかなか合わない</span>
                 </span>
               </button>
               <button className="diag-option" data-value="self_doubt">
+                <span className="diag-option-icon">😔</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">「自分には無理かも」という気持ちが出てきた</span>
-                  <span className="diag-option-desc">自信がなくなり、やめてしまった</span>
+                  <span className="diag-option-title">自信・マインド</span>
+                  <span className="diag-option-desc">「自分には変われないかも」という気持ちが邪魔をする</span>
                 </span>
               </button>
               <button className="diag-option" data-value="ongoing">
+                <span className="diag-option-icon">💡</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">今も続けている（もっと良くしたい）</span>
-                  <span className="diag-option-desc">現状に満足できず、さらなる改善を求めている</span>
+                  <span className="diag-option-title">特に壁はない</span>
+                  <span className="diag-option-desc">今も取り組んでいて、さらに深めたい</span>
                 </span>
               </button>
             </div>

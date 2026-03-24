@@ -23,7 +23,7 @@ function safeCopy(src, dest) {
 }
 
 // assets, components, data, scripts, feature, diagnosis は丸ごとコピー
-const FULL_COPY = ['assets', 'components', 'data', 'styles', 'scripts', 'feature', 'diagnosis'];
+const FULL_COPY = ['assets', 'components', 'data', 'styles', 'scripts', 'feature', 'diagnosis', 'business'];
 for (const dir of FULL_COPY) {
   const src = path.resolve(ROOT, dir);
   if (!fs.existsSync(src)) continue;

@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Me Scan 診断ロジック解説 — Fineme</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@400;500;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background-color: #060c1a;
+    background-image: linear-gradient(rgba(6,12,26,0.93), rgba(6,12,26,0.93)),
+                      url('../public/assets/images/bg-parchment.webp');
+    background-size: cover;
+    background-attachment: fixed;
+    color: #e8e2d4;
+    line-height: 1.7;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page { max-width: 800px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  /* ── Cover ── */
+  .cover {
+    text-align: center; padding: 56px 24px 48px;
+    border-bottom: 1px solid rgba(201,168,76,.2); margin-bottom: 40px;
+  }
+  .cover-badge {
+    display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .18em;
+    text-transform: uppercase; color: rgba(201,168,76,.7);
+    border: 1px solid rgba(201,168,76,.3); padding: 5px 14px; border-radius: 3px;
+    margin-bottom: 20px;
+  }
+  .cover h1 {
+    font-family: 'Noto Serif JP', Georgia, serif;
+    font-size: clamp(22px, 4vw, 30px); font-weight: 700; color: #fff;
+    line-height: 1.5; margin-bottom: 16px;
+  }
+  .cover h1 em { font-style: normal; color: #c9a84c; }
+  .cover-meta { font-size: 12px; color: rgba(201,168,76,.55); letter-spacing: .08em; margin-top: 20px; }
+  .cover-lead {
+    font-size: 14px; color: rgba(255,255,255,.72); max-width: 520px; margin: 14px auto 0;
+    line-height: 1.9;
+  }
+
+  /* ── Section ── */
+  .section { margin-bottom: 40px; }
+  .sec-num {
+    font-size: 10px; font-weight: 800; letter-spacing: .18em; color: rgba(201,168,76,.5);
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .sec-label {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  }
+  .sec-label-line { width: 24px; height: 1.5px; background: #c9a84c; flex-shrink: 0; }
+  .sec-label-text { font-size: 10px; font-weight: 800; letter-spacing: .16em; color: rgba(201,168,76,.7); text-transform: uppercase; }
+  .sec-label::after { content: ''; flex: 1; height: 1px; background: repeating-linear-gradient(90deg, rgba(201,168,76,.3) 0, rgba(201,168,76,.3) 4px, transparent 4px, transparent 10px); }
+
+  .lead { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(16px, 3vw, 20px); font-weight: 700; color: #fff; line-height: 1.6; margin-bottom: 16px; }
+
+  /* ── Cards ── */
+  .card {
+    background: rgba(255,255,255,.03); border: 1px solid rgba(201,168,76,.15);
+    border-radius: 12px; padding: 20px 22px; margin-bottom: 12px;
+  }
+  .card-gold {
+    background: rgba(201,168,76,.05); border: 1.5px solid rgba(201,168,76,.3);
+    border-radius: 12px; padding: 20px 22px; margin-bottom: 12px;
+  }
+  .card h3 { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+  .card p, .card-gold p { font-size: 13px; color: #c0bab2; line-height: 1.8; }
+  .card p + p { margin-top: 6px; }
+
+  /* ── Phase flow ── */
+  .phase-list { display: flex; flex-direction: column; gap: 0; }
+  .phase-item {
+    display: flex; gap: 16px; padding: 18px 0;
+    border-bottom: 1px solid rgba(201,168,76,.1);
+  }
+  .phase-item:last-child { border-bottom: none; }
+  .phase-num {
+    width: 36px; height: 36px; border-radius: 50%; background: rgba(201,168,76,.12);
+    border: 1px solid rgba(201,168,76,.3); display: flex; align-items: center;
+    justify-content: center; font-size: 13px; font-weight: 900; color: #c9a84c;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .phase-body { flex: 1; }
+  .phase-label { font-size: 10px; font-weight: 800; color: rgba(201,168,76,.7); letter-spacing: .1em; margin-bottom: 5px; }
+  .phase-title { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .phase-desc { font-size: 13px; color: #b8b0a8; line-height: 1.8; }
+  .phase-desc strong { color: #e8e2d4; font-weight: 700; }
+  .phase-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .phase-tag { font-size: 11px; padding: 3px 10px; border-radius: 99px; background: rgba(201,168,76,.08); color: rgba(201,168,76,.85); border: 1px solid rgba(201,168,76,.2); }
+
+  /* ── 7軸テーブル ── */
+  .axis-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 8px; }
+  .axis-card {
+    border-radius: 10px; padding: 14px 16px;
+    border: 1px solid rgba(201,168,76,.18); background: rgba(255,255,255,.02);
+  }
+  .axis-card.tier-1 { border-color: rgba(201,168,76,.4); background: rgba(201,168,76,.04); }
+  .axis-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .axis-icon { font-size: 18px; }
+  .axis-name { font-size: 14px; font-weight: 800; color: #fff; }
+  .axis-tier { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; margin-left: auto; }
+  .tier-badge-1 { background: rgba(201,168,76,.15); color: #c9a84c; border: 1px solid rgba(201,168,76,.3); }
+  .tier-badge-2 { background: rgba(99,102,241,.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,.3); }
+  .tier-badge-3 { background: rgba(245,158,11,.12); color: #fcd34d; border: 1px solid rgba(245,158,11,.25); }
+  .tier-badge-4 { background: rgba(255,255,255,.06); color: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.12); }
+  .axis-desc { font-size: 12px; color: #a09890; line-height: 1.7; }
+  .axis-speed { font-size: 11px; color: rgba(201,168,76,.7); margin-top: 6px; font-weight: 700; }
+
+  /* ── Formula ── */
+  .formula-box {
+    background: #0a0f1e; border: 1.5px solid rgba(201,168,76,.3); border-radius: 12px;
+    padding: 20px 22px; font-family: 'Courier New', monospace; margin: 14px 0;
+  }
+  .formula-line { font-size: 13px; color: #c9a84c; line-height: 2; }
+  .formula-comment { font-size: 12px; color: rgba(255,255,255,.4); font-family: 'Noto Sans JP', sans-serif; font-style: italic; padding-left: 16px; }
+
+  /* ── Path type ── */
+  .path-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
+  .path-card { border-radius: 10px; padding: 14px 15px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); }
+  .path-key { font-size: 11px; font-weight: 800; color: #c9a84c; letter-spacing: .06em; margin-bottom: 5px; }
+  .path-label { font-size: 13px; font-weight: 700; color: #e8e2d4; margin-bottom: 4px; }
+  .path-use { font-size: 12px; color: #9d9890; line-height: 1.6; }
+
+  /* ── Output cards ── */
+  .output-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+  .output-card { border-radius: 12px; padding: 18px 16px; text-align: center; border: 1px solid rgba(201,168,76,.2); background: rgba(201,168,76,.04); }
+  .output-icon { font-size: 28px; margin-bottom: 10px; }
+  .output-name { font-size: 13px; font-weight: 800; color: #c9a84c; margin-bottom: 6px; }
+  .output-desc { font-size: 12px; color: #9d9890; line-height: 1.6; }
+
+  /* ── Insight box ── */
+  .insight {
+    border-left: 3px solid #c9a84c; padding: 14px 16px;
+    background: rgba(201,168,76,.05); border-radius: 0 10px 10px 0; margin: 12px 0;
+  }
+  .insight p { font-size: 13px; color: #d0c8c0; line-height: 1.85; }
+  .insight strong { color: #fff; }
+
+  /* ── Table ── */
+  .data-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+  .data-table th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 800; color: rgba(201,168,76,.7); letter-spacing: .08em; border-bottom: 1px solid rgba(201,168,76,.2); }
+  .data-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.05); color: #c0bab2; vertical-align: top; line-height: 1.7; }
+  .data-table td:first-child { color: #c9a84c; font-weight: 800; font-size: 12px; font-family: 'Courier New', monospace; white-space: nowrap; }
+
+  /* ── Divider ── */
+  .divider { height: 1px; background: repeating-linear-gradient(90deg, rgba(201,168,76,.25) 0, rgba(201,168,76,.25) 5px, transparent 5px, transparent 12px); margin: 32px 0; }
+
+  /* ── Footer ── */
+  .footer { text-align: center; padding-top: 32px; border-top: 1px solid rgba(201,168,76,.15); margin-top: 24px; }
+  .footer p { font-size: 11px; color: rgba(201,168,76,.4); letter-spacing: .08em; }
+
+  @media print {
+    body { background-color: #060c1a !important; background-image: linear-gradient(rgba(6,12,26,0.93),rgba(6,12,26,0.93)), url('../public/assets/images/bg-parchment.webp') !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .page { padding: 24px 20px 40px; }
+  }
+  @media (max-width: 600px) {
+    .axis-grid { grid-template-columns: 1fr; }
+    .path-grid { grid-template-columns: 1fr; }
+    .output-grid { grid-template-columns: 1fr; }
+  }
+  .print-btn{
+    position:fixed;bottom:24px;right:24px;
+    display:flex;align-items:center;gap:8px;
+    padding:11px 20px;
+    background:linear-gradient(135deg,#c9a84c,#e6c96e);
+    color:#0a0f1e;border:none;border-radius:99px;
+    font-size:13px;font-weight:800;font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    cursor:pointer;box-shadow:0 4px 20px rgba(201,168,76,.4);
+    letter-spacing:.04em;z-index:100;
+  }
+  @media print{
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .print-btn{display:none}
+  }
+</style>
+<button class="print-btn" onclick="window.print()">🖨 PDF保存</button>
+</head>
+<body>
+<div class="page">
+
+  <!-- Cover -->
+  <div class="cover">
+    <div class="cover-badge">Internal Document — Fineme</div>
+    <h1>Me Scan 診断ロジック解説<br><em>なぜこの設計なのか、どう動くのか</em></h1>
+    <p class="cover-lead">
+      PTおよび掲載者（ガイド）向けに、Finemeの中核機能「Me Scan」の設計思想・質問構造・スコア計算・マッチングへの接続を解説します。
+    </p>
+    <p class="cover-meta">Version: v9_me_scan　／　2026-03-22　／　Fineme</p>
+  </div>
+
+  <!-- 00: 設計思想 -->
+  <div class="section">
+    <div class="sec-num">00</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Design Philosophy</div></div>
+    <p class="lead">Me Scanは「タイプ分類」ではなく、<br>「変容の経路を生成するエンジン」です。</p>
+
+    <div class="card-gold">
+      <h3>「タイプ診断」との根本的な違い</h3>
+      <p>一般的な外見診断は「あなたはXXタイプ」と分類して終わります。Me Scanはそうではありません。</p>
+      <p>目的は<strong>「この人が変容の旅を通じて、今どの軸に注力すべきか」を継続的に指し示すこと</strong>です。最初の一手を示すだけでなく、旅が進むにつれて次に向かうべき方向を更新し続ける羅針盤を生成します。結果は一人ひとり異なり、同じ状態でもゴールの違いによって経路が変わります。</p>
+    </div>
+
+    <div class="card">
+      <h3>診断データが担う3つの役割</h3>
+      <p>① <strong>New Me Map（地図）の生成</strong> — 現在地・理想・ギャップを7軸で可視化</p>
+      <p>② <strong>Fineme Compass（羅針盤）の決定</strong> — 最初に動かすべき軸を1つ示す</p>
+      <p>③ <strong>掲載者マッチングのスコアリング</strong> — ユーザーの文脈と掲載者のプロフィールを照合</p>
+    </div>
+
+    <div class="insight">
+      <p>診断結果は「見てわかる地図」として設計されており、ユーザーは何度でも見返します。Finemeにとって診断は入口ではなく、<strong>ユーザーとの継続的な関係の基盤</strong>です。</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 01: 全体フロー -->
+  <div class="section">
+    <div class="sec-num">01</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Scan Flow — 全体フロー</div></div>
+    <p class="lead">4つのフェーズで<br>「文脈 → 現在地 → 来た道 → 行動スタイル」を取得</p>
+
+    <div class="phase-list">
+      <div class="phase-item">
+        <div class="phase-num">1</div>
+        <div class="phase-body">
+          <div class="phase-label">Phase 1 — Context</div>
+          <div class="phase-title">文脈・動機の把握（5問）</div>
+          <p class="phase-desc">
+            変わりたい<strong>きっかけ</strong>（trigger）、<strong>ゴールの4層</strong>（何の場面で / 何をどう変えたいか / 変わった後のビジョン / 具体的な状況）を取得します。<br>
+            「なぜ今か」を最初に聞くことで、後続の質問に感情的な意味を持たせます。
+          </p>
+          <div class="phase-tags">
+            <span class="phase-tag">trigger</span>
+            <span class="phase-tag">goal_scene</span>
+            <span class="phase-tag">goal_change</span>
+            <span class="phase-tag">goal_vision</span>
+            <span class="phase-tag">scene</span>
+          </div>
+        </div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-num">2</div>
+        <div class="phase-body">
+          <div class="phase-label">Phase 2 — Baseline</div>
+          <div class="phase-title">7軸の現在地・理想スコア（9〜11問）</div>
+          <p class="phase-desc">
+            体型・眉・服・髪・肌・歯・爪の7軸について、<strong>現状の関わり方（care_level）</strong>と<strong>理想スコア（1〜5）</strong>を取得します。<br>
+            care_levelは「気にしていない（1点）→ 気にはなっている（2点）→ 自己流でやっている（3点）→ プロに頼んでいる（4点）」の4段階。<br>
+            髪軸には<strong>AGA分岐</strong>（薄毛・抜け毛の懸念）が独立した1問として存在します。
+          </p>
+          <div class="phase-tags">
+            <span class="phase-tag">care_levels</span>
+            <span class="phase-tag">ideal_levels</span>
+            <span class="phase-tag">aga_concern / aga_status</span>
+          </div>
+        </div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-num">3</div>
+        <div class="phase-body">
+          <div class="phase-label">Phase 3 — Path Scan</div>
+          <div class="phase-title">7軸×3問の「来た道・客観視・恋愛紐付け」（最大21問）</div>
+          <p class="phase-desc">
+            Phase 2でスコアが入った各軸に対し、3つの角度で深掘りします。<br>
+            <strong>① 来た道（path_type）</strong> — その軸とどんな経緯で関わってきたか（virgin/quit/blind/lapsed）<br>
+            <strong>② 客観視（self_view）</strong> — 他者から自分がどう見えていると思うか（better/accurate/worse/unknown）<br>
+            <strong>③ 恋愛への影響（love_impact）</strong> — その軸への不安が恋愛・出会いに影響したことがあるか（体型・眉・服・髪・肌・歯のみ）
+          </p>
+          <div class="phase-tags">
+            <span class="phase-tag">path_types</span>
+            <span class="phase-tag">self_views</span>
+            <span class="phase-tag">love_impact</span>
+          </div>
+        </div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-num">4</div>
+        <div class="phase-body">
+          <div class="phase-label">Phase 4 — Behavior Style</div>
+          <div class="phase-title">行動スタイル・コンテキスト（4問）</div>
+          <p class="phase-desc">
+            <strong>失敗パターン（failure_pattern）</strong> — 過去の挫折の文脈（継続不足・自己流・情報過多など）<br>
+            <strong>スタイル優先軸（style_priority_top）</strong> — 「説明重視×自己判断」「相談重視×通いやすさ」「おまかせ×指示がほしい」「慎重派×継続重視」の4タイプ<br>
+            <strong>緊急度（urgency）</strong> — いつまでに変わりたいか<br>
+            <strong>予算感（budget）</strong> — 月の投資可能額
+          </p>
+          <div class="phase-tags">
+            <span class="phase-tag">failure_pattern</span>
+            <span class="phase-tag">style_priority_top</span>
+            <span class="phase-tag">urgency</span>
+            <span class="phase-tag">budget</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 02: 7軸の設計 -->
+  <div class="section">
+    <div class="sec-num">02</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">7 Axes — 7軸の設計</div></div>
+    <p class="lead">Tier構造で「変わりやすさ」を設計</p>
+
+    <p style="font-size:13px;color:#b8b0a8;line-height:1.8;margin-bottom:16px">
+      7軸にはTier（1〜4）が設定されています。Tierは「その軸の変化がもたらすインパクトの大きさと速さ」を表し、Compassの計算に使われます。
+    </p>
+
+    <div class="axis-grid">
+      <div class="axis-card tier-1">
+        <div class="axis-card-head">
+          <span class="axis-icon">💪</span>
+          <span class="axis-name">体型・ボディ</span>
+          <span class="axis-tier tier-badge-1">Tier 1 / 速効度3</span>
+        </div>
+        <p class="axis-desc">筋肉・体脂肪・姿勢。変化に時間がかかるが、変わったときのインパクトは最大。パーソナルジムが対応。</p>
+      </div>
+      <div class="axis-card tier-1">
+        <div class="axis-card-head">
+          <span class="axis-icon">✂️</span>
+          <span class="axis-name">眉毛</span>
+          <span class="axis-tier tier-badge-1">Tier 1 / 速効度5</span>
+        </div>
+        <p class="axis-desc">顔の印象を決定づける。プロに1回頼むだけで変化が出る「最速の投資」。眉毛サロンが対応。</p>
+      </div>
+      <div class="axis-card tier-1">
+        <div class="axis-card-head">
+          <span class="axis-icon">👔</span>
+          <span class="axis-name">服・コーデ</span>
+          <span class="axis-tier tier-badge-1">Tier 1 / 速効度5</span>
+        </div>
+        <p class="axis-desc">全身印象の60〜70%を決める。トータルコーディネートの提案で即日変化が出る。</p>
+      </div>
+      <div class="axis-card tier-1">
+        <div class="axis-card-head">
+          <span class="axis-icon">💇</span>
+          <span class="axis-name">髪・ヘア</span>
+          <span class="axis-tier tier-badge-1">Tier 1 / 速効度4</span>
+        </div>
+        <p class="axis-desc">清潔感・若見えに直結。AGA分岐あり（薄毛はカテゴリ別に分岐して対応ガイドへ接続）。</p>
+      </div>
+      <div class="axis-card">
+        <div class="axis-card-head">
+          <span class="axis-icon">✨</span>
+          <span class="axis-name">肌・エステ・脱毛</span>
+          <span class="axis-tier tier-badge-2">Tier 2 / 速効度3</span>
+        </div>
+        <p class="axis-desc">清潔感・近距離の印象に影響。スキンケア習慣の構築からプロのケアまで幅広い。</p>
+      </div>
+      <div class="axis-card">
+        <div class="axis-card-head">
+          <span class="axis-icon">🦷</span>
+          <span class="axis-name">歯・口元</span>
+          <span class="axis-tier tier-badge-3">Tier 3 / 速効度2</span>
+        </div>
+        <p class="axis-desc">笑顔・近距離コミュニケーションに影響。ホワイトニング（即効）から矯正（長期）まで。</p>
+      </div>
+      <div class="axis-card">
+        <div class="axis-card-head">
+          <span class="axis-icon">💅</span>
+          <span class="axis-name">爪</span>
+          <span class="axis-tier tier-badge-4">Tier 4 / 速効度2</span>
+        </div>
+        <p class="axis-desc">細部の清潔感。ハンドケア・ネイルサロン対応。恋愛軸の問いはなし（近距離印象に特化）。</p>
+      </div>
+    </div>
+
+    <div class="insight" style="margin-top:16px">
+      <p>Tier 1（体型・眉・服・髪）はFinemeの「基盤」カテゴリです。この4軸に同時に問題がある場合、<strong>速効度の高い「眉」か「服」を最初の一手として優先する</strong>設計になっています。「最速で自信を感じられる変化」を起点にすることが、変容継続につながるからです。</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 03: スコア計算 -->
+  <div class="section">
+    <div class="sec-num">03</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Score Calculation — スコア計算</div></div>
+    <p class="lead">変容ベクトル（gap）と<br>Compassの決定ロジック</p>
+
+    <div class="card" style="margin-bottom:16px">
+      <h3>① 変容ベクトルの計算</h3>
+      <p>各軸の「現在地スコア」と「理想スコア」の差分がベクトル（gap）です。</p>
+    </div>
+
+    <div class="formula-box">
+      <div class="formula-line">current_score = care_level の変換</div>
+      <div class="formula-comment">  none → 1　／　concerned → 2　／　self → 3　／　pro → 4</div>
+      <div class="formula-line" style="margin-top:10px">ideal_score = ユーザーが選んだ理想スコア（1〜5）</div>
+      <div class="formula-line" style="margin-top:10px">gap = max(0, ideal_score − current_score)</div>
+      <div class="formula-comment">  ※ gap が 0 = 現状で十分、またはすでに理想以上</div>
+    </div>
+
+    <div class="card" style="margin-top:16px;margin-bottom:10px">
+      <h3>② Compass（最初の一手）の決定：priority_order</h3>
+      <p>gap > 0 の軸を以下の優先順位でソートし、1位が「Compass」になります。</p>
+    </div>
+
+    <div class="formula-box">
+      <div class="formula-line">優先順位1位: Tier が低いほど優先（Tier 1 → 4）</div>
+      <div class="formula-line">同Tierの場合: gap が大きいほど優先</div>
+      <div class="formula-line">同gapの場合: 速効度（SPEED値）が高いほど優先</div>
+      <div class="formula-comment" style="margin-top:8px">
+        SPEED値: 眉=5, 服=5, 髪=4, 体型=3, 肌=3, 歯=2, 爪=2
+      </div>
+    </div>
+
+    <div class="insight">
+      <p>例：体型(gap=3)と眉(gap=2)が同じTier 1にある場合、gapは体型が大きいが、速効度は眉(5)&gt;体型(3)なので<strong>Compassは体型を指す</strong>。ただしユーザーは「最初の一手」を7軸チップで上書きできます（Compass override機能）。</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 04: Phase 3の3問の意味 -->
+  <div class="section">
+    <div class="sec-num">04</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Phase 3 — 3問の設計意図</div></div>
+    <p class="lead">「来た道」「客観視」「恋愛紐付け」の<br>それぞれが何のためにあるか</p>
+
+    <div class="path-grid">
+      <div class="path-card" style="grid-column: 1 / -1">
+        <div class="phase-label" style="color:rgba(201,168,76,.7);margin-bottom:8px">問い① — 来た道（path_type）</div>
+        <p style="font-size:13px;color:#c0bab2;line-height:1.8">その軸とこれまでどんな経緯で関わってきたかを4分類で取得します。これは<strong>掲載者との照合に使われる最重要データ</strong>です。「初めての人（virgin）」と「挫折経験者（quit）」では、必要なガイドの種類が根本的に違います。</p>
+      </div>
+      <div class="path-card">
+        <div class="path-key">virgin</div>
+        <div class="path-label">🌱 未着手・無関心</div>
+        <div class="path-use">入門・ゼロからのスタートを得意とするガイドとマッチ。不安の解消が先決。</div>
+      </div>
+      <div class="path-card">
+        <div class="path-key">quit</div>
+        <div class="path-label">🔄 試したが続かなかった</div>
+        <div class="path-use">「なぜ続かなかったか」の原因分析と再設計が得意なガイドとマッチ。</div>
+      </div>
+      <div class="path-card">
+        <div class="path-key">blind</div>
+        <div class="path-label">🤔 自己流・客観評価なし</div>
+        <div class="path-use">「方向性の見直し」「客観的な評価」を提供できるガイドとマッチ。</div>
+      </div>
+      <div class="path-card">
+        <div class="path-key">lapsed</div>
+        <div class="path-label">😴 以前はやっていた</div>
+        <div class="path-use">「再起動・モチベーション維持」が得意なガイドとマッチ。</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>問い② — 客観視（self_view）</h3>
+      <p>「他者から自分がどう見えていると思うか」の推測を取得します（better / accurate / worse / unknown）。</p>
+      <p><strong>worse（自分より悪く見えているかも）や unknown（わからない）は強い不安の指標</strong>です。New Me Naviの「障壁分析」セクションに使われ、「まず客観評価を受けることが先決」というアドバイスの根拠になります。</p>
+    </div>
+
+    <div class="card" style="margin-top:10px">
+      <h3>問い③ — 恋愛への影響（love_impact）</h3>
+      <p>「その軸への不安が恋愛・出会いの場面で影響したことがあるか」（often / sometimes / rarely）。</p>
+      <p>love_impactが「often（よくある）」の軸は、New Me Mapで<strong>恋愛バッジ</strong>として強調表示されます。また、外見への不安と恋愛の結びつきはFineme全体の動機文脈として機能します。爪軸のみhas_love=falseで、この問いをスキップします（近距離印象には影響するが恋愛への文脈が薄いため）。</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 05: 出力データ一覧 -->
+  <div class="section">
+    <div class="sec-num">05</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Output Data — 診断結果データ</div></div>
+    <p class="lead">localStorage / Supabaseに保存される<br>全フィールドと使われ方</p>
+
+    <table class="data-table">
+      <tr><th>フィールド名</th><th>内容と使われ方</th></tr>
+      <tr><td>trigger</td><td>変わりたいきっかけ（matching_app / love / career / self / friend_reaction）。掲載者の suitable_triggers と照合してマッチングスコアに加点。</td></tr>
+      <tr><td>goal_scene / goal_change / goal_vision</td><td>ゴール3層。New Me Mapのヒーローコピー生成に使用。「誰の前で」「何をどう」「変わった後どうなる」。</td></tr>
+      <tr><td>transform_vectors</td><td>7軸の {current, ideal, gap, tier, care_type, path_type, self_view, love_impact} オブジェクト。レーダーチャート・ベクトルリスト・Compassすべての根拠。</td></tr>
+      <tr><td>priority_order</td><td>gap>0の軸をTier→gap→速効度でソートした配列。[0]がCompass。</td></tr>
+      <tr><td>compass_first</td><td>priority_order[0]のコピー。Compassのデフォルト値。overrideで上書き可能。</td></tr>
+      <tr><td>failure_pattern</td><td>過去の失敗パターン（too_busy / no_direction / quit_fast / info_overload / ongoing）。掲載者の handles_failure_patterns と照合。</td></tr>
+      <tr><td>style_priority_top</td><td>4スタイルのうち最優先（explanation_autonomy / consultation_accessibility / delegate_directive / cautious_continuity）。New Me Naviのトーン変更に使用予定。</td></tr>
+      <tr><td>urgency</td><td>変わりたい期間（1ヶ月以内 / 3ヶ月 / 半年 / 焦っていない）。Compassの「急ぎ注記」表示に使用。</td></tr>
+      <tr><td>aga_concern / aga_status</td><td>AGA（薄毛）の懸念・現状。hair軸の結果とは別に保持。AGAガイドへの専用接続に使用。</td></tr>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 06: 3つのアウトプット -->
+  <div class="section">
+    <div class="sec-num">06</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Outputs — 診断が生み出す3つのアウトプット</div></div>
+    <p class="lead">「地図」「羅針盤」「ロードマップ」が<br>ユーザーの変容を継続的に支える</p>
+
+    <div class="output-grid">
+      <div class="output-card">
+        <div class="output-icon">🗺️</div>
+        <div class="output-name">New Me Map</div>
+        <div class="output-desc">7軸レーダーチャート、変容ベクトルリスト、ゴール4層、プロマッチング。「自分だけの地図」として保存・参照される。</div>
+      </div>
+      <div class="output-card">
+        <div class="output-icon">🧭</div>
+        <div class="output-name">Fineme Compass</div>
+        <div class="output-desc">変容の旅を通じて「今最も注力すべき軸」を指し示す羅針盤。最初の一手を示すだけでなく、旅が進むにつれて向かうべき方向が更新される。ユーザーによる手動override機能あり。</div>
+      </div>
+      <div class="output-card">
+        <div class="output-icon">🛤️</div>
+        <div class="output-name">New Me Navi</div>
+        <div class="output-desc">7軸並列のロードマップ。各軸にTier別3中継地点（来た道別）を表示。Tier 4はグレーアウトで段階的に解放。</div>
+      </div>
+    </div>
+
+    <div class="insight" style="margin-top:16px">
+      <p>この3つは「地図を渡す→羅針盤で方向を示す→ロードマップで道を歩く」という連続した体験として設計されています。Compassは最初の一手を示すだけでなく、<strong>旅が進むにつれてどの軸に向かうべきかを指し示し続ける</strong>ものです。診断は「完了するもの」ではなく、変容の旅全体を通じてユーザーと共に在り続けます。</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 07: マッチングへの接続 -->
+  <div class="section">
+    <div class="sec-num">07</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Matching — 診断データとマッチングの接続</div></div>
+    <p class="lead">診断データが掲載者スコアリングに<br>どう使われるか</p>
+
+    <p style="font-size:13px;color:#b8b0a8;margin-bottom:14px;line-height:1.8">診断が終わると、ユーザーのデータは<code style="background:rgba(201,168,76,.1);padding:2px 6px;border-radius:4px;font-size:12px;color:#c9a84c">/api/providers</code>へのクエリパラメーターとして渡され、掲載者の総合スコアを計算します。</p>
+
+    <table class="data-table">
+      <tr><th>診断フィールド</th><th>マッチングへの影響</th></tr>
+      <tr><td>trigger</td><td>掲載者の suitable_triggers（きっかけ配列）に含まれていれば <strong>+8点</strong></td></tr>
+      <tr><td>failure_pattern</td><td>掲載者の handles_failure_patterns（失敗パターン配列）に含まれていれば <strong>+8点</strong></td></tr>
+      <tr><td>compass_first (軸)</td><td>その軸に対応するカテゴリを掲載者が持っていれば <strong>+12点</strong>（例：body軸 → gym カテゴリ）</td></tr>
+      <tr><td>priority_order (上位3軸)</td><td>掲載者のサービスがその軸の対象軸であれば各 <strong>+5点</strong>（最大+15点）</td></tr>
+    </table>
+
+    <div class="card" style="margin-top:14px">
+      <h3>ユーザーデータ以外のスコア要素</h3>
+      <p>マッチングスコアはユーザーとの一致だけでなく、<strong>掲載者のプロフィール充実度</strong>（哲学・ビジョン・写真・スタッフ等）と<strong>サービスの内容充実度</strong>（変容の約束・Before/After等）も積算します。テキトーに2項目だけ設定しても上位には出ない設計です。</p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>Fineme Internal Document — Me Scan v9 Diagnostic Logic　／　配布先：PT・掲載者（ガイド）</p>
+    <p style="margin-top:4px">Fineme（ファインミ）　www.fineme.me</p>
+  </div>
+
+</div>
+</body>
+</html>

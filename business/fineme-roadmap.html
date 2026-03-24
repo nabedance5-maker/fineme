@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fineme 事業ロードマップ</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Hiragino Mincho Pro','Noto Serif JP',Georgia,serif;
+    background-color:#060c1a;
+    color:#e8e2d4;line-height:1.8;font-size:15px;
+  }
+  .page{max-width:860px;margin:0 auto;padding:0 0 120px}
+
+  /* HERO */
+  .hero{
+    padding:72px 40px 60px;
+    background:linear-gradient(rgba(6,12,26,0.82),rgba(10,15,30,0.95));
+    border-bottom:1px solid rgba(201,168,76,.2);
+  }
+  .hero-eyebrow{font-size:11px;font-weight:700;letter-spacing:.14em;color:rgba(201,168,76,.6);font-family:'Hiragino Kaku Gothic Pro',sans-serif;text-transform:uppercase;margin-bottom:20px}
+  .hero h1{font-size:32px;font-weight:800;line-height:1.4;color:#f0ece4;margin-bottom:14px}
+  .hero-sub{font-size:13px;color:#a09890;line-height:2}
+  .hero-sub strong{color:#c9a84c}
+
+  /* PHASE SECTION */
+  .phase{padding:52px 40px;border-bottom:1px solid rgba(255,255,255,.04);position:relative}
+  .phase:nth-child(even){background:rgba(8,14,28,0.6)}
+
+  /* Phase header */
+  .phase-header{display:flex;align-items:flex-start;gap:20px;margin-bottom:28px}
+  .phase-badge{
+    flex-shrink:0;
+    width:56px;height:56px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:800;font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    letter-spacing:.04em;text-align:center;line-height:1.3;
+  }
+  .phase-badge.done{background:rgba(74,222,128,.1);border:1.5px solid rgba(74,222,128,.35);color:#4ade80}
+  .phase-badge.now{background:rgba(201,168,76,.15);border:1.5px solid rgba(201,168,76,.5);color:#c9a84c;box-shadow:0 0 20px rgba(201,168,76,.15)}
+  .phase-badge.next{background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.1);color:#6b7280}
+  .phase-meta{flex:1}
+  .phase-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-family:'Hiragino Kaku Gothic Pro',sans-serif;margin-bottom:6px}
+  .phase-label.done{color:rgba(74,222,128,.7)}
+  .phase-label.now{color:#c9a84c}
+  .phase-label.next{color:rgba(255,255,255,.25)}
+  .phase-title{font-size:22px;font-weight:800;color:#f0ece4;line-height:1.4;margin-bottom:4px}
+  .phase-title.next{color:#6b7280}
+  .phase-period{font-size:12px;color:#a09890;font-family:'Hiragino Kaku Gothic Pro',sans-serif}
+
+  /* Status tag */
+  .status-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:700;font-family:'Hiragino Kaku Gothic Pro',sans-serif;margin-bottom:20px}
+  .status-done{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.25);color:#4ade80}
+  .status-now{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.35);color:#c9a84c}
+  .status-next{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:#6b7280}
+  .status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+  .status-dot.done{background:#4ade80}
+  .status-dot.now{background:#c9a84c;animation:pulse 1.8s infinite}
+  .status-dot.next{background:#4b5563}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+  /* Deliverables */
+  .deliverables{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+  .del-item{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:#c4bfb5;line-height:1.7;padding:10px 14px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05);border-radius:10px}
+  .del-item.done-item{border-color:rgba(74,222,128,.1)}
+  .del-item.now-item{border-color:rgba(201,168,76,.12)}
+  .del-icon{flex-shrink:0;font-size:14px;margin-top:1px}
+  .del-label{color:#e8e2d4;font-weight:700;display:block;margin-bottom:2px}
+
+  /* KPI */
+  .kpi-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+  .kpi-card{flex:1;min-width:140px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px;text-align:center}
+  .kpi-num{font-size:28px;font-weight:900;color:#c9a84c;font-family:'Hiragino Kaku Gothic Pro',sans-serif;line-height:1}
+  .kpi-unit{font-size:11px;color:#b0aaa2;margin-top:3px}
+  .kpi-label{font-size:11px;color:#a09890;margin-top:8px;line-height:1.5}
+  .kpi-card.next-kpi .kpi-num{color:#4b5563}
+
+  /* Insight */
+  .insight{background:rgba(201,168,76,.06);border-left:3px solid #c9a84c;border-radius:0 10px 10px 0;padding:14px 20px;margin-top:20px;font-size:13px;color:#c4bfb5;line-height:1.85}
+  .insight strong{color:#e8e2d4}
+
+  /* Timeline connector */
+  .connector{display:flex;justify-content:center;padding:4px 0;opacity:.3}
+  .connector-line{width:2px;height:32px;background:linear-gradient(to bottom,rgba(201,168,76,.5),rgba(201,168,76,.1))}
+
+  /* Footer */
+  .footer{padding:48px 40px 20px;text-align:center;border-top:1px solid rgba(255,255,255,.05)}
+  .footer-brand{font-size:16px;font-weight:800;color:#c9a84c;margin-bottom:6px}
+  .footer-sub{font-size:12px;color:#a09890}
+
+  /* Details / collapsible */
+  .detail-block{margin-top:20px}
+  details{
+    background:rgba(0,0,0,.2);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:12px;
+    margin-top:10px;
+    overflow:hidden;
+  }
+  details[open]{border-color:rgba(201,168,76,.18)}
+  summary{
+    padding:14px 18px;
+    font-size:13px;font-weight:700;
+    color:#c4bfb5;
+    font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    cursor:pointer;
+    display:flex;align-items:center;gap:8px;
+    list-style:none;
+    user-select:none;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary::before{
+    content:'▶';font-size:9px;color:rgba(201,168,76,.5);
+    transition:transform .2s;flex-shrink:0;
+  }
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:hover{color:#e8e2d4}
+  .detail-body{padding:4px 18px 18px}
+  .detail-section{margin-top:14px}
+  .detail-section-title{
+    font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    color:rgba(201,168,76,.55);font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    margin-bottom:8px;
+  }
+  .detail-list{display:flex;flex-direction:column;gap:6px}
+  .detail-row{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#c4bfb5;line-height:1.65}
+  .detail-row .tag{
+    flex-shrink:0;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;
+    font-family:'Hiragino Kaku Gothic Pro',sans-serif;margin-top:2px;
+  }
+  .tag-todo{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2);color:#60a5fa}
+  .tag-done{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);color:#4ade80}
+  .tag-doing{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);color:#c9a84c}
+  .tag-decide{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);color:#a78bfa}
+
+  /* Print */
+  .print-btn{
+    position:fixed;bottom:24px;right:24px;
+    display:flex;align-items:center;gap:8px;
+    padding:11px 20px;
+    background:linear-gradient(135deg,#c9a84c,#e6c96e);
+    color:#0a0f1e;border:none;border-radius:99px;
+    font-size:13px;font-weight:800;font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    cursor:pointer;box-shadow:0 4px 20px rgba(201,168,76,.4);
+    z-index:100;
+  }
+  @media print{
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{background-color:#060c1a !important;color:#e8e2d4}
+    .print-btn{display:none}
+    .phase{background:rgba(8,14,28,0.5) !important}
+  }
+  @media(max-width:640px){
+    .hero,.phase,.footer{padding-left:20px;padding-right:20px}
+    .hero h1{font-size:24px}
+    .phase-title{font-size:18px}
+    .kpi-row{flex-direction:column}
+  }
+</style>
+<button class="print-btn" onclick="window.print()">🖨 PDF保存</button>
+</head>
+<body>
+<div class="page">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Fineme（ファインミ）／ 事業ロードマップ ／ 2026年3月更新</div>
+  <h1>そのまま進むのが怖くなった夜に。<br>自信を再設計する、地図と羅針盤。</h1>
+  <p class="hero-sub">
+    Mission: <strong>外見を起点に、自信を再設計する人を増やす</strong><br>
+    Vision: 外見を理由に、人生を諦めなくていい世界をつくる<br>
+    目標: 年商10億円（個人年収9,000万円）
+  </p>
+</div>
+<!-- /HERO -->
+
+
+<!-- PHASE 0 -->
+<div class="phase">
+  <div class="phase-header">
+    <div class="phase-badge done">P<br>0</div>
+    <div class="phase-meta">
+      <div class="phase-label done">Phase 0</div>
+      <div class="phase-title">設計・開発・MVP完成</div>
+      <div class="phase-period">2026年1月〜3月</div>
+    </div>
+  </div>
+  <div class="status-tag status-done"><span class="status-dot done"></span>完了</div>
+
+  <div class="deliverables">
+    <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">Me Scan（診断）</span>7軸スコアリング・ゴール4層・AGA分岐・transform_vectors算出</div></div>
+    <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">New Me Map（地図）</span>7軸レーダーチャート・変容ベクトル・ゴール表示・プロマッチング</div></div>
+    <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">Fineme Compass（動的羅針盤）</span>軸進捗に応じて更新。done軸をスキップし旅を通じて向くべき方角を指し続ける</div></div>
+    <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">New Me Navi（ロードマップ）</span>7軸並列トラック・来た道別中継地点・進捗ステータス管理</div></div>
+    <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">掲載者ダッシュボード</span>スタッフ管理・画像アップロード・体験談管理・統計3項目（閲覧数・問い合わせ・紹介報酬）</div></div>
+    <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">多要素マッチングアルゴリズム</span>USER MATCH / PROFILE QUALITY / SERVICE QUALITYの3軸スコアリング</div></div>
+    <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">ユーザー認証・プロフィール</span>メール＋LINEログイン・プロフィール管理・診断データのデバイス間同期</div></div>
+    <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">管理画面・課金基盤</span>Stripe連携・管理画面・問い合わせ管理・掲載者公開ページLP型</div></div>
+  </div>
+
+  <div class="insight">
+    本番稼働中：<strong>www.fineme.me</strong>（Vercel）<br>
+    技術スタック：Next.js 14 App Router + Supabase + Stripe
+  </div>
+
+  <div class="detail-block">
+    <details>
+      <summary>📋 詳細：決めたこと・確定事項</summary>
+      <div class="detail-body">
+        <div class="detail-section">
+          <div class="detail-section-title">設計・仕様確定</div>
+          <div class="detail-list">
+            <div class="detail-row"><span class="tag tag-done">確定</span>掲載プラン：月額¥5,000 + 手数料8.3%（単一プラン）</div>
+            <div class="detail-row"><span class="tag tag-done">確定</span>課金開始トリガー：Fineme経由の初回予約が入った月から</div>
+            <div class="detail-row"><span class="tag tag-done">確定</span>ストック型紹介報酬：有料掲載者数×¥500/月（単層型・永年）</div>
+            <div class="detail-row"><span class="tag tag-done">確定</span>マッチングアルゴリズム：USER MATCH / PROFILE QUALITY / SERVICE QUALITYの3軸多要素スコアリング</div>
+            <div class="detail-row"><span class="tag tag-done">確定</span>Fineme Compass：動的（軸進捗に応じてdone軸をスキップし更新）</div>
+            <div class="detail-row"><span class="tag tag-done">確定</span>ユーザー認証：メール＋LINE Login（別フロー）</div>
+            <div class="detail-row"><span class="tag tag-done">確定</span>キャッチコピー：「そのまま進むのが怖くなった夜に。自信を再設計する、地図と羅針盤。」</div>
+            <div class="detail-row"><span class="tag tag-done">確定</span>デザイン方針：深海ネイビー×古地図ゴールド・大航海時代×変容の旅</div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<div class="connector"><div class="connector-line"></div></div>
+
+<!-- PHASE 1 -->
+<div class="phase">
+  <div class="phase-header">
+    <div class="phase-badge now">P<br>1</div>
+    <div class="phase-meta">
+      <div class="phase-label now">Phase 1 — 現在地</div>
+      <div class="phase-title">初期掲載者獲得・提携基盤構築</div>
+      <div class="phase-period">2026年3月〜6月</div>
+    </div>
+  </div>
+  <div class="status-tag status-now"><span class="status-dot now"></span>進行中</div>
+
+  <div class="deliverables">
+    <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">PT業務委託（掲載者部門統括）</span>掲載者管理・営業を委託。報酬：有料掲載者数×¥500/月・最低保証¥10,000/月</div></div>
+    <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">創業パートナー制度（3〜5社）</span>月1回Zoom30分＋LINEレポート→掲載料¥5,000無料。3年間・バッジ永続</div></div>
+    <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">ゴリラハウス提携交渉</span>ショートドラマ月2本制作。報酬：有料掲載者数×¥500/月・最低保証¥20,000/月</div></div>
+    <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">掲載者直接営業（PT＋オーナー並行）</span>個人PT・外見コンサル・スタイリスト等を中心に個別アプローチ</div></div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-num">10</div>
+      <div class="kpi-unit">社</div>
+      <div class="kpi-label">Phase 1末<br>有料掲載者数 目標</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-num">3〜5</div>
+      <div class="kpi-unit">社</div>
+      <div class="kpi-label">創業パートナー<br>獲得目標</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-num">1</div>
+      <div class="kpi-unit">件</div>
+      <div class="kpi-label">ゴリラハウス<br>提携確定</div>
+    </div>
+  </div>
+
+  <div class="detail-block">
+    <details>
+      <summary>📋 やること</summary>
+      <div class="detail-body">
+        <div class="detail-section">
+          <div class="detail-section-title">ゴリラハウス</div>
+          <div class="detail-list">
+            <div class="detail-row"><span class="tag tag-doing">進行中</span>LINEで資料（fineme-gorilla-house.html）を送付</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>打ち合わせ実施・条件すり合わせ</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>提携確定・業務委託契約締結</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>専用計測リンク設置（ゴリラハウス経由の流入計測）</div>
+          </div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">PT業務委託</div>
+          <div class="detail-list">
+            <div class="detail-row"><span class="tag tag-doing">進行中</span>PT向け業務説明（fineme-diagnosis-logic.html等を活用）</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>業務委託契約締結・報酬支払い開始</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>PT主導での掲載者営業スタート</div>
+          </div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">創業パートナー・掲載者営業</div>
+          <div class="detail-list">
+            <div class="detail-row"><span class="tag tag-doing">進行中</span>創業パートナー候補リストアップ・個別アプローチ</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>初期掲載者オンボーディング（fineme-onboarding-guide.html活用）</div>
+          </div>
+        </div>
+      </div>
+    </details>
+    <details>
+      <summary>🔷 決めること</summary>
+      <div class="detail-body">
+        <div class="detail-list">
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>ゴリラハウスとの正式提携条件（Layer 3報酬の将来設計含む）</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>PT業務委託契約の開始日・支払いサイクル</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>創業パートナー候補の優先順位</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>初期掲載者の地域・カテゴリ集中戦略（全国か首都圏先行か）</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<div class="connector"><div class="connector-line"></div></div>
+
+<!-- PHASE 2 -->
+<div class="phase">
+  <div class="phase-header">
+    <div class="phase-badge next">P<br>2</div>
+    <div class="phase-meta">
+      <div class="phase-label next">Phase 2</div>
+      <div class="phase-title">コンテンツ集客始動・ユーザー流入</div>
+      <div class="phase-period">2026年4月〜9月</div>
+    </div>
+  </div>
+  <div class="status-tag status-next"><span class="status-dot next"></span>予定</div>
+
+  <div class="deliverables">
+    <div class="del-item"><span class="del-icon">📽</span><div><span class="del-label">ゴリラハウス制作・発信スタート</span>月2本ペースでInstagram・TikTok・YouTube Shortsへ展開</div></div>
+    <div class="del-item"><span class="del-icon">📊</span><div><span class="del-label">Me Scan受診者の蓄積</span>ショートドラマ→診断の導線を確立。受診データから改善を継続</div></div>
+    <div class="del-item"><span class="del-icon">💬</span><div><span class="del-label">体験談の初期蓄積</span>掲載者経由の初期ユーザーから体験談を収集。SEOコンテンツ化の準備</div></div>
+    <div class="del-item"><span class="del-icon">🔁</span><div><span class="del-label">掲載者→掲載者紹介ループの稼働確認</span>ストック型紹介報酬（¥500/月）が自然に動き始めるかを検証</div></div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card next-kpi">
+      <div class="kpi-num">200</div>
+      <div class="kpi-unit">社</div>
+      <div class="kpi-label">有料掲載者数 目標</div>
+    </div>
+    <div class="kpi-card next-kpi">
+      <div class="kpi-num">5,000</div>
+      <div class="kpi-unit">人</div>
+      <div class="kpi-label">Me Scan受診者 目標</div>
+    </div>
+    <div class="kpi-card next-kpi">
+      <div class="kpi-num">12</div>
+      <div class="kpi-unit">本</div>
+      <div class="kpi-label">ゴリラハウス<br>動画累計</div>
+    </div>
+  </div>
+
+  <div class="detail-block">
+    <details>
+      <summary>📋 やること</summary>
+      <div class="detail-body">
+        <div class="detail-section">
+          <div class="detail-section-title">コンテンツ集客</div>
+          <div class="detail-list">
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>ゴリラハウス制作スタート（月2本ペース・Instagram/TikTok/YouTube Shorts）</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>動画末尾のFineme誘導シーン設計・QRコード設置</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>ゴリラハウス経由の流入・Me Scan受診数の計測開始</div>
+          </div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">掲載者・ユーザー基盤</div>
+          <div class="detail-list">
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>掲載者→掲載者紹介ループの稼働確認・報酬支払い自動化</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>初期ユーザーからの体験談収集・投稿促進</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>体験談のSEO記事化フォーマット策定・運用開始</div>
+          </div>
+        </div>
+      </div>
+    </details>
+    <details>
+      <summary>🔷 決めること</summary>
+      <div class="detail-body">
+        <div class="detail-list">
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>ゴリラハウス動画内でのFineme登場シーン・セリフ・画面表示の設計</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>計測リンクのUX（専用LPを作るか・診断直リンクか）</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>体験談のSEO記事化フォーマット（誰が書くか・運用フロー）</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>掲載者営業の地域戦略（首都圏集中 vs 全国展開）</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<div class="connector"><div class="connector-line"></div></div>
+
+<!-- PHASE 3 -->
+<div class="phase">
+  <div class="phase-header">
+    <div class="phase-badge next">P<br>3</div>
+    <div class="phase-meta">
+      <div class="phase-label next">Phase 3</div>
+      <div class="phase-title">フライホイール始動・スケール準備</div>
+      <div class="phase-period">2026年10月〜2027年3月</div>
+    </div>
+  </div>
+  <div class="status-tag status-next"><span class="status-dot next"></span>予定</div>
+
+  <div class="deliverables">
+    <div class="del-item"><span class="del-icon">⚙️</span><div><span class="del-label">3つのフライホイールが自走し始める</span>ユーザーループ・掲載者ループ・コンテンツループが相互に回り出す状態を確認</div></div>
+    <div class="del-item"><span class="del-icon">💰</span><div><span class="del-label">診断サブスク検討・設計</span>月額300〜500円・再診断×変容追跡設計。掲載者・ユーザーが十分集まってから着手</div></div>
+    <div class="del-item"><span class="del-icon">🌐</span><div><span class="del-label">SEO・オーガニック流入の確立</span>体験談コンテンツがSEO資産として機能し始める</div></div>
+    <div class="del-item"><span class="del-icon">📣</span><div><span class="del-label">コンテンツパートナーの拡張検討</span>ゴリラハウス以外のクリエイターとの提携可能性を検討</div></div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card next-kpi">
+      <div class="kpi-num">1,000</div>
+      <div class="kpi-unit">社</div>
+      <div class="kpi-label">有料掲載者数 目標</div>
+    </div>
+    <div class="kpi-card next-kpi">
+      <div class="kpi-num">3万</div>
+      <div class="kpi-unit">人</div>
+      <div class="kpi-label">Me Scan受診者累計</div>
+    </div>
+    <div class="kpi-card next-kpi">
+      <div class="kpi-num">2,300</div>
+      <div class="kpi-unit">万円</div>
+      <div class="kpi-label">月商 目標</div>
+    </div>
+  </div>
+
+  <div class="detail-block">
+    <details>
+      <summary>📋 やること</summary>
+      <div class="detail-body">
+        <div class="detail-section">
+          <div class="detail-section-title">フライホイール検証</div>
+          <div class="detail-list">
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>3フライホイール（ユーザー・掲載者・コンテンツ）の自走状況を定期計測</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>SEOオーガニック流入の確認・キーワード改善</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>コンテンツパートナー拡張（ゴリラハウス以外のクリエイター提携検討）</div>
+          </div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">新機能・収益拡張</div>
+          <div class="detail-list">
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>診断サブスク設計・開発（月額300〜500円・再診断×変容追跡）</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>掲載者向けレポート機能（月次パフォーマンスレポート自動配信）</div>
+          </div>
+        </div>
+      </div>
+    </details>
+    <details>
+      <summary>🔷 決めること</summary>
+      <div class="detail-body">
+        <div class="detail-list">
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>診断サブスクの価格・内容・課金タイミング</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>コンテンツパートナー追加基準（どんなアカウントと組むか）</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>ターゲット拡張タイミングの判断基準（何をもって拡張するか）</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>法人化・税務設計のタイミング</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<div class="connector"><div class="connector-line"></div></div>
+
+<!-- PHASE 4 -->
+<div class="phase">
+  <div class="phase-header">
+    <div class="phase-badge next">P<br>4</div>
+    <div class="phase-meta">
+      <div class="phase-label next">Phase 4</div>
+      <div class="phase-title">スケール・年商10億への道</div>
+      <div class="phase-period">2027年〜2028年</div>
+    </div>
+  </div>
+  <div class="status-tag status-next"><span class="status-dot next"></span>予定</div>
+
+  <div class="deliverables">
+    <div class="del-item"><span class="del-icon">🎯</span><div><span class="del-label">掲載者3,600社突破・ストック報酬の自走</span>紹介報酬制度が営業部隊として機能。オーナーが動かなくても掲載者が増え続ける状態。ホットペッパー全国14万社に対し3,600社は全体の約2.6%——現実的な目標。</div></div>
+    <div class="del-item"><span class="del-icon">📱</span><div><span class="del-label">ユーザーサブスク本格導入</span>診断追加・変容追跡・パーソナルレポートを月額課金化</div></div>
+    <div class="del-item"><span class="del-icon">🌏</span><div><span class="del-label">ターゲット拡張</span>「恋愛に悩む男性」→「外見を理由に何かを諦めていたすべての人」へ</div></div>
+    <div class="del-item"><span class="del-icon">🛒</span><div><span class="del-label">EC機能・高単価パッケージ検討</span>外見磨き関連商品のアフィリエイト・月3〜5万円の3ヶ月変容パッケージ</div></div>
+    <div class="del-item"><span class="del-icon">📈</span><div><span class="del-label">収益をIクワドラントへ再投資</span>Finemeの収益を資産形成・投資フェーズへシフト開始</div></div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card next-kpi">
+      <div class="kpi-num">3,600</div>
+      <div class="kpi-unit">社</div>
+      <div class="kpi-label">有料掲載者数 目標</div>
+    </div>
+    <div class="kpi-card next-kpi">
+      <div class="kpi-num">10</div>
+      <div class="kpi-unit">億円</div>
+      <div class="kpi-label">年商 目標</div>
+    </div>
+    <div class="kpi-card next-kpi">
+      <div class="kpi-num">9,000</div>
+      <div class="kpi-unit">万円</div>
+      <div class="kpi-label">個人年収 目標</div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <strong>年商10億の公式：</strong>（人生の分岐点にいる人数）×（切り替え単価）<br>
+    Finemeが売っているのは施術ではなく、<strong>「新しい自分に切り替わる許可証」</strong>。<br>
+    人生の分岐点での感情価値が最大化するため、高単価が正当化される。
+  </div>
+
+  <div class="detail-block">
+    <details>
+      <summary>📋 やること</summary>
+      <div class="detail-body">
+        <div class="detail-section">
+          <div class="detail-section-title">スケール</div>
+          <div class="detail-list">
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>掲載者3,600社突破（ホットペッパー全国14万社の約2.6%）</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>ユーザーサブスク本格導入・運用</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>ターゲット拡張実行（恋愛→自己再定義全般）</div>
+          </div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">収益拡張・投資</div>
+          <div class="detail-list">
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>EC機能・アフィリエイト設計・実装</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>高単価パッケージ（月3〜5万円・3ヶ月変容プログラム）設計・販売</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>Fineme収益をIクワドラント（投資）へ再投資開始</div>
+          </div>
+        </div>
+      </div>
+    </details>
+    <details>
+      <summary>🔷 決めること</summary>
+      <div class="detail-body">
+        <div class="detail-list">
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>EC商品カテゴリと提携先（在庫を持たない外部リンク型）</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>高単価パッケージの内容・価格・提供方法・掲載者との役割分担</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>投資先・再投資戦略（不動産・株・次の事業）</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>DMMアフィリエイト事業との資金・時間配分</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-brand">Fineme（ファインミ）</div>
+  <div class="footer-sub">外見を起点に、自信を再設計する人を増やす ／ 最終更新：2026年3月22日</div>
+</div>
+
+</div>
+</body>
+</html>

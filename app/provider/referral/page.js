@@ -24,8 +24,8 @@ export default function ProviderReferralPage() {
           <h2 className="section-title">仕組み</h2>
           <div className="referral-grid-3">
             <div className="referral-card"><span className="referral-badge">相互紹介</span><p className="referral-muted">あなたのユーザーに対して「この分野ならこの人が良い」と紹介できる掲載者を選び、紹介リンクを発行します。</p></div>
-            <div className="referral-card"><span className="referral-badge">紹介トラッキング</span><p className="referral-muted">紹介リンク経由の閲覧・予約はトラッキングされ、紹介ポイントが加算されます。</p></div>
-            <div className="referral-card"><span className="referral-badge">ポイント精算</span><p className="referral-muted">月次で紹介ポイントを精算。掲載料から差し引く（実質無料）またはプラス分をキャッシュバックします。</p></div>
+            <div className="referral-card"><span className="referral-badge">紹介トラッキング</span><p className="referral-muted">紹介リンク経由の閲覧・予約はトラッキングされ、月次で集計されます。</p></div>
+            <div className="referral-card"><span className="referral-badge">月次報酬</span><p className="referral-muted">紹介実績に応じた報酬を毎月お支払いします。報酬が掲載料を上回ることで、実質無料以上になるケースもあります。</p></div>
           </div>
         </div>
       </section>
@@ -56,10 +56,10 @@ export default function ProviderReferralPage() {
 
       <section className="referral-section">
         <div className="container stack">
-          <h2 className="section-title">事例（シミュレーション）</h2>
+          <h2 className="section-title">イメージ</h2>
           <div className="referral-grid-2">
-            <div className="referral-card"><h3>掲載料が実質無料に</h3><p className="referral-muted">あなたの紹介から月5件の予約が成立。紹介ポイントが月額7,000円を上回り、掲載料が実質無料に。</p></div>
-            <div className="referral-card"><h3>プラスのキャッシュバック</h3><p className="referral-muted">紹介ポイントが掲載料を超過した場合、翌月に差額分をキャッシュバックします。</p></div>
+            <div className="referral-card"><h3>掲載料が実質無料に</h3><p className="referral-muted">紹介報酬が月額掲載料と同額になることで、実質無料で掲載を続けられる状態が生まれます。</p></div>
+            <div className="referral-card"><h3>副収益として積み上がる</h3><p className="referral-muted">紹介報酬が掲載料を上回った場合、差額分は翌月の報酬としてお支払いします。</p></div>
           </div>
         </div>
       </section>

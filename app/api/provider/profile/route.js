@@ -8,7 +8,17 @@ const ALLOWED_FIELDS = [
   'area', 'price_from', 'photo_url', 'provider_style',
   'suitable_triggers', 'handles_failure_patterns',
   'published',
+  // 比較・信頼シグナルフィールド
+  'nearest_station', 'online_available', 'payment_methods',
+  'cancellation_policy', 'first_session_desc',
+  'experience_years', 'credentials', 'unique_strengths',
+  'response_hours', 'trial_available', 'trial_desc',
+  'facility_photos',
+  'cover_image_url',
 ];
+const BOOLEAN_FIELDS  = new Set(['online_available', 'trial_available', 'published']);
+const NUMBER_FIELDS   = new Set(['price_from', 'experience_years', 'response_hours']);
+const ARRAY_FIELDS    = new Set(['suitable_triggers', 'handles_failure_patterns', 'payment_methods', 'facility_photos']);
 
 export async function PATCH(request) {
   const authHeader = request.headers.get('Authorization');
@@ -37,9 +47,12 @@ export async function PATCH(request) {
   const body = await request.json();
   const updates = {};
   for (const key of ALLOWED_FIELDS) {
-    if (body[key] !== undefined) {
-      updates[key] = key === 'price_from' && body[key] ? Number(body[key]) : body[key];
-    }
+    if (body[key] === undefined) continue;
+    const v = body[key];
+    if (BOOLEAN_FIELDS.has(key))     updates[key] = v === true || v === 'true';
+    else if (NUMBER_FIELDS.has(key)) updates[key] = v !== '' && v !== null ? Number(v) || null : null;
+    else if (ARRAY_FIELDS.has(key))  updates[key] = Array.isArray(v) ? v : [];
+    else                             updates[key] = v;
   }
 
   if (Object.keys(updates).length === 0) {

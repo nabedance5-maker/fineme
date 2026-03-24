@@ -152,6 +152,17 @@ function init(){
       createdAt TEXT,
       FOREIGN KEY(providerId) REFERENCES providers(id)
     )`);
+    // diagnosis_events: 診断後LINEリマインド管理
+    db.run(`CREATE TABLE IF NOT EXISTS diagnosis_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      line_user_id TEXT NOT NULL,
+      compass_first TEXT,
+      completed_at TEXT NOT NULL,
+      remind_3d_sent INTEGER DEFAULT 0,
+      remind_7d_sent INTEGER DEFAULT 0,
+      remind_30d_sent INTEGER DEFAULT 0,
+      createdAt TEXT
+    )`);
   });
   return db;
 }

@@ -1,25 +1,23 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseAnon = createClient(
-  'https://qsfpzlvucqzmjldshwwd.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODM1MzIsImV4cCI6MjA4ODU1OTUzMn0.9mBlP8-0l9jotex_UkX7Ba8ZodYtailaxoK_RIy3Kq8'
-);
-
-function isValidEmail(email) {
-  return /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(email);
-}
 
 export default function MypageProfilePage() {
-  const [session, setSession] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
+  const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
-  const [bio, setBio] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [shareDiagnosis, setShareDiagnosis] = useState(false);
+  const [shareRoadmap, setShareRoadmap] = useState(false);
+  const [lineUserId, setLineUserId] = useState(null);
+
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
+  const [lineMsg, setLineMsg] = useState('');
 
   useEffect(() => {
     const sbKey = Object.keys(localStorage).find(
@@ -28,23 +26,39 @@ export default function MypageProfilePage() {
     if (sbKey) {
       try {
         const obj = JSON.parse(localStorage.getItem(sbKey));
-        if (obj?.user?.id) {
-          setSession(obj);
-          setLoading(false);
-          // プロフィール初期値取得
-          supabaseAnon.auth.getUser().then(({ data: { user } }) => {
-            if (!user) return;
-            setDisplayName(user.user_metadata?.display_name || '');
-            setEmail(user.email || '');
-            supabaseAnon
-              .from('profiles')
-              .select('bio')
-              .eq('id', user.id)
-              .single()
-              .then(({ data: profile }) => {
-                if (profile?.bio) setBio(profile.bio);
-              });
-          });
+        if (obj?.access_token && obj?.user?.id) {
+          setAccessToken(obj.access_token);
+          setUserId(obj.user.id);
+
+          // APIルート経由でプロフィール取得（RLS問題を回避）
+          fetch('/api/me/profile', {
+            headers: { 'Authorization': `Bearer ${obj.access_token}` },
+          })
+            .then(r => r.json())
+            .then(data => {
+              if (data && !data.error) {
+                setDisplayName(data.display_name || '');
+                setEmail(data.email || '');
+                setLastName(data.last_name || '');
+                setFirstName(data.first_name || '');
+                setPhone(data.phone || '');
+                setShareDiagnosis(!!data.share_diagnosis);
+                setShareRoadmap(!!data.share_roadmap);
+                setLineUserId(data.line_user_id || null);
+              }
+              setLoading(false);
+            })
+            .catch(() => setLoading(false));
+
+          // URL パラメータでLINE連携結果を表示
+          const params = new URLSearchParams(window.location.search);
+          if (params.get('line_connected') === '1') {
+            setLineMsg('LINEアカウントを連携しました。リマインドが届くようになります。');
+            window.history.replaceState({}, '', '/mypage/profile');
+          } else if (params.get('line_error')) {
+            setLineMsg(`LINE連携でエラーが発生しました（${params.get('line_error')}）`);
+            window.history.replaceState({}, '', '/mypage/profile');
+          }
           return;
         }
       } catch {}
@@ -55,23 +69,31 @@ export default function MypageProfilePage() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!displayName.trim()) { setMessage('名前は必須です。'); return; }
-    if (!isValidEmail(email)) { setMessage('メールアドレスの形式が正しくありません。'); return; }
     setSaving(true);
     setMessage('');
     try {
-      const { error: authError } = await supabaseAnon.auth.updateUser({
-        data: { display_name: displayName.trim() },
+      const res = await fetch('/api/me/profile', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          display_name: displayName.trim(),
+          last_name: lastName.trim(),
+          first_name: firstName.trim(),
+          phone: phone.trim(),
+          share_diagnosis: shareDiagnosis,
+          share_roadmap: shareRoadmap,
+        }),
       });
-      if (authError) { setMessage(`更新に失敗しました: ${authError.message}`); setSaving(false); return; }
-
-      const userId = session?.user?.id;
-      const { error: profileError } = await supabaseAnon
-        .from('profiles')
-        .upsert({ id: userId, display_name: displayName.trim(), bio, updated_at: new Date().toISOString() }, { onConflict: 'id' });
-      if (profileError) { setMessage(`プロフィール保存エラー: ${profileError.message}`); setSaving(false); return; }
-
-      setMessage('保存しました。');
-    } catch (err) {
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setMessage(`保存エラー: ${data.error || res.status}`);
+      } else {
+        setMessage('保存しました。');
+      }
+    } catch {
       setMessage('保存に失敗しました。');
     }
     setSaving(false);
@@ -85,11 +107,13 @@ export default function MypageProfilePage() {
         <aside className="mypage-sidenav">
           <nav className="stack" style={{ gap: '4px' }}>
             <Link href="/mypage" className="sidenav-link">ホーム</Link>
-            <Link href="/mypage/diagnosis" className="sidenav-link">診断結果</Link>
-            <Link href="/mypage/profile" className="sidenav-link sidenav-link--active">プロフィール編集</Link>
+            <Link href="/diagnosis/result" className="sidenav-link">New Me Map</Link>
+            <Link href="/mypage/navi" className="sidenav-link">New Me Navi</Link>
             <Link href="/mypage/favorites" className="sidenav-link">お気に入り</Link>
             <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
             <Link href="/my-reservations" className="sidenav-link">予約履歴</Link>
+            <Link href="/mypage/story-submit" className="sidenav-link">体験談を書く</Link>
+            <Link href="/mypage/profile" className="sidenav-link sidenav-link--active">プロフィール編集</Link>
           </nav>
         </aside>
 
@@ -97,39 +121,116 @@ export default function MypageProfilePage() {
           <h1 className="section-title">プロフィール編集</h1>
           <form id="user-profile-form" className="card" style={{ padding: '24px', maxWidth: '640px' }} onSubmit={handleSubmit}>
             <div className="stack">
-              <label className="profile-label">
-                <span className="profile-label-text">名前</span>
-                <input
-                  id="profile-displayName"
-                  name="displayName"
-                  type="text"
-                  placeholder="山田太郎"
-                  value={displayName}
-                  onChange={e => setDisplayName(e.target.value)}
-                />
-              </label>
+              <div>
+                <label className="profile-label">
+                  <span className="profile-label-text">表示名</span>
+                  <input
+                    type="text"
+                    placeholder="例: たろう（ニックネーム可）"
+                    value={displayName}
+                    onChange={e => setDisplayName(e.target.value)}
+                  />
+                </label>
+                <p className="display-name-note">New Me Map・New Me Naviに表示されます。ニックネームでもOKです。他のユーザーには公開されません。</p>
+              </div>
               <label className="profile-label">
                 <span className="profile-label-text">メール</span>
                 <input
-                  id="profile-email"
-                  name="email"
                   type="email"
-                  placeholder="you@example.com"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  readOnly
+                  style={{ background: '#f9fafb', color: '#6b7280' }}
                 />
               </label>
-              <label className="profile-label">
-                <span className="profile-label-text">自己紹介</span>
-                <textarea
-                  id="profile-bio"
-                  name="bio"
-                  rows={4}
-                  placeholder="自己紹介を入力"
-                  value={bio}
-                  onChange={e => setBio(e.target.value)}
-                />
-              </label>
+
+              {/* 予約者情報 */}
+              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '20px', marginTop: '4px' }}>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: '#374151', margin: '0 0 4px' }}>予約者情報</p>
+                <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 14px' }}>予約が成立した際に掲載者へ公開されます。任意入力ですが、入力しておくとスムーズです。</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#374151' }}>姓</label>
+                    <input
+                      type="text"
+                      placeholder="山田"
+                      value={lastName}
+                      onChange={e => setLastName(e.target.value)}
+                      style={{ padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#374151' }}>名</label>
+                    <input
+                      type="text"
+                      placeholder="太郎"
+                      value={firstName}
+                      onChange={e => setFirstName(e.target.value)}
+                      style={{ padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#374151' }}>電話番号</label>
+                  <input
+                    type="tel"
+                    placeholder="090-0000-0000"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    style={{ padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box', maxWidth: '240px' }}
+                  />
+                </div>
+              </div>
+
+              {/* LINE 連携セクション */}
+              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '20px', marginTop: '4px' }}>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: '#374151', margin: '0 0 6px' }}>LINE 連携</p>
+                <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 14px' }}>連携すると、診断完了後に変容リマインドがLINEで届きます。</p>
+                {lineUserId ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(6,200,99,0.07)', border: '1px solid rgba(6,200,99,0.3)', borderRadius: '10px', padding: '10px 14px' }}>
+                    <span style={{ fontSize: '18px' }}>✅</span>
+                    <div>
+                      <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#059669' }}>LINE連携済み</p>
+                      <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>リマインドが届く設定になっています</p>
+                    </div>
+                  </div>
+                ) : (
+                  <a
+                    href={`/api/me/line-connect?user_id=${userId || ''}`}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#06C755', color: '#fff', padding: '10px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.077 2 11.1c0 2.65 1.09 5.03 2.844 6.73C4.59 18.97 4 20.516 4 22c0 .166.1.315.25.382C4.397 22.46 4.558 22.437 4.68 22.34L7.6 20H12c5.523 0 10-4.077 10-9.1C22 6.077 17.523 2 12 2z"/></svg>
+                    LINEで連携する
+                  </a>
+                )}
+                {lineMsg && (
+                  <p style={{ margin: '10px 0 0', fontSize: '13px', color: lineMsg.includes('エラー') ? '#dc2626' : '#059669' }}>{lineMsg}</p>
+                )}
+              </div>
+
+              {/* 掲載者への公開設定 */}
+              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '20px', marginTop: '4px' }}>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: '#374151', margin: '0 0 12px' }}>掲載者への公開設定</p>
+                <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 14px' }}>オンにした項目は、予約が承認された掲載者に公開されます。</p>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', marginBottom: '12px' }}>
+                  <input
+                    type="checkbox"
+                    checked={shareDiagnosis}
+                    onChange={e => setShareDiagnosis(e.target.checked)}
+                    style={{ width: '18px', height: '18px', accentColor: '#2563eb', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '14px', color: '#111' }}>診断結果を公開する</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={shareRoadmap}
+                    onChange={e => setShareRoadmap(e.target.checked)}
+                    style={{ width: '18px', height: '18px', accentColor: '#2563eb', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '14px', color: '#111' }}>変容ロードマップを公開する</span>
+                </label>
+              </div>
+
               <div className="row" style={{ gap: '12px', alignItems: 'center' }}>
                 <button className="btn" type="submit" disabled={saving}>
                   {saving ? '保存中...' : '保存'}
@@ -143,13 +244,15 @@ export default function MypageProfilePage() {
 
       <style>{`
         .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
-        @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; margin-bottom: 8px; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; } }
+        .mypage-sidenav { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav > * { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
         .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: #374151; text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: #f3f4f6; }
-        .sidenav-link--active { background: #f3f4f6; font-weight: 700; color: #111; }
+        .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
+        .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
         .profile-label { display: grid; grid-template-columns: 160px 1fr; align-items: center; gap: 12px; }
-        .profile-label input, .profile-label textarea { grid-column: 2; width: 100%; min-width: 0; }
-        @media (max-width: 640px) { .profile-label { grid-template-columns: 1fr; } .profile-label input, .profile-label textarea { grid-column: auto; } }
+        .profile-label input { grid-column: 2; width: 100%; min-width: 0; }
+        .display-name-note { font-size: 11px; color: #9ca3af; margin: 6px 0 0 172px; }
+        @media (max-width: 640px) { .profile-label { grid-template-columns: 1fr; } .profile-label input { grid-column: auto; } .display-name-note { margin-left: 0; } }
       `}</style>
     </main>
   );

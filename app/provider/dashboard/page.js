@@ -1,5 +1,11 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const _sb = createClient(
+  'https://qsfpzlvucqzmjldshwwd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODM1MzIsImV4cCI6MjA4ODU1OTUzMn0.9mBlP8-0l9jotex_UkX7Ba8ZodYtailaxoK_RIy3Kq8'
+);
 
 export default function ProviderDashboardPage() {
   const initialized = useRef(false);
@@ -21,6 +27,7 @@ export default function ProviderDashboardPage() {
       .form-field textarea { min-height: 100px; resize: vertical; }
       .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
       .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+      @media (max-width: 640px) { .checkbox-group { flex-direction: column; gap: 8px; } .checkbox-item { width: 100%; } }
       .stat-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; text-align: center; }
       .stat-value { font-size: 32px; font-weight: 800; color: #111; }
       .stat-label { font-size: 12px; color: #6b7280; margin-top: 2px; }
@@ -84,6 +91,38 @@ export default function ProviderDashboardPage() {
 
     const PLAN_LABELS = { A: 'ライト（¥5,000/月）', B: 'スタンダード（¥7,000/月）', C: 'プレミアム（¥10,000/月）', free: '特例（無料）' };
 
+    function calcPageScore(prov, svcs) {
+      let s = 0;
+      if (prov?.photo_url) s += 10;
+      if (prov?.cover_image_url) s += 5;
+      if (prov?.catchphrase) s += 10;
+      if (prov?.philosophy) s += 10;
+      if (prov?.unique_strengths) s += 10;
+      if ((prov?.facility_photos || []).filter(Boolean).length > 0) s += 5;
+      if (svcs?.length > 0) s += 15;
+      if (svcs?.some(x => x.transformation_promise)) s += 15;
+      if (svcs?.some(x => x.target_axis)) s += 10;
+      if (svcs?.some(x => (x.before_text && x.after_text) || (x.before_image_url && x.after_image_url))) s += 10;
+      return Math.min(s, 100);
+    }
+    function renderPageScore(prov, svcs) {
+      const el = document.getElementById('page-score-bar');
+      if (!el) return;
+      const score = calcPageScore(prov, svcs);
+      const color = score >= 80 ? '#059669' : score >= 50 ? '#d97706' : '#ef4444';
+      const msg = score >= 80 ? '掲載者として誇れるページです' : score >= 50 ? 'もう少しで魅力的なページになります' : 'まだ掲載者の魅力が伝わりにくい状態です';
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:700;color:#374151">ページ完成度</span>
+          <span style="font-size:14px;font-weight:900;color:${color}">${score}%</span>
+        </div>
+        <div style="height:8px;background:#f3f4f6;border-radius:99px;overflow:hidden;margin-bottom:6px">
+          <div style="height:100%;width:${score}%;background:${color};border-radius:99px;transition:width .4s ease"></div>
+        </div>
+        <div style="font-size:11px;color:${color};font-weight:600">${msg}</div>
+      `;
+    }
+
     let provider = loadProviderData();
     fetchAndCacheProviderData().then(data => {
       if (data && JSON.stringify(data) !== JSON.stringify(provider)) {
@@ -112,16 +151,48 @@ export default function ProviderDashboardPage() {
       document.getElementById('referral-code').textContent = fnCode || slug || '—';
       document.getElementById('publish-toggle-input').checked = !!provider.published;
       document.getElementById('publish-label').textContent = provider.published ? '公開中' : '非公開';
-      ['name', 'catchphrase', 'target_desc', 'philosophy', 'photo_url'].forEach(k => {
+      ['name', 'catchphrase', 'target_desc', 'philosophy', 'guide_message', 'photo_url'].forEach(k => {
         const el = document.getElementById('profile-form').elements[k];
         if (el) el.value = provider[k] || '';
       });
+      // 新プロフィールフィールド
+      ['unique_strengths', 'nearest_station'].forEach(k => {
+        const el = document.getElementById('profile-form').elements[k];
+        if (el) el.value = provider[k] || '';
+      });
+      // カバー画像プレビュー
+      if (provider.cover_image_url) {
+        const cp = document.getElementById('cover-photo-preview');
+        const cw = document.getElementById('cover-photo-preview-wrap');
+        const cu = document.querySelector('[name=cover_image_url]');
+        if (cp) cp.src = provider.cover_image_url;
+        if (cw) cw.style.display = 'block';
+        if (cu) cu.value = provider.cover_image_url;
+      }
+      const oaEl = document.querySelector('[name=online_available]');
+      if (oaEl) oaEl.checked = !!provider.online_available;
+      (provider.facility_photos || []).forEach((url, i) => {
+        const el = document.querySelector(`[name=facility_photo_${i + 1}]`);
+        if (el) el.value = url || '';
+      });
+
       ['description', 'area', 'price_from', 'provider_style'].forEach(k => {
         const el = document.getElementById('service-form').elements[k];
         if (el) el.value = provider[k] || '';
       });
+      // 新サービスフィールド
+      ['cancellation_policy', 'first_session_desc', 'trial_desc'].forEach(k => {
+        const el = document.getElementById('service-form').elements[k];
+        if (el) el.value = provider[k] || '';
+      });
+      const taEl = document.querySelector('[name=trial_available]');
+      if (taEl) taEl.checked = !!provider.trial_available;
+      const rhEl = document.getElementById('service-form').elements['response_hours'];
+      if (rhEl && provider.response_hours) rhEl.value = String(provider.response_hours);
+
       document.querySelectorAll('[name=suitable_triggers]').forEach(cb => { cb.checked = (provider.suitable_triggers || []).includes(cb.value); });
       document.querySelectorAll('[name=handles_failure_patterns]').forEach(cb => { cb.checked = (provider.handles_failure_patterns || []).includes(cb.value); });
+      document.querySelectorAll('[name=payment_methods]').forEach(cb => { cb.checked = (provider.payment_methods || []).includes(cb.value); });
     } else {
       document.getElementById('tab-stats').innerHTML = `
         <div class="card" style="padding:20px;text-align:center">
@@ -131,9 +202,71 @@ export default function ProviderDashboardPage() {
       `;
     }
 
-    document.getElementById('stat-views').textContent = '準備中';
-    document.getElementById('stat-inquiries').textContent = '準備中';
-    document.getElementById('stat-referrals').textContent = '準備中';
+    // 今月の統計を非同期で取得
+    (async function loadDashboardStats() {
+      const pid = provider?.id;
+      if (!pid) return;
+      const yyyymm = new Date().toISOString().slice(0, 7); // YYYY-MM
+
+      // 今月のページ閲覧数
+      try {
+        const res = await fetch(`/api/track/provider-view?provider_id=${encodeURIComponent(pid)}&month=${yyyymm}`);
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('stat-views').textContent = (data.total || 0) + '回';
+        } else {
+          document.getElementById('stat-views').textContent = '—';
+        }
+      } catch { document.getElementById('stat-views').textContent = '—'; }
+
+      // 今月の問い合わせ数（予約リクエスト）
+      try {
+        const res = await fetch(`/api/reservations?providerId=${encodeURIComponent(pid)}`);
+        if (res.ok) {
+          const items = await res.json();
+          const count = items.filter(r => (r.created_at || '').startsWith(yyyymm)).length;
+          document.getElementById('stat-inquiries').textContent = count + '件';
+        } else {
+          document.getElementById('stat-inquiries').textContent = '—';
+        }
+      } catch { document.getElementById('stat-inquiries').textContent = '—'; }
+
+      // 紹介報酬（今月の見込み）
+      try {
+        const res = await fetch(`/api/billing/referrals?provider_id=${encodeURIComponent(pid)}`);
+        if (res.ok) {
+          const data = await res.json();
+          const amount = data.summary?.pending_this_month || 0;
+          document.getElementById('stat-referrals').textContent = '¥' + amount.toLocaleString();
+        } else {
+          document.getElementById('stat-referrals').textContent = '—';
+        }
+      } catch { document.getElementById('stat-referrals').textContent = '—'; }
+    })();
+
+    // ── New Me Map カバー軸の表示 ─────────────────────────────────
+    if (provider) {
+      const CAT_TO_AXIS = { gym:'body', eyebrow:'eyebrow', fashion:'fashion', hair:'hair', aga:'hair', makeup:'skin', hairremoval:'skin', esthetic:'skin', whitening:'teeth', orthodontics:'teeth', nail:'nail' };
+      const AXIS_LABELS = { body:'体型', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
+      const AXIS_ICONS = { body:'💪', eyebrow:'✏️', fashion:'👔', hair:'💇', skin:'✨', teeth:'😁', nail:'💅' };
+      const allCats = [provider.main_category, ...(provider.sub_categories || [])].filter(Boolean);
+      const coveredAxes = [...new Set(allCats.map(c => CAT_TO_AXIS[c]).filter(Boolean))];
+      const infoEl = document.getElementById('axis-coverage-info');
+      if (infoEl) {
+        if (coveredAxes.length > 0) {
+          infoEl.innerHTML = `
+            <div style="padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px">
+              <p style="font-size:12px;font-weight:700;color:#059669;margin:0 0 8px">✓ 自動検出されたカバー軸（7軸のうち）</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                ${coveredAxes.map(ax => `<span style="font-size:13px;font-weight:700;padding:4px 12px;background:#dcfce7;color:#15803d;border-radius:99px">${AXIS_ICONS[ax]} ${AXIS_LABELS[ax]}</span>`).join('')}
+              </div>
+              <p style="font-size:12px;color:#6b7280;margin:8px 0 0">このサービスがカバーする軸のギャップが大きいユーザーほど一致度が高くなります。</p>
+            </div>`;
+        } else {
+          infoEl.innerHTML = `<div style="padding:10px 14px;background:#fef9c3;border:1px solid #fde68a;border-radius:10px;font-size:13px;color:#92400e">このサービスのカテゴリは7軸外（photo / consulting等）のため、軸一致スコアは計算されません。きっかけ・スタイルの一致で判定されます。</div>`;
+        }
+      }
+    }
 
     // ── 公開設定トグル ───────────────────────────────────────────
     document.getElementById('publish-toggle-input').addEventListener('change', async function () {
@@ -161,12 +294,16 @@ export default function ProviderDashboardPage() {
             const updated = await res.json();
             localStorage.setItem(PROVIDER_KEY, JSON.stringify(updated));
             showToast('保存しました');
+            return true;
           } else {
-            showToast('保存しました（オフライン）');
+            const errData = await res.json().catch(() => ({}));
+            showToast('保存エラー: ' + (errData.error || res.status));
+            return false;
           }
-        } catch { showToast('保存しました（オフライン）'); }
+        } catch (e) { showToast('通信エラー: ' + e.message); return false; }
       } else {
         showToast('保存しました');
+        return true;
       }
     }
 
@@ -183,7 +320,15 @@ export default function ProviderDashboardPage() {
     document.getElementById('profile-form').addEventListener('submit', e => {
       e.preventDefault();
       const fd = new FormData(e.target);
-      saveToLocal(Object.fromEntries(fd));
+      const data = Object.fromEntries(fd);
+      // boolean
+      data.online_available = !!e.target.querySelector('[name=online_available]')?.checked;
+      // number
+      if (data.experience_years !== undefined) data.experience_years = data.experience_years ? Number(data.experience_years) : null;
+      // facility_photos: 3つのURL入力を配列に結合
+      data.facility_photos = [fd.get('facility_photo_1'), fd.get('facility_photo_2'), fd.get('facility_photo_3')].filter(Boolean);
+      delete data.facility_photo_1; delete data.facility_photo_2; delete data.facility_photo_3;
+      saveToLocal(data);
     });
 
     document.getElementById('service-form').addEventListener('submit', e => {
@@ -192,7 +337,10 @@ export default function ProviderDashboardPage() {
       const data = Object.fromEntries(fd);
       data.suitable_triggers = [...e.target.querySelectorAll('[name=suitable_triggers]:checked')].map(el => el.value);
       data.handles_failure_patterns = [...e.target.querySelectorAll('[name=handles_failure_patterns]:checked')].map(el => el.value);
+      data.payment_methods = [...e.target.querySelectorAll('[name=payment_methods]:checked')].map(el => el.value);
       if (data.price_from) data.price_from = Number(data.price_from);
+      data.trial_available = !!e.target.querySelector('[name=trial_available]')?.checked;
+      data.response_hours = data.response_hours ? Number(data.response_hours) : null;
       saveToLocal(data);
     });
 
@@ -212,16 +360,23 @@ export default function ProviderDashboardPage() {
         const res = await fetch('/api/provider/services', { headers: { 'Authorization': `Bearer ${token}` } });
         if (!res.ok) { listEl.innerHTML = '<p class="muted" style="color:#ef4444">取得エラー</p>'; return; }
         const items = await res.json();
+        renderPageScore(provider, items);
         if (!items.length) { listEl.innerHTML = '<p class="muted">まだサービスがありません。「＋ 追加」から登録してください。</p>'; return; }
         listEl.innerHTML = '';
         items.forEach(s => {
           const row = document.createElement('div');
           row.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;padding:12px 0;border-bottom:1px solid #f3f4f6;gap:10px';
+          const AXIS_LABELS_D = { body:'体型', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
+          const AXIS_ICONS_D  = { body:'💪', eyebrow:'✏️', fashion:'👔', hair:'💇', skin:'✨', teeth:'😁', nail:'💅' };
           row.innerHTML = `
-            <div>
-              <div style="font-weight:700;font-size:14px">${esc(s.name)} ${s.is_featured ? '<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:99px">看板</span>' : ''}</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+                <span style="font-weight:700;font-size:14px">${esc(s.name)}</span>
+                ${s.is_featured ? '<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:99px">看板</span>' : ''}
+                ${s.target_axis ? `<span style="font-size:11px;background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:99px">${AXIS_ICONS_D[s.target_axis]||''} ${AXIS_LABELS_D[s.target_axis]||s.target_axis}</span>` : ''}
+              </div>
               <div style="font-size:13px;color:#6b7280">¥${Number(s.price).toLocaleString()}${s.duration ? ' · ' + esc(s.duration) : ''}</div>
-              ${s.description ? `<div style="font-size:12px;color:#9ca3af;margin-top:2px">${esc(s.description)}</div>` : ''}
+              ${s.transformation_promise ? `<div style="font-size:12px;color:#374151;margin-top:3px;font-style:italic">「${esc(s.transformation_promise)}」</div>` : ''}
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0">
               <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" data-edit="${s.id}">編集</button>
@@ -233,13 +388,27 @@ export default function ProviderDashboardPage() {
           const s = items.find(x => x.id === btn.dataset.edit); if (!s) return;
           editTitle.textContent = 'サービスを編集'; editCard.style.display = 'block';
           editForm.elements['name'].value = s.name || ''; editForm.elements['price'].value = s.price || '';
-          editForm.elements['duration'].value = s.duration || ''; editForm.elements['description'].value = s.description || '';
+          editForm.elements['duration'].value = s.duration || '';
           editForm.elements['is_featured'].checked = !!s.is_featured; editForm.elements['_service_id'].value = s.id;
+          editForm.querySelectorAll('[name=suitable_path_types]').forEach(cb => { cb.checked = (s.suitable_path_types || []).includes(cb.value); });
+          // 新フィールド
+          if (editForm.elements['target_axis']) editForm.elements['target_axis'].value = s.target_axis || '';
+          if (editForm.elements['category']) editForm.elements['category'].value = s.category || '';
+          if (editForm.elements['transformation_promise']) editForm.elements['transformation_promise'].value = s.transformation_promise || '';
+          if (editForm.elements['before_text']) editForm.elements['before_text'].value = s.before_text || '';
+          if (editForm.elements['after_text']) editForm.elements['after_text'].value = s.after_text || '';
+          if (editForm.elements['benefit_list_text']) editForm.elements['benefit_list_text'].value = (s.benefit_list || []).join('\n');
           const sImgPreview = document.getElementById('service-img-preview');
           const sImgPreviewWrap = document.getElementById('service-img-preview-wrap');
           const sImgUrl = document.getElementById('service-image-url');
           if (s.image_url) { if (sImgPreview) sImgPreview.src = s.image_url; if (sImgPreviewWrap) sImgPreviewWrap.style.display = 'block'; if (sImgUrl) sImgUrl.value = s.image_url; }
           else { if (sImgPreviewWrap) sImgPreviewWrap.style.display = 'none'; if (sImgUrl) sImgUrl.value = ''; }
+          const sBIp = document.getElementById('service-before-img-preview'), sBIw = document.getElementById('service-before-img-wrap'), sBIu = document.getElementById('service-before-image-url');
+          if (s.before_image_url) { if (sBIp) sBIp.src = s.before_image_url; if (sBIw) sBIw.style.display = 'block'; if (sBIu) sBIu.value = s.before_image_url; }
+          else { if (sBIw) sBIw.style.display = 'none'; if (sBIu) sBIu.value = ''; }
+          const sAIp = document.getElementById('service-after-img-preview'), sAIw = document.getElementById('service-after-img-wrap'), sAIu = document.getElementById('service-after-image-url');
+          if (s.after_image_url) { if (sAIp) sAIp.src = s.after_image_url; if (sAIw) sAIw.style.display = 'block'; if (sAIu) sAIu.value = s.after_image_url; }
+          else { if (sAIw) sAIw.style.display = 'none'; if (sAIu) sAIu.value = ''; }
           editCard.scrollIntoView({ behavior: 'smooth' });
         }));
         listEl.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', async () => {
@@ -253,6 +422,12 @@ export default function ProviderDashboardPage() {
         const w = document.getElementById('service-img-preview-wrap'); if (w) w.style.display = 'none';
         const u = document.getElementById('service-image-url'); if (u) u.value = '';
         const m = document.getElementById('service-img-msg'); if (m) { m.style.display = 'none'; m.textContent = ''; }
+        const bw = document.getElementById('service-before-img-wrap'); if (bw) bw.style.display = 'none';
+        const bu = document.getElementById('service-before-image-url'); if (bu) bu.value = '';
+        const bm = document.getElementById('service-before-img-msg'); if (bm) { bm.style.display = 'none'; bm.textContent = ''; }
+        const aw = document.getElementById('service-after-img-wrap'); if (aw) aw.style.display = 'none';
+        const au = document.getElementById('service-after-image-url'); if (au) au.value = '';
+        const am = document.getElementById('service-after-img-msg'); if (am) { am.style.display = 'none'; am.textContent = ''; }
       }
       document.getElementById('btn-add-service')?.addEventListener('click', () => {
         editTitle.textContent = 'サービスを追加'; editCard.style.display = 'block';
@@ -268,7 +443,10 @@ export default function ProviderDashboardPage() {
         e.preventDefault();
         const fd = new FormData(editForm);
         const id = fd.get('_service_id');
-        const body = { name: fd.get('name'), price: Number(fd.get('price')), duration: fd.get('duration') || null, description: fd.get('description') || null, is_featured: !!editForm.elements['is_featured'].checked, image_url: fd.get('image_url') || null };
+        const suitablePathTypes = [...editForm.querySelectorAll('[name=suitable_path_types]:checked')].map(el => el.value);
+        const benefitListRaw = fd.get('benefit_list_text') || '';
+        const benefitList = benefitListRaw.split('\n').map(s => s.replace(/^[・▶→✓\s]+/, '').trim()).filter(Boolean);
+        const body = { name: fd.get('name'), price: Number(fd.get('price')), duration: fd.get('duration') || null, is_featured: !!editForm.elements['is_featured'].checked, image_url: fd.get('image_url') || null, suitable_path_types: suitablePathTypes.length > 0 ? suitablePathTypes : null, target_axis: fd.get('target_axis') || null, transformation_promise: fd.get('transformation_promise') || null, before_text: fd.get('before_text') || null, after_text: fd.get('after_text') || null, before_image_url: fd.get('before_image_url') || null, after_image_url: fd.get('after_image_url') || null, benefit_list: benefitList.length > 0 ? benefitList : null, category: fd.get('category') || null };
         const url = id ? `/api/provider/services/${id}` : '/api/provider/services';
         const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(body) });
         if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadServices(); showToast('保存しました'); }
@@ -277,6 +455,276 @@ export default function ProviderDashboardPage() {
 
       document.querySelectorAll('[data-tab="service"]').forEach(btn => btn.addEventListener('click', loadServices, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'service') loadServices();
+    })();
+
+    // ── スタッフ管理 ─────────────────────────────────────────────
+    (function setupStaff() {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const listEl    = document.getElementById('staff-list');
+      const editCard  = document.getElementById('staff-edit-card');
+      const editForm  = document.getElementById('staff-edit-form');
+      const editTitle = document.getElementById('staff-edit-title');
+
+      function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+      async function loadStaff() {
+        if (!listEl) return;
+        const res = await fetch('/api/provider/staff', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) { listEl.innerHTML = '<p class="muted" style="color:#ef4444">取得エラー</p>'; return; }
+        const items = await res.json();
+        if (!items.length) { listEl.innerHTML = '<p class="muted">まだスタッフが登録されていません。「＋ 追加」から登録してください。</p>'; return; }
+        listEl.innerHTML = '';
+        items.forEach(s => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid #f3f4f6';
+          row.innerHTML = `
+            <div style="flex-shrink:0">
+              ${s.photo_url
+                ? `<img src="${esc(s.photo_url)}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #e5e7eb" />`
+                : `<div style="width:52px;height:52px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:22px">👤</div>`}
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
+                <strong style="font-size:14px">${esc(s.name)}</strong>
+                ${s.is_featured ? '<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:99px">担当</span>' : ''}
+                ${s.role ? `<span style="font-size:12px;color:#6b7280">${esc(s.role)}</span>` : ''}
+              </div>
+              ${s.experience_years ? `<span style="font-size:11px;color:#059669">経験${s.experience_years}年</span>` : ''}
+              ${s.bio ? `<p style="font-size:12px;color:#9ca3af;margin:4px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.bio.slice(0, 60))}${s.bio.length > 60 ? '…' : ''}</p>` : ''}
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" data-staff-edit="${s.id}">編集</button>
+              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px;color:#ef4444" data-staff-del="${s.id}">削除</button>
+            </div>`;
+          listEl.appendChild(row);
+        });
+        listEl.querySelectorAll('[data-staff-edit]').forEach(btn => btn.addEventListener('click', () => {
+          const s = items.find(x => x.id === btn.dataset.staffEdit); if (!s) return;
+          editTitle.textContent = 'スタッフを編集'; editCard.style.display = 'block';
+          editForm.elements['name'].value         = s.name || '';
+          editForm.elements['role'].value         = s.role || '';
+          editForm.elements['bio'].value          = s.bio || '';
+          editForm.elements['experience_years'].value = s.experience_years || '';
+          editForm.elements['credentials'].value  = s.credentials || '';
+          editForm.elements['is_featured'].checked = !!s.is_featured;
+          editForm.elements['sort_order'].value   = s.sort_order ?? 0;
+          editForm.elements['_staff_id'].value    = s.id;
+          const prev = document.getElementById('staff-photo-preview');
+          const prevWrap = document.getElementById('staff-photo-preview-wrap');
+          const urlEl  = document.getElementById('staff-photo-url');
+          if (s.photo_url) { prev.src = s.photo_url; prevWrap.style.display = 'block'; if (urlEl) urlEl.value = s.photo_url; }
+          else { prevWrap.style.display = 'none'; if (urlEl) urlEl.value = ''; }
+          editCard.scrollIntoView({ behavior: 'smooth' });
+        }));
+        listEl.querySelectorAll('[data-staff-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('このスタッフを削除しますか？')) return;
+          await fetch(`/api/provider/staff/${btn.dataset.staffDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+          loadStaff();
+        }));
+      }
+
+      document.getElementById('btn-add-staff')?.addEventListener('click', () => {
+        editTitle.textContent = 'スタッフを追加'; editCard.style.display = 'block';
+        editForm.reset(); editForm.elements['_staff_id'].value = '';
+        document.getElementById('staff-photo-preview-wrap').style.display = 'none';
+        document.getElementById('staff-photo-url').value = '';
+        editCard.scrollIntoView({ behavior: 'smooth' });
+      });
+      document.getElementById('staff-cancel-btn')?.addEventListener('click', () => {
+        editCard.style.display = 'none'; editForm.reset();
+      });
+
+      editForm?.addEventListener('submit', async e => {
+        e.preventDefault();
+        const fd = new FormData(editForm);
+        const id  = fd.get('_staff_id');
+        const body = {
+          name: fd.get('name'), role: fd.get('role') || null, bio: fd.get('bio') || null,
+          photo_url: fd.get('photo_url') || null,
+          experience_years: fd.get('experience_years') ? Number(fd.get('experience_years')) : null,
+          credentials: fd.get('credentials') || null,
+          is_featured: !!editForm.elements['is_featured'].checked,
+          sort_order: Number(fd.get('sort_order')) || 0,
+        };
+        const url = id ? `/api/provider/staff/${id}` : '/api/provider/staff';
+        const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(body) });
+        if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadStaff(); showToast('保存しました'); }
+        else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
+      });
+
+      // スタッフ写真アップロード（サービス画像と同じエンドポイントを流用）
+      const staffImgBtn   = document.getElementById('staff-img-btn');
+      const staffImgInput = document.getElementById('staff-img-input');
+      const staffImgPrev  = document.getElementById('staff-photo-preview');
+      const staffImgPrevW = document.getElementById('staff-photo-preview-wrap');
+      const staffImgMsg   = document.getElementById('staff-img-msg');
+      const staffPhotoUrl = document.getElementById('staff-photo-url');
+      if (staffImgBtn) staffImgBtn.addEventListener('click', () => staffImgInput?.click());
+      staffImgInput?.addEventListener('change', async () => {
+        const file = staffImgInput.files?.[0]; if (!file) return;
+        staffImgMsg.textContent = 'アップロード中…'; staffImgMsg.style.display = 'block'; staffImgBtn.disabled = true;
+        const fd = new FormData(); fd.append('photo', file);
+        try {
+          const res  = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+          const data = await res.json();
+          if (res.ok && data.url) {
+            staffImgPrev.src = data.url; staffImgPrevW.style.display = 'block';
+            if (staffPhotoUrl) staffPhotoUrl.value = data.url;
+            staffImgMsg.textContent = '✓ 写真を設定しました'; staffImgMsg.style.color = '#059669';
+          } else { staffImgMsg.textContent = 'エラー: ' + (data.error || '不明'); staffImgMsg.style.color = '#ef4444'; }
+        } catch { staffImgMsg.textContent = '通信エラー'; staffImgMsg.style.color = '#ef4444'; }
+        staffImgBtn.disabled = false; staffImgInput.value = '';
+      });
+
+      document.querySelectorAll('[data-tab="staff"]').forEach(btn => btn.addEventListener('click', loadStaff, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'staff') loadStaff();
+    })();
+
+    // ── 体験談タブ ────────────────────────────────────────────────
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const listEl = document.getElementById('stories-list');
+
+      const AXIS_LABELS = { body:'体型・ボディ', eyebrow:'眉毛', fashion:'服・コーデ', hair:'髪・ヘア', skin:'肌・エステ', teeth:'歯・口元', nail:'爪' };
+
+      async function loadStories() {
+        if (!listEl) return;
+        listEl.innerHTML = '<p class="muted">読み込み中…</p>';
+        const res = await fetch('/api/provider/stories', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) { listEl.innerHTML = '<p style="color:#ef4444" class="muted">取得エラー</p>'; return; }
+        const items = await res.json();
+        if (!items.length) { listEl.innerHTML = '<p class="muted">まだ体験談はありません。</p>'; return; }
+        listEl.innerHTML = '';
+        items.forEach(s => {
+          const row = document.createElement('div');
+          row.style.cssText = 'border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px;background:#fff;';
+          const isHidden = !!s.provider_hidden;
+          const axisLabel = s.axis_id ? (AXIS_LABELS[s.axis_id] || s.axis_id) : null;
+          const date = s.created_at ? new Date(s.created_at).toLocaleDateString('ja-JP',{month:'long',day:'numeric'}) : '';
+          row.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+                  ${axisLabel ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>` : ''}
+                  <span style="font-size:11px;color:#9ca3af;">${date}</span>
+                  <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;${s.status==='approved'?'background:#d1fae5;color:#065f46;':'background:#fef3c7;color:#92400e;'}">${s.status==='approved'?'公開中':'審査中'}</span>
+                  ${isHidden ? '<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#f3f4f6;color:#6b7280;border-radius:99px;">非表示中</span>' : ''}
+                </div>
+                <p style="font-size:13px;color:#374151;margin:0 0 4px;font-weight:600;">${s.concern_before ? s.concern_before.slice(0,80)+(s.concern_before.length>80?'…':'') : '(悩みなし)'}</p>
+                <p style="font-size:12px;color:#6b7280;margin:0;">${s.change_after ? s.change_after.slice(0,80)+(s.change_after.length>80?'…':'') : ''}</p>
+              </div>
+              <button
+                class="btn btn-ghost stories-toggle-btn"
+                data-story-id="${s.id}"
+                data-hidden="${isHidden ? '1' : '0'}"
+                style="font-size:12px;padding:6px 12px;flex-shrink:0;${isHidden ? 'color:#6b7280;' : 'color:#ef4444;'}"
+              >${isHidden ? '表示する' : '非表示にする'}</button>
+            </div>
+          `;
+          listEl.appendChild(row);
+        });
+        listEl.querySelectorAll('.stories-toggle-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = btn.dataset.storyId;
+            const nowHidden = btn.dataset.hidden === '1';
+            btn.disabled = true; btn.textContent = '更新中…';
+            const res = await fetch(`/api/provider/stories/${id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({ provider_hidden: !nowHidden }),
+            });
+            if (res.ok) { loadStories(); showToast(nowHidden ? '体験談を表示しました' : '体験談を非表示にしました'); }
+            else { btn.disabled = false; btn.textContent = nowHidden ? '表示する' : '非表示にする'; showToast('更新エラー'); }
+          });
+        });
+      }
+
+      document.querySelectorAll('[data-tab="stories"]').forEach(btn => btn.addEventListener('click', loadStories, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'stories') loadStories();
+    })();
+
+    // ── 画像圧縮ヘルパー（Canvas, max 1200px, JPEG/WebP 0.85） ────
+    function compressImage(file, maxPx = 1200, quality = 0.85) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          let { width, height } = img;
+          if (width > maxPx || height > maxPx) {
+            if (width >= height) { height = Math.round(height * maxPx / width); width = maxPx; }
+            else { width = Math.round(width * maxPx / height); height = maxPx; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          canvas.toBlob(blob => resolve(blob || file), 'image/jpeg', quality);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+        img.src = url;
+      });
+    }
+
+    // ── 施設写真アップロード ──────────────────────────────────────
+    (function setupFacilityPhotoUpload() {
+      [1, 2, 3].forEach(slot => {
+        const btn = document.getElementById(`facility-img-btn-${slot}`);
+        const input = document.getElementById(`facility-img-input-${slot}`);
+        const preview = document.getElementById(`facility-photo-preview-${slot}`);
+        const previewWrap = document.getElementById(`facility-photo-preview-wrap-${slot}`);
+        const msg = document.getElementById(`facility-img-msg-${slot}`);
+        const hiddenUrl = document.querySelector(`[name=facility_photo_${slot}]`);
+
+        const existingUrl = (provider?.facility_photos || [])[slot - 1];
+        if (existingUrl && preview && previewWrap) {
+          preview.src = existingUrl; previewWrap.style.display = 'block';
+          if (hiddenUrl) hiddenUrl.value = existingUrl;
+        }
+
+        if (btn) btn.addEventListener('click', () => input?.click());
+        if (!input) return;
+
+        input.addEventListener('change', async () => {
+          const file = input.files?.[0];
+          if (!file) return;
+          const token = getSupabaseToken();
+          if (!token) { showToast('ログインが必要です'); return; }
+
+          msg.textContent = '圧縮中…'; msg.style.display = 'block'; btn.disabled = true;
+          const compressedFacility = await compressImage(file);
+          msg.textContent = 'アップロード中…';
+
+          const fd = new FormData();
+          fd.append('photo', compressedFacility, 'photo.jpg');
+          fd.append('slot', String(slot));
+          try {
+            const res = await fetch('/api/provider/upload-facility-photo', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` },
+              body: fd,
+            });
+            let data; try { data = await res.json(); } catch { data = {}; }
+            if (res.ok && data.url) {
+              preview.src = data.url; previewWrap.style.display = 'block';
+              if (hiddenUrl) hiddenUrl.value = data.url;
+              msg.textContent = '保存中…'; msg.style.color = '#9ca3af';
+              // 現在のfacility_photosを再構築してDB保存
+              const allPhotos = [1, 2, 3].map(s => {
+                const h = document.querySelector(`[name=facility_photo_${s}]`);
+                return h ? h.value : '';
+              }).filter(Boolean);
+              const saved = await saveToLocal({ facility_photos: allPhotos });
+              msg.textContent = saved ? '✓ 写真を保存しました' : '⚠ アップロードはできましたが保存に失敗しました。「保存する」を押してください。';
+              msg.style.color = saved ? '#059669' : '#ef4444';
+            } else {
+              msg.textContent = 'エラー: ' + (data.error || '不明'); msg.style.color = '#ef4444';
+            }
+          } catch (e) { msg.textContent = '通信エラーが発生しました: ' + e.message; msg.style.color = '#ef4444'; }
+          btn.disabled = false; input.value = '';
+        });
+      });
     })();
 
     // ── 写真アップロード ─────────────────────────────────────────
@@ -325,6 +773,43 @@ export default function ProviderDashboardPage() {
       });
     })();
 
+    // ── カバー画像アップロード ────────────────────────────────────
+    (function setupCoverImageUpload() {
+      const btn = document.getElementById('cover-photo-upload-btn');
+      const input = document.getElementById('cover-photo-file-input');
+      const preview = document.getElementById('cover-photo-preview');
+      const previewWrap = document.getElementById('cover-photo-preview-wrap');
+      const msg = document.getElementById('cover-photo-upload-msg');
+      const hiddenUrl = document.querySelector('[name=cover_image_url]');
+      if (btn) btn.addEventListener('click', () => input?.click());
+      if (!input) return;
+      input.addEventListener('change', async () => {
+        const file = input.files?.[0]; if (!file) return;
+        const token = getSupabaseToken();
+        if (!token) { showToast('ログインが必要です'); return; }
+        msg.textContent = '圧縮中…'; msg.style.display = 'block'; btn.disabled = true;
+        const compressedCover = await compressImage(file, 1920);
+        msg.textContent = 'アップロード中…';
+        const fd = new FormData(); fd.append('photo', compressedCover, 'photo.jpg');
+        try {
+          const res = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+          let data; try { data = await res.json(); } catch { data = {}; }
+          if (res.ok && data.url) {
+            preview.src = data.url; previewWrap.style.display = 'block';
+            if (hiddenUrl) hiddenUrl.value = data.url;
+            msg.textContent = '保存中…'; msg.style.color = '#9ca3af';
+            const saved = await saveToLocal({ cover_image_url: data.url });
+            if (saved) {
+              msg.textContent = '✓ カバー画像を保存しました（ページに反映されました）'; msg.style.color = '#059669';
+            } else {
+              msg.textContent = '⚠ 画像はアップロードできましたが、DBへの保存に失敗しました。ページを再読み込みして再試行してください。'; msg.style.color = '#ef4444';
+            }
+          } else { msg.textContent = 'エラー: ' + (data.error || '不明'); msg.style.color = '#ef4444'; }
+        } catch { msg.textContent = '通信エラーが発生しました'; msg.style.color = '#ef4444'; }
+        btn.disabled = false; input.value = '';
+      });
+    })();
+
     // ── サービス画像アップロード ─────────────────────────────────
     (function setupServiceImageUpload() {
       const btn = document.getElementById('service-img-btn');
@@ -343,28 +828,72 @@ export default function ProviderDashboardPage() {
         const token = getSupabaseToken();
         if (!token) { showToast('ログインが必要です'); return; }
 
-        msg.textContent = 'アップロード中…'; msg.style.display = 'block'; btn.disabled = true;
+        msg.textContent = '圧縮中…'; msg.style.display = 'block'; btn.disabled = true;
+        const compressedSvc = await compressImage(file);
+        msg.textContent = 'アップロード中…';
 
         const fd = new FormData();
-        fd.append('photo', file);
+        fd.append('photo', compressedSvc, 'photo.jpg');
         try {
           const res = await fetch('/api/provider/upload-service-image', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: fd
           });
-          const data = await res.json();
+          let data; try { data = await res.json(); } catch { data = {}; }
           if (res.ok && data.url) {
             preview.src = data.url; previewWrap.style.display = 'block';
             if (hiddenUrl) hiddenUrl.value = data.url;
             msg.textContent = '✓ 画像を設定しました'; msg.style.color = '#059669';
           } else {
-            msg.textContent = 'エラー: ' + (data.error || '不明'); msg.style.color = '#ef4444';
+            msg.textContent = 'エラー: ' + (data.error || res.status); msg.style.color = '#ef4444';
           }
-        } catch (e) { msg.textContent = '通信エラーが発生しました'; msg.style.color = '#ef4444'; }
+        } catch (e) { msg.textContent = '通信エラー: ' + e.message; msg.style.color = '#ef4444'; }
         btn.disabled = false;
         input.value = '';
       });
+    })();
+
+    // ── サービス Before/After 画像アップロード ────────────────────
+    (function setupServiceBeforeAfterImages() {
+      function setupImgSlot(btnId, inputId, previewId, wrapId, msgId, hiddenId) {
+        const btn = document.getElementById(btnId);
+        const input = document.getElementById(inputId);
+        if (btn) btn.addEventListener('click', () => input?.click());
+        if (!input) return;
+        input.addEventListener('change', async () => {
+          const file = input.files?.[0]; if (!file) return;
+          const token = getSupabaseToken();
+          if (!token) { showToast('ログインが必要です'); return; }
+          // 毎回 getElementById で取得（初期化タイミングの問題を回避）
+          const preview = document.getElementById(previewId);
+          const previewWrap = document.getElementById(wrapId);
+          const msg = document.getElementById(msgId);
+          const hidden = document.getElementById(hiddenId);
+          if (msg) { msg.textContent = '圧縮中…'; msg.style.display = 'block'; }
+          if (btn) btn.disabled = true;
+          const compressed = await compressImage(file);
+          if (msg) msg.textContent = 'アップロード中…';
+          const fd = new FormData(); fd.append('photo', compressed, 'photo.jpg');
+          try {
+            const res = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+            let data; try { data = await res.json(); } catch { data = {}; }
+            if (res.ok && data.url) {
+              if (preview) preview.src = data.url;
+              if (previewWrap) previewWrap.style.display = 'block';
+              if (hidden) hidden.value = data.url;
+              if (msg) { msg.textContent = '✓ 画像を設定しました'; msg.style.color = '#059669'; }
+            } else {
+              if (msg) { msg.textContent = 'エラー: ' + (data.error || res.status); msg.style.color = '#ef4444'; }
+            }
+          } catch (e) {
+            if (msg) { msg.textContent = '通信エラー: ' + e.message; msg.style.color = '#ef4444'; }
+          }
+          if (btn) btn.disabled = false; input.value = '';
+        });
+      }
+      setupImgSlot('service-before-img-btn','service-before-img-input','service-before-img-preview','service-before-img-wrap','service-before-img-msg','service-before-image-url');
+      setupImgSlot('service-after-img-btn','service-after-img-input','service-after-img-preview','service-after-img-wrap','service-after-img-msg','service-after-image-url');
     })();
 
     // ── 予約リクエスト管理 ────────────────────────────────────────
@@ -382,8 +911,19 @@ export default function ProviderDashboardPage() {
       return choices;
     }
     function noteWithoutChoices(note) {
-      return (note || '').replace(/【第[23]希望】\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{2}/g, '').replace(/【メニュー】[^\n]*/g, '').trim();
+      return (note || '')
+        .replace(/【第[23]希望】\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{2}/g, '')
+        .replace(/【メニュー】[^\n]*/g, '')
+        .replace(/【New Me Map より】[\s\S]*?(?=\n\n|$)/, '')
+        .trim();
     }
+
+    function parseMeMapNote(note) {
+      const match = (note || '').match(/【New Me Map より】\n([\s\S]*?)(?:\n\n|$)/);
+      return match ? match[1].trim() : null;
+    }
+
+    let _allRequests = [];
 
     async function loadRequests() {
       const providerId = provider?.id || loadProviderData()?.id;
@@ -391,15 +931,36 @@ export default function ProviderDashboardPage() {
       const res = await fetch(`/api/reservations?providerId=${providerId}`);
       if (!res.ok) { document.getElementById('requests-list').innerHTML = '<p class="muted" style="color:#ef4444">取得エラー</p>'; return; }
       const items = await res.json();
+      _allRequests = items;
       const pending = items.filter(r => r.status === 'pending').length;
       const b = document.getElementById('requests-badge');
       if (b) { b.textContent = pending || ''; b.style.display = pending > 0 ? 'inline' : 'none'; }
+      applyRequestFilters();
+    }
+
+    function applyRequestFilters() {
+      const statusFilter = document.getElementById('req-filter-status')?.value || '';
+      const kwFilter = (document.getElementById('req-filter-kw')?.value || '').toLowerCase().trim();
+      let items = _allRequests;
+      if (statusFilter) items = items.filter(r => r.status === statusFilter);
+      if (kwFilter) items = items.filter(r => (r.user_name || '').toLowerCase().includes(kwFilter) || (r.note || '').toLowerCase().includes(kwFilter));
+      const countEl = document.getElementById('req-filter-count');
+      if (countEl) countEl.textContent = `${items.length}件`;
       renderRequests(items);
     }
 
+    // 絞り込みコントロールのイベント登録
+    document.getElementById('req-filter-status')?.addEventListener('change', applyRequestFilters);
+    document.getElementById('req-filter-kw')?.addEventListener('input', applyRequestFilters);
+    document.getElementById('req-filter-reset')?.addEventListener('click', () => {
+      const s = document.getElementById('req-filter-status'); if (s) s.value = '';
+      const k = document.getElementById('req-filter-kw'); if (k) k.value = '';
+      applyRequestFilters();
+    });
+
     function renderRequests(items) {
       const el = document.getElementById('requests-list');
-      if (!items.length) { el.innerHTML = '<p class="muted">まだリクエストはありません。</p>'; return; }
+      if (!items.length) { el.innerHTML = '<p class="muted">条件に一致するリクエストはありません。</p>'; return; }
       el.innerHTML = '';
       items.forEach(r => {
         const choices = parseDateChoices(r);
@@ -417,6 +978,7 @@ export default function ProviderDashboardPage() {
           </label>
         `).join('') : `<p style="font-size:13px;color:#6b7280">第1希望: ${choices[0].date} ${choices[0].time}${r.confirmed_date ? ` → 確定: ${r.confirmed_date} ${r.confirmed_time || ''}` : ''}</p>`;
 
+        const meMapNote = parseMeMapNote(r.note);
         const card = document.createElement('div');
         card.style.cssText = 'border:1.5px solid #e5e7eb;border-radius:14px;padding:18px;margin-bottom:12px;background:#fff';
         card.innerHTML = `
@@ -426,7 +988,17 @@ export default function ProviderDashboardPage() {
                 <strong style="font-size:15px">${esc(r.user_name)}</strong>
                 <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${statusColor}20;color:${statusColor}">${statusLabel}</span>
               </div>
-              <p style="font-size:12px;color:#9ca3af;margin:0 0 10px">連絡先: ${esc(r.user_contact)}</p>
+              ${meMapNote ? `
+              <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:10px">
+                <p style="font-size:11px;font-weight:700;color:#2563eb;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em">🗺 New Me Map より</p>
+                ${meMapNote.split('\n').map(line => `<p style="font-size:13px;color:#1e40af;margin:0 0 2px;font-weight:${line.startsWith('最優先') ? '700' : '400'}">${esc(line)}</p>`).join('')}
+              </div>` : ''}
+              ${(r.status === 'approved' || r.status === 'visited') ? `
+              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-bottom:10px">
+                <p style="font-size:11px;font-weight:700;color:#15803d;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em">ユーザー情報</p>
+                <p style="font-size:13px;font-weight:700;color:#111;margin:0 0 2px">👤 ${esc(r.user_name)}</p>
+                <p style="font-size:13px;color:#374151;margin:0">📧 ${esc(r.user_contact)}</p>
+              </div>` : `<p style="font-size:12px;color:#9ca3af;margin:0 0 10px">連絡先: ${esc(r.user_contact)}</p>`}
               ${menuText ? `<p style="font-size:13px;color:#374151;margin:0 0 8px;font-weight:700">🎯 ${esc(menuText)}</p>` : ''}
               <div style="margin-bottom:8px">${choicesHtml}</div>
               ${userMsg ? `<div style="font-size:13px;color:#374151;padding:8px 12px;background:#f9fafb;border-radius:8px;margin-bottom:8px">${esc(userMsg)}</div>` : ''}
@@ -667,10 +1239,18 @@ export default function ProviderDashboardPage() {
     document.getElementById('billing-portal-btn').addEventListener('click', async e => {
       e.preventDefault();
       try {
-        const res = await fetch('/api/billing/portal-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ providerId: provider?.id || '' }) });
-        const { url } = await res.json();
-        if (url) window.location.href = url;
-      } catch { showToast('ポータルへのアクセスに失敗しました'); }
+        const { data: { session } } = await _sb.auth.getSession();
+        const token = session?.access_token;
+        if (!token) { showToast('ログインが必要です'); return; }
+        const res = await fetch('/api/billing/portal-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({}),
+        });
+        const data = await res.json();
+        if (data.url) window.location.href = data.url;
+        else showToast('エラー: ' + (data.error || '不明なエラー'));
+      } catch (err) { showToast('ポータルへのアクセスに失敗しました: ' + err.message); }
     });
 
     return () => {
@@ -705,6 +1285,8 @@ export default function ProviderDashboardPage() {
           <button className="tab-btn active" data-tab="stats">📊 概況</button>
           <button className="tab-btn" data-tab="requests">📬 予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
           <button className="tab-btn" data-tab="profile">プロフィール</button>
+          <button className="tab-btn" data-tab="staff">👤 スタッフ</button>
+          <button className="tab-btn" data-tab="stories">📝 体験談</button>
           <button className="tab-btn" data-tab="service">サービス設定</button>
           <button className="tab-btn" data-tab="publish">公開設定</button>
           <button className="tab-btn" data-tab="billing">課金・プラン</button>
@@ -720,7 +1302,7 @@ export default function ProviderDashboardPage() {
           </div>
           <div className="card" style={{ padding: '20px' }}>
             <h3 style={{ margin: '0 0 10px', fontSize: '15px' }}>Finemeからのメッセージ</h3>
-            <p className="muted" style={{ margin: '0', lineHeight: '1.7' }}>順位は出しません。「合う人に届く」ことを大切にしています。プロフィールを丁寧に書くほど、あなたと合うユーザーが来やすくなります。</p>
+            <p className="muted" style={{ margin: '0', lineHeight: '1.7' }}>順位は出しません。「合う人に届く」ことを大切にしています。<br />Finemeのマッチングは、<strong>「きっかけ」</strong>と<strong>「失敗パターン」</strong>の2項目を軸にスコアリングしています。ユーザーの診断結果と、あなたが「公開設定」タブで設定した「どんなきっかけのユーザーに向いているか」「どんな失敗パターンを持つユーザーを得意とするか」が近いほど、あなたのページが届きやすくなります。</p>
             <a href="/provider/philosophy" className="btn btn-ghost" style={{ fontSize: '13px', marginTop: '12px', display: 'inline-block' }}>Finemeの考え方を見る</a>
           </div>
 
@@ -746,22 +1328,76 @@ export default function ProviderDashboardPage() {
         {/* タブ②：予約リクエスト */}
         <div className="tab-pane" id="tab-requests">
           <div className="card" style={{ padding: '20px' }}>
-            <h2 style={{ margin: '0 0 14px', fontSize: '16px' }}>予約リクエスト</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+              <h2 style={{ margin: '0', fontSize: '16px' }}>予約リクエスト</h2>
+              <span style={{ fontSize: '12px', color: '#9ca3af' }} id="req-filter-count"></span>
+            </div>
+
+            {/* 絞り込みバー */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px', padding: '12px 14px', background: '#f9fafb', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+              <input
+                id="req-filter-kw"
+                type="text"
+                placeholder="名前・メモで検索"
+                style={{ flex: '1 1 140px', padding: '7px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '13px', outline: 'none' }}
+              />
+              <select
+                id="req-filter-status"
+                style={{ padding: '7px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '13px', background: '#fff', cursor: 'pointer' }}
+              >
+                <option value="">すべてのステータス</option>
+                <option value="pending">返答待ち</option>
+                <option value="counter_proposed">代替提案済み</option>
+                <option value="approved">承認済み</option>
+                <option value="visited">来店確認済み</option>
+                <option value="rejected">お断り</option>
+              </select>
+              <button
+                id="req-filter-reset"
+                className="btn btn-ghost"
+                style={{ fontSize: '12px', padding: '6px 12px', whiteSpace: 'nowrap' }}
+              >
+                リセット
+              </button>
+            </div>
+
             <div id="requests-list"><p className="muted">読み込み中…</p></div>
           </div>
         </div>
 
         {/* タブ③：プロフィール */}
         <div className="tab-pane" id="tab-profile">
+          {/* ページ完成度スコア */}
+          <div className="card" style={{ padding: '18px 22px', marginBottom: '16px', background: '#f9fafb' }}>
+            <div id="page-score-bar">
+              <div style={{ fontSize: '12px', color: '#9ca3af' }}>ページ完成度を計算中…</div>
+            </div>
+          </div>
           <div className="card" style={{ padding: '24px' }}>
             <h2 style={{ margin: '0 0 16px', fontSize: '16px' }}>基本情報</h2>
             <form id="profile-form">
               <div className="form-field"><label>掲載名 *</label><input name="name" required /></div>
-              <div className="form-field"><label>キャッチコピー（一言で表すと？）</label><input name="catchphrase" placeholder="初デートで堂々としていたい男性のための3ヶ月プログラム" /></div>
-              <div className="form-field"><label>こんな人に向いています</label><textarea name="target_desc" placeholder="どんな悩みを持つ方に向いているか、具体的に書いてください"></textarea></div>
-              <div className="form-field"><label>このサービスが大切にしていること（哲学）</label><textarea name="philosophy" placeholder="あなたのサービスの考え方・スタイル・強みを自分の言葉で"></textarea></div>
               <div className="form-field">
-                <label>プロフィール写真</label>
+                <label>キャッチコピー（ページ冒頭に大きく表示されます）</label>
+                <input name="catchphrase" placeholder="例: マッチングアプリで勝てる顔をつくる、3ヶ月の変容プログラム" />
+                <small className="muted">短く・強く・誰に向けているかが一目でわかる一文が効果的です</small>
+              </div>
+              <div className="form-field">
+                <label>こんな方に向いています（1行ずつ書くと番号リストで表示されます）</label>
+                <textarea name="target_desc" placeholder={"マッチングアプリの写真を改善したい\n何度も挫折したが今度こそ変わりたい\n自分が何をすべきかわからない"} style={{ minHeight: '100px' }}></textarea>
+                <small className="muted">改行で区切ると①②③のカードとして掲載者ページに表示されます</small>
+              </div>
+              <div className="form-field">
+                <label>このサービスが大切にしていること（引用文として大きく表示されます）</label>
+                <textarea name="philosophy" placeholder="あなたのサービスの考え方・信念・強みを自分の言葉で。ページ上では黒背景の引用文スタイルで表示されます。"></textarea>
+              </div>
+              <div className="form-field" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '12px', padding: '16px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🧭 <span>変容の旅を始めようとしている方への言葉</span></label>
+                <textarea name="guide_message" placeholder="ここから変わろうとしているあなたへ、ガイドとして一言あれば。&#10;例: 「外見を変えることは、自分の優先順位を自分で決めること」だと思っています。まず話を聞かせてください。" style={{ minHeight: '90px' }}></textarea>
+                <small className="muted">掲載者ページの最上部に「ガイドからのひと言」として表示されます。サービス説明ではなく、人としてのあなたが伝わる言葉を。</small>
+              </div>
+              <div className="form-field">
+                <label>プロフィール写真（ヒーロー内に円形アバターとして表示）</label>
                 <div id="photo-preview-wrap" style={{ marginBottom: '8px', display: 'none' }}>
                   <img id="photo-preview" src="" alt="現在の写真" style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
                 </div>
@@ -770,13 +1406,130 @@ export default function ProviderDashboardPage() {
                 <p id="photo-upload-msg" className="muted" style={{ fontSize: '12px', margin: '4px 0 0', display: 'none' }}></p>
                 <input type="hidden" name="photo_url" />
               </div>
+              <div className="form-field">
+                <label>ヒーロー画像（ページ上部の背景バナー）</label>
+                <div id="cover-photo-preview-wrap" style={{ marginBottom: '8px', display: 'none' }}>
+                  <img id="cover-photo-preview" src="" alt="カバー画像" style={{ width: '100%', maxHeight: '130px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #e5e7eb' }} />
+                </div>
+                <input type="file" id="cover-photo-file-input" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} />
+                <button type="button" id="cover-photo-upload-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>🖼️ カバー画像を選択（横長比推奨・jpg/png/webp）</button>
+                <p id="cover-photo-upload-msg" className="muted" style={{ fontSize: '12px', margin: '4px 0 0', display: 'none' }}></p>
+                <small className="muted">ページ上部の大きな背景として使用されます。施設・スタジオの雰囲気が伝わる横長写真を推奨。未設定の場合は黒グラデーションになります。</small>
+                <input type="hidden" name="cover_image_url" />
+              </div>
+              {/* ── 掲載者情報・信頼シグナル ── */}
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>掲載者情報・信頼シグナル</h3>
+              <small className="muted" style={{ display: 'block', marginBottom: '14px', fontSize: '12px', lineHeight: '1.6' }}>ページ上部の「クイックファクト」として横一列で表示されます。同じカテゴリの他ガイドとの比較に直結します。</small>
+              <div className="form-field">
+                <label>最寄り駅・アクセス</label>
+                <input name="nearest_station" placeholder="例: 渋谷駅から徒歩5分" />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                <input type="checkbox" name="online_available" id="online_available" />
+                <label htmlFor="online_available" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>オンライン対応あり（バッジ表示）</label>
+              </div>
+              <div className="form-field">
+                <label>他サービスとの違い・このガイドだけの強み（最上部にゴールドで表示）</label>
+                <textarea name="unique_strengths" placeholder={"例: マッチングアプリの写真撮影と外見コーチングをセットで提供できる唯一のサービスです。\n撮影から約1週間でプロフィール改善の結果を実感できます。"}></textarea>
+                <small className="muted">同カテゴリで比較されたとき最初に目に入る場所です。「なぜここを選ぶか」を一言で書いてください。</small>
+              </div>
+              {[1, 2, 3].map(slot => (
+                <div key={slot} className="form-field">
+                  <label>施設・スタジオ写真 {['①','②','③'][slot-1]}</label>
+                  <div id={`facility-photo-preview-wrap-${slot}`} style={{ marginBottom: '8px', display: 'none' }}>
+                    <img id={`facility-photo-preview-${slot}`} src="" alt={`施設写真${slot}`} style={{ width: '160px', height: '110px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e5e7eb' }} />
+                  </div>
+                  <input type="file" id={`facility-img-input-${slot}`} accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} />
+                  <button type="button" id={`facility-img-btn-${slot}`} className="btn btn-ghost" style={{ fontSize: '13px' }}>📷 写真を選択（5MB以内・jpg/png/webp）</button>
+                  <p id={`facility-img-msg-${slot}`} className="muted" style={{ fontSize: '12px', margin: '4px 0 0', display: 'none' }}></p>
+                  <input type="hidden" name={`facility_photo_${slot}`} />
+                </div>
+              ))}
+
               <button type="submit" className="btn" style={{ marginTop: '8px' }}>保存する</button>
             </form>
           </div>
         </div>
 
-        {/* タブ④：サービス設定 */}
+        {/* タブ④：スタッフ */}
+        <div className="tab-pane" id="tab-staff">
+          <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>スタッフ管理</h2>
+                <p className="muted" style={{ margin: '0', fontSize: '12px', lineHeight: '1.6' }}>
+                  個人でやっている方は、ご自身を「スタッフ」として登録してください。<br />
+                  掲載者公開ページの「スタッフ紹介」欄に表示されます。
+                </p>
+              </div>
+              <button type="button" className="btn" id="btn-add-staff" style={{ fontSize: '13px', padding: '7px 14px', flexShrink: '0' }}>＋ 追加</button>
+            </div>
+            <div id="staff-list"><p className="muted">読み込み中…</p></div>
+          </div>
+
+          {/* スタッフ追加・編集フォーム */}
+          <div className="card" id="staff-edit-card" style={{ padding: '24px', display: 'none' }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: '15px' }} id="staff-edit-title">スタッフを追加</h3>
+            <form id="staff-edit-form">
+              <div className="form-field"><label>名前 *</label><input name="name" required placeholder="例: 山田 太郎" /></div>
+              <div className="form-field"><label>役職・肩書き</label><input name="role" placeholder="例: パーソナルトレーナー / 代表" /></div>
+              <div className="form-field">
+                <label>写真</label>
+                <div id="staff-photo-preview-wrap" style={{ marginBottom: '8px', display: 'none' }}>
+                  <img id="staff-photo-preview" src="" alt="スタッフ写真" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '50%', border: '2px solid #e5e7eb' }} />
+                </div>
+                <input type="file" id="staff-img-input" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} />
+                <button type="button" id="staff-img-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>📷 写真を選択（5MB以内）</button>
+                <p id="staff-img-msg" className="muted" style={{ fontSize: '12px', margin: '4px 0 0', display: 'none' }}></p>
+                <input type="hidden" name="photo_url" id="staff-photo-url" />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className="form-field"><label>経験年数</label><input name="experience_years" type="number" min="0" placeholder="例: 5" /></div>
+                <div className="form-field"><label>表示順（小さい順）</label><input name="sort_order" type="number" min="0" defaultValue="0" /></div>
+              </div>
+              <div className="form-field"><label>資格・経歴</label><textarea name="credentials" placeholder={"例: NSCA認定パーソナルトレーナー\n元プロサッカー選手 8年"} style={{ minHeight: '80px' }}></textarea></div>
+              <div className="form-field"><label>自己紹介・一言メッセージ</label><textarea name="bio" placeholder="例: 「外見を整えることは、生き方を整えること」。一人ひとりのペースで、一緒に歩んでいきます。" style={{ minHeight: '100px' }}></textarea></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <input type="checkbox" name="is_featured" id="staff-is-featured" />
+                <label htmlFor="staff-is-featured" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>担当スタッフとして優先表示する</label>
+              </div>
+              <input type="hidden" name="_staff_id" />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button type="submit" className="btn">保存</button>
+                <button type="button" className="btn btn-ghost" id="staff-cancel-btn">キャンセル</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* タブ⑤：サービス設定 */}
         <div className="tab-pane" id="tab-service">
+
+          {/* Finemeユーザー像バナー */}
+          <div className="card" style={{ padding: '20px 22px', marginBottom: '16px', background: 'linear-gradient(135deg,#eff6ff,#eef2ff)', border: '1px solid #c7d2fe' }}>
+            <div style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '10px' }}>Finemeに来るユーザーはどんな人か？</div>
+            <p style={{ fontSize: '13px', color: '#1e1b4b', fontWeight: '600', margin: '0 0 12px', lineHeight: '1.7' }}>
+              Finemeのユーザーは<strong>「Me Scanを受けた、変わる意志が決まっている人」</strong>です。<br />
+              自分の<strong>コンパス軸（最優先の変容テーマ）</strong>を持ってあなたのページを訪れます。
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: '8px', marginBottom: '12px' }}>
+              {[
+                { icon: '🧬', text: 'Me Scanで7軸をスキャン済み' },
+                { icon: '🧭', text: 'コンパス軸（最優先テーマ）が決まっている' },
+                { icon: '💬', text: '「来た道（タイプ）」が明確' },
+                { icon: '🎯', text: '対応軸が一致すれば優先表示' },
+              ].map(item => (
+                <div key={item.icon} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', background: 'rgba(255,255,255,0.7)', borderRadius: '10px', padding: '10px' }}>
+                  <span style={{ fontSize: '15px', flexShrink: 0 }}>{item.icon}</span>
+                  <span style={{ fontSize: '11px', color: '#374151', lineHeight: '1.5', fontWeight: '600' }}>{item.text}</span>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: '12px', color: '#4f46e5', margin: '0', fontWeight: '700' }}>
+              → 各プログラムに「対応軸」を設定すると、その軸のコンパスを持つユーザーに優先表示されます
+            </p>
+          </div>
+
           {/* サービス（メニュー）一覧 */}
           <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
@@ -794,7 +1547,96 @@ export default function ProviderDashboardPage() {
                 <div className="form-field"><label>価格（円）*</label><input name="price" type="number" required placeholder="5000" /></div>
                 <div className="form-field"><label>所要時間</label><input name="duration" placeholder="例: 60分" /></div>
               </div>
-              <div className="form-field"><label>説明</label><textarea name="description" placeholder="このサービスの内容・特徴"></textarea></div>
+
+              {/* サービスカテゴリ（L14） */}
+              <div className="form-field">
+                <label>サービスカテゴリ</label>
+                <select name="category">
+                  <option value="">選択しない</option>
+                  <option value="gym">💪 ジム・パーソナルトレーニング</option>
+                  <option value="makeup">💄 メイク・コスメ</option>
+                  <option value="hair">💇 ヘア・美容院</option>
+                  <option value="diagnosis">🔍 骨格・パーソナルカラー診断</option>
+                  <option value="fashion">👔 ファッション・スタイリング</option>
+                  <option value="photo">📷 プロフィール写真・撮影</option>
+                  <option value="marriage">💍 婚活・マッチングサポート</option>
+                  <option value="eyebrow">✏️ 眉毛サロン</option>
+                  <option value="hairremoval">🪒 脱毛</option>
+                  <option value="esthetic">✨ エステ・フェイシャル</option>
+                  <option value="whitening">😁 歯のホワイトニング</option>
+                  <option value="orthodontics">🦷 歯列矯正</option>
+                  <option value="nail">💅 ネイル</option>
+                  <option value="aga">💊 AGA・薄毛治療</option>
+                  <option value="consulting">🗣 コンサルティング</option>
+                </select>
+                <small className="muted">検索ページでのカテゴリ絞り込みに使われます</small>
+              </div>
+
+              {/* 対応軸（新） */}
+              <div className="form-field">
+                <label>対応軸（Me Scan 7軸）</label>
+                <select name="target_axis">
+                  <option value="">選択しない</option>
+                  <option value="body">💪 体型・ボディ</option>
+                  <option value="eyebrow">✏️ 眉</option>
+                  <option value="fashion">👔 服・コーデ</option>
+                  <option value="hair">💇 髪・ヘア</option>
+                  <option value="skin">✨ 肌・エステ</option>
+                  <option value="teeth">😁 歯・口元</option>
+                  <option value="nail">💅 爪</option>
+                </select>
+                <small className="muted">設定すると、その軸のコンパスを持つユーザーのプログラム一覧で最上位に表示されます</small>
+              </div>
+
+              {/* 変容の約束（新） */}
+              <div className="form-field">
+                <label>変容の約束（一言キャッチコピー）</label>
+                <input name="transformation_promise" placeholder="例: 骨格から計算した眉で、顔の印象が一変します" />
+                <small className="muted">掲載者ページのプログラムカードで「」に囲まれて表示されます</small>
+              </div>
+
+              {/* Before / After（新） */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className="form-field">
+                  <label>受ける前の状態（Before）</label>
+                  <textarea name="before_text" placeholder="例: 眉の形がわからず、なんとなく描いている" style={{ minHeight: '80px' }}></textarea>
+                </div>
+                <div className="form-field">
+                  <label>受けた後の状態（After）</label>
+                  <textarea name="after_text" placeholder="例: 骨格に合った眉で、顔全体が引き締まって見える" style={{ minHeight: '80px' }}></textarea>
+                </div>
+              </div>
+
+              {/* Before/After 画像（任意） */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '4px' }}>
+                <div className="form-field">
+                  <label style={{ fontSize: '11px' }}>Before 画像（任意）</label>
+                  <div id="service-before-img-wrap" style={{ marginBottom: '6px', display: 'none' }}>
+                    <img id="service-before-img-preview" src="" alt="Before" style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e5e7eb' }} />
+                  </div>
+                  <input type="file" id="service-before-img-input" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} />
+                  <button type="button" id="service-before-img-btn" className="btn btn-ghost" style={{ fontSize: '11px', padding: '5px 10px' }}>📷 画像追加</button>
+                  <p id="service-before-img-msg" className="muted" style={{ fontSize: '11px', margin: '3px 0 0', display: 'none' }}></p>
+                  <input type="hidden" name="before_image_url" id="service-before-image-url" />
+                </div>
+                <div className="form-field">
+                  <label style={{ fontSize: '11px' }}>After 画像（任意）</label>
+                  <div id="service-after-img-wrap" style={{ marginBottom: '6px', display: 'none' }}>
+                    <img id="service-after-img-preview" src="" alt="After" style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e5e7eb' }} />
+                  </div>
+                  <input type="file" id="service-after-img-input" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} />
+                  <button type="button" id="service-after-img-btn" className="btn btn-ghost" style={{ fontSize: '11px', padding: '5px 10px' }}>📷 画像追加</button>
+                  <p id="service-after-img-msg" className="muted" style={{ fontSize: '11px', margin: '3px 0 0', display: 'none' }}></p>
+                  <input type="hidden" name="after_image_url" id="service-after-image-url" />
+                </div>
+              </div>
+
+              {/* ベネフィットリスト（新） */}
+              <div className="form-field">
+                <label>このプログラムで変わること（1行1項目）</label>
+                <textarea name="benefit_list_text" placeholder={"例:\n自分に似合う眉の形が客観的にわかる\n毎朝5分で再現できるセルフケア手順を習得できる\nマッチングアプリの写真で印象が変わる"} style={{ minHeight: '120px' }}></textarea>
+                <small className="muted">1行につき1項目。掲載者ページで✓リストとして表示されます（最大5項目）</small>
+              </div>
               <div className="form-field">
                 <label>サービス画像</label>
                 <div id="service-img-preview-wrap" style={{ marginBottom: '8px', display: 'none' }}>
@@ -805,9 +1647,19 @@ export default function ProviderDashboardPage() {
                 <p id="service-img-msg" className="muted" style={{ fontSize: '12px', margin: '4px 0 0', display: 'none' }}></p>
                 <input type="hidden" name="image_url" id="service-image-url" />
               </div>
+              <div className="form-field">
+                <label>このプログラムが向いている来た道の類型（任意・複数選択可）</label>
+                <small className="muted" style={{ marginBottom: '8px', display: 'block' }}>選択すると掲載者公開ページでバッジとして表示されます</small>
+                <div className="checkbox-group">
+                  <label className="checkbox-item"><input type="checkbox" name="suitable_path_types" value="virgin" />初めてタイプ</label>
+                  <label className="checkbox-item"><input type="checkbox" name="suitable_path_types" value="quit" />続かなかったタイプ</label>
+                  <label className="checkbox-item"><input type="checkbox" name="suitable_path_types" value="blind" />非客観視タイプ</label>
+                  <label className="checkbox-item"><input type="checkbox" name="suitable_path_types" value="lapsed" />再開タイプ</label>
+                </div>
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                 <input type="checkbox" name="is_featured" id="is_featured" />
-                <label htmlFor="is_featured" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>看板メニューとして表示する</label>
+                <label htmlFor="is_featured" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>おすすめプログラムとして表示する</label>
               </div>
               <input type="hidden" name="_service_id" />
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -817,7 +1669,9 @@ export default function ProviderDashboardPage() {
             </form>
           </div>
           <div className="card" style={{ padding: '24px' }}>
-            <h2 style={{ margin: '0 0 16px', fontSize: '16px' }}>診断マッチング設定</h2>
+            <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>New Me Map マッチング設定</h2>
+            <p className="muted" style={{ fontSize: '13px', margin: '0 0 12px', lineHeight: '1.6' }}>ユーザーのNew Me Mapに基づいて「あなたとの一致度」が自動計算されます。カバーする7軸は登録カテゴリから自動検出されます。</p>
+            <div id="axis-coverage-info" style={{ marginBottom: '16px' }}></div>
             <form id="service-form">
               <div className="form-field"><label>サービス説明文（料金・メニューなど）</label><textarea name="description" placeholder="提供するサービスの詳細をここに書いてください"></textarea></div>
               <div className="form-field">
@@ -850,7 +1704,7 @@ export default function ProviderDashboardPage() {
               </div>
               <div className="form-field"><label>最低価格（円）</label><input name="price_from" type="number" placeholder="10000" /></div>
               <div className="form-field">
-                <label>提供スタイル（診断との連動）</label>
+                <label>提供スタイル（New Me Map連動）</label>
                 <select name="provider_style">
                   <option value="">選択してください</option>
                   <option value="explanation">納得してから動く人向け（理由を丁寧に説明するスタイル）</option>
@@ -858,7 +1712,7 @@ export default function ProviderDashboardPage() {
                   <option value="delegate">任せて結果を出してほしい人向け</option>
                   <option value="cautious">小さく試したい人向け</option>
                 </select>
-                <small className="muted">これが診断タイプとの一致計算に使われます</small>
+                <small className="muted">ユーザーのMe Scan回答のスタイル傾向と照合されます</small>
               </div>
               <div className="form-field">
                 <label>得意なきっかけ（複数選択可）</label>
@@ -871,21 +1725,77 @@ export default function ProviderDashboardPage() {
                 </div>
               </div>
               <div className="form-field">
-                <label>得意な失敗パターン対応（複数選択可）</label>
+                <label>得意な「来た道」の類型（複数選択可）</label>
+                <small className="muted" style={{ display: 'block', marginBottom: '8px' }}>New Me Mapの「来た道スコア」と照合されます。該当する方にとって一致度が高くなります。</small>
                 <div className="checkbox-group">
-                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="lost_direction" />方向を見失った方</label>
-                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_continuation" />続かなかった方</label>
-                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="cost" />コストで断念した方</label>
-                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="awkward" />関係性で悩んだ方</label>
-                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_result" />変化が感じられなかった方</label>
+                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="lost_direction" />以前やっていたが疎かになった方（再開タイプ）</label>
+                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_continuation" />始めたが続かなかった方（継続タイプ）</label>
+                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_result" />やっているが客観的評価がない方（非客観視タイプ）</label>
+                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="cost" />コストで断念した経験がある方</label>
+                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="awkward" />プロとの関係性で悩んだ方</label>
                 </div>
               </div>
+              {/* ── 予約・比較情報 ── */}
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>予約・比較情報</h3>
+              <small className="muted" style={{ display: 'block', marginBottom: '14px', fontSize: '12px', lineHeight: '1.6' }}>相談フォームや比較時に表示される情報です。設定するほどユーザーの「踏み出せない理由」を減らせます。</small>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <input type="checkbox" name="trial_available" id="trial_available" />
+                <label htmlFor="trial_available" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>お試し・無料相談あり（クイックファクトにバッジ表示）</label>
+              </div>
+              <div className="form-field"><label>お試しコースの内容説明</label><textarea name="trial_desc" placeholder="例: 初回30分無料の外見相談を実施しています。オンライン可。まず話を聞くだけでもOKです。"></textarea></div>
+              <div className="form-field">
+                <label>返信目安</label>
+                <select name="response_hours">
+                  <option value="">設定しない</option>
+                  <option value="12">12時間以内</option>
+                  <option value="24">24時間以内（翌日）</option>
+                  <option value="48">48時間以内（2日）</option>
+                  <option value="72">72時間以内（3日）</option>
+                </select>
+                <small className="muted">「返信〇時間以内」として相談ページに表示。設定するだけで申込率が上がります。</small>
+              </div>
+              <div className="form-field">
+                <label>支払い方法（複数選択可）</label>
+                <div className="checkbox-group">
+                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="cash" />現金</label>
+                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="credit" />クレジットカード</label>
+                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="paypay" />PayPay</label>
+                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="rakuten_pay" />楽天Pay</label>
+                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="line_pay" />LINE Pay</label>
+                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="bank" />銀行振込</label>
+                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="other" />その他</label>
+                </div>
+              </div>
+              <div className="form-field">
+                <label>キャンセルポリシー</label>
+                <textarea name="cancellation_policy" placeholder="例: 前日24時間前までのキャンセルは無料。当日キャンセルは料金の50%をいただきます。"></textarea>
+              </div>
+              <div className="form-field">
+                <label>初回セッションの内容説明</label>
+                <textarea name="first_session_desc" placeholder="例: 初回は60分のカウンセリングから始まります。現状ヒアリング・外見診断・今後のプラン提案を行います。見学・話を聞くだけでも歓迎です。"></textarea>
+                <small className="muted">相談フォームの直前にユーザーへ表示されます。「何が起きるかわからない不安」を解消する文章を書いてください。</small>
+              </div>
+
               <button type="submit" className="btn" style={{ marginTop: '8px' }}>保存する</button>
             </form>
           </div>
         </div>
 
-        {/* タブ⑤：公開設定 */}
+        {/* タブ⑤：体験談 */}
+        <div className="tab-pane" id="tab-stories">
+          <div className="card" style={{ padding: '24px' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>体験談の管理</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                利用者から寄せられた体験談の表示・非表示を切り替えられます。<br />
+                非表示にした体験談は公開ページには表示されません。
+              </p>
+            </div>
+            <div id="stories-list"><p className="muted">読み込み中…</p></div>
+          </div>
+        </div>
+
+        {/* タブ⑥：公開設定 */}
         <div className="tab-pane" id="tab-publish">
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
             <h2 style={{ margin: '0', fontSize: '16px' }}>公開設定</h2>
@@ -928,7 +1838,6 @@ export default function ProviderDashboardPage() {
           </div>
           <div className="card stack" style={{ padding: '24px', gap: '14px' }}>
             <h2 style={{ margin: '0', fontSize: '16px' }}>パスワード変更</h2>
-            <p className="muted" style={{ fontSize: '12px', margin: '0', padding: '8px 12px', background: '#f9fafb', borderRadius: '8px' }}>※ パスワードを変更すると、掲載者ダッシュボードとFinemeユーザーとしてのログイン、両方に適用されます。</p>
             <div className="form-field"><label>新しいパスワード（8文字以上）</label><input type="password" id="new-pw1" /></div>
             <div className="form-field"><label>新しいパスワード（確認）</label><input type="password" id="new-pw2" /></div>
             <p id="pw-change-msg" style={{ fontSize: '13px', margin: '0', display: 'none' }}></p>

@@ -28,6 +28,11 @@ export async function PATCH(request, { params }) {
   for (const key of allowed) {
     if (body[key] !== undefined) updates[key] = body[key];
   }
+  // price_from: 空文字・nullはnullに（Supabase integer型エラー対策）
+  if (updates.price_from !== undefined) {
+    updates.price_from = (updates.price_from === '' || updates.price_from === null)
+      ? null : Number(updates.price_from);
+  }
 
   const { data, error } = await supabase
     .from('providers')

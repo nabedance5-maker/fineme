@@ -14,13 +14,28 @@ export async function GET(request, { params }) {
 export async function PATCH(request, { params }) {
   const { id } = await params;
   try {
-    const { status } = await request.json();
-    if (!['pending', 'approved', 'rejected'].includes(status)) {
-      return Response.json({ error: '不正なステータスです' }, { status: 400 });
+    const body = await request.json();
+    const { status, axis_id, path_type, milestone_reached } = body;
+
+    const updates = {};
+
+    if (status !== undefined) {
+      if (!['pending', 'approved', 'rejected'].includes(status)) {
+        return Response.json({ error: '不正なステータスです' }, { status: 400 });
+      }
+      updates.status = status;
+      if (status === 'approved') updates.published_at = new Date().toISOString();
     }
 
-    const updates = { status };
-    if (status === 'approved') updates.published_at = new Date().toISOString();
+    const VALID_AXES = ['body', 'eyebrow', 'fashion', 'hair', 'skin', 'teeth', 'nail'];
+    const VALID_PATHS = ['virgin', 'quit', 'blind', 'lapsed'];
+    if (axis_id !== undefined) updates.axis_id = VALID_AXES.includes(axis_id) ? axis_id : null;
+    if (path_type !== undefined) updates.path_type = VALID_PATHS.includes(path_type) ? path_type : null;
+    if (milestone_reached !== undefined) updates.milestone_reached = milestone_reached ? String(milestone_reached).slice(0, 200) : null;
+
+    if (!Object.keys(updates).length) {
+      return Response.json({ error: '更新するフィールドがありません' }, { status: 400 });
+    }
 
     const { data, error } = await supabaseAdmin
       .from('stories')

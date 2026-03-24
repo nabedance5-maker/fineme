@@ -90,16 +90,25 @@ export async function POST(request) {
       if (existingUser) {
         // 既存ユーザー → パスワードをリセット
         await supabase.auth.admin.updateUserById(existingUser.id, { password: initPassword });
+        // 掲載者はユーザープロフィールを持たない → profiles行があれば削除
+        await supabase.from('profiles').delete().eq('id', existingUser.id);
         console.log('[auth] password reset for existing user:', email);
       } else {
         // 新規ユーザーを作成
-        const { error: createError } = await supabase.auth.admin.createUser({
+        const { data: createdUser, error: createError } = await supabase.auth.admin.createUser({
           email,
           password: initPassword,
           email_confirm: true,
         });
-        if (createError) console.warn('[auth] createUser error:', createError.message);
-        else console.log('[auth] created new user:', email);
+        if (createError) {
+          console.warn('[auth] createUser error:', createError.message);
+        } else {
+          // トリガーが自動生成した profiles 行を削除（掲載者はユーザーアカウントを持たない）
+          if (createdUser?.user?.id) {
+            await supabase.from('profiles').delete().eq('id', createdUser.user.id);
+          }
+          console.log('[auth] created new provider user:', email);
+        }
       }
 
       // 初期パスワードをメールで送信

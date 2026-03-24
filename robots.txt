@@ -1,2 +1,30 @@
 User-agent: *
-Disallow: /
+Allow: /
+
+# 管理・認証・マイページ系は非公開
+Disallow: /admin/
+Disallow: /provider/dashboard
+Disallow: /provider/billing
+Disallow: /provider/profile
+Disallow: /provider/staff
+Disallow: /provider/schedule
+Disallow: /provider/requests
+Disallow: /provider/reservations
+Disallow: /provider/service-form
+Disallow: /provider/photo-settings
+Disallow: /provider/compatibility
+Disallow: /provider/onboarding
+Disallow: /provider/referral
+Disallow: /provider/inquiry
+Disallow: /mypage/
+Disallow: /my-reservations
+Disallow: /auth/
+Disallow: /login
+Disallow: /user/
+Disallow: /booking/
+Disallow: /story-submit
+Disallow: /diagnosis/result
+Disallow: /notifications
+Disallow: /business/
+
+Sitemap: https://www.fineme.me/sitemap.xml

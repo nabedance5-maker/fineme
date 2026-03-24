@@ -118,7 +118,7 @@ export default function AuthCallbackPage() {
         setStatus('password-form');
       } else {
         // 一般ユーザー → マイページへ
-        window.location.href = '/pages/mypage/index.html';
+        window.location.href = '/mypage';
       }
     }
     init();
@@ -133,7 +133,7 @@ export default function AuthCallbackPage() {
       setPwError('エラー: ' + error.message);
       return;
     }
-    window.location.href = '/pages/provider/index.html';
+    window.location.href = '/provider/dashboard';
   }
 
   return (

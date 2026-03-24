@@ -12,13 +12,15 @@ export async function GET(request) {
 
   let query = supabaseAdmin
     .from('stories')
-    .select('id, provider_id, service_name, concern_before, change_after, love_impact, recommend_to, tags, rating, published_at, created_at')
+    .select('id, provider_id, service_name, concern_before, change_after, love_impact, recommend_to, tags, rating, axis_id, path_type, milestone_reached, published_at, created_at')
     .eq('status', status)
     .order('published_at', { ascending: false })
     .limit(50);
 
   if (providerId) query = query.eq('provider_id', providerId);
   if (tag) query = query.contains('tags', [tag]);
+  // 掲載者が非表示にした体験談は除外
+  query = query.eq('provider_hidden', false);
 
   const { data, error } = await query;
   if (error) return Response.json({ error: error.message }, { status: 500 });
@@ -28,7 +30,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { answers, tags, reservationId, providerId, serviceName, userId } = body;
+    const { answers, tags, reservationId, providerId, serviceName, userId, axisId, pathType, milestoneReached } = body;
 
     if (!answers || answers.length < 2 || !answers[0]?.trim() || !answers[1]?.trim()) {
       return Response.json({ error: '必須項目（Q1・Q2）が不足しています' }, { status: 400 });
@@ -52,6 +54,9 @@ export async function POST(request) {
         recommend_to: clean[3] || null,
         tags: Array.isArray(tags) ? tags.slice(0, 5) : [],
         rating: 5,
+        axis_id: axisId || null,
+        path_type: pathType || null,
+        milestone_reached: milestoneReached ? String(milestoneReached).slice(0, 200) : null,
         status: 'approved',
         published_at: new Date().toISOString(),
       })

@@ -16,11 +16,16 @@ export default function ProviderInquiryPage() {
     `;
     document.head.appendChild(style);
 
-    function saveInquiry(data) {
-      const k = 'fineme:provider:inquiries';
-      const arr = JSON.parse(localStorage.getItem(k) || '[]');
-      arr.push({ ...data, createdAt: new Date().toISOString() });
-      localStorage.setItem(k, JSON.stringify(arr));
+    async function saveInquiry(data) {
+      const res = await fetch('/api/provider/inquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'サーバーエラー');
+      }
     }
     function mapCategoryLabel(v) {
       const map = {
@@ -65,12 +70,12 @@ export default function ProviderInquiryPage() {
           return;
         }
         try {
-          saveInquiry(data);
+          await saveInquiry(data);
           statusEl.textContent = '送信を受け付けました。担当よりご連絡します。';
           statusEl.style.color = '#111827';
           form.reset();
         } catch (err) {
-          statusEl.textContent = '保存に失敗しました。再度お試しください。';
+          statusEl.textContent = '送信に失敗しました。時間をおいて再度お試しください。';
           statusEl.style.color = '#b91c1c';
         }
       });

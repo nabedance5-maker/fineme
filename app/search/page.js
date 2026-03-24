@@ -3,6 +3,9 @@ import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+const AXIS_LABELS = { body:'体型・ボディ', eyebrow:'眉毛', fashion:'服・コーデ', hair:'髪・ヘア', skin:'肌・エステ', teeth:'歯・口元', nail:'爪' };
+const AXIS_ICONS  = { body:'💪', eyebrow:'✂️', fashion:'👔', hair:'💇', skin:'✨', teeth:'🦷', nail:'💅' };
+
 const CATEGORY_LABELS = {
   consulting: '外見トータルサポート',
   gym: 'パーソナルジム',
@@ -89,6 +92,15 @@ function ProviderCard({ provider }) {
             )}
           </div>
           <h3 style={{ fontSize: '16px', fontWeight: '800', margin: '0 0 6px', lineHeight: '1.3' }}>{provider.name}</h3>
+          {provider.match_tags?.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
+              {provider.match_tags.slice(0, 2).map((tag, i) => (
+                <span key={i} style={{ fontSize: '10px', fontWeight: '700', padding: '2px 8px', background: 'rgba(201,168,76,0.1)', color: '#c9a84c', border: '1px solid rgba(201,168,76,0.3)', borderRadius: '99px' }}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
           {provider.catchphrase && (
             <p style={{
               fontSize: '13px', color: '#6b7280', margin: '0 0 12px', lineHeight: '1.6',
@@ -103,8 +115,8 @@ function ProviderCard({ provider }) {
               : <span style={{ fontSize: '13px', color: '#9ca3af' }}>要問合せ</span>
             }
             <span style={{
-              fontSize: '12px', fontWeight: '700', color: '#2563eb',
-              padding: '6px 14px', border: '1.5px solid #2563eb', borderRadius: '99px'
+              fontSize: '12px', fontWeight: '700', color: '#c9a84c',
+              padding: '6px 14px', border: '1.5px solid #c9a84c', borderRadius: '99px'
             }}>
               詳細を見る →
             </span>
@@ -140,18 +152,42 @@ function SearchContent() {
   const [area, setArea] = useState(() => {
     const a = sp.get('area');
     if (a) return a;
-    // 旧 pages/search.html の region（英語コード）→ 日本語エリアに変換
     const regionMap = { tokyo: '東京', osaka: '大阪', kanagawa: '神奈川', aichi: '愛知', fukuoka: '福岡', saitama: '埼玉', chiba: '千葉', kyoto: '京都', hyogo: '兵庫', hokkaido: '北海道' };
     const r = sp.get('region') || '';
     return regionMap[r] || '';
   });
+  const [axis, setAxis] = useState(() => sp.get('axis') || '');
+  const [compassAxis, setCompassAxis] = useState('');
+  const [scanData, setScanData] = useState(null); // Me Scan データ（マッチング用）
 
-  const fetchProviders = useCallback(async (cat, ar) => {
+  // 診断データからCompassとMe Scanデータを読む（クライアントのみ）
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('fineme:diagnosis:latest');
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d.compass_first) setCompassAxis(d.compass_first);
+        setScanData(d);
+      }
+    } catch {}
+  }, []);
+
+  const fetchProviders = useCallback(async (cat, ar, ax, scan) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (cat) params.set('category', cat);
       if (ar) params.set('area', ar);
+      if (ax) params.set('axis', ax);
+      // Me Scan データがあればマッチングパラメーターを追加
+      if (scan) {
+        if (scan.trigger) params.set('trigger', scan.trigger);
+        if (scan.failure_pattern && scan.failure_pattern !== 'ongoing') params.set('failure', scan.failure_pattern);
+        const compass = localStorage.getItem('fineme:compass:override') || scan.compass_first;
+        if (compass) params.set('compass', compass);
+        const axes = scan.priority_order;
+        if (Array.isArray(axes) && axes.length) params.set('axes', axes.join(','));
+      }
       const res = await fetch(`/api/providers?${params}`);
       const data = res.ok ? await res.json() : [];
       setProviders(Array.isArray(data) ? data : []);
@@ -163,8 +199,8 @@ function SearchContent() {
   }, []);
 
   useEffect(() => {
-    fetchProviders(category, area);
-  }, [category, area, fetchProviders]);
+    fetchProviders(category, area, axis, scanData);
+  }, [category, area, axis, scanData, fetchProviders]);
 
   const filtered = providers.filter(p => {
     if (!keyword.trim()) return true;
@@ -176,44 +212,78 @@ function SearchContent() {
     );
   });
 
+  function applyFilters({ kw, cat, ar, ax }) {
+    const params = new URLSearchParams();
+    if (kw) params.set('keyword', kw);
+    if (cat) params.set('category', cat);
+    if (ar) params.set('area', ar);
+    if (ax) params.set('axis', ax);
+    router.replace(`/search?${params}`, { scroll: false });
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const kw = String(fd.get('keyword') || '');
     const cat = String(fd.get('category') || '');
     const ar = String(fd.get('area') || '');
-    setKeyword(kw);
-    setCategory(cat);
-    setArea(ar);
-    const params = new URLSearchParams();
-    if (kw) params.set('keyword', kw);
-    if (cat) params.set('category', cat);
-    if (ar) params.set('area', ar);
-    router.replace(`/search?${params}`, { scroll: false });
+    setKeyword(kw); setCategory(cat); setArea(ar);
+    applyFilters({ kw, cat, ar, ax: axis });
   }
+
+  function toggleAxis(id) {
+    const next = axis === id ? '' : id;
+    setAxis(next);
+    applyFilters({ kw: keyword, cat: category, ar: area, ax: next });
+  }
+
+  function resetAll() {
+    setKeyword(''); setCategory(''); setArea(''); setAxis('');
+    router.replace('/search');
+  }
+
+  const activeFilters = [category, area, axis].filter(Boolean).length;
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '40px 20px 80px' }}>
       <h1 style={{ fontSize: 'clamp(22px,4vw,28px)', fontWeight: '800', margin: '0 0 8px' }}>サービスを探す</h1>
       <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 28px' }}>外見磨きのプロフェッショナルを検索・比較できます</p>
 
+      {/* Compassバナー（診断済みのみ） */}
+      {compassAxis && !axis && (
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'linear-gradient(135deg,#eff6ff,#f5f3ff)', border: '1.5px solid #bfdbfe', borderRadius: '14px', marginBottom: '20px', cursor: 'pointer', flexWrap: 'wrap' }}
+          onClick={() => toggleAxis(compassAxis)}
+        >
+          <span style={{ fontSize: '20px' }}>🧭</span>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: '11px', fontWeight: 800, color: '#2563eb', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '.06em' }}>Fineme Compass</p>
+            <p style={{ fontSize: '14px', fontWeight: 700, color: '#111', margin: 0 }}>
+              最初の一手は {AXIS_ICONS[compassAxis]} {AXIS_LABELS[compassAxis]} — この軸で絞り込む →
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 検索フォーム */}
       <form
         onSubmit={handleSubmit}
         style={{
-          display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '32px',
-          padding: '20px', background: '#f9fafb', borderRadius: '16px', border: '1px solid #e5e7eb'
+          display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px',
+          padding: '16px 20px', background: '#f9fafb', borderRadius: '16px', border: '1px solid #e5e7eb'
         }}
       >
         <input
           name="keyword"
-          defaultValue={keyword}
+          value={keyword}
+          onChange={e => setKeyword(e.target.value)}
           placeholder="キーワード（例：メンズメイク、骨格診断）"
           style={{ flex: '1 1 200px', padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', outline: 'none' }}
         />
         <select
           name="category"
-          defaultValue={category}
+          value={category}
+          onChange={e => { setCategory(e.target.value); applyFilters({ kw: keyword, cat: e.target.value, ar: area, ax: axis }); }}
           style={{ padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', background: '#fff', cursor: 'pointer' }}
         >
           <option value="">すべてのカテゴリ</option>
@@ -221,7 +291,8 @@ function SearchContent() {
         </select>
         <select
           name="area"
-          defaultValue={area}
+          value={area}
+          onChange={e => { setArea(e.target.value); applyFilters({ kw: keyword, cat: category, ar: e.target.value, ax: axis }); }}
           style={{ padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', background: '#fff', cursor: 'pointer' }}
         >
           {AREAS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
@@ -234,9 +305,47 @@ function SearchContent() {
         </button>
       </form>
 
+      {/* 7軸チップフィルター */}
+      <div style={{ marginBottom: '24px' }}>
+        <p style={{ fontSize: '11px', fontWeight: 800, color: '#9ca3af', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '.06em' }}>
+          Me Scan 7軸で絞り込む
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          {Object.entries(AXIS_LABELS).map(([id, label]) => {
+            const isActive = axis === id;
+            const isCompass = compassAxis === id;
+            return (
+              <button
+                key={id}
+                onClick={() => toggleAxis(id)}
+                style={{
+                  padding: '7px 14px', borderRadius: '99px', fontSize: '13px', fontWeight: 600,
+                  cursor: 'pointer', border: 'none', transition: 'all .15s',
+                  background: isActive ? '#111' : isCompass ? '#eff6ff' : '#f3f4f6',
+                  color: isActive ? '#fff' : isCompass ? '#1d4ed8' : '#374151',
+                  outline: isActive ? 'none' : isCompass ? '1.5px solid #bfdbfe' : 'none',
+                }}
+              >
+                {AXIS_ICONS[id]} {label}
+                {isCompass && !isActive && <span style={{ marginLeft: '5px', fontSize: '10px' }}>🧭</span>}
+              </button>
+            );
+          })}
+          {activeFilters > 0 && (
+            <button
+              onClick={resetAll}
+              style={{ padding: '7px 14px', borderRadius: '99px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280' }}
+            >
+              ✕ リセット
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* 件数 */}
       <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 20px' }}>
         {loading ? '読み込み中…' : `${filtered.length}件のサービスが見つかりました`}
+        {axis && !loading && <span style={{ marginLeft: '8px', fontSize: '12px', fontWeight: 700, color: '#4f46e5' }}>（{AXIS_ICONS[axis]} {AXIS_LABELS[axis]}で絞り込み中）</span>}
       </p>
 
       {/* 結果 */}
@@ -250,7 +359,7 @@ function SearchContent() {
           <p style={{ fontSize: '16px', fontWeight: '700', marginBottom: '8px', color: '#374151' }}>見つかりませんでした</p>
           <p style={{ fontSize: '14px', marginBottom: '20px' }}>条件を変えて再度お試しください。</p>
           <button
-            onClick={() => { setKeyword(''); setCategory(''); setArea(''); router.replace('/search'); }}
+            onClick={resetAll}
             style={{ padding: '10px 24px', background: '#111', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
           >
             条件をリセット

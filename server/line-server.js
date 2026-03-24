@@ -187,6 +187,67 @@ app.get('/line/action', (req,res)=>{
 // simple list endpoint for debug
 app.get('/line/reservations', (req,res)=>{ res.json(readReservations()); });
 
+// ── 診断完了イベント登録 ──────────────────────────────────────────────────
+// POST /line/diagnosis-event { line_user_id, compass_first }
+app.post('/line/diagnosis-event', (req, res) => {
+  if (!passesCsrfCheck(req)) return res.status(403).send('forbidden');
+  const { line_user_id, compass_first } = req.body || {};
+  if (!line_user_id) return res.status(400).json({ error: 'line_user_id required' });
+  const now = new Date().toISOString();
+  // upsert: 同じline_user_idが既にあれば更新、なければ挿入
+  db.get('SELECT id FROM diagnosis_events WHERE line_user_id = ?', [line_user_id], (err, row) => {
+    if (row) {
+      db.run(
+        'UPDATE diagnosis_events SET compass_first=?, completed_at=?, remind_3d_sent=0, remind_7d_sent=0, remind_30d_sent=0 WHERE line_user_id=?',
+        [compass_first || null, now, line_user_id]
+      );
+    } else {
+      db.run(
+        'INSERT INTO diagnosis_events (line_user_id, compass_first, completed_at, createdAt) VALUES (?, ?, ?, ?)',
+        [line_user_id, compass_first || null, now, now]
+      );
+    }
+  });
+  res.json({ ok: true });
+});
+
+// ── 診断後リマインドスケジューラー ─────────────────────────────────────────
+function runDiagnosisReminders(){
+  const now = new Date();
+  db.all('SELECT * FROM diagnosis_events', [], (err, rows) => {
+    if (err || !rows) return;
+    for (const row of rows) {
+      const completed = new Date(row.completed_at);
+      const diffDays = (now.getTime() - completed.getTime()) / (1000 * 60 * 60 * 24);
+      const compassLabel = row.compass_first ? `【${row.compass_first}】` : '';
+
+      // 3日後リマインド
+      if (diffDays >= 3 && !row.remind_3d_sent) {
+        sendPush(row.line_user_id, buildTextMessage(
+          `🧭 変容の旅、最初の一歩は踏み出せましたか？\n\nMe Scanから3日が経ちました。${compassLabel}があなたのFineme Compassです。\n\nNew Me Naviで今日の行き先を確認してみてください。\nhttps://fineme.me/mypage/navi`
+        )).catch(() => {});
+        db.run('UPDATE diagnosis_events SET remind_3d_sent=1 WHERE id=?', [row.id]);
+      }
+
+      // 7日後リマインド
+      if (diffDays >= 7 && !row.remind_7d_sent) {
+        sendPush(row.line_user_id, buildTextMessage(
+          `🗺️ Me Scanから1週間が経ちました。\n\n地図を持ったまま止まっていませんか？どんな小さな一歩でも、変容は始まります。${compassLabel}から始めてみましょう。\n\nhttps://fineme.me/diagnosis/result`
+        )).catch(() => {});
+        db.run('UPDATE diagnosis_events SET remind_7d_sent=1 WHERE id=?', [row.id]);
+      }
+
+      // 30日後リマインド
+      if (diffDays >= 30 && !row.remind_30d_sent) {
+        sendPush(row.line_user_id, buildTextMessage(
+          `✨ Me Scanから1ヶ月が経ちました。\n\n外見は変わりましたか？変容の地図（New Me Map）を更新して、今の自分を再スキャンしてみてください。\n\nhttps://fineme.me/diagnosis`
+        )).catch(() => {});
+        db.run('UPDATE diagnosis_events SET remind_30d_sent=1 WHERE id=?', [row.id]);
+      }
+    }
+  });
+}
+
 // scheduler: run every minute and check for reminders
 function runScheduler(){
   const now = new Date();
@@ -215,7 +276,7 @@ function runScheduler(){
   if(changed) writeReservations(list);
 }
 
-setInterval(runScheduler, 60*1000); // every minute
+setInterval(() => { runScheduler(); runDiagnosisReminders(); }, 60*1000); // every minute
 
 app.listen(PORT, ()=>{
   console.log('LINE server listening on port', PORT);

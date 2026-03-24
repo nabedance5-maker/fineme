@@ -1,236 +1,234 @@
-'use client';
+import GuideInteractive from './GuideInteractive';
 
-import { useEffect } from 'react';
-import Link from 'next/link';
+const AXES = [
+  {
+    id: 'eyebrow', icon: '✂️', label: '眉毛', tier: 1,
+    quick_win: '1〜2回のサロンで劇的に変わる。コスパ最高の即効軸。',
+    start: '眉サロン 1回（¥3,000〜）',
+    effect: '顔の印象・清潔感が即日アップ',
+    href: '/search?category=eyebrow',
+    paths: {
+      virgin: '初めてでも「骨格に合わせた形」をプロに任せれば失敗なし。',
+      quit: '続かない原因は「間隔が空きすぎること」。2〜3ヶ月定期に設定するだけ。',
+      blind: '「今の自分の眉がどう見えているか」を一度プロに評価してもらうだけで変わる。',
+      lapsed: '再開のハードルは低い。「また来ました」で通える関係性を作ること。',
+    },
+  },
+  {
+    id: 'hair', icon: '💇', label: '髪・ヘア', tier: 1,
+    quick_win: '毎日目に入る。スタイリング習慣が変われば毎朝の自信が変わる。',
+    start: '信頼できる美容師との出会い',
+    effect: '第一印象・清潔感・毎朝の気分',
+    href: '/search?category=hair',
+    paths: {
+      virgin: '「いつも任せます」が一番危険。「短く・清潔感」の2ワードから始めよう。',
+      quit: 'スタイルが決まらないのは担当者との相性かも。「来た道」を正直に話せるスタイリストを探す。',
+      blind: '「いつも同じスタイル」になるのは指示が曖昧だから。写真を1枚持っていくだけで変わる。',
+      lapsed: '間隔が空きすぎると崩れが定着する。2ヶ月ルールを習慣にするだけで変わる。',
+    },
+  },
+  {
+    id: 'body', icon: '💪', label: '体型・ボディ', tier: 1,
+    quick_win: '姿勢だけで今日から印象が変わる。継続で確実に積み上がる軸。',
+    start: 'まず姿勢チェック＆体脂肪率把握',
+    effect: '見た目・健康・自信の土台',
+    href: '/search?category=gym',
+    paths: {
+      virgin: '「ジムに通う」ではなく「何を変えたいか」から決める。最初は週2回以下でもOK。',
+      quit: '続かない原因の95%は「目標と負荷のミスマッチ」。小さく設定し直すことが正解。',
+      blind: '「自己流でやっているが変わっている気がしない」なら、一度客観的に評価を受ける価値がある。',
+      lapsed: 'リスタートはゼロからではなく50から。体は覚えている。再開のハードルを下げることが先。',
+    },
+  },
+  {
+    id: 'fashion', icon: '👔', label: '服・コーデ', tier: 1,
+    quick_win: '「似合う色×体型に合うシルエット」2軸を押さえれば全体が変わる。',
+    start: '骨格診断 or パーソナルカラー診断',
+    effect: '全体の調和・おしゃれな印象',
+    href: '/search?category=fashion',
+    paths: {
+      virgin: '「なんとなく」で選んでいる服を一度プロに見てもらう。それだけで基準が生まれる。',
+      quit: '「試したがしっくりこなかった」のは、自分の骨格・顔タイプを知らなかったから。',
+      blind: 'TPOで「なんか違う」と言われたことがある人は客観評価が必要。',
+      lapsed: '去年の服が似合わなくなるのは当然。体型・年齢・ライフスタイルが変わるから。',
+    },
+  },
+  {
+    id: 'skin', icon: '✨', label: '肌・エステ', tier: 2,
+    quick_win: '毎日の洗顔・保湿から。プロの施術で確実に底上げできる軸。',
+    start: 'スキンケア習慣の見直し',
+    effect: '清潔感・健康的な印象',
+    href: '/search?category=esthetic',
+    paths: {
+      virgin: '「男性がスキンケアするのは変」は昭和の話。洗顔＋保湿だけで5年分変わる。',
+      quit: '続かないスキンケアは「ステップが多すぎる」から。最小3ステップにする。',
+      blind: 'やっているのに変わらない人は、成分・順番・量のどれかがズレている。',
+      lapsed: '再開は今日から。「明日から」は永遠に来ない。',
+    },
+  },
+  {
+    id: 'teeth', icon: '🦷', label: '歯・口元', tier: 3,
+    quick_win: '笑顔への自信が変わる。投資対効果が高い中期プロジェクト。',
+    start: 'ホワイトニング or 歯科相談',
+    effect: '笑顔の自信・口元の印象',
+    href: '/search?category=whitening',
+    paths: {
+      virgin: '一歩が踏み出せないのは「費用・痛み・時間」への不安から。まず相談だけ。',
+      quit: '途中で止まった人は「目標が抽象的すぎた」ことが多い。「笑顔を隠さなくなる」が正しいゴール設定。',
+      blind: '「自分の歯が人からどう見えているか」を知ることが最初の一歩。',
+      lapsed: '再開のきっかけはいつでも作れる。まず歯医者の定期健診から。',
+    },
+  },
+  {
+    id: 'nail', icon: '💅', label: '爪', tier: 4,
+    quick_win: '整えるだけ。汚れ・長さ・形。それだけで「細部まで気を使う人」になる。',
+    start: '長さを整える＋甘皮ケア',
+    effect: '細部の清潔感・手元の印象',
+    href: '/search?category=nail',
+    paths: {
+      virgin: '爪を整えるだけで「清潔感が高い」という評価が生まれる。月1回で十分。',
+      quit: '続かない人は「自分でやろうとしていた」から。サロンに任せると習慣になる。',
+      blind: '「自分は爪を整えているつもり」が一番危ない。客観的に見てもらう機会を作る。',
+      lapsed: '再開は15分で終わる。ネイルサロンに予約を入れるだけ。',
+    },
+  },
+];
+
+const TIER_INFO = {
+  1: { label: 'Tier 1 — 今すぐ着手', color: '#c9a84c', bg: 'rgba(201,168,76,0.12)', border: 'rgba(201,168,76,0.3)', desc: '即効性が高く、コスト・時間ともに参入しやすい軸。変化の実感を得やすい。' },
+  2: { label: 'Tier 2 — 早めに着手',  color: '#065f46', bg: '#d1fae5', border: '#86efac', desc: '継続が必要だが確実に変わる軸。Tier 1と並走で取り組むと効果的。' },
+  3: { label: 'Tier 3 — 中期計画',   color: '#92400e', bg: '#fef3c7', border: '#fcd34d', desc: '投資額・時間ともに大きいが、変化の質と永続性が高い軸。' },
+  4: { label: 'Tier 4 — 長期・細部', color: '#374151', bg: '#f3f4f6', border: '#d1d5db', desc: '完成度を上げる仕上げの軸。Tier 1〜3が整ってから取り組む。' },
+};
 
 export default function GuidePage() {
-  useEffect(() => {
-    const chips = Array.from(document.querySelectorAll('.guide-chip'));
-    if (!chips.length) return;
-    if (!('IntersectionObserver' in window)) {
-      chips.forEach(c => c.classList.add('visible'));
-      return;
-    }
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.classList.add('visible');
-          io.unobserve(e.target);
-        }
-      });
-    }, { threshold: 0.2 });
-    chips.forEach(c => io.observe(c));
-    return () => io.disconnect();
-  }, []);
-
   return (
     <>
       <style>{`
-        .guide-hero{padding:72px 24px;background:radial-gradient(1200px 420px at 50% -10%, rgba(37,99,235,0.08), transparent 68%),linear-gradient(180deg,#ffffff,#f8fafc);}
-        .guide-hero .title{font-size:clamp(30px,6vw,52px);font-weight:800;text-align:center;margin:0;color:#0f172a;letter-spacing:-0.02em}
-        .guide-hero .lead{font-size:18px;text-align:center;color:#475569;margin-top:10px}
-        .guide-wrap{max-width:1040px;margin:34px auto;padding:0 20px}
-        .guide-section{margin:26px 0;padding:20px;border:1px solid rgba(15,23,42,0.06);border-radius:14px;background:linear-gradient(180deg,#fff,#fbfbff);box-shadow:0 10px 26px rgba(15,23,42,0.05)}
-        .guide-section h2{font-size:clamp(22px,3.4vw,30px);margin:0 0 10px;font-weight:800;color:#0f172a}
-        .guide-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
-        .guide-card{position:relative;background:#fff;border-radius:14px;padding:14px;border:1px solid rgba(2,6,23,0.06);box-shadow:0 8px 22px rgba(2,6,23,0.06);transition:transform .2s ease, box-shadow .2s}
-        .guide-card:hover{transform:translateY(-4px);box-shadow:0 16px 32px rgba(2,6,23,0.12)}
-        .guide-card .icon{font-size:28px}
-        .guide-card h3{margin:6px 0 8px;font-size:18px;font-weight:700}
-        .guide-card p,.guide-card li{color:#475569;font-size:14px;line-height:1.7}
-        .guide-card .cta{display:inline-flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
-        .guide-road{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-        .road-step{background:linear-gradient(180deg,#f8fafc,#eef2ff);border:1px solid #e5e7eb;padding:14px;border-radius:12px}
-        .road-step h4{margin:0 0 8px;font-size:16px}
-        .qa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
-        .qa{background:#fff;border:1px solid rgba(2,6,23,0.06);border-radius:12px;box-shadow:0 8px 20px rgba(2,6,23,0.06);padding:14px}
-        .qa h4{margin:0 0 6px;font-size:16px}
-        .starter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-        .starter{background:linear-gradient(180deg,#ffffff,#fbfbff);border:1px solid rgba(15,23,42,0.06);border-radius:12px;padding:14px}
-        .starter h4{margin:0 0 8px;font-size:16px}
-        .guide-muted{color:#64748b}
-        .guide-chip{display:inline-block;padding:4px 8px;border:1px solid #e5e7eb;border-radius:999px;font-size:12px;color:#64748b;background:#fff;margin-right:6px;opacity:0;transform:translateY(4px);transition:opacity .5s ease, transform .5s ease}
-        .guide-chip.visible{opacity:1;transform:none}
-        @media (max-width:720px){.guide-wrap{padding:0 14px}.guide-section{padding:16px}}
+        .guide-hero {
+          position: relative; padding: 96px 24px 80px;
+          background:
+            linear-gradient(rgba(10,15,30,0.72), rgba(10,15,30,0.82)),
+            url('/assets/images/hero-bg.webp') center / cover no-repeat;
+          text-align: center; overflow: hidden;
+        }
+        .guide-hero-eyebrow {
+          font-size: 11px; font-weight: 800; letter-spacing: .18em;
+          color: rgba(201,168,76,0.55); text-transform: uppercase; margin: 0 0 18px;
+        }
+        .guide-hero h1 {
+          font-family: 'Noto Serif JP', Georgia, serif;
+          font-size: clamp(26px, 5.5vw, 42px); font-weight: 700;
+          margin: 0 0 14px; color: #fff; letter-spacing: -.01em; line-height: 1.4;
+        }
+        .guide-hero p {
+          font-family: 'Noto Serif JP', Georgia, serif;
+          font-size: clamp(14px, 2.2vw, 17px); color: rgba(255,255,255,.65);
+          margin: 0 auto; line-height: 2; max-width: 500px;
+        }
+        .guide-wrap { max-width: 860px; margin: 0 auto; padding: 0 20px 80px; }
+        .guide-sec { margin: 48px 0 0; }
+        .guide-sec-label {
+          font-size: 11px; font-weight: 800; letter-spacing: .14em;
+          text-transform: uppercase; color: var(--color-gold, #c9a84c); margin: 0 0 10px;
+        }
+        .guide-sec h2 {
+          font-family: 'Noto Serif JP', Georgia, serif;
+          font-size: clamp(20px, 4vw, 28px); font-weight: 700;
+          color: var(--color-fg, #0a0f1e); margin: 0 0 8px;
+        }
+        .guide-sec-lead { font-size: 15px; color: var(--color-muted, #7a6e65); line-height: 1.9; margin: 0 0 24px; }
+        .compass-banner {
+          background: rgba(201,168,76,0.06); border: 1.5px solid rgba(201,168,76,0.3);
+          border-radius: 10px; padding: 20px 22px; margin-bottom: 24px;
+          display: flex; gap: 14px; align-items: flex-start;
+        }
+        .compass-banner-icon { font-size: 32px; flex-shrink: 0; }
+        .compass-banner-title { font-size: 16px; font-weight: 800; color: var(--color-fg, #0a0f1e); margin: 0 0 4px; }
+        .compass-banner-desc { font-size: 13px; color: var(--color-gold, #c9a84c); margin: 0; line-height: 1.7; }
+        .no-diag-banner {
+          background: var(--color-bg-parchment, #f5f0e8);
+          border: 1.5px solid rgba(201,168,76,0.45);
+          border-radius: 10px; padding: 22px; text-align: center; margin-bottom: 24px;
+        }
+        .tier-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+        .guide-axis-card {
+          background: #fff; border: 1px solid var(--color-border-gold, rgba(201,168,76,0.28));
+          border-radius: 12px; overflow: hidden; margin-bottom: 14px;
+          box-shadow: var(--shadow-sm); transition: box-shadow .15s, transform .12s;
+        }
+        .guide-axis-card:hover { box-shadow: var(--shadow-gold); transform: translateY(-2px); }
+        .guide-axis-card.is-compass {
+          border-color: rgba(201,168,76,0.55);
+          box-shadow: 0 4px 20px rgba(201,168,76,0.18);
+        }
+        .guide-axis-header { display: flex; align-items: center; gap: 14px; padding: 18px 20px; }
+        .guide-axis-icon { font-size: 28px; flex-shrink: 0; }
+        .guide-axis-label { font-size: 17px; font-weight: 800; color: var(--color-fg, #0a0f1e); flex: 1; }
+        .guide-axis-tier-badge {
+          font-size: 10px; font-weight: 700; padding: 3px 10px;
+          border-radius: 99px; flex-shrink: 0;
+        }
+        .guide-axis-body { padding: 0 20px 20px; }
+        .guide-axis-quick { font-size: 14px; color: var(--color-fg, #0a0f1e); line-height: 1.7; margin: 0 0 12px; }
+        .guide-axis-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+        .guide-axis-chip {
+          font-size: 12px; padding: 4px 12px; border-radius: 99px;
+          background: var(--color-bg-parchment, #f5f0e8);
+          color: var(--color-muted, #7a6e65);
+          border: 1px solid var(--color-border-gold, rgba(201,168,76,0.25));
+          display: flex; align-items: center; gap: 5px;
+        }
+        .guide-axis-path {
+          background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.2);
+          border-radius: 10px; padding: 12px 16px; margin: 0 0 14px;
+          font-size: 13px; color: var(--color-fg, #0a0f1e); line-height: 1.8;
+        }
+        .guide-axis-path-label { font-size: 10px; font-weight: 800; color: var(--color-gold, #c9a84c); margin: 0 0 4px; letter-spacing: .08em; }
+        .guide-axis-cta {
+          display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px;
+          border: 1.5px solid var(--color-gold, #c9a84c); color: var(--color-gold, #c9a84c);
+          background: transparent; border-radius: 6px; font-size: 13px; font-weight: 700;
+          text-decoration: none; transition: background .18s, color .18s;
+        }
+        .guide-axis-cta:hover { background: var(--color-gold, #c9a84c); color: #0a0f1e; }
+        .compass-crown {
+          font-size: 10px; font-weight: 700; color: var(--color-gold, #c9a84c);
+          background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,.3);
+          padding: 2px 10px; border-radius: 99px;
+          display: inline-flex; align-items: center; gap: 4px;
+        }
+        .guide-scan-cta {
+          background: var(--color-bg-dark, #0a0f1e); border-radius: 12px;
+          padding: 44px 28px; text-align: center; margin-top: 56px;
+          border: 1px solid rgba(201,168,76,0.2);
+        }
+        .guide-scan-cta h2 {
+          font-family: 'Noto Serif JP', Georgia, serif;
+          font-size: clamp(20px,4vw,26px); font-weight: 700; color: #fff; margin: 0 0 12px;
+        }
+        .guide-scan-cta p { font-size: 14px; color: rgba(255,255,255,.6); margin: 0 0 28px; line-height: 1.8; }
+        .guide-scan-btn {
+          display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px;
+          border: 1.5px solid #c9a84c; color: #c9a84c; background: transparent;
+          border-radius: 3px; font-size: 15px; font-weight: 700; text-decoration: none;
+          letter-spacing: .06em; transition: background .2s, color .2s, box-shadow .2s;
+        }
+        .guide-scan-btn:hover { background: #c9a84c; color: #0a0f1e; box-shadow: 0 0 28px rgba(201,168,76,.35); }
+        @media (max-width: 600px) { .guide-wrap { padding: 0 14px 60px; } }
       `}</style>
 
       <section className="guide-hero">
-        <h1 className="title">垢抜けガイド</h1>
-        <p className="lead">診断なしでも分かる、"まず何を変えると良いか"。楽しく、明るい第一歩。</p>
+        <p className="guide-hero-eyebrow">7-Axis Transformation Guide</p>
+        <h1>7軸 変容ガイド</h1>
+        <p>
+          外見を7つの軸に分解し、どこから・どう変えるかを整理した地図。<br />
+          Me Scanを受けると、あなた専用の優先順位が生成されます。
+        </p>
       </section>
 
       <main className="guide-wrap">
-        {/* よくある悩み */}
-        <section className="guide-section">
-          <h2>よくある悩み → まずはここから</h2>
-          <div className="guide-grid">
-            <article className="guide-card">
-              <div className="icon">🌿</div>
-              <h3>肌の荒れ・黒ずみが気になる</h3>
-              <ul>
-                <li>洗顔・保湿の基本を整える</li>
-                <li>毛穴/角質ケアで「清潔感」を底上げ</li>
-                <li>日焼け止めの習慣化でトラブル予防</li>
-              </ul>
-              <div className="cta">
-                <Link className="btn" href="/search?category=esthetic">エステで肌を整える</Link>
-                <span className="guide-muted">or メイクでカバー</span>
-              </div>
-            </article>
-            <article className="guide-card">
-              <div className="icon">✂️</div>
-              <h3>眉が重く野暮ったい</h3>
-              <ul>
-                <li>眉カットで輪郭を整える</li>
-                <li>左右バランスと角度を微調整</li>
-                <li>少しの変化で印象がガラっと</li>
-              </ul>
-              <div className="cta">
-                <Link className="btn" href="/search?category=eyebrow">眉サロンで整える</Link>
-              </div>
-            </article>
-            <article className="guide-card">
-              <div className="icon">💇‍♂️</div>
-              <h3>髪型が決まらない</h3>
-              <ul>
-                <li>横/後ろをコンパクトにして整える</li>
-                <li>前髪・分け目で雰囲気を調整</li>
-                <li>ワックスの基本の使い方を習得</li>
-              </ul>
-              <div className="cta">
-                <Link className="btn" href="/search?category=hair">美容室でスタイル更新</Link>
-              </div>
-            </article>
-            <article className="guide-card">
-              <div className="icon">👔</div>
-              <h3>服の合わせ方が分からない</h3>
-              <ul>
-                <li>ベーシックな色/形からはじめる</li>
-                <li>体型に合うサイズ選び</li>
-                <li>小物で"清潔感"を補強</li>
-              </ul>
-              <div className="cta">
-                <Link className="btn" href="/search?category=fashion">スタイリング相談</Link>
-                <span className="guide-muted">or カラー診断</span>
-              </div>
-            </article>
-            <article className="guide-card">
-              <div className="icon">✨</div>
-              <h3>歯の黄ばみ・整列が気になる</h3>
-              <ul>
-                <li>ホワイトニングで明るさアップ</li>
-                <li>気になる歯並びは軽微な矯正</li>
-                <li>口元の印象で自信が上がる</li>
-              </ul>
-              <div className="cta">
-                <Link className="btn" href="/search?category=whitening">ホワイトニング</Link>
-                <Link className="btn btn-ghost" href="/search?category=orthodontics">矯正</Link>
-              </div>
-            </article>
-            <article className="guide-card">
-              <div className="icon">🏋️‍♂️</div>
-              <h3>体型を整えたい</h3>
-              <ul>
-                <li>姿勢改善＋軽いトレーニング</li>
-                <li>目標は「健康的で続けられる」</li>
-                <li>見た目の変化は少しずつでOK</li>
-              </ul>
-              <div className="cta">
-                <Link className="btn" href="/search?category=gym">パーソナルジム</Link>
-              </div>
-            </article>
-            <article className="guide-card">
-              <div className="icon">🪒</div>
-              <h3>ひげ・ムダ毛を減らしたい</h3>
-              <ul>
-                <li>青ひげ対策で清潔感UP</li>
-                <li>フェイスラインの産毛ケア</li>
-                <li>毎朝の時短にもつながる</li>
-              </ul>
-              <div className="cta">
-                <Link className="btn" href="/search?category=hairremoval">脱毛</Link>
-              </div>
-            </article>
-            <article className="guide-card">
-              <div className="icon">📸</div>
-              <h3>プロフィール写真を良くしたい</h3>
-              <ul>
-                <li>光と構図で印象を最大化</li>
-                <li>服装・髪・眉と合わせて最適化</li>
-                <li>表情づくりの練習も有効</li>
-              </ul>
-              <div className="cta">
-                <Link className="btn" href="/search?category=photo">写真撮影</Link>
-              </div>
-              <div className="guide-muted" style={{marginTop:'8px',fontSize:'12.5px'}}>
-                <span style={{display:'inline-flex',alignItems:'center',gap:'6px'}}>💡 写真はプロフィール用だけでなく、</span>
-                <span className="guide-chip">客観視</span>
-                <span className="guide-chip">変化の実感</span>
-                <span className="guide-chip">成功体験の蓄積</span>
-                <span>の記録にも役立ちます。</span>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        {/* 垢抜けルート図 */}
-        <section className="guide-section">
-          <h2>垢抜けルート図</h2>
-          <div className="guide-road">
-            <div className="road-step">
-              <h4>Step 1: 眉・髪・肌の「土台」</h4>
-              <p className="guide-muted">小さな変化の積み重ねで"清潔感"を底上げ。まずは眉・髪・肌の3点から。</p>
-            </div>
-            <div className="road-step">
-              <h4>Step 2: 服・色で「調和」</h4>
-              <p className="guide-muted">全体のバランスを整え、あなたらしい印象に。色とシルエットを意識。</p>
-            </div>
-            <div className="road-step">
-              <h4>Step 3: 写真で「見え方」を最適化</h4>
-              <p className="guide-muted">光・角度・背景を味方に。プロフィールで伝わる印象が変わります。記録・振り返りに活用すると、変化の実感と成功体験の蓄積につながります。</p>
-            </div>
-            <div className="road-step">
-              <h4>Step 4: 継続・アップデート</h4>
-              <p className="guide-muted">習慣化・定期チェックで無理なく更新。季節や目的に合わせて微調整。</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Q&A */}
-        <section className="guide-section">
-          <h2>よくある迷い Q&A</h2>
-          <div className="qa-grid">
-            {[
-              {q:'何から始めるのが最短？',a:'眉・髪のコンパクト化と肌の基本ケアが、効果実感と写真に最も早く効きます。'},
-              {q:'お金をあまりかけたくない',a:'日常ケア＋眉カットなど、低コストの初手でも十分に印象が変わります。'},
-              {q:'忙しくて続けられるか不安',a:'週1〜2の短時間メンテ＋習慣化のコツで、無理なく続けられます。'},
-              {q:'どれが自分に合うか分からない',a:'まずは気になる1箇所から。写真で比較しながら、少しずつ方向性を定めましょう。'},
-            ].map(({q,a})=>(
-              <div key={q} className="qa">
-                <h4>{q}</h4>
-                <p className="guide-muted">{a}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* スターター */}
-        <section className="guide-section">
-          <h2>スターター（まずはここから3選）</h2>
-          <div className="starter-grid">
-            {[
-              {title:'眉カット',desc:'最小の時間と費用で、顔の印象を大きく更新。',href:'/search?category=eyebrow',label:'眉を整える'},
-              {title:'ヘア更新',desc:'横/後ろを整え、前髪や分け目で雰囲気調整。',href:'/search?category=hair',label:'髪を整える'},
-              {title:'肌の基本ケア',desc:'洗顔・保湿の見直し＋毛穴ケアで清潔感を底上げ。',href:'/search?category=esthetic',label:'肌を整える'},
-            ].map(({title,desc,href,label})=>(
-              <div key={title} className="starter">
-                <h4>{title}</h4>
-                <p className="guide-muted">{desc}</p>
-                <Link className="btn" href={href}>{label}</Link>
-              </div>
-            ))}
-          </div>
-        </section>
+        <GuideInteractive axes={AXES} tierInfo={TIER_INFO} />
       </main>
     </>
   );

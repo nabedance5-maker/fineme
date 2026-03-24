@@ -60,6 +60,21 @@ export default function AdminDashboardPage() {
       return { totals, daily, topQueries, topNoResult, topFeatures, adoptionRate, revisitRate, featureViewsMap };
     }
 
+    let ADMIN_KEY = sessionStorage.getItem('fineme:admin:key') || '';
+    if (!ADMIN_KEY) {
+      ADMIN_KEY = prompt('管理APIキーを入力してください：') || '';
+      if (ADMIN_KEY) {
+        sessionStorage.setItem('fineme:admin:key', ADMIN_KEY);
+        // business/ 資料へのアクセスを許可するクッキーをセット（24h）
+        document.cookie = 'fineme_admin=1; path=/; max-age=86400; SameSite=Lax';
+      }
+    } else {
+      // セッションキーがある = 認証済み。クッキーを維持（なければ再発行）
+      if (!document.cookie.split(';').some(c => c.trim().startsWith('fineme_admin='))) {
+        document.cookie = 'fineme_admin=1; path=/; max-age=86400; SameSite=Lax';
+      }
+    }
+
     function seedDemo() {
       const store = loadMetricsStore();
       const events = Array.isArray(store.events) ? store.events : [];
@@ -114,12 +129,16 @@ export default function AdminDashboardPage() {
       set('kpi-adoption', `${adoptionRate || 0}%`);
       set('kpi-revisit', `${revisitRate || 0}%`);
 
-      try {
-        const raw = localStorage.getItem('fineme:provider:inquiries');
-        const arr = raw ? JSON.parse(raw) : [];
-        const pending = Array.isArray(arr) ? arr.filter(it => (it?.status || 'new') !== 'done').length : 0;
-        set('kpi-inquiries-pending', String(pending));
-      } catch { set('kpi-inquiries-pending', '0'); }
+      (async () => {
+        try {
+          const res = await fetch('/api/admin/inquiries', { headers: { 'x-admin-key': ADMIN_KEY } });
+          if (res.ok) {
+            const arr = await res.json();
+            const pending = arr.filter(it => (it?.status || 'new') !== 'done').length;
+            set('kpi-inquiries-pending', String(pending));
+          }
+        } catch { set('kpi-inquiries-pending', '—'); }
+      })();
 
       const features = loadFeatures();
       const map = new Map(features.map(f => [f.id, f.title || '(無題)']));
@@ -188,42 +207,56 @@ export default function AdminDashboardPage() {
         mount.innerHTML = sparklineSVG([s, a, r], { width: 600, height: 80, colors: ['#2563eb', '#10b981', '#f59e0b'], labels, seriesNames: ['検索', '採用', '再訪'] });
       }
 
-      // Diagnosis summary
+      // Me Scan サマリー（新フォーマット: transform_vectors / compass_first）
       (function () {
-        function loadSaved() { try { const raw = localStorage.getItem('fineme:saved:diagnoses'); const arr = raw ? JSON.parse(raw) : []; return Array.isArray(arr) ? arr : []; } catch { return []; } }
+        const AXIS_LABELS = { body:'体型', eyebrow:'眉毛', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
+        const AXIS_ICONS  = { body:'💪', eyebrow:'✂️', fashion:'👔', hair:'💇', skin:'✨', teeth:'🦷', nail:'💅' };
+        const PATH_LABELS = { virgin:'初挑戦', quit:'リスタート', blind:'客観化', lapsed:'再開' };
+
         function getLatest() { try { const raw = localStorage.getItem('fineme:diagnosis:latest'); return raw ? JSON.parse(raw) : null; } catch { return null; } }
-        const saved = loadSaved();
-        const now = new Date();
-        const start = new Date(now); start.setDate(now.getDate() - 6); start.setHours(0, 0, 0, 0);
-        const weekCount = saved.filter(x => { const t = new Date(x.savedAt || 0).getTime(); return t && t >= start.getTime(); }).length;
-        const total = saved.length;
-        let distMap = new Map();
-        if (total > 0) {
-          for (const x of saved) { const id = String(x.typeId || ''); if (!id) continue; const prev = distMap.get(id) || { id, name: String(x.typeName || id), count: 0 }; prev.count++; distMap.set(id, prev); }
-        } else {
-          const latest = getLatest();
-          const id = String(latest?.step2?.classification?.type_id || latest?.intent?.type_id || '');
-          const name = String(latest?.step2?.classification?.type_name || latest?.intent?.type_name || id);
-          if (id) { distMap.set(id, { id, name, count: 1 }); }
-        }
-        const dist = Array.from(distMap.values()).sort((a, b) => b.count - a.count);
-        set('kpi-diag-week', String(weekCount));
-        set('kpi-diag-total', String(total));
+        const latest = getLatest();
+        const vectors = Array.isArray(latest?.transform_vectors) ? latest.transform_vectors : [];
+        const compass = latest?.compass_first || null;
+        const scanDate = latest?.at ? new Date(latest.at).toLocaleDateString('ja-JP', { month:'long', day:'numeric' }) : null;
+
+        set('kpi-diag-week', vectors.length > 0 ? '✓' : '—');
+        set('kpi-diag-total', scanDate || '未スキャン');
+
         const distMount = document.getElementById('diag-type-dist');
         if (distMount) {
           distMount.textContent = '';
-          if (!dist.length) { const div = document.createElement('div'); div.className = 'muted'; div.textContent = 'データがありません'; distMount.appendChild(div); }
-          else {
-            const max = Math.max(...dist.map(d => d.count), 1);
-            for (const row of dist) {
-              const line = document.createElement('div'); line.style.display = 'flex'; line.style.alignItems = 'center'; line.style.gap = '8px';
-              const label = document.createElement('div'); label.className = 'muted'; label.style.width = '140px'; label.style.whiteSpace = 'nowrap'; label.textContent = row.name;
-              const barWrap = document.createElement('div'); barWrap.style.flex = '1'; barWrap.style.height = '8px'; barWrap.style.background = '#f3f4f6'; barWrap.style.borderRadius = '9999px'; barWrap.style.overflow = 'hidden';
-              const bar = document.createElement('div'); bar.style.height = '100%'; bar.style.width = `${Math.round((row.count / max) * 100)}%`; bar.style.background = '#111';
-              barWrap.appendChild(bar);
-              const cnt = document.createElement('div'); cnt.style.width = '40px'; cnt.style.textAlign = 'right'; cnt.textContent = String(row.count);
-              line.appendChild(label); line.appendChild(barWrap); line.appendChild(cnt);
-              distMount.appendChild(line);
+          if (!vectors.length) {
+            const div = document.createElement('div'); div.className = 'muted'; div.textContent = 'Me Scanデータがありません（まだ診断未実施）'; distMount.appendChild(div);
+          } else {
+            // コンパス表示
+            if (compass) {
+              const compassEl = document.createElement('div');
+              compassEl.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 14px;background:#eff6ff;border-radius:10px;margin-bottom:10px;border:1px solid #bfdbfe';
+              compassEl.innerHTML = `<span style="font-size:18px">🧭</span><div><div style="font-size:11px;font-weight:700;color:#2563eb;margin-bottom:2px">Fineme Compass（最初の一手）</div><div style="font-size:14px;font-weight:800;color:#111">${AXIS_ICONS[compass] || ''} ${AXIS_LABELS[compass] || compass}</div></div>`;
+              distMount.appendChild(compassEl);
+            }
+            // ゴール
+            if (latest.goal_change) {
+              const goalEl = document.createElement('div');
+              goalEl.style.cssText = 'font-size:12px;color:#374151;padding:8px 12px;background:#f9fafb;border-radius:8px;margin-bottom:10px;border-left:3px solid #d1d5db';
+              goalEl.innerHTML = `<span style="font-size:10px;font-weight:700;color:#9ca3af;display:block;margin-bottom:3px">ゴール</span>${String(latest.goal_change).slice(0, 80)}${String(latest.goal_change).length > 80 ? '…' : ''}`;
+              distMount.appendChild(goalEl);
+            }
+            // 7軸ギャップ分布
+            const gapAxes = vectors.filter(v => v.gap > 0).sort((a, b) => { if (a.tier !== b.tier) return a.tier - b.tier; return b.gap - a.gap; });
+            if (gapAxes.length) {
+              const header = document.createElement('div'); header.style.cssText = 'font-size:11px;font-weight:700;color:#9ca3af;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em'; header.textContent = '変容ベクトル分布（ギャップあり軸）'; distMount.appendChild(header);
+              const maxGap = Math.max(...gapAxes.map(v => v.gap), 1);
+              gapAxes.forEach(v => {
+                const line = document.createElement('div'); line.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px';
+                const lbl = document.createElement('div'); lbl.style.cssText = 'width:80px;font-size:12px;color:#374151;white-space:nowrap;flex-shrink:0'; lbl.textContent = `${AXIS_ICONS[v.id] || ''} ${AXIS_LABELS[v.id] || v.id}`;
+                const barWrap = document.createElement('div'); barWrap.style.cssText = 'flex:1;height:8px;background:#f3f4f6;border-radius:9999px;overflow:hidden';
+                const bar = document.createElement('div'); bar.style.cssText = `height:100%;width:${Math.round((v.gap / maxGap) * 100)}%;background:${v.id === compass ? '#2563eb' : '#9ca3af'};border-radius:9999px`;
+                barWrap.appendChild(bar);
+                const meta = document.createElement('div'); meta.style.cssText = 'font-size:11px;color:#6b7280;white-space:nowrap'; meta.textContent = `+${v.gap} ${v.path_type ? '/ ' + (PATH_LABELS[v.path_type] || v.path_type) : ''}`;
+                line.appendChild(lbl); line.appendChild(barWrap); line.appendChild(meta);
+                distMount.appendChild(line);
+              });
             }
           }
         }
@@ -239,45 +272,35 @@ export default function AdminDashboardPage() {
         tasks.appendChild(li1);
       }
 
-      // Type × Preference
+      // Compass × 来た道（新フォーマット）
       (function () {
         const mount = document.getElementById('dash-type-pref'); if (!mount) return;
         mount.textContent = '';
-        let typeId = ''; let typeName = '';
-        try { const raw = localStorage.getItem('fineme:diagnosis:latest'); const obj = raw ? JSON.parse(raw) : {}; typeId = obj?.step2?.classification?.type_id || obj?.intent?.type_id || ''; typeName = obj?.step2?.classification?.type_name || obj?.intent?.type_name || ''; } catch {}
-        function inferPref() {
-          try {
-            const raw = localStorage.getItem(METRICS_KEY); const store = raw ? JSON.parse(raw) : {}; const events = Array.isArray(store?.events) ? store.events : [];
-            const recent = events.slice(-500);
-            const searches = recent.filter(e => e.type === 'search');
-            const adoptions = recent.filter(e => e.type === 'adoption');
-            if (!searches.length || !adoptions.length) return { fast: false, habit: false, medianMs: null, s: 0, a: 0 };
-            const adTimes = adoptions.map(e => new Date(e.t).getTime()).sort((a, b) => a - b);
-            const deltas = []; for (const s of searches) { const st = new Date(s.t).getTime(); const a = adTimes.find(t => t >= st); if (a) { deltas.push(a - st); } }
-            if (!deltas.length) return { fast: false, habit: false, medianMs: null, s: searches.length, a: adoptions.length };
-            const median = deltas.sort((a, b) => a - b)[Math.floor(deltas.length / 2)];
-            const oneDay = 24 * 60 * 60 * 1000;
-            const fastPref = median <= oneDay;
-            const qTokens = searches.map(s => String(s.query || '').toLowerCase());
-            const fastWords = qTokens.filter(q => /短期|即|早|最短|プラン/.test(q)).length;
-            const habitWords = qTokens.filter(q => /習慣|続け|ルーティン|週次|継続/.test(q)).length;
-            const habitPref = (!fastPref && habitWords > fastWords) || (median > oneDay);
-            return { fast: fastPref, habit: habitPref, medianMs: median, s: searches.length, a: adoptions.length };
-          } catch { return { fast: false, habit: false, medianMs: null, s: 0, a: 0 }; }
+        const AXIS_LABELS = { body:'体型', eyebrow:'眉毛', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
+        const AXIS_ICONS  = { body:'💪', eyebrow:'✂️', fashion:'👔', hair:'💇', skin:'✨', teeth:'🦷', nail:'💅' };
+        const PATH_LABELS = { virgin:'初挑戦タイプ', quit:'リスタートタイプ', blind:'客観化タイプ', lapsed:'再開タイプ' };
+        const PATH_COLORS = { virgin:'#10b981', quit:'#f59e0b', blind:'#6366f1', lapsed:'#3b82f6' };
+        let latest = null;
+        try { const raw = localStorage.getItem('fineme:diagnosis:latest'); latest = raw ? JSON.parse(raw) : null; } catch {}
+        const compass = latest?.compass_first || null;
+        const vectors = Array.isArray(latest?.transform_vectors) ? latest.transform_vectors : [];
+        const compassVec = vectors.find(v => v.id === compass);
+
+        const badge = (text, color) => { const b = document.createElement('span'); b.textContent = text; b.style.cssText = `display:inline-block;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600;background:${color};color:#fff`; return b; };
+        const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px';
+        if (compass) {
+          row.appendChild(badge(`${AXIS_ICONS[compass] || ''} ${AXIS_LABELS[compass] || compass}`, '#111'));
+          if (compassVec?.path_type) row.appendChild(badge(PATH_LABELS[compassVec.path_type] || compassVec.path_type, PATH_COLORS[compassVec.path_type] || '#64748b'));
+          if (latest?.goal_scene) { const g = document.createElement('span'); g.style.cssText = 'font-size:12px;color:#6b7280'; g.textContent = `場面: ${String(latest.goal_scene).slice(0, 30)}`; row.appendChild(g); }
+        } else {
+          const m = document.createElement('span'); m.className = 'muted'; m.textContent = 'Me Scan未実施（診断データなし）'; row.appendChild(m);
         }
-        const pref = inferPref();
-        const badge = (text, color) => { const b = document.createElement('span'); b.textContent = text; b.style.display = 'inline-block'; b.style.padding = '6px 10px'; b.style.borderRadius = '999px'; b.style.fontSize = '12px'; b.style.fontWeight = '600'; b.style.background = color; b.style.color = '#fff'; return b; };
-        const row = document.createElement('div'); row.style.display = 'flex'; row.style.gap = '8px'; row.style.alignItems = 'center';
-        if (typeName) { row.appendChild(badge(typeName, '#111')); } else { const m = document.createElement('span'); m.className = 'muted'; m.textContent = 'タイプ未設定（診断未保存）'; row.appendChild(m); }
-        let prefLabel = 'バランス型'; let prefColor = '#64748b';
-        if (pref.fast && !pref.habit) { prefLabel = '即効性寄り'; prefColor = '#10b981'; }
-        else if (pref.habit && !pref.fast) { prefLabel = '習慣化寄り'; prefColor = '#2563eb'; }
-        row.appendChild(badge(prefLabel, prefColor));
         mount.appendChild(row);
-        const stats = document.createElement('div'); stats.className = 'muted'; stats.style.fontSize = '12px';
-        const medianText = (pref.medianMs != null) ? (() => { const d = Math.round(pref.medianMs / 86400000); const h = Math.round(pref.medianMs / 3600000); return d > 0 ? `${d}日以内の採用中央値` : `${h}時間以内の採用中央値`; })() : '学習中（十分なイベントがありません）';
-        stats.textContent = `${medianText}／検索 ${pref.s} ／ 採用 ${pref.a}`;
-        mount.appendChild(stats);
+        if (latest?.at) {
+          const meta = document.createElement('div'); meta.style.cssText = 'font-size:12px;color:#9ca3af';
+          meta.textContent = `スキャン日: ${new Date(latest.at).toLocaleDateString('ja-JP')} ／ ギャップ軸: ${vectors.filter(v=>v.gap>0).length}軸`;
+          mount.appendChild(meta);
+        }
       })();
     }
 
@@ -314,8 +337,8 @@ export default function AdminDashboardPage() {
           </div>
           <div className="card" style={{padding:'12px'}}>
             <div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}>
-              <h2 className="section-title" style={{fontSize:'18px',margin:'0'}}>タイプ × 嗜好（即効/習慣）</h2>
-              <span className="muted" style={{fontSize:'12px'}}>ローカルイベントから推定</span>
+              <h2 className="section-title" style={{fontSize:'18px',margin:'0'}}>Compass × 来た道</h2>
+              <span className="muted" style={{fontSize:'12px'}}>直近のMe Scanデータから</span>
             </div>
             <div id="dash-type-pref" className="stack" style={{marginTop:'8px',gap:'8px'}}></div>
           </div>
@@ -376,12 +399,12 @@ export default function AdminDashboardPage() {
           </div>
           <div className="card" style={{padding:'12px'}}>
             <div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}>
-              <h2 className="section-title" style={{fontSize:'18px',margin:'0'}}>診断サマリー</h2>
-              <span className="muted" style={{fontSize:'12px'}}>ローカル保存ベース</span>
+              <h2 className="section-title" style={{fontSize:'18px',margin:'0'}}>Me Scanサマリー</h2>
+              <span className="muted" style={{fontSize:'12px'}}>直近のスキャンデータ</span>
             </div>
             <div className="kpi-grid" style={{gridTemplateColumns:'repeat(2,minmax(0,1fr))',marginTop:'8px'}}>
-              <div className="kpi-card"><div className="kpi-label">今週の診断保存</div><div id="kpi-diag-week" className="kpi-value">0</div></div>
-              <div className="kpi-card"><div className="kpi-label">累計診断保存</div><div id="kpi-diag-total" className="kpi-value">0</div></div>
+              <div className="kpi-card"><div className="kpi-label">スキャン済み</div><div id="kpi-diag-week" className="kpi-value">—</div></div>
+              <div className="kpi-card"><div className="kpi-label">最終スキャン日</div><div id="kpi-diag-total" className="kpi-value">—</div></div>
             </div>
             <div className="stack" style={{gap:'6px',marginTop:'12px'}}>
               <div className="muted" style={{fontSize:'12px'}}>タイプ分布</div>
