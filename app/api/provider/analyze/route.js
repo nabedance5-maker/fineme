@@ -18,7 +18,7 @@ export async function POST(request) {
   }
 
   // 掲載者のプロフィール全文を取得
-  const { data: provider } = await supabase
+  const { data: provider, error: providerError } = await supabase
     .from('providers')
     .select(`
       id, name, catchphrase, philosophy, guide_message, unique_strengths,
@@ -28,6 +28,10 @@ export async function POST(request) {
     .eq('email', user.email)
     .single();
 
+  if (providerError) {
+    console.error('Provider fetch error:', providerError);
+    return Response.json({ error: `DB error: ${providerError.message}` }, { status: 500 });
+  }
   if (!provider) {
     return Response.json({ error: 'Provider not found' }, { status: 404 });
   }
