@@ -24,10 +24,11 @@ export default function ProviderDashboardPage() {
       .form-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
       .form-field label { font-size: 12px; font-weight: 700; color: #374151; }
       .form-field input, .form-field textarea, .form-field select { padding: 10px 12px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14px; width: 100%; box-sizing: border-box; }
+      .form-field input[type=checkbox] { width: auto; padding: 0; border: none; border-radius: 0; flex-shrink: 0; }
       .form-field textarea { min-height: 100px; resize: vertical; }
       .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
-      .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 14px; }
-      @media (max-width: 640px) { .checkbox-group { flex-direction: column; gap: 8px; } .checkbox-item { width: 100%; } }
+      .checkbox-item { display: flex; flex-direction: row; align-items: center; gap: 6px; font-size: 14px; text-align: left; }
+      @media (max-width: 640px) { .checkbox-group { flex-direction: column; gap: 8px; } .checkbox-item { width: 100%; flex-direction: row; align-items: flex-start; } }
       .stat-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; text-align: center; }
       .stat-value { font-size: 32px; font-weight: 800; color: #111; }
       .stat-label { font-size: 12px; color: #6b7280; margin-top: 2px; }
@@ -151,15 +152,26 @@ export default function ProviderDashboardPage() {
       document.getElementById('referral-code').textContent = fnCode || slug || '—';
       document.getElementById('publish-toggle-input').checked = !!provider.published;
       document.getElementById('publish-label').textContent = provider.published ? '公開中' : '非公開';
-      ['name', 'catchphrase', 'target_desc', 'philosophy', 'guide_message', 'photo_url'].forEach(k => {
+      ['name', 'catchphrase', 'target_desc', 'philosophy', 'guide_message', 'photo_url',
+       'unique_strengths', 'nearest_station',
+      ].forEach(k => {
         const el = document.getElementById('profile-form').elements[k];
         if (el) el.value = provider[k] || '';
       });
-      // 新プロフィールフィールド
-      ['unique_strengths', 'nearest_station'].forEach(k => {
-        const el = document.getElementById('profile-form').elements[k];
+      // service-form内のAIフィールド読み込み
+      ['ideal_client_desc', 'client_before_state', 'transformation_pattern', 'best_fit_desc'].forEach(k => {
+        const el = document.getElementById('service-form')?.elements[k];
         if (el) el.value = provider[k] || '';
       });
+      // AI分析ステータス表示
+      const aiStatus = document.getElementById('ai-match-status');
+      if (aiStatus && provider.ai_match_profile) {
+        const d = provider.ai_match_profile;
+        const date = d.analyzed_at ? new Date(d.analyzed_at).toLocaleDateString('ja-JP') : '';
+        aiStatus.innerHTML = `<span style="color:#059669;font-weight:700">✅ AI分析済み（${date}）</span><br><span style="font-size:12px;color:#6b7280">${d.summary || ''}</span>`;
+      } else if (aiStatus) {
+        aiStatus.textContent = '未分析 — プロフィールを入力後「AIで分析する」ボタンを押してください';
+      }
       // カバー画像プレビュー
       if (provider.cover_image_url) {
         const cp = document.getElementById('cover-photo-preview');
@@ -329,6 +341,36 @@ export default function ProviderDashboardPage() {
       data.facility_photos = [fd.get('facility_photo_1'), fd.get('facility_photo_2'), fd.get('facility_photo_3')].filter(Boolean);
       delete data.facility_photo_1; delete data.facility_photo_2; delete data.facility_photo_3;
       saveToLocal(data);
+    });
+
+    // AI分析ボタン
+    document.getElementById('ai-analyze-btn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('ai-analyze-btn');
+      const status = document.getElementById('ai-match-status');
+      const token = getSupabaseToken();
+      if (!token) { showToast('ログインが必要です'); return; }
+      btn.disabled = true;
+      btn.textContent = '分析中…';
+      if (status) status.textContent = 'Claudeがプロフィールを読み取っています…';
+      try {
+        const res = await fetch('/api/provider/analyze', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || '分析に失敗しました');
+        const d = json.profile;
+        if (status) {
+          status.innerHTML = `<span style="color:#059669;font-weight:700">✅ AI分析完了</span><br><span style="font-size:12px;color:#6b7280">${d.summary || ''}</span>`;
+        }
+        showToast('✅ AI分析が完了しました。マッチングに反映されます。');
+      } catch (err) {
+        if (status) status.textContent = `エラー: ${err.message}`;
+        showToast(`分析失敗: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'AIで分析する';
+      }
     });
 
     document.getElementById('service-form').addEventListener('submit', e => {
@@ -1714,6 +1756,42 @@ export default function ProviderDashboardPage() {
                 </select>
                 <small className="muted">ユーザーのMe Scan回答のスタイル傾向と照合されます</small>
               </div>
+
+              {/* ── AIマッチングプロフィール ── */}
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>AIマッチングプロフィール</h3>
+              <p className="muted" style={{ fontSize: '12px', margin: '0 0 14px', lineHeight: '1.6' }}>
+                ここに書いた内容をAIが読み取り、あなたのサービスにどんなユーザーが合うかを自動判定します。<br />
+                チェックボックスより精度の高いマッチングが実現します。書くほど効果的です。
+              </p>
+              <div className="form-field">
+                <label>よく来るお客様の状況・背景</label>
+                <textarea name="ideal_client_desc" rows={3} placeholder="例: マッチングアプリを始めたばかりで、写真の撮り方もわからない30代のサラリーマンが多い。自信がなく、何から始めればいいかわからない方が多い。" />
+              </div>
+              <div className="form-field">
+                <label>来る前の典型的な状態</label>
+                <textarea name="client_before_state" rows={3} placeholder="例: 外見に無頓着で、ジムや美容院に何年も行っていない。服は量販店で適当に買っていて、自分に似合うものがわからない。" />
+              </div>
+              <div className="form-field">
+                <label>よく起きる変化のパターン</label>
+                <textarea name="transformation_pattern" rows={3} placeholder="例: 3回通うと姿勢と歩き方が変わり、周囲から「変わった？」と言われ始める。6ヶ月で体重10kg減・マッチング率が上がったという声が多い。" />
+              </div>
+              <div className="form-field">
+                <label>特に向いている人・状況</label>
+                <textarea name="best_fit_desc" rows={3} placeholder="例: 「何かを変えなければ」と焦りを感じている人。過去に挫折したが今回こそはと思っている人。一人ではモチベーションが続かない人に特に向いている。" />
+              </div>
+
+              {/* AI分析ボタン */}
+              <div style={{ background: 'linear-gradient(135deg,#eff6ff,#eef2ff)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#4f46e5', marginBottom: '6px' }}>AIプロフィール分析</div>
+                <p style={{ fontSize: '12px', color: '#374151', margin: '0 0 12px', lineHeight: '1.6' }}>
+                  上の4つのフィールドを保存した後、「AIで分析する」をクリックするとClaudeがプロフィール全体を読み取り、マッチング精度を向上させます。
+                </p>
+                <div id="ai-match-status" style={{ fontSize: '12px', color: '#6b7280', marginBottom: '10px' }}></div>
+                <button type="button" id="ai-analyze-btn" className="btn" style={{ background: '#4f46e5', color: '#fff', fontSize: '13px', padding: '8px 18px' }}>
+                  AIで分析する
+                </button>
+              </div>
+
               <div className="form-field">
                 <label>得意なきっかけ（複数選択可）</label>
                 <div className="checkbox-group">

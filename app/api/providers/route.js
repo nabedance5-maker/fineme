@@ -28,24 +28,33 @@ function textScore(str, thresholds) {
 function calcScore({ provider, services, staffCount, trigger, failure, compassAxis, priorityAxes }) {
   let score = 0;
   const tags = [];
+  const ai = provider.ai_match_profile || null;
 
   // ── 1. ユーザーデータとの一致（診断結果があるときのみ加点）──
-  if (trigger && Array.isArray(provider.suitable_triggers) && provider.suitable_triggers.includes(trigger)) {
-    score += 8;
+  // AIが分析済みの場合はai_match_profileを優先、未分析時はチェックボックスにフォールバック
+  const effectiveTriggers  = ai?.suitable_triggers?.length       ? ai.suitable_triggers         : (provider.suitable_triggers  || []);
+  const effectiveFailures  = ai?.handles_failure_patterns?.length ? ai.handles_failure_patterns  : (provider.handles_failure_patterns || []);
+
+  if (trigger && effectiveTriggers.includes(trigger)) {
+    score += ai ? 10 : 8;  // AI分析済みは精度が高いためボーナス
     tags.push('あなたのきっかけをよく知っている');
   }
-  if (failure && failure !== 'ongoing' && Array.isArray(provider.handles_failure_patterns) && provider.handles_failure_patterns.includes(failure)) {
-    score += 8;
+  if (failure && failure !== 'ongoing' && effectiveFailures.includes(failure)) {
+    score += ai ? 10 : 8;
     tags.push('あなたの失敗パターンを得意とする');
   }
   if (compassAxis) {
     const targetCat = AXIS_TO_CATEGORY[compassAxis];
     const allCats = [provider.main_category, ...(provider.sub_categories || [])].filter(Boolean);
-    if (targetCat && allCats.includes(targetCat)) {
+    const aiAxes = ai?.target_axes || [];
+    const axisMatch = (targetCat && allCats.includes(targetCat)) || aiAxes.includes(compassAxis);
+    if (axisMatch) {
       score += 12;
       tags.push(`${compassAxis}改善の専門家`);
     }
   }
+  // AI分析済みプロフィールのボーナス（文章をちゃんと書いた掲載者を優遇）
+  if (ai) score += 6;
   // ユーザーの優先軸トップ3と、掲載者サービスの対象軸が一致
   if (priorityAxes?.length && services?.length) {
     let axisMatchCount = 0;
@@ -112,7 +121,8 @@ export async function GET(request) {
       photo_url,cover_image_url,provider_style,
       suitable_triggers,handles_failure_patterns,
       philosophy,guide_message,unique_strengths,target_desc,
-      facility_photo_1,facility_photo_2,facility_photo_3
+      facility_photo_1,facility_photo_2,facility_photo_3,
+      ai_match_profile
     `)
     .eq('published', true)
     .eq('admin_hidden', false);
@@ -178,7 +188,7 @@ export async function GET(request) {
   scored.sort((a, b) => b.match_score - a.match_score || 0);
 
   // レスポンスサイズを抑えるため内部フィールドを削除
-  const result = scored.map(({ philosophy, guide_message, unique_strengths, target_desc, facility_photo_1, facility_photo_2, facility_photo_3, ...rest }) => rest);
+  const result = scored.map(({ philosophy, guide_message, unique_strengths, target_desc, facility_photo_1, facility_photo_2, facility_photo_3, ai_match_profile, ...rest }) => rest);
 
   return Response.json(result);
   } catch (err) {

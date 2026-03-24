@@ -5,16 +5,22 @@ const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 const ALLOWED_FIELDS = [
   'name', 'catchphrase', 'description', 'target_desc', 'philosophy',
+  'guide_message', 'unique_strengths',
   'area', 'price_from', 'photo_url', 'provider_style',
   'suitable_triggers', 'handles_failure_patterns',
   'published',
   // 比較・信頼シグナルフィールド
   'nearest_station', 'online_available', 'payment_methods',
   'cancellation_policy', 'first_session_desc',
-  'experience_years', 'credentials', 'unique_strengths',
+  'experience_years', 'credentials',
   'response_hours', 'trial_available', 'trial_desc',
   'facility_photos',
   'cover_image_url',
+  // AI マッチング用テキストフィールド
+  'ideal_client_desc',
+  'client_before_state',
+  'transformation_pattern',
+  'best_fit_desc',
 ];
 const BOOLEAN_FIELDS  = new Set(['online_available', 'trial_available', 'published']);
 const NUMBER_FIELDS   = new Set(['price_from', 'experience_years', 'response_hours']);

@@ -22,13 +22,37 @@
       "Bash(grep -l provider c:/Users/nabed/OneDrive/デスクトップ/Fineme/scripts/*.js)",
       "Bash(xargs wc:*)",
       "Bash(grep -l \"detail\\\\|feature\\\\|staff\" c:/Users/nabed/OneDrive/デスクトップ/Fineme/scripts/*.js)",
-      "Bash(grep -rn \"cdn.jsdelivr\\\\|from ''https://\" \"c:/Users/nabed/OneDrive/デスクトップ/Fineme/app/\")"
+      "Bash(grep -rn \"cdn.jsdelivr\\\\|from ''https://\" \"c:/Users/nabed/OneDrive/デスクトップ/Fineme/app/\")",
+      "Bash(find c:/Users/nabed/OneDrive/デスクトップ/Fineme -maxdepth 2 -name fineme-roadmap* -o -name fineme.md)",
+      "Bash(find c:/Users/nabed/OneDrive/デスクトップ/Fineme -name *.md -o -name *roadmap*)",
+      "Bash(find c:/Users/nabed/OneDrive/デスクトップ/Fineme/business -name *.html)",
+      "Bash(gh run:*)",
+      "Bash(node.exe scripts/copy-static.js)",
+      "Bash(npx vercel:*)",
+      "Bash(ls \"C:\\\\Users\\\\nabed\\\\.claude\\\\projects\\\\c--Users-nabed-OneDrive--------Fineme\\\\memory\"\" 2>/dev/null || echo \"empty \")",
+      "Read(//c/Users/nabed/.claude/projects/c--Users-nabed-OneDrive--------Fineme/**)",
+      "Read(//c/Users/nabed/OneDrive/デスクトップ/**)",
+      "Read(//c/Users/nabed/Downloads/**)",
+      "WebFetch(domain:www.instagram.com)",
+      "Bash(vercel --prod)",
+      "WebFetch(domain:www.tiktok.com)",
+      "WebFetch(domain:www.youtube.com)",
+      "Bash(python -c \":*)",
+      "Bash(powershell -command \"\\(Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(''c:\\\\Users\\\\nabed\\\\OneDrive\\\\デスクトップ\\\\Fineme\\\\public\\\\assets\\\\images\\\\og-image.png''\\); Write-Host $img.Width $img.Height\\)\")",
+      "Bash(ls \"c:\\\\Users\\\\nabed\\\\OneDrive\\\\デスクトップ\\\\Fineme\\\\public\\\\favicon\"* \"c:\\\\Users\\\\nabed\\\\OneDrive\\\\デスクトップ\\\\Fineme\\\\app\\\\favicon\"*)",
+      "Bash(grep -v \"^\\\\s*//\")",
+      "Bash(ls \"c:/Users/nabed/OneDrive/デスクトップ/Fineme/supabase-diagnosis\"*)",
+      "Bash(grep -r \"from ''@/lib/supabase''\" app/api/ --include=\"*.js\" -l)",
+      "Bash(curl -s \"https://www.fineme.me/mypage/navi\")",
+      "Bash(curl -s \"https://www.fineme.me/_next/static/chunks/app/mypage/navi/page-db510ea9f4bff428.js\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\nabed\\OneDrive\\デスクトップ\\Fineme\\app\\api\\provider\\services",
       "c:\\Users\\nabed\\OneDrive\\デスクトップ\\Fineme\\app\\search",
       "C:\\Users\\nabed\\.claude\\projects\\c--Users-nabed-OneDrive--------Fineme\\memory",
-      "c:\\Users\\nabed\\OneDrive\\デスクトップ\\Fineme\\app\\provider"
+      "c:\\Users\\nabed\\OneDrive\\デスクトップ\\Fineme\\app\\provider",
+      "C:\\Users\\nabed\\OneDrive\\デスクトップ\\business",
+      "C:\\Users\\nabed\\OneDrive\\画像\\Fineme関連"
     ]
   }
 }

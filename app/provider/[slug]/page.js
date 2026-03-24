@@ -428,6 +428,39 @@ function PhilosophySection({ provider }) {
         </div>
       )}
 
+      {/* ━━ Block 2.5: 変容ストーリー（AIマッチング用テキストフィールド） ━━ */}
+      {(provider.ideal_client_desc || provider.client_before_state || provider.transformation_pattern || provider.best_fit_desc) && (
+        <div style={{ border: '1.5px solid #e5e7eb', borderRadius: '18px', padding: '22px', background: '#fff' }}>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: '#9ca3af', letterSpacing: '.12em', marginBottom: '18px', textTransform: 'uppercase' }}>来る方のリアルなストーリー</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            {provider.ideal_client_desc && (
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', marginBottom: '6px', letterSpacing: '.05em' }}>よく来るお客様の状況・背景</div>
+                <p style={{ fontSize: '14px', color: '#374151', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.ideal_client_desc}</p>
+              </div>
+            )}
+            {provider.client_before_state && (
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', marginBottom: '6px', letterSpacing: '.05em' }}>来る前の典型的な状態</div>
+                <p style={{ fontSize: '14px', color: '#374151', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.client_before_state}</p>
+              </div>
+            )}
+            {provider.transformation_pattern && (
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#059669', marginBottom: '6px', letterSpacing: '.05em' }}>よく起きる変化のパターン</div>
+                <p style={{ fontSize: '14px', color: '#374151', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.transformation_pattern}</p>
+              </div>
+            )}
+            {provider.best_fit_desc && (
+              <div style={{ background: '#f0fdf4', borderRadius: '12px', padding: '16px' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#059669', marginBottom: '6px', letterSpacing: '.05em' }}>特に向いている人・状況</div>
+                <p style={{ fontSize: '14px', color: '#374151', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.best_fit_desc}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ━━ Block 3: サービス詳細 ━━ */}
       {provider.description && (
         <div style={{ border: '1.5px solid #e5e7eb', borderRadius: '18px', padding: '22px', background: '#fff' }}>
