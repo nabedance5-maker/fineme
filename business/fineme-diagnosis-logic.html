@@ -193,7 +193,7 @@
     <p class="cover-lead">
       PTおよび掲載者（ガイド）向けに、Finemeの中核機能「Me Scan」の設計思想・質問構造・スコア計算・マッチングへの接続を解説します。
     </p>
-    <p class="cover-meta">Version: v9_me_scan　／　2026-03-22　／　Fineme</p>
+    <p class="cover-meta">Version: v9_me_scan　／　2026-03-24　／　Fineme</p>
   </div>
 
   <!-- 00: 設計思想 -->
@@ -487,6 +487,8 @@
       <tr><td>style_priority_top</td><td>4スタイルのうち最優先（explanation_autonomy / consultation_accessibility / delegate_directive / cautious_continuity）。New Me Naviのトーン変更に使用予定。</td></tr>
       <tr><td>urgency</td><td>変わりたい期間（1ヶ月以内 / 3ヶ月 / 半年 / 焦っていない）。Compassの「急ぎ注記」表示に使用。</td></tr>
       <tr><td>aga_concern / aga_status</td><td>AGA（薄毛）の懸念・現状。hair軸の結果とは別に保持。AGAガイドへの専用接続に使用。</td></tr>
+      <tr><td>axis_progress</td><td>各軸の進捗状態を管理するJSONB（例: {"body":"active","hair":"done"}）。"done"になった軸はCompassの候補から除外される（動的Compass）。LocalStorage + Supabase（profiles.axis_progress）に二重保存。</td></tr>
+      <tr><td>step_done</td><td>New Me Naviの各軸ステップ完了チェック状態をJSONBで保存（例: {"body_s0":true,"body_s1":true}）。LocalStorage + Supabase（profiles.step_done）に二重保存。デバイスをまたいで同期される。</td></tr>
     </table>
   </div>
 
@@ -512,12 +514,12 @@
       <div class="output-card">
         <div class="output-icon">🛤️</div>
         <div class="output-name">New Me Navi</div>
-        <div class="output-desc">7軸並列のロードマップ。各軸にTier別3中継地点（来た道別）を表示。Tier 4はグレーアウトで段階的に解放。</div>
+        <div class="output-desc">7軸をルート状に並べた変容ロードマップ。Compassが指す軸だけ全幅展開、他は折りたたみ表示。停留所が左右交互にずれるジグザグ設計。ルートパターン3種（推奨・印象インパクト・取り組みやすさ）から選択可。</div>
       </div>
     </div>
 
     <div class="insight" style="margin-top:16px">
-      <p>この3つは「地図を渡す→羅針盤で方向を示す→ロードマップで道を歩く」という連続した体験として設計されています。Compassは最初の一手を示すだけでなく、<strong>旅が進むにつれてどの軸に向かうべきかを指し示し続ける</strong>ものです。診断は「完了するもの」ではなく、変容の旅全体を通じてユーザーと共に在り続けます。</p>
+      <p>この3つは「地図を渡す→羅針盤で方向を示す→ロードマップで道を歩く」という連続した体験として設計されています。Compassは最初の一手を示すだけでなく、<strong>旅が進むにつれてどの軸に向かうべきかを指し示し続ける</strong>ものです。ユーザーがNew Me Navi上でステータスを「ひと段落」にした軸はCompassの対象から外れ、次に優先すべき軸へ自動で切り替わります（動的Compass）。診断は「完了するもの」ではなく、変容の旅全体を通じてユーザーと共に在り続けます。</p>
     </div>
   </div>
 
