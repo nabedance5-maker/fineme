@@ -415,63 +415,83 @@
     <p class="lead">まず最初にやること</p>
 
     <div class="priority-banner">
-      <div class="priority-head">マッチングスコアの起点となる2項目</div>
-      <div class="priority-lead">「きっかけ」と「失敗パターン」はユーザーの診断結果と直接照合されます。チェックを入れた項目が一致するほどスコアが上がります。まずここから始めてください。</div>
+      <div class="priority-head">マッチングスコアの核心 — AIプロフィール分析</div>
+      <div class="priority-lead">あなたの顧客について「文章で書く」と、AIがそれを読み取り、合うユーザーを自動で判定します。チェックボックスではなく、文章の内容でマッチングが決まります。</div>
       <div class="priority-desc">
-        Finemeはユーザーの診断結果（Me Scan）と、あなたのページに書かれた<strong>すべての情報</strong>を照合して総合スコアを算出します。<br>
-        「きっかけ」「失敗パターン」はスコアへの影響が特に大きい項目ですが、哲学・ビフォーアフター・サービス内容・写真など、<strong>ページ全体の充実度が積み重なってスコアが決まります。</strong><br>
-        テキトーに2項目だけ設定しても、上位には出ません。丁寧に書かれたページが、合う人に届く設計です。
+        Finemeはユーザーの診断結果（Me Scan）と、あなたが書いた文章をAIが解析した結果を照合して相性スコアを算出します。<br>
+        <strong>書けば書くほど、合う人に届く</strong>設計です。「誰でも大歓迎」のような漠然とした書き方では、誰にも刺さりません。実際の顧客のことを思い浮かべながら具体的に書いてください。
       </div>
     </div>
 
-    <!-- きっかけ -->
+    <!-- AIマッチングプロフィール -->
     <div class="field-card gold">
       <div class="field-head">
-        <span class="field-badge">① きっかけ</span>
-        <span class="field-title">suitable_triggers</span>
+        <span class="field-badge">① よく来るお客様の状況・背景</span>
       </div>
-      <p class="field-what">「どんなきっかけで来る人があなたのサービスに向いているか」を書く項目です。<br>ユーザーが診断時に入力した「変わりたいきっかけ」と照合されます。具体的であればあるほど、合う人に届きます。</p>
+      <p class="field-what">実際に多く来ているお客様の状況・職業・年齢・生活背景などを自由に書いてください。「こういう人が来る」という情報がAIの判定精度を高めます。</p>
       <div class="eg-wrap">
         <div class="eg-box good">
           <div class="eg-head">◎ 良い例</div>
-          <div class="eg-item">マッチングアプリで写真に自信がない</div>
-          <div class="eg-item">元交際相手に外見で傷ついた経験がある</div>
-          <div class="eg-item">就活の面接で第一印象を指摘された</div>
-          <div class="eg-item">好きな人ができたが、自分を変えたい</div>
+          <div class="eg-item">マッチングアプリを始めたばかりで写真の撮り方もわからない30代会社員が多い</div>
+          <div class="eg-item">転職活動中で面接の第一印象を改善したい20〜30代男性</div>
+          <div class="eg-item">好きな人ができて「変わりたい」という強い動機を持って来る方が中心</div>
         </div>
         <div class="eg-box bad">
           <div class="eg-head">✕ NG例</div>
-          <div class="eg-item">外見を改善したい方</div>
-          <div class="eg-item">美容に興味がある方</div>
+          <div class="eg-item">外見を改善したい方全般</div>
           <div class="eg-item">どなたでも大歓迎</div>
-          <p class="ng-note">漠然としすぎるとスコアに反映されません。「誰に来てほしいか」を具体的な場面で書いてください。</p>
+          <p class="ng-note">具体性がないとAIが判定できません。「どんな人が来ているか」を正直に書いてください。</p>
         </div>
       </div>
     </div>
 
-    <!-- 失敗パターン -->
     <div class="field-card gold">
       <div class="field-head">
-        <span class="field-badge">② 失敗パターン</span>
-        <span class="field-title">handles_failure_patterns</span>
+        <span class="field-badge">② 来る前の典型的な状態</span>
       </div>
-      <p class="field-what">「過去に挫折・うまくいかなかった経験を持つ人を得意とするか」を書く項目です。<br>ユーザーの「過去の失敗パターン」と照合されます。あなたが特に力を発揮できる人の「過去」を書いてください。</p>
+      <p class="field-what">初回来店前のお客様が抱えていた悩みや状態のパターンを書いてください。「どんな課題を抱えてくる人が多いか」が伝わると、同じ状態のユーザーに届きます。</p>
       <div class="eg-wrap">
         <div class="eg-box good">
           <div class="eg-head">◎ 良い例</div>
-          <div class="eg-item">何度やっても続かなかった人</div>
-          <div class="eg-item">自己流でやって逆効果になった人</div>
-          <div class="eg-item">プロに頼む勇気がなかった人</div>
-          <div class="eg-item">情報が多すぎて何から始めるか迷った人</div>
-        </div>
-        <div class="eg-box bad">
-          <div class="eg-head">✕ NG例</div>
-          <div class="eg-item">初心者の方歓迎</div>
-          <div class="eg-item">どんな方でもお気軽に</div>
-          <div class="eg-item">経験者・未経験者問わず</div>
-          <p class="ng-note">「失敗パターン」は「初心者かどうか」ではなく「過去の経験・挫折の文脈」で書くと効果的です。</p>
+          <div class="eg-item">何度か自分でやってみたが続かず、プロに相談するのを迷っていた</div>
+          <div class="eg-item">鏡を見るたびに気になっていたが、何から手をつければいいかわからなかった</div>
+          <div class="eg-item">恋愛がうまくいかない原因が外見にあると薄々感じていた</div>
         </div>
       </div>
+    </div>
+
+    <div class="field-card gold">
+      <div class="field-head">
+        <span class="field-badge">③ よく起きる変化のパターン</span>
+      </div>
+      <p class="field-what">このサービスを通じてお客様にどんな変化が起きるか、典型的なストーリーを書いてください。「Before → After」のイメージで書くと伝わりやすいです。</p>
+      <div class="eg-wrap">
+        <div class="eg-box good">
+          <div class="eg-head">◎ 良い例</div>
+          <div class="eg-item">プロフィール写真を撮り直したら、マッチング数が3〜5倍になったという方が多い</div>
+          <div class="eg-item">「似合うと言われたことがない」という方が、初回で友人に褒められるようになった</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-card gold">
+      <div class="field-head">
+        <span class="field-badge">④ 特に向いている人・状況</span>
+      </div>
+      <p class="field-what">どんな人・タイミングに最もマッチするかを書いてください。逆に向かない人についても書くと、AIの判定精度が上がります。</p>
+      <div class="eg-wrap">
+        <div class="eg-box good">
+          <div class="eg-head">◎ 良い例</div>
+          <div class="eg-item">「何から始めればいいかわからない」という初めての方に特に向いている</div>
+          <div class="eg-item">結果よりも「自分で納得したい」タイプの方と相性がいい</div>
+          <div class="eg-item">逆に、すでに方向性が決まっていてすぐ始めたい方には向かないかもしれない</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:12px;padding:16px 18px;margin-top:8px">
+      <p style="font-size:13px;font-weight:800;color:#c9a84c;margin-bottom:6px">4項目を保存したら「AIで分析する」ボタンを押してください</p>
+      <p style="font-size:13px;color:#b8b0a8;line-height:1.7">ダッシュボード「サービス設定」タブ → 「AIマッチングプロフィール」セクション → 4項目入力・保存 → 「AIで分析する」クリック。プロフィールを更新したときは再度押してください。</p>
     </div>
   </section>
 
@@ -509,17 +529,8 @@
         <div class="check-num">3</div>
         <div class="check-box"></div>
         <div class="check-body">
-          <div class="check-title">きっかけ（suitable_triggers）<span class="star-mark">★ 高優先</span></div>
-          <div class="check-desc">STEP 2の内容を参考に設定してください。ユーザーの診断データと直接照合される高スコア項目です。</div>
-        </div>
-      </div>
-
-      <div class="check-item star">
-        <div class="check-num">4</div>
-        <div class="check-box"></div>
-        <div class="check-body">
-          <div class="check-title">失敗パターン（handles_failure_patterns）<span class="star-mark">★ 高優先</span></div>
-          <div class="check-desc">STEP 2の内容を参考に設定してください。ユーザーの診断データと直接照合される高スコア項目です。</div>
+          <div class="check-title">AIマッチングプロフィール（4項目）<span class="star-mark">★ 高優先</span></div>
+          <div class="check-desc">STEP 2の内容を参考に4項目を記入し、保存後「AIで分析する」ボタンを押してください。AIがプロフィール全体を読み取り、マッチング精度が大幅に向上します。</div>
         </div>
       </div>
 
@@ -657,11 +668,11 @@
       <div class="faq-item">
         <div class="faq-q">
           <span class="faq-q-mark">Q</span>
-          <span class="faq-q-text">きっかけや失敗パターンは後から変更できますか？</span>
+          <span class="faq-q-text">AIマッチングプロフィールは後から書き直せますか？</span>
         </div>
         <div class="faq-a">
           <span class="faq-a-mark">A</span>
-          <span class="faq-a-text">はい、いつでもダッシュボードから変更できます。公開後も随時見直してください。最初から完璧な表現でなくても大丈夫です。実際にユーザーからの反応を見ながら調整していくのがおすすめです。</span>
+          <span class="faq-a-text">はい、いつでもダッシュボードから書き直せます。内容を更新して保存したら、再度「AIで分析する」ボタンを押してください。最初から完璧でなくても大丈夫です。実際にどんな方が来るかを振り返りながら、少しずつ精度を上げていくのがおすすめです。</span>
         </div>
       </div>
 
@@ -683,7 +694,7 @@
         </div>
         <div class="faq-a">
           <span class="faq-a-mark">A</span>
-          <span class="faq-a-text">ユーザー数は増加中です。まず2〜4週間はプロフィールを充実させることに集中してください。「きっかけ」「失敗パターン」の質が、最初の問い合わせを左右します。</span>
+          <span class="faq-a-text">ユーザー数は増加中です。まず2〜4週間はプロフィールを充実させることに集中してください。特に「AIマッチングプロフィール」の内容が、最初の問い合わせを左右します。4項目を書いてAI分析を完了させることが最優先です。</span>
         </div>
       </div>
 

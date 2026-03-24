@@ -193,7 +193,7 @@
     <p class="cover-lead">
       PTおよび掲載者（ガイド）向けに、Finemeの中核機能「Me Scan」の設計思想・質問構造・スコア計算・マッチングへの接続を解説します。
     </p>
-    <p class="cover-meta">Version: v9_me_scan　／　2026-03-24　／　Fineme</p>
+    <p class="cover-meta">Version: v10_ai_matching　／　2026-03-25　／　Fineme</p>
   </div>
 
   <!-- 00: 設計思想 -->
@@ -500,9 +500,103 @@
   </div>
 
 
+  <div class="divider"></div>
+
+  <!-- 06: AIマッチング -->
+  <div class="section">
+    <div class="sec-num">06</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">AI Matching — 掲載者とユーザーの相性判定</div></div>
+    <p class="lead">「チェックボックス」ではなく<br>「文章をAIが読み取る」マッチング</p>
+
+    <div class="card-gold">
+      <h3>なぜチェックボックスではないのか</h3>
+      <p>「得意なきっかけ」を選ぶ方式では、掲載者は全項目にチェックを入れることができてしまいます。これでは「誰にでも合います」という状態になり、ユーザーにとって意味のある相性判定になりません。</p>
+      <p style="margin-top:8px">Finemeは、掲載者が実際の顧客について文章で書いた内容をClaudeが読み取ることで、<strong>本当に合う人を精度高く判定</strong>する設計を採用しています。文章を丁寧に書けば書くほど、ターゲットに近いユーザーに届きやすくなります。</p>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3>掲載者が書く4つのフィールド</h3>
+      <p>ダッシュボード「サービス設定」タブの「AIマッチングプロフィール」欄に以下を記述します。</p>
+    </div>
+
+    <div class="path-grid" style="margin-top:10px">
+      <div class="path-card">
+        <div class="path-key">ideal_client_desc</div>
+        <div class="path-label">よく来るお客様の状況・背景</div>
+        <div class="path-use">実際に多く来ている顧客の状況・職業・年齢・生活背景などを自由に記述する。</div>
+      </div>
+      <div class="path-card">
+        <div class="path-key">client_before_state</div>
+        <div class="path-label">来る前の典型的な状態</div>
+        <div class="path-use">初回来店前の悩みや状態のパターン。どんな課題を抱えてくる人が多いか。</div>
+      </div>
+      <div class="path-card">
+        <div class="path-key">transformation_pattern</div>
+        <div class="path-label">よく起きる変化のパターン</div>
+        <div class="path-use">このサービスを通じてどんな変化が起きるか。ビフォーアフターの典型的なストーリー。</div>
+      </div>
+      <div class="path-card">
+        <div class="path-key">best_fit_desc</div>
+        <div class="path-label">特に向いている人・状況</div>
+        <div class="path-use">どんな人・タイミングに最もマッチするか。逆に向かない人についても書くと精度が上がる。</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>AIが生成する構造化データ</h3>
+      <p>「AIで分析する」ボタンを押すと、Claudeがキャッチコピー・理念・ガイドメッセージ・強みも含めたプロフィール全文を読み取り、以下の構造化データを自動生成します。</p>
+    </div>
+
+    <table class="data-table" style="margin-top:0">
+      <thead>
+        <tr>
+          <th>フィールド</th>
+          <th>内容</th>
+          <th>マッチングへの使われ方</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>suitable_triggers</td>
+          <td>向いているきっかけ（AI推論）</td>
+          <td>ユーザーのtriggerと照合。一致でスコア+10</td>
+        </tr>
+        <tr>
+          <td>handles_failure_patterns</td>
+          <td>対応できる失敗パターン（AI推論）</td>
+          <td>ユーザーのfailure_patternと照合。一致でスコア+10</td>
+        </tr>
+        <tr>
+          <td>target_axes</td>
+          <td>対応できる変容軸（AI推論）</td>
+          <td>ユーザーのCompass軸・優先軸と照合</td>
+        </tr>
+        <tr>
+          <td>goal_alignment</td>
+          <td>ゴールとの親和性タグ（自由語）</td>
+          <td>ユーザーのゴール文脈との重み付けに使用</td>
+        </tr>
+        <tr>
+          <td>personality_tags</td>
+          <td>向いているユーザーの特徴（自由語）</td>
+          <td>掲載者公開ページに「こんな方に向いています」として表示</td>
+        </tr>
+        <tr>
+          <td>summary</td>
+          <td>誰に向いているかの1〜2文</td>
+          <td>掲載者公開ページに「来る方のリアルなストーリー」として表示</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="insight" style="margin-top:16px">
+      <p>AI分析済みの掲載者はスコアにボーナスが加算されます。分析後にプロフィールを更新した場合、再度「AIで分析する」ボタンを押すことで最新の内容に更新されます。チェックボックスの設定は、AI未分析の場合のフォールバックとして機能します。</p>
+    </div>
+  </div>
+
   <!-- Footer -->
   <div class="footer">
-    <p>Fineme Internal Document — Me Scan v9 Diagnostic Logic　／　配布先：PT・掲載者（ガイド）</p>
+    <p>Fineme Internal Document — Me Scan v10 Diagnostic Logic + AI Matching　／　配布先：PT・掲載者（ガイド）</p>
     <p style="margin-top:4px">Fineme（ファインミ）　<a href="https://www.fineme.me" target="_blank" style="color:inherit">www.fineme.me</a></p>
   </div>
 

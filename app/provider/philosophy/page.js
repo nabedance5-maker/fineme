@@ -126,13 +126,18 @@ export default function ProviderPhilosophyPage() {
 
           <div className="phil-matching">
             <h3>マッチングスコアの仕組み</h3>
-            <p>Finemeは人気順でも価格順でもなく、<strong>「ユーザーとの相性スコア」</strong>で表示順が変わります。<br />スコアに影響するのは以下の2項目（ダッシュボード「公開設定」タブで設定）：</p>
+            <p>Finemeは人気順でも価格順でもなく、<strong>「ユーザーとの相性スコア」</strong>で表示順が変わります。スコアの核心は<strong>AIによるプロフィール解析</strong>です。</p>
+            <p style={{ marginTop: '10px', fontSize: '13px', color: '#374151', lineHeight: '1.7' }}>
+              ダッシュボード「サービス設定」タブの「AIマッチングプロフィール」に以下の4項目を文章で記入し、「AIで分析する」ボタンを押してください。Claudeがその文章を読み取り、ユーザーとの相性を自動で判定します。
+            </p>
             <div style={{ marginTop: '10px' }}>
-              <span className="phil-chip">きっかけ（suitable_triggers）</span>
-              <span className="phil-chip">失敗パターン（handles_failure_patterns）</span>
+              <span className="phil-chip">よく来るお客様の状況・背景</span>
+              <span className="phil-chip">来る前の典型的な状態</span>
+              <span className="phil-chip">よく起きる変化のパターン</span>
+              <span className="phil-chip">特に向いている人・状況</span>
             </div>
-            <p style={{ marginTop: '10px', fontSize: '12px', color: '#6b7280' }}>
-              ユーザーの診断結果に記録された「変わりたいきっかけ」と「過去の失敗パターン」が、あなたの設定と一致するほどスコアが上がります。この2項目を丁寧に設定することが、「合う人に届く」ための実質的な行動です。
+            <p style={{ marginTop: '10px', fontSize: '12px', color: '#6b7280', lineHeight: '1.7' }}>
+              AIが分析したプロフィールは、ユーザーの診断結果（変わりたいきっかけ・過去の失敗パターン・変容軸）と照合されます。チェックボックスよりも文章のほうが精度の高いマッチングが実現します。プロフィールを更新したら再度AIで分析してください。
             </p>
           </div>
         </div>
