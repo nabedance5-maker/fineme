@@ -156,7 +156,7 @@ export default function NewMeNaviPage() {
       .rg-text { font-size: 13px; font-weight: 700; color: #0a0f1e; margin: 0; }
 
       /* ── Station ── */
-      .station { display: flex; }
+      .station { display: flex; width: 100%; box-sizing: border-box; }
       .station-collapsed { align-items: center; }
       .station-expanded { align-items: flex-start; }
       .station-spine { display: flex; flex-direction: column; align-items: center; width: 28px; flex-shrink: 0; }
@@ -196,7 +196,7 @@ export default function NewMeNaviPage() {
       .station-left .station-mini-card { max-width: 72%; }
       .station-right .station-card,
       .station-right .station-mini-card { max-width: 72%; margin-left: 28%; }
-      .station-compass .station-card { max-width: 100%; border-color: rgba(201,168,76,0.5); box-shadow: 0 6px 32px rgba(0,0,0,.1); }
+      .station-compass .station-card { width: 100%; max-width: 100%; border-color: rgba(201,168,76,0.5); box-shadow: 0 6px 32px rgba(0,0,0,.1); }
       .sic-wrap { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
       .sic-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
       .sic-current { background: #0a0f1e; box-shadow: 0 0 0 3px rgba(10,15,30,.12); }
