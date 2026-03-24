@@ -42,7 +42,11 @@ export default function NewMeNaviPage() {
       .track-card.tier-1 { border-color: rgba(201,168,76,0.45); }
       .track-card.tier-2 { border-color: #a7f3d0; }
       .track-card.tier-3 { border-color: #fde68a; }
-      .track-card.tier-4 { opacity: .42; filter: grayscale(.7); }
+      .track-card.tier-4 { opacity: .42; filter: grayscale(.7); transition: opacity .3s, filter .3s; }
+      .track-card.tier-4.tier-revealed { opacity: 1; filter: none; }
+      .tier-reveal-banner { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 8px; margin-bottom: 14px; font-size: 12px; color: #9ca3af; }
+      .tier-reveal-btn { font-size: 11px; font-weight: 700; color: #6b7280; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; }
+      .tier-reveal-btn:hover { border-color: #c9a84c; color: #c9a84c; }
       .track-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
       .track-name { font-size: 17px; font-weight: 900; color: #0a0f1e; display: flex; align-items: center; gap: 8px; }
       .track-tier-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 99px; }
@@ -74,6 +78,14 @@ export default function NewMeNaviPage() {
       .milestone-current-tag { display: inline-block; font-size: 10px; font-weight: 700; color: #0a0f1e; background: rgba(10,15,30,0.07); padding: 1px 7px; border-radius: 99px; margin-bottom: 3px; border: 1px solid rgba(10,15,30,0.12); }
       .milestone-goal-tag { display: inline-block; font-size: 10px; font-weight: 700; color: #c9a84c; background: rgba(201,168,76,0.12); padding: 1px 7px; border-radius: 99px; margin-bottom: 3px; border: 1px solid rgba(201,168,76,.3); }
       .milestone-dot.past { background: #d1fae5; border: 2px solid #6ee7b7; }
+
+      /* ── ステップ完了チェック ── */
+      .milestone-item { position: relative; }
+      .step-check-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid #e5e7eb; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #d1d5db; transition: all .15s; flex-shrink: 0; font-family: 'Noto Sans JP', sans-serif; }
+      .step-check-btn:hover { border-color: #10b981; color: #10b981; background: #f0fdf4; }
+      .step-check-btn.checked { border-color: #10b981; background: #10b981; color: #fff; }
+      .milestone-item.step-done .milestone-text { text-decoration: line-through; color: #9ca3af; }
+      .milestone-item.step-done .milestone-dot:not(.current):not(.goal) { background: #6ee7b7; border: 2px solid #10b981; }
 
       /* ── ガイド推奨度 ── */
       .guide-badge { display: flex; align-items: center; gap: 5px; margin-top: 5px; padding: 4px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; line-height: 1.4; }
@@ -139,6 +151,7 @@ export default function NewMeNaviPage() {
     ;(async () => {
     const STORAGE_KEY = 'fineme:diagnosis:latest';
     const PROGRESS_KEY = 'fineme:axis:progress';
+    const STEP_DONE_KEY = 'fineme:step:done';
     const root = document.getElementById('navi-root');
     if (!root) return;
 
@@ -204,6 +217,10 @@ export default function NewMeNaviPage() {
         } }
       }
     } catch {}
+
+    // ── ステップ完了データ読み込み ──
+    let stepDone = {};
+    try { const s = localStorage.getItem(STEP_DONE_KEY); if (s) stepDone = JSON.parse(s); } catch {}
 
     // ── 進捗データ読み込み ──
     let axisProgress = {};
@@ -465,11 +482,13 @@ export default function NewMeNaviPage() {
     function getTeethFocus() { return localStorage.getItem('fineme:teeth:focus') || 'white'; }
 
     // ── マイルストーンHTML生成（共通） ──
-    function buildMilestoneItems(steps, careType, isExpanded, catLink) {
+    function buildMilestoneItems(steps, careType, isExpanded, catLink, axisKey) {
       const currentIdx = steps.findIndex(s => s.isCurrentFor === careType);
       const items = steps.map((step, i) => {
+        const doneKey = `${axisKey}-${i}`;
+        const isDone = !!stepDone[doneKey];
         const isCurrentPosition = (i === currentIdx);
-        const dotClass = isCurrentPosition ? 'current' : (i < currentIdx ? 'past' : 'future');
+        const dotClass = isCurrentPosition ? 'current' : (i < currentIdx || isDone ? 'past' : 'future');
         const labelHtml = isCurrentPosition ? '<span class="milestone-current-tag">★ 現在地</span>' : '';
         let guideHtml = '';
         if (step.guide === 'HIGH') {
@@ -481,17 +500,19 @@ export default function NewMeNaviPage() {
           guideHtml = `<span class="guide-badge guide-low">🏥</span>`;
         }
         const noteHtml = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
+        const checkBtn = `<button class="step-check-btn${isDone?' checked':''}" data-done-key="${esc(doneKey)}" title="${isDone?'完了を取り消す':'できてる・やった'}">${isDone?'✓':''}</button>`;
         return `
-          <div class="milestone-item">
+          <div class="milestone-item${isDone?' step-done':''}">
             <div class="milestone-dot-wrap">
               ${i > 0 ? '<div class="milestone-connector"></div>' : ''}
               <div class="milestone-dot ${dotClass}"></div>
             </div>
-            <div style="padding-top:${i>0?'12px':'0'}">
+            <div style="padding-top:${i>0?'12px':'0'};padding-right:36px;flex:1">
               ${labelHtml}
               <p class="milestone-text">${esc(step.text)}</p>
               ${guideHtml}${noteHtml}
             </div>
+            ${checkBtn}
           </div>
         `;
       }).join('');
@@ -532,7 +553,7 @@ export default function NewMeNaviPage() {
             <button class="subtab-btn${skinFocus==='hige'?' active':''}" data-subtab="skin" data-val="hige">🪒 ひげケア</button>
           </div>
           ${headerNoteHtml}
-          ${buildMilestoneItems(steps, careType, isCompassTarget, def.catLink)}
+          ${buildMilestoneItems(steps, careType, isCompassTarget, def.catLink, subKey)}
         `;
       // ── 歯：サブトラックタブ ──
       } else if (id === 'teeth') {
@@ -546,16 +567,24 @@ export default function NewMeNaviPage() {
             <button class="subtab-btn${teethFocus==='ortho'?' active':''}" data-subtab="teeth" data-val="ortho">😬 歯並び（矯正）</button>
           </div>
           ${orthoNote}
-          ${buildMilestoneItems(steps, careType, isCompassTarget, def.catLink)}
+          ${buildMilestoneItems(steps, careType, isCompassTarget, def.catLink, subKey)}
         `;
       // ── 通常軸 ──
       } else {
         const steps = MILESTONES[id] || [];
-        milestoneHtml = buildMilestoneItems(steps, careType, isCompassTarget, def.catLink);
+        milestoneHtml = buildMilestoneItems(steps, careType, isCompassTarget, def.catLink, id);
       }
+
+      const tier4Banner = def.tier === 4
+        ? `<div class="tier-reveal-banner">
+            <span>今すぐ必要でない場合が多いカテゴリです</span>
+            <button class="tier-reveal-btn" data-reveal="${esc(id)}">通常表示に切り替え</button>
+           </div>`
+        : '';
 
       return `
         <div class="track-card tier-${def.tier}${v.gap === 0 ? ' track-done' : ''}${doneClass}" id="track-${id}">
+          ${tier4Banner}
           <div class="track-header">
             <div class="track-name">${esc(def.icon)} ${esc(def.label)}${compassBadge}</div>
             <div style="display:flex;align-items:center;gap:6px">
@@ -705,6 +734,41 @@ export default function NewMeNaviPage() {
       if (list && list.classList.contains('milestone-list')) {
         list.classList.remove('collapsed');
         btn.remove();
+      }
+    });
+
+    // ── ステップ完了チェックボタン ──
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('.step-check-btn');
+      if (!btn) return;
+      const key = btn.dataset.doneKey;
+      if (!key) return;
+      const isDone = !!stepDone[key];
+      if (isDone) { delete stepDone[key]; } else { stepDone[key] = true; }
+      try { localStorage.setItem(STEP_DONE_KEY, JSON.stringify(stepDone)); } catch {}
+      // DOM更新
+      const item = btn.closest('.milestone-item');
+      if (item) {
+        item.classList.toggle('step-done', !isDone);
+        btn.classList.toggle('checked', !isDone);
+        btn.textContent = !isDone ? '✓' : '';
+        const dot = item.querySelector('.milestone-dot');
+        if (dot && !dot.classList.contains('current') && !dot.classList.contains('goal')) {
+          dot.classList.toggle('past', !isDone);
+          dot.classList.toggle('future', isDone);
+        }
+      }
+    });
+
+    // ── Tier-4 通常表示切り替え ──
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('.tier-reveal-btn');
+      if (!btn) return;
+      const axisId = btn.dataset.reveal;
+      const card = document.getElementById('track-' + axisId);
+      if (card) {
+        card.classList.add('tier-revealed');
+        btn.closest('.tier-reveal-banner')?.remove();
       }
     });
 
