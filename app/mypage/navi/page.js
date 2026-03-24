@@ -1,0 +1,782 @@
+'use client';
+import { useEffect, useRef } from 'react';
+import Link from 'next/link';
+
+export default function NewMeNaviPage() {
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
+    const style = document.createElement('style');
+    style.textContent = `
+      .navi-wrap { max-width: 680px; margin: 0 auto; padding: 24px 20px 80px; }
+
+      /* ── Header ── */
+      .navi-header { padding: 44px 28px 36px; background: linear-gradient(rgba(10,15,30,0.78), rgba(10,15,30,0.88)), url('/assets/images/hero-bg.webp') center / cover no-repeat; border-radius: 14px; margin-bottom: 24px; position: relative; overflow: hidden; border: 1px solid rgba(201,168,76,0.2); }
+      .navi-header::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(201,168,76,.1) 0%, transparent 70%); border-radius: 50%; }
+      .navi-header-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .18em; color: rgba(201,168,76,0.55); margin: 0 0 10px; text-transform: uppercase; position: relative; z-index: 1; }
+      .navi-header-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 5px 14px; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); color: #c9a84c; border-radius: 3px; margin-bottom: 14px; position: relative; z-index: 1; letter-spacing: .08em; }
+      .navi-header h1 { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(16px,4vw,22px); font-weight: 700; color: #fff; margin: 0 0 10px; line-height: 1.55; position: relative; z-index: 1; }
+      .navi-header h1 em { font-style: normal; color: #c9a84c; }
+      .navi-header-sub { font-size: 13px; color: rgba(255,255,255,.65); margin: 0; line-height: 1.75; position: relative; z-index: 1; }
+
+      /* ── Compass strip ── */
+      .compass-strip { background: rgba(201,168,76,0.06); border: 1.5px solid rgba(201,168,76,0.3); border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; }
+      .compass-strip-icon { font-size: 28px; flex-shrink: 0; }
+      .compass-strip-body { flex: 1; }
+      .compass-strip-label { font-size: 10px; font-weight: 800; color: rgba(201,168,76,0.7); letter-spacing: .1em; margin: 0 0 3px; text-transform: uppercase; }
+      .compass-strip-text  { font-size: 15px; font-weight: 900; color: #0a0f1e; margin: 0; }
+      .compass-strip-cta { font-size: 12px; font-weight: 700; padding: 7px 14px; border: 1.5px solid #c9a84c; color: #c9a84c; background: transparent; border-radius: 8px; text-decoration: none; white-space: nowrap; flex-shrink: 0; transition: all .15s; }
+      .compass-strip-cta:hover { background: #c9a84c; color: #0a0f1e; }
+
+      /* ── Section label ── */
+      .sec-label { display: flex; align-items: center; gap: 10px; font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(201,168,76,0.7); margin: 0 0 14px; padding-left: 0; }
+      .sec-label::before { content: ''; width: 18px; height: 1.5px; background: #c9a84c; border-radius: 1px; flex-shrink: 0; }
+      .sec-label::after { content: ''; flex: 1; height: 1px; background: repeating-linear-gradient(90deg, rgba(201,168,76,0.45) 0, rgba(201,168,76,0.45) 5px, transparent 5px, transparent 11px); }
+
+      /* ── Track card ── */
+      .track-list { display: flex; flex-direction: column; gap: 16px; }
+      .track-card { background: #fff; border: 1px solid rgba(201,168,76,0.2); border-radius: 14px; padding: 22px; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
+      .track-card.tier-1 { border-color: rgba(201,168,76,0.45); }
+      .track-card.tier-2 { border-color: #a7f3d0; }
+      .track-card.tier-3 { border-color: #fde68a; }
+      .track-card.tier-4 { opacity: .42; filter: grayscale(.7); }
+      .track-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+      .track-name { font-size: 17px; font-weight: 900; color: #0a0f1e; display: flex; align-items: center; gap: 8px; }
+      .track-tier-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 99px; }
+      .tb-1 { background: rgba(201,168,76,0.15); color: #c9a84c; border: 1px solid rgba(201,168,76,.3); }
+      .tb-2 { background: #d1fae5; color: #065f46; }
+      .tb-3 { background: #fef3c7; color: #92400e; }
+      .tb-4 { background: #f3f4f6; color: #6b7280; }
+      .track-care-badge { font-size: 11px; color: #6b7280; padding: 3px 9px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 99px; }
+
+      /* Progress bar */
+      .track-progress { margin-bottom: 16px; }
+      .track-progress-labels { display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af; margin-bottom: 5px; }
+      .track-progress-track { height: 8px; background: rgba(10,15,30,0.07); border-radius: 99px; overflow: hidden; position: relative; }
+      .track-progress-current { height: 100%; border-radius: 99px; background: #0a0f1e; transition: width 1s cubic-bezier(.4,0,.2,1) .4s; }
+      .track-progress-ideal { position: absolute; top: 0; height: 100%; width: 3px; background: #c9a84c; transform: translateX(-50%); border-radius: 1px; }
+
+      /* Milestones */
+      .milestone-list { display: flex; flex-direction: column; gap: 0; }
+      .milestone-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(201,168,76,0.08); }
+      .milestone-item:last-child { border-bottom: none; padding-bottom: 0; }
+      .milestone-dot-wrap { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 20px; margin-top: 2px; }
+      .milestone-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+      .milestone-dot.current { background: #0a0f1e; box-shadow: 0 0 0 3px rgba(10,15,30,.15); }
+      .milestone-dot.future  { background: #e5e7eb; border: 2px solid #d1d5db; }
+      .milestone-dot.goal    { background: #c9a84c; box-shadow: 0 0 0 3px rgba(201,168,76,.25); }
+      .milestone-connector { width: 2px; flex: 1; min-height: 14px; background: repeating-linear-gradient(to bottom, rgba(201,168,76,0.6) 0, rgba(201,168,76,0.6) 4px, transparent 4px, transparent 9px); margin: 2px 0; }
+      .milestone-label { font-size: 10px; font-weight: 700; margin: 0 0 2px; }
+      .milestone-text { font-size: 13px; color: #374151; line-height: 1.55; margin: 0; }
+      .milestone-current-tag { display: inline-block; font-size: 10px; font-weight: 700; color: #0a0f1e; background: rgba(10,15,30,0.07); padding: 1px 7px; border-radius: 99px; margin-bottom: 3px; border: 1px solid rgba(10,15,30,0.12); }
+      .milestone-goal-tag { display: inline-block; font-size: 10px; font-weight: 700; color: #c9a84c; background: rgba(201,168,76,0.12); padding: 1px 7px; border-radius: 99px; margin-bottom: 3px; border: 1px solid rgba(201,168,76,.3); }
+      .milestone-dot.past { background: #d1fae5; border: 2px solid #6ee7b7; }
+
+      /* ── ガイド推奨度 ── */
+      .guide-badge { display: flex; align-items: center; gap: 5px; margin-top: 5px; padding: 4px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; line-height: 1.4; }
+      .guide-high { background: rgba(201,168,76,0.09); border: 1px solid rgba(201,168,76,0.22); color: #78350f; }
+      .guide-high a { color: #c9a84c; font-weight: 700; text-decoration: none; }
+      .guide-mid { background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.15); color: #1e40af; }
+      .guide-low { display: inline-flex; background: none; border: none; font-size: 11px; color: #9ca3af; padding: 2px 0; }
+      .milestone-note { font-size: 11px; color: #92400e; background: #fef3c7; border: 1px solid #fde68a; border-radius: 4px; padding: 4px 8px; margin-top: 4px; }
+      .subtab-header-note { font-size: 11px; color: #6b7280; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; }
+
+      /* CTA inside track */
+      .track-action { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(201,168,76,0.1); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+      .track-action-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #c9a84c; text-decoration: none; padding: 6px 12px; background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,.2); border-radius: 8px; transition: background .12s; }
+      .track-action-link:hover { background: rgba(201,168,76,0.16); }
+
+      /* ── 進捗ステータスボタン ── */
+      .track-status-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 5px 11px; border-radius: 99px; cursor: pointer; border: 1.5px solid; transition: all .15s; background: transparent; font-family: 'Noto Sans JP', sans-serif; }
+      .track-status-btn[data-status=""] { color: #9ca3af; border-color: #e5e7eb; }
+      .track-status-btn[data-status=""] :hover { border-color: #c9a84c; color: #c9a84c; }
+      .track-status-btn[data-status="active"] { color: #1d4ed8; border-color: #93c5fd; background: #eff6ff; }
+      .track-status-btn[data-status="done"]   { color: #065f46; border-color: #6ee7b7; background: #ecfdf5; }
+
+      /* ── Compassが指している軸のバッジ ── */
+      .compass-pointing-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; color: #c9a84c; background: rgba(201,168,76,.12); border: 1px solid rgba(201,168,76,.3); padding: 2px 9px; border-radius: 99px; margin-left: 6px; vertical-align: middle; }
+
+      /* ── Done状態のトラック ── */
+      .track-card.status-done { opacity: 0.55; }
+      .track-card.status-done .track-name { text-decoration: line-through; text-decoration-color: rgba(201,168,76,.4); }
+
+      /* ── 折りたたみ ── */
+      .milestone-list.collapsed .milestone-item:not(:first-child) { display: none; }
+      .milestone-expand-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #c9a84c; background: none; border: none; cursor: pointer; padding: 6px 0 0; font-family: 'Noto Sans JP', sans-serif; }
+      .milestone-expand-btn:hover { opacity: .75; }
+
+      /* ── サブトラックタブ ── */
+      .subtab-wrap { display: flex; gap: 6px; margin-bottom: 14px; }
+      .subtab-btn { flex: 1; padding: 7px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1.5px solid rgba(201,168,76,0.3); background: transparent; color: #9ca3af; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
+      .subtab-btn.active { background: rgba(201,168,76,0.12); border-color: #c9a84c; color: #0a0f1e; }
+      .subtab-note { font-size: 11px; color: #f59e0b; background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; }
+
+      /* ── Bottom ── */
+      .navi-footer { margin-top: 32px; display: flex; flex-direction: column; gap: 10px; }
+      .navi-footer-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; border-radius: 14px; font-size: 14px; font-weight: 700; text-decoration: none; transition: opacity .15s; }
+      .navi-footer-btn:hover { opacity: .85; }
+      .nfb-primary   { background: #0a0f1e; color: #fff; }
+      .nfb-secondary { background: #fff; color: #0a0f1e; border: 1.5px solid rgba(201,168,76,0.35); }
+      .nfb-ghost     { color: #9ca3af; font-size: 13px; padding: 10px; text-align: center; }
+
+      /* ── No data ── */
+      .no-data { text-align: center; padding: 60px 20px; }
+      .no-data-icon { font-size: 48px; margin-bottom: 16px; }
+      .no-data-title { font-size: 20px; font-weight: 800; margin: 0 0 10px; }
+      .no-data-text { font-size: 14px; color: #6b7280; line-height: 1.75; margin: 0 0 24px; }
+
+      /* ── Voyage route connector ── */
+      .v-route { display: flex; flex-direction: column; align-items: center; height: 28px; margin: 0 auto; width: 16px; }
+      .v-route-line { flex: 1; width: 1px; background: repeating-linear-gradient(to bottom, rgba(201,168,76,0.55) 0, rgba(201,168,76,0.55) 4px, transparent 4px, transparent 9px); }
+      .v-route-dot { width: 7px; height: 7px; background: rgba(201,168,76,0.7); border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(201,168,76,0.4); }
+    `;
+    document.head.appendChild(style);
+
+    // ── データ（Supabase優先 → localStorage fallback）──
+    ;(async () => {
+    const STORAGE_KEY = 'fineme:diagnosis:latest';
+    const PROGRESS_KEY = 'fineme:axis:progress';
+    const root = document.getElementById('navi-root');
+    if (!root) return;
+
+    // ── 認証チェック（AuthGateに依存しない） ──
+    try {
+      const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      const isLoggedIn = !!(sbKey && JSON.parse(localStorage.getItem(sbKey) || 'null')?.user?.id);
+      if (!isLoggedIn) {
+        root.innerHTML = `
+          <div style="min-height:50vh;display:flex;align-items:center;justify-content:center;padding:48px 20px">
+            <div style="max-width:480px;width:100%;background:#fff;border:1px solid rgba(201,168,76,0.25);border-radius:18px;padding:40px 32px;text-align:center;box-shadow:0 4px 32px rgba(0,0,0,0.06)">
+              <div style="font-size:40px;margin:0 0 16px">🗺️</div>
+              <h2 style="font-family:'Noto Serif JP',Georgia,serif;font-size:18px;font-weight:700;color:#0a0f1e;margin:0 0 12px;line-height:1.6">
+                ここはあなただけの<br>変容ロードマップが届く場所です。
+              </h2>
+              <p style="font-size:14px;color:#6b7280;line-height:1.85;margin:0 0 28px">
+                Me Scanを受けると、7軸の現在地と変容ロードマップ<br>（Fineme Compass）がここに保存されます。<br>診断はアカウントなしで受けられます。
+              </p>
+              <a href="/diagnosis" style="display:block;width:100%;padding:15px 24px;background:#c9a84c;color:#0a0f1e;font-size:15px;font-weight:700;border-radius:6px;text-decoration:none;letter-spacing:.05em;margin-bottom:12px;box-sizing:border-box">
+                🧬 Me Scanを受ける（無料・約15分）
+              </a>
+              <a href="/login" style="font-size:13px;color:#9ca3af;text-decoration:none;border-bottom:1px solid #e5e7eb;padding-bottom:2px">
+                すでにアカウントをお持ちの方はログイン
+              </a>
+            </div>
+          </div>`;
+        return;
+      }
+    } catch {}
+
+    try { // ── エラー全捕捉：読み込み中のまま固まることを防ぐ ──
+
+    // タイムアウト付きfetch（5秒で打ち切りlocalStorage fallbackへ）
+    async function fetchWithTimeout(url, opts, ms = 5000) {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), ms);
+      try {
+        return await fetch(url, { ...opts, signal: ctrl.signal });
+      } catch { return null; } finally { clearTimeout(tid); }
+    }
+
+    // ── Supabaseトークン取得 ──
+    let token = null;
+    try {
+      const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (sbKey) {
+        const sbObj = JSON.parse(localStorage.getItem(sbKey) || 'null');
+        token = sbObj?.access_token || null;
+      }
+    } catch {}
+
+    // ── 診断データ読み込み（Supabase優先） ──
+    try {
+      if (token) {
+        const res = await fetchWithTimeout('/api/me/diagnosis', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res?.ok) { const data = await res.json(); if (data) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {} } }
+      }
+    } catch {}
+
+    // ── 進捗データ読み込み ──
+    let axisProgress = {};
+    try {
+      const stored = localStorage.getItem(PROGRESS_KEY);
+      if (stored) axisProgress = JSON.parse(stored);
+    } catch {}
+    try {
+      if (token) {
+        const res = await fetchWithTimeout('/api/me/profile', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res?.ok) {
+          const data = await res.json();
+          if (data.axis_progress && Object.keys(data.axis_progress).length > 0) {
+            axisProgress = data.axis_progress;
+            try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(axisProgress)); } catch {}
+          }
+        }
+      }
+    } catch {}
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      root.innerHTML = `<div class="no-data">
+        <div class="no-data-icon">🧭</div>
+        <h2 class="no-data-title">まだ地図がありません</h2>
+        <p class="no-data-text">Me Scanを受けると、あなただけの<br>変容ナビが生成されます。</p>
+        <a href="/diagnosis" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px">Me Scanを受ける</a>
+      </div>`;
+      return;
+    }
+    let p;
+    try { p = JSON.parse(raw); } catch {
+      root.innerHTML = `<div class="no-data"><p>データエラー。</p><a href="/diagnosis" class="btn">再スキャン</a></div>`;
+      return;
+    }
+    if (!p.transform_vectors) {
+      root.innerHTML = `<div class="no-data">
+        <div class="no-data-icon">🗺️</div>
+        <h2 class="no-data-title">新しいMe Scanが必要です</h2>
+        <p class="no-data-text">診断をアップデートしました。<br>新しいMe Scanで変容ナビを生成します。</p>
+        <a href="/diagnosis" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px">Me Scanを受ける（新版）</a>
+      </div>`;
+      return;
+    }
+
+    function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    // ── 定数 ──
+    const AREA_DEFS = {
+      body:    { icon:'💪', label:'体型',  catLink:'gym',       tier:1 },
+      eyebrow: { icon:'✂️', label:'眉',    catLink:'eyebrow',  tier:1 },
+      fashion: { icon:'👔', label:'服',    catLink:'fashion',   tier:1 },
+      hair:    { icon:'💇', label:'髪',    catLink:'hair',      tier:1 },
+      skin:    { icon:'✨', label:'肌',    catLink:'esthetic',  tier:2 },
+      teeth:   { icon:'🦷', label:'歯',    catLink:'whitening', tier:3 },
+      nail:    { icon:'💅', label:'爪',    catLink:'nail',      tier:4 },
+    };
+    const TIER_LABELS = { 1:'基盤', 2:'深化', 3:'補完', 4:'磨き込み' };
+    const CARE_LABELS = { none:'未着手', concerned:'気になっている', self:'自己ケア中', pro:'プロ通い中' };
+
+    // 現在地スコアを来た道類型ラベルに変換
+    function getCareLabel(careType) { return CARE_LABELS[careType] || ''; }
+
+    // ── ミルストーン（統合リスト形式・全careType共通） ──
+    // isCurrentFor: そのcareTypeの「現在地」マーカー
+    // guide: 'none'|'LOW'|'MID'|'HIGH' — ガイド推奨度
+    // note: 注意書き（任意）
+    const MILESTONES = {
+      body: [
+        { text: '自分の体型で気になる部分を言語化できている', guide: 'none', isCurrentFor: 'none' },
+        { text: '現在の体重・体脂肪率を把握している', guide: 'none' },
+        { text: '食事・運動の現状を把握している', guide: 'none' },
+        { text: '日常的に歩く・階段を使うなど生活習慣に動きを取り入れている', guide: 'none' },
+        { text: '週1回以上の運動習慣がある', guide: 'none' },
+        { text: '食事の基本ルール（タンパク質・糖質など）を1つ知っている', guide: 'LOW', isCurrentFor: 'concerned' },
+        { text: 'パーソナルジムの無料体験カウンセリングに行ったことがある', guide: 'HIGH', isCurrentFor: 'self' },
+        { text: 'トレーニングメニューをプロに組んでもらったことがある', guide: 'HIGH' },
+        { text: '週2回以上のトレーニングを1ヶ月以上継続している', guide: 'MID', isCurrentFor: 'pro' },
+        { text: '食事管理と運動のバランスが取れている', guide: 'MID' },
+        { text: '3ヶ月前と今の体型を比較して変化を確認している', guide: 'LOW' },
+      ],
+      eyebrow: [
+        { text: '眉を整えている（何らかのケアをしている）', guide: 'none', isCurrentFor: 'none' },
+        { text: 'スクリューブラシで毎朝眉を整えている', guide: 'none' },
+        { text: '自分の顔に合う眉の形を把握している', guide: 'MID', isCurrentFor: 'concerned' },
+        { text: '眉毛サロンで一度プロに整えてもらったことがある', guide: 'HIGH', isCurrentFor: 'self' },
+        { text: 'プロが作った形を自分でメンテナンスできている', guide: 'LOW' },
+        { text: '2〜3週に1回のペースでサロンに通っている', guide: 'HIGH', isCurrentFor: 'pro' },
+        { text: '眉の形が顔の第一印象に影響していると実感している', guide: 'none' },
+        { text: '担当スタッフと信頼関係ができ、定期的に通っている', guide: 'HIGH' },
+      ],
+      fashion: [
+        { text: '自分の服のサイズを正確に把握している（肩幅・ウエストなど）', guide: 'none', isCurrentFor: 'none' },
+        { text: 'クローゼットを整理し、今持っている服を把握している', guide: 'none' },
+        { text: 'サイズ感の基本ルールを1つ知っている（肩幅を合わせるなど）', guide: 'LOW' },
+        { text: 'ベーシックアイテムが揃っている（白シャツ・ダークデニム・シンプルスニーカーなど）', guide: 'LOW' },
+        { text: 'パーソナルカラー診断を受けたことがある', guide: 'HIGH', isCurrentFor: 'concerned' },
+        { text: '顔タイプ診断を受けたことがある', guide: 'HIGH' },
+        { text: '骨格診断を受けたことがある', guide: 'HIGH' },
+        { text: '診断結果を踏まえたコーデを実践している', guide: 'MID', isCurrentFor: 'self' },
+        { text: 'ショップスタッフやスタイリストに「自分に似合うもの」を相談したことがある', guide: 'MID' },
+        { text: '「これが自分の正解コーデ」と言えるパターンを持っている', guide: 'LOW', isCurrentFor: 'pro' },
+        { text: '場面別（デート・仕事・カジュアル）のコーデを使い分けできている', guide: 'LOW' },
+      ],
+      hair: [
+        { text: '定期的に美容院・理髪店に行っている', guide: 'none', isCurrentFor: 'none' },
+        { text: '自分の髪質を把握している（硬い・柔らかい・くせ毛・直毛など）', guide: 'LOW' },
+        { text: '自分の顔型を把握している', guide: 'LOW' },
+        { text: '自分の髪質に合ったシャンプーを使っている', guide: 'LOW' },
+        { text: 'ドライヤーで正しく乾かしている（自然乾燥していない）', guide: 'none' },
+        { text: 'スタイリング剤を使っている', guide: 'none' },
+        { text: 'トリートメント・アウトバスケアをしている', guide: 'LOW', isCurrentFor: 'concerned' },
+        { text: '美容師に「顔型・骨格に合う髪型」を相談したことがある', guide: 'HIGH', isCurrentFor: 'self' },
+        { text: '定期的に通う美容師を1人決めている', guide: 'MID' },
+        { text: '自宅でのセット方法を美容師に教わったことがある', guide: 'HIGH' },
+        { text: '毎朝のセットが迷いなく再現できている', guide: 'LOW', isCurrentFor: 'pro' },
+        { text: '季節や場面に合わせてスタイルを変えられている', guide: 'MID' },
+        { text: 'AGA・薄毛が気になる場合、専門クリニックに相談したことがある', guide: 'HIGH' },
+      ],
+      nail: [
+        { text: '定期的に爪を切っている', guide: 'none', isCurrentFor: 'none' },
+        { text: '爪やすりでバリや形を整えている', guide: 'none' },
+        { text: 'ハンドクリームで手・爪を保湿している', guide: 'none' },
+        { text: '爪の形を意識して整えている', guide: 'LOW', isCurrentFor: 'concerned' },
+        { text: 'ネイルオイルを使っている', guide: 'LOW' },
+        { text: '甘皮を押し上げるケアをしている', guide: 'MID', note: '切り取るのはNG。正しい方法はプロに教わるのが理想。', isCurrentFor: 'self' },
+        { text: 'ネイルケアサロンでプロのケアを受けたことがある', guide: 'HIGH' },
+        { text: '定期的にサロンでメンテナンスしている', guide: 'HIGH', isCurrentFor: 'pro' },
+        { text: '手元・指先が清潔感のある状態を保てている', guide: 'none' },
+      ],
+    };
+
+    // ── サブトラック（肌・歯の内訳別・統合リスト形式） ──
+    const MILESTONES_SUB = {
+      skin_care: {
+        steps: [
+          { text: '洗顔料で洗顔している', guide: 'none', isCurrentFor: 'none' },
+          { text: '化粧水をつけている', guide: 'none' },
+          { text: '乳液で保湿している', guide: 'none' },
+          { text: '日焼け止めを朝塗っている', guide: 'none' },
+          { text: '肌タイプを把握している（乾燥・脂性・混合）', guide: 'LOW', isCurrentFor: 'concerned' },
+          { text: '肌悩みを言語化している（ニキビ・毛穴・くすみ・赤みなど）', guide: 'LOW' },
+          { text: 'クレンジングをしている（夜）', guide: 'MID', isCurrentFor: 'self' },
+          { text: '角質ケアをしている', guide: 'MID' },
+          { text: '皮膚科・エステで今の肌状態を診てもらった', guide: 'HIGH', isCurrentFor: 'pro' },
+          { text: 'スペシャルケア（美容液・シートマスクなど）を取り入れている', guide: 'HIGH' },
+        ],
+      },
+      skin_hige: {
+        headerNote: 'カミソリ・毛抜き・ワックスはNG。電動シェーバーのみ推奨。ひげが普通〜濃い人は医療脱毛が本命。',
+        steps: [
+          { text: '電動シェーバーを使っている（カミソリ・毛抜きNG）', guide: 'none', note: 'カミソリは剃るたびに皮膚まで削るため肌へのダメージが大きい', isCurrentFor: 'none' },
+          { text: '剃り後に保湿している', guide: 'none' },
+          { text: '自分のひげタイプを把握している（薄い／普通〜濃い）', guide: 'LOW', note: '迷ったらカウンセリングで確認できる', isCurrentFor: 'concerned' },
+          { text: '医療脱毛クリニックのカウンセリングに行ったことがある', guide: 'HIGH', isCurrentFor: 'self' },
+          { text: '脱毛を開始している', guide: 'HIGH', isCurrentFor: 'pro' },
+          { text: '脱毛完了後のスキンケアが習慣になっている', guide: 'MID' },
+        ],
+      },
+      teeth_white: {
+        steps: [
+          { text: '毎日歯磨きをしている', guide: 'none', isCurrentFor: 'none' },
+          { text: '歯間ブラシかフロスを使っている', guide: 'none' },
+          { text: 'ホワイトニング配合の歯磨き粉を使っている', guide: 'none' },
+          { text: '自分の歯の黄ばみの原因を把握している（着色・加齢など）', guide: 'LOW', isCurrentFor: 'concerned' },
+          { text: 'セルフホワイトニングサロンを体験したことがある', guide: 'MID' },
+          { text: '歯科でPMTC（クリーニング）を受けたことがある', guide: 'HIGH', isCurrentFor: 'self' },
+          { text: '歯科医にホワイトニングの方法・適性を相談したことがある', guide: 'HIGH' },
+          { text: '歯科クリニックでオフィスホワイトニングを受けたことがある', guide: 'HIGH', isCurrentFor: 'pro' },
+          { text: 'ホワイトニングの効果を維持するケアをしている（着色食品を知るなど）', guide: 'LOW' },
+          { text: '定期的にホワイトニングのメンテナンスをしている', guide: 'MID' },
+        ],
+      },
+      teeth_ortho: {
+        note: '⚠️ 矯正は長期・高額の意思決定です。他のステップより時間軸が長くなります。',
+        steps: [
+          { text: '自分の歯並びで気になる部分を言語化できている', guide: 'none', isCurrentFor: 'none' },
+          { text: '矯正の種類を知っている（ワイヤー・マウスピース・裏側など）', guide: 'none' },
+          { text: '費用・期間の相場をざっくり把握している', guide: 'none' },
+          { text: '矯正歯科の無料カウンセリングに行ったことがある', guide: 'HIGH', isCurrentFor: 'concerned' },
+          { text: '「始める・後にする・しない」を意識的に決断している', guide: 'none' },
+          { text: '矯正を開始している', guide: 'HIGH', isCurrentFor: 'self' },
+          { text: '定期通院（月1回程度）を習慣化している', guide: 'HIGH' },
+          { text: '矯正装置に慣れ、日常生活への支障がなくなっている', guide: 'LOW' },
+          { text: '保定装置（リテーナー）に移行している', guide: 'HIGH', isCurrentFor: 'pro' },
+          { text: '保定期間のケアが習慣になっている', guide: 'MID' },
+        ],
+      },
+    };
+
+    // ── カテゴリゴール（理想スコアの言語化） ──
+    const IDEAL_GOALS = {
+      body:    ['体型が気になる状態を終わらせる', '服が似合う体型をつくる', '自信を持てる体型を維持する', '体型が自信の核になっている', '体型が自分の特徴になっている'],
+      eyebrow: ['眉の乱れをなくす', '顔に合う眉の形を持つ', '整った眉で第一印象が変わっている', '眉が顔の印象を決めている', '眉が自分の個性になっている'],
+      fashion: ['服への迷いをなくす', '清潔感のある着こなしを持つ', '「なんかいい感じ」と言われる', '服が自信の道具になっている', '着こなしが自分の武器になっている'],
+      hair:    ['髪への不安をなくす', '定期的に整えられている状態', '髪が印象の武器になっている', '髪型が「あの人らしい」と思われる', '髪が自分のアイデンティティになっている'],
+      skin:    ['肌の気になりをなくす', '清潔感のある肌を保つ', '肌が第一印象の強みになっている', '肌への自信が日常になっている', '肌が自分の特徴になっている'],
+      teeth:   ['口元の気になりをなくす', '笑顔を隠さなくなる', '歯・口元が清潔感の源になっている', '笑顔が自分の強みになっている', '歯への自信が当たり前になっている'],
+      nail:    ['爪の乱れをなくす', '爪が「整っている」と気づかれる', '手先の細部が整っている', '爪が全体の印象を底上げしている', '細部の完成度が自信に繋がっている'],
+    };
+
+    // ── ゴール文 ──
+    function getOverallGoal() {
+      const VISION_MAP = {
+        love_active:      '恋愛で、躊躇せず動けるようになっている',
+        no_give_up:       '外見を理由に何かを諦めることが減っている',
+        like_self:        '自分のことを、もう少し好きになっている',
+        natural_confident:'自信が「自然な状態」になっている',
+      };
+      const CHANGE_MAP = {
+        others_perception: '他の人からの見られ方・評価が変わる',
+        self_confidence:   '自分の気持ち・自己肯定感が変わる',
+        action_ease:       '行動のしやすさ・動けるようになること',
+        life_options:      '外見を理由に諦めることが減ること',
+      };
+      return VISION_MAP[p.goal_vision] || CHANGE_MAP[p.goal_change] || '外見を起点に、自信を再設計する';
+    }
+
+    const tv = p.transform_vectors || {};
+    const priorityOrder = p.priority_order || Object.keys(AREA_DEFS);
+    const compassFirst  = p.compass_first  || priorityOrder[0] || 'body';
+    const overallGoal   = getOverallGoal();
+
+    // ── 動的Compass計算 ──
+    function calcDynamicCompass() {
+      const doneAxes = new Set(
+        Object.entries(axisProgress).filter(([,v]) => v === 'done').map(([k]) => k)
+      );
+      const compassOverride = localStorage.getItem('fineme:compass:override');
+      // overrideが設定されていて、かつdone済みでなければ尊重
+      if (compassOverride && AREA_DEFS[compassOverride] && !doneAxes.has(compassOverride)) {
+        return compassOverride;
+      }
+      // priority_order の中で done でない最初の軸
+      const next = priorityOrder.find(id => !doneAxes.has(id));
+      return next || compassFirst;
+    }
+
+    function buildCompassHtml() {
+      const currentAxis = calcDynamicCompass();
+      const def = AREA_DEFS[currentAxis] || {};
+      const doneCount = Object.values(axisProgress).filter(v => v === 'done').length;
+      const progressNote = doneCount > 0
+        ? `<span style="font-size:11px;color:rgba(201,168,76,.65);margin-left:6px">（${doneCount}軸ひと段落済み）</span>`
+        : '';
+      return `
+        <div class="compass-strip" id="compass-strip">
+          <div class="compass-strip-icon">${esc(def.icon||'🧭')}</div>
+          <div class="compass-strip-body">
+            <p class="compass-strip-label">Fineme Compass — 今向くべき方角${progressNote}</p>
+            <p class="compass-strip-text">${esc(def.label||'—')}</p>
+          </div>
+          <a href="/search?category=${esc(def.catLink||'consulting')}&diag=1" class="compass-strip-cta">探す</a>
+        </div>
+      `;
+    }
+
+    // ── サブトラックフォーカス（buildTrack内で毎回読む） ──
+    function getSkinFocus()  { return localStorage.getItem('fineme:skin:focus')  || 'care'; }
+    function getTeethFocus() { return localStorage.getItem('fineme:teeth:focus') || 'white'; }
+
+    // ── マイルストーンHTML生成（共通） ──
+    function buildMilestoneItems(steps, careType, isExpanded, catLink) {
+      const currentIdx = steps.findIndex(s => s.isCurrentFor === careType);
+      const items = steps.map((step, i) => {
+        const isCurrentPosition = (i === currentIdx);
+        const dotClass = isCurrentPosition ? 'current' : (i < currentIdx ? 'past' : 'future');
+        const labelHtml = isCurrentPosition ? '<span class="milestone-current-tag">★ 現在地</span>' : '';
+        let guideHtml = '';
+        if (step.guide === 'HIGH') {
+          const link = catLink ? ` <a href="/search?category=${esc(catLink)}&diag=1">ガイドを探す →</a>` : '';
+          guideHtml = `<div class="guide-badge guide-high">🏥 ここはプロに任せると確実に変わる${link}</div>`;
+        } else if (step.guide === 'MID') {
+          guideHtml = `<div class="guide-badge guide-mid">📋 プロと進めると精度が上がる</div>`;
+        } else if (step.guide === 'LOW') {
+          guideHtml = `<span class="guide-badge guide-low">🏥</span>`;
+        }
+        const noteHtml = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
+        return `
+          <div class="milestone-item">
+            <div class="milestone-dot-wrap">
+              ${i > 0 ? '<div class="milestone-connector"></div>' : ''}
+              <div class="milestone-dot ${dotClass}"></div>
+            </div>
+            <div style="padding-top:${i>0?'12px':'0'}">
+              ${labelHtml}
+              <p class="milestone-text">${esc(step.text)}</p>
+              ${guideHtml}${noteHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+      const collapseClass = isExpanded ? '' : ' collapsed';
+      const expandBtn = isExpanded ? '' : `<button class="milestone-expand-btn" data-expand="true">＋ すべてのステップを見る（${steps.length}ステップ）</button>`;
+      return `<div class="milestone-list${collapseClass}">${items}</div>${expandBtn}`;
+    }
+
+    // ── トラックHTMLを生成 ──
+    function buildTrack(id) {
+      const def = AREA_DEFS[id];
+      if (!def) return '';
+      const v = tv[id] || { current:1, ideal:3, gap:2, tier:def.tier, care_type:'none' };
+      const careType = v.care_type || 'none';
+      const currentPct = Math.min((v.current / 5) * 100, 100).toFixed(1);
+      const idealPct   = Math.min((v.ideal   / 5) * 100, 100).toFixed(1);
+
+      const idealGoalText = (IDEAL_GOALS[id] || [])[Math.min(v.ideal - 1, 4)] || `${def.label}の理想を実現する`;
+
+      const statusVal = axisProgress[id] || '';
+      const STATUS_LABELS = { '': '○ 未着手', 'active': '🔵 取り組み中', 'done': '✅ ひと段落' };
+      const isCompassTarget = (calcDynamicCompass() === id);
+      const compassBadge = isCompassTarget ? '<span class="compass-pointing-badge">🧭 今ここ</span>' : '';
+      const doneClass = statusVal === 'done' ? ' status-done' : '';
+
+      // ── 肌：サブトラックタブ ──
+      const skinFocus  = getSkinFocus();
+      const teethFocus = getTeethFocus();
+      let milestoneHtml = '';
+      if (id === 'skin') {
+        const subKey = skinFocus === 'hige' ? 'skin_hige' : 'skin_care';
+        const subData = MILESTONES_SUB[subKey] || MILESTONES_SUB['skin_care'];
+        const steps = subData.steps || [];
+        const headerNoteHtml = subData.headerNote ? `<p class="subtab-header-note">ℹ️ ${esc(subData.headerNote)}</p>` : '';
+        milestoneHtml = `
+          <div class="subtab-wrap">
+            <button class="subtab-btn${skinFocus==='care'?' active':''}" data-subtab="skin" data-val="care">✨ スキンケア</button>
+            <button class="subtab-btn${skinFocus==='hige'?' active':''}" data-subtab="skin" data-val="hige">🪒 ひげケア</button>
+          </div>
+          ${headerNoteHtml}
+          ${buildMilestoneItems(steps, careType, isCompassTarget, def.catLink)}
+        `;
+      // ── 歯：サブトラックタブ ──
+      } else if (id === 'teeth') {
+        const subKey = teethFocus === 'ortho' ? 'teeth_ortho' : 'teeth_white';
+        const subData = MILESTONES_SUB[subKey] || MILESTONES_SUB['teeth_white'];
+        const steps = subData.steps || [];
+        const orthoNote = subData.note ? `<p class="subtab-note">${esc(subData.note)}</p>` : '';
+        milestoneHtml = `
+          <div class="subtab-wrap">
+            <button class="subtab-btn${teethFocus==='white'?' active':''}" data-subtab="teeth" data-val="white">🦷 ホワイトニング</button>
+            <button class="subtab-btn${teethFocus==='ortho'?' active':''}" data-subtab="teeth" data-val="ortho">😬 歯並び（矯正）</button>
+          </div>
+          ${orthoNote}
+          ${buildMilestoneItems(steps, careType, isCompassTarget, def.catLink)}
+        `;
+      // ── 通常軸 ──
+      } else {
+        const steps = MILESTONES[id] || [];
+        milestoneHtml = buildMilestoneItems(steps, careType, isCompassTarget, def.catLink);
+      }
+
+      return `
+        <div class="track-card tier-${def.tier}${v.gap === 0 ? ' track-done' : ''}${doneClass}" id="track-${id}">
+          <div class="track-header">
+            <div class="track-name">${esc(def.icon)} ${esc(def.label)}${compassBadge}</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span class="track-tier-badge tb-${def.tier}">${esc(TIER_LABELS[def.tier]||'')}</span>
+              <span class="track-care-badge">${esc(getCareLabel(careType))}</span>
+            </div>
+          </div>
+
+          <div class="track-progress">
+            <div class="track-progress-labels">
+              <span>現在地</span>
+              <span>★ ${esc(idealGoalText)}</span>
+            </div>
+            <div class="track-progress-track">
+              <div class="track-progress-current" style="width:${currentPct}%"></div>
+              <div class="track-progress-ideal" style="left:${idealPct}%"></div>
+            </div>
+          </div>
+
+          ${milestoneHtml}
+
+          <div style="margin-top:14px">
+            <div class="milestone-item" style="padding:0">
+              <div class="milestone-dot-wrap">
+                <div class="milestone-connector"></div>
+                <div class="milestone-dot goal"></div>
+              </div>
+              <div style="padding-top:12px">
+                <span class="milestone-goal-tag">ゴール</span>
+                <p class="milestone-text" style="font-weight:700;color:#c9a84c">${esc(idealGoalText)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="track-action">
+            <a href="/search?category=${esc(def.catLink)}&diag=1" class="track-action-link">
+              ${esc(def.icon)} ${esc(def.label)}のプロを探す →
+            </a>
+            <button class="track-status-btn" data-axis="${esc(id)}" data-status="${esc(statusVal)}">
+              ${esc(STATUS_LABELS[statusVal] || '○ 未着手')}
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // ── ページ組み立て ──
+    const allAreaIds = [...new Set([...priorityOrder, ...Object.keys(AREA_DEFS)])];
+
+    const vRoute = '<div class="v-route"><div class="v-route-line"></div><div class="v-route-dot"></div><div class="v-route-line"></div></div>';
+    const tracksHtml = allAreaIds
+      .filter(id => AREA_DEFS[id])
+      .map((id) => buildTrack(id))
+      .join(vRoute);
+
+    const html = `
+      <div class="navi-header">
+        <p class="navi-header-eyebrow">New Me Navi</p>
+        <div class="navi-header-badge">🧭 変容トラッキング</div>
+        <h1>ゴール：<em>${esc(overallGoal)}</em></h1>
+        <p class="navi-header-sub">7軸の変容トラックが常に更新される。<br>どのトラックも「完了」はない——深度が深まり続ける。</p>
+        <svg viewBox="0 0 80 80" width="68" height="68" style="position:absolute;top:14px;right:14px;z-index:1;opacity:0.17" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="37" fill="none" stroke="#c9a84c" stroke-width="0.8"/><circle cx="40" cy="40" r="28" fill="none" stroke="#c9a84c" stroke-width="0.4"/><line x1="40" y1="3" x2="40" y2="77" stroke="#c9a84c" stroke-width="0.8"/><line x1="3" y1="40" x2="77" y2="40" stroke="#c9a84c" stroke-width="0.8"/><line x1="14" y1="14" x2="66" y2="66" stroke="#c9a84c" stroke-width="0.5"/><line x1="66" y1="14" x2="14" y2="66" stroke="#c9a84c" stroke-width="0.5"/><polygon points="40,4 37,23 40,19 43,23" fill="#c9a84c"/><polygon points="40,76 37,57 40,61 43,57" fill="#c9a84c" opacity="0.4"/><polygon points="76,40 57,37 61,40 57,43" fill="#c9a84c" opacity="0.4"/><polygon points="4,40 23,37 19,40 23,43" fill="#c9a84c" opacity="0.4"/><circle cx="40" cy="40" r="5" fill="none" stroke="#c9a84c" stroke-width="1.2"/><circle cx="40" cy="40" r="2" fill="#c9a84c"/></svg>
+        <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(201,168,76,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
+      </div>
+
+      ${buildCompassHtml()}
+
+      <p class="sec-label">変容トラック（7軸）</p>
+      <div class="track-list" id="track-list">${tracksHtml}</div>
+
+      <div class="navi-footer">
+        <a href="/diagnosis/result" class="navi-footer-btn nfb-secondary">🗺️ New Me Mapに戻る</a>
+        <a href="/diagnosis" class="navi-footer-btn nfb-ghost">Me Scanを再スキャンする</a>
+      </div>
+    `;
+
+    root.innerHTML = html;
+
+    // ── ステータスボタンのイベントリスナー ──
+    const STATUS_CYCLE = { '': 'active', 'active': 'done', 'done': '' };
+
+    function refreshCompassAndTracks() {
+      // Compassストリップだけ更新
+      const strip = document.getElementById('compass-strip');
+      if (strip) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = buildCompassHtml();
+        strip.replaceWith(tmp.firstElementChild);
+      }
+      // 各トラックの「今ここ」バッジとステータスボタンを更新
+      const currentAxis = calcDynamicCompass();
+      document.querySelectorAll('.track-status-btn').forEach(btn => {
+        const axisId = btn.dataset.axis;
+        const newStatus = axisProgress[axisId] || '';
+        const STATUS_LABELS = { '': '○ 未着手', 'active': '🔵 取り組み中', 'done': '✅ ひと段落' };
+        btn.dataset.status = newStatus;
+        btn.textContent = STATUS_LABELS[newStatus] || '○ 未着手';
+        // カードのdoneクラス更新
+        const card = document.getElementById('track-' + axisId);
+        if (card) {
+          card.classList.toggle('status-done', newStatus === 'done');
+          // 「今ここ」バッジ更新
+          const nameEl = card.querySelector('.track-name');
+          if (nameEl) {
+            const existingBadge = nameEl.querySelector('.compass-pointing-badge');
+            if (existingBadge) existingBadge.remove();
+            if (currentAxis === axisId) {
+              const badge = document.createElement('span');
+              badge.className = 'compass-pointing-badge';
+              badge.textContent = '🧭 今ここ';
+              nameEl.appendChild(badge);
+            }
+          }
+        }
+      });
+    }
+
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('.track-status-btn');
+      if (!btn) return;
+      const axisId = btn.dataset.axis;
+      const currentStatus = axisProgress[axisId] || '';
+      const nextStatus = STATUS_CYCLE[currentStatus] ?? '';
+      if (nextStatus === '') {
+        delete axisProgress[axisId];
+      } else {
+        axisProgress[axisId] = nextStatus;
+      }
+      // ローカル保存
+      try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(axisProgress)); } catch {}
+      // Supabase保存（非同期、失敗しても無視）
+      if (token) {
+        fetch('/api/me/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ axis_progress: axisProgress }),
+        }).catch(() => {});
+      }
+      refreshCompassAndTracks();
+    });
+
+    // ── 展開ボタン ──
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('.milestone-expand-btn');
+      if (!btn) return;
+      const list = btn.previousElementSibling;
+      if (list && list.classList.contains('milestone-list')) {
+        list.classList.remove('collapsed');
+        btn.remove();
+      }
+    });
+
+    // ── サブトラックタブ切り替え ──
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('.subtab-btn');
+      if (!btn) return;
+      const axis = btn.dataset.subtab;
+      const val  = btn.dataset.val;
+      if (axis === 'skin')  { localStorage.setItem('fineme:skin:focus',  val); }
+      if (axis === 'teeth') { localStorage.setItem('fineme:teeth:focus', val); }
+      // トラックカードを再描画
+      const card = document.getElementById('track-' + axis);
+      if (card) {
+        const newCard = document.createElement('div');
+        newCard.innerHTML = buildTrack(axis);
+        const newCardEl = newCard.firstElementChild;
+        if (newCardEl) card.replaceWith(newCardEl);
+      }
+    });
+
+    } catch (err) {
+      // エラーが発生した場合、読み込み中のまま固まらないようにする
+      try {
+        root.innerHTML = `<div class="no-data">
+          <div class="no-data-icon">⚠️</div>
+          <h2 class="no-data-title">読み込みエラー</h2>
+          <p class="no-data-text">データの読み込みに失敗しました。<br>ページを再読み込みするか、Me Scanを受け直してください。</p>
+          <p style="font-size:11px;color:#9ca3af;margin-bottom:20px">${err.message || ''}</p>
+          <a href="/diagnosis" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px;margin-right:10px">Me Scanを受ける</a>
+          <button onclick="location.reload()" style="font-size:14px;font-weight:600;padding:12px 24px;border:1.5px solid #e5e7eb;border-radius:8px;background:#fff;cursor:pointer">再読み込み</button>
+        </div>`;
+      } catch {}
+    }
+
+    })(); // async IIFE end
+
+    return () => { document.head.removeChild(style); };
+  }, []);
+
+  return (
+    <>
+      <style>{`
+        .navi-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
+        .navi-sidenav { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        .navi-sidenav .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: #374151; text-decoration: none; transition: background .15s; }
+        .navi-sidenav .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
+        .navi-sidenav .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
+        @media (max-width: 640px) {
+          .navi-layout { grid-template-columns: 1fr; padding: 16px 16px 60px; }
+          .navi-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
+          .navi-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; }
+          .navi-sidenav nav::-webkit-scrollbar { display: none; }
+          .navi-sidenav nav > * { margin-top: 0 !important; }
+          .navi-sidenav .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; }
+          .navi-wrap { padding: 0 0 40px !important; }
+        }
+      `}</style>
+      <main>
+        <div className="navi-layout">
+          <aside className="navi-sidenav">
+            <nav className="stack" style={{ gap: '4px' }}>
+              <Link href="/mypage" className="sidenav-link">ホーム</Link>
+              <Link href="/diagnosis/result" className="sidenav-link">New Me Map</Link>
+              <Link href="/mypage/navi" className="sidenav-link sidenav-link--active">New Me Navi</Link>
+              <Link href="/mypage/favorites" className="sidenav-link">お気に入り</Link>
+              <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
+              <Link href="/my-reservations" className="sidenav-link">予約履歴</Link>
+              <Link href="/mypage/story-submit" className="sidenav-link">体験談を書く</Link>
+              <Link href="/mypage/profile" className="sidenav-link">プロフィール編集</Link>
+            </nav>
+          </aside>
+          <div>
+            <div id="navi-root">
+              <p style={{textAlign:'center',padding:'60px 20px',color:'#9ca3af'}}>読み込み中…</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </>
+  );
+}
