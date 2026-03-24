@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-03-24
 -- profiles テーブルに line_user_id カラムを追加（ユーザー側LINE連携用）
 -- Supabase SQL Editor で実行してください
 

@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-03-24
 -- profiles テーブルに不足カラムを追加
 -- Supabase SQL Editor で実行してください
 

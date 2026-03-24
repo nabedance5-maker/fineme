@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-03-24
 -- provider_page_views: 掲載者公開ページの日次閲覧数集計テーブル
 CREATE TABLE IF NOT EXISTS provider_page_views (
   id         BIGSERIAL PRIMARY KEY,

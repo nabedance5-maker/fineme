@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-03-24
 -- providers にカバー（ヒーロー）画像カラムを追加
 ALTER TABLE providers ADD COLUMN IF NOT EXISTS cover_image_url text;
 

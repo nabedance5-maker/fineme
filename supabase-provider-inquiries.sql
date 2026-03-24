@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-03-24
 -- 掲載相談フォームの問い合わせを保存するテーブル
 create table if not exists provider_inquiries (
   id uuid primary key default gen_random_uuid(),
