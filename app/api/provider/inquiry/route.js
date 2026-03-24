@@ -10,8 +10,12 @@ function getSupabaseClient() {
 }
 
 const CATEGORY_LABEL = {
-  hair: '美容室・ヘアサロン', esthetic: 'エステ・痩身', nails: 'ネイル',
-  makeup: 'メイク・顔分析', eyelash: 'まつ毛・アイブロウ', cosmetic: '美容外科・美容クリニック',
+  gym: 'ジム・パーソナルトレーニング', makeup: 'メイク・コスメ', hair: 'ヘア・美容院',
+  diagnosis: '骨格・パーソナルカラー診断', fashion: 'ファッション・スタイリング',
+  photo: 'プロフィール写真・撮影', marriage: '婚活・マッチングサポート',
+  eyebrow: '眉毛サロン', hairremoval: '脱毛', esthetic: 'エステ・フェイシャル',
+  whitening: '歯のホワイトニング', orthodontics: '歯列矯正', nail: 'ネイル',
+  aga: 'AGA・薄毛治療', consulting: 'コンサルティング',
 };
 
 export async function POST(request) {
@@ -36,30 +40,69 @@ export async function POST(request) {
 
     if (error) throw error;
 
-    // メール通知（RESEND_API_KEY が設定されていれば送信）
-    if (process.env.RESEND_API_KEY && process.env.ADMIN_EMAIL) {
+    // メール送信（RESEND_API_KEY が設定されていれば送信）
+    if (process.env.RESEND_API_KEY) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const categoryLabel = category ? (CATEGORY_LABEL[category] || category) : '未選択';
+      const contactPrefLabel = contactPref === 'phone' ? '電話' : contactPref === 'either' ? 'どちらでも' : 'メール';
+
       try {
-        const resend = new Resend(process.env.RESEND_API_KEY);
+        // 管理者への通知メール
+        if (process.env.ADMIN_EMAIL) {
+          await resend.emails.send({
+            from: 'Fineme <noreply@fineme.me>',
+            to: process.env.ADMIN_EMAIL,
+            subject: `【掲載問い合わせ】${bizName}`,
+            text: [
+              '掲載相談フォームから問い合わせが届きました。',
+              '',
+              `会社名・屋号: ${bizName}`,
+              `担当者: ${contactName}`,
+              `メール: ${email}`,
+              phone ? `電話: ${phone}` : '',
+              `カテゴリ: ${categoryLabel}`,
+              `希望連絡方法: ${contactPrefLabel}`,
+              '',
+              '相談内容:',
+              message || '（未記入）',
+              '',
+              '---',
+              '管理画面で確認: https://www.fineme.me/admin/inquiries',
+            ].filter(Boolean).join('\n'),
+          });
+        }
+
+        // 送信者への自動返信メール
         await resend.emails.send({
           from: 'Fineme <noreply@fineme.me>',
-          to: process.env.ADMIN_EMAIL,
-          subject: `【掲載問い合わせ】${bizName}`,
+          to: email,
+          subject: `【Fineme】お問い合わせを受け付けました`,
           text: [
-            '掲載相談フォームから問い合わせが届きました。',
+            `${contactName} 様`,
             '',
+            'この度はFinemeへお問い合わせいただき、ありがとうございます。',
+            '以下の内容で受け付けました。担当者より改めてご連絡差し上げます。',
+            '',
+            '━━━━━━━━━━━━━━━━━━',
             `会社名・屋号: ${bizName}`,
             `担当者: ${contactName}`,
             `メール: ${email}`,
             phone ? `電話: ${phone}` : '',
-            category ? `カテゴリ: ${CATEGORY_LABEL[category] || category}` : '',
-            `希望連絡方法: ${contactPref || 'email'}`,
+            `カテゴリ: ${categoryLabel}`,
+            `希望連絡方法: ${contactPrefLabel}`,
             '',
-            `相談内容:`,
+            '相談内容:',
             message || '（未記入）',
+            '━━━━━━━━━━━━━━━━━━',
             '',
-            '---',
-            '管理画面で確認: https://www.fineme.me/admin/inquiries',
-          ].filter(line => line !== null).join('\n'),
+            'ご不明な点がございましたら、このメールにご返信ください。',
+            '',
+            '──────────────────',
+            'Fineme（ファインミ）',
+            'https://www.fineme.me',
+            '外見を起点に、自信を再設計する人を増やす',
+            '──────────────────',
+          ].filter(Boolean).join('\n'),
         });
       } catch (mailErr) {
         // メール失敗でも問い合わせ保存は成功扱い

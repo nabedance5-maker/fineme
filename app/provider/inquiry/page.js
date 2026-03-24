@@ -168,8 +168,12 @@ export default function ProviderInquiryPage() {
 
     function mapCategoryLabel(v) {
       const map = {
-        hair: '美容室・ヘアサロン', esthetic: 'エステ・痩身', nails: 'ネイル',
-        makeup: 'メイク・顔分析', eyelash: 'まつ毛・アイブロウ', cosmetic: '美容外科・美容クリニック'
+        gym: 'ジム・パーソナルトレーニング', makeup: 'メイク・コスメ', hair: 'ヘア・美容院',
+        diagnosis: '骨格・パーソナルカラー診断', fashion: 'ファッション・スタイリング',
+        photo: 'プロフィール写真・撮影', marriage: '婚活・マッチングサポート',
+        eyebrow: '眉毛サロン', hairremoval: '脱毛', esthetic: 'エステ・フェイシャル',
+        whitening: '歯のホワイトニング', orthodontics: '歯列矯正', nail: 'ネイル',
+        aga: 'AGA・薄毛治療', consulting: 'コンサルティング',
       };
       return map[v] || '未選択';
     }
@@ -289,12 +293,21 @@ export default function ProviderInquiryPage() {
                 <label className="inq-label" htmlFor="category">掲載カテゴリ（目安）</label>
                 <select className="inq-select" id="category" name="category">
                   <option value="">未選択</option>
-                  <option value="hair">美容室・ヘアサロン</option>
-                  <option value="esthetic">エステ・痩身</option>
-                  <option value="nails">ネイル</option>
-                  <option value="makeup">メイク・顔分析</option>
-                  <option value="eyelash">まつ毛・アイブロウ</option>
-                  <option value="cosmetic">美容外科・美容クリニック</option>
+                  <option value="gym">💪 ジム・パーソナルトレーニング</option>
+                  <option value="makeup">💄 メイク・コスメ</option>
+                  <option value="hair">💇 ヘア・美容院</option>
+                  <option value="diagnosis">🔍 骨格・パーソナルカラー診断</option>
+                  <option value="fashion">👔 ファッション・スタイリング</option>
+                  <option value="photo">📷 プロフィール写真・撮影</option>
+                  <option value="marriage">💍 婚活・マッチングサポート</option>
+                  <option value="eyebrow">✏️ 眉毛サロン</option>
+                  <option value="hairremoval">🪒 脱毛</option>
+                  <option value="esthetic">✨ エステ・フェイシャル</option>
+                  <option value="whitening">😁 歯のホワイトニング</option>
+                  <option value="orthodontics">🦷 歯列矯正</option>
+                  <option value="nail">💅 ネイル</option>
+                  <option value="aga">💊 AGA・薄毛治療</option>
+                  <option value="consulting">🗣 コンサルティング</option>
                 </select>
               </div>
               <div className="inq-field">
