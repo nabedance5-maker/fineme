@@ -470,33 +470,9 @@
 
   <div class="divider"></div>
 
-  <!-- 05: 出力データ一覧 -->
+  <!-- 05: 3つのアウトプット -->
   <div class="section">
     <div class="sec-num">05</div>
-    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Output Data — 診断結果データ</div></div>
-    <p class="lead">localStorage / Supabaseに保存される<br>全フィールドと使われ方</p>
-
-    <table class="data-table">
-      <tr><th>フィールド名</th><th>内容と使われ方</th></tr>
-      <tr><td>trigger</td><td>変わりたいきっかけ（matching_app / love / career / self / friend_reaction）。掲載者の suitable_triggers と照合してマッチングスコアに加点。</td></tr>
-      <tr><td>goal_scene / goal_change / goal_vision</td><td>ゴール3層。New Me Mapのヒーローコピー生成に使用。「誰の前で」「何をどう」「変わった後どうなる」。</td></tr>
-      <tr><td>transform_vectors</td><td>7軸の {current, ideal, gap, tier, care_type, path_type, self_view, love_impact} オブジェクト。レーダーチャート・ベクトルリスト・Compassすべての根拠。</td></tr>
-      <tr><td>priority_order</td><td>gap>0の軸をTier→gap→速効度でソートした配列。[0]がCompass。</td></tr>
-      <tr><td>compass_first</td><td>priority_order[0]のコピー。Compassのデフォルト値。overrideで上書き可能。</td></tr>
-      <tr><td>failure_pattern</td><td>過去の失敗パターン（too_busy / no_direction / quit_fast / info_overload / ongoing）。掲載者の handles_failure_patterns と照合。</td></tr>
-      <tr><td>style_priority_top</td><td>4スタイルのうち最優先（explanation_autonomy / consultation_accessibility / delegate_directive / cautious_continuity）。New Me Naviのトーン変更に使用予定。</td></tr>
-      <tr><td>urgency</td><td>変わりたい期間（1ヶ月以内 / 3ヶ月 / 半年 / 焦っていない）。Compassの「急ぎ注記」表示に使用。</td></tr>
-      <tr><td>aga_concern / aga_status</td><td>AGA（薄毛）の懸念・現状。hair軸の結果とは別に保持。AGAガイドへの専用接続に使用。</td></tr>
-      <tr><td>axis_progress</td><td>各軸の進捗状態を管理するJSONB（例: {"body":"active","hair":"done"}）。"done"になった軸はCompassの候補から除外される（動的Compass）。LocalStorage + Supabase（profiles.axis_progress）に二重保存。</td></tr>
-      <tr><td>step_done</td><td>New Me Naviの各軸ステップ完了チェック状態をJSONBで保存（例: {"body_s0":true,"body_s1":true}）。LocalStorage + Supabase（profiles.step_done）に二重保存。デバイスをまたいで同期される。</td></tr>
-    </table>
-  </div>
-
-  <div class="divider"></div>
-
-  <!-- 06: 3つのアウトプット -->
-  <div class="section">
-    <div class="sec-num">06</div>
     <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Outputs — 診断が生み出す3つのアウトプット</div></div>
     <p class="lead">「地図」「羅針盤」「ロードマップ」が<br>ユーザーの変容を継続的に支える</p>
 
@@ -523,29 +499,6 @@
     </div>
   </div>
 
-  <div class="divider"></div>
-
-  <!-- 07: マッチングへの接続 -->
-  <div class="section">
-    <div class="sec-num">07</div>
-    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Matching — 診断データとマッチングの接続</div></div>
-    <p class="lead">診断データが掲載者スコアリングに<br>どう使われるか</p>
-
-    <p style="font-size:13px;color:#b8b0a8;margin-bottom:14px;line-height:1.8">診断が終わると、ユーザーのデータは<code style="background:rgba(201,168,76,.1);padding:2px 6px;border-radius:4px;font-size:12px;color:#c9a84c">/api/providers</code>へのクエリパラメーターとして渡され、掲載者の総合スコアを計算します。</p>
-
-    <table class="data-table">
-      <tr><th>診断フィールド</th><th>マッチングへの影響</th></tr>
-      <tr><td>trigger</td><td>掲載者の suitable_triggers（きっかけ配列）に含まれていれば <strong>+8点</strong></td></tr>
-      <tr><td>failure_pattern</td><td>掲載者の handles_failure_patterns（失敗パターン配列）に含まれていれば <strong>+8点</strong></td></tr>
-      <tr><td>compass_first (軸)</td><td>その軸に対応するカテゴリを掲載者が持っていれば <strong>+12点</strong>（例：body軸 → gym カテゴリ）</td></tr>
-      <tr><td>priority_order (上位3軸)</td><td>掲載者のサービスがその軸の対象軸であれば各 <strong>+5点</strong>（最大+15点）</td></tr>
-    </table>
-
-    <div class="card" style="margin-top:14px">
-      <h3>ユーザーデータ以外のスコア要素</h3>
-      <p>マッチングスコアはユーザーとの一致だけでなく、<strong>掲載者のプロフィール充実度</strong>（哲学・ビジョン・写真・スタッフ等）と<strong>サービスの内容充実度</strong>（変容の約束・Before/After等）も積算します。テキトーに2項目だけ設定しても上位には出ない設計です。</p>
-    </div>
-  </div>
 
   <!-- Footer -->
   <div class="footer">
