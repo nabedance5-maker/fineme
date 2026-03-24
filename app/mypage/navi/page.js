@@ -188,6 +188,22 @@ export default function NewMeNaviPage() {
       .station-title { font-size: 17px; font-weight: 900; color: #0a0f1e; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
       .station-collapse-btn { font-size: 11px; font-weight: 700; color: #9ca3af; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 3px 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; white-space: nowrap; }
       .station-collapse-btn:hover { border-color: #c9a84c; color: #c9a84c; }
+
+      /* ── Zigzag positioning ── */
+      .station-card { margin: 0; } /* スパイン時代の left margin をリセット */
+      .station-mini-card { background: #fff; border: 1px solid rgba(201,168,76,0.2); border-radius: 12px; padding: 10px 14px; }
+      .station-left .station-card,
+      .station-left .station-mini-card { max-width: 72%; }
+      .station-right .station-card,
+      .station-right .station-mini-card { max-width: 72%; margin-left: 28%; }
+      .station-compass .station-card { max-width: 100%; border-color: rgba(201,168,76,0.5); box-shadow: 0 6px 32px rgba(0,0,0,.1); }
+      .sic-wrap { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
+      .sic-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+      .sic-current { background: #0a0f1e; box-shadow: 0 0 0 3px rgba(10,15,30,.12); }
+      .sic-done { background: #c9a84c; }
+      .sic-active { background: #3b82f6; }
+      .sic-future { background: #e5e7eb; border: 1.5px solid #d1d5db; }
+      .sic-label { font-size: 10px; font-weight: 700; color: #9ca3af; }
     `;
     document.head.appendChild(style);
 
@@ -617,8 +633,8 @@ export default function NewMeNaviPage() {
       }).join('');
     }
 
-    // ── ステーションHTMLを生成（ルート案内型） ──
-    function buildStation(id) {
+    // ── ステーションHTMLを生成（ジグザグルート案内型） ──
+    function buildStation(id, routeIndex) {
       const def = AREA_DEFS[id];
       if (!def) return '';
       const v = tv[id] || { current:1, ideal:3, gap:2, tier:def.tier, care_type:'none' };
@@ -628,31 +644,29 @@ export default function NewMeNaviPage() {
       const idealGoalText = (IDEAL_GOALS[id] || [])[Math.min(v.ideal - 1, 4)] || `${def.label}の理想を実現する`;
       const statusVal = axisProgress[id] || '';
       const isDoneAxis = statusVal === 'done';
-      const isCompassTarget = (calcDynamicCompass() === id);
-      const isExpanded = isCompassTarget || expandedStations.has(id);
-      const compassBadge = isCompassTarget ? '<span class="compass-pointing-badge">🧭 今ここ</span>' : '';
+      const isCompass = calcDynamicCompass() === id;
+      const isExpanded = isCompass || expandedStations.has(id);
 
-      let nodeClass = 'sn-future';
-      if (isDoneAxis) nodeClass = 'sn-done';
-      else if (isCompassTarget) nodeClass = 'sn-current';
+      // 配置クラス: Compass=全幅、偶数=左寄り、奇数=右寄り
+      const posClass = isCompass ? 'station-compass' : (routeIndex % 2 === 0 ? 'station-left' : 'station-right');
+
+      // 状態インジケーター
+      const dotClass = isDoneAxis ? 'sic-done' : isCompass ? 'sic-current' : statusVal === 'active' ? 'sic-active' : 'sic-future';
+      const stateLabel = isDoneAxis ? 'ひと段落 ✅' : isCompass ? '今ここ 🧭' : statusVal === 'active' ? '取り組み中 🔵' : getCareLabel(careType);
 
       if (!isExpanded) {
-        // ── 折りたたみ表示 ──
+        // ── 折りたたみミニカード ──
         const rowClass = isDoneAxis ? ' station-done-row' : '';
-        const statusLabel = isDoneAxis ? '✅ ひと段落' : statusVal === 'active' ? '🔵 取り組み中' : getCareLabel(careType);
         return `
-          <div class="station station-collapsed" id="station-${id}">
-            <div class="station-spine">
-              <div class="station-line-seg"></div>
-              <div class="station-node ${nodeClass}"></div>
-              <div class="station-line-seg"></div>
-            </div>
-            <div class="station-body">
+          <div class="station ${posClass}" id="station-${id}">
+            <div class="station-mini-card">
+              <div class="sic-wrap">
+                <div class="sic-dot ${dotClass}"></div>
+                <span class="sic-label">${esc(stateLabel)}</span>
+              </div>
               <div class="station-row${rowClass}">
                 <span class="station-icon-sm">${esc(def.icon)}</span>
                 <span class="station-name-sm">${esc(def.label)}</span>
-                <span class="track-care-badge" style="font-size:10px">${esc(statusLabel)}</span>
-                ${compassBadge}
                 <button class="station-expand-btn" data-expand-station="${esc(id)}">詳細を見る</button>
               </div>
               <div class="station-mini-progress">${getMiniProgressDots(id, careType)}</div>
@@ -661,7 +675,7 @@ export default function NewMeNaviPage() {
         `;
       }
 
-      // ── 展開表示 ──
+      // ── 展開カード（milestoneHTML生成） ──
       const skinFocus  = getSkinFocus();
       const teethFocus = getTeethFocus();
       let milestoneHtml = '';
@@ -700,60 +714,54 @@ export default function NewMeNaviPage() {
         ? `<p style="font-size:11px;color:#9ca3af;background:#f9fafb;border:1px dashed #d1d5db;border-radius:6px;padding:6px 10px;margin:0 0 12px">💡 今すぐ必要でない場合が多いカテゴリです</p>`
         : '';
 
+      const compassBadge = isCompass ? '<span class="compass-pointing-badge">🧭 今ここ</span>' : '';
       const STATUS_BTN_LABELS = { '': '○ 未着手', 'active': '🔵 取り組み中', 'done': '✅ ひと段落' };
       return `
-        <div class="station station-expanded" id="station-${id}">
-          <div class="station-spine">
-            <div class="station-line-seg"></div>
-            <div class="station-node ${nodeClass}"></div>
-            <div class="station-line-flex"></div>
-          </div>
-          <div class="station-body">
-            <div class="station-card">
-              <div class="station-card-header">
-                <div class="station-title">${esc(def.icon)} ${esc(def.label)}${compassBadge}</div>
-                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                  <span class="track-tier-badge tb-${def.tier}">${esc(TIER_LABELS[def.tier]||'')}</span>
-                  <span class="track-care-badge">${esc(getCareLabel(careType))}</span>
-                  <button class="station-collapse-btn" data-collapse-station="${esc(id)}">折りたたむ ↑</button>
+        <div class="station ${posClass}" id="station-${id}">
+          <div class="station-card">
+            <div class="station-card-header">
+              <div class="station-title">${esc(def.icon)} ${esc(def.label)}${compassBadge}</div>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span class="track-tier-badge tb-${def.tier}">${esc(TIER_LABELS[def.tier]||'')}</span>
+                <span class="track-care-badge">${esc(getCareLabel(careType))}</span>
+                <button class="station-collapse-btn" data-collapse-station="${esc(id)}">折りたたむ ↑</button>
+              </div>
+            </div>
+
+            <div class="track-progress">
+              <div class="track-progress-labels">
+                <span>現在地</span>
+                <span>★ ${esc(idealGoalText)}</span>
+              </div>
+              <div class="track-progress-track">
+                <div class="track-progress-current" style="width:${currentPct}%"></div>
+                <div class="track-progress-ideal" style="left:${idealPct}%"></div>
+              </div>
+            </div>
+
+            ${tier4Note}
+            ${milestoneHtml}
+
+            <div style="margin-top:14px">
+              <div class="milestone-item" style="padding:0">
+                <div class="milestone-dot-wrap">
+                  <div class="milestone-connector"></div>
+                  <div class="milestone-dot goal"></div>
+                </div>
+                <div style="padding-top:12px">
+                  <span class="milestone-goal-tag">ゴール</span>
+                  <p class="milestone-text" style="font-weight:700;color:#c9a84c">${esc(idealGoalText)}</p>
                 </div>
               </div>
+            </div>
 
-              <div class="track-progress">
-                <div class="track-progress-labels">
-                  <span>現在地</span>
-                  <span>★ ${esc(idealGoalText)}</span>
-                </div>
-                <div class="track-progress-track">
-                  <div class="track-progress-current" style="width:${currentPct}%"></div>
-                  <div class="track-progress-ideal" style="left:${idealPct}%"></div>
-                </div>
-              </div>
-
-              ${tier4Note}
-              ${milestoneHtml}
-
-              <div style="margin-top:14px">
-                <div class="milestone-item" style="padding:0">
-                  <div class="milestone-dot-wrap">
-                    <div class="milestone-connector"></div>
-                    <div class="milestone-dot goal"></div>
-                  </div>
-                  <div style="padding-top:12px">
-                    <span class="milestone-goal-tag">ゴール</span>
-                    <p class="milestone-text" style="font-weight:700;color:#c9a84c">${esc(idealGoalText)}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="track-action">
-                <a href="/search?category=${esc(def.catLink)}&diag=1" class="track-action-link">
-                  ${esc(def.icon)} ${esc(def.label)}のプロを探す →
-                </a>
-                <button class="track-status-btn" data-axis="${esc(id)}" data-status="${esc(statusVal)}">
-                  ${esc(STATUS_BTN_LABELS[statusVal] || '○ 未着手')}
-                </button>
-              </div>
+            <div class="track-action">
+              <a href="/search?category=${esc(def.catLink)}&diag=1" class="track-action-link">
+                ${esc(def.icon)} ${esc(def.label)}のプロを探す →
+              </a>
+              <button class="track-status-btn" data-axis="${esc(id)}" data-status="${esc(statusVal)}">
+                ${esc(STATUS_BTN_LABELS[statusVal] || '○ 未着手')}
+              </button>
             </div>
           </div>
         </div>
@@ -762,25 +770,63 @@ export default function NewMeNaviPage() {
 
     // ── ページ組み立て ──
     function buildRouteContainerHtml() {
+      const routeOrder = getRouteOrder();
+      const compassAxis = calcDynamicCompass();
+
+      // 停留所のノード位置X（%）: Compass=中央、偶数=左カード右端、奇数=右カード左端
+      function getNodeX(idx) {
+        if (routeOrder[idx] === compassAxis) return 50;
+        return idx % 2 === 0 ? 72 : 28;
+      }
+
+      // 停留所間をつなぐ斜め線SVG
+      function buildConnectorSvg(fromIdx, toIdx) {
+        const x1 = getNodeX(fromIdx);
+        const x2 = getNodeX(toIdx);
+        return `<svg viewBox="0 0 100 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:40px;display:block;overflow:visible">
+          <line x1="${x1}" y1="2" x2="${x2}" y2="38" stroke="rgba(201,168,76,0.45)" stroke-width="1.5" stroke-dasharray="4 5"/>
+          <circle cx="${x1}" cy="2" r="2.5" fill="rgba(201,168,76,0.5)"/>
+          <circle cx="${x2}" cy="38" r="2.5" fill="rgba(201,168,76,0.5)"/>
+        </svg>`;
+      }
+
+      // スタートノード
+      const firstX = routeOrder.length > 0 ? getNodeX(0) : 50;
       const startHtml = `
-        <div class="route-start-node">
-          <div class="station-spine" style="height:40px;justify-content:center">
-            <div class="route-start-icon">🏁</div>
-            <div class="station-line-seg"></div>
+        <div style="position:relative;height:64px">
+          <svg viewBox="0 0 100 64" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%">
+            <line x1="${firstX}" y1="38" x2="${firstX}" y2="64" stroke="rgba(201,168,76,0.4)" stroke-width="1.5" stroke-dasharray="4 5"/>
+            <circle cx="${firstX}" cy="64" r="2.5" fill="rgba(201,168,76,0.5)"/>
+          </svg>
+          <div style="position:absolute;top:4px;left:${firstX}%;transform:translateX(-50%);text-align:center;line-height:1.2;pointer-events:none">
+            <div style="font-size:24px">🏁</div>
+            <div style="font-size:9px;font-weight:800;letter-spacing:.1em;color:rgba(201,168,76,0.7);text-transform:uppercase;margin-top:2px">出発点</div>
           </div>
-          <div class="rg-body"><p class="rg-label">出発点</p><p style="font-size:12px;color:#6b7280;margin:0">Me Scan完了</p></div>
         </div>
       `;
-      const goalHtml = `
-        <div class="route-goal-node">
-          <div class="station-spine">
-            <div class="station-line-seg"></div>
-            <div class="rg-star">⭐</div>
-          </div>
-          <div class="rg-body"><p class="rg-label">ゴール</p><p class="rg-text">${esc(overallGoal)}</p></div>
+
+      // ステーション + コネクター
+      let html = startHtml;
+      routeOrder.forEach((id, i) => {
+        html += buildStation(id, i);
+        if (i < routeOrder.length - 1) html += buildConnectorSvg(i, i + 1);
+      });
+
+      // ゴールノード
+      const lastX = routeOrder.length > 0 ? getNodeX(routeOrder.length - 1) : 50;
+      html += `
+        <svg viewBox="0 0 100 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:40px;display:block">
+          <circle cx="${lastX}" cy="0" r="2.5" fill="rgba(201,168,76,0.5)"/>
+          <line x1="${lastX}" y1="2" x2="50" y2="38" stroke="rgba(201,168,76,0.4)" stroke-width="1.5" stroke-dasharray="4 5"/>
+        </svg>
+        <div style="text-align:center;padding:4px 0 28px">
+          <div style="font-size:24px;margin-bottom:4px">⭐</div>
+          <p style="font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(201,168,76,0.7);margin:0 0 4px">ゴール</p>
+          <p style="font-size:14px;font-weight:700;color:#0a0f1e;margin:0">${esc(overallGoal)}</p>
         </div>
       `;
-      return startHtml + getRouteOrder().map(id => buildStation(id)).join('') + goalHtml;
+
+      return html;
     }
 
     const patternBarHtml = `
@@ -910,10 +956,11 @@ export default function NewMeNaviPage() {
       const val  = btn.dataset.val;
       if (axis === 'skin')  { localStorage.setItem('fineme:skin:focus',  val); }
       if (axis === 'teeth') { localStorage.setItem('fineme:teeth:focus', val); }
+      const routeIdx = getRouteOrder().indexOf(axis);
       const stationEl = document.getElementById('station-' + axis);
       if (stationEl) {
         const tmp = document.createElement('div');
-        tmp.innerHTML = buildStation(axis);
+        tmp.innerHTML = buildStation(axis, routeIdx);
         stationEl.replaceWith(tmp.firstElementChild);
       }
     });
@@ -940,10 +987,11 @@ export default function NewMeNaviPage() {
       const id = btn.dataset.expandStation;
       if (!id) return;
       expandedStations.add(id);
+      const routeIdx = getRouteOrder().indexOf(id);
       const el = document.getElementById('station-' + id);
       if (el) {
         const tmp = document.createElement('div');
-        tmp.innerHTML = buildStation(id);
+        tmp.innerHTML = buildStation(id, routeIdx);
         el.replaceWith(tmp.firstElementChild);
       }
     });
@@ -955,10 +1003,11 @@ export default function NewMeNaviPage() {
       const id = btn.dataset.collapseStation;
       if (!id) return;
       expandedStations.delete(id);
+      const routeIdx = getRouteOrder().indexOf(id);
       const el = document.getElementById('station-' + id);
       if (el) {
         const tmp = document.createElement('div');
-        tmp.innerHTML = buildStation(id);
+        tmp.innerHTML = buildStation(id, routeIdx);
         el.replaceWith(tmp.firstElementChild);
       }
     });
