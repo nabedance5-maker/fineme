@@ -266,7 +266,7 @@ export default function NewMeNaviPage() {
     let stepDone = {};
     try { const s = localStorage.getItem(STEP_DONE_KEY); if (s) stepDone = JSON.parse(s); } catch {}
 
-    // ── 進捗データ読み込み ──
+    // ── 進捗データ読み込み（Supabase優先） ──
     let axisProgress = {};
     try {
       const stored = localStorage.getItem(PROGRESS_KEY);
@@ -280,6 +280,11 @@ export default function NewMeNaviPage() {
           if (data.axis_progress && Object.keys(data.axis_progress).length > 0) {
             axisProgress = data.axis_progress;
             try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(axisProgress)); } catch {}
+          }
+          // ── stepDone: Supabaseが空でないならマージ（新しい方が優先） ──
+          if (data.step_done && Object.keys(data.step_done).length > 0) {
+            stepDone = { ...stepDone, ...data.step_done };
+            try { localStorage.setItem(STEP_DONE_KEY, JSON.stringify(stepDone)); } catch {}
           }
         }
       }
@@ -875,6 +880,14 @@ export default function NewMeNaviPage() {
       const isDone = !!stepDone[key];
       if (isDone) { delete stepDone[key]; } else { stepDone[key] = true; }
       try { localStorage.setItem(STEP_DONE_KEY, JSON.stringify(stepDone)); } catch {}
+      // Supabase保存（非同期・失敗しても無視）
+      if (token) {
+        fetch('/api/me/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ step_done: stepDone }),
+        }).catch(() => {});
+      }
       // DOM更新
       const item = btn.closest('.milestone-item');
       if (item) {
