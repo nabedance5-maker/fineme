@@ -171,7 +171,15 @@ export default function DiagnosisResultPage() {
           isLoggedIn = true;
           authToken = token;
           const res = await fetch('/api/me/diagnosis', { headers: { 'Authorization': `Bearer ${token}` } });
-          if (res.ok) { const data = await res.json(); if (data) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {} } }
+          if (res.ok) { const data = await res.json(); if (data) {
+            // localStorageの方が新しい場合は上書きしない（新規診断直後を保護）
+            try {
+              const local = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+              const localAt = local?.at ? new Date(local.at).getTime() : 0;
+              const remoteAt = data?.at ? new Date(data.at).getTime() : 0;
+              if (remoteAt >= localAt) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+            } catch { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+          } }
         }
       }
     } catch {}

@@ -194,7 +194,14 @@ export default function NewMeNaviPage() {
     try {
       if (token) {
         const res = await fetchWithTimeout('/api/me/diagnosis', { headers: { 'Authorization': `Bearer ${token}` } });
-        if (res?.ok) { const data = await res.json(); if (data) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {} } }
+        if (res?.ok) { const data = await res.json(); if (data) {
+          try {
+            const local = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+            const localAt = local?.at ? new Date(local.at).getTime() : 0;
+            const remoteAt = data?.at ? new Date(data.at).getTime() : 0;
+            if (remoteAt >= localAt) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+          } catch { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {} }
+        } }
       }
     } catch {}
 
