@@ -11,7 +11,7 @@ export default function NewMeNaviPage() {
 
     const style = document.createElement('style');
     style.textContent = `
-      .navi-wrap { max-width: 680px; margin: 0 auto; padding: 24px 20px 80px; }
+      .navi-wrap { max-width: 100%; margin: 0; padding: 24px 0 80px; }
 
       /* ── Header ── */
       .navi-header { padding: 44px 28px 36px; background: linear-gradient(rgba(10,15,30,0.78), rgba(10,15,30,0.88)), url('/assets/images/hero-bg.webp') center / cover no-repeat; border-radius: 14px; margin-bottom: 24px; position: relative; overflow: hidden; border: 1px solid rgba(201,168,76,0.2); }
@@ -204,6 +204,29 @@ export default function NewMeNaviPage() {
       .sic-active { background: #3b82f6; }
       .sic-future { background: #e5e7eb; border: 1.5px solid #d1d5db; }
       .sic-label { font-size: 10px; font-weight: 700; color: #9ca3af; }
+
+      /* ── カード接続ドット（中央上下）── */
+      .station-mini-card, .station-card { position: relative; }
+      .station-mini-card::before, .station-card::before,
+      .station-mini-card::after,  .station-card::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 9px; height: 9px;
+        border-radius: 50%;
+        background: rgba(201,168,76,0.55);
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 1.5px rgba(201,168,76,0.3);
+        z-index: 2;
+      }
+      .station-mini-card::before, .station-card::before { top: -5px; }
+      .station-mini-card::after,  .station-card::after  { bottom: -5px; }
+      /* 最初と最後のカードは不要な端ドットを非表示 */
+      .station:first-child .station-mini-card::before,
+      .station:first-child .station-card::before { display: none; }
+      .station:last-child .station-mini-card::after,
+      .station:last-child .station-card::after { display: none; }
     `;
     document.head.appendChild(style);
 
@@ -773,21 +796,19 @@ export default function NewMeNaviPage() {
       const routeOrder = getRouteOrder();
       const compassAxis = calcDynamicCompass();
 
-      // 停留所のノード位置X（%）: Compass=中央、偶数=左カード右端、奇数=右カード左端
+      // 停留所のノード位置X（%）: Compass=中央、偶数=左カード中央(36%)、奇数=右カード中央(64%)
       function getNodeX(idx) {
         if (routeOrder[idx] === compassAxis) return 50;
-        return idx % 2 === 0 ? 72 : 28;
+        return idx % 2 === 0 ? 36 : 64;
       }
 
-      // 停留所間をつなぐ斜め線SVG
+      // 停留所間をつなぐ斜め線SVG（カード中央から中央へ）
       function buildConnectorSvg(fromIdx, toIdx) {
         const x1 = getNodeX(fromIdx);
         const x2 = getNodeX(toIdx);
-        return `<svg viewBox="0 0 100 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:40px;display:block;overflow:visible">
-          <line x1="${x1}" y1="2" x2="${x2}" y2="38" stroke="rgba(201,168,76,0.45)" stroke-width="1.5" stroke-dasharray="4 5"/>
-          <circle cx="${x1}" cy="2" r="2.5" fill="rgba(201,168,76,0.5)"/>
-          <circle cx="${x2}" cy="38" r="2.5" fill="rgba(201,168,76,0.5)"/>
-        </svg>`;
+        return `<div style="margin:-2px 0;overflow:visible"><svg viewBox="0 0 100 36" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:36px;display:block;overflow:visible">
+          <line x1="${x1}" y1="0" x2="${x2}" y2="36" stroke="rgba(201,168,76,0.65)" stroke-width="2" stroke-dasharray="5 4"/>
+        </svg></div>`;
       }
 
       // スタートノード
@@ -795,8 +816,7 @@ export default function NewMeNaviPage() {
       const startHtml = `
         <div style="position:relative;height:64px">
           <svg viewBox="0 0 100 64" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%">
-            <line x1="${firstX}" y1="38" x2="${firstX}" y2="64" stroke="rgba(201,168,76,0.4)" stroke-width="1.5" stroke-dasharray="4 5"/>
-            <circle cx="${firstX}" cy="64" r="2.5" fill="rgba(201,168,76,0.5)"/>
+            <line x1="${firstX}" y1="40" x2="${firstX}" y2="64" stroke="rgba(201,168,76,0.55)" stroke-width="2" stroke-dasharray="5 4"/>
           </svg>
           <div style="position:absolute;top:4px;left:${firstX}%;transform:translateX(-50%);text-align:center;line-height:1.2;pointer-events:none">
             <div style="font-size:24px">🏁</div>
@@ -815,9 +835,8 @@ export default function NewMeNaviPage() {
       // ゴールノード
       const lastX = routeOrder.length > 0 ? getNodeX(routeOrder.length - 1) : 50;
       html += `
-        <svg viewBox="0 0 100 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:40px;display:block">
-          <circle cx="${lastX}" cy="0" r="2.5" fill="rgba(201,168,76,0.5)"/>
-          <line x1="${lastX}" y1="2" x2="50" y2="38" stroke="rgba(201,168,76,0.4)" stroke-width="1.5" stroke-dasharray="4 5"/>
+        <svg viewBox="0 0 100 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:40px;display:block;margin-top:-2px">
+          <line x1="${lastX}" y1="0" x2="50" y2="38" stroke="rgba(201,168,76,0.55)" stroke-width="2" stroke-dasharray="5 4"/>
         </svg>
         <div style="text-align:center;padding:4px 0 28px">
           <div style="font-size:24px;margin-bottom:4px">⭐</div>
