@@ -148,7 +148,7 @@ export default function NewMeNaviPage() {
       .route-pattern-desc { font-size: 11px; color: #9ca3af; margin: 0 0 20px; }
 
       /* ── Route 1本道 ── */
-      .route-container { }
+      .route-container { width: 100%; box-sizing: border-box; }
       .route-start-node, .route-goal-node { display: flex; align-items: flex-start; }
       .route-start-icon, .rg-star { font-size: 18px; width: 28px; text-align: center; flex-shrink: 0; }
       .rg-body { flex: 1; padding: 4px 0 8px 12px; }
@@ -858,6 +858,7 @@ export default function NewMeNaviPage() {
     `;
 
     const html = `
+      <div class="navi-wrap">
       <div class="navi-header">
         <p class="navi-header-eyebrow">New Me Navi</p>
         <div class="navi-header-badge">🧭 ルート案内</div>
@@ -880,6 +881,7 @@ export default function NewMeNaviPage() {
       <div class="navi-footer">
         <a href="/diagnosis/result" class="navi-footer-btn nfb-secondary">🗺️ New Me Mapに戻る</a>
         <a href="/diagnosis" class="navi-footer-btn nfb-ghost">Me Scanを再スキャンする</a>
+      </div>
       </div>
     `;
 
