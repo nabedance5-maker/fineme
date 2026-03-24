@@ -163,14 +163,16 @@ export default function ProviderDashboardPage() {
         const el = document.getElementById('service-form')?.elements[k];
         if (el) el.value = provider[k] || '';
       });
-      // AI分析ステータス表示
+      // AI分析ステータス表示 & ボタン制御
       const aiStatus = document.getElementById('ai-match-status');
-      if (aiStatus && provider.ai_match_profile) {
+      if (provider.ai_match_profile) {
         const d = provider.ai_match_profile;
         const date = d.analyzed_at ? new Date(d.analyzed_at).toLocaleDateString('ja-JP') : '';
-        aiStatus.innerHTML = `<span style="color:#059669;font-weight:700">✅ AI分析済み（${date}）</span><br><span style="font-size:12px;color:#6b7280">${d.summary || ''}</span>`;
-      } else if (aiStatus) {
-        aiStatus.textContent = '未分析 — プロフィールを入力後「AIで分析する」ボタンを押してください';
+        if (aiStatus) aiStatus.innerHTML = `<span style="color:#059669;font-weight:700">✅ AI分析済み（${date}）</span><br><span style="font-size:12px;color:#6b7280">${d.summary || ''}</span>`;
+        setAnalyzeButtonState(true);
+      } else {
+        if (aiStatus) aiStatus.textContent = '未分析 — プロフィールを入力後「AIで分析する」ボタンを押してください';
+        setAnalyzeButtonState(false);
       }
       // カバー画像プレビュー
       if (provider.cover_image_url) {
@@ -329,7 +331,7 @@ export default function ProviderDashboardPage() {
       } catch {}
     }
 
-    document.getElementById('profile-form').addEventListener('submit', e => {
+    document.getElementById('profile-form').addEventListener('submit', async e => {
       e.preventDefault();
       const fd = new FormData(e.target);
       const data = Object.fromEntries(fd);
@@ -340,8 +342,30 @@ export default function ProviderDashboardPage() {
       // facility_photos: 3つのURL入力を配列に結合
       data.facility_photos = [fd.get('facility_photo_1'), fd.get('facility_photo_2'), fd.get('facility_photo_3')].filter(Boolean);
       delete data.facility_photo_1; delete data.facility_photo_2; delete data.facility_photo_3;
-      saveToLocal(data);
+      // プロフィール保存時にAI分析をリセット（再分析を促す）
+      data.ai_match_profile = null;
+      const ok = await saveToLocal(data);
+      if (ok) setAnalyzeButtonState(false);
     });
+
+    // AI分析ボタンの有効/無効を制御
+    function setAnalyzeButtonState(analyzed) {
+      const btn = document.getElementById('ai-analyze-btn');
+      const status = document.getElementById('ai-match-status');
+      if (!btn) return;
+      if (analyzed) {
+        btn.disabled = true;
+        btn.style.opacity = '0.4';
+        btn.title = 'プロフィールを編集して保存すると再分析できます';
+      } else {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.title = '';
+        if (status && !status.innerHTML.includes('✅')) {
+          status.textContent = '未分析（ボタンを押すとマッチング精度が向上します）';
+        }
+      }
+    }
 
     // AI分析ボタン
     document.getElementById('ai-analyze-btn')?.addEventListener('click', async () => {
@@ -364,12 +388,15 @@ export default function ProviderDashboardPage() {
           status.innerHTML = `<span style="color:#059669;font-weight:700">✅ AI分析完了</span><br><span style="font-size:12px;color:#6b7280">${d.summary || ''}</span>`;
         }
         showToast('✅ AI分析が完了しました。マッチングに反映されます。');
+        setAnalyzeButtonState(true);
       } catch (err) {
         if (status) status.textContent = `エラー: ${err.message}`;
         showToast(`分析失敗: ${err.message}`);
-      } finally {
         btn.disabled = false;
+        btn.style.opacity = '1';
         btn.textContent = 'AIで分析する';
+      } finally {
+        if (btn.textContent === '分析中…') btn.textContent = 'AIで分析する';
       }
     });
 
