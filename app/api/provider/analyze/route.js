@@ -131,7 +131,7 @@ summary（このサービスが誰に向いているかを1〜2文で。ユー�
     aiResult = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
   } catch (e) {
     console.error('Claude analyze error:', e);
-    return Response.json({ error: 'AI分析に失敗しました。プロフィールを確認して再試行してください。' }, { status: 500 });
+    return Response.json({ error: `Claude API error: ${e.message}` }, { status: 500 });
   }
 
   // ai_match_profile を保存
