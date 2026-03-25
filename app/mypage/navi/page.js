@@ -138,6 +138,14 @@ export default function NewMeNaviPage() {
       .prereq-text { font-size: 13px; color: #4b5563; line-height: 1.5; flex: 1; padding-right: 4px; }
       .prereq-item.step-done .prereq-text { text-decoration: line-through; color: #9ca3af; }
 
+      /* ── 出発前チェックバナー ── */
+      .prereq-banner { background: rgba(201,168,76,0.07); border: 1.5px solid rgba(201,168,76,0.28); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; }
+      .prereq-banner-icon { font-size: 22px; flex-shrink: 0; }
+      .prereq-banner-body { flex: 1; }
+      .prereq-banner-title { font-size: 13px; font-weight: 800; color: #0a0f1e; margin: 0 0 2px; }
+      .prereq-banner-desc { font-size: 11px; color: #6b7280; line-height: 1.5; margin: 0; }
+      .prereq-banner-count { font-weight: 700; color: #c9a84c; }
+
       /* ── Bottom ── */
       .navi-footer { margin-top: 32px; display: flex; flex-direction: column; gap: 10px; }
       .navi-footer-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; border-radius: 14px; font-size: 14px; font-weight: 700; text-decoration: none; transition: opacity .15s; }
@@ -605,6 +613,44 @@ export default function NewMeNaviPage() {
     function getSkinFocus()  { return localStorage.getItem('fineme:skin:focus')  || 'care'; }
     function getTeethFocus() { return localStorage.getItem('fineme:teeth:focus') || 'white'; }
 
+    // ── 出発前チェック全体の進捗 ──
+    function getAllPrereqInfo() {
+      const simpleAxes = ['body', 'eyebrow', 'fashion', 'hair', 'nail'];
+      const skinKey  = getSkinFocus()  === 'hige'  ? 'skin_hige'   : 'skin_care';
+      const teethKey = getTeethFocus() === 'ortho' ? 'teeth_ortho' : 'teeth_white';
+      let total = 0, done = 0;
+      simpleAxes.forEach(axisKey => {
+        const steps = MILESTONES[axisKey] || [];
+        const idx = steps.findIndex(s => s.isCurrentFor === 'concerned');
+        const splitAt = idx > 0 ? idx : 0;
+        for (let i = 0; i < splitAt; i++) { total++; if (stepDone[`prereq-${axisKey}-${i}`]) done++; }
+      });
+      [skinKey, teethKey].forEach(axisKey => {
+        const subData = MILESTONES_SUB[axisKey];
+        if (!subData) return;
+        const steps = subData.steps || [];
+        const idx = steps.findIndex(s => s.isCurrentFor === 'concerned');
+        const splitAt = idx > 0 ? idx : 0;
+        for (let i = 0; i < splitAt; i++) { total++; if (stepDone[`prereq-${axisKey}-${i}`]) done++; }
+      });
+      return { total, done, allDone: total > 0 && done >= total };
+    }
+
+    function buildPrereqBannerHtml() {
+      const { total, done, allDone } = getAllPrereqInfo();
+      if (allDone) return '';
+      return `
+        <div class="prereq-banner" id="prereq-banner">
+          <div class="prereq-banner-icon">📋</div>
+          <div class="prereq-banner-body">
+            <p class="prereq-banner-title">まず「出発前チェック」から始めよう</p>
+            <p class="prereq-banner-desc">各停留所を展開すると出発前チェックが確認できます ·
+              <span class="prereq-banner-count">${done}/${total} チェック済み</span>
+            </p>
+          </div>
+        </div>`;
+    }
+
     // ── マイルストーンHTML生成（共通） ──
     function buildMilestoneItems(steps, careType, isExpanded, catLink, axisKey) {
       const currentIdx = steps.findIndex(s => s.isCurrentFor === careType);
@@ -913,6 +959,7 @@ export default function NewMeNaviPage() {
       </div>
 
       ${buildCompassHtml()}
+      ${buildPrereqBannerHtml()}
 
       <p class="sec-label">ルート選択</p>
       ${patternBarHtml}
@@ -933,6 +980,15 @@ export default function NewMeNaviPage() {
 
     // ── ステータスボタンのイベントリスナー ──
     const STATUS_CYCLE = { '': 'active', 'active': 'done', 'done': '' };
+
+    function updatePrereqBanner() {
+      const banner = document.getElementById('prereq-banner');
+      if (!banner) return;
+      const { done, total, allDone } = getAllPrereqInfo();
+      if (allDone) { banner.remove(); return; }
+      const countEl = banner.querySelector('.prereq-banner-count');
+      if (countEl) countEl.textContent = `${done}/${total} チェック済み`;
+    }
 
     function refreshCompassAndTracks() {
       // Compassストリップ更新
@@ -1017,6 +1073,7 @@ export default function NewMeNaviPage() {
         btn.classList.toggle('checked', !isDone);
         btn.textContent = !isDone ? '✓' : '';
       }
+      updatePrereqBanner();
     });
 
     // ── サブトラックタブ切り替え ──

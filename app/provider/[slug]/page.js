@@ -570,10 +570,20 @@ function GuideTab({ provider, diagnosis, matchData, stories, staff, onGoToConsul
           </div>
         )}
         <UniqueStrengthsSection provider={provider} />
+        {(provider.facility_photos || [])[0] && (
+          <div style={{ margin: '-8px -16px', overflow: 'hidden' }}>
+            <img src={provider.facility_photos[0]} alt="" style={{ width: '100%', display: 'block', maxHeight: '280px', objectFit: 'cover' }} loading="lazy" />
+          </div>
+        )}
         <StaffSection staff={staff} />
         {/* Me Scan 済みなら最上部に、未スキャンは最下部に小さく */}
         {diagnosis && mapSection}
         <PhilosophySection provider={provider} />
+        {(provider.facility_photos || [])[1] && (
+          <div style={{ margin: '-8px -16px', overflow: 'hidden' }}>
+            <img src={provider.facility_photos[1]} alt="" style={{ width: '100%', display: 'block', maxHeight: '280px', objectFit: 'cover' }} loading="lazy" />
+          </div>
+        )}
         <StoriesSection stories={stories} provider={provider} />
         {!diagnosis && (
           <div style={{ opacity: 0.85 }}>

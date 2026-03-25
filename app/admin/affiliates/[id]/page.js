@@ -156,7 +156,6 @@ export default function AdminAffiliateEditPage() {
       if (!res.ok) { document.getElementById('aff-name-header').textContent = '読み込みエラー'; return; }
       affiliate = await res.json();
       renderData();
-      loadServices();
     }
 
     function renderData() {
@@ -176,6 +175,8 @@ export default function AdminAffiliateEditPage() {
         });
         const catEl = profileForm.elements['main_category'];
         if (catEl) catEl.value = affiliate.main_category || '';
+        const photosEl = profileForm.elements['facility_photos_raw'];
+        if (photosEl) photosEl.value = (affiliate.facility_photos || []).join('\n');
       }
 
       // サービス設定タブ
@@ -237,6 +238,9 @@ export default function AdminAffiliateEditPage() {
       e.preventDefault();
       const fd = new FormData(e.target);
       const data = Object.fromEntries(fd);
+      const photosRaw = data.facility_photos_raw || '';
+      data.facility_photos = photosRaw.split('\n').map(u => u.trim()).filter(Boolean);
+      delete data.facility_photos_raw;
       data.ai_match_profile = null; // プロフィール変更時はAI分析リセット
       const ok = await save(data);
       if (ok) setAnalyzeBtnState(false);
@@ -296,105 +300,6 @@ export default function AdminAffiliateEditPage() {
     document.getElementById('save-affiliate-url').addEventListener('click', async () => {
       const url = document.getElementById('affiliate-url-input').value.trim();
       await save({ affiliate_url: url || null });
-    });
-
-    // ── サービス/メニュー管理 ─────────────────────────────────
-    const AXIS_OPTIONS = [
-      { value: 'body', label: '💪 体型・ボディ' },
-      { value: 'eyebrow', label: '✏️ 眉毛' },
-      { value: 'fashion', label: '👔 服・コーデ' },
-      { value: 'hair', label: '💇 髪・ヘア' },
-      { value: 'skin', label: '✨ 肌' },
-      { value: 'teeth', label: '😁 歯' },
-      { value: 'nail', label: '💅 ネイル' },
-    ];
-
-    async function loadServices() {
-      const listEl = document.getElementById('services-list');
-      if (!listEl) return;
-      const res = await fetch(`/api/providers/${affiliate?.slug}/services`);
-      if (!res.ok) { listEl.innerHTML = '<p class="muted" style="color:#ef4444">取得エラー</p>'; return; }
-      const items = await res.json();
-      if (!items.length) { listEl.innerHTML = '<p class="muted">まだサービスはありません。</p>'; return; }
-      listEl.innerHTML = '';
-      items.forEach(svc => {
-        const row = document.createElement('div');
-        row.className = 'service-row';
-        row.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-            <div>
-              <strong style="font-size:14px">${esc(svc.name)}</strong>
-              ${svc.price ? `<span style="font-size:13px;color:#6b7280;margin-left:8px">¥${Number(svc.price).toLocaleString()}</span>` : ''}
-              ${svc.target_axis ? `<span style="font-size:11px;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;margin-left:6px">${AXIS_OPTIONS.find(a=>a.value===svc.target_axis)?.label||svc.target_axis}</span>` : ''}
-            </div>
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" data-svc-edit="${svc.id}">編集</button>
-              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px;color:#ef4444" data-svc-delete="${svc.id}" data-svc-name="${esc(svc.name)}">削除</button>
-            </div>
-          </div>
-        `;
-        listEl.appendChild(row);
-      });
-
-      listEl.querySelectorAll('[data-svc-edit]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const svc = items.find(s => s.id === btn.dataset.svcEdit);
-          if (svc) openServiceForm(svc);
-        });
-      });
-      listEl.querySelectorAll('[data-svc-delete]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          if (!confirm(`「${btn.dataset.svcName}」を削除しますか？`)) return;
-          const r = await fetch(`/api/provider/services/${btn.dataset.svcDelete}`, { method: 'DELETE', headers: h() });
-          if (r.ok) { loadServices(); showToast('削除しました'); }
-          else showToast('削除エラー');
-        });
-      });
-    }
-
-    function openServiceForm(svc) {
-      const form = document.getElementById('service-edit-form');
-      if (!form) return;
-      form.style.display = 'block';
-      form.querySelector('[name=_svc_id]').value = svc?.id || '';
-      form.querySelector('[name=name]').value = svc?.name || '';
-      form.querySelector('[name=price]').value = svc?.price || '';
-      form.querySelector('[name=duration]').value = svc?.duration || '';
-      form.querySelector('[name=target_axis]').value = svc?.target_axis || '';
-      form.querySelector('[name=transformation_promise]').value = svc?.transformation_promise || '';
-      form.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    document.getElementById('btn-add-service').addEventListener('click', () => openServiceForm(null));
-    document.getElementById('svc-cancel-btn').addEventListener('click', () => {
-      document.getElementById('service-edit-form').style.display = 'none';
-      document.getElementById('service-edit-form').reset();
-    });
-
-    document.getElementById('service-edit-form').addEventListener('submit', async e => {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const svcId = fd.get('_svc_id');
-      const body = {
-        provider_id: id,
-        name: fd.get('name'),
-        price: fd.get('price') ? Number(fd.get('price')) : null,
-        duration: fd.get('duration') || null,
-        target_axis: fd.get('target_axis') || null,
-        transformation_promise: fd.get('transformation_promise') || null,
-      };
-      const url = svcId ? `/api/provider/services/${svcId}` : '/api/provider/services';
-      const method = svcId ? 'PATCH' : 'POST';
-      const res = await fetch(url, { method, headers: h(), body: JSON.stringify(body) });
-      if (res.ok) {
-        document.getElementById('service-edit-form').style.display = 'none';
-        document.getElementById('service-edit-form').reset();
-        loadServices();
-        showToast('保存しました');
-      } else {
-        const err = await res.json();
-        showToast('エラー: ' + (err.error || '不明'));
-      }
     });
 
     load();
@@ -489,6 +394,11 @@ export default function AdminAffiliateEditPage() {
                 <label>ヒーロー画像URL（ページ上部の背景バナー）</label>
                 <input name="cover_image_url" type="url" placeholder="https://..." />
               </div>
+              <div className="form-field">
+                <label>ページ内画像URL（1行に1URL・最大5枚）</label>
+                <textarea name="facility_photos_raw" style={{ minHeight: '100px' }} placeholder={'https://example.com/image1.jpg\nhttps://example.com/image2.jpg'}></textarea>
+                <small className="muted">文章と文章の間に差し込まれる横長の画像です。A8.netのバナー画像URLも使えます。</small>
+              </div>
               <button type="submit" className="btn" style={{ marginTop: '8px' }}>保存する</button>
             </form>
           </div>
@@ -567,44 +477,6 @@ export default function AdminAffiliateEditPage() {
             </form>
           </div>
 
-          {/* サービス・メニュー */}
-          <div className="card" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h2 style={{ margin: '0', fontSize: '16px' }}>サービス・メニュー</h2>
-              <button type="button" className="btn" id="btn-add-service" style={{ fontSize: '13px', padding: '7px 14px' }}>＋ 追加</button>
-            </div>
-            <div id="services-list"><p className="muted">読み込み中…</p></div>
-
-            <div id="service-edit-form" className="service-edit-form">
-              <h3 style={{ margin: '0 0 14px', fontSize: '14px' }}>サービスを追加・編集</h3>
-              <form>
-                <div className="form-field"><label>サービス名 *</label><input name="name" required placeholder="例: 初回オンライン診察コース" /></div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div className="form-field"><label>価格（円）</label><input name="price" type="number" placeholder="5000" /></div>
-                  <div className="form-field"><label>所要時間</label><input name="duration" placeholder="例: 30分" /></div>
-                </div>
-                <div className="form-field">
-                  <label>対応軸（Me Scan 7軸）</label>
-                  <select name="target_axis">
-                    <option value="">選択しない</option>
-                    <option value="body">💪 体型・ボディ</option>
-                    <option value="eyebrow">✏️ 眉毛</option>
-                    <option value="fashion">👔 服・コーデ</option>
-                    <option value="hair">💇 髪・ヘア</option>
-                    <option value="skin">✨ 肌</option>
-                    <option value="teeth">😁 歯</option>
-                    <option value="nail">💅 ネイル</option>
-                  </select>
-                </div>
-                <div className="form-field"><label>変容の約束（このサービスで何が変わるか）</label><textarea name="transformation_promise" placeholder="例: 初回診察から最短2週間で発毛治療を開始できます。"></textarea></div>
-                <input type="hidden" name="_svc_id" />
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button type="submit" className="btn">保存</button>
-                  <button type="button" className="btn btn-ghost" id="svc-cancel-btn">キャンセル</button>
-                </div>
-              </form>
-            </div>
-          </div>
         </div>
 
         {/* タブ③：公開設定 */}

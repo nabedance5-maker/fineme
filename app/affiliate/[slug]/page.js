@@ -217,6 +217,13 @@ function AffiliatePageInner() {
           </div>
         )}
 
+        {/* ── ページ内画像①（unique_strengths後） ────────────────── */}
+        {(affiliate.facility_photos || [])[0] && (
+          <div style={{ margin: '4px -16px 20px', overflow: 'hidden' }}>
+            <img src={affiliate.facility_photos[0]} alt="" style={{ width: '100%', display: 'block', maxHeight: '300px', objectFit: 'cover' }} loading="lazy" />
+          </div>
+        )}
+
         {/* ── こんな方に向いています ───────────────────────────────── */}
         {affiliate.target_desc && (() => {
           const lines = affiliate.target_desc.split('\n').map(l => l.trim()).filter(Boolean);
@@ -281,6 +288,13 @@ function AffiliatePageInner() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ── ページ内画像②（変容ストーリー後） ──────────────────── */}
+        {(affiliate.facility_photos || [])[1] && (
+          <div style={{ margin: '4px -16px 20px', overflow: 'hidden' }}>
+            <img src={affiliate.facility_photos[1]} alt="" style={{ width: '100%', display: 'block', maxHeight: '300px', objectFit: 'cover' }} loading="lazy" />
           </div>
         )}
 
@@ -359,6 +373,13 @@ function AffiliatePageInner() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ── ページ内画像③（得意な方セクション後） ───────────────── */}
+        {(affiliate.facility_photos || [])[2] && (
+          <div style={{ margin: '4px -16px 20px', overflow: 'hidden' }}>
+            <img src={affiliate.facility_photos[2]} alt="" style={{ width: '100%', display: 'block', maxHeight: '300px', objectFit: 'cover' }} loading="lazy" />
           </div>
         )}
 

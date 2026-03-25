@@ -66,7 +66,7 @@ function ProviderCard({ provider }) {
   const img = provider.photo_url || categoryPhoto(provider.main_category);
 
   return (
-    <Link href={`/provider/${provider.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+    <Link href={provider.entity_type === 'affiliate' ? `/affiliate/${provider.slug}` : `/provider/${provider.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
       <article style={{
         border: '1.5px solid #e5e7eb', borderRadius: '16px', overflow: 'hidden',
         background: '#fff', transition: 'box-shadow .15s', cursor: 'pointer',

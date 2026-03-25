@@ -561,7 +561,7 @@ export default function DiagnosisResultPage() {
             <div class="result-card-title">✨ ${esc(title)}</div>
             <div class="result-card-subtitle">${esc(subtitle)}</div>
             ${top3.map((prov, i) => `
-              <a href="/provider/${esc(prov.slug)}" class="pmc-card${i===0&&hasMatch?' top':''}">
+              <a href="${prov.entity_type === 'affiliate' ? '/affiliate' : '/provider'}/${esc(prov.slug)}" class="pmc-card${i===0&&hasMatch?' top':''}">
                 <div class="pmc-photo">${prov.photo_url ? `<img src="${esc(prov.photo_url)}" alt="${esc(prov.name)}" loading="lazy">` : '<span class="pmc-photo-icon">🧑</span>'}</div>
                 <div class="pmc-body">
                   <div class="pmc-name">${esc(prov.name)}</div>
@@ -627,6 +627,14 @@ export default function DiagnosisResultPage() {
       <div class="navi-section">
         <div class="navi-section-label">🗺️ 次の行き先</div>
         <a href="/mypage/navi" class="navi-btn navi-btn-primary">
+          <span class="navi-btn-icon">📋</span>
+          <span class="navi-btn-body">
+            <span class="navi-btn-title">出発前チェックを確認する</span>
+            <span class="navi-btn-desc">旅を始める前に、今の自分の状態を確認しよう（任意・全部揃わなくてもOK）</span>
+          </span>
+          <span class="navi-btn-arrow">→</span>
+        </a>
+        <a href="/mypage/navi" class="navi-btn navi-btn-secondary">
           <span class="navi-btn-icon">🧭</span>
           <span class="navi-btn-body">
             <span class="navi-btn-title">New Me Naviを見る</span>
