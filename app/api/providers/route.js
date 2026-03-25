@@ -122,7 +122,7 @@ export async function GET(request) {
       suitable_triggers,handles_failure_patterns,
       philosophy,guide_message,unique_strengths,target_desc,
       facility_photo_1,facility_photo_2,facility_photo_3,
-      ai_match_profile
+      ai_match_profile,entity_type,affiliate_url
     `)
     .eq('published', true)
     .eq('admin_hidden', false);
@@ -189,6 +189,7 @@ export async function GET(request) {
 
   // レスポンスサイズを抑えるため内部フィールドを削除
   const result = scored.map(({ philosophy, guide_message, unique_strengths, target_desc, facility_photo_1, facility_photo_2, facility_photo_3, ai_match_profile, ...rest }) => rest);
+  // entity_type と affiliate_url はレスポンスに含まれる（...rest に含まれる）
 
   return Response.json(result);
   } catch (err) {

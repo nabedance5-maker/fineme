@@ -3,13 +3,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const NAV = [
-  { href: '/admin',            label: 'ダッシュボード',  icon: '📊' },
-  { href: '/admin/providers',  label: '掲載者管理',      icon: '🏢' },
-  { href: '/admin/payments',   label: '支払い管理',      icon: '💳' },
-  { href: '/admin/features',   label: '特集管理',        icon: '📝' },
-  { href: '/admin/stories',    label: '体験談管理',      icon: '💬' },
-  { href: '/admin/inquiries',  label: 'お問い合わせ',    icon: '📩' },
-  { href: '/admin/analytics',  label: 'アナリティクス',  icon: '📈' },
+  { href: '/admin',              label: 'ダッシュボード',      icon: '📊' },
+  { href: '/admin/providers',    label: '掲載者管理',          icon: '🏢' },
+  { href: '/admin/affiliates',   label: 'アフィリエイト管理',  icon: '🔗' },
+  { href: '/admin/payments',     label: '支払い管理',          icon: '💳' },
+  { href: '/admin/features',     label: '特集管理',            icon: '📝' },
+  { href: '/admin/stories',      label: '体験談管理',          icon: '💬' },
+  { href: '/admin/inquiries',    label: 'お問い合わせ',        icon: '📩' },
+  { href: '/admin/analytics',    label: 'アナリティクス',      icon: '📈' },
 ];
 
 export default function AdminLayout({ children }) {
