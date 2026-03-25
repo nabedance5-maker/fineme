@@ -373,7 +373,7 @@ function AffiliatePageInner() {
             <a
               href={affiliate.affiliate_url}
               target="_blank"
-              rel="noopener noreferrer"
+              rel="nofollow noopener noreferrer"
               className="btn"
               style={{
                 display: 'block', width: '100%', textAlign: 'center',
