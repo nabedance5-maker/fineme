@@ -187,6 +187,6 @@ export async function GET(request) {
   return Response.json(result);
   } catch (err) {
     console.error('[/api/providers] unexpected error:', err);
-    return Response.json({ __debug_error: err?.message || String(err) }, { status: 200 });
+    return Response.json([], { status: 200 });
   }
 }
