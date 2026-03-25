@@ -82,6 +82,72 @@ export default function AdminAffiliateEditPage() {
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
+    // ── AI再生成（編集画面から） ─────────────────────────────
+    document.getElementById('btn-regenerate').addEventListener('click', async () => {
+      const serviceName = document.getElementById('regen-service-name').value.trim();
+      const serviceUrl = document.getElementById('regen-service-url').value.trim();
+      if (!serviceName) { alert('サービス名を入力してください'); return; }
+
+      const btn = document.getElementById('btn-regenerate');
+      const status = document.getElementById('regen-status');
+      btn.disabled = true; btn.textContent = '調査中…';
+      status.style.display = 'block'; status.style.color = '#6b7280';
+      status.textContent = 'AIがサービス情報を調査しています…';
+
+      try {
+        const res = await fetch('/api/admin/affiliates/auto-fill', {
+          method: 'POST', headers: h(),
+          body: JSON.stringify({ service_name: serviceName, service_url: serviceUrl || undefined }),
+        });
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'AI生成失敗'); }
+        const aiData = await res.json();
+
+        // フォームに反映
+        const pf = document.getElementById('profile-form');
+        const sf = document.getElementById('service-form');
+        const fields = {
+          name: aiData.name || serviceName,
+          catchphrase: aiData.catchphrase || '',
+          target_desc: aiData.target_desc || '',
+          philosophy: aiData.philosophy || '',
+          guide_message: aiData.guide_message || '',
+          unique_strengths: aiData.unique_strengths || '',
+        };
+        Object.entries(fields).forEach(([k, v]) => {
+          const el = pf?.elements[k]; if (el) el.value = v;
+        });
+        if (pf?.elements['main_category'] && aiData.main_category) pf.elements['main_category'].value = aiData.main_category;
+
+        const sfFields = {
+          description: aiData.description || '',
+          provider_style: aiData.provider_style || '',
+          ideal_client_desc: aiData.ideal_client_desc || '',
+          client_before_state: aiData.client_before_state || '',
+          transformation_pattern: aiData.transformation_pattern || '',
+          best_fit_desc: aiData.best_fit_desc || '',
+          price_from: aiData.price_from !== null && aiData.price_from !== undefined ? String(aiData.price_from) : '',
+        };
+        Object.entries(sfFields).forEach(([k, v]) => {
+          const el = sf?.elements[k]; if (el) el.value = v;
+        });
+        document.querySelectorAll('[name=suitable_triggers]').forEach(cb => {
+          cb.checked = (aiData.suitable_triggers || []).includes(cb.value);
+        });
+        document.querySelectorAll('[name=handles_failure_patterns]').forEach(cb => {
+          cb.checked = (aiData.handles_failure_patterns || []).includes(cb.value);
+        });
+
+        status.style.color = '#059669';
+        status.textContent = '✅ フィールドを自動入力しました。内容を確認して各タブで「保存する」を押してください。';
+        document.getElementById('regen-section').style.background = '#f0fdf4';
+      } catch (err) {
+        status.style.color = '#ef4444';
+        status.textContent = `エラー: ${err.message}`;
+      } finally {
+        btn.disabled = false; btn.textContent = '✨ AI自動入力';
+      }
+    });
+
     // ── アフィリエイトデータ取得 ──────────────────────────────
     let affiliate = null;
 
@@ -351,6 +417,24 @@ export default function AdminAffiliateEditPage() {
             onClick={e => { const slug = document.getElementById('aff-page-link')?.href?.split('/affiliate/')?.[1]; if (slug) e.currentTarget.href = `/affiliate/${slug}`; }}>
             公開ページを見る ↗
           </a>
+        </div>
+
+        {/* AI自動入力カード */}
+        <div id="regen-section" style={{ background: 'linear-gradient(135deg,#eff6ff,#eef2ff)', border: '1px solid #c7d2fe', borderRadius: '16px', padding: '18px 20px', marginBottom: '20px' }}>
+          <div style={{ fontSize: '12px', fontWeight: '800', color: '#6366f1', marginBottom: '8px' }}>✨ AI自動入力</div>
+          <p style={{ fontSize: '12px', color: '#374151', margin: '0 0 12px', lineHeight: '1.6' }}>
+            サービス名を入力してAIに調査させると、全フィールドが自動入力されます。既存の内容は上書きされます。
+          </p>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+            <input id="regen-service-name" type="text" placeholder="サービス名（例: ローランドビューティーラウンジ）"
+              style={{ flex: '1 1 200px', padding: '8px 12px', border: '1.5px solid #c7d2fe', borderRadius: '8px', fontSize: '13px' }} />
+            <input id="regen-service-url" type="url" placeholder="公式サイトURL（任意・精度向上）"
+              style={{ flex: '1 1 180px', padding: '8px 12px', border: '1.5px solid #c7d2fe', borderRadius: '8px', fontSize: '13px' }} />
+            <button type="button" id="btn-regenerate" className="btn" style={{ fontSize: '13px', padding: '8px 16px', whiteSpace: 'nowrap' }}>
+              ✨ AI自動入力
+            </button>
+          </div>
+          <div id="regen-status" style={{ display: 'none', fontSize: '12px', marginTop: '4px' }}></div>
         </div>
 
         {/* タブナビ */}

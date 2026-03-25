@@ -117,27 +117,65 @@ export default function AdminAffiliatesPage() {
       } catch (e) { listEl.innerHTML = `<p class="muted" style="color:#ef4444">接続エラー: ${e.message}</p>`; }
     }
 
-    document.getElementById('btn-new').addEventListener('click', () => {
-      modal.style.display = 'flex';
-    });
-    document.getElementById('modal-close').addEventListener('click', () => { modal.style.display = 'none'; form.reset(); });
-    document.getElementById('modal-cancel').addEventListener('click', () => { modal.style.display = 'none'; form.reset(); });
+    function closeModal() { modal.style.display = 'none'; form.reset(); resetModalState(); }
+    function resetModalState() {
+      document.getElementById('ai-status').style.display = 'none';
+      document.getElementById('ai-status').textContent = '';
+      document.getElementById('btn-ai-fill').disabled = false;
+      document.getElementById('btn-ai-fill').textContent = '✨ AI自動入力して登録';
+    }
 
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
-      const fd = new FormData(form);
-      const data = Object.fromEntries(fd);
-      data.price_from = data.price_from ? Number(data.price_from) : null;
-      const res = await fetch('/api/admin/affiliates', { method: 'POST', headers: h(), body: JSON.stringify(data) });
-      if (res.ok) {
-        const result = await res.json();
-        modal.style.display = 'none';
-        form.reset();
-        // 作成後は編集画面へ遷移
-        window.location.href = `/admin/affiliates/${result.id}`;
-      } else {
-        const err = await res.json();
-        alert('エラー: ' + (err.error || '不明'));
+    document.getElementById('btn-new').addEventListener('click', () => { modal.style.display = 'flex'; });
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    document.getElementById('modal-cancel').addEventListener('click', closeModal);
+
+    // AI自動入力して登録
+    document.getElementById('btn-ai-fill').addEventListener('click', async () => {
+      const serviceName = form.elements['service_name'].value.trim();
+      const affiliateUrl = form.elements['affiliate_url'].value.trim();
+      const serviceUrl = form.elements['service_url'].value.trim();
+      if (!serviceName) { alert('サービス名を入力してください'); return; }
+
+      const btn = document.getElementById('btn-ai-fill');
+      const status = document.getElementById('ai-status');
+      btn.disabled = true;
+      btn.textContent = '調査中…';
+      status.style.display = 'block';
+      status.style.color = '#6b7280';
+      status.textContent = 'AIがサービス情報を調査しています…（10〜20秒かかります）';
+
+      try {
+        // Step 1: AI自動入力
+        const aiRes = await fetch('/api/admin/affiliates/auto-fill', {
+          method: 'POST', headers: h(),
+          body: JSON.stringify({ service_name: serviceName, service_url: serviceUrl || undefined }),
+        });
+        if (!aiRes.ok) { const e = await aiRes.json(); throw new Error(e.error || 'AI生成失敗'); }
+        const aiData = await aiRes.json();
+
+        btn.textContent = '登録中…';
+        status.textContent = '情報を生成しました。アフィリエイトを登録中…';
+
+        // Step 2: アフィリエイト作成
+        const createRes = await fetch('/api/admin/affiliates', {
+          method: 'POST', headers: h(),
+          body: JSON.stringify({
+            name: serviceName,
+            affiliate_url: affiliateUrl || null,
+            ...aiData,
+          }),
+        });
+        if (!createRes.ok) { const e = await createRes.json(); throw new Error(e.error || '登録失敗'); }
+        const result = await createRes.json();
+
+        status.style.color = '#059669';
+        status.textContent = '✅ 登録完了！編集画面に移動します…';
+        setTimeout(() => { window.location.href = `/admin/affiliates/${result.id}`; }, 800);
+      } catch (err) {
+        status.style.color = '#ef4444';
+        status.textContent = `エラー: ${err.message}`;
+        btn.disabled = false;
+        btn.textContent = '✨ AI自動入力して登録';
       }
     });
 
@@ -162,41 +200,46 @@ export default function AdminAffiliatesPage() {
         </section>
       </div>
 
-      {/* 新規作成モーダル（最小限の項目のみ — 詳細は編集画面で） */}
+      {/* 新規作成モーダル */}
       <div className="modal-overlay" id="modal" style={{ display: 'none' }}>
         <div className="modal-box">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <h2 style={{ margin: '0', fontSize: '18px' }}>アフィリエイトを追加</h2>
             <button type="button" id="modal-close" style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6b7280' }}>✕</button>
           </div>
-          <p className="muted" style={{ fontSize: '12px', marginBottom: '16px' }}>まず基本情報を入力してください。詳細は次の編集画面で設定できます。</p>
+
+          {/* AI自動入力の説明 */}
+          <div style={{ background: 'linear-gradient(135deg,#eff6ff,#eef2ff)', border: '1px solid #c7d2fe', borderRadius: '12px', padding: '14px 16px', marginBottom: '20px' }}>
+            <div style={{ fontSize: '12px', fontWeight: '800', color: '#6366f1', marginBottom: '6px' }}>✨ AI自動入力モード</div>
+            <p style={{ fontSize: '12px', color: '#374151', margin: '0', lineHeight: '1.6' }}>
+              サービス名を入力してボタンを押すと、AIがサービスを調査してFinemeの全フィールドを自動入力します。
+              登録後に編集画面で内容を確認・修正できます。
+            </p>
+          </div>
+
           <form id="aform" className="stack">
-            <div className="form-field"><label>掲載名 *</label><input name="name" required placeholder="例: スカルプDオンライン診断" /></div>
             <div className="form-field">
-              <label>メインカテゴリ *</label>
-              <select name="main_category" required>
-                <option value="">選択</option>
-                <option value="gym">パーソナルジム</option>
-                <option value="eyebrow">眉毛サロン</option>
-                <option value="hair">ヘア・美容院</option>
-                <option value="skin">肌・エステ</option>
-                <option value="fashion">ファッション</option>
-                <option value="photo">写真撮影</option>
-                <option value="consulting">外見トータルサポート</option>
-                <option value="makeup">メイク</option>
-                <option value="nail">ネイル</option>
-                <option value="hairremoval">脱毛</option>
-                <option value="whitening">ホワイトニング</option>
-                <option value="orthodontics">歯科矯正</option>
-                <option value="marriage">結婚相談所</option>
-                <option value="diagnosis">骨格診断</option>
-                <option value="aga">AGA・薄毛治療</option>
-              </select>
+              <label>サービス名 *</label>
+              <input name="service_name" required placeholder="例: ローランドビューティーラウンジ" />
+              <small style={{ fontSize: '11px', color: '#9ca3af' }}>AIがこの名前で情報を調査します</small>
             </div>
-            <div className="form-field"><label>アフィリエイトURL（PR先リンク）</label><input name="affiliate_url" type="url" placeholder="https://..." /></div>
+            <div className="form-field">
+              <label>アフィリエイトURL（PR先リンク）*</label>
+              <input name="affiliate_url" required placeholder="https://px.a8.net/..." />
+              <small style={{ fontSize: '11px', color: '#9ca3af' }}>A8.netなどのトラッキングURLを貼り付け</small>
+            </div>
+            <div className="form-field">
+              <label>サービスの公式サイトURL（任意・精度向上）</label>
+              <input name="service_url" type="url" placeholder="https://..." />
+              <small style={{ fontSize: '11px', color: '#9ca3af' }}>入力するとAIがサイトを読んでより正確な情報を生成します</small>
+            </div>
+
+            {/* ステータス表示 */}
+            <div id="ai-status" style={{ display: 'none', fontSize: '13px', padding: '10px 12px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}></div>
+
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
               <button type="button" className="btn btn-ghost" id="modal-cancel">キャンセル</button>
-              <button type="submit" className="btn">追加して編集する →</button>
+              <button type="button" className="btn" id="btn-ai-fill">✨ AI自動入力して登録</button>
             </div>
           </form>
         </div>
