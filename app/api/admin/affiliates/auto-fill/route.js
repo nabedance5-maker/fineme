@@ -74,8 +74,9 @@ Finemeは「恋愛に悩む男性向けの外見磨きサービス」のポー�
 
 【各フィールドの指示】
 
-main_category（以下から必ず1つ選択）:
+main_category（以下の値のみ使用可・必ず1つ選択・それ以外の値は絶対に使わないこと）:
 gym / eyebrow / hair / esthetic / fashion / photo / consulting / makeup / nail / hairremoval / whitening / orthodontics / marriage / diagnosis / aga
+※ マッチングアプリ・婚活サービスは必ず "marriage" を使うこと。"matching_app" は存在しない。
 
 catchphrase（20〜40文字）:
 変わりたい30代男性に刺さるコピー。「あなた」に語りかける形で。
