@@ -618,7 +618,7 @@ export default function NewMeNaviPage() {
       let prereqHtml = '';
       if (prereqSteps.length > 0) {
         const prereqItems = prereqSteps.map((step, i) => {
-          const doneKey = `${axisKey}-${i}`;
+          const doneKey = `prereq-${axisKey}-${i}`;  // メインステップと別キー空間
           const isDone = !!stepDone[doneKey];
           return `
             <div class="prereq-item${isDone ? ' step-done' : ''}">
