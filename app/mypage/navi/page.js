@@ -126,6 +126,18 @@ export default function NewMeNaviPage() {
       .subtab-btn.active { background: rgba(201,168,76,0.12); border-color: #c9a84c; color: #0a0f1e; }
       .subtab-note { font-size: 11px; color: #f59e0b; background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; }
 
+      /* ── 出発前チェック ── */
+      .prereq-section { background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 10px; padding: 12px 14px 10px; margin-bottom: 14px; }
+      .prereq-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; flex-wrap: wrap; gap: 6px; }
+      .prereq-title { font-size: 11px; font-weight: 800; color: #6b7280; letter-spacing: .08em; text-transform: uppercase; }
+      .prereq-note { font-size: 11px; color: #9ca3af; line-height: 1.5; margin: 0 0 10px; }
+      .prereq-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid #f3f4f6; position: relative; }
+      .prereq-item:last-child { border-bottom: none; padding-bottom: 0; }
+      .prereq-box { width: 16px; height: 16px; border-radius: 3px; border: 1.5px solid #d1d5db; background: #fff; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #10b981; transition: all .15s; cursor: pointer; }
+      .prereq-box.checked { background: #10b981; border-color: #10b981; color: #fff; }
+      .prereq-text { font-size: 13px; color: #4b5563; line-height: 1.5; flex: 1; padding-right: 4px; }
+      .prereq-item.step-done .prereq-text { text-decoration: line-through; color: #9ca3af; }
+
       /* ── Bottom ── */
       .navi-footer { margin-top: 32px; display: flex; flex-direction: column; gap: 10px; }
       .navi-footer-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; border-radius: 14px; font-size: 14px; font-weight: 700; text-decoration: none; transition: opacity .15s; }
@@ -596,7 +608,37 @@ export default function NewMeNaviPage() {
     // ── マイルストーンHTML生成（共通） ──
     function buildMilestoneItems(steps, careType, isExpanded, catLink, axisKey) {
       const currentIdx = steps.findIndex(s => s.isCurrentFor === careType);
-      const items = steps.map((step, i) => {
+      // isCurrentFor: 'concerned' 以前のステップを「出発前チェック」として分離
+      const concernedIdx = steps.findIndex(s => s.isCurrentFor === 'concerned');
+      const splitAt = concernedIdx > 0 ? concernedIdx : 0;
+      const prereqSteps = splitAt > 0 ? steps.slice(0, splitAt) : [];
+      const mainSteps   = steps.slice(splitAt);
+
+      // 出発前チェックHTML
+      let prereqHtml = '';
+      if (prereqSteps.length > 0) {
+        const prereqItems = prereqSteps.map((step, i) => {
+          const doneKey = `${axisKey}-${i}`;
+          const isDone = !!stepDone[doneKey];
+          return `
+            <div class="prereq-item${isDone ? ' step-done' : ''}">
+              <div class="prereq-box${isDone ? ' checked' : ''}" data-done-key="${esc(doneKey)}">${isDone ? '✓' : ''}</div>
+              <span class="prereq-text">${esc(step.text)}</span>
+            </div>`;
+        }).join('');
+        prereqHtml = `
+          <div class="prereq-section">
+            <div class="prereq-header">
+              <span class="prereq-title">出発前チェック（任意）</span>
+            </div>
+            <p class="prereq-note">全部揃ってなくてもOK。いきなりプロに頼むのも正解です。</p>
+            ${prereqItems}
+          </div>`;
+      }
+
+      // メインステップHTML
+      const items = mainSteps.map((step, j) => {
+        const i = splitAt + j; // 元のインデックス（doneKeyのため）
         const doneKey = `${axisKey}-${i}`;
         const isDone = !!stepDone[doneKey];
         const isCurrentPosition = (i === currentIdx);
@@ -616,10 +658,10 @@ export default function NewMeNaviPage() {
         return `
           <div class="milestone-item${isDone?' step-done':''}">
             <div class="milestone-dot-wrap">
-              ${i > 0 ? '<div class="milestone-connector"></div>' : ''}
+              ${j > 0 ? '<div class="milestone-connector"></div>' : ''}
               <div class="milestone-dot ${dotClass}"></div>
             </div>
-            <div style="padding-top:${i>0?'12px':'0'};padding-right:36px;flex:1">
+            <div style="padding-top:${j>0?'12px':'0'};padding-right:36px;flex:1">
               ${labelHtml}
               <p class="milestone-text">${esc(step.text)}</p>
               ${guideHtml}${noteHtml}
@@ -628,9 +670,11 @@ export default function NewMeNaviPage() {
           </div>
         `;
       }).join('');
+
       const collapseClass = isExpanded ? '' : ' collapsed';
-      const expandBtn = isExpanded ? '' : `<button class="milestone-expand-btn" data-expand="true">＋ すべてのステップを見る（${steps.length}ステップ）</button>`;
-      return `<div class="milestone-list${collapseClass}">${items}</div>${expandBtn}`;
+      const mainCount = mainSteps.length;
+      const expandBtn = isExpanded ? '' : `<button class="milestone-expand-btn" data-expand="true">＋ すべてのステップを見る（${mainCount}ステップ）</button>`;
+      return `${prereqHtml}<div class="milestone-list${collapseClass}">${items}</div>${expandBtn}`;
     }
 
     // ── ミニ進捗ドット（折りたたみ時） ──
@@ -938,16 +982,15 @@ export default function NewMeNaviPage() {
       }
     });
 
-    // ── ステップ完了チェックボタン ──
+    // ── ステップ完了チェックボタン（メインステップ + 出発前チェック共通） ──
     root.addEventListener('click', (e) => {
-      const btn = e.target.closest('.step-check-btn');
+      const btn = e.target.closest('.step-check-btn, .prereq-box');
       if (!btn) return;
       const key = btn.dataset.doneKey;
       if (!key) return;
       const isDone = !!stepDone[key];
       if (isDone) { delete stepDone[key]; } else { stepDone[key] = true; }
       try { localStorage.setItem(STEP_DONE_KEY, JSON.stringify(stepDone)); } catch {}
-      // Supabase保存（非同期・失敗しても無視）
       if (token) {
         fetch('/api/me/profile', {
           method: 'PUT',
@@ -955,17 +998,24 @@ export default function NewMeNaviPage() {
           body: JSON.stringify({ step_done: stepDone }),
         }).catch(() => {});
       }
-      // DOM更新
-      const item = btn.closest('.milestone-item');
-      if (item) {
-        item.classList.toggle('step-done', !isDone);
+      // メインステップのDOM更新
+      const milestoneItem = btn.closest('.milestone-item');
+      if (milestoneItem) {
+        milestoneItem.classList.toggle('step-done', !isDone);
         btn.classList.toggle('checked', !isDone);
         btn.textContent = !isDone ? '✓' : '';
-        const dot = item.querySelector('.milestone-dot');
+        const dot = milestoneItem.querySelector('.milestone-dot');
         if (dot && !dot.classList.contains('current') && !dot.classList.contains('goal')) {
           dot.classList.toggle('past', !isDone);
           dot.classList.toggle('future', isDone);
         }
+      }
+      // 出発前チェックのDOM更新
+      const prereqItem = btn.closest('.prereq-item');
+      if (prereqItem) {
+        prereqItem.classList.toggle('step-done', !isDone);
+        btn.classList.toggle('checked', !isDone);
+        btn.textContent = !isDone ? '✓' : '';
       }
     });
 
