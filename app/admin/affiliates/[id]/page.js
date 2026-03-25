@@ -6,7 +6,7 @@ const CAT_OPTIONS = [
   { value: 'gym',          label: 'パーソナルジム' },
   { value: 'eyebrow',      label: '眉毛サロン' },
   { value: 'hair',         label: 'ヘア・美容院' },
-  { value: 'skin',         label: '肌・エステ' },
+  { value: 'esthetic',     label: '肌・エステ' },
   { value: 'fashion',      label: 'ファッション' },
   { value: 'photo',        label: '写真撮影' },
   { value: 'consulting',   label: '外見トータルサポート' },

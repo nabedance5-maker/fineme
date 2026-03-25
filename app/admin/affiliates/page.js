@@ -43,7 +43,7 @@ export default function AdminAffiliatesPage() {
     function h() { return { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY }; }
     function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function catLabel(c) {
-      return { gym:'ジム', eyebrow:'眉毛', hair:'ヘア', skin:'肌', fashion:'ファッション',
+      return { gym:'ジム', eyebrow:'眉毛', hair:'ヘア', skin:'肌', esthetic:'肌・エステ', fashion:'ファッション',
                photo:'写真', consulting:'コンサル', makeup:'メイク', nail:'ネイル',
                hairremoval:'脱毛', whitening:'ホワイトニング', orthodontics:'矯正',
                marriage:'婚活', diagnosis:'骨格診断', aga:'AGA' }[c] || c;
