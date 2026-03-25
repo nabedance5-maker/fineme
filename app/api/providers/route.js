@@ -116,14 +116,7 @@ export async function GET(request) {
   // ── プロバイダー一覧取得（充実度判定に必要なフィールドも含む）──
   let query = supabase
     .from('providers')
-    .select(`
-      id,slug,name,catchphrase,main_category,sub_categories,area,price_from,
-      photo_url,cover_image_url,provider_style,
-      suitable_triggers,handles_failure_patterns,
-      philosophy,guide_message,unique_strengths,target_desc,
-      facility_photo_1,facility_photo_2,facility_photo_3,
-      ai_match_profile,entity_type,affiliate_url
-    `)
+    .select('*')
     .eq('published', true)
     .eq('admin_hidden', false);
 
