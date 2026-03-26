@@ -48,11 +48,17 @@ function ReservationCard({ r, onRefresh, accessToken }) {
     .trim();
 
   async function patchStatus(status, extra = {}) {
+    if (!accessToken) {
+      if (confirm('この操作にはログインが必要です。ログインページへ移動しますか？')) {
+        window.location.href = '/login';
+      }
+      return;
+    }
     setActing(true);
     try {
       const res = await fetch(`/api/reservations/${r.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}) },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
         body: JSON.stringify({ status, ...extra }),
       });
       if (res.ok) onRefresh();
