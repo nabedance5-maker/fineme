@@ -56,6 +56,8 @@ export default async function FeatureListPage({ searchParams }) {
           />
         </form>
 
+        <style dangerouslySetInnerHTML={{ __html: `.feature-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-gold) !important; }` }} />
+
         {/* 記事グリッド */}
         {articles.length === 0 ? (
           <p className="muted" style={{ textAlign: 'center', padding: '48px 0' }}>
@@ -85,7 +87,7 @@ function ArticleCard({ article }) {
 
   return (
     <Link href={`/feature/${article.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
-      <article style={{
+      <article className="feature-card" style={{
         background: 'rgba(255,255,255,0.52)',
         border: '1px solid rgba(201,168,76,0.2)',
         borderRadius: '16px',
@@ -93,10 +95,7 @@ function ArticleCard({ article }) {
         transition: 'transform 0.2s ease, box-shadow 0.2s ease',
         height: '100%',
         boxShadow: 'var(--shadow-sm)',
-      }}
-        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = 'var(--shadow-gold)'; }}
-        onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
-      >
+      }}>
         {article.thumbnail && (
           <div style={{ aspectRatio: '16/9', overflow: 'hidden' }}>
             <img
