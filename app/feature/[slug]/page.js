@@ -2,16 +2,17 @@ import { notFound } from 'next/navigation';
 import { getAllArticles, getArticle } from '@/lib/articles';
 import { ArticleBlocks } from '@/app/_components/ArticleBlocks';
 import { ParallaxImg } from '@/app/_components/ParallaxImg';
+import { PersonalizedServices } from '@/app/_components/PersonalizedServices';
 import { getSupabase } from '@/lib/supabase';
 import Link from 'next/link';
 
 export const revalidate = 3600;
 
-// カテゴリ → 関連サービスカテゴリ
+// カテゴリ → 関連サービスカテゴリ（広めに取得してクライアントでパーソナライズ）
 const ARTICLE_TO_SERVICE_CAT = {
-  '清潔感':    ['hair', 'esthetic', 'eyebrow'],
-  '写真撮影':  ['photo'],
-  '変容の思想': ['consulting', 'diagnosis'],
+  '清潔感':    ['hair', 'esthetic', 'eyebrow', 'whitening', 'makeup'],
+  '写真撮影':  ['photo', 'consulting', 'makeup'],
+  '変容の思想': ['consulting', 'diagnosis', 'gym', 'fashion'],
 };
 
 async function getRelatedProviders(category) {
@@ -24,7 +25,7 @@ async function getRelatedProviders(category) {
       .eq('status', 'published')
       .is('admin_hidden', null)
       .in('main_category', cats)
-      .limit(5);
+      .limit(10);
     return data || [];
   } catch { return []; }
 }
@@ -57,11 +58,6 @@ export async function generateMetadata({ params }) {
   };
 }
 
-// カテゴリ日本語ラベル
-const CAT_LABEL = {
-  hair: 'ヘア', esthetic: '肌・エステ', eyebrow: '眉毛サロン',
-  photo: '写真撮影', consulting: 'トータルサポート', diagnosis: '骨格診断',
-};
 
 export default async function ArticlePage({ params }) {
   const [article, relatedProviders] = await Promise.all([
@@ -210,57 +206,12 @@ export default async function ArticlePage({ params }) {
               <p style={{ color: 'rgba(255,255,255,0.35)', textAlign: 'center', padding: '40px 0' }}>コンテンツを準備中です。</p>
             )}
 
-            {/* ── 関連サービス ── */}
+            {/* ── 関連サービス（パーソナライズ） ── */}
             {relatedProviders.length > 0 && (
-              <div style={{ marginTop: '60px', paddingTop: '48px', borderTop: '1px solid rgba(201,168,76,0.15)' }}>
-                {/* sec-label スタイル */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                  <div style={{ width: '24px', height: '1.5px', background: '#c9a84c', borderRadius: '1px', flexShrink: 0 }} />
-                  <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.8)', margin: 0 }}>
-                    この記事に関連するサービス
-                  </p>
-                  <div style={{ flex: 1, height: '1px', background: 'repeating-linear-gradient(90deg,rgba(201,168,76,0.3) 0,rgba(201,168,76,0.3) 4px,transparent 4px,transparent 9px)' }} />
-                </div>
-                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', margin: '0 0 20px', lineHeight: 1.6 }}>
-                  読んだ内容を実践できるプロが見つかります。
-                </p>
-                {/* 横スクロールカード */}
-                <div style={{ display: 'flex', gap: '14px', overflowX: 'auto', paddingBottom: '12px', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', marginLeft: '-4px', paddingLeft: '4px' }}>
-                  {relatedProviders.map(p => (
-                    <Link key={p.id} href={p.entity_type === 'affiliate' ? `/affiliate/${p.slug}` : `/provider/${p.slug}`}
-                      style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 'clamp(200px, 42vw, 240px)', scrollSnapAlign: 'start' }}>
-                      <div style={{ border: '1px solid rgba(201,168,76,0.2)', borderRadius: '14px', overflow: 'hidden', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(4px)', transition: 'border-color 0.15s' }}>
-                        {p.thumbnail ? (
-                          <img src={p.thumbnail} alt={p.name} style={{ width: '100%', height: '130px', objectFit: 'cover', display: 'block' }} />
-                        ) : (
-                          <div style={{ height: '130px', background: 'linear-gradient(135deg, #0a0f1e, #1e2b54)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ fontSize: '28px' }}>✨</span>
-                          </div>
-                        )}
-                        <div style={{ padding: '12px' }}>
-                          <p style={{ fontSize: '10px', color: '#c9a84c', fontWeight: 800, letterSpacing: '0.08em', margin: '0 0 5px', textTransform: 'uppercase' }}>
-                            {CAT_LABEL[p.main_category] || p.main_category}
-                          </p>
-                          <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', margin: '0 0 5px', lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                            {p.name}
-                          </p>
-                          {p.tagline && (
-                            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', margin: 0, lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                              {p.tagline}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-                <div style={{ textAlign: 'right', marginTop: '10px' }}>
-                  <Link href={`/search?category=${ARTICLE_TO_SERVICE_CAT[article.category]?.[0] || ''}`}
-                    style={{ fontSize: '12px', color: '#c9a84c', fontWeight: 700, textDecoration: 'none' }}>
-                    関連サービスをもっと見る →
-                  </Link>
-                </div>
-              </div>
+              <PersonalizedServices
+                providers={relatedProviders}
+                firstCat={ARTICLE_TO_SERVICE_CAT[article.category]?.[0] || ''}
+              />
             )}
           </div>
 
