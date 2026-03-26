@@ -121,7 +121,8 @@ export async function GET(request) {
     .or('admin_hidden.eq.false,admin_hidden.is.null');
 
   if (category) query = query.eq('main_category', category);
-  if (area) query = query.ilike('area', `%${area}%`);
+  // エリアフィルター：アフィリエイト（area=null）は全国対応のため常に含める
+  if (area) query = query.or(`area.ilike.%${area}%,entity_type.eq.affiliate`);
 
   const { data: providers, error } = await query;
   if (error) return Response.json({ error: error.message }, { status: 500 });
