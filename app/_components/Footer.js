@@ -9,7 +9,7 @@ export default function Footer() {
           <Link href="/tokusho" style={{fontSize:'13px', color:'inherit'}}>特定商取引法</Link>
           <Link href="/privacy" style={{fontSize:'13px', color:'inherit'}}>プライバシーポリシー</Link>
           <Link href="/terms" style={{fontSize:'13px', color:'inherit'}}>利用規約</Link>
-          <Link href="/about-fineme" style={{fontSize:'13px', color:'inherit'}}>About Fineme</Link>
+          <Link href="/about" style={{fontSize:'13px', color:'inherit'}}>About Fineme</Link>
           <Link href="/provider/join" style={{fontSize:'13px', color:'inherit'}}>掲載をご検討中の方</Link>
           <Link href="/login?type=provider" style={{fontSize:'13px', color:'inherit'}}>掲載者ログイン</Link>
         </nav>

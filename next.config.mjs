@@ -16,7 +16,7 @@ const nextConfig = {
       { source: '/pages/terms-provider.html', destination: '/terms-provider', permanent: true },
       { source: '/pages/tokusho.html', destination: '/tokusho', permanent: true },
       { source: '/pages/about.html', destination: '/about', permanent: true },
-      { source: '/pages/about-fineme.html', destination: '/about-fineme', permanent: true },
+      { source: '/pages/about-fineme.html', destination: '/about', permanent: true },
       { source: '/pages/glowup-guide.html', destination: '/guide', permanent: true },
       { source: '/pages/notifications.html', destination: '/notifications', permanent: true },
       { source: '/pages/mypage/index.html', destination: '/mypage', permanent: true },
