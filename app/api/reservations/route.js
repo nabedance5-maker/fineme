@@ -6,6 +6,17 @@ import { sendLinePush } from '@/lib/line-push';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
+// スパム対策: 同一IPから1分間に5件まで
+const _postRateMap = new Map();
+function checkPostRateLimit(ip) {
+  const now = Date.now();
+  const entry = _postRateMap.get(ip) || { count: 0, reset: now + 60000 };
+  if (now > entry.reset) { entry.count = 0; entry.reset = now + 60000; }
+  entry.count++;
+  _postRateMap.set(ip, entry);
+  return entry.count <= 5;
+}
+
 async function verifyAuth(request) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   if (!token) return null;
@@ -53,6 +64,10 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  if (!checkPostRateLimit(ip)) {
+    return Response.json({ error: 'しばらく時間をおいてから再送信してください' }, { status: 429 });
+  }
   const body = await request.json();
   // preferred_date/preferred_time/message はフロントからの名前。DB上は reserved_date/start_time/note
   const { provider_id, user_name, user_contact, preferred_date, preferred_time, message, user_id } = body;
