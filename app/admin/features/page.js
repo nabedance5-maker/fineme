@@ -131,7 +131,8 @@ export default function AdminFeaturesPage() {
       const fSummary = document.getElementById('feature-summary'); if (fSummary) fSummary.value = f?.summary || '';
       const th = document.getElementById('feature-thumbnail'); if (th) { th.value = f?.thumbnail || ''; }
       updateThumbPreview(f?.thumbnail || '');
-      const html = f?.body || '';
+      // blocksがある場合はHTML変換して本文エディタに読み込む
+      const html = (f?.blocks ? blocksToHtml(f.blocks) : null) || f?.body || '';
       const ed = document.getElementById('feature-body-editor');
       if (ed) {
         ed.innerHTML = '';
@@ -141,8 +142,6 @@ export default function AdminFeaturesPage() {
         });
       }
       try { const ta = document.getElementById('feature-body'); if (ta) { ta.value = sanitizeHtml(html); } } catch {}
-      const fBlocks = document.getElementById('feature-blocks');
-      if (fBlocks) fBlocks.value = f?.blocks ? JSON.stringify(f.blocks, null, 2) : '';
       const fStatus = document.getElementById('feature-status'); if (fStatus) fStatus.value = f?.status || 'draft';
     }
 
@@ -157,12 +156,7 @@ export default function AdminFeaturesPage() {
         summary: (document.getElementById('feature-summary')?.value || '').toString(),
         thumbnail: (document.getElementById('feature-thumbnail')?.value || '').toString().trim(),
         body: (document.getElementById('feature-body')?.value || '').toString(),
-        blocks: (() => {
-          try {
-            const v = (document.getElementById('feature-blocks')?.value || '').trim();
-            return v ? JSON.parse(v) : null;
-          } catch { return null; }
-        })(),
+        blocks: null, // 本文エディタで編集した場合はbodyとして保存、blocksはクリア
         status: document.getElementById('feature-status')?.value || 'draft'
       };
     }
@@ -181,6 +175,241 @@ export default function AdminFeaturesPage() {
         if (!pv || !ta || !ed) return;
         pv.innerHTML = ta.value || sanitizeHtml(ed.innerHTML || '');
       } catch {}
+    }
+
+    // ── ブロックエディタ ───────────────────────────────────────────────────
+    let _blocks = [];
+
+    const BLOCK_TYPES = {
+      lead:      { label: 'リード文',        color: '#0a0f1e' },
+      h2:        { label: '見出し H2',       color: '#c9a84c' },
+      h3:        { label: '小見出し H3',     color: '#9ca3af' },
+      text:      { label: '本文テキスト',    color: '#374151' },
+      tip:       { label: 'ポイント TIP',    color: '#059669' },
+      callout:   { label: 'コールアウト',    color: '#7c3aed' },
+      quote:     { label: '引用',            color: '#dc2626' },
+      checklist: { label: 'チェックリスト', color: '#ea580c' },
+      steps:     { label: 'ステップ',        color: '#2563eb' },
+      cta:       { label: 'CTA ボタン',      color: '#c9a84c' },
+    };
+
+    function bEsc(s) {
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function serializeBlocks() {
+      const ta = document.getElementById('feature-blocks-json');
+      if (ta) ta.value = _blocks.length ? JSON.stringify(_blocks) : '';
+    }
+
+    function renderBlockCard(b, i) {
+      const type = BLOCK_TYPES[b.type] || { label: b.type, color: '#9ca3af' };
+      const isFirst = i === 0, isLast = i === _blocks.length - 1;
+      let fields = '';
+      const ta = (field, val, rows=4, ph='') => `<textarea data-field="${field}" rows="${rows}" placeholder="${ph}" style="width:100%;resize:vertical;font-size:14px;padding:8px;border:1px solid #e5e7eb;border-radius:6px;box-sizing:border-box">${bEsc(val)}</textarea>`;
+      const inp = (field, val, ph='', fw='') => `<input type="text" data-field="${field}" placeholder="${ph}" value="${bEsc(val)}" style="width:100%;padding:6px 8px;margin-bottom:6px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;${fw?'font-weight:'+fw+';':''}box-sizing:border-box">`;
+      switch (b.type) {
+        case 'lead': case 'text': case 'callout': case 'quote':
+          fields = ta('text', b.text||'', b.type==='lead'?3:4); break;
+        case 'h2':
+          fields = inp('text', b.text||'', '見出しテキスト', '800'); break;
+        case 'h3':
+          fields = inp('text', b.text||'', '小見出しテキスト', '700'); break;
+        case 'tip':
+          fields = inp('label', b.label||'', 'ラベル（例：POINT）') + ta('text', b.text||'', 3); break;
+        case 'cta':
+          fields = ta('text', b.text||'', 2, '説明文')
+            + inp('buttonLabel', b.buttonLabel||'', 'ボタンラベル（例：Me Scanで診断する）')
+            + inp('buttonHref', b.buttonHref||'', 'リンク先（例：/diagnosis）'); break;
+        case 'checklist': {
+          const items = (b.items||[]).map((item,j)=>`
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+              <input type="text" data-cl-item="${j}" value="${bEsc(item)}" style="flex:1;padding:5px 8px;border:1px solid #e5e7eb;border-radius:5px;font-size:13px">
+              <button type="button" data-cl-del="${j}" style="padding:2px 8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;font-size:12px;color:#dc2626">✕</button>
+            </div>`).join('');
+          fields = inp('title', b.title||'', 'リストのタイトル（任意）', '700')
+            + `<div data-cl-list>${items}</div>`
+            + `<button type="button" data-cl-add style="margin-top:4px;padding:5px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;cursor:pointer;font-size:12px;color:#15803d">＋ 項目を追加</button>`;
+          break;
+        }
+        case 'steps': {
+          const items = (b.items||[]).map((item,j)=>{
+            const t = typeof item==='object'?item.title||'':item;
+            const tx = typeof item==='object'?item.text||'':'';
+            return `<div data-step-item="${j}" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:6px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <span style="font-size:11px;font-weight:700;color:#6b7280">STEP ${j+1}</span>
+                <button type="button" data-step-del="${j}" style="padding:2px 8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;font-size:11px;color:#dc2626">削除</button>
+              </div>
+              <input type="text" data-step-title="${j}" placeholder="タイトル" value="${bEsc(t)}" style="width:100%;padding:5px 8px;margin-bottom:4px;border:1px solid #e5e7eb;border-radius:5px;font-size:13px;font-weight:700;box-sizing:border-box">
+              <textarea data-step-text="${j}" rows="2" placeholder="説明文" style="width:100%;resize:vertical;padding:5px 8px;border:1px solid #e5e7eb;border-radius:5px;font-size:13px;box-sizing:border-box">${bEsc(tx)}</textarea>
+            </div>`;
+          }).join('');
+          fields = `<div data-step-list>${items}</div>`
+            + `<button type="button" data-step-add style="margin-top:4px;padding:5px 12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;cursor:pointer;font-size:12px;color:#2563eb">＋ ステップを追加</button>`;
+          break;
+        }
+      }
+      return `<div data-block-idx="${i}" style="border:1px solid #e5e7eb;border-radius:10px;background:#fff;margin-bottom:10px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f9fafb;border-bottom:1px solid #e5e7eb">
+          <span style="font-size:11px;font-weight:800;color:#fff;background:${type.color};padding:2px 10px;border-radius:99px">${type.label}</span>
+          <span style="flex:1"></span>
+          <button type="button" data-block-up="${i}" style="padding:2px 7px;border:1px solid #e5e7eb;border-radius:4px;background:#fff;cursor:pointer;opacity:${isFirst?.35:1}">↑</button>
+          <button type="button" data-block-dn="${i}" style="padding:2px 7px;border:1px solid #e5e7eb;border-radius:4px;background:#fff;cursor:pointer;opacity:${isLast?.35:1}">↓</button>
+          <button type="button" data-block-del="${i}" style="padding:2px 8px;border:1px solid #fca5a5;border-radius:4px;background:#fee2e2;cursor:pointer;font-size:12px;color:#dc2626">✕</button>
+        </div>
+        <div style="padding:12px" data-block-fields="${i}">${fields}</div>
+      </div>`;
+    }
+
+    function renderBlockEditor() {
+      const list = document.getElementById('block-editor-list');
+      if (!list) return;
+      list.innerHTML = _blocks.length
+        ? _blocks.map((b,i) => renderBlockCard(b,i)).join('')
+        : '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:20px 0">ブロックがありません。下の「＋ブロックを追加」から追加してください。</p>';
+    }
+
+    function readBlockEditorState() {
+      const list = document.getElementById('block-editor-list');
+      if (!list) return;
+      _blocks.forEach((b, i) => {
+        const card = list.querySelector(`[data-block-fields="${i}"]`);
+        if (!card) return;
+        // simple fields
+        card.querySelectorAll('[data-field]').forEach(el => {
+          b[el.dataset.field] = el.value;
+        });
+        // checklist items
+        if (b.type === 'checklist') {
+          const clItems = card.querySelectorAll('[data-cl-item]');
+          b.items = Array.from(clItems).map(el => el.value);
+        }
+        // steps items
+        if (b.type === 'steps') {
+          const stepItems = card.querySelectorAll('[data-step-item]');
+          b.items = Array.from(stepItems).map((_, j) => ({
+            title: (card.querySelector(`[data-step-title="${j}"]`)?.value || ''),
+            text:  (card.querySelector(`[data-step-text="${j}"]`)?.value  || ''),
+          }));
+        }
+      });
+    }
+
+    function initBlockEditor(blocks) {
+      _blocks = Array.isArray(blocks) ? blocks.map(b => ({ ...b,
+        items: Array.isArray(b.items) ? b.items.map(it => typeof it==='object' ? {...it} : it) : undefined
+      })) : [];
+      renderBlockEditor();
+      serializeBlocks();
+    }
+
+    // blocks → HTML 変換（既存の本文エディタに読み込むため）
+    function blocksToHtml(blocks) {
+      if (!Array.isArray(blocks)) return '';
+      return blocks.map(b => {
+        const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const nl2br = s => esc(s).replace(/\n/g,'<br>');
+        switch (b.type) {
+          case 'lead':
+            return `<p class="fb-text" style="font-size:17px;line-height:1.9;font-weight:500">${nl2br(b.text)}</p>`;
+          case 'h2':  return `<h2>${esc(b.text)}</h2>`;
+          case 'h3':  return `<h3>${esc(b.text)}</h3>`;
+          case 'text': return `<p>${nl2br(b.text)}</p>`;
+          case 'tip':
+            return `<blockquote><strong>${esc(b.label||'POINT')}</strong><br>${nl2br(b.text)}</blockquote>`;
+          case 'callout':
+            return `<blockquote>${nl2br(b.text)}</blockquote>`;
+          case 'quote':
+            return `<blockquote>${nl2br(b.text)}</blockquote>`;
+          case 'checklist': {
+            const title = b.title ? `<p><strong>${esc(b.title)}</strong></p>` : '';
+            const items = (b.items||[]).map(item=>`<li>${esc(item)}</li>`).join('');
+            return `${title}<ul>${items}</ul>`;
+          }
+          case 'steps': {
+            const items = (b.items||[]).map(item => {
+              const t = typeof item==='object' ? item.title||'' : item;
+              const d = typeof item==='object' ? item.text||'' : '';
+              return `<li><strong>${esc(t)}</strong>${d ? `<br>${nl2br(d)}` : ''}</li>`;
+            }).join('');
+            return `<ol>${items}</ol>`;
+          }
+          case 'cta':
+            return `<blockquote>${nl2br(b.text)}<br><a href="${esc(b.buttonHref)}">${esc(b.buttonLabel)}</a></blockquote>`;
+          default:
+            return b.text ? `<p>${nl2br(b.text)}</p>` : '';
+        }
+      }).join('\n');
+    }
+
+    function setupBlockEditorEvents() {
+      const container = document.getElementById('block-editor-container');
+      if (!container) return;
+
+      // イベント委任
+      container.addEventListener('input', e => {
+        readBlockEditorState();
+        serializeBlocks();
+      });
+
+      container.addEventListener('click', e => {
+        const t = e.target;
+
+        // ── ブロック削除
+        if (t.dataset.blockDel !== undefined) {
+          readBlockEditorState();
+          _blocks.splice(Number(t.dataset.blockDel), 1);
+          renderBlockEditor(); serializeBlocks(); return;
+        }
+        // ── 上に移動
+        if (t.dataset.blockUp !== undefined) {
+          const idx = Number(t.dataset.blockUp);
+          if (idx > 0) { readBlockEditorState(); [_blocks[idx-1],_blocks[idx]]=[_blocks[idx],_blocks[idx-1]]; renderBlockEditor(); serializeBlocks(); } return;
+        }
+        // ── 下に移動
+        if (t.dataset.blockDn !== undefined) {
+          const idx = Number(t.dataset.blockDn);
+          if (idx < _blocks.length-1) { readBlockEditorState(); [_blocks[idx],_blocks[idx+1]]=[_blocks[idx+1],_blocks[idx]]; renderBlockEditor(); serializeBlocks(); } return;
+        }
+        // ── チェックリスト: 項目追加
+        if (t.dataset.clAdd !== undefined) {
+          readBlockEditorState();
+          const card = t.closest('[data-block-idx]');
+          if (card) { const idx = Number(card.dataset.blockIdx); if (_blocks[idx]) { _blocks[idx].items = [...(_blocks[idx].items||[]), '']; renderBlockEditor(); serializeBlocks(); } } return;
+        }
+        // ── チェックリスト: 項目削除
+        if (t.dataset.clDel !== undefined) {
+          readBlockEditorState();
+          const card = t.closest('[data-block-idx]');
+          if (card) { const idx = Number(card.dataset.blockIdx); if (_blocks[idx]) { _blocks[idx].items.splice(Number(t.dataset.clDel), 1); renderBlockEditor(); serializeBlocks(); } } return;
+        }
+        // ── ステップ: 追加
+        if (t.dataset.stepAdd !== undefined) {
+          readBlockEditorState();
+          const card = t.closest('[data-block-idx]');
+          if (card) { const idx = Number(card.dataset.blockIdx); if (_blocks[idx]) { _blocks[idx].items = [...(_blocks[idx].items||[]), {title:'',text:''}]; renderBlockEditor(); serializeBlocks(); } } return;
+        }
+        // ── ステップ: 削除
+        if (t.dataset.stepDel !== undefined) {
+          readBlockEditorState();
+          const card = t.closest('[data-block-idx]');
+          if (card) { const idx = Number(card.dataset.blockIdx); if (_blocks[idx]) { _blocks[idx].items.splice(Number(t.dataset.stepDel), 1); renderBlockEditor(); serializeBlocks(); } } return;
+        }
+        // ── ブロック追加
+        if (t.id === 'block-add-btn' || t.dataset.addBlock !== undefined) {
+          const sel = document.getElementById('block-type-select');
+          if (!sel) return;
+          const type = sel.value;
+          if (!type) return;
+          readBlockEditorState();
+          const defaults = { lead:{type:'lead',text:''}, h2:{type:'h2',text:''}, h3:{type:'h3',text:''}, text:{type:'text',text:''}, tip:{type:'tip',label:'POINT',text:''}, callout:{type:'callout',text:''}, quote:{type:'quote',text:''}, checklist:{type:'checklist',title:'',items:['']}, steps:{type:'steps',items:[{title:'',text:''}]}, cta:{type:'cta',text:'',buttonLabel:'',buttonHref:''} };
+          _blocks.push(defaults[type] || {type,text:''});
+          renderBlockEditor(); serializeBlocks();
+          document.getElementById('block-editor-list')?.lastElementChild?.scrollIntoView({behavior:'smooth'});
+          return;
+        }
+      });
     }
 
     function renderTable() {
@@ -609,9 +838,9 @@ export default function AdminFeaturesPage() {
                       </div>
                     </div>
 
-                    <label htmlFor="feature-blocks">ブロック（JSON形式）</label>
-                    <p className="muted" style={{fontSize:'12px',margin:'-8px 0 8px'}}>blocksが設定されると本文より優先されます。シードデータで挿入した記事の編集はここで行います。</p>
-                    <textarea id="feature-blocks" rows={12} style={{fontFamily:'monospace',fontSize:'12px',width:'100%'}} placeholder={'[\n  {"type":"lead","text":"リード文"},\n  {"type":"h2","text":"見出し"},\n  {"type":"text","text":"本文"}\n]'}></textarea>
+                    <p className="muted" style={{fontSize:'12px',margin:'-4px 0 0',padding:'8px 12px',background:'rgba(201,168,76,0.06)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:'6px'}}>
+                      💡 シードデータで追加した記事（blocks形式）は上の「本文」エディタに自動変換して読み込まれます。編集して保存するとHTML形式で上書き保存されます。
+                    </p>
 
                     <div className="cluster" style={{alignItems:'center',gap:'12px'}}>
                       <label>ステータス
