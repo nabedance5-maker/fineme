@@ -1,6 +1,7 @@
 // @ts-nocheck
 export {};
 import { getSummary, seedDemo } from './metrics.js';
+function escapeHtml(str){ return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 // GitHub Pages project base prefix
 const PROJECT_BASE = (location.hostname && /github\.io$/i.test(location.hostname)) ? '/fineme' : '';
 // Prefer relative navigation when already under /pages/admin/
@@ -63,7 +64,7 @@ function render(){
       topFeatures.forEach(item=>{
         const tr = document.createElement('tr');
         const nm = map.get(item.id) || item.id;
-        tr.innerHTML = `<td style="padding:8px; border-bottom:1px solid var(--color-border)">${nm}</td>`+
+        tr.innerHTML = `<td style="padding:8px; border-bottom:1px solid var(--color-border)">${escapeHtml(nm)}</td>`+
                        `<td style=\"padding:8px; border-bottom:1px solid var(--color-border); text-align:right\">${item.count}</td>`;
         tf.appendChild(tr);
       });
@@ -91,7 +92,7 @@ function render(){
     else{
       topNoResult.forEach(q=>{
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td style=\"padding:8px; border-bottom:1px solid var(--color-border)\">${q.query}</td>`+
+        tr.innerHTML = `<td style=\"padding:8px; border-bottom:1px solid var(--color-border)\">${escapeHtml(q.query)}</td>`+
                        `<td style=\"padding:8px; border-bottom:1px solid var(--color-border); text-align:right\">${q.count}</td>`;
         tnr.appendChild(tr);
       });
@@ -110,7 +111,7 @@ function render(){
     else{
       arr.forEach(it=>{
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td style=\"padding:8px; border-bottom:1px solid var(--color-border)\">${it.title}</td>`+
+        tr.innerHTML = `<td style=\"padding:8px; border-bottom:1px solid var(--color-border)\">${escapeHtml(it.title)}</td>`+
                        `<td style=\"padding:8px; border-bottom:1px solid var(--color-border); text-align:right\">${it.count}</td>`;
         lowT.appendChild(tr);
       });

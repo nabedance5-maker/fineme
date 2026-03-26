@@ -9,6 +9,17 @@ function checkAdmin(request) {
   return key && key === ADMIN_KEY;
 }
 
+// 簡易レートリミット（同一IPから1分間に10回まで）
+const _rateMap = new Map();
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = _rateMap.get(ip) || { count: 0, reset: now + 60000 };
+  if (now > entry.reset) { entry.count = 0; entry.reset = now + 60000; }
+  entry.count++;
+  _rateMap.set(ip, entry);
+  return entry.count <= 10;
+}
+
 function stripHtml(html) {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, '')
@@ -21,6 +32,8 @@ function stripHtml(html) {
 
 export async function POST(request) {
   if (!checkAdmin(request)) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  if (!checkRateLimit(ip)) return Response.json({ error: 'Too Many Requests' }, { status: 429 });
 
   const { service_name, service_url } = await request.json();
   if (!service_name) return Response.json({ error: 'service_name は必須です' }, { status: 400 });

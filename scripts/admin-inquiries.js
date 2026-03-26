@@ -3,6 +3,8 @@
 
 const KEY = 'fineme:provider:inquiries';
 
+function escapeHtml(str){ return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+
 function loadInquiries(){
   try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch{ return []; }
 }
@@ -95,12 +97,12 @@ function render(){
     const tr = document.createElement('tr');
     const contact = [it.email, it.phone].filter(Boolean).join(' / ');
     tr.innerHTML = `
-      <td>${formatDate(it.createdAt)}</td>
-      <td>${it.bizName || '—'}</td>
-      <td>${it.contactName || '—'}</td>
-      <td>${contact || '—'}</td>
-      <td>${labelCategory(it.category)}</td>
-      <td>${it.contactPref || '—'}</td>
+      <td>${escapeHtml(formatDate(it.createdAt))}</td>
+      <td>${escapeHtml(it.bizName || '—')}</td>
+      <td>${escapeHtml(it.contactName || '—')}</td>
+      <td>${escapeHtml(contact || '—')}</td>
+      <td>${escapeHtml(labelCategory(it.category))}</td>
+      <td>${escapeHtml(it.contactPref || '—')}</td>
       <td><span class="badge ${it.status==='done'?'status-done':'status-new'}">${it.status==='done'?'対応済み':'未対応'}</span></td>
       <td class="row-note">詳細 / 完了 / 削除</td>
     `;
@@ -110,7 +112,7 @@ function render(){
     td2.colSpan = 8;
     td2.innerHTML = `
       <div class="stack" style="gap:6px">
-        <div class="msg">${(it.message||'').replace(/</g,'&lt;')}</div>
+        <div class="msg">${escapeHtml(it.message||'')}</div>
         <div class="cluster" style="gap:8px">
           <button class="btn btn-ghost" data-act="done">${it.status==='done'?'未対応に戻す':'対応済みにする'}</button>
           <button class="btn btn-ghost" data-act="copy">内容をコピー</button>

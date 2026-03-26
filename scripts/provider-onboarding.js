@@ -3,6 +3,7 @@
 import { getProviderSession } from './auth.js';
 
 const PROVIDERS_KEY = 'glowup:providers';
+function escapeHtml(str){ return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 function qs(s,el=document){ return el.querySelector(s); }
 function loadProviders(){ try{ const raw=localStorage.getItem(PROVIDERS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch{ return []; } }
 function saveProviders(list){ localStorage.setItem(PROVIDERS_KEY, JSON.stringify(list)); }
@@ -34,7 +35,7 @@ try{
       // STEP1 をレンダリング
       const card1 = document.createElement('div'); card1.className='ob-step';
       const diag = me && me.onboarding ? (me.onboarding.diag || {}) : {};
-      const resultLine = (diag.intent_type_name) ? `<p class="muted">あなたの診断結果（第2階層）: <strong>${diag.intent_type_name}</strong></p>` : `<p class="muted">まだ診断結果が読み込まれていません。</p>`;
+      const resultLine = (diag.intent_type_name) ? `<p class="muted">あなたの診断結果（第2階層）: <strong>${escapeHtml(diag.intent_type_name)}</strong></p>` : `<p class="muted">まだ診断結果が読み込まれていません。</p>`;
       card1.innerHTML = `
         <h2>STEP1：診断体験（掲載者自身が受ける）</h2>
         <div class="stack">
