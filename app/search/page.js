@@ -78,7 +78,7 @@ function ProviderCard({ provider }) {
         <div style={{ height: '200px', overflow: 'hidden', background: '#f3f4f6', flexShrink: 0, position: 'relative' }}>
           <img src={img} alt={provider.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           {provider.entity_type === 'affiliate' && (
-            <span style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '10px', fontWeight: '700', padding: '2px 7px', background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: '4px', letterSpacing: '0.05em' }}>PR</span>
+            <span title="Finemeが精査した提携サービスです。掲載サービスと同じ基準でAIがマッチングしています。" style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '10px', fontWeight: '700', padding: '2px 7px', background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: '4px', letterSpacing: '0.05em', cursor: 'help' }}>PR</span>
           )}
         </div>
         <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -346,10 +346,20 @@ function SearchContent() {
       </div>
 
       {/* 件数 */}
-      <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 20px' }}>
+      <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 12px' }}>
         {loading ? '読み込み中…' : `${filtered.length}件のサービスが見つかりました`}
         {axis && !loading && <span style={{ marginLeft: '8px', fontSize: '12px', fontWeight: 700, color: '#4f46e5' }}>（{AXIS_ICONS[axis]} {AXIS_LABELS[axis]}で絞り込み中）</span>}
       </p>
+
+      {/* 透明性注釈（アフィリエイトが含まれる場合のみ） */}
+      {!loading && filtered.some(p => p.entity_type === 'affiliate') && (
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 14px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '10px', marginBottom: '20px' }}>
+          <span style={{ fontSize: '13px', color: '#9ca3af', flexShrink: 0, marginTop: '1px' }}>ℹ️</span>
+          <p style={{ fontSize: '12px', color: '#6b7280', margin: 0, lineHeight: '1.6' }}>
+            掲載サービス・提携サービス（PR）の区別なく、AIがあなたの診断結果との一致度で並び替えています。提携サービスは「男性の外見変容に向き合うサービスか」「変わりたい人を否定しないか」の基準でFinemeが精査しています。
+          </p>
+        </div>
+      )}
 
       {/* 結果 */}
       {loading ? (
