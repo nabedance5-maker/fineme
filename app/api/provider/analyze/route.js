@@ -23,7 +23,7 @@ export async function POST(request) {
     .select(`
       id, name, catchphrase, philosophy, guide_message, unique_strengths,
       target_desc, ideal_client_desc, client_before_state,
-      transformation_pattern, best_fit_desc, description
+      transformation_pattern, best_fit_desc, description, ai_match_profile
     `)
     .eq('email', user.email)
     .single();
@@ -65,6 +65,16 @@ export async function POST(request) {
 
   if (profileText.trim().length < 30) {
     return Response.json({ error: 'プロフィールの記載が少なすぎます。まずプロフィールを充実させてください。' }, { status: 400 });
+  }
+
+  // レートリミット: 5分以内に分析済みの場合はスキップ
+  const lastAnalyzedAt = provider.ai_match_profile?.analyzed_at;
+  if (lastAnalyzedAt) {
+    const elapsed = Date.now() - new Date(lastAnalyzedAt).getTime();
+    if (elapsed < 5 * 60 * 1000) {
+      const remaining = Math.ceil((5 * 60 * 1000 - elapsed) / 1000);
+      return Response.json({ error: `分析は5分に1回まで実行できます。あと${remaining}秒後に再試行してください。` }, { status: 429 });
+    }
   }
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });

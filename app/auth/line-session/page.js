@@ -54,9 +54,11 @@ export default function LineSessionPage() {
       await syncLocalDiagnosis(session.access_token);
 
       const params = new URLSearchParams(window.location.search);
-      const next = params.get('next');
+      const rawNext = params.get('next') || '';
+      // オープンリダイレクト防止: 相対パスのみ許可
+      const next = (rawNext.startsWith('/') && !rawNext.startsWith('//')) ? rawNext : '/mypage';
       setStatus('マイページへ移動します...');
-      window.location.href = next || '/mypage';
+      window.location.href = next;
     }
 
     handleSession();
