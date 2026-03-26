@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getAllArticles, getArticle } from '@/lib/articles';
 import { ArticleBlocks } from '@/app/_components/ArticleBlocks';
+import { ParallaxImg } from '@/app/_components/ParallaxImg';
 import { getSupabase } from '@/lib/supabase';
 import Link from 'next/link';
 
@@ -97,19 +98,30 @@ export default async function ArticlePage({ params }) {
       <main>
 
         {/* ── ヒーロー：フルブリード画像 + タイトルオーバーレイ ── */}
+        <style dangerouslySetInnerHTML={{ __html: `@keyframes compassSpin { to { transform: rotate(360deg); } }` }} />
         <div style={{ position: 'relative', height: 'clamp(360px, 52vw, 520px)', overflow: 'hidden', background: '#0a0f1e' }}>
-          {article.thumbnail && (
-            <img
-              src={article.thumbnail}
-              alt={article.title}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: 0.88 }}
-            />
-          )}
+          {article.thumbnail && <ParallaxImg src={article.thumbnail} alt={article.title} />}
           {/* グラデーション：上薄く→下濃く */}
           <div style={{
             position: 'absolute', inset: 0,
             background: 'linear-gradient(to bottom, rgba(10,15,30,0.05) 0%, rgba(10,15,30,0.35) 40%, rgba(10,15,30,0.88) 78%, rgba(10,15,30,0.97) 100%)',
           }} />
+          {/* コンパスローズ装飾 */}
+          <div style={{ position: 'absolute', right: '28px', bottom: '96px', opacity: 0.14, pointerEvents: 'none', zIndex: 2 }}>
+            <svg width="84" height="84" viewBox="0 0 88 88" style={{ animation: 'compassSpin 48s linear infinite' }}>
+              <polygon points="44,4 49,40 44,44 39,40" fill="#c9a84c"/>
+              <polygon points="44,84 49,48 44,44 39,48" fill="rgba(201,168,76,0.55)"/>
+              <polygon points="84,44 48,39 44,44 48,49" fill="rgba(201,168,76,0.55)"/>
+              <polygon points="4,44 40,39 44,44 40,49" fill="rgba(201,168,76,0.55)"/>
+              <circle cx="44" cy="44" r="5" fill="#c9a84c" opacity="0.85"/>
+              <circle cx="44" cy="44" r="18" fill="none" stroke="rgba(201,168,76,0.3)" strokeWidth="1"/>
+              <circle cx="44" cy="44" r="32" fill="none" stroke="rgba(201,168,76,0.15)" strokeWidth="1"/>
+              {[0,45,90,135,180,225,270,315].map(deg => {
+                const r = deg * Math.PI / 180;
+                return <line key={deg} x1={44 + 28*Math.sin(r)} y1={44 - 28*Math.cos(r)} x2={44 + 34*Math.sin(r)} y2={44 - 34*Math.cos(r)} stroke="rgba(201,168,76,0.4)" strokeWidth="1"/>;
+              })}
+            </svg>
+          </div>
 
           {/* タイトルオーバーレイ（ヒーロー下部） */}
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 20px clamp(40px, 6vw, 56px)' }}>
