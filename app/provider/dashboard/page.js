@@ -235,7 +235,10 @@ export default function ProviderDashboardPage() {
 
       // 今月の問い合わせ数（予約リクエスト）
       try {
-        const res = await fetch(`/api/reservations?providerId=${encodeURIComponent(pid)}`);
+        const _statsToken = getSupabaseToken();
+        const res = await fetch(`/api/reservations?providerId=${encodeURIComponent(pid)}`, {
+          headers: _statsToken ? { 'Authorization': `Bearer ${_statsToken}` } : {}
+        });
         if (res.ok) {
           const items = await res.json();
           const count = items.filter(r => (r.created_at || '').startsWith(yyyymm)).length;
@@ -997,7 +1000,10 @@ export default function ProviderDashboardPage() {
     async function loadRequests() {
       const providerId = provider?.id || loadProviderData()?.id;
       if (!providerId) { document.getElementById('requests-list').innerHTML = '<p class="muted">掲載者IDが見つかりません。</p>'; return; }
-      const res = await fetch(`/api/reservations?providerId=${providerId}`);
+      const _reqToken = getSupabaseToken();
+      const res = await fetch(`/api/reservations?providerId=${providerId}`, {
+        headers: _reqToken ? { 'Authorization': `Bearer ${_reqToken}` } : {}
+      });
       if (!res.ok) { document.getElementById('requests-list').innerHTML = '<p class="muted" style="color:#ef4444">取得エラー</p>'; return; }
       const items = await res.json();
       _allRequests = items;
@@ -1106,21 +1112,24 @@ export default function ProviderDashboardPage() {
       const choice = getSelectedChoice(id);
       const body = { status: 'approved' };
       if (choice) { body.confirmed_date = choice.date; body.confirmed_time = choice.time; }
-      const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const _approveToken = getSupabaseToken();
+      const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...(_approveToken ? { 'Authorization': `Bearer ${_approveToken}` } : {}) }, body: JSON.stringify(body) });
       if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
       await loadRequests(); showToast('承認しました');
     };
 
     window.rejectRequest = async function (id) {
       if (!confirm('このリクエストをお断りしますか？（ユーザーへ通知されます）')) return;
-      const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'rejected' }) });
+      const _rejectToken = getSupabaseToken();
+      const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...(_rejectToken ? { 'Authorization': `Bearer ${_rejectToken}` } : {}) }, body: JSON.stringify({ status: 'rejected' }) });
       if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
       await loadRequests(); showToast('お断りを送りました');
     };
 
     window.markVisited = async function (id) {
       if (!confirm('来店を確認しますか？')) return;
-      const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'visited' }) });
+      const _visitToken = getSupabaseToken();
+      const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...(_visitToken ? { 'Authorization': `Bearer ${_visitToken}` } : {}) }, body: JSON.stringify({ status: 'visited' }) });
       if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
       await loadRequests(); showToast('来店を確認しました');
     };
@@ -1160,8 +1169,9 @@ export default function ProviderDashboardPage() {
       const time = document.getElementById('counter-time-input').value;
       const msg = document.getElementById('counter-msg-input').value;
       if (!date || !time) { showToast('日付と時間を選択してください'); return; }
+      const _counterToken = getSupabaseToken();
       const res = await fetch(`/api/reservations/${id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH', headers: { 'Content-Type': 'application/json', ...(_counterToken ? { 'Authorization': `Bearer ${_counterToken}` } : {}) },
         body: JSON.stringify({ status: 'counter_proposed', counter_date: date, counter_time: time, counter_proposal: msg || null })
       });
       if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }

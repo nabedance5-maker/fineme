@@ -5,7 +5,7 @@ import { getSupabase } from '@/lib/supabase';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
-const ADMIN_KEY = process.env.ADMIN_API_KEY || process.env.UPLOAD_API_KEY || '';
+const ADMIN_KEY = process.env.ADMIN_API_KEY || '';
 
 function checkAdmin(request) {
   const key = request.headers.get('x-admin-key') || request.headers.get('x-internal-key');

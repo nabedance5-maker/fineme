@@ -4,6 +4,13 @@ import { getSupabase } from '@/lib/supabase';
 
 const supabaseAdmin = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
+async function getUser(request) {
+  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  if (!token) return null;
+  const { data: { user } } = await getSupabase().auth.getUser(token);
+  return user || null;
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const status = searchParams.get('status') || 'approved';
@@ -30,7 +37,10 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { answers, tags, reservationId, providerId, serviceName, userId, axisId, pathType, milestoneReached } = body;
+    const { answers, tags, reservationId, providerId, serviceName, axisId, pathType, milestoneReached } = body;
+    // userIdはトークンから取得（bodyのuserIdは無視して成りすまし防止）
+    const user = await getUser(request);
+    const resolvedUserId = user ? user.id : null;
 
     if (!answers || answers.length < 2 || !answers[0]?.trim() || !answers[1]?.trim()) {
       return Response.json({ error: '必須項目（Q1・Q2）が不足しています' }, { status: 400 });
@@ -45,7 +55,7 @@ export async function POST(request) {
       .from('stories')
       .insert({
         reservation_id: reservationId || null,
-        user_id: userId || null,
+        user_id: resolvedUserId,
         provider_id: String(providerId || ''),
         service_name: serviceName || null,
         concern_before: clean[0],

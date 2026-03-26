@@ -34,7 +34,7 @@ function fmtDate(d) {
   catch { return String(d); }
 }
 
-function ReservationCard({ r, onRefresh }) {
+function ReservationCard({ r, onRefresh, accessToken }) {
   const [acting, setActing] = useState(false);
   const statusColor = STATUS_COLORS[r.status] || '#6b7280';
   const statusLabel = STATUS_LABELS[r.status] || r.status;
@@ -52,7 +52,7 @@ function ReservationCard({ r, onRefresh }) {
     try {
       const res = await fetch(`/api/reservations/${r.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}) },
         body: JSON.stringify({ status, ...extra }),
       });
       if (res.ok) onRefresh();
@@ -161,11 +161,13 @@ function MyReservationsContent() {
   const [contact, setContact] = useState('');
   const [inputContact, setInputContact] = useState('');
   const [searched, setSearched] = useState(false);
+  const [accessToken, setAccessToken] = useState(null);
 
   useEffect(() => {
     // ログイン中ユーザーのメールを自動取得
     supabaseAnon.auth.getSession().then(({ data: { session } }) => {
       const email = session?.user?.email || '';
+      if (session?.access_token) setAccessToken(session.access_token);
       if (email) {
         setContact(email);
         setInputContact(email);
@@ -265,7 +267,7 @@ function MyReservationsContent() {
           )}
           <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 16px' }}>{reservations.length}件の予約</p>
           {reservations.map(r => (
-            <ReservationCard key={r.id} r={r} onRefresh={() => fetchReservations(contact)} />
+            <ReservationCard key={r.id} r={r} onRefresh={() => fetchReservations(contact)} accessToken={accessToken} />
           ))}
         </>
       )}

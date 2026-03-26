@@ -2,7 +2,7 @@
 // サービス名（＋任意でサービスURL）からAIがFinemeの各フィールドを自動生成
 import Anthropic from '@anthropic-ai/sdk';
 
-const ADMIN_KEY = process.env.ADMIN_API_KEY || process.env.UPLOAD_API_KEY || '';
+const ADMIN_KEY = process.env.ADMIN_API_KEY || '';
 
 function checkAdmin(request) {
   const key = request.headers.get('x-admin-key') || request.headers.get('x-internal-key');

@@ -18,6 +18,12 @@ export async function GET(request, context) {
 
 export async function PATCH(request, context) {
   try {
+    const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+    if (!token) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const db = getSupabase();
+    const { data: { user } } = await db.auth.getUser(token);
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
     const id = context.params.id;
     const body = await request.json();
     const { status, action, counter_proposal, counter_date, counter_time, confirmed_date, confirmed_time } = body;
@@ -44,7 +50,6 @@ export async function PATCH(request, context) {
       updates.counter_expires_at = null;
     }
 
-    const db = getSupabase();
     const { data, error } = await db
       .from('reservations').update(updates).eq('id', id).select().single();
 

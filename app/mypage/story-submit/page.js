@@ -19,6 +19,7 @@ export default function StorySubmitPage() {
   const [answers, setAnswers] = useState(['', '', '', '']);
   const [milestoneReached, setMilestoneReached] = useState('');
 
+  const [accessToken, setAccessToken] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
@@ -33,6 +34,7 @@ export default function StorySubmitPage() {
       const uid = obj?.user?.id;
       if (!uid) { window.location.href = '/login'; return; }
       setUserId(uid);
+      setAccessToken(obj?.access_token || null);
 
       // 診断データ
       try {
@@ -58,7 +60,9 @@ export default function StorySubmitPage() {
       } catch {}
 
       // 予約一覧を取得
-      fetch(`/api/reservations?userId=${uid}`)
+      fetch(`/api/reservations?userId=${uid}`, {
+        headers: obj?.access_token ? { 'Authorization': `Bearer ${obj.access_token}` } : {}
+      })
         .then(r => r.ok ? r.json() : [])
         .then(data => {
           const approved = (data || []).filter(r =>
@@ -98,7 +102,7 @@ export default function StorySubmitPage() {
     try {
       const res = await fetch('/api/stories', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}) },
         body: JSON.stringify({
           answers,
           userId,

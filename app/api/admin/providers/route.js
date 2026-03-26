@@ -5,7 +5,7 @@ import { sendProviderCredentialsEmail } from '@/lib/email';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
-const ADMIN_KEY = process.env.ADMIN_API_KEY || process.env.UPLOAD_API_KEY || '';
+const ADMIN_KEY = process.env.ADMIN_API_KEY || '';
 
 // 読みやすい初期パスワードを生成（12文字・英数字のみ・紛らわしい文字除外）
 function generatePassword() {

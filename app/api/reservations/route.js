@@ -6,6 +6,13 @@ import { sendLinePush } from '@/lib/line-push';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
+async function verifyAuth(request) {
+  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  if (!token) return null;
+  const { data: { user } } = await getSupabase().auth.getUser(token);
+  return user || null;
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const providerId = searchParams.get('providerId');
@@ -13,6 +20,23 @@ export async function GET(request) {
 
   if (!providerId && !userId) {
     return Response.json({ error: 'providerId または userId が必要です' }, { status: 400 });
+  }
+
+  const user = await verifyAuth(request);
+  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // userIdクエリ: 本人確認
+  if (userId && user.id !== userId) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  // providerIdクエリ: 掲載者本人確認
+  if (providerId) {
+    const { data: prov } = await getSupabase()
+      .from('providers').select('id').eq('email', user.email).single();
+    if (!prov || prov.id !== providerId) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
   }
 
   let query = supabase
