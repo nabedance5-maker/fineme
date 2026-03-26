@@ -27,36 +27,38 @@ export default function AdminFeaturesPage() {
     `;
     document.head.appendChild(style);
 
-    const FEATURES_KEY = 'glowup:features';
-
-    function uuid() {
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      });
+    // ── Admin key ──────────────────────────────────────
+    let ADMIN_KEY = sessionStorage.getItem('fineme:admin:key') || '';
+    if (!ADMIN_KEY) {
+      ADMIN_KEY = prompt('管理APIキーを入力してください：') || '';
+      if (ADMIN_KEY) sessionStorage.setItem('fineme:admin:key', ADMIN_KEY);
     }
+    function h() { return { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY }; }
 
-    function loadFeatures() {
+    // ── In-memory cache ────────────────────────────────
+    let _cache = [];
+
+    async function refreshFeatures() {
       try {
-        const raw = localStorage.getItem(FEATURES_KEY);
-        let arr = raw ? JSON.parse(raw) : [];
-        if (!Array.isArray(arr)) arr = [];
-        const now = new Date().toISOString();
-        let changed = false;
-        for (const f of arr) {
-          if (!f.id) { f.id = uuid(); changed = true; }
-          if (!f.createdAt) { f.createdAt = now; changed = true; }
-          if (!f.updatedAt) { f.updatedAt = f.createdAt; changed = true; }
-          if (!f.status) { f.status = 'draft'; changed = true; }
-          if (typeof f.thumbnail === 'undefined') { f.thumbnail = ''; changed = true; }
-        }
-        if (changed) { try { saveFeatures(arr); } catch {} }
-        return arr;
-      } catch { return []; }
+        const res = await fetch('/api/admin/features', { headers: h() });
+        if (!res.ok) { showMsg(`API error: ${res.status}`); return; }
+        _cache = await res.json();
+        renderTable();
+      } catch (e) { showMsg(`読み込みエラー: ${e.message}`); }
     }
 
+    function loadFeatures() { return _cache; }
+
+    function showMsg(text) {
+      try {
+        const msg = document.getElementById('feature-message');
+        if (msg) msg.textContent = text;
+      } catch {}
+    }
+
+    // ── saveFeatures は廃止（API経由のみ）──────────────
     function saveFeatures(list) {
-      localStorage.setItem(FEATURES_KEY, JSON.stringify(list));
+      // no-op: 後方互換のために残す
       try {
         const cb = document.getElementById('features-auto-export');
         if (cb && cb instanceof HTMLInputElement && cb.checked) {
@@ -121,7 +123,11 @@ export default function AdminFeaturesPage() {
 
     function fillForm(f) {
       const fId = document.getElementById('feature-id'); if (fId) fId.value = f?.id || '';
+      const fSlug = document.getElementById('feature-slug'); if (fSlug) fSlug.value = f?.slug || '';
       const fTitle = document.getElementById('feature-title'); if (fTitle) fTitle.value = f?.title || '';
+      const fDesc = document.getElementById('feature-description'); if (fDesc) fDesc.value = f?.description || '';
+      const fCat = document.getElementById('feature-category'); if (fCat) fCat.value = f?.category || '';
+      const fRT = document.getElementById('feature-reading-time'); if (fRT) fRT.value = f?.reading_time || 5;
       const fSummary = document.getElementById('feature-summary'); if (fSummary) fSummary.value = f?.summary || '';
       const th = document.getElementById('feature-thumbnail'); if (th) { th.value = f?.thumbnail || ''; }
       updateThumbPreview(f?.thumbnail || '');
@@ -141,12 +147,22 @@ export default function AdminFeaturesPage() {
     function readForm() {
       return {
         id: document.getElementById('feature-id')?.value || null,
+        slug: (document.getElementById('feature-slug')?.value || '').trim(),
         title: (document.getElementById('feature-title')?.value || '').trim(),
+        description: (document.getElementById('feature-description')?.value || '').trim(),
+        category: (document.getElementById('feature-category')?.value || '').trim(),
+        reading_time: Number(document.getElementById('feature-reading-time')?.value || 5),
         summary: (document.getElementById('feature-summary')?.value || '').toString(),
         thumbnail: (document.getElementById('feature-thumbnail')?.value || '').toString().trim(),
         body: (document.getElementById('feature-body')?.value || '').toString(),
         status: document.getElementById('feature-status')?.value || 'draft'
       };
+    }
+
+    function autoSlug(title) {
+      // 英数字のみでスラッグ生成、日本語はタイムスタンプで補完
+      const base = title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+      return (base || 'article') + '-' + Date.now().toString(36);
     }
 
     function updatePreview() {
@@ -172,7 +188,7 @@ export default function AdminFeaturesPage() {
           if (q) { const text = [f.title || '', f.summary || '', String(f.body || '').replace(/<[^>]*>/g, ' ')].join(' ').toLowerCase(); if (!text.includes(q)) return false; }
           return true;
         })
-        .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
+        .sort((a, b) => new Date(b.updated_at || b.updatedAt || b.created_at || 0).getTime() - new Date(a.updated_at || a.updatedAt || a.created_at || 0).getTime());
       tbody.textContent = '';
       for (const f of list) {
         const tr = document.createElement('tr');
@@ -180,7 +196,7 @@ export default function AdminFeaturesPage() {
         const tdTitle = document.createElement('td'); tdTitle.style.padding = '12px'; tdTitle.style.borderBottom = '1px solid var(--color-border)';
         const a = document.createElement('a'); a.className = 'svc-link'; a.href = `?id=${encodeURIComponent(f.id)}`; a.textContent = f.title || '(無題)'; tdTitle.appendChild(a);
         const tdStatus = document.createElement('td'); tdStatus.style.padding = '12px'; tdStatus.style.borderBottom = '1px solid var(--color-border)'; tdStatus.textContent = labelStatus(f.status);
-        const tdDate = document.createElement('td'); tdDate.style.padding = '12px'; tdDate.style.borderBottom = '1px solid var(--color-border)'; tdDate.textContent = formatDate(f.updatedAt || f.createdAt);
+        const tdDate = document.createElement('td'); tdDate.style.padding = '12px'; tdDate.style.borderBottom = '1px solid var(--color-border)'; tdDate.textContent = formatDate(f.updated_at || f.updatedAt || f.created_at);
         const tdOps = document.createElement('td'); tdOps.style.padding = '12px'; tdOps.style.borderBottom = '1px solid var(--color-border)';
         const aEdit = document.createElement('a'); aEdit.className = 'btn btn-ghost'; aEdit.href = `?id=${encodeURIComponent(f.id)}`; aEdit.textContent = '編集';
         const btnStatus = document.createElement('button'); btnStatus.type = 'button'; btnStatus.className = 'btn btn-ghost'; btnStatus.setAttribute('data-action', 'status'); btnStatus.setAttribute('data-id', f.id); btnStatus.textContent = '公開切替';
@@ -231,39 +247,35 @@ export default function AdminFeaturesPage() {
 
     function onNew() {
       fillForm({ status: 'draft' });
-      const msg = document.getElementById('feature-message'); if (msg) msg.textContent = '';
+      showMsg('');
     }
 
-    function onSubmit(e) {
+    async function onSubmit(e) {
       e.preventDefault();
-      const msg = document.getElementById('feature-message');
       const form = readForm();
-      if (!form.title) { if (msg) msg.textContent = 'タイトルは必須です。'; return; }
+      if (!form.title) { showMsg('タイトルは必須です。'); return; }
       const isDataThumb = form.thumbnail && /^data:image\//i.test(form.thumbnail);
-      if (isDataThumb && form.thumbnail.length > 1_000_000) { if (msg) msg.textContent = 'サムネイル画像が大きすぎます。'; return; }
-      const now = new Date().toISOString();
-      const list = loadFeatures();
-      if (form.id) {
-        const idx = list.findIndex(x => x.id === form.id);
-        if (idx !== -1) { list[idx] = { ...list[idx], ...form, updatedAt: now }; }
-      } else {
-        const item = { id: uuid(), ...form, createdAt: now, updatedAt: now };
-        list.push(item); form.id = item.id;
-      }
-      try { saveFeatures(list); } catch (err) {
-        const name = (err && err.name) || '';
-        if (name === 'QuotaExceededError') { if (msg) msg.textContent = '保存できません（ブラウザの保存容量を超えました）。'; return; }
-        if (msg) msg.textContent = '保存中にエラーが発生しました。'; return;
-      }
-      if (msg) msg.textContent = '保存しました。';
+      if (isDataThumb && form.thumbnail.length > 1_000_000) { showMsg('サムネイル画像が大きすぎます。URLを使用してください。'); return; }
+      if (!form.slug) form.slug = autoSlug(form.title);
+
+      showMsg('保存中...');
+      try {
+        const url = form.id ? `/api/admin/features/${form.id}` : '/api/admin/features';
+        const method = form.id ? 'PUT' : 'POST';
+        const res = await fetch(url, { method, headers: h(), body: JSON.stringify(form) });
+        if (!res.ok) { const err = await res.json().catch(() => ({})); showMsg(`エラー: ${err.error || res.status}`); return; }
+        const saved = await res.json();
+        showMsg('保存しました。');
+        await refreshFeatures();
+        if (!form.id && saved?.id) { updateUrlForEdit(saved.id); fillForm(saved); }
+      } catch (err) { showMsg(`保存エラー: ${err.message}`); return; }
       renderTable();
       fillForm(list.find(x => x.id === form.id));
       updateUrlForEdit(form.id);
     }
 
     function openEditorForId(id) {
-      const list = loadFeatures();
-      const item = list.find(f => f.id === id);
+      const item = _cache.find(f => f.id === id);
       showEditor();
       if (!item) { onNew(); updateUrlForEdit('new'); }
       else { fillForm(item); updateUrlForEdit(id); }
@@ -271,17 +283,24 @@ export default function AdminFeaturesPage() {
 
     // Global handlers
     window.__featureEdit = function (id) { openEditorForId(id); };
-    window.__featureStatus = function (id) {
-      const list = loadFeatures(); const idx = list.findIndex(f => f.id === id); if (idx === -1) return;
-      const cur = list[idx].status || 'draft';
+    window.__featureStatus = async function (id) {
+      const item = _cache.find(f => f.id === id); if (!item) return;
+      const cur = item.status || 'draft';
       const next = cur === 'published' ? 'private' : (cur === 'private' ? 'draft' : 'published');
-      list[idx].status = next; list[idx].updatedAt = new Date().toISOString();
-      saveFeatures(list); renderTable();
+      try {
+        const res = await fetch(`/api/admin/features/${id}`, { method: 'PUT', headers: h(), body: JSON.stringify({ status: next }) });
+        if (!res.ok) return;
+        await refreshFeatures();
+      } catch {}
     };
-    window.__featureDelete = function (id) {
-      const list = loadFeatures(); const idx = list.findIndex(f => f.id === id); if (idx === -1) return;
+    window.__featureDelete = async function (id) {
       if (!confirm('この特集を削除しますか？')) return;
-      list.splice(idx, 1); saveFeatures(list); renderTable();
+      try {
+        const res = await fetch(`/api/admin/features/${id}`, { method: 'DELETE', headers: h() });
+        if (!res.ok) return;
+        await refreshFeatures();
+        showList();
+      } catch {}
     };
     window.__featureCreate = function () { onNew(); updateUrlForEdit('new'); showEditor(); };
     window.__featureBack = function () { showList(); };
@@ -387,8 +406,6 @@ export default function AdminFeaturesPage() {
 
     const btnExport = document.getElementById('features-export'); if (btnExport) btnExport.addEventListener('click', exportFeatures);
     const importInput = document.getElementById('features-import-input'); if (importInput) importInput.addEventListener('change', importFeaturesFile);
-    const seedBtn = document.getElementById('features-seed'); if (seedBtn) seedBtn.addEventListener('click', seedFromStatic);
-    const restoreBtn = document.getElementById('features-restore'); if (restoreBtn) restoreBtn.addEventListener('click', restoreRecommendedSet);
 
     // Modal close
     const closeBtn = document.getElementById('feature-modal-close'); if (closeBtn) closeBtn.addEventListener('click', showList);
@@ -428,11 +445,14 @@ export default function AdminFeaturesPage() {
     const thumbInput = document.getElementById('feature-thumbnail');
     if (thumbInput) thumbInput.addEventListener('input', () => updateThumbPreview(thumbInput.value));
 
-    renderTable();
+    // 初回データ読み込み
+    refreshFeatures().then(() => {
+      const urlId = getParam('id');
+      if (urlId) { if (urlId === 'new') { onNew(); showEditor(); } else { openEditorForId(urlId); } }
+      else { showList(); }
+    });
 
-    const urlId = getParam('id');
-    if (urlId) { if (urlId === 'new') { onNew(); showEditor(); } else { openEditorForId(urlId); } }
-    else { showList(); }
+    renderTable();
 
     window.addEventListener('popstate', () => {
       const pid = getParam('id');
@@ -459,16 +479,10 @@ export default function AdminFeaturesPage() {
             <div style={{display:'flex',alignItems:'center'}}>
               <h2 className="section-title" style={{fontSize:'22px',margin:'0'}}>特集一覧</h2>
               <div className="cluster" style={{marginLeft:'auto'}}>
-                <button type="button" id="features-export" className="btn btn-ghost">エクスポート</button>
+                <button type="button" id="features-export" className="btn btn-ghost">エクスポート（JSON）</button>
                 <label htmlFor="features-import-input" className="btn btn-ghost" style={{margin:'0'}}>インポート</label>
                 <input id="features-import-input" type="file" accept="application/json" style={{display:'none'}} />
-                <button type="button" id="features-seed" className="btn btn-ghost">サンプル読み込み</button>
-                <button type="button" id="features-restore" className="btn btn-ghost">復元（推奨セット）</button>
                 <button type="button" id="features-create" className="btn">新規特集を作成</button>
-                <label className="cluster" style={{alignItems:'center',gap:'8px',marginLeft:'8px'}}>
-                  <input id="features-auto-export" type="checkbox" />
-                  <span className="muted">保存時に自動バックアップ</span>
-                </label>
                 <span className="rte-sep"></span>
                 <label className="cluster" style={{alignItems:'center',gap:'8px'}}>
                   <span className="muted">検索</span>
@@ -514,6 +528,12 @@ export default function AdminFeaturesPage() {
                   <input type="hidden" id="feature-id" name="id" />
                   <div className="stack">
                     <label>タイトル<input id="feature-title" name="title" type="text" placeholder="タイトルを入力" required /></label>
+                    <div className="cluster" style={{gap:'12px',flexWrap:'wrap'}}>
+                      <label style={{flex:'1',minWidth:'200px'}}>スラッグ（URL）<input id="feature-slug" name="slug" type="text" placeholder="auto-generated（英数字-）" /></label>
+                      <label style={{flex:'1',minWidth:'160px'}}>カテゴリ<input id="feature-category" name="category" type="text" placeholder="清潔感・写真撮影 等" /></label>
+                      <label style={{width:'100px'}}>読了時間(分)<input id="feature-reading-time" name="reading_time" type="number" min={1} max={60} defaultValue={5} style={{width:'80px'}} /></label>
+                    </div>
+                    <label>SEO説明文（description）<input id="feature-description" name="description" type="text" placeholder="検索結果やSNSに表示される1文（〜120文字）" /></label>
                     <label>概要<textarea id="feature-summary" name="summary" rows={3} placeholder="概要（リード文）"></textarea></label>
                     <label>サムネイル画像URL<input id="feature-thumbnail" name="thumbnail" type="url" placeholder="https://example.com/cover.jpg または data:image/..." /></label>
                     <div className="cluster" style={{alignItems:'center'}}>
