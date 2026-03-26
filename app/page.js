@@ -160,12 +160,20 @@ export default function HomePage() {
   const [diagnosis, setDiagnosis] = useState(null);
   const [loggedIn, setLoggedIn] = useState(false);
   const [stories, setStories] = useState([]);
+  const [featuredArticles, setFeaturedArticles] = useState([]);
 
-  // スクリプト（おすすめ・特集・最近閲覧）
+  // 特集記事取得（Supabase経由）
+  useEffect(() => {
+    fetch('/api/features')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => { if (Array.isArray(data) && data.length) setFeaturedArticles(data.slice(0, 3)); })
+      .catch(() => {});
+  }, []);
+
+  // スクリプト（おすすめ・最近閲覧）
   useEffect(() => {
     const srcs = [
       '/scripts/home-reco.js?v=20251016',
-      '/scripts/home-features.js?v=20251015',
       '/scripts/home-recent.js?v=20251016',
     ];
     let loaded = 0;
@@ -727,17 +735,37 @@ export default function HomePage() {
         </section>
 
         {/* ── 特集 ── */}
-        <section className="section">
-          <div className="container stack">
-            <div className="cluster space-between">
-              <h2 className="section-title">変容ガイド</h2>
-              <Link className="btn btn-ghost" href="/feature">一覧を見る</Link>
+        {featuredArticles.length > 0 && (
+          <section className="section">
+            <div className="container stack">
+              <div className="cluster space-between">
+                <h2 className="section-title">変容ガイド</h2>
+                <Link className="btn btn-ghost" href="/feature">一覧を見る</Link>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+                {featuredArticles.map(a => (
+                  <Link key={a.id} href={`/feature/${a.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(201,168,76,0.15)', background: 'rgba(255,255,255,0.03)', transition: 'border-color 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)'}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)'}
+                    >
+                      {a.thumbnail && (
+                        <img src={a.thumbnail} alt={a.title} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
+                      )}
+                      <div style={{ padding: '16px' }}>
+                        {a.category && (
+                          <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--color-gold)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{a.category}</span>
+                        )}
+                        <p style={{ fontSize: '15px', fontWeight: 700, lineHeight: 1.5, margin: '8px 0 6px', fontFamily: 'var(--font-serif)' }}>{a.title}</p>
+                        <p style={{ fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.6, margin: 0 }}>{a.description || a.summary}</p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
-            <div className="features-grid">
-              <div id="top-features"></div>
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
       </main>
     </>
   );

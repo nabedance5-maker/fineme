@@ -141,6 +141,8 @@ export default function AdminFeaturesPage() {
         });
       }
       try { const ta = document.getElementById('feature-body'); if (ta) { ta.value = sanitizeHtml(html); } } catch {}
+      const fBlocks = document.getElementById('feature-blocks');
+      if (fBlocks) fBlocks.value = f?.blocks ? JSON.stringify(f.blocks, null, 2) : '';
       const fStatus = document.getElementById('feature-status'); if (fStatus) fStatus.value = f?.status || 'draft';
     }
 
@@ -155,6 +157,12 @@ export default function AdminFeaturesPage() {
         summary: (document.getElementById('feature-summary')?.value || '').toString(),
         thumbnail: (document.getElementById('feature-thumbnail')?.value || '').toString().trim(),
         body: (document.getElementById('feature-body')?.value || '').toString(),
+        blocks: (() => {
+          try {
+            const v = (document.getElementById('feature-blocks')?.value || '').trim();
+            return v ? JSON.parse(v) : null;
+          } catch { return null; }
+        })(),
         status: document.getElementById('feature-status')?.value || 'draft'
       };
     }
@@ -600,6 +608,11 @@ export default function AdminFeaturesPage() {
                         <div id="feature-preview" style={{marginTop:'8px'}}></div>
                       </div>
                     </div>
+
+                    <label htmlFor="feature-blocks">ブロック（JSON形式）</label>
+                    <p className="muted" style={{fontSize:'12px',margin:'-8px 0 8px'}}>blocksが設定されると本文より優先されます。シードデータで挿入した記事の編集はここで行います。</p>
+                    <textarea id="feature-blocks" rows={12} style={{fontFamily:'monospace',fontSize:'12px',width:'100%'}} placeholder={'[\n  {"type":"lead","text":"リード文"},\n  {"type":"h2","text":"見出し"},\n  {"type":"text","text":"本文"}\n]'}></textarea>
+
                     <div className="cluster" style={{alignItems:'center',gap:'12px'}}>
                       <label>ステータス
                         <select id="feature-status" name="status">
