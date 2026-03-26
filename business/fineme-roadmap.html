@@ -134,6 +134,26 @@
   .tag-doing{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);color:#c9a84c}
   .tag-decide{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);color:#a78bfa}
 
+  /* NOW BOARD */
+  .now-board{padding:36px 40px;background:rgba(201,168,76,.04);border-bottom:1px solid rgba(201,168,76,.18)}
+  .now-board-eyebrow{font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(201,168,76,.7);font-family:'Hiragino Kaku Gothic Pro',sans-serif;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  .now-board-eyebrow::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#c9a84c;animation:pulse 1.8s infinite}
+  .now-board-title{font-size:18px;font-weight:800;color:#f0ece4;margin-bottom:24px}
+  .now-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:640px){.now-cols{grid-template-columns:1fr}.now-board{padding-left:20px;padding-right:20px}}
+  .now-col-label{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-family:'Hiragino Kaku Gothic Pro',sans-serif;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.06)}
+  .now-col-label.doing{color:#c9a84c}
+  .now-col-label.todo{color:#60a5fa}
+  .now-col-label.done{color:#4ade80}
+  .now-item{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#c4bfb5;line-height:1.6;padding:8px 10px;background:rgba(255,255,255,.025);border-radius:8px;margin-bottom:6px;border:1px solid rgba(255,255,255,.04)}
+  .now-item:last-child{margin-bottom:0}
+  .now-item-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+  .now-item-dot.doing{background:#c9a84c}
+  .now-item-dot.todo{background:#60a5fa}
+  .now-item-dot.done{background:#4ade80}
+  .now-item-main{font-weight:700;color:#e8e2d4;display:block;margin-bottom:1px}
+  .now-item-sub{font-size:11px;color:#7a7472}
+
   /* Print */
   .print-btn{
     position:fixed;bottom:24px;right:24px;
@@ -165,7 +185,7 @@
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-eyebrow">Fineme（ファインミ）／ 事業ロードマップ ／ 2026年3月更新</div>
+  <div class="hero-eyebrow">Fineme（ファインミ）／ 事業ロードマップ ／ 2026年3月26日更新</div>
   <h1>そのまま進むのが怖くなった夜に。<br>自信を再設計する、地図と羅針盤。</h1>
   <p class="hero-sub">
     Mission: <strong>外見を起点に、自信を再設計する人を増やす</strong><br>
@@ -175,6 +195,77 @@
 </div>
 <!-- /HERO -->
 
+
+<!-- NOW BOARD -->
+<div class="now-board">
+  <div class="now-board-eyebrow">今ここ — 2026年3月</div>
+  <div class="now-board-title">現在の進捗と直近アクション</div>
+  <div class="now-cols">
+
+    <div>
+      <div class="now-col-label doing">🔄 進行中</div>
+      <div class="now-item">
+        <div class="now-item-dot doing"></div>
+        <div>
+          <span class="now-item-main">小川くん（コンテンツパートナー）</span>
+          <span class="now-item-sub">ご飯の日程調整中。診断体験・資料はその後。</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot doing"></div>
+        <div>
+          <span class="now-item-main">PT — フィードバック待ち</span>
+          <span class="now-item-sub">管理画面を渡し確認中。キックオフ食事は4月以降。</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="now-col-label todo">📋 次にやること</div>
+      <div class="now-item">
+        <div class="now-item-dot todo"></div>
+        <div>
+          <span class="now-item-main">創業パートナー候補リストアップ</span>
+          <span class="now-item-sub">SNSアプローチ候補の洗い出し</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot todo"></div>
+        <div>
+          <span class="now-item-main">掲載者直接営業</span>
+          <span class="now-item-sub">PT・スタイリスト・外見コンサルへの個別アプローチ</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="now-col-label done">✅ 最近完了</div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
+          <span class="now-item-main">AIマッチングシステム</span>
+          <span class="now-item-sub">Claude Haikuによるプロフィール解析・3軸スコアリング</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
+          <span class="now-item-main">New Me Navi 出発前チェック</span>
+          <span class="now-item-sub">チェックリスト分離・診断結果CTA・Naviバナー</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
+          <span class="now-item-main">LINE応答メッセージ設定</span>
+          <span class="now-item-sub">6パターン + Day0〜5ステップ配信</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- /NOW BOARD -->
 
 <!-- PHASE 0 -->
 <div class="phase">
@@ -245,7 +336,7 @@
   <div class="deliverables">
     <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">PT業務委託（掲載者部門統括）</span>掲載者管理・営業を委託。報酬：有料掲載者数×¥500/月・最低保証¥10,000/月</div></div>
     <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">創業パートナー制度（3〜5社）</span>月1回Zoom30分＋LINEレポート→掲載料¥5,000無料。3年間・バッジ永続</div></div>
-    <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">ゴリラハウス提携交渉</span>ショートドラマ月2本制作。報酬：有料掲載者数×¥500/月・最低保証¥20,000/月</div></div>
+    <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">小川くん（コンテンツパートナー）</span>Finemeターゲット層を主人公にしたショートドラマ新アカウントを共同立ち上げ。報酬：有料掲載者数×¥500/月・最低保証¥20,000/月</div></div>
     <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">掲載者直接営業（PT＋オーナー並行）</span>個人PT・外見コンサル・スタイリスト等を中心に個別アプローチ</div></div>
   </div>
 
@@ -263,7 +354,7 @@
     <div class="kpi-card">
       <div class="kpi-num">1</div>
       <div class="kpi-unit">件</div>
-      <div class="kpi-label">ゴリラハウス<br>提携確定</div>
+      <div class="kpi-label">コンテンツパートナー<br>始動</div>
     </div>
   </div>
 
@@ -272,12 +363,12 @@
       <summary>📋 やること</summary>
       <div class="detail-body">
         <div class="detail-section">
-          <div class="detail-section-title">ゴリラハウス</div>
+          <div class="detail-section-title">小川くん（コンテンツパートナー）</div>
           <div class="detail-list">
-            <div class="detail-row"><span class="tag tag-done">完了</span>LINEで資料（fineme-gorilla-house.html）を送付</div>
-            <div class="detail-row"><span class="tag tag-done">完了</span>オンライン打ち合わせ実施（2026-03-25）</div>
-            <div class="detail-row"><span class="tag tag-todo">未着手</span>提携確定・業務委託契約締結</div>
-            <div class="detail-row"><span class="tag tag-todo">未着手</span>専用計測リンク設置（ゴリラハウス経由の流入計測）</div>
+            <div class="detail-row"><span class="tag tag-done">完了</span>打ち合わせ実施・一緒にやりたいと表明（2026-03-25）</div>
+            <div class="detail-row"><span class="tag tag-done">完了</span>提案資料（fineme-ogawa-pitch.html）作成</div>
+            <div class="detail-row"><span class="tag tag-doing">進行中</span>ご飯の日程調整中（診断体験・資料はその後）</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>条件すり合わせ・アカウント開設・第1本目の企画</div>
           </div>
         </div>
         <div class="detail-section">
@@ -302,7 +393,7 @@
       <summary>🔷 決めること</summary>
       <div class="detail-body">
         <div class="detail-list">
-          <div class="detail-row"><span class="tag tag-decide">要決定</span>ゴリラハウスとの正式提携条件（Layer 3報酬の将来設計含む）</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>小川くんとの正式提携条件・投稿頻度・クレジット表記</div>
           <div class="detail-row"><span class="tag tag-decide">要決定</span>PT業務委託契約の開始日・支払いサイクル</div>
           <div class="detail-row"><span class="tag tag-decide">要決定</span>創業パートナー候補の優先順位</div>
           <div class="detail-row"><span class="tag tag-decide">要決定</span>初期掲載者の地域・カテゴリ集中戦略（全国か首都圏先行か）</div>
@@ -327,7 +418,7 @@
   <div class="status-tag status-next"><span class="status-dot next"></span>予定</div>
 
   <div class="deliverables">
-    <div class="del-item"><span class="del-icon">📽</span><div><span class="del-label">ゴリラハウス制作・発信スタート</span>月2本ペースでInstagram・TikTok・YouTube Shortsへ展開</div></div>
+    <div class="del-item"><span class="del-icon">📽</span><div><span class="del-label">小川くん制作・発信スタート</span>月2本ペースでInstagram・TikTok・YouTube Shortsへ展開</div></div>
     <div class="del-item"><span class="del-icon">📊</span><div><span class="del-label">Me Scan受診者の蓄積</span>ショートドラマ→診断の導線を確立。受診データから改善を継続</div></div>
     <div class="del-item"><span class="del-icon">💬</span><div><span class="del-label">体験談の初期蓄積</span>掲載者経由の初期ユーザーから体験談を収集。SEOコンテンツ化の準備</div></div>
     <div class="del-item"><span class="del-icon">🔁</span><div><span class="del-label">掲載者→掲載者紹介ループの稼働確認</span>ストック型紹介報酬（¥500/月）が自然に動き始めるかを検証</div></div>
@@ -347,7 +438,7 @@
     <div class="kpi-card next-kpi">
       <div class="kpi-num">12</div>
       <div class="kpi-unit">本</div>
-      <div class="kpi-label">ゴリラハウス<br>動画累計</div>
+      <div class="kpi-label">コンテンツ<br>動画累計</div>
     </div>
   </div>
 
@@ -358,9 +449,9 @@
         <div class="detail-section">
           <div class="detail-section-title">コンテンツ集客</div>
           <div class="detail-list">
-            <div class="detail-row"><span class="tag tag-todo">未着手</span>ゴリラハウス制作スタート（月2本ペース・Instagram/TikTok/YouTube Shorts）</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>小川くん制作スタート（月2本ペース・Instagram/TikTok/YouTube Shorts）</div>
             <div class="detail-row"><span class="tag tag-todo">未着手</span>動画末尾のFineme誘導シーン設計・QRコード設置</div>
-            <div class="detail-row"><span class="tag tag-todo">未着手</span>ゴリラハウス経由の流入・Me Scan受診数の計測開始</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>コンテンツ経由の流入・Me Scan受診数の計測開始</div>
           </div>
         </div>
         <div class="detail-section">
@@ -377,7 +468,7 @@
       <summary>🔷 決めること</summary>
       <div class="detail-body">
         <div class="detail-list">
-          <div class="detail-row"><span class="tag tag-decide">要決定</span>ゴリラハウス動画内でのFineme登場シーン・セリフ・画面表示の設計</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>動画内でのFineme登場シーン・セリフ・画面表示の設計</div>
           <div class="detail-row"><span class="tag tag-decide">要決定</span>計測リンクのUX（専用LPを作るか・診断直リンクか）</div>
           <div class="detail-row"><span class="tag tag-decide">要決定</span>体験談のSEO記事化フォーマット（誰が書くか・運用フロー）</div>
           <div class="detail-row"><span class="tag tag-decide">要決定</span>掲載者営業の地域戦略（首都圏集中 vs 全国展開）</div>
@@ -405,7 +496,7 @@
     <div class="del-item"><span class="del-icon">⚙️</span><div><span class="del-label">3つのフライホイールが自走し始める</span>ユーザーループ・掲載者ループ・コンテンツループが相互に回り出す状態を確認</div></div>
     <div class="del-item"><span class="del-icon">💰</span><div><span class="del-label">診断サブスク検討・設計</span>月額300〜500円・再診断×変容追跡設計。掲載者・ユーザーが十分集まってから着手</div></div>
     <div class="del-item"><span class="del-icon">🌐</span><div><span class="del-label">SEO・オーガニック流入の確立</span>体験談コンテンツがSEO資産として機能し始める</div></div>
-    <div class="del-item"><span class="del-icon">📣</span><div><span class="del-label">コンテンツパートナーの拡張検討</span>ゴリラハウス以外のクリエイターとの提携可能性を検討</div></div>
+    <div class="del-item"><span class="del-icon">📣</span><div><span class="del-label">コンテンツパートナーの拡張検討</span>小川くん以外のクリエイターとの提携可能性を検討</div></div>
   </div>
 
   <div class="kpi-row">
@@ -435,7 +526,7 @@
           <div class="detail-list">
             <div class="detail-row"><span class="tag tag-todo">未着手</span>3フライホイール（ユーザー・掲載者・コンテンツ）の自走状況を定期計測</div>
             <div class="detail-row"><span class="tag tag-todo">未着手</span>SEOオーガニック流入の確認・キーワード改善</div>
-            <div class="detail-row"><span class="tag tag-todo">未着手</span>コンテンツパートナー拡張（ゴリラハウス以外のクリエイター提携検討）</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>コンテンツパートナー拡張（小川くん以外のクリエイター提携検討）</div>
           </div>
         </div>
         <div class="detail-section">
