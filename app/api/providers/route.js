@@ -118,7 +118,7 @@ export async function GET(request) {
     .from('providers')
     .select('*')
     .eq('published', true)
-    .eq('admin_hidden', false);
+    .or('admin_hidden.eq.false,admin_hidden.is.null');
 
   if (category) query = query.eq('main_category', category);
   if (area) query = query.ilike('area', `%${area}%`);

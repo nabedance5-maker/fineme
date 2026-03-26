@@ -61,6 +61,7 @@ export async function POST(request) {
         unique_strengths: unique_strengths || null,
         affiliate_url: affiliate_url || null,
         published: false,
+        admin_hidden: false,
         suitable_triggers: suitable_triggers || [],
         handles_failure_patterns: handles_failure_patterns || [],
         provider_style: provider_style || null,
