@@ -75,8 +75,11 @@ function ProviderCard({ provider }) {
         onMouseEnter={e => e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,.10)'}
         onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
       >
-        <div style={{ height: '200px', overflow: 'hidden', background: '#f3f4f6', flexShrink: 0 }}>
+        <div style={{ height: '200px', overflow: 'hidden', background: '#f3f4f6', flexShrink: 0, position: 'relative' }}>
           <img src={img} alt={provider.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          {provider.entity_type === 'affiliate' && (
+            <span style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '10px', fontWeight: '700', padding: '2px 7px', background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: '4px', letterSpacing: '0.05em' }}>PR</span>
+          )}
         </div>
         <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
