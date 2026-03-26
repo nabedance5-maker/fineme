@@ -1,9 +1,21 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+
+// 軸 → 関連カテゴリのマッピング（記事のcategoryフィールドと照合）
+const AXIS_RELATED_CATS = {
+  hair:    ['清潔感', '垢抜け'],
+  skin:    ['清潔感'],
+  eyebrow: ['清潔感', '垢抜け'],
+  fashion: ['垢抜け'],
+  body:    ['垢抜け'],
+  teeth:   [],
+  nail:    [],
+};
 
 export default function NewMeNaviPage() {
   const initialized = useRef(false);
+  const [relatedArticles, setRelatedArticles] = useState([]);
 
   useEffect(() => {
     if (initialized.current) return;
@@ -1159,6 +1171,38 @@ export default function NewMeNaviPage() {
     return () => { document.head.removeChild(style); };
   }, []);
 
+  // 診断軸に基づいて関連記事を取得
+  useEffect(() => {
+    let topAxes = [];
+    try {
+      const raw = localStorage.getItem('fineme:diagnosis:latest');
+      if (raw) {
+        const p = JSON.parse(raw);
+        topAxes = p.priority_order?.slice(0, 3) || (p.compass_first ? [p.compass_first] : []);
+      }
+    } catch {}
+
+    fetch('/api/features')
+      .then(r => r.ok ? r.json() : [])
+      .then(articles => {
+        if (!Array.isArray(articles) || articles.length === 0) return;
+        // 関連スコアで並び替え
+        const scored = articles.map(a => {
+          let score = 0;
+          topAxes.forEach((axis, i) => {
+            const cats = AXIS_RELATED_CATS[axis] || [];
+            if (cats.some(c => a.category?.includes(c))) score += (3 - i);
+          });
+          // 「変容の思想」系は常に出す
+          if (a.category === '変容の思想') score += 1;
+          return { ...a, _score: score };
+        });
+        scored.sort((a, b) => b._score - a._score);
+        setRelatedArticles(scored.slice(0, 3));
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <>
       <style>{`
@@ -1195,6 +1239,50 @@ export default function NewMeNaviPage() {
             <div id="navi-root">
               <p style={{textAlign:'center',padding:'60px 20px',color:'#9ca3af'}}>読み込み中…</p>
             </div>
+
+            {/* 関連する読み物 */}
+            {relatedArticles.length > 0 && (
+              <div style={{ marginTop: '40px', paddingTop: '32px', borderTop: '1px solid rgba(201,168,76,0.15)' }}>
+                <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.7)', margin: '0 0 16px' }}>
+                  あなたの変容に関連する読み物
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {relatedArticles.map(a => (
+                    <Link key={a.id} href={`/feature/${a.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <div style={{
+                        display: 'flex', gap: '14px', alignItems: 'center',
+                        padding: '14px', borderRadius: '12px',
+                        border: '1px solid rgba(201,168,76,0.15)',
+                        background: 'rgba(255,255,255,0.6)',
+                        transition: 'border-color 0.15s',
+                      }}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)'}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)'}
+                      >
+                        {a.thumbnail && (
+                          <img src={a.thumbnail} alt={a.title}
+                            style={{ width: '72px', height: '52px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 }}
+                          />
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          {a.category && (
+                            <span style={{ fontSize: '10px', fontWeight: 800, color: '#c9a84c', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{a.category}</span>
+                          )}
+                          <p style={{ fontSize: '14px', fontWeight: 700, margin: '4px 0 4px', lineHeight: 1.45, fontFamily: 'var(--font-serif)', color: '#0a0f1e' }}>{a.title}</p>
+                          <span style={{ fontSize: '11px', color: '#9ca3af' }}>{a.reading_time || 5}分で読める</span>
+                        </div>
+                        <span style={{ fontSize: '16px', color: 'rgba(201,168,76,0.6)', flexShrink: 0 }}>→</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+                <div style={{ textAlign: 'right', marginTop: '12px' }}>
+                  <Link href="/feature" style={{ fontSize: '12px', color: 'var(--color-gold)', textDecoration: 'none', fontWeight: 700 }}>
+                    特集一覧を見る →
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>
