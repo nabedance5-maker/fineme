@@ -2,6 +2,7 @@
 // PUT    /api/admin/features/[id]  - 更新
 // DELETE /api/admin/features/[id]  - 削除
 import { createClient } from '@supabase/supabase-js';
+import { revalidatePath } from 'next/cache';
 
 function db() {
   return createClient(
@@ -69,6 +70,8 @@ export async function PUT(request, { params }) {
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
+  revalidatePath('/feature');
+  if (data?.slug) revalidatePath(`/feature/${data.slug}`);
   return Response.json(data);
 }
 

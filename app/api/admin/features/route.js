@@ -1,6 +1,7 @@
 // GET  /api/admin/features  - 一覧取得
 // POST /api/admin/features  - 新規作成
 import { createClient } from '@supabase/supabase-js';
+import { revalidatePath } from 'next/cache';
 
 function db() {
   return createClient(
@@ -59,5 +60,7 @@ export async function POST(request) {
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
+  revalidatePath('/feature');
+  if (data?.slug) revalidatePath(`/feature/${data.slug}`);
   return Response.json(data, { status: 201 });
 }
