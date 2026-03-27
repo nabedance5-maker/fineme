@@ -1,6 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 
 export default function MypageProfilePage() {
   const [accessToken, setAccessToken] = useState(null);
@@ -11,8 +12,9 @@ export default function MypageProfilePage() {
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [phone, setPhone] = useState('');
-  const [area, setArea] = useState('');
-  const [city, setCity] = useState('');
+  const [area, setArea] = useState('');  // 都道府県
+  const [city, setCity] = useState('');  // 市区町村
+  const cityOptions = useMemo(() => JAPAN_CITIES[area] || [], [area]);
   const [shareDiagnosis, setShareDiagnosis] = useState(false);
   const [shareRoadmap, setShareRoadmap] = useState(false);
   const [lineUserId, setLineUserId] = useState(null);
@@ -104,8 +106,14 @@ export default function MypageProfilePage() {
         } else {
           localStorage.removeItem('fineme:user:area');
         }
-        if (city.trim()) localStorage.setItem('fineme:user:city', city.trim());
-        else localStorage.removeItem('fineme:user:city');
+        if (city.trim()) {
+          localStorage.setItem('fineme:user:city', city.trim());
+          // 市区町村を手動変更した場合、既存の座標キャッシュをクリア（再設定をLocationPromptに委ねる）
+          localStorage.removeItem('fineme:user:lat');
+          localStorage.removeItem('fineme:user:lon');
+        } else {
+          localStorage.removeItem('fineme:user:city');
+        }
       }
     } catch {
       setMessage('保存に失敗しました。');
@@ -164,21 +172,25 @@ export default function MypageProfilePage() {
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <select
                     value={area}
-                    onChange={e => setArea(e.target.value)}
+                    onChange={e => { setArea(e.target.value); setCity(''); }}
                     style={{ padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', width: '140px', boxSizing: 'border-box', background: '#fff' }}
                   >
                     <option value="">都道府県</option>
-                    {['北海道','青森','岩手','宮城','秋田','山形','福島','茨城','栃木','群馬','埼玉','千葉','東京','神奈川','新潟','富山','石川','福井','山梨','長野','岐阜','静岡','愛知','三重','滋賀','京都','大阪','兵庫','奈良','和歌山','鳥取','島根','岡山','広島','山口','徳島','香川','愛媛','高知','福岡','佐賀','長崎','熊本','大分','宮崎','鹿児島','沖縄'].map(p => (
+                    {PREFECTURES.map(p => (
                       <option key={p} value={p}>{p}</option>
                     ))}
                   </select>
-                  <input
-                    type="text"
-                    placeholder="市区町村（例: 青梅市）"
+                  <select
                     value={city}
                     onChange={e => setCity(e.target.value)}
-                    style={{ padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', flex: 1, minWidth: '140px', boxSizing: 'border-box' }}
-                  />
+                    disabled={!area}
+                    style={{ padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', flex: 1, minWidth: '140px', boxSizing: 'border-box', background: '#fff' }}
+                  >
+                    <option value="">{area ? '市区町村を選ぶ（任意）' : '都道府県を先に選択'}</option>
+                    {cityOptions.map(c => (
+                      <option key={c.name} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

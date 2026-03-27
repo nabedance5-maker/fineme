@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -153,10 +154,23 @@ export default function ProviderDashboardPage() {
       document.getElementById('publish-toggle-input').checked = !!provider.published;
       document.getElementById('publish-label').textContent = provider.published ? '公開中' : '非公開';
       ['name', 'catchphrase', 'target_desc', 'philosophy', 'guide_message', 'photo_url',
-       'unique_strengths', 'nearest_station',
+       'unique_strengths', 'nearest_station', 'prefecture', 'address',
+       'price_from', 'experience_years', 'credentials',
       ].forEach(k => {
         const el = document.getElementById('profile-form').elements[k];
         if (el) el.value = provider[k] || '';
+      });
+      // 都道府県に連動して市区町村セレクトを更新し、保存済みの市区町村を選択
+      const prefEl = document.getElementById('profile-form').elements['prefecture'];
+      const cityEl = document.getElementById('profile-city-select');
+      if (prefEl && cityEl && provider.prefecture) {
+        populateCitySelect(cityEl, provider.prefecture);
+        cityEl.value = provider.city || '';
+      }
+      // payment_methods チェックボックス
+      (provider.payment_methods || []).forEach(v => {
+        const cb = document.getElementById('profile-form').querySelector(`[name=payment_methods][value="${v}"]`);
+        if (cb) cb.checked = true;
       });
       // service-form内のAIフィールド読み込み
       ['ideal_client_desc', 'client_before_state', 'transformation_pattern', 'best_fit_desc'].forEach(k => {
@@ -190,8 +204,8 @@ export default function ProviderDashboardPage() {
         if (el) el.value = url || '';
       });
 
-      ['description', 'area', 'price_from', 'provider_style', 'prefecture'].forEach(k => {
-        const el = document.getElementById('service-form').elements[k];
+      ['description', 'provider_style'].forEach(k => {
+        const el = document.getElementById('service-form')?.elements[k];
         if (el) el.value = provider[k] || '';
       });
       // 新サービスフィールド
@@ -334,14 +348,39 @@ export default function ProviderDashboardPage() {
       } catch {}
     }
 
+    // 市区町村セレクトを都道府県に連動して更新
+    function populateCitySelect(selectEl, prefecture) {
+      const cities = JAPAN_CITIES[prefecture] || [];
+      selectEl.innerHTML = '<option value="">市区町村を選ぶ（任意）</option>';
+      cities.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = c.name;
+        selectEl.appendChild(opt);
+      });
+    }
+    const profilePrefEl = document.getElementById('profile-form').elements['prefecture'];
+    const profileCityEl = document.getElementById('profile-city-select');
+    if (profilePrefEl && profileCityEl) {
+      profilePrefEl.addEventListener('change', () => {
+        populateCitySelect(profileCityEl, profilePrefEl.value);
+        profileCityEl.value = '';
+      });
+    }
+
     document.getElementById('profile-form').addEventListener('submit', async e => {
       e.preventDefault();
       const fd = new FormData(e.target);
       const data = Object.fromEntries(fd);
       // boolean
       data.online_available = !!e.target.querySelector('[name=online_available]')?.checked;
-      // number
+      // numbers
       if (data.experience_years !== undefined) data.experience_years = data.experience_years ? Number(data.experience_years) : null;
+      if (data.price_from) data.price_from = Number(data.price_from) || null;
+      // arrays
+      data.payment_methods = [...e.target.querySelectorAll('[name=payment_methods]:checked')].map(el => el.value);
+      // city は select から取得
+      data.city = profileCityEl ? profileCityEl.value : '';
       // facility_photos: 3つのURL入力を配列に結合
       data.facility_photos = [fd.get('facility_photo_1'), fd.get('facility_photo_2'), fd.get('facility_photo_3')].filter(Boolean);
       delete data.facility_photo_1; delete data.facility_photo_2; delete data.facility_photo_3;
@@ -409,8 +448,6 @@ export default function ProviderDashboardPage() {
       const data = Object.fromEntries(fd);
       data.suitable_triggers = [...e.target.querySelectorAll('[name=suitable_triggers]:checked')].map(el => el.value);
       data.handles_failure_patterns = [...e.target.querySelectorAll('[name=handles_failure_patterns]:checked')].map(el => el.value);
-      data.payment_methods = [...e.target.querySelectorAll('[name=payment_methods]:checked')].map(el => el.value);
-      if (data.price_from) data.price_from = Number(data.price_from);
       data.trial_available = !!e.target.querySelector('[name=trial_available]')?.checked;
       data.response_hours = data.response_hours ? Number(data.response_hours) : null;
       saveToLocal(data);
@@ -1499,28 +1536,77 @@ export default function ProviderDashboardPage() {
               {/* ── 掲載者情報・信頼シグナル ── */}
               <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>掲載者情報・信頼シグナル</h3>
               <small className="muted" style={{ display: 'block', marginBottom: '14px', fontSize: '12px', lineHeight: '1.6' }}>ページ上部の「クイックファクト」として横一列で表示されます。同じカテゴリの他ガイドとの比較に直結します。</small>
-              <div className="form-field">
-                <label>都道府県 <span style={{color:'#dc2626',fontSize:'12px'}}>*</span></label>
-                <select name="prefecture">
-                  <option value="">選択してください</option>
-                  {['北海道','青森','岩手','宮城','秋田','山形','福島','茨城','栃木','群馬',
-                    '埼玉','千葉','東京','神奈川','新潟','富山','石川','福井','山梨','長野',
-                    '岐阜','静岡','愛知','三重','滋賀','京都','大阪','兵庫','奈良','和歌山',
-                    '鳥取','島根','岡山','広島','山口','徳島','香川','愛媛','高知','福岡',
-                    '佐賀','長崎','熊本','大分','宮崎','鹿児島','沖縄'].map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
-                <small className="muted">エリア検索・マッチングに使用されます</small>
+              {/* ── 所在地 ── */}
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>所在地・アクセス</h3>
+              <small className="muted" style={{ display: 'block', marginBottom: '14px', fontSize: '12px', lineHeight: '1.6' }}>
+                入力した住所はAIマッチングの距離計算に使用されます。番地まで入力するほど精度が上がります。ユーザーには最寄り駅のみ表示されます。
+              </small>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className="form-field">
+                  <label>都道府県 <span style={{color:'#dc2626',fontSize:'12px'}}>*</span></label>
+                  <select name="prefecture">
+                    <option value="">選択してください</option>
+                    {PREFECTURES.map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-field">
+                  <label>市区町村</label>
+                  <select id="profile-city-select" name="city">
+                    <option value="">都道府県を先に選択</option>
+                  </select>
+                </div>
               </div>
               <div className="form-field">
-                <label>最寄り駅・アクセス</label>
+                <label>番地以下（住所詳細）</label>
+                <input name="address" placeholder="例: 渋谷区渋谷1-2-3 ○○ビル401号室" />
+                <small className="muted">公開ページには表示されません。距離マッチング精度向上のみに使用します。</small>
+              </div>
+              <div className="form-field">
+                <label>最寄り駅・アクセス（公開される情報）</label>
                 <input name="nearest_station" placeholder="例: 渋谷駅から徒歩5分" />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                 <input type="checkbox" name="online_available" id="online_available" />
                 <label htmlFor="online_available" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>オンライン対応あり（バッジ表示）</label>
               </div>
+
+              {/* ── 料金・支払い ── */}
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>料金・支払い</h3>
+              <div className="form-field">
+                <label>最低価格（円）</label>
+                <input name="price_from" type="number" placeholder="例: 10000" />
+                <small className="muted">検索ページでの価格フィルターに使用されます</small>
+              </div>
+              <div className="form-field">
+                <label>支払い方法（複数選択可）</label>
+                <div className="checkbox-group">
+                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="cash" />現金</label>
+                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="credit" />クレジットカード</label>
+                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="paypay" />PayPay</label>
+                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="rakuten_pay" />楽天Pay</label>
+                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="line_pay" />LINE Pay</label>
+                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="bank" />銀行振込</label>
+                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="other" />その他</label>
+                </div>
+              </div>
+
+              {/* ── 経歴・実績 ── */}
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>経歴・実績</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className="form-field">
+                  <label>経験年数</label>
+                  <input name="experience_years" type="number" min="0" placeholder="例: 5" />
+                </div>
+                <div></div>
+              </div>
+              <div className="form-field">
+                <label>資格・経歴</label>
+                <textarea name="credentials" placeholder={"例: NSCA認定パーソナルトレーナー\n元プロサッカー選手 8年"} style={{ minHeight: '80px' }}></textarea>
+                <small className="muted">クイックファクト・ページ下部の「プロフィール」に表示されます</small>
+              </div>
+
               <div className="form-field">
                 <label>他サービスとの違い・このガイドだけの強み（最上部にゴールドで表示）</label>
                 <textarea name="unique_strengths" placeholder={"例: マッチングアプリの写真撮影と外見コーチングをセットで提供できる唯一のサービスです。\n撮影から約1週間でプロフィール改善の結果を実感できます。"}></textarea>
@@ -1768,35 +1854,6 @@ export default function ProviderDashboardPage() {
             <form id="service-form">
               <div className="form-field"><label>サービス説明文（料金・メニューなど）</label><textarea name="description" placeholder="提供するサービスの詳細をここに書いてください"></textarea></div>
               <div className="form-field">
-                <label>エリア</label>
-                <select name="area">
-                  <option value="">選択してください</option>
-                  <optgroup label="東京">
-                    <option value="東京・渋谷">渋谷</option>
-                    <option value="東京・新宿">新宿</option>
-                    <option value="東京・表参道">表参道・青山</option>
-                    <option value="東京・銀座">銀座・有楽町</option>
-                    <option value="東京・恵比寿">恵比寿・代官山</option>
-                    <option value="東京・六本木">六本木</option>
-                    <option value="東京・品川">品川</option>
-                    <option value="東京・池袋">池袋</option>
-                    <option value="東京・上野">上野・秋葉原</option>
-                    <option value="東京・吉祥寺">吉祥寺・三鷹</option>
-                    <option value="東京・その他">東京（その他）</option>
-                  </optgroup>
-                  <optgroup label="神奈川">
-                    <option value="横浜">横浜</option>
-                    <option value="川崎">川崎</option>
-                  </optgroup>
-                  <optgroup label="埼玉・千葉">
-                    <option value="大宮・さいたま">大宮・さいたま</option>
-                    <option value="千葉市">千葉市</option>
-                  </optgroup>
-                  <option value="オンライン">オンライン</option>
-                </select>
-              </div>
-              <div className="form-field"><label>最低価格（円）</label><input name="price_from" type="number" placeholder="10000" /></div>
-              <div className="form-field">
                 <label>提供スタイル（New Me Map連動）</label>
                 <select name="provider_style">
                   <option value="">選択してください</option>
@@ -1882,18 +1939,6 @@ export default function ProviderDashboardPage() {
                   <option value="72">72時間以内（3日）</option>
                 </select>
                 <small className="muted">「返信〇時間以内」として相談ページに表示。設定するだけで申込率が上がります。</small>
-              </div>
-              <div className="form-field">
-                <label>支払い方法（複数選択可）</label>
-                <div className="checkbox-group">
-                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="cash" />現金</label>
-                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="credit" />クレジットカード</label>
-                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="paypay" />PayPay</label>
-                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="rakuten_pay" />楽天Pay</label>
-                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="line_pay" />LINE Pay</label>
-                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="bank" />銀行振込</label>
-                  <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="other" />その他</label>
-                </div>
               </div>
               <div className="form-field">
                 <label>キャンセルポリシー</label>

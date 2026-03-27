@@ -1,12 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-
-// 都道府県リスト
-const PREFS = ['北海道','青森','岩手','宮城','秋田','山形','福島','茨城','栃木','群馬',
-  '埼玉','千葉','東京','神奈川','新潟','富山','石川','福井','山梨','長野',
-  '岐阜','静岡','愛知','三重','滋賀','京都','大阪','兵庫','奈良','和歌山',
-  '鳥取','島根','岡山','広島','山口','徳島','香川','愛媛','高知','福岡',
-  '佐賀','長崎','熊本','大分','宮崎','鹿児島','沖縄'];
+import { JAPAN_CITIES, PREFECTURES, getCityCoords } from '@/app/_data/japan-cities';
 
 // Nominatim（OpenStreetMap）で座標→都道府県＋市区町村に変換
 // 座標はOSMに1回送信され、地名のみ保存。座標は即破棄。
@@ -27,6 +21,8 @@ async function reverseGeocode(lat, lon) {
 
 const LS_PREF = 'fineme:user:area';       // 後方互換のため都道府県はこのキーを維持
 const LS_CITY = 'fineme:user:city';
+const LS_LAT  = 'fineme:user:lat';
+const LS_LON  = 'fineme:user:lon';
 const LS_SKIP = 'fineme:user:area:skip';
 
 export function LocationPrompt({ accessToken }) {
@@ -34,7 +30,7 @@ export function LocationPrompt({ accessToken }) {
   const [step, setStep] = useState('top');   // top | manual
   const [detecting, setDetecting] = useState(false);
   const [selPref, setSelPref] = useState('');
-  const [cityText, setCityText] = useState('');
+  const [selCity, setSelCity] = useState('');
   const [done, setDone] = useState(false);
   const [geoError, setGeoError] = useState('');
 
@@ -44,9 +40,13 @@ export function LocationPrompt({ accessToken }) {
     if (!existing && !skipped) setShow(true);
   }, []);
 
-  function saveLocation(prefecture, city) {
+  const cityOptions = selPref ? (JAPAN_CITIES[selPref] || []) : [];
+
+  function saveLocation(prefecture, city, lat, lon) {
     localStorage.setItem(LS_PREF, prefecture);
     localStorage.setItem(LS_CITY, city);
+    if (lat != null) localStorage.setItem(LS_LAT, String(lat));
+    if (lon != null) localStorage.setItem(LS_LON, String(lon));
     localStorage.removeItem(LS_SKIP);
     if (accessToken) {
       fetch('/api/me/profile', {
@@ -66,10 +66,12 @@ export function LocationPrompt({ accessToken }) {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
-          const { prefecture, city } = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+          const { lat, lon: posLon } = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+          const { prefecture, city } = await reverseGeocode(lat, posLon);
           if (!prefecture) throw new Error('not found');
           setDetecting(false);
-          saveLocation(prefecture, city);
+          // 現在地はNominatimから正確な座標を保持
+          saveLocation(prefecture, city, lat, posLon);
         } catch {
           setDetecting(false);
           setGeoError('位置情報の取得に失敗しました。手動で選択してください。');
@@ -87,7 +89,9 @@ export function LocationPrompt({ accessToken }) {
 
   function handleManualSave() {
     if (!selPref) return;
-    saveLocation(selPref, cityText.trim());
+    // 選択した市区町村の重心座標を使用
+    const coords = selCity ? getCityCoords(selPref, selCity) : null;
+    saveLocation(selPref, selCity, coords?.lat ?? null, coords?.lon ?? null);
   }
 
   function handleSkip() {
@@ -147,19 +151,20 @@ export function LocationPrompt({ accessToken }) {
         <>
           <p style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: 700, color: '#0a0f1e' }}>エリアを選択</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <select value={selPref} onChange={e => setSelPref(e.target.value)} style={{
+            <select value={selPref} onChange={e => { setSelPref(e.target.value); setSelCity(''); }} style={{
               padding: '10px 12px', borderRadius: '8px', border: '1.5px solid #e5e7eb', fontSize: '14px', background: '#fff',
             }}>
               <option value="">都道府県を選ぶ</option>
-              {PREFS.map(p => <option key={p} value={p}>{p}</option>)}
+              {PREFECTURES.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
-            <input
-              type="text"
-              placeholder="市区町村を入力（例: 青梅市、世田谷区）"
-              value={cityText}
-              onChange={e => setCityText(e.target.value)}
-              style={{ padding: '10px 12px', borderRadius: '8px', border: '1.5px solid #e5e7eb', fontSize: '14px' }}
-            />
+            {selPref && (
+              <select value={selCity} onChange={e => setSelCity(e.target.value)} style={{
+                padding: '10px 12px', borderRadius: '8px', border: '1.5px solid #e5e7eb', fontSize: '14px', background: '#fff',
+              }}>
+                <option value="">市区町村を選ぶ（任意）</option>
+                {cityOptions.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+              </select>
+            )}
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={handleManualSave} disabled={!selPref} style={{
                 flex: 1, padding: '11px', borderRadius: '8px', border: 'none',

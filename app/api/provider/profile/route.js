@@ -6,7 +6,7 @@ const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const ALLOWED_FIELDS = [
   'name', 'catchphrase', 'description', 'target_desc', 'philosophy',
   'guide_message', 'unique_strengths',
-  'area', 'prefecture', 'price_from', 'photo_url', 'provider_style',
+  'area', 'prefecture', 'city', 'address', 'price_from', 'photo_url', 'provider_style',
   'suitable_triggers', 'handles_failure_patterns',
   'published',
   // 比較・信頼シグナルフィールド
@@ -64,6 +64,29 @@ export async function PATCH(request) {
 
   if (Object.keys(updates).length === 0) {
     return Response.json({ error: 'No valid fields to update' }, { status: 400 });
+  }
+
+  // 住所が更新された場合、Nominatimでジオコーディングしてlat/lonを保存
+  const prefectureVal = updates.prefecture || provider.prefecture || '';
+  const cityVal = updates.city ?? '';
+  const addressVal = updates.address ?? '';
+  if (updates.address !== undefined || updates.prefecture !== undefined || updates.city !== undefined) {
+    const fullAddress = [prefectureVal, cityVal, addressVal].filter(Boolean).join('');
+    if (fullAddress.length >= 3) {
+      try {
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress + ' 日本')}&limit=1&accept-language=ja`,
+          { headers: { 'User-Agent': 'Fineme/1.0' }, signal: AbortSignal.timeout(5000) }
+        );
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          if (geoData?.[0]) {
+            updates.lat = parseFloat(geoData[0].lat);
+            updates.lon = parseFloat(geoData[0].lon);
+          }
+        }
+      } catch { /* ジオコーディング失敗は無視してデータ保存は継続 */ }
+    }
   }
 
   const { data, error } = await supabase

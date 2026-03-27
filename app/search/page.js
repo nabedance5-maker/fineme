@@ -197,8 +197,10 @@ function SearchContent() {
       try {
         const upref = localStorage.getItem('fineme:user:area') || '';
         const ucity = localStorage.getItem('fineme:user:city') || '';
-        if (upref) params.set('prefecture', upref);
-        if (ucity) params.set('city', ucity);
+        const ulat  = localStorage.getItem('fineme:user:lat') || '';
+        const ulon  = localStorage.getItem('fineme:user:lon') || '';
+        if (ulat && ulon) { params.set('lat', ulat); params.set('lon', ulon); }
+        else if (upref) { params.set('prefecture', upref); if (ucity) params.set('city', ucity); }
       } catch {}
       const res = await fetch(`/api/providers?${params}`);
       const data = res.ok ? await res.json() : [];
