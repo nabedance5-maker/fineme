@@ -40,10 +40,10 @@ export async function PATCH(request) {
     return Response.json({ error: 'Invalid token' }, { status: 401 });
   }
 
-  // メールで掲載者を特定
+  // メールで掲載者を特定（geocoding フォールバック用に prefecture/city も取得）
   const { data: provider } = await supabase
     .from('providers')
-    .select('id')
+    .select('id, prefecture, city')
     .eq('email', user.email)
     .single();
 

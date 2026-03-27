@@ -123,7 +123,7 @@ export function LocationPrompt({ accessToken }) {
           </p>
           <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#6b7280', lineHeight: 1.65 }}>
             市区町村レベルで設定すると、通いやすいサービスが上位に表示されます。
-            現在地を使う場合、座標はOpenStreetMapで市区町村名に変換後に即破棄します。
+            現在地を使う場合、座標はお使いの端末内のみに保存し、外部サービスへの送信はOpenStreetMapへの変換1回のみです。
           </p>
           {geoError && <p style={{ margin: '0 0 12px', fontSize: '12px', color: '#dc2626' }}>{geoError}</p>}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

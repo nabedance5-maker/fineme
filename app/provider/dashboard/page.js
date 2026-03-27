@@ -167,11 +167,6 @@ export default function ProviderDashboardPage() {
         populateCitySelect(cityEl, provider.prefecture);
         cityEl.value = provider.city || '';
       }
-      // payment_methods チェックボックス
-      (provider.payment_methods || []).forEach(v => {
-        const cb = document.getElementById('profile-form').querySelector(`[name=payment_methods][value="${v}"]`);
-        if (cb) cb.checked = true;
-      });
       // service-form内のAIフィールド読み込み
       ['ideal_client_desc', 'client_before_state', 'transformation_pattern', 'best_fit_desc'].forEach(k => {
         const el = document.getElementById('service-form')?.elements[k];
