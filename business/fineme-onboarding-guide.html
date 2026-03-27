@@ -512,12 +512,21 @@
         <div class="check-box"></div>
         <div class="check-body">
           <div class="check-title">基本情報</div>
-          <div class="check-desc">事業名・カテゴリ・エリア・電話番号を入力します。公開ページの最上部に表示されます。</div>
+          <div class="check-desc">事業名・カテゴリ・電話番号を入力します。公開ページの最上部に表示されます。</div>
+        </div>
+      </div>
+
+      <div class="check-item star">
+        <div class="check-num">2</div>
+        <div class="check-box"></div>
+        <div class="check-body">
+          <div class="check-title">所在地（距離マッチングに必須）<span class="star-mark">★ 推奨</span></div>
+          <div class="check-desc">都道府県 → 市区町村 → 番地以下の順に入力します。保存すると自動で位置座標が取得され、近くにいるユーザーへの優先表示が有効になります。番地以下はユーザーには公開されません（マッチング精度向上のみに使用）。最寄り駅・アクセスは別のフィールドで設定できます。</div>
         </div>
       </div>
 
       <div class="check-item">
-        <div class="check-num">2</div>
+        <div class="check-num">3</div>
         <div class="check-box"></div>
         <div class="check-body">
           <div class="check-title">事業紹介文</div>
@@ -526,7 +535,7 @@
       </div>
 
       <div class="check-item star">
-        <div class="check-num">3</div>
+        <div class="check-num">4</div>
         <div class="check-box"></div>
         <div class="check-body">
           <div class="check-title">AIマッチングプロフィール（4項目）<span class="star-mark">★ 高優先</span></div>
@@ -621,6 +630,14 @@
           <div class="p-desc">ユーザーは変容ロードマップ（New Me Navi）に何度も戻ってきます。旅が進んであなたの担当軸がCompassの次の一手に変わったとき、再びあなたのページへ誘導されます。「一度来なかった人」が数週間後に戻ってくる仕組みです。</div>
         </div>
       </div>
+    </div>
+
+    <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.18);border-radius:12px;padding:18px 20px;margin-top:20px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.1em;color:rgba(201,168,76,.7);text-transform:uppercase;font-family:'Hiragino Kaku Gothic Pro',sans-serif;margin-bottom:8px">📍 ユーザー側のエリア設定フロー（参考）</div>
+      <p style="font-size:13px;color:#b0aaa2;line-height:1.85">
+        ユーザーが診断結果ページを表示すると、ページ下部に「LocationPrompt」が任意表示されます。ユーザーは「現在地から自動設定」または「都道府県 → 市区町村のセレクトで手動設定」でエリアを登録できます（任意）。<br>
+        エリアを設定したユーザーが掲載者検索を行うと、<strong>10km以内+8pt / 10〜30km+5pt / 30〜50km+2pt</strong> の距離ボーナスが加算され、近くの掲載者が優先表示されます。あなたの所在地を正確に登録しておくことで、この恩恵を受けられます。
+      </p>
     </div>
   </section>
 

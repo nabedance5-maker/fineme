@@ -289,6 +289,20 @@
           <span class="now-item-sub">チェックリスト分離・診断結果CTA・Naviバナー</span>
         </div>
       </div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
+          <span class="now-item-main">エリアマッチング（Haversine距離ベース）（2026-03-27）</span>
+          <span class="now-item-sub">GPS/手動セレクトで位置登録・10km以内+8pt など距離スコアリング・Nominatim自動ジオコーディング</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
+          <span class="now-item-main">掲載者基本情報整理（住所3段階入力）（2026-03-27）</span>
+          <span class="now-item-sub">都道府県→市区町村→番地以下の3段階入力・番地は非公開・Nominatim lat/lon保存</span>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -319,6 +333,8 @@
     <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">AIマッチングシステム</span>Claude Haikuがプロフィール文章を解析しai_match_profile生成。USER MATCH / PROFILE QUALITY / SERVICE QUALITYの3軸スコアリング確立</div></div>
     <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">New Me Navi 出発前チェック</span>各軸の前提項目をチェックリスト分離・診断結果ページCTA追加・Naviバナー追加</div></div>
     <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">セキュリティ強化</span>API認証9件・XSSエスケープ4ファイル・LINEオープンリダイレクト修正・AI APIレートリミット・予約POSTスパム対策</div></div>
+    <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">エリアマッチング（Haversine距離ベース）</span>GPS/手動セレクトでユーザー位置登録・掲載者住所3段階入力・Nominatim自動ジオコーディング・10km以内+8pt/10〜30km+5pt/30〜50km+2ptのスコアリング。Google Maps通勤時間APIは不採用確定（Haversineで代替）</div></div>
+    <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">掲載者基本情報整理（プロフィールタブ集約）</span>都道府県→市区町村→番地以下の3段階住所入力。番地はユーザー非公開（マッチング精度向上のみ使用）。最寄り駅・アクセスは別途公開フィールド。最低価格・支払い方法・経験年数・資格もプロフィールタブに集約</div></div>
   </div>
 
   <div class="insight">
@@ -581,6 +597,7 @@
       <summary>🔷 決めること</summary>
       <div class="detail-body">
         <div class="detail-list">
+          <div class="detail-row"><span class="tag tag-done">確定</span>Google Maps通勤時間API — 不採用確定（Haversine距離ベースで代替。APIコスト・複雑さに対して精度向上が見合わない判断）</div>
           <div class="detail-row"><span class="tag tag-decide">要決定</span>診断サブスクの価格・内容・課金タイミング</div>
           <div class="detail-row"><span class="tag tag-decide">要決定</span>コンテンツパートナー追加基準（どんなアカウントと組むか）</div>
           <div class="detail-row"><span class="tag tag-decide">要決定</span>ターゲット拡張タイミングの判断基準（何をもって拡張するか）</div>
@@ -676,7 +693,7 @@
 <!-- FOOTER -->
 <div class="footer">
   <div class="footer-brand">Fineme（ファインミ）</div>
-  <div class="footer-sub">外見を起点に、自信を再設計する人を増やす ／ 最終更新：2026年3月22日</div>
+  <div class="footer-sub">外見を起点に、自信を再設計する人を増やす ／ 最終更新：2026年3月27日</div>
 </div>
 
 </div>

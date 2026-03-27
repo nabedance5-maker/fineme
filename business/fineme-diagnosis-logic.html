@@ -193,7 +193,7 @@
     <p class="cover-lead">
       PTおよび掲載者（ガイド）向けに、Finemeの中核機能「Me Scan」の設計思想・質問構造・スコア計算・マッチングへの接続を解説します。
     </p>
-    <p class="cover-meta">Version: v10_ai_matching　／　2026-03-25　／　Fineme</p>
+    <p class="cover-meta">Version: v11_area_matching　／　2026-03-27　／　Fineme</p>
   </div>
 
   <!-- 00: 設計思想 -->
@@ -594,9 +594,141 @@
     </div>
   </div>
 
+  <div class="divider"></div>
+
+  <!-- 07: エリアマッチング -->
+  <div class="section">
+    <div class="sec-num">07</div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Area Matching — エリアマッチング</div></div>
+    <p class="lead">距離（Haversine）ベースで<br>近くにいるユーザーに優先表示</p>
+
+    <div class="card-gold">
+      <h3>なぜ距離マッチングが必要なのか</h3>
+      <p>外見磨きサービスは「通い続けられる距離にあること」が継続率に直結します。Me Scanの診断結果との相性が高くても、遠距離では予約に至りません。エリアマッチングはユーザーと掲載者の物理的な距離をスコアに組み込み、「合う × 通える」という条件を両立させます。</p>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3>ユーザーの位置情報取得フロー</h3>
+      <p>診断結果ページの下部に「LocationPrompt」が任意表示され、エリア設定を促します。設定方法は2種類あります。</p>
+    </div>
+
+    <div class="phase-list" style="margin-top:12px">
+      <div class="phase-item">
+        <div class="phase-num">A</div>
+        <div class="phase-body">
+          <div class="phase-label">方法 A — 現在地から自動設定</div>
+          <div class="phase-title">GPS → Nominatim → 座標保存</div>
+          <p class="phase-desc">
+            ブラウザのGeolocation APIでGPS座標を取得 → Nominatim（OpenStreetMap）に送信して都道府県・市区町村のテキストを取得 → GPS座標（lat/lon）をそのまま端末のlocalStorageに保存。<br>
+            <strong>座標は端末内にのみ保存され、サーバーには送信しません。</strong>マッチングAPIが呼ばれた瞬間にクライアントから座標を添付し、サーバー側でスコアを計算します。
+          </p>
+          <div class="phase-tags">
+            <span class="phase-tag">Geolocation API</span>
+            <span class="phase-tag">Nominatim（OSM）</span>
+            <span class="phase-tag">lat/lon → localStorage</span>
+          </div>
+        </div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-num">B</div>
+        <div class="phase-body">
+          <div class="phase-label">方法 B — 手動選択（都道府県 → 市区町村）</div>
+          <div class="phase-title">セレクトUI → 市区町村重心座標 → 保存</div>
+          <p class="phase-desc">
+            ドロップダウンで都道府県 → 市区町村の順に選択 → Nominatimで選択した市区町村の重心座標を取得 → lat/lonをlocalStorageに保存。<br>
+            マイページからいつでも変更可能（引越し対応）。都道府県は`profiles.prefecture`、市区町村は`profiles.city`としてSupabaseに保存されます（ログイン時）。
+          </p>
+          <div class="phase-tags">
+            <span class="phase-tag">都道府県セレクト</span>
+            <span class="phase-tag">市区町村セレクト</span>
+            <span class="phase-tag">Nominatim重心座標</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>Haversine距離スコアリング（/api/providers）</h3>
+      <p>APIリクエスト時にユーザーのlat/lonが添付されている場合、掲載者のlat/lonとのHaversine距離を計算し、距離に応じたボーナスをスコアに加算します。</p>
+    </div>
+
+    <div class="formula-box" style="margin-top:10px">
+      <div class="formula-line">距離 ≤ 10km    → +8pt</div>
+      <div class="formula-comment">  徒歩・自転車・近接エリア — 最も強いボーナス</div>
+      <div class="formula-line">距離 10〜30km  → +5pt</div>
+      <div class="formula-comment">  電車で通える範囲</div>
+      <div class="formula-line">距離 30〜50km  → +2pt</div>
+      <div class="formula-comment">  少し遠いが通える可能性あり</div>
+      <div class="formula-line">距離 > 50km    → +0pt</div>
+      <div class="formula-comment">  距離ボーナスなし</div>
+      <div class="formula-line" style="margin-top:10px">座標未設定の場合 → テキストフォールバック</div>
+      <div class="formula-comment">  同都道府県+4pt / 同市区町村+4pt（合計最大+8pt）</div>
+    </div>
+
+    <div class="insight" style="margin-top:16px">
+      <p><strong>アフィリエイト掲載者は距離ボーナス対象外</strong>です。オンライン完結・全国対応のサービスとして扱われるため、エリアに関わらず均等にスコアリングされます。</p>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>掲載者の住所とジオコーディング</h3>
+      <p>掲載者ダッシュボード「プロフィール設定」タブで都道府県 → 市区町村 → 番地以下の3段階で住所を入力します。保存時にNominatimが自動でジオコーディングを実行し、lat/lonをprovidersテーブルに保存します。<strong>番地以下はユーザーには非公開</strong>（マッチング精度向上のみに使用）。最寄り駅・アクセスは別途テキストで入力し公開されます。</p>
+    </div>
+
+    <table class="data-table" style="margin-top:10px">
+      <thead>
+        <tr>
+          <th>テーブル</th>
+          <th>カラム</th>
+          <th>内容</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>profiles（ユーザー）</td>
+          <td>prefecture</td>
+          <td>都道府県（手動選択時に保存）</td>
+        </tr>
+        <tr>
+          <td>profiles（ユーザー）</td>
+          <td>city</td>
+          <td>市区町村（手動選択時に保存）</td>
+        </tr>
+        <tr>
+          <td>providers（掲載者）</td>
+          <td>prefecture</td>
+          <td>都道府県（セレクト入力）</td>
+        </tr>
+        <tr>
+          <td>providers（掲載者）</td>
+          <td>city</td>
+          <td>市区町村（セレクト入力）</td>
+        </tr>
+        <tr>
+          <td>providers（掲載者）</td>
+          <td>address</td>
+          <td>番地以下の詳細住所（非公開）</td>
+        </tr>
+        <tr>
+          <td>providers（掲載者）</td>
+          <td>lat</td>
+          <td>緯度（Nominatim自動取得）</td>
+        </tr>
+        <tr>
+          <td>providers（掲載者）</td>
+          <td>lon</td>
+          <td>経度（Nominatim自動取得）</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="insight" style="margin-top:16px">
+      <p>ユーザーのlat/lonはlocalStorageにのみ保存されます（DBには保存しない）。これはプライバシーを守りつつ、「現在地に近い掲載者を優先表示」という体験を実現するための設計です。座標情報はマッチングAPIへのリクエスト時にのみ利用され、セッション終了後も端末内に保持されます（引越し時にマイページから更新可）。</p>
+    </div>
+  </div>
+
   <!-- Footer -->
   <div class="footer">
-    <p>Fineme Internal Document — Me Scan v10 Diagnostic Logic + AI Matching　／　配布先：PT・掲載者（ガイド）</p>
+    <p>Fineme Internal Document — Me Scan v11 Diagnostic Logic + AI Matching + Area Matching　／　配布先：PT・掲載者（ガイド）</p>
     <p style="margin-top:4px">Fineme（ファインミ）　<a href="https://www.fineme.me" target="_blank" style="color:inherit">www.fineme.me</a></p>
   </div>
 
