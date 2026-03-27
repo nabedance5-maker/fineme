@@ -155,7 +155,7 @@ export default function ProviderDashboardPage() {
       document.getElementById('publish-label').textContent = provider.published ? '公開中' : '非公開';
       ['name', 'catchphrase', 'target_desc', 'philosophy', 'guide_message', 'photo_url',
        'unique_strengths', 'nearest_station', 'prefecture', 'address',
-       'price_from', 'experience_years', 'credentials',
+       'price_from',
       ].forEach(k => {
         const el = document.getElementById('profile-form').elements[k];
         if (el) el.value = provider[k] || '';
@@ -370,7 +370,6 @@ export default function ProviderDashboardPage() {
       // boolean
       data.online_available = !!e.target.querySelector('[name=online_available]')?.checked;
       // numbers
-      if (data.experience_years !== undefined) data.experience_years = data.experience_years ? Number(data.experience_years) : null;
       if (data.price_from) data.price_from = Number(data.price_from) || null;
       // arrays
       data.payment_methods = [...e.target.querySelectorAll('[name=payment_methods]:checked')].map(el => el.value);
@@ -1585,21 +1584,6 @@ export default function ProviderDashboardPage() {
                   <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="bank" />銀行振込</label>
                   <label className="checkbox-item"><input type="checkbox" name="payment_methods" value="other" />その他</label>
                 </div>
-              </div>
-
-              {/* ── 経歴・実績 ── */}
-              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>経歴・実績</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div className="form-field">
-                  <label>経験年数</label>
-                  <input name="experience_years" type="number" min="0" placeholder="例: 5" />
-                </div>
-                <div></div>
-              </div>
-              <div className="form-field">
-                <label>資格・経歴</label>
-                <textarea name="credentials" placeholder={"例: NSCA認定パーソナルトレーナー\n元プロサッカー選手 8年"} style={{ minHeight: '80px' }}></textarea>
-                <small className="muted">クイックファクト・ページ下部の「プロフィール」に表示されます</small>
               </div>
 
               <div className="form-field">
