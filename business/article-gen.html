@@ -44,6 +44,29 @@
 
   .toast { position: fixed; bottom: 24px; right: 24px; background: #1e2b54; border: 1px solid rgba(201,168,76,0.3); border-radius: 10px; padding: 12px 20px; font-size: 13px; color: #c9a84c; font-weight: 700; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100; }
   .toast.show { opacity: 1; }
+
+  /* チェックボックス */
+  .article-check { width: 20px; height: 20px; border-radius: 5px; border: 1.5px solid rgba(201,168,76,0.35); background: transparent; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .article-check:hover { border-color: rgba(201,168,76,0.7); background: rgba(201,168,76,0.08); }
+  .article-check.done { background: rgba(52,211,153,0.15); border-color: #34d399; }
+  .article-check.done::after { content: '✓'; font-size: 12px; font-weight: 800; color: #34d399; }
+
+  /* 完了済みの行 */
+  .article-row.done { opacity: 0.45; }
+  .article-row.done .article-title { text-decoration: line-through; color: rgba(255,255,255,0.4); }
+  .article-row.done { border-color: rgba(52,211,153,0.15); }
+
+  /* 進捗バー */
+  .progress-wrap { max-width: 900px; margin: 0 auto 24px; padding: 0 24px; }
+  .progress-bar-bg { height: 6px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; margin-top: 10px; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #34d399, #c9a84c); border-radius: 99px; transition: width 0.4s ease; }
+  .progress-label { display: flex; justify-content: space-between; align-items: center; }
+  .progress-label span { font-size: 12px; color: rgba(255,255,255,0.5); }
+  .progress-label strong { font-size: 14px; font-weight: 800; color: #34d399; }
+
+  /* 完了済み非表示トグル */
+  .toggle-done-btn { font-size: 11px; padding: 4px 12px; background: transparent; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: rgba(255,255,255,0.45); cursor: pointer; transition: all 0.15s; }
+  .toggle-done-btn:hover { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); }
 </style>
 </head>
 <body>
@@ -52,6 +75,17 @@
   <h1>📋 Fineme 記事生成ツール</h1>
   <p>各記事のプロンプトをコピーして Claude（推奨）に貼り付けると、Supabase SQL INSERT文が出力されます。<br>
   目標：<strong style="color:#c9a84c">6,000〜8,000字・20〜30ブロック</strong>の徹底網羅型記事。ドメインパワーゼロから上位表示を狙う唯一の戦略。</p>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-label">
+    <span>作成進捗</span>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="toggle-done-btn" onclick="toggleHideDone()" id="hide-btn">完了済みを隠す</button>
+      <strong id="progress-text">0 / 40 本</strong>
+    </div>
+  </div>
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
 </div>
 
 <div class="workflow" style="max-width:900px;margin:0 auto 32px;padding:18px 22px;">
@@ -163,6 +197,45 @@ const ARTICLES = [
 ];
 
 const CAT_CLASS = { '清潔感': 'cat-clean', '写真撮影': 'cat-photo', '変容の思想': 'cat-idea' };
+const STORAGE_KEY = 'fineme:article-gen:done';
+let hideDone = false;
+
+function getDoneSet() {
+  try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')); } catch { return new Set(); }
+}
+function saveDoneSet(set) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...set]));
+}
+function toggleDone(id) {
+  const set = getDoneSet();
+  set.has(id) ? set.delete(id) : set.add(id);
+  saveDoneSet(set);
+  applyDoneState();
+}
+function applyDoneState() {
+  const set = getDoneSet();
+  const rows = document.querySelectorAll('.article-row');
+  rows.forEach(row => {
+    const id = Number(row.dataset.id);
+    const isDone = set.has(id);
+    row.classList.toggle('done', isDone);
+    const chk = row.querySelector('.article-check');
+    if (chk) chk.classList.toggle('done', isDone);
+    if (hideDone) row.style.display = isDone ? 'none' : '';
+    else row.style.display = '';
+  });
+  updateProgress(set.size);
+}
+function updateProgress(count) {
+  const total = ARTICLES.length;
+  document.getElementById('progress-text').textContent = `${count} / ${total} 本`;
+  document.getElementById('progress-bar').style.width = `${(count / total) * 100}%`;
+}
+function toggleHideDone() {
+  hideDone = !hideDone;
+  document.getElementById('hide-btn').textContent = hideDone ? '完了済みを表示' : '完了済みを隠す';
+  applyDoneState();
+}
 
 function buildPrompt(a) {
   return `以下の仕様で、Fineme特集記事を生成し、Supabase SQLのINSERT文として出力してください。
@@ -246,7 +319,9 @@ function renderGrid(gridId, articles) {
   articles.forEach(a => {
     const row = document.createElement('div');
     row.className = 'article-row';
+    row.dataset.id = a.id;
     row.innerHTML = `
+      <div class="article-check" onclick="toggleDone(${a.id})" title="作成済みにする"></div>
       <span class="article-num">${String(a.id).padStart(2,'0')}</span>
       <span class="article-cat ${CAT_CLASS[a.cat]}">${a.cat}</span>
       <span class="article-title">${a.title}</span>
@@ -280,6 +355,7 @@ function showToast() {
 [1,2,3,4].forEach(g => {
   renderGrid(`grid-${g}`, ARTICLES.filter(a => a.grid === g));
 });
+applyDoneState();
 </script>
 </body>
 </html>
