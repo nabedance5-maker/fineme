@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fineme 記事生成ツール</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0f1e; color: #e8e4dc; min-height: 100vh; }
+
+  .header { padding: 40px 24px 24px; max-width: 900px; margin: 0 auto; }
+  .header h1 { font-size: 22px; font-weight: 800; color: #c9a84c; margin-bottom: 6px; }
+  .header p { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.7; }
+
+  .workflow { background: rgba(201,168,76,0.07); border: 1px solid rgba(201,168,76,0.2); border-radius: 12px; padding: 18px 22px; max-width: 900px; margin: 0 auto 32px; }
+  .workflow h2 { font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #c9a84c; margin-bottom: 12px; }
+  .steps-flow { display: flex; gap: 0; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .step-item { background: rgba(10,15,30,0.6); border: 1px solid rgba(201,168,76,0.2); border-radius: 8px; padding: 8px 14px; font-size: 12px; color: rgba(255,255,255,0.8); }
+  .step-arrow { color: rgba(201,168,76,0.5); font-size: 14px; }
+
+  .section { max-width: 900px; margin: 0 auto 40px; padding: 0 24px; }
+  .section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .section-label .line { width: 20px; height: 1.5px; background: #c9a84c; }
+  .section-label span { font-size: 9px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(201,168,76,0.7); }
+  .section-label .dashed { flex: 1; height: 1px; background: repeating-linear-gradient(90deg,rgba(201,168,76,0.25) 0,rgba(201,168,76,0.25) 4px,transparent 4px,transparent 9px); }
+
+  .article-grid { display: flex; flex-direction: column; gap: 8px; }
+  .article-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 12px 16px; transition: border-color 0.15s; }
+  .article-row:hover { border-color: rgba(201,168,76,0.25); }
+  .article-num { font-size: 11px; font-weight: 800; color: rgba(201,168,76,0.45); width: 24px; flex-shrink: 0; font-family: monospace; }
+  .article-cat { font-size: 9px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; flex-shrink: 0; }
+  .cat-clean { background: rgba(99,179,237,0.12); color: #63b3ed; border: 1px solid rgba(99,179,237,0.2); }
+  .cat-photo { background: rgba(252,211,77,0.1); color: #fcd34d; border: 1px solid rgba(252,211,77,0.2); }
+  .cat-idea  { background: rgba(167,139,250,0.1); color: #a78bfa; border: 1px solid rgba(167,139,250,0.2); }
+  .article-title { font-size: 13px; color: rgba(240,236,228,0.85); flex: 1; line-height: 1.5; }
+  .copy-btn { flex-shrink: 0; padding: 6px 14px; background: transparent; border: 1px solid rgba(201,168,76,0.4); border-radius: 6px; color: #c9a84c; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .copy-btn:hover { background: rgba(201,168,76,0.12); }
+  .copy-btn.copied { background: rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.4); color: #34d399; }
+
+  .prompt-preview { max-width: 900px; margin: 0 auto 40px; padding: 0 24px; }
+  .prompt-box { background: rgba(10,15,30,0.8); border: 1px solid rgba(201,168,76,0.2); border-radius: 12px; padding: 20px; }
+  .prompt-box h3 { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(201,168,76,0.7); margin-bottom: 14px; }
+  .prompt-text { font-family: 'Courier New', monospace; font-size: 11px; color: rgba(240,236,228,0.7); line-height: 1.8; white-space: pre-wrap; max-height: 320px; overflow-y: auto; }
+
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #1e2b54; border: 1px solid rgba(201,168,76,0.3); border-radius: 10px; padding: 12px 20px; font-size: 13px; color: #c9a84c; font-weight: 700; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📋 Fineme 記事生成ツール</h1>
+  <p>各記事のプロンプトをコピーして Claude / GPT-4 に貼り付けると、Supabase SQL INSERT文が出力されます。</p>
+</div>
+
+<div class="workflow" style="max-width:900px;margin:0 auto 32px;padding:18px 22px;">
+  <h2>ワークフロー</h2>
+  <div class="steps-flow">
+    <div class="step-item">① プロンプトをコピー</div>
+    <span class="step-arrow">→</span>
+    <div class="step-item">② AI（Claude推奨）に貼り付けて送信</div>
+    <span class="step-arrow">→</span>
+    <div class="step-item">③ 出力されたSQL文をコピー</div>
+    <span class="step-arrow">→</span>
+    <div class="step-item">④ Supabase → SQL Editor に貼り付けて実行</div>
+    <span class="step-arrow">→</span>
+    <div class="step-item">⑤ 管理画面で確認・公開</div>
+  </div>
+</div>
+
+<!-- 悩みから入る -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>悩みから入る — 流入・共感重視</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-1"></div>
+</div>
+
+<!-- 方法・知識 -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>方法・知識 — SEO × 専門性</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-2"></div>
+</div>
+
+<!-- 思想 -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>思想・共感 — ブランド構築</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-3"></div>
+</div>
+
+<!-- 比較・サービス -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>比較・サービス選び — コンバージョン</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-4"></div>
+</div>
+
+<div class="toast" id="toast">プロンプトをコピーしました ✓</div>
+
+<script>
+const ARTICLES = [
+  // 悩みから入る (grid-1)
+  { id:1,  grid:1, title:'マッチングアプリで「いいね」が来ない男性がまず変えるべきこと', cat:'清潔感', slug:'matching-app-no-likes-appearance', searchHref:'/search?category=hair' },
+  { id:2,  grid:1, title:'女性が男性の第一印象で最初に見ているのはどこか', cat:'清潔感', slug:'first-impression-what-women-see', searchHref:'/search' },
+  { id:3,  grid:1, title:'「清潔感がない」と言われた男性が1ヶ月でやること', cat:'清潔感', slug:'no-cleanliness-1month-plan', searchHref:'/search?category=hair' },
+  { id:4,  grid:1, title:'30代男性が今すぐ垢抜けるための外見改善チェックリスト', cat:'清潔感', slug:'30s-men-glow-up-checklist', searchHref:'/search' },
+  { id:5,  grid:1, title:'モテない男性に共通する外見の特徴と、具体的な改善ステップ', cat:'清潔感', slug:'unpopular-men-appearance-features', searchHref:'/search' },
+  { id:6,  grid:1, title:'「頑張っているのに恋愛がうまくいかない」男性に共通する盲点', cat:'変容の思想', slug:'romance-not-working-blindspot', searchHref:'/search' },
+  { id:7,  grid:1, title:'垢抜けない人の共通点とは？', cat:'清潔感', slug:'why-cant-glow-up-common-traits', searchHref:'/search' },
+  { id:8,  grid:1, title:'女性が一瞬で「ないな」と感じる男性の特徴と、その変え方', cat:'清潔感', slug:'women-instant-no-men-traits', searchHref:'/search' },
+  { id:9,  grid:1, title:'恋愛経験が少ない男性がまず変えるべきこと', cat:'変容の思想', slug:'little-romance-experience-first-change', searchHref:'/search' },
+  { id:10, grid:1, title:'「どうせ顔じゃない」と思っている男性が、実は一番損している理由', cat:'変容の思想', slug:'its-not-face-men-losing-out', searchHref:'/search' },
+  { id:11, grid:1, title:'婚活男性が外見に投資すべき3つの理由', cat:'変容の思想', slug:'marriage-hunting-appearance-investment', searchHref:'/search' },
+
+  // 方法・知識 (grid-2)
+  { id:12, grid:2, title:'メンズ美容 何から始める？', cat:'清潔感', slug:'mens-beauty-where-to-start', searchHref:'/search' },
+  { id:13, grid:2, title:'垢抜けたいけど何から始めればいいかわからない男性へ', cat:'清潔感', slug:'want-to-glow-up-dont-know-where-to-start', searchHref:'/search' },
+  { id:14, grid:2, title:'外見改善の初心者が最初の1週間でやること', cat:'清潔感', slug:'appearance-improvement-first-week', searchHref:'/search' },
+  { id:15, grid:2, title:'垢抜けたい男性がまず試すべき5つのこと', cat:'清潔感', slug:'glow-up-men-5-things-to-try', searchHref:'/search' },
+  { id:16, grid:2, title:'外見改善の正しい優先順位：何から始めれば最速で変われるか', cat:'清潔感', slug:'appearance-improvement-priority-order', searchHref:'/search' },
+  { id:17, grid:2, title:'「モテない」を変えたい男性が、最初に作るべき垢抜け習慣', cat:'清潔感', slug:'unpopular-men-glow-up-habits', searchHref:'/search' },
+  { id:18, grid:2, title:'男性の清潔感を作る5つの要素：ヘア・肌・眉・服・においの整え方', cat:'清潔感', slug:'mens-cleanliness-5-elements', searchHref:'/search' },
+  { id:19, grid:2, title:'眉毛を整えるだけで印象が変わる理由と整え方完全ガイド', cat:'清潔感', slug:'eyebrow-grooming-impression-guide', searchHref:'/search?category=eyebrow' },
+  { id:20, grid:2, title:'肌荒れが恋愛に影響している？男性スキンケアと自信の関係', cat:'清潔感', slug:'skin-trouble-romance-confidence', searchHref:'/search?category=esthetic' },
+  { id:21, grid:2, title:'モテる髪型を選ぶ前に知っておくべきこと：顔型・骨格・印象の関係', cat:'清潔感', slug:'popular-hairstyle-face-shape-guide', searchHref:'/search?category=hair' },
+  { id:22, grid:2, title:'服装を変えるだけで垢抜ける男性と変わらない男性の違い', cat:'清潔感', slug:'fashion-change-glow-up-difference', searchHref:'/search?category=diagnosis' },
+  { id:23, grid:2, title:'骨格診断で変わる服選び：男性向け完全ガイド', cat:'清潔感', slug:'skeleton-diagnosis-fashion-guide', searchHref:'/search?category=diagnosis' },
+  { id:24, grid:2, title:'パーソナルカラー診断が男性にも必要な理由', cat:'清潔感', slug:'personal-color-diagnosis-men', searchHref:'/search?category=diagnosis' },
+  { id:25, grid:2, title:'マッチングアプリのプロフィール写真で損している男性の共通点', cat:'写真撮影', slug:'matching-app-photo-losing-men', searchHref:'/search?category=photo' },
+  { id:26, grid:2, title:'プロに撮ってもらうだけで変わる？男性プロフィール写真撮影の効果', cat:'写真撮影', slug:'professional-profile-photo-effect', searchHref:'/search?category=photo' },
+  { id:27, grid:2, title:'男性向けメイク入門：ナチュラルに整えるだけで変わる印象', cat:'清潔感', slug:'mens-makeup-beginner-guide', searchHref:'/search?category=makeup' },
+  { id:28, grid:2, title:'男性がメイクサロンを選ぶときに確認すべき5つのポイント', cat:'清潔感', slug:'mens-makeup-salon-selection-guide', searchHref:'/search?category=makeup' },
+  { id:29, grid:2, title:'「顔じゃないのに気になる」雰囲気イケメンになる方法', cat:'変容の思想', slug:'atmosphere-handsome-not-face', searchHref:'/search' },
+  { id:30, grid:2, title:'モテない原因は顔じゃない理由', cat:'変容の思想', slug:'unpopular-reason-not-face', searchHref:'/search' },
+  { id:31, grid:2, title:'ホワイトニングは恋愛に効果的か？歯と印象の関係', cat:'清潔感', slug:'whitening-romance-effect-teeth', searchHref:'/search?category=whitening' },
+
+  // 思想 (grid-3)
+  { id:32, grid:3, title:'外見コンプレックスを持つ男性が、最短で自信をつける方法', cat:'変容の思想', slug:'appearance-complex-men-confidence', searchHref:'/search' },
+  { id:33, grid:3, title:'「自分磨き」と「ありのままの自分」は矛盾しない', cat:'変容の思想', slug:'self-improvement-authentic-self-harmony', searchHref:'/search' },
+  { id:34, grid:3, title:'30代から外見を変えるのは遅すぎるか？', cat:'変容の思想', slug:'30s-appearance-change-too-late', searchHref:'/search' },
+  { id:35, grid:3, title:'なぜ「モテたい」という動機は恥ずかしくないのか', cat:'変容の思想', slug:'want-to-be-popular-not-shameful', searchHref:'/search' },
+  { id:36, grid:3, title:'外見を整えることで、人に優しくなれる余白が生まれる', cat:'変容の思想', slug:'appearance-confidence-kindness-margin', searchHref:'/search' },
+
+  // 比較・サービス (grid-4)
+  { id:37, grid:4, title:'外見改善でプロに頼るべき理由と、頼るべきプロの選び方', cat:'変容の思想', slug:'appearance-improvement-pro-reasons', searchHref:'/search' },
+  { id:38, grid:4, title:'外見改善サービス完全比較：骨格診断・写真撮影・ヘア…どれから？', cat:'変容の思想', slug:'appearance-service-complete-comparison', searchHref:'/search' },
+  { id:39, grid:4, title:'東京でおすすめの男性向け外見改善サービス完全まとめ', cat:'清潔感', slug:'tokyo-mens-appearance-service-guide', searchHref:'/search' },
+  { id:40, grid:4, title:'外見改善にかけるべき予算の考え方：月1万円から始める変容の旅', cat:'変容の思想', slug:'appearance-improvement-budget-guide', searchHref:'/search' },
+];
+
+const CAT_CLASS = { '清潔感': 'cat-clean', '写真撮影': 'cat-photo', '変容の思想': 'cat-idea' };
+
+function buildPrompt(a) {
+  return `以下の仕様で、Fineme特集記事を生成し、Supabase SQLのINSERT文として出力してください。
+
+【記事情報】
+タイトル：${a.title}
+カテゴリ：${a.cat}
+スラッグ：${a.slug}
+
+【Finemeについて】
+- 恋愛に悩む男性向けの外見磨きサービス検索サイト「Fineme（ファインミ）」
+- ミッション：「外見を起点に、自信を再設計する人を増やす」
+- 哲学：「外見を整えることで生まれる小さな自信が、人に優しくなれる余白をつくる」
+- トーン：共感・温かみ・寄り添い。上から目線・説教口調は厳禁
+- 読者像：20〜35歳男性、恋愛に悩んでいる、外見への自信が低い、変わりたいと思っている
+
+【blocksフィールド（JSONB）の構造】
+以下のブロックタイプを組み合わせて記事を構成する。最低8ブロック以上使うこと。
+
+{"type":"lead","text":"リード文（200字程度）"}
+{"type":"h2","text":"大見出し"}
+{"type":"h3","text":"小見出し"}
+{"type":"text","text":"本文段落（150〜250字）"}
+{"type":"tip","label":"ラベル（例：POINT）","text":"ポイント・コツ"}
+{"type":"callout","text":"コラム・補足情報"}
+{"type":"quote","text":"印象的な一文・金言"}
+{"type":"checklist","title":"チェックリストタイトル","items":["項目1","項目2","項目3"]}
+{"type":"steps","items":[{"title":"ステップ名","text":"説明（任意）"}]}
+{"type":"cta","text":"サービスへの誘導文","buttonLabel":"ボタンテキスト","buttonHref":"${a.searchHref}"}
+{"type":"stat","items":[{"value":"数値（例：94%）","label":"ラベル"}]}
+
+【出力SQL】
+以下のフォーマットで出力すること。他の説明文は一切不要。SQLのみ出力。
+
+INSERT INTO features (title, slug, category, description, blocks, reading_time, status)
+VALUES (
+  '${a.title}',
+  '${a.slug}',
+  '${a.cat}',
+  '（120字程度の説明文。検索結果に表示される）',
+  '[ここにブロックJSON配列]'::jsonb,
+  （読了時間・整数・分）,
+  'draft'
+);
+
+【注意事項】
+- blocksの文字列内のシングルクォートは ''（二重）にエスケープすること
+- 最後は必ずctaブロックでFinemeのサービス検索へ誘導すること
+- 文字量は2000〜3000字相当のブロック量
+- 実体験に近いエピソードを盛り込み、読者が「自分のことだ」と感じる内容にすること`;
+}
+
+function renderGrid(gridId, articles) {
+  const container = document.getElementById(gridId);
+  articles.forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'article-row';
+    row.innerHTML = `
+      <span class="article-num">${String(a.id).padStart(2,'0')}</span>
+      <span class="article-cat ${CAT_CLASS[a.cat]}">${a.cat}</span>
+      <span class="article-title">${a.title}</span>
+      <button class="copy-btn" onclick="copyPrompt(this, ${a.id})">プロンプトをコピー</button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function copyPrompt(btn, id) {
+  const article = ARTICLES.find(a => a.id === id);
+  const prompt = buildPrompt(article);
+  navigator.clipboard.writeText(prompt).then(() => {
+    btn.textContent = 'コピー済み ✓';
+    btn.classList.add('copied');
+    showToast();
+    setTimeout(() => {
+      btn.textContent = 'プロンプトをコピー';
+      btn.classList.remove('copied');
+    }, 2500);
+  });
+}
+
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// レンダリング
+[1,2,3,4].forEach(g => {
+  renderGrid(`grid-${g}`, ARTICLES.filter(a => a.grid === g));
+});
+</script>
+</body>
+</html>
