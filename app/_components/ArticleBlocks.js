@@ -94,6 +94,7 @@ function Block({ block }) {
     case 'cta':       return <CtaBlock {...block} />;
     case 'image':     return <ImageBlock {...block} />;
     case 'stat':      return <StatBlock {...block} />;
+    case 'cards':     return <CardsBlock {...block} />;
     default:          return null;
   }
 }
@@ -426,6 +427,48 @@ function ImageBlock({ src, alt, caption }) {
         </figcaption>
       )}
     </figure>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Cards — カードグリッド（箇条書きの視覚化）
+───────────────────────────────────────────── */
+function CardsBlock({ items }) {
+  if (!Array.isArray(items) || !items.length) return null;
+  const cols = Math.min(items.length, 3);
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: `repeat(${cols}, 1fr)`,
+      gap: '14px',
+      margin: '36px 0',
+    }}>
+      {items.map((item, i) => (
+        <div key={i} style={{
+          background: 'rgba(201,168,76,0.05)',
+          border: '1px solid rgba(201,168,76,0.22)',
+          borderRadius: '14px',
+          padding: '20px 16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+        }}>
+          {item.icon && (
+            <div style={{ fontSize: '28px', lineHeight: 1 }}>{item.icon}</div>
+          )}
+          {item.title && (
+            <p style={{ fontWeight: 800, fontSize: '14px', color: '#fff', margin: 0, lineHeight: 1.4, fontFamily: 'var(--font-sans)' }}>
+              {item.title}
+            </p>
+          )}
+          {item.text && (
+            <p style={{ fontSize: '13px', lineHeight: 1.75, color: 'rgba(240,236,228,0.68)', margin: 0 }}>
+              {item.text}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }
 

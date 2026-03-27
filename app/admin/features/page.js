@@ -121,6 +121,25 @@ export default function AdminFeaturesPage() {
     function getParam(name) { try { return new URL(location.href).searchParams.get(name); } catch { return null; } }
     function updateUrlForEdit(id) { const url = new URL(location.href); url.searchParams.set('id', id); history.pushState({ id }, '', url); }
 
+    function switchToRteMode() {
+      const rteEl = document.querySelector('.rte');
+      const blkEl = document.getElementById('block-editor-container');
+      if (rteEl) rteEl.style.display = '';
+      if (blkEl) blkEl.style.display = 'none';
+      document.getElementById('tab-rte-btn')?.setAttribute('data-active','1');
+      document.getElementById('tab-block-btn')?.removeAttribute('data-active');
+      _blocks = []; serializeBlocks();
+    }
+    function switchToBlockMode() {
+      const rteEl = document.querySelector('.rte');
+      const blkEl = document.getElementById('block-editor-container');
+      if (rteEl) rteEl.style.display = 'none';
+      if (blkEl) blkEl.style.display = '';
+      document.getElementById('tab-block-btn')?.setAttribute('data-active','1');
+      document.getElementById('tab-rte-btn')?.removeAttribute('data-active');
+      const ta = document.getElementById('feature-body'); if (ta) ta.value = '';
+    }
+
     function fillForm(f) {
       const fId = document.getElementById('feature-id'); if (fId) fId.value = f?.id || '';
       const fSlug = document.getElementById('feature-slug'); if (fSlug) fSlug.value = f?.slug || '';
@@ -131,21 +150,30 @@ export default function AdminFeaturesPage() {
       const fSummary = document.getElementById('feature-summary'); if (fSummary) fSummary.value = f?.summary || '';
       const th = document.getElementById('feature-thumbnail'); if (th) { th.value = f?.thumbnail || ''; }
       updateThumbPreview(f?.thumbnail || '');
-      // blocksがある場合はHTML変換して本文エディタに読み込む
-      const html = (f?.blocks ? blocksToHtml(f.blocks) : null) || f?.body || '';
-      const ed = document.getElementById('feature-body-editor');
-      if (ed) {
-        ed.innerHTML = '';
-        requestAnimationFrame(() => {
-          try { ed.innerHTML = sanitizeHtml(html); } catch { ed.textContent = html; }
-          try { const ta = document.getElementById('feature-body'); if (ta) { ta.value = sanitizeHtml(ed.innerHTML); } updatePreview(); } catch {}
-        });
+      const hasBlocks = Array.isArray(f?.blocks) && f.blocks.length > 0;
+      if (hasBlocks) {
+        initBlockEditor(f.blocks);
+        switchToBlockMode();
+      } else {
+        const html = f?.body || '';
+        const ed = document.getElementById('feature-body-editor');
+        if (ed) {
+          ed.innerHTML = '';
+          requestAnimationFrame(() => {
+            try { ed.innerHTML = sanitizeHtml(html); } catch { ed.textContent = html; }
+            try { const ta = document.getElementById('feature-body'); if (ta) { ta.value = sanitizeHtml(ed.innerHTML); } updatePreview(); } catch {}
+          });
+        }
+        try { const ta = document.getElementById('feature-body'); if (ta) { ta.value = sanitizeHtml(html); } } catch {}
+        switchToRteMode();
       }
-      try { const ta = document.getElementById('feature-body'); if (ta) { ta.value = sanitizeHtml(html); } } catch {}
       const fStatus = document.getElementById('feature-status'); if (fStatus) fStatus.value = f?.status || 'draft';
     }
 
     function readForm() {
+      const blocksJson = (document.getElementById('feature-blocks-json')?.value || '').trim();
+      let blocksData = null;
+      if (blocksJson) { try { const parsed = JSON.parse(blocksJson); if (Array.isArray(parsed) && parsed.length) blocksData = parsed; } catch {} }
       return {
         id: document.getElementById('feature-id')?.value || null,
         slug: (document.getElementById('feature-slug')?.value || '').trim(),
@@ -155,8 +183,8 @@ export default function AdminFeaturesPage() {
         reading_time: Number(document.getElementById('feature-reading-time')?.value || 5),
         summary: (document.getElementById('feature-summary')?.value || '').toString(),
         thumbnail: (document.getElementById('feature-thumbnail')?.value || '').toString().trim(),
-        body: (document.getElementById('feature-body')?.value || '').toString(),
-        blocks: null, // 本文エディタで編集した場合はbodyとして保存、blocksはクリア
+        body: blocksData ? null : (document.getElementById('feature-body')?.value || '').toString(),
+        blocks: blocksData,
         status: document.getElementById('feature-status')?.value || 'draft'
       };
     }
@@ -233,16 +261,19 @@ export default function AdminFeaturesPage() {
     let _blocks = [];
 
     const BLOCK_TYPES = {
-      lead:      { label: 'リード文',        color: '#0a0f1e' },
-      h2:        { label: '見出し H2',       color: '#c9a84c' },
-      h3:        { label: '小見出し H3',     color: '#9ca3af' },
-      text:      { label: '本文テキスト',    color: '#374151' },
-      tip:       { label: 'ポイント TIP',    color: '#059669' },
-      callout:   { label: 'コールアウト',    color: '#7c3aed' },
-      quote:     { label: '引用',            color: '#dc2626' },
-      checklist: { label: 'チェックリスト', color: '#ea580c' },
-      steps:     { label: 'ステップ',        color: '#2563eb' },
-      cta:       { label: 'CTA ボタン',      color: '#c9a84c' },
+      lead:      { label: 'リード文',         color: '#0a0f1e' },
+      h2:        { label: '見出し H2',        color: '#c9a84c' },
+      h3:        { label: '小見出し H3',      color: '#9ca3af' },
+      text:      { label: '本文テキスト',     color: '#374151' },
+      tip:       { label: 'ポイント TIP',     color: '#059669' },
+      callout:   { label: 'コールアウト',     color: '#7c3aed' },
+      quote:     { label: '引用',             color: '#dc2626' },
+      checklist: { label: 'チェックリスト',  color: '#ea580c' },
+      steps:     { label: 'ステップ',         color: '#2563eb' },
+      cards:     { label: 'カードグリッド',   color: '#7c3aed' },
+      stat:      { label: 'KPIカード',        color: '#b45309' },
+      image:     { label: '画像',             color: '#0369a1' },
+      cta:       { label: 'CTA ボタン',       color: '#c9a84c' },
     };
 
     function bEsc(s) {
@@ -301,6 +332,37 @@ export default function AdminFeaturesPage() {
             + `<button type="button" data-step-add style="margin-top:4px;padding:5px 12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:6px;cursor:pointer;font-size:12px;color:#2563eb">＋ ステップを追加</button>`;
           break;
         }
+        case 'cards': {
+          const items = (b.items||[]).map((item,j)=>`
+            <div data-cards-item="${j}" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:6px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <span style="font-size:11px;font-weight:700;color:#6b7280">カード ${j+1}</span>
+                <button type="button" data-cards-del="${j}" style="padding:2px 8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;font-size:11px;color:#dc2626">削除</button>
+              </div>
+              <input type="text" data-cards-icon="${j}" placeholder="絵文字アイコン（例：✅ 💪 ✦）" value="${bEsc(item.icon||'')}" style="width:100%;padding:4px 8px;margin-bottom:4px;border:1px solid #e5e7eb;border-radius:5px;font-size:18px;box-sizing:border-box">
+              <input type="text" data-cards-title="${j}" placeholder="タイトル" value="${bEsc(item.title||'')}" style="width:100%;padding:4px 8px;margin-bottom:4px;border:1px solid #e5e7eb;border-radius:5px;font-size:13px;font-weight:700;box-sizing:border-box">
+              <textarea data-cards-text="${j}" rows="2" placeholder="説明文（任意）" style="width:100%;resize:vertical;padding:4px 8px;border:1px solid #e5e7eb;border-radius:5px;font-size:13px;box-sizing:border-box">${bEsc(item.text||'')}</textarea>
+            </div>`).join('');
+          fields = `<div data-cards-list>${items}</div>`
+            + `<button type="button" data-cards-add style="margin-top:4px;padding:5px 12px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:6px;cursor:pointer;font-size:12px;color:#5b21b6">＋ カードを追加</button>`;
+          break;
+        }
+        case 'stat': {
+          const items = (b.items||[]).map((item,j)=>`
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+              <input type="text" data-stat-val="${j}" placeholder="値（例：98%）" value="${bEsc(item.value||'')}" style="width:90px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:5px;font-size:15px;font-weight:800;box-sizing:border-box">
+              <input type="text" data-stat-label="${j}" placeholder="ラベル（例：顧客満足度）" value="${bEsc(item.label||'')}" style="flex:1;padding:5px 8px;border:1px solid #e5e7eb;border-radius:5px;font-size:13px;box-sizing:border-box">
+              <button type="button" data-stat-del="${j}" style="padding:2px 8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;font-size:12px;color:#dc2626">✕</button>
+            </div>`).join('');
+          fields = `<div data-stat-list>${items}</div>`
+            + `<button type="button" data-stat-add style="margin-top:4px;padding:5px 12px;background:#fef9c3;border:1px solid #fde047;border-radius:6px;cursor:pointer;font-size:12px;color:#854d0e">＋ 統計を追加</button>`;
+          break;
+        }
+        case 'image':
+          fields = inp('src', b.src||'', '画像URL (https://...)')
+            + inp('alt', b.alt||'', 'altテキスト（空欄可）')
+            + inp('caption', b.caption||'', 'キャプション（任意）');
+          break;
       }
       return `<div data-block-idx="${i}" style="border:1px solid #e5e7eb;border-radius:10px;background:#fff;margin-bottom:10px;overflow:hidden">
         <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f9fafb;border-bottom:1px solid #e5e7eb">
@@ -343,6 +405,21 @@ export default function AdminFeaturesPage() {
           b.items = Array.from(stepItems).map((_, j) => ({
             title: (card.querySelector(`[data-step-title="${j}"]`)?.value || ''),
             text:  (card.querySelector(`[data-step-text="${j}"]`)?.value  || ''),
+          }));
+        }
+        // cards items
+        if (b.type === 'cards') {
+          b.items = Array.from(card.querySelectorAll('[data-cards-item]')).map((_, j) => ({
+            icon:  (card.querySelector(`[data-cards-icon="${j}"]`)?.value  || ''),
+            title: (card.querySelector(`[data-cards-title="${j}"]`)?.value || ''),
+            text:  (card.querySelector(`[data-cards-text="${j}"]`)?.value  || ''),
+          }));
+        }
+        // stat items
+        if (b.type === 'stat') {
+          b.items = Array.from(card.querySelectorAll('[data-stat-val]')).map((_, j) => ({
+            value: (card.querySelector(`[data-stat-val="${j}"]`)?.value   || ''),
+            label: (card.querySelector(`[data-stat-label="${j}"]`)?.value || ''),
           }));
         }
       });
@@ -389,6 +466,12 @@ export default function AdminFeaturesPage() {
           }
           case 'cta':
             return `<blockquote>${nl2br(b.text)}<br><a href="${esc(b.buttonHref)}">${esc(b.buttonLabel)}</a></blockquote>`;
+          case 'cards':
+            return `<div class="fb-grid">${(b.items||[]).map(item=>`<div class="fb-card"><h3 class="fb-heading">${esc(item.icon||'')} ${esc(item.title)}</h3><p class="fb-text">${esc(item.text)}</p></div>`).join('')}</div>`;
+          case 'stat':
+            return `<div class="fb-grid">${(b.items||[]).map(item=>`<div class="fb-card" style="text-align:center"><strong class="fb-heading" style="font-size:24px;display:block;margin-bottom:4px">${esc(item.value)}</strong><p class="fb-text">${esc(item.label)}</p></div>`).join('')}</div>`;
+          case 'image':
+            return b.src ? `<p><img src="${esc(b.src)}" alt="${esc(b.alt||'')}" style="max-width:100%;border-radius:12px">${b.caption?`<span style="display:block;text-align:center;font-size:12px;opacity:.65;margin-top:4px">${esc(b.caption)}</span>`:''}</p>` : '';
           default:
             return b.text ? `<p>${nl2br(b.text)}</p>` : '';
         }
@@ -448,6 +531,30 @@ export default function AdminFeaturesPage() {
           const card = t.closest('[data-block-idx]');
           if (card) { const idx = Number(card.dataset.blockIdx); if (_blocks[idx]) { _blocks[idx].items.splice(Number(t.dataset.stepDel), 1); renderBlockEditor(); serializeBlocks(); } } return;
         }
+        // ── カード: 追加
+        if (t.dataset.cardsAdd !== undefined) {
+          readBlockEditorState();
+          const card = t.closest('[data-block-idx]');
+          if (card) { const idx = Number(card.dataset.blockIdx); if (_blocks[idx]) { _blocks[idx].items = [...(_blocks[idx].items||[]), {icon:'',title:'',text:''}]; renderBlockEditor(); serializeBlocks(); } } return;
+        }
+        // ── カード: 削除
+        if (t.dataset.cardsDel !== undefined) {
+          readBlockEditorState();
+          const card = t.closest('[data-block-idx]');
+          if (card) { const idx = Number(card.dataset.blockIdx); if (_blocks[idx]) { _blocks[idx].items.splice(Number(t.dataset.cardsDel), 1); renderBlockEditor(); serializeBlocks(); } } return;
+        }
+        // ── KPI: 追加
+        if (t.dataset.statAdd !== undefined) {
+          readBlockEditorState();
+          const card = t.closest('[data-block-idx]');
+          if (card) { const idx = Number(card.dataset.blockIdx); if (_blocks[idx]) { _blocks[idx].items = [...(_blocks[idx].items||[]), {value:'',label:''}]; renderBlockEditor(); serializeBlocks(); } } return;
+        }
+        // ── KPI: 削除
+        if (t.dataset.statDel !== undefined) {
+          readBlockEditorState();
+          const card = t.closest('[data-block-idx]');
+          if (card) { const idx = Number(card.dataset.blockIdx); if (_blocks[idx]) { _blocks[idx].items.splice(Number(t.dataset.statDel), 1); renderBlockEditor(); serializeBlocks(); } } return;
+        }
         // ── ブロック追加
         if (t.id === 'block-add-btn' || t.dataset.addBlock !== undefined) {
           const sel = document.getElementById('block-type-select');
@@ -455,7 +562,7 @@ export default function AdminFeaturesPage() {
           const type = sel.value;
           if (!type) return;
           readBlockEditorState();
-          const defaults = { lead:{type:'lead',text:''}, h2:{type:'h2',text:''}, h3:{type:'h3',text:''}, text:{type:'text',text:''}, tip:{type:'tip',label:'POINT',text:''}, callout:{type:'callout',text:''}, quote:{type:'quote',text:''}, checklist:{type:'checklist',title:'',items:['']}, steps:{type:'steps',items:[{title:'',text:''}]}, cta:{type:'cta',text:'',buttonLabel:'',buttonHref:''} };
+          const defaults = { lead:{type:'lead',text:''}, h2:{type:'h2',text:''}, h3:{type:'h3',text:''}, text:{type:'text',text:''}, tip:{type:'tip',label:'POINT',text:''}, callout:{type:'callout',text:''}, quote:{type:'quote',text:''}, checklist:{type:'checklist',title:'',items:['']}, steps:{type:'steps',items:[{title:'',text:''}]}, cards:{type:'cards',items:[{icon:'',title:'',text:''}]}, stat:{type:'stat',items:[{value:'',label:''}]}, image:{type:'image',src:'',alt:'',caption:''}, cta:{type:'cta',text:'',buttonLabel:'',buttonHref:''} };
           _blocks.push(defaults[type] || {type,text:''});
           renderBlockEditor(); serializeBlocks();
           document.getElementById('block-editor-list')?.lastElementChild?.scrollIntoView({behavior:'smooth'});
@@ -659,6 +766,11 @@ export default function AdminFeaturesPage() {
         const msg = document.getElementById('feature-message'); if (msg) msg.textContent = '推奨セットで復元しました。（公開）';
       } catch { const msg = document.getElementById('feature-message'); if (msg) msg.textContent = '復元に失敗しました。'; }
     }
+
+    // タブ切替
+    document.getElementById('tab-rte-btn')?.addEventListener('click', () => { switchToRteMode(); });
+    document.getElementById('tab-block-btn')?.addEventListener('click', () => { if (_blocks.length === 0) initBlockEditor([]); switchToBlockMode(); });
+    setupBlockEditorEvents();
 
     // Init
     const formEl = document.getElementById('feature-form');
@@ -908,7 +1020,12 @@ export default function AdminFeaturesPage() {
                     <div id="feature-thumb-preview" className="card" style={{maxWidth:'520px',overflow:'hidden'}}>
                       <img id="feature-thumbnail-preview" alt="サムネイルプレビュー" style={{display:'none',aspectRatio:'4/3',width:'100%',objectFit:'cover'}} />
                     </div>
-                    <label htmlFor="feature-body-editor">本文</label>
+                    <div style={{display:'flex',gap:'6px',alignItems:'center'}}>
+                      <span style={{fontWeight:700,fontSize:'14px'}}>本文</span>
+                      <button type="button" id="tab-rte-btn" className="btn" style={{fontSize:'12px',padding:'4px 12px'}} data-active="1">✍ RTEエディタ</button>
+                      <button type="button" id="tab-block-btn" className="btn btn-ghost" style={{fontSize:'12px',padding:'4px 12px'}}>🧱 ブロックエディタ</button>
+                      <span className="muted" style={{fontSize:'11px'}}>ブロックモードで保存すると公開ページで構造化レンダリングされます</span>
+                    </div>
                     <div className="rte" style={{position:'relative'}}>
                       <div className="rte-toolbar" role="toolbar" aria-label="テキスト編集">
                         <select id="rte-heading" title="見出し">
@@ -965,8 +1082,32 @@ export default function AdminFeaturesPage() {
                       </div>
                     </div>
 
-                    <p className="muted" style={{fontSize:'12px',margin:'-4px 0 0',padding:'8px 12px',background:'rgba(201,168,76,0.06)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:'6px'}}>
-                      💡 シードデータで追加した記事（blocks形式）は上の「本文」エディタに自動変換して読み込まれます。編集して保存するとHTML形式で上書き保存されます。
+                    {/* ── ブロックエディタ ── */}
+                    <div id="block-editor-container" style={{display:'none',marginTop:'4px'}}>
+                      <div id="block-editor-list"></div>
+                      <div className="cluster" style={{gap:'8px',marginTop:'8px',alignItems:'center',flexWrap:'wrap'}}>
+                        <select id="block-type-select" style={{padding:'6px 10px',borderRadius:'6px',border:'1px solid var(--color-border)',fontSize:'13px',background:'#fff'}}>
+                          <option value="">ブロックタイプを選択</option>
+                          <option value="lead">リード文</option>
+                          <option value="h2">見出し H2</option>
+                          <option value="h3">小見出し H3</option>
+                          <option value="text">本文テキスト</option>
+                          <option value="tip">ポイント TIP</option>
+                          <option value="callout">コールアウト</option>
+                          <option value="quote">引用</option>
+                          <option value="checklist">チェックリスト</option>
+                          <option value="steps">ステップ</option>
+                          <option value="cards">🃏 カードグリッド</option>
+                          <option value="stat">📊 KPIカード</option>
+                          <option value="image">🖼 画像</option>
+                          <option value="cta">CTA ボタン</option>
+                        </select>
+                        <button type="button" id="block-add-btn" className="btn">＋ ブロックを追加</button>
+                      </div>
+                      <textarea id="feature-blocks-json" name="blocks_json" hidden readOnly></textarea>
+                    </div>
+                    <p className="muted" style={{fontSize:'12px',margin:'4px 0 0',padding:'8px 12px',background:'rgba(201,168,76,0.06)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:'6px'}}>
+                      💡 RTEモードはHTML保存・ブロックモードは構造化データ保存。blocks形式の既存記事はブロックモードで自動読み込まれます。
                     </p>
 
                     <div className="cluster" style={{alignItems:'center',gap:'12px'}}>

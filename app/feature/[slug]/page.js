@@ -196,8 +196,12 @@ export default async function ArticlePage({ params }) {
                   .article-html-body a{color:#c9a84c;text-decoration:underline}
                   .article-html-body strong{color:#fff;font-weight:800}
                   .article-html-body .fb-block{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:16px;color:rgba(240,236,228,0.88)}
+                  .article-html-body .fb-card{background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.22);border-radius:14px;padding:18px 16px;color:rgba(240,236,228,0.88)}
+                  .article-html-body .fb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:28px 0}
+                  .article-html-body .fb-slider{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;margin:28px 0;scrollbar-width:thin}
+                  .article-html-body .fb-slide{flex-shrink:0;width:240px;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:16px}
                   .article-html-body .fb-text{font-size:15px;color:rgba(240,236,228,0.85);line-height:1.9}
-                  .article-html-body .fb-heading{font-weight:800;font-size:clamp(18px,3vw,24px);font-family:var(--font-serif);color:#fff}
+                  .article-html-body .fb-heading{font-weight:800;font-size:clamp(16px,2.5vw,20px);font-family:var(--font-serif);color:#fff;margin:0 0 8px}
                 `}</style>
                 <div className="article-html-body" dangerouslySetInnerHTML={{ __html: article.body }} />
               </>
