@@ -80,6 +80,7 @@ export default function MypageDiagnosisPage() {
   const [diagProfile, setDiagProfile] = useState(null);
   const [diagHistory, setDiagHistory] = useState([]);
   const [diagStatus, setDiagStatus] = useState('loading'); // loading | v4 | v8 | old | empty
+  const [stageDoneCount, setStageDoneCount] = useState(0);
 
   useEffect(() => {
     const sbKey = Object.keys(localStorage).find(
@@ -93,6 +94,11 @@ export default function MypageDiagnosisPage() {
           setLoading(false);
           // 診断データ読み込み
           try {
+            // stepDone カウント
+            try {
+              const sd = JSON.parse(localStorage.getItem('fineme:step:done') || '{}');
+              setStageDoneCount(Object.values(sd).filter(Boolean).length);
+            } catch {}
             const raw = localStorage.getItem('fineme:diagnosis:latest');
             const histRaw = localStorage.getItem('fineme:diagnosis:history');
             const hist = histRaw ? JSON.parse(histRaw) : [];
@@ -213,6 +219,63 @@ export default function MypageDiagnosisPage() {
                   <Link href="/diagnosis-result" className="action-btn action-btn-secondary">詳細な結果を見る</Link>
                 </div>
               </div>
+
+              {/* 発揮ステージ */}
+              {(() => {
+                const isReady      = stageDoneCount >= 5;
+                const isApproaching = stageDoneCount >= 2;
+                const cardBg     = isApproaching ? 'linear-gradient(135deg,rgba(201,168,76,0.07),rgba(10,15,30,0.03))' : '#f9fafb';
+                const cardBorder = isApproaching ? '1.5px solid rgba(201,168,76,0.3)' : '1.5px solid #e5e7eb';
+                const stageStages = [
+                  { icon: '📸', title: '写真撮影', sub: 'マッチングアプリ・プロフィール写真', href: '/search?category=photo' },
+                  { icon: '💍', title: '婚活サポート', sub: '自信を持った自分で、真剣な出会いへ', href: '/search?category=marriage' },
+                ];
+                return (
+                  <div className="card" style={{ padding: '20px', background: cardBg, border: cardBorder }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: 'rgba(201,168,76,0.8)', textTransform: 'uppercase' }}>Next Stage</span>
+                    </div>
+                    <h2 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 6px', color: '#111' }}>変わった自分を、世界へ発揮するステージ</h2>
+                    {isReady ? (
+                      <p style={{ fontSize: '13px', color: '#059669', fontWeight: 700, margin: '0 0 16px' }}>
+                        ✦ 準備が整いました。次のステージへ進みましょう。
+                      </p>
+                    ) : isApproaching ? (
+                      <p style={{ fontSize: '13px', color: 'rgba(201,168,76,0.85)', fontWeight: 700, margin: '0 0 16px' }}>
+                        ◎ もうすぐ発揮のタイミング。あと少しで解放されます。
+                      </p>
+                    ) : (
+                      <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 16px' }}>
+                        🔒 New Me Naviのステップを進めると、このステージが開放されます。
+                      </p>
+                    )}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      {stageStages.map(({ icon, title, sub, href }) => (
+                        isApproaching ? (
+                          <Link key={title} href={href} style={{ display: 'block', textDecoration: 'none', padding: '14px', borderRadius: '12px', background: '#fff', border: '1.5px solid rgba(201,168,76,0.25)', transition: 'box-shadow .15s' }}>
+                            <div style={{ fontSize: '22px', marginBottom: '6px' }}>{icon}</div>
+                            <div style={{ fontSize: '14px', fontWeight: 800, color: '#111', marginBottom: '3px' }}>{title}</div>
+                            <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.5 }}>{sub}</div>
+                          </Link>
+                        ) : (
+                          <div key={title} style={{ padding: '14px', borderRadius: '12px', background: '#f3f4f6', border: '1.5px solid #e5e7eb', opacity: 0.6 }}>
+                            <div style={{ fontSize: '22px', marginBottom: '6px', filter: 'grayscale(1)' }}>{icon}</div>
+                            <div style={{ fontSize: '14px', fontWeight: 800, color: '#9ca3af', marginBottom: '3px' }}>{title}</div>
+                            <div style={{ fontSize: '12px', color: '#d1d5db', lineHeight: 1.5 }}>{sub}</div>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                    {!isApproaching && (
+                      <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                        <Link href="/mypage/navi" style={{ fontSize: '13px', fontWeight: 700, color: '#6366f1', textDecoration: 'none' }}>
+                          → New Me Naviでステップを進める
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* 診断履歴 */}
               {diagHistory.length >= 2 && (
