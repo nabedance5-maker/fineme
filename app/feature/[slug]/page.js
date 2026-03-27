@@ -23,7 +23,7 @@ async function getRelatedProviders(category) {
       .from('providers')
       .select('id, slug, name, main_category, thumbnail, tagline, entity_type')
       .eq('status', 'published')
-      .is('admin_hidden', null)
+      .or('admin_hidden.eq.false,admin_hidden.is.null')
       .in('main_category', cats)
       .limit(10);
     return data || [];
