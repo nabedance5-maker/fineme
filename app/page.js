@@ -144,7 +144,6 @@ const CATEGORIES = [
   {cat:'fashion',  icon:'👔',  label:'ファッション',       sub:'似合う服で自信をつくる'},
   {cat:'hair',     icon:'💇',  label:'ヘア',               sub:'毎朝の自信を変える'},
   {cat:'esthetic', icon:'💆',  label:'肌・エステ',         sub:'清潔感を底上げする'},
-  {cat:'photo',    icon:'📸',  label:'写真撮影',           sub:'第一印象を最大化する'},
   {cat:'diagnosis',icon:'🔍',  label:'骨格・パーソナルカラー診断', sub:'自分の基準を知る'},
   {cat:'consulting',icon:'🗣', label:'外見トータルサポート', sub:'変容の全体地図を描く'},
   {cat:'whitening',icon:'✨',  label:'歯のホワイトニング', sub:'笑顔への自信をつくる'},
@@ -152,8 +151,13 @@ const CATEGORIES = [
   {cat:'hairremoval',icon:'🪒',label:'脱毛',               sub:'なめらかさで印象を変える'},
   {cat:'aga',      icon:'💊',  label:'AGA・薄毛治療',      sub:'髪の悩みと向き合う'},
   {cat:'orthodontics',icon:'🦷',label:'歯科矯正',          sub:'笑顔の質を長期で変える'},
-  {cat:'marriage', icon:'💍',  label:'婚活サポート',       sub:'変容の先にある出会いへ'},
   {cat:'nail',     icon:'💅',  label:'ネイル',             sub:'細部まで気を配る人になる'},
+];
+
+// 発揮カテゴリ（出口）：変わった自分を世界に見せる
+const STAGE2_CATEGORIES = [
+  {cat:'photo',    icon:'📸', label:'プロフィール写真撮影', sub:'変わった自分を、最高の一枚に。マッチングアプリの第一印象を決定的に変える。'},
+  {cat:'marriage', icon:'💍', label:'婚活サポート',         sub:'自信がついた今が、出会いを本気にするタイミング。変容の先にある、本当の出会いへ。'},
 ];
 
 export default function HomePage() {
@@ -677,6 +681,7 @@ export default function HomePage() {
         {/* ── カテゴリ（補助ナビ） ── */}
         <section className="categories-section">
           <div className="categories-inner">
+            {/* ── STEP 1：変容の入口 ── */}
             <p className="categories-eyebrow">変容の入口を選ぶ</p>
             <h2 className="categories-title">変えたい場所がすでに決まっている方へ</h2>
             <div className="cat-grid">
@@ -705,6 +710,53 @@ export default function HomePage() {
                 🗺️ 7軸変容ガイドを見る
               </Link>
             </div>
+
+            {/* ── STEP 2：発揮のステージ ── */}
+            <div style={{
+              marginTop: '56px',
+              paddingTop: '48px',
+              borderTop: '1px solid rgba(201,168,76,0.2)',
+            }}>
+              {/* sec-label */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <div style={{ width: '20px', height: '1.5px', background: '#c9a84c', borderRadius: '1px', flexShrink: 0 }} />
+                <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.75)', margin: 0, fontFamily: 'var(--font-sans)' }}>
+                  Next Stage
+                </p>
+                <div style={{ flex: 1, height: '1px', background: 'repeating-linear-gradient(90deg,rgba(201,168,76,0.25) 0,rgba(201,168,76,0.25) 4px,transparent 4px,transparent 9px)' }} />
+              </div>
+              <h3 style={{ fontSize: 'clamp(17px, 3vw, 22px)', fontWeight: 800, fontFamily: 'var(--font-serif)', color: 'var(--color-fg)', marginBottom: '6px' }}>
+                自信がついてきたら、発揮するステージへ
+              </h3>
+              <p style={{ fontSize: '13px', color: 'var(--color-muted)', marginBottom: '24px', lineHeight: 1.75 }}>
+                変容は外見を変えることで完結しない。変わった自分を世界に見せて、初めて完成する。
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                {STAGE2_CATEGORIES.map(({ cat, icon, label, sub }) => (
+                  <Link key={cat} href={`/search?category=${cat}`} style={{ textDecoration: 'none' }}>
+                    <div style={{
+                      display: 'flex', gap: '18px', alignItems: 'flex-start',
+                      padding: '22px 24px',
+                      background: 'linear-gradient(135deg, rgba(201,168,76,0.06) 0%, rgba(10,15,30,0.4) 100%)',
+                      border: '1px solid rgba(201,168,76,0.3)',
+                      borderRadius: '16px',
+                      transition: 'border-color 0.2s, transform 0.2s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.7)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.3)'; e.currentTarget.style.transform = ''; }}
+                    >
+                      <span style={{ fontSize: '28px', flexShrink: 0, marginTop: '2px' }}>{icon}</span>
+                      <div>
+                        <p style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-fg)', margin: '0 0 6px', fontFamily: 'var(--font-serif)' }}>{label}</p>
+                        <p style={{ fontSize: '12px', color: 'var(--color-muted)', margin: 0, lineHeight: 1.7 }}>{sub}</p>
+                      </div>
+                      <span style={{ marginLeft: 'auto', color: 'rgba(201,168,76,0.6)', fontSize: '16px', alignSelf: 'center', flexShrink: 0 }}>→</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
           </div>
         </section>
 
