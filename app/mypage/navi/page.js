@@ -158,6 +158,15 @@ export default function NewMeNaviPage() {
       .prereq-banner-desc { font-size: 11px; color: #6b7280; line-height: 1.5; margin: 0; }
       .prereq-banner-count { font-weight: 700; color: #c9a84c; }
 
+      /* ── 出発前チェック 全完了トースト ── */
+      #prereq-complete-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(120px); background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #fff; border-radius: 18px; padding: 16px 24px; display: flex; align-items: center; gap: 14px; box-shadow: 0 8px 36px rgba(16,185,129,.4); transition: transform .45s cubic-bezier(.34,1.56,.64,1); z-index: 9999; pointer-events: none; width: min(340px, calc(100vw - 40px)); }
+      #prereq-complete-toast.show { transform: translateX(-50%) translateY(0); }
+      .prereq-toast-icon { font-size: 28px; flex-shrink: 0; }
+      .prereq-toast-title { font-size: 14px; font-weight: 800; margin: 0 0 2px; }
+      .prereq-toast-sub { font-size: 12px; opacity: .85; margin: 0; }
+      @keyframes confetti-fall { 0% { transform: translateY(-20px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+      .confetti-piece { position: fixed; top: -10px; z-index: 9998; border-radius: 2px; animation: confetti-fall linear forwards; pointer-events: none; }
+
       /* ── Bottom ── */
       .navi-footer { margin-top: 32px; display: flex; flex-direction: column; gap: 10px; }
       .navi-footer-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; border-radius: 14px; font-size: 14px; font-weight: 700; text-decoration: none; transition: opacity .15s; }
@@ -1066,6 +1075,27 @@ export default function NewMeNaviPage() {
       if (countEl) countEl.textContent = `${done}/${total} チェック済み`;
     }
 
+    function showPrereqCelebration() {
+      let toast = document.getElementById('prereq-complete-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'prereq-complete-toast';
+        toast.innerHTML = '<div class="prereq-toast-icon">🎉</div><div><p class="prereq-toast-title">出発前チェック完了！</p><p class="prereq-toast-sub">旅の準備が整いました。さあ、出発しよう。</p></div>';
+        document.body.appendChild(toast);
+      }
+      requestAnimationFrame(() => toast.classList.add('show'));
+      setTimeout(() => toast.classList.remove('show'), 4200);
+      const colors = ['#c9a84c','#10b981','#3b82f6','#f59e0b','#ec4899','#8b5cf6'];
+      for (let i = 0; i < 48; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti-piece';
+        const size = 5 + Math.random() * 7;
+        el.style.cssText = `left:${Math.random()*100}vw;width:${size}px;height:${size}px;background:${colors[i % colors.length]};animation-duration:${2 + Math.random() * 2.5}s;animation-delay:${Math.random() * 0.8}s`;
+        document.body.appendChild(el);
+        el.addEventListener('animationend', () => el.remove());
+      }
+    }
+
     function refreshCompassAndTracks() {
       // Compassストリップ更新
       const strip = document.getElementById('compass-strip');
@@ -1150,6 +1180,11 @@ export default function NewMeNaviPage() {
         btn.textContent = !isDone ? '✓' : '';
       }
       updatePrereqBanner();
+      // チェックした瞬間に全完了→祝福ギミック
+      if (!isDone && key.startsWith('prereq-')) {
+        const { allDone } = getAllPrereqInfo();
+        if (allDone) showPrereqCelebration();
+      }
     });
 
     // ── サブトラックタブ切り替え ──

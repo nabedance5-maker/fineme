@@ -76,6 +76,14 @@
   .kpi-label{font-size:11px;color:#a09890;margin-top:8px;line-height:1.5}
   .kpi-card.next-kpi .kpi-num{color:#4b5563}
 
+  /* 今ここ ライン */
+  .now-divider{display:flex;align-items:center;gap:16px;padding:0 40px;margin:0}
+  .now-divider-line{flex:1;height:1px;background:#c9a84c;opacity:.5}
+  .now-divider-label{display:flex;align-items:center;gap:8px;background:rgba(201,168,76,.15);border:1.5px solid rgba(201,168,76,.7);border-radius:99px;padding:7px 20px;font-size:11px;font-weight:800;color:#c9a84c;letter-spacing:.14em;white-space:nowrap;font-family:'Hiragino Kaku Gothic Pro',sans-serif;text-transform:uppercase;box-shadow:0 0 16px rgba(201,168,76,.2)}
+  .now-divider-dot{width:8px;height:8px;border-radius:50%;background:#c9a84c;animation:pulse 1.8s infinite;flex-shrink:0}
+  /* Phase NOW 左ボーダー＋背景 */
+  .phase.phase-now{border-left:3px solid rgba(201,168,76,.7);background:rgba(201,168,76,.03)}
+
   /* Insight */
   .insight{background:rgba(201,168,76,.06);border-left:3px solid #c9a84c;border-radius:0 10px 10px 0;padding:14px 20px;margin-top:20px;font-size:13px;color:#c4bfb5;line-height:1.85}
   .insight strong{color:#e8e2d4}
@@ -364,10 +372,14 @@
   </div>
 </div>
 
-<div class="connector"><div class="connector-line"></div></div>
+<div class="now-divider">
+  <div class="now-divider-line"></div>
+  <div class="now-divider-label"><div class="now-divider-dot"></div>今ここ</div>
+  <div class="now-divider-line"></div>
+</div>
 
 <!-- PHASE 1 -->
-<div class="phase">
+<div class="phase phase-now">
   <div class="phase-header">
     <div class="phase-badge now">P<br>1</div>
     <div class="phase-meta">
