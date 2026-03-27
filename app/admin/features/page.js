@@ -682,6 +682,75 @@ export default function AdminFeaturesPage() {
     const thumbInput = document.getElementById('feature-thumbnail');
     if (thumbInput) thumbInput.addEventListener('input', () => updateThumbPreview(thumbInput.value));
 
+    // サムネイル「端末から選択」ファイル処理
+    const thumbFileInput = document.getElementById('feature-thumbnail-file');
+    if (thumbFileInput) {
+      thumbFileInput.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target.result;
+          const canvas = document.createElement('canvas');
+          const img = new Image();
+          img.onload = () => {
+            const MAX = 1280;
+            let w = img.width, h = img.height;
+            if (w > MAX || h > MAX) {
+              if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+              else { w = Math.round(w * MAX / h); h = MAX; }
+            }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            const compressed = canvas.toDataURL('image/webp', 0.85);
+            const urlField = document.getElementById('feature-thumbnail');
+            if (urlField) urlField.value = compressed;
+            updateThumbPreview(compressed);
+          };
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+      });
+    }
+
+    // 本文エディタ「端末から画像」ファイル処理
+    const rteFileInput = document.getElementById('rte-image-file-input');
+    if (rteFileInput) {
+      rteFileInput.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target.result;
+          const canvas = document.createElement('canvas');
+          const img = new Image();
+          img.onload = () => {
+            const MAX = 1200;
+            let w = img.width, h = img.height;
+            if (w > MAX || h > MAX) {
+              if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+              else { w = Math.round(w * MAX / h); h = MAX; }
+            }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            const compressed = canvas.toDataURL('image/jpeg', 0.88);
+            const ed = document.getElementById('feature-body-editor');
+            const ta = document.getElementById('feature-body');
+            if (ed) {
+              ed.focus();
+              document.execCommand('insertImage', false, compressed);
+              if (ta) ta.value = sanitizeHtml(ed.innerHTML);
+              updatePreview();
+            }
+          };
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+      });
+    }
+
     // 初回データ読み込み
     refreshFeatures().then(() => {
       const urlId = getParam('id');
