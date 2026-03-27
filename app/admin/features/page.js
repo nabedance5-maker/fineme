@@ -122,6 +122,15 @@ export default function AdminFeaturesPage() {
     function updateUrlForEdit(id) { const url = new URL(location.href); url.searchParams.set('id', id); history.pushState({ id }, '', url); }
 
     function switchToRteMode() {
+      // ブロックモードから切り替える場合、ブロック→HTMLに変換してRTEに読み込む
+      if (_blocks.length > 0) {
+        readBlockEditorState();
+        const html = blocksToHtml(_blocks);
+        const ed2 = document.getElementById('feature-body-editor');
+        const ta2 = document.getElementById('feature-body');
+        if (ed2) ed2.innerHTML = sanitizeHtml(html);
+        if (ta2) ta2.value = sanitizeHtml(html);
+      }
       const rteEl = document.querySelector('.rte');
       const blkEl = document.getElementById('block-editor-container');
       if (rteEl) rteEl.style.display = '';
@@ -129,6 +138,7 @@ export default function AdminFeaturesPage() {
       document.getElementById('tab-rte-btn')?.setAttribute('data-active','1');
       document.getElementById('tab-block-btn')?.removeAttribute('data-active');
       _blocks = []; serializeBlocks();
+      updatePreview();
     }
     function switchToBlockMode() {
       const rteEl = document.querySelector('.rte');
@@ -138,6 +148,7 @@ export default function AdminFeaturesPage() {
       document.getElementById('tab-block-btn')?.setAttribute('data-active','1');
       document.getElementById('tab-rte-btn')?.removeAttribute('data-active');
       const ta = document.getElementById('feature-body'); if (ta) ta.value = '';
+      updatePreview();
     }
 
     function fillForm(f) {
@@ -198,15 +209,20 @@ export default function AdminFeaturesPage() {
     function updatePreview() {
       try {
         const pv = document.getElementById('feature-preview');
+        if (!pv) return;
         const ta = document.getElementById('feature-body');
         const ed = document.getElementById('feature-body-editor');
-        if (!pv || !ta || !ed) return;
+
+        const blkEl = document.getElementById('block-editor-container');
+        const isBlockMode = blkEl && blkEl.style.display !== 'none';
 
         const thumb    = (document.getElementById('feature-thumbnail')?.value || '').trim();
         const title    = (document.getElementById('feature-title')?.value || '（タイトル未入力）').trim();
         const category = (document.getElementById('feature-category')?.value || '').trim();
         const readTime = (document.getElementById('feature-reading-time')?.value || '5');
-        const bodyHtml = ta.value || sanitizeHtml(ed.innerHTML || '');
+        const bodyHtml = isBlockMode
+          ? blocksToHtml(_blocks)
+          : (ta?.value || sanitizeHtml(ed?.innerHTML || ''));
 
         const heroStyle = thumb
           ? `position:relative;height:260px;overflow:hidden;background:#0a0f1e;border-radius:12px 12px 0 0`
@@ -486,6 +502,7 @@ export default function AdminFeaturesPage() {
       container.addEventListener('input', e => {
         readBlockEditorState();
         serializeBlocks();
+        updatePreview();
       });
 
       container.addEventListener('click', e => {
@@ -1073,13 +1090,6 @@ export default function AdminFeaturesPage() {
                       </div>
                       <div id="feature-body-editor" className="rte-editor" contentEditable="true" aria-label="本文エディタ" style={{paddingTop:'8px'}}></div>
                       <textarea id="feature-body" name="body" hidden></textarea>
-                      <div className="card" style={{marginTop:'12px',padding:'12px'}}>
-                        <div style={{display:'flex',alignItems:'center'}}>
-                          <strong>公開ページプレビュー</strong>
-                          <span className="muted" style={{marginLeft:'auto'}}>公開時と同じ見た目で確認できます</span>
-                        </div>
-                        <div id="feature-preview" style={{marginTop:'12px',borderRadius:'12px',overflow:'hidden'}}></div>
-                      </div>
                     </div>
 
                     {/* ── ブロックエディタ ── */}
@@ -1106,6 +1116,16 @@ export default function AdminFeaturesPage() {
                       </div>
                       <textarea id="feature-blocks-json" name="blocks_json" hidden readOnly></textarea>
                     </div>
+
+                    {/* プレビュー（RTE・ブロック共通） */}
+                    <div className="card" style={{marginTop:'12px',padding:'12px'}}>
+                      <div style={{display:'flex',alignItems:'center'}}>
+                        <strong>公開ページプレビュー</strong>
+                        <span className="muted" style={{marginLeft:'auto'}}>公開時と同じ見た目で確認できます</span>
+                      </div>
+                      <div id="feature-preview" style={{marginTop:'12px',borderRadius:'12px',overflow:'hidden'}}></div>
+                    </div>
+
                     <p className="muted" style={{fontSize:'12px',margin:'4px 0 0',padding:'8px 12px',background:'rgba(201,168,76,0.06)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:'6px'}}>
                       💡 RTEモードはHTML保存・ブロックモードは構造化データ保存。blocks形式の既存記事はブロックモードで自動読み込まれます。
                     </p>
