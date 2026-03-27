@@ -1181,9 +1181,13 @@ export default function NewMeNaviPage() {
       }
       updatePrereqBanner();
       // チェックした瞬間に全完了→祝福ギミック
+      // ※ 表示中の .prereq-box を数える（全軸ではなく描画済みのみ）
       if (!isDone && key.startsWith('prereq-')) {
-        const { allDone } = getAllPrereqInfo();
-        if (allDone) showPrereqCelebration();
+        const allBoxes     = document.querySelectorAll('.prereq-box');
+        const checkedBoxes = document.querySelectorAll('.prereq-box.checked');
+        if (allBoxes.length > 0 && allBoxes.length === checkedBoxes.length) {
+          showPrereqCelebration();
+        }
       }
     });
 
