@@ -173,7 +173,59 @@ export default function AdminFeaturesPage() {
         const ta = document.getElementById('feature-body');
         const ed = document.getElementById('feature-body-editor');
         if (!pv || !ta || !ed) return;
-        pv.innerHTML = ta.value || sanitizeHtml(ed.innerHTML || '');
+
+        const thumb    = (document.getElementById('feature-thumbnail')?.value || '').trim();
+        const title    = (document.getElementById('feature-title')?.value || '（タイトル未入力）').trim();
+        const category = (document.getElementById('feature-category')?.value || '').trim();
+        const readTime = (document.getElementById('feature-reading-time')?.value || '5');
+        const bodyHtml = ta.value || sanitizeHtml(ed.innerHTML || '');
+
+        const heroStyle = thumb
+          ? `position:relative;height:260px;overflow:hidden;background:#0a0f1e;border-radius:12px 12px 0 0`
+          : `position:relative;height:140px;overflow:hidden;background:linear-gradient(135deg,#0a0f1e,#1e1b4b);border-radius:12px 12px 0 0`;
+
+        const heroImg = thumb
+          ? `<img src="${thumb.replace(/"/g,'&quot;')}" alt="" style="width:100%;height:130%;object-fit:cover;display:block;opacity:0.88;transform:translateY(0)">`
+          : '';
+
+        const catBadge = category
+          ? `<span style="display:inline-block;background:#c9a84c;color:#0a0f1e;font-size:10px;font-weight:800;padding:3px 12px;border-radius:99px;letter-spacing:.12em;margin-bottom:10px;text-transform:uppercase">${category}</span>`
+          : '';
+
+        pv.innerHTML = `
+          <div style="border-radius:12px;overflow:hidden;background:#0a0f1e;font-family:sans-serif">
+            <!-- ヒーロー -->
+            <div style="${heroStyle}">
+              ${heroImg}
+              <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,15,30,.05) 0%,rgba(10,15,30,.35) 40%,rgba(10,15,30,.88) 78%,rgba(10,15,30,.97) 100%)"></div>
+              <div style="position:absolute;bottom:0;left:0;right:0;padding:0 20px 24px">
+                ${catBadge}
+                <div style="font-size:clamp(16px,3vw,22px);font-weight:800;line-height:1.45;color:#fff;margin-bottom:10px;text-shadow:0 2px 12px rgba(0,0,0,.35)">${title}</div>
+                <div style="font-size:12px;color:rgba(255,255,255,.55)">📖 ${readTime}分で読める</div>
+              </div>
+            </div>
+            <!-- 本文エリア -->
+            <div style="background:rgba(10,15,30,.78);padding:24px 24px 32px">
+              <style>
+                #feature-preview .ab-body h2{font-size:18px;font-weight:800;padding-left:12px;border-left:4px solid #c9a84c;margin:36px 0 12px;line-height:1.55;color:#fff}
+                #feature-preview .ab-body h3{font-size:15px;font-weight:700;margin:24px 0 8px;color:rgba(255,255,255,.9)}
+                #feature-preview .ab-body p{font-size:15px;line-height:2;margin-bottom:16px;color:rgba(240,236,228,.85)}
+                #feature-preview .ab-body blockquote{background:rgba(201,168,76,.07);border-left:4px solid #c9a84c;border-radius:0 10px 10px 0;padding:12px 18px;margin:20px 0;color:rgba(240,236,228,.88)}
+                #feature-preview .ab-body img{max-width:100%;border-radius:10px;display:block;margin:18px auto}
+                #feature-preview .ab-body ul,#feature-preview .ab-body ol{padding-left:20px;margin-bottom:16px}
+                #feature-preview .ab-body li{font-size:14px;line-height:1.85;color:rgba(240,236,228,.82);margin-bottom:4px}
+                #feature-preview .ab-body a{color:#c9a84c;text-decoration:underline}
+                #feature-preview .ab-body strong{color:#fff;font-weight:800}
+                #feature-preview .ab-body .fb-block{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:14px;color:rgba(240,236,228,.88);margin-bottom:14px}
+                #feature-preview .ab-body .fb-heading{font-weight:800;font-size:18px;color:#fff}
+                #feature-preview .ab-body .fb-text{font-size:14px;color:rgba(240,236,228,.85);line-height:1.9}
+              </style>
+              ${bodyHtml
+                ? `<div class="ab-body">${bodyHtml}</div>`
+                : `<p style="color:rgba(255,255,255,.3);text-align:center;padding:32px 0">本文をエディタに入力すると、ここにプレビューが表示されます</p>`
+              }
+            </div>
+          </div>`;
       } catch {}
     }
 
@@ -680,7 +732,13 @@ export default function AdminFeaturesPage() {
     }
 
     const thumbInput = document.getElementById('feature-thumbnail');
-    if (thumbInput) thumbInput.addEventListener('input', () => updateThumbPreview(thumbInput.value));
+    if (thumbInput) thumbInput.addEventListener('input', () => { updateThumbPreview(thumbInput.value); updatePreview(); });
+
+    // タイトル・カテゴリ・読了時間の変更でもプレビュー更新
+    ['feature-title', 'feature-category', 'feature-reading-time'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', updatePreview);
+    });
 
     // サムネイル「端末から選択」ファイル処理
     const thumbFileInput = document.getElementById('feature-thumbnail-file');
@@ -900,10 +958,10 @@ export default function AdminFeaturesPage() {
                       <textarea id="feature-body" name="body" hidden></textarea>
                       <div className="card" style={{marginTop:'12px',padding:'12px'}}>
                         <div style={{display:'flex',alignItems:'center'}}>
-                          <strong>プレビュー（編集用）</strong>
-                          <span className="muted" style={{marginLeft:'auto'}}>保存前の見た目を確認できます</span>
+                          <strong>公開ページプレビュー</strong>
+                          <span className="muted" style={{marginLeft:'auto'}}>公開時と同じ見た目で確認できます</span>
                         </div>
-                        <div id="feature-preview" style={{marginTop:'8px'}}></div>
+                        <div id="feature-preview" style={{marginTop:'12px',borderRadius:'12px',overflow:'hidden'}}></div>
                       </div>
                     </div>
 
