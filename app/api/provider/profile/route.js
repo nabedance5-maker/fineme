@@ -6,7 +6,7 @@ const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const ALLOWED_FIELDS = [
   'name', 'catchphrase', 'description', 'target_desc', 'philosophy',
   'guide_message', 'unique_strengths',
-  'area', 'price_from', 'photo_url', 'provider_style',
+  'area', 'prefecture', 'price_from', 'photo_url', 'provider_style',
   'suitable_triggers', 'handles_failure_patterns',
   'published',
   // 比較・信頼シグナルフィールド

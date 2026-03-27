@@ -550,6 +550,12 @@ export default function DiagnosisResultPage() {
         if (p.failure_pattern && p.failure_pattern !== 'ongoing') params.set('failure', p.failure_pattern);
         if (compassFirst) params.set('compass', compassFirst);
         if (priorityOrder?.length) params.set('axes', priorityOrder.join(','));
+        try {
+          const upref = localStorage.getItem('fineme:user:area') || '';
+          const ucity = localStorage.getItem('fineme:user:city') || '';
+          if (upref) params.set('prefecture', upref);
+          if (ucity) params.set('city', ucity);
+        } catch {}
         const res = await fetch(`/api/providers?${params}`);
         if (!res.ok) return;
         const providers = await res.json();

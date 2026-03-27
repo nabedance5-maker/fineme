@@ -193,6 +193,13 @@ function SearchContent() {
         const axes = scan.priority_order;
         if (Array.isArray(axes) && axes.length) params.set('axes', axes.join(','));
       }
+      // ユーザーの位置情報をソフトボーナスとして送信（ハードフィルターではない）
+      try {
+        const upref = localStorage.getItem('fineme:user:area') || '';
+        const ucity = localStorage.getItem('fineme:user:city') || '';
+        if (upref) params.set('prefecture', upref);
+        if (ucity) params.set('city', ucity);
+      } catch {}
       const res = await fetch(`/api/providers?${params}`);
       const data = res.ok ? await res.json() : [];
       setProviders(Array.isArray(data) ? data : []);

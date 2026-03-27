@@ -25,7 +25,7 @@ function textScore(str, thresholds) {
   return s;
 }
 
-function calcScore({ provider, services, staffCount, trigger, failure, compassAxis, priorityAxes }) {
+function calcScore({ provider, services, staffCount, trigger, failure, compassAxis, priorityAxes, userPrefecture, userCity }) {
   let score = 0;
   const tags = [];
   const ai = provider.ai_match_profile || null;
@@ -77,6 +77,22 @@ function calcScore({ provider, services, staffCount, trigger, failure, compassAx
   score += textScore(provider.catchphrase, [[1,3]]);
 
   // 写真
+  // ── 位置ボーナス（ソフト加点・ハードフィルターではない）──
+  if (userPrefecture && provider.entity_type !== 'affiliate') {
+    const provPref = (provider.prefecture || '').trim();
+    const provArea = (provider.area || '').trim();
+    // 都道府県一致: +4点
+    if (provPref && provPref === userPrefecture) {
+      score += 4;
+      // 市区町村一致: さらに +4点（合計 +8）
+      if (userCity && provArea && provArea.includes(userCity)) score += 4;
+    } else if (!provPref && provArea && provArea.includes(userPrefecture)) {
+      // prefectureカラム未設定でも area に都道府県名が含まれていれば加点
+      score += 4;
+      if (userCity && provArea.includes(userCity)) score += 4;
+    }
+  }
+
   if (provider.cover_image_url) score += 5;
   else if (provider.photo_url) score += 3;
   if (provider.facility_photo_1) score += 3;
@@ -104,13 +120,15 @@ function calcScore({ provider, services, staffCount, trigger, failure, compassAx
 export async function GET(request) {
   try {
   const { searchParams } = new URL(request.url);
-  const category    = searchParams.get('category');
-  const area        = searchParams.get('area');
-  const axis        = searchParams.get('axis');        // 軸ハードフィルター（検索ページ）
-  const trigger     = searchParams.get('trigger');     // Me Scan: ユーザーのきっかけ
-  const failure     = searchParams.get('failure');     // Me Scan: 失敗パターン
-  const compassAxis = searchParams.get('compass');     // Me Scan: 最初の一手（軸）
-  const axesParam   = searchParams.get('axes');        // Me Scan: 優先軸（カンマ区切り）
+  const category      = searchParams.get('category');
+  const area          = searchParams.get('area');
+  const axis          = searchParams.get('axis');          // 軸ハードフィルター（検索ページ）
+  const trigger       = searchParams.get('trigger');       // Me Scan: ユーザーのきっかけ
+  const failure       = searchParams.get('failure');       // Me Scan: 失敗パターン
+  const compassAxis   = searchParams.get('compass');       // Me Scan: 最初の一手（軸）
+  const axesParam     = searchParams.get('axes');          // Me Scan: 優先軸（カンマ区切り）
+  const userPrefecture = searchParams.get('prefecture') || ''; // ユーザー都道府県（ソフト加点）
+  const userCity       = searchParams.get('city') || '';       // ユーザー市区町村（ソフト加点）
   const priorityAxes = axesParam ? axesParam.split(',').filter(Boolean) : [];
 
   // ── プロバイダー一覧取得（充実度判定に必要なフィールドも含む）──
@@ -173,6 +191,8 @@ export async function GET(request) {
       failure,
       compassAxis,
       priorityAxes,
+      userPrefecture,
+      userCity,
     });
     // レスポンスに含める（クライアントで match_tags 表示用）
     return { ...provider, match_score: score, match_tags: tags };

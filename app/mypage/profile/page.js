@@ -12,6 +12,7 @@ export default function MypageProfilePage() {
   const [firstName, setFirstName] = useState('');
   const [phone, setPhone] = useState('');
   const [area, setArea] = useState('');
+  const [city, setCity] = useState('');
   const [shareDiagnosis, setShareDiagnosis] = useState(false);
   const [shareRoadmap, setShareRoadmap] = useState(false);
   const [lineUserId, setLineUserId] = useState(null);
@@ -44,6 +45,7 @@ export default function MypageProfilePage() {
                 setFirstName(data.first_name || '');
                 setPhone(data.phone || '');
                 setArea(data.area || localStorage.getItem('fineme:user:area') || '');
+                setCity(data.city || localStorage.getItem('fineme:user:city') || '');
                 setShareDiagnosis(!!data.share_diagnosis);
                 setShareRoadmap(!!data.share_roadmap);
                 setLineUserId(data.line_user_id || null);
@@ -86,6 +88,7 @@ export default function MypageProfilePage() {
           first_name: firstName.trim(),
           phone: phone.trim(),
           area: area.trim(),
+          city: city.trim(),
           share_diagnosis: shareDiagnosis,
           share_roadmap: shareRoadmap,
         }),
@@ -101,6 +104,8 @@ export default function MypageProfilePage() {
         } else {
           localStorage.removeItem('fineme:user:area');
         }
+        if (city.trim()) localStorage.setItem('fineme:user:city', city.trim());
+        else localStorage.removeItem('fineme:user:city');
       }
     } catch {
       setMessage('保存に失敗しました。');
@@ -156,16 +161,25 @@ export default function MypageProfilePage() {
               <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '20px', marginTop: '4px' }}>
                 <p style={{ fontSize: '13px', fontWeight: 700, color: '#374151', margin: '0 0 4px' }}>📍 お住まいのエリア</p>
                 <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 12px' }}>設定すると、検索結果や診断結果で近くのサービスが優先表示されます。引越し時などはここから変更できます。</p>
-                <select
-                  value={area}
-                  onChange={e => setArea(e.target.value)}
-                  style={{ padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', width: '100%', maxWidth: '240px', boxSizing: 'border-box', background: '#fff' }}
-                >
-                  <option value="">未設定</option>
-                  {['北海道','青森','岩手','宮城','秋田','山形','福島','茨城','栃木','群馬','埼玉','千葉','東京','神奈川','新潟','富山','石川','福井','山梨','長野','岐阜','静岡','愛知','三重','滋賀','京都','大阪','兵庫','奈良','和歌山','鳥取','島根','岡山','広島','山口','徳島','香川','愛媛','高知','福岡','佐賀','長崎','熊本','大分','宮崎','鹿児島','沖縄'].map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <select
+                    value={area}
+                    onChange={e => setArea(e.target.value)}
+                    style={{ padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', width: '140px', boxSizing: 'border-box', background: '#fff' }}
+                  >
+                    <option value="">都道府県</option>
+                    {['北海道','青森','岩手','宮城','秋田','山形','福島','茨城','栃木','群馬','埼玉','千葉','東京','神奈川','新潟','富山','石川','福井','山梨','長野','岐阜','静岡','愛知','三重','滋賀','京都','大阪','兵庫','奈良','和歌山','鳥取','島根','岡山','広島','山口','徳島','香川','愛媛','高知','福岡','佐賀','長崎','熊本','大分','宮崎','鹿児島','沖縄'].map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="市区町村（例: 青梅市）"
+                    value={city}
+                    onChange={e => setCity(e.target.value)}
+                    style={{ padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', flex: 1, minWidth: '140px', boxSizing: 'border-box' }}
+                  />
+                </div>
               </div>
 
               {/* 予約者情報 */}
