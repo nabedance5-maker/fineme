@@ -17,7 +17,7 @@ export async function GET(request) {
 
   const { data } = await supabase
     .from('profiles')
-    .select('display_name, share_diagnosis, share_roadmap, line_user_id, last_name, first_name, phone, axis_progress, step_done')
+    .select('display_name, share_diagnosis, share_roadmap, line_user_id, last_name, first_name, phone, axis_progress, step_done, area')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -32,6 +32,7 @@ export async function GET(request) {
     email: user.email || '',
     axis_progress: data?.axis_progress || {},
     step_done: data?.step_done || {},
+    area: data?.area || '',
   });
 }
 
@@ -40,7 +41,7 @@ export async function PUT(request) {
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
-  const { display_name, share_diagnosis, share_roadmap, last_name, first_name, phone, axis_progress, step_done } = body;
+  const { display_name, share_diagnosis, share_roadmap, last_name, first_name, phone, axis_progress, step_done, area } = body;
 
   // auth.users の display_name を更新
   if (display_name !== undefined) {
@@ -62,6 +63,7 @@ export async function PUT(request) {
   if (phone !== undefined) upsertData.phone = String(phone).trim();
   if (axis_progress !== undefined) upsertData.axis_progress = axis_progress;
   if (step_done !== undefined) upsertData.step_done = step_done;
+  if (area !== undefined) upsertData.area = String(area).trim();
 
   const { error } = await supabase
     .from('profiles')

@@ -157,7 +157,9 @@ function SearchContent() {
     if (a) return a;
     const regionMap = { tokyo: '東京', osaka: '大阪', kanagawa: '神奈川', aichi: '愛知', fukuoka: '福岡', saitama: '埼玉', chiba: '千葉', kyoto: '京都', hyogo: '兵庫', hokkaido: '北海道' };
     const r = sp.get('region') || '';
-    return regionMap[r] || '';
+    if (regionMap[r]) return regionMap[r];
+    // URLにエリア指定がない場合、ユーザー設定エリアをデフォルト適用
+    try { return localStorage.getItem('fineme:user:area') || ''; } catch { return ''; }
   });
   const [axis, setAxis] = useState(() => sp.get('axis') || '');
   const [compassAxis, setCompassAxis] = useState('');

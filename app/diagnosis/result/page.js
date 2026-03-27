@@ -1,9 +1,11 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { LocationPrompt } from '@/app/_components/LocationPrompt';
 
 export default function DiagnosisResultPage() {
   const initialized = useRef(false);
+  const [accessToken, setAccessToken] = useState(null);
 
   useEffect(() => {
     if (initialized.current) return;
@@ -170,6 +172,7 @@ export default function DiagnosisResultPage() {
         if (token) {
           isLoggedIn = true;
           authToken = token;
+          setAccessToken(token);
           const res = await fetch('/api/me/diagnosis', { headers: { 'Authorization': `Bearer ${token}` } });
           if (res.ok) { const data = await res.json(); if (data) {
             // localStorageの方が新しい場合は上書きしない（新規診断直後を保護）
@@ -763,6 +766,7 @@ export default function DiagnosisResultPage() {
             <div id="result-root">
               <p style={{textAlign:'center',padding:'60px 20px',color:'#9ca3af'}}>読み込み中…</p>
             </div>
+            <LocationPrompt accessToken={accessToken} />
           </div>
         </div>
       </main>
