@@ -234,7 +234,11 @@ VALUES (
 【エスケープルール — 必ず守ること】
 - blocksのJSON文字列内に含まれるシングルクォート（'）は ''（連続2つ）にエスケープする
 - ダブルクォート（"）はJSONの構造に使うのでそのまま
-- 改行は\\nではなく実際の改行を含めない（1つのtext値は1行で収める）`;
+- 改行は\\nではなく実際の改行を含めない（1つのtext値は1行で収める）
+
+SQLの末尾に必ず以下のコメントを追記すること：
+-- 📷 推奨サムネイル検索キーワード（Unsplash）: （英語キーワード2〜3語。記事テーマに合う男性の外見・ライフスタイル系の写真）
+-- 例: "japanese man grooming mirror" / "men hairstyle salon" / "confident young man"`;
 }
 
 function renderGrid(gridId, articles) {
