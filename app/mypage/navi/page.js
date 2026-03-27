@@ -947,6 +947,70 @@ export default function NewMeNaviPage() {
         </div>
       `;
 
+      // ── 発揮ステージ ──
+      const doneCount = Object.values(stepDone).filter(Boolean).length;
+      const isReady      = doneCount >= 5;
+      const isApproaching = doneCount >= 2;
+
+      const stageReadinessHtml = isReady ? `
+        <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:8px;margin-bottom:18px">
+          <span style="font-size:16px">🎉</span>
+          <span style="font-size:12px;font-weight:700;color:#065f46">このステージへ進む準備ができています！</span>
+        </div>
+      ` : isApproaching ? `
+        <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.22);border-radius:8px;margin-bottom:18px">
+          <span style="font-size:14px">🧭</span>
+          <span style="font-size:12px;font-weight:700;color:#92400e">変容が着実に進んでいます。もう少しで発揮のステージへ。</span>
+        </div>
+      ` : `
+        <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:#f9fafb;border:1px dashed #d1d5db;border-radius:8px;margin-bottom:18px">
+          <span style="font-size:14px">🔒</span>
+          <span style="font-size:12px;color:#9ca3af;line-height:1.6">まずは上の変容ルートを歩もう。変化が積み重なるほど、このステージが近づいてくる。</span>
+        </div>
+      `;
+
+      const cardBg    = isApproaching ? 'linear-gradient(135deg,rgba(201,168,76,0.07),rgba(10,15,30,0.03))' : '#f9fafb';
+      const cardBorder = isApproaching ? 'rgba(201,168,76,0.3)' : '#e5e7eb';
+
+      html += `
+        <svg viewBox="0 0 100 32" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:32px;display:block">
+          <line x1="50" y1="0" x2="50" y2="32" stroke="rgba(201,168,76,0.45)" stroke-width="2" stroke-dasharray="5 4"/>
+        </svg>
+
+        <div style="padding:20px 0 8px">
+          <!-- sec-label -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="width:18px;height:1.5px;background:#c9a84c;flex-shrink:0;border-radius:1px"></div>
+            <span style="font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(201,168,76,0.7)">Next Stage</span>
+            <div style="flex:1;height:1px;background:repeating-linear-gradient(90deg,rgba(201,168,76,0.25) 0,rgba(201,168,76,0.25) 4px,transparent 4px,transparent 9px)"></div>
+          </div>
+
+          <p style="font-family:'Noto Serif JP',Georgia,serif;font-size:16px;font-weight:800;color:#0a0f1e;margin:0 0 6px;line-height:1.5">変わった自分を、世界へ発揮するステージ</p>
+          <p style="font-size:12px;color:#6b7280;line-height:1.7;margin:0 0 16px">変容は発揮することで初めて完成する。外見の変化を最大限に活かすステージへ。</p>
+
+          ${stageReadinessHtml}
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <a href="/search?category=photo" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none;transition:border-color .2s">
+              <span style="font-size:26px;flex-shrink:0">📸</span>
+              <div style="flex:1">
+                <p style="font-size:14px;font-weight:800;color:#0a0f1e;margin:0 0 4px;font-family:'Noto Serif JP',Georgia,serif">プロフィール写真撮影</p>
+                <p style="font-size:12px;color:#6b7280;margin:0;line-height:1.6">変わった自分を、最高の一枚に。マッチングアプリの第一印象を決定的に変える。</p>
+              </div>
+              <span style="color:rgba(201,168,76,0.6);font-size:16px;flex-shrink:0">→</span>
+            </a>
+            <a href="/search?category=marriage" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none;transition:border-color .2s">
+              <span style="font-size:26px;flex-shrink:0">💍</span>
+              <div style="flex:1">
+                <p style="font-size:14px;font-weight:800;color:#0a0f1e;margin:0 0 4px;font-family:'Noto Serif JP',Georgia,serif">婚活サポート</p>
+                <p style="font-size:12px;color:#6b7280;margin:0;line-height:1.6">自信がついた今が、出会いを本気にするタイミング。変容の先にある、本当の出会いへ。</p>
+              </div>
+              <span style="color:rgba(201,168,76,0.6);font-size:16px;flex-shrink:0">→</span>
+            </a>
+          </div>
+        </div>
+      `;
+
       return html;
     }
 
