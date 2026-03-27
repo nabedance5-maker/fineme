@@ -67,6 +67,9 @@
   /* 完了済み非表示トグル */
   .toggle-done-btn { font-size: 11px; padding: 4px 12px; background: transparent; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: rgba(255,255,255,0.45); cursor: pointer; transition: all 0.15s; }
   .toggle-done-btn:hover { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); }
+
+  /* キーワードタグ */
+  .article-keyword { display:inline-block; margin-top:3px; font-size:10px; font-family:monospace; color:rgba(201,168,76,0.55); letter-spacing:0.03em; }
 </style>
 </head>
 <body>
@@ -74,7 +77,8 @@
 <div class="header">
   <h1>📋 Fineme 記事生成ツール</h1>
   <p>各記事のプロンプトをコピーして Claude（推奨）に貼り付けると、Supabase SQL INSERT文が出力されます。<br>
-  目標：<strong style="color:#c9a84c">6,000〜8,000字・20〜30ブロック</strong>の徹底網羅型記事。ドメインパワーゼロから上位表示を狙う唯一の戦略。</p>
+  目標：<strong style="color:#c9a84c">6,000〜8,000字・25〜30ブロック</strong>の徹底網羅型記事。ドメインパワーゼロから上位表示を狙う唯一の戦略。<br>
+  <span style="font-size:11px;color:rgba(201,168,76,0.6)">🔍 各記事のターゲットキーワードをタイトル下に表示。プロンプトにも自動挿入されます。</span></p>
 </div>
 
 <div class="progress-wrap">
@@ -82,7 +86,7 @@
     <span>作成進捗</span>
     <div style="display:flex;align-items:center;gap:12px;">
       <button class="toggle-done-btn" onclick="toggleHideDone()" id="hide-btn">完了済みを隠す</button>
-      <strong id="progress-text">0 / 40 本</strong>
+      <strong id="progress-text">0 / 140 本</strong>
     </div>
   </div>
   <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
@@ -143,57 +147,229 @@
   <div class="article-grid" id="grid-4"></div>
 </div>
 
+<!-- 年代・シーン別 -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>年代・シーン別 — ライフステージ特化</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-5"></div>
+</div>
+
+<!-- パーツ別ケア -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>パーツ別ケア — 細部SEO・ロングテール</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-6"></div>
+</div>
+
+<!-- サービス・費用・地域 -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>サービス・費用・地域 — 比較検索ニーズ</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-7"></div>
+</div>
+
+<!-- マッチング・婚活特化 -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>マッチング・婚活特化 — 高コンバージョン</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-8"></div>
+</div>
+
+<!-- マインドセット・比較 -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>マインドセット・比較 — ブランド深化</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-9"></div>
+</div>
+
+<!-- 特殊テーマ・ニッチ -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>特殊テーマ・ニッチ — 競合ゼロを狙う</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-10"></div>
+</div>
+
 <div class="toast" id="toast">プロンプトをコピーしました ✓</div>
 
 <script>
 const ARTICLES = [
   // 悩みから入る (grid-1)
-  { id:1,  grid:1, title:'マッチングアプリで「いいね」が来ない男性がまず変えるべきこと', cat:'清潔感', slug:'matching-app-no-likes-appearance', searchHref:'/search?category=hair' },
-  { id:2,  grid:1, title:'女性が男性の第一印象で最初に見ているのはどこか', cat:'清潔感', slug:'first-impression-what-women-see', searchHref:'/search' },
-  { id:3,  grid:1, title:'「清潔感がない」と言われた男性が1ヶ月でやること', cat:'清潔感', slug:'no-cleanliness-1month-plan', searchHref:'/search?category=hair' },
-  { id:4,  grid:1, title:'30代男性が今すぐ垢抜けるための外見改善チェックリスト', cat:'清潔感', slug:'30s-men-glow-up-checklist', searchHref:'/search' },
-  { id:5,  grid:1, title:'モテない男性に共通する外見の特徴と、具体的な改善ステップ', cat:'清潔感', slug:'unpopular-men-appearance-features', searchHref:'/search' },
-  { id:6,  grid:1, title:'「頑張っているのに恋愛がうまくいかない」男性に共通する盲点', cat:'変容の思想', slug:'romance-not-working-blindspot', searchHref:'/search' },
-  { id:7,  grid:1, title:'垢抜けない人の共通点とは？', cat:'清潔感', slug:'why-cant-glow-up-common-traits', searchHref:'/search' },
-  { id:8,  grid:1, title:'女性が一瞬で「ないな」と感じる男性の特徴と、その変え方', cat:'清潔感', slug:'women-instant-no-men-traits', searchHref:'/search' },
-  { id:9,  grid:1, title:'恋愛経験が少ない男性がまず変えるべきこと', cat:'変容の思想', slug:'little-romance-experience-first-change', searchHref:'/search' },
-  { id:10, grid:1, title:'「どうせ顔じゃない」と思っている男性が、実は一番損している理由', cat:'変容の思想', slug:'its-not-face-men-losing-out', searchHref:'/search' },
-  { id:11, grid:1, title:'婚活男性が外見に投資すべき3つの理由', cat:'変容の思想', slug:'marriage-hunting-appearance-investment', searchHref:'/search' },
+  { id:1,  grid:1, cat:'清潔感', title:'マッチングアプリで「いいね」が来ない男性がまず変えるべきこと', slug:'matching-app-no-likes-appearance', searchHref:'/search?category=hair', keyword:'マッチングアプリ いいね来ない 男性 外見' },
+  { id:2,  grid:1, cat:'清潔感', title:'女性が男性の第一印象で最初に見ているのはどこか', slug:'first-impression-what-women-see', searchHref:'/search', keyword:'男性 第一印象 女性 どこを見る' },
+  { id:3,  grid:1, cat:'清潔感', title:'「清潔感がない」と言われた男性が1ヶ月でやること', slug:'no-cleanliness-1month-plan', searchHref:'/search?category=hair', keyword:'清潔感がない 男性 改善 1ヶ月' },
+  { id:4,  grid:1, cat:'清潔感', title:'30代男性が今すぐ垢抜けるための外見改善チェックリスト', slug:'30s-men-glow-up-checklist', searchHref:'/search', keyword:'30代 男性 垢抜け チェックリスト' },
+  { id:5,  grid:1, cat:'清潔感', title:'モテない男性に共通する外見の特徴と、具体的な改善ステップ', slug:'unpopular-men-appearance-features', searchHref:'/search', keyword:'モテない 男性 外見 特徴 改善' },
+  { id:6,  grid:1, cat:'変容の思想', title:'「頑張っているのに恋愛がうまくいかない」男性に共通する盲点', slug:'romance-not-working-blindspot', searchHref:'/search', keyword:'恋愛 うまくいかない 男性 原因 盲点' },
+  { id:7,  grid:1, cat:'清潔感', title:'垢抜けない人の共通点とは？', slug:'why-cant-glow-up-common-traits', searchHref:'/search', keyword:'垢抜けない 原因 男性 共通点' },
+  { id:8,  grid:1, cat:'清潔感', title:'女性が一瞬で「ないな」と感じる男性の特徴と、その変え方', slug:'women-instant-no-men-traits', searchHref:'/search', keyword:'女性 ないな 思う 男性 特徴' },
+  { id:9,  grid:1, cat:'変容の思想', title:'恋愛経験が少ない男性がまず変えるべきこと', slug:'little-romance-experience-first-change', searchHref:'/search', keyword:'恋愛経験 少ない 男性 外見 変えるべき' },
+  { id:10, grid:1, cat:'変容の思想', title:'「どうせ顔じゃない」と思っている男性が、実は一番損している理由', slug:'its-not-face-men-losing-out', searchHref:'/search', keyword:'どうせ顔じゃない 男性 外見 損している' },
+  { id:11, grid:1, cat:'変容の思想', title:'婚活男性が外見に投資すべき3つの理由', slug:'marriage-hunting-appearance-investment', searchHref:'/search', keyword:'婚活 男性 外見 投資 理由' },
 
   // 方法・知識 (grid-2)
-  { id:12, grid:2, title:'メンズ美容 何から始める？', cat:'清潔感', slug:'mens-beauty-where-to-start', searchHref:'/search' },
-  { id:13, grid:2, title:'垢抜けたいけど何から始めればいいかわからない男性へ', cat:'清潔感', slug:'want-to-glow-up-dont-know-where-to-start', searchHref:'/search' },
-  { id:14, grid:2, title:'外見改善の初心者が最初の1週間でやること', cat:'清潔感', slug:'appearance-improvement-first-week', searchHref:'/search' },
-  { id:15, grid:2, title:'垢抜けたい男性がまず試すべき5つのこと', cat:'清潔感', slug:'glow-up-men-5-things-to-try', searchHref:'/search' },
-  { id:16, grid:2, title:'外見改善の正しい優先順位：何から始めれば最速で変われるか', cat:'清潔感', slug:'appearance-improvement-priority-order', searchHref:'/search' },
-  { id:17, grid:2, title:'「モテない」を変えたい男性が、最初に作るべき垢抜け習慣', cat:'清潔感', slug:'unpopular-men-glow-up-habits', searchHref:'/search' },
-  { id:18, grid:2, title:'男性の清潔感を作る5つの要素：ヘア・肌・眉・服・においの整え方', cat:'清潔感', slug:'mens-cleanliness-5-elements', searchHref:'/search' },
-  { id:19, grid:2, title:'眉毛を整えるだけで印象が変わる理由と整え方完全ガイド', cat:'清潔感', slug:'eyebrow-grooming-impression-guide', searchHref:'/search?category=eyebrow' },
-  { id:20, grid:2, title:'肌荒れが恋愛に影響している？男性スキンケアと自信の関係', cat:'清潔感', slug:'skin-trouble-romance-confidence', searchHref:'/search?category=esthetic' },
-  { id:21, grid:2, title:'モテる髪型を選ぶ前に知っておくべきこと：顔型・骨格・印象の関係', cat:'清潔感', slug:'popular-hairstyle-face-shape-guide', searchHref:'/search?category=hair' },
-  { id:22, grid:2, title:'服装を変えるだけで垢抜ける男性と変わらない男性の違い', cat:'清潔感', slug:'fashion-change-glow-up-difference', searchHref:'/search?category=diagnosis' },
-  { id:23, grid:2, title:'骨格診断で変わる服選び：男性向け完全ガイド', cat:'清潔感', slug:'skeleton-diagnosis-fashion-guide', searchHref:'/search?category=diagnosis' },
-  { id:24, grid:2, title:'パーソナルカラー診断が男性にも必要な理由', cat:'清潔感', slug:'personal-color-diagnosis-men', searchHref:'/search?category=diagnosis' },
-  { id:25, grid:2, title:'マッチングアプリのプロフィール写真で損している男性の共通点', cat:'写真撮影', slug:'matching-app-photo-losing-men', searchHref:'/search?category=photo' },
-  { id:26, grid:2, title:'プロに撮ってもらうだけで変わる？男性プロフィール写真撮影の効果', cat:'写真撮影', slug:'professional-profile-photo-effect', searchHref:'/search?category=photo' },
-  { id:27, grid:2, title:'男性向けメイク入門：ナチュラルに整えるだけで変わる印象', cat:'清潔感', slug:'mens-makeup-beginner-guide', searchHref:'/search?category=makeup' },
-  { id:28, grid:2, title:'男性がメイクサロンを選ぶときに確認すべき5つのポイント', cat:'清潔感', slug:'mens-makeup-salon-selection-guide', searchHref:'/search?category=makeup' },
-  { id:29, grid:2, title:'「顔じゃないのに気になる」雰囲気イケメンになる方法', cat:'変容の思想', slug:'atmosphere-handsome-not-face', searchHref:'/search' },
-  { id:30, grid:2, title:'モテない原因は顔じゃない理由', cat:'変容の思想', slug:'unpopular-reason-not-face', searchHref:'/search' },
-  { id:31, grid:2, title:'ホワイトニングは恋愛に効果的か？歯と印象の関係', cat:'清潔感', slug:'whitening-romance-effect-teeth', searchHref:'/search?category=whitening' },
+  { id:12, grid:2, cat:'清潔感', title:'メンズ美容 何から始める？', slug:'mens-beauty-where-to-start', searchHref:'/search', keyword:'メンズ美容 何から始める 初心者' },
+  { id:13, grid:2, cat:'清潔感', title:'垢抜けたいけど何から始めればいいかわからない男性へ', slug:'want-to-glow-up-dont-know-where-to-start', searchHref:'/search', keyword:'垢抜けたい 何から 男性 わからない' },
+  { id:14, grid:2, cat:'清潔感', title:'外見改善の初心者が最初の1週間でやること', slug:'appearance-improvement-first-week', searchHref:'/search', keyword:'外見改善 初心者 最初の1週間 始め方' },
+  { id:15, grid:2, cat:'清潔感', title:'垢抜けたい男性がまず試すべき5つのこと', slug:'glow-up-men-5-things-to-try', searchHref:'/search', keyword:'垢抜けたい 男性 試すべきこと 方法' },
+  { id:16, grid:2, cat:'清潔感', title:'外見改善の正しい優先順位：何から始めれば最速で変われるか', slug:'appearance-improvement-priority-order', searchHref:'/search', keyword:'外見改善 優先順位 何から 最速' },
+  { id:17, grid:2, cat:'清潔感', title:'「モテない」を変えたい男性が、最初に作るべき垢抜け習慣', slug:'unpopular-men-glow-up-habits', searchHref:'/search', keyword:'モテない 変えたい 男性 垢抜け 習慣' },
+  { id:18, grid:2, cat:'清潔感', title:'男性の清潔感を作る5つの要素：ヘア・肌・眉・服・においの整え方', slug:'mens-cleanliness-5-elements', searchHref:'/search', keyword:'男性 清潔感 作り方 5つの要素' },
+  { id:19, grid:2, cat:'清潔感', title:'眉毛を整えるだけで印象が変わる理由と整え方完全ガイド', slug:'eyebrow-grooming-impression-guide', searchHref:'/search?category=eyebrow', keyword:'眉毛 整え方 男性 印象 ガイド' },
+  { id:20, grid:2, cat:'清潔感', title:'肌荒れが恋愛に影響している？男性スキンケアと自信の関係', slug:'skin-trouble-romance-confidence', searchHref:'/search?category=esthetic', keyword:'男性 肌荒れ スキンケア 恋愛 自信' },
+  { id:21, grid:2, cat:'清潔感', title:'モテる髪型を選ぶ前に知っておくべきこと：顔型・骨格・印象の関係', slug:'popular-hairstyle-face-shape-guide', searchHref:'/search?category=hair', keyword:'モテる 髪型 男性 顔型 骨格' },
+  { id:22, grid:2, cat:'清潔感', title:'服装を変えるだけで垢抜ける男性と変わらない男性の違い', slug:'fashion-change-glow-up-difference', searchHref:'/search?category=diagnosis', keyword:'服装 変える 垢抜ける 男性 違い' },
+  { id:23, grid:2, cat:'清潔感', title:'骨格診断で変わる服選び：男性向け完全ガイド', slug:'skeleton-diagnosis-fashion-guide', searchHref:'/search?category=diagnosis', keyword:'骨格診断 男性 服選び ガイド' },
+  { id:24, grid:2, cat:'清潔感', title:'パーソナルカラー診断が男性にも必要な理由', slug:'personal-color-diagnosis-men', searchHref:'/search?category=diagnosis', keyword:'パーソナルカラー診断 男性 必要な理由' },
+  { id:25, grid:2, cat:'写真撮影', title:'マッチングアプリのプロフィール写真で損している男性の共通点', slug:'matching-app-photo-losing-men', searchHref:'/search?category=photo', keyword:'マッチングアプリ プロフィール写真 男性 共通点' },
+  { id:26, grid:2, cat:'写真撮影', title:'プロに撮ってもらうだけで変わる？男性プロフィール写真撮影の効果', slug:'professional-profile-photo-effect', searchHref:'/search?category=photo', keyword:'プロフィール写真 プロ撮影 男性 効果' },
+  { id:27, grid:2, cat:'清潔感', title:'男性向けメイク入門：ナチュラルに整えるだけで変わる印象', slug:'mens-makeup-beginner-guide', searchHref:'/search?category=makeup', keyword:'男性 メイク 入門 ナチュラル 印象' },
+  { id:28, grid:2, cat:'清潔感', title:'男性がメイクサロンを選ぶときに確認すべき5つのポイント', slug:'mens-makeup-salon-selection-guide', searchHref:'/search?category=makeup', keyword:'メイクサロン 男性 選び方 ポイント' },
+  { id:29, grid:2, cat:'変容の思想', title:'「顔じゃないのに気になる」雰囲気イケメンになる方法', slug:'atmosphere-handsome-not-face', searchHref:'/search', keyword:'雰囲気イケメン 作り方 顔じゃない 方法' },
+  { id:30, grid:2, cat:'変容の思想', title:'モテない原因は顔じゃない理由', slug:'unpopular-reason-not-face', searchHref:'/search', keyword:'モテない 原因 顔じゃない 外見' },
+  { id:31, grid:2, cat:'清潔感', title:'ホワイトニングは恋愛に効果的か？歯と印象の関係', slug:'whitening-romance-effect-teeth', searchHref:'/search?category=whitening', keyword:'ホワイトニング 男性 恋愛 効果 歯' },
 
   // 思想 (grid-3)
-  { id:32, grid:3, title:'外見コンプレックスを持つ男性が、最短で自信をつける方法', cat:'変容の思想', slug:'appearance-complex-men-confidence', searchHref:'/search' },
-  { id:33, grid:3, title:'「自分磨き」と「ありのままの自分」は矛盾しない', cat:'変容の思想', slug:'self-improvement-authentic-self-harmony', searchHref:'/search' },
-  { id:34, grid:3, title:'30代から外見を変えるのは遅すぎるか？', cat:'変容の思想', slug:'30s-appearance-change-too-late', searchHref:'/search' },
-  { id:35, grid:3, title:'なぜ「モテたい」という動機は恥ずかしくないのか', cat:'変容の思想', slug:'want-to-be-popular-not-shameful', searchHref:'/search' },
-  { id:36, grid:3, title:'外見を整えることで、人に優しくなれる余白が生まれる', cat:'変容の思想', slug:'appearance-confidence-kindness-margin', searchHref:'/search' },
+  { id:32, grid:3, cat:'変容の思想', title:'外見コンプレックスを持つ男性が、最短で自信をつける方法', slug:'appearance-complex-men-confidence', searchHref:'/search', keyword:'外見 コンプレックス 男性 自信 つける' },
+  { id:33, grid:3, cat:'変容の思想', title:'「自分磨き」と「ありのままの自分」は矛盾しない', slug:'self-improvement-authentic-self-harmony', searchHref:'/search', keyword:'自分磨き ありのまま 矛盾しない' },
+  { id:34, grid:3, cat:'変容の思想', title:'30代から外見を変えるのは遅すぎるか？', slug:'30s-appearance-change-too-late', searchHref:'/search', keyword:'30代 外見改善 遅い 遅くない' },
+  { id:35, grid:3, cat:'変容の思想', title:'なぜ「モテたい」という動機は恥ずかしくないのか', slug:'want-to-be-popular-not-shameful', searchHref:'/search', keyword:'モテたい 動機 恥ずかしくない 男性' },
+  { id:36, grid:3, cat:'変容の思想', title:'外見を整えることで、人に優しくなれる余白が生まれる', slug:'appearance-confidence-kindness-margin', searchHref:'/search', keyword:'外見 整える 自信 優しさ 余白' },
 
   // 比較・サービス (grid-4)
-  { id:37, grid:4, title:'外見改善でプロに頼るべき理由と、頼るべきプロの選び方', cat:'変容の思想', slug:'appearance-improvement-pro-reasons', searchHref:'/search' },
-  { id:38, grid:4, title:'外見改善サービス完全比較：骨格診断・写真撮影・ヘア…どれから？', cat:'変容の思想', slug:'appearance-service-complete-comparison', searchHref:'/search' },
-  { id:39, grid:4, title:'東京でおすすめの男性向け外見改善サービス完全まとめ', cat:'清潔感', slug:'tokyo-mens-appearance-service-guide', searchHref:'/search' },
-  { id:40, grid:4, title:'外見改善にかけるべき予算の考え方：月1万円から始める変容の旅', cat:'変容の思想', slug:'appearance-improvement-budget-guide', searchHref:'/search' },
+  { id:37, grid:4, cat:'変容の思想', title:'外見改善でプロに頼るべき理由と、頼るべきプロの選び方', slug:'appearance-improvement-pro-reasons', searchHref:'/search', keyword:'外見改善 プロ 選び方 頼む理由' },
+  { id:38, grid:4, cat:'変容の思想', title:'外見改善サービス完全比較：骨格診断・写真撮影・ヘア…どれから？', slug:'appearance-service-complete-comparison', searchHref:'/search', keyword:'外見改善サービス 比較 何から どれから' },
+  { id:39, grid:4, cat:'清潔感', title:'東京でおすすめの男性向け外見改善サービス完全まとめ', slug:'tokyo-mens-appearance-service-guide', searchHref:'/search', keyword:'東京 男性 外見改善サービス おすすめ' },
+  { id:40, grid:4, cat:'変容の思想', title:'外見改善にかけるべき予算の考え方：月1万円から始める変容の旅', slug:'appearance-improvement-budget-guide', searchHref:'/search', keyword:'外見改善 予算 月1万円 費用' },
+
+  // 年代・シーン別 (grid-5)
+  { id:41, grid:5, cat:'清潔感', title:'20代前半から外見を整えておくべき理由と始め方', slug:'20s-early-appearance-why-start', searchHref:'/search', keyword:'20代前半 男性 外見 始め方 理由' },
+  { id:42, grid:5, cat:'清潔感', title:'20代後半で外見を変えるための最初の一歩', slug:'20s-late-appearance-first-step', searchHref:'/search', keyword:'20代後半 男性 外見 変えたい 一歩' },
+  { id:43, grid:5, cat:'清潔感', title:'40代から垢抜けた男性たちが実践していること', slug:'40s-men-glow-up-practices', searchHref:'/search', keyword:'40代 男性 垢抜け 方法 実践' },
+  { id:44, grid:5, cat:'清潔感', title:'40代男性が清潔感を作るためにやるべき5つのこと', slug:'40s-men-cleanliness-5things', searchHref:'/search', keyword:'40代 男性 清潔感 出し方 方法' },
+  { id:45, grid:5, cat:'清潔感', title:'大学生のうちにやっておくべき外見改善3つ', slug:'college-men-appearance-3things', searchHref:'/search', keyword:'大学生 男性 外見改善 何から やるべき' },
+  { id:46, grid:5, cat:'清潔感', title:'社会人1年目の男性が最初に整えるべき外見ポイント', slug:'new-worker-appearance-points', searchHref:'/search', keyword:'社会人1年目 男性 外見 整え方 ポイント' },
+  { id:47, grid:5, cat:'清潔感', title:'転職活動で選ばれる男性の外見の作り方', slug:'job-change-appearance-men', searchHref:'/search', keyword:'転職活動 男性 清潔感 外見 第一印象' },
+  { id:48, grid:5, cat:'変容の思想', title:'彼女ができない男性が見落としている外見の問題', slug:'no-girlfriend-appearance-blind-spot', searchHref:'/search', keyword:'彼女できない 男性 外見 原因 見落とし' },
+  { id:49, grid:5, cat:'清潔感', title:'初デートで「また会いたい」と思われる男性の外見準備', slug:'first-date-appearance-preparation', searchHref:'/search', keyword:'初デート 男性 外見 服装 準備' },
+  { id:50, grid:5, cat:'清潔感', title:'合コンで選ばれる男性がやっている外見の整え方', slug:'goukon-appearance-chosen-men', searchHref:'/search', keyword:'合コン 男性 外見 清潔感 選ばれる' },
+  { id:51, grid:5, cat:'変容の思想', title:'同窓会で「変わったね」と言われるための外見準備', slug:'reunion-glow-up-preparation', searchHref:'/search', keyword:'同窓会 外見 変わった 男性 準備' },
+  { id:52, grid:5, cat:'清潔感', title:'職場でモテる男性がやっている外見の整え方', slug:'workplace-popular-men-appearance', searchHref:'/search', keyword:'職場 モテる 男性 外見 清潔感' },
+  { id:53, grid:5, cat:'清潔感', title:'就活・入社式で好印象を与える男性の外見準備', slug:'job-interview-appearance-prep', searchHref:'/search', keyword:'就活 男性 外見 清潔感 第一印象' },
+  { id:54, grid:5, cat:'変容の思想', title:'外見磨きが続けられない男性の3つのパターンと解決策', slug:'appearance-cant-continue-patterns', searchHref:'/search', keyword:'外見磨き 続けられない 男性 継続 方法' },
+  { id:55, grid:5, cat:'変容の思想', title:'外見改善して実際に変わるまでにかかる期間', slug:'appearance-change-timeline-real', searchHref:'/search', keyword:'外見改善 変わるまで 期間 何ヶ月' },
+  { id:56, grid:5, cat:'変容の思想', title:'自分磨きをしたい男性が具体的に何をすべきか', slug:'self-improvement-men-what-specifically', searchHref:'/search', keyword:'自分磨き 男性 何をする 具体的' },
+  { id:57, grid:5, cat:'変容の思想', title:'変わりたいと思った男性が最初に踏み出すべき一歩', slug:'want-to-change-first-step', searchHref:'/search', keyword:'変わりたい 男性 最初の一歩 何から' },
+  { id:58, grid:5, cat:'清潔感', title:'忙しい男性でも外見を整えられる時短ケアルーティン', slug:'busy-men-appearance-short-routine', searchHref:'/search', keyword:'仕事が忙しい 男性 外見磨き 時間ない 時短' },
+  { id:59, grid:5, cat:'変容の思想', title:'外見磨きに意味はあるか？続けて変わった男性の本音', slug:'glow-up-worth-it-men-honest', searchHref:'/search', keyword:'外見磨き 意味ある 効果 本音 男性' },
+  { id:60, grid:5, cat:'変容の思想', title:'「外見より中身」は本当か？現実の恋愛で外見が果たす役割', slug:'looks-vs-personality-reality-romance', searchHref:'/search', keyword:'外見より中身 本当か 恋愛 現実' },
+
+  // パーツ別ケア (grid-6)
+  { id:61, grid:6, cat:'清潔感', title:'男性の正しい洗顔方法：泡で優しく洗うだけで肌が変わる', slug:'mens-face-washing-correct-method', searchHref:'/search?category=esthetic', keyword:'男性 洗顔 正しい 方法 順番' },
+  { id:62, grid:6, cat:'清潔感', title:'男性スキンケアの正しい順番と初心者向け基本ルーティン', slug:'mens-skincare-routine-beginners', searchHref:'/search?category=esthetic', keyword:'男性 スキンケア 順番 初心者 方法' },
+  { id:63, grid:6, cat:'清潔感', title:'男性の毛穴が目立つ原因と効果的なケア方法', slug:'mens-pores-care-guide', searchHref:'/search?category=esthetic', keyword:'男性 毛穴 目立つ 原因 ケア' },
+  { id:64, grid:6, cat:'清潔感', title:'30代男性の大人ニキビの原因と清潔感を保つ対策', slug:'30s-mens-adult-acne-guide', searchHref:'/search?category=esthetic', keyword:'30代 男性 大人ニキビ 原因 スキンケア' },
+  { id:65, grid:6, cat:'清潔感', title:'男性にも日焼け止めが必要な理由とスキンケアへの取り入れ方', slug:'mens-sunscreen-necessity-guide', searchHref:'/search?category=esthetic', keyword:'男性 日焼け止め 必要 理由 やり方' },
+  { id:66, grid:6, cat:'清潔感', title:'自宅でできる男性向けホワイトニングの始め方と効果', slug:'mens-home-whitening-beginners', searchHref:'/search?category=whitening', keyword:'男性 ホワイトニング 自宅 始め方 効果' },
+  { id:67, grid:6, cat:'清潔感', title:'歯並びが男性の印象に与える影響と矯正の始め方', slug:'mens-teeth-alignment-impression-guide', searchHref:'/search?category=orthodontics', keyword:'歯並び 男性 印象 矯正 始め方' },
+  { id:68, grid:6, cat:'清潔感', title:'くせ毛の男性がオシャレに見せるヘアスタイリング術', slug:'mens-curly-hair-styling-guide', searchHref:'/search?category=hair', keyword:'くせ毛 男性 スタイリング おしゃれ 方法' },
+  { id:69, grid:6, cat:'清潔感', title:'薄毛の男性でも垢抜けるヘアスタイルの選び方', slug:'thinning-hair-glow-up-style', searchHref:'/search?category=hair', keyword:'薄毛 男性 ヘアスタイル 垢抜け 選び方' },
+  { id:70, grid:6, cat:'清潔感', title:'前髪を変えるだけで印象が変わる男性の前髪スタイル', slug:'mens-bangs-impression-styles', searchHref:'/search?category=hair', keyword:'男性 前髪 印象 変わる スタイル' },
+  { id:71, grid:6, cat:'清潔感', title:'美容院で理想の髪型を伝えるコツ：男性のための頼み方', slug:'mens-salon-how-to-communicate', searchHref:'/search?category=hair', keyword:'美容院 頼み方 男性 何と言う 伝え方' },
+  { id:72, grid:6, cat:'清潔感', title:'男性の眉毛の正しい形と整え方の基本', slug:'mens-eyebrow-shape-form-basics', searchHref:'/search?category=eyebrow', keyword:'男性 眉毛 形 整え方 正しい' },
+  { id:73, grid:6, cat:'清潔感', title:'男性が初めて眉毛サロンに行く前に知っておくこと', slug:'mens-eyebrow-salon-first-time-guide', searchHref:'/search?category=eyebrow', keyword:'眉毛サロン 男性 初めて 何をする 流れ' },
+  { id:74, grid:6, cat:'清潔感', title:'男性のひげの整え方で清潔感が大きく変わる理由', slug:'mens-beard-cleanliness-complete', searchHref:'/search', keyword:'ひげ 整え方 男性 清潔感 モテる' },
+  { id:75, grid:6, cat:'清潔感', title:'男性の体臭が清潔感を左右する理由と具体的な対策', slug:'mens-body-odor-cleanliness-guide', searchHref:'/search?category=hairremoval', keyword:'男性 体臭 においケア 清潔感 対策' },
+  { id:76, grid:6, cat:'清潔感', title:'骨格ストレートの男性に似合う服装と避けるべきスタイル', slug:'skeleton-straight-men-fashion-guide', searchHref:'/search?category=diagnosis', keyword:'骨格ストレート 男性 服装 似合う 特徴' },
+  { id:77, grid:6, cat:'清潔感', title:'骨格ウェーブの男性が垢抜けるファッションのコツ', slug:'skeleton-wave-men-fashion-guide', searchHref:'/search?category=diagnosis', keyword:'骨格ウェーブ 男性 ファッション 垢抜け コツ' },
+  { id:78, grid:6, cat:'清潔感', title:'イエベ男性のパーソナルカラーを活かした服の選び方', slug:'yellow-based-men-color-guide', searchHref:'/search?category=diagnosis', keyword:'パーソナルカラー イエベ 男性 服 似合う色' },
+  { id:79, grid:6, cat:'清潔感', title:'ブルベ男性が知っておくべき似合う色と服選びのコツ', slug:'blue-based-men-color-guide', searchHref:'/search?category=diagnosis', keyword:'パーソナルカラー ブルベ 男性 似合う服 コツ' },
+  { id:80, grid:6, cat:'清潔感', title:'眼鏡をかけた男性が清潔感と印象を上げるコツ', slug:'glasses-men-impression-tips', searchHref:'/search', keyword:'眼鏡 男性 清潔感 印象 おしゃれ' },
+
+  // サービス・費用・地域 (grid-7)
+  { id:81, grid:7, cat:'清潔感', title:'男性の骨格診断はいくらかかる？料金相場と受け方ガイド', slug:'skeleton-diagnosis-cost-mens-guide', searchHref:'/search?category=diagnosis', keyword:'骨格診断 料金 相場 男性 いくら' },
+  { id:82, grid:7, cat:'清潔感', title:'男性向けパーソナルカラー診断の料金相場と選び方', slug:'personal-color-cost-mens-guide', searchHref:'/search?category=diagnosis', keyword:'パーソナルカラー診断 料金 相場 男性' },
+  { id:83, grid:7, cat:'変容の思想', title:'パーソナルスタイリストに依頼する費用と効果的な活用法', slug:'personal-stylist-cost-mens', searchHref:'/search?category=fashion', keyword:'パーソナルスタイリスト 料金 費用 男性 相場' },
+  { id:84, grid:7, cat:'清潔感', title:'男性眉毛サロンの料金相場と初めて行く時の完全ガイド', slug:'mens-eyebrow-salon-cost-guide', searchHref:'/search?category=eyebrow', keyword:'眉毛サロン 料金 男性 相場 初めて' },
+  { id:85, grid:7, cat:'清潔感', title:'メンズ脱毛の料金を抑えて清潔感を上げる賢い選び方', slug:'mens-hair-removal-cost-smart', searchHref:'/search?category=hairremoval', keyword:'メンズ脱毛 料金 安い 相場 清潔感' },
+  { id:86, grid:7, cat:'清潔感', title:'歯のホワイトニングはいくら？クリニックと市販の違いと選び方', slug:'whitening-cost-clinic-vs-home', searchHref:'/search?category=whitening', keyword:'ホワイトニング 料金 クリニック 相場 比較' },
+  { id:87, grid:7, cat:'変容の思想', title:'パーソナルトレーニングの料金相場と体型を変える選び方', slug:'personal-training-cost-body', searchHref:'/search?category=gym', keyword:'パーソナルトレーニング 料金 相場 男性 費用' },
+  { id:88, grid:7, cat:'変容の思想', title:'外見磨きに月いくら使えばいい？予算別の投資ロードマップ', slug:'glow-up-monthly-budget-roadmap', searchHref:'/search', keyword:'外見磨き 月いくら 費用 男性 予算' },
+  { id:89, grid:7, cat:'変容の思想', title:'費用対効果の高い外見改善の優先順位：まずここに投資せよ', slug:'appearance-roi-investment-priority', searchHref:'/search', keyword:'外見改善 費用対効果 優先順位 コスパ 投資' },
+  { id:90, grid:7, cat:'清潔感', title:'メンズ美容院の選び方：初めての男性でも失敗しないポイント', slug:'mens-hair-salon-how-to-choose', searchHref:'/search?category=hair', keyword:'メンズ美容院 選び方 初めて 失敗しない' },
+  { id:91, grid:7, cat:'清潔感', title:'骨格診断を初めて受ける男性のための当日の流れと準備', slug:'skeleton-diagnosis-first-experience', searchHref:'/search?category=diagnosis', keyword:'骨格診断 初めて 流れ 当日 準備 男性' },
+  { id:92, grid:7, cat:'清潔感', title:'パーソナルカラー診断の当日の流れと事前準備ガイド', slug:'personal-color-diagnosis-day-guide', searchHref:'/search?category=diagnosis', keyword:'パーソナルカラー診断 当日 流れ 準備 何をする' },
+  { id:93, grid:7, cat:'写真撮影', title:'プロフィール写真撮影の当日の流れと事前準備の完全ガイド', slug:'profile-photo-session-complete', searchHref:'/search?category=photo', keyword:'プロフィール写真撮影 流れ 当日 準備 男性' },
+  { id:94, grid:7, cat:'清潔感', title:'大阪で男性向け外見改善サービスを受けるならここから', slug:'osaka-mens-appearance-services', searchHref:'/search', keyword:'大阪 男性 外見改善 サービス おすすめ' },
+  { id:95, grid:7, cat:'清潔感', title:'名古屋で利用できる男性向け外見改善サービスガイド', slug:'nagoya-mens-appearance-services', searchHref:'/search', keyword:'名古屋 男性 外見改善 どこで受ける' },
+  { id:96, grid:7, cat:'清潔感', title:'福岡のメンズ美容サービス：骨格診断・ヘア・スキンケア', slug:'fukuoka-mens-beauty-services', searchHref:'/search', keyword:'福岡 メンズ美容 サービス おすすめ' },
+  { id:97, grid:7, cat:'清潔感', title:'地方在住でも外見改善できる：オンラインサービス活用ガイド', slug:'rural-men-online-appearance', searchHref:'/search', keyword:'地方 男性 外見改善 オンライン 受けられる' },
+  { id:98, grid:7, cat:'変容の思想', title:'骨格診断とパーソナルカラー診断の違い：どちらを先に受けるべきか', slug:'skeleton-vs-color-which-first', searchHref:'/search?category=diagnosis', keyword:'骨格診断 パーソナルカラー 違い どちら先に' },
+  { id:99, grid:7, cat:'変容の思想', title:'外見改善をプロに頼む場面とセルフケアで十分な場面の違い', slug:'pro-vs-self-appearance-decision', searchHref:'/search', keyword:'外見改善 プロ セルフ 違い どちらがいい' },
+  { id:100, grid:7, cat:'変容の思想', title:'外見への自己投資はどれくらい効果がある？実感のタイムライン', slug:'appearance-investment-effect-real', searchHref:'/search', keyword:'自己投資 外見 効果 実感 タイムライン' },
+
+  // マッチング・婚活特化 (grid-8)
+  { id:101, grid:8, cat:'写真撮影', title:'マッチングアプリで顔出しなし写真のリスクと正しい代替案', slug:'dating-app-no-face-risks', searchHref:'/search?category=photo', keyword:'マッチングアプリ 顔出しなし 写真 リスク 対策' },
+  { id:102, grid:8, cat:'写真撮影', title:'マッチングアプリで「いいね」が増える写真の角度と撮り方', slug:'dating-app-photo-angle-likes', searchHref:'/search?category=photo', keyword:'マッチングアプリ 写真 角度 いいね 増える' },
+  { id:103, grid:8, cat:'写真撮影', title:'マッチングアプリの自撮り写真で差をつける男性のコツ', slug:'dating-app-selfie-men-tips', searchHref:'/search?category=photo', keyword:'マッチングアプリ 自撮り 男性 コツ 差をつける' },
+  { id:104, grid:8, cat:'変容の思想', title:'マッチングアプリでは外見がどのくらい重要か？データと対策', slug:'dating-app-appearance-importance-data', searchHref:'/search', keyword:'マッチングアプリ 外見 どのくらい重要 データ' },
+  { id:105, grid:8, cat:'写真撮影', title:'マッチングアプリの写真をプロに撮ってもらった結果', slug:'dating-app-pro-photo-result', searchHref:'/search?category=photo', keyword:'マッチングアプリ 写真 プロ撮影 効果 結果' },
+  { id:106, grid:8, cat:'写真撮影', title:'婚活写真で好印象を与える男性の外見準備と撮影ポイント', slug:'marriage-photo-appearance-prep', searchHref:'/search?category=photo', keyword:'婚活 写真 男性 外見準備 好印象' },
+  { id:107, grid:8, cat:'清潔感', title:'婚活パーティーに着ていく服装：男性向け完全ガイド', slug:'marriage-party-outfit-complete', searchHref:'/search?category=fashion', keyword:'婚活パーティー 服装 男性 何を着る' },
+  { id:108, grid:8, cat:'清潔感', title:'お見合い当日に向けた男性の外見準備チェックリスト', slug:'formal-meeting-appearance-checklist', searchHref:'/search', keyword:'お見合い 外見 男性 準備 当日 チェックリスト' },
+  { id:109, grid:8, cat:'変容の思想', title:'婚活で女性に選ばれる男性の清潔感とは何か', slug:'marriage-hunting-cleanliness-chosen', searchHref:'/search', keyword:'婚活 清潔感 男性 選ばれる 外見' },
+  { id:110, grid:8, cat:'変容の思想', title:'婚活を始める前に外見を整える最短期間と手順', slug:'marriage-hunting-appearance-prep-steps', searchHref:'/search', keyword:'婚活 外見磨き 期間 最短 準備 手順' },
+  { id:111, grid:8, cat:'写真撮影', title:'Pairsで選ばれる男性のプロフィール写真の作り方', slug:'pairs-profile-photo-mens-guide', searchHref:'/search?category=photo', keyword:'Pairs プロフィール写真 男性 選ばれる 作り方' },
+  { id:112, grid:8, cat:'清潔感', title:'婚活スーツの選び方：清潔感と誠実さを両立する着こなし', slug:'marriage-suit-style-guide', searchHref:'/search?category=fashion', keyword:'婚活 スーツ 男性 選び方 清潔感 印象' },
+  { id:113, grid:8, cat:'変容の思想', title:'婚活で外見改善に取り組んだ男性のリアルな体験談', slug:'marriage-hunting-glow-up-stories', searchHref:'/search', keyword:'婚活 外見改善 体験談 男性 成功' },
+  { id:114, grid:8, cat:'変容の思想', title:'マッチングアプリで外見磨きを始めてから変わった3つのこと', slug:'dating-app-after-glow-up', searchHref:'/search', keyword:'マッチングアプリ 外見磨き 始めた後 変化 変わった' },
+  { id:115, grid:8, cat:'写真撮影', title:'マッチングアプリの写真を撮る前に整えるべき外見', slug:'dating-app-pre-photo-appearance', searchHref:'/search?category=photo', keyword:'マッチングアプリ 写真 外見 整える 事前準備' },
+
+  // マインドセット・比較 (grid-9)
+  { id:116, grid:9, cat:'変容の思想', title:'外見から自信をつける方法：小さな変化が大きな自信を生む', slug:'appearance-confidence-small-steps', searchHref:'/search', keyword:'外見 自信 つける 方法 男性 小さな変化' },
+  { id:117, grid:9, cat:'変容の思想', title:'外見磨きを始めてから彼女ができるまでに変えたこと', slug:'glow-up-to-girlfriend-changes', searchHref:'/search', keyword:'外見磨き 始めた 彼女できた 変えたこと' },
+  { id:118, grid:9, cat:'変容の思想', title:'メンズ美容が恥ずかしいと思っていた男性が変わったきっかけ', slug:'mens-beauty-embarrassed-overcome', searchHref:'/search', keyword:'メンズ美容 恥ずかしい 克服 きっかけ 男性' },
+  { id:119, grid:9, cat:'変容の思想', title:'コスパが高い外見改善：低予算から始める変容の入口', slug:'cost-effective-glow-up-low-budget', searchHref:'/search', keyword:'外見改善 コスパ いい 低予算 始め方' },
+  { id:120, grid:9, cat:'変容の思想', title:'外見改善で本当に変われた男性の体験談と共通点', slug:'appearance-change-success-stories', searchHref:'/search', keyword:'外見改善 変われた 体験談 男性 共通点' },
+  { id:121, grid:9, cat:'変容の思想', title:'「外見より中身」と言いながらモテない男性への処方箋', slug:'looks-vs-heart-men-solution', searchHref:'/search', keyword:'外見より中身 言いながら モテない 男性 解決' },
+  { id:122, grid:9, cat:'変容の思想', title:'モテるために外見を磨くのは正しい動機か', slug:'glow-up-for-popularity-right-motivation', searchHref:'/search', keyword:'外見磨く モテたい 動機 正しい か' },
+  { id:123, grid:9, cat:'変容の思想', title:'外見改善の効果を最短で実感するための科学的アプローチ', slug:'appearance-scientific-fastest-results', searchHref:'/search', keyword:'外見改善 効果 最短 実感 科学的 アプローチ' },
+  { id:124, grid:9, cat:'変容の思想', title:'男性が美容に投資して効果を実感するまでのリアルな期間', slug:'mens-beauty-investment-real-period', searchHref:'/search', keyword:'男性 美容 効果 実感 期間 投資' },
+  { id:125, grid:9, cat:'変容の思想', title:'外見コンプレックスがある男性が前を向くための考え方', slug:'appearance-complex-forward-mindset', searchHref:'/search', keyword:'外見 コンプレックス 男性 前向き 考え方' },
+  { id:126, grid:9, cat:'変容の思想', title:'外見が変わると内面も変わる：自己効力感と変容の連鎖', slug:'appearance-inner-change-cycle', searchHref:'/search', keyword:'外見 変わる 内面 変化 自信 自己効力感' },
+  { id:127, grid:9, cat:'変容の思想', title:'外見改善を続けた先にある「余白」とは何か', slug:'appearance-improvement-inner-margin', searchHref:'/search', keyword:'外見改善 続けた先 変化 余白 自信' },
+  { id:128, grid:9, cat:'変容の思想', title:'外見磨きは「ありのまま」と矛盾しない理由（深掘り）', slug:'glow-up-authentic-self-deep', searchHref:'/search', keyword:'外見磨き ありのまま 矛盾しない 自分らしさ' },
+  { id:129, grid:9, cat:'変容の思想', title:'外見改善を「恥ずかしい」と思わせる思い込みを解く', slug:'appearance-improvement-shame-dissolve', searchHref:'/search', keyword:'外見改善 恥ずかしい 思い込み 克服 男性' },
+  { id:130, grid:9, cat:'変容の思想', title:'外見を整えることが「人への優しさ」につながる理由', slug:'appearance-grooming-kindness-others', searchHref:'/search', keyword:'外見 整える 優しさ 人への影響 自信' },
+
+  // 特殊テーマ・ニッチ (grid-10)
+  { id:131, grid:10, cat:'清潔感', title:'背が低い男性がスタイルよく見える服装の選び方', slug:'short-men-stylish-fashion', searchHref:'/search?category=fashion', keyword:'背が低い 男性 服装 スタイルよく見える テクニック' },
+  { id:132, grid:10, cat:'清潔感', title:'体型に関係なく清潔感を出せる男性の外見ポイント', slug:'any-body-type-cleanliness-men', searchHref:'/search', keyword:'太っている 男性 清潔感 外見 体型 関係ない' },
+  { id:133, grid:10, cat:'清潔感', title:'薄毛でもモテる男性になれる：印象の作り方と外見改善', slug:'thinning-hair-still-attractive-men', searchHref:'/search?category=hair', keyword:'薄毛 男性 モテる 外見改善 印象 作り方' },
+  { id:134, grid:10, cat:'清潔感', title:'AGA治療は外見改善になるか？費用・期間・印象の変化', slug:'aga-treatment-appearance-guide', searchHref:'/search?category=aga', keyword:'AGA 治療 外見 印象 変わる 費用 期間' },
+  { id:135, grid:10, cat:'清潔感', title:'夏の男性の清潔感：汗・においに負けないケア完全版', slug:'summer-mens-cleanliness-complete', searchHref:'/search', keyword:'夏 男性 清潔感 汗 においケア 方法' },
+  { id:136, grid:10, cat:'清潔感', title:'冬の男性スキンケア：乾燥から肌を守り清潔感を保つ方法', slug:'winter-mens-skincare-guide', searchHref:'/search?category=esthetic', keyword:'冬 男性 スキンケア 乾燥 対策 清潔感' },
+  { id:137, grid:10, cat:'清潔感', title:'メンズネイルは清潔感に効果的か？男性のネイルケア入門', slug:'mens-nail-care-cleanliness-guide', searchHref:'/search?category=nail', keyword:'メンズ ネイル 清潔感 効果 男性 ケア' },
+  { id:138, grid:10, cat:'清潔感', title:'色黒の男性に似合う服の色と清潔感の出し方', slug:'dark-skin-men-fashion-guide', searchHref:'/search?category=diagnosis', keyword:'色黒 男性 似合う服 色 清潔感 出し方' },
+  { id:139, grid:10, cat:'変容の思想', title:'外見磨きがメンタルに与える影響：自信と心の健康の深い関係', slug:'glow-up-mental-health-connection', searchHref:'/search', keyword:'外見磨き メンタル 影響 自信 心の健康' },
+  { id:140, grid:10, cat:'変容の思想', title:'男性が外見改善にハマる理由：変容の体験が止まらない', slug:'men-addicted-glow-up-reasons', searchHref:'/search', keyword:'外見改善 ハマる 男性 変容 体験 止まらない' },
 ];
 
 const CAT_CLASS = { '清潔感': 'cat-clean', '写真撮影': 'cat-photo', '変容の思想': 'cat-idea' };
@@ -242,6 +418,7 @@ function buildPrompt(a) {
 
 【記事情報】
 タイトル：${a.title}
+ターゲットキーワード：${a.keyword}
 カテゴリ：${a.cat}
 スラッグ：${a.slug}
 
@@ -358,7 +535,7 @@ function renderGrid(gridId, articles) {
       <div class="article-check" onclick="toggleDone(${a.id})" title="作成済みにする"></div>
       <span class="article-num">${String(a.id).padStart(2,'0')}</span>
       <span class="article-cat ${CAT_CLASS[a.cat]}">${a.cat}</span>
-      <span class="article-title">${a.title}</span>
+      <span class="article-title">${a.title}<span class="article-keyword">🔍 ${a.keyword||''}</span></span>
       <button class="copy-btn" onclick="copyPrompt(this, ${a.id})">プロンプトをコピー</button>
     `;
     container.appendChild(row);
@@ -386,7 +563,7 @@ function showToast() {
 }
 
 // レンダリング
-[1,2,3,4].forEach(g => {
+[1,2,3,4,5,6,7,8,9,10].forEach(g => {
   renderGrid(`grid-${g}`, ARTICLES.filter(a => a.grid === g));
 });
 applyDoneState();
