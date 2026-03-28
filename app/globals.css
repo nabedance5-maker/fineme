@@ -44,8 +44,6 @@ body {
   font-family: var(--font-sans);
   color: var(--color-fg);
   background: transparent;
-  /* 羊皮紙背景上での文字コントラスト補助 — 白背景上では実質無効 */
-  text-shadow: 0 1px 3px rgba(255,255,255,0.6);
 }
 /* 羊皮紙背景 — position:fixed で iOS Safari 対応 */
 body::before {
@@ -59,12 +57,12 @@ body::before {
   pointer-events: none;
   opacity: 0.6;
 }
-/* ネイビー薄膜 — 「暗い船室で航海図を見る」雰囲気 */
+/* ネイビー薄膜 — 文字視認性のため0.22→0.50に強化 */
 body::after {
   content: '';
   position: fixed;
   inset: 0;
-  background: rgba(10,15,30,0.22);
+  background: rgba(10,15,30,0.50);
   z-index: -1;
   pointer-events: none;
 }
