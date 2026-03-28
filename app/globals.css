@@ -4,10 +4,10 @@
   --color-bg:           #faf8f3;           /* 羊皮紙ウォームホワイト */
   --color-bg-dark:      #0a0f1e;           /* 深海ネイビー */
   --color-bg-parchment: #f5f0e8;           /* 羊皮紙クリーム */
-  --color-fg:           #0a0f1e;           /* 深海ネイビー */
-  --color-muted:        #4e4038;           /* ウォームブラウングレー（羊皮紙対応で濃く） */
+  --color-fg:           #e8e4dc;           /* 深海に浮かぶ羊皮紙ホワイト */
+  --color-muted:        rgba(232,228,220,0.55); /* ミュートライト */
   --color-accent:       #c9a84c;           /* 古地図ゴールド */
-  --color-border:       rgba(10,15,30,0.1);
+  --color-border:       rgba(232,228,220,0.12); /* 深海ボーダー */
   --color-border-gold:  rgba(201,168,76,0.28);
 
   /* Brand */
@@ -37,13 +37,15 @@
 html, body, #__next { height: 100%; }
 html {
   scroll-behavior: smooth;
-  background-color: #f0ebe0; /* parchment fallback */
+  background-color: #0a0f1e; /* dark fallback */
 }
 body {
   margin: 0;
   font-family: var(--font-sans);
   color: var(--color-fg);
   background: transparent;
+  /* 白バックライト：文字の背後に淡い発光感 */
+  text-shadow: 0 0 14px rgba(255,255,255,0.14), 0 1px 3px rgba(0,0,0,0.55);
 }
 /* 羊皮紙背景 — position:fixed で iOS Safari 対応 */
 body::before {
@@ -57,12 +59,12 @@ body::before {
   pointer-events: none;
   opacity: 0.6;
 }
-/* ネイビー薄膜 — 文字視認性のため0.22→0.50に強化 */
+/* 深海ネイビー薄膜 — 0.65で「深海に沈む羊皮紙」の世界観 */
 body::after {
   content: '';
   position: fixed;
   inset: 0;
-  background: rgba(10,15,30,0.50);
+  background: rgba(10,15,30,0.65);
   z-index: -1;
   pointer-events: none;
 }
