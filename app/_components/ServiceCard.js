@@ -19,7 +19,7 @@ export default function ServiceCard({ service }) {
   return (
     <article className="card col-4" style={{position:'relative'}}>
       <img className="service-thumb" src={imgSrc} alt={name} />
-      <div style={{position:'absolute', top:12, right:12, background:'#fff', padding:'6px 8px', borderRadius:6, boxShadow:'0 6px 18px rgba(0,0,0,0.08)', fontWeight:700}}>{typeof priceFrom === 'number' ? `¥${priceFrom.toLocaleString()}` : '要問合せ'}</div>
+      <div style={{position:'absolute', top:12, right:12, background:'#fff', padding:'6px 8px', borderRadius:6, boxShadow:'0 6px 18px rgba(0,0,0,0.08)', fontWeight:700, color:'#1a1410', textShadow:'none'}}>{typeof priceFrom === 'number' ? `¥${priceFrom.toLocaleString()}` : '要問合せ'}</div>
       <div className="card-body">
         <h3 className="card-title">{name}</h3>
         <div className="cluster" style={{justifyContent:'space-between', alignItems:'center'}}>

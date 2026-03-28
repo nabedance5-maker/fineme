@@ -70,7 +70,8 @@ function ProviderCard({ provider }) {
       <article style={{
         border: '1.5px solid #e5e7eb', borderRadius: '16px', overflow: 'hidden',
         background: '#fff', transition: 'box-shadow .15s', cursor: 'pointer',
-        height: '100%', display: 'flex', flexDirection: 'column'
+        height: '100%', display: 'flex', flexDirection: 'column',
+        color: '#1a1410', textShadow: 'none'
       }}
         onMouseEnter={e => e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,.10)'}
         onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}

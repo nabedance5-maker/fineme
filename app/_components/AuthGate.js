@@ -40,6 +40,8 @@ export default function AuthGate({ children, pageName = 'このページ' }) {
             padding: 40px 32px;
             text-align: center;
             box-shadow: 0 4px 32px rgba(0,0,0,0.06);
+            color: #1a1410;
+            text-shadow: none;
           }
           .auth-gate-icon {
             font-size: 40px;
