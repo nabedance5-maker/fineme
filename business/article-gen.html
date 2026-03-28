@@ -86,7 +86,7 @@
     <span>作成進捗</span>
     <div style="display:flex;align-items:center;gap:12px;">
       <button class="toggle-done-btn" onclick="toggleHideDone()" id="hide-btn">完了済みを隠す</button>
-      <strong id="progress-text">0 / 230 本</strong>
+      <strong id="progress-text">0 / 251 本</strong>
     </div>
   </div>
   <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
@@ -267,6 +267,46 @@
   <div class="article-grid" id="grid-16"></div>
 </div>
 
+<!-- ネガティブKW（後悔・失敗・意味ない系） -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>ネガティブキーワード — 後悔・失敗・意味ない系</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-17"></div>
+</div>
+
+<!-- アプリ固有名詞 -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>マッチングアプリ固有名詞 — Pairs / with / Omiai 等</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-18"></div>
+</div>
+
+<!-- ローカルSEO -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>ローカルSEO — 都市×カテゴリ</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-19"></div>
+</div>
+
+<!-- アフィリエイト活用型 -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>アフィリエイト活用型 — RIZAP / AGA / ホワイトニング / 写真撮影</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-20"></div>
+</div>
+
 <div class="toast" id="toast">プロンプトをコピーしました ✓</div>
 
 <script>
@@ -282,7 +322,6 @@ const ARTICLES = [
   { id:8,  grid:1, cat:'清潔感', title:'女性が一瞬で「ないな」と感じる男性の特徴と、その変え方', slug:'women-instant-no-men-traits', searchHref:'/search', keyword:'女性 ないな 思う 男性 特徴' },
   { id:9,  grid:1, cat:'変容の思想', title:'恋愛経験が少ない男性がまず変えるべきこと', slug:'little-romance-experience-first-change', searchHref:'/search', keyword:'恋愛経験 少ない 男性 外見 変えるべき' },
   { id:10, grid:1, cat:'変容の思想', title:'「どうせ顔じゃない」と思っている男性が、実は一番損している理由', slug:'its-not-face-men-losing-out', searchHref:'/search', keyword:'どうせ顔じゃない 男性 外見 損している' },
-  { id:11, grid:1, cat:'変容の思想', title:'婚活男性が外見に投資すべき3つの理由', slug:'marriage-hunting-appearance-investment', searchHref:'/search', keyword:'婚活 男性 外見 投資 理由' },
 
   // 方法・知識 (grid-2)
   { id:12, grid:2, cat:'清潔感', title:'メンズ美容 何から始める？', slug:'mens-beauty-where-to-start', searchHref:'/search', keyword:'メンズ美容 何から始める 初心者' },
@@ -292,22 +331,17 @@ const ARTICLES = [
   { id:16, grid:2, cat:'清潔感', title:'外見改善の正しい優先順位：何から始めれば最速で変われるか', slug:'appearance-improvement-priority-order', searchHref:'/search', keyword:'外見改善 優先順位 何から 最速' },
   { id:17, grid:2, cat:'清潔感', title:'「モテない」を変えたい男性が、最初に作るべき垢抜け習慣', slug:'unpopular-men-glow-up-habits', searchHref:'/search', keyword:'モテない 変えたい 男性 垢抜け 習慣' },
   { id:18, grid:2, cat:'清潔感', title:'男性の清潔感を作る5つの要素：ヘア・肌・眉・服・においの整え方', slug:'mens-cleanliness-5-elements', searchHref:'/search', keyword:'男性 清潔感 作り方 5つの要素' },
-  { id:19, grid:2, cat:'清潔感', title:'眉毛を整えるだけで印象が変わる理由と整え方完全ガイド', slug:'eyebrow-grooming-impression-guide', searchHref:'/search?category=eyebrow', keyword:'眉毛 整え方 男性 印象 ガイド' },
   { id:20, grid:2, cat:'清潔感', title:'肌荒れが恋愛に影響している？男性スキンケアと自信の関係', slug:'skin-trouble-romance-confidence', searchHref:'/search?category=esthetic', keyword:'男性 肌荒れ スキンケア 恋愛 自信' },
   { id:21, grid:2, cat:'清潔感', title:'モテる髪型を選ぶ前に知っておくべきこと：顔型・骨格・印象の関係', slug:'popular-hairstyle-face-shape-guide', searchHref:'/search?category=hair', keyword:'モテる 髪型 男性 顔型 骨格' },
   { id:22, grid:2, cat:'清潔感', title:'服装を変えるだけで垢抜ける男性と変わらない男性の違い', slug:'fashion-change-glow-up-difference', searchHref:'/search?category=diagnosis', keyword:'服装 変える 垢抜ける 男性 違い' },
-  { id:23, grid:2, cat:'清潔感', title:'骨格診断で変わる服選び：男性向け完全ガイド', slug:'skeleton-diagnosis-fashion-guide', searchHref:'/search?category=diagnosis', keyword:'骨格診断 男性 服選び ガイド' },
   { id:24, grid:2, cat:'清潔感', title:'パーソナルカラー診断が男性にも必要な理由', slug:'personal-color-diagnosis-men', searchHref:'/search?category=diagnosis', keyword:'パーソナルカラー診断 男性 必要な理由' },
   { id:25, grid:2, cat:'写真撮影', title:'マッチングアプリのプロフィール写真で損している男性の共通点', slug:'matching-app-photo-losing-men', searchHref:'/search?category=photo', keyword:'マッチングアプリ プロフィール写真 男性 共通点' },
-  { id:26, grid:2, cat:'写真撮影', title:'プロに撮ってもらうだけで変わる？男性プロフィール写真撮影の効果', slug:'professional-profile-photo-effect', searchHref:'/search?category=photo', keyword:'プロフィール写真 プロ撮影 男性 効果' },
   { id:27, grid:2, cat:'清潔感', title:'男性向けメイク入門：ナチュラルに整えるだけで変わる印象', slug:'mens-makeup-beginner-guide', searchHref:'/search?category=makeup', keyword:'男性 メイク 入門 ナチュラル 印象' },
   { id:28, grid:2, cat:'清潔感', title:'男性がメイクサロンを選ぶときに確認すべき5つのポイント', slug:'mens-makeup-salon-selection-guide', searchHref:'/search?category=makeup', keyword:'メイクサロン 男性 選び方 ポイント' },
   { id:29, grid:2, cat:'変容の思想', title:'「顔じゃないのに気になる」雰囲気イケメンになる方法', slug:'atmosphere-handsome-not-face', searchHref:'/search', keyword:'雰囲気イケメン 作り方 顔じゃない 方法' },
   { id:30, grid:2, cat:'変容の思想', title:'モテない原因は顔じゃない理由', slug:'unpopular-reason-not-face', searchHref:'/search', keyword:'モテない 原因 顔じゃない 外見' },
-  { id:31, grid:2, cat:'清潔感', title:'ホワイトニングは恋愛に効果的か？歯と印象の関係', slug:'whitening-romance-effect-teeth', searchHref:'/search?category=whitening', keyword:'ホワイトニング 男性 恋愛 効果 歯' },
 
   // 思想 (grid-3)
-  { id:32, grid:3, cat:'変容の思想', title:'外見コンプレックスを持つ男性が、最短で自信をつける方法', slug:'appearance-complex-men-confidence', searchHref:'/search', keyword:'外見 コンプレックス 男性 自信 つける' },
   { id:33, grid:3, cat:'変容の思想', title:'「自分磨き」と「ありのままの自分」は矛盾しない', slug:'self-improvement-authentic-self-harmony', searchHref:'/search', keyword:'自分磨き ありのまま 矛盾しない' },
   { id:34, grid:3, cat:'変容の思想', title:'30代から外見を変えるのは遅すぎるか？', slug:'30s-appearance-change-too-late', searchHref:'/search', keyword:'30代 外見改善 遅い 遅くない' },
   { id:35, grid:3, cat:'変容の思想', title:'なぜ「モテたい」という動機は恥ずかしくないのか', slug:'want-to-be-popular-not-shameful', searchHref:'/search', keyword:'モテたい 動機 恥ずかしくない 男性' },
@@ -347,7 +381,6 @@ const ARTICLES = [
   { id:63, grid:6, cat:'清潔感', title:'男性の毛穴が目立つ原因と効果的なケア方法', slug:'mens-pores-care-guide', searchHref:'/search?category=esthetic', keyword:'男性 毛穴 目立つ 原因 ケア' },
   { id:64, grid:6, cat:'清潔感', title:'30代男性の大人ニキビの原因と清潔感を保つ対策', slug:'30s-mens-adult-acne-guide', searchHref:'/search?category=esthetic', keyword:'30代 男性 大人ニキビ 原因 スキンケア' },
   { id:65, grid:6, cat:'清潔感', title:'男性にも日焼け止めが必要な理由とスキンケアへの取り入れ方', slug:'mens-sunscreen-necessity-guide', searchHref:'/search?category=esthetic', keyword:'男性 日焼け止め 必要 理由 やり方' },
-  { id:66, grid:6, cat:'清潔感', title:'自宅でできる男性向けホワイトニングの始め方と効果', slug:'mens-home-whitening-beginners', searchHref:'/search?category=whitening', keyword:'男性 ホワイトニング 自宅 始め方 効果' },
   { id:67, grid:6, cat:'清潔感', title:'歯並びが男性の印象に与える影響と矯正の始め方', slug:'mens-teeth-alignment-impression-guide', searchHref:'/search?category=orthodontics', keyword:'歯並び 男性 印象 矯正 始め方' },
   { id:68, grid:6, cat:'清潔感', title:'くせ毛の男性がオシャレに見せるヘアスタイリング術', slug:'mens-curly-hair-styling-guide', searchHref:'/search?category=hair', keyword:'くせ毛 男性 スタイリング おしゃれ 方法' },
   { id:69, grid:6, cat:'清潔感', title:'薄毛の男性でも垢抜けるヘアスタイルの選び方', slug:'thinning-hair-glow-up-style', searchHref:'/search?category=hair', keyword:'薄毛 男性 ヘアスタイル 垢抜け 選び方' },
@@ -398,7 +431,6 @@ const ARTICLES = [
   { id:110, grid:8, cat:'変容の思想', title:'婚活を始める前に外見を整える最短期間と手順', slug:'marriage-hunting-appearance-prep-steps', searchHref:'/search', keyword:'婚活 外見磨き 期間 最短 準備 手順' },
   { id:111, grid:8, cat:'写真撮影', title:'Pairsで選ばれる男性のプロフィール写真の作り方', slug:'pairs-profile-photo-mens-guide', searchHref:'/search?category=photo', keyword:'Pairs プロフィール写真 男性 選ばれる 作り方' },
   { id:112, grid:8, cat:'清潔感', title:'婚活スーツの選び方：清潔感と誠実さを両立する着こなし', slug:'marriage-suit-style-guide', searchHref:'/search?category=fashion', keyword:'婚活 スーツ 男性 選び方 清潔感 印象' },
-  { id:113, grid:8, cat:'変容の思想', title:'婚活で外見改善に取り組んだ男性のリアルな体験談', slug:'marriage-hunting-glow-up-stories', searchHref:'/search', keyword:'婚活 外見改善 体験談 男性 成功' },
   { id:114, grid:8, cat:'変容の思想', title:'マッチングアプリで外見磨きを始めてから変わった3つのこと', slug:'dating-app-after-glow-up', searchHref:'/search', keyword:'マッチングアプリ 外見磨き 始めた後 変化 変わった' },
   { id:115, grid:8, cat:'写真撮影', title:'マッチングアプリの写真を撮る前に整えるべき外見', slug:'dating-app-pre-photo-appearance', searchHref:'/search?category=photo', keyword:'マッチングアプリ 写真 外見 整える 事前準備' },
 
@@ -466,7 +498,6 @@ const ARTICLES = [
   { id:170, grid:12, cat:'清潔感', title:'歯列矯正で外見の印象はどのくらい変わるか', slug:'braces-appearance-impression-change', searchHref:'/search?category=orthodontics', keyword:'歯列矯正 外見 印象 変わる 男性' },
   { id:171, grid:12, cat:'清潔感', title:'歯列矯正を始めたい男性のためのクリニック選びから初回まで', slug:'braces-clinic-selection-first-visit', searchHref:'/search?category=orthodontics', keyword:'歯列矯正 始め方 クリニック 男性 流れ' },
   { id:172, grid:12, cat:'清潔感', title:'歯の白さが男性の第一印象に与える影響とその改善方法', slug:'teeth-whiteness-mens-impression', searchHref:'/search?category=whitening', keyword:'歯 白さ 印象 男性 影響 改善' },
-  { id:173, grid:12, cat:'清潔感', title:'口元の清潔感が男性の第一印象を大きく左右する理由', slug:'mouth-cleanliness-mens-impression', searchHref:'/search?category=whitening', keyword:'口元 清潔感 男性 第一印象 理由' },
   { id:174, grid:12, cat:'清潔感', title:'歯を整えるとモテるか？口元と恋愛の関係', slug:'teeth-grooming-romance-connection', searchHref:'/search?category=orthodontics', keyword:'歯 男性 モテる 口元 恋愛' },
   { id:175, grid:12, cat:'清潔感', title:'男性の口腔ケアが清潔感に与える影響と毎日の習慣', slug:'mens-oral-care-cleanliness-habits', searchHref:'/search?category=whitening', keyword:'口腔ケア 男性 清潔感 習慣 影響' },
 
@@ -505,7 +536,6 @@ const ARTICLES = [
   { id:205, grid:14, cat:'清潔感', title:'清潔感が出るメンズコーデの組み方：色・素材・シルエット', slug:'mens-coord-cleanliness-guide', searchHref:'/search?category=fashion', keyword:'メンズ コーデ 清潔感 出し方 色 素材 シルエット' },
 
   // 写真・婚活・コンサル系 (grid-15)
-  { id:206, grid:15, cat:'写真撮影', title:'プロフィール写真で伝わる男性の自然な表情の作り方', slug:'profile-photo-natural-expression-men', searchHref:'/search?category=photo', keyword:'プロフィール写真 表情 男性 自然 作り方' },
   { id:207, grid:15, cat:'写真撮影', title:'プロフィール写真の背景が印象に与える影響と正しい選び方', slug:'profile-photo-background-impact', searchHref:'/search?category=photo', keyword:'プロフィール写真 背景 男性 印象 選び方' },
   { id:208, grid:15, cat:'写真撮影', title:'男性がプロフィール写真を撮るフォトスタジオの選び方', slug:'photo-studio-selection-mens-profile', searchHref:'/search?category=photo', keyword:'フォトスタジオ 選び方 男性 プロフィール写真' },
   { id:209, grid:15, cat:'写真撮影', title:'写真で自然な笑顔を作る男性のための練習法と表情の作り方', slug:'mens-photo-smile-practice', searchHref:'/search?category=photo', keyword:'写真 笑顔 練習 男性 表情 自然 作り方' },
@@ -532,6 +562,45 @@ const ARTICLES = [
   { id:228, grid:16, cat:'写真撮影', title:'ホワイトニングはマッチングアプリの写真映りに影響するか', slug:'whitening-dating-app-photo-effect', searchHref:'/search?category=whitening', keyword:'ホワイトニング マッチングアプリ 写真 映り 影響' },
   { id:229, grid:16, cat:'変容の思想', title:'外見改善の全カテゴリ優先順位：どこから始めると最も変わるか', slug:'appearance-all-category-priority-guide', searchHref:'/search', keyword:'外見改善 優先順位 全カテゴリ どこから 最も変わる' },
   { id:230, grid:16, cat:'変容の思想', title:'外見をトータルで変えるための6ヶ月計画', slug:'appearance-total-change-6month-plan', searchHref:'/search', keyword:'外見 トータル 変える 計画 6ヶ月 男性' },
+
+  // ネガティブKW (grid-17)
+  { id:231, grid:17, cat:'変容の思想', title:'パーソナルジムで変わらない男性の共通点と、確実に変わる人との違い', slug:'personal-gym-no-change-reasons', searchHref:'/search?category=gym', keyword:'パーソナルジム 効果なし 変わらない 男性 原因' },
+  { id:232, grid:17, cat:'清潔感', title:'ホワイトニングで後悔した男性の失敗例と選び方のコツ', slug:'whitening-regret-failure-mens', searchHref:'/search?category=whitening', keyword:'ホワイトニング 後悔 男性 失敗 選び方' },
+  { id:233, grid:17, cat:'清潔感', title:'骨格診断は意味ないのか？活かせる人と活かせない人の違い', slug:'skeleton-diagnosis-worth-it-men', searchHref:'/search?category=diagnosis', keyword:'骨格診断 意味ない 効果 活かせない 男性' },
+  { id:234, grid:17, cat:'清潔感', title:'AGA治療で効果が出ない男性が見落としているポイント', slug:'aga-treatment-no-effect-men', searchHref:'/search?category=aga', keyword:'AGA 治療 効果なし 男性 見落とし' },
+  { id:235, grid:17, cat:'写真撮影', title:'プロフィール写真をプロに撮ってもらっても変わらない人の特徴', slug:'pro-photo-no-change-reasons', searchHref:'/search?category=photo', keyword:'プロフィール写真 プロ 意味ない 変わらない 男性' },
+  { id:236, grid:17, cat:'変容の思想', title:'外見を整えても変わらなかった男性に共通している本当の問題', slug:'appearance-improved-but-no-change', searchHref:'/search', keyword:'外見改善 意味ない 変わらない 男性 本当の原因' },
+  { id:237, grid:17, cat:'清潔感', title:'筋トレしているのにモテない男性が見落としている外見の要素', slug:'workout-men-still-unpopular-why', searchHref:'/search?category=gym', keyword:'筋トレ モテない 男性 外見 見落とし 原因' },
+  { id:238, grid:17, cat:'変容の思想', title:'男性がメイクをすることへの抵抗感はどこから来るのか', slug:'mens-makeup-resistance-reason', searchHref:'/search?category=makeup', keyword:'男性 メイク 気持ち悪い 抵抗感 偏見 なぜ' },
+
+  // アプリ固有名詞 (grid-18)
+  { id:239, grid:18, cat:'写真撮影', title:'Pairsでマッチングが増えた男性がやっていたプロフィール写真の作り方', slug:'pairs-profile-photo-men-tips', searchHref:'/search?category=photo', keyword:'Pairs プロフィール写真 男性 コツ マッチング増やす' },
+  { id:240, grid:18, cat:'写真撮影', title:'withで選ばれる男性プロフィールの外見準備と写真の整え方', slug:'with-app-mens-profile-appearance', searchHref:'/search?category=photo', keyword:'with 男性 外見 プロフィール 写真 選ばれる' },
+  { id:241, grid:18, cat:'変容の思想', title:'Omiaiで婚活を成功させた男性がやっていた外見磨きの順番', slug:'omiai-marriage-hunting-mens-glow-up', searchHref:'/search', keyword:'Omiai 男性 外見 婚活 写真 成功' },
+  { id:242, grid:18, cat:'写真撮影', title:'タップルで出会いが増えた男性がやっている外見と写真の準備', slug:'tapple-mens-appearance-photo-prep', searchHref:'/search?category=photo', keyword:'タップル 男性 写真 外見 出会い 増える' },
+  { id:243, grid:18, cat:'写真撮影', title:'プロに頼まなくてもできるマッチングアプリ用スマホ写真の撮り方', slug:'dating-app-diy-smartphone-photo', searchHref:'/search?category=photo', keyword:'マッチングアプリ 写真 スマホ 撮り方 男性 プロなし' },
+
+  // ローカルSEO (grid-19)
+  { id:244, grid:19, cat:'清潔感', title:'東京で骨格診断を受けたい男性のためのサロン選び方ガイド', slug:'tokyo-mens-skeleton-diagnosis-guide', searchHref:'/search?category=diagnosis', keyword:'東京 骨格診断 男性 サロン 選び方' },
+  { id:245, grid:19, cat:'清潔感', title:'東京でパーソナルジムを選ぶ男性が知っておくべきこと', slug:'tokyo-personal-gym-mens-guide', searchHref:'/search?category=gym', keyword:'東京 パーソナルジム 男性 外見改善 選び方' },
+  { id:246, grid:19, cat:'清潔感', title:'大阪で骨格診断を受けたい男性向けサロン選び方ガイド', slug:'osaka-mens-skeleton-diagnosis-guide', searchHref:'/search?category=diagnosis', keyword:'大阪 骨格診断 男性 サロン 選び方' },
+  { id:247, grid:19, cat:'清潔感', title:'大阪でパーソナルジムを選ぶときに男性が確認すべきこと', slug:'osaka-personal-gym-mens-guide', searchHref:'/search?category=gym', keyword:'大阪 パーソナルジム 男性 体型改善 選び方' },
+  { id:248, grid:19, cat:'清潔感', title:'名古屋でパーソナルジムを選ぶときに確認すべきこと', slug:'nagoya-personal-gym-mens-guide', searchHref:'/search?category=gym', keyword:'名古屋 パーソナルジム 男性 選び方' },
+  { id:249, grid:19, cat:'清潔感', title:'横浜で清潔感のある髪型を作る男性向けヘアサロン選び方ガイド', slug:'yokohama-mens-hair-salon-guide', searchHref:'/search?category=hair', keyword:'横浜 ヘアサロン 男性 清潔感 選び方' },
+  { id:250, grid:19, cat:'清潔感', title:'福岡で骨格診断を受けたい男性向けサロン選び方ガイド', slug:'fukuoka-mens-skeleton-diagnosis-guide', searchHref:'/search?category=diagnosis', keyword:'福岡 骨格診断 男性 サロン 選び方' },
+  { id:251, grid:19, cat:'清潔感', title:'札幌でAGA治療を始めたい男性のためのクリニック選び方ガイド', slug:'sapporo-mens-aga-clinic-guide', searchHref:'/search?category=aga', keyword:'札幌 AGA クリニック 男性 選び方' },
+
+  // アフィリエイト活用型 (grid-20)
+  { id:252, grid:20, cat:'清潔感', title:'RIZAPで外見が変わるまでの期間と費用の現実', slug:'rizap-mens-appearance-change-period', searchHref:'/search?category=gym', keyword:'RIZAP 男性 外見 変化 費用 期間 効果' },
+  { id:253, grid:20, cat:'清潔感', title:'RIZAPと他のパーソナルジムを比較したとき男性が選ぶべき基準', slug:'rizap-vs-other-gym-mens-criteria', searchHref:'/search?category=gym', keyword:'パーソナルジム RIZAP 以外 比較 男性 選び方' },
+  { id:254, grid:20, cat:'清潔感', title:'AGAクリニックに初めて行く前に知っておくべきこと', slug:'aga-clinic-first-visit-prep', searchHref:'/search?category=aga', keyword:'AGAクリニック 初めて 男性 流れ 何をする 準備' },
+  { id:255, grid:20, cat:'清潔感', title:'AGA治療の費用を抑えながら効果を出すクリニックの選び方', slug:'aga-treatment-cost-effective-guide', searchHref:'/search?category=aga', keyword:'AGA 治療 費用 安い クリニック 選び方' },
+  { id:256, grid:20, cat:'清潔感', title:'AGAクリニックの選び方：口コミに頼らず失敗しないための判断基準', slug:'aga-clinic-selection-not-reviews', searchHref:'/search?category=aga', keyword:'AGAクリニック 選び方 口コミ 失敗しない 基準' },
+  { id:257, grid:20, cat:'清潔感', title:'初めてホワイトニングクリニックに行く男性のための完全準備ガイド', slug:'whitening-clinic-first-visit-mens', searchHref:'/search?category=whitening', keyword:'ホワイトニングクリニック 初めて 男性 準備 流れ' },
+  { id:258, grid:20, cat:'清潔感', title:'セルフホワイトニングとクリニックホワイトニングの違いを男性向けに解説', slug:'self-vs-clinic-whitening-mens', searchHref:'/search?category=whitening', keyword:'セルフホワイトニング クリニック 違い 男性 どちらがいい' },
+  { id:259, grid:20, cat:'写真撮影', title:'マッチングアプリのプロフィール写真撮影にかかる費用と相場ガイド', slug:'profile-photo-cost-guide-mens', searchHref:'/search?category=photo', keyword:'マッチングアプリ 写真 プロ撮影 料金 相場 男性' },
+  { id:260, grid:20, cat:'写真撮影', title:'マッチング専門の写真撮影サービスを使う前に知っておくべきこと', slug:'matching-photo-service-before-using', searchHref:'/search?category=photo', keyword:'マッチングフォト 評判 男性 効果 使う前に' },
+  { id:261, grid:20, cat:'写真撮影', title:'プロフィール写真を撮る前日にやるべき外見準備チェックリスト', slug:'profile-photo-day-before-prep', searchHref:'/search?category=photo', keyword:'プロフィール写真 撮影 前日 外見 準備 チェックリスト' },
 ];
 
 const CAT_CLASS = { '清潔感': 'cat-clean', '写真撮影': 'cat-photo', '変容の思想': 'cat-idea' };
@@ -725,7 +794,7 @@ function showToast() {
 }
 
 // レンダリング
-[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16].forEach(g => {
+[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].forEach(g => {
   renderGrid(`grid-${g}`, ARTICLES.filter(a => a.grid === g));
 });
 applyDoneState();
