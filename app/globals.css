@@ -258,3 +258,51 @@ input, select, textarea, option {
 
 /* ── Points badge ── */
 .points-badge { display: inline-flex; align-items: center; font-size: 12px; font-weight: 700; background: rgba(201,168,76,0.1); color: var(--color-gold); padding: 4px 10px; border-radius: 99px; border: 1px solid var(--color-border-gold); white-space: nowrap; }
+
+/* ================================================================
+   深海テーマ 文字補正: 白/薄色背景コンテキストでは暗い文字に自動切替
+   --color-fg / --color-muted をスコープ内で上書きすることで
+   var(--color-fg) を参照するすべての子孫が自動的に暗い文字になる
+   ================================================================ */
+
+/* A. globals.css 定義の白/薄色背景クラス */
+.hp-step:not(.hp-step--accent),
+.hp-steps-section,
+.hp-cat-section,
+.hp-cat {
+  --color-fg:     #1a1410;
+  --color-muted:  #4e4038;
+  --color-border: rgba(10,15,30,0.1);
+  text-shadow: none;
+}
+
+/* B. page.js <style>タグ内の白背景クラス (story-card 等) */
+.story-card {
+  --color-fg:    #1a1410;
+  --color-muted: #4e4038;
+  text-shadow: none;
+  color: #1a1410;
+}
+.story-before { color: #4e4038 !important; text-shadow: none !important; }
+.story-after  { color: #1a1410 !important; text-shadow: none !important; }
+.story-milestone { color: #1a1410 !important; text-shadow: none !important; }
+
+/* C. インラインstyleで白/薄色背景が指定されたコンテナ
+      CSS変数をスコープ上書きし、var(--color-fg)を使う子孫も自動補正 */
+[style*="background: rgba(255, 255, 255"],
+[style*="background: rgba(255,255,255"],
+[style*="background: #fff"],
+[style*="background:#fff"],
+[style*="background: #ffffff"],
+[style*="background: white"],
+[style*="background: #f9fafb"],
+[style*="background: #f3f4f6"],
+[style*="background: #faf8f3"],
+[style*="background: #fafafe"],
+[style*="background: rgb(255, 255, 255"] {
+  --color-fg:     #1a1410;
+  --color-muted:  #4e4038;
+  --color-border: rgba(10,15,30,0.1);
+  color: #1a1410;
+  text-shadow: none;
+}
