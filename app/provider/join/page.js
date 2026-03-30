@@ -65,7 +65,7 @@ export default function ProviderJoinPage() {
                       url('/assets/images/bg-parchment.webp') center / cover;
           color: #fff;
         }
-        .join-section-tinted { padding: 64px 0; background: #fff; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; }
+        .join-section-tinted { padding: 64px 0; background: rgba(10,15,30,0.50); border-top: 1px solid rgba(232,228,220,0.12); border-bottom: 1px solid rgba(232,228,220,0.12); }
 
         .sec-eyebrow {
           font-size: 10px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
@@ -83,11 +83,11 @@ export default function ProviderJoinPage() {
         /* ─── Problem cards ─── */
         .problem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
         .problem-card {
-          background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px;
-          box-shadow: 0 2px 12px rgba(0,0,0,.06);
+          background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(232,228,220,0.15); border-radius: 14px; padding: 20px;
+          box-shadow: 0 4px 24px rgba(0,0,0,.4);
         }
         .problem-card-icon { font-size: 22px; margin-bottom: 10px; }
-        .problem-card h3 { font-size: 14px; font-weight: 800; color: #111827; margin: 0 0 8px; }
+        .problem-card h3 { font-size: 14px; font-weight: 800; color: rgba(232,228,220,0.90); margin: 0 0 8px; }
         .problem-card p { font-size: 13px; color: #4b5563; line-height: 1.7; margin: 0; font-family: 'Noto Sans JP', sans-serif; }
         .problem-card-bar { height: 2px; border-radius: 999px; background: #c9a84c; opacity: .3; margin-top: 14px; }
 
@@ -143,14 +143,14 @@ export default function ProviderJoinPage() {
         /* ─── Fit cards ─── */
         .fit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .fit-card { border-radius: 14px; padding: 22px; }
-        .fit-card-yes { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+        .fit-card-yes { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(232,228,220,0.15); box-shadow: 0 4px 24px rgba(0,0,0,.4); }
         .fit-card-no { background: #0a0f1e; border: 1px solid rgba(255,255,255,.1); }
         .fit-card h3 { font-size: 15px; font-weight: 800; margin: 0 0 14px; }
-        .fit-card-yes h3 { color: #111827; }
+        .fit-card-yes h3 { color: rgba(232,228,220,0.90); }
         .fit-card-no h3 { color: rgba(255,255,255,.7); }
         .fit-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px; }
         .fit-list li { font-size: 13px; line-height: 1.6; font-family: 'Noto Sans JP', sans-serif; display: flex; gap: 8px; align-items: flex-start; }
-        .fit-card-yes .fit-list li { color: #1f2937; }
+        .fit-card-yes .fit-list li { color: rgba(232,228,220,0.80); }
         .fit-card-no .fit-list li { color: rgba(255,255,255,.75); }
         .fit-icon-yes { color: #c9a84c; flex-shrink: 0; font-weight: 900; }
         .fit-icon-no { color: rgba(255,255,255,.5); flex-shrink: 0; }
@@ -355,12 +355,12 @@ export default function ProviderJoinPage() {
             <h2 className="sec-h2 sec-h2-light">掲載料を相殺できる、紹介報酬制度</h2>
             <p className="sec-lead sec-lead-light">一般的なポータルは「掲載料→集客→掲載料」の循環ですが、Finemeは掲載者自身が副収益を作れる仕組みを持っています。</p>
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px'}}>
-              <div style={{background:'#fff', border:'1px solid #e5e7eb', borderRadius:'14px', padding:'20px', boxShadow:'0 2px 12px rgba(0,0,0,.06)'}}>
-                <h3 style={{fontSize:'14px', fontWeight:'800', color:'#111827', margin:'0 0 10px'}}>仕組み</h3>
+              <div style={{background:'rgba(10,15,30,0.65)', backdropFilter:'blur(8px)', border:'1px solid rgba(232,228,220,0.15)', borderRadius:'14px', padding:'20px', boxShadow:'0 4px 24px rgba(0,0,0,.4)'}}>
+                <h3 style={{fontSize:'14px', fontWeight:'800', color:'rgba(232,228,220,0.90)', margin:'0 0 10px'}}>仕組み</h3>
                 <ul style={{listStyle:'none', padding:0, margin:0, display:'flex', flexDirection:'column', gap:'8px'}}>
-                  <li style={{fontSize:'13px', color:'#1f2937', fontFamily:"'Noto Sans JP', sans-serif", display:'flex', gap:'8px'}}><span style={{color:'#c9a84c', fontWeight:'900', flexShrink:0}}>✓</span>あなたが紹介した事業者が有料掲載を開始→<strong>紹介報酬が発生</strong></li>
-                  <li style={{fontSize:'13px', color:'#1f2937', fontFamily:"'Noto Sans JP', sans-serif", display:'flex', gap:'8px'}}><span style={{color:'#c9a84c', fontWeight:'900', flexShrink:0}}>✓</span>うまく運用すると<strong>掲載料相当を相殺</strong>、場合によっては<strong>プラス</strong>へ</li>
-                  <li style={{fontSize:'13px', color:'#1f2937', fontFamily:"'Noto Sans JP', sans-serif", display:'flex', gap:'8px'}}><span style={{color:'#c9a84c', fontWeight:'900', flexShrink:0}}>✓</span>単なる数集めではなく<strong>相性主導</strong>の健全なエコシステム</li>
+                  <li style={{fontSize:'13px', color:'rgba(232,228,220,0.80)', fontFamily:"'Noto Sans JP', sans-serif", display:'flex', gap:'8px'}}><span style={{color:'#c9a84c', fontWeight:'900', flexShrink:0}}>✓</span>あなたが紹介した事業者が有料掲載を開始→<strong>紹介報酬が発生</strong></li>
+                  <li style={{fontSize:'13px', color:'rgba(232,228,220,0.80)', fontFamily:"'Noto Sans JP', sans-serif", display:'flex', gap:'8px'}}><span style={{color:'#c9a84c', fontWeight:'900', flexShrink:0}}>✓</span>うまく運用すると<strong>掲載料相当を相殺</strong>、場合によっては<strong>プラス</strong>へ</li>
+                  <li style={{fontSize:'13px', color:'rgba(232,228,220,0.80)', fontFamily:"'Noto Sans JP', sans-serif", display:'flex', gap:'8px'}}><span style={{color:'#c9a84c', fontWeight:'900', flexShrink:0}}>✓</span>単なる数集めではなく<strong>相性主導</strong>の健全なエコシステム</li>
                 </ul>
               </div>
               <div style={{background:'#111827', border:'1px solid rgba(201,168,76,.15)', borderRadius:'14px', padding:'20px'}}>

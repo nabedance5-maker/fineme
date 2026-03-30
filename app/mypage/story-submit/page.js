@@ -131,8 +131,8 @@ export default function StorySubmitPage() {
       <main className="section">
         <div className="container" style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center', padding: '60px 20px' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎉</div>
-          <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#111', marginBottom: '10px' }}>体験談を投稿しました</h1>
-          <p style={{ color: '#6b7280', fontSize: '14px', lineHeight: 1.7, marginBottom: '28px' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'rgba(232,228,220,0.90)', marginBottom: '10px' }}>体験談を投稿しました</h1>
+          <p style={{ color: 'rgba(232,228,220,0.55)', fontSize: '14px', lineHeight: 1.7, marginBottom: '28px' }}>
             あなたの変容ストーリーは、同じ悩みを持つ誰かの「最初の一歩」になります。<br />
             投稿ありがとうございました。
           </p>
@@ -163,8 +163,8 @@ export default function StorySubmitPage() {
         <section style={{ maxWidth: 640 }}>
           <div style={{ marginBottom: '24px' }}>
             <p style={{ fontSize: '11px', fontWeight: 800, color: '#6366f1', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '.06em' }}>変容の記録</p>
-            <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#111', margin: '0 0 6px' }}>体験談を投稿する</h1>
-            <p style={{ fontSize: '14px', color: '#6b7280', margin: 0, lineHeight: 1.6 }}>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'rgba(232,228,220,0.90)', margin: '0 0 6px' }}>体験談を投稿する</h1>
+            <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.55)', margin: 0, lineHeight: 1.6 }}>
               実際に利用・来店したサービスについての体験談を残しましょう。<br />同じ悩みを持つ人の地図になります。
             </p>
           </div>
@@ -172,17 +172,17 @@ export default function StorySubmitPage() {
           {/* STEP 1: 予約を選ぶ */}
           {!selectedReservation ? (
             <div>
-              <p style={{ fontSize: '14px', fontWeight: 700, color: '#111', marginBottom: '12px' }}>
+              <p style={{ fontSize: '14px', fontWeight: 700, color: 'rgba(232,228,220,0.90)', marginBottom: '12px' }}>
                 どの来店・サービス利用について書きますか？
               </p>
 
               {reservations.length === 0 ? (
-                <div style={{ background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: '14px', padding: '32px 24px', textAlign: 'center' }}>
+                <div style={{ background: 'rgba(10,15,30,0.50)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '14px', padding: '32px 24px', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
                   <p style={{ fontSize: '32px', margin: '0 0 12px' }}>📅</p>
-                  <p style={{ fontSize: '15px', fontWeight: 700, color: '#374151', marginBottom: '8px' }}>
+                  <p style={{ fontSize: '15px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', marginBottom: '8px' }}>
                     まだ承認済みの予約がありません
                   </p>
-                  <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '20px', lineHeight: 1.6 }}>
+                  <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', marginBottom: '20px', lineHeight: 1.6 }}>
                     体験談は、実際に利用・来店したサービスについてのみ投稿できます。<br />
                     まずはガイドを探して予約してみましょう。
                   </p>
@@ -204,17 +204,17 @@ export default function StorySubmitPage() {
                         onClick={() => selectReservation(res)}
                         style={{
                           display: 'flex', alignItems: 'center', gap: '16px',
-                          padding: '16px 20px', background: '#fff',
-                          border: '1.5px solid #e5e7eb', borderRadius: '14px',
+                          padding: '16px 20px', background: 'rgba(10,15,30,0.65)',
+                          border: '1px solid rgba(232,228,220,0.15)', borderRadius: '14px',
                           cursor: 'pointer', textAlign: 'left', transition: 'border-color .15s, box-shadow .15s',
                         }}
                         onMouseEnter={e => { e.currentTarget.style.borderColor = '#c9a84c'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(201,168,76,.12)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.boxShadow = 'none'; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(232,228,220,0.15)'; e.currentTarget.style.boxShadow = 'none'; }}
                       >
                         <div style={{ fontSize: '28px', flexShrink: 0 }}>🗓</div>
                         <div style={{ flex: 1 }}>
-                          <p style={{ fontSize: '15px', fontWeight: 700, color: '#111', margin: '0 0 4px' }}>{name}</p>
-                          <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>{dateStr}</p>
+                          <p style={{ fontSize: '15px', fontWeight: 700, color: 'rgba(232,228,220,0.90)', margin: '0 0 4px' }}>{name}</p>
+                          <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', margin: 0 }}>{dateStr}</p>
                         </div>
                         <div style={{ fontSize: '18px', color: '#c9a84c', flexShrink: 0 }}>→</div>
                       </button>
@@ -231,10 +231,10 @@ export default function StorySubmitPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'rgba(201,168,76,0.06)', border: '1.5px solid rgba(201,168,76,0.3)', borderRadius: '12px' }}>
                 <span style={{ fontSize: '20px' }}>🗓</span>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '13px', fontWeight: 700, color: '#111', margin: 0 }}>
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.90)', margin: 0 }}>
                     {providerName || '掲載者名を入力してください'}
                   </p>
-                  <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>
+                  <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.40)', margin: 0 }}>
                     {selectedReservation.reserved_date
                       ? new Date(selectedReservation.reserved_date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
                       : '日付不明'}
@@ -243,7 +243,7 @@ export default function StorySubmitPage() {
                 <button
                   type="button"
                   onClick={() => { setSelectedReservation(null); setProviderName(''); }}
-                  style={{ fontSize: '12px', color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
+                  style={{ fontSize: '12px', color: 'rgba(232,228,220,0.40)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
                 >
                   変更
                 </button>
@@ -258,7 +258,7 @@ export default function StorySubmitPage() {
                   onChange={e => setProviderName(e.target.value)}
                   placeholder="例：〇〇パーソナルジム、田中スタイリストなど"
                   maxLength={100}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1.5px solid #e5e7eb', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -274,9 +274,9 @@ export default function StorySubmitPage() {
                       onClick={() => setAxisId(id)}
                       style={{
                         padding: '7px 14px', borderRadius: '99px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                        background: axisId === id ? '#6366f1' : '#f3f4f6',
-                        color: axisId === id ? '#fff' : '#374151',
-                        border: axisId === id ? '1.5px solid #6366f1' : '1.5px solid transparent',
+                        background: axisId === id ? '#6366f1' : 'rgba(10,15,30,0.45)',
+                        color: axisId === id ? '#fff' : 'rgba(232,228,220,0.75)',
+                        border: axisId === id ? '1.5px solid #6366f1' : '1px solid rgba(232,228,220,0.15)',
                         transition: 'all .15s',
                       }}
                     >
@@ -288,9 +288,9 @@ export default function StorySubmitPage() {
                     onClick={() => setAxisId('')}
                     style={{
                       padding: '7px 14px', borderRadius: '99px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                      background: axisId === '' ? '#6366f1' : '#f3f4f6',
-                      color: axisId === '' ? '#fff' : '#374151',
-                      border: axisId === '' ? '1.5px solid #6366f1' : '1.5px solid transparent',
+                      background: axisId === '' ? '#6366f1' : 'rgba(10,15,30,0.45)',
+                      color: axisId === '' ? '#fff' : 'rgba(232,228,220,0.75)',
+                      border: axisId === '' ? '1.5px solid #6366f1' : '1px solid rgba(232,228,220,0.15)',
                     }}
                   >
                     指定しない
@@ -310,9 +310,9 @@ export default function StorySubmitPage() {
                         onClick={() => setPathType(pathType === val ? '' : val)}
                         style={{
                           padding: '6px 14px', borderRadius: '99px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                          background: pathType === val ? '#e0e7ff' : '#f3f4f6',
-                          color: pathType === val ? '#4f46e5' : '#6b7280',
-                          border: pathType === val ? '1.5px solid #c7d2fe' : '1.5px solid transparent',
+                          background: pathType === val ? '#e0e7ff' : 'rgba(10,15,30,0.45)',
+                          color: pathType === val ? '#4f46e5' : 'rgba(232,228,220,0.55)',
+                          border: pathType === val ? '1.5px solid #c7d2fe' : '1px solid rgba(232,228,220,0.15)',
                         }}
                       >
                         {label}
@@ -335,9 +335,9 @@ export default function StorySubmitPage() {
                   placeholder="例：ジムに3回通っては辞めるを繰り返し、自分はどうせ変われないと思っていた。"
                   maxLength={500}
                   rows={4}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1.5px solid #e5e7eb', fontSize: '14px', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.7 }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.7 }}
                 />
-                <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0', textAlign: 'right' }}>{answers[0].length}/500</p>
+                <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.40)', margin: '4px 0 0', textAlign: 'right' }}>{answers[0].length}/500</p>
               </div>
 
               {/* Q2 */}
@@ -353,9 +353,9 @@ export default function StorySubmitPage() {
                   placeholder="例：週3で通えるようになり、3ヶ月でウエスト5cm減。鏡を見るのが楽しくなった。"
                   maxLength={600}
                   rows={4}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1.5px solid #e5e7eb', fontSize: '14px', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.7 }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.7 }}
                 />
-                <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0', textAlign: 'right' }}>{answers[1].length}/600</p>
+                <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.40)', margin: '4px 0 0', textAlign: 'right' }}>{answers[1].length}/600</p>
               </div>
 
               {/* Q3 */}
@@ -370,9 +370,9 @@ export default function StorySubmitPage() {
                   placeholder="例：マッチングアプリで会う約束が取れるようになった。自信がついて話しかけやすくなった。"
                   maxLength={500}
                   rows={3}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1.5px solid #e5e7eb', fontSize: '14px', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.7 }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.7 }}
                 />
-                <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0', textAlign: 'right' }}>{answers[2].length}/500</p>
+                <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.40)', margin: '4px 0 0', textAlign: 'right' }}>{answers[2].length}/500</p>
               </div>
 
               {/* Q4 */}
@@ -387,9 +387,9 @@ export default function StorySubmitPage() {
                   placeholder="例：過去の自分みたいに「どうせ変われない」と思っている人。ダイエットを何度も挫折した人。"
                   maxLength={400}
                   rows={3}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1.5px solid #e5e7eb', fontSize: '14px', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.7 }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.7 }}
                 />
-                <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0', textAlign: 'right' }}>{answers[3].length}/400</p>
+                <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.40)', margin: '4px 0 0', textAlign: 'right' }}>{answers[3].length}/400</p>
               </div>
 
               {/* マイルストーン */}
@@ -404,12 +404,12 @@ export default function StorySubmitPage() {
                   onChange={e => setMilestoneReached(e.target.value)}
                   placeholder="例：ウエスト-5cm、マッチングアプリのマッチ率2倍、初めてスーツを褒められた"
                   maxLength={200}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1.5px solid #e5e7eb', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
 
               {error && (
-                <p style={{ fontSize: '14px', color: '#ef4444', background: '#fef2f2', padding: '10px 14px', borderRadius: '10px', margin: 0 }}>
+                <p style={{ fontSize: '14px', color: '#ef4444', background: 'rgba(239,68,68,0.10)', padding: '10px 14px', borderRadius: '10px', margin: 0 }}>
                   {error}
                 </p>
               )}
@@ -432,17 +432,17 @@ export default function StorySubmitPage() {
 
       <style>{`
         .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
-        .mypage-sidenav { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        .mypage-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
         @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav > * { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
-        .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: #374151; text-decoration: none; transition: background .15s; }
+        .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
         .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
         .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
         .form-block { display: flex; flex-direction: column; gap: 4px; }
-        .form-label { font-size: 14px; font-weight: 700; color: #111; display: flex; align-items: center; gap: 8px; }
-        .form-hint { font-size: 12px; color: #9ca3af; margin: 0; line-height: 1.5; }
+        .form-label { font-size: 14px; font-weight: 700; color: rgba(232,228,220,0.90); display: flex; align-items: center; gap: 8px; }
+        .form-hint { font-size: 12px; color: rgba(232,228,220,0.40); margin: 0; line-height: 1.5; }
         .q-badge { display: inline-block; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 99px; letter-spacing: .04em; }
         .q-badge.required { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
-        .q-badge.optional { background: #f3f4f6; color: #9ca3af; border: 1px solid #e5e7eb; }
+        .q-badge.optional { background: rgba(10,15,30,0.45); color: rgba(232,228,220,0.40); border: 1px solid rgba(232,228,220,0.15); }
         textarea:focus, input:focus { border-color: #6366f1 !important; box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
       `}</style>
     </main>

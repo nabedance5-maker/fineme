@@ -14,7 +14,7 @@ export default function DiagnosisTypesPage() {
       <div className="container" style={{ maxWidth: 820 }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <p style={{ fontSize: '11px', fontWeight: 800, color: '#6366f1', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '.1em' }}>Me Scan</p>
-          <h1 style={{ fontSize: 'clamp(22px,4vw,30px)', fontWeight: 900, color: '#111', margin: '0 0 12px', lineHeight: 1.3 }}>
+          <h1 style={{ fontSize: 'clamp(22px,4vw,30px)', fontWeight: 900, color: 'rgba(232,228,220,0.90)', margin: '0 0 12px', lineHeight: 1.3 }}>
             全 {maleTypes.length} タイプ一覧
           </h1>
           <p style={{ fontSize: '15px', color: '#6b7280', lineHeight: 1.7, margin: '0 auto 24px', maxWidth: 540 }}>
@@ -36,11 +36,12 @@ export default function DiagnosisTypesPage() {
             <div
               key={type.type_id}
               style={{
-                background: '#fff',
-                border: '1px solid #e5e7eb',
+                background: 'rgba(10,15,30,0.65)',
+                border: '1px solid rgba(232,228,220,0.15)',
                 borderRadius: '16px',
                 overflow: 'hidden',
-                boxShadow: '0 2px 8px rgba(0,0,0,.04)',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+                backdropFilter: 'blur(8px)',
                 transition: 'box-shadow .15s, transform .15s',
               }}
             >
@@ -75,7 +76,7 @@ export default function DiagnosisTypesPage() {
                 </p>
 
                 {/* 説明（短縮） */}
-                <p style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.65, margin: '0 0 12px' }}>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', lineHeight: 1.65, margin: '0 0 12px' }}>
                   {type.description?.slice(0, 80)}{type.description?.length > 80 ? '…' : ''}
                 </p>
 
@@ -86,8 +87,8 @@ export default function DiagnosisTypesPage() {
                       key={trait}
                       style={{
                         fontSize: '10px', fontWeight: 700, padding: '2px 8px',
-                        borderRadius: '99px', background: '#f3f4f6', color: '#374151',
-                        border: '1px solid #e5e7eb',
+                        borderRadius: '99px', background: 'rgba(10,15,30,0.45)', color: 'rgba(232,228,220,0.75)',
+                        border: '1px solid rgba(232,228,220,0.15)',
                       }}
                     >
                       {trait}
@@ -99,10 +100,10 @@ export default function DiagnosisTypesPage() {
           ))}
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '48px', padding: '32px', background: 'linear-gradient(135deg,#f5f7ff,#eef2ff)', borderRadius: '20px', border: '1.5px solid #e0e7ff' }}>
-          <p style={{ fontSize: '11px', fontWeight: 800, color: '#6366f1', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '.08em' }}>あなたはどのタイプ？</p>
-          <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#111', margin: '0 0 10px' }}>Me Scanを受けて確認しよう</h2>
-          <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: 1.7, margin: '0 0 20px' }}>
+        <div style={{ textAlign: 'center', marginTop: '48px', padding: '32px', background: 'rgba(10,15,30,0.65)', borderRadius: '20px', border: '1px solid rgba(99,102,241,0.3)', backdropFilter: 'blur(8px)' }}>
+          <p style={{ fontSize: '11px', fontWeight: 800, color: '#818cf8', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '.08em' }}>あなたはどのタイプ？</p>
+          <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'rgba(232,228,220,0.90)', margin: '0 0 10px' }}>Me Scanを受けて確認しよう</h2>
+          <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.55)', lineHeight: 1.7, margin: '0 0 20px' }}>
             7軸の診断から、あなたの現在地・理想・最初の一手を生成します。
           </p>
           <Link href="/diagnosis" className="btn" style={{ fontSize: '14px', padding: '12px 26px' }}>

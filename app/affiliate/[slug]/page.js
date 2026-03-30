@@ -90,7 +90,7 @@ function AffiliatePageInner() {
 
   if (loading) return (
     <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#6b7280' }}>読み込み中…</p>
+      <p style={{ color: 'rgba(232,228,220,0.55)' }}>読み込み中…</p>
     </div>
   );
   if (error) return (
@@ -189,14 +189,14 @@ function AffiliatePageInner() {
         {/* ── ガイドからのひと言 ────────────────────────────────────── */}
         {affiliate.guide_message && (
           <div style={{
-            background: 'linear-gradient(135deg,#fffbeb,#fef9c3)',
-            border: '1.5px solid #fde68a', borderRadius: '18px',
-            padding: '22px 24px', marginBottom: '20px',
+            background: 'rgba(10,15,30,0.65)',
+            border: '1px solid rgba(201,168,76,0.25)', borderRadius: '18px',
+            padding: '22px 24px', marginBottom: '20px', backdropFilter: 'blur(8px)',
           }}>
-            <div style={{ fontSize: '10px', fontWeight: '800', color: '#b45309', letterSpacing: '.12em', marginBottom: '10px', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '10px', fontWeight: '800', color: '#c9a84c', letterSpacing: '.12em', marginBottom: '10px', textTransform: 'uppercase' }}>
               ガイドからのひと言
             </div>
-            <p style={{ fontSize: '15px', color: '#111', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap', fontStyle: 'italic' }}>
+            <p style={{ fontSize: '15px', color: 'rgba(232,228,220,0.90)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap', fontStyle: 'italic' }}>
               「{affiliate.guide_message}」
             </p>
           </div>
@@ -205,13 +205,13 @@ function AffiliatePageInner() {
         {/* ── このガイドにしかできないこと ─────────────────────────── */}
         {affiliate.unique_strengths && (
           <div style={{
-            background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '18px',
-            padding: '22px 24px', marginBottom: '20px',
+            background: 'rgba(10,15,30,0.65)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: '18px',
+            padding: '22px 24px', marginBottom: '20px', backdropFilter: 'blur(8px)',
           }}>
-            <div style={{ fontSize: '10px', fontWeight: '800', color: '#b45309', letterSpacing: '.12em', marginBottom: '12px', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '10px', fontWeight: '800', color: '#c9a84c', letterSpacing: '.12em', marginBottom: '12px', textTransform: 'uppercase' }}>
               このガイドにしかできないこと
             </div>
-            <p style={{ fontSize: '15px', color: '#111', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap', fontWeight: '500' }}>
+            <p style={{ fontSize: '15px', color: 'rgba(232,228,220,0.90)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap', fontWeight: '500' }}>
               {affiliate.unique_strengths}
             </p>
           </div>

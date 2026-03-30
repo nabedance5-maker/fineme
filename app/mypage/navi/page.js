@@ -50,27 +50,27 @@ export default function NewMeNaviPage() {
 
       /* ── Track card ── */
       .track-list { display: flex; flex-direction: column; gap: 16px; }
-      .track-card { background: #fff; border: 1px solid rgba(201,168,76,0.2); border-radius: 14px; padding: 22px; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
+      .track-card { background: rgba(10,15,30,0.65); border: 1px solid rgba(232,228,220,0.15); border-radius: 14px; padding: 22px; box-shadow: 0 4px 24px rgba(0,0,0,0.4); backdrop-filter: blur(8px); }
       .track-card.tier-1 { border-color: rgba(201,168,76,0.45); }
       .track-card.tier-2 { border-color: #a7f3d0; }
       .track-card.tier-3 { border-color: #fde68a; }
       .track-card.tier-4 { opacity: .42; filter: grayscale(.7); transition: opacity .3s, filter .3s; }
       .track-card.tier-4.tier-revealed { opacity: 1; filter: none; }
-      .tier-reveal-banner { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 8px; margin-bottom: 14px; font-size: 12px; color: #9ca3af; }
-      .tier-reveal-btn { font-size: 11px; font-weight: 700; color: #6b7280; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; }
+      .tier-reveal-banner { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(10,15,30,0.50); border: 1px dashed rgba(232,228,220,0.20); border-radius: 8px; margin-bottom: 14px; font-size: 12px; color: rgba(232,228,220,0.40); }
+      .tier-reveal-btn { font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.55); background: rgba(10,15,30,0.65); border: 1px solid rgba(232,228,220,0.15); border-radius: 6px; padding: 4px 10px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; }
       .tier-reveal-btn:hover { border-color: #c9a84c; color: #c9a84c; }
       .track-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-      .track-name { font-size: 17px; font-weight: 900; color: #0a0f1e; display: flex; align-items: center; gap: 8px; }
+      .track-name { font-size: 17px; font-weight: 900; color: rgba(232,228,220,0.90); display: flex; align-items: center; gap: 8px; }
       .track-tier-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 99px; }
       .tb-1 { background: rgba(201,168,76,0.15); color: #c9a84c; border: 1px solid rgba(201,168,76,.3); }
       .tb-2 { background: #d1fae5; color: #065f46; }
       .tb-3 { background: #fef3c7; color: #92400e; }
-      .tb-4 { background: #f3f4f6; color: #6b7280; }
-      .track-care-badge { font-size: 11px; color: #6b7280; padding: 3px 9px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 99px; }
+      .tb-4 { background: rgba(232,228,220,0.10); color: rgba(232,228,220,0.55); }
+      .track-care-badge { font-size: 11px; color: rgba(232,228,220,0.55); padding: 3px 9px; background: rgba(10,15,30,0.50); border: 1px solid rgba(232,228,220,0.15); border-radius: 99px; }
 
       /* Progress bar */
       .track-progress { margin-bottom: 16px; }
-      .track-progress-labels { display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af; margin-bottom: 5px; }
+      .track-progress-labels { display: flex; justify-content: space-between; font-size: 11px; color: rgba(232,228,220,0.40); margin-bottom: 5px; }
       .track-progress-track { height: 8px; background: rgba(10,15,30,0.07); border-radius: 99px; overflow: hidden; position: relative; }
       .track-progress-current { height: 100%; border-radius: 99px; background: #0a0f1e; transition: width 1s cubic-bezier(.4,0,.2,1) .4s; }
       .track-progress-ideal { position: absolute; top: 0; height: 100%; width: 3px; background: #c9a84c; transform: translateX(-50%); border-radius: 1px; }
@@ -82,18 +82,18 @@ export default function NewMeNaviPage() {
       .milestone-dot-wrap { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 20px; margin-top: 2px; }
       .milestone-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
       .milestone-dot.current { background: #0a0f1e; box-shadow: 0 0 0 3px rgba(10,15,30,.15); }
-      .milestone-dot.future  { background: #e5e7eb; border: 2px solid #d1d5db; }
+      .milestone-dot.future  { background: rgba(232,228,220,0.15); border: 2px solid rgba(232,228,220,0.25); }
       .milestone-dot.goal    { background: #c9a84c; box-shadow: 0 0 0 3px rgba(201,168,76,.25); }
       .milestone-connector { width: 2px; flex: 1; min-height: 14px; background: repeating-linear-gradient(to bottom, rgba(201,168,76,0.6) 0, rgba(201,168,76,0.6) 4px, transparent 4px, transparent 9px); margin: 2px 0; }
       .milestone-label { font-size: 10px; font-weight: 700; margin: 0 0 2px; }
-      .milestone-text { font-size: 13px; color: #374151; line-height: 1.55; margin: 0; }
+      .milestone-text { font-size: 13px; color: rgba(232,228,220,0.75); line-height: 1.55; margin: 0; }
       .milestone-current-tag { display: inline-block; font-size: 10px; font-weight: 700; color: #0a0f1e; background: rgba(10,15,30,0.07); padding: 1px 7px; border-radius: 99px; margin-bottom: 3px; border: 1px solid rgba(10,15,30,0.12); }
       .milestone-goal-tag { display: inline-block; font-size: 10px; font-weight: 700; color: #c9a84c; background: rgba(201,168,76,0.12); padding: 1px 7px; border-radius: 99px; margin-bottom: 3px; border: 1px solid rgba(201,168,76,.3); }
       .milestone-dot.past { background: #d1fae5; border: 2px solid #6ee7b7; }
 
       /* ── ステップ完了チェック ── */
       .milestone-item { position: relative; }
-      .step-check-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid #e5e7eb; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #d1d5db; transition: all .15s; flex-shrink: 0; font-family: 'Noto Sans JP', sans-serif; }
+      .step-check-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(232,228,220,0.15); background: rgba(10,15,30,0.65); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; color: rgba(232,228,220,0.25); transition: all .15s; flex-shrink: 0; font-family: 'Noto Sans JP', sans-serif; }
       .step-check-btn:hover { border-color: #10b981; color: #10b981; background: #f0fdf4; }
       .step-check-btn.checked { border-color: #10b981; background: #10b981; color: #fff; }
       .milestone-item.step-done .milestone-text { text-decoration: line-through; color: #9ca3af; }
@@ -106,7 +106,7 @@ export default function NewMeNaviPage() {
       .guide-mid { background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.15); color: #1e40af; }
       .guide-low { display: inline-flex; background: none; border: none; font-size: 11px; color: #9ca3af; padding: 2px 0; }
       .milestone-note { font-size: 11px; color: #92400e; background: #fef3c7; border: 1px solid #fde68a; border-radius: 4px; padding: 4px 8px; margin-top: 4px; }
-      .subtab-header-note { font-size: 11px; color: #6b7280; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; }
+      .subtab-header-note { font-size: 11px; color: rgba(232,228,220,0.55); background: rgba(10,15,30,0.50); border: 1px solid rgba(232,228,220,0.15); border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; }
 
       /* CTA inside track */
       .track-action { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(201,168,76,0.1); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
@@ -139,15 +139,15 @@ export default function NewMeNaviPage() {
       .subtab-note { font-size: 11px; color: #f59e0b; background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; }
 
       /* ── 出発前チェック ── */
-      .prereq-section { background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 10px; padding: 12px 14px 10px; margin-bottom: 14px; }
+      .prereq-section { background: rgba(10,15,30,0.50); border: 1px dashed rgba(232,228,220,0.20); border-radius: 10px; padding: 12px 14px 10px; margin-bottom: 14px; }
       .prereq-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; flex-wrap: wrap; gap: 6px; }
-      .prereq-title { font-size: 11px; font-weight: 800; color: #6b7280; letter-spacing: .08em; text-transform: uppercase; }
-      .prereq-note { font-size: 11px; color: #9ca3af; line-height: 1.5; margin: 0 0 10px; }
-      .prereq-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid #f3f4f6; position: relative; }
+      .prereq-title { font-size: 11px; font-weight: 800; color: rgba(232,228,220,0.55); letter-spacing: .08em; text-transform: uppercase; }
+      .prereq-note { font-size: 11px; color: rgba(232,228,220,0.40); line-height: 1.5; margin: 0 0 10px; }
+      .prereq-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(232,228,220,0.08); position: relative; }
       .prereq-item:last-child { border-bottom: none; padding-bottom: 0; }
-      .prereq-box { width: 16px; height: 16px; border-radius: 3px; border: 1.5px solid #d1d5db; background: #fff; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #10b981; transition: all .15s; cursor: pointer; }
+      .prereq-box { width: 16px; height: 16px; border-radius: 3px; border: 1px solid rgba(232,228,220,0.25); background: rgba(10,15,30,0.65); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #10b981; transition: all .15s; cursor: pointer; }
       .prereq-box.checked { background: #10b981; border-color: #10b981; color: #fff; }
-      .prereq-text { font-size: 13px; color: #4b5563; line-height: 1.5; flex: 1; padding-right: 4px; }
+      .prereq-text { font-size: 13px; color: rgba(232,228,220,0.75); line-height: 1.5; flex: 1; padding-right: 4px; }
       .prereq-item.step-done .prereq-text { text-decoration: line-through; color: #9ca3af; }
 
       /* ── 出発前チェックバナー ── */
@@ -172,21 +172,21 @@ export default function NewMeNaviPage() {
       .navi-footer-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; border-radius: 14px; font-size: 14px; font-weight: 700; text-decoration: none; transition: opacity .15s; }
       .navi-footer-btn:hover { opacity: .85; }
       .nfb-primary   { background: #0a0f1e; color: #fff; }
-      .nfb-secondary { background: #fff; color: #0a0f1e; border: 1.5px solid rgba(201,168,76,0.35); }
+      .nfb-secondary { background: rgba(10,15,30,0.65); color: rgba(232,228,220,0.90); border: 1.5px solid rgba(201,168,76,0.35); backdrop-filter: blur(8px); }
       .nfb-ghost     { color: #9ca3af; font-size: 13px; padding: 10px; text-align: center; }
 
       /* ── No data ── */
       .no-data { text-align: center; padding: 60px 20px; }
       .no-data-icon { font-size: 48px; margin-bottom: 16px; }
       .no-data-title { font-size: 20px; font-weight: 800; margin: 0 0 10px; }
-      .no-data-text { font-size: 14px; color: #6b7280; line-height: 1.75; margin: 0 0 24px; }
+      .no-data-text { font-size: 14px; color: rgba(232,228,220,0.55); line-height: 1.75; margin: 0 0 24px; }
 
       /* ── Route pattern selector ── */
       .route-pattern-bar { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
-      .rpb { flex: 1; padding: 8px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1.5px solid rgba(201,168,76,0.25); background: transparent; color: #6b7280; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
+      .rpb { flex: 1; padding: 8px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1.5px solid rgba(201,168,76,0.25); background: transparent; color: rgba(232,228,220,0.55); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
       .rpb.active { background: #0a0f1e; border-color: #0a0f1e; color: #c9a84c; }
-      .rpb:not(.active):hover { border-color: #c9a84c; color: #0a0f1e; }
-      .route-pattern-desc { font-size: 11px; color: #9ca3af; margin: 0 0 20px; }
+      .rpb:not(.active):hover { border-color: #c9a84c; color: rgba(232,228,220,0.90); }
+      .route-pattern-desc { font-size: 11px; color: rgba(232,228,220,0.40); margin: 0 0 20px; }
 
       /* ── Route 1本道 ── */
       .route-container { width: 100%; box-sizing: border-box; }
@@ -194,7 +194,7 @@ export default function NewMeNaviPage() {
       .route-start-icon, .rg-star { font-size: 18px; width: 28px; text-align: center; flex-shrink: 0; }
       .rg-body { flex: 1; padding: 4px 0 8px 12px; }
       .rg-label { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(201,168,76,0.7); margin: 0 0 2px; }
-      .rg-text { font-size: 13px; font-weight: 700; color: #0a0f1e; margin: 0; }
+      .rg-text { font-size: 13px; font-weight: 700; color: rgba(232,228,220,0.90); margin: 0; }
 
       /* ── Station ── */
       .station { display: flex; width: 100%; box-sizing: border-box; }
@@ -203,36 +203,36 @@ export default function NewMeNaviPage() {
       .station-spine { display: flex; flex-direction: column; align-items: center; width: 28px; flex-shrink: 0; }
       .station-line-seg { width: 2px; height: 16px; background: rgba(201,168,76,0.35); flex-shrink: 0; }
       .station-line-flex { width: 2px; flex: 1; min-height: 24px; background: rgba(201,168,76,0.35); }
-      .station-node { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(201,168,76,0.5); background: #fff; transition: all .2s; }
+      .station-node { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(201,168,76,0.5); background: rgba(10,15,30,0.65); transition: all .2s; }
       .station-node.sn-current { width: 20px; height: 20px; background: #0a0f1e; border-color: #0a0f1e; box-shadow: 0 0 0 4px rgba(10,15,30,0.1); }
       .station-node.sn-done { background: #c9a84c; border-color: #c9a84c; }
-      .station-node.sn-future { background: #fff; border-color: #e5e7eb; }
+      .station-node.sn-future { background: rgba(10,15,30,0.50); border-color: rgba(232,228,220,0.20); }
 
       /* Collapsed station body */
       .station-body { flex: 1; }
       .station-collapsed .station-body { padding: 8px 0 8px 12px; }
       .station-row { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow: hidden; }
       .station-icon-sm { font-size: 15px; flex-shrink: 0; }
-      .station-name-sm { font-size: 14px; font-weight: 800; color: #0a0f1e; flex-shrink: 0; }
-      .station-expand-btn { margin-left: auto; font-size: 11px; font-weight: 700; color: #9ca3af; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 3px 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; white-space: nowrap; flex-shrink: 0; }
+      .station-name-sm { font-size: 14px; font-weight: 800; color: rgba(232,228,220,0.90); flex-shrink: 0; }
+      .station-expand-btn { margin-left: auto; font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.40); background: rgba(10,15,30,0.50); border: 1px solid rgba(232,228,220,0.15); border-radius: 6px; padding: 3px 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; white-space: nowrap; flex-shrink: 0; }
       .station-expand-btn:hover { border-color: #c9a84c; color: #c9a84c; }
       .station-done-row .station-name-sm { text-decoration: line-through; text-decoration-color: rgba(201,168,76,.4); color: #9ca3af; }
       .station-mini-progress { display: flex; gap: 3px; padding-left: 2px; margin-top: 5px; flex-wrap: wrap; }
-      .smp-dot { width: 5px; height: 5px; border-radius: 50%; background: #e5e7eb; flex-shrink: 0; }
+      .smp-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(232,228,220,0.20); flex-shrink: 0; }
       .smp-dot.done { background: #10b981; }
       .smp-dot.cur { background: #0a0f1e; }
 
       /* Expanded station */
       .station-expanded .station-body { padding: 0; }
-      .station-card { background: #fff; border: 1.5px solid rgba(10,15,30,0.14); border-radius: 14px; padding: 18px 18px 14px; box-shadow: 0 4px 20px rgba(0,0,0,.06); margin: 6px 0 8px 12px; }
+      .station-card { background: rgba(10,15,30,0.65); border: 1px solid rgba(232,228,220,0.15); border-radius: 14px; padding: 18px 18px 14px; box-shadow: 0 4px 24px rgba(0,0,0,0.4); margin: 6px 0 8px 12px; backdrop-filter: blur(8px); }
       .station-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; gap: 8px; flex-wrap: wrap; }
-      .station-title { font-size: 17px; font-weight: 900; color: #0a0f1e; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-      .station-collapse-btn { font-size: 11px; font-weight: 700; color: #9ca3af; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 3px 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; white-space: nowrap; }
+      .station-title { font-size: 17px; font-weight: 900; color: rgba(232,228,220,0.90); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .station-collapse-btn { font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.40); background: rgba(10,15,30,0.50); border: 1px solid rgba(232,228,220,0.15); border-radius: 6px; padding: 3px 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; white-space: nowrap; }
       .station-collapse-btn:hover { border-color: #c9a84c; color: #c9a84c; }
 
       /* ── Zigzag positioning ── */
       .station-card { margin: 0; } /* スパイン時代の left margin をリセット */
-      .station-mini-card { background: #fff; border: 1px solid rgba(201,168,76,0.2); border-radius: 12px; padding: 10px 14px; }
+      .station-mini-card { background: rgba(10,15,30,0.65); border: 1px solid rgba(232,228,220,0.15); border-radius: 12px; padding: 10px 14px; backdrop-filter: blur(8px); }
       .station-left .station-card,
       .station-left .station-mini-card { max-width: 72%; }
       .station-right .station-card,
@@ -243,8 +243,8 @@ export default function NewMeNaviPage() {
       .sic-current { background: #0a0f1e; box-shadow: 0 0 0 3px rgba(10,15,30,.12); }
       .sic-done { background: #c9a84c; }
       .sic-active { background: #3b82f6; }
-      .sic-future { background: #e5e7eb; border: 1.5px solid #d1d5db; }
-      .sic-label { font-size: 10px; font-weight: 700; color: #9ca3af; }
+      .sic-future { background: rgba(232,228,220,0.15); border: 1.5px solid rgba(232,228,220,0.25); }
+      .sic-label { font-size: 10px; font-weight: 700; color: rgba(232,228,220,0.40); }
 
       /* ── カード接続ドット（中央上下）── */
       .station-mini-card, .station-card { position: relative; }
@@ -257,7 +257,7 @@ export default function NewMeNaviPage() {
         width: 9px; height: 9px;
         border-radius: 50%;
         background: rgba(201,168,76,0.55);
-        border: 2px solid #fff;
+        border: 2px solid rgba(10,15,30,0.8);
         box-shadow: 0 0 0 1.5px rgba(201,168,76,0.3);
         z-index: 2;
       }
@@ -286,18 +286,18 @@ export default function NewMeNaviPage() {
       if (!isLoggedIn) {
         root.innerHTML = `
           <div style="min-height:50vh;display:flex;align-items:center;justify-content:center;padding:48px 20px">
-            <div style="max-width:480px;width:100%;background:#fff;border:1px solid rgba(201,168,76,0.25);border-radius:18px;padding:40px 32px;text-align:center;box-shadow:0 4px 32px rgba(0,0,0,0.06)">
+            <div style="max-width:480px;width:100%;background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.25);border-radius:18px;padding:40px 32px;text-align:center;box-shadow:0 4px 32px rgba(0,0,0,0.4);backdrop-filter:blur(8px)">
               <div style="font-size:40px;margin:0 0 16px">🗺️</div>
-              <h2 style="font-family:'Noto Serif JP',Georgia,serif;font-size:18px;font-weight:700;color:#0a0f1e;margin:0 0 12px;line-height:1.6">
+              <h2 style="font-family:'Noto Serif JP',Georgia,serif;font-size:18px;font-weight:700;color:rgba(232,228,220,0.90);margin:0 0 12px;line-height:1.6">
                 ここはあなただけの<br>変容ロードマップが届く場所です。
               </h2>
-              <p style="font-size:14px;color:#6b7280;line-height:1.85;margin:0 0 28px">
+              <p style="font-size:14px;color:rgba(232,228,220,0.55);line-height:1.85;margin:0 0 28px">
                 Me Scanを受けると、7軸の現在地と変容ロードマップ<br>（Fineme Compass）がここに保存されます。<br>診断はアカウントなしで受けられます。
               </p>
               <a href="/diagnosis" style="display:block;width:100%;padding:15px 24px;background:#c9a84c;color:#0a0f1e;font-size:15px;font-weight:700;border-radius:6px;text-decoration:none;letter-spacing:.05em;margin-bottom:12px;box-sizing:border-box">
                 🧬 Me Scanを受ける（無料・約15分）
               </a>
-              <a href="/login" style="font-size:13px;color:#9ca3af;text-decoration:none;border-bottom:1px solid #e5e7eb;padding-bottom:2px">
+              <a href="/login" style="font-size:13px;color:rgba(232,228,220,0.40);text-decoration:none;border-bottom:1px solid rgba(232,228,220,0.15);padding-bottom:2px">
                 すでにアカウントをお持ちの方はログイン
               </a>
             </div>

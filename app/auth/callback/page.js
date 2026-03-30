@@ -25,12 +25,12 @@ function PasswordForm({ onSubmit, loading, error }) {
   return (
     <div>
       <h2 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 6px' }}>パスワードを設定してください</h2>
-      <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 20px' }}>
+      <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.55)', margin: '0 0 20px' }}>
         掲載者ダッシュボードへのログインに使用します。
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
-        <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>
+        <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)' }}>
           新しいパスワード（8文字以上）
         </label>
         <input
@@ -41,7 +41,7 @@ function PasswordForm({ onSubmit, loading, error }) {
           minLength={8}
           style={{
             padding: '12px 14px',
-            border: '1.5px solid #e5e7eb',
+            border: '1px solid rgba(232,228,220,0.15)',
             borderRadius: '10px',
             fontSize: '15px',
             width: '100%',
@@ -51,7 +51,7 @@ function PasswordForm({ onSubmit, loading, error }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
-        <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>パスワード（確認）</label>
+        <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)' }}>パスワード（確認）</label>
         <input
           type="password"
           value={pw2}
@@ -60,7 +60,7 @@ function PasswordForm({ onSubmit, loading, error }) {
           minLength={8}
           style={{
             padding: '12px 14px',
-            border: '1.5px solid #e5e7eb',
+            border: '1px solid rgba(232,228,220,0.15)',
             borderRadius: '10px',
             fontSize: '15px',
             width: '100%',
@@ -139,15 +139,16 @@ export default function AuthCallbackPage() {
   return (
     <div style={{ maxWidth: '440px', margin: '80px auto', padding: '0 20px' }}>
       <div style={{
-        background: '#fff',
-        border: '1px solid #e5e7eb',
+        background: 'rgba(10,15,30,0.65)',
+        border: '1px solid rgba(232,228,220,0.15)',
         borderRadius: '18px',
         padding: '32px',
-        boxShadow: '0 4px 24px rgba(2,6,23,.06)',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+        backdropFilter: 'blur(8px)',
       }}>
 
         {status === 'loading' && (
-          <p style={{ textAlign: 'center', color: '#6b7280' }}>処理中…</p>
+          <p style={{ textAlign: 'center', color: 'rgba(232,228,220,0.55)' }}>処理中…</p>
         )}
 
         {status === 'password-form' && (
@@ -161,7 +162,7 @@ export default function AuthCallbackPage() {
         {status === 'invalid' && (
           <div>
             <h2 style={{ fontSize: '18px', fontWeight: '800', margin: '0 0 8px' }}>リンクが無効です</h2>
-            <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 20px' }}>
+            <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.55)', margin: '0 0 20px' }}>
               リンクの有効期限が切れているか、すでに使用済みです。
             </p>
             <a

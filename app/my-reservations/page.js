@@ -67,7 +67,7 @@ function ReservationCard({ r, onRefresh, accessToken }) {
   }
 
   return (
-    <div style={{ border: `1.5px solid ${r.status === 'counter_proposed' ? '#818cf8' : '#e5e7eb'}`, borderRadius: '16px', padding: '20px', marginBottom: '12px', background: r.status === 'counter_proposed' ? '#fafafe' : '#fff' }}>
+    <div style={{ border: `1.5px solid ${r.status === 'counter_proposed' ? '#818cf8' : 'rgba(232,228,220,0.15)'}`, borderRadius: '16px', padding: '20px', marginBottom: '12px', background: r.status === 'counter_proposed' ? 'rgba(99,102,241,0.12)' : 'rgba(10,15,30,0.65)', backdropFilter: 'blur(8px)' }}>
       {/* ヘッダー */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
         <div>
@@ -90,7 +90,7 @@ function ReservationCard({ r, onRefresh, accessToken }) {
       {menuText && <p style={{ fontSize: '13px', fontWeight: '700', color: '#374151', margin: '0 0 8px' }}>🎯 {menuText}</p>}
 
       {/* ユーザーメッセージ */}
-      {userMsg && <div style={{ fontSize: '13px', color: '#374151', padding: '8px 12px', background: '#f9fafb', borderRadius: '8px', marginBottom: '10px' }}>{userMsg}</div>}
+      {userMsg && <div style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', padding: '8px 12px', background: 'rgba(10,15,30,0.50)', borderRadius: '8px', marginBottom: '10px' }}>{userMsg}</div>}
 
       {/* 確定日時（承認済み） */}
       {r.status === 'approved' && r.confirmed_date && (
@@ -131,7 +131,7 @@ function ReservationCard({ r, onRefresh, accessToken }) {
             <button
               onClick={() => { if (confirm('キャンセルしますか？')) patchStatus('cancelled'); }}
               disabled={acting}
-              style={{ padding: '10px 14px', background: '#fff', color: '#6b7280', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '13px', cursor: acting ? 'not-allowed' : 'pointer' }}
+              style={{ padding: '10px 14px', background: 'rgba(10,15,30,0.45)', color: 'rgba(232,228,220,0.75)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '13px', cursor: acting ? 'not-allowed' : 'pointer' }}
             >
               キャンセル
             </button>
@@ -151,7 +151,7 @@ function ReservationCard({ r, onRefresh, accessToken }) {
         <button
           onClick={() => { if (confirm('この予約リクエストをキャンセルしますか？')) patchStatus('cancelled'); }}
           disabled={acting}
-          style={{ marginTop: '8px', padding: '8px 16px', background: '#fff', color: '#6b7280', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '13px', cursor: acting ? 'not-allowed' : 'pointer' }}
+          style={{ marginTop: '8px', padding: '8px 16px', background: 'rgba(10,15,30,0.45)', color: 'rgba(232,228,220,0.75)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', fontSize: '13px', cursor: acting ? 'not-allowed' : 'pointer' }}
         >
           {acting ? '処理中…' : 'リクエストをキャンセル'}
         </button>
@@ -205,8 +205,8 @@ function MyReservationsContent() {
     <>
     <style>{`
       .resv-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; max-width: 980px; margin: 0 auto; padding: 40px 20px 80px; }
-      .resv-sidenav { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
-      .resv-sidenav .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: #374151; text-decoration: none; transition: background .15s; }
+      .resv-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+      .resv-sidenav .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
       .resv-sidenav .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
       .resv-sidenav .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
       @media (max-width: 640px) {
@@ -255,7 +255,7 @@ function MyReservationsContent() {
       {loading ? (
         <p style={{ color: '#9ca3af', textAlign: 'center', padding: '40px' }}>読み込み中…</p>
       ) : !searched ? null : reservations.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', background: '#f9fafb', borderRadius: '16px', border: '1px dashed #d1d5db' }}>
+        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'rgba(10,15,30,0.50)', borderRadius: '16px', border: '1px dashed rgba(232,228,220,0.20)' }}>
           <p style={{ fontSize: '32px', margin: '0 0 12px' }}>📭</p>
           <p style={{ fontSize: '15px', fontWeight: '700', color: '#374151', margin: '0 0 6px' }}>予約履歴が見つかりません</p>
           <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>予約時に使用したメールアドレスで検索してください</p>

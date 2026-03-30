@@ -210,12 +210,12 @@ export default function MypagePage() {
                   const progress = Math.max(5, ((4 - (v.tier || 4)) / 4) * 100);
                   const isCompass = v.id === compass;
                   return (
-                    <div key={v.id} style={{ padding: '14px 16px', background: isCompass ? '#eff6ff' : '#f9fafb', borderRadius: '14px', border: isCompass ? '1.5px solid #bfdbfe' : '1px solid #f3f4f6' }}>
+                    <div key={v.id} style={{ padding: '14px 16px', background: isCompass ? 'rgba(37,99,235,0.15)' : 'rgba(10,15,30,0.50)', borderRadius: '14px', border: isCompass ? '1.5px solid rgba(59,130,246,0.40)' : '1px solid rgba(232,228,220,0.12)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '18px' }}>{AXIS_ICONS[v.id]}</span>
                           <div>
-                            <span style={{ fontSize: '14px', fontWeight: 800, color: '#111' }}>{AXIS_LABELS[v.id]}</span>
+                            <span style={{ fontSize: '14px', fontWeight: 800, color: 'rgba(232,228,220,0.90)' }}>{AXIS_LABELS[v.id]}</span>
                             {isCompass && <span style={{ marginLeft: '6px', fontSize: '10px', fontWeight: 700, padding: '2px 7px', background: '#2563eb', color: '#fff', borderRadius: '99px' }}>🧭 最優先</span>}
                           </div>
                         </div>
@@ -224,7 +224,7 @@ export default function MypagePage() {
                         </div>
                       </div>
                       {/* プログレスバー */}
-                      <div style={{ height: '6px', background: '#e5e7eb', borderRadius: '99px', overflow: 'hidden' }}>
+                      <div style={{ height: '6px', background: 'rgba(232,228,220,0.15)', borderRadius: '99px', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${progress}%`, background: isCompass ? '#2563eb' : '#6b7280', borderRadius: '99px', transition: 'width .4s' }} />
                       </div>
                       {v.path_type && (
@@ -239,7 +239,7 @@ export default function MypagePage() {
 
           {/* ── 次の来店予定 ── */}
           {nextVisit && (
-            <div className="card" style={{ padding: '16px', background: 'linear-gradient(120deg,#eff6ff,#dbeafe)', border: '1px solid #bfdbfe' }}>
+            <div className="card" style={{ padding: '16px', background: 'rgba(37,99,235,0.15)', border: '1px solid rgba(59,130,246,0.35)' }}>
               <p style={{ fontSize: '11px', fontWeight: 700, color: '#1d4ed8', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '.06em' }}>次の来店予定</p>
               <p style={{ fontSize: '18px', fontWeight: 800, color: '#111', margin: '0 0 2px' }}>
                 {new Date(nextVisit.date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' })}
@@ -273,7 +273,7 @@ export default function MypagePage() {
             )}
             {resvSummary?.total > 0 && (
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', color: '#374151' }}>合計 <strong>{resvSummary.total}件</strong></span>
+                <span style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)' }}>合計 <strong>{resvSummary.total}件</strong></span>
                 {resvSummary.counter > 0 && <span style={{ fontSize: '12px', color: '#6366f1', fontWeight: 700 }}>代替提案 {resvSummary.counter}件 ⚠</span>}
                 {resvSummary.pending > 0 && <span style={{ fontSize: '12px', color: '#f59e0b' }}>返答待ち {resvSummary.pending}件</span>}
                 {resvSummary.approved > 0 && <span style={{ fontSize: '12px', color: '#10b981' }}>承認済み {resvSummary.approved}件</span>}
@@ -289,15 +289,15 @@ export default function MypagePage() {
 
       <style>{`
         .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
-        .mypage-sidenav { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        .mypage-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
         @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; min-width: 0; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; overflow-y: visible; gap: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav > * { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
-        .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: #374151; text-decoration: none; transition: background .15s; }
+        .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
         .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
         .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
 
         /* New Me Map card */
         .map-card { background: linear-gradient(145deg, #0f172a, #1e1b4b); border-radius: 20px; padding: 22px; color: #fff; }
-        .map-card--empty { background: linear-gradient(135deg, #f8fafc, #f1f5f9); border: 1.5px dashed #d1d5db; }
+        .map-card--empty { background: rgba(10,15,30,0.50); border: 1.5px dashed rgba(232,228,220,0.20); }
         .map-card--empty .map-eyebrow { color: #9ca3af !important; }
         .map-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; gap: 12px; }
         .map-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .08em; color: rgba(255,255,255,.5); margin: 0 0 4px; text-transform: uppercase; }

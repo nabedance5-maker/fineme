@@ -148,7 +148,7 @@ function FacilityPhotosStrip({ provider }) {
     <div style={{ marginBottom: '16px' }}>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
         {photos.map((url, i) => (
-          <div key={i} style={{ flexShrink: 0, width: '160px', height: '108px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+          <div key={i} style={{ flexShrink: 0, width: '160px', height: '108px', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(232,228,220,0.15)' }}>
             <img src={url} alt={`施設写真${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
         ))}
@@ -176,9 +176,9 @@ function QuickFactsStrip({ provider }) {
           <span key={i} style={{
             flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '5px',
             padding: '7px 14px',
-            background: chip.highlight ? '#f0fdf4' : '#f3f4f6',
-            color: chip.highlight ? '#15803d' : '#374151',
-            border: `1px solid ${chip.highlight ? '#bbf7d0' : '#e5e7eb'}`,
+            background: chip.highlight ? 'rgba(5,150,105,0.15)' : 'rgba(10,15,30,0.45)',
+            color: chip.highlight ? '#10b981' : 'rgba(232,228,220,0.75)',
+            border: `1px solid ${chip.highlight ? 'rgba(5,150,105,0.3)' : 'rgba(232,228,220,0.15)'}`,
             borderRadius: '99px', fontSize: '13px', fontWeight: chip.highlight ? '700' : '500',
             whiteSpace: 'nowrap',
           }}>
@@ -206,25 +206,25 @@ function StaffSection({ staff }) {
   if (!staff || staff.length === 0) return null;
   return (
     <div>
-      <div style={{ fontSize: '10px', fontWeight: '800', color: '#9ca3af', letterSpacing: '.12em', marginBottom: '16px', textTransform: 'uppercase' }}>担当スタッフ紹介</div>
+      <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(232,228,220,0.40)', letterSpacing: '.12em', marginBottom: '16px', textTransform: 'uppercase' }}>担当スタッフ紹介</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {staff.map(s => (
-          <div key={s.id} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', padding: '20px', background: '#f9fafb', borderRadius: '18px', border: '1.5px solid #f3f4f6' }}>
+          <div key={s.id} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', padding: '20px', background: 'rgba(10,15,30,0.50)', borderRadius: '18px', border: '1.5px solid rgba(232,228,220,0.15)', backdropFilter: 'blur(8px)' }}>
             {/* アバター */}
             <div style={{ flexShrink: 0 }}>
               {s.photo_url
-                ? <img src={s.photo_url} alt={s.name} style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', border: '2.5px solid #e5e7eb', display: 'block' }} />
+                ? <img src={s.photo_url} alt={s.name} style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', border: '2.5px solid rgba(232,228,220,0.25)', display: 'block' }} />
                 : <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'linear-gradient(135deg,#e5e7eb,#d1d5db)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>👤</div>
               }
             </div>
             {/* テキスト情報 */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                <span style={{ fontSize: '16px', fontWeight: '800', color: '#111' }}>{s.name}</span>
+                <span style={{ fontSize: '16px', fontWeight: '800', color: 'rgba(232,228,220,0.90)' }}>{s.name}</span>
                 {s.is_featured && (
                   <span style={{ fontSize: '11px', fontWeight: '700', padding: '2px 8px', background: '#fef3c7', color: '#92400e', borderRadius: '99px' }}>担当</span>
                 )}
-                {s.role && <span style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>{s.role}</span>}
+                {s.role && <span style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', fontWeight: '500' }}>{s.role}</span>}
               </div>
               {/* 経験・資格チップ */}
               {(s.experience_years || s.credentials) && (
@@ -243,7 +243,7 @@ function StaffSection({ staff }) {
               )}
               {/* 自己紹介 */}
               {s.bio && (
-                <p style={{ fontSize: '13px', color: '#374151', lineHeight: '1.7', margin: 0, fontStyle: 'italic' }}>「{s.bio}」</p>
+                <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', lineHeight: '1.7', margin: 0, fontStyle: 'italic' }}>「{s.bio}」</p>
               )}
             </div>
           </div>
@@ -256,12 +256,12 @@ function StaffSection({ staff }) {
 // ── TabBar ────────────────────────────────────────────────────────────────────
 function TabBar({ activeTab, onSelect }) {
   return (
-    <div style={{ display: 'flex', borderBottom: '2px solid #e5e7eb', marginBottom: '28px', gap: '4px' }}>
+    <div style={{ display: 'flex', borderBottom: '2px solid rgba(232,228,220,0.15)', marginBottom: '28px', gap: '4px' }}>
       {TABS.map(t => (
         <button key={t.id} onClick={() => onSelect(t.id)} style={{
           padding: '12px 20px', fontSize: '14px', fontWeight: activeTab === t.id ? '800' : '500',
-          color: activeTab === t.id ? '#111' : '#6b7280', background: 'none', border: 'none',
-          borderBottom: activeTab === t.id ? '2px solid #111' : '2px solid transparent',
+          color: activeTab === t.id ? 'rgba(232,228,220,0.90)' : 'rgba(232,228,220,0.55)', background: 'none', border: 'none',
+          borderBottom: activeTab === t.id ? '2px solid rgba(232,228,220,0.75)' : '2px solid transparent',
           marginBottom: '-2px', cursor: 'pointer', transition: 'all .15s',
         }}>{t.label}</button>
       ))}
@@ -276,9 +276,9 @@ function NewMeMapSection({ diagnosis, matchData }) {
 
   if (!diagnosis) {
     return (
-      <div style={{ padding: '24px', borderRadius: '16px', border: '1.5px solid #e5e7eb', background: '#f9fafb' }}>
-        <p style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: '0 0 6px' }}>Me Scanを受けると、このガイドとの接点がわかります</p>
-        <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 16px', lineHeight: '1.7' }}>あなたの変容プロファイル（最優先トラック・来た道・ゴール）とこのガイドが合っているかを、7軸で確認できます。</p>
+      <div style={{ padding: '24px', borderRadius: '16px', border: '1.5px solid rgba(232,228,220,0.15)', background: 'rgba(10,15,30,0.50)', backdropFilter: 'blur(8px)' }}>
+        <p style={{ fontSize: '15px', fontWeight: '700', color: 'rgba(232,228,220,0.90)', margin: '0 0 6px' }}>Me Scanを受けると、このガイドとの接点がわかります</p>
+        <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', margin: '0 0 16px', lineHeight: '1.7' }}>あなたの変容プロファイル（最優先トラック・来た道・ゴール）とこのガイドが合っているかを、7軸で確認できます。</p>
         <a href="/diagnosis" style={{ display: 'inline-block', padding: '10px 22px', background: '#111', color: '#fff', borderRadius: '10px', fontSize: '14px', fontWeight: '700', textDecoration: 'none' }}>
           無料でMe Scanを受ける（約12〜18分）
         </a>
@@ -311,7 +311,7 @@ function NewMeMapSection({ diagnosis, matchData }) {
             <p style={{ fontSize: '11px', color: '#93c5fd', margin: '6px 0 0', lineHeight: '1.5' }}>※ Me Scan 7軸診断（変容ベクトル・来た道・ギャップ）との相性スコア</p>
           </>
         ) : (
-          <p style={{ fontSize: '13px', color: '#374151', margin: 0 }}>診断結果と照らし合わせています。</p>
+          <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', margin: 0 }}>診断結果と照らし合わせています。</p>
         )}
       </div>
 
@@ -337,7 +337,7 @@ function NewMeMapSection({ diagnosis, matchData }) {
                   {ax.gap > 0 && (
                     <div style={{ position: 'relative', height: '6px', background: '#dbeafe', borderRadius: '99px', overflow: 'visible' }}>
                       <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', background: '#2563eb', borderRadius: '99px', width: `${Math.max(10, (10 - ax.gap) / 10 * 100)}%` }} />
-                      <span style={{ position: 'absolute', right: 0, top: '-14px', fontSize: '10px', fontWeight: '700', color: '#6b7280' }}>理想</span>
+                      <span style={{ position: 'absolute', right: 0, top: '-14px', fontSize: '10px', fontWeight: '700', color: 'rgba(232,228,220,0.55)' }}>理想</span>
                     </div>
                   )}
                 </div>
@@ -383,8 +383,8 @@ function PhilosophySection({ provider }) {
 
       {/* ━━ Block 1: こんな方へ ━━ */}
       {hasTargetBlock && (
-        <div style={{ background: '#f9fafb', borderRadius: '20px', padding: '28px 24px' }}>
-          <div style={{ fontSize: '10px', fontWeight: '800', color: '#9ca3af', letterSpacing: '.12em', marginBottom: '18px', textTransform: 'uppercase' }}>このガイドが伴走できる人</div>
+        <div style={{ background: 'rgba(10,15,30,0.50)', borderRadius: '20px', padding: '28px 24px', backdropFilter: 'blur(8px)', border: '1px solid rgba(232,228,220,0.10)' }}>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(232,228,220,0.40)', letterSpacing: '.12em', marginBottom: '18px', textTransform: 'uppercase' }}>このガイドが伴走できる人</div>
 
           {/* target_desc 行リスト */}
           {targetLines.length > 0 && (
@@ -392,7 +392,7 @@ function PhilosophySection({ provider }) {
               {targetLines.map((line, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                   <span style={{ width: '22px', height: '22px', background: '#111', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800', flexShrink: 0, marginTop: '1px' }}>{i + 1}</span>
-                  <span style={{ fontSize: '14px', color: '#111', lineHeight: '1.6', fontWeight: '500' }}>{line}</span>
+                  <span style={{ fontSize: '14px', color: 'rgba(232,228,220,0.90)', lineHeight: '1.6', fontWeight: '500' }}>{line}</span>
                 </div>
               ))}
             </div>
@@ -402,9 +402,9 @@ function PhilosophySection({ provider }) {
           {personCards.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
               {personCards.map((card, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '14px', background: '#fff', borderRadius: '14px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,.04)' }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '14px', background: 'rgba(10,15,30,0.65)', borderRadius: '14px', border: '1px solid rgba(232,228,220,0.15)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
                   <span style={{ fontSize: '22px', flexShrink: 0, lineHeight: 1 }}>{card.icon}</span>
-                  <span style={{ fontSize: '13px', color: '#374151', lineHeight: '1.55' }}>{card.text}</span>
+                  <span style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', lineHeight: '1.55' }}>{card.text}</span>
                 </div>
               ))}
             </div>
@@ -430,31 +430,31 @@ function PhilosophySection({ provider }) {
 
       {/* ━━ Block 2.5: 変容ストーリー（AIマッチング用テキストフィールド） ━━ */}
       {(provider.ideal_client_desc || provider.client_before_state || provider.transformation_pattern || provider.best_fit_desc) && (
-        <div style={{ border: '1.5px solid #e5e7eb', borderRadius: '18px', padding: '22px', background: '#fff' }}>
-          <div style={{ fontSize: '10px', fontWeight: '800', color: '#9ca3af', letterSpacing: '.12em', marginBottom: '18px', textTransform: 'uppercase' }}>来る方のリアルなストーリー</div>
+        <div style={{ border: '1px solid rgba(232,228,220,0.15)', borderRadius: '18px', padding: '22px', background: 'rgba(10,15,30,0.65)', backdropFilter: 'blur(8px)' }}>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(232,228,220,0.40)', letterSpacing: '.12em', marginBottom: '18px', textTransform: 'uppercase' }}>来る方のリアルなストーリー</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             {provider.ideal_client_desc && (
               <div>
                 <div style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', marginBottom: '6px', letterSpacing: '.05em' }}>よく来るお客様の状況・背景</div>
-                <p style={{ fontSize: '14px', color: '#374151', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.ideal_client_desc}</p>
+                <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.75)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.ideal_client_desc}</p>
               </div>
             )}
             {provider.client_before_state && (
               <div>
-                <div style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', marginBottom: '6px', letterSpacing: '.05em' }}>来る前の典型的な状態</div>
-                <p style={{ fontSize: '14px', color: '#374151', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.client_before_state}</p>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#818cf8', marginBottom: '6px', letterSpacing: '.05em' }}>来る前の典型的な状態</div>
+                <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.75)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.client_before_state}</p>
               </div>
             )}
             {provider.transformation_pattern && (
               <div>
-                <div style={{ fontSize: '11px', fontWeight: '800', color: '#059669', marginBottom: '6px', letterSpacing: '.05em' }}>よく起きる変化のパターン</div>
-                <p style={{ fontSize: '14px', color: '#374151', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.transformation_pattern}</p>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#34d399', marginBottom: '6px', letterSpacing: '.05em' }}>よく起きる変化のパターン</div>
+                <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.75)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.transformation_pattern}</p>
               </div>
             )}
             {provider.best_fit_desc && (
-              <div style={{ background: '#f0fdf4', borderRadius: '12px', padding: '16px' }}>
-                <div style={{ fontSize: '11px', fontWeight: '800', color: '#059669', marginBottom: '6px', letterSpacing: '.05em' }}>特に向いている人・状況</div>
-                <p style={{ fontSize: '14px', color: '#374151', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.best_fit_desc}</p>
+              <div style={{ background: 'rgba(5,150,105,0.12)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(5,150,105,0.2)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#34d399', marginBottom: '6px', letterSpacing: '.05em' }}>特に向いている人・状況</div>
+                <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.75)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.best_fit_desc}</p>
               </div>
             )}
           </div>
@@ -463,9 +463,9 @@ function PhilosophySection({ provider }) {
 
       {/* ━━ Block 3: サービス詳細 ━━ */}
       {provider.description && (
-        <div style={{ border: '1.5px solid #e5e7eb', borderRadius: '18px', padding: '22px', background: '#fff' }}>
-          <div style={{ fontSize: '10px', fontWeight: '800', color: '#9ca3af', letterSpacing: '.12em', marginBottom: '12px', textTransform: 'uppercase' }}>この一手でできること</div>
-          <p style={{ fontSize: '14px', color: '#374151', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.description}</p>
+        <div style={{ border: '1px solid rgba(232,228,220,0.15)', borderRadius: '18px', padding: '22px', background: 'rgba(10,15,30,0.65)', backdropFilter: 'blur(8px)' }}>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(232,228,220,0.40)', letterSpacing: '.12em', marginBottom: '12px', textTransform: 'uppercase' }}>この一手でできること</div>
+          <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.75)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.description}</p>
         </div>
       )}
     </div>
@@ -478,13 +478,13 @@ function StoriesSection({ stories, provider }) {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
         <h2 style={{ fontSize: '16px', fontWeight: '800', margin: '0' }}>変容の証言</h2>
-        {stories.length > 0 && <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600', background: '#f3f4f6', padding: '2px 10px', borderRadius: '99px' }}>{stories.length}件</span>}
+        {stories.length > 0 && <span style={{ fontSize: '12px', color: 'rgba(232,228,220,0.40)', fontWeight: '600', background: 'rgba(10,15,30,0.45)', padding: '2px 10px', borderRadius: '99px' }}>{stories.length}件</span>}
       </div>
       {stories.length === 0 ? (
         <div style={{ background: '#fffbeb', border: '1px dashed #fde68a', borderRadius: '18px', padding: '32px', textAlign: 'center' }}>
           <div style={{ fontSize: '36px', marginBottom: '12px' }}>✍️</div>
           <p style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: '0 0 6px' }}>このガイドへの最初の証言を残す人になれます</p>
-          <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 18px', lineHeight: '1.7' }}>相談・来店後に「変わる前」と「今」をありのままに残してください。あなたの声が次の誰かの地図になります。</p>
+          <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', margin: '0 0 18px', lineHeight: '1.7' }}>相談・来店後に「変わる前」と「今」をありのままに残してください。あなたの声が次の誰かの地図になります。</p>
           {provider?.slug && (
             <a href={`/story-submit?providerId=${provider.id || ''}`} style={{ display: 'inline-block', padding: '10px 22px', background: '#111', color: '#fff', borderRadius: '10px', fontSize: '13px', fontWeight: '700', textDecoration: 'none' }}>
               体験談を書く（無料）
@@ -494,10 +494,10 @@ function StoriesSection({ stories, provider }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           {stories.map(s => (
-            <div key={s.id} style={{ borderRadius: '18px', overflow: 'hidden', border: '1px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,.05)' }}>
+            <div key={s.id} style={{ borderRadius: '18px', overflow: 'hidden', border: '1px solid rgba(232,228,220,0.15)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
               {/* ヘッダー: 軸・来た道 */}
               {(s.axis_id || s.path_type) && (
-                <div style={{ background: '#f9fafb', padding: '10px 16px', borderBottom: '1px solid #f3f4f6', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ background: 'rgba(10,15,30,0.50)', padding: '10px 16px', borderBottom: '1px solid rgba(232,228,220,0.10)', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
                   {s.axis_id && (
                     <span style={{ fontSize: '12px', fontWeight: '700', padding: '3px 10px', background: '#ecfdf5', color: '#059669', borderRadius: '99px' }}>
                       {AXIS_ICONS[s.axis_id]} {AXIS_LABELS[s.axis_id] || s.axis_id}トラック
@@ -522,7 +522,7 @@ function StoriesSection({ stories, provider }) {
                 {s.milestone_reached ? (
                   <>
                     <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.15)' }} />
-                    <div style={{ padding: '6px 14px', background: '#fff', border: '1.5px solid #a7f3d0', borderRadius: '99px', fontSize: '12px', color: '#059669', fontWeight: '700', whiteSpace: 'nowrap', boxShadow: '0 1px 6px rgba(5,150,105,.15)' }}>
+                    <div style={{ padding: '6px 14px', background: 'rgba(10,15,30,0.65)', border: '1px solid #a7f3d0', borderRadius: '99px', fontSize: '12px', color: '#34d399', fontWeight: '700', whiteSpace: 'nowrap', boxShadow: '0 1px 6px rgba(5,150,105,.15)' }}>
                       🏁 {s.milestone_reached}
                     </div>
                     <div style={{ flex: 1, height: '1px', background: 'rgba(16,185,129,0.25)' }} />
@@ -592,7 +592,7 @@ function GuideTab({ provider, diagnosis, matchData, stories, staff, onGoToConsul
         )}
       </div>
       {/* スティッキーCTA */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '10px 16px 24px', background: 'linear-gradient(to top, rgba(255,255,255,1) 70%, rgba(255,255,255,0))', zIndex: 50, pointerEvents: 'none' }}>
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '10px 16px 24px', background: 'linear-gradient(to top, rgba(10,15,30,0.95) 70%, rgba(10,15,30,0))', zIndex: 50, pointerEvents: 'none' }}>
         <div style={{ maxWidth: '780px', margin: '0 auto', pointerEvents: 'all' }}>
           <button onClick={onGoToConsult} style={{ width: '100%', padding: '16px', background: '#111', color: '#fff', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 24px rgba(0,0,0,0.22)', letterSpacing: '.02em' }}>
             このガイドに相談する →
@@ -620,7 +620,7 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
   const borderColor = isCompassMatch ? '#1d4ed8' : isPathMatch ? '#2563eb' : '#e5e7eb';
 
   return (
-    <div style={{ background: '#fff', borderRadius: '20px', overflow: 'hidden', border: `${isCompassMatch || isPathMatch ? '2px' : '1.5px'} solid ${borderColor}`, boxShadow: isCompassMatch ? '0 0 0 4px rgba(29,78,216,.1),0 4px 20px rgba(0,0,0,.07)' : '0 2px 12px rgba(0,0,0,.05)' }}>
+    <div style={{ background: 'rgba(10,15,30,0.65)', borderRadius: '20px', overflow: 'hidden', border: `${isCompassMatch || isPathMatch ? '2px' : '1px'} solid ${isCompassMatch ? '#1d4ed8' : isPathMatch ? '#2563eb' : 'rgba(232,228,220,0.15)'}`, boxShadow: isCompassMatch ? '0 0 0 4px rgba(29,78,216,.1),0 4px 24px rgba(0,0,0,0.4)' : '0 4px 24px rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}>
 
       {/* バナー */}
       {isCompassMatch && (
@@ -660,7 +660,7 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
           </div>
           <h3 style={{ fontSize: '17px', fontWeight: '900', margin: '0 0 7px', color: '#0f172a', lineHeight: '1.3' }}>{service.name}</h3>
           {service.transformation_promise && (
-            <p style={{ fontSize: '13px', color: '#374151', margin: '0', fontStyle: 'italic', lineHeight: '1.6', padding: '8px 12px', background: '#f8fafc', borderRadius: '8px', borderLeft: '3px solid #6366f1' }}>
+            <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', margin: '0', fontStyle: 'italic', lineHeight: '1.6', padding: '8px 12px', background: 'rgba(10,15,30,0.50)', borderRadius: '8px', borderLeft: '3px solid #6366f1' }}>
               「{service.transformation_promise}」
             </p>
           )}
@@ -669,14 +669,14 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
         {/* 価格 */}
         <div style={{ marginBottom: '12px' }}>
           <span style={{ fontSize: '24px', fontWeight: '900', color: '#0f172a', lineHeight: 1 }}>¥{service.price.toLocaleString()}</span>
-          {service.duration && <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '6px' }}>/ {service.duration}</span>}
+          {service.duration && <span style={{ fontSize: '12px', color: 'rgba(232,228,220,0.40)', marginLeft: '6px' }}>/ {service.duration}</span>}
         </div>
 
         {/* 「変容の旅を覗く」ボタン（常時表示・フル幅） */}
         {hasDetails && (
           <button
             onClick={() => setExpanded(v => !v)}
-            style={{ width: '100%', padding: '13px', marginBottom: '10px', background: expanded ? '#f3f4f6' : 'rgba(201,168,76,0.07)', color: expanded ? '#374151' : '#c9a84c', border: `1.5px solid ${expanded ? '#e5e7eb' : 'rgba(201,168,76,0.35)'}`, borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', transition: 'all .15s', letterSpacing: '.02em' }}
+            style={{ width: '100%', padding: '13px', marginBottom: '10px', background: expanded ? 'rgba(10,15,30,0.45)' : 'rgba(201,168,76,0.07)', color: expanded ? 'rgba(232,228,220,0.75)' : '#c9a84c', border: `1.5px solid ${expanded ? 'rgba(232,228,220,0.15)' : 'rgba(201,168,76,0.35)'}`, borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', transition: 'all .15s', letterSpacing: '.02em' }}
           >
             {expanded ? '閉じる ▲' : '変容の旅を覗く ▾'}
           </button>
@@ -684,13 +684,13 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
 
         {/* 展開エリア（アコーディオン） */}
         {expanded && (
-          <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '16px', marginBottom: '16px' }}>
+          <div style={{ borderTop: '1px solid rgba(232,228,220,0.10)', paddingTop: '16px', marginBottom: '16px' }}>
             {(service.before_text || service.before_image_url || service.after_text || service.after_image_url) && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
-                <div style={{ background: '#f9fafb', borderRadius: '10px', overflow: 'hidden', border: '1px solid #f3f4f6' }}>
-                  <div style={{ fontSize: '10px', fontWeight: '800', color: '#9ca3af', letterSpacing: '.1em', padding: service.before_image_url ? '8px 12px 4px' : '12px 12px 4px', textTransform: 'uppercase' }}>BEFORE</div>
+                <div style={{ background: 'rgba(10,15,30,0.50)', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(232,228,220,0.10)' }}>
+                  <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(232,228,220,0.40)', letterSpacing: '.1em', padding: service.before_image_url ? '8px 12px 4px' : '12px 12px 4px', textTransform: 'uppercase' }}>BEFORE</div>
                   {service.before_image_url && <img src={service.before_image_url} alt="Before" style={{ width: '100%', height: '110px', objectFit: 'cover', display: 'block' }} />}
-                  {service.before_text && <p style={{ fontSize: '12px', color: '#475569', margin: 0, lineHeight: '1.6', padding: service.before_image_url ? '8px 12px 12px' : '0 12px 12px' }}>{service.before_text}</p>}
+                  {service.before_text && <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: 0, lineHeight: '1.6', padding: service.before_image_url ? '8px 12px 12px' : '0 12px 12px' }}>{service.before_text}</p>}
                 </div>
                 <div style={{ background: '#f0fdf4', borderRadius: '10px', overflow: 'hidden', border: '1px solid #bbf7d0' }}>
                   <div style={{ fontSize: '10px', fontWeight: '800', color: '#059669', letterSpacing: '.1em', padding: service.after_image_url ? '8px 12px 4px' : '12px 12px 4px', textTransform: 'uppercase' }}>AFTER</div>
@@ -700,21 +700,21 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
               </div>
             )}
             {benefits.length > 0 && (
-              <div style={{ marginBottom: '12px', padding: '14px', background: '#f9fafb', borderRadius: '12px' }}>
-                <div style={{ fontSize: '10px', fontWeight: '800', color: '#374151', letterSpacing: '.1em', marginBottom: '8px', textTransform: 'uppercase' }}>このプログラムで変わること</div>
+              <div style={{ marginBottom: '12px', padding: '14px', background: 'rgba(10,15,30,0.50)', borderRadius: '12px', border: '1px solid rgba(232,228,220,0.10)' }}>
+                <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(232,228,220,0.75)', letterSpacing: '.1em', marginBottom: '8px', textTransform: 'uppercase' }}>このプログラムで変わること</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
                   {benefits.slice(0, 5).map((line, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                      <span style={{ color: '#059669', fontWeight: '800', fontSize: '13px', flexShrink: 0, lineHeight: '1.4' }}>✓</span>
-                      <span style={{ fontSize: '13px', color: '#374151', lineHeight: '1.5' }}>{line}</span>
+                      <span style={{ color: '#34d399', fontWeight: '800', fontSize: '13px', flexShrink: 0, lineHeight: '1.4' }}>✓</span>
+                      <span style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', lineHeight: '1.5' }}>{line}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
             {suitablePaths.length > 0 && (
-              <div style={{ padding: '10px 14px', background: '#f9fafb', borderRadius: '10px', border: '1px solid #f3f4f6' }}>
-                <div style={{ fontSize: '10px', fontWeight: '800', color: '#9ca3af', letterSpacing: '.1em', marginBottom: '7px', textTransform: 'uppercase' }}>こんな方に向いています</div>
+              <div style={{ padding: '10px 14px', background: 'rgba(10,15,30,0.50)', borderRadius: '10px', border: '1px solid rgba(232,228,220,0.10)' }}>
+                <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(232,228,220,0.40)', letterSpacing: '.1em', marginBottom: '7px', textTransform: 'uppercase' }}>こんな方に向いています</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                   {suitablePaths.map(p => (
                     <span key={p} style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', background: (PATH_COLORS[p] || '#6b7280') + '18', color: PATH_COLORS[p] || '#6b7280', borderRadius: '99px' }}>
@@ -742,9 +742,9 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
 }
 
 function ProgramTab({ services, onConsult, userPathType, provider, matchData }) {
-  if (services === null) return <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>読み込み中…</div>;
+  if (services === null) return <div style={{ textAlign: 'center', padding: '40px', color: 'rgba(232,228,220,0.40)' }}>読み込み中…</div>;
   if (!services.length) return (
-    <div style={{ textAlign: 'center', padding: '60px 20px', color: '#6b7280', background: '#f9fafb', borderRadius: '18px', border: '1px dashed #d1d5db' }}>
+    <div style={{ textAlign: 'center', padding: '60px 20px', color: 'rgba(232,228,220,0.55)', background: 'rgba(10,15,30,0.50)', borderRadius: '18px', border: '1px dashed rgba(232,228,220,0.20)' }}>
       <div style={{ fontSize: '32px', marginBottom: '12px', opacity: 0.3 }}>📋</div>
       <p style={{ fontSize: '15px', margin: 0, fontWeight: '600' }}>プログラムはまだ登録されていません</p>
     </div>
@@ -771,15 +771,15 @@ function ProgramTab({ services, onConsult, userPathType, provider, matchData }) 
 
       {/* Me Scan連携バナー */}
       {hasScan && (
-        <div style={{ background: isCompassProvider ? 'linear-gradient(135deg,#eff6ff,#eef2ff)' : '#f9fafb', border: `1px solid ${isCompassProvider ? '#a5b4fc' : '#e5e7eb'}`, borderRadius: '14px', padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+        <div style={{ background: isCompassProvider ? 'rgba(29,78,216,0.15)' : 'rgba(10,15,30,0.50)', border: `1px solid ${isCompassProvider ? '#6366f1' : 'rgba(232,228,220,0.15)'}`, borderRadius: '14px', padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: '10px', backdropFilter: 'blur(8px)' }}>
           <span style={{ fontSize: '20px', flexShrink: 0 }}>{isCompassProvider ? '🧭' : '🗺️'}</span>
           <div>
-            <div style={{ fontSize: '12px', fontWeight: '800', color: isCompassProvider ? '#4f46e5' : '#374151', marginBottom: '6px' }}>
+            <div style={{ fontSize: '12px', fontWeight: '800', color: isCompassProvider ? '#818cf8' : 'rgba(232,228,220,0.75)', marginBottom: '6px' }}>
               {isCompassProvider ? 'あなたのコンパス軸を専門とするガイドです' : 'あなたの変容軸をカバーするガイドです'}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
               {coveredAxes.map(ax => (
-                <span key={ax.id} style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', background: ax.isCompass ? '#1d4ed8' : '#e5e7eb', color: ax.isCompass ? '#fff' : '#374151', borderRadius: '99px' }}>
+                <span key={ax.id} style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', background: ax.isCompass ? '#1d4ed8' : 'rgba(232,228,220,0.12)', color: ax.isCompass ? '#fff' : 'rgba(232,228,220,0.75)', borderRadius: '99px' }}>
                   {AXIS_ICONS[ax.id]} {AXIS_LABELS[ax.id]}{ax.gap > 0 ? ` +${ax.gap}` : ''}
                 </span>
               ))}
@@ -881,11 +881,11 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
     return (
       <div style={{ padding: '40px 20px', textAlign: 'center' }}>
         <div style={{ fontSize: '48px', marginBottom: '16px' }}>✓</div>
-        <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#15803d', margin: '0 0 8px' }}>相談リクエストを送りました</h2>
-        <p style={{ fontSize: '14px', color: '#374151', margin: '0 0 24px', lineHeight: '1.7' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#34d399', margin: '0 0 8px' }}>相談リクエストを送りました</h2>
+        <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.75)', margin: '0 0 24px', lineHeight: '1.7' }}>
           このガイドからの返答をお待ちください。<br />連絡先にご連絡が届きます。
         </p>
-        <button onClick={() => setSubmitted(false)} style={{ padding: '10px 24px', background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}>
+        <button onClick={() => setSubmitted(false)} style={{ padding: '10px 24px', background: 'rgba(10,15,30,0.45)', color: 'rgba(232,228,220,0.75)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}>
           別のリクエストを送る
         </button>
       </div>
@@ -895,8 +895,8 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
   return (
     <div style={{ maxWidth: '520px' }}>
       {/* ① 相談の流れ 3ステップ */}
-      <div style={{ background: '#f9fafb', borderRadius: '16px', padding: '20px', marginBottom: '20px' }}>
-        <div style={{ fontSize: '10px', fontWeight: '800', color: '#9ca3af', letterSpacing: '.12em', marginBottom: '14px', textTransform: 'uppercase' }}>相談の流れ</div>
+      <div style={{ background: 'rgba(10,15,30,0.50)', borderRadius: '16px', padding: '20px', marginBottom: '20px', backdropFilter: 'blur(8px)', border: '1px solid rgba(232,228,220,0.10)' }}>
+        <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(232,228,220,0.40)', letterSpacing: '.12em', marginBottom: '14px', textTransform: 'uppercase' }}>相談の流れ</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {[
             { n: '1', label: 'リクエストを送る', desc: 'このフォームで希望日時と連絡先を送信します' },
@@ -906,8 +906,8 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
             <div key={step.n} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
               <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#111', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', flexShrink: 0, marginTop: '1px' }}>{step.n}</span>
               <div>
-                <div style={{ fontSize: '14px', fontWeight: '700', color: '#111', marginBottom: '2px' }}>{step.label}</div>
-                <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: '1.5' }}>{step.desc}</div>
+                <div style={{ fontSize: '14px', fontWeight: '700', color: 'rgba(232,228,220,0.90)', marginBottom: '2px' }}>{step.label}</div>
+                <div style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', lineHeight: '1.5' }}>{step.desc}</div>
               </div>
             </div>
           ))}
@@ -918,15 +918,15 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
       {provider.trial_available && (
         <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '14px', padding: '16px 18px', marginBottom: '20px' }}>
           <div style={{ fontSize: '13px', fontWeight: '800', color: '#b45309', marginBottom: '4px' }}>🎁 まずお試しから始めることができます</div>
-          <p style={{ fontSize: '13px', color: '#374151', margin: 0, lineHeight: '1.6' }}>{provider.trial_desc || '初回お試し・無料相談を提供しています。まずは気軽にご連絡ください。'}</p>
+          <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', margin: 0, lineHeight: '1.6' }}>{provider.trial_desc || '初回お試し・無料相談を提供しています。まずは気軽にご連絡ください。'}</p>
         </div>
       )}
 
       {/* ③ 初回セッション説明 */}
       {provider.first_session_desc && (
-        <div style={{ border: '1.5px solid #e5e7eb', borderRadius: '14px', padding: '16px 18px', marginBottom: '20px', background: '#fff' }}>
-          <div style={{ fontSize: '10px', fontWeight: '800', color: '#9ca3af', letterSpacing: '.1em', marginBottom: '8px', textTransform: 'uppercase' }}>初回はこんな内容です</div>
-          <p style={{ fontSize: '13px', color: '#374151', margin: 0, lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{provider.first_session_desc}</p>
+        <div style={{ border: '1px solid rgba(232,228,220,0.15)', borderRadius: '14px', padding: '16px 18px', marginBottom: '20px', background: 'rgba(10,15,30,0.65)', backdropFilter: 'blur(8px)' }}>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(232,228,220,0.40)', letterSpacing: '.1em', marginBottom: '8px', textTransform: 'uppercase' }}>初回はこんな内容です</div>
+          <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', margin: 0, lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{provider.first_session_desc}</p>
         </div>
       )}
 
@@ -937,13 +937,13 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
             <p style={{ fontSize: '12px', fontWeight: '700', color: '#2563eb', margin: 0 }}>📎 以下のMe Scanデータがこのガイドに送られます</p>
             <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', flexShrink: 0 }}>
               <input type="checkbox" checked={includeMeScan} onChange={e => setIncludeMeScan(e.target.checked)} style={{ accentColor: '#2563eb' }} />
-              <span style={{ fontSize: '12px', color: '#374151' }}>送る</span>
+              <span style={{ fontSize: '12px', color: 'rgba(232,228,220,0.75)' }}>送る</span>
             </label>
           </div>
           {meScanSummary.map((line, i) => (
             <p key={i} style={{ fontSize: '13px', color: '#1e40af', margin: i < meScanSummary.length - 1 ? '0 0 4px' : '0', fontWeight: i === 0 ? '700' : '400' }}>{line}</p>
           ))}
-          {!includeMeScan && <p style={{ fontSize: '12px', color: '#9ca3af', margin: '8px 0 0' }}>チェックを外したためデータは送られません。</p>}
+          {!includeMeScan && <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.40)', margin: '8px 0 0' }}>チェックを外したためデータは送られません。</p>}
         </div>
       )}
 
@@ -956,16 +956,16 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
       {/* プログラム選択 */}
       {services && services.length > 0 && (
         <div style={{ marginBottom: '20px' }}>
-          <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', display: 'block', marginBottom: '8px' }}>相談したいプログラム（任意）</label>
+          <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '8px' }}>相談したいプログラム（任意）</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', border: `1.5px solid ${!selectedService ? '#111' : '#e5e7eb'}`, borderRadius: '10px', cursor: 'pointer' }}>
               <input type="radio" name="menu" checked={!selectedService} onChange={() => onServiceSelect(null)} style={{ accentColor: '#111' }} />
-              <span style={{ fontSize: '13px', color: '#374151' }}>まず話を聞いてみたい（プログラム未定）</span>
+              <span style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)' }}>まず話を聞いてみたい（プログラム未定）</span>
             </label>
             {services.map(s => (
               <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', border: `1.5px solid ${selectedService?.id === s.id ? '#111' : '#e5e7eb'}`, borderRadius: '10px', cursor: 'pointer' }}>
                 <input type="radio" name="menu" checked={selectedService?.id === s.id} onChange={() => onServiceSelect(s)} style={{ accentColor: '#111' }} />
-                <span style={{ flex: 1, fontSize: '13px', color: '#374151' }}>{s.name}{s.duration ? ` (${s.duration})` : ''}</span>
+                <span style={{ flex: 1, fontSize: '13px', color: 'rgba(232,228,220,0.75)' }}>{s.name}{s.duration ? ` (${s.duration})` : ''}</span>
                 <span style={{ fontSize: '13px', fontWeight: '700', color: '#111', flexShrink: 0 }}>¥{s.price.toLocaleString()}</span>
               </label>
             ))}
@@ -975,36 +975,36 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div>
-          <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', display: 'block', marginBottom: '4px' }}>お名前（姓名） *</label>
-          <input value={formState.name} onChange={e => setFormState(p => ({ ...p, name: e.target.value }))} placeholder="山田 太郎" style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} required />
+          <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '4px' }}>お名前（姓名） *</label>
+          <input value={formState.name} onChange={e => setFormState(p => ({ ...p, name: e.target.value }))} placeholder="山田 太郎" style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} required />
         </div>
         <div>
-          <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', display: 'block', marginBottom: '4px' }}>
-            メールアドレス <span style={{ fontWeight: 400, color: '#374151' }}>（電話番号がある場合は省略可）</span>
+          <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '4px' }}>
+            メールアドレス <span style={{ fontWeight: 400, color: 'rgba(232,228,220,0.75)' }}>（電話番号がある場合は省略可）</span>
           </label>
           <input
             type="email"
             value={formState.email}
             onChange={e => setFormState(p => ({ ...p, email: e.target.value }))}
             placeholder="example@email.com"
-            style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}
           />
         </div>
         <div>
-          <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', display: 'block', marginBottom: '4px' }}>
-            電話番号 <span style={{ fontWeight: 400, color: '#374151' }}>（メールアドレスがある場合は省略可）</span>
+          <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '4px' }}>
+            電話番号 <span style={{ fontWeight: 400, color: 'rgba(232,228,220,0.75)' }}>（メールアドレスがある場合は省略可）</span>
           </label>
           <input
             type="tel"
             value={formState.phone}
             onChange={e => setFormState(p => ({ ...p, phone: e.target.value }))}
             placeholder="090-0000-0000"
-            style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}
           />
-          <p style={{ fontSize: '11px', color: '#374151', margin: '4px 0 0' }}>メールアドレス・電話番号のどちらか一方は必須です。</p>
+          <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.75)', margin: '4px 0 0' }}>メールアドレス・電話番号のどちらか一方は必須です。</p>
         </div>
         <div>
-          <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', display: 'block', marginBottom: '6px' }}>希望日時（第1希望）*</label>
+          <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '6px' }}>希望日時（第1希望）*</label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <input type="date" value={formState.date} min={today} onChange={e => setFormState(p => ({ ...p, date: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #111', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} required />
             <select value={formState.time} onChange={e => setFormState(p => ({ ...p, time: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #111', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} required>
@@ -1014,28 +1014,28 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
           </div>
         </div>
         <div>
-          <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', display: 'block', marginBottom: '6px' }}>希望日時（第2希望）<span style={{ fontWeight: '400', color: '#374151' }}>任意</span></label>
+          <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '6px' }}>希望日時（第2希望）<span style={{ fontWeight: '400', color: 'rgba(232,228,220,0.75)' }}>任意</span></label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <input type="date" value={formState.date2} min={today} onChange={e => setFormState(p => ({ ...p, date2: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} />
-            <select value={formState.time2} onChange={e => setFormState(p => ({ ...p, time2: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}>
+            <input type="date" value={formState.date2} min={today} onChange={e => setFormState(p => ({ ...p, date2: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} />
+            <select value={formState.time2} onChange={e => setFormState(p => ({ ...p, time2: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}>
               <option value="">時間を選択</option>
               {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
         </div>
         <div>
-          <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', display: 'block', marginBottom: '6px' }}>希望日時（第3希望）<span style={{ fontWeight: '400', color: '#374151' }}>任意</span></label>
+          <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '6px' }}>希望日時（第3希望）<span style={{ fontWeight: '400', color: 'rgba(232,228,220,0.75)' }}>任意</span></label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <input type="date" value={formState.date3} min={today} onChange={e => setFormState(p => ({ ...p, date3: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} />
-            <select value={formState.time3} onChange={e => setFormState(p => ({ ...p, time3: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}>
+            <input type="date" value={formState.date3} min={today} onChange={e => setFormState(p => ({ ...p, date3: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} />
+            <select value={formState.time3} onChange={e => setFormState(p => ({ ...p, time3: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}>
               <option value="">時間を選択</option>
               {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
         </div>
         <div>
-          <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151', display: 'block', marginBottom: '4px' }}>このガイドに一番聞きたいこと（任意）</label>
-          <textarea value={formState.message} onChange={e => setFormState(p => ({ ...p, message: e.target.value }))} placeholder="今の状況や悩み、気になることがあれば教えてください" rows={3} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', resize: 'vertical' }} />
+          <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '4px' }}>このガイドに一番聞きたいこと（任意）</label>
+          <textarea value={formState.message} onChange={e => setFormState(p => ({ ...p, message: e.target.value }))} placeholder="今の状況や悩み、気になることがあれば教えてください" rows={3} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', resize: 'vertical' }} />
         </div>
         {formError && <p style={{ fontSize: '13px', color: '#ef4444', margin: 0 }}>{formError}</p>}
         <button type="submit" disabled={submitting} style={{ padding: '14px', background: submitting ? '#9ca3af' : '#111', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: submitting ? 'not-allowed' : 'pointer' }}>
@@ -1045,9 +1045,9 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
 
       {/* キャンセルポリシー */}
       {provider.cancellation_policy && (
-        <div style={{ marginTop: '20px', padding: '14px 16px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px' }}>
-          <div style={{ fontSize: '10px', fontWeight: '800', color: '#9ca3af', letterSpacing: '.1em', marginBottom: '6px', textTransform: 'uppercase' }}>キャンセルポリシー</div>
-          <p style={{ fontSize: '12px', color: '#6b7280', margin: 0, lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{provider.cancellation_policy}</p>
+        <div style={{ marginTop: '20px', padding: '14px 16px', background: 'rgba(10,15,30,0.50)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '12px', backdropFilter: 'blur(8px)' }}>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(232,228,220,0.40)', letterSpacing: '.1em', marginBottom: '6px', textTransform: 'uppercase' }}>キャンセルポリシー</div>
+          <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: 0, lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{provider.cancellation_policy}</p>
         </div>
       )}
     </div>
@@ -1192,10 +1192,10 @@ function ProviderPageContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  if (loading) return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: '#9ca3af' }}>読み込み中…</p></div>;
+  if (loading) return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: 'rgba(232,228,220,0.40)' }}>読み込み中…</p></div>;
   if (!provider) return (
     <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
-      <p style={{ color: '#374151', fontWeight: '700' }}>掲載者が見つかりませんでした。</p>
+      <p style={{ color: 'rgba(232,228,220,0.75)', fontWeight: '700' }}>掲載者が見つかりませんでした。</p>
       <a href="/search" style={{ padding: '10px 20px', background: '#111', color: '#fff', borderRadius: '10px', textDecoration: 'none' }}>サービスを探す</a>
     </div>
   );
@@ -1230,7 +1230,7 @@ function ProviderPageContent() {
                 ¥{provider.price_from.toLocaleString()}〜
               </span>
             )}
-            <button onClick={() => { setActiveTab('consult'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '12px 24px', background: '#fff', color: '#111', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
+            <button onClick={() => { setActiveTab('consult'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '12px 24px', background: 'rgba(232,228,220,0.9)', color: '#0a0f1e', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
               このガイドに相談する
             </button>
             <button onClick={toggleFavorite} title={isFavorited ? 'お気に入りから削除' : 'お気に入りに追加'} style={{ padding: '12px 16px', background: isFavorited ? 'rgba(201,168,76,0.85)' : 'rgba(255,255,255,0.15)', color: '#fff', border: `1.5px solid ${isFavorited ? '#c9a84c' : 'rgba(255,255,255,0.4)'}`, borderRadius: '12px', fontSize: '18px', cursor: 'pointer', backdropFilter: 'blur(4px)', lineHeight: 1 }}>
@@ -1284,7 +1284,7 @@ function ProviderPageContent() {
 
 export default function ProviderPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>読み込み中…</div>}>
+    <Suspense fallback={<div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(232,228,220,0.40)' }}>読み込み中…</div>}>
       <ProviderPageContent />
     </Suspense>
   );

@@ -121,7 +121,7 @@ export function LocationPrompt({ accessToken }) {
           <p style={{ margin: '0 0 10px', fontSize: '14px', fontWeight: 700, color: '#0a0f1e', lineHeight: 1.6 }}>
             近くのサービスを優先表示しますか？
           </p>
-          <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#6b7280', lineHeight: 1.65 }}>
+          <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'rgba(232,228,220,0.55)', lineHeight: 1.65 }}>
             市区町村レベルで設定すると、通いやすいサービスが上位に表示されます。
             現在地を使う場合、座標はお使いの端末内のみに保存し、外部サービスへの送信はOpenStreetMapへの変換1回のみです。
           </p>
@@ -137,12 +137,12 @@ export function LocationPrompt({ accessToken }) {
             </button>
             <button onClick={() => setStep('manual')} style={{
               padding: '11px 20px', borderRadius: '10px',
-              border: '1.5px solid #e5e7eb', background: '#fff',
-              fontWeight: 700, fontSize: '14px', cursor: 'pointer', color: '#374151',
+              border: '1px solid rgba(232,228,220,0.15)', background: 'rgba(10,15,30,0.65)',
+              fontWeight: 700, fontSize: '14px', cursor: 'pointer', color: 'rgba(232,228,220,0.75)',
             }}>
               🗾 都道府県・市区町村を選ぶ
             </button>
-            <button onClick={handleSkip} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '12px', cursor: 'pointer', textAlign: 'left', padding: '4px 0' }}>
+            <button onClick={handleSkip} style={{ background: 'none', border: 'none', color: 'rgba(232,228,220,0.40)', fontSize: '12px', cursor: 'pointer', textAlign: 'left', padding: '4px 0' }}>
               あとで設定する →
             </button>
           </div>
@@ -152,14 +152,14 @@ export function LocationPrompt({ accessToken }) {
           <p style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: 700, color: '#0a0f1e' }}>エリアを選択</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <select value={selPref} onChange={e => { setSelPref(e.target.value); setSelCity(''); }} style={{
-              padding: '10px 12px', borderRadius: '8px', border: '1.5px solid #e5e7eb', fontSize: '14px', background: '#fff',
+              padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', background: 'rgba(10,15,30,0.65)',
             }}>
               <option value="">都道府県を選ぶ</option>
               {PREFECTURES.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
             {selPref && (
               <select value={selCity} onChange={e => setSelCity(e.target.value)} style={{
-                padding: '10px 12px', borderRadius: '8px', border: '1.5px solid #e5e7eb', fontSize: '14px', background: '#fff',
+                padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', background: 'rgba(10,15,30,0.65)',
               }}>
                 <option value="">市区町村を選ぶ（任意）</option>
                 {cityOptions.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
@@ -168,15 +168,15 @@ export function LocationPrompt({ accessToken }) {
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={handleManualSave} disabled={!selPref} style={{
                 flex: 1, padding: '11px', borderRadius: '8px', border: 'none',
-                background: selPref ? '#c9a84c' : '#f3f4f6',
-                color: selPref ? '#0a0f1e' : '#9ca3af',
+                background: selPref ? '#c9a84c' : 'rgba(10,15,30,0.45)',
+                color: selPref ? '#0a0f1e' : 'rgba(232,228,220,0.40)',
                 fontWeight: 700, fontSize: '14px', cursor: selPref ? 'pointer' : 'not-allowed',
               }}>
                 設定する
               </button>
               <button onClick={() => setStep('top')} style={{
-                padding: '11px 16px', borderRadius: '8px', border: '1.5px solid #e5e7eb',
-                background: '#fff', color: '#6b7280', fontSize: '14px', cursor: 'pointer',
+                padding: '11px 16px', borderRadius: '8px', border: '1px solid rgba(232,228,220,0.15)',
+                background: 'rgba(10,15,30,0.65)', color: 'rgba(232,228,220,0.55)', fontSize: '14px', cursor: 'pointer',
               }}>
                 戻る
               </button>

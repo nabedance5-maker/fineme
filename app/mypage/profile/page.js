@@ -161,19 +161,19 @@ export default function MypageProfilePage() {
                   type="email"
                   value={email}
                   readOnly
-                  style={{ background: '#f9fafb', color: '#6b7280' }}
+                  style={{ background: 'rgba(10,15,30,0.50)', color: 'rgba(232,228,220,0.55)' }}
                 />
               </label>
 
               {/* エリア設定 */}
-              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '20px', marginTop: '4px' }}>
-                <p style={{ fontSize: '13px', fontWeight: 700, color: '#374151', margin: '0 0 4px' }}>📍 お住まいのエリア</p>
-                <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 12px' }}>設定すると、検索結果や診断結果で近くのサービスが優先表示されます。引越し時などはここから変更できます。</p>
+              <div style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px' }}>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 4px' }}>📍 お住まいのエリア</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 12px' }}>設定すると、検索結果や診断結果で近くのサービスが優先表示されます。引越し時などはここから変更できます。</p>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <select
                     value={area}
                     onChange={e => { setArea(e.target.value); setCity(''); }}
-                    style={{ padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', width: '140px', boxSizing: 'border-box', background: '#fff' }}
+                    style={{ padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', fontSize: '14px', width: '140px', boxSizing: 'border-box', background: 'rgba(10,15,30,0.65)'}}
                   >
                     <option value="">都道府県</option>
                     {PREFECTURES.map(p => (
@@ -184,7 +184,7 @@ export default function MypageProfilePage() {
                     value={city}
                     onChange={e => setCity(e.target.value)}
                     disabled={!area}
-                    style={{ padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', flex: 1, minWidth: '140px', boxSizing: 'border-box', background: '#fff' }}
+                    style={{ padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', fontSize: '14px', flex: 1, minWidth: '140px', boxSizing: 'border-box', background: 'rgba(10,15,30,0.65)'}}
                   >
                     <option value="">{area ? '市区町村を選ぶ（任意）' : '都道府県を先に選択'}</option>
                     {cityOptions.map(c => (
@@ -195,53 +195,53 @@ export default function MypageProfilePage() {
               </div>
 
               {/* 予約者情報 */}
-              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '20px', marginTop: '4px' }}>
-                <p style={{ fontSize: '13px', fontWeight: 700, color: '#374151', margin: '0 0 4px' }}>予約者情報</p>
-                <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 14px' }}>予約が成立した際に掲載者へ公開されます。任意入力ですが、入力しておくとスムーズです。</p>
+              <div style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px' }}>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 4px' }}>予約者情報</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>予約が成立した際に掲載者へ公開されます。任意入力ですが、入力しておくとスムーズです。</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#374151' }}>姓</label>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(232,228,220,0.75)' }}>姓</label>
                     <input
                       type="text"
                       placeholder="山田"
                       value={lastName}
                       onChange={e => setLastName(e.target.value)}
-                      style={{ padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                      style={{ padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                     />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#374151' }}>名</label>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(232,228,220,0.75)' }}>名</label>
                     <input
                       type="text"
                       placeholder="太郎"
                       value={firstName}
                       onChange={e => setFirstName(e.target.value)}
-                      style={{ padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                      style={{ padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
                     />
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#374151' }}>電話番号</label>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(232,228,220,0.75)' }}>電話番号</label>
                   <input
                     type="tel"
                     placeholder="090-0000-0000"
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
-                    style={{ padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box', maxWidth: '240px' }}
+                    style={{ padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box', maxWidth: '240px' }}
                   />
                 </div>
               </div>
 
               {/* LINE 連携セクション */}
-              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '20px', marginTop: '4px' }}>
-                <p style={{ fontSize: '13px', fontWeight: 700, color: '#374151', margin: '0 0 6px' }}>LINE 連携</p>
-                <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 14px' }}>連携すると、診断完了後に変容リマインドがLINEで届きます。</p>
+              <div style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px' }}>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 6px' }}>LINE 連携</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>連携すると、診断完了後に変容リマインドがLINEで届きます。</p>
                 {lineUserId ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(6,200,99,0.07)', border: '1px solid rgba(6,200,99,0.3)', borderRadius: '10px', padding: '10px 14px' }}>
                     <span style={{ fontSize: '18px' }}>✅</span>
                     <div>
                       <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#059669' }}>LINE連携済み</p>
-                      <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>リマインドが届く設定になっています</p>
+                      <p style={{ margin: 0, fontSize: '11px', color: 'rgba(232,228,220,0.55)' }}>リマインドが届く設定になっています</p>
                     </div>
                   </div>
                 ) : (
@@ -259,9 +259,9 @@ export default function MypageProfilePage() {
               </div>
 
               {/* 掲載者への公開設定 */}
-              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '20px', marginTop: '4px' }}>
-                <p style={{ fontSize: '13px', fontWeight: 700, color: '#374151', margin: '0 0 12px' }}>掲載者への公開設定</p>
-                <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 14px' }}>オンにした項目は、予約が承認された掲載者に公開されます。</p>
+              <div style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px' }}>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 12px' }}>掲載者への公開設定</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>オンにした項目は、予約が承認された掲載者に公開されます。</p>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', marginBottom: '12px' }}>
                   <input
                     type="checkbox"
