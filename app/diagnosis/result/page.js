@@ -47,7 +47,7 @@ export default function DiagnosisResultPage() {
       .compass-override-chip.active { background: #c9a84c; color: #0a0f1e; border-color: #c9a84c; box-shadow: 0 2px 10px rgba(201,168,76,0.4); }
 
       /* ── Radar chart card ── */
-      .radar-card { background: var(--color-bg-parchment, #f5f0e8); border: 1px solid rgba(201,168,76,0.3); border-radius: 14px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.05); }
+      .radar-card { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.3); border-radius: 14px; padding: 24px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.4); }
       .radar-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: 16px; font-weight: 700; color: var(--color-fg, #0a0f1e); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
       .radar-subtitle { font-size: 12px; color: var(--color-muted, #7a6e65); margin: 0 0 20px; }
       .radar-legend { display: flex; align-items: center; gap: 20px; justify-content: center; margin-top: 16px; }
@@ -56,7 +56,7 @@ export default function DiagnosisResultPage() {
 
       /* ── Vector cards (priority categories) ── */
       .vector-list { display: flex; flex-direction: column; gap: 12px; }
-      .vector-item { background: #fff; border: 1px solid rgba(201,168,76,0.25); border-radius: 12px; padding: 16px 18px; }
+      .vector-item { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.25); border-radius: 12px; padding: 16px 18px; }
       .vector-item.priority-1 { border-color: rgba(201,168,76,0.5); background: var(--color-bg-dark, #0a0f1e); }
       .vector-item.priority-1 .vector-item-name { color: #fff; }
       .vector-item.priority-1 .vector-bar-label { color: rgba(255,255,255,.5); }
@@ -67,7 +67,7 @@ export default function DiagnosisResultPage() {
       .tier-1 { background: rgba(201,168,76,0.15); color: #c9a84c; border: 1px solid rgba(201,168,76,.3); }
       .tier-2 { background: #d1fae5; color: #065f46; }
       .tier-3 { background: #fef3c7; color: #92400e; }
-      .tier-4 { background: #f3f4f6; color: #374151; }
+      .tier-4 { background: rgba(232,228,220,0.10); color: rgba(232,228,220,0.60); }
       .vector-bar-wrap { display: flex; align-items: center; gap: 10px; }
       .vector-bar-label { font-size: 11px; color: var(--color-muted, #7a6e65); width: 36px; text-align: right; flex-shrink: 0; }
       .vector-bar-track { flex: 1; height: 8px; background: rgba(10,15,30,0.08); border-radius: 99px; overflow: hidden; position: relative; }
@@ -89,7 +89,7 @@ export default function DiagnosisResultPage() {
       .goal-layer-text { font-size: 14px; font-weight: 700; color: rgba(255,255,255,.88); margin: 0; line-height: 1.5; }
 
       /* ── Barrier card ── */
-      .result-card { background: #fff; border: 1px solid rgba(201,168,76,0.25); border-radius: 14px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
+      .result-card { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.25); border-radius: 14px; padding: 24px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.4); }
       .result-card-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: 16px; font-weight: 700; color: var(--color-fg, #0a0f1e); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
       .result-card-subtitle { font-size: 12px; color: var(--color-muted, #7a6e65); margin: 0 0 18px; line-height: 1.5; }
       .insight-list { display: flex; flex-direction: column; gap: 12px; }
@@ -98,14 +98,14 @@ export default function DiagnosisResultPage() {
       .insight-text { font-size: 14px; font-weight: 800; color: var(--color-fg, #0a0f1e); margin: 0 0 4px; line-height: 1.5; }
       .insight-sub { font-size: 13px; color: var(--color-muted, #7a6e65); margin: 0; line-height: 1.7; }
       .trait-list { display: flex; flex-direction: column; gap: 10px; }
-      .trait-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--color-fg, #0a0f1e); line-height: 1.55; padding: 12px 14px; background: var(--color-bg-parchment, #f5f0e8); border-radius: 10px; }
+      .trait-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: #e8e4dc; line-height: 1.55; padding: 12px 14px; background: rgba(232,228,220,0.06); border-radius: 10px; }
       .trait-check { width: 20px; height: 20px; background: rgba(201,168,76,0.2); color: #c9a84c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; flex-shrink: 0; margin-top: 1px; }
 
       /* ── Provider match ── */
       .pmc-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1.5px solid rgba(201,168,76,0.25); border-radius: 12px; margin-bottom: 10px; text-decoration: none; color: inherit; transition: border-color .12s, box-shadow .12s; }
       .pmc-card:hover { border-color: #c9a84c; box-shadow: 0 2px 12px rgba(201,168,76,.15); }
       .pmc-card.top { border-color: rgba(201,168,76,0.5); background: rgba(201,168,76,0.04); }
-      .pmc-photo { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: #f3f4f6; display: flex; align-items: center; justify-content: center; }
+      .pmc-photo { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: rgba(232,228,220,0.10); display: flex; align-items: center; justify-content: center; }
       .pmc-photo img { width: 100%; height: 100%; object-fit: cover; }
       .pmc-photo-icon { font-size: 24px; }
       .pmc-body { flex: 1; min-width: 0; }
@@ -131,9 +131,9 @@ export default function DiagnosisResultPage() {
       .navi-btn-arrow { font-size: 18px; color: rgba(201,168,76,0.5); flex-shrink: 0; }
 
       /* ── Bottom CTA ── */
-      .cta-block { background: #fff; border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 24px; margin-top: 8px; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
+      .cta-block { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 24px; margin-top: 8px; box-shadow: 0 4px 24px rgba(0,0,0,.4); }
       .cta-section { display: flex; flex-direction: column; gap: 10px; }
-      .cta-btn-secondary { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; background: #fff; color: var(--color-fg, #0a0f1e); font-size: 15px; font-weight: 700; border: 1.5px solid rgba(201,168,76,0.3); border-radius: 10px; text-decoration: none; transition: border-color .12s; cursor: pointer; }
+      .cta-btn-secondary { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; background: rgba(10,15,30,0.50); color: #e8e4dc; font-size: 15px; font-weight: 700; border: 1.5px solid rgba(201,168,76,0.3); border-radius: 10px; text-decoration: none; transition: border-color .12s; cursor: pointer; }
       .cta-btn-secondary:hover { border-color: #c9a84c; }
       .cta-divider { height: 1px; background: rgba(201,168,76,0.1); margin: 4px 0; }
       .cta-btn-ghost { display: block; text-align: center; padding: 10px 20px; color: var(--color-muted, #7a6e65); font-size: 13px; text-decoration: none; }
@@ -742,8 +742,8 @@ export default function DiagnosisResultPage() {
     <>
       <style>{`
         .result-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
-        .result-sidenav { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
-        .result-sidenav .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: #374151; text-decoration: none; transition: background .15s; }
+        .result-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        .result-sidenav .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
         .result-sidenav .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
         .result-sidenav .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
         @media (max-width: 640px) {

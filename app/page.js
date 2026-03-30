@@ -405,7 +405,7 @@ export default function HomePage() {
         .ba-dot.active { background: #c9a84c; }
 
         /* ── Steps section ── */
-        .steps-section { padding: 72px 20px; background: rgba(245,240,232,0.68); }
+        .steps-section { padding: 72px 20px; background: rgba(10,15,30,0.50); }
         .steps-inner { max-width: 800px; margin: 0 auto; }
         .steps-eyebrow { font-size: 11px; font-weight: 800; color: var(--color-gold, #c9a84c); letter-spacing: .1em; text-transform: uppercase; margin: 0 0 10px; text-align: center; }
         .steps-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(20px, 3.5vw, 26px); font-weight: 700; color: var(--color-fg, #0a0f1e); text-align: center; margin: 0 0 8px; }
@@ -438,7 +438,7 @@ export default function HomePage() {
         .sample-vec-gap { font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.8); width: 32px; text-align: right; flex-shrink: 0; }
 
         /* ── Stories ── */
-        .stories-section { padding: 64px 20px; background: rgba(245,240,232,0.68); }
+        .stories-section { padding: 64px 20px; background: rgba(10,15,30,0.50); }
         .stories-inner { max-width: 880px; margin: 0 auto; }
         .stories-eyebrow { font-size: 11px; font-weight: 800; color: var(--color-gold, #c9a84c); letter-spacing: .1em; text-transform: uppercase; margin: 0 0 10px; text-align: center; }
         .stories-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(18px,3vw,24px); font-weight: 700; color: var(--color-fg, #0a0f1e); text-align: center; margin: 0 0 32px; }
@@ -523,7 +523,7 @@ export default function HomePage() {
         {/* ── 3ステップ or 診断済みパネル ── */}
         {diagnosis && loggedIn ? (
           /* 診断済み：Map / Navi へのナビゲーション */
-          <section className="steps-section" style={{ background: 'rgba(248,250,252,0.65)' }}>
+          <section className="steps-section" style={{ background: 'rgba(10,15,30,0.55)' }}>
             <div className="steps-inner">
               <p className="steps-eyebrow">あなたの変容の旅、進行中</p>
               <h2 className="steps-title">New Me Mapが生成されています</h2>

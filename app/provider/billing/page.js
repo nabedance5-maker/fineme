@@ -18,7 +18,7 @@ export default function BillingPage() {
     style.textContent = `
       .provider-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start}
       .kpi-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-      .kpi-card{padding:20px;border:1px solid var(--color-border);border-radius:14px;background:#fff}
+      .kpi-card{padding:20px;border:1px solid rgba(232,228,220,0.15);border-radius:14px;background:rgba(10,15,30,0.65);backdrop-filter:blur(8px)}
       .kpi-label{color:#6b7280;font-size:12px;margin-bottom:4px}
       .kpi-value{font-weight:800;font-size:26px}
       .kpi-sub{font-size:11px;color:#9ca3af;margin-top:2px}
@@ -34,7 +34,7 @@ export default function BillingPage() {
       .badge-paid{background:#d1fae5;color:#065f46}
       .badge-referral{background:#ede9fe;color:#5b21b6}
       .referral-list{display:flex;flex-direction:column;gap:8px}
-      .referral-item{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border:1px solid var(--color-border);border-radius:10px;background:#fff}
+      .referral-item{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border:1px solid rgba(232,228,220,0.15);border-radius:10px;background:rgba(10,15,30,0.65)}
       .referral-item-name{font-weight:600;font-size:14px}
       .referral-item-status{font-size:12px;color:#6b7280}
       .timeline{display:flex;flex-direction:column;gap:0}
@@ -44,7 +44,7 @@ export default function BillingPage() {
       .timeline-dot.done{background:#111}
       .timeline-dot.current{background:var(--color-primary,#111);animation:pulse 2s infinite}
       @keyframes pulse{0%,100%{box-shadow:0 0 0 2px rgba(17,24,39,.3)}50%{box-shadow:0 0 0 6px rgba(17,24,39,.1)}}
-      .copy-btn{font-size:11px;padding:4px 10px;border:1px solid var(--color-border);border-radius:6px;background:#f9fafb;cursor:pointer;transition:background .15s}
+      .copy-btn{font-size:11px;padding:4px 10px;border:1px solid rgba(232,228,220,0.15);border-radius:6px;background:rgba(10,15,30,0.45);color:#e8e4dc;cursor:pointer;transition:background .15s}
       .copy-btn:hover{background:#e5e7eb}
       @media(max-width:960px){.provider-grid{grid-template-columns:1fr}.kpi-row{grid-template-columns:1fr 1fr}}
       @media(max-width:540px){.kpi-row{grid-template-columns:1fr}}
@@ -330,7 +330,7 @@ export default function BillingPage() {
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <input id="referral-link" type="text" readOnly
-              style={{ flex: 1, minWidth: '240px', background: '#f9fafb', color: '#374151' }}
+              style={{ flex: 1, minWidth: '240px', background: 'rgba(10,15,30,0.50)', color: '#e8e4dc', border: '1px solid rgba(232,228,220,0.15)' }}
               defaultValue="読み込み中..." />
             <button className="copy-btn">コピー</button>
             <button id="share-referral-btn" className="btn btn-ghost">シェア</button>

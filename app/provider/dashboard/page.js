@@ -30,17 +30,17 @@ export default function ProviderDashboardPage() {
       .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
       .checkbox-item { display: flex; flex-direction: row; align-items: center; gap: 6px; font-size: 14px; text-align: left; }
       @media (max-width: 640px) { .checkbox-group { flex-direction: column; gap: 8px; } .checkbox-item { width: 100%; flex-direction: row; align-items: flex-start; } }
-      .stat-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; text-align: center; }
-      .stat-value { font-size: 32px; font-weight: 800; color: #111; }
+      .stat-card { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(232,228,220,0.15); border-radius: 12px; padding: 16px; text-align: center; }
+      .stat-value { font-size: 32px; font-weight: 800; color: #e8e4dc; }
       .stat-label { font-size: 12px; color: #6b7280; margin-top: 2px; }
-      .publish-toggle { display: flex; align-items: center; gap: 12px; padding: 16px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; }
+      .publish-toggle { display: flex; align-items: center; gap: 12px; padding: 16px; background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border-radius: 12px; border: 1px solid rgba(232,228,220,0.15); }
       .toggle-switch { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
       .toggle-switch input { opacity: 0; width: 0; height: 0; }
       .toggle-slider { position: absolute; inset: 0; background: #d1d5db; border-radius: 26px; cursor: pointer; transition: background .2s; }
       .toggle-slider:before { content:''; position: absolute; width: 18px; height: 18px; left: 4px; bottom: 4px; background: #fff; border-radius: 50%; transition: transform .2s; }
       .toggle-switch input:checked + .toggle-slider { background: #111; }
       .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); }
-      .referral-code-box { padding: 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; font-family: monospace; font-size: 18px; font-weight: 800; text-align: center; letter-spacing: 2px; }
+      .referral-code-box { padding: 16px; background: rgba(10,15,30,0.65); border: 1px solid rgba(232,228,220,0.15); border-radius: 12px; font-family: monospace; font-size: 18px; font-weight: 800; text-align: center; letter-spacing: 2px; color: #e8e4dc; }
     `;
     document.head.appendChild(style);
 

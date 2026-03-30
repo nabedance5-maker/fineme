@@ -49,16 +49,16 @@ export default function Navbar() {
       <style>{`
         .nav-links { display: flex; align-items: center; gap: 4px; }
         .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 8px; }
-        .hamburger span { display: block; width: 22px; height: 2px; background: #111; margin: 5px 0; border-radius: 2px; transition: all .2s; }
+        .hamburger span { display: block; width: 22px; height: 2px; background: #e8e4dc; margin: 5px 0; border-radius: 2px; transition: all .2s; }
         @media (max-width: 768px) {
           .nav-links { display: none; }
           .nav-links.is-open {
             display: flex; flex-direction: column; align-items: stretch; gap: 0;
             position: absolute; top: 64px; left: 0; right: 0;
-            background: rgba(245,240,232,0.97); border-bottom: 1px solid rgba(201,168,76,0.2);
-            padding: 8px 16px 16px; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            background: rgba(10,15,30,0.97); border-bottom: 1px solid rgba(201,168,76,0.2);
+            padding: 8px 16px 16px; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
           }
-          .nav-links a { padding: 12px 8px; border-bottom: 1px solid #f3f4f6; font-size: 15px; }
+          .nav-links a { padding: 12px 8px; border-bottom: 1px solid rgba(232,228,220,0.12); font-size: 15px; }
           .nav-links a:last-child { border-bottom: none; }
           .btn-diagnosis { text-align: center; margin-top: 4px; }
           .hamburger { display: block; }

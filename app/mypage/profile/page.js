@@ -269,7 +269,7 @@ export default function MypageProfilePage() {
                     onChange={e => setShareDiagnosis(e.target.checked)}
                     style={{ width: '18px', height: '18px', accentColor: '#2563eb', cursor: 'pointer' }}
                   />
-                  <span style={{ fontSize: '14px', color: '#111' }}>診断結果を公開する</span>
+                  <span style={{ fontSize: '14px', color: 'rgba(232,228,220,0.90)' }}>診断結果を公開する</span>
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
                   <input
@@ -278,7 +278,7 @@ export default function MypageProfilePage() {
                     onChange={e => setShareRoadmap(e.target.checked)}
                     style={{ width: '18px', height: '18px', accentColor: '#2563eb', cursor: 'pointer' }}
                   />
-                  <span style={{ fontSize: '14px', color: '#111' }}>変容ロードマップを公開する</span>
+                  <span style={{ fontSize: '14px', color: 'rgba(232,228,220,0.90)' }}>変容ロードマップを公開する</span>
                 </label>
               </div>
 
@@ -295,9 +295,9 @@ export default function MypageProfilePage() {
 
       <style>{`
         .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
-        .mypage-sidenav { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        .mypage-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
         @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav > * { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
-        .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: #374151; text-decoration: none; transition: background .15s; }
+        .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
         .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
         .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
         .profile-label { display: grid; grid-template-columns: 160px 1fr; align-items: center; gap: 12px; }
