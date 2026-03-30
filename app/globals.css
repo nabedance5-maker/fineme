@@ -98,7 +98,7 @@ button { font: inherit; }
 .hero p { color: rgba(255,255,255,0.6); max-width: 60ch; }
 
 /* ── Searchbar ── */
-.searchbar { display: grid; grid-template-columns: 1.5fr 1fr 1fr auto; gap: var(--sp-3); padding: var(--sp-4); background: #fff; border: 1px solid var(--color-border-gold); border-radius: var(--radius); box-shadow: var(--shadow-sm); color: #1a1410; text-shadow: none; }
+.searchbar { display: grid; grid-template-columns: 1.5fr 1fr 1fr auto; gap: var(--sp-3); padding: var(--sp-4); background: rgba(10,15,30,0.65); border: 1px solid var(--color-border-gold); border-radius: var(--radius); box-shadow: var(--shadow-sm); color: #e8e4dc; text-shadow: none; backdrop-filter: blur(8px); }
 .searchbar input, .searchbar select { padding: 10px 12px; border: 1px solid rgba(26,20,16,0.15); border-radius: 6px; background: #faf8f3; color: #1a1410; text-shadow: none; }
 
 /* ── Buttons ── */
@@ -164,7 +164,7 @@ input, select, textarea, option {
   color: #1a1410 !important;
   text-shadow: none !important;
 }
-.searchbar { color: #1a1410; text-shadow: none; }
+.searchbar { border-color: rgba(232,228,220,0.2); color: #e8e4dc; text-shadow: none; }
 
 /* ── text-shadow reset（ダーク系セクション） ── */
 .footer, .hp-hero, .hp-bottom-cta, .hp-step--accent,
@@ -244,65 +244,18 @@ input, select, textarea, option {
 .hp-bottom-cta { background: var(--color-bg-dark); padding: 96px 0; text-align: center; }
 .hp-bottom-cta__title { font-size: clamp(22px,4vw,36px); font-weight: 700; color: #fff; line-height: 1.4; margin: 0; }
 .hp-bottom-cta__sub { font-size: 14px; color: rgba(255,255,255,0.4); letter-spacing: .1em; margin: 0; }
-.hp-steps-section { background: rgba(245,240,232,0.68); }
-.hp-step { background: rgba(255,255,255,0.82); backdrop-filter: blur(4px); border-radius: var(--radius); padding: 28px 24px; border: 1px solid var(--color-border-gold); }
+.hp-steps-section { background: rgba(10,15,30,0.35); }
+.hp-step { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border-radius: var(--radius); padding: 28px 24px; border: 1px solid var(--color-border-gold); }
 .hp-step--accent { background: var(--color-bg-dark); }
 .hp-step--accent .hp-step__title { color: #fff; }
 .hp-step--accent .hp-step__desc { color: rgba(255,255,255,0.6); }
 .hp-step__title { font-size: 17px; font-weight: 700; color: var(--color-fg); margin: 0 0 8px; }
 .hp-step__desc { font-size: 13px; color: var(--color-muted); line-height: 1.7; margin: 0; }
-.hp-cat-section { background: rgba(245,240,232,0.68); }
-.hp-cat { background: rgba(255,255,255,0.78); backdrop-filter: blur(4px); border: 1px solid var(--color-border-gold); border-radius: var(--radius); padding: 24px 12px; text-decoration: none; transition: box-shadow .2s, transform .2s; }
+.hp-cat-section { background: rgba(10,15,30,0.35); }
+.hp-cat { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid var(--color-border-gold); border-radius: var(--radius); padding: 24px 12px; text-decoration: none; transition: box-shadow .2s, transform .2s; }
 .hp-cat:hover { box-shadow: var(--shadow-gold); transform: translateY(-2px); }
 .hp-cat__label { font-size: 13px; font-weight: 600; color: var(--color-fg); text-align: center; }
 
 /* ── Points badge ── */
 .points-badge { display: inline-flex; align-items: center; font-size: 12px; font-weight: 700; background: rgba(201,168,76,0.1); color: var(--color-gold); padding: 4px 10px; border-radius: 99px; border: 1px solid var(--color-border-gold); white-space: nowrap; }
 
-/* ================================================================
-   深海テーマ 文字補正: 白/薄色背景コンテキストでは暗い文字に自動切替
-   --color-fg / --color-muted をスコープ内で上書きすることで
-   var(--color-fg) を参照するすべての子孫が自動的に暗い文字になる
-   ================================================================ */
-
-/* A. globals.css 定義の白/薄色背景クラス */
-.hp-step:not(.hp-step--accent),
-.hp-steps-section,
-.hp-cat-section,
-.hp-cat {
-  --color-fg:     #1a1410;
-  --color-muted:  #4e4038;
-  --color-border: rgba(10,15,30,0.1);
-  text-shadow: none;
-}
-
-/* B. page.js <style>タグ内の白背景クラス (story-card 等) */
-.story-card {
-  --color-fg:    #1a1410;
-  --color-muted: #4e4038;
-  text-shadow: none;
-  color: #1a1410;
-}
-.story-before { color: #4e4038 !important; text-shadow: none !important; }
-.story-after  { color: #1a1410 !important; text-shadow: none !important; }
-.story-milestone { color: #1a1410 !important; text-shadow: none !important; }
-
-/* C. インラインstyleで白/薄色背景が指定されたコンテナ
-      CSS変数をスコープ上書きし、var(--color-fg)を使う子孫も自動補正 */
-[style*="background: rgba(255, 255, 255"],
-[style*="background: rgba(255,255,255"],
-[style*="background: #fff"],
-[style*="background:#fff"],
-[style*="background: #ffffff"],
-[style*="background: white"],
-[style*="background: #f9fafb"],
-[style*="background: #f3f4f6"],
-[style*="background: #faf8f3"],
-[style*="background: #fafafe"],
-[style*="background: rgb(255, 255, 255"] {
-  --color-fg:     #1a1410;
-  --color-muted:  #4e4038;
-  --color-border: rgba(10,15,30,0.1);
-  color: #1a1410;
-  text-shadow: none;
-}

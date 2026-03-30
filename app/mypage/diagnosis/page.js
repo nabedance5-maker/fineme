@@ -252,16 +252,16 @@ export default function MypageDiagnosisPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                       {stageStages.map(({ icon, title, sub, href }) => (
                         isApproaching ? (
-                          <Link key={title} href={href} style={{ display: 'block', textDecoration: 'none', padding: '14px', borderRadius: '12px', background: '#fff', border: '1.5px solid rgba(201,168,76,0.25)', transition: 'box-shadow .15s' }}>
+                          <Link key={title} href={href} style={{ display: 'block', textDecoration: 'none', padding: '14px', borderRadius: '12px', background: 'rgba(10,15,30,0.65)', backdropFilter: 'blur(8px)', border: '1.5px solid rgba(201,168,76,0.25)', transition: 'box-shadow .15s' }}>
                             <div style={{ fontSize: '22px', marginBottom: '6px' }}>{icon}</div>
-                            <div style={{ fontSize: '14px', fontWeight: 800, color: '#111', marginBottom: '3px' }}>{title}</div>
-                            <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.5 }}>{sub}</div>
+                            <div style={{ fontSize: '14px', fontWeight: 800, color: '#e8e4dc', marginBottom: '3px' }}>{title}</div>
+                            <div style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', lineHeight: 1.5 }}>{sub}</div>
                           </Link>
                         ) : (
-                          <div key={title} style={{ padding: '14px', borderRadius: '12px', background: '#f3f4f6', border: '1.5px solid #e5e7eb', opacity: 0.6 }}>
+                          <div key={title} style={{ padding: '14px', borderRadius: '12px', background: 'rgba(10,15,30,0.45)', border: '1px solid rgba(232,228,220,0.15)', opacity: 0.6 }}>
                             <div style={{ fontSize: '22px', marginBottom: '6px', filter: 'grayscale(1)' }}>{icon}</div>
-                            <div style={{ fontSize: '14px', fontWeight: 800, color: '#9ca3af', marginBottom: '3px' }}>{title}</div>
-                            <div style={{ fontSize: '12px', color: '#d1d5db', lineHeight: 1.5 }}>{sub}</div>
+                            <div style={{ fontSize: '14px', fontWeight: 800, color: 'rgba(232,228,220,0.40)', marginBottom: '3px' }}>{title}</div>
+                            <div style={{ fontSize: '12px', color: 'rgba(232,228,220,0.25)', lineHeight: 1.5 }}>{sub}</div>
                           </div>
                         )
                       ))}
@@ -305,33 +305,33 @@ export default function MypageDiagnosisPage() {
       <style>{`
         .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
         @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; margin-bottom: 8px; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; } }
-        .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: #374151; text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: #f3f4f6; }
-        .sidenav-link--active { background: #f3f4f6; font-weight: 700; color: #111; }
+        .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
+        .sidenav-link:hover { background: rgba(10,15,30,0.45); }
+        .sidenav-link--active { background: rgba(10,15,30,0.45); font-weight: 700; color: #e8e4dc; }
         .result-hero { padding: 24px; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); border-radius: 16px; margin-bottom: 16px; }
         .result-hero h2 { font-size: 18px; font-weight: 800; color: #fff !important; margin: 0 0 6px; line-height: 1.4; }
         .result-hero p { font-size: 13px; color: rgba(255,255,255,.75) !important; margin: 0; line-height: 1.6; }
         .result-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 12px; background: rgba(255,255,255,.2); color: #fff !important; border-radius: 99px; margin-bottom: 10px; }
         .type-badge { display: inline-block; font-size: 13px; font-weight: 800; padding: 6px 16px; border-radius: 99px; margin-bottom: 10px; color: #fff !important; }
-        .analysis-block { padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+        .analysis-block { padding: 12px 0; border-bottom: 1px solid rgba(232,228,220,0.1); }
         .analysis-block:last-child { border-bottom: none; }
         .analysis-label { font-size: 11px; font-weight: 700; color: #6366f1; text-transform: uppercase; letter-spacing: .05em; margin: 0 0 4px; }
-        .analysis-text { font-size: 14px; font-weight: 700; color: #111; margin: 0 0 2px; line-height: 1.5; }
+        .analysis-text { font-size: 14px; font-weight: 700; color: #e8e4dc; margin: 0 0 2px; line-height: 1.5; }
         .concern-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-        .concern-bar-label { font-size: 12px; width: 70px; flex-shrink: 0; color: #374151; }
-        .concern-bar-track { flex: 1; height: 6px; background: #f3f4f6; border-radius: 99px; overflow: hidden; }
+        .concern-bar-label { font-size: 12px; width: 70px; flex-shrink: 0; color: rgba(232,228,220,0.75); }
+        .concern-bar-track { flex: 1; height: 6px; background: rgba(10,15,30,0.45); border-radius: 99px; overflow: hidden; }
         .concern-bar-fill { height: 100%; border-radius: 99px; }
         .concern-bar-value { font-size: 11px; font-weight: 700; width: 40px; text-align: right; flex-shrink: 0; }
-        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f3f4f6; gap: 8px; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(232,228,220,0.1); gap: 8px; }
         .history-item:last-child { border-bottom: none; }
-        .history-date { font-size: 12px; color: #9ca3af; }
-        .history-type { font-size: 13px; font-weight: 700; color: #374151; }
+        .history-date { font-size: 12px; color: rgba(232,228,220,0.40); }
+        .history-type { font-size: 13px; font-weight: 700; color: rgba(232,228,220,0.75); }
         .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         @media(max-width:480px){ .action-grid { grid-template-columns: 1fr; } }
         .action-btn { display: block; text-align: center; padding: 13px 16px; border-radius: 12px; font-size: 14px; font-weight: 700; text-decoration: none; transition: opacity .15s; }
         .action-btn:hover { opacity: .85; }
         .action-btn-primary { background: #111; color: #fff !important; }
-        .action-btn-secondary { background: #fff; color: #111 !important; border: 1.5px solid #e5e7eb; }
+        .action-btn-secondary { background: rgba(10,15,30,0.65); color: #e8e4dc !important; border: 1px solid rgba(232,228,220,0.15); }
       `}</style>
     </main>
   );

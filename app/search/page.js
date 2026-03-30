@@ -68,15 +68,15 @@ function ProviderCard({ provider }) {
   return (
     <Link href={provider.entity_type === 'affiliate' ? `/affiliate/${provider.slug}` : `/provider/${provider.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
       <article style={{
-        border: '1.5px solid #e5e7eb', borderRadius: '16px', overflow: 'hidden',
-        background: '#fff', transition: 'box-shadow .15s', cursor: 'pointer',
+        border: '1px solid rgba(232,228,220,0.15)', borderRadius: '16px', overflow: 'hidden',
+        background: 'rgba(10,15,30,0.65)', backdropFilter: 'blur(8px)', transition: 'box-shadow .15s', cursor: 'pointer',
         height: '100%', display: 'flex', flexDirection: 'column',
-        color: '#1a1410', textShadow: 'none'
+        textShadow: 'none'
       }}
         onMouseEnter={e => e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,.10)'}
         onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
       >
-        <div style={{ height: '200px', overflow: 'hidden', background: '#f3f4f6', flexShrink: 0, position: 'relative' }}>
+        <div style={{ height: '200px', overflow: 'hidden', background: 'rgba(10,15,30,0.45)', flexShrink: 0, position: 'relative' }}>
           <img src={img} alt={provider.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           {provider.entity_type === 'affiliate' && (
             <span title="Finemeが精査した提携サービスです。掲載サービスと同じ基準でAIがマッチングしています。" style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '10px', fontWeight: '700', padding: '2px 7px', background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: '4px', letterSpacing: '0.05em', cursor: 'help' }}>PR</span>
@@ -90,7 +90,7 @@ function ProviderCard({ provider }) {
               </span>
             )}
             {provider.area && (
-              <span style={{ fontSize: '11px', padding: '3px 10px', background: '#f3f4f6', color: '#374151', borderRadius: '99px' }}>
+              <span style={{ fontSize: '11px', padding: '3px 10px', background: 'rgba(10,15,30,0.45)', color: 'rgba(232,228,220,0.75)', borderRadius: '99px' }}>
                 📍 {provider.area}
               </span>
             )}
@@ -107,7 +107,7 @@ function ProviderCard({ provider }) {
           )}
           {provider.catchphrase && (
             <p style={{
-              fontSize: '13px', color: '#6b7280', margin: '0 0 12px', lineHeight: '1.6',
+              fontSize: '13px', color: 'rgba(232,228,220,0.55)', margin: '0 0 12px', lineHeight: '1.6',
               display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', flex: 1
             }}>
               {provider.catchphrase}
@@ -115,8 +115,8 @@ function ProviderCard({ provider }) {
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
             {provider.price_from
-              ? <span style={{ fontSize: '15px', fontWeight: '800', color: '#111' }}>¥{provider.price_from.toLocaleString()}〜</span>
-              : <span style={{ fontSize: '13px', color: '#9ca3af' }}>要問合せ</span>
+              ? <span style={{ fontSize: '15px', fontWeight: '800', color: 'rgba(232,228,220,0.85)' }}>¥{provider.price_from.toLocaleString()}〜</span>
+              : <span style={{ fontSize: '13px', color: 'rgba(232,228,220,0.40)' }}>要問合せ</span>
             }
             <span style={{
               fontSize: '12px', fontWeight: '700', color: '#c9a84c',
@@ -133,13 +133,13 @@ function ProviderCard({ provider }) {
 
 function SkeletonCard() {
   return (
-    <div style={{ border: '1.5px solid #e5e7eb', borderRadius: '16px', overflow: 'hidden', background: '#fff' }}>
-      <div style={{ height: '200px', background: '#f3f4f6' }} />
+    <div style={{ border: '1px solid rgba(232,228,220,0.15)', borderRadius: '16px', overflow: 'hidden', background: 'rgba(10,15,30,0.65)' }}>
+      <div style={{ height: '200px', background: 'rgba(10,15,30,0.45)' }} />
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div style={{ height: '16px', background: '#f3f4f6', borderRadius: '8px', width: '40%' }} />
-        <div style={{ height: '20px', background: '#f3f4f6', borderRadius: '8px', width: '80%' }} />
-        <div style={{ height: '14px', background: '#f3f4f6', borderRadius: '8px', width: '90%' }} />
-        <div style={{ height: '14px', background: '#f3f4f6', borderRadius: '8px', width: '60%' }} />
+        <div style={{ height: '16px', background: 'rgba(10,15,30,0.45)', borderRadius: '8px', width: '40%' }} />
+        <div style={{ height: '20px', background: 'rgba(10,15,30,0.45)', borderRadius: '8px', width: '80%' }} />
+        <div style={{ height: '14px', background: 'rgba(10,15,30,0.45)', borderRadius: '8px', width: '90%' }} />
+        <div style={{ height: '14px', background: 'rgba(10,15,30,0.45)', borderRadius: '8px', width: '60%' }} />
       </div>
     </div>
   );
@@ -262,7 +262,7 @@ function SearchContent() {
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '40px 20px 80px' }}>
       <h1 style={{ fontSize: 'clamp(22px,4vw,28px)', fontWeight: '800', margin: '0 0 8px' }}>サービスを探す</h1>
-      <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 28px' }}>外見磨きのプロフェッショナルを検索・比較できます</p>
+      <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.55)', margin: '0 0 28px' }}>外見磨きのプロフェッショナルを検索・比較できます</p>
 
       {/* Compassバナー（診断済みのみ） */}
       {compassAxis && !axis && (
@@ -285,7 +285,7 @@ function SearchContent() {
         onSubmit={handleSubmit}
         style={{
           display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px',
-          padding: '16px 20px', background: '#f9fafb', borderRadius: '16px', border: '1px solid #e5e7eb'
+          padding: '16px 20px', background: 'rgba(10,15,30,0.50)', backdropFilter: 'blur(8px)', borderRadius: '16px', border: '1px solid rgba(232,228,220,0.15)'
         }}
       >
         <input
@@ -293,13 +293,13 @@ function SearchContent() {
           value={keyword}
           onChange={e => setKeyword(e.target.value)}
           placeholder="キーワード（例：メンズメイク、骨格診断）"
-          style={{ flex: '1 1 200px', padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', outline: 'none' }}
+          style={{ flex: '1 1 200px', padding: '10px 14px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', outline: 'none' }}
         />
         <select
           name="category"
           value={category}
           onChange={e => { setCategory(e.target.value); applyFilters({ kw: keyword, cat: e.target.value, ar: area, ax: axis }); }}
-          style={{ padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', background: '#fff', cursor: 'pointer' }}
+          style={{ padding: '10px 14px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', background: 'rgba(10,15,30,0.65)', cursor: 'pointer' }}
         >
           <option value="">すべてのカテゴリ</option>
           {CATEGORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -308,7 +308,7 @@ function SearchContent() {
           name="area"
           value={area}
           onChange={e => { setArea(e.target.value); applyFilters({ kw: keyword, cat: category, ar: e.target.value, ax: axis }); }}
-          style={{ padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', background: '#fff', cursor: 'pointer' }}
+          style={{ padding: '10px 14px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', background: 'rgba(10,15,30,0.65)', cursor: 'pointer' }}
         >
           {AREAS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
         </select>
@@ -322,7 +322,7 @@ function SearchContent() {
 
       {/* 7軸チップフィルター */}
       <div style={{ marginBottom: '24px' }}>
-        <p style={{ fontSize: '11px', fontWeight: 800, color: '#9ca3af', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '.06em' }}>
+        <p style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(232,228,220,0.40)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '.06em' }}>
           Me Scan 7軸で絞り込む
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -336,8 +336,8 @@ function SearchContent() {
                 style={{
                   padding: '7px 14px', borderRadius: '99px', fontSize: '13px', fontWeight: 600,
                   cursor: 'pointer', border: 'none', transition: 'all .15s',
-                  background: isActive ? '#111' : isCompass ? '#eff6ff' : '#f3f4f6',
-                  color: isActive ? '#fff' : isCompass ? '#1d4ed8' : '#374151',
+                  background: isActive ? '#111' : isCompass ? '#eff6ff' : 'rgba(10,15,30,0.45)',
+                  color: isActive ? '#fff' : isCompass ? '#1d4ed8' : 'rgba(232,228,220,0.75)',
                   outline: isActive ? 'none' : isCompass ? '1.5px solid #bfdbfe' : 'none',
                 }}
               >
@@ -349,7 +349,7 @@ function SearchContent() {
           {activeFilters > 0 && (
             <button
               onClick={resetAll}
-              style={{ padding: '7px 14px', borderRadius: '99px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280' }}
+              style={{ padding: '7px 14px', borderRadius: '99px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', border: '1px solid rgba(232,228,220,0.15)', background: 'rgba(10,15,30,0.65)', color: 'rgba(232,228,220,0.55)' }}
             >
               ✕ リセット
             </button>
@@ -358,16 +358,16 @@ function SearchContent() {
       </div>
 
       {/* 件数 */}
-      <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 12px' }}>
+      <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', margin: '0 0 12px' }}>
         {loading ? '読み込み中…' : `${filtered.length}件のサービスが見つかりました`}
         {axis && !loading && <span style={{ marginLeft: '8px', fontSize: '12px', fontWeight: 700, color: '#4f46e5' }}>（{AXIS_ICONS[axis]} {AXIS_LABELS[axis]}で絞り込み中）</span>}
       </p>
 
       {/* 透明性注釈（アフィリエイトが含まれる場合のみ） */}
       {!loading && filtered.some(p => p.entity_type === 'affiliate') && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 14px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '10px', marginBottom: '20px' }}>
-          <span style={{ fontSize: '13px', color: '#9ca3af', flexShrink: 0, marginTop: '1px' }}>ℹ️</span>
-          <p style={{ fontSize: '12px', color: '#6b7280', margin: 0, lineHeight: '1.6' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 14px', background: 'rgba(10,15,30,0.50)', backdropFilter: 'blur(8px)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', marginBottom: '20px' }}>
+          <span style={{ fontSize: '13px', color: 'rgba(232,228,220,0.40)', flexShrink: 0, marginTop: '1px' }}>ℹ️</span>
+          <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: 0, lineHeight: '1.6' }}>
             掲載サービス・提携サービス（PR）の区別なく、AIがあなたの診断結果との一致度で並び替えています。提携サービスは「男性の外見変容に向き合うサービスか」「変わりたい人を否定しないか」の基準でFinemeが精査しています。
           </p>
         </div>
@@ -379,9 +379,9 @@ function SearchContent() {
           {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '80px 20px', color: '#6b7280' }}>
+        <div style={{ textAlign: 'center', padding: '80px 20px', color: 'rgba(232,228,220,0.55)' }}>
           <p style={{ fontSize: '40px', margin: '0 0 12px' }}>🔍</p>
-          <p style={{ fontSize: '16px', fontWeight: '700', marginBottom: '8px', color: '#374151' }}>見つかりませんでした</p>
+          <p style={{ fontSize: '16px', fontWeight: '700', marginBottom: '8px', color: 'rgba(232,228,220,0.75)' }}>見つかりませんでした</p>
           <p style={{ fontSize: '14px', marginBottom: '20px' }}>条件を変えて再度お試しください。</p>
           <button
             onClick={resetAll}

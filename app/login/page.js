@@ -146,8 +146,9 @@ export default function LoginPage() {
   return (
     <div style={{ maxWidth: '420px', margin: '60px auto', padding: '0 20px' }}>
       <div style={{
-        background: '#fff',
-        border: '1px solid #e5e7eb',
+        background: 'rgba(10,15,30,0.65)',
+        backdropFilter: 'blur(8px)',
+        border: '1px solid rgba(232,228,220,0.15)',
         borderRadius: '18px',
         padding: '32px',
         boxShadow: '0 4px 24px rgba(2,6,23,.06)',
@@ -157,12 +158,12 @@ export default function LoginPage() {
         {view === 'login' && (
           <div>
             <h1 style={{ fontSize: '22px', fontWeight: '800', margin: '0 0 6px' }}>ログイン</h1>
-            <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 24px' }}>
+            <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.55)', margin: '0 0 24px' }}>
               登録されたメールアドレスとパスワードを入力してください
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>メールアドレス</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)' }}>メールアドレス</label>
               <input
                 type="email"
                 value={email}
@@ -172,7 +173,7 @@ export default function LoginPage() {
                 autoComplete="email"
                 style={{
                   padding: '12px 14px',
-                  border: '1.5px solid #e5e7eb',
+                  border: '1px solid rgba(232,228,220,0.15)',
                   borderRadius: '10px',
                   fontSize: '15px',
                   width: '100%',
@@ -182,7 +183,7 @@ export default function LoginPage() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>パスワード</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)' }}>パスワード</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -193,7 +194,7 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   style={{
                     padding: '12px 44px 12px 14px',
-                    border: '1.5px solid #e5e7eb',
+                    border: '1px solid rgba(232,228,220,0.15)',
                     borderRadius: '10px',
                     fontSize: '15px',
                     width: '100%',
