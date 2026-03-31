@@ -565,7 +565,7 @@ function GuideTab({ provider, diagnosis, matchData, stories, staff, onGoToConsul
             )}
             <div>
               <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(201,168,76,0.7)', letterSpacing: '.1em', marginBottom: '8px', textTransform: 'uppercase' }}>ガイドからのひと言</div>
-              <p style={{ fontSize: '14px', color: '#111', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap', fontWeight: '500' }}>{provider.guide_message}</p>
+              <p style={{ fontSize: '14px', color: '#e8e4dc', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap', fontWeight: '500' }}>{provider.guide_message}</p>
             </div>
           </div>
         )}

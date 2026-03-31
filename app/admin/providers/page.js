@@ -68,7 +68,7 @@ export default function AdminProvidersPage() {
               <div>
                 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
                   ${p.referral_code ? `<span style="font-size:13px;font-weight:800;padding:3px 10px;background:#111;color:#fff;border-radius:99px">${esc(p.referral_code)}</span>` : ''}
-                  <strong style="font-size:15px">${esc(p.name)}</strong>
+                  <strong style="font-size:15px;color:#e8e4dc">${esc(p.name)}</strong>
                   <span class="badge ${statusClass}">${statusLabel}</span>
                   <span class="badge badge-gray">${catLabel(p.main_category)}</span>
                   ${p.billing_started && p.plan !== 'free' ? '<span class="badge badge-green">課金中</span>' : ''}
