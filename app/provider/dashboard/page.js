@@ -17,22 +17,25 @@ export default function ProviderDashboardPage() {
 
     const style = document.createElement('style');
     style.textContent = `
-      .tab-nav { display: flex; gap: 0; border-bottom: 2px solid #e5e7eb; margin-bottom: 24px; overflow-x: auto; }
-      .tab-btn { padding: 10px 20px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 600; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: color .15s; }
-      .tab-btn.active { color: #111; border-bottom-color: #111; }
+      .tab-nav { display: flex; gap: 0; border-bottom: 2px solid rgba(232,228,220,0.2); margin-bottom: 24px; overflow-x: auto; }
+      .tab-btn { padding: 10px 20px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 600; color: rgba(232,228,220,0.5); border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: color .15s; }
+      .tab-btn.active { color: #e8e4dc; border-bottom-color: rgba(232,228,220,0.85); }
       .tab-pane { display: none; }
       .tab-pane.active { display: block; }
       .form-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
-      .form-field label { font-size: 12px; font-weight: 700; color: #374151; }
-      .form-field input, .form-field textarea, .form-field select { padding: 10px 12px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14px; width: 100%; box-sizing: border-box; }
-      .form-field input[type=checkbox] { width: auto; padding: 0; border: none; border-radius: 0; flex-shrink: 0; }
+      .form-field label { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.9); }
+      .form-field input, .form-field textarea, .form-field select { padding: 10px 12px; border: 1.5px solid rgba(232,228,220,0.2); border-radius: 10px; font-size: 14px; width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.06); color: #e8e4dc; }
+      .form-field input[type=checkbox] { width: auto; padding: 0; border: none; border-radius: 0; flex-shrink: 0; background: none; }
       .form-field textarea { min-height: 100px; resize: vertical; }
+      .form-field select option { background: #0a0f1e; color: #e8e4dc; }
+      .form-field input::placeholder, .form-field textarea::placeholder { color: rgba(232,228,220,0.35); }
       .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
-      .checkbox-item { display: flex; flex-direction: row; align-items: center; gap: 6px; font-size: 14px; text-align: left; }
+      .checkbox-item { display: flex; flex-direction: row; align-items: center; gap: 6px; font-size: 14px; text-align: left; color: rgba(232,228,220,0.85); }
       @media (max-width: 640px) { .checkbox-group { flex-direction: column; gap: 8px; } .checkbox-item { width: 100%; flex-direction: row; align-items: flex-start; } }
       .stat-card { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(232,228,220,0.15); border-radius: 12px; padding: 16px; text-align: center; }
       .stat-value { font-size: 32px; font-weight: 800; color: #e8e4dc; }
-      .stat-label { font-size: 12px; color: #6b7280; margin-top: 2px; }
+      .stat-label { font-size: 12px; color: rgba(232,228,220,0.6); margin-top: 2px; }
+      .muted { color: rgba(232,228,220,0.55); }
       .publish-toggle { display: flex; align-items: center; gap: 12px; padding: 16px; background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border-radius: 12px; border: 1px solid rgba(232,228,220,0.15); }
       .toggle-switch { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
       .toggle-switch input { opacity: 0; width: 0; height: 0; }
@@ -115,10 +118,10 @@ export default function ProviderDashboardPage() {
       const msg = score >= 80 ? '掲載者として誇れるページです' : score >= 50 ? 'もう少しで魅力的なページになります' : 'まだ掲載者の魅力が伝わりにくい状態です';
       el.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <span style="font-size:12px;font-weight:700;color:#374151">ページ完成度</span>
+          <span style="font-size:12px;font-weight:700;color:rgba(232,228,220,0.9)">ページ完成度</span>
           <span style="font-size:14px;font-weight:900;color:${color}">${score}%</span>
         </div>
-        <div style="height:8px;background:#f3f4f6;border-radius:99px;overflow:hidden;margin-bottom:6px">
+        <div style="height:8px;background:rgba(232,228,220,0.12);border-radius:99px;overflow:hidden;margin-bottom:6px">
           <div style="height:100%;width:${score}%;background:${color};border-radius:99px;transition:width .4s ease"></div>
         </div>
         <div style="font-size:11px;color:${color};font-weight:600">${msg}</div>
@@ -177,7 +180,7 @@ export default function ProviderDashboardPage() {
       if (provider.ai_match_profile) {
         const d = provider.ai_match_profile;
         const date = d.analyzed_at ? new Date(d.analyzed_at).toLocaleDateString('ja-JP') : '';
-        if (aiStatus) aiStatus.innerHTML = `<span style="color:#059669;font-weight:700">✅ AI分析済み（${date}）</span><br><span style="font-size:12px;color:#6b7280">${d.summary || ''}</span>`;
+        if (aiStatus) aiStatus.innerHTML = `<span style="color:#059669;font-weight:700">✅ AI分析済み（${date}）</span><br><span style="font-size:12px;color:rgba(232,228,220,0.6)">${d.summary || ''}</span>`;
         setAnalyzeButtonState(true);
       } else {
         if (aiStatus) aiStatus.textContent = '未分析 — プロフィールを入力後「AIで分析する」ボタンを押してください';
@@ -1440,7 +1443,7 @@ export default function ProviderDashboardPage() {
           <div className="card" style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
               <h2 style={{ margin: '0', fontSize: '16px' }}>予約リクエスト</h2>
-              <span style={{ fontSize: '12px', color: '#9ca3af' }} id="req-filter-count"></span>
+              <span style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)' }} id="req-filter-count"></span>
             </div>
 
             {/* 絞り込みバー */}
@@ -1478,9 +1481,9 @@ export default function ProviderDashboardPage() {
         {/* タブ③：プロフィール */}
         <div className="tab-pane" id="tab-profile">
           {/* ページ完成度スコア */}
-          <div className="card" style={{ padding: '18px 22px', marginBottom: '16px', background: '#f9fafb' }}>
+          <div className="card" style={{ padding: '18px 22px', marginBottom: '16px' }}>
             <div id="page-score-bar">
-              <div style={{ fontSize: '12px', color: '#9ca3af' }}>ページ完成度を計算中…</div>
+              <div style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)' }}>ページ完成度を計算中…</div>
             </div>
           </div>
           <div className="card" style={{ padding: '24px' }}>
@@ -1528,10 +1531,10 @@ export default function ProviderDashboardPage() {
                 <input type="hidden" name="cover_image_url" />
               </div>
               {/* ── 掲載者情報・信頼シグナル ── */}
-              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>掲載者情報・信頼シグナル</h3>
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(232,228,220,0.12)' }}>掲載者情報・信頼シグナル</h3>
               <small className="muted" style={{ display: 'block', marginBottom: '14px', fontSize: '12px', lineHeight: '1.6' }}>ページ上部の「クイックファクト」として横一列で表示されます。同じカテゴリの他ガイドとの比較に直結します。</small>
               {/* ── 所在地 ── */}
-              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>所在地・アクセス</h3>
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(232,228,220,0.12)' }}>所在地・アクセス</h3>
               <small className="muted" style={{ display: 'block', marginBottom: '14px', fontSize: '12px', lineHeight: '1.6' }}>
                 入力した住所はAIマッチングの距離計算に使用されます。番地まで入力するほど精度が上がります。ユーザーには最寄り駅のみ表示されます。
               </small>
@@ -1567,7 +1570,7 @@ export default function ProviderDashboardPage() {
               </div>
 
               {/* ── 料金・支払い ── */}
-              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>料金・支払い</h3>
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(232,228,220,0.12)' }}>料金・支払い</h3>
               <div className="form-field">
                 <label>最低価格（円）</label>
                 <input name="price_from" type="number" placeholder="例: 10000" />
@@ -1845,7 +1848,7 @@ export default function ProviderDashboardPage() {
               </div>
 
               {/* ── AIマッチングプロフィール ── */}
-              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>AIマッチングプロフィール</h3>
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(232,228,220,0.12)' }}>AIマッチングプロフィール</h3>
               <p className="muted" style={{ fontSize: '12px', margin: '0 0 14px', lineHeight: '1.6' }}>
                 ここに書いた内容をAIが読み取り、あなたのサービスにどんなユーザーが合うかを自動判定します。<br />
                 チェックボックスより精度の高いマッチングが実現します。書くほど効果的です。
@@ -1868,12 +1871,12 @@ export default function ProviderDashboardPage() {
               </div>
 
               {/* AI分析ボタン */}
-              <div style={{ background: 'linear-gradient(135deg,#eff6ff,#eef2ff)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#4f46e5', marginBottom: '6px' }}>AIプロフィール分析</div>
-                <p style={{ fontSize: '12px', color: '#374151', margin: '0 0 12px', lineHeight: '1.6' }}>
+              <div style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#a5b4fc', marginBottom: '6px' }}>AIプロフィール分析</div>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.75)', margin: '0 0 12px', lineHeight: '1.6' }}>
                   上の4つのフィールドを保存した後、「AIで分析する」をクリックするとClaudeがプロフィール全体を読み取り、マッチング精度を向上させます。
                 </p>
-                <div id="ai-match-status" style={{ fontSize: '12px', color: '#6b7280', marginBottom: '10px' }}></div>
+                <div id="ai-match-status" style={{ fontSize: '12px', color: 'rgba(232,228,220,0.6)', marginBottom: '10px' }}></div>
                 <button type="button" id="ai-analyze-btn" className="btn" style={{ background: '#4f46e5', color: '#fff', fontSize: '13px', padding: '8px 18px' }}>
                   AIで分析する
                 </button>
@@ -1901,7 +1904,7 @@ export default function ProviderDashboardPage() {
                 </div>
               </div>
               {/* ── 予約・比較情報 ── */}
-              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>予約・比較情報</h3>
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(232,228,220,0.12)' }}>予約・比較情報</h3>
               <small className="muted" style={{ display: 'block', marginBottom: '14px', fontSize: '12px', lineHeight: '1.6' }}>相談フォームや比較時に表示される情報です。設定するほどユーザーの「踏み出せない理由」を減らせます。</small>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                 <input type="checkbox" name="trial_available" id="trial_available" />
@@ -1970,19 +1973,19 @@ export default function ProviderDashboardPage() {
         <div className="tab-pane" id="tab-billing">
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
             <h2 style={{ margin: '0', fontSize: '16px' }}>課金・プラン</h2>
-            <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px' }}>
-              <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>現在のプラン</div>
-              <div style={{ fontSize: '22px', fontWeight: '800', color: '#111' }} id="billing-plan">読み込み中…</div>
-              <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }} id="billing-status"></div>
+            <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ fontSize: '12px', color: 'rgba(232,228,220,0.6)', marginBottom: '4px' }}>現在のプラン</div>
+              <div style={{ fontSize: '22px', fontWeight: '800', color: '#e8e4dc' }} id="billing-plan">読み込み中…</div>
+              <div style={{ fontSize: '13px', color: 'rgba(232,228,220,0.6)', marginTop: '4px' }} id="billing-status"></div>
             </div>
-            <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px' }}>
-              <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: '700' }}>紹介報酬制度</div>
+            <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ fontSize: '12px', color: 'rgba(232,228,220,0.7)', marginBottom: '8px', fontWeight: '700' }}>紹介報酬制度</div>
               <p className="muted" style={{ fontSize: '13px', margin: '0 0 10px' }}>あなたの紹介コードを共有すると、紹介した方が掲載を継続している限り¥500/月の報酬を受け取れます。</p>
               <div className="referral-code-box" id="referral-code">—</div>
               <button className="btn btn-ghost" style={{ fontSize: '13px', marginTop: '10px', width: '100%' }} id="copy-referral">コードをコピー</button>
             </div>
-            <div style={{ padding: '14px 16px', border: '1.5px solid #e5e7eb', borderRadius: '12px', background: '#f9fafb', textAlign: 'center' }}>
-              <p style={{ fontSize: '14px', color: '#374151', margin: '0 0 8px', fontWeight: '700' }}>プラン変更・解約について</p>
+            <div style={{ padding: '14px 16px', border: '1.5px solid rgba(232,228,220,0.15)', borderRadius: '12px', background: 'rgba(255,255,255,0.06)', textAlign: 'center' }}>
+              <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.9)', margin: '0 0 8px', fontWeight: '700' }}>プラン変更・解約について</p>
               <p className="muted" style={{ fontSize: '13px', margin: '0' }}>プランの変更や解約は、運営（Fineme）への申請が必要です。<br />下記よりご連絡ください。</p>
               <a href="mailto:contact@fineme.me?subject=プラン変更・解約申請" className="btn btn-ghost" style={{ marginTop: '12px', display: 'inline-block', fontSize: '13px' }}>contact@fineme.me に連絡する</a>
             </div>
@@ -2007,8 +2010,8 @@ export default function ProviderDashboardPage() {
             </p>
 
             {/* 自分の紹介コード */}
-            <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px' }}>
-              <div style={{ fontSize: '12px', color: '#6b7280', fontWeight: '700', marginBottom: '8px' }}>あなたの紹介コード</div>
+            <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ fontSize: '12px', color: 'rgba(232,228,220,0.7)', fontWeight: '700', marginBottom: '8px' }}>あなたの紹介コード</div>
               <div className="referral-code-box" id="referral-code-tab">—</div>
               <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
                 <button className="btn btn-ghost" style={{ fontSize: '13px', flex: '1' }} id="copy-referral-code-btn">コードをコピー</button>
@@ -2026,7 +2029,7 @@ export default function ProviderDashboardPage() {
 
             {/* 紹介一覧テーブル */}
             <div>
-              <h3 style={{ fontSize: '14px', fontWeight: '700', margin: '0 0 10px', color: '#374151' }}>紹介パートナー一覧</h3>
+              <h3 style={{ fontSize: '14px', fontWeight: '700', margin: '0 0 10px', color: 'rgba(232,228,220,0.9)' }}>紹介パートナー一覧</h3>
               <div id="referral-list"><p className="muted">読み込み中…</p></div>
             </div>
           </div>
