@@ -43,10 +43,10 @@ export default function GuideInteractive({ axes, tierInfo }) {
         </div>
       ) : (
         <div className="no-diag-banner">
-          <p style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-fg, #0a0f1e)', margin: '0 0 8px' }}>
+          <p style={{ fontSize: '15px', fontWeight: '700', color: 'rgba(232,228,220,0.90)', margin: '0 0 8px' }}>
             🧬 Me Scanを受けると、あなた専用の優先順位が生成されます
           </p>
-          <p style={{ fontSize: '13px', color: 'var(--color-muted, #7a6e65)', margin: '0 0 16px', lineHeight: '1.8' }}>
+          <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.60)', margin: '0 0 16px', lineHeight: '1.8' }}>
             今は一般的な順番（Tier順）で表示しています。<br />
             あなたの現在地・来た道・ゴールに合わせた地図が欲しい方は無料のMe Scanを。
           </p>

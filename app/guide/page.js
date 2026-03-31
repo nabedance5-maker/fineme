@@ -135,25 +135,25 @@ export default function GuidePage() {
         .guide-sec h2 {
           font-family: 'Noto Serif JP', Georgia, serif;
           font-size: clamp(20px, 4vw, 28px); font-weight: 700;
-          color: var(--color-fg, #0a0f1e); margin: 0 0 8px;
+          color: rgba(232,228,220,0.90); margin: 0 0 8px;
         }
-        .guide-sec-lead { font-size: 15px; color: var(--color-muted, #7a6e65); line-height: 1.9; margin: 0 0 24px; }
+        .guide-sec-lead { font-size: 15px; color: rgba(232,228,220,0.55); line-height: 1.9; margin: 0 0 24px; }
         .compass-banner {
           background: rgba(201,168,76,0.06); border: 1.5px solid rgba(201,168,76,0.3);
           border-radius: 10px; padding: 20px 22px; margin-bottom: 24px;
           display: flex; gap: 14px; align-items: flex-start;
         }
         .compass-banner-icon { font-size: 32px; flex-shrink: 0; }
-        .compass-banner-title { font-size: 16px; font-weight: 800; color: var(--color-fg, #0a0f1e); margin: 0 0 4px; }
+        .compass-banner-title { font-size: 16px; font-weight: 800; color: rgba(232,228,220,0.90); margin: 0 0 4px; }
         .compass-banner-desc { font-size: 13px; color: var(--color-gold, #c9a84c); margin: 0; line-height: 1.7; }
         .no-diag-banner {
-          background: var(--color-bg-parchment, #f5f0e8);
+          background: rgba(10,15,30,0.65); backdrop-filter: blur(8px);
           border: 1.5px solid rgba(201,168,76,0.45);
           border-radius: 10px; padding: 22px; text-align: center; margin-bottom: 24px;
         }
         .tier-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
         .guide-axis-card {
-          background: #fff; border: 1px solid var(--color-border-gold, rgba(201,168,76,0.28));
+          background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid var(--color-border-gold, rgba(201,168,76,0.28));
           border-radius: 12px; overflow: hidden; margin-bottom: 14px;
           box-shadow: var(--shadow-sm); transition: box-shadow .15s, transform .12s;
         }
@@ -164,25 +164,25 @@ export default function GuidePage() {
         }
         .guide-axis-header { display: flex; align-items: center; gap: 14px; padding: 18px 20px; }
         .guide-axis-icon { font-size: 28px; flex-shrink: 0; }
-        .guide-axis-label { font-size: 17px; font-weight: 800; color: var(--color-fg, #0a0f1e); flex: 1; }
+        .guide-axis-label { font-size: 17px; font-weight: 800; color: rgba(232,228,220,0.90); flex: 1; }
         .guide-axis-tier-badge {
           font-size: 10px; font-weight: 700; padding: 3px 10px;
           border-radius: 99px; flex-shrink: 0;
         }
         .guide-axis-body { padding: 0 20px 20px; }
-        .guide-axis-quick { font-size: 14px; color: var(--color-fg, #0a0f1e); line-height: 1.7; margin: 0 0 12px; }
+        .guide-axis-quick { font-size: 14px; color: rgba(232,228,220,0.80); line-height: 1.7; margin: 0 0 12px; }
         .guide-axis-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
         .guide-axis-chip {
           font-size: 12px; padding: 4px 12px; border-radius: 99px;
-          background: var(--color-bg-parchment, #f5f0e8);
-          color: var(--color-muted, #7a6e65);
+          background: rgba(232,228,220,0.08);
+          color: rgba(232,228,220,0.65);
           border: 1px solid var(--color-border-gold, rgba(201,168,76,0.25));
           display: flex; align-items: center; gap: 5px;
         }
         .guide-axis-path {
           background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.2);
           border-radius: 10px; padding: 12px 16px; margin: 0 0 14px;
-          font-size: 13px; color: var(--color-fg, #0a0f1e); line-height: 1.8;
+          font-size: 13px; color: rgba(232,228,220,0.80); line-height: 1.8;
         }
         .guide-axis-path-label { font-size: 10px; font-weight: 800; color: var(--color-gold, #c9a84c); margin: 0 0 4px; letter-spacing: .08em; }
         .guide-axis-cta {

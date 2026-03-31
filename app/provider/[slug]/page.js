@@ -658,7 +658,7 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
             )}
             {!service.image_url && service.is_featured && <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', background: '#fef3c7', color: '#d97706', borderRadius: '99px' }}>⭐ おすすめ</span>}
           </div>
-          <h3 style={{ fontSize: '17px', fontWeight: '900', margin: '0 0 7px', color: '#0f172a', lineHeight: '1.3' }}>{service.name}</h3>
+          <h3 style={{ fontSize: '17px', fontWeight: '900', margin: '0 0 7px', color: 'rgba(232,228,220,0.90)', lineHeight: '1.3' }}>{service.name}</h3>
           {service.transformation_promise && (
             <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', margin: '0', fontStyle: 'italic', lineHeight: '1.6', padding: '8px 12px', background: 'rgba(10,15,30,0.50)', borderRadius: '8px', borderLeft: '3px solid #6366f1' }}>
               「{service.transformation_promise}」
@@ -668,7 +668,7 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
 
         {/* 価格 */}
         <div style={{ marginBottom: '12px' }}>
-          <span style={{ fontSize: '24px', fontWeight: '900', color: '#0f172a', lineHeight: 1 }}>¥{service.price.toLocaleString()}</span>
+          <span style={{ fontSize: '24px', fontWeight: '900', color: 'rgba(232,228,220,0.90)', lineHeight: 1 }}>¥{service.price.toLocaleString()}</span>
           {service.duration && <span style={{ fontSize: '12px', color: 'rgba(232,228,220,0.40)', marginLeft: '6px' }}>/ {service.duration}</span>}
         </div>
 

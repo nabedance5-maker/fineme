@@ -89,9 +89,9 @@ export default function AboutPage() {
         .af-sec h2 {
           font-family: 'Noto Serif JP', Georgia, serif;
           font-size: clamp(22px, 4vw, 30px); font-weight: 700;
-          color: var(--color-fg, #0a0f1e); margin: 0 0 10px;
+          color: rgba(232,228,220,0.90); margin: 0 0 10px;
         }
-        .af-sec-lead { font-size: 16px; color: var(--color-muted, #7a6e65); line-height: 1.9; margin: 0 0 28px; }
+        .af-sec-lead { font-size: 16px; color: rgba(232,228,220,0.55); line-height: 1.9; margin: 0 0 28px; }
 
         /* ── Journey steps ── */
         .af-journey { display: flex; flex-direction: column; gap: 14px; }
@@ -100,7 +100,7 @@ export default function AboutPage() {
           gap: 0; align-items: stretch;
           border-radius: 10px;
           border: 1px solid var(--color-border-gold, rgba(201,168,76,0.28));
-          overflow: hidden; background: #fff;
+          overflow: hidden; background: rgba(10,15,30,0.65); backdrop-filter: blur(8px);
           box-shadow: var(--shadow-sm); transition: transform .15s, box-shadow .15s;
         }
         .af-journey-step:hover { transform: translateX(4px); box-shadow: var(--shadow-gold); }
@@ -114,9 +114,9 @@ export default function AboutPage() {
         }
         .af-step-icon { font-size: 26px; line-height: 1; }
         .af-step-right { padding: 18px 20px; }
-        .af-step-label { font-size: 17px; font-weight: 800; color: var(--color-fg, #0a0f1e); margin: 0 0 2px; }
+        .af-step-label { font-size: 17px; font-weight: 800; color: rgba(232,228,220,0.90); margin: 0 0 2px; }
         .af-step-sublabel { font-size: 11px; color: var(--color-gold, #c9a84c); font-weight: 700; margin: 0 0 8px; letter-spacing: .06em; }
-        .af-step-desc { font-size: 14px; color: var(--color-muted, #7a6e65); line-height: 1.7; margin: 0; }
+        .af-step-desc { font-size: 14px; color: rgba(232,228,220,0.55); line-height: 1.7; margin: 0; }
 
         /* ── 7 axis grid ── */
         .af-axis-grid {
@@ -125,7 +125,7 @@ export default function AboutPage() {
           gap: 12px;
         }
         .af-axis-card {
-          background: #fff; border: 1px solid var(--color-border-gold, rgba(201,168,76,0.28));
+          background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid var(--color-border-gold, rgba(201,168,76,0.28));
           border-radius: 12px; padding: 16px 18px;
           display: flex; gap: 12px; align-items: flex-start;
           box-shadow: var(--shadow-sm);
@@ -133,7 +133,7 @@ export default function AboutPage() {
         }
         .af-axis-card:hover { box-shadow: var(--shadow-gold); transform: translateY(-2px); }
         .af-axis-icon { font-size: 24px; flex-shrink: 0; }
-        .af-axis-name { font-size: 14px; font-weight: 800; color: var(--color-fg, #0a0f1e); margin: 0 0 4px; }
+        .af-axis-name { font-size: 14px; font-weight: 800; color: rgba(232,228,220,0.90); margin: 0 0 4px; }
         .af-axis-tier {
           font-size: 10px; font-weight: 700; padding: 2px 8px;
           border-radius: 99px; display: inline-block; margin: 0 0 6px;
@@ -142,7 +142,7 @@ export default function AboutPage() {
         .tier-2 { background: #d1fae5; color: #065f46; }
         .tier-3 { background: #fef3c7; color: #92400e; }
         .tier-4 { background: #f3f4f6; color: #374151; }
-        .af-axis-desc { font-size: 12px; color: var(--color-muted, #7a6e65); line-height: 1.6; margin: 0; }
+        .af-axis-desc { font-size: 12px; color: rgba(232,228,220,0.55); line-height: 1.6; margin: 0; }
 
         /* ── Philosophy ── */
         .af-philosophy {
@@ -164,10 +164,10 @@ export default function AboutPage() {
         .af-mvcard {
           padding: 20px; border-radius: 10px;
           border: 1px solid var(--color-border-gold, rgba(201,168,76,0.28));
-          background: #fff;
+          background: rgba(10,15,30,0.65); backdrop-filter: blur(8px);
         }
         .af-mvcard-label { font-size: 10px; font-weight: 800; color: var(--color-gold, #c9a84c); margin: 0 0 8px; letter-spacing: .12em; }
-        .af-mvcard p { font-size: 15px; font-weight: 700; color: var(--color-fg, #0a0f1e); margin: 0; line-height: 1.6; }
+        .af-mvcard p { font-size: 15px; font-weight: 700; color: rgba(232,228,220,0.90); margin: 0; line-height: 1.6; }
 
         /* ── Difference ── */
         .af-diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -275,10 +275,10 @@ export default function AboutPage() {
             一般の美容・健康サービス検索と、Finemeが根本的に異なる点があります。
           </p>
           <div className="af-diff-grid">
-            <div className="af-diff-card" style={{ background: '#f9fafb', borderColor: '#e5e7eb' }}>
-              <div className="af-diff-label" style={{ color: '#9ca3af' }}>一般の検索サイト</div>
-              <div className="af-diff-title" style={{ color: '#374151' }}>「どこがいいか」を探す</div>
-              <ul className="af-diff-list">
+            <div className="af-diff-card" style={{ background: 'rgba(10,15,30,0.40)', borderColor: 'rgba(232,228,220,0.15)' }}>
+              <div className="af-diff-label" style={{ color: 'rgba(232,228,220,0.40)' }}>一般の検索サイト</div>
+              <div className="af-diff-title" style={{ color: 'rgba(232,228,220,0.70)' }}>「どこがいいか」を探す</div>
+              <ul className="af-diff-list" style={{ color: 'rgba(232,228,220,0.60)' }}>
                 <li data-icon="❌">ユーザーの現在地・ゴールを知らない</li>
                 <li data-icon="❌">「来た道」（なぜ続かなかったか）を問わない</li>
                 <li data-icon="❌">予約して終わり。変容の旅は始まらない</li>

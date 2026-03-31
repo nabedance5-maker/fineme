@@ -78,7 +78,7 @@ export default function DiagnosisPage() {
       .cat-dot--done { background: rgba(201,168,76,0.18); }
       .cat-dot--pending { background: rgba(10,15,30,0.06); opacity: .45; }
       /* Echo back banner */
-      .cat-echo-banner { background: rgba(201,168,76,0.07); border-left: 3px solid #c9a84c; padding: 10px 14px; border-radius: 0 8px 8px 0; margin-bottom: 16px; font-size: 12px; color: #7a6e65; line-height: 1.5; }
+      .cat-echo-banner { background: rgba(201,168,76,0.07); border-left: 3px solid #c9a84c; padding: 10px 14px; border-radius: 0 8px 8px 0; margin-bottom: 16px; font-size: 12px; color: rgba(232,228,220,0.75); line-height: 1.5; }
       /* Goal framing banner */
       .goal-frame-banner { background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.25); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; }
     `;
@@ -1065,8 +1065,8 @@ export default function DiagnosisPage() {
         <div className="diag-screen" id="screen-q_goal_a">
           <button className="diag-back-btn" data-back="">← 戻る</button>
           <div className="goal-frame-banner">
-            <p style={{fontSize:'12px',fontWeight:'700',color:'#2563eb',margin:'0 0 4px'}}>🗺 あなたの地図の「目的地」を設定します</p>
-            <p style={{fontSize:'13px',color:'#1e40af',margin:'0',lineHeight:'1.6'}}>まず、ここに来た理由を聞かせてください。<br/>この3問の答えが、あなただけの変容マップの目的地になります。</p>
+            <p style={{fontSize:'12px',fontWeight:'700',color:'rgba(232,228,220,0.90)',margin:'0 0 4px'}}>🗺 あなたの地図の「目的地」を設定します</p>
+            <p style={{fontSize:'13px',color:'rgba(232,228,220,0.75)',margin:'0',lineHeight:'1.6'}}>まず、ここに来た理由を聞かせてください。<br/>この3問の答えが、あなただけの変容マップの目的地になります。</p>
           </div>
           <div className="diag-card">
             <p className="diag-step-label">ゴール｜場面</p>

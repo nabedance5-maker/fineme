@@ -75,10 +75,10 @@ export default function ProviderJoinPage() {
         .sec-eyebrow::before { content: ''; width: 20px; height: 1.5px; background: #c9a84c; border-radius: 1px; }
         .sec-h2 { font-size: clamp(20px, 4vw, 28px); font-weight: 700; margin: 0 0 10px; line-height: 1.4; }
         .sec-h2-dark { color: #fff; }
-        .sec-h2-light { color: #0a0f1e; }
+        .sec-h2-light { color: rgba(232,228,220,0.90); }
         .sec-lead { font-size: 14px; line-height: 1.9; margin: 0 0 32px; font-family: 'Noto Sans JP', sans-serif; }
         .sec-lead-dark { color: rgba(255,255,255,.72); }
-        .sec-lead-light { color: #4b5563; }
+        .sec-lead-light { color: rgba(255,255,255,.72); }
 
         /* ─── Problem cards ─── */
         .problem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
