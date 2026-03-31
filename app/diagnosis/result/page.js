@@ -70,8 +70,8 @@ export default function DiagnosisResultPage() {
       .tier-4 { background: rgba(232,228,220,0.10); color: rgba(232,228,220,0.60); }
       .vector-bar-wrap { display: flex; align-items: center; gap: 10px; }
       .vector-bar-label { font-size: 11px; color: var(--color-muted, #7a6e65); width: 36px; text-align: right; flex-shrink: 0; }
-      .vector-bar-track { flex: 1; height: 8px; background: rgba(10,15,30,0.08); border-radius: 99px; overflow: hidden; position: relative; }
-      .vector-bar-current { height: 100%; border-radius: 99px; background: var(--color-bg-dark, #0a0f1e); transition: width 1s cubic-bezier(.4,0,.2,1) .3s; }
+      .vector-bar-track { flex: 1; height: 8px; background: rgba(232,228,220,0.12); border-radius: 99px; overflow: hidden; position: relative; }
+      .vector-bar-current { height: 100%; border-radius: 99px; background: rgba(96,165,250,0.75); transition: width 1s cubic-bezier(.4,0,.2,1) .3s; }
       .vector-bar-ideal-marker { position: absolute; top: 0; height: 100%; width: 3px; background: #c9a84c; border-radius: 1px; transform: translateX(-50%); }
       .vector-bar-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--color-muted, #7a6e65); margin-top: 4px; }
       .vector-gap-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: rgba(201,168,76,0.15); color: #c9a84c; border: 1px solid rgba(201,168,76,.3); flex-shrink: 0; }
@@ -352,19 +352,19 @@ export default function DiagnosisResultPage() {
         const lr = R + 24;
         const lx = (cx + lr*Math.cos(a)).toFixed(1);
         const ly = (cy + lr*Math.sin(a) + 4).toFixed(1);
-        labelsSvg += `<text x="${lx}" y="${ly}" text-anchor="middle" font-size="10" font-weight="700" fill="#0a0f1e">${icons[id]}${labels[id]}</text>`;
+        labelsSvg += `<text x="${lx}" y="${ly}" text-anchor="middle" font-size="10" font-weight="700" fill="rgba(232,228,220,0.80)">${icons[id]}${labels[id]}</text>`;
       });
 
       return `
         <svg viewBox="0 0 300 300" width="100%" style="max-width:300px;display:block;margin:0 auto">
           ${grid}${axes}
           <polygon points="${idealPts}" fill="rgba(201,168,76,0.08)" stroke="#c9a84c" stroke-width="1.5" stroke-dasharray="4,3"/>
-          <polygon points="${currentPts}" fill="rgba(10,15,30,.22)" stroke="#0a0f1e" stroke-width="2"/>
+          <polygon points="${currentPts}" fill="rgba(96,165,250,0.10)" stroke="rgba(96,165,250,0.85)" stroke-width="2"/>
           ${labelsSvg}
           <circle cx="${cx}" cy="${cy}" r="4" fill="#c9a84c"/>
         </svg>
         <div class="radar-legend">
-          <div class="radar-legend-item"><div class="radar-legend-dot" style="background:#0a0f1e"></div>現在地</div>
+          <div class="radar-legend-item"><div class="radar-legend-dot" style="background:rgba(96,165,250,0.85)"></div>現在地</div>
           <div class="radar-legend-item"><div class="radar-legend-dot" style="background:#c9a84c;opacity:.8"></div>理想</div>
         </div>
       `;
@@ -501,7 +501,7 @@ export default function DiagnosisResultPage() {
             </div>
             ${b.condition ? `<div class="insight-item" style="border-left-color:#059669;background:#f0fdf4">
               <div class="insight-label" style="color:#059669">今回優先するプロの条件</div>
-              <div class="insight-text">${esc(b.condition)}</div>
+              <div class="insight-text" style="color:#0a0f1e">${esc(b.condition)}</div>
             </div>` : ''}
           </div>
         </div>
