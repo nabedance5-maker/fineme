@@ -71,8 +71,8 @@ export default function NewMeNaviPage() {
       /* Progress bar */
       .track-progress { margin-bottom: 16px; }
       .track-progress-labels { display: flex; justify-content: space-between; font-size: 11px; color: rgba(232,228,220,0.40); margin-bottom: 5px; }
-      .track-progress-track { height: 8px; background: rgba(10,15,30,0.07); border-radius: 99px; overflow: hidden; position: relative; }
-      .track-progress-current { height: 100%; border-radius: 99px; background: #0a0f1e; transition: width 1s cubic-bezier(.4,0,.2,1) .4s; }
+      .track-progress-track { height: 8px; background: rgba(232,228,220,0.12); border-radius: 99px; overflow: hidden; position: relative; }
+      .track-progress-current { height: 100%; border-radius: 99px; background: rgba(96,165,250,0.75); transition: width 1s cubic-bezier(.4,0,.2,1) .4s; }
       .track-progress-ideal { position: absolute; top: 0; height: 100%; width: 3px; background: #c9a84c; transform: translateX(-50%); border-radius: 1px; }
 
       /* Milestones */
@@ -135,7 +135,7 @@ export default function NewMeNaviPage() {
       /* ── サブトラックタブ ── */
       .subtab-wrap { display: flex; gap: 6px; margin-bottom: 14px; }
       .subtab-btn { flex: 1; padding: 7px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1.5px solid rgba(201,168,76,0.3); background: transparent; color: #9ca3af; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
-      .subtab-btn.active { background: rgba(201,168,76,0.12); border-color: #c9a84c; color: #0a0f1e; }
+      .subtab-btn.active { background: rgba(201,168,76,0.12); border-color: #c9a84c; color: rgba(232,228,220,0.90); }
       .subtab-note { font-size: 11px; color: #f59e0b; background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; }
 
       /* ── 出発前チェック ── */
@@ -220,7 +220,7 @@ export default function NewMeNaviPage() {
       .station-mini-progress { display: flex; gap: 3px; padding-left: 2px; margin-top: 5px; flex-wrap: wrap; }
       .smp-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(232,228,220,0.20); flex-shrink: 0; }
       .smp-dot.done { background: #10b981; }
-      .smp-dot.cur { background: #0a0f1e; }
+      .smp-dot.cur { background: rgba(96,165,250,0.85); }
 
       /* Expanded station */
       .station-expanded .station-body { padding: 0; }
