@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fineme 名刺モックアップ</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Hiragino Kaku Gothic Pro','Noto Sans JP',sans-serif;
+    background:#0d1220;
+    color:#e8e2d4;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:48px;
+    padding:60px 24px;
+  }
+
+  .page-title{
+    font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+    color:rgba(201,168,76,.5);text-align:center;
+  }
+
+  .cards-wrap{
+    display:flex;
+    flex-wrap:wrap;
+    gap:40px;
+    align-items:flex-start;
+    justify-content:center;
+  }
+
+  .card-group{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
+  }
+  .card-label{
+    font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    color:rgba(201,168,76,.45);
+  }
+
+  /* ── 名刺本体：91mm × 55mm を px 換算（96dpi基準: 1mm≒3.78px） ── */
+  /* 表示用は少し大きめに2倍スケール */
+  .card{
+    width:340px;   /* 91mm × 3.73 ≒ 340px */
+    height:205px;  /* 55mm × 3.73 ≒ 205px */
+    border-radius:8px;
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(201,168,76,.15);
+  }
+
+  /* ════════════════════════════════
+     表面
+  ════════════════════════════════ */
+  .card-front{
+    background: linear-gradient(135deg, #060c1a 0%, #0d1628 55%, #091220 100%);
+  }
+
+  /* 装飾：右上のゴールド放射 */
+  .card-front::before{
+    content:'';position:absolute;
+    top:-40px;right:-40px;
+    width:180px;height:180px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(201,168,76,.12) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  /* 左下の薄いアクセント */
+  .card-front::after{
+    content:'';position:absolute;
+    bottom:-20px;left:-20px;
+    width:120px;height:120px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(96,165,250,.05) 0%, transparent 70%);
+    pointer-events:none;
+  }
+
+  /* ゴールドラインボーダー */
+  .card-front-inner{
+    position:absolute;inset:6px;
+    border:1px solid rgba(201,168,76,.18);
+    border-radius:4px;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  /* ロゴ */
+  .front-logo{
+    position:absolute;
+    top:18px;left:20px;
+    z-index:1;
+  }
+  .front-logo img{
+    height:22px;
+    display:block;
+    filter:drop-shadow(0 2px 8px rgba(201,168,76,.4));
+  }
+
+  /* メインコピー */
+  .front-copy{
+    position:absolute;
+    top:50%;left:20px;right:110px;
+    transform:translateY(-56%);
+    z-index:1;
+  }
+  .front-copy-main{
+    font-family:'Hiragino Mincho Pro','Noto Serif JP',Georgia,serif;
+    font-size:15px;
+    font-weight:700;
+    color:#f0ece4;
+    line-height:1.55;
+    letter-spacing:.01em;
+  }
+  .front-copy-main em{
+    font-style:normal;
+    color:#c9a84c;
+  }
+  .front-copy-sub{
+    margin-top:8px;
+    font-size:8px;
+    font-weight:700;
+    letter-spacing:.14em;
+    color:rgba(201,168,76,.55);
+    text-transform:uppercase;
+  }
+
+  /* QRコード エリア */
+  .front-qr{
+    position:absolute;
+    top:50%;right:18px;
+    transform:translateY(-52%);
+    z-index:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+  }
+  .front-qr-box{
+    width:72px;height:72px;
+    background:#fff;
+    border-radius:4px;
+    display:flex;align-items:center;justify-content:center;
+    padding:4px;
+  }
+  .front-qr-box img{
+    width:100%;height:100%;
+    object-fit:contain;
+    image-rendering:pixelated;
+  }
+  /* QRプレースホルダー（実際のQRが無い場合） */
+  .front-qr-placeholder{
+    width:64px;height:64px;
+    background: repeating-linear-gradient(
+      0deg,
+      #000 0px, #000 4px,
+      #fff 4px, #fff 8px
+    );
+    background-size:8px 8px;
+    image-rendering:pixelated;
+    position:relative;
+  }
+  .front-qr-placeholder::before{
+    content:'QR';
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    font-size:9px;font-weight:800;color:#333;
+    background:rgba(255,255,255,.85);
+    font-family:monospace;
+    letter-spacing:.05em;
+  }
+  .front-qr-label{
+    font-size:7px;font-weight:700;
+    color:rgba(201,168,76,.6);
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    text-align:center;
+  }
+
+  /* 名前 */
+  .front-name{
+    position:absolute;
+    bottom:14px;left:20px;
+    z-index:1;
+  }
+  .front-name-role{
+    font-size:7px;font-weight:700;
+    color:rgba(201,168,76,.55);
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    margin-bottom:2px;
+  }
+  .front-name-text{
+    font-size:10px;font-weight:700;
+    color:rgba(201,168,76,.75);
+    letter-spacing:.04em;
+  }
+
+  /* ── ゴールドライン 下部 ── */
+  .front-bottom-line{
+    position:absolute;
+    bottom:0;left:0;right:0;
+    height:2px;
+    background:linear-gradient(90deg, transparent, rgba(201,168,76,.6) 40%, rgba(201,168,76,.6) 60%, transparent);
+  }
+
+  /* ════════════════════════════════
+     裏面
+  ════════════════════════════════ */
+  .card-back{
+    background: linear-gradient(160deg, #08101e 0%, #060c1a 100%);
+  }
+  .card-back::before{
+    content:'';position:absolute;
+    top:-60px;left:-60px;
+    width:240px;height:240px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(201,168,76,.07) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .card-back-inner{
+    position:absolute;inset:6px;
+    border:1px solid rgba(201,168,76,.12);
+    border-radius:4px;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  /* キャッチコピー */
+  .back-copy{
+    position:absolute;
+    top:22px;left:22px;right:22px;
+    z-index:1;
+  }
+  .back-copy-line{
+    width:20px;height:1.5px;
+    background:#c9a84c;
+    opacity:.5;
+    margin-bottom:10px;
+  }
+  .back-copy-text{
+    font-family:'Hiragino Mincho Pro','Noto Serif JP',Georgia,serif;
+    font-size:10.5px;
+    font-weight:700;
+    color:#d4cfc6;
+    line-height:1.85;
+    letter-spacing:.02em;
+  }
+  .back-copy-text em{
+    font-style:normal;
+    color:#c9a84c;
+  }
+
+  /* 区切り線 */
+  .back-divider{
+    position:absolute;
+    bottom:56px;left:22px;right:22px;
+    height:1px;
+    background:repeating-linear-gradient(90deg, rgba(201,168,76,.3) 0, rgba(201,168,76,.3) 4px, transparent 4px, transparent 9px);
+    z-index:1;
+  }
+
+  /* 連絡先 */
+  .back-contact{
+    position:absolute;
+    bottom:14px;left:22px;right:22px;
+    z-index:1;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .back-contact-item{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:8.5px;
+    color:rgba(201,168,76,.65);
+    letter-spacing:.04em;
+    font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+  }
+  .back-contact-icon{
+    font-size:9px;
+    flex-shrink:0;
+  }
+
+  /* ── URL ── */
+  .back-url{
+    position:absolute;
+    bottom:14px;right:22px;
+    z-index:1;
+    font-size:8px;font-weight:700;
+    color:rgba(201,168,76,.4);
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+  }
+
+  /* 注記 */
+  .note{
+    font-size:11px;color:rgba(255,255,255,.25);
+    text-align:center;line-height:1.9;
+    font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+  }
+  .note strong{color:rgba(201,168,76,.45)}
+
+  /* 印刷ボタン */
+  .print-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:12px 28px;
+    background:linear-gradient(135deg,#c9a84c,#e6c96e);
+    color:#0a0f1e;border:none;border-radius:99px;
+    font-size:13px;font-weight:800;
+    font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    cursor:pointer;box-shadow:0 4px 20px rgba(201,168,76,.35);
+    letter-spacing:.04em;
+  }
+
+  @media print{
+    body{background:#fff;gap:20px;padding:20px}
+    .print-btn,.page-title,.note{display:none}
+    .card{box-shadow:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="page-title">Fineme 名刺モックアップ — 91 × 55 mm</div>
+
+<div class="cards-wrap">
+
+  <!-- 表面 -->
+  <div class="card-group">
+    <div class="card-label">表面</div>
+    <div class="card card-front">
+      <div class="card-front-inner"></div>
+
+      <!-- ロゴ -->
+      <div class="front-logo">
+        <img src="/assets/images/fineme-logo-official.png" alt="Fineme"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+        <div style="display:none;font-family:'Hiragino Mincho Pro',Georgia,serif;font-size:16px;font-weight:800;color:#c9a84c;letter-spacing:.06em">Fineme</div>
+      </div>
+
+      <!-- コピー -->
+      <div class="front-copy">
+        <div class="front-copy-main">あなたは、<em>何タイプ</em>ですか？</div>
+        <div class="front-copy-sub">Scan &amp; Find Your Type</div>
+      </div>
+
+      <!-- QR -->
+      <div class="front-qr">
+        <div class="front-qr-box">
+          <div class="front-qr-placeholder"></div>
+        </div>
+        <div class="front-qr-label">fineme.me/diagnosis</div>
+      </div>
+
+      <!-- 名前 -->
+      <div class="front-name">
+        <div class="front-name-role">Fineme 代表</div>
+        <div class="front-name-text">渡邉 英雄</div>
+      </div>
+
+      <div class="front-bottom-line"></div>
+    </div>
+  </div>
+
+  <!-- 裏面 -->
+  <div class="card-group">
+    <div class="card-label">裏面</div>
+    <div class="card card-back">
+      <div class="card-back-inner"></div>
+
+      <!-- キャッチコピー -->
+      <div class="back-copy">
+        <div class="back-copy-line"></div>
+        <div class="back-copy-text">
+          そのまま進むのが怖くなった夜に。<br>
+          自信を再設計する、<em>地図と羅針盤</em>。
+        </div>
+      </div>
+
+      <!-- 区切り -->
+      <div class="back-divider"></div>
+
+      <!-- 連絡先 -->
+      <div class="back-contact">
+        <div class="back-contact-item">
+          <span class="back-contact-icon">✉</span>
+          contact@fineme.me
+        </div>
+        <div class="back-contact-item">
+          <span class="back-contact-icon">📱</span>
+          070-5561-4315
+        </div>
+      </div>
+
+      <div class="back-url">www.fineme.me</div>
+    </div>
+  </div>
+
+</div>
+
+<p class="note">
+  QRコードは印刷前に <strong>fineme.me/diagnosis</strong> のQRを差し替えてください。<br>
+  入稿はこのデザインをリファレンスにCanva・ラクスル等で再現、または画像として渡す。
+</p>
+
+<button class="print-btn" onclick="window.print()">🖨 PDF保存</button>
+
+</body>
+</html>
