@@ -39,7 +39,7 @@ export default function NewMeNaviPage() {
       .compass-strip-icon { font-size: 28px; flex-shrink: 0; }
       .compass-strip-body { flex: 1; }
       .compass-strip-label { font-size: 10px; font-weight: 800; color: rgba(201,168,76,0.7); letter-spacing: .1em; margin: 0 0 3px; text-transform: uppercase; }
-      .compass-strip-text  { font-size: 15px; font-weight: 900; color: #0a0f1e; margin: 0; }
+      .compass-strip-text  { font-size: 15px; font-weight: 900; color: rgba(232,228,220,0.90); margin: 0; }
       .compass-strip-cta { font-size: 12px; font-weight: 700; padding: 7px 14px; border: 1.5px solid #c9a84c; color: #c9a84c; background: transparent; border-radius: 8px; text-decoration: none; white-space: nowrap; flex-shrink: 0; transition: all .15s; }
       .compass-strip-cta:hover { background: #c9a84c; color: #0a0f1e; }
 
@@ -87,7 +87,7 @@ export default function NewMeNaviPage() {
       .milestone-connector { width: 2px; flex: 1; min-height: 14px; background: repeating-linear-gradient(to bottom, rgba(201,168,76,0.6) 0, rgba(201,168,76,0.6) 4px, transparent 4px, transparent 9px); margin: 2px 0; }
       .milestone-label { font-size: 10px; font-weight: 700; margin: 0 0 2px; }
       .milestone-text { font-size: 13px; color: rgba(232,228,220,0.75); line-height: 1.55; margin: 0; }
-      .milestone-current-tag { display: inline-block; font-size: 10px; font-weight: 700; color: #0a0f1e; background: rgba(10,15,30,0.07); padding: 1px 7px; border-radius: 99px; margin-bottom: 3px; border: 1px solid rgba(10,15,30,0.12); }
+      .milestone-current-tag { display: inline-block; font-size: 10px; font-weight: 700; color: rgba(232,228,220,0.90); background: rgba(96,165,250,0.12); padding: 1px 7px; border-radius: 99px; margin-bottom: 3px; border: 1px solid rgba(96,165,250,0.30); }
       .milestone-goal-tag { display: inline-block; font-size: 10px; font-weight: 700; color: #c9a84c; background: rgba(201,168,76,0.12); padding: 1px 7px; border-radius: 99px; margin-bottom: 3px; border: 1px solid rgba(201,168,76,.3); }
       .milestone-dot.past { background: #d1fae5; border: 2px solid #6ee7b7; }
 
@@ -154,8 +154,8 @@ export default function NewMeNaviPage() {
       .prereq-banner { background: rgba(201,168,76,0.07); border: 1.5px solid rgba(201,168,76,0.28); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; }
       .prereq-banner-icon { font-size: 22px; flex-shrink: 0; }
       .prereq-banner-body { flex: 1; }
-      .prereq-banner-title { font-size: 13px; font-weight: 800; color: #0a0f1e; margin: 0 0 2px; }
-      .prereq-banner-desc { font-size: 11px; color: #6b7280; line-height: 1.5; margin: 0; }
+      .prereq-banner-title { font-size: 13px; font-weight: 800; color: rgba(232,228,220,0.90); margin: 0 0 2px; }
+      .prereq-banner-desc { font-size: 11px; color: rgba(232,228,220,0.55); line-height: 1.5; margin: 0; }
       .prereq-banner-count { font-weight: 700; color: #c9a84c; }
 
       /* ── 出発前チェック 全完了トースト ── */
