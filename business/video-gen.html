@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fineme AI動画生成ツール</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0f1e; color: #e8e4dc; min-height: 100vh; }
+
+  .header { padding: 40px 24px 24px; max-width: 960px; margin: 0 auto; }
+  .header h1 { font-size: 22px; font-weight: 800; color: #c9a84c; margin-bottom: 6px; }
+  .header p { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.7; }
+
+  .workflow { background: rgba(201,168,76,0.07); border: 1px solid rgba(201,168,76,0.2); border-radius: 12px; padding: 18px 22px; max-width: 960px; margin: 0 auto 32px; }
+  .workflow h2 { font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #c9a84c; margin-bottom: 12px; }
+  .steps-flow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .step-item { background: rgba(10,15,30,0.6); border: 1px solid rgba(201,168,76,0.2); border-radius: 8px; padding: 8px 14px; font-size: 12px; color: rgba(255,255,255,0.8); }
+  .step-arrow { color: rgba(201,168,76,0.5); font-size: 14px; }
+
+  .progress-wrap { max-width: 960px; margin: 0 auto 24px; padding: 0 24px; }
+  .progress-bar-bg { height: 6px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; margin-top: 10px; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #34d399, #c9a84c); border-radius: 99px; transition: width 0.4s ease; }
+  .progress-label { display: flex; justify-content: space-between; align-items: center; }
+  .progress-label span { font-size: 12px; color: rgba(255,255,255,0.5); }
+  .progress-label strong { font-size: 14px; font-weight: 800; color: #34d399; }
+  .toggle-done-btn { font-size: 11px; padding: 4px 12px; background: transparent; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: rgba(255,255,255,0.45); cursor: pointer; transition: all 0.15s; }
+  .toggle-done-btn:hover { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); }
+
+  /* Character section */
+  .char-section { max-width: 960px; margin: 0 auto 40px; padding: 0 24px; }
+  .section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .section-label .line { width: 20px; height: 1.5px; background: #c9a84c; }
+  .section-label span { font-size: 9px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(201,168,76,0.7); white-space: nowrap; }
+  .section-label .dashed { flex: 1; height: 1px; background: repeating-linear-gradient(90deg,rgba(201,168,76,0.25) 0,rgba(201,168,76,0.25) 4px,transparent 4px,transparent 9px); }
+
+  .char-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .char-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px; }
+  .char-card.kenji { border-color: rgba(239,68,68,0.25); }
+  .char-card.risa  { border-color: rgba(167,139,250,0.25); }
+  .char-emoji { font-size: 28px; margin-bottom: 8px; }
+  .char-name { font-size: 16px; font-weight: 800; margin-bottom: 2px; }
+  .char-name.kenji { color: #f87171; }
+  .char-name.risa  { color: #a78bfa; }
+  .char-role { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 12px; }
+  .char-traits { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .trait { font-size: 10px; padding: 3px 9px; border-radius: 99px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.55); }
+  .prompt-label { font-size: 9px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(201,168,76,0.6); margin-bottom: 8px; }
+  .prompt-code { background: rgba(10,15,30,0.8); border: 1px solid rgba(201,168,76,0.15); border-radius: 8px; padding: 12px; font-family: 'Courier New', monospace; font-size: 10px; color: rgba(240,236,228,0.6); line-height: 1.75; white-space: pre-wrap; max-height: 140px; overflow-y: auto; margin-bottom: 10px; }
+  .copy-btn { padding: 7px 16px; background: transparent; border: 1px solid rgba(201,168,76,0.4); border-radius: 6px; color: #c9a84c; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap; width: 100%; }
+  .copy-btn:hover { background: rgba(201,168,76,0.12); }
+  .copy-btn.copied { background: rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.4); color: #34d399; }
+
+  /* HeyGen memo */
+  .memo-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 18px 22px; }
+  .memo-card h3 { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(201,168,76,0.6); margin-bottom: 12px; }
+  .memo-cols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .memo-col h4 { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
+  .memo-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .memo-list li { font-size: 12px; color: rgba(255,255,255,0.6); padding-left: 14px; position: relative; line-height: 1.6; }
+  .memo-list li::before { content: '–'; position: absolute; left: 0; color: rgba(201,168,76,0.5); }
+
+  /* Script section */
+  .section { max-width: 960px; margin: 0 auto 40px; padding: 0 24px; }
+  .video-grid { display: flex; flex-direction: column; gap: 8px; }
+  .video-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 12px 16px; transition: border-color 0.15s; }
+  .video-row:hover { border-color: rgba(201,168,76,0.25); }
+  .video-row.done { opacity: 0.4; }
+  .video-row.done .video-title { text-decoration: line-through; color: rgba(255,255,255,0.35); }
+  .video-num { font-size: 11px; font-weight: 800; color: rgba(201,168,76,0.45); width: 24px; flex-shrink: 0; font-family: monospace; }
+  .video-type { font-size: 9px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; flex-shrink: 0; white-space: nowrap; }
+  .type-learn { background: rgba(99,179,237,0.12); color: #63b3ed; border: 1px solid rgba(99,179,237,0.2); }
+  .type-cta   { background: rgba(167,139,250,0.1);  color: #a78bfa; border: 1px solid rgba(167,139,250,0.2); }
+  .video-title { font-size: 13px; color: rgba(240,236,228,0.85); flex: 1; line-height: 1.5; }
+  .video-check { width: 20px; height: 20px; border-radius: 5px; border: 1.5px solid rgba(201,168,76,0.35); background: transparent; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .video-check:hover { border-color: rgba(201,168,76,0.7); background: rgba(201,168,76,0.08); }
+  .video-check.done { background: rgba(52,211,153,0.15); border-color: #34d399; }
+  .video-check.done::after { content: '✓'; font-size: 12px; font-weight: 800; color: #34d399; }
+  .script-btn { flex-shrink: 0; padding: 6px 14px; background: transparent; border: 1px solid rgba(201,168,76,0.4); border-radius: 6px; color: #c9a84c; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .script-btn:hover { background: rgba(201,168,76,0.12); }
+  .script-btn.copied { background: rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.4); color: #34d399; }
+
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #1e2b54; border: 1px solid rgba(201,168,76,0.3); border-radius: 10px; padding: 12px 20px; font-size: 13px; color: #c9a84c; font-weight: 700; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100; }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 640px) {
+    .char-grid { grid-template-columns: 1fr; }
+    .memo-cols { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎬 Fineme AI動画生成ツール</h1>
+  <p>ケンジ（非モテ男）× リサ（AIスタイリスト）による縦型ショート動画の制作管理ツール。<br>
+  キャラ設定 → Midjourney生成 → HeyGen登録 → スクリプト生成 → CapCut編集 → 投稿の順で進める。<br>
+  <span style="font-size:11px;color:rgba(201,168,76,0.6)">目標：第1週で21本投稿。キャラ設定は一度だけ。スクリプトはClaudeに依頼。</span></p>
+</div>
+
+<div class="workflow" style="max-width:960px;margin:0 auto 32px;">
+  <h2>制作ワークフロー（1本あたり）</h2>
+  <div class="steps-flow">
+    <div class="step-item">① スクリプトプロンプトをコピー</div>
+    <span class="step-arrow">→</span>
+    <div class="step-item">② Claudeに貼り付けて脚本生成</div>
+    <span class="step-arrow">→</span>
+    <div class="step-item">③ HeyGenでケンジ・リサの口パク動画を生成</div>
+    <span class="step-arrow">→</span>
+    <div class="step-item">④ Kling AIでギャグシーン映像を生成</div>
+    <span class="step-arrow">→</span>
+    <div class="step-item">⑤ CapCutで結合・テロップ・SE追加</div>
+    <span class="step-arrow">→</span>
+    <div class="step-item">⑥ 投稿 → チェックON</div>
+  </div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-label">
+    <span>第1週 投稿進捗</span>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="toggle-done-btn" onclick="toggleHideDone()" id="hide-btn">完了済みを隠す</button>
+      <strong id="progress-text">0 / 21 本</strong>
+    </div>
+  </div>
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+</div>
+
+<!-- キャラクター設定 -->
+<div class="char-section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>キャラクター設定 — Midjourney プロンプト</span>
+    <div class="dashed"></div>
+  </div>
+
+  <div class="char-grid">
+    <!-- ケンジ -->
+    <div class="char-card kenji">
+      <div class="char-emoji">👨</div>
+      <div class="char-name kenji">ケンジ</div>
+      <div class="char-role">30代・非モテ男 / ボケ担当</div>
+      <div class="char-traits">
+        <span class="trait">だらしない体型</span>
+        <span class="trait">テカり顔</span>
+        <span class="trait">天然ボケ</span>
+        <span class="trait">自信満々</span>
+        <span class="trait">方向性がズレてる</span>
+      </div>
+      <div class="prompt-label">Midjourney プロンプト</div>
+      <div class="prompt-code" id="kenji-prompt">Portrait of a Japanese man in his early 30s, slightly overweight with soft round belly, slouching posture, shiny oily skin on face, slightly greasy unkempt hair, wearing a wrinkled faded polo shirt, tired droopy eyes, comedic and lovable appearance, not intimidating, facing camera directly, neutral expression with mouth closed, plain light gray background, soft studio lighting, photorealistic, high detail --ar 9:16 --v 6</div>
+      <button class="copy-btn" onclick="copyText('kenji-prompt', this)">Midjourneyにコピー</button>
+    </div>
+
+    <!-- リサ -->
+    <div class="char-card risa">
+      <div class="char-emoji">👩</div>
+      <div class="char-name risa">リサ</div>
+      <div class="char-role">AIスタイリスト（女性美容師） / ツッコミ・先生担当</div>
+      <div class="char-traits">
+        <span class="trait">プロフェッショナル</span>
+        <span class="trait">冷静</span>
+        <span class="trait">的確なツッコミ</span>
+        <span class="trait">丁寧</span>
+        <span class="trait">わずかに呆れ顔</span>
+      </div>
+      <div class="prompt-label">Midjourney プロンプト</div>
+      <div class="prompt-code" id="risa-prompt">Portrait of a Japanese woman in her late 20s, professional hair stylist, wearing a clean white salon apron over a stylish outfit, sleek straight black hair in a neat ponytail, clear skin, calm confident expression with a very subtle warm smile, polished and elegant, facing camera directly, mouth closed neutral expression, plain light gray background, soft studio lighting, photorealistic, high detail --ar 9:16 --v 6</div>
+      <button class="copy-btn" onclick="copyText('risa-prompt', this)">Midjourneyにコピー</button>
+    </div>
+  </div>
+
+  <!-- HeyGen・制作メモ -->
+  <div class="memo-card">
+    <h3>HeyGen 設定メモ &amp; 制作ポイント</h3>
+    <div class="memo-cols">
+      <div class="memo-col">
+        <h4>Midjourney → HeyGen</h4>
+        <ul class="memo-list">
+          <li>4枚生成して最も正面向きの1枚を選ぶ</li>
+          <li>選んだ画像でバリエーションを出したい場合は <code style="font-size:10px;color:#c9a84c">--cref [URL] --cw 100</code> を追加</li>
+          <li>HeyGen → Avatars → Upload photo で登録</li>
+          <li>ケンジ：日本語男性・少し疲れた声を選ぶ</li>
+          <li>リサ：日本語女性・落ち着いたプロフェッショナルな声を選ぶ</li>
+        </ul>
+      </div>
+      <div class="memo-col">
+        <h4>CapCut テンプレ固定設定</h4>
+        <ul class="memo-list">
+          <li>縦型 9:16 / 1080×1920px</li>
+          <li>BGM：ローファイ系 or 無音（SE多めで代替）</li>
+          <li>テロップ：白太字・黒縁取り / 中央下部</li>
+          <li>カット切替：基本ストレートカット（エフェクトは最小限）</li>
+          <li>オチ前に0.5秒の間を入れる</li>
+        </ul>
+      </div>
+      <div class="memo-col">
+        <h4>ギャグシーン（Kling AI）</h4>
+        <ul class="memo-list">
+          <li>各スクリプトのプロンプトに【制作メモ】として映像プロンプトを出力させる</li>
+          <li>Kling AIに英語プロンプトで5〜8秒のクリップを生成</li>
+          <li>キャラ一貫性は不要（一発ネタシーンなので）</li>
+          <li>コミカル・大げさな表現が得意なので積極活用</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- エンタメ × 学び型 -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>エンタメ × 学び型 — 外見ノウハウ（フォロワー獲得）</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="video-grid" id="grid-1"></div>
+</div>
+
+<!-- エンタメ × 問題提起型 -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>エンタメ × 問題提起型 — 気づき → 診断誘導（Finemeへ流入）</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="video-grid" id="grid-2"></div>
+</div>
+
+<div class="toast" id="toast">コピーしました ✓</div>
+
+<script>
+const VIDEOS = [
+  // エンタメ × 学び型 (grid-1)
+  {
+    id:1, grid:1, type:'learn',
+    title:'香水をいっぱいつけたら清潔感が出るはず',
+    theme:'清潔感の正解は「無臭に近い状態」。香水はあくまで補助で1プッシュが上限。オチのギャグ方向：ケンジが「1プッシュだけ！」と宣言したが人間サイズの巨大香水を取り出してぶしゃあ→周りの人がバタバタ倒れる'
+  },
+  {
+    id:2, grid:1, type:'learn',
+    title:'洗顔はゴシゴシ力強く洗った方が汚れが落ちる',
+    theme:'洗いすぎは皮脂を取りすぎて逆にテカリ・乾燥を招く。正解は泡で優しく30秒。オチのギャグ方向：「じゃあ超優しく洗う！」と言って羽根で顔を撫でるだけ→「これで清潔感出る？」'
+  },
+  {
+    id:3, grid:1, type:'learn',
+    title:'スキンケアは何もしなくて大丈夫、男だから',
+    theme:'保湿しないと乾燥→皮脂過剰分泌→テカリのループ。洗顔後に化粧水＋乳液が基本の2ステップ。オチのギャグ方向：「じゃあ全部やる！」と言って美容液を頭から被る'
+  },
+  {
+    id:4, grid:1, type:'learn',
+    title:'ヘアワックスはたっぷりつけた方がキマる',
+    theme:'つけすぎはベタつき・白残り・不潔感の原因。適量は1円玉サイズ（2〜3g）。オチのギャグ方向：「1円玉サイズ！」と言って1円玉を頭に貼り付けようとする'
+  },
+  {
+    id:5, grid:1, type:'learn',
+    title:'眉毛は細い方がスッキリして清潔感が出る',
+    theme:'現代は適度な太眉が主流。眉毛は顔の印象の7割を決める。細すぎると老けて見える・不健康に見える。オチのギャグ方向：「じゃあ全部剃ってスッキリさせる！」→眉毛がなくなって驚き顔'
+  },
+  {
+    id:6, grid:1, type:'learn',
+    title:'大きめの服の方が「余裕があってかっこいい」',
+    theme:'サイズ感は外見改善で最コスパが高い要素。2サイズ下にするだけで垢抜ける。オチのギャグ方向：「2サイズ下！」と言って小学生の制服を買ってくる'
+  },
+  {
+    id:7, grid:1, type:'learn',
+    title:'ヘアカットは半年に1回行けば十分',
+    theme:'理想は6〜8週間に1回。髪が伸びると形が崩れて清潔感が落ちる。オチのギャグ方向：「じゃあ毎週行く！」と言って毎日同じ美容院に現れる（美容師が「また来たの…」）'
+  },
+  {
+    id:8, grid:1, type:'learn',
+    title:'日焼け止めは女性が使うもの、男には関係ない',
+    theme:'日焼けがくすみ・シミ・老化の原因になる。男性こそスキンケアの土台として日焼け止めが必要。オチのギャグ方向：「じゃあ塗る！」と言って全身真っ白になるほど塗りすぎて雪だるまみたいになる'
+  },
+  {
+    id:9, grid:1, type:'learn',
+    title:'筋トレしてるのでプロテインを毎食飲んでいる',
+    theme:'過剰摂取は内臓への負担・カロリーオーバー・逆効果。運動量に合った摂取が基本。オチのギャグ方向：「適量に減らす！」と言ってプロテインシェイカーを愛おしそうに抱きしめながら「…一口だけ」'
+  },
+  {
+    id:10, grid:1, type:'learn',
+    title:'睡眠は4時間で十分、タフな方がかっこいい',
+    theme:'睡眠中に成長ホルモンが分泌されて肌が再生する。睡眠不足はテカり・くま・むくみの三重苦。オチのギャグ方向：「8時間寝る！」と言ってベッドに入ったまま冬眠するように何日も出てこない'
+  },
+  {
+    id:11, grid:1, type:'learn',
+    title:'マッチングアプリの写真は自撮りで十分、顔が映ればいい',
+    theme:'プロフィール写真は第一印象の全て。明るさ・背景・自然な表情・縦構図がポイント。オチのギャグ方向：「明るくする！」と言って太陽を正面から直視しながら撮影しようとして目が見えなくなる'
+  },
+  {
+    id:12, grid:1, type:'learn',
+    title:'靴はどれでもいい、服さえちゃんとしていれば大丈夫',
+    theme:'女性は男性の靴を必ず見ると言われる。くたびれた靴は全体の印象を下げる。オチのギャグ方向：「いい靴を買う！」と言って中世の騎士の鎧みたいな鉄の靴を買ってくる'
+  },
+  {
+    id:13, grid:1, type:'learn',
+    title:'スーツの袖は長い方が貫禄がある',
+    theme:'正しいシャツの袖出しは1〜1.5cm。長すぎると清潔感がなく幼く見える。オチのギャグ方向：「じゃあピッタリにする！」と言って腕が全部出てる七分袖スーツを着てくる'
+  },
+
+  // エンタメ × 問題提起型 (grid-2)
+  {
+    id:14, grid:2, type:'cta',
+    title:'外見磨きを「とりあえず気合」でずっとやってきた',
+    theme:'順番を知らずにバラバラに試してきたケンジ。リサが「外見磨きには正しい順番がある。順番が違うと何をやっても効果が出ない」と指摘。「じゃあ俺の順番は？」→「まず自分のタイプを診断することから」→Fineme診断CTA。オチ：ケンジが「分かった！全部同時にやる！」'
+  },
+  {
+    id:15, grid:2, type:'cta',
+    title:'外見に頑張って投資しているのになぜ変わらないのか',
+    theme:'ジム・スキンケア・服を買っても変わらないケンジ。リサが「自分に合っていないものにお金を使っても効果は出ない」と指摘。「自分に何が合ってるか知ってる？」→「…知らない」→「だから診断が先」→Fineme診断CTA'
+  },
+  {
+    id:16, grid:2, type:'cta',
+    title:'「清潔感がある」と「垢抜けている」は同じことだと思っていた',
+    theme:'清潔感は最低限の土台・垢抜けはその上に乗るもの。全く別の問題。自分がどちらが欠けているか知ることが最初の一手。→Fineme診断CTA。オチ：ケンジが「じゃあどっちもある！」と謎の自信'
+  },
+  {
+    id:17, grid:2, type:'cta',
+    title:'マッチングアプリの写真だけ変えたがマッチング数は変わらなかった',
+    theme:'写真を変えても外見の土台が弱いと限界がある。写真は外見の結果であって原因ではない。土台から整えることが先。→Fineme診断CTA。オチ：ケンジが「じゃあ写真を100枚撮る！」'
+  },
+  {
+    id:18, grid:2, type:'cta',
+    title:'外見改善に去年10万円使ったのに何も変わらなかった',
+    theme:'何に使ったか聞くと全部バラバラ・順番もなし。リサが「投資先より順番の問題。自分に何が必要かを知らずに使うと全部無駄になる」と解説。→Fineme診断で投資先を明確にしよう→診断CTA'
+  },
+  {
+    id:19, grid:2, type:'cta',
+    title:'変わりたいと思ってから3年、何も変わっていない',
+    theme:'何から始めるか分からずに3年が経過。リサが「最初の一手を間違えると全部止まる。正しい最初の一手は人によって違う」→診断で自分の最初の一手が分かる→Fineme診断CTA'
+  },
+  {
+    id:20, grid:2, type:'cta',
+    title:'いつも周りから「印象が変わらないね」と言われる',
+    theme:'頑張っているのに印象が変わらない。リサが「自分のパターンを知らずに努力してるから。同じ努力でも自分に合った方向に使えば全然違う」→Fineme診断でパターンを知ろう→診断CTA'
+  },
+  {
+    id:21, grid:2, type:'cta',
+    title:'外見を変えたら人生が変わった男の話（感動系）',
+    theme:'変容前のケンジの様子→リサとの出会い（診断から始まる）→少しずつ変わっていく→変容後の変化（表情・自信・周りの反応）。感動的なトーンで締めて「あなたも始められる。まず診断から」→Fineme診断CTA。珍しくオチなし・真剣モードの1本'
+  },
+];
+
+const KENJI_PROMPT = document.getElementById('kenji-prompt').textContent;
+const RISA_PROMPT  = document.getElementById('risa-prompt').textContent;
+
+const SCRIPT_TEMPLATE_LEARN = (theme) => `以下の設定でAIショート動画（縦型・60秒以内）の脚本を書いてください。
+
+【キャラクター】
+- ケンジ（👨）: 30代・非モテ男。だらしない体型・テカり顔。外見に気を使おうとしているが方向性がズレている。天然ボケ。自信満々なのがポイント。
+- リサ（👩）: AIスタイリスト（女性美容師）。プロフェッショナルで冷静。呆れながらも丁寧に教える。的確なツッコミで締める。
+
+【構成（必ず守ること）】
+① ケンジが間違った外見ケアをする（セットアップ・導入）
+② リサが正しい知識を教える（解説・学び）
+③ ケンジが「じゃあ〇〇する！」と宣言（自信満々・ここがボケの起点）
+④ 過剰・的外れな行動でオチをつける（視覚的なギャグ）
+⑤ リサのツッコミで締め（1〜2行）
+
+【今回のテーマ・ネタ方向性】
+${theme}
+
+【出力形式】
+- キャラ名と台詞だけのシンプルな脚本形式（👨ケンジ：〜 / 👩リサ：〜）
+- セリフは短く・テンポよく（1発言2〜3行以内）
+- オチは映像で表現できる視覚的ギャグにする（AI動画で生成できるシーンを意識）
+- 全体で60秒以内に収まる分量（目安15〜20行）
+- 最後に【制作メモ】として「オチのギャグシーン用Kling AI映像プロンプト（英語・1文）」を付けること`;
+
+const SCRIPT_TEMPLATE_CTA = (theme) => `以下の設定でAIショート動画（縦型・60秒以内）の脚本を書いてください。
+
+【キャラクター】
+- ケンジ（👨）: 30代・非モテ男。だらしない体型・テカり顔。変わりたいと思っているが何をすればいいか分かっていない。素直で共感しやすいキャラ。
+- リサ（👩）: AIスタイリスト（女性美容師）。プロフェッショナルで冷静。問題の本質を的確に指摘する。上から目線ではなく寄り添い型。
+
+【構成（必ず守ること）】
+① ケンジが悩みや失敗を語る（共感セットアップ）
+② リサが問題の本質を指摘する（気づきを与える）
+③ ケンジが「じゃあどうすれば？」と聞く
+④ リサが「まず自分を知ることから。Finemeで無料診断できるよ」と自然に誘導
+⑤ ケンジが明るく反応してオチ（重くなりすぎず締める）
+
+【今回のテーマ・ネタ方向性】
+${theme}
+
+【出力形式】
+- キャラ名と台詞だけのシンプルな脚本形式（👨ケンジ：〜 / 👩リサ：〜）
+- セリフは短く・テンポよく（1発言2〜3行以内）
+- 診断CTAは押しつけにならず自然な会話の流れで入れる
+- 全体で60秒以内に収まる分量（目安15〜20行）
+- 最後の行は必ずテロップ指示として「【テロップ】プロフィールのリンクから無料診断→」を付けること`;
+
+/* ---- render ---- */
+function renderGrids() {
+  const grids = {};
+  VIDEOS.forEach(v => {
+    if (!grids[v.grid]) grids[v.grid] = [];
+    grids[v.grid].push(v);
+  });
+  Object.entries(grids).forEach(([g, videos]) => {
+    const el = document.getElementById('grid-' + g);
+    if (!el) return;
+    el.innerHTML = videos.map(v => `
+      <div class="video-row${isDone(v.id) ? ' done' : ''}" id="row-${v.id}">
+        <div class="video-num">${String(v.id).padStart(2,'0')}</div>
+        <div class="video-type ${v.type === 'learn' ? 'type-learn' : 'type-cta'}">${v.type === 'learn' ? '学び' : 'CTA'}</div>
+        <div class="video-title">${v.title}</div>
+        <button class="script-btn" onclick="copyScript(${v.id}, this)">脚本プロンプトをコピー</button>
+        <div class="video-check${isDone(v.id) ? ' done' : ''}" onclick="toggleDone(${v.id})"></div>
+      </div>
+    `).join('');
+  });
+}
+
+/* ---- progress ---- */
+function updateProgress() {
+  const done = VIDEOS.filter(v => isDone(v.id)).length;
+  const total = VIDEOS.length;
+  document.getElementById('progress-text').textContent = `${done} / ${total} 本`;
+  document.getElementById('progress-bar').style.width = (done / total * 100) + '%';
+}
+
+/* ---- done state ---- */
+const STORAGE_KEY = 'fineme:video:done';
+function getDone() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { return []; } }
+function isDone(id) { return getDone().includes(id); }
+function toggleDone(id) {
+  let done = getDone();
+  if (done.includes(id)) { done = done.filter(d => d !== id); }
+  else { done.push(id); }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(done));
+  const row = document.getElementById('row-' + id);
+  const check = row.querySelector('.video-check');
+  const doneNow = done.includes(id);
+  row.classList.toggle('done', doneNow);
+  check.classList.toggle('done', doneNow);
+  if (hideDone && doneNow) row.style.display = 'none';
+  updateProgress();
+}
+
+/* ---- hide done ---- */
+let hideDone = false;
+function toggleHideDone() {
+  hideDone = !hideDone;
+  document.getElementById('hide-btn').textContent = hideDone ? '完了済みを表示' : '完了済みを隠す';
+  VIDEOS.forEach(v => {
+    if (isDone(v.id)) {
+      const row = document.getElementById('row-' + v.id);
+      if (row) row.style.display = hideDone ? 'none' : '';
+    }
+  });
+}
+
+/* ---- copy ---- */
+function copyText(elId, btn) {
+  const text = document.getElementById(elId).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'コピー済 ✓'; btn.classList.add('copied');
+    showToast('コピーしました ✓');
+    setTimeout(() => { btn.textContent = 'Midjourneyにコピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function copyScript(id, btn) {
+  const v = VIDEOS.find(v => v.id === id);
+  if (!v) return;
+  const prompt = v.type === 'learn' ? SCRIPT_TEMPLATE_LEARN(v.theme) : SCRIPT_TEMPLATE_CTA(v.theme);
+  navigator.clipboard.writeText(prompt).then(() => {
+    btn.textContent = 'コピー済 ✓'; btn.classList.add('copied');
+    showToast(`#${String(id).padStart(2,'0')} 脚本プロンプトをコピーしました ✓`);
+    setTimeout(() => { btn.textContent = '脚本プロンプトをコピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+/* ---- toast ---- */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ---- init ---- */
+renderGrids();
+updateProgress();
+</script>
+</body>
+</html>
