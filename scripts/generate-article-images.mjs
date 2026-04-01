@@ -201,24 +201,23 @@ async function uploadToSupabase(imageUrl, storagePath) {
   return urlData.publicUrl;
 }
 
-// ── Step 4: blocksのsrc空imageブロックにURLを埋める、なければ挿入 ──────────
+// ── Step 4: blocksのimageブロックにURLを埋める ───────────────────────────
 function insertImagesIntoBlocks(blocks, imageUrls) {
   if (!blocks || !imageUrls.length) return blocks;
   const result = [...blocks.map(b => ({ ...b }))];
 
-  // src が空の image ブロックを探す
-  const emptyImgIndices = [];
-  result.forEach((b, i) => { if (b.type === 'image' && !b.src) emptyImgIndices.push(i); });
+  // 既存のimageブロック（src有無問わず）を全て取得
+  const imgIndices = result.map((b, i) => b.type === 'image' ? i : -1).filter(i => i !== -1);
 
-  // 空imageブロックにURLを順番に埋める
   imageUrls.forEach((url, i) => {
-    if (i < emptyImgIndices.length) {
-      result[emptyImgIndices[i]].src = url;
+    if (i < imgIndices.length) {
+      // 既存imageブロックのsrcを上書き
+      result[imgIndices[i]].src = url;
     } else {
-      // 空ブロックが足りない場合はh2の直後に新規挿入
+      // imageブロックが足りない場合のみ新規挿入（h2の後）
       const h2Indices = result.map((b, idx) => b.type === 'h2' ? idx : -1).filter(idx => idx !== -1);
       const insertAfter = h2Indices[Math.floor(h2Indices.length / 2)] ?? result.length - 2;
-      result.splice(insertAfter + 1 + (i - emptyImgIndices.length), 0, {
+      result.splice(insertAfter + 1, 0, {
         type: 'image',
         src: url,
         alt: `記事内画像${i + 1}`,
