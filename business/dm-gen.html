@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fineme DMジェネレーター</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0f1e; color: #e8e4dc; min-height: 100vh; }
+
+  .header { padding: 40px 24px 24px; max-width: 960px; margin: 0 auto; }
+  .header h1 { font-size: 22px; font-weight: 800; color: #c9a84c; margin-bottom: 6px; }
+  .header p { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.7; }
+
+  .workflow { background: rgba(201,168,76,0.07); border: 1px solid rgba(201,168,76,0.2); border-radius: 12px; padding: 18px 22px; max-width: 960px; margin: 0 auto 32px; }
+  .workflow h2 { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #c9a84c; margin-bottom: 12px; }
+  .steps-flow { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .step-item { background: rgba(10,15,30,0.6); border: 1px solid rgba(201,168,76,0.2); border-radius: 8px; padding: 8px 14px; font-size: 12px; color: rgba(255,255,255,0.8); }
+  .step-arrow { color: rgba(201,168,76,0.5); font-size: 14px; }
+
+  .tabs { display: flex; gap: 4px; max-width: 960px; margin: 0 auto 0; padding: 0 24px; }
+  .tab { padding: 10px 20px; font-size: 13px; font-weight: 700; border-radius: 8px 8px 0 0; cursor: pointer; border: 1px solid rgba(255,255,255,0.08); border-bottom: none; color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.02); transition: all 0.15s; }
+  .tab.active { background: rgba(201,168,76,0.1); border-color: rgba(201,168,76,0.3); color: #c9a84c; }
+  .tab:hover:not(.active) { color: rgba(255,255,255,0.7); }
+
+  .tab-content { display: none; max-width: 960px; margin: 0 auto; padding: 28px 24px 60px; border-top: 1px solid rgba(201,168,76,0.2); }
+  .tab-content.active { display: block; }
+
+  /* フォーム系 */
+  .form-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+  .form-card h3 { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(201,168,76,0.7); margin-bottom: 18px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .form-row.single { grid-template-columns: 1fr; }
+  .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+  .field label { display: block; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.45); margin-bottom: 6px; letter-spacing: 0.06em; }
+  .field input, .field select, .field textarea {
+    width: 100%; background: rgba(10,15,30,0.7); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #e8e4dc;
+    font-family: inherit; outline: none; transition: border-color 0.15s;
+  }
+  .field input:focus, .field select, .field textarea:focus { border-color: rgba(201,168,76,0.4); }
+  .field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+  .field select { cursor: pointer; }
+  .field select option { background: #0a0f1e; }
+
+  /* ターゲット種別トグル */
+  .target-toggle { display: flex; gap: 8px; margin-bottom: 20px; }
+  .target-btn { flex: 1; padding: 14px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.1); background: transparent; color: rgba(255,255,255,0.4); font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .target-btn.active.provider { border-color: #63b3ed; background: rgba(99,179,237,0.1); color: #63b3ed; }
+  .target-btn.active.partner { border-color: #a78bfa; background: rgba(167,139,250,0.1); color: #a78bfa; }
+  .target-btn:hover:not(.active) { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.7); }
+  .target-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; opacity: 0.7; display: block; margin-top: 2px; }
+
+  /* 生成ボタン */
+  .gen-btn { width: 100%; padding: 14px; border-radius: 10px; border: none; background: linear-gradient(135deg, #c9a84c, #e8c86a); color: #0a0f1e; font-size: 14px; font-weight: 800; cursor: pointer; transition: all 0.2s; margin-top: 6px; }
+  .gen-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .gen-btn:active { transform: translateY(0); }
+
+  /* プロンプト出力 */
+  .prompt-output { background: rgba(10,15,30,0.9); border: 1px solid rgba(201,168,76,0.25); border-radius: 12px; padding: 20px; margin-top: 20px; display: none; }
+  .prompt-output.show { display: block; }
+  .prompt-output-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .prompt-output-header span { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(201,168,76,0.7); }
+  .copy-prompt-btn { padding: 6px 16px; background: transparent; border: 1px solid rgba(201,168,76,0.4); border-radius: 6px; color: #c9a84c; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .copy-prompt-btn:hover { background: rgba(201,168,76,0.12); }
+  .copy-prompt-btn.copied { background: rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.4); color: #34d399; }
+  .prompt-text { font-family: 'Courier New', monospace; font-size: 11.5px; color: rgba(240,236,228,0.75); line-height: 1.9; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+
+  /* CSV インポート */
+  .csv-hint { background: rgba(99,179,237,0.06); border: 1px solid rgba(99,179,237,0.2); border-radius: 10px; padding: 14px 16px; margin-bottom: 18px; font-size: 12px; color: rgba(99,179,237,0.85); line-height: 1.7; }
+  .csv-hint strong { color: #63b3ed; }
+  .csv-hint code { background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; font-size: 11px; }
+  .parse-btn { padding: 10px 24px; background: rgba(99,179,237,0.12); border: 1px solid rgba(99,179,237,0.3); border-radius: 8px; color: #63b3ed; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s; margin-top: 10px; }
+  .parse-btn:hover { background: rgba(99,179,237,0.2); }
+
+  /* アカウントテーブル */
+  .accounts-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .accounts-table th { text-align: left; padding: 10px 12px; font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.35); border-bottom: 1px solid rgba(255,255,255,0.07); }
+  .accounts-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; }
+  .accounts-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .acc-name { font-weight: 700; color: rgba(255,255,255,0.85); }
+  .acc-followers { font-size: 11px; color: rgba(255,255,255,0.4); font-family: monospace; }
+  .acc-bio { color: rgba(255,255,255,0.55); line-height: 1.5; max-width: 260px; }
+  .acc-url { font-size: 11px; }
+  .acc-url a { color: rgba(99,179,237,0.7); text-decoration: none; }
+  .acc-url a:hover { color: #63b3ed; }
+
+  /* ステータスバッジ */
+  .status-badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 800; letter-spacing: 0.05em; cursor: pointer; transition: all 0.15s; }
+  .status-pending   { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.1); }
+  .status-prompted  { background: rgba(201,168,76,0.1); color: #c9a84c; border: 1px solid rgba(201,168,76,0.25); }
+  .status-sent      { background: rgba(99,179,237,0.1); color: #63b3ed; border: 1px solid rgba(99,179,237,0.25); }
+  .status-replied   { background: rgba(52,211,153,0.1); color: #34d399; border: 1px solid rgba(52,211,153,0.25); }
+  .status-meeting   { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+  .status-converted { background: rgba(52,211,153,0.18); color: #34d399; border: 1px solid rgba(52,211,153,0.4); }
+  .status-rejected  { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.07); }
+
+  .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .action-btn { padding: 4px 10px; background: transparent; border: 1px solid rgba(201,168,76,0.3); border-radius: 5px; color: #c9a84c; font-size: 10px; font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .action-btn:hover { background: rgba(201,168,76,0.1); }
+  .action-btn.del { border-color: rgba(248,113,113,0.3); color: rgba(248,113,113,0.6); }
+  .action-btn.del:hover { background: rgba(248,113,113,0.08); }
+
+  /* パイプライン統計 */
+  .pipeline-stats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+  .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 14px 18px; min-width: 100px; flex: 1; text-align: center; }
+  .stat-num { font-size: 24px; font-weight: 800; color: #c9a84c; }
+  .stat-label { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 2px; font-weight: 700; letter-spacing: 0.06em; }
+  .stat-card.green .stat-num { color: #34d399; }
+  .stat-card.blue .stat-num { color: #63b3ed; }
+
+  /* フィルタ */
+  .filter-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-btn { padding: 5px 14px; background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 99px; color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .filter-btn.active { background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.35); color: #c9a84c; }
+
+  /* モーダル */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; display: none; align-items: center; justify-content: center; padding: 24px; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #0e1428; border: 1px solid rgba(201,168,76,0.25); border-radius: 16px; padding: 28px; max-width: 680px; width: 100%; max-height: 85vh; overflow-y: auto; }
+  .modal h3 { font-size: 14px; font-weight: 800; color: #c9a84c; margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+  .modal-close { padding: 10px 20px; background: transparent; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: rgba(255,255,255,0.5); font-size: 13px; cursor: pointer; }
+  .modal-close:hover { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.8); }
+
+  /* Apifyガイド */
+  .guide-steps { display: flex; flex-direction: column; gap: 12px; }
+  .guide-step { display: flex; gap: 14px; align-items: flex-start; }
+  .guide-step-num { width: 26px; height: 26px; border-radius: 50%; background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.3); color: #c9a84c; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .guide-step-body { flex: 1; }
+  .guide-step-body strong { font-size: 13px; color: rgba(255,255,255,0.85); display: block; margin-bottom: 4px; }
+  .guide-step-body p { font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.6; }
+  .guide-step-body code { background: rgba(255,255,255,0.07); padding: 1px 7px; border-radius: 4px; font-size: 11px; color: rgba(201,168,76,0.8); }
+  .hashtag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .hashtag { padding: 3px 10px; background: rgba(99,179,237,0.08); border: 1px solid rgba(99,179,237,0.2); border-radius: 99px; font-size: 11px; color: rgba(99,179,237,0.8); font-family: monospace; cursor: pointer; transition: all 0.15s; }
+  .hashtag:hover { background: rgba(99,179,237,0.15); }
+  .hashtag.copied { background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.3); color: #34d399; }
+
+  /* empty state */
+  .empty-state { text-align: center; padding: 60px 24px; color: rgba(255,255,255,0.25); }
+  .empty-state p { font-size: 13px; line-height: 1.8; }
+
+  /* toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #1e2b54; border: 1px solid rgba(201,168,76,0.3); border-radius: 10px; padding: 12px 20px; font-size: 13px; color: #c9a84c; font-weight: 700; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 999; }
+  .toast.show { opacity: 1; }
+
+  /* inline prompt モーダル */
+  .inline-prompt { background: rgba(10,15,30,0.95); border: 1px solid rgba(201,168,76,0.2); border-radius: 10px; padding: 18px; margin-top: 14px; display: none; }
+  .inline-prompt.show { display: block; }
+  .inline-prompt .prompt-text { max-height: 280px; }
+
+  @media (max-width: 600px) {
+    .form-row { grid-template-columns: 1fr; }
+    .form-row.triple { grid-template-columns: 1fr 1fr; }
+    .pipeline-stats { gap: 8px; }
+    .stat-card { min-width: 80px; padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Fineme DMジェネレーター</h1>
+  <p>Instagram アカウントの情報を入力するだけで、スクリーニング＋パーソナライズDM文案プロンプトを生成。<br>
+  プロンプトを Claude に貼り付けるとそのまま送れるDMが出力されます。</p>
+</div>
+
+<div class="workflow" style="max-width:960px;margin:0 auto 28px;padding:18px 22px;">
+  <h2>ワークフロー</h2>
+  <div class="steps-flow">
+    <div class="step-item">① Apifyでアカウント収集</div>
+    <span class="step-arrow">→</span>
+    <div class="step-item">② CSVをここに貼り付け</div>
+    <span class="step-arrow">→</span>
+    <div class="step-item">③ プロンプト生成・コピー</div>
+    <span class="step-arrow">→</span>
+    <div class="step-item">④ Claude に貼り付けてDM取得</div>
+    <span class="step-arrow">→</span>
+    <div class="step-item">⑤ Instagram で手動送信</div>
+    <span class="step-arrow">→</span>
+    <div class="step-item">⑥ ステータス更新</div>
+  </div>
+</div>
+
+<div class="tabs" style="max-width:960px;margin:0 auto 0;padding:0 24px;">
+  <div class="tab active" onclick="switchTab('single')">単体入力</div>
+  <div class="tab" onclick="switchTab('csv')">CSVインポート</div>
+  <div class="tab" onclick="switchTab('pipeline')">パイプライン管理</div>
+  <div class="tab" onclick="switchTab('guide')">Apify使い方</div>
+</div>
+
+<!-- ========== TAB: 単体入力 ========== -->
+<div class="tab-content active" id="tab-single">
+
+  <div class="form-card">
+    <h3>ターゲット種別</h3>
+    <div class="target-toggle">
+      <button class="target-btn active provider" onclick="setTarget('provider', this)">
+        掲載者
+        <span class="target-label">集客・掲載の提案</span>
+      </button>
+      <button class="target-btn partner" onclick="setTarget('partner', this)">
+        創業パートナー
+        <span class="target-label">月1FB＋紹介</span>
+      </button>
+    </div>
+
+    <div class="form-row triple">
+      <div class="field">
+        <label>カテゴリ</label>
+        <select id="s-category">
+          <option value="personal_gym">パーソナルジム</option>
+          <option value="eyebrow">眉毛サロン</option>
+          <option value="fashion">ファッション・スタイリスト</option>
+          <option value="total">外見トータルサポート</option>
+          <option value="hair">ヘアサロン</option>
+          <option value="other">その他</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>アカウント名</label>
+        <input type="text" id="s-name" placeholder="@username" />
+      </div>
+      <div class="field">
+        <label>フォロワー数（概算）</label>
+        <input type="text" id="s-followers" placeholder="例: 2,800" />
+      </div>
+    </div>
+
+    <div class="form-row single">
+      <div class="field">
+        <label>プロフィール文（bio）</label>
+        <textarea id="s-bio" rows="3" placeholder="Instagramのプロフィール文をそのままコピペ"></textarea>
+      </div>
+    </div>
+
+    <div class="form-row single">
+      <div class="field">
+        <label>最近の投稿メモ（任意）</label>
+        <textarea id="s-notes" rows="2" placeholder="気になった投稿の内容・雰囲気・キャプションのトーンなど"></textarea>
+      </div>
+    </div>
+
+    <button class="gen-btn" onclick="generateSingle()">プロンプトを生成する</button>
+  </div>
+
+  <div class="prompt-output" id="single-output">
+    <div class="prompt-output-header">
+      <span>生成されたプロンプト — Claude に貼り付けてください</span>
+      <button class="copy-prompt-btn" onclick="copyPrompt('single-prompt-text', this)">コピー</button>
+    </div>
+    <pre class="prompt-text" id="single-prompt-text"></pre>
+    <div style="margin-top:14px;display:flex;gap:10px;align-items:center;">
+      <button class="action-btn" onclick="saveToPipeline()">パイプラインに追加</button>
+      <span style="font-size:11px;color:rgba(255,255,255,0.3)">追加後はパイプライン管理タブでステータス追跡できます</span>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TAB: CSVインポート ========== -->
+<div class="tab-content" id="tab-csv">
+
+  <div class="csv-hint">
+    <strong>Apify Instagram Scraper</strong> のCSV出力をそのまま貼り付けてください。<br>
+    対応カラム: <code>username</code> <code>biography</code> <code>followersCount</code> <code>url</code> <code>fullName</code><br>
+    ※ Apifyの使い方は「Apify使い方」タブを参照
+  </div>
+
+  <div class="form-card">
+    <h3>CSVデータ貼り付け</h3>
+    <div class="form-row triple">
+      <div class="field">
+        <label>ターゲット種別</label>
+        <select id="csv-target">
+          <option value="provider">掲載者</option>
+          <option value="partner">創業パートナー</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>カテゴリ</label>
+        <select id="csv-category">
+          <option value="personal_gym">パーソナルジム</option>
+          <option value="eyebrow">眉毛サロン</option>
+          <option value="fashion">ファッション・スタイリスト</option>
+          <option value="total">外見トータルサポート</option>
+          <option value="hair">ヘアサロン</option>
+          <option value="other">その他</option>
+        </select>
+      </div>
+      <div class="field" style="display:flex;flex-direction:column;justify-content:flex-end;">
+        <button class="parse-btn" onclick="parseCSV()">CSVを読み込む</button>
+      </div>
+    </div>
+    <div class="form-row single">
+      <div class="field">
+        <label>CSVテキスト</label>
+        <textarea id="csv-input" rows="8" placeholder="Apify からダウンロードした CSV の内容をここに貼り付け（ヘッダー行込み）"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div id="csv-results"></div>
+</div>
+
+<!-- ========== TAB: パイプライン管理 ========== -->
+<div class="tab-content" id="tab-pipeline">
+
+  <div class="pipeline-stats" id="pipeline-stats"></div>
+
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="filterPipeline('all', this)">すべて</button>
+    <button class="filter-btn" onclick="filterPipeline('pending', this)">未処理</button>
+    <button class="filter-btn" onclick="filterPipeline('prompted', this)">プロンプト生成済</button>
+    <button class="filter-btn" onclick="filterPipeline('sent', this)">DM送信済</button>
+    <button class="filter-btn" onclick="filterPipeline('replied', this)">返信あり</button>
+    <button class="filter-btn" onclick="filterPipeline('meeting', this)">商談中</button>
+    <button class="filter-btn" onclick="filterPipeline('converted', this)">成約</button>
+    <div style="flex:1"></div>
+    <button class="filter-btn" onclick="if(confirm('全データを削除しますか？'))clearPipeline()" style="border-color:rgba(248,113,113,0.2);color:rgba(248,113,113,0.4);">全削除</button>
+  </div>
+
+  <div id="pipeline-list"></div>
+</div>
+
+<!-- ========== TAB: Apify使い方 ========== -->
+<div class="tab-content" id="tab-guide">
+  <div class="form-card">
+    <h3>Apify でアカウントを収集する手順</h3>
+    <div class="guide-steps">
+      <div class="guide-step">
+        <div class="guide-step-num">1</div>
+        <div class="guide-step-body">
+          <strong>Apify にアクセス・ログイン</strong>
+          <p>apify.com にアクセスしてアカウント作成（無料枠あり・クレカ不要）。</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-step-num">2</div>
+        <div class="guide-step-body">
+          <strong>「Instagram Hashtag Scraper」を検索</strong>
+          <p>Actors（アクター）から <code>Instagram Hashtag Scraper</code> または <code>Instagram Profile Scraper</code> を選択。</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-step-num">3</div>
+        <div class="guide-step-body">
+          <strong>ハッシュタグを入力してRun</strong>
+          <p>以下のハッシュタグを使い分けてリストアップ。1回のRunで1〜3個が目安。</p>
+          <div class="hashtag-list" id="hashtag-list">
+            <span class="hashtag" onclick="copyHashtag(this)">#パーソナルトレーナー</span>
+            <span class="hashtag" onclick="copyHashtag(this)">#メンズパーソナルジム</span>
+            <span class="hashtag" onclick="copyHashtag(this)">#男性ボディメイク</span>
+            <span class="hashtag" onclick="copyHashtag(this)">#眉毛サロン</span>
+            <span class="hashtag" onclick="copyHashtag(this)">#メンズ眉毛</span>
+            <span class="hashtag" onclick="copyHashtag(this)">#眉毛スタイリスト</span>
+            <span class="hashtag" onclick="copyHashtag(this)">#パーソナルスタイリスト</span>
+            <span class="hashtag" onclick="copyHashtag(this)">#メンズファッション</span>
+            <span class="hashtag" onclick="copyHashtag(this)">#骨格診断スタイリスト</span>
+            <span class="hashtag" onclick="copyHashtag(this)">#外見磨き</span>
+            <span class="hashtag" onclick="copyHashtag(this)">#メンズイメチェン</span>
+            <span class="hashtag" onclick="copyHashtag(this)">#イメコン</span>
+            <span class="hashtag" onclick="copyHashtag(this)">#男性の自信</span>
+            <span class="hashtag" onclick="copyHashtag(this)">#外見改善</span>
+          </div>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-step-num">4</div>
+        <div class="guide-step-body">
+          <strong>Results → Export → CSV でダウンロード</strong>
+          <p>Run完了後、Results タブから <code>Export</code> → <code>CSV</code> を選択してダウンロード。</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-step-num">5</div>
+        <div class="guide-step-body">
+          <strong>CSVをテキストエディタで開いてコピー</strong>
+          <p>VS Code や メモ帳 で開いて全選択 → コピー → このツールの「CSVインポート」タブに貼り付け。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-card" style="margin-top:16px;">
+    <h3>スクリーニング基準（参考）</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:12px;">
+      <div>
+        <div style="color:#63b3ed;font-weight:800;margin-bottom:8px;font-size:11px;letter-spacing:0.06em;">✅ 優先度 高</div>
+        <ul style="color:rgba(255,255,255,0.6);line-height:2;padding-left:16px;">
+          <li>フォロワー 500〜10,000</li>
+          <li>男性クライアントのBefore/After投稿あり</li>
+          <li>個人事業主・小規模サロン</li>
+          <li>キャプションが丁寧・長い（思想がある）</li>
+          <li>投稿頻度：週1回以上</li>
+        </ul>
+      </div>
+      <div>
+        <div style="color:rgba(248,113,113,0.8);font-weight:800;margin-bottom:8px;font-size:11px;letter-spacing:0.06em;">⚠️ 見送り検討</div>
+        <ul style="color:rgba(255,255,255,0.6);line-height:2;padding-left:16px;">
+          <li>フォロワー 10万超（法人・大手の可能性）</li>
+          <li>投稿が宣伝ばかり</li>
+          <li>女性専門のサービス</li>
+          <li>最終投稿が3ヶ月以上前</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- モーダル（パイプラインのプロンプト表示） -->
+<div class="modal-overlay" id="prompt-modal" onclick="closeModal(event)">
+  <div class="modal">
+    <h3 id="modal-title">プロンプト</h3>
+    <pre class="prompt-text" id="modal-prompt-text" style="background:rgba(10,15,30,0.8);border:1px solid rgba(201,168,76,0.15);border-radius:8px;padding:14px;max-height:360px;overflow-y:auto;font-size:11px;line-height:1.9;color:rgba(240,236,228,0.75);white-space:pre-wrap;"></pre>
+    <div class="modal-actions">
+      <button class="copy-prompt-btn" onclick="copyPrompt('modal-prompt-text', this)" style="padding:10px 24px;font-size:13px;">コピー</button>
+      <button class="modal-close" onclick="document.getElementById('prompt-modal').classList.remove('show')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== State ==========
+let currentTarget = 'provider';
+let pipeline = JSON.parse(localStorage.getItem('fineme:dmgen:pipeline') || '[]');
+let currentFilter = 'all';
+let lastSingleData = null;
+
+// ========== Utils ==========
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    if (btn) { btn.textContent = 'コピー済'; btn.classList.add('copied'); setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000); }
+    showToast('クリップボードにコピーしました');
+  });
+}
+
+function copyPrompt(elemId, btn) {
+  const text = document.getElementById(elemId).textContent;
+  copyText(text, btn);
+}
+
+function savePipeline() {
+  localStorage.setItem('fineme:dmgen:pipeline', JSON.stringify(pipeline));
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.tab')[['single','csv','pipeline','guide'].indexOf(name)].classList.add('active');
+  if (name === 'pipeline') renderPipeline();
+}
+
+function closeModal(e) {
+  if (e.target.id === 'prompt-modal') document.getElementById('prompt-modal').classList.remove('show');
+}
+
+// ========== Target Toggle ==========
+function setTarget(type, btn) {
+  currentTarget = type;
+  document.querySelectorAll('.target-btn').forEach(b => b.classList.remove('active', 'provider', 'partner'));
+  btn.classList.add('active', type);
+}
+
+// ========== Prompt Generator ==========
+function categoryLabel(cat) {
+  return { personal_gym:'パーソナルジム', eyebrow:'眉毛サロン', fashion:'ファッション・スタイリスト', total:'外見トータルサポート', hair:'ヘアサロン', other:'その他' }[cat] || cat;
+}
+
+function buildPrompt(data) {
+  const isPartner = data.target === 'partner';
+  const catLabel = categoryLabel(data.category);
+
+  if (isPartner) {
+    return `以下のInstagramアカウントについて、2つのタスクを実行してください。
+
+【アカウント情報】
+アカウント名: ${data.name || '（不明）'}
+フォロワー数: ${data.followers || '不明'}
+カテゴリ: ${catLabel}
+プロフィール文:
+${data.bio || '（なし）'}
+${data.notes ? `\n投稿の雰囲気・メモ:\n${data.notes}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━
+【タスク1: 創業パートナー適合スクリーニング】
+
+以下の基準で1〜5のスコアと理由を2文で評価してください：
+- 投稿・bioに「なぜやるか」という思想・哲学が見えるか
+- 「男性の自信を育てたい」「人生を変えたい」などの価値観が感じられるか
+- キャプションが丁寧・熱量がある（押し売りでない）か
+- コミュニケーションが取れそうな人柄か
+- 向上心・自発性を感じさせるか
+
+出力形式:
+スコア: X/5
+理由: （2文以内）
+
+━━━━━━━━━━━━━━━━━━━━━━
+【タスク2: 創業パートナー向けDM文案】
+
+以下の構造で、Instagramのダイレクトメッセージを作成してください。
+
+構造:
+① プロフィールへの具体的な言及（コピペ感ゼロ・相手が「読んでくれた」と感じる一言）
+② Finemeのビジョンを一言で伝える（「外見を起点に、自信を再設計する男性向けのサービスを作っています」）
+③ お願いしたいこと（月1回、現場の声やフィードバックをいただきながらプロダクト改善に参加してもらいたい。紹介も歓迎）
+④ 「一度話を聞いてもらえませんか」
+
+条件:
+- 文字数: 180〜220字
+- トーン: 熱量がある。丁寧だが堅くない。仲間を探している感じ
+- 「突然のDMすみません」は最初の一言として自然につける
+- NG: 売り込み感・上から目線・テンプレ感
+
+Fineme補足情報:
+Finemeは「恋愛に悩む男性向けの外見磨きサービス検索サイト」。ミッションは「外見を起点に、自信を再設計する人を増やす」。現場のプロたちのリアルな声でプロダクトを作っていきたい段階。`;
+  } else {
+    return `以下のInstagramアカウントについて、2つのタスクを実行してください。
+
+【アカウント情報】
+アカウント名: ${data.name || '（不明）'}
+フォロワー数: ${data.followers || '不明'}
+カテゴリ: ${catLabel}
+プロフィール文:
+${data.bio || '（なし）'}
+${data.notes ? `\n投稿の雰囲気・メモ:\n${data.notes}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━
+【タスク1: 掲載者適合スクリーニング】
+
+以下の基準で1〜5のスコアと理由を2文で評価してください：
+- 男性クライアントの外見変容に関わるサービスか
+- 変わりたい人を否定しない・押し付けないサービスか
+- 個人事業主または小規模サロンか（大手は不可）
+- フォロワー500〜10,000の規模か（反応しやすい）
+- 最近も投稿が続いているか（活動中か）
+
+出力形式:
+スコア: X/5
+理由: （2文以内）
+
+━━━━━━━━━━━━━━━━━━━━━━
+【タスク2: 掲載者向けDM文案】
+
+以下の構造で、Instagramのダイレクトメッセージを作成してください。
+
+構造:
+① プロフィール・投稿への具体的な言及（コピペ感ゼロ・相手が「見てくれた」と感じる一言）
+② Finemeを一言で紹介（「恋愛に悩む男性が外見を磨けるサービスを探せるポータルサイトを作っています」）
+③ このサービス・この人に刺さる掲載メリット（無料掲載・変わりたい男性に届く・マッチング機能）
+④ 「5分でご説明できます。詳しくお話できますか？」
+
+条件:
+- 文字数: 150〜180字
+- トーン: 軽快で読みやすい。熱量はあるが短く
+- 「突然のDMすみません」は最初の一言として自然につける
+- NG: 売り込み感・長すぎ・テンプレ感
+
+Fineme補足情報:
+Finemeは「恋愛に悩む男性向けの外見磨きサービス検索サイト」。掲載は完全無料。「外見を起点に、自信を再設計する」という思想のもと、変わりたい男性とサービス提供者をつなぐプラットフォーム。`;
+  }
+}
+
+// ========== Single Tab ==========
+function generateSingle() {
+  const data = {
+    target: currentTarget,
+    category: document.getElementById('s-category').value,
+    name: document.getElementById('s-name').value.trim(),
+    followers: document.getElementById('s-followers').value.trim(),
+    bio: document.getElementById('s-bio').value.trim(),
+    notes: document.getElementById('s-notes').value.trim(),
+  };
+
+  if (!data.bio && !data.name) { showToast('アカウント名またはbioを入力してください'); return; }
+
+  lastSingleData = data;
+  const prompt = buildPrompt(data);
+  document.getElementById('single-prompt-text').textContent = prompt;
+  document.getElementById('single-output').classList.add('show');
+  document.getElementById('single-output').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function saveToPipeline() {
+  if (!lastSingleData) return;
+  const entry = {
+    id: Date.now(),
+    ...lastSingleData,
+    status: 'prompted',
+    createdAt: new Date().toISOString(),
+    prompt: buildPrompt(lastSingleData),
+  };
+  pipeline.unshift(entry);
+  savePipeline();
+  showToast('パイプラインに追加しました');
+}
+
+// ========== CSV Tab ==========
+function parseCSV() {
+  const raw = document.getElementById('csv-input').value.trim();
+  if (!raw) { showToast('CSVを貼り付けてください'); return; }
+
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l);
+  if (lines.length < 2) { showToast('データが少なすぎます'); return; }
+
+  const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim().toLowerCase());
+
+  const idx = (names) => {
+    for (const n of names) { const i = headers.indexOf(n); if (i >= 0) return i; }
+    return -1;
+  };
+  const iUser = idx(['username', 'username/handle', 'username / handle']);
+  const iName = idx(['fullname', 'full name', 'name']);
+  const iBio  = idx(['biography', 'bio', 'description']);
+  const iFollow = idx(['followerscount', 'followers', 'followers count']);
+  const iUrl  = idx(['url', 'profileurl', 'profile url', 'instagram url']);
+
+  const accounts = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i]);
+    if (!cols.length) continue;
+    const username = iUser >= 0 ? cols[iUser] : '';
+    const fullName = iName >= 0 ? cols[iName] : '';
+    const bio      = iBio  >= 0 ? cols[iBio]  : '';
+    const followers = iFollow >= 0 ? cols[iFollow] : '';
+    const url      = iUrl  >= 0 ? cols[iUrl]  : (username ? `https://www.instagram.com/${username}/` : '');
+    if (!username && !bio) continue;
+    accounts.push({ username, fullName, bio, followers, url });
+  }
+
+  if (!accounts.length) { showToast('アカウントが見つかりませんでした。列名を確認してください'); return; }
+
+  const target   = document.getElementById('csv-target').value;
+  const category = document.getElementById('csv-category').value;
+
+  const container = document.getElementById('csv-results');
+  container.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <span style="font-size:13px;color:rgba(255,255,255,0.6);"><strong style="color:#c9a84c">${accounts.length}</strong> 件のアカウントを読み込みました</span>
+      <button class="action-btn" onclick="addAllToPipeline()" style="font-size:12px;padding:7px 16px;">全件をパイプラインに追加</button>
+    </div>
+    <div style="overflow-x:auto;">
+    <table class="accounts-table">
+      <thead>
+        <tr>
+          <th>アカウント</th>
+          <th>フォロワー</th>
+          <th>プロフィール文</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${accounts.map((a, i) => `
+          <tr id="csv-row-${i}">
+            <td>
+              <div class="acc-name">@${a.username || a.fullName}</div>
+              ${a.url ? `<div class="acc-url"><a href="${a.url}" target="_blank">プロフィールを開く →</a></div>` : ''}
+            </td>
+            <td><span class="acc-followers">${a.followers ? Number(a.followers).toLocaleString() : '—'}</span></td>
+            <td><div class="acc-bio">${a.bio ? a.bio.substring(0, 120) + (a.bio.length > 120 ? '…' : '') : '—'}</div></td>
+            <td>
+              <div class="row-actions">
+                <button class="action-btn" onclick="generateFromCSV(${i}, this)" data-idx="${i}">プロンプト生成</button>
+                <button class="action-btn" onclick="addOneToPipeline(${i})">追加</button>
+              </div>
+              <div class="inline-prompt" id="csv-prompt-${i}">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                  <span style="font-size:10px;color:rgba(201,168,76,0.6);font-weight:800;letter-spacing:0.08em;text-transform:uppercase;">PROMPT</span>
+                  <button class="copy-prompt-btn" onclick="copyPrompt('csv-pt-${i}',this)">コピー</button>
+                </div>
+                <pre class="prompt-text" id="csv-pt-${i}"></pre>
+              </div>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    </div>
+  `;
+
+  window._csvAccounts = accounts;
+  window._csvTarget   = target;
+  window._csvCategory = category;
+  showToast(`${accounts.length}件読み込み完了`);
+}
+
+function generateFromCSV(idx, btn) {
+  const a = window._csvAccounts[idx];
+  const data = { target: window._csvTarget, category: window._csvCategory, name: a.username || a.fullName, followers: a.followers, bio: a.bio, notes: '' };
+  const prompt = buildPrompt(data);
+  document.getElementById(`csv-pt-${idx}`).textContent = prompt;
+  document.getElementById(`csv-prompt-${idx}`).classList.add('show');
+}
+
+function addOneToPipeline(idx) {
+  const a = window._csvAccounts[idx];
+  const data = { target: window._csvTarget, category: window._csvCategory, name: a.username || a.fullName, followers: a.followers, bio: a.bio, notes: '', url: a.url };
+  const entry = { id: Date.now() + idx, ...data, status: 'pending', createdAt: new Date().toISOString(), prompt: buildPrompt(data) };
+  if (pipeline.find(p => p.name === entry.name)) { showToast('すでに追加済みです'); return; }
+  pipeline.unshift(entry);
+  savePipeline();
+  showToast(`@${entry.name} をパイプラインに追加`);
+}
+
+function addAllToPipeline() {
+  if (!window._csvAccounts) return;
+  let added = 0;
+  window._csvAccounts.forEach((a, idx) => {
+    const data = { target: window._csvTarget, category: window._csvCategory, name: a.username || a.fullName, followers: a.followers, bio: a.bio, notes: '', url: a.url };
+    if (pipeline.find(p => p.name === data.name)) return;
+    pipeline.unshift({ id: Date.now() + idx, ...data, status: 'pending', createdAt: new Date().toISOString(), prompt: buildPrompt(data) });
+    added++;
+  });
+  savePipeline();
+  showToast(`${added}件追加しました`);
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+// ========== Pipeline ==========
+const statusLabels = { pending:'未処理', prompted:'プロンプト生成済', sent:'DM送信済', replied:'返信あり', meeting:'商談中', converted:'成約', rejected:'見送り' };
+const statusNext   = { pending:'prompted', prompted:'sent', sent:'replied', replied:'meeting', meeting:'converted' };
+
+function updateStatus(id, status) {
+  const entry = pipeline.find(p => p.id === id);
+  if (entry) { entry.status = status; savePipeline(); renderPipeline(); }
+}
+
+function deleteEntry(id) {
+  pipeline = pipeline.filter(p => p.id !== id);
+  savePipeline();
+  renderPipeline();
+}
+
+function clearPipeline() {
+  pipeline = [];
+  savePipeline();
+  renderPipeline();
+}
+
+function filterPipeline(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPipeline();
+}
+
+function renderPipeline() {
+  // stats
+  const counts = { all: pipeline.length, pending:0, prompted:0, sent:0, replied:0, meeting:0, converted:0, rejected:0 };
+  pipeline.forEach(p => { if (counts[p.status] !== undefined) counts[p.status]++; });
+
+  document.getElementById('pipeline-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${counts.all}</div><div class="stat-label">TOTAL</div></div>
+    <div class="stat-card"><div class="stat-num">${counts.sent}</div><div class="stat-label">DM送信済</div></div>
+    <div class="stat-card blue"><div class="stat-num">${counts.replied}</div><div class="stat-label">返信あり</div></div>
+    <div class="stat-card green"><div class="stat-num">${counts.converted}</div><div class="stat-label">成約</div></div>
+    <div class="stat-card" style="flex:1;"><div class="stat-num" style="font-size:18px;color:rgba(255,255,255,0.4);">${counts.sent > 0 ? Math.round(counts.replied/counts.sent*100) : 0}%</div><div class="stat-label">返信率</div></div>
+  `;
+
+  const filtered = currentFilter === 'all' ? pipeline : pipeline.filter(p => p.status === currentFilter);
+
+  if (!filtered.length) {
+    document.getElementById('pipeline-list').innerHTML = `<div class="empty-state"><p>アカウントがありません。<br>単体入力またはCSVインポートで追加してください。</p></div>`;
+    return;
+  }
+
+  document.getElementById('pipeline-list').innerHTML = `
+    <table class="accounts-table">
+      <thead>
+        <tr>
+          <th>アカウント</th>
+          <th>種別/カテゴリ</th>
+          <th>ステータス</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filtered.map(p => `
+          <tr>
+            <td>
+              <div class="acc-name">@${p.name || '—'}</div>
+              ${p.url ? `<div class="acc-url"><a href="${p.url}" target="_blank">Instagramを開く →</a></div>` : ''}
+              <div style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:3px;">${new Date(p.createdAt).toLocaleDateString('ja-JP')}</div>
+            </td>
+            <td>
+              <span style="font-size:10px;font-weight:800;color:${p.target==='partner'?'rgba(167,139,250,0.8)':'rgba(99,179,237,0.8)'};">${p.target==='partner'?'創業パートナー':'掲載者'}</span><br>
+              <span style="font-size:11px;color:rgba(255,255,255,0.4);">${categoryLabel(p.category)}</span>
+            </td>
+            <td>
+              <select onchange="updateStatus(${p.id}, this.value)" style="background:rgba(10,15,30,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:#e8e4dc;cursor:pointer;outline:none;">
+                ${Object.entries(statusLabels).map(([v,l]) => `<option value="${v}" ${p.status===v?'selected':''}>${l}</option>`).join('')}
+              </select>
+            </td>
+            <td>
+              <div class="row-actions">
+                <button class="action-btn" onclick="showPromptModal(${p.id})">プロンプト</button>
+                <button class="action-btn del" onclick="deleteEntry(${p.id})">削除</button>
+              </div>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function showPromptModal(id) {
+  const entry = pipeline.find(p => p.id === id);
+  if (!entry) return;
+  document.getElementById('modal-title').textContent = `@${entry.name} — ${entry.target === 'partner' ? '創業パートナー' : '掲載者'} プロンプト`;
+  document.getElementById('modal-prompt-text').textContent = entry.prompt;
+  document.getElementById('prompt-modal').classList.add('show');
+}
+
+// ========== Hashtag copy ==========
+function copyHashtag(el) {
+  navigator.clipboard.writeText(el.textContent);
+  el.classList.add('copied');
+  setTimeout(() => el.classList.remove('copied'), 1500);
+  showToast('コピーしました: ' + el.textContent);
+}
+
+// ========== Init ==========
+renderPipeline();
+</script>
+</body>
+</html>
