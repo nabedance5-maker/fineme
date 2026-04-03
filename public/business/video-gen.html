@@ -241,7 +241,7 @@
 <div class="toast" id="toast">コピーしました ✓</div>
 
 <style>
-  .sch-row { display:grid; grid-template-columns: 32px 1fr 130px 36px 36px 36px; gap:10px; align-items:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:10px 14px; transition:border-color 0.15s; }
+  .sch-row { display:grid; grid-template-columns: 32px 1fr 130px 48px 48px 48px; gap:8px; align-items:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:10px 14px; transition:border-color 0.15s; }
   .sch-row:hover { border-color:rgba(201,168,76,0.2); }
   .sch-num { font-size:11px; font-weight:800; color:rgba(201,168,76,0.45); font-family:monospace; }
   .sch-title { font-size:12px; color:rgba(240,236,228,0.8); line-height:1.45; }
@@ -258,7 +258,7 @@
   .sch-check.yt.done::after { color:#ff4444; }
   .sch-check.ig.done::after { color:#d62976; }
   .sch-check.tt.done::after { color:#69c9d0; }
-  .sch-header { display:grid; grid-template-columns:32px 1fr 130px 36px 36px 36px; gap:10px; padding:0 14px 8px; }
+  .sch-header { display:grid; grid-template-columns:32px 1fr 130px 48px 48px 48px; gap:8px; padding:0 14px 8px; }
   .sch-header span { font-size:9px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.2); text-align:center; }
   .sch-header span:nth-child(2) { text-align:left; }
 </style>
@@ -569,7 +569,7 @@ updateProgress();
 loadSchedule();
 
 /* ---- schedule ---- */
-const API = '/api/video-schedule';
+const API = 'https://www.fineme.me/api/video-schedule';
 let scheduleData = {}; // video_id → row
 
 async function loadSchedule() {
