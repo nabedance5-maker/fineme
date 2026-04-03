@@ -227,7 +227,41 @@
   <div class="video-grid" id="grid-2"></div>
 </div>
 
+<!-- スケジュール管理 -->
+<div class="section" id="schedule-section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>投稿スケジュール管理 — YouTube 12:00 / Reels 18:30 / TikTok 21:00</span>
+    <div class="dashed"></div>
+  </div>
+  <div id="schedule-loading" style="font-size:12px;color:rgba(255,255,255,0.3);padding:12px 0;">読み込み中...</div>
+  <div id="schedule-grid" style="display:flex;flex-direction:column;gap:8px;"></div>
+</div>
+
 <div class="toast" id="toast">コピーしました ✓</div>
+
+<style>
+  .sch-row { display:grid; grid-template-columns: 32px 1fr 130px 36px 36px 36px; gap:10px; align-items:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:10px 14px; transition:border-color 0.15s; }
+  .sch-row:hover { border-color:rgba(201,168,76,0.2); }
+  .sch-num { font-size:11px; font-weight:800; color:rgba(201,168,76,0.45); font-family:monospace; }
+  .sch-title { font-size:12px; color:rgba(240,236,228,0.8); line-height:1.45; }
+  .sch-date input { background:rgba(10,15,30,0.8); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:rgba(255,255,255,0.7); font-size:11px; padding:4px 8px; width:100%; cursor:pointer; }
+  .sch-date input:focus { outline:none; border-color:rgba(201,168,76,0.4); }
+  .sch-platform { display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .sch-platform span { font-size:8px; font-weight:800; letter-spacing:0.05em; color:rgba(255,255,255,0.3); }
+  .sch-check { width:28px; height:28px; border-radius:6px; border:1.5px solid rgba(255,255,255,0.15); background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; font-size:13px; }
+  .sch-check:hover { border-color:rgba(255,255,255,0.35); }
+  .sch-check.yt.done  { background:rgba(255,0,0,0.15); border-color:#ff4444; }
+  .sch-check.ig.done  { background:rgba(214,41,118,0.15); border-color:#d62976; }
+  .sch-check.tt.done  { background:rgba(105,201,208,0.15); border-color:#69c9d0; }
+  .sch-check.done::after { content:'✓'; font-size:13px; font-weight:800; }
+  .sch-check.yt.done::after { color:#ff4444; }
+  .sch-check.ig.done::after { color:#d62976; }
+  .sch-check.tt.done::after { color:#69c9d0; }
+  .sch-header { display:grid; grid-template-columns:32px 1fr 130px 36px 36px 36px; gap:10px; padding:0 14px 8px; }
+  .sch-header span { font-size:9px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.2); text-align:center; }
+  .sch-header span:nth-child(2) { text-align:left; }
+</style>
 
 <script>
 const VIDEOS = [
@@ -532,6 +566,80 @@ function showToast(msg) {
 /* ---- init ---- */
 renderGrids();
 updateProgress();
+loadSchedule();
+
+/* ---- schedule ---- */
+const API = '/api/video-schedule';
+let scheduleData = {}; // video_id → row
+
+async function loadSchedule() {
+  try {
+    const res = await fetch(API);
+    const rows = await res.json();
+    rows.forEach(r => { scheduleData[r.video_id] = r; });
+  } catch(e) {}
+  renderSchedule();
+}
+
+function renderSchedule() {
+  const el = document.getElementById('schedule-grid');
+  const loading = document.getElementById('schedule-loading');
+  loading.style.display = 'none';
+
+  el.innerHTML = `
+    <div class="sch-header">
+      <span>#</span><span>タイトル</span><span>投稿日</span>
+      <span>YT</span><span>IG</span><span>TT</span>
+    </div>
+  ` + VIDEOS.map(v => {
+    const s = scheduleData[v.id] || {};
+    return `
+    <div class="sch-row" id="sch-${v.id}">
+      <div class="sch-num">${String(v.id).padStart(2,'0')}</div>
+      <div class="sch-title">${v.title}</div>
+      <div class="sch-date">
+        <input type="date" value="${s.scheduled_date || ''}" onchange="saveSchedule(${v.id}, 'scheduled_date', this.value)" />
+      </div>
+      <div class="sch-platform">
+        <div class="sch-check yt${s.youtube_done ? ' done' : ''}" onclick="togglePlatform(${v.id}, 'youtube_done', this)"></div>
+        <span>12:00</span>
+      </div>
+      <div class="sch-platform">
+        <div class="sch-check ig${s.reels_done ? ' done' : ''}" onclick="togglePlatform(${v.id}, 'reels_done', this)"></div>
+        <span>18:30</span>
+      </div>
+      <div class="sch-platform">
+        <div class="sch-check tt${s.tiktok_done ? ' done' : ''}" onclick="togglePlatform(${v.id}, 'tiktok_done', this)"></div>
+        <span>21:00</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function saveSchedule(videoId, field, value) {
+  const v = VIDEOS.find(v => v.id === videoId);
+  const current = scheduleData[videoId] || {};
+  const payload = {
+    video_id: videoId,
+    video_title: v.title,
+    ...current,
+    [field]: value,
+  };
+  try {
+    const res = await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const updated = await res.json();
+    scheduleData[videoId] = updated;
+  } catch(e) { showToast('保存に失敗しました'); }
+}
+
+async function togglePlatform(videoId, field, el) {
+  const current = scheduleData[videoId] || {};
+  const newVal = !current[field];
+  current[field] = newVal;
+  el.classList.toggle('done', newVal);
+  await saveSchedule(videoId, field, newVal);
+  showToast(newVal ? '投稿済みにしました ✓' : '未投稿に戻しました');
+}
 </script>
 </body>
 </html>
