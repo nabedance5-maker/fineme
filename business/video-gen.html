@@ -563,14 +563,14 @@ function showToast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
+/* ---- schedule ---- */
+const API = 'https://www.fineme.me/api/video-schedule';
+let scheduleData = {};
+
 /* ---- init ---- */
 renderGrids();
 updateProgress();
-loadSchedule();
-
-/* ---- schedule ---- */
-const API = 'https://www.fineme.me/api/video-schedule';
-let scheduleData = {}; // video_id → row
+loadSchedule(); // video_id → row
 
 async function loadSchedule() {
   try {
