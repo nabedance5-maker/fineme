@@ -69,8 +69,9 @@
   .video-row.done .video-title { text-decoration: line-through; color: rgba(255,255,255,0.35); }
   .video-num { font-size: 11px; font-weight: 800; color: rgba(201,168,76,0.45); width: 24px; flex-shrink: 0; font-family: monospace; }
   .video-type { font-size: 9px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; flex-shrink: 0; white-space: nowrap; }
-  .type-learn { background: rgba(99,179,237,0.12); color: #63b3ed; border: 1px solid rgba(99,179,237,0.2); }
-  .type-cta   { background: rgba(167,139,250,0.1);  color: #a78bfa; border: 1px solid rgba(167,139,250,0.2); }
+  .type-learn   { background: rgba(99,179,237,0.12); color: #63b3ed; border: 1px solid rgba(99,179,237,0.2); }
+  .type-cta     { background: rgba(167,139,250,0.1);  color: #a78bfa; border: 1px solid rgba(167,139,250,0.2); }
+  .type-debate  { background: rgba(251,113,133,0.12); color: #fb7185; border: 1px solid rgba(251,113,133,0.25); }
   .video-title { font-size: 13px; color: rgba(240,236,228,0.85); flex: 1; line-height: 1.5; }
   .video-check { width: 20px; height: 20px; border-radius: 5px; border: 1.5px solid rgba(201,168,76,0.35); background: transparent; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
   .video-check:hover { border-color: rgba(201,168,76,0.7); background: rgba(201,168,76,0.08); }
@@ -227,6 +228,16 @@
   <div class="video-grid" id="grid-2"></div>
 </div>
 
+<!-- 主張型（賛否両論） -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>主張型（賛否両論）— 炎上狙い・コメント数最大化（拡散）</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="video-grid" id="grid-3"></div>
+</div>
+
 <!-- スケジュール管理 -->
 <div class="section" id="schedule-section">
   <div class="section-label">
@@ -373,6 +384,38 @@ const VIDEOS = [
     title:'外見を変えたら人生が変わった男の話（感動系）',
     theme:'変容前のケンジの様子→リサとの出会い（診断から始まる）→少しずつ変わっていく→変容後の変化（表情・自信・周りの反応）。感動的なトーンで締めて「あなたも始められる。まず診断から」→Fineme診断CTA。珍しくオチなし・真剣モードの1本'
   },
+
+  // 主張型（賛否両論）(grid-3)
+  {
+    id:22, grid:3, type:'debate',
+    title:'清潔感は才能じゃない。サボってる言い訳だ',
+    theme:'強度★★★。リサが「清潔感は才能だと思ってる人がいる。違う。サボってる言い訳だ」と断言。ケンジが「でも俺、生まれつきテカりやすいし毛穴も広いし…」と反論。リサが「全部対処法がある。知らないんじゃなくて調べてないだけ」と論破。最後にリサが「清潔感は生まれつきじゃない。習慣だ」と締め。コメント誘導：「清潔感は才能だと思いますか？」'
+  },
+  {
+    id:23, grid:3, type:'debate',
+    title:'モテない男に共通するのは顔じゃなくて諦め癖',
+    theme:'強度★★★。リサが「モテない男の共通点は顔じゃない。諦め癖だ」と断言。ケンジが「でも現実を見ることって大事じゃないですか」と反論。リサが「現実を見てるんじゃなくて、変わる前に降りてるだけだ」と論破。ケンジが「…それ俺のことですか」と気づく。コメント誘導：「これに反論できる人いますか？」'
+  },
+  {
+    id:24, grid:3, type:'debate',
+    title:'「自分らしさ」を盾に外見を放棄している男は相手への敬意がない',
+    theme:'強度★★★。リサが「自分らしくいたい気持ちはわかる。でも外見を放棄してそれを自分らしさって言うのは違う」と断言。ケンジが「自分らしくいるのって大事じゃないですか」と反論。リサが「相手がどう感じるかを考えない自分らしさはただのわがままだ」と論破し「デートに汚い格好で来るのは相手へのリスペクトがないということだ」と締め。コメント誘導：「これは言い過ぎだと思いますか？」'
+  },
+  {
+    id:25, grid:3, type:'debate',
+    title:'外見を磨くのはナルシストじゃない。自信を持つための最短ルートだ',
+    theme:'強度★★。ケンジが「外見気にしすぎてるのかな…ナルシストって思われたくないし」と悩みを語る。リサが「外見を磨くのがナルシストなら、歯磨きもナルシストですか？」と切り返す。ケンジが「それは違くないですか」と混乱。リサが「同じだ。自分を整えることは自信の土台を作ること。ナルシストとの違いは他者への敬意があるかどうかだ」と締め。コメント誘導：「外見を磨くことはナルシストだと思いますか？」'
+  },
+  {
+    id:26, grid:3, type:'debate',
+    title:'整形を批判する人ほど自分の外見に無頓着',
+    theme:'強度★★。ケンジが「整形って批判されますよね。不自然とか、整形してまでとか」と話を振る。リサが「整形を批判する人って大体、自分の外見に無頓着なんですよ」と断言。ケンジが「えっそうなんですか」と驚く。リサが「自分が変える努力をしてない人ほど、変えようとしてる人を批判する。整形に限らず全部そうだ」と締め。ケンジが「…耳が痛い」。コメント誘導：「整形を批判したことある人、正直に言ってください」'
+  },
+  {
+    id:27, grid:3, type:'debate',
+    title:'ジムに通い始めた男が変わるのは体型じゃなくて態度だ',
+    theme:'強度★★。ケンジが「ジムに通い始めたんですけど全然体変わらなくて」と落ち込む。リサが「でも印象変わりましたよ」と言う。ケンジが「え？体型変わってないのに？」と驚く。リサが「ジムに通い始めた人が最初に変わるのは体型じゃなくて態度だ。自分を変えようとしてる人は目が違う。それが一番モテる」と締め。コメント誘導：「ジムで最初に変わったのは体型より何でしたか？」'
+  },
 ];
 
 const KENJI_PROMPT = document.getElementById('kenji-prompt').textContent;
@@ -472,6 +515,50 @@ ${theme}
 ---【テロップ】---
 最後の行：プロフィールのリンクから無料診断→`;
 
+const SCRIPT_TEMPLATE_DEBATE = (theme) => `以下の設定でAIショート動画（縦型・60秒以内）の脚本を書いてください。
+
+【キャラクター】
+- リサ（👩）: AIスタイリスト（女性美容師）。プロフェッショナルで冷静。今回は強い主張を断言する役割。論拠が明確で感情ではなく事実で語る。
+- ケンジ（👨）: 30代・非モテ男。今回は視聴者の言い訳・反論を代弁する役割。「でも…」「でも俺は…」と反論するが最終的に論破される。
+
+【今回の構成（必ず守ること）】
+① リサが主張を断言する（最初の1〜2行で核心を言い切る。遠慮しない）
+② ケンジが「でも…」と反論する（視聴者が心の中で思っている言い訳をそのまま言わせる）
+③ リサが根拠を示して論破する（感情論ではなく、具体的な事実・例え・視点の転換で）
+④ リサが一言で締める（短く鋭く）
+⑤ 最後にコメント誘導テロップを出力する（視聴者に「あなたはどう思う？」と問いかける形で）
+
+【今回のテーマ・主張方向性】
+${theme}
+
+【出力形式】
+以下の3ブロックを順番に出力すること。
+
+---【台本全体】---
+キャラ名と台詞だけのシンプルな脚本形式（👩リサ：〜 / 👨ケンジ：〜）
+セリフは短く・テンポよく（1発言2〜3行以内）
+主張は遠慮せず断言する。「〜だと思います」ではなく「〜だ」「〜です」で言い切る
+全体で60秒以内に収まる分量（目安12〜18行）
+最後の行：コメント誘導テロップ（例：「これは言い過ぎだと思いますか？コメントで教えてください」）
+
+---【ケンジのセリフまとめ】---
+ケンジのセリフだけを順番に並べる（Hedraに貼り付けてそのまま使える形）
+👨マークや「ケンジ：」は不要。セリフのテキストのみ。
+「」などの括弧類は一切使わない。地の文のテキストのみ。
+（）内の動作描写・ト書きは一切含めない。実際に口から発する言葉だけを出力する。
+漢字は使わず すべてひらがな・カタカナで出力する（例：「清潔感」→「せいけつかん」「スキンケア」→「スキンケア」）。
+1発言ごとに改行を入れる。
+合計70文字以内に収めること（読み上げ約15秒が目安）。句読点は最小限にしてテンポよく読み上げられる文体にする。
+
+---【リサのセリフまとめ】---
+リサのセリフだけを順番に並べる（Hedraに貼り付けてそのまま使える形）
+👩マークや「リサ：」は不要。セリフのテキストのみ。
+「」などの括弧類は一切使わない。地の文のテキストのみ。
+（）内の動作描写・ト書きは一切含めない。実際に口から発する言葉だけを出力する。
+漢字は使わず すべてひらがな・カタカナで出力する（例：「清潔感」→「せいけつかん」「スキンケア」→「スキンケア」）。
+1発言ごとに改行を入れる。
+合計70文字以内に収めること（読み上げ約15秒が目安）。句読点は最小限にしてテンポよく読み上げられる文体にする。`;
+
 /* ---- render ---- */
 function renderGrids() {
   const grids = {};
@@ -485,7 +572,7 @@ function renderGrids() {
     el.innerHTML = videos.map(v => `
       <div class="video-row${isDone(v.id) ? ' done' : ''}" id="row-${v.id}">
         <div class="video-num">${String(v.id).padStart(2,'0')}</div>
-        <div class="video-type ${v.type === 'learn' ? 'type-learn' : 'type-cta'}">${v.type === 'learn' ? '学び' : 'CTA'}</div>
+        <div class="video-type ${v.type === 'learn' ? 'type-learn' : v.type === 'debate' ? 'type-debate' : 'type-cta'}">${v.type === 'learn' ? '学び' : v.type === 'debate' ? '主張' : 'CTA'}</div>
         <div class="video-title">${v.title}</div>
         <button class="script-btn" onclick="copyScript(${v.id}, this)">脚本プロンプトをコピー</button>
         <div class="video-check${isDone(v.id) ? ' done' : ''}" onclick="toggleDone(${v.id})"></div>
@@ -546,7 +633,7 @@ function copyText(elId, btn) {
 function copyScript(id, btn) {
   const v = VIDEOS.find(v => v.id === id);
   if (!v) return;
-  const prompt = v.type === 'learn' ? SCRIPT_TEMPLATE_LEARN(v.theme) : SCRIPT_TEMPLATE_CTA(v.theme);
+  const prompt = v.type === 'learn' ? SCRIPT_TEMPLATE_LEARN(v.theme) : v.type === 'debate' ? SCRIPT_TEMPLATE_DEBATE(v.theme) : SCRIPT_TEMPLATE_CTA(v.theme);
   navigator.clipboard.writeText(prompt).then(() => {
     btn.textContent = 'コピー済 ✓'; btn.classList.add('copied');
     showToast(`#${String(id).padStart(2,'0')} 脚本プロンプトをコピーしました ✓`);
