@@ -219,10 +219,45 @@ export default async function ArticlePage({ params }) {
             )}
           </div>
 
+          {/* ── 診断誘導CTA ── */}
+          <div style={{
+            margin: '0 0 0',
+            padding: 'clamp(36px, 7vw, 64px) 20px',
+            background: 'linear-gradient(135deg, rgba(10,15,30,0.9) 0%, rgba(6,12,26,0.95) 100%)',
+            borderTop: '1px solid rgba(201,168,76,0.15)',
+            textAlign: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+          }}>
+            {/* 背景装飾 */}
+            <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+            <div style={{ position: 'relative', zIndex: 1, maxWidth: '560px', margin: '0 auto' }}>
+              <div style={{ fontSize: '32px', marginBottom: '12px' }}>🧭</div>
+              <h3 style={{ fontSize: 'clamp(18px, 3vw, 22px)', fontWeight: 800, color: '#f0ece4', marginBottom: '12px', lineHeight: 1.4, fontFamily: 'var(--font-serif)' }}>
+                あなたに合う変容ルートを<br />診断で見つけてみませんか？
+              </h3>
+              <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.55)', marginBottom: '24px', lineHeight: 1.8, fontFamily: 'var(--font-sans)' }}>
+                体型・眉・ヘア・肌・服・歯・爪。7軸の診断で、<br />今のあなたに最も効く「最初の一手」がわかります。
+              </p>
+              <Link href="/diagnosis" style={{
+                display: 'inline-block', padding: '14px 36px',
+                background: 'linear-gradient(135deg, #c9a84c, #e8c97a)',
+                borderRadius: '8px', color: '#0a0f1e', fontWeight: 800,
+                fontSize: '15px', textDecoration: 'none', fontFamily: 'var(--font-sans)',
+                boxShadow: '0 4px 20px rgba(201,168,76,0.3)',
+              }}>
+                無料で診断する（3分）→
+              </Link>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginTop: '12px', fontFamily: 'var(--font-sans)' }}>
+                登録不要・無料・すぐに結果が出ます
+              </p>
+            </div>
+          </div>
+
           {/* ── 記事フッター ── */}
           <div style={{
             borderTop: '1px solid rgba(201,168,76,0.12)',
-            padding: 'clamp(32px, 6vw, 56px) 20px',
+            padding: 'clamp(24px, 4vw, 40px) 20px',
             textAlign: 'center',
             background: 'rgba(10,15,30,0.4)',
           }}>
