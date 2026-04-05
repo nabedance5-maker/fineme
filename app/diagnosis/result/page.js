@@ -671,6 +671,9 @@ export default function DiagnosisResultPage() {
         </a>
       </div>
 
+      {/* ── Xシェアボタン ── */}
+      <div id="share-block" style="margin: 0 0 20px; text-align: center;"></div>
+
       <div class="cta-block">
         <div class="cta-section">
           <button id="btn-save-map" class="cta-btn-secondary" type="button">この地図を保存する</button>
@@ -681,6 +684,25 @@ export default function DiagnosisResultPage() {
     `;
 
     root.innerHTML = html;
+
+    // ── Xシェアボタン生成 ──
+    const shareBlock = document.getElementById('share-block');
+    if (shareBlock) {
+      const ogUrl = `https://www.fineme.me/api/og/diagnosis?compass=${encodeURIComponent(compassFirst)}&goal=${encodeURIComponent(p.goal_change||'')}&trigger=${encodeURIComponent(p.trigger||'')}`;
+      const axisLabel = AREA_DEFS[compassFirst]?.label || '外見';
+      const shareText = `Me Scan を受けた。\n今の私に一番効くのは「${axisLabel}」からだった。\n\nあなたも試してみて👇\n`;
+      const shareUrl = `https://www.fineme.me/diagnosis`;
+      const twitterHref = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+      shareBlock.innerHTML = `
+        <a href="${twitterHref}" target="_blank" rel="noopener"
+          style="display:inline-flex;align-items:center;gap:10px;padding:13px 28px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#fff;font-size:14px;font-weight:700;text-decoration:none;transition:background 0.15s;"
+          onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          この診断結果をXでシェアする
+        </a>
+        <p style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:10px;">シェアするとあなたのCompass軸が表示されます</p>
+      `;
+    }
 
     // Compass override チップ
     document.querySelectorAll('.compass-override-chip').forEach(btn => {
