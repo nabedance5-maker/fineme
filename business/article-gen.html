@@ -107,7 +107,15 @@
         style="flex:1;min-width:240px;background:rgba(0,0,0,0.4);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:#e8e4dc;font-size:13px;padding:9px 13px;" />
       <button onclick="saveArtApiKey()" style="padding:9px 16px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);border-radius:8px;color:#c9a84c;font-size:12px;font-weight:700;cursor:pointer;">保存</button>
     </div>
-    <p id="art-apikey-status" style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:20px;"></p>
+    <p id="art-apikey-status" style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:12px;"></p>
+
+    <!-- Supabaseキー設定（重複チェック用） -->
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+      <input type="password" id="art-supakey" placeholder="Supabase Service Role Key（重複チェック用）"
+        style="flex:1;min-width:240px;background:rgba(0,0,0,0.4);border:1px solid rgba(100,150,255,0.3);border-radius:8px;color:#e8e4dc;font-size:13px;padding:9px 13px;" />
+      <button onclick="saveArtSupaKey()" style="padding:9px 16px;background:rgba(100,150,255,0.1);border:1px solid rgba(100,150,255,0.3);border-radius:8px;color:#7aadff;font-size:12px;font-weight:700;cursor:pointer;">保存</button>
+    </div>
+    <p id="art-supakey-status" style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:20px;"></p>
 
     <!-- 生成設定 -->
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px;">
@@ -698,7 +706,11 @@ function toggleHideDone() {
   applyDoneState();
 }
 
-function buildPrompt(a) {
+function buildPrompt(a, existingTitles = []) {
+  const existingSection = existingTitles.length > 0
+    ? `\n【既存記事（内容が重複しないこと）】\n同カテゴリに以下の記事がすでに公開されている。これらと内容・構成・見出しが被らないよう、独自の切り口・角度・具体例を選ぶこと。\n${existingTitles.map((t, i) => `${i+1}. ${t}`).join('\n')}\n`
+    : '';
+
   return `以下の仕様で、Fineme特集記事を生成し、Supabase SQLのINSERT文として出力してください。
 
 【記事情報】
@@ -706,6 +718,7 @@ function buildPrompt(a) {
 ターゲットキーワード：${a.keyword}
 カテゴリ：${a.cat}
 スラッグ：${a.slug}
+${existingSection}
 
 【Finemeについて】
 - 恋愛に悩む男性向けの外見磨きサービス検索サイト「Fineme（ファインミ）」
@@ -909,7 +922,41 @@ function saveArtApiKey() {
     document.getElementById('art-apikey').value = '●'.repeat(20);
     document.getElementById('art-apikey-status').textContent = '✓ APIキー保存済み';
   }
+
+  const supaKey = localStorage.getItem('fineme:supabase:key');
+  if (supaKey) {
+    document.getElementById('art-supakey-status').textContent = '✓ Supabaseキー保存済み（重複チェック有効）';
+  }
 })();
+
+function saveArtSupaKey() {
+  const key = document.getElementById('art-supakey').value.trim();
+  if (!key) return;
+  localStorage.setItem('fineme:supabase:key', key);
+  document.getElementById('art-supakey-status').textContent = '✓ Supabaseキー保存済み（重複チェック有効）';
+  document.getElementById('art-supakey').value = '';
+}
+
+// ── Supabase既存記事フェッチ ──
+async function fetchExistingArticles(supaKey) {
+  const url = 'https://qsfpzlvucqzmjldshwwd.supabase.co/rest/v1/features?select=title,slug,keyword,category&status=eq.published&limit=2000';
+  const res = await fetch(url, {
+    headers: {
+      'apikey': supaKey,
+      'Authorization': `Bearer ${supaKey}`,
+    },
+  });
+  if (!res.ok) throw new Error(`Supabase fetch failed: ${res.status}`);
+  return await res.json(); // [{title, slug, keyword, category}, ...]
+}
+
+// キーワード重複スコア（共通単語数）
+function keywordOverlapScore(kw1, kw2) {
+  const words1 = (kw1 || '').toLowerCase().split(/[\s,、　]+/).filter(w => w.length > 1);
+  const words2 = (kw2 || '').toLowerCase().split(/[\s,、　]+/).filter(w => w.length > 1);
+  const set2 = new Set(words2);
+  return words1.filter(w => set2.has(w)).length;
+}
 
 // ── AI記事生成 ──
 async function startArticleGen() {
@@ -918,7 +965,7 @@ async function startArticleGen() {
 
   const count = parseInt(document.getElementById('art-count').value);
   const doneIds = new Set(JSON.parse(localStorage.getItem('fineme:article:done') || '[]'));
-  const targets = ARTICLES.filter(a => !doneIds.has(a.id)).slice(0, count);
+  let targets = ARTICLES.filter(a => !doneIds.has(a.id)).slice(0, count * 3); // 多めに取ってスキップ後に絞る
 
   if (!targets.length) { alert('未完了の記事がありません'); return; }
 
@@ -928,16 +975,81 @@ async function startArticleGen() {
 
   const log = document.getElementById('art-gen-log');
   const sqlOutput = document.getElementById('art-sql-output');
-  log.innerHTML = `${targets.length}本の記事を生成します。しばらくお待ちください…<br>`;
+  log.innerHTML = `重複チェック中…<br>`;
   sqlOutput.innerHTML = '';
+
+  // ── Tier 1 & 2: Supabase既存記事との照合 ──
+  const supaKey = localStorage.getItem('fineme:supabase:key');
+  let existingArticles = [];
+  let existingSlugs = new Set();
+
+  if (supaKey) {
+    try {
+      existingArticles = await fetchExistingArticles(supaKey);
+      existingSlugs = new Set(existingArticles.map(a => a.slug));
+      log.innerHTML += `✅ 既存記事 ${existingArticles.length}本 を取得しました<br>`;
+    } catch (e) {
+      log.innerHTML += `⚠️ Supabase接続失敗（重複チェックなしで続行）: ${e.message}<br>`;
+    }
+  } else {
+    log.innerHTML += `⚠️ Supabaseキー未設定。重複チェックなしで生成します。<br>`;
+  }
+
+  // Tier 1: slugが既存DBにある記事を除外
+  const tier1Filtered = targets.filter(a => {
+    if (existingSlugs.has(a.slug)) {
+      log.innerHTML += `❌ [スキップ] 「${a.title}」 — slug既存: ${a.slug}<br>`;
+      return false;
+    }
+    return true;
+  });
+
+  // Tier 2: キーワード重複警告（同カテゴリ内で2単語以上一致したら警告、ただし生成は続行）
+  const duplicateWarnings = new Map(); // article.id → 警告メッセージ
+  if (existingArticles.length) {
+    tier1Filtered.forEach(a => {
+      const sameCat = existingArticles.filter(e => e.category === a.cat);
+      const overlaps = sameCat
+        .map(e => ({ title: e.title, score: keywordOverlapScore(a.keyword, e.keyword) }))
+        .filter(x => x.score >= 2)
+        .sort((x, y) => y.score - x.score)
+        .slice(0, 3);
+      if (overlaps.length) {
+        duplicateWarnings.set(a.id, overlaps.map(x => `「${x.title}」(${x.score}語重複)`).join(' / '));
+      }
+    });
+  }
+
+  // 最終ターゲット（count本に絞る）
+  const finalTargets = tier1Filtered.slice(0, count);
+  if (!finalTargets.length) {
+    btn.disabled = false;
+    btn.textContent = '生成開始 →';
+    log.innerHTML += '<br>⚠️ 生成対象の記事がありませんでした（すべてスキップまたは完了済み）';
+    return;
+  }
+
+  log.innerHTML += `<br>${finalTargets.length}本の記事を生成します。しばらくお待ちください…<br>`;
 
   const allSqls = [];
 
-  for (let i = 0; i < targets.length; i++) {
-    const article = targets[i];
-    log.innerHTML += `<br>[${i+1}/${targets.length}] 「${article.title}」を生成中…`;
+  for (let i = 0; i < finalTargets.length; i++) {
+    const article = finalTargets[i];
 
-    const prompt = buildPrompt(article);
+    // Tier 2 警告表示
+    if (duplicateWarnings.has(article.id)) {
+      log.innerHTML += `⚠️ キーワード重複あり: ${duplicateWarnings.get(article.id)}<br>`;
+    }
+
+    log.innerHTML += `<br>[${i+1}/${finalTargets.length}] 「${article.title}」を生成中…`;
+
+    // Tier 3: 同カテゴリ既存タイトルをプロンプトに注入（最大20件）
+    const sameCatTitles = existingArticles
+      .filter(e => e.category === article.cat)
+      .slice(0, 20)
+      .map(e => e.title);
+
+    const prompt = buildPrompt(article, sameCatTitles);
     const systemPrompt = `あなたはFineme（男性向け外見変容診断ポータル）の記事ライターです。
 指示通りのSupabase SQL INSERT文のみを出力してください。
 前置き・説明・マークダウンコードブロック（\`\`\`sql等）は一切不要。
@@ -988,7 +1100,7 @@ INSERT文だけをそのまま出力してください。`;
     }
 
     // レート制限対策：1本ごとに1秒待機
-    if (i < targets.length - 1) await new Promise(r => setTimeout(r, 1000));
+    if (i < finalTargets.length - 1) await new Promise(r => setTimeout(r, 1000));
   }
 
   btn.disabled = false;
