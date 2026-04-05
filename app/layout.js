@@ -41,6 +41,7 @@ import '../styles/style.css';
 import Navbar from './_components/Navbar';
 import Footer from './_components/Footer';
 import ServiceWorkerRegister from './_components/ServiceWorkerRegister';
+import GoogleAnalytics from './_components/GoogleAnalytics';
 
 export default function RootLayout({ children }) {
   return (
@@ -86,6 +87,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
+        <GoogleAnalytics />
         <Navbar />
         {children}
         <Footer />
