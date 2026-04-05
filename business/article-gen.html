@@ -92,7 +92,61 @@
   <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
 </div>
 
-<div class="workflow" style="max-width:900px;margin:0 auto 32px;padding:18px 22px;">
+<!-- ── AI自動生成パネル ── -->
+<div id="ai-gen-panel" style="max-width:900px;margin:0 auto 32px;padding:0 24px;display:none;">
+  <div style="background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.25);border-radius:14px;padding:24px;">
+    <div style="font-size:11px;font-weight:800;letter-spacing:0.14em;color:#c9a84c;text-transform:uppercase;margin-bottom:16px;">✨ AI自動生成モード</div>
+    <p style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.8;margin-bottom:20px;">
+      Claude APIを使って記事を自動生成→Supabase SQLを出力します。<br>
+      未完了の記事を順番に処理。1本生成→SQLを確認→Supabaseに実行の繰り返しで量産できます。
+    </p>
+
+    <!-- APIキー設定 -->
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+      <input type="password" id="art-apikey" placeholder="Anthropic APIキー（sk-ant-...）"
+        style="flex:1;min-width:240px;background:rgba(0,0,0,0.4);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:#e8e4dc;font-size:13px;padding:9px 13px;" />
+      <button onclick="saveArtApiKey()" style="padding:9px 16px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);border-radius:8px;color:#c9a84c;font-size:12px;font-weight:700;cursor:pointer;">保存</button>
+    </div>
+    <p id="art-apikey-status" style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:20px;"></p>
+
+    <!-- 生成設定 -->
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px;">
+      <div>
+        <label style="font-size:11px;color:rgba(255,255,255,0.45);display:block;margin-bottom:4px;">生成する記事（未完了から順番に）</label>
+        <select id="art-count" style="background:rgba(0,0,0,0.4);border:1px solid rgba(201,168,76,0.25);border-radius:8px;color:#e8e4dc;font-size:13px;padding:9px 12px;">
+          <option value="1">1本</option>
+          <option value="3">3本</option>
+          <option value="5" selected>5本</option>
+          <option value="10">10本</option>
+        </select>
+      </div>
+      <div style="margin-top:20px;">
+        <button id="art-gen-btn" onclick="startArticleGen()" style="padding:11px 28px;background:linear-gradient(135deg,#c9a84c,#e8c97a);border:none;border-radius:8px;color:#0a0f1e;font-size:14px;font-weight:800;cursor:pointer;">
+          生成開始 →
+        </button>
+      </div>
+    </div>
+
+    <!-- 生成結果ログ -->
+    <div id="art-gen-log" style="font-size:12px;color:rgba(255,255,255,0.5);line-height:1.9;"></div>
+
+    <!-- 生成されたSQL -->
+    <div id="art-sql-output" style="margin-top:16px;"></div>
+  </div>
+</div>
+
+<div style="max-width:900px;margin:0 auto 16px;padding:0 24px;display:flex;gap:10px;">
+  <button onclick="setMode('manual')" id="btn-mode-manual"
+    style="padding:10px 20px;border-radius:8px;border:1px solid rgba(201,168,76,0.4);background:linear-gradient(135deg,#c9a84c,#e8c97a);color:#0a0f1e;font-size:13px;font-weight:800;cursor:pointer;">
+    📋 手動モード
+  </button>
+  <button onclick="setMode('ai')" id="btn-mode-ai"
+    style="padding:10px 20px;border-radius:8px;border:1px solid rgba(201,168,76,0.3);background:transparent;color:#c9a84c;font-size:13px;font-weight:800;cursor:pointer;">
+    ✨ AI自動生成モード
+  </button>
+</div>
+
+<div class="workflow" style="max-width:900px;margin:0 auto 32px;padding:18px 22px;" id="manual-workflow">
   <h2>ワークフロー</h2>
   <div class="steps-flow">
     <div class="step-item">① プロンプトをコピー</div>
@@ -810,6 +864,168 @@ function showToast() {
   renderGrid(`grid-${g}`, ARTICLES.filter(a => a.grid === g));
 });
 applyDoneState();
+
+// ── モード切替 ──
+function setMode(mode) {
+  const aiPanel = document.getElementById('ai-gen-panel');
+  const manualWorkflow = document.getElementById('manual-workflow');
+  const btnAi = document.getElementById('btn-mode-ai');
+  const btnManual = document.getElementById('btn-mode-manual');
+  const sections = document.querySelectorAll('.section, .prompt-preview');
+
+  if (mode === 'ai') {
+    aiPanel.style.display = 'block';
+    manualWorkflow.style.display = 'none';
+    sections.forEach(s => s.style.display = 'none');
+    btnAi.style.background = 'linear-gradient(135deg,#c9a84c,#e8c97a)';
+    btnAi.style.color = '#0a0f1e';
+    btnManual.style.background = 'transparent';
+    btnManual.style.color = '#c9a84c';
+  } else {
+    aiPanel.style.display = 'none';
+    manualWorkflow.style.display = '';
+    sections.forEach(s => s.style.display = '');
+    btnManual.style.background = 'linear-gradient(135deg,#c9a84c,#e8c97a)';
+    btnManual.style.color = '#0a0f1e';
+    btnAi.style.background = 'transparent';
+    btnAi.style.color = '#c9a84c';
+  }
+}
+
+// ── AIキー管理 ──
+function saveArtApiKey() {
+  const key = document.getElementById('art-apikey').value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    document.getElementById('art-apikey-status').textContent = '⚠️ sk-ant- から始まるキーを入力してください';
+    return;
+  }
+  localStorage.setItem('fineme:anthropic:key', key);
+  document.getElementById('art-apikey').value = '●'.repeat(20);
+  document.getElementById('art-apikey-status').textContent = '✓ 保存しました';
+}
+
+(function initArtKeyUi() {
+  if (localStorage.getItem('fineme:anthropic:key')) {
+    document.getElementById('art-apikey').value = '●'.repeat(20);
+    document.getElementById('art-apikey-status').textContent = '✓ APIキー保存済み';
+  }
+})();
+
+// ── AI記事生成 ──
+async function startArticleGen() {
+  const apiKey = localStorage.getItem('fineme:anthropic:key');
+  if (!apiKey) { alert('APIキーを保存してください'); return; }
+
+  const count = parseInt(document.getElementById('art-count').value);
+  const doneIds = new Set(JSON.parse(localStorage.getItem('fineme:article:done') || '[]'));
+  const targets = ARTICLES.filter(a => !doneIds.has(a.id)).slice(0, count);
+
+  if (!targets.length) { alert('未完了の記事がありません'); return; }
+
+  const btn = document.getElementById('art-gen-btn');
+  btn.disabled = true;
+  btn.textContent = '生成中…';
+
+  const log = document.getElementById('art-gen-log');
+  const sqlOutput = document.getElementById('art-sql-output');
+  log.innerHTML = `${targets.length}本の記事を生成します。しばらくお待ちください…<br>`;
+  sqlOutput.innerHTML = '';
+
+  const allSqls = [];
+
+  for (let i = 0; i < targets.length; i++) {
+    const article = targets[i];
+    log.innerHTML += `<br>[${i+1}/${targets.length}] 「${article.title}」を生成中…`;
+
+    const prompt = buildPrompt(article);
+    const systemPrompt = `あなたはFineme（男性向け外見変容診断ポータル）の記事ライターです。
+指示通りのSupabase SQL INSERT文のみを出力してください。
+前置き・説明・マークダウンコードブロック（\`\`\`sql等）は一切不要。
+INSERT文だけをそのまま出力してください。`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-6',
+          max_tokens: 8000,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        log.innerHTML += ` ❌ エラー: ${err.error?.message || res.status}`;
+        continue;
+      }
+
+      const data = await res.json();
+      const sql = data.content?.[0]?.text?.trim() || '';
+
+      if (!sql.toLowerCase().startsWith('insert')) {
+        log.innerHTML += ` ⚠️ SQL形式で出力されませんでした`;
+        // SQLが含まれているか試みる
+        const match = sql.match(/INSERT[\s\S]+?;/i);
+        if (match) {
+          allSqls.push({ article, sql: match[0] });
+          log.innerHTML += ` → 抽出成功 ✓`;
+        }
+        continue;
+      }
+
+      allSqls.push({ article, sql });
+      log.innerHTML += ` ✓ 完了`;
+
+    } catch (e) {
+      log.innerHTML += ` ❌ 通信エラー: ${e.message}`;
+    }
+
+    // レート制限対策：1本ごとに1秒待機
+    if (i < targets.length - 1) await new Promise(r => setTimeout(r, 1000));
+  }
+
+  btn.disabled = false;
+  btn.textContent = '生成開始 →';
+
+  if (!allSqls.length) {
+    log.innerHTML += '<br><br>❌ 生成できた記事がありませんでした。';
+    return;
+  }
+
+  log.innerHTML += `<br><br>✅ ${allSqls.length}本の生成完了。以下のSQLをSupabase → SQL Editorで実行してください。`;
+
+  sqlOutput.innerHTML = allSqls.map(({ article, sql }, i) => `
+    <div style="margin-top:16px;background:rgba(10,15,30,0.8);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:18px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:12px;font-weight:800;color:#c9a84c;">[${i+1}] ${article.title}</span>
+        <button onclick="copySqlBlock(this, ${i})"
+          style="padding:6px 14px;background:transparent;border:1px solid rgba(201,168,76,0.4);border-radius:6px;color:#c9a84c;font-size:11px;font-weight:700;cursor:pointer;">
+          SQLコピー
+        </button>
+      </div>
+      <pre id="sql-block-${i}" style="font-family:monospace;font-size:11px;color:rgba(240,236,228,0.7);white-space:pre-wrap;max-height:200px;overflow-y:auto;">${escHtmlArt(sql)}</pre>
+    </div>
+  `).join('');
+}
+
+function escHtmlArt(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function copySqlBlock(btn, i) {
+  const el = document.getElementById(`sql-block-${i}`);
+  navigator.clipboard.writeText(el.textContent).then(() => {
+    btn.textContent = 'コピー済み ✓';
+    setTimeout(() => btn.textContent = 'SQLコピー', 2000);
+  });
+}
 </script>
 </body>
 </html>
