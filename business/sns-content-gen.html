@@ -58,6 +58,9 @@
   .hashtag { color: var(--gold); }
   .kv-title { font-size: clamp(20px,3vw,28px); font-weight: 800; font-family: var(--serif); color: #fff; line-height: 1.4; }
   .kv-sub { font-size: 14px; color: var(--muted); margin-top: 8px; line-height: 1.7; }
+  .ai-apikey-row { background: rgba(201,168,76,0.04); border: 1px solid rgba(201,168,76,0.15); border-radius: 12px; padding: 16px 18px; }
+  #tab-ai { background: linear-gradient(135deg, rgba(201,168,76,0.15), rgba(201,168,76,0.05)); border-color: rgba(201,168,76,0.4); color: var(--gold); }
+  #tab-ai.active { background: linear-gradient(135deg, #c9a84c, #e8c97a); color: var(--navy); }
 </style>
 </head>
 <body>
@@ -70,10 +73,62 @@
 <div class="container">
 
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('x')">X（旧Twitter）</button>
+    <button class="tab" onclick="switchTab('ai')" id="tab-ai">✨ AI生成</button>
+    <button class="tab active" onclick="switchTab('x')">X テンプレート</button>
     <button class="tab" onclick="switchTab('note')">note / ブログ</button>
     <button class="tab" onclick="switchTab('press')">プレスリリース</button>
     <button class="tab" onclick="switchTab('dm')">掲載者獲得DM</button>
+  </div>
+
+  <!-- ====== AI生成 ====== -->
+  <div id="panel-ai" class="panel">
+    <div class="section-label">✨ AI投稿生成（Claude API）</div>
+    <p class="intro">記事のURLまたはタイトル＋本文を入力すると、Claudeが5パターンのX投稿文を生成します。</p>
+
+    <!-- APIキー設定 -->
+    <div class="ai-apikey-row" id="ai-apikey-row">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <input type="password" id="ai-apikey-input" placeholder="Anthropic APIキーを入力（sk-ant-...）" style="flex:1;min-width:260px;background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:10px 14px;" />
+        <button onclick="saveApiKey()" style="padding:10px 18px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">保存</button>
+        <button onclick="clearApiKey()" style="padding:10px 14px;background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--muted);font-size:12px;cursor:pointer;">クリア</button>
+      </div>
+      <p id="ai-apikey-status" style="font-size:11px;color:var(--muted);margin-top:8px;"></p>
+    </div>
+
+    <div style="height:20px"></div>
+
+    <!-- 入力エリア -->
+    <div class="fullwidth-card" style="margin-bottom:20px">
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+        <button class="theme-chip selected" id="input-mode-url" onclick="setInputMode('url')">記事URLから生成</button>
+        <button class="theme-chip" id="input-mode-text" onclick="setInputMode('text')">タイトル＋本文を直接入力</button>
+      </div>
+
+      <div id="ai-input-url">
+        <input type="url" id="ai-url" placeholder="https://www.fineme.me/feature/..." style="width:100%;background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:10px 14px;margin-bottom:10px;" />
+        <p class="tip">※ URLを入力するとタイトルと本文を自動取得します（同一オリジンのみ）。外部URLの場合はタイトル＋本文入力モードをご利用ください。</p>
+      </div>
+
+      <div id="ai-input-text" style="display:none">
+        <input type="text" id="ai-title" placeholder="記事タイトル" style="width:100%;background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:10px 14px;margin-bottom:10px;" />
+        <textarea id="ai-body" rows="6" placeholder="記事の本文（要約でもOK）" style="width:100%;background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;line-height:1.8;padding:10px 14px;resize:vertical;font-family:var(--sans);"></textarea>
+      </div>
+
+      <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <select id="ai-tone" style="background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:9px 12px;">
+          <option value="all">5パターン全部生成</option>
+          <option value="awareness">認知獲得型</option>
+          <option value="pain">悩み共感型</option>
+          <option value="howto">ノウハウ型</option>
+          <option value="story">変容ストーリー型</option>
+          <option value="cta">CTA直球型</option>
+        </select>
+        <button id="ai-generate-btn" onclick="generatePosts()" style="padding:11px 28px;background:linear-gradient(135deg,#c9a84c,#e8c97a);border:none;border-radius:8px;color:#0a0f1e;font-size:14px;font-weight:800;cursor:pointer;">生成する →</button>
+      </div>
+    </div>
+
+    <!-- 生成結果 -->
+    <div id="ai-results"></div>
   </div>
 
   <!-- ====== X（旧Twitter） ====== -->
@@ -636,8 +691,197 @@ function copyText(id, btn) {
 }
 
 // ──────────────────────────────────
+// AI生成
+// ──────────────────────────────────
+
+let aiInputMode = 'url';
+
+function setInputMode(mode) {
+  aiInputMode = mode;
+  document.getElementById('ai-input-url').style.display = mode === 'url' ? 'block' : 'none';
+  document.getElementById('ai-input-text').style.display = mode === 'text' ? 'block' : 'none';
+  document.getElementById('input-mode-url').classList.toggle('selected', mode === 'url');
+  document.getElementById('input-mode-text').classList.toggle('selected', mode === 'text');
+}
+
+function saveApiKey() {
+  const key = document.getElementById('ai-apikey-input').value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    document.getElementById('ai-apikey-status').textContent = '⚠️ APIキーは sk-ant- から始まる必要があります';
+    return;
+  }
+  localStorage.setItem('fineme:anthropic:key', key);
+  document.getElementById('ai-apikey-input').value = '●'.repeat(20);
+  document.getElementById('ai-apikey-status').textContent = '✓ 保存しました（localStorageに保存。このPCのみ有効）';
+}
+
+function clearApiKey() {
+  localStorage.removeItem('fineme:anthropic:key');
+  document.getElementById('ai-apikey-input').value = '';
+  document.getElementById('ai-apikey-status').textContent = 'クリアしました';
+}
+
+function initApiKeyUi() {
+  const saved = localStorage.getItem('fineme:anthropic:key');
+  if (saved) {
+    document.getElementById('ai-apikey-input').value = '●'.repeat(20);
+    document.getElementById('ai-apikey-status').textContent = '✓ APIキー保存済み';
+  }
+}
+
+async function fetchArticleContent(url) {
+  // 同一オリジン（fineme.me）のみ fetch で取得
+  try {
+    const res = await fetch(url);
+    const html = await res.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const title = doc.querySelector('h1')?.textContent?.trim() || doc.title || '';
+    // 本文テキストを取得（article-html-body or ArticleBlocks相当のテキスト）
+    const bodyEl = doc.querySelector('.article-html-body, main article, main');
+    const body = bodyEl ? bodyEl.innerText?.slice(0, 2000) || bodyEl.textContent?.slice(0, 2000) : '';
+    return { title, body };
+  } catch {
+    return null;
+  }
+}
+
+const TONE_PROMPTS = {
+  awareness: '認知獲得型（問題提起→解決の示唆→CTA。初見ユーザーを引き込む）',
+  pain: '悩み共感型（ターゲットの悩みに深く共感するところから始まる）',
+  howto: 'ノウハウ型（具体的な手順・チェックリスト形式で実用的な情報を提供）',
+  story: '変容ストーリー型（before/after形式でリアルな変容の物語を語る）',
+  cta: 'CTA直球型（Finemeの診断に直接誘導するシンプルな訴求）',
+};
+
+async function generatePosts() {
+  const apiKey = localStorage.getItem('fineme:anthropic:key');
+  if (!apiKey) {
+    alert('APIキーを入力して保存してください');
+    return;
+  }
+
+  const tone = document.getElementById('ai-tone').value;
+  const tones = tone === 'all' ? Object.keys(TONE_PROMPTS) : [tone];
+
+  let title = '', body = '';
+
+  if (aiInputMode === 'url') {
+    const url = document.getElementById('ai-url').value.trim();
+    if (!url) { alert('URLを入力してください'); return; }
+    const btn = document.getElementById('ai-generate-btn');
+    btn.textContent = '記事を取得中…';
+    btn.disabled = true;
+    const content = await fetchArticleContent(url);
+    if (!content || !content.title) {
+      // URLから取得できない場合はタイトルだけURLから推測
+      title = url.split('/').pop().replace(/-/g, ' ');
+      body = `記事URL: ${url}`;
+    } else {
+      title = content.title;
+      body = content.body;
+    }
+    btn.textContent = '生成する →';
+    btn.disabled = false;
+  } else {
+    title = document.getElementById('ai-title').value.trim();
+    body = document.getElementById('ai-body').value.trim();
+    if (!title) { alert('タイトルを入力してください'); return; }
+  }
+
+  const results = document.getElementById('ai-results');
+  results.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:14px;">✨ Claudeが生成中…</div>';
+
+  const btn = document.getElementById('ai-generate-btn');
+  btn.disabled = true;
+  btn.textContent = '生成中…';
+
+  const generated = [];
+
+  for (const t of tones) {
+    const prompt = `あなたはFineme（男性向け外見変容診断ポータル）のSNSマーケターです。
+以下の記事をもとに、X（旧Twitter）の投稿文を1本生成してください。
+
+【記事タイトル】
+${title}
+
+【記事の内容（抜粋）】
+${body.slice(0, 1500)}
+
+【投稿スタイル】
+${TONE_PROMPTS[t]}
+
+【ルール】
+- 140字以内（厳守）
+- 末尾に必ず「https://www.fineme.me/diagnosis」または記事URLを入れる
+- ハッシュタグを2〜3個（#清潔感 #男磨き #外見磨き から選んで適宜追加）
+- 改行を使いテンポよく読める構成
+- Finemeの哲学「外見を変えることで生まれる自信が人を優しくする」を体現するトーン
+- 説教くさくない。寄り添うトーン。
+
+投稿文だけ出力してください（前置き不要）。`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 400,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        generated.push({ tone: t, text: `エラー: ${err.error?.message || res.status}`, error: true });
+        continue;
+      }
+
+      const data = await res.json();
+      const text = data.content?.[0]?.text || '';
+      generated.push({ tone: t, text });
+    } catch (e) {
+      generated.push({ tone: t, text: `通信エラー: ${e.message}`, error: true });
+    }
+  }
+
+  btn.disabled = false;
+  btn.textContent = '生成する →';
+
+  if (!generated.length) {
+    results.innerHTML = '<p style="color:var(--muted);text-align:center;padding:24px">生成に失敗しました</p>';
+    return;
+  }
+
+  const toneLabels = { awareness:'認知獲得型', pain:'悩み共感型', howto:'ノウハウ型', story:'変容ストーリー型', cta:'CTA直球型' };
+
+  results.innerHTML = `
+    <div style="margin-bottom:12px;font-size:12px;color:var(--muted)">
+      「${title.slice(0,30)}${title.length>30?'…':''}」をもとに${generated.length}パターン生成しました
+    </div>
+    <div class="grid2">
+      ${generated.map(g => `
+        <div class="card${g.error ? ' style="opacity:.5"' : ''}">
+          <div class="card-title">${toneLabels[g.tone] || g.tone}</div>
+          <div class="card-body" id="gen-${g.tone}">${escHtml(g.text)}</div>
+          <div class="char-count">${g.text.length}字</div>
+          ${!g.error ? `<button class="copy-btn" onclick="copyTextContent(this, \`${escJs(g.text)}\`)">コピー</button>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ──────────────────────────────────
 // 初期化
 // ──────────────────────────────────
+initApiKeyUi();
 renderXCards('awareness');
 renderNoteCards();
 renderDMCards();
