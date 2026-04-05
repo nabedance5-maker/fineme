@@ -253,12 +253,29 @@ export default function ProviderDashboardPage() {
         });
         if (res.ok) {
           const items = await res.json();
-          const count = items.filter(r => (r.created_at || '').startsWith(yyyymm)).length;
-          document.getElementById('stat-inquiries').textContent = count + '件';
+          const thisMonthItems = items.filter(r => (r.created_at || '').startsWith(yyyymm));
+          const inquiryCount = thisMonthItems.length;
+          document.getElementById('stat-inquiries').textContent = inquiryCount + '件';
+
+          // 予約転換率・確定数・来店数
+          const approvedCount = thisMonthItems.filter(r => r.status === 'approved').length;
+          const visitedCount = thisMonthItems.filter(r => r.status === 'visited').length;
+          const cvr = inquiryCount > 0 ? Math.round((approvedCount / inquiryCount) * 100) : 0;
+          document.getElementById('stat-approved').textContent = approvedCount + '件';
+          document.getElementById('stat-cvr').textContent = cvr + '%';
+          document.getElementById('stat-visited').textContent = visitedCount + '件';
         } else {
           document.getElementById('stat-inquiries').textContent = '—';
+          document.getElementById('stat-approved').textContent = '—';
+          document.getElementById('stat-cvr').textContent = '—';
+          document.getElementById('stat-visited').textContent = '—';
         }
-      } catch { document.getElementById('stat-inquiries').textContent = '—'; }
+      } catch {
+        document.getElementById('stat-inquiries').textContent = '—';
+        document.getElementById('stat-approved').textContent = '—';
+        document.getElementById('stat-cvr').textContent = '—';
+        document.getElementById('stat-visited').textContent = '—';
+      }
 
       // 紹介報酬（今月の見込み）
       try {
@@ -1408,10 +1425,15 @@ export default function ProviderDashboardPage() {
 
         {/* タブ①：概況 */}
         <div className="tab-pane active" id="tab-stats">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', marginBottom: '12px' }}>
             <div className="stat-card"><div className="stat-value" id="stat-views">—</div><div className="stat-label">今月のページ閲覧数</div></div>
             <div className="stat-card"><div className="stat-value" id="stat-inquiries">—</div><div className="stat-label">今月の問い合わせ数</div></div>
             <div className="stat-card"><div className="stat-value" id="stat-referrals">—</div><div className="stat-label">紹介報酬（今月）</div></div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', marginBottom: '20px' }}>
+            <div className="stat-card"><div className="stat-value" id="stat-approved">—</div><div className="stat-label">予約確定数（今月）</div></div>
+            <div className="stat-card"><div className="stat-value" id="stat-cvr">—</div><div className="stat-label">予約転換率</div><div style={{fontSize:'11px',color:'rgba(232,228,220,0.4)',marginTop:'2px'}}>確定÷問い合わせ</div></div>
+            <div className="stat-card"><div className="stat-value" id="stat-visited">—</div><div className="stat-label">来店完了数（今月）</div></div>
           </div>
           <div className="card" style={{ padding: '20px' }}>
             <h3 style={{ margin: '0 0 10px', fontSize: '15px' }}>Finemeからのメッセージ</h3>

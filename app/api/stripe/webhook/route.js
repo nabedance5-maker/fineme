@@ -2,7 +2,7 @@
 import { getSupabase } from '@/lib/supabase';
 // Stripeイベントを受信してSupabaseを更新する
 import Stripe from 'stripe';
-import { getPlanByPriceId } from '@/lib/stripe-plans';
+import { getPlanKeyByPriceId } from '@/lib/stripe-plans';
 import { sendReservationCreatedEmails } from '@/lib/email';
 
 function getStripe() {
@@ -37,14 +37,14 @@ export async function POST(request) {
         if (!providerId) break;
 
         const priceId = sub.items?.data?.[0]?.price?.id;
-        const plan = getPlanByPriceId(priceId);
+        const planKey = getPlanKeyByPriceId(priceId);
 
         await supabaseAdmin.from('providers').upsert({
           id: providerId,
           stripe_subscription_id: sub.id,
           stripe_customer_id: sub.customer,
           billing_status: sub.status,
-          plan: plan ? Object.keys({ A: true }).find(k => plan === k) || 'A' : 'A',
+          plan: planKey,
         }, { onConflict: 'id' });
 
         console.log(`[webhook] subscription ${sub.status} for provider ${providerId}`);
