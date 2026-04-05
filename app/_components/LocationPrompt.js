@@ -149,17 +149,17 @@ export function LocationPrompt({ accessToken }) {
         </>
       ) : (
         <>
-          <p style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: 700, color: '#0a0f1e' }}>エリアを選択</p>
+          <p style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: 700, color: 'rgba(232,228,220,0.88)' }}>エリアを選択</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <select value={selPref} onChange={e => { setSelPref(e.target.value); setSelCity(''); }} style={{
-              padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', background: 'rgba(10,15,30,0.65)',
+              padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', background: 'rgba(10,15,30,0.65)', color: 'rgba(232,228,220,0.88)',
             }}>
               <option value="">都道府県を選ぶ</option>
               {PREFECTURES.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
             {selPref && (
               <select value={selCity} onChange={e => setSelCity(e.target.value)} style={{
-                padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', background: 'rgba(10,15,30,0.65)',
+                padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', background: 'rgba(10,15,30,0.65)', color: 'rgba(232,228,220,0.88)',
               }}>
                 <option value="">市区町村を選ぶ（任意）</option>
                 {cityOptions.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}

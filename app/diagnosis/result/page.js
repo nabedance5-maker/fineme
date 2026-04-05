@@ -671,7 +671,6 @@ export default function DiagnosisResultPage() {
         </a>
       </div>
 
-      {/* ── Xシェアボタン ── */}
       <div id="share-block" style="margin: 0 0 20px; text-align: center;"></div>
 
       <div class="cta-block">
