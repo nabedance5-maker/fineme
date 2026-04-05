@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SNS発信素材ジェネレーター | Fineme</title>
+<style>
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --navy: #0a0f1e;
+    --bg: #080d1a;
+    --card: rgba(255,255,255,0.04);
+    --border: rgba(201,168,76,0.18);
+    --text: rgba(240,236,228,0.88);
+    --muted: rgba(240,236,228,0.45);
+    --serif: 'Georgia', serif;
+    --sans: -apple-system, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+  .header { background: rgba(10,15,30,0.9); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+  .header-logo { font-size: 20px; font-weight: 800; color: var(--gold); font-family: var(--serif); }
+  .header-title { font-size: 14px; color: var(--muted); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 32px; flex-wrap: wrap; }
+  .tab { padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .tab.active { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+  .tab:hover:not(.active) { border-color: var(--gold); color: var(--gold); }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .section-label { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; color: var(--gold); text-transform: uppercase; margin-bottom: 20px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+  .card-title { font-size: 13px; font-weight: 800; color: var(--gold); margin-bottom: 10px; }
+  .card-body { font-size: 13px; color: var(--text); line-height: 1.9; white-space: pre-wrap; }
+  .copy-btn { margin-top: 12px; padding: 8px 18px; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.35); border-radius: 7px; color: var(--gold); font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .copy-btn:hover { background: rgba(201,168,76,0.2); }
+  .copy-btn.copied { background: rgba(201,168,76,0.25); color: #fff; }
+  .tip { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.6; }
+  h2 { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 8px; font-family: var(--serif); }
+  .intro { font-size: 14px; color: var(--muted); margin-bottom: 28px; line-height: 1.8; }
+  .theme-selector { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .theme-chip { padding: 7px 14px; border-radius: 99px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .theme-chip.selected { background: rgba(201,168,76,0.15); border-color: var(--gold); color: var(--gold); }
+  .char-count { font-size: 11px; color: var(--muted); margin-top: 4px; text-align: right; }
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 99px; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; margin-right: 6px; }
+  .badge-x { background: rgba(255,255,255,0.1); color: #fff; }
+  .badge-tiktok { background: rgba(105,201,208,0.15); color: #69c9d0; }
+  .badge-note { background: rgba(77,169,121,0.15); color: #4da979; }
+  .badge-pr { background: rgba(100,150,255,0.15); color: #6496ff; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+  .fullwidth-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 20px; }
+  textarea.edit-area { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; line-height: 1.9; padding: 14px; resize: vertical; font-family: var(--sans); }
+  textarea.edit-area:focus { outline: none; border-color: var(--gold); }
+  .row { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+  .pill-info { padding: 4px 10px; border-radius: 99px; background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2); font-size: 11px; color: var(--muted); }
+  .hashtag { color: var(--gold); }
+  .kv-title { font-size: clamp(20px,3vw,28px); font-weight: 800; font-family: var(--serif); color: #fff; line-height: 1.4; }
+  .kv-sub { font-size: 14px; color: var(--muted); margin-top: 8px; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">Fineme</div>
+  <div class="header-title">SNS発信素材ジェネレーター</div>
+</div>
+
+<div class="container">
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('x')">X（旧Twitter）</button>
+    <button class="tab" onclick="switchTab('tiktok')">TikTok スクリプト</button>
+    <button class="tab" onclick="switchTab('note')">note / ブログ</button>
+    <button class="tab" onclick="switchTab('press')">プレスリリース</button>
+    <button class="tab" onclick="switchTab('dm')">掲載者獲得DM</button>
+  </div>
+
+  <!-- ====== X（旧Twitter） ====== -->
+  <div id="panel-x" class="panel active">
+    <div class="section-label">X（旧Twitter）投稿テンプレート</div>
+
+    <div class="theme-selector" id="x-theme-selector">
+      <button class="theme-chip selected" data-theme="awareness" onclick="setTheme('x','awareness',this)">認知獲得</button>
+      <button class="theme-chip" data-theme="pain" onclick="setTheme('x','pain',this)">悩み共感</button>
+      <button class="theme-chip" data-theme="howto" onclick="setTheme('x','howto',this)">ノウハウ</button>
+      <button class="theme-chip" data-theme="story" onclick="setTheme('x','story',this)">変容ストーリー</button>
+      <button class="theme-chip" data-theme="tool" onclick="setTheme('x','tool',this)">ツール紹介</button>
+    </div>
+
+    <div class="grid2" id="x-cards">
+      <!-- JS で挿入 -->
+    </div>
+  </div>
+
+  <!-- ====== TikTok ====== -->
+  <div id="panel-tiktok" class="panel">
+    <div class="section-label">TikTok 動画スクリプト</div>
+    <p class="intro">各スクリプトは「フック→本題→CTA」の15〜60秒構成。ナレーション＋テロップ想定。</p>
+
+    <div class="theme-selector" id="tt-theme-selector">
+      <button class="theme-chip selected" data-theme="howto" onclick="setTheme('tt','howto',this)">清潔感ノウハウ</button>
+      <button class="theme-chip" data-theme="before_after" onclick="setTheme('tt','before_after',this)">Before/After</button>
+      <button class="theme-chip" data-theme="diagnosis" onclick="setTheme('tt','diagnosis',this)">診断告知</button>
+      <button class="theme-chip" data-theme="myth" onclick="setTheme('tt','myth',this)">誤解を解く</button>
+    </div>
+
+    <div id="tt-cards">
+      <!-- JS で挿入 -->
+    </div>
+  </div>
+
+  <!-- ====== note ====== -->
+  <div id="panel-note" class="panel">
+    <div class="section-label">note / ブログ 記事アウトライン</div>
+    <p class="intro">SEO×読まれる記事設計。各テンプレートをコピーしてClaude等で本文を生成してください。</p>
+
+    <div id="note-cards">
+      <!-- JS で挿入 -->
+    </div>
+  </div>
+
+  <!-- ====== プレスリリース ====== -->
+  <div id="panel-press" class="panel">
+    <div class="section-label">プレスリリース文面</div>
+    <p class="intro">PR TIMESやmainichi.jpへの投稿用。HTMLのままコピーして編集してください。</p>
+
+    <div class="fullwidth-card">
+      <div class="card-title">📰 プレスリリース — サービス開始告知</div>
+      <textarea class="edit-area" id="press-text" rows="42">【プレスリリース】
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+「外見を変えると、人は変わる」——
+恋愛に悩む男性のための外見変容ポータル
+「Fineme（ファインミ）」正式公開
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+■ 概要
+株式会社○○（代表：渡邉英雄）は、外見磨きに特化した
+サービス検索ポータル「Fineme（ファインミ）」を正式公開しました。
+URL：https://www.fineme.me/
+
+■ 背景と課題
+「恋愛がうまくいかない理由を『外見』だと薄々わかっていながら、
+何から手を付ければいいかわからない」——そんな男性が急増しています。
+
+パーソナルジム・眉毛サロン・プロ写真撮影・骨格診断など、
+外見磨きのプロフェッショナルは各地に存在します。しかし、
+「どのジャンルの専門家が今の自分に必要か」を客観的に示す
+プラットフォームはこれまで存在しませんでした。
+
+■ サービス概要
+Fineme は「体型・眉・ヘア・肌・服・歯・爪」の7軸で外見を
+診断し、今の自分に最も効くサービスと専門家を提示します。
+
+  ◆ Me Scan（外見変容診断）
+    7軸の設問に答えるだけで「今向くべき最初の一手」がわかる。
+    無料・登録不要・3分で完了。
+
+  ◆ New Me Map（変容地図）
+    診断結果を可視化。自分の「強み軸」「伸び代軸」が一目でわかる。
+
+  ◆ New Me Navi（ロードマップ）
+    各軸ごとのマイルストーンを示すジグザグ型進捗トラック。
+    完了状態はクラウド保存されデバイス間で同期。
+
+  ◆ サービス検索・比較
+    掲載者ページと診断結果をAIがマッチングし最適な専門家を提示。
+
+■ 創業者コメント
+「外見を整えることで生まれる小さな自信が、人に優しくなれる余白を
+つくり、世界は少しずつ愛で満たされていく——そう信じています。
+Fineme は外見変容の旅における地図と羅針盤を提供するサービスです。」
+                              代表　渡邉 英雄
+
+■ 掲載者募集
+パーソナルジム・眉毛サロン・骨格診断・プロ写真撮影など、
+男性の外見変容を支援するサービス事業者の掲載申請を受け付けています。
+掲載申請：https://www.fineme.me/provider/join
+
+■ 会社概要
+社名    ：（記入）
+代表者  ：渡邉 英雄
+所在地  ：（記入）
+設立    ：（記入）
+事業内容：外見磨きサービス検索ポータルの運営
+URL     ：https://www.fineme.me/
+
+■ 本件に関するお問い合わせ
+メール：（記入）
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+以上
+</textarea>
+      <button class="copy-btn" onclick="copyText('press-text', this)">クリップボードにコピー</button>
+    </div>
+  </div>
+
+  <!-- ====== 掲載者獲得DM ====== -->
+  <div id="panel-dm" class="panel">
+    <div class="section-label">掲載者獲得 DMテンプレート（業種別）</div>
+    <p class="intro">DM送信前に「名前」「店名」「特徴」を差し込んでカスタマイズしてください。</p>
+
+    <div class="grid2" id="dm-cards">
+      <!-- JS で挿入 -->
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ──────────────────────────────────
+// データ定義
+// ──────────────────────────────────
+
+const X_CONTENT = {
+  awareness: [
+    {
+      title: '認知① — 問題提起型',
+      badge: 'x',
+      text: `「なんか垢抜けない…」と感じてる男性に質問です。
+
+清潔感って「顔」じゃないんですよ。
+
+・眉の形
+・ヘアライン
+・肌の透明感
+・体のシルエット
+
+この4つだけで、同じ顔でも印象が全然変わる。
+
+どこから手をつければいいか分からない人は、
+まず7軸の外見診断を受けてみてください。無料3分。
+
+👇
+https://www.fineme.me/diagnosis
+
+#清潔感 #外見磨き #垢抜け #モテる外見`,
+    },
+    {
+      title: '認知② — 数字型',
+      badge: 'x',
+      text: `マッチングアプリで「いいね」が全然こない男性の98%が見落としてること👇
+
+ーーーーーーーーーーーーーーー
+アプリの写真より先に
+「実物の清潔感」を整えること
+ーーーーーーーーーーーーーーー
+
+眉毛・ヘア・肌・体型。
+この4軸を整えるだけで、同じ写真でも印象が劇的に変わります。
+
+Fineme では無料の外見診断で「今一番効く改善ポイント」を特定できます。
+
+https://www.fineme.me/diagnosis
+
+#マッチングアプリ #清潔感 #男磨き`,
+    },
+    {
+      title: '認知③ — 共感型',
+      badge: 'x',
+      text: `「外見は関係ない」と言い続けて5年。
+
+でも正直に言うと、
+清潔感を整えた月から
+アプリの反応が変わりました。
+
+まず眉毛サロン。次に髪。次に肌。
+順番が大事で、「全部同時」はしんどい。
+
+今の自分に「最初の一手」を教えてくれる診断、
+Fineme という無料ツールがあります。
+
+https://www.fineme.me/diagnosis
+
+#男磨き #外見改善 #清潔感`,
+    },
+  ],
+  pain: [
+    {
+      title: '悩み共感① — 失敗談共感',
+      badge: 'x',
+      text: `マッチングアプリ「全然マッチしない」で半年消耗してた話。
+
+やったこと
+✗ プロフ文を100回書き直す
+✗ 趣味を充実させる
+✗ コミュ力を鍛える
+
+やるべきだったこと
+✓ 写真の清潔感を整える
+
+先に外見を整えたら、同じプロフで3倍マッチした。
+
+「何から整えるか」が分からない人へ→
+https://www.fineme.me/diagnosis
+
+#マッチングアプリ #モテない理由 #清潔感`,
+    },
+    {
+      title: '悩み共感② — 勇気の話',
+      badge: 'x',
+      text: `「外見を整える＝ナルシスト」と思ってた時期、あったな。
+
+でも違った。
+清潔感を整えることは
+「相手への敬意」なんだと気づいた。
+
+会いに来てくれる人の時間を、
+最高の自分で迎える準備。
+
+それだけのこと。
+
+Fineme で今の自分の「変容地図」を作ってみてください。
+https://www.fineme.me/diagnosis
+
+#男磨き #外見 #自己投資`,
+    },
+  ],
+  howto: [
+    {
+      title: 'ノウハウ① — 清潔感チェックリスト',
+      badge: 'x',
+      text: `【保存版】モテる清潔感チェックリスト
+
+□ 眉毛が整っている（束眉・ぼさぼさNG）
+□ 髪型が顔型に合っている
+□ 肌が乾燥・テカっていない
+□ 歯が黄ばんでいない
+□ 爪が切れている
+□ 服にシワ・ニオイがない
+□ 体型がスーツを着こなせる範囲
+
+この7項目が全部OKなら、顔関係なく「清潔感がある」と認識される。
+
+どこが弱いか分からない方→
+https://www.fineme.me/diagnosis
+
+#清潔感 #外見チェック #男磨き`,
+    },
+    {
+      title: 'ノウハウ② — 眉毛の重要性',
+      badge: 'x',
+      text: `外見改善で「費用対効果が高い」1位は圧倒的に眉毛。
+
+理由：
+・月1回3000〜5000円で整えられる
+・顔全体の印象を変える最短ルート
+・「清潔感がある」と認識される第一歩
+
+眉毛サロンに行ったことがない男性、
+まず1回行ってみてください。
+世界が変わります（マジで）
+
+眉毛サロンを探す→ https://www.fineme.me/search?category=eyebrow
+
+#眉毛サロン #清潔感 #外見磨き`,
+    },
+  ],
+  story: [
+    {
+      title: '変容ストーリー① — ビフォーアフター体験',
+      badge: 'x',
+      text: `3ヶ月前の自分に教えてあげたい。
+
+【外見改善でやったこと】
+1. 眉毛サロン（月1）
+2. 美容院でヘアセット相談
+3. プロ撮影でアプリ写真更新
+
+結果：
+マッチ数が先月比で約3倍。
+デート率も上がった。
+
+費用：月2万円未満。
+効果：プライスレス。
+
+同じルートを試してみたい人→
+https://www.fineme.me/diagnosis
+
+#男磨き #外見改善 #マッチングアプリ`,
+    },
+  ],
+  tool: [
+    {
+      title: 'ツール紹介① — 診断告知',
+      badge: 'x',
+      text: `外見改善を始めたいけど「何から？」という人へ。
+
+Fineme の無料診断、試してみてください。
+
+体型・眉・ヘア・肌・服・歯・爪
+7軸で分析して「今の自分に最も効く最初の一手」を教えてくれます。
+
+登録不要・3分・無料。
+
+https://www.fineme.me/diagnosis
+
+#外見診断 #清潔感 #男磨き #無料ツール`,
+    },
+    {
+      title: 'ツール紹介② — New Me Navi',
+      badge: 'x',
+      text: `外見改善って「何をいつやればいいか」が一番難しい。
+
+Fineme の New Me Navi は
+7軸それぞれのマイルストーンを
+ジグザグの進捗トラックで表示してくれる。
+
+今日やること・次にやること・最終ゴール。
+全部見える。
+
+無料で使えます→
+https://www.fineme.me/diagnosis
+
+#外見磨き #男の自己投資 #アプリ紹介`,
+    },
+  ],
+};
+
+const TT_SCRIPTS = {
+  howto: [
+    {
+      title: '清潔感を上げる「最初の一手」【15秒】',
+      text: `【フック（0〜3秒）】
+"外見改善、何から始めるか迷ってる？答えは眉毛一択です"
+
+【本題（3〜12秒）】
+"月4000円・月1回。それだけで顔の印象が全然変わる。
+清潔感って顔じゃなくて、眉の形と髪で決まるから"
+
+【CTA（12〜15秒）】
+"他に何を整えるべきか分からない人は、
+プロフリンクの診断を試してみて。無料3分"
+
+─
+字幕タイミング：全セリフにテロップ表示
+BGM推奨：明るめポップ
+ハッシュタグ：#清潔感 #眉毛 #外見磨き #男磨き #垢抜け`,
+    },
+    {
+      title: '外見改善ロードマップ【30秒】',
+      text: `【フック（0〜4秒）】
+"外見改善で「お金も時間も無駄にした」経験ありますか？
+正しい順番があります"
+
+【本題（4〜24秒）】
+"STEP1：眉毛サロンで眉を整える（月4000円）
+STEP2：美容院でヘアセット相談（2ヶ月に1回）
+STEP3：スキンケアで肌の質感を整える（月2000円〜）
+STEP4：体型がある程度整ったらプロ写真撮影
+
+全部一気にやろうとすると挫折する。
+一つずつ積み上げるのが最速ルート"
+
+【CTA（24〜30秒）】
+"自分は今どこから始めるべき？
+Fineme の無料診断で7軸分析できます。
+プロフのリンクからどうぞ"
+
+─
+テロップ：各STEP番号を大きく表示
+BGM推奨：やや落ち着いたリズム
+ハッシュタグ：#外見改善 #男磨き #清潔感ロードマップ`,
+    },
+  ],
+  before_after: [
+    {
+      title: 'Before/After 変容ストーリー【30秒】',
+      text: `【フック（0〜4秒）】
+"半年前の俺、今見たら別人みたいです（写真切り替え）"
+
+【本題（4〜24秒）】
+"何をやったかというと、
+1. 眉毛サロンに通い始めた
+2. 美容師さんに「清潔感を出したい」と伝えてカット
+3. スキンケアを始めた（洗顔＋保湿だけ）
+
+顔は全く変えてない。でも「垢抜けた」って言われるようになった。
+
+費用で言うと月1.5万円くらい。
+プロテインや習慣食より安くて効果が出た"
+
+【CTA（24〜30秒）】
+"自分はどこから始めるべきかを診断してくれるツール、
+Fineme というサイトが無料で使えます。
+プロフのリンクからどうぞ"
+
+─
+ビジュアル：テキスト中心 or スライドショー
+ハッシュタグ：#垢抜け #外見改善 #ビフォーアフター #男磨き`,
+    },
+  ],
+  diagnosis: [
+    {
+      title: 'Fineme 診断告知【20秒】',
+      text: `【フック（0〜4秒）】
+"外見磨き、「何から始めるか」で迷ってる人に朗報です"
+
+【本題（4〜15秒）】
+"Fineme という無料サービスが、
+体型・眉・ヘア・肌・服・歯・爪
+7軸を診断して「今の自分に最も効く一手」を教えてくれる。
+
+3分で終わる。登録不要。完全無料。"
+
+【CTA（15〜20秒）】
+"プロフのリンクから試してみてください。
+変わりたい全ての男性へ"
+
+─
+テロップ：「7軸」の各項目を一覧で表示
+ハッシュタグ：#Fineme #外見診断 #無料ツール #男磨き #外見磨き`,
+    },
+  ],
+  myth: [
+    {
+      title: '誤解を解く「外見改善は遺伝じゃない」【20秒】',
+      text: `【フック（0〜3秒）】
+"「イケメンじゃないから無理」は間違いです"
+
+【本題（3〜16秒）】
+"清潔感と顔の良さは別物。
+清潔感はスキルで、練習すれば誰でも上げられる。
+
+事実：顔偏差値50の男が眉毛・ヘア・肌を整えたら
+「顔は普通だけど整ってる」から「清潔感あってカッコいい」になる。
+
+女性が見てるのは顔のパーツより、全体の清潔感と丁寧さ"
+
+【CTA（16〜20秒）】
+"今すぐ始めたい人→ プロフリンクの無料診断へ"
+
+─
+ハッシュタグ：#清潔感の真実 #外見磨き #モテる男 #男磨き`,
+    },
+  ],
+};
+
+const NOTE_OUTLINES = [
+  {
+    title: '「外見改善は遺伝じゃない」清潔感を科学する',
+    text: `# タイトル案
+外見改善は遺伝じゃない——清潔感を後天的に手に入れた男たちの共通点
+
+# リード文（300字）
+「顔が良くないから外見磨きをしても意味ない」という思い込みを持っていませんか？
+実は清潔感と顔の造形は全くの別物です。この記事では...
+
+# 目次（H2）
+1. 清潔感は顔の造形より眉・ヘア・肌で決まる
+2. 女性がパートナー選びで重視する「清潔感シグナル」とは
+3. 外見改善の正しい順番（費用対効果順）
+4. 1ヶ月2万円で変われる3ステップ
+5. 診断から始める「自分の改善地図」の作り方
+
+# CTA
+→ 無料の外見変容診断を試す（Fineme）
+
+# SEOキーワード
+清潔感 上げる 男 / 外見磨き 順番 / 垢抜け 男 方法`,
+  },
+  {
+    title: '眉毛サロン初心者ガイド（男性向け）',
+    text: `# タイトル案
+眉毛サロン初心者が知っておくべき7つのこと——費用・頻度・選び方
+
+# リード文（300字）
+「眉毛サロン、行ってみたいけど何を伝えればいいかわからない」
+そんな疑問を全部まとめました。費用から当日の流れまで...
+
+# 目次（H2）
+1. 眉毛サロンの料金相場（2024年版）
+2. 初回に伝える「鉄板フレーズ」
+3. 顔型別おすすめ眉の形
+4. 行く頻度と維持コスト
+5. セルフ眉カットとの違い
+
+# CTA
+→ 近くの眉毛サロンを探す（Fineme）
+
+# SEOキーワード
+眉毛サロン 男 初めて / 眉毛サロン 料金 / 眉毛 整え方 男`,
+  },
+  {
+    title: 'マッチングアプリの写真で損してる男性へ',
+    text: `# タイトル案
+マッチングアプリで「いいね」が来ない本当の理由——外見の整え方から始めよう
+
+# リード文（300字）
+プロフィール文を何度書き直しても反応がない。
+でも外見を整えてプロ撮影した写真に変えたら、マッチ数が3倍になった人が続出しています...
+
+# 目次（H2）
+1. アプリで損してる男性に共通する「写真の問題」
+2. 写真映えする外見の条件（清潔感チェックリスト）
+3. プロ写真撮影サービスの選び方
+4. 撮影前に整えるべき5つのポイント
+5. Fineme の診断で「今の自分に足りないもの」を特定する方法
+
+# CTA
+→ 外見変容診断を無料で試す
+
+# SEOキーワード
+マッチングアプリ 写真 男 / マッチングアプリ モテない 外見 / プロフ写真 撮影`,
+  },
+];
+
+const DM_TEMPLATES = [
+  {
+    title: '眉毛サロン向け',
+    text: `はじめまして。
+Fineme（ファインミ）という、恋愛に悩む男性向けの
+外見磨きサービス検索ポータルを運営している渡邉と申します。
+
+「清潔感を整えたい男性」が眉毛サロンを探す際、
+Fineme経由で繋がれるようにならないかと思いご連絡しました。
+
+現在、診断→最適サービス提示の導線を整えており、
+[サロン名]さんのような「男性へのアプローチを大切にしているサロン」に
+掲載いただけると、新規男性客の流入につながると考えています。
+
+掲載は完全無料でスタートできます（現在初期費用0円キャンペーン中）。
+10分ほどお話できる機会をいただけますでしょうか？
+
+Fineme：https://www.fineme.me/
+掲載詳細：https://www.fineme.me/provider/join
+
+渡邉 英雄`,
+  },
+  {
+    title: 'パーソナルジム向け',
+    text: `はじめまして。
+Fineme（ファインミ）の渡邉と申します。
+
+「外見を変えて自信を取り戻したい男性」と
+「そこに向き合っているパーソナルジム」を繋ぐポータルを運営しています。
+
+[ジム名]さんは男性クライアントの体型変容に特化されていると
+拝見し、ご連絡しました。
+
+Fineme の診断を受けた男性が「体型」を改善すべきと判定された場合、
+[ジム名]さんのページが優先表示されるよう設定できます。
+
+初期費用0円・掲載は5分で完了します。
+詳細を5分だけ聞いていただけますか？
+
+掲載詳細：https://www.fineme.me/provider/join`,
+  },
+  {
+    title: 'フリーランス骨格診断士向け',
+    text: `はじめまして。渡邉と申します。
+
+男性向け外見磨きポータル「Fineme」を運営しており、
+骨格診断・パーソナルカラー診断のプロをお探しのユーザーから
+問い合わせを多くいただいています。
+
+[お名前]さんのように男性クライアントへの実績がある方に
+Fineme に掲載いただけると、新規クライアントとの接点が増えると思います。
+
+掲載費は現在無料です。
+プロフィールと事例を登録いただくだけで、
+診断結果との相性が高いユーザーにご紹介できる仕組みです。
+
+ご関心あればぜひ！
+https://www.fineme.me/provider/join`,
+  },
+  {
+    title: '婚活サポート向け',
+    text: `はじめまして。Fineme の渡邉です。
+
+Fineme は外見変容の旅を終えた男性が
+「次のステージ（婚活・出会い）」へ進む際の導線も持っており、
+婚活サービスとの連携を強化したいと考えています。
+
+[サービス名]さんは外見磨き後の男性にとって
+非常に相性が良いと感じご連絡しました。
+
+掲載は無料・5分で登録できます。
+ぜひ一度詳細をご覧ください：
+https://www.fineme.me/provider/join`,
+  },
+];
+
+// ──────────────────────────────────
+// レンダリング
+// ──────────────────────────────────
+
+function renderXCards(theme) {
+  const items = X_CONTENT[theme] || [];
+  const container = document.getElementById('x-cards');
+  container.innerHTML = items.map((item, i) => `
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span class="badge badge-x">X</span>
+        <span class="card-title" style="margin:0">${item.title}</span>
+      </div>
+      <div class="card-body">${escHtml(item.text)}</div>
+      <div class="char-count">${item.text.length}字</div>
+      <button class="copy-btn" onclick="copyTextContent(this, \`${escJs(item.text)}\`)">コピー</button>
+    </div>
+  `).join('');
+}
+
+function renderTTCards(theme) {
+  const items = TT_SCRIPTS[theme] || [];
+  const container = document.getElementById('tt-cards');
+  container.innerHTML = items.map((item, i) => `
+    <div class="fullwidth-card" style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span class="badge badge-tiktok">TikTok</span>
+        <span class="card-title" style="margin:0">${item.title}</span>
+      </div>
+      <div class="card-body">${escHtml(item.text)}</div>
+      <button class="copy-btn" onclick="copyTextContent(this, \`${escJs(item.text)}\`)" style="margin-top:14px">コピー</button>
+    </div>
+  `).join('');
+}
+
+function renderNoteCards() {
+  const container = document.getElementById('note-cards');
+  container.innerHTML = NOTE_OUTLINES.map((item, i) => `
+    <div class="fullwidth-card" style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span class="badge badge-note">note</span>
+        <span class="card-title" style="margin:0">${item.title}</span>
+      </div>
+      <div class="card-body">${escHtml(item.text)}</div>
+      <button class="copy-btn" onclick="copyTextContent(this, \`${escJs(item.text)}\`)" style="margin-top:14px">コピー</button>
+    </div>
+  `).join('');
+}
+
+function renderDMCards() {
+  const container = document.getElementById('dm-cards');
+  container.innerHTML = DM_TEMPLATES.map((item, i) => `
+    <div class="card">
+      <div class="card-title">${item.title}</div>
+      <div class="card-body">${escHtml(item.text)}</div>
+      <button class="copy-btn" onclick="copyTextContent(this, \`${escJs(item.text)}\`)">コピー</button>
+    </div>
+  `).join('');
+}
+
+// ──────────────────────────────────
+// ユーティリティ
+// ──────────────────────────────────
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escJs(str) {
+  return str.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+function setTheme(prefix, theme, el) {
+  document.querySelectorAll('#' + prefix + '-theme-selector .theme-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  if (prefix === 'x') renderXCards(theme);
+  if (prefix === 'tt') renderTTCards(theme);
+}
+
+function copyTextContent(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'コピーしました ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function copyText(id, btn) {
+  const val = document.getElementById(id).value;
+  navigator.clipboard.writeText(val).then(() => {
+    btn.textContent = 'コピーしました ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'クリップボードにコピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ──────────────────────────────────
+// 初期化
+// ──────────────────────────────────
+renderXCards('awareness');
+renderTTCards('howto');
+renderNoteCards();
+renderDMCards();
+</script>
+</body>
+</html>
