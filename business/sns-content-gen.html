@@ -47,8 +47,7 @@
   .char-count { font-size: 11px; color: var(--muted); margin-top: 4px; text-align: right; }
   .badge { display: inline-block; padding: 3px 9px; border-radius: 99px; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; margin-right: 6px; }
   .badge-x { background: rgba(255,255,255,0.1); color: #fff; }
-  .badge-tiktok { background: rgba(105,201,208,0.15); color: #69c9d0; }
-  .badge-note { background: rgba(77,169,121,0.15); color: #4da979; }
+.badge-note { background: rgba(77,169,121,0.15); color: #4da979; }
   .badge-pr { background: rgba(100,150,255,0.15); color: #6496ff; }
   .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
   .fullwidth-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 20px; }
@@ -72,7 +71,6 @@
 
   <div class="tabs">
     <button class="tab active" onclick="switchTab('x')">X（旧Twitter）</button>
-    <button class="tab" onclick="switchTab('tiktok')">TikTok スクリプト</button>
     <button class="tab" onclick="switchTab('note')">note / ブログ</button>
     <button class="tab" onclick="switchTab('press')">プレスリリース</button>
     <button class="tab" onclick="switchTab('dm')">掲載者獲得DM</button>
@@ -91,23 +89,6 @@
     </div>
 
     <div class="grid2" id="x-cards">
-      <!-- JS で挿入 -->
-    </div>
-  </div>
-
-  <!-- ====== TikTok ====== -->
-  <div id="panel-tiktok" class="panel">
-    <div class="section-label">TikTok 動画スクリプト</div>
-    <p class="intro">各スクリプトは「フック→本題→CTA」の15〜60秒構成。ナレーション＋テロップ想定。</p>
-
-    <div class="theme-selector" id="tt-theme-selector">
-      <button class="theme-chip selected" data-theme="howto" onclick="setTheme('tt','howto',this)">清潔感ノウハウ</button>
-      <button class="theme-chip" data-theme="before_after" onclick="setTheme('tt','before_after',this)">Before/After</button>
-      <button class="theme-chip" data-theme="diagnosis" onclick="setTheme('tt','diagnosis',this)">診断告知</button>
-      <button class="theme-chip" data-theme="myth" onclick="setTheme('tt','myth',this)">誤解を解く</button>
-    </div>
-
-    <div id="tt-cards">
       <!-- JS で挿入 -->
     </div>
   </div>
@@ -421,124 +402,6 @@ https://www.fineme.me/diagnosis
   ],
 };
 
-const TT_SCRIPTS = {
-  howto: [
-    {
-      title: '清潔感を上げる「最初の一手」【15秒】',
-      text: `【フック（0〜3秒）】
-"外見改善、何から始めるか迷ってる？答えは眉毛一択です"
-
-【本題（3〜12秒）】
-"月4000円・月1回。それだけで顔の印象が全然変わる。
-清潔感って顔じゃなくて、眉の形と髪で決まるから"
-
-【CTA（12〜15秒）】
-"他に何を整えるべきか分からない人は、
-プロフリンクの診断を試してみて。無料3分"
-
-─
-字幕タイミング：全セリフにテロップ表示
-BGM推奨：明るめポップ
-ハッシュタグ：#清潔感 #眉毛 #外見磨き #男磨き #垢抜け`,
-    },
-    {
-      title: '外見改善ロードマップ【30秒】',
-      text: `【フック（0〜4秒）】
-"外見改善で「お金も時間も無駄にした」経験ありますか？
-正しい順番があります"
-
-【本題（4〜24秒）】
-"STEP1：眉毛サロンで眉を整える（月4000円）
-STEP2：美容院でヘアセット相談（2ヶ月に1回）
-STEP3：スキンケアで肌の質感を整える（月2000円〜）
-STEP4：体型がある程度整ったらプロ写真撮影
-
-全部一気にやろうとすると挫折する。
-一つずつ積み上げるのが最速ルート"
-
-【CTA（24〜30秒）】
-"自分は今どこから始めるべき？
-Fineme の無料診断で7軸分析できます。
-プロフのリンクからどうぞ"
-
-─
-テロップ：各STEP番号を大きく表示
-BGM推奨：やや落ち着いたリズム
-ハッシュタグ：#外見改善 #男磨き #清潔感ロードマップ`,
-    },
-  ],
-  before_after: [
-    {
-      title: 'Before/After 変容ストーリー【30秒】',
-      text: `【フック（0〜4秒）】
-"半年前の俺、今見たら別人みたいです（写真切り替え）"
-
-【本題（4〜24秒）】
-"何をやったかというと、
-1. 眉毛サロンに通い始めた
-2. 美容師さんに「清潔感を出したい」と伝えてカット
-3. スキンケアを始めた（洗顔＋保湿だけ）
-
-顔は全く変えてない。でも「垢抜けた」って言われるようになった。
-
-費用で言うと月1.5万円くらい。
-プロテインや習慣食より安くて効果が出た"
-
-【CTA（24〜30秒）】
-"自分はどこから始めるべきかを診断してくれるツール、
-Fineme というサイトが無料で使えます。
-プロフのリンクからどうぞ"
-
-─
-ビジュアル：テキスト中心 or スライドショー
-ハッシュタグ：#垢抜け #外見改善 #ビフォーアフター #男磨き`,
-    },
-  ],
-  diagnosis: [
-    {
-      title: 'Fineme 診断告知【20秒】',
-      text: `【フック（0〜4秒）】
-"外見磨き、「何から始めるか」で迷ってる人に朗報です"
-
-【本題（4〜15秒）】
-"Fineme という無料サービスが、
-体型・眉・ヘア・肌・服・歯・爪
-7軸を診断して「今の自分に最も効く一手」を教えてくれる。
-
-3分で終わる。登録不要。完全無料。"
-
-【CTA（15〜20秒）】
-"プロフのリンクから試してみてください。
-変わりたい全ての男性へ"
-
-─
-テロップ：「7軸」の各項目を一覧で表示
-ハッシュタグ：#Fineme #外見診断 #無料ツール #男磨き #外見磨き`,
-    },
-  ],
-  myth: [
-    {
-      title: '誤解を解く「外見改善は遺伝じゃない」【20秒】',
-      text: `【フック（0〜3秒）】
-"「イケメンじゃないから無理」は間違いです"
-
-【本題（3〜16秒）】
-"清潔感と顔の良さは別物。
-清潔感はスキルで、練習すれば誰でも上げられる。
-
-事実：顔偏差値50の男が眉毛・ヘア・肌を整えたら
-「顔は普通だけど整ってる」から「清潔感あってカッコいい」になる。
-
-女性が見てるのは顔のパーツより、全体の清潔感と丁寧さ"
-
-【CTA（16〜20秒）】
-"今すぐ始めたい人→ プロフリンクの無料診断へ"
-
-─
-ハッシュタグ：#清潔感の真実 #外見磨き #モテる男 #男磨き`,
-    },
-  ],
-};
 
 const NOTE_OUTLINES = [
   {
@@ -705,20 +568,6 @@ function renderXCards(theme) {
   `).join('');
 }
 
-function renderTTCards(theme) {
-  const items = TT_SCRIPTS[theme] || [];
-  const container = document.getElementById('tt-cards');
-  container.innerHTML = items.map((item, i) => `
-    <div class="fullwidth-card" style="margin-bottom:20px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-        <span class="badge badge-tiktok">TikTok</span>
-        <span class="card-title" style="margin:0">${item.title}</span>
-      </div>
-      <div class="card-body">${escHtml(item.text)}</div>
-      <button class="copy-btn" onclick="copyTextContent(this, \`${escJs(item.text)}\`)" style="margin-top:14px">コピー</button>
-    </div>
-  `).join('');
-}
 
 function renderNoteCards() {
   const container = document.getElementById('note-cards');
@@ -767,7 +616,6 @@ function setTheme(prefix, theme, el) {
   document.querySelectorAll('#' + prefix + '-theme-selector .theme-chip').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   if (prefix === 'x') renderXCards(theme);
-  if (prefix === 'tt') renderTTCards(theme);
 }
 
 function copyTextContent(btn, text) {
@@ -791,7 +639,6 @@ function copyText(id, btn) {
 // 初期化
 // ──────────────────────────────────
 renderXCards('awareness');
-renderTTCards('howto');
 renderNoteCards();
 renderDMCards();
 </script>
