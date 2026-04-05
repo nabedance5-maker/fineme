@@ -383,12 +383,17 @@ function SearchContent() {
           <p style={{ fontSize: '40px', margin: '0 0 12px' }}>🔍</p>
           <p style={{ fontSize: '16px', fontWeight: '700', marginBottom: '8px', color: 'rgba(232,228,220,0.75)' }}>見つかりませんでした</p>
           <p style={{ fontSize: '14px', marginBottom: '20px' }}>条件を変えて再度お試しください。</p>
-          <button
-            onClick={resetAll}
-            style={{ padding: '10px 24px', background: '#111', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
-          >
-            条件をリセット
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+            <button
+              onClick={resetAll}
+              style={{ padding: '10px 24px', background: '#111', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
+            >
+              条件をリセット
+            </button>
+            <Link href="/feature" style={{ fontSize: '13px', color: '#c9a84c', textDecoration: 'none' }}>
+              📖 特集記事で外見変容のヒントを見る →
+            </Link>
+          </div>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '20px' }}>

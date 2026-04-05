@@ -3,7 +3,22 @@ import { getAllArticles } from '@/lib/articles';
 
 export const metadata = {
   title: '特集記事 | Fineme',
-  description: '外見磨きの方法、変容のヒント、Finemeの思想を伝える特集記事。',
+  description: '外見磨きの方法、変容のヒント、Finemeの思想を伝える特集記事。清潔感・写真撮影・変容の思想など、恋愛に悩む男性のための実践コンテンツ。',
+  alternates: { canonical: 'https://www.fineme.me/feature' },
+  openGraph: {
+    title: '特集記事 | Fineme',
+    description: '清潔感・写真撮影・変容の思想。恋愛に悩む男性の外見変容を後押しするコンテンツ集。',
+    url: 'https://www.fineme.me/feature',
+    images: [{ url: 'https://www.fineme.me/assets/images/og-image.png', width: 1200, height: 630 }],
+    locale: 'ja_JP',
+    siteName: 'Fineme',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '特集記事 | Fineme',
+    description: '清潔感・写真撮影・変容の思想。恋愛に悩む男性の外見変容を後押しするコンテンツ集。',
+    images: ['https://www.fineme.me/assets/images/og-image.png'],
+  },
 };
 
 export const revalidate = 3600; // 1時間キャッシュ
@@ -75,6 +90,42 @@ export default async function FeatureListPage({ searchParams }) {
             ))}
           </div>
         )}
+
+        {/* ── 診断誘導CTAバナー ── */}
+        <div style={{
+          marginTop: '64px',
+          padding: 'clamp(32px, 6vw, 52px) clamp(20px, 5vw, 48px)',
+          background: 'linear-gradient(135deg, rgba(10,15,30,0.9) 0%, rgba(6,12,26,0.95) 100%)',
+          border: '1px solid rgba(201,168,76,0.2)',
+          borderRadius: '20px',
+          textAlign: 'center',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '160px', height: '160px', background: 'radial-gradient(circle, rgba(201,168,76,0.07) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ fontSize: '28px', marginBottom: '10px' }}>🧭</div>
+            <h2 style={{ fontSize: 'clamp(17px, 2.8vw, 22px)', fontWeight: 800, color: '#f0ece4', marginBottom: '10px', lineHeight: 1.4, fontFamily: 'var(--font-serif)' }}>
+              記事を読んだら、次は診断で「最初の一手」を見つけよう
+            </h2>
+            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.55)', marginBottom: '20px', lineHeight: 1.8, fontFamily: 'var(--font-sans)' }}>
+              体型・眉・ヘア・肌・服・歯・爪。7軸で分析して、今の自分に最も効く変容ルートを教えます。
+            </p>
+            <Link href="/diagnosis" style={{
+              display: 'inline-block', padding: '13px 32px',
+              background: 'linear-gradient(135deg, #c9a84c, #e8c97a)',
+              borderRadius: '8px', color: '#0a0f1e', fontWeight: 800,
+              fontSize: '15px', textDecoration: 'none', fontFamily: 'var(--font-sans)',
+              boxShadow: '0 4px 18px rgba(201,168,76,0.3)',
+            }}>
+              無料で診断する（3分）→
+            </Link>
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginTop: '10px', fontFamily: 'var(--font-sans)' }}>
+              登録不要・無料・すぐに結果が出ます
+            </p>
+          </div>
+        </div>
+
       </div>
     </main>
   );

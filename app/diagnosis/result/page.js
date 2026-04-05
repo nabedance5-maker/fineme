@@ -661,6 +661,14 @@ export default function DiagnosisResultPage() {
           </span>
           <span class="navi-btn-arrow">→</span>
         </a>
+        <a href="/feature" class="navi-btn navi-btn-secondary">
+          <span class="navi-btn-icon">📖</span>
+          <span class="navi-btn-body">
+            <span class="navi-btn-title">Fineme Journal を読む</span>
+            <span class="navi-btn-desc">清潔感・写真・変容の思想——変容の旅を後押しするコンテンツ</span>
+          </span>
+          <span class="navi-btn-arrow">→</span>
+        </a>
       </div>
 
       <div class="cta-block">
