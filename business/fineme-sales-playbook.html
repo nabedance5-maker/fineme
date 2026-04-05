@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fineme 掲載者獲得 営業プレイブック</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Hiragino Mincho Pro','Noto Serif JP',Georgia,serif;background:#060c1a;color:#e8e2d4;line-height:1.8;font-size:15px}
+  .page{max-width:900px;margin:0 auto;padding:0 20px 120px}
+
+  /* ── HERO ── */
+  .hero{position:relative;overflow:hidden;padding:64px 40px 56px;background:linear-gradient(rgba(6,12,26,0.82),rgba(10,15,30,0.92)),url('../public/assets/images/hero-bg.webp') center/cover no-repeat;border-bottom:1px solid rgba(201,168,76,.2);margin-bottom:48px}
+  .hero-badge{font-size:10px;font-weight:700;letter-spacing:.12em;color:rgba(201,168,76,.5);font-family:sans-serif;text-transform:uppercase;margin-bottom:16px}
+  .hero h1{font-size:clamp(26px,4vw,36px);font-weight:800;line-height:1.35;color:#f0ece4;margin-bottom:14px}
+  .hero h1 em{font-style:normal;color:#c9a84c}
+  .hero-sub{font-size:14px;color:#b0aaa2;line-height:1.9;max-width:560px}
+  .hero-meta{display:flex;gap:16px;flex-wrap:wrap;margin-top:20px;font-family:sans-serif;font-size:12px;color:rgba(201,168,76,.7)}
+
+  /* ── Layout ── */
+  .section{margin-bottom:48px}
+  .section-title{font-size:22px;font-weight:800;color:#f0ece4;border-left:3px solid #c9a84c;padding-left:14px;margin-bottom:24px;line-height:1.3}
+  .section-subtitle{font-size:13px;color:#9ca3af;font-family:sans-serif;margin-top:4px;padding-left:17px}
+  .card{background:rgba(10,15,30,0.7);border:1px solid rgba(232,228,220,0.12);border-radius:14px;padding:24px;margin-bottom:16px}
+  .card-title{font-size:16px;font-weight:700;color:#c9a84c;margin-bottom:12px;font-family:sans-serif}
+  .tag{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;font-family:sans-serif}
+  .tag-gold{background:rgba(201,168,76,.12);color:#c9a84c;border:1px solid rgba(201,168,76,.25)}
+  .tag-green{background:rgba(74,222,128,.08);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+  .tag-blue{background:rgba(96,165,250,.08);color:#60a5fa;border:1px solid rgba(96,165,250,.2)}
+  .tag-red{background:rgba(248,113,113,.08);color:#f87171;border:1px solid rgba(248,113,113,.2)}
+  .muted{color:#9ca3af;font-size:13px;font-family:sans-serif}
+
+  /* ── Target ── */
+  .target-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+  .target-card{background:rgba(10,15,30,0.7);border:1px solid rgba(232,228,220,0.12);border-radius:12px;padding:20px}
+  .target-card.priority-1{border-color:rgba(201,168,76,.4)}
+  .target-card.priority-2{border-color:rgba(96,165,250,.25)}
+  .target-name{font-size:16px;font-weight:700;color:#e8e2d4;margin-bottom:6px}
+  .target-why{font-size:13px;color:#9ca3af;font-family:sans-serif;margin-bottom:10px;line-height:1.7}
+  .target-where{font-size:12px;color:#c9a84c;font-family:sans-serif;font-weight:600}
+
+  /* ── Script ── */
+  .script-block{background:rgba(6,12,26,0.8);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:20px;margin-bottom:16px;position:relative}
+  .script-label{font-size:10px;font-weight:700;letter-spacing:.1em;color:#c9a84c;font-family:sans-serif;text-transform:uppercase;margin-bottom:8px}
+  .script-text{font-size:14px;line-height:2;color:#e8e2d4;white-space:pre-wrap}
+  .script-note{font-size:12px;color:#6b7280;font-family:sans-serif;margin-top:8px;padding-top:8px;border-top:1px solid rgba(232,228,220,0.08)}
+  .copy-btn{position:absolute;top:16px;right:16px;font-size:11px;padding:4px 10px;border:1px solid rgba(201,168,76,.3);border-radius:6px;background:rgba(201,168,76,.08);color:#c9a84c;cursor:pointer;font-family:sans-serif}
+  .copy-btn:hover{background:rgba(201,168,76,.15)}
+
+  /* ── Objection ── */
+  .obj-item{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid rgba(232,228,220,0.12);border-radius:12px;overflow:hidden;margin-bottom:12px}
+  .obj-q{padding:16px;background:rgba(248,113,113,.05);border-right:1px solid rgba(232,228,220,0.08)}
+  .obj-a{padding:16px;background:rgba(74,222,128,.04)}
+  .obj-label{font-size:10px;font-weight:700;letter-spacing:.08em;font-family:sans-serif;margin-bottom:6px;text-transform:uppercase}
+  .obj-label.q{color:#f87171}
+  .obj-label.a{color:#4ade80}
+  .obj-text{font-size:14px;line-height:1.8}
+
+  /* ── Flow ── */
+  .flow{display:flex;flex-direction:column;gap:0}
+  .flow-item{display:flex;gap:16px;padding-bottom:24px;position:relative}
+  .flow-item:not(:last-child)::before{content:'';position:absolute;left:15px;top:32px;bottom:0;width:2px;background:rgba(201,168,76,.2)}
+  .flow-num{width:32px;height:32px;border-radius:50%;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);color:#c9a84c;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:sans-serif}
+  .flow-title{font-weight:700;color:#e8e2d4;margin-bottom:4px}
+  .flow-desc{font-size:13px;color:#9ca3af;font-family:sans-serif;line-height:1.7}
+  .flow-action{font-size:12px;color:#c9a84c;font-family:sans-serif;margin-top:6px;font-weight:600}
+
+  /* ── KPI Table ── */
+  .kpi-table{width:100%;border-collapse:collapse;font-family:sans-serif;font-size:13px}
+  .kpi-table th{background:rgba(201,168,76,.08);color:#c9a84c;font-weight:700;padding:10px 14px;text-align:left;border-bottom:1px solid rgba(201,168,76,.2)}
+  .kpi-table td{padding:10px 14px;border-bottom:1px solid rgba(232,228,220,.06);color:#e8e2d4;vertical-align:top}
+  .kpi-table tr:last-child td{border-bottom:none}
+
+  /* ── Toast ── */
+  #toast{position:fixed;bottom:24px;right:24px;background:#111;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-family:sans-serif;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none}
+
+  @media(max-width:640px){.obj-item{grid-template-columns:1fr}.obj-q{border-right:none;border-bottom:1px solid rgba(232,228,220,0.08)}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-badge">INTERNAL / SALES PLAYBOOK</div>
+    <h1>Fineme 掲載者獲得<br><em>営業プレイブック</em></h1>
+    <div class="hero-sub">誰に・どこで・何を言って・どう動くか。初めての掲載者から1,000社へのロードマップ。</div>
+    <div class="hero-meta">
+      <span>更新日: 2026-04-05</span>
+      <span>対象フェーズ: Phase2（掲載者0→100社）</span>
+      <span>作成: 渡邉 英雄</span>
+    </div>
+  </div>
+
+  <!-- 1. 戦略方針 -->
+  <div class="section">
+    <div class="section-title">1. 戦略方針
+      <div class="section-subtitle">なぜ「個人PT・フリーランス特化」から始めるのか</div>
+    </div>
+    <div class="card">
+      <p style="line-height:2;margin-bottom:16px">Finemeが最初に狙うべき掲載者は<strong style="color:#c9a84c">「ホットペッパーに掲載できない、埋もれた才能」</strong>だ。チェーン店・大手ジムは意思決定が遅く、本部承認が必要で、すでに集客が安定している。動く理由がない。</p>
+      <p style="line-height:2;margin-bottom:16px">一方、個人PTやフリーランス美容師・骨格診断士は：</p>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;font-family:sans-serif;font-size:14px">
+        <li style="display:flex;gap:10px"><span style="color:#c9a84c;flex-shrink:0">✓</span><span>意思決定が本人1人。「いいね」と思ったら即日登録できる</span></li>
+        <li style="display:flex;gap:10px"><span style="color:#c9a84c;flex-shrink:0">✓</span><span>ホットペッパーに掲載できない（固定店舗なし、個人事業）</span></li>
+        <li style="display:flex;gap:10px"><span style="color:#c9a84c;flex-shrink:0">✓</span><span>集客に常に困っている。新しい流入を求めている</span></li>
+        <li style="display:flex;gap:10px"><span style="color:#c9a84c;flex-shrink:0">✓</span><span>SNSで見つけやすい（Instagram・X・TikTokで発信している）</span></li>
+        <li style="display:flex;gap:10px"><span style="color:#c9a84c;flex-shrink:0">✓</span><span>「変わりたい男性を応援する」思想に共感しやすい</span></li>
+      </ul>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="card" style="border-color:rgba(248,113,113,.2)">
+        <div class="card-title" style="color:#f87171">❌ 最初に狙わない層</div>
+        <ul style="list-style:none;font-family:sans-serif;font-size:13px;color:#9ca3af;display:flex;flex-direction:column;gap:6px">
+          <li>チェーン店・フランチャイズジム</li>
+          <li>大手ヘアサロン（リクルート・ホットペッパー加盟）</li>
+          <li>医療クリニック（医療広告規制が複雑）</li>
+          <li>固定費が高く集客に困っていない店舗</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:rgba(201,168,76,.4)">
+        <div class="card-title">✅ 最初に狙う層</div>
+        <ul style="list-style:none;font-family:sans-serif;font-size:13px;color:#9ca3af;display:flex;flex-direction:column;gap:6px">
+          <li>個人パーソナルトレーナー（業務委託・独立）</li>
+          <li>フリーランス美容師・スタイリスト</li>
+          <li>パーソナルカラー・骨格診断士</li>
+          <li>メンズ眉毛サロン（個人経営）</li>
+          <li>メンズメイクレッスン提供者</li>
+          <li>婚活コーチ・外見改善コンサル</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. ターゲット詳細 -->
+  <div class="section">
+    <div class="section-title">2. ターゲット別アプローチ詳細</div>
+    <div class="target-grid">
+      <div class="target-card priority-1">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="target-name">個人パーソナルトレーナー</div>
+          <span class="tag tag-gold">最優先</span>
+        </div>
+        <div class="target-why">レンタルスペース・出張型でホットペッパー掲載不可。SNS経由の集客に依存しており、安定した新規流入を切実に求めている。ヒアリング済みで親和性が高い。</div>
+        <div class="target-where">📍 Instagram #パーソナルトレーナー #PT独立 / Xで集客発信 / ジムのレンタルスペース掲示板</div>
+      </div>
+      <div class="target-card priority-1">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="target-name">パーソナルカラー・骨格診断士</div>
+          <span class="tag tag-gold">最優先</span>
+        </div>
+        <div class="target-why">Finemeの診断と直結するカテゴリ。診断結果から「骨格診断を受ける」への導線が最も自然。個人運営が多く意思決定が早い。</div>
+        <div class="target-where">📍 Instagram #パーソナルカラー診断 #骨格診断 / ストアカ・タイムチケット出品者 / minne・Creema</div>
+      </div>
+      <div class="target-card priority-1">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="target-name">フリーランス美容師</div>
+          <span class="tag tag-gold">最優先</span>
+        </div>
+        <div class="target-why">面貸し・シェアサロン利用の美容師はホットペッパー掲載不可。Instagram集客依存でFinemeからの流入に価値を感じやすい。男性カット特化型が特に相性よし。</div>
+        <div class="target-where">📍 Instagram #フリーランス美容師 #面貸し / シェアサロンの掲示板 / Xでの集客投稿</div>
+      </div>
+      <div class="target-card priority-2">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="target-name">メンズ眉毛サロン（個人）</div>
+          <span class="tag tag-blue">高優先</span>
+        </div>
+        <div class="target-why">男性外見改善の入門として需要が急増中。個人経営が多く集客力に課題。Finemeのターゲット層（恋愛に悩む男性）と完全一致。</div>
+        <div class="target-where">📍 Instagram #メンズ眉毛サロン / ホットペッパービューティー小規模店 / 地域ポータル</div>
+      </div>
+      <div class="target-card priority-2">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="target-name">メンズメイクレッスン</div>
+          <span class="tag tag-blue">高優先</span>
+        </div>
+        <div class="target-why">需要があるが検索で見つかりにくいサービス。Finemeで「第一印象改善」として掲載することでターゲット層に届く。個人・少人数レッスンが中心。</div>
+        <div class="target-where">📍 ストアカ・タイムチケット / Instagram #メンズメイク / YouTube発信者</div>
+      </div>
+      <div class="target-card priority-2">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="target-name">婚活・外見改善コンサル</div>
+          <span class="tag tag-blue">高優先</span>
+        </div>
+        <div class="target-why">Finemeの「発揮ステージ」（変容後の活用フェーズ）と直結。変容旅の終盤でサジェストできる。高単価で手数料収益も大きい。</div>
+        <div class="target-where">📍 婚活コーチ系X・note / ストアカ / 婚活ポータルサイト出品者</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 営業フロー -->
+  <div class="section">
+    <div class="section-title">3. 営業フロー（Discovery → 登録完了）</div>
+    <div class="card">
+      <div class="flow">
+        <div class="flow-item">
+          <div class="flow-num">1</div>
+          <div>
+            <div class="flow-title">ターゲット発見</div>
+            <div class="flow-desc">Instagram・X・ストアカ等で「#パーソナルトレーナー 集客」「#骨格診断 男性」等で検索。個人運営・男性向けの発信をしているアカウントをリスト化。</div>
+            <div class="flow-action">→ 1日10〜20件をスプレッドシートに追加。氏名・URL・カテゴリ・フォロワー数・直近投稿を記録</div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">2</div>
+          <div>
+            <div class="flow-title">ウォームアップ（任意・効果大）</div>
+            <div class="flow-desc">DM送信前に投稿にいいね・コメント（本物の感想）を2〜3日行う。「突然のDM」より「知っている人からの連絡」に変える。</div>
+            <div class="flow-action">→ コメント例:「この投稿すごく共感しました。男性の外見改善をサポートされてるんですね」</div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">3</div>
+          <div>
+            <div class="flow-title">初回DM送信</div>
+            <div class="flow-desc">「返信率を上げるDM」の鉄則: 短く・具体的に・相手目線で。自分の紹介より「相手にどんな価値があるか」を先に言う。</div>
+            <div class="flow-action">→ 下記「DM文面テンプレート」参照</div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">4</div>
+          <div>
+            <div class="flow-title">返信・ヒアリング</div>
+            <div class="flow-desc">返信があったら「詳しく聞きたい」という反応が多い。資料URLを送りつつ、簡単なヒアリングを行う（どんな客層・今の集客課題・単価帯）。</div>
+            <div class="flow-action">→ provider-pitch.html のURLを共有: https://www.fineme.me/provider/pitch（※要整備）</div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">5</div>
+          <div>
+            <div class="flow-title">登録誘導</div>
+            <div class="flow-desc">「まず無料で登録だけでも」というトーンで。初回予約まで費用なし・初回予約後に¥5,000/月のみ強調。難しい設定は一緒に行うオファーも有効。</div>
+            <div class="flow-action">→ https://www.fineme.me/provider/join に誘導</div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">6</div>
+          <div>
+            <div class="flow-title">登録後フォロー</div>
+            <div class="flow-desc">登録完了後24時間以内にDMで「登録ありがとうございます！プロフィールを充実させると掲載順位が上がります」とフォロー。AIプロフィール生成ボタンを案内。</div>
+            <div class="flow-action">→ オンボーディングページ（/provider/onboarding）に自動誘導されているはず</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. DM文面テンプレート -->
+  <div class="section">
+    <div class="section-title">4. DM文面テンプレート
+      <div class="section-subtitle">各プラットフォーム・ターゲット別。コピーしてそのまま使える</div>
+    </div>
+
+    <!-- Instagram DM: PT向け -->
+    <div class="script-block">
+      <button class="copy-btn" onclick="copyScript(this)">コピー</button>
+      <div class="script-label">Instagram DM ／ パーソナルトレーナー向け（初回）</div>
+      <div class="script-text">はじめまして、Finemeというサービスを運営している渡邉と申します。
+
+突然のDMで失礼します。○○さんのトレーニング投稿を拝見して、男性の変容にすごく真剣に向き合われているのが伝わってご連絡しました。
+
+Finemeは「恋愛や外見に悩む男性」が診断を受けてサービスを探すプラットフォームで、今まさに個人PTさんとのマッチングを強化しています。
+
+ホットペッパーには掲載できないPTさんでも、Fineme経由でFinemeに興味を持った男性ユーザーに見てもらえる仕組みです。初回予約が入るまで費用は一切かかりません。
+
+もしよければ、詳細をご覧いただけますか？（3分で読める資料があります）
+https://www.fineme.me/provider/join
+
+ご検討の程よろしくお願いします！</div>
+      <div class="script-note">※「○○さんの〜投稿を拝見して」の部分は必ず具体的に（「昨日のスクワット投稿」等）。コピペそのままはNG。</div>
+    </div>
+
+    <!-- Instagram DM: 骨格診断士向け -->
+    <div class="script-block">
+      <button class="copy-btn" onclick="copyScript(this)">コピー</button>
+      <div class="script-label">Instagram DM ／ パーソナルカラー・骨格診断士向け</div>
+      <div class="script-text">はじめまして、Finemeというサービスを運営している渡邉と申します。
+
+○○さんの骨格診断の投稿、いつも参考にしています。男性向けにも対応されているんですね！
+
+Finemeは「第一印象を変えたい男性」が骨格・顔型診断を受けてサービスを探すプラットフォームです。診断結果に合わせて○○さんのサービスをサジェストできる仕組みなので、他サービスとは違う層のユーザーに届けられます。
+
+登録・掲載は初回予約まで無料です。よろしければ詳細をご覧ください。
+https://www.fineme.me/provider/join</div>
+      <div class="script-note">※「診断結果に合わせてサジェスト」は骨格診断士には強い訴求ポイント。Finemeの診断と掲載者が繋がっていることを強調。</div>
+    </div>
+
+    <!-- X(Twitter) DM -->
+    <div class="script-block">
+      <button class="copy-btn" onclick="copyScript(this)">コピー</button>
+      <div class="script-label">X（旧Twitter）DM ／ 集客に困っている発信者向け</div>
+      <div class="script-text">はじめまして。Finemeというプラットフォームを運営しています。
+
+○○さんの「男性の外見改善」発信、すごく刺さりました。
+
+Finemeは外見に悩む男性が診断→サービス予約まで完結するサービスで、現在○○さんのような専門家を探しているユーザーが増えています。
+
+掲載は初回予約まで完全無料です。もしよければ5分だけ話せませんか？</div>
+      <div class="script-note">※X DMは文字数制限あり（280字）。短く・価値提案を先に。「5分だけ話せませんか」は返信率が上がる。</div>
+    </div>
+
+    <!-- フォローアップ（未返信2〜3日後） -->
+    <div class="script-block">
+      <button class="copy-btn" onclick="copyScript(this)">コピー</button>
+      <div class="script-label">フォローアップ DM ／ 初回DM後2〜3日後（未返信の場合）</div>
+      <div class="script-text">先日ご連絡させていただいた渡邉です。
+
+もしタイミングが合わなかったようでしたら全然大丈夫です！
+
+一点だけお伝えすると、Fineme経由でご予約が入るまでは完全無料なので、「とりあえず登録だけ」という形でも歓迎しています。
+
+もし気が向いたときにでもご覧いただければ嬉しいです。
+https://www.fineme.me/provider/join</div>
+      <div class="script-note">※フォローアップは1回まで。2回目以降はしつこくなる。「完全無料・とりあえず登録だけ」が最大の返信誘引。</div>
+    </div>
+
+    <!-- 紹介依頼（掲載者向け） -->
+    <div class="script-block">
+      <button class="copy-btn" onclick="copyScript(this)">コピー</button>
+      <div class="script-label">紹介依頼 DM ／ 既存掲載者への同業者紹介お願い</div>
+      <div class="script-text">○○さん、いつもご掲載ありがとうございます！
+
+一つお願いがあるのですが、もし同業や知り合いで「Finemeに向いてそうな方」がいれば、ご紹介いただけませんか？
+
+ご紹介いただいた方が掲載して課金が始まると、○○さんに月¥500の紹介報酬が毎月入り続けます（紹介者が課金している限り継続）。
+
+こちらに専用の紹介リンクがあります：[紹介リンクURL]
+
+よろしくお願いします！</div>
+      <div class="script-note">※既存掲載者への紹介依頼は最も低コスト・高効率。特に「気に入ってくれている掲載者」に真っ先に送る。</div>
+    </div>
+  </div>
+
+  <!-- 5. 反論対処法 -->
+  <div class="section">
+    <div class="section-title">5. よくある反論と切り返し</div>
+
+    <div class="obj-item">
+      <div class="obj-q">
+        <div class="obj-label q">反論</div>
+        <div class="obj-text">「ホットペッパーで十分です」</div>
+      </div>
+      <div class="obj-a">
+        <div class="obj-label a">切り返し</div>
+        <div class="obj-text">「ホットペッパーは"サービスを探している人"に届きます。Finemeは"変わりたいのにどこから始めれば分からない人"に届きます。客層がまったく違うので、補完関係として考えていただけます。」</div>
+      </div>
+    </div>
+
+    <div class="obj-item">
+      <div class="obj-q">
+        <div class="obj-label q">反論</div>
+        <div class="obj-text">「今は集客に困っていないので」</div>
+      </div>
+      <div class="obj-a">
+        <div class="obj-label a">切り返し</div>
+        <div class="obj-text">「それは素晴らしいですね！今すぐでなくてもいいです。初回予約まで無料なので、登録だけ先にしておいて、あとから掲載内容を整えていくことも全然できます。将来の保険として置いておくイメージです。」</div>
+      </div>
+    </div>
+
+    <div class="obj-item">
+      <div class="obj-q">
+        <div class="obj-label q">反論</div>
+        <div class="obj-text">「月¥5,000の費用が発生するのは怖い」</div>
+      </div>
+      <div class="obj-a">
+        <div class="obj-label a">切り返し</div>
+        <div class="obj-text">「課金が始まるのはFineme経由で初めての予約が入ってからです。試算すると、¥5,000の費用回収には1件/月の予約で十分なケースがほとんどです。リスクなしで試せる構造にしています。」</div>
+      </div>
+    </div>
+
+    <div class="obj-item">
+      <div class="obj-q">
+        <div class="obj-label q">反論</div>
+        <div class="obj-text">「知名度がないサービスは信用できない」</div>
+      </div>
+      <div class="obj-a">
+        <div class="obj-label a">切り返し</div>
+        <div class="obj-text">「おっしゃる通り、まだ始まったばかりです。だから早く登録した掲載者さんが最初から露出できる、という機会でもあります。ローンチ直後のHotPepperやミニモを早めに使い始めた方が先行優位を取れたのと同じです。」</div>
+      </div>
+    </div>
+
+    <div class="obj-item">
+      <div class="obj-q">
+        <div class="obj-label q">反論</div>
+        <div class="obj-text">「男性のお客さんはあまり来ていない」</div>
+      </div>
+      <div class="obj-a">
+        <div class="obj-label a">切り返し</div>
+        <div class="obj-text">「それがFinemeの強みです。男性ユーザーが"外見を変えたい"という意識がある状態で来るので、サービスへの抵抗感が低く成約率が高い傾向があります。また男性向けの実績を作ることで、口コミで男性客が増えやすい構造にもなります。」</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. KPI・管理 -->
+  <div class="section">
+    <div class="section-title">6. 週次KPIと管理方法</div>
+    <div class="card">
+      <table class="kpi-table">
+        <thead>
+          <tr>
+            <th>指標</th>
+            <th>目標値（フェーズ2初期）</th>
+            <th>計測方法</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>週間DM送信数</td>
+            <td>30〜50件/週</td>
+            <td>スプレッドシートで記録</td>
+          </tr>
+          <tr>
+            <td>DM返信率</td>
+            <td>10〜20%（5〜10件/週）</td>
+            <td>返信数÷送信数</td>
+          </tr>
+          <tr>
+            <td>資料閲覧率</td>
+            <td>返信者の50%以上</td>
+            <td>provider-pitch PV数（GA4）</td>
+          </tr>
+          <tr>
+            <td>登録転換率</td>
+            <td>資料閲覧者の20〜30%</td>
+            <td>/provider/join へのGA4コンバージョン</td>
+          </tr>
+          <tr>
+            <td>累計掲載者数</td>
+            <td>3ヶ月で50社・6ヶ月で100社</td>
+            <td>Supabase providers テーブル</td>
+          </tr>
+          <tr>
+            <td>初回予約発生率</td>
+            <td>掲載者の30%以上が90日以内に初回予約</td>
+            <td>reservations テーブル</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card" style="margin-top:0">
+      <div class="card-title">管理ツール（シンプルに）</div>
+      <ul style="list-style:none;font-family:sans-serif;font-size:14px;display:flex;flex-direction:column;gap:10px;color:#9ca3af">
+        <li><strong style="color:#e8e2d4">Googleスプレッドシート</strong> — ターゲットリスト管理（氏名・URL・DM日・返信・登録有無・備考）</li>
+        <li><strong style="color:#e8e2d4">Notionまたはメモ</strong> — DM文面のバリエーション管理・反応の良かったパターン記録</li>
+        <li><strong style="color:#e8e2d4">GA4</strong> — /provider/join のCVR・provider-pitchのPV数</li>
+        <li><strong style="color:#e8e2d4">Supabase</strong> — 実際の掲載者数・初回予約発生数の確認</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 7. 発信フライホイール（長期） -->
+  <div class="section">
+    <div class="section-title">7. 発信フライホイール（掲載者が掲載者を呼ぶ）</div>
+    <div class="card">
+      <p style="line-height:2;margin-bottom:16px;font-family:sans-serif;font-size:14px;color:#9ca3af">渡邉さんが1人でDMを送り続けることは最初の突破口に過ぎない。目指すのは<strong style="color:#c9a84c">「仕組みで掲載者が増える状態」</strong>。以下の3つのフライホイールが回り始めると、アウトバウンド営業の依存度が下がる。</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+        <div style="padding:16px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:10px">
+          <div style="font-weight:700;color:#c9a84c;margin-bottom:8px;font-family:sans-serif">① 紹介フライホイール</div>
+          <div style="font-size:13px;color:#9ca3af;font-family:sans-serif;line-height:1.7">掲載者が掲載者を紹介→¥500/月の報酬→もっと紹介したくなる。最低10社が紹介し始めると雪だるまになる。</div>
+        </div>
+        <div style="padding:16px;background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.2);border-radius:10px">
+          <div style="font-weight:700;color:#60a5fa;margin-bottom:8px;font-family:sans-serif">② SEOフライホイール</div>
+          <div style="font-size:13px;color:#9ca3af;font-family:sans-serif;line-height:1.7">記事251本→流入増→掲載者への送客増→掲載者が「効果ある」と口コミ→新規掲載者増。記事投入が加速する。</div>
+        </div>
+        <div style="padding:16px;background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.2);border-radius:10px">
+          <div style="font-weight:700;color:#4ade80;margin-bottom:8px;font-family:sans-serif">③ SNSフライホイール</div>
+          <div style="font-size:13px;color:#9ca3af;font-family:sans-serif;line-height:1.7">Finemeを紹介したSNS投稿→新規ユーザー流入→掲載者への予約増→掲載者がFinemeをSNSで紹介→さらに広がる。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+function copyScript(btn) {
+  const block = btn.closest('.script-block');
+  const text = block.querySelector('.script-text').textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    const toast = document.getElementById('toast');
+    toast.textContent = 'コピーしました';
+    toast.style.opacity = '1';
+    setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+  });
+}
+</script>
+</body>
+</html>
