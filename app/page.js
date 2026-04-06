@@ -502,8 +502,8 @@ export default function HomePage() {
 
             <Link href="/search" className="hero-nav-sub">診断せずに探す</Link>
 
-            {/* 診断済みユーザー向けバナー */}
-            {compass && (
+            {/* 診断済みユーザー向けバナー（ログイン済みのみ） */}
+            {loggedIn && compass && (
               <Link href="/diagnosis/result" className="compass-banner">
                 <span style={{ fontSize: '22px', color: '#c9a84c' }}>◎</span>
                 <div className="compass-banner-body">
