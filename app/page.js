@@ -256,13 +256,15 @@ export default function HomePage() {
           margin: 0 0 16px;
         }
         .hero-nav-h1 {
-          font-family: 'Playfair Display', 'Noto Serif JP', Georgia, serif;
-          font-size: clamp(72px, 14vw, 120px);
-          font-weight: 900;
-          color: #c9a84c;
           margin: 0 0 12px;
           line-height: 1;
-          letter-spacing: -0.02em;
+        }
+        .hero-nav-logo {
+          width: clamp(220px, 48vw, 420px);
+          height: auto;
+          display: block;
+          margin: 0 auto;
+          filter: drop-shadow(0 2px 24px rgba(201,168,76,0.45));
         }
         .hero-nav-h2 {
           font-family: 'Playfair Display', Georgia, serif;
@@ -467,7 +469,13 @@ export default function HomePage() {
         <section className="hero-nav">
           <div className="hero-nav-inner">
             <p className="hero-nav-brand">— Find New Me —</p>
-            <h1 className="hero-nav-h1">Fineme</h1>
+            <h1 className="hero-nav-h1">
+              <img
+                src="/assets/images/fineme-logo-final.png"
+                alt="Fineme"
+                className="hero-nav-logo"
+              />
+            </h1>
             <p className="hero-nav-h2">Find New Me.</p>
 
             <div className="hero-nav-verse">

@@ -67,7 +67,7 @@ export default function Navbar() {
       <div className="container navbar-inner" style={{ position: 'relative' }}>
         <Link href="/" className="brand logo" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>
           <Image
-            src="/assets/images/fineme-logo-v2.png"
+            src="/assets/images/fineme-logo-final.png"
             alt="Fineme"
             width={220}
             height={72}
