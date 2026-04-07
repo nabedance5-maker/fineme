@@ -150,8 +150,66 @@
 
   <!-- ====== note ====== -->
   <div id="panel-note" class="panel">
-    <div class="section-label">note 記事生成プロンプト（抜けアドバイザー）</div>
-    <p class="intro">「抜けアドバイザー」アカウント用。プロンプトをそのままClaude/ChatGPTに貼ると記事本文が生成されます。テーマを選んでください。</p>
+    <div class="section-label">note 記事ジェネレーター（でお｜抜けアドバイザー）</div>
+
+    <!-- AI直接生成 -->
+    <div class="fullwidth-card" style="margin-bottom:32px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <span style="background:linear-gradient(135deg,#c9a84c,#e8c97a);color:#0a0f1e;font-size:10px;font-weight:800;padding:3px 10px;border-radius:99px;letter-spacing:.08em">✨ AI直接生成</span>
+        <span class="card-title" style="margin:0">タイトルを入力するだけで「でお」文体の記事を生成</span>
+      </div>
+      <p class="tip" style="margin-bottom:16px">テーマ・タイトル案を入力してください。2,000字のnote記事が生成されます。Finemeへのリンクも自動で入ります。</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">記事のジャンル</label>
+          <select id="note-ai-genre" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:10px 12px;outline:none;">
+            <option value="story">体験談・ストーリー</option>
+            <option value="howto">ノウハウ・方法論</option>
+            <option value="fail">失敗談・後悔</option>
+            <option value="mind">マインド・考え方</option>
+            <option value="compare">比較・サービス選び方</option>
+            <option value="keyword">SEOキーワード狙い</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">fineme.meのどのページにリンクするか</label>
+          <select id="note-ai-link" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:10px 12px;outline:none;">
+            <option value="https://www.fineme.me/diagnosis">診断ページ（/diagnosis）</option>
+            <option value="https://www.fineme.me/mypage/navi">New Me Navi（/mypage/navi）</option>
+            <option value="https://www.fineme.me/search">サービス検索（/search）</option>
+            <option value="https://www.fineme.me/">トップページ</option>
+            <option value="custom">その他（下に入力）</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px" id="note-ai-custom-link-wrap" style="display:none">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">カスタムURL（fineme.meのURLを入力）</label>
+        <input id="note-ai-custom-link" type="text" placeholder="https://www.fineme.me/..." style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:10px 12px;outline:none;" />
+      </div>
+
+      <div style="margin-bottom:16px">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">記事タイトル案・テーマ（自由に書いてください）</label>
+        <textarea id="note-ai-title" class="edit-area" rows="3" placeholder="例：外見を変えようとして3回失敗した話&#10;例：眉毛を整えただけで街の景色が変わった&#10;例：モテたくてジム通ったのに、変わったのは自分への向き合い方だった"></textarea>
+      </div>
+
+      <button id="note-ai-generate-btn" onclick="generateNote()" style="background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.1));border:1px solid rgba(201,168,76,0.5);border-radius:8px;color:var(--gold);font-size:13px;font-weight:700;padding:10px 24px;cursor:pointer;">記事を生成する →</button>
+
+      <div id="note-ai-result" style="display:none;margin-top:20px">
+        <div class="section-label" style="margin-bottom:10px">生成された記事</div>
+        <p class="tip" style="margin-bottom:10px">このままnoteに貼り付けて、見出し（##）を整えてから投稿してください。</p>
+        <textarea id="note-ai-output" class="edit-area" rows="24" readonly></textarea>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+          <span id="note-ai-charcount" class="char-count"></span>
+          <button class="copy-btn" onclick="copyText('note-ai-output', this)">クリップボードにコピー</button>
+          <button onclick="generateNote()" style="background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:12px;font-weight:700;padding:8px 14px;cursor:pointer;">再生成</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">プロンプトテンプレート（Claude/ChatGPTに貼る用）</div>
+    <p class="intro" style="margin-bottom:20px">テーマごとの詳細プロンプト。微調整したい場合はこちらをコピーして使ってください。</p>
 
     <div class="theme-selector" id="note-theme-selector">
       <button class="theme-chip selected" data-theme="story" onclick="setTheme('note','story',this)">体験談</button>
@@ -245,8 +303,62 @@ URL     ：https://www.fineme.me/
 
   <!-- ====== 掲載者獲得DM ====== -->
   <div id="panel-dm" class="panel">
-    <div class="section-label">掲載者獲得 DMテンプレート（業種別）</div>
-    <p class="intro">DM送信前に「名前」「店名」「特徴」を差し込んでカスタマイズしてください。</p>
+    <div class="section-label">掲載者獲得 DMジェネレーター</div>
+
+    <!-- Instagram BAN注意 -->
+    <div style="background:rgba(255,180,0,0.07);border:1px solid rgba(255,180,0,0.25);border-radius:10px;padding:14px 18px;margin-bottom:24px;font-size:12px;color:rgba(255,210,80,0.85);line-height:1.8;">
+      ⚠️ <strong>Instagram BAN安全ライン</strong>：1日30件以内・送信間隔は2〜3分以上・同文コピペ禁止（AI個別化を活用）・リプライ・いいねなどの通常活動と並行して行う
+    </div>
+
+    <!-- AI個別化生成 -->
+    <div class="fullwidth-card" style="margin-bottom:32px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <span style="background:linear-gradient(135deg,#c9a84c,#e8c97a);color:#0a0f1e;font-size:10px;font-weight:800;padding:3px 10px;border-radius:99px;letter-spacing:.08em">✨ AI個別化</span>
+        <span class="card-title" style="margin:0">相手のプロフィールからDMを自動生成</span>
+      </div>
+      <p class="tip" style="margin-bottom:16px">相手のInstagramプロフィール文・投稿内容を貼り付けると、その人に合わせたDMをClaudeが生成します。</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">業種</label>
+          <select id="dm-ai-category" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:10px 12px;outline:none;">
+            <option value="eyebrow">眉毛サロン</option>
+            <option value="pt">パーソナルトレーナー（個人）</option>
+            <option value="gym">パーソナルジム</option>
+            <option value="fashion">ファッションコーディネーター</option>
+            <option value="hair">美容師・理容師</option>
+            <option value="diagnosis">骨格診断士</option>
+            <option value="photo">フォトグラファー</option>
+            <option value="marriage">婚活サポート</option>
+            <option value="other">その他</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">名前 / 店名</label>
+          <input id="dm-ai-name" type="text" placeholder="例：田中さん / MENS STYLE" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:10px 12px;outline:none;" />
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">相手のプロフィール文・投稿内容（コピペしてください）</label>
+        <textarea id="dm-ai-profile" class="edit-area" rows="5" placeholder="例：「都内でメンズパーソナルトレーニング専門。10年で1,000人以上の体型変容をサポート。恋愛・婚活前の男性も多く来店」"></textarea>
+      </div>
+
+      <button id="dm-ai-generate-btn" onclick="generateDM()" style="background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.1));border:1px solid rgba(201,168,76,0.5);border-radius:8px;color:var(--gold);font-size:13px;font-weight:700;padding:10px 24px;cursor:pointer;">DM を生成する →</button>
+
+      <div id="dm-ai-result" style="display:none;margin-top:20px">
+        <div class="section-label" style="margin-bottom:10px">生成されたDM</div>
+        <textarea id="dm-ai-output" class="edit-area" rows="10" readonly></textarea>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+          <span id="dm-ai-charcount" class="char-count"></span>
+          <button class="copy-btn" onclick="copyText('dm-ai-output', this)">クリップボードにコピー</button>
+          <button onclick="generateDM()" style="background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:12px;font-weight:700;padding:8px 14px;cursor:pointer;">再生成</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">テンプレート（業種別）</div>
+    <p class="intro" style="margin-bottom:20px">コピーして送信前に微調整してください。<span style="color:rgba(201,168,76,0.7)">太字の紹介報酬フックは必ず残してください。</span></p>
 
     <div class="grid2" id="dm-cards">
       <!-- JS で挿入 -->
@@ -710,21 +822,27 @@ const DM_TEMPLATES = [
   {
     title: '眉毛サロン向け',
     text: `はじめまして。
-Fineme（ファインミ）という、恋愛に悩む男性向けの
-外見磨きサービス検索ポータルを運営している渡邉と申します。
+男性向け外見変容ポータル「Fineme（ファインミ）」を運営している渡邉と申します。
 
-「清潔感を整えたい男性」が眉毛サロンを探す際、
-Fineme経由で繋がれるようにならないかと思いご連絡しました。
+「清潔感を整えたい男性」が眉毛サロンを探す際の診断・マッチング導線を整えており、[サロン名]さんのようなサロンに掲載いただけると男性新規客の流入につながると考えています。
 
-現在、診断→最適サービス提示の導線を整えており、
-[サロン名]さんのような「男性へのアプローチを大切にしているサロン」に
-掲載いただけると、新規男性客の流入につながると考えています。
+掲載料は月¥5,000ですが、同じく掲載している他の事業者を1社ご紹介いただくと、その方が在籍している間ずっと月¥500の報酬が入ります。10社ご紹介で掲載費が実質ゼロになる仕組みです。
 
-掲載は完全無料でスタートできます（現在初期費用0円キャンペーン中）。
-10分ほどお話できる機会をいただけますでしょうか？
+詳細はこちら：https://www.fineme.me/provider/join
 
-Fineme：https://www.fineme.me/
-掲載詳細：https://www.fineme.me/provider/join
+渡邉 英雄`,
+  },
+  {
+    title: 'パーソナルトレーナー（個人）向け',
+    text: `はじめまして。渡邉と申します。
+
+「外見を変えて自信を取り戻したい男性」と「その男性に向き合うプロ」を繋ぐポータル「Fineme」を運営しています。
+
+[お名前]さんのようにマンツーマンで男性の体型変容に向き合っているトレーナーと、まさにそれを求めているユーザーが繋がれる導線を作っています。
+
+月¥5,000の掲載ですが、他の掲載者を紹介していただくと月¥500の報酬がずっと入る仕組みもあります。外見磨きの同業者とのネットワークにもなります。
+
+https://www.fineme.me/provider/join
 
 渡邉 英雄`,
   },
@@ -733,52 +851,67 @@ Fineme：https://www.fineme.me/
     text: `はじめまして。
 Fineme（ファインミ）の渡邉と申します。
 
-「外見を変えて自信を取り戻したい男性」と
-「そこに向き合っているパーソナルジム」を繋ぐポータルを運営しています。
+「体型を変えて自信を取り戻したい男性」の診断→最適ジム紹介の導線を整えており、[ジム名]さんのように男性の体型変容に特化したジムと繋げたいと思いご連絡しました。
 
-[ジム名]さんは男性クライアントの体型変容に特化されていると
-拝見し、ご連絡しました。
+掲載料は月¥5,000です。また、Finemeに掲載している眉サロン・骨格診断士など他の外見磨き事業者を1社ご紹介いただくと、月¥500の紹介報酬がずっと入る仕組みがあります。
 
-Fineme の診断を受けた男性が「体型」を改善すべきと判定された場合、
-[ジム名]さんのページが優先表示されるよう設定できます。
+詳細：https://www.fineme.me/provider/join
 
-初期費用0円・掲載は5分で完了します。
-詳細を5分だけ聞いていただけますか？
-
-掲載詳細：https://www.fineme.me/provider/join`,
+渡邉 英雄`,
   },
   {
-    title: 'フリーランス骨格診断士向け',
+    title: 'ファッションコーディネーター向け',
     text: `はじめまして。渡邉と申します。
 
-男性向け外見磨きポータル「Fineme」を運営しており、
-骨格診断・パーソナルカラー診断のプロをお探しのユーザーから
-問い合わせを多くいただいています。
+男性が外見を変えて自信を取り戻すための診断・マッチングサービス「Fineme」を運営しています。
 
-[お名前]さんのように男性クライアントへの実績がある方に
-Fineme に掲載いただけると、新規クライアントとの接点が増えると思います。
+診断結果で「服装・コーディネート」の改善が必要と判定されたユーザーを、[お名前]さんのようなプロに繋ぐ導線を作っています。
 
-掲載費は現在無料です。
-プロフィールと事例を登録いただくだけで、
-診断結果との相性が高いユーザーにご紹介できる仕組みです。
+月¥5,000の掲載で、診断経由のユーザーが自動的に届く仕組みです。また掲載者紹介制度（月¥500/社）で紹介数次第で掲載費以上の報酬になるケースもあります。
 
-ご関心あればぜひ！
-https://www.fineme.me/provider/join`,
+https://www.fineme.me/provider/join
+
+渡邉 英雄`,
+  },
+  {
+    title: '美容師・理容師向け',
+    text: `はじめまして。渡邉と申します。
+
+男性向け外見変容ポータル「Fineme」を運営しています。ホットペッパーのような予約サイトではなく、「この男性に今必要な外見改善は何か」を診断して最適なプロに繋ぐ"地図と羅針盤"です。
+
+ホットペッパーで探されていない層——「彼女に振られた」「自分を変えたい」と思い立った男性が診断を通じて[お名前]さんのところに辿り着く、という導線を作っています。
+
+月¥5,000・掲載者紹介制度（月¥500/社）あり。
+詳細：https://www.fineme.me/provider/join
+
+渡邉 英雄`,
+  },
+  {
+    title: '骨格診断士向け',
+    text: `はじめまして。渡邉と申します。
+
+男性向け外見変容ポータル「Fineme」を運営しており、骨格診断・パーソナルカラー診断のプロをお探しの男性ユーザーを繋ぐ導線を整えています。
+
+[お名前]さんのように男性クライアントの実績がある方に掲載いただけると、診断結果で「骨格・カラー」が課題と判定されたユーザーが優先的に表示されます。
+
+月¥5,000・他の掲載者を紹介するたびに月¥500の報酬が入る紹介制度あり。
+
+https://www.fineme.me/provider/join
+
+渡邉 英雄`,
   },
   {
     title: '婚活サポート向け',
     text: `はじめまして。Fineme の渡邉です。
 
-Fineme は外見変容の旅を終えた男性が
-「次のステージ（婚活・出会い）」へ進む際の導線も持っており、
-婚活サービスとの連携を強化したいと考えています。
+Finemeは外見を変えて自信をつけた男性が「次のステージ（婚活・出会い）」へ進む際の導線も持っており、外見変容後の男性と婚活サービスを繋ぐセクションを設けています。
 
-[サービス名]さんは外見磨き後の男性にとって
-非常に相性が良いと感じご連絡しました。
+[サービス名]さんは外見磨きを終えた男性にとって非常に相性が良いと感じご連絡しました。
 
-掲載は無料・5分で登録できます。
-ぜひ一度詳細をご覧ください：
-https://www.fineme.me/provider/join`,
+月¥5,000・掲載者紹介制度（月¥500/社）あり。
+https://www.fineme.me/provider/join
+
+渡邉 英雄`,
   },
 ];
 
@@ -829,9 +962,203 @@ function renderDMCards() {
     <div class="card">
       <div class="card-title">${item.title}</div>
       <div class="card-body">${escHtml(item.text)}</div>
+      <div class="char-count">${item.text.length}字</div>
       <button class="copy-btn" onclick="copyTextContent(this, \`${escJs(item.text)}\`)">コピー</button>
     </div>
   `).join('');
+}
+
+const NOTE_GENRE_LABELS = {
+  story:   '体験談・ストーリー',
+  howto:   'ノウハウ・方法論',
+  fail:    '失敗談・後悔',
+  mind:    'マインド・考え方',
+  compare: '比較・サービス選び方',
+  keyword: 'SEOキーワード狙い',
+};
+
+// カスタムリンク表示切り替え
+document.addEventListener('DOMContentLoaded', () => {
+  const linkSel = document.getElementById('note-ai-link');
+  const customWrap = document.getElementById('note-ai-custom-link-wrap');
+  if (linkSel && customWrap) {
+    linkSel.addEventListener('change', () => {
+      customWrap.style.display = linkSel.value === 'custom' ? 'block' : 'none';
+    });
+  }
+});
+
+async function generateNote() {
+  const apiKey = localStorage.getItem('fineme:anthropic:key');
+  if (!apiKey) { alert('APIキーを入力して保存してください（AI生成タブ）'); return; }
+
+  const genre = document.getElementById('note-ai-genre').value;
+  const titleInput = document.getElementById('note-ai-title').value.trim();
+  if (!titleInput) { alert('記事タイトル案・テーマを入力してください'); return; }
+
+  const linkSel = document.getElementById('note-ai-link').value;
+  const targetUrl = linkSel === 'custom'
+    ? (document.getElementById('note-ai-custom-link').value.trim() || 'https://www.fineme.me/diagnosis')
+    : linkSel;
+
+  const btn = document.getElementById('note-ai-generate-btn');
+  btn.textContent = '生成中…';
+  btn.disabled = true;
+
+  const genreLabel = NOTE_GENRE_LABELS[genre] || genre;
+
+  const prompt = `${DEO_CHARACTER}
+
+あなたは「でお｜抜けアドバイザー」として、以下のテーマでnote記事を書いてください。
+
+【ジャンル】${genreLabel}
+【テーマ・タイトル案】
+${titleInput}
+
+【記事の要件】
+・2,000〜2,500字
+・H2見出し（##）を3〜4個使った構成
+・一人称は「ぼく」
+・でおのキャラクター設定を必ず守ること（上のキャラクター設定参照）
+・実体験・共感ベースの語り口（上からアドバイスしない）
+・記事の末尾から2〜3段落のあたりで、Finemeへの自然な導線を1箇所入れる
+  → 「どこから始めればいいかわからない人は、Finemeの診断を試してみてほしい」などの流れで
+  → リンク：${targetUrl}
+・最後の1段落は締めの言葉（読者への応援・共感で終わる）
+
+【禁止事項】
+・「〜べき」「〜しないといけない」などの命令的表現
+・箇条書きの多用（体験談・エッセイなので文章で語る）
+・Finemeへの言及を押しつけがましくしない（1箇所だけ、自然に）
+・タイトルは冒頭に1つだけ記載（「# タイトル」の形式で）
+
+記事本文だけ出力してください（前置き・説明不要）。`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 3000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      alert(`エラー: ${err.error?.message || res.status}`);
+      return;
+    }
+
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+    const output = document.getElementById('note-ai-output');
+    output.value = text;
+    document.getElementById('note-ai-charcount').textContent = `${text.length}字`;
+    document.getElementById('note-ai-result').style.display = 'block';
+    output.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (e) {
+    alert(`通信エラー: ${e.message}`);
+  } finally {
+    btn.textContent = '記事を生成する →';
+    btn.disabled = false;
+  }
+}
+
+const DM_CATEGORY_LABELS = {
+  eyebrow: '眉毛サロン',
+  pt: 'パーソナルトレーナー（個人）',
+  gym: 'パーソナルジム',
+  fashion: 'ファッションコーディネーター',
+  hair: '美容師・理容師',
+  diagnosis: '骨格診断士',
+  photo: 'フォトグラファー',
+  marriage: '婚活サポート',
+  other: 'その他（外見磨き系）',
+};
+
+async function generateDM() {
+  const apiKey = localStorage.getItem('fineme:anthropic:key');
+  if (!apiKey) { alert('APIキーを入力して保存してください（AI生成タブ）'); return; }
+
+  const category = document.getElementById('dm-ai-category').value;
+  const name = document.getElementById('dm-ai-name').value.trim();
+  const profile = document.getElementById('dm-ai-profile').value.trim();
+
+  if (!profile) { alert('相手のプロフィール・投稿内容を入力してください'); return; }
+
+  const btn = document.getElementById('dm-ai-generate-btn');
+  btn.textContent = '生成中…';
+  btn.disabled = true;
+
+  const categoryLabel = DM_CATEGORY_LABELS[category] || category;
+
+  const prompt = `あなたは男性向け外見変容ポータル「Fineme（ファインミ）」の代表・渡邉英雄です。
+以下の事業者にInstagramのDMを送ります。
+
+【業種】${categoryLabel}
+【名前・店名】${name || '（未入力）'}
+【相手のプロフィール・投稿内容】
+${profile}
+
+Finemeについて：
+- 恋愛・外見に悩む男性が診断を受けて最適なサービスに出会えるポータル
+- 予約サイトではなく「地図と羅針盤」を提供するサービス（診断→マッチング→変容のインフラ）
+- 掲載料：月¥5,000
+- 紹介報酬制度：自分が紹介した掲載者が在籍し続ける限り毎月¥500が入る（10社紹介で掲載費が実質ゼロ）
+
+DM生成のルール：
+- 300字以内
+- 相手のプロフィールや投稿の具体的な内容に1箇所触れる（「拝見しました」で終わらず何を見たかを言う）
+- メインフックは「この診断導線から男性ユーザーが届く」こと
+- サブフックとして紹介報酬制度に軽く触れる
+- 押しつけがましくない。興味を持ってもらうことが目的
+- 末尾に掲載詳細URL：https://www.fineme.me/provider/join
+- 署名：渡邉 英雄
+
+DMの文章だけ出力してください（前置き・説明不要）。`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 600,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      alert(`エラー: ${err.error?.message || res.status}`);
+      return;
+    }
+
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+    const output = document.getElementById('dm-ai-output');
+    output.value = text;
+    document.getElementById('dm-ai-charcount').textContent = `${text.length}字`;
+    document.getElementById('dm-ai-result').style.display = 'block';
+    output.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (e) {
+    alert(`通信エラー: ${e.message}`);
+  } finally {
+    btn.textContent = 'DM を生成する →';
+    btn.disabled = false;
+  }
 }
 
 // ──────────────────────────────────
