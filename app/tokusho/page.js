@@ -97,7 +97,7 @@ export default function TokushoPage() {
               <tr style={{ borderBottom: '1px solid rgba(232,228,220,0.15)' }}>
                 <th style={{ textAlign: 'left', padding: '14px 20px', color: 'rgba(232,228,220,0.75)', fontWeight: 700, background: 'rgba(10,15,30,0.50)', whiteSpace: 'nowrap', verticalAlign: 'top' }}>解約・返金について</th>
                 <td style={{ padding: '14px 20px' }}>
-                  解約はマイページより月末までにお手続きいただくと、翌月から課金が停止します。<br />
+                  解約またはプラン変更をご希望の場合は、<a href="mailto:contact@fineme.me">contact@fineme.me</a> までメールにてご連絡ください。月末までにご連絡いただいた場合、翌月から課金が停止します。<br />
                   当月分の月額掲載料は原則返金いたしません。<br />
                   ただし、当社の都合によりサービス提供が不可能となった場合は、未提供期間に応じた返金対応を行います。<br />
                   登録手数料（初回）は返金対象外です。
