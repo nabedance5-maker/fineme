@@ -52,7 +52,7 @@ export default function MypagePage() {
                   setResvSummary({ total: items.length, pending, counter, approved });
                   const now = new Date();
                   const upcoming = items
-                    .filter(r => r.status === 'approved' && r.date && new Date(r.date) >= now)
+                    .filter(r => r.status === 'approved' && r.reserved_date && new Date(r.reserved_date) >= now)
                     .sort((a, b) => new Date(a.date) - new Date(b.date));
                   if (upcoming.length > 0) setNextVisit(upcoming[0]);
                 })
