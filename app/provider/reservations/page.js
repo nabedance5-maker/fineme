@@ -1,133 +1,175 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = typeof window !== 'undefined'
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null;
+
+const STATUS_LABEL = {
+  pending:          { text: '申請中',     color: '#f59e0b' },
+  approved:         { text: '確定済み',   color: '#10b981' },
+  counter_proposed: { text: '代替提案中', color: '#6366f1' },
+  visited:          { text: '来店済み',   color: '#64748b' },
+  rejected:         { text: 'お断り',     color: '#ef4444' },
+  cancelled:        { text: 'キャンセル', color: '#ef4444' },
+  expired:          { text: '期限切れ',   color: '#94a3b8' },
+};
 
 export default function ProviderReservationsPage() {
-  const initialized = useRef(false);
+  const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [token, setToken] = useState(null);
+  const [providerId, setProviderId] = useState(null);
+  const [visiting, setVisiting] = useState(null); // 処理中のID
 
+  // 認証 + 掲載者情報を取得
   useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-
-    function listReservations() {
-      try {
-        const raw = localStorage.getItem('fineme:reservations:list');
-        const arr = raw ? JSON.parse(raw) : [];
-        return Array.isArray(arr) ? arr : [];
-      } catch { return []; }
-    }
-    function confirmVisited(id) {
-      try {
-        const key = 'fineme:reservations:list';
-        const arr = JSON.parse(localStorage.getItem(key) || '[]');
-        const idx = arr.findIndex(r => r.id === id);
-        if (idx === -1) return { ok: false, error: 'not found' };
-        arr[idx].status = 'visited';
-        arr[idx].visitedAt = Date.now();
-        localStorage.setItem(key, JSON.stringify(arr));
-        return { ok: true };
-      } catch { return { ok: false }; }
-    }
-
-    const host = document.getElementById('reservations-host');
-    if (!host) return;
-
-    function render() {
-      host.textContent = '';
-      const arr = listReservations();
-      if (!arr.length) {
-        const p = document.createElement('p');
-        p.className = 'muted';
-        p.textContent = '予約がまだありません。';
-        host.appendChild(p);
+    (async () => {
+      if (!supabase) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setError('ログインが必要です');
+        setLoading(false);
         return;
       }
-      arr.forEach(r => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.style.padding = '12px';
+      const t = session.access_token;
+      setToken(t);
 
-        const h = document.createElement('div');
-        h.className = 'cluster';
-        h.style.justifyContent = 'space-between';
-
-        const left = document.createElement('div');
-        left.className = 'stack';
-        left.appendChild(Object.assign(document.createElement('strong'), { textContent: r.title }));
-        left.appendChild(Object.assign(document.createElement('span'), {
-          className: 'muted',
-          textContent: `予約者: ${r.userId} / 来店予定: ${new Date(r.visitDate).toLocaleString('ja-JP')}`
-        }));
-
-        const right = document.createElement('div');
-        right.className = 'cluster';
-        right.style.gap = '8px';
-
-        const status = document.createElement('span');
-        status.className = 'badge badge--neutral';
-        status.textContent = r.status;
-        right.appendChild(status);
-
-        if (r.status !== 'visited') {
-          const btn = document.createElement('button');
-          btn.className = 'btn';
-          btn.textContent = '来店確認';
-          btn.addEventListener('click', async () => {
-            const ok = confirm('このユーザーが来店したことを確認しますか？\n※ 確認後、体験談依頼メールが自動送信されます');
-            if (!ok) return;
-            const res = confirmVisited(r.id);
-            if (res.ok) {
-              status.textContent = 'visited';
-              render();
-            }
-            try {
-              const apiRes = await fetch(`/api/reservations?providerId=${r.storeId}`);
-              const apiList = await apiRes.json();
-              const match = (apiList || []).find(x =>
-                x.provider_id === String(r.storeId) && x.status === 'approved' &&
-                Math.abs(new Date(x.reserved_date) - new Date(r.visitDate)) < 86400000
-              );
-              if (match) {
-                const userEmail = (match.user_contact || '').includes('@') ? match.user_contact : '';
-                await fetch(`/api/reservations/${match.id}`, {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    action: 'visited',
-                    user_email: userEmail,
-                    user_name: match.user_name,
-                    provider_name: match.provider_id,
-                    service_name: match.service_name || r.title,
-                  }),
-                });
-              }
-            } catch (e) { console.warn('[visited API]', e); }
-            alert('来店確認しました。体験談依頼メールを送信しました。');
-          });
-          right.appendChild(btn);
-        }
-
-        h.appendChild(left);
-        h.appendChild(right);
-        card.appendChild(h);
-
-        const meta = document.createElement('p');
-        meta.className = 'muted';
-        meta.textContent = `料金: ${r.price}円 / 手数料率: ${r.commissionRate}%`;
-        card.appendChild(meta);
-
-        host.appendChild(card);
+      const res = await fetch('/api/provider/me', {
+        headers: { Authorization: `Bearer ${t}` },
       });
-    }
-
-    render();
+      if (!res.ok) { setError('掲載者情報の取得に失敗しました'); setLoading(false); return; }
+      const me = await res.json();
+      setProviderId(me.id);
+    })();
   }, []);
+
+  // 予約一覧を取得
+  useEffect(() => {
+    if (!providerId || !token) return;
+    fetchReservations();
+  }, [providerId, token]);
+
+  async function fetchReservations() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/reservations?providerId=${encodeURIComponent(providerId)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('予約一覧の取得に失敗しました');
+      const data = await res.json();
+      // 最新順にソート
+      setReservations((Array.isArray(data) ? data : []).sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      ));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleVisited(id) {
+    if (!confirm('このお客様の来店を確認しますか？\n確認後、体験談依頼メールが自動送信されます。')) return;
+    setVisiting(id);
+    try {
+      const res = await fetch(`/api/reservations/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: 'visited' }),
+      });
+      if (!res.ok) throw new Error('来店確認に失敗しました');
+      setReservations(prev => prev.map(r => r.id === id ? { ...r, status: 'visited' } : r));
+      alert('来店確認しました。体験談依頼メールを送信しました。');
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setVisiting(null);
+    }
+  }
+
+  const statusInfo = (r) => {
+    let s = r.status;
+    if (s === 'counter_proposed' && r.counter_expires_at && new Date(r.counter_expires_at) < new Date()) s = 'expired';
+    return STATUS_LABEL[s] || { text: s, color: '#94a3b8' };
+  };
 
   return (
     <main className="section">
       <div className="container stack" style={{ maxWidth: '1000px' }}>
-        <h1 className="section-title">予約一覧（掲載者向け）</h1>
+        <h1 className="section-title">予約一覧</h1>
         <p className="muted">来店確認を行うと、体験談依頼メールが自動送信されます。</p>
-        <div id="reservations-host" className="stack"></div>
+
+        {error && (
+          <div style={{ background: 'rgba(239,68,68,.15)', border: '1px solid #ef4444', borderRadius: '8px', padding: '12px 16px', color: '#ef4444' }}>
+            {error}
+          </div>
+        )}
+
+        {loading && <p className="muted">読み込み中...</p>}
+
+        {!loading && !error && reservations.length === 0 && (
+          <div className="card" style={{ padding: '32px', textAlign: 'center' }}>
+            <p className="muted">予約がまだありません。</p>
+          </div>
+        )}
+
+        <div className="stack">
+          {reservations.map(r => {
+            const { text: statusText, color: statusColor } = statusInfo(r);
+            const dateStr = r.confirmed_date || r.reserved_date || '';
+            const timeStr = r.confirmed_time || r.start_time || '';
+            return (
+              <div key={r.id} className="card" style={{ padding: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
+                  <div className="stack" style={{ gap: '4px', flex: 1 }}>
+                    <strong>{r.user_name || '（名前なし）'}</strong>
+                    <span className="muted" style={{ fontSize: '0.875rem' }}>
+                      {r.service_name && <>{r.service_name} ／ </>}
+                      来店予定: {dateStr} {timeStr}
+                    </span>
+                    {r.user_contact && (
+                      <span className="muted" style={{ fontSize: '0.875rem' }}>
+                        連絡先: {r.user_contact}
+                      </span>
+                    )}
+                    {r.note && (
+                      <span className="muted" style={{ fontSize: '0.875rem' }}>
+                        メモ: {r.note}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                    <span style={{
+                      fontSize: '0.8rem', fontWeight: 600, padding: '2px 10px',
+                      borderRadius: '9999px', background: `${statusColor}22`, color: statusColor,
+                      border: `1px solid ${statusColor}44`,
+                    }}>
+                      {statusText}
+                    </span>
+                    {r.status === 'approved' && (
+                      <button
+                        className="btn"
+                        style={{ fontSize: '0.875rem', padding: '6px 14px' }}
+                        disabled={visiting === r.id}
+                        onClick={() => handleVisited(r.id)}
+                      >
+                        {visiting === r.id ? '処理中...' : '来店確認'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {r.price > 0 && (
+                  <p className="muted" style={{ fontSize: '0.8rem', marginTop: '8px' }}>
+                    料金: ¥{r.price.toLocaleString()}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </main>
   );
