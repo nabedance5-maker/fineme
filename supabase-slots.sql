@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS public.provider_slots (
   id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  provider_id   TEXT NOT NULL REFERENCES public.providers(id) ON DELETE CASCADE,
+  provider_id   UUID NOT NULL REFERENCES public.providers(id) ON DELETE CASCADE,
   service_id    UUID,                        -- provider_services.id（NULL = 全サービス対応）
   date          DATE NOT NULL,               -- 日付 YYYY-MM-DD
   start_time    TEXT NOT NULL,               -- 開始時刻 HH:MM
