@@ -125,15 +125,8 @@ export async function POST(request) {
     catch (e) { console.error('[reservation line]', e); }
   }
 
-  // 初回予約なら課金開始（無料プランは除く）
-  if (provider && !provider.billing_started && provider.plan !== 'free') {
-    try {
-      await supabase
-        .from('providers')
-        .update({ billing_started: true })
-        .eq('id', provider_id);
-    } catch (e) { console.error('[billing activate]', e); }
-  }
+  // 課金開始は「初回来店時」に行う（PATCH /api/reservations/[id] の visited 処理で実施）
+  // 予約作成時点では billing_started を変更しない
 
   return Response.json(data, { status: 201 });
 }
