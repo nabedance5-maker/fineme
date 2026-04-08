@@ -1,14 +1,24 @@
 // GET /api/reservations/by-contact?contact=xxx
-// ユーザーが連絡先(email)で自分の予約を検索する
+// ログインユーザーが自分の予約を取得する（トークン検証で本人確認）
 import { getSupabase } from '@/lib/supabase';
 
 export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const contact = searchParams.get('contact')?.trim();
+  const db = getSupabase();
+
+  // トークンが提供されている場合はトークンから email を取得（なりすまし防止）
+  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  let contact;
+  if (token) {
+    const { data: { user }, error: authErr } = await db.auth.getUser(token);
+    if (authErr || !user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    contact = user.email;
+  } else {
+    // 未ログインゲストの場合はクエリパラメータを使用（ゲスト予約対応）
+    const { searchParams } = new URL(request.url);
+    contact = searchParams.get('contact')?.trim();
+  }
 
   if (!contact) return Response.json({ error: 'contact は必須です' }, { status: 400 });
-
-  const db = getSupabase();
   const { data, error } = await db
     .from('reservations')
     .select('id,provider_id,user_name,user_contact,status,reserved_date,start_time,note,provider_comment,counter_date,counter_time,confirmed_date,confirmed_time,counter_expires_at,created_at')

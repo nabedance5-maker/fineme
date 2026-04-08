@@ -40,7 +40,9 @@ export default function MypagePage() {
           if (email) {
             supabaseAnon.auth.getSession().then(({ data }) => {
               const userEmail = data?.session?.user?.email || email;
-              fetch('/api/reservations/by-contact?contact=' + encodeURIComponent(userEmail))
+              const token = data?.session?.access_token;
+              const headers = token ? { Authorization: `Bearer ${token}` } : {};
+              fetch('/api/reservations/by-contact?contact=' + encodeURIComponent(userEmail), { headers })
                 .then(r => r.ok ? r.json() : [])
                 .then(items => {
                   if (!Array.isArray(items) || !items.length) { setResvSummary({ empty: true }); return; }

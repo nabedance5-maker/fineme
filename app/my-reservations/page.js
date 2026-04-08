@@ -187,7 +187,8 @@ function MyReservationsContent() {
   async function fetchReservations(email) {
     setLoading(true);
     try {
-      const res = await fetch(`/api/reservations/by-contact?contact=${encodeURIComponent(email)}`);
+      const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+      const res = await fetch(`/api/reservations/by-contact?contact=${encodeURIComponent(email)}`, { headers });
       if (res.ok) setReservations(await res.json());
     } finally {
       setLoading(false);
