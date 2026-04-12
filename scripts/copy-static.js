@@ -82,7 +82,7 @@ console.log('Copied pages/**/*.html → public/pages/**/*.html');
 
 // ルート直下の静的 HTML
 // index.html は _root.html として配置（/index.html というURLを存在させない＝重複コンテンツ対策）
-const ROOT_HTMLS = ['404.html', 'result.html', 'robots.txt', 'sitemap.xml', 'favicon.ico'];
+const ROOT_HTMLS = ['404.html', 'result.html', 'robots.txt', 'sitemap.xml', 'favicon.ico', '4fbd52dc-784e-4ab8-97c4-f1f99e48b504.txt'];
 for (const file of ROOT_HTMLS) {
   const src = path.resolve(ROOT, file);
   const dest = path.resolve(PUBLIC, file);

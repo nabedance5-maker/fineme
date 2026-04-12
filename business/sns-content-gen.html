@@ -61,6 +61,8 @@
   .ai-apikey-row { background: rgba(201,168,76,0.04); border: 1px solid rgba(201,168,76,0.15); border-radius: 12px; padding: 16px 18px; }
   #tab-ai { background: linear-gradient(135deg, rgba(201,168,76,0.15), rgba(201,168,76,0.05)); border-color: rgba(201,168,76,0.4); color: var(--gold); }
   #tab-ai.active { background: linear-gradient(135deg, #c9a84c, #e8c97a); color: var(--navy); }
+  #tab-dm-bulk { border-color: rgba(100,180,255,0.3); color: rgba(100,180,255,0.8); }
+  #tab-dm-bulk.active { background: rgba(100,180,255,0.15); border-color: rgba(100,180,255,0.6); color: #64b4ff; }
 </style>
 </head>
 <body>
@@ -78,6 +80,7 @@
     <button class="tab" onclick="switchTab('note')">note / ブログ</button>
     <button class="tab" onclick="switchTab('press')">プレスリリース</button>
     <button class="tab" onclick="switchTab('dm')">掲載者獲得DM</button>
+    <button class="tab" onclick="switchTab('dm-bulk')" id="tab-dm-bulk">📋 DM一括生成</button>
   </div>
 
   <!-- ====== AI生成 ====== -->
@@ -362,6 +365,34 @@ URL     ：https://www.fineme.me/
 
     <div class="grid2" id="dm-cards">
       <!-- JS で挿入 -->
+    </div>
+  </div>
+
+  <!-- ====== DM一括生成 ====== -->
+  <div id="panel-dm-bulk" class="panel">
+    <div class="section-label">📋 DM一括生成（複数候補者）</div>
+    <p class="intro">複数の候補者にまとめてDMを生成します。APIキーは「AI生成」タブで保存してください。</p>
+
+    <div class="fullwidth-card" style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+        <div class="card-title" style="margin:0">候補者リスト</div>
+        <button onclick="addBulkRow()" style="padding:7px 16px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.35);border-radius:7px;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer;">＋ 候補者を追加</button>
+      </div>
+      <p class="tip" style="margin-bottom:16px">名前・業種・プロフィール文を入力してください。プロフィール文はInstagramの自己紹介や投稿内容を貼り付けると精度が上がります。</p>
+
+      <div id="bulk-rows">
+        <!-- JS で行を追加 -->
+      </div>
+
+      <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+        <button id="bulk-generate-btn" onclick="generateAllDMs()" style="background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.1));border:1px solid rgba(201,168,76,0.5);border-radius:8px;color:var(--gold);font-size:13px;font-weight:700;padding:10px 24px;cursor:pointer;">全員分のDMを生成する →</button>
+        <span id="bulk-progress" style="font-size:12px;color:var(--muted);"></span>
+      </div>
+    </div>
+
+    <div id="bulk-results" style="display:none;">
+      <div class="section-label" style="margin-bottom:16px">生成結果</div>
+      <div id="bulk-result-cards" class="grid2"></div>
     </div>
   </div>
 
@@ -1392,12 +1423,156 @@ ${TONE_PROMPTS[t]}
 }
 
 // ──────────────────────────────────
+// DM一括生成
+// ──────────────────────────────────
+let bulkRowCount = 0;
+
+function addBulkRow(name = '', category = 'gym', profile = '') {
+  const id = ++bulkRowCount;
+  const container = document.getElementById('bulk-rows');
+  const div = document.createElement('div');
+  div.id = `bulk-row-${id}`;
+  div.style.cssText = 'background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;';
+  div.innerHTML = `
+    <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px;">
+      <div style="flex:1;min-width:160px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:700;">名前・店名</div>
+        <input type="text" id="bulk-name-${id}" value="${escHtml(name)}" placeholder="例：田中さん / MENS STYLE" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;padding:8px 10px;outline:none;" />
+      </div>
+      <div style="min-width:160px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:700;">業種</div>
+        <select id="bulk-cat-${id}" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;padding:8px 10px;outline:none;">
+          ${Object.entries(DM_CATEGORY_LABELS).map(([v,l]) => `<option value="${v}"${v===category?' selected':''}>${l}</option>`).join('')}
+        </select>
+      </div>
+      <button onclick="removeBulkRow(${id})" style="margin-top:20px;padding:7px 12px;background:transparent;border:1px solid rgba(255,100,100,0.3);border-radius:7px;color:rgba(255,100,100,0.6);font-size:12px;cursor:pointer;">削除</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:700;">プロフィール・投稿内容</div>
+    <textarea id="bulk-profile-${id}" rows="3" placeholder="InstagramのBio・投稿内容を貼り付けてください" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;padding:8px 10px;outline:none;resize:vertical;font-family:var(--sans);">${escHtml(profile)}</textarea>
+  `;
+  container.appendChild(div);
+}
+
+function removeBulkRow(id) {
+  const el = document.getElementById(`bulk-row-${id}`);
+  if (el) el.remove();
+}
+
+async function generateAllDMs() {
+  const apiKey = localStorage.getItem('fineme:anthropic:key');
+  if (!apiKey) { alert('APIキーを入力して保存してください（AI生成タブ）'); return; }
+
+  // 全行を収集
+  const rows = [];
+  document.querySelectorAll('[id^="bulk-row-"]').forEach(row => {
+    const id = row.id.replace('bulk-row-', '');
+    const name = (document.getElementById(`bulk-name-${id}`)?.value || '').trim();
+    const category = document.getElementById(`bulk-cat-${id}`)?.value || 'gym';
+    const profile = (document.getElementById(`bulk-profile-${id}`)?.value || '').trim();
+    if (profile) rows.push({ id, name, category, profile });
+  });
+
+  if (rows.length === 0) { alert('プロフィール文が入力されている行がありません'); return; }
+
+  const btn = document.getElementById('bulk-generate-btn');
+  const progress = document.getElementById('bulk-progress');
+  btn.disabled = true;
+  btn.textContent = '生成中…';
+
+  const results = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const { name, category, profile } = rows[i];
+    progress.textContent = `${i + 1} / ${rows.length} 件処理中…`;
+
+    const categoryLabel = DM_CATEGORY_LABELS[category] || category;
+    const prompt = `あなたは男性向け外見変容ポータル「Fineme（ファインミ）」の代表・渡邉英雄です。
+以下の事業者にInstagramのDMを送ります。
+
+【業種】${categoryLabel}
+【名前・店名】${name || '（未入力）'}
+【相手のプロフィール・投稿内容】
+${profile}
+
+Finemeについて：
+- 恋愛・外見に悩む男性が診断を受けて最適なサービスに出会えるポータル
+- 予約サイトではなく「地図と羅針盤」を提供するサービス（診断→マッチング→変容のインフラ）
+- 掲載料：月¥5,000
+- 紹介報酬制度：自分が紹介した掲載者が在籍し続ける限り毎月¥500が入る（10社紹介で掲載費が実質ゼロ）
+
+DM生成のルール：
+- 300字以内
+- 相手のプロフィールや投稿の具体的な内容に1箇所触れる（「拝見しました」で終わらず何を見たかを言う）
+- メインフックは「この診断導線から男性ユーザーが届く」こと
+- サブフックとして紹介報酬制度に軽く触れる
+- 押しつけがましくない。興味を持ってもらうことが目的
+- 末尾に掲載詳細URL：https://www.fineme.me/provider/join
+- 署名：渡邉 英雄
+
+DMの文章だけ出力してください（前置き・説明不要）。`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 600,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        results.push({ name: name || `候補者${i+1}`, category: categoryLabel, text: `エラー: ${err.error?.message || res.status}`, error: true });
+      } else {
+        const data = await res.json();
+        const text = data.content?.[0]?.text || '';
+        results.push({ name: name || `候補者${i+1}`, category: categoryLabel, text });
+      }
+    } catch (e) {
+      results.push({ name: name || `候補者${i+1}`, category: categoryLabel, text: `通信エラー: ${e.message}`, error: true });
+    }
+
+    // API レート制限対策: 1件ごとに少し待つ
+    if (i < rows.length - 1) await new Promise(r => setTimeout(r, 500));
+  }
+
+  btn.disabled = false;
+  btn.textContent = '全員分のDMを生成する →';
+  progress.textContent = `${results.length}件 生成完了`;
+
+  // 結果表示
+  const resultSection = document.getElementById('bulk-results');
+  const resultCards = document.getElementById('bulk-result-cards');
+  resultSection.style.display = 'block';
+  resultCards.innerHTML = results.map((r, i) => `
+    <div class="card" style="${r.error ? 'opacity:.6' : ''}">
+      <div class="card-title">${escHtml(r.name)} <span style="font-size:10px;font-weight:400;color:var(--muted)">${escHtml(r.category)}</span></div>
+      <textarea id="bulk-out-${i}" class="edit-area" rows="8" style="margin-top:8px">${escHtml(r.text)}</textarea>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--muted)">${r.text.length}字</span>
+        ${!r.error ? `<button class="copy-btn" onclick="copyText('bulk-out-${i}', this)">コピー</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ──────────────────────────────────
 // 初期化
 // ──────────────────────────────────
 initApiKeyUi();
 renderXCards('awareness');
 renderNoteCards();
 renderDMCards();
+addBulkRow(); // DM一括の初期行
 </script>
 </body>
 </html>
