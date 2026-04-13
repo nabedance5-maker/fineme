@@ -2,48 +2,6 @@
   "framework": "nextjs",
   "buildCommand": "node scripts/copy-static.js && next build",
   "outputDirectory": ".next",
-  "crons": [
-    {
-      "path": "/api/cron/expire-counters",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/line-reminder",
-      "schedule": "0 15 * * *"
-    },
-    {
-      "path": "/api/cron/weekly-nudge",
-      "schedule": "0 0 * * 1"
-    },
-    {
-      "path": "/api/cron/monthly-report",
-      "schedule": "0 0 1 * *"
-    },
-    {
-      "path": "/api/cron/reservation-alert",
-      "schedule": "0 15 * * *"
-    },
-    {
-      "path": "/api/cron/story-reminder",
-      "schedule": "0 12 * * *"
-    },
-    {
-      "path": "/api/cron/auto-visited",
-      "schedule": "0 */2 * * *"
-    },
-    {
-      "path": "/api/cron/index-submit",
-      "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/cron/x-post",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/seo-report",
-      "schedule": "0 0 * * 1"
-    }
-  ],
   "redirects": [
     {
       "source": "/:path*",
