@@ -87,7 +87,33 @@ function calcScore({ provider, services, staffCount, trigger, failure, compassAx
 
   // 写真
   // ── 位置ボーナス（ソフト加点・ハードフィルターではない）──
-  if (provider.entity_type !== 'affiliate') {
+  if (provider.entity_type === 'affiliate') {
+    // アフィリエイトは location_areas（複数エリア配列）でマッチング
+    const areas = provider.location_areas || [];
+    if (areas.length > 0 && userPrefecture) {
+      const prefMatch = areas.some(a => (a.prefecture || '') === userPrefecture);
+      if (prefMatch) {
+        score += 5;
+        const cityMatch = userCity && areas.some(a =>
+          (a.prefecture || '') === userPrefecture &&
+          (a.city || '').includes(userCity)
+        );
+        if (cityMatch) { score += 4; tags.push('近くにある'); }
+      }
+    }
+    // 座標ベースのマッチング（location_areasにlatが含まれる場合）
+    if (userLat && userLon && areas.length > 0) {
+      const minKm = Math.min(...areas
+        .filter(a => a.lat && a.lon)
+        .map(a => haversineKm(userLat, userLon, a.lat, a.lon))
+      );
+      if (isFinite(minKm)) {
+        if (minKm <= 10)      { score += 8; tags.push('近くにある'); }
+        else if (minKm <= 30) { score += 5; }
+        else if (minKm <= 50) { score += 2; }
+      }
+    }
+  } else {
     const provLat = provider.lat;
     const provLon = provider.lon;
     if (userLat && userLon && provLat && provLon) {

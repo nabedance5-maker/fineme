@@ -39,6 +39,7 @@ export async function PATCH(request, { params }) {
     'suitable_triggers', 'handles_failure_patterns', 'provider_style',
     'ideal_client_desc', 'client_before_state', 'transformation_pattern', 'best_fit_desc',
     'ai_match_profile', 'facility_photos',
+    'location_areas', 'affiliate_notes',
   ];
 
   const updates = {};

@@ -86,6 +86,7 @@ export default function AdminAffiliateEditPage() {
     document.getElementById('btn-regenerate').addEventListener('click', async () => {
       const serviceName = document.getElementById('regen-service-name').value.trim();
       const serviceUrl = document.getElementById('regen-service-url').value.trim();
+      const affiliateNotes = document.getElementById('regen-affiliate-notes').value.trim();
       if (!serviceName) { alert('サービス名を入力してください'); return; }
 
       const btn = document.getElementById('btn-regenerate');
@@ -97,7 +98,11 @@ export default function AdminAffiliateEditPage() {
       try {
         const res = await fetch('/api/admin/affiliates/auto-fill', {
           method: 'POST', headers: h(),
-          body: JSON.stringify({ service_name: serviceName, service_url: serviceUrl || undefined }),
+          body: JSON.stringify({
+            service_name: serviceName,
+            service_url: serviceUrl || undefined,
+            affiliate_notes: affiliateNotes || undefined,
+          }),
         });
         if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'AI生成失敗'); }
         const aiData = await res.json();
@@ -302,7 +307,100 @@ export default function AdminAffiliateEditPage() {
       await save({ affiliate_url: url || null });
     });
 
-    load();
+    // ── エリア管理 ─────────────────────────────────────────
+    const PREFS_LIST = ['北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県','茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県','新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県','三重県','滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県','鳥取県','島根県','岡山県','広島県','山口県','徳島県','香川県','愛媛県','高知県','福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県'];
+
+    // 都道府県セレクト生成
+    const prefSel = document.getElementById('area-pref-select');
+    if (prefSel) {
+      PREFS_LIST.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p; opt.textContent = p;
+        prefSel.appendChild(opt);
+      });
+    }
+
+    function renderAreas() {
+      const areas = affiliate?.location_areas || [];
+      const list = document.getElementById('area-list');
+      if (!list) return;
+      if (!areas.length) {
+        list.innerHTML = '<p style="font-size:12px;color:#6b7280;margin:0;">エリア未設定 — 全国対応として扱われます</p>';
+        return;
+      }
+      list.innerHTML = areas.map((a, i) => `
+        <span style="display:inline-flex;align-items:center;gap:6px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:20px;padding:4px 12px;font-size:13px;">
+          ${esc(a.prefecture)}${a.city ? ' ' + esc(a.city) : ''}
+          <button onclick="removeArea(${i})" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;line-height:1;padding:0;">×</button>
+        </span>
+      `).join('');
+    }
+
+    window.removeArea = async (idx) => {
+      if (!affiliate) return;
+      const areas = [...(affiliate.location_areas || [])];
+      areas.splice(idx, 1);
+      const ok = await save({ location_areas: areas });
+      if (ok) renderAreas();
+    };
+
+    document.getElementById('area-add-btn')?.addEventListener('click', async () => {
+      const pref = document.getElementById('area-pref-select')?.value;
+      const city = document.getElementById('area-city-input')?.value.trim();
+      if (!pref) { alert('都道府県を選択してください'); return; }
+      const areas = [...(affiliate?.location_areas || [])];
+      if (areas.some(a => a.prefecture === pref && (a.city || '') === (city || ''))) {
+        showToast('同じエリアがすでに登録されています'); return;
+      }
+      areas.push({ prefecture: pref, city: city || '' });
+      const ok = await save({ location_areas: areas });
+      if (ok) {
+        document.getElementById('area-city-input').value = '';
+        renderAreas();
+      }
+    });
+
+    document.getElementById('area-extract-btn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('area-extract-btn');
+      const status = document.getElementById('area-extract-status');
+      btn.disabled = true; btn.textContent = '抽出中…';
+      if (status) { status.style.display = 'block'; status.textContent = 'AIがエリアを解析しています…'; status.style.color = '#6b7280'; }
+      try {
+        const res = await fetch(`/api/admin/affiliates/${id}/extract-areas`, { method: 'POST', headers: h() });
+        if (!res.ok) throw new Error((await res.json()).error || '失敗');
+        const { areas } = await res.json();
+        if (!areas?.length) throw new Error('エリアが抽出できませんでした');
+        // 既存エリアとマージ（重複除去）
+        const existing = affiliate?.location_areas || [];
+        const merged = [...existing];
+        areas.forEach(a => {
+          if (!merged.some(e => e.prefecture === a.prefecture && (e.city || '') === (a.city || ''))) {
+            merged.push(a);
+          }
+        });
+        const ok = await save({ location_areas: merged });
+        if (ok) {
+          renderAreas();
+          if (status) { status.style.color = '#059669'; status.textContent = `✅ ${areas.length}件のエリアを抽出・追加しました`; }
+        }
+      } catch (err) {
+        if (status) { status.style.color = '#ef4444'; status.textContent = `エラー: ${err.message}`; }
+      } finally {
+        btn.disabled = false; btn.textContent = '✨ AIでエリア自動抽出';
+      }
+    });
+
+    // affiliate_notes の保存
+    document.getElementById('save-affiliate-notes')?.addEventListener('click', async () => {
+      const notes = document.getElementById('affiliate-notes-input')?.value.trim();
+      await save({ affiliate_notes: notes || null });
+    });
+
+    load().then(() => {
+      renderAreas();
+      const notesEl = document.getElementById('affiliate-notes-input');
+      if (notesEl && affiliate) notesEl.value = affiliate.affiliate_notes || '';
+    });
 
     return () => { try { document.head.removeChild(style); } catch {} };
   }, [id]);
@@ -339,13 +437,23 @@ export default function AdminAffiliateEditPage() {
               ✨ AI自動入力
             </button>
           </div>
-          <div id="regen-status" style={{ display: 'none', fontSize: '12px', marginTop: '4px' }}></div>
+          <div style={{ marginTop: '10px' }}>
+            <label style={{ fontSize: '11px', fontWeight: '700', color: '#6366f1', display: 'block', marginBottom: '4px' }}>
+              ⚠️ アフィリエイト表現規約・注意事項（ASPから指定されたNG表現等をここに貼り付け）
+            </label>
+            <textarea id="regen-affiliate-notes" rows={3}
+              placeholder={'例：「効果を保証する」表現は禁止&#10;競合他社との比較表現NG&#10;「ダイエット」という単語は使用不可'}
+              style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #c7d2fe', borderRadius: '8px', fontSize: '12px', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit', color: '#374151' }} />
+            <p style={{ fontSize: '11px', color: '#6b7280', margin: '3px 0 0' }}>ここに入力した内容はAI自動入力時に参照され、規約に違反しない表現が生成されます。</p>
+          </div>
+          <div id="regen-status" style={{ display: 'none', fontSize: '12px', marginTop: '8px' }}></div>
         </div>
 
         {/* タブナビ */}
         <div className="tab-nav">
           <button className="tab-btn active" data-tab="profile">プロフィール</button>
           <button className="tab-btn" data-tab="service">サービス設定</button>
+          <button className="tab-btn" data-tab="area">エリア設定</button>
           <button className="tab-btn" data-tab="publish">公開設定</button>
         </div>
 
@@ -479,7 +587,61 @@ export default function AdminAffiliateEditPage() {
 
         </div>
 
-        {/* タブ③：公開設定 */}
+        {/* タブ③：エリア設定 */}
+        <div className="tab-pane" id="tab-area">
+          <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
+            <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>展開エリア</h2>
+            <p className="muted" style={{ margin: '0 0 16px', fontSize: '12px' }}>
+              設定したエリアのユーザーの検索・New Me Naviに優先表示されます。未設定の場合は全国対応として扱われます。
+            </p>
+
+            {/* 登録済みエリア */}
+            <div id="area-list" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px', minHeight: '32px' }}>
+              <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>読み込み中…</p>
+            </div>
+
+            {/* AI自動抽出 */}
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+              <p style={{ fontSize: '12px', color: '#1d4ed8', fontWeight: '700', margin: '0 0 8px' }}>✨ AIでエリア自動抽出</p>
+              <p style={{ fontSize: '12px', color: '#374151', margin: '0 0 10px', lineHeight: '1.6' }}>
+                サービス名・説明文・サイトURLからAIが展開エリアを推測して追加します。
+              </p>
+              <button type="button" id="area-extract-btn" className="btn" style={{ fontSize: '12px', padding: '7px 14px' }}>
+                ✨ AIでエリア自動抽出
+              </button>
+              <div id="area-extract-status" style={{ display: 'none', fontSize: '12px', marginTop: '8px' }}></div>
+            </div>
+
+            {/* 手動追加 */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="form-field" style={{ margin: 0, flex: '0 0 160px' }}>
+                <label>都道府県</label>
+                <select id="area-pref-select" style={{ padding: '9px 10px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '13px' }}>
+                  <option value="">選択</option>
+                </select>
+              </div>
+              <div className="form-field" style={{ margin: 0, flex: '1 1 140px' }}>
+                <label>市区町村（任意）</label>
+                <input id="area-city-input" type="text" placeholder="例: 渋谷区" style={{ padding: '9px 10px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '13px' }} />
+              </div>
+              <button type="button" id="area-add-btn" className="btn" style={{ padding: '9px 16px', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                追加
+              </button>
+            </div>
+          </div>
+
+          {/* 注意事項の保存 */}
+          <div className="card" style={{ padding: '24px' }}>
+            <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>表現規約・注意事項（保存）</h2>
+            <p className="muted" style={{ margin: '0 0 12px', fontSize: '12px' }}>ASPから指定されたNG表現・規約をここに保存しておくと、次回のAI自動入力時に自動で参照されます。</p>
+            <textarea id="affiliate-notes-input" rows={5}
+              placeholder={'例：「効果を保証する」表現は禁止&#10;競合他社との比較表現NG&#10;「ダイエット」という単語は使用不可'}
+              style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }} />
+            <button type="button" id="save-affiliate-notes" className="btn" style={{ marginTop: '10px' }}>保存する</button>
+          </div>
+        </div>
+
+        {/* タブ④：公開設定 */}
         <div className="tab-pane" id="tab-publish">
           <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
             <h2 style={{ margin: '0 0 16px', fontSize: '16px' }}>公開状態</h2>
