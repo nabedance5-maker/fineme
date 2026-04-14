@@ -1,5 +1,5 @@
+-- ✅ 本番適用済 2026-04-15（expires_atなし・永続保存版）
 -- New Me Mirror セッションテーブル
--- 実行後: ✅ 本番適用済 と追記すること
 
 CREATE TABLE IF NOT EXISTS mirror_sessions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

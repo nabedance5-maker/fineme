@@ -1,6 +1,22 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
 
+const LS_SESSIONS_KEY = 'fineme:mirror:sessions'; // ['session_id1', 'session_id2', ...]
+
+function saveSessionToLocal(sessionId) {
+  try {
+    const existing = JSON.parse(localStorage.getItem(LS_SESSIONS_KEY) || '[]');
+    if (!existing.includes(sessionId)) {
+      existing.unshift(sessionId);
+      localStorage.setItem(LS_SESSIONS_KEY, JSON.stringify(existing.slice(0, 10)));
+    }
+  } catch {}
+}
+
+function getLocalSessionIds() {
+  try { return JSON.parse(localStorage.getItem(LS_SESSIONS_KEY) || '[]'); } catch { return []; }
+}
+
 const POTENTIAL_COLORS = {
   '高': { bg: 'rgba(201,168,76,0.12)', border: 'rgba(201,168,76,0.5)', text: '#c9a84c', label: '変容余地 高' },
   '中': { bg: 'rgba(100,160,255,0.10)', border: 'rgba(100,160,255,0.4)', text: '#7aadff', label: '変容余地 中' },
@@ -38,17 +54,20 @@ export default function MirrorPage() {
   const [previewFile, setPreviewFile] = useState(null);
   const [error, setError] = useState('');
   const [purchasing, setPurchasing] = useState(false);
+  const [pastSessions, setPastSessions] = useState([]);
   const fileInputRef = useRef(null);
   const dropRef = useRef(null);
 
-  // Stripe支払い完了後のリダイレクト処理
+  // Stripe支払い完了後のリダイレクト処理 + 過去セッション読み込み
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sid = params.get('session_id');
     const purchased = params.get('purchased');
+
     if (sid && purchased === '1') {
       setState('analyzing');
       setSessionId(sid);
+      saveSessionToLocal(sid);
       fetch(`/api/mirror/result?session_id=${sid}`)
         .then(r => r.json())
         .then(data => {
@@ -62,10 +81,40 @@ export default function MirrorPage() {
           }
         })
         .catch(() => { setError('通信エラーが発生しました。'); setState('idle'); });
-    } else if (sid) {
-      // キャンセルして戻ってきた場合 — 何もしない
+      return;
+    }
+
+    if (sid) {
       window.history.replaceState({}, '', '/mirror');
     }
+
+    // 過去セッション一覧を取得
+    const loadPastSessions = async () => {
+      // ログインユーザーのsession一覧（user_id紐付け）
+      let userId = null;
+      try {
+        const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+        if (sbKey) {
+          const obj = JSON.parse(localStorage.getItem(sbKey) || 'null');
+          userId = obj?.user?.id || null;
+        }
+      } catch {}
+
+      const localIds = getLocalSessionIds();
+      if (!userId && !localIds.length) return;
+
+      const url = userId
+        ? `/api/mirror/sessions?user_id=${userId}`
+        : `/api/mirror/sessions?ids=${localIds.join(',')}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.sessions?.length) setPastSessions(data.sessions);
+      } catch {}
+    };
+
+    loadPastSessions();
   }, []);
 
   const handleFile = useCallback((file) => {
@@ -108,6 +157,7 @@ export default function MirrorPage() {
 
       setSessionId(data.session_id);
       setAnalysis(data.analysis);
+      saveSessionToLocal(data.session_id);
       setState('preview');
     } catch (e) {
       setError(e.message);
@@ -238,6 +288,66 @@ export default function MirrorPage() {
           <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.3)', textAlign: 'center', marginTop: '16px', lineHeight: '1.6' }}>
             Me Scanを受けた方は、Compassとの連動アクション提案も表示されます。
           </p>
+
+          {/* 過去セッション */}
+          {pastSessions.length > 0 && (
+            <div style={{ marginTop: '32px', borderTop: '1px solid rgba(232,228,220,0.08)', paddingTop: '24px' }}>
+              <p style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(232,228,220,0.35)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '12px', textAlign: 'center' }}>
+                過去の分析結果
+              </p>
+              {pastSessions.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    setState('analyzing');
+                    const endpoint = s.paid
+                      ? `/api/mirror/result?session_id=${s.id}`
+                      : null;
+                    if (!endpoint) {
+                      // 未購入プレビューを再表示するには analyze API の結果が必要（session_idだけでは取得不可）
+                      // → 再分析を促す
+                      setError('この結果の無料プレビューは再表示できません。新しい写真で再分析してください。');
+                      setState('idle');
+                      return;
+                    }
+                    fetch(endpoint)
+                      .then(r => r.json())
+                      .then(data => {
+                        if (data.paid && data.analysis) {
+                          setAnalysis(data.analysis);
+                          setSessionId(s.id);
+                          setState('full');
+                        }
+                      })
+                      .catch(() => { setError('読み込みエラーが発生しました。'); setState('idle'); });
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    width: '100%', background: 'rgba(10,15,30,0.6)',
+                    border: '1px solid rgba(232,228,220,0.1)', borderRadius: '10px',
+                    padding: '12px 16px', marginBottom: '8px', cursor: 'pointer', textAlign: 'left',
+                  }}
+                >
+                  <div>
+                    <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: '0 0 4px' }}>
+                      {new Date(s.created_at).toLocaleDateString('ja-JP')} — {s.axes_count}軸分析
+                    </p>
+                    <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', margin: 0, lineHeight: '1.5',
+                      overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                      {s.first_impression}
+                    </p>
+                  </div>
+                  <span style={{ fontSize: '11px', fontWeight: '800', marginLeft: '12px', flexShrink: 0,
+                    color: s.paid ? '#50c88c' : 'rgba(201,168,76,0.6)',
+                    background: s.paid ? 'rgba(80,200,140,0.1)' : 'rgba(201,168,76,0.08)',
+                    border: `1px solid ${s.paid ? 'rgba(80,200,140,0.3)' : 'rgba(201,168,76,0.2)'}`,
+                    borderRadius: '20px', padding: '3px 10px' }}>
+                    {s.paid ? '購入済み' : '無料版'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

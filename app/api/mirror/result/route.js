@@ -21,11 +21,6 @@ export async function GET(request) {
     return Response.json({ error: 'セッションが見つかりません' }, { status: 404 });
   }
 
-  // 期限切れチェック
-  if (new Date(mirrorSession.expires_at) < new Date()) {
-    return Response.json({ error: 'セッションの有効期限が切れています' }, { status: 410 });
-  }
-
   // すでに paid ならそのまま返す
   if (mirrorSession.paid) {
     return Response.json({ paid: true, analysis: mirrorSession.analysis });
