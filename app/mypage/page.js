@@ -239,6 +239,17 @@ export default function MypagePage() {
             </div>
           )}
 
+          {/* ── New Me Mirror CTA ── */}
+          <Link href="/mirror" style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(10,15,30,0.65)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '16px', textDecoration: 'none', transition: 'border-color .2s' }}>
+            <span style={{ fontSize: '32px', flexShrink: 0 }}>🪞</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(201,168,76,0.7)', margin: '0 0 3px', letterSpacing: '.08em', textTransform: 'uppercase' }}>New Me Mirror — オプション</p>
+              <p style={{ fontSize: '15px', fontWeight: 800, color: 'rgba(232,228,220,0.9)', margin: '0 0 4px' }}>写真でも変容余地を確認する</p>
+              <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: 0, lineHeight: 1.5 }}>AIが写真から変容余地マップを生成。Me Scanと照らし合わせて精度UP。</p>
+            </div>
+            <span style={{ fontSize: '18px', color: 'rgba(201,168,76,0.6)', flexShrink: 0 }}>→</span>
+          </Link>
+
           {/* ── 次の来店予定 ── */}
           {nextVisit && (
             <div className="card" style={{ padding: '16px', background: 'rgba(37,99,235,0.15)', border: '1px solid rgba(59,130,246,0.35)' }}>

@@ -676,7 +676,7 @@ export default function DiagnosisResultPage() {
         <div style="flex:1">
           <p style="font-size:10px;font-weight:800;letter-spacing:.14em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin:0 0 4px">New Me Mirror — オプション</p>
           <p style="font-size:14px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 3px">写真でも変容余地を確認する</p>
-          <p style="font-size:12px;color:rgba(232,228,220,0.5);margin:0;line-height:1.5">診断結果と照らし合わせて、AIが写真から変容余地マップを生成。無料プレビューあり。</p>
+          <p style="font-size:12px;color:rgba(232,228,220,0.5);margin:0;line-height:1.5">診断結果と照らし合わせて、AIが写真から変容余地マップを生成。</p>
         </div>
         <span style="font-size:16px;color:rgba(201,168,76,0.5);flex-shrink:0">→</span>
       </a>
