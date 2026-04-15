@@ -239,16 +239,18 @@ export default function MypagePage() {
             </div>
           )}
 
-          {/* ── New Me Mirror CTA ── */}
-          <Link href="/mirror" style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(10,15,30,0.65)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '16px', textDecoration: 'none', transition: 'border-color .2s' }}>
-            <span style={{ fontSize: '32px', flexShrink: 0 }}>🪞</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(201,168,76,0.7)', margin: '0 0 3px', letterSpacing: '.08em', textTransform: 'uppercase' }}>New Me Mirror — オプション</p>
-              <p style={{ fontSize: '15px', fontWeight: 800, color: 'rgba(232,228,220,0.9)', margin: '0 0 4px' }}>写真でも変容余地を確認する</p>
-              <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: 0, lineHeight: 1.5 }}>AIが写真から変容余地マップを生成。Me Scanと照らし合わせて精度UP。</p>
+          {/* ── New Me Mirror CTA（Coming soon） ── */}
+          <div style={{ position: 'relative', opacity: 0.45, pointerEvents: 'none', userSelect: 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(10,15,30,0.65)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '16px' }}>
+              <span style={{ fontSize: '32px', flexShrink: 0 }}>🪞</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(201,168,76,0.7)', margin: '0 0 3px', letterSpacing: '.08em', textTransform: 'uppercase' }}>New Me Mirror — オプション</p>
+                <p style={{ fontSize: '15px', fontWeight: 800, color: 'rgba(232,228,220,0.9)', margin: '0 0 4px' }}>写真でも変容余地を確認する</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: 0, lineHeight: 1.5 }}>AIが写真から変容余地マップを生成。Me Scanと照らし合わせて精度UP。</p>
+              </div>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(232,228,220,0.6)', background: 'rgba(232,228,220,0.1)', border: '1px solid rgba(232,228,220,0.2)', borderRadius: '20px', padding: '4px 12px', flexShrink: 0, letterSpacing: '.06em' }}>Coming soon</span>
             </div>
-            <span style={{ fontSize: '18px', color: 'rgba(201,168,76,0.6)', flexShrink: 0 }}>→</span>
-          </Link>
+          </div>
 
           {/* ── 次の来店予定 ── */}
           {nextVisit && (

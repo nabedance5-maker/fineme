@@ -671,15 +671,17 @@ export default function DiagnosisResultPage() {
         </a>
       </div>
 
-      <a href="/mirror" style="display:flex;align-items:center;gap:16px;padding:18px 20px;background:rgba(10,15,30,0.55);border:1px solid rgba(201,168,76,0.2);border-radius:14px;text-decoration:none;margin-bottom:20px;transition:border-color .2s" onmouseover="this.style.borderColor='rgba(201,168,76,0.5)'" onmouseout="this.style.borderColor='rgba(201,168,76,0.2)'">
-        <span style="font-size:28px;flex-shrink:0">🪞</span>
-        <div style="flex:1">
-          <p style="font-size:10px;font-weight:800;letter-spacing:.14em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin:0 0 4px">New Me Mirror — オプション</p>
-          <p style="font-size:14px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 3px">写真でも変容余地を確認する</p>
-          <p style="font-size:12px;color:rgba(232,228,220,0.5);margin:0;line-height:1.5">診断結果と照らし合わせて、AIが写真から変容余地マップを生成。</p>
+      <div style="position:relative;opacity:0.45;pointer-events:none;user-select:none;margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:16px;padding:18px 20px;background:rgba(10,15,30,0.55);border:1px solid rgba(201,168,76,0.2);border-radius:14px">
+          <span style="font-size:28px;flex-shrink:0">🪞</span>
+          <div style="flex:1">
+            <p style="font-size:10px;font-weight:800;letter-spacing:.14em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin:0 0 4px">New Me Mirror — オプション</p>
+            <p style="font-size:14px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 3px">写真でも変容余地を確認する</p>
+            <p style="font-size:12px;color:rgba(232,228,220,0.5);margin:0;line-height:1.5">診断結果と照らし合わせて、AIが写真から変容余地マップを生成。</p>
+          </div>
+          <span style="font-size:11px;font-weight:800;color:rgba(232,228,220,0.6);background:rgba(232,228,220,0.1);border:1px solid rgba(232,228,220,0.2);border-radius:20px;padding:4px 12px;flex-shrink:0;letter-spacing:.06em">Coming soon</span>
         </div>
-        <span style="font-size:16px;color:rgba(201,168,76,0.5);flex-shrink:0">→</span>
-      </a>
+      </div>
 
       <div id="share-block" style="margin: 0 0 20px; text-align: center;"></div>
 

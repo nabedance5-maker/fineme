@@ -272,8 +272,20 @@ export default function MirrorPage() {
         )}
       </div>
 
-      {/* アップロード（idle状態） */}
+      {/* Coming soon バナー */}
       {state === 'idle' && (
+        <div style={{ maxWidth: '480px', margin: '0 auto 48px', padding: '0 20px', textAlign: 'center' }}>
+          <div style={{ background: 'rgba(232,228,220,0.05)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '16px', padding: '40px 32px' }}>
+            <p style={{ fontSize: '32px', marginBottom: '16px' }}>🔧</p>
+            <p style={{ fontSize: '13px', fontWeight: 800, color: 'rgba(232,228,220,0.4)', letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Coming Soon</p>
+            <p style={{ fontSize: '16px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', marginBottom: '10px' }}>現在準備中です</p>
+            <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.4)', lineHeight: '1.7', margin: 0 }}>New Me Mirror は現在調整中のため<br />一時的にご利用いただけません。<br />もうしばらくお待ちください。</p>
+          </div>
+        </div>
+      )}
+
+      {/* アップロード（idle状態・Coming soon中は非表示） */}
+      {false && state === 'idle' && (
         <div className="upload-area">
           <div
             ref={dropRef}
