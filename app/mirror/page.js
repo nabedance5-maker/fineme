@@ -23,24 +23,37 @@ const POTENTIAL_COLORS = {
   '低': { bg: 'rgba(80,200,140,0.10)', border: 'rgba(80,200,140,0.4)', text: '#50c88c', label: 'すでに整っている' },
 };
 
-// 画像をCanvas経由で圧縮・base64化（max 1200px / quality 0.85）
+// 画像をCanvas経由で多段階圧縮・base64化（最終出力 < 4MB を保証）
 async function compressImage(file) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(url);
-      const MAX = 1200;
-      let { width, height } = img;
-      if (width > MAX || height > MAX) {
-        if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
-        else { width = Math.round(width * MAX / height); height = MAX; }
+
+      function drawToCanvas(maxPx) {
+        let { width, height } = img;
+        if (width > maxPx || height > maxPx) {
+          if (width > height) { height = Math.round(height * maxPx / width); width = maxPx; }
+          else { width = Math.round(width * maxPx / height); height = maxPx; }
+        }
+        const c = document.createElement('canvas');
+        c.width = width; c.height = height;
+        c.getContext('2d').drawImage(img, 0, 0, width, height);
+        return c;
       }
-      const canvas = document.createElement('canvas');
-      canvas.width = width; canvas.height = height;
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
-      resolve({ base64, media_type: 'image/jpeg' });
+
+      const LIMIT = 4 * 1024 * 1024; // 4MB
+      // 段階: [最大辺px, JPEG品質]
+      const passes = [[1200, 0.85], [1200, 0.65], [900, 0.65], [720, 0.55], [600, 0.45]];
+      for (const [maxPx, q] of passes) {
+        const canvas = drawToCanvas(maxPx);
+        const base64 = canvas.toDataURL('image/jpeg', q).split(',')[1];
+        if (base64.length <= LIMIT) { resolve({ base64, media_type: 'image/jpeg' }); return; }
+      }
+      // フォールバック（ほぼ到達しないが念のため）
+      const canvas = drawToCanvas(480);
+      resolve({ base64: canvas.toDataURL('image/jpeg', 0.40).split(',')[1], media_type: 'image/jpeg' });
     };
     img.onerror = reject;
     img.src = url;
@@ -54,6 +67,7 @@ export default function MirrorPage() {
   const [previewFile, setPreviewFile] = useState(null);
   const [error, setError] = useState('');
   const [purchasing, setPurchasing] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [pastSessions, setPastSessions] = useState([]);
   const fileInputRef = useRef(null);
   const dropRef = useRef(null);
@@ -136,10 +150,20 @@ export default function MirrorPage() {
     const file = fileInputRef.current?.files[0];
     if (!file) { setError('写真を選択してください'); return; }
     setError('');
+    setCompressing(true);
+
+    let base64, media_type;
+    try {
+      ({ base64, media_type } = await compressImage(file));
+    } catch {
+      setError('画像の読み込みに失敗しました。別の画像をお試しください。');
+      setCompressing(false);
+      return;
+    }
+    setCompressing(false);
     setState('analyzing');
 
     try {
-      const { base64, media_type } = await compressImage(file);
       const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
       let userId = null;
       if (sbKey) {
@@ -279,9 +303,9 @@ export default function MirrorPage() {
           <button
             className="analyze-btn"
             onClick={handleAnalyze}
-            disabled={!previewFile}
+            disabled={!previewFile || compressing}
           >
-            🔍 変容余地を分析する（無料）
+            {compressing ? '📐 画像を最適化中…' : '🔍 変容余地を分析する'}
           </button>
           {error && <p className="error-msg">{error}</p>}
 
