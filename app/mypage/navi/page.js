@@ -1052,6 +1052,16 @@ export default function NewMeNaviPage() {
         ${buildRouteContainerHtml()}
       </div>
 
+      <a href="/mirror" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:rgba(10,15,30,0.55);border:1px solid rgba(201,168,76,0.2);border-radius:14px;text-decoration:none;margin:24px 0 0;transition:border-color .2s">
+        <span style="font-size:26px;flex-shrink:0">🪞</span>
+        <div style="flex:1">
+          <p style="font-size:10px;font-weight:800;letter-spacing:.14em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin:0 0 3px">New Me Mirror</p>
+          <p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px">写真でも変容余地を確認する</p>
+          <p style="font-size:11px;color:rgba(232,228,220,0.5);margin:0">AIが写真から7軸の変容余地マップを生成。無料プレビューあり。</p>
+        </div>
+        <span style="font-size:15px;color:rgba(201,168,76,0.5);flex-shrink:0">→</span>
+      </a>
+
       <div class="navi-footer">
         <a href="/diagnosis/result" class="navi-footer-btn nfb-secondary">🗺️ New Me Mapに戻る</a>
         <a href="/diagnosis" class="navi-footer-btn nfb-ghost">Me Scanを再スキャンする</a>
