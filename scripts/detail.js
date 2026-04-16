@@ -47,7 +47,7 @@ function categoryPhotoFor(category){
 function categoryLabel(v){
   const map = {
     consulting:'外見トータルサポート', gym:'パーソナルジム', makeup:'メイクアップ', hair:'ヘア',
-    diagnosis:'カラー/骨格診断', fashion:'コーデ提案', photo:'写真撮影（アプリ等）', marriage:'結婚相談所',
+    diagnosis:'カラー/骨格診断', fashion:'コーディネート', photo:'写真撮影（アプリ等）', marriage:'結婚関連サービス',
     eyebrow:'眉毛', hairremoval:'脱毛', esthetic:'エステ', cosmetic:'美容外科・美容クリニック', whitening:'ホワイトニング', orthodontics:'歯科矯正', nail:'ネイル', aga:'AGA'
   };
   return map[v] || v;

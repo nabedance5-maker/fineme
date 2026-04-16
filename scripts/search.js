@@ -68,7 +68,7 @@ function labelRegion(key){
   return map[key] || key;
 }
 function labelCategory(key){
-  const map={consulting:'外見トータルサポート',gym:'パーソナルジム',makeup:'メイクアップ',hair:'ヘア',diagnosis:'カラー/骨格診断',fashion:'コーデ提案',photo:'写真撮影（アプリ等）',marriage:'結婚相談所'};
+  const map={consulting:'外見トータルサポート',gym:'パーソナルジム',makeup:'メイクアップ',hair:'ヘア',diagnosis:'カラー/骨格診断',fashion:'コーディネート',photo:'写真撮影（アプリ等）',marriage:'結婚関連サービス'};
   const u=new URL(location.href);
   const ent = Object.fromEntries(u.searchParams.entries());
   // accept both q and keyword

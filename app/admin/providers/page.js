@@ -198,7 +198,7 @@ export default function AdminProvidersPage() {
                   <option value="hairremoval">脱毛</option>
                   <option value="whitening">ホワイトニング</option>
                   <option value="orthodontics">歯科矯正</option>
-                  <option value="marriage">結婚相談所</option>
+                  <option value="marriage">結婚関連サービス</option>
                 </select>
               </div>
               <div className="form-field"><label>エリア</label>

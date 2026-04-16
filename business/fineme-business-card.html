@@ -25,88 +25,73 @@
   }
 
   .cards-wrap{
-    display:flex;
-    flex-wrap:wrap;
-    gap:40px;
-    align-items:flex-start;
-    justify-content:center;
+    display:flex;flex-wrap:wrap;gap:40px;
+    align-items:flex-start;justify-content:center;
   }
 
   .card-group{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:12px;
+    display:flex;flex-direction:column;align-items:center;gap:12px;
   }
   .card-label{
     font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
     color:rgba(201,168,76,.45);
   }
 
-  /* ── 名刺本体：91mm × 55mm を px 換算（96dpi基準: 1mm≒3.78px） ── */
-  /* 表示用は少し大きめに2倍スケール */
   .card{
-    width:340px;   /* 91mm × 3.73 ≒ 340px */
-    height:205px;  /* 55mm × 3.73 ≒ 205px */
+    width:340px;
+    height:205px;
     border-radius:8px;
     position:relative;
     overflow:hidden;
-    box-shadow:0 20px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(201,168,76,.15);
+    box-shadow:0 20px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(201,168,76,.2);
   }
 
   /* ════════════════════════════════
      表面
   ════════════════════════════════ */
   .card-front{
-    background: linear-gradient(135deg, #060c1a 0%, #0d1628 55%, #091220 100%);
+    background:#060c1a;
   }
 
-  /* 装飾：右上のゴールド放射 */
-  .card-front::before{
-    content:'';position:absolute;
-    top:-40px;right:-40px;
-    width:180px;height:180px;
-    border-radius:50%;
-    background:radial-gradient(circle, rgba(201,168,76,.12) 0%, transparent 70%);
-    pointer-events:none;
+  /* 古地図背景画像 */
+  .front-bg{
+    position:absolute;inset:0;
+    background: url('C:/Users/nabed/OneDrive/画像/Fineme関連/weryai_1773931433323.png') center / cover no-repeat;
+    z-index:0;
   }
-  /* 左下の薄いアクセント */
-  .card-front::after{
-    content:'';position:absolute;
-    bottom:-20px;left:-20px;
-    width:120px;height:120px;
-    border-radius:50%;
-    background:radial-gradient(circle, rgba(96,165,250,.05) 0%, transparent 70%);
-    pointer-events:none;
+  /* ダーク薄膜 */
+  .front-bg::after{
+    content:'';position:absolute;inset:0;
+    background: linear-gradient(135deg, rgba(6,12,26,0.78) 0%, rgba(8,15,30,0.72) 100%);
   }
 
   /* ゴールドラインボーダー */
   .card-front-inner{
     position:absolute;inset:6px;
-    border:1px solid rgba(201,168,76,.18);
+    border:1px solid rgba(201,168,76,.25);
     border-radius:4px;
     pointer-events:none;
-    z-index:0;
+    z-index:2;
   }
 
   /* ロゴ */
   .front-logo{
     position:absolute;
-    top:18px;left:20px;
-    z-index:1;
+    top:14px;left:16px;
+    z-index:3;
   }
   .front-logo img{
-    height:22px;
+    height:66px;
     display:block;
-    filter:drop-shadow(0 2px 8px rgba(201,168,76,.4));
+    filter:drop-shadow(0 2px 12px rgba(201,168,76,.5));
   }
 
-  /* メインコピー */
+  /* メインコピー — 縦中央（ロゴ下端〜名前上端の間） */
   .front-copy{
     position:absolute;
-    top:50%;left:20px;right:110px;
-    transform:translateY(-56%);
-    z-index:1;
+    top:86px;bottom:32px;left:20px;right:108px;
+    display:flex;flex-direction:column;justify-content:center;
+    z-index:3;
   }
   .front-copy-main{
     font-family:'Hiragino Mincho Pro','Noto Serif JP',Georgia,serif;
@@ -115,6 +100,7 @@
     color:#f0ece4;
     line-height:1.55;
     letter-spacing:.01em;
+    text-shadow:0 1px 8px rgba(6,12,26,.8);
   }
   .front-copy-main em{
     font-style:normal;
@@ -124,21 +110,18 @@
     margin-top:8px;
     font-size:8px;
     font-weight:700;
-    letter-spacing:.14em;
-    color:rgba(201,168,76,.55);
-    text-transform:uppercase;
+    letter-spacing:.10em;
+    color:rgba(201,168,76,.6);
   }
 
-  /* QRコード エリア */
+  /* QR */
   .front-qr{
     position:absolute;
-    top:50%;right:18px;
-    transform:translateY(-52%);
-    z-index:1;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:4px;
+    top:0;bottom:0;right:16px;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:5px;
+    z-index:3;
   }
   .front-qr-box{
     width:72px;height:72px;
@@ -146,22 +129,10 @@
     border-radius:4px;
     display:flex;align-items:center;justify-content:center;
     padding:4px;
+    box-shadow:0 2px 12px rgba(0,0,0,.4);
   }
-  .front-qr-box img{
-    width:100%;height:100%;
-    object-fit:contain;
-    image-rendering:pixelated;
-  }
-  /* QRプレースホルダー（実際のQRが無い場合） */
   .front-qr-placeholder{
     width:64px;height:64px;
-    background: repeating-linear-gradient(
-      0deg,
-      #000 0px, #000 4px,
-      #fff 4px, #fff 8px
-    );
-    background-size:8px 8px;
-    image-rendering:pixelated;
     position:relative;
   }
   .front-qr-placeholder::before{
@@ -169,43 +140,43 @@
     position:absolute;inset:0;
     display:flex;align-items:center;justify-content:center;
     font-size:9px;font-weight:800;color:#333;
-    background:rgba(255,255,255,.85);
+    background:#f0f0f0;
     font-family:monospace;
     letter-spacing:.05em;
+    border:1px dashed #ccc;
   }
   .front-qr-label{
-    font-size:7px;font-weight:700;
-    color:rgba(201,168,76,.6);
-    letter-spacing:.08em;
-    text-transform:uppercase;
+    font-size:6.5px;font-weight:700;
+    color:rgba(201,168,76,.65);
+    letter-spacing:.04em;
     text-align:center;
   }
 
   /* 名前 */
   .front-name{
     position:absolute;
-    bottom:14px;left:20px;
-    z-index:1;
+    bottom:12px;left:20px;
+    z-index:3;
   }
   .front-name-role{
     font-size:7px;font-weight:700;
     color:rgba(201,168,76,.55);
-    letter-spacing:.12em;
-    text-transform:uppercase;
+    letter-spacing:.08em;
     margin-bottom:2px;
   }
   .front-name-text{
+    font-family:'Noto Serif JP','Hiragino Mincho Pro',Georgia,serif;
     font-size:10px;font-weight:700;
-    color:rgba(201,168,76,.75);
+    color:rgba(201,168,76,.80);
     letter-spacing:.04em;
   }
 
-  /* ── ゴールドライン 下部 ── */
+  /* 下部ゴールドライン */
   .front-bottom-line{
     position:absolute;
-    bottom:0;left:0;right:0;
-    height:2px;
-    background:linear-gradient(90deg, transparent, rgba(201,168,76,.6) 40%, rgba(201,168,76,.6) 60%, transparent);
+    bottom:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg, transparent, rgba(201,168,76,.65) 35%, rgba(201,168,76,.65) 65%, transparent);
+    z-index:3;
   }
 
   /* ════════════════════════════════
@@ -217,38 +188,38 @@
   .card-back::before{
     content:'';position:absolute;
     top:-60px;left:-60px;
-    width:240px;height:240px;
+    width:280px;height:280px;
     border-radius:50%;
-    background:radial-gradient(circle, rgba(201,168,76,.07) 0%, transparent 70%);
+    background:radial-gradient(circle, rgba(201,168,76,.08) 0%, transparent 70%);
     pointer-events:none;
   }
   .card-back-inner{
     position:absolute;inset:6px;
-    border:1px solid rgba(201,168,76,.12);
+    border:1px solid rgba(201,168,76,.15);
     border-radius:4px;
     pointer-events:none;
     z-index:0;
   }
 
-  /* キャッチコピー */
+  /* キャッチコピー — 縦中央 */
   .back-copy{
     position:absolute;
-    top:22px;left:22px;right:22px;
+    inset:0 22px 52px 22px;
+    display:flex;flex-direction:column;justify-content:center;
     z-index:1;
   }
   .back-copy-line{
     width:20px;height:1.5px;
-    background:#c9a84c;
-    opacity:.5;
-    margin-bottom:10px;
+    background:#c9a84c;opacity:.5;
+    margin-bottom:12px;
   }
   .back-copy-text{
     font-family:'Hiragino Mincho Pro','Noto Serif JP',Georgia,serif;
-    font-size:10.5px;
+    font-size:13px;
     font-weight:700;
-    color:#d4cfc6;
-    line-height:1.85;
-    letter-spacing:.02em;
+    color:#e8e4dc;
+    line-height:1.9;
+    letter-spacing:.03em;
   }
   .back-copy-text em{
     font-style:normal;
@@ -258,8 +229,7 @@
   /* 区切り線 */
   .back-divider{
     position:absolute;
-    bottom:56px;left:22px;right:22px;
-    height:1px;
+    bottom:52px;left:22px;right:22px;height:1px;
     background:repeating-linear-gradient(90deg, rgba(201,168,76,.3) 0, rgba(201,168,76,.3) 4px, transparent 4px, transparent 9px);
     z-index:1;
   }
@@ -267,39 +237,30 @@
   /* 連絡先 */
   .back-contact{
     position:absolute;
-    bottom:14px;left:22px;right:22px;
+    bottom:14px;left:22px;
     z-index:1;
-    display:flex;
-    flex-direction:column;
-    gap:4px;
+    display:flex;flex-direction:column;gap:4px;
   }
   .back-contact-item{
-    display:flex;
-    align-items:center;
-    gap:7px;
+    display:flex;align-items:center;gap:7px;
     font-size:8.5px;
     color:rgba(201,168,76,.65);
     letter-spacing:.04em;
     font-family:'Hiragino Kaku Gothic Pro',sans-serif;
   }
-  .back-contact-icon{
-    font-size:9px;
-    flex-shrink:0;
-  }
+  .back-contact-icon{ font-size:9px;flex-shrink:0; }
 
-  /* ── URL ── */
   .back-url{
     position:absolute;
     bottom:14px;right:22px;
     z-index:1;
     font-size:8px;font-weight:700;
-    color:rgba(201,168,76,.4);
+    color:rgba(201,168,76,.35);
     letter-spacing:.06em;
-    text-transform:uppercase;
     font-family:'Hiragino Kaku Gothic Pro',sans-serif;
   }
 
-  /* 注記 */
+  /* 注記・ボタン */
   .note{
     font-size:11px;color:rgba(255,255,255,.25);
     text-align:center;line-height:1.9;
@@ -307,7 +268,6 @@
   }
   .note strong{color:rgba(201,168,76,.45)}
 
-  /* 印刷ボタン */
   .print-btn{
     display:inline-flex;align-items:center;gap:8px;
     padding:12px 28px;
@@ -336,22 +296,20 @@
   <div class="card-group">
     <div class="card-label">表面</div>
     <div class="card card-front">
+      <div class="front-bg"></div>
       <div class="card-front-inner"></div>
 
-      <!-- ロゴ -->
       <div class="front-logo">
-        <img src="/assets/images/fineme-logo-official.png" alt="Fineme"
+        <img src="../public/assets/images/fineme-logo-official.png" alt="Fineme"
              onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-        <div style="display:none;font-family:'Hiragino Mincho Pro',Georgia,serif;font-size:16px;font-weight:800;color:#c9a84c;letter-spacing:.06em">Fineme</div>
+        <div style="display:none;font-family:'Hiragino Mincho Pro',Georgia,serif;font-size:40px;font-weight:800;color:#c9a84c;letter-spacing:.06em">Fineme</div>
       </div>
 
-      <!-- コピー -->
       <div class="front-copy">
         <div class="front-copy-main">あなたは、<em>何タイプ</em>ですか？</div>
         <div class="front-copy-sub">Scan &amp; Find Your Type</div>
       </div>
 
-      <!-- QR -->
       <div class="front-qr">
         <div class="front-qr-box">
           <div class="front-qr-placeholder"></div>
@@ -359,7 +317,6 @@
         <div class="front-qr-label">fineme.me/diagnosis</div>
       </div>
 
-      <!-- 名前 -->
       <div class="front-name">
         <div class="front-name-role">Fineme 代表</div>
         <div class="front-name-text">渡邉 英雄</div>
@@ -375,19 +332,16 @@
     <div class="card card-back">
       <div class="card-back-inner"></div>
 
-      <!-- キャッチコピー -->
       <div class="back-copy">
         <div class="back-copy-line"></div>
         <div class="back-copy-text">
-          そのまま進むのが怖くなった夜に。<br>
+          そのまま進むのが<br>怖くなった夜に。<br>
           自信を再設計する、<em>地図と羅針盤</em>。
         </div>
       </div>
 
-      <!-- 区切り -->
       <div class="back-divider"></div>
 
-      <!-- 連絡先 -->
       <div class="back-contact">
         <div class="back-contact-item">
           <span class="back-contact-icon">✉</span>
@@ -407,7 +361,7 @@
 
 <p class="note">
   QRコードは印刷前に <strong>fineme.me/diagnosis</strong> のQRを差し替えてください。<br>
-  入稿はこのデザインをリファレンスにCanva・ラクスル等で再現、または画像として渡す。
+  入稿はCanva（91×55mm）でこのデザインを再現、またはPDFとしてラクスルへ。
 </p>
 
 <button class="print-btn" onclick="window.print()">🖨 PDF保存</button>

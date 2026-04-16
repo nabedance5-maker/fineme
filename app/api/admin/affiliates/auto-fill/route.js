@@ -108,7 +108,7 @@ Fineme（外見変容ポータル）に掲載するアフィリエイトの紹�
 
 main_category（以下の値のみ使用可・必ず1つ選択・それ以外の値は絶対に使わないこと）:
 gym / eyebrow / hair / esthetic / fashion / photo / consulting / makeup / nail / hairremoval / whitening / orthodontics / marriage / diagnosis / aga
-※ マッチングアプリ・婚活・結婚相談所は必ず "marriage"。"matching_app" は存在しない。
+※ マッチングアプリ・婚活・結婚関連サービスは必ず "marriage"。"matching_app" は存在しない。
 
 catchphrase（20〜40文字）:
 「ケンジ」が見た瞬間「これ、俺のことだ」と思うコピー。

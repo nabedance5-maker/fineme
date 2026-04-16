@@ -7,7 +7,7 @@ const CATEGORY_LABELS = {
   skin:'肌・エステ', fashion:'ファッション', photo:'写真撮影',
   consulting:'外見トータルサポート', makeup:'メイク', nail:'ネイル',
   hairremoval:'脱毛', whitening:'ホワイトニング', orthodontics:'歯科矯正',
-  aga:'AGA', marriage:'結婚相談所', diagnosis:'骨格診断',
+  aga:'AGA', marriage:'結婚関連サービス', diagnosis:'骨格診断',
 };
 
 export async function generateMetadata({ params }) {

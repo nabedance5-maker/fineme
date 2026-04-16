@@ -54,9 +54,9 @@ export default function SearchBar({ keyword = '', region = '', category = '', co
         <option value="makeup">メイクアップ</option>
   <option value="hair">ヘア</option>
         <option value="diagnosis">カラー/骨格診断</option>
-        <option value="fashion">コーデ提案</option>
+        <option value="fashion">コーディネート</option>
   <option value="photo">写真撮影（アプリ等）</option>
-        <option value="marriage">結婚相談所</option>
+        <option value="marriage">結婚関連サービス</option>
         <option value="eyebrow">眉毛</option>
         <option value="hairremoval">脱毛</option>
         <option value="esthetic">エステ</option>

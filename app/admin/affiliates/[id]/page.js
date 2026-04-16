@@ -15,7 +15,7 @@ const CAT_OPTIONS = [
   { value: 'hairremoval',  label: '脱毛' },
   { value: 'whitening',    label: 'ホワイトニング' },
   { value: 'orthodontics', label: '歯科矯正' },
-  { value: 'marriage',     label: '結婚相談所' },
+  { value: 'marriage',     label: '結婚関連サービス' },
   { value: 'diagnosis',    label: '骨格診断' },
   { value: 'aga',          label: 'AGA・薄毛治療' },
 ];

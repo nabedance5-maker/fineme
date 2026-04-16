@@ -635,7 +635,7 @@ async function inject(selector, relativePath){
       body: `どこから変えればいいか分からないなら、まずは相談を。髪・眉・肌・服・姿勢をトータルで見てもらうと、全体のバランスが整う。自分に合うスタイルを一緒に設計していくから、再現もしやすい。“自分史上最高”をプロと一緒に形にしよう。`
     },
     marriage: {
-      title: '結婚相談所',
+      title: '結婚関連サービス',
       body: `出会いがうまくいかないのは、性格よりも“印象”の問題かもしれない。専門のカウンセラーと一緒に、外見も内面もアップデートしていくことで、出会いの質が変わる。自分をよく見せる努力が、ちゃんと報われる場所。本気で恋をしたい人に。`
     },
     hairremoval: {
@@ -718,7 +718,7 @@ async function inject(selector, relativePath){
 
     // category select (short list)
     const categorySelect = document.createElement('select'); categorySelect.name = 'category'; categorySelect.className = 'modal-search-select'; categorySelect.setAttribute('aria-label','カテゴリ');
-    const cats = [['','すべてのカテゴリ'],['consulting','外見トータルサポート'],['gym','パーソナルジム'],['makeup','メイクアップ'],['hair','ヘア'],['diagnosis','カラー/骨格診断'],['fashion','コーデ提案'],['photo','写真撮影（アプリ等）'],['marriage','結婚相談所'],['eyebrow','眉毛'],['hairremoval','脱毛'],['esthetic','エステ'],['cosmetic','美容外科・美容クリニック'],['whitening','ホワイトニング'],['orthodontics','歯科矯正'],['nail','ネイル'],['aga','AGA']];
+    const cats = [['','すべてのカテゴリ'],['consulting','外見トータルサポート'],['gym','パーソナルジム'],['makeup','メイクアップ'],['hair','ヘア'],['diagnosis','カラー/骨格診断'],['fashion','コーディネート'],['photo','写真撮影（アプリ等）'],['marriage','結婚関連サービス'],['eyebrow','眉毛'],['hairremoval','脱毛'],['esthetic','エステ'],['cosmetic','美容外科・美容クリニック'],['whitening','ホワイトニング'],['orthodontics','歯科矯正'],['nail','ネイル'],['aga','AGA']];
     cats.forEach(c=>{ const opt=document.createElement('option'); opt.value=c[0]; opt.textContent=c[1]; categorySelect.appendChild(opt); });
 
     rowSelects.appendChild(regionSelect); rowSelects.appendChild(purposeSelect); rowSelects.appendChild(categorySelect);
