@@ -268,11 +268,11 @@ export default function HomePage() {
         }
         .hero-nav-h2 {
           font-family: 'Playfair Display', Georgia, serif;
-          font-size: clamp(18px, 3.5vw, 28px);
+          font-size: clamp(28px, 6vw, 52px);
           font-weight: 700;
           font-style: italic;
-          color: rgba(201,168,76,0.55);
-          margin: 0 0 44px;
+          color: rgba(201,168,76,0.65);
+          margin: 8px 0 44px;
           letter-spacing: .02em;
         }
         .hero-nav-verse {
@@ -468,7 +468,6 @@ export default function HomePage() {
         {/* ── Nautical Hero ── */}
         <section className="hero-nav">
           <div className="hero-nav-inner">
-            <p className="hero-nav-brand">— Find New Me —</p>
             <h1 className="hero-nav-h1">
               <img
                 src="/assets/images/fineme-logo-final.png"
