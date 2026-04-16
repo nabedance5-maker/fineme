@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>掲載候補リスト生成 | Fineme</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,sans-serif;background:#0a0f1e;color:#e8e4dc;min-height:100vh}
+.header{padding:24px 32px;border-bottom:1px solid rgba(201,168,76,0.2);display:flex;align-items:center;gap:16px}
+.header h1{font-size:18px;font-weight:800;color:#c9a84c}
+.header p{font-size:13px;color:rgba(232,228,220,0.5)}
+.wrap{max-width:1200px;margin:0 auto;padding:32px}
+.card{background:rgba(255,255,255,0.04);border:1px solid rgba(232,228,220,0.1);border-radius:14px;padding:24px;margin-bottom:24px}
+.card-title{font-size:13px;font-weight:800;color:rgba(201,168,76,0.8);letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px}
+label{font-size:13px;color:rgba(232,228,220,0.6);display:block;margin-bottom:6px}
+input,select,textarea{width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(232,228,220,0.15);border-radius:8px;padding:9px 12px;color:#e8e4dc;font-size:14px;outline:none}
+input:focus,select:focus{border-color:rgba(201,168,76,0.5)}
+.search-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin-bottom:10px}
+.btn{padding:10px 20px;border-radius:9px;border:none;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:linear-gradient(135deg,#c9a84c,#e8c97a);color:#0a0f1e}
+.btn-ghost{background:transparent;border:1px solid rgba(232,228,220,0.2);color:rgba(232,228,220,0.7)}
+.btn-danger{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-run{width:100%;padding:16px;font-size:16px;border-radius:12px;margin-top:8px;background:linear-gradient(135deg,#c9a84c,#e8c97a);color:#0a0f1e;border:none;font-weight:800;cursor:pointer}
+.btn-run:disabled{opacity:.4;cursor:not-allowed}
+.progress-wrap{display:none;margin-bottom:24px}
+.progress-label{font-size:13px;color:rgba(232,228,220,0.6);margin-bottom:8px}
+.progress-bar{height:6px;background:rgba(255,255,255,0.1);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#c9a84c,#e8c97a);border-radius:99px;transition:width .3s}
+.log{font-size:12px;color:rgba(232,228,220,0.45);margin-top:8px;max-height:100px;overflow-y:auto;line-height:1.7}
+.result-wrap{display:none}
+.result-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.stat{font-size:13px;color:rgba(232,228,220,0.5)}
+.stat strong{color:#c9a84c}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.filters input,.filters select{width:auto;flex:1;min-width:140px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:rgba(255,255,255,0.05);padding:10px 12px;text-align:left;font-weight:700;color:rgba(232,228,220,0.5);font-size:11px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;white-space:nowrap;user-select:none}
+th:hover{color:#c9a84c}
+th.sorted{color:#c9a84c}
+td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.05);vertical-align:top}
+tr:hover td{background:rgba(255,255,255,0.03)}
+.score-badge{display:inline-block;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:800;text-align:center;line-height:22px}
+.s5{background:rgba(201,168,76,0.3);color:#c9a84c}
+.s4{background:rgba(99,102,241,0.25);color:#a5b4fc}
+.s3{background:rgba(255,255,255,0.1);color:rgba(232,228,220,0.6)}
+.s2,.s1{background:rgba(239,68,68,0.1);color:#f87171}
+.type-badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700}
+.type-個人{background:rgba(80,200,140,0.15);color:#50c88c;border:1px solid rgba(80,200,140,0.3)}
+.type-法人{background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.2)}
+.type-不明{background:rgba(255,255,255,0.06);color:rgba(232,228,220,0.4);border:1px solid rgba(255,255,255,0.1)}
+a{color:#7aadff;text-decoration:none}
+a:hover{text-decoration:underline}
+.empty{text-align:center;padding:40px;color:rgba(232,228,220,0.3);font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🔍 掲載候補リスト生成ツール</h1>
+    <p>Google Places + AI で掲載候補を自動収集・スコアリング</p>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- 検索設定 -->
+  <div class="card">
+    <p class="card-title">検索設定</p>
+    <div id="search-list"></div>
+    <button class="btn btn-ghost btn-sm" onclick="addRow()" style="margin-top:4px">＋ 行を追加</button>
+  </div>
+
+  <!-- 実行 -->
+  <button class="btn-run" id="run-btn" onclick="runAll()">🔍 検索＆スコアリング開始</button>
+
+  <!-- 進捗 -->
+  <div class="progress-wrap" id="progress-wrap" style="margin-top:20px">
+    <div class="progress-label" id="progress-label">準備中...</div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- 結果 -->
+  <div class="result-wrap" id="result-wrap" style="margin-top:24px">
+    <div class="result-header">
+      <div class="stat" id="stat-text"></div>
+      <button class="btn btn-primary btn-sm" onclick="downloadCSV()">📥 CSVダウンロード</button>
+    </div>
+    <div class="filters">
+      <input type="text" id="filter-name" placeholder="事業者名で絞り込み" oninput="renderTable()">
+      <select id="filter-type" onchange="renderTable()">
+        <option value="">個人/法人 すべて</option>
+        <option value="個人">個人のみ</option>
+        <option value="法人">法人のみ</option>
+      </select>
+      <select id="filter-score" onchange="renderTable()">
+        <option value="0">優先度 すべて</option>
+        <option value="4">4以上</option>
+        <option value="5">5のみ</option>
+      </select>
+      <select id="filter-ig" onchange="renderTable()">
+        <option value="">Instagram 問わず</option>
+        <option value="1">Instagram あり</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto">
+      <table id="result-table">
+        <thead>
+          <tr>
+            <th onclick="sortBy('score')">優先度</th>
+            <th onclick="sortBy('name')">事業者名</th>
+            <th onclick="sortBy('category')">カテゴリ</th>
+            <th onclick="sortBy('type')">個人/法人</th>
+            <th onclick="sortBy('reviewCount')">レビュー</th>
+            <th>Instagram</th>
+            <th>Web</th>
+            <th>電話</th>
+            <th>メモ</th>
+            <th>マップ</th>
+          </tr>
+        </thead>
+        <tbody id="result-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const DEFAULT_SEARCHES = [
+  ['パーソナルトレーナー',       '東京都渋谷区'],
+  ['パーソナルジム',             '東京都渋谷区'],
+  ['眉毛サロン メンズ',          '東京都渋谷区'],
+  ['骨格診断',                   '東京都渋谷区'],
+  ['パーソナルカラー診断',       '東京都渋谷区'],
+  ['メンズ脱毛サロン',           '東京都渋谷区'],
+  ['パーソナルスタイリスト',     '東京都渋谷区'],
+  ['ホワイトニングサロン メンズ','東京都渋谷区'],
+];
+
+const AREAS = ['東京都渋谷区','東京都新宿区','東京都池袋','東京都銀座','東京都恵比寿',
+  '大阪市梅田','大阪市心斎橋','名古屋市栄','福岡市天神','横浜市みなとみらい'];
+
+let allData = [];
+let sortKey = 'score';
+let sortAsc = false;
+
+function addRow(kw = '', area = '') {
+  const div = document.createElement('div');
+  div.className = 'search-row';
+  div.innerHTML = `
+    <div><label>キーワード</label><input type="text" value="${kw}" placeholder="パーソナルトレーナー"></div>
+    <div><label>エリア</label>
+      <select>
+        ${AREAS.map(a => `<option${a===area?' selected':''}>${a}</option>`).join('')}
+        <option${!AREAS.includes(area)&&area?' selected':''} value="${area}">${area||'カスタム入力'}</option>
+      </select>
+    </div>
+    <div style="padding-top:24px"><button class="btn btn-danger btn-sm" onclick="this.closest('.search-row').remove()">削除</button></div>
+  `;
+  document.getElementById('search-list').appendChild(div);
+}
+
+function getSearches() {
+  return [...document.querySelectorAll('#search-list .search-row')].map(row => {
+    const kw   = row.querySelector('input').value.trim();
+    const area = row.querySelector('select').value;
+    return kw && area ? [kw, area] : null;
+  }).filter(Boolean);
+}
+
+function log(msg) {
+  const el = document.getElementById('log');
+  el.innerHTML += msg + '<br>';
+  el.scrollTop = el.scrollHeight;
+}
+
+function setProgress(pct, label) {
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = label;
+}
+
+async function api(action, params) {
+  const res = await fetch('/api/find-providers', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({action, ...params}),
+  });
+  return res.json();
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function runAll() {
+  const searches = getSearches();
+  if (!searches.length) { alert('検索設定を入力してください'); return; }
+
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('result-wrap').style.display = 'none';
+  document.getElementById('log').innerHTML = '';
+  allData = [];
+
+  const seen = new Set();
+  let done = 0;
+  const total = searches.length;
+
+  // Step1: 検索
+  for (const [keyword, area] of searches) {
+    setProgress(Math.round(done/total*60), `検索中: ${keyword} / ${area}`);
+    log(`📍 ${keyword} × ${area}`);
+
+    const r = await api('search', {keyword, area});
+    const places = r.results || [];
+    log(`　→ ${places.length}件`);
+
+    for (const p of places) {
+      if (seen.has(p.place_id)) continue;
+      seen.add(p.place_id);
+
+      await sleep(200);
+      const d = await api('details', {place_id: p.place_id});
+      allData.push({
+        name: p.name || '',
+        category: keyword,
+        area,
+        address: p.formatted_address || '',
+        phone: d.phone || '',
+        website: d.website || '',
+        instagram: d.instagram || '',
+        reviewCount: p.user_ratings_total || 0,
+        rating: p.rating || '',
+        mapsUrl: d.mapsUrl || '',
+        type: '不明',
+        score: 3,
+        memo: '',
+      });
+    }
+    done++;
+    await sleep(200);
+  }
+
+  log(`\n合計 ${allData.length}件（重複除去済み）`);
+
+  // Step2: スコアリング（30件ずつ）
+  setProgress(65, `AIスコアリング中... (${allData.length}件)`);
+  const BATCH = 30;
+  for (let i = 0; i < allData.length; i += BATCH) {
+    const batch = allData.slice(i, i+BATCH);
+    const r = await api('score', {businesses: batch});
+    for (const s of (r.scores || [])) {
+      const b = batch[s.i];
+      if (b) { b.type = s.t || '不明'; b.score = s.s || 3; b.memo = s.m || ''; }
+    }
+    setProgress(65 + Math.round((i+BATCH)/allData.length*30), `AIスコアリング中...`);
+    await sleep(400);
+  }
+
+  // Step3: 完了
+  setProgress(100, '✅ 完了！');
+  log(`優先度5: ${allData.filter(b=>b.score===5).length}件 / Instagram: ${allData.filter(b=>b.instagram).length}件`);
+
+  allData.sort((a,b) => b.score - a.score || b.reviewCount - a.reviewCount);
+  document.getElementById('result-wrap').style.display = 'block';
+  document.getElementById('run-btn').disabled = false;
+  updateStat();
+  renderTable();
+}
+
+function sortBy(key) {
+  if (sortKey === key) sortAsc = !sortAsc;
+  else { sortKey = key; sortAsc = false; }
+  document.querySelectorAll('th').forEach(th => th.classList.remove('sorted'));
+  event.target.classList.add('sorted');
+  renderTable();
+}
+
+function getFiltered() {
+  const name  = document.getElementById('filter-name').value.toLowerCase();
+  const type  = document.getElementById('filter-type').value;
+  const score = parseInt(document.getElementById('filter-score').value) || 0;
+  const ig    = document.getElementById('filter-ig').value;
+  return allData.filter(b =>
+    (!name  || b.name.toLowerCase().includes(name)) &&
+    (!type  || b.type === type) &&
+    (!score || b.score >= score) &&
+    (!ig    || b.instagram)
+  );
+}
+
+function updateStat() {
+  document.getElementById('stat-text').innerHTML =
+    `<strong>${allData.length}</strong>件取得 ／ 優先度5: <strong>${allData.filter(b=>b.score===5).length}</strong>件 ／ Instagram取得: <strong>${allData.filter(b=>b.instagram).length}</strong>件`;
+}
+
+function renderTable() {
+  const data = getFiltered().slice().sort((a,b) => {
+    let av = a[sortKey], bv = b[sortKey];
+    if (typeof av === 'string') av = av.toLowerCase(), bv = bv.toLowerCase();
+    return sortAsc ? (av>bv?1:-1) : (av<bv?1:-1);
+  });
+
+  const tbody = document.getElementById('result-tbody');
+  if (!data.length) { tbody.innerHTML = `<tr><td colspan="10" class="empty">該当なし</td></tr>`; return; }
+
+  tbody.innerHTML = data.map(b => `
+    <tr>
+      <td><span class="score-badge s${b.score}">${b.score}</span></td>
+      <td style="max-width:180px;word-break:break-word">
+        <strong style="color:#e8e4dc">${esc(b.name)}</strong><br>
+        <span style="font-size:11px;color:rgba(232,228,220,0.4)">${esc(b.area)}</span>
+      </td>
+      <td style="font-size:12px;color:rgba(232,228,220,0.6)">${esc(b.category)}</td>
+      <td><span class="type-badge type-${b.type}">${b.type}</span></td>
+      <td style="text-align:right;color:rgba(232,228,220,0.6)">${b.reviewCount}<br><span style="font-size:10px">★${b.rating}</span></td>
+      <td>${b.instagram ? `<a href="${b.instagram}" target="_blank">@${b.instagram.replace('https://instagram.com/','')}</a>` : '<span style="color:rgba(255,255,255,0.2)">—</span>'}</td>
+      <td>${b.website ? `<a href="${b.website}" target="_blank" style="font-size:11px">サイト</a>` : '<span style="color:rgba(255,255,255,0.2)">—</span>'}</td>
+      <td style="font-size:12px;white-space:nowrap">${esc(b.phone) || '<span style="color:rgba(255,255,255,0.2)">—</span>'}</td>
+      <td style="font-size:12px;color:rgba(232,228,220,0.5);max-width:140px">${esc(b.memo)}</td>
+      <td>${b.mapsUrl ? `<a href="${b.mapsUrl}" target="_blank" style="font-size:11px">🗺</a>` : ''}</td>
+    </tr>
+  `).join('');
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function downloadCSV() {
+  const data = getFiltered();
+  const cols = ['事業者名','カテゴリ','エリア','住所','電話番号','ウェブサイト','Instagram','レビュー数','Google評価','個人/法人','DM優先度','GoogleマップURL','DMメモ'];
+  const rows = data.map(b => [b.name,b.category,b.area,b.address,b.phone,b.website,b.instagram,b.reviewCount,b.rating,b.type,b.score,b.mapsUrl,b.memo]);
+  const q = v => `"${String(v??'').replace(/"/g,'""')}"`;
+  const csv = '\uFEFF' + [cols, ...rows].map(r => r.map(q).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = `provider-candidates-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// 初期行を追加
+DEFAULT_SEARCHES.forEach(([kw, area]) => addRow(kw, area));
+</script>
+</body>
+</html>
