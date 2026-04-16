@@ -10,7 +10,8 @@
     "gen-srcset": "node scripts/gen-srcset.js",
     "line-server": "node server/line-server.js",
     "vercel-build": "node scripts/copy-static.js && next build",
-    "copy-static": "node scripts/copy-static.js"
+    "copy-static": "node scripts/copy-static.js",
+    "find-providers": "node scripts/find-providers.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
