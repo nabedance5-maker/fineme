@@ -428,11 +428,11 @@ export default function NewMeNaviPage() {
       body: [
         { text: '自分の体型で気になる部分を1つ言語化できている（例：「腹まわりが気になる」）', guide: 'none', isCurrentFor: 'none' },
         { text: '現在の体重・体脂肪率を計測して数字で把握している', guide: 'none',
-          products: [{ name: '体組成計（TANITA）', url: 'https://www.amazon.co.jp/s?k=タニタ+体組成計&tag=whero523-22' }] },
+          products: [{ name: '体組成計（TANITA）', url: 'https://www.amazon.co.jp/s?k=タニタ+体組成計&tag=whero523-22', level: 'intermediate' }] },
         { text: '1週間で何回体を動かしているかを把握している', guide: 'none' },
         { text: '日常的に歩く・階段を使うなど、生活のなかに動きを取り入れている', guide: 'none' },
         { text: '週1回以上、意識的な運動習慣がある', guide: 'none',
-          products: [{ name: 'プロテイン（SAVAS ホエイ）', url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=whero523-22' }, { name: 'トレーニングウェア', url: 'https://www.amazon.co.jp/s?k=メンズ+トレーニングウェア&tag=whero523-22' }] },
+          products: [{ name: 'プロテイン（SAVAS ホエイ）', url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=whero523-22', level: 'intermediate' }, { name: 'トレーニングウェア', url: 'https://www.amazon.co.jp/s?k=メンズ+トレーニングウェア&tag=whero523-22' }] },
         { text: '食事の基本ルールを1つ知っている（例：タンパク質を毎食とる）', guide: 'LOW', isCurrentFor: 'concerned',
           products: [{ name: 'プロテインバー（手軽なタンパク源）', url: 'https://www.amazon.co.jp/s?k=プロテインバー&tag=whero523-22' }] },
         { text: 'パーソナルジムの無料体験カウンセリングに1回行ったことがある', guide: 'HIGH', isCurrentFor: 'self' },
@@ -470,13 +470,13 @@ export default function NewMeNaviPage() {
         { text: '自分の髪質を把握している（硬い・柔らかい・くせ毛・直毛など）', guide: 'LOW' },
         { text: '自分の顔型を把握している（丸・面長・卵型など）', guide: 'LOW' },
         { text: '髪質に合ったシャンプーを使っている', guide: 'LOW',
-          products: [{ name: 'BOTANIST ボタニカルシャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=whero523-22' }, { name: 'スカルプシャンプー（薄毛が気になる方）', url: 'https://www.amazon.co.jp/s?k=スカルプシャンプー+メンズ&tag=whero523-22' }] },
+          products: [{ name: 'BOTANIST ボタニカルシャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=whero523-22' }, { name: 'スカルプシャンプー（薄毛が気になる方）', url: 'https://www.amazon.co.jp/s?k=スカルプシャンプー+メンズ&tag=whero523-22', level: 'intermediate' }] },
         { text: 'ドライヤーで根元から乾かしている（自然乾燥していない）', guide: 'none',
           products: [{ name: 'ドライヤー（速乾・髪に優しい）', url: 'https://www.amazon.co.jp/s?k=ドライヤー+速乾+メンズ&tag=whero523-22' }] },
         { text: 'スタイリング剤を使っている', guide: 'none',
-          products: [{ name: 'ウーノ スーパーハード（定番）', url: 'https://www.amazon.co.jp/s?k=ウーノ+スーパーハード&tag=whero523-22' }, { name: 'バーム系スタイリング剤（ナチュラル仕上げ）', url: 'https://www.amazon.co.jp/s?k=ヘアバーム+メンズ&tag=whero523-22' }] },
+          products: [{ name: 'ウーノ スーパーハード（定番）', url: 'https://www.amazon.co.jp/s?k=ウーノ+スーパーハード&tag=whero523-22' }, { name: 'バーム系スタイリング剤（ナチュラル仕上げ）', url: 'https://www.amazon.co.jp/s?k=ヘアバーム+メンズ&tag=whero523-22', level: 'intermediate' }] },
         { text: 'トリートメントまたはアウトバスケアをしている', guide: 'LOW', isCurrentFor: 'concerned',
-          products: [{ name: 'アウトバストリートメント（洗い流さないタイプ）', url: 'https://www.amazon.co.jp/s?k=洗い流さないトリートメント+メンズ&tag=whero523-22' }] },
+          products: [{ name: 'アウトバストリートメント（洗い流さないタイプ）', url: 'https://www.amazon.co.jp/s?k=洗い流さないトリートメント+メンズ&tag=whero523-22', level: 'intermediate' }] },
         { text: '美容師に「顔型・骨格に合う髪型」を相談したことがある', guide: 'HIGH', isCurrentFor: 'self' },
         { text: '定期的に通う美容師を1人決めている', guide: 'MID' },
         { text: '自宅でのセット方法を美容師に教わったことがある', guide: 'HIGH' },
@@ -492,7 +492,7 @@ export default function NewMeNaviPage() {
           products: [{ name: 'ニベア リッチケアハンドクリーム', url: 'https://www.amazon.co.jp/s?k=ニベア+ハンドクリーム&tag=whero523-22' }] },
         { text: '爪の形を丸・スクエアなど意識して整えている', guide: 'LOW', isCurrentFor: 'concerned' },
         { text: 'ネイルオイルを使っている', guide: 'LOW',
-          products: [{ name: 'OPI プロスパ ネイルオイル', url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=whero523-22' }, { name: 'ネイルオイル（プチプラ）', url: 'https://www.amazon.co.jp/s?k=ネイルオイル+メンズ&tag=whero523-22' }] },
+          products: [{ name: 'OPI プロスパ ネイルオイル', url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=whero523-22', level: 'intermediate' }, { name: 'ネイルオイル（プチプラ）', url: 'https://www.amazon.co.jp/s?k=ネイルオイル+メンズ&tag=whero523-22' }] },
         { text: '甘皮を押し上げるケアをしている', guide: 'MID', note: '切り取るのはNG。正しい方法はプロに教わるのが理想。', isCurrentFor: 'self' },
         { text: 'ネイルケアサロンでプロのケアを受けたことがある', guide: 'HIGH' },
         { text: '定期的にサロンでメンテナンスしている', guide: 'HIGH', isCurrentFor: 'pro' },
@@ -511,7 +511,7 @@ export default function NewMeNaviPage() {
           { text: '自分の肌タイプを把握している（乾燥・脂性・混合）', guide: 'LOW', isCurrentFor: 'concerned' },
           { text: '自分の肌悩みを1つ言語化している（例：ニキビ・毛穴・くすみ・赤み）', guide: 'LOW' },
           { text: '角質ケアを取り入れている', guide: 'MID', isCurrentFor: 'self',
-            products: [{ name: 'ピーリングジェル（週1回）', url: 'https://www.amazon.co.jp/s?k=ピーリングジェル+メンズ&tag=whero523-22' }] },
+            products: [{ name: 'ピーリングジェル（週1回）', url: 'https://www.amazon.co.jp/s?k=ピーリングジェル+メンズ&tag=whero523-22', level: 'intermediate' }] },
           { text: '皮膚科またはエステで今の肌状態を1回診てもらったことがある', guide: 'HIGH', isCurrentFor: 'pro' },
           { text: '診断をもとにスキンケアを1アイテム以上アップデートした', guide: 'HIGH' },
           { text: 'アップデートしたケアが3ヶ月以上途切れず続いている', guide: 'LOW' },
@@ -531,11 +531,11 @@ export default function NewMeNaviPage() {
       teeth_white: {
         steps: [
           { text: '毎日歯磨きをしている', guide: 'none', isCurrentFor: 'none',
-            products: [{ name: '電動歯ブラシ（オーラルB）', url: 'https://www.amazon.co.jp/s?k=オーラルB+電動歯ブラシ&tag=whero523-22' }] },
+            products: [{ name: '電動歯ブラシ（オーラルB）', url: 'https://www.amazon.co.jp/s?k=オーラルB+電動歯ブラシ&tag=whero523-22', level: 'intermediate' }] },
           { text: '歯間ブラシかフロスを使っている', guide: 'none',
             products: [{ name: 'GUM デンタルフロス', url: 'https://www.amazon.co.jp/s?k=GUM+デンタルフロス&tag=whero523-22' }, { name: 'ルシェロ 歯間ブラシ', url: 'https://www.amazon.co.jp/s?k=歯間ブラシ+細め&tag=whero523-22' }] },
           { text: 'ホワイトニング配合の歯磨き粉を使っている', guide: 'none',
-            products: [{ name: 'アパガード プレミオ', url: 'https://www.amazon.co.jp/s?k=アパガード+プレミオ&tag=whero523-22' }, { name: 'チェックアップ スタンダード', url: 'https://www.amazon.co.jp/s?k=チェックアップ+歯磨き粉&tag=whero523-22' }] },
+            products: [{ name: 'アパガード プレミオ', url: 'https://www.amazon.co.jp/s?k=アパガード+プレミオ&tag=whero523-22', level: 'intermediate' }, { name: 'チェックアップ スタンダード', url: 'https://www.amazon.co.jp/s?k=チェックアップ+歯磨き粉&tag=whero523-22' }] },
           { text: '自分の歯の黄ばみの原因を把握している（着色・加齢など）', guide: 'LOW', isCurrentFor: 'concerned' },
           { text: 'セルフホワイトニングサロンを体験したことがある', guide: 'MID' },
           { text: '歯科でPMTC（クリーニング）を受けたことがある', guide: 'HIGH', isCurrentFor: 'self' },
@@ -746,12 +746,20 @@ export default function NewMeNaviPage() {
         const noteHtml = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
         let productsHtml = '';
         if (step.products && step.products.length > 0) {
-          const chips = step.products.map((prod, pi) => {
-            const prodKey = `prod-${axisKey}-${i}-${pi}`;
-            const isProdDone = !!stepDone[prodKey];
-            return `<a href="${esc(prod.url)}" target="_blank" rel="noopener noreferrer" class="product-chip">🛒 ${esc(prod.name)}</a><button class="product-check-btn${isProdDone?' checked':''}" data-done-key="${esc(prodKey)}" title="${isProdDone?'使用中を取り消す':'使っている・試した'}">${isProdDone?'✓ 使用中':'使ってる？'}</button>`;
-          }).join('');
-          productsHtml = `<div class="product-suggestions">${chips}</div>`;
+          // level別フィルター: 0-2→入門 / 3-8→習慣化中 / 9+→こだわり派（カスケード表示）
+          const _totalDone = Object.values(stepDone).filter(Boolean).length;
+          const _userLevel = _totalDone >= 9 ? 'advanced' : _totalDone >= 3 ? 'intermediate' : 'beginner';
+          const _lvRank = { beginner: 0, intermediate: 1, advanced: 2 };
+          const _maxRank = _lvRank[_userLevel];
+          const chips = step.products
+            .map((prod, pi) => ({ prod, pi }))
+            .filter(({ prod }) => (_lvRank[prod.level || 'beginner']) <= _maxRank)
+            .map(({ prod, pi }) => {
+              const prodKey = `prod-${axisKey}-${i}-${pi}`;
+              const isProdDone = !!stepDone[prodKey];
+              return `<a href="${esc(prod.url)}" target="_blank" rel="noopener noreferrer" class="product-chip">🛒 ${esc(prod.name)}</a><button class="product-check-btn${isProdDone?' checked':''}" data-done-key="${esc(prodKey)}" title="${isProdDone?'使用中を取り消す':'使っている・試した'}">${isProdDone?'✓ 使用中':'使ってる？'}</button>`;
+            }).join('');
+          if (chips) productsHtml = `<div class="product-suggestions">${chips}</div>`;
         }
         const checkBtn = `<button class="step-check-btn${isDone?' checked':''}" data-done-key="${esc(doneKey)}" title="${isDone?'完了を取り消す':'できてる・やった'}">${isDone?'✓':''}</button>`;
         return `

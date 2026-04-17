@@ -171,59 +171,89 @@ export default function DiagnosisResultPage() {
     function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     // ─── 軸別おすすめ商品（Amazonアフィリエイト）───
+    // level: beginner（入門）/ intermediate（習慣化中）/ advanced（こだわり派）
+    // カスケード: beginner→入門のみ / intermediate→入門+習慣化中 / advanced→全て
     const AXIS_PRODUCTS = {
-      skin:    [
-        { name: '肌ラボ 極潤 洗顔フォーム',          url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+洗顔&tag=whero523-22' },
-        { name: '肌ラボ 極潤 ヒアルロン液（化粧水）', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=whero523-22' },
-        { name: 'ビオレUV アクアリッチ（日焼け止め）', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=whero523-22' },
+      skin: [
+        { name: '肌ラボ 極潤 洗顔フォーム',               url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+洗顔&tag=whero523-22',               level: 'beginner' },
+        { name: '肌ラボ 極潤 ヒアルロン液（化粧水）',      url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=whero523-22',             level: 'beginner' },
+        { name: 'ビオレUV アクアリッチ（日焼け止め）',     url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=whero523-22',          level: 'beginner' },
+        { name: 'メンズビオレ ONE（オールインワン洗顔）',   url: 'https://www.amazon.co.jp/s?k=メンズビオレ+ONE+洗顔&tag=whero523-22',          level: 'intermediate' },
+        { name: 'ピーリングジェル（毛穴ケア・週1）',        url: 'https://www.amazon.co.jp/s?k=ピーリングジェル+メンズ&tag=whero523-22',         level: 'intermediate' },
+        { name: 'ドクターシーラボ VC100 美容液化粧水',     url: 'https://www.amazon.co.jp/s?k=ドクターシーラボ+VC100+化粧水&tag=whero523-22',   level: 'advanced' },
       ],
       eyebrow: [
-        { name: 'スクリューブラシ（眉整え）',          url: 'https://www.amazon.co.jp/s?k=スクリューブラシ+眉&tag=whero523-22' },
-        { name: '眉用ハサミ（ステンレス）',            url: 'https://www.amazon.co.jp/s?k=眉用はさみ+ステンレス&tag=whero523-22' },
+        { name: 'スクリューブラシ（眉整え・使い捨て）',    url: 'https://www.amazon.co.jp/s?k=スクリューブラシ+眉&tag=whero523-22',            level: 'beginner' },
+        { name: '眉用ハサミ（ステンレス）',                url: 'https://www.amazon.co.jp/s?k=眉用はさみ+ステンレス&tag=whero523-22',           level: 'beginner' },
+        { name: 'KATE デザイニングアイブロウ3D',           url: 'https://www.amazon.co.jp/s?k=ケイト+デザイニングアイブロウ3D&tag=whero523-22', level: 'intermediate' },
+        { name: 'UZU 眉ペンシル極細（メンズ自然仕上げ）',  url: 'https://www.amazon.co.jp/s?k=UZU+眉ペンシル+メンズ&tag=whero523-22',          level: 'advanced' },
       ],
-      hair:    [
-        { name: 'BOTANIST ボタニカルシャンプー',       url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=whero523-22' },
-        { name: 'ウーノ スーパーハード（スタイリング）', url: 'https://www.amazon.co.jp/s?k=ウーノ+スーパーハード&tag=whero523-22' },
-        { name: '洗い流さないトリートメント',           url: 'https://www.amazon.co.jp/s?k=洗い流さないトリートメント+メンズ&tag=whero523-22' },
+      hair: [
+        { name: 'BOTANIST ボタニカルシャンプー',           url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=whero523-22',      level: 'beginner' },
+        { name: 'ウーノ スーパーハード（スタイリング）',   url: 'https://www.amazon.co.jp/s?k=ウーノ+スーパーハード&tag=whero523-22',            level: 'beginner' },
+        { name: '洗い流さないトリートメント（アウトバス）', url: 'https://www.amazon.co.jp/s?k=洗い流さないトリートメント+メンズ&tag=whero523-22', level: 'intermediate' },
+        { name: 'ルシードエル バームワックス（ナチュラル）', url: 'https://www.amazon.co.jp/s?k=ルシードエル+バームワックス&tag=whero523-22',   level: 'intermediate' },
+        { name: 'KAMIKA 黒髪クリームシャンプー（オーガニック）', url: 'https://www.amazon.co.jp/s?k=KAMIKA+クリームシャンプー&tag=whero523-22', level: 'advanced' },
       ],
-      body:    [
-        { name: 'ザバス ホエイプロテイン',             url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=whero523-22' },
-        { name: 'タニタ 体組成計',                    url: 'https://www.amazon.co.jp/s?k=タニタ+体組成計&tag=whero523-22' },
-        { name: 'トレーニングウェア（メンズ）',         url: 'https://www.amazon.co.jp/s?k=メンズ+トレーニングウェア&tag=whero523-22' },
+      body: [
+        { name: 'トレーニングウェア（メンズ）',            url: 'https://www.amazon.co.jp/s?k=メンズ+トレーニングウェア&tag=whero523-22',       level: 'beginner' },
+        { name: 'ザバス ホエイプロテイン',                 url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=whero523-22',           level: 'intermediate' },
+        { name: 'タニタ 体組成計',                        url: 'https://www.amazon.co.jp/s?k=タニタ+体組成計&tag=whero523-22',                  level: 'intermediate' },
+        { name: 'フォームローラー（筋膜リリース）',         url: 'https://www.amazon.co.jp/s?k=フォームローラー+筋膜リリース&tag=whero523-22',    level: 'intermediate' },
+        { name: 'HMBサプリメント（筋力維持）',             url: 'https://www.amazon.co.jp/s?k=HMB+サプリ+筋トレ&tag=whero523-22',              level: 'advanced' },
       ],
-      teeth:   [
-        { name: 'アパガード プレミオ（歯磨き粉）',      url: 'https://www.amazon.co.jp/s?k=アパガード+プレミオ&tag=whero523-22' },
-        { name: 'GUM デンタルフロス',                 url: 'https://www.amazon.co.jp/s?k=GUM+デンタルフロス&tag=whero523-22' },
-        { name: 'オーラルB 電動歯ブラシ',             url: 'https://www.amazon.co.jp/s?k=オーラルB+電動歯ブラシ&tag=whero523-22' },
+      teeth: [
+        { name: 'GUM デンタルフロス',                     url: 'https://www.amazon.co.jp/s?k=GUM+デンタルフロス&tag=whero523-22',              level: 'beginner' },
+        { name: 'チェックアップ スタンダード（歯磨き粉）',  url: 'https://www.amazon.co.jp/s?k=チェックアップ+歯磨き粉&tag=whero523-22',         level: 'beginner' },
+        { name: 'アパガード プレミオ（ホワイトニング）',   url: 'https://www.amazon.co.jp/s?k=アパガード+プレミオ&tag=whero523-22',              level: 'intermediate' },
+        { name: 'オーラルB 電動歯ブラシ',                 url: 'https://www.amazon.co.jp/s?k=オーラルB+電動歯ブラシ&tag=whero523-22',           level: 'intermediate' },
+        { name: 'フィリップス ソニッケアー（上位機種）',   url: 'https://www.amazon.co.jp/s?k=ソニッケアー+電動歯ブラシ&tag=whero523-22',       level: 'advanced' },
       ],
-      nail:    [
-        { name: 'OPI プロスパ ネイルオイル',           url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=whero523-22' },
-        { name: 'ニベア ハンドクリーム',               url: 'https://www.amazon.co.jp/s?k=ニベア+ハンドクリーム&tag=whero523-22' },
-        { name: 'ガラス製爪やすり',                   url: 'https://www.amazon.co.jp/s?k=ガラス製+爪やすり&tag=whero523-22' },
+      nail: [
+        { name: 'ニベア リッチケア ハンドクリーム',        url: 'https://www.amazon.co.jp/s?k=ニベア+ハンドクリーム&tag=whero523-22',           level: 'beginner' },
+        { name: 'ガラス製爪やすり（水洗いOK）',            url: 'https://www.amazon.co.jp/s?k=ガラス製+爪やすり&tag=whero523-22',               level: 'beginner' },
+        { name: 'OPI プロスパ ネイルオイル',               url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=whero523-22',                level: 'intermediate' },
+        { name: 'ロレアル エクステンション ネイルコート',  url: 'https://www.amazon.co.jp/s?k=ロレアル+ネイルコート+強化&tag=whero523-22',      level: 'advanced' },
       ],
       fashion: [
-        { name: 'ステンカラーコート（ベーシック）',     url: 'https://www.amazon.co.jp/s?k=ステンカラーコート+メンズ&tag=whero523-22' },
-        { name: '白シャツ（ジャストサイズ）',           url: 'https://www.amazon.co.jp/s?k=白シャツ+メンズ+スリム&tag=whero523-22' },
+        { name: '白シャツ（メンズ スリムフィット）',       url: 'https://www.amazon.co.jp/s?k=白シャツ+メンズ+スリム&tag=whero523-22',          level: 'beginner' },
+        { name: 'ステンカラーコート（ベーシック）',         url: 'https://www.amazon.co.jp/s?k=ステンカラーコート+メンズ&tag=whero523-22',       level: 'intermediate' },
+        { name: 'スエードチェルシーブーツ（メンズ）',      url: 'https://www.amazon.co.jp/s?k=チェルシーブーツ+メンズ+スエード&tag=whero523-22', level: 'advanced' },
       ],
     };
 
-    function buildProductCarousel(axes) {
+    // stepDone総数でレベル判定: 0-2→入門 / 3-8→習慣化中 / 9+→こだわり派
+    const LEVEL_RANK  = { beginner: 0, intermediate: 1, advanced: 2 };
+    const LEVEL_LABEL = { beginner: '入門', intermediate: '習慣化中', advanced: 'こだわり派' };
+    function getUserLevel() {
+      try {
+        const obj = JSON.parse(localStorage.getItem('fineme:step:done') || '{}');
+        const n = Object.values(obj).filter(Boolean).length;
+        return n >= 9 ? 'advanced' : n >= 3 ? 'intermediate' : 'beginner';
+      } catch { return 'beginner'; }
+    }
+
+    function buildProductCarousel(axes, userLevel) {
+      const maxRank = LEVEL_RANK[userLevel || 'beginner'];
+      const axisLabel = { body:'体型', skin:'肌', eyebrow:'眉', hair:'髪', teeth:'歯', nail:'爪', fashion:'服' };
       const cards = axes
         .filter(id => AXIS_PRODUCTS[id])
-        .flatMap(id => {
-          const def = { body:'体型', skin:'肌', eyebrow:'眉', hair:'髪', teeth:'歯', nail:'爪', fashion:'服' }[id] || id;
-          return AXIS_PRODUCTS[id].map(p =>
-            `<a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" class="product-card">
-              <span class="product-card-axis">${esc(def)}</span>
-              <span class="product-card-name">${esc(p.name)}</span>
-              <span class="product-card-cta">Amazonで見る →</span>
-            </a>`
-          );
-        }).join('');
+        .flatMap(id =>
+          AXIS_PRODUCTS[id]
+            .filter(p => (LEVEL_RANK[p.level || 'beginner']) <= maxRank)
+            .map(p =>
+              `<a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" class="product-card">
+                <span class="product-card-axis">${esc(axisLabel[id] || id)}</span>
+                <span class="product-card-name">${esc(p.name)}</span>
+                <span class="product-card-cta">Amazonで見る →</span>
+              </a>`
+            )
+        ).join('');
       if (!cards) return '';
+      const lvLabel = LEVEL_LABEL[userLevel || 'beginner'];
       return `
         <div class="product-carousel-section">
-          <p class="product-carousel-label">🛒 旅に役立つグッズ</p>
+          <p class="product-carousel-label">🛒 旅に役立つグッズ <span style="font-size:10px;font-weight:600;opacity:0.55;margin-left:6px">${lvLabel}向け</span></p>
           <p class="product-carousel-note">あなたの診断結果に関連するアイテムです（Amazonアフィリエイト）← スワイプで全部見る</p>
           <div class="product-carousel">${cards}</div>
         </div>`;
@@ -754,7 +784,7 @@ export default function DiagnosisResultPage() {
         </div>
       </div>
 
-      ${buildProductCarousel(priorityOrder.filter(id => AXIS_PRODUCTS[id]).slice(0, 5))}
+      ${buildProductCarousel(priorityOrder.filter(id => AXIS_PRODUCTS[id]).slice(0, 5), getUserLevel())}
 
       <div id="share-block" style="margin: 0 0 20px; text-align: center;"></div>
 

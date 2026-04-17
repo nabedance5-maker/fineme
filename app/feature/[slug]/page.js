@@ -42,6 +42,18 @@ const ARTICLE_TO_PRODUCTS = {
     { name: 'OPI プロスパ ネイルオイル', url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=whero523-22' },
     { name: 'ニベア ハンドクリーム', url: 'https://www.amazon.co.jp/s?k=ニベア+ハンドクリーム&tag=whero523-22' },
   ],
+  'メイク': [
+    { name: 'UNO フェイスカラークリエイター（BBクリーム）', url: 'https://www.amazon.co.jp/s?k=ウーノ+フェイスカラークリエイター&tag=whero523-22' },
+    { name: 'ちふれ BBクリーム（男性も使いやすいプチプラ）', url: 'https://www.amazon.co.jp/s?k=ちふれ+BBクリーム&tag=whero523-22' },
+    { name: 'KATE デザイニングアイブロウ3D（眉ペン）', url: 'https://www.amazon.co.jp/s?k=ケイト+デザイニングアイブロウ3D&tag=whero523-22' },
+    { name: 'コンシーラー（CEZANNE メンズ向け）', url: 'https://www.amazon.co.jp/s?k=セザンヌ+コンシーラー+メンズ&tag=whero523-22' },
+  ],
+  '日常習慣': [
+    { name: '肌ラボ 極潤 洗顔フォーム', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+洗顔&tag=whero523-22' },
+    { name: 'ビオレUV アクアリッチ（日焼け止め）', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=whero523-22' },
+    { name: 'BOTANIST ボタニカルシャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=whero523-22' },
+    { name: 'ガラス製爪やすり（水洗いOK）', url: 'https://www.amazon.co.jp/s?k=ガラス製+爪やすり&tag=whero523-22' },
+  ],
 };
 
 async function getRelatedProviders(category) {

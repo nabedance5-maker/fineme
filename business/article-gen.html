@@ -87,7 +87,7 @@
     <span>作成進捗</span>
     <div style="display:flex;align-items:center;gap:12px;">
       <button class="toggle-done-btn" onclick="toggleHideDone()" id="hide-btn">完了済みを隠す</button>
-      <strong id="progress-text">0 / 301 本</strong>
+      <strong id="progress-text">0 / 310 本</strong>
     </div>
   </div>
   <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
@@ -371,6 +371,65 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════
+     商品選定基準リファレンス（管理者向け）
+═══════════════════════════════════════════════ -->
+<div style="max-width:900px;margin:0 auto 40px;padding:0 24px;">
+  <details style="background:rgba(201,168,76,0.04);border:1px solid rgba(201,168,76,0.2);border-radius:14px;overflow:hidden;">
+    <summary style="padding:16px 20px;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#c9a84c;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;">
+      📦 商品選定基準リファレンス（クリックで展開）
+    </summary>
+    <div style="padding:0 20px 20px;font-size:12px;line-height:1.9;color:rgba(240,236,228,0.75);">
+      <p style="margin:0 0 14px;font-size:13px;color:rgba(201,168,76,0.85);font-weight:700;">▌選定の大前提</p>
+      <ul style="margin:0 0 18px;padding-left:18px;">
+        <li>「変容の旅を成功させるために必要なもの」であること</li>
+        <li>男性が「女性向けっぽい」と感じずに手に取れるもの</li>
+        <li>Amazonで検索すれば上位に出る（入手のしやすさ）</li>
+        <li>商品を使う意義がFinemeの思想（自信・変容）と矛盾しないこと</li>
+      </ul>
+
+      <p style="margin:0 0 10px;font-size:13px;color:rgba(201,168,76,0.85);font-weight:700;">▌3段階レベル基準</p>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:18px;">
+        <thead>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+            <th style="text-align:left;padding:6px 8px;color:#c9a84c;font-size:11px;white-space:nowrap;">レベル</th>
+            <th style="text-align:left;padding:6px 8px;color:#c9a84c;font-size:11px;">対象</th>
+            <th style="text-align:left;padding:6px 8px;color:#c9a84c;font-size:11px;">選定基準</th>
+            <th style="text-align:left;padding:6px 8px;color:#c9a84c;font-size:11px;">stepDone数</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+            <td style="padding:8px;white-space:nowrap;"><span style="background:rgba(99,179,237,0.12);color:#63b3ed;border:1px solid rgba(99,179,237,0.2);border-radius:4px;padding:2px 8px;font-size:10px;font-weight:800;">入門</span></td>
+            <td style="padding:8px;">完全初心者</td>
+            <td style="padding:8px;color:rgba(255,255,255,0.6);">コンビニ・薬局で買える / 男性向けパッケージ / 1アイテムで完結 / 失敗がない / 500〜1,500円程度</td>
+            <td style="padding:8px;color:rgba(201,168,76,0.7);">0〜2</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+            <td style="padding:8px;white-space:nowrap;"><span style="background:rgba(251,191,36,0.1);color:#fbbf24;border:1px solid rgba(251,191,36,0.2);border-radius:4px;padding:2px 8px;font-size:10px;font-weight:800;">習慣化中</span></td>
+            <td style="padding:8px;">1〜3ヶ月継続</td>
+            <td style="padding:8px;color:rgba(255,255,255,0.6);">メンズコスメライン / 複数アイテム組み合わせ / 効果実感重視 / 1,500〜5,000円程度</td>
+            <td style="padding:8px;color:rgba(201,168,76,0.7);">3〜8</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;white-space:nowrap;"><span style="background:rgba(52,211,153,0.1);color:#34d399;border:1px solid rgba(52,211,153,0.2);border-radius:4px;padding:2px 8px;font-size:10px;font-weight:800;">こだわり派</span></td>
+            <td style="padding:8px;">半年以上 or 探求型</td>
+            <td style="padding:8px;color:rgba(255,255,255,0.6);">オーガニック・無添加 / 肌負担最小 / セミデパコス・高機能 / 成分・原料こだわり / 5,000円〜</td>
+            <td style="padding:8px;color:rgba(201,168,76,0.7);">9+</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p style="margin:0 0 10px;font-size:13px;color:rgba(201,168,76,0.85);font-weight:700;">▌記事プロンプトでの使い方</p>
+      <p style="margin:0;color:rgba(255,255,255,0.55);">
+        習慣系記事（grid-21〜29）のプロンプトには「入門者向けにはこの種類を・慣れてきたらこれを」という段階的な商品紹介を必ず含める。
+        ブランド名は一般名称（例：「BBクリーム」「ヘアオイル」）と具体名（例：「ウーノ フェイスカラークリエイター」）の両方を使い、
+        読者が自分のレベルに合わせて選べるよう書く。
+      </p>
+    </div>
+  </details>
+</div>
+
+<!-- ═══════════════════════════════════════════════
      習慣・日常ルーティン系（grid-21〜28）
      サービスへの来店より「今日から家で実践できる」を軸にした習慣形成KW群
      Amazon商品アフィリエイト × Navi/診断への自然な誘導
@@ -454,6 +513,16 @@
     <div class="dashed"></div>
   </div>
   <div class="article-grid" id="grid-28"></div>
+</div>
+
+<!-- メイク習慣 -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>💄 メイク習慣 — BBクリーム・コンシーラー・眉ペン…自宅で毎日できるメンズメイク</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-29"></div>
 </div>
 
 <div class="toast" id="toast">プロンプトをコピーしました ✓</div>
@@ -818,6 +887,17 @@ const ARTICLES = [
   { id:309, grid:28, cat:'日常習慣', type:'habit', title:'男性の靴の手入れ習慣：清潔感は足元から始まるという本当の理由', slug:'mens-shoes-care-habit-cleanliness', searchHref:'/search?category=fashion', keyword:'男性 靴 手入れ 習慣 清潔感 磨き方' },
   { id:310, grid:28, cat:'日常習慣', type:'habit', title:'男性の服の洗濯頻度と清潔感の関係：思っているより汚れている現実', slug:'mens-laundry-frequency-cleanliness', searchHref:'/search?category=fashion', keyword:'男性 服 洗濯 頻度 清潔感 汚れ 習慣' },
   { id:311, grid:28, cat:'日常習慣', type:'habit', title:'同じ服でも清潔感が出る男性の着こなし習慣5選：素材・サイズ・手入れの基本', slug:'mens-same-clothes-better-appearance', searchHref:'/search?category=fashion', keyword:'男性 同じ服 清潔感 着こなし 習慣 サイズ 素材' },
+
+  // メイク習慣 (grid-29)
+  { id:312, grid:29, cat:'日常習慣', type:'habit', title:'男性がBBクリームを毎日使うための塗り方・量・選び方完全ガイド', slug:'mens-bb-cream-daily-how-to', searchHref:'/diagnosis', keyword:'男性 BBクリーム 毎日 塗り方 量 選び方' },
+  { id:313, grid:29, cat:'日常習慣', type:'habit', title:'男性のコンシーラーの使い方：ニキビ跡・クマ・赤みを自然にカバーする方法', slug:'mens-concealer-how-to-natural', searchHref:'/diagnosis', keyword:'男性 コンシーラー 使い方 ニキビ跡 クマ バレない' },
+  { id:314, grid:29, cat:'日常習慣', type:'habit', title:'メンズメイク5分ルーティン：BBクリーム・眉・リップの毎日の順番', slug:'mens-makeup-5min-daily-routine', searchHref:'/diagnosis', keyword:'メンズメイク 毎日 ルーティン 順番 5分 習慣' },
+  { id:315, grid:29, cat:'日常習慣', type:'habit', title:'男性のBBクリームの選び方：色・カバー力・テカリ防止で失敗しない基準', slug:'mens-bb-cream-selection-guide', searchHref:'/diagnosis', keyword:'男性 BBクリーム 選び方 色 カバー力 テカリ 種類' },
+  { id:316, grid:29, cat:'日常習慣', type:'habit', title:'眉ペンシル初心者の男性が自然な眉を描くための3ステップ', slug:'mens-eyebrow-pencil-beginner-3steps', searchHref:'/diagnosis', keyword:'男性 眉ペンシル 使い方 初心者 自然 書き方' },
+  { id:317, grid:29, cat:'日常習慣', type:'habit', title:'男性の眉マスカラの使い方：眉を整えながら印象を上げる正しい使い方', slug:'mens-eyebrow-mascara-guide', searchHref:'/diagnosis', keyword:'男性 眉マスカラ 使い方 印象 初心者 選び方' },
+  { id:318, grid:29, cat:'日常習慣', type:'habit', title:'メンズメイクのクレンジングは必要か？毎日のオフ方法と肌への影響', slug:'mens-makeup-cleansing-necessity', searchHref:'/diagnosis', keyword:'メンズメイク クレンジング 必要 毎日 方法 肌 影響' },
+  { id:319, grid:29, cat:'日常習慣', type:'habit', title:'男性がリップケアを毎日の習慣にする方法：荒れ・乾燥・くすみを防ぐ', slug:'mens-lip-care-daily-habit', searchHref:'/diagnosis', keyword:'男性 リップケア 毎日 習慣 荒れ 乾燥 くすみ リップクリーム' },
+  { id:320, grid:29, cat:'日常習慣', type:'habit', title:'メンズメイクを3ヶ月続けた男性が感じた外見・印象・自信の変化', slug:'mens-makeup-3month-habit-changes', searchHref:'/mypage/navi', keyword:'メンズメイク 続けた 変化 習慣化 外見 印象 自信' },
 ];
 
 const CAT_CLASS = { '清潔感': 'cat-clean', '写真撮影': 'cat-photo', '変容の思想': 'cat-idea', '日常習慣': 'cat-habit' };
@@ -1180,7 +1260,7 @@ function showToast() {
 }
 
 // レンダリング
-[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28].forEach(g => {
+[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29].forEach(g => {
   renderGrid(`grid-${g}`, ARTICLES.filter(a => a.grid === g));
 });
 applyDoneState();
