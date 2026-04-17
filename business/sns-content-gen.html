@@ -306,7 +306,7 @@ URL     ：https://www.fineme.me/
 
   <!-- ====== 掲載者獲得DM ====== -->
   <div id="panel-dm" class="panel">
-    <div class="section-label">掲載者獲得 DMジェネレーター</div>
+    <div class="section-label">DM ジェネレーター</div>
 
     <!-- Instagram BAN注意 -->
     <div style="background:rgba(255,180,0,0.07);border:1px solid rgba(255,180,0,0.25);border-radius:10px;padding:14px 18px;margin-bottom:24px;font-size:12px;color:rgba(255,210,80,0.85);line-height:1.8;">
@@ -320,6 +320,17 @@ URL     ：https://www.fineme.me/
         <span class="card-title" style="margin:0">相手のプロフィールからDMを自動生成</span>
       </div>
       <p class="tip" style="margin-bottom:16px">相手のInstagramプロフィール文・投稿内容を貼り付けると、その人に合わせたDMをClaudeが生成します。</p>
+
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">DM の目的</label>
+        <select id="dm-ai-purpose" onchange="updatePurposeNote()" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:10px 12px;outline:none;">
+          <option value="partner">🤝 創業パートナー募集（永年無料・一緒に作る）</option>
+          <option value="provider">📋 通常掲載者獲得（月¥5,000・紹介報酬あり）</option>
+        </select>
+        <p id="dm-purpose-note" style="font-size:11px;color:rgba(100,200,255,0.7);margin-top:6px;line-height:1.6;">
+          創業パートナー：掲載料永年無料。「変容の旅のインフラを一緒に作る仲間」として声をかける。関係性ファーストのDM。
+        </p>
+      </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
         <div>
@@ -372,6 +383,14 @@ URL     ：https://www.fineme.me/
   <div id="panel-dm-bulk" class="panel">
     <div class="section-label">📋 DM一括生成（複数候補者）</div>
     <p class="intro">複数の候補者にまとめてDMを生成します。APIキーは「AI生成」タブで保存してください。</p>
+
+    <div style="margin-bottom:16px">
+      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px">DM の目的（全候補者共通）</label>
+      <select id="bulk-purpose" style="width:100%;max-width:420px;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:10px 12px;outline:none;">
+        <option value="partner">🤝 創業パートナー募集（永年無料・一緒に作る）</option>
+        <option value="provider">📋 通常掲載者獲得（月¥5,000・紹介報酬あり）</option>
+      </select>
+    </div>
 
     <div class="fullwidth-card" style="margin-bottom:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
@@ -1114,10 +1133,86 @@ const DM_CATEGORY_LABELS = {
   other: 'その他（外見磨き系）',
 };
 
+function updatePurposeNote() {
+  const purpose = document.getElementById('dm-ai-purpose').value;
+  const note = document.getElementById('dm-purpose-note');
+  if (purpose === 'partner') {
+    note.textContent = '創業パートナー：掲載料永年無料。「変容の旅のインフラを一緒に作る仲間」として声をかける。関係性ファーストのDM。';
+    note.style.color = 'rgba(100,200,255,0.7)';
+  } else {
+    note.textContent = '通常掲載者：月¥5,000の掲載料・紹介報酬制度が条件。診断導線から意欲的な男性ユーザーが届くことをメインフックにする。';
+    note.style.color = 'rgba(160,220,120,0.7)';
+  }
+}
+
+function buildDMPrompt(purpose, categoryLabel, name, profile) {
+  if (purpose === 'partner') {
+    return `あなたは男性向け外見変容ポータル「Fineme（ファインミ）」の代表・渡邉英雄です。
+以下の方に創業パートナーのお誘いDMをInstagramで送ります。
+
+【業種】${categoryLabel}
+【名前・店名】${name || '（未入力）'}
+【相手のプロフィール・投稿内容】
+${profile}
+
+Finemeとは：
+- 外見を変えたい男性が自分に合った道筋を見つけられるサービス（予約ポータルではなく「地図と羅針盤」）
+- 診断→マッチング→変容の導線。眉毛サロン・骨格診断・パーソナルジム・スキンケアなど外見改善サービスを紹介
+- 創業パートナー特典：掲載料が永年無料（通常月¥5,000）
+
+生成するDMの構成（この順番・このトーンで300〜350字に収める）：
+1. 「突然のDMすみません🙏」で始める
+2. 相手のプロフィール・投稿から具体的なフレーズや活動テーマを1つ引用し、それを読んで「何を感じたか」を1文で伝える（「〜という言葉/取り組み、〜と感じて、思わずメッセージしました」の形）
+3. 「私は今、外見を変えたい男性が自分に合った道筋を見つけられるサービス・Finemeを立ち上げています。」
+4. サイトで紹介しているサービス例を1〜2個（業種に関連するものを含める）を自然に添える
+5. 「現場でお客様の変化を間近で見ているプロの方と一緒にプロダクトを作っていきたく、創業パートナーとなってくださる方を探していまして、${name || 'こちら'}にお声がけしました。」
+6. 「創業パートナーは掲載料が永年無料です。」（さらっと1文。押しつけない）
+7. 「もし興味持っていただけそうでしたら、一言だけでも構いませんのでお返事いただけますと嬉しいです！」
+
+制約：
+- 署名は不要
+- 売り込み感・事業説明の羅列にならない。感情的な共鳴と関係性の誘いが主軸
+- ビジネスメールのような硬い文体は禁止。Instagram DMらしい自然な口語で
+
+DMの文章だけ出力してください（前置き・説明不要）。`;
+  } else {
+    return `あなたは男性向け外見変容ポータル「Fineme（ファインミ）」の代表・渡邉英雄です。
+以下の事業者に掲載のご案内DMをInstagramで送ります。
+
+【業種】${categoryLabel}
+【名前・店名】${name || '（未入力）'}
+【相手のプロフィール・投稿内容】
+${profile}
+
+Finemeとは：
+- 恋愛・外見に悩む男性が診断を受けて最適なサービスに出会えるポータル
+- 「診断→個別マッチング→来店」という導線。既に外見を変えたい意欲がある男性ユーザーが届く
+- 掲載料：月¥5,000
+- 紹介報酬制度：自分が紹介した掲載者が在籍し続ける限り毎月¥500（10社紹介で掲載費が実質ゼロ）
+
+生成するDMの構成（この順番・このトーンで280〜320字に収める）：
+1. 「突然のDMすみません🙏」で始める
+2. 相手のプロフィール・投稿から具体的なフレーズや実績を1つ引用し、共鳴した理由を1文で（何を見たかが伝わること。「拝見しました」だけは禁止）
+3. Finemeの簡潔な説明（1〜2文。「診断で意欲の高い男性が届く仕組み」がポイント）
+4. ${categoryLabel}の方が掲載に向いている理由を1文（汎用的にならず業種・投稿内容に寄せる）
+5. 「掲載料は月¥5,000で、ご紹介いただくと紹介報酬が毎月¥500入る制度もあります。」
+6. 「詳細はこちらをご覧ください：https://www.fineme.me/provider/join」
+7. 「一言だけでも構いませんのでお返事いただけますと嬉しいです！」
+
+制約：
+- 署名は不要
+- 営業感よりも「こういう仕組みがあります」という紹介トーン
+- Instagram DMらしい自然な口語で
+
+DMの文章だけ出力してください（前置き・説明不要）。`;
+  }
+}
+
 async function generateDM() {
   const apiKey = localStorage.getItem('fineme:anthropic:key');
   if (!apiKey) { alert('APIキーを入力して保存してください（AI生成タブ）'); return; }
 
+  const purpose = document.getElementById('dm-ai-purpose').value;
   const category = document.getElementById('dm-ai-category').value;
   const name = document.getElementById('dm-ai-name').value.trim();
   const profile = document.getElementById('dm-ai-profile').value.trim();
@@ -1129,31 +1224,7 @@ async function generateDM() {
   btn.disabled = true;
 
   const categoryLabel = DM_CATEGORY_LABELS[category] || category;
-
-  const prompt = `あなたは男性向け外見変容ポータル「Fineme（ファインミ）」の代表・渡邉英雄です。
-以下の事業者にInstagramのDMを送ります。
-
-【業種】${categoryLabel}
-【名前・店名】${name || '（未入力）'}
-【相手のプロフィール・投稿内容】
-${profile}
-
-Finemeについて：
-- 恋愛・外見に悩む男性が診断を受けて最適なサービスに出会えるポータル
-- 予約サイトではなく「地図と羅針盤」を提供するサービス（診断→マッチング→変容のインフラ）
-- 掲載料：月¥5,000
-- 紹介報酬制度：自分が紹介した掲載者が在籍し続ける限り毎月¥500が入る（10社紹介で掲載費が実質ゼロ）
-
-DM生成のルール：
-- 300字以内
-- 相手のプロフィールや投稿の具体的な内容に1箇所触れる（「拝見しました」で終わらず何を見たかを言う）
-- メインフックは「この診断導線から男性ユーザーが届く」こと
-- サブフックとして紹介報酬制度に軽く触れる
-- 押しつけがましくない。興味を持ってもらうことが目的
-- 末尾に掲載詳細URL：https://www.fineme.me/provider/join
-- 署名：渡邉 英雄
-
-DMの文章だけ出力してください（前置き・説明不要）。`;
+  const prompt = buildDMPrompt(purpose, categoryLabel, name, profile);
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1481,35 +1552,14 @@ async function generateAllDMs() {
 
   const results = [];
 
+  const bulkPurpose = document.getElementById('bulk-purpose').value;
+
   for (let i = 0; i < rows.length; i++) {
     const { name, category, profile } = rows[i];
     progress.textContent = `${i + 1} / ${rows.length} 件処理中…`;
 
     const categoryLabel = DM_CATEGORY_LABELS[category] || category;
-    const prompt = `あなたは男性向け外見変容ポータル「Fineme（ファインミ）」の代表・渡邉英雄です。
-以下の事業者にInstagramのDMを送ります。
-
-【業種】${categoryLabel}
-【名前・店名】${name || '（未入力）'}
-【相手のプロフィール・投稿内容】
-${profile}
-
-Finemeについて：
-- 恋愛・外見に悩む男性が診断を受けて最適なサービスに出会えるポータル
-- 予約サイトではなく「地図と羅針盤」を提供するサービス（診断→マッチング→変容のインフラ）
-- 掲載料：月¥5,000
-- 紹介報酬制度：自分が紹介した掲載者が在籍し続ける限り毎月¥500が入る（10社紹介で掲載費が実質ゼロ）
-
-DM生成のルール：
-- 300字以内
-- 相手のプロフィールや投稿の具体的な内容に1箇所触れる（「拝見しました」で終わらず何を見たかを言う）
-- メインフックは「この診断導線から男性ユーザーが届く」こと
-- サブフックとして紹介報酬制度に軽く触れる
-- 押しつけがましくない。興味を持ってもらうことが目的
-- 末尾に掲載詳細URL：https://www.fineme.me/provider/join
-- 署名：渡邉 英雄
-
-DMの文章だけ出力してください（前置き・説明不要）。`;
+    const prompt = buildDMPrompt(bulkPurpose, categoryLabel, name, profile);
 
     try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
