@@ -15,6 +15,35 @@ const ARTICLE_TO_SERVICE_CAT = {
   '変容の思想': ['consulting', 'diagnosis', 'gym', 'fashion'],
 };
 
+// 記事カテゴリ → 商品サジェスト（Amazonアフィリエイト）
+const ARTICLE_TO_PRODUCTS = {
+  '清潔感': [
+    { name: '肌ラボ 極潤 化粧水', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=fineme-22' },
+    { name: 'ビオレUV 日焼け止め', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=fineme-22' },
+    { name: 'スクリューブラシ（眉整え）', url: 'https://www.amazon.co.jp/s?k=スクリューブラシ+眉&tag=fineme-22' },
+    { name: 'BOTANIST シャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=fineme-22' },
+  ],
+  '垢抜け': [
+    { name: 'ウーノ スーパーハード（スタイリング）', url: 'https://www.amazon.co.jp/s?k=ウーノ+スーパーハード&tag=fineme-22' },
+    { name: 'ガラス製爪やすり', url: 'https://www.amazon.co.jp/s?k=ガラス製+爪やすり&tag=fineme-22' },
+    { name: 'アウトバストリートメント', url: 'https://www.amazon.co.jp/s?k=洗い流さないトリートメント+メンズ&tag=fineme-22' },
+  ],
+  '体型・筋トレ': [
+    { name: 'ザバス ホエイプロテイン', url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=fineme-22' },
+    { name: 'タニタ 体組成計', url: 'https://www.amazon.co.jp/s?k=タニタ+体組成計&tag=fineme-22' },
+    { name: 'トレーニングウェア（メンズ）', url: 'https://www.amazon.co.jp/s?k=メンズ+トレーニングウェア&tag=fineme-22' },
+  ],
+  '歯・口元': [
+    { name: 'アパガード プレミオ（ホワイトニング歯磨き粉）', url: 'https://www.amazon.co.jp/s?k=アパガード+プレミオ&tag=fineme-22' },
+    { name: 'GUM デンタルフロス', url: 'https://www.amazon.co.jp/s?k=GUM+デンタルフロス&tag=fineme-22' },
+    { name: 'オーラルB 電動歯ブラシ', url: 'https://www.amazon.co.jp/s?k=オーラルB+電動歯ブラシ&tag=fineme-22' },
+  ],
+  '爪・ネイル': [
+    { name: 'OPI プロスパ ネイルオイル', url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=fineme-22' },
+    { name: 'ニベア ハンドクリーム', url: 'https://www.amazon.co.jp/s?k=ニベア+ハンドクリーム&tag=fineme-22' },
+  ],
+};
+
 async function getRelatedProviders(category) {
   const cats = ARTICLE_TO_SERVICE_CAT[category] || [];
   if (!cats.length) return [];
@@ -216,6 +245,47 @@ export default async function ArticlePage({ params }) {
                 providers={relatedProviders}
                 firstCat={ARTICLE_TO_SERVICE_CAT[article.category]?.[0] || ''}
               />
+            )}
+
+            {/* ── 旅に役立つグッズ ── */}
+            {ARTICLE_TO_PRODUCTS[article.category]?.length > 0 && (
+              <div style={{
+                margin: '40px 0 0',
+                padding: '22px 24px',
+                background: 'rgba(16,185,129,0.04)',
+                border: '1px solid rgba(16,185,129,0.18)',
+                borderRadius: '14px',
+              }}>
+                <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(16,185,129,0.6)', margin: '0 0 12px' }}>
+                  🛒 旅に役立つグッズ
+                </p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.45)', margin: '0 0 14px', lineHeight: 1.6 }}>
+                  この記事のテーマに関連するアイテムです（Amazonアフィリエイト）
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {ARTICLE_TO_PRODUCTS[article.category].map((prod, i) => (
+                    <a
+                      key={i}
+                      href={prod.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '5px',
+                        fontSize: '12px', padding: '6px 12px',
+                        background: 'rgba(16,185,129,0.07)',
+                        border: '1px solid rgba(16,185,129,0.22)',
+                        borderRadius: '8px',
+                        color: 'rgba(200,230,215,0.85)',
+                        textDecoration: 'none',
+                        fontFamily: 'var(--font-sans)',
+                        transition: 'all .15s',
+                      }}
+                    >
+                      {prod.name} →
+                    </a>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 
