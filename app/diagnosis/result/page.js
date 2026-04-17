@@ -152,11 +152,82 @@ export default function DiagnosisResultPage() {
       .v-route { display: flex; flex-direction: column; align-items: center; height: 28px; margin: -4px auto 0; width: 16px; }
       .v-route-line { flex: 1; width: 1px; background: repeating-linear-gradient(to bottom, rgba(201,168,76,0.55) 0, rgba(201,168,76,0.55) 4px, transparent 4px, transparent 9px); }
       .v-route-dot { width: 7px; height: 7px; background: rgba(201,168,76,0.7); border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(201,168,76,0.4); }
+
+      /* ── 商品カルーセル ── */
+      .product-carousel-section { margin: 28px 0; }
+      .product-carousel-label { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(16,185,129,0.65); margin: 0 0 6px; display: flex; align-items: center; gap: 6px; }
+      .product-carousel-note { font-size: 11px; color: rgba(232,228,220,0.35); margin: 0 0 12px; line-height: 1.5; }
+      .product-carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; scrollbar-width: none; -ms-overflow-style: none; }
+      .product-carousel::-webkit-scrollbar { display: none; }
+      .product-card { flex-shrink: 0; width: 160px; scroll-snap-align: start; background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.18); border-radius: 12px; padding: 14px 12px; display: flex; flex-direction: column; gap: 8px; transition: border-color .15s; text-decoration: none; }
+      .product-card:hover { border-color: rgba(16,185,129,0.45); }
+      .product-card-axis { font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(16,185,129,0.55); }
+      .product-card-name { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.85); line-height: 1.45; flex: 1; }
+      .product-card-cta { font-size: 11px; font-weight: 700; color: rgba(16,185,129,0.75); display: flex; align-items: center; gap: 3px; }
     `;
     document.head.appendChild(style);
 
     // ─── ユーティリティ ───
     function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    // ─── 軸別おすすめ商品（Amazonアフィリエイト）───
+    const AXIS_PRODUCTS = {
+      skin:    [
+        { name: '肌ラボ 極潤 洗顔フォーム',          url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+洗顔&tag=fineme-22' },
+        { name: '肌ラボ 極潤 ヒアルロン液（化粧水）', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=fineme-22' },
+        { name: 'ビオレUV アクアリッチ（日焼け止め）', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=fineme-22' },
+      ],
+      eyebrow: [
+        { name: 'スクリューブラシ（眉整え）',          url: 'https://www.amazon.co.jp/s?k=スクリューブラシ+眉&tag=fineme-22' },
+        { name: '眉用ハサミ（ステンレス）',            url: 'https://www.amazon.co.jp/s?k=眉用はさみ+ステンレス&tag=fineme-22' },
+      ],
+      hair:    [
+        { name: 'BOTANIST ボタニカルシャンプー',       url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=fineme-22' },
+        { name: 'ウーノ スーパーハード（スタイリング）', url: 'https://www.amazon.co.jp/s?k=ウーノ+スーパーハード&tag=fineme-22' },
+        { name: '洗い流さないトリートメント',           url: 'https://www.amazon.co.jp/s?k=洗い流さないトリートメント+メンズ&tag=fineme-22' },
+      ],
+      body:    [
+        { name: 'ザバス ホエイプロテイン',             url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=fineme-22' },
+        { name: 'タニタ 体組成計',                    url: 'https://www.amazon.co.jp/s?k=タニタ+体組成計&tag=fineme-22' },
+        { name: 'トレーニングウェア（メンズ）',         url: 'https://www.amazon.co.jp/s?k=メンズ+トレーニングウェア&tag=fineme-22' },
+      ],
+      teeth:   [
+        { name: 'アパガード プレミオ（歯磨き粉）',      url: 'https://www.amazon.co.jp/s?k=アパガード+プレミオ&tag=fineme-22' },
+        { name: 'GUM デンタルフロス',                 url: 'https://www.amazon.co.jp/s?k=GUM+デンタルフロス&tag=fineme-22' },
+        { name: 'オーラルB 電動歯ブラシ',             url: 'https://www.amazon.co.jp/s?k=オーラルB+電動歯ブラシ&tag=fineme-22' },
+      ],
+      nail:    [
+        { name: 'OPI プロスパ ネイルオイル',           url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=fineme-22' },
+        { name: 'ニベア ハンドクリーム',               url: 'https://www.amazon.co.jp/s?k=ニベア+ハンドクリーム&tag=fineme-22' },
+        { name: 'ガラス製爪やすり',                   url: 'https://www.amazon.co.jp/s?k=ガラス製+爪やすり&tag=fineme-22' },
+      ],
+      fashion: [
+        { name: 'ステンカラーコート（ベーシック）',     url: 'https://www.amazon.co.jp/s?k=ステンカラーコート+メンズ&tag=fineme-22' },
+        { name: '白シャツ（ジャストサイズ）',           url: 'https://www.amazon.co.jp/s?k=白シャツ+メンズ+スリム&tag=fineme-22' },
+      ],
+    };
+
+    function buildProductCarousel(axes) {
+      const cards = axes
+        .filter(id => AXIS_PRODUCTS[id])
+        .flatMap(id => {
+          const def = { body:'体型', skin:'肌', eyebrow:'眉', hair:'髪', teeth:'歯', nail:'爪', fashion:'服' }[id] || id;
+          return AXIS_PRODUCTS[id].map(p =>
+            `<a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" class="product-card">
+              <span class="product-card-axis">${esc(def)}</span>
+              <span class="product-card-name">${esc(p.name)}</span>
+              <span class="product-card-cta">Amazonで見る →</span>
+            </a>`
+          );
+        }).join('');
+      if (!cards) return '';
+      return `
+        <div class="product-carousel-section">
+          <p class="product-carousel-label">🛒 旅に役立つグッズ</p>
+          <p class="product-carousel-note">あなたの診断結果に関連するアイテムです（Amazonアフィリエイト）← スワイプで全部見る</p>
+          <div class="product-carousel">${cards}</div>
+        </div>`;
+    }
 
     // ─── データ読み込み（Supabase優先 → localStorage fallback）───
     ;(async () => {
@@ -682,6 +753,8 @@ export default function DiagnosisResultPage() {
           <span style="font-size:11px;font-weight:800;color:rgba(232,228,220,0.6);background:rgba(232,228,220,0.1);border:1px solid rgba(232,228,220,0.2);border-radius:20px;padding:4px 12px;flex-shrink:0;letter-spacing:.06em">Coming soon</span>
         </div>
       </div>
+
+      ${buildProductCarousel(priorityOrder.filter(id => AXIS_PRODUCTS[id]).slice(0, 5))}
 
       <div id="share-block" style="margin: 0 0 20px; text-align: center;"></div>
 
