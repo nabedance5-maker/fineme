@@ -18,29 +18,29 @@ const ARTICLE_TO_SERVICE_CAT = {
 // 記事カテゴリ → 商品サジェスト（Amazonアフィリエイト）
 const ARTICLE_TO_PRODUCTS = {
   '清潔感': [
-    { name: '肌ラボ 極潤 化粧水', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=fineme-22' },
-    { name: 'ビオレUV 日焼け止め', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=fineme-22' },
-    { name: 'スクリューブラシ（眉整え）', url: 'https://www.amazon.co.jp/s?k=スクリューブラシ+眉&tag=fineme-22' },
-    { name: 'BOTANIST シャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=fineme-22' },
+    { name: '肌ラボ 極潤 化粧水', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=whero523-22' },
+    { name: 'ビオレUV 日焼け止め', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=whero523-22' },
+    { name: 'スクリューブラシ（眉整え）', url: 'https://www.amazon.co.jp/s?k=スクリューブラシ+眉&tag=whero523-22' },
+    { name: 'BOTANIST シャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=whero523-22' },
   ],
   '垢抜け': [
-    { name: 'ウーノ スーパーハード（スタイリング）', url: 'https://www.amazon.co.jp/s?k=ウーノ+スーパーハード&tag=fineme-22' },
-    { name: 'ガラス製爪やすり', url: 'https://www.amazon.co.jp/s?k=ガラス製+爪やすり&tag=fineme-22' },
-    { name: 'アウトバストリートメント', url: 'https://www.amazon.co.jp/s?k=洗い流さないトリートメント+メンズ&tag=fineme-22' },
+    { name: 'ウーノ スーパーハード（スタイリング）', url: 'https://www.amazon.co.jp/s?k=ウーノ+スーパーハード&tag=whero523-22' },
+    { name: 'ガラス製爪やすり', url: 'https://www.amazon.co.jp/s?k=ガラス製+爪やすり&tag=whero523-22' },
+    { name: 'アウトバストリートメント', url: 'https://www.amazon.co.jp/s?k=洗い流さないトリートメント+メンズ&tag=whero523-22' },
   ],
   '体型・筋トレ': [
-    { name: 'ザバス ホエイプロテイン', url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=fineme-22' },
-    { name: 'タニタ 体組成計', url: 'https://www.amazon.co.jp/s?k=タニタ+体組成計&tag=fineme-22' },
-    { name: 'トレーニングウェア（メンズ）', url: 'https://www.amazon.co.jp/s?k=メンズ+トレーニングウェア&tag=fineme-22' },
+    { name: 'ザバス ホエイプロテイン', url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=whero523-22' },
+    { name: 'タニタ 体組成計', url: 'https://www.amazon.co.jp/s?k=タニタ+体組成計&tag=whero523-22' },
+    { name: 'トレーニングウェア（メンズ）', url: 'https://www.amazon.co.jp/s?k=メンズ+トレーニングウェア&tag=whero523-22' },
   ],
   '歯・口元': [
-    { name: 'アパガード プレミオ（ホワイトニング歯磨き粉）', url: 'https://www.amazon.co.jp/s?k=アパガード+プレミオ&tag=fineme-22' },
-    { name: 'GUM デンタルフロス', url: 'https://www.amazon.co.jp/s?k=GUM+デンタルフロス&tag=fineme-22' },
-    { name: 'オーラルB 電動歯ブラシ', url: 'https://www.amazon.co.jp/s?k=オーラルB+電動歯ブラシ&tag=fineme-22' },
+    { name: 'アパガード プレミオ（ホワイトニング歯磨き粉）', url: 'https://www.amazon.co.jp/s?k=アパガード+プレミオ&tag=whero523-22' },
+    { name: 'GUM デンタルフロス', url: 'https://www.amazon.co.jp/s?k=GUM+デンタルフロス&tag=whero523-22' },
+    { name: 'オーラルB 電動歯ブラシ', url: 'https://www.amazon.co.jp/s?k=オーラルB+電動歯ブラシ&tag=whero523-22' },
   ],
   '爪・ネイル': [
-    { name: 'OPI プロスパ ネイルオイル', url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=fineme-22' },
-    { name: 'ニベア ハンドクリーム', url: 'https://www.amazon.co.jp/s?k=ニベア+ハンドクリーム&tag=fineme-22' },
+    { name: 'OPI プロスパ ネイルオイル', url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=whero523-22' },
+    { name: 'ニベア ハンドクリーム', url: 'https://www.amazon.co.jp/s?k=ニベア+ハンドクリーム&tag=whero523-22' },
   ],
 };
 
