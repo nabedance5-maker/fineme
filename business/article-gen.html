@@ -32,6 +32,7 @@
   .cat-clean { background: rgba(99,179,237,0.12); color: #63b3ed; border: 1px solid rgba(99,179,237,0.2); }
   .cat-photo { background: rgba(252,211,77,0.1); color: #fcd34d; border: 1px solid rgba(252,211,77,0.2); }
   .cat-idea  { background: rgba(167,139,250,0.1); color: #a78bfa; border: 1px solid rgba(167,139,250,0.2); }
+  .cat-habit { background: rgba(52,211,153,0.1); color: #34d399; border: 1px solid rgba(52,211,153,0.2); }
   .article-title { font-size: 13px; color: rgba(240,236,228,0.85); flex: 1; line-height: 1.5; }
   .copy-btn { flex-shrink: 0; padding: 6px 14px; background: transparent; border: 1px solid rgba(201,168,76,0.4); border-radius: 6px; color: #c9a84c; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
   .copy-btn:hover { background: rgba(201,168,76,0.12); }
@@ -86,7 +87,7 @@
     <span>作成進捗</span>
     <div style="display:flex;align-items:center;gap:12px;">
       <button class="toggle-done-btn" onclick="toggleHideDone()" id="hide-btn">完了済みを隠す</button>
-      <strong id="progress-text">0 / 251 本</strong>
+      <strong id="progress-text">0 / 301 本</strong>
     </div>
   </div>
   <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
@@ -367,6 +368,92 @@
     <div class="dashed"></div>
   </div>
   <div class="article-grid" id="grid-20"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     習慣・日常ルーティン系（grid-21〜28）
+     サービスへの来店より「今日から家で実践できる」を軸にした習慣形成KW群
+     Amazon商品アフィリエイト × Navi/診断への自然な誘導
+═══════════════════════════════════════════════ -->
+
+<!-- 朝・夜ルーティン -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>🌅 朝・夜ルーティン — 毎日の習慣で外見が変わる</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-21"></div>
+</div>
+
+<!-- 体型・筋トレ習慣 -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>💪 体型・筋トレ習慣 — 姿勢・体型・印象を日常で変える</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-22"></div>
+</div>
+
+<!-- 食事・生活習慣 -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>🥗 食事・生活習慣 — 肌・体型・エネルギーは食べ物でつくる</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-23"></div>
+</div>
+
+<!-- 香り・においケア -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>🌿 香り・においケア — 見えない清潔感の正体</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-24"></div>
+</div>
+
+<!-- 爪・手ケア -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>💅 爪・手ケア — 小さな部位で清潔感が大きく変わる</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-25"></div>
+</div>
+
+<!-- ヘアケア日常 -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>💇 ヘアケア日常 — サロン以外の毎日の髪ケア</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-26"></div>
+</div>
+
+<!-- 歯・口元ケア -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>🦷 歯・口元ケア — 毎日のオーラルケアで印象が変わる</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-27"></div>
+</div>
+
+<!-- 服・ファッション習慣 -->
+<div class="section">
+  <div class="section-label">
+    <div class="line"></div>
+    <span>👔 服・ファッション習慣 — クローゼットから清潔感をつくる</span>
+    <div class="dashed"></div>
+  </div>
+  <div class="article-grid" id="grid-28"></div>
 </div>
 
 <div class="toast" id="toast">プロンプトをコピーしました ✓</div>
@@ -663,9 +750,77 @@ const ARTICLES = [
   { id:259, grid:20, cat:'写真撮影', title:'マッチングアプリのプロフィール写真撮影にかかる費用と相場ガイド', slug:'profile-photo-cost-guide-mens', searchHref:'/search?category=photo', keyword:'マッチングアプリ 写真 プロ撮影 料金 相場 男性' },
   { id:260, grid:20, cat:'写真撮影', title:'マッチング専門の写真撮影サービスを使う前に知っておくべきこと', slug:'matching-photo-service-before-using', searchHref:'/search?category=photo', keyword:'マッチングフォト 評判 男性 効果 使う前に' },
   { id:261, grid:20, cat:'写真撮影', title:'プロフィール写真を撮る前日にやるべき外見準備チェックリスト', slug:'profile-photo-day-before-prep', searchHref:'/search?category=photo', keyword:'プロフィール写真 撮影 前日 外見 準備 チェックリスト' },
+
+  // ─── 習慣・日常ルーティン系 ───────────────────────────────────────
+
+  // 朝・夜ルーティン (grid-21)
+  { id:262, grid:21, cat:'日常習慣', type:'habit', title:'朝5分でできる男性スキンケアルーティン：洗顔・保湿・日焼け止めの完全手順', slug:'mens-morning-skincare-5min-routine', searchHref:'/diagnosis', keyword:'男性 朝のスキンケア 順番 洗顔 保湿' },
+  { id:263, grid:21, cat:'日常習慣', type:'habit', title:'寝る前10分の男性美容ルーティン：夜のケアで翌朝の肌が変わる', slug:'mens-night-beauty-routine-10min', searchHref:'/diagnosis', keyword:'男性 ナイトケア ルーティン 夜 スキンケア' },
+  { id:264, grid:21, cat:'日常習慣', type:'habit', title:'男性の朝洗顔はお湯だけでいい？正しい朝の洗顔習慣ガイド', slug:'mens-morning-face-wash-guide', searchHref:'/diagnosis', keyword:'男性 朝 洗顔 お湯だけ 正しい方法' },
+  { id:265, grid:21, cat:'日常習慣', type:'habit', title:'シャワー中にやるだけで外見が変わる男性の入浴ルーティン7選', slug:'mens-shower-routine-appearance', searchHref:'/diagnosis', keyword:'男性 シャワー 順番 入浴 外見 ルーティン' },
+  { id:266, grid:21, cat:'日常習慣', type:'habit', title:'男性の乾燥肌を治す毎日の保湿ルーティン：使う順番と量のコツ', slug:'mens-dry-skin-moisturize-routine', searchHref:'/diagnosis', keyword:'男性 乾燥肌 保湿 毎日 習慣 ルーティン' },
+  { id:267, grid:21, cat:'日常習慣', type:'habit', title:'朝の身支度を10分で終わらせながら清潔感を上げる男性の時短術', slug:'mens-morning-grooming-10min-shortcut', searchHref:'/diagnosis', keyword:'男性 朝 身支度 時間 清潔感 時短 ルーティン' },
+  { id:268, grid:21, cat:'日常習慣', type:'habit', title:'疲れた夜でも続けられる男性のミニマムナイトケア3ステップ', slug:'mens-minimal-night-care-tired', searchHref:'/diagnosis', keyword:'男性 夜 スキンケア 疲れ ミニマム 続ける' },
+  { id:269, grid:21, cat:'日常習慣', type:'habit', title:'外見改善ルーティンを3ヶ月続けた男性がやっていた習慣化のコツ', slug:'mens-appearance-routine-3month-habit', searchHref:'/mypage/navi', keyword:'男性 外見改善 ルーティン 習慣 継続 コツ' },
+
+  // 体型・筋トレ習慣 (grid-22)
+  { id:270, grid:22, cat:'日常習慣', type:'habit', title:'器具なし自宅筋トレで男性が外見を変える最小習慣プログラム', slug:'mens-home-workout-no-equipment-minimum', searchHref:'/mypage/navi', keyword:'男性 自宅 筋トレ 習慣 器具なし 始め方' },
+  { id:271, grid:22, cat:'日常習慣', type:'habit', title:'体型が印象を変える理由：筋トレを始めた男性が気づいた外見の変化', slug:'mens-body-shape-impression-change', searchHref:'/mypage/navi', keyword:'男性 体型 外見 印象 筋トレ 変化' },
+  { id:272, grid:22, cat:'日常習慣', type:'habit', title:'男性の姿勢が悪いと清潔感が半減する理由と毎日5分の改善ルーティン', slug:'mens-posture-cleanliness-daily-fix', searchHref:'/mypage/navi', keyword:'男性 姿勢 悪い 清潔感 改善 習慣 方法' },
+  { id:273, grid:22, cat:'日常習慣', type:'habit', title:'筋トレが続かない男性の3パターンと最小習慣で挫折しない方法', slug:'mens-workout-not-continuing-minimum-habit', searchHref:'/mypage/navi', keyword:'男性 筋トレ 続かない 理由 習慣化 方法' },
+  { id:274, grid:22, cat:'日常習慣', type:'habit', title:'毎朝5分のストレッチで男性の姿勢・体型・印象が変わる理由', slug:'mens-morning-stretch-5min-impression', searchHref:'/mypage/navi', keyword:'男性 ストレッチ 毎朝 姿勢 体型 印象 習慣' },
+  { id:275, grid:22, cat:'日常習慣', type:'habit', title:'お腹まわりが気になる男性のための最小ルーティン：腹筋より大事なこと', slug:'mens-belly-fat-minimum-routine', searchHref:'/mypage/navi', keyword:'男性 お腹 腹筋 痩せる 習慣 方法 ルーティン' },
+  { id:276, grid:22, cat:'日常習慣', type:'habit', title:'体重を落とすより先に外見が変わる：男性の生活習慣改善ロードマップ', slug:'mens-lifestyle-before-weight-loss', searchHref:'/mypage/navi', keyword:'男性 体重 落とす 外見 生活習慣 改善 ロードマップ' },
+
+  // 食事・生活習慣 (grid-23)
+  { id:277, grid:23, cat:'日常習慣', type:'habit', title:'男性の肌荒れは食事が原因？外見に影響する食習慣の整え方', slug:'mens-skin-trouble-diet-cause', searchHref:'/diagnosis', keyword:'男性 肌荒れ 食事 原因 習慣 改善' },
+  { id:278, grid:23, cat:'日常習慣', type:'habit', title:'睡眠の質が男性の外見に与える影響：クマ・肌荒れ・むくみの原因と解消法', slug:'mens-sleep-quality-appearance-effect', searchHref:'/diagnosis', keyword:'男性 睡眠 外見 肌荒れ 目のクマ むくみ 影響' },
+  { id:279, grid:23, cat:'日常習慣', type:'habit', title:'水を毎日2L飲み続けた男性の肌に何が起きるか：水分補給と外見の関係', slug:'mens-water-2L-skin-effect', searchHref:'/diagnosis', keyword:'男性 水 飲む 肌 効果 外見 習慣' },
+  { id:280, grid:23, cat:'日常習慣', type:'habit', title:'お酒が男性の外見に与えるダメージと飲み方を見直す習慣', slug:'mens-alcohol-appearance-damage-habit', searchHref:'/diagnosis', keyword:'男性 アルコール 飲酒 外見 肌 影響 習慣' },
+  { id:281, grid:23, cat:'日常習慣', type:'habit', title:'喫煙が男性の外見・肌・歯に与えるリアルな影響と禁煙後の変化', slug:'mens-smoking-appearance-real-effect', searchHref:'/diagnosis', keyword:'男性 タバコ 喫煙 外見 肌 歯 影響' },
+  { id:282, grid:23, cat:'日常習慣', type:'habit', title:'コンビニ飯から脱却：男性の外見が変わる簡単食習慣5選', slug:'mens-convenience-food-improve-habit', searchHref:'/diagnosis', keyword:'男性 コンビニ 食事 外見 改善 習慣 野菜' },
+  { id:283, grid:23, cat:'日常習慣', type:'habit', title:'朝食を抜く男性が外見で損している理由と朝食習慣の始め方', slug:'mens-skip-breakfast-appearance-loss', searchHref:'/diagnosis', keyword:'男性 朝食 抜く 外見 影響 肌 習慣' },
+
+  // 香り・においケア (grid-24)
+  { id:284, grid:24, cat:'日常習慣', type:'habit', title:'男性の香水の選び方入門：初心者が失敗しないフレグランスの基本', slug:'mens-perfume-beginner-guide', searchHref:'/diagnosis', keyword:'男性 香水 選び方 初心者 フレグランス' },
+  { id:285, grid:24, cat:'日常習慣', type:'habit', title:'男性の香水のつけ方：量・場所・タイミングの正解と好印象を作るコツ', slug:'mens-perfume-how-to-apply', searchHref:'/diagnosis', keyword:'男性 香水 つけ方 量 場所 タイミング' },
+  { id:286, grid:24, cat:'日常習慣', type:'habit', title:'メンズデオドラント完全ガイド：制汗剤・デオドラント・体臭ケアの違いと選び方', slug:'mens-deodorant-complete-guide', searchHref:'/diagnosis', keyword:'男性 制汗剤 デオドラント 選び方 体臭 違い' },
+  { id:287, grid:24, cat:'日常習慣', type:'habit', title:'男性の口臭を毎日のケアで改善する5つの習慣：原因から対策まで', slug:'mens-bad-breath-daily-habits', searchHref:'/diagnosis', keyword:'男性 口臭 対策 毎日 習慣 原因' },
+  { id:288, grid:24, cat:'日常習慣', type:'habit', title:'服のにおいが清潔感を台無しにする理由と洗濯・収納の見直し方', slug:'mens-clothes-smell-cleanliness-laundry', searchHref:'/diagnosis', keyword:'男性 服 におい 清潔感 洗濯 収納 習慣' },
+  { id:289, grid:24, cat:'日常習慣', type:'habit', title:'30代男性が知っておくべき加齢臭の原因と毎日できる予防習慣', slug:'mens-30s-aging-smell-prevention', searchHref:'/diagnosis', keyword:'男性 加齢臭 30代 原因 対策 毎日 習慣' },
+
+  // 爪・手ケア (grid-25)
+  { id:290, grid:25, cat:'日常習慣', type:'habit', title:'男性の爪の正しい切り方・形・長さで清潔感が大きく変わる', slug:'mens-nail-trimming-correct-shape', searchHref:'/diagnosis', keyword:'男性 爪 切り方 形 長さ 清潔感' },
+  { id:291, grid:25, cat:'日常習慣', type:'habit', title:'男性が自宅でできるネイルケア入門：道具・手順・頻度の基本', slug:'mens-home-nail-care-beginner', searchHref:'/diagnosis', keyword:'男性 ネイルケア 自宅 やり方 道具 頻度' },
+  { id:292, grid:25, cat:'日常習慣', type:'habit', title:'男性にもハンドクリームが必要な理由と毎日の使い方・選び方', slug:'mens-hand-cream-necessity-guide', searchHref:'/diagnosis', keyword:'男性 ハンドクリーム 使い方 必要 習慣' },
+  { id:293, grid:25, cat:'日常習慣', type:'habit', title:'手荒れが男性の清潔感を下げる理由と冬のハンドケア習慣', slug:'mens-chapped-hands-winter-care', searchHref:'/diagnosis', keyword:'男性 手荒れ ひびわれ ケア 冬 清潔感 習慣' },
+  { id:294, grid:25, cat:'日常習慣', type:'habit', title:'男性の爪の黄ばみ・汚れを落とす方法と日常予防習慣', slug:'mens-nail-yellowing-prevention', searchHref:'/diagnosis', keyword:'男性 爪 黄ばみ 汚れ 落とす 予防 習慣' },
+
+  // ヘアケア日常 (grid-26)
+  { id:295, grid:26, cat:'日常習慣', type:'habit', title:'男性の毎日のヘアケア完全版：シャンプー・トリートメント・スタイリングの正しい順番', slug:'mens-daily-hair-care-complete', searchHref:'/search?category=hair', keyword:'男性 ヘアケア 毎日 順番 シャンプー トリートメント' },
+  { id:296, grid:26, cat:'日常習慣', type:'habit', title:'メンズヘアオイルの正しい使い方：量・タイミング・テクスチャの選び方', slug:'mens-hair-oil-correct-usage', searchHref:'/search?category=hair', keyword:'男性 ヘアオイル 使い方 量 タイミング 選び方' },
+  { id:297, grid:26, cat:'日常習慣', type:'habit', title:'男性のドライヤーの正しい使い方：髪を傷めず速く乾かすコツ', slug:'mens-hairdryer-correct-technique', searchHref:'/search?category=hair', keyword:'男性 ドライヤー 正しい 使い方 速く乾かす 傷めない' },
+  { id:298, grid:26, cat:'日常習慣', type:'habit', title:'男性のヘアワックス選び方と正しい使い方：種類別・髪型別完全ガイド', slug:'mens-hair-wax-selection-guide', searchHref:'/search?category=hair', keyword:'男性 ヘアワックス 選び方 使い方 種類 髪型' },
+  { id:299, grid:26, cat:'日常習慣', type:'habit', title:'男性の頭皮ケアを毎日の習慣にする方法：抜け毛・においを防ぐルーティン', slug:'mens-scalp-care-daily-routine', searchHref:'/search?category=hair', keyword:'男性 頭皮ケア 毎日 習慣 抜け毛 におい ルーティン' },
+  { id:300, grid:26, cat:'日常習慣', type:'habit', title:'男性の白髪を増やさない生活習慣と自宅でできる白髪ケアの始め方', slug:'mens-grey-hair-prevention-habit', searchHref:'/search?category=hair', keyword:'男性 白髪 増やさない 対策 生活習慣 ケア' },
+
+  // 歯・口元ケア (grid-27)
+  { id:301, grid:27, cat:'日常習慣', type:'habit', title:'男性の歯磨きの正しい方法：時間・道具・手順で清潔感が変わる', slug:'mens-toothbrushing-correct-method', searchHref:'/search?category=whitening', keyword:'男性 歯磨き 正しい 方法 時間 道具 清潔感' },
+  { id:302, grid:27, cat:'日常習慣', type:'habit', title:'電動歯ブラシで男性の口元清潔感が変わる理由と選び方ガイド', slug:'mens-electric-toothbrush-guide', searchHref:'/search?category=whitening', keyword:'男性 電動歯ブラシ 効果 選び方 清潔感' },
+  { id:303, grid:27, cat:'日常習慣', type:'habit', title:'男性のマウスウォッシュ活用法：使うタイミング・選び方・毎日の習慣化', slug:'mens-mouthwash-daily-habit', searchHref:'/search?category=whitening', keyword:'男性 マウスウォッシュ 使い方 タイミング 毎日 習慣' },
+  { id:304, grid:27, cat:'日常習慣', type:'habit', title:'男性の歯の黄ばみを市販品で改善する方法と限界：クリニックとの使い分け', slug:'mens-teeth-yellowing-otc-vs-clinic', searchHref:'/search?category=whitening', keyword:'男性 歯 黄ばみ 市販 改善 限界 クリニック' },
+  { id:305, grid:27, cat:'日常習慣', type:'habit', title:'口元が男性の印象を決める理由と毎日のオーラルケア習慣の作り方', slug:'mens-oral-care-impression-habit', searchHref:'/search?category=whitening', keyword:'男性 口元 印象 オーラルケア 毎日 習慣 清潔感' },
+
+  // 服・ファッション習慣 (grid-28)
+  { id:306, grid:28, cat:'日常習慣', type:'habit', title:'男性のクローゼット断捨離で外見が変わる理由と捨てる基準の決め方', slug:'mens-closet-declutter-appearance', searchHref:'/search?category=fashion', keyword:'男性 クローゼット 断捨離 服 整理 方法 外見' },
+  { id:307, grid:28, cat:'日常習慣', type:'habit', title:'男性の毎日コーデに清潔感を出す最小ルール5選', slug:'mens-daily-coordinate-cleanliness-rules', searchHref:'/search?category=fashion', keyword:'男性 毎日 コーデ 清潔感 ルール 服 選び方' },
+  { id:308, grid:28, cat:'日常習慣', type:'habit', title:'男性の服のしわが清潔感を台無しにする理由と毎日のケア習慣', slug:'mens-clothes-wrinkle-cleanliness', searchHref:'/search?category=fashion', keyword:'男性 服 しわ 清潔感 アイロン 習慣 ケア' },
+  { id:309, grid:28, cat:'日常習慣', type:'habit', title:'男性の靴の手入れ習慣：清潔感は足元から始まるという本当の理由', slug:'mens-shoes-care-habit-cleanliness', searchHref:'/search?category=fashion', keyword:'男性 靴 手入れ 習慣 清潔感 磨き方' },
+  { id:310, grid:28, cat:'日常習慣', type:'habit', title:'男性の服の洗濯頻度と清潔感の関係：思っているより汚れている現実', slug:'mens-laundry-frequency-cleanliness', searchHref:'/search?category=fashion', keyword:'男性 服 洗濯 頻度 清潔感 汚れ 習慣' },
+  { id:311, grid:28, cat:'日常習慣', type:'habit', title:'同じ服でも清潔感が出る男性の着こなし習慣5選：素材・サイズ・手入れの基本', slug:'mens-same-clothes-better-appearance', searchHref:'/search?category=fashion', keyword:'男性 同じ服 清潔感 着こなし 習慣 サイズ 素材' },
 ];
 
-const CAT_CLASS = { '清潔感': 'cat-clean', '写真撮影': 'cat-photo', '変容の思想': 'cat-idea' };
+const CAT_CLASS = { '清潔感': 'cat-clean', '写真撮影': 'cat-photo', '変容の思想': 'cat-idea', '日常習慣': 'cat-habit' };
 const STORAGE_KEY = 'fineme:article-gen:done';
 let hideDone = false;
 
@@ -706,7 +861,159 @@ function toggleHideDone() {
   applyDoneState();
 }
 
+function buildHabitPrompt(a, existingTitles = []) {
+  const existingSection = existingTitles.length > 0
+    ? `\n【既存記事（内容が重複しないこと）】\n同カテゴリに以下の記事がすでに公開されている。これらと内容・構成・見出しが被らないよう、独自の切り口・角度・具体例を選ぶこと。\n${existingTitles.map((t, i) => `${i+1}. ${t}`).join('\n')}\n`
+    : '';
+
+  return `以下の仕様で、Fineme特集記事（習慣・日常ルーティン系）を生成し、Supabase SQLのINSERT文として出力してください。
+
+【記事情報】
+タイトル：${a.title}
+ターゲットキーワード：${a.keyword}
+カテゴリ：${a.cat}
+スラッグ：${a.slug}
+${existingSection}
+
+【Finemeについて】
+- 恋愛に悩む男性向けの外見磨き伴走サービス「Fineme（ファインミ）」
+- ミッション：「外見を起点に、自信を再設計する人を増やす」
+- 哲学：「外見を整えることで生まれる小さな自信が、人に優しくなれる余白をつくる」
+- トーン：共感・温かみ・寄り添い。上から目線・説教口調・精神論は厳禁
+- 読者像：20〜35歳男性、毎日の習慣を少しずつ変えることで外見を整えたい、継続が苦手、忙しい日常の中で「今日からできること」を探している
+
+【この記事の核心：習慣形成フォーカス】
+このカテゴリの記事は「サービスに行く」より「今日から自宅で実践できる」を最優先にする。
+以下を必ず記事に組み込むこと。
+
+1. **毎日の時間・タイミング**: 「朝〇分」「夜〇分」「シャワー後」など具体的な日常の文脈で手順を示す
+2. **最小習慣から始める**: いきなり完璧を目指さない。「まず1週間これだけやれば十分」の閾値を示す
+3. **継続のコツ**: なぜ続かないのかの心理的障壁を分析し、「こういうときはこうする」という対処法を入れる
+4. **使うアイテム（一般名称で可）**: その習慣で使う具体的な商品カテゴリ（例：「乳液」「ヘアオイル」「電動歯ブラシ」）を自然な文脈で言及する。Amazon商品として購入しやすい名称で書く
+5. **変化の時間軸**: 「1週間で〇〇、1ヶ月で〇〇」という現実的な変化の目安を示す
+
+【習慣記事のCTA方針（重要）】
+この記事のCTAは「サービスを検索する」ではなく「自分の変容ロードマップを確認する」方向。
+- 診断ページ（/diagnosis）: 「自分の軸を診断してから習慣の優先順位を決める」訴求
+- New Me Navi（/mypage/navi）: 「習慣の積み重ねを記録・可視化する」訴求
+どちらかを記事テーマに合わせて選択すること（searchHref に従う）。
+CTA文は「変容の旅の次の一歩」「自分の現在地を確認する」「小さな習慣から始める旅」のトーンで書く。
+「一括で探せます」「サービスを検索できます」などのポータル表現は絶対禁止。
+
+【記事品質の絶対基準 — 必ず守ること】
+このサイトはドメインパワーがゼロの新規サイトである。
+検索上位を獲得する唯一の方法は「このテーマで日本語で読める最も網羅的・実用的な記事」になることだけ。
+以下の基準を全て満たせ。
+
+1. 文字数：6,000〜8,000字相当（blocks合計）。これ以下は不合格。
+2. ブロック数：最低25ブロック以上。30ブロックが理想。
+3. 網羅性：読者がこの記事を読み終えた後に「他の記事を読む必要がない」状態にする。
+4. 具体性：「〜しましょう」で終わる抽象論禁止。必ず「何を・何分で・いつ・どのくらいの費用で」まで書く。
+5. 共感導線：冒頭で読者の痛みを言語化し、「自分のことが書いてある」と感じさせる。
+6. 反論処理：「面倒くさい」「時間がない」「どうせ続かない」などの抵抗を先回りして解消する。
+7. データ・数字：可能な限り具体的な数値・統計・期間・費用を入れる（実在する一般的な相場で可）。
+8. FAQ：記事末尾にQ&A形式のよくある質問を3〜5個、calloutブロックで追加する。
+9. ビジュアル分散（重要）：textブロックが3個連続してはならない。必ず cards / stat / image / checklist / steps / tip / quote のいずれかを挟む。
+10. CTA思想（重要）：上記【習慣記事のCTA方針】に従うこと。ポータル表現は絶対禁止。
+
+【ビジュアルブロックの使い分けルール — 必ず守ること】
+文章の塊が続く記事は読まれない。以下のルールを厳守して、視覚的なリズムをつくること。
+
+■ 箇条書きにしたくなったら → まず cards を検討
+  「〜できること」「〜の特徴」「〜のメリット」「〜な人の共通点」など、
+  リスト化したい内容は text の箇条書きではなく cards（カードグリッド）で表現する。
+  各カードにはアイコン絵文字（💪 ✨ 🏆 等）を必ず付ける。
+  ⚠️ cards の枚数は 3・4・6 のいずれかに限定する（5・7枚は3列グリッドで非対称になるため禁止）。
+     5つのものを列挙する場合は6枚に増やす（補足カード1枚追加）か、steps または checklist で代替する。
+
+■ 数値・データがあれば → stat を使う
+  「〜%が満足」「平均〜円」「〜ヶ月で変化」などの数値は stat ブロックに切り出す。
+  1つのセクションに最低1回は stat を入れること（記事全体で最低2〜3回）。
+  ⚠️ stat の value は単一値のみ。範囲表記はカウントアップアニメーションが壊れるため禁止。
+     ✓ 良い例: "93%"  "3,000円〜"  "2週間"  "1ヶ月"
+     ✗ 悪い例: "5,000〜12,000円"  "2〜4週間"  "3〜5回"
+
+■ やること一覧・セルフチェック → checklist
+  「まず確認すべきこと」「失敗しないためのチェック」など確認系は checklist。
+
+■ 手順・フロー → steps
+  「初めての〜」「〜の始め方」「ルーティンの手順」など時系列がある内容は steps で番号付きフロー。
+  習慣記事では「毎朝のルーティン手順」「始める前の準備」などに積極的に使うこと。
+
+■ セクションのビジュアル引き締め → image
+  本文中に最低1枚、理想は2枚の image ブロックを入れる。
+  src は空文字 "" で出力し、末尾コメントに対応するUnsplash検索キーワードを記載する。
+
+■ H2セクションの構成パターン（推奨）
+  h2 → image（任意）→ text（導入1段落のみ）→ cards または stat → h3 → text → tip
+
+【必須の記事構成】
+以下の流れで構成すること（順序は状況に応じて調整可）：
+① 共感リード（読者の「続けられない」「何から始めるか分からない」悩みを代弁）
+② stat（この記事に関連する驚きのデータ2〜3個で読者を引き込む）
+③ 本論H2×3〜5個（各H2の直下：text1段落→cards または stat→h3→text→tip の順で構成）
+   ※ 必ず「最小習慣から始める方法」セクションを含める
+   ※ 必ず「継続のコツ・挫折しない方法」セクションを含める
+   ※ 必ず「使うアイテム・道具」セクションを含める（Amazon商品として購入しやすい一般名称で）
+④ よくある失敗・誤解の解消（「やりすぎ」「間違った方法」などのNGパターンを cards で）
+⑤ 毎日のルーティン手順（steps ブロックで「朝〇分」「夜〇分」の具体的フロー）
+⑥ FAQ（callout ブロックで3〜5個）
+⑦ まとめ（quote + text）
+⑧ CTA（習慣記事のCTA方針に従い、診断またはNaviへ誘導）
+
+【blocksフィールド（JSONB）の構造】
+以下のブロックタイプを使用すること。cards と stat は積極的に使え。
+
+{"type":"lead","text":"リード文（300〜400字。読者の状況・痛みを言語化し、この記事への期待を高める）"}
+{"type":"h2","text":"大見出し（検索キーワードを自然に含める）"}
+{"type":"h3","text":"小見出し"}
+{"type":"text","text":"本文段落（200〜350字。具体的な数値・事例・理由を含める）"}
+{"type":"tip","label":"ラベル（POINT / CHECK / NOTE / DATA）","text":"重要ポイント（具体的な数値や行動指針を含む）"}
+{"type":"callout","text":"補足・FAQ項目（Q: ～ A: ～ の形式でも可）"}
+{"type":"quote","text":"記事を貫く金言・読者の心に刺さる一文（30〜60字）"}
+{"type":"checklist","title":"チェックリストタイトル","items":["具体的な行動項目（5〜8個）"]}
+{"type":"steps","items":[{"title":"ステップ名","text":"具体的な説明（時間・道具・量を含める）"}]}
+{"type":"stat","items":[{"value":"単一値のみ（例：94%・3,000円〜・2週間）【禁止：範囲値 例：5,000〜12,000円・2〜4週間】","label":"文脈を示す短いラベル（10字以内）"}]}
+{"type":"cards","items":[{"icon":"絵文字1文字","title":"カードタイトル（10〜20字）","text":"カード説明（30〜60字。任意だが書くと深みが出る）"}]}  ※枚数は3・4・6のいずれかのみ（5・7枚禁止）
+{"type":"image","src":"","alt":"画像の説明（10〜30字）","caption":"キャプション（任意・20〜40字）"}
+{"type":"cta","text":"【習慣記事CTA】診断（/diagnosis）またはNavi（/mypage/navi）へ誘導。「変容の旅の次の一歩」「自分の現在地を確認する」「小さな習慣から始める旅」のトーンで書く。ポータル表現は絶対禁止","buttonLabel":"ボタンテキスト（例：自分の変容ロードマップを見る / Me Scanで現在地を確認する / 習慣の積み重ねを記録する）","buttonHref":"${a.searchHref}"}
+
+【ブロック数の目安（30ブロック構成の例）】
+lead×1、stat×2〜3、h2×4〜5、h3×5〜7、text×8〜10、cards×3〜4、image×1〜2、checklist×1〜2、steps×1〜2、tip×2〜3、quote×1、callout×3〜4、cta×1
+
+【descriptionフィールドの生成ルール — 必ず守ること】
+- descriptionには実際の説明文を120〜150字で生成する（括弧テキストをそのまま出力しない）
+- 読者の「続けられない」悩みを代弁し「この記事を読めば今日から実践できる」と感じさせる共感型＋予告型
+- 例：「スキンケアを始めようとしても何から手をつければいいか分からない男性へ。洗顔・保湿・日焼け止めを朝5分で完結するルーティンを、使うアイテムの選び方から継続のコツまで解説します。」
+
+【出力SQL】
+以下のフォーマットで出力すること。前置き・解説・コメントは一切不要。SQLのみ出力。
+
+INSERT INTO features (title, slug, category, description, blocks, reading_time, status)
+VALUES (
+  '${a.title}',
+  '${a.slug}',
+  '${a.cat}',
+  '（ここに実際の説明文を120〜150字で生成。上の生成ルールを守ること）',
+  '[ここに全blocksのJSON配列]'::jsonb,
+  （読了時間・整数・分。6,000字なら15〜18分）,
+  'draft'
+);
+
+【エスケープルール — 必ず守ること】
+- blocksのJSON文字列内に含まれるシングルクォート（'）は ''（連続2つ）にエスケープする
+- ダブルクォート（"）はJSONの構造に使うのでそのまま
+- 改行は\\nではなく実際の改行を含めない（1つのtext値は1行で収める）
+
+SQLの末尾に必ず以下のコメントを追記すること：
+-- 📷 推奨サムネイル検索キーワード（Unsplash）: （英語キーワード2〜3語。記事テーマに合う男性の日常ケア・ライフスタイル系の写真）
+-- 📷 本文内imageブロック用キーワード: （imageブロックが複数ある場合は配置順に1行ずつ記載）
+-- 例: "japanese man morning routine" / "men skincare products flatlay" / "man using hair oil"`;
+}
+
 function buildPrompt(a, existingTitles = []) {
+  if (a.type === 'habit') return buildHabitPrompt(a, existingTitles);
+
   const existingSection = existingTitles.length > 0
     ? `\n【既存記事（内容が重複しないこと）】\n同カテゴリに以下の記事がすでに公開されている。これらと内容・構成・見出しが被らないよう、独自の切り口・角度・具体例を選ぶこと。\n${existingTitles.map((t, i) => `${i+1}. ${t}`).join('\n')}\n`
     : '';
@@ -873,7 +1180,7 @@ function showToast() {
 }
 
 // レンダリング
-[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].forEach(g => {
+[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28].forEach(g => {
   renderGrid(`grid-${g}`, ARTICLES.filter(a => a.grid === g));
 });
 applyDoneState();
