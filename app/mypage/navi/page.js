@@ -106,6 +106,14 @@ export default function NewMeNaviPage() {
       .guide-mid { background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.15); color: #1e40af; }
       .guide-low { display: inline-flex; background: none; border: none; font-size: 11px; color: #9ca3af; padding: 2px 0; }
       .milestone-note { font-size: 11px; color: #92400e; background: #fef3c7; border: 1px solid #fde68a; border-radius: 4px; padding: 4px 8px; margin-top: 4px; }
+
+      /* ── 商品サジェスト ── */
+      .product-suggestions { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+      .product-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 4px 10px; background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.18); border-radius: 6px; color: rgba(200,230,215,0.75); text-decoration: none; transition: all .15s; }
+      .product-chip:hover { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.4); color: rgba(232,228,220,0.95); }
+      .product-check-btn { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; padding: 4px 10px; background: transparent; border: 1px solid rgba(232,228,220,0.15); border-radius: 99px; color: rgba(232,228,220,0.30); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; white-space: nowrap; }
+      .product-check-btn:hover { border-color: #10b981; color: #10b981; }
+      .product-check-btn.checked { background: rgba(16,185,129,0.10); border-color: #10b981; color: #10b981; }
       .subtab-header-note { font-size: 11px; color: rgba(232,228,220,0.55); background: rgba(10,15,30,0.50); border: 1px solid rgba(232,228,220,0.15); border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; }
 
       /* CTA inside track */
@@ -419,11 +427,14 @@ export default function NewMeNaviPage() {
     const MILESTONES = {
       body: [
         { text: '自分の体型で気になる部分を1つ言語化できている（例：「腹まわりが気になる」）', guide: 'none', isCurrentFor: 'none' },
-        { text: '現在の体重・体脂肪率を計測して数字で把握している', guide: 'none' },
+        { text: '現在の体重・体脂肪率を計測して数字で把握している', guide: 'none',
+          products: [{ name: '体組成計（TANITA）', url: 'https://www.amazon.co.jp/s?k=タニタ+体組成計&tag=fineme-22' }] },
         { text: '1週間で何回体を動かしているかを把握している', guide: 'none' },
         { text: '日常的に歩く・階段を使うなど、生活のなかに動きを取り入れている', guide: 'none' },
-        { text: '週1回以上、意識的な運動習慣がある', guide: 'none' },
-        { text: '食事の基本ルールを1つ知っている（例：タンパク質を毎食とる）', guide: 'LOW', isCurrentFor: 'concerned' },
+        { text: '週1回以上、意識的な運動習慣がある', guide: 'none',
+          products: [{ name: 'プロテイン（SAVAS ホエイ）', url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=fineme-22' }, { name: 'トレーニングウェア', url: 'https://www.amazon.co.jp/s?k=メンズ+トレーニングウェア&tag=fineme-22' }] },
+        { text: '食事の基本ルールを1つ知っている（例：タンパク質を毎食とる）', guide: 'LOW', isCurrentFor: 'concerned',
+          products: [{ name: 'プロテインバー（手軽なタンパク源）', url: 'https://www.amazon.co.jp/s?k=プロテインバー&tag=fineme-22' }] },
         { text: 'パーソナルジムの無料体験カウンセリングに1回行ったことがある', guide: 'HIGH', isCurrentFor: 'self' },
         { text: 'プロにトレーニングメニューを組んでもらったことがある', guide: 'HIGH' },
         { text: '週2回以上のトレーニングを1ヶ月以上継続している', guide: 'MID', isCurrentFor: 'pro' },
@@ -432,7 +443,8 @@ export default function NewMeNaviPage() {
       ],
       eyebrow: [
         { text: '何らかの方法で眉を整えている（サロン・自己処理どちらでもOK）', guide: 'none', isCurrentFor: 'none' },
-        { text: 'スクリューブラシで毎朝眉を整えている', guide: 'none' },
+        { text: 'スクリューブラシで毎朝眉を整えている', guide: 'none',
+          products: [{ name: 'スクリューブラシ（使い捨て）', url: 'https://www.amazon.co.jp/s?k=スクリューブラシ+眉&tag=fineme-22' }, { name: '眉用ハサミ', url: 'https://www.amazon.co.jp/s?k=眉用はさみ+ステンレス&tag=fineme-22' }] },
         { text: '自分の顔型に合う眉の形を1つ把握している', guide: 'MID', isCurrentFor: 'concerned' },
         { text: '眉毛サロンでプロに一度整えてもらったことがある', guide: 'HIGH', isCurrentFor: 'self' },
         { text: 'プロに作ってもらった形を基準に、自宅で眉バサミ＋スクリューブラシでメンテナンスできている', guide: 'LOW' },
@@ -457,10 +469,14 @@ export default function NewMeNaviPage() {
         { text: '定期的に美容院・理髪店に行っている（2ヶ月以内に行った）', guide: 'none', isCurrentFor: 'none' },
         { text: '自分の髪質を把握している（硬い・柔らかい・くせ毛・直毛など）', guide: 'LOW' },
         { text: '自分の顔型を把握している（丸・面長・卵型など）', guide: 'LOW' },
-        { text: '髪質に合ったシャンプーを使っている', guide: 'LOW' },
-        { text: 'ドライヤーで根元から乾かしている（自然乾燥していない）', guide: 'none' },
-        { text: 'スタイリング剤を使っている', guide: 'none' },
-        { text: 'トリートメントまたはアウトバスケアをしている', guide: 'LOW', isCurrentFor: 'concerned' },
+        { text: '髪質に合ったシャンプーを使っている', guide: 'LOW',
+          products: [{ name: 'BOTANIST ボタニカルシャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=fineme-22' }, { name: 'スカルプシャンプー（薄毛が気になる方）', url: 'https://www.amazon.co.jp/s?k=スカルプシャンプー+メンズ&tag=fineme-22' }] },
+        { text: 'ドライヤーで根元から乾かしている（自然乾燥していない）', guide: 'none',
+          products: [{ name: 'ドライヤー（速乾・髪に優しい）', url: 'https://www.amazon.co.jp/s?k=ドライヤー+速乾+メンズ&tag=fineme-22' }] },
+        { text: 'スタイリング剤を使っている', guide: 'none',
+          products: [{ name: 'ウーノ スーパーハード（定番）', url: 'https://www.amazon.co.jp/s?k=ウーノ+スーパーハード&tag=fineme-22' }, { name: 'バーム系スタイリング剤（ナチュラル仕上げ）', url: 'https://www.amazon.co.jp/s?k=ヘアバーム+メンズ&tag=fineme-22' }] },
+        { text: 'トリートメントまたはアウトバスケアをしている', guide: 'LOW', isCurrentFor: 'concerned',
+          products: [{ name: 'アウトバストリートメント（洗い流さないタイプ）', url: 'https://www.amazon.co.jp/s?k=洗い流さないトリートメント+メンズ&tag=fineme-22' }] },
         { text: '美容師に「顔型・骨格に合う髪型」を相談したことがある', guide: 'HIGH', isCurrentFor: 'self' },
         { text: '定期的に通う美容師を1人決めている', guide: 'MID' },
         { text: '自宅でのセット方法を美容師に教わったことがある', guide: 'HIGH' },
@@ -470,10 +486,13 @@ export default function NewMeNaviPage() {
       ],
       nail: [
         { text: '定期的に爪を切っている（1〜2週間に1回）', guide: 'none', isCurrentFor: 'none' },
-        { text: '爪やすりでバリや形を整えている', guide: 'none' },
-        { text: 'ハンドクリームで手・爪を保湿している', guide: 'none' },
+        { text: '爪やすりでバリや形を整えている', guide: 'none',
+          products: [{ name: 'ガラス製爪やすり（水洗いOK）', url: 'https://www.amazon.co.jp/s?k=ガラス製+爪やすり&tag=fineme-22' }] },
+        { text: 'ハンドクリームで手・爪を保湿している', guide: 'none',
+          products: [{ name: 'ニベア リッチケアハンドクリーム', url: 'https://www.amazon.co.jp/s?k=ニベア+ハンドクリーム&tag=fineme-22' }] },
         { text: '爪の形を丸・スクエアなど意識して整えている', guide: 'LOW', isCurrentFor: 'concerned' },
-        { text: 'ネイルオイルを使っている', guide: 'LOW' },
+        { text: 'ネイルオイルを使っている', guide: 'LOW',
+          products: [{ name: 'OPI プロスパ ネイルオイル', url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=fineme-22' }, { name: 'ネイルオイル（プチプラ）', url: 'https://www.amazon.co.jp/s?k=ネイルオイル+メンズ&tag=fineme-22' }] },
         { text: '甘皮を押し上げるケアをしている', guide: 'MID', note: '切り取るのはNG。正しい方法はプロに教わるのが理想。', isCurrentFor: 'self' },
         { text: 'ネイルケアサロンでプロのケアを受けたことがある', guide: 'HIGH' },
         { text: '定期的にサロンでメンテナンスしている', guide: 'HIGH', isCurrentFor: 'pro' },
@@ -485,11 +504,14 @@ export default function NewMeNaviPage() {
     const MILESTONES_SUB = {
       skin_care: {
         steps: [
-          { text: '洗顔・化粧水・乳液の3ステップが毎日できている', guide: 'none', isCurrentFor: 'none' },
-          { text: 'クレンジング（夜）と日焼け止め（朝）が習慣になっている', guide: 'none' },
+          { text: '洗顔・化粧水・乳液の3ステップが毎日できている', guide: 'none', isCurrentFor: 'none',
+            products: [{ name: '肌ラボ 極潤 洗顔フォーム', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+洗顔&tag=fineme-22' }, { name: '肌ラボ 極潤 ヒアルロン液（化粧水）', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=fineme-22' }, { name: 'ニベア フェイス 乳液', url: 'https://www.amazon.co.jp/s?k=ニベア+フェイス+乳液&tag=fineme-22' }] },
+          { text: 'クレンジング（夜）と日焼け止め（朝）が習慣になっている', guide: 'none',
+            products: [{ name: 'ビオレUV アクアリッチ（日焼け止め）', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=fineme-22' }, { name: 'メンズビオレ クレンジング', url: 'https://www.amazon.co.jp/s?k=メンズ+クレンジング+洗顔&tag=fineme-22' }] },
           { text: '自分の肌タイプを把握している（乾燥・脂性・混合）', guide: 'LOW', isCurrentFor: 'concerned' },
           { text: '自分の肌悩みを1つ言語化している（例：ニキビ・毛穴・くすみ・赤み）', guide: 'LOW' },
-          { text: '角質ケアを取り入れている', guide: 'MID', isCurrentFor: 'self' },
+          { text: '角質ケアを取り入れている', guide: 'MID', isCurrentFor: 'self',
+            products: [{ name: 'ピーリングジェル（週1回）', url: 'https://www.amazon.co.jp/s?k=ピーリングジェル+メンズ&tag=fineme-22' }] },
           { text: '皮膚科またはエステで今の肌状態を1回診てもらったことがある', guide: 'HIGH', isCurrentFor: 'pro' },
           { text: '診断をもとにスキンケアを1アイテム以上アップデートした', guide: 'HIGH' },
           { text: 'アップデートしたケアが3ヶ月以上途切れず続いている', guide: 'LOW' },
@@ -508,9 +530,12 @@ export default function NewMeNaviPage() {
       },
       teeth_white: {
         steps: [
-          { text: '毎日歯磨きをしている', guide: 'none', isCurrentFor: 'none' },
-          { text: '歯間ブラシかフロスを使っている', guide: 'none' },
-          { text: 'ホワイトニング配合の歯磨き粉を使っている', guide: 'none' },
+          { text: '毎日歯磨きをしている', guide: 'none', isCurrentFor: 'none',
+            products: [{ name: '電動歯ブラシ（オーラルB）', url: 'https://www.amazon.co.jp/s?k=オーラルB+電動歯ブラシ&tag=fineme-22' }] },
+          { text: '歯間ブラシかフロスを使っている', guide: 'none',
+            products: [{ name: 'GUM デンタルフロス', url: 'https://www.amazon.co.jp/s?k=GUM+デンタルフロス&tag=fineme-22' }, { name: 'ルシェロ 歯間ブラシ', url: 'https://www.amazon.co.jp/s?k=歯間ブラシ+細め&tag=fineme-22' }] },
+          { text: 'ホワイトニング配合の歯磨き粉を使っている', guide: 'none',
+            products: [{ name: 'アパガード プレミオ', url: 'https://www.amazon.co.jp/s?k=アパガード+プレミオ&tag=fineme-22' }, { name: 'チェックアップ スタンダード', url: 'https://www.amazon.co.jp/s?k=チェックアップ+歯磨き粉&tag=fineme-22' }] },
           { text: '自分の歯の黄ばみの原因を把握している（着色・加齢など）', guide: 'LOW', isCurrentFor: 'concerned' },
           { text: 'セルフホワイトニングサロンを体験したことがある', guide: 'MID' },
           { text: '歯科でPMTC（クリーニング）を受けたことがある', guide: 'HIGH', isCurrentFor: 'self' },
@@ -719,6 +744,15 @@ export default function NewMeNaviPage() {
           guideHtml = `<span class="guide-badge guide-low">🏥</span>`;
         }
         const noteHtml = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
+        let productsHtml = '';
+        if (step.products && step.products.length > 0) {
+          const chips = step.products.map((prod, pi) => {
+            const prodKey = `prod-${axisKey}-${i}-${pi}`;
+            const isProdDone = !!stepDone[prodKey];
+            return `<a href="${esc(prod.url)}" target="_blank" rel="noopener noreferrer" class="product-chip">🛒 ${esc(prod.name)}</a><button class="product-check-btn${isProdDone?' checked':''}" data-done-key="${esc(prodKey)}" title="${isProdDone?'使用中を取り消す':'使っている・試した'}">${isProdDone?'✓ 使用中':'使ってる？'}</button>`;
+          }).join('');
+          productsHtml = `<div class="product-suggestions">${chips}</div>`;
+        }
         const checkBtn = `<button class="step-check-btn${isDone?' checked':''}" data-done-key="${esc(doneKey)}" title="${isDone?'完了を取り消す':'できてる・やった'}">${isDone?'✓':''}</button>`;
         return `
           <div class="milestone-item${isDone?' step-done':''}">
@@ -729,7 +763,7 @@ export default function NewMeNaviPage() {
             <div style="padding-top:${j>0?'12px':'0'};padding-right:36px;flex:1">
               ${labelHtml}
               <p class="milestone-text">${esc(step.text)}</p>
-              ${guideHtml}${noteHtml}
+              ${guideHtml}${noteHtml}${productsHtml}
             </div>
             ${checkBtn}
           </div>
@@ -1154,9 +1188,9 @@ export default function NewMeNaviPage() {
       }
     });
 
-    // ── ステップ完了チェックボタン（メインステップ + 出発前チェック共通） ──
+    // ── ステップ完了チェックボタン（メインステップ + 出発前チェック + 商品チェック共通） ──
     root.addEventListener('click', (e) => {
-      const btn = e.target.closest('.step-check-btn, .prereq-box');
+      const btn = e.target.closest('.step-check-btn, .prereq-box, .product-check-btn');
       if (!btn) return;
       const key = btn.dataset.doneKey;
       if (!key) return;
@@ -1169,6 +1203,12 @@ export default function NewMeNaviPage() {
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ step_done: stepDone }),
         }).catch(() => {});
+      }
+      // 商品チェックボタンのDOM更新
+      if (btn.classList.contains('product-check-btn')) {
+        btn.classList.toggle('checked', !isDone);
+        btn.textContent = !isDone ? '✓ 使用中' : '使ってる？';
+        return;
       }
       // メインステップのDOM更新
       const milestoneItem = btn.closest('.milestone-item');
