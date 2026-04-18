@@ -430,13 +430,13 @@ export default function NewMeNaviPage() {
       body: [
         { text: '自分の体型で気になる部分を1つ言語化できている（例：「腹まわりが気になる」）', guide: 'none', isCurrentFor: 'none' },
         { text: '現在の体重・体脂肪率を計測して数字で把握している', guide: 'none',
-          products: [{ name: '体組成計（TANITA）', url: 'https://www.amazon.co.jp/s?k=タニタ+体組成計&tag=whero523-22', level: 'intermediate' }] },
+          products: [{ name: '体組成計（TANITA）', url: 'https://www.amazon.co.jp/s?k=タニタ+体組成計&tag=whero523-22', level: 'intermediate', priceRange: 'mid' }] },
         { text: '1週間で何回体を動かしているかを把握している', guide: 'none' },
         { text: '日常的に歩く・階段を使うなど、生活のなかに動きを取り入れている', guide: 'none' },
         { text: '週1回以上、意識的な運動習慣がある', guide: 'none',
-          products: [{ name: 'プロテイン（SAVAS ホエイ）', url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=whero523-22', level: 'intermediate' }, { name: 'トレーニングウェア', url: 'https://www.amazon.co.jp/s?k=メンズ+トレーニングウェア&tag=whero523-22' }] },
+          products: [{ name: 'プロテイン（SAVAS ホエイ）', url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=whero523-22', level: 'intermediate', priceRange: 'low' }, { name: 'トレーニングウェア', url: 'https://www.amazon.co.jp/s?k=メンズ+トレーニングウェア&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
         { text: '食事の基本ルールを1つ知っている（例：タンパク質を毎食とる）', guide: 'LOW', isCurrentFor: 'concerned',
-          products: [{ name: 'プロテインバー（手軽なタンパク源）', url: 'https://www.amazon.co.jp/s?k=プロテインバー&tag=whero523-22' }] },
+          products: [{ name: 'プロテインバー（手軽なタンパク源）', url: 'https://www.amazon.co.jp/s?k=プロテインバー&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
         { text: 'パーソナルジムの無料体験カウンセリングに1回行ったことがある', guide: 'HIGH', isCurrentFor: 'self' },
         { text: 'プロにトレーニングメニューを組んでもらったことがある', guide: 'HIGH' },
         { text: '週2回以上のトレーニングを1ヶ月以上継続している', guide: 'MID', isCurrentFor: 'pro' },
@@ -446,7 +446,7 @@ export default function NewMeNaviPage() {
       eyebrow: [
         { text: '何らかの方法で眉を整えている（サロン・自己処理どちらでもOK）', guide: 'none', isCurrentFor: 'none' },
         { text: 'スクリューブラシで毎朝眉を整えている', guide: 'none',
-          products: [{ name: 'スクリューブラシ（使い捨て）', url: 'https://www.amazon.co.jp/s?k=スクリューブラシ+眉&tag=whero523-22' }, { name: '眉用ハサミ', url: 'https://www.amazon.co.jp/s?k=眉用はさみ+ステンレス&tag=whero523-22' }] },
+          products: [{ name: 'スクリューブラシ（使い捨て）', url: 'https://www.amazon.co.jp/s?k=スクリューブラシ+眉&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: '眉用ハサミ', url: 'https://www.amazon.co.jp/s?k=眉用はさみ+ステンレス&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
         { text: '自分の顔型に合う眉の形を1つ把握している', guide: 'MID', isCurrentFor: 'concerned' },
         { text: '眉毛サロンでプロに一度整えてもらったことがある', guide: 'HIGH', isCurrentFor: 'self' },
         { text: 'プロに作ってもらった形を基準に、自宅で眉バサミ＋スクリューブラシでメンテナンスできている', guide: 'LOW' },
@@ -472,13 +472,13 @@ export default function NewMeNaviPage() {
         { text: '自分の髪質を把握している（硬い・柔らかい・くせ毛・直毛など）', guide: 'LOW' },
         { text: '自分の顔型を把握している（丸・面長・卵型など）', guide: 'LOW' },
         { text: '髪質に合ったシャンプーを使っている', guide: 'LOW',
-          products: [{ name: 'BOTANIST ボタニカルシャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=whero523-22' }, { name: 'スカルプシャンプー（薄毛が気になる方）', url: 'https://www.amazon.co.jp/s?k=スカルプシャンプー+メンズ&tag=whero523-22', level: 'intermediate' }] },
+          products: [{ name: 'BOTANIST ボタニカルシャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'スカルプシャンプー（薄毛が気になる方）', url: 'https://www.amazon.co.jp/s?k=スカルプシャンプー+メンズ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
         { text: 'ドライヤーで根元から乾かしている（自然乾燥していない）', guide: 'none',
-          products: [{ name: 'ドライヤー（速乾・髪に優しい）', url: 'https://www.amazon.co.jp/s?k=ドライヤー+速乾+メンズ&tag=whero523-22' }] },
+          products: [{ name: 'ドライヤー（速乾・髪に優しい）', url: 'https://www.amazon.co.jp/s?k=ドライヤー+速乾+メンズ&tag=whero523-22', level: 'beginner', priceRange: 'mid' }] },
         { text: 'スタイリング剤を使っている', guide: 'none',
-          products: [{ name: 'ウーノ スーパーハード（定番）', url: 'https://www.amazon.co.jp/s?k=ウーノ+スーパーハード&tag=whero523-22' }, { name: 'バーム系スタイリング剤（ナチュラル仕上げ）', url: 'https://www.amazon.co.jp/s?k=ヘアバーム+メンズ&tag=whero523-22', level: 'intermediate' }] },
+          products: [{ name: 'ウーノ スーパーハード（定番）', url: 'https://www.amazon.co.jp/s?k=ウーノ+スーパーハード&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'バーム系スタイリング剤（ナチュラル仕上げ）', url: 'https://www.amazon.co.jp/s?k=ヘアバーム+メンズ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
         { text: 'トリートメントまたはアウトバスケアをしている', guide: 'LOW', isCurrentFor: 'concerned',
-          products: [{ name: 'アウトバストリートメント（洗い流さないタイプ）', url: 'https://www.amazon.co.jp/s?k=洗い流さないトリートメント+メンズ&tag=whero523-22', level: 'intermediate' }] },
+          products: [{ name: 'アウトバストリートメント（洗い流さないタイプ）', url: 'https://www.amazon.co.jp/s?k=洗い流さないトリートメント+メンズ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
         { text: '美容師に「顔型・骨格に合う髪型」を相談したことがある', guide: 'HIGH', isCurrentFor: 'self' },
         { text: '定期的に通う美容師を1人決めている', guide: 'MID' },
         { text: '自宅でのセット方法を美容師に教わったことがある', guide: 'HIGH' },
@@ -489,12 +489,12 @@ export default function NewMeNaviPage() {
       nail: [
         { text: '定期的に爪を切っている（1〜2週間に1回）', guide: 'none', isCurrentFor: 'none' },
         { text: '爪やすりでバリや形を整えている', guide: 'none',
-          products: [{ name: 'ガラス製爪やすり（水洗いOK）', url: 'https://www.amazon.co.jp/s?k=ガラス製+爪やすり&tag=whero523-22' }] },
+          products: [{ name: 'ガラス製爪やすり（水洗いOK）', url: 'https://www.amazon.co.jp/s?k=ガラス製+爪やすり&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
         { text: 'ハンドクリームで手・爪を保湿している', guide: 'none',
-          products: [{ name: 'ニベア リッチケアハンドクリーム', url: 'https://www.amazon.co.jp/s?k=ニベア+ハンドクリーム&tag=whero523-22' }] },
+          products: [{ name: 'ニベア リッチケアハンドクリーム', url: 'https://www.amazon.co.jp/s?k=ニベア+ハンドクリーム&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
         { text: '爪の形を丸・スクエアなど意識して整えている', guide: 'LOW', isCurrentFor: 'concerned' },
         { text: 'ネイルオイルを使っている', guide: 'LOW',
-          products: [{ name: 'OPI プロスパ ネイルオイル', url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=whero523-22', level: 'intermediate' }, { name: 'ネイルオイル（プチプラ）', url: 'https://www.amazon.co.jp/s?k=ネイルオイル+メンズ&tag=whero523-22' }] },
+          products: [{ name: 'OPI プロスパ ネイルオイル', url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=whero523-22', level: 'intermediate', priceRange: 'low' }, { name: 'ネイルオイル（プチプラ）', url: 'https://www.amazon.co.jp/s?k=ネイルオイル+メンズ&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
         { text: '甘皮を押し上げるケアをしている', guide: 'MID', note: '切り取るのはNG。正しい方法はプロに教わるのが理想。', isCurrentFor: 'self' },
         { text: 'ネイルケアサロンでプロのケアを受けたことがある', guide: 'HIGH' },
         { text: '定期的にサロンでメンテナンスしている', guide: 'HIGH', isCurrentFor: 'pro' },
@@ -507,16 +507,16 @@ export default function NewMeNaviPage() {
       skin_care: {
         steps: [
           { text: '洗顔・化粧水・乳液の3ステップが毎日できている', guide: 'none', isCurrentFor: 'none',
-            products: [{ name: '肌ラボ 極潤 洗顔フォーム', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+洗顔&tag=whero523-22' }, { name: '肌ラボ 極潤 ヒアルロン液（化粧水）', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=whero523-22' }, { name: 'ニベア フェイス 乳液', url: 'https://www.amazon.co.jp/s?k=ニベア+フェイス+乳液&tag=whero523-22' }] },
+            products: [{ name: '肌ラボ 極潤 洗顔フォーム', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+洗顔&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: '肌ラボ 極潤 ヒアルロン液（化粧水）', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'ニベア フェイス 乳液', url: 'https://www.amazon.co.jp/s?k=ニベア+フェイス+乳液&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
           { text: 'クレンジング（夜）と日焼け止め（朝）が習慣になっている', guide: 'none',
-            products: [{ name: 'ビオレUV アクアリッチ（日焼け止め）', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=whero523-22' }, { name: 'メンズビオレ クレンジング', url: 'https://www.amazon.co.jp/s?k=メンズ+クレンジング+洗顔&tag=whero523-22' }] },
+            products: [{ name: 'ビオレUV アクアリッチ（日焼け止め）', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'メンズビオレ クレンジング', url: 'https://www.amazon.co.jp/s?k=メンズ+クレンジング+洗顔&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
           { text: '自分の肌タイプを把握している（乾燥・脂性・混合）', guide: 'LOW', isCurrentFor: 'concerned' },
           { text: '自分の肌悩みを1つ言語化している（例：ニキビ・毛穴・くすみ・赤み）', guide: 'LOW' },
           { text: '角質ケアを取り入れている', guide: 'MID', isCurrentFor: 'self',
-            products: [{ name: 'ピーリングジェル（週1回）', url: 'https://www.amazon.co.jp/s?k=ピーリングジェル+メンズ&tag=whero523-22', level: 'intermediate' }] },
+            products: [{ name: 'ピーリングジェル（週1回）', url: 'https://www.amazon.co.jp/s?k=ピーリングジェル+メンズ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
           { text: '皮膚科またはエステで今の肌状態を1回診てもらったことがある', guide: 'HIGH', isCurrentFor: 'pro' },
           { text: '診断をもとにスキンケアを1アイテム以上アップデートした', guide: 'HIGH',
-            products: [{ name: 'WELEDA スキンフード（天然成分・有機認証）', url: 'https://www.amazon.co.jp/s?k=WELEDA+スキンフード&tag=whero523-22', level: 'advanced' }] },
+            products: [{ name: 'WELEDA スキンフード（天然成分・有機認証）', url: 'https://www.amazon.co.jp/s?k=WELEDA+スキンフード&tag=whero523-22', level: 'advanced', priceRange: 'low' }] },
           { text: 'アップデートしたケアが3ヶ月以上途切れず続いている', guide: 'LOW' },
         ],
       },
@@ -534,11 +534,11 @@ export default function NewMeNaviPage() {
       teeth_white: {
         steps: [
           { text: '毎日歯磨きをしている', guide: 'none', isCurrentFor: 'none',
-            products: [{ name: '電動歯ブラシ（オーラルB）', url: 'https://www.amazon.co.jp/s?k=オーラルB+電動歯ブラシ&tag=whero523-22', level: 'intermediate' }] },
+            products: [{ name: '電動歯ブラシ（オーラルB）', url: 'https://www.amazon.co.jp/s?k=オーラルB+電動歯ブラシ&tag=whero523-22', level: 'intermediate', priceRange: 'mid' }] },
           { text: '歯間ブラシかフロスを使っている', guide: 'none',
-            products: [{ name: 'GUM デンタルフロス', url: 'https://www.amazon.co.jp/s?k=GUM+デンタルフロス&tag=whero523-22' }, { name: 'ルシェロ 歯間ブラシ', url: 'https://www.amazon.co.jp/s?k=歯間ブラシ+細め&tag=whero523-22' }] },
+            products: [{ name: 'GUM デンタルフロス', url: 'https://www.amazon.co.jp/s?k=GUM+デンタルフロス&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'ルシェロ 歯間ブラシ', url: 'https://www.amazon.co.jp/s?k=歯間ブラシ+細め&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
           { text: 'ホワイトニング配合の歯磨き粉を使っている', guide: 'none',
-            products: [{ name: 'アパガード プレミオ', url: 'https://www.amazon.co.jp/s?k=アパガード+プレミオ&tag=whero523-22', level: 'intermediate' }, { name: 'チェックアップ スタンダード', url: 'https://www.amazon.co.jp/s?k=チェックアップ+歯磨き粉&tag=whero523-22' }] },
+            products: [{ name: 'アパガード プレミオ', url: 'https://www.amazon.co.jp/s?k=アパガード+プレミオ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }, { name: 'チェックアップ スタンダード', url: 'https://www.amazon.co.jp/s?k=チェックアップ+歯磨き粉&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
           { text: '自分の歯の黄ばみの原因を把握している（着色・加齢など）', guide: 'LOW', isCurrentFor: 'concerned' },
           { text: 'セルフホワイトニングサロンを体験したことがある', guide: 'MID' },
           { text: '歯科でPMTC（クリーニング）を受けたことがある', guide: 'HIGH', isCurrentFor: 'self' },
@@ -749,14 +749,22 @@ export default function NewMeNaviPage() {
         const noteHtml = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
         let productsHtml = '';
         if (step.products && step.products.length > 0) {
-          // level別フィルター: 0-2→入門 / 3-8→習慣化中 / 9+→こだわり派（カスケード表示）
+          // level×budget 2軸フィルター
           const _totalDone = Object.values(stepDone).filter(Boolean).length;
           const _userLevel = _totalDone >= 9 ? 'advanced' : _totalDone >= 3 ? 'intermediate' : 'beginner';
           const _lvRank = { beginner: 0, intermediate: 1, advanced: 2 };
+          const _budgetRank = { low: 0, mid: 1, high: 2 };
           const _maxRank = _lvRank[_userLevel];
+          let _budget = null;
+          try { const _raw = localStorage.getItem('fineme:diagnosis:latest'); if (_raw) _budget = JSON.parse(_raw).budget || null; } catch {}
+          const _maxBudgetRank = (!_budget || _budget === 'high' || _budget === 'premium') ? 2 : (_budget === 'mid' ? 1 : 0);
           const chips = step.products
             .map((prod, pi) => ({ prod, pi }))
-            .filter(({ prod }) => (_lvRank[prod.level || 'beginner']) <= _maxRank)
+            .filter(({ prod }) => {
+              const lvOk = (_lvRank[prod.level || 'beginner']) <= _maxRank;
+              const prOk = (_budgetRank[prod.priceRange || 'low']) <= _maxBudgetRank;
+              return lvOk && prOk;
+            })
             .map(({ prod, pi }) => {
               const prodKey = `prod-${axisKey}-${i}-${pi}`;
               const isProdDone = !!stepDone[prodKey];
