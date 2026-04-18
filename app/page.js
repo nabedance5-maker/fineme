@@ -499,8 +499,6 @@ export default function HomePage() {
               <span className="hero-nav-badge">7軸コンパス生成</span>
             </div>
 
-            <Link href="/search" className="hero-nav-sub">診断せずに探す</Link>
-
             {/* 診断済みユーザー向けバナー（ログイン済みのみ） */}
             {loggedIn && compass && (
               <Link href="/diagnosis/result" className="compass-banner">
@@ -685,12 +683,12 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── カテゴリ（補助ナビ） ── */}
+        {/* ── カテゴリ（診断済み：補助ナビ / 未診断：診断への誘導） ── */}
+        {diagnosis ? (
         <section className="categories-section">
           <div className="categories-inner">
-            {/* ── STEP 1：変容の入口 ── */}
-            <p className="categories-eyebrow">変容の入口を選ぶ</p>
-            <h2 className="categories-title">変えたい場所がすでに決まっている方へ</h2>
+            <p className="categories-eyebrow">あなたの変容ルートを深める</p>
+            <h2 className="categories-title">専門家・サービスから次の一手を選ぶ</h2>
             <div className="cat-grid">
               {CATEGORIES.map(({ cat, icon, label, sub }) => (
                 <Link key={cat} href={`/search?category=${cat}`} className="cat-card">
@@ -699,23 +697,6 @@ export default function HomePage() {
                   <span className="cat-sub">{sub}</span>
                 </Link>
               ))}
-            </div>
-            <div style={{ textAlign: 'center', marginTop: '32px', paddingTop: '24px', borderTop: '1px solid rgba(201,168,76,0.15)' }}>
-              <p style={{ fontSize: '13px', color: 'var(--color-muted)', margin: '0 0 14px', lineHeight: '1.7' }}>
-                カテゴリが決まっていない方は、7軸変容ガイドで<br />どこから始めるべきかを確認できます。
-              </p>
-              <Link href="/guide" style={{
-                display: 'inline-flex', alignItems: 'center', gap: '7px',
-                padding: '11px 24px', border: '1.5px solid var(--color-gold, #c9a84c)',
-                color: 'var(--color-gold, #c9a84c)', background: 'transparent',
-                borderRadius: '6px', fontSize: '14px', fontWeight: '700',
-                textDecoration: 'none', transition: 'background .18s, color .18s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#c9a84c'; e.currentTarget.style.color = '#0a0f1e'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#c9a84c'; }}
-              >
-                🗺️ 7軸変容ガイドを見る
-              </Link>
             </div>
 
             {/* ── STEP 2：発揮のステージ ── */}
@@ -766,6 +747,38 @@ export default function HomePage() {
 
           </div>
         </section>
+        ) : (
+        /* 未診断：Me Scan への強い誘導 */
+        <section style={{ padding: '72px 20px', background: 'rgba(10,15,30,0.70)', textAlign: 'center' }}>
+          <div style={{ maxWidth: '640px', margin: '0 auto' }}>
+            <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '.16em', color: 'rgba(201,168,76,0.6)', textTransform: 'uppercase', margin: '0 0 16px', fontFamily: 'var(--font-sans)' }}>地図なき旅は迷う</p>
+            <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(20px,3.5vw,28px)', fontWeight: 700, color: '#f0ece4', margin: '0 0 16px', lineHeight: 1.5 }}>
+              「何を変えるか」を決める前に、<br />あなたの「変容地図」を描く。
+            </h2>
+            <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.6)', margin: '0 0 36px', lineHeight: 1.9 }}>
+              カテゴリから選ぶことはできる。でも何から始めるべきかは、<br />あなたの現在地を測ってから分かる。<br />
+              Me Scanが、7軸の中で「今のあなたに効く順番」を教えてくれる。
+            </p>
+            <Link href="/diagnosis" className="hero-nav-cta">
+              🧬 Me Scanで地図を描く（無料）
+            </Link>
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.25)', margin: '16px 0 0' }}>約15分 · 匿名 · 登録不要</p>
+            <div style={{ marginTop: '36px', paddingTop: '28px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', margin: '0 0 12px' }}>すでに始める場所が決まっている方</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+                {CATEGORIES.slice(0, 6).map(({ cat, icon, label }) => (
+                  <Link key={cat} href={`/search?category=${cat}`} style={{ fontSize: '12px', padding: '6px 14px', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', color: 'rgba(255,255,255,0.45)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                    {icon} {label}
+                  </Link>
+                ))}
+                <Link href="/search" style={{ fontSize: '12px', padding: '6px 14px', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '8px', color: 'rgba(201,168,76,0.5)', textDecoration: 'none' }}>
+                  全カテゴリ →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+        )}
 
         {/* ── おすすめサービス ── */}
         <section className="section">

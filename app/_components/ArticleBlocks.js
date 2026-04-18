@@ -95,6 +95,7 @@ function Block({ block }) {
     case 'image':     return <ImageBlock {...block} />;
     case 'stat':      return <StatBlock {...block} />;
     case 'cards':     return <CardsBlock {...block} />;
+    case 'product':   return <ProductBlock {...block} />;
     default:          return null;
   }
 }
@@ -469,6 +470,37 @@ function CardsBlock({ items }) {
         </div>
       ))}
     </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Product — インライン商品紹介（本文中に自然挿入）
+───────────────────────────────────────────── */
+function ProductBlock({ name, url, reason }) {
+  if (!name || !url) return null;
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" style={{
+      display: 'flex', alignItems: 'center', gap: '14px',
+      margin: '20px 0 28px',
+      padding: '14px 18px',
+      background: 'rgba(201,168,76,0.05)',
+      border: '1px solid rgba(201,168,76,0.22)',
+      borderRadius: '12px',
+      textDecoration: 'none',
+      transition: 'border-color .15s, background .15s',
+    }}>
+      <span style={{ fontSize: '20px', flexShrink: 0 }}>🛒</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {reason && (
+          <p style={{ fontSize: '11px', color: 'rgba(201,168,76,0.7)', margin: '0 0 3px', fontWeight: 700, fontFamily: 'var(--font-sans)' }}>
+            {reason}
+          </p>
+        )}
+        <p style={{ fontSize: '14px', fontWeight: 700, color: 'rgba(240,228,180,0.9)', margin: 0 }}>
+          {name} →
+        </p>
+      </div>
+    </a>
   );
 }
 
