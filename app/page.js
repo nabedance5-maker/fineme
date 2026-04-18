@@ -683,8 +683,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── カテゴリ（診断済み：補助ナビ / 未診断：診断への誘導） ── */}
-        {diagnosis ? (
+        {/* ── カテゴリ（ログイン+診断済み：補助ナビ / それ以外：Me Scan誘導） ── */}
+        {(loggedIn && diagnosis) ? (
         <section className="categories-section">
           <div className="categories-inner">
             <p className="categories-eyebrow">あなたの変容ルートを深める</p>
