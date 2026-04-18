@@ -241,21 +241,28 @@
         <div class="now-item-dot todo"></div>
         <div>
           <span class="now-item-main">掲載者への直接アプローチ</span>
-          <span class="now-item-sub">インスタ・GoogleマップでPT・サロン・ジムにDM。PT待ちと並行して動く。</span>
+          <span class="now-item-sub">find-providers.html で候補抽出 → sns-content-gen.html でDM個別生成 → 送付。PT稼働待ちと並行して動く。</span>
         </div>
       </div>
       <div class="now-item">
         <div class="now-item-dot todo"></div>
         <div>
           <span class="now-item-main">SEO流入の確認</span>
-          <span class="now-item-sub">Search Consoleでインデックス状況・クリック数チェック。記事効果の検証。</span>
+          <span class="now-item-sub">Search Consoleでインデックス状況・クリック数チェック。記事251本の効果検証。新規ドメインのため被リンク獲得が急務（note・X経由で継続）。</span>
         </div>
       </div>
       <div class="now-item">
         <div class="now-item-dot todo"></div>
         <div>
-          <span class="now-item-main">創業パートナー候補リストアップ</span>
-          <span class="now-item-sub">SNSアプローチ候補の洗い出し</span>
+          <span class="now-item-main">Naviの習慣ノード設計</span>
+          <span class="now-item-sub">現在のNaviは「サービス来店ノード」のみ。洗顔・食事・筋トレ等の日々の習慣ノードを各軸に追加。変容の旅の地図の主成分が習慣ノードになることが最終形。</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot todo"></div>
+        <div>
+          <span class="now-item-main">アフィリエイト商品ストックの拡充</span>
+          <span class="now-item-sub">全7軸×3レベル（beginner/intermediate/advanced）の商品ラインナップを揃える。ASP登録済みのリンクと紐付けて実際にアフィリエイト収益フローを構築。</span>
         </div>
       </div>
     </div>
@@ -345,7 +352,7 @@
 
   <div class="deliverables">
     <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">Me Scan（診断）</span>7軸スコアリング・ゴール4層・AGA分岐・transform_vectors算出</div></div>
-    <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">New Me Map（地図）</span>7軸レーダーチャート・変容ベクトル・ゴール表示・プロマッチング</div></div>
+    <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">New Me Map（地図）</span>7軸レーダーチャート・変容ベクトル・ゴール表示・変容環境マッチング（障壁→Navi動線→あなたに合う変容環境→掲載者の順序で変容の旅を軸に設計）</div></div>
     <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">Fineme Compass（動的羅針盤）</span>軸進捗に応じて更新。done軸をスキップし旅を通じて向くべき方角を指し続ける</div></div>
     <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">New Me Navi（ロードマップ）</span>7軸並列トラック・来た道別中継地点・進捗ステータス管理</div></div>
     <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">掲載者ダッシュボード</span>スタッフ管理・画像アップロード・体験談管理・統計3項目（閲覧数・問い合わせ・紹介報酬）</div></div>
@@ -357,6 +364,7 @@
     <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">セキュリティ強化</span>API認証9件・XSSエスケープ4ファイル・LINEオープンリダイレクト修正・AI APIレートリミット・予約POSTスパム対策</div></div>
     <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">エリアマッチング（Haversine距離ベース）</span>GPS/手動セレクトでユーザー位置登録・掲載者住所3段階入力・Nominatim自動ジオコーディング・10km以内+8pt/10〜30km+5pt/30〜50km+2ptのスコアリング。Google Maps通勤時間APIは不採用確定（Haversineで代替）</div></div>
     <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">掲載者基本情報整理（プロフィールタブ集約）</span>都道府県→市区町村→番地以下の3段階住所入力。番地はユーザー非公開（マッチング精度向上のみ使用）。最寄り駅・アクセスは別途公開フィールド。最低価格・支払い方法・経験年数・資格もプロフィールタブに集約</div></div>
+    <div class="del-item done-item"><span class="del-icon">✅</span><div><span class="del-label">ポータルサイト思想の構造的排除（2026-04-18）</span>Me Scan / New Me Map / New Me Navi / Mirror の4機能を「変容の旅の地図と羅針盤」視点で監査・刷新。budget×level 2軸商品フィルタリング（旅の進捗と予算を掛け合わせ）・Navi各軸に関連記事リンク追加・New Me Map セクション順序変更＋"Pro Matching"→"あなたに合う変容環境"リネーム</div></div>
   </div>
 
   <div class="insight">
@@ -518,6 +526,8 @@
     <div class="del-item"><span class="del-icon">📊</span><div><span class="del-label">Me Scan受診者の蓄積</span>ショートドラマ→診断の導線を確立。受診データから改善を継続</div></div>
     <div class="del-item"><span class="del-icon">💬</span><div><span class="del-label">体験談の初期蓄積</span>掲載者経由の初期ユーザーから体験談を収集。SEOコンテンツ化の準備</div></div>
     <div class="del-item"><span class="del-icon">🔁</span><div><span class="del-label">掲載者→掲載者紹介ループの稼働確認</span>ストック型紹介報酬（¥500/月）が自然に動き始めるかを検証</div></div>
+    <div class="del-item"><span class="del-icon">🗺</span><div><span class="del-label">Naviへの習慣ノード追加</span>洗顔・食事・筋トレ・服の選び方など日々の習慣ノードを各軸に実装。「サービス来店」だけでなく「日常の積み重ね」が地図の主成分になる状態を目指す。習慣ノードに自然な形でアフィリエイト商品を紐づける。</div></div>
+    <div class="del-item"><span class="del-icon">💰</span><div><span class="del-label">アフィリエイト収益フロー確立</span>全7軸×3レベルの商品ラインナップ整備。ASPリンク紐付け・クリック計測・月次収益確認まで通す。</div></div>
   </div>
 
   <div class="kpi-row">
@@ -556,6 +566,22 @@
             <div class="detail-row"><span class="tag tag-todo">未着手</span>掲載者→掲載者紹介ループの稼働確認・報酬支払い自動化</div>
             <div class="detail-row"><span class="tag tag-todo">未着手</span>初期ユーザーからの体験談収集・投稿促進</div>
             <div class="detail-row"><span class="tag tag-todo">未着手</span>体験談のSEO記事化フォーマット策定・運用開始</div>
+          </div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">Naviの習慣ノード化（変容の旅のインフラとして最重要）</div>
+          <div class="detail-list">
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>各軸の習慣ノード設計（洗顔・食事管理・姿勢・服の捨て方等）——Naviの主成分は「日々の習慣」にする</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>習慣ノードへのアフィリエイト商品紐づけ（level×budgetフィルタリング適用済み）</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>習慣達成の記録機能（step_done JSONB 拡張）——サービス来店と日常習慣を同列で追える地図に</div>
+          </div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-title">アフィリエイト収益フロー</div>
+          <div class="detail-list">
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>全7軸×3レベル（beginner/intermediate/advanced）商品ラインナップ整備</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>ASPリンク（A8.net・afb等）各商品ページに実装・クリック計測</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>月次アフィリエイト収益確認・ラインナップ最適化</div>
           </div>
         </div>
       </div>
