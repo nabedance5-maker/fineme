@@ -278,6 +278,39 @@ export default function NewMeNaviPage() {
       .station:first-child .station-card::before { display: none; }
       .station:last-child .station-mini-card::after,
       .station:last-child .station-card::after { display: none; }
+
+      /* ── アクションセクション（新構造） ── */
+      .action-section { margin-bottom: 28px; }
+      .action-sec-header { display: flex; align-items: center; gap: 12px; padding: 12px 0 10px; border-bottom: 1.5px solid rgba(201,168,76,0.18); margin-bottom: 12px; }
+      .action-sec-icon { font-size: 22px; flex-shrink: 0; }
+      .action-sec-body { flex: 1; }
+      .action-sec-label { font-size: 15px; font-weight: 900; color: rgba(232,228,220,0.92); margin: 0 0 2px; font-family: 'Noto Serif JP', Georgia, serif; }
+      .action-sec-desc { font-size: 11px; color: rgba(232,228,220,0.45); margin: 0; }
+      .action-sec-progress { font-size: 12px; font-weight: 800; color: rgba(201,168,76,0.75); background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2); border-radius: 20px; padding: 3px 10px; white-space: nowrap; flex-shrink: 0; }
+
+      /* ── ステップカード ── */
+      .step-card { display: flex; align-items: flex-start; gap: 10px; padding: 11px 10px; border-bottom: 1px solid rgba(201,168,76,0.07); position: relative; transition: background .12s; }
+      .step-card:last-child { border-bottom: none; }
+      .step-card.step-compass { background: rgba(201,168,76,0.04); border-radius: 10px; border-bottom: none; margin-bottom: 2px; }
+      .step-card.step-done .step-text { text-decoration: line-through; color: #9ca3af; }
+      .step-card-body { flex: 1; min-width: 0; padding-right: 4px; }
+      .step-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+      .step-axis-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; border: 1px solid; }
+      .step-text { font-size: 13px; color: rgba(232,228,220,0.80); line-height: 1.6; margin: 0; }
+      .step-check-btn-wrap { flex-shrink: 0; padding-top: 2px; }
+
+      /* ── スキン・歯フォーカストグル ── */
+      .focus-toggle-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+      .focus-toggle-group { display: flex; background: rgba(10,15,30,0.50); border: 1px solid rgba(232,228,220,0.15); border-radius: 8px; overflow: hidden; }
+      .focus-toggle-btn { padding: 5px 12px; font-size: 12px; font-weight: 700; background: transparent; border: none; color: rgba(232,228,220,0.45); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; }
+      .focus-toggle-btn.active { background: rgba(201,168,76,0.15); color: rgba(232,228,220,0.90); }
+
+      /* ── 軸ステータスバー ── */
+      .axis-status-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+      .axis-status-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px; border: 1px solid; background: transparent; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
+      .axis-status-chip[data-status=""] { border-color: rgba(232,228,220,0.18); color: rgba(232,228,220,0.40); }
+      .axis-status-chip[data-status="active"] { border-color: #93c5fd; color: #60a5fa; background: rgba(59,130,246,0.06); }
+      .axis-status-chip[data-status="done"] { border-color: #6ee7b7; color: #10b981; background: rgba(16,185,129,0.06); }
     `;
     document.head.appendChild(style);
 
@@ -564,6 +597,188 @@ export default function NewMeNaviPage() {
         ],
       },
     };
+
+    // ── アクションタイプ: quick=即日一回 / habit=毎日毎週 / ongoing=数週間〜数ヶ月 ──
+    const ACTION_TYPE_MAP = {
+      body:        ['quick','quick','quick','habit','habit','quick','quick','quick','ongoing','ongoing','quick'],
+      eyebrow:     ['quick','habit','quick','quick','habit','ongoing','ongoing','ongoing'],
+      fashion:     ['quick','quick','quick','quick','quick','quick','quick','quick','quick','habit','habit'],
+      hair:        ['ongoing','quick','quick','habit','habit','habit','habit','quick','ongoing','quick','habit','ongoing','quick'],
+      nail:        ['habit','habit','habit','habit','habit','habit','quick','ongoing','ongoing'],
+      skin_care:   ['habit','habit','quick','quick','habit','quick','quick','ongoing'],
+      skin_hige:   ['habit','habit','quick','quick','ongoing','habit'],
+      teeth_white: ['habit','habit','habit','quick','quick','quick','quick','quick','habit','ongoing'],
+      teeth_ortho: ['quick','quick','quick','quick','quick','ongoing','ongoing','ongoing','ongoing','ongoing'],
+    };
+    function getActionType(axisKey, idx) {
+      return (ACTION_TYPE_MAP[axisKey] || [])[idx] || 'ongoing';
+    }
+
+    // ── 全ステップを actionType 別フラットリストに展開 ──
+    function flattenAllSteps() {
+      const skinKey  = getSkinFocus()  === 'hige'  ? 'skin_hige'   : 'skin_care';
+      const teethKey = getTeethFocus() === 'ortho' ? 'teeth_ortho' : 'teeth_white';
+      const result = [];
+      for (const axisId of Object.keys(AREA_DEFS)) {
+        const def = AREA_DEFS[axisId];
+        const v = tv[axisId] || { current:1, ideal:3, care_type:'none' };
+        const careType = v.care_type || 'none';
+        let steps, axisKey;
+        if (axisId === 'skin')  { steps = (MILESTONES_SUB[skinKey]  || {}).steps || []; axisKey = skinKey; }
+        else if (axisId === 'teeth') { steps = (MILESTONES_SUB[teethKey] || {}).steps || []; axisKey = teethKey; }
+        else { steps = MILESTONES[axisId] || []; axisKey = axisId; }
+        const concernedIdx = steps.findIndex(s => s.isCurrentFor === 'concerned');
+        const splitAt = concernedIdx > 0 ? concernedIdx : 0;
+        const currentIdx = steps.findIndex(s => s.isCurrentFor === careType);
+        steps.forEach((step, idx) => {
+          const doneKey = (splitAt > 0 && idx < splitAt)
+            ? `prereq-${axisKey}-${idx}` : `${axisKey}-${idx}`;
+          result.push({
+            axisId, axisKey, def, careType,
+            step, idx, doneKey,
+            actionType: getActionType(axisKey, idx),
+            isDone: !!stepDone[doneKey],
+            isCurrentPosition: (idx === currentIdx),
+          });
+        });
+      }
+      return result;
+    }
+
+    // ── ステップカードHTML ──
+    function buildStepCard({ axisId, axisKey, def, step, idx, doneKey, isDone, isCurrentPosition }, compassAxis) {
+      const isCompassStep = axisId === compassAxis;
+      let guideHtml = '';
+      if (step.guide === 'HIGH') {
+        const link = def.catLink ? ` <a href="/search?category=${esc(def.catLink)}&diag=1" style="color:#c9a84c;font-weight:700;text-decoration:none">ガイドを探す →</a>` : '';
+        guideHtml = `<div class="guide-badge guide-high">🏥 ここはプロに任せると確実に変わる${link}</div>`;
+      } else if (step.guide === 'MID') {
+        guideHtml = `<div class="guide-badge guide-mid">📋 プロと進めると精度が上がる</div>`;
+      }
+      const noteHtml = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
+      let productsHtml = '';
+      if (step.products && step.products.length > 0) {
+        const _totalDone = Object.values(stepDone).filter(Boolean).length;
+        const _userLevel = _totalDone >= 9 ? 'advanced' : _totalDone >= 3 ? 'intermediate' : 'beginner';
+        const _lvRank = { beginner: 0, intermediate: 1, advanced: 2 };
+        const _budgetRank = { low: 0, mid: 1, high: 2 };
+        const _maxRank = _lvRank[_userLevel];
+        let _budget = null;
+        try { const _raw = localStorage.getItem('fineme:diagnosis:latest'); if (_raw) _budget = JSON.parse(_raw).budget || null; } catch {}
+        const _maxBudgetRank = (!_budget || _budget === 'high' || _budget === 'premium') ? 2 : (_budget === 'mid' ? 1 : 0);
+        const chips = step.products
+          .filter(prod => (_lvRank[prod.level||'beginner']) <= _maxRank && (_budgetRank[prod.priceRange||'low']) <= _maxBudgetRank)
+          .map((prod, pi) => {
+            const prodKey = `prod-${axisKey}-${idx}-${pi}`;
+            const isProdDone = !!stepDone[prodKey];
+            return `<a href="${esc(prod.url)}" target="_blank" rel="noopener noreferrer" class="product-chip">🛒 ${esc(prod.name)}</a><button class="product-check-btn${isProdDone?' checked':''}" data-done-key="${esc(prodKey)}">${isProdDone?'✓ 使用中':'使ってる？'}</button>`;
+          }).join('');
+        if (chips) productsHtml = `<div class="product-suggestions">${chips}</div>`;
+      }
+      const compassTag = isCompassStep ? `<span class="compass-pointing-badge">🧭 今ここ</span>` : '';
+      const currentTag = isCurrentPosition ? '<span class="milestone-current-tag">★ 現在地</span>' : '';
+      const badgeBg    = isCompassStep ? 'rgba(201,168,76,0.15)' : 'rgba(10,15,30,0.50)';
+      const badgeBorder = isCompassStep ? 'rgba(201,168,76,0.35)' : 'rgba(232,228,220,0.18)';
+      const badgeColor  = isCompassStep ? '#c9a84c' : 'rgba(232,228,220,0.55)';
+      return `
+        <div class="step-card${isDone?' step-done':''}${isCompassStep?' step-compass':''}">
+          <div class="step-check-btn-wrap">
+            <button class="step-check-btn${isDone?' checked':''}" data-done-key="${esc(doneKey)}" title="${isDone?'完了を取り消す':'できてる・やった'}">${isDone?'✓':''}</button>
+          </div>
+          <div class="step-card-body">
+            <div class="step-meta">
+              <span class="step-axis-badge" style="background:${badgeBg};border-color:${badgeBorder};color:${badgeColor}">${esc(def.icon)} ${esc(def.label)}</span>
+              ${compassTag}${currentTag}
+            </div>
+            <p class="step-text">${esc(step.text)}</p>
+            ${guideHtml}${noteHtml}${productsHtml}
+          </div>
+        </div>`;
+    }
+
+    // ── 3セクションHTML生成 ──
+    function buildSectionsHtml() {
+      const compassAxis = calcDynamicCompass();
+      const allSteps = flattenAllSteps();
+      const SECTIONS = [
+        { type: 'quick',   icon: '⚡', label: '今すぐ動ける一手',       desc: '今日中に完了できる。まずここから動こう' },
+        { type: 'habit',   icon: '🔄', label: '毎日・毎週の習慣にする', desc: '継続が変容を積み上げる。少しずつでOK' },
+        { type: 'ongoing', icon: '🌊', label: 'じっくり取り組むプログラム', desc: '数週間〜数ヶ月スパン。覚悟して始めると変わる' },
+      ];
+      // ゴール
+      const doneCount = Object.values(stepDone).filter(Boolean).length;
+      const isReady       = doneCount >= 20;
+      const isApproaching = doneCount >= 10;
+      const cardBg     = isApproaching ? 'linear-gradient(135deg,rgba(201,168,76,0.10),rgba(10,15,30,0.30))' : 'rgba(10,15,30,0.35)';
+      const cardBorder = isApproaching ? 'rgba(201,168,76,0.3)' : 'rgba(232,228,220,0.12)';
+      const stageReadinessHtml = isReady ? `
+        <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:8px;margin-bottom:18px">
+          <span style="font-size:16px">🎉</span><span style="font-size:12px;font-weight:700;color:rgba(52,211,153,0.95)">このステージへ進む準備ができています！</span>
+        </div>` : isApproaching ? `
+        <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.22);border-radius:8px;margin-bottom:18px">
+          <span style="font-size:14px">🧭</span><span style="font-size:12px;font-weight:700;color:rgba(201,168,76,0.95)">変容が着実に進んでいます。もう少しで発揮のステージへ。</span>
+        </div>` : `
+        <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(10,15,30,0.40);border:1px dashed rgba(232,228,220,0.18);border-radius:8px;margin-bottom:18px">
+          <span style="font-size:14px">🔒</span><span style="font-size:12px;color:rgba(232,228,220,0.50);line-height:1.6">まずは変容ルートを歩もう。変化が積み重なるほど、このステージが近づいてくる。</span>
+        </div>`;
+
+      let html = '';
+      SECTIONS.forEach(({ type, icon, label, desc }) => {
+        const sectionSteps = allSteps
+          .filter(s => s.actionType === type)
+          .sort((a, b) => {
+            const aIsCompass = a.axisId === compassAxis ? 0 : 1;
+            const bIsCompass = b.axisId === compassAxis ? 0 : 1;
+            if (aIsCompass !== bIsCompass) return aIsCompass - bIsCompass;
+            const ar = priorityOrder.indexOf(a.axisId); const br = priorityOrder.indexOf(b.axisId);
+            return (ar === -1 ? 99 : ar) - (br === -1 ? 99 : br);
+          });
+        const doneInSection = sectionSteps.filter(s => s.isDone).length;
+        html += `
+          <div class="action-section" id="section-${type}">
+            <div class="action-sec-header">
+              <span class="action-sec-icon">${icon}</span>
+              <div class="action-sec-body">
+                <h3 class="action-sec-label">${esc(label)}</h3>
+                <p class="action-sec-desc">${esc(desc)}</p>
+              </div>
+              <div class="action-sec-progress">${doneInSection}/${sectionSteps.length}</div>
+            </div>
+            <div class="action-step-list">
+              ${sectionSteps.map(s => buildStepCard(s, compassAxis)).join('')}
+            </div>
+          </div>`;
+      });
+
+      // Next Stage
+      html += `
+        <svg viewBox="0 0 100 32" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:32px;display:block;margin-top:16px">
+          <line x1="50" y1="0" x2="50" y2="32" stroke="rgba(201,168,76,0.45)" stroke-width="2" stroke-dasharray="5 4"/>
+        </svg>
+        <div style="padding:16px 0 8px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="width:18px;height:1.5px;background:#c9a84c;flex-shrink:0;border-radius:1px"></div>
+            <span style="font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(201,168,76,0.7)">Next Stage</span>
+            <div style="flex:1;height:1px;background:repeating-linear-gradient(90deg,rgba(201,168,76,0.25) 0,rgba(201,168,76,0.25) 4px,transparent 4px,transparent 9px)"></div>
+          </div>
+          <p style="font-family:'Noto Serif JP',Georgia,serif;font-size:16px;font-weight:800;color:rgba(232,228,220,0.95);margin:0 0 6px;line-height:1.5">変わった自分を、世界へ発揮するステージ</p>
+          <p style="font-size:12px;color:rgba(232,228,220,0.60);line-height:1.7;margin:0 0 16px">変容は発揮することで初めて完成する。外見の変化を最大限に活かすステージへ。</p>
+          ${stageReadinessHtml}
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <a href="/search?category=photo" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none">
+              <span style="font-size:26px;flex-shrink:0">📸</span>
+              <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Noto Serif JP',Georgia,serif">プロフィール写真撮影</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">変わった自分を、最高の一枚に。マッチングアプリの第一印象を決定的に変える。</p></div>
+              <span style="color:rgba(201,168,76,0.6);font-size:16px;flex-shrink:0">→</span>
+            </a>
+            <a href="/search?category=marriage" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none">
+              <span style="font-size:26px;flex-shrink:0">💍</span>
+              <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Noto Serif JP',Georgia,serif">婚活サポート</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">自信がついた今が、出会いを本気にするタイミング。変容の先にある、本当の出会いへ。</p></div>
+              <span style="color:rgba(201,168,76,0.6);font-size:16px;flex-shrink:0">→</span>
+            </a>
+          </div>
+        </div>`;
+      return html;
+    }
 
     // ── カテゴリゴール（理想スコアの言語化） ──
     const IDEAL_GOALS = {
@@ -1074,47 +1289,47 @@ export default function NewMeNaviPage() {
       return html;
     }
 
-    const patternBarHtml = `
-      <div class="route-pattern-bar" id="route-pattern-bar">
-        ${Object.entries(PATTERN_LABELS).map(([k, label]) =>
-          `<button class="rpb${k === activePattern ? ' active' : ''}" data-pattern="${esc(k)}">${esc(label)}</button>`
-        ).join('')}
-      </div>
-      <p class="route-pattern-desc" id="route-pattern-desc">${esc(PATTERN_DESCS[activePattern])}</p>
-    `;
+    function buildAxisStatusBar() {
+      return `<div class="axis-status-bar" id="axis-status-bar">` +
+        Object.entries(AREA_DEFS).map(([id, def]) => {
+          const st = axisProgress[id] || '';
+          return `<button class="axis-status-chip" data-axis="${esc(id)}" data-status="${esc(st)}">${esc(def.icon)} ${esc(def.label)}</button>`;
+        }).join('') +
+      `</div>`;
+    }
+
+    function buildFocusToggleRow() {
+      const sf = getSkinFocus(); const tf = getTeethFocus();
+      return `
+        <div class="focus-toggle-row" id="focus-toggle-row">
+          <div class="focus-toggle-group">
+            <button class="focus-toggle-btn${sf==='care'?' active':''}" data-subtab="skin" data-val="care">✨ スキンケア</button>
+            <button class="focus-toggle-btn${sf==='hige'?' active':''}" data-subtab="skin" data-val="hige">🪒 ひげケア</button>
+          </div>
+          <div class="focus-toggle-group">
+            <button class="focus-toggle-btn${tf==='white'?' active':''}" data-subtab="teeth" data-val="white">🦷 ホワイトニング</button>
+            <button class="focus-toggle-btn${tf==='ortho'?' active':''}" data-subtab="teeth" data-val="ortho">😬 歯並び矯正</button>
+          </div>
+        </div>`;
+    }
 
     const html = `
       <div class="navi-wrap">
       <div class="navi-header">
         <p class="navi-header-eyebrow">New Me Navi</p>
-        <div class="navi-header-badge">🧭 ルート案内</div>
+        <div class="navi-header-badge">🧭 行動タイプ別ロードマップ</div>
         <h1>ゴール：<em>${esc(overallGoal)}</em></h1>
-        <p class="navi-header-sub">変容の旅を一本道で案内する。<br>Compassが指す停留所がいまの次の一手。</p>
+        <p class="navi-header-sub">「今すぐ動ける」から始めよう。<br>Compassが指す軸のステップが最優先で表示される。</p>
         <svg viewBox="0 0 80 80" width="68" height="68" style="position:absolute;top:14px;right:14px;z-index:1;opacity:0.17" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="37" fill="none" stroke="#c9a84c" stroke-width="0.8"/><circle cx="40" cy="40" r="28" fill="none" stroke="#c9a84c" stroke-width="0.4"/><line x1="40" y1="3" x2="40" y2="77" stroke="#c9a84c" stroke-width="0.8"/><line x1="3" y1="40" x2="77" y2="40" stroke="#c9a84c" stroke-width="0.8"/><line x1="14" y1="14" x2="66" y2="66" stroke="#c9a84c" stroke-width="0.5"/><line x1="66" y1="14" x2="14" y2="66" stroke="#c9a84c" stroke-width="0.5"/><polygon points="40,4 37,23 40,19 43,23" fill="#c9a84c"/><polygon points="40,76 37,57 40,61 43,57" fill="#c9a84c" opacity="0.4"/><polygon points="76,40 57,37 61,40 57,43" fill="#c9a84c" opacity="0.4"/><polygon points="4,40 23,37 19,40 23,43" fill="#c9a84c" opacity="0.4"/><circle cx="40" cy="40" r="5" fill="none" stroke="#c9a84c" stroke-width="1.2"/><circle cx="40" cy="40" r="2" fill="#c9a84c"/></svg>
         <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(201,168,76,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
       </div>
 
       ${buildCompassHtml()}
-      ${buildPrereqBannerHtml()}
+      ${buildAxisStatusBar()}
+      ${buildFocusToggleRow()}
 
-      <p class="sec-label">ルート選択</p>
-      ${patternBarHtml}
-
-      <p class="sec-label">変容ルート</p>
-      <div class="route-container" id="route-container">
-        ${buildRouteContainerHtml()}
-      </div>
-
-      <div style="position:relative;opacity:0.45;pointer-events:none;user-select:none;margin:24px 0 0">
-        <div style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:rgba(10,15,30,0.55);border:1px solid rgba(201,168,76,0.2);border-radius:14px">
-          <span style="font-size:26px;flex-shrink:0">🪞</span>
-          <div style="flex:1">
-            <p style="font-size:10px;font-weight:800;letter-spacing:.14em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin:0 0 3px">New Me Mirror</p>
-            <p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px">写真でも変容余地を確認する</p>
-            <p style="font-size:11px;color:rgba(232,228,220,0.5);margin:0">AIが写真から7軸の変容余地マップを生成。</p>
-          </div>
-          <span style="font-size:11px;font-weight:800;color:rgba(232,228,220,0.6);background:rgba(232,228,220,0.1);border:1px solid rgba(232,228,220,0.2);border-radius:20px;padding:4px 12px;flex-shrink:0;letter-spacing:.06em">Coming soon</span>
-        </div>
+      <div id="sections-container">
+        ${buildSectionsHtml()}
       </div>
 
       <div class="navi-footer">
@@ -1167,25 +1382,23 @@ export default function NewMeNaviPage() {
         tmp.innerHTML = buildCompassHtml();
         strip.replaceWith(tmp.firstElementChild);
       }
-      // 全ステーションを再描画（Compass変化・ステータス変化に対応）
-      const container = document.getElementById('route-container');
-      if (container) container.innerHTML = buildRouteContainerHtml();
+      // セクションを再描画
+      const container = document.getElementById('sections-container');
+      if (container) container.innerHTML = buildSectionsHtml();
+      // 軸ステータスバー更新
+      const bar = document.getElementById('axis-status-bar');
+      if (bar) { const tmp = document.createElement('div'); tmp.innerHTML = buildAxisStatusBar(); bar.replaceWith(tmp.firstElementChild); }
     }
 
+    // ── 軸ステータスチップ（軸ステータスバー）クリック ──
     root.addEventListener('click', (e) => {
-      const btn = e.target.closest('.track-status-btn');
+      const btn = e.target.closest('.axis-status-chip');
       if (!btn) return;
       const axisId = btn.dataset.axis;
       const currentStatus = axisProgress[axisId] || '';
       const nextStatus = STATUS_CYCLE[currentStatus] ?? '';
-      if (nextStatus === '') {
-        delete axisProgress[axisId];
-      } else {
-        axisProgress[axisId] = nextStatus;
-      }
-      // ローカル保存
+      if (nextStatus === '') { delete axisProgress[axisId]; } else { axisProgress[axisId] = nextStatus; }
       try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(axisProgress)); } catch {}
-      // Supabase保存（非同期、失敗しても無視）
       if (token) {
         fetch('/api/me/profile', {
           method: 'PUT',
@@ -1260,68 +1473,20 @@ export default function NewMeNaviPage() {
       }
     });
 
-    // ── サブトラックタブ切り替え ──
+    // ── スキン・歯フォーカストグル（新UI）──
     root.addEventListener('click', (e) => {
-      const btn = e.target.closest('.subtab-btn');
+      const btn = e.target.closest('.focus-toggle-btn');
       if (!btn) return;
       const axis = btn.dataset.subtab;
       const val  = btn.dataset.val;
       if (axis === 'skin')  { localStorage.setItem('fineme:skin:focus',  val); }
       if (axis === 'teeth') { localStorage.setItem('fineme:teeth:focus', val); }
-      const routeIdx = getRouteOrder().indexOf(axis);
-      const stationEl = document.getElementById('station-' + axis);
-      if (stationEl) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = buildStation(axis, routeIdx);
-        stationEl.replaceWith(tmp.firstElementChild);
-      }
-    });
-
-    // ── ルートパターン切り替え ──
-    root.addEventListener('click', (e) => {
-      const btn = e.target.closest('.rpb');
-      if (!btn) return;
-      const pattern = btn.dataset.pattern;
-      if (!ROUTE_PATTERNS[pattern]) return;
-      activePattern = pattern;
-      try { localStorage.setItem('fineme:navi:pattern', pattern); } catch {}
-      document.querySelectorAll('.rpb').forEach(b => b.classList.toggle('active', b.dataset.pattern === pattern));
-      const desc = document.getElementById('route-pattern-desc');
-      if (desc) desc.textContent = PATTERN_DESCS[pattern] || '';
-      const container = document.getElementById('route-container');
-      if (container) container.innerHTML = buildRouteContainerHtml();
-    });
-
-    // ── ステーション展開 ──
-    root.addEventListener('click', (e) => {
-      const btn = e.target.closest('.station-expand-btn');
-      if (!btn) return;
-      const id = btn.dataset.expandStation;
-      if (!id) return;
-      expandedStations.add(id);
-      const routeIdx = getRouteOrder().indexOf(id);
-      const el = document.getElementById('station-' + id);
-      if (el) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = buildStation(id, routeIdx);
-        el.replaceWith(tmp.firstElementChild);
-      }
-    });
-
-    // ── ステーション折りたたみ ──
-    root.addEventListener('click', (e) => {
-      const btn = e.target.closest('.station-collapse-btn');
-      if (!btn) return;
-      const id = btn.dataset.collapseStation;
-      if (!id) return;
-      expandedStations.delete(id);
-      const routeIdx = getRouteOrder().indexOf(id);
-      const el = document.getElementById('station-' + id);
-      if (el) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = buildStation(id, routeIdx);
-        el.replaceWith(tmp.firstElementChild);
-      }
+      // フォーカストグルUI更新
+      const row = document.getElementById('focus-toggle-row');
+      if (row) { const tmp = document.createElement('div'); tmp.innerHTML = buildFocusToggleRow(); row.replaceWith(tmp.firstElementChild); }
+      // セクション再描画
+      const container = document.getElementById('sections-container');
+      if (container) container.innerHTML = buildSectionsHtml();
     });
 
     } catch (err) {
