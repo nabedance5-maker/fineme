@@ -14,7 +14,7 @@ export default function DiagnosisResultPage() {
     // ─── ページ固有スタイル ───
     const style = document.createElement('style');
     style.textContent = `
-      .map-wrap { max-width: 680px; margin: 0 auto; padding: 32px 20px 80px; }
+      .map-wrap { max-width: 680px; margin: 0 auto; padding: 32px 20px 80px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
 
       /* ── Hero ── */
       .map-hero { padding: 44px 28px 40px; background: linear-gradient(rgba(10,15,30,0.78), rgba(10,15,30,0.88)), url('/assets/images/hero-bg.webp') center / cover no-repeat; border-radius: 14px; margin-bottom: 24px; position: relative; overflow: hidden; border: 1px solid rgba(201,168,76,0.2); }
@@ -285,7 +285,7 @@ export default function DiagnosisResultPage() {
       return `
         <div class="product-carousel-section">
           <p class="product-carousel-label">🛒 旅に役立つグッズ <span style="font-size:10px;font-weight:600;opacity:0.55;margin-left:6px">${lvLabel}向け</span></p>
-          <p class="product-carousel-note">あなたの診断結果に関連するアイテムです（Amazonアフィリエイト）← スワイプで全部見る</p>
+          <p class="product-carousel-note">あなたの診断結果に関連するアイテムです ← スワイプで全部見る</p>
           <div class="product-carousel">${cards}</div>
         </div>`;
     }
@@ -946,7 +946,7 @@ export default function DiagnosisResultPage() {
               <Link href="/mypage/profile" className="sidenav-link">プロフィール編集</Link>
             </nav>
           </aside>
-          <div>
+          <div style={{minWidth: 0, overflow: 'hidden'}}>
             <div id="result-root">
               <p style={{textAlign:'center',padding:'60px 20px',color:'#9ca3af'}}>読み込み中…</p>
             </div>

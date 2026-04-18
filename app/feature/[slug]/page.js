@@ -100,6 +100,47 @@ export async function generateMetadata({ params }) {
 }
 
 
+function ArticleProductBlock({ products }) {
+  return (
+    <div style={{
+      margin: '40px 0',
+      padding: '22px 24px',
+      background: 'rgba(201,168,76,0.04)',
+      border: '1px solid rgba(201,168,76,0.18)',
+      borderRadius: '14px',
+    }}>
+      <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.7)', margin: '0 0 6px' }}>
+        🛒 この記事で紹介したアイテム
+      </p>
+      <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.45)', margin: '0 0 14px', lineHeight: 1.6 }}>
+        変容の旅に役立つグッズ。気になるものを試してみてください。
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        {products.map((prod, i) => (
+          <a
+            key={i}
+            href={prod.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '5px',
+              fontSize: '12px', padding: '7px 14px',
+              background: 'rgba(201,168,76,0.07)',
+              border: '1px solid rgba(201,168,76,0.22)',
+              borderRadius: '8px',
+              color: 'rgba(240,228,180,0.85)',
+              textDecoration: 'none',
+              fontFamily: 'var(--font-sans)',
+            }}
+          >
+            {prod.name} →
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default async function ArticlePage({ params }) {
   const [article, relatedProviders] = await Promise.all([
     getArticle(params.slug),
@@ -222,8 +263,18 @@ export default async function ArticlePage({ params }) {
             padding: 'clamp(32px, 5vw, 52px) clamp(20px, 5vw, 48px) clamp(48px, 8vw, 80px)',
           }}>
 
-            {/* 記事本文 */}
-            {hasBlocks && <ArticleBlocks blocks={article.blocks} />}
+            {/* 記事本文（blocksの場合は60%地点に商品ブロックを挿入） */}
+            {hasBlocks && (() => {
+              const products = ARTICLE_TO_PRODUCTS[article.category] || [];
+              const splitAt = Math.ceil(article.blocks.length * 0.6);
+              return (
+                <>
+                  <ArticleBlocks blocks={article.blocks.slice(0, splitAt)} />
+                  {products.length > 0 && <ArticleProductBlock products={products} />}
+                  <ArticleBlocks blocks={article.blocks.slice(splitAt)} />
+                </>
+              );
+            })()}
             {!hasBlocks && hasBody && (
               <>
                 <style>{`
@@ -245,6 +296,9 @@ export default async function ArticlePage({ params }) {
                   .article-html-body .fb-heading{font-weight:800;font-size:clamp(16px,2.5vw,20px);font-family:var(--font-serif);color:#fff;margin:0 0 8px}
                 `}</style>
                 <div className="article-html-body" dangerouslySetInnerHTML={{ __html: article.body }} />
+                {ARTICLE_TO_PRODUCTS[article.category]?.length > 0 && (
+                  <ArticleProductBlock products={ARTICLE_TO_PRODUCTS[article.category]} />
+                )}
               </>
             )}
             {!hasBlocks && !hasBody && (
@@ -257,47 +311,6 @@ export default async function ArticlePage({ params }) {
                 providers={relatedProviders}
                 firstCat={ARTICLE_TO_SERVICE_CAT[article.category]?.[0] || ''}
               />
-            )}
-
-            {/* ── 旅に役立つグッズ ── */}
-            {ARTICLE_TO_PRODUCTS[article.category]?.length > 0 && (
-              <div style={{
-                margin: '40px 0 0',
-                padding: '22px 24px',
-                background: 'rgba(16,185,129,0.04)',
-                border: '1px solid rgba(16,185,129,0.18)',
-                borderRadius: '14px',
-              }}>
-                <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(16,185,129,0.6)', margin: '0 0 12px' }}>
-                  🛒 旅に役立つグッズ
-                </p>
-                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.45)', margin: '0 0 14px', lineHeight: 1.6 }}>
-                  この記事のテーマに関連するアイテムです（Amazonアフィリエイト）
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {ARTICLE_TO_PRODUCTS[article.category].map((prod, i) => (
-                    <a
-                      key={i}
-                      href={prod.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '5px',
-                        fontSize: '12px', padding: '6px 12px',
-                        background: 'rgba(16,185,129,0.07)',
-                        border: '1px solid rgba(16,185,129,0.22)',
-                        borderRadius: '8px',
-                        color: 'rgba(200,230,215,0.85)',
-                        textDecoration: 'none',
-                        fontFamily: 'var(--font-sans)',
-                        transition: 'all .15s',
-                      }}
-                    >
-                      {prod.name} →
-                    </a>
-                  ))}
-                </div>
-              </div>
             )}
           </div>
 

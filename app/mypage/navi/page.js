@@ -895,10 +895,6 @@ export default function NewMeNaviPage() {
         milestoneHtml = buildMilestoneItems(steps, careType, true, def.catLink, id);
       }
 
-      const tier4Note = def.tier === 4
-        ? `<p style="font-size:11px;color:#9ca3af;background:#f9fafb;border:1px dashed #d1d5db;border-radius:6px;padding:6px 10px;margin:0 0 12px">💡 今すぐ必要でない場合が多いカテゴリです</p>`
-        : '';
-
       const compassBadge = isCompass ? '<span class="compass-pointing-badge">🧭 今ここ</span>' : '';
       const STATUS_BTN_LABELS = { '': '○ 未着手', 'active': '🔵 取り組み中', 'done': '✅ ひと段落' };
       return `
@@ -924,7 +920,6 @@ export default function NewMeNaviPage() {
               </div>
             </div>
 
-            ${tier4Note}
             ${milestoneHtml}
 
             <div style="margin-top:14px">
@@ -1014,8 +1009,8 @@ export default function NewMeNaviPage() {
 
       // ── 発揮ステージ ──
       const doneCount = Object.values(stepDone).filter(Boolean).length;
-      const isReady      = doneCount >= 5;
-      const isApproaching = doneCount >= 2;
+      const isReady      = doneCount >= 20;
+      const isApproaching = doneCount >= 10;
 
       const stageReadinessHtml = isReady ? `
         <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:8px;margin-bottom:18px">
