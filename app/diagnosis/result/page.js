@@ -175,12 +175,12 @@ export default function DiagnosisResultPage() {
     // カスケード: beginner→入門のみ / intermediate→入門+習慣化中 / advanced→全て
     const AXIS_PRODUCTS = {
       skin: [
-        { name: '肌ラボ 極潤 洗顔フォーム',               url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+洗顔&tag=whero523-22',               level: 'beginner' },
-        { name: '肌ラボ 極潤 ヒアルロン液（化粧水）',      url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=whero523-22',             level: 'beginner' },
-        { name: 'ビオレUV アクアリッチ（日焼け止め）',     url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=whero523-22',          level: 'beginner' },
-        { name: 'メンズビオレ ONE（オールインワン洗顔）',   url: 'https://www.amazon.co.jp/s?k=メンズビオレ+ONE+洗顔&tag=whero523-22',          level: 'intermediate' },
-        { name: 'ピーリングジェル（毛穴ケア・週1）',        url: 'https://www.amazon.co.jp/s?k=ピーリングジェル+メンズ&tag=whero523-22',         level: 'intermediate' },
-        { name: 'ドクターシーラボ VC100 美容液化粧水',     url: 'https://www.amazon.co.jp/s?k=ドクターシーラボ+VC100+化粧水&tag=whero523-22',   level: 'advanced' },
+        { name: '肌ラボ 極潤 洗顔フォーム',                    url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+洗顔&tag=whero523-22',              level: 'beginner' },
+        { name: '肌ラボ 極潤 ヒアルロン液（化粧水）',           url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=whero523-22',            level: 'beginner' },
+        { name: 'ビオレUV アクアリッチ（日焼け止め）',          url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=whero523-22',         level: 'beginner' },
+        { name: 'メンズビオレ ONE（オールインワン洗顔）',        url: 'https://www.amazon.co.jp/s?k=メンズビオレ+ONE+洗顔&tag=whero523-22',         level: 'intermediate' },
+        { name: 'ピーリングジェル（毛穴ケア・週1）',             url: 'https://www.amazon.co.jp/s?k=ピーリングジェル+メンズ&tag=whero523-22',        level: 'intermediate' },
+        { name: 'WELEDA スキンフード（天然成分・有機認証）',     url: 'https://www.amazon.co.jp/s?k=WELEDA+スキンフード&tag=whero523-22',           level: 'advanced' },
       ],
       eyebrow: [
         { name: 'スクリューブラシ（眉整え・使い捨て）',    url: 'https://www.amazon.co.jp/s?k=スクリューブラシ+眉&tag=whero523-22',            level: 'beginner' },
@@ -210,10 +210,10 @@ export default function DiagnosisResultPage() {
         { name: 'フィリップス ソニッケアー（上位機種）',   url: 'https://www.amazon.co.jp/s?k=ソニッケアー+電動歯ブラシ&tag=whero523-22',       level: 'advanced' },
       ],
       nail: [
-        { name: 'ニベア リッチケア ハンドクリーム',        url: 'https://www.amazon.co.jp/s?k=ニベア+ハンドクリーム&tag=whero523-22',           level: 'beginner' },
-        { name: 'ガラス製爪やすり（水洗いOK）',            url: 'https://www.amazon.co.jp/s?k=ガラス製+爪やすり&tag=whero523-22',               level: 'beginner' },
-        { name: 'OPI プロスパ ネイルオイル',               url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=whero523-22',                level: 'intermediate' },
-        { name: 'ロレアル エクステンション ネイルコート',  url: 'https://www.amazon.co.jp/s?k=ロレアル+ネイルコート+強化&tag=whero523-22',      level: 'advanced' },
+        { name: 'ニベア リッチケア ハンドクリーム',           url: 'https://www.amazon.co.jp/s?k=ニベア+ハンドクリーム&tag=whero523-22',           level: 'beginner' },
+        { name: 'ガラス製爪やすり（水洗いOK）',               url: 'https://www.amazon.co.jp/s?k=ガラス製+爪やすり&tag=whero523-22',               level: 'beginner' },
+        { name: 'OPI プロスパ ネイルオイル',                  url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=whero523-22',                level: 'intermediate' },
+        { name: 'uka ネイルオイル 13:00（天然精油配合）',     url: 'https://www.amazon.co.jp/s?k=uka+ネイルオイル&tag=whero523-22',               level: 'advanced' },
       ],
       fashion: [
         { name: '白シャツ（メンズ スリムフィット）',       url: 'https://www.amazon.co.jp/s?k=白シャツ+メンズ+スリム&tag=whero523-22',          level: 'beginner' },
