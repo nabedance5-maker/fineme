@@ -117,6 +117,8 @@ export default function NewMeNaviPage() {
       .subtab-header-note { font-size: 11px; color: rgba(232,228,220,0.55); background: rgba(10,15,30,0.50); border: 1px solid rgba(232,228,220,0.15); border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; }
 
       /* CTA inside track */
+      .track-article-link { display: inline-flex; align-items: center; gap: 6px; margin: 12px 0 4px; font-size: 12px; font-weight: 600; color: rgba(201,168,76,0.7); text-decoration: none; transition: color .15s; }
+      .track-article-link:hover { color: #c9a84c; }
       .track-action { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(201,168,76,0.1); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
       .track-action-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #c9a84c; text-decoration: none; padding: 6px 12px; background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,.2); border-radius: 8px; transition: background .12s; }
       .track-action-link:hover { background: rgba(201,168,76,0.16); }
@@ -406,13 +408,13 @@ export default function NewMeNaviPage() {
 
     // ── 定数 ──
     const AREA_DEFS = {
-      body:    { icon:'💪', label:'体型',  catLink:'gym',       tier:1 },
-      eyebrow: { icon:'✂️', label:'眉',    catLink:'eyebrow',  tier:1 },
-      fashion: { icon:'👔', label:'服',    catLink:'fashion',   tier:1 },
-      hair:    { icon:'💇', label:'髪',    catLink:'hair',      tier:1 },
-      skin:    { icon:'✨', label:'肌',    catLink:'esthetic',  tier:2 },
-      teeth:   { icon:'🦷', label:'歯',    catLink:'whitening', tier:3 },
-      nail:    { icon:'💅', label:'爪',    catLink:'nail',      tier:4 },
+      body:    { icon:'💪', label:'体型',  catLink:'gym',       tier:1, articleQ:'垢抜け' },
+      eyebrow: { icon:'✂️', label:'眉',    catLink:'eyebrow',  tier:1, articleQ:'清潔感' },
+      fashion: { icon:'👔', label:'服',    catLink:'fashion',   tier:1, articleQ:'垢抜け' },
+      hair:    { icon:'💇', label:'髪',    catLink:'hair',      tier:1, articleQ:'清潔感' },
+      skin:    { icon:'✨', label:'肌',    catLink:'esthetic',  tier:2, articleQ:'清潔感' },
+      teeth:   { icon:'🦷', label:'歯',    catLink:'whitening', tier:3, articleQ:'清潔感' },
+      nail:    { icon:'💅', label:'爪',    catLink:'nail',      tier:4, articleQ:'垢抜け' },
     };
     const TIER_LABELS = { 1:'基盤', 2:'深化', 3:'補完', 4:'磨き込み' };
     const CARE_LABELS = { none:'未着手', concerned:'気になっている', self:'自己ケア中', pro:'プロ通い中' };
@@ -929,6 +931,11 @@ export default function NewMeNaviPage() {
                 </div>
               </div>
             </div>
+
+            ${def.articleQ ? `
+            <a href="/feature?q=${esc(def.articleQ)}" class="track-article-link">
+              📖 この軸に関連する読み物を見る →
+            </a>` : ''}
 
             <div class="track-action">
               <a href="/search?category=${esc(def.catLink)}&diag=1" class="track-action-link">

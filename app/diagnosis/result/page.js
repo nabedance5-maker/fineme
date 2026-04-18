@@ -629,10 +629,10 @@ export default function DiagnosisResultPage() {
       const unique = [...new Set(traits)].slice(0, 4);
       if (!unique.length) return '';
       return `
-        <p class="sec-label" style="margin-top:28px">Pro Matching</p>
+        <p class="sec-label" style="margin-top:28px">あなたに合う変容環境</p>
         <div class="result-card">
-          <div class="result-card-title">🧭 この旅に合うガイドの条件</div>
-          <div class="result-card-subtitle">この条件を持つプロとの相性がいい。サービス選びの判断軸にしてほしい</div>
+          <div class="result-card-title">🌱 あなたが変わりやすい環境の条件</div>
+          <div class="result-card-subtitle">旅を通じて見えてきた、あなたに合う変容環境の条件。プロと組むときも、独学で進めるときも、この軸で選ぶと続きやすい</div>
           <div class="trait-list">
             ${unique.map(t => `<div class="trait-item"><div class="trait-check">✓</div><span>${esc(t)}</span></div>`).join('')}
           </div>
@@ -720,9 +720,6 @@ export default function DiagnosisResultPage() {
       ${buildVectorList()}
       ${buildGoalLayers()}
       ${buildBarrier()}
-      ${buildTraits()}
-
-      <div id="match-providers-slot"></div>
 
       ${!isLoggedIn ? `
       <div class="save-map-cta">
@@ -771,6 +768,10 @@ export default function DiagnosisResultPage() {
           <span class="navi-btn-arrow">→</span>
         </a>
       </div>
+
+      ${buildTraits()}
+
+      <div id="match-providers-slot"></div>
 
       <div style="position:relative;opacity:0.45;pointer-events:none;user-select:none;margin-bottom:20px">
         <div style="display:flex;align-items:center;gap:16px;padding:18px 20px;background:rgba(10,15,30,0.55);border:1px solid rgba(201,168,76,0.2);border-radius:14px">
