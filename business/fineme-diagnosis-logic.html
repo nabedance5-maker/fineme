@@ -210,7 +210,7 @@
 
     <div class="card">
       <h3>診断データが担う3つの役割</h3>
-      <p>① <strong>New Me Map（地図）の生成</strong> — 現在地・理想・ギャップを7軸で可視化</p>
+      <p>① <strong>New Me Navi（地図）の生成</strong> — 現在地・理想・ギャップを7軸で可視化</p>
       <p>② <strong>Fineme Compass（羅針盤）の決定</strong> — 最初に動かすべき軸を1つ示す</p>
       <p>③ <strong>掲載者マッチングのスコアリング</strong> — ユーザーの文脈と掲載者のプロフィールを照合</p>
     </div>
@@ -458,13 +458,13 @@
     <div class="card" style="margin-top:16px">
       <h3>問い② — 客観視（self_view）</h3>
       <p>「他者から自分がどう見えていると思うか」の推測を取得します（better / accurate / worse / unknown）。</p>
-      <p><strong>worse（自分より悪く見えているかも）や unknown（わからない）は強い不安の指標</strong>です。New Me Naviの「障壁分析」セクションに使われ、「まず客観評価を受けることが先決」というアドバイスの根拠になります。</p>
+      <p><strong>worse（自分より悪く見えているかも）や unknown（わからない）は強い不安の指標</strong>です。New Me Mapの「障壁分析」セクションに使われ、「まず客観評価を受けることが先決」というアドバイスの根拠になります。</p>
     </div>
 
     <div class="card" style="margin-top:10px">
       <h3>問い③ — 恋愛への影響（love_impact）</h3>
       <p>「その軸への不安が恋愛・出会いの場面で影響したことがあるか」（often / sometimes / rarely）。</p>
-      <p>love_impactが「often（よくある）」の軸は、New Me Mapで<strong>恋愛バッジ</strong>として強調表示されます。また、外見への不安と恋愛の結びつきはFineme全体の動機文脈として機能します。爪軸のみhas_love=falseで、この問いをスキップします（近距離印象には影響するが恋愛への文脈が薄いため）。</p>
+      <p>love_impactが「often（よくある）」の軸は、New Me Naviで<strong>恋愛バッジ</strong>として強調表示されます。また、外見への不安と恋愛の結びつきはFineme全体の動機文脈として機能します。爪軸のみhas_love=falseで、この問いをスキップします（近距離印象には影響するが恋愛への文脈が薄いため）。</p>
     </div>
   </div>
 
@@ -479,7 +479,7 @@
     <div class="output-grid">
       <div class="output-card">
         <div class="output-icon">🗺️</div>
-        <div class="output-name">New Me Map</div>
+        <div class="output-name">New Me Navi</div>
         <div class="output-desc">7軸レーダーチャート、変容ベクトルリスト、ゴール4層、プロマッチング。「自分だけの地図」として保存・参照される。</div>
       </div>
       <div class="output-card">
@@ -489,13 +489,13 @@
       </div>
       <div class="output-card">
         <div class="output-icon">🛤️</div>
-        <div class="output-name">New Me Navi</div>
+        <div class="output-name">New Me Map</div>
         <div class="output-desc">7軸をルート状に並べた変容ロードマップ。Compassが指す軸だけ全幅展開、他は折りたたみ表示。停留所が左右交互にずれるジグザグ設計。ルートパターン3種（推奨・印象インパクト・取り組みやすさ）から選択可。</div>
       </div>
     </div>
 
     <div class="insight" style="margin-top:16px">
-      <p>この3つは「地図を渡す→羅針盤で方向を示す→ロードマップで道を歩く」という連続した体験として設計されています。Compassは最初の一手を示すだけでなく、<strong>旅が進むにつれてどの軸に向かうべきかを指し示し続ける</strong>ものです。ユーザーがNew Me Navi上でステータスを「ひと段落」にした軸はCompassの対象から外れ、次に優先すべき軸へ自動で切り替わります（動的Compass）。診断は「完了するもの」ではなく、変容の旅全体を通じてユーザーと共に在り続けます。</p>
+      <p>この3つは「地図を渡す→羅針盤で方向を示す→ロードマップで道を歩く」という連続した体験として設計されています。Compassは最初の一手を示すだけでなく、<strong>旅が進むにつれてどの軸に向かうべきかを指し示し続ける</strong>ものです。ユーザーがNew Me Map上でステータスを「ひと段落」にした軸はCompassの対象から外れ、次に優先すべき軸へ自動で切り替わります（動的Compass）。診断は「完了するもの」ではなく、変容の旅全体を通じてユーザーと共に在り続けます。</p>
     </div>
   </div>
 

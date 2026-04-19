@@ -576,7 +576,7 @@ function renderSamples() {
       </div>
       <p style="font-size:12px;color:#6b7280;line-height:1.6;margin:0 0 14px;">${p.copy}</p>
       <a href="/diagnosis" class="btn btn-ghost"
-        style="font-size:13px;width:100%;text-align:center;display:block;">自分のNew Me Mapを作る →</a>
+        style="font-size:13px;width:100%;text-align:center;display:block;">自分のNew Me Naviを作る →</a>
     </div>`).join('');
 }
 
@@ -800,7 +800,7 @@ function renderV9(v) {
     <div>
       <span style="display:inline-block;font-size:11px;font-weight:800;padding:3px 10px;background:#6366f1;color:#fff;border-radius:99px;margin-bottom:10px;">Me Scan済み</span>
       <h2 style="font-size:clamp(18px,4vw,24px);font-weight:800;margin:0 0 4px;">変容ダッシュボード</h2>
-      <p style="font-size:13px;color:#6b7280;margin:0 0 16px;">あなたのNew Me Mapが生成されています。続きの旅へ。</p>
+      <p style="font-size:13px;color:#6b7280;margin:0 0 16px;">あなたのNew Me Naviが生成されています。続きの旅へ。</p>
     </div>
     <div style="background:linear-gradient(135deg,#eff6ff,#eef2ff);border:1.5px solid #a5b4fc;border-radius:18px;padding:22px 22px;">
       <div style="font-size:11px;font-weight:800;color:#6366f1;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;">🧭 Finemeコンパス — 最初の一手</div>
@@ -813,8 +813,8 @@ function renderV9(v) {
       </div>
       ${goalHtml}
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">
-        <a href="/diagnosis/result" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#1d4ed8;color:#fff;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">🗺️ New Me Mapを見る</a>
-        <a href="/mypage/navi" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">🧭 New Me Naviへ</a>
+        <a href="/diagnosis/result" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#1d4ed8;color:#fff;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">🗺️ New Me Naviを見る</a>
+        <a href="/mypage/navi" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">🧭 New Me Mapへ</a>
         ${compassCategory ? `<a href="/search?category=${compassCategory}" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">${compassIcon} ガイドを探す</a>` : ''}
       </div>
     </div>
