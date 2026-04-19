@@ -288,8 +288,20 @@ export default function NewMeNaviPage() {
       .section-tab-icon { font-size: 16px; }
       .section-tab-progress { font-size: 10px; font-weight: 800; color: rgba(201,168,76,0.65); }
 
+      /* ── 背景マップグリッド ── */
+      .navi-wrap { background-image: repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(201,168,76,.028) 39px,rgba(201,168,76,.028) 40px), repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(201,168,76,.028) 39px,rgba(201,168,76,.028) 40px); }
+
+      /* ── 旅路トレイル ── */
+      .trail-container { position: relative; padding-left: 26px; overflow: visible; }
+      .trail-container::before { content:''; position:absolute; left:7px; top:22px; bottom:24px; width:2px; background:repeating-linear-gradient(to bottom,rgba(201,168,76,.5) 0,rgba(201,168,76,.5) 6px,transparent 6px,transparent 11px); border-radius:1px; pointer-events:none; }
+      .trail-stop { position:absolute; left:-18px; width:14px; height:14px; border-radius:50%; flex-shrink:0; pointer-events:none; }
+      .trail-stop.ts-done { background:#c9a84c; border:2px solid #c9a84c; box-shadow:0 0 0 3px rgba(201,168,76,.18),0 0 6px rgba(201,168,76,.3); }
+      .trail-stop.ts-current { background:#0a0f1e; border:2px solid #c9a84c; animation:trail-pulse 2.2s ease-in-out infinite; }
+      .trail-stop.ts-future { background:rgba(10,15,30,.65); border:2px solid rgba(232,228,220,.2); }
+      @keyframes trail-pulse { 0%,100% { box-shadow:0 0 0 3px rgba(201,168,76,.12),0 0 8px rgba(201,168,76,.2); } 50% { box-shadow:0 0 0 6px rgba(201,168,76,.22),0 0 16px rgba(201,168,76,.32); } }
+
       /* ── アクションセクション（新構造） ── */
-      .action-section { margin-bottom: 28px; scroll-margin-top: 120px; }
+      .action-section { margin-bottom: 28px; scroll-margin-top: 120px; position: relative; }
       .action-sec-header { display: flex; align-items: center; gap: 12px; padding: 12px 0 10px; border-bottom: 1.5px solid rgba(201,168,76,0.18); margin-bottom: 12px; }
       .action-sec-icon { font-size: 22px; flex-shrink: 0; }
       .action-sec-body { flex: 1; }
@@ -749,6 +761,7 @@ export default function NewMeNaviPage() {
         </div>`;
 
       let html = tabBarHtml;
+      const sectionHtmlParts = [];
       SECTIONS.forEach(({ type, icon, label, desc }) => {
         const sectionSteps = allSteps
           .filter(s => s.actionType === type)
@@ -761,8 +774,12 @@ export default function NewMeNaviPage() {
             return (ar === -1 ? 99 : ar) - (br === -1 ? 99 : br);
           });
         const doneInSection = sectionSteps.filter(s => s.isDone).length;
-        html += `
+        const allDone = sectionSteps.length > 0 && doneInSection === sectionSteps.length;
+        const hasSome = doneInSection > 0 && !allDone;
+        const trailStatus = allDone ? 'ts-done' : hasSome ? 'ts-current' : 'ts-future';
+        sectionHtmlParts.push(`
           <div class="action-section" id="section-${type}">
+            <span class="trail-stop ${trailStatus}" style="top:16px"></span>
             <div class="action-sec-header">
               <span class="action-sec-icon">${icon}</span>
               <div class="action-sec-body">
@@ -774,8 +791,9 @@ export default function NewMeNaviPage() {
             <div class="action-step-list">
               ${sectionSteps.map(s => buildStepCard(s, compassAxis)).join('')}
             </div>
-          </div>`;
+          </div>`);
       });
+      html += `<div class="trail-container">${sectionHtmlParts.join('')}</div>`;
 
       // Next Stage
       html += `
