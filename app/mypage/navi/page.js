@@ -320,6 +320,15 @@ export default function NewMeNaviPage() {
       .step-text { font-size: 13px; color: rgba(232,228,220,0.80); line-height: 1.6; margin: 0; }
       .step-check-btn-wrap { flex-shrink: 0; padding-top: 2px; }
 
+      /* ── 旅の途中の読み物ノード ── */
+      .trail-article-node { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px; padding: 10px 14px; background: rgba(10,15,30,0.45); border: 1px solid rgba(201,168,76,0.18); border-left: 3px solid rgba(201,168,76,0.5); border-radius: 8px; text-decoration: none; transition: background .15s; }
+      .trail-article-node:hover { background: rgba(201,168,76,0.07); }
+      .trail-article-icon { font-size: 16px; flex-shrink: 0; }
+      .trail-article-body { flex: 1; min-width: 0; }
+      .trail-article-label { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(201,168,76,0.6); margin: 0 0 2px; }
+      .trail-article-title { font-size: 13px; font-weight: 700; color: rgba(232,228,220,0.85); margin: 0; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .trail-article-arrow { font-size: 14px; color: rgba(201,168,76,0.5); flex-shrink: 0; }
+
       /* ── 軸フィルターバー ── */
       .axis-filter-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
       .axis-filter-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 99px; border: 1px solid rgba(232,228,220,0.18); color: rgba(232,228,220,0.40); background: transparent; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
@@ -400,6 +409,7 @@ export default function NewMeNaviPage() {
     } catch {}
 
     // ── ステップ完了データ読み込み ──
+    let allNaviArticles = [];
     let stepDone = {};
     try { const s = localStorage.getItem(STEP_DONE_KEY); if (s) stepDone = JSON.parse(s); } catch {}
 
@@ -426,6 +436,16 @@ export default function NewMeNaviPage() {
         }
       }
     } catch {}
+
+    // ── 記事フェッチ（非同期・失敗しても無視） ──
+    try {
+      const artRes = await fetchWithTimeout('/api/features', {}, 5000);
+      if (artRes?.ok) {
+        const arts = await artRes.json();
+        if (Array.isArray(arts)) allNaviArticles = arts;
+      }
+    } catch {}
+
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       root.innerHTML = `<div class="no-data">
@@ -468,6 +488,27 @@ export default function NewMeNaviPage() {
 
     // 現在地スコアを来た道類型ラベルに変換
     function getCareLabel(careType) { return CARE_LABELS[careType] || ''; }
+
+    // ── 記事マッチング ──
+    const AXIS_ARTICLE_CATS = {
+      body: ['垢抜け'], eyebrow: ['清潔感', '垢抜け'], fashion: ['垢抜け', '清潔感'],
+      hair: ['清潔感', '垢抜け'], skin: ['清潔感'], teeth: ['清潔感'], nail: ['垢抜け'],
+    };
+    function pickSectionArticle(sectionAxes, compassAxis, usedSlugs) {
+      if (!allNaviArticles.length) return null;
+      let best = null, bestScore = -1;
+      for (const art of allNaviArticles) {
+        if (usedSlugs.has(art.slug)) continue;
+        let score = 0;
+        if (art.category === '変容の思想') score = 1;
+        for (const axis of sectionAxes) {
+          const cats = AXIS_ARTICLE_CATS[axis] || [];
+          if (cats.includes(art.category)) score += (axis === compassAxis ? 4 : 1);
+        }
+        if (score > bestScore) { bestScore = score; best = art; }
+      }
+      return bestScore > 0 ? best : null;
+    }
 
     // ── ミルストーン（統合リスト形式・全careType共通） ──
     // isCurrentFor: そのcareTypeの「現在地」マーカー
@@ -762,6 +803,7 @@ export default function NewMeNaviPage() {
 
       let html = tabBarHtml;
       const sectionHtmlParts = [];
+      const usedArticleSlugs = new Set();
       SECTIONS.forEach(({ type, icon, label, desc }) => {
         const sectionSteps = allSteps
           .filter(s => s.actionType === type)
@@ -777,6 +819,21 @@ export default function NewMeNaviPage() {
         const allDone = sectionSteps.length > 0 && doneInSection === sectionSteps.length;
         const hasSome = doneInSection > 0 && !allDone;
         const trailStatus = allDone ? 'ts-done' : hasSome ? 'ts-current' : 'ts-future';
+
+        // セクションに関連する記事を1本選択
+        const sectionAxes = [...new Set(sectionSteps.map(s => s.axisId))];
+        const sectionArticle = pickSectionArticle(sectionAxes, compassAxis, usedArticleSlugs);
+        if (sectionArticle) usedArticleSlugs.add(sectionArticle.slug);
+        const articleHtml = sectionArticle ? `
+          <a href="/feature/${esc(sectionArticle.slug)}" class="trail-article-node" target="_blank">
+            <span class="trail-article-icon">📖</span>
+            <div class="trail-article-body">
+              <p class="trail-article-label">この工程を深める読み物</p>
+              <p class="trail-article-title">${esc(sectionArticle.title)}</p>
+            </div>
+            <span class="trail-article-arrow">→</span>
+          </a>` : '';
+
         sectionHtmlParts.push(`
           <div class="action-section" id="section-${type}">
             <span class="trail-stop ${trailStatus}" style="top:16px"></span>
@@ -791,6 +848,7 @@ export default function NewMeNaviPage() {
             <div class="action-step-list">
               ${sectionSteps.map(s => buildStepCard(s, compassAxis)).join('')}
             </div>
+            ${articleHtml}
           </div>`);
       });
       html += `<div class="trail-container">${sectionHtmlParts.join('')}</div>`;
