@@ -813,8 +813,8 @@ function renderV9(v) {
       </div>
       ${goalHtml}
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">
-        <a href="/diagnosis/result" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#1d4ed8;color:#fff;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">🗺️ New Me Naviを見る</a>
-        <a href="/mypage/navi" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">🧭 New Me Mapへ</a>
+        <a href="/diagnosis/result" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#1d4ed8;color:#fff;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">🧭 New Me Naviを見る</a>
+        <a href="/mypage/navi" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">🗺️ New Me Mapへ</a>
         ${compassCategory ? `<a href="/search?category=${compassCategory}" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">${compassIcon} ガイドを探す</a>` : ''}
       </div>
     </div>

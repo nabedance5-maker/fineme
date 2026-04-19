@@ -21,11 +21,11 @@ const JOURNEY = [
     desc: 'あなたの現在地・理想・来た道を7つの軸でスキャン。12〜18分で、変容プロファイルが完成する。',
   },
   {
-    step: '02', label: 'New Me Navi', sublabel: '変容ナビ', icon: '🗺️',
+    step: '02', label: 'New Me Navi', sublabel: '変容ナビ', icon: '🧭',
     desc: 'ギャップを可視化したレーダーチャートと、あなた専用の「Finemeコンパス（最優先の一手）」が生成される。',
   },
   {
-    step: '03', label: 'New Me Map', sublabel: '変容マップ', icon: '🧭',
+    step: '03', label: 'New Me Map', sublabel: '変容マップ', icon: '🗺️',
     desc: '7軸それぞれのロードマップ。どの順で、どんな中継地点を経て変わっていくかを可視化した羅針盤。',
   },
   {
