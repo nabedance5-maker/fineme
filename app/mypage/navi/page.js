@@ -820,19 +820,38 @@ export default function NewMeNaviPage() {
         const hasSome = doneInSection > 0 && !allDone;
         const trailStatus = allDone ? 'ts-done' : hasSome ? 'ts-current' : 'ts-future';
 
-        // セクションに関連する記事を1本選択
-        const sectionAxes = [...new Set(sectionSteps.map(s => s.axisId))];
-        const sectionArticle = pickSectionArticle(sectionAxes, compassAxis, usedArticleSlugs);
-        if (sectionArticle) usedArticleSlugs.add(sectionArticle.slug);
-        const articleHtml = sectionArticle ? `
-          <a href="/feature/${esc(sectionArticle.slug)}" class="trail-article-node" target="_blank">
-            <span class="trail-article-icon">📖</span>
-            <div class="trail-article-body">
-              <p class="trail-article-label">この工程を深める読み物</p>
-              <p class="trail-article-title">${esc(sectionArticle.title)}</p>
-            </div>
-            <span class="trail-article-arrow">→</span>
-          </a>` : '';
+        // guide:HIGH の直前に記事を差し込む（軸ごとに1回・Compass軸を優先）
+        // 各軸の最初の guide:HIGH ステップのインデックスを収集
+        const insertBefore = new Map(); // stepIdx → article
+        const injectedAxes = new Set();
+        // Compass軸 → 次に priority_order の順で処理
+        const axisOrder = [compassAxis, ...priorityOrder.filter(a => a !== compassAxis)];
+        for (const targetAxis of axisOrder) {
+          const firstHighIdx = sectionSteps.findIndex(s => s.axisId === targetAxis && s.step.guide === 'HIGH');
+          if (firstHighIdx === -1 || injectedAxes.has(targetAxis)) continue;
+          const art = pickSectionArticle([targetAxis], compassAxis, usedArticleSlugs);
+          if (art) {
+            insertBefore.set(firstHighIdx, art);
+            usedArticleSlugs.add(art.slug);
+            injectedAxes.add(targetAxis);
+          }
+          if (insertBefore.size >= 2) break; // 1セクション最大2本
+        }
+
+        // ステップカードをレンダリング（記事を直前に挿入）
+        const stepCardsHtml = sectionSteps.map((s, i) => {
+          const art = insertBefore.get(i);
+          const artHtml = art ? `
+            <a href="/feature/${esc(art.slug)}" class="trail-article-node" target="_blank">
+              <span class="trail-article-icon">📖</span>
+              <div class="trail-article-body">
+                <p class="trail-article-label">この一歩を踏み出す前に読む</p>
+                <p class="trail-article-title">${esc(art.title)}</p>
+              </div>
+              <span class="trail-article-arrow">→</span>
+            </a>` : '';
+          return artHtml + buildStepCard(s, compassAxis);
+        }).join('');
 
         sectionHtmlParts.push(`
           <div class="action-section" id="section-${type}">
@@ -846,9 +865,8 @@ export default function NewMeNaviPage() {
               <div class="action-sec-progress">${doneInSection}/${sectionSteps.length}</div>
             </div>
             <div class="action-step-list">
-              ${sectionSteps.map(s => buildStepCard(s, compassAxis)).join('')}
+              ${stepCardsHtml}
             </div>
-            ${articleHtml}
           </div>`);
       });
       html += `<div class="trail-container">${sectionHtmlParts.join('')}</div>`;
