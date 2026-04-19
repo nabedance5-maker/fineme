@@ -296,7 +296,9 @@ export default function ProviderInquiryPage() {
                   <option value="gym">💪 ジム・パーソナルトレーニング</option>
                   <option value="makeup">💄 メイク・コスメ</option>
                   <option value="hair">💇 ヘア・美容院</option>
-                  <option value="diagnosis">🔍 骨格・パーソナルカラー診断</option>
+                  <option value="colordiagnosis">🎨 パーソナルカラー診断</option>
+                  <option value="bonediagnosis">🔍 骨格診断</option>
+                  <option value="diagnosis">📋 診断（総合・イメコン）</option>
                   <option value="fashion">👔 ファッション・スタイリング</option>
                   <option value="photo">📷 プロフィール写真・撮影</option>
                   <option value="marriage">💍 婚活・マッチングサポート</option>
