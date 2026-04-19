@@ -118,15 +118,35 @@
     </div>
     <p id="art-supakey-status" style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:20px;"></p>
 
+    <!-- Supabase直接INSERT設定 -->
+    <div style="background:rgba(37,99,235,0.07);border:1px solid rgba(37,99,235,0.25);border-radius:10px;padding:16px;margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:800;color:#7aadff;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">🚀 Supabase直接INSERT（SQLコピペ不要）</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+        <input type="text" id="art-supa-url" placeholder="Supabase URL（https://xxx.supabase.co）"
+          style="flex:1;min-width:240px;background:rgba(0,0,0,0.4);border:1px solid rgba(37,99,235,0.3);border-radius:8px;color:#e8e4dc;font-size:13px;padding:9px 13px;" />
+        <button onclick="saveSupaUrl()" style="padding:9px 16px;background:rgba(37,99,235,0.12);border:1px solid rgba(37,99,235,0.35);border-radius:8px;color:#7aadff;font-size:12px;font-weight:700;cursor:pointer;">保存</button>
+      </div>
+      <p id="art-supa-url-status" style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:0;"></p>
+      <p style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:6px;">※ Service Role Key は上の欄と共用。URLとキー両方設定時に直接INSERTします。</p>
+    </div>
+
     <!-- 生成設定 -->
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px;">
       <div>
-        <label style="font-size:11px;color:rgba(255,255,255,0.45);display:block;margin-bottom:4px;">生成する記事（未完了から順番に）</label>
+        <label style="font-size:11px;color:rgba(255,255,255,0.45);display:block;margin-bottom:4px;">開始ID（この番号以降を対象）</label>
+        <input type="number" id="art-start-id" value="263" min="1"
+          style="width:90px;background:rgba(0,0,0,0.4);border:1px solid rgba(201,168,76,0.25);border-radius:8px;color:#e8e4dc;font-size:13px;padding:9px 12px;" />
+      </div>
+      <div>
+        <label style="font-size:11px;color:rgba(255,255,255,0.45);display:block;margin-bottom:4px;">生成本数</label>
         <select id="art-count" style="background:rgba(0,0,0,0.4);border:1px solid rgba(201,168,76,0.25);border-radius:8px;color:#e8e4dc;font-size:13px;padding:9px 12px;">
           <option value="1">1本</option>
           <option value="3">3本</option>
-          <option value="5" selected>5本</option>
-          <option value="10">10本</option>
+          <option value="5">5本</option>
+          <option value="10" selected>10本</option>
+          <option value="20">20本</option>
+          <option value="50">50本</option>
+          <option value="9999">全件</option>
         </select>
       </div>
       <div style="margin-top:20px;">
@@ -136,10 +156,21 @@
       </div>
     </div>
 
-    <!-- 生成結果ログ -->
-    <div id="art-gen-log" style="font-size:12px;color:rgba(255,255,255,0.5);line-height:1.9;"></div>
+    <!-- 進捗バー -->
+    <div id="art-progress-wrap" style="display:none;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:4px;">
+        <span id="art-progress-label">0 / 0</span>
+        <span id="art-progress-pct">0%</span>
+      </div>
+      <div style="background:rgba(255,255,255,0.1);border-radius:99px;height:6px;overflow:hidden;">
+        <div id="art-progress-bar" style="height:100%;background:linear-gradient(90deg,#c9a84c,#e8c97a);border-radius:99px;width:0%;transition:width .3s;"></div>
+      </div>
+    </div>
 
-    <!-- 生成されたSQL -->
+    <!-- 生成結果ログ -->
+    <div id="art-gen-log" style="font-size:12px;color:rgba(255,255,255,0.5);line-height:1.9;max-height:300px;overflow-y:auto;"></div>
+
+    <!-- 生成されたSQL（直接INSERT時は非表示） -->
     <div id="art-sql-output" style="margin-top:16px;"></div>
   </div>
 </div>
@@ -991,6 +1022,7 @@ CTA文は「変容の旅の次の一歩」「自分の現在地を確認する�
 4. 具体性：「〜しましょう」で終わる抽象論禁止。必ず「何を・何分で・いつ・どのくらいの費用で」まで書く。
 5. 共感導線：冒頭で読者の痛みを言語化し、「自分のことが書いてある」と感じさせる。
 6. 反論処理：「面倒くさい」「時間がない」「どうせ続かない」などの抵抗を先回りして解消する。
+7. **商品紹介（必須）**: 習慣・ルーティン系記事は必ず product ブロックを2〜3個含めること。「使うアイテム」「道具」「ケア用品」に言及する段落の直後に自然な文脈で挿入する。Amazonで検索できる具体的な商品カテゴリ名を使う（例：「メンズ洗顔フォーム」「乳液 メンズ」「日焼け止め 顔用」）。「まとめとして並べる」は禁止。文脈から外れる場所には挿入しない。
 7. データ・数字：可能な限り具体的な数値・統計・期間・費用を入れる（実在する一般的な相場で可）。
 8. FAQ：記事末尾にQ&A形式のよくある質問を3〜5個、calloutブロックで追加する。
 9. ビジュアル分散（重要）：textブロックが3個連続してはならない。必ず cards / stat / image / checklist / steps / tip / quote のいずれかを挟む。
@@ -1325,6 +1357,20 @@ function saveArtSupaKey() {
   document.getElementById('art-supakey').value = '';
 }
 
+function saveSupaUrl() {
+  const url = document.getElementById('art-supa-url').value.trim().replace(/\/$/, '');
+  if (!url.startsWith('https://')) { alert('https:// から始まるURLを入力してください'); return; }
+  localStorage.setItem('fineme:supabase:url', url);
+  document.getElementById('art-supa-url').value = '';
+  document.getElementById('art-supa-url-status').textContent = '✓ Supabase URL保存済み — 直接INSERTが有効になりました';
+}
+
+(function initSupaUrlUi() {
+  if (localStorage.getItem('fineme:supabase:url')) {
+    document.getElementById('art-supa-url-status').textContent = '✓ Supabase URL保存済み — 直接INSERTが有効になりました';
+  }
+})();
+
 // ── Supabase既存記事フェッチ ──
 async function fetchExistingArticles(supaKey) {
   const url = 'https://qsfpzlvucqzmjldshwwd.supabase.co/rest/v1/features?select=title,slug,keyword,category&status=eq.published&limit=2000';
@@ -1352,10 +1398,15 @@ async function startArticleGen() {
   if (!apiKey) { alert('APIキーを保存してください'); return; }
 
   const count = parseInt(document.getElementById('art-count').value);
+  const startId = parseInt(document.getElementById('art-start-id').value) || 1;
   const doneIds = new Set(JSON.parse(localStorage.getItem('fineme:article:done') || '[]'));
-  let targets = ARTICLES.filter(a => !doneIds.has(a.id)).slice(0, count * 3); // 多めに取ってスキップ後に絞る
+  let targets = ARTICLES.filter(a => a.id >= startId && !doneIds.has(a.id)).slice(0, count * 3);
 
-  if (!targets.length) { alert('未完了の記事がありません'); return; }
+  if (!targets.length) { alert('対象記事がありません（開始IDを確認してください）'); return; }
+
+  const supaUrl = localStorage.getItem('fineme:supabase:url');
+  const supaKey = localStorage.getItem('fineme:supabase:key');
+  const directInsert = !!(supaUrl && supaKey);
 
   const btn = document.getElementById('art-gen-btn');
   btn.disabled = true;
@@ -1366,8 +1417,21 @@ async function startArticleGen() {
   log.innerHTML = `重複チェック中…<br>`;
   sqlOutput.innerHTML = '';
 
+  // 進捗バー表示
+  const progressWrap = document.getElementById('art-progress-wrap');
+  const progressBar = document.getElementById('art-progress-bar');
+  const progressLabel = document.getElementById('art-progress-label');
+  const progressPct = document.getElementById('art-progress-pct');
+  progressWrap.style.display = 'block';
+
+  function updateProgress(done, total) {
+    const pct = total ? Math.round(done / total * 100) : 0;
+    progressBar.style.width = pct + '%';
+    progressLabel.textContent = `${done} / ${total}`;
+    progressPct.textContent = pct + '%';
+  }
+
   // ── Tier 1 & 2: Supabase既存記事との照合 ──
-  const supaKey = localStorage.getItem('fineme:supabase:key');
   let existingArticles = [];
   let existingSlugs = new Set();
 
@@ -1429,7 +1493,9 @@ async function startArticleGen() {
       log.innerHTML += `⚠️ キーワード重複あり: ${duplicateWarnings.get(article.id)}<br>`;
     }
 
+    updateProgress(i, finalTargets.length);
     log.innerHTML += `<br>[${i+1}/${finalTargets.length}] 「${article.title}」を生成中…`;
+    log.scrollTop = log.scrollHeight;
 
     // Tier 3: 同カテゴリ既存タイトルをプロンプトに注入（最大20件）
     const sameCatTitles = existingArticles
@@ -1480,19 +1546,45 @@ INSERT文だけをそのまま出力してください。`;
         continue;
       }
 
-      allSqls.push({ article, sql });
-      log.innerHTML += ` ✓ 完了`;
+      if (directInsert) {
+        // 直接Supabase INSERT（SQLをパースしてREST APIで挿入）
+        try {
+          const inserted = await insertArticleDirectly(sql, supaUrl, supaKey, article);
+          if (inserted) {
+            log.innerHTML += ` ✅ Supabase INSERT完了`;
+            const done = JSON.parse(localStorage.getItem('fineme:article:done') || '[]');
+            done.push(article.id);
+            localStorage.setItem('fineme:article:done', JSON.stringify(done));
+            markDone(article.id);
+          } else {
+            log.innerHTML += ` ⚠️ INSERT失敗 — SQLも出力します`;
+            allSqls.push({ article, sql });
+          }
+        } catch(e) {
+          log.innerHTML += ` ❌ INSERT エラー: ${e.message} — SQLも出力します`;
+          allSqls.push({ article, sql });
+        }
+      } else {
+        allSqls.push({ article, sql });
+        log.innerHTML += ` ✓ 完了`;
+      }
 
     } catch (e) {
       log.innerHTML += ` ❌ 通信エラー: ${e.message}`;
     }
 
-    // レート制限対策：1本ごとに1秒待機
-    if (i < finalTargets.length - 1) await new Promise(r => setTimeout(r, 1000));
+    // レート制限対策：1本ごとに2秒待機（多本数対応）
+    if (i < finalTargets.length - 1) await new Promise(r => setTimeout(r, 2000));
   }
 
+  updateProgress(finalTargets.length, finalTargets.length);
   btn.disabled = false;
   btn.textContent = '生成開始 →';
+
+  if (directInsert && !allSqls.length) {
+    log.innerHTML += `<br><br>🎉 全 ${finalTargets.length}本 を Supabase に直接INSERT完了！`;
+    return;
+  }
 
   if (!allSqls.length) {
     log.innerHTML += '<br><br>❌ 生成できた記事がありませんでした。';
@@ -1513,6 +1605,73 @@ INSERT文だけをそのまま出力してください。`;
       <pre id="sql-block-${i}" style="font-family:monospace;font-size:11px;color:rgba(240,236,228,0.7);white-space:pre-wrap;max-height:200px;overflow-y:auto;">${escHtmlArt(sql)}</pre>
     </div>
   `).join('');
+}
+
+// SQLからJSONブロックを抽出してSupabase REST APIで直接INSERT
+async function insertArticleDirectly(sql, supaUrl, supaKey, article) {
+  // INSERT INTO features (...) VALUES (...) からJSONブロック部分を抽出
+  const blocksMatch = sql.match(/blocks\s*=\s*'([\s\S]+?)'\s*(?:,|\))/i) ||
+                      sql.match(/'blocks'\s*,\s*'([\s\S]+?)'\s*(?:\)|,)/i);
+  // VALUES句全体を取得してパース
+  const valuesMatch = sql.match(/VALUES\s*\(([\s\S]+)\)\s*(?:ON CONFLICT|;|$)/i);
+  if (!valuesMatch) return false;
+
+  // slug重複チェック
+  const checkRes = await fetch(`${supaUrl}/rest/v1/features?slug=eq.${encodeURIComponent(article.slug)}&select=id`, {
+    headers: { 'apikey': supaKey, 'Authorization': `Bearer ${supaKey}` }
+  });
+  const existing = await checkRes.json();
+  if (existing?.length > 0) {
+    log.innerHTML += ` (slug重複スキップ)`;
+    return true;
+  }
+
+  // SQL直接実行（Supabase SQL Editor API経由）
+  const execRes = await fetch(`${supaUrl}/rest/v1/rpc/exec_sql`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': supaKey,
+      'Authorization': `Bearer ${supaKey}`,
+    },
+    body: JSON.stringify({ query: sql }),
+  });
+
+  if (execRes.ok) return true;
+
+  // rpc/exec_sql が使えない場合はフォールバック: pg REST直接INSERT
+  // SQLからフィールド値を抽出してオブジェクト化
+  const titleMatch = sql.match(/title['":\s]+['"]([^'"]+)['"]/i);
+  const slugMatch  = sql.match(/slug['":\s]+['"]([^'"]+)['"]/i);
+  const descMatch  = sql.match(/description['":\s]+['"]([^'"]+)['"]/i);
+  const catMatch   = sql.match(/category['":\s]+['"]([^'"]+)['"]/i);
+  const bodyMatch  = sql.match(/body['":\s]+[\$\d]*['"]?([\s\S]+?)['"]?\s*(?:,\s*status|ON CONFLICT)/i);
+  const blocksRaw  = sql.match(/blocks['":\s]+[\$\d]*'([\s\S]+?)'\s*(?:,\s*(?:title|slug|status)|ON CONFLICT)/i);
+
+  const now = new Date().toISOString();
+  const payload = {
+    title: titleMatch?.[1] || article.title,
+    slug: slugMatch?.[1] || article.slug,
+    description: descMatch?.[1] || '',
+    category: catMatch?.[1] || article.cat || '',
+    status: 'published',
+    published_at: now,
+    updated_at: now,
+    blocks: blocksRaw ? blocksRaw[1] : '[]',
+    reading_time: 8,
+  };
+
+  const insertRes = await fetch(`${supaUrl}/rest/v1/features`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': supaKey,
+      'Authorization': `Bearer ${supaKey}`,
+      'Prefer': 'return=minimal',
+    },
+    body: JSON.stringify(payload),
+  });
+  return insertRes.ok || insertRes.status === 201;
 }
 
 function escHtmlArt(str) {
