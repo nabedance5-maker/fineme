@@ -101,9 +101,9 @@ export default function NewMeNaviPage() {
 
       /* ── ガイド推奨度 ── */
       .guide-badge { display: flex; align-items: center; gap: 5px; margin-top: 5px; padding: 4px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; line-height: 1.4; }
-      .guide-high { background: rgba(201,168,76,0.09); border: 1px solid rgba(201,168,76,0.22); color: #78350f; }
+      .guide-high { background: rgba(201,168,76,0.09); border: 1px solid rgba(201,168,76,0.28); color: rgba(253,230,138,0.9); }
       .guide-high a { color: #c9a84c; font-weight: 700; text-decoration: none; }
-      .guide-mid { background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.15); color: #1e40af; }
+      .guide-mid { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.22); color: rgba(147,197,253,0.85); }
       .guide-low { display: inline-flex; background: none; border: none; font-size: 11px; color: #9ca3af; padding: 2px 0; }
       .milestone-note { font-size: 11px; color: #92400e; background: #fef3c7; border: 1px solid #fde68a; border-radius: 4px; padding: 4px 8px; margin-top: 4px; }
 
