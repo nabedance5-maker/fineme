@@ -708,8 +708,9 @@ export default function NewMeNaviPage() {
     let activeAxisFilter = null;
 
     // ── ステップカードHTML ──
-    function buildStepCard({ axisId, axisKey, def, step, idx, doneKey, isDone, isCurrentPosition }, compassAxis) {
+    function buildStepCard({ axisId, axisKey, def, step, idx, doneKey, isDone }, compassAxis, compassFirstUndoneKey) {
       const isCompassStep = axisId === compassAxis;
+      const isGlobalCurrent = doneKey === compassFirstUndoneKey;
       let guideHtml = '';
       if (step.guide === 'HIGH') {
         const link = def.catLink ? ` <a href="/search?category=${esc(def.catLink)}&diag=1" style="color:#c9a84c;font-weight:700;text-decoration:none">ガイドを探す →</a>` : '';
@@ -737,8 +738,8 @@ export default function NewMeNaviPage() {
           }).join('');
         if (chips) productsHtml = `<div class="product-suggestions">${chips}</div>`;
       }
-      const compassTag = isCompassStep ? `<span class="compass-pointing-badge">🧭 今ここ</span>` : '';
-      const currentTag = isCurrentPosition ? '<span class="milestone-current-tag">★ 現在地</span>' : '';
+      const compassTag = isGlobalCurrent ? `<span class="compass-pointing-badge">🧭 今ここ</span>` : '';
+      const currentTag = '';
       const badgeBg    = isCompassStep ? 'rgba(201,168,76,0.15)' : 'rgba(10,15,30,0.50)';
       const badgeBorder = isCompassStep ? 'rgba(201,168,76,0.35)' : 'rgba(232,228,220,0.18)';
       const badgeColor  = isCompassStep ? '#c9a84c' : 'rgba(232,228,220,0.55)';
@@ -767,6 +768,11 @@ export default function NewMeNaviPage() {
         { type: 'habit',   icon: '🔄', label: '毎日・毎週の習慣にする',   tabLabel: '毎日習慣', desc: '継続が変容を積み上げる。少しずつでOK' },
         { type: 'ongoing', icon: '🌊', label: 'じっくり取り組むプログラム', tabLabel: 'じっくり', desc: '数週間〜数ヶ月スパン。覚悟して始めると変わる' },
       ];
+
+      // Compass軸の最初の未完了ステップのdoneKeyを特定（今ここバッジは全体で1個だけ）
+      const compassFirstUndoneKey = allSteps
+        .filter(s => s.axisId === compassAxis && !s.isDone)
+        .sort((a, b) => a.idx - b.idx)[0]?.doneKey ?? null;
 
       // タブバー用の進捗を事前計算
       const sectionMeta = SECTIONS.map(({ type }) => {
@@ -850,7 +856,7 @@ export default function NewMeNaviPage() {
               </div>
               <span class="trail-article-arrow">→</span>
             </a>` : '';
-          return artHtml + buildStepCard(s, compassAxis);
+          return artHtml + buildStepCard(s, compassAxis, compassFirstUndoneKey);
         }).join('');
 
         sectionHtmlParts.push(`
