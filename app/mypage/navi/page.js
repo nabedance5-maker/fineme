@@ -308,18 +308,11 @@ export default function NewMeNaviPage() {
       .step-text { font-size: 13px; color: rgba(232,228,220,0.80); line-height: 1.6; margin: 0; }
       .step-check-btn-wrap { flex-shrink: 0; padding-top: 2px; }
 
-      /* ── スキン・歯フォーカストグル ── */
-      .focus-toggle-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-      .focus-toggle-group { display: flex; background: rgba(10,15,30,0.50); border: 1px solid rgba(232,228,220,0.15); border-radius: 8px; overflow: hidden; }
-      .focus-toggle-btn { padding: 5px 12px; font-size: 12px; font-weight: 700; background: transparent; border: none; color: rgba(232,228,220,0.45); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; }
-      .focus-toggle-btn.active { background: rgba(201,168,76,0.15); color: rgba(232,228,220,0.90); }
-
-      /* ── 軸ステータスバー ── */
-      .axis-status-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
-      .axis-status-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px; border: 1px solid; background: transparent; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
-      .axis-status-chip[data-status=""] { border-color: rgba(232,228,220,0.18); color: rgba(232,228,220,0.40); }
-      .axis-status-chip[data-status="active"] { border-color: #93c5fd; color: #60a5fa; background: rgba(59,130,246,0.06); }
-      .axis-status-chip[data-status="done"] { border-color: #6ee7b7; color: #10b981; background: rgba(16,185,129,0.06); }
+      /* ── 軸フィルターバー ── */
+      .axis-filter-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+      .axis-filter-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 99px; border: 1px solid rgba(232,228,220,0.18); color: rgba(232,228,220,0.40); background: transparent; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
+      .axis-filter-chip:hover { border-color: rgba(201,168,76,0.4); color: rgba(232,228,220,0.75); }
+      .axis-filter-chip.active { border-color: #c9a84c; color: #c9a84c; background: rgba(201,168,76,0.10); }
     `;
     document.head.appendChild(style);
 
@@ -623,36 +616,43 @@ export default function NewMeNaviPage() {
       return (ACTION_TYPE_MAP[axisKey] || [])[idx] || 'ongoing';
     }
 
-    // ── 全ステップを actionType 別フラットリストに展開 ──
+    // ── 全ステップを actionType 別フラットリストに展開（スキン・歯は全サブトラック同時表示）──
     function flattenAllSteps() {
-      const skinKey  = getSkinFocus()  === 'hige'  ? 'skin_hige'   : 'skin_care';
-      const teethKey = getTeethFocus() === 'ortho' ? 'teeth_ortho' : 'teeth_white';
       const result = [];
+      const SUB_TRACKS = {
+        skin:  ['skin_care', 'skin_hige'],
+        teeth: ['teeth_white', 'teeth_ortho'],
+      };
       for (const axisId of Object.keys(AREA_DEFS)) {
         const def = AREA_DEFS[axisId];
         const v = tv[axisId] || { current:1, ideal:3, care_type:'none' };
         const careType = v.care_type || 'none';
-        let steps, axisKey;
-        if (axisId === 'skin')  { steps = (MILESTONES_SUB[skinKey]  || {}).steps || []; axisKey = skinKey; }
-        else if (axisId === 'teeth') { steps = (MILESTONES_SUB[teethKey] || {}).steps || []; axisKey = teethKey; }
-        else { steps = MILESTONES[axisId] || []; axisKey = axisId; }
-        const concernedIdx = steps.findIndex(s => s.isCurrentFor === 'concerned');
-        const splitAt = concernedIdx > 0 ? concernedIdx : 0;
-        const currentIdx = steps.findIndex(s => s.isCurrentFor === careType);
-        steps.forEach((step, idx) => {
-          const doneKey = (splitAt > 0 && idx < splitAt)
-            ? `prereq-${axisKey}-${idx}` : `${axisKey}-${idx}`;
-          result.push({
-            axisId, axisKey, def, careType,
-            step, idx, doneKey,
-            actionType: getActionType(axisKey, idx),
-            isDone: !!stepDone[doneKey],
-            isCurrentPosition: (idx === currentIdx),
+        const subKeys = SUB_TRACKS[axisId] || [axisId];
+        for (const axisKey of subKeys) {
+          const steps = axisKey in MILESTONES_SUB
+            ? (MILESTONES_SUB[axisKey] || {}).steps || []
+            : MILESTONES[axisKey] || [];
+          const concernedIdx = steps.findIndex(s => s.isCurrentFor === 'concerned');
+          const splitAt = concernedIdx > 0 ? concernedIdx : 0;
+          const currentIdx = steps.findIndex(s => s.isCurrentFor === careType);
+          steps.forEach((step, idx) => {
+            const doneKey = (splitAt > 0 && idx < splitAt)
+              ? `prereq-${axisKey}-${idx}` : `${axisKey}-${idx}`;
+            result.push({
+              axisId, axisKey, def, careType,
+              step, idx, doneKey,
+              actionType: getActionType(axisKey, idx),
+              isDone: !!stepDone[doneKey],
+              isCurrentPosition: (idx === currentIdx),
+            });
           });
-        });
+        }
       }
       return result;
     }
+
+    // ── 軸フィルター状態 ──
+    let activeAxisFilter = null;
 
     // ── ステップカードHTML ──
     function buildStepCard({ axisId, axisKey, def, step, idx, doneKey, isDone, isCurrentPosition }, compassAxis) {
@@ -752,6 +752,7 @@ export default function NewMeNaviPage() {
       SECTIONS.forEach(({ type, icon, label, desc }) => {
         const sectionSteps = allSteps
           .filter(s => s.actionType === type)
+          .filter(s => !activeAxisFilter || s.axisId === activeAxisFilter)
           .sort((a, b) => {
             const aIsCompass = a.axisId === compassAxis ? 0 : 1;
             const bIsCompass = b.axisId === compassAxis ? 0 : 1;
@@ -1315,28 +1316,13 @@ export default function NewMeNaviPage() {
       return html;
     }
 
-    function buildAxisStatusBar() {
-      return `<div class="axis-status-bar" id="axis-status-bar">` +
-        Object.entries(AREA_DEFS).map(([id, def]) => {
-          const st = axisProgress[id] || '';
-          return `<button class="axis-status-chip" data-axis="${esc(id)}" data-status="${esc(st)}">${esc(def.icon)} ${esc(def.label)}</button>`;
-        }).join('') +
+    function buildAxisFilterBar() {
+      return `<div class="axis-filter-bar" id="axis-filter-bar">` +
+        `<button class="axis-filter-chip${!activeAxisFilter ? ' active' : ''}" data-axis-filter="">全て</button>` +
+        Object.entries(AREA_DEFS).map(([id, def]) =>
+          `<button class="axis-filter-chip${activeAxisFilter === id ? ' active' : ''}" data-axis-filter="${esc(id)}">${esc(def.icon)} ${esc(def.label)}</button>`
+        ).join('') +
       `</div>`;
-    }
-
-    function buildFocusToggleRow() {
-      const sf = getSkinFocus(); const tf = getTeethFocus();
-      return `
-        <div class="focus-toggle-row" id="focus-toggle-row">
-          <div class="focus-toggle-group">
-            <button class="focus-toggle-btn${sf==='care'?' active':''}" data-subtab="skin" data-val="care">✨ スキンケア</button>
-            <button class="focus-toggle-btn${sf==='hige'?' active':''}" data-subtab="skin" data-val="hige">🪒 ひげケア</button>
-          </div>
-          <div class="focus-toggle-group">
-            <button class="focus-toggle-btn${tf==='white'?' active':''}" data-subtab="teeth" data-val="white">🦷 ホワイトニング</button>
-            <button class="focus-toggle-btn${tf==='ortho'?' active':''}" data-subtab="teeth" data-val="ortho">😬 歯並び矯正</button>
-          </div>
-        </div>`;
     }
 
     const html = `
@@ -1351,8 +1337,7 @@ export default function NewMeNaviPage() {
       </div>
 
       ${buildCompassHtml()}
-      ${buildAxisStatusBar()}
-      ${buildFocusToggleRow()}
+      ${buildAxisFilterBar()}
 
       <div id="sections-container">
         ${buildSectionsHtml()}
@@ -1401,37 +1386,20 @@ export default function NewMeNaviPage() {
     }
 
     function refreshCompassAndTracks() {
-      // Compassストリップ更新
       const strip = document.getElementById('compass-strip');
-      if (strip) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = buildCompassHtml();
-        strip.replaceWith(tmp.firstElementChild);
-      }
-      // セクションを再描画
+      if (strip) { const tmp = document.createElement('div'); tmp.innerHTML = buildCompassHtml(); strip.replaceWith(tmp.firstElementChild); }
       const container = document.getElementById('sections-container');
       if (container) container.innerHTML = buildSectionsHtml();
-      // 軸ステータスバー更新
-      const bar = document.getElementById('axis-status-bar');
-      if (bar) { const tmp = document.createElement('div'); tmp.innerHTML = buildAxisStatusBar(); bar.replaceWith(tmp.firstElementChild); }
+      const bar = document.getElementById('axis-filter-bar');
+      if (bar) { const tmp = document.createElement('div'); tmp.innerHTML = buildAxisFilterBar(); bar.replaceWith(tmp.firstElementChild); }
     }
 
-    // ── 軸ステータスチップ（軸ステータスバー）クリック ──
+    // ── 軸フィルターチップ クリック ──
     root.addEventListener('click', (e) => {
-      const btn = e.target.closest('.axis-status-chip');
+      const btn = e.target.closest('.axis-filter-chip');
       if (!btn) return;
-      const axisId = btn.dataset.axis;
-      const currentStatus = axisProgress[axisId] || '';
-      const nextStatus = STATUS_CYCLE[currentStatus] ?? '';
-      if (nextStatus === '') { delete axisProgress[axisId]; } else { axisProgress[axisId] = nextStatus; }
-      try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(axisProgress)); } catch {}
-      if (token) {
-        fetch('/api/me/profile', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ axis_progress: axisProgress }),
-        }).catch(() => {});
-      }
+      const axis = btn.dataset.axisFilter || '';
+      activeAxisFilter = (axis === '' || axis === activeAxisFilter) ? null : axis;
       refreshCompassAndTracks();
     });
 
@@ -1508,21 +1476,6 @@ export default function NewMeNaviPage() {
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    // ── スキン・歯フォーカストグル（新UI）──
-    root.addEventListener('click', (e) => {
-      const btn = e.target.closest('.focus-toggle-btn');
-      if (!btn) return;
-      const axis = btn.dataset.subtab;
-      const val  = btn.dataset.val;
-      if (axis === 'skin')  { localStorage.setItem('fineme:skin:focus',  val); }
-      if (axis === 'teeth') { localStorage.setItem('fineme:teeth:focus', val); }
-      // フォーカストグルUI更新
-      const row = document.getElementById('focus-toggle-row');
-      if (row) { const tmp = document.createElement('div'); tmp.innerHTML = buildFocusToggleRow(); row.replaceWith(tmp.firstElementChild); }
-      // セクション再描画
-      const container = document.getElementById('sections-container');
-      if (container) container.innerHTML = buildSectionsHtml();
-    });
 
     } catch (err) {
       // エラーが発生した場合、読み込み中のまま固まらないようにする
