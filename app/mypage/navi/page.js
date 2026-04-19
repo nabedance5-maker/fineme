@@ -279,8 +279,17 @@ export default function NewMeNaviPage() {
       .station:last-child .station-mini-card::after,
       .station:last-child .station-card::after { display: none; }
 
+      /* ── セクションタブバー ── */
+      .section-tab-bar { display: flex; gap: 0; background: rgba(10,15,30,0.75); border: 1px solid rgba(201,168,76,0.22); border-radius: 10px; overflow: hidden; margin-bottom: 20px; backdrop-filter: blur(8px); position: sticky; top: 64px; z-index: 10; }
+      .section-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.45); background: transparent; border: none; border-right: 1px solid rgba(201,168,76,0.15); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; text-decoration: none; }
+      .section-tab:last-child { border-right: none; }
+      .section-tab:hover { background: rgba(201,168,76,0.06); color: rgba(232,228,220,0.75); }
+      .section-tab.active { background: rgba(201,168,76,0.12); color: rgba(232,228,220,0.92); }
+      .section-tab-icon { font-size: 16px; }
+      .section-tab-progress { font-size: 10px; font-weight: 800; color: rgba(201,168,76,0.65); }
+
       /* ── アクションセクション（新構造） ── */
-      .action-section { margin-bottom: 28px; }
+      .action-section { margin-bottom: 28px; scroll-margin-top: 120px; }
       .action-sec-header { display: flex; align-items: center; gap: 12px; padding: 12px 0 10px; border-bottom: 1.5px solid rgba(201,168,76,0.18); margin-bottom: 12px; }
       .action-sec-icon { font-size: 22px; flex-shrink: 0; }
       .action-sec-body { flex: 1; }
@@ -701,10 +710,27 @@ export default function NewMeNaviPage() {
       const compassAxis = calcDynamicCompass();
       const allSteps = flattenAllSteps();
       const SECTIONS = [
-        { type: 'quick',   icon: '⚡', label: '今すぐ動ける一手',       desc: '今日中に完了できる。まずここから動こう' },
-        { type: 'habit',   icon: '🔄', label: '毎日・毎週の習慣にする', desc: '継続が変容を積み上げる。少しずつでOK' },
-        { type: 'ongoing', icon: '🌊', label: 'じっくり取り組むプログラム', desc: '数週間〜数ヶ月スパン。覚悟して始めると変わる' },
+        { type: 'quick',   icon: '⚡', label: '今すぐ動ける一手',         tabLabel: '今すぐ', desc: '今日中に完了できる。まずここから動こう' },
+        { type: 'habit',   icon: '🔄', label: '毎日・毎週の習慣にする',   tabLabel: '毎日習慣', desc: '継続が変容を積み上げる。少しずつでOK' },
+        { type: 'ongoing', icon: '🌊', label: 'じっくり取り組むプログラム', tabLabel: 'じっくり', desc: '数週間〜数ヶ月スパン。覚悟して始めると変わる' },
       ];
+
+      // タブバー用の進捗を事前計算
+      const sectionMeta = SECTIONS.map(({ type }) => {
+        const steps = allSteps.filter(s => s.actionType === type);
+        return { type, done: steps.filter(s => s.isDone).length, total: steps.length };
+      });
+      const tabBarHtml = `
+        <div class="section-tab-bar" id="section-tab-bar">
+          ${SECTIONS.map(({ type, icon, tabLabel }, i) => {
+            const m = sectionMeta[i];
+            return `<button class="section-tab" data-scroll-to="section-${type}">
+              <span class="section-tab-icon">${icon}</span>
+              <span>${esc(tabLabel)}</span>
+              <span class="section-tab-progress">${m.done}/${m.total}</span>
+            </button>`;
+          }).join('')}
+        </div>`;
       // ゴール
       const doneCount = Object.values(stepDone).filter(Boolean).length;
       const isReady       = doneCount >= 20;
@@ -722,7 +748,7 @@ export default function NewMeNaviPage() {
           <span style="font-size:14px">🔒</span><span style="font-size:12px;color:rgba(232,228,220,0.50);line-height:1.6">まずは変容ルートを歩もう。変化が積み重なるほど、このステージが近づいてくる。</span>
         </div>`;
 
-      let html = '';
+      let html = tabBarHtml;
       SECTIONS.forEach(({ type, icon, label, desc }) => {
         const sectionSteps = allSteps
           .filter(s => s.actionType === type)
@@ -1471,6 +1497,15 @@ export default function NewMeNaviPage() {
           showPrereqCelebration();
         }
       }
+    });
+
+    // ── セクションタブ（スクロール移動）──
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('.section-tab');
+      if (!btn) return;
+      const targetId = btn.dataset.scrollTo;
+      const el = document.getElementById(targetId);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
     // ── スキン・歯フォーカストグル（新UI）──
