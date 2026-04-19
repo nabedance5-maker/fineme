@@ -334,7 +334,7 @@ export default function DiagnosisResultPage() {
       root.innerHTML = `<div style="text-align:center;padding:60px 20px">
         <p style="font-size:32px;margin-bottom:16px">🗺️</p>
         <h2 style="font-size:20px;font-weight:800;margin:0 0 10px">新しいMe Scanで地図を生成しよう</h2>
-        <p style="color:#6b7280;font-size:14px;line-height:1.75;margin:0 0 24px">診断をアップデートしました。<br>新しいMe Scanで、あなただけの変容マップを作成します。</p>
+        <p style="color:#6b7280;font-size:14px;line-height:1.75;margin:0 0 24px">診断をアップデートしました。<br>新しいMe Scanで、あなただけの変容ナビを作成します。</p>
         <a href="/diagnosis" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px">Me Scanを受ける（新版）</a>
       </div>`;
       return;
@@ -726,7 +726,7 @@ export default function DiagnosisResultPage() {
 
     const html = `
       <div class="map-hero">
-        <p class="map-hero-eyebrow">New Me Map</p>
+        <p class="map-hero-eyebrow">New Me Navi</p>
         <div class="map-hero-badge">🗺️ あなたの変容プロファイル</div>
         <h1>${hero.h1}</h1>
         <div class="map-hero-divider"></div>
@@ -777,7 +777,7 @@ export default function DiagnosisResultPage() {
         <a href="/mypage/navi" class="navi-btn navi-btn-secondary">
           <span class="navi-btn-icon">🧭</span>
           <span class="navi-btn-body">
-            <span class="navi-btn-title">New Me Naviを見る</span>
+            <span class="navi-btn-title">New Me Mapを見る</span>
             <span class="navi-btn-desc">7軸それぞれの変容トラックと、今向くべき方角が常に見える</span>
           </span>
           <span class="navi-btn-arrow">→</span>
@@ -808,9 +808,9 @@ export default function DiagnosisResultPage() {
         <div style="display:flex;align-items:center;gap:16px;padding:18px 20px;background:rgba(10,15,30,0.55);border:1px solid rgba(201,168,76,0.2);border-radius:14px">
           <span style="font-size:28px;flex-shrink:0">🪞</span>
           <div style="flex:1">
-            <p style="font-size:10px;font-weight:800;letter-spacing:.14em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin:0 0 4px">New Me Mirror — オプション</p>
+            <p style="font-size:10px;font-weight:800;letter-spacing:.14em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin:0 0 4px">Fineme Mirror — オプション</p>
             <p style="font-size:14px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 3px">写真でも変容余地を確認する</p>
-            <p style="font-size:12px;color:rgba(232,228,220,0.5);margin:0;line-height:1.5">診断結果と照らし合わせて、AIが写真から変容余地マップを生成。</p>
+            <p style="font-size:12px;color:rgba(232,228,220,0.5);margin:0;line-height:1.5">診断結果と照らし合わせて、AIが写真からNew Me Logを生成。</p>
           </div>
           <span style="font-size:11px;font-weight:800;color:rgba(232,228,220,0.6);background:rgba(232,228,220,0.1);border:1px solid rgba(232,228,220,0.2);border-radius:20px;padding:4px 12px;flex-shrink:0;letter-spacing:.06em">Coming soon</span>
         </div>
@@ -856,7 +856,7 @@ export default function DiagnosisResultPage() {
         const axis = btn.dataset.axis;
         if (!axis || !AREA_DEFS[axis]) return;
         localStorage.setItem('fineme:compass:override', axis);
-        // 診断データにも反映（New Me Naviが読む用）
+        // 診断データにも反映（New Me Mapが読む用）
         try {
           const raw = localStorage.getItem('fineme:diagnosis:latest');
           if (raw) {
@@ -937,8 +937,8 @@ export default function DiagnosisResultPage() {
           <aside className="result-sidenav">
             <nav className="stack" style={{ gap: '4px' }}>
               <Link href="/mypage" className="sidenav-link">ホーム</Link>
-              <Link href="/diagnosis/result" className="sidenav-link sidenav-link--active">New Me Map</Link>
-              <Link href="/mypage/navi" className="sidenav-link">New Me Navi</Link>
+              <Link href="/diagnosis/result" className="sidenav-link sidenav-link--active">New Me Navi</Link>
+              <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
               <Link href="/mypage/favorites" className="sidenav-link">お気に入り</Link>
               <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
               <Link href="/my-reservations" className="sidenav-link">予約履歴</Link>

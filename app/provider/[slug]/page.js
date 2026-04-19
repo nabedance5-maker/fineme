@@ -102,7 +102,7 @@ function calcMatch(provider, diagnosis) {
   return { score: total === 0 ? null : Math.round((score / total) * 100), detail: { coveredAxes: axisDetails, isCompassProvider } };
 }
 
-/** New Me Map接点のナラティブ生成 */
+/** New Me Navi接点のナラティブ生成 */
 function buildNarrative(diagnosis, matchData) {
   if (!diagnosis?.transform_vectors || !matchData?.detail) return [];
   const { coveredAxes, isCompassProvider } = matchData.detail;
@@ -269,7 +269,7 @@ function TabBar({ activeTab, onSelect }) {
   );
 }
 
-// ── Section A: New Me Map との接点 ────────────────────────────────────────────
+// ── Section A: New Me Navi との接点 ────────────────────────────────────────────
 function NewMeMapSection({ diagnosis, matchData }) {
   const isNewStyle = !!diagnosis?.transform_vectors;
   const { score, detail } = matchData || {};
@@ -293,7 +293,7 @@ function NewMeMapSection({ diagnosis, matchData }) {
       {/* スコアヘッダー */}
       <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #bfdbfe' }}>
         <div style={{ fontSize: '11px', fontWeight: '700', color: '#2563eb', letterSpacing: '.05em', marginBottom: '8px' }}>
-          {isNewStyle ? '🗺 New Me Map との接点' : '🎯 あなたの診断との一致度'}
+          {isNewStyle ? '🗺 New Me Navi との接点' : '🎯 あなたの診断との一致度'}
         </div>
         {score !== null ? (
           <>
@@ -852,7 +852,7 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
     try {
       // Me Scanデータを添付
       const meScanNote = (includeMeScan && meScanSummary)
-        ? `【New Me Map より】\n${meScanSummary.join('\n')}\n\n`
+        ? `【New Me Navi より】\n${meScanSummary.join('\n')}\n\n`
         : '';
       const noteParts = [
         selectedService ? `【プログラム】${selectedService.name}（¥${selectedService.price.toLocaleString()}）` : '',

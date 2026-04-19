@@ -256,7 +256,7 @@ export default function ProviderJoinPage() {
               <div className="scan-step">
                 <div className="scan-step-icon">🗺️</div>
                 <div>
-                  <div className="scan-step-label">STEP 2 — New Me Map</div>
+                  <div className="scan-step-label">STEP 2 — New Me Navi</div>
                   <div className="scan-step-title">変容プロファイルが生成される</div>
                   <p className="scan-step-desc">7軸レーダーチャートと変容ベクトルが可視化された「自分だけの地図」が生成されます。これが<strong>マッチングの起点</strong>です。</p>
                 </div>

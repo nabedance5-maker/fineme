@@ -141,7 +141,7 @@ export default function AdminStoriesPage() {
               ${tags.length ? `<div class="story-tags">${tags.map(t => `<span class="story-tag">${esc(t)}</span>`).join('')}</div>` : ''}
             </div>
             <div class="meta-edit-panel" id="meta-panel-${sid}">
-              <div style="font-size:11px;font-weight:700;color:#6b7280;margin-bottom:10px">変容の証言メタデータ（New Me Map 連動）</div>
+              <div style="font-size:11px;font-weight:700;color:#6b7280;margin-bottom:10px">変容の証言メタデータ（New Me Navi 連動）</div>
               <div class="meta-edit-row">
                 <div>
                   <label class="meta-label">変容軸</label>

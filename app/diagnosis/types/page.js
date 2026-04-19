@@ -26,7 +26,7 @@ export default function DiagnosisTypesPage() {
               Me Scanを受ける →
             </Link>
             <Link href="/diagnosis/result" className="btn btn-ghost" style={{ fontSize: '14px', padding: '10px 22px' }}>
-              あなたのNew Me Mapを見る
+              あなたのNew Me Naviを見る
             </Link>
           </div>
         </div>

@@ -246,7 +246,7 @@ export default function MypageDiagnosisPage() {
                       </p>
                     ) : (
                       <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 16px' }}>
-                        🔒 New Me Naviのステップを進めると、このステージが開放されます。
+                        🔒 New Me Mapのステップを進めると、このステージが開放されます。
                       </p>
                     )}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -269,7 +269,7 @@ export default function MypageDiagnosisPage() {
                     {!isApproaching && (
                       <div style={{ marginTop: '12px', textAlign: 'center' }}>
                         <Link href="/mypage/navi" style={{ fontSize: '13px', fontWeight: 700, color: '#6366f1', textDecoration: 'none' }}>
-                          → New Me Naviでステップを進める
+                          → New Me Mapでステップを進める
                         </Link>
                       </div>
                     )}
@@ -301,14 +301,14 @@ export default function MypageDiagnosisPage() {
           )}
         </section>
 
-        {/* New Me Mirror CTA（Coming soon） */}
+        {/* Fineme Mirror CTA（Coming soon） */}
         <div style={{ position: 'relative', opacity: 0.45, pointerEvents: 'none', userSelect: 'none', marginTop: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(10,15,30,0.55)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '14px' }}>
             <span style={{ fontSize: '28px', flexShrink: 0 }}>🪞</span>
             <div style={{ flex: 1 }}>
-              <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: 'rgba(201,168,76,0.6)', textTransform: 'uppercase', margin: '0 0 4px' }}>New Me Mirror — オプション</p>
+              <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: 'rgba(201,168,76,0.6)', textTransform: 'uppercase', margin: '0 0 4px' }}>Fineme Mirror — オプション</p>
               <p style={{ fontSize: '14px', fontWeight: 700, color: 'rgba(232,228,220,0.9)', margin: '0 0 3px' }}>写真でも変容余地を確認する</p>
-              <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: 0, lineHeight: '1.5' }}>診断結果と照らし合わせて、AIが写真から変容余地マップを生成。</p>
+              <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: 0, lineHeight: '1.5' }}>診断結果と照らし合わせて、AIが写真からNew Me Logを生成。</p>
             </div>
             <span style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(232,228,220,0.6)', background: 'rgba(232,228,220,0.1)', border: '1px solid rgba(232,228,220,0.2)', borderRadius: '20px', padding: '4px 12px', flexShrink: 0, letterSpacing: '.06em' }}>Coming soon</span>
           </div>

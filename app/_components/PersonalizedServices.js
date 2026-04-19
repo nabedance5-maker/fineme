@@ -71,7 +71,7 @@ export function PersonalizedServices({ providers, firstCat }) {
       {personalized ? (
         <p style={{ fontSize: '12px', color: 'rgba(201,168,76,0.75)', margin: '0 0 20px', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ fontSize: '10px' }}>✦</span>
-          あなたのNew Me Mapに合わせて表示しています
+          あなたのNew Me Naviに合わせて表示しています
         </p>
       ) : (
         <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', margin: '0 0 20px', lineHeight: 1.6 }}>

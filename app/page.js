@@ -506,7 +506,7 @@ export default function HomePage() {
                 <div className="compass-banner-body">
                   <p className="compass-banner-label">あなたのFineme Compass</p>
                   <p className="compass-banner-main">
-                    最初の一手：{AXIS_ICONS[compass]} {AXIS_LABELS[compass]} — New Me Mapを見る →
+                    最初の一手：{AXIS_ICONS[compass]} {AXIS_LABELS[compass]} — New Me Naviを見る →
                   </p>
                 </div>
                 <span className="compass-banner-arrow">→</span>
@@ -531,17 +531,17 @@ export default function HomePage() {
           <section className="steps-section" style={{ background: 'rgba(10,15,30,0.55)' }}>
             <div className="steps-inner">
               <p className="steps-eyebrow">あなたの変容の旅、進行中</p>
-              <h2 className="steps-title">New Me Mapが生成されています</h2>
+              <h2 className="steps-title">New Me Naviが生成されています</h2>
               <p className="steps-sub">変容プロファイルを確認して、次の一手へ進みましょう。</p>
               <div className="steps-grid" style={{ gridTemplateColumns: '1fr 1fr', maxWidth: '520px', margin: '0 auto' }}>
                 <Link href="/diagnosis/result" className="step-card" style={{ textDecoration: 'none', cursor: 'pointer' }}>
                   <div className="step-icon">🗺️</div>
-                  <p className="step-name">New Me Map</p>
+                  <p className="step-name">New Me Navi</p>
                   <p className="step-desc">7軸変容プロファイルとFineme Compassを確認する</p>
                 </Link>
                 <Link href="/mypage/navi" className="step-card" style={{ textDecoration: 'none', cursor: 'pointer' }}>
                   <div className="step-icon">🧭</div>
-                  <p className="step-name">New Me Navi</p>
+                  <p className="step-name">New Me Map</p>
                   <p className="step-desc">軸ごとの変容ロードマップと中継地点を確認する</p>
                 </Link>
               </div>
@@ -569,13 +569,13 @@ export default function HomePage() {
                 <div className="step-card">
                   <div className="step-num">2</div>
                   <div className="step-icon">🗺️</div>
-                  <p className="step-name">New Me Map</p>
+                  <p className="step-name">New Me Navi</p>
                   <p className="step-desc">7軸のレーダーチャートと変容ベクトルが即座に生成。<strong style={{color:'#c9a84c'}}>Fineme Compass</strong>があなたの「最初の一手」を明示する。</p>
                 </div>
                 <div className="step-card">
                   <div className="step-num">3</div>
                   <div className="step-icon">🧭</div>
-                  <p className="step-name">New Me Navi</p>
+                  <p className="step-name">New Me Map</p>
                   <p className="step-desc">軸ごとの変容ロードマップと、来た道タイプ別の中継地点が表示される。迷わず次の一手へ。</p>
                 </div>
               </div>

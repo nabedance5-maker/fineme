@@ -104,7 +104,7 @@ export default function ProviderPhilosophyPage() {
             <div className="phil-flow-step">
               <div className="phil-flow-num">2</div>
               <div className="phil-flow-body">
-                <strong>New Me Map（変容マップ）</strong> を受け取る<br />
+                <strong>New Me Navi（変容ナビ）</strong> を受け取る<br />
                 7軸レーダーチャートで「現在地×理想」を可視化。ユーザーが「自分のどこから手をつけるべきか」を自覚する。
               </div>
             </div>

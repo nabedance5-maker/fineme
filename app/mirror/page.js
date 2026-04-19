@@ -258,8 +258,8 @@ export default function MirrorPage() {
 
       {/* ヒーロー */}
       <div className="mirror-hero">
-        <p className="mirror-badge">New Me Mirror</p>
-        <h1 className="mirror-title">変容余地マップ</h1>
+        <p className="mirror-badge">Fineme Mirror</p>
+        <h1 className="mirror-title">New Me Log</h1>
         <p className="mirror-subtitle">
           写真1枚。AIがあなたの「変われる余白」を地図にする。<br />
           スコアじゃない。あなたの可能性の見取り図。
@@ -279,7 +279,7 @@ export default function MirrorPage() {
             <p style={{ fontSize: '32px', marginBottom: '16px' }}>🔧</p>
             <p style={{ fontSize: '13px', fontWeight: 800, color: 'rgba(232,228,220,0.4)', letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Coming Soon</p>
             <p style={{ fontSize: '16px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', marginBottom: '10px' }}>現在準備中です</p>
-            <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.4)', lineHeight: '1.7', margin: 0 }}>New Me Mirror は現在調整中のため<br />一時的にご利用いただけません。<br />もうしばらくお待ちください。</p>
+            <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.4)', lineHeight: '1.7', margin: 0 }}>Fineme Mirror は現在調整中のため<br />一時的にご利用いただけません。<br />もうしばらくお待ちください。</p>
           </div>
         </div>
       )}
@@ -392,7 +392,7 @@ export default function MirrorPage() {
         <div className="analyzing-wrap">
           <div className="analyzing-spinner" />
           <p style={{ color: 'rgba(232,228,220,0.6)', fontSize: '15px', marginBottom: '8px' }}>
-            AIが変容余地マップを生成中…
+            AIがNew Me Logを生成中…
           </p>
           <p style={{ color: 'rgba(232,228,220,0.35)', fontSize: '12px' }}>
             30〜60秒ほどかかります。そのままお待ちください。
@@ -405,7 +405,7 @@ export default function MirrorPage() {
         <div className="results-wrap">
           {state === 'full' && (
             <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-              <span className="full-badge">✨ フル版 — 全軸の変容余地マップ</span>
+              <span className="full-badge">✨ フル版 — 全軸のNew Me Log</span>
             </div>
           )}
 
@@ -474,7 +474,7 @@ export default function MirrorPage() {
           {state === 'preview' && (
             <div style={{ background: 'rgba(10,15,30,0.97)', borderRadius: '16px', padding: '32px 24px', textAlign: 'center', border: '1px solid rgba(201,168,76,0.2)', marginTop: '8px' }}>
               <p style={{ fontSize: '11px', color: 'rgba(201,168,76,0.6)', fontWeight: '800', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '12px' }}>
-                残り {(analysis.axes?.length || 0) - 1} 軸の変容余地マップ
+                残り {(analysis.axes?.length || 0) - 1} 軸のNew Me Log
               </p>
               <p className="paywall-title">詳細な地図を手に入れる</p>
               <p className="paywall-desc">

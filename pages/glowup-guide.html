@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>垢抜けガイド | 明るい第一歩</title>
+  <link rel="stylesheet" href="../assets/styles/style.css">
+  <link rel="stylesheet" href="../assets/styles/components.css">
+  <meta name="robots" content="noindex,nofollow" />
+  <style>
+    /* --- Page aesthetics --- */
+    .guide-hero{padding:72px 24px;background:
+      radial-gradient(1200px 420px at 50% -10%, rgba(37,99,235,0.08), transparent 68%),
+      linear-gradient(180deg,#ffffff,#f8fafc);} 
+    .guide-hero .title{font-size:clamp(30px,6vw,52px);font-weight:800;text-align:center;margin:0;color:#0f172a;letter-spacing:-0.02em}
+    .guide-hero .lead{font-size:18px;text-align:center;color:#475569;margin-top:10px}
+    .guide-wrap{max-width:1040px;margin:34px auto;padding:0 20px}
+    .guide-section{margin:26px 0;padding:20px;border:1px solid rgba(15,23,42,0.06);border-radius:14px;background:linear-gradient(180deg,#fff,#fbfbff);box-shadow:0 10px 26px rgba(15,23,42,0.05)}
+    .guide-section h2{font-size:clamp(22px,3.4vw,30px);margin:0 0 10px;font-weight:800;color:#0f172a}
+    .guide-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+    .guide-card{position:relative;background:#fff;border-radius:14px;padding:14px;border:1px solid rgba(2,6,23,0.06);box-shadow:0 8px 22px rgba(2,6,23,0.06);transition:transform .2s ease, box-shadow .2s}
+    .guide-card:hover{transform:translateY(-4px);box-shadow:0 16px 32px rgba(2,6,23,0.12)}
+    .guide-card .icon{font-size:28px}
+    .guide-card h3{margin:6px 0 8px;font-size:18px;font-weight:700}
+    .guide-card p,.guide-card li{color:#475569;font-size:14px;line-height:1.7}
+    .guide-card .cta{display:inline-flex;align-items:center;gap:8px;margin-top:10px}
+    .guide-road{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    .road-step{background:linear-gradient(180deg,#f8fafc,#eef2ff);border:1px solid #e5e7eb;padding:14px;border-radius:12px}
+    .road-step h4{margin:0 0 8px;font-size:16px}
+    .qa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+    .qa{background:#fff;border:1px solid rgba(2,6,23,0.06);border-radius:12px;box-shadow:0 8px 20px rgba(2,6,23,0.06);padding:14px}
+    .qa h4{margin:0 0 6px;font-size:16px}
+    .starter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+    .starter{background:linear-gradient(180deg,#ffffff,#fbfbff);border:1px solid rgba(15,23,42,0.06);border-radius:12px;padding:14px}
+    .starter h4{margin:0 0 8px;font-size:16px}
+    .muted{color:#64748b}
+    .chip{display:inline-block;padding:4px 8px;border:1px solid #e5e7eb;border-radius:999px;font-size:12px;color:#64748b;background:#fff;margin-right:6px;opacity:0;transform:translateY(4px);transition:opacity .5s ease, transform .5s ease}
+    .chip.visible{opacity:1;transform:none}
+    @media (max-width:720px){ .guide-wrap{padding:0 14px} .guide-section{padding:16px} }
+  </style>
+</head>
+<body>
+  <header id="site-header"></header>
+  <section class="guide-hero">
+    <h1 class="title">垢抜けガイド</h1>
+    <p class="lead">診断なしでも分かる、“まず何を変えると良いか”。楽しく、明るい第一歩。</p>
+  </section>
+  <main class="guide-wrap">
+    <!-- よくある悩み → まずはここから -->
+    <section class="guide-section">
+      <h2>よくある悩み → まずはここから</h2>
+      <div class="guide-grid">
+        <article class="guide-card">
+          <div class="icon">🌿</div>
+          <h3>肌の荒れ・黒ずみが気になる</h3>
+          <ul>
+            <li>洗顔・保湿の基本を整える</li>
+            <li>毛穴/角質ケアで「清潔感」を底上げ</li>
+            <li>日焼け止めの習慣化でトラブル予防</li>
+          </ul>
+          <div class="cta">
+            <a class="btn" href="/pages/search.html?category=esthetic">エステで肌を整える</a>
+            <span class="muted">or メイクでカバー</span>
+          </div>
+        </article>
+        <article class="guide-card">
+          <div class="icon">✂️</div>
+          <h3>眉が重く野暮ったい</h3>
+          <ul>
+            <li>眉カットで輪郭を整える</li>
+            <li>左右バランスと角度を微調整</li>
+            <li>少しの変化で印象がガラっと</li>
+          </ul>
+          <div class="cta">
+            <a class="btn" href="/pages/search.html?category=eyebrow">眉サロンで整える</a>
+          </div>
+        </article>
+        <article class="guide-card">
+          <div class="icon">💇‍♂️</div>
+          <h3>髪型が決まらない</h3>
+          <ul>
+            <li>横/後ろをコンパクトにして整える</li>
+            <li>前髪・分け目で雰囲気を調整</li>
+            <li>ワックスの基本の使い方を習得</li>
+          </ul>
+          <div class="cta">
+            <a class="btn" href="/pages/search.html?category=hair">美容室でスタイル更新</a>
+          </div>
+        </article>
+        <article class="guide-card">
+          <div class="icon">👔</div>
+          <h3>服の合わせ方が分からない</h3>
+          <ul>
+            <li>ベーシックな色/形からはじめる</li>
+            <li>体型に合うサイズ選び</li>
+            <li>小物で“清潔感”を補強</li>
+          </ul>
+          <div class="cta">
+            <a class="btn" href="/pages/search.html?category=fashion">スタイリング相談</a>
+            <span class="muted">or カラー診断</span>
+          </div>
+        </article>
+        <article class="guide-card">
+          <div class="icon">✨</div>
+          <h3>歯の黄ばみ・整列が気になる</h3>
+          <ul>
+            <li>ホワイトニングで明るさアップ</li>
+            <li>気になる歯並びは軽微な矯正</li>
+            <li>口元の印象で自信が上がる</li>
+          </ul>
+          <div class="cta">
+            <a class="btn" href="/pages/search.html?category=whitening">ホワイトニング</a>
+            <a class="btn btn-ghost" href="/pages/search.html?category=orthodontics">矯正</a>
+          </div>
+        </article>
+        <article class="guide-card">
+          <div class="icon">🏋️‍♂️</div>
+          <h3>体型を整えたい</h3>
+          <ul>
+            <li>姿勢改善＋軽いトレーニング</li>
+            <li>目標は「健康的で続けられる」</li>
+            <li>見た目の変化は少しずつでOK</li>
+          </ul>
+          <div class="cta">
+            <a class="btn" href="/pages/search.html?category=gym">パーソナルジム</a>
+          </div>
+        </article>
+        <article class="guide-card">
+          <div class="icon">🪒</div>
+          <h3>ひげ・ムダ毛を減らしたい</h3>
+          <ul>
+            <li>青ひげ対策で清潔感UP</li>
+            <li>フェイスラインの産毛ケア</li>
+            <li>毎朝の時短にもつながる</li>
+          </ul>
+          <div class="cta">
+            <a class="btn" href="/pages/search.html?category=hairremoval">脱毛</a>
+          </div>
+        </article>
+        <article class="guide-card">
+          <div class="icon">📸</div>
+          <h3>プロフィール写真を良くしたい</h3>
+          <ul>
+            <li>光と構図で印象を最大化</li>
+            <li>服装・髪・眉と合わせて最適化</li>
+            <li>表情づくりの練習も有効</li>
+          </ul>
+          <div class="cta">
+            <a class="btn" href="/pages/search.html?category=photo">写真撮影</a>
+          </div>
+          <div class="muted" style="margin-top:8px;font-size:12.5px">
+            <span style="display:inline-flex;align-items:center;gap:6px">💡 写真はプロフィール用だけでなく、</span>
+            <span class="chip">客観視</span>
+            <span class="chip">変化の実感</span>
+            <span class="chip">成功体験の蓄積</span>
+            <span>の記録にも役立ちます。</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- 垢抜けルート図（マップ） -->
+    <section class="guide-section">
+      <h2>垢抜けルート図</h2>
+      <div class="guide-road">
+        <div class="road-step">
+          <h4>Step 1: 眉・髪・肌の「土台」</h4>
+          <p class="muted">小さな変化の積み重ねで“清潔感”を底上げ。まずは眉・髪・肌の3点から。</p>
+        </div>
+        <div class="road-step">
+          <h4>Step 2: 服・色で「調和」</h4>
+          <p class="muted">全体のバランスを整え、あなたらしい印象に。色とシルエットを意識。</p>
+        </div>
+        <div class="road-step">
+          <h4>Step 3: 写真で「見え方」を最適化</h4>
+          <p class="muted">光・角度・背景を味方に。プロフィールで伝わる印象が変わります。記録・振り返りに活用すると、変化の実感と成功体験の蓄積につながります。</p>
+        </div>
+        <div class="road-step">
+          <h4>Step 4: 継続・アップデート</h4>
+          <p class="muted">習慣化・定期チェックで無理なく更新。季節や目的に合わせて微調整。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- よくある迷い Q&A -->
+    <section class="guide-section">
+      <h2>よくある迷い Q&A</h2>
+      <div class="qa-grid">
+        <div class="qa">
+          <h4>何から始めるのが最短？</h4>
+          <p class="muted">眉・髪のコンパクト化と肌の基本ケアが、効果実感と写真に最も早く効きます。</p>
+        </div>
+        <div class="qa">
+          <h4>お金をあまりかけたくない</h4>
+          <p class="muted">日常ケア＋眉カットなど、低コストの初手でも十分に印象が変わります。</p>
+        </div>
+        <div class="qa">
+          <h4>忙しくて続けられるか不安</h4>
+          <p class="muted">週1〜2の短時間メンテ＋習慣化のコツで、無理なく続けられます。</p>
+        </div>
+        <div class="qa">
+          <h4>どれが自分に合うか分からない</h4>
+          <p class="muted">まずは気になる1箇所から。写真で比較しながら、少しずつ方向性を定めましょう。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- スターター（汎用） -->
+    <section class="guide-section">
+      <h2>スターター（まずはここから3選）</h2>
+      <div class="starter-grid">
+        <div class="starter">
+          <h4>眉カット</h4>
+          <p class="muted">最小の時間と費用で、顔の印象を大きく更新。</p>
+          <a class="btn" href="/pages/search.html?category=eyebrow">眉を整える</a>
+        </div>
+        <div class="starter">
+          <h4>ヘア更新</h4>
+          <p class="muted">横/後ろを整え、前髪や分け目で雰囲気調整。</p>
+          <a class="btn" href="/pages/search.html?category=hair">髪を整える</a>
+        </div>
+        <div class="starter">
+          <h4>肌の基本ケア</h4>
+          <p class="muted">洗顔・保湿の見直し＋毛穴ケアで清潔感を底上げ。</p>
+          <a class="btn" href="/pages/search.html?category=esthetic">肌を整える</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer"></footer>
+  <script src="../scripts/main.js" type="module"></script>
+  <script>
+    (function(){
+      try{
+        const chips = Array.from(document.querySelectorAll('.chip'));
+        if(!chips.length){ return; }
+        if(!('IntersectionObserver' in window)){
+          chips.forEach(c=> c.classList.add('visible'));
+          return;
+        }
+        const io = new IntersectionObserver((entries)=>{
+          entries.forEach(e=>{
+            if(e.isIntersecting){ e.target.classList.add('visible'); io.unobserve(e.target); }
+          });
+        }, { threshold: 0.2 });
+        chips.forEach(c=> io.observe(c));
+      }catch{}
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>予約一覧（掲載者向け） | Fineme</title>
+  <link rel="stylesheet" href="../../assets/styles/style.css" />
+  <link rel="stylesheet" href="../../assets/styles/components.css" />
+</head>
+<body>
+  <div id="provider-navbar"></div>
+  <main class="section">
+    <div class="container stack" style="max-width:1000px">
+      <h1 class="section-title">予約一覧（掲載者向け）</h1>
+      <p class="muted">来店確認は、来店したユーザーにのみポイントを付与するための重要な操作です。</p>
+      <div id="reservations-host" class="stack"></div>
+    </div>
+  </main>
+  <div id="provider-footer"></div>
+  <script src="../../scripts/main.js" type="module"></script>
+  <script src="../../scripts/partials.js" type="module"></script>
+  <script type="module">
+    import { listReservations, confirmVisited } from '../../scripts/points.js';
+    import { updateHeaderPointsBadge } from '../../scripts/points.js';
+
+    const host = document.getElementById('reservations-host');
+
+    function render(){
+      host.textContent = '';
+      const arr = listReservations();
+      if(!arr.length){ const p=document.createElement('p'); p.className='muted'; p.textContent='予約がまだありません。'; host.appendChild(p); return; }
+      arr.forEach(r => {
+        const card = document.createElement('div'); card.className='card'; card.style.padding='12px';
+        const h = document.createElement('div'); h.className='cluster'; h.style.justifyContent='space-between';
+        const left = document.createElement('div'); left.className='stack';
+        left.appendChild(Object.assign(document.createElement('strong'), { textContent: r.title }));
+        left.appendChild(Object.assign(document.createElement('span'), { className:'muted', textContent: `予約者: ${r.userId} / 来店予定: ${new Date(r.visitDate).toLocaleString('ja-JP')}` }));
+        const right = document.createElement('div'); right.className='cluster'; right.style.gap='8px';
+        const status = document.createElement('span'); status.className='badge badge--neutral'; status.textContent = r.status;
+        right.appendChild(status);
+        if(r.status !== 'visited'){
+          const btn = document.createElement('button'); btn.className='btn'; btn.textContent='来店確認';
+          btn.addEventListener('click', ()=>{
+            const ok = confirm('このユーザーが来店したことを確認しますか？\n※ 確認後、ポイントが付与されます');
+            if(!ok) return;
+            const res = confirmVisited(r.id);
+            if(res.ok){
+              status.textContent = 'visited';
+              render();
+              updateHeaderPointsBadge();
+              alert(`来店が確認されました。+${res.granted}pt 付与。現在の還元率: ${res.rate}%`);
+            } else {
+              alert('来店確認に失敗しました');
+            }
+          });
+          right.appendChild(btn);
+        }
+        h.appendChild(left); h.appendChild(right); card.appendChild(h);
+        const meta = document.createElement('p'); meta.className='muted'; meta.textContent = `料金: ${r.price}円 / 手数料率: ${r.commissionRate}%`;
+        card.appendChild(meta);
+        host.appendChild(card);
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>

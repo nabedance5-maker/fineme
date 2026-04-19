@@ -1,5 +1,5 @@
 // POST /api/mirror/purchase
-// New Me Mirror フル版 ¥500 の Stripe Checkout セッションを作成
+// Fineme Mirror フル版 ¥500 の Stripe Checkout セッションを作成
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 
@@ -38,7 +38,7 @@ export async function POST(request) {
         price_data: {
           currency: 'jpy',
           product_data: {
-            name: 'New Me Mirror — 変容余地マップ フル版',
+            name: 'Fineme Mirror — New Me Log フル版',
             description: '7軸の詳細分析・具体的改善ヒント・Me ScanのCompassアクション提案',
           },
           unit_amount: 500,

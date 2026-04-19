@@ -517,7 +517,7 @@ export default function AdminAffiliateEditPage() {
           {/* AIマッチングセクション */}
           <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
             <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>マッチング設定</h2>
-            <p className="muted" style={{ margin: '0 0 16px', fontSize: '12px' }}>New Me Naviでユーザーにマッチングされるための設定です。</p>
+            <p className="muted" style={{ margin: '0 0 16px', fontSize: '12px' }}>New Me Mapでユーザーにマッチングされるための設定です。</p>
             <form id="service-form">
               <div className="form-field">
                 <label>サービス説明文</label>
@@ -592,7 +592,7 @@ export default function AdminAffiliateEditPage() {
           <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
             <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>展開エリア</h2>
             <p className="muted" style={{ margin: '0 0 16px', fontSize: '12px' }}>
-              設定したエリアのユーザーの検索・New Me Naviに優先表示されます。未設定の場合は全国対応として扱われます。
+              設定したエリアのユーザーの検索・New Me Mapに優先表示されます。未設定の場合は全国対応として扱われます。
             </p>
 
             {/* 登録済みエリア */}

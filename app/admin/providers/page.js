@@ -254,7 +254,7 @@ export default function AdminProvidersPage() {
                 </div>
               </div>
               <div className="form-field form-field-full">
-                <label>得意な「来た道」の類型（New Me Map連動・複数選択可）</label>
+                <label>得意な「来た道」の類型（New Me Navi連動・複数選択可）</label>
                 <div className="checkbox-group">
                   <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="lost_direction" />再開タイプ（以前やっていた）</label>
                   <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_continuation" />継続タイプ（続かなかった）</label>

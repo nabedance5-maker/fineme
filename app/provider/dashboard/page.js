@@ -290,7 +290,7 @@ export default function ProviderDashboardPage() {
       } catch { document.getElementById('stat-referrals').textContent = '—'; }
     })();
 
-    // ── New Me Map カバー軸の表示 ─────────────────────────────────
+    // ── New Me Navi カバー軸の表示 ─────────────────────────────────
     if (provider) {
       const CAT_TO_AXIS = { gym:'body', eyebrow:'eyebrow', fashion:'fashion', hair:'hair', aga:'hair', makeup:'skin', hairremoval:'skin', esthetic:'skin', whitening:'teeth', orthodontics:'teeth', nail:'nail' };
       const AXIS_LABELS = { body:'体型', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
@@ -1037,12 +1037,12 @@ export default function ProviderDashboardPage() {
       return (note || '')
         .replace(/【第[23]希望】\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{2}/g, '')
         .replace(/【メニュー】[^\n]*/g, '')
-        .replace(/【New Me Map より】[\s\S]*?(?=\n\n|$)/, '')
+        .replace(/【New Me Navi より】[\s\S]*?(?=\n\n|$)/, '')
         .trim();
     }
 
     function parseMeMapNote(note) {
-      const match = (note || '').match(/【New Me Map より】\n([\s\S]*?)(?:\n\n|$)/);
+      const match = (note || '').match(/【New Me Navi より】\n([\s\S]*?)(?:\n\n|$)/);
       return match ? match[1].trim() : null;
     }
 
@@ -1116,7 +1116,7 @@ export default function ProviderDashboardPage() {
               </div>
               ${meMapNote ? `
               <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:10px">
-                <p style="font-size:11px;font-weight:700;color:#2563eb;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em">🗺 New Me Map より</p>
+                <p style="font-size:11px;font-weight:700;color:#2563eb;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em">🗺 New Me Navi より</p>
                 ${meMapNote.split('\n').map(line => `<p style="font-size:13px;color:#1e40af;margin:0 0 2px;font-weight:${line.startsWith('最優先') ? '700' : '400'}">${esc(line)}</p>`).join('')}
               </div>` : ''}
               ${(r.status === 'approved' || r.status === 'visited') ? `
@@ -1852,13 +1852,13 @@ export default function ProviderDashboardPage() {
             </form>
           </div>
           <div className="card" style={{ padding: '24px' }}>
-            <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>New Me Map マッチング設定</h2>
-            <p className="muted" style={{ fontSize: '13px', margin: '0 0 12px', lineHeight: '1.6' }}>ユーザーのNew Me Mapに基づいて「あなたとの一致度」が自動計算されます。カバーする7軸は登録カテゴリから自動検出されます。</p>
+            <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>New Me Navi マッチング設定</h2>
+            <p className="muted" style={{ fontSize: '13px', margin: '0 0 12px', lineHeight: '1.6' }}>ユーザーのNew Me Naviに基づいて「あなたとの一致度」が自動計算されます。カバーする7軸は登録カテゴリから自動検出されます。</p>
             <div id="axis-coverage-info" style={{ marginBottom: '16px' }}></div>
             <form id="service-form">
               <div className="form-field"><label>サービス説明文（料金・メニューなど）</label><textarea name="description" placeholder="提供するサービスの詳細をここに書いてください"></textarea></div>
               <div className="form-field">
-                <label>提供スタイル（New Me Map連動）</label>
+                <label>提供スタイル（New Me Navi連動）</label>
                 <select name="provider_style">
                   <option value="">選択してください</option>
                   <option value="explanation">納得してから動く人向け（理由を丁寧に説明するスタイル）</option>
@@ -1916,7 +1916,7 @@ export default function ProviderDashboardPage() {
               </div>
               <div className="form-field">
                 <label>得意な「来た道」の類型（複数選択可）</label>
-                <small className="muted" style={{ display: 'block', marginBottom: '8px' }}>New Me Mapの「来た道スコア」と照合されます。該当する方にとって一致度が高くなります。</small>
+                <small className="muted" style={{ display: 'block', marginBottom: '8px' }}>New Me Naviの「来た道スコア」と照合されます。該当する方にとって一致度が高くなります。</small>
                 <div className="checkbox-group">
                   <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="lost_direction" />以前やっていたが疎かになった方（再開タイプ）</label>
                   <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_continuation" />始めたが続かなかった方（継続タイプ）</label>

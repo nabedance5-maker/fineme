@@ -1,5 +1,5 @@
 // POST /api/mirror/analyze
-// 写真をClaude Visionで分析し、変容余地マップを生成
+// 写真をClaude Visionで分析し、New Me Logを生成
 // 写真はサーバーに保存しない。分析結果（テキスト）のみSupabaseに保存。
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
@@ -9,7 +9,7 @@ export const maxDuration = 60;
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 const SYSTEM_PROMPT = `あなたは、外見の変容可能性を温かく・誠実に分析する専門家です。
-Fineme（外見を起点に自信を再設計するサービス）の「New Me Mirror」機能として機能します。
+Fineme（外見を起点に自信を再設計するサービス）の「Fineme Mirror」機能として機能します。
 
 【絶対禁止】
 - 外見を点数化・ランク付けする表現（「○点」「上位○%」等）
@@ -100,7 +100,7 @@ export async function POST(request) {
           },
           {
             type: 'text',
-            text: 'この写真を分析して、New Me Mirror の変容余地マップをJSON形式で出力してください。',
+            text: 'この写真を分析して、Fineme Mirror のNew Me LogをJSON形式で出力してください。',
           },
         ],
       }],

@@ -129,8 +129,8 @@ export default function MypageProfilePage() {
         <aside className="mypage-sidenav">
           <nav className="stack" style={{ gap: '4px' }}>
             <Link href="/mypage" className="sidenav-link">ホーム</Link>
-            <Link href="/diagnosis/result" className="sidenav-link">New Me Map</Link>
-            <Link href="/mypage/navi" className="sidenav-link">New Me Navi</Link>
+            <Link href="/diagnosis/result" className="sidenav-link">New Me Navi</Link>
+            <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
             <Link href="/mypage/favorites" className="sidenav-link">お気に入り</Link>
             <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
             <Link href="/my-reservations" className="sidenav-link">予約履歴</Link>
@@ -153,7 +153,7 @@ export default function MypageProfilePage() {
                     onChange={e => setDisplayName(e.target.value)}
                   />
                 </label>
-                <p className="display-name-note">New Me Map・New Me Naviに表示されます。ニックネームでもOKです。他のユーザーには公開されません。</p>
+                <p className="display-name-note">New Me Navi・New Me Mapに表示されます。ニックネームでもOKです。他のユーザーには公開されません。</p>
               </div>
               <label className="profile-label">
                 <span className="profile-label-text">メール</span>

@@ -44,7 +44,20 @@
       "Bash(ls \"c:/Users/nabed/OneDrive/デスクトップ/Fineme/supabase-diagnosis\"*)",
       "Bash(grep -r \"from ''@/lib/supabase''\" app/api/ --include=\"*.js\" -l)",
       "Bash(curl -s \"https://www.fineme.me/mypage/navi\")",
-      "Bash(curl -s \"https://www.fineme.me/_next/static/chunks/app/mypage/navi/page-db510ea9f4bff428.js\")"
+      "Bash(curl -s \"https://www.fineme.me/_next/static/chunks/app/mypage/navi/page-db510ea9f4bff428.js\")",
+      "Bash(xargs grep:*)",
+      "Bash(grep -r href.*provider c:UsersnabedOneDriveデスクトップFinemeapp --include=*.js)",
+      "WebFetch(domain:www.fineme.me)",
+      "Bash(find c:UsersnabedOneDriveデスクトップFinemepublicassets -name *logo* -o -name *Logo*)",
+      "Bash(find c:/Users/nabed/OneDrive/デスクトップ/Fineme/pages -name *.html -type f)",
+      "Bash(find c:UsersnabedOneDriveデスクトップFineme -name *.js -path */navi*)",
+      "Bash(node -e \"console.log\\(require\\(''./package.json''\\).dependencies.next\\)\")",
+      "Bash(grep -n \"thumbnail\\\\|cover_image\\\\|image\\\\|supabase\\\\|fetch\\\\|localStorage\" app/feature/[slug]/page.js)",
+      "Bash(grep -n \"supabase\\\\|articles\\\\|features\\\\|from\\\\|select\" app/feature/[slug]/page.js)",
+      "Bash(grep -n \"revalidate\\\\|cache\" app/feature/[slug]/page.js)",
+      "Bash(do echo:*)",
+      "Read(//c/Users/nabed/OneDrive/デスクトップ/business/**)",
+      "Bash(git commit -m ':*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\nabed\\OneDrive\\デスクトップ\\Fineme\\app\\api\\provider\\services",

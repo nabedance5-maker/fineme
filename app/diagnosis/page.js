@@ -360,7 +360,7 @@ export default function DiagnosisPage() {
       }
       btnNext.disabled = !enabled;
       const isLastCat = currentScreen === 'q3_cat' && state.currentCatIdx >= CATEGORY_PHASE3.length - 1;
-      btnNext.textContent = (currentScreen === 'q8') ? 'New Me Mapを生成する'
+      btnNext.textContent = (currentScreen === 'q8') ? 'New Me Naviを生成する'
         : (currentScreen === 'q3_cat' && !isLastCat) ? `次のカテゴリへ (${state.currentCatIdx + 1}/${CATEGORY_PHASE3.length})`
         : '次へ';
     }
@@ -981,12 +981,12 @@ export default function DiagnosisPage() {
             <div className="diag-landing">
               <p style={{fontSize:'12px',fontWeight:'700',color:'#6366f1',letterSpacing:'.06em',textTransform:'uppercase',margin:'0 0 10px'}}>Find New Me</p>
               <h1>Me Scan</h1>
-              <p>今のあなたを丁寧にスキャンして、<br />あなただけの変容マップを生成します。</p>
+              <p>今のあなたを丁寧にスキャンして、<br />あなただけの変容ナビを生成します。</p>
               <p style={{fontSize:'13px',color:'#9ca3af'}}>外見より先に、「あなたの状況」を聞きます。<br />だから答えが、本物になる。</p>
               <div className="diag-badges">
                 <span className="diag-badge">⏱️ 約12〜18分</span>
                 <span className="diag-badge">🕶️ 登録不要</span>
-                <span className="diag-badge">🗺️ New Me Map生成</span>
+                <span className="diag-badge">🗺️ New Me Navi生成</span>
               </div>
               <button className="diag-nav-next" id="btn-start" style={{width:'100%',fontSize:'18px',padding:'16px'}}>Me Scanをはじめる</button>
             </div>
@@ -1066,7 +1066,7 @@ export default function DiagnosisPage() {
           <button className="diag-back-btn" data-back="">← 戻る</button>
           <div className="goal-frame-banner">
             <p style={{fontSize:'12px',fontWeight:'700',color:'rgba(232,228,220,0.90)',margin:'0 0 4px'}}>🗺 あなたの地図の「目的地」を設定します</p>
-            <p style={{fontSize:'13px',color:'rgba(232,228,220,0.75)',margin:'0',lineHeight:'1.6'}}>まず、ここに来た理由を聞かせてください。<br/>この3問の答えが、あなただけの変容マップの目的地になります。</p>
+            <p style={{fontSize:'13px',color:'rgba(232,228,220,0.75)',margin:'0',lineHeight:'1.6'}}>まず、ここに来た理由を聞かせてください。<br/>この3問の答えが、あなただけの変容ナビの目的地になります。</p>
           </div>
           <div className="diag-card">
             <p className="diag-step-label">ゴール｜場面</p>
@@ -1320,7 +1320,7 @@ export default function DiagnosisPage() {
               <p style={{fontSize:'11px',fontWeight:'700',color:'#6366f1',letterSpacing:'.06em',textTransform:'uppercase',margin:'0 0 12px'}}>Phase 3 ｜ 軸別スキャン</p>
               <h2 style={{fontSize:'clamp(18px,4vw,22px)',fontWeight:'800',lineHeight:'1.35',margin:'0 0 12px'}}>ここからは、7つの軸を<br />一つひとつ聞いていきます</h2>
               <p style={{fontSize:'14px',color:'#6b7280',lineHeight:'1.7',margin:'0 0 6px'}}>各軸で「来た道」「他者からの見え方」「恋愛への影響」<br />の3つを聞きます。</p>
-              <p style={{fontSize:'13px',color:'#9ca3af',margin:'0 0 4px'}}>この7つの答えが、あなたの変容マップの「現在地」になります。</p>
+              <p style={{fontSize:'13px',color:'#9ca3af',margin:'0 0 4px'}}>この7つの答えが、あなたの変容ナビの「現在地」になります。</p>
               <p style={{fontSize:'12px',color:'#a78bfa',fontWeight:'600',margin:'0 0 20px'}}>正直な答えほど、精度の高いマップになります。</p>
               <div className="q3-intro-axes">
                 {[['💪','体型'],['✂️','眉毛'],['👔','服'],['💇','髪'],['✨','肌'],['🦷','歯'],['💅','爪']].map(([icon, label], i) => (

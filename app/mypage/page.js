@@ -102,8 +102,8 @@ export default function MypagePage() {
         <aside className="mypage-sidenav">
           <nav className="stack" style={{ gap: '4px' }}>
             <Link href="/mypage" className="sidenav-link sidenav-link--active">ホーム</Link>
-            <Link href="/diagnosis/result" className="sidenav-link">New Me Map</Link>
-            <Link href="/mypage/navi" className="sidenav-link">New Me Navi</Link>
+            <Link href="/diagnosis/result" className="sidenav-link">New Me Navi</Link>
+            <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
             <Link href="/mypage/favorites" className="sidenav-link">お気に入り</Link>
             <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
             <Link href="/my-reservations" className="sidenav-link">予約履歴</Link>
@@ -116,12 +116,12 @@ export default function MypagePage() {
           <h1 className="section-title" style={{ marginBottom: '4px' }}>変容ダッシュボード</h1>
           {scanDate && <p className="muted" style={{ fontSize: '13px', margin: '0 0 20px' }}>最終スキャン: {scanDate}</p>}
 
-          {/* ── New Me Map カード ── */}
+          {/* ── New Me Navi カード ── */}
           {diagnosis ? (
             <div className="map-card">
               <div className="map-card-top">
                 <div>
-                  <p className="map-eyebrow">🗺 New Me Map</p>
+                  <p className="map-eyebrow">🗺 New Me Navi</p>
                   <p className="map-scan-date">スキャン済み {scanDate && `· ${scanDate}`}</p>
                 </div>
                 <Link href="/diagnosis/result" className="map-cta-btn">マップを見る →</Link>
@@ -183,25 +183,25 @@ export default function MypagePage() {
               )}
 
               <div className="map-card-footer">
-                <Link href="/mypage/navi" className="btn btn-ghost" style={{ fontSize: '13px', padding: '7px 14px' }}>New Me Navi でロードマップを見る</Link>
+                <Link href="/mypage/navi" className="btn btn-ghost" style={{ fontSize: '13px', padding: '7px 14px' }}>New Me Map でロードマップを見る</Link>
                 <Link href="/diagnosis" className="muted" style={{ fontSize: '12px' }}>再スキャン</Link>
               </div>
             </div>
           ) : (
             <div className="map-card map-card--empty">
-              <p className="map-eyebrow" style={{ color: '#9ca3af' }}>🗺 New Me Map</p>
+              <p className="map-eyebrow" style={{ color: '#9ca3af' }}>🗺 New Me Navi</p>
               <h2 style={{ fontSize: '18px', fontWeight: 800, margin: '8px 0 6px', color: '#111' }}>まだスキャンが<br />完了していません</h2>
-              <p className="muted" style={{ fontSize: '14px', margin: '0 0 16px', lineHeight: 1.6 }}>Me Scanを受けると、あなたの変容マップと<br />最初の一手が生成されます。</p>
+              <p className="muted" style={{ fontSize: '14px', margin: '0 0 16px', lineHeight: 1.6 }}>Me Scanを受けると、あなたの変容ナビと<br />最初の一手が生成されます。</p>
               <Link href="/diagnosis" className="btn" style={{ fontSize: '14px', padding: '10px 20px' }}>Me Scanをはじめる →</Link>
             </div>
           )}
 
-          {/* ── New Me Navi プレビュー ── */}
+          {/* ── New Me Map プレビュー ── */}
           {naviPreviewAxes.length > 0 && (
             <div className="card" style={{ padding: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <div>
-                  <p style={{ fontSize: '11px', fontWeight: 800, color: '#9ca3af', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '.06em' }}>New Me Navi</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, color: '#9ca3af', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '.06em' }}>New Me Map</p>
                   <p style={{ fontSize: '15px', fontWeight: 800, color: '#111', margin: 0 }}>変容トラック</p>
                 </div>
                 <Link href="/mypage/navi" style={{ fontSize: '13px', fontWeight: 700, color: '#6366f1', textDecoration: 'none' }}>すべて見る →</Link>
@@ -239,14 +239,14 @@ export default function MypagePage() {
             </div>
           )}
 
-          {/* ── New Me Mirror CTA（Coming soon） ── */}
+          {/* ── Fineme Mirror CTA（Coming soon） ── */}
           <div style={{ position: 'relative', opacity: 0.45, pointerEvents: 'none', userSelect: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(10,15,30,0.65)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '16px' }}>
               <span style={{ fontSize: '32px', flexShrink: 0 }}>🪞</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(201,168,76,0.7)', margin: '0 0 3px', letterSpacing: '.08em', textTransform: 'uppercase' }}>New Me Mirror — オプション</p>
+                <p style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(201,168,76,0.7)', margin: '0 0 3px', letterSpacing: '.08em', textTransform: 'uppercase' }}>Fineme Mirror — オプション</p>
                 <p style={{ fontSize: '15px', fontWeight: 800, color: 'rgba(232,228,220,0.9)', margin: '0 0 4px' }}>写真でも変容余地を確認する</p>
-                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: 0, lineHeight: 1.5 }}>AIが写真から変容余地マップを生成。Me Scanと照らし合わせて精度UP。</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: 0, lineHeight: 1.5 }}>AIが写真からNew Me Logを生成。Me Scanと照らし合わせて精度UP。</p>
               </div>
               <span style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(232,228,220,0.6)', background: 'rgba(232,228,220,0.1)', border: '1px solid rgba(232,228,220,0.2)', borderRadius: '20px', padding: '4px 12px', flexShrink: 0, letterSpacing: '.06em' }}>Coming soon</span>
             </div>
@@ -310,7 +310,7 @@ export default function MypagePage() {
         .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
         .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
 
-        /* New Me Map card */
+        /* New Me Navi card */
         .map-card { background: linear-gradient(145deg, #0f172a, #1e1b4b); border-radius: 20px; padding: 22px; color: #fff; }
         .map-card--empty { background: rgba(10,15,30,0.50); border: 1.5px dashed rgba(232,228,220,0.20); }
         .map-card--empty .map-eyebrow { color: #9ca3af !important; }

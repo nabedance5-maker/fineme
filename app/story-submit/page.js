@@ -253,9 +253,9 @@ export default function StorySubmitPage() {
                       タグを1つ以上選んでください
                     </div>
                   )}
-                  {/* 変容トラック（任意・New Me Map連動） */}
+                  {/* 変容トラック（任意・New Me Navi連動） */}
                   <div style={{ marginTop: '20px', padding: '14px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '12px' }}>
-                    <p style={{ fontSize: '12px', fontWeight: 700, color: '#0369a1', margin: '0 0 10px' }}>🗺 変容トラック（任意）— New Me Map 連動</p>
+                    <p style={{ fontSize: '12px', fontWeight: 700, color: '#0369a1', margin: '0 0 10px' }}>🗺 変容トラック（任意）— New Me Navi 連動</p>
                     <div style={{ marginBottom: '10px' }}>
                       <p style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', margin: '0 0 6px' }}>この変容は主にどの軸でしたか？</p>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>

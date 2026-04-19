@@ -451,7 +451,7 @@ export default function NewMeNaviPage() {
       root.innerHTML = `<div class="no-data">
         <div class="no-data-icon">🧭</div>
         <h2 class="no-data-title">まだ地図がありません</h2>
-        <p class="no-data-text">Me Scanを受けると、あなただけの<br>変容ナビが生成されます。</p>
+        <p class="no-data-text">Me Scanを受けると、あなただけの<br>変容マップが生成されます。</p>
         <a href="/diagnosis" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px">Me Scanを受ける</a>
       </div>`;
       return;
@@ -465,7 +465,7 @@ export default function NewMeNaviPage() {
       root.innerHTML = `<div class="no-data">
         <div class="no-data-icon">🗺️</div>
         <h2 class="no-data-title">新しいMe Scanが必要です</h2>
-        <p class="no-data-text">診断をアップデートしました。<br>新しいMe Scanで変容ナビを生成します。</p>
+        <p class="no-data-text">診断をアップデートしました。<br>新しいMe Scanで変容マップを生成します。</p>
         <a href="/diagnosis" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px">Me Scanを受ける（新版）</a>
       </div>`;
       return;
@@ -1428,7 +1428,7 @@ export default function NewMeNaviPage() {
     const html = `
       <div class="navi-wrap">
       <div class="navi-header">
-        <p class="navi-header-eyebrow">New Me Navi</p>
+        <p class="navi-header-eyebrow">New Me Map</p>
         <div class="navi-header-badge">🧭 行動タイプ別ロードマップ</div>
         <h1>ゴール：<em>${esc(overallGoal)}</em></h1>
         <p class="navi-header-sub">「今すぐ動ける」から始めよう。<br>Compassが指す軸のステップが最優先で表示される。</p>
@@ -1444,7 +1444,7 @@ export default function NewMeNaviPage() {
       </div>
 
       <div class="navi-footer">
-        <a href="/diagnosis/result" class="navi-footer-btn nfb-secondary">🗺️ New Me Mapに戻る</a>
+        <a href="/diagnosis/result" class="navi-footer-btn nfb-secondary">🗺️ New Me Naviに戻る</a>
         <a href="/diagnosis" class="navi-footer-btn nfb-ghost">Me Scanを再スキャンする</a>
       </div>
       </div>
@@ -1651,8 +1651,8 @@ export default function NewMeNaviPage() {
           <aside className="navi-sidenav">
             <nav className="stack" style={{ gap: '4px' }}>
               <Link href="/mypage" className="sidenav-link">ホーム</Link>
-              <Link href="/diagnosis/result" className="sidenav-link">New Me Map</Link>
-              <Link href="/mypage/navi" className="sidenav-link sidenav-link--active">New Me Navi</Link>
+              <Link href="/diagnosis/result" className="sidenav-link">New Me Navi</Link>
+              <Link href="/mypage/navi" className="sidenav-link sidenav-link--active">New Me Map</Link>
               <Link href="/mypage/favorites" className="sidenav-link">お気に入り</Link>
               <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
               <Link href="/my-reservations" className="sidenav-link">予約履歴</Link>

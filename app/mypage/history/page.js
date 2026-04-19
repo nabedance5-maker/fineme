@@ -85,8 +85,8 @@ export default function MypageHistoryPage() {
         <aside className="mypage-sidenav">
           <nav className="stack" style={{ gap: '4px' }}>
             <Link href="/mypage" className="sidenav-link">ホーム</Link>
-            <Link href="/diagnosis/result" className="sidenav-link">New Me Map</Link>
-            <Link href="/mypage/navi" className="sidenav-link">New Me Navi</Link>
+            <Link href="/diagnosis/result" className="sidenav-link">New Me Navi</Link>
+            <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
             <Link href="/mypage/favorites" className="sidenav-link">お気に入り</Link>
             <Link href="/mypage/history" className="sidenav-link sidenav-link--active">閲覧履歴</Link>
             <Link href="/my-reservations" className="sidenav-link">予約履歴</Link>

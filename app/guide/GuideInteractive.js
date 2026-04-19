@@ -104,7 +104,7 @@ export default function GuideInteractive({ axes, tierInfo }) {
         <p>
           このガイドは一般的な情報です。<br />
           Me Scanを受けると、あなたの現在地・ギャップ・来た道に合わせた<br />
-          7軸の変容マップ（New Me Map）と変容ナビ（New Me Navi）が生成されます。
+          7軸の変容ナビ（New Me Navi）と変容マップ（New Me Map）が生成されます。
         </p>
         <Link href="/diagnosis" className="guide-scan-btn">🧬 Me Scanを受ける（無料）</Link>
       </div>
