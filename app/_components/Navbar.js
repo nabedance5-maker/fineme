@@ -83,7 +83,7 @@ export default function Navbar() {
         <nav className={`nav-links${menuOpen ? ' is-open' : ''}`}>
           <Link href="/search" onClick={closeMenu}>検索</Link>
           <Link href="/about" onClick={closeMenu}>Finemeとは？</Link>
-          <Link href="/guide" onClick={closeMenu}>変容ガイド</Link>
+          <Link href="/feature" onClick={closeMenu}>Journal</Link>
           <Link href="/mirror" onClick={closeMenu}>Mirror</Link>
           <Link href="/diagnosis" className="btn-diagnosis" onClick={closeMenu}>診断する</Link>
           {authState === null ? null : authState ? (

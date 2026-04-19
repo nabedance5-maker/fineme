@@ -2,12 +2,12 @@ import Link from 'next/link';
 import { getAllArticles } from '@/lib/articles';
 
 export const metadata = {
-  title: '特集記事 | Fineme',
-  description: '外見磨きの方法、変容のヒント、Finemeの思想を伝える特集記事。清潔感・写真撮影・変容の思想など、恋愛に悩む男性のための実践コンテンツ。',
+  title: 'Fineme Journal | Fineme',
+  description: '変容の旅のヒント。外見を変えることで、世界との関わり方が変わる。清潔感・写真撮影・変容の思想など、恋愛に悩む男性のための実践コンテンツ。',
   alternates: { canonical: 'https://www.fineme.me/feature' },
   openGraph: {
-    title: '特集記事 | Fineme',
-    description: '清潔感・写真撮影・変容の思想。恋愛に悩む男性の外見変容を後押しするコンテンツ集。',
+    title: 'Fineme Journal | Fineme',
+    description: '変容の旅のヒント。清潔感・写真撮影・変容の思想。恋愛に悩む男性の外見変容を後押しするコンテンツ集。',
     url: 'https://www.fineme.me/feature',
     images: [{ url: 'https://www.fineme.me/assets/images/og-image.png', width: 1200, height: 630 }],
     locale: 'ja_JP',
@@ -15,8 +15,8 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: '特集記事 | Fineme',
-    description: '清潔感・写真撮影・変容の思想。恋愛に悩む男性の外見変容を後押しするコンテンツ集。',
+    title: 'Fineme Journal | Fineme',
+    description: '変容の旅のヒント。清潔感・写真撮影・変容の思想。恋愛に悩む男性の外見変容を後押しするコンテンツ集。',
     images: ['https://www.fineme.me/assets/images/og-image.png'],
   },
 };
@@ -51,10 +51,13 @@ export default async function FeatureListPage({ searchParams }) {
             fontWeight: 800,
             fontFamily: 'var(--font-serif)',
             color: 'var(--color-fg)',
-            marginBottom: '12px',
+            marginBottom: '8px',
           }}>
-            特集記事
+            Fineme Journal
           </h1>
+          <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-gold)', letterSpacing: '.08em', marginBottom: '12px' }}>
+            変容の旅のヒント
+          </p>
           <p style={{ fontSize: '15px', color: 'var(--color-muted)', lineHeight: 1.8 }}>
             外見を変えることで、世界との関わり方が変わる。<br />
             変容の旅を歩む人たちへ、地図と羅針盤を届ける。

@@ -1703,7 +1703,7 @@ export default function NewMeNaviPage() {
                 </div>
                 <div style={{ textAlign: 'right', marginTop: '12px' }}>
                   <Link href="/feature" style={{ fontSize: '12px', color: 'var(--color-gold)', textDecoration: 'none', fontWeight: 700 }}>
-                    特集一覧を見る →
+                    Fineme Journal を読む →
                   </Link>
                 </div>
               </div>

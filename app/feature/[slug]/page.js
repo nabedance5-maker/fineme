@@ -210,7 +210,7 @@ export default async function ArticlePage({ params }) {
                 marginBottom: '14px', fontFamily: 'var(--font-sans)',
                 transition: 'color 0.15s',
               }}>
-                ← 特集一覧へ戻る
+                ← Fineme Journal へ戻る
               </Link>
 
               {article.category && (
@@ -357,7 +357,7 @@ export default async function ArticlePage({ params }) {
             background: 'rgba(10,15,30,0.4)',
           }}>
             <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', marginBottom: '16px' }}>
-              他の特集記事も読んでみませんか？
+              Fineme Journal の他の記事も読んでみませんか？
             </p>
             <Link href="/feature" style={{
               display: 'inline-block', padding: '10px 28px',
@@ -365,7 +365,7 @@ export default async function ArticlePage({ params }) {
               borderRadius: '8px', color: '#c9a84c', fontWeight: 700,
               fontSize: '14px', textDecoration: 'none', fontFamily: 'var(--font-sans)',
             }}>
-              特集一覧へ
+              Fineme Journal を見る
             </Link>
           </div>
         </div>

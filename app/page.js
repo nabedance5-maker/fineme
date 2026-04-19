@@ -813,7 +813,7 @@ export default function HomePage() {
           <section className="section">
             <div className="container stack">
               <div className="cluster space-between">
-                <h2 className="section-title">変容ガイド</h2>
+                <h2 className="section-title">Fineme Journal</h2>
                 <Link className="btn btn-ghost" href="/feature">一覧を見る</Link>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>

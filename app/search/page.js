@@ -395,7 +395,7 @@ function SearchContent() {
               条件をリセット
             </button>
             <Link href="/feature" style={{ fontSize: '13px', color: '#c9a84c', textDecoration: 'none' }}>
-              📖 特集記事で外見変容のヒントを見る →
+              📖 Fineme Journal — 変容の旅のヒントを読む →
             </Link>
           </div>
         </div>
