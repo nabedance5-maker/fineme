@@ -1,114 +1,68 @@
 import { NextResponse } from 'next/server';
+import { getSupabase } from '@/lib/supabase';
 
-const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-// GET /api/products?axis=skin,hair&level=beginner&price_range=low,mid
+// GET /api/products?axis=skin,hair&level=beginner&price_range=low,mid&admin=1
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
-  const axisParam = searchParams.get('axis');      // カンマ区切り or null=全軸
-  const levelParam = searchParams.get('level');    // beginner/intermediate/advanced
-  const priceParam = searchParams.get('price_range'); // low/mid/high カンマ区切り
+  const axisParam  = searchParams.get('axis');
+  const levelParam = searchParams.get('level');
+  const priceParam = searchParams.get('price_range');
+  const adminMode  = searchParams.get('admin') === '1';
 
-  const adminMode = searchParams.get('admin') === '1'; // 管理画面用：全件返す
-  let url = `${SUPA_URL}/rest/v1/affiliate_products?order=sort_order.asc,created_at.asc&select=*`;
-  if (!adminMode) url += '&is_active=eq.true';
+  const supabase = getSupabase();
+  let query = supabase.from('affiliate_products').select('*').order('sort_order').order('created_at');
+
+  if (!adminMode) query = query.eq('is_active', true);
 
   if (axisParam) {
-    const axes = axisParam.split(',').map(a => a.trim()).filter(Boolean);
-    url += `&axis=in.(${axes.join(',')})`;
+    query = query.in('axis', axisParam.split(',').map(a => a.trim()).filter(Boolean));
   }
   if (levelParam) {
-    // level 以下を全部返す（beginner → beginner のみ / intermediate → beginner+intermediate）
     const LEVELS = ['beginner', 'intermediate', 'advanced'];
-    const maxIdx = LEVELS.indexOf(levelParam);
-    const allowed = LEVELS.slice(0, maxIdx + 1);
-    url += `&level=in.(${allowed.join(',')})`;
+    const allowed = LEVELS.slice(0, LEVELS.indexOf(levelParam) + 1);
+    query = query.in('level', allowed);
   }
   if (priceParam) {
-    const prices = priceParam.split(',').map(p => p.trim()).filter(Boolean);
-    url += `&price_range=in.(${prices.join(',')})`;
+    query = query.in('price_range', priceParam.split(',').map(p => p.trim()).filter(Boolean));
   }
 
-  const res = await fetch(url, {
-    headers: {
-      apikey: SUPA_KEY,
-      Authorization: `Bearer ${SUPA_KEY}`,
-    },
-    next: { revalidate: 300 },
-  });
-
-  if (!res.ok) {
-    const errBody = await res.json().catch(() => ({}));
-    return NextResponse.json({ error: 'fetch failed', status: res.status, detail: errBody }, { status: 500 });
-  }
-  const data = await res.json();
+  const { data, error } = await query;
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }
 
-// POST /api/products  — 管理者のみ（Service Role Key 必要）
+// POST — 管理者のみ
 export async function POST(req) {
-  const key = req.headers.get('x-admin-key');
-  if (key !== process.env.ADMIN_SECRET) {
+  if (req.headers.get('x-admin-key') !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
   const body = await req.json();
-  const res = await fetch(`${SUPA_URL}/rest/v1/affiliate_products`, {
-    method: 'POST',
-    headers: {
-      apikey: SERVICE_KEY,
-      Authorization: `Bearer ${SERVICE_KEY}`,
-      'Content-Type': 'application/json',
-      Prefer: 'return=representation',
-    },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  return NextResponse.json(data, { status: res.ok ? 201 : 400 });
+  const { data, error } = await getSupabase().from('affiliate_products').insert(body).select();
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json(data, { status: 201 });
 }
 
 // PATCH /api/products?id=xxx
 export async function PATCH(req) {
-  const key = req.headers.get('x-admin-key');
-  if (key !== process.env.ADMIN_SECRET) {
+  if (req.headers.get('x-admin-key') !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get('id');
+  const id = new URL(req.url).searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
-
   const body = await req.json();
-  const res = await fetch(`${SUPA_URL}/rest/v1/affiliate_products?id=eq.${id}`, {
-    method: 'PATCH',
-    headers: {
-      apikey: SERVICE_KEY,
-      Authorization: `Bearer ${SERVICE_KEY}`,
-      'Content-Type': 'application/json',
-      Prefer: 'return=representation',
-    },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  return NextResponse.json(data, { status: res.ok ? 200 : 400 });
+  const { data, error } = await getSupabase().from('affiliate_products').update(body).eq('id', id).select();
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json(data);
 }
 
 // DELETE /api/products?id=xxx
 export async function DELETE(req) {
-  const key = req.headers.get('x-admin-key');
-  if (key !== process.env.ADMIN_SECRET) {
+  if (req.headers.get('x-admin-key') !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get('id');
+  const id = new URL(req.url).searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
-
-  const res = await fetch(`${SUPA_URL}/rest/v1/affiliate_products?id=eq.${id}`, {
-    method: 'DELETE',
-    headers: {
-      apikey: SERVICE_KEY,
-      Authorization: `Bearer ${SERVICE_KEY}`,
-    },
-  });
-  return NextResponse.json({ ok: res.ok }, { status: res.ok ? 200 : 400 });
+  const { error } = await getSupabase().from('affiliate_products').delete().eq('id', id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ ok: true });
 }
