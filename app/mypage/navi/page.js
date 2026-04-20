@@ -23,7 +23,9 @@ export default function NewMeNaviPage() {
 
     const style = document.createElement('style');
     style.textContent = `
-      .navi-wrap { max-width: 100%; margin: 0; padding: 24px 0 80px; }
+      .navi-wrap { max-width: 100%; margin: 0; padding: 24px 0 80px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+      #navi-root { width: 100%; overflow-x: hidden; box-sizing: border-box; }
+      #navi-root * { max-width: 100%; box-sizing: border-box; }
 
       /* ── Header ── */
       .navi-header { padding: 44px 28px 36px; background: linear-gradient(rgba(10,15,30,0.78), rgba(10,15,30,0.88)), url('/assets/images/hero-bg.webp') center / cover no-repeat; border-radius: 14px; margin-bottom: 24px; position: relative; overflow: hidden; border: 1px solid rgba(201,168,76,0.2); }
@@ -1631,22 +1633,23 @@ export default function NewMeNaviPage() {
   return (
     <>
       <style>{`
-        .navi-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
-        .navi-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        .navi-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; overflow-x: hidden; width: 100%; box-sizing: border-box; }
+        .navi-layout > * { min-width: 0; }
+        .navi-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; min-width: 0; }
         .navi-sidenav .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
         .navi-sidenav .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
         .navi-sidenav .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
         @media (max-width: 640px) {
-          .navi-layout { grid-template-columns: 1fr; padding: 16px 16px 60px; }
+          .navi-layout { grid-template-columns: 1fr; padding: 16px 16px 60px; overflow-x: hidden; }
           .navi-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
           .navi-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; }
           .navi-sidenav nav::-webkit-scrollbar { display: none; }
           .navi-sidenav nav > * { margin-top: 0 !important; }
           .navi-sidenav .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; }
-          .navi-wrap { padding: 0 0 40px !important; }
+          .navi-wrap { padding: 0 0 40px !important; width: 100%; box-sizing: border-box; overflow-x: hidden; }
         }
       `}</style>
-      <main>
+      <main style={{overflowX:'hidden', width:'100%'}}>
         <div className="navi-layout">
           <aside className="navi-sidenav">
             <nav className="stack" style={{ gap: '4px' }}>
@@ -1660,7 +1663,7 @@ export default function NewMeNaviPage() {
               <Link href="/mypage/profile" className="sidenav-link">プロフィール編集</Link>
             </nav>
           </aside>
-          <div>
+          <div style={{minWidth:0, overflow:'hidden'}}>
             <div id="navi-root">
               <p style={{textAlign:'center',padding:'60px 20px',color:'#9ca3af'}}>読み込み中…</p>
             </div>
