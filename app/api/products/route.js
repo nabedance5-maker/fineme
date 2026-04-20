@@ -40,7 +40,8 @@ export async function GET(req) {
   });
 
   if (!res.ok) {
-    return NextResponse.json({ error: 'fetch failed' }, { status: 500 });
+    const errBody = await res.json().catch(() => ({}));
+    return NextResponse.json({ error: 'fetch failed', status: res.status, detail: errBody }, { status: 500 });
   }
   const data = await res.json();
   return NextResponse.json(data);
