@@ -201,13 +201,15 @@ export default function ProviderJoinPage() {
               <span className="join-chip">ガイドとしての参加</span>
             </div>
             <h1>
-              「合う人に届く」仕組みが、<br/>
-              <em>ここにあります。</em>
+              探してきたのではなく、<br/>
+              <em>旅の途中で辿り着く。</em>
             </h1>
             <p className="join-hero-lead">
-              Finemeは「価格ではなく相性」で、変わりたい男性と外見のプロをつなぐプラットフォームです。<br/>
-              クーポン集客・価格勝負をしたい方には、向いていません。
+              Finemeのユーザーは、診断で生成された自分だけの変容ロードマップを持っています。<br/>
+              あなたのページには「次のステップに必要だから」という理由で辿り着きます。<br/>
+              比較して迷っているのではなく、地図の指示に従って進んでいる人たちです。
             </p>
+            <p className="join-hero-note">「合わなかった」のではなく「まだ出会っていなかった」。そのユーザーが、今ここにいます。</p>
             <div className="join-cta-row">
               <a className="btn-gold" href="/provider/inquiry">掲載について相談する</a>
               <a className="btn-ghost-white" href="/provider/philosophy">Finemeの考え方を読む</a>
