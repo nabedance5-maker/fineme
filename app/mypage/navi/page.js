@@ -35,6 +35,15 @@ export default function NewMeNaviPage() {
       .navi-header h1 { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(16px,4vw,22px); font-weight: 700; color: #fff; margin: 0 0 10px; line-height: 1.55; position: relative; z-index: 1; }
       .navi-header h1 em { font-style: normal; color: #c9a84c; }
       .navi-header-sub { font-size: 13px; color: rgba(255,255,255,.65); margin: 0; line-height: 1.75; position: relative; z-index: 1; }
+      .progress-bar-wrap { margin-top: 18px; position: relative; z-index: 1; }
+      .progress-bar-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+      .progress-bar-label-text { font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.8); letter-spacing: .08em; text-transform: uppercase; }
+      .progress-bar-pct { font-size: 13px; font-weight: 900; color: #c9a84c; }
+      .progress-bar-track { height: 6px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; }
+      .progress-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, rgba(201,168,76,0.7), #c9a84c); transition: width 1s cubic-bezier(.4,0,.2,1) .5s; }
+      .progress-bar-sub { font-size: 11px; color: rgba(255,255,255,.35); margin: 5px 0 0; }
+      .step-hint { font-size: 11px; color: rgba(232,228,220,0.45); margin: 4px 0 0; line-height: 1.6; padding-left: 2px; }
+      .step-hint::before { content: '→ '; color: rgba(201,168,76,0.5); font-weight: 700; }
 
       /* ── Compass strip ── */
       .compass-strip { background: rgba(201,168,76,0.06); border: 1.5px solid rgba(201,168,76,0.3); border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; }
@@ -521,11 +530,11 @@ export default function NewMeNaviPage() {
         { text: '自分の体型で気になる部分を1つ言語化できている（例：「腹まわりが気になる」）', guide: 'none', isCurrentFor: 'none' },
         { text: '現在の体重・体脂肪率を計測して数字で把握している', guide: 'none',
           products: [{ name: '体組成計（TANITA）', url: 'https://www.amazon.co.jp/s?k=タニタ+体組成計&tag=whero523-22', level: 'intermediate', priceRange: 'mid' }] },
-        { text: '1週間で何回体を動かしているかを把握している', guide: 'none' },
+        { text: '今週1週間、体を動かした回数を数えてみる', guide: 'none', hint: 'ゼロでも正直に。現状を知ることが出発点' },
         { text: '日常的に歩く・階段を使うなど、生活のなかに動きを取り入れている', guide: 'none' },
         { text: '週1回以上、意識的な運動習慣がある', guide: 'none',
           products: [{ name: 'プロテイン（SAVAS ホエイ）', url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=whero523-22', level: 'intermediate', priceRange: 'low' }, { name: 'トレーニングウェア', url: 'https://www.amazon.co.jp/s?k=メンズ+トレーニングウェア&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
-        { text: '食事の基本ルールを1つ知っている（例：タンパク質を毎食とる）', guide: 'LOW', isCurrentFor: 'concerned',
+        { text: '食事の基本ルールを1つ調べてみる（例：タンパク質を毎食とる）', guide: 'LOW', isCurrentFor: 'concerned', hint: '「タンパク質を毎食とる」だけ覚えれば今日から実践できる',
           products: [{ name: 'プロテインバー（手軽なタンパク源）', url: 'https://www.amazon.co.jp/s?k=プロテインバー&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
         { text: 'パーソナルジムの無料体験カウンセリングに1回行ったことがある', guide: 'HIGH', isCurrentFor: 'self' },
         { text: 'プロにトレーニングメニューを組んでもらったことがある', guide: 'HIGH' },
@@ -537,7 +546,7 @@ export default function NewMeNaviPage() {
         { text: '何らかの方法で眉を整えている（サロン・自己処理どちらでもOK）', guide: 'none', isCurrentFor: 'none' },
         { text: 'スクリューブラシで毎朝眉を整えている', guide: 'none',
           products: [{ name: 'スクリューブラシ（使い捨て）', url: 'https://www.amazon.co.jp/s?k=スクリューブラシ+眉&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: '眉用ハサミ', url: 'https://www.amazon.co.jp/s?k=眉用はさみ+ステンレス&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
-        { text: '自分の顔型に合う眉の形を1つ把握している', guide: 'MID', isCurrentFor: 'concerned' },
+        { text: '自分の顔型に合う眉の形を1つ調べてみる', guide: 'MID', isCurrentFor: 'concerned', hint: '「顔型 眉 似合う」で検索するか、眉毛サロンで聞くのが一番確実' },
         { text: '眉毛サロンでプロに一度整えてもらったことがある', guide: 'HIGH', isCurrentFor: 'self' },
         { text: 'プロに作ってもらった形を基準に、自宅で眉バサミ＋スクリューブラシでメンテナンスできている', guide: 'LOW' },
         { text: '2〜3週に1回のペースでサロンに通っている', guide: 'HIGH', isCurrentFor: 'pro' },
@@ -545,9 +554,9 @@ export default function NewMeNaviPage() {
         { text: '整えた眉のサイクル（サロン＋自宅メンテ）が3ヶ月以上継続している', guide: 'none' },
       ],
       fashion: [
-        { text: '自分の服のサイズを数字で把握している（肩幅・ウエスト・着丈など）', guide: 'none', isCurrentFor: 'none' },
-        { text: 'クローゼットを整理し、今持っている服を把握している', guide: 'none' },
-        { text: 'サイズ感の基本ルールを1つ知っている（例：肩幅を合わせることが最優先）', guide: 'LOW' },
+        { text: '自分の服のサイズをメジャーで測ってみる（肩幅・ウエスト・着丈など）', guide: 'none', isCurrentFor: 'none', hint: '手持ちの服を広げて計測するだけでOK。5〜10分でできる' },
+        { text: 'クローゼットを開けて、今持っている服を全部出してみる', guide: 'none', hint: '捨てなくていい。まず「何があるか」を把握するだけ。10分でできる' },
+        { text: 'サイズ感の基本ルールを1つ調べてみる（例：肩幅を合わせることが最優先）', guide: 'LOW', hint: '「肩幅を合わせることが最優先」これだけ覚えれば今日から服選びが変わる' },
         { text: 'ベーシックアイテムが揃っている（白シャツ・ダークデニム・シンプルスニーカーなど）', guide: 'LOW' },
         { text: 'パーソナルカラー診断を受けたことがある', guide: 'HIGH', isCurrentFor: 'concerned' },
         { text: '顔タイプ診断を受けたことがある', guide: 'HIGH' },
@@ -559,8 +568,8 @@ export default function NewMeNaviPage() {
       ],
       hair: [
         { text: '定期的に美容院・理髪店に行っている（2ヶ月以内に行った）', guide: 'none', isCurrentFor: 'none' },
-        { text: '自分の髪質を把握している（硬い・柔らかい・くせ毛・直毛など）', guide: 'LOW' },
-        { text: '自分の顔型を把握している（丸・面長・卵型など）', guide: 'LOW' },
+        { text: '自分の髪質を確認してみる（硬い・柔らかい・くせ毛・直毛など）', guide: 'LOW', hint: '洗髪後に何もつけず乾かして、うねるならくせ毛。毛を1本つまんで硬さも確認できる' },
+        { text: '自分の顔型を確認してみる（丸・面長・卵型など）', guide: 'LOW', hint: '髪を後ろにまとめて鏡の前に立つ。輪郭が丸・面長・卵型・逆三角形のどれかを見る' },
         { text: '髪質に合ったシャンプーを使っている', guide: 'LOW',
           products: [{ name: 'BOTANIST ボタニカルシャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'スカルプシャンプー（薄毛が気になる方）', url: 'https://www.amazon.co.jp/s?k=スカルプシャンプー+メンズ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
         { text: 'ドライヤーで根元から乾かしている（自然乾燥していない）', guide: 'none',
@@ -600,8 +609,8 @@ export default function NewMeNaviPage() {
             products: [{ name: '肌ラボ 極潤 洗顔フォーム', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+洗顔&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: '肌ラボ 極潤 ヒアルロン液（化粧水）', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'ニベア フェイス 乳液', url: 'https://www.amazon.co.jp/s?k=ニベア+フェイス+乳液&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
           { text: 'クレンジング（夜）と日焼け止め（朝）が習慣になっている', guide: 'none',
             products: [{ name: 'ビオレUV アクアリッチ（日焼け止め）', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'メンズビオレ クレンジング', url: 'https://www.amazon.co.jp/s?k=メンズ+クレンジング+洗顔&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
-          { text: '自分の肌タイプを把握している（乾燥・脂性・混合）', guide: 'LOW', isCurrentFor: 'concerned' },
-          { text: '自分の肌悩みを1つ言語化している（例：ニキビ・毛穴・くすみ・赤み）', guide: 'LOW' },
+          { text: '自分の肌タイプを確認してみる（乾燥・脂性・混合）', guide: 'LOW', isCurrentFor: 'concerned', hint: '朝、何もつけずに1〜2時間過ごす。Tゾーンが脂っぽければ混合、全体的に突っ張れば乾燥肌' },
+          { text: '自分の肌悩みを1つ言葉にしてみる（ニキビ・毛穴・くすみ・赤みなど）', guide: 'LOW', hint: '鏡を見て「一番気になるのは？」と問いかけるだけ。答えがそのまま肌悩みになる' },
           { text: '角質ケアを取り入れている', guide: 'MID', isCurrentFor: 'self',
             products: [{ name: 'ピーリングジェル（週1回）', url: 'https://www.amazon.co.jp/s?k=ピーリングジェル+メンズ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
           { text: '皮膚科またはエステで今の肌状態を1回診てもらったことがある', guide: 'HIGH', isCurrentFor: 'pro' },
@@ -615,7 +624,7 @@ export default function NewMeNaviPage() {
         steps: [
           { text: '電動シェーバーを使っている（カミソリ・毛抜きNG）', guide: 'none', note: 'カミソリは剃るたびに皮膚まで削るため肌へのダメージが大きい', isCurrentFor: 'none' },
           { text: '剃り後に保湿している', guide: 'none' },
-          { text: '自分のひげタイプを把握している（薄い／普通〜濃い）', guide: 'LOW', note: '迷ったらカウンセリングで確認できる', isCurrentFor: 'concerned' },
+          { text: '自分のひげの濃さを確認してみる（薄い／普通〜濃い）', guide: 'LOW', note: '迷ったらカウンセリングで確認できる', hint: '剃った翌日に見て青みが強く残るほど濃いタイプ。薄い人は電動シェーバーで十分なことが多い', isCurrentFor: 'concerned' },
           { text: '医療脱毛クリニックのカウンセリングに行ったことがある', guide: 'HIGH', isCurrentFor: 'self' },
           { text: '脱毛を開始している', guide: 'HIGH', isCurrentFor: 'pro' },
           { text: '脱毛完了後のスキンケアが習慣になっている', guide: 'MID' },
@@ -629,7 +638,7 @@ export default function NewMeNaviPage() {
             products: [{ name: 'GUM デンタルフロス', url: 'https://www.amazon.co.jp/s?k=GUM+デンタルフロス&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'ルシェロ 歯間ブラシ', url: 'https://www.amazon.co.jp/s?k=歯間ブラシ+細め&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
           { text: 'ホワイトニング配合の歯磨き粉を使っている', guide: 'none',
             products: [{ name: 'アパガード プレミオ', url: 'https://www.amazon.co.jp/s?k=アパガード+プレミオ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }, { name: 'チェックアップ スタンダード', url: 'https://www.amazon.co.jp/s?k=チェックアップ+歯磨き粉&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
-          { text: '自分の歯の黄ばみの原因を把握している（着色・加齢など）', guide: 'LOW', isCurrentFor: 'concerned' },
+          { text: '自分の歯が黄ばんでいる原因を考えてみる（着色・加齢など）', guide: 'LOW', isCurrentFor: 'concerned', hint: 'コーヒー・お茶・タバコをよく摂るなら着色が原因。加齢の場合はホワイトニングが有効' },
           { text: 'セルフホワイトニングサロンを体験したことがある', guide: 'MID' },
           { text: '歯科でPMTC（クリーニング）を受けたことがある', guide: 'HIGH', isCurrentFor: 'self' },
           { text: '歯科医にホワイトニングの方法・適性を相談したことがある', guide: 'HIGH' },
@@ -642,8 +651,8 @@ export default function NewMeNaviPage() {
         note: '⚠️ 矯正は長期・高額の意思決定です。他のステップより時間軸が長くなります。',
         steps: [
           { text: '自分の歯並びで気になる部分を言語化できている', guide: 'none', isCurrentFor: 'none' },
-          { text: '矯正の種類を知っている（ワイヤー・マウスピース・裏側など）', guide: 'none' },
-          { text: '費用・期間の相場をざっくり把握している', guide: 'none' },
+          { text: '矯正の種類を調べてみる（ワイヤー・マウスピース・裏側など）', guide: 'none', hint: '3種類あるとだけ知っておけばOK。詳細は無料カウンセリングで確認できる' },
+          { text: '矯正の費用・期間の相場をざっくり調べてみる', guide: 'none', hint: 'ワイヤー・マウスピースともに60〜100万円・1〜3年が目安。無料カウンセリングで正確な額がわかる' },
           { text: '矯正歯科の無料カウンセリングに行ったことがある', guide: 'HIGH', isCurrentFor: 'concerned' },
           { text: '「始める・後にする・しない」を意識的に決断している', guide: 'none' },
           { text: '矯正を開始している', guide: 'HIGH', isCurrentFor: 'self' },
@@ -721,6 +730,7 @@ export default function NewMeNaviPage() {
         guideHtml = `<div class="guide-badge guide-mid">📋 プロと進めると精度が上がる</div>`;
       }
       const noteHtml = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
+      const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
       let productsHtml = '';
       if (step.products && step.products.length > 0) {
         const _totalDone = Object.values(stepDone).filter(Boolean).length;
@@ -756,7 +766,7 @@ export default function NewMeNaviPage() {
               ${compassTag}${currentTag}
             </div>
             <p class="step-text">${esc(step.text)}</p>
-            ${guideHtml}${noteHtml}${productsHtml}
+            ${hintHtml}${guideHtml}${noteHtml}${productsHtml}
           </div>
         </div>`;
     }
@@ -1091,6 +1101,7 @@ export default function NewMeNaviPage() {
           guideHtml = `<span class="guide-badge guide-low">🏥</span>`;
         }
         const noteHtml = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
+        const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
         let productsHtml = '';
         if (step.products && step.products.length > 0) {
           // level×budget 2軸フィルター
@@ -1126,7 +1137,7 @@ export default function NewMeNaviPage() {
             <div style="padding-top:${j>0?'12px':'0'};padding-right:36px;flex:1">
               ${labelHtml}
               <p class="milestone-text">${esc(step.text)}</p>
-              ${guideHtml}${noteHtml}${productsHtml}
+              ${hintHtml}${guideHtml}${noteHtml}${productsHtml}
             </div>
             ${checkBtn}
           </div>
@@ -1434,6 +1445,7 @@ export default function NewMeNaviPage() {
         <div class="navi-header-badge">🧭 行動タイプ別ロードマップ</div>
         <h1>ゴール：<em>${esc(overallGoal)}</em></h1>
         <p class="navi-header-sub">「今すぐ動ける」から始めよう。<br>Compassが指す軸のステップが最優先で表示される。</p>
+        ${(() => { const _all = flattenAllSteps(); const _done = _all.filter(s=>s.isDone).length; const _total = _all.length; const _pct = _total > 0 ? Math.round(_done/_total*100) : 0; return `<div class="progress-bar-wrap"><div class="progress-bar-label"><span class="progress-bar-label-text">変容の進捗</span><span class="progress-bar-pct">${_pct}%</span></div><div class="progress-bar-track"><div class="progress-bar-fill" style="width:${_pct}%"></div></div><p class="progress-bar-sub">${_done} / ${_total} ステップ完了</p></div>`; })()}
         <svg viewBox="0 0 80 80" width="68" height="68" style="position:absolute;top:14px;right:14px;z-index:1;opacity:0.17" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="37" fill="none" stroke="#c9a84c" stroke-width="0.8"/><circle cx="40" cy="40" r="28" fill="none" stroke="#c9a84c" stroke-width="0.4"/><line x1="40" y1="3" x2="40" y2="77" stroke="#c9a84c" stroke-width="0.8"/><line x1="3" y1="40" x2="77" y2="40" stroke="#c9a84c" stroke-width="0.8"/><line x1="14" y1="14" x2="66" y2="66" stroke="#c9a84c" stroke-width="0.5"/><line x1="66" y1="14" x2="14" y2="66" stroke="#c9a84c" stroke-width="0.5"/><polygon points="40,4 37,23 40,19 43,23" fill="#c9a84c"/><polygon points="40,76 37,57 40,61 43,57" fill="#c9a84c" opacity="0.4"/><polygon points="76,40 57,37 61,40 57,43" fill="#c9a84c" opacity="0.4"/><polygon points="4,40 23,37 19,40 23,43" fill="#c9a84c" opacity="0.4"/><circle cx="40" cy="40" r="5" fill="none" stroke="#c9a84c" stroke-width="1.2"/><circle cx="40" cy="40" r="2" fill="#c9a84c"/></svg>
         <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(201,168,76,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
       </div>
