@@ -11,7 +11,9 @@ export async function GET(req) {
   const levelParam = searchParams.get('level');    // beginner/intermediate/advanced
   const priceParam = searchParams.get('price_range'); // low/mid/high カンマ区切り
 
-  let url = `${SUPA_URL}/rest/v1/affiliate_products?is_active=eq.true&order=sort_order.asc,created_at.asc&select=*`;
+  const adminMode = searchParams.get('admin') === '1'; // 管理画面用：全件返す
+  let url = `${SUPA_URL}/rest/v1/affiliate_products?order=sort_order.asc,created_at.asc&select=*`;
+  if (!adminMode) url += '&is_active=eq.true';
 
   if (axisParam) {
     const axes = axisParam.split(',').map(a => a.trim()).filter(Boolean);

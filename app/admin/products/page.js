@@ -9,8 +9,6 @@ const LEVEL_LABELS = { beginner:'入門', intermediate:'習慣化中', advanced:
 const PRICES = ['low','mid','high'];
 const PRICE_LABELS = { low:'低', mid:'中', high:'高' };
 
-const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPA_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const ADMIN_SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET || '';
 
 const EMPTY_FORM = { axis: 'skin', name: '', url: '', level: 'beginner', price_range: 'low', sort_order: 0, is_active: true };
@@ -26,11 +24,11 @@ export default function AdminProductsPage() {
 
   async function fetchProducts() {
     setLoading(true);
-    const res = await fetch(`${SUPA_URL}/rest/v1/affiliate_products?order=axis.asc,sort_order.asc&select=*`, {
-      headers: { apikey: SUPA_ANON, Authorization: `Bearer ${SUPA_ANON}` },
-    });
-    const data = await res.json();
-    setProducts(Array.isArray(data) ? data : []);
+    try {
+      const res = await fetch('/api/products?admin=1');
+      const data = await res.json();
+      setProducts(Array.isArray(data) ? data : []);
+    } catch { setProducts([]); }
     setLoading(false);
   }
 
