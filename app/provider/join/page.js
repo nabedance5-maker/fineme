@@ -1,9 +1,10 @@
 export const metadata = {
-  title: '掲載者募集 — 変容の旅を共に',
-  description: '外見磨きの専門家・サービス提供者の方へ。Finemeに掲載して、本気で変わりたいユーザーとのマッチングを始めましょう。成果が出るまで費用は発生しません。',
+  title: '男性客の集客方法：個人・フリーランスの外見系サービス提供者へ | Fineme',
+  description: 'パーソナルジム・眉毛サロン・美容師・外見コンサルなど、男性客の集客に悩む個人・フリーランス向け。Finemeは「変わりたい男性」が診断を経て辿り着くプラットフォームです。クーポン集客ではなく、相性で選ばれる仕組みを提供します。',
+  keywords: ['男性客 集客', 'パーソナルジム 集客 個人', '眉毛サロン 男性客 増やす', 'フリーランス 美容師 集客', '外見コンサル 集客 個人'],
   openGraph: {
-    title: '掲載者募集 — 変容の旅を共に | Fineme',
-    description: '本気で変わりたいユーザーと出会う。成果が出るまで費用は発生しません。',
+    title: '男性客の集客に悩む個人・フリーランスへ | Fineme',
+    description: '診断を経た「本気で変わりたい男性」との出会いを設計します。',
   },
 };
 
@@ -79,6 +80,21 @@ export default function ProviderJoinPage() {
         .sec-lead { font-size: 14px; line-height: 1.9; margin: 0 0 32px; font-family: 'Noto Sans JP', sans-serif; }
         .sec-lead-dark { color: rgba(255,255,255,.72); }
         .sec-lead-light { color: rgba(255,255,255,.72); }
+
+        /* ─── Categories ─── */
+        .categories-section { padding: 48px 0 40px; border-bottom: 1px solid rgba(232,228,220,0.1); }
+        .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .cat-item {
+          background: rgba(10,15,30,0.65); backdrop-filter: blur(8px);
+          border: 1px solid rgba(232,228,220,0.12); border-radius: 12px;
+          padding: 16px 12px; text-align: center;
+        }
+        .cat-item-icon { font-size: 24px; margin-bottom: 8px; }
+        .cat-item-name { font-size: 13px; font-weight: 800; color: rgba(232,228,220,0.9); margin: 0 0 4px; }
+        .cat-item-desc { font-size: 11px; color: rgba(255,255,255,0.5); font-family: 'Noto Sans JP', sans-serif; margin: 0; }
+        @media (max-width: 680px) {
+          .cat-grid { grid-template-columns: repeat(2, 1fr); }
+        }
 
         /* ─── Problem cards ─── */
         .problem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
@@ -199,7 +215,58 @@ export default function ProviderJoinPage() {
           </div>
         </section>
 
-        {/* ② 問題提起 */}
+        {/* ② 対象業種 */}
+        <section className="categories-section">
+          <div className="join-container">
+            <div className="sec-eyebrow">対象業種</div>
+            <h2 className="sec-h2 sec-h2-light" style={{marginBottom:'8px'}}>こんな業種の方が参加しています</h2>
+            <p className="sec-lead sec-lead-light" style={{marginBottom:'24px'}}>個人経営・フリーランス・小規模サロン、すべて歓迎です。</p>
+            <div className="cat-grid">
+              <div className="cat-item">
+                <div className="cat-item-icon">🏋️</div>
+                <div className="cat-item-name">パーソナルジム</div>
+                <p className="cat-item-desc">フリーランスPT・個人ジム</p>
+              </div>
+              <div className="cat-item">
+                <div className="cat-item-icon">✂️</div>
+                <div className="cat-item-name">眉毛サロン</div>
+                <p className="cat-item-desc">アイブロウスタイリスト</p>
+              </div>
+              <div className="cat-item">
+                <div className="cat-item-icon">💈</div>
+                <div className="cat-item-name">美容室・美容師</div>
+                <p className="cat-item-desc">フリーランス・個人サロン</p>
+              </div>
+              <div className="cat-item">
+                <div className="cat-item-icon">🪞</div>
+                <div className="cat-item-name">外見コンサル</div>
+                <p className="cat-item-desc">外見・印象改善コンサル</p>
+              </div>
+              <div className="cat-item">
+                <div className="cat-item-icon">👔</div>
+                <div className="cat-item-name">ファッション</div>
+                <p className="cat-item-desc">パーソナルスタイリスト</p>
+              </div>
+              <div className="cat-item">
+                <div className="cat-item-icon">✨</div>
+                <div className="cat-item-name">脱毛サロン</div>
+                <p className="cat-item-desc">メンズ脱毛・医療脱毛</p>
+              </div>
+              <div className="cat-item">
+                <div className="cat-item-icon">💊</div>
+                <div className="cat-item-name">AGAクリニック</div>
+                <p className="cat-item-desc">薄毛・AGA治療院</p>
+              </div>
+              <div className="cat-item">
+                <div className="cat-item-icon">📸</div>
+                <div className="cat-item-name">写真撮影・その他</div>
+                <p className="cat-item-desc">婚活・マッチングアプリ写真</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ③ 問題提起 */}
         <section className="join-section">
           <div className="join-container">
             <div className="sec-eyebrow">Problem</div>
