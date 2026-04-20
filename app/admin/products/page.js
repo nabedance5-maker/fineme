@@ -88,7 +88,7 @@ export default function AdminProductsPage() {
   const filtered = filterAxis === 'all' ? products : products.filter(p => p.axis === filterAxis);
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px 80px', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 20px 80px', fontFamily: 'sans-serif', color: '#111827' }}>
       <div style={{ marginBottom: 24 }}>
         <Link href="/admin" style={{ color: '#6b7280', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
         <h1 style={{ margin: '8px 0 4px', fontSize: 22, fontWeight: 800 }}>商品アフィリエイト管理</h1>
@@ -196,5 +196,5 @@ const btnPrimary = { padding: '8px 18px', borderRadius: 8, border: 'none', backg
 const btnSecondary = { padding: '8px 14px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: '#374151', fontWeight: 600, fontSize: 13, cursor: 'pointer' };
 const btnFilter = { padding: '5px 12px', borderRadius: 99, border: '1px solid #d1d5db', background: '#fff', color: '#374151', fontSize: 12, cursor: 'pointer' };
 const btnFilterActive = { ...btnFilter, background: '#111827', color: '#fff', borderColor: '#111827' };
-const th = { padding: '8px 12px', fontWeight: 700, color: '#374151', fontSize: 12 };
-const td = { padding: '10px 12px', color: '#374151', verticalAlign: 'middle' };
+const th = { padding: '8px 12px', fontWeight: 700, color: '#111827', fontSize: 12 };
+const td = { padding: '10px 12px', color: '#111827', verticalAlign: 'middle' };
