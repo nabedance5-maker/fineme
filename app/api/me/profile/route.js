@@ -17,7 +17,7 @@ export async function GET(request) {
 
   const { data } = await supabase
     .from('profiles')
-    .select('display_name, share_diagnosis, share_roadmap, line_user_id, last_name, first_name, phone, axis_progress, step_done, area, city')
+    .select('display_name, share_diagnosis, share_roadmap, line_user_id, last_name, first_name, phone, axis_progress, step_done, area, city, body_data')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -34,6 +34,7 @@ export async function GET(request) {
     step_done: data?.step_done || {},
     area: data?.area || '',
     city: data?.city || '',
+    body_data: data?.body_data || {},
   });
 }
 
@@ -42,7 +43,7 @@ export async function PUT(request) {
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
-  const { display_name, share_diagnosis, share_roadmap, last_name, first_name, phone, axis_progress, step_done, area, city } = body;
+  const { display_name, share_diagnosis, share_roadmap, last_name, first_name, phone, axis_progress, step_done, area, city, body_data } = body;
 
   // auth.users の display_name を更新
   if (display_name !== undefined) {
@@ -66,6 +67,7 @@ export async function PUT(request) {
   if (step_done !== undefined) upsertData.step_done = step_done;
   if (area !== undefined) upsertData.area = String(area).trim();
   if (city !== undefined) upsertData.city = String(city).trim();
+  if (body_data !== undefined) upsertData.body_data = body_data;
 
   const { error } = await supabase
     .from('profiles')

@@ -345,6 +345,44 @@ export default function NewMeNaviPage() {
       .axis-filter-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 99px; border: 1px solid rgba(232,228,220,0.18); color: rgba(232,228,220,0.40); background: transparent; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
       .axis-filter-chip:hover { border-color: rgba(201,168,76,0.4); color: rgba(232,228,220,0.75); }
       .axis-filter-chip.active { border-color: #c9a84c; color: #c9a84c; background: rgba(201,168,76,0.10); }
+
+      /* ── 現状把握ステップ（目立たせ） ── */
+      .step-card.step-selfcheck { border-left: 3px solid rgba(201,168,76,0.7) !important; background: rgba(201,168,76,0.05); border-radius: 10px; border-bottom: none !important; margin-bottom: 4px; }
+      .selfcheck-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 800; color: #c9a84c; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.3); border-radius: 3px; padding: 1px 6px; letter-spacing: .06em; text-transform: uppercase; }
+      .selfcheck-badge::before { content: '📍'; font-size: 9px; }
+      .selfcheck-value { font-size: 11px; font-weight: 700; color: #c9a84c; background: rgba(201,168,76,0.10); border: 1px solid rgba(201,168,76,0.25); border-radius: 4px; padding: 2px 7px; margin-top: 4px; display: inline-block; }
+
+      /* ── 現状把握バナー ── */
+      .selfcheck-intro-section { background: rgba(201,168,76,0.06); border: 1.5px solid rgba(201,168,76,0.35); border-radius: 14px; padding: 16px 18px 14px; margin-bottom: 20px; }
+      .selfcheck-intro-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+      .selfcheck-intro-icon { font-size: 22px; flex-shrink: 0; }
+      .selfcheck-intro-title { font-size: 13px; font-weight: 800; color: rgba(232,228,220,0.92); margin: 0 0 2px; }
+      .selfcheck-intro-desc { font-size: 11px; color: rgba(232,228,220,0.55); margin: 0; line-height: 1.5; }
+      .selfcheck-chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+      .selfcheck-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(201,168,76,0.35); color: rgba(201,168,76,0.85); background: transparent; line-height: 1.3; }
+      .selfcheck-chip.done { color: rgba(16,185,129,0.9); border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.06); }
+
+      /* ── 現状把握モーダル ── */
+      #body-data-modal { position: fixed; inset: 0; background: rgba(5,8,20,0.88); z-index: 99998; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+      #body-data-modal.hidden { display: none; }
+      .bdm-multi-note.hidden { display: none; }
+      .bdm-card { background: rgba(10,15,30,0.97); border: 1.5px solid rgba(201,168,76,0.5); border-radius: 18px; padding: 26px 22px 20px; max-width: 400px; width: 100%; box-shadow: 0 24px 64px rgba(0,0,0,0.65); }
+      .bdm-eyebrow { font-size: 9px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(201,168,76,0.65); margin: 0 0 8px; }
+      .bdm-title { font-size: 15px; font-weight: 800; color: rgba(232,228,220,0.95); margin: 0 0 6px; line-height: 1.5; font-family: 'Noto Serif JP', Georgia, serif; }
+      .bdm-step-text { font-size: 12px; color: rgba(232,228,220,0.50); margin: 0 0 18px; line-height: 1.6; }
+      .bdm-options { display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
+      .bdm-option { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 9px; border: 1px solid rgba(232,228,220,0.16); cursor: pointer; transition: all .12s; }
+      .bdm-option:hover { border-color: rgba(201,168,76,0.45); background: rgba(201,168,76,0.06); }
+      .bdm-option.selected { border-color: #c9a84c; background: rgba(201,168,76,0.12); }
+      .bdm-option input[type="radio"] { width: 14px; height: 14px; accent-color: #c9a84c; flex-shrink: 0; cursor: pointer; }
+      .bdm-option input[type="checkbox"] { width: 14px; height: 14px; accent-color: #c9a84c; flex-shrink: 0; cursor: pointer; }
+      .bdm-option-label { font-size: 13px; font-weight: 600; color: rgba(232,228,220,0.85); cursor: pointer; }
+      .bdm-multi-note { font-size: 11px; color: rgba(232,228,220,0.40); margin: 0 0 10px; }
+      .bdm-actions { display: flex; gap: 8px; }
+      .bdm-submit { flex: 1; padding: 12px 20px; background: #c9a84c; color: #0a0f1e; font-size: 14px; font-weight: 800; border: none; border-radius: 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: opacity .15s; }
+      .bdm-submit:hover { opacity: .85; }
+      .bdm-skip { padding: 12px 14px; background: transparent; color: rgba(232,228,220,0.40); font-size: 13px; font-weight: 600; border: 1px solid rgba(232,228,220,0.15); border-radius: 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; }
+      .bdm-skip:hover { color: rgba(232,228,220,0.65); border-color: rgba(232,228,220,0.3); }
     `;
     document.head.appendChild(style);
 
@@ -424,6 +462,11 @@ export default function NewMeNaviPage() {
     let stepDone = {};
     try { const s = localStorage.getItem(STEP_DONE_KEY); if (s) stepDone = JSON.parse(s); } catch {}
 
+    // ── 現状把握データ読み込み ──
+    const BODY_DATA_KEY = 'fineme:body:data';
+    let bodyData = {};
+    try { const s = localStorage.getItem(BODY_DATA_KEY); if (s) bodyData = JSON.parse(s); } catch {}
+
     // ── 進捗データ読み込み（Supabase優先） ──
     let axisProgress = {};
     try {
@@ -443,6 +486,10 @@ export default function NewMeNaviPage() {
           if (data.step_done && Object.keys(data.step_done).length > 0) {
             stepDone = { ...stepDone, ...data.step_done };
             try { localStorage.setItem(STEP_DONE_KEY, JSON.stringify(stepDone)); } catch {}
+          }
+          if (data.body_data && Object.keys(data.body_data).length > 0) {
+            bodyData = { ...bodyData, ...data.body_data };
+            try { localStorage.setItem(BODY_DATA_KEY, JSON.stringify(bodyData)); } catch {}
           }
         }
       }
@@ -527,7 +574,7 @@ export default function NewMeNaviPage() {
     // note: 注意書き（任意）
     const MILESTONES = {
       body: [
-        { text: '自分の体型で気になる部分を1つ言語化できている（例：「腹まわりが気になる」）', guide: 'none', isCurrentFor: 'none' },
+        { text: '自分の体型で気になる部分を1つ言語化できている（例：「腹まわりが気になる」）', guide: 'none', isCurrentFor: 'none', isSelfCheck: true, bodyDataKey: 'body_concern', bodyDataOptions: ['腹まわり', '胸（上半身）', '背中', '脚（太もも・ふくらはぎ）', '全体的に気になる'] },
         { text: '現在の体重・体脂肪率を計測して数字で把握している', guide: 'none',
           products: [{ name: '体組成計（TANITA）', url: 'https://www.amazon.co.jp/s?k=タニタ+体組成計&tag=whero523-22', level: 'intermediate', priceRange: 'mid' }] },
         { text: '今週1週間、体を動かした回数を数えてみる', guide: 'none', hint: 'ゼロでも正直に。現状を知ることが出発点' },
@@ -546,7 +593,7 @@ export default function NewMeNaviPage() {
         { text: '何らかの方法で眉を整えている（サロン・自己処理どちらでもOK）', guide: 'none', isCurrentFor: 'none' },
         { text: 'スクリューブラシで毎朝眉を整えている', guide: 'none',
           products: [{ name: 'スクリューブラシ（使い捨て）', url: 'https://www.amazon.co.jp/s?k=スクリューブラシ+眉&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: '眉用ハサミ', url: 'https://www.amazon.co.jp/s?k=眉用はさみ+ステンレス&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
-        { text: '自分の顔型に合う眉の形を1つ調べてみる', guide: 'MID', isCurrentFor: 'concerned', hint: '「顔型 眉 似合う」で検索するか、眉毛サロンで聞くのが一番確実' },
+        { text: '自分の顔型に合う眉の形を1つ調べてみる', guide: 'MID', isCurrentFor: 'concerned', hint: '「顔型 眉 似合う」で検索するか、眉毛サロンで聞くのが一番確実', isSelfCheck: true, bodyDataKey: 'face_shape', bodyDataOptions: ['丸顔', '面長', '卵型', '逆三角形（逆卵型）', '四角（ベース型）'] },
         { text: '眉毛サロンでプロに一度整えてもらったことがある', guide: 'HIGH', isCurrentFor: 'self' },
         { text: 'プロに作ってもらった形を基準に、自宅で眉バサミ＋スクリューブラシでメンテナンスできている', guide: 'LOW' },
         { text: '2〜3週に1回のペースでサロンに通っている', guide: 'HIGH', isCurrentFor: 'pro' },
@@ -568,8 +615,8 @@ export default function NewMeNaviPage() {
       ],
       hair: [
         { text: '定期的に美容院・理髪店に行っている（2ヶ月以内に行った）', guide: 'none', isCurrentFor: 'none' },
-        { text: '自分の髪質を確認してみる（硬い・柔らかい・くせ毛・直毛など）', guide: 'LOW', hint: '洗髪後に何もつけず乾かして、うねるならくせ毛。毛を1本つまんで硬さも確認できる' },
-        { text: '自分の顔型を確認してみる（丸・面長・卵型など）', guide: 'LOW', hint: '髪を後ろにまとめて鏡の前に立つ。輪郭が丸・面長・卵型・逆三角形のどれかを見る' },
+        { text: '自分の髪質を確認してみる（硬い・柔らかい・くせ毛・直毛など）', guide: 'LOW', hint: '洗髪後に何もつけず乾かして、うねるならくせ毛。毛を1本つまんで硬さも確認できる', isSelfCheck: true, bodyDataKey: 'hair_type', bodyDataOptions: ['硬い', '柔らかい', 'くせ毛', '直毛', '細い'] },
+        { text: '自分の顔型を確認してみる（丸・面長・卵型など）', guide: 'LOW', hint: '髪を後ろにまとめて鏡の前に立つ。輪郭が丸・面長・卵型・逆三角形のどれかを見る', isSelfCheck: true, bodyDataKey: 'face_shape', bodyDataOptions: ['丸顔', '面長', '卵型', '逆三角形（逆卵型）', '四角（ベース型）'] },
         { text: '髪質に合ったシャンプーを使っている', guide: 'LOW',
           products: [{ name: 'BOTANIST ボタニカルシャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'スカルプシャンプー（薄毛が気になる方）', url: 'https://www.amazon.co.jp/s?k=スカルプシャンプー+メンズ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
         { text: 'ドライヤーで根元から乾かしている（自然乾燥していない）', guide: 'none',
@@ -609,8 +656,8 @@ export default function NewMeNaviPage() {
             products: [{ name: '肌ラボ 極潤 洗顔フォーム', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+洗顔&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: '肌ラボ 極潤 ヒアルロン液（化粧水）', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'ニベア フェイス 乳液', url: 'https://www.amazon.co.jp/s?k=ニベア+フェイス+乳液&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
           { text: 'クレンジング（夜）と日焼け止め（朝）が習慣になっている', guide: 'none',
             products: [{ name: 'ビオレUV アクアリッチ（日焼け止め）', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'メンズビオレ クレンジング', url: 'https://www.amazon.co.jp/s?k=メンズ+クレンジング+洗顔&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
-          { text: '自分の肌タイプを確認してみる（乾燥・脂性・混合）', guide: 'LOW', isCurrentFor: 'concerned', hint: '朝、何もつけずに1〜2時間過ごす。Tゾーンが脂っぽければ混合、全体的に突っ張れば乾燥肌' },
-          { text: '自分の肌悩みを1つ言葉にしてみる（ニキビ・毛穴・くすみ・赤みなど）', guide: 'LOW', hint: '鏡を見て「一番気になるのは？」と問いかけるだけ。答えがそのまま肌悩みになる' },
+          { text: '自分の肌タイプを確認してみる（乾燥・脂性・混合）', guide: 'LOW', isCurrentFor: 'concerned', hint: '朝、何もつけずに1〜2時間過ごす。Tゾーンが脂っぽければ混合、全体的に突っ張れば乾燥肌', isSelfCheck: true, bodyDataKey: 'skin_type', bodyDataOptions: ['乾燥肌', '脂性肌（オイリー）', '混合肌', '普通肌'] },
+          { text: '自分の肌悩みを1つ言葉にしてみる（ニキビ・毛穴・くすみ・赤みなど）', guide: 'LOW', hint: '鏡を見て「一番気になるのは？」と問いかけるだけ。答えがそのまま肌悩みになる', isSelfCheck: true, bodyDataKey: 'skin_concerns', bodyDataMulti: true, bodyDataOptions: ['毛穴', 'ニキビ・吹き出物', 'くすみ', '赤み', '乾燥・カサつき', 'テカリ'] },
           { text: '角質ケアを取り入れている', guide: 'MID', isCurrentFor: 'self',
             products: [{ name: 'ピーリングジェル（週1回）', url: 'https://www.amazon.co.jp/s?k=ピーリングジェル+メンズ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
           { text: '皮膚科またはエステで今の肌状態を1回診てもらったことがある', guide: 'HIGH', isCurrentFor: 'pro' },
@@ -624,7 +671,7 @@ export default function NewMeNaviPage() {
         steps: [
           { text: '電動シェーバーを使っている（カミソリ・毛抜きNG）', guide: 'none', note: 'カミソリは剃るたびに皮膚まで削るため肌へのダメージが大きい', isCurrentFor: 'none' },
           { text: '剃り後に保湿している', guide: 'none' },
-          { text: '自分のひげの濃さを確認してみる（薄い／普通〜濃い）', guide: 'LOW', note: '迷ったらカウンセリングで確認できる', hint: '剃った翌日に見て青みが強く残るほど濃いタイプ。薄い人は電動シェーバーで十分なことが多い', isCurrentFor: 'concerned' },
+          { text: '自分のひげの濃さを確認してみる（薄い／普通〜濃い）', guide: 'LOW', note: '迷ったらカウンセリングで確認できる', hint: '剃った翌日に見て青みが強く残るほど濃いタイプ。薄い人は電動シェーバーで十分なことが多い', isCurrentFor: 'concerned', isSelfCheck: true, bodyDataKey: 'beard_density', bodyDataOptions: ['薄い（青みがほとんど残らない）', '普通〜濃い（翌日に青みが残る）'] },
           { text: '医療脱毛クリニックのカウンセリングに行ったことがある', guide: 'HIGH', isCurrentFor: 'self' },
           { text: '脱毛を開始している', guide: 'HIGH', isCurrentFor: 'pro' },
           { text: '脱毛完了後のスキンケアが習慣になっている', guide: 'MID' },
@@ -638,7 +685,7 @@ export default function NewMeNaviPage() {
             products: [{ name: 'GUM デンタルフロス', url: 'https://www.amazon.co.jp/s?k=GUM+デンタルフロス&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'ルシェロ 歯間ブラシ', url: 'https://www.amazon.co.jp/s?k=歯間ブラシ+細め&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
           { text: 'ホワイトニング配合の歯磨き粉を使っている', guide: 'none',
             products: [{ name: 'アパガード プレミオ', url: 'https://www.amazon.co.jp/s?k=アパガード+プレミオ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }, { name: 'チェックアップ スタンダード', url: 'https://www.amazon.co.jp/s?k=チェックアップ+歯磨き粉&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
-          { text: '自分の歯が黄ばんでいる原因を考えてみる（着色・加齢など）', guide: 'LOW', isCurrentFor: 'concerned', hint: 'コーヒー・お茶・タバコをよく摂るなら着色が原因。加齢の場合はホワイトニングが有効' },
+          { text: '自分の歯が黄ばんでいる原因を考えてみる（着色・加齢など）', guide: 'LOW', isCurrentFor: 'concerned', hint: 'コーヒー・お茶・タバコをよく摂るなら着色が原因。加齢の場合はホワイトニングが有効', isSelfCheck: true, bodyDataKey: 'teeth_concern', bodyDataOptions: ['着色（コーヒー・お茶・タバコ）', '加齢による黄ばみ', '元々の歯の色が薄い', 'よくわからない'] },
           { text: 'セルフホワイトニングサロンを体験したことがある', guide: 'MID' },
           { text: '歯科でPMTC（クリーニング）を受けたことがある', guide: 'HIGH', isCurrentFor: 'self' },
           { text: '歯科医にホワイトニングの方法・適性を相談したことがある', guide: 'HIGH' },
@@ -751,23 +798,62 @@ export default function NewMeNaviPage() {
         if (chips) productsHtml = `<div class="product-suggestions">${chips}</div>`;
       }
       const compassTag = isGlobalCurrent ? `<span class="compass-pointing-badge">🧭 今ここ</span>` : '';
-      const currentTag = '';
+      const selfCheckBadge = step.isSelfCheck ? `<span class="selfcheck-badge"> 現状確認</span>` : '';
+      const selfCheckValue = (step.isSelfCheck && bodyData[step.bodyDataKey])
+        ? `<span class="selfcheck-value">✓ ${esc(Array.isArray(bodyData[step.bodyDataKey]) ? bodyData[step.bodyDataKey].join('・') : bodyData[step.bodyDataKey])}</span>`
+        : '';
+      const selfCheckAttrs = step.isSelfCheck && !isDone
+        ? `data-self-check-key="${esc(step.bodyDataKey)}" data-self-check-opts="${esc((step.bodyDataOptions||[]).join('|'))}" data-self-check-multi="${step.bodyDataMulti ? '1' : '0'}" data-self-check-text="${esc(step.text)}"`
+        : '';
       const badgeBg    = isCompassStep ? 'rgba(201,168,76,0.15)' : 'rgba(10,15,30,0.50)';
       const badgeBorder = isCompassStep ? 'rgba(201,168,76,0.35)' : 'rgba(232,228,220,0.18)';
       const badgeColor  = isCompassStep ? '#c9a84c' : 'rgba(232,228,220,0.55)';
       return `
-        <div class="step-card${isDone?' step-done':''}${isCompassStep?' step-compass':''}">
+        <div class="step-card${isDone?' step-done':''}${isCompassStep?' step-compass':''}${step.isSelfCheck?' step-selfcheck':''}">
           <div class="step-check-btn-wrap">
-            <button class="step-check-btn${isDone?' checked':''}" data-done-key="${esc(doneKey)}" title="${isDone?'完了を取り消す':'できてる・やった'}">${isDone?'✓':''}</button>
+            <button class="step-check-btn${isDone?' checked':''}" data-done-key="${esc(doneKey)}" ${selfCheckAttrs} title="${isDone?'完了を取り消す':'できてる・やった'}">${isDone?'✓':''}</button>
           </div>
           <div class="step-card-body">
             <div class="step-meta">
               <span class="step-axis-badge" style="background:${badgeBg};border-color:${badgeBorder};color:${badgeColor}">${esc(def.icon)} ${esc(def.label)}</span>
-              ${compassTag}${currentTag}
+              ${compassTag}${selfCheckBadge}
             </div>
             <p class="step-text">${esc(step.text)}</p>
+            ${selfCheckValue}
             ${hintHtml}${guideHtml}${noteHtml}${productsHtml}
           </div>
+        </div>`;
+    }
+
+    // ── 現状把握バナー生成 ──
+    const SELF_CHECK_ITEMS = [
+      { key: 'body_concern',  label: '体型の気になる部分', icon: '💪' },
+      { key: 'hair_type',     label: '髪質',              icon: '💇' },
+      { key: 'face_shape',    label: '顔型',              icon: '🪞' },
+      { key: 'skin_type',     label: '肌タイプ',           icon: '✨' },
+      { key: 'skin_concerns', label: '肌悩み',             icon: '🔬' },
+      { key: 'beard_density', label: 'ひげの濃さ',         icon: '🪒' },
+      { key: 'teeth_concern', label: '歯の黄ばみ原因',     icon: '🦷' },
+    ];
+    function buildSelfCheckIntroHtml() {
+      const undoneCount = SELF_CHECK_ITEMS.filter(item => !bodyData[item.key]).length;
+      if (undoneCount === 0) return '';
+      const chips = SELF_CHECK_ITEMS.map(item => {
+        const val = bodyData[item.key];
+        const isDone = !!val;
+        const valText = isDone ? (Array.isArray(val) ? val.join('・') : val) : '未確認';
+        return `<span class="selfcheck-chip${isDone ? ' done' : ''}">${item.icon} ${esc(item.label)}${isDone ? '：' + esc(valText) : ''}</span>`;
+      }).join('');
+      return `
+        <div class="selfcheck-intro-section" id="selfcheck-intro">
+          <div class="selfcheck-intro-header">
+            <span class="selfcheck-intro-icon">📍</span>
+            <div style="flex:1">
+              <p class="selfcheck-intro-title">まず自分の現状を把握しておこう（残り${undoneCount}項目）</p>
+              <p class="selfcheck-intro-desc">「📍 現状確認」バッジのステップをチェックするとMapが自分専用に最適化されます。</p>
+            </div>
+          </div>
+          <div class="selfcheck-chip-list">${chips}</div>
         </div>`;
     }
 
@@ -819,7 +905,7 @@ export default function NewMeNaviPage() {
           <span style="font-size:14px">🔒</span><span style="font-size:12px;color:rgba(232,228,220,0.50);line-height:1.6">まずは変容ルートを歩もう。変化が積み重なるほど、このステージが近づいてくる。</span>
         </div>`;
 
-      let html = tabBarHtml;
+      let html = buildSelfCheckIntroHtml() + tabBarHtml;
       const sectionHtmlParts = [];
       const usedArticleSlugs = new Set();
       SECTIONS.forEach(({ type, icon, label, desc }) => {
@@ -1462,9 +1548,97 @@ export default function NewMeNaviPage() {
         <a href="/diagnosis" class="navi-footer-btn nfb-ghost">Me Scanを再スキャンする</a>
       </div>
       </div>
+
+      <!-- 現状把握モーダル -->
+      <div id="body-data-modal" class="hidden">
+        <div class="bdm-card">
+          <p class="bdm-eyebrow">現状把握 — あなたの地図を作る</p>
+          <p class="bdm-title" id="bdm-title">自分の現状を記録しておこう</p>
+          <p class="bdm-step-text" id="bdm-step-text"></p>
+          <p class="bdm-multi-note hidden" id="bdm-multi-note">複数選択できます</p>
+          <div class="bdm-options" id="bdm-options"></div>
+          <div class="bdm-actions">
+            <button class="bdm-submit" id="bdm-submit">記録して完了 →</button>
+            <button class="bdm-skip" id="bdm-skip">スキップ</button>
+          </div>
+        </div>
+      </div>
     `;
 
     root.innerHTML = html;
+
+    // モーダルをbodyに移動（z-index確保）
+    const modalEl = document.getElementById('body-data-modal');
+    if (modalEl) document.body.appendChild(modalEl);
+
+    // ── 現状把握モーダル表示 ──
+    function showBodyDataModal({ doneKey, bodyDataKey, bodyDataOptions, bodyDataMulti, stepText, onConfirm }) {
+      const modal = document.getElementById('body-data-modal');
+      if (!modal) { onConfirm(); return; }
+      const titleEl    = document.getElementById('bdm-title');
+      const stepTextEl = document.getElementById('bdm-step-text');
+      const multiNote  = document.getElementById('bdm-multi-note');
+      const optionsEl  = document.getElementById('bdm-options');
+      const submitBtn  = document.getElementById('bdm-submit');
+      const skipBtn    = document.getElementById('bdm-skip');
+      if (titleEl)    titleEl.textContent = '自分の現状を記録しておこう';
+      if (stepTextEl) stepTextEl.textContent = stepText;
+      if (multiNote)  { multiNote.classList.toggle('hidden', !bodyDataMulti); }
+      const inputType = bodyDataMulti ? 'checkbox' : 'radio';
+      const currentVal = bodyData[bodyDataKey];
+      optionsEl.innerHTML = (bodyDataOptions || []).map(opt => {
+        const isChecked = bodyDataMulti
+          ? (Array.isArray(currentVal) && currentVal.includes(opt))
+          : currentVal === opt;
+        return `<label class="bdm-option${isChecked ? ' selected' : ''}">
+          <input type="${inputType}" name="bdm-opt" value="${esc(opt)}" ${isChecked ? 'checked' : ''}>
+          <span class="bdm-option-label">${esc(opt)}</span>
+        </label>`;
+      }).join('');
+      // オプションクリックで選択状態トグル
+      optionsEl.querySelectorAll('.bdm-option').forEach(el => {
+        el.addEventListener('click', () => {
+          if (!bodyDataMulti) {
+            optionsEl.querySelectorAll('.bdm-option').forEach(o => { o.classList.remove('selected'); o.querySelector('input').checked = false; });
+          }
+          const input = el.querySelector('input');
+          if (bodyDataMulti) {
+            el.classList.toggle('selected');
+            input.checked = el.classList.contains('selected');
+          } else {
+            el.classList.add('selected');
+            input.checked = true;
+          }
+        });
+      });
+      modal.classList.remove('hidden');
+      // 新しいリスナー（古いリスナーを上書き）
+      const newSubmit = submitBtn.cloneNode(true);
+      submitBtn.replaceWith(newSubmit);
+      const newSkip = skipBtn.cloneNode(true);
+      skipBtn.replaceWith(newSkip);
+      document.getElementById('bdm-submit').addEventListener('click', () => {
+        const checked = optionsEl.querySelectorAll('input:checked');
+        if (checked.length > 0) {
+          const value = bodyDataMulti ? Array.from(checked).map(i => i.value) : checked[0].value;
+          bodyData[bodyDataKey] = value;
+          try { localStorage.setItem(BODY_DATA_KEY, JSON.stringify(bodyData)); } catch {}
+          if (token) {
+            fetch('/api/me/profile', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({ body_data: bodyData }),
+            }).catch(() => {});
+          }
+        }
+        modal.classList.add('hidden');
+        onConfirm();
+      });
+      document.getElementById('bdm-skip').addEventListener('click', () => {
+        modal.classList.add('hidden');
+        onConfirm();
+      });
+    }
 
     // ── ステータスボタンのイベントリスナー ──
     const STATUS_CYCLE = { '': 'active', 'active': 'done', 'done': '' };
@@ -1528,14 +1702,61 @@ export default function NewMeNaviPage() {
       }
     });
 
-    // ── ステップ完了チェックボタン（メインステップ + 出発前チェック + 商品チェック共通） ──
-    root.addEventListener('click', (e) => {
-      const btn = e.target.closest('.step-check-btn, .prereq-box, .product-check-btn');
-      if (!btn) return;
-      const key = btn.dataset.doneKey;
-      if (!key) return;
-      const isDone = !!stepDone[key];
-      if (isDone) { delete stepDone[key]; } else { stepDone[key] = true; }
+    // ── ステップDOMを完了状態に更新する共通関数 ──
+    function applyStepDone(btn, key, newDone) {
+      btn.classList.toggle('checked', newDone);
+      btn.textContent = newDone ? '✓' : '';
+      // メインステップ
+      const milestoneItem = btn.closest('.milestone-item');
+      if (milestoneItem) {
+        milestoneItem.classList.toggle('step-done', newDone);
+        const dot = milestoneItem.querySelector('.milestone-dot');
+        if (dot && !dot.classList.contains('current') && !dot.classList.contains('goal')) {
+          dot.classList.toggle('past', newDone);
+          dot.classList.toggle('future', !newDone);
+        }
+      }
+      // 出発前チェック
+      const prereqItem = btn.closest('.prereq-item');
+      if (prereqItem) {
+        prereqItem.classList.toggle('step-done', newDone);
+      }
+      // step-card
+      const stepCard = btn.closest('.step-card');
+      if (stepCard) {
+        stepCard.classList.toggle('step-done', newDone);
+        // self-checkは完了後にsections再レンダーで値表示更新
+        if (newDone && btn.dataset.selfCheckKey) {
+          const container = document.getElementById('sections-container');
+          if (container) container.innerHTML = buildSectionsHtml();
+          // progress bar 更新
+          const pbFill = document.querySelector('.progress-bar-fill');
+          const pbPct  = document.querySelector('.progress-bar-pct');
+          const pbSub  = document.querySelector('.progress-bar-sub');
+          if (pbFill) {
+            const _all = flattenAllSteps();
+            const _done = _all.filter(s => s.isDone).length;
+            const _total = _all.length;
+            const _pct = _total > 0 ? Math.round(_done/_total*100) : 0;
+            pbFill.style.width = _pct + '%';
+            if (pbPct) pbPct.textContent = _pct + '%';
+            if (pbSub) pbSub.textContent = `${_done} / ${_total} ステップ完了`;
+          }
+          return;
+        }
+      }
+      updatePrereqBanner();
+      if (newDone && key.startsWith('prereq-')) {
+        const allBoxes     = document.querySelectorAll('.prereq-box');
+        const checkedBoxes = document.querySelectorAll('.prereq-box.checked');
+        if (allBoxes.length > 0 && allBoxes.length === checkedBoxes.length) {
+          showPrereqCelebration();
+        }
+      }
+    }
+
+    function persistStepDone(key, newDone) {
+      if (newDone) { stepDone[key] = true; } else { delete stepDone[key]; }
       try { localStorage.setItem(STEP_DONE_KEY, JSON.stringify(stepDone)); } catch {}
       if (token) {
         fetch('/api/me/profile', {
@@ -1544,41 +1765,47 @@ export default function NewMeNaviPage() {
           body: JSON.stringify({ step_done: stepDone }),
         }).catch(() => {});
       }
-      // 商品チェックボタンのDOM更新
+    }
+
+    // ── ステップ完了チェックボタン（メインステップ + 出発前チェック + 商品チェック共通） ──
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('.step-check-btn, .prereq-box, .product-check-btn');
+      if (!btn) return;
+      const key = btn.dataset.doneKey;
+      if (!key) return;
+      const isDone = !!stepDone[key];
+
+      // 商品チェックボタン
       if (btn.classList.contains('product-check-btn')) {
+        persistStepDone(key, !isDone);
         btn.classList.toggle('checked', !isDone);
         btn.textContent = !isDone ? '✓ 使用中' : '使ってる？';
         return;
       }
-      // メインステップのDOM更新
-      const milestoneItem = btn.closest('.milestone-item');
-      if (milestoneItem) {
-        milestoneItem.classList.toggle('step-done', !isDone);
-        btn.classList.toggle('checked', !isDone);
-        btn.textContent = !isDone ? '✓' : '';
-        const dot = milestoneItem.querySelector('.milestone-dot');
-        if (dot && !dot.classList.contains('current') && !dot.classList.contains('goal')) {
-          dot.classList.toggle('past', !isDone);
-          dot.classList.toggle('future', isDone);
-        }
+
+      // 現状確認ステップ → 未完了のときだけモーダルを表示
+      const selfCheckKey   = btn.dataset.selfCheckKey;
+      const selfCheckOpts  = btn.dataset.selfCheckOpts;
+      const selfCheckMulti = btn.dataset.selfCheckMulti === '1';
+      const selfCheckText  = btn.dataset.selfCheckText;
+      if (selfCheckKey && !isDone) {
+        showBodyDataModal({
+          doneKey: key,
+          bodyDataKey: selfCheckKey,
+          bodyDataOptions: selfCheckOpts ? selfCheckOpts.split('|') : [],
+          bodyDataMulti: selfCheckMulti,
+          stepText: selfCheckText || '',
+          onConfirm: () => {
+            persistStepDone(key, true);
+            applyStepDone(btn, key, true);
+          },
+        });
+        return;
       }
-      // 出発前チェックのDOM更新
-      const prereqItem = btn.closest('.prereq-item');
-      if (prereqItem) {
-        prereqItem.classList.toggle('step-done', !isDone);
-        btn.classList.toggle('checked', !isDone);
-        btn.textContent = !isDone ? '✓' : '';
-      }
-      updatePrereqBanner();
-      // チェックした瞬間に全完了→祝福ギミック
-      // ※ 表示中の .prereq-box を数える（全軸ではなく描画済みのみ）
-      if (!isDone && key.startsWith('prereq-')) {
-        const allBoxes     = document.querySelectorAll('.prereq-box');
-        const checkedBoxes = document.querySelectorAll('.prereq-box.checked');
-        if (allBoxes.length > 0 && allBoxes.length === checkedBoxes.length) {
-          showPrereqCelebration();
-        }
-      }
+
+      // 通常のトグル
+      persistStepDone(key, !isDone);
+      applyStepDone(btn, key, !isDone);
     });
 
     // ── セクションタブ（スクロール移動）──
