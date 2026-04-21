@@ -13,7 +13,9 @@ const CONCERN_VOCABULARY = [
 const AXIS_LABELS = { skin:'肌ケア', eyebrow:'眉', hair:'髪', body:'体型', teeth:'歯', nail:'爪', fashion:'ファッション' };
 
 export async function POST(req) {
-  if (req.headers.get('x-admin-key') !== process.env.ADMIN_SECRET) {
+  const sentKey = req.headers.get('x-admin-key') || '';
+  const validKey = process.env.ADMIN_SECRET || process.env.ADMIN_API_KEY || '';
+  if (!validKey || sentKey !== validKey) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
