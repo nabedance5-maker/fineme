@@ -55,12 +55,14 @@ export default function AdminProductsPage() {
       });
       if (res.ok) {
         const d = await res.json();
-        setForm(f => ({ ...f, description: d.description || f.description, target_user: d.target_user || f.target_user, target_concerns: d.target_concerns || f.target_concerns }));
+        setForm(f => ({ ...f, description: d.description || f.description, target_user: d.target_user || f.target_user, target_concerns: d.target_concerns?.length ? d.target_concerns : f.target_concerns }));
         setMsg('AI自動入力完了');
-      } else { setMsg('AI分析エラー'); }
-    } catch { setMsg('AI分析エラー'); }
+      } else {
+        const errBody = await res.json().catch(() => ({}));
+        setMsg(`AI分析エラー (${res.status}: ${errBody.error || ''})`);
+      }
+    } catch (e) { setMsg(`AI分析エラー: ${e.message}`); }
     setAnalyzing(false);
-    setTimeout(() => setMsg(''), 3000);
   }
 
   function toggleConcern(c) {
