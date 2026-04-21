@@ -802,16 +802,13 @@ export default function NewMeNaviPage() {
       const selfCheckValue = (step.isSelfCheck && bodyData[step.bodyDataKey])
         ? `<span class="selfcheck-value">✓ ${esc(Array.isArray(bodyData[step.bodyDataKey]) ? bodyData[step.bodyDataKey].join('・') : bodyData[step.bodyDataKey])}</span>`
         : '';
-      const selfCheckAttrs = step.isSelfCheck && !isDone
-        ? `data-self-check-key="${esc(step.bodyDataKey)}" data-self-check-opts="${esc((step.bodyDataOptions||[]).join('|'))}" data-self-check-multi="${step.bodyDataMulti ? '1' : '0'}" data-self-check-text="${esc(step.text)}"`
-        : '';
       const badgeBg    = isCompassStep ? 'rgba(201,168,76,0.15)' : 'rgba(10,15,30,0.50)';
       const badgeBorder = isCompassStep ? 'rgba(201,168,76,0.35)' : 'rgba(232,228,220,0.18)';
       const badgeColor  = isCompassStep ? '#c9a84c' : 'rgba(232,228,220,0.55)';
       return `
         <div class="step-card${isDone?' step-done':''}${isCompassStep?' step-compass':''}${step.isSelfCheck?' step-selfcheck':''}">
           <div class="step-check-btn-wrap">
-            <button class="step-check-btn${isDone?' checked':''}" data-done-key="${esc(doneKey)}" ${selfCheckAttrs} title="${isDone?'完了を取り消す':'できてる・やった'}">${isDone?'✓':''}</button>
+            <button class="step-check-btn${isDone?' checked':''}" data-done-key="${esc(doneKey)}" title="${isDone?'完了を取り消す':'できてる・やった'}">${isDone?'✓':''}</button>
           </div>
           <div class="step-card-body">
             <div class="step-meta">
@@ -1673,6 +1670,19 @@ export default function NewMeNaviPage() {
       }
     }
 
+    // ── selfCheckMap: doneKey → selfCheck メタデータ（属性依存をなくすため） ──
+    const selfCheckMap = new Map();
+    flattenAllSteps().forEach(s => {
+      if (s.step.isSelfCheck) {
+        selfCheckMap.set(s.doneKey, {
+          bodyDataKey:     s.step.bodyDataKey,
+          bodyDataOptions: s.step.bodyDataOptions || [],
+          bodyDataMulti:   s.step.bodyDataMulti || false,
+          stepText:        s.step.text,
+        });
+      }
+    });
+
     function refreshCompassAndTracks() {
       const strip = document.getElementById('compass-strip');
       if (strip) { const tmp = document.createElement('div'); tmp.innerHTML = buildCompassHtml(); strip.replaceWith(tmp.firstElementChild); }
@@ -1726,7 +1736,7 @@ export default function NewMeNaviPage() {
       if (stepCard) {
         stepCard.classList.toggle('step-done', newDone);
         // self-checkは完了後にsections再レンダーで値表示更新
-        if (newDone && btn.dataset.selfCheckKey) {
+        if (newDone && selfCheckMap.has(btn.dataset.doneKey)) {
           const container = document.getElementById('sections-container');
           if (container) container.innerHTML = buildSectionsHtml();
           // progress bar 更新
@@ -1784,17 +1794,14 @@ export default function NewMeNaviPage() {
       }
 
       // 現状確認ステップ → 未完了のときだけモーダルを表示
-      const selfCheckKey   = btn.dataset.selfCheckKey;
-      const selfCheckOpts  = btn.dataset.selfCheckOpts;
-      const selfCheckMulti = btn.dataset.selfCheckMulti === '1';
-      const selfCheckText  = btn.dataset.selfCheckText;
-      if (selfCheckKey && !isDone) {
+      const meta = selfCheckMap.get(key);
+      if (meta && !isDone) {
         showBodyDataModal({
           doneKey: key,
-          bodyDataKey: selfCheckKey,
-          bodyDataOptions: selfCheckOpts ? selfCheckOpts.split('|') : [],
-          bodyDataMulti: selfCheckMulti,
-          stepText: selfCheckText || '',
+          bodyDataKey:     meta.bodyDataKey,
+          bodyDataOptions: meta.bodyDataOptions,
+          bodyDataMulti:   meta.bodyDataMulti,
+          stepText:        meta.stepText,
           onConfirm: () => {
             persistStepDone(key, true);
             applyStepDone(btn, key, true);
