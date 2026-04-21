@@ -834,19 +834,43 @@ export default function NewMeNaviPage() {
     ];
     function buildSelfCheckIntroHtml() {
       const undoneCount = SELF_CHECK_ITEMS.filter(item => !bodyData[item.key]).length;
-      if (undoneCount === 0) return '';
+      const anyFilled   = SELF_CHECK_ITEMS.some(item => bodyData[item.key]);
+      // データが全くなければ非表示
+      if (undoneCount === SELF_CHECK_ITEMS.length) return `
+        <div class="selfcheck-intro-section" id="selfcheck-intro">
+          <div class="selfcheck-intro-header">
+            <span class="selfcheck-intro-icon">📍</span>
+            <div style="flex:1">
+              <p class="selfcheck-intro-title">まず自分の現状を把握しておこう</p>
+              <p class="selfcheck-intro-desc">「📍 現状確認」バッジのステップをチェックするとMapが自分専用に最適化されます。</p>
+            </div>
+          </div>
+        </div>`;
       const chips = SELF_CHECK_ITEMS.map(item => {
         const val = bodyData[item.key];
         const isDone = !!val;
         const valText = isDone ? (Array.isArray(val) ? val.join('・') : val) : '未確認';
-        return `<span class="selfcheck-chip${isDone ? ' done' : ''}">${item.icon} ${esc(item.label)}${isDone ? '：' + esc(valText) : ''}</span>`;
+        return `<span class="selfcheck-chip${isDone ? ' done' : ''}">${esc(item.icon)} ${esc(item.label)}${isDone ? '：' + esc(valText) : ''}</span>`;
       }).join('');
+      if (undoneCount === 0) {
+        return `
+          <div class="selfcheck-intro-section" id="selfcheck-intro" style="background:rgba(16,185,129,0.05);border-color:rgba(16,185,129,0.3)">
+            <div class="selfcheck-intro-header">
+              <span class="selfcheck-intro-icon">✅</span>
+              <div style="flex:1">
+                <p class="selfcheck-intro-title" style="color:rgba(52,211,153,0.9)">現状把握データ — 登録完了</p>
+                <p class="selfcheck-intro-desc">このデータをもとにMapが最適化されています。タップで再選択できます。</p>
+              </div>
+            </div>
+            <div class="selfcheck-chip-list">${chips}</div>
+          </div>`;
+      }
       return `
         <div class="selfcheck-intro-section" id="selfcheck-intro">
           <div class="selfcheck-intro-header">
             <span class="selfcheck-intro-icon">📍</span>
             <div style="flex:1">
-              <p class="selfcheck-intro-title">まず自分の現状を把握しておこう（残り${undoneCount}項目）</p>
+              <p class="selfcheck-intro-title">現状把握データ（残り${undoneCount}項目）</p>
               <p class="selfcheck-intro-desc">「📍 現状確認」バッジのステップをチェックするとMapが自分専用に最適化されます。</p>
             </div>
           </div>
@@ -1587,24 +1611,32 @@ export default function NewMeNaviPage() {
         const isChecked = bodyDataMulti
           ? (Array.isArray(currentVal) && currentVal.includes(opt))
           : currentVal === opt;
-        return `<label class="bdm-option${isChecked ? ' selected' : ''}">
-          <input type="${inputType}" name="bdm-opt" value="${esc(opt)}" ${isChecked ? 'checked' : ''}>
+        // label非使用（ラベルclickとinputchangeの二重発火を防ぐ）
+        return `<div class="bdm-option${isChecked ? ' selected' : ''}" data-val="${esc(opt)}">
           <span class="bdm-option-label">${esc(opt)}</span>
-        </label>`;
+          ${isChecked ? '<span style="margin-left:auto;color:#c9a84c;font-weight:700;font-size:14px">✓</span>' : ''}
+        </div>`;
       }).join('');
-      // オプションクリックで選択状態トグル
+      // オプションクリック（ラベルなしdivなので二重発火なし）
       optionsEl.querySelectorAll('.bdm-option').forEach(el => {
         el.addEventListener('click', () => {
           if (!bodyDataMulti) {
-            optionsEl.querySelectorAll('.bdm-option').forEach(o => { o.classList.remove('selected'); o.querySelector('input').checked = false; });
+            optionsEl.querySelectorAll('.bdm-option').forEach(o => o.classList.remove('selected'));
           }
-          const input = el.querySelector('input');
-          if (bodyDataMulti) {
-            el.classList.toggle('selected');
-            input.checked = el.classList.contains('selected');
+          el.classList.toggle('selected');
+          // ✓マークの表示更新
+          const check = el.querySelector('span[style]');
+          if (el.classList.contains('selected')) {
+            if (!check) el.insertAdjacentHTML('beforeend', '<span style="margin-left:auto;color:#c9a84c;font-weight:700;font-size:14px">✓</span>');
           } else {
-            el.classList.add('selected');
-            input.checked = true;
+            if (check) check.remove();
+          }
+          // ラジオは1つだけ選択
+          if (!bodyDataMulti) {
+            optionsEl.querySelectorAll('.bdm-option').forEach(o => {
+              const ck = o.querySelector('span[style]');
+              if (o !== el && ck) ck.remove();
+            });
           }
         });
       });
@@ -1615,9 +1647,9 @@ export default function NewMeNaviPage() {
       const newSkip = skipBtn.cloneNode(true);
       skipBtn.replaceWith(newSkip);
       document.getElementById('bdm-submit').addEventListener('click', () => {
-        const checked = optionsEl.querySelectorAll('input:checked');
-        if (checked.length > 0) {
-          const value = bodyDataMulti ? Array.from(checked).map(i => i.value) : checked[0].value;
+        const selected = optionsEl.querySelectorAll('.bdm-option.selected');
+        if (selected.length > 0) {
+          const value = bodyDataMulti ? Array.from(selected).map(el => el.dataset.val) : selected[0].dataset.val;
           bodyData[bodyDataKey] = value;
           try { localStorage.setItem(BODY_DATA_KEY, JSON.stringify(bodyData)); } catch {}
           if (token) {
