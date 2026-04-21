@@ -9,8 +9,6 @@ const LEVEL_LABELS = { beginner:'入門', intermediate:'習慣化中', advanced:
 const PRICES = ['low','mid','high'];
 const PRICE_LABELS = { low:'低', mid:'中', high:'高' };
 
-const ADMIN_SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET || '';
-
 const EMPTY_FORM = { axis: 'skin', name: '', url: '', level: 'beginner', price_range: 'low', sort_order: 0, is_active: true, description: '', target_user: '', target_concerns: [] };
 
 const CONCERN_VOCABULARY = [
@@ -31,6 +29,16 @@ export default function AdminProductsPage() {
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  const [adminKey, setAdminKey] = useState('');
+
+  function getAdminKey() {
+    let key = sessionStorage.getItem('fineme:admin:key') || '';
+    if (!key) {
+      key = prompt('管理APIキーを入力してください：') || '';
+      if (key) sessionStorage.setItem('fineme:admin:key', key);
+    }
+    return key;
+  }
 
   async function fetchProducts() {
     setLoading(true);
@@ -42,7 +50,11 @@ export default function AdminProductsPage() {
     setLoading(false);
   }
 
-  useEffect(() => { fetchProducts(); }, []);
+  useEffect(() => {
+    const key = sessionStorage.getItem('fineme:admin:key') || '';
+    setAdminKey(key);
+    fetchProducts();
+  }, []);
 
   async function analyzeProduct() {
     if (!form.name.trim()) { setMsg('商品名を入力してください'); return; }
@@ -50,7 +62,7 @@ export default function AdminProductsPage() {
     try {
       const res = await fetch('/api/admin/products/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_SECRET },
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': getAdminKey() },
         body: JSON.stringify({ product_name: form.name, axis: form.axis }),
       });
       if (res.ok) {
@@ -92,7 +104,7 @@ export default function AdminProductsPage() {
     const endpoint = editId ? `/api/products?id=${editId}` : '/api/products';
     const res = await fetch(endpoint, {
       method,
-      headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_SECRET },
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': getAdminKey() },
       body: JSON.stringify({ ...form, sort_order: Number(form.sort_order), target_concerns: form.target_concerns }),
     });
     if (res.ok) {
@@ -110,7 +122,7 @@ export default function AdminProductsPage() {
   async function toggleActive(p) {
     await fetch(`/api/products?id=${p.id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_SECRET },
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': getAdminKey() },
       body: JSON.stringify({ is_active: !p.is_active }),
     });
     fetchProducts();
@@ -120,7 +132,7 @@ export default function AdminProductsPage() {
     if (!confirm(`「${p.name}」を削除しますか？`)) return;
     await fetch(`/api/products?id=${p.id}`, {
       method: 'DELETE',
-      headers: { 'x-admin-key': ADMIN_SECRET },
+      headers: { 'x-admin-key': getAdminKey() },
     });
     fetchProducts();
   }

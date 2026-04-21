@@ -14,7 +14,7 @@ const AXIS_LABELS = { skin:'肌ケア', eyebrow:'眉', hair:'髪', body:'体型'
 
 export async function POST(req) {
   const sentKey = req.headers.get('x-admin-key') || '';
-  const validKey = process.env.ADMIN_SECRET || process.env.ADMIN_API_KEY || '';
+  const validKey = process.env.ADMIN_API_KEY || process.env.ADMIN_SECRET || '';
   if (!validKey || sentKey !== validKey) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }

@@ -33,7 +33,7 @@ export async function GET(req) {
 
 // POST — 管理者のみ
 export async function POST(req) {
-  if (req.headers.get('x-admin-key') !== process.env.ADMIN_SECRET) {
+  if ((() => { const k = process.env.ADMIN_API_KEY || process.env.ADMIN_SECRET || ''; return !k || req.headers.get('x-admin-key') !== k; })()) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
   const body = await req.json();
@@ -44,7 +44,7 @@ export async function POST(req) {
 
 // PATCH /api/products?id=xxx
 export async function PATCH(req) {
-  if (req.headers.get('x-admin-key') !== process.env.ADMIN_SECRET) {
+  if ((() => { const k = process.env.ADMIN_API_KEY || process.env.ADMIN_SECRET || ''; return !k || req.headers.get('x-admin-key') !== k; })()) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
   const id = new URL(req.url).searchParams.get('id');
@@ -57,7 +57,7 @@ export async function PATCH(req) {
 
 // DELETE /api/products?id=xxx
 export async function DELETE(req) {
-  if (req.headers.get('x-admin-key') !== process.env.ADMIN_SECRET) {
+  if ((() => { const k = process.env.ADMIN_API_KEY || process.env.ADMIN_SECRET || ''; return !k || req.headers.get('x-admin-key') !== k; })()) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
   const id = new URL(req.url).searchParams.get('id');
