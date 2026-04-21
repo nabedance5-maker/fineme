@@ -383,6 +383,19 @@ export default function NewMeNaviPage() {
       .bdm-submit:hover { opacity: .85; }
       .bdm-skip { padding: 12px 14px; background: transparent; color: rgba(232,228,220,0.40); font-size: 13px; font-weight: 600; border: 1px solid rgba(232,228,220,0.15); border-radius: 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; }
       .bdm-skip:hover { color: rgba(232,228,220,0.65); border-color: rgba(232,228,220,0.3); }
+
+      /* ── Matched products ── */
+      .navi-products-section { margin: 0 0 28px; }
+      .navi-product-carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; scrollbar-width: none; -ms-overflow-style: none; }
+      .navi-product-carousel::-webkit-scrollbar { display: none; }
+      .navi-product-card { flex-shrink: 0; width: 158px; scroll-snap-align: start; background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.18); border-radius: 12px; padding: 13px 12px; display: flex; flex-direction: column; gap: 7px; text-decoration: none; transition: border-color .15s; }
+      .navi-product-card:hover { border-color: rgba(16,185,129,0.45); }
+      .navi-product-card.matched { border-color: rgba(201,168,76,0.45); background: rgba(201,168,76,0.06); }
+      .navi-product-card.matched:hover { border-color: #c9a84c; }
+      .navi-product-axis { font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(16,185,129,0.55); }
+      .navi-product-name { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.85); line-height: 1.45; flex: 1; }
+      .navi-product-cta { font-size: 11px; font-weight: 700; color: rgba(16,185,129,0.75); }
+      .navi-product-match-badge { font-size: 9px; font-weight: 800; background: rgba(201,168,76,0.18); color: #c9a84c; border: 1px solid rgba(201,168,76,.3); border-radius: 99px; padding: 2px 7px; width: fit-content; letter-spacing: .04em; }
     `;
     document.head.appendChild(style);
 
@@ -502,6 +515,13 @@ export default function NewMeNaviPage() {
         const arts = await artRes.json();
         if (Array.isArray(arts)) allNaviArticles = arts;
       }
+    } catch {}
+
+    // ── 商品フェッチ（body_dataマッチング用） ──
+    let naviProducts = [];
+    try {
+      const prRes = await fetchWithTimeout('/api/products', {}, 5000);
+      if (prRes?.ok) { const rows = await prRes.json(); if (Array.isArray(rows)) naviProducts = rows; }
     } catch {}
 
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -1536,6 +1556,45 @@ export default function NewMeNaviPage() {
       return html;
     }
 
+    function buildMatchedProductsHtml() {
+      if (!naviProducts.length) return '';
+      const userConcerns = new Set();
+      Object.values(bodyData).forEach(v => {
+        if (Array.isArray(v)) v.forEach(x => userConcerns.add(x));
+        else if (v) userConcerns.add(v);
+      });
+      const AXIS_LABEL = { body:'体型', skin:'肌', eyebrow:'眉', hair:'髪', teeth:'歯', nail:'爪', fashion:'服' };
+      const LEVEL_RANK = { beginner: 0, intermediate: 1, advanced: 2 };
+      const BUDGET_RANK = { low: 0, mid: 1, high: 2 };
+      const doneCount = Object.values(stepDone).filter(Boolean).length;
+      const userLevelRank = doneCount >= 9 ? 2 : doneCount >= 3 ? 1 : 0;
+      const currentCompass = calcDynamicCompass();
+      const displayAxes = new Set(currentCompass ? [currentCompass] : []);
+      priorityOrder.slice(0, 5).forEach(a => displayAxes.add(a));
+      const cards = naviProducts
+        .filter(p => displayAxes.has(p.axis) && LEVEL_RANK[p.level || 'beginner'] <= userLevelRank)
+        .map(p => {
+          const concerns = p.target_concerns || [];
+          const matched = userConcerns.size > 0 && concerns.some(c => userConcerns.has(c));
+          return { ...p, matched };
+        })
+        .sort((a, b) => (b.matched ? 1 : 0) - (a.matched ? 1 : 0))
+        .slice(0, 12)
+        .map(p => `<a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" class="navi-product-card${p.matched ? ' matched' : ''}">
+          <span class="navi-product-axis">${esc(AXIS_LABEL[p.axis] || p.axis)}</span>
+          ${p.matched ? '<span class="navi-product-match-badge">あなた向け</span>' : ''}
+          <span class="navi-product-name">${esc(p.name)}</span>
+          <span class="navi-product-cta">Amazonで見る →</span>
+        </a>`).join('');
+      if (!cards) return '';
+      const hasMatch = userConcerns.size > 0 && naviProducts.some(p => (p.target_concerns||[]).some(c => userConcerns.has(c)));
+      return `<div class="navi-products-section">
+        <p class="sec-label">🛒 旅に役立つアイテム</p>
+        <p style="font-size:11px;color:rgba(232,228,220,0.35);margin:0 0 10px;line-height:1.5">${hasMatch ? 'あなたのプロフィールに合うアイテムが見つかりました ✦' : 'あなたのCompass軸に関連するアイテム'} ← スワイプで全部見る</p>
+        <div class="navi-product-carousel">${cards}</div>
+      </div>`;
+    }
+
     function buildAxisFilterBar() {
       return `<div class="axis-filter-bar" id="axis-filter-bar">` +
         `<button class="axis-filter-chip${!activeAxisFilter ? ' active' : ''}" data-axis-filter="">全て</button>` +
@@ -1563,6 +1622,8 @@ export default function NewMeNaviPage() {
       <div id="sections-container">
         ${buildSectionsHtml()}
       </div>
+
+      ${buildMatchedProductsHtml()}
 
       <div class="navi-footer">
         <a href="/diagnosis/result" class="navi-footer-btn nfb-secondary">🗺️ New Me Naviに戻る</a>

@@ -11,13 +11,23 @@ const PRICE_LABELS = { low:'低', mid:'中', high:'高' };
 
 const ADMIN_SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET || '';
 
-const EMPTY_FORM = { axis: 'skin', name: '', url: '', level: 'beginner', price_range: 'low', sort_order: 0, is_active: true };
+const EMPTY_FORM = { axis: 'skin', name: '', url: '', level: 'beginner', price_range: 'low', sort_order: 0, is_active: true, description: '', target_user: '', target_concerns: [] };
+
+const CONCERN_VOCABULARY = [
+  '腹まわり','胸（上半身）','背中','脚（太もも・ふくらはぎ）','全体的に気になる',
+  '硬い','柔らかい','くせ毛','直毛','細い',
+  '乾燥肌','脂性肌（オイリー）','混合肌','普通肌',
+  '毛穴','ニキビ・吹き出物','くすみ','赤み','乾燥・カサつき','テカリ',
+  '薄い（青みがほとんど残らない）','普通〜濃い（翌日に青みが残る）',
+  '着色（コーヒー・お茶・タバコ）','加齢による黄ばみ','元々の歯の色が薄い','よくわからない',
+];
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterAxis, setFilterAxis] = useState('all');
   const [form, setForm] = useState(EMPTY_FORM);
+  const [analyzing, setAnalyzing] = useState(false);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
@@ -34,9 +44,37 @@ export default function AdminProductsPage() {
 
   useEffect(() => { fetchProducts(); }, []);
 
+  async function analyzeProduct() {
+    if (!form.name.trim()) { setMsg('商品名を入力してください'); return; }
+    setAnalyzing(true);
+    try {
+      const res = await fetch('/api/admin/products/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_SECRET },
+        body: JSON.stringify({ product_name: form.name, axis: form.axis }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setForm(f => ({ ...f, description: d.description || f.description, target_user: d.target_user || f.target_user, target_concerns: d.target_concerns || f.target_concerns }));
+        setMsg('AI自動入力完了');
+      } else { setMsg('AI分析エラー'); }
+    } catch { setMsg('AI分析エラー'); }
+    setAnalyzing(false);
+    setTimeout(() => setMsg(''), 3000);
+  }
+
+  function toggleConcern(c) {
+    setForm(f => ({
+      ...f,
+      target_concerns: f.target_concerns.includes(c)
+        ? f.target_concerns.filter(x => x !== c)
+        : [...f.target_concerns, c],
+    }));
+  }
+
   function startEdit(p) {
     setEditId(p.id);
-    setForm({ axis: p.axis, name: p.name, url: p.url, level: p.level, price_range: p.price_range, sort_order: p.sort_order, is_active: p.is_active });
+    setForm({ axis: p.axis, name: p.name, url: p.url, level: p.level, price_range: p.price_range, sort_order: p.sort_order, is_active: p.is_active, description: p.description || '', target_user: p.target_user || '', target_concerns: p.target_concerns || [] });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -53,7 +91,7 @@ export default function AdminProductsPage() {
     const res = await fetch(endpoint, {
       method,
       headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_SECRET },
-      body: JSON.stringify({ ...form, sort_order: Number(form.sort_order) }),
+      body: JSON.stringify({ ...form, sort_order: Number(form.sort_order), target_concerns: form.target_concerns }),
     });
     if (res.ok) {
       setMsg(editId ? '更新しました' : '追加しました');
@@ -126,10 +164,31 @@ export default function AdminProductsPage() {
           商品名
           <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={{ ...inputStyle, width: '100%' }} placeholder="例: 肌ラボ 極潤 洗顔フォーム" />
         </label>
-        <label style={{ ...labelStyle, display: 'flex', flexDirection: 'column', marginBottom: 16 }}>
+        <label style={{ ...labelStyle, display: 'flex', flexDirection: 'column', marginBottom: 10 }}>
           URL（Amazonアソシエイトタグ付き）
           <input value={form.url} onChange={e => setForm(f => ({ ...f, url: e.target.value }))} style={{ ...inputStyle, width: '100%' }} placeholder="https://www.amazon.co.jp/..." />
         </label>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
+          <button onClick={analyzeProduct} disabled={analyzing} style={{ ...btnPrimary, background: '#4f46e5' }}>{analyzing ? 'AI分析中…' : '✨ AI自動入力'}</button>
+          <span style={{ fontSize: 11, color: '#9ca3af' }}>商品名+軸でdescription/target_user/target_concernsを自動生成</span>
+        </div>
+        <label style={{ ...labelStyle, display: 'flex', flexDirection: 'column', marginBottom: 10 }}>
+          商品説明（50文字以内）
+          <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={{ ...inputStyle, width: '100%' }} placeholder="例: 毛穴汚れを徹底除去する洗顔フォーム" maxLength={100} />
+        </label>
+        <label style={{ ...labelStyle, display: 'flex', flexDirection: 'column', marginBottom: 12 }}>
+          対象ユーザー（30文字以内）
+          <input value={form.target_user} onChange={e => setForm(f => ({ ...f, target_user: e.target.value }))} style={{ ...inputStyle, width: '100%' }} placeholder="例: 脂性肌で毛穴が気になる男性" maxLength={80} />
+        </label>
+        <div style={{ ...labelStyle, marginBottom: 16 }}>
+          <span>対象コンサーン（複数選択可）</span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+            {CONCERN_VOCABULARY.map(c => (
+              <button key={c} type="button" onClick={() => toggleConcern(c)} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 99, border: '1px solid', borderColor: form.target_concerns.includes(c) ? '#6366f1' : '#d1d5db', background: form.target_concerns.includes(c) ? '#e0e7ff' : '#fff', color: form.target_concerns.includes(c) ? '#4f46e5' : '#6b7280', cursor: 'pointer', fontWeight: form.target_concerns.includes(c) ? 700 : 400 }}>{c}</button>
+            ))}
+          </div>
+          {form.target_concerns.length > 0 && <span style={{ fontSize: 11, color: '#4f46e5', marginTop: 4 }}>選択中: {form.target_concerns.join('、')}</span>}
+        </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <button onClick={save} disabled={saving} style={btnPrimary}>{saving ? '保存中…' : editId ? '更新する' : '追加する'}</button>
           {editId && <button onClick={cancelEdit} style={btnSecondary}>キャンセル</button>}
@@ -156,6 +215,7 @@ export default function AdminProductsPage() {
               <th style={th}>商品名</th>
               <th style={th}>レベル</th>
               <th style={th}>価格帯</th>
+              <th style={th}>コンサーン</th>
               <th style={th}>順</th>
               <th style={th}>状態</th>
               <th style={th}></th>
@@ -170,6 +230,7 @@ export default function AdminProductsPage() {
                 </td>
                 <td style={td}>{LEVEL_LABELS[p.level]}</td>
                 <td style={td}>{PRICE_LABELS[p.price_range]}</td>
+                <td style={td}>{(p.target_concerns || []).length > 0 ? <span title={(p.target_concerns||[]).join('、')} style={{ fontSize: 11, background: '#e0e7ff', color: '#4f46e5', borderRadius: 99, padding: '2px 7px', fontWeight: 700 }}>{(p.target_concerns||[]).length}件</span> : <span style={{ color: '#9ca3af', fontSize: 11 }}>-</span>}</td>
                 <td style={td}>{p.sort_order}</td>
                 <td style={td}>
                   <button onClick={() => toggleActive(p)} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, border: '1px solid', borderColor: p.is_active ? '#bbf7d0' : '#fca5a5', background: p.is_active ? '#dcfce7' : '#fee2e2', color: p.is_active ? '#15803d' : '#b91c1c', cursor: 'pointer' }}>

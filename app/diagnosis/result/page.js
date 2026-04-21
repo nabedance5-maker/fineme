@@ -166,6 +166,8 @@ export default function DiagnosisResultPage() {
       .product-carousel::-webkit-scrollbar { display: none; }
       .product-card { flex-shrink: 0; width: 160px; scroll-snap-align: start; background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.18); border-radius: 12px; padding: 14px 12px; display: flex; flex-direction: column; gap: 8px; transition: border-color .15s; text-decoration: none; }
       .product-card:hover { border-color: rgba(16,185,129,0.45); }
+      .product-card-matched { border-color: rgba(201,168,76,0.45); background: rgba(201,168,76,0.06); }
+      .product-card-matched:hover { border-color: #c9a84c; }
       .product-card-axis { font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(16,185,129,0.55); }
       .product-card-name { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.85); line-height: 1.45; flex: 1; }
       .product-card-cta { font-size: 11px; font-weight: 700; color: rgba(16,185,129,0.75); display: flex; align-items: center; gap: 3px; }
@@ -177,7 +179,20 @@ export default function DiagnosisResultPage() {
 
     // ─── 軸別おすすめ商品（DBから取得・管理画面 /admin/products で管理）───
     // AXIS_PRODUCTS は非同期で /api/products から取得してから buildProductCarousel に渡す
-    let AXIS_PRODUCTS = {}; // axis → [{name, url, level, price_range}]
+    let AXIS_PRODUCTS = {}; // axis → [{name, url, level, price_range, target_concerns}]
+
+    // body_data: ユーザーが New Me Map で入力した自己把握データ
+    function getUserBodyData() {
+      try { return JSON.parse(localStorage.getItem('fineme:body:data') || '{}'); } catch { return {}; }
+    }
+    function getUserBodyConcerns(bodyData) {
+      const concerns = new Set();
+      Object.values(bodyData).forEach(v => {
+        if (Array.isArray(v)) v.forEach(x => concerns.add(x));
+        else if (v) concerns.add(v);
+      });
+      return concerns;
+    }
 
     // stepDone総数でレベル判定: 0-2→入門 / 3-8→習慣化中 / 9+→こだわり派
     const LEVEL_RANK  = { beginner: 0, intermediate: 1, advanced: 2 };
@@ -208,6 +223,7 @@ export default function DiagnosisResultPage() {
       const maxRank = LEVEL_RANK[userLevel || 'beginner'];
       const budget = getUserBudget();
       const maxBudgetRank = getBudgetMaxRank(budget);
+      const userConcerns = getUserBodyConcerns(getUserBodyData());
       const axisLabel = { body:'体型', skin:'肌', eyebrow:'眉', hair:'髪', teeth:'歯', nail:'爪', fashion:'服' };
       const cards = axes
         .filter(id => AXIS_PRODUCTS[id])
@@ -218,20 +234,29 @@ export default function DiagnosisResultPage() {
               const prOk = (BUDGET_RANK[p.price_range || 'low']) <= maxBudgetRank;
               return lvOk && prOk;
             })
-            .map(p =>
-              `<a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" class="product-card">
+            .map(p => {
+              const concerns = p.target_concerns || [];
+              const matched = userConcerns.size > 0 && concerns.some(c => userConcerns.has(c));
+              const matchBadge = matched
+                ? `<span style="font-size:9px;font-weight:800;background:rgba(201,168,76,0.2);color:#c9a84c;border:1px solid rgba(201,168,76,.35);border-radius:99px;padding:2px 7px;letter-spacing:.04em">あなた向け</span>`
+                : '';
+              return `<a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" class="product-card${matched ? ' product-card-matched' : ''}">
                 <span class="product-card-axis">${esc(axisLabel[id] || id)}</span>
+                ${matchBadge}
                 <span class="product-card-name">${esc(p.name)}</span>
                 <span class="product-card-cta">Amazonで見る →</span>
-              </a>`
-            )
-        ).join('');
+              </a>`;
+            })
+        )
+        .sort((a, b) => (b.includes('product-card-matched') ? 1 : 0) - (a.includes('product-card-matched') ? 1 : 0))
+        .join('');
       if (!cards) return '';
       const lvLabel = LEVEL_LABEL[userLevel || 'beginner'];
+      const hasMatch = userConcerns.size > 0 && cards.includes('product-card-matched');
       return `
         <div class="product-carousel-section">
           <p class="product-carousel-label">🛒 旅に役立つグッズ <span style="font-size:10px;font-weight:600;opacity:0.55;margin-left:6px">${lvLabel}向け</span></p>
-          <p class="product-carousel-note">あなたの診断結果に関連するアイテムです ← スワイプで全部見る</p>
+          <p class="product-carousel-note">${hasMatch ? 'あなたのプロフィールに合うアイテムが見つかりました ✦' : 'あなたの診断結果に関連するアイテムです'} ← スワイプで全部見る</p>
           <div class="product-carousel">${cards}</div>
         </div>`;
     }
