@@ -11,14 +11,53 @@ const PRICE_LABELS = { low:'低', mid:'中', high:'高' };
 
 const EMPTY_FORM = { axis: 'skin', name: '', url: '', level: 'beginner', price_range: 'low', sort_order: 0, is_active: true, description: '', target_user: '', target_concerns: [] };
 
-const CONCERN_VOCABULARY = [
-  '腹まわり','胸（上半身）','背中','脚（太もも・ふくらはぎ）','全体的に気になる',
-  '硬い','柔らかい','くせ毛','直毛','細い',
-  '乾燥肌','脂性肌（オイリー）','混合肌','普通肌',
-  '毛穴','ニキビ・吹き出物','くすみ','赤み','乾燥・カサつき','テカリ',
-  '薄い（青みがほとんど残らない）','普通〜濃い（翌日に青みが残る）',
-  '着色（コーヒー・お茶・タバコ）','加齢による黄ばみ','元々の歯の色が薄い','よくわからない',
-];
+const AXIS_CONCERNS = {
+  skin: [
+    { label: '肌タイプ', items: ['乾燥肌','脂性肌（オイリー）','混合肌','普通肌','敏感肌','肌タイプがわからない'] },
+    { label: '肌悩み', items: ['毛穴','ニキビ・吹き出物','くすみ','赤み','乾燥・カサつき','テカリ','シミ・そばかす','ハリ・弾力不足','色ムラ'] },
+    { label: 'ひげ', items: ['ひげが薄い（青みがほとんど残らない）','ひげが濃い（翌日に青みが残る）'] },
+    { label: 'プロ診断', items: ['肌をプロに診断してもらったことがない'] },
+  ],
+  eyebrow: [
+    { label: '顔型', items: ['丸顔','面長','卵型','逆三角形','四角（ベース型）','顔の輪郭がわからない'] },
+    { label: '顔タイプ', items: ['チャーミングソフト','チャーミングハード','フレッシュソフト','フレッシュハード','エレガントソフト','エレガントハード','クールソフト','クールハード','顔タイプ診断したことがない'] },
+    { label: '目の形', items: ['一重','奥二重','二重'] },
+    { label: '眉の悩み', items: ['眉が薄い','眉が濃い・太い','左右非対称','眉の形がわからない'] },
+  ],
+  hair: [
+    { label: '髪質', items: ['硬い','柔らかい','くせ毛','直毛','細い','太い','髪質がわからない'] },
+    { label: '頭皮・ボリューム', items: ['薄毛・抜け毛が気になる','ボリュームが出ない','頭皮がべたつく','フケが気になる'] },
+    { label: 'スタイリング', items: ['セットが決まらない','すぐにペタンとなる','まとまらない'] },
+    { label: '顔型', items: ['丸顔','面長','卵型','逆三角形','四角（ベース型）'] },
+    { label: '顔タイプ', items: ['チャーミングソフト','チャーミングハード','フレッシュソフト','フレッシュハード','エレガントソフト','エレガントハード','クールソフト','クールハード'] },
+    { label: 'プロ相談', items: ['髪質・頭皮を美容師に相談したことがない'] },
+  ],
+  body: [
+    { label: '気になる部位', items: ['腹まわり','胸（上半身）','背中','脚（太もも・ふくらはぎ）','全体的に気になる'] },
+    { label: '姿勢', items: ['猫背が気になる','O脚・X脚が気になる','肩が丸まっている'] },
+    { label: '目標', items: ['筋肉をつけたい','体重を落としたい','引き締めたい'] },
+  ],
+  teeth: [
+    { label: '歯の色', items: ['着色（コーヒー・お茶・タバコ）','加齢による黄ばみ','元々の歯の色が薄い'] },
+    { label: '形・整列', items: ['歯並びが気になる','すきっ歯が気になる'] },
+    { label: 'その他', items: ['口臭が気になる','歯茎の色が気になる','よくわからない'] },
+  ],
+  nail: [
+    { label: '爪の状態', items: ['爪が割れやすい','爪が薄い','二枚爪になりやすい','縦線が目立つ','凸凹がある','爪が黄ばんでいる'] },
+    { label: 'ケア・習慣', items: ['甘皮が気になる','噛み癖がある','爪の形を整えたい','長さが揃わない'] },
+    { label: 'ハンドケア', items: ['手の乾燥が気になる','ハンドケアもしたい'] },
+  ],
+  fashion: [
+    { label: '目指すスタイル', items: ['キレイめ','カジュアル','キレイめカジュアル','ストリート','モード・個性派','まずは清潔感から'] },
+    { label: '骨格タイプ', items: ['ストレート骨格','ウェーブ骨格','ナチュラル骨格','骨格診断したことがない'] },
+    { label: '顔タイプ', items: ['チャーミングソフト','チャーミングハード','フレッシュソフト','フレッシュハード','エレガントソフト','エレガントハード','クールソフト','クールハード','顔タイプ診断したことがない'] },
+    { label: '体型の悩み', items: ['腹まわり','胸（上半身）','脚（太もも・ふくらはぎ）','体型カバーしたい'] },
+    { label: '顔型', items: ['丸顔','面長','卵型','逆三角形','四角（ベース型）'] },
+    { label: 'スタイルの悩み', items: ['何を買えばいいかわからない','清潔感が出ない'] },
+  ],
+};
+// フラットリスト（AI分析・バリデーション用）
+const CONCERN_VOCABULARY = Object.values(AXIS_CONCERNS).flatMap(groups => groups.flatMap(g => g.items));
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState([]);
@@ -196,12 +235,17 @@ export default function AdminProductsPage() {
         </label>
         <div style={{ ...labelStyle, marginBottom: 16 }}>
           <span>対象コンサーン（複数選択可）</span>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
-            {CONCERN_VOCABULARY.map(c => (
-              <button key={c} type="button" onClick={() => toggleConcern(c)} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 99, border: '1px solid', borderColor: form.target_concerns.includes(c) ? '#6366f1' : '#d1d5db', background: form.target_concerns.includes(c) ? '#e0e7ff' : '#fff', color: form.target_concerns.includes(c) ? '#4f46e5' : '#6b7280', cursor: 'pointer', fontWeight: form.target_concerns.includes(c) ? 700 : 400 }}>{c}</button>
-            ))}
-          </div>
-          {form.target_concerns.length > 0 && <span style={{ fontSize: 11, color: '#4f46e5', marginTop: 4 }}>選択中: {form.target_concerns.join('、')}</span>}
+          {(AXIS_CONCERNS[form.axis] || []).map(group => (
+            <div key={group.label} style={{ marginTop: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', letterSpacing: '.08em', marginBottom: 4 }}>{group.label}</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                {group.items.map(c => (
+                  <button key={c} type="button" onClick={() => toggleConcern(c)} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 99, border: '1px solid', borderColor: form.target_concerns.includes(c) ? '#6366f1' : '#d1d5db', background: form.target_concerns.includes(c) ? '#e0e7ff' : '#fff', color: form.target_concerns.includes(c) ? '#4f46e5' : '#6b7280', cursor: 'pointer', fontWeight: form.target_concerns.includes(c) ? 700 : 400 }}>{c}</button>
+                ))}
+              </div>
+            </div>
+          ))}
+          {form.target_concerns.length > 0 && <div style={{ fontSize: 11, color: '#4f46e5', marginTop: 6 }}>選択中: {form.target_concerns.join('、')}</div>}
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <button onClick={save} disabled={saving} style={btnPrimary}>{saving ? '保存中…' : editId ? '更新する' : '追加する'}</button>
