@@ -206,9 +206,28 @@
   </div>
 
   <div class="panel">
-    <div class="panel-title">選択した質問への回答</div>
-    <div id="qa-answer-blocks">
-      <div style="color:rgba(255,255,255,0.35);font-size:13px;">「質問バンク」タブで質問を選択してください</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="panel-title" style="margin-bottom:0;">回答の入力方法</div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-sm" id="mode-btn-individual" onclick="setInputMode('individual')" style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);color:#c9a84c;">質問ごとに入力</button>
+        <button class="btn btn-sm" id="mode-btn-transcript" onclick="setInputMode('transcript')" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);">文字起こし一括貼付け</button>
+      </div>
+    </div>
+
+    <!-- 個別入力モード -->
+    <div id="mode-individual">
+      <div id="qa-answer-blocks">
+        <div style="color:rgba(255,255,255,0.35);font-size:13px;">「質問バンク」タブで質問を選択してください</div>
+      </div>
+    </div>
+
+    <!-- 文字起こしモード -->
+    <div id="mode-transcript" style="display:none;">
+      <div class="alert alert-info" style="margin-bottom:12px;">ボイスメモの文字起こし全文をそのまま貼り付けてください。質問リストと照合して記事化します。</div>
+      <div class="form-row">
+        <div class="form-label">文字起こし全文</div>
+        <textarea id="transcript-text" rows="16" placeholder="（ここに文字起こしをそのまま貼り付け）" oninput="currentInterview.transcript=this.value" style="font-size:13px;line-height:1.7;"></textarea>
+      </div>
     </div>
   </div>
 
@@ -505,9 +524,12 @@ let currentInterview = {
   id: null,
   profile: {},
   answers: {},
+  transcript: '',
+  inputMode: 'individual',
   generatedArticle: null,
   status: 'pending',
 };
+let inputMode = 'individual';
 let interviewList = [];
 let generatedData = null;
 
@@ -535,6 +557,19 @@ function switchTab(tab) {
 
 function goToInput() { switchTab('input'); }
 function goToGenerate() { switchTab('generate'); }
+
+function setInputMode(mode) {
+  inputMode = mode;
+  currentInterview.inputMode = mode;
+  document.getElementById('mode-individual').style.display = mode === 'individual' ? 'block' : 'none';
+  document.getElementById('mode-transcript').style.display = mode === 'transcript' ? 'block' : 'none';
+  document.getElementById('mode-btn-individual').style.background = mode === 'individual' ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.05)';
+  document.getElementById('mode-btn-individual').style.borderColor = mode === 'individual' ? 'rgba(201,168,76,0.35)' : 'rgba(255,255,255,0.1)';
+  document.getElementById('mode-btn-individual').style.color = mode === 'individual' ? '#c9a84c' : 'rgba(255,255,255,0.5)';
+  document.getElementById('mode-btn-transcript').style.background = mode === 'transcript' ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.05)';
+  document.getElementById('mode-btn-transcript').style.borderColor = mode === 'transcript' ? 'rgba(201,168,76,0.35)' : 'rgba(255,255,255,0.1)';
+  document.getElementById('mode-btn-transcript').style.color = mode === 'transcript' ? '#c9a84c' : 'rgba(255,255,255,0.5)';
+}
 
 // ── Axis selector ──────────────────────────────────
 function selectAxis(axis) {
@@ -639,6 +674,8 @@ function saveInterview() {
     bio: document.getElementById('p-bio').value,
     url: document.getElementById('p-url').value,
   };
+  currentInterview.transcript = document.getElementById('transcript-text')?.value || '';
+  currentInterview.inputMode = inputMode;
   if (!currentInterview.id) {
     currentInterview.id = 'iv_' + Date.now();
     currentInterview.createdAt = new Date().toISOString();
@@ -689,20 +726,27 @@ function getProfileAndQA() {
     const a = block.querySelector('textarea').value;
     if (a.trim()) qaPairs.push({ q, a });
   });
-  return { profile, qaPairs };
+  const transcript = document.getElementById('transcript-text')?.value || currentInterview.transcript || '';
+  return { profile, qaPairs, transcript };
 }
 
 function buildAndShowPrompt() {
-  const { profile, qaPairs } = getProfileAndQA();
+  const { profile, qaPairs, transcript } = getProfileAndQA();
   if (!profile.name || !profile.title) { alert('回答入力タブでお名前と肩書きを入力してください'); return; }
-  if (qaPairs.length === 0) { alert('回答入力タブで回答を1つ以上入力してください'); return; }
+
+  const isTranscript = inputMode === 'transcript';
+  if (isTranscript && !transcript.trim()) { alert('文字起こしを貼り付けてください'); return; }
+  if (!isTranscript && qaPairs.length === 0) { alert('回答入力タブで回答を1つ以上入力してください'); return; }
 
   const title = document.getElementById('gen-title').value;
   const slug = document.getElementById('gen-slug').value;
   const note = document.getElementById('gen-note').value;
   const axisLabel = { gym:'体型・ジム', eyebrow:'眉', hair:'髪', skin:'肌・ひげ', fashion:'ファッション', teeth:'歯', nail:'爪' }[profile.axis] || profile.axis;
 
-  const prompt = buildGeneratePrompt(profile, qaPairs, title, slug, note, axisLabel);
+  const prompt = isTranscript
+    ? buildTranscriptPrompt(profile, transcript, title, slug, note, axisLabel)
+    : buildGeneratePrompt(profile, qaPairs, title, slug, note, axisLabel);
+
   const el = document.getElementById('prompt-output');
   el.style.display = 'block';
   el.textContent = prompt;
@@ -736,6 +780,73 @@ function parseResult() {
     statusEl.style.color = '#f87171';
     statusEl.textContent = '❌ JSONパースエラー: ' + e.message;
   }
+}
+
+function buildTranscriptPrompt(profile, transcript, titleHint, slug, note, axisLabel) {
+  const finalTitle = titleHint || `${profile.name}が語る、男の外見が変わる瞬間`;
+  const finalSlug = slug || 'interview-' + Date.now();
+
+  // 選択済みの質問リストを取得
+  const selectedQList = [];
+  [currentAxis, ...Object.keys(QUESTION_BANK).filter(k => k !== currentAxis)].forEach(axis => {
+    const data = QUESTION_BANK[axis];
+    if (!data) return;
+    data.categories.forEach(cat => {
+      cat.questions.forEach(q => {
+        if (selectedQuestions.has(qKey(cat.name, q))) selectedQList.push(q);
+      });
+    });
+  });
+  const qListStr = selectedQList.length > 0
+    ? `\n【取材で聞いた質問リスト】\n${selectedQList.map((q, i) => `${i+1}. ${q}`).join('\n')}\n`
+    : '';
+
+  return `あなたはFineme（男性向け外見改善サービスポータル）の編集ライターです。
+以下のインタビュー録音の文字起こし全文をもとに、Fineme Journalの記事を生成してください。
+
+【取材対象者】
+名前: ${profile.name}
+肩書き: ${profile.title}
+施設: ${profile.facility || '（フリーランス）'}
+経験: ${profile.years || '不明'}
+エリア: ${profile.area || ''}
+カテゴリ: ${axisLabel}
+プロフィール: ${profile.bio || ''}
+Fineme URL: ${profile.url || 'なし'}
+${qListStr}
+【文字起こし全文】
+${transcript}
+
+${note ? `【記事の方向性】\n${note}\n` : ''}
+【記事の思想・トーン】
+- Finemeは「外見を起点に自信を再設計する人を増やす」サービス
+- 読者は「変わりたいが何から始めればいいかわからない男性」
+- 記事は「変容の旅の地図」として機能すること
+- 上から目線NG。共感と希望を軸に
+- 文字起こしの中からインパクトのある言葉・エピソードを活かす
+- 口語をそのまま使わず、読みやすく整える（意味は変えない）
+
+【出力形式】
+以下のJSONのみ出力（前置き・説明不要）:
+{
+  "title": "${finalTitle}（改善可）",
+  "slug": "${finalSlug}",
+  "description": "記事説明120〜150字",
+  "reading_time": 読了時間（整数・分）,
+  "blocks": [
+    {"type":"paragraph","text":"リード文（100〜150字。読者の「あるある」な悩みから入り、取材対象者を紹介）"},
+    {"type":"heading","text":"見出し1"},
+    {"type":"paragraph","text":"本文"},
+    {"type":"qa","q":"質問文（文字起こしから自然な形で抽出）","a":"回答（200〜300字。本人の言葉を活かして整理）"},
+    {"type":"heading","text":"最後に：〇〇からの一言"},
+    {"type":"paragraph","text":"まとめ（読者への希望・行動喚起）"},
+    {"type":"cta","text":"${axisLabel}のプロを探す","url":"/search?category=${profile.axis}"}
+  ]
+}
+
+【エスケープルール】
+- JSON文字列内のシングルクォート（'）は ''にエスケープ（SQL用）
+- ダブルクォート（"）はJSONの構造に使うのでそのまま`;
 }
 
 function buildGeneratePrompt(profile, qaPairs, titleHint, slug, note, axisLabel) {
@@ -933,6 +1044,9 @@ function loadInterview(id) {
     const el = document.getElementById('p-' + k);
     if (el) el.value = p[k] || '';
   });
+  const transcriptEl = document.getElementById('transcript-text');
+  if (transcriptEl) transcriptEl.value = iv.transcript || '';
+  setInputMode(iv.inputMode || 'individual');
   // restore selected questions from answers keys
   selectedQuestions.clear();
   Object.keys(iv.answers || {}).forEach(k => selectedQuestions.add(k));
