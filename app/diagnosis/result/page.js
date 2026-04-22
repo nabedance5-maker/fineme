@@ -819,7 +819,7 @@ export default function DiagnosisResultPage() {
     if (shareBlock) {
       const ogUrl = `https://www.fineme.me/api/og/diagnosis?compass=${encodeURIComponent(compassFirst)}&goal=${encodeURIComponent(p.goal_change||'')}&trigger=${encodeURIComponent(p.trigger||'')}`;
       const axisLabel = AREA_DEFS[compassFirst]?.label || '外見';
-      const shareText = `Me Scan を受けた。\n今の私に一番効くのは「${axisLabel}」からだった。\n\nあなたも試してみて👇\n`;
+      const shareText = `Me Scan を受けた。\n今の私に一番効くのは「${axisLabel}」からだった。\n\nあなたも試してみて👇\n#Fineme`;
       const shareUrl = `https://www.fineme.me/diagnosis`;
       const twitterHref = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
       shareBlock.innerHTML = `
