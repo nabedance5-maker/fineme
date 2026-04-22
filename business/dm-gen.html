@@ -48,6 +48,7 @@
   .target-btn { flex: 1; padding: 14px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.1); background: transparent; color: rgba(255,255,255,0.4); font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.2s; text-align: center; }
   .target-btn.active.provider { border-color: #63b3ed; background: rgba(99,179,237,0.1); color: #63b3ed; }
   .target-btn.active.partner { border-color: #a78bfa; background: rgba(167,139,250,0.1); color: #a78bfa; }
+  .target-btn.active.interview { border-color: #c9a84c; background: rgba(201,168,76,0.1); color: #c9a84c; }
   .target-btn:hover:not(.active) { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.7); }
   .target-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; opacity: 0.7; display: block; margin-top: 2px; }
 
@@ -203,6 +204,10 @@
         創業パートナー
         <span class="target-label">月1FB＋紹介</span>
       </button>
+      <button class="target-btn interview" onclick="setTarget('interview', this)">
+        インタビュー記事
+        <span class="target-label">記事掲載＋掲載打診</span>
+      </button>
     </div>
 
     <div class="form-row triple">
@@ -272,6 +277,7 @@
       <div class="field">
         <label>ターゲット種別</label>
         <select id="csv-target">
+          <option value="interview">インタビュー記事＋掲載打診</option>
           <option value="provider">掲載者</option>
           <option value="partner">創業パートナー</option>
         </select>
@@ -467,7 +473,7 @@ function closeModal(e) {
 // ========== Target Toggle ==========
 function setTarget(type, btn) {
   currentTarget = type;
-  document.querySelectorAll('.target-btn').forEach(b => b.classList.remove('active', 'provider', 'partner'));
+  document.querySelectorAll('.target-btn').forEach(b => b.classList.remove('active', 'provider', 'partner', 'interview'));
   btn.classList.add('active', type);
 }
 
@@ -477,10 +483,56 @@ function categoryLabel(cat) {
 }
 
 function buildPrompt(data) {
-  const isPartner = data.target === 'partner';
   const catLabel = categoryLabel(data.category);
 
-  if (isPartner) {
+  if (data.target === 'interview') {
+    return `以下のアカウントについて、2つのタスクを実行してください。
+
+【アカウント情報】
+アカウント名: ${data.name || '（不明）'}
+フォロワー数: ${data.followers || '不明'}
+カテゴリ: ${catLabel}
+プロフィール文:
+${data.bio || '（なし）'}
+${data.notes ? `\n投稿の雰囲気・メモ:\n${data.notes}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━
+【タスク1: インタビュー記事候補スクリーニング】
+
+以下の基準で1〜5のスコアと理由を2文で評価してください：
+- 男性の外見変容・自信向上に関わる仕事をしているか
+- 思想・哲学・こだわりがプロフィールや投稿から読み取れるか
+- 読者（変わりたい男性）が参考になる実績・知見があるか
+- 誠実さ・熱量を感じるか
+
+出力形式:
+スコア: X/5
+理由: （2文以内）
+
+━━━━━━━━━━━━━━━━━━━━━━
+【タスク2: インタビュー記事オファーDM文案】
+
+以下の構造で、XまたはInstagramのダイレクトメッセージを作成してください。
+
+構造:
+① 「突然のDMすみません🙏」で始める
+② プロフィール・投稿から具体的なフレーズや実績を1つ引用し、共鳴した理由を1文で
+③ 「外見改善に取り組むプロへのインタビュー記事を制作しているのですが、${data.name || 'こちら'}のお仕事・考え方をぜひFinemeで紹介させていただけないかと思い、ご連絡しました。」
+④ 記事は完全無料・こちらで執筆・公開後にSNSでもシェアする旨を1文で
+⑤ 「また、もし掲載にご興味があれば、Finemeへの掲載者としてご案内できる場合もあります。」（押しつけにならない、案内できる"場合もある"トーン）
+⑥ 「よろしければ一言お返事いただけますと嬉しいです！」
+
+条件:
+- 文字数: 280〜330字
+- トーン: 誠実・熱量あり・押し売りゼロ
+- 掲載は「お願い」ではなく「ご案内できる場合もある」という表現。Fineme側が選ぶニュアンス
+- NG: テンプレ感・ビジネスメール調・掲載を前面に出す
+
+Fineme補足情報:
+Finemeは「外見を変えたい男性が自分に合った道筋を見つけられるサービス」。ミッションは「外見を起点に、自信を再設計する人を増やす」。眉毛サロン・パーソナルジム・スタイリスト等のプロを紹介するメディアでもある。`;
+  }
+
+  if (data.target === 'partner') {
     return `以下のInstagramアカウントについて、2つのタスクを実行してください。
 
 【アカウント情報】
