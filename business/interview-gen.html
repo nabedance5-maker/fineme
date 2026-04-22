@@ -222,13 +222,8 @@
   Tab 3: 記事生成
 ──────────────────────────────────────────── -->
 <div id="tab-generate" class="tab-content">
-  <div class="panel">
-    <div class="panel-title">Claude API 設定</div>
-    <div class="apikey-row">
-      <input type="password" id="api-key-input" placeholder="sk-ant-..." />
-      <button class="btn btn-blue" onclick="saveApiKey()">保存</button>
-    </div>
-    <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:6px;">ローカル保存のみ。外部送信なし。</div>
+  <div class="alert alert-info">
+    💡 プロンプトをコピーして <a href="https://claude.ai" target="_blank" style="color:#7aadff;font-weight:700;">claude.ai</a> に貼り付け → 生成されたJSONをここに貼り付けてSQL出力します
   </div>
 
   <div class="panel panel-gold">
@@ -236,7 +231,7 @@
     <div class="form-grid">
       <div class="form-row">
         <div class="form-label">記事タイトル（提案）</div>
-        <input type="text" id="gen-title" placeholder="AIが生成します（手動上書き可）" />
+        <input type="text" id="gen-title" placeholder="例: 山田さんが語る、男の外見が変わる瞬間" />
       </div>
       <div class="form-row">
         <div class="form-label">スラッグ</div>
@@ -249,13 +244,27 @@
     </div>
   </div>
 
-  <div class="row-btns">
-    <button class="btn btn-gold" id="gen-btn" onclick="generateArticle()">✨ 記事を生成する</button>
-    <span id="gen-status" style="font-size:12px;color:rgba(255,255,255,0.4);"></span>
+  <!-- STEP 1: プロンプト生成 -->
+  <div class="panel">
+    <div class="panel-title">STEP 1 ── プロンプトを生成してコピー</div>
+    <div class="row-btns" style="margin-top:0;">
+      <button class="btn btn-gold" onclick="buildAndShowPrompt()">📋 プロンプトを生成</button>
+      <button class="btn btn-blue" id="copy-prompt-btn" onclick="copyPrompt()" style="display:none;">コピー</button>
+      <a href="https://claude.ai" target="_blank" class="btn btn-sm" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);">claude.ai を開く →</a>
+    </div>
+    <div id="prompt-output" class="output-box" style="display:none;margin-top:14px;max-height:300px;color:#e8e4dc;font-family:inherit;font-size:12px;white-space:pre-wrap;"></div>
+  </div>
+
+  <!-- STEP 2: 結果貼り付け -->
+  <div class="panel">
+    <div class="panel-title">STEP 2 ── Claude の出力（JSONのみ）をここに貼り付け</div>
+    <textarea id="result-paste" rows="8" placeholder='{"title":"...","slug":"...","description":"...","reading_time":10,"blocks":[...]}' style="font-family:monospace;font-size:12px;" oninput="parseResult()"></textarea>
+    <div id="parse-status" style="font-size:12px;margin-top:6px;"></div>
   </div>
 
   <hr class="divider">
 
+  <!-- 出力 -->
   <div id="gen-preview-wrap" style="display:none;">
     <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
       <button class="btn btn-sm" id="tab-preview-btn" onclick="showGenTab('preview')" style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);color:#c9a84c;">プレビュー</button>
@@ -504,7 +513,6 @@ let generatedData = null;
 
 // ── Init ──────────────────────────────────────────
 function init() {
-  loadApiKey();
   loadSupaKeys();
   loadInterviewList();
   renderQuestionBank('common');
@@ -664,10 +672,7 @@ function prefillGenerateForm() {
   }
 }
 
-async function generateArticle() {
-  const apiKey = localStorage.getItem('fineme:claude:key') || '';
-  if (!apiKey) { alert('Claude APIキーを設定してください'); return; }
-
+function getProfileAndQA() {
   const profile = {
     name: document.getElementById('p-name').value,
     title: document.getElementById('p-title').value,
@@ -678,63 +683,58 @@ async function generateArticle() {
     bio: document.getElementById('p-bio').value,
     url: document.getElementById('p-url').value,
   };
-  if (!profile.name || !profile.title) { alert('お名前と肩書きを入力してください'); return; }
-
   const qaPairs = [];
   document.querySelectorAll('.qa-block').forEach(block => {
     const q = block.querySelector('.qa-block-q').textContent.replace(/^Q:\s*/, '');
     const a = block.querySelector('textarea').value;
     if (a.trim()) qaPairs.push({ q, a });
   });
-  if (qaPairs.length === 0) { alert('回答を1つ以上入力してください'); return; }
+  return { profile, qaPairs };
+}
+
+function buildAndShowPrompt() {
+  const { profile, qaPairs } = getProfileAndQA();
+  if (!profile.name || !profile.title) { alert('回答入力タブでお名前と肩書きを入力してください'); return; }
+  if (qaPairs.length === 0) { alert('回答入力タブで回答を1つ以上入力してください'); return; }
 
   const title = document.getElementById('gen-title').value;
   const slug = document.getElementById('gen-slug').value;
   const note = document.getElementById('gen-note').value;
   const axisLabel = { gym:'体型・ジム', eyebrow:'眉', hair:'髪', skin:'肌・ひげ', fashion:'ファッション', teeth:'歯', nail:'爪' }[profile.axis] || profile.axis;
 
-  const btn = document.getElementById('gen-btn');
-  const status = document.getElementById('gen-status');
-  btn.disabled = true;
-  status.innerHTML = '<span class="loading"></span> 生成中…';
-
   const prompt = buildGeneratePrompt(profile, qaPairs, title, slug, note, axisLabel);
+  const el = document.getElementById('prompt-output');
+  el.style.display = 'block';
+  el.textContent = prompt;
+  document.getElementById('copy-prompt-btn').style.display = 'inline-flex';
+}
+
+function copyPrompt() {
+  const text = document.getElementById('prompt-output').textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('プロンプトをコピーしました'));
+}
+
+function parseResult() {
+  const raw = document.getElementById('result-paste').value.trim();
+  const statusEl = document.getElementById('parse-status');
+  if (!raw) { statusEl.textContent = ''; return; }
+
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) { statusEl.style.color = '#f87171'; statusEl.textContent = '❌ JSONが見つかりません'; return; }
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 4096,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-    const data = await res.json();
-    const text = data.content?.[0]?.text || '';
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('JSON取得失敗: ' + text.slice(0, 200));
     const parsed = JSON.parse(match[0]);
     generatedData = parsed;
     currentInterview.generatedArticle = parsed;
     renderGeneratedOutput(parsed);
     document.getElementById('gen-preview-wrap').style.display = 'block';
     document.getElementById('supa-section').style.display = 'block';
-    status.textContent = '✅ 生成完了';
-    if (currentInterview.id) {
-      currentInterview.status = 'writing';
-      saveInterview();
-    }
+    statusEl.style.color = '#6ee7b7';
+    statusEl.textContent = '✅ パース成功 — 下にプレビュー・SQLが表示されました';
+    if (currentInterview.id) { currentInterview.status = 'writing'; saveInterview(); }
   } catch (e) {
-    status.textContent = '❌ エラー: ' + e.message;
-    console.error(e);
-  } finally {
-    btn.disabled = false;
+    statusEl.style.color = '#f87171';
+    statusEl.textContent = '❌ JSONパースエラー: ' + e.message;
   }
 }
 
@@ -760,7 +760,6 @@ Fineme URL: ${profile.url || 'なし'}
 ${qaText}
 
 ${note ? `【記事の方向性】\n${note}\n` : ''}
-
 【記事の思想・トーン】
 - Finemeは「外見を起点に自信を再設計する人を増やす」サービス
 - 読者は「変わりたいが何から始めればいいかわからない男性」
@@ -780,7 +779,6 @@ ${note ? `【記事の方向性】\n${note}\n` : ''}
     {"type":"heading","text":"見出し1"},
     {"type":"paragraph","text":"本文"},
     {"type":"qa","q":"質問文","a":"回答（インタビューの言葉を活かして200〜300字）"},
-    ...（Q&Aを中心に展開。見出しで区切る）
     {"type":"heading","text":"最後に：〇〇からの一言"},
     {"type":"paragraph","text":"まとめ（読者への希望・行動喚起）"},
     {"type":"cta","text":"${axisLabel}のプロを探す","url":"/search?category=${profile.axis}"}
@@ -970,15 +968,7 @@ function deleteInterview(id) {
   renderManageList();
 }
 
-// ── API key ──────────────────────────────────────
-function saveApiKey() {
-  const v = document.getElementById('api-key-input').value.trim();
-  if (v) { localStorage.setItem('fineme:claude:key', v); showToast('APIキー保存'); }
-}
-function loadApiKey() {
-  const v = localStorage.getItem('fineme:claude:key') || '';
-  if (v) document.getElementById('api-key-input').value = v;
-}
+
 function saveSupaKeys() {
   const url = document.getElementById('supa-url').value.trim();
   const key = document.getElementById('supa-key').value.trim();
