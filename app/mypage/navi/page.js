@@ -595,6 +595,7 @@ export default function NewMeNaviPage() {
     const MILESTONES = {
       body: [
         { text: '自分の体型で気になる部分を1つ言語化できている（例：「腹まわりが気になる」）', guide: 'none', isCurrentFor: 'none', isSelfCheck: true, bodyDataKey: 'body_concern', bodyDataOptions: ['腹まわり', '胸（上半身）', '背中', '脚（太もも・ふくらはぎ）', '全体的に気になる'] },
+        { text: '自分の体型目標を1つ言葉にしてみる（筋肉をつける・引き締めるなど）', guide: 'none', hint: '目標の方向性で取り組むべきことが変わる。まず「どっちを目指すか」を決める', isSelfCheck: true, bodyDataKey: 'body_goal', bodyDataOptions: ['筋肉をつけたい', '体重を落としたい', '引き締めたい', '猫背を改善したい', 'O脚・X脚を改善したい'] },
         { text: '現在の体重・体脂肪率を計測して数字で把握している', guide: 'none',
           products: [{ name: '体組成計（TANITA）', url: 'https://www.amazon.co.jp/s?k=タニタ+体組成計&tag=whero523-22', level: 'intermediate', priceRange: 'mid' }] },
         { text: '今週1週間、体を動かした回数を数えてみる', guide: 'none', hint: 'ゼロでも正直に。現状を知ることが出発点' },
@@ -613,7 +614,8 @@ export default function NewMeNaviPage() {
         { text: '何らかの方法で眉を整えている（サロン・自己処理どちらでもOK）', guide: 'none', isCurrentFor: 'none' },
         { text: 'スクリューブラシで毎朝眉を整えている', guide: 'none',
           products: [{ name: 'スクリューブラシ（使い捨て）', url: 'https://www.amazon.co.jp/s?k=スクリューブラシ+眉&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: '眉用ハサミ', url: 'https://www.amazon.co.jp/s?k=眉用はさみ+ステンレス&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
-        { text: '自分の顔型に合う眉の形を1つ調べてみる', guide: 'MID', isCurrentFor: 'concerned', hint: '「顔型 眉 似合う」で検索するか、眉毛サロンで聞くのが一番確実', isSelfCheck: true, bodyDataKey: 'face_shape', bodyDataOptions: ['丸顔', '面長', '卵型', '逆三角形（逆卵型）', '四角（ベース型）'] },
+        { text: '自分の顔型に合う眉の形を1つ調べてみる', guide: 'MID', isCurrentFor: 'concerned', hint: '「顔型 眉 似合う」で検索するか、眉毛サロンで聞くのが一番確実', isSelfCheck: true, bodyDataKey: 'face_shape', bodyDataOptions: ['丸顔', '面長', '卵型', '逆三角形（逆卵型）', '四角（ベース型）', '顔の輪郭がわからない'] },
+        { text: '自分の眉の悩みを言語化してみる（薄い・濃い・左右差など）', guide: 'LOW', hint: '眉が薄い人はパウダー補整、濃い人はサロンで輪郭を作るのが近道', isSelfCheck: true, bodyDataKey: 'eyebrow_concerns', bodyDataMulti: true, bodyDataOptions: ['眉が薄い', '眉が濃い・太い', '左右非対称', '眉の形がわからない'] },
         { text: '眉毛サロンでプロに一度整えてもらったことがある', guide: 'HIGH', isCurrentFor: 'self' },
         { text: 'プロに作ってもらった形を基準に、自宅で眉バサミ＋スクリューブラシでメンテナンスできている', guide: 'LOW' },
         { text: '2〜3週に1回のペースでサロンに通っている', guide: 'HIGH', isCurrentFor: 'pro' },
@@ -623,11 +625,12 @@ export default function NewMeNaviPage() {
       fashion: [
         { text: '自分の服のサイズをメジャーで測ってみる（肩幅・ウエスト・着丈など）', guide: 'none', isCurrentFor: 'none', hint: '手持ちの服を広げて計測するだけでOK。5〜10分でできる' },
         { text: 'クローゼットを開けて、今持っている服を全部出してみる', guide: 'none', hint: '捨てなくていい。まず「何があるか」を把握するだけ。10分でできる' },
+        { text: '自分が目指したいスタイルの方向性を考えてみる', guide: 'LOW', hint: '「なりたいイメージ」を言葉にするだけでOK。複数あっていい', isSelfCheck: true, bodyDataKey: 'fashion_self', bodyDataMulti: true, bodyDataOptions: ['キレイめ', 'カジュアル', 'キレイめカジュアル', 'ストリート', 'モード・個性派', 'まずは清潔感から'] },
         { text: 'サイズ感の基本ルールを1つ調べてみる（例：肩幅を合わせることが最優先）', guide: 'LOW', hint: '「肩幅を合わせることが最優先」これだけ覚えれば今日から服選びが変わる' },
         { text: 'ベーシックアイテムが揃っている（白シャツ・ダークデニム・シンプルスニーカーなど）', guide: 'LOW' },
         { text: 'パーソナルカラー診断を受けたことがある', guide: 'HIGH', isCurrentFor: 'concerned' },
-        { text: '顔タイプ診断を受けたことがある', guide: 'HIGH' },
-        { text: '骨格診断を受けたことがある', guide: 'HIGH' },
+        { text: '顔タイプ診断を受けたことがある', guide: 'HIGH', isSelfCheck: true, bodyDataKey: 'face_type', bodyDataOptions: ['チャーミングソフト', 'チャーミングハード', 'フレッシュソフト', 'フレッシュハード', 'エレガントソフト', 'エレガントハード', 'クールソフト', 'クールハード', '診断したことがない'] },
+        { text: '骨格診断を受けたことがある', guide: 'HIGH', isSelfCheck: true, bodyDataKey: 'skeletal_type', bodyDataOptions: ['ストレート骨格', 'ウェーブ骨格', 'ナチュラル骨格', '診断したことがない'] },
         { text: '診断結果を踏まえて服を1アイテム以上選び直したことがある', guide: 'MID', isCurrentFor: 'self' },
         { text: 'ショップスタッフやスタイリストに「自分に似合うもの」を相談したことがある', guide: 'MID' },
         { text: '迷わず選べる「自分の正解コーデ」のパターンを1つ持っている', guide: 'LOW', isCurrentFor: 'pro' },
@@ -635,8 +638,9 @@ export default function NewMeNaviPage() {
       ],
       hair: [
         { text: '定期的に美容院・理髪店に行っている（2ヶ月以内に行った）', guide: 'none', isCurrentFor: 'none' },
-        { text: '自分の髪質を確認してみる（硬い・柔らかい・くせ毛・直毛など）', guide: 'LOW', hint: '洗髪後に何もつけず乾かして、うねるならくせ毛。毛を1本つまんで硬さも確認できる', isSelfCheck: true, bodyDataKey: 'hair_type', bodyDataOptions: ['硬い', '柔らかい', 'くせ毛', '直毛', '細い'] },
-        { text: '自分の顔型を確認してみる（丸・面長・卵型など）', guide: 'LOW', hint: '髪を後ろにまとめて鏡の前に立つ。輪郭が丸・面長・卵型・逆三角形のどれかを見る', isSelfCheck: true, bodyDataKey: 'face_shape', bodyDataOptions: ['丸顔', '面長', '卵型', '逆三角形（逆卵型）', '四角（ベース型）'] },
+        { text: '自分の髪質を確認してみる（硬い・柔らかい・くせ毛・直毛など）', guide: 'LOW', hint: '洗髪後に何もつけず乾かして、うねるならくせ毛。毛を1本つまんで硬さも確認できる', isSelfCheck: true, bodyDataKey: 'hair_type', bodyDataOptions: ['硬い', '柔らかい', 'くせ毛', '直毛', '細い', '太い', '髪質がわからない'] },
+        { text: '自分の髪・頭皮の悩みを確認してみる（薄毛・スタイリングなど）', guide: 'LOW', hint: '薄毛が気になる人は早めの対応が有効。スタイリングが決まらない場合は美容師相談が近道', isSelfCheck: true, bodyDataKey: 'hair_additional', bodyDataMulti: true, bodyDataOptions: ['薄毛・抜け毛が気になる', 'ボリュームが出ない', '頭皮がべたつく', 'フケが気になる', 'セットが決まらない', 'すぐにペタンとなる', 'まとまらない'] },
+        { text: '自分の顔型を確認してみる（丸・面長・卵型など）', guide: 'LOW', hint: '髪を後ろにまとめて鏡の前に立つ。輪郭が丸・面長・卵型・逆三角形のどれかを見る', isSelfCheck: true, bodyDataKey: 'face_shape', bodyDataOptions: ['丸顔', '面長', '卵型', '逆三角形（逆卵型）', '四角（ベース型）', '顔の輪郭がわからない'] },
         { text: '髪質に合ったシャンプーを使っている', guide: 'LOW',
           products: [{ name: 'BOTANIST ボタニカルシャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'スカルプシャンプー（薄毛が気になる方）', url: 'https://www.amazon.co.jp/s?k=スカルプシャンプー+メンズ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
         { text: 'ドライヤーで根元から乾かしている（自然乾燥していない）', guide: 'none',
@@ -654,6 +658,7 @@ export default function NewMeNaviPage() {
       ],
       nail: [
         { text: '定期的に爪を切っている（1〜2週間に1回）', guide: 'none', isCurrentFor: 'none' },
+        { text: '自分の爪の悩みを確認してみる（割れ・黄ばみ・形など）', guide: 'LOW', hint: '爪の状態によってケアの優先順位が変わる。まず現状を把握するだけでOK', isSelfCheck: true, bodyDataKey: 'nail_concerns', bodyDataMulti: true, bodyDataOptions: ['爪が割れやすい', '爪が薄い', '二枚爪になりやすい', '縦線が目立つ', '凸凹がある', '爪が黄ばんでいる', '甘皮が気になる', '噛み癖がある', '手の乾燥が気になる'] },
         { text: '爪やすりでバリや形を整えている', guide: 'none',
           products: [{ name: 'ガラス製爪やすり（水洗いOK）', url: 'https://www.amazon.co.jp/s?k=ガラス製+爪やすり&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
         { text: 'ハンドクリームで手・爪を保湿している', guide: 'none',
@@ -676,8 +681,8 @@ export default function NewMeNaviPage() {
             products: [{ name: '肌ラボ 極潤 洗顔フォーム', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+洗顔&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: '肌ラボ 極潤 ヒアルロン液（化粧水）', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'ニベア フェイス 乳液', url: 'https://www.amazon.co.jp/s?k=ニベア+フェイス+乳液&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
           { text: 'クレンジング（夜）と日焼け止め（朝）が習慣になっている', guide: 'none',
             products: [{ name: 'ビオレUV アクアリッチ（日焼け止め）', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'メンズビオレ クレンジング', url: 'https://www.amazon.co.jp/s?k=メンズ+クレンジング+洗顔&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
-          { text: '自分の肌タイプを確認してみる（乾燥・脂性・混合）', guide: 'LOW', isCurrentFor: 'concerned', hint: '朝、何もつけずに1〜2時間過ごす。Tゾーンが脂っぽければ混合、全体的に突っ張れば乾燥肌', isSelfCheck: true, bodyDataKey: 'skin_type', bodyDataOptions: ['乾燥肌', '脂性肌（オイリー）', '混合肌', '普通肌'] },
-          { text: '自分の肌悩みを1つ言葉にしてみる（ニキビ・毛穴・くすみ・赤みなど）', guide: 'LOW', hint: '鏡を見て「一番気になるのは？」と問いかけるだけ。答えがそのまま肌悩みになる', isSelfCheck: true, bodyDataKey: 'skin_concerns', bodyDataMulti: true, bodyDataOptions: ['毛穴', 'ニキビ・吹き出物', 'くすみ', '赤み', '乾燥・カサつき', 'テカリ'] },
+          { text: '自分の肌タイプを確認してみる（乾燥・脂性・混合）', guide: 'LOW', isCurrentFor: 'concerned', hint: '朝、何もつけずに1〜2時間過ごす。Tゾーンが脂っぽければ混合、全体的に突っ張れば乾燥肌', isSelfCheck: true, bodyDataKey: 'skin_type', bodyDataOptions: ['乾燥肌', '脂性肌（オイリー）', '混合肌', '普通肌', '敏感肌', '肌タイプがわからない'] },
+          { text: '自分の肌悩みを1つ言葉にしてみる（ニキビ・毛穴・くすみ・赤みなど）', guide: 'LOW', hint: '鏡を見て「一番気になるのは？」と問いかけるだけ。答えがそのまま肌悩みになる', isSelfCheck: true, bodyDataKey: 'skin_concerns', bodyDataMulti: true, bodyDataOptions: ['毛穴', 'ニキビ・吹き出物', 'くすみ', '赤み', '乾燥・カサつき', 'テカリ', 'シミ・そばかす', 'ハリ・弾力不足', '色ムラ'] },
           { text: '角質ケアを取り入れている', guide: 'MID', isCurrentFor: 'self',
             products: [{ name: 'ピーリングジェル（週1回）', url: 'https://www.amazon.co.jp/s?k=ピーリングジェル+メンズ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
           { text: '皮膚科またはエステで今の肌状態を1回診てもらったことがある', guide: 'HIGH', isCurrentFor: 'pro' },
@@ -691,7 +696,7 @@ export default function NewMeNaviPage() {
         steps: [
           { text: '電動シェーバーを使っている（カミソリ・毛抜きNG）', guide: 'none', note: 'カミソリは剃るたびに皮膚まで削るため肌へのダメージが大きい', isCurrentFor: 'none' },
           { text: '剃り後に保湿している', guide: 'none' },
-          { text: '自分のひげの濃さを確認してみる（薄い／普通〜濃い）', guide: 'LOW', note: '迷ったらカウンセリングで確認できる', hint: '剃った翌日に見て青みが強く残るほど濃いタイプ。薄い人は電動シェーバーで十分なことが多い', isCurrentFor: 'concerned', isSelfCheck: true, bodyDataKey: 'beard_density', bodyDataOptions: ['薄い（青みがほとんど残らない）', '普通〜濃い（翌日に青みが残る）'] },
+          { text: '自分のひげの濃さを確認してみる（薄い／普通〜濃い）', guide: 'LOW', note: '迷ったらカウンセリングで確認できる', hint: '剃った翌日に見て青みが強く残るほど濃いタイプ。薄い人は電動シェーバーで十分なことが多い', isCurrentFor: 'concerned', isSelfCheck: true, bodyDataKey: 'beard_density', bodyDataOptions: ['ひげが薄い（青みがほとんど残らない）', 'ひげが濃い（翌日に青みが残る）'] },
           { text: '医療脱毛クリニックのカウンセリングに行ったことがある', guide: 'HIGH', isCurrentFor: 'self' },
           { text: '脱毛を開始している', guide: 'HIGH', isCurrentFor: 'pro' },
           { text: '脱毛完了後のスキンケアが習慣になっている', guide: 'MID' },
@@ -844,13 +849,20 @@ export default function NewMeNaviPage() {
 
     // ── 現状把握バナー生成 ──
     const SELF_CHECK_ITEMS = [
-      { key: 'body_concern',  label: '体型の気になる部分', icon: '💪' },
-      { key: 'hair_type',     label: '髪質',              icon: '💇' },
-      { key: 'face_shape',    label: '顔型',              icon: '🪞' },
-      { key: 'skin_type',     label: '肌タイプ',           icon: '✨' },
-      { key: 'skin_concerns', label: '肌悩み',             icon: '🔬' },
-      { key: 'beard_density', label: 'ひげの濃さ',         icon: '🪒' },
-      { key: 'teeth_concern', label: '歯の黄ばみ原因',     icon: '🦷' },
+      { key: 'body_concern',    label: '体型の気になる部分',   icon: '💪' },
+      { key: 'body_goal',       label: '体型目標',             icon: '🎯' },
+      { key: 'hair_type',       label: '髪質',                icon: '💇' },
+      { key: 'hair_additional', label: '髪・頭皮の悩み',       icon: '🌿' },
+      { key: 'face_shape',      label: '顔型',                icon: '🪞' },
+      { key: 'face_type',       label: '顔タイプ',             icon: '🎭' },
+      { key: 'skeletal_type',   label: '骨格タイプ',           icon: '🦴' },
+      { key: 'fashion_self',    label: '目指すスタイル',        icon: '👔' },
+      { key: 'skin_type',       label: '肌タイプ',             icon: '✨' },
+      { key: 'skin_concerns',   label: '肌悩み',               icon: '🔬' },
+      { key: 'beard_density',   label: 'ひげの濃さ',           icon: '🪒' },
+      { key: 'teeth_concern',   label: '歯の黄ばみ原因',       icon: '🦷' },
+      { key: 'eyebrow_concerns',label: '眉の悩み',             icon: '✂️' },
+      { key: 'nail_concerns',   label: '爪の悩み',             icon: '💅' },
     ];
     function buildSelfCheckIntroHtml() {
       const undoneCount = SELF_CHECK_ITEMS.filter(item => !bodyData[item.key]).length;
