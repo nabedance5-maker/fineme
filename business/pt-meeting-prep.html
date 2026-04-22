@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PT ご飯 準備メモ</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0f1e; color: #e8e4dc; min-height: 100vh; padding: 40px 24px 80px; }
+  .wrap { max-width: 680px; margin: 0 auto; }
+
+  h1 { font-size: 20px; font-weight: 800; color: #c9a84c; margin-bottom: 6px; }
+  .meta { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 36px; }
+
+  .section { margin-bottom: 28px; }
+  .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .section-num { width: 26px; height: 26px; border-radius: 50%; background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.4); color: #c9a84c; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .section-title { font-size: 15px; font-weight: 800; color: #e8e4dc; }
+  .section-note { font-size: 11px; color: rgba(255,255,255,0.35); margin-left: auto; }
+
+  .items { display: flex; flex-direction: column; gap: 8px; padding-left: 36px; }
+  .item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 13px 16px; display: flex; align-items: flex-start; gap: 12px; cursor: pointer; transition: all 0.15s; }
+  .item:hover { border-color: rgba(201,168,76,0.2); }
+  .item.done { border-color: rgba(52,211,153,0.25); background: rgba(52,211,153,0.05); }
+  .item-check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.2); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .item.done .item-check { border-color: #6ee7b7; background: rgba(52,211,153,0.2); }
+  .item-check::after { content: ''; display: none; width: 5px; height: 8px; border: 2px solid #6ee7b7; border-top: none; border-left: none; transform: rotate(45deg) translate(-1px,-1px); }
+  .item.done .item-check::after { display: block; }
+  .item-body { flex: 1; }
+  .item-text { font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+  .item.done .item-text { color: rgba(255,255,255,0.4); text-decoration: line-through; text-decoration-color: rgba(52,211,153,0.4); }
+  .item-sub { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 4px; line-height: 1.5; }
+
+  .alert-box { background: rgba(201,168,76,0.07); border: 1px solid rgba(201,168,76,0.25); border-radius: 12px; padding: 16px 20px; margin-bottom: 28px; }
+  .alert-box p { font-size: 13px; line-height: 1.7; color: rgba(255,255,255,0.7); }
+  .alert-box strong { color: #c9a84c; }
+
+  .reset-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.4); margin-top: 32px; }
+  .reset-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🍽️ PT ご飯 — 話すこと</h1>
+  <div class="meta">2026-04-23 ／ タップでチェック</div>
+
+  <div class="alert-box">
+    <p>目的は<strong>温度感の確認</strong>と<strong>インタビュー記事の提案</strong>。押し込まず、相手が話す時間を多く作る。業務委託の話は「やりたい」まで来ていれば自然に進める。</p>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-num">1</div>
+      <div class="section-title">管理画面のフィードバックを引き出す</div>
+    </div>
+    <div class="items">
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">使ってみてどうだったか</div>
+          <div class="item-sub">直感的か、わかりにくい箇所はあったか</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">掲載者に渡したとき「ここが説明しにくそう」な箇所はあったか</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">営業する立場として「これがあれば売りやすい」機能はあるか</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-num">2</div>
+      <div class="section-title">役割のイメージ合わせ</div>
+    </div>
+    <div class="items">
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">業務内容を具体的に伝える</div>
+          <div class="item-sub">候補抽出 → DM → 商談 → 掲載設定サポート → 月次フォロー</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">1ヶ月に何件アプローチできそうか、現実的な感触を聞く</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">副業感覚か、本気でコミットする気があるか確認する</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-num">3</div>
+      <div class="section-title">報酬感の確認</div>
+    </div>
+    <div class="items">
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">報酬設計を提示して反応を見る</div>
+          <div class="item-sub">有料掲載者数 × ¥500/月・最低保証 ¥10,000/月</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">「最初は保証が軸、増えれば青天井」という設計を説明する</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-num">4</div>
+      <div class="section-title">熱量・温度感の確認 <span style="color:#c9a84c;font-size:11px;">★最重要</span></div>
+    </div>
+    <div class="items">
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">Finemeの思想に共感しているか</div>
+          <div class="item-sub">「変容の旅インフラ」としてのFineme。外見改善が自信につながるという考え方</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">「面白そう」止まりか、「やりたい」まで来ているか</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">懸念・不安があれば今日出してもらう</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-num">5</div>
+      <div class="section-title">インタビュー記事の提案</div>
+    </div>
+    <div class="items">
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">Fineme Journalにインタビュー記事を作っていくと伝える</div>
+          <div class="item-sub">SEO・認知拡大が目的。最初の取材対象者になってほしい</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">記事はサイト掲載 + 本人にもシェアしてもらえる（集客になる）</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">「もし記事を通じて合えば、掲載の話もできる」というスタンスで伝える</div>
+          <div class="item-sub">こちらが選ぶ側。餌にした勧誘に見えないように</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">合意もらえたらインタビュー日程を設定する（LINEで30〜60分）</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-num">6</div>
+      <div class="section-title">次のアクション合意</div>
+    </div>
+    <div class="items">
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">「やる」なら：いつから動くか・最初の1ヶ月で何をするか決める</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">「持ち帰り」なら：次回MTGの日程または具体的な宿題を決める</div>
+        </div>
+      </div>
+      <div class="item" onclick="toggle(this)">
+        <div class="item-check"></div>
+        <div class="item-body">
+          <div class="item-text">業務委託契約書の雛形を送る旨を伝える</div>
+          <div class="item-sub">報酬・秘密保持・非競合。「やろう」となったタイミングですぐ動ける準備を</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="reset-btn" onclick="resetAll()">↺ チェックをリセット</button>
+</div>
+
+<script>
+  const KEY = 'fineme:pt-meeting-checks';
+
+  function toggle(el) {
+    el.classList.toggle('done');
+    save();
+  }
+
+  function save() {
+    const items = document.querySelectorAll('.item');
+    const state = Array.from(items).map(el => el.classList.contains('done'));
+    localStorage.setItem(KEY, JSON.stringify(state));
+  }
+
+  function load() {
+    try {
+      const state = JSON.parse(localStorage.getItem(KEY) || '[]');
+      const items = document.querySelectorAll('.item');
+      items.forEach((el, i) => { if (state[i]) el.classList.add('done'); });
+    } catch {}
+  }
+
+  function resetAll() {
+    document.querySelectorAll('.item').forEach(el => el.classList.remove('done'));
+    localStorage.removeItem(KEY);
+  }
+
+  load();
+</script>
+</body>
+</html>
