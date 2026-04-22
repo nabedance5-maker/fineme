@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fineme インタビュー記事生成ツール</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0f1e; color: #e8e4dc; min-height: 100vh; }
+
+  .header { padding: 40px 24px 20px; max-width: 960px; margin: 0 auto; }
+  .header h1 { font-size: 22px; font-weight: 800; color: #c9a84c; margin-bottom: 6px; }
+  .header p { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.7; }
+
+  /* Tabs */
+  .tabs { max-width: 960px; margin: 0 auto 0; padding: 0 24px; display: flex; gap: 4px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .tab-btn { padding: 10px 20px; font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.4); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.15s; margin-bottom: -1px; }
+  .tab-btn.active { color: #c9a84c; border-bottom-color: #c9a84c; }
+  .tab-btn:hover:not(.active) { color: rgba(255,255,255,0.7); }
+
+  .tab-content { display: none; max-width: 960px; margin: 0 auto; padding: 28px 24px 60px; }
+  .tab-content.active { display: block; }
+
+  /* Cards / Panels */
+  .panel { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px 22px; margin-bottom: 20px; }
+  .panel-title { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(201,168,76,0.7); margin-bottom: 14px; }
+  .panel-gold { background: rgba(201,168,76,0.05); border-color: rgba(201,168,76,0.2); }
+
+  /* Axis selector */
+  .axis-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .axis-btn { padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 20px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.15s; }
+  .axis-btn.active { background: rgba(201,168,76,0.15); border-color: rgba(201,168,76,0.5); color: #c9a84c; }
+
+  /* Question bank */
+  .q-category { margin-bottom: 22px; }
+  .q-category-label { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(122,173,255,0.7); margin-bottom: 10px; }
+  .q-item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 12px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); margin-bottom: 6px; cursor: pointer; transition: all 0.15s; }
+  .q-item:hover { border-color: rgba(201,168,76,0.2); background: rgba(201,168,76,0.04); }
+  .q-item.selected { border-color: rgba(201,168,76,0.4); background: rgba(201,168,76,0.08); }
+  .q-item input[type=checkbox] { margin-top: 2px; flex-shrink: 0; accent-color: #c9a84c; }
+  .q-item label { font-size: 13px; color: rgba(255,255,255,0.8); cursor: pointer; line-height: 1.5; }
+  .q-item.selected label { color: #e8e4dc; }
+
+  /* Form fields */
+  .form-row { margin-bottom: 16px; }
+  .form-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5); margin-bottom: 6px; letter-spacing: .05em; }
+  .form-label .req { color: #c9a84c; margin-left: 3px; }
+  input[type=text], select, textarea {
+    width: 100%; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px; color: #e8e4dc; font-size: 13px; padding: 9px 12px; outline: none;
+    transition: border-color 0.15s; font-family: inherit;
+  }
+  input[type=text]:focus, select:focus, textarea:focus { border-color: rgba(201,168,76,0.4); }
+  select option { background: #0a0f1e; }
+  textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* Q&A answer blocks */
+  .qa-block { margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; }
+  .qa-block-q { background: rgba(122,173,255,0.06); padding: 10px 14px; font-size: 12px; font-weight: 700; color: rgba(122,173,255,0.9); border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .qa-block-a { padding: 10px 14px; }
+  .qa-block-a textarea { border: none; background: transparent; padding: 0; font-size: 13px; min-height: 70px; }
+  .qa-block-a textarea:focus { outline: none; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-gold { background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.4); color: #c9a84c; }
+  .btn-gold:hover { background: rgba(201,168,76,0.25); }
+  .btn-blue { background: rgba(37,99,235,0.12); border: 1px solid rgba(37,99,235,0.35); color: #7aadff; }
+  .btn-blue:hover { background: rgba(37,99,235,0.22); }
+  .btn-danger { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #f87171; }
+  .btn-danger:hover { background: rgba(239,68,68,0.2); }
+  .btn-sm { padding: 6px 12px; font-size: 11px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Output */
+  .output-box { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 16px; font-family: 'Courier New', monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; color: #a8d8a8; max-height: 480px; overflow-y: auto; margin-top: 14px; }
+  .output-box.preview { font-family: inherit; color: #e8e4dc; font-size: 13px; line-height: 1.8; }
+
+  /* Status badges */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 800; }
+  .badge-pending { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+  .badge-interviewing { background: rgba(122,173,255,0.12); color: #7aadff; }
+  .badge-writing { background: rgba(201,168,76,0.12); color: #c9a84c; }
+  .badge-published { background: rgba(52,211,153,0.12); color: #6ee7b7; }
+
+  /* Management list */
+  .interview-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 14px 16px; margin-bottom: 8px; transition: border-color 0.15s; }
+  .interview-row:hover { border-color: rgba(201,168,76,0.2); }
+  .interview-row .name { font-weight: 700; font-size: 14px; flex: 1; }
+  .interview-row .meta { font-size: 11px; color: rgba(255,255,255,0.4); }
+  .interview-row .actions { display: flex; gap: 6px; }
+
+  /* Selected count */
+  .selected-count { background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.3); border-radius: 8px; padding: 10px 16px; font-size: 13px; color: #c9a84c; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 22px 0; }
+
+  /* Alert */
+  .alert { border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 14px; }
+  .alert-info { background: rgba(122,173,255,0.08); border: 1px solid rgba(122,173,255,0.2); color: #7aadff; }
+  .alert-success { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); color: #6ee7b7; }
+
+  .loading { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(201,168,76,0.3); border-top-color: #c9a84c; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .row-btns { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+
+  /* API key section */
+  .apikey-row { display: flex; gap: 8px; align-items: center; }
+  .apikey-row input { flex: 1; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎙️ Fineme インタビュー記事生成ツール</h1>
+  <p>質問バンクから選択 → 回答を入力 → Claude で記事自動生成 → Supabase INSERT SQL 出力</p>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('bank')">📋 質問バンク</button>
+  <button class="tab-btn" onclick="switchTab('input')">✍️ 回答入力</button>
+  <button class="tab-btn" onclick="switchTab('generate')">✨ 記事生成</button>
+  <button class="tab-btn" onclick="switchTab('manage')">📁 管理リスト</button>
+</div>
+
+<!-- ────────────────────────────────────────────
+  Tab 1: 質問バンク
+──────────────────────────────────────────── -->
+<div id="tab-bank" class="tab-content active">
+  <div class="panel panel-gold">
+    <div class="panel-title">取材対象の軸を選ぶ</div>
+    <div class="axis-row" id="axis-row">
+      <button class="axis-btn active" data-axis="common" onclick="selectAxis('common')">🌐 共通</button>
+      <button class="axis-btn" data-axis="gym" onclick="selectAxis('gym')">💪 体型・ジム</button>
+      <button class="axis-btn" data-axis="eyebrow" onclick="selectAxis('eyebrow')">✂️ 眉</button>
+      <button class="axis-btn" data-axis="hair" onclick="selectAxis('hair')">💇 髪</button>
+      <button class="axis-btn" data-axis="skin" onclick="selectAxis('skin')">✨ 肌・ひげ</button>
+      <button class="axis-btn" data-axis="fashion" onclick="selectAxis('fashion')">👔 ファッション</button>
+      <button class="axis-btn" data-axis="teeth" onclick="selectAxis('teeth')">🦷 歯</button>
+      <button class="axis-btn" data-axis="nail" onclick="selectAxis('nail')">💅 爪</button>
+    </div>
+  </div>
+
+  <div class="selected-count" id="selected-count">
+    <span>0 問 選択中</span>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-sm" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);" onclick="clearAllQ()">すべて解除</button>
+      <button class="btn btn-gold btn-sm" onclick="goToInput()">→ 回答入力へ</button>
+    </div>
+  </div>
+
+  <div id="question-bank"></div>
+</div>
+
+<!-- ────────────────────────────────────────────
+  Tab 2: 回答入力
+──────────────────────────────────────────── -->
+<div id="tab-input" class="tab-content">
+  <div class="panel panel-gold">
+    <div class="panel-title">取材対象者 プロフィール</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <div class="form-label">お名前<span class="req">*</span></div>
+        <input type="text" id="p-name" placeholder="山田 太郎" />
+      </div>
+      <div class="form-row">
+        <div class="form-label">肩書き・職業<span class="req">*</span></div>
+        <input type="text" id="p-title" placeholder="パーソナルトレーナー" />
+      </div>
+      <div class="form-row">
+        <div class="form-label">サロン・施設名</div>
+        <input type="text" id="p-facility" placeholder="〇〇ジム / フリーランス" />
+      </div>
+      <div class="form-row">
+        <div class="form-label">経験年数</div>
+        <input type="text" id="p-years" placeholder="10年" />
+      </div>
+      <div class="form-row">
+        <div class="form-label">エリア</div>
+        <input type="text" id="p-area" placeholder="東京・渋谷" />
+      </div>
+      <div class="form-row">
+        <div class="form-label">軸カテゴリ<span class="req">*</span></div>
+        <select id="p-axis">
+          <option value="gym">体型・ジム</option>
+          <option value="eyebrow">眉</option>
+          <option value="hair">髪</option>
+          <option value="skin">肌・ひげ</option>
+          <option value="fashion">ファッション</option>
+          <option value="teeth">歯</option>
+          <option value="nail">爪</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:4px;">
+      <div class="form-label">一言プロフィール（記事リード用）</div>
+      <textarea id="p-bio" rows="2" placeholder="「外見の変化が自信に直結する」を信じ、10年間男性専門で指導を続けるトレーナー。"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-label">Fineme 掲載URL（あれば）</div>
+      <input type="text" id="p-url" placeholder="https://fineme.me/affiliate/xxx" />
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">選択した質問への回答</div>
+    <div id="qa-answer-blocks">
+      <div style="color:rgba(255,255,255,0.35);font-size:13px;">「質問バンク」タブで質問を選択してください</div>
+    </div>
+  </div>
+
+  <div class="row-btns">
+    <button class="btn btn-blue" onclick="saveInterview()">💾 一時保存</button>
+    <button class="btn btn-gold" onclick="goToGenerate()">→ 記事生成へ</button>
+  </div>
+</div>
+
+<!-- ────────────────────────────────────────────
+  Tab 3: 記事生成
+──────────────────────────────────────────── -->
+<div id="tab-generate" class="tab-content">
+  <div class="panel">
+    <div class="panel-title">Claude API 設定</div>
+    <div class="apikey-row">
+      <input type="password" id="api-key-input" placeholder="sk-ant-..." />
+      <button class="btn btn-blue" onclick="saveApiKey()">保存</button>
+    </div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:6px;">ローカル保存のみ。外部送信なし。</div>
+  </div>
+
+  <div class="panel panel-gold">
+    <div class="panel-title">記事設定</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <div class="form-label">記事タイトル（提案）</div>
+        <input type="text" id="gen-title" placeholder="AIが生成します（手動上書き可）" />
+      </div>
+      <div class="form-row">
+        <div class="form-label">スラッグ</div>
+        <input type="text" id="gen-slug" placeholder="interview-yamada-pt-2026" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-label">記事の方向性・補足（任意）</div>
+      <textarea id="gen-note" rows="2" placeholder="モテたくて始めたトレーニングが、いつの間にか自信の源になった話を軸にしてほしい"></textarea>
+    </div>
+  </div>
+
+  <div class="row-btns">
+    <button class="btn btn-gold" id="gen-btn" onclick="generateArticle()">✨ 記事を生成する</button>
+    <span id="gen-status" style="font-size:12px;color:rgba(255,255,255,0.4);"></span>
+  </div>
+
+  <hr class="divider">
+
+  <div id="gen-preview-wrap" style="display:none;">
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+      <button class="btn btn-sm" id="tab-preview-btn" onclick="showGenTab('preview')" style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);color:#c9a84c;">プレビュー</button>
+      <button class="btn btn-sm" id="tab-sql-btn" onclick="showGenTab('sql')" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);">SQL</button>
+      <button class="btn btn-sm" id="tab-raw-btn" onclick="showGenTab('raw')" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);">RAW JSON</button>
+      <button class="btn btn-blue btn-sm" onclick="copyOutput()">📋 コピー</button>
+    </div>
+    <div id="gen-preview" class="output-box preview"></div>
+    <div id="gen-sql" class="output-box" style="display:none;"></div>
+    <div id="gen-raw" class="output-box" style="display:none;"></div>
+  </div>
+
+  <div id="supa-section" style="margin-top:20px;display:none;">
+    <div class="panel">
+      <div class="panel-title">Supabase 直接INSERT</div>
+      <div class="apikey-row" style="margin-bottom:8px;">
+        <input type="text" id="supa-url" placeholder="https://xxx.supabase.co" />
+        <input type="text" id="supa-key" placeholder="service_role key" style="flex:1;" />
+        <button class="btn btn-blue btn-sm" onclick="saveSupaKeys()">保存</button>
+      </div>
+      <button class="btn btn-gold" id="supa-btn" onclick="insertToSupabase()">🚀 Supabaseに投入</button>
+      <span id="supa-status" style="font-size:12px;color:rgba(255,255,255,0.4);margin-left:10px;"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ────────────────────────────────────────────
+  Tab 4: 管理リスト
+──────────────────────────────────────────── -->
+<div id="tab-manage" class="tab-content">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <div style="font-size:14px;font-weight:700;color:rgba(255,255,255,0.7);">インタビュー管理</div>
+    <button class="btn btn-gold btn-sm" onclick="newInterview()">＋ 新しいインタビュー</button>
+  </div>
+  <div id="interview-list">
+    <div style="color:rgba(255,255,255,0.3);font-size:13px;text-align:center;padding:40px 0;">まだ登録がありません</div>
+  </div>
+</div>
+
+<script>
+// ── データ ──────────────────────────────────────────
+
+const QUESTION_BANK = {
+  common: {
+    label: '共通（全軸）',
+    categories: [
+      {
+        name: 'プロフィール・経歴',
+        questions: [
+          'この仕事を始めたきっかけを教えてください',
+          '今の仕事で一番やりがいを感じる瞬間はどんなときですか？',
+          'これまでで印象に残っているクライアントのエピソードを教えてください',
+        ]
+      },
+      {
+        name: 'クライアントの悩み',
+        questions: [
+          'よく来てくださる方に多い悩みは何ですか？',
+          '「外見に悩む男性」に共通するパターンや心理はありますか？',
+          '初めて来た方が一番驚くことや、戸惑うことは何ですか？',
+        ]
+      },
+      {
+        name: '変容ストーリー',
+        questions: [
+          '外見が変わったことで、クライアントの生活や自信がどう変わりましたか？',
+          '「変わった」と手応えを感じる瞬間はどんなときですか？',
+          '外見ケアが恋愛・仕事・メンタルに影響した具体的なエピソードがあれば',
+        ]
+      },
+      {
+        name: 'Fineme・読者へ',
+        questions: [
+          'Finemeを通じてどんな方に来てほしいですか？',
+          '「外見を整えることで自信を取り戻す」という考え方についてどう思いますか？',
+          '外見に悩む男性に、一言メッセージをお願いします',
+        ]
+      },
+    ]
+  },
+  gym: {
+    label: '体型・ジム専門',
+    categories: [
+      {
+        name: '指導・専門知識',
+        questions: [
+          'トレーニング指導で一番重要視していることは何ですか？',
+          'ダイエット目的と筋肉増量目的で、アプローチはどう変わりますか？',
+          '食事指導はどこまでしていますか？タンパク質や糖質について意識していることは？',
+          'ありがちな「間違った筋トレ」や「やってはいけないこと」はありますか？',
+        ]
+      },
+      {
+        name: '体型コンプレックス',
+        questions: [
+          '「腹まわりが気になる」「胸板をつけたい」など、男性に多い悩み別のアドバイスは？',
+          '姿勢（猫背・肩の丸まり）改善のために最初にやることは？',
+          '週1回しか時間が取れない人でも変われますか？',
+        ]
+      },
+    ]
+  },
+  eyebrow: {
+    label: '眉専門',
+    categories: [
+      {
+        name: '眉の知識・技術',
+        questions: [
+          '顔型別に眉を整えるポイントを教えてください（丸顔・面長・卵型など）',
+          '男性眉のよくある「NG」はどんな形ですか？',
+          '一重・奥二重・二重で眉の形の作り方は変わりますか？',
+          '初めてサロンに来る男性に、まず何を伝えますか？',
+        ]
+      },
+      {
+        name: 'セルフケア',
+        questions: [
+          'サロン後に自宅でできるメンテナンス方法を教えてください',
+          'スクリューブラシと眉バサミ以外に、あると便利なアイテムはありますか？',
+        ]
+      },
+    ]
+  },
+  hair: {
+    label: '髪専門',
+    categories: [
+      {
+        name: '髪質・スタイル',
+        questions: [
+          '髪質診断で最初に見るポイントはどこですか？',
+          '「セットが決まらない」という男性に多い原因は何ですか？',
+          'くせ毛・直毛・細毛それぞれに向いているスタイルはありますか？',
+          'スタイリング剤の種類と選び方のコツを教えてください',
+        ]
+      },
+      {
+        name: '頭皮・薄毛',
+        questions: [
+          '頭皮のべたつきやフケが気になる方へのアドバイスは？',
+          'AGA・薄毛が気になり始めた男性は、いつ頃・どこに相談すべきですか？',
+          '正しいシャンプーの方法で気をつけることは？',
+        ]
+      },
+    ]
+  },
+  skin: {
+    label: '肌・ひげ専門',
+    categories: [
+      {
+        name: '男性肌の知識',
+        questions: [
+          '男性肌に特有の悩みは何ですか？女性とどう違いますか？',
+          'スキンケアを全くやったことのない男性が、最初に始めるべき1アイテムは？',
+          'ニキビ・毛穴・くすみ・赤みなど悩み別に、最初にやることは？',
+          '日焼け止めを使わない男性に、どう伝えますか？',
+        ]
+      },
+      {
+        name: 'ひげケア',
+        questions: [
+          'カミソリ・電動シェーバー・医療脱毛、それぞれのメリット・デメリットは？',
+          'ひげが濃い男性と薄い男性で、アプローチは変わりますか？',
+          '剃り後の肌荒れを防ぐためにやるべきことは？',
+        ]
+      },
+    ]
+  },
+  fashion: {
+    label: 'ファッション専門',
+    categories: [
+      {
+        name: 'スタイリング・選び方',
+        questions: [
+          '「清潔感が出ない」男性に一番多い原因は何ですか？',
+          '服を選ぶとき、何を最優先にすべきですか？',
+          '予算が月1万円以下の場合、どこに投資すべきですか？',
+          '「何を買えばいいかわからない」人への最初のアドバイスは？',
+        ]
+      },
+      {
+        name: '診断・パーソナライズ',
+        questions: [
+          '骨格診断を受けるとどんなメリットがありますか？',
+          '顔タイプ診断は服選びにどう活かせますか？',
+          '自分に似合うものがわからない人が、まずやるべきことは？',
+        ]
+      },
+    ]
+  },
+  teeth: {
+    label: '歯専門',
+    categories: [
+      {
+        name: 'ホワイトニング',
+        questions: [
+          'セルフホワイトニング・歯科ホワイトニング・ホワイトニングバー、何が違いますか？',
+          'どんな人がホワイトニングに向いていますか？逆に向いていない人は？',
+          'ホワイトニングの効果を長持ちさせるために日常でできることは？',
+          '着色（コーヒー・タバコ）と加齢による黄ばみで、対処法は違いますか？',
+        ]
+      },
+      {
+        name: '歯と印象',
+        questions: [
+          '歯の白さ・清潔感が第一印象に与える影響を教えてください',
+          '口臭・歯茎の色が気になる方へのアドバイスは？',
+        ]
+      },
+    ]
+  },
+  nail: {
+    label: '爪・ネイルケア専門',
+    categories: [
+      {
+        name: 'メンズネイルケアの基本',
+        questions: [
+          '男性が最低限やるべき爪のケアを教えてください',
+          '初めてネイルサロンに来る男性は、何をお願いすればいいですか？',
+          '爪が割れやすい・薄いという方へのアドバイスは？',
+          '甘皮ケアはなぜ大事ですか？自分でやってもいいですか？',
+        ]
+      },
+      {
+        name: '爪と清潔感・印象',
+        questions: [
+          '爪を見ると何がわかりますか？爪が与える印象について教えてください',
+          'ハンドケア（手の保湿）と爪ケアはセットでやるべきですか？',
+        ]
+      },
+    ]
+  },
+};
+
+// ── State ──────────────────────────────────────────
+let currentAxis = 'common';
+let selectedQuestions = new Set(); // "category::question" keys
+let currentInterview = {
+  id: null,
+  profile: {},
+  answers: {},
+  generatedArticle: null,
+  status: 'pending',
+};
+let interviewList = [];
+let generatedData = null;
+
+// ── Init ──────────────────────────────────────────
+function init() {
+  loadApiKey();
+  loadSupaKeys();
+  loadInterviewList();
+  renderQuestionBank('common');
+  renderManageList();
+}
+
+// ── Tab switching ──────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    const tabs = ['bank','input','generate','manage'];
+    b.classList.toggle('active', tabs[i] === tab);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+
+  if (tab === 'input') renderAnswerBlocks();
+  if (tab === 'manage') renderManageList();
+  if (tab === 'generate') prefillGenerateForm();
+}
+
+function goToInput() { switchTab('input'); }
+function goToGenerate() { switchTab('generate'); }
+
+// ── Axis selector ──────────────────────────────────
+function selectAxis(axis) {
+  currentAxis = axis;
+  document.querySelectorAll('.axis-btn').forEach(b => b.classList.toggle('active', b.dataset.axis === axis));
+  renderQuestionBank(axis);
+}
+
+// ── Question bank rendering ──────────────────────
+function qKey(cat, q) { return cat + '::' + q; }
+
+function renderQuestionBank(axis) {
+  const data = QUESTION_BANK[axis];
+  if (!data) return;
+  const el = document.getElementById('question-bank');
+  el.innerHTML = data.categories.map(cat => `
+    <div class="q-category">
+      <div class="q-category-label">${cat.name}</div>
+      ${cat.questions.map(q => {
+        const key = qKey(cat.name, q);
+        const sel = selectedQuestions.has(key);
+        return `
+          <div class="q-item${sel ? ' selected' : ''}" onclick="toggleQ('${escAttr(cat.name)}','${escAttr(q)}',this)">
+            <input type="checkbox" ${sel ? 'checked' : ''} onclick="event.stopPropagation();toggleQ('${escAttr(cat.name)}','${escAttr(q)}',this.closest('.q-item'))">
+            <label>${esc(q)}</label>
+          </div>`;
+      }).join('')}
+    </div>
+  `).join('');
+  updateSelectedCount();
+}
+
+function toggleQ(cat, q, el) {
+  const key = qKey(cat, q);
+  if (selectedQuestions.has(key)) {
+    selectedQuestions.delete(key);
+    el.classList.remove('selected');
+    el.querySelector('input').checked = false;
+  } else {
+    selectedQuestions.add(key);
+    el.classList.add('selected');
+    el.querySelector('input').checked = true;
+  }
+  updateSelectedCount();
+}
+
+function clearAllQ() {
+  selectedQuestions.clear();
+  renderQuestionBank(currentAxis);
+}
+
+function updateSelectedCount() {
+  const n = selectedQuestions.size;
+  document.getElementById('selected-count').querySelector('span').textContent = `${n} 問 選択中`;
+}
+
+// ── Answer blocks ──────────────────────────────────
+function renderAnswerBlocks() {
+  const container = document.getElementById('qa-answer-blocks');
+  if (selectedQuestions.size === 0) {
+    container.innerHTML = '<div style="color:rgba(255,255,255,0.35);font-size:13px;">「質問バンク」タブで質問を選択してください</div>';
+    return;
+  }
+  const pairs = [];
+  [currentAxis, ...Object.keys(QUESTION_BANK).filter(k => k !== currentAxis)].forEach(axis => {
+    const data = QUESTION_BANK[axis];
+    if (!data) return;
+    data.categories.forEach(cat => {
+      cat.questions.forEach(q => {
+        if (selectedQuestions.has(qKey(cat.name, q))) {
+          pairs.push({ cat: cat.name, q });
+        }
+      });
+    });
+  });
+  container.innerHTML = pairs.map(({ cat, q }) => {
+    const key = qKey(cat, q);
+    const val = currentInterview.answers[key] || '';
+    return `
+      <div class="qa-block">
+        <div class="qa-block-q">Q: ${esc(q)}</div>
+        <div class="qa-block-a">
+          <textarea placeholder="回答を入力…" data-key="${escAttr(key)}" oninput="saveAnswer(this)">${esc(val)}</textarea>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function saveAnswer(el) {
+  currentInterview.answers[el.dataset.key] = el.value;
+}
+
+// ── Save/load interview ──────────────────────────
+function saveInterview() {
+  currentInterview.profile = {
+    name: document.getElementById('p-name').value,
+    title: document.getElementById('p-title').value,
+    facility: document.getElementById('p-facility').value,
+    years: document.getElementById('p-years').value,
+    area: document.getElementById('p-area').value,
+    axis: document.getElementById('p-axis').value,
+    bio: document.getElementById('p-bio').value,
+    url: document.getElementById('p-url').value,
+  };
+  if (!currentInterview.id) {
+    currentInterview.id = 'iv_' + Date.now();
+    currentInterview.createdAt = new Date().toISOString();
+  }
+  currentInterview.updatedAt = new Date().toISOString();
+  // upsert in list
+  const idx = interviewList.findIndex(iv => iv.id === currentInterview.id);
+  if (idx >= 0) interviewList[idx] = { ...currentInterview };
+  else interviewList.push({ ...currentInterview });
+  saveInterviewList();
+  showToast('一時保存しました');
+}
+
+function loadInterviewList() {
+  try { interviewList = JSON.parse(localStorage.getItem('fineme:interviews') || '[]'); } catch { interviewList = []; }
+}
+function saveInterviewList() {
+  localStorage.setItem('fineme:interviews', JSON.stringify(interviewList));
+}
+
+// ── Generate article ──────────────────────────────
+function prefillGenerateForm() {
+  const name = document.getElementById('p-name').value;
+  const axis = document.getElementById('p-axis').value;
+  if (name && !document.getElementById('gen-title').value) {
+    document.getElementById('gen-title').value = `${name}が語る、男の外見が変わる瞬間`;
+  }
+  if (name && !document.getElementById('gen-slug').value) {
+    const slug = 'interview-' + name.replace(/[\s　]+/g, '-').toLowerCase() + '-' + axis;
+    document.getElementById('gen-slug').value = slug;
+  }
+}
+
+async function generateArticle() {
+  const apiKey = localStorage.getItem('fineme:claude:key') || '';
+  if (!apiKey) { alert('Claude APIキーを設定してください'); return; }
+
+  const profile = {
+    name: document.getElementById('p-name').value,
+    title: document.getElementById('p-title').value,
+    facility: document.getElementById('p-facility').value,
+    years: document.getElementById('p-years').value,
+    area: document.getElementById('p-area').value,
+    axis: document.getElementById('p-axis').value,
+    bio: document.getElementById('p-bio').value,
+    url: document.getElementById('p-url').value,
+  };
+  if (!profile.name || !profile.title) { alert('お名前と肩書きを入力してください'); return; }
+
+  const qaPairs = [];
+  document.querySelectorAll('.qa-block').forEach(block => {
+    const q = block.querySelector('.qa-block-q').textContent.replace(/^Q:\s*/, '');
+    const a = block.querySelector('textarea').value;
+    if (a.trim()) qaPairs.push({ q, a });
+  });
+  if (qaPairs.length === 0) { alert('回答を1つ以上入力してください'); return; }
+
+  const title = document.getElementById('gen-title').value;
+  const slug = document.getElementById('gen-slug').value;
+  const note = document.getElementById('gen-note').value;
+  const axisLabel = { gym:'体型・ジム', eyebrow:'眉', hair:'髪', skin:'肌・ひげ', fashion:'ファッション', teeth:'歯', nail:'爪' }[profile.axis] || profile.axis;
+
+  const btn = document.getElementById('gen-btn');
+  const status = document.getElementById('gen-status');
+  btn.disabled = true;
+  status.innerHTML = '<span class="loading"></span> 生成中…';
+
+  const prompt = buildGeneratePrompt(profile, qaPairs, title, slug, note, axisLabel);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('JSON取得失敗: ' + text.slice(0, 200));
+    const parsed = JSON.parse(match[0]);
+    generatedData = parsed;
+    currentInterview.generatedArticle = parsed;
+    renderGeneratedOutput(parsed);
+    document.getElementById('gen-preview-wrap').style.display = 'block';
+    document.getElementById('supa-section').style.display = 'block';
+    status.textContent = '✅ 生成完了';
+    if (currentInterview.id) {
+      currentInterview.status = 'writing';
+      saveInterview();
+    }
+  } catch (e) {
+    status.textContent = '❌ エラー: ' + e.message;
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function buildGeneratePrompt(profile, qaPairs, titleHint, slug, note, axisLabel) {
+  const qaText = qaPairs.map((p, i) => `Q${i+1}: ${p.q}\nA: ${p.a}`).join('\n\n');
+  const finalTitle = titleHint || `${profile.name}が語る、男の外見が変わる瞬間`;
+  const finalSlug = slug || 'interview-' + Date.now();
+
+  return `あなたはFineme（男性向け外見改善サービスポータル）の編集ライターです。
+以下のインタビュー情報をもとに、Fineme Journalの記事を生成してください。
+
+【取材対象者】
+名前: ${profile.name}
+肩書き: ${profile.title}
+施設: ${profile.facility || '（フリーランス）'}
+経験: ${profile.years || '不明'}
+エリア: ${profile.area || ''}
+カテゴリ: ${axisLabel}
+プロフィール: ${profile.bio || ''}
+Fineme URL: ${profile.url || 'なし'}
+
+【インタビューQ&A】
+${qaText}
+
+${note ? `【記事の方向性】\n${note}\n` : ''}
+
+【記事の思想・トーン】
+- Finemeは「外見を起点に自信を再設計する人を増やす」サービス
+- 読者は「変わりたいが何から始めればいいかわからない男性」
+- 記事は「変容の旅の地図」として機能すること
+- 上から目線NG。共感と希望を軸に
+- 取材対象者のリアルな言葉・体験を活かす
+
+【出力形式】
+以下のJSONのみ出力（前置き・説明不要）:
+{
+  "title": "${finalTitle}（改善可）",
+  "slug": "${finalSlug}",
+  "description": "記事説明120〜150字",
+  "reading_time": 読了時間（整数・分）,
+  "blocks": [
+    {"type":"paragraph","text":"リード文（100〜150字。読者の「あるある」な悩みから入り、取材対象者を紹介）"},
+    {"type":"heading","text":"見出し1"},
+    {"type":"paragraph","text":"本文"},
+    {"type":"qa","q":"質問文","a":"回答（インタビューの言葉を活かして200〜300字）"},
+    ...（Q&Aを中心に展開。見出しで区切る）
+    {"type":"heading","text":"最後に：〇〇からの一言"},
+    {"type":"paragraph","text":"まとめ（読者への希望・行動喚起）"},
+    {"type":"cta","text":"${axisLabel}のプロを探す","url":"/search?category=${profile.axis}"}
+  ]
+}
+
+【エスケープルール】
+- JSON文字列内のシングルクォート（'）は ''にエスケープ（SQL用）
+- ダブルクォート（"）はJSONの構造に使うのでそのまま`;
+}
+
+function renderGeneratedOutput(data) {
+  // Preview
+  const preview = document.getElementById('gen-preview');
+  const blocks = data.blocks || [];
+  preview.innerHTML = `<h2 style="font-size:20px;font-weight:800;color:#c9a84c;margin-bottom:12px;">${esc(data.title)}</h2>` +
+    blocks.map(b => {
+      if (b.type === 'heading') return `<h3 style="font-size:16px;font-weight:800;margin:18px 0 8px;color:#e8e4dc;">${esc(b.text)}</h3>`;
+      if (b.type === 'paragraph') return `<p style="margin-bottom:12px;">${esc(b.text)}</p>`;
+      if (b.type === 'qa') return `<div style="margin:14px 0;padding:12px 16px;background:rgba(122,173,255,0.06);border-left:3px solid rgba(122,173,255,0.4);border-radius:0 8px 8px 0;"><div style="font-size:12px;font-weight:700;color:#7aadff;margin-bottom:6px;">Q: ${esc(b.q)}</div><div>${esc(b.a)}</div></div>`;
+      if (b.type === 'cta') return `<div style="margin:18px 0;padding:12px 16px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:8px;text-align:center;"><a href="${esc(b.url)}" style="color:#c9a84c;font-weight:700;">${esc(b.text)}</a></div>`;
+      if (b.type === 'image') return `<div style="margin:12px 0;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.4);">[画像: ${esc(b.alt || '')}]</div>`;
+      return '';
+    }).join('');
+
+  // SQL
+  const sql = buildSQL(data);
+  document.getElementById('gen-sql').textContent = sql;
+
+  // Raw
+  document.getElementById('gen-raw').textContent = JSON.stringify(data, null, 2);
+}
+
+function buildSQL(data) {
+  const blocksStr = JSON.stringify(data.blocks || []).replace(/'/g, "''");
+  const desc = (data.description || '').replace(/'/g, "''");
+  const title = (data.title || '').replace(/'/g, "''");
+  const slug = (data.slug || '').replace(/'/g, "''");
+  return `INSERT INTO features (title, slug, category, description, blocks, reading_time, status)
+VALUES (
+  '${title}',
+  '${slug}',
+  'interview',
+  '${desc}',
+  '${blocksStr}'::jsonb,
+  ${data.reading_time || 10},
+  'draft'
+);`;
+}
+
+function showGenTab(tab) {
+  ['preview','sql','raw'].forEach(t => {
+    document.getElementById('gen-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('tab-' + t + '-btn').style.background = t === tab ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.05)';
+    document.getElementById('tab-' + t + '-btn').style.color = t === tab ? '#c9a84c' : 'rgba(255,255,255,0.5)';
+    document.getElementById('tab-' + t + '-btn').style.borderColor = t === tab ? 'rgba(201,168,76,0.3)' : 'rgba(255,255,255,0.1)';
+  });
+}
+
+function copyOutput() {
+  const active = ['preview','sql','raw'].find(t => document.getElementById('gen-' + t).style.display !== 'none') || 'sql';
+  const el = document.getElementById('gen-' + active);
+  const text = el.innerText || el.textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('コピーしました'));
+}
+
+// ── Supabase insert ──────────────────────────────
+async function insertToSupabase() {
+  if (!generatedData) { alert('記事を生成してください'); return; }
+  const supaUrl = localStorage.getItem('fineme:supa:url') || '';
+  const supaKey = localStorage.getItem('fineme:supa:key') || '';
+  if (!supaUrl || !supaKey) { alert('Supabase URLとキーを設定してください'); return; }
+
+  const btn = document.getElementById('supa-btn');
+  const status = document.getElementById('supa-status');
+  btn.disabled = true;
+  status.innerHTML = '<span class="loading"></span> 投入中…';
+
+  try {
+    const res = await fetch(supaUrl + '/rest/v1/features', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supaKey,
+        'Authorization': 'Bearer ' + supaKey,
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
+        title: generatedData.title,
+        slug: generatedData.slug,
+        category: 'interview',
+        description: generatedData.description,
+        blocks: generatedData.blocks,
+        reading_time: generatedData.reading_time || 10,
+        status: 'draft',
+      }),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    status.textContent = '✅ 投入成功（draft）';
+    if (currentInterview.id) {
+      currentInterview.status = 'published';
+      saveInterview();
+      renderManageList();
+    }
+  } catch (e) {
+    status.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Management list ──────────────────────────────
+function renderManageList() {
+  loadInterviewList();
+  const el = document.getElementById('interview-list');
+  if (interviewList.length === 0) {
+    el.innerHTML = '<div style="color:rgba(255,255,255,0.3);font-size:13px;text-align:center;padding:40px 0;">まだ登録がありません</div>';
+    return;
+  }
+  const statusLabel = { pending:'取材待ち', interviewing:'取材中', writing:'執筆中', published:'公開済み' };
+  const statusClass = { pending:'badge-pending', interviewing:'badge-interviewing', writing:'badge-writing', published:'badge-published' };
+  el.innerHTML = [...interviewList].reverse().map(iv => `
+    <div class="interview-row">
+      <div>
+        <div class="name">${esc(iv.profile?.name || '（未入力）')}</div>
+        <div class="meta">${esc(iv.profile?.title || '')} ${iv.profile?.facility ? '・' + esc(iv.profile.facility) : ''}</div>
+      </div>
+      <span class="badge ${statusClass[iv.status] || 'badge-pending'}">${statusLabel[iv.status] || iv.status}</span>
+      <div class="meta">${iv.createdAt ? new Date(iv.createdAt).toLocaleDateString('ja-JP') : ''}</div>
+      <div class="actions">
+        <button class="btn btn-gold btn-sm" onclick="loadInterview('${iv.id}')">編集</button>
+        <select class="btn btn-sm" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);padding:5px 8px;" onchange="updateStatus('${iv.id}',this.value)">
+          <option value="">ステータス変更</option>
+          <option value="pending">取材待ち</option>
+          <option value="interviewing">取材中</option>
+          <option value="writing">執筆中</option>
+          <option value="published">公開済み</option>
+        </select>
+        <button class="btn btn-danger btn-sm" onclick="deleteInterview('${iv.id}')">削除</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function loadInterview(id) {
+  const iv = interviewList.find(i => i.id === id);
+  if (!iv) return;
+  currentInterview = { ...iv };
+  // restore profile fields
+  const p = iv.profile || {};
+  ['name','title','facility','years','area','axis','bio','url'].forEach(k => {
+    const el = document.getElementById('p-' + k);
+    if (el) el.value = p[k] || '';
+  });
+  // restore selected questions from answers keys
+  selectedQuestions.clear();
+  Object.keys(iv.answers || {}).forEach(k => selectedQuestions.add(k));
+  updateSelectedCount();
+  switchTab('input');
+}
+
+function newInterview() {
+  currentInterview = { id: null, profile: {}, answers: {}, generatedArticle: null, status: 'pending' };
+  selectedQuestions.clear();
+  ['name','title','facility','years','area','bio','url'].forEach(k => {
+    const el = document.getElementById('p-' + k);
+    if (el) el.value = '';
+  });
+  document.getElementById('gen-title').value = '';
+  document.getElementById('gen-slug').value = '';
+  document.getElementById('gen-note').value = '';
+  document.getElementById('gen-preview-wrap').style.display = 'none';
+  updateSelectedCount();
+  switchTab('bank');
+}
+
+function updateStatus(id, status) {
+  if (!status) return;
+  const iv = interviewList.find(i => i.id === id);
+  if (iv) { iv.status = status; saveInterviewList(); renderManageList(); }
+}
+
+function deleteInterview(id) {
+  if (!confirm('削除しますか？')) return;
+  interviewList = interviewList.filter(i => i.id !== id);
+  saveInterviewList();
+  renderManageList();
+}
+
+// ── API key ──────────────────────────────────────
+function saveApiKey() {
+  const v = document.getElementById('api-key-input').value.trim();
+  if (v) { localStorage.setItem('fineme:claude:key', v); showToast('APIキー保存'); }
+}
+function loadApiKey() {
+  const v = localStorage.getItem('fineme:claude:key') || '';
+  if (v) document.getElementById('api-key-input').value = v;
+}
+function saveSupaKeys() {
+  const url = document.getElementById('supa-url').value.trim();
+  const key = document.getElementById('supa-key').value.trim();
+  if (url) localStorage.setItem('fineme:supa:url', url);
+  if (key) localStorage.setItem('fineme:supa:key', key);
+  showToast('Supabase設定保存');
+}
+function loadSupaKeys() {
+  const url = localStorage.getItem('fineme:supa:url') || '';
+  const key = localStorage.getItem('fineme:supa:key') || '';
+  if (url) document.getElementById('supa-url').value = url;
+  if (key) document.getElementById('supa-key').value = key;
+}
+
+// ── Utils ────────────────────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+  return String(s || '').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+}
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:rgba(201,168,76,0.9);color:#0a0f1e;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:700;z-index:9999;pointer-events:none;';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+
+init();
+</script>
+</body>
+</html>
