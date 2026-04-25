@@ -27,15 +27,17 @@ export default function NewMeNaviPage() {
       #navi-root { width: 100%; overflow-x: hidden; box-sizing: border-box; }
       #navi-root * { max-width: 100%; box-sizing: border-box; }
 
-      /* ── Header ── */
-      .navi-header { padding: 44px 28px 36px; background: linear-gradient(rgba(10,15,30,0.78), rgba(10,15,30,0.88)), url('/assets/images/hero-bg.webp') center / cover no-repeat; border-radius: 14px; margin-bottom: 24px; position: relative; overflow: hidden; border: 1px solid rgba(201,168,76,0.2); }
-      .navi-header::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(201,168,76,.1) 0%, transparent 70%); border-radius: 50%; }
-      .navi-header-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .18em; color: rgba(201,168,76,0.55); margin: 0 0 10px; text-transform: uppercase; position: relative; z-index: 1; }
-      .navi-header-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 5px 14px; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); color: #c9a84c; border-radius: 3px; margin-bottom: 14px; position: relative; z-index: 1; letter-spacing: .08em; }
-      .navi-header h1 { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(16px,4vw,22px); font-weight: 700; color: #fff; margin: 0 0 10px; line-height: 1.55; position: relative; z-index: 1; }
-      .navi-header h1 em { font-style: normal; color: #c9a84c; }
-      .navi-header-sub { font-size: 13px; color: rgba(255,255,255,.65); margin: 0; line-height: 1.75; position: relative; z-index: 1; }
-      .progress-bar-wrap { margin-top: 18px; position: relative; z-index: 1; }
+      /* ── Type Hero ── */
+      .type-hero { width: 100%; text-align: center; padding: 40px 24px 32px; margin-bottom: 20px; position: relative; overflow: hidden; }
+      .type-hero-code { font-size: 10px; font-weight: 800; letter-spacing: .2em; margin: 0 0 12px; text-transform: uppercase; }
+      .type-hero-name { font-family: 'Noto Serif JP',Georgia,serif; font-size: clamp(24px,7vw,40px); font-weight: 900; color: #fff; margin: 0 0 22px; line-height: 1.2; }
+      .type-hero-img-wrap { width: min(240px,68vw); height: min(320px,90vw); margin: 0 auto 20px; border-radius: 18px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
+      .type-hero-img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; border-radius: 18px; }
+      .type-hero-tagline { font-size: 13px; color: rgba(232,228,220,0.5); line-height: 1.85; max-width: 280px; margin: 0 auto 24px; }
+      .type-hero-divider { height: 1px; background: linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent); margin: 0 0 20px; }
+
+      /* ── Progress bar ── */
+      .progress-bar-wrap { position: relative; z-index: 1; padding: 0 4px; }
       .progress-bar-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
       .progress-bar-label-text { font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.8); letter-spacing: .08em; text-transform: uppercase; }
       .progress-bar-pct { font-size: 13px; font-weight: 900; color: #c9a84c; }
@@ -1097,6 +1099,44 @@ export default function NewMeNaviPage() {
     const compassFirst  = p.compass_first  || priorityOrder[0] || 'body';
     const overallGoal   = getOverallGoal();
 
+    // ── タイプシステム ──
+    const AXIS_TYPE_CODE  = { body:'B', eyebrow:'E', fashion:'F', hair:'H', skin:'S', teeth:'T', nail:'W' };
+    const CARE_CODE_MAP   = { none:'N', concerned:'C', self:'A', pro:'P' };
+    const PATH_CODE_MAP   = { virgin:'V', quit:'Q', blind:'K', lapsed:'L', doing:'D' };
+    const TYPE_CREATURE   = {
+      NV:'フェンリル', NK:'レヴィアタン', ND:'伏竜',
+      CV:'蟠龍', CQ:'鵺', CK:'マンティコア', CL:'ヒュドラ', CD:'鳳凰',
+      AV:'グリフィン', AQ:'玄武', AK:'ガルーダ', AL:'天馬', AD:'朱雀',
+      PQ:'白虎', PK:'飛龍', PL:'スフィンクス', PD:'麒麟',
+    };
+    const CREATURE_TAGLINE = {
+      'フェンリル':   '縛られた巨狼。解放を待つ、圧倒的な力。',
+      'レヴィアタン': '深海に潜む原初の獣。無意識の巨大さがある。',
+      '伏竜':         '深き影に潜む竜。その才、まだ誰も知らない。',
+      '蟠龍':         '今まさにとぐろを解こうとする竜。跳躍寸前の力。',
+      '鵺':           '正体不明の合成獣。まだ本当の姿を見せていない。',
+      'マンティコア': '本能のまま疾走する猛獣。力は本物、方向を定めよ。',
+      'ヒュドラ':     '切られるたびに甦る多頭の竜。諦めない再生力。',
+      '鳳凰':         '炎から蘇る不死鳥。変容こそが本質。',
+      'グリフィン':   '試されていないだけ。誇り高き守護者が目覚める。',
+      '玄武':         '深き知恵を持つ亀。時が来るまで動かない。',
+      'ガルーダ':     '天空の覇者。本能のまま風を支配する。',
+      '天馬':         '翼を持つ神馬。次に飛ぶとき、空を変える。',
+      '朱雀':         '南天の炎鳥。今まさに最も輝いている。',
+      '白虎':         '西の守護神。引いた今も、その威厳は本物だ。',
+      '飛龍':         '天を制する竜。到達した者だけが見る景色がある。',
+      'スフィンクス': '砂漠の謎かけ番人。深淵の智慧、今は静かに待つ。',
+      '麒麟':         '徳ある者にのみ現れる聖獣。至高の境地へ。',
+    };
+    const AXIS_ACCENT_COLOR = { B:'#ef4444', E:'#8b5cf6', F:'#10b981', H:'#3b82f6', S:'#f59e0b', T:'#eab308', W:'#14b8a6' };
+    const AXIS_WORD = { B:'鋼の', E:'眉弧の', F:'纏いの', H:'黒髪の', S:'光肌の', T:'白砂の', W:'翡翠の' };
+    const TYPE_MODIFIER = {
+      NV:'眠れる', NK:'知らぬ', ND:'臥す',
+      CV:'潜む',   CQ:'折れた', CK:'暴れる', CL:'眠れる', CD:'蘇る',
+      AV:'構えの', AQ:'迷い',   AK:'本能の', AL:'羽休めの', AD:'燃える',
+      PQ:'引きの', PK:'無自覚の', PL:'休みの', PD:'聖なる',
+    };
+
     // ── ルートパターン ──
     const ROUTE_PATTERNS = {
       recommend: [...new Set([...priorityOrder, ...Object.keys(AREA_DEFS)])].filter(id => AREA_DEFS[id]),
@@ -1134,6 +1174,49 @@ export default function NewMeNaviPage() {
       // priority_order の中で done でない最初の軸
       const next = priorityOrder.find(id => !doneAxes.has(id));
       return next || compassFirst;
+    }
+
+    function buildTypeHero() {
+      const axisCode = AXIS_TYPE_CODE[compassFirst];
+      if (!axisCode) return '';
+      const v = tv[compassFirst] || {};
+      const careCode = CARE_CODE_MAP[v.care_type] || 'N';
+      const pathCode = PATH_CODE_MAP[v.path_type] || 'V';
+      const creature = TYPE_CREATURE[careCode + pathCode];
+      if (!creature) return '';
+      const typeCode  = `${axisCode}${careCode}${pathCode}`;
+      const modifier  = TYPE_MODIFIER[careCode + pathCode] || '';
+      const axisWord  = AXIS_WORD[axisCode] || '';
+      const fullName  = `${axisWord}${modifier}${creature}`;
+      const tagline   = CREATURE_TAGLINE[creature] || '';
+      const color     = AXIS_ACCENT_COLOR[axisCode] || '#c9a84c';
+      const axisLabel = AREA_DEFS[compassFirst]?.label || '';
+      const allSteps  = flattenAllSteps();
+      const doneCount = allSteps.filter(s => s.isDone).length;
+      const total     = allSteps.length;
+      const pct       = total > 0 ? Math.round(doneCount / total * 100) : 0;
+      return `
+        <div class="type-hero" style="background:linear-gradient(180deg,${color}18 0%,rgba(10,15,30,0) 100%)">
+          <p class="type-hero-code" style="color:${color}">TYPE-${esc(typeCode)} · ${esc(axisLabel)}軸</p>
+          <h1 class="type-hero-name">${esc(fullName)}</h1>
+          <div class="type-hero-img-wrap" style="border:2px solid ${color}44;box-shadow:0 0 32px ${color}22">
+            <img class="type-hero-img" src="/images/types/TYPE-${esc(typeCode)}.png" alt="${esc(creature)}" onerror="this.style.display='none'" />
+            <span style="font-size:64px;position:relative;z-index:0">🐉</span>
+          </div>
+          <p class="type-hero-tagline">${esc(tagline)}</p>
+          <div class="type-hero-divider"></div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-label">
+              <span class="progress-bar-label-text">変容の進捗</span>
+              <span class="progress-bar-pct">${pct}%</span>
+            </div>
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" style="width:${pct}%"></div>
+            </div>
+            <p class="progress-bar-sub">${doneCount} / ${total} ステップ完了</p>
+          </div>
+        </div>
+      `;
     }
 
     function buildCompassHtml() {
@@ -1624,15 +1707,7 @@ export default function NewMeNaviPage() {
 
     const html = `
       <div class="navi-wrap">
-      <div class="navi-header">
-        <p class="navi-header-eyebrow">New Me Map</p>
-        <div class="navi-header-badge">🧭 行動タイプ別ロードマップ</div>
-        <h1>ゴール：<em>${esc(overallGoal)}</em></h1>
-        <p class="navi-header-sub">「今すぐ動ける」から始めよう。<br>Compassが指す軸のステップが最優先で表示される。</p>
-        ${(() => { const _all = flattenAllSteps(); const _done = _all.filter(s=>s.isDone).length; const _total = _all.length; const _pct = _total > 0 ? Math.round(_done/_total*100) : 0; return `<div class="progress-bar-wrap"><div class="progress-bar-label"><span class="progress-bar-label-text">変容の進捗</span><span class="progress-bar-pct">${_pct}%</span></div><div class="progress-bar-track"><div class="progress-bar-fill" style="width:${_pct}%"></div></div><p class="progress-bar-sub">${_done} / ${_total} ステップ完了</p></div>`; })()}
-        <svg viewBox="0 0 80 80" width="68" height="68" style="position:absolute;top:14px;right:14px;z-index:1;opacity:0.17" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="37" fill="none" stroke="#c9a84c" stroke-width="0.8"/><circle cx="40" cy="40" r="28" fill="none" stroke="#c9a84c" stroke-width="0.4"/><line x1="40" y1="3" x2="40" y2="77" stroke="#c9a84c" stroke-width="0.8"/><line x1="3" y1="40" x2="77" y2="40" stroke="#c9a84c" stroke-width="0.8"/><line x1="14" y1="14" x2="66" y2="66" stroke="#c9a84c" stroke-width="0.5"/><line x1="66" y1="14" x2="14" y2="66" stroke="#c9a84c" stroke-width="0.5"/><polygon points="40,4 37,23 40,19 43,23" fill="#c9a84c"/><polygon points="40,76 37,57 40,61 43,57" fill="#c9a84c" opacity="0.4"/><polygon points="76,40 57,37 61,40 57,43" fill="#c9a84c" opacity="0.4"/><polygon points="4,40 23,37 19,40 23,43" fill="#c9a84c" opacity="0.4"/><circle cx="40" cy="40" r="5" fill="none" stroke="#c9a84c" stroke-width="1.2"/><circle cx="40" cy="40" r="2" fill="#c9a84c"/></svg>
-        <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(201,168,76,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
-      </div>
+      ${buildTypeHero()}
 
       ${buildCompassHtml()}
       ${buildAxisFilterBar()}
