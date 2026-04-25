@@ -38,7 +38,7 @@ export default function DiagnosisPage() {
       .diag-option-icon { font-size: 20px; flex-shrink: 0; line-height: 1.3; }
       .diag-option-body { flex: 1; }
       .diag-option-title { font-size: 15px; font-weight: 700; color: #0a0f1e; line-height: 1.4; display: block; }
-      .diag-option-desc { font-size: 13px; color: #5a4e45; margin-top: 2px; line-height: 1.5; display: block; }
+      .diag-option-desc { display: none; }
       .diag-option.multi .diag-check { width: 18px; height: 18px; border: 2px solid rgba(201,168,76,0.3); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all .12s; }
       .diag-option.multi.selected .diag-check { background: #c9a84c; border-color: #c9a84c; color: #0a0f1e; font-size: 11px; font-weight: 900; }
       .care-level-item { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(201,168,76,0.12); }
@@ -258,11 +258,13 @@ export default function DiagnosisPage() {
 
     const state = {
       trigger: null,
+      triggers: [],
       // ゴール深掘り（Layer 2→3→4）
       goal_scene: null,
       goal_change: null,
       goal_vision: null,
       scene: null,
+      scenes: [],
       care_levels: {},
       ideal_levels: {},   // 各カテゴリの理想スコア（1〜5）
       aga_concern: null,
@@ -274,6 +276,7 @@ export default function DiagnosisPage() {
       currentCatIdx: 0,   // Phase3でのカテゴリ進捗
       past_attempts: [],
       failure_pattern: null,
+      failure_patterns: [],
       style_priorities: [],
       style_priority_top: null,
       urgency: null,
@@ -336,11 +339,11 @@ export default function DiagnosisPage() {
     function updateNextBtn() {
       let enabled = false;
       switch (currentScreen) {
-        case 'q1':       enabled = !!state.trigger; break;
+        case 'q1':       enabled = state.triggers.length > 0; break;
         case 'q_goal_a': enabled = !!state.goal_scene; break;
         case 'q_goal_b': enabled = !!state.goal_change; break;
         case 'q_goal_c': enabled = !!state.goal_vision; break;
-        case 'q2':       enabled = !!state.scene; break;
+        case 'q2':       enabled = state.scenes.length > 0; break;
         case 'q3':     enabled = Object.values(state.care_levels).some(v => v && v !== ''); break;
         case 'q3_aga': enabled = !!state.aga_status; break;
         case 'q3_cat': {
@@ -352,7 +355,7 @@ export default function DiagnosisPage() {
           enabled = pathOk && viewOk && loveOk;
           break;
         }
-        case 'q5b':    enabled = !!state.failure_pattern; break;
+        case 'q5b':    enabled = state.failure_patterns.length > 0; break;
         case 'q6':       enabled = state.style_priorities.length > 0; break;
         case 'q6b':      enabled = !!state.style_priority_top; break;
         case 'q7':       enabled = !!state.urgency; break;
@@ -656,13 +659,15 @@ export default function DiagnosisPage() {
         version: 'v9_me_scan',
         at: Date.now(),
         // 文脈
-        trigger: state.trigger,
+        trigger: state.triggers[0] || null,
+        triggers: state.triggers,
         // ゴール（Layer 2→4）
         goal_scene: state.goal_scene,
         goal_change: state.goal_change,
         goal_vision: state.goal_vision,
         // 場面
-        scene: state.scene,
+        scene: state.scenes[0] || null,
+        scenes: state.scenes,
         // 7軸スコア
         transform_vectors: transformVectors,
         priority_order: priorityOrder,
@@ -681,7 +686,8 @@ export default function DiagnosisPage() {
         concern_priority: priority,
         behavior_baseline: behaviorBaseline,
         past_attempts: state.past_attempts,
-        failure_pattern: state.failure_pattern,
+        failure_pattern: state.failure_patterns[0] || null,
+        failure_patterns: state.failure_patterns,
         style_priorities: state.style_priorities,
         style_priority_top: state.style_priority_top,
         style: styleRel.style,
@@ -887,13 +893,13 @@ export default function DiagnosisPage() {
         });
       });
     }
-    bindSingleChoice('opts-q1', 'trigger');
+    bindMultiChoice('opts-q1', state.triggers);
     bindSingleChoice('opts-q_goal_a', 'goal_scene');
     bindSingleChoice('opts-q_goal_b', 'goal_change');
     bindSingleChoice('opts-q_goal_c', 'goal_vision');
-    bindSingleChoice('opts-q2', 'scene');
+    bindMultiChoice('opts-q2', state.scenes);
     bindSingleChoice('opts-q3_aga', 'aga_status');
-    bindSingleChoice('opts-q5b', 'failure_pattern');
+    bindMultiChoice('opts-q5b', state.failure_patterns);
     bindSingleChoice('opts-q7', 'urgency');
     bindSingleChoice('opts-q8', 'budget');
 
@@ -1001,60 +1007,60 @@ export default function DiagnosisPage() {
             <h2 className="diag-q">なぜ今、外見を変えようと<br />思いましたか？</h2>
             <p className="diag-hint">今の気持ちに一番近いものを選んでください。</p>
             <div className="diag-options" id="opts-q1">
-              <button className="diag-option" data-value="matching_photo">
-                <span className="diag-option-icon">📱</span>
+              <button className="diag-option multi" data-value="matching_photo">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">マッチングアプリで、写真が原因で損している気がする</span>
-                  <span className="diag-option-desc">マッチング数が少ない、またはプロフィール写真が自信を持てない</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>📱</span>
+                  <span className="diag-option-title">マッチングアプリの写真で損している</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="matching_date">
-                <span className="diag-option-icon">💔</span>
+              <button className="diag-option multi" data-value="matching_date">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>💔</span>
                   <span className="diag-option-title">マッチングはできるが、会うと続かない</span>
-                  <span className="diag-option-desc">実際に会ったときの印象で差がついている気がする</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="love_now">
-                <span className="diag-option-icon">❤️</span>
+              <button className="diag-option multi" data-value="love_now">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">好きな人ができた。次に会う時に印象を変えたい</span>
-                  <span className="diag-option-desc">具体的な相手がいる。タイムリミットがある</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>❤️</span>
+                  <span className="diag-option-title">好きな人に会う前に変わりたい</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="career">
-                <span className="diag-option-icon">💼</span>
+              <button className="diag-option multi" data-value="career">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">就職・転職・大事な場面が近い</span>
-                  <span className="diag-option-desc">第一印象が評価に直結する場面が控えている</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>💼</span>
+                  <span className="diag-option-title">就職・転職など大事な場面が近い</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="mirror">
-                <span className="diag-option-icon">🪞</span>
+              <button className="diag-option multi" data-value="mirror">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">毎朝鏡を見るたびに、気分が上がらない</span>
-                  <span className="diag-option-desc">日常の小さな積み重ねが、自己評価を下げている</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>🪞</span>
+                  <span className="diag-option-title">毎朝鏡を見て気分が上がらない</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="word">
-                <span className="diag-option-icon">💬</span>
+              <button className="diag-option multi" data-value="word">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">誰かに言われた一言が、頭から離れない</span>
-                  <span className="diag-option-desc">指摘・冗談・比較——何かが刺さって残っている</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>💬</span>
+                  <span className="diag-option-title">言われた一言が頭から離れない</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="comparison">
-                <span className="diag-option-icon">😔</span>
+              <button className="diag-option multi" data-value="comparison">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">同世代と並んだとき、自分だけが違う気がした</span>
-                  <span className="diag-option-desc">清潔感・雰囲気・スタイル——差が気になった瞬間があった</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>😔</span>
+                  <span className="diag-option-title">同世代と並んで差が気になった</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="vague">
-                <span className="diag-option-icon">🌱</span>
+              <button className="diag-option multi" data-value="vague">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">明確なきっかけはないが、このままでいいとは思っていない</span>
-                  <span className="diag-option-desc">漠然とした「変わりたい」気持ちが、ずっとある</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>🌱</span>
+                  <span className="diag-option-title">明確な理由はないが変わりたい</span>
                 </span>
               </button>
             </div>
@@ -1200,53 +1206,53 @@ export default function DiagnosisPage() {
             <h2 className="diag-q">「このままじゃ嫌だ」と<br />一番感じる場面は？</h2>
             <p className="diag-hint">最もリアルに刺さるものを選んでください。</p>
             <div className="diag-options" id="opts-q2">
-              <button className="diag-option" data-value="date_first">
-                <span className="diag-option-icon">🫀</span>
+              <button className="diag-option multi" data-value="date_first">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">初めて会うデートの前夜、緊張より不安の方が大きい</span>
-                  <span className="diag-option-desc">「外見で引かれたらどうしよう」が頭をよぎる</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>🫀</span>
+                  <span className="diag-option-title">初デートの前、緊張より不安の方が大きい</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="photo_gap">
-                <span className="diag-option-icon">📸</span>
+              <button className="diag-option multi" data-value="photo_gap">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">写真に映った自分が、思っていた自分と全然違う</span>
-                  <span className="diag-option-desc">自撮り・集合写真・ビデオ通話で毎回落ち込む</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>📸</span>
+                  <span className="diag-option-title">写真の自分が想像と全然違う</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="clothes_fit">
-                <span className="diag-option-icon">👔</span>
+              <button className="diag-option multi" data-value="clothes_fit">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">気に入った服を試着したら、似合わなくて棚に戻した</span>
-                  <span className="diag-option-desc">「着たいのに、なんか違う」が続いている</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>👔</span>
+                  <span className="diag-option-title">気に入った服を試着したら似合わなかった</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="morning_mirror">
-                <span className="diag-option-icon">🌅</span>
+              <button className="diag-option multi" data-value="morning_mirror">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">朝、洗面台の鏡を見て、一日のやる気が下がる</span>
-                  <span className="diag-option-desc">毎日のことだから、じわじわ積み重なっている</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>🌅</span>
+                  <span className="diag-option-title">朝の鏡で一日のやる気が下がる</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="video_call">
-                <span className="diag-option-icon">💻</span>
+              <button className="diag-option multi" data-value="video_call">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">オンライン通話やカメラに映った自分を見て、落ち込んだ</span>
-                  <span className="diag-option-desc">画面越しの自分の顔・雰囲気が、想像と違いすぎる</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>💻</span>
+                  <span className="diag-option-title">オンライン通話の画面の自分に落ち込んだ</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="group_scene">
-                <span className="diag-option-icon">👥</span>
+              <button className="diag-option multi" data-value="group_scene">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">集合写真や街中で、同世代の男性との差が目に入った</span>
-                  <span className="diag-option-desc">清潔感・スタイル・雰囲気——比べてしまう場面があった</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>👥</span>
+                  <span className="diag-option-title">同世代と並んで差が気になった</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="daily_low">
-                <span className="diag-option-icon">🌫️</span>
+              <button className="diag-option multi" data-value="daily_low">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">特定の場面というより、日常的に自信が持てていない</span>
-                  <span className="diag-option-desc">いつも「もう少し自分に自信があれば」と思っている</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>🌫️</span>
+                  <span className="diag-option-title">日常的に自信が持てない</span>
                 </span>
               </button>
             </div>
@@ -1398,53 +1404,53 @@ export default function DiagnosisPage() {
             <h2 className="diag-q">外見を変えようとするとき、<br />一番の壁になってきたのは何だと思う？</h2>
             <p className="diag-hint">カテゴリは関係なく、あなた自身の「傾向」を振り返ってください。正直な答えが、あなたに合うガイドを見つけます。</p>
             <div className="diag-options" id="opts-q5b">
-              <button className="diag-option" data-value="cost">
-                <span className="diag-option-icon">💸</span>
+              <button className="diag-option multi" data-value="cost">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>💸</span>
                   <span className="diag-option-title">お金・コスト</span>
-                  <span className="diag-option-desc">費用面でいつも躊躇する、または続けられなくなる</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="no_continuation">
-                <span className="diag-option-icon">⏰</span>
+              <button className="diag-option multi" data-value="no_continuation">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>⏰</span>
                   <span className="diag-option-title">時間・習慣化</span>
-                  <span className="diag-option-desc">続けようとしても、生活の中に組み込めない</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="lost_direction">
-                <span className="diag-option-icon">🧭</span>
+              <button className="diag-option multi" data-value="lost_direction">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">方向・知識</span>
-                  <span className="diag-option-desc">何から始めるか、何が正解かわからなくなる</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>🧭</span>
+                  <span className="diag-option-title">方向・知識がわからない</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="no_result">
-                <span className="diag-option-icon">📉</span>
+              <button className="diag-option multi" data-value="no_result">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>📉</span>
                   <span className="diag-option-title">実感・モチベーション</span>
-                  <span className="diag-option-desc">やっても変わった気がしない、続ける理由が見えなくなる</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="awkward">
-                <span className="diag-option-icon">🤝</span>
+              <button className="diag-option multi" data-value="awkward">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
-                  <span className="diag-option-title">サポート・関係性</span>
-                  <span className="diag-option-desc">一人では難しく、プロとの相性もなかなか合わない</span>
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>🤝</span>
+                  <span className="diag-option-title">プロとの相性・サポート</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="self_doubt">
-                <span className="diag-option-icon">😔</span>
+              <button className="diag-option multi" data-value="self_doubt">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>😔</span>
                   <span className="diag-option-title">自信・マインド</span>
-                  <span className="diag-option-desc">「自分には変われないかも」という気持ちが邪魔をする</span>
                 </span>
               </button>
-              <button className="diag-option" data-value="ongoing">
-                <span className="diag-option-icon">💡</span>
+              <button className="diag-option multi" data-value="ongoing">
+                <span className="diag-check">✓</span>
                 <span className="diag-option-body">
+                  <span className="diag-option-icon" style={{marginRight:'6px'}}>💡</span>
                   <span className="diag-option-title">特に壁はない</span>
-                  <span className="diag-option-desc">今も取り組んでいて、さらに深めたい</span>
                 </span>
               </button>
             </div>
