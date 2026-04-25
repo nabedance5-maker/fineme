@@ -112,6 +112,7 @@ export default function DiagnosisPage() {
           {v:'quit',   t:'🔄 試したが、続かなかった',              d:'筋トレ・食事制限など、途中で止まった'},
           {v:'blind',  t:'🤔 自分なりにやっているが、効果が不明',   d:'やり方が正しいか、客観的な評価を受けたことがない'},
           {v:'lapsed', t:'😴 以前はやっていたが、今は後回し',       d:'できていた時期があったが、疎かになっている'},
+          {v:'doing',  t:'✅ 継続してできている',                   d:'今の習慣・ペースで問題ない。さらに高みを目指したい'},
         ],
         view_q:'他の人から見た自分の体型、実際どう見えていると思う？',
         view_opts:[
@@ -133,6 +134,7 @@ export default function DiagnosisPage() {
           {v:'quit',   t:'🔄 サロンに行ったが続いていない',         d:'一度は試したが、習慣にならなかった'},
           {v:'blind',  t:'🤔 自分で整えているが、似合っているか不安',d:'鏡では確認しているが、第三者の目がわからない'},
           {v:'lapsed', t:'😴 以前は通っていたが、最近サボっている',  d:'できていた時期があったが、間隔が空いている'},
+          {v:'doing',  t:'✅ 継続してできている',                   d:'定期的に整えられている。さらに高みを目指したい'},
         ],
         view_q:'自分の眉って、他の人から見てどう見えていると思う？',
         view_opts:[
@@ -154,6 +156,7 @@ export default function DiagnosisPage() {
           {v:'quit',   t:'🔄 変えようとしたが、しっくりこなかった', d:'試みたことはあるが、自分に合うかわからなかった'},
           {v:'blind',  t:'🤔 自分なりにこだわっているが、客観評価なし',d:'気を使っているが、外から見てどうかわからない'},
           {v:'lapsed', t:'😴 以前は気を使っていたが、最近は後回し',  d:'できていた時期があったが、今は惰性になっている'},
+          {v:'doing',  t:'✅ 継続してできている',                   d:'自分のスタイルが確立している。さらに磨きたい'},
         ],
         view_q:'自分の着こなしって、他の人から見てどう見えていると思う？',
         view_opts:[
@@ -175,6 +178,7 @@ export default function DiagnosisPage() {
           {v:'quit',   t:'🔄 変えようとしたが、思い通りにならなかった',d:'オーダーがうまく伝わらない、また同じスタイルに戻る'},
           {v:'blind',  t:'🤔 定期的に行っているが、似合っているか不安',d:'美容院には通っているが、「これでいい」か正直わからない'},
           {v:'lapsed', t:'😴 以前は意識していたが、最近は間隔が空いている',d:'できていた時期があったが、なんとなく後回し'},
+          {v:'doing',  t:'✅ 継続してできている',                   d:'定期的に美容院に通い、スタイルを維持できている'},
         ],
         view_q:'自分の髪型って、他の人から見てどう見えていると思う？',
         view_opts:[
@@ -196,6 +200,7 @@ export default function DiagnosisPage() {
           {v:'quit',   t:'🔄 スキンケアを始めたことはあるが続かなかった',d:'少し試みたが、習慣にならなかった'},
           {v:'blind',  t:'🤔 スキンケアは習慣だが、効果が実感できない',d:'やっているが、本当に改善しているか正直わからない'},
           {v:'lapsed', t:'😴 以前はちゃんとやっていたが、最近は手を抜いている',d:'できていた時期があったが、今は惰性'},
+          {v:'doing',  t:'✅ 継続してできている',                   d:'スキンケアが習慣化し、肌の状態を維持できている'},
         ],
         view_q:'自分の肌って、他の人から見てどう見えていると思う？',
         view_opts:[
@@ -217,6 +222,7 @@ export default function DiagnosisPage() {
           {v:'quit',   t:'🔄 検討したことはあるが、踏み出せていない',  d:'興味はあるが、まだアクションを起こせていない'},
           {v:'blind',  t:'🤔 ケアはしているが、外から見てどうかわからない',d:'気を使っているが、人からどう見えているか不安'},
           {v:'lapsed', t:'😴 以前は気を使っていたが、最近は後回し',    d:'できていた時期があったが、今は惰性'},
+          {v:'doing',  t:'✅ 継続してできている',                   d:'ホワイトニングや定期ケアを継続できている'},
         ],
         view_q:'自分の歯・口元って、他の人から見てどう見えていると思う？',
         view_opts:[
@@ -238,6 +244,7 @@ export default function DiagnosisPage() {
           {v:'quit',   t:'🔄 ネイルサロンなど試したことはあるが続かなかった',d:'少し試みたが、習慣にならなかった'},
           {v:'blind',  t:'🤔 一応ケアしているが、基準がわからない',    d:'やっているが、これで十分かどうか判断できない'},
           {v:'lapsed', t:'😴 以前はちゃんとやっていたが、今は後回し',   d:'できていた時期があったが、今は疎かになっている'},
+          {v:'doing',  t:'✅ 継続してできている',                   d:'定期的なケアが習慣化できている'},
         ],
         view_q:'自分の爪・手元って、他の人から見てどう見えていると思う？',
         view_opts:[
@@ -254,6 +261,7 @@ export default function DiagnosisPage() {
       quit:   '試したが続かなかった',
       blind:  '自分なりにやっているが客観評価なし',
       lapsed: '以前はやっていたが後回し',
+      doing:  '継続してできている',
     };
 
     const state = {
@@ -470,7 +478,8 @@ export default function DiagnosisPage() {
       });
 
       const idealVals = CONCERN_AREAS.map((area, i) => {
-        const v = parseInt(state.ideal_levels[area.id] || '3', 10);
+        const currentV = { none:1, concerned:2, self:3, pro:4 }[state.care_levels[area.id]] || 1;
+        const v = parseInt(state.ideal_levels[area.id] || String(Math.max(currentV, 3)), 10);
         return i <= doneUpTo ? v : 1;
       });
 
@@ -631,7 +640,7 @@ export default function DiagnosisPage() {
       const transformVectors = {};
       CONCERN_AREAS.forEach(area => {
         const currentScore = { none:1, concerned:2, self:3, pro:4 }[state.care_levels[area.id]] || 1;
-        const idealScore = parseInt(state.ideal_levels[area.id] || '3', 10);
+        const idealScore = parseInt(state.ideal_levels[area.id] || String(Math.max(currentScore, 3)), 10);
         transformVectors[area.id] = {
           current: currentScore,
           ideal: idealScore,
@@ -767,6 +776,18 @@ export default function DiagnosisPage() {
             state.care_levels[area.id] = opt.value;
             wrap.querySelectorAll('.care-level-opt').forEach(el => el.classList.remove('selected'));
             optEl.classList.add('selected');
+            // 理想スコアが現在地を下回らないよう自動補正
+            const mappedScore = { none:1, concerned:2, self:3, pro:4 }[opt.value] || 1;
+            if (!state.ideal_levels[area.id] || parseInt(state.ideal_levels[area.id]) < mappedScore) {
+              const newIdeal = String(Math.max(mappedScore, 3));
+              state.ideal_levels[area.id] = newIdeal;
+              idealBtns.querySelectorAll('button').forEach(b => {
+                const sel = b.dataset.v === newIdeal;
+                b.style.background    = sel ? '#2563eb' : '#fff';
+                b.style.borderColor   = sel ? '#2563eb' : '#e5e7eb';
+                b.style.color         = sel ? '#fff'    : '#374151';
+              });
+            }
             // AGAトグル表示制御
             if (area.hasAga) {
               const agaRow = document.getElementById('aga-row');
@@ -1072,11 +1093,11 @@ export default function DiagnosisPage() {
           <button className="diag-back-btn" data-back="">← 戻る</button>
           <div className="goal-frame-banner">
             <p style={{fontSize:'12px',fontWeight:'700',color:'rgba(232,228,220,0.90)',margin:'0 0 4px'}}>🗺 あなたの地図の「目的地」を設定します</p>
-            <p style={{fontSize:'13px',color:'rgba(232,228,220,0.75)',margin:'0',lineHeight:'1.6'}}>まず、ここに来た理由を聞かせてください。<br/>この3問の答えが、あなただけの変容ナビの目的地になります。</p>
+            <p style={{fontSize:'13px',color:'rgba(232,228,220,0.75)',margin:'0',lineHeight:'1.6'}}>まず、ここに来た理由を聞かせてください。<br/>この答えが、あなただけの変容ナビの目的地になります。</p>
           </div>
           <div className="diag-card">
             <p className="diag-step-label">ゴール｜場面</p>
-            <h2 className="diag-q">外見が変わったとき、<br />どんな場面で一番感じたいですか？</h2>
+            <h2 className="diag-q">外見が変わったとき、<br />どんな場面で一番実感したいですか？</h2>
             <p className="diag-hint">変わったことを実感したい瞬間を選んでください。</p>
             <div className="diag-options" id="opts-q_goal_a">
               <button className="diag-option" data-value="first_impression">

@@ -7,6 +7,22 @@ const SUPABASE_URL = 'https://qsfpzlvucqzmjldshwwd.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODM1MzIsImV4cCI6MjA4ODU1OTUzMn0.9mBlP8-0l9jotex_UkX7Ba8ZodYtailaxoK_RIy3Kq8';
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
+async function syncLocalDiagnosis(accessToken) {
+  try {
+    const raw = localStorage.getItem('fineme:diagnosis:latest');
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    if (!parsed) return false;
+    const res = await fetch('/api/me/diagnosis', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw_data: parsed }),
+    });
+    if (res.ok) { localStorage.removeItem('fineme:diagnosis:latest'); return true; }
+  } catch {}
+  return false;
+}
+
 // パスワード設定フォーム
 function PasswordForm({ onSubmit, loading, error }) {
   const [pw1, setPw1] = useState('');
@@ -117,8 +133,9 @@ export default function AuthCallbackPage() {
         setSession(sess);
         setStatus('password-form');
       } else {
-        // 一般ユーザー → マイページへ
-        window.location.href = '/mypage';
+        // 一般ユーザー → 診断データがあれば同期してからナビへ
+        const synced = await syncLocalDiagnosis(sess.access_token);
+        window.location.href = synced ? '/mypage/navi' : '/mypage';
       }
     }
     init();

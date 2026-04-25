@@ -412,21 +412,27 @@ export default function NewMeNaviPage() {
       const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
       const isLoggedIn = !!(sbKey && JSON.parse(localStorage.getItem(sbKey) || 'null')?.user?.id);
       if (!isLoggedIn) {
+        const hasDiagData = !!(localStorage.getItem('fineme:diagnosis:latest'));
         root.innerHTML = `
           <div style="min-height:50vh;display:flex;align-items:center;justify-content:center;padding:48px 20px">
             <div style="max-width:480px;width:100%;background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.25);border-radius:18px;padding:40px 32px;text-align:center;box-shadow:0 4px 32px rgba(0,0,0,0.4);backdrop-filter:blur(8px)">
               <div style="font-size:40px;margin:0 0 16px">🗺️</div>
               <h2 style="font-family:'Noto Serif JP',Georgia,serif;font-size:18px;font-weight:700;color:rgba(232,228,220,0.90);margin:0 0 12px;line-height:1.6">
-                ここはあなただけの<br>変容ロードマップが届く場所です。
+                New Me Mapはログイン後に表示されます
               </h2>
-              <p style="font-size:14px;color:rgba(232,228,220,0.55);line-height:1.85;margin:0 0 28px">
-                Me Scanを受けると、7軸の現在地と変容ロードマップ<br>（Fineme Compass）がここに保存されます。<br>診断はアカウントなしで受けられます。
-              </p>
-              <a href="/diagnosis" style="display:block;width:100%;padding:15px 24px;background:#c9a84c;color:#0a0f1e;font-size:15px;font-weight:700;border-radius:6px;text-decoration:none;letter-spacing:.05em;margin-bottom:12px;box-sizing:border-box">
-                🧬 Me Scanを受ける（無料・約15分）
+              ${hasDiagData
+                ? `<p style="font-size:13px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);border-radius:8px;padding:10px 14px;color:rgba(52,211,153,0.9);margin:0 0 20px;line-height:1.7">
+                    ✅ Me Scanのデータは保存されています。<br>ログインまたは登録してマップに反映させましょう。
+                  </p>`
+                : `<p style="font-size:14px;color:rgba(232,228,220,0.55);line-height:1.85;margin:0 0 20px">
+                    7軸の現在地と変容ロードマップ（Fineme Compass）が<br>ここに届きます。まずログイン / 新規登録してください。
+                  </p>`
+              }
+              <a href="/login" style="display:block;width:100%;padding:15px 24px;background:#c9a84c;color:#0a0f1e;font-size:15px;font-weight:700;border-radius:6px;text-decoration:none;letter-spacing:.05em;margin-bottom:12px;box-sizing:border-box">
+                ログイン / 新規登録
               </a>
-              <a href="/login" style="font-size:13px;color:rgba(232,228,220,0.40);text-decoration:none;border-bottom:1px solid rgba(232,228,220,0.15);padding-bottom:2px">
-                すでにアカウントをお持ちの方はログイン
+              <a href="/diagnosis" style="font-size:13px;color:rgba(232,228,220,0.40);text-decoration:none;border-bottom:1px solid rgba(232,228,220,0.15);padding-bottom:2px">
+                まだMe Scanを受けていない方はこちら
               </a>
             </div>
           </div>`;

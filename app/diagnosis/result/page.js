@@ -516,17 +516,44 @@ export default function DiagnosisResultPage() {
       const overrideNote = isOverrideActive
         ? `<p style="font-size:11px;color:#c9a84c;font-weight:700;margin:4px 0 0">🧭 あなたが選んだ方角 — <button id="compass-reset-btn" style="background:none;border:none;color:#c9a84c;font-size:11px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline">診断の推奨に戻す</button></p>`
         : `<p style="font-size:11px;color:#6b7280;margin:4px 0 0">診断が算出した最初の一手</p>`;
+      // TOP2, TOP3
+      const top2Id = isOverrideActive ? (priorityOrder.filter(id => id !== compassFirst)[0] || null) : (priorityOrder.filter(id => id !== compassFirst)[0] || null);
+      const top3Id = priorityOrder.filter(id => id !== compassFirst && id !== top2Id)[0] || null;
+      const top2Def = top2Id && AREA_DEFS[top2Id];
+      const top3Def = top3Id && AREA_DEFS[top3Id];
+      const subCompasses = [top2Id, top3Id].filter(Boolean).map((id, si) => {
+        const d = AREA_DEFS[id];
+        if (!d) return '';
+        const pathT = tv[id]?.path_type;
+        const pathNote = pathT ? `<span style="font-size:10px;color:#c9a84c;font-weight:700;display:block;margin-top:3px">${(PATH_ACTION[pathT]||'').replace('→ ','')}</span>` : '';
+        return `
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.12);border-radius:10px;flex:1;min-width:0">
+            <span style="font-size:18px;flex-shrink:0;line-height:1.4">${esc(d.icon)}</span>
+            <div style="min-width:0">
+              <span style="font-size:10px;color:rgba(201,168,76,0.6);font-weight:700;letter-spacing:.06em">第${si+2}候補</span>
+              <div style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9)">${esc(d.label)}</div>
+              ${pathNote}
+            </div>
+          </div>`;
+      }).join('');
+
       return `
         <p class="sec-label" style="margin-top:28px">Fineme Compass</p>
         <div class="compass-card">
-          <div class="compass-eyebrow">今向くべき方角</div>
+          <div class="compass-eyebrow">今向くべき方角 — 第1候補</div>
           <div class="compass-main">${esc(def.icon)} ${esc(def.label)}</div>
           ${overrideNote}
           <div class="compass-reason" style="margin-top:12px">${COMPASS_REASONS[compassFirst] || ''}${urgencyNote}${pathActionNote}</div>
           <a href="/mypage/navi" class="compass-cta">変容ロードマップを見る →</a>
           <a href="/search?category=${esc(def.catLink)}&diag=1" style="display:inline-block;margin-top:8px;font-size:12px;color:#6b7280;text-decoration:none;" onmouseover="this.style.color='#c9a84c'" onmouseout="this.style.color='#6b7280'">このカテゴリのプロを探すなら →</a>
 
-          <div style="margin-top:20px;padding-top:18px;border-top:1px solid rgba(201,168,76,0.2);">
+          ${subCompasses ? `
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(201,168,76,0.15)">
+            <p style="font-size:11px;font-weight:700;color:rgba(201,168,76,0.6);margin:0 0 8px;letter-spacing:.06em">第2・第3候補</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">${subCompasses}</div>
+          </div>` : ''}
+
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(201,168,76,0.2);">
             <p style="font-size:12px;font-weight:800;color:rgba(201,168,76,0.8);margin:0 0 10px;letter-spacing:.06em;display:flex;align-items:center;gap:6px"><span>🔄</span> 最初の一手を自分で選ぶ</p>
             <div style="display:flex;flex-wrap:wrap;gap:8px">${overrideChips}</div>
           </div>
@@ -721,6 +748,13 @@ export default function DiagnosisResultPage() {
 
       <div class="v-route"><div class="v-route-line"></div><div class="v-route-dot"></div><div class="v-route-line"></div></div>
 
+      ${!isLoggedIn ? `
+      <div style="background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.22);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:20px;flex-shrink:0">💾</span>
+        <span style="flex:1;font-size:13px;color:rgba(232,228,220,0.72);line-height:1.6">このページを閉じると地図が消えます。<a href="/login?mode=signup&next=/diagnosis/result" style="color:#c9a84c;font-weight:700;text-decoration:none">無料で保存する →</a></span>
+      </div>
+      ` : ''}
+
       ${buildCompass()}
 
       <p class="sec-label" style="margin-top:28px">Radar Map</p>
@@ -750,18 +784,10 @@ export default function DiagnosisResultPage() {
       <div class="navi-section">
         <div class="navi-section-label">🗺️ 次の行き先</div>
         <a href="/mypage/navi" class="navi-btn navi-btn-primary">
-          <span class="navi-btn-icon">📋</span>
-          <span class="navi-btn-body">
-            <span class="navi-btn-title">出発前チェックを確認する</span>
-            <span class="navi-btn-desc">旅を始める前に、今の自分の状態を確認しよう（任意・全部揃わなくてもOK）</span>
-          </span>
-          <span class="navi-btn-arrow">→</span>
-        </a>
-        <a href="/mypage/navi" class="navi-btn navi-btn-secondary">
           <span class="navi-btn-icon">🧭</span>
           <span class="navi-btn-body">
-            <span class="navi-btn-title">New Me Mapを見る</span>
-            <span class="navi-btn-desc">7軸それぞれの変容トラックと、今向くべき方角が常に見える</span>
+            <span class="navi-btn-title">New Me Mapを開く</span>
+            <span class="navi-btn-desc">出発前チェック・7軸変容トラック・今向くべき方角が一画面で見える</span>
           </span>
           <span class="navi-btn-arrow">→</span>
         </a>
@@ -802,6 +828,18 @@ export default function DiagnosisResultPage() {
       ${buildProductCarousel(priorityOrder.filter(id => AXIS_PRODUCTS[id]).slice(0, 5), getUserLevel())}
 
       <div id="share-block" style="margin: 0 0 20px; text-align: center;"></div>
+
+      ${!isLoggedIn ? `
+      <div class="save-map-cta" style="margin-bottom:24px">
+        <div class="save-map-cta-icon">🔑</div>
+        <div class="save-map-cta-body">
+          <div class="save-map-cta-title">あなたの地図はまだ保存されていません</div>
+          <div class="save-map-cta-desc">ページを閉じると診断データは消えます。<br>無料登録するとNew Me Mapにすぐ反映されます。</div>
+          <a href="/login?mode=signup&next=/mypage/navi" class="save-map-cta-btn">無料アカウントを作って保存する →</a>
+          <p class="save-map-cta-note">登録後すぐにNew Me Mapが開きます</p>
+        </div>
+      </div>
+      ` : ''}
 
       <div class="cta-block">
         <div class="cta-section">
