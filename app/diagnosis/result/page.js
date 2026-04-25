@@ -356,24 +356,25 @@ export default function DiagnosisResultPage() {
       AV:'グリフィン', AQ:'玄武', AK:'ガルーダ', AL:'天馬', AD:'朱雀',
       PQ:'白虎', PK:'飛龍', PL:'スフィンクス', PD:'麒麟',
     };
-    const CREATURE_TAGLINE = {
-      'フェンリル':   '縛られた巨狼。解放を待つ、圧倒的な力。',
-      'レヴィアタン': '深海に潜む原初の獣。無意識の巨大さがある。',
-      '伏竜':         '深き影に潜む竜。その才、まだ誰も知らない。',
-      '蟠龍':         '今まさにとぐろを解こうとする竜。跳躍寸前の力。',
-      '鵺':           '正体不明の合成獣。まだ本当の姿を見せていない。',
-      'マンティコア': '本能のまま疾走する猛獣。力は本物、方向を定めよ。',
-      'ヒュドラ':     '切られるたびに甦る多頭の竜。諦めない再生力。',
-      '鳳凰':         '炎から蘇る不死鳥。変容こそが本質。',
-      'グリフィン':   '試されていないだけ。誇り高き守護者が目覚める。',
-      '玄武':         '深き知恵を持つ亀。時が来るまで動かない。',
-      'ガルーダ':     '天空の覇者。本能のまま風を支配する。',
-      '天馬':         '翼を持つ神馬。次に飛ぶとき、空を変える。',
-      '朱雀':         '南天の炎鳥。今まさに最も輝いている。',
-      '白虎':         '西の守護神。引いた今も、その威厳は本物だ。',
-      '飛龍':         '天を制する竜。到達した者だけが見る景色がある。',
-      'スフィンクス': '砂漠の謎かけ番人。深淵の智慧、今は静かに待つ。',
-      '麒麟':         '徳ある者にのみ現れる聖獣。至高の境地へ。',
+    // ケア×パス の組み合わせで決まるユーザー向けの状態説明文
+    const TYPE_DESCRIPTION = {
+      NV: 'まだ外見と向き合ったことがない。でも、気になっていないだけで変えられる余白は最大だ。最初の一点さえ変えれば、誰より大きく変われる可能性がある。',
+      NK: '客観的な目で自分を見たことがない。悪いわけではないが、見えていない死角がある。一度だけ他人の目線で確かめてみよう。そこから全てが変わる。',
+      ND: '気負いなく、淡々と整えている。それが実は最も強い姿勢だ。欲のない取り組みは長続きし、気づいたとき大きく変わっている。',
+      CV: '変わりたいという気持ちはある。ただ、まだ動けていない。その緊張感こそが力だ。最初の一点だけを変えてみる。そこから全部が動き出す。',
+      CQ: '一度やってみたけど、続かなかった。それは失敗ではない。合う方法をまだ見つけていないだけだ。次は仕組みを先に作る。',
+      CK: '気になっているし、自分なりに頑張っている。ただ、自己流には限界がある。一度だけプロの目線でフィードバックをもらう。それだけで方向が定まる。',
+      CL: 'かつてやっていた。気になってはいる。でも今は止まっている。再開のハードルはそれほど高くない。一番小さいステップを一つだけ踏む。',
+      CD: '気になっていて、今まさに取り組んでいる。変容の真っ只中にある。今が最も変われる時期だ。止まらなければ、必ず見える景色が変わる。',
+      AV: '自分でケアはしている。でも、試していないことがある。自己ケアの先にあるプロの力を一度だけ借りてみる。未試の翼を広げる時だ。',
+      AQ: '自分でケアしながら、一度立ち止まった。焦らなくていい。本当に合うペースと方法を見つけることが大事だ。急がず、でも止まらない。',
+      AK: '直感でケアを続けている。本能は正しい。でも一度整理して戦略を持つとさらに加速できる。羅針盤を手に入れれば、もっと遠くへ行ける。',
+      AL: '以前はしっかりケアしていた。今は少し休憩中。その経験は失っていない。一番軽いステップで再開する。次は前より高く行ける。',
+      AD: '自分でケアしながら、今まさに燃えている。この火を消さないことが全てだ。一つひとつのステップを丁寧に、今の勢いを形にする。',
+      PQ: 'プロに頼っていたが、今は引いている。その経験は消えていない。戻るタイミングが来たとき、以前より早く結果が出る。',
+      PK: 'プロに通いながらも、その効果を測れていない可能性がある。投資に対してリターンが出ているか確認する。正しく届いていれば、もっと加速できる。',
+      PL: 'プロレベルのケア経験がある。今は一時停止中。再開した時、その知恵が最大の武器になる。慌てず、でも忘れずにいる。',
+      PD: 'プロのサポートを受けながら、今まさに動いている。これ以上ない状態だ。次は発揮の場に目を向ける。積み上げたものを、人との出会いで試す時だ。',
     };
     const AXIS_ACCENT_COLOR = { B:'#ef4444', E:'#8b5cf6', F:'#10b981', H:'#3b82f6', S:'#f59e0b', T:'#eab308', W:'#14b8a6' };
     const AXIS_WORD = { B:'鋼の', E:'眉弧の', F:'纏いの', H:'黒髪の', S:'光肌の', T:'白砂の', W:'翡翠の' };
@@ -546,7 +547,7 @@ export default function DiagnosisResultPage() {
       const modifier  = TYPE_MODIFIER[careCode + pathCode] || '';
       const axisWord  = AXIS_WORD[axisCode] || '';
       const fullName  = `${axisWord}${modifier}${creature}`;
-      const tagline   = CREATURE_TAGLINE[creature] || '';
+      const desc      = TYPE_DESCRIPTION[careCode + pathCode] || '';
       const color     = AXIS_ACCENT_COLOR[axisCode] || '#c9a84c';
       const axisLabel = AREA_DEFS[compassFirst]?.label || '';
       return `
@@ -554,10 +555,9 @@ export default function DiagnosisResultPage() {
           <p class="type-hero-code" style="color:${color}">TYPE-${esc(typeCode)} · ${esc(axisLabel)}軸</p>
           <h1 class="type-hero-name">${esc(fullName)}</h1>
           <div class="type-hero-img-wrap" style="border:2px solid ${color}44;box-shadow:0 0 36px ${color}22">
-            <img class="type-hero-img" src="/images/types/TYPE-${esc(typeCode)}.png" alt="${esc(creature)}" onerror="this.style.display='none'" />
-            <span style="font-size:64px;position:relative;z-index:0">🐉</span>
+            <img class="type-hero-img" src="/images/types/TYPE-${esc(typeCode)}.png" alt="${esc(creature)}" />
           </div>
-          <p class="type-hero-tagline">${esc(tagline)}</p>
+          <p class="type-hero-tagline">${esc(desc)}</p>
           <button id="share-type-card-btn" class="type-hero-share-btn"
             data-type-code="${esc(typeCode)}"
             data-creature="${esc(fullName)}"
