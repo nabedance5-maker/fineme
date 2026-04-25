@@ -1030,36 +1030,38 @@ export default function DiagnosisPage() {
         </div>
 
         {/* Sample result preview（landing cardの直下に表示） */}
-        <div id="sample-preview-block" style={{width:'100%',maxWidth:'600px',marginTop:'20px'}}>
-          <p style={{textAlign:'center',fontSize:'11px',fontWeight:'800',letterSpacing:'.14em',color:'rgba(201,168,76,0.65)',textTransform:'uppercase',margin:'0 0 12px'}}>— スキャン後に生成される地図のサンプル —</p>
+        <div id="sample-preview-block" style={{width:'100%',maxWidth:'600px',marginTop:'24px',position:'relative'}}>
+          <p style={{textAlign:'center',fontSize:'10px',fontWeight:'800',letterSpacing:'.18em',color:'rgba(201,168,76,0.5)',textTransform:'uppercase',margin:'0 0 14px'}}>— スキャン結果のサンプル —</p>
 
-          {/* Sample type card */}
-          <div style={{background:'rgba(10,15,30,0.75)',border:'1.5px solid rgba(59,130,246,0.4)',borderRadius:'14px',padding:'16px',marginBottom:'10px',display:'flex',alignItems:'center',gap:'14px',backdropFilter:'blur(8px)',background:'linear-gradient(135deg,rgba(59,130,246,0.08) 0%,rgba(10,15,30,0.9) 60%)'}}>
-            <div style={{width:'68px',height:'90px',borderRadius:'10px',overflow:'hidden',background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.3)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,position:'relative'}}>
-              <img src="/images/types/TYPE-HND.png" alt="伏竜" style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}} onError={(e)=>e.target.remove()} />
-              <span style={{fontSize:'32px',position:'relative',zIndex:0}}>🐉</span>
+          {/* TYPE HERO（全幅・Naviと同じレイアウト） */}
+          <div style={{width:'100%',background:'linear-gradient(180deg,rgba(59,130,246,0.18) 0%,rgba(10,15,30,0) 100%)',textAlign:'center',padding:'32px 20px 24px',borderRadius:'18px',marginBottom:'10px',position:'relative',overflow:'hidden'}}>
+            <p style={{fontSize:'10px',fontWeight:'800',letterSpacing:'.18em',color:'rgba(59,130,246,0.8)',textTransform:'uppercase',margin:'0 0 12px'}}>TYPE-HND · 髪軸</p>
+            <h2 style={{fontFamily:"'Noto Serif JP',Georgia,serif",fontSize:'clamp(22px,6vw,34px)',fontWeight:'900',color:'#fff',margin:'0 0 20px',lineHeight:1.2}}>黒髪の臥す伏竜</h2>
+            <div style={{width:'min(200px,60vw)',height:'min(268px,80vw)',margin:'0 auto 18px',borderRadius:'16px',overflow:'hidden',border:'2px solid rgba(59,130,246,0.4)',boxShadow:'0 0 28px rgba(59,130,246,0.18)',position:'relative',display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(59,130,246,0.08)'}}>
+              <img src="/images/types/TYPE-HND.png" alt="伏竜" style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,borderRadius:'14px'}} onError={(e)=>e.currentTarget.style.display='none'} />
+              <span style={{fontSize:'56px',position:'relative',zIndex:0}}>🐉</span>
             </div>
+            <p style={{fontSize:'13px',color:'rgba(232,228,220,0.5)',lineHeight:1.85,maxWidth:'260px',margin:'0 auto'}}>深き影に潜む竜。その才、まだ誰も知らない。</p>
+          </div>
+
+          {/* Compass strip */}
+          <div style={{background:'rgba(10,15,30,0.75)',border:'1.5px solid rgba(201,168,76,0.3)',borderRadius:'14px',padding:'14px 16px',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',gap:'14px',marginBottom:'10px'}}>
+            <span style={{fontSize:'26px',flexShrink:0}}>🧭</span>
             <div style={{flex:1}}>
-              <div style={{fontSize:'9px',fontWeight:'800',letterSpacing:'.14em',color:'rgba(59,130,246,0.7)',margin:'0 0 3px'}}>TYPE-HND · 髪軸</div>
-              <div style={{fontFamily:"'Noto Serif JP',Georgia,serif",fontSize:'26px',fontWeight:'900',color:'#fff',margin:'0 0 5px',lineHeight:1}}>伏竜</div>
-              <div style={{fontSize:'11px',color:'rgba(232,228,220,0.5)',lineHeight:1.7}}>深き影に潜む竜。その才、まだ誰も知らない。</div>
+              <div style={{fontSize:'10px',fontWeight:'700',color:'rgba(201,168,76,0.65)',letterSpacing:'.08em',margin:'0 0 2px'}}>Fineme Compass — 今向くべき方角</div>
+              <div style={{fontSize:'16px',fontWeight:'900',color:'#fff',margin:'0 0 3px'}}>💇 髪 が最初の一手</div>
+              <div style={{fontSize:'12px',color:'rgba(232,228,220,0.5)',lineHeight:1.6}}>髪型は第一印象の30%。美容院1回で「なんかいい感じ」が体感できる。</div>
             </div>
           </div>
 
-          {/* Sample compass */}
-          <div style={{background:'rgba(10,15,30,0.75)',border:'1.5px solid rgba(201,168,76,0.3)',borderRadius:'14px',padding:'16px',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',gap:'14px'}}>
-            <span style={{fontSize:'28px',flexShrink:0}}>🧭</span>
-            <div style={{flex:1}}>
-              <div style={{fontSize:'10px',fontWeight:'700',color:'rgba(201,168,76,0.65)',letterSpacing:'.08em',margin:'0 0 3px'}}>Fineme Compass — 今向くべき方角</div>
-              <div style={{fontSize:'18px',fontWeight:'900',color:'#fff',margin:'0 0 4px'}}>💇 髪 が最初の一手</div>
-              <div style={{fontSize:'12px',color:'rgba(232,228,220,0.55)',lineHeight:1.65}}>髪型は第一印象の30%を占める。美容院1回で「なんかいい感じ」という変化が体感できる。</div>
+          {/* フェードアウト＋CTA */}
+          <div style={{position:'relative'}}>
+            <div style={{height:'60px',background:'linear-gradient(to bottom,rgba(10,15,30,0),rgba(10,15,30,0.85))',borderRadius:'0 0 12px 12px',pointerEvents:'none'}} />
+            <div style={{textAlign:'center',paddingTop:'4px'}}>
+              <p style={{fontSize:'12px',color:'rgba(201,168,76,0.5)',margin:'0 0 10px',lineHeight:1.6}}>119タイプの中のあなたのタイプが生成されます</p>
+              <button id="btn-start-from-preview" style={{background:'linear-gradient(135deg,#c9a84c,#e8c86a)',border:'none',cursor:'pointer',color:'#0a0f1e',fontSize:'14px',fontWeight:'800',padding:'12px 28px',borderRadius:'10px',letterSpacing:'.04em'}}>あなたのタイプを診断する →</button>
             </div>
           </div>
-
-          <p style={{textAlign:'center',fontSize:'12px',color:'rgba(201,168,76,0.5)',margin:'12px 0 0',lineHeight:1.7}}>
-            119タイプの中のどれかに分類されます。<br />
-            <button id="btn-start-from-preview" style={{background:'none',border:'none',cursor:'pointer',color:'#c9a84c',fontSize:'13px',fontWeight:'700',textDecoration:'underline',padding:0}}>あなたのタイプを調べる →</button>
-          </p>
         </div>
 
         {/* SCREEN Q1: きっかけ */}
