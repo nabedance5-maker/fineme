@@ -171,6 +171,12 @@ export default function DiagnosisResultPage() {
       .product-card-axis { font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(16,185,129,0.55); }
       .product-card-name { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.85); line-height: 1.45; flex: 1; }
       .product-card-cta { font-size: 11px; font-weight: 700; color: rgba(16,185,129,0.75); display: flex; align-items: center; gap: 3px; }
+
+      /* ── Type Card ── */
+      .type-card { background: var(--color-bg-dark,#0a0f1e); border: 1.5px solid rgba(201,168,76,0.35); border-radius: 16px; padding: 20px 20px 20px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; overflow: hidden; }
+      .type-card-code { font-size: 10px; font-weight: 800; letter-spacing: .14em; margin: 0 0 4px; opacity: 0.7; }
+      .type-card-name { font-family: 'Noto Serif JP',Georgia,serif; font-size: 32px; font-weight: 900; color: #fff; margin: 0 0 8px; line-height: 1; }
+      .type-card-tagline { font-size: 12px; color: rgba(232,228,220,0.55); line-height: 1.75; margin: 0; }
     `;
     document.head.appendChild(style);
 
@@ -335,6 +341,37 @@ export default function DiagnosisResultPage() {
     };
     const TIER_LABELS = { 1:'基盤', 2:'深化', 3:'補完', 4:'磨き込み' };
     const PATH_LABELS = { virgin:'未経験', quit:'試したが続かない', blind:'非客観視', lapsed:'以前やっていた' };
+
+    // ─── タイプシステム ───
+    const AXIS_TYPE_CODE = { body:'B', eyebrow:'E', fashion:'F', hair:'H', skin:'S', teeth:'T', nail:'W' };
+    const CARE_CODE_MAP  = { none:'N', concerned:'C', self:'A', pro:'P' };
+    const PATH_CODE_MAP  = { virgin:'V', quit:'Q', blind:'K', lapsed:'L', doing:'D' };
+    const TYPE_CREATURE  = {
+      NV:'フェンリル', NK:'レヴィアタン', ND:'伏竜',
+      CV:'蟠龍', CQ:'鵺', CK:'マンティコア', CL:'ヒュドラ', CD:'鳳凰',
+      AV:'グリフィン', AQ:'玄武', AK:'ガルーダ', AL:'天馬', AD:'朱雀',
+      PQ:'白虎', PK:'飛龍', PL:'スフィンクス', PD:'麒麟',
+    };
+    const CREATURE_TAGLINE = {
+      'フェンリル':   '縛られた巨狼。解放を待つ、圧倒的な力。',
+      'レヴィアタン': '深海に潜む原初の獣。無意識の巨大さがある。',
+      '伏竜':         '深き影に潜む竜。その才、まだ誰も知らない。',
+      '蟠龍':         '今まさにとぐろを解こうとする竜。跳躍寸前の力。',
+      '鵺':           '正体不明の合成獣。まだ本当の姿を見せていない。',
+      'マンティコア': '本能のまま疾走する猛獣。力は本物、方向を定めよ。',
+      'ヒュドラ':     '切られるたびに甦る多頭の竜。諦めない再生力。',
+      '鳳凰':         '炎から蘇る不死鳥。変容こそが本質。',
+      'グリフィン':   '試されていないだけ。誇り高き守護者が目覚める。',
+      '玄武':         '深き知恵を持つ亀。時が来るまで動かない。',
+      'ガルーダ':     '天空の覇者。本能のまま風を支配する。',
+      '天馬':         '翼を持つ神馬。次に飛ぶとき、空を変える。',
+      '朱雀':         '南天の炎鳥。今まさに最も輝いている。',
+      '白虎':         '西の守護神。引いた今も、その威厳は本物だ。',
+      '飛龍':         '天を制する竜。到達した者だけが見る景色がある。',
+      'スフィンクス': '砂漠の謎かけ番人。深淵の智慧、今は静かに待つ。',
+      '麒麟':         '徳ある者にのみ現れる聖獣。至高の境地へ。',
+    };
+    const AXIS_ACCENT_COLOR = { B:'#ef4444', E:'#8b5cf6', F:'#10b981', H:'#3b82f6', S:'#f59e0b', T:'#eab308', W:'#14b8a6' };
     const PATH_COLORS = { virgin:'rgba(201,168,76,0.12):#c9a84c', quit:'#fee2e2:#b91c1c', blind:'#f5f0e8:#7a6e65', lapsed:'#d1fae5:#065f46' };
     const VIEW_ALERTS = {
       worse:   '⚠️ 他者評価が自己評価より低い可能性',
@@ -481,6 +518,45 @@ export default function DiagnosisResultPage() {
         <div class="radar-legend">
           <div class="radar-legend-item"><div class="radar-legend-dot" style="background:rgba(96,165,250,0.85)"></div>現在地</div>
           <div class="radar-legend-item"><div class="radar-legend-dot" style="background:#c9a84c;opacity:.8"></div>理想</div>
+        </div>
+      `;
+    }
+
+    // ─── タイプカード ───
+    function buildTypeCard() {
+      const axisCode = AXIS_TYPE_CODE[compassFirst];
+      if (!axisCode) return '';
+      const v = tv[compassFirst] || {};
+      const careCode = CARE_CODE_MAP[v.care_type] || 'N';
+      const pathCode = PATH_CODE_MAP[v.path_type] || 'V';
+      const creature = TYPE_CREATURE[careCode + pathCode];
+      if (!creature) return '';
+      const typeCode = `${axisCode}${careCode}${pathCode}`;
+      const tagline  = CREATURE_TAGLINE[creature] || '';
+      const color    = AXIS_ACCENT_COLOR[axisCode] || '#c9a84c';
+      const axisLabel = AREA_DEFS[compassFirst]?.label || '';
+      return `
+        <p class="sec-label" style="margin-top:28px">Your Type</p>
+        <div class="type-card" style="border-color:${color}44;background:linear-gradient(135deg,${color}0d 0%,rgba(10,15,30,0.95) 60%)">
+          <div style="width:80px;height:107px;flex-shrink:0;border-radius:10px;overflow:hidden;background:${color}0d;border:1px solid ${color}33;display:flex;align-items:center;justify-content:center;position:relative">
+            <img src="/images/types/TYPE-${esc(typeCode)}.png" alt="${esc(creature)}"
+              style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"
+              onerror="this.remove()" />
+            <span style="font-size:40px;position:relative;z-index:0">🐉</span>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div class="type-card-code" style="color:${color}">TYPE-${esc(typeCode)} · ${esc(axisLabel)}軸</div>
+            <div class="type-card-name">${esc(creature)}</div>
+            <div class="type-card-tagline">${esc(tagline)}</div>
+            <button id="share-type-card-btn"
+              data-type-code="${esc(typeCode)}"
+              data-creature="${esc(creature)}"
+              data-color="${esc(color)}"
+              data-tagline="${esc(tagline)}"
+              style="margin-top:14px;padding:8px 16px;background:${color}18;border:1.5px solid ${color}44;border-radius:8px;color:${color};font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+              📷 カードを画像保存
+            </button>
+          </div>
         </div>
       `;
     }
@@ -755,6 +831,8 @@ export default function DiagnosisResultPage() {
       </div>
       ` : ''}
 
+      ${buildTypeCard()}
+
       ${buildCompass()}
 
       <p class="sec-label" style="margin-top:28px">Radar Map</p>
@@ -851,6 +929,47 @@ export default function DiagnosisResultPage() {
     `;
 
     root.innerHTML = html;
+
+    // ── タイプカード画像保存 ──
+    const shareTypeCardBtn = document.getElementById('share-type-card-btn');
+    if (shareTypeCardBtn) {
+      shareTypeCardBtn.addEventListener('click', async () => {
+        const tc  = shareTypeCardBtn.dataset.typeCode;
+        const cr  = shareTypeCardBtn.dataset.creature;
+        const col = shareTypeCardBtn.dataset.color;
+        const tl  = shareTypeCardBtn.dataset.tagline;
+        shareTypeCardBtn.textContent = '生成中...';
+        shareTypeCardBtn.disabled = true;
+
+        const card = document.createElement('div');
+        card.style.cssText = 'position:fixed;left:-9999px;top:0;width:540px;height:720px;background:#0a0f1e;border-radius:0;overflow:hidden;font-family:system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;padding:48px 40px 36px;box-sizing:border-box;';
+        card.innerHTML = `
+          <div style="width:0;height:0;position:absolute;top:-60px;left:-60px;width:200px;height:200px;background:radial-gradient(circle,${col}22 0%,transparent 70%);border-radius:50%"></div>
+          <div style="width:180px;height:240px;border-radius:16px;overflow:hidden;background:${col}15;border:2px solid ${col}44;margin-bottom:28px;position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <img src="/images/types/TYPE-${tc}.png" crossorigin="anonymous" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" onerror="this.remove()" />
+            <span style="font-size:64px;position:relative;z-index:0">🐉</span>
+          </div>
+          <div style="text-align:center;flex:1;display:flex;flex-direction:column;align-items:center">
+            <div style="font-size:11px;font-weight:800;letter-spacing:.2em;color:${col}99;margin-bottom:10px">TYPE-${tc}</div>
+            <div style="font-size:52px;font-weight:900;color:#fff;margin-bottom:14px;line-height:1">${cr}</div>
+            <div style="font-size:14px;color:rgba(232,228,220,0.5);line-height:1.85;max-width:320px">${tl}</div>
+          </div>
+          <div style="margin-top:auto;padding-top:20px;font-size:12px;font-weight:800;color:rgba(201,168,76,0.3);letter-spacing:.14em">FINEME.ME</div>
+        `;
+        document.body.appendChild(card);
+        try {
+          const html2canvas = (await import('html2canvas')).default;
+          const canvas = await html2canvas(card, { scale:2, backgroundColor:'#0a0f1e', useCORS:true, allowTaint:true, logging:false });
+          const link = document.createElement('a');
+          link.download = `fineme-type-${tc}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        } catch (e) { console.error('share card error:', e); }
+        document.body.removeChild(card);
+        shareTypeCardBtn.innerHTML = '📷 カードを画像保存';
+        shareTypeCardBtn.disabled = false;
+      });
+    }
 
     // ── Xシェアボタン生成 ──
     const shareBlock = document.getElementById('share-block');

@@ -308,6 +308,8 @@ export default function DiagnosisPage() {
       const el = document.getElementById('screen-' + id);
       if (el) el.classList.add('is-active');
       currentScreen = id;
+      const previewBlock = document.getElementById('sample-preview-block');
+      if (previewBlock) previewBlock.style.display = id === 'landing' ? '' : 'none';
       updateProgress();
       updateNav();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -964,6 +966,10 @@ export default function DiagnosisPage() {
       screenHistory.push('q1');
       showScreen('q1');
     });
+    document.getElementById('btn-start-from-preview')?.addEventListener('click', function () {
+      document.getElementById('btn-start')?.click();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 
     btnNext.addEventListener('click', function () {
       goNext();
@@ -1011,13 +1017,49 @@ export default function DiagnosisPage() {
               <p>今のあなたを丁寧にスキャンして、<br />あなただけの変容ナビを生成します。</p>
               <p style={{fontSize:'13px',color:'#9ca3af'}}>外見より先に、「あなたの状況」を聞きます。<br />だから答えが、本物になる。</p>
               <div className="diag-badges">
-                <span className="diag-badge">⏱️ 約12〜18分</span>
+                <span className="diag-badge" style={{fontWeight:'800',background:'rgba(201,168,76,0.15)',color:'#a07830',border:'1px solid rgba(201,168,76,0.4)',fontSize:'13px',padding:'7px 14px'}}>⏱️ 所要時間：約12〜18分</span>
                 <span className="diag-badge">🕶️ 登録不要</span>
                 <span className="diag-badge">🗺️ New Me Navi生成</span>
               </div>
+              <p style={{fontSize:'12px',color:'#9ca3af',margin:'-10px 0 16px',lineHeight:'1.5'}}>
+                ※ ゆっくり考えながら進めると15分前後かかります
+              </p>
               <button className="diag-nav-next" id="btn-start" style={{width:'100%',fontSize:'18px',padding:'16px'}}>Me Scanをはじめる</button>
             </div>
           </div>
+        </div>
+
+        {/* Sample result preview（landing cardの直下に表示） */}
+        <div id="sample-preview-block" style={{width:'100%',maxWidth:'600px',marginTop:'20px'}}>
+          <p style={{textAlign:'center',fontSize:'11px',fontWeight:'800',letterSpacing:'.14em',color:'rgba(201,168,76,0.65)',textTransform:'uppercase',margin:'0 0 12px'}}>— スキャン後に生成される地図のサンプル —</p>
+
+          {/* Sample type card */}
+          <div style={{background:'rgba(10,15,30,0.75)',border:'1.5px solid rgba(59,130,246,0.4)',borderRadius:'14px',padding:'16px',marginBottom:'10px',display:'flex',alignItems:'center',gap:'14px',backdropFilter:'blur(8px)',background:'linear-gradient(135deg,rgba(59,130,246,0.08) 0%,rgba(10,15,30,0.9) 60%)'}}>
+            <div style={{width:'68px',height:'90px',borderRadius:'10px',overflow:'hidden',background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.3)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,position:'relative'}}>
+              <img src="/images/types/TYPE-HND.png" alt="伏竜" style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}} onError={(e)=>e.target.remove()} />
+              <span style={{fontSize:'32px',position:'relative',zIndex:0}}>🐉</span>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:'9px',fontWeight:'800',letterSpacing:'.14em',color:'rgba(59,130,246,0.7)',margin:'0 0 3px'}}>TYPE-HND · 髪軸</div>
+              <div style={{fontFamily:"'Noto Serif JP',Georgia,serif",fontSize:'26px',fontWeight:'900',color:'#fff',margin:'0 0 5px',lineHeight:1}}>伏竜</div>
+              <div style={{fontSize:'11px',color:'rgba(232,228,220,0.5)',lineHeight:1.7}}>深き影に潜む竜。その才、まだ誰も知らない。</div>
+            </div>
+          </div>
+
+          {/* Sample compass */}
+          <div style={{background:'rgba(10,15,30,0.75)',border:'1.5px solid rgba(201,168,76,0.3)',borderRadius:'14px',padding:'16px',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',gap:'14px'}}>
+            <span style={{fontSize:'28px',flexShrink:0}}>🧭</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:'10px',fontWeight:'700',color:'rgba(201,168,76,0.65)',letterSpacing:'.08em',margin:'0 0 3px'}}>Fineme Compass — 今向くべき方角</div>
+              <div style={{fontSize:'18px',fontWeight:'900',color:'#fff',margin:'0 0 4px'}}>💇 髪 が最初の一手</div>
+              <div style={{fontSize:'12px',color:'rgba(232,228,220,0.55)',lineHeight:1.65}}>髪型は第一印象の30%を占める。美容院1回で「なんかいい感じ」という変化が体感できる。</div>
+            </div>
+          </div>
+
+          <p style={{textAlign:'center',fontSize:'12px',color:'rgba(201,168,76,0.5)',margin:'12px 0 0',lineHeight:1.7}}>
+            119タイプの中のどれかに分類されます。<br />
+            <button id="btn-start-from-preview" style={{background:'none',border:'none',cursor:'pointer',color:'#c9a84c',fontSize:'13px',fontWeight:'700',textDecoration:'underline',padding:0}}>あなたのタイプを調べる →</button>
+          </p>
         </div>
 
         {/* SCREEN Q1: きっかけ */}
