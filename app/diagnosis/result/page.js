@@ -172,11 +172,15 @@ export default function DiagnosisResultPage() {
       .product-card-name { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.85); line-height: 1.45; flex: 1; }
       .product-card-cta { font-size: 11px; font-weight: 700; color: rgba(16,185,129,0.75); display: flex; align-items: center; gap: 3px; }
 
-      /* ── Type Card ── */
-      .type-card { background: var(--color-bg-dark,#0a0f1e); border: 1.5px solid rgba(201,168,76,0.35); border-radius: 16px; padding: 20px 20px 20px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; overflow: hidden; }
-      .type-card-code { font-size: 10px; font-weight: 800; letter-spacing: .14em; margin: 0 0 4px; opacity: 0.7; }
-      .type-card-name { font-family: 'Noto Serif JP',Georgia,serif; font-size: 32px; font-weight: 900; color: #fff; margin: 0 0 8px; line-height: 1; }
-      .type-card-tagline { font-size: 12px; color: rgba(232,228,220,0.55); line-height: 1.75; margin: 0; }
+      /* ── Type Hero ── */
+      .type-hero { width: 100%; text-align: center; padding: 40px 20px 32px; margin-bottom: 0; position: relative; overflow: hidden; }
+      .type-hero-code { font-size: 10px; font-weight: 800; letter-spacing: .2em; margin: 0 0 12px; text-transform: uppercase; }
+      .type-hero-name { font-family: 'Noto Serif JP',Georgia,serif; font-size: clamp(24px,7vw,38px); font-weight: 900; color: #fff; margin: 0 0 22px; line-height: 1.2; }
+      .type-hero-img-wrap { width: min(240px,68vw); height: min(320px,90vw); margin: 0 auto 20px; border-radius: 18px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
+      .type-hero-img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; border-radius: 18px; }
+      .type-hero-tagline { font-size: 13px; color: rgba(232,228,220,0.5); line-height: 1.85; max-width: 280px; margin: 0 auto 20px; }
+      .type-hero-share-btn { padding: 9px 20px; background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.15); border-radius: 8px; color: rgba(232,228,220,0.65); font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+      .type-hero-divider { height: 1px; background: linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent); margin: 24px 0 0; }
     `;
     document.head.appendChild(style);
 
@@ -372,6 +376,13 @@ export default function DiagnosisResultPage() {
       '麒麟':         '徳ある者にのみ現れる聖獣。至高の境地へ。',
     };
     const AXIS_ACCENT_COLOR = { B:'#ef4444', E:'#8b5cf6', F:'#10b981', H:'#3b82f6', S:'#f59e0b', T:'#eab308', W:'#14b8a6' };
+    const AXIS_WORD = { B:'鋼の', E:'眉弧の', F:'纏いの', H:'黒髪の', S:'光肌の', T:'白砂の', W:'翡翠の' };
+    const TYPE_MODIFIER = {
+      NV:'眠れる', NK:'知らぬ', ND:'臥す',
+      CV:'潜む',   CQ:'折れた', CK:'暴れる', CL:'眠れる', CD:'蘇る',
+      AV:'構えの', AQ:'迷い',   AK:'本能の', AL:'羽休めの', AD:'燃える',
+      PQ:'引きの', PK:'無自覚の', PL:'休みの', PD:'聖なる',
+    };
     const PATH_COLORS = { virgin:'rgba(201,168,76,0.12):#c9a84c', quit:'#fee2e2:#b91c1c', blind:'#f5f0e8:#7a6e65', lapsed:'#d1fae5:#065f46' };
     const VIEW_ALERTS = {
       worse:   '⚠️ 他者評価が自己評価より低い可能性',
@@ -522,41 +533,39 @@ export default function DiagnosisResultPage() {
       `;
     }
 
-    // ─── タイプカード ───
-    function buildTypeCard() {
+    // ─── タイプヒーロー（Naviの最初のセクション） ───
+    function buildTypeHero() {
       const axisCode = AXIS_TYPE_CODE[compassFirst];
       if (!axisCode) return '';
       const v = tv[compassFirst] || {};
-      const careCode = CARE_CODE_MAP[v.care_type] || 'N';
-      const pathCode = PATH_CODE_MAP[v.path_type] || 'V';
-      const creature = TYPE_CREATURE[careCode + pathCode];
+      const careCode  = CARE_CODE_MAP[v.care_type] || 'N';
+      const pathCode  = PATH_CODE_MAP[v.path_type] || 'V';
+      const creature  = TYPE_CREATURE[careCode + pathCode];
       if (!creature) return '';
-      const typeCode = `${axisCode}${careCode}${pathCode}`;
-      const tagline  = CREATURE_TAGLINE[creature] || '';
-      const color    = AXIS_ACCENT_COLOR[axisCode] || '#c9a84c';
+      const typeCode  = `${axisCode}${careCode}${pathCode}`;
+      const modifier  = TYPE_MODIFIER[careCode + pathCode] || '';
+      const axisWord  = AXIS_WORD[axisCode] || '';
+      const fullName  = `${axisWord}${modifier}${creature}`;
+      const tagline   = CREATURE_TAGLINE[creature] || '';
+      const color     = AXIS_ACCENT_COLOR[axisCode] || '#c9a84c';
       const axisLabel = AREA_DEFS[compassFirst]?.label || '';
       return `
-        <p class="sec-label" style="margin-top:28px">Your Type</p>
-        <div class="type-card" style="border-color:${color}44;background:linear-gradient(135deg,${color}0d 0%,rgba(10,15,30,0.95) 60%)">
-          <div style="width:80px;height:107px;flex-shrink:0;border-radius:10px;overflow:hidden;background:${color}0d;border:1px solid ${color}33;display:flex;align-items:center;justify-content:center;position:relative">
-            <img src="/images/types/TYPE-${esc(typeCode)}.png" alt="${esc(creature)}"
-              style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"
-              onerror="this.remove()" />
-            <span style="font-size:40px;position:relative;z-index:0">🐉</span>
+        <div class="type-hero" style="background:linear-gradient(180deg,${color}1a 0%,rgba(10,15,30,0) 100%)">
+          <p class="type-hero-code" style="color:${color}">TYPE-${esc(typeCode)} · ${esc(axisLabel)}軸</p>
+          <h1 class="type-hero-name">${esc(fullName)}</h1>
+          <div class="type-hero-img-wrap" style="border:2px solid ${color}44;box-shadow:0 0 36px ${color}22">
+            <img class="type-hero-img" src="/images/types/TYPE-${esc(typeCode)}.png" alt="${esc(creature)}" onerror="this.style.display='none'" />
+            <span style="font-size:64px;position:relative;z-index:0">🐉</span>
           </div>
-          <div style="flex:1;min-width:0">
-            <div class="type-card-code" style="color:${color}">TYPE-${esc(typeCode)} · ${esc(axisLabel)}軸</div>
-            <div class="type-card-name">${esc(creature)}</div>
-            <div class="type-card-tagline">${esc(tagline)}</div>
-            <button id="share-type-card-btn"
-              data-type-code="${esc(typeCode)}"
-              data-creature="${esc(creature)}"
-              data-color="${esc(color)}"
-              data-tagline="${esc(tagline)}"
-              style="margin-top:14px;padding:8px 16px;background:${color}18;border:1.5px solid ${color}44;border-radius:8px;color:${color};font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px">
-              📷 カードを画像保存
-            </button>
-          </div>
+          <p class="type-hero-tagline">${esc(tagline)}</p>
+          <button id="share-type-card-btn" class="type-hero-share-btn"
+            data-type-code="${esc(typeCode)}"
+            data-creature="${esc(fullName)}"
+            data-color="${esc(color)}"
+            data-tagline="${esc(tagline)}">
+            📷 カードを画像保存
+          </button>
+          <div class="type-hero-divider"></div>
         </div>
       `;
     }
@@ -811,18 +820,7 @@ export default function DiagnosisResultPage() {
     const compassFirstDef = AREA_DEFS[compassFirst] || {};
 
     const html = `
-      <div class="map-hero">
-        <p class="map-hero-eyebrow">New Me Navi</p>
-        <div class="map-hero-badge">🗺️ あなたの変容プロファイル</div>
-        <h1>${hero.h1}</h1>
-        <div class="map-hero-divider"></div>
-        <p style="font-size:11px;color:rgba(255,255,255,.4);margin:0 0 10px;position:relative;z-index:1;letter-spacing:.06em">— 今日、あなたの地図が描かれました —</p>
-        <p class="map-hero-sub">${hero.sub}</p>
-        <svg viewBox="0 0 80 80" width="68" height="68" style="position:absolute;top:14px;right:14px;z-index:1;opacity:0.17" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="37" fill="none" stroke="#c9a84c" stroke-width="0.8"/><circle cx="40" cy="40" r="28" fill="none" stroke="#c9a84c" stroke-width="0.4"/><line x1="40" y1="3" x2="40" y2="77" stroke="#c9a84c" stroke-width="0.8"/><line x1="3" y1="40" x2="77" y2="40" stroke="#c9a84c" stroke-width="0.8"/><line x1="14" y1="14" x2="66" y2="66" stroke="#c9a84c" stroke-width="0.5"/><line x1="66" y1="14" x2="14" y2="66" stroke="#c9a84c" stroke-width="0.5"/><polygon points="40,4 37,23 40,19 43,23" fill="#c9a84c"/><polygon points="40,76 37,57 40,61 43,57" fill="#c9a84c" opacity="0.4"/><polygon points="76,40 57,37 61,40 57,43" fill="#c9a84c" opacity="0.4"/><polygon points="4,40 23,37 19,40 23,43" fill="#c9a84c" opacity="0.4"/><circle cx="40" cy="40" r="5" fill="none" stroke="#c9a84c" stroke-width="1.2"/><circle cx="40" cy="40" r="2" fill="#c9a84c"/></svg>
-        <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(201,168,76,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
-      </div>
-
-      <div class="v-route"><div class="v-route-line"></div><div class="v-route-dot"></div><div class="v-route-line"></div></div>
+      ${buildTypeHero()}
 
       ${!isLoggedIn ? `
       <div style="background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.22);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
@@ -830,8 +828,6 @@ export default function DiagnosisResultPage() {
         <span style="flex:1;font-size:13px;color:rgba(232,228,220,0.72);line-height:1.6">このページを閉じると地図が消えます。<a href="/login?mode=signup&next=/diagnosis/result" style="color:#c9a84c;font-weight:700;text-decoration:none">無料で保存する →</a></span>
       </div>
       ` : ''}
-
-      ${buildTypeCard()}
 
       ${buildCompass()}
 
