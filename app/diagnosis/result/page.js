@@ -1052,7 +1052,6 @@ export default function DiagnosisResultPage() {
           <div style="width:0;height:0;position:absolute;top:-60px;left:-60px;width:200px;height:200px;background:radial-gradient(circle,${col}22 0%,transparent 70%);border-radius:50%"></div>
           <div style="width:180px;height:240px;border-radius:16px;overflow:hidden;background:${col}15;border:2px solid ${col}44;margin-bottom:28px;position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0">
             <img src="/images/types/TYPE-${tc}.png" crossorigin="anonymous" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" onerror="this.remove()" />
-            <span style="font-size:64px;position:relative;z-index:0">🐉</span>
           </div>
           <div style="text-align:center;flex:1;display:flex;flex-direction:column;align-items:center">
             <div style="font-size:11px;font-weight:800;letter-spacing:.2em;color:${col}99;margin-bottom:10px">TYPE-${tc}</div>
