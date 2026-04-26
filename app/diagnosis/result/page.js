@@ -1052,7 +1052,18 @@ export default function DiagnosisResultPage() {
           typeImg.crossOrigin = 'anonymous';
           await new Promise(res => { typeImg.onload = res; typeImg.onerror = res; typeImg.src = `/images/types/TYPE-${tc}.png`; });
 
-          const W = 540, H = 720, S = 2;
+          const W = 540, S = 2;
+          // テキスト行数を事前計測してカード高さを動的算出
+          const tmpCtx = document.createElement('canvas').getContext('2d');
+          tmpCtx.font = '13px system-ui,-apple-system,sans-serif';
+          let lineCount = 0, tmpLine = '';
+          for (const ch of tl) {
+            const t = tmpLine + ch;
+            if (tmpCtx.measureText(t).width > 420) { lineCount++; tmpLine = ch; }
+            else { tmpLine = t; }
+          }
+          if (tmpLine) lineCount++;
+          const H = Math.max(720, 36 + 320 + 26 + 42 + 18 + 22 + lineCount * 20 + 60);
           const canvas = document.createElement('canvas');
           canvas.width = W * S; canvas.height = H * S;
           const ctx = canvas.getContext('2d');
@@ -1117,20 +1128,19 @@ export default function DiagnosisResultPage() {
           ctx.strokeStyle = col + '44'; ctx.lineWidth = 1;
           ctx.beginPath(); ctx.moveTo(W/2-50, ty); ctx.lineTo(W/2+50, ty); ctx.stroke();
 
-          // 説明文（最初の2文のみ・折り返し）
+          // 説明文（全文・折り返し）
           ty += 22;
-          const sentences = tl.split('。').filter(Boolean);
-          const shortDesc = sentences.slice(0, 2).join('。') + '。';
           ctx.fillStyle = 'rgba(232,228,220,0.55)';
           ctx.font = '13px system-ui,-apple-system,sans-serif';
           ctx.textAlign = 'center';
           let line = '';
-          for (const ch of shortDesc) {
+          for (const ch of tl) {
             const test = line + ch;
             if (ctx.measureText(test).width > 420) { ctx.fillText(line, W/2, ty); line = ch; ty += 20; }
             else { line = test; }
           }
           if (line) ctx.fillText(line, W/2, ty);
+          ty += 20;
 
           // フッター
           ctx.globalAlpha = 0.3; ctx.fillStyle = col;
