@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>X 投稿案 — タイプシステム刷新｜Fineme</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Hiragino Kaku Gothic Pro','Noto Sans JP',sans-serif;background:#060c1a;color:#e8e2d4;line-height:1.8;font-size:15px;padding:40px 20px 100px}
+  .wrap{max-width:720px;margin:0 auto}
+  h1{font-size:24px;font-weight:900;color:#c9a84c;margin-bottom:8px}
+  .sub{font-size:13px;color:rgba(232,228,220,0.4);margin-bottom:40px}
+  .post-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:24px;margin-bottom:20px;position:relative}
+  .post-num{font-size:10px;font-weight:800;letter-spacing:.12em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin-bottom:10px}
+  .post-text{font-size:15px;line-height:1.9;white-space:pre-wrap;color:#e8e2d4}
+  .post-char{font-size:11px;color:rgba(232,228,220,0.3);margin-top:12px;text-align:right}
+  .post-tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 10px;border-radius:99px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);color:#c9a84c;margin-bottom:10px;margin-right:6px}
+  .copy-btn{position:absolute;top:16px;right:16px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);color:#c9a84c;font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px;cursor:pointer;transition:background .15s}
+  .copy-btn:hover{background:rgba(201,168,76,0.22)}
+  .copy-btn.copied{background:rgba(74,222,128,0.12);border-color:rgba(74,222,128,0.3);color:#4ade80}
+  .section-title{font-size:12px;font-weight:800;letter-spacing:.14em;color:rgba(201,168,76,0.5);text-transform:uppercase;margin:40px 0 16px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>X 投稿案 — タイプシステム刷新</h1>
+  <p class="sub">作成: 2026-04-27　テーマ: 診断タイプUX・119タイプ設計・MBTI的自分ごと化</p>
+
+  <div class="section-title">プロダクト告知・共感系</div>
+
+  <div class="post-card">
+    <div class="post-num">Post 01</div>
+    <span class="post-tag">告知</span>
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div class="post-text" id="p1">Finemeの診断、タイプ表示を全面刷新しました。
+
+以前は「TYPE-BAQ · 体型軸」という小さな文字だったのを、
+「あなたのタイプは → BAQ ～ 鋼の迷い玄武 ～（体型軸）」
+という形に変えました。
+
+MBTIって、INFJとか文字が自分の一部になっていく感覚があるじゃないですか。
+あの感覚をFinemeでも作りたくて。
+
+全119タイプ、イラストも説明文も全部バラバラです。
+https://fineme.me/diagnosis</div>
+    <div class="post-char" id="c1"></div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-num">Post 02</div>
+    <span class="post-tag">開発ストーリー</span>
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div class="post-text" id="p2">診断の説明文、最初は17パターンしかなかった。
+
+体型軸のユーザーはみんな同じ文章を読む、という状態。
+それじゃ「自分のこと」とは感じてもらえないと気づいて、
+119タイプ、全部バラバラの文章を書き直した。
+
+構成は:
+・今の状態への共感
+・この軸の特性
+・具体的な次の一手
+・変容への見通し
+
+地味な作業だけど、これが一番「自分ごと化」に効くと思ってる。</div>
+    <div class="post-char" id="c2"></div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-num">Post 03</div>
+    <span class="post-tag">UX設計</span>
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div class="post-text" id="p3">「自分ごと化」を作る要素って何だろうと考えた。
+
+・自分だけのコードがある（BAQ, HNV, etc.）
+・そのコードに自分だけの名前がある（鋼の迷い玄武）
+・説明文が自分のことを言っている
+・AIが描いた自分のイラストがある
+・一覧で自分の位置がわかる
+
+どれか一つでも「全員に同じもの」になると、
+そこで「自分ごと」が崩れる。
+
+MBTIが16タイプ持ってるものを、
+Finemeは119タイプで作ってる。</div>
+    <div class="post-char" id="c3"></div>
+  </div>
+
+  <div class="section-title">AI × 開発ストーリー系</div>
+
+  <div class="post-card">
+    <div class="post-num">Post 04</div>
+    <span class="post-tag">AIイラスト</span>
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div class="post-text" id="p4">Finemeには119種類のイラストがある。
+
+全部AIで生成した。
+「縦長・アニメ調・深海のような青みがかった背景・○○の生き物・変容の途中にいる青年」
+という感じのプロンプトで、一枚一枚。
+
+119枚描き終わったとき、
+ちょっとした達成感があった。
+
+診断を受けると、自分だけのイラストが出る。
+それが地味に、でも確実に「自分のタイプ、好き」につながる。</div>
+    <div class="post-char" id="c4"></div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-num">Post 05</div>
+    <span class="post-tag">開発失敗談</span>
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div class="post-text" id="p5">カード保存機能、3回直した。
+
+1回目: イラストの上に龍の絵文字が2つ出てた（HTMLの残骸）
+2回目: イラストが縦に伸びて保存される（html2canvasがCSS解釈できない）
+3回目: 説明文が途中で切れる（コードに slice(0,2) が残ってた）
+
+2回目は根本的にライブラリを変えた。
+Canvas APIで直接描画する方式に全部切り替え。
+
+地味なバグほど気づきにくくて、
+でも一番「なんで？」ってなる。</div>
+    <div class="post-char" id="c5"></div>
+  </div>
+
+  <div class="section-title">思想・哲学系</div>
+
+  <div class="post-card">
+    <div class="post-num">Post 06</div>
+    <span class="post-tag">思想</span>
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div class="post-text" id="p6">診断って、「あなたはこういう人です」じゃなくて
+「あなたは今、こういう旅の途中にいます」を見せるものだと思ってる。
+
+MBTIはキャラクターを当てる。
+Finemeは旅の地点を当てる。
+
+だから同じコードでも、3ヶ月後に診断し直すと変わる。
+変わったことが、成長の証明になる。
+
+タイプは固定されたラベルじゃなくて、
+変容の現在地だと思ってる。</div>
+    <div class="post-char" id="c6"></div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-num">Post 07</div>
+    <span class="post-tag">思想</span>
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div class="post-text" id="p7">119通りの説明文を全部書いて気づいたこと。
+
+「この人は今、ここで止まっている」という状態を
+正確に言語化してあげると、人は動き出す。
+
+「わかってもらえた」という感覚が先で、
+「次に何をするか」は後からついてくる。
+
+診断の役割って、
+答えを出すことよりも、
+「自分を理解してもらえた」という体験を提供することかもしれない。</div>
+    <div class="post-char" id="c7"></div>
+  </div>
+
+  <div class="section-title">数字・実績系</div>
+
+  <div class="post-card">
+    <div class="post-num">Post 08</div>
+    <span class="post-tag">実績</span>
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div class="post-text" id="p8">Finemeの診断スペック（現状）
+
+・7軸（体型・眉・ヘア・肌・服・歯・爪）
+・4関心度（N/C/A/P）× 5歩み（V/Q/K/L/D）
+・有効組み合わせ: 119タイプ
+・各タイプにAI生成イラスト: 119枚
+・各タイプに固有の説明文: 119通り
+・全タイプ一覧ページ: /types
+
+「全119タイプを見る」からMBTIの一覧表みたいに
+自分の位置を俯瞰できるようにしました。
+https://fineme.me/types</div>
+    <div class="post-char" id="c8"></div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-num">Post 09</div>
+    <span class="post-tag">問いかけ</span>
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div class="post-text" id="p9">MBTIやってる人って、
+「自分INFJ」みたいにタイプ名を自己紹介で言ったりしますよね。
+
+Finemeのタイプも、そういう「自分の一部」になるといいなと思って設計してる。
+
+「自分BAQです（体型軸・鋼の迷い玄武）」みたいな感じで。
+
+外見の変容タイプが、
+アイデンティティになるくらいの解像度を目指してる。
+
+あなたはどんなタイプか、気になりますか。
+https://fineme.me/diagnosis</div>
+    <div class="post-char" id="c9"></div>
+  </div>
+
+  <div class="post-card">
+    <div class="post-num">Post 10</div>
+    <span class="post-tag">スレッド起点</span>
+    <button class="copy-btn" onclick="copyPost(this)">コピー</button>
+    <div class="post-text" id="p10">「自分がどのタイプか知る」より
+「全タイプの中の自分の位置を知る」の方が、
+自分ごと感が上がると思って。
+
+Finemeに全119タイプ一覧ページを作りました。
+
+体型/眉/ヘア/肌/服/歯/爪の7軸タブで切り替えながら、
+自分のタイプが119の中のどこにいるか確認できます。
+
+診断してないとピンと来ないかもしれないけど、
+MBTIの16タイプ表を見る感覚に近いです。
+
+→ https://fineme.me/types</div>
+    <div class="post-char" id="c10"></div>
+  </div>
+
+</div>
+
+<script>
+const ids = ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10'];
+ids.forEach(id => {
+  const el = document.getElementById(id);
+  const cid = 'c' + id.slice(1);
+  const cel = document.getElementById(cid);
+  if (el && cel) {
+    const count = el.textContent.trim().length;
+    cel.textContent = count + ' 文字（X上限: 140字）';
+    if (count > 140) cel.style.color = '#f87171';
+  }
+});
+
+function copyPost(btn) {
+  const card = btn.closest('.post-card');
+  const postEl = card.querySelector('.post-text');
+  navigator.clipboard.writeText(postEl.textContent.trim()).then(() => {
+    btn.textContent = 'コピー済み ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+</body>
+</html>

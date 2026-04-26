@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>note下書き — New Me Mirror｜Fineme</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Hiragino Kaku Gothic Pro','Noto Sans JP',sans-serif;background:#060c1a;color:#e8e2d4;line-height:1.8;font-size:15px;padding:40px 20px 100px}
+  .wrap{max-width:680px;margin:0 auto}
+  h1{font-size:22px;font-weight:900;color:#c9a84c;margin-bottom:6px}
+  .meta{font-size:12px;color:rgba(232,228,220,0.35);margin-bottom:48px}
+  .article{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:36px 32px}
+  .article h2{font-size:20px;font-weight:900;color:#fff;margin:32px 0 12px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)}
+  .article h2:first-child{margin-top:0;border-top:none}
+  .article p{font-size:15px;color:rgba(232,228,220,0.85);line-height:1.95;margin-bottom:18px}
+  .article code{background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);border-radius:4px;padding:1px 7px;font-size:13px;color:#c9a84c;font-family:monospace}
+  .article ul{margin:0 0 18px 20px}
+  .article li{font-size:14px;color:rgba(232,228,220,0.75);line-height:1.85;margin-bottom:6px}
+  .article blockquote{border-left:3px solid #c9a84c;padding:12px 20px;background:rgba(201,168,76,0.05);border-radius:0 10px 10px 0;margin:20px 0;font-size:14px;color:#c4bfb5;font-style:normal}
+  .copy-btn{margin:16px 0;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);color:#c9a84c;font-size:12px;font-weight:700;padding:8px 18px;border-radius:8px;cursor:pointer;transition:background .15s;display:block;width:fit-content}
+  .copy-btn:hover{background:rgba(201,168,76,0.22)}
+  .copy-btn.copied{background:rgba(74,222,128,0.12);border-color:rgba(74,222,128,0.3);color:#4ade80}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>note 下書き — New Me Mirror</h1>
+  <p class="meta">作成: 2026-04-27　テーマ: 写真1枚で外見の変容余地を可視化するツール開発の話</p>
+
+  <button class="copy-btn" onclick="copyAll(this)">記事全文をコピー</button>
+
+  <div class="article" id="article-body">
+
+<p>写真を1枚アップロードすると、外見の変容余地が7軸で見えてくるツールを作りました。</p>
+
+<p>名前は <strong>New Me Mirror</strong>。</p>
+
+<p>何がどのくらいできていて、何がまだ余地があるのか。数値じゃなくて、言葉で。</p>
+
+<h2>なぜ「写真分析」を作ったのか</h2>
+
+<p>Finemeの診断は、ユーザーが自己申告で答えていく方式です。「体型について、あなたは今どのくらい気にかけていますか？」みたいな質問に答えていく。</p>
+
+<p>それはそれで価値があるんですが、一つ限界があって。</p>
+
+<p>自分の外見を正確に把握できている人って、そんなに多くないんですよ。「自分はそんなに気にしてない」と思っていても、客観的には結構気になる状態だったり。逆に「もっとひどいと思ってた」ということもある。</p>
+
+<p>だから「写真を見てAIが外見を分析する」という補完的なツールがあれば、自己申告の診断と組み合わせて、より精度の高い変容マップが作れると思ったんです。</p>
+
+<h2>どういうツールか</h2>
+
+<p>写真を1枚アップロードします。</p>
+
+<p>するとAI（Claude Opus）が写真を読み取って、Finemeの7軸（体型・眉・ヘア・肌・服・歯・爪）それぞれについて分析します。</p>
+
+<p>出力されるのは：</p>
+
+<ul>
+<li>第一印象の総評（first_impression）</li>
+<li>7軸それぞれの現状サマリーと変容余地のコメント</li>
+<li>有料部分: 各軸の詳細分析・具体的なヒント・Compassが指すべき軸の提案</li>
+</ul>
+
+<p>無料で見られるのは概要まで。詳細を見るには¥500の一回払いが必要です。</p>
+
+<h2>「写真を送る」というハードル</h2>
+
+<p>正直、このハードルは最初から意識していました。</p>
+
+<p>自分の顔や体の写真を、見知らぬサービスに送るのって、かなり心理的なコストがかかりますよね。</p>
+
+<p>だから設計で意識したのは2点です。</p>
+
+<p>一つは「診断精度を上げるためのツール」というポジショニング。Mirrorはあくまで補完ツールで、Finemeの診断体験をより良くするための道具、という文脈で提示しています。</p>
+
+<p>もう一つは「分析後に写真を保存しない」という設計。セッションデータはユーザーの履歴として残りますが、写真のバイナリそのものは保存しません。</p>
+
+<h2>Claude Opusで分析する理由</h2>
+
+<p>写真分析には、今はClaude Opus（Vision対応）を使っています。</p>
+
+<p>ちょっと高いんですが、外見分析という微妙なタスクで「Haiku」クラスのモデルを使うのは難しかった。</p>
+
+<p>外見に関するコメントって、言葉の選び方が本当に大事で。同じ事実でも、言い方によって「傷つける」か「勇気をもらえる」かが分かれる。</p>
+
+<p>「変容余地がある」という内容でも、「あなたにはまだこういう可能性がある」という文体で出てくるように、プロンプトをかなり丁寧に設計しました。</p>
+
+<h2>¥500 という価格設定</h2>
+
+<p>有料部分の価格は¥500にしました。</p>
+
+<p>高くもなく、低くもない。「ちょっと試してみよう」と思える金額感を意識しています。</p>
+
+<p>Stripeで一回払い（Checkout）を実装していて、webhookは使っていません。決済完了後にAPIで直接ステータスを確認する方式にしています。サーバー管理をシンプルに保ちたかったので。</p>
+
+<p>結果は永続保存されて、過去のセッションも復元できます。¥500払ったら、何度でも同じ結果を見返せる設計です。</p>
+
+<h2>作ってみて思ったこと</h2>
+
+<p>「AIが外見を見る」という機能は、やり方を間違えると結構危険だと思っています。</p>
+
+<p>外見のコンプレックスを刺激する方向に使えば、クリック率は上がるかもしれない。でも、それはFinemeが目指している方向ではない。</p>
+
+<blockquote>「外見を整えることで生まれる小さな自信が、人に優しくなれる余白をつくる」</blockquote>
+
+<p>これがFinemeの思想なので、分析ツールもその文脈に沿っていないといけない。</p>
+
+<p>「あなたに足りないものを指摘するツール」ではなく、「あなたの変容可能性を可視化するツール」として設計することに、かなり時間をかけました。</p>
+
+<p>まだ磨き途中ですが、使ってみた感想を聞かせてもらえると嬉しいです。</p>
+
+<p>最後まで読んでいただきありがとうございました。</p>
+
+<p><em>渡邉英雄 / Fineme</em></p>
+
+  </div>
+
+  <button class="copy-btn" onclick="copyAll(this)" style="margin-top:16px">記事全文をコピー</button>
+
+</div>
+
+<script>
+function copyAll(btn) {
+  const body = document.getElementById('article-body');
+  // Extract plain text
+  const text = body.innerText;
+  navigator.clipboard.writeText(text.trim()).then(() => {
+    btn.textContent = 'コピー済み ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '記事全文をコピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+</body>
+</html>
