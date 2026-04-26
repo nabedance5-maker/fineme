@@ -671,13 +671,16 @@ export default function DiagnosisResultPage() {
           <h1 class="type-hero-name">～ ${esc(fullName)} ～</h1>
           <p class="type-hero-axis">（${esc(axisLabel)}軸）</p>
           <p class="type-hero-tagline">${esc(desc)}</p>
-          <button id="share-type-card-btn" class="type-hero-share-btn"
-            data-type-code="${esc(typeCode)}"
-            data-creature="${esc(fullName)}"
-            data-color="${esc(color)}"
-            data-tagline="${esc(desc)}">
-            📷 カードを画像保存
-          </button>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button id="share-type-card-btn" class="type-hero-share-btn"
+              data-type-code="${esc(typeCode)}"
+              data-creature="${esc(fullName)}"
+              data-color="${esc(color)}"
+              data-tagline="${esc(desc)}">
+              📷 カードを画像保存
+            </button>
+            <a href="/types" class="type-hero-share-btn" style="text-decoration:none">全119タイプを見る →</a>
+          </div>
           <div class="type-hero-divider"></div>
         </div>
       `;
