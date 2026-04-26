@@ -1046,30 +1046,105 @@ export default function DiagnosisResultPage() {
         shareTypeCardBtn.textContent = '生成中...';
         shareTypeCardBtn.disabled = true;
 
-        const card = document.createElement('div');
-        card.style.cssText = 'position:fixed;left:-9999px;top:0;width:540px;height:720px;background:#0a0f1e;border-radius:0;overflow:hidden;font-family:system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;padding:48px 40px 36px;box-sizing:border-box;';
-        card.innerHTML = `
-          <div style="width:0;height:0;position:absolute;top:-60px;left:-60px;width:200px;height:200px;background:radial-gradient(circle,${col}22 0%,transparent 70%);border-radius:50%"></div>
-          <div style="width:180px;height:240px;border-radius:16px;overflow:hidden;background:${col}15;border:2px solid ${col}44;margin-bottom:28px;flex-shrink:0">
-            <img src="/images/types/TYPE-${tc}.png" crossorigin="anonymous" style="width:180px;height:240px;display:block" onerror="this.remove()" />
-          </div>
-          <div style="text-align:center;flex:1;display:flex;flex-direction:column;align-items:center">
-            <div style="font-size:11px;font-weight:800;letter-spacing:.2em;color:${col}99;margin-bottom:10px">TYPE-${tc}</div>
-            <div style="font-size:52px;font-weight:900;color:#fff;margin-bottom:14px;line-height:1">${cr}</div>
-            <div style="font-size:14px;color:rgba(232,228,220,0.5);line-height:1.85;max-width:320px">${tl}</div>
-          </div>
-          <div style="margin-top:auto;padding-top:20px;font-size:12px;font-weight:800;color:rgba(201,168,76,0.3);letter-spacing:.14em">FINEME.ME</div>
-        `;
-        document.body.appendChild(card);
         try {
-          const html2canvas = (await import('html2canvas')).default;
-          const canvas = await html2canvas(card, { scale:2, backgroundColor:'#0a0f1e', useCORS:true, allowTaint:true, logging:false });
+          // 画像を先にロード（CORSあり）
+          const typeImg = new Image();
+          typeImg.crossOrigin = 'anonymous';
+          await new Promise(res => { typeImg.onload = res; typeImg.onerror = res; typeImg.src = `/images/types/TYPE-${tc}.png`; });
+
+          const W = 540, H = 720, S = 2;
+          const canvas = document.createElement('canvas');
+          canvas.width = W * S; canvas.height = H * S;
+          const ctx = canvas.getContext('2d');
+          ctx.scale(S, S);
+
+          // 背景
+          ctx.fillStyle = '#0a0f1e';
+          ctx.fillRect(0, 0, W, H);
+
+          // 上部グロー
+          const grd = ctx.createRadialGradient(W/2, 0, 0, W/2, 0, 240);
+          grd.addColorStop(0, col + '55'); grd.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+
+          // 画像エリア（240×320, 3:4）
+          const iW = 240, iH = 320, iX = (W - iW) / 2, iY = 36;
+
+          // 角丸クリップ用ヘルパー
+          function rRect(cx, x, y, w, h, r) {
+            cx.beginPath();
+            if (cx.roundRect) { cx.roundRect(x,y,w,h,r); return; }
+            cx.moveTo(x+r,y); cx.lineTo(x+w-r,y); cx.arcTo(x+w,y,x+w,y+r,r);
+            cx.lineTo(x+w,y+h-r); cx.arcTo(x+w,y+h,x+w-r,y+h,r);
+            cx.lineTo(x+r,y+h); cx.arcTo(x,y+h,x,y+h-r,r);
+            cx.lineTo(x,y+r); cx.arcTo(x,y,x+r,y,r); cx.closePath();
+          }
+
+          // 画像をobject-fit:cover相当で描画
+          ctx.save(); rRect(ctx, iX, iY, iW, iH, 18); ctx.clip();
+          if (typeImg.naturalWidth > 0) {
+            const sW = typeImg.naturalWidth, sH = typeImg.naturalHeight;
+            const sR = sW / sH, dR = iW / iH;
+            let sx = 0, sy = 0, sw = sW, sh = sH;
+            if (sR > dR) { sw = sH * dR; sx = (sW - sw) / 2; }
+            else { sh = sW / dR; sy = (sH - sh) / 2; }
+            ctx.drawImage(typeImg, sx, sy, sw, sh, iX, iY, iW, iH);
+          } else {
+            ctx.fillStyle = col + '22'; ctx.fillRect(iX, iY, iW, iH);
+          }
+          ctx.restore();
+
+          // 画像ボーダー
+          ctx.strokeStyle = col + '66'; ctx.lineWidth = 2;
+          rRect(ctx, iX, iY, iW, iH, 18); ctx.stroke();
+
+          // TYPE コード
+          let ty = iY + iH + 26;
+          ctx.globalAlpha = 0.7; ctx.fillStyle = col;
+          ctx.font = '700 11px system-ui,-apple-system,sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('TYPE-' + tc, W/2, ty); ctx.globalAlpha = 1;
+
+          // クリーチャー名
+          ty += 42;
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '900 34px system-ui,-apple-system,sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(cr, W/2, ty);
+
+          // 区切り線
+          ty += 18;
+          ctx.strokeStyle = col + '44'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(W/2-50, ty); ctx.lineTo(W/2+50, ty); ctx.stroke();
+
+          // 説明文（最初の2文のみ・折り返し）
+          ty += 22;
+          const sentences = tl.split('。').filter(Boolean);
+          const shortDesc = sentences.slice(0, 2).join('。') + '。';
+          ctx.fillStyle = 'rgba(232,228,220,0.55)';
+          ctx.font = '13px system-ui,-apple-system,sans-serif';
+          ctx.textAlign = 'center';
+          let line = '';
+          for (const ch of shortDesc) {
+            const test = line + ch;
+            if (ctx.measureText(test).width > 420) { ctx.fillText(line, W/2, ty); line = ch; ty += 20; }
+            else { line = test; }
+          }
+          if (line) ctx.fillText(line, W/2, ty);
+
+          // フッター
+          ctx.globalAlpha = 0.3; ctx.fillStyle = col;
+          ctx.font = '800 11px system-ui,-apple-system,sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('FINEME.ME', W/2, H - 24);
+          ctx.globalAlpha = 1;
+
           const link = document.createElement('a');
-          link.download = `fineme-type-${tc}.png`;
+          link.download = 'fineme-type-' + tc + '.png';
           link.href = canvas.toDataURL('image/png');
           link.click();
         } catch (e) { console.error('share card error:', e); }
-        document.body.removeChild(card);
+
         shareTypeCardBtn.innerHTML = '📷 カードを画像保存';
         shareTypeCardBtn.disabled = false;
       });
