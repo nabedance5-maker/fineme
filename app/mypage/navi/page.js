@@ -181,6 +181,22 @@ export default function NewMeNaviPage() {
       .prereq-banner-desc { font-size: 11px; color: rgba(232,228,220,0.55); line-height: 1.5; margin: 0; }
       .prereq-banner-count { font-weight: 700; color: #c9a84c; }
 
+      /* ── 継続フェーズ区切り ── */
+      .layer2-divider { display: flex; align-items: center; gap: 8px; margin: 16px 0 8px; }
+      .layer2-divider-line { flex: 1; height: 1px; background: repeating-linear-gradient(90deg, rgba(201,168,76,0.25) 0, rgba(201,168,76,0.25) 4px, transparent 4px, transparent 9px); }
+      .layer2-divider-label { font-size: 9px; font-weight: 800; letter-spacing: .12em; color: rgba(201,168,76,0.45); white-space: nowrap; text-transform: uppercase; }
+
+      /* ── 毎日の習慣 ── */
+      .habit-section { margin-top: 20px; padding: 14px 16px 4px; background: rgba(16,185,129,0.04); border: 1px solid rgba(16,185,129,0.18); border-radius: 12px; }
+      .habit-section-title { font-size: 10px; font-weight: 800; letter-spacing: .12em; color: rgba(74,222,128,0.65); text-transform: uppercase; margin: 0 0 10px; }
+      .habit-item { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+      .habit-item:last-child { border-bottom: none; padding-bottom: 2px; }
+      .habit-item-text { flex: 1; font-size: 12px; color: rgba(232,228,220,0.70); line-height: 1.45; }
+      .habit-check-today { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 99px; border: 1.5px solid rgba(74,222,128,0.35); background: transparent; color: rgba(74,222,128,0.55); cursor: pointer; white-space: nowrap; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; flex-shrink: 0; }
+      .habit-check-today:hover { border-color: #4ade80; color: #4ade80; }
+      .habit-check-today.done-today { background: rgba(74,222,128,0.12); border-color: #4ade80; color: #4ade80; }
+      .habit-streak { font-size: 11px; color: rgba(249,168,37,0.75); font-weight: 700; white-space: nowrap; flex-shrink: 0; min-width: 40px; text-align: right; }
+
       /* ── 出発前チェック 全完了トースト ── */
       #prereq-complete-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(120px); background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #fff; border-radius: 18px; padding: 16px 24px; display: flex; align-items: center; gap: 14px; box-shadow: 0 8px 36px rgba(16,185,129,.4); transition: transform .45s cubic-bezier(.34,1.56,.64,1); z-index: 9999; pointer-events: none; width: min(340px, calc(100vw - 40px)); }
       #prereq-complete-toast.show { transform: translateX(-50%) translateY(0); }
@@ -1231,7 +1247,9 @@ export default function NewMeNaviPage() {
           </div>`;
       }
 
-      // メインステップHTML
+      // メインステップHTML（Layer1→Layer2 区切りを proIdx で自動挿入）
+      const proIdxInMain = mainSteps.findIndex(s => s.isCurrentFor === 'pro');
+      const layer2Divider = '<div class="layer2-divider"><div class="layer2-divider-line"></div><span class="layer2-divider-label">継続・アップデートフェーズ</span><div class="layer2-divider-line"></div></div>';
       const items = mainSteps.map((step, j) => {
         const i = splitAt + j; // 元のインデックス（doneKeyのため）
         const doneKey = `${axisKey}-${i}`;
@@ -1276,7 +1294,8 @@ export default function NewMeNaviPage() {
           if (chips) productsHtml = `<div class="product-suggestions">${chips}</div>`;
         }
         const checkBtn = `<button class="step-check-btn${isDone?' checked':''}" data-done-key="${esc(doneKey)}" title="${isDone?'完了を取り消す':'できてる・やった'}">${isDone?'✓':''}</button>`;
-        return `
+        const dividerBefore = (proIdxInMain > 0 && j === proIdxInMain) ? layer2Divider : '';
+        return dividerBefore + `
           <div class="milestone-item${isDone?' step-done':''}">
             <div class="milestone-dot-wrap">
               ${j > 0 ? '<div class="milestone-connector"></div>' : ''}
@@ -1319,6 +1338,52 @@ export default function NewMeNaviPage() {
         const isCur = i === currentIdx;
         return `<div class="smp-dot${isDone ? ' done' : isCur ? ' cur' : ''}"></div>`;
       }).join('');
+    }
+
+    // ── 毎日の習慣セクション ──
+    function buildHabitSection(id) {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const skinFocus  = getSkinFocus();
+      const teethFocus = getTeethFocus();
+      let axisKey = id;
+      if (id === 'skin')  axisKey = skinFocus  === 'hige'  ? 'skin_hige'   : 'skin_care';
+      if (id === 'teeth') axisKey = teethFocus === 'ortho' ? 'teeth_ortho' : 'teeth_white';
+      const actionTypes = ACTION_TYPE_MAP[axisKey] || [];
+      const habitIdxs = actionTypes.map((t, i) => t === 'habit' ? i : -1).filter(i => i >= 0);
+      if (habitIdxs.length === 0) return '';
+      const allSteps = axisKey in MILESTONES_SUB
+        ? (MILESTONES_SUB[axisKey] || {}).steps || []
+        : MILESTONES[axisKey] || [];
+      const items = habitIdxs.map(i => {
+        const step = allSteps[i];
+        if (!step) return '';
+        const habitKey = 'habit-' + axisKey + '-' + i;
+        const storageKey = 'fineme:habit:' + habitKey + ':' + todayStr;
+        const isDoneToday = localStorage.getItem(storageKey) === 'done';
+        let streakCount = 0;
+        try {
+          const raw = localStorage.getItem('fineme:streak:' + habitKey);
+          if (raw) {
+            const d = JSON.parse(raw);
+            const yestStr = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+            if (d.lastDate === todayStr || d.lastDate === yestStr) streakCount = d.count || 0;
+          }
+        } catch {}
+        const streakHtml = streakCount > 0
+          ? '<span class="habit-streak">🔥 ' + streakCount + '日</span>'
+          : '<span class="habit-streak" style="opacity:.2">—</span>';
+        return '<div class="habit-item">'
+          + '<span class="habit-item-text">' + esc(step.text) + '</span>'
+          + streakHtml
+          + '<button class="habit-check-today' + (isDoneToday ? ' done-today' : '') + '"'
+          + ' data-habit-key="' + esc(habitKey) + '" data-today="' + esc(todayStr) + '">'
+          + (isDoneToday ? '✓ できた' : '今日できた？')
+          + '</button></div>';
+      }).filter(Boolean).join('');
+      if (!items) return '';
+      return '<div class="habit-section">'
+        + '<div class="habit-section-title">毎日の習慣</div>'
+        + items + '</div>';
     }
 
     // ── ステーションHTMLを生成（ジグザグルート案内型） ──
@@ -1424,6 +1489,7 @@ export default function NewMeNaviPage() {
             </div>
 
             ${milestoneHtml}
+            ${buildHabitSection(id)}
 
             <div style="margin-top:14px">
               <div class="milestone-item" style="padding:0">
@@ -1927,6 +1993,37 @@ export default function NewMeNaviPage() {
       // 通常のトグル
       persistStepDone(key, !isDone);
       applyStepDone(btn, key, !isDone);
+    });
+
+    // ── 習慣チェックボタン ──
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('.habit-check-today');
+      if (!btn) return;
+      const habitKey = btn.dataset.habitKey;
+      const todayStr = btn.dataset.today;
+      if (!habitKey || !todayStr) return;
+      const storageKey = 'fineme:habit:' + habitKey + ':' + todayStr;
+      const isDoneToday = localStorage.getItem(storageKey) === 'done';
+      if (!isDoneToday) {
+        localStorage.setItem(storageKey, 'done');
+        btn.classList.add('done-today');
+        btn.textContent = '✓ できた';
+        try {
+          const streakKey = 'fineme:streak:' + habitKey;
+          const raw = localStorage.getItem(streakKey);
+          let d = raw ? JSON.parse(raw) : { count: 0, lastDate: '' };
+          const yestStr = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+          d.count = (d.lastDate === yestStr) ? (d.count || 0) + 1 : (d.lastDate === todayStr ? d.count : 1);
+          d.lastDate = todayStr;
+          localStorage.setItem(streakKey, JSON.stringify(d));
+          const streakEl = btn.closest('.habit-item') && btn.closest('.habit-item').querySelector('.habit-streak');
+          if (streakEl) { streakEl.textContent = '🔥 ' + d.count + '日'; streakEl.style.opacity = '1'; }
+        } catch {}
+      } else {
+        localStorage.removeItem(storageKey);
+        btn.classList.remove('done-today');
+        btn.textContent = '今日できた？';
+      }
     });
 
     // ── セクションタブ（スクロール移動）──
