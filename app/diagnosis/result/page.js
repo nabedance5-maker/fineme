@@ -174,11 +174,13 @@ export default function DiagnosisResultPage() {
 
       /* ── Type Hero ── */
       .type-hero { width: 100%; text-align: center; padding: 40px 20px 32px; margin-bottom: 0; position: relative; overflow: hidden; }
-      .type-hero-code { font-size: 10px; font-weight: 800; letter-spacing: .2em; margin: 0 0 12px; text-transform: uppercase; }
-      .type-hero-name { font-family: 'Noto Serif JP',Georgia,serif; font-size: clamp(24px,7vw,38px); font-weight: 900; color: #fff; margin: 0 0 22px; line-height: 1.2; }
+      .type-hero-lead { font-size: 12px; font-weight: 700; letter-spacing: .12em; color: rgba(232,228,220,0.45); margin: 0 0 8px; }
+      .type-hero-code { font-size: clamp(36px,10vw,52px); font-weight: 900; letter-spacing: .14em; margin: 0 0 24px; line-height: 1; }
       .type-hero-img-wrap { width: min(240px,68vw); height: min(320px,90vw); margin: 0 auto 20px; border-radius: 18px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
       .type-hero-img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; border-radius: 18px; }
-      .type-hero-tagline { font-size: 13px; color: rgba(232,228,220,0.5); line-height: 1.85; max-width: 280px; margin: 0 auto 20px; }
+      .type-hero-name { font-family: 'Noto Serif JP',Georgia,serif; font-size: clamp(20px,6vw,30px); font-weight: 900; color: #fff; margin: 0 0 6px; line-height: 1.3; }
+      .type-hero-axis { font-size: 13px; color: rgba(232,228,220,0.45); margin: 0 0 20px; letter-spacing: .06em; }
+      .type-hero-tagline { font-size: 13px; color: rgba(232,228,220,0.5); line-height: 1.85; max-width: 280px; margin: 0 auto 20px; text-align: left; }
       .type-hero-share-btn { padding: 9px 20px; background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.15); border-radius: 8px; color: rgba(232,228,220,0.65); font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
       .type-hero-divider { height: 1px; background: linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent); margin: 24px 0 0; }
     `;
@@ -661,11 +663,13 @@ export default function DiagnosisResultPage() {
       const axisLabel = AREA_DEFS[compassFirst]?.label || '';
       return `
         <div class="type-hero" style="background:linear-gradient(180deg,${color}1a 0%,rgba(10,15,30,0) 100%)">
-          <p class="type-hero-code" style="color:${color}">TYPE-${esc(typeCode)} · ${esc(axisLabel)}軸</p>
-          <h1 class="type-hero-name">${esc(fullName)}</h1>
+          <p class="type-hero-lead">あなたのタイプは →</p>
+          <p class="type-hero-code" style="color:${color}">${esc(typeCode)}</p>
           <div class="type-hero-img-wrap" style="border:2px solid ${color}44;box-shadow:0 0 36px ${color}22">
             <img class="type-hero-img" src="/images/types/TYPE-${esc(typeCode)}.png" alt="${esc(creature)}" />
           </div>
+          <h1 class="type-hero-name">～ ${esc(fullName)} ～</h1>
+          <p class="type-hero-axis">（${esc(axisLabel)}軸）</p>
           <p class="type-hero-tagline">${esc(desc)}</p>
           <button id="share-type-card-btn" class="type-hero-share-btn"
             data-type-code="${esc(typeCode)}"
