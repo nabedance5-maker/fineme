@@ -671,7 +671,7 @@ export default function DiagnosisResultPage() {
             data-type-code="${esc(typeCode)}"
             data-creature="${esc(fullName)}"
             data-color="${esc(color)}"
-            data-tagline="${esc(tagline)}">
+            data-tagline="${esc(desc)}">
             📷 カードを画像保存
           </button>
           <div class="type-hero-divider"></div>
