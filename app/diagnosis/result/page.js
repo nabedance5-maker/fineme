@@ -1050,8 +1050,8 @@ export default function DiagnosisResultPage() {
         card.style.cssText = 'position:fixed;left:-9999px;top:0;width:540px;height:720px;background:#0a0f1e;border-radius:0;overflow:hidden;font-family:system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;padding:48px 40px 36px;box-sizing:border-box;';
         card.innerHTML = `
           <div style="width:0;height:0;position:absolute;top:-60px;left:-60px;width:200px;height:200px;background:radial-gradient(circle,${col}22 0%,transparent 70%);border-radius:50%"></div>
-          <div style="width:180px;height:240px;border-radius:16px;overflow:hidden;background:${col}15;border:2px solid ${col}44;margin-bottom:28px;position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <img src="/images/types/TYPE-${tc}.png" crossorigin="anonymous" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" onerror="this.remove()" />
+          <div style="width:180px;height:240px;border-radius:16px;overflow:hidden;background:${col}15;border:2px solid ${col}44;margin-bottom:28px;flex-shrink:0">
+            <img src="/images/types/TYPE-${tc}.png" crossorigin="anonymous" style="width:180px;height:240px;display:block" onerror="this.remove()" />
           </div>
           <div style="text-align:center;flex:1;display:flex;flex-direction:column;align-items:center">
             <div style="font-size:11px;font-weight:800;letter-spacing:.2em;color:${col}99;margin-bottom:10px">TYPE-${tc}</div>
