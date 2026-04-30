@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>note下書き — 119通りの言葉｜Fineme</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Hiragino Kaku Gothic Pro','Noto Sans JP',sans-serif;background:#060c1a;color:#e8e2d4;line-height:1.8;font-size:15px;padding:40px 20px 100px}
+  .wrap{max-width:680px;margin:0 auto}
+  h1{font-size:22px;font-weight:900;color:#c9a84c;margin-bottom:6px}
+  .meta{font-size:12px;color:rgba(232,228,220,0.35);margin-bottom:48px}
+  .article{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:36px 32px}
+  .article h2{font-size:20px;font-weight:900;color:#fff;margin:32px 0 12px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)}
+  .article h2:first-child{margin-top:0;border-top:none}
+  .article p{font-size:15px;color:rgba(232,228,220,0.85);line-height:1.95;margin-bottom:18px}
+  .article ul{margin:0 0 18px 20px}
+  .article li{font-size:14px;color:rgba(232,228,220,0.75);line-height:1.85;margin-bottom:6px}
+  .article blockquote{border-left:3px solid #c9a84c;padding:12px 20px;background:rgba(201,168,76,0.05);border-radius:0 10px 10px 0;margin:20px 0;font-size:14px;color:#c4bfb5;font-style:normal}
+  .copy-btn{margin:16px 0;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);color:#c9a84c;font-size:12px;font-weight:700;padding:8px 18px;border-radius:8px;cursor:pointer;transition:background .15s;display:block;width:fit-content}
+  .copy-btn:hover{background:rgba(201,168,76,0.22)}
+  .copy-btn.copied{background:rgba(74,222,128,0.12);border-color:rgba(74,222,128,0.3);color:#4ade80}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>note 下書き — 119通りの言葉</h1>
+  <p class="meta">作成: 2026-05-01　テーマ: 診断タイプを119通り全部書き直した話</p>
+
+  <button class="copy-btn" onclick="copyAll(this)">記事全文をコピー</button>
+
+  <div class="article" id="article-body">
+
+<p>Finemeの外見診断を受けると、最後に「タイプ」が出ます。</p>
+
+<p>たとえば「BAQ」とか「MCS」とか。コードみたいな3文字です。</p>
+
+<p>これを全部作り直しました。119通り全部。</p>
+
+<h2>以前の設計の何が気になっていたか</h2>
+
+<p>以前の表示はシンプルで、タイプコードと軸名が小さく出るだけでした。「TYPE-BAQ · 体型軸」みたいな感じで。</p>
+
+<p>機能としては成立していたんですが、一つ気になっていたことがあって。</p>
+
+<p>「自分のこと」として受け取れているか、ということです。</p>
+
+<p>コードが出ても、それが自分のどういう状態を表しているのか、すぐにはわからない。「BAQって何？」という感じで、記号として処理されて終わってしまう可能性がある。</p>
+
+<p>診断というのは本来、「あなたは今こういう状態にいる」という言葉を渡すものだと思っています。だから言葉がないと、診断として機能していないんじゃないか、という感覚がずっとありました。</p>
+
+<h2>119通り、全部バラバラの説明文を書いた</h2>
+
+<p>Finemeのタイプは7軸×4関心度×5歩みの組み合わせで構成されています。出力されるタイプは119通り。</p>
+
+<p>それを全部、個別の説明文にしました。</p>
+
+<p>MBTIみたいなイメージで、4〜7文で。「今どういう状態か」「この軸の特性」「次の一手」「変容の見通し」という流れで書いています。</p>
+
+<p>119通り全部、違う文章です。共通の文章をベースに単語を差し替えたものではなく、それぞれのタイプが持つ文脈に合わせて書きました。</p>
+
+<p>これが一番時間がかかりました。でも、ここを手抜きすると診断の意味が薄れると思ったので、丁寧にやりました。</p>
+
+<h2>タイプヒーローの見た目も変えた</h2>
+
+<p>説明文だけじゃなくて、表示の設計も変えました。</p>
+
+<p>新しいレイアウトは、「あなたのタイプは →」という導入から始まって、大きくタイプコードを表示して、イラスト、そのタイプの名前（「鋼の迷い玄武」みたいな）、説明文、という順番で読めるようにしています。</p>
+
+<p>名前はちょっと変わった感じにしました。「体型×迷い中×克服しようとしている状態」を「鋼の迷い玄武」と表現するような設計です。MBTIで言うと「INTJ = 建築家」みたいなイメージに近いです。</p>
+
+<p>イラストも全タイプ分あります。AIで生成したものですが、各タイプのイメージに合わせたビジュアルになっています。</p>
+
+<h2>全119タイプを一覧で見られるページも作った</h2>
+
+<p>診断を受けた人が「自分以外のタイプを見てみたい」と思うことはあると思います。MBTIで「INFJってどんな人？」と調べるような感覚で。</p>
+
+<p>そのために、全タイプを軸別に一覧で見られるページ（/types）を作りました。</p>
+
+<p>タブで軸を絞り込めて、カードをクリックすると説明文がモーダルで開く設計です。自分の現在のタイプはハイライト表示されます。</p>
+
+<h2>カード保存機能も作り直した</h2>
+
+<p>診断結果をカード画像として保存できる機能があるんですが、これもついでに作り直しました。</p>
+
+<p>以前はhtml2canvasというライブラリを使っていたんですが、縦に伸びてしまう問題があって。説明文が長くなるとカードの縦幅が変わってしまい、見た目が崩れることがありました。</p>
+
+<p>Canvas APIで直接描画する方式に切り替えたことで、説明文が長くても高さを動的に計算してきれいに収まるようになりました。</p>
+
+<h2>「診断に言葉を宿らせる」ということ</h2>
+
+<p>今回の作業を通じて改めて思ったのは、診断というのは「仕分け」じゃないということです。</p>
+
+<p>ユーザーを119のどこかに振り分けるための機能ではなくて、「あなたは今ここにいる」と伝えるための道具。</p>
+
+<p>だから、コードだけ出して終わりにするのは、地図を渡さずに「出発点はここです」と言っているようなものだと感じていました。</p>
+
+<blockquote>「外見を整えることで生まれる小さな自信が、人に優しくなれる余白をつくる」</blockquote>
+
+<p>これがFinemeの思想なので、診断もその入り口として機能していないといけない。119通りの言葉は、その入り口を少しだけ丁寧に作り直した、という話です。</p>
+
+<p>最後まで読んでいただきありがとうございました。</p>
+
+<p><em>渡邉英雄 / Fineme</em></p>
+
+  </div>
+
+  <button class="copy-btn" onclick="copyAll(this)" style="margin-top:16px">記事全文をコピー</button>
+
+</div>
+
+<script>
+function copyAll(btn) {
+  const body = document.getElementById('article-body');
+  const text = body.innerText;
+  navigator.clipboard.writeText(text.trim()).then(() => {
+    btn.textContent = 'コピー済み ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '記事全文をコピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+</body>
+</html>
