@@ -113,11 +113,15 @@ export default function NewMeNaviPage() {
       .milestone-item.step-done .milestone-dot:not(.current):not(.goal) { background: #6ee7b7; border: 2px solid #10b981; }
 
       /* ── ガイド推奨度 ── */
-      .guide-badge { display: flex; align-items: center; gap: 5px; margin-top: 5px; padding: 4px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; line-height: 1.4; }
+      .guide-badge { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 5px; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; line-height: 1.4; }
       .guide-high { background: rgba(201,168,76,0.09); border: 1px solid rgba(201,168,76,0.28); color: rgba(253,230,138,0.9); }
-      .guide-high a { color: #c9a84c; font-weight: 700; text-decoration: none; }
       .guide-mid { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.22); color: rgba(147,197,253,0.85); }
       .guide-low { display: inline-flex; background: none; border: none; font-size: 11px; color: #9ca3af; padding: 2px 0; }
+      .guide-find-btn { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 99px; text-decoration: none; white-space: nowrap; letter-spacing: .04em; transition: all .15s; }
+      .guide-high .guide-find-btn { background: rgba(201,168,76,0.18); border: 1px solid rgba(201,168,76,0.45); color: #c9a84c; }
+      .guide-high .guide-find-btn:hover { background: rgba(201,168,76,0.32); }
+      .guide-mid .guide-find-btn { background: rgba(59,130,246,0.14); border: 1px solid rgba(59,130,246,0.38); color: #93c5fd; }
+      .guide-mid .guide-find-btn:hover { background: rgba(59,130,246,0.25); }
       .milestone-note { font-size: 11px; color: #92400e; background: #fef3c7; border: 1px solid #fde68a; border-radius: 4px; padding: 4px 8px; margin-top: 4px; }
 
       /* ── 商品サジェスト ── */
@@ -820,10 +824,11 @@ export default function NewMeNaviPage() {
       const isGlobalCurrent = doneKey === compassFirstUndoneKey;
       let guideHtml = '';
       if (step.guide === 'HIGH') {
-        const link = def.catLink ? ` <a href="/search?category=${esc(def.catLink)}&diag=1" style="color:#c9a84c;font-weight:700;text-decoration:none">ガイドを探す →</a>` : '';
-        guideHtml = `<div class="guide-badge guide-high">🏥 ここはプロに任せると確実に変わる${link}</div>`;
+        const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
+        guideHtml = `<div class="guide-badge guide-high"><span>🏥 ここはプロに任せると確実に変わる</span>${btn}</div>`;
       } else if (step.guide === 'MID') {
-        guideHtml = `<div class="guide-badge guide-mid">📋 プロと進めると精度が上がる</div>`;
+        const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
+        guideHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${btn}</div>`;
       }
       const noteHtml = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
       const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
@@ -1259,10 +1264,11 @@ export default function NewMeNaviPage() {
         const labelHtml = isCurrentPosition ? '<span class="milestone-current-tag">★ 現在地</span>' : '';
         let guideHtml = '';
         if (step.guide === 'HIGH') {
-          const link = catLink ? ` <a href="/search?category=${esc(catLink)}&diag=1">ガイドを探す →</a>` : '';
-          guideHtml = `<div class="guide-badge guide-high">🏥 ここはプロに任せると確実に変わる${link}</div>`;
+          const btn = catLink ? `<a href="/search?category=${esc(catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
+          guideHtml = `<div class="guide-badge guide-high"><span>🏥 ここはプロに任せると確実に変わる</span>${btn}</div>`;
         } else if (step.guide === 'MID') {
-          guideHtml = `<div class="guide-badge guide-mid">📋 プロと進めると精度が上がる</div>`;
+          const btn = catLink ? `<a href="/search?category=${esc(catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
+          guideHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${btn}</div>`;
         } else if (step.guide === 'LOW') {
           guideHtml = `<span class="guide-badge guide-low">🏥</span>`;
         }
