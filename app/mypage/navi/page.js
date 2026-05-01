@@ -390,29 +390,8 @@ export default function NewMeNaviPage() {
 
       /* ── 旅路ビジュアル ── */
       .journey-section { margin-bottom: 20px; }
-      .journey-scroll { overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; padding: 6px 0 10px; }
-      .journey-scroll::-webkit-scrollbar { display: none; }
-      .journey-inner { display: flex; align-items: center; padding: 8px 16px; min-width: max-content; }
-      .jr-endpoint { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
-      .jr-endpoint-dot { width: 10px; height: 10px; border-radius: 50%; }
-      .jr-start-dot { background: rgba(201,168,76,0.35); border: 2px solid rgba(201,168,76,0.55); }
-      .jr-goal-dot { background: #c9a84c; border: 2px solid #c9a84c; box-shadow: 0 0 10px rgba(201,168,76,0.55); }
-      .jr-endpoint-label { font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(201,168,76,0.5); }
-      .jr-line { width: 18px; height: 2px; flex-shrink: 0; }
-      .jr-line-dash { background: repeating-linear-gradient(90deg, rgba(201,168,76,0.28) 0, rgba(201,168,76,0.28) 3px, transparent 3px, transparent 6px); }
-      .jr-line-solid { background: rgba(201,168,76,0.65); }
-      .jr-stop { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; width: 68px; cursor: pointer; transition: transform .15s; scroll-snap-align: start; }
-      .jr-stop:hover { transform: translateY(-2px); }
-      .jr-ring-wrap { position: relative; width: 52px; height: 52px; }
-      .jr-ring-bg { fill: none; stroke: rgba(255,255,255,0.07); stroke-width: 3; }
-      .jr-ring-fill { fill: none; stroke-width: 3; stroke-linecap: round; transform-origin: 26px 26px; transform: rotate(-90deg); transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1) .2s; }
-      .jr-stop.jr-compass .jr-ring-wrap { filter: drop-shadow(0 0 8px rgba(201,168,76,0.6)); }
-      .jr-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 20px; line-height: 1; }
-      .jr-stop-name { font-size: 10px; font-weight: 700; color: rgba(232,228,220,0.60); text-align: center; white-space: nowrap; }
-      .jr-stop.jr-compass .jr-stop-name { color: #c9a84c; font-weight: 900; }
-      .jr-stop.jr-done .jr-stop-name { color: rgba(52,211,153,0.7); }
-      .jr-stop-pct { font-size: 9px; font-weight: 800; color: rgba(232,228,220,0.28); }
-      .jr-stop.jr-compass .jr-stop-pct { color: rgba(201,168,76,0.8); }
+      .journey-map-wrap { display:flex; justify-content:center; padding: 2px 0 8px; }
+      .journey-map-svg { width:100%; max-width:280px; display:block; overflow:visible; }
 
       /* ── 軸ステータスグリッド ── */
       .axis-status-section { margin-bottom: 20px; }
@@ -1876,50 +1855,85 @@ export default function NewMeNaviPage() {
       return { done, total, pct, status, nextStepText: nextStep?.step?.text || '' };
     }
 
-    // ── 旅路ビジュアル ──
+    // ── 変容マップ（放射状・7軸同時進行） ──
     function buildJourneyRouteHtml() {
-      const routeOrder = getRouteOrder();
-      const CIRC = 125.66;
-      const compassAxis = calcDynamicCompass();
-      const stops = routeOrder.map((axisId, i) => {
+      const axisIds = Object.keys(AREA_DEFS);
+      const n = axisIds.length;
+      const cx = 150, cy = 150;
+      const innerR = 26; // center circle edge
+      const outerR = 95; // node center
+      const spokeLen = outerR - innerR;
+
+      const spokes = axisIds.map((axisId, i) => {
         const def = AREA_DEFS[axisId];
         if (!def) return '';
         const { pct, status } = getAxisStats(axisId);
+        const angle = (-Math.PI / 2) + (i * 2 * Math.PI / n);
+        const cosA = Math.cos(angle), sinA = Math.sin(angle);
+
+        const x1 = (cx + innerR * cosA).toFixed(1);
+        const y1 = (cy + innerR * sinA).toFixed(1);
+        const x2 = (cx + outerR * cosA).toFixed(1);
+        const y2 = (cy + outerR * sinA).toFixed(1);
+
+        const fillFrac = pct / 100;
+        const fillEndR = innerR + fillFrac * (spokeLen - 18);
+        const xf = (cx + fillEndR * cosA).toFixed(1);
+        const yf = (cy + fillEndR * sinA).toFixed(1);
+
+        const labelR = outerR + 25;
+        const xl = (cx + labelR * cosA).toFixed(1);
+        const yl = (cy + labelR * sinA).toFixed(1);
+        const textAnchor = cosA > 0.3 ? 'start' : cosA < -0.3 ? 'end' : 'middle';
+        const labelDy = sinA > 0.3 ? 11 : sinA < -0.3 ? -1 : 4;
+
         const isCompass = status === 'compass';
-        const isDone = status === 'done';
+        const isDone   = status === 'done';
         const isActive = status === 'active';
-        const stroke = isDone ? '#c9a84c' : isCompass ? '#c9a84c' : isActive ? '#3b82f6' : 'rgba(232,228,220,0.13)';
-        const offset = (CIRC * (1 - pct / 100)).toFixed(1);
-        const prevDone = i > 0 ? (() => { const { pct: pp } = getAxisStats(routeOrder[i-1]); return pp > 0; })() : false;
-        const connector = `<div class="jr-line ${prevDone ? 'jr-line-solid' : 'jr-line-dash'}"></div>`;
-        return connector + `
-          <div class="jr-stop${isCompass ? ' jr-compass' : ''}${isDone ? ' jr-done' : ''}" data-axis-jump="${esc(axisId)}">
-            <div class="jr-ring-wrap">
-              <svg width="52" height="52" viewBox="0 0 52 52">
-                <circle class="jr-ring-bg" cx="26" cy="26" r="20"/>
-                <circle class="jr-ring-fill" cx="26" cy="26" r="20" stroke="${stroke}" stroke-dasharray="${CIRC}" stroke-dashoffset="${offset}"/>
-              </svg>
-              <span class="jr-icon">${esc(def.icon)}</span>
-            </div>
-            <span class="jr-stop-name">${esc(def.label)}</span>
-            <span class="jr-stop-pct">${pct > 0 ? pct + '%' : '—'}</span>
-          </div>`;
+
+        const fillColor  = isCompass || isDone ? '#c9a84c' : isActive ? '#3b82f6' : null;
+        const nodeStroke = isCompass ? '#c9a84c' : isDone ? 'rgba(201,168,76,0.45)' : isActive ? 'rgba(59,130,246,0.4)' : 'rgba(232,228,220,0.14)';
+        const nodeFill   = isCompass ? 'rgba(201,168,76,0.13)' : isDone ? 'rgba(201,168,76,0.06)' : isActive ? 'rgba(59,130,246,0.07)' : 'rgba(10,15,30,0.5)';
+        const nodeR      = isCompass ? 17 : 13;
+        const labelFill  = isCompass ? '#c9a84c' : isDone ? 'rgba(52,211,153,0.75)' : 'rgba(232,228,220,0.55)';
+        const labelWt    = isCompass ? '800' : '600';
+
+        const bgSpoke  = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(232,228,220,0.10)" stroke-width="2" stroke-dasharray="3 3"/>`;
+        const fillSpoke = fillColor && pct > 0 ? `<line x1="${x1}" y1="${y1}" x2="${xf}" y2="${yf}" stroke="${fillColor}" stroke-width="${isCompass ? 3.5 : 2.5}" stroke-linecap="round"/>` : '';
+        const glowRing  = isCompass ? `<circle cx="${x2}" cy="${y2}" r="${nodeR + 7}" fill="none" stroke="rgba(201,168,76,0.18)" stroke-width="1.5" stroke-dasharray="3 2"/>` : '';
+        const iconOrCheck = isDone
+          ? `<text x="${x2}" y="${(parseFloat(y2)+4).toFixed(1)}" text-anchor="middle" font-size="11" fill="rgba(52,211,153,0.75)">✓</text>`
+          : `<text x="${x2}" y="${(parseFloat(y2)+5).toFixed(1)}" text-anchor="middle" font-size="${isCompass ? 15 : 13}">${def.icon}</text>`;
+        const pctTspan = pct > 0
+          ? `<tspan x="${xl}" dy="11" font-size="8" fill="${fillColor || 'rgba(232,228,220,0.28)'}88">${pct}%</tspan>`
+          : '';
+
+        return `
+          <g data-axis-jump="${axisId}" style="cursor:pointer">
+            ${bgSpoke}${fillSpoke}${glowRing}
+            <circle cx="${x2}" cy="${y2}" r="${nodeR}" fill="${nodeFill}" stroke="${nodeStroke}" stroke-width="${isCompass ? 1.8 : 1.2}"/>
+            ${iconOrCheck}
+            <text text-anchor="${textAnchor}" font-size="9.5" fill="${labelFill}" font-weight="${labelWt}">
+              <tspan x="${xl}" y="${(parseFloat(yl)+labelDy).toFixed(1)}">${def.label}</tspan>${pctTspan}
+            </text>
+            <rect x="${(parseFloat(x2)-22).toFixed(1)}" y="${(parseFloat(y2)-22).toFixed(1)}" width="44" height="44" fill="transparent"/>
+          </g>`;
       }).join('');
+
+      const allSt = flattenAllSteps();
+      const doneCount  = allSt.filter(s => s.isDone).length;
+      const totalCount = allSt.length;
+      const overallPct = totalCount > 0 ? Math.round(doneCount / totalCount * 100) : 0;
+
       return `
-        <div class="sec-label">🗺️ 変容の旅路</div>
-        <div class="journey-scroll">
-          <div class="journey-inner">
-            <div class="jr-endpoint">
-              <div class="jr-endpoint-dot jr-start-dot"></div>
-              <span class="jr-endpoint-label">START</span>
-            </div>
-            ${stops}
-            <div class="jr-line jr-line-dash"></div>
-            <div class="jr-endpoint">
-              <div class="jr-endpoint-dot jr-goal-dot"></div>
-              <span class="jr-endpoint-label">GOAL</span>
-            </div>
-          </div>
+        <div class="sec-label">🗺️ 変容マップ — 7軸同時進行</div>
+        <div class="journey-map-wrap">
+          <svg viewBox="0 0 300 300" class="journey-map-svg">
+            ${spokes}
+            <circle cx="${cx}" cy="${cy}" r="24" fill="rgba(201,168,76,0.07)" stroke="rgba(201,168,76,0.35)" stroke-width="1.5"/>
+            <text x="${cx}" y="${cy - 5}" text-anchor="middle" font-size="8" fill="rgba(232,228,220,0.4)">変容中</text>
+            <text x="${cx}" y="${cy + 9}" text-anchor="middle" font-size="11" fill="rgba(201,168,76,0.9)" font-weight="700">${overallPct}%</text>
+          </svg>
         </div>`;
     }
 
