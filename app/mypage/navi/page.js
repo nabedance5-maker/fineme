@@ -1988,7 +1988,7 @@ export default function NewMeNaviPage() {
     const html = `
       <div class="navi-wrap">
       <div class="navi-header">
-        <p class="navi-header-eyebrow">New Me Map</p>
+        <p class="navi-header-eyebrow">New Me Navi &nbsp;<a href="/mypage/map" style="font-size:9px;font-weight:700;color:rgba(201,168,76,0.6);text-decoration:none;border:1px solid rgba(201,168,76,0.22);padding:2px 8px;border-radius:99px;vertical-align:middle;letter-spacing:.06em">🗺️ Map</a></p>
         <div class="navi-header-badge">🧭 行動タイプ別ロードマップ</div>
         <h1>ゴール：<em>${esc(overallGoal)}</em></h1>
         <p class="navi-header-sub">「今すぐ動ける」から始めよう。<br>Compassが指す軸のステップが最優先で表示される。</p>
