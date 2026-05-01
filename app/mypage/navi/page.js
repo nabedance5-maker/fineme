@@ -343,15 +343,50 @@ export default function NewMeNaviPage() {
       .action-sec-progress { font-size: 12px; font-weight: 800; color: rgba(201,168,76,0.75); background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2); border-radius: 20px; padding: 3px 10px; white-space: nowrap; flex-shrink: 0; }
 
       /* ── ステップカード ── */
-      .step-card { display: flex; align-items: flex-start; gap: 10px; padding: 11px 10px; border-bottom: 1px solid rgba(201,168,76,0.07); position: relative; transition: background .12s; }
+      .step-card { display: flex; align-items: flex-start; gap: 12px; padding: 14px 12px; border-bottom: 1px solid rgba(201,168,76,0.07); position: relative; transition: background .12s; }
       .step-card:last-child { border-bottom: none; }
-      .step-card.step-compass { background: rgba(201,168,76,0.04); border-radius: 10px; border-bottom: none; margin-bottom: 2px; }
+      .step-card.step-compass { background: rgba(201,168,76,0.04); border-radius: 10px; border-bottom: none; margin-bottom: 3px; }
       .step-card.step-done .step-text { text-decoration: line-through; color: #9ca3af; }
+      .step-card.guide-high { border-left: 3px solid rgba(201,168,76,0.55); background: rgba(201,168,76,0.03); border-radius: 10px; border-bottom: none; margin-bottom: 3px; padding-left: 14px; }
+      .step-card.guide-mid  { border-left: 2px solid rgba(59,130,246,0.45); background: rgba(59,130,246,0.03); border-radius: 10px; border-bottom: none; margin-bottom: 3px; padding-left: 14px; }
       .step-card-body { flex: 1; min-width: 0; padding-right: 4px; }
-      .step-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+      .step-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 5px; }
       .step-axis-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; border: 1px solid; }
-      .step-text { font-size: 13px; color: rgba(232,228,220,0.80); line-height: 1.6; margin: 0; }
+      .step-text { font-size: 14px; color: rgba(232,228,220,0.82); line-height: 1.65; margin: 0; }
       .step-check-btn-wrap { flex-shrink: 0; padding-top: 2px; }
+
+      /* ── 答えを見るパネル ── */
+      .step-detail-toggle { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.75); background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.22); border-radius: 6px; padding: 4px 10px; cursor: pointer; margin-top: 7px; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
+      .step-detail-toggle:hover { background: rgba(201,168,76,0.14); color: #c9a84c; }
+      .step-detail-toggle.open { background: rgba(201,168,76,0.14); color: #c9a84c; }
+      .step-detail-panel { display: none; margin-top: 8px; padding: 12px 14px; background: rgba(201,168,76,0.05); border: 1px solid rgba(201,168,76,0.2); border-radius: 10px; font-size: 12px; color: rgba(232,228,220,0.82); line-height: 1.8; }
+      .step-detail-panel.open { display: block; }
+
+      /* ── インラインサービスカード ── */
+      .inline-service-card { display: none; margin-top: 10px; text-decoration: none; }
+      .inline-service-card.loaded { display: block; }
+      .isc-inner { display: flex; align-items: flex-start; gap: 12px; padding: 11px 14px; background: rgba(10,15,30,0.65); border: 1px solid rgba(201,168,76,0.25); border-radius: 10px; text-decoration: none; transition: border-color .15s; }
+      .isc-inner:hover { border-color: rgba(201,168,76,0.5); }
+      .isc-icon { font-size: 22px; flex-shrink: 0; }
+      .isc-body { flex: 1; min-width: 0; }
+      .isc-label { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(201,168,76,0.55); margin: 0 0 3px; }
+      .isc-name { font-size: 13px; font-weight: 700; color: rgba(232,228,220,0.88); margin: 0 0 3px; line-height: 1.4; }
+      .isc-desc { font-size: 11px; color: rgba(232,228,220,0.50); margin: 0; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+      .isc-cta { font-size: 11px; font-weight: 700; color: #c9a84c; flex-shrink: 0; align-self: center; }
+
+      /* ── Today's Quest ── */
+      .todayquest-card { background: linear-gradient(135deg, rgba(201,168,76,0.12), rgba(10,15,30,0.40)); border: 1.5px solid rgba(201,168,76,0.4); border-radius: 16px; padding: 20px 22px; margin-bottom: 20px; position: relative; overflow: hidden; }
+      .todayquest-card::before { content: ''; position: absolute; top: -40px; right: -40px; width: 140px; height: 140px; background: radial-gradient(circle, rgba(201,168,76,0.10) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
+      .tq-eyebrow { font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(201,168,76,0.65); margin: 0 0 10px; }
+      .tq-axis-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.32); color: #c9a84c; margin-bottom: 10px; }
+      .tq-text { font-size: 15px; font-weight: 800; color: rgba(232,228,220,0.92); line-height: 1.6; margin: 0 0 10px; font-family: 'Noto Serif JP', Georgia, serif; }
+      .tq-guide { font-size: 12px; color: rgba(232,228,220,0.50); margin: 0 0 14px; }
+      .tq-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+      .tq-check-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; padding: 10px 20px; background: rgba(201,168,76,0.15); border: 1.5px solid rgba(201,168,76,0.5); border-radius: 9px; color: #c9a84c; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
+      .tq-check-btn:hover { background: rgba(201,168,76,0.26); }
+      .tq-check-btn.done { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.45); color: #4ade80; }
+      .tq-skip-link { font-size: 12px; color: rgba(232,228,220,0.35); text-decoration: none; transition: color .12s; }
+      .tq-skip-link:hover { color: rgba(232,228,220,0.65); }
 
       /* ── 旅の途中の読み物ノード ── */
       .trail-article-node { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px; padding: 10px 14px; background: rgba(10,15,30,0.45); border: 1px solid rgba(201,168,76,0.18); border-left: 3px solid rgba(201,168,76,0.5); border-radius: 8px; text-decoration: none; transition: background .15s; }
@@ -363,8 +398,9 @@ export default function NewMeNaviPage() {
       .trail-article-arrow { font-size: 14px; color: rgba(201,168,76,0.5); flex-shrink: 0; }
 
       /* ── 軸フィルターバー ── */
-      .axis-filter-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
-      .axis-filter-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 99px; border: 1px solid rgba(232,228,220,0.18); color: rgba(232,228,220,0.40); background: transparent; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
+      .axis-filter-bar { display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; margin-bottom: 18px; padding-bottom: 6px; scrollbar-width: none; -ms-overflow-style: none; }
+      .axis-filter-bar::-webkit-scrollbar { display: none; }
+      .axis-filter-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 6px 14px; border-radius: 99px; border: 1px solid rgba(232,228,220,0.18); color: rgba(232,228,220,0.40); background: transparent; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; white-space: nowrap; flex-shrink: 0; scroll-snap-align: start; }
       .axis-filter-chip:hover { border-color: rgba(201,168,76,0.4); color: rgba(232,228,220,0.75); }
       .axis-filter-chip.active { border-color: #c9a84c; color: #c9a84c; background: rgba(201,168,76,0.10); }
 
@@ -631,6 +667,7 @@ export default function NewMeNaviPage() {
         { text: '週1回以上、意識的な運動習慣がある', guide: 'none',
           products: [{ name: 'プロテイン（SAVAS ホエイ）', url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=whero523-22', level: 'intermediate', priceRange: 'low' }, { name: 'トレーニングウェア', url: 'https://www.amazon.co.jp/s?k=メンズ+トレーニングウェア&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
         { text: '食事の基本ルールを1つ調べてみる（例：タンパク質を毎食とる）', guide: 'LOW', isCurrentFor: 'concerned', hint: '「タンパク質を毎食とる」だけ覚えれば今日から実践できる',
+          detail: 'タンパク質の目安：体重(kg)×1.5g/日。体重70kgなら約105g。食材別：鶏むね肉100g→約20g、卵1個→約6g、サバ缶1缶→約25g、納豆1パック→約8g、プロテイン1杯→約20g。まず「毎食に1品タンパク源を足す」だけで十分。炭水化物を減らすより先に、たんぱく質を増やすことの方が体型改善には効果が出やすい。',
           products: [{ name: 'プロテインバー（手軽なタンパク源）', url: 'https://www.amazon.co.jp/s?k=プロテインバー&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
         { text: 'パーソナルジムの無料体験カウンセリングに1回行ったことがある', guide: 'HIGH', isCurrentFor: 'self' },
         { text: 'プロにトレーニングメニューを組んでもらったことがある', guide: 'HIGH' },
@@ -642,7 +679,9 @@ export default function NewMeNaviPage() {
         { text: '何らかの方法で眉を整えている（サロン・自己処理どちらでもOK）', guide: 'none', isCurrentFor: 'none' },
         { text: 'スクリューブラシで毎朝眉を整えている', guide: 'none',
           products: [{ name: 'スクリューブラシ（使い捨て）', url: 'https://www.amazon.co.jp/s?k=スクリューブラシ+眉&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: '眉用ハサミ', url: 'https://www.amazon.co.jp/s?k=眉用はさみ+ステンレス&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
-        { text: '自分の顔型に合う眉の形を1つ調べてみる', guide: 'MID', isCurrentFor: 'concerned', hint: '「顔型 眉 似合う」で検索するか、眉毛サロンで聞くのが一番確実', isSelfCheck: true, bodyDataKey: 'face_shape', bodyDataOptions: ['丸顔', '面長', '卵型', '逆三角形（逆卵型）', '四角（ベース型）', '顔の輪郭がわからない'] },
+        { text: '自分の顔型に合う眉の形を1つ調べてみる', guide: 'MID', isCurrentFor: 'concerned', hint: '「顔型 眉 似合う」で検索するか、眉毛サロンで聞くのが一番確実',
+          detail: '顔型別の目安：丸顔→アーチ形（縦のバランスを出す）／面長→フラット気味（横に広く見せる）／卵型→どんな形も合う（ナチュラルがおすすめ）／逆三角形→やや丸みのあるアーチ（シャープさを和らげる）。ただし、実際の骨格・筋肉のつき方による個人差が大きいので、眉毛サロンでプロに一度作ってもらうのが最も確実。',
+          isSelfCheck: true, bodyDataKey: 'face_shape', bodyDataOptions: ['丸顔', '面長', '卵型', '逆三角形（逆卵型）', '四角（ベース型）', '顔の輪郭がわからない'] },
         { text: '自分の眉の悩みを言語化してみる（薄い・濃い・左右差など）', guide: 'LOW', hint: '眉が薄い人はパウダー補整、濃い人はサロンで輪郭を作るのが近道', isSelfCheck: true, bodyDataKey: 'eyebrow_concerns', bodyDataMulti: true, bodyDataOptions: ['眉が薄い', '眉が濃い・太い', '左右非対称', '眉の形がわからない'] },
         { text: '眉毛サロンでプロに一度整えてもらったことがある', guide: 'HIGH', isCurrentFor: 'self' },
         { text: 'プロに作ってもらった形を基準に、自宅で眉バサミ＋スクリューブラシでメンテナンスできている', guide: 'LOW' },
@@ -654,7 +693,8 @@ export default function NewMeNaviPage() {
         { text: '自分の服のサイズをメジャーで測ってみる（肩幅・ウエスト・着丈など）', guide: 'none', isCurrentFor: 'none', hint: '手持ちの服を広げて計測するだけでOK。5〜10分でできる' },
         { text: 'クローゼットを開けて、今持っている服を全部出してみる', guide: 'none', hint: '捨てなくていい。まず「何があるか」を把握するだけ。10分でできる' },
         { text: '自分が目指したいスタイルの方向性を考えてみる', guide: 'LOW', hint: '「なりたいイメージ」を言葉にするだけでOK。複数あっていい', isSelfCheck: true, bodyDataKey: 'fashion_self', bodyDataMulti: true, bodyDataOptions: ['キレイめ', 'カジュアル', 'キレイめカジュアル', 'ストリート', 'モード・個性派', 'まずは清潔感から'] },
-        { text: 'サイズ感の基本ルールを1つ調べてみる（例：肩幅を合わせることが最優先）', guide: 'LOW', hint: '「肩幅を合わせることが最優先」これだけ覚えれば今日から服選びが変わる' },
+        { text: 'サイズ感の基本ルールを1つ調べてみる（例：肩幅を合わせることが最優先）', guide: 'LOW', hint: '「肩幅を合わせることが最優先」これだけ覚えれば今日から服選びが変わる',
+          detail: '肩幅の合わせ方：試着時に「肩線（肩の縫い目）がちょうど肩の端で終わっているか」を確認する。外にはみ出ていたら大きすぎ、内側に入っていたら小さすぎ。肩さえ合えば、袖の長さや丈の多少のズレは着こなしで吸収できる。上半身アウターは特に肩幅が最優先で、ウエスト・ヒップは二の次。ボトムスは太もも→ウエストの順に確認。' },
         { text: 'ベーシックアイテムが揃っている（白シャツ・ダークデニム・シンプルスニーカーなど）', guide: 'LOW' },
         { text: 'パーソナルカラー診断を受けたことがある', guide: 'HIGH', isCurrentFor: 'concerned' },
         { text: '顔タイプ診断を受けたことがある', guide: 'HIGH', isSelfCheck: true, bodyDataKey: 'face_type', bodyDataOptions: ['チャーミングソフト', 'チャーミングハード', 'フレッシュソフト', 'フレッシュハード', 'エレガントソフト', 'エレガントハード', 'クールソフト', 'クールハード', '診断したことがない'] },
@@ -666,7 +706,9 @@ export default function NewMeNaviPage() {
       ],
       hair: [
         { text: '定期的に美容院・理髪店に行っている（2ヶ月以内に行った）', guide: 'none', isCurrentFor: 'none' },
-        { text: '自分の髪質を確認してみる（硬い・柔らかい・くせ毛・直毛など）', guide: 'LOW', hint: '洗髪後に何もつけず乾かして、うねるならくせ毛。毛を1本つまんで硬さも確認できる', isSelfCheck: true, bodyDataKey: 'hair_type', bodyDataOptions: ['硬い', '柔らかい', 'くせ毛', '直毛', '細い', '太い', '髪質がわからない'] },
+        { text: '自分の髪質を確認してみる（硬い・柔らかい・くせ毛・直毛など）', guide: 'LOW', hint: '洗髪後に何もつけず乾かして、うねるならくせ毛。毛を1本つまんで硬さも確認できる',
+          detail: '確認手順：①洗髪後に何もつけず完全乾燥する。うねり・広がりが出ればくせ毛、まっすぐなら直毛。②毛を1本抜いてつまむ。太ければ「硬い」、細ければ「柔らかい」。③これらの情報（くせの有無・硬さ・太さ）を美容師に伝えると、似合う髪型の提案精度が上がる。「くせ毛・硬い・太め」なら重め・ストレートが向く。「直毛・柔らかい・細め」なら軽いスタイルがまとまりやすい。',
+          isSelfCheck: true, bodyDataKey: 'hair_type', bodyDataOptions: ['硬い', '柔らかい', 'くせ毛', '直毛', '細い', '太い', '髪質がわからない'] },
         { text: '自分の髪・頭皮の悩みを確認してみる（薄毛・スタイリングなど）', guide: 'LOW', hint: '薄毛が気になる人は早めの対応が有効。スタイリングが決まらない場合は美容師相談が近道', isSelfCheck: true, bodyDataKey: 'hair_additional', bodyDataMulti: true, bodyDataOptions: ['薄毛・抜け毛が気になる', 'ボリュームが出ない', '頭皮がべたつく', 'フケが気になる', 'セットが決まらない', 'すぐにペタンとなる', 'まとまらない'] },
         { text: '自分の顔型を確認してみる（丸・面長・卵型など）', guide: 'LOW', hint: '髪を後ろにまとめて鏡の前に立つ。輪郭が丸・面長・卵型・逆三角形のどれかを見る', isSelfCheck: true, bodyDataKey: 'face_shape', bodyDataOptions: ['丸顔', '面長', '卵型', '逆三角形（逆卵型）', '四角（ベース型）', '顔の輪郭がわからない'] },
         { text: '髪質に合ったシャンプーを使っている', guide: 'LOW',
@@ -751,8 +793,10 @@ export default function NewMeNaviPage() {
         note: '⚠️ 矯正は長期・高額の意思決定です。他のステップより時間軸が長くなります。',
         steps: [
           { text: '自分の歯並びで気になる部分を言語化できている', guide: 'none', isCurrentFor: 'none' },
-          { text: '矯正の種類を調べてみる（ワイヤー・マウスピース・裏側など）', guide: 'none', hint: '3種類あるとだけ知っておけばOK。詳細は無料カウンセリングで確認できる' },
-          { text: '矯正の費用・期間の相場をざっくり調べてみる', guide: 'none', hint: 'ワイヤー・マウスピースともに60〜100万円・1〜3年が目安。無料カウンセリングで正確な額がわかる' },
+          { text: '矯正の種類を調べてみる（ワイヤー・マウスピース・裏側など）', guide: 'none', hint: '3種類あるとだけ知っておけばOK。詳細は無料カウンセリングで確認できる',
+            detail: '① ワイヤー矯正：費用60〜100万円・期間1〜3年。確実に動かせる基本形。② マウスピース矯正（インビザラインなど）：70〜120万円・取り外し可能・自己管理が必要。③ 裏側矯正：80〜150万円・正面から見えない・費用は高め。どれが自分に向くかは歯並びの状態によって変わるため、無料カウンセリングで歯科医に診てもらうのが最短。' },
+          { text: '矯正の費用・期間の相場をざっくり調べてみる', guide: 'none', hint: 'ワイヤー・マウスピースともに60〜100万円・1〜3年が目安。無料カウンセリングで正確な額がわかる',
+            detail: '相場まとめ：ワイヤー矯正60〜100万円・1〜3年／マウスピース矯正70〜120万円・1〜2年／裏側矯正80〜150万円・1〜3年。クリニックによって開きが大きく、同じ治療でも30〜50万円差が出ることがある。複数クリニックの無料カウンセリングを比較するのがおすすめ。矯正は長期プロジェクトなので、担当医との相性と通院しやすさも重要な選択基準。' },
           { text: '矯正歯科の無料カウンセリングに行ったことがある', guide: 'HIGH', isCurrentFor: 'concerned' },
           { text: '「始める・後にする・しない」を意識的に決断している', guide: 'none' },
           { text: '矯正を開始している', guide: 'HIGH', isCurrentFor: 'self' },
@@ -832,6 +876,12 @@ export default function NewMeNaviPage() {
       }
       const noteHtml = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
       const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
+      const detailId = `detail-${axisKey}-${idx}`;
+      const detailHtml = step.detail ? `
+        <button class="step-detail-toggle" onclick="(function(btn){const panel=document.getElementById('${detailId}');panel.classList.toggle('open');btn.classList.toggle('open');btn.textContent=panel.classList.contains('open')?'▲ 閉じる':'📖 答えを見る';})(this)">📖 答えを見る</button>
+        <div class="step-detail-panel" id="${detailId}">${esc(step.detail)}</div>` : '';
+      const svcCardId = (step.guide === 'HIGH' || step.guide === 'MID') && def.catLink ? `svc-${axisKey}-${idx}` : null;
+      const svcCardHtml = svcCardId ? `<div id="${esc(svcCardId)}" class="inline-service-card" data-svc-cat="${esc(def.catLink)}"></div>` : '';
       let productsHtml = '';
       if (step.products && step.products.length > 0) {
         const _totalDone = Object.values(stepDone).filter(Boolean).length;
@@ -859,8 +909,9 @@ export default function NewMeNaviPage() {
       const badgeBg    = isCompassStep ? 'rgba(201,168,76,0.15)' : 'rgba(10,15,30,0.50)';
       const badgeBorder = isCompassStep ? 'rgba(201,168,76,0.35)' : 'rgba(232,228,220,0.18)';
       const badgeColor  = isCompassStep ? '#c9a84c' : 'rgba(232,228,220,0.55)';
+      const guideClass  = step.guide === 'HIGH' ? ' guide-high' : step.guide === 'MID' ? ' guide-mid' : '';
       return `
-        <div class="step-card${isDone?' step-done':''}${isCompassStep?' step-compass':''}${step.isSelfCheck?' step-selfcheck':''}">
+        <div class="step-card${isDone?' step-done':''}${isCompassStep?' step-compass':''}${step.isSelfCheck?' step-selfcheck':''}${guideClass}">
           <div class="step-check-btn-wrap">
             <button class="step-check-btn${isDone?' checked':''}" data-done-key="${esc(doneKey)}" title="${isDone?'完了を取り消す':'できてる・やった'}">${isDone?'✓':''}</button>
           </div>
@@ -871,7 +922,7 @@ export default function NewMeNaviPage() {
             </div>
             <p class="step-text">${esc(step.text)}</p>
             ${selfCheckValue}
-            ${hintHtml}${guideHtml}${noteHtml}${productsHtml}
+            ${hintHtml}${detailHtml}${guideHtml}${svcCardHtml}${noteHtml}${productsHtml}
           </div>
         </div>`;
     }
@@ -1274,6 +1325,12 @@ export default function NewMeNaviPage() {
         }
         const noteHtml = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
         const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
+        const mDetailId = `detail-${axisKey}-${i}`;
+        const mDetailHtml = step.detail ? `
+          <button class="step-detail-toggle" onclick="(function(btn){const panel=document.getElementById('${mDetailId}');panel.classList.toggle('open');btn.classList.toggle('open');btn.textContent=panel.classList.contains('open')?'▲ 閉じる':'📖 答えを見る';})(this)">📖 答えを見る</button>
+          <div class="step-detail-panel" id="${mDetailId}">${esc(step.detail)}</div>` : '';
+        const mSvcId = (step.guide === 'HIGH' || step.guide === 'MID') && catLink ? `svc-${axisKey}-${i}` : null;
+        const mSvcHtml = mSvcId ? `<div id="${esc(mSvcId)}" class="inline-service-card" data-svc-cat="${esc(catLink)}"></div>` : '';
         let productsHtml = '';
         if (step.products && step.products.length > 0) {
           // level×budget 2軸フィルター
@@ -1310,7 +1367,7 @@ export default function NewMeNaviPage() {
             <div style="padding-top:${j>0?'12px':'0'};padding-right:36px;flex:1">
               ${labelHtml}
               <p class="milestone-text">${esc(step.text)}</p>
-              ${hintHtml}${guideHtml}${noteHtml}${productsHtml}
+              ${hintHtml}${mDetailHtml}${guideHtml}${mSvcHtml}${noteHtml}${productsHtml}
             </div>
             ${checkBtn}
           </div>
@@ -1688,6 +1745,68 @@ export default function NewMeNaviPage() {
       </div>`;
     }
 
+    // ── Today's Quest ──
+    function buildTodayQuestHtml() {
+      const compassAxis = calcDynamicCompass();
+      const allSteps = flattenAllSteps();
+      const nextStep = allSteps
+        .filter(s => s.axisId === compassAxis && !s.isDone)
+        .sort((a, b) => a.idx - b.idx)[0];
+      if (!nextStep) return '';
+      const { axisKey, def, step, doneKey } = nextStep;
+      const isDone = !!stepDone[doneKey];
+      const guideText = step.guide === 'HIGH' ? '🏥 ここはプロに任せると確実に変わる'
+        : step.guide === 'MID' ? '📋 プロと進めると精度が上がる' : '';
+      const svcPlaceholder = (step.guide === 'HIGH' || step.guide === 'MID') && def.catLink
+        ? `<div id="tq-svc" class="inline-service-card" data-svc-cat="${esc(def.catLink)}" style="margin-top:12px"></div>` : '';
+      return `
+        <div class="todayquest-card">
+          <p class="tq-eyebrow">🎯 今日のミッション — Compass：${esc(def.label)}軸</p>
+          <div class="tq-axis-badge">${esc(def.icon)} ${esc(def.label)}</div>
+          <p class="tq-text">${esc(step.text)}</p>
+          ${guideText ? `<p class="tq-guide">${guideText}</p>` : ''}
+          <div class="tq-actions">
+            <button class="tq-check-btn${isDone?' done':''}" data-done-key="${esc(doneKey)}">${isDone ? '✓ 完了！' : '✓ やった！'}</button>
+            <a href="#section-quick" class="tq-skip-link">全ステップを見る →</a>
+          </div>
+          ${svcPlaceholder}
+        </div>`;
+    }
+
+    // ── インラインサービスカード注入 ──
+    const _svcCache = {};
+    async function injectServiceCards() {
+      const cards = document.querySelectorAll('.inline-service-card[data-svc-cat]');
+      const cats = new Set();
+      cards.forEach(el => cats.add(el.dataset.svcCat));
+      for (const cat of cats) {
+        if (_svcCache[cat] === undefined) {
+          try {
+            const res = await fetch(`/api/providers?category=${encodeURIComponent(cat)}&limit=3`);
+            if (!res.ok) { _svcCache[cat] = null; continue; }
+            const data = await res.json();
+            const list = Array.isArray(data) ? data : (data.providers || []);
+            _svcCache[cat] = list.find(p => p.entity_type !== 'affiliate' && p.name) || list[0] || null;
+          } catch { _svcCache[cat] = null; }
+        }
+        const prov = _svcCache[cat];
+        if (!prov) continue;
+        const html = `<a href="/provider/${esc(prov.slug||'')}" class="isc-inner" target="_self">
+          <span class="isc-icon">${esc(AREA_DEFS[Object.keys(AREA_DEFS).find(k=>AREA_DEFS[k].catLink===cat)]?.icon||'🏥')}</span>
+          <div class="isc-body">
+            <p class="isc-label">Fineme おすすめ</p>
+            <p class="isc-name">${esc(prov.name||'')}</p>
+            <p class="isc-desc">${esc((prov.ai_match_profile||prov.description||'').slice(0,80))}</p>
+          </div>
+          <span class="isc-cta">→</span>
+        </a>`;
+        document.querySelectorAll(`.inline-service-card[data-svc-cat="${cat}"]`).forEach(el => {
+          el.innerHTML = html;
+          el.classList.add('loaded');
+        });
+      }
+    }
+
     function buildAxisFilterBar() {
       return `<div class="axis-filter-bar" id="axis-filter-bar">` +
         `<button class="axis-filter-chip${!activeAxisFilter ? ' active' : ''}" data-axis-filter="">全て</button>` +
@@ -1710,6 +1829,11 @@ export default function NewMeNaviPage() {
       </div>
 
       ${buildCompassHtml()}
+
+      <div id="todayquest-container">
+        ${buildTodayQuestHtml()}
+      </div>
+
       ${buildAxisFilterBar()}
 
       <div id="sections-container">
@@ -1741,6 +1865,9 @@ export default function NewMeNaviPage() {
     `;
 
     root.innerHTML = html;
+
+    // サービスカードを非同期注入
+    injectServiceCards();
 
     // モーダルをbodyに移動（z-index確保）
     const modalEl = document.getElementById('body-data-modal');
@@ -1872,10 +1999,13 @@ export default function NewMeNaviPage() {
     function refreshCompassAndTracks() {
       const strip = document.getElementById('compass-strip');
       if (strip) { const tmp = document.createElement('div'); tmp.innerHTML = buildCompassHtml(); strip.replaceWith(tmp.firstElementChild); }
+      const tqEl = document.getElementById('todayquest-container');
+      if (tqEl) tqEl.innerHTML = buildTodayQuestHtml();
       const container = document.getElementById('sections-container');
       if (container) container.innerHTML = buildSectionsHtml();
       const bar = document.getElementById('axis-filter-bar');
       if (bar) { const tmp = document.createElement('div'); tmp.innerHTML = buildAxisFilterBar(); bar.replaceWith(tmp.firstElementChild); }
+      injectServiceCards();
     }
 
     // ── 軸フィルターチップ クリック ──
@@ -1999,6 +2129,19 @@ export default function NewMeNaviPage() {
       // 通常のトグル
       persistStepDone(key, !isDone);
       applyStepDone(btn, key, !isDone);
+    });
+
+    // ── Today's Quest 完了ボタン ──
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('.tq-check-btn');
+      if (!btn) return;
+      const key = btn.dataset.doneKey;
+      if (!key) return;
+      const nowDone = !/** @type {{[k:string]:boolean}} */(stepDone)[key];
+      persistStepDone(key, nowDone);
+      btn.classList.toggle('done', nowDone);
+      btn.textContent = nowDone ? '✓ 完了！' : '✓ やった！';
+      refreshCompassAndTracks();
     });
 
     // ── 習慣チェックボタン ──

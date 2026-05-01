@@ -120,11 +120,11 @@
       <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <select id="ai-tone" style="background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:9px 12px;">
           <option value="all">5パターン全部生成</option>
-          <option value="awareness">認知獲得型</option>
-          <option value="pain">悩み共感型</option>
+          <option value="philosophy">思想型</option>
+          <option value="story">実体験型</option>
           <option value="howto">ノウハウ型</option>
-          <option value="story">変容ストーリー型</option>
-          <option value="cta">CTA直球型</option>
+          <option value="behind">制作裏話型</option>
+          <option value="cta">Fineme誘導型</option>
         </select>
         <button id="ai-generate-btn" onclick="generatePosts()" style="padding:11px 28px;background:linear-gradient(135deg,#c9a84c,#e8c97a);border:none;border-radius:8px;color:#0a0f1e;font-size:14px;font-weight:800;cursor:pointer;">生成する →</button>
       </div>
@@ -136,14 +136,23 @@
 
   <!-- ====== X（旧Twitter） ====== -->
   <div id="panel-x" class="panel active">
-    <div class="section-label">X（旧Twitter）投稿テンプレート</div>
+    <div class="section-label">X投稿テンプレート — @deo_fineme（でお｜Finemeオーナー個人アカウント）</div>
+
+    <div style="background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:16px 18px;margin-bottom:20px;font-size:12px;line-height:1.85;color:rgba(232,228,220,0.75)">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(201,168,76,0.65);margin-bottom:10px;text-transform:uppercase">📌 プロフィール文（X bio）</div>
+      <div style="white-space:pre-line;color:rgba(232,228,220,0.9)">元芋男→現役モデル。外見を変えたら人生が変わったので、その地図を作っています。
+恋愛に悩む男性の外見変容サービス Fineme オーナー。
+↓ 変わりたいなら
+fineme.me/diagnosis</div>
+      <button onclick="navigator.clipboard.writeText('元芋男→現役モデル。外見を変えたら人生が変わったので、その地図を作っています。\n恋愛に悩む男性の外見変容サービス Fineme オーナー。\n↓ 変わりたいなら\nfineme.me/diagnosis').then(()=>{this.textContent='コピー済 ✓';setTimeout(()=>this.textContent='プロフィール文をコピー',2000)})" style="margin-top:10px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);border-radius:6px;color:#c9a84c;font-size:11px;font-weight:700;padding:5px 14px;cursor:pointer;">プロフィール文をコピー</button>
+    </div>
 
     <div class="theme-selector" id="x-theme-selector">
-      <button class="theme-chip selected" data-theme="awareness" onclick="setTheme('x','awareness',this)">認知獲得</button>
-      <button class="theme-chip" data-theme="pain" onclick="setTheme('x','pain',this)">悩み共感</button>
+      <button class="theme-chip selected" data-theme="philosophy" onclick="setTheme('x','philosophy',this)">思想</button>
+      <button class="theme-chip" data-theme="story" onclick="setTheme('x','story',this)">実体験</button>
       <button class="theme-chip" data-theme="howto" onclick="setTheme('x','howto',this)">ノウハウ</button>
-      <button class="theme-chip" data-theme="story" onclick="setTheme('x','story',this)">変容ストーリー</button>
-      <button class="theme-chip" data-theme="tool" onclick="setTheme('x','tool',this)">ツール紹介</button>
+      <button class="theme-chip" data-theme="behind" onclick="setTheme('x','behind',this)">制作裏話</button>
+      <button class="theme-chip" data-theme="cta" onclick="setTheme('x','cta',this)">Fineme誘導</button>
     </div>
 
     <div class="grid2" id="x-cards">
@@ -425,206 +434,296 @@ URL     ：https://www.fineme.me/
 // ──────────────────────────────────
 
 const X_CONTENT = {
-  awareness: [
+  philosophy: [
     {
-      title: '認知① — 問題提起型',
+      title: '思想① — 外見を整えることの意味',
       badge: 'x',
-      text: `「なんか垢抜けない…」と感じてる男性に質問です。
+      text: `外見を整えることって、「モテたい」だけじゃないと思ってる。
 
-清潔感って「顔」じゃないんですよ。
+鏡を見て「今日の自分、悪くないな」と思えた朝って、
+人への接し方がちょっと変わる。
 
-・眉の形
-・ヘアライン
-・肌の透明感
-・体のシルエット
+余裕が生まれる。
+優しくなれる。
 
-この4つだけで、同じ顔でも印象が全然変わる。
+外見を整えることで生まれる小さな自信が、
+人に優しくなれる余白をつくる。
 
-どこから手をつければいいか分からない人は、
-まず7軸の外見診断を受けてみてください。無料3分。
+ぼくがそれを信じてるから、
+Finemeを作ってる。
 
-👇
-https://www.fineme.me/diagnosis
-
-#清潔感 #外見磨き #垢抜け #モテる外見`,
+#外見磨き #男磨き #自己投資`,
     },
     {
-      title: '認知② — 数字型',
+      title: '思想② — 変わりたいは弱さじゃない',
       badge: 'x',
-      text: `マッチングアプリで「いいね」が全然こない男性の98%が見落としてること👇
+      text: `「外見で悩んでるのが恥ずかしくて誰にも言えない」
 
-ーーーーーーーーーーーーーーー
-アプリの写真より先に
-「実物の清潔感」を整えること
-ーーーーーーーーーーーーーーー
+って人、多いと思う。
 
-眉毛・ヘア・肌・体型。
-この4軸を整えるだけで、同じ写真でも印象が劇的に変わります。
+ぼくもそうやった。
+「そんなことで悩む自分ダサっ」て思ってた。
 
-Fineme では無料の外見診断で「今一番効く改善ポイント」を特定できます。
+でも今は違う。
+変わりたいって思える人間は強い。
 
-https://www.fineme.me/diagnosis
+現状に満足してる人間は変わろうとしない。
+変わろうとする人間だけが変わる。
 
-#マッチングアプリ #清潔感 #男磨き`,
+だから外見に悩んでることを
+恥じなくていい。
+
+#男磨き #自己投資 #外見改善`,
     },
     {
-      title: '認知③ — 共感型',
+      title: '思想③ — 外見と内面の話',
       badge: 'x',
-      text: `「外見は関係ない」と言い続けて5年。
+      text: `「外見より中身」って言葉、ぼくは嫌いじゃない。
 
-でも正直に言うと、
-清潔感を整えた月から
-アプリの反応が変わりました。
+中身が大事なのは本当だと思う。
 
-まず眉毛サロン。次に髪。次に肌。
-順番が大事で、「全部同時」はしんどい。
+でも「外見より中身が大事だから外見は気にしなくていい」
+って解釈は違うと思ってる。
 
-今の自分に「最初の一手」を教えてくれる診断、
-Fineme という無料ツールがあります。
+外見を整えると、自分への信頼が上がる。
+自分を信頼できると、中身が届きやすくなる。
 
-https://www.fineme.me/diagnosis
+外見は中身の入口。
 
-#男磨き #外見改善 #清潔感`,
-    },
-  ],
-  pain: [
-    {
-      title: '悩み共感① — 失敗談共感',
-      badge: 'x',
-      text: `マッチングアプリ「全然マッチしない」で半年消耗してた話。
-
-やったこと
-✗ プロフ文を100回書き直す
-✗ 趣味を充実させる
-✗ コミュ力を鍛える
-
-やるべきだったこと
-✓ 写真の清潔感を整える
-
-先に外見を整えたら、同じプロフで3倍マッチした。
-
-「何から整えるか」が分からない人へ→
-https://www.fineme.me/diagnosis
-
-#マッチングアプリ #モテない理由 #清潔感`,
-    },
-    {
-      title: '悩み共感② — 勇気の話',
-      badge: 'x',
-      text: `「外見を整える＝ナルシスト」と思ってた時期、あったな。
-
-でも違った。
-清潔感を整えることは
-「相手への敬意」なんだと気づいた。
-
-会いに来てくれる人の時間を、
-最高の自分で迎える準備。
-
-それだけのこと。
-
-Fineme で今の自分の「変容地図」を作ってみてください。
-https://www.fineme.me/diagnosis
-
-#男磨き #外見 #自己投資`,
-    },
-  ],
-  howto: [
-    {
-      title: 'ノウハウ① — 清潔感チェックリスト',
-      badge: 'x',
-      text: `【保存版】モテる清潔感チェックリスト
-
-□ 眉毛が整っている（束眉・ぼさぼさNG）
-□ 髪型が顔型に合っている
-□ 肌が乾燥・テカっていない
-□ 歯が黄ばんでいない
-□ 爪が切れている
-□ 服にシワ・ニオイがない
-□ 体型がスーツを着こなせる範囲
-
-この7項目が全部OKなら、顔関係なく「清潔感がある」と認識される。
-
-どこが弱いか分からない方→
-https://www.fineme.me/diagnosis
-
-#清潔感 #外見チェック #男磨き`,
-    },
-    {
-      title: 'ノウハウ② — 眉毛の重要性',
-      badge: 'x',
-      text: `外見改善で「費用対効果が高い」1位は圧倒的に眉毛。
-
-理由：
-・月1回3000〜5000円で整えられる
-・顔全体の印象を変える最短ルート
-・「清潔感がある」と認識される第一歩
-
-眉毛サロンに行ったことがない男性、
-まず1回行ってみてください。
-世界が変わります（マジで）
-
-眉毛サロンを探す→ https://www.fineme.me/search?category=eyebrow
-
-#眉毛サロン #清潔感 #外見磨き`,
+#男磨き #外見 #清潔感`,
     },
   ],
   story: [
     {
-      title: '変容ストーリー① — ビフォーアフター体験',
+      title: '実体験① — 眉毛サロンに初めて行った話',
       badge: 'x',
-      text: `3ヶ月前の自分に教えてあげたい。
+      text: `眉毛サロンに初めて行ったとき、
+入り口で5分悩んだ。
 
-【外見改善でやったこと】
-1. 眉毛サロン（月1）
-2. 美容院でヘアセット相談
-3. プロ撮影でアプリ写真更新
+「男が来るとこじゃないかも」
+「変な顔になったら恥ずかしい」
 
-結果：
-マッチ数が先月比で約3倍。
-デート率も上がった。
+でも意を決して入ったら、
+スタッフさんに「どんなイメージですか？」って聞かれて。
 
-費用：月2万円未満。
-効果：プライスレス。
+「…普通に整えてほしいです」
 
-同じルートを試してみたい人→
-https://www.fineme.me/diagnosis
+それだけ言って任せたら、
+15分で顔が変わった。
 
-#男磨き #外見改善 #マッチングアプリ`,
+帰り道、コンビニのガラスで自分の顔を見て
+「あ、ちゃんと顔があるな」と思った。
+
+あの日から変わり始めた気がする。
+
+#眉毛サロン #男磨き #実体験`,
+    },
+    {
+      title: '実体験② — 外見を変えたら何が変わったか',
+      badge: 'x',
+      text: `外見を変えたら何が変わったか、正直に書く。
+
+・マッチングアプリのいいね数が増えた
+・職場で「雰囲気変わったね」と言われた
+・鏡を見るのが嫌じゃなくなった
+
+でも一番大きかったのはこれ。
+
+「自分を大切にすることに慣れた」こと。
+
+外見を整える習慣って、
+自分への投資を続ける練習でもある。
+
+元芋男のぼくが言うのもなんやけど、
+変わることに遅すぎるはない。
+
+#男磨き #外見改善 #実体験`,
+    },
+    {
+      title: '実体験③ — モデルになるとは思ってなかった',
+      badge: 'x',
+      text: `外見を変えようと思い立ったとき、
+モデルになるとは微塵も思ってなかった。
+
+ただ、鏡を見たときに「悪くないな」と思いたかった。
+ただ、好きな人に会うとき堂々としたかった。
+
+それだけやった。
+
+眉毛サロン、ヘア、スキンケア、体型。
+ひとつずつ向き合ってたら、
+気づいたら仕事が来るようになってた。
+
+変わることの先に何があるかは、
+やってみないとわからない。
+
+#実体験 #男磨き #変容`,
     },
   ],
-  tool: [
+  howto: [
     {
-      title: 'ツール紹介① — 診断告知',
+      title: 'ノウハウ① — 外見改善の正しい順番',
       badge: 'x',
-      text: `外見改善を始めたいけど「何から？」という人へ。
+      text: `外見改善、どこから始めるかで効率が全然違う。
 
-Fineme の無料診断、試してみてください。
+ぼくがやってよかった順番👇
 
-体型・眉・ヘア・肌・服・歯・爪
-7軸で分析して「今の自分に最も効く最初の一手」を教えてくれます。
+1. 眉毛サロン（月3,000〜5,000円・即効性◎）
+2. ヘアカット（美容師に「清潔感重視で」と伝える）
+3. スキンケア（洗顔・保湿だけでいい）
+4. 体型（ジムよりまず食事改善）
+5. 服装（体型が変わってから）
 
-登録不要・3分・無料。
+全部同時にやろうとして3回失敗した。
+結局、ひとつずつが最速。
 
+どこから始めるべきかは人によって違う→
 https://www.fineme.me/diagnosis
 
-#外見診断 #清潔感 #男磨き #無料ツール`,
+#外見改善 #男磨き #清潔感`,
     },
     {
-      title: 'ツール紹介② — New Me Map',
+      title: 'ノウハウ② — 清潔感チェックリスト',
       badge: 'x',
-      text: `外見改善って「何をいつやればいいか」が一番難しい。
+      text: `【保存版】清潔感チェックリスト
 
-Fineme の New Me Map は
-7軸それぞれのマイルストーンを
-ジグザグの進捗トラックで表示してくれる。
+□ 眉毛が整っている
+□ 髪型が顔型に合っている
+□ 肌がテカってない・乾燥してない
+□ 爪が切れている
+□ 服にシワ・ニオイがない
+□ 歯が黄ばんでいない
 
-今日やること・次にやること・最終ゴール。
-全部見える。
+「顔が良くない」じゃなくて
+「清潔感がない」が原因のことが多い。
 
-無料で使えます→
+チェックリストで全部OKなら、
+顔関係なく「清潔感のある人」になれる。
+
+#清潔感 #外見チェック #男磨き`,
+    },
+    {
+      title: 'ノウハウ③ — 眉毛サロンの選び方',
+      badge: 'x',
+      text: `男性が眉毛サロンを選ぶときのポイント。
+
+① 「メンズ歓迎」の表記があるか確認する
+② Instagramで「before/after」を見る
+③ 初回の希望は「ナチュラルに整える」で十分
+
+価格は3,000〜5,000円が相場。
+月1回行けば維持できる。
+
+「何を伝えればいいかわからない」という人は
+「清潔感重視で、ナチュラルにお願いします」
+これだけ言えば大丈夫。
+
+眉毛サロンを探す→
+https://www.fineme.me/search?category=eyebrow
+
+#眉毛サロン #清潔感 #男磨き`,
+    },
+  ],
+  behind: [
+    {
+      title: '制作裏話① — Finemeを作った理由',
+      badge: 'x',
+      text: `Finemeを作り始めたきっかけを話す。
+
+外見を変えようとしたとき、
+何から始めればいいか全然わからなくて。
+
+眉毛サロン？ジム？ヘアサロン？
+みんな「とりあえず眉毛から」って言うけど、
+自分の場合はそれが正解かどうか確信が持てなかった。
+
+「自分に合った最初の一手を教えてくれるもの」
+があればよかったのに、なかった。
+
+だから作った。
+
+変わりたい人の地図になりたくて。
+
+#Fineme #サービス制作 #外見磨き`,
+    },
+    {
+      title: '制作裏話② — 診断タイプを119通り書いた話',
+      badge: 'x',
+      text: `Finemeの診断、タイプが119通りあるんやけど。
+
+全部、個別の説明文を書いた。
+
+「体型軸×迷い中×克服しようとしている」とか
+それぞれの状態に合わせた言葉を。
+
+コード出して終わりにしたくなかった。
+
+「あなたは今ここにいる」って伝えることが
+診断の意味だと思ってるから。
+
+時間かかったけど、
+ここを手抜きしたら診断じゃないなと思って。
+
+#Fineme #外見診断 #制作裏話`,
+    },
+    {
+      title: '制作裏話③ — 一人で作ってる話',
+      badge: 'x',
+      text: `Fineme、ほぼ一人で作ってる。
+
+デザイン・コード・コピー・診断設計・SNS運用。
+全部自分でやってる（Claudeとペアで）。
+
+すごいでしょ、じゃなくて、
+それだけ「これが必要だ」という確信があるから続けてる。
+
+外見に悩む男性の変容を支えるインフラを作る。
+
+大げさに聞こえるかもしれんけど、
+本当にそう思ってやってる。
+
+#Fineme #制作裏話 #一人開発`,
+    },
+  ],
+  cta: [
+    {
+      title: 'Fineme誘導① — 診断案内',
+      badge: 'x',
+      text: `「外見を変えたいけど何から？」
+
+この問いに答えるために作ったのが
+Fineme の外見診断。
+
+体型・眉・ヘア・肌・服・歯・爪
+7軸で分析して「今の自分に一番効く最初の一手」を教えてくれる。
+
+無料・3分・登録不要。
+
+元芋男のぼくが「これがあれば変われた」と思って作ったやつ。
+
+👇
 https://www.fineme.me/diagnosis
 
-#外見磨き #男の自己投資 #アプリ紹介`,
+#外見診断 #男磨き #清潔感`,
+    },
+    {
+      title: 'Fineme誘導② — New Me Map案内',
+      badge: 'x',
+      text: `外見改善って「何を・いつ・どの順番でやるか」が一番難しい。
+
+Finemeには New Me Map というのがあって、
+診断後に「今日やること・次にやること・最終ゴール」が
+ジグザグの進捗トラックで見える。
+
+1本の旅のルートとして、
+自分の変容を可視化できる。
+
+使ってみると「こう動けばいいのか」がわかる感じがする。
+
+無料→
+https://www.fineme.me/diagnosis
+
+#男磨き #外見改善 #Fineme`,
     },
   ],
 };
@@ -1397,11 +1496,11 @@ async function fetchArticleContent(url) {
 }
 
 const TONE_PROMPTS = {
-  awareness: '認知獲得型（問題提起→解決の示唆→CTA。初見ユーザーを引き込む）',
-  pain: '悩み共感型（ターゲットの悩みに深く共感するところから始まる）',
-  howto: 'ノウハウ型（具体的な手順・チェックリスト形式で実用的な情報を提供）',
-  story: '変容ストーリー型（before/after形式でリアルな変容の物語を語る）',
-  cta: 'CTA直球型（Finemeの診断に直接誘導するシンプルな訴求）',
+  philosophy: '思想型（外見を整えることの意味・自信・余白・変容への信念を語る。説教でなく独白のトーン）',
+  story: '実体験型（でお自身のビフォーアフター・失敗・気づきをリアルに語る。一人称「ぼく」）',
+  howto: 'ノウハウ型（外見改善の具体的な手順・チェックリスト・費用対効果。実体験の裏付けあり）',
+  behind: '制作裏話型（Finemeを作った理由・機能設計の意図・一人で作っている現実を正直に語る）',
+  cta: 'Fineme誘導型（診断・New Me Mapへの自然な誘導。押しつけでなく「こんな人に使ってほしい」）',
 };
 
 async function generatePosts() {
@@ -1449,10 +1548,16 @@ async function generatePosts() {
   const generated = [];
 
   for (const t of tones) {
-    const prompt = `あなたはFineme（男性向け外見変容診断ポータル）のSNSマーケターです。
-以下の記事をもとに、X（旧Twitter）の投稿文を1本生成してください。
+    const prompt = `あなたは「でお」という人物として、X（旧Twitter）の投稿文を1本生成してください。
 
-【記事タイトル】
+【でおのプロフィール】
+- アカウント名：でお｜Finemeオーナー（@deo_fineme）
+- 元芋男→現役モデル。外見を変えたら人生が変わったので、変わりたい男性のための地図を作っている
+- Fineme（外見変容診断ポータル）のオーナー
+- 一人称：「ぼく」。フレンドリーで親しみやすい口語。自虐ネタOK
+- 説教くさくない。「ぼくがそうだった」という共感ベースの語り口
+
+【参考にする記事タイトル】
 ${title}
 
 【記事の内容（抜粋）】
@@ -1463,11 +1568,10 @@ ${TONE_PROMPTS[t]}
 
 【ルール】
 - 140字以内（厳守）
-- 末尾に必ず「https://www.fineme.me/diagnosis」または記事URLを入れる
-- ハッシュタグを2〜3個（#清潔感 #男磨き #外見磨き から選んで適宜追加）
+- 個人の言葉で語る（Finemeの宣伝文句ではなく「でお」の声）
 - 改行を使いテンポよく読める構成
-- Finemeの哲学「外見を変えることで生まれる自信が人を優しくする」を体現するトーン
-- 説教くさくない。寄り添うトーン。
+- CTAが必要な場合は末尾に「https://www.fineme.me/diagnosis」を自然に添える
+- ハッシュタグ2〜3個（#男磨き #外見改善 #清潔感 など）
 
 投稿文だけ出力してください（前置き不要）。`;
 
@@ -1509,7 +1613,7 @@ ${TONE_PROMPTS[t]}
     return;
   }
 
-  const toneLabels = { awareness:'認知獲得型', pain:'悩み共感型', howto:'ノウハウ型', story:'変容ストーリー型', cta:'CTA直球型' };
+  const toneLabels = { philosophy:'思想型', story:'実体験型', howto:'ノウハウ型', behind:'制作裏話型', cta:'Fineme誘導型' };
 
   results.innerHTML = `
     <div style="margin-bottom:12px;font-size:12px;color:var(--muted)">
@@ -1654,7 +1758,7 @@ async function generateAllDMs() {
 // 初期化
 // ──────────────────────────────────
 initApiKeyUi();
-renderXCards('awareness');
+renderXCards('philosophy');
 renderNoteCards();
 renderDMCards();
 addBulkRow(); // DM一括の初期行
