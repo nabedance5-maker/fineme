@@ -28,13 +28,13 @@ export default function NewMeNaviPage() {
       #navi-root * { max-width: 100%; box-sizing: border-box; }
 
       /* ── Navi Header ── */
-      .navi-header { padding: 44px 28px 36px; background: linear-gradient(rgba(10,15,30,0.78), rgba(10,15,30,0.88)), url('/assets/images/hero-bg.webp') center / cover no-repeat; border-radius: 14px; margin-bottom: 24px; position: relative; overflow: hidden; border: 1px solid rgba(201,168,76,0.2); }
+      .navi-header { padding: 24px 24px 20px; background: linear-gradient(rgba(10,15,30,0.78), rgba(10,15,30,0.88)), url('/assets/images/hero-bg.webp') center / cover no-repeat; border-radius: 14px; margin-bottom: 24px; position: relative; overflow: hidden; border: 1px solid rgba(201,168,76,0.2); }
       .navi-header::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(201,168,76,.1) 0%, transparent 70%); border-radius: 50%; }
       .navi-header-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .18em; color: rgba(201,168,76,0.55); margin: 0 0 10px; text-transform: uppercase; position: relative; z-index: 1; }
-      .navi-header-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 5px 14px; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); color: #c9a84c; border-radius: 3px; margin-bottom: 14px; position: relative; z-index: 1; letter-spacing: .08em; }
+      .navi-header-badge { display: none; }
       .navi-header h1 { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(16px,4vw,22px); font-weight: 700; color: #fff; margin: 0 0 10px; line-height: 1.55; position: relative; z-index: 1; }
       .navi-header h1 em { font-style: normal; color: #c9a84c; }
-      .navi-header-sub { font-size: 13px; color: rgba(255,255,255,.65); margin: 0; line-height: 1.75; position: relative; z-index: 1; }
+      .navi-header-sub { display: none; }
 
       /* ── Progress bar ── */
       .progress-bar-wrap { margin-top: 18px; position: relative; z-index: 1; }
@@ -387,6 +387,60 @@ export default function NewMeNaviPage() {
       .tq-check-btn.done { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.45); color: #4ade80; }
       .tq-skip-link { font-size: 12px; color: rgba(232,228,220,0.35); text-decoration: none; transition: color .12s; }
       .tq-skip-link:hover { color: rgba(232,228,220,0.65); }
+
+      /* ── 旅路ビジュアル ── */
+      .journey-section { margin-bottom: 20px; }
+      .journey-scroll { overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; padding: 6px 0 10px; }
+      .journey-scroll::-webkit-scrollbar { display: none; }
+      .journey-inner { display: flex; align-items: center; padding: 8px 16px; min-width: max-content; }
+      .jr-endpoint { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
+      .jr-endpoint-dot { width: 10px; height: 10px; border-radius: 50%; }
+      .jr-start-dot { background: rgba(201,168,76,0.35); border: 2px solid rgba(201,168,76,0.55); }
+      .jr-goal-dot { background: #c9a84c; border: 2px solid #c9a84c; box-shadow: 0 0 10px rgba(201,168,76,0.55); }
+      .jr-endpoint-label { font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(201,168,76,0.5); }
+      .jr-line { width: 18px; height: 2px; flex-shrink: 0; }
+      .jr-line-dash { background: repeating-linear-gradient(90deg, rgba(201,168,76,0.28) 0, rgba(201,168,76,0.28) 3px, transparent 3px, transparent 6px); }
+      .jr-line-solid { background: rgba(201,168,76,0.65); }
+      .jr-stop { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; width: 68px; cursor: pointer; transition: transform .15s; scroll-snap-align: start; }
+      .jr-stop:hover { transform: translateY(-2px); }
+      .jr-ring-wrap { position: relative; width: 52px; height: 52px; }
+      .jr-ring-bg { fill: none; stroke: rgba(255,255,255,0.07); stroke-width: 3; }
+      .jr-ring-fill { fill: none; stroke-width: 3; stroke-linecap: round; transform-origin: 26px 26px; transform: rotate(-90deg); transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1) .2s; }
+      .jr-stop.jr-compass .jr-ring-wrap { filter: drop-shadow(0 0 8px rgba(201,168,76,0.6)); }
+      .jr-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 20px; line-height: 1; }
+      .jr-stop-name { font-size: 10px; font-weight: 700; color: rgba(232,228,220,0.60); text-align: center; white-space: nowrap; }
+      .jr-stop.jr-compass .jr-stop-name { color: #c9a84c; font-weight: 900; }
+      .jr-stop.jr-done .jr-stop-name { color: rgba(52,211,153,0.7); }
+      .jr-stop-pct { font-size: 9px; font-weight: 800; color: rgba(232,228,220,0.28); }
+      .jr-stop.jr-compass .jr-stop-pct { color: rgba(201,168,76,0.8); }
+
+      /* ── 軸ステータスグリッド ── */
+      .axis-status-section { margin-bottom: 20px; }
+      .axis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .agc { background: rgba(10,15,30,0.65); border: 1px solid rgba(232,228,220,0.10); border-radius: 14px; padding: 14px 14px 12px; cursor: pointer; transition: border-color .15s, transform .15s; position: relative; overflow: hidden; }
+      .agc:hover { border-color: rgba(201,168,76,0.3); transform: translateY(-1px); }
+      .agc.agc-compass { border-color: rgba(201,168,76,0.45); background: rgba(201,168,76,0.05); }
+      .agc.agc-done { opacity: 0.48; }
+      .agc.agc-active { border-color: rgba(59,130,246,0.28); }
+      .agc.agc-selected { border-color: #c9a84c !important; box-shadow: 0 0 0 1px rgba(201,168,76,0.25); }
+      .agc-top { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+      .agc-icon { font-size: 18px; flex-shrink: 0; }
+      .agc-name { font-size: 12px; font-weight: 800; color: rgba(232,228,220,0.85); flex: 1; min-width: 0; }
+      .agc-badge { font-size: 8px; font-weight: 800; padding: 2px 6px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; letter-spacing: .04em; }
+      .agc-badge-compass { background: rgba(201,168,76,0.12); color: #c9a84c; border: 1px solid rgba(201,168,76,0.3); }
+      .agc-badge-done { background: rgba(16,185,129,0.10); color: rgba(52,211,153,0.8); border: 1px solid rgba(16,185,129,0.2); }
+      .agc-badge-active { background: rgba(59,130,246,0.10); color: rgba(147,197,253,0.85); border: 1px solid rgba(59,130,246,0.2); }
+      .agc-badge-none { background: transparent; color: rgba(232,228,220,0.22); border: 1px solid rgba(232,228,220,0.08); }
+      .agc-bar-labels { display: flex; justify-content: space-between; font-size: 9px; color: rgba(232,228,220,0.22); margin-bottom: 4px; }
+      .agc-bar { height: 3px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
+      .agc-bar-fill { height: 100%; border-radius: 99px; transition: width 1.2s cubic-bezier(.4,0,.2,1) .3s; }
+      .agc-bar-fill.bfill-compass { background: linear-gradient(90deg, rgba(201,168,76,0.5), #c9a84c); }
+      .agc-bar-fill.bfill-active { background: rgba(96,165,250,0.65); }
+      .agc-bar-fill.bfill-done { background: rgba(52,211,153,0.65); }
+      .agc-bar-fill.bfill-none { background: rgba(232,228,220,0.10); }
+      .agc-step { font-size: 11px; color: rgba(232,228,220,0.42); line-height: 1.5; margin: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+      .agc.agc-compass .agc-step { color: rgba(201,168,76,0.58); }
+      .agc-compass-mark { position: absolute; top: 8px; right: 10px; font-size: 11px; opacity: 0.55; }
 
       /* ── 旅の途中の読み物ノード ── */
       .trail-article-node { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px; padding: 10px 14px; background: rgba(10,15,30,0.45); border: 1px solid rgba(201,168,76,0.18); border-left: 3px solid rgba(201,168,76,0.5); border-radius: 8px; text-decoration: none; transition: background .15s; }
@@ -1807,6 +1861,107 @@ export default function NewMeNaviPage() {
       }
     }
 
+    // ── 軸ごとのステータス計算 ──
+    function getAxisStats(axisId) {
+      const compassAxis = calcDynamicCompass();
+      const allSteps = flattenAllSteps();
+      const axisSteps = allSteps.filter(s => s.axisId === axisId);
+      const done = axisSteps.filter(s => s.isDone).length;
+      const total = axisSteps.length;
+      const pct = total > 0 ? Math.round(done / total * 100) : 0;
+      const isAxisDone = axisProgress[axisId] === 'done' || (total > 0 && pct === 100);
+      const hasAny = done > 0;
+      const nextStep = axisSteps.filter(s => !s.isDone).sort((a, b) => a.idx - b.idx)[0];
+      const status = axisId === compassAxis ? 'compass' : isAxisDone ? 'done' : hasAny ? 'active' : 'none';
+      return { done, total, pct, status, nextStepText: nextStep?.step?.text || '' };
+    }
+
+    // ── 旅路ビジュアル ──
+    function buildJourneyRouteHtml() {
+      const routeOrder = getRouteOrder();
+      const CIRC = 125.66;
+      const compassAxis = calcDynamicCompass();
+      const stops = routeOrder.map((axisId, i) => {
+        const def = AREA_DEFS[axisId];
+        if (!def) return '';
+        const { pct, status } = getAxisStats(axisId);
+        const isCompass = status === 'compass';
+        const isDone = status === 'done';
+        const isActive = status === 'active';
+        const stroke = isDone ? '#c9a84c' : isCompass ? '#c9a84c' : isActive ? '#3b82f6' : 'rgba(232,228,220,0.13)';
+        const offset = (CIRC * (1 - pct / 100)).toFixed(1);
+        const prevDone = i > 0 ? (() => { const { pct: pp } = getAxisStats(routeOrder[i-1]); return pp > 0; })() : false;
+        const connector = `<div class="jr-line ${prevDone ? 'jr-line-solid' : 'jr-line-dash'}"></div>`;
+        return connector + `
+          <div class="jr-stop${isCompass ? ' jr-compass' : ''}${isDone ? ' jr-done' : ''}" data-axis-jump="${esc(axisId)}">
+            <div class="jr-ring-wrap">
+              <svg width="52" height="52" viewBox="0 0 52 52">
+                <circle class="jr-ring-bg" cx="26" cy="26" r="20"/>
+                <circle class="jr-ring-fill" cx="26" cy="26" r="20" stroke="${stroke}" stroke-dasharray="${CIRC}" stroke-dashoffset="${offset}"/>
+              </svg>
+              <span class="jr-icon">${esc(def.icon)}</span>
+            </div>
+            <span class="jr-stop-name">${esc(def.label)}</span>
+            <span class="jr-stop-pct">${pct > 0 ? pct + '%' : '—'}</span>
+          </div>`;
+      }).join('');
+      return `
+        <div class="sec-label">🗺️ 変容の旅路</div>
+        <div class="journey-scroll">
+          <div class="journey-inner">
+            <div class="jr-endpoint">
+              <div class="jr-endpoint-dot jr-start-dot"></div>
+              <span class="jr-endpoint-label">START</span>
+            </div>
+            ${stops}
+            <div class="jr-line jr-line-dash"></div>
+            <div class="jr-endpoint">
+              <div class="jr-endpoint-dot jr-goal-dot"></div>
+              <span class="jr-endpoint-label">GOAL</span>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // ── 軸ステータスグリッド ──
+    function buildAxisGridHtml() {
+      const cards = Object.entries(AREA_DEFS).map(([axisId, def]) => {
+        const { done, total, pct, status, nextStepText } = getAxisStats(axisId);
+        const isCompass = status === 'compass';
+        const isDone = status === 'done';
+        const isActive = status === 'active';
+        const badgeText = isCompass ? '🧭 今ここ' : isDone ? '✓ 完了' : isActive ? '進行中' : '未着手';
+        const badgeClass = isCompass ? 'agc-badge-compass' : isDone ? 'agc-badge-done' : isActive ? 'agc-badge-active' : 'agc-badge-none';
+        const cardClass = isCompass ? ' agc-compass' : isDone ? ' agc-done' : isActive ? ' agc-active' : '';
+        const fillClass = isCompass ? 'bfill-compass' : isDone ? 'bfill-done' : isActive ? 'bfill-active' : 'bfill-none';
+        const isSelected = activeAxisFilter === axisId;
+        const stepText = nextStepText
+          ? nextStepText.replace(/（例：[^）]*）/g, '').slice(0, 28) + (nextStepText.length > 28 ? '…' : '')
+          : isDone ? 'ゴール達成！' : '';
+        return `
+          <div class="agc${cardClass}${isSelected ? ' agc-selected' : ''}" data-axis-jump="${esc(axisId)}">
+            ${isCompass ? '<span class="agc-compass-mark">🧭</span>' : ''}
+            <div class="agc-top">
+              <span class="agc-icon">${esc(def.icon)}</span>
+              <span class="agc-name">${esc(def.label)}</span>
+              <span class="agc-badge ${badgeClass}">${badgeText}</span>
+            </div>
+            <div class="agc-bar-labels">
+              <span>${done}/${total} ステップ</span><span>${pct}%</span>
+            </div>
+            <div class="agc-bar">
+              <div class="agc-bar-fill ${fillClass}" style="width:${pct}%"></div>
+            </div>
+            <p class="agc-step">${esc(stepText)}</p>
+          </div>`;
+      }).join('');
+      return `
+        <div class="sec-label">📊 変容ステータス</div>
+        <div class="axis-grid" id="axis-grid">
+          ${cards}
+        </div>`;
+    }
+
     function buildAxisFilterBar() {
       return `<div class="axis-filter-bar" id="axis-filter-bar">` +
         `<button class="axis-filter-chip${!activeAxisFilter ? ' active' : ''}" data-axis-filter="">全て</button>` +
@@ -1826,6 +1981,14 @@ export default function NewMeNaviPage() {
         ${(() => { const _all = flattenAllSteps(); const _done = _all.filter(s=>s.isDone).length; const _total = _all.length; const _pct = _total > 0 ? Math.round(_done/_total*100) : 0; return `<div class="progress-bar-wrap"><div class="progress-bar-label"><span class="progress-bar-label-text">変容の進捗</span><span class="progress-bar-pct">${_pct}%</span></div><div class="progress-bar-track"><div class="progress-bar-fill" style="width:${_pct}%"></div></div><p class="progress-bar-sub">${_done} / ${_total} ステップ完了</p></div>`; })()}
         <svg viewBox="0 0 80 80" width="68" height="68" style="position:absolute;top:14px;right:14px;z-index:1;opacity:0.17" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="37" fill="none" stroke="#c9a84c" stroke-width="0.8"/><circle cx="40" cy="40" r="28" fill="none" stroke="#c9a84c" stroke-width="0.4"/><line x1="40" y1="3" x2="40" y2="77" stroke="#c9a84c" stroke-width="0.8"/><line x1="3" y1="40" x2="77" y2="40" stroke="#c9a84c" stroke-width="0.8"/><line x1="14" y1="14" x2="66" y2="66" stroke="#c9a84c" stroke-width="0.5"/><line x1="66" y1="14" x2="14" y2="66" stroke="#c9a84c" stroke-width="0.5"/><polygon points="40,4 37,23 40,19 43,23" fill="#c9a84c"/><polygon points="40,76 37,57 40,61 43,57" fill="#c9a84c" opacity="0.4"/><polygon points="76,40 57,37 61,40 57,43" fill="#c9a84c" opacity="0.4"/><polygon points="4,40 23,37 19,40 23,43" fill="#c9a84c" opacity="0.4"/><circle cx="40" cy="40" r="5" fill="none" stroke="#c9a84c" stroke-width="1.2"/><circle cx="40" cy="40" r="2" fill="#c9a84c"/></svg>
         <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(201,168,76,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
+      </div>
+
+      <div id="journey-container">
+        ${buildJourneyRouteHtml()}
+      </div>
+
+      <div id="axisgrid-container">
+        ${buildAxisGridHtml()}
       </div>
 
       ${buildCompassHtml()}
@@ -1997,6 +2160,10 @@ export default function NewMeNaviPage() {
     });
 
     function refreshCompassAndTracks() {
+      const journeyEl = document.getElementById('journey-container');
+      if (journeyEl) journeyEl.innerHTML = buildJourneyRouteHtml();
+      const gridEl = document.getElementById('axisgrid-container');
+      if (gridEl) gridEl.innerHTML = buildAxisGridHtml();
       const strip = document.getElementById('compass-strip');
       if (strip) { const tmp = document.createElement('div'); tmp.innerHTML = buildCompassHtml(); strip.replaceWith(tmp.firstElementChild); }
       const tqEl = document.getElementById('todayquest-container');
@@ -2142,6 +2309,19 @@ export default function NewMeNaviPage() {
       btn.classList.toggle('done', nowDone);
       btn.textContent = nowDone ? '✓ 完了！' : '✓ やった！';
       refreshCompassAndTracks();
+    });
+
+    // ── 旅路ストップ・軸グリッドカード クリック ──
+    root.addEventListener('click', (e) => {
+      const el = e.target.closest('[data-axis-jump]');
+      if (!el) return;
+      const axisId = el.dataset.axisJump;
+      if (!axisId) return;
+      activeAxisFilter = (activeAxisFilter === axisId) ? null : axisId;
+      try { localStorage.setItem('fineme:navi:filter', activeAxisFilter || ''); } catch {}
+      refreshCompassAndTracks();
+      const sections = document.getElementById('sections-container');
+      if (sections) setTimeout(() => sections.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     });
 
     // ── 習慣チェックボタン ──
