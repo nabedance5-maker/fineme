@@ -390,26 +390,6 @@ export default function NewMeNaviPage() {
 
       /* ── 旅路ビジュアル ── */
       .journey-section { margin-bottom: 20px; }
-      /* ── 霧晴れワールドマップ ── */
-      .fog-map-wrap { display:flex; justify-content:center; padding: 0 10px 6px; }
-      .fog-map-svg { width:100%; max-width:400px; display:block; overflow:visible; }
-      .tg { cursor:pointer; -webkit-tap-highlight-color:transparent; }
-      .fog-full    { filter:blur(6px) grayscale(1); opacity:.18; transition:filter 1.4s,opacity 1.4s; }
-      .fog-partial { filter:blur(1.5px) grayscale(.5); opacity:.58; transition:filter 1.4s,opacity 1.4s; }
-      .fog-clear   { filter:none; opacity:1; transition:filter 1.4s,opacity 1.4s; }
-      .tg:hover .fog-full    { filter:blur(3px) grayscale(.8); opacity:.36; }
-      .tg:hover .fog-partial { filter:none; opacity:.9; }
-      .cpulse { animation:cp 2.5s ease-in-out infinite; }
-      @keyframes cp { 0%,100%{opacity:.14} 55%{opacity:.38} }
-      .fog-detail { margin:0 0 8px; background:rgba(8,12,28,.9); border:1px solid rgba(201,168,76,.25); border-radius:16px; padding:16px; animation:fgsu .22s ease; }
-      @keyframes fgsu { from{transform:translateY(8px);opacity:0} to{transform:translateY(0);opacity:1} }
-      .fog-detail-head { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
-      .fog-detail-icon { font-size:28px; flex-shrink:0; }
-      .fog-detail-name { font-size:15px; font-weight:900; color:rgba(232,228,220,.9); }
-      .fog-detail-desc { font-size:11px; color:rgba(232,228,220,.42); margin-top:2px; }
-      .fog-detail-status { font-size:11px; color:rgba(232,228,220,.42); margin-bottom:12px; }
-      .fog-detail-cta { display:block; width:100%; padding:10px; background:rgba(201,168,76,.09); border:1px solid rgba(201,168,76,.3); border-radius:99px; color:#c9a84c; font-size:13px; font-weight:700; cursor:pointer; transition:background .15s; text-align:center; box-sizing:border-box; }
-      .fog-detail-cta:hover { background:rgba(201,168,76,.18); }
 
       /* ── 軸ステータスグリッド ── */
       .axis-status-section { margin-bottom: 20px; }
@@ -1873,81 +1853,6 @@ export default function NewMeNaviPage() {
       return { done, total, pct, status, nextStepText: nextStep?.step?.text || '' };
     }
 
-    // ── 霧晴れワールドマップ定数 ──
-    const MAP_TERRITORY = {
-      body:    { x:180, y:95,  r:52, c:'#1c3826', desc:'筋トレ・食事・体型管理' },
-      eyebrow: { x:74,  y:194, r:35, c:'#2c1e0e', desc:'眉の形・清潔感の基盤' },
-      fashion: { x:286, y:194, r:41, c:'#1c1636', desc:'サイズ感・服の選び方' },
-      hair:    { x:60,  y:318, r:38, c:'#0e2030', desc:'ヘアスタイル・質感' },
-      skin:    { x:300, y:318, r:36, c:'#2c1c0e', desc:'スキンケア・清潔感' },
-      teeth:   { x:140, y:408, r:33, c:'#1c2236', desc:'歯並び・ホワイトニング' },
-      nail:    { x:248, y:408, r:28, c:'#2c0e1c', desc:'ネイルケア・指先' },
-    };
-    const MAP_AXIS_TOTALS = { body:12, eyebrow:8, fashion:10, hair:10, skin:8, teeth:6, nail:6 };
-    const MAP_PATHS = [
-      'M 180,95 Q 115,148 74,194',
-      'M 180,95 Q 245,148 286,194',
-      'M 74,194 Q 62,256 60,318',
-      'M 286,194 Q 298,256 300,318',
-      'M 60,318 Q 90,374 140,408',
-      'M 300,318 Q 285,374 248,408',
-      'M 140,408 Q 194,424 248,408',
-    ];
-
-    // ── 霧晴れワールドマップ ──
-    function buildFogMapHtml() {
-      const compassAxis = calcDynamicCompass();
-      const defs = Object.entries(MAP_TERRITORY).map(([id, mt]) =>
-        `<radialGradient id="fgm-${id}" cx="${mt.x}" cy="${mt.y}" r="${(mt.r * 1.6).toFixed(1)}" gradientUnits="userSpaceOnUse">` +
-        `<stop offset="0%" stop-color="${mt.c}"/><stop offset="100%" stop-color="#050810"/></radialGradient>`
-      ).join('');
-      const grid =
-        [60,120,180,240,300].map(x => `<line x1="${x}" y1="0" x2="${x}" y2="490" stroke="rgba(255,255,255,.022)" stroke-width="1"/>`).join('') +
-        [80,160,240,320,400].map(y => `<line x1="0" y1="${y}" x2="360" y2="${y}" stroke="rgba(255,255,255,.022)" stroke-width="1"/>`).join('');
-      const paths = MAP_PATHS.map(d =>
-        `<path d="${d}" fill="none" stroke="rgba(232,228,220,.065)" stroke-width="1.2" stroke-dasharray="4 6"/>`
-      ).join('');
-      const territories = Object.entries(MAP_TERRITORY).map(([id, mt]) => {
-        const def = AREA_DEFS[id];
-        if (!def) return '';
-        const doneCount = Object.keys(stepDone).filter(k => k.startsWith(id + ':') && /** @type {{[k:string]:boolean}} */(stepDone)[k]).length;
-        const total  = MAP_AXIS_TOTALS[id] ?? 10;
-        const isDone = /** @type {{[k:string]:string}} */(axisProgress)[id] === 'done';
-        const pct    = isDone ? 100 : Math.min(100, Math.round(doneCount / total * 100));
-        const fog    = isDone ? 'clear' : doneCount > 0 ? 'partial' : 'full';
-        const isC    = id === compassAxis;
-        const arcR   = mt.r + 9;
-        const circ   = (2 * Math.PI * arcR).toFixed(2);
-        const offset = (parseFloat(circ) * (1 - pct / 100)).toFixed(2);
-        const iconSize = mt.r > 46 ? 26 : mt.r > 34 ? 20 : 15;
-        const labelFill = isC ? '#c9a84c' : fog === 'full' ? 'rgba(232,228,220,.25)' : 'rgba(232,228,220,.82)';
-        const glow = isC ? `<circle cx="${mt.x}" cy="${mt.y}" r="${mt.r+26}" class="cpulse" fill="rgba(201,168,76,.06)"/>` +
-          `<circle cx="${mt.x}" cy="${mt.y}" r="${mt.r+15}" fill="none" stroke="rgba(201,168,76,.2)" stroke-width="1.5" stroke-dasharray="3 3"/>` : '';
-        const arc = pct > 0 ? `<circle cx="${mt.x}" cy="${mt.y}" r="${arcR}" fill="none" stroke="${isC ? '#c9a84c' : 'rgba(96,165,250,.6)'}" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" transform="rotate(-90,${mt.x},${mt.y})"/>` : '';
-        const badge = isC ? `<text x="${mt.x}" y="${mt.y - mt.r - 10}" text-anchor="middle" font-size="9" fill="rgba(201,168,76,.78)">🧭 今ここ</text>` : '';
-        const check = isDone ? `<text x="${(mt.x + mt.r * .58).toFixed(1)}" y="${(mt.y - mt.r * .5).toFixed(1)}" font-size="13" fill="rgba(52,211,153,.82)">✓</text>` : '';
-        return `<g data-fog-axis="${id}" class="tg">` +
-          glow +
-          `<g class="fog-${fog}">` +
-          `<circle cx="${(mt.x + mt.r*.20).toFixed(1)}" cy="${(mt.y - mt.r*.24).toFixed(1)}" r="${(mt.r*.44).toFixed(1)}" fill="url(#fgm-${id})"/>` +
-          `<circle cx="${(mt.x - mt.r*.28).toFixed(1)}" cy="${(mt.y + mt.r*.18).toFixed(1)}" r="${(mt.r*.38).toFixed(1)}" fill="url(#fgm-${id})"/>` +
-          `<circle cx="${mt.x}" cy="${mt.y}" r="${mt.r}" fill="url(#fgm-${id})" stroke="${isC ? 'rgba(201,168,76,.6)' : 'rgba(232,228,220,.09)'}" stroke-width="${isC ? 2 : 1.5}"/>` +
-          `<ellipse cx="${(mt.x - mt.r*.16).toFixed(1)}" cy="${(mt.y - mt.r*.2).toFixed(1)}" rx="${(mt.r*.42).toFixed(1)}" ry="${(mt.r*.3).toFixed(1)}" fill="rgba(255,255,255,.05)"/>` +
-          `<text x="${mt.x}" y="${(mt.y + mt.r*.16).toFixed(1)}" text-anchor="middle" font-size="${iconSize}">${esc(def.icon)}</text>` +
-          `</g>` + arc +
-          `<text x="${mt.x}" y="${mt.y + mt.r + 18}" text-anchor="middle" font-size="10.5" font-weight="${isC ? 900 : 700}" fill="${labelFill}">${esc(def.label)}</text>` +
-          badge + check +
-          `<circle cx="${mt.x}" cy="${mt.y}" r="${mt.r + 22}" fill="transparent"/>` +
-          `</g>`;
-      }).join('');
-      return `<div class="fog-map-wrap">` +
-        `<svg viewBox="0 0 360 490" class="fog-map-svg">` +
-        `<defs>${defs}</defs>${grid}${paths}${territories}` +
-        `<g transform="translate(326,456)"><circle r="14" fill="rgba(5,8,22,.95)" stroke="rgba(201,168,76,.25)" stroke-width="1"/><text x="0" y="5" text-anchor="middle" font-size="12" fill="rgba(201,168,76,.5)">✦</text></g>` +
-        `<text x="18" y="482" font-size="7.5" fill="rgba(255,255,255,.04)" font-weight="700" letter-spacing=".1em">NEW ME MAP</text>` +
-        `</svg></div><div id="fog-detail-panel"></div>`;
-    }
-
     // ── 旧放射状マップ（未使用・削除予定） ──
     function buildJourneyRouteHtml() {
       const axisIds = Object.keys(AREA_DEFS);
@@ -2088,10 +1993,6 @@ export default function NewMeNaviPage() {
         ${(() => { const _all = flattenAllSteps(); const _done = _all.filter(s=>s.isDone).length; const _total = _all.length; const _pct = _total > 0 ? Math.round(_done/_total*100) : 0; return `<div class="progress-bar-wrap"><div class="progress-bar-label"><span class="progress-bar-label-text">変容の進捗</span><span class="progress-bar-pct">${_pct}%</span></div><div class="progress-bar-track"><div class="progress-bar-fill" style="width:${_pct}%"></div></div><p class="progress-bar-sub">${_done} / ${_total} ステップ完了</p></div>`; })()}
         <svg viewBox="0 0 80 80" width="68" height="68" style="position:absolute;top:14px;right:14px;z-index:1;opacity:0.17" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="37" fill="none" stroke="#c9a84c" stroke-width="0.8"/><circle cx="40" cy="40" r="28" fill="none" stroke="#c9a84c" stroke-width="0.4"/><line x1="40" y1="3" x2="40" y2="77" stroke="#c9a84c" stroke-width="0.8"/><line x1="3" y1="40" x2="77" y2="40" stroke="#c9a84c" stroke-width="0.8"/><line x1="14" y1="14" x2="66" y2="66" stroke="#c9a84c" stroke-width="0.5"/><line x1="66" y1="14" x2="14" y2="66" stroke="#c9a84c" stroke-width="0.5"/><polygon points="40,4 37,23 40,19 43,23" fill="#c9a84c"/><polygon points="40,76 37,57 40,61 43,57" fill="#c9a84c" opacity="0.4"/><polygon points="76,40 57,37 61,40 57,43" fill="#c9a84c" opacity="0.4"/><polygon points="4,40 23,37 19,40 23,43" fill="#c9a84c" opacity="0.4"/><circle cx="40" cy="40" r="5" fill="none" stroke="#c9a84c" stroke-width="1.2"/><circle cx="40" cy="40" r="2" fill="#c9a84c"/></svg>
         <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(201,168,76,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
-      </div>
-
-      <div id="fog-map-container">
-        ${buildFogMapHtml()}
       </div>
 
       ${buildCompassHtml()}
@@ -2263,8 +2164,6 @@ export default function NewMeNaviPage() {
     });
 
     function refreshCompassAndTracks() {
-      const fogMapEl = document.getElementById('fog-map-container');
-      if (fogMapEl) fogMapEl.innerHTML = buildFogMapHtml();
       const strip = document.getElementById('compass-strip');
       if (strip) { const tmp = document.createElement('div'); tmp.innerHTML = buildCompassHtml(); strip.replaceWith(tmp.firstElementChild); }
       const tqEl = document.getElementById('todayquest-container');
@@ -2275,42 +2174,6 @@ export default function NewMeNaviPage() {
       if (bar) { const tmp = document.createElement('div'); tmp.innerHTML = buildAxisFilterBar(); bar.replaceWith(tmp.firstElementChild); }
       injectServiceCards();
     }
-
-    // ── 霧マップ 島タップ ──
-    root.addEventListener('click', (e) => {
-      const el = e.target.closest('[data-fog-axis]');
-      if (!el) return;
-      const axisId = el.dataset.fogAxis;
-      if (!axisId) return;
-      const panel = document.getElementById('fog-detail-panel');
-      if (!panel) return;
-      if (panel.dataset.open === axisId) {
-        panel.innerHTML = '';
-        panel.dataset.open = '';
-        return;
-      }
-      panel.dataset.open = axisId;
-      const mt  = MAP_TERRITORY[axisId];
-      const def = AREA_DEFS[axisId];
-      if (!mt || !def) return;
-      const doneCount = Object.keys(stepDone).filter(k => k.startsWith(axisId + ':') && /** @type {{[k:string]:boolean}} */(stepDone)[k]).length;
-      const isDone = /** @type {{[k:string]:string}} */(axisProgress)[axisId] === 'done';
-      const statusText = isDone ? '✓ この領域の探索は完了'
-        : doneCount > 0 ? `${doneCount}ステップ踏破済み`
-        : '⚡ まだ足を踏み入れていない領域';
-      panel.innerHTML = `
-        <div class="fog-detail">
-          <div class="fog-detail-head">
-            <span class="fog-detail-icon">${esc(def.icon)}</span>
-            <div>
-              <div class="fog-detail-name">${esc(def.label)}の領域</div>
-              <div class="fog-detail-desc">${esc(mt.desc)}</div>
-            </div>
-          </div>
-          <div class="fog-detail-status">${statusText}</div>
-          <button class="fog-detail-cta" data-axis-jump="${esc(axisId)}">この領域のステップを見る →</button>
-        </div>`;
-    });
 
     // ── 軸フィルターチップ クリック ──
     root.addEventListener('click', (e) => {
