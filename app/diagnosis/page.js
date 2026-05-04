@@ -538,13 +538,20 @@ export default function DiagnosisPage() {
         chip.addEventListener('click', function () {
           const axisId  = this.dataset.axis;
           const pathVal = this.dataset.pathval;
-          state.path_types[axisId] = pathVal;
 
-          // 同軸の全チップを更新（割り当て済み・他グループ所属・未割り当て）
+          // すでに同じ選択肢に割り当て済みならトグルで未選択に戻す
+          if (state.path_types[axisId] === pathVal) {
+            delete state.path_types[axisId];
+          } else {
+            state.path_types[axisId] = pathVal;
+          }
+          const newVal = state.path_types[axisId];
+
+          // 同軸の全チップを更新
           container.querySelectorAll(`.axis-chip[data-axis="${axisId}"]`).forEach(c => {
             const cv = c.dataset.pathval;
-            c.classList.toggle('assigned',  cv === pathVal);
-            c.classList.toggle('elsewhere', cv !== pathVal);
+            c.classList.toggle('assigned',  !!newVal && cv === newVal);
+            c.classList.toggle('elsewhere', !!newVal && cv !== newVal);
           });
 
           updateQ3Progress();
