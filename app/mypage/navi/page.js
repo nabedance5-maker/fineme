@@ -351,6 +351,11 @@ export default function NewMeNaviPage() {
       .step-card.guide-mid  { border-left: 2px solid rgba(59,130,246,0.45); background: rgba(59,130,246,0.03); border-radius: 10px; border-bottom: none; margin-bottom: 3px; padding-left: 14px; }
       .step-card-body { flex: 1; min-width: 0; padding-right: 4px; }
       .step-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 5px; }
+      .phase-badge { font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 99px; letter-spacing: .04em; white-space: nowrap; flex-shrink: 0; }
+      .phase-badge-week1   { background: rgba(52,211,153,.12); color: rgba(52,211,153,.85); border: 1px solid rgba(52,211,153,.22); }
+      .phase-badge-week1_2 { background: rgba(59,130,246,.12); color: rgba(147,197,253,.9); border: 1px solid rgba(59,130,246,.22); }
+      .phase-badge-month1  { background: rgba(201,168,76,.12); color: rgba(253,230,138,.9); border: 1px solid rgba(201,168,76,.25); }
+      .phase-badge-month2_3{ background: rgba(168,85,247,.12);  color: rgba(216,180,254,.9); border: 1px solid rgba(168,85,247,.22); }
       .step-axis-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; border: 1px solid; }
       .step-text { font-size: 14px; color: rgba(232,228,220,0.82); line-height: 1.65; margin: 0; }
       .step-check-btn-wrap { flex-shrink: 0; padding-top: 2px; }
@@ -934,6 +939,14 @@ export default function NewMeNaviPage() {
       }
       const compassTag = isGlobalCurrent ? `<span class="compass-pointing-badge">🧭 今ここ</span>` : '';
       const selfCheckBadge = step.isSelfCheck ? `<span class="selfcheck-badge"> 現状確認</span>` : '';
+      const phaseMap = {
+        none: { cls: 'phase-badge-week1',   label: '🌱 Week 1' },
+        LOW:  { cls: 'phase-badge-week1_2', label: '🚀 Week 1-2' },
+        HIGH: { cls: 'phase-badge-month1',  label: '📈 Month 1' },
+        MID:  { cls: 'phase-badge-month2_3',label: '💎 Month 2-3' },
+      };
+      const phaseInfo = phaseMap[step.guide] || phaseMap['none'];
+      const phaseBadge = `<span class="phase-badge ${phaseInfo.cls}">${phaseInfo.label}</span>`;
       const selfCheckValue = (step.isSelfCheck && bodyData[step.bodyDataKey])
         ? `<span class="selfcheck-value">✓ ${esc(Array.isArray(bodyData[step.bodyDataKey]) ? bodyData[step.bodyDataKey].join('・') : bodyData[step.bodyDataKey])}</span>`
         : '';
@@ -949,7 +962,7 @@ export default function NewMeNaviPage() {
           <div class="step-card-body">
             <div class="step-meta">
               <span class="step-axis-badge" style="background:${badgeBg};border-color:${badgeBorder};color:${badgeColor}">${esc(def.icon)} ${esc(def.label)}</span>
-              ${compassTag}${selfCheckBadge}
+              ${phaseBadge}${compassTag}${selfCheckBadge}
             </div>
             <p class="step-text">${esc(step.text)}</p>
             ${selfCheckValue}
