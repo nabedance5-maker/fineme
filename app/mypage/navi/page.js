@@ -1388,15 +1388,20 @@ export default function NewMeNaviPage() {
           </div>`;
       }
 
+      // メインステップをguide時系列順にソート（元インデックスをdoneKey用に保持）
+      const _guideOrder = { none:0, LOW:1, HIGH:2, MID:3 };
+      const mainStepsSorted = mainSteps
+        .map((step, j) => ({ ...step, _oi: splitAt + j }))
+        .sort((a, b) => (_guideOrder[a.guide]??0) - (_guideOrder[b.guide]??0));
+
       // メインステップHTML（Layer1→Layer2 区切りを proIdx で自動挿入）
-      const proIdxInMain = mainSteps.findIndex(s => s.isCurrentFor === 'pro');
+      const proIdxInMain = mainStepsSorted.findIndex(s => s.isCurrentFor === 'pro');
       const layer2Divider = '<div class="layer2-divider"><div class="layer2-divider-line"></div><span class="layer2-divider-label">継続・アップデートフェーズ</span><div class="layer2-divider-line"></div></div>';
-      const items = mainSteps.map((step, j) => {
-        const i = splitAt + j; // 元のインデックス（doneKeyのため）
-        const doneKey = `${axisKey}-${i}`;
+      const items = mainStepsSorted.map((step, j) => {
+        const doneKey = `${axisKey}-${step._oi}`;
         const isDone = !!stepDone[doneKey];
-        const isCurrentPosition = (i === currentIdx);
-        const dotClass = isCurrentPosition ? 'current' : (i < currentIdx || isDone ? 'past' : 'future');
+        const isCurrentPosition = (step._oi === currentIdx);
+        const dotClass = isCurrentPosition ? 'current' : (step._oi < currentIdx || isDone ? 'past' : 'future');
         const labelHtml = isCurrentPosition ? '<span class="milestone-current-tag">★ 現在地</span>' : '';
         let guideHtml = '';
         if (step.guide === 'HIGH') {
@@ -1410,11 +1415,11 @@ export default function NewMeNaviPage() {
         }
         const noteHtml = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
         const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
-        const mDetailId = `detail-${axisKey}-${i}`;
+        const mDetailId = `detail-${axisKey}-${step._oi}`;
         const mDetailHtml = step.detail ? `
           <button class="step-detail-toggle" onclick="(function(btn){const panel=document.getElementById('${mDetailId}');panel.classList.toggle('open');btn.classList.toggle('open');btn.textContent=panel.classList.contains('open')?'▲ 閉じる':'📖 答えを見る';})(this)">📖 答えを見る</button>
           <div class="step-detail-panel" id="${mDetailId}">${esc(step.detail)}</div>` : '';
-        const mSvcId = (step.guide === 'HIGH' || step.guide === 'MID') && catLink ? `svc-${axisKey}-${i}` : null;
+        const mSvcId = (step.guide === 'HIGH' || step.guide === 'MID') && catLink ? `svc-${axisKey}-${step._oi}` : null;
         const mSvcHtml = mSvcId ? `<div id="${esc(mSvcId)}" class="inline-service-card" data-svc-cat="${esc(catLink)}"></div>` : '';
         let productsHtml = '';
         if (step.products && step.products.length > 0) {
@@ -1435,7 +1440,7 @@ export default function NewMeNaviPage() {
               return lvOk && prOk;
             })
             .map(({ prod, pi }) => {
-              const prodKey = `prod-${axisKey}-${i}-${pi}`;
+              const prodKey = `prod-${axisKey}-${step._oi}-${pi}`;
               const isProdDone = !!stepDone[prodKey];
               return `<a href="${esc(prod.url)}" target="_blank" rel="noopener noreferrer" class="product-chip">🛒 ${esc(prod.name)}</a><button class="product-check-btn${isProdDone?' checked':''}" data-done-key="${esc(prodKey)}" title="${isProdDone?'使用中を取り消す':'使っている・試した'}">${isProdDone?'✓ 使用中':'使ってる？'}</button>`;
             }).join('');
@@ -1460,7 +1465,7 @@ export default function NewMeNaviPage() {
       }).join('');
 
       const collapseClass = isExpanded ? '' : ' collapsed';
-      const mainCount = mainSteps.length;
+      const mainCount = mainStepsSorted.length;
       const expandBtn = isExpanded ? '' : `<button class="milestone-expand-btn" data-expand="true">＋ すべてのステップを見る（${mainCount}ステップ）</button>`;
       return `${prereqHtml}<div class="milestone-list${collapseClass}">${items}</div>${expandBtn}`;
     }
