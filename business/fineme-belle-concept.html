@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fineme belle — 構想概要 | Fineme</title>
+<style>
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --belle: #d4a0c0;
+    --belle-dark: #b07898;
+    --navy: #0a0f1e;
+    --bg: #080d1a;
+    --card: rgba(255,255,255,0.04);
+    --border: rgba(201,168,76,0.18);
+    --belle-border: rgba(212,160,192,0.22);
+    --text: rgba(240,236,228,0.88);
+    --muted: rgba(240,236,228,0.45);
+    --serif: 'Georgia', serif;
+    --sans: -apple-system, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+
+  .header { background: rgba(10,15,30,0.9); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+  .header-logo { font-size: 20px; font-weight: 800; color: var(--gold); font-family: var(--serif); }
+  .header-belle { font-size: 20px; font-weight: 800; color: var(--belle); font-family: var(--serif); }
+  .header-title { font-size: 13px; color: var(--muted); }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 48px 24px; }
+
+  .hero { text-align: center; margin-bottom: 64px; }
+  .hero-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.18em; color: var(--belle); text-transform: uppercase; margin-bottom: 16px; }
+  .hero-title { font-size: clamp(32px, 6vw, 52px); font-weight: 800; font-family: var(--serif); color: #fff; line-height: 1.25; margin-bottom: 20px; }
+  .hero-title .belle { color: var(--belle); }
+  .hero-sub { font-size: 15px; color: var(--muted); line-height: 1.9; max-width: 560px; margin: 0 auto; }
+
+  .section { margin-bottom: 56px; }
+  .section-label { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; color: var(--belle); text-transform: uppercase; margin-bottom: 20px; border-left: 3px solid var(--belle); padding-left: 12px; }
+  .section-title { font-size: 22px; font-weight: 800; font-family: var(--serif); color: #fff; margin-bottom: 16px; }
+
+  .card { background: var(--card); border: 1px solid var(--belle-border); border-radius: 14px; padding: 24px; margin-bottom: 16px; }
+  .card-title { font-size: 13px; font-weight: 800; color: var(--belle); margin-bottom: 10px; }
+  .card-body { font-size: 14px; color: var(--text); line-height: 1.85; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+
+  .quote-block { background: rgba(212,160,192,0.06); border-left: 3px solid var(--belle); border-radius: 0 10px 10px 0; padding: 20px 24px; margin: 24px 0; font-family: var(--serif); font-size: 17px; color: rgba(240,236,228,0.75); line-height: 1.8; font-style: italic; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: rgba(212,160,192,0.1); color: var(--belle); font-weight: 800; padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--belle-border); }
+  td { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text); vertical-align: top; line-height: 1.7; }
+  tr:last-child td { border-bottom: none; }
+
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 800; margin: 2px; }
+  .tag-shared { background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.3); color: var(--gold); }
+  .tag-separate { background: rgba(212,160,192,0.12); border: 1px solid rgba(212,160,192,0.3); color: var(--belle); }
+  .tag-choice { background: rgba(100,150,255,0.1); border: 1px solid rgba(100,150,255,0.25); color: #6496ff; }
+
+  .status-badge { display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; }
+  .status-future { background: rgba(212,160,192,0.1); border: 1px solid var(--belle-border); color: var(--belle); }
+
+  .timeline { border-left: 2px solid var(--belle-border); margin-left: 12px; padding-left: 28px; }
+  .timeline-item { position: relative; margin-bottom: 32px; }
+  .timeline-item::before { content: ''; position: absolute; left: -36px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: var(--belle-dark); border: 2px solid var(--belle); }
+  .timeline-phase { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; color: var(--belle); text-transform: uppercase; margin-bottom: 4px; }
+  .timeline-title { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .timeline-body { font-size: 13px; color: var(--muted); line-height: 1.8; }
+
+  .note { background: rgba(10,15,30,0.6); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; font-size: 13px; color: var(--muted); line-height: 1.8; margin-top: 16px; }
+  .note strong { color: var(--text); }
+
+  .ui-mockup { background: rgba(10,15,30,0.7); border: 1px solid var(--belle-border); border-radius: 12px; padding: 20px 24px; font-family: monospace; font-size: 13px; line-height: 2; color: var(--muted); }
+  .ui-mockup .folder { color: var(--gold); }
+  .ui-mockup .file { color: var(--text); }
+  .ui-mockup .comment { color: rgba(212,160,192,0.6); }
+
+  .divider { border: none; border-top: 1px solid var(--belle-border); margin: 48px 0; }
+
+  .footer-note { text-align: center; font-size: 12px; color: var(--muted); padding: 32px 0 48px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <span class="header-logo">Fineme</span>
+    <span style="color:var(--muted);font-size:18px;margin:0 8px;">×</span>
+    <span class="header-belle">belle</span>
+  </div>
+  <div class="header-title">女性向けサービス展開 — 構想概要</div>
+</div>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">Future Expansion Concept</div>
+    <h1 class="hero-title">Fineme <span class="belle">belle</span></h1>
+    <p class="hero-sub">
+      「変わりたい人に、地図と羅針盤を届ける」という仕組みを、女性にも。<br>
+      外見を起点に、自信を再設計する旅は男女を問わない。
+    </p>
+  </div>
+
+  <!-- ネーミング -->
+  <div class="section">
+    <div class="section-label">Naming</div>
+    <h2 class="section-title">Fineme belle（ファインミ ベル）</h2>
+    <div class="quote-block">
+      belle — フランス語で「美しい」「素晴らしい」「見事な」を意味する女性形容詞。<br>
+      英語の beautiful に相当し、外見だけでなく知性・内面の美しさも内包する。
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">名前の由来</div>
+        <div class="card-body">
+          フランス語の女性形容詞 <strong>belle</strong> は「美しい女性」という名詞としても使われる。<br><br>
+          世界的名作『美女と野獣』の主人公ベルは、外見だけでなく知性・自分らしさ・優しさを持つ女性として描かれ、Fineme の「外見を起点に内面まで変容する旅」の思想と重なる。
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Fineme思想との一致</div>
+        <div class="card-body">
+          Fineme の哲学<br>
+          「外見を整えることで生まれる小さな自信が、人に優しくなれる余白をつくる」<br><br>
+          belle は外見だけの美しさではなく、<strong>内面から溢れ出る美しさ</strong>も指す。この二重性がそのまま Fineme の変容思想と合致する。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ポジショニング -->
+  <div class="section">
+    <div class="section-label">Concept</div>
+    <h2 class="section-title">Fineme が持つ仕組みをそのまま女性へ</h2>
+    <div class="card-body" style="font-size:14px;line-height:1.9;margin-bottom:24px;">
+      Fineme の核心は「診断 → パーソナライズされた地図（New Me Map）と羅針盤（Fineme Compass）の提供」という仕組みにある。この仕組み自体は性別に関係なく価値を持つ。<br><br>
+      外見を変えたい女性に対して、何をやっていけばいいかを示す地図と羅針盤を届ける — それが Fineme belle の使命。
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Fineme（男性向け）</div>
+        <div class="card-body">
+          恋愛に悩む男性が外見を磨くためのサービスを探し、変容の旅を歩むインフラ。<br><br>
+          ジム・メイク・ヘア・骨格診断・婚活写真など男性の変容に特化したサービス群。
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Fineme belle（女性向け）</div>
+        <div class="card-body">
+          外見を起点に自信を再設計したい女性のための、同じ地図と羅針盤の仕組み。<br><br>
+          スキンケア・パーソナルカラー・ネイル・ヘア・エステなど女性の変容に特化したサービス群。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- タイミング -->
+  <div class="section">
+    <div class="section-label">Timing</div>
+    <h2 class="section-title">開始タイミング</h2>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-phase">現在</div>
+        <div class="timeline-title">Fineme 男性向けを育てる</div>
+        <div class="timeline-body">掲載者獲得・SEO・SNS・コンテンツ充実。男性側の仕組みを確立することが先決。</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-phase">移行期</div>
+        <div class="timeline-title">掲載者・収益が軌道に乗ったタイミング</div>
+        <div class="timeline-body">具体的な数字ラインは未定。男性側のオペレーションが自走し始めたら belle の具体設計へ。</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-phase">belle 開始</div>
+        <div class="timeline-title">Fineme belle ローンチ</div>
+        <div class="timeline-body">既存インフラ・管理画面・掲載者ネットワークを活用してゼロから立ち上げるよりも低コストで展開。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- URL構造 -->
+  <div class="section">
+    <div class="section-label">URL Architecture</div>
+    <h2 class="section-title">fineme.me/belle/ 配下に展開</h2>
+    <div class="card-body" style="font-size:14px;line-height:1.9;margin-bottom:20px;">
+      別ドメイン（belle.me 等）ではなく、<strong>fineme.me のサブディレクトリ</strong>として展開する。これにより fineme.me に蓄積された SEO ドメイン力をそのまま belle に引き継ぐことができる。
+    </div>
+    <div class="ui-mockup">
+      <span class="folder">fineme.me/</span><br>
+      <span class="file">&nbsp;&nbsp;search/</span><span class="comment">&nbsp;&nbsp;← 男性向け検索</span><br>
+      <span class="file">&nbsp;&nbsp;diagnosis/</span><span class="comment">&nbsp;&nbsp;← 男性向け診断</span><br>
+      <span class="file">&nbsp;&nbsp;mypage/</span><span class="comment">&nbsp;&nbsp;← 男性向けマイページ</span><br>
+      <span class="folder">&nbsp;&nbsp;belle/</span><span class="comment">&nbsp;&nbsp;← 女性向けトップ</span><br>
+      <span class="file">&nbsp;&nbsp;&nbsp;&nbsp;belle/search/</span><span class="comment">&nbsp;&nbsp;← 女性向け検索</span><br>
+      <span class="file">&nbsp;&nbsp;&nbsp;&nbsp;belle/diagnosis/</span><span class="comment">&nbsp;&nbsp;← 女性向け診断</span><br>
+      <span class="file">&nbsp;&nbsp;&nbsp;&nbsp;belle/mypage/</span><span class="comment">&nbsp;&nbsp;← 女性向けマイページ</span><br>
+    </div>
+    <div class="note">
+      <strong>混乱防止設計：</strong> belle へのリンクは男性向けページの<strong>フッターにのみ</strong>設置。流入経路（SEO・広告・SNS）は belle 配下に直接誘導するため、男性ユーザーが誤って迷い込むリスクは極めて低い。SEO 流入は /belle/ ページに直接着地するため混乱は発生しない。
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 管理画面 -->
+  <div class="section">
+    <div class="section-label">Admin Architecture</div>
+    <h2 class="section-title">管理画面は共通・データで分岐</h2>
+    <div class="grid2" style="margin-bottom:20px;">
+      <div class="card">
+        <div class="card-title">運営管理画面（/admin/）</div>
+        <div class="card-body">
+          渡邉が両方を管理するため共通のまま使用。各データに <code>target</code> フィールドを追加し、男性向け / belle / 両方 でフィルタリングする。
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">掲載者管理画面（/provider/dashboard）</div>
+        <div class="card-body">
+          掲載者も共通画面を使用。登録時に「どちらのサイトに掲載するか」を選択。男女両対応サービス（ヘアサロン等）は <code>both</code> を選べば両サイトに自動表示される。
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">掲載情報の管理方針</div>
+      <div class="card-body">
+        <div class="table-wrap">
+          <table>
+            <tr>
+              <th>区分</th>
+              <th>項目</th>
+              <th>管理方法</th>
+            </tr>
+            <tr>
+              <td><span class="tag tag-shared">共通</span></td>
+              <td>店舗名・住所・連絡先・営業時間・支払い方法・施設写真・スタッフ情報</td>
+              <td>1箇所で入力 → 両サイトに反映</td>
+            </tr>
+            <tr>
+              <td><span class="tag tag-separate">男女別</span></td>
+              <td>サービス紹介文・キャッチコピー・AIマッチングプロフィール・料金メニュー・ビフォーアフター写真</td>
+              <td>Fineme向け / belle向け をタブで別管理</td>
+            </tr>
+            <tr>
+              <td><span class="tag tag-choice">選択式</span></td>
+              <td>メイン写真・アイキャッチ・タグ・対応カテゴリ</td>
+              <td>「Fineme設定から引き継ぐ」ボタンで初期値コピー → 上書き可</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- マネタイズ -->
+  <div class="section">
+    <div class="section-label">Monetization</div>
+    <h2 class="section-title">belle はマネタイズの拡張機会</h2>
+    <div class="card-body" style="font-size:14px;line-height:1.9;margin-bottom:20px;">
+      既存掲載者（特に男女両対応のサービス）に対して「belle 追加掲載」のアップセルが自然に発生する。belle オープン時点でセールスターゲットが既に存在する状態を作れる。
+    </div>
+    <div class="table-wrap">
+      <table>
+        <tr>
+          <th>プラン</th>
+          <th>掲載先</th>
+          <th>想定ターゲット</th>
+        </tr>
+        <tr>
+          <td>Finemeプラン</td>
+          <td>男性向けサイトのみ</td>
+          <td>男性専用サービス（AGA・ひげ脱毛等）</td>
+        </tr>
+        <tr>
+          <td>belleプラン</td>
+          <td>女性向けサイトのみ</td>
+          <td>女性専用サービス（ネイル・エステ等）</td>
+        </tr>
+        <tr>
+          <td>両サイトプラン</td>
+          <td>Fineme + belle</td>
+          <td>男女対応サービス（ヘアサロン・パーソナルカラー・歯列矯正等）</td>
+        </tr>
+      </table>
+    </div>
+    <div class="note">
+      ヘアサロン・スキンケア・ホワイトニング・骨格診断など、男女両方を対象にするサービスは belle 立ち上げ時の<strong>アップセルの有力候補</strong>。「belle が始まったので両サイト掲載にしませんか」というアプローチが自然にできる。
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 技術設計 -->
+  <div class="section">
+    <div class="section-label">Technical Design</div>
+    <h2 class="section-title">実装方針（belle 開始時）</h2>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">サイト構造</div>
+        <div class="card-body">
+          <code>app/belle/</code> フォルダを作成。Next.js App Router が /belle/ 配下のルートを自動生成する。男性向けと同じページ構成をベースに、女性向けのデザイン・文言・カテゴリで差分を作る。
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">DB設計</div>
+        <div class="card-body">
+          各テーブルに <code>target: "male" | "belle" | "both"</code> フィールドを追加。既存データは全て <code>male</code> に一括設定。/belle/ 配下の API は belle と both のデータのみ取得する。
+        </div>
+      </div>
+    </div>
+    <div class="note" style="margin-top:16px;">
+      <strong>実装コスト最適化：</strong> 最初は男性向けページをベースに /belle/ 配下にコピーして素早く立ち上げ、共通化・最適化は後から必要に応じて行う。「完璧より70点で回す」方針で進める。
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ステータス -->
+  <div class="section">
+    <div class="section-label">Status</div>
+    <h2 class="section-title">現在のステータス</h2>
+    <div class="card" style="display:flex;align-items:center;gap:16px;">
+      <span class="status-badge status-future">構想段階</span>
+      <div class="card-body">
+        男性向け Fineme の掲載者・収益が軌道に乗ったタイミングで具体設計に移行する。URL構造・管理画面設計・マネタイズ方針の基本方向は確定済み。
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer-note">
+  Fineme belle 構想概要 — 作成日 2026-05-04 &nbsp;|&nbsp; 内部資料
+</div>
+
+</body>
+</html>
