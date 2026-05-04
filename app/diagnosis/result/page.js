@@ -152,6 +152,18 @@ export default function DiagnosisResultPage() {
       .save-map-cta-btn { display: inline-flex; align-items: center; gap: 6px; padding: 11px 22px; background: #c9a84c; color: #0a0f1e; font-size: 14px; font-weight: 800; border-radius: 6px; text-decoration: none; transition: opacity .15s; }
       .save-map-cta-btn:hover { opacity: .88; }
       .save-map-cta-note { font-size: 11px; color: var(--color-muted, #7a6e65); margin: 10px 0 0; line-height: 1.7; }
+      /* ── ヒーロー直下 登録促進バナー ── */
+      .auth-hero-banner { margin: 0 0 20px; padding: 18px 20px; background: linear-gradient(135deg, rgba(201,168,76,0.13) 0%, rgba(10,15,30,0.6) 100%); border: 1.5px solid rgba(201,168,76,0.5); border-radius: 14px; animation: abpulse 3s ease-in-out infinite; }
+      @keyframes abpulse { 0%,100%{ border-color:rgba(201,168,76,0.5); } 50%{ border-color:rgba(201,168,76,0.85); } }
+      .auth-hero-banner-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+      .auth-hero-banner-icon { font-size: 22px; flex-shrink: 0; }
+      .auth-hero-banner-title { font-size: 14px; font-weight: 900; color: #c9a84c; line-height: 1.4; }
+      .auth-hero-banner-body { font-size: 12px; color: rgba(232,228,220,0.7); line-height: 1.75; margin: 0 0 14px; }
+      .auth-hero-banner-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+      .auth-hero-banner-btn-primary { flex: 1; min-width: 140px; display: block; text-align: center; padding: 11px 16px; background: #c9a84c; color: #0a0f1e; font-size: 13px; font-weight: 800; border-radius: 8px; text-decoration: none; transition: opacity .15s; }
+      .auth-hero-banner-btn-primary:hover { opacity: .88; }
+      .auth-hero-banner-btn-secondary { flex: 1; min-width: 100px; display: block; text-align: center; padding: 11px 16px; background: transparent; color: rgba(201,168,76,0.85); font-size: 13px; font-weight: 700; border-radius: 8px; border: 1px solid rgba(201,168,76,0.4); text-decoration: none; transition: background .15s; }
+      .auth-hero-banner-btn-secondary:hover { background: rgba(201,168,76,0.08); }
 
       /* ── Voyage route connector ── */
       .v-route { display: flex; flex-direction: column; align-items: center; height: 28px; margin: -4px auto 0; width: 16px; }
@@ -939,9 +951,16 @@ export default function DiagnosisResultPage() {
       ${buildTypeHero()}
 
       ${!isLoggedIn ? `
-      <div style="background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.22);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
-        <span style="font-size:20px;flex-shrink:0">💾</span>
-        <span style="flex:1;font-size:13px;color:rgba(232,228,220,0.72);line-height:1.6">このページを閉じると地図が消えます。<a href="/login?mode=signup&next=/diagnosis/result" style="color:#c9a84c;font-weight:700;text-decoration:none">無料で保存する →</a></span>
+      <div class="auth-hero-banner">
+        <div class="auth-hero-banner-top">
+          <span class="auth-hero-banner-icon">⚠️</span>
+          <div class="auth-hero-banner-title">この診断結果は、今ページを閉じると消えます</div>
+        </div>
+        <p class="auth-hero-banner-body">未登録の状態では、この結果も変容の旅の地図も保存されません。<br>無料登録すれば、スマホ・PCどこからでも見返せます。</p>
+        <div class="auth-hero-banner-btns">
+          <a href="/login?mode=signup&next=/diagnosis/result" class="auth-hero-banner-btn-primary">無料で登録して保存する</a>
+          <a href="/login?next=/diagnosis/result" class="auth-hero-banner-btn-secondary">ログインはこちら</a>
+        </div>
       </div>
       ` : ''}
 
