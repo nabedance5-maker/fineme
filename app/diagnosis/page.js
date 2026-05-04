@@ -268,7 +268,7 @@ export default function DiagnosisPage() {
       trigger: null,
       triggers: [],
       // ゴール深掘り（Layer 2→3→4）
-      goal_scene: null,
+      goal_scene: [],
       goal_change: null,
       goal_vision: null,
       scene: null,
@@ -350,7 +350,7 @@ export default function DiagnosisPage() {
       let enabled = false;
       switch (currentScreen) {
         case 'q1':       enabled = state.triggers.length > 0; break;
-        case 'q_goal_a': enabled = !!state.goal_scene; break;
+        case 'q_goal_a': enabled = state.goal_scene.length > 0; break;
         case 'q_goal_b': enabled = !!state.goal_change; break;
         case 'q_goal_c': enabled = !!state.goal_vision; break;
         case 'q2':       enabled = state.scenes.length > 0; break;
@@ -641,7 +641,7 @@ export default function DiagnosisPage() {
       // 変容ベクトル：理想スコア - 現状スコア = ギャップ
       const transformVectors = {};
       CONCERN_AREAS.forEach(area => {
-        const currentScore = { none:1, concerned:2, self:3, pro:4 }[state.care_levels[area.id]] || 1;
+        const currentScore = { none:1, concerned:2, self:3, self_regular:3, pro:4 }[state.care_levels[area.id]] || 1;
         const idealScore = parseInt(state.ideal_levels[area.id] || String(Math.max(currentScore, 3)), 10);
         transformVectors[area.id] = {
           current: currentScore,
@@ -743,10 +743,11 @@ export default function DiagnosisPage() {
       if (!grid) return;
 
       const CARE_OPTIONS = [
-        { value: 'none',      label: '気にしていない',                        color: '#9ca3af' },
-        { value: 'concerned', label: '気になっているが、まだ何もしていない',   color: '#f59e0b' },
-        { value: 'self',      label: '自分なりにやっている（自己流・不定期）', color: '#3b82f6' },
-        { value: 'pro',       label: 'プロ・サロンに定期的に任せている',       color: '#10b981' }
+        { value: 'none',         label: '気にしていない',                          color: '#9ca3af' },
+        { value: 'concerned',    label: '気になっているが、まだ何もしていない',     color: '#f59e0b' },
+        { value: 'self',         label: '自分なりにやっている（自己流・不定期）',   color: '#3b82f6' },
+        { value: 'self_regular', label: '自己流だが、定期的に続けている',           color: '#60a5fa' },
+        { value: 'pro',          label: 'プロ・サロンに定期的に任せている',         color: '#10b981' }
       ];
 
       const IDEAL_LABELS = ['1','2','3','4','5'];
@@ -917,7 +918,7 @@ export default function DiagnosisPage() {
       });
     }
     bindMultiChoice('opts-q1', state.triggers);
-    bindSingleChoice('opts-q_goal_a', 'goal_scene');
+    bindMultiChoice('opts-q_goal_a', state.goal_scene);
     bindSingleChoice('opts-q_goal_b', 'goal_change');
     bindSingleChoice('opts-q_goal_c', 'goal_vision');
     bindMultiChoice('opts-q2', state.scenes);
@@ -1141,8 +1142,8 @@ export default function DiagnosisPage() {
           </div>
           <div className="diag-card">
             <p className="diag-step-label">ゴール｜場面</p>
-            <h2 className="diag-q">外見が変わったとき、<br />どんな場面で一番実感したいですか？</h2>
-            <p className="diag-hint">変わったことを実感したい瞬間を選んでください。</p>
+            <h2 className="diag-q">外見が変わったとき、<br />どんな場面で実感したいですか？</h2>
+            <p className="diag-hint">当てはまるものをすべて選んでください（複数可）</p>
             <div className="diag-options" id="opts-q_goal_a">
               <button className="diag-option" data-value="first_impression">
                 <span className="diag-option-icon">🫀</span>

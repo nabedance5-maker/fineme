@@ -780,7 +780,7 @@ export default function DiagnosisResultPage() {
       const topAreas = priorityOrder.filter(id => AREA_DEFS[id]).slice(0, 5);
       if (!topAreas.length) return '';
 
-      const CARE_LABELS = { none:'未着手', concerned:'気になっている', self:'自己ケア中', pro:'プロ通い中' };
+      const CARE_LABELS = { none:'未着手', concerned:'気になっている', self:'自己ケア中', self_regular:'自己流・定期', pro:'プロ通い中' };
 
       const rows = topAreas.map((id, idx) => {
         const def = AREA_DEFS[id];

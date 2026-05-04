@@ -662,7 +662,9 @@ export default function NewMeNaviPage() {
       nail:    { icon:'💅', label:'爪',    catLink:'nail',      tier:4, articleQ:'垢抜け' },
     };
     const TIER_LABELS = { 1:'基盤', 2:'深化', 3:'補完', 4:'磨き込み' };
-    const CARE_LABELS = { none:'未着手', concerned:'気になっている', self:'自己ケア中', pro:'プロ通い中' };
+    const CARE_LABELS = { none:'未着手', concerned:'気になっている', self:'自己ケア中', self_regular:'自己流・定期', pro:'プロ通い中' };
+    // self_regular は self の上位 — milestone上はselfと同じ位置を現在地とする
+    function normalizeCareType(ct) { return ct === 'self_regular' ? 'self' : (ct || 'none'); }
 
     // 現在地スコアを来た道類型ラベルに変換
     function getCareLabel(careType) { return CARE_LABELS[careType] || ''; }
@@ -878,7 +880,7 @@ export default function NewMeNaviPage() {
             : MILESTONES[axisKey] || [];
           const concernedIdx = steps.findIndex(s => s.isCurrentFor === 'concerned');
           const splitAt = concernedIdx > 0 ? concernedIdx : 0;
-          const currentIdx = steps.findIndex(s => s.isCurrentFor === careType);
+          const currentIdx = steps.findIndex(s => s.isCurrentFor === normalizeCareType(careType));
           steps.forEach((step, idx) => {
             const doneKey = (splitAt > 0 && idx < splitAt)
               ? `prereq-${axisKey}-${idx}` : `${axisKey}-${idx}`;
@@ -1215,6 +1217,33 @@ export default function NewMeNaviPage() {
     const compassFirst  = p.compass_first  || priorityOrder[0] || 'body';
     const overallGoal   = getOverallGoal();
 
+    // ── goal_scene（複数選択対応・後方互換） ──
+    const GOAL_SCENE_LABELS = {
+      first_impression: { icon:'🫀', label:'初対面' },
+      date_confidence:  { icon:'💫', label:'デート' },
+      photo_self:       { icon:'📸', label:'写真映え' },
+      morning_mirror:   { icon:'🌅', label:'朝の鏡' },
+      approach:         { icon:'🚀', label:'積極行動' },
+    };
+    const rawGoalScene = p.goal_scene;
+    const goalScenes = Array.isArray(rawGoalScene)
+      ? rawGoalScene
+      : (rawGoalScene ? [rawGoalScene] : []);
+
+    function buildGoalSceneHtml() {
+      if (!goalScenes.length) return '';
+      const pills = goalScenes
+        .filter(v => GOAL_SCENE_LABELS[v])
+        .map(v => {
+          const g = GOAL_SCENE_LABELS[v];
+          return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:rgba(201,168,76,0.09);border:1px solid rgba(201,168,76,0.22);color:rgba(232,228,220,0.80);white-space:nowrap">${esc(g.icon)} ${esc(g.label)}</span>`;
+        }).join('');
+      if (!pills) return '';
+      return `<div style="margin:0 0 16px;padding:10px 14px;background:rgba(10,15,30,0.5);border:1px solid rgba(201,168,76,0.15);border-radius:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:10px;font-weight:800;letter-spacing:.08em;color:rgba(201,168,76,0.55);white-space:nowrap;text-transform:uppercase">変容ゴール</span>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">${pills}</div>
+      </div>`;
+    }
 
     // ── ルートパターン ──
     const ROUTE_PATTERNS = {
@@ -2009,6 +2038,8 @@ export default function NewMeNaviPage() {
       </div>
 
       ${buildCompassHtml()}
+
+      ${buildGoalSceneHtml()}
 
       <div id="todayquest-container">
         ${buildTodayQuestHtml()}
