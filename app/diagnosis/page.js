@@ -88,13 +88,14 @@ export default function DiagnosisPage() {
     const STORAGE_KEY = 'fineme:diagnosis:latest';
 
     const CONCERN_AREAS = [
-      { id:'body',    icon:'💪',  label:'体型・ボディ',        tier:1 },
-      { id:'eyebrow', icon:'✂️', label:'眉毛',                tier:1 },
-      { id:'fashion', icon:'👔',  label:'服・コーデ',           tier:1 },
-      { id:'hair',    icon:'💇‍♂️', label:'髪・ヘア',        tier:1, hasAga:true },
-      { id:'skin',    icon:'✨',   label:'肌・エステ・脱毛',    tier:2 },
-      { id:'teeth',   icon:'🦷',  label:'歯・口元',            tier:3 },
-      { id:'nail',    icon:'💅',  label:'爪',                  tier:4 },
+      { id:'body',         icon:'💪',  label:'体型・ボディ',        tier:1 },
+      { id:'eyebrow',      icon:'✂️', label:'眉毛',                tier:1 },
+      { id:'fashion',      icon:'👔',  label:'服・コーデ',           tier:1 },
+      { id:'hair',         icon:'💇‍♂️', label:'髪・ヘア',        tier:1, hasAga:true },
+      { id:'skin',         icon:'✨',   label:'肌・ニキビ・エステ',  tier:2 },
+      { id:'hairremoval',  icon:'🪒',   label:'脱毛・ムダ毛',        tier:2 },
+      { id:'teeth',        icon:'🦷',  label:'歯・口元',            tier:3 },
+      { id:'nail',         icon:'💅',  label:'爪',                  tier:4 },
     ];
 
     const STYLE_MAP = {
@@ -193,7 +194,7 @@ export default function DiagnosisPage() {
           {v:'sometimes',t:'たまにある'},
           {v:'rarely',   t:'あまりない'},
         ], has_love:true },
-      { id:'skin', icon:'✨', label:'肌・エステ・脱毛',
+      { id:'skin', icon:'✨', label:'肌・ニキビ・エステ',
         path_q:'肌・スキンケアについて、これまでどんな道を歩いてきた？',
         path_opts:[
           {v:'virgin', t:'🌱 洗顔以外ほとんど何もしてこなかった',    d:'スキンケアのことをあまり考えてこなかった'},
@@ -215,6 +216,23 @@ export default function DiagnosisPage() {
           {v:'sometimes',t:'たまにある'},
           {v:'rarely',   t:'あまりない'},
         ], has_love:true },
+      { id:'hairremoval', icon:'🪒', label:'脱毛・ムダ毛',
+        path_q:'脱毛・ムダ毛ケアについて、これまでどんな道を歩いてきた？',
+        path_opts:[
+          {v:'virgin', t:'🌱 ほとんど何もしてこなかった',            d:'脱毛やムダ毛ケアを真剣に考えたことがなかった'},
+          {v:'quit',   t:'🔄 自己処理はしているが、サロンには行っていない',d:'カミソリや除毛クリームで対処している'},
+          {v:'blind',  t:'🤔 自己処理しているが、これで十分か不安',   d:'サロンと比べてどうなのか正直わからない'},
+          {v:'lapsed', t:'😴 以前は通っていたが、最近は後回し',       d:'サロンに行っていた時期があったが、今は間が空いている'},
+          {v:'doing',  t:'✅ 定期的に通ってケアできている',           d:'照射・メンテナンスのサイクルが確立している'},
+        ],
+        view_q:'自分のムダ毛って、他の人から見てどう見えていると思う？',
+        view_opts:[
+          {v:'better',   t:'気になるレベルではないと思う'},
+          {v:'accurate', t:'自分の認識通りだと思う'},
+          {v:'worse',    t:'実は気になられているかもしれない'},
+          {v:'unknown',  t:'まったくわからない'},
+        ],
+        has_love:false },
       { id:'teeth', icon:'🦷', label:'歯・口元',
         path_q:'歯・口元について、これまでどんな道を歩いてきた？',
         path_opts:[
@@ -281,7 +299,6 @@ export default function DiagnosisPage() {
       path_types: {},     // { body: 'virgin'|'quit'|'blind'|'lapsed', ... }
       self_views: {},     // { body: 'better'|'accurate'|'worse'|'unknown', ... }
       love_impact: {},    // { body: 'often'|'sometimes'|'rarely', ... }
-      currentCatIdx: 0,   // Phase3でのカテゴリ進捗
       past_attempts: [],
       failure_pattern: null,
       failure_patterns: [],
@@ -291,8 +308,8 @@ export default function DiagnosisPage() {
       budget: null
     };
 
-    const MAIN_SCREENS = ['q1','q_goal_a','q_goal_b','q_goal_c','q2','q3','q3_cat','q5b','q6','q6b','q7','q8'];
-    const TOTAL_STEPS = 19; // q3_catは7カテゴリ×内部3問を含む
+    const MAIN_SCREENS = ['q1','q_goal_a','q_goal_b','q_goal_c','q2','q3','q3_path','q5b','q6','q6b','q7','q8'];
+    const TOTAL_STEPS = 12;
 
     let currentScreen = 'landing';
     let screenHistory = ['landing'];
@@ -322,12 +339,7 @@ export default function DiagnosisPage() {
       progressWrap.style.display = isMain ? '' : 'none';
       if (!isMain) return;
       let pct;
-      if (baseScreen === 'q3_cat') {
-        // q3_catは7カテゴリ分をMAIN_SCREENSの1スロットに収める。サブ進捗を計算
-        const catIdx = MAIN_SCREENS.indexOf('q3_cat');
-        const subPct = state.currentCatIdx / CATEGORY_PHASE3.length;
-        pct = Math.round(((catIdx + subPct) / TOTAL_STEPS) * 100);
-      } else {
+      {
         const idx = MAIN_SCREENS.indexOf(baseScreen);
         if (idx === -1) return;
         pct = Math.round((idx / TOTAL_STEPS) * 100);
@@ -356,13 +368,15 @@ export default function DiagnosisPage() {
         case 'q2':       enabled = state.scenes.length > 0; break;
         case 'q3':     enabled = Object.values(state.care_levels).some(v => v && v !== ''); break;
         case 'q3_aga': enabled = !!state.aga_status; break;
-        case 'q3_cat': {
-          const cat = CATEGORY_PHASE3[state.currentCatIdx];
-          if (!cat) { enabled = true; break; }
-          const pathOk = !!state.path_types[cat.id];
-          const viewOk = !!state.self_views[cat.id];
-          const loveOk = !cat.has_love || !!state.love_impact[cat.id];
-          enabled = pathOk && viewOk && loveOk;
+        case 'q3_path': {
+          // 気になっている軸は全てpath_types + self_views が必要
+          const activeAreas = CONCERN_AREAS.filter(a => state.care_levels[a.id] && state.care_levels[a.id] !== 'none');
+          if (activeAreas.length === 0) { enabled = true; break; }
+          const allPath = activeAreas.every(a => !!state.path_types[a.id]);
+          const allView = activeAreas.every(a => !!state.self_views[a.id]);
+          const loveCats = CATEGORY_PHASE3.filter(c => c.has_love && activeAreas.some(a => a.id === c.id));
+          const allLove = loveCats.every(c => !!state.love_impact[c.id]);
+          enabled = allPath && allView && allLove;
           break;
         }
         case 'q5b':    enabled = state.failure_patterns.length > 0; break;
@@ -372,10 +386,7 @@ export default function DiagnosisPage() {
         case 'q8':       enabled = !!state.budget; break;
       }
       btnNext.disabled = !enabled;
-      const isLastCat = currentScreen === 'q3_cat' && state.currentCatIdx >= CATEGORY_PHASE3.length - 1;
-      btnNext.textContent = (currentScreen === 'q8') ? 'New Me Naviを生成する'
-        : (currentScreen === 'q3_cat' && !isLastCat) ? `次のカテゴリへ (${state.currentCatIdx + 1}/${CATEGORY_PHASE3.length})`
-        : '次へ';
+      btnNext.textContent = (currentScreen === 'q8') ? 'New Me Naviを生成する' : '次へ';
     }
 
     function goNext() {
@@ -387,27 +398,12 @@ export default function DiagnosisPage() {
         case 'q_goal_c': next = 'q2'; break;
         case 'q2':       next = 'q3'; break;
         case 'q3':
-          if (state.aga_concern === 'yes') {
-            next = 'q3_aga';
-          } else {
-            next = 'q3_intro';
-          }
+          next = state.aga_concern === 'yes' ? 'q3_aga' : 'q3_intro';
           break;
         case 'q3_aga':
           next = 'q3_intro';
           break;
-        case 'q3_cat':
-          if (state.currentCatIdx < CATEGORY_PHASE3.length - 1) {
-            const completedIdx = state.currentCatIdx;
-            state.currentCatIdx++;
-            showCategoryCompleteCard(completedIdx, function() {
-              renderCategoryScreen(state.currentCatIdx);
-              updateNextBtn();
-              updateProgress();
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-            return;
-          }
+        case 'q3_path':
           next = 'q5b';
           break;
         case 'q5b': next = 'q6'; break;
@@ -433,14 +429,6 @@ export default function DiagnosisPage() {
     }
 
     function goBack() {
-      if (currentScreen === 'q3_cat' && state.currentCatIdx > 0) {
-        state.currentCatIdx--;
-        renderCategoryScreen(state.currentCatIdx);
-        updateNextBtn();
-        updateProgress();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        return;
-      }
       if (screenHistory.length > 1) {
         screenHistory.pop();
         showScreen(screenHistory[screenHistory.length - 1]);
@@ -450,7 +438,7 @@ export default function DiagnosisPage() {
     function buildMiniRadarSVG(doneUpTo) {
       const n = CONCERN_AREAS.length;
       const cx = 80, cy = 80, r = 62, SIZE = 160;
-      const AXIS_COLORS = ['#3b82f6','#8b5cf6','#f59e0b','#10b981','#ec4899','#f97316','#6366f1'];
+      const AXIS_COLORS = ['#3b82f6','#8b5cf6','#f59e0b','#10b981','#ec4899','#06b6d4','#f97316','#6366f1'];
 
       function ptStr(val, i) {
         const angle = -Math.PI / 2 + i * (2 * Math.PI / n);
@@ -496,122 +484,89 @@ export default function DiagnosisPage() {
       </svg>`;
     }
 
-    function showCategoryCompleteCard(completedIdx, callback) {
-      const container = document.getElementById('q3_cat_content');
-      if (!container) { callback(); return; }
+    function buildAllCategoryCards() {
+      const container = document.getElementById('q3_path_content');
+      if (!container) return;
 
-      const cat = CATEGORY_PHASE3[completedIdx];
-      const nextCat = CATEGORY_PHASE3[completedIdx + 1];
-      const done = completedIdx + 1;
-      const total = CATEGORY_PHASE3.length;
-
-      const pathVal = state.path_types[cat.id];
-      const pathLabel = PATH_LABELS[pathVal] || pathVal || '';
-
-      const gaps = [];
-      const level = state.care_levels[cat.id] || 'none';
-      const current = { none: 1, concerned: 2, self: 3, pro: 4 }[level] || 1;
-      const ideal = parseInt(state.ideal_levels[cat.id] || '3', 10);
-      const gap = Math.max(0, ideal - current);
-      if (gap > 0) gaps.push(`現在地 ${current} → 理想 ${ideal}（ギャップ +${gap}）`);
-
-      const dots = CATEGORY_PHASE3.map((c, i) => {
-        const cls = i <= completedIdx ? 'cat-dot cat-dot--done' : 'cat-dot cat-dot--pending';
-        return `<div class="${cls}" title="${c.label}">${c.icon}</div>`;
-      }).join('');
-
-      const radarSVG = buildMiniRadarSVG(completedIdx);
-
-      container.innerHTML = `
-        <div class="diag-card cat-complete-overlay" id="cat-complete-card">
-          <div style="font-size:32px;margin-bottom:6px">✅</div>
-          <p style="font-size:11px;font-weight:700;color:#10b981;margin:0 0 6px;letter-spacing:.06em;text-transform:uppercase">RECORDED</p>
-          <h3 style="font-size:17px;font-weight:800;color:#111;margin:0 0 4px">${cat.icon} ${cat.label}トラック — 記録しました</h3>
-          ${pathLabel ? `<p style="font-size:12px;color:#6b7280;margin:0 0 2px">来た道: ${pathLabel}</p>` : ''}
-          ${gaps.length ? `<p style="font-size:12px;color:#6b7280;margin:0 0 16px">${gaps[0]}</p>` : '<div style="margin-bottom:16px"></div>'}
-          <div style="margin:0 auto 14px">${radarSVG}</div>
-          <p style="font-size:11px;color:#9ca3af;margin:0 0 6px">${done} / ${total} 完了</p>
-          <div class="cat-dots-row">${dots}</div>
-          ${nextCat ? `<p style="font-size:13px;color:#374151;font-weight:600;margin:14px 0 4px">次: ${nextCat.icon} ${nextCat.label}</p>` : ''}
-          <p style="font-size:11px;color:#9ca3af;margin:8px 0 0">タップで続ける</p>
-        </div>
-      `;
-
-      btnNext.disabled = true;
-      btnNext.textContent = '記録中…';
-
-      const timer = setTimeout(callback, 2500);
-      const card = document.getElementById('cat-complete-card');
-      if (card) card.addEventListener('click', function() { clearTimeout(timer); callback(); });
-    }
-
-    function renderCategoryScreen(idx) {
-      const cat = CATEGORY_PHASE3[idx];
-      const container = document.getElementById('q3_cat_content');
-      if (!container || !cat) return;
-      const catTotal = CATEGORY_PHASE3.length;
-
-      // B: Echo back — 前のカテゴリの回答をヒントとして表示
-      let echoHtml = '';
-      if (idx > 0) {
-        const prevCat = CATEGORY_PHASE3[idx - 1];
-        const prevPath = state.path_types[prevCat.id];
-        if (prevPath && PATH_LABELS[prevPath]) {
-          echoHtml = `<div class="cat-echo-banner">📝 ${prevCat.label}では「${PATH_LABELS[prevPath]}」と答えてくれました。${cat.label}についてはどうでしょう？</div>`;
+      // 気になっている軸のみ表示、noneはvirginで自動設定
+      const activeAreas = CONCERN_AREAS.filter(a => state.care_levels[a.id] && state.care_levels[a.id] !== 'none');
+      CONCERN_AREAS.forEach(a => {
+        if (!state.care_levels[a.id] || state.care_levels[a.id] === 'none') {
+          state.path_types[a.id] = state.path_types[a.id] || 'virgin';
         }
-      }
+      });
 
-      function opt(arr, stateKey, type) {
+      function optHtml(arr, stateObj, catId) {
         return arr.map(o => `
-          <button class="diag-option${state[stateKey]?.[cat.id] === o.v ? ' selected' : ''}" data-value="${o.v}" data-type="${type}">
+          <button class="diag-option${stateObj[catId] === o.v ? ' selected' : ''}" data-value="${o.v}" data-cat="${catId}">
             <span class="diag-option-body">
               <span class="diag-option-title">${o.t}</span>
               ${o.d ? `<span class="diag-option-desc">${o.d}</span>` : ''}
             </span>
           </button>`).join('');
       }
-      const pathAnswered = !!state.path_types[cat.id];
-      const viewAnswered = !!state.self_views[cat.id];
-      container.innerHTML = `
-        ${echoHtml}
-        <div class="diag-card">
-          <p class="diag-step-label">${cat.icon} ${cat.label}｜来た道</p>
-          <p style="font-size:11px;color:#9ca3af;margin:0 0 8px">カテゴリ ${idx + 1} / ${catTotal}</p>
-          <h2 class="diag-q">${cat.path_q}</h2>
-          <div class="diag-options" id="opts-cat-path">${opt(cat.path_opts, 'path_types', 'path')}</div>
-        </div>
-        <div class="diag-card" id="cat-view-section" style="${pathAnswered ? '' : 'display:none'}">
-          <p class="diag-step-label">${cat.icon} ${cat.label}｜客観視</p>
-          <h2 class="diag-q">${cat.view_q}</h2>
-          <p class="diag-hint">正直な直感で選んでください。</p>
-          <div class="diag-options" id="opts-cat-view">${opt(cat.view_opts, 'self_views', 'view')}</div>
-        </div>
-        ${cat.has_love ? `
-        <div class="diag-card" id="cat-love-section" style="${viewAnswered ? '' : 'display:none'}">
-          <p class="diag-step-label">${cat.icon} ${cat.label}｜恋愛場面</p>
-          <h2 class="diag-q">${cat.love_q}</h2>
-          <div class="diag-options" id="opts-cat-love">${opt(cat.love_opts, 'love_impact', 'love')}</div>
-        </div>` : ''}
-      `;
+
+      container.innerHTML = activeAreas.map(area => {
+        const cat = CATEGORY_PHASE3.find(c => c.id === area.id);
+        if (!cat) return '';
+        const pathAnswered = !!state.path_types[area.id];
+        const viewAnswered = !!state.self_views[area.id];
+        return `
+          <div class="diag-card" id="q3path-card-${cat.id}" style="margin-bottom:16px">
+            <p class="diag-step-label">${cat.icon} ${cat.label}｜来た道</p>
+            <h2 class="diag-q" style="font-size:clamp(15px,3.5vw,18px)">${cat.path_q}</h2>
+            <div class="diag-options" data-cat="${cat.id}" data-type="path">${optHtml(cat.path_opts, state.path_types, cat.id)}</div>
+
+            <div id="q3path-view-${cat.id}" style="${pathAnswered ? '' : 'display:none'}">
+              <div style="border-top:1px dashed rgba(201,168,76,0.2);margin:16px 0 12px"></div>
+              <p class="diag-step-label">${cat.icon} ${cat.label}｜他者の目</p>
+              <h2 class="diag-q" style="font-size:clamp(14px,3.2vw,17px)">${cat.view_q}</h2>
+              <p class="diag-hint">正直な直感で選んでください。</p>
+              <div class="diag-options" data-cat="${cat.id}" data-type="view">${optHtml(cat.view_opts, state.self_views, cat.id)}</div>
+            </div>
+
+            ${cat.has_love ? `
+            <div id="q3path-love-${cat.id}" style="${viewAnswered ? '' : 'display:none'}">
+              <div style="border-top:1px dashed rgba(201,168,76,0.2);margin:16px 0 12px"></div>
+              <p class="diag-step-label">${cat.icon} ${cat.label}｜恋愛場面</p>
+              <h2 class="diag-q" style="font-size:clamp(14px,3.2vw,17px)">${cat.love_q}</h2>
+              <div class="diag-options" data-cat="${cat.id}" data-type="love">${optHtml(cat.love_opts, state.love_impact, cat.id)}</div>
+            </div>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      // 進捗インジケーター
+      const progressEl = document.getElementById('q3path-progress');
+      function updateQ3Progress() {
+        if (!progressEl) return;
+        const answered = activeAreas.filter(a => !!state.path_types[a.id]).length;
+        progressEl.textContent = `${answered} / ${activeAreas.length} 分野 回答済み`;
+      }
+      updateQ3Progress();
+
       container.querySelectorAll('.diag-option').forEach(btn => {
         btn.addEventListener('click', function () {
-          const val = this.dataset.value;
-          const type = this.dataset.type;
+          const catId = this.dataset.cat;
+          const type  = this.dataset.type;
+          const val   = this.dataset.value;
           this.closest('.diag-options').querySelectorAll('.diag-option').forEach(b => b.classList.remove('selected'));
           this.classList.add('selected');
           if (type === 'path') {
-            state.path_types[cat.id] = val;
-            const viewSec = document.getElementById('cat-view-section');
+            state.path_types[catId] = val;
+            const viewSec = document.getElementById('q3path-view-' + catId);
             if (viewSec) viewSec.style.display = '';
           } else if (type === 'view') {
-            state.self_views[cat.id] = val;
-            if (cat.has_love) {
-              const loveSec = document.getElementById('cat-love-section');
+            state.self_views[catId] = val;
+            const cat = CATEGORY_PHASE3.find(c => c.id === catId);
+            if (cat?.has_love) {
+              const loveSec = document.getElementById('q3path-love-' + catId);
               if (loveSec) loveSec.style.display = '';
             }
           } else if (type === 'love') {
-            state.love_impact[cat.id] = val;
+            state.love_impact[catId] = val;
           }
+          updateQ3Progress();
           updateNextBtn();
         });
       });
@@ -656,7 +611,7 @@ export default function DiagnosisPage() {
       });
 
       // 優先順位：tier → gap → 速効性
-      const SPEED = { eyebrow:5, fashion:5, hair:4, body:3, skin:3, teeth:2, nail:2 };
+      const SPEED = { eyebrow:5, fashion:5, hair:4, body:3, skin:3, hairremoval:3, teeth:2, nail:2 };
       const priorityOrder = Object.entries(transformVectors)
         .filter(([, v]) => v.gap > 0)
         .sort((a, b) => {
@@ -983,10 +938,9 @@ export default function DiagnosisPage() {
     const introStartBtn = document.getElementById('btn-q3-intro-start');
     if (introStartBtn) {
       introStartBtn.addEventListener('click', function() {
-        state.currentCatIdx = 0;
-        renderCategoryScreen(0);
-        screenHistory.push('q3_cat');
-        showScreen('q3_cat');
+        buildAllCategoryCards();
+        screenHistory.push('q3_path');
+        showScreen('q3_path');
       });
     }
 
@@ -1390,27 +1344,33 @@ export default function DiagnosisPage() {
           <div className="diag-card">
             <div className="q3-intro-card">
               <p style={{fontSize:'11px',fontWeight:'700',color:'#6366f1',letterSpacing:'.06em',textTransform:'uppercase',margin:'0 0 12px'}}>Phase 3 ｜ 軸別スキャン</p>
-              <h2 style={{fontSize:'clamp(18px,4vw,22px)',fontWeight:'800',lineHeight:'1.35',margin:'0 0 12px'}}>ここからは、7つの軸を<br />一つひとつ聞いていきます</h2>
-              <p style={{fontSize:'14px',color:'#6b7280',lineHeight:'1.7',margin:'0 0 6px'}}>各軸で「来た道」「他者からの見え方」「恋愛への影響」<br />の3つを聞きます。</p>
-              <p style={{fontSize:'13px',color:'#9ca3af',margin:'0 0 4px'}}>この7つの答えが、あなたの変容ナビの「現在地」になります。</p>
+              <h2 style={{fontSize:'clamp(18px,4vw,22px)',fontWeight:'800',lineHeight:'1.35',margin:'0 0 12px'}}>ここからは、8つの軸を<br />1ページで一気に答えてもらいます</h2>
+              <p style={{fontSize:'14px',color:'#6b7280',lineHeight:'1.7',margin:'0 0 6px'}}>各軸で「来た道」「他者からの見え方」「恋愛への影響」を聞きます。</p>
+              <p style={{fontSize:'13px',color:'#9ca3af',margin:'0 0 4px'}}>この答えが、あなたの変容ナビの「現在地」になります。</p>
               <p style={{fontSize:'12px',color:'#a78bfa',fontWeight:'600',margin:'0 0 20px'}}>正直な答えほど、精度の高いマップになります。</p>
               <div className="q3-intro-axes">
-                {[['💪','体型'],['✂️','眉毛'],['👔','服'],['💇','髪'],['✨','肌'],['🦷','歯'],['💅','爪']].map(([icon, label], i) => (
+                {[['💪','体型'],['✂️','眉毛'],['👔','服'],['💇','髪'],['✨','肌'],['🪒','脱毛'],['🦷','歯'],['💅','爪']].map(([icon, label], i) => (
                   <div key={i} className="q3-intro-axis">
                     <div className="q3-intro-axis-icon">{icon}</div>
                     <span className="q3-intro-axis-label">{label}</span>
                   </div>
                 ))}
               </div>
-              <button className="diag-nav-next" id="btn-q3-intro-start" style={{width:'100%',fontSize:'16px'}}>7軸スキャンを始める →</button>
+              <button className="diag-nav-next" id="btn-q3-intro-start" style={{width:'100%',fontSize:'16px'}}>スキャンを始める →</button>
             </div>
           </div>
         </div>
 
-        {/* SCREEN Q3_CAT: Phase 3 カテゴリ別来た道・客観視・恋愛 */}
-        <div className="diag-screen" id="screen-q3_cat">
+        {/* SCREEN Q3_PATH: Phase 3 軸別スキャン（全軸1ページ） */}
+        <div className="diag-screen" id="screen-q3_path">
           <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div id="q3_cat_content"></div>
+          <div className="diag-card" style={{marginBottom:'16px'}}>
+            <p className="diag-step-label">Phase 3｜来た道の記録</p>
+            <h2 className="diag-q">各分野の<br />これまでの取り組みを教えてください</h2>
+            <p className="diag-hint">気になっている分野のみ表示されます。すべて答えてください。</p>
+            <p id="q3path-progress" style={{fontSize:'12px',fontWeight:'700',color:'rgba(201,168,76,0.8)',margin:'6px 0 0'}}></p>
+          </div>
+          <div id="q3_path_content"></div>
         </div>
 
         {/* SCREEN Q5: 過去の試み（フローからは除外、後方互換で残す） */}

@@ -4,13 +4,14 @@ import Link from 'next/link';
 
 // 軸 → 関連カテゴリのマッピング（記事のcategoryフィールドと照合）
 const AXIS_RELATED_CATS = {
-  hair:    ['清潔感', '垢抜け'],
-  skin:    ['清潔感'],
-  eyebrow: ['清潔感', '垢抜け'],
-  fashion: ['垢抜け'],
-  body:    ['垢抜け'],
-  teeth:   [],
-  nail:    [],
+  hair:        ['清潔感', '垢抜け'],
+  skin:        ['清潔感'],
+  hairremoval: ['清潔感'],
+  eyebrow:     ['清潔感', '垢抜け'],
+  fashion:     ['垢抜け'],
+  body:        ['垢抜け'],
+  teeth:       [],
+  nail:        [],
 };
 
 export default function NewMeNaviPage() {
@@ -657,9 +658,10 @@ export default function NewMeNaviPage() {
       eyebrow: { icon:'✂️', label:'眉',    catLink:'eyebrow',  tier:1, articleQ:'清潔感' },
       fashion: { icon:'👔', label:'服',    catLink:'fashion',   tier:1, articleQ:'垢抜け' },
       hair:    { icon:'💇', label:'髪',    catLink:'hair',      tier:1, articleQ:'清潔感' },
-      skin:    { icon:'✨', label:'肌',    catLink:'esthetic',  tier:2, articleQ:'清潔感' },
-      teeth:   { icon:'🦷', label:'歯',    catLink:'whitening', tier:3, articleQ:'清潔感' },
-      nail:    { icon:'💅', label:'爪',    catLink:'nail',      tier:4, articleQ:'垢抜け' },
+      skin:        { icon:'✨', label:'肌',   catLink:'esthetic',    tier:2, articleQ:'清潔感' },
+      hairremoval: { icon:'🪒', label:'脱毛', catLink:'hairremoval', tier:2, articleQ:'清潔感' },
+      teeth:       { icon:'🦷', label:'歯',   catLink:'whitening',   tier:3, articleQ:'清潔感' },
+      nail:        { icon:'💅', label:'爪',   catLink:'nail',        tier:4, articleQ:'垢抜け' },
     };
     const TIER_LABELS = { 1:'基盤', 2:'深化', 3:'補完', 4:'磨き込み' };
     const CARE_LABELS = { none:'未着手', concerned:'気になっている', self:'自己ケア中', self_regular:'自己流・定期', pro:'プロ通い中' };
@@ -672,7 +674,7 @@ export default function NewMeNaviPage() {
     // ── 記事マッチング ──
     const AXIS_ARTICLE_CATS = {
       body: ['垢抜け'], eyebrow: ['清潔感', '垢抜け'], fashion: ['垢抜け', '清潔感'],
-      hair: ['清潔感', '垢抜け'], skin: ['清潔感'], teeth: ['清潔感'], nail: ['垢抜け'],
+      hair: ['清潔感', '垢抜け'], skin: ['清潔感'], hairremoval: ['清潔感'], teeth: ['清潔感'], nail: ['垢抜け'],
     };
     function pickSectionArticle(sectionAxes, compassAxis, usedSlugs) {
       if (!allNaviArticles.length) return null;
@@ -778,6 +780,16 @@ export default function NewMeNaviPage() {
         { text: 'ネイルケアサロンでプロのケアを受けたことがある', guide: 'HIGH' },
         { text: '定期的にサロンでメンテナンスしている', guide: 'HIGH', isCurrentFor: 'pro' },
         { text: '爪ケアのサイクル（切る・やすり・保湿）が2週間以上途切れず続いている', guide: 'none' },
+      ],
+      hairremoval: [
+        { text: '気になる部位を1つ確認してみる（ヒゲ・腕・胸・脚・VIOなど）', guide: 'none', isCurrentFor: 'none', isSelfCheck: true, bodyDataKey: 'depilation_target', bodyDataMulti: true, bodyDataOptions: ['ヒゲ', '腕・脚', '胸・背中', 'VIO', '全身', '今は気にしていない'] },
+        { text: '現在の自己処理の頻度と手間を確認してみる', guide: 'none', hint: '「週何回カミソリを当てているか」を数えるだけでOK。ゼロでも正直に。' },
+        { text: '脱毛サロンとクリニックの違いを調べてみる', guide: 'LOW', hint: 'サロン＝光脱毛（痛み少・通い多）、クリニック＝医療レーザー（永久・通い少）', isCurrentFor: 'concerned' },
+        { text: '脱毛サロン・クリニックの無料カウンセリングに1回行ったことがある', guide: 'HIGH', isCurrentFor: 'self' },
+        { text: '1〜3ヶ所の照射を完了している', guide: 'HIGH' },
+        { text: '定期的に通い、気になる部位の脱毛が概ね完了した', guide: 'HIGH', isCurrentFor: 'pro' },
+        { text: '脱毛後のアフターケア（保湿）が習慣になっている', guide: 'LOW',
+          products: [{ name: 'ヴァセリン ボディローション（脱毛後保湿）', url: 'https://www.amazon.co.jp/s?k=ヴァセリン+ボディローション&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
       ],
     };
 

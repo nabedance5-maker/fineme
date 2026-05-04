@@ -353,9 +353,10 @@ export default function DiagnosisResultPage() {
       eyebrow: { icon:'✂️', label:'眉',   catLink:'eyebrow',     tier:1 },
       fashion: { icon:'👔', label:'服',   catLink:'fashion',      tier:1 },
       hair:    { icon:'💇', label:'髪',   catLink:'hair',         tier:1 },
-      skin:    { icon:'✨', label:'肌',   catLink:'esthetic',     tier:2 },
-      teeth:   { icon:'🦷', label:'歯',   catLink:'whitening',    tier:3 },
-      nail:    { icon:'💅', label:'爪',   catLink:'nail',         tier:4 },
+      skin:        { icon:'✨', label:'肌',   catLink:'esthetic',     tier:2 },
+      hairremoval: { icon:'🪒', label:'脱毛', catLink:'hairremoval',  tier:2 },
+      teeth:       { icon:'🦷', label:'歯',   catLink:'whitening',    tier:3 },
+      nail:        { icon:'💅', label:'爪',   catLink:'nail',         tier:4 },
     };
     const TIER_LABELS = { 1:'基盤', 2:'深化', 3:'補完', 4:'磨き込み' };
     const PATH_LABELS = { virgin:'未経験', quit:'試したが続かない', blind:'非客観視', lapsed:'以前やっていた' };

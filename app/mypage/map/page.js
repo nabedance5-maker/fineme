@@ -3,24 +3,26 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 const T = {
-  body:    { icon:'💪', label:'体型',  x:180, y:95,  r:52, c:'#1c3826', desc:'筋トレ・食事・体型管理' },
-  eyebrow: { icon:'✂️', label:'眉',    x:74,  y:194, r:35, c:'#2c1e0e', desc:'眉の形・清潔感の基盤' },
-  fashion: { icon:'👔', label:'服',    x:286, y:194, r:41, c:'#1c1636', desc:'サイズ感・服の選び方' },
-  hair:    { icon:'💇', label:'髪',    x:60,  y:318, r:38, c:'#0e2030', desc:'ヘアスタイル・質感' },
-  skin:    { icon:'✨', label:'肌',    x:300, y:318, r:36, c:'#2c1c0e', desc:'スキンケア・清潔感' },
-  teeth:   { icon:'🦷', label:'歯',    x:140, y:408, r:33, c:'#1c2236', desc:'歯並び・ホワイトニング' },
-  nail:    { icon:'💅', label:'爪',    x:248, y:408, r:28, c:'#2c0e1c', desc:'ネイルケア・指先' },
+  body:        { icon:'💪', label:'体型',  x:180, y:95,  r:52, c:'#1c3826', desc:'筋トレ・食事・体型管理' },
+  eyebrow:     { icon:'✂️', label:'眉',    x:74,  y:194, r:35, c:'#2c1e0e', desc:'眉の形・清潔感の基盤' },
+  fashion:     { icon:'👔', label:'服',    x:286, y:194, r:41, c:'#1c1636', desc:'サイズ感・服の選び方' },
+  hair:        { icon:'💇', label:'髪',    x:60,  y:318, r:38, c:'#0e2030', desc:'ヘアスタイル・質感' },
+  skin:        { icon:'✨', label:'肌',    x:282, y:318, r:30, c:'#2c1c0e', desc:'スキンケア・清潔感' },
+  hairremoval: { icon:'🪒', label:'脱毛',  x:334, y:360, r:24, c:'#0e1c2c', desc:'脱毛・ムダ毛ケア' },
+  teeth:       { icon:'🦷', label:'歯',    x:140, y:408, r:33, c:'#1c2236', desc:'歯並び・ホワイトニング' },
+  nail:        { icon:'💅', label:'爪',    x:248, y:408, r:28, c:'#2c0e1c', desc:'ネイルケア・指先' },
 };
 
-const AXIS_TOTALS = { body:12, eyebrow:8, fashion:10, hair:10, skin:8, teeth:6, nail:6 };
+const AXIS_TOTALS = { body:12, eyebrow:8, fashion:10, hair:10, skin:8, hairremoval:7, teeth:6, nail:6 };
 
 const MAP_PATHS = [
   'M 180,95 Q 115,148 74,194',
   'M 180,95 Q 245,148 286,194',
   'M 74,194 Q 62,256 60,318',
-  'M 286,194 Q 298,256 300,318',
+  'M 286,194 Q 294,256 282,318',
+  'M 282,318 Q 310,340 334,360',
   'M 60,318 Q 90,374 140,408',
-  'M 300,318 Q 285,374 248,408',
+  'M 282,318 Q 272,374 248,408',
   'M 140,408 Q 194,424 248,408',
 ];
 
