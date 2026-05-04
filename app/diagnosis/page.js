@@ -71,14 +71,16 @@ export default function DiagnosisPage() {
       .q3-intro-axis { display: flex; flex-direction: column; align-items: center; gap: 5px; }
       .q3-intro-axis-icon { width: 44px; height: 44px; border-radius: 50%; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.25); display: flex; align-items: center; justify-content: center; font-size: 20px; }
       .q3-intro-axis-label { font-size: 10px; color: #7a6e65; font-weight: 600; }
-      /* Category complete card */
-      .cat-complete-overlay { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(201,168,76,0.25); border-radius: 18px; padding: 28px 24px; text-align: center; animation: fadeUp .25s ease; cursor: pointer; }
-      .cat-dots-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 14px 0 0; }
-      .cat-dot { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-      .cat-dot--done { background: rgba(201,168,76,0.18); }
-      .cat-dot--pending { background: rgba(10,15,30,0.06); opacity: .45; }
-      /* Echo back banner */
-      .cat-echo-banner { background: rgba(201,168,76,0.07); border-left: 3px solid #c9a84c; padding: 10px 14px; border-radius: 0 8px 8px 0; margin-bottom: 16px; font-size: 12px; color: rgba(232,228,220,0.75); line-height: 1.5; }
+      /* Path-type chip assignment (q3_path) */
+      .path-row { background:rgba(10,15,30,0.65); border:1px solid rgba(232,228,220,0.12); border-radius:14px; padding:14px 16px; margin-bottom:10px; }
+      .path-row-label { display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }
+      .path-row-icon { font-size:22px; line-height:1.2; flex-shrink:0; margin-top:1px; }
+      .path-row-short { font-size:14px; font-weight:800; color:rgba(232,228,220,0.9); margin:0 0 2px; }
+      .path-row-desc { font-size:11px; color:rgba(232,228,220,0.42); margin:0; }
+      .axis-chips { display:flex; flex-wrap:wrap; gap:7px; }
+      .axis-chip { padding:6px 12px; border-radius:99px; font-size:12px; font-weight:700; border:1.5px solid rgba(232,228,220,0.15); background:rgba(232,228,220,0.05); color:rgba(232,228,220,0.45); cursor:pointer; transition:all .14s; white-space:nowrap; user-select:none; }
+      .axis-chip.assigned { background:rgba(201,168,76,0.18); border-color:rgba(201,168,76,0.65); color:#c9a84c; }
+      .axis-chip.elsewhere { opacity:0.18; pointer-events:none; }
       /* Goal framing banner */
       .goal-frame-banner { background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.25); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; }
     `;
@@ -369,14 +371,8 @@ export default function DiagnosisPage() {
         case 'q3':     enabled = Object.values(state.care_levels).some(v => v && v !== ''); break;
         case 'q3_aga': enabled = !!state.aga_status; break;
         case 'q3_path': {
-          // 気になっている軸は全てpath_types + self_views が必要
           const activeAreas = CONCERN_AREAS.filter(a => state.care_levels[a.id] && state.care_levels[a.id] !== 'none');
-          if (activeAreas.length === 0) { enabled = true; break; }
-          const allPath = activeAreas.every(a => !!state.path_types[a.id]);
-          const allView = activeAreas.every(a => !!state.self_views[a.id]);
-          const loveCats = CATEGORY_PHASE3.filter(c => c.has_love && activeAreas.some(a => a.id === c.id));
-          const allLove = loveCats.every(c => !!state.love_impact[c.id]);
-          enabled = allPath && allView && allLove;
+          enabled = activeAreas.length === 0 || activeAreas.every(a => !!state.path_types[a.id]);
           break;
         }
         case 'q5b':    enabled = state.failure_patterns.length > 0; break;
@@ -488,84 +484,69 @@ export default function DiagnosisPage() {
       const container = document.getElementById('q3_path_content');
       if (!container) return;
 
-      // 気になっている軸のみ表示、noneはvirginで自動設定
+      // care_level:none の軸はvirginで自動設定し、表示対象から除外
       const activeAreas = CONCERN_AREAS.filter(a => state.care_levels[a.id] && state.care_levels[a.id] !== 'none');
       CONCERN_AREAS.forEach(a => {
         if (!state.care_levels[a.id] || state.care_levels[a.id] === 'none') {
-          state.path_types[a.id] = state.path_types[a.id] || 'virgin';
+          state.path_types[a.id] = 'virgin';
         }
       });
 
-      function optHtml(arr, stateObj, catId) {
-        return arr.map(o => `
-          <button class="diag-option${stateObj[catId] === o.v ? ' selected' : ''}" data-value="${o.v}" data-cat="${catId}">
-            <span class="diag-option-body">
-              <span class="diag-option-title">${o.t}</span>
-              ${o.d ? `<span class="diag-option-desc">${o.d}</span>` : ''}
-            </span>
-          </button>`).join('');
+      const PATH_OPTIONS = [
+        { v:'virgin', icon:'🌱', short:'まだ何もやったことがない',    desc:'取り組んだことがない・考えたことがなかった' },
+        { v:'quit',   icon:'🔄', short:'試したが、続かなかった',       desc:'始めたことはあるが習慣にならなかった' },
+        { v:'blind',  icon:'🤔', short:'自己流でやっているが不安',      desc:'正しいのか客観的な評価を受けたことがない' },
+        { v:'lapsed', icon:'😴', short:'以前はやっていたが後回し中',    desc:'できていた時期があるが、今は疎かになっている' },
+        { v:'doing',  icon:'✅', short:'継続できている',                desc:'今の習慣・ペースで問題なく続けられている' },
+      ];
+
+      function renderChips(pathVal) {
+        return activeAreas.map(area => {
+          const cur = state.path_types[area.id];
+          const isAssigned  = cur === pathVal;
+          const isElsewhere = cur && cur !== pathVal;
+          return `<button class="axis-chip${isAssigned ? ' assigned' : ''}${isElsewhere ? ' elsewhere' : ''}"
+            data-axis="${area.id}" data-pathval="${pathVal}">${area.icon} ${area.label}</button>`;
+        }).join('');
       }
 
-      container.innerHTML = activeAreas.map(area => {
-        const cat = CATEGORY_PHASE3.find(c => c.id === area.id);
-        if (!cat) return '';
-        const pathAnswered = !!state.path_types[area.id];
-        const viewAnswered = !!state.self_views[area.id];
-        return `
-          <div class="diag-card" id="q3path-card-${cat.id}" style="margin-bottom:16px">
-            <p class="diag-step-label">${cat.icon} ${cat.label}｜来た道</p>
-            <h2 class="diag-q" style="font-size:clamp(15px,3.5vw,18px)">${cat.path_q}</h2>
-            <div class="diag-options" data-cat="${cat.id}" data-type="path">${optHtml(cat.path_opts, state.path_types, cat.id)}</div>
-
-            <div id="q3path-view-${cat.id}" style="${pathAnswered ? '' : 'display:none'}">
-              <div style="border-top:1px dashed rgba(201,168,76,0.2);margin:16px 0 12px"></div>
-              <p class="diag-step-label">${cat.icon} ${cat.label}｜他者の目</p>
-              <h2 class="diag-q" style="font-size:clamp(14px,3.2vw,17px)">${cat.view_q}</h2>
-              <p class="diag-hint">正直な直感で選んでください。</p>
-              <div class="diag-options" data-cat="${cat.id}" data-type="view">${optHtml(cat.view_opts, state.self_views, cat.id)}</div>
+      container.innerHTML = PATH_OPTIONS.map(opt => `
+        <div class="path-row" data-pathval="${opt.v}">
+          <div class="path-row-label">
+            <span class="path-row-icon">${opt.icon}</span>
+            <div>
+              <p class="path-row-short">${opt.short}</p>
+              <p class="path-row-desc">${opt.desc}</p>
             </div>
-
-            ${cat.has_love ? `
-            <div id="q3path-love-${cat.id}" style="${viewAnswered ? '' : 'display:none'}">
-              <div style="border-top:1px dashed rgba(201,168,76,0.2);margin:16px 0 12px"></div>
-              <p class="diag-step-label">${cat.icon} ${cat.label}｜恋愛場面</p>
-              <h2 class="diag-q" style="font-size:clamp(14px,3.2vw,17px)">${cat.love_q}</h2>
-              <div class="diag-options" data-cat="${cat.id}" data-type="love">${optHtml(cat.love_opts, state.love_impact, cat.id)}</div>
-            </div>` : ''}
           </div>
-        `;
-      }).join('');
+          <div class="axis-chips" data-pathval="${opt.v}">${renderChips(opt.v)}</div>
+        </div>
+      `).join('');
 
-      // 進捗インジケーター
       const progressEl = document.getElementById('q3path-progress');
       function updateQ3Progress() {
         if (!progressEl) return;
-        const answered = activeAreas.filter(a => !!state.path_types[a.id]).length;
-        progressEl.textContent = `${answered} / ${activeAreas.length} 分野 回答済み`;
+        const assigned = activeAreas.filter(a => !!state.path_types[a.id]).length;
+        const remaining = activeAreas.length - assigned;
+        progressEl.textContent = remaining > 0
+          ? `残り ${remaining} 分野 — すべて割り当てると「次へ」が有効になります`
+          : `✓ 全 ${activeAreas.length} 分野 割り当て完了`;
       }
       updateQ3Progress();
 
-      container.querySelectorAll('.diag-option').forEach(btn => {
-        btn.addEventListener('click', function () {
-          const catId = this.dataset.cat;
-          const type  = this.dataset.type;
-          const val   = this.dataset.value;
-          this.closest('.diag-options').querySelectorAll('.diag-option').forEach(b => b.classList.remove('selected'));
-          this.classList.add('selected');
-          if (type === 'path') {
-            state.path_types[catId] = val;
-            const viewSec = document.getElementById('q3path-view-' + catId);
-            if (viewSec) viewSec.style.display = '';
-          } else if (type === 'view') {
-            state.self_views[catId] = val;
-            const cat = CATEGORY_PHASE3.find(c => c.id === catId);
-            if (cat?.has_love) {
-              const loveSec = document.getElementById('q3path-love-' + catId);
-              if (loveSec) loveSec.style.display = '';
-            }
-          } else if (type === 'love') {
-            state.love_impact[catId] = val;
-          }
+      container.querySelectorAll('.axis-chip').forEach(chip => {
+        chip.addEventListener('click', function () {
+          const axisId  = this.dataset.axis;
+          const pathVal = this.dataset.pathval;
+          state.path_types[axisId] = pathVal;
+
+          // 同軸の全チップを更新（割り当て済み・他グループ所属・未割り当て）
+          container.querySelectorAll(`.axis-chip[data-axis="${axisId}"]`).forEach(c => {
+            const cv = c.dataset.pathval;
+            c.classList.toggle('assigned',  cv === pathVal);
+            c.classList.toggle('elsewhere', cv !== pathVal);
+          });
+
           updateQ3Progress();
           updateNextBtn();
         });
@@ -1366,9 +1347,9 @@ export default function DiagnosisPage() {
           <button className="diag-back-btn" data-back="">← 戻る</button>
           <div className="diag-card" style={{marginBottom:'16px'}}>
             <p className="diag-step-label">Phase 3｜来た道の記録</p>
-            <h2 className="diag-q">各分野の<br />これまでの取り組みを教えてください</h2>
-            <p className="diag-hint">気になっている分野のみ表示されます。すべて答えてください。</p>
-            <p id="q3path-progress" style={{fontSize:'12px',fontWeight:'700',color:'rgba(201,168,76,0.8)',margin:'6px 0 0'}}></p>
+            <h2 className="diag-q">各分野を、当てはまる<br />「来た道」に割り当ててください</h2>
+            <p className="diag-hint">各項目の下に表示される分野チップをタップして割り当てます。すべての分野を割り当てると次に進めます。</p>
+            <p id="q3path-progress" style={{fontSize:'12px',fontWeight:'700',color:'rgba(201,168,76,0.8)',margin:'8px 0 0'}}></p>
           </div>
           <div id="q3_path_content"></div>
         </div>
