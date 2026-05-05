@@ -371,7 +371,7 @@ export default function DiagnosisResultPage() {
       AV:'グリフィン', AQ:'玄武', AK:'ガルーダ', AL:'天馬', AD:'朱雀',
       PQ:'白虎', PK:'飛龍', PL:'スフィンクス', PD:'麒麟',
     };
-    // 軸×ケア×パス の119通り全パターン説明文（typeCodeをキーに）
+    // 軸×ケア×パス の136通り全パターン説明文（typeCodeをキーに）
     const TYPE_DESCRIPTION = {
       // ── B軸（体型） ──
       BNV:'体型をこれまで意識してこなかった。それはある意味、一番フラットな出発点だ。変えるべき習慣がまだ根付いていない分、正しい方向へ動けば誰より早く変わる可能性がある。まず自分の現在地を数値で知ることから始めよう。体重や体組成の計測が、最初の地図になる。体型は外見の中で最も「土台」になる軸だ。ここが変わると、服の見え方も印象も連動して変わっていく。',
@@ -710,7 +710,7 @@ export default function DiagnosisResultPage() {
               data-tagline="${esc(desc)}">
               📷 カードを画像保存
             </button>
-            <a href="/types" class="type-hero-share-btn" style="text-decoration:none">全119タイプを見る →</a>
+            <a href="/types" class="type-hero-share-btn" style="text-decoration:none">全136タイプを見る →</a>
           </div>
           <div class="type-hero-divider"></div>
         </div>
