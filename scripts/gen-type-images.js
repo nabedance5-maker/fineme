@@ -33,6 +33,7 @@ const AXIS_COLOR = {
   F: 'emerald green accent color',
   H: 'deep cobalt blue accent color',
   S: 'warm amber peach accent color',
+  R: 'bright cyan aqua accent color',
   T: 'bright golden yellow accent color',
   W: 'jade teal accent color',
 };
@@ -44,6 +45,7 @@ const AXIS_MOTIF = {
   F: 'the creature body is entirely draped in flowing kimono silk and woven brocade — fabric folds and textile patterns replace scales, elaborate layered Japanese garments wrap the creature, clothing IS its skin',
   H: 'the creature mane and tail ARE composed entirely of long cascading human black hair strands, flowing silk-like hair dominates the image, hair is unmistakably the creature defining body feature',
   S: 'the creature entire surface IS smooth luminous translucent human skin, glowing skin membrane envelops the body, the texture is unmistakably skin — not scales, not fur, skin with subtle light refraction',
+  R: 'the creature body is covered in impossibly smooth hairless porcelain skin without a single follicle or hair strand, silky bare hide gleams like polished satin, perfectly clean smooth surface catches cyan light like a mirror, no fur no scales no hair — pure hairless smoothness is the defining visual texture',
   T: 'the creature face shows a prominent open radiant smile, beautiful gleaming white teeth fully visible, the joyful laughing expression dominates the face and is the unmistakable focal point',
   W: 'the creature claws transform into elegant slender human hands with long fingers, adorned with jade rings and delicate bracelets, the beautiful refined hands are the clear and dominant visual focal point',
 };
@@ -91,7 +93,7 @@ const CARE_PATH_CREATURE = {
   PD: '麒麟',
 };
 
-const AXES  = ['B', 'E', 'F', 'H', 'S', 'T', 'W'];
+const AXES  = ['B', 'E', 'F', 'H', 'S', 'R', 'T', 'W'];
 const CARES = ['N', 'C', 'A', 'P'];
 const PATHS = ['V', 'Q', 'K', 'L', 'D'];
 
