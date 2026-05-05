@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 
 const T = {
@@ -26,10 +26,33 @@ const MAP_PATHS = [
   'M 140,408 Q 194,424 248,408',
 ];
 
+function FbStarRow({ label, onChange }) {
+  const [val, setVal] = useState(0);
+  const [hover, setHover] = useState(0);
+  return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginBottom:10}}>
+      <span style={{fontSize:13,color:'rgba(232,228,220,.75)',minWidth:100}}>{label}</span>
+      <div style={{display:'flex',gap:4}}>
+        {[1,2,3,4,5].map(n => (
+          <button key={n}
+            style={{background:'none',border:'none',cursor:'pointer',fontSize:22,color:n<=(hover||val)?'#c9a84c':'rgba(255,255,255,.2)',padding:2,transition:'color .15s'}}
+            onMouseEnter={() => setHover(n)}
+            onMouseLeave={() => setHover(0)}
+            onClick={() => { setVal(n); onChange(n); }}
+          >★</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function MapPage() {
   const [prog, setProg]       = useState({});
   const [compass, setCompass] = useState('body');
   const [selected, setSel]    = useState(null);
+  const [fbDone, setFbDone]   = useState(false);
+  const [fbSent, setFbSent]   = useState(false);
+  const fbRatings = useRef({ accuracy: 0, usability: 0, revisit: 0 });
 
   useEffect(() => {
     try {
@@ -51,6 +74,7 @@ export default function MapPage() {
         ?? 'body';
       setCompass(cId);
     } catch {}
+    setFbDone(!!localStorage.getItem('fineme:feedback:map'));
   }, []);
 
   const fogOf = id => {
@@ -206,6 +230,48 @@ export default function MapPage() {
             <text x="18" y="482" fontSize="7.5" fill="rgba(255,255,255,.04)" fontWeight="700" letterSpacing=".1em">NEW ME MAP</text>
           </svg>
         </div>
+
+        {/* Feedback widget */}
+        {!fbDone && !fbSent && (
+          <div style={{margin:'16px 16px 0',background:'rgba(10,15,30,0.65)',border:'1px solid rgba(201,168,76,.18)',borderRadius:16,padding:'20px 16px'}}>
+            <div style={{fontSize:11,fontWeight:700,color:'rgba(201,168,76,.9)',letterSpacing:'.06em',marginBottom:3}}>FEEDBACK</div>
+            <div style={{fontSize:14,fontWeight:700,color:'#e8e4dc',marginBottom:16}}>このマップはどうでしたか？</div>
+            {[['accuracy','結果の的確さ'],['usability','使いやすさ'],['revisit','また使いたいか']].map(([key,label]) => (
+              <FbStarRow key={key} label={label} onChange={v => { fbRatings.current[key] = v; }}/>
+            ))}
+            <textarea
+              placeholder="ひとこと（任意）"
+              rows={2}
+              id="map-fb-comment"
+              style={{background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.12)',borderRadius:8,color:'#e8e4dc',fontSize:13,padding:'10px 12px',resize:'vertical',width:'100%',boxSizing:'border-box',marginTop:8,marginBottom:12}}
+            />
+            <button
+              style={{background:'rgba(201,168,76,.18)',border:'1px solid rgba(201,168,76,.35)',borderRadius:8,color:'#c9a84c',fontSize:13,fontWeight:700,padding:'9px 22px',cursor:'pointer',letterSpacing:'.04em'}}
+              onClick={async () => {
+                try {
+                  await fetch('/api/feedback', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                      page:'map',
+                      rating_accuracy:  fbRatings.current.accuracy  || null,
+                      rating_usability: fbRatings.current.usability || null,
+                      rating_revisit:   fbRatings.current.revisit   || null,
+                      comment: document.getElementById('map-fb-comment')?.value?.trim() || null,
+                    }),
+                  });
+                } catch {}
+                localStorage.setItem('fineme:feedback:map','1');
+                setFbSent(true);
+              }}
+            >送信する</button>
+          </div>
+        )}
+        {fbSent && (
+          <div style={{margin:'16px 16px 0',padding:'16px',textAlign:'center',color:'rgba(201,168,76,.9)',fontSize:14,fontWeight:700,background:'rgba(10,15,30,.65)',border:'1px solid rgba(201,168,76,.18)',borderRadius:16}}>
+            フィードバックを送りました。ありがとうございます 🙏
+          </div>
+        )}
 
         {/* Detail panel */}
         {selData ? (

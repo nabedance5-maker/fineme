@@ -1069,6 +1069,26 @@ export default function DiagnosisResultPage() {
       </div>
       ` : ''}
 
+      ${!localStorage.getItem('fineme:feedback:diagnosis_result') ? `
+      <div id="feedback-widget" style="background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.18);border-radius:16px;padding:24px 20px;margin-bottom:24px">
+        <div style="font-size:13px;font-weight:700;color:rgba(201,168,76,0.9);letter-spacing:.06em;margin-bottom:4px">FEEDBACK</div>
+        <div style="font-size:16px;font-weight:700;color:#e8e4dc;margin-bottom:20px">この診断はどうでしたか？</div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          ${['accuracy','usability','revisit'].map((k,i) => {
+            const label = ['結果の的確さ','使いやすさ','また使いたいか'][i];
+            return `<div class="fb-row" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <span style="font-size:13px;color:rgba(232,228,220,0.75);min-width:100px">${label}</span>
+              <div class="fb-stars" data-key="${k}" style="display:flex;gap:4px">
+                ${[1,2,3,4,5].map(n=>`<button class="fb-star" data-val="${n}" style="background:none;border:none;cursor:pointer;font-size:22px;color:rgba(255,255,255,0.2);transition:color .15s;padding:2px">★</button>`).join('')}
+              </div>
+            </div>`;
+          }).join('')}
+          <textarea id="fb-comment" placeholder="ひとこと（任意）" rows="2" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#e8e4dc;font-size:13px;padding:10px 12px;resize:vertical;width:100%;box-sizing:border-box;margin-top:4px"></textarea>
+          <button id="fb-submit" style="background:rgba(201,168,76,0.18);border:1px solid rgba(201,168,76,0.35);border-radius:8px;color:#c9a84c;font-size:13px;font-weight:700;padding:10px 24px;cursor:pointer;letter-spacing:.04em;transition:background .15s;align-self:flex-end">送信する</button>
+        </div>
+      </div>
+      ` : ''}
+
       <div class="cta-block">
         <div class="cta-section">
           <button id="btn-save-map" class="cta-btn-secondary" type="button">この地図を保存する</button>
@@ -1079,6 +1099,54 @@ export default function DiagnosisResultPage() {
     `;
 
     root.innerHTML = html;
+
+    // ── フィードバックウィジェット ──
+    const fbWidget = document.getElementById('feedback-widget');
+    if (fbWidget) {
+      const ratings = { accuracy: 0, usability: 0, revisit: 0 };
+      fbWidget.querySelectorAll('.fb-stars').forEach(group => {
+        const key = group.dataset.key;
+        group.querySelectorAll('.fb-star').forEach(star => {
+          star.addEventListener('mouseenter', () => {
+            group.querySelectorAll('.fb-star').forEach(s => {
+              s.style.color = parseInt(s.dataset.val) <= parseInt(star.dataset.val) ? '#c9a84c' : 'rgba(255,255,255,0.2)';
+            });
+          });
+          star.addEventListener('mouseleave', () => {
+            group.querySelectorAll('.fb-star').forEach(s => {
+              s.style.color = parseInt(s.dataset.val) <= ratings[key] ? '#c9a84c' : 'rgba(255,255,255,0.2)';
+            });
+          });
+          star.addEventListener('click', () => {
+            ratings[key] = parseInt(star.dataset.val);
+            group.querySelectorAll('.fb-star').forEach(s => {
+              s.style.color = parseInt(s.dataset.val) <= ratings[key] ? '#c9a84c' : 'rgba(255,255,255,0.2)';
+            });
+          });
+        });
+      });
+      document.getElementById('fb-submit')?.addEventListener('click', async () => {
+        const btn = document.getElementById('fb-submit');
+        btn.disabled = true; btn.textContent = '送信中...';
+        try {
+          await fetch('/api/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              page: 'diagnosis_result',
+              rating_accuracy:  ratings.accuracy  || null,
+              rating_usability: ratings.usability || null,
+              rating_revisit:   ratings.revisit   || null,
+              comment: document.getElementById('fb-comment')?.value?.trim() || null,
+              type_code:    typeCode    || null,
+              compass_first: compassFirst || null,
+            }),
+          });
+        } catch {}
+        localStorage.setItem('fineme:feedback:diagnosis_result', '1');
+        fbWidget.innerHTML = '<div style="padding:16px 0;text-align:center;color:rgba(201,168,76,0.9);font-size:14px;font-weight:700">フィードバックを送りました。ありがとうございます 🙏</div>';
+      });
+    }
 
     // ── タイプカード画像保存 ──
     const shareTypeCardBtn = document.getElementById('share-type-card-btn');
