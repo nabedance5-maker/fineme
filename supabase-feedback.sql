@@ -1,4 +1,4 @@
--- ✅ 本番適用後にこの行を追記すること
+-- ✅ 本番適用済 2026-05-05
 -- フィードバックテーブル
 CREATE TABLE IF NOT EXISTS public.feedback (
   id               UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
