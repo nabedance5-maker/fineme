@@ -1104,6 +1104,9 @@ export default function NewMeNaviPage() {
           .filter(s => s.actionType === type)
           .filter(s => !activeAxisFilter || s.axisId === activeAxisFilter)
           .sort((a, b) => {
+            const _go = { none:0, LOW:1, HIGH:2, MID:3 };
+            const ag = _go[a.step.guide] ?? 0, bg = _go[b.step.guide] ?? 0;
+            if (ag !== bg) return ag - bg;
             const aIsCompass = a.axisId === compassAxis ? 0 : 1;
             const bIsCompass = b.axisId === compassAxis ? 0 : 1;
             if (aIsCompass !== bIsCompass) return aIsCompass - bIsCompass;
