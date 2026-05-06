@@ -121,6 +121,7 @@
 
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('bank')">📋 質問バンク</button>
+  <button class="tab-btn" onclick="switchTab('ai')">🤖 AI質問生成</button>
   <button class="tab-btn" onclick="switchTab('input')">✍️ 回答入力</button>
   <button class="tab-btn" onclick="switchTab('generate')">✨ 記事生成</button>
   <button class="tab-btn" onclick="switchTab('manage')">📁 管理リスト</button>
@@ -153,6 +154,76 @@
   </div>
 
   <div id="question-bank"></div>
+</div>
+
+<!-- ────────────────────────────────────────────
+  Tab 1.5: AI質問生成
+──────────────────────────────────────────── -->
+<div id="tab-ai" class="tab-content">
+
+  <!-- APIキー -->
+  <div class="panel panel-gold">
+    <div class="panel-title">Anthropic API キー</div>
+    <div class="apikey-row">
+      <input type="password" id="ai-apikey" placeholder="sk-ant-..." />
+      <button class="btn btn-blue btn-sm" onclick="saveAiApiKey()">保存</button>
+    </div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:6px;">ローカルに保存されます。Claudeの外部には送信されません。</div>
+  </div>
+
+  <!-- 取材対象者の情報 -->
+  <div class="panel">
+    <div class="panel-title">取材対象者の情報</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <div class="form-label">軸カテゴリ<span class="req">*</span></div>
+        <select id="ai-axis">
+          <option value="gym">体型・ジム</option>
+          <option value="hair" selected>髪</option>
+          <option value="eyebrow">眉</option>
+          <option value="skin">肌・ひげ</option>
+          <option value="fashion">ファッション</option>
+          <option value="teeth">歯</option>
+          <option value="nail">爪</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-label">肩書き・得意分野<span class="req">*</span></div>
+        <input type="text" id="ai-title" placeholder="例: メンズ専門美容師 / アイドルヘアが得意" />
+      </div>
+    </div>
+    <div class="form-row" style="margin-bottom:14px;">
+      <div class="form-label">Instagramのプロフィール文（bio）</div>
+      <textarea id="ai-bio" rows="3" placeholder="そのままコピペでOK"></textarea>
+    </div>
+    <div class="form-row" style="margin-bottom:14px;">
+      <div class="form-label">特色・メモ（投稿の雰囲気・強み・気になった発言など）</div>
+      <textarea id="ai-notes" rows="2" placeholder="例: アイドルヘアが得意。メンズ特化10年以上。キャプションに自信と変化への言及が多い"></textarea>
+    </div>
+    <div class="form-row" style="margin-bottom:0;">
+      <div class="form-label">生成する質問数</div>
+      <select id="ai-count" style="width:auto;">
+        <option value="10">10問</option>
+        <option value="12" selected>12問</option>
+        <option value="14">14問</option>
+        <option value="15">15問</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="btn btn-gold" id="ai-gen-btn" onclick="generateAiQuestions()" style="width:100%;justify-content:center;padding:13px;">🤖 質問を生成する</button>
+
+  <!-- 生成結果 -->
+  <div id="ai-results" style="margin-top:20px;"></div>
+
+  <!-- 適用ボタン（生成後に表示） -->
+  <div id="ai-apply-wrap" style="display:none;margin-top:16px;">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button class="btn btn-sm" onclick="selectAllAiQ()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);">全選択</button>
+      <button class="btn btn-gold" onclick="applyAiQuestions()">→ 選択した質問で回答入力へ</button>
+      <span id="ai-selected-count" style="font-size:12px;color:rgba(201,168,76,0.7);"></span>
+    </div>
+  </div>
 </div>
 
 <!-- ────────────────────────────────────────────
@@ -524,6 +595,7 @@ let currentInterview = {
   id: null,
   profile: {},
   answers: {},
+  aiQuestions: [],  // [{category, question}]
   transcript: '',
   inputMode: 'individual',
   generatedArticle: null,
@@ -532,10 +604,13 @@ let currentInterview = {
 let inputMode = 'individual';
 let interviewList = [];
 let generatedData = null;
+let aiGeneratedCategories = []; // [{category, questions:[]}]
+let selectedAiQKeys = new Set();
 
 // ── Init ──────────────────────────────────────────
 function init() {
   loadSupaKeys();
+  loadAiApiKey();
   loadInterviewList();
   renderQuestionBank('common');
   renderManageList();
@@ -544,7 +619,7 @@ function init() {
 // ── Tab switching ──────────────────────────────────
 function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach((b, i) => {
-    const tabs = ['bank','input','generate','manage'];
+    const tabs = ['bank','ai','input','generate','manage'];
     b.classList.toggle('active', tabs[i] === tab);
   });
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -629,23 +704,28 @@ function updateSelectedCount() {
 // ── Answer blocks ──────────────────────────────────
 function renderAnswerBlocks() {
   const container = document.getElementById('qa-answer-blocks');
-  if (selectedQuestions.size === 0) {
-    container.innerHTML = '<div style="color:rgba(255,255,255,0.35);font-size:13px;">「質問バンク」タブで質問を選択してください</div>';
-    return;
-  }
+  const aiQs = currentInterview.aiQuestions || [];
+
   const pairs = [];
   [currentAxis, ...Object.keys(QUESTION_BANK).filter(k => k !== currentAxis)].forEach(axis => {
     const data = QUESTION_BANK[axis];
     if (!data) return;
     data.categories.forEach(cat => {
       cat.questions.forEach(q => {
-        if (selectedQuestions.has(qKey(cat.name, q))) {
-          pairs.push({ cat: cat.name, q });
-        }
+        if (selectedQuestions.has(qKey(cat.name, q))) pairs.push({ cat: cat.name, q });
       });
     });
   });
-  container.innerHTML = pairs.map(({ cat, q }) => {
+
+  if (pairs.length === 0 && aiQs.length === 0) {
+    container.innerHTML = '<div style="color:rgba(255,255,255,0.35);font-size:13px;">「質問バンク」または「AI質問生成」タブで質問を選択してください</div>';
+    return;
+  }
+
+  let html = '';
+
+  // 質問バンクの質問
+  html += pairs.map(({ cat, q }) => {
     const key = qKey(cat, q);
     const val = currentInterview.answers[key] || '';
     return `
@@ -656,6 +736,31 @@ function renderAnswerBlocks() {
         </div>
       </div>`;
   }).join('');
+
+  // AI生成質問
+  if (aiQs.length > 0) {
+    if (pairs.length > 0) html += `<hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:20px 0;">`;
+    let lastCat = null;
+    aiQs.forEach(({ category, question }) => {
+      if (category !== lastCat) {
+        html += `<div style="font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin:${lastCat ? '18px' : '0'} 0 10px;">${esc(category)}</div>`;
+        lastCat = category;
+      }
+      const key = 'ai::' + category + '::' + question;
+      const val = currentInterview.answers[key] || '';
+      html += `
+        <div class="qa-block">
+          <div class="qa-block-q">Q: ${esc(question)}</div>
+          <div class="qa-block-a">
+            <textarea placeholder="回答を入力…" data-key="${escAttr(key)}" oninput="saveAnswer(this)">${esc(val)}</textarea>
+          </div>
+        </div>`;
+    });
+    // リセットボタン
+    html += `<div style="margin-top:12px;"><button class="btn btn-danger btn-sm" onclick="resetAiQuestions()">AI質問をリセット</button></div>`;
+  }
+
+  container.innerHTML = html;
 }
 
 function saveAnswer(el) {
@@ -1047,9 +1152,9 @@ function loadInterview(id) {
   const transcriptEl = document.getElementById('transcript-text');
   if (transcriptEl) transcriptEl.value = iv.transcript || '';
   setInputMode(iv.inputMode || 'individual');
-  // restore selected questions from answers keys
+  // restore selected questions from answers keys (ai::キーは除外)
   selectedQuestions.clear();
-  Object.keys(iv.answers || {}).forEach(k => selectedQuestions.add(k));
+  Object.keys(iv.answers || {}).filter(k => !k.startsWith('ai::')).forEach(k => selectedQuestions.add(k));
   updateSelectedCount();
   switchTab('input');
 }
@@ -1095,6 +1200,172 @@ function loadSupaKeys() {
   const key = localStorage.getItem('fineme:supa:key') || '';
   if (url) document.getElementById('supa-url').value = url;
   if (key) document.getElementById('supa-key').value = key;
+}
+
+// ── AI質問生成 ────────────────────────────────────
+
+function saveAiApiKey() {
+  const key = document.getElementById('ai-apikey').value.trim();
+  if (key) { localStorage.setItem('fineme:anthropic:apikey', key); showToast('APIキーを保存しました'); }
+}
+
+function loadAiApiKey() {
+  const key = localStorage.getItem('fineme:anthropic:apikey') || '';
+  if (key) document.getElementById('ai-apikey').value = key;
+}
+
+async function generateAiQuestions() {
+  const apiKey = localStorage.getItem('fineme:anthropic:apikey') || document.getElementById('ai-apikey').value.trim();
+  if (!apiKey) { alert('Anthropic APIキーを入力してください'); return; }
+
+  const axis  = document.getElementById('ai-axis').value;
+  const title = document.getElementById('ai-title').value.trim();
+  const bio   = document.getElementById('ai-bio').value.trim();
+  const notes = document.getElementById('ai-notes').value.trim();
+  const count = document.getElementById('ai-count').value;
+  if (!title) { alert('肩書き・得意分野を入力してください'); return; }
+
+  const axisLabel = { gym:'体型・ジム', hair:'髪', eyebrow:'眉', skin:'肌・ひげ', fashion:'ファッション', teeth:'歯', nail:'爪' }[axis] || axis;
+
+  const prompt = `あなたはFineme（男性向け外見改善サービスポータル）のインタビュー記者です。
+以下の取材対象者の情報をもとに、Fineme Journalのインタビュー記事に使う質問セットを生成してください。
+
+【記事の方向性】
+- ストーリー重視（人物像・変容エピソード）＋専門知識を織り交ぜる
+- 読者：「変わりたいが何から始めればいいかわからない男性」
+- 各質問は一問で200〜300字の回答が引き出せる深さと具体性を持つこと
+- NG：「〜について教えてください」で終わる汎用的な質問。その人だからこそ聞く質問にすること
+
+【取材対象者】
+軸カテゴリ：${axisLabel}
+肩書き・得意分野：${title}
+${bio ? `プロフィール文：${bio}` : ''}
+${notes ? `特色・メモ：${notes}` : ''}
+
+【質問カテゴリと配分】（合計${count}問）
+① 原点・人物像（2〜3問）：なぜこの仕事をするか、転換点となった体験
+② ${title}の哲学・こだわり（2〜3問）：得意分野・特色に深く踏み込む質問
+③ クライアントの変容エピソード（2〜3問）：外見→自信→行動変化のリアルな話
+④ 実践的な知識（2〜3問）：読者が「なるほど」と感じる専門的なアドバイス
+⑤ 信念と読者へ（1〜2問）：踏み出せない人への言葉
+
+【出力形式】
+JSONのみ出力（前置き・後置き・説明文は一切不要）:
+[
+  {"category": "原点・人物像", "questions": ["...", "..."]},
+  {"category": "...", "questions": ["...", "..."]},
+  ...
+]`;
+
+  const btn = document.getElementById('ai-gen-btn');
+  const resultEl = document.getElementById('ai-results');
+  btn.disabled = true; btn.textContent = '生成中...';
+  resultEl.innerHTML = '<div style="color:rgba(255,255,255,0.4);font-size:13px;padding:20px 0;">Claude が質問を考えています...</div>';
+  document.getElementById('ai-apply-wrap').style.display = 'none';
+  selectedAiQKeys.clear();
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || 'API error ' + res.status);
+    const text = data.content[0].text;
+    const match = text.match(/\[[\s\S]*\]/);
+    if (!match) throw new Error('JSONが見つかりません: ' + text.slice(0, 100));
+    const categories = JSON.parse(match[0]);
+    aiGeneratedCategories = categories;
+    renderAiResults(categories);
+  } catch(e) {
+    resultEl.innerHTML = `<div style="color:#f87171;font-size:13px;padding:12px 0;">❌ ${esc(e.message)}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '🤖 質問を生成する';
+  }
+}
+
+function renderAiResults(categories) {
+  const el = document.getElementById('ai-results');
+  el.innerHTML = categories.map(cat => `
+    <div class="q-category">
+      <div class="q-category-label">${esc(cat.category)}</div>
+      ${cat.questions.map(q => {
+        const key = cat.category + '::' + q;
+        return `
+          <div class="q-item" onclick="toggleAiQ('${escAttr(cat.category)}','${escAttr(q)}',this)">
+            <input type="checkbox" onclick="event.stopPropagation();toggleAiQ('${escAttr(cat.category)}','${escAttr(q)}',this.closest('.q-item'))">
+            <label>${esc(q)}</label>
+          </div>`;
+      }).join('')}
+    </div>
+  `).join('');
+  document.getElementById('ai-apply-wrap').style.display = 'block';
+  updateAiSelectedCount();
+}
+
+function toggleAiQ(cat, q, el) {
+  const key = cat + '::' + q;
+  const cb = el.querySelector('input');
+  if (selectedAiQKeys.has(key)) {
+    selectedAiQKeys.delete(key); el.classList.remove('selected'); cb.checked = false;
+  } else {
+    selectedAiQKeys.add(key); el.classList.add('selected'); cb.checked = true;
+  }
+  updateAiSelectedCount();
+}
+
+function selectAllAiQ() {
+  document.querySelectorAll('#ai-results .q-item').forEach(el => {
+    const label  = el.querySelector('label').textContent;
+    const catLbl = el.closest('.q-category').querySelector('.q-category-label').textContent;
+    const key = catLbl + '::' + label;
+    selectedAiQKeys.add(key);
+    el.classList.add('selected');
+    el.querySelector('input').checked = true;
+  });
+  updateAiSelectedCount();
+}
+
+function updateAiSelectedCount() {
+  const n = selectedAiQKeys.size;
+  document.getElementById('ai-selected-count').textContent = n > 0 ? `${n}問 選択中` : '';
+}
+
+function applyAiQuestions() {
+  const aiQuestions = [];
+  aiGeneratedCategories.forEach(cat => {
+    cat.questions.forEach(q => {
+      if (selectedAiQKeys.has(cat.category + '::' + q)) {
+        aiQuestions.push({ category: cat.category, question: q });
+      }
+    });
+  });
+  if (aiQuestions.length === 0) { alert('質問を1つ以上選択してください'); return; }
+  currentInterview.aiQuestions = aiQuestions;
+  aiQuestions.forEach(({ category, question }) => {
+    const key = 'ai::' + category + '::' + question;
+    if (!currentInterview.answers[key]) currentInterview.answers[key] = '';
+  });
+  showToast(`${aiQuestions.length}問を回答入力タブに追加しました`);
+  switchTab('input');
+}
+
+function resetAiQuestions() {
+  if (!confirm('AI生成質問と入力済みの回答を削除しますか？')) return;
+  currentInterview.aiQuestions = [];
+  Object.keys(currentInterview.answers).filter(k => k.startsWith('ai::')).forEach(k => delete currentInterview.answers[k]);
+  renderAnswerBlocks();
+  showToast('AI質問をリセットしました');
 }
 
 // ── Utils ────────────────────────────────────────
