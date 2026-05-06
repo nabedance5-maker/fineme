@@ -301,15 +301,9 @@
       <textarea id="pv-philosophy" rows="2" placeholder="例: 外見の変化が自信に直結するという考えのもと、一人ひとりのライフスタイルに合わせた..."></textarea>
     </div>
 
-    <div class="form-grid">
-      <div class="form-row">
-        <div class="form-label">最低価格（円）<span class="req">*</span></div>
-        <input type="number" id="pv-price" placeholder="5500" min="0" step="100" />
-      </div>
-      <div class="form-row">
-        <div class="form-label">予約URL / DM / LINE<span class="req">*</span></div>
-        <input type="text" id="pv-booking" placeholder="https://instagram.com/xxx または @LINE_ID" />
-      </div>
+    <div class="form-row" style="max-width:320px;">
+      <div class="form-label">最低価格（円）<span class="req">*</span></div>
+      <input type="number" id="pv-price" placeholder="5500" min="0" step="100" />
     </div>
 
     <div class="form-row">
@@ -846,7 +840,6 @@ function saveProviderInfoFromForm() {
     target_desc:            document.getElementById('pv-target')?.value || '',
     philosophy:             document.getElementById('pv-philosophy')?.value || '',
     price_from:             document.getElementById('pv-price')?.value || '',
-    booking_url:            document.getElementById('pv-booking')?.value || '',
     ideal_client_desc:      document.getElementById('pv-ideal')?.value || '',
     transformation_pattern: document.getElementById('pv-transform')?.value || '',
   };
@@ -920,7 +913,7 @@ function buildProviderSQL() {
 
   return `INSERT INTO providers (
   slug, name, catchphrase, description, target_desc, philosophy,
-  main_category, area, price_from, booking_url,
+  main_category, area, price_from,
   ideal_client_desc, transformation_pattern,
   published, admin_hidden
 ) VALUES (
@@ -933,7 +926,6 @@ function buildProviderSQL() {
   '${cat}',
   '${area}',
   ${price !== null ? price : 'NULL'},
-  '${s(pv.booking_url)}',
   '${s(pv.ideal_client_desc)}',
   '${s(pv.transformation_pattern)}',
   false,
@@ -1308,7 +1300,7 @@ function loadInterview(id) {
   const pvMap = {
     'pv-slug': 'slug', 'pv-catchphrase': 'catchphrase', 'pv-description': 'description',
     'pv-target': 'target_desc', 'pv-philosophy': 'philosophy', 'pv-price': 'price_from',
-    'pv-booking': 'booking_url', 'pv-ideal': 'ideal_client_desc', 'pv-transform': 'transformation_pattern',
+    'pv-ideal': 'ideal_client_desc', 'pv-transform': 'transformation_pattern',
   };
   Object.entries(pvMap).forEach(([elId, key]) => {
     const el = document.getElementById(elId);
@@ -1328,7 +1320,7 @@ function newInterview() {
     const el = document.getElementById('p-' + k);
     if (el) el.value = '';
   });
-  ['pv-slug','pv-catchphrase','pv-description','pv-target','pv-philosophy','pv-price','pv-booking','pv-ideal','pv-transform'].forEach(id => {
+  ['pv-slug','pv-catchphrase','pv-description','pv-target','pv-philosophy','pv-price','pv-ideal','pv-transform'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
