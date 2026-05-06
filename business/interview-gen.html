@@ -1407,11 +1407,14 @@ ${notes ? `特色・メモ：${notes}` : ''}
 ④ 実践的な知識（2〜3問）：読者が「なるほど」と感じる専門的なアドバイス
 ⑤ 信念と読者へ（1〜2問）：踏み出せない人への言葉
 
-【出力形式】
-JSONのみ出力（前置き・後置き・説明文は一切不要）:
+【出力形式・厳守事項】
+- JSONのみ出力（前置き・後置き・説明文・コードブロック記号は一切不要）
+- 質問文中にダブルクォート（"）は絶対に使わないこと。強調には「」を使う
+- 出力の最初の文字は [ 、最後の文字は ] であること
+
 [
-  {"category": "原点・人物像", "questions": ["...", "..."]},
-  {"category": "...", "questions": ["...", "..."]},
+  {"category": "原点・人物像", "questions": ["質問文1", "質問文2"]},
+  {"category": "カテゴリ名", "questions": ["質問文1", "質問文2"]},
   ...
 ]`;
 
@@ -1440,9 +1443,7 @@ JSONのみ出力（前置き・後置き・説明文は一切不要）:
     const data = await res.json();
     if (!res.ok) throw new Error(data.error?.message || 'API error ' + res.status);
     const text = data.content[0].text;
-    const match = text.match(/\[[\s\S]*\]/);
-    if (!match) throw new Error('JSONが見つかりません: ' + text.slice(0, 100));
-    const categories = JSON.parse(match[0]);
+    const categories = parseJsonArray(text);
     aiGeneratedCategories = categories;
     renderAiResults(categories);
   } catch(e) {
@@ -1527,6 +1528,37 @@ function resetAiQuestions() {
 }
 
 // ── Utils ────────────────────────────────────────
+
+function parseJsonArray(text) {
+  // 1. コードブロックを除去
+  let cleaned = text.replace(/```(?:json)?[\s\S]*?```/g, m => {
+    const inner = m.replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'');
+    return inner;
+  }).trim();
+
+  // 2. [ ... ] を抽出（最初の [ から最後の ] まで）
+  const start = cleaned.indexOf('[');
+  const end   = cleaned.lastIndexOf(']');
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error('JSONが見つかりません: ' + text.slice(0, 120));
+  }
+  const jsonStr = cleaned.slice(start, end + 1);
+
+  try {
+    return JSON.parse(jsonStr);
+  } catch (e1) {
+    // 3. 文字列値内の未エスケープダブルクォートを除去して再試行
+    const fixed = jsonStr.replace(/"([^"]*)"/g, (m, inner) =>
+      '"' + inner.replace(/"/g, '「').replace(/"/g, '」') + '"'
+    );
+    try {
+      return JSON.parse(fixed);
+    } catch (e2) {
+      throw new Error('JSONパースエラー: ' + e1.message + '\n元テキスト冒頭: ' + text.slice(0, 150));
+    }
+  }
+}
+
 function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
