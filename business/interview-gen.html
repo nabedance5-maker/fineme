@@ -276,6 +276,64 @@
     </div>
   </div>
 
+  <!-- 掲載情報パネル -->
+  <div class="panel" style="border-color:rgba(52,211,153,0.3);background:rgba(52,211,153,0.03);">
+    <div class="panel-title" style="color:rgba(52,211,153,0.7);">掲載情報（providers テーブル用）</div>
+    <div class="alert alert-info" style="margin-bottom:16px;">取材時に一緒に収集してください。記事生成タブで掲載者 INSERT SQL が出力されます。</div>
+
+    <div class="form-row">
+      <div class="form-label">キャッチコピー<span class="req">*</span></div>
+      <input type="text" id="pv-catchphrase" placeholder="「なりたい自分」を一緒に見つける、メンズ専門美容師" />
+    </div>
+
+    <div class="form-row">
+      <div class="form-label">サービス説明<span class="req">*</span></div>
+      <textarea id="pv-description" rows="3" placeholder="どんなサービスを提供しているか・どんな空間か・施術の流れなど（150字程度）"></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-label">こんな人に向いています<span class="req">*</span></div>
+      <textarea id="pv-target" rows="2" placeholder="例: 初めてメンズサロンに来る方・毎朝セットが決まらなくて悩んでいる方"></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-label">大切にしていること（philosophy）<span class="req">*</span></div>
+      <textarea id="pv-philosophy" rows="2" placeholder="例: 外見の変化が自信に直結するという考えのもと、一人ひとりのライフスタイルに合わせた..."></textarea>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-row">
+        <div class="form-label">最低価格（円）<span class="req">*</span></div>
+        <input type="number" id="pv-price" placeholder="5500" min="0" step="100" />
+      </div>
+      <div class="form-row">
+        <div class="form-label">予約URL / DM / LINE<span class="req">*</span></div>
+        <input type="text" id="pv-booking" placeholder="https://instagram.com/xxx または @LINE_ID" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-label">スラッグ（URL用・英数ハイフン）<span class="req">*</span></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="pv-slug" placeholder="hair-yamada-shibuya-2026" style="flex:1;" />
+        <button class="btn btn-sm btn-blue" onclick="autoGenSlug()" style="white-space:nowrap;flex-shrink:0;">自動生成</button>
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px;">英数字・ハイフンのみ。自動生成後に名前部分を手動追加してください</div>
+    </div>
+
+    <hr class="divider" style="margin:16px 0;">
+
+    <div class="form-row">
+      <div class="form-label">こんなクライアントが来ます（ideal_client_desc）</div>
+      <textarea id="pv-ideal" rows="2" placeholder="例:「結婚したいのに自信がない」そんな悩みを抱えた男性たちが多く来ます"></textarea>
+    </div>
+
+    <div class="form-row" style="margin-bottom:0;">
+      <div class="form-label">来た人の変化パターン（transformation_pattern）</div>
+      <textarea id="pv-transform" rows="2" placeholder="例: 髪型が変わって自信がついた → 合コンで話しかけられるようになった、など"></textarea>
+    </div>
+  </div>
+
   <div class="panel">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
       <div class="panel-title" style="margin-bottom:0;">回答の入力方法</div>
@@ -369,7 +427,7 @@
 
   <div id="supa-section" style="margin-top:20px;display:none;">
     <div class="panel">
-      <div class="panel-title">Supabase 直接INSERT</div>
+      <div class="panel-title">Supabase 直接INSERT（記事）</div>
       <div class="apikey-row" style="margin-bottom:8px;">
         <input type="text" id="supa-url" placeholder="https://xxx.supabase.co" />
         <input type="text" id="supa-key" placeholder="service_role key" style="flex:1;" />
@@ -377,6 +435,17 @@
       </div>
       <button class="btn btn-gold" id="supa-btn" onclick="insertToSupabase()">🚀 Supabaseに投入</button>
       <span id="supa-status" style="font-size:12px;color:rgba(255,255,255,0.4);margin-left:10px;"></span>
+    </div>
+  </div>
+
+  <div id="pvsql-section" style="margin-top:20px;">
+    <div class="panel" style="border-color:rgba(52,211,153,0.25);background:rgba(52,211,153,0.03);">
+      <div class="panel-title" style="color:rgba(52,211,153,0.7);">掲載者 INSERT SQL（providers テーブル）</div>
+      <div class="row-btns" style="margin-top:0;margin-bottom:12px;">
+        <button class="btn btn-sm" style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.3);color:#6ee7b7;" onclick="refreshProviderSQL()">🔄 SQLを生成</button>
+        <button class="btn btn-blue btn-sm" onclick="copyProviderSQL()">📋 コピー</button>
+      </div>
+      <div id="pvsql-output" class="output-box" style="color:#a8ffd8;min-height:80px;">-- 「SQLを生成」ボタンを押してください</div>
     </div>
   </div>
 </div>
@@ -594,6 +663,7 @@ let selectedQuestions = new Set(); // "category::question" keys
 let currentInterview = {
   id: null,
   profile: {},
+  providerInfo: {},
   answers: {},
   aiQuestions: [],  // [{category, question}]
   transcript: '',
@@ -768,6 +838,20 @@ function saveAnswer(el) {
 }
 
 // ── Save/load interview ──────────────────────────
+function saveProviderInfoFromForm() {
+  currentInterview.providerInfo = {
+    slug:                   document.getElementById('pv-slug')?.value || '',
+    catchphrase:            document.getElementById('pv-catchphrase')?.value || '',
+    description:            document.getElementById('pv-description')?.value || '',
+    target_desc:            document.getElementById('pv-target')?.value || '',
+    philosophy:             document.getElementById('pv-philosophy')?.value || '',
+    price_from:             document.getElementById('pv-price')?.value || '',
+    booking_url:            document.getElementById('pv-booking')?.value || '',
+    ideal_client_desc:      document.getElementById('pv-ideal')?.value || '',
+    transformation_pattern: document.getElementById('pv-transform')?.value || '',
+  };
+}
+
 function saveInterview() {
   currentInterview.profile = {
     name: document.getElementById('p-name').value,
@@ -779,6 +863,7 @@ function saveInterview() {
     bio: document.getElementById('p-bio').value,
     url: document.getElementById('p-url').value,
   };
+  saveProviderInfoFromForm();
   currentInterview.transcript = document.getElementById('transcript-text')?.value || '';
   currentInterview.inputMode = inputMode;
   if (!currentInterview.id) {
@@ -812,6 +897,72 @@ function prefillGenerateForm() {
     const slug = 'interview-' + name.replace(/[\s　]+/g, '-').toLowerCase() + '-' + axis;
     document.getElementById('gen-slug').value = slug;
   }
+  // refresh provider SQL whenever generate tab is opened
+  saveProviderInfoFromForm();
+  const el = document.getElementById('pvsql-output');
+  if (el) el.textContent = buildProviderSQL();
+}
+
+function buildProviderSQL() {
+  const pv = currentInterview.providerInfo || {};
+  const p  = currentInterview.profile || {};
+  const s  = (v) => String(v || '').replace(/'/g, "''");
+
+  const slug  = s(pv.slug);
+  const name  = s(p.name);
+  const cat   = s(p.axis);
+  const area  = s(p.area);
+  const price = pv.price_from ? parseInt(pv.price_from) : null;
+
+  if (!slug || !name || !cat) {
+    return '-- ⚠ 掲載情報が不足しています（スラッグ・名前・軸カテゴリは必須）\n-- 回答入力タブの「掲載情報」パネルを入力してください';
+  }
+
+  return `INSERT INTO providers (
+  slug, name, catchphrase, description, target_desc, philosophy,
+  main_category, area, price_from, booking_url,
+  ideal_client_desc, transformation_pattern,
+  published, admin_hidden
+) VALUES (
+  '${slug}',
+  '${name}',
+  '${s(pv.catchphrase)}',
+  '${s(pv.description)}',
+  '${s(pv.target_desc)}',
+  '${s(pv.philosophy)}',
+  '${cat}',
+  '${area}',
+  ${price !== null ? price : 'NULL'},
+  '${s(pv.booking_url)}',
+  '${s(pv.ideal_client_desc)}',
+  '${s(pv.transformation_pattern)}',
+  false,
+  false
+);`;
+}
+
+function refreshProviderSQL() {
+  saveProviderInfoFromForm();
+  document.getElementById('pvsql-output').textContent = buildProviderSQL();
+}
+
+function copyProviderSQL() {
+  const text = document.getElementById('pvsql-output').textContent;
+  if (!text || text.startsWith('--')) { showToast('先に「SQLを生成」を押してください'); return; }
+  navigator.clipboard.writeText(text).then(() => showToast('掲載者SQLをコピーしました'));
+}
+
+function autoGenSlug() {
+  const axis = document.getElementById('p-axis').value || 'service';
+  const areaRaw = (document.getElementById('p-area').value || '').trim();
+  const area = areaRaw.split(/[・,、\s]/)[0].replace(/[^\w-]/g, '').toLowerCase();
+  const year = new Date().getFullYear();
+  let slug = axis;
+  if (area) slug += '-' + area;
+  slug += '-' + year;
+  document.getElementById('pv-slug').value = slug;
+  document.getElementById('pv-slug').focus();
+  showToast('自動生成しました。名前部分（ローマ字）を追加してください');
 }
 
 function getProfileAndQA() {
@@ -1152,6 +1303,17 @@ function loadInterview(id) {
   const transcriptEl = document.getElementById('transcript-text');
   if (transcriptEl) transcriptEl.value = iv.transcript || '';
   setInputMode(iv.inputMode || 'individual');
+  // restore provider info fields
+  const pv = iv.providerInfo || {};
+  const pvMap = {
+    'pv-slug': 'slug', 'pv-catchphrase': 'catchphrase', 'pv-description': 'description',
+    'pv-target': 'target_desc', 'pv-philosophy': 'philosophy', 'pv-price': 'price_from',
+    'pv-booking': 'booking_url', 'pv-ideal': 'ideal_client_desc', 'pv-transform': 'transformation_pattern',
+  };
+  Object.entries(pvMap).forEach(([elId, key]) => {
+    const el = document.getElementById(elId);
+    if (el) el.value = pv[key] || '';
+  });
   // restore selected questions from answers keys (ai::キーは除外)
   selectedQuestions.clear();
   Object.keys(iv.answers || {}).filter(k => !k.startsWith('ai::')).forEach(k => selectedQuestions.add(k));
@@ -1160,10 +1322,14 @@ function loadInterview(id) {
 }
 
 function newInterview() {
-  currentInterview = { id: null, profile: {}, answers: {}, generatedArticle: null, status: 'pending' };
+  currentInterview = { id: null, profile: {}, providerInfo: {}, answers: {}, aiQuestions: [], generatedArticle: null, status: 'pending' };
   selectedQuestions.clear();
   ['name','title','facility','years','area','bio','url'].forEach(k => {
     const el = document.getElementById('p-' + k);
+    if (el) el.value = '';
+  });
+  ['pv-slug','pv-catchphrase','pv-description','pv-target','pv-philosophy','pv-price','pv-booking','pv-ideal','pv-transform'].forEach(id => {
+    const el = document.getElementById(id);
     if (el) el.value = '';
   });
   document.getElementById('gen-title').value = '';
