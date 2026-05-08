@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fineme × ショートドラマ パートナー提案</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Hiragino Mincho Pro','Noto Serif JP',Georgia,serif;
+    background-color:#060c1a;
+    background-image:
+      linear-gradient(rgba(6,12,26,0.93),rgba(6,12,26,0.93)),
+      url('../public/assets/images/bg-parchment.webp');
+    background-size:auto, 500px auto;
+    color:#e8e2d4;line-height:1.8;font-size:15px;
+  }
+  .page{max-width:860px;margin:0 auto;padding:0 0 120px}
+
+  /* ── HERO ── */
+  .hero{
+    position:relative;overflow:hidden;
+    padding:80px 40px 70px;
+    background:
+      linear-gradient(rgba(6,12,26,0.72), rgba(10,15,30,0.88)),
+      url('../public/assets/images/hero-bg.webp') center / cover no-repeat;
+    border-bottom:1px solid rgba(201,168,76,.2);
+  }
+  .hero::before{
+    content:'';position:absolute;top:-60px;right:-60px;
+    width:380px;height:380px;border-radius:50%;
+    background:radial-gradient(circle,rgba(201,168,76,.1) 0%,transparent 70%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;max-width:620px}
+  .hero-eyebrow{font-size:11px;font-weight:700;letter-spacing:.14em;color:rgba(201,168,76,.6);font-family:'Hiragino Kaku Gothic Pro',sans-serif;text-transform:uppercase;margin-bottom:22px}
+  .hero h1{font-size:34px;font-weight:800;line-height:1.4;letter-spacing:.01em;color:#f0ece4;margin-bottom:22px}
+  .hero-sub{font-size:14px;color:#b0aaa2;line-height:2;margin-bottom:28px;max-width:520px}
+  .hero-sub strong{color:#c9a84c}
+  .badges{display:flex;gap:8px;flex-wrap:wrap}
+  .badge{display:inline-block;padding:4px 14px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.06em;font-family:'Hiragino Kaku Gothic Pro',sans-serif}
+  .badge-gold{background:rgba(201,168,76,.12);color:#c9a84c;border:1px solid rgba(201,168,76,.3)}
+  .badge-red{background:rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+
+  /* ── Compass SVG (hero decoration) ── */
+  .hero-compass{
+    position:absolute;right:32px;top:50%;transform:translateY(-50%);
+    width:200px;height:200px;opacity:.15;
+    pointer-events:none;
+  }
+
+  /* ── Section wrapper ── */
+  .section{padding:56px 40px;border-bottom:1px solid rgba(255,255,255,.04);position:relative}
+  .section:nth-child(even){
+    background:
+      linear-gradient(rgba(8,14,28,0.96),rgba(8,14,28,0.96)),
+      url('../public/assets/images/bg-parchment.webp') center / 400px auto;
+  }
+
+  /* ── Section header ── */
+  .sec-num{font-size:120px;font-weight:900;color:rgba(201,168,76,.04);position:absolute;top:20px;right:32px;line-height:1;font-family:'Hiragino Kaku Gothic Pro',sans-serif;pointer-events:none;user-select:none}
+  .sec-label{display:inline-flex;align-items:center;gap:8px;margin-bottom:16px}
+  .sec-label-line{width:24px;height:1.5px;background:#c9a84c;opacity:.6}
+  .sec-label-text{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(201,168,76,.7);font-family:'Hiragino Kaku Gothic Pro',sans-serif}
+  .lead{font-size:22px;font-weight:800;line-height:1.55;color:#f0ece4;margin-bottom:24px;max-width:560px}
+
+  /* ── Body text ── */
+  p{color:#c4bfb5;font-size:14px;line-height:2}
+  p+p{margin-top:10px}
+  ul,ol{padding-left:0;list-style:none}
+  li{color:#c4bfb5;font-size:14px;line-height:2}
+  strong{color:#e8e2d4;font-weight:700}
+
+  /* ── Flow diagram ── */
+  .flow-wrap{background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:28px 24px;margin:28px 0}
+  .flow-row{display:flex;align-items:center;gap:0}
+  .flow-box{flex:1;text-align:center;padding:10px 6px}
+  .flow-box-inner{background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.18);border-radius:12px;padding:14px 8px}
+  .flow-box-inner.active{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.45);box-shadow:0 0 20px rgba(201,168,76,.1)}
+  .flow-icon{font-size:20px;display:block;margin-bottom:6px}
+  .flow-title{font-size:11px;font-weight:800;color:#c9a84c;font-family:'Hiragino Kaku Gothic Pro',sans-serif;line-height:1.4}
+  .flow-sub{font-size:10px;color:#b0aaa2;margin-top:4px;line-height:1.5}
+  .flow-arr{color:rgba(201,168,76,.35);font-size:22px;padding:0 2px;flex-shrink:0}
+  .flow-note{text-align:center;margin-top:16px;font-size:13px;color:#a09890;font-style:italic}
+
+  /* ── Quote ── */
+  .big-quote{position:relative;padding:24px 28px;margin:24px 0;background:rgba(201,168,76,.05);border-radius:12px;border:1px solid rgba(201,168,76,.12)}
+  .big-quote::before{content:'❝';position:absolute;top:-10px;left:20px;font-size:36px;color:rgba(201,168,76,.25);line-height:1;font-family:Georgia,serif}
+  .big-quote p{font-size:15px;color:#c4bfb5;line-height:1.95;font-style:italic}
+
+  /* ── Insight / highlight bar ── */
+  .insight{background:rgba(201,168,76,.06);border-left:3px solid #c9a84c;border-radius:0 10px 10px 0;padding:14px 20px;margin:20px 0;font-size:14px;color:#c4bfb5;line-height:1.85}
+  .insight strong{color:#e8e2d4}
+
+  /* ── Persona card ── */
+  .persona-card{
+    background:
+      linear-gradient(rgba(8,14,28,0.86),rgba(8,14,28,0.86)),
+      url('../public/assets/images/bg-parchment.webp') center / 300px auto;
+    border:1px solid rgba(201,168,76,.22);border-radius:16px;padding:28px 26px;margin:24px 0;
+  }
+  .persona-name{font-size:18px;font-weight:800;color:#f0ece4;margin-bottom:4px}
+  .persona-sub{font-size:12px;color:#c9a84c;font-family:'Hiragino Kaku Gothic Pro',sans-serif;margin-bottom:18px;letter-spacing:.06em}
+  .persona-row{display:flex;gap:24px;flex-wrap:wrap;margin-top:10px}
+  .persona-col{flex:1;min-width:200px}
+  .persona-col-title{font-size:11px;font-weight:700;color:rgba(201,168,76,.6);font-family:'Hiragino Kaku Gothic Pro',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+  .persona-col li{font-size:13px;color:#c4bfb5;line-height:2;padding-left:12px;position:relative}
+  .persona-col li::before{content:'─';position:absolute;left:0;color:rgba(201,168,76,.4);font-size:10px;top:4px}
+
+  /* ── Market stats ── */
+  .stat-row{display:flex;gap:14px;margin:20px 0;flex-wrap:wrap}
+  .stat-card{flex:1;min-width:180px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:20px;text-align:center}
+  .stat-num{font-size:34px;font-weight:900;color:#c9a84c;font-family:'Hiragino Kaku Gothic Pro',sans-serif;line-height:1}
+  .stat-unit{font-size:11px;color:#b0aaa2;margin-top:4px}
+  .stat-label{font-size:11px;color:#a09890;margin-top:8px;line-height:1.5}
+
+  /* ── General card ── */
+  .card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:22px;margin-bottom:12px}
+  .card-dark{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:18px;margin-bottom:10px}
+  .card-title{font-size:15px;font-weight:700;color:#e8e2d4;margin-bottom:8px}
+  .card-body{font-size:13px;color:#c4bfb5;line-height:1.85}
+
+  /* ── Drama series cards ── */
+  .drama-card{
+    border-radius:14px;padding:22px;margin-bottom:12px;
+    background:rgba(201,168,76,.04);
+    border:1px solid rgba(201,168,76,.15);
+    position:relative;overflow:hidden;
+  }
+  .drama-card::before{content:attr(data-num);position:absolute;right:16px;top:8px;font-size:60px;font-weight:900;color:rgba(201,168,76,.06);font-family:'Hiragino Kaku Gothic Pro',sans-serif;line-height:1;pointer-events:none}
+  .drama-num{font-size:10px;font-weight:700;letter-spacing:.12em;color:rgba(201,168,76,.5);font-family:'Hiragino Kaku Gothic Pro',sans-serif;text-transform:uppercase;margin-bottom:8px}
+  .drama-title{font-size:16px;font-weight:800;color:#f0ece4;line-height:1.5;margin-bottom:12px}
+  .drama-desc{font-size:13px;color:#c4bfb5;line-height:1.85}
+
+  /* ── Endcard banner ── */
+  .endcard{
+    background:rgba(0,0,0,.35);
+    border:1px dashed rgba(201,168,76,.3);
+    border-radius:10px;
+    padding:14px 20px;
+    margin:20px 0;
+    font-size:13px;
+    color:#c4bfb5;
+    line-height:1.8;
+  }
+  .endcard strong{color:#c9a84c}
+
+  /* ── Reward / simulation table ── */
+  .reward-table{width:100%;border-collapse:collapse;margin:20px 0}
+  .reward-table th{font-size:11px;font-weight:700;letter-spacing:.08em;color:rgba(201,168,76,.7);font-family:'Hiragino Kaku Gothic Pro',sans-serif;text-align:left;padding:8px 14px;border-bottom:1px solid rgba(201,168,76,.2);background:rgba(201,168,76,.04)}
+  .reward-table td{font-size:13px;color:#c4bfb5;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.04);line-height:1.6}
+  .reward-table tr:last-child td{border-bottom:none}
+  .reward-table tr.highlight td{color:#c9a84c;font-weight:700}
+  .reward-table tr.minimum td{color:#a09890;font-size:12px}
+
+  /* ── Two-column benefit ── */
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0}
+  .benefit-card{border-radius:14px;padding:22px}
+  .benefit-card.partner{background:rgba(74,222,128,.04);border:1px solid rgba(74,222,128,.15)}
+  .benefit-card.fineme{background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.2)}
+  .benefit-head{font-size:12px;font-weight:700;font-family:'Hiragino Kaku Gothic Pro',sans-serif;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .benefit-head.partner-h{color:#4ade80}
+  .benefit-head.fineme-h{color:#c9a84c}
+  .benefit-icon{font-size:16px}
+  .benefit-list{display:flex;flex-direction:column;gap:9px}
+  .benefit-item{display:flex;align-items:flex-start;gap:9px;font-size:13px;color:#c4bfb5;line-height:1.7}
+  .b-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:6px}
+  .b-dot.green{background:#4ade80}
+  .b-dot.gold{background:#c9a84c}
+
+  /* ── Step list ── */
+  .step-list{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+  .step-item{display:flex;gap:16px;align-items:flex-start;padding:18px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:14px}
+  .step-num{width:36px;height:36px;border-radius:50%;background:rgba(201,168,76,.1);border:1.5px solid rgba(201,168,76,.35);color:#c9a84c;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;font-family:'Hiragino Kaku Gothic Pro',sans-serif}
+  .step-title{font-size:15px;font-weight:700;color:#e8e2d4;margin-bottom:3px}
+  .step-desc{font-size:13px;color:#a09890;line-height:1.7}
+
+  /* ── Check list ── */
+  .check-list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+  .check-item{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:#c4bfb5}
+  .check-item .ic{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:2px}
+  .ic-yes{background:rgba(74,222,128,.1);color:#4ade80}
+  .ic-no{background:rgba(239,68,68,.1);color:#f87171}
+
+  /* ── Print button ── */
+  .print-btn{
+    position:fixed;bottom:24px;right:24px;
+    display:flex;align-items:center;gap:8px;
+    padding:11px 20px;
+    background:linear-gradient(135deg,#c9a84c,#e6c96e);
+    color:#0a0f1e;border:none;border-radius:99px;
+    font-size:13px;font-weight:800;font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    cursor:pointer;box-shadow:0 4px 20px rgba(201,168,76,.4);
+    letter-spacing:.04em;z-index:100;
+  }
+
+  /* ── Footer ── */
+  .footer{padding:48px 40px 20px;text-align:center;border-top:1px solid rgba(255,255,255,.05)}
+  .footer-brand{font-size:16px;font-weight:800;color:#c9a84c;margin-bottom:8px}
+  .footer-tagline{font-size:13px;color:#a09890;margin-bottom:16px}
+  .footer-contact{font-size:13px;color:#b0aaa2}
+  .footer-contact a{color:#c9a84c;text-decoration:none}
+
+  /* ── Print ── */
+  @media print{
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{background-color:#060c1a !important;background-image:none !important;color:#e8e2d4}
+    .page{background-color:#060c1a}
+    .hero{background:#0a0f1e !important;background-image:none !important}
+    .section{background-color:#060c1a;background-image:none !important;border-color:rgba(255,255,255,.05)}
+    .section:nth-child(even){background-color:#080e1c !important;background-image:none !important}
+    .lead{color:#f0ece4}
+    p,li{color:#c4bfb5}
+    .step-desc,.flow-sub,.flow-note,.drama-desc,.card-body{color:#a09890}
+    .step-title,.card-title,.drama-title{color:#e8e2d4}
+    .step-num{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.4);color:#c9a84c}
+    .sec-label-line{background:#c9a84c}
+    .sec-label-text{color:rgba(201,168,76,.7)}
+    .sec-num{color:rgba(201,168,76,.04)}
+    .card,.card-dark{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08)}
+    .persona-card{background:#0d1528 !important;background-image:none !important;border-color:rgba(201,168,76,.22)}
+    .drama-card{background:rgba(201,168,76,.05);border-color:rgba(201,168,76,.18)}
+    .flow-wrap{background:rgba(0,0,0,.2);border-color:rgba(255,255,255,.06)}
+    .flow-box-inner{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.2)}
+    .flow-box-inner.active{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.45)}
+    .flow-title{color:#c9a84c}
+    .flow-arr{color:rgba(201,168,76,.4)}
+    .big-quote{background:rgba(201,168,76,.06);border-color:rgba(201,168,76,.15)}
+    .big-quote p{color:#c4bfb5}
+    .insight{background:rgba(201,168,76,.07);border-color:#c9a84c;color:#c4bfb5}
+    .reward-table th{background:rgba(201,168,76,.06)}
+    .reward-table td{color:#c4bfb5}
+    .reward-table tr.highlight td{color:#c9a84c}
+    .benefit-card.partner{background:rgba(74,222,128,.05);border-color:rgba(74,222,128,.18)}
+    .benefit-card.fineme{background:rgba(201,168,76,.06);border-color:rgba(201,168,76,.22)}
+    .step-item{background:rgba(255,255,255,.025);border-color:rgba(255,255,255,.06)}
+    .badge-gold{background:rgba(201,168,76,.12);color:#c9a84c;border-color:rgba(201,168,76,.3)}
+    .badge-red{background:rgba(239,68,68,.08);color:#f87171;border-color:rgba(239,68,68,.25)}
+    .endcard{background:rgba(0,0,0,.25);border-color:rgba(201,168,76,.3)}
+    .stat-card{background:rgba(0,0,0,.25);border-color:rgba(255,255,255,.07)}
+    .hero-compass{display:none}
+    .hero::before{display:none}
+    .print-btn{display:none}
+    .grid-2{grid-template-columns:1fr 1fr}
+    .footer{border-top:1px solid rgba(255,255,255,.06)}
+  }
+  @media(max-width:640px){
+    .hero,.section,.footer{padding-left:20px;padding-right:20px}
+    .hero h1{font-size:24px}
+    .lead{font-size:18px}
+    .grid-2,.stat-row,.flow-row{grid-template-columns:1fr}
+    .flow-row{flex-direction:column;align-items:stretch}
+    .flow-arr{transform:rotate(90deg);text-align:center;font-size:16px}
+    .sec-num{font-size:80px}
+    .hero-compass{display:none}
+    .persona-row{flex-direction:column}
+    .stat-card{text-align:left;display:flex;align-items:center;gap:16px}
+    .stat-num{font-size:28px}
+  }
+</style>
+<button class="print-btn" onclick="window.print()">🖨 PDF保存</button>
+</head>
+<body>
+
+<div class="page">
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<div class="hero">
+
+  <!-- Compass SVG decoration -->
+  <div class="hero-compass">
+    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="100" cy="100" r="92" stroke="#c9a84c" stroke-width="1"/>
+      <circle cx="100" cy="100" r="70" stroke="#c9a84c" stroke-width=".5" stroke-dasharray="4 6"/>
+      <circle cx="100" cy="100" r="10" fill="#c9a84c" fill-opacity=".4"/>
+      <circle cx="100" cy="100" r="4" fill="#c9a84c"/>
+      <polygon points="100,8 106,90 100,100 94,90" fill="#c9a84c" fill-opacity=".9"/>
+      <polygon points="100,192 106,110 100,100 94,110" fill="#c9a84c" fill-opacity=".4"/>
+      <polygon points="192,100 110,94 100,100 110,106" fill="#c9a84c" fill-opacity=".4"/>
+      <polygon points="8,100 90,94 100,100 90,106" fill="#c9a84c" fill-opacity=".4"/>
+      <polygon points="163,37 112,88 100,100 88,88 137,37" fill="#c9a84c" fill-opacity=".12"/>
+      <polygon points="37,37 88,88 100,100 112,88 63,37" fill="#c9a84c" fill-opacity=".12"/>
+      <line x1="100" y1="18" x2="100" y2="26" stroke="#c9a84c" stroke-width="1.5" opacity=".6"/>
+      <line x1="100" y1="174" x2="100" y2="182" stroke="#c9a84c" stroke-width="1" opacity=".3"/>
+      <line x1="18" y1="100" x2="26" y2="100" stroke="#c9a84c" stroke-width="1" opacity=".3"/>
+      <line x1="174" y1="100" x2="182" y2="100" stroke="#c9a84c" stroke-width="1" opacity=".3"/>
+      <text x="100" y="46" text-anchor="middle" fill="#c9a84c" font-size="11" font-weight="bold" font-family="Georgia,serif" opacity=".7">N</text>
+    </svg>
+  </div>
+
+  <div class="hero-inner">
+    <div class="hero-eyebrow">Fineme ／ ショートドラマ パートナー提案</div>
+    <h1>恋愛で傷ついた男性が、<br>最初に訪れる場所を<br>つくっています。</h1>
+    <p style="font-size:13px;color:rgba(201,168,76,.7);font-style:italic;margin-bottom:20px;line-height:1.9">
+      そのまま進むのが怖くなった夜に。<br>
+      自信を再設計する、地図と羅針盤。
+    </p>
+    <p class="hero-sub">
+      その男性に必要なのは、<strong>地図と羅針盤</strong>です。<br>
+      Finemeはその地図と羅針盤であり、<br>
+      ショートドラマはその男性を連れてくる<strong>出会いの入口</strong>です。
+    </p>
+    <div class="badges">
+      <span class="badge badge-gold">初回打ち合わせ資料</span>
+      <span class="badge badge-red">CONFIDENTIAL</span>
+    </div>
+  </div>
+</div>
+<!-- /HERO -->
+
+
+<!-- ═══════════════ SECTION 01 ═══════════════ -->
+<div class="section">
+  <div class="sec-num">01</div>
+  <div class="sec-label"><span class="sec-label-line"></span><span class="sec-label-text">What is Fineme</span></div>
+  <p class="lead">Fineme（ファインミ）とは何か。</p>
+
+  <div class="insight">
+    <strong>HOT PEPPERのような予約サイトではありません。</strong><br>
+    「外見を起点に自信を再設計するための、地図と羅針盤を提供するプラットフォーム」です。
+    診断から始まり、ユーザーは自分専用のロードマップを手にします。
+  </div>
+
+  <p>名前の由来は <strong>"Find New Me"</strong>（新しい自分を見つける）。読み方はファインミ（長音なし）。<br>
+  恋愛で傷ついた男性が「変わりたい」と思った瞬間に最初に訪れる場所になることを目指しています。</p>
+
+  <p style="margin-top:14px"><strong>Mission：</strong>外見を起点に、自信を再設計する人を増やす</p>
+
+  <!-- Flow diagram -->
+  <div class="flow-wrap">
+    <div class="flow-row">
+      <div class="flow-box">
+        <div class="flow-box-inner active">
+          <span class="flow-icon">🧭</span>
+          <div class="flow-title">Me Scan</div>
+          <div class="flow-sub">診断<br>自分を知る</div>
+        </div>
+      </div>
+      <div class="flow-arr">›</div>
+      <div class="flow-box">
+        <div class="flow-box-inner">
+          <span class="flow-icon">🗺</span>
+          <div class="flow-title">New Me Navi</div>
+          <div class="flow-sub">地図<br>現在地と理想</div>
+        </div>
+      </div>
+      <div class="flow-arr">›</div>
+      <div class="flow-box">
+        <div class="flow-box-inner">
+          <span class="flow-icon">⭐</span>
+          <div class="flow-title">Fineme Compass</div>
+          <div class="flow-sub">羅針盤<br>最初の一手</div>
+        </div>
+      </div>
+      <div class="flow-arr">›</div>
+      <div class="flow-box">
+        <div class="flow-box-inner">
+          <span class="flow-icon">🧑‍✈️</span>
+          <div class="flow-title">ガイド</div>
+          <div class="flow-sub">専門家<br>道案内人</div>
+        </div>
+      </div>
+      <div class="flow-arr">›</div>
+      <div class="flow-box">
+        <div class="flow-box-inner active">
+          <span class="flow-icon">✨</span>
+          <div class="flow-title">変容</div>
+          <div class="flow-sub">外見×自信<br>の再設計</div>
+        </div>
+      </div>
+    </div>
+    <p class="flow-note">「診断して終わり」ではなく「変容の旅の入口」として設計されています</p>
+  </div>
+
+  <p>掲載しているサービス提供者（ジム、ヘアサロン、骨格診断、男性向けメイクなど）は「出品者」ではなく、ユーザーの変容を伴走する<strong>ガイド（道案内人）</strong>として位置づけています。体験談はレビューではなく、<strong>変容の記録・証言</strong>です。</p>
+</div>
+<!-- /SECTION 01 -->
+
+
+<!-- ═══════════════ SECTION 02 ═══════════════ -->
+<div class="section">
+  <div class="sec-num">02</div>
+  <div class="sec-label"><span class="sec-label-line"></span><span class="sec-label-text">Target User</span></div>
+  <p class="lead">私たちが届けたい、たった一人のユーザー。</p>
+
+  <div class="persona-card">
+    <div class="persona-name">「今日、恋愛で失敗した男性」</div>
+    <div class="persona-sub">PRIMARY PERSONA — 28〜32歳・会社員</div>
+    <div class="persona-row">
+      <div class="persona-col">
+        <div class="persona-col-title">状況</div>
+        <ul>
+          <li>マッチングアプリで3ヶ月マッチングなし</li>
+          <li>告白して振られ、傷ついている</li>
+          <li>元彼女にSNSで幸せそうな姿を見た</li>
+        </ul>
+      </div>
+      <div class="persona-col">
+        <div class="persona-col-title">心の中</div>
+        <ul>
+          <li>「変わりたい」気持ちはある</li>
+          <li>何から始めればいいかわからない</li>
+          <li>外見のせいなのか、中身のせいなのかわからない</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top:20px"><strong>なぜ今この男性なのか — 市場背景</strong></p>
+
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-num">3,000<span style="font-size:18px">万人</span></div>
+      <div class="stat-unit">以上</div>
+      <div class="stat-label">マッチングアプリ<br>利用者数（国内推計）</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">男性<br><span style="font-size:22px">圧倒的</span></div>
+      <div class="stat-unit">不利</div>
+      <div class="stat-label">男性ユーザーは女性の<br>数倍いるが<br>マッチング率は低い</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">地図<br><span style="font-size:22px">0</span></div>
+      <div class="stat-unit">存在</div>
+      <div class="stat-label">男性向けの<br>「外見×変容の地図」は<br>どこにも存在しない</div>
+    </div>
+  </div>
+
+  <div class="big-quote">
+    <p>マッチングアプリの普及で、男性が自分の外見と向き合う機会は急増した。<br>
+    しかし「どこへ行けばいいか」を教えてくれるインフラが、男性向けには存在しない。<br>
+    Finemeはそのインフラをつくっています。</p>
+  </div>
+</div>
+<!-- /SECTION 02 -->
+
+
+<!-- ═══════════════ SECTION 03 ═══════════════ -->
+<div class="section">
+  <div class="sec-num">03</div>
+  <div class="sec-label"><span class="sec-label-line"></span><span class="sec-label-text">Why Short Drama</span></div>
+  <p class="lead">なぜショートドラマクリエイターと組むのか。</p>
+
+  <div class="insight" style="margin-bottom:24px">
+    Finemeのユーザー獲得戦略は当初から、<strong>「恋愛で失敗した男性を主人公にしたショートドラマを集客の起点にする」</strong>という設計で作られています。<br>
+    偶然声をかけたわけではありません。この戦略を実現するために必要なピースが、ショートドラマクリエイターです。
+  </div>
+
+  <p>ターゲットに最短距離で届けられるメディアは、ショートドラマだと考えています。彼らは「外見を変えたい」と検索していません。でも、うまくいかなかった自分を反芻しながら、夜ひとりでスマホをスクロールしています。その瞬間に、偶然出会わせる——それがFinemeの集客の根幹です。</p>
+
+  <div class="card" style="margin-top:20px">
+    <div class="card-title">ショートドラマが持つ「感情移入→自分ごと化」の力</div>
+    <div class="card-body">
+      テキスト広告でも、インフォグラフィックでも届かない層がいます。<br>
+      「このドラマの男性、自分だ」と感じた瞬間に、人は初めて動き始めます。<br>
+      ショートドラマは、Finemeが伝えたい感情的な体験を「体験として」届けられる唯一のフォーマットです。
+    </div>
+  </div>
+
+  <div class="check-list" style="margin-top:20px">
+    <div class="check-item">
+      <div class="ic ic-yes">✓</div>
+      <span>ショートドラマの視聴者は「感情で動く」——Finemeが届けたい体験と親和性が高い</span>
+    </div>
+    <div class="check-item">
+      <div class="ic ic-yes">✓</div>
+      <span>SEO・口コミでは届かない層（感情的に揺れている瞬間の男性）にアプローチできる</span>
+    </div>
+    <div class="check-item">
+      <div class="ic ic-yes">✓</div>
+      <span>あなたのコンテンツに共鳴したユーザーは、Finemeが届けたいユーザーと重なる</span>
+    </div>
+  </div>
+
+  <div class="insight" style="margin-top:24px">
+    「このドラマの男性、自分だ」と思った瞬間にFinemeへ来てほしい。<br>
+    それだけです。強引な宣伝は一切しません。
+  </div>
+</div>
+<!-- /SECTION 03 -->
+
+
+<!-- ═══════════════ SECTION 04 ═══════════════ -->
+<div class="section">
+  <div class="sec-num">04</div>
+  <div class="sec-label"><span class="sec-label-line"></span><span class="sec-label-text">Content Direction</span></div>
+  <p class="lead">想定するコンテンツの方向性。</p>
+
+  <p>テーマは一つです。<strong>恋愛の失敗をきっかけに外見を変え、人生が変わる男性のストーリー。</strong></p>
+
+  <div class="card-dark" style="margin-top:20px;margin-bottom:20px">
+    <div style="display:flex;gap:24px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:11px;color:rgba(201,168,76,.6);font-family:'Hiragino Kaku Gothic Pro',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">FORMAT</div>
+        <div style="font-size:13px;color:#c4bfb5">ショートドラマ<br>（リール / TikTok / YouTube Shorts）</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:rgba(201,168,76,.6);font-family:'Hiragino Kaku Gothic Pro',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">TONE</div>
+        <div style="font-size:13px;color:#c4bfb5">あなたのスタイルで自由に<br>スカッと系・勧善懲悪・変われない終わりも全部あり</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:rgba(201,168,76,.6);font-family:'Hiragino Kaku Gothic Pro',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">SERIES</div>
+        <div style="font-size:13px;color:#c4bfb5">複数話構成（シリーズ化）を想定<br>まずパイロット1本から</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drama series proposals -->
+  <p style="margin-bottom:16px"><strong>ドラマシリーズ案（叩き台・3案）</strong></p>
+
+  <div class="drama-card" data-num="1">
+    <div class="drama-num">SERIES 01</div>
+    <div class="drama-title">「告白して振られた夜、初めて鏡を見た男の話」</div>
+    <div class="drama-desc">
+      告白して振られた帰り道、コンビニのガラスに映る自分を見つめるシーンから始まる。
+      「このままでいい」と思っていた男が、初めて自分の外見と向き合う物語。
+      Me Scanを受けるシーンが自然な文脈で登場。
+    </div>
+  </div>
+
+  <div class="drama-card" data-num="2">
+    <div class="drama-num">SERIES 02</div>
+    <div class="drama-title">「マッチングアプリで3ヶ月、1件もマッチングしなかった男が変わるまで」</div>
+    <div class="drama-desc">
+      プロフィール写真を撮り直すことをきっかけに、骨格・髪・眉と一つひとつ向き合っていく過程を描く。
+      「何から始めればいいかわからない」という共感から入り、Fineme Compassで最初の一手を見つける流れ。
+    </div>
+  </div>
+
+  <div class="drama-card" data-num="3">
+    <div class="drama-num">SERIES 03</div>
+    <div class="drama-title">「元彼女に偶然再会した日から、すべてが変わった話」</div>
+    <div class="drama-desc">
+      幸せそうな元彼女との再会が、男の変容のトリガーになる。
+      嫉妬や悔しさという生々しい感情から出発し、「見返したい」が「本当に変わりたい」に変わっていく。
+      最も感情移入しやすい王道の構成。
+    </div>
+  </div>
+
+  <!-- Endcard -->
+  <div class="endcard">
+    <strong>各話エンドカード（テキスト例）</strong><br>
+    「変わりたいのに何から始めればいいかわからない方へ → Fineme Me Scan」<br>
+    <span style="color:#a09890;font-size:12px">※ URLとQRコードを添付。ドラマがスカッと終わっても、変われない人を連れてくる形でもいい。やり方はいくらでもある。</span>
+  </div>
+
+  <!-- Finemeの見せ方 -->
+  <p style="margin-top:24px;margin-bottom:12px"><strong>Finemeの見せ方（重要）</strong></p>
+  <div class="check-list">
+    <div class="check-item">
+      <div class="ic ic-no">✗</div>
+      <span>ドラマ内でFinemeを直接宣伝する（口頭で「Finemeというサービスが〜」と説明するなど）</span>
+    </div>
+    <div class="check-item">
+      <div class="ic ic-yes">✓</div>
+      <span>ドラマの結末はあなたのスタイルで完全に自由。変容して終わらなくていい</span>
+    </div>
+    <div class="check-item">
+      <div class="ic ic-yes">✓</div>
+      <span>「変わろうとしない人・変われなかった人」の末尾で、Finemeをそっと置く</span>
+    </div>
+    <div class="check-item">
+      <div class="ic ic-yes">✓</div>
+      <span>視聴者が「自分もこうかも」と感じた瞬間にFinemeへ来てもらう。強引な宣伝は一切しない</span>
+    </div>
+    <div class="check-item">
+      <div class="ic ic-yes">✓</div>
+      <span>制作への口出しはしません。Finemeの登場シーン・エンドカードの形は一緒に決めればいい</span>
+    </div>
+  </div>
+</div>
+<!-- /SECTION 04 -->
+
+
+<!-- ═══════════════ SECTION 05 ═══════════════ -->
+<div class="section">
+  <div class="sec-num">05</div>
+  <div class="sec-label"><span class="sec-label-line"></span><span class="sec-label-text">Reward Model</span></div>
+  <p class="lead">連携モデルと報酬について。</p>
+
+  <p>シンプルな成果連動型です。Finemeに有料掲載者が増えるほど、パートナーへの報酬が増えます。</p>
+
+  <div class="card-dark" style="margin-top:20px;margin-bottom:4px">
+    <div style="font-size:11px;color:rgba(201,168,76,.6);font-family:'Hiragino Kaku Gothic Pro',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">制作条件</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:22px;font-weight:900;color:#c9a84c;font-family:'Hiragino Kaku Gothic Pro',sans-serif;line-height:1">月2本</div>
+        <div style="font-size:12px;color:#a09890;margin-top:4px">Finemeが登場する動画</div>
+      </div>
+      <div style="flex:1;min-width:200px;font-size:13px;color:#c4bfb5;line-height:1.8">
+        それ以外のコンテンツ制作は<strong style="color:#e8e2d4">完全に自由</strong>。<br>
+        あなた自身の活動を制限しません。<br>
+        他ブランドとのコラボ・自社コンテンツも引き続きOK。
+      </div>
+    </div>
+  </div>
+
+  <!-- Reward structure -->
+  <div class="card" style="margin-top:24px;margin-bottom:24px">
+    <div style="display:flex;gap:32px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:11px;color:rgba(201,168,76,.6);font-family:'Hiragino Kaku Gothic Pro',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">報酬</div>
+        <div style="font-size:28px;font-weight:900;color:#c9a84c;font-family:'Hiragino Kaku Gothic Pro',sans-serif;line-height:1">¥500</div>
+        <div style="font-size:12px;color:#b0aaa2;margin-top:4px">× 有料掲載者数 / 月</div>
+        <div style="font-size:12px;color:#a09890;margin-top:8px;line-height:1.6">掲載者が増えるほど<br>報酬がスケールする仕組み</div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:11px;color:rgba(201,168,76,.6);font-family:'Hiragino Kaku Gothic Pro',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">最低保証</div>
+        <div style="font-size:28px;font-weight:900;color:#c9a84c;font-family:'Hiragino Kaku Gothic Pro',sans-serif;line-height:1">¥20,000</div>
+        <div style="font-size:12px;color:#b0aaa2;margin-top:4px">/ 月</div>
+        <div style="font-size:12px;color:#a09890;margin-top:8px;line-height:1.6">初期は本当に少額で申し訳ないけど、<br>この金額は必ず守ります</div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:11px;color:rgba(201,168,76,.6);font-family:'Hiragino Kaku Gothic Pro',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">アカウント収益</div>
+        <div style="font-size:16px;font-weight:800;color:#4ade80;margin-top:8px;line-height:1.5">100% あなたのもの</div>
+        <div style="font-size:12px;color:#a09890;margin-top:8px;line-height:1.6">アカウントの収益化収入は<br>すべてあなたのもの<br>Finemeは取り分を受け取りません</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simulation table -->
+  <p style="margin-bottom:12px"><strong>報酬シミュレーション</strong></p>
+  <table class="reward-table">
+    <thead>
+      <tr>
+        <th>有料掲載者数</th>
+        <th>月額報酬</th>
+        <th>備考</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="minimum">
+        <td>〜10社</td>
+        <td>¥20,000（最低保証適用）</td>
+        <td>ローンチ初期。少額で申し訳ないけど必ず払います</td>
+      </tr>
+      <tr>
+        <td>50社</td>
+        <td>¥25,000</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>100社</td>
+        <td>¥50,000</td>
+        <td></td>
+      </tr>
+      <tr class="highlight">
+        <td>200社</td>
+        <td>¥100,000</td>
+        <td>掲載者拡大に伴い自動スケール</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    コンテンツが積み上がるほど、報酬も右肩上がりになる構造です。<br>
+    Finemeの成長とパートナーの報酬は、同じ方向を向いています。
+  </div>
+</div>
+<!-- /SECTION 05 -->
+
+
+<!-- ═══════════════ SECTION 06 ═══════════════ -->
+<div class="section">
+  <div class="sec-num">06</div>
+  <div class="sec-label"><span class="sec-label-line"></span><span class="sec-label-text">Mutual Benefits</span></div>
+  <p class="lead">お互いにとってのメリット。</p>
+
+  <div class="grid-2">
+    <!-- Partner -->
+    <div class="benefit-card partner">
+      <div class="benefit-head partner-h">
+        <span class="benefit-icon">🎬</span>
+        パートナーにとって
+      </div>
+      <div class="benefit-list">
+        <div class="benefit-item">
+          <div class="b-dot green"></div>
+          <span><strong style="color:#e8e2d4">新しいコンテンツ軸を得られる</strong><br>
+          外見変容・自信回復という<br>共感を呼ぶテーマで新しい視聴層を開拓できる</span>
+        </div>
+        <div class="benefit-item">
+          <div class="b-dot green"></div>
+          <span><strong style="color:#e8e2d4">安定した月額報酬</strong><br>
+          掲載者数の増加に伴い、<br>継続的にスケールする収入</span>
+        </div>
+        <div class="benefit-item">
+          <div class="b-dot green"></div>
+          <span><strong style="color:#e8e2d4">Finemeの成長とともに報酬増加</strong><br>
+          一度作ったコンテンツが<br>積み上がり型で報酬に貢献し続ける</span>
+        </div>
+        <div class="benefit-item">
+          <div class="b-dot green"></div>
+          <span><strong style="color:#e8e2d4">制作の自由度</strong><br>
+          世界観に合う範囲で<br>表現方法・演出は完全に自由</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fineme -->
+    <div class="benefit-card fineme">
+      <div class="benefit-head fineme-h">
+        <span class="benefit-icon">🧭</span>
+        Finemeにとって
+      </div>
+      <div class="benefit-list">
+        <div class="benefit-item">
+          <div class="b-dot gold"></div>
+          <span><strong style="color:#e8e2d4">ターゲット層へのリーチ</strong><br>
+          SEO・口コミでは届かない<br>感情的に揺れている瞬間の男性へ</span>
+        </div>
+        <div class="benefit-item">
+          <div class="b-dot gold"></div>
+          <span><strong style="color:#e8e2d4">世界観を「体験」として伝えられる</strong><br>
+          テキストでは伝わらない<br>「変容の旅」をドラマで届けられる</span>
+        </div>
+        <div class="benefit-item">
+          <div class="b-dot gold"></div>
+          <span><strong style="color:#e8e2d4">ブランドストーリーの形成</strong><br>
+          「恋愛で傷ついた男性が変わる」<br>という物語がFinemeの核になる</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /SECTION 06 -->
+
+
+<!-- ═══════════════ SECTION 07 ═══════════════ -->
+<div class="section">
+  <div class="sec-num">07</div>
+  <div class="sec-label"><span class="sec-label-line"></span><span class="sec-label-text">Next Steps</span></div>
+  <p class="lead">まずは話を聞いてほしい。</p>
+
+  <div class="step-list">
+    <div class="step-item">
+      <div class="step-num">1</div>
+      <div>
+        <div class="step-title">この資料を読んで、気になることがあれば連絡ください</div>
+        <div class="step-desc">
+          テーマ・コンテンツトーン・連携モデルについて、疑問・懸念・「ここはちょっと…」が
+          あれば何でも話しましょう。会って話す前でも、会ってからでも。
+        </div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">2</div>
+      <div>
+        <div class="step-title">試作1本（パイロット）を制作・公開</div>
+        <div class="step-desc">
+          まず1本だけ作って市場の反応を見ます。
+          完璧を目指すより、早く出して学ぶことを優先します。
+        </div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">3</div>
+      <div>
+        <div class="step-title">反応を見てシリーズ化を判断</div>
+        <div class="step-desc">
+          視聴者の反応・コメント・Finemeへの流入を確認し、
+          シリーズ化・継続の方向性を双方で判断します。
+        </div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">4</div>
+      <div>
+        <div class="step-title">正式提携・報酬開始</div>
+        <div class="step-desc">
+          OKが出た時点で業務委託契約を締結。<br>
+          最低保証（¥20,000/月）は1本目から支払います。再生数・反応は問いません。<br>
+          Finemeとしては提携が決まればユーザーの反応に関わらず続ける方針です。<br>
+          有料掲載者数×¥500のストック型報酬も提携確定と同時にスタートします。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="big-quote" style="margin-top:32px">
+    <p>
+      作りたいのは「広告コンテンツ」ではありません。<br>
+      「恋愛で傷ついた男性が、自分と向き合うきっかけになる作品」です。<br><br>
+      もしその思いが少しでも重なるなら、一緒にやりましょう。<br>
+      <span style="color:#c9a84c;font-style:normal">Finemeの夢と、あなたの夢を——同じ方向に向けにいく話をしたいと思っています。</span>
+    </p>
+  </div>
+</div>
+<!-- /SECTION 07 -->
+
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<div class="footer">
+  <div class="footer-brand">Fineme（ファインミ）</div>
+  <div class="footer-tagline">外見を起点に、自信を再設計する人を増やす</div>
+  <div class="footer-contact">
+    打ち合わせ後のご連絡・ご質問 →
+    <a href="mailto:contact@fineme.me">contact@fineme.me</a>
+  </div>
+</div>
+<!-- /FOOTER -->
+
+</div><!-- /page -->
+</body>
+</html>
