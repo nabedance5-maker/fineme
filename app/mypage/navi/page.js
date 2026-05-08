@@ -479,6 +479,52 @@ export default function NewMeNaviPage() {
       .bdm-skip { padding: 12px 14px; background: transparent; color: rgba(232,228,220,0.40); font-size: 13px; font-weight: 600; border: 1px solid rgba(232,228,220,0.15); border-radius: 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; }
       .bdm-skip:hover { color: rgba(232,228,220,0.65); border-color: rgba(232,228,220,0.3); }
 
+      /* ── Journey Overview (変容の旅 全体図) ── */
+      .jov-section { margin-bottom: 24px; }
+      .jov-hero { background: rgba(10,15,30,0.65); border: 1.5px solid rgba(201,168,76,0.4); border-radius: 16px; padding: 18px 16px 16px; margin-bottom: 14px; }
+      .jov-hero-axis { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+      .jov-hero-icon { font-size: 20px; flex-shrink: 0; }
+      .jov-hero-sub { font-size: 9px; font-weight: 800; letter-spacing:.1em; color: rgba(201,168,76,0.6); text-transform: uppercase; margin: 0 0 2px; }
+      .jov-hero-title { font-size: 14px; font-weight: 900; color: rgba(232,228,220,0.90); margin: 0; }
+      .jov-track-row { display: flex; align-items: center; gap: 0; margin: 0 0 6px; }
+      .jov-wp-node { flex: 0 0 auto; }
+      .jov-wp-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(232,228,220,0.2); background: rgba(10,15,30,0.65); flex-shrink: 0; display: block; }
+      .jov-wp-dot.jov-done { background: #c9a84c; border-color: #c9a84c; }
+      .jov-wp-dot.jov-current { background: #0a0f1e; border-color: #c9a84c; box-shadow: 0 0 0 4px rgba(201,168,76,0.18); animation: jov-pulse 2.2s ease-in-out infinite; }
+      .jov-wp-dot.jov-goal { width: 14px; height: 14px; }
+      .jov-wp-dot.jov-goal.jov-done { background: rgba(52,211,153,0.9); border-color: rgba(52,211,153,0.9); }
+      @keyframes jov-pulse { 0%,100% { box-shadow: 0 0 0 3px rgba(201,168,76,.12),0 0 6px rgba(201,168,76,.18); } 50% { box-shadow: 0 0 0 6px rgba(201,168,76,.22),0 0 14px rgba(201,168,76,.28); } }
+      .jov-track-conn { flex: 1; height: 2px; background: rgba(232,228,220,0.1); border-radius: 1px; align-self: center; margin-bottom: 0; }
+      .jov-track-conn.jov-done { background: #c9a84c; }
+      .jov-labels-row { display: flex; align-items: flex-start; gap: 0; margin-top: 5px; }
+      .jov-wp-label-wrap { flex: 0 0 auto; text-align: center; width: 0; overflow: visible; }
+      .jov-conn-spacer { flex: 1; }
+      .jov-wp-label { font-size: 9px; font-weight: 700; color: rgba(232,228,220,0.38); line-height: 1.3; white-space: nowrap; transform: translateX(-50%); display: inline-block; }
+      .jov-wp-label.jov-done { color: rgba(201,168,76,0.75); }
+      .jov-wp-label.jov-next { color: rgba(232,228,220,0.75); font-weight: 800; }
+      .jov-next-target { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.2); border-radius: 8px; margin-top: 14px; }
+      .jov-next-target-text { flex: 1; min-width: 0; }
+      .jov-next-target-eyebrow { font-size: 9px; font-weight: 800; letter-spacing:.08em; text-transform: uppercase; color: rgba(201,168,76,0.55); margin: 0 0 2px; }
+      .jov-next-target-label { font-size: 13px; font-weight: 800; color: rgba(232,228,220,0.88); margin: 0 0 2px; }
+      .jov-next-target-desc { font-size: 11px; color: rgba(232,228,220,0.50); margin: 0; line-height: 1.5; }
+      .jov-next-steps { text-align: center; flex-shrink: 0; }
+      .jov-next-steps-num { font-size: 24px; font-weight: 900; color: #c9a84c; line-height: 1; display: block; }
+      .jov-next-steps-unit { font-size: 10px; color: rgba(201,168,76,0.65); display: block; }
+      .jov-other-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .jov-other-chip { background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.1); border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: border-color .15s; }
+      .jov-other-chip:hover { border-color: rgba(201,168,76,0.3); }
+      .jov-other-chip-head { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
+      .jov-other-chip-icon { font-size: 14px; }
+      .jov-other-chip-name { font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.75); flex: 1; }
+      .jov-stage-dots { display: flex; gap: 3px; margin-bottom: 4px; }
+      .jov-sd { flex: 1; height: 3px; border-radius: 99px; background: rgba(232,228,220,0.1); }
+      .jov-sd.jov-done { background: #c9a84c; }
+      .jov-sd.jov-goal-done { background: rgba(52,211,153,0.7); }
+      .jov-stage-label { font-size: 9px; font-weight: 700; color: rgba(232,228,220,0.28); }
+      .jov-stage-label.s1 { color: rgba(201,168,76,0.65); }
+      .jov-stage-label.s2 { color: rgba(201,168,76,0.80); }
+      .jov-stage-label.s3 { color: rgba(52,211,153,0.75); }
+
       /* ── Matched products ── */
       .navi-products-section { margin: 0 0 28px; }
       .navi-product-carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; scrollbar-width: none; -ms-overflow-style: none; }
@@ -663,6 +709,19 @@ export default function NewMeNaviPage() {
       teeth:       { icon:'🦷', label:'歯',   catLink:'whitening',   tier:3, articleQ:'清潔感' },
       nail:        { icon:'💅', label:'爪',   catLink:'nail',        tier:4, articleQ:'垢抜け' },
     };
+
+    // ── 軸ごとの変容中継地点定義 ──
+    const AXIS_WAYPOINTS = {
+      hair:        { cp1: { label:'清潔感が届く',   desc:'「なんか髪型整ってる？」と気づかれる' },  cp2: { label:'印象が変わる',  desc:'「どこで切ってるの？」と聞かれる' },          goal: '髪が自分の武器になる' },
+      skin:        { cp1: { label:'清潔感が届く',   desc:'「肌きれいになった？」と気づかれる' },    cp2: { label:'印象が変わる',  desc:'「清潔感ある人」という印象が定着する' },      goal: '肌が自信の土台になる' },
+      fashion:     { cp1: { label:'変化が見える',   desc:'「なんか雰囲気変わった？」と言われる' },  cp2: { label:'印象が変わる',  desc:'「おしゃれだね」と言われる' },                goal: '服で自分を表現できる' },
+      body:        { cp1: { label:'自分で感じる',   desc:'体の変化を自分でも実感できる' },          cp2: { label:'他者が気づく',  desc:'「引き締まったね」と言われる' },              goal: '体が自信の源になる' },
+      eyebrow:     { cp1: { label:'顔がすっきり',   desc:'「顔がすっきりした？」と言われる' },      cp2: { label:'印象が整う',    desc:'眉が顔全体の印象を整えている' },              goal: '顔に統一感が出る' },
+      teeth:       { cp1: { label:'笑顔に自信',     desc:'笑顔に自信が持てるようになる' },          cp2: { label:'笑顔が変わる',  desc:'「笑顔いいね」と言われる' },                  goal: '笑顔が最大の武器になる' },
+      hairremoval: { cp1: { label:'清潔感の底上げ', desc:'ムダ毛が気にならなくなる' },              cp2: { label:'肌質が変わる',  desc:'「肌きれいだね」と言われる' },                goal: '清潔感が全身に行き渡る' },
+      nail:        { cp1: { label:'手元を意識する', desc:'手元が整った状態が当たり前になる' },      cp2: { label:'細部が変わる',  desc:'「手元きれいだね」と言われる' },               goal: '細部まで整った自分になる' },
+    };
+
     const TIER_LABELS = { 1:'基盤', 2:'深化', 3:'補完', 4:'磨き込み' };
     const CARE_LABELS = { none:'未着手', concerned:'気になっている', self:'自己ケア中', self_regular:'自己流・定期', pro:'プロ通い中' };
     // self_regular は self の上位 — milestone上はselfと同じ位置を現在地とする
@@ -1299,6 +1358,25 @@ export default function NewMeNaviPage() {
       return next || compassFirst;
     }
 
+    // ── 軸の変容ステージ（0〜3）を計算 ──
+    function getAxisStage(axisId) {
+      const { done, total, status } = getAxisStats(axisId);
+      if (status === 'done' || (total > 0 && done >= total)) return 3;
+      if (total === 0) return 0;
+      const pct = done / total;
+      if (pct >= 0.60) return 2;
+      if (pct >= 0.25 || done >= 2) return 1;
+      return 0;
+    }
+    function stepsToNextCheckpoint(axisId) {
+      const stage = getAxisStage(axisId);
+      if (stage >= 3) return 0;
+      const { done, total } = getAxisStats(axisId);
+      if (total === 0) return 0;
+      const thresholds = [Math.max(2, Math.ceil(total * 0.25)), Math.ceil(total * 0.60), total];
+      return Math.max(0, thresholds[stage] - done);
+    }
+
     function buildCompassHtml() {
       const currentAxis = calcDynamicCompass();
       const def = AREA_DEFS[currentAxis] || {};
@@ -1316,6 +1394,105 @@ export default function NewMeNaviPage() {
           <a href="/search?category=${esc(def.catLink||'consulting')}&diag=1" class="compass-strip-cta">探す</a>
         </div>
       `;
+    }
+
+    // ── 変容の旅 全体図 ──
+    function buildJourneyOverviewHtml() {
+      const compassAxis = calcDynamicCompass();
+      const compassDef  = AREA_DEFS[compassAxis] || {};
+      const wp = AXIS_WAYPOINTS[compassAxis] || {
+        cp1: { label:'はじめの変化', desc:'変化が自分でわかる' },
+        cp2: { label:'印象が変わる',  desc:'他者にも伝わり始める' },
+        goal: '目標達成',
+      };
+      const stage       = getAxisStage(compassAxis);
+      const stepsToNext = stepsToNextCheckpoint(compassAxis);
+
+      // ドット4個とコネクター3本
+      const nodes = [
+        { label: '今ここ',         dotCls: 'jov-current',                          labelCls: '' },
+        { label: wp.cp1.label,     dotCls: stage >= 1 ? 'jov-done' : '',            labelCls: stage >= 1 ? 'jov-done' : (stage === 0 ? 'jov-next' : '') },
+        { label: wp.cp2.label,     dotCls: stage >= 2 ? 'jov-done' : '',            labelCls: stage >= 2 ? 'jov-done' : (stage === 1 ? 'jov-next' : '') },
+        { label: 'ゴール',         dotCls: `jov-goal${stage >= 3 ? ' jov-done' : ''}`, labelCls: stage >= 3 ? 'jov-done' : (stage === 2 ? 'jov-next' : '') },
+      ];
+      const connsDone = [stage >= 1, stage >= 2, stage >= 3];
+
+      const trackRowHtml = `
+        <div class="jov-track-row">
+          ${nodes.map((n, i) => `
+            <div class="jov-wp-node"><div class="jov-wp-dot ${n.dotCls}"></div></div>
+            ${i < 3 ? `<div class="jov-track-conn${connsDone[i] ? ' jov-done' : ''}"></div>` : ''}
+          `).join('')}
+        </div>
+        <div class="jov-labels-row">
+          ${nodes.map((n, i) => `
+            <div class="jov-wp-label-wrap"><span class="jov-wp-label ${n.labelCls}">${esc(n.label)}</span></div>
+            ${i < 3 ? '<div class="jov-conn-spacer"></div>' : ''}
+          `).join('')}
+        </div>`;
+
+      const nextWpList = [
+        { label: wp.cp1.label, desc: wp.cp1.desc },
+        { label: wp.cp2.label, desc: wp.cp2.desc },
+        { label: 'ゴール',     desc: wp.goal },
+      ];
+      const nextWp = stage < 3 ? nextWpList[stage] : null;
+      const nextTargetHtml = nextWp
+        ? `<div class="jov-next-target">
+            <div class="jov-next-target-text">
+              <p class="jov-next-target-eyebrow">次の中継地点</p>
+              <p class="jov-next-target-label">${esc(nextWp.label)}</p>
+              <p class="jov-next-target-desc">${esc(nextWp.desc)}</p>
+            </div>
+            ${stepsToNext > 0
+              ? `<div class="jov-next-steps"><span class="jov-next-steps-num">${stepsToNext}</span><span class="jov-next-steps-unit">ステップ</span></div>`
+              : `<div style="font-size:12px;font-weight:700;color:rgba(52,211,153,0.85)">到達中！</div>`}
+          </div>`
+        : `<div class="jov-next-target" style="border-color:rgba(52,211,153,0.3);background:rgba(16,185,129,0.06)">
+            <span style="font-size:18px">🎉</span>
+            <div class="jov-next-target-text">
+              <p class="jov-next-target-label" style="color:rgba(52,211,153,0.9)">ゴール達成！</p>
+              <p class="jov-next-target-desc">${esc(wp.goal)}</p>
+            </div>
+          </div>`;
+
+      const stageLabelText = ['未着手', 'はじめの変化', '印象が変わる', 'ゴール達成'];
+      const stageLabelCls  = ['', 's1', 's2', 's3'];
+      const otherAxesHtml = Object.entries(AREA_DEFS)
+        .filter(([id]) => id !== compassAxis)
+        .map(([id, def]) => {
+          const s = getAxisStage(id);
+          const dots = [0,1,2,3].map(i =>
+            `<div class="jov-sd${s > i ? (i === 3 ? ' jov-goal-done' : ' jov-done') : (s === 3 && i === 3 ? ' jov-goal-done' : '')}"></div>`
+          ).join('');
+          return `
+            <div class="jov-other-chip" data-axis-jump="${esc(id)}">
+              <div class="jov-other-chip-head">
+                <span class="jov-other-chip-icon">${esc(def.icon)}</span>
+                <span class="jov-other-chip-name">${esc(def.label)}</span>
+              </div>
+              <div class="jov-stage-dots">${dots}</div>
+              <div class="jov-stage-label ${stageLabelCls[s]}">${stageLabelText[s]}</div>
+            </div>`;
+        }).join('');
+
+      return `
+        <div class="jov-section">
+          <div class="sec-label">🗺️ 変容の旅 — 全体図</div>
+          <div class="jov-hero">
+            <div class="jov-hero-axis">
+              <span class="jov-hero-icon">${esc(compassDef.icon||'🧭')}</span>
+              <div>
+                <p class="jov-hero-sub">Compass — 今向くべき方角</p>
+                <p class="jov-hero-title">${esc(compassDef.label||'')}軸の変容ロードマップ</p>
+              </div>
+            </div>
+            ${trackRowHtml}
+            ${nextTargetHtml}
+          </div>
+          <div class="sec-label" style="margin-top:4px;font-size:8px">その他の軸</div>
+          <div class="jov-other-grid">${otherAxesHtml}</div>
+        </div>`;
     }
 
     // ── サブトラックフォーカス（buildTrack内で毎回読む） ──
@@ -2058,13 +2235,13 @@ export default function NewMeNaviPage() {
         <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(201,168,76,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
       </div>
 
-      ${buildCompassHtml()}
-
-      ${buildGoalSceneHtml()}
-
       <div id="todayquest-container">
         ${buildTodayQuestHtml()}
       </div>
+
+      ${buildJourneyOverviewHtml()}
+
+      ${buildCompassHtml()}
 
       ${buildAxisFilterBar()}
 
