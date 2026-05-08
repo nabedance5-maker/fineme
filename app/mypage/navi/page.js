@@ -1884,7 +1884,8 @@ export default function NewMeNaviPage() {
         }
         const prov = _svcCache[cat];
         if (!prov) continue;
-        const html = `<a href="/provider/${esc(prov.slug||'')}" class="isc-inner" target="_self">
+        const provHref = prov.entity_type === 'affiliate' ? `/affiliate/${esc(prov.slug||'')}` : `/provider/${esc(prov.slug||'')}`;
+        const html = `<a href="${provHref}" class="isc-inner" target="_self">
           <span class="isc-icon">${esc(AREA_DEFS[Object.keys(AREA_DEFS).find(k=>AREA_DEFS[k].catLink===cat)]?.icon||'🏥')}</span>
           <div class="isc-body">
             <p class="isc-label">Fineme おすすめ</p>
