@@ -524,6 +524,11 @@ export default function NewMeNaviPage() {
       .jov-stage-label.s1 { color: rgba(201,168,76,0.65); }
       .jov-stage-label.s2 { color: rgba(201,168,76,0.80); }
       .jov-stage-label.s3 { color: rgba(52,211,153,0.75); }
+      /* ── 軸完了ボタン ── */
+      .jov-complete-btn { width:100%;margin-top:14px;padding:14px 20px;background:linear-gradient(135deg,rgba(201,168,76,0.18),rgba(201,168,76,0.10));border:1.5px solid rgba(201,168,76,0.5);border-radius:12px;color:#c9a84c;font-size:15px;font-weight:800;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.04em; }
+      .jov-complete-btn:hover { background:linear-gradient(135deg,rgba(201,168,76,0.28),rgba(201,168,76,0.18));border-color:#c9a84c;transform:translateY(-1px);box-shadow:0 4px 16px rgba(201,168,76,0.2); }
+      .jov-complete-btn:active { transform:translateY(0); }
+      .jov-complete-btn:disabled { opacity:.5;cursor:default;transform:none; }
 
       /* ── Matched products ── */
       .navi-products-section { margin: 0 0 28px; }
@@ -1437,8 +1442,10 @@ export default function NewMeNaviPage() {
         { label: 'ゴール',     desc: wp.goal },
       ];
       const nextWp = stage < 3 ? nextWpList[stage] : null;
-      const nextTargetHtml = nextWp
-        ? `<div class="jov-next-target">
+      const alreadyDone = axisProgress[compassAxis] === 'done';
+      let nextTargetHtml;
+      if (nextWp) {
+        nextTargetHtml = `<div class="jov-next-target">
             <div class="jov-next-target-text">
               <p class="jov-next-target-eyebrow">次の中継地点</p>
               <p class="jov-next-target-label">${esc(nextWp.label)}</p>
@@ -1447,14 +1454,30 @@ export default function NewMeNaviPage() {
             ${stepsToNext > 0
               ? `<div class="jov-next-steps"><span class="jov-next-steps-num">${stepsToNext}</span><span class="jov-next-steps-unit">ステップ</span></div>`
               : `<div style="font-size:12px;font-weight:700;color:rgba(52,211,153,0.85)">到達中！</div>`}
-          </div>`
-        : `<div class="jov-next-target" style="border-color:rgba(52,211,153,0.3);background:rgba(16,185,129,0.06)">
+          </div>`;
+      } else if (alreadyDone) {
+        const nextAxisId = priorityOrder.find(id => axisProgress[id] !== 'done' && id !== compassAxis);
+        const nextDef = nextAxisId ? AREA_DEFS[nextAxisId] : null;
+        nextTargetHtml = `<div class="jov-next-target" style="border-color:rgba(52,211,153,0.3);background:rgba(16,185,129,0.06)">
+            <span style="font-size:18px">✅</span>
+            <div class="jov-next-target-text">
+              <p class="jov-next-target-label" style="color:rgba(52,211,153,0.9)">この軸の旅は完了しました</p>
+              <p class="jov-next-target-desc">${nextDef ? `次は ${esc(nextDef.icon)} ${esc(nextDef.label)}軸へ進みましょう` : esc(wp.goal)}</p>
+            </div>
+          </div>`;
+      } else {
+        nextTargetHtml = `
+          <div class="jov-next-target" style="border-color:rgba(52,211,153,0.3);background:rgba(16,185,129,0.06)">
             <span style="font-size:18px">🎉</span>
             <div class="jov-next-target-text">
               <p class="jov-next-target-label" style="color:rgba(52,211,153,0.9)">ゴール達成！</p>
               <p class="jov-next-target-desc">${esc(wp.goal)}</p>
             </div>
-          </div>`;
+          </div>
+          <button class="jov-complete-btn" data-complete-axis="${esc(compassAxis)}">
+            🏁 この軸の旅を完了する
+          </button>`;
+      }
 
       const stageLabelText = ['未着手', 'はじめの変化', '印象が変わる', 'ゴール達成'];
       const stageLabelCls  = ['', 's1', 's2', 's3'];
@@ -1477,7 +1500,7 @@ export default function NewMeNaviPage() {
         }).join('');
 
       return `
-        <div class="jov-section">
+        <div class="jov-section" id="jov-section">
           <div class="sec-label">🗺️ 変容の旅 — 全体図</div>
           <div class="jov-hero">
             <div class="jov-hero-axis">
@@ -2405,11 +2428,39 @@ export default function NewMeNaviPage() {
       }
     });
 
+    function showAxisCompleteCelebration(axisId) {
+      const def = AREA_DEFS[axisId] || {};
+      const nextAxisId = priorityOrder.find(id => axisProgress[id] !== 'done');
+      const nextDef = nextAxisId ? AREA_DEFS[nextAxisId] : null;
+      let toast = document.getElementById('axis-complete-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'axis-complete-toast';
+        toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(120px);background:linear-gradient(135deg,#c9a84c 0%,#a0832b 100%);color:#0a0f1e;border-radius:18px;padding:18px 24px;display:flex;align-items:center;gap:14px;box-shadow:0 8px 36px rgba(201,168,76,.4);transition:transform .45s cubic-bezier(.34,1.56,.64,1);z-index:9999;pointer-events:none;width:min(360px,calc(100vw - 40px))';
+        document.body.appendChild(toast);
+      }
+      const nextMsg = nextDef ? `次は ${nextDef.icon} ${nextDef.label}軸へ` : 'すべての軸が前進中！';
+      toast.innerHTML = `<div style="font-size:28px;flex-shrink:0">🏁</div><div><p style="font-size:15px;font-weight:800;margin:0 0 3px">${esc(def.icon)} ${esc(def.label)}軸 — ひと段落！</p><p style="font-size:12px;opacity:.85;margin:0">${nextMsg}</p></div>`;
+      requestAnimationFrame(() => { toast.style.transform = 'translateX(-50%) translateY(0)'; });
+      setTimeout(() => { toast.style.transform = 'translateX(-50%) translateY(120px)'; }, 4500);
+      const colors = ['#c9a84c','#10b981','#3b82f6','#f59e0b','#ec4899','#8b5cf6'];
+      for (let i = 0; i < 36; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti-piece';
+        const size = 5 + Math.random() * 7;
+        el.style.cssText = `left:${Math.random()*100}vw;width:${size}px;height:${size}px;background:${colors[i%colors.length]};animation-duration:${2+Math.random()*2.5}s;animation-delay:${Math.random()*.8}s`;
+        document.body.appendChild(el);
+        el.addEventListener('animationend', () => el.remove());
+      }
+    }
+
     function refreshCompassAndTracks() {
       const strip = document.getElementById('compass-strip');
       if (strip) { const tmp = document.createElement('div'); tmp.innerHTML = buildCompassHtml(); strip.replaceWith(tmp.firstElementChild); }
       const tqEl = document.getElementById('todayquest-container');
       if (tqEl) tqEl.innerHTML = buildTodayQuestHtml();
+      const jovEl = document.getElementById('jov-section');
+      if (jovEl) { const tmp = document.createElement('div'); tmp.innerHTML = buildJourneyOverviewHtml(); const newJov = tmp.querySelector('#jov-section'); if (newJov) jovEl.replaceWith(newJov); }
       const container = document.getElementById('sections-container');
       if (container) container.innerHTML = buildSectionsHtml();
       const bar = document.getElementById('axis-filter-bar');
@@ -2604,6 +2655,27 @@ export default function NewMeNaviPage() {
       const targetId = btn.dataset.scrollTo;
       const el = document.getElementById(targetId);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // ── 軸完了ボタン ──
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('.jov-complete-btn');
+      if (!btn) return;
+      const axisId = btn.dataset.completeAxis;
+      if (!axisId) return;
+      btn.disabled = true;
+      btn.textContent = '✓ 完了しました！';
+      axisProgress[axisId] = 'done';
+      try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(axisProgress)); } catch {}
+      if (token) {
+        fetch('/api/me/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ axis_progress: axisProgress }),
+        }).catch(() => {});
+      }
+      showAxisCompleteCelebration(axisId);
+      setTimeout(() => refreshCompassAndTracks(), 800);
     });
 
 
