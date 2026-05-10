@@ -543,39 +543,48 @@ export default function NewMeNaviPage() {
       .navi-product-cta { font-size: 11px; font-weight: 700; color: rgba(16,185,129,0.75); }
       .navi-product-match-badge { font-size: 9px; font-weight: 800; background: rgba(201,168,76,0.18); color: #c9a84c; border: 1px solid rgba(201,168,76,.3); border-radius: 99px; padding: 2px 7px; width: fit-content; letter-spacing: .04em; }
 
-      /* ── Duolingo Path ── */
-      .path-wrap { position: relative; }
-      .path-phase-block { }
-      .path-phase-header { display: flex; align-items: center; gap: 10px; padding: 18px 0 10px; }
-      .path-phase-header-spine { width: 36px; flex-shrink: 0; display: flex; justify-content: center; }
-      .path-phase-label { font-size: 15px; font-weight: 900; color: rgba(232,228,220,0.85); margin: 0 0 2px; font-family: 'Noto Serif JP', Georgia, serif; }
-      .path-phase-desc { font-size: 11px; color: rgba(232,228,220,0.42); margin: 0; }
-      .path-phase-count { font-size: 11px; font-weight: 800; color: rgba(201,168,76,0.7); background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2); border-radius: 99px; padding: 3px 10px; white-space: nowrap; flex-shrink: 0; }
-      .path-node { display: flex; gap: 0; }
-      .path-spine-col { width: 36px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
-      .path-conn { width: 2px; flex: 1; min-height: 12px; background: rgba(201,168,76,0.25); border-radius: 1px; }
-      .path-conn.pc-done { background: #c9a84c; }
-      .path-dot { width: 13px; height: 13px; border-radius: 50%; border: 2px solid rgba(201,168,76,0.4); background: rgba(10,15,30,0.65); flex-shrink: 0; transition: all .2s; }
-      .path-dot.pd-done { background: #c9a84c; border-color: #c9a84c; }
-      .path-dot.pd-compass { width: 17px; height: 17px; background: rgba(201,168,76,0.12); border-color: #c9a84c; box-shadow: 0 0 0 4px rgba(201,168,76,0.14); animation: trail-pulse 2.2s ease-in-out infinite; }
-      .path-dot.pd-high { width: 15px; height: 15px; border-color: rgba(201,168,76,0.55); background: rgba(201,168,76,0.07); }
-      .path-dot.pd-future { border-color: rgba(232,228,220,0.2); background: rgba(10,15,30,0.45); }
-      .path-body { flex: 1; padding: 0 0 14px 10px; min-width: 0; }
-      .path-node-head { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0 4px; cursor: pointer; }
-      .path-node-meta { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; }
-      .path-node-content { flex: 1; min-width: 0; }
-      .path-node-axis-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px; border: 1px solid; white-space: nowrap; }
-      .path-node-text { font-size: 14px; color: rgba(232,228,220,0.82); line-height: 1.55; margin: 0; }
-      .path-node.pn-done .path-node-text { text-decoration: line-through; color: #6b7280; }
-      .path-node.pn-done .path-node-axis-chip { opacity: 0.45; }
-      .path-node-check { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid rgba(232,228,220,0.2); background: rgba(10,15,30,0.65); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; color: rgba(232,228,220,0.3); transition: all .15s; flex-shrink: 0; font-family: 'Noto Sans JP', sans-serif; margin-top: 6px; }
-      .path-node-check:hover { border-color: #10b981; color: #10b981; }
-      .path-node-check.checked { border-color: #10b981; background: #10b981; color: #fff; }
-      .path-node-detail { display: none; margin: 2px 0 8px; }
+      /* ── Game Map Path ── */
+      .path-wrap { position: relative; padding: 0 4px; }
+      .path-phase-banner { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: rgba(10,15,30,0.55); border: 1px solid rgba(201,168,76,0.22); border-radius: 12px; margin: 24px 0 8px; }
+      .path-phase-banner-icon { font-size: 22px; flex-shrink: 0; }
+      .path-phase-banner-body { flex: 1; min-width: 0; }
+      .path-phase-banner-label { font-size: 14px; font-weight: 900; color: rgba(232,228,220,0.88); margin: 0 0 2px; font-family: 'Noto Serif JP', Georgia, serif; }
+      .path-phase-banner-desc { font-size: 11px; color: rgba(232,228,220,0.42); margin: 0; }
+      .path-phase-banner-count { font-size: 11px; font-weight: 800; color: rgba(201,168,76,0.7); background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2); border-radius: 99px; padding: 3px 10px; white-space: nowrap; flex-shrink: 0; }
+      .gmap-node-row { display: flex; padding: 4px 8px; }
+      .gmap-node-row.gnr-left { justify-content: flex-start; padding-left: 20px; }
+      .gmap-node-row.gnr-right { justify-content: flex-end; padding-right: 20px; }
+      .gmap-node-row.gnr-center { justify-content: center; }
+      .gmap-node { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 96px; cursor: pointer; }
+      .gm-circle { width: 62px; height: 62px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 3px solid; transition: all .25s; position: relative; flex-shrink: 0; }
+      .gm-c-future { border-color: rgba(232,228,220,0.18); background: rgba(10,15,30,0.5); box-shadow: 0 3px 12px rgba(0,0,0,.3); }
+      .gm-c-active { border-color: rgba(201,168,76,0.45); background: rgba(201,168,76,0.07); box-shadow: 0 4px 16px rgba(201,168,76,.1); }
+      .gm-c-done { border-color: #c9a84c; background: rgba(201,168,76,0.15); box-shadow: 0 4px 14px rgba(201,168,76,.2); }
+      .gm-c-done::after { content: '✓'; position: absolute; top: -4px; right: -4px; width: 22px; height: 22px; border-radius: 50%; background: #10b981; color: #fff; font-size: 13px; font-weight: 900; line-height: 22px; text-align: center; display: block; }
+      .gm-c-compass { border-color: #c9a84c; background: rgba(201,168,76,0.12); box-shadow: 0 0 0 8px rgba(201,168,76,.08), 0 6px 20px rgba(201,168,76,.25); animation: gmap-pulse 2.2s ease-in-out infinite; width: 70px; height: 70px; font-size: 32px; }
+      @keyframes gmap-pulse { 0%,100% { box-shadow: 0 0 0 6px rgba(201,168,76,.08), 0 6px 20px rgba(201,168,76,.2); } 50% { box-shadow: 0 0 0 14px rgba(201,168,76,.14), 0 8px 28px rgba(201,168,76,.35); } }
+      .gmap-node-label { text-align: center; width: 100%; }
+      .gmap-node-axis-name { font-size: 10px; font-weight: 800; color: rgba(201,168,76,0.75); letter-spacing: .05em; display: block; margin-bottom: 3px; }
+      .gmap-node-text { font-size: 11px; color: rgba(232,228,220,0.72); line-height: 1.45; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+      .path-node.pn-done .gmap-node-text { text-decoration: line-through; color: #6b7280; }
+      .path-node.pn-done .gmap-node-axis-name { opacity: 0.45; }
+      .gmap-now-badge { display: inline-flex; align-items: center; gap: 2px; font-size: 9px; font-weight: 800; color: #c9a84c; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.32); border-radius: 99px; padding: 1px 6px; white-space: nowrap; margin-bottom: 2px; }
+      .gmap-selfcheck-badge { font-size: 9px; font-weight: 700; color: rgba(52,211,153,0.85); background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); border-radius: 99px; padding: 1px 6px; display: inline-block; margin-bottom: 2px; }
+      .path-node-detail { display: none; margin: 4px 0 8px; }
       .path-node-detail.pnd-open { display: block; }
-      .path-node.pn-compass .path-body { background: rgba(201,168,76,0.03); border-radius: 10px; padding: 0 12px 12px 10px; border-left: 2.5px solid rgba(201,168,76,0.45); margin-left: 2px; }
-      .path-now-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 800; color: #c9a84c; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.32); border-radius: 99px; padding: 2px 8px; white-space: nowrap; }
-      .path-expand-icon { font-size: 10px; color: rgba(201,168,76,0.5); flex-shrink: 0; padding-top: 4px; }
+      .gmap-detail-card { background: rgba(10,15,30,0.65); border: 1px solid rgba(232,228,220,0.12); border-radius: 12px; padding: 16px; margin: 0 4px; backdrop-filter: blur(8px); }
+      .path-node.pn-compass .gmap-detail-card { border-color: rgba(201,168,76,0.3); }
+      .gmap-detail-title { font-size: 14px; font-weight: 700; color: rgba(232,228,220,0.90); line-height: 1.6; margin: 0 0 12px; }
+      .gmap-check-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 13px; background: rgba(16,185,129,0.1); border: 1.5px solid rgba(16,185,129,0.35); border-radius: 10px; color: rgba(16,185,129,0.85); font-size: 15px; font-weight: 800; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; margin-top: 12px; }
+      .gmap-check-btn:hover { background: rgba(16,185,129,0.18); border-color: #10b981; }
+      .gmap-check-btn.checked { background: rgba(16,185,129,0.18); border-color: #10b981; color: #10b981; }
+      .gmap-article-row { display: flex; justify-content: center; padding: 2px 8px; }
+      .gmap-article-node { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(10,15,30,0.45); border: 1px solid rgba(232,228,220,0.12); border-radius: 10px; text-decoration: none; width: 100%; max-width: 310px; }
+      .gmap-article-node:hover { border-color: rgba(201,168,76,0.3); }
+      .gmap-article-icon { font-size: 18px; flex-shrink: 0; }
+      .gmap-article-body { flex: 1; min-width: 0; }
+      .gmap-article-label { font-size: 10px; color: rgba(232,228,220,0.40); margin: 0 0 2px; }
+      .gmap-article-title { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.75); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     `;
     document.head.appendChild(style);
 
@@ -1297,24 +1306,30 @@ export default function NewMeNaviPage() {
       return html;
     }
 
-    // ── Duolingo型縦スクロールパス生成 ──
-    function buildPathNode(s, compassAxis, compassFirstUndoneKey) {
+    // ── ゲームマップ：ノード間コネクターSVG ──
+    function connectorSvg(fromClass, toClass, done) {
+      const POS = { 'gnr-left': 19, 'gnr-center': 50, 'gnr-right': 81 };
+      const x1 = POS[fromClass] ?? 50, x2 = POS[toClass] ?? 50;
+      const color = done ? '#c9a84c' : 'rgba(201,168,76,0.30)';
+      const w = done ? '3' : '2';
+      const dash = done ? '' : 'stroke-dasharray="7 5"';
+      return `<svg viewBox="0 0 100 52" preserveAspectRatio="none" style="width:100%;height:52px;display:block;overflow:visible;margin:-2px 0"><path d="M${x1} 0 C${x1} 26 ${x2} 26 ${x2} 52" stroke="${color}" stroke-width="${w}" fill="none" ${dash} stroke-linecap="round"/></svg>`;
+    }
+
+    // ── ゲームマップ：ノード生成 ──
+    function buildPathNode(s, compassAxis, compassFirstUndoneKey, posClass) {
       const { axisId, axisKey, def, step, idx, doneKey, isDone } = s;
       const isCompassStep = axisId === compassAxis;
       const isGlobalCurrent = doneKey === compassFirstUndoneKey;
       const isHigh = step.guide === 'HIGH';
       const isMid  = step.guide === 'MID';
-      const connDoneClass = isDone ? ' pc-done' : '';
-      const dotClass = isDone ? 'pd-done'
-        : isCompassStep ? 'pd-compass'
-        : (isHigh || isMid) ? 'pd-high'
-        : 'pd-future';
+      const circleClass = isDone ? 'gm-c-done'
+        : isCompassStep ? 'gm-c-compass'
+        : (isHigh || isMid) ? 'gm-c-active'
+        : 'gm-c-future';
       const nodeClasses = ['path-node', isDone ? 'pn-done' : '', isCompassStep && !isDone ? 'pn-compass' : ''].filter(Boolean).join(' ');
-      const badgeBg     = isCompassStep ? 'rgba(201,168,76,0.15)' : 'rgba(10,15,30,0.50)';
-      const badgeBorder = isCompassStep ? 'rgba(201,168,76,0.35)' : 'rgba(232,228,220,0.18)';
-      const badgeColor  = isCompassStep ? '#c9a84c' : 'rgba(232,228,220,0.55)';
-      const nowBadge = isGlobalCurrent ? `<span class="path-now-badge">🧭 今ここ</span>` : '';
-      const selfCheckBadge = step.isSelfCheck ? `<span class="selfcheck-badge"> 現状確認</span>` : '';
+      const nowBadge = isGlobalCurrent ? `<span class="gmap-now-badge">🧭 今ここ</span><br>` : '';
+      const selfCheckBadge = step.isSelfCheck ? `<span class="gmap-selfcheck-badge">📋 現状確認</span><br>` : '';
       const selfCheckValue = (step.isSelfCheck && bodyData[step.bodyDataKey])
         ? `<span class="selfcheck-value">✓ ${esc(Array.isArray(bodyData[step.bodyDataKey]) ? bodyData[step.bodyDataKey].join('・') : bodyData[step.bodyDataKey])}</span>` : '';
       let guideBadgeHtml = '';
@@ -1350,27 +1365,26 @@ export default function NewMeNaviPage() {
           }).join('');
         if (chips) productsHtml = `<div class="product-suggestions">${chips}</div>`;
       }
-      const detailContent = [selfCheckValue, hintHtml, detailHtml, guideBadgeHtml, svcCardHtml, noteHtml, productsHtml].filter(Boolean).join('');
-      const hasDetail = !!detailContent;
-      const isAutoOpen = isGlobalCurrent && hasDetail;
+      const innerDetail = [selfCheckValue, hintHtml, detailHtml, guideBadgeHtml, svcCardHtml, noteHtml, productsHtml].filter(Boolean).join('');
+      const isAutoOpen = isGlobalCurrent;
+      const shortText = step.text.length > 22 ? step.text.slice(0, 22) + '…' : step.text;
       return `<div class="${nodeClasses}" data-done-key="${esc(doneKey)}">
-        <div class="path-spine-col">
-          <div class="path-conn${connDoneClass}"></div>
-          <div class="path-dot ${dotClass}"></div>
-        </div>
-        <div class="path-body">
-          <div class="path-node-head"${hasDetail ? ` data-toggle-node="${esc(doneKey)}"` : ''}>
-            <div class="path-node-content">
-              <div class="path-node-meta">
-                <span class="path-node-axis-chip" style="background:${badgeBg};border-color:${badgeBorder};color:${badgeColor}">${esc(def.icon)} ${esc(def.label)}</span>
-                ${nowBadge}${selfCheckBadge}
-              </div>
-              <p class="path-node-text">${esc(step.text)}</p>
+        <div class="gmap-node-row ${posClass}">
+          <div class="gmap-node" data-toggle-node="${esc(doneKey)}">
+            <div class="gm-circle ${circleClass}">${esc(def.icon)}</div>
+            <div class="gmap-node-label">
+              ${nowBadge}${selfCheckBadge}
+              <span class="gmap-node-axis-name">${esc(def.label)}</span>
+              <p class="gmap-node-text">${esc(shortText)}</p>
             </div>
-            ${hasDetail ? `<span class="path-expand-icon">${isAutoOpen ? '▲' : '▼'}</span>` : ''}
-            <button class="step-check-btn path-node-check${isDone?' checked':''}" data-done-key="${esc(doneKey)}" title="${isDone?'完了を取り消す':'できてる・やった'}">${isDone?'✓':''}</button>
           </div>
-          ${hasDetail ? `<div class="path-node-detail${isAutoOpen ? ' pnd-open' : ''}">${detailContent}</div>` : ''}
+        </div>
+        <div class="path-node-detail${isAutoOpen ? ' pnd-open' : ''}">
+          <div class="gmap-detail-card">
+            <p class="gmap-detail-title">${esc(step.text)}</p>
+            ${innerDetail}
+            <button class="step-check-btn gmap-check-btn${isDone?' checked':''}" data-done-key="${esc(doneKey)}">${isDone ? '✓ 完了済み' : '✓ やった！'}</button>
+          </div>
         </div>
       </div>`;
     }
@@ -1383,6 +1397,7 @@ export default function NewMeNaviPage() {
         { type: 'habit',   icon: '🔄', tabLabel: '毎日習慣', label: '毎日・毎週の習慣にする',     desc: '継続が変容を積み上げる。少しずつでOK' },
         { type: 'ongoing', icon: '🌊', tabLabel: 'じっくり', label: 'じっくり取り組むプログラム', desc: '数週間〜数ヶ月スパン。覚悟して始めると変わる' },
       ];
+      const POS_CYCLE = ['gnr-left', 'gnr-right'];
       const compassFirstUndoneKey = allSteps
         .filter(s => s.axisId === compassAxis && !s.isDone)
         .sort((a, b) => a.idx - b.idx)[0]?.doneKey ?? null;
@@ -1402,7 +1417,7 @@ export default function NewMeNaviPage() {
       </div>`;
       let html = buildSelfCheckIntroHtml() + tabBarHtml + `<div class="path-wrap">`;
       const usedArticleSlugs = new Set();
-      SECTIONS.forEach(({ type, icon, tabLabel, label, desc }) => {
+      SECTIONS.forEach(({ type, icon, label, desc }) => {
         const sectionSteps = allSteps
           .filter(s => s.actionType === type)
           .filter(s => !activeAxisFilter || s.axisId === activeAxisFilter)
@@ -1415,14 +1430,13 @@ export default function NewMeNaviPage() {
           });
         const doneInSection = sectionSteps.filter(s => s.isDone).length;
         html += `<div class="path-phase-block" id="path-section-${type}">
-          <div class="path-phase-header">
-            <div class="path-phase-header-spine"><div class="path-conn" style="min-height:18px"></div></div>
-            <span style="font-size:20px;flex-shrink:0">${icon}</span>
-            <div style="flex:1;min-width:0">
-              <p class="path-phase-label">${esc(label)}</p>
-              <p class="path-phase-desc">${esc(desc)}</p>
+          <div class="path-phase-banner">
+            <span class="path-phase-banner-icon">${icon}</span>
+            <div class="path-phase-banner-body">
+              <p class="path-phase-banner-label">${esc(label)}</p>
+              <p class="path-phase-banner-desc">${esc(desc)}</p>
             </div>
-            <span class="path-phase-count">${doneInSection}/${sectionSteps.length}</span>
+            <span class="path-phase-banner-count">${doneInSection}/${sectionSteps.length}</span>
           </div>`;
         const insertBefore = new Map();
         const injectedAxes = new Set();
@@ -1434,24 +1448,29 @@ export default function NewMeNaviPage() {
           if (art) { insertBefore.set(firstHighIdx, art); usedArticleSlugs.add(art.slug); injectedAxes.add(targetAxis); }
           if (insertBefore.size >= 2) break;
         }
+        let posIdx = 0;
+        let prevPosClass = null;
         sectionSteps.forEach((s, i) => {
           const art = insertBefore.get(i);
           if (art) {
-            html += `<div style="display:flex;gap:0">
-              <div class="path-spine-col"><div class="path-conn"></div></div>
-              <div style="flex:1;padding:0 0 8px 10px">
-                <a href="/feature/${esc(art.slug)}" class="trail-article-node" target="_blank">
-                  <span class="trail-article-icon">📖</span>
-                  <div class="trail-article-body">
-                    <p class="trail-article-label">この一歩を踏み出す前に読む</p>
-                    <p class="trail-article-title">${esc(art.title)}</p>
-                  </div>
-                  <span class="trail-article-arrow">→</span>
-                </a>
-              </div>
+            html += `<div class="gmap-article-row">
+              <a href="/feature/${esc(art.slug)}" class="gmap-article-node" target="_blank">
+                <span class="gmap-article-icon">📖</span>
+                <div class="gmap-article-body">
+                  <p class="gmap-article-label">この一歩を踏み出す前に読む</p>
+                  <p class="gmap-article-title">${esc(art.title)}</p>
+                </div>
+                <span style="color:rgba(201,168,76,0.6);font-size:14px;flex-shrink:0">→</span>
+              </a>
             </div>`;
           }
-          html += buildPathNode(s, compassAxis, compassFirstUndoneKey);
+          const posClass = POS_CYCLE[posIdx % 2];
+          if (i > 0 && prevPosClass !== null) {
+            html += connectorSvg(prevPosClass, posClass, s.isDone);
+          }
+          html += buildPathNode(s, compassAxis, compassFirstUndoneKey, posClass);
+          prevPosClass = posClass;
+          posIdx++;
         });
         html += `</div>`;
       });
@@ -2734,7 +2753,11 @@ export default function NewMeNaviPage() {
     // ── ステップDOMを完了状態に更新する共通関数 ──
     function applyStepDone(btn, key, newDone) {
       btn.classList.toggle('checked', newDone);
-      btn.textContent = newDone ? '✓' : '';
+      if (btn.classList.contains('gmap-check-btn')) {
+        btn.textContent = newDone ? '✓ 完了済み' : '✓ やった！';
+      } else {
+        btn.textContent = newDone ? '✓' : '';
+      }
       // メインステップ
       const milestoneItem = btn.closest('.milestone-item');
       if (milestoneItem) {
@@ -2761,15 +2784,15 @@ export default function NewMeNaviPage() {
           return;
         }
       }
-      // path-node (Duolingo パス)
+      // path-node (ゲームマップ)
       const pathNode = btn.closest('.path-node');
       if (pathNode) {
         pathNode.classList.toggle('pn-done', newDone);
-        const dot = pathNode.querySelector('.path-dot');
-        if (dot) {
+        const circle = pathNode.querySelector('.gm-circle');
+        if (circle) {
           if (newDone) {
-            dot.className = 'path-dot pd-done';
-            dot.style.cssText = '';
+            circle.className = 'gm-circle gm-c-done';
+            circle.style.animation = '';
           } else {
             const container = document.getElementById('sections-container');
             if (container) { container.innerHTML = buildPathHtml(); injectServiceCards(); }
@@ -2777,8 +2800,6 @@ export default function NewMeNaviPage() {
             return;
           }
         }
-        const conn = pathNode.querySelector('.path-conn');
-        if (conn) conn.classList.toggle('pc-done', newDone);
         if (newDone && selfCheckMap.has(btn.dataset.doneKey)) {
           const container = document.getElementById('sections-container');
           if (container) { container.innerHTML = buildPathHtml(); injectServiceCards(); }
