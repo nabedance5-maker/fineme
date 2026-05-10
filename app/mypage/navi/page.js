@@ -542,6 +542,40 @@ export default function NewMeNaviPage() {
       .navi-product-name { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.85); line-height: 1.45; flex: 1; }
       .navi-product-cta { font-size: 11px; font-weight: 700; color: rgba(16,185,129,0.75); }
       .navi-product-match-badge { font-size: 9px; font-weight: 800; background: rgba(201,168,76,0.18); color: #c9a84c; border: 1px solid rgba(201,168,76,.3); border-radius: 99px; padding: 2px 7px; width: fit-content; letter-spacing: .04em; }
+
+      /* ── Duolingo Path ── */
+      .path-wrap { position: relative; }
+      .path-phase-block { }
+      .path-phase-header { display: flex; align-items: center; gap: 10px; padding: 18px 0 10px; }
+      .path-phase-header-spine { width: 36px; flex-shrink: 0; display: flex; justify-content: center; }
+      .path-phase-label { font-size: 15px; font-weight: 900; color: rgba(232,228,220,0.85); margin: 0 0 2px; font-family: 'Noto Serif JP', Georgia, serif; }
+      .path-phase-desc { font-size: 11px; color: rgba(232,228,220,0.42); margin: 0; }
+      .path-phase-count { font-size: 11px; font-weight: 800; color: rgba(201,168,76,0.7); background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2); border-radius: 99px; padding: 3px 10px; white-space: nowrap; flex-shrink: 0; }
+      .path-node { display: flex; gap: 0; }
+      .path-spine-col { width: 36px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
+      .path-conn { width: 2px; flex: 1; min-height: 12px; background: rgba(201,168,76,0.25); border-radius: 1px; }
+      .path-conn.pc-done { background: #c9a84c; }
+      .path-dot { width: 13px; height: 13px; border-radius: 50%; border: 2px solid rgba(201,168,76,0.4); background: rgba(10,15,30,0.65); flex-shrink: 0; transition: all .2s; }
+      .path-dot.pd-done { background: #c9a84c; border-color: #c9a84c; }
+      .path-dot.pd-compass { width: 17px; height: 17px; background: rgba(201,168,76,0.12); border-color: #c9a84c; box-shadow: 0 0 0 4px rgba(201,168,76,0.14); animation: trail-pulse 2.2s ease-in-out infinite; }
+      .path-dot.pd-high { width: 15px; height: 15px; border-color: rgba(201,168,76,0.55); background: rgba(201,168,76,0.07); }
+      .path-dot.pd-future { border-color: rgba(232,228,220,0.2); background: rgba(10,15,30,0.45); }
+      .path-body { flex: 1; padding: 0 0 14px 10px; min-width: 0; }
+      .path-node-head { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0 4px; cursor: pointer; }
+      .path-node-meta { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; }
+      .path-node-content { flex: 1; min-width: 0; }
+      .path-node-axis-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px; border: 1px solid; white-space: nowrap; }
+      .path-node-text { font-size: 14px; color: rgba(232,228,220,0.82); line-height: 1.55; margin: 0; }
+      .path-node.pn-done .path-node-text { text-decoration: line-through; color: #6b7280; }
+      .path-node.pn-done .path-node-axis-chip { opacity: 0.45; }
+      .path-node-check { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid rgba(232,228,220,0.2); background: rgba(10,15,30,0.65); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; color: rgba(232,228,220,0.3); transition: all .15s; flex-shrink: 0; font-family: 'Noto Sans JP', sans-serif; margin-top: 6px; }
+      .path-node-check:hover { border-color: #10b981; color: #10b981; }
+      .path-node-check.checked { border-color: #10b981; background: #10b981; color: #fff; }
+      .path-node-detail { display: none; margin: 2px 0 8px; }
+      .path-node-detail.pnd-open { display: block; }
+      .path-node.pn-compass .path-body { background: rgba(201,168,76,0.03); border-radius: 10px; padding: 0 12px 12px 10px; border-left: 2.5px solid rgba(201,168,76,0.45); margin-left: 2px; }
+      .path-now-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 800; color: #c9a84c; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.32); border-radius: 99px; padding: 2px 8px; white-space: nowrap; }
+      .path-expand-icon { font-size: 10px; color: rgba(201,168,76,0.5); flex-shrink: 0; padding-top: 4px; }
     `;
     document.head.appendChild(style);
 
@@ -1238,6 +1272,201 @@ export default function NewMeNaviPage() {
         <svg viewBox="0 0 100 32" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:32px;display:block;margin-top:16px">
           <line x1="50" y1="0" x2="50" y2="32" stroke="rgba(201,168,76,0.45)" stroke-width="2" stroke-dasharray="5 4"/>
         </svg>
+        <div style="padding:16px 0 8px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="width:18px;height:1.5px;background:#c9a84c;flex-shrink:0;border-radius:1px"></div>
+            <span style="font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(201,168,76,0.7)">Next Stage</span>
+            <div style="flex:1;height:1px;background:repeating-linear-gradient(90deg,rgba(201,168,76,0.25) 0,rgba(201,168,76,0.25) 4px,transparent 4px,transparent 9px)"></div>
+          </div>
+          <p style="font-family:'Noto Serif JP',Georgia,serif;font-size:16px;font-weight:800;color:rgba(232,228,220,0.95);margin:0 0 6px;line-height:1.5">変わった自分を、世界へ発揮するステージ</p>
+          <p style="font-size:12px;color:rgba(232,228,220,0.60);line-height:1.7;margin:0 0 16px">変容は発揮することで初めて完成する。外見の変化を最大限に活かすステージへ。</p>
+          ${stageReadinessHtml}
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <a href="/search?category=photo" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none">
+              <span style="font-size:26px;flex-shrink:0">📸</span>
+              <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Noto Serif JP',Georgia,serif">プロフィール写真撮影</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">変わった自分を、最高の一枚に。マッチングアプリの第一印象を決定的に変える。</p></div>
+              <span style="color:rgba(201,168,76,0.6);font-size:16px;flex-shrink:0">→</span>
+            </a>
+            <a href="/search?category=marriage" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none">
+              <span style="font-size:26px;flex-shrink:0">💍</span>
+              <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Noto Serif JP',Georgia,serif">婚活サポート</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">自信がついた今が、出会いを本気にするタイミング。変容の先にある、本当の出会いへ。</p></div>
+              <span style="color:rgba(201,168,76,0.6);font-size:16px;flex-shrink:0">→</span>
+            </a>
+          </div>
+        </div>`;
+      return html;
+    }
+
+    // ── Duolingo型縦スクロールパス生成 ──
+    function buildPathNode(s, compassAxis, compassFirstUndoneKey) {
+      const { axisId, axisKey, def, step, idx, doneKey, isDone } = s;
+      const isCompassStep = axisId === compassAxis;
+      const isGlobalCurrent = doneKey === compassFirstUndoneKey;
+      const isHigh = step.guide === 'HIGH';
+      const isMid  = step.guide === 'MID';
+      const connDoneClass = isDone ? ' pc-done' : '';
+      const dotClass = isDone ? 'pd-done'
+        : isCompassStep ? 'pd-compass'
+        : (isHigh || isMid) ? 'pd-high'
+        : 'pd-future';
+      const nodeClasses = ['path-node', isDone ? 'pn-done' : '', isCompassStep && !isDone ? 'pn-compass' : ''].filter(Boolean).join(' ');
+      const badgeBg     = isCompassStep ? 'rgba(201,168,76,0.15)' : 'rgba(10,15,30,0.50)';
+      const badgeBorder = isCompassStep ? 'rgba(201,168,76,0.35)' : 'rgba(232,228,220,0.18)';
+      const badgeColor  = isCompassStep ? '#c9a84c' : 'rgba(232,228,220,0.55)';
+      const nowBadge = isGlobalCurrent ? `<span class="path-now-badge">🧭 今ここ</span>` : '';
+      const selfCheckBadge = step.isSelfCheck ? `<span class="selfcheck-badge"> 現状確認</span>` : '';
+      const selfCheckValue = (step.isSelfCheck && bodyData[step.bodyDataKey])
+        ? `<span class="selfcheck-value">✓ ${esc(Array.isArray(bodyData[step.bodyDataKey]) ? bodyData[step.bodyDataKey].join('・') : bodyData[step.bodyDataKey])}</span>` : '';
+      let guideBadgeHtml = '';
+      if (isHigh) {
+        const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
+        guideBadgeHtml = `<div class="guide-badge guide-high"><span>🏥 ここはプロに任せると確実に変わる</span>${btn}</div>`;
+      } else if (isMid) {
+        const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
+        guideBadgeHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${btn}</div>`;
+      }
+      const hintHtml   = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
+      const noteHtml   = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
+      const detailId   = `detail-${axisKey}-${idx}`;
+      const detailHtml = step.detail ? `<button class="step-detail-toggle" onclick="(function(btn){const panel=document.getElementById('${detailId}');panel.classList.toggle('open');btn.classList.toggle('open');btn.textContent=panel.classList.contains('open')?'▲ 閉じる':'📖 答えを見る';})(this)">📖 答えを見る</button><div class="step-detail-panel" id="${detailId}">${esc(step.detail)}</div>` : '';
+      const svcCardId  = (isHigh || isMid) && def.catLink ? `svc-${axisKey}-${idx}` : null;
+      const svcCardHtml = svcCardId ? `<div id="${esc(svcCardId)}" class="inline-service-card" data-svc-cat="${esc(def.catLink)}"></div>` : '';
+      let productsHtml = '';
+      if (step.products && step.products.length > 0) {
+        const _totalDone = Object.values(stepDone).filter(Boolean).length;
+        const _userLevel = _totalDone >= 9 ? 'advanced' : _totalDone >= 3 ? 'intermediate' : 'beginner';
+        const _lvRank = { beginner: 0, intermediate: 1, advanced: 2 };
+        const _budgetRank = { low: 0, mid: 1, high: 2 };
+        const _maxRank = _lvRank[_userLevel];
+        let _budget = null;
+        try { const _raw = localStorage.getItem('fineme:diagnosis:latest'); if (_raw) _budget = JSON.parse(_raw).budget || null; } catch {}
+        const _maxBudgetRank = (!_budget || _budget === 'high' || _budget === 'premium') ? 2 : (_budget === 'mid' ? 1 : 0);
+        const chips = step.products
+          .filter(prod => (_lvRank[prod.level||'beginner']) <= _maxRank && (_budgetRank[prod.priceRange||'low']) <= _maxBudgetRank)
+          .map((prod, pi) => {
+            const prodKey = `prod-${axisKey}-${idx}-${pi}`;
+            const isProdDone = !!stepDone[prodKey];
+            return `<a href="${esc(prod.url)}" target="_blank" rel="noopener noreferrer" class="product-chip">🛒 ${esc(prod.name)}</a><button class="product-check-btn${isProdDone?' checked':''}" data-done-key="${esc(prodKey)}">${isProdDone?'✓ 使用中':'使ってる？'}</button>`;
+          }).join('');
+        if (chips) productsHtml = `<div class="product-suggestions">${chips}</div>`;
+      }
+      const detailContent = [selfCheckValue, hintHtml, detailHtml, guideBadgeHtml, svcCardHtml, noteHtml, productsHtml].filter(Boolean).join('');
+      const hasDetail = !!detailContent;
+      const isAutoOpen = isGlobalCurrent && hasDetail;
+      return `<div class="${nodeClasses}" data-done-key="${esc(doneKey)}">
+        <div class="path-spine-col">
+          <div class="path-conn${connDoneClass}"></div>
+          <div class="path-dot ${dotClass}"></div>
+        </div>
+        <div class="path-body">
+          <div class="path-node-head"${hasDetail ? ` data-toggle-node="${esc(doneKey)}"` : ''}>
+            <div class="path-node-content">
+              <div class="path-node-meta">
+                <span class="path-node-axis-chip" style="background:${badgeBg};border-color:${badgeBorder};color:${badgeColor}">${esc(def.icon)} ${esc(def.label)}</span>
+                ${nowBadge}${selfCheckBadge}
+              </div>
+              <p class="path-node-text">${esc(step.text)}</p>
+            </div>
+            ${hasDetail ? `<span class="path-expand-icon">${isAutoOpen ? '▲' : '▼'}</span>` : ''}
+            <button class="step-check-btn path-node-check${isDone?' checked':''}" data-done-key="${esc(doneKey)}" title="${isDone?'完了を取り消す':'できてる・やった'}">${isDone?'✓':''}</button>
+          </div>
+          ${hasDetail ? `<div class="path-node-detail${isAutoOpen ? ' pnd-open' : ''}">${detailContent}</div>` : ''}
+        </div>
+      </div>`;
+    }
+
+    function buildPathHtml() {
+      const compassAxis = calcDynamicCompass();
+      const allSteps = flattenAllSteps();
+      const SECTIONS = [
+        { type: 'quick',   icon: '⚡', tabLabel: '今すぐ',   label: '今すぐ動ける一手',           desc: '今日中に完了できる。まずここから動こう' },
+        { type: 'habit',   icon: '🔄', tabLabel: '毎日習慣', label: '毎日・毎週の習慣にする',     desc: '継続が変容を積み上げる。少しずつでOK' },
+        { type: 'ongoing', icon: '🌊', tabLabel: 'じっくり', label: 'じっくり取り組むプログラム', desc: '数週間〜数ヶ月スパン。覚悟して始めると変わる' },
+      ];
+      const compassFirstUndoneKey = allSteps
+        .filter(s => s.axisId === compassAxis && !s.isDone)
+        .sort((a, b) => a.idx - b.idx)[0]?.doneKey ?? null;
+      const sectionMeta = SECTIONS.map(({ type }) => {
+        const steps = allSteps.filter(s => s.actionType === type);
+        return { type, done: steps.filter(s => s.isDone).length, total: steps.length };
+      });
+      const tabBarHtml = `<div class="section-tab-bar" id="section-tab-bar">
+        ${SECTIONS.map(({ type, icon, tabLabel }, i) => {
+          const m = sectionMeta[i];
+          return `<button class="section-tab" data-scroll-to="path-section-${type}">
+            <span class="section-tab-icon">${icon}</span>
+            <span>${esc(tabLabel)}</span>
+            <span class="section-tab-progress">${m.done}/${m.total}</span>
+          </button>`;
+        }).join('')}
+      </div>`;
+      let html = buildSelfCheckIntroHtml() + tabBarHtml + `<div class="path-wrap">`;
+      const usedArticleSlugs = new Set();
+      SECTIONS.forEach(({ type, icon, tabLabel, label, desc }) => {
+        const sectionSteps = allSteps
+          .filter(s => s.actionType === type)
+          .filter(s => !activeAxisFilter || s.axisId === activeAxisFilter)
+          .sort((a, b) => {
+            const aIsCompass = a.axisId === compassAxis ? 0 : 1;
+            const bIsCompass = b.axisId === compassAxis ? 0 : 1;
+            if (aIsCompass !== bIsCompass) return aIsCompass - bIsCompass;
+            const ar = priorityOrder.indexOf(a.axisId); const br = priorityOrder.indexOf(b.axisId);
+            return (ar === -1 ? 99 : ar) - (br === -1 ? 99 : br);
+          });
+        const doneInSection = sectionSteps.filter(s => s.isDone).length;
+        html += `<div class="path-phase-block" id="path-section-${type}">
+          <div class="path-phase-header">
+            <div class="path-phase-header-spine"><div class="path-conn" style="min-height:18px"></div></div>
+            <span style="font-size:20px;flex-shrink:0">${icon}</span>
+            <div style="flex:1;min-width:0">
+              <p class="path-phase-label">${esc(label)}</p>
+              <p class="path-phase-desc">${esc(desc)}</p>
+            </div>
+            <span class="path-phase-count">${doneInSection}/${sectionSteps.length}</span>
+          </div>`;
+        const insertBefore = new Map();
+        const injectedAxes = new Set();
+        const axisOrder = [compassAxis, ...priorityOrder.filter(a => a !== compassAxis)];
+        for (const targetAxis of axisOrder) {
+          const firstHighIdx = sectionSteps.findIndex(s => s.axisId === targetAxis && s.step.guide === 'HIGH');
+          if (firstHighIdx === -1 || injectedAxes.has(targetAxis)) continue;
+          const art = pickSectionArticle([targetAxis], compassAxis, usedArticleSlugs);
+          if (art) { insertBefore.set(firstHighIdx, art); usedArticleSlugs.add(art.slug); injectedAxes.add(targetAxis); }
+          if (insertBefore.size >= 2) break;
+        }
+        sectionSteps.forEach((s, i) => {
+          const art = insertBefore.get(i);
+          if (art) {
+            html += `<div style="display:flex;gap:0">
+              <div class="path-spine-col"><div class="path-conn"></div></div>
+              <div style="flex:1;padding:0 0 8px 10px">
+                <a href="/feature/${esc(art.slug)}" class="trail-article-node" target="_blank">
+                  <span class="trail-article-icon">📖</span>
+                  <div class="trail-article-body">
+                    <p class="trail-article-label">この一歩を踏み出す前に読む</p>
+                    <p class="trail-article-title">${esc(art.title)}</p>
+                  </div>
+                  <span class="trail-article-arrow">→</span>
+                </a>
+              </div>
+            </div>`;
+          }
+          html += buildPathNode(s, compassAxis, compassFirstUndoneKey);
+        });
+        html += `</div>`;
+      });
+      html += `</div>`;
+      const doneCount = Object.values(stepDone).filter(Boolean).length;
+      const isReady = doneCount >= 20;
+      const isApproaching = doneCount >= 10;
+      const cardBg = isApproaching ? 'linear-gradient(135deg,rgba(201,168,76,0.10),rgba(10,15,30,0.30))' : 'rgba(10,15,30,0.35)';
+      const cardBorder = isApproaching ? 'rgba(201,168,76,0.3)' : 'rgba(232,228,220,0.12)';
+      const stageReadinessHtml = isReady
+        ? `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:8px;margin-bottom:18px"><span style="font-size:16px">🎉</span><span style="font-size:12px;font-weight:700;color:rgba(52,211,153,0.95)">このステージへ進む準備ができています！</span></div>`
+        : isApproaching
+        ? `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.22);border-radius:8px;margin-bottom:18px"><span style="font-size:14px">🧭</span><span style="font-size:12px;font-weight:700;color:rgba(201,168,76,0.95)">変容が着実に進んでいます。もう少しで発揮のステージへ。</span></div>`
+        : `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(10,15,30,0.40);border:1px dashed rgba(232,228,220,0.18);border-radius:8px;margin-bottom:18px"><span style="font-size:14px">🔒</span><span style="font-size:12px;color:rgba(232,228,220,0.50);line-height:1.6">まずは変容ルートを歩もう。変化が積み重なるほど、このステージが近づいてくる。</span></div>`;
+      html += `<svg viewBox="0 0 100 32" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:32px;display:block;margin-top:8px"><line x1="50" y1="0" x2="50" y2="32" stroke="rgba(201,168,76,0.45)" stroke-width="2" stroke-dasharray="5 4"/></svg>
         <div style="padding:16px 0 8px">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
             <div style="width:18px;height:1.5px;background:#c9a84c;flex-shrink:0;border-radius:1px"></div>
@@ -2269,7 +2498,7 @@ export default function NewMeNaviPage() {
       ${buildAxisFilterBar()}
 
       <div id="sections-container">
-        ${buildSectionsHtml()}
+        ${buildPathHtml()}
       </div>
 
       ${buildMatchedProductsHtml()}
@@ -2454,6 +2683,20 @@ export default function NewMeNaviPage() {
       }
     }
 
+    function _updateProgressBar() {
+      const pbFill = document.querySelector('.progress-bar-fill');
+      const pbPct  = document.querySelector('.progress-bar-pct');
+      const pbSub  = document.querySelector('.progress-bar-sub');
+      if (!pbFill) return;
+      const _all = flattenAllSteps();
+      const _done = _all.filter(s => s.isDone).length;
+      const _total = _all.length;
+      const _pct = _total > 0 ? Math.round(_done / _total * 100) : 0;
+      pbFill.style.width = _pct + '%';
+      if (pbPct) pbPct.textContent = _pct + '%';
+      if (pbSub) pbSub.textContent = `${_done} / ${_total} ステップ完了`;
+    }
+
     function refreshCompassAndTracks() {
       const strip = document.getElementById('compass-strip');
       if (strip) { const tmp = document.createElement('div'); tmp.innerHTML = buildCompassHtml(); strip.replaceWith(tmp.firstElementChild); }
@@ -2462,7 +2705,7 @@ export default function NewMeNaviPage() {
       const jovEl = document.getElementById('jov-section');
       if (jovEl) { const tmp = document.createElement('div'); tmp.innerHTML = buildJourneyOverviewHtml(); const newJov = tmp.querySelector('#jov-section'); if (newJov) jovEl.replaceWith(newJov); }
       const container = document.getElementById('sections-container');
-      if (container) container.innerHTML = buildSectionsHtml();
+      if (container) container.innerHTML = buildPathHtml();
       const bar = document.getElementById('axis-filter-bar');
       if (bar) { const tmp = document.createElement('div'); tmp.innerHTML = buildAxisFilterBar(); bar.replaceWith(tmp.firstElementChild); }
       injectServiceCards();
@@ -2507,29 +2750,42 @@ export default function NewMeNaviPage() {
       if (prereqItem) {
         prereqItem.classList.toggle('step-done', newDone);
       }
-      // step-card
+      // step-card (旧ジグザグルート 互換)
       const stepCard = btn.closest('.step-card');
       if (stepCard) {
         stepCard.classList.toggle('step-done', newDone);
-        // self-checkは完了後にsections再レンダーで値表示更新
         if (newDone && selfCheckMap.has(btn.dataset.doneKey)) {
           const container = document.getElementById('sections-container');
-          if (container) container.innerHTML = buildSectionsHtml();
-          // progress bar 更新
-          const pbFill = document.querySelector('.progress-bar-fill');
-          const pbPct  = document.querySelector('.progress-bar-pct');
-          const pbSub  = document.querySelector('.progress-bar-sub');
-          if (pbFill) {
-            const _all = flattenAllSteps();
-            const _done = _all.filter(s => s.isDone).length;
-            const _total = _all.length;
-            const _pct = _total > 0 ? Math.round(_done/_total*100) : 0;
-            pbFill.style.width = _pct + '%';
-            if (pbPct) pbPct.textContent = _pct + '%';
-            if (pbSub) pbSub.textContent = `${_done} / ${_total} ステップ完了`;
-          }
+          if (container) { container.innerHTML = buildPathHtml(); injectServiceCards(); }
+          _updateProgressBar();
           return;
         }
+      }
+      // path-node (Duolingo パス)
+      const pathNode = btn.closest('.path-node');
+      if (pathNode) {
+        pathNode.classList.toggle('pn-done', newDone);
+        const dot = pathNode.querySelector('.path-dot');
+        if (dot) {
+          if (newDone) {
+            dot.className = 'path-dot pd-done';
+            dot.style.cssText = '';
+          } else {
+            const container = document.getElementById('sections-container');
+            if (container) { container.innerHTML = buildPathHtml(); injectServiceCards(); }
+            _updateProgressBar();
+            return;
+          }
+        }
+        const conn = pathNode.querySelector('.path-conn');
+        if (conn) conn.classList.toggle('pc-done', newDone);
+        if (newDone && selfCheckMap.has(btn.dataset.doneKey)) {
+          const container = document.getElementById('sections-container');
+          if (container) { container.innerHTML = buildPathHtml(); injectServiceCards(); }
+        }
+        _updateProgressBar();
+        updatePrereqBanner();
+        return;
       }
       updatePrereqBanner();
       if (newDone && key.startsWith('prereq-')) {
@@ -2589,6 +2845,19 @@ export default function NewMeNaviPage() {
       // 通常のトグル
       persistStepDone(key, !isDone);
       applyStepDone(btn, key, !isDone);
+    });
+
+    // ── パスノード タップ展開 ──
+    root.addEventListener('click', (e) => {
+      if (e.target.closest('.step-check-btn, .product-check-btn, .prereq-box, .step-detail-toggle, a')) return;
+      const head = e.target.closest('[data-toggle-node]');
+      if (!head) return;
+      const node = head.closest('.path-node');
+      const detail = node?.querySelector('.path-node-detail');
+      if (!detail) return;
+      detail.classList.toggle('pnd-open');
+      const expandIcon = head.querySelector('.path-expand-icon');
+      if (expandIcon) expandIcon.textContent = detail.classList.contains('pnd-open') ? '▲' : '▼';
     });
 
     // ── Today's Quest 完了ボタン ──
