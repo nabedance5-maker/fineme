@@ -393,6 +393,10 @@ export default function NewMeNaviPage() {
       .tq-check-btn.done { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.45); color: #4ade80; }
       .tq-skip-link { font-size: 12px; color: rgba(232,228,220,0.35); text-decoration: none; transition: color .12s; }
       .tq-skip-link:hover { color: rgba(232,228,220,0.65); }
+      .tq-item { padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid rgba(201,168,76,0.12); }
+      .tq-item:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+      .tq-item-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+      .tq-item-axis { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; color: rgba(201,168,76,0.7); letter-spacing: .04em; }
 
       /* ── 旅路ビジュアル ── */
       .journey-section { margin-bottom: 20px; }
@@ -1016,6 +1020,22 @@ export default function NewMeNaviPage() {
       return result;
     }
 
+    // ── マップ順で次のN件の未完了ステップを返す ──
+    function getNextUndoneSteps(n) {
+      const SECTION_ORDER = { quick: 0, habit: 1, ongoing: 2 };
+      return flattenAllSteps()
+        .filter(s => !s.isDone)
+        .sort((a, b) => {
+          const sa = SECTION_ORDER[a.actionType] ?? 2, sb = SECTION_ORDER[b.actionType] ?? 2;
+          if (sa !== sb) return sa - sb;
+          const ar = priorityOrder.indexOf(a.axisId), br = priorityOrder.indexOf(b.axisId);
+          const arn = ar === -1 ? 99 : ar, brn = br === -1 ? 99 : br;
+          if (arn !== brn) return arn - brn;
+          return a.idx - b.idx;
+        })
+        .slice(0, n);
+    }
+
     // ── 軸フィルター状態 ──
     let activeAxisFilter = null;
 
@@ -1317,10 +1337,10 @@ export default function NewMeNaviPage() {
     }
 
     // ── ゲームマップ：ノード生成 ──
-    function buildPathNode(s, compassAxis, compassFirstUndoneKey, posClass) {
+    function buildPathNode(s, compassFirstUndoneKey, posClass) {
       const { axisId, axisKey, def, step, idx, doneKey, isDone } = s;
-      const isCompassStep = axisId === compassAxis;
-      const isGlobalCurrent = doneKey === compassFirstUndoneKey;
+      const isCompassStep = doneKey === compassFirstUndoneKey;
+      const isGlobalCurrent = isCompassStep;
       const isHigh = step.guide === 'HIGH';
       const isMid  = step.guide === 'MID';
       const circleClass = isDone ? 'gm-c-done'
@@ -1390,7 +1410,6 @@ export default function NewMeNaviPage() {
     }
 
     function buildPathHtml() {
-      const compassAxis = calcDynamicCompass();
       const allSteps = flattenAllSteps();
       const SECTIONS = [
         { type: 'quick',   icon: '⚡', tabLabel: '今すぐ',   label: '今すぐ動ける一手',           desc: '今日中に完了できる。まずここから動こう' },
@@ -1398,9 +1417,7 @@ export default function NewMeNaviPage() {
         { type: 'ongoing', icon: '🌊', tabLabel: 'じっくり', label: 'じっくり取り組むプログラム', desc: '数週間〜数ヶ月スパン。覚悟して始めると変わる' },
       ];
       const POS_CYCLE = ['gnr-left', 'gnr-right'];
-      const compassFirstUndoneKey = allSteps
-        .filter(s => s.axisId === compassAxis && !s.isDone)
-        .sort((a, b) => a.idx - b.idx)[0]?.doneKey ?? null;
+      const compassFirstUndoneKey = getNextUndoneSteps(1)[0]?.doneKey ?? null;
       const sectionMeta = SECTIONS.map(({ type }) => {
         const steps = allSteps.filter(s => s.actionType === type);
         return { type, done: steps.filter(s => s.isDone).length, total: steps.length };
@@ -1422,9 +1439,6 @@ export default function NewMeNaviPage() {
           .filter(s => s.actionType === type)
           .filter(s => !activeAxisFilter || s.axisId === activeAxisFilter)
           .sort((a, b) => {
-            const aIsCompass = a.axisId === compassAxis ? 0 : 1;
-            const bIsCompass = b.axisId === compassAxis ? 0 : 1;
-            if (aIsCompass !== bIsCompass) return aIsCompass - bIsCompass;
             const ar = priorityOrder.indexOf(a.axisId); const br = priorityOrder.indexOf(b.axisId);
             return (ar === -1 ? 99 : ar) - (br === -1 ? 99 : br);
           });
@@ -1440,11 +1454,10 @@ export default function NewMeNaviPage() {
           </div>`;
         const insertBefore = new Map();
         const injectedAxes = new Set();
-        const axisOrder = [compassAxis, ...priorityOrder.filter(a => a !== compassAxis)];
-        for (const targetAxis of axisOrder) {
+        for (const targetAxis of priorityOrder) {
           const firstHighIdx = sectionSteps.findIndex(s => s.axisId === targetAxis && s.step.guide === 'HIGH');
           if (firstHighIdx === -1 || injectedAxes.has(targetAxis)) continue;
-          const art = pickSectionArticle([targetAxis], compassAxis, usedArticleSlugs);
+          const art = pickSectionArticle([targetAxis], priorityOrder[0], usedArticleSlugs);
           if (art) { insertBefore.set(firstHighIdx, art); usedArticleSlugs.add(art.slug); injectedAxes.add(targetAxis); }
           if (insertBefore.size >= 2) break;
         }
@@ -1468,7 +1481,7 @@ export default function NewMeNaviPage() {
           if (i > 0 && prevPosClass !== null) {
             html += connectorSvg(prevPosClass, posClass, s.isDone);
           }
-          html += buildPathNode(s, compassAxis, compassFirstUndoneKey, posClass);
+          html += buildPathNode(s, compassFirstUndoneKey, posClass);
           prevPosClass = posClass;
           posIdx++;
         });
@@ -1631,22 +1644,27 @@ export default function NewMeNaviPage() {
     }
 
     function buildCompassHtml() {
-      const currentAxis = calcDynamicCompass();
-      const def = AREA_DEFS[currentAxis] || {};
-      const doneCount = Object.values(axisProgress).filter(v => v === 'done').length;
-      const progressNote = doneCount > 0
-        ? `<span style="font-size:11px;color:rgba(201,168,76,.65);margin-left:6px">（${doneCount}軸ひと段落済み）</span>`
-        : '';
-      return `
-        <div class="compass-strip" id="compass-strip">
-          <div class="compass-strip-icon">${esc(def.icon||'🧭')}</div>
+      const steps = getNextUndoneSteps(1);
+      if (!steps.length) {
+        return `<div class="compass-strip" id="compass-strip">
+          <div class="compass-strip-icon">🎉</div>
           <div class="compass-strip-body">
-            <p class="compass-strip-label">Fineme Compass — 今向くべき方角${progressNote}</p>
-            <p class="compass-strip-text">${esc(def.label||'—')}</p>
+            <p class="compass-strip-label">Fineme Compass</p>
+            <p class="compass-strip-text">すべてのステップが完了しています</p>
           </div>
-          <a href="/search?category=${esc(def.catLink||'consulting')}&diag=1" class="compass-strip-cta">探す</a>
+        </div>`;
+      }
+      const { def, step } = steps[0];
+      const shortText = step.text.length > 30 ? step.text.slice(0, 30) + '…' : step.text;
+      return `<div class="compass-strip" id="compass-strip">
+        <div class="compass-strip-icon">🧭</div>
+        <div class="compass-strip-body">
+          <p class="compass-strip-label">Fineme Compass — 次の一手</p>
+          <p class="compass-strip-text">${esc(shortText)}</p>
+          <p style="font-size:11px;color:rgba(201,168,76,0.55);margin:3px 0 0">${esc(def.icon)} ${esc(def.label)}</p>
         </div>
-      `;
+        <a href="#sections-container" class="compass-strip-cta" onclick="event.preventDefault();document.getElementById('sections-container')?.scrollIntoView({behavior:'smooth'})">見る</a>
+      </div>`;
     }
 
     // ── 変容の旅 全体図 ──
@@ -2288,30 +2306,27 @@ export default function NewMeNaviPage() {
 
     // ── Today's Quest ──
     function buildTodayQuestHtml() {
-      const compassAxis = calcDynamicCompass();
-      const allSteps = flattenAllSteps();
-      const nextStep = allSteps
-        .filter(s => s.axisId === compassAxis && !s.isDone)
-        .sort((a, b) => a.idx - b.idx)[0];
-      if (!nextStep) return '';
-      const { axisKey, def, step, doneKey } = nextStep;
-      const isDone = !!stepDone[doneKey];
-      const guideText = step.guide === 'HIGH' ? '🏥 ここはプロに任せると確実に変わる'
-        : step.guide === 'MID' ? '📋 プロと進めると精度が上がる' : '';
-      const svcPlaceholder = (step.guide === 'HIGH' || step.guide === 'MID') && def.catLink
-        ? `<div id="tq-svc" class="inline-service-card" data-svc-cat="${esc(def.catLink)}" style="margin-top:12px"></div>` : '';
-      return `
-        <div class="todayquest-card">
-          <p class="tq-eyebrow">🎯 今日のミッション — Compass：${esc(def.label)}軸</p>
-          <div class="tq-axis-badge">${esc(def.icon)} ${esc(def.label)}</div>
-          <p class="tq-text">${esc(step.text)}</p>
-          ${guideText ? `<p class="tq-guide">${guideText}</p>` : ''}
-          <div class="tq-actions">
+      const steps = getNextUndoneSteps(3);
+      if (!steps.length) return '';
+      const itemsHtml = steps.map((s, i) => {
+        const { def, step, doneKey } = s;
+        const isDone = !!stepDone[doneKey];
+        const fontSize = i === 0 ? '' : ' style="font-size:13px;font-weight:700"';
+        return `<div class="tq-item">
+          <div class="tq-item-head">
+            <span class="tq-item-axis">${esc(def.icon)} ${esc(def.label)}</span>
             <button class="tq-check-btn${isDone?' done':''}" data-done-key="${esc(doneKey)}">${isDone ? '✓ 完了！' : '✓ やった！'}</button>
-            <a href="#section-quick" class="tq-skip-link">全ステップを見る →</a>
           </div>
-          ${svcPlaceholder}
+          <p class="tq-text"${fontSize}>${esc(step.text)}</p>
         </div>`;
+      }).join('');
+      return `<div class="todayquest-card">
+        <p class="tq-eyebrow">🎯 次の一手 — マップから</p>
+        ${itemsHtml}
+        <div class="tq-actions">
+          <a href="#sections-container" class="tq-skip-link" onclick="event.preventDefault();document.getElementById('sections-container')?.scrollIntoView({behavior:'smooth'})">マップ全体を見る →</a>
+        </div>
+      </div>`;
     }
 
     // ── インラインサービスカード注入 ──
