@@ -2734,6 +2734,17 @@ export default function NewMeNaviPage() {
       if (pbSub) pbSub.textContent = `${_done} / ${_total} ステップ完了`;
     }
 
+    function refreshCompassOnly() {
+      const strip = document.getElementById('compass-strip');
+      if (strip) { const tmp = document.createElement('div'); tmp.innerHTML = buildCompassHtml(); strip.replaceWith(tmp.firstElementChild); }
+      const tqEl = document.getElementById('todayquest-container');
+      if (tqEl) tqEl.innerHTML = buildTodayQuestHtml();
+      const jovEl = document.getElementById('jov-section');
+      if (jovEl) { const tmp = document.createElement('div'); tmp.innerHTML = buildJourneyOverviewHtml(); const newJov = tmp.querySelector('#jov-section'); if (newJov) jovEl.replaceWith(newJov); }
+      const bar = document.getElementById('axis-filter-bar');
+      if (bar) { const tmp = document.createElement('div'); tmp.innerHTML = buildAxisFilterBar(); bar.replaceWith(tmp.firstElementChild); }
+    }
+
     function refreshCompassAndTracks() {
       const strip = document.getElementById('compass-strip');
       if (strip) { const tmp = document.createElement('div'); tmp.innerHTML = buildCompassHtml(); strip.replaceWith(tmp.firstElementChild); }
@@ -2824,7 +2835,7 @@ export default function NewMeNaviPage() {
                 setTimeout(() => reNode.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
               }
             }
-            refreshCompassAndTracks();
+            refreshCompassOnly();
             _updateProgressBar();
             return;
           }
@@ -2833,7 +2844,7 @@ export default function NewMeNaviPage() {
           const container = document.getElementById('sections-container');
           if (container) { container.innerHTML = buildPathHtml(); injectServiceCards(); }
         }
-        refreshCompassAndTracks();
+        refreshCompassOnly();
         _updateProgressBar();
         updatePrereqBanner();
         return;
