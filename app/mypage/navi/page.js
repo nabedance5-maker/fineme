@@ -579,7 +579,7 @@ export default function NewMeNaviPage() {
       .gmap-detail-card { background: rgba(8,12,26,0.92); border: 1px solid rgba(232,228,220,0.12); border-radius: 12px; padding: 16px; margin: 0 4px; display: flex; flex-direction: column; gap: 10px; }
       .path-node.pn-compass .gmap-detail-card { border-color: rgba(201,168,76,0.3); }
       .gmap-detail-title { font-size: 14px; font-weight: 700; color: rgba(232,228,220,0.90); line-height: 1.6; margin: 0; }
-      .gmap-check-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 13px; background: rgba(16,185,129,0.1); border: 1.5px solid rgba(16,185,129,0.35); border-radius: 10px; color: rgba(16,185,129,0.85); font-size: 15px; font-weight: 800; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; flex-shrink: 0; }
+      .gmap-check-btn { position: static; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 13px; background: rgba(16,185,129,0.1); border: 1.5px solid rgba(16,185,129,0.35); border-radius: 10px; color: rgba(16,185,129,0.85); font-size: 15px; font-weight: 800; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; flex-shrink: 0; transform: none; }
       .gmap-check-btn:hover { background: rgba(16,185,129,0.18); border-color: #10b981; }
       .gmap-check-btn.checked { background: rgba(16,185,129,0.15); border-color: #10b981; color: #10b981; }
       .gmap-check-btn.checked:hover { background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.45); color: rgba(239,68,68,0.8); }
