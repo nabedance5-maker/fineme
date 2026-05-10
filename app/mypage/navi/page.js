@@ -582,6 +582,7 @@ export default function NewMeNaviPage() {
       .gmap-check-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 13px; background: rgba(16,185,129,0.1); border: 1.5px solid rgba(16,185,129,0.35); border-radius: 10px; color: rgba(16,185,129,0.85); font-size: 15px; font-weight: 800; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; margin-top: 12px; }
       .gmap-check-btn:hover { background: rgba(16,185,129,0.18); border-color: #10b981; }
       .gmap-check-btn.checked { background: rgba(16,185,129,0.18); border-color: #10b981; color: #10b981; }
+      .gmap-check-btn.checked:hover { background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.5); color: rgba(239,68,68,0.85); }
       .gmap-article-row { display: flex; justify-content: center; padding: 2px 8px; }
       .gmap-article-node { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(10,15,30,0.45); border: 1px solid rgba(232,228,220,0.12); border-radius: 10px; text-decoration: none; width: 100%; max-width: 310px; }
       .gmap-article-node:hover { border-color: rgba(201,168,76,0.3); }
@@ -1403,7 +1404,7 @@ export default function NewMeNaviPage() {
           <div class="gmap-detail-card">
             <p class="gmap-detail-title">${esc(step.text)}</p>
             ${aboveBtn}
-            <button class="step-check-btn gmap-check-btn${isDone?' checked':''}" data-done-key="${esc(doneKey)}">${isDone ? '✓ 完了済み' : '✓ やった！'}</button>
+            <button class="step-check-btn gmap-check-btn${isDone?' checked':''}" data-done-key="${esc(doneKey)}" title="${isDone ? '押すと取り消せます' : ''}">${isDone ? '✓ 完了済み（押して取り消す）' : '✓ やった！'}</button>
             ${svcCardHtml}
           </div>
         </div>
@@ -2811,7 +2812,18 @@ export default function NewMeNaviPage() {
             circle.style.animation = '';
           } else {
             const container = document.getElementById('sections-container');
-            if (container) { container.innerHTML = buildPathHtml(); injectServiceCards(); }
+            if (container) {
+              container.innerHTML = buildPathHtml();
+              injectServiceCards();
+              // 取り消し後：詳細パネルを再オープンしてスクロール
+              const reNode = container.querySelector(`.path-node[data-done-key="${key}"]`);
+              if (reNode) {
+                const detail = reNode.querySelector('.path-node-detail');
+                if (detail) detail.classList.add('pnd-open');
+                setTimeout(() => reNode.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+              }
+            }
+            refreshCompassAndTracks();
             _updateProgressBar();
             return;
           }
@@ -2820,6 +2832,7 @@ export default function NewMeNaviPage() {
           const container = document.getElementById('sections-container');
           if (container) { container.innerHTML = buildPathHtml(); injectServiceCards(); }
         }
+        refreshCompassAndTracks();
         _updateProgressBar();
         updatePrereqBanner();
         return;
