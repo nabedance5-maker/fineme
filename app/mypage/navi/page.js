@@ -369,7 +369,7 @@ export default function NewMeNaviPage() {
       .step-detail-panel.open { display: block; }
 
       /* ── インラインサービスカード ── */
-      .inline-service-card { display: none; margin-top: 10px; text-decoration: none; }
+      .inline-service-card { display: none; margin-top: 14px; text-decoration: none; }
       .inline-service-card.loaded { display: block; }
       .isc-inner { display: flex; align-items: flex-start; gap: 12px; padding: 11px 14px; background: rgba(10,15,30,0.65); border: 1px solid rgba(201,168,76,0.25); border-radius: 10px; text-decoration: none; transition: border-color .15s; }
       .isc-inner:hover { border-color: rgba(201,168,76,0.5); }
@@ -1385,7 +1385,7 @@ export default function NewMeNaviPage() {
           }).join('');
         if (chips) productsHtml = `<div class="product-suggestions">${chips}</div>`;
       }
-      const innerDetail = [selfCheckValue, hintHtml, detailHtml, guideBadgeHtml, svcCardHtml, noteHtml, productsHtml].filter(Boolean).join('');
+      const aboveBtn = [selfCheckValue, hintHtml, detailHtml, guideBadgeHtml, noteHtml, productsHtml].filter(Boolean).join('');
       const isAutoOpen = isGlobalCurrent;
       const shortText = step.text.length > 22 ? step.text.slice(0, 22) + '…' : step.text;
       return `<div class="${nodeClasses}" data-done-key="${esc(doneKey)}">
@@ -1402,8 +1402,9 @@ export default function NewMeNaviPage() {
         <div class="path-node-detail${isAutoOpen ? ' pnd-open' : ''}">
           <div class="gmap-detail-card">
             <p class="gmap-detail-title">${esc(step.text)}</p>
-            ${innerDetail}
+            ${aboveBtn}
             <button class="step-check-btn gmap-check-btn${isDone?' checked':''}" data-done-key="${esc(doneKey)}">${isDone ? '✓ 完了済み' : '✓ やった！'}</button>
+            ${svcCardHtml}
           </div>
         </div>
       </div>`;
