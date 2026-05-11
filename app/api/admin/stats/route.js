@@ -32,6 +32,7 @@ export async function GET(request) {
     mirrorPaid,
     inquiriesPending,
     storiesPending,
+    stepDoneProfiles,
   ] = await Promise.all([
     supabase.from('profiles').select('id', { count: 'exact', head: true }),
     supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', thisMonthStart),
@@ -42,6 +43,7 @@ export async function GET(request) {
     supabase.from('mirror_sessions').select('id', { count: 'exact', head: true }).eq('paid', true),
     supabase.from('provider_inquiries').select('id', { count: 'exact', head: true }).neq('status', 'done'),
     supabase.from('stories').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('profiles').select('step_done').not('step_done', 'is', null),
   ]);
 
   const providers = providersAll.data || [];
@@ -53,6 +55,12 @@ export async function GET(request) {
   regular.forEach(p => {
     if (p.category) byCategory[p.category] = (byCategory[p.category] || 0) + 1;
   });
+
+  // Navi利用状況（step_doneに1件以上あるユーザー）
+  const stepDoneRows = stepDoneProfiles.data || [];
+  const naviUsers = stepDoneRows.filter(p => p.step_done && Object.keys(p.step_done).length > 0).length;
+  const totalStepsDone = stepDoneRows.reduce((sum, p) => sum + (p.step_done ? Object.keys(p.step_done).length : 0), 0);
+  const avgStepsDone = naviUsers > 0 ? Math.round(totalStepsDone / naviUsers * 10) / 10 : 0;
 
   return NextResponse.json({
     users: {
@@ -74,6 +82,10 @@ export async function GET(request) {
       total: mirrorTotal.count ?? 0,
       paid: mirrorPaid.count ?? 0,
       revenue: (mirrorPaid.count ?? 0) * 500,
+    },
+    navi: {
+      users: naviUsers,
+      avgStepsDone,
     },
     inquiriesPending: inquiriesPending.count ?? 0,
     storiesPending: storiesPending.count ?? 0,

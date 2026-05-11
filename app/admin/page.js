@@ -37,7 +37,15 @@ export default function AdminDashboardPage() {
       .db-cat-bar { height: 100%; background: #2563eb; border-radius: 99px; transition: width .4s; }
       .db-cat-count { font-size: 12px; color: #6b7280; width: 24px; text-align: right; flex-shrink: 0; }
       .db-loading { color: #9ca3af; font-size: 14px; }
-      @media (max-width: 900px) { .db-kpi-grid { grid-template-columns: repeat(2, 1fr); } .db-two-col { grid-template-columns: 1fr; } }
+      .db-funnel { display: flex; flex-direction: column; gap: 6px; }
+      .db-funnel-row { display: flex; align-items: center; gap: 10px; }
+      .db-funnel-label { width: 140px; font-size: 13px; color: #374151; font-weight: 600; flex-shrink: 0; }
+      .db-funnel-bar-wrap { flex: 1; height: 22px; background: #f3f4f6; border-radius: 6px; overflow: hidden; position: relative; }
+      .db-funnel-bar { height: 100%; border-radius: 6px; transition: width .5s; }
+      .db-funnel-count { font-size: 13px; font-weight: 700; color: #111827; width: 40px; text-align: right; flex-shrink: 0; }
+      .db-funnel-rate { font-size: 11px; color: #6b7280; width: 48px; text-align: right; flex-shrink: 0; }
+      .db-funnel-arrow { font-size: 12px; color: #d1d5db; text-align: center; padding-left: 150px; }
+      @media (max-width: 900px) { .db-kpi-grid { grid-template-columns: repeat(2, 1fr); } .db-two-col { grid-template-columns: 1fr; } .db-funnel-label { width: 100px; } }
     `;
     document.head.appendChild(style);
 
@@ -93,6 +101,47 @@ export default function AdminDashboardPage() {
           if (d.inquiriesPending > 0) addAlert('red', '📩', `未対応の問い合わせが ${d.inquiriesPending} 件あります`, '/admin/inquiries');
           if (d.storiesPending > 0) addAlert('warn', '💬', `審査待ちの体験談が ${d.storiesPending} 件あります`, '/admin/stories');
           if (d.inquiriesPending === 0 && d.storiesPending === 0) addAlert('ok', '✅', '対応が必要な項目はありません');
+        }
+
+        // ── ユーザーファネル
+        const funnelEl = $('db-funnel');
+        if (funnelEl) {
+          const steps = [
+            { label: '👤 会員登録',      count: d.users.total,    color: '#6366f1' },
+            { label: '🧭 Me Scan受診',   count: d.meScan.total,   color: '#2563eb' },
+            { label: '🗺️ Navi利用',      count: d.navi.users,     color: '#0891b2' },
+            { label: '🪞 Mirror利用',    count: d.mirror.total,   color: '#059669' },
+            { label: '💳 Mirror有料',    count: d.mirror.paid,    color: '#d97706' },
+          ];
+          const base = steps[0].count || 1;
+          funnelEl.innerHTML = '';
+          steps.forEach((step, i) => {
+            const pct = Math.round(step.count / base * 100);
+            const prevCount = i > 0 ? steps[i - 1].count : null;
+            const stepRate = prevCount ? Math.round(step.count / prevCount * 100) : null;
+            if (i > 0) {
+              const arrow = document.createElement('div');
+              arrow.className = 'db-funnel-arrow';
+              arrow.textContent = `↓ ${stepRate}%`;
+              funnelEl.appendChild(arrow);
+            }
+            const row = document.createElement('div');
+            row.className = 'db-funnel-row';
+            row.innerHTML = `
+              <span class="db-funnel-label">${step.label}</span>
+              <div class="db-funnel-bar-wrap">
+                <div class="db-funnel-bar" style="width:${pct}%;background:${step.color}"></div>
+              </div>
+              <span class="db-funnel-count">${step.count.toLocaleString()}</span>
+              <span class="db-funnel-rate">${pct}%</span>`;
+            funnelEl.appendChild(row);
+          });
+          if (d.navi.avgStepsDone > 0) {
+            const note = document.createElement('p');
+            note.style.cssText = 'font-size:12px;color:#6b7280;margin:10px 0 0;';
+            note.textContent = `Navi利用者の平均ステップ完了数: ${d.navi.avgStepsDone} ステップ`;
+            funnelEl.appendChild(note);
+          }
         }
 
         // ── カテゴリ別掲載者
@@ -154,6 +203,12 @@ export default function AdminDashboardPage() {
               <div className="db-kpi-main" id="kpi-mirror-paid">—</div>
               <div className="db-kpi-sub"><span id="kpi-mirror-revenue" style={{color:'#059669', fontWeight:700}}></span>　<span id="kpi-mirror-total" style={{color:'#9ca3af'}}></span></div>
             </div>
+          </div>
+
+          {/* ユーザーファネル */}
+          <div className="db-section">
+            <p className="db-section-title">📉 ユーザーファネル（累計）</p>
+            <div id="db-funnel" className="db-funnel"><p className="db-loading">読み込み中...</p></div>
           </div>
 
           {/* アラート */}
