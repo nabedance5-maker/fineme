@@ -1735,17 +1735,17 @@ export default function NewMeNaviPage() {
             </div>
           </div>`;
       } else {
+        // stage === 3: ゴール達成。ボタンは表示しない
+        const nextAxisId2 = priorityOrder.find(id => axisProgress[id] !== 'done' && id !== compassAxis);
+        const nextDef2 = nextAxisId2 ? AREA_DEFS[nextAxisId2] : null;
         nextTargetHtml = `
           <div class="jov-next-target" style="border-color:rgba(52,211,153,0.3);background:rgba(16,185,129,0.06)">
             <span style="font-size:18px">🎉</span>
             <div class="jov-next-target-text">
               <p class="jov-next-target-label" style="color:rgba(52,211,153,0.9)">ゴール達成！</p>
-              <p class="jov-next-target-desc">${esc(wp.goal)}</p>
+              <p class="jov-next-target-desc">${nextDef2 ? `次は ${esc(nextDef2.icon)} ${esc(nextDef2.label)}軸へ進みましょう` : 'すべての軸の旅が完成しました 🎊'}</p>
             </div>
-          </div>
-          <button class="jov-complete-btn" data-complete-axis="${esc(compassAxis)}">
-            🏁 この軸の旅を完了する
-          </button>`;
+          </div>`;
       }
 
       const stageLabelText = ['未着手', 'はじめの変化', '印象が変わる', 'ゴール達成'];

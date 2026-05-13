@@ -247,9 +247,11 @@ export default function MapPage() {
             />
             <button
               style={{background:'rgba(201,168,76,.18)',border:'1px solid rgba(201,168,76,.35)',borderRadius:8,color:'#c9a84c',fontSize:13,fontWeight:700,padding:'9px 22px',cursor:'pointer',letterSpacing:'.04em'}}
-              onClick={async () => {
+              onClick={async (e) => {
+                const btn = e.currentTarget;
+                btn.disabled = true; btn.textContent = '送信中...';
                 try {
-                  await fetch('/api/feedback', {
+                  const r = await fetch('/api/feedback', {
                     method:'POST',
                     headers:{'Content-Type':'application/json'},
                     body:JSON.stringify({
@@ -260,7 +262,8 @@ export default function MapPage() {
                       comment: document.getElementById('map-fb-comment')?.value?.trim() || null,
                     }),
                   });
-                } catch {}
+                  if (!r.ok) { btn.disabled = false; btn.textContent = '送信する'; return; }
+                } catch { btn.disabled = false; btn.textContent = '送信する'; return; }
                 localStorage.setItem('fineme:feedback:map','1');
                 setFbSent(true);
               }}

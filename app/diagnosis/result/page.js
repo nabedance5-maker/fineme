@@ -1129,7 +1129,7 @@ export default function DiagnosisResultPage() {
         const btn = document.getElementById('fb-submit');
         btn.disabled = true; btn.textContent = '送信中...';
         try {
-          await fetch('/api/feedback', {
+          const fbRes = await fetch('/api/feedback', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1142,7 +1142,8 @@ export default function DiagnosisResultPage() {
               compass_first: compassFirst || null,
             }),
           });
-        } catch {}
+          if (!fbRes.ok) { btn.disabled = false; btn.textContent = '送信する'; return; }
+        } catch { btn.disabled = false; btn.textContent = '送信する'; return; }
         localStorage.setItem('fineme:feedback:diagnosis_result', '1');
         fbWidget.innerHTML = '<div style="padding:16px 0;text-align:center;color:rgba(201,168,76,0.9);font-size:14px;font-weight:700">フィードバックを送りました。ありがとうございます 🙏</div>';
       });

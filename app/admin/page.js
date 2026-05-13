@@ -80,7 +80,10 @@ export default function AdminDashboardPage() {
         // ── 掲載者
         set('kpi-prov-total', d.providers.total.toLocaleString());
         set('kpi-prov-month', `今月 +${d.providers.thisMonth}`);
-        set('kpi-prov-detail', `通常 ${d.providers.regular} / アフィリ ${d.providers.affiliate}`);
+        const provDetail = d.providers.queryError
+          ? `エラー: ${d.providers.queryError}`
+          : `通常 ${d.providers.regular} / アフィリ ${d.providers.affiliate}`;
+        set('kpi-prov-detail', provDetail);
 
         // ── Mirror
         set('kpi-mirror-paid', d.mirror.paid.toLocaleString());

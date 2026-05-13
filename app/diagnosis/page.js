@@ -981,8 +981,8 @@ export default function DiagnosisPage() {
             <p style={{fontSize:'10px',fontWeight:'800',letterSpacing:'.18em',color:'rgba(59,130,246,0.8)',textTransform:'uppercase',margin:'0 0 12px'}}>TYPE-HND · 髪軸</p>
             <h2 style={{fontFamily:"'Noto Serif JP',Georgia,serif",fontSize:'clamp(22px,6vw,34px)',fontWeight:'900',color:'#fff',margin:'0 0 20px',lineHeight:1.2}}>黒髪の臥す伏竜</h2>
             <div style={{width:'min(200px,60vw)',height:'min(268px,80vw)',margin:'0 auto 18px',borderRadius:'16px',overflow:'hidden',border:'2px solid rgba(59,130,246,0.4)',boxShadow:'0 0 28px rgba(59,130,246,0.18)',position:'relative',display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(59,130,246,0.08)'}}>
-              <img src="/images/types/TYPE-HND.png" alt="伏竜" style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,borderRadius:'14px'}} onError={(e)=>e.currentTarget.style.display='none'} />
-              <span style={{fontSize:'56px',position:'relative',zIndex:0}}>🐉</span>
+              <img src="/images/types/TYPE-HND.png" alt="伏竜" style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,borderRadius:'14px'}} onError={(e)=>{e.currentTarget.style.display='none';const s=e.currentTarget.nextElementSibling;if(s)s.style.visibility='visible';}} />
+              <span style={{fontSize:'56px',position:'relative',zIndex:0,visibility:'hidden'}}>🐉</span>
             </div>
             <p style={{fontSize:'13px',color:'rgba(232,228,220,0.5)',lineHeight:1.85,maxWidth:'260px',margin:'0 auto'}}>深き影に潜む竜。その才、まだ誰も知らない。</p>
           </div>

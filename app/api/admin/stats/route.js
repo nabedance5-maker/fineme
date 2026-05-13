@@ -47,7 +47,8 @@ export async function GET(request) {
   ]);
 
   const providers = providersAll.data || [];
-  const regular = providers.filter(p => p.entity_type !== 'affiliate');
+  const providerQueryError = providersAll.error?.message || null;
+  const regular = providers.filter(p => p.entity_type == null || p.entity_type === 'provider');
   const affiliate = providers.filter(p => p.entity_type === 'affiliate');
   const providersThisMonth = providers.filter(p => p.created_at >= thisMonthStart).length;
 
@@ -77,6 +78,7 @@ export async function GET(request) {
       regular: regular.length,
       affiliate: affiliate.length,
       byCategory,
+      queryError: providerQueryError,
     },
     mirror: {
       total: mirrorTotal.count ?? 0,
