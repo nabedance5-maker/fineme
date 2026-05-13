@@ -38,7 +38,7 @@ export async function GET(request) {
     supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', thisMonthStart),
     supabase.from('diagnosis_results').select('id', { count: 'exact', head: true }),
     supabase.from('diagnosis_results').select('id', { count: 'exact', head: true }).gte('created_at', thisMonthStart),
-    supabase.from('providers').select('id, category, entity_type, created_at'),
+    supabase.from('providers').select('id, main_category, entity_type, created_at'),
     supabase.from('mirror_sessions').select('id', { count: 'exact', head: true }),
     supabase.from('mirror_sessions').select('id', { count: 'exact', head: true }).eq('paid', true),
     supabase.from('provider_inquiries').select('id', { count: 'exact', head: true }).neq('status', 'done'),
@@ -54,7 +54,7 @@ export async function GET(request) {
 
   const byCategory = {};
   regular.forEach(p => {
-    if (p.category) byCategory[p.category] = (byCategory[p.category] || 0) + 1;
+    if (p.main_category) byCategory[p.main_category] = (byCategory[p.main_category] || 0) + 1;
   });
 
   // Navi利用状況（step_doneに1件以上あるユーザー）
