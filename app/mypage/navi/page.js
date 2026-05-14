@@ -789,7 +789,20 @@ export default function NewMeNaviPage() {
       body: ['垢抜け'], eyebrow: ['清潔感', '垢抜け'], fashion: ['垢抜け', '清潔感'],
       hair: ['清潔感', '垢抜け'], skin: ['清潔感'], hairremoval: ['清潔感'], teeth: ['清潔感'], nail: ['垢抜け'],
     };
-    function pickSectionArticle(sectionAxes, compassAxis, usedSlugs) {
+
+    // ステップテキストと記事タイトルのキーワード一致スコア
+    function keywordScore(stepText, art) {
+      if (!stepText) return 0;
+      // 2文字以上の単語を抽出（助詞・記号除去）
+      const words = stepText.replace(/[（）「」・。、\s\d]/g, ' ').split(' ')
+        .map(w => w.trim()).filter(w => w.length >= 2);
+      const target = art.title + ' ' + (Array.isArray(art.tags) ? art.tags.join(' ') : '');
+      let s = 0;
+      for (const w of words) { if (target.includes(w)) s += 2; }
+      return s;
+    }
+
+    function pickSectionArticle(sectionAxes, compassAxis, usedSlugs, stepText) {
       if (!allNaviArticles.length) return null;
       let best = null, bestScore = -1;
       for (const art of allNaviArticles) {
@@ -800,6 +813,8 @@ export default function NewMeNaviPage() {
           const cats = AXIS_ARTICLE_CATS[axis] || [];
           if (cats.includes(art.category)) score += (axis === compassAxis ? 4 : 1);
         }
+        // キーワード一致ボーナス（カテゴリ一致より優先度高め）
+        score += keywordScore(stepText, art) * 2;
         if (score > bestScore) { bestScore = score; best = art; }
       }
       return bestScore > 0 ? best : null;
@@ -1256,7 +1271,11 @@ export default function NewMeNaviPage() {
         for (const targetAxis of axisOrder) {
           const firstHighIdx = sectionSteps.findIndex(s => s.axisId === targetAxis && s.step.guide === 'HIGH');
           if (firstHighIdx === -1 || injectedAxes.has(targetAxis)) continue;
-          const art = pickSectionArticle([targetAxis], compassAxis, usedArticleSlugs);
+          // HIGH ステップとその直前ステップのテキストをキーワード源に使う
+          const highStepText = sectionSteps[firstHighIdx]?.step?.text || '';
+          const prevStepText = firstHighIdx > 0 ? (sectionSteps[firstHighIdx - 1]?.step?.text || '') : '';
+          const contextText = highStepText + ' ' + prevStepText;
+          const art = pickSectionArticle([targetAxis], compassAxis, usedArticleSlugs, contextText);
           if (art) {
             insertBefore.set(firstHighIdx, art);
             usedArticleSlugs.add(art.slug);
