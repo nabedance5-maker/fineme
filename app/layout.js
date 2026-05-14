@@ -5,6 +5,9 @@ export const metadata = {
   },
   description: 'そのまま進むのが怖くなった夜に。自信を再設計する、地図と羅針盤。恋愛に悩む男性の外見・自信を診断から変える。',
   metadataBase: new URL('https://www.fineme.me'),
+  alternates: {
+    canonical: 'https://www.fineme.me',
+  },
   verification: {
     google: 'rV01Z0WUK3HqetQjrbWjrhACNGPAvOY2sWIolOtdfIc',
   },

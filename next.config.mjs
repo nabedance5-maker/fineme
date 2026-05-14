@@ -10,6 +10,13 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      // www なし → www あり（canonical統一）
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'fineme.me' }],
+        destination: 'https://www.fineme.me/:path*',
+        permanent: true,
+      },
       { source: '/pages/login.html', destination: '/login', permanent: true },
       { source: '/pages/user/login.html', destination: '/login', permanent: true },
       { source: '/pages/auth/callback.html', destination: '/auth/callback', permanent: true },
