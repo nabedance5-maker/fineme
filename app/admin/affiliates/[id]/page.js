@@ -408,7 +408,7 @@ export default function AdminAffiliateEditPage() {
   }, [id]);
 
   return (
-    <main className="section">
+    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
       <div className="container" style={{ maxWidth: '800px' }}>
 
         {/* ヘッダー */}

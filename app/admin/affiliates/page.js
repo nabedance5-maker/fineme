@@ -185,7 +185,7 @@ export default function AdminAffiliatesPage() {
   }, []);
 
   return (
-    <main className="section">
+    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
       <div>
         <section className="stack">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>

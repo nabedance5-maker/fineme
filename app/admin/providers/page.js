@@ -14,22 +14,22 @@ export default function AdminProvidersPage() {
       .badge-green { background: #d1fae5; color: #065f46; }
       .badge-gray { background: #f3f4f6; color: #6b7280; }
       .badge-red { background: #fee2e2; color: #991b1b; }
-      .provider-row { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 10px; background: #fff; }
+      .provider-row { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 10px; background: #fff; color: #111; text-shadow: none; }
       .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
-      .modal-box { background: #fff; border-radius: 18px; padding: 28px; width: 100%; max-width: 700px; max-height: 90vh; overflow-y: auto; }
+      .modal-box { background: #fff; border-radius: 18px; padding: 28px; width: 100%; max-width: 700px; max-height: 90vh; overflow-y: auto; color: #111; text-shadow: none; }
       .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
       @media(max-width:600px){ .form-grid { grid-template-columns: 1fr; } }
       .form-field { display: flex; flex-direction: column; gap: 4px; }
-      .form-field label { font-size: 12px; font-weight: 700; color: #374151; }
-      .form-field input, .form-field textarea, .form-field select { padding: 8px 12px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
+      .form-field label { font-size: 12px; font-weight: 700; color: #374151; text-shadow: none; }
+      .form-field input, .form-field textarea, .form-field select { padding: 8px 12px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; color: #111; background: #fff; text-shadow: none; }
       .form-field textarea { min-height: 80px; resize: vertical; }
       .form-field-full { grid-column: 1 / -1; }
       .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
-      .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+      .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #374151; text-shadow: none; }
       .kpi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
-      .kpi-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; text-align: center; }
+      .kpi-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; text-align: center; text-shadow: none; }
       .kpi-value { font-size: 28px; font-weight: 800; color: #111; }
-      .kpi-label { font-size: 12px; color: #6b7280; margin-top: 2px; }
+      .kpi-label { font-size: 12px; color: #374151; margin-top: 2px; font-weight: 600; }
     `;
     document.head.appendChild(style);
 
@@ -157,7 +157,7 @@ export default function AdminProvidersPage() {
   }, []);
 
   return (
-    <main className="section">
+    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
       <div>
         <section className="stack">
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'12px'}}>

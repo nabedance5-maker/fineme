@@ -232,7 +232,7 @@ export default function AdminAnalyticsPage() {
   }, []);
 
   return (
-    <main className="section">
+    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
       <div>
         <section className="stack">
           <h1 className="section-title">分析</h1>

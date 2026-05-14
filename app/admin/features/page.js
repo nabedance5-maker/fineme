@@ -964,7 +964,7 @@ export default function AdminFeaturesPage() {
   }, []);
 
   return (
-    <main className="section">
+    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
       <div>
         <section className="stack">
           <h1 className="section-title">特集管理</h1>

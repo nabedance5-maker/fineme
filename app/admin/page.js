@@ -176,7 +176,7 @@ export default function AdminDashboardPage() {
   }, []);
 
   return (
-    <main className="section">
+    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
       <div>
         <section className="stack">
           <div style={{display:'flex', alignItems:'center', gap:'12px', marginBottom:'8px'}}>

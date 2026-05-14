@@ -102,7 +102,7 @@ export default function AdminOptionsPage() {
   }, []);
 
   return (
-    <main className="section">
+    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
       <div className="container" style={{maxWidth:'900px'}}>
         <h1 className="section-title">オプション管理</h1>
         <div className="cluster" style={{justifyContent:'space-between',alignItems:'center'}}>

@@ -200,7 +200,7 @@ export default function AdminPaymentsPage() {
   }, []);
 
   return (
-    <main className="section">
+    <main className="section" style={{textShadow:'none',color:'#e8e4dc'}}>
       <div>
         <section className="stack">
           <h1 className="section-title">課金・サブスク管理</h1>
