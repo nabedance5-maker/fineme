@@ -1049,6 +1049,8 @@ export default function ProviderDashboardPage() {
     let _allRequests = [];
 
     async function loadRequests() {
+      const k = document.getElementById('req-filter-kw'); if (k) k.value = '';
+      const sf = document.getElementById('req-filter-status'); if (sf) sf.value = '';
       const providerId = provider?.id || loadProviderData()?.id;
       if (!providerId) { document.getElementById('requests-list').innerHTML = '<p class="muted">掲載者IDが見つかりません。</p>'; return; }
       const _reqToken = getSupabaseToken();
