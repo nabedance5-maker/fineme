@@ -1108,7 +1108,7 @@ export default function ProviderDashboardPage() {
 
         const meMapNote = parseMeMapNote(r.note);
         const card = document.createElement('div');
-        card.style.cssText = 'border:1.5px solid #e5e7eb;border-radius:14px;padding:18px;margin-bottom:12px;background:#fff';
+        card.style.cssText = 'border:1.5px solid #e5e7eb;border-radius:14px;padding:18px;margin-bottom:12px;background:#fff;color:#111;text-shadow:none';
         card.innerHTML = `
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
             <div style="flex:1;min-width:0">
@@ -1471,7 +1471,7 @@ export default function ProviderDashboardPage() {
             </div>
 
             {/* 絞り込みバー */}
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px', padding: '12px 14px', background: '#f9fafb', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px', padding: '12px 14px', background: '#f9fafb', borderRadius: '12px', border: '1px solid #e5e7eb', color: '#111', textShadow: 'none' }}>
               <input
                 id="req-filter-kw"
                 type="text"
