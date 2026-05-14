@@ -159,10 +159,13 @@ button { font: inherit; }
 .feature-title { font-size: 16px; font-weight: 700; margin: 0 0 6px; color: var(--color-fg); }
 .feature-meta { font-size: 13px; color: var(--color-muted); margin: 0; line-height: 1.6; }
 
-/* ── 白背景上は暗い文字を強制（フォーム入力・searchbar） ── */
+/* ── searchbar 入力は白背景なので暗い文字 ── */
+.searchbar input, .searchbar select {
+  color: #1a1410;
+  text-shadow: none;
+}
 input, select, textarea, option {
-  color: #1a1410 !important;
-  text-shadow: none !important;
+  text-shadow: none;
 }
 .searchbar { border-color: rgba(232,228,220,0.2); color: #e8e4dc; text-shadow: none; }
 
