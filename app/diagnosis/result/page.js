@@ -1084,7 +1084,8 @@ export default function DiagnosisResultPage() {
             </div>`;
           }).join('')}
           <textarea id="fb-comment" placeholder="ひとこと（任意）" rows="2" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#e8e4dc;font-size:13px;padding:10px 12px;resize:vertical;width:100%;box-sizing:border-box;margin-top:4px"></textarea>
-          <button id="fb-submit" style="background:rgba(201,168,76,0.18);border:1px solid rgba(201,168,76,0.35);border-radius:8px;color:#c9a84c;font-size:13px;font-weight:700;padding:10px 24px;cursor:pointer;letter-spacing:.04em;transition:background .15s;align-self:flex-end">送信する</button>
+          <div id="fb-error" style="display:none;font-size:12px;color:#f87171;text-align:right;margin-top:-8px"></div>
+          <button id="fb-submit" type="button" style="background:rgba(201,168,76,0.18);border:1px solid rgba(201,168,76,0.35);border-radius:8px;color:#c9a84c;font-size:13px;font-weight:700;padding:10px 24px;cursor:pointer;letter-spacing:.04em;transition:background .15s;align-self:flex-end">送信する</button>
         </div>
       </div>
       ` : ''}
@@ -1125,9 +1126,11 @@ export default function DiagnosisResultPage() {
           });
         });
       });
-      document.getElementById('fb-submit')?.addEventListener('click', async () => {
-        const btn = document.getElementById('fb-submit');
-        btn.disabled = true; btn.textContent = '送信中...';
+      const fbSubmitBtn = fbWidget.querySelector('#fb-submit');
+      const fbErrorEl   = fbWidget.querySelector('#fb-error');
+      if (fbSubmitBtn) fbSubmitBtn.addEventListener('click', async () => {
+        if (fbErrorEl) { fbErrorEl.style.display = 'none'; fbErrorEl.textContent = ''; }
+        fbSubmitBtn.disabled = true; fbSubmitBtn.textContent = '送信中...';
         try {
           const fbRes = await fetch('/api/feedback', {
             method: 'POST',
@@ -1137,13 +1140,21 @@ export default function DiagnosisResultPage() {
               rating_accuracy:  ratings.accuracy  || null,
               rating_usability: ratings.usability || null,
               rating_revisit:   ratings.revisit   || null,
-              comment: document.getElementById('fb-comment')?.value?.trim() || null,
-              type_code:    typeCode    || null,
+              comment: fbWidget.querySelector('#fb-comment')?.value?.trim() || null,
+              type_code:    null,
               compass_first: compassFirst || null,
             }),
           });
-          if (!fbRes.ok) { btn.disabled = false; btn.textContent = '送信する'; return; }
-        } catch { btn.disabled = false; btn.textContent = '送信する'; return; }
+          if (!fbRes.ok) {
+            fbSubmitBtn.disabled = false; fbSubmitBtn.textContent = '送信する';
+            if (fbErrorEl) { fbErrorEl.textContent = '送信に失敗しました。もう一度お試しください。'; fbErrorEl.style.display = 'block'; }
+            return;
+          }
+        } catch {
+          fbSubmitBtn.disabled = false; fbSubmitBtn.textContent = '送信する';
+          if (fbErrorEl) { fbErrorEl.textContent = 'ネットワークエラーが発生しました。'; fbErrorEl.style.display = 'block'; }
+          return;
+        }
         localStorage.setItem('fineme:feedback:diagnosis_result', '1');
         fbWidget.innerHTML = '<div style="padding:16px 0;text-align:center;color:rgba(201,168,76,0.9);font-size:14px;font-weight:700">フィードバックを送りました。ありがとうございます 🙏</div>';
       });

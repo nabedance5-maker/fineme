@@ -57,7 +57,20 @@
       "Bash(grep -n \"revalidate\\\\|cache\" app/feature/[slug]/page.js)",
       "Bash(do echo:*)",
       "Read(//c/Users/nabed/OneDrive/デスクトップ/business/**)",
-      "Bash(git commit -m ':*)"
+      "Bash(git commit -m ':*)",
+      "Bash(n# LINE → Claude Code ブリッジ)",
+      "Bash(Add-Content -Path \"c:\\\\Users\\\\nabed\\\\OneDrive\\\\デスクトップ\\\\Fineme\\\\.env.local\" -Value \"`n# LINE → Claude Code ブリッジ`nCLAUDE_LINE_CHANNEL_SECRET=`nCLAUDE_LINE_ACCESS_TOKEN=`nOWNER_LINE_USER_ID=\" -Encoding utf8)",
+      "PowerShell(& \"$env:USERPROFILE\\\\cloudflared.exe\" --version)",
+      "PowerShell(Get-ChildItem -Path \"$env:USERPROFILE\" -Filter \"ngrok.yml\" -Recurse -Depth 4 -ErrorAction SilentlyContinue | Select-Object FullName)",
+      "PowerShell(Get-ChildItem -Path \"$env:USERPROFILE\\\\AppData\\\\Local\\\\ngrok\" -ErrorAction SilentlyContinue | Select-Object Name)",
+      "PowerShell(Get-ChildItem \"$env:USERPROFILE\\\\AppData\" -Recurse -Filter \"ngrok.yml\" -ErrorAction SilentlyContinue -Depth 5 | Select-Object FullName)",
+      "PowerShell(& \"$env:USERPROFILE\\\\ngrok.exe\" config check 2>&1)",
+      "PowerShell(Start-Process -FilePath \"$env:USERPROFILE\\\\ngrok.exe\" -ArgumentList \"http --url=unsmacked-orthopaedically-roseline.ngrok-free.dev 4015\" -WindowStyle Normal)",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:4040/api/tunnels\" -UseBasicParsing 2>&1)",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:4015/line/reservations\" -UseBasicParsing -ErrorAction SilentlyContinue)",
+      "PowerShell(netstat -ano)",
+      "PowerShell(Get-Process -Id \\(Get-NetTCPConnection -LocalPort 4015 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess\\) -ErrorAction SilentlyContinue | Stop-Process -Force; Write-Host \"done\")",
+      "PowerShell(\\(Get-Command claude -ErrorAction SilentlyContinue\\).Source)"
     ],
     "additionalDirectories": [
       "c:\\Users\\nabed\\OneDrive\\デスクトップ\\Fineme\\app\\api\\provider\\services",

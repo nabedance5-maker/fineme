@@ -10,14 +10,19 @@
   - For production, integrate with real backend DB and secure auth + publicly reachable endpoints.
 */
 
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env.local') });
+require('dotenv').config(); // fallback to .env
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+const { spawn } = require('child_process');
 const bodyParser = require('body-parser');
 const { sendPush, buildTextMessage, formatReservationForUser, formatReservationForProvider } = require('./line-service');
 const dbModule = require('./db');
 const { internalRouter, billingRouter } = require('./stripe-handlers');
+
+const FINEME_DIR = path.join(__dirname, '..');
 
 const DATA_FILE = path.join(__dirname, 'data', 'reservations.json');
 const PORT = process.env.LINE_SERVER_PORT || 4015;
@@ -31,7 +36,7 @@ function readReservations(){
 function writeReservations(arr){ fs.writeFileSync(DATA_FILE, JSON.stringify(arr, null, 2), 'utf8'); }
 
 const app = express();
-app.use(bodyParser.json());
+app.use(bodyParser.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
 // Simple in-memory rate limiter: last reservation timestamp by user identifier
 const lastReservationAt = {}; // { [userId]: timestamp }
@@ -277,6 +282,133 @@ function runScheduler(){
 }
 
 setInterval(() => { runScheduler(); runDiagnosisReminders(); }, 60*1000); // every minute
+
+// ── LINE → Claude Code ブリッジ ──────────────────────────────────────────────
+
+const MEETING_AGENTS = [
+  { id: 'COO',        name: '戦略参謀（COO）',          role: 'KPI管理・事業方針・意思決定支援・ロードマップを担当する戦略参謀' },
+  { id: 'CPO',        name: 'CPO（プロダクト責任者）',  role: '機能企画・UX・ロードマップを担当するプロダクト責任者' },
+  { id: 'CMO',        name: 'CMO（マーケティング責任者）', role: 'SEO・集客・ブランド・SNSを担当するマーケティング責任者' },
+  { id: 'CSO_SALES',  name: 'CSO（セールス責任者）',    role: '掲載企業獲得・パートナー交渉・マネタイズを担当するセールス責任者' },
+  { id: 'ENG',        name: 'ENG（エンジニア）',         role: 'コード実装・バグ修正・技術負債解消を担当するエンジニア' },
+  { id: 'CW',         name: 'CW（コンテンツライター）',  role: '記事・サービス説明文・LP原稿を担当するコンテンツライター' },
+  { id: 'DA',         name: 'DA（データアナリスト）',    role: '市場調査・競合分析・GA分析を担当するデータアナリスト' },
+  { id: 'SKEPTIC',    name: '懐疑役（CSO）',             role: '他エージェント全員の意見に批判的・懐疑的な反論を出す懐疑役。数字・前提・リスクを徹底的に突く。肯定しない。' },
+];
+
+function runClaude(prompt) {
+  return new Promise((resolve) => {
+    const claudePath = process.env.CLAUDE_PATH || 'claude';
+    const proc = spawn(claudePath, ['--print', prompt, '--output-format', 'text', '--dangerously-skip-permissions'], {
+      cwd: FINEME_DIR, shell: true, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env)
+    });
+    let out = '';
+    proc.stdout.on('data', d => { out += d.toString(); });
+    proc.stderr.on('data', d => { out += d.toString(); });
+    proc.on('close', () => resolve(out.trim()));
+    proc.on('error', e => resolve(`エラー: ${e.message}`));
+  });
+}
+
+async function runMeeting(topic) {
+  const meetingDir = path.join(__dirname, 'data', 'meetings');
+  if (!fs.existsSync(meetingDir)) fs.mkdirSync(meetingDir, { recursive: true });
+  const dateStr = new Date().toLocaleString('ja-JP').replace(/[/:]/g, '-').replace(/\s/g, '_');
+  const meetingFile = path.join(meetingDir, `${dateStr}.md`);
+  fs.writeFileSync(meetingFile, `# Fineme 定例会議\n\n**日時**: ${new Date().toLocaleString('ja-JP')}\n**議題**: ${topic}\n\n---\n\n`, 'utf8');
+
+  await pushToOwner(`📋 定例会議を開始します\n\n議題: ${topic}\n\n参加: COO → CPO → CMO → CSO(Sales) → ENG → CW → DA → 懐疑役 → まとめ\n\n各発言が届き次第お知らせします。`);
+
+  const outputs = [];
+  for (const agent of MEETING_AGENTS) {
+    const prevContext = outputs.length > 0
+      ? `\n\nこれまでの発言:\n${outputs.map(o => `【${o.name}】\n${o.output}`).join('\n\n')}`
+      : '';
+    const prompt = agent.id === 'SKEPTIC'
+      ? `あなたはFinemeの懐疑役（CSO）です。以下の議題に対する他エージェント全員の意見に批判的・懐疑的な反論・問題提起をしてください。数字・前提・リスクを徹底的に突いてください。肯定しないでください。300字以内。\n\n議題: ${topic}${prevContext}`
+      : `あなたはFinemeの${agent.role}です。以下の議題について専門領域の観点から意見・提案を述べてください。300字以内。\n\n議題: ${topic}${prevContext}`;
+
+    const output = await runClaude(prompt);
+    outputs.push({ name: agent.name, output });
+    await pushToOwner(`【${agent.name}】\n\n${output}`);
+    fs.appendFileSync(meetingFile, `## ${agent.name}\n\n${output}\n\n---\n\n`, 'utf8');
+  }
+
+  const summaryPrompt = `以下のFineme定例会議の議事録から、重要論点3つと次のアクション（担当付き）をまとめてください。200字以内。\n\n議題: ${topic}\n\n${outputs.map(o => `【${o.name}】\n${o.output}`).join('\n\n')}`;
+  const summary = await runClaude(summaryPrompt);
+  fs.appendFileSync(meetingFile, `## まとめ\n\n${summary}\n`, 'utf8');
+  await pushToOwner(`📌 会議まとめ\n\n${summary}`);
+}
+
+async function pushToOwner(text) {
+  const token = process.env.CLAUDE_LINE_ACCESS_TOKEN;
+  const userId = process.env.OWNER_LINE_USER_ID;
+  if (!token || !userId) return;
+  await fetch('https://api.line.me/v2/bot/message/push', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ to: userId, messages: [{ type: 'text', text: String(text).slice(0, 4900) }] })
+  }).catch(e => console.warn('pushToOwner err', e));
+}
+
+function splitForLine(text, max = 4900) {
+  const chunks = [];
+  let s = String(text || '(出力なし)');
+  while (s.length > 0) { chunks.push(s.slice(0, max)); s = s.slice(max); }
+  return chunks.length ? chunks : ['(出力なし)'];
+}
+
+app.post('/webhook/claude', (req, res) => {
+  const secret = process.env.CLAUDE_LINE_CHANNEL_SECRET;
+  const signature = req.headers['x-line-signature'];
+  if (secret && signature) {
+    const hash = crypto.createHmac('SHA256', secret).update(req.rawBody || '').digest('base64');
+    if (hash !== signature) return res.status(403).send('Forbidden');
+  }
+  // 即座に 200 を返す（LINE の 1 秒タイムアウト対策）
+  res.status(200).send('OK');
+
+  const events = (req.body && req.body.events) || [];
+  for (const event of events) {
+    if (event.type !== 'message' || !event.message || event.message.type !== 'text') continue;
+    const senderId = event.source && event.source.userId;
+    if (senderId !== process.env.OWNER_LINE_USER_ID) continue;
+
+    const prompt = event.message.text.trim();
+    if (!prompt) continue;
+
+    // 定例会議モード
+    if (prompt.startsWith('定例会議:') || prompt.startsWith('定例会議：')) {
+      const topic = prompt.replace(/^定例会議[：:]\s*/, '').trim();
+      if (!topic) { pushToOwner('議題を入力してください。例: 定例会議: 今月の掲載者獲得が目標未達'); continue; }
+      runMeeting(topic).catch(e => pushToOwner(`❌ 会議エラー: ${e.message}`));
+      continue;
+    }
+
+    // 通常の Claude Code モード
+    pushToOwner(`🤖 作業開始します...\n\n「${prompt}」\n\n完了したら報告します。`);
+
+    const proc = spawn(process.env.CLAUDE_PATH || 'claude', ['--print', prompt, '--output-format', 'text', '--dangerously-skip-permissions'], {
+      cwd: FINEME_DIR,
+      shell: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: Object.assign({}, process.env)
+    });
+
+    let output = '';
+    proc.stdout.on('data', d => { output += d.toString(); });
+    proc.stderr.on('data', d => { output += d.toString(); });
+    proc.on('close', async (code) => {
+      const prefix = code === 0 ? '✅ 完了しました\n\n' : '⚠️ エラーが発生しました\n\n';
+      for (const chunk of splitForLine(prefix + output.trim())) {
+        await pushToOwner(chunk);
+      }
+    });
+    proc.on('error', async (err) => {
+      await pushToOwner(`❌ Claude Code の起動に失敗しました\n${err.message}`);
+    });
+  }
+});
 
 app.listen(PORT, ()=>{
   console.log('LINE server listening on port', PORT);
