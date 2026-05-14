@@ -511,36 +511,36 @@ function StoriesSection({ stories, provider }) {
                 </div>
               )}
 
-              {/* BEFORE ブロック */}
-              <div style={{ background: '#1f2937', padding: '18px 20px' }}>
-                <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.35)', letterSpacing: '.12em', marginBottom: '10px', textTransform: 'uppercase' }}>Before — 出会う前</div>
-                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.88)', margin: 0, lineHeight: '1.75' }}>{s.concern_before}</p>
-              </div>
-
-              {/* 中継地点 or 矢印 */}
-              <div style={{ background: 'linear-gradient(to bottom, #1f2937 0%, #f0fdf4 100%)', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', minHeight: '44px' }}>
-                {s.milestone_reached ? (
-                  <>
-                    <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.15)' }} />
-                    <div style={{ padding: '6px 14px', background: 'rgba(10,15,30,0.65)', border: '1px solid #a7f3d0', borderRadius: '99px', fontSize: '12px', color: '#34d399', fontWeight: '700', whiteSpace: 'nowrap', boxShadow: '0 1px 6px rgba(5,150,105,.15)' }}>
-                      🏁 {s.milestone_reached}
-                    </div>
-                    <div style={{ flex: 1, height: '1px', background: 'rgba(16,185,129,0.25)' }} />
-                  </>
-                ) : (
-                  <div style={{ fontSize: '18px', color: '#059669', fontWeight: '800' }}>↓</div>
-                )}
-              </div>
-
-              {/* AFTER ブロック */}
-              <div style={{ background: '#f0fdf4', padding: '18px 20px' }}>
+              {/* AFTER ブロック（先頭・タイトル扱い） */}
+              <div style={{ background: '#f0fdf4', padding: '20px 20px 16px' }}>
                 <div style={{ fontSize: '10px', fontWeight: '800', color: '#059669', letterSpacing: '.12em', marginBottom: '10px', textTransform: 'uppercase' }}>After — 今ここにいる</div>
-                <p style={{ fontSize: '14px', color: '#111', margin: s.tags?.length ? '0 0 12px' : '0', lineHeight: '1.75' }}>{s.change_after}</p>
+                <p style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: s.tags?.length ? '0 0 12px' : '0', lineHeight: '1.75' }}>{s.change_after}</p>
                 {s.tags?.length > 0 && (
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {s.tags.map(t => <span key={t} style={{ fontSize: '11px', padding: '3px 10px', background: '#dcfce7', color: '#15803d', borderRadius: '99px' }}>#{t}</span>)}
                   </div>
                 )}
+              </div>
+
+              {/* 中継地点 or 矢印（逆向き） */}
+              <div style={{ background: 'linear-gradient(to bottom, #f0fdf4 0%, #1f2937 100%)', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', minHeight: '44px' }}>
+                {s.milestone_reached ? (
+                  <>
+                    <div style={{ flex: 1, height: '1px', background: 'rgba(16,185,129,0.25)' }} />
+                    <div style={{ padding: '6px 14px', background: 'rgba(10,15,30,0.65)', border: '1px solid #a7f3d0', borderRadius: '99px', fontSize: '12px', color: '#34d399', fontWeight: '700', whiteSpace: 'nowrap', boxShadow: '0 1px 6px rgba(5,150,105,.15)' }}>
+                      🏁 {s.milestone_reached}
+                    </div>
+                    <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.15)' }} />
+                  </>
+                ) : (
+                  <div style={{ fontSize: '13px', color: 'rgba(232,228,220,0.45)', fontWeight: '600', letterSpacing: '.05em' }}>出会う前</div>
+                )}
+              </div>
+
+              {/* BEFORE ブロック（折りたたみ気味に小さく） */}
+              <div style={{ background: '#1f2937', padding: '14px 20px' }}>
+                <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.35)', letterSpacing: '.12em', marginBottom: '8px', textTransform: 'uppercase' }}>Before</div>
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', margin: 0, lineHeight: '1.7' }}>{s.concern_before}</p>
               </div>
             </div>
           ))}
