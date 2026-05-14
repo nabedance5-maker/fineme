@@ -1020,7 +1020,16 @@ export default function NewMeNaviPage() {
             : MILESTONES[axisKey] || [];
           const concernedIdx = steps.findIndex(s => s.isCurrentFor === 'concerned');
           const splitAt = concernedIdx > 0 ? concernedIdx : 0;
-          const currentIdx = steps.findIndex(s => s.isCurrentFor === normalizeCareType(careType));
+          const staticCurrentIdx = steps.findIndex(s => s.isCurrentFor === normalizeCareType(careType));
+          // ① step_done基準の現在地: 最後に完了したステップの次を「今ここ」にする
+          let lastDoneIdx = -1;
+          steps.forEach((_, idx) => {
+            const dk = (splitAt > 0 && idx < splitAt) ? `prereq-${axisKey}-${idx}` : `${axisKey}-${idx}`;
+            if (stepDone[dk]) lastDoneIdx = idx;
+          });
+          const currentIdx = lastDoneIdx >= 0
+            ? (lastDoneIdx + 1 < steps.length ? lastDoneIdx + 1 : -1)
+            : staticCurrentIdx;
           steps.forEach((step, idx) => {
             const doneKey = (splitAt > 0 && idx < splitAt)
               ? `prereq-${axisKey}-${idx}` : `${axisKey}-${idx}`;
@@ -1575,7 +1584,35 @@ export default function NewMeNaviPage() {
     }
 
     const tv = p.transform_vectors || {};
-    const priorityOrder = p.priority_order || Object.keys(AREA_DEFS);
+    const _diagPriorityOrder = p.priority_order || Object.keys(AREA_DEFS);
+    // ③ 軸ごとの実ステップ完了率を算出するヘルパー（③④で共用）
+    function computeAxisCompletion(axisId) {
+      const subKeys = { skin: ['skin_care','skin_hige'], teeth: ['teeth_white','teeth_ortho'] }[axisId] || [axisId];
+      let total = 0, done = 0;
+      for (const axisKey of subKeys) {
+        const steps = axisKey in MILESTONES_SUB ? (MILESTONES_SUB[axisKey]?.steps || []) : (MILESTONES[axisKey] || []);
+        const cIdx = steps.findIndex(s => s.isCurrentFor === 'concerned');
+        const splitAt = cIdx > 0 ? cIdx : 0;
+        steps.forEach((_, idx) => {
+          const dk = (splitAt > 0 && idx < splitAt) ? `prereq-${axisKey}-${idx}` : `${axisKey}-${idx}`;
+          total++;
+          if (stepDone[dk]) done++;
+        });
+      }
+      return { total, done };
+    }
+    // ③ 動的優先順: gap×(1-完了率) が高い軸を上位に。同スコアは診断順を維持
+    const priorityOrder = [..._diagPriorityOrder].sort((a, b) => {
+      const ca = computeAxisCompletion(a), cb = computeAxisCompletion(b);
+      const gapA = (tv[a]?.ideal || 3) - (tv[a]?.current || 1);
+      const gapB = (tv[b]?.ideal || 3) - (tv[b]?.current || 1);
+      const ratioA = ca.total > 0 ? ca.done / ca.total : 0;
+      const ratioB = cb.total > 0 ? cb.done / cb.total : 0;
+      const scoreA = gapA * (1 - ratioA);
+      const scoreB = gapB * (1 - ratioB);
+      if (Math.abs(scoreA - scoreB) > 0.01) return scoreB - scoreA;
+      return _diagPriorityOrder.indexOf(a) - _diagPriorityOrder.indexOf(b);
+    });
     const compassFirst  = p.compass_first  || priorityOrder[0] || 'body';
     const overallGoal   = getOverallGoal();
 
@@ -1636,12 +1673,16 @@ export default function NewMeNaviPage() {
       const doneAxes = new Set(
         Object.entries(axisProgress).filter(([,v]) => v === 'done').map(([k]) => k)
       );
+      // ④ step_done上で全ステップ完了の軸もdone扱い（手動axisProgressに頼らない）
+      Object.keys(AREA_DEFS).forEach(axisId => {
+        const { done, total } = computeAxisCompletion(axisId);
+        if (total > 0 && done >= total) doneAxes.add(axisId);
+      });
       const compassOverride = localStorage.getItem('fineme:compass:override');
-      // overrideが設定されていて、かつdone済みでなければ尊重
       if (compassOverride && AREA_DEFS[compassOverride] && !doneAxes.has(compassOverride)) {
         return compassOverride;
       }
-      // priority_order の中で done でない最初の軸
+      // ③の動的priorityOrderを使い、未完了の先頭軸を選ぶ
       const next = priorityOrder.find(id => !doneAxes.has(id));
       return next || compassFirst;
     }
