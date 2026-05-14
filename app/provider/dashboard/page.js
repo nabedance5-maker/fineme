@@ -1474,6 +1474,8 @@ export default function ProviderDashboardPage() {
                 id="req-filter-kw"
                 type="text"
                 placeholder="名前・メモで検索"
+                autoComplete="off"
+                defaultValue=""
                 style={{ flex: '1 1 140px', padding: '7px 12px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '13px', outline: 'none' }}
               />
               <select
