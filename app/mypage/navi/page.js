@@ -1219,24 +1219,34 @@ export default function NewMeNaviPage() {
         ? new Date(naviStepsData.generated_at).toLocaleDateString('ja-JP', { month:'numeric', day:'numeric' })
         : '';
 
-      // 最初の未完了のCompass軸ステップを「今ここ」にする
-      const compassFirstUndoneId = steps.find(s => s.axis === compassAxis && !stepDone[s.id])?.id ?? null;
+      // 「今ここ」= 全体で最初の未完了ステップ（旅の先頭に立つ）
+      const currentStepId   = steps.find(s => !stepDone[s.id])?.id ?? null;
+      // Compass軸の最初の未完了ステップ（gnr-center強調表示、「今ここ」と同じ場合もある）
+      const compassNextId   = steps.find(s => s.axis === compassAxis && !stepDone[s.id])?.id ?? null;
 
       const POS_CYCLE = ['gnr-left', 'gnr-right'];
       let posIdx = 0;
       const nodesHtml = steps.map((step, i) => {
         const def = AREA_DEFS[step.axis] || {};
-        const isDone = !!stepDone[step.id];
-        const isCompassStep = step.id === compassFirstUndoneId;
-        const posClass = isCompassStep ? 'gnr-center' : POS_CYCLE[posIdx % 2];
-        if (!isCompassStep) posIdx++;
+        const isDone        = !!stepDone[step.id];
+        const isCurrentStep = step.id === currentStepId;   // 「今ここ」バッジ
+        const isCompassNext = step.id === compassNextId;    // gnr-center + 🧭強調
+
+        const posClass = isCompassNext ? 'gnr-center' : POS_CYCLE[posIdx % 2];
+        if (!isCompassNext) posIdx++;
 
         const circleClass = isDone ? 'gm-c-done'
-          : isCompassStep ? 'gm-c-compass'
+          : isCompassNext ? 'gm-c-compass'
           : (step.guide === 'HIGH' || step.guide === 'MID') ? 'gm-c-active'
           : 'gm-c-future';
-        const nodeClasses = ['path-node', isDone ? 'pn-done' : '', isCompassStep ? 'pn-compass' : ''].filter(Boolean).join(' ');
-        const nowBadge = isCompassStep ? `<span class="gmap-now-badge">🧭 今ここ</span><br>` : '';
+        const nodeClasses = ['path-node', isDone ? 'pn-done' : '', isCompassNext ? 'pn-compass' : ''].filter(Boolean).join(' ');
+
+        // 「今ここ」バッジはcurrentStepId、🧭バッジはcompassNextId（重複なら両方統合）
+        let nowBadge = '';
+        if (isCurrentStep && isCompassNext) nowBadge = `<span class="gmap-now-badge">🧭 今ここ</span><br>`;
+        else if (isCurrentStep)             nowBadge = `<span class="gmap-now-badge">📍 今ここ</span><br>`;
+        else if (isCompassNext)             nowBadge = `<span class="gmap-now-badge">🧭 重点</span><br>`;
+
         const actionLabel = { quick:'⚡', habit:'🔄', ongoing:'🌊' }[step.action_type] || '';
 
         let guideBadgeHtml = '';
@@ -1248,17 +1258,25 @@ export default function NewMeNaviPage() {
           guideBadgeHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${btn}</div>`;
         }
         const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
-        return `<div class="${nodeClasses}" data-done-key="${esc(step.id)}">
+
+        // prevPos: posIdxはnon-compassNextのみインクリメント済みのため2引く
+        const prevIsCompassNext = steps[i-1]?.id === compassNextId;
+        const prevPos = i === 0 ? null
+          : prevIsCompassNext ? 'gnr-center'
+          : POS_CYCLE[(posIdx - (isCompassNext ? 1 : 2) + 100) % 2];
+        const connHtml = i > 0 ? connectorSvg(prevPos || 'gnr-left', posClass, isDone) : '';
+
+        return `${connHtml}<div class="${nodeClasses}" data-done-key="${esc(step.id)}">
           <div class="gmap-node-row ${posClass}">
             <div class="gmap-node" data-toggle-node="${esc(step.id)}">
-              <div class="gm-circle ${circleClass}" data-circle-idx="${i}" data-done="${isDone}">${esc(def.icon || '•')}</div>
+              <div class="gm-circle ${circleClass}">${esc(def.icon || '•')}</div>
               <div class="gmap-node-label">
                 ${nowBadge}
                 <span class="gmap-node-axis-name">${esc(def.label || step.axis)} ${actionLabel}</span>
               </div>
             </div>
           </div>
-          <div class="path-node-detail${isCompassStep ? ' pnd-open' : ''}">
+          <div class="path-node-detail${isCurrentStep ? ' pnd-open' : ''}">
             <div class="gmap-detail-card">
               <p class="gmap-detail-title">${esc(step.text)}</p>
               ${hintHtml}${guideBadgeHtml}
@@ -1735,7 +1753,12 @@ export default function NewMeNaviPage() {
     const tv = p.transform_vectors || {};
     const _diagPriorityOrder = p.priority_order || Object.keys(AREA_DEFS);
     // ③ 軸ごとの実ステップ完了率を算出するヘルパー（③④で共用）
+    // naviStepsData（AI生成）があればそちらのstep.idを使う
     function computeAxisCompletion(axisId) {
+      if (naviStepsData?.steps?.length) {
+        const axisSteps = naviStepsData.steps.filter(s => s.axis === axisId);
+        return { total: axisSteps.length, done: axisSteps.filter(s => stepDone[s.id]).length };
+      }
       const subKeys = { skin: ['skin_care','skin_hige'], teeth: ['teeth_white','teeth_ortho'] }[axisId] || [axisId];
       let total = 0, done = 0;
       for (const axisKey of subKeys) {
@@ -1856,24 +1879,44 @@ export default function NewMeNaviPage() {
     }
 
     function buildCompassHtml() {
-      const steps = getNextUndoneSteps(1);
-      if (!steps.length) {
-        return `<div class="compass-strip" id="compass-strip">
-          <div class="compass-strip-icon">🎉</div>
-          <div class="compass-strip-body">
-            <p class="compass-strip-label">Fineme Compass</p>
-            <p class="compass-strip-text">すべてのステップが完了しています</p>
-          </div>
-        </div>`;
+      let nextText = '', nextDef = {};
+      if (naviStepsData?.steps?.length) {
+        // AI生成パス: Compass軸の未完了ステップ → 全体の未完了ステップ の順で探す
+        const compassAxis = calcDynamicCompass();
+        const aiNext = naviStepsData.steps.find(s => s.axis === compassAxis && !stepDone[s.id])
+          || naviStepsData.steps.find(s => !stepDone[s.id]);
+        if (!aiNext) {
+          return `<div class="compass-strip" id="compass-strip">
+            <div class="compass-strip-icon">🎉</div>
+            <div class="compass-strip-body">
+              <p class="compass-strip-label">Fineme Compass</p>
+              <p class="compass-strip-text">すべてのステップが完了しています</p>
+            </div>
+          </div>`;
+        }
+        nextText = aiNext.text;
+        nextDef  = AREA_DEFS[aiNext.axis] || {};
+      } else {
+        const steps = getNextUndoneSteps(1);
+        if (!steps.length) {
+          return `<div class="compass-strip" id="compass-strip">
+            <div class="compass-strip-icon">🎉</div>
+            <div class="compass-strip-body">
+              <p class="compass-strip-label">Fineme Compass</p>
+              <p class="compass-strip-text">すべてのステップが完了しています</p>
+            </div>
+          </div>`;
+        }
+        nextText = steps[0].step.text;
+        nextDef  = steps[0].def;
       }
-      const { def, step } = steps[0];
-      const shortText = step.text.length > 30 ? step.text.slice(0, 30) + '…' : step.text;
+      const shortText = nextText.length > 30 ? nextText.slice(0, 30) + '…' : nextText;
       return `<div class="compass-strip" id="compass-strip">
         <div class="compass-strip-icon">🧭</div>
         <div class="compass-strip-body">
           <p class="compass-strip-label">Fineme Compass — 次の一手</p>
           <p class="compass-strip-text">${esc(shortText)}</p>
-          <p style="font-size:11px;color:rgba(201,168,76,0.55);margin:3px 0 0">${esc(def.icon)} ${esc(def.label)}</p>
+          <p style="font-size:11px;color:rgba(201,168,76,0.55);margin:3px 0 0">${esc(nextDef.icon)} ${esc(nextDef.label)}</p>
         </div>
         <a href="#sections-container" class="compass-strip-cta" onclick="event.preventDefault();document.getElementById('sections-container')?.scrollIntoView({behavior:'smooth'})">見る</a>
       </div>`;
@@ -2728,7 +2771,7 @@ export default function NewMeNaviPage() {
         <div class="navi-header-badge">🧭 ${naviStepsData ? 'あなただけの変容ロードマップ' : '行動タイプ別ロードマップ'}</div>
         <h1>ゴール：<em>${esc(overallGoal)}</em></h1>
         <p class="navi-header-sub">${naviStepsData ? 'Me Scanをもとに生成された、あなただけの変容の道。' : '「今すぐ動ける」から始めよう。<br>Compassが指す軸のステップが最優先で表示される。'}</p>
-        ${(() => { const _all = flattenAllSteps(); const _done = _all.filter(s=>s.isDone).length; const _total = _all.length; const _pct = _total > 0 ? Math.round(_done/_total*100) : 0; return `<div class="progress-bar-wrap"><div class="progress-bar-label"><span class="progress-bar-label-text">変容の進捗</span><span class="progress-bar-pct">${_pct}%</span></div><div class="progress-bar-track"><div class="progress-bar-fill" style="width:${_pct}%"></div></div><p class="progress-bar-sub">${_done} / ${_total} ステップ完了</p></div>`; })()}
+        ${(() => { let _done, _total; if (naviStepsData?.steps?.length) { _total = naviStepsData.steps.length; _done = naviStepsData.steps.filter(s => stepDone[s.id]).length; } else { const _all = flattenAllSteps(); _done = _all.filter(s=>s.isDone).length; _total = _all.length; } const _pct = _total > 0 ? Math.round(_done/_total*100) : 0; return `<div class="progress-bar-wrap"><div class="progress-bar-label"><span class="progress-bar-label-text">変容の進捗</span><span class="progress-bar-pct">${_pct}%</span></div><div class="progress-bar-track"><div class="progress-bar-fill" style="width:${_pct}%"></div></div><p class="progress-bar-sub">${_done} / ${_total} ステップ完了</p></div>`; })()}
         <svg viewBox="0 0 80 80" width="68" height="68" style="position:absolute;top:14px;right:14px;z-index:1;opacity:0.17" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="37" fill="none" stroke="#c9a84c" stroke-width="0.8"/><circle cx="40" cy="40" r="28" fill="none" stroke="#c9a84c" stroke-width="0.4"/><line x1="40" y1="3" x2="40" y2="77" stroke="#c9a84c" stroke-width="0.8"/><line x1="3" y1="40" x2="77" y2="40" stroke="#c9a84c" stroke-width="0.8"/><line x1="14" y1="14" x2="66" y2="66" stroke="#c9a84c" stroke-width="0.5"/><line x1="66" y1="14" x2="14" y2="66" stroke="#c9a84c" stroke-width="0.5"/><polygon points="40,4 37,23 40,19 43,23" fill="#c9a84c"/><polygon points="40,76 37,57 40,61 43,57" fill="#c9a84c" opacity="0.4"/><polygon points="76,40 57,37 61,40 57,43" fill="#c9a84c" opacity="0.4"/><polygon points="4,40 23,37 19,40 23,43" fill="#c9a84c" opacity="0.4"/><circle cx="40" cy="40" r="5" fill="none" stroke="#c9a84c" stroke-width="1.2"/><circle cx="40" cy="40" r="2" fill="#c9a84c"/></svg>
         <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(201,168,76,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
       </div>
@@ -2935,9 +2978,15 @@ export default function NewMeNaviPage() {
       const pbPct  = document.querySelector('.progress-bar-pct');
       const pbSub  = document.querySelector('.progress-bar-sub');
       if (!pbFill) return;
-      const _all = flattenAllSteps();
-      const _done = _all.filter(s => s.isDone).length;
-      const _total = _all.length;
+      let _done, _total;
+      if (naviStepsData?.steps?.length) {
+        _total = naviStepsData.steps.length;
+        _done  = naviStepsData.steps.filter(s => stepDone[s.id]).length;
+      } else {
+        const _all = flattenAllSteps();
+        _done  = _all.filter(s => s.isDone).length;
+        _total = _all.length;
+      }
       const _pct = _total > 0 ? Math.round(_done / _total * 100) : 0;
       pbFill.style.width = _pct + '%';
       if (pbPct) pbPct.textContent = _pct + '%';
