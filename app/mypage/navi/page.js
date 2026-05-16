@@ -233,7 +233,7 @@ export default function NewMeNaviPage() {
       .route-pattern-desc { font-size: 11px; color: rgba(232,228,220,0.40); margin: 0 0 20px; }
 
       /* ── Route 1本道 ── */
-      .route-container { width: 100%; box-sizing: border-box; }
+      .route-container { width: 100%; box-sizing: border-box; position: relative; }
       .route-start-node, .route-goal-node { display: flex; align-items: flex-start; }
       .route-start-icon, .rg-star { font-size: 18px; width: 28px; text-align: center; flex-shrink: 0; }
       .rg-body { flex: 1; padding: 4px 0 8px 12px; }
@@ -560,7 +560,8 @@ export default function NewMeNaviPage() {
       .gmap-node-row.gnr-right { justify-content: flex-end; padding-right: 20px; }
       .gmap-node-row.gnr-center { justify-content: center; }
       .gmap-node { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 96px; cursor: pointer; }
-      .gm-circle { width: 62px; height: 62px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 3px solid; transition: all .25s; position: relative; flex-shrink: 0; }
+      .gm-circle { width: 62px; height: 62px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 3px solid; transition: all .25s; position: relative; flex-shrink: 0; z-index: 1; }
+      .gmap-node-row { position: relative; z-index: 1; }
       .gm-c-future { border-color: rgba(232,228,220,0.18); background: rgba(10,15,30,0.5); box-shadow: 0 3px 12px rgba(0,0,0,.3); }
       .gm-c-active { border-color: rgba(201,168,76,0.45); background: rgba(201,168,76,0.07); box-shadow: 0 4px 16px rgba(201,168,76,.1); }
       .gm-c-done { border-color: #c9a84c; background: rgba(201,168,76,0.15); box-shadow: 0 4px 14px rgba(201,168,76,.2); }
@@ -1247,18 +1248,13 @@ export default function NewMeNaviPage() {
           guideBadgeHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${btn}</div>`;
         }
         const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
-        const shortText = step.text.length > 22 ? step.text.slice(0, 22) + '…' : step.text;
-        const prevPos = i === 0 ? null : (steps[i-1]?.id === compassFirstUndoneId ? 'gnr-center' : POS_CYCLE[(posIdx - (isCompassStep ? 0 : 1)) % 2]);
-        const connHtml = i > 0 ? connectorSvg(prevPos || 'gnr-left', posClass, isDone) : '';
-
-        return `${connHtml}<div class="${nodeClasses}" data-done-key="${esc(step.id)}">
+        return `<div class="${nodeClasses}" data-done-key="${esc(step.id)}">
           <div class="gmap-node-row ${posClass}">
             <div class="gmap-node" data-toggle-node="${esc(step.id)}">
-              <div class="gm-circle ${circleClass}">${esc(def.icon || '•')}</div>
+              <div class="gm-circle ${circleClass}" data-circle-idx="${i}" data-done="${isDone}">${esc(def.icon || '•')}</div>
               <div class="gmap-node-label">
                 ${nowBadge}
                 <span class="gmap-node-axis-name">${esc(def.label || step.axis)} ${actionLabel}</span>
-                <p class="gmap-node-text">${esc(shortText)}</p>
               </div>
             </div>
           </div>
@@ -1452,14 +1448,57 @@ export default function NewMeNaviPage() {
       return html;
     }
 
-    // ── ゲームマップ：ノード間コネクターSVG ──
+    // ── ゲームマップ：ノード間コネクターSVG（3タブビュー用・旧方式） ──
     function connectorSvg(fromClass, toClass, done) {
       const POS = { 'gnr-left': 19, 'gnr-center': 50, 'gnr-right': 81 };
       const x1 = POS[fromClass] ?? 50, x2 = POS[toClass] ?? 50;
       const color = done ? '#c9a84c' : 'rgba(201,168,76,0.30)';
       const w = done ? '3' : '2';
       const dash = done ? '' : 'stroke-dasharray="7 5"';
-      return `<svg viewBox="0 0 100 52" preserveAspectRatio="none" style="width:100%;height:52px;display:block;overflow:visible;margin:-2px 0"><path d="M${x1} 0 C${x1} 26 ${x2} 26 ${x2} 52" stroke="${color}" stroke-width="${w}" fill="none" ${dash} stroke-linecap="round"/></svg>`;
+      return `<svg viewBox="0 0 100 52" preserveAspectRatio="none" style="width:100%;height:52px;display:block;overflow:visible;margin:-2px 0"><path d="M${x1} 0 C${x1} 30 ${x2} 57 ${x2} 87" stroke="${color}" stroke-width="${w}" fill="none" ${dash} stroke-linecap="round"/></svg>`;
+    }
+
+    // ── ゲームマップ（一本の道）：DOMベースでcircle中心間を曲線コネクターで結ぶ ──
+    function drawGmapConnectors() {
+      const container = document.querySelector('.route-container');
+      if (!container) return;
+
+      let overlay = document.getElementById('gmap-connector-overlay');
+      if (!overlay) {
+        overlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        overlay.id = 'gmap-connector-overlay';
+        overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;pointer-events:none;overflow:visible;z-index:0';
+        container.prepend(overlay);
+      }
+
+      const circles = Array.from(container.querySelectorAll('[data-circle-idx]'))
+        .sort((a, b) => +a.dataset.circleIdx - +b.dataset.circleIdx);
+
+      if (circles.length < 2) { overlay.innerHTML = ''; return; }
+
+      const containerRect = container.getBoundingClientRect();
+      const containerH = containerRect.height;
+      overlay.setAttribute('viewBox', `0 0 ${containerRect.width} ${containerH}`);
+      overlay.setAttribute('preserveAspectRatio', 'none');
+      overlay.style.height = containerH + 'px';
+
+      let pathsHtml = '';
+      for (let i = 0; i < circles.length - 1; i++) {
+        const r1 = circles[i].getBoundingClientRect();
+        const r2 = circles[i + 1].getBoundingClientRect();
+        const x1 = r1.left + r1.width / 2 - containerRect.left;
+        const y1 = r1.top + r1.height / 2 - containerRect.top;
+        const x2 = r2.left + r2.width / 2 - containerRect.left;
+        const y2 = r2.top + r2.height / 2 - containerRect.top;
+        const isDone = circles[i].dataset.done === 'true';
+        const color = isDone ? '#c9a84c' : 'rgba(201,168,76,0.30)';
+        const w = isDone ? '3' : '2';
+        const dash = isDone ? '' : 'stroke-dasharray="7 5"';
+        // S字曲線: 中間y点で水平方向に曲げてDuolingo風の滑らかな道に
+        const my = (y1 + y2) / 2;
+        pathsHtml += `<path d="M${x1} ${y1} C${x1} ${my} ${x2} ${my} ${x2} ${y2}" stroke="${color}" stroke-width="${w}" fill="none" ${dash} stroke-linecap="round"/>`;
+      }
+      overlay.innerHTML = pathsHtml;
     }
 
     // ── ゲームマップ：ノード生成 ──
@@ -2735,6 +2774,9 @@ export default function NewMeNaviPage() {
     // サービスカードを非同期注入
     injectServiceCards();
 
+    // ゲームマップのコネクター描画（DOMが確定してから）
+    requestAnimationFrame(() => requestAnimationFrame(drawGmapConnectors));
+
     // モーダルをbodyに移動（z-index確保）
     const modalEl = document.getElementById('body-data-modal');
     if (modalEl) document.body.appendChild(modalEl);
@@ -2989,12 +3031,15 @@ export default function NewMeNaviPage() {
         if (circle) {
           if (newDone) {
             circle.className = 'gm-circle gm-c-done';
+            circle.dataset.done = 'true';
             circle.style.animation = '';
+            requestAnimationFrame(drawGmapConnectors);
           } else {
             const container = document.getElementById('sections-container');
             if (container) {
               container.innerHTML = buildPathHtml();
               injectServiceCards();
+              requestAnimationFrame(drawGmapConnectors);
               // 取り消し後：詳細パネルを再オープンしてスクロール
               const reNode = container.querySelector(`.path-node[data-done-key="${key}"]`);
               if (reNode) {
@@ -3010,7 +3055,7 @@ export default function NewMeNaviPage() {
         }
         if (newDone && selfCheckMap.has(btn.dataset.doneKey)) {
           const container = document.getElementById('sections-container');
-          if (container) { container.innerHTML = buildPathHtml(); injectServiceCards(); }
+          if (container) { container.innerHTML = buildPathHtml(); injectServiceCards(); requestAnimationFrame(drawGmapConnectors); }
         }
         refreshCompassOnly();
         _updateProgressBar();
@@ -3088,6 +3133,8 @@ export default function NewMeNaviPage() {
       detail.classList.toggle('pnd-open');
       const expandIcon = head.querySelector('.path-expand-icon');
       if (expandIcon) expandIcon.textContent = detail.classList.contains('pnd-open') ? '▲' : '▼';
+      // detailの高さ変化に合わせてコネクターを再描画
+      requestAnimationFrame(drawGmapConnectors);
     });
 
     // ── Today's Quest 完了ボタン ──
