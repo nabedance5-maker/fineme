@@ -673,6 +673,15 @@ export default function DiagnosisPage() {
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
               body: JSON.stringify({ raw_data: profile }),
             }).catch(() => {});
+            // 診断完了と同時にパーソナライズされた変容ステップを非同期生成
+            try {
+              const bd = JSON.parse(localStorage.getItem('fineme:body:data') || '{}');
+              fetch('/api/me/navi-steps/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ diagnosis: profile, body_data: bd }),
+              }).catch(() => {});
+            } catch (_) {}
           }
         }
       } catch (e) {}

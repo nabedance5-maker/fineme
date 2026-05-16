@@ -17,7 +17,7 @@ export async function GET(request) {
 
   const { data } = await supabase
     .from('profiles')
-    .select('display_name, share_diagnosis, share_roadmap, line_user_id, last_name, first_name, phone, axis_progress, step_done, area, city, body_data')
+    .select('display_name, share_diagnosis, share_roadmap, line_user_id, last_name, first_name, phone, axis_progress, step_done, area, city, body_data, navi_steps')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -35,6 +35,7 @@ export async function GET(request) {
     area: data?.area || '',
     city: data?.city || '',
     body_data: data?.body_data || {},
+    navi_steps: data?.navi_steps || null,
   });
 }
 

@@ -681,6 +681,9 @@ export default function NewMeNaviPage() {
     let bodyData = {};
     try { const s = localStorage.getItem(BODY_DATA_KEY); if (s) bodyData = JSON.parse(s); } catch {}
 
+    // ── AI生成パーソナライズステップ ──
+    let naviStepsData = null;
+
     // ── 進捗データ読み込み（Supabase優先） ──
     let axisProgress = {};
     try {
@@ -704,6 +707,9 @@ export default function NewMeNaviPage() {
           if (data.body_data && Object.keys(data.body_data).length > 0) {
             bodyData = { ...bodyData, ...data.body_data };
             try { localStorage.setItem(BODY_DATA_KEY, JSON.stringify(bodyData)); } catch {}
+          }
+          if (data.navi_steps?.steps?.length > 0) {
+            naviStepsData = data.navi_steps;
           }
         }
       }
@@ -1201,6 +1207,78 @@ export default function NewMeNaviPage() {
         </div>`;
     }
 
+    // ── AI生成「一本の道」ビュー ──
+    function buildOnePathHtml() {
+      if (!naviStepsData?.steps?.length) return null;
+      const compassAxis = calcDynamicCompass();
+      const steps = naviStepsData.steps;
+      const totalDone = steps.filter(s => stepDone[s.id]).length;
+      const pct = steps.length > 0 ? Math.round(totalDone / steps.length * 100) : 0;
+      const genDate = naviStepsData.generated_at
+        ? new Date(naviStepsData.generated_at).toLocaleDateString('ja-JP', { month:'numeric', day:'numeric' })
+        : '';
+
+      const cardsHtml = steps.map(step => {
+        const def = AREA_DEFS[step.axis] || {};
+        const isDone = !!stepDone[step.id];
+        const isCompass = step.axis === compassAxis;
+        const badgeBg     = isCompass ? 'rgba(201,168,76,0.15)' : 'rgba(10,15,30,0.50)';
+        const badgeBorder = isCompass ? 'rgba(201,168,76,0.35)' : 'rgba(232,228,220,0.18)';
+        const badgeColor  = isCompass ? '#c9a84c' : 'rgba(232,228,220,0.55)';
+        const actionTypeLabel = { quick:'⚡ 今すぐ', habit:'🔄 習慣', ongoing:'🌊 じっくり' }[step.action_type] || '';
+        let guideHtml = '';
+        if (step.guide === 'HIGH') {
+          const catLink = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
+          guideHtml = `<div class="guide-badge guide-high"><span>🏥 ここはプロに任せると確実に変わる</span>${catLink}</div>`;
+        } else if (step.guide === 'MID') {
+          const catLink = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
+          guideHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${catLink}</div>`;
+        }
+        const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
+        const compassTag = isCompass && !isDone ? `<span class="compass-pointing-badge">🧭 今ここ</span>` : '';
+        const guideClass = step.guide === 'HIGH' ? ' guide-high' : step.guide === 'MID' ? ' guide-mid' : '';
+        return `
+          <div class="step-card${isDone ? ' step-done' : ''}${isCompass && !isDone ? ' step-compass' : ''}${guideClass}">
+            <div class="step-check-btn-wrap">
+              <button class="step-check-btn${isDone ? ' checked' : ''}" data-done-key="${esc(step.id)}" title="${isDone ? '完了を取り消す' : 'できてる・やった'}">${isDone ? '✓' : ''}</button>
+            </div>
+            <div class="step-card-body">
+              <div class="step-meta">
+                <span class="step-axis-badge" style="background:${badgeBg};border-color:${badgeBorder};color:${badgeColor}">${esc(def.icon || '•')} ${esc(def.label || step.axis)}</span>
+                <span style="font-size:9px;color:rgba(232,228,220,0.35);font-weight:600">${esc(actionTypeLabel)}</span>
+                ${compassTag}
+              </div>
+              <p class="step-text">${esc(step.text)}</p>
+              ${hintHtml}${guideHtml}
+            </div>
+          </div>`;
+      }).join('');
+
+      const regenBtn = token ? `
+        <button id="navi-regen-btn" style="display:block;width:100%;padding:10px;background:rgba(10,15,30,0.5);border:1px solid rgba(232,228,220,0.12);border-radius:8px;color:rgba(232,228,220,0.4);font-size:11px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-top:16px;letter-spacing:.05em">
+          ↻ 旅を再生成する（Me Scanデータを更新中の方向け）
+        </button>` : '';
+
+      return `
+        <div style="margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(201,168,76,0.55);text-transform:uppercase">あなただけの変容の道</span>
+            ${genDate ? `<span style="font-size:9px;color:rgba(232,228,220,0.25)">${genDate}生成</span>` : ''}
+          </div>
+          <div style="background:rgba(10,15,30,0.4);border:1px solid rgba(201,168,76,0.12);border-radius:12px;padding:14px 12px;margin-bottom:4px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <span style="font-size:11px;color:rgba(232,228,220,0.55)">${totalDone} / ${steps.length} ステップ完了</span>
+              <span style="font-size:12px;font-weight:800;color:rgba(201,168,76,0.8)">${pct}%</span>
+            </div>
+            <div style="height:4px;background:rgba(232,228,220,0.08);border-radius:2px;overflow:hidden">
+              <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#c9a84c,#f5d78e);border-radius:2px;transition:width .4s"></div>
+            </div>
+          </div>
+        </div>
+        <div class="action-step-list">${cardsHtml}</div>
+        ${regenBtn}`;
+    }
+
     // ── 3セクションHTML生成 ──
     function buildSectionsHtml() {
       const compassAxis = calcDynamicCompass();
@@ -1441,6 +1519,10 @@ export default function NewMeNaviPage() {
     }
 
     function buildPathHtml() {
+      // AI生成ステップがあれば一本の道ビューを返す
+      const onePathHtml = buildOnePathHtml();
+      if (onePathHtml) return onePathHtml;
+
       const allSteps = flattenAllSteps();
       const SECTIONS = [
         { type: 'quick',   icon: '⚡', tabLabel: '今すぐ',   label: '今すぐ動ける一手',           desc: '今日中に完了できる。まずここから動こう' },
@@ -2576,9 +2658,9 @@ export default function NewMeNaviPage() {
       <div class="navi-wrap">
       <div class="navi-header">
         <p class="navi-header-eyebrow">New Me Navi &nbsp;<a href="/mypage/map" style="font-size:9px;font-weight:700;color:rgba(201,168,76,0.6);text-decoration:none;border:1px solid rgba(201,168,76,0.22);padding:2px 8px;border-radius:99px;vertical-align:middle;letter-spacing:.06em">🗺️ Map</a></p>
-        <div class="navi-header-badge">🧭 行動タイプ別ロードマップ</div>
+        <div class="navi-header-badge">🧭 ${naviStepsData ? 'あなただけの変容ロードマップ' : '行動タイプ別ロードマップ'}</div>
         <h1>ゴール：<em>${esc(overallGoal)}</em></h1>
-        <p class="navi-header-sub">「今すぐ動ける」から始めよう。<br>Compassが指す軸のステップが最優先で表示される。</p>
+        <p class="navi-header-sub">${naviStepsData ? 'Me Scanをもとに生成された、あなただけの変容の道。' : '「今すぐ動ける」から始めよう。<br>Compassが指す軸のステップが最優先で表示される。'}</p>
         ${(() => { const _all = flattenAllSteps(); const _done = _all.filter(s=>s.isDone).length; const _total = _all.length; const _pct = _total > 0 ? Math.round(_done/_total*100) : 0; return `<div class="progress-bar-wrap"><div class="progress-bar-label"><span class="progress-bar-label-text">変容の進捗</span><span class="progress-bar-pct">${_pct}%</span></div><div class="progress-bar-track"><div class="progress-bar-fill" style="width:${_pct}%"></div></div><p class="progress-bar-sub">${_done} / ${_total} ステップ完了</p></div>`; })()}
         <svg viewBox="0 0 80 80" width="68" height="68" style="position:absolute;top:14px;right:14px;z-index:1;opacity:0.17" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="37" fill="none" stroke="#c9a84c" stroke-width="0.8"/><circle cx="40" cy="40" r="28" fill="none" stroke="#c9a84c" stroke-width="0.4"/><line x1="40" y1="3" x2="40" y2="77" stroke="#c9a84c" stroke-width="0.8"/><line x1="3" y1="40" x2="77" y2="40" stroke="#c9a84c" stroke-width="0.8"/><line x1="14" y1="14" x2="66" y2="66" stroke="#c9a84c" stroke-width="0.5"/><line x1="66" y1="14" x2="14" y2="66" stroke="#c9a84c" stroke-width="0.5"/><polygon points="40,4 37,23 40,19 43,23" fill="#c9a84c"/><polygon points="40,76 37,57 40,61 43,57" fill="#c9a84c" opacity="0.4"/><polygon points="76,40 57,37 61,40 57,43" fill="#c9a84c" opacity="0.4"/><polygon points="4,40 23,37 19,40 23,43" fill="#c9a84c" opacity="0.4"/><circle cx="40" cy="40" r="5" fill="none" stroke="#c9a84c" stroke-width="1.2"/><circle cx="40" cy="40" r="2" fill="#c9a84c"/></svg>
         <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(201,168,76,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
@@ -2588,11 +2670,9 @@ export default function NewMeNaviPage() {
         ${buildTodayQuestHtml()}
       </div>
 
-      ${buildJourneyOverviewHtml()}
-
       ${buildCompassHtml()}
 
-      ${buildAxisFilterBar()}
+      ${naviStepsData ? '' : buildAxisFilterBar()}
 
       <div id="sections-container">
         ${buildPathHtml()}
@@ -3069,6 +3149,30 @@ export default function NewMeNaviPage() {
       setTimeout(() => refreshCompassAndTracks(), 800);
     });
 
+
+    // ── 旅を再生成するボタン ──
+    root.addEventListener('click', async (e) => {
+      const btn = e.target.closest('#navi-regen-btn');
+      if (!btn || !token) return;
+      btn.disabled = true;
+      btn.textContent = '生成中… しばらくお待ちください';
+      try {
+        const diagRaw = localStorage.getItem(STORAGE_KEY);
+        const diag = diagRaw ? JSON.parse(diagRaw) : null;
+        if (!diag?.transform_vectors) { btn.textContent = '診断データが見つかりません'; return; }
+        const bd = JSON.parse(localStorage.getItem(BODY_DATA_KEY) || '{}');
+        const res = await fetch('/api/me/navi-steps/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ diagnosis: diag, body_data: bd }),
+        });
+        if (!res.ok) { btn.textContent = '生成に失敗しました。再度お試しください'; btn.disabled = false; return; }
+        const data = await res.json();
+        naviStepsData = data.navi_steps;
+        const container = document.getElementById('sections-container');
+        if (container) container.innerHTML = buildPathHtml();
+      } catch { btn.textContent = 'エラーが発生しました'; btn.disabled = false; }
+    });
 
     } catch (err) {
       // エラーが発生した場合、読み込み中のまま固まらないようにする
