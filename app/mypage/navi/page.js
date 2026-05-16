@@ -1523,6 +1523,16 @@ export default function NewMeNaviPage() {
       const onePathHtml = buildOnePathHtml();
       if (onePathHtml) return onePathHtml;
 
+      // ── フォールバック表示 + 生成CTAバナー ──
+      const genCtaBanner = token ? `
+        <div id="navi-gen-banner" style="margin-bottom:20px;padding:16px 18px;background:linear-gradient(135deg,rgba(201,168,76,0.10),rgba(10,15,30,0.30));border:1px solid rgba(201,168,76,0.30);border-radius:14px">
+          <p style="font-size:12px;font-weight:800;color:rgba(201,168,76,0.85);margin:0 0 4px;letter-spacing:.04em">✨ あなただけの変容の道を生成できます</p>
+          <p style="font-size:11px;color:rgba(232,228,220,0.55);margin:0 0 12px;line-height:1.6">Me Scanの診断データをAIが読み取り、この人だけの順番と内容でステップを生成します。</p>
+          <button id="navi-regen-btn" style="display:block;width:100%;padding:11px;background:rgba(201,168,76,0.18);border:1px solid rgba(201,168,76,0.45);border-radius:8px;color:#c9a84c;font-size:13px;font-weight:800;cursor:pointer;font-family:'Noto Sans JP',sans-serif;letter-spacing:.05em">
+            🧭 変容の道を生成する
+          </button>
+        </div>` : '';
+
       const allSteps = flattenAllSteps();
       const SECTIONS = [
         { type: 'quick',   icon: '⚡', tabLabel: '今すぐ',   label: '今すぐ動ける一手',           desc: '今日中に完了できる。まずここから動こう' },
@@ -1634,7 +1644,7 @@ export default function NewMeNaviPage() {
             </a>
           </div>
         </div>`;
-      return html;
+      return genCtaBanner + html;
     }
 
     // ── カテゴリゴール（理想スコアの言語化） ──
