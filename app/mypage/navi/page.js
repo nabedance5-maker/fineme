@@ -1207,7 +1207,7 @@ export default function NewMeNaviPage() {
         </div>`;
     }
 
-    // ── AI生成「一本の道」ビュー ──
+    // ── AI生成「一本の道」ビュー（ゲームマップ形式） ──
     function buildOnePathHtml() {
       if (!naviStepsData?.steps?.length) return null;
       const compassAxis = calcDynamicCompass();
@@ -1218,64 +1218,82 @@ export default function NewMeNaviPage() {
         ? new Date(naviStepsData.generated_at).toLocaleDateString('ja-JP', { month:'numeric', day:'numeric' })
         : '';
 
-      const cardsHtml = steps.map(step => {
+      // 最初の未完了のCompass軸ステップを「今ここ」にする
+      const compassFirstUndoneId = steps.find(s => s.axis === compassAxis && !stepDone[s.id])?.id ?? null;
+
+      const POS_CYCLE = ['gnr-left', 'gnr-right'];
+      let posIdx = 0;
+      const nodesHtml = steps.map((step, i) => {
         const def = AREA_DEFS[step.axis] || {};
         const isDone = !!stepDone[step.id];
-        const isCompass = step.axis === compassAxis;
-        const badgeBg     = isCompass ? 'rgba(201,168,76,0.15)' : 'rgba(10,15,30,0.50)';
-        const badgeBorder = isCompass ? 'rgba(201,168,76,0.35)' : 'rgba(232,228,220,0.18)';
-        const badgeColor  = isCompass ? '#c9a84c' : 'rgba(232,228,220,0.55)';
-        const actionTypeLabel = { quick:'⚡ 今すぐ', habit:'🔄 習慣', ongoing:'🌊 じっくり' }[step.action_type] || '';
-        let guideHtml = '';
+        const isCompassStep = step.id === compassFirstUndoneId;
+        const posClass = isCompassStep ? 'gnr-center' : POS_CYCLE[posIdx % 2];
+        if (!isCompassStep) posIdx++;
+
+        const circleClass = isDone ? 'gm-c-done'
+          : isCompassStep ? 'gm-c-compass'
+          : (step.guide === 'HIGH' || step.guide === 'MID') ? 'gm-c-active'
+          : 'gm-c-future';
+        const nodeClasses = ['path-node', isDone ? 'pn-done' : '', isCompassStep ? 'pn-compass' : ''].filter(Boolean).join(' ');
+        const nowBadge = isCompassStep ? `<span class="gmap-now-badge">🧭 今ここ</span><br>` : '';
+        const actionLabel = { quick:'⚡', habit:'🔄', ongoing:'🌊' }[step.action_type] || '';
+
+        let guideBadgeHtml = '';
         if (step.guide === 'HIGH') {
-          const catLink = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
-          guideHtml = `<div class="guide-badge guide-high"><span>🏥 ここはプロに任せると確実に変わる</span>${catLink}</div>`;
+          const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
+          guideBadgeHtml = `<div class="guide-badge guide-high"><span>🏥 ここはプロに任せると確実に変わる</span>${btn}</div>`;
         } else if (step.guide === 'MID') {
-          const catLink = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
-          guideHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${catLink}</div>`;
+          const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
+          guideBadgeHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${btn}</div>`;
         }
         const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
-        const compassTag = isCompass && !isDone ? `<span class="compass-pointing-badge">🧭 今ここ</span>` : '';
-        const guideClass = step.guide === 'HIGH' ? ' guide-high' : step.guide === 'MID' ? ' guide-mid' : '';
-        return `
-          <div class="step-card${isDone ? ' step-done' : ''}${isCompass && !isDone ? ' step-compass' : ''}${guideClass}">
-            <div class="step-check-btn-wrap">
-              <button class="step-check-btn${isDone ? ' checked' : ''}" data-done-key="${esc(step.id)}" title="${isDone ? '完了を取り消す' : 'できてる・やった'}">${isDone ? '✓' : ''}</button>
-            </div>
-            <div class="step-card-body">
-              <div class="step-meta">
-                <span class="step-axis-badge" style="background:${badgeBg};border-color:${badgeBorder};color:${badgeColor}">${esc(def.icon || '•')} ${esc(def.label || step.axis)}</span>
-                <span style="font-size:9px;color:rgba(232,228,220,0.35);font-weight:600">${esc(actionTypeLabel)}</span>
-                ${compassTag}
+        const shortText = step.text.length > 22 ? step.text.slice(0, 22) + '…' : step.text;
+        const prevPos = i === 0 ? null : (steps[i-1]?.id === compassFirstUndoneId ? 'gnr-center' : POS_CYCLE[(posIdx - (isCompassStep ? 0 : 1)) % 2]);
+        const connHtml = i > 0 ? connectorSvg(prevPos || 'gnr-left', posClass, isDone) : '';
+
+        return `${connHtml}<div class="${nodeClasses}" data-done-key="${esc(step.id)}">
+          <div class="gmap-node-row ${posClass}">
+            <div class="gmap-node" data-toggle-node="${esc(step.id)}">
+              <div class="gm-circle ${circleClass}">${esc(def.icon || '•')}</div>
+              <div class="gmap-node-label">
+                ${nowBadge}
+                <span class="gmap-node-axis-name">${esc(def.label || step.axis)} ${actionLabel}</span>
+                <p class="gmap-node-text">${esc(shortText)}</p>
               </div>
-              <p class="step-text">${esc(step.text)}</p>
-              ${hintHtml}${guideHtml}
             </div>
-          </div>`;
+          </div>
+          <div class="path-node-detail${isCompassStep ? ' pnd-open' : ''}">
+            <div class="gmap-detail-card">
+              <p class="gmap-detail-title">${esc(step.text)}</p>
+              ${hintHtml}${guideBadgeHtml}
+              <button class="step-check-btn gmap-check-btn${isDone?' checked':''}" data-done-key="${esc(step.id)}">${isDone ? '✓ 完了済み' : '✓ やった！'}</button>
+            </div>
+          </div>
+        </div>`;
       }).join('');
 
       const regenBtn = token ? `
-        <button id="navi-regen-btn" style="display:block;width:100%;padding:10px;background:rgba(10,15,30,0.5);border:1px solid rgba(232,228,220,0.12);border-radius:8px;color:rgba(232,228,220,0.4);font-size:11px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-top:16px;letter-spacing:.05em">
-          ↻ 旅を再生成する（Me Scanデータを更新中の方向け）
+        <button id="navi-regen-btn" style="display:block;width:100%;padding:10px;background:rgba(10,15,30,0.5);border:1px solid rgba(232,228,220,0.12);border-radius:8px;color:rgba(232,228,220,0.4);font-size:11px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-top:24px;letter-spacing:.05em">
+          ↻ 旅を再生成する
         </button>` : '';
 
       return `
-        <div style="margin-bottom:12px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <span style="font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(201,168,76,0.55);text-transform:uppercase">あなただけの変容の道</span>
             ${genDate ? `<span style="font-size:9px;color:rgba(232,228,220,0.25)">${genDate}生成</span>` : ''}
           </div>
-          <div style="background:rgba(10,15,30,0.4);border:1px solid rgba(201,168,76,0.12);border-radius:12px;padding:14px 12px;margin-bottom:4px">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-              <span style="font-size:11px;color:rgba(232,228,220,0.55)">${totalDone} / ${steps.length} ステップ完了</span>
+          <div style="background:rgba(10,15,30,0.4);border:1px solid rgba(201,168,76,0.12);border-radius:10px;padding:12px 14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+              <span style="font-size:11px;color:rgba(232,228,220,0.50)">${totalDone} / ${steps.length} ステップ完了</span>
               <span style="font-size:12px;font-weight:800;color:rgba(201,168,76,0.8)">${pct}%</span>
             </div>
-            <div style="height:4px;background:rgba(232,228,220,0.08);border-radius:2px;overflow:hidden">
+            <div style="height:3px;background:rgba(232,228,220,0.08);border-radius:2px;overflow:hidden">
               <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#c9a84c,#f5d78e);border-radius:2px;transition:width .4s"></div>
             </div>
           </div>
         </div>
-        <div class="action-step-list">${cardsHtml}</div>
+        <div class="route-container">${nodesHtml}</div>
         ${regenBtn}`;
     }
 
