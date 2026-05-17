@@ -5,13 +5,13 @@
  * - APIリクエスト (localhost:3001): Network First → 失敗時はキャッシュ
  * - 画像: Stale While Revalidate → 高速表示 + バックグラウンド更新
  */
-const CACHE_NAME = 'fineme-v4';
+const CACHE_NAME = 'fineme-v5';
 const SHELL_URLS = [
   '/',
-  '/pages/search.html',
-  '/pages/diagnosis.html',
-  '/assets/styles/style.css',
-  '/assets/styles/components.css',
+  '/search',
+  '/diagnosis',
+  '/mypage/navi',
+  '/mypage/log',
 ];
 
 // ---- インストール: Shellをキャッシュ ----

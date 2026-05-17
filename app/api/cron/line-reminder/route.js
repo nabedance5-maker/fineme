@@ -91,5 +91,43 @@ export async function GET(request) {
   }
 
   console.log(`[cron/line-reminder] date=${tomorrowStr} reservations=${reservations.length} sent=${sent}`);
+
+  // --- New Me Log リマインダー ---
+  const { data: serviceLogs, error: logErr } = await db
+    .from('user_service_logs')
+    .select('id, user_id, axis, name, next_visit, memo')
+    .eq('next_visit', tomorrowStr)
+    .eq('active', true);
+
+  if (!logErr && serviceLogs?.length) {
+    const logUserIds = [...new Set(serviceLogs.map(l => l.user_id).filter(Boolean))];
+    const { data: logProfiles } = logUserIds.length
+      ? await db.from('profiles').select('id, line_user_id').in('id', logUserIds)
+      : { data: [] };
+    const logProfileMap = Object.fromEntries((logProfiles || []).map(p => [p.id, p]));
+
+    const AXIS_LABEL = {
+      body: 'ボディ', hair: 'ヘア', eyebrow: '眉毛',
+      skin: 'スキンケア', hairremoval: '脱毛', teeth: '歯', nail: 'ネイル',
+    };
+
+    for (const log of serviceLogs) {
+      const prof = logProfileMap[log.user_id];
+      if (!prof?.line_user_id) continue;
+      const axisLabel = AXIS_LABEL[log.axis] || log.axis;
+      const msg = [
+        `【Fineme】明日の${axisLabel}予約リマインダー`,
+        `明日（${tomorrowStr}）は「${log.name}」の予約日です。`,
+        log.memo ? `メモ: ${log.memo}` : '',
+        '変容の旅、一歩一歩進めていきましょう。',
+        `https://fineme.me/mypage/log`,
+      ].filter(Boolean).join('\n');
+      const result = await sendLinePush(prof.line_user_id, msg);
+      if (result.ok) sent++;
+      results.push({ type: 'service-log', logId: log.id, ok: result.ok });
+    }
+    console.log(`[cron/line-reminder] service-logs=${serviceLogs.length}`);
+  }
+
   return Response.json({ sent, date: tomorrowStr, results });
 }

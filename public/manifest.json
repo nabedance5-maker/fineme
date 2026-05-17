@@ -4,8 +4,8 @@
   "description": "変わりたい男性のための外見磨きサービス検索ポータル。パーソナルトレーナー・眉毛サロン・外見コンサルなど、あなたの変容をサポートするプロを探せる。",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#111111",
+  "background_color": "#0a0f1e",
+  "theme_color": "#0a0f1e",
   "orientation": "portrait-primary",
   "lang": "ja",
   "scope": "/",
@@ -26,15 +26,27 @@
   ],
   "shortcuts": [
     {
-      "name": "サービスを探す",
-      "short_name": "検索",
-      "url": "/pages/search.html",
+      "name": "New Me Map",
+      "short_name": "Map",
+      "url": "/mypage/navi",
+      "icons": [{ "src": "/assets/images/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "New Me Log",
+      "short_name": "Log",
+      "url": "/mypage/log",
       "icons": [{ "src": "/assets/images/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "外見診断",
       "short_name": "診断",
-      "url": "/pages/diagnosis.html",
+      "url": "/diagnosis",
+      "icons": [{ "src": "/assets/images/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "サービスを探す",
+      "short_name": "検索",
+      "url": "/search",
       "icons": [{ "src": "/assets/images/icon-192.png", "sizes": "192x192" }]
     }
   ],

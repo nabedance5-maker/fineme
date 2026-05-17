@@ -211,6 +211,30 @@ export default function NewMeNaviPage() {
       @keyframes confetti-fall { 0% { transform: translateY(-20px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
       .confetti-piece { position: fixed; top: -10px; z-index: 9998; border-radius: 2px; animation: confetti-fall linear forwards; pointer-events: none; }
 
+      /* ── New Me Log Widget ── */
+      .sl-widget { background: rgba(10,15,30,0.65); border: 1px solid rgba(201,168,76,0.18); border-radius: 14px; padding: 14px 16px; margin-bottom: 20px; backdrop-filter: blur(8px); }
+      .sl-widget-empty { border-style: dashed; border-color: rgba(232,228,220,0.10); }
+      .sl-widget-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+      .sl-widget-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(201,168,76,0.65); }
+      .sl-widget-link { font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.7); text-decoration: none; }
+      .sl-widget-link:hover { color: #c9a84c; }
+      .sl-widget-empty-text { font-size: 12px; color: rgba(232,228,220,0.38); line-height: 1.65; margin: 0; }
+      .sl-items { display: flex; flex-direction: column; gap: 8px; }
+      .sl-item { display: flex; align-items: center; gap: 10px; }
+      .sl-item-icon { font-size: 20px; flex-shrink: 0; width: 28px; text-align: center; }
+      .sl-item-body { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+      .sl-item-name { font-size: 13px; font-weight: 700; color: rgba(232,228,220,0.80); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .sl-next-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.12); color: rgba(232,228,220,0.45); }
+      .sl-next-badge.sl-next-soon { border-color: rgba(52,211,153,0.35); color: rgba(52,211,153,0.85); background: rgba(52,211,153,0.06); }
+      .sl-next-badge.sl-next-today { border-color: #c9a84c; color: #c9a84c; background: rgba(201,168,76,0.08); }
+      .sl-next-badge.sl-next-overdue { border-color: rgba(239,68,68,0.35); color: rgba(239,68,68,0.80); background: rgba(239,68,68,0.06); }
+      .sl-next-badge.sl-next-none { opacity: .4; }
+      /* ── ongoingステップのログバッジ ── */
+      .step-log-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 8px; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.12); color: rgba(232,228,220,0.55); margin-top: 8px; width: 100%; box-sizing: border-box; text-decoration: none; }
+      .step-log-badge.slb-linked { border-color: rgba(201,168,76,0.3); color: rgba(201,168,76,0.85); background: rgba(201,168,76,0.06); }
+      .step-log-badge.slb-soon { border-color: rgba(52,211,153,0.3); color: rgba(52,211,153,0.85); background: rgba(52,211,153,0.06); }
+      .step-log-badge.slb-overdue { border-color: rgba(239,68,68,0.3); color: rgba(239,68,68,0.80); background: rgba(239,68,68,0.06); }
+
       /* ── Bottom ── */
       .navi-footer { margin-top: 32px; display: flex; flex-direction: column; gap: 10px; }
       .navi-footer-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; border-radius: 14px; font-size: 14px; font-weight: 700; text-decoration: none; transition: opacity .15s; }
@@ -715,6 +739,20 @@ export default function NewMeNaviPage() {
         }
       }
     } catch {}
+
+    // ── New Me Log: サービスログ取得 ──
+    let serviceLogs = [];
+    if (token) {
+      try {
+        const r = await fetchWithTimeout('/api/me/service-logs', { headers: { Authorization: `Bearer ${token}` } });
+        if (r?.ok) { const d = await r.json(); serviceLogs = d.logs || []; }
+      } catch {}
+    }
+    // axis → log のマップ（軸ごとの直近ログ）
+    const serviceLogByAxis = {};
+    serviceLogs.forEach(log => {
+      if (!serviceLogByAxis[log.axis]) serviceLogByAxis[log.axis] = log;
+    });
 
     // ── 記事フェッチ（非同期・失敗しても無視） ──
     try {
@@ -1259,6 +1297,20 @@ export default function NewMeNaviPage() {
         }
         const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
 
+        // ongoingステップにサービスログバッジを表示
+        let logBadgeHtml = '';
+        if (step.action_type === 'ongoing') {
+          const linkedLog = serviceLogByAxis[step.axis];
+          if (linkedLog) {
+            const diff = linkedLog.next_visit ? Math.round((new Date(linkedLog.next_visit) - new Date()) / 86400000) : null;
+            let nextLabel = diff === null ? '次回未設定' : diff < 0 ? `${-diff}日前（要予約）` : diff === 0 ? '今日！' : `${diff}日後`;
+            const cls = diff === null ? '' : diff < 0 ? 'slb-overdue' : diff <= 7 ? 'slb-soon' : 'slb-linked';
+            logBadgeHtml = `<a href="/mypage/log" class="step-log-badge ${cls}">📖 ${esc(linkedLog.name)} — 次回 ${esc(nextLabel)}</a>`;
+          } else {
+            logBadgeHtml = `<a href="/mypage/log" class="step-log-badge">＋ 通っているサービスをLogに登録する</a>`;
+          }
+        }
+
         // prevPos: posIdxはnon-compassNextのみインクリメント済みのため2引く
         const prevIsCompassNext = steps[i-1]?.id === compassNextId;
         const prevPos = i === 0 ? null
@@ -1279,7 +1331,7 @@ export default function NewMeNaviPage() {
           <div class="path-node-detail${isCurrentStep ? ' pnd-open' : ''}">
             <div class="gmap-detail-card">
               <p class="gmap-detail-title">${esc(step.text)}</p>
-              ${hintHtml}${guideBadgeHtml}
+              ${hintHtml}${guideBadgeHtml}${logBadgeHtml}
               <button class="step-check-btn gmap-check-btn${isDone?' checked':''}" data-done-key="${esc(step.id)}">${isDone ? '✓ 完了済み' : '✓ やった！'}</button>
             </div>
           </div>
@@ -2559,6 +2611,56 @@ export default function NewMeNaviPage() {
       </div>`;
     }
 
+    // ── New Me Log ウィジェット ──
+    function buildServiceLogWidget() {
+      if (!serviceLogs.length) {
+        return `<div class="sl-widget sl-widget-empty">
+          <div class="sl-widget-head">
+            <span class="sl-widget-eyebrow">New Me Log</span>
+            <a href="/mypage/log" class="sl-widget-link">管理する →</a>
+          </div>
+          <p class="sl-widget-empty-text">📖 通っているサービスをまだ登録していません。<br>
+            <a href="/mypage/log" style="color:#c9a84c;text-decoration:underline">登録して変容の旅を一元管理しよう</a>
+          </p>
+        </div>`;
+      }
+
+      const today = new Date();
+      // 次回予約日が近い順にソート（未設定は後ろ）
+      const sorted = [...serviceLogs].sort((a, b) => {
+        if (!a.next_visit && !b.next_visit) return 0;
+        if (!a.next_visit) return 1;
+        if (!b.next_visit) return -1;
+        return new Date(a.next_visit) - new Date(b.next_visit);
+      });
+
+      const items = sorted.slice(0, 4).map(log => {
+        const def = AREA_DEFS[log.axis] || {};
+        const diff = log.next_visit ? Math.round((new Date(log.next_visit) - today) / 86400000) : null;
+        let nextLabel = '', nextCls = '';
+        if (diff === null)      { nextLabel = '次回未設定'; nextCls = 'sl-next-none'; }
+        else if (diff < 0)      { nextLabel = `${-diff}日前 （要予約）`; nextCls = 'sl-next-overdue'; }
+        else if (diff === 0)    { nextLabel = '今日！'; nextCls = 'sl-next-today'; }
+        else if (diff <= 7)     { nextLabel = `${diff}日後`; nextCls = 'sl-next-soon'; }
+        else                    { nextLabel = `${diff}日後`; nextCls = ''; }
+        return `<div class="sl-item">
+          <span class="sl-item-icon">${esc(def.icon || '🏥')}</span>
+          <div class="sl-item-body">
+            <p class="sl-item-name">${esc(log.name)}</p>
+            <span class="sl-next-badge ${nextCls}">次回 ${esc(nextLabel)}</span>
+          </div>
+        </div>`;
+      }).join('');
+
+      return `<div class="sl-widget">
+        <div class="sl-widget-head">
+          <span class="sl-widget-eyebrow">📖 New Me Log</span>
+          <a href="/mypage/log" class="sl-widget-link">すべて見る →</a>
+        </div>
+        <div class="sl-items">${items}</div>
+      </div>`;
+    }
+
     // ── Today's Quest ──
     function buildTodayQuestHtml() {
       const steps = getNextUndoneSteps(3);
@@ -2776,6 +2878,10 @@ export default function NewMeNaviPage() {
         <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(201,168,76,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
       </div>
 
+      <div id="service-log-widget">
+        ${buildServiceLogWidget()}
+      </div>
+
       <div id="todayquest-container">
         ${buildTodayQuestHtml()}
       </div>
@@ -2791,6 +2897,7 @@ export default function NewMeNaviPage() {
       ${buildMatchedProductsHtml()}
 
       <div class="navi-footer">
+        <a href="/mypage/log" class="navi-footer-btn nfb-secondary" style="border-color:rgba(201,168,76,0.45)">📖 New Me Log — サービスを管理する</a>
         <a href="/diagnosis/result" class="navi-footer-btn nfb-secondary">🗺️ New Me Naviに戻る</a>
         <a href="/diagnosis" class="navi-footer-btn nfb-ghost">Me Scanを再スキャンする</a>
       </div>
