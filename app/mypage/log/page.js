@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import Link from 'next/link';
 
 const AXIS_DEFS = {
   body:        { icon: '💪', label: '体型・ジム',     freq: { min: 1,  max: 1,  unit: '週' } },
@@ -38,7 +39,7 @@ export default function NewMeLogPage() {
 
     const style = document.createElement('style');
     style.textContent = `
-      .log-wrap { max-width: 640px; margin: 0 auto; padding: 24px 16px 100px; }
+      .log-wrap { max-width: 100%; padding: 0 0 100px; }
 
       /* ── Header ── */
       .log-header { background: linear-gradient(rgba(10,15,30,0.82), rgba(10,15,30,0.92)), url('/assets/images/hero-bg.webp') center/cover no-repeat; border-radius: 14px; padding: 22px 22px 18px; margin-bottom: 24px; border: 1px solid rgba(201,168,76,0.2); position: relative; overflow: hidden; }
@@ -403,62 +404,80 @@ export default function NewMeLogPage() {
   }, []);
 
   return (
-    <div>
-      <div id="log-root" className="log-wrap" />
+    <main className="section">
+      <div className="container mypage-layout">
+        <aside className="mypage-sidenav">
+          <nav className="stack" style={{ gap: '4px' }}>
+            <Link href="/mypage" className="sidenav-link">ホーム</Link>
+            <Link href="/diagnosis/result" className="sidenav-link">New Me Navi</Link>
+            <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
+            <Link href="/mypage/log" className="sidenav-link sidenav-link--active">New Me Log</Link>
+            <Link href="/mypage/favorites" className="sidenav-link">お気に入り</Link>
+            <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
+            <Link href="/my-reservations" className="sidenav-link">予約履歴</Link>
+            <Link href="/mypage/story-submit" className="sidenav-link">体験談を書く</Link>
+            <Link href="/mypage/profile" className="sidenav-link">プロフィール編集</Link>
+          </nav>
+        </aside>
 
-      {/* モーダル（常にDOM上に存在） */}
-      <div id="log-modal-overlay" className="log-modal-overlay hidden">
-        <div id="log-modal" className="log-modal">
-          <p id="log-modal-title" className="log-modal-title">サービスを登録</p>
+        <section>
+          <div id="log-root" className="log-wrap" />
 
-          <div className="log-field">
-            <label>軸（カテゴリ）</label>
-            <select id="log-f-axis" />
-          </div>
+          {/* モーダル（常にDOM上に存在） */}
+          <div id="log-modal-overlay" className="log-modal-overlay hidden">
+            <div id="log-modal" className="log-modal">
+              <p id="log-modal-title" className="log-modal-title">サービスを登録</p>
 
-          <div className="log-field">
-            <label>サービス名</label>
-            <input id="log-f-name" type="text" placeholder="例：〇〇パーソナルジム、△△美容室" />
-          </div>
+              <div className="log-field">
+                <label>軸（カテゴリ）</label>
+                <select id="log-f-axis" />
+              </div>
 
-          <div className="log-field">
-            <label>Finemeサービスと紐づける（任意）</label>
-            <div className="log-provider-search">
-              <input id="log-provider-search-input" type="text" placeholder="サービス名で検索..." />
-              <button className="log-provider-clear" id="log-provider-clear">解除</button>
+              <div className="log-field">
+                <label>サービス名</label>
+                <input id="log-f-name" type="text" placeholder="例：〇〇パーソナルジム、△△美容室" />
+              </div>
+
+              <div className="log-field">
+                <label>Finemeサービスと紐づける（任意）</label>
+                <div className="log-provider-search">
+                  <input id="log-provider-search-input" type="text" placeholder="サービス名で検索..." />
+                  <button className="log-provider-clear" id="log-provider-clear">解除</button>
+                </div>
+                <div id="log-provider-results" className="log-provider-result" />
+              </div>
+
+              <div className="log-modal-row">
+                <div className="log-field">
+                  <label>頻度（週ごと）</label>
+                  <input id="log-f-freq" type="number" placeholder="例：4（4週ごと）" min="1" max="52" />
+                  <p id="log-freq-hint" className="log-field-hint" />
+                </div>
+                <div className="log-field">
+                  <label>前回利用日</label>
+                  <input id="log-f-last" type="date" />
+                </div>
+              </div>
+
+              <div className="log-field">
+                <label>次回予約日</label>
+                <input id="log-f-next" type="date" />
+                <p className="log-field-hint">前回日と頻度を入力すると自動で候補が入ります</p>
+              </div>
+
+              <div className="log-field">
+                <label>メモ（任意）</label>
+                <textarea id="log-f-memo" placeholder="担当者名、店舗の場所など..." />
+              </div>
+
+              <div className="log-modal-btns">
+                <button className="log-modal-cancel" id="log-modal-cancel">キャンセル</button>
+                <button className="log-modal-save" id="log-modal-save">保存する</button>
+              </div>
             </div>
-            <div id="log-provider-results" className="log-provider-result" />
           </div>
-
-          <div className="log-modal-row">
-            <div className="log-field">
-              <label>頻度（週ごと）</label>
-              <input id="log-f-freq" type="number" placeholder="例：4（4週ごと）" min="1" max="52" />
-              <p id="log-freq-hint" className="log-field-hint" />
-            </div>
-            <div className="log-field">
-              <label>前回利用日</label>
-              <input id="log-f-last" type="date" />
-            </div>
-          </div>
-
-          <div className="log-field">
-            <label>次回予約日</label>
-            <input id="log-f-next" type="date" />
-            <p className="log-field-hint">前回日と頻度を入力すると自動で候補が入ります</p>
-          </div>
-
-          <div className="log-field">
-            <label>メモ（任意）</label>
-            <textarea id="log-f-memo" placeholder="担当者名、店舗の場所など..." />
-          </div>
-
-          <div className="log-modal-btns">
-            <button className="log-modal-cancel" id="log-modal-cancel">キャンセル</button>
-            <button className="log-modal-save" id="log-modal-save">保存する</button>
-          </div>
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
