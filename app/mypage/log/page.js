@@ -109,9 +109,14 @@ export default function NewMeLogPage() {
     const root = document.getElementById('log-root');
     if (!root) return;
 
-    const TOKEN_KEY  = 'fineme:auth:token';
     let token = null;
-    try { token = localStorage.getItem(TOKEN_KEY); } catch {}
+    try {
+      const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (sbKey) {
+        const obj = JSON.parse(localStorage.getItem(sbKey));
+        if (obj?.access_token) token = obj.access_token;
+      }
+    } catch {}
 
     if (!token) {
       root.innerHTML = `<div class="log-empty"><div class="log-empty-icon">🔒</div><p class="log-empty-text">ログインが必要です。<br><a href="/mypage" style="color:#c9a84c">マイページへ</a></p></div>`;
