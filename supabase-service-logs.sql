@@ -1,5 +1,5 @@
 -- New Me Log: ユーザーが定期通いしているサービスを管理するテーブル
--- ✅ 本番適用済 YYYY-MM-DD （適用後に日付を記入）
+-- ✅ 本番適用済 2026-05-17
 CREATE TABLE IF NOT EXISTS user_service_logs (
   id              UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE,
