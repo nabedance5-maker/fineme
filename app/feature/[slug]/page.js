@@ -141,15 +141,27 @@ function ArticleProductBlock({ products }) {
   );
 }
 
+async function getRelatedArticles(relatedSlugs) {
+  if (!relatedSlugs?.length) return [];
+  try {
+    const { data } = await getSupabase()
+      .from('features')
+      .select('slug, title, description, thumbnail, category, reading_time')
+      .in('slug', relatedSlugs)
+      .eq('status', 'published')
+      .limit(4);
+    return data || [];
+  } catch { return []; }
+}
+
 export default async function ArticlePage({ params }) {
-  const [article, relatedProviders] = await Promise.all([
-    getArticle(params.slug),
-    (async () => {
-      const a = await getArticle(params.slug);
-      return a ? getRelatedProviders(a.category) : [];
-    })(),
-  ]);
+  const article = await getArticle(params.slug);
   if (!article) notFound();
+
+  const [relatedProviders, relatedArticles] = await Promise.all([
+    getRelatedProviders(article.category),
+    getRelatedArticles(article.related_slugs),
+  ]);
 
   const hasBlocks = Array.isArray(article.blocks) && article.blocks.length > 0;
   const hasBody = typeof article.body === 'string' && article.body.trim().length > 0;
@@ -348,6 +360,81 @@ export default async function ArticlePage({ params }) {
               </p>
             </div>
           </div>
+
+          {/* ── 関連記事 ── */}
+          {relatedArticles.length > 0 && (
+            <div style={{
+              borderTop: '1px solid rgba(201,168,76,0.12)',
+              padding: 'clamp(28px, 5vw, 48px) 20px',
+              background: 'rgba(10,15,30,0.3)',
+            }}>
+              <div style={{ maxWidth: '740px', margin: '0 auto' }}>
+                <p style={{
+                  fontSize: '10px', fontWeight: 800, letterSpacing: '.16em',
+                  textTransform: 'uppercase', color: 'rgba(201,168,76,0.6)',
+                  margin: '0 0 18px', fontFamily: 'var(--font-sans)',
+                }}>
+                  関連記事
+                </p>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                  gap: '14px',
+                }}>
+                  {relatedArticles.map(a => (
+                    <Link key={a.slug} href={`/feature/${a.slug}`} style={{ textDecoration: 'none' }}>
+                      <div style={{
+                        background: 'rgba(10,15,30,0.6)',
+                        border: '1px solid rgba(201,168,76,0.14)',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        transition: 'border-color .2s',
+                      }}>
+                        {a.thumbnail && (
+                          <div style={{
+                            height: '110px', overflow: 'hidden',
+                            background: '#0a0f1e',
+                          }}>
+                            <img
+                              src={a.thumbnail}
+                              alt={a.title}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }}
+                            />
+                          </div>
+                        )}
+                        <div style={{ padding: '12px 14px' }}>
+                          {a.category && (
+                            <span style={{
+                              fontSize: '9px', fontWeight: 800, letterSpacing: '.1em',
+                              textTransform: 'uppercase', color: 'rgba(201,168,76,0.6)',
+                              fontFamily: 'var(--font-sans)',
+                            }}>
+                              {a.category}
+                            </span>
+                          )}
+                          <p style={{
+                            fontSize: '13px', fontWeight: 700, color: 'rgba(240,236,228,0.88)',
+                            margin: '4px 0 0', lineHeight: 1.55,
+                            fontFamily: 'var(--font-serif)',
+                            display: '-webkit-box', WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                          }}>
+                            {a.title}
+                          </p>
+                          <p style={{
+                            fontSize: '10px', color: 'rgba(255,255,255,0.3)',
+                            margin: '6px 0 0', fontFamily: 'var(--font-sans)',
+                          }}>
+                            📖 {a.reading_time || 5}分
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ── 記事フッター ── */}
           <div style={{
