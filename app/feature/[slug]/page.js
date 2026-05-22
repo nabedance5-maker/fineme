@@ -74,7 +74,10 @@ async function getRelatedProviders(category) {
 export async function generateStaticParams() {
   try {
     const articles = await getAllArticles();
-    return articles.filter(a => a.slug).map(a => ({ slug: a.slug }));
+    return articles
+      .filter(a => a.slug)
+      .slice(0, 50)
+      .map(a => ({ slug: a.slug }));
   } catch { return []; }
 }
 
