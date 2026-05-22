@@ -97,12 +97,26 @@
 
 <script>
 const API = '/api/admin/tasks';
-const KEY_STORAGE = 'fineme:admin:key';
+const KEY_STORAGE = 'fineme:business:key'; // 運営管理画面のadminキーとは別キー
 
 let ADMIN_KEY = localStorage.getItem(KEY_STORAGE) || '';
 if (!ADMIN_KEY) {
-  ADMIN_KEY = prompt('管理APIキーを入力してください：') || '';
-  if (ADMIN_KEY) localStorage.setItem(KEY_STORAGE, ADMIN_KEY);
+  ADMIN_KEY = prompt('業務アクセスキーを入力してください：') || '';
+  if (ADMIN_KEY) {
+    // 認証確認
+    fetch('/api/business/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: ADMIN_KEY }),
+    }).then(r => {
+      if (r.ok) {
+        localStorage.setItem(KEY_STORAGE, ADMIN_KEY);
+      } else {
+        alert('キーが正しくありません');
+        ADMIN_KEY = '';
+      }
+    });
+  }
 }
 
 let tasks = [];

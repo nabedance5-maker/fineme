@@ -5,7 +5,8 @@ function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 }
 function checkAdminKey(req) {
-  return req.headers.get('x-admin-key') === process.env.ADMIN_API_KEY;
+  const key = req.headers.get('x-admin-key');
+  return key === process.env.ADMIN_API_KEY || key === process.env.BUSINESS_ACCESS_KEY;
 }
 
 export async function GET(req) {
