@@ -3402,6 +3402,7 @@ export default function NewMeNaviPage() {
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ diagnosis: diag, body_data: bd }),
         });
+        if (res.status === 429) { btn.textContent = '本日はすでに生成済みです。明日また生成できます。'; return; }
         if (!res.ok) { btn.textContent = '生成に失敗しました。再度お試しください'; btn.disabled = false; return; }
         const data = await res.json();
         naviStepsData = data.navi_steps;

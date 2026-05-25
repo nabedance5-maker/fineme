@@ -53,6 +53,24 @@ export async function POST(request) {
     return Response.json({ error: 'diagnosis.transform_vectors が必要です' }, { status: 400 });
   }
 
+  // 1日1回制限: generated_at が今日(JST)なら拒否
+  const { data: profile } = await getSupabase()
+    .from('profiles')
+    .select('navi_steps')
+    .eq('id', user.id)
+    .single();
+  if (profile?.navi_steps?.generated_at) {
+    const jst = (d) => new Date(new Date(d).getTime() + 9 * 3600000);
+    const lastJST = jst(profile.navi_steps.generated_at);
+    const nowJST  = jst(new Date());
+    const sameDay = lastJST.getFullYear() === nowJST.getFullYear()
+      && lastJST.getMonth() === nowJST.getMonth()
+      && lastJST.getDate()  === nowJST.getDate();
+    if (sameDay) {
+      return Response.json({ error: 'daily_limit', message: '本日はすでに生成済みです。明日また生成できます。' }, { status: 429 });
+    }
+  }
+
   const tv = diagnosis.transform_vectors || {};
   const bd = body_data || {};
   const budget = diagnosis.budget || null;
