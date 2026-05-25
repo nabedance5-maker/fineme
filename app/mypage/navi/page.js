@@ -949,7 +949,7 @@ export default function NewMeNaviPage() {
         { text: '爪の形を丸・スクエアなど意識して整えている', guide: 'LOW', isCurrentFor: 'concerned' },
         { text: 'ネイルオイルを使っている', guide: 'LOW',
           products: [{ name: 'OPI プロスパ ネイルオイル', url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=whero523-22', level: 'intermediate', priceRange: 'low' }, { name: 'ネイルオイル（プチプラ）', url: 'https://www.amazon.co.jp/s?k=ネイルオイル+メンズ&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
-        { text: '甘皮を押し上げるケアをしている', guide: 'MID', note: '切り取るのはNG。正しい方法はプロに教わるのが理想。', isCurrentFor: 'self' },
+        { text: '爪のケアを自分なりのルーティンにしている（切る・やすり・オイル）', guide: 'none', isCurrentFor: 'self' },
         { text: 'ネイルケアサロンでプロのケアを受けたことがある', guide: 'HIGH' },
         { text: '定期的にサロンでメンテナンスしている', guide: 'HIGH', isCurrentFor: 'pro' },
         { text: '爪ケアのサイクル（切る・やすり・保湿）が2週間以上途切れず続いている', guide: 'none' },
@@ -1828,12 +1828,14 @@ export default function NewMeNaviPage() {
     // ③ 動的優先順: gap×(1-完了率) が高い軸を上位に。同スコアは診断順を維持
     const priorityOrder = [..._diagPriorityOrder].sort((a, b) => {
       const ca = computeAxisCompletion(a), cb = computeAxisCompletion(b);
+      const tierA = AREA_DEFS[a]?.tier || 1;
+      const tierB = AREA_DEFS[b]?.tier || 1;
       const gapA = (tv[a]?.ideal || 3) - (tv[a]?.current || 1);
       const gapB = (tv[b]?.ideal || 3) - (tv[b]?.current || 1);
       const ratioA = ca.total > 0 ? ca.done / ca.total : 0;
       const ratioB = cb.total > 0 ? cb.done / cb.total : 0;
-      const scoreA = gapA * (1 - ratioA);
-      const scoreB = gapB * (1 - ratioB);
+      const scoreA = gapA * (1 - ratioA) / tierA;
+      const scoreB = gapB * (1 - ratioB) / tierB;
       if (Math.abs(scoreA - scoreB) > 0.01) return scoreB - scoreA;
       return _diagPriorityOrder.indexOf(a) - _diagPriorityOrder.indexOf(b);
     });
@@ -1872,7 +1874,7 @@ export default function NewMeNaviPage() {
     const ROUTE_PATTERNS = {
       recommend: [...new Set([...priorityOrder, ...Object.keys(AREA_DEFS)])].filter(id => AREA_DEFS[id]),
       impact:    ['eyebrow','hair','fashion','skin','body','teeth','nail'],
-      ease:      ['eyebrow','nail','skin','hair','teeth','fashion','body'],
+      ease:      ['eyebrow','skin','hair','teeth','fashion','nail','body'],
     };
     const PATTERN_LABELS = {
       recommend: '📍 推奨ルート',
