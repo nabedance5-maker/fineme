@@ -1250,9 +1250,12 @@ export default function NewMeNaviPage() {
     function buildOnePathHtml() {
       if (!naviStepsData?.steps?.length) return null;
       const compassAxis = calcDynamicCompass();
-      const steps = naviStepsData.steps;
-      const totalDone = steps.filter(s => stepDone[s.id]).length;
-      const pct = steps.length > 0 ? Math.round(totalDone / steps.length * 100) : 0;
+      const allNaviSteps = naviStepsData.steps;
+      const steps = activeAxisFilter
+        ? allNaviSteps.filter(s => s.axis === activeAxisFilter)
+        : allNaviSteps;
+      const totalDone = allNaviSteps.filter(s => stepDone[s.id]).length;
+      const pct = allNaviSteps.length > 0 ? Math.round(totalDone / allNaviSteps.length * 100) : 0;
       const genDate = naviStepsData.generated_at
         ? new Date(naviStepsData.generated_at).toLocaleDateString('ja-JP', { month:'numeric', day:'numeric' })
         : '';
@@ -2890,7 +2893,7 @@ export default function NewMeNaviPage() {
 
       ${buildCompassHtml()}
 
-      ${naviStepsData ? '' : buildAxisFilterBar()}
+      ${buildAxisFilterBar()}
 
       <div id="sections-container">
         ${buildPathHtml()}
