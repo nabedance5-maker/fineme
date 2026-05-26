@@ -8,7 +8,29 @@ export const maxDuration = 60;
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
-const SYSTEM_PROMPT = `あなたは、外見の変容可能性を温かく・誠実に分析する専門家です。
+const AXIS_TO_SEARCH = {
+  body: 'gym', eyebrow: 'eyebrow', fashion: 'fashion',
+  hair: 'hair', skin: 'esthetic', teeth: 'whitening', nail: 'nail',
+};
+
+function buildCompassInstruction(userState, diagnosisInfo) {
+  if (userState === 'guest') {
+    return `この軸を改善するために最初にすべきことを1文で述べる。その後に必ず以下のいずれか1つだけを付け加える（実在するURLのみ使用。「〇〇プログラム」「〇〇診断」などの架空の機能名は絶対禁止）:\n「Me Scan（無料の外見診断）を受けると自分の優先軸がわかります → /diagnosis」\nまたは\n「会員登録すると分析結果が保存され行動ロードマップも作れます → /auth/login」`;
+  }
+  if (userState === 'member') {
+    return `この軸を改善するために最初にすべきことを1文で述べる。その後に必ず以下を付け加える（実在するURLのみ使用。架空の機能名は禁止）:\n「Me Scan（無料診断）を受けると、この分析と連携した行動ロードマップ『New Me Navi』が使えます → /diagnosis」`;
+  }
+  // diagnosed: Me Scan受診済み
+  const compassAxis = diagnosisInfo?.compass_first || null;
+  const searchCat = compassAxis ? (AXIS_TO_SEARCH[compassAxis] || null) : null;
+  const naviLine = `New Me Navi でこの軸の具体的なステップを確認できます → /mypage/navi`;
+  const searchLine = searchCat ? `\nまたは「関連サービスを探す → /search?category=${searchCat}」` : '';
+  return `この軸を改善するために最初にすべきことを1文で述べる。その後に必ず以下を付け加える（実在するURLのみ使用。「〇〇プログラム」などの架空の機能名は絶対禁止）:\n「${naviLine}」${searchLine}`;
+}
+
+function buildSystemPrompt(userState, diagnosisInfo) {
+  const compassInstruction = buildCompassInstruction(userState, diagnosisInfo);
+  return `あなたは、外見の変容可能性を温かく・誠実に分析する専門家です。
 Fineme（外見を起点に自信を再設計するサービス）の「Fineme Mirror」機能として機能します。
 
 【絶対禁止】
@@ -44,7 +66,7 @@ Fineme（外見を起点に自信を再設計するサービス）の「Fineme M
         "具体的な改善ヒント2",
         "具体的な改善ヒント3"
       ],
-      "compass_action": "Me Scan診断のCompassと紐付けて、最初の一手として何をすべきかを1文で。"
+      "compass_action": "${compassInstruction}"
     }
   ],
   "overall_message": "分析全体を締めくくる、背中を押す一言。変わることへの期待感と安心感を込めて。50文字以内。"
@@ -70,10 +92,11 @@ potential_levelについて:
 「高」= 少しの変化で大きく印象が変わる余地がある
 「中」= 磨けば確実に向上する余地がある
 「低」= すでに整っている（称賛すべき点として伝える）`;
+}
 
 export async function POST(request) {
   try {
-    const { photo_base64, media_type, user_id } = await request.json();
+    const { photo_base64, media_type, user_id, user_state, diagnosis_info } = await request.json();
 
     if (!photo_base64 || !media_type) {
       return Response.json({ error: '写真データが必要です' }, { status: 400 });
@@ -87,10 +110,12 @@ export async function POST(request) {
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+    const systemPrompt = buildSystemPrompt(user_state || 'guest', diagnosis_info || null);
+
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 4000,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: [{
         role: 'user',
         content: [

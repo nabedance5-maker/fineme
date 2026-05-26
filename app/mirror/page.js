@@ -171,10 +171,24 @@ export default function MirrorPage() {
         userId = obj?.user?.id || null;
       }
 
+      // Me Scan診断データ確認（ユーザー状態の判定）
+      let diagnosisInfo = null;
+      try {
+        const diagRaw = localStorage.getItem('fineme:diagnosis:latest');
+        if (diagRaw) {
+          const diag = JSON.parse(diagRaw);
+          diagnosisInfo = {
+            compass_first: diag.compass_first || null,
+            priority_order: (diag.priority_order || []).slice(0, 3),
+          };
+        }
+      } catch {}
+      const userState = !userId ? 'guest' : diagnosisInfo ? 'diagnosed' : 'member';
+
       const res = await fetch('/api/mirror/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photo_base64: base64, media_type, user_id: userId }),
+        body: JSON.stringify({ photo_base64: base64, media_type, user_id: userId, user_state: userState, diagnosis_info: diagnosisInfo }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '分析に失敗しました');
