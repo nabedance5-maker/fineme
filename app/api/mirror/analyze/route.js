@@ -89,7 +89,7 @@ export async function POST(request) {
 
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2000,
+      max_tokens: 4000,
       system: SYSTEM_PROMPT,
       messages: [{
         role: 'user',
@@ -108,7 +108,13 @@ export async function POST(request) {
 
     const raw = message.content[0]?.text?.trim() || '{}';
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    const analysis = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+    let analysis;
+    try {
+      analysis = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+    } catch {
+      console.error('Mirror JSON parse error. stop_reason:', message.stop_reason, 'raw length:', raw.length);
+      return Response.json({ error: '分析結果の生成に失敗しました。もう一度お試しください。' }, { status: 500 });
+    }
 
     if (!analysis.axes || !Array.isArray(analysis.axes)) {
       return Response.json({ error: '分析結果の形式が不正です。もう一度試してください。' }, { status: 500 });
