@@ -48,12 +48,18 @@ export default function MirrorLpPage() {
         .m-compare-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(201,168,76,0.08); font-size: 14px; }
         .m-compare-row:last-child { border-bottom: none; }
         .m-tag { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #c9a84c; border: 1px solid rgba(201,168,76,0.35); border-radius: 20px; padding: 3px 10px; margin-bottom: 14px; }
+        @keyframes mirror-ring-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .m-hero-mirror-ring { animation: mirror-ring-spin 28s linear infinite; }
+        .m-hero-inner { display: flex; flex-direction: row; align-items: center; gap: clamp(24px,5vw,80px); flex-wrap: wrap; justify-content: center; max-width: 1100px; margin: 0 auto; width: 100%; position: relative; z-index: 2; }
+        .m-hero-text { flex: 1 1 280px; max-width: 560px; }
+        .m-hero-img-col { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
+        @media (max-width: 760px) { .m-hero-inner { flex-direction: column; } .m-hero-img-col { order: -1; } .m-hero-text { text-align: center !important; } }
       ` }} />
 
       <main style={{ background: '#080d1a', minHeight: '100vh', color: 'rgba(240,236,228,0.88)', fontFamily: '-apple-system, sans-serif' }}>
 
         {/* ── ヒーロー ── */}
-        <section style={{ background: 'linear-gradient(180deg, #04081a 0%, #070e1e 35%, #0a1228 65%, #060c1a 100%)', padding: 'clamp(72px,12vw,110px) 20px clamp(56px,10vw,88px)', textAlign: 'center', position: 'relative', overflow: 'hidden', minHeight: 'min(88vh,700px)', display: 'flex', alignItems: 'center' }}>
+        <section style={{ background: 'linear-gradient(180deg, #04081a 0%, #070e1e 35%, #0a1228 65%, #060c1a 100%)', padding: 'clamp(72px,12vw,110px) 20px clamp(56px,10vw,88px)', position: 'relative', overflow: 'hidden', minHeight: 'min(88vh,700px)', display: 'flex', alignItems: 'center' }}>
 
           {/* ドットグリッド背景 */}
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(201,168,76,0.1) 1px, transparent 1px)', backgroundSize: '44px 44px', opacity: 0.35, pointerEvents: 'none' }} />
@@ -94,37 +100,67 @@ export default function MirrorLpPage() {
             }} />
           ))}
 
-          <div style={{ position: 'relative', zIndex: 2, maxWidth: '660px', margin: '0 auto', width: '100%' }}>
-            <div className="m-fade" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.18em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '20px' }}>
-              🪞 Fineme Mirror
-            </div>
-            <h1 className="m-fade m-fade-d1" style={{ fontSize: 'clamp(26px,6.5vw,48px)', fontWeight: 900, fontFamily: 'Georgia, "Times New Roman", serif', lineHeight: 1.3, color: '#fff', marginBottom: '22px' }}>
-              非モテから憧れの男へ。<br />
-              写真1枚で、あなたの<br />
-              <span style={{ color: '#c9a84c' }}>「未開発の魅力」</span><br />
-              が地図になる。
-            </h1>
-            <p className="m-fade m-fade-d2" style={{ fontSize: 'clamp(13px,2.5vw,16px)', color: 'rgba(240,236,228,0.55)', lineHeight: 1.85, marginBottom: '10px' }}>
-              鏡は嘘をつく。でも、AIは本当の可能性を見せる。
-            </p>
-            <p className="m-fade m-fade-d2" style={{ fontSize: 'clamp(14px,2.8vw,17px)', color: 'rgba(240,236,228,0.65)', lineHeight: 2.0, marginBottom: '36px' }}>
-              AIが7軸で分析。眉・肌・ヘア・姿勢・体型・服・爪。<br />
-              今のあなたが「最も変わりやすい場所」を地図にします。<br />
-              <span style={{ color: 'rgba(201,168,76,0.7)', fontWeight: 700 }}>¥500。写真はサーバーに保存されません。</span>
-            </p>
-            <div className="m-fade m-fade-d3">
-              <Link href="/mirror" className="m-cta-btn" style={{
-                display: 'inline-block', padding: 'clamp(15px,3vw,20px) clamp(36px,7vw,60px)',
-                borderRadius: '12px', color: '#0a0f1e', fontWeight: 900,
-                fontSize: 'clamp(16px,2.8vw,20px)', textDecoration: 'none',
-                boxShadow: '0 8px 32px rgba(201,168,76,0.4)',
-              }}>
-                Mirrorを使う — ¥500 →
-              </Link>
-              <p className="m-fade m-fade-d4" style={{ fontSize: '12px', color: 'rgba(240,236,228,0.3)', marginTop: '14px' }}>
-                Stripe決済（クレジットカード）・写真はAI分析後に削除
+          <div className="m-hero-inner">
+
+            {/* テキスト（左） */}
+            <div className="m-hero-text">
+              <div className="m-fade" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.18em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '20px' }}>
+                🪞 Fineme Mirror
+              </div>
+              <h1 className="m-fade m-fade-d1" style={{ fontSize: 'clamp(26px,6.5vw,48px)', fontWeight: 900, fontFamily: 'Georgia, "Times New Roman", serif', lineHeight: 1.3, color: '#fff', marginBottom: '22px' }}>
+                非モテから憧れの男へ。<br />
+                写真1枚で、あなたの<br />
+                <span style={{ color: '#c9a84c' }}>「未開発の魅力」</span><br />
+                が地図になる。
+              </h1>
+              <p className="m-fade m-fade-d2" style={{ fontSize: 'clamp(13px,2.5vw,16px)', color: 'rgba(240,236,228,0.55)', lineHeight: 1.85, marginBottom: '10px' }}>
+                鏡は嘘をつく。でも、AIは本当の可能性を見せる。
               </p>
+              <p className="m-fade m-fade-d2" style={{ fontSize: 'clamp(14px,2.8vw,17px)', color: 'rgba(240,236,228,0.65)', lineHeight: 2.0, marginBottom: '36px' }}>
+                AIが7軸で分析。眉・肌・ヘア・姿勢・体型・服・爪。<br />
+                今のあなたが「最も変わりやすい場所」を地図にします。<br />
+                <span style={{ color: 'rgba(201,168,76,0.7)', fontWeight: 700 }}>¥500。写真はサーバーに保存されません。</span>
+              </p>
+              <div className="m-fade m-fade-d3">
+                <Link href="/mirror" className="m-cta-btn" style={{
+                  display: 'inline-block', padding: 'clamp(15px,3vw,20px) clamp(36px,7vw,60px)',
+                  borderRadius: '12px', color: '#0a0f1e', fontWeight: 900,
+                  fontSize: 'clamp(16px,2.8vw,20px)', textDecoration: 'none',
+                  boxShadow: '0 8px 32px rgba(201,168,76,0.4)',
+                }}>
+                  Mirrorを使う — ¥500 →
+                </Link>
+                <p className="m-fade m-fade-d4" style={{ fontSize: '12px', color: 'rgba(240,236,228,0.3)', marginTop: '14px' }}>
+                  Stripe決済（クレジットカード）・写真はAI分析後に削除
+                </p>
+              </div>
             </div>
+
+            {/* 鏡画像（右） */}
+            <div className="m-hero-img-col">
+              <div style={{ position: 'relative', width: 'clamp(220px,28vw,340px)', height: 'clamp(220px,28vw,340px)' }}>
+                <div className="m-hero-mirror-ring" style={{ position: 'absolute', inset: '-20px', borderRadius: '50%', border: '1px dashed rgba(201,168,76,0.45)' }} />
+                <div style={{ position: 'absolute', inset: '-8px', borderRadius: '50%', border: '1px solid rgba(201,168,76,0.18)' }} />
+                <div style={{ position: 'absolute', top: '-30px', left: '50%', transform: 'translateX(-50%)', fontSize: '9px', fontWeight: 900, color: '#c9a84c', letterSpacing: '0.15em' }}>N</div>
+                <div style={{ position: 'absolute', bottom: '-30px', left: '50%', transform: 'translateX(-50%)', fontSize: '9px', fontWeight: 900, color: 'rgba(201,168,76,0.5)', letterSpacing: '0.15em' }}>S</div>
+                <div style={{ position: 'absolute', right: '-26px', top: '50%', transform: 'translateY(-50%)', fontSize: '9px', fontWeight: 900, color: 'rgba(201,168,76,0.5)', letterSpacing: '0.15em' }}>E</div>
+                <div style={{ position: 'absolute', left: '-26px', top: '50%', transform: 'translateY(-50%)', fontSize: '9px', fontWeight: 900, color: 'rgba(201,168,76,0.5)', letterSpacing: '0.15em' }}>W</div>
+                <img
+                  src="https://images.unsplash.com/photo-Y6L_zTbSmbs?auto=format&fit=crop&w=600&q=85"
+                  alt="外見変容余地マップ — 航海の鏡"
+                  style={{
+                    width: '100%', height: '100%',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    objectPosition: 'center',
+                    border: '2px solid rgba(201,168,76,0.65)',
+                    boxShadow: '0 0 0 6px rgba(201,168,76,0.1), 0 0 40px rgba(201,168,76,0.5), 0 0 80px rgba(201,168,76,0.2)',
+                    display: 'block',
+                  }}
+                />
+              </div>
+            </div>
+
           </div>
         </section>
 
