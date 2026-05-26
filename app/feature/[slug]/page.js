@@ -15,46 +15,32 @@ const ARTICLE_TO_SERVICE_CAT = {
   '変容の思想': ['consulting', 'diagnosis', 'gym', 'fashion'],
 };
 
-// 記事カテゴリ → 商品サジェスト（Amazonアフィリエイト）
-const ARTICLE_TO_PRODUCTS = {
-  '清潔感': [
-    { name: '肌ラボ 極潤 化粧水', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=whero523-22' },
-    { name: 'ビオレUV 日焼け止め', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=whero523-22' },
-    { name: 'スクリューブラシ（眉整え）', url: 'https://www.amazon.co.jp/s?k=スクリューブラシ+眉&tag=whero523-22' },
-    { name: 'BOTANIST シャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=whero523-22' },
-  ],
-  '垢抜け': [
-    { name: 'ウーノ スーパーハード（スタイリング）', url: 'https://www.amazon.co.jp/s?k=ウーノ+スーパーハード&tag=whero523-22' },
-    { name: 'ガラス製爪やすり', url: 'https://www.amazon.co.jp/s?k=ガラス製+爪やすり&tag=whero523-22' },
-    { name: 'アウトバストリートメント', url: 'https://www.amazon.co.jp/s?k=洗い流さないトリートメント+メンズ&tag=whero523-22' },
-  ],
-  '体型・筋トレ': [
-    { name: 'ザバス ホエイプロテイン', url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=whero523-22' },
-    { name: 'タニタ 体組成計', url: 'https://www.amazon.co.jp/s?k=タニタ+体組成計&tag=whero523-22' },
-    { name: 'トレーニングウェア（メンズ）', url: 'https://www.amazon.co.jp/s?k=メンズ+トレーニングウェア&tag=whero523-22' },
-  ],
-  '歯・口元': [
-    { name: 'アパガード プレミオ（ホワイトニング歯磨き粉）', url: 'https://www.amazon.co.jp/s?k=アパガード+プレミオ&tag=whero523-22' },
-    { name: 'GUM デンタルフロス', url: 'https://www.amazon.co.jp/s?k=GUM+デンタルフロス&tag=whero523-22' },
-    { name: 'オーラルB 電動歯ブラシ', url: 'https://www.amazon.co.jp/s?k=オーラルB+電動歯ブラシ&tag=whero523-22' },
-  ],
-  '爪・ネイル': [
-    { name: 'OPI プロスパ ネイルオイル', url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=whero523-22' },
-    { name: 'ニベア ハンドクリーム', url: 'https://www.amazon.co.jp/s?k=ニベア+ハンドクリーム&tag=whero523-22' },
-  ],
-  'メイク': [
-    { name: 'UNO フェイスカラークリエイター（BBクリーム）', url: 'https://www.amazon.co.jp/s?k=ウーノ+フェイスカラークリエイター&tag=whero523-22' },
-    { name: 'ちふれ BBクリーム（男性も使いやすいプチプラ）', url: 'https://www.amazon.co.jp/s?k=ちふれ+BBクリーム&tag=whero523-22' },
-    { name: 'KATE デザイニングアイブロウ3D（眉ペン）', url: 'https://www.amazon.co.jp/s?k=ケイト+デザイニングアイブロウ3D&tag=whero523-22' },
-    { name: 'コンシーラー（CEZANNE メンズ向け）', url: 'https://www.amazon.co.jp/s?k=セザンヌ+コンシーラー+メンズ&tag=whero523-22' },
-  ],
-  '日常習慣': [
-    { name: '肌ラボ 極潤 洗顔フォーム', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+洗顔&tag=whero523-22' },
-    { name: 'ビオレUV アクアリッチ（日焼け止め）', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=whero523-22' },
-    { name: 'BOTANIST ボタニカルシャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=whero523-22' },
-    { name: 'ガラス製爪やすり（水洗いOK）', url: 'https://www.amazon.co.jp/s?k=ガラス製+爪やすり&tag=whero523-22' },
-  ],
+// 記事カテゴリ → 商品軸（affiliate_productsのaxis）
+const CATEGORY_TO_AXES = {
+  '清潔感':     ['skin', 'hair', 'eyebrow'],
+  '垢抜け':     ['eyebrow', 'hair', 'fashion'],
+  '体型・筋トレ': ['body'],
+  '歯・口元':   ['teeth'],
+  '爪・ネイル': ['nail'],
+  'メイク':     ['skin', 'eyebrow'],
+  '日常習慣':   ['skin', 'hair'],
+  '写真撮影':   ['fashion', 'skin', 'hair'],
+  '変容の思想': ['body', 'skin', 'hair'],
 };
+
+async function getRelatedProducts(category) {
+  const axes = CATEGORY_TO_AXES[category] || [];
+  if (!axes.length) return [];
+  try {
+    const { data } = await getSupabase()
+      .from('affiliate_products')
+      .select('id, name, affiliate_url, description, axis, price_range')
+      .eq('is_active', true)
+      .in('axis', axes)
+      .limit(6);
+    return (data || []).filter(p => p.affiliate_url);
+  } catch { return []; }
+}
 
 async function getRelatedProviders(category) {
   const cats = ARTICLE_TO_SERVICE_CAT[category] || [];
@@ -113,16 +99,16 @@ function ArticleProductBlock({ products }) {
       borderRadius: '14px',
     }}>
       <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.7)', margin: '0 0 6px' }}>
-        🛒 この記事で紹介したアイテム
+        🛒 関連商品
       </p>
       <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.45)', margin: '0 0 14px', lineHeight: 1.6 }}>
         変容の旅に役立つグッズ。気になるものを試してみてください。
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-        {products.map((prod, i) => (
+        {products.map((prod) => (
           <a
-            key={i}
-            href={prod.url}
+            key={prod.id}
+            href={prod.affiliate_url}
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -161,9 +147,10 @@ export default async function ArticlePage({ params }) {
   const article = await getArticle(params.slug);
   if (!article) notFound();
 
-  const [relatedProviders, relatedArticles] = await Promise.all([
+  const [relatedProviders, relatedArticles, relatedProducts] = await Promise.all([
     getRelatedProviders(article.category),
     getRelatedArticles(article.related_slugs),
+    getRelatedProducts(article.category),
   ]);
 
   const hasBlocks = Array.isArray(article.blocks) && article.blocks.length > 0;
@@ -280,12 +267,11 @@ export default async function ArticlePage({ params }) {
 
             {/* 記事本文（blocksの場合は60%地点に商品ブロックを挿入） */}
             {hasBlocks && (() => {
-              const products = ARTICLE_TO_PRODUCTS[article.category] || [];
               const splitAt = Math.ceil(article.blocks.length * 0.6);
               return (
                 <>
                   <ArticleBlocks blocks={article.blocks.slice(0, splitAt)} />
-                  {products.length > 0 && <ArticleProductBlock products={products} />}
+                  {relatedProducts.length > 0 && <ArticleProductBlock products={relatedProducts} />}
                   <ArticleBlocks blocks={article.blocks.slice(splitAt)} />
                 </>
               );
@@ -311,8 +297,8 @@ export default async function ArticlePage({ params }) {
                   .article-html-body .fb-heading{font-weight:800;font-size:clamp(16px,2.5vw,20px);font-family:var(--font-serif);color:#fff;margin:0 0 8px}
                 `}</style>
                 <div className="article-html-body" dangerouslySetInnerHTML={{ __html: article.body }} />
-                {ARTICLE_TO_PRODUCTS[article.category]?.length > 0 && (
-                  <ArticleProductBlock products={ARTICLE_TO_PRODUCTS[article.category]} />
+                {relatedProducts.length > 0 && (
+                  <ArticleProductBlock products={relatedProducts} />
                 )}
               </>
             )}
