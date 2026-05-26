@@ -182,7 +182,7 @@ export default function MirrorPage() {
       setSessionId(data.session_id);
       setAnalysis(data.analysis);
       saveSessionToLocal(data.session_id);
-      setState('preview');
+      setState(data.paid ? 'full' : 'preview');
     } catch (e) {
       setError(e.message);
       setState('idle');

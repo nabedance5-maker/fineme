@@ -120,12 +120,23 @@ export async function POST(request) {
       return Response.json({ error: '分析結果の形式が不正です。もう一度試してください。' }, { status: 500 });
     }
 
+    // オーナーバイパス（OWNER_EMAIL と一致するユーザーは即paid）
+    let isPaidBypass = false;
+    const ownerEmail = process.env.OWNER_EMAIL;
+    if (user_id && ownerEmail) {
+      try {
+        const { data: { user: authUser } } = await getSupabase().auth.admin.getUserById(user_id);
+        if (authUser?.email === ownerEmail) isPaidBypass = true;
+      } catch {}
+    }
+
     // 写真は保存せず、分析結果（テキスト）のみ保存
     const { data: session, error: dbError } = await supabase
       .from('mirror_sessions')
       .insert({
         user_id: user_id || null,
         analysis,
+        paid: isPaidBypass,
       })
       .select('id')
       .single();
@@ -135,7 +146,7 @@ export async function POST(request) {
       return Response.json({ error: 'セッション保存エラー' }, { status: 500 });
     }
 
-    return Response.json({ session_id: session.id, analysis });
+    return Response.json({ session_id: session.id, analysis, paid: isPaidBypass });
   } catch (e) {
     console.error('mirror analyze error:', e);
     return Response.json({ error: `分析エラー: ${e.message}` }, { status: 500 });
