@@ -301,18 +301,18 @@ export default function MypageDiagnosisPage() {
           )}
         </section>
 
-        {/* Fineme Mirror CTA（Coming soon） */}
-        <div style={{ position: 'relative', opacity: 0.45, pointerEvents: 'none', userSelect: 'none', marginTop: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(10,15,30,0.55)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '14px' }}>
+        {/* Fineme Mirror CTA */}
+        <a href="/lp/mirror" style={{ display: 'block', textDecoration: 'none', marginTop: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: '14px' }}>
             <span style={{ fontSize: '28px', flexShrink: 0 }}>🪞</span>
             <div style={{ flex: 1 }}>
-              <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: 'rgba(201,168,76,0.6)', textTransform: 'uppercase', margin: '0 0 4px' }}>Fineme Mirror — オプション</p>
-              <p style={{ fontSize: '14px', fontWeight: 700, color: 'rgba(232,228,220,0.9)', margin: '0 0 3px' }}>写真でも変容余地を確認する</p>
-              <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: 0, lineHeight: '1.5' }}>診断結果と照らし合わせて、AIが写真からNew Me Logを生成。</p>
+              <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: '#c9a84c', textTransform: 'uppercase', margin: '0 0 4px' }}>Fineme Mirror — ¥500</p>
+              <p style={{ fontSize: '14px', fontWeight: 700, color: 'rgba(232,228,220,0.95)', margin: '0 0 3px' }}>写真1枚で変容余地を可視化する</p>
+              <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: 0, lineHeight: '1.5' }}>AIが7軸を分析。あなたの「最初に変えるべき場所」が地図になります。</p>
             </div>
-            <span style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(232,228,220,0.6)', background: 'rgba(232,228,220,0.1)', border: '1px solid rgba(232,228,220,0.2)', borderRadius: '20px', padding: '4px 12px', flexShrink: 0, letterSpacing: '.06em' }}>Coming soon</span>
+            <span style={{ fontSize: '11px', fontWeight: 800, color: '#0a0f1e', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', borderRadius: '20px', padding: '5px 14px', flexShrink: 0, whiteSpace: 'nowrap' }}>詳しく見る →</span>
           </div>
-        </div>
+        </a>
       </div>
 
       <style>{`
