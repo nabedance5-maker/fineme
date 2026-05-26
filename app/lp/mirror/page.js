@@ -13,6 +13,19 @@ export default function MirrorLpPage() {
         @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.4); } 50% { box-shadow: 0 0 0 14px rgba(201,168,76,0); } }
         @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+        @keyframes orb-breathe { 0%,100% { transform: translateX(-50%) scale(1); opacity: 1; } 50% { transform: translateX(-50%) scale(1.22); opacity: 1; } }
+        @keyframes orb-drift-l { 0%,100% { transform: translate(0,0); } 45% { transform: translate(30px,-35px); } }
+        @keyframes orb-drift-r { 0%,100% { transform: translate(0,0); } 40% { transform: translate(-25px,30px); } }
+        @keyframes particle-rise { 0% { transform: translateY(0) scale(1); opacity: 0.9; } 70% { opacity: 0.4; } 100% { transform: translateY(-110px) scale(0.2); opacity: 0; } }
+        @keyframes beam-pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+        @keyframes hero-sweep { 0% { left: -50%; opacity: 0; } 5% { opacity: 1; } 95% { opacity: 1; } 100% { left: 160%; opacity: 0; } }
+        @keyframes ring-spin { from { transform: translate(-50%,-50%) rotate(0deg); } to { transform: translate(-50%,-50%) rotate(360deg); } }
+        .m-orb-main { animation: orb-breathe 5.5s ease-in-out infinite; }
+        .m-orb-l { animation: orb-drift-l 9s ease-in-out infinite; }
+        .m-orb-r { animation: orb-drift-r 10s ease-in-out infinite 1.2s; }
+        .m-particle { animation: particle-rise linear infinite; }
+        .m-beam { animation: beam-pulse 4s ease-in-out infinite; }
+        .m-sweep { animation: hero-sweep 8s ease-in-out infinite 0.8s; }
         .m-fade { animation: fadeUp 0.7s ease both; }
         .m-fade-d1 { animation-delay: 0.12s; }
         .m-fade-d2 { animation-delay: 0.28s; }
@@ -40,10 +53,48 @@ export default function MirrorLpPage() {
       <main style={{ background: '#080d1a', minHeight: '100vh', color: 'rgba(240,236,228,0.88)', fontFamily: '-apple-system, sans-serif' }}>
 
         {/* ── ヒーロー ── */}
-        <section style={{ background: 'linear-gradient(160deg, #080d1a 0%, #0c1422 55%, #080d1a 100%)', padding: 'clamp(52px,10vw,88px) 20px clamp(44px,8vw,72px)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-          {/* 背景光 */}
-          <div style={{ position: 'absolute', top: '5%', left: '50%', transform: 'translateX(-50%)', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(201,168,76,0.09) 0%, transparent 60%)', pointerEvents: 'none' }} />
-          <div style={{ position: 'relative', zIndex: 1, maxWidth: '660px', margin: '0 auto' }}>
+        <section style={{ background: 'linear-gradient(180deg, #04081a 0%, #070e1e 35%, #0a1228 65%, #060c1a 100%)', padding: 'clamp(72px,12vw,110px) 20px clamp(56px,10vw,88px)', textAlign: 'center', position: 'relative', overflow: 'hidden', minHeight: 'min(88vh,700px)', display: 'flex', alignItems: 'center' }}>
+
+          {/* ドットグリッド背景 */}
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(201,168,76,0.1) 1px, transparent 1px)', backgroundSize: '44px 44px', opacity: 0.35, pointerEvents: 'none' }} />
+
+          {/* メイン中央ゴールドオーブ */}
+          <div className="m-orb-main" style={{ position: 'absolute', bottom: '-20%', left: '50%', width: '900px', height: '900px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(201,168,76,0.13) 0%, rgba(201,168,76,0.04) 45%, transparent 68%)', pointerEvents: 'none' }} />
+
+          {/* 左上オーブ（ブルー系） */}
+          <div className="m-orb-l" style={{ position: 'absolute', top: '-5%', left: '-8%', width: '480px', height: '480px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(60,100,220,0.09) 0%, transparent 65%)', pointerEvents: 'none' }} />
+
+          {/* 右下オーブ（ブルー系） */}
+          <div className="m-orb-r" style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '520px', height: '520px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(80,140,255,0.07) 0%, transparent 65%)', pointerEvents: 'none' }} />
+
+          {/* 縦ビーム */}
+          <div className="m-beam" style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '1px', height: '100%', background: 'linear-gradient(to bottom, transparent 0%, rgba(201,168,76,0.25) 25%, rgba(201,168,76,0.12) 60%, transparent 100%)', pointerEvents: 'none' }} />
+
+          {/* コンパスリング */}
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '540px', height: '540px', borderRadius: '50%', border: '1px solid rgba(201,168,76,0.05)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '820px', height: '820px', borderRadius: '50%', border: '1px solid rgba(201,168,76,0.03)', pointerEvents: 'none' }} />
+
+          {/* スイープシマー */}
+          <div className="m-sweep" style={{ position: 'absolute', top: 0, width: '25%', height: '100%', background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.025) 50%, transparent 100%)', transform: 'skewX(-12deg)', pointerEvents: 'none' }} />
+
+          {/* パーティクル */}
+          {[
+            [7,18,0,3.8],[14,52,1.0,4.3],[21,78,2.1,3.2],[33,28,0.4,4.8],
+            [44,68,1.5,3.6],[53,85,0.1,4.1],[61,42,2.6,3.5],[70,22,0.7,4.5],
+            [78,60,1.9,3.9],[86,38,0.3,4.2],[93,72,2.3,3.3],[4,90,1.3,4.7],
+            [50,12,0.9,3.7],[30,92,2.8,4.0],[64,88,0.5,3.4],
+          ].map(([left, bottom, delay, dur], i) => (
+            <div key={i} className="m-particle" style={{
+              position: 'absolute', left: `${left}%`, bottom: `${bottom}%`,
+              width: i % 3 === 0 ? '4px' : '2px', height: i % 3 === 0 ? '4px' : '2px',
+              borderRadius: '50%',
+              background: i % 4 === 0 ? 'rgba(255,255,255,0.5)' : 'rgba(201,168,76,0.65)',
+              animationDelay: `${delay}s`, animationDuration: `${dur}s`,
+              pointerEvents: 'none',
+            }} />
+          ))}
+
+          <div style={{ position: 'relative', zIndex: 2, maxWidth: '660px', margin: '0 auto', width: '100%' }}>
             <div className="m-fade" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.18em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '20px' }}>
               🪞 Fineme Mirror
             </div>
