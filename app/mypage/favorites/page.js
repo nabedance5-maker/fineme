@@ -78,6 +78,7 @@ export default function MypageFavoritesPage() {
             <Link href="/diagnosis/result" className="sidenav-link">New Me Navi</Link>
             <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
             <Link href="/mypage/log" className="sidenav-link">New Me Log</Link>
+            <Link href="/mypage/mirror" className="sidenav-link">Mirror履歴</Link>
             <Link href="/mypage/favorites" className="sidenav-link sidenav-link--active">お気に入り</Link>
             <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
             <Link href="/my-reservations" className="sidenav-link">予約履歴</Link>
