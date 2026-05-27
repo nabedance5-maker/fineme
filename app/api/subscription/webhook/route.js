@@ -12,7 +12,7 @@ export const config = { api: { bodyParser: false } };
 
 export async function POST(request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const webhookSecret = process.env.STRIPE_SUBSCRIPTION_WEBHOOK_SECRET;
 
   const rawBody = await request.text();
   const sig = request.headers.get('stripe-signature');
