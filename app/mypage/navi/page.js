@@ -772,12 +772,53 @@ export default function NewMeNaviPage() {
 
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      root.innerHTML = `<div class="no-data">
-        <div class="no-data-icon">🧭</div>
-        <h2 class="no-data-title">まだ地図がありません</h2>
-        <p class="no-data-text">Me Scanを受けると、あなただけの<br>変容マップが生成されます。</p>
-        <a href="/diagnosis" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px">Me Scanを受ける</a>
-      </div>`;
+      // Mirror履歴があればMirror-only Map生成を提案
+      let hasMirrorData = false;
+      if (token) {
+        try {
+          const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+          const uid = JSON.parse(localStorage.getItem(sbKey) || 'null')?.user?.id;
+          if (uid) {
+            const mRes = await fetchWithTimeout(`/api/mirror/sessions?user_id=${uid}&limit=1`);
+            if (mRes?.ok) { const d = await mRes.json(); hasMirrorData = !!(d.sessions?.length); }
+          }
+        } catch {}
+      }
+
+      if (hasMirrorData) {
+        root.innerHTML = `<div class="no-data">
+          <div class="no-data-icon">📸</div>
+          <h2 class="no-data-title">Mirrorのデータがあります</h2>
+          <p class="no-data-text">Mirror分析の変容余地データから、<br>あなた専用の New Me Map を生成できます。</p>
+          <button id="mirror-map-gen-btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px;background:linear-gradient(135deg,#c9a84c,#e8c97a);border:none;border-radius:10px;color:#0a0f1e;cursor:pointer;font-family:inherit;box-shadow:0 6px 24px rgba(201,168,76,0.3)">📸 Mirrorデータでマップを生成 →</button>
+          <p style="margin-top:14px;font-size:11px;color:rgba(232,228,220,0.3)">Me Scan（無料診断）を受けるとさらに精度が上がります</p>
+          <a href="/diagnosis" style="display:block;margin-top:8px;font-size:12px;color:rgba(201,168,76,0.55);text-decoration:none">Me Scanも受ける（推奨）→</a>
+        </div>`;
+        document.getElementById('mirror-map-gen-btn')?.addEventListener('click', async (e) => {
+          const btn = e.currentTarget;
+          btn.disabled = true; btn.textContent = '生成中… しばらくお待ちください';
+          try {
+            const res = await fetch('/api/me/navi-steps/generate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({ mirror_only: true }),
+            });
+            if (res.status === 429) { btn.textContent = '本日はすでに生成済みです。明日また生成できます。'; return; }
+            if (!res.ok) { btn.textContent = '生成に失敗しました。再度お試しください'; btn.disabled = false; return; }
+            window.location.reload();
+          } catch { btn.textContent = 'エラーが発生しました'; btn.disabled = false; }
+        });
+      } else {
+        root.innerHTML = `<div class="no-data">
+          <div class="no-data-icon">🧭</div>
+          <h2 class="no-data-title">まだ地図がありません</h2>
+          <p class="no-data-text">Me Scanを受けるか、Mirrorで写真を分析すると、<br>あなただけの変容マップが生成されます。</p>
+          <div style="display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:4px">
+            <a href="/diagnosis" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px">Me Scanを受ける（無料）</a>
+            <a href="/mirror" style="font-size:13px;color:rgba(201,168,76,0.7);text-decoration:none">写真でMirror分析 →</a>
+          </div>
+        </div>`;
+      }
       return;
     }
     let p;
@@ -1346,7 +1387,18 @@ export default function NewMeNaviPage() {
           ↻ 旅を再生成する
         </button>` : '';
 
+      const mirrorOnlyBanner = naviStepsData.source === 'mirror' ? `
+        <div style="margin-bottom:16px;padding:12px 16px;background:rgba(100,160,255,0.07);border:1px solid rgba(100,160,255,0.25);border-radius:12px;display:flex;align-items:center;gap:12px">
+          <span style="font-size:22px;flex-shrink:0">📸</span>
+          <div style="flex:1">
+            <p style="font-size:11px;font-weight:800;color:rgba(100,160,255,0.8);margin:0 0 3px;letter-spacing:.06em">MIRROR データから生成</p>
+            <p style="font-size:12px;color:rgba(232,228,220,0.55);margin:0;line-height:1.6">Me Scan（無料診断）を受けるとさらに精度の高いマップに更新されます</p>
+          </div>
+          <a href="/diagnosis" style="font-size:11px;font-weight:700;padding:7px 14px;border:1px solid rgba(100,160,255,0.4);border-radius:8px;color:rgba(100,160,255,0.9);text-decoration:none;flex-shrink:0;white-space:nowrap">Me Scanを受ける →</a>
+        </div>` : '';
+
       return `
+        ${mirrorOnlyBanner}
         <div style="margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <span style="font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(201,168,76,0.55);text-transform:uppercase">あなただけの変容の道</span>

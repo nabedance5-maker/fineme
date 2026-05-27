@@ -48,8 +48,8 @@ export async function POST(request) {
   const user = await getUser(request);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { diagnosis, body_data } = await request.json().catch(() => ({}));
-  if (!diagnosis?.transform_vectors) {
+  const { diagnosis, body_data, mirror_only } = await request.json().catch(() => ({}));
+  if (!mirror_only && !diagnosis?.transform_vectors) {
     return Response.json({ error: 'diagnosis.transform_vectors が必要です' }, { status: 400 });
   }
 
@@ -86,7 +86,27 @@ export async function POST(request) {
     }
   } catch {}
 
-  const tv = diagnosis.transform_vectors || {};
+  // mirror_only モード: Mirror軸データからtransform_vectorsを合成
+  const MIRROR_AXIS_MAP = { eyebrow: 'eyebrow', skin: 'skin', hair: 'hair', body: 'body', posture: 'body', fashion: 'fashion' };
+  const POTENTIAL_TO_TV = {
+    '高': { current: 1, ideal: 3, care_type: 'none' },
+    '中': { current: 2, ideal: 3, care_type: 'concerned' },
+    '低': { current: 3, ideal: 3, care_type: 'self' },
+  };
+  let derivedDiagnosis = diagnosis;
+  if (mirror_only && mirrorAxes) {
+    const tv_derived = {};
+    for (const ax of mirrorAxes) {
+      const naviAxis = MIRROR_AXIS_MAP[ax.id];
+      if (!naviAxis) continue;
+      tv_derived[naviAxis] = POTENTIAL_TO_TV[ax.potential_level] || { current: 2, ideal: 3, care_type: 'concerned' };
+    }
+    derivedDiagnosis = { transform_vectors: tv_derived };
+  } else if (mirror_only && !mirrorAxes) {
+    return Response.json({ error: 'Mirror分析データが見つかりません。先にMirrorで写真を分析してください。' }, { status: 400 });
+  }
+
+  const tv = derivedDiagnosis?.transform_vectors || {};
   const bd = body_data || {};
   const budget = diagnosis.budget || null;
   const goalScene = diagnosis.goal_scene || null;
@@ -228,7 +248,8 @@ ${mirrorDataLines}` : ''}`;
   const navi_steps = {
     steps: generated.steps,
     generated_at: new Date().toISOString(),
-    diagnosis_at: diagnosis.at || null,
+    diagnosis_at: derivedDiagnosis?.at || null,
+    source: mirror_only ? 'mirror' : 'diagnosis',
   };
 
   const { error: saveError } = await supabase

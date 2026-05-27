@@ -122,7 +122,7 @@ export default function MirrorLpPage() {
             <p className="m-fade m-fade-d2" style={{ fontSize: 'clamp(14px,2.8vw,17px)', color: 'rgba(240,236,228,0.65)', lineHeight: 2.0, marginBottom: '36px' }}>
               AIが7軸で分析。眉・肌・ヘア・姿勢・体型・服・爪。<br />
               今のあなたが「最も変わりやすい場所」を地図にします。<br />
-              <span style={{ color: 'rgba(201,168,76,0.7)', fontWeight: 700 }}>¥500。写真はサーバーに保存されません。</span>
+              <span style={{ color: 'rgba(201,168,76,0.7)', fontWeight: 700 }}>写真はサーバーに保存されません。</span>
             </p>
             <div className="m-fade m-fade-d3">
               <Link href="/mirror" className="m-cta-btn" style={{
@@ -131,9 +131,12 @@ export default function MirrorLpPage() {
                 fontSize: 'clamp(16px,2.8vw,20px)', textDecoration: 'none',
                 boxShadow: '0 8px 32px rgba(201,168,76,0.4)',
               }}>
-                Mirrorを使う — ¥500 →
+                Mirrorを試す →
               </Link>
-              <p className="m-fade m-fade-d4" style={{ fontSize: '12px', color: 'rgba(240,236,228,0.3)', marginTop: '14px' }}>
+              <p className="m-fade m-fade-d4" style={{ fontSize: '12px', color: 'rgba(240,236,228,0.3)', marginTop: '10px' }}>
+                分析後、プレビューを確認してから購入できます
+              </p>
+              <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.2)', marginTop: '4px' }}>
                 Stripe決済（クレジットカード）・写真はAI分析後に削除
               </p>
             </div>
@@ -240,7 +243,7 @@ export default function MirrorLpPage() {
               fontSize: '17px', textDecoration: 'none',
               boxShadow: '0 8px 32px rgba(201,168,76,0.4)',
             }}>
-              Mirrorを使う — ¥500 →
+              Mirrorを試す →
             </Link>
           </div>
         </section>
@@ -271,6 +274,79 @@ export default function MirrorLpPage() {
             </div>
             <p style={{ textAlign: 'center', fontSize: '13px', color: 'rgba(240,236,228,0.4)', marginTop: '16px', lineHeight: 1.8 }}>
               外見投資を始める前に、まず「どこから変えるか」を知る。<br />¥500はその地図代です。
+            </p>
+          </div>
+        </section>
+
+        {/* ── New Me Map ── */}
+        <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+            <div className="m-tag">Mirror が地図になる</div>
+            <h2 style={{ fontSize: 'clamp(20px,4.5vw,30px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
+              写真1枚が、あなた専用の<br />
+              <span style={{ color: '#c9a84c' }}>「New Me Map」</span>を生成します。
+            </h2>
+            <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.5)', lineHeight: 1.9, marginTop: '14px' }}>
+              Mirror の7軸分析データは、行動ロードマップ「New Me Map」に直結しています。<br />
+              Me Scan（無料診断）を受けていなくても、Mirror だけで Map を生成できます。
+            </p>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
+            {[
+              ['📸', 'Mirrorで写真を分析', '7軸の変容余地が可視化される'],
+              ['🗺️', 'New Me Mapが自動生成', '変容余地の高い軸から行動ステップが並ぶ'],
+              ['✅', 'ステップを1つずつ完了する', '記録が積み重なり、変容の旅が進む'],
+            ].map(([icon, title, desc], i) => (
+              <div key={i} style={{ display: 'flex', gap: '14px', alignItems: 'center', padding: '16px 20px', background: i === 1 ? 'rgba(201,168,76,0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${i === 1 ? 'rgba(201,168,76,0.3)' : 'rgba(201,168,76,0.1)'}`, borderRadius: '12px' }}>
+                <span style={{ fontSize: '24px', flexShrink: 0 }}>{icon}</span>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: i === 1 ? '#c9a84c' : 'rgba(240,236,228,0.85)', marginBottom: '2px' }}>{title}</div>
+                  <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.45)', lineHeight: 1.6 }}>{desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '12px', padding: '14px 18px', fontSize: '12px', color: 'rgba(240,236,228,0.5)', lineHeight: 1.8, marginBottom: '28px' }}>
+            <strong style={{ color: '#c9a84c' }}>Me Scan + Mirror の組み合わせが最高精度。</strong><br />
+            Me Scan（無料・3分）を受診済みの場合、診断データと Mirror データを統合して、さらに精度の高い Map が生成されます。
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <Link href="/mirror" className="m-cta-btn" style={{ display: 'inline-block', padding: '14px 44px', borderRadius: '12px', color: '#0a0f1e', fontWeight: 900, fontSize: '16px', textDecoration: 'none', boxShadow: '0 6px 24px rgba(201,168,76,0.35)' }}>
+              Mirrorを試す →
+            </Link>
+          </div>
+        </section>
+
+        {/* ── サブスク ── */}
+        <section style={{ padding: 'clamp(44px,8vw,68px) 20px', background: 'rgba(10,15,30,0.65)', borderTop: '1px solid rgba(201,168,76,0.1)', borderBottom: '1px solid rgba(201,168,76,0.1)' }}>
+          <div style={{ maxWidth: '640px', margin: '0 auto', textAlign: 'center' }}>
+            <div className="m-tag">毎月3回、変化を記録する</div>
+            <h2 style={{ fontSize: 'clamp(20px,4.5vw,30px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4, marginBottom: '8px' }}>
+              月額780円。<br />
+              <span style={{ color: '#c9a84c' }}>Mirror 月3回無料</span>。
+            </h2>
+            <p style={{ fontSize: '13px', color: 'rgba(240,236,228,0.4)', marginBottom: '28px', lineHeight: 1.8 }}>
+              1回¥500のMirrorが月3回無料（¥1,500相当）。<br />月初・中旬・月末で変化を追う。変容の記録が資産になる。
+            </p>
+            <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '28px' }}>
+              {[
+                ['🪞', 'Mirror 月3回無料', '¥500×3=¥1,500相当', true],
+                ['📚', 'Mirror履歴 無期限保存', '変容の記録がいつでも見返せる', false],
+              ].map(([icon, title, desc, featured]) => (
+                <div key={title} style={{ flex: '1', minWidth: '200px', padding: '20px 18px', background: featured ? 'rgba(201,168,76,0.08)' : 'rgba(255,255,255,0.02)', border: `1px solid ${featured ? 'rgba(201,168,76,0.4)' : 'rgba(201,168,76,0.12)'}`, borderRadius: '14px', textAlign: 'left' }}>
+                  <div style={{ fontSize: '22px', marginBottom: '8px' }}>{icon}</div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: featured ? '#c9a84c' : 'rgba(240,236,228,0.85)', marginBottom: '4px' }}>{title}</div>
+                  <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.4)', lineHeight: 1.6 }}>{desc}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: '26px', fontWeight: 900, color: '#c9a84c', marginBottom: '4px' }}>¥780 <span style={{ fontSize: '14px', fontWeight: 400, color: 'rgba(240,236,228,0.35)' }}>/ 月（税込）</span></div>
+            <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.25)', marginBottom: '22px' }}>いつでも解約可能</p>
+            <Link href="/mirror" className="m-cta-btn" style={{ display: 'inline-block', padding: '14px 44px', borderRadius: '12px', color: '#0a0f1e', fontWeight: 900, fontSize: '15px', textDecoration: 'none', boxShadow: '0 6px 24px rgba(201,168,76,0.35)' }}>
+              まずMirrorを試す →
+            </Link>
+            <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.25)', marginTop: '10px' }}>
+              サブスクへの加入は <Link href="/mypage/subscription" style={{ color: 'rgba(201,168,76,0.5)', textDecoration: 'none' }}>マイページ</Link> から
             </p>
           </div>
         </section>
@@ -372,7 +448,7 @@ export default function MirrorLpPage() {
               fontSize: 'clamp(17px,3vw,22px)', textDecoration: 'none',
               boxShadow: '0 10px 40px rgba(201,168,76,0.45)',
             }}>
-              Mirrorを使う — ¥500 →
+              Mirrorを試す →
             </Link>
             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.2)', marginTop: '16px' }}>
               Stripe決済 ・ 写真は分析後削除 ・ いつでもキャンセル不要

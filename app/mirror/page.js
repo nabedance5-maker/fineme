@@ -515,6 +515,34 @@ export default function MirrorPage() {
             </div>
           )}
 
+          {/* New Me Map 生成CTA（fullのみ） */}
+          {state === 'full' && (
+            <div style={{ marginTop: '24px', background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '16px', padding: '28px 24px', textAlign: 'center' }}>
+              <p style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(201,168,76,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '12px' }}>
+                次のステップ
+              </p>
+              <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '17px', fontWeight: '800', color: '#e8e4dc', marginBottom: '8px' }}>
+                このデータで New Me Map を生成する
+              </p>
+              <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.5)', marginBottom: '20px', lineHeight: '1.7' }}>
+                Mirror の変容余地データが、あなた専用の行動ロードマップに変わります。
+              </p>
+              <button
+                onClick={() => {
+                  let loggedIn = false;
+                  try {
+                    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+                    if (sbKey) loggedIn = !!JSON.parse(localStorage.getItem(sbKey) || 'null')?.user?.id;
+                  } catch {}
+                  window.location.href = loggedIn ? '/mypage/navi' : '/auth/login?redirect=/mypage/navi';
+                }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '15px 32px', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '800', color: '#0a0f1e', cursor: 'pointer', boxShadow: '0 0 24px rgba(201,168,76,0.25)' }}
+              >
+                🗺️ New Me Map を生成する →
+              </button>
+            </div>
+          )}
+
           {/* やり直しボタン */}
           <button
             className="retry-btn"
