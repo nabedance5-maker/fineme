@@ -17,6 +17,13 @@ function getLocalSessionIds() {
   try { return JSON.parse(localStorage.getItem(LS_SESSIONS_KEY) || '[]'); } catch { return []; }
 }
 
+function parseCompassAction(text) {
+  const urlMatch = text.match(/→\s*(\/[^\s」\n]+)/);
+  const url = urlMatch ? urlMatch[1].replace(/」/g, '') : null;
+  const cleanText = url ? text.slice(0, text.indexOf('→')).trim() : text;
+  return { cleanText, url };
+}
+
 const POTENTIAL_COLORS = {
   '高': { bg: 'rgba(201,168,76,0.12)', border: 'rgba(201,168,76,0.5)', text: '#c9a84c', label: '変容余地 高' },
   '中': { bg: 'rgba(100,160,255,0.10)', border: 'rgba(100,160,255,0.4)', text: '#7aadff', label: '変容余地 中' },
@@ -254,7 +261,8 @@ export default function MirrorPage() {
         .axis-hints { list-style: none; padding: 0; margin: 0 0 14px; display: flex; flex-direction: column; gap: 6px; }
         .axis-hints li { font-size: 13px; color: rgba(232,228,220,0.65); padding-left: 18px; position: relative; line-height: 1.6; }
         .axis-hints li::before { content: '→'; position: absolute; left: 0; color: #c9a84c; font-weight: 700; }
-        .compass-action { background: rgba(201,168,76,0.07); border-left: 3px solid rgba(201,168,76,0.5); padding: 10px 14px; border-radius: 0 8px 8px 0; font-size: 13px; color: rgba(232,228,220,0.75); line-height: 1.6; }
+        .compass-action { background: rgba(201,168,76,0.07); border-left: 3px solid rgba(201,168,76,0.5); padding: 10px 14px; border-radius: 0 8px 8px 0; font-size: 13px; color: rgba(232,228,220,0.75); line-height: 1.6; transition: background .15s; }
+        a:hover .compass-action { background: rgba(201,168,76,0.14); }
         .compass-action-label { font-size: 10px; font-weight: 800; color: rgba(201,168,76,0.6); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 4px; }
         .paywall-overlay { position: relative; margin-top: -8px; }
         .paywall-blur { filter: blur(5px); user-select: none; pointer-events: none; opacity: 0.5; max-height: 120px; overflow: hidden; }
@@ -459,12 +467,18 @@ export default function MirrorPage() {
                         {axis.hints.map((h, j) => <li key={j}>{h}</li>)}
                       </ul>
                     )}
-                    {axis.compass_action && (
-                      <div className="compass-action">
-                        <p className="compass-action-label">🧭 Compass アクション</p>
-                        {axis.compass_action}
-                      </div>
-                    )}
+                    {axis.compass_action && (() => {
+                      const { cleanText, url } = parseCompassAction(axis.compass_action);
+                      const inner = (
+                        <div className="compass-action" style={url ? { cursor: 'pointer' } : {}}>
+                          <p className="compass-action-label">🧭 Compass アクション {url && '→'}</p>
+                          {cleanText}
+                        </div>
+                      );
+                      return url
+                        ? <a href={url} style={{ textDecoration: 'none', display: 'block' }}>{inner}</a>
+                        : inner;
+                    })()}
                   </>
                 )}
               </div>

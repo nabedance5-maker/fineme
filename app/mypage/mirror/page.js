@@ -2,6 +2,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+function parseCompassAction(text) {
+  const urlMatch = text.match(/→\s*(\/[^\s」\n]+)/);
+  const url = urlMatch ? urlMatch[1].replace(/」/g, '') : null;
+  const cleanText = url ? text.slice(0, text.indexOf('→')).trim() : text;
+  return { cleanText, url };
+}
+
 const POTENTIAL_COLORS = {
   '高': { bg: 'rgba(201,168,76,0.12)', border: 'rgba(201,168,76,0.5)', text: '#c9a84c', label: '変容余地 高' },
   '中': { bg: 'rgba(100,160,255,0.10)', border: 'rgba(100,160,255,0.4)', text: '#7aadff', label: '変容余地 中' },
@@ -39,12 +46,18 @@ function AnalysisView({ analysis }) {
                 ))}
               </ul>
             )}
-            {axis.compass_action && (
-              <div style={{ background: 'rgba(201,168,76,0.07)', borderLeft: '3px solid rgba(201,168,76,0.5)', padding: '8px 12px', borderRadius: '0 8px 8px 0', fontSize: '12px', color: 'rgba(232,228,220,0.75)', lineHeight: 1.6 }}>
-                <p style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(201,168,76,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', margin: '0 0 4px' }}>🧭 Compass アクション</p>
-                {axis.compass_action}
-              </div>
-            )}
+            {axis.compass_action && (() => {
+              const { cleanText, url } = parseCompassAction(axis.compass_action);
+              const inner = (
+                <div style={{ background: 'rgba(201,168,76,0.07)', borderLeft: '3px solid rgba(201,168,76,0.5)', padding: '8px 12px', borderRadius: '0 8px 8px 0', fontSize: '12px', color: 'rgba(232,228,220,0.75)', lineHeight: 1.6, transition: 'background .15s', ...(url ? { cursor: 'pointer' } : {}) }}>
+                  <p style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(201,168,76,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', margin: '0 0 4px' }}>🧭 Compass アクション {url && '→'}</p>
+                  {cleanText}
+                </div>
+              );
+              return url
+                ? <a href={url} style={{ textDecoration: 'none', display: 'block' }}>{inner}</a>
+                : inner;
+            })()}
           </div>
         );
       })}
