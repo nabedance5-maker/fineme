@@ -145,13 +145,45 @@ export async function POST(request) {
       return Response.json({ error: '分析結果の形式が不正です。もう一度試してください。' }, { status: 500 });
     }
 
-    // オーナーバイパス（OWNER_EMAIL と一致するユーザーは即paid）
+    // paid判定: オーナーバイパス → サブスク月1無料 → 通常（未払い）の順で評価
     let isPaidBypass = false;
+
+    // オーナーバイパス
     const ownerEmail = process.env.OWNER_EMAIL;
     if (user_id && ownerEmail) {
       try {
         const { data: { user: authUser } } = await getSupabase().auth.admin.getUserById(user_id);
         if (authUser?.email === ownerEmail) isPaidBypass = true;
+      } catch {}
+    }
+
+    // サブスク会員の月1無料判定
+    if (!isPaidBypass && user_id) {
+      try {
+        const { data: profile } = await getSupabase()
+          .from('profiles')
+          .select('subscription_status, mirror_monthly_free_used_at')
+          .eq('id', user_id)
+          .single();
+
+        if (profile?.subscription_status === 'active') {
+          const usedAt = profile.mirror_monthly_free_used_at;
+          let freeAvailable = !usedAt;
+          if (!freeAvailable) {
+            const jst = (d) => new Date(new Date(d).getTime() + 9 * 3600000);
+            const now  = jst(new Date());
+            const used = jst(usedAt);
+            freeAvailable = !(now.getFullYear() === used.getFullYear() && now.getMonth() === used.getMonth());
+          }
+          if (freeAvailable) {
+            isPaidBypass = true;
+            // 使用済みとして記録
+            await getSupabase()
+              .from('profiles')
+              .update({ mirror_monthly_free_used_at: new Date().toISOString() })
+              .eq('id', user_id);
+          }
+        }
       } catch {}
     }
 

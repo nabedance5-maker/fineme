@@ -71,9 +71,12 @@ function AnalysisView({ analysis }) {
   );
 }
 
+const FREE_LIMIT = 5; // 非会員が閲覧できるセッション数
+
 export default function MirrorHistoryPage() {
   const [userId, setUserId]       = useState(null);
   const [sessions, setSessions]   = useState([]);
+  const [isSubscriber, setIsSubscriber] = useState(false);
   const [loading, setLoading]     = useState(true);
   const [expandedId, setExpandedId]           = useState(null);
   const [expandedAnalysis, setExpandedAnalysis] = useState({});
@@ -82,11 +85,13 @@ export default function MirrorHistoryPage() {
 
   useEffect(() => {
     let uid = null;
+    let tok = null;
     try {
       const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
       if (sbKey) {
         const obj = JSON.parse(localStorage.getItem(sbKey) || 'null');
         uid = obj?.user?.id || null;
+        tok = obj?.access_token || null;
       }
     } catch {}
 
@@ -96,10 +101,15 @@ export default function MirrorHistoryPage() {
     }
     setUserId(uid);
 
-    fetch(`/api/mirror/sessions?user_id=${uid}`)
-      .then(r => r.json())
-      .then(data => { setSessions(data.sessions || []); setLoading(false); })
-      .catch(() => { setError('データの読み込みに失敗しました。'); setLoading(false); });
+    // セッション一覧とサブスク状態を並行取得
+    Promise.all([
+      fetch(`/api/mirror/sessions?user_id=${uid}`).then(r => r.json()),
+      tok ? fetch('/api/subscription/status', { headers: { Authorization: `Bearer ${tok}` } }).then(r => r.json()) : Promise.resolve(null),
+    ]).then(([sessionData, subData]) => {
+      setSessions(sessionData.sessions || []);
+      setIsSubscriber(subData?.isActive === true);
+      setLoading(false);
+    }).catch(() => { setError('データの読み込みに失敗しました。'); setLoading(false); });
   }, []);
 
   async function toggleSession(session) {
@@ -185,7 +195,22 @@ export default function MirrorHistoryPage() {
             </div>
           ) : (
             <div>
-              {sessions.map(s => {
+              {/* 非会員: 5件超えた分はCTAで隠す */}
+              {!isSubscriber && sessions.length > FREE_LIMIT && (
+                <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: '14px', padding: '20px 24px', marginBottom: '16px', textAlign: 'center' }}>
+                  <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.7)', margin: '0 0 4px', lineHeight: 1.7 }}>
+                    {sessions.length}件の分析履歴があります。
+                  </p>
+                  <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.5)', margin: '0 0 16px', lineHeight: 1.7 }}>
+                    サブスク会員になると全件いつでも見返せます。
+                  </p>
+                  <Link href="/mypage/subscription" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 24px', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', borderRadius: '10px', fontSize: '13px', fontWeight: 800, color: '#0a0f1e', textDecoration: 'none' }}>
+                    月額780円で無制限に →
+                  </Link>
+                </div>
+              )}
+
+              {(isSubscriber ? sessions : sessions.slice(0, FREE_LIMIT)).map(s => {
                 const isExpanded = expandedId === s.id;
                 const isLoading  = loadingId === s.id;
                 const fullData   = expandedAnalysis[s.id];
