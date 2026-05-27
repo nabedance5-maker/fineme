@@ -71,6 +71,21 @@ export async function POST(request) {
     }
   }
 
+  // Mirror最新セッション取得（写真ベースの変容余地データ）
+  let mirrorAxes = null;
+  try {
+    const { data: mirrorSession } = await getSupabase()
+      .from('mirror_sessions')
+      .select('analysis, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    if (mirrorSession?.analysis?.axes?.length) {
+      mirrorAxes = mirrorSession.analysis.axes;
+    }
+  } catch {}
+
   const tv = diagnosis.transform_vectors || {};
   const bd = body_data || {};
   const budget = diagnosis.budget || null;
@@ -108,6 +123,14 @@ export async function POST(request) {
     ? goalScene.map(g => GOAL_SCENE_LABELS[g] || g).join('、')
     : (GOAL_SCENE_LABELS[goalScene] || goalScene || '未設定');
 
+  const POTENTIAL_LEVEL_JA = { '高': '高（少しの変化で大きく印象が変わる余地あり）', '中': '中（磨けば確実に向上）', '低': '低（すでに整っている）' };
+  const mirrorDataLines = mirrorAxes
+    ? mirrorAxes
+        .filter(ax => ax.id !== 'overall' && ax.id !== 'expression' && ax.id !== 'color')
+        .map(ax => `- ${ax.name}（id:${ax.id}）: 変容余地=${POTENTIAL_LEVEL_JA[ax.potential_level] || ax.potential_level}　${ax.potential_reason || ''}`)
+        .join('\n')
+    : null;
+
   const userContext = `## ユーザーの変容軸データ
 ${axisLines || '（データなし）'}
 
@@ -117,10 +140,21 @@ ${bodyDataLines || '（まだ入力なし）'}
 ## 予算・ゴール・きっかけ
 - 予算志向: ${BUDGET_LABELS[budget] || '不明'}
 - 変容ゴール: ${goalSceneText}
-${triggerType ? `- 変容のきっかけ: ${triggerType}` : ''}`;
+${triggerType ? `- 変容のきっかけ: ${triggerType}` : ''}${mirrorDataLines ? `
+
+## Fineme Mirror 写真分析データ（最新セッション）
+写真から直接観察された変容余地データ。体型・外見のリアルな現状を反映。
+${mirrorDataLines}` : ''}`;
 
   const systemPrompt = `あなたは「変容の旅コンシェルジュ」です。
 恋愛・外見に悩む男性ユーザーの診断データをもとに、この人専用の変容ステップリストを生成してください。
+
+## Mirror分析データの活用ルール
+「Fineme Mirror 写真分析データ」が提供されている場合は以下のルールに従う。
+- 変容余地「高」の軸：その軸のステップを早めに配置し、より具体的・熱量の高い文章で書く
+- 変容余地「低」（すでに整っている）の軸：維持ステップのみ1〜2件に絞り、称賛として書く
+- このデータは写真から直接観察された情報なので、ユーザーの自己申告より優先度が高い
+- Mirror軸とNavi軸の対応: eyebrow→eyebrow, skin→skin, hair→hair, body→body, fashion→fashion, posture→body
 
 ## ⚠️ 絶対禁止：提供データにない身体的特性を推測・仮定すること
 

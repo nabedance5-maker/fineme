@@ -8,7 +8,7 @@
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 
-export const config = { api: { bodyParser: false } };
+export const runtime = 'nodejs';
 
 export async function POST(request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
