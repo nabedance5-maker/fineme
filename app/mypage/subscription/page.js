@@ -73,7 +73,7 @@ export default function SubscriptionPage() {
   const periodEnd = subData?.periodEnd
     ? new Date(subData.periodEnd).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
     : null;
-  const freeAvailable = subData?.mirrorFreeAvailable;
+  const freeRemaining = subData?.mirrorFreeRemaining ?? 0;
 
   return (
     <main className="section">
@@ -121,7 +121,7 @@ export default function SubscriptionPage() {
             <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '.12em', color: 'rgba(201,168,76,0.6)', textTransform: 'uppercase', margin: '0 0 16px' }}>月額780円の特典</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {[
-                { icon: '🪞', title: 'Mirror 月1回無料', desc: '毎月1回、写真分析（通常¥500）が無料で使えます。' },
+                { icon: '🪞', title: 'Mirror 月3回無料', desc: '毎月3回まで、写真分析（通常¥500/回）が無料で使えます。' },
                 { icon: '📚', title: 'Mirror履歴 無期限保存', desc: '過去の分析結果をいつまでも見返せます。非会員は直近5件のみ。' },
               ].map(item => (
                 <div key={item.title} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
@@ -151,9 +151,16 @@ export default function SubscriptionPage() {
                 </p>
               )}
               <div style={{ background: 'rgba(201,168,76,0.07)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px' }}>
-                <p style={{ fontSize: '12px', fontWeight: 700, color: '#c9a84c', margin: '0 0 4px' }}>今月のMirror無料枠</p>
-                <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.8)', margin: 0 }}>
-                  {freeAvailable ? '✨ 今月分の無料Mirrorが使えます' : '今月分はすでに使用済みです（来月1日に復活）'}
+                <p style={{ fontSize: '12px', fontWeight: 700, color: '#c9a84c', margin: '0 0 8px' }}>今月のMirror無料枠</p>
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
+                  {[0,1,2].map(i => (
+                    <div key={i} style={{ flex: 1, height: '6px', borderRadius: '99px', background: i < freeRemaining ? '#c9a84c' : 'rgba(201,168,76,0.15)' }} />
+                  ))}
+                </div>
+                <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.8)', margin: 0 }}>
+                  {freeRemaining > 0
+                    ? `✨ あと ${freeRemaining} 回使えます`
+                    : '今月分は使い切りました（来月1日に3回分復活）'}
                 </p>
               </div>
               <button

@@ -157,30 +157,32 @@ export async function POST(request) {
       } catch {}
     }
 
-    // サブスク会員の月1無料判定
+    // サブスク会員の月3回無料判定
     if (!isPaidBypass && user_id) {
       try {
         const { data: profile } = await getSupabase()
           .from('profiles')
-          .select('subscription_status, mirror_monthly_free_used_at')
+          .select('subscription_status, mirror_monthly_free_count, mirror_monthly_free_month')
           .eq('id', user_id)
           .single();
 
         if (profile?.subscription_status === 'active') {
-          const usedAt = profile.mirror_monthly_free_used_at;
-          let freeAvailable = !usedAt;
-          if (!freeAvailable) {
-            const jst = (d) => new Date(new Date(d).getTime() + 9 * 3600000);
-            const now  = jst(new Date());
-            const used = jst(usedAt);
-            freeAvailable = !(now.getFullYear() === used.getFullYear() && now.getMonth() === used.getMonth());
-          }
-          if (freeAvailable) {
+          const MAX_FREE = 3;
+          const jst = (d) => new Date(new Date(d).getTime() + 9 * 3600000);
+          const nowJST = jst(new Date());
+          const currentMonth = `${nowJST.getFullYear()}-${String(nowJST.getMonth() + 1).padStart(2, '0')}`;
+
+          const storedMonth = profile.mirror_monthly_free_month;
+          const storedCount = storedMonth === currentMonth ? (profile.mirror_monthly_free_count || 0) : 0;
+
+          if (storedCount < MAX_FREE) {
             isPaidBypass = true;
-            // 使用済みとして記録
             await getSupabase()
               .from('profiles')
-              .update({ mirror_monthly_free_used_at: new Date().toISOString() })
+              .update({
+                mirror_monthly_free_count: storedCount + 1,
+                mirror_monthly_free_month: currentMonth,
+              })
               .eq('id', user_id);
           }
         }
