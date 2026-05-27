@@ -54,6 +54,7 @@ export async function POST(request) {
   }
 
   // 1日1回制限: generated_at が今日(JST)なら拒否
+  // ただし mirror_only の場合: 最新Mirrorセッションが既存Mapより新しければ通す
   const { data: profile } = await getSupabase()
     .from('profiles')
     .select('navi_steps')
@@ -67,7 +68,24 @@ export async function POST(request) {
       && lastJST.getMonth() === nowJST.getMonth()
       && lastJST.getDate()  === nowJST.getDate();
     if (sameDay) {
-      return Response.json({ error: 'daily_limit', message: '本日はすでに生成済みです。明日また生成できます。' }, { status: 429 });
+      // mirror_only の場合：最新Mirrorセッションが既存Mapの生成時刻より新しければ許可
+      if (mirror_only) {
+        const { data: latestMirror } = await getSupabase()
+          .from('mirror_sessions')
+          .select('created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        const mapAt = new Date(profile.navi_steps.generated_at).getTime();
+        const mirrorAt = latestMirror?.created_at ? new Date(latestMirror.created_at).getTime() : 0;
+        if (mirrorAt <= mapAt) {
+          return Response.json({ error: 'daily_limit', message: 'Mirrorの最新分析はすでにMapに反映済みです。新しく分析してから更新してください。' }, { status: 429 });
+        }
+        // Mirror が Map より新しい → 日次制限を免除してfall-through
+      } else {
+        return Response.json({ error: 'daily_limit', message: '本日はすでに生成済みです。明日また生成できます。' }, { status: 429 });
+      }
     }
   }
 

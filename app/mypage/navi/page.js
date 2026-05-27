@@ -673,12 +673,25 @@ export default function NewMeNaviPage() {
 
     // ── Supabaseトークン取得 ──
     let token = null;
+    let currentUid = null;
     try {
       const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
       if (sbKey) {
         const sbObj = JSON.parse(localStorage.getItem(sbKey) || 'null');
         token = sbObj?.access_token || null;
+        currentUid = sbObj?.user?.id || null;
       }
+    } catch {}
+
+    // ── アカウント切り替え検知: 前回と異なるユーザーならfineme:*キーを全削除 ──
+    try {
+      const lastUid = localStorage.getItem('fineme:uid');
+      if (currentUid && lastUid && lastUid !== currentUid) {
+        ['fineme:diagnosis:latest','fineme:axis:progress','fineme:step:done',
+         'fineme:body:data','fineme:navi:pattern','fineme:compass:override',
+         'fineme:navi:filter','fineme:mirror:sessions'].forEach(k => localStorage.removeItem(k));
+      }
+      if (currentUid) localStorage.setItem('fineme:uid', currentUid);
     } catch {}
 
     // ── 診断データ読み込み（Supabase優先） ──
@@ -739,6 +752,44 @@ export default function NewMeNaviPage() {
         }
       }
     } catch {}
+
+    // ── from=mirror: Mirrorから来た場合、Mapを自動更新 ──
+    const fromMirror = new URLSearchParams(location.search).get('from') === 'mirror';
+    if (fromMirror && token) {
+      try {
+        root.innerHTML = `<div style="min-height:40vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:48px 20px;text-align:center">
+          <div style="font-size:36px">🪞</div>
+          <p style="font-size:15px;font-weight:700;color:rgba(232,228,220,0.85)">Mirrorデータを反映してMapを更新しています…</p>
+          <p style="font-size:12px;color:rgba(232,228,220,0.4)">20〜40秒ほどかかります。そのままお待ちください。</p>
+        </div>`;
+        const genRes = await fetch('/api/me/navi-steps/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ mirror_only: true }),
+        });
+        if (genRes.ok) {
+          // 成功 → URLパラメータを除去してリロード
+          const url = new URL(location.href);
+          url.searchParams.delete('from');
+          window.location.replace(url.toString());
+          return;
+        }
+        // 429: すでに反映済み、または今日の制限。そのまま続行してMapを表示
+        const errData = genRes.status === 429 ? await genRes.json().catch(() => ({})) : {};
+        if (genRes.status === 429 && errData.error === 'daily_limit') {
+          // Mapはすでに最新 → パラメータだけ除去してそのまま表示
+          const url = new URL(location.href);
+          url.searchParams.delete('from');
+          history.replaceState(null, '', url.toString());
+          // fall-through to normal rendering
+        }
+      } catch {
+        // エラー時はそのまま表示に fall-through
+        root.innerHTML = '';
+      }
+      // root が中間表示のままなら空にしてfall-through
+      if (root.innerHTML && root.innerHTML.includes('Mirrorデータを反映')) root.innerHTML = '';
+    }
 
     // ── New Me Log: サービスログ取得 ──
     let serviceLogs = [];

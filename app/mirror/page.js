@@ -534,7 +534,7 @@ export default function MirrorPage() {
                     const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
                     if (sbKey) loggedIn = !!JSON.parse(localStorage.getItem(sbKey) || 'null')?.user?.id;
                   } catch {}
-                  window.location.href = loggedIn ? '/mypage/navi' : '/auth/login?redirect=/mypage/navi';
+                  window.location.href = loggedIn ? '/mypage/navi?from=mirror' : '/auth/login?redirect=/mypage/navi?from=mirror';
                 }}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '15px 32px', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '800', color: '#0a0f1e', cursor: 'pointer', boxShadow: '0 0 24px rgba(201,168,76,0.25)' }}
               >
