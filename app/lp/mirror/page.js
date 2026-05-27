@@ -50,36 +50,22 @@ export default function MirrorLpPage() {
         .m-tag { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #c9a84c; border: 1px solid rgba(201,168,76,0.35); border-radius: 20px; padding: 3px 10px; margin-bottom: 14px; }
         @keyframes mirror-ring-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .m-hero-mirror-ring { animation: mirror-ring-spin 40s linear infinite; }
+        .m-sample-card { background: rgba(10,15,30,0.6); border-radius: 14px; padding: 18px 20px; position: relative; overflow: hidden; }
+        .m-sample-badge { font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 20px; letter-spacing: .06em; white-space: nowrap; display: inline-block; margin-bottom: 10px; }
       ` }} />
 
       <main style={{ background: '#080d1a', minHeight: '100vh', color: 'rgba(240,236,228,0.88)', fontFamily: '-apple-system, sans-serif' }}>
 
-        {/* ── ヒーロー ── */}
+        {/* ── ① ヒーロー ── */}
         <section style={{ background: 'linear-gradient(180deg, #04081a 0%, #070e1e 35%, #0a1228 65%, #060c1a 100%)', padding: 'clamp(72px,12vw,110px) 20px clamp(56px,10vw,88px)', textAlign: 'center', position: 'relative', overflow: 'hidden', minHeight: 'min(88vh,700px)', display: 'flex', alignItems: 'center' }}>
-
-          {/* ドットグリッド背景 */}
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(201,168,76,0.1) 1px, transparent 1px)', backgroundSize: '44px 44px', opacity: 0.35, pointerEvents: 'none' }} />
-
-          {/* メイン中央ゴールドオーブ */}
           <div className="m-orb-main" style={{ position: 'absolute', bottom: '-20%', left: '50%', width: '900px', height: '900px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(201,168,76,0.13) 0%, rgba(201,168,76,0.04) 45%, transparent 68%)', pointerEvents: 'none' }} />
-
-          {/* 左上オーブ（ブルー系） */}
           <div className="m-orb-l" style={{ position: 'absolute', top: '-5%', left: '-8%', width: '480px', height: '480px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(60,100,220,0.09) 0%, transparent 65%)', pointerEvents: 'none' }} />
-
-          {/* 右下オーブ（ブルー系） */}
           <div className="m-orb-r" style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '520px', height: '520px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(80,140,255,0.07) 0%, transparent 65%)', pointerEvents: 'none' }} />
-
-          {/* 縦ビーム */}
           <div className="m-beam" style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '1px', height: '100%', background: 'linear-gradient(to bottom, transparent 0%, rgba(201,168,76,0.25) 25%, rgba(201,168,76,0.12) 60%, transparent 100%)', pointerEvents: 'none' }} />
-
-          {/* コンパスリング */}
           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '540px', height: '540px', borderRadius: '50%', border: '1px solid rgba(201,168,76,0.05)', pointerEvents: 'none' }} />
           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '820px', height: '820px', borderRadius: '50%', border: '1px solid rgba(201,168,76,0.03)', pointerEvents: 'none' }} />
-
-          {/* スイープシマー */}
           <div className="m-sweep" style={{ position: 'absolute', top: 0, width: '25%', height: '100%', background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.025) 50%, transparent 100%)', transform: 'skewX(-12deg)', pointerEvents: 'none' }} />
-
-          {/* パーティクル */}
           {[
             [7,18,0,3.8],[14,52,1.0,4.3],[21,78,2.1,3.2],[33,28,0.4,4.8],
             [44,68,1.5,3.6],[53,85,0.1,4.1],[61,42,2.6,3.5],[70,22,0.7,4.5],
@@ -95,17 +81,10 @@ export default function MirrorLpPage() {
               pointerEvents: 'none',
             }} />
           ))}
-
-          {/* 鏡画像（背景・中央透過） */}
           <div className="m-hero-mirror-ring" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'clamp(320px,55vw,560px)', height: 'clamp(320px,55vw,560px)', borderRadius: '50%', border: '1px dashed rgba(201,168,76,0.2)', pointerEvents: 'none', zIndex: 1 }} />
           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'clamp(280px,48vw,480px)', height: 'clamp(280px,48vw,480px)', borderRadius: '50%', overflow: 'hidden', opacity: 0.18, pointerEvents: 'none', zIndex: 1 }}>
-            <img
-              src="https://images.unsplash.com/photo-Y6L_zTbSmbs?auto=format&fit=crop&w=700&q=80"
-              alt=""
-              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
-            />
+            <img src="https://images.unsplash.com/photo-Y6L_zTbSmbs?auto=format&fit=crop&w=700&q=80" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
           </div>
-
           <div style={{ position: 'relative', zIndex: 2, maxWidth: '660px', margin: '0 auto', width: '100%' }}>
             <div className="m-fade" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.18em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '20px' }}>
               🪞 Fineme Mirror
@@ -143,61 +122,159 @@ export default function MirrorLpPage() {
           </div>
         </section>
 
-        {/* ── 問題提起 ── */}
+        {/* ── ② 問題提起（感情エスカレーション）── */}
         <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
           <div className="m-tag">こんな経験はありませんか？</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="m-pain-item">
+              <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>🤔</span>
+              <span style={{ fontSize: '14px', color: 'rgba(240,236,228,0.75)', lineHeight: 1.75 }}>
+                外見を変えたいと思っている。でも何から始めればいいかわからない。
+              </span>
+            </div>
+            <div className="m-pain-item" style={{ borderColor: 'rgba(201,168,76,0.2)' }}>
+              <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>📸</span>
+              <span style={{ fontSize: '14px', color: 'rgba(240,236,228,0.80)', lineHeight: 1.75 }}>
+                写真に映る自分と、鏡の中の自分が別人に見える。でも<strong style={{ color: 'rgba(240,236,228,0.9)' }}>「どこが」問題なのか言語化できない。</strong>
+              </span>
+            </div>
+            <div className="m-pain-item" style={{ borderColor: 'rgba(201,168,76,0.35)', background: 'rgba(201,168,76,0.04)' }}>
+              <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>💸</span>
+              <span style={{ fontSize: '14px', color: 'rgba(240,236,228,0.85)', lineHeight: 1.75 }}>
+                ジム、眉毛サロン、美容院——全部試した。<strong style={{ color: 'rgba(240,236,228,0.95)' }}>変わった気がするけど、本当に効果があったのか確信が持てない。</strong>
+              </span>
+            </div>
+          </div>
+          <div style={{ marginTop: '20px', padding: '14px 18px', borderLeft: '3px solid rgba(201,168,76,0.5)', background: 'rgba(201,168,76,0.04)', borderRadius: '0 8px 8px 0' }}>
+            <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.6)', lineHeight: 1.8, margin: 0 }}>
+              このまま放置すると、外見の悩みは来年も再来年も残る。<br />
+              <strong style={{ color: 'rgba(240,236,228,0.85)' }}>問題は「やる気」ではなく「順番」だ。</strong>
+            </p>
+          </div>
+        </section>
+
+        {/* ── ③ でおのストーリー（信頼先出し）── */}
+        <section style={{ padding: 'clamp(44px,8vw,68px) 20px', background: 'rgba(10,15,30,0.65)', borderTop: '1px solid rgba(201,168,76,0.1)', borderBottom: '1px solid rgba(201,168,76,0.1)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0', alignItems: 'center', maxWidth: '700px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+              <div className="m-tag">このツールを作った人</div>
+              <h2 style={{ fontSize: 'clamp(18px,4vw,26px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
+                元非モテ芋男から、<br />
+                <span style={{ color: '#c9a84c' }}>現役モデルへ。</span>
+              </h2>
+            </div>
+            <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '20px', padding: 'clamp(24px,5vw,40px)', maxWidth: '580px', width: '100%' }}>
+              <p style={{ fontSize: 'clamp(14px,2.5vw,16px)', color: 'rgba(240,236,228,0.75)', lineHeight: 2.0, margin: '0 0 20px' }}>
+                「かつて自分は、マッチングアプリで全くマッチしなかった。清潔感がないと言われても、具体的に何を直せばいいかわからなかった。」
+              </p>
+              <p style={{ fontSize: 'clamp(14px,2.5vw,16px)', color: 'rgba(240,236,228,0.75)', lineHeight: 2.0, margin: '0 0 20px' }}>
+                「眉毛を整えるところから始めた。それだけで周囲の反応が変わった。次は肌。次はヘア。<strong style={{ color: 'rgba(240,236,228,0.9)' }}>順番があったんだ、と気づいた。</strong>」
+              </p>
+              <p style={{ fontSize: 'clamp(14px,2.5vw,16px)', color: 'rgba(240,236,228,0.75)', lineHeight: 2.0, margin: '0 0 24px' }}>
+                「変わりたいのに何から始めればいいかわからない男性のために、Fineme Mirrorを作った。1枚の写真が、あなたの最初の一手を教えてくれる。」
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingTop: '20px', borderTop: '1px solid rgba(201,168,76,0.15)' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg,rgba(201,168,76,0.3),rgba(201,168,76,0.1))', border: '1px solid rgba(201,168,76,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>🧭</div>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: 'rgba(240,236,228,0.9)' }}>でお（渡邉 英雄）</div>
+                  <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.4)', marginTop: '2px' }}>Fineme 代表 ／ 元非モテ芋男 → 現役モデル</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── ④ Mirrorが見せるもの ── */}
+        <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
+          <div className="m-tag">Mirrorが見せるもの</div>
+          <h2 style={{ fontSize: 'clamp(20px,4.5vw,32px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', marginBottom: '14px', lineHeight: 1.4 }}>
+            スコアじゃない。<br />
+            <span style={{ color: '#c9a84c' }}>可能性の見取り図</span>。
+          </h2>
+          <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.55)', lineHeight: 1.9, marginBottom: '36px' }}>
+            Fineme Mirrorは「外見の点数」を出しません。<br />
+            「今、変えるとどれだけ変わるか」という<em style={{ color: 'rgba(240,236,228,0.75)', fontStyle: 'normal' }}>変容余地（伸びしろ）</em>を7軸で可視化します。
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '12px', marginBottom: '32px' }}>
             {[
-              ['🤔', '外見を変えたいけど、何から始めればいいか分からない。'],
-              ['📸', '写真に映った自分を見て、「何かが違う」と感じるが原因が分からない。'],
-              ['💸', 'ジム・眉毛サロン・美容院…全部にお金と時間をかける余裕はない。'],
-              ['😐', '清潔感を上げたいのに、具体的に「どこ」を直せばいいのか判断できない。'],
-            ].map(([icon, text], i) => (
-              <div key={i} className="m-pain-item">
-                <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>{icon}</span>
-                <span style={{ fontSize: '14px', color: 'rgba(240,236,228,0.75)', lineHeight: 1.75 }}>{text}</span>
+              ['✂️', '眉毛', '印象の8割'],
+              ['🌿', '肌', '清潔感の土台'],
+              ['💈', 'ヘア', '第一印象'],
+              ['🧍', '姿勢', '見た目の若さ'],
+              ['💪', '体型', '全体シルエット'],
+              ['👔', '服装', 'センスの可視化'],
+              ['💅', '爪', '細部の誠実さ'],
+            ].map(([icon, label, sub]) => (
+              <div key={label} className="m-axis-card">
+                <div style={{ fontSize: '24px', marginBottom: '6px' }}>{icon}</div>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: 'rgba(240,236,228,0.85)', marginBottom: '3px' }}>{label}</div>
+                <div style={{ fontSize: '10px', color: 'rgba(240,236,228,0.35)', lineHeight: 1.4 }}>{sub}</div>
               </div>
             ))}
           </div>
+          <p style={{ fontSize: '13px', color: 'rgba(240,236,228,0.45)', lineHeight: 1.8 }}>
+            各軸に「変容余地 高 / 中 / 低」が表示されます。<br />
+            高い軸 = 今最も効率よく変われる場所。最初の一手はそこです。
+          </p>
         </section>
 
-        {/* ── Mirrorが見せるもの ── */}
+        {/* ── ⑤ 分析サンプル（社会的証明の代替）── */}
         <section style={{ padding: 'clamp(44px,8vw,68px) 20px', background: 'rgba(10,15,30,0.65)', borderTop: '1px solid rgba(201,168,76,0.1)', borderBottom: '1px solid rgba(201,168,76,0.1)' }}>
-          <div style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
-            <div className="m-tag">Mirrorが見せるもの</div>
-            <h2 style={{ fontSize: 'clamp(20px,4.5vw,32px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', marginBottom: '14px', lineHeight: 1.4 }}>
-              スコアじゃない。<br />
-              <span style={{ color: '#c9a84c' }}>可能性の見取り図</span>。
-            </h2>
-            <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.55)', lineHeight: 1.9, marginBottom: '36px' }}>
-              Fineme Mirrorは「外見の点数」を出しません。<br />
-              「今、変えるとどれだけ変わるか」という<em style={{ color: 'rgba(240,236,228,0.75)', fontStyle: 'normal' }}>変容余地（伸びしろ）</em>を7軸で可視化します。
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '12px', marginBottom: '32px' }}>
+          <div style={{ maxWidth: '680px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+              <div className="m-tag">実際に出る分析結果</div>
+              <h2 style={{ fontSize: 'clamp(18px,4vw,26px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
+                こんな分析が、<br />あなたに届きます。
+              </h2>
+              <p style={{ fontSize: '13px', color: 'rgba(240,236,228,0.4)', marginTop: '10px' }}>
+                7軸すべてに「変容余地」と「具体的な改善ヒント」が出力されます
+              </p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
               {[
-                ['✂️', '眉毛', '印象の8割'],
-                ['🌿', '肌', '清潔感の土台'],
-                ['💈', 'ヘア', '第一印象'],
-                ['🧍', '姿勢', '見た目の若さ'],
-                ['💪', '体型', '全体シルエット'],
-                ['👔', '服装', 'センスの可視化'],
-                ['💅', '爪', '細部の誠実さ'],
-              ].map(([icon, label, sub]) => (
-                <div key={label} className="m-axis-card">
-                  <div style={{ fontSize: '24px', marginBottom: '6px' }}>{icon}</div>
-                  <div style={{ fontSize: '12px', fontWeight: 800, color: 'rgba(240,236,228,0.85)', marginBottom: '3px' }}>{label}</div>
-                  <div style={{ fontSize: '10px', color: 'rgba(240,236,228,0.35)', lineHeight: 1.4 }}>{sub}</div>
+                {
+                  icon: '✂️', axis: '眉毛', level: '高', levelColor: '#c9a84c', levelBg: 'rgba(201,168,76,0.12)', levelBorder: 'rgba(201,168,76,0.5)',
+                  summary: '眉の形が顔の縦の比率を歪めています。眉尾を5mm短くするだけで目元が2割広く見えます。',
+                  hint: '今週中に眉毛サロンに行くか、自宅でテンプレートを使った整え方を試してください。費用：¥0〜¥3,000。',
+                },
+                {
+                  icon: '🌿', axis: '肌', level: '中', levelColor: '#7aadff', levelBg: 'rgba(100,160,255,0.10)', levelBorder: 'rgba(100,160,255,0.4)',
+                  summary: '毛穴の目立ちと皮脂テカリが清潔感を下げています。洗顔を1回増やすだけで来週には変化が出ます。',
+                  hint: '朝の洗顔を追加するだけでOK。整肌ローションを1本持つと2週間で肌のトーンが均一になります。',
+                },
+                {
+                  icon: '💈', axis: 'ヘア', level: '低', levelColor: '#50c88c', levelBg: 'rgba(80,200,140,0.10)', levelBorder: 'rgba(80,200,140,0.4)',
+                  summary: '現状すでに整っています。優先度は低い。他の軸を先に取り組むことを推奨します。',
+                  hint: '今の状態を維持してください。6週間に1回のカットで十分です。',
+                },
+              ].map((item) => (
+                <div key={item.axis} className="m-sample-card" style={{ border: `1px solid ${item.levelBorder}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '22px' }}>{item.icon}</span>
+                    <span style={{ fontSize: '15px', fontWeight: 800, color: '#e8e4dc', flex: 1 }}>{item.axis}</span>
+                    <span className="m-sample-badge" style={{ background: item.levelBg, border: `1px solid ${item.levelBorder}`, color: item.levelColor }}>
+                      変容余地 {item.level}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.7)', lineHeight: 1.75, marginBottom: '10px' }}>{item.summary}</p>
+                  <div style={{ background: 'rgba(201,168,76,0.07)', borderLeft: '3px solid rgba(201,168,76,0.4)', padding: '8px 12px', borderRadius: '0 6px 6px 0', fontSize: '12px', color: 'rgba(232,228,220,0.6)', lineHeight: 1.65 }}>
+                    → {item.hint}
+                  </div>
                 </div>
               ))}
             </div>
-            <p style={{ fontSize: '13px', color: 'rgba(240,236,228,0.45)', lineHeight: 1.8 }}>
-              各軸に「変容余地 高 / 中 / 低」が表示されます。<br />
-              高い軸 = 今最も効率よく変われる場所。最初の一手はそこです。
+            <p style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(240,236,228,0.25)', lineHeight: 1.7 }}>
+              ※ これはサンプルです。実際の分析はあなたの写真から生成されます。
             </p>
+            <div style={{ textAlign: 'center', marginTop: '24px' }}>
+              <Link href="/mirror" className="m-cta-btn" style={{ display: 'inline-block', padding: '15px 44px', borderRadius: '12px', color: '#0a0f1e', fontWeight: 900, fontSize: '16px', textDecoration: 'none', boxShadow: '0 6px 24px rgba(201,168,76,0.35)' }}>
+                自分の分析を見る →
+              </Link>
+            </div>
           </div>
         </section>
 
-        {/* ── 無料 vs 有料 ── */}
+        {/* ── ⑥ 無料 vs 有料 ── */}
         <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
             <div className="m-tag">無料と有料の違い</div>
@@ -206,7 +283,6 @@ export default function MirrorLpPage() {
             </h2>
           </div>
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-            {/* 無料 */}
             <div className="m-plan-card" style={{ background: 'rgba(255,255,255,0.02)' }}>
               <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '.12em', color: 'rgba(240,236,228,0.4)', textTransform: 'uppercase', marginBottom: '10px' }}>無料で確認できること</p>
               <div style={{ fontSize: '22px', fontWeight: 900, color: 'rgba(240,236,228,0.7)', marginBottom: '18px' }}>¥0</div>
@@ -217,7 +293,6 @@ export default function MirrorLpPage() {
                 </div>
               ))}
             </div>
-            {/* 有料 */}
             <div className="m-plan-card featured">
               <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '.12em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '10px' }}>¥500で追加されるもの</p>
               <div style={{ fontSize: '22px', fontWeight: 900, color: '#c9a84c', marginBottom: '18px' }}>¥500</div>
@@ -237,18 +312,13 @@ export default function MirrorLpPage() {
             </div>
           </div>
           <div style={{ textAlign: 'center', marginTop: '32px' }}>
-            <Link href="/mirror" className="m-cta-btn" style={{
-              display: 'inline-block', padding: '16px 52px',
-              borderRadius: '12px', color: '#0a0f1e', fontWeight: 900,
-              fontSize: '17px', textDecoration: 'none',
-              boxShadow: '0 8px 32px rgba(201,168,76,0.4)',
-            }}>
+            <Link href="/mirror" className="m-cta-btn" style={{ display: 'inline-block', padding: '16px 52px', borderRadius: '12px', color: '#0a0f1e', fontWeight: 900, fontSize: '17px', textDecoration: 'none', boxShadow: '0 8px 32px rgba(201,168,76,0.4)' }}>
               Mirrorを試す →
             </Link>
           </div>
         </section>
 
-        {/* ── 価格の比較 ── */}
+        {/* ── ⑦ 価格の比較 ── */}
         <section style={{ padding: 'clamp(44px,8vw,68px) 20px', background: 'rgba(10,15,30,0.65)', borderTop: '1px solid rgba(201,168,76,0.1)', borderBottom: '1px solid rgba(201,168,76,0.1)' }}>
           <div style={{ maxWidth: '620px', margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: '28px' }}>
@@ -278,7 +348,7 @@ export default function MirrorLpPage() {
           </div>
         </section>
 
-        {/* ── New Me Map ── */}
+        {/* ── ⑧ New Me Map ── */}
         <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
             <div className="m-tag">Mirror が地図になる</div>
@@ -317,7 +387,7 @@ export default function MirrorLpPage() {
           </div>
         </section>
 
-        {/* ── BRIDGE: 変容は「線」で見る ── */}
+        {/* ── ⑨ BRIDGE: 変容は「線」で見る ── */}
         <section style={{ padding: 'clamp(44px,8vw,68px) 20px', background: 'rgba(10,15,30,0.65)', borderTop: '1px solid rgba(201,168,76,0.1)', borderBottom: '1px solid rgba(201,168,76,0.1)' }}>
           <div style={{ maxWidth: '660px', margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: '32px' }}>
@@ -331,7 +401,6 @@ export default function MirrorLpPage() {
                 「変わったよ」と言われても実感できない。記録がないから。
               </p>
             </div>
-
             <div style={{ position: 'relative', paddingLeft: '32px', marginBottom: '28px' }}>
               <div style={{ position: 'absolute', left: '9px', top: '10px', bottom: '10px', width: '2px', background: 'linear-gradient(to bottom, #c9a84c, rgba(201,168,76,0.1))' }} />
               {[
@@ -349,7 +418,6 @@ export default function MirrorLpPage() {
                 </div>
               ))}
             </div>
-
             <div style={{ padding: '18px 22px', background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '12px', textAlign: 'center' }}>
               <p style={{ fontSize: '15px', fontWeight: 800, color: 'rgba(240,236,228,0.8)', lineHeight: 1.8, margin: 0, fontFamily: 'Georgia, serif' }}>
                 Mirrorは「今日の自分」を映す鏡。<br />
@@ -359,7 +427,7 @@ export default function MirrorLpPage() {
           </div>
         </section>
 
-        {/* ── サブスク ── */}
+        {/* ── ⑩ サブスク ── */}
         <section style={{ padding: 'clamp(56px,10vw,80px) 20px', maxWidth: '700px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '36px' }}>
             <div className="m-tag">毎月3回、変容を追跡する</div>
@@ -372,7 +440,6 @@ export default function MirrorLpPage() {
               でも本当の価値は「続けること」にある。
             </p>
           </div>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
             {[
               { icon: '🪞', title: '毎月3回、変わった自分をスキャンできる', sub: '¥500 × 3 = ¥1,500相当が月¥780に', featured: true },
@@ -389,7 +456,6 @@ export default function MirrorLpPage() {
               </div>
             ))}
           </div>
-
           <div style={{ textAlign: 'center', padding: '28px 20px', background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '16px', marginBottom: '28px' }}>
             <div style={{ fontSize: '13px', color: 'rgba(240,236,228,0.35)', marginBottom: '6px' }}>
               通常 <s>¥1,500</s>相当 →
@@ -398,7 +464,6 @@ export default function MirrorLpPage() {
             <div style={{ fontSize: '14px', color: 'rgba(240,236,228,0.35)', marginTop: '4px' }}>/ 月（税込）・いつでも解約可能</div>
             <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.3)', marginTop: '10px' }}>1日あたり約¥26。スタバのコーヒー1杯以下。</div>
           </div>
-
           <div style={{ textAlign: 'center' }}>
             <Link href="/mirror" className="m-cta-btn" style={{ display: 'inline-block', padding: '15px 48px', borderRadius: '12px', color: '#0a0f1e', fontWeight: 900, fontSize: '16px', textDecoration: 'none', boxShadow: '0 8px 32px rgba(201,168,76,0.4)' }}>
               まずMirrorを1回試す →
@@ -411,34 +476,36 @@ export default function MirrorLpPage() {
           </div>
         </section>
 
-        {/* ── プライバシー ── */}
-        <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-            <div className="m-tag">プライバシーについて</div>
-            <h2 style={{ fontSize: 'clamp(18px,4vw,24px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
-              写真はサーバーに<br />保存されません。
-            </h2>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {[
-              ['📤', 'アップロードした写真はHTTPS通信でAIに送信されます', 'ブラウザとAIサーバー間の通信は暗号化されています。'],
-              ['🔍', 'AI（Claude Vision）が写真を分析します', '写真データはAnthropicのAPIを経由して分析されます。'],
-              ['💾', '分析結果テキストのみが保存されます', '写真そのものはFinemeのデータベースには一切保存されません。'],
-              ['🗑️', '写真データは分析完了後に削除されます', '分析が終わった瞬間から、写真データへのアクセスはなくなります。'],
-            ].map(([icon, title, desc], i) => (
-              <div key={i} style={{ display: 'flex', gap: '16px', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: '12px' }}>
-                <span style={{ fontSize: '22px', flexShrink: 0 }}>{icon}</span>
-                <div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'rgba(240,236,228,0.85)', marginBottom: '4px' }}>{title}</div>
-                  <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.4)', lineHeight: 1.7 }}>{desc}</div>
+        {/* ── ⑪ プライバシー ── */}
+        <section style={{ padding: 'clamp(44px,8vw,68px) 20px', background: 'rgba(10,15,30,0.65)', borderTop: '1px solid rgba(201,168,76,0.1)', borderBottom: '1px solid rgba(201,168,76,0.1)' }}>
+          <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+              <div className="m-tag">プライバシーについて</div>
+              <h2 style={{ fontSize: 'clamp(18px,4vw,24px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
+                写真はサーバーに<br />保存されません。
+              </h2>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {[
+                ['📤', 'アップロードした写真はHTTPS通信でAIに送信されます', 'ブラウザとAIサーバー間の通信は暗号化されています。'],
+                ['🔍', 'AI（Claude Vision）が写真を分析します', '写真データはAnthropicのAPIを経由して分析されます。'],
+                ['💾', '分析結果テキストのみが保存されます', '写真そのものはFinemeのデータベースには一切保存されません。'],
+                ['🗑️', '写真データは分析完了後に削除されます', '分析が終わった瞬間から、写真データへのアクセスはなくなります。'],
+              ].map(([icon, title, desc], i) => (
+                <div key={i} style={{ display: 'flex', gap: '16px', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: '12px' }}>
+                  <span style={{ fontSize: '22px', flexShrink: 0 }}>{icon}</span>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'rgba(240,236,228,0.85)', marginBottom: '4px' }}>{title}</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.4)', lineHeight: 1.7 }}>{desc}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* ── FAQ ── */}
-        <section style={{ padding: 'clamp(44px,8vw,68px) 20px', background: 'rgba(10,15,30,0.65)', borderTop: '1px solid rgba(201,168,76,0.1)', borderBottom: '1px solid rgba(201,168,76,0.1)' }}>
+        {/* ── ⑫ FAQ ── */}
+        <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
           <div style={{ maxWidth: '680px', margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <div className="m-tag">よくある質問</div>
@@ -458,38 +525,7 @@ export default function MirrorLpPage() {
           </div>
         </section>
 
-        {/* ── でおのストーリー ── */}
-        <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0', alignItems: 'center' }}>
-            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-              <div className="m-tag">このツールを作った人</div>
-              <h2 style={{ fontSize: 'clamp(18px,4vw,26px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
-                元非モテ芋男から、<br />
-                <span style={{ color: '#c9a84c' }}>現役モデルへ。</span>
-              </h2>
-            </div>
-            <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '20px', padding: 'clamp(24px,5vw,40px)', maxWidth: '580px', width: '100%' }}>
-              <p style={{ fontSize: 'clamp(14px,2.5vw,16px)', color: 'rgba(240,236,228,0.75)', lineHeight: 2.0, margin: '0 0 20px' }}>
-                「かつて自分は、マッチングアプリで全くマッチしなかった。清潔感がないと言われても、具体的に何を直せばいいかわからなかった。」
-              </p>
-              <p style={{ fontSize: 'clamp(14px,2.5vw,16px)', color: 'rgba(240,236,228,0.75)', lineHeight: 2.0, margin: '0 0 20px' }}>
-                「眉毛を整えるところから始めた。それだけで周囲の反応が変わった。次は肌。次はヘア。順番があったんだ、と気づいた。」
-              </p>
-              <p style={{ fontSize: 'clamp(14px,2.5vw,16px)', color: 'rgba(240,236,228,0.75)', lineHeight: 2.0, margin: '0 0 24px' }}>
-                「変わりたいのに何から始めればいいかわからない男性のために、Fineme Mirrorを作った。1枚の写真が、あなたの最初の一手を教えてくれる。」
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingTop: '20px', borderTop: '1px solid rgba(201,168,76,0.15)' }}>
-                <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg,rgba(201,168,76,0.3),rgba(201,168,76,0.1))', border: '1px solid rgba(201,168,76,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>🧭</div>
-                <div>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: 'rgba(240,236,228,0.9)' }}>でお（渡邉 英雄）</div>
-                  <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.4)', marginTop: '2px' }}>Fineme 代表 ／ 元非モテ芋男 → 現役モデル</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── 最終CTA ── */}
+        {/* ── ⑬ 最終CTA ── */}
         <section style={{ padding: 'clamp(56px,12vw,96px) 20px', textAlign: 'center', background: 'linear-gradient(160deg, #0a0f1e 0%, #070c1a 100%)', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 60%)', pointerEvents: 'none' }} />
           <div style={{ position: 'relative', zIndex: 1, maxWidth: '580px', margin: '0 auto' }}>
