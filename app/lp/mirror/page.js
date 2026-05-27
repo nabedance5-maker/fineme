@@ -202,7 +202,7 @@ export default function MirrorLpPage() {
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
             <div className="m-tag">無料と有料の違い</div>
             <h2 style={{ fontSize: 'clamp(18px,4vw,26px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
-              ¥500で手に入るのは、<br />「最初の一手」まで。
+              ¥500で、変容の「順番」と<br />「最初の一手」が手に入る。
             </h2>
           </div>
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
