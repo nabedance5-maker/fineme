@@ -317,36 +317,96 @@ export default function MirrorLpPage() {
           </div>
         </section>
 
-        {/* ── サブスク ── */}
+        {/* ── BRIDGE: 変容は「線」で見る ── */}
         <section style={{ padding: 'clamp(44px,8vw,68px) 20px', background: 'rgba(10,15,30,0.65)', borderTop: '1px solid rgba(201,168,76,0.1)', borderBottom: '1px solid rgba(201,168,76,0.1)' }}>
-          <div style={{ maxWidth: '640px', margin: '0 auto', textAlign: 'center' }}>
-            <div className="m-tag">毎月3回、変化を記録する</div>
-            <h2 style={{ fontSize: 'clamp(20px,4.5vw,30px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4, marginBottom: '8px' }}>
-              月額780円。<br />
-              <span style={{ color: '#c9a84c' }}>Mirror 月3回無料</span>。
-            </h2>
-            <p style={{ fontSize: '13px', color: 'rgba(240,236,228,0.4)', marginBottom: '28px', lineHeight: 1.8 }}>
-              1回¥500のMirrorが月3回無料（¥1,500相当）。<br />月初・中旬・月末で変化を追う。変容の記録が資産になる。
-            </p>
-            <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '28px' }}>
+          <div style={{ maxWidth: '660px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+              <div className="m-tag">変容は「1回」では終わらない</div>
+              <h2 style={{ fontSize: 'clamp(20px,4.5vw,30px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
+                1枚で始まる。<br />
+                <span style={{ color: '#c9a84c' }}>3ヶ月で、変わった証拠になる。</span>
+              </h2>
+              <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.5)', lineHeight: 1.9, marginTop: '14px' }}>
+                毎日見ている自分の顔は、変化に気づけない。<br />
+                「変わったよ」と言われても実感できない。記録がないから。
+              </p>
+            </div>
+
+            <div style={{ position: 'relative', paddingLeft: '32px', marginBottom: '28px' }}>
+              <div style={{ position: 'absolute', left: '9px', top: '10px', bottom: '10px', width: '2px', background: 'linear-gradient(to bottom, #c9a84c, rgba(201,168,76,0.1))' }} />
               {[
-                ['🪞', 'Mirror 月3回無料', '¥500×3=¥1,500相当', true],
-                ['📚', 'Mirror履歴 無期限保存', '変容の記録がいつでも見返せる', false],
-              ].map(([icon, title, desc, featured]) => (
-                <div key={title} style={{ flex: '1', minWidth: '200px', padding: '20px 18px', background: featured ? 'rgba(201,168,76,0.08)' : 'rgba(255,255,255,0.02)', border: `1px solid ${featured ? 'rgba(201,168,76,0.4)' : 'rgba(201,168,76,0.12)'}`, borderRadius: '14px', textAlign: 'left' }}>
-                  <div style={{ fontSize: '22px', marginBottom: '8px' }}>{icon}</div>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: featured ? '#c9a84c' : 'rgba(240,236,228,0.85)', marginBottom: '4px' }}>{title}</div>
-                  <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.4)', lineHeight: 1.6 }}>{desc}</div>
+                { label: '1ヶ月目', color: '#c9a84c', rgb: '201,168,76', title: '「どこから変えるか」がわかる', desc: '変容余地 高の軸が特定される。眉毛から始める決断が生まれる。' },
+                { label: '2ヶ月目', color: '#7aadff', rgb: '100,160,255', title: '「変わったのか」がわかる', desc: '再スキャンで変容余地が下がっている。変化がデータになって現れる。' },
+                { label: '3ヶ月目', color: '#50c88c', rgb: '80,200,140', title: '「次に何をすべきか」がわかる', desc: '次の高い軸が浮かぶ。変容の旅は続いていく。' },
+              ].map((item, i) => (
+                <div key={i} style={{ position: 'relative', marginBottom: i < 2 ? '16px' : 0 }}>
+                  <div style={{ position: 'absolute', left: '-27px', top: '18px', width: '12px', height: '12px', borderRadius: '50%', background: item.color, boxShadow: `0 0 10px ${item.color}80` }} />
+                  <div style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.025)', border: `1px solid rgba(${item.rgb},0.22)`, borderRadius: '12px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.12em', color: item.color, marginBottom: '5px', textTransform: 'uppercase' }}>📸 {item.label}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: 'rgba(240,236,228,0.9)', marginBottom: '3px' }}>{item.title}</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.45)', lineHeight: 1.7 }}>{item.desc}</div>
+                  </div>
                 </div>
               ))}
             </div>
-            <div style={{ fontSize: '26px', fontWeight: 900, color: '#c9a84c', marginBottom: '4px' }}>¥780 <span style={{ fontSize: '14px', fontWeight: 400, color: 'rgba(240,236,228,0.35)' }}>/ 月（税込）</span></div>
-            <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.25)', marginBottom: '22px' }}>いつでも解約可能</p>
-            <Link href="/mirror" className="m-cta-btn" style={{ display: 'inline-block', padding: '14px 44px', borderRadius: '12px', color: '#0a0f1e', fontWeight: 900, fontSize: '15px', textDecoration: 'none', boxShadow: '0 6px 24px rgba(201,168,76,0.35)' }}>
-              まずMirrorを試す →
+
+            <div style={{ padding: '18px 22px', background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '12px', textAlign: 'center' }}>
+              <p style={{ fontSize: '15px', fontWeight: 800, color: 'rgba(240,236,228,0.8)', lineHeight: 1.8, margin: 0, fontFamily: 'Georgia, serif' }}>
+                Mirrorは「今日の自分」を映す鏡。<br />
+                <span style={{ color: '#c9a84c' }}>毎月使うと「変わっていく自分」のタイムラプスになる。</span>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── サブスク ── */}
+        <section style={{ padding: 'clamp(56px,10vw,80px) 20px', maxWidth: '700px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '36px' }}>
+            <div className="m-tag">毎月3回、変容を追跡する</div>
+            <h2 style={{ fontSize: 'clamp(22px,5vw,34px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.35, marginBottom: '12px' }}>
+              変わっていく自分を、<br />
+              <span style={{ color: '#c9a84c' }}>¥780/月で記録し続ける。</span>
+            </h2>
+            <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.5)', lineHeight: 1.9 }}>
+              1回¥500 × 3回 = ¥1,500分のMirrorが、月¥780で使える。<br />
+              でも本当の価値は「続けること」にある。
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
+            {[
+              { icon: '🪞', title: '毎月3回、変わった自分をスキャンできる', sub: '¥500 × 3 = ¥1,500相当が月¥780に', featured: true },
+              { icon: '🗺️', title: 'Mirror分析がNew Me Mapに直結する', sub: '変容余地データが行動ロードマップを常に最新化する', featured: false },
+              { icon: '📚', title: '全履歴が無期限保存される', sub: '3ヶ月前の自分と今を、いつでも比べられる', featured: false },
+            ].map((item, i) => (
+              <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'center', padding: '18px 20px', background: item.featured ? 'rgba(201,168,76,0.08)' : 'rgba(255,255,255,0.025)', border: `1px solid ${item.featured ? 'rgba(201,168,76,0.4)' : 'rgba(201,168,76,0.12)'}`, borderRadius: '14px' }}>
+                <span style={{ fontSize: '26px', flexShrink: 0 }}>{item.icon}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: item.featured ? '#c9a84c' : 'rgba(240,236,228,0.85)', marginBottom: '3px' }}>{item.title}</div>
+                  <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.4)', lineHeight: 1.6 }}>{item.sub}</div>
+                </div>
+                {item.featured && <span style={{ fontSize: '10px', fontWeight: 800, color: '#c9a84c', background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: '20px', padding: '3px 10px', flexShrink: 0, whiteSpace: 'nowrap' }}>主な特典</span>}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ textAlign: 'center', padding: '28px 20px', background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '16px', marginBottom: '28px' }}>
+            <div style={{ fontSize: '13px', color: 'rgba(240,236,228,0.35)', marginBottom: '6px' }}>
+              通常 <s>¥1,500</s>相当 →
+            </div>
+            <div style={{ fontSize: '40px', fontWeight: 900, color: '#c9a84c', lineHeight: 1.1 }}>¥780</div>
+            <div style={{ fontSize: '14px', color: 'rgba(240,236,228,0.35)', marginTop: '4px' }}>/ 月（税込）・いつでも解約可能</div>
+            <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.3)', marginTop: '10px' }}>1日あたり約¥26。スタバのコーヒー1杯以下。</div>
+          </div>
+
+          <div style={{ textAlign: 'center' }}>
+            <Link href="/mirror" className="m-cta-btn" style={{ display: 'inline-block', padding: '15px 48px', borderRadius: '12px', color: '#0a0f1e', fontWeight: 900, fontSize: '16px', textDecoration: 'none', boxShadow: '0 8px 32px rgba(201,168,76,0.4)' }}>
+              まずMirrorを1回試す →
             </Link>
-            <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.25)', marginTop: '10px' }}>
-              サブスクへの加入は <Link href="/mypage/subscription" style={{ color: 'rgba(201,168,76,0.5)', textDecoration: 'none' }}>マイページ</Link> から
+            <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.25)', marginTop: '12px', lineHeight: 1.8 }}>
+              体験してから判断できます。サブスク加入は{' '}
+              <Link href="/mypage/subscription" style={{ color: 'rgba(201,168,76,0.5)', textDecoration: 'none' }}>マイページ</Link>
+              {' '}から。
             </p>
           </div>
         </section>
