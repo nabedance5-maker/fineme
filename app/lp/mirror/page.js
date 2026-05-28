@@ -163,6 +163,34 @@ export default function MirrorLpPage() {
                 <span style={{ color: '#c9a84c' }}>現役モデルへ。</span>
               </h2>
             </div>
+
+            {/* Before / After 写真 */}
+            <div style={{ display: 'flex', gap: 'clamp(12px,3vw,24px)', width: '100%', maxWidth: '560px', marginBottom: '28px' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.12em', color: 'rgba(240,236,228,0.35)', textAlign: 'center', marginBottom: '8px', textTransform: 'uppercase' }}>Before</div>
+                <div style={{ borderRadius: '14px', overflow: 'hidden', border: '1px solid rgba(232,228,220,0.12)', aspectRatio: '3/4', position: 'relative' }}>
+                  <img
+                    src="/images/deo/before.jpg"
+                    alt="でお 変容前"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, paddingTop: '22px' }}>
+                <span style={{ fontSize: 'clamp(18px,4vw,28px)', color: '#c9a84c' }}>→</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.12em', color: '#c9a84c', textAlign: 'center', marginBottom: '8px', textTransform: 'uppercase' }}>After</div>
+                <div style={{ borderRadius: '14px', overflow: 'hidden', border: '1px solid rgba(201,168,76,0.35)', aspectRatio: '3/4', position: 'relative', boxShadow: '0 0 24px rgba(201,168,76,0.15)' }}>
+                  <img
+                    src="/images/deo/after-portrait.png"
+                    alt="でお 変容後"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
+                  />
+                </div>
+              </div>
+            </div>
+
             <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '20px', padding: 'clamp(24px,5vw,40px)', maxWidth: '580px', width: '100%' }}>
               <p style={{ fontSize: 'clamp(14px,2.5vw,16px)', color: 'rgba(240,236,228,0.75)', lineHeight: 2.0, margin: '0 0 20px' }}>
                 「かつて自分は、マッチングアプリで全くマッチしなかった。清潔感がないと言われても、具体的に何を直せばいいかわからなかった。」
@@ -174,7 +202,9 @@ export default function MirrorLpPage() {
                 「変わりたいのに何から始めればいいかわからない男性のために、Fineme Mirrorを作った。1枚の写真が、あなたの最初の一手を教えてくれる。」
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingTop: '20px', borderTop: '1px solid rgba(201,168,76,0.15)' }}>
-                <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg,rgba(201,168,76,0.3),rgba(201,168,76,0.1))', border: '1px solid rgba(201,168,76,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>🧭</div>
+                <div style={{ width: '44px', height: '44px', borderRadius: '50%', overflow: 'hidden', border: '1px solid rgba(201,168,76,0.4)', flexShrink: 0 }}>
+                  <img src="/images/deo/after-portrait.png" alt="でお" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                </div>
                 <div>
                   <div style={{ fontSize: '14px', fontWeight: 800, color: 'rgba(240,236,228,0.9)' }}>でお（渡邉 英雄）</div>
                   <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.4)', marginTop: '2px' }}>Fineme 代表 ／ 元非モテ芋男 → 現役モデル</div>
