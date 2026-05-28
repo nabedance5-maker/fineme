@@ -350,6 +350,37 @@ export default async function ArticlePage({ params }) {
             </div>
           </div>
 
+          {/* ── Mirror CTA ── */}
+          <div style={{
+            padding: 'clamp(28px,5vw,48px) 20px',
+            background: 'rgba(4,8,26,0.98)',
+            borderTop: '1px solid rgba(201,168,76,0.12)',
+            textAlign: 'center',
+          }}>
+            <div style={{ maxWidth: '540px', margin: '0 auto' }}>
+              <div style={{ fontSize: '28px', marginBottom: '10px' }}>🪞</div>
+              <h3 style={{ fontSize: 'clamp(16px,2.8vw,20px)', fontWeight: 800, color: '#f0ece4', marginBottom: '10px', lineHeight: 1.45, fontFamily: 'var(--font-serif)' }}>
+                写真1枚で、「変えるべき場所」の地図が手に入る
+              </h3>
+              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', marginBottom: '22px', lineHeight: 1.85, fontFamily: 'var(--font-sans)' }}>
+                AIが7軸（眉・肌・ヘア・姿勢・体型・服・爪）を分析。<br />
+                今のあなたが最も変わりやすい場所と、最初の一手がわかります。¥500。
+              </p>
+              <Link href="/lp/mirror" style={{
+                display: 'inline-block', padding: '13px 32px',
+                border: '1px solid rgba(201,168,76,0.55)',
+                borderRadius: '8px', color: '#c9a84c', fontWeight: 800,
+                fontSize: '14px', textDecoration: 'none', fontFamily: 'var(--font-sans)',
+                background: 'rgba(201,168,76,0.06)',
+              }}>
+                Fineme Mirror を見る →
+              </Link>
+              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.2)', marginTop: '10px', fontFamily: 'var(--font-sans)' }}>
+                写真はAI分析後に削除 ・ Stripe決済 ・ 分析後に購入判断できます
+              </p>
+            </div>
+          </div>
+
           {/* ── 関連記事 ── */}
           {relatedArticles.length > 0 && (
             <div style={{
