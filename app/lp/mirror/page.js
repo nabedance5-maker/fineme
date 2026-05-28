@@ -260,41 +260,24 @@ export default function MirrorLpPage() {
                 7軸すべてに「変容余地」と「具体的な改善ヒント」が出力されます
               </p>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px', justifyContent: 'center', WebkitOverflowScrolling: 'touch' }}>
               {[
-                {
-                  icon: '✂️', axis: '眉毛', level: '高', levelColor: '#c9a84c', levelBg: 'rgba(201,168,76,0.12)', levelBorder: 'rgba(201,168,76,0.5)',
-                  summary: '眉の形が顔の縦の比率を歪めています。眉尾を5mm短くするだけで目元が2割広く見えます。',
-                  hint: '今週中に眉毛サロンに行くか、自宅でテンプレートを使った整え方を試してください。費用：¥0〜¥3,000。',
-                },
-                {
-                  icon: '🌿', axis: '肌', level: '中', levelColor: '#7aadff', levelBg: 'rgba(100,160,255,0.10)', levelBorder: 'rgba(100,160,255,0.4)',
-                  summary: '毛穴の目立ちと皮脂テカリが清潔感を下げています。洗顔を1回増やすだけで来週には変化が出ます。',
-                  hint: '朝の洗顔を追加するだけでOK。整肌ローションを1本持つと2週間で肌のトーンが均一になります。',
-                },
-                {
-                  icon: '💈', axis: 'ヘア', level: '低', levelColor: '#50c88c', levelBg: 'rgba(80,200,140,0.10)', levelBorder: 'rgba(80,200,140,0.4)',
-                  summary: '現状すでに整っています。優先度は低い。他の軸を先に取り組むことを推奨します。',
-                  hint: '今の状態を維持してください。6週間に1回のカットで十分です。',
-                },
-              ].map((item) => (
-                <div key={item.axis} className="m-sample-card" style={{ border: `1px solid ${item.levelBorder}` }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                    <span style={{ fontSize: '22px' }}>{item.icon}</span>
-                    <span style={{ fontSize: '15px', fontWeight: 800, color: '#e8e4dc', flex: 1 }}>{item.axis}</span>
-                    <span className="m-sample-badge" style={{ background: item.levelBg, border: `1px solid ${item.levelBorder}`, color: item.levelColor }}>
-                      変容余地 {item.level}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.7)', lineHeight: 1.75, marginBottom: '10px' }}>{item.summary}</p>
-                  <div style={{ background: 'rgba(201,168,76,0.07)', borderLeft: '3px solid rgba(201,168,76,0.4)', padding: '8px 12px', borderRadius: '0 6px 6px 0', fontSize: '12px', color: 'rgba(232,228,220,0.6)', lineHeight: 1.65 }}>
-                    → {item.hint}
-                  </div>
+                { src: '/images/lp/mirror-sample-1.png', label: 'First Impression' },
+                { src: '/images/lp/mirror-sample-2.png', label: '眉毛の詳細分析' },
+                { src: '/images/lp/mirror-sample-3.png', label: 'ヘア・爪の分析' },
+              ].map(({ src, label }) => (
+                <div key={label} style={{ flex: '0 0 auto', width: 'clamp(150px,28vw,200px)' }}>
+                  <img
+                    src={src}
+                    alt={label}
+                    style={{ width: '100%', borderRadius: '16px', border: '1px solid rgba(201,168,76,0.2)', boxShadow: '0 8px 28px rgba(0,0,0,0.5)', display: 'block' }}
+                  />
+                  <p style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(240,236,228,0.35)', marginTop: '8px', fontWeight: 700 }}>{label}</p>
                 </div>
               ))}
             </div>
-            <p style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(240,236,228,0.25)', lineHeight: 1.7 }}>
-              ※ これはサンプルです。実際の分析はあなたの写真から生成されます。
+            <p style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(240,236,228,0.2)', lineHeight: 1.7, marginTop: '8px' }}>
+              ※ 実際の出力画面。分析内容はあなたの写真によって変わります。
             </p>
             <div style={{ textAlign: 'center', marginTop: '24px' }}>
               <Link href="/mirror" className="m-cta-btn" style={{ display: 'inline-block', padding: '15px 44px', borderRadius: '12px', color: '#0a0f1e', fontWeight: 900, fontSize: '16px', textDecoration: 'none', boxShadow: '0 6px 24px rgba(201,168,76,0.35)' }}>
