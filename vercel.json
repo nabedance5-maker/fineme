@@ -2,6 +2,9 @@
   "framework": "nextjs",
   "buildCommand": "node scripts/copy-static.js && next build",
   "outputDirectory": ".next",
+  "crons": [
+    { "path": "/api/cron/cleanup-mirror-sessions", "schedule": "0 2 * * *" }
+  ],
   "redirects": [
     {
       "source": "/:path*",

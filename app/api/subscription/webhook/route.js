@@ -47,8 +47,9 @@ export async function POST(request) {
       await sb
         .from('profiles')
         .update({
-          subscription_status:     'canceled',
-          subscription_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+          subscription_status:        'canceled',
+          subscription_period_end:    new Date(sub.current_period_end * 1000).toISOString(),
+          subscription_cancelled_at:  new Date().toISOString(),
         })
         .eq('stripe_customer_id', sub.customer);
       break;

@@ -76,6 +76,7 @@ export default function MirrorPage() {
   const [purchasing, setPurchasing] = useState(false);
   const [compressing, setCompressing] = useState(false);
   const [pastSessions, setPastSessions] = useState([]);
+  const [subStatus, setSubStatus] = useState(null); // { isActive, mirrorFreeRemaining }
   const fileInputRef = useRef(null);
   const dropRef = useRef(null);
 
@@ -136,6 +137,25 @@ export default function MirrorPage() {
     };
 
     loadPastSessions();
+
+    // サブスク状態取得（ログイン済みのみ）
+    const loadSubStatus = async () => {
+      try {
+        const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+        if (!sbKey) return;
+        const obj = JSON.parse(localStorage.getItem(sbKey) || 'null');
+        const token = obj?.access_token;
+        if (!token) return;
+        const res = await fetch('/api/subscription/status', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSubStatus({ isActive: data.isActive, mirrorFreeRemaining: data.mirrorFreeRemaining ?? 0 });
+        }
+      } catch {}
+    };
+    loadSubStatus();
   }, []);
 
   const handleFile = useCallback((file) => {
@@ -321,6 +341,34 @@ export default function MirrorPage() {
             style={{ display: 'none' }}
             onChange={(e) => { const f = e.target.files[0]; if (f) handleFile(f); }}
           />
+          {/* サブスク残回数バッジ */}
+          {subStatus?.isActive && (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              marginTop: '14px', marginBottom: '4px',
+            }}>
+              {subStatus.mirrorFreeRemaining > 0 ? (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  background: 'rgba(80,200,140,0.10)', border: '1px solid rgba(80,200,140,0.35)',
+                  borderRadius: '20px', padding: '5px 14px',
+                  fontSize: '12px', fontWeight: '800', color: '#50c88c',
+                }}>
+                  ✓ 今月あと<span style={{ fontSize: '15px' }}>{subStatus.mirrorFreeRemaining}</span>回無料
+                </span>
+              ) : (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  background: 'rgba(232,228,220,0.05)', border: '1px solid rgba(232,228,220,0.12)',
+                  borderRadius: '20px', padding: '5px 14px',
+                  fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.4)',
+                }}>
+                  今月の無料枠を使い切りました（¥500/回）
+                </span>
+              )}
+            </div>
+          )}
+
           <button
             className="analyze-btn"
             onClick={handleAnalyze}
