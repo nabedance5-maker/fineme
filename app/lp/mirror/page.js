@@ -260,24 +260,47 @@ export default function MirrorLpPage() {
                 7軸すべてに「変容余地」と「具体的な改善ヒント」が出力されます
               </p>
             </div>
-            <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px', justifyContent: 'center', WebkitOverflowScrolling: 'touch' }}>
+            {/* 無料パート */}
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '20px', padding: '20px', marginBottom: '16px' }}>
+              <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '.12em', color: 'rgba(240,236,228,0.4)', textTransform: 'uppercase', marginBottom: '14px' }}>無料で届くもの</p>
+              <img
+                src="/images/lp/mirror-sample-1.png"
+                alt="Mirror出力サンプル — First Impression"
+                style={{ width: '100%', borderRadius: '14px', display: 'block', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
+              />
+              <p style={{ fontSize: '13px', color: 'rgba(240,236,228,0.55)', lineHeight: 1.8, marginTop: '14px' }}>
+                写真をアップロードするとAIの「第一印象コメント」と、7軸それぞれの概要が表示されます。
+              </p>
+            </div>
+
+            {/* 矢印 */}
+            <div style={{ textAlign: 'center', margin: '4px 0', fontSize: '13px', fontWeight: 800, color: '#c9a84c', letterSpacing: '.05em' }}>
+              ¥500 で、ここから先が開く
+            </div>
+            <div style={{ textAlign: 'center', fontSize: '22px', color: 'rgba(201,168,76,0.5)', marginBottom: '4px' }}>↓</div>
+
+            {/* 有料パート */}
+            <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: '20px', padding: '20px', boxShadow: '0 0 32px rgba(201,168,76,0.08)' }}>
+              <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '.12em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '14px' }}>¥500 で追加される詳細分析</p>
+              <img
+                src="/images/lp/mirror-sample-2.png"
+                alt="Mirror出力サンプル — 眉毛の詳細分析"
+                style={{ width: '100%', borderRadius: '14px', display: 'block', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', marginBottom: '16px' }}
+              />
               {[
-                { src: '/images/lp/mirror-sample-1.png', label: 'First Impression' },
-                { src: '/images/lp/mirror-sample-2.png', label: '眉毛の詳細分析' },
-                { src: '/images/lp/mirror-sample-3.png', label: 'ヘア・爪の分析' },
-              ].map(({ src, label }) => (
-                <div key={label} style={{ flex: '0 0 auto', width: 'clamp(150px,28vw,200px)' }}>
-                  <img
-                    src={src}
-                    alt={label}
-                    style={{ width: '100%', borderRadius: '16px', border: '1px solid rgba(201,168,76,0.2)', boxShadow: '0 8px 28px rgba(0,0,0,0.5)', display: 'block' }}
-                  />
-                  <p style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(240,236,228,0.35)', marginTop: '8px', fontWeight: 700 }}>{label}</p>
+                '「なぜその評価か」根拠まで詳しく説明',
+                '今すぐできる改善アクション＋費用感（¥0〜¥3,000など）',
+                '7軸の中で「最初に変えるべき一手」がわかる',
+              ].map((text, i) => (
+                <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', fontSize: '13px', color: 'rgba(240,236,228,0.75)', lineHeight: 1.7 }}>
+                  <span style={{ color: '#c9a84c', fontWeight: 900, flexShrink: 0 }}>→</span>
+                  <span>{text}</span>
                 </div>
               ))}
             </div>
-            <p style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(240,236,228,0.2)', lineHeight: 1.7, marginTop: '8px' }}>
-              ※ 実際の出力画面。分析内容はあなたの写真によって変わります。
+
+            <p style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(240,236,228,0.2)', lineHeight: 1.7, marginTop: '16px' }}>
+              ※ 実際の出力画面。分析内容はあなたの写真から生成されます。
             </p>
             <div style={{ textAlign: 'center', marginTop: '24px' }}>
               <Link href="/mirror" className="m-cta-btn" style={{ display: 'inline-block', padding: '15px 44px', borderRadius: '12px', color: '#0a0f1e', fontWeight: 900, fontSize: '16px', textDecoration: 'none', boxShadow: '0 6px 24px rgba(201,168,76,0.35)' }}>
