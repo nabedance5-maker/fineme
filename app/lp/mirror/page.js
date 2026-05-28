@@ -144,12 +144,44 @@ export default function MirrorLpPage() {
                 ジム、眉毛サロン、美容院——全部試した。<strong style={{ color: 'rgba(240,236,228,0.95)' }}>変わった気がするけど、本当に効果があったのか確信が持てない。</strong>
               </span>
             </div>
+            <div className="m-pain-item" style={{ borderColor: 'rgba(180,60,60,0.35)', background: 'rgba(180,60,60,0.04)' }}>
+              <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>📅</span>
+              <span style={{ fontSize: '14px', color: 'rgba(240,236,228,0.85)', lineHeight: 1.75 }}>
+                「来年こそ本気で外見を変える」——そう思い続けて、<strong style={{ color: 'rgba(240,236,228,0.95)' }}>もう何年も経っている。</strong>
+              </span>
+            </div>
           </div>
           <div style={{ marginTop: '20px', padding: '14px 18px', borderLeft: '3px solid rgba(201,168,76,0.5)', background: 'rgba(201,168,76,0.04)', borderRadius: '0 8px 8px 0' }}>
             <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.6)', lineHeight: 1.8, margin: 0 }}>
               このまま放置すると、外見の悩みは来年も再来年も残る。<br />
               <strong style={{ color: 'rgba(240,236,228,0.85)' }}>問題は「やる気」ではなく「順番」だ。</strong>
             </p>
+          </div>
+        </section>
+
+        {/* ── 損失の可視化 ── */}
+        <section style={{ padding: 'clamp(44px,8vw,68px) 20px', background: 'rgba(6,4,12,0.9)', borderTop: '1px solid rgba(232,228,220,0.06)', borderBottom: '1px solid rgba(232,228,220,0.06)' }}>
+          <div style={{ maxWidth: '680px', margin: '0 auto' }}>
+            <p style={{ fontSize: 'clamp(22px,5vw,34px)', fontWeight: 900, fontFamily: 'Georgia, "Times New Roman", serif', color: '#fff', lineHeight: 1.5, marginBottom: '36px', textAlign: 'center' }}>
+              今日も、チャンスが<br /><span style={{ color: 'rgba(240,236,228,0.3)' }}>通り過ぎている。</span>
+            </p>
+            {[
+              ['📱', 'マッチングアプリで「なぜかマッチしない」と感じているとき、その原因は写真のどこかにある。どこかわからないまま毎月課金を続けることのコスト。'],
+              ['👤', '初対面の3秒で、人はあなたへの印象を決めている。その3秒をコントロールする方法を知らないまま、今日も誰かと会っている。'],
+              ['⏳', '「変わろう」と思った日から何年経ちましたか。情報はある。時間もある。なのに動けないのは、最初の一手が見えていないから。'],
+            ].map(([emoji, text], i, arr) => (
+              <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', padding: '20px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(232,228,220,0.06)' : 'none' }}>
+                <span style={{ fontSize: '20px', flexShrink: 0, marginTop: '2px', opacity: 0.5 }}>{emoji}</span>
+                <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.5)', lineHeight: 1.9, margin: 0 }}>{text}</p>
+              </div>
+            ))}
+            <div style={{ marginTop: '36px', padding: 'clamp(20px,4vw,32px)', background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: '16px', textAlign: 'center' }}>
+              <p style={{ fontSize: 'clamp(16px,3.5vw,21px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: 'rgba(240,236,228,0.88)', lineHeight: 1.75, margin: 0 }}>
+                問題は「やる気」でも「お金」でもない。<br />
+                <span style={{ color: '#c9a84c' }}>「どこを、どの順番で」</span>を<br />
+                誰も教えてくれなかっただけだ。
+              </p>
+            </div>
           </div>
         </section>
 
@@ -570,10 +602,17 @@ export default function MirrorLpPage() {
               変われないと思っている<br />
               <span style={{ color: '#c9a84c' }}>あなたへ。</span>
             </h2>
-            <p style={{ fontSize: 'clamp(13px,2.5vw,16px)', color: 'rgba(240,236,228,0.5)', marginBottom: '36px', lineHeight: 1.9 }}>
+            <p style={{ fontSize: 'clamp(13px,2.5vw,16px)', color: 'rgba(240,236,228,0.5)', marginBottom: '28px', lineHeight: 1.9 }}>
               「未開発の魅力」は、必ずある。<br />
               写真1枚が、その地図の始まりです。
             </p>
+            <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: '14px', padding: '16px 20px', marginBottom: '28px', textAlign: 'left' }}>
+              <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.65)', lineHeight: 1.9, margin: 0 }}>
+                このページを閉じると、また「いつかやろう」に戻ります。<br />
+                写真1枚・20〜40秒。それだけで<strong style={{ color: 'rgba(240,236,228,0.9)' }}>「何から変えればいいか」がわかる</strong>。<br />
+                <span style={{ color: 'rgba(201,168,76,0.7)', fontSize: '13px' }}>無料部分だけ見て、続きは自分で判断できます。</span>
+              </p>
+            </div>
             <Link href="/mirror" className="m-cta-btn" style={{
               display: 'inline-block', padding: 'clamp(16px,3.5vw,22px) clamp(44px,8vw,72px)',
               borderRadius: '14px', color: '#0a0f1e', fontWeight: 900,
