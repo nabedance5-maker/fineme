@@ -466,6 +466,20 @@ export default function MirrorPage() {
             </div>
           )}
 
+          {/* 分析した写真（現セッションのみ表示） */}
+          {previewFile && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+              <div style={{ position: 'relative', width: '96px', flexShrink: 0 }}>
+                <img
+                  src={previewFile}
+                  alt="分析した写真"
+                  style={{ width: '96px', height: '96px', objectFit: 'cover', objectPosition: 'center top', borderRadius: '50%', border: '2px solid rgba(201,168,76,0.4)', display: 'block' }}
+                />
+                <span style={{ position: 'absolute', bottom: 0, right: 0, fontSize: '16px', lineHeight: 1 }}>🪞</span>
+              </div>
+            </div>
+          )}
+
           {/* 第一印象 */}
           <div className="first-impression">
             <p style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(201,168,76,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '10px' }}>First Impression</p>
