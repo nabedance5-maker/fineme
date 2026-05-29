@@ -344,26 +344,30 @@ export default function MirrorLpPage() {
 
         {/* ── ChatGPT との違い ── */}
         <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div className="m-tag">ChatGPTとはここが違う</div>
+          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+            <div className="m-tag">汎用ツールと専門ツールの差</div>
             <h2 style={{ fontSize: 'clamp(18px,4vw,28px)', fontWeight: 900, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
-              印象コメントで終わるか、<br />
-              <span style={{ color: '#c9a84c' }}>地図になるか。</span>
+              ChatGPTでも分析はできる。<br />
+              <span style={{ color: '#c9a84c' }}>でも、目的が違う。</span>
             </h2>
+            <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.45)', marginTop: '12px', lineHeight: 1.85 }}>
+              プロンプトを工夫すれば、ChatGPTにも写真の印象を聞けます。<br />
+              Fineme Mirrorは「男性の外見改善」という一点に絞り込んだ専用設計です。
+            </p>
           </div>
 
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             {/* ChatGPT */}
             <div style={{ flex: '1 1 240px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '16px', padding: '20px' }}>
-              <p style={{ fontSize: '12px', fontWeight: 800, color: 'rgba(232,228,220,0.3)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '16px' }}>汎用AI（ChatGPT等）</p>
+              <p style={{ fontSize: '12px', fontWeight: 800, color: 'rgba(232,228,220,0.35)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '16px' }}>汎用AI（ChatGPT等）</p>
               {[
-                '「清潔感がありますね」で終わる',
-                '何を、どの順番で変えるかは出ない',
-                '7軸の優先度判定はできない',
-                '分析は一回完結・その後に続かない',
-              ].map((t, i) => (
-                <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', fontSize: '13px', color: 'rgba(232,228,220,0.4)', lineHeight: 1.7 }}>
-                  <span style={{ flexShrink: 0, color: 'rgba(200,80,80,0.6)', fontWeight: 800 }}>✗</span>
+                ['✓', 'プロンプト次第で写真の印象を教えてくれる'],
+                ['✓', '幅広い質問に即座に答えられる'],
+                ['△', '外見改善に特化した学習・ロジックではない'],
+                ['△', '分析結果が次のアクションに連動しない'],
+              ].map(([mark, t], i) => (
+                <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', fontSize: '13px', lineHeight: 1.7, color: mark === '✓' ? 'rgba(232,228,220,0.6)' : 'rgba(232,228,220,0.35)' }}>
+                  <span style={{ flexShrink: 0, fontWeight: 800, color: mark === '✓' ? 'rgba(232,228,220,0.4)' : 'rgba(232,228,220,0.2)' }}>{mark}</span>
                   <span>{t}</span>
                 </div>
               ))}
@@ -373,9 +377,9 @@ export default function MirrorLpPage() {
             <div style={{ flex: '1 1 240px', background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: '16px', padding: '20px', boxShadow: '0 0 28px rgba(201,168,76,0.07)' }}>
               <p style={{ fontSize: '12px', fontWeight: 800, color: '#c9a84c', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '16px' }}>🪞 Fineme Mirror</p>
               {[
-                '7軸ごとに「変容余地 高/中/低」を判定',
-                '根拠＋費用感つきの具体的アクションが出る',
-                '最初に変えるべき一手（Compass Action）が明示',
+                '外見磨きに特化した7軸フレームワーク＋独自ロジックで高精度判定',
+                '変容余地の優先順位と根拠・費用感つきアクションが自動で出る',
+                '最初に変えるべき一手（Compass Action）が明示される',
                 '分析結果から New Me Map（外見改善ロードマップ）が生成される',
               ].map((t, i) => (
                 <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', fontSize: '13px', color: 'rgba(240,236,228,0.8)', lineHeight: 1.7 }}>
