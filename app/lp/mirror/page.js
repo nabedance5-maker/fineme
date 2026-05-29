@@ -342,6 +342,62 @@ export default function MirrorLpPage() {
           </div>
         </section>
 
+        {/* ── ChatGPT との違い ── */}
+        <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <div className="m-tag">ChatGPTとはここが違う</div>
+            <h2 style={{ fontSize: 'clamp(18px,4vw,28px)', fontWeight: 900, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
+              印象コメントで終わるか、<br />
+              <span style={{ color: '#c9a84c' }}>地図になるか。</span>
+            </h2>
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            {/* ChatGPT */}
+            <div style={{ flex: '1 1 240px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '16px', padding: '20px' }}>
+              <p style={{ fontSize: '12px', fontWeight: 800, color: 'rgba(232,228,220,0.3)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '16px' }}>汎用AI（ChatGPT等）</p>
+              {[
+                '「清潔感がありますね」で終わる',
+                '何を、どの順番で変えるかは出ない',
+                '7軸の優先度判定はできない',
+                '分析は一回完結・その後に続かない',
+              ].map((t, i) => (
+                <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', fontSize: '13px', color: 'rgba(232,228,220,0.4)', lineHeight: 1.7 }}>
+                  <span style={{ flexShrink: 0, color: 'rgba(200,80,80,0.6)', fontWeight: 800 }}>✗</span>
+                  <span>{t}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Fineme Mirror */}
+            <div style={{ flex: '1 1 240px', background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: '16px', padding: '20px', boxShadow: '0 0 28px rgba(201,168,76,0.07)' }}>
+              <p style={{ fontSize: '12px', fontWeight: 800, color: '#c9a84c', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '16px' }}>🪞 Fineme Mirror</p>
+              {[
+                '7軸ごとに「変容余地 高/中/低」を判定',
+                '根拠＋費用感つきの具体的アクションが出る',
+                '最初に変えるべき一手（Compass Action）が明示',
+                '分析結果から New Me Map（外見改善ロードマップ）が生成される',
+              ].map((t, i) => (
+                <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', fontSize: '13px', color: 'rgba(240,236,228,0.8)', lineHeight: 1.7 }}>
+                  <span style={{ flexShrink: 0, color: '#c9a84c', fontWeight: 800 }}>✓</span>
+                  <span>{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* New Me Map 説明 */}
+          <div style={{ marginTop: '20px', padding: '18px 20px', background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: '14px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '22px', flexShrink: 0 }}>🗺️</span>
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: 800, color: 'rgba(240,236,228,0.85)', marginBottom: '6px' }}>New Me Map とは？</p>
+              <p style={{ fontSize: '13px', color: 'rgba(240,236,228,0.5)', lineHeight: 1.8, margin: 0 }}>
+                Mirror分析の結果をもとに、「何を、どの順番で、どこまでやるか」を可視化した外見改善のロードマップ。ChatGPTには生成できない、Fineme独自の仕組みです。
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* ── ⑥ 無料 vs 有料 ── */}
         <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
@@ -581,7 +637,6 @@ export default function MirrorLpPage() {
             </div>
             {[
               ['どんな写真を使えばいいですか？', '顔写真または全身写真を推奨します。自撮りでも構いません。明るい場所で撮影した正面・斜め45度の写真が最も精度が高くなります。'],
-              ['ChatGPTでも写真分析できるのでは？', 'はい、できます。ただし汎用AIは「印象コメント」を出すことはできても、7軸ごとの変容余地判定・費用感つきの具体的アクション・最初に変えるべき一手の提示（Compass Action）は出力されません。Fineme Mirrorは外見改善の順番と地図に特化した専用設計です。'],
               ['決済はどうなりますか？', 'Stripe（クレジットカード）での一回払いです。定期課金や自動更新はありません。決済後、即座に詳細分析結果が表示されます。'],
               ['スマートフォンでも使えますか？', 'はい。PCでもスマートフォンでもご利用いただけます。写真はカメラロールから選択またはカメラで撮影して直接アップロードできます。'],
               ['分析にどのくらい時間がかかりますか？', '通常、写真のアップロードから分析結果表示まで20〜40秒程度です。通信環境によって多少前後します。'],
