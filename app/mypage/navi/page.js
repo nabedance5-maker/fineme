@@ -887,6 +887,30 @@ export default function NewMeNaviPage() {
       return;
     }
 
+    // ── Me Scanが最新Mapより新しい場合は自動生成（古いMapを見せない） ──
+    if (token && p?.at) {
+      const diagAt = new Date(p.at).getTime();
+      const mapAt = naviStepsData?.generated_at ? new Date(naviStepsData.generated_at).getTime() : 0;
+      if (diagAt > mapAt) {
+        const isFirstTime = !naviStepsData;
+        root.innerHTML = `<div style="min-height:40vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:48px 20px;text-align:center">
+          <div style="font-size:36px">🧭</div>
+          <p style="font-size:15px;font-weight:700;color:rgba(232,228,220,0.85)">${isFirstTime ? 'あなた専用のMapを生成しています…' : '新しいMe Scanを反映してMapを更新しています…'}</p>
+          <p style="font-size:12px;color:rgba(232,228,220,0.4)">20〜40秒ほどかかります。そのままお待ちください。</p>
+        </div>`;
+        try {
+          const genRes = await fetch('/api/me/navi-steps/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ diagnosis: p, body_data: bodyData }),
+          });
+          if (genRes.ok) { window.location.reload(); return; }
+          // 429（本日生成済み）またはエラー → 既存Mapをそのまま表示
+        } catch {}
+        root.innerHTML = '';
+      }
+    }
+
     function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     // ── 定数 ──
