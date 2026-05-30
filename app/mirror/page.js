@@ -110,25 +110,22 @@ export default function MirrorPage() {
       window.history.replaceState({}, '', '/mirror');
     }
 
-    // 過去セッション一覧を取得
+    let authUserId = null, authToken = null;
+    try {
+      const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (sbKey) {
+        const obj = JSON.parse(localStorage.getItem(sbKey) || 'null');
+        authUserId = obj?.user?.id || null;
+        authToken = obj?.access_token || null;
+      }
+    } catch {}
+
     const loadPastSessions = async () => {
-      // ログインユーザーのsession一覧（user_id紐付け）
-      let userId = null;
-      try {
-        const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-        if (sbKey) {
-          const obj = JSON.parse(localStorage.getItem(sbKey) || 'null');
-          userId = obj?.user?.id || null;
-        }
-      } catch {}
-
       const localIds = getLocalSessionIds();
-      if (!userId && !localIds.length) return;
-
-      const url = userId
-        ? `/api/mirror/sessions?user_id=${userId}`
+      if (!authUserId && !localIds.length) return;
+      const url = authUserId
+        ? `/api/mirror/sessions?user_id=${authUserId}`
         : `/api/mirror/sessions?ids=${localIds.join(',')}`;
-
       try {
         const res = await fetch(url);
         const data = await res.json();
@@ -136,18 +133,11 @@ export default function MirrorPage() {
       } catch {}
     };
 
-    loadPastSessions();
-
-    // サブスク状態取得（ログイン済みのみ）
     const loadSubStatus = async () => {
+      if (!authToken) return;
       try {
-        const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-        if (!sbKey) return;
-        const obj = JSON.parse(localStorage.getItem(sbKey) || 'null');
-        const token = obj?.access_token;
-        if (!token) return;
         const res = await fetch('/api/subscription/status', {
-          headers: { 'Authorization': `Bearer ${token}` },
+          headers: { 'Authorization': `Bearer ${authToken}` },
         });
         if (res.ok) {
           const data = await res.json();
@@ -155,6 +145,8 @@ export default function MirrorPage() {
         }
       } catch {}
     };
+
+    loadPastSessions();
     loadSubStatus();
   }, []);
 
@@ -466,17 +458,14 @@ export default function MirrorPage() {
             </div>
           )}
 
-          {/* 分析した写真（現セッションのみ表示） */}
           {previewFile && (
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-              <div style={{ position: 'relative', width: '96px', flexShrink: 0 }}>
-                <img
-                  src={previewFile}
-                  alt="分析した写真"
-                  style={{ width: '96px', height: '96px', objectFit: 'cover', objectPosition: 'center top', borderRadius: '50%', border: '2px solid rgba(201,168,76,0.4)', display: 'block' }}
-                />
-                <span style={{ position: 'absolute', bottom: 0, right: 0, fontSize: '16px', lineHeight: 1 }}>🪞</span>
-              </div>
+            <div style={{ position: 'relative', width: '96px', margin: '0 auto 24px' }}>
+              <img
+                src={previewFile}
+                alt="分析した写真"
+                style={{ width: '96px', height: '96px', objectFit: 'cover', objectPosition: 'center top', borderRadius: '50%', border: '2px solid rgba(201,168,76,0.4)', display: 'block' }}
+              />
+              <span style={{ position: 'absolute', bottom: 0, right: 0, fontSize: '16px', lineHeight: 1 }}>🪞</span>
             </div>
           )}
 

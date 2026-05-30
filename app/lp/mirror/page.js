@@ -365,12 +365,15 @@ export default function MirrorLpPage() {
                 ['✓', '幅広い質問に即座に答えられる'],
                 ['△', '外見改善に特化した学習・ロジックではない'],
                 ['△', '分析結果が次のアクションに連動しない'],
-              ].map(([mark, t], i) => (
-                <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', fontSize: '13px', lineHeight: 1.7, color: mark === '✓' ? 'rgba(232,228,220,0.6)' : 'rgba(232,228,220,0.35)' }}>
-                  <span style={{ flexShrink: 0, fontWeight: 800, color: mark === '✓' ? 'rgba(232,228,220,0.4)' : 'rgba(232,228,220,0.2)' }}>{mark}</span>
-                  <span>{t}</span>
-                </div>
-              ))}
+              ].map(([mark, t], i) => {
+                const pos = mark === '✓';
+                return (
+                  <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', fontSize: '13px', lineHeight: 1.7, color: pos ? 'rgba(232,228,220,0.6)' : 'rgba(232,228,220,0.35)' }}>
+                    <span style={{ flexShrink: 0, fontWeight: 800, color: pos ? 'rgba(232,228,220,0.4)' : 'rgba(232,228,220,0.2)' }}>{mark}</span>
+                    <span>{t}</span>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Fineme Mirror */}
