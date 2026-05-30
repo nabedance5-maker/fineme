@@ -255,7 +255,7 @@ export default function NewMeLogPage() {
         `<option value="${id}"${log?.axis === id ? ' selected' : ''}>${def.icon} ${def.label}</option>`
       ).join('');
 
-      const modal = document.getElementById('log-modal');
+      const overlay = document.getElementById('log-modal-overlay');
       const title = document.getElementById('log-modal-title');
       title.textContent = log ? 'サービスを編集' : '新しいサービスを登録';
 
@@ -268,14 +268,14 @@ export default function NewMeLogPage() {
       document.getElementById('log-provider-search-input').value = log?.provider_slug ? `（登録済み）${log.provider_slug}` : '';
       providerSearchResults = [];
       renderProviderResults();
-      modal.classList.remove('hidden');
+      overlay.classList.remove('hidden');
 
       // 軸変更で理想頻度ヒントを更新
       updateFreqHint();
     }
 
     function closeModal() {
-      document.getElementById('log-modal').classList.add('hidden');
+      document.getElementById('log-modal-overlay').classList.add('hidden');
       editingId = null;
       selectedProvider = null;
     }
