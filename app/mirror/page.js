@@ -547,14 +547,39 @@ export default function MirrorPage() {
                 各軸の詳細分析・具体的な改善ヒント・<br />
                 Me ScanのCompassに連動した「最初の一手」提案
               </p>
-              <button
-                className="purchase-btn"
-                onClick={handlePurchase}
-                disabled={purchasing}
-              >
-                {purchasing ? '決済画面に移動中…' : '🪞 ¥500 で全体を見る'}
-              </button>
-              <p className="purchase-note">クレジットカード決済 / 7日間有効 / 一度購入すると再閲覧可能</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
+                <button
+                  className="purchase-btn"
+                  onClick={handlePurchase}
+                  disabled={purchasing}
+                >
+                  {purchasing ? '決済画面に移動中…' : '🪞 ¥500 で全体を見る'}
+                </button>
+
+                {!subStatus?.isActive && (
+                  <a
+                    href="/mypage/subscription"
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '8px',
+                      padding: '13px 28px',
+                      border: '1px solid rgba(201,168,76,0.5)',
+                      borderRadius: '12px',
+                      fontSize: '14px', fontWeight: '800',
+                      color: '#c9a84c',
+                      textDecoration: 'none',
+                      background: 'rgba(201,168,76,0.06)',
+                    }}
+                  >
+                    ♾️ ¥780/月 — 月3回まで無料で使う
+                  </a>
+                )}
+              </div>
+
+              <p className="purchase-note" style={{ marginTop: '12px' }}>
+                {subStatus?.isActive
+                  ? 'クレジットカード決済 / 7日間有効 / 一度購入すると再閲覧可能'
+                  : '単発¥500 または サブスク¥780/月（月3回分含む・いつでも解約可）'}
+              </p>
               {error && <p className="error-msg" style={{ marginTop: '12px' }}>{error}</p>}
             </div>
           )}
