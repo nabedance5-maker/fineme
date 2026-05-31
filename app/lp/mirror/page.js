@@ -52,6 +52,9 @@ export default function MirrorLpPage() {
         .m-hero-mirror-ring { animation: mirror-ring-spin 40s linear infinite; }
         .m-sample-card { background: rgba(10,15,30,0.6); border-radius: 14px; padding: 18px 20px; position: relative; overflow: hidden; }
         .m-sample-badge { font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 20px; letter-spacing: .06em; white-space: nowrap; display: inline-block; margin-bottom: 10px; }
+        @media (max-width: 640px) {
+          .m-hero-mirror-ring, .m-sweep, .m-particle, .m-orb-l, .m-orb-r { animation: none !important; }
+        }
       ` }} />
 
       <main style={{ background: '#080d1a', minHeight: '100vh', color: 'rgba(240,236,228,0.88)', fontFamily: '-apple-system, sans-serif' }}>
@@ -67,10 +70,8 @@ export default function MirrorLpPage() {
           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '820px', height: '820px', borderRadius: '50%', border: '1px solid rgba(201,168,76,0.03)', pointerEvents: 'none' }} />
           <div className="m-sweep" style={{ position: 'absolute', top: 0, width: '25%', height: '100%', background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.025) 50%, transparent 100%)', transform: 'skewX(-12deg)', pointerEvents: 'none' }} />
           {[
-            [7,18,0,3.8],[14,52,1.0,4.3],[21,78,2.1,3.2],[33,28,0.4,4.8],
-            [44,68,1.5,3.6],[53,85,0.1,4.1],[61,42,2.6,3.5],[70,22,0.7,4.5],
-            [78,60,1.9,3.9],[86,38,0.3,4.2],[93,72,2.3,3.3],[4,90,1.3,4.7],
-            [50,12,0.9,3.7],[30,92,2.8,4.0],[64,88,0.5,3.4],
+            [7,18,0,3.8],[21,78,2.1,3.2],[44,68,1.5,3.6],[61,42,2.6,3.5],
+            [78,60,1.9,3.9],[93,72,2.3,3.3],[50,12,0.9,3.7],[30,92,2.8,4.0],
           ].map(([left, bottom, delay, dur], i) => (
             <div key={i} className="m-particle" style={{
               position: 'absolute', left: `${left}%`, bottom: `${bottom}%`,
@@ -82,26 +83,22 @@ export default function MirrorLpPage() {
             }} />
           ))}
           <div className="m-hero-mirror-ring" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'clamp(320px,55vw,560px)', height: 'clamp(320px,55vw,560px)', borderRadius: '50%', border: '1px dashed rgba(201,168,76,0.2)', pointerEvents: 'none', zIndex: 1 }} />
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'clamp(280px,48vw,480px)', height: 'clamp(280px,48vw,480px)', borderRadius: '50%', overflow: 'hidden', opacity: 0.18, pointerEvents: 'none', zIndex: 1 }}>
-            <img src="https://images.unsplash.com/photo-Y6L_zTbSmbs?auto=format&fit=crop&w=700&q=80" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
-          </div>
           <div style={{ position: 'relative', zIndex: 2, maxWidth: '660px', margin: '0 auto', width: '100%' }}>
             <div className="m-fade" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.18em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '20px' }}>
               🪞 Fineme Mirror
             </div>
             <h1 className="m-fade m-fade-d1" style={{ fontSize: 'clamp(26px,6.5vw,48px)', fontWeight: 900, fontFamily: 'Georgia, "Times New Roman", serif', lineHeight: 1.3, color: '#fff', marginBottom: '22px' }}>
-              非モテから憧れの男へ。<br />
-              写真1枚で、あなたの<br />
-              <span style={{ color: '#c9a84c' }}>「未開発の魅力」</span><br />
-              が地図になる。
+              「清潔感がない」と言われた。<br />
+              でも<span style={{ color: '#c9a84c' }}>“どこを”</span>とは、<br />
+              誰も教えてくれなかった。<br />
+              写真1枚が、その答えになる。
             </h1>
             <p className="m-fade m-fade-d2" style={{ fontSize: 'clamp(13px,2.5vw,16px)', color: 'rgba(240,236,228,0.55)', lineHeight: 1.85, marginBottom: '10px' }}>
-              鏡は嘘をつく。でも、AIは本当の可能性を見せる。
+              鏡だけでは気づけない伸びしろを、AIが映し出す。
             </p>
             <p className="m-fade m-fade-d2" style={{ fontSize: 'clamp(14px,2.8vw,17px)', color: 'rgba(240,236,228,0.65)', lineHeight: 2.0, marginBottom: '36px' }}>
               AIが7軸で分析。眉・肌・ヘア・姿勢・体型・服・爪。<br />
-              今のあなたが「最も変わりやすい場所」を地図にします。<br />
-              <span style={{ color: 'rgba(201,168,76,0.7)', fontWeight: 700 }}>写真はサーバーに保存されません。</span>
+              今のあなたが「最も変わりやすい場所」を地図にします。
             </p>
             <div className="m-fade m-fade-d3">
               <Link href="/mirror" className="m-cta-btn" style={{
@@ -110,22 +107,22 @@ export default function MirrorLpPage() {
                 fontSize: 'clamp(16px,2.8vw,20px)', textDecoration: 'none',
                 boxShadow: '0 8px 32px rgba(201,168,76,0.4)',
               }}>
-                Mirrorを試す →
+                無料で試す →
               </Link>
-              <p className="m-fade m-fade-d4" style={{ fontSize: '12px', color: 'rgba(240,236,228,0.3)', marginTop: '10px' }}>
-                分析後、プレビューを確認してから購入できます
+              <p className="m-fade m-fade-d4" style={{ fontSize: 'clamp(12px,2.3vw,14px)', color: 'rgba(201,168,76,0.85)', fontWeight: 700, marginTop: '12px', lineHeight: 1.7 }}>
+                無料で7軸の概要が見れる。続きが要らなければ1円も払わなくていい。
               </p>
-              <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.2)', marginTop: '4px' }}>
-                Stripe決済（クレジットカード）・写真はAI分析後に削除
+              <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.25)', marginTop: '6px' }}>
+                続きは¥500（任意）・Stripe決済・写真はAI分析後に削除
               </p>
             </div>
           </div>
         </section>
 
-        {/* ── ② 問題提起（感情エスカレーション）── */}
+        {/* ── ② 問題提起 → 機会損失（統合・感情エスカレーション）── */}
         <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
           <div className="m-tag">こんな経験はありませんか？</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
             <div className="m-pain-item">
               <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>🤔</span>
               <span style={{ fontSize: '14px', color: 'rgba(240,236,228,0.75)', lineHeight: 1.75 }}>
@@ -135,13 +132,7 @@ export default function MirrorLpPage() {
             <div className="m-pain-item" style={{ borderColor: 'rgba(201,168,76,0.2)' }}>
               <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>📸</span>
               <span style={{ fontSize: '14px', color: 'rgba(240,236,228,0.80)', lineHeight: 1.75 }}>
-                写真に映る自分と、鏡の中の自分が別人に見える。でも<strong style={{ color: 'rgba(240,236,228,0.9)' }}>「どこが」問題なのか言語化できない。</strong>
-              </span>
-            </div>
-            <div className="m-pain-item" style={{ borderColor: 'rgba(201,168,76,0.35)', background: 'rgba(201,168,76,0.04)' }}>
-              <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>💸</span>
-              <span style={{ fontSize: '14px', color: 'rgba(240,236,228,0.85)', lineHeight: 1.75 }}>
-                ジム、眉毛サロン、美容院——全部試した。<strong style={{ color: 'rgba(240,236,228,0.95)' }}>変わった気がするけど、本当に効果があったのか確信が持てない。</strong>
+                マッチングアプリで「なぜかマッチしない」。原因は写真のどこかにあるのに、<strong style={{ color: 'rgba(240,236,228,0.9)' }}>「どこが」問題なのか言語化できない。</strong>
               </span>
             </div>
             <div className="m-pain-item" style={{ borderColor: 'rgba(180,60,60,0.35)', background: 'rgba(180,60,60,0.04)' }}>
@@ -151,37 +142,28 @@ export default function MirrorLpPage() {
               </span>
             </div>
           </div>
-          <div style={{ marginTop: '20px', padding: '14px 18px', borderLeft: '3px solid rgba(201,168,76,0.5)', background: 'rgba(201,168,76,0.04)', borderRadius: '0 8px 8px 0' }}>
-            <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.6)', lineHeight: 1.8, margin: 0 }}>
-              このまま放置すると、外見の悩みは来年も再来年も残る。<br />
-              <strong style={{ color: 'rgba(240,236,228,0.85)' }}>問題は「やる気」ではなく「順番」だ。</strong>
-            </p>
-          </div>
-        </section>
 
-        {/* ── 損失の可視化 ── */}
-        <section style={{ padding: 'clamp(44px,8vw,68px) 20px', background: 'rgba(6,4,12,0.9)', borderTop: '1px solid rgba(232,228,220,0.06)', borderBottom: '1px solid rgba(232,228,220,0.06)' }}>
-          <div style={{ maxWidth: '680px', margin: '0 auto' }}>
-            <p style={{ fontSize: 'clamp(22px,5vw,34px)', fontWeight: 900, fontFamily: 'Georgia, "Times New Roman", serif', color: '#fff', lineHeight: 1.5, marginBottom: '36px', textAlign: 'center' }}>
-              今日も、チャンスが<br /><span style={{ color: 'rgba(240,236,228,0.3)' }}>通り過ぎている。</span>
-            </p>
+          <p style={{ fontSize: 'clamp(20px,4.5vw,30px)', fontWeight: 900, fontFamily: 'Georgia, "Times New Roman", serif', color: '#fff', lineHeight: 1.5, marginBottom: '28px', textAlign: 'center' }}>
+            その間も、チャンスは<br /><span style={{ color: 'rgba(240,236,228,0.3)' }}>通り過ぎている。</span>
+          </p>
+          <div style={{ background: 'rgba(6,4,12,0.5)', border: '1px solid rgba(232,228,220,0.06)', borderRadius: '16px', padding: '4px 20px', marginBottom: '28px' }}>
             {[
-              ['📱', 'マッチングアプリで「なぜかマッチしない」と感じているとき、その原因は写真のどこかにある。どこかわからないまま毎月課金を続けることのコスト。'],
-              ['👤', '初対面の3秒で、人はあなたへの印象を決めている。その3秒をコントロールする方法を知らないまま、今日も誰かと会っている。'],
-              ['⏳', '「変わろう」と思った日から何年経ちましたか。情報はある。時間もある。なのに動けないのは、最初の一手が見えていないから。'],
+              ['📱', '初対面の3秒で、人はあなたへの印象を決めている。その3秒をコントロールする方法を知らないまま、今日も誰かと会っている。'],
+              ['👤', 'ジム・眉毛サロン・美容院——お金をかけても「効果があったのか」確信が持てない。順番がわからないまま投資し続けるコスト。'],
+              ['⏳', '情報はある。時間もある。なのに動けないのは、最初の一手が見えていないから。'],
             ].map(([emoji, text], i, arr) => (
-              <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', padding: '20px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(232,228,220,0.06)' : 'none' }}>
+              <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', padding: '18px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(232,228,220,0.06)' : 'none' }}>
                 <span style={{ fontSize: '20px', flexShrink: 0, marginTop: '2px', opacity: 0.5 }}>{emoji}</span>
                 <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.5)', lineHeight: 1.9, margin: 0 }}>{text}</p>
               </div>
             ))}
-            <div style={{ marginTop: '36px', padding: 'clamp(20px,4vw,32px)', background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: '16px', textAlign: 'center' }}>
-              <p style={{ fontSize: 'clamp(16px,3.5vw,21px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: 'rgba(240,236,228,0.88)', lineHeight: 1.75, margin: 0 }}>
-                問題は「やる気」でも「お金」でもない。<br />
-                <span style={{ color: '#c9a84c' }}>「どこを、どの順番で」</span>を<br />
-                誰も教えてくれなかっただけだ。
-              </p>
-            </div>
+          </div>
+          <div style={{ padding: 'clamp(20px,4vw,32px)', background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: '16px', textAlign: 'center' }}>
+            <p style={{ fontSize: 'clamp(16px,3.5vw,21px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: 'rgba(240,236,228,0.88)', lineHeight: 1.75, margin: 0 }}>
+              問題は「やる気」でも「お金」でもない。<br />
+              <span style={{ color: '#c9a84c' }}>「どこを、どの順番で」</span>を<br />
+              誰も教えてくれなかっただけだ。
+            </p>
           </div>
         </section>
 
@@ -191,7 +173,7 @@ export default function MirrorLpPage() {
             <div style={{ textAlign: 'center', marginBottom: '28px' }}>
               <div className="m-tag">このツールを作った人</div>
               <h2 style={{ fontSize: 'clamp(18px,4vw,26px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
-                元非モテ芋男から、<br />
+                モテなかった頃から、<br />
                 <span style={{ color: '#c9a84c' }}>現役モデルへ。</span>
               </h2>
             </div>
@@ -239,7 +221,7 @@ export default function MirrorLpPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: '14px', fontWeight: 800, color: 'rgba(240,236,228,0.9)' }}>でお（渡邉 英雄）</div>
-                  <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.4)', marginTop: '2px' }}>Fineme 代表 ／ 元非モテ芋男 → 現役モデル</div>
+                  <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.4)', marginTop: '2px' }}>Fineme 代表 ／ モテなかった頃の自分 → 現役モデル</div>
                 </div>
               </div>
             </div>
@@ -336,30 +318,30 @@ export default function MirrorLpPage() {
             </p>
             <div style={{ textAlign: 'center', marginTop: '24px' }}>
               <Link href="/mirror" className="m-cta-btn" style={{ display: 'inline-block', padding: '15px 44px', borderRadius: '12px', color: '#0a0f1e', fontWeight: 900, fontSize: '16px', textDecoration: 'none', boxShadow: '0 6px 24px rgba(201,168,76,0.35)' }}>
-                自分の分析を見る →
+                自分の第一印象を見る →
               </Link>
             </div>
           </div>
         </section>
 
-        {/* ── ChatGPT との違い ── */}
+        {/* ── なぜ専用設計か ── */}
         <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
             <div className="m-tag">汎用ツールと専門ツールの差</div>
             <h2 style={{ fontSize: 'clamp(18px,4vw,28px)', fontWeight: 900, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
-              ChatGPTでも分析はできる。<br />
-              <span style={{ color: '#c9a84c' }}>でも、目的が違う。</span>
+              なぜ、<span style={{ color: '#c9a84c' }}>専用設計</span>が<br />
+              必要か。
             </h2>
             <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.45)', marginTop: '12px', lineHeight: 1.85 }}>
-              プロンプトを工夫すれば、ChatGPTにも写真の印象を聞けます。<br />
+              写真の印象を「聞く」だけなら、他の手段もあります。<br />
               Fineme Mirrorは「男性の外見改善」という一点に絞り込んだ専用設計です。
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            {/* ChatGPT */}
+            {/* 汎用AI */}
             <div style={{ flex: '1 1 240px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '16px', padding: '20px' }}>
-              <p style={{ fontSize: '12px', fontWeight: 800, color: 'rgba(232,228,220,0.35)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '16px' }}>汎用AI（ChatGPT等）</p>
+              <p style={{ fontSize: '12px', fontWeight: 800, color: 'rgba(232,228,220,0.35)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '16px' }}>汎用AI</p>
               {[
                 ['✓', 'プロンプト次第で写真の印象を教えてくれる'],
                 ['✓', '幅広い質問に即座に答えられる'],
@@ -399,7 +381,7 @@ export default function MirrorLpPage() {
             <div>
               <p style={{ fontSize: '13px', fontWeight: 800, color: 'rgba(240,236,228,0.85)', marginBottom: '6px' }}>New Me Map とは？</p>
               <p style={{ fontSize: '13px', color: 'rgba(240,236,228,0.5)', lineHeight: 1.8, margin: 0 }}>
-                Mirror分析の結果をもとに、「何を、どの順番で、どこまでやるか」を可視化した外見改善のロードマップ。ChatGPTには生成できない、Fineme独自の仕組みです。
+                Mirror分析の結果をもとに、「何を、どの順番で、どこまでやるか」を可視化した外見改善のロードマップ。汎用AIには生成できない、Fineme独自の仕組みです。
               </p>
             </div>
           </div>
@@ -444,37 +426,57 @@ export default function MirrorLpPage() {
           </div>
           <div style={{ textAlign: 'center', marginTop: '32px' }}>
             <Link href="/mirror" className="m-cta-btn" style={{ display: 'inline-block', padding: '16px 52px', borderRadius: '12px', color: '#0a0f1e', fontWeight: 900, fontSize: '17px', textDecoration: 'none', boxShadow: '0 8px 32px rgba(201,168,76,0.4)' }}>
-              Mirrorを試す →
+              最初の一手を知る →
             </Link>
           </div>
         </section>
 
-        {/* ── ⑦ 価格の比較 ── */}
+        {/* ── ⑦ Mirror vs 何もしない現状 ── */}
         <section style={{ padding: 'clamp(44px,8vw,68px) 20px', background: 'rgba(10,15,30,0.65)', borderTop: '1px solid rgba(201,168,76,0.1)', borderBottom: '1px solid rgba(201,168,76,0.1)' }}>
           <div style={{ maxWidth: '620px', margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-              <div className="m-tag">¥500でできること</div>
+              <div className="m-tag">本当の比較対象</div>
               <h2 style={{ fontSize: 'clamp(18px,4vw,26px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
-                最初の一手を間違えない<br />ための、¥500の投資。
+                高い診断と比べる前に。<br />「何もしない現状」と比べてみる。
               </h2>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: '16px', padding: '8px 24px' }}>
-              {[
-                ['ChatGPT（汎用AI）', '無料だが「順番」は出ない'],
-                ['スタイリスト個人相談', '¥5,000〜¥30,000'],
-                ['骨格診断（プロ）', '¥10,000〜¥30,000'],
-                ['パーソナルカラー診断', '¥8,000〜¥20,000'],
-                ['Fineme Mirror', '¥500', true],
-              ].map(([label, price, featured]) => (
-                <div key={label} className="m-compare-row" style={featured ? { color: '#c9a84c' } : {}}>
-                  <span style={{ fontWeight: featured ? 800 : 400, color: featured ? '#c9a84c' : 'rgba(240,236,228,0.55)' }}>
-                    {featured ? '🪞 ' : ''}{label}
-                  </span>
-                  <span style={{ fontWeight: 800, fontSize: featured ? '18px' : '14px' }}>{price}</span>
+            <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+              {/* 何もしない現状 */}
+              <div style={{ flex: '1 1 240px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '16px', padding: '22px 20px' }}>
+                <p style={{ fontSize: '12px', fontWeight: 800, color: 'rgba(232,228,220,0.4)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '16px' }}>何もしない現状</p>
+                {[
+                  '悩み続ける時間が、また1年積み上がる',
+                  '順番がわからないまま、無駄な出費を重ねる',
+                  '通り過ぎていく出会いに、気づけないまま',
+                ].map((t, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', fontSize: '13px', lineHeight: 1.7, color: 'rgba(232,228,220,0.5)' }}>
+                    <span style={{ flexShrink: 0, color: 'rgba(232,228,220,0.25)', fontWeight: 800 }}>×</span>
+                    <span>{t}</span>
+                  </div>
+                ))}
+                <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(232,228,220,0.08)', fontSize: '13px', color: 'rgba(232,228,220,0.4)' }}>
+                  コスト：<strong style={{ color: 'rgba(232,228,220,0.6)' }}>失われ続ける時間</strong>
                 </div>
-              ))}
+              </div>
+              {/* Fineme Mirror */}
+              <div style={{ flex: '1 1 240px', background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: '16px', padding: '22px 20px', boxShadow: '0 0 28px rgba(201,168,76,0.07)' }}>
+                <p style={{ fontSize: '12px', fontWeight: 800, color: '#c9a84c', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '16px' }}>🪞 Fineme Mirror</p>
+                {[
+                  '写真1枚・20〜40秒で「どこから変えるか」がわかる',
+                  '7軸の優先順位と、最初の一手が明示される',
+                  '無料で概要が見れて、続きは¥500（任意）',
+                ].map((t, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '10px', fontSize: '13px', lineHeight: 1.7, color: 'rgba(240,236,228,0.8)' }}>
+                    <span style={{ flexShrink: 0, color: '#c9a84c', fontWeight: 800 }}>✓</span>
+                    <span>{t}</span>
+                  </div>
+                ))}
+                <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(201,168,76,0.18)', fontSize: '13px', color: 'rgba(240,236,228,0.6)' }}>
+                  コスト：<strong style={{ color: '#c9a84c', fontSize: '18px' }}>¥500</strong>（地図代）
+                </div>
+              </div>
             </div>
-            <p style={{ textAlign: 'center', fontSize: '13px', color: 'rgba(240,236,228,0.4)', marginTop: '16px', lineHeight: 1.8 }}>
+            <p style={{ textAlign: 'center', fontSize: '13px', color: 'rgba(240,236,228,0.4)', marginTop: '20px', lineHeight: 1.8 }}>
               外見投資を始める前に、まず「どこから変えるか」を知る。<br />¥500はその地図代です。
             </p>
           </div>
@@ -514,7 +516,7 @@ export default function MirrorLpPage() {
           </div>
           <div style={{ textAlign: 'center' }}>
             <Link href="/mirror" className="m-cta-btn" style={{ display: 'inline-block', padding: '14px 44px', borderRadius: '12px', color: '#0a0f1e', fontWeight: 900, fontSize: '16px', textDecoration: 'none', boxShadow: '0 6px 24px rgba(201,168,76,0.35)' }}>
-              Mirrorを試す →
+              Mapを生成する →
             </Link>
           </div>
         </section>
@@ -568,15 +570,15 @@ export default function MirrorLpPage() {
               <span style={{ color: '#c9a84c' }}>¥780/月で記録し続ける。</span>
             </h2>
             <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.5)', lineHeight: 1.9 }}>
-              1回¥500 × 3回 = ¥1,500分のMirrorが、月¥780で使える。<br />
-              でも本当の価値は「続けること」にある。
+              まず¥500で1回試す → 続けるなら¥780/月（毎月3回分込み）。<br />
+              本当の価値は「続けること」にある。
             </p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
             {[
-              { icon: '🪞', title: '毎月3回、変わった自分をスキャンできる', sub: '¥500 × 3 = ¥1,500相当が月¥780に', featured: true },
-              { icon: '🗺️', title: 'Mirror分析がNew Me Mapに直結する', sub: '変容余地データが行動ロードマップを常に最新化する', featured: false },
-              { icon: '📚', title: '全履歴が無期限保存される', sub: '3ヶ月前の自分と今を、いつでも比べられる', featured: false },
+              { icon: '🪞', title: '毎月3回、変わった自分をスキャンできる', sub: '単発¥500を3回ぶん、月¥780に含む', featured: true },
+              { icon: '🗺️', title: 'Mirror分析がNew Me Mapを常に最新化する', sub: '毎月の変容余地データで行動ロードマップが更新される', featured: false },
+              { icon: '📚', title: '分析結果（テキスト）の全履歴が無期限保存', sub: '3ヶ月前の自分と今を、いつでも比べられる', featured: false },
             ].map((item, i) => (
               <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'center', padding: '18px 20px', background: item.featured ? 'rgba(201,168,76,0.08)' : 'rgba(255,255,255,0.025)', border: `1px solid ${item.featured ? 'rgba(201,168,76,0.4)' : 'rgba(201,168,76,0.12)'}`, borderRadius: '14px' }}>
                 <span style={{ fontSize: '26px', flexShrink: 0 }}>{item.icon}</span>
@@ -589,12 +591,10 @@ export default function MirrorLpPage() {
             ))}
           </div>
           <div style={{ textAlign: 'center', padding: '28px 20px', background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '16px', marginBottom: '28px' }}>
-            <div style={{ fontSize: '13px', color: 'rgba(240,236,228,0.35)', marginBottom: '6px' }}>
-              通常 <s>¥1,500</s>相当 →
-            </div>
             <div style={{ fontSize: '40px', fontWeight: 900, color: '#c9a84c', lineHeight: 1.1 }}>¥780</div>
             <div style={{ fontSize: '14px', color: 'rgba(240,236,228,0.35)', marginTop: '4px' }}>/ 月（税込）・いつでも解約可能</div>
-            <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.3)', marginTop: '10px' }}>1日あたり約¥26。スタバのコーヒー1杯以下。</div>
+            <div style={{ fontSize: '13px', color: 'rgba(240,236,228,0.45)', marginTop: '10px', lineHeight: 1.7 }}>単発¥500を3回使うぶんが、月¥780に含まれる。</div>
+            <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.3)', marginTop: '6px' }}>1日あたり約¥26。スタバのコーヒー1杯以下。</div>
           </div>
           <div style={{ textAlign: 'center' }}>
             <Link href="/mirror" className="m-cta-btn" style={{ display: 'inline-block', padding: '15px 48px', borderRadius: '12px', color: '#0a0f1e', fontWeight: 900, fontSize: '16px', textDecoration: 'none', boxShadow: '0 8px 32px rgba(201,168,76,0.4)' }}>
@@ -621,8 +621,8 @@ export default function MirrorLpPage() {
               {[
                 ['📤', 'アップロードした写真はHTTPS通信でAIに送信されます', 'ブラウザとAIサーバー間の通信は暗号化されています。'],
                 ['🔍', 'AI（Claude Vision）が写真を分析します', '写真データはAnthropicのAPIを経由して分析されます。'],
-                ['💾', '分析結果テキストのみが保存されます', '写真そのものはFinemeのデータベースには一切保存されません。'],
-                ['🗑️', '写真データは分析完了後に削除されます', '分析が終わった瞬間から、写真データへのアクセスはなくなります。'],
+                ['💾', '保存されるのは「分析結果テキスト」だけ', '過去の分析を後から見返せるよう、テキスト結果のみを保存します。写真そのものはFinemeのデータベースには一切保存されません。'],
+                ['🗑️', '写真データは分析完了後に削除されます', '分析が終わった瞬間から、写真データへのアクセスはなくなります。残るのはテキストの分析結果だけです。'],
               ].map(([icon, title, desc], i) => (
                 <div key={i} style={{ display: 'flex', gap: '16px', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,168,76,0.1)', borderRadius: '12px' }}>
                   <span style={{ fontSize: '22px', flexShrink: 0 }}>{icon}</span>
@@ -672,9 +672,9 @@ export default function MirrorLpPage() {
             </p>
             <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: '14px', padding: '16px 20px', marginBottom: '28px', textAlign: 'left' }}>
               <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.65)', lineHeight: 1.9, margin: 0 }}>
-                このページを閉じると、また「いつかやろう」に戻ります。<br />
-                写真1枚・20〜40秒。それだけで<strong style={{ color: 'rgba(240,236,228,0.9)' }}>「何から変えればいいか」がわかる</strong>。<br />
-                <span style={{ color: 'rgba(201,168,76,0.7)', fontSize: '13px' }}>無料部分だけ見て、続きは自分で判断できます。</span>
+                Finemeは生まれたばかり。派手な口コミは、まだありません。<br />
+                あるのは「無料で試せる」という約束だけ。写真1枚・20〜40秒で<strong style={{ color: 'rgba(240,236,228,0.9)' }}>「何から変えればいいか」がわかる</strong>。<br />
+                <span style={{ color: 'rgba(201,168,76,0.7)', fontSize: '13px' }}>続きが要らなければ1円も払わなくていい。あなたが、最初の一歩を踏み出す番です。</span>
               </p>
             </div>
             <Link href="/mirror" className="m-cta-btn" style={{
@@ -683,10 +683,10 @@ export default function MirrorLpPage() {
               fontSize: 'clamp(17px,3vw,22px)', textDecoration: 'none',
               boxShadow: '0 10px 40px rgba(201,168,76,0.45)',
             }}>
-              Mirrorを試す →
+              無料で第一印象を見る →
             </Link>
             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.2)', marginTop: '16px' }}>
-              Stripe決済 ・ 写真は分析後削除 ・ いつでもキャンセル不要
+              無料プレビューあり ・ 続きは¥500（任意）・ 写真は分析後削除
             </p>
           </div>
         </section>
@@ -699,7 +699,7 @@ export default function MirrorLpPage() {
             <Link href="/tokusho" style={{ fontSize: '12px', color: 'rgba(240,236,228,0.3)', textDecoration: 'none' }}>特定商取引法</Link>
             <Link href="/mirror" style={{ fontSize: '12px', color: 'rgba(201,168,76,0.4)', textDecoration: 'none' }}>Mirrorを使う →</Link>
           </div>
-          <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.15)' }}>© 2024 Fineme All rights reserved.</p>
+          <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.15)' }}>© 2026 Fineme All rights reserved.</p>
         </footer>
 
       </main>
