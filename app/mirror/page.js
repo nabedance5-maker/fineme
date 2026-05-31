@@ -81,6 +81,7 @@ export default function MirrorPage() {
   const [fbRevisit, setFbRevisit] = useState(0);
   const [fbComment, setFbComment] = useState('');
   const [fbSent, setFbSent] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const fileInputRef = useRef(null);
   const dropRef = useRef(null);
 
@@ -262,6 +263,14 @@ export default function MirrorPage() {
     } catch {}
     try { localStorage.setItem('fineme:mirror:feedback:sent', '1'); } catch {}
     setFbSent(true);
+  };
+
+  const shareUrl = () => `${window.location.origin}/mirror/s/${sessionId}`;
+  const SHARE_TEXT = '写真1枚で、AIが「変われる余白」を地図にしてくれた。あなたの変容余地マップも見てみて🪞';
+  const shareX = () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}&url=${encodeURIComponent(shareUrl())}`, '_blank', 'noopener');
+  const shareLINE = () => window.open(`https://line.me/R/msg/text/?${encodeURIComponent(SHARE_TEXT + '\n' + shareUrl())}`, '_blank', 'noopener');
+  const copyShareLink = async () => {
+    try { await navigator.clipboard.writeText(shareUrl()); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); } catch {}
   };
 
   return (
@@ -605,6 +614,29 @@ export default function MirrorPage() {
                   : '単発¥500 または サブスク¥780/月（月3回分含む・いつでも解約可）'}
               </p>
               {error && <p className="error-msg" style={{ marginTop: '12px' }}>{error}</p>}
+            </div>
+          )}
+
+          {/* シェア（preview / full 共通・sessionIdがある時） */}
+          {sessionId && (
+            <div style={{ marginTop: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '14px', padding: '20px', textAlign: 'center' }}>
+              <p style={{ fontSize: '13px', fontWeight: '800', color: 'rgba(232,228,220,0.8)', margin: '0 0 4px' }}>
+                この結果をシェアする
+              </p>
+              <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.4)', margin: '0 0 16px', lineHeight: 1.6 }}>
+                共有されるのは概要のみ。写真や詳細分析は表示されません。
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button onClick={shareX} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(232,228,220,0.18)', borderRadius: '10px', color: 'rgba(232,228,220,0.85)', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  𝕏 でシェア
+                </button>
+                <button onClick={shareLINE} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'rgba(6,199,85,0.12)', border: '1px solid rgba(6,199,85,0.4)', borderRadius: '10px', color: '#06c755', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  LINEで送る
+                </button>
+                <button onClick={copyShareLink} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: '10px', color: '#c9a84c', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  {linkCopied ? '✓ コピーしました' : '🔗 リンクをコピー'}
+                </button>
+              </div>
             </div>
           )}
 

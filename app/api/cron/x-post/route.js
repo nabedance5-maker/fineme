@@ -69,7 +69,7 @@ async function postTweet(text) {
 }
 
 // 投稿タイプ別テンプレート（日付ベースでローテーション）
-const POST_TYPES = ['diagnosis', 'philosophy', 'article'];
+const POST_TYPES = ['diagnosis', 'philosophy', 'mirror', 'article'];
 
 const DIAGNOSIS_POSTS = [
   `恋愛がうまくいかない理由、外見だけじゃないかもしれない。
@@ -129,6 +129,36 @@ ${BASE_URL}
 #外見磨き #自己投資 #メンズ`,
 ];
 
+const MIRROR_POSTS = [
+  `写真1枚で、AIが「あなたの変われる余白」を地図にする。
+
+眉・肌・ヘア・姿勢・体型・服・爪の7軸を分析。
+今いちばん変わりやすい場所がわかります。
+
+まずは無料で👇
+${BASE_URL}/mirror
+
+#外見磨き #メンズ美容 #AI`,
+
+  `「清潔感がない」と言われても、どこを直せばいいか分からない。
+
+その"どこ"を、写真1枚からAIが特定します。
+無料で7軸の概要が見れる。続きが要らなければ0円。
+
+${BASE_URL}/mirror
+
+#垢抜け #メンズ #自己投資`,
+
+  `自分では気づけない伸びしろを、AIが映し出す。
+
+スコアじゃない。「今、何から変えると最も効くか」の見取り図。
+写真はAI分析後に削除されます。
+
+${BASE_URL}/mirror
+
+#外見改善 #メンズ美容 #Fineme`,
+];
+
 export async function GET(request) {
   const authHeader = request.headers.get('authorization');
   if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET}`) {
@@ -149,6 +179,8 @@ export async function GET(request) {
     tweetText = DIAGNOSIS_POSTS[dayOfYear % DIAGNOSIS_POSTS.length];
   } else if (postType === 'philosophy') {
     tweetText = PHILOSOPHY_POSTS[dayOfYear % PHILOSOPHY_POSTS.length];
+  } else if (postType === 'mirror') {
+    tweetText = MIRROR_POSTS[dayOfYear % MIRROR_POSTS.length];
   } else {
     // article: Supabaseから公開済み記事を1本取得
     const db = getSupabase();
