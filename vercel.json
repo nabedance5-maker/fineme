@@ -4,7 +4,8 @@
   "outputDirectory": ".next",
   "crons": [
     { "path": "/api/cron/cleanup-mirror-sessions", "schedule": "0 2 * * *" },
-    { "path": "/api/cron/mirror-report", "schedule": "0 0 * * 1" }
+    { "path": "/api/cron/mirror-report", "schedule": "0 0 * * 1" },
+    { "path": "/api/cron/sns-trend-draft", "schedule": "0 0 * * 0" }
   ],
   "redirects": [
     {
