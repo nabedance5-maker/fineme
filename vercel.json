@@ -3,7 +3,8 @@
   "buildCommand": "node scripts/copy-static.js && next build",
   "outputDirectory": ".next",
   "crons": [
-    { "path": "/api/cron/cleanup-mirror-sessions", "schedule": "0 2 * * *" }
+    { "path": "/api/cron/cleanup-mirror-sessions", "schedule": "0 2 * * *" },
+    { "path": "/api/cron/mirror-report", "schedule": "0 0 * * 1" }
   ],
   "redirects": [
     {
