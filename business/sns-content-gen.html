@@ -78,6 +78,7 @@
     <button class="tab" onclick="switchTab('ai')" id="tab-ai">✨ AI生成</button>
     <button class="tab active" onclick="switchTab('x')">X テンプレート</button>
     <button class="tab" onclick="switchTab('note')">note / ブログ</button>
+    <button class="tab" onclick="switchTab('mirror')" id="tab-mirror">🪞 Mirror</button>
     <button class="tab" onclick="switchTab('press')">プレスリリース</button>
     <button class="tab" onclick="switchTab('dm')">掲載者獲得DM</button>
     <button class="tab" onclick="switchTab('dm-bulk')" id="tab-dm-bulk">📋 DM一括生成</button>
@@ -232,6 +233,15 @@ fineme.me/diagnosis</div>
     </div>
 
     <div id="note-cards">
+      <!-- JS で挿入 -->
+    </div>
+  </div>
+
+  <!-- ====== Mirror ====== -->
+  <div id="panel-mirror" class="panel">
+    <div class="section-label">🪞 Fineme Mirror 集客素材 — 写真1枚で「変われる余白」を地図化</div>
+    <p class="intro">Mirror（fineme.me/mirror）への流入を増やすためのX投稿テンプレ。無料プレビュー＝リスクゼロを軸に。コピーしてそのまま投稿できます。</p>
+    <div class="grid2" id="mirror-cards">
       <!-- JS で挿入 -->
     </div>
   </div>
@@ -1755,12 +1765,81 @@ async function generateAllDMs() {
 }
 
 // ──────────────────────────────────
+// Mirror 集客素材
+// ──────────────────────────────────
+const MIRROR_CONTENT = [
+  { title: '無料フック', text: `写真1枚で、AIが「あなたの変われる余白」を地図にする。
+
+眉・肌・ヘア・姿勢・体型・服・爪の7軸を分析。
+今いちばん変わりやすい場所がわかります。
+
+まずは無料で👇
+fineme.me/mirror
+
+#外見磨き #メンズ美容 #AI` },
+  { title: '痛点フック', text: `「清潔感がない」と言われても、どこを直せばいいか分からない。
+
+その"どこ"を、写真1枚からAIが特定します。
+無料で7軸の概要が見れる。続きが要らなければ0円。
+
+fineme.me/mirror
+
+#垢抜け #メンズ #自己投資` },
+  { title: '気づき系', text: `自分では気づけない伸びしろを、AIが映し出す。
+
+スコアじゃない。「今、何から変えると最も効くか」の見取り図。
+写真はAI分析後に削除されます。
+
+fineme.me/mirror
+
+#外見改善 #メンズ美容 #Fineme` },
+  { title: '体験シェア風', text: `Fineme MirrorにAIで自分の写真を分析させてみた。
+
+眉=変容余地 高、肌=中…って出て、
+"最初の一手"が眉だってハッキリした。
+
+無料でここまで見れるの強い。
+fineme.me/mirror
+
+#外見磨き #AI診断` },
+  { title: 'サブスク訴求', text: `外見は1回で変わらない。だから「記録」が効く。
+
+Mirrorは写真1枚で変容余地を地図化。
+月780円で毎月3回、変わっていく自分を追える。
+
+まず無料で試す→ fineme.me/mirror
+
+#メンズ美容 #自己投資 #習慣化` },
+  { title: 'note見出し案', text: `【note記事タイトル候補】
+・「写真1枚をAIに分析させたら、"何から変えるべきか"が一瞬で分かった話」
+・「鏡では気づけない。AIが教えてくれた自分の"伸びしろ"7軸」
+・「清潔感がない、の正体。Fineme Mirrorで言語化してみた」` },
+];
+
+function renderMirrorCards() {
+  const container = document.getElementById('mirror-cards');
+  if (!container) return;
+  container.innerHTML = MIRROR_CONTENT.map((item) => `
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span class="badge badge-x">Mirror</span>
+        <span class="card-title" style="margin:0">${item.title}</span>
+      </div>
+      <div class="card-body">${escHtml(item.text)}</div>
+      <div class="char-count">${item.text.length}字</div>
+      <button class="copy-btn" onclick="copyTextContent(this, \`${escJs(item.text)}\`)">コピー</button>
+    </div>
+  `).join('');
+}
+
+// ──────────────────────────────────
 // 初期化
 // ──────────────────────────────────
 initApiKeyUi();
 renderXCards('philosophy');
 renderNoteCards();
 renderDMCards();
+renderMirrorCards();
 addBulkRow(); // DM一括の初期行
 </script>
 </body>

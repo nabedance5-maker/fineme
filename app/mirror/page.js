@@ -82,6 +82,8 @@ export default function MirrorPage() {
   const [fbComment, setFbComment] = useState('');
   const [fbSent, setFbSent] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [myUserId, setMyUserId] = useState(null);
+  const [inviteCopied, setInviteCopied] = useState(false);
   const fileInputRef = useRef(null);
   const dropRef = useRef(null);
 
@@ -90,6 +92,10 @@ export default function MirrorPage() {
     const params = new URLSearchParams(window.location.search);
     const sid = params.get('session_id');
     const purchased = params.get('purchased');
+
+    // 友達紹介リンク（?ref=uuid）を捕捉して保存
+    const refParam = params.get('ref');
+    if (refParam) { try { localStorage.setItem('fineme:mirror:ref', refParam); } catch {} }
 
     if (sid && purchased === '1') {
       setState('analyzing');
@@ -124,6 +130,7 @@ export default function MirrorPage() {
         authToken = obj?.access_token || null;
       }
     } catch {}
+    if (authUserId) setMyUserId(authUserId);
 
     const loadPastSessions = async () => {
       const localIds = getLocalSessionIds();
@@ -211,10 +218,13 @@ export default function MirrorPage() {
       } catch {}
       const userState = !userId ? 'guest' : diagnosisInfo ? 'diagnosed' : 'member';
 
+      let ref = null;
+      try { ref = localStorage.getItem('fineme:mirror:ref') || null; } catch {}
+
       const res = await fetch('/api/mirror/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photo_base64: base64, media_type, user_id: userId, user_state: userState, diagnosis_info: diagnosisInfo }),
+        body: JSON.stringify({ photo_base64: base64, media_type, user_id: userId, user_state: userState, diagnosis_info: diagnosisInfo, ref }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '分析に失敗しました');
@@ -271,6 +281,11 @@ export default function MirrorPage() {
   const shareLINE = () => window.open(`https://line.me/R/msg/text/?${encodeURIComponent(SHARE_TEXT + '\n' + shareUrl())}`, '_blank', 'noopener');
   const copyShareLink = async () => {
     try { await navigator.clipboard.writeText(shareUrl()); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); } catch {}
+  };
+
+  const inviteUrl = () => `${window.location.origin}/mirror?ref=${myUserId}`;
+  const copyInvite = async () => {
+    try { await navigator.clipboard.writeText(inviteUrl()); setInviteCopied(true); setTimeout(() => setInviteCopied(false), 2000); } catch {}
   };
 
   return (
@@ -727,6 +742,25 @@ export default function MirrorPage() {
                   </button>
                 </>
               )}
+            </div>
+          )}
+
+          {/* 友達紹介（ログイン済み・fullのみ） */}
+          {state === 'full' && myUserId && (
+            <div style={{ marginTop: '20px', background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: '14px', padding: '22px 20px', textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎟️</div>
+              <p style={{ fontSize: '14px', fontWeight: '800', color: '#e8e4dc', margin: '0 0 6px' }}>
+                友達を招待して、おたがい1回無料
+              </p>
+              <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: '0 0 16px', lineHeight: 1.7 }}>
+                招待リンク経由で友達が初めて分析すると、<br />あなたと友達の両方に詳細分析の無料チケットが1枚届きます。
+              </p>
+              <button
+                onClick={copyInvite}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 28px', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '800', color: '#0a0f1e', cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                {inviteCopied ? '✓ 招待リンクをコピーしました' : '🔗 招待リンクをコピー'}
+              </button>
             </div>
           )}
 

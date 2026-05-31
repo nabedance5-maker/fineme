@@ -96,7 +96,7 @@ potential_levelについて:
 
 export async function POST(request) {
   try {
-    const { photo_base64, media_type, user_id, user_state, diagnosis_info } = await request.json();
+    const { photo_base64, media_type, user_id, user_state, diagnosis_info, ref } = await request.json();
 
     if (!photo_base64 || !media_type) {
       return Response.json({ error: '写真データが必要です' }, { status: 400 });
@@ -185,6 +185,45 @@ export async function POST(request) {
               })
               .eq('id', user_id);
           }
+        }
+      } catch {}
+    }
+
+    // リファラル付与：被紹介者の初回分析時に、紹介者・被紹介者の双方へ無料チケット+1
+    if (user_id && ref && ref !== user_id) {
+      try {
+        const { count: priorCount } = await getSupabase()
+          .from('mirror_sessions')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user_id);
+        if (!priorCount) {
+          const { error: refErr } = await getSupabase()
+            .from('referrals')
+            .insert({ referrer_id: ref, referee_id: user_id });
+          if (!refErr) {
+            // UNIQUE違反でない＝初回紹介成立 → 双方+1
+            await getSupabase().rpc('increment_referral_credit', { uid: ref });
+            await getSupabase().rpc('increment_referral_credit', { uid: user_id });
+          }
+        }
+      } catch {}
+    }
+
+    // リファラル無料チケット消費（サブスク無料枠で未バイパスのときのみ）
+    if (!isPaidBypass && user_id) {
+      try {
+        const { data: prof } = await getSupabase()
+          .from('profiles')
+          .select('mirror_referral_credits')
+          .eq('id', user_id)
+          .single();
+        const credits = prof?.mirror_referral_credits || 0;
+        if (credits > 0) {
+          isPaidBypass = true;
+          await getSupabase()
+            .from('profiles')
+            .update({ mirror_referral_credits: credits - 1 })
+            .eq('id', user_id);
         }
       } catch {}
     }
