@@ -12,6 +12,7 @@ const NAV = [
   { href: '/admin/stories',      label: '体験談管理',          icon: '💬' },
   { href: '/admin/inquiries',    label: 'お問い合わせ',        icon: '📩' },
   { href: '/admin/analytics',    label: 'アナリティクス',      icon: '📈' },
+  { href: '/admin/mirror',       label: 'Mirror計測',          icon: '🪞' },
   { href: '/admin/feedback',     label: 'フィードバック',       icon: '⭐' },
 ];
 
