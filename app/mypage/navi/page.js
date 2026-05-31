@@ -3028,6 +3028,14 @@ export default function NewMeNaviPage() {
 
       ${buildMatchedProductsHtml()}
 
+      ${(serviceLogs.length >= 1 && Object.values(stepDone).filter(Boolean).length >= 3) ? `
+      <div style="margin-top:28px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.25);border-radius:16px;padding:24px 22px;text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">✍️</div>
+        <p style="font-size:15px;font-weight:800;color:rgba(240,236,228,0.9);margin:0 0 8px;line-height:1.6">変化を感じ始めたら、あなたの物語を残しませんか？</p>
+        <p style="font-size:12px;color:rgba(240,236,228,0.5);margin:0 0 18px;line-height:1.75">あなたの一歩は、同じ悩みを抱える誰かの地図になります。<br>かかった期間・変わったこと——リアルな記録が誰かの背中を押します。</p>
+        <a href="/mypage/story-submit" style="display:inline-block;font-size:14px;font-weight:800;padding:12px 28px;background:linear-gradient(135deg,#c9a84c,#e8c97a);border-radius:10px;color:#0a0f1e;text-decoration:none;box-shadow:0 4px 18px rgba(201,168,76,0.25)">体験談を書く →</a>
+      </div>` : ''}
+
       <div class="navi-footer">
         <a href="/mypage/log" class="navi-footer-btn nfb-secondary" style="border-color:rgba(201,168,76,0.45)">📖 New Me Log — サービスを管理する</a>
         <a href="/diagnosis/result" class="navi-footer-btn nfb-secondary">🗺️ New Me Naviに戻る</a>

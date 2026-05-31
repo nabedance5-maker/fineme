@@ -77,6 +77,10 @@ export default function MirrorPage() {
   const [compressing, setCompressing] = useState(false);
   const [pastSessions, setPastSessions] = useState([]);
   const [subStatus, setSubStatus] = useState(null); // { isActive, mirrorFreeRemaining }
+  const [fbAccuracy, setFbAccuracy] = useState(0);
+  const [fbRevisit, setFbRevisit] = useState(0);
+  const [fbComment, setFbComment] = useState('');
+  const [fbSent, setFbSent] = useState(false);
   const fileInputRef = useRef(null);
   const dropRef = useRef(null);
 
@@ -148,6 +152,8 @@ export default function MirrorPage() {
 
     loadPastSessions();
     loadSubStatus();
+
+    try { if (localStorage.getItem('fineme:mirror:feedback:sent') === '1') setFbSent(true); } catch {}
   }, []);
 
   const handleFile = useCallback((file) => {
@@ -238,6 +244,24 @@ export default function MirrorPage() {
       setError(e.message);
       setPurchasing(false);
     }
+  };
+
+  const submitFeedback = async () => {
+    if (!fbAccuracy && !fbRevisit && !fbComment.trim()) return;
+    try {
+      await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          page: 'mirror',
+          rating_accuracy: fbAccuracy || null,
+          rating_revisit: fbRevisit || null,
+          comment: fbComment.trim() || null,
+        }),
+      });
+    } catch {}
+    try { localStorage.setItem('fineme:mirror:feedback:sent', '1'); } catch {}
+    setFbSent(true);
   };
 
   return (
@@ -616,6 +640,61 @@ export default function MirrorPage() {
               >
                 🗺️ New Me Map を生成する →
               </button>
+            </div>
+          )}
+
+          {/* フィードバック収集（任意・非ブロッキング） */}
+          {state === 'full' && (
+            <div style={{ marginTop: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '14px', padding: '22px 20px' }}>
+              {fbSent ? (
+                <p style={{ textAlign: 'center', fontSize: '13px', color: 'rgba(80,200,140,0.85)', margin: 0 }}>
+                  🙏 フィードバックありがとうございました。
+                </p>
+              ) : (
+                <>
+                  <p style={{ fontSize: '13px', fontWeight: '800', color: 'rgba(232,228,220,0.8)', margin: '0 0 4px', textAlign: 'center' }}>
+                    この分析は役に立ちましたか？
+                  </p>
+                  <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.4)', margin: '0 0 16px', textAlign: 'center' }}>
+                    あなたの一言が、同じ悩みを持つ誰かの背中を押します（任意）
+                  </p>
+                  {[
+                    ['分析の的確さ', fbAccuracy, setFbAccuracy],
+                    ['また使いたい', fbRevisit, setFbRevisit],
+                  ].map(([label, val, setter]) => (
+                    <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <span style={{ fontSize: '12px', color: 'rgba(232,228,220,0.6)' }}>{label}</span>
+                      <span style={{ display: 'inline-flex', gap: '4px' }}>
+                        {[1, 2, 3, 4, 5].map(n => (
+                          <button
+                            key={n}
+                            onClick={() => setter(n)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: 0, color: n <= val ? '#c9a84c' : 'rgba(232,228,220,0.2)' }}
+                            aria-label={`${label} ${n}`}
+                          >
+                            ★
+                          </button>
+                        ))}
+                      </span>
+                    </div>
+                  ))}
+                  <textarea
+                    value={fbComment}
+                    onChange={(e) => setFbComment(e.target.value)}
+                    placeholder="一番の気づきは？（例：清潔感がない理由が肌だと初めて分かった）"
+                    maxLength={300}
+                    rows={2}
+                    style={{ width: '100%', boxSizing: 'border-box', marginTop: '8px', background: 'rgba(10,15,30,0.6)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', padding: '10px 12px', fontSize: '13px', color: 'rgba(232,228,220,0.88)', fontFamily: 'inherit', resize: 'vertical', outline: 'none' }}
+                  />
+                  <button
+                    onClick={submitFeedback}
+                    disabled={!fbAccuracy && !fbRevisit && !fbComment.trim()}
+                    style={{ display: 'block', width: '100%', marginTop: '12px', padding: '11px', background: (!fbAccuracy && !fbRevisit && !fbComment.trim()) ? 'rgba(201,168,76,0.15)' : 'rgba(201,168,76,0.9)', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '800', color: (!fbAccuracy && !fbRevisit && !fbComment.trim()) ? 'rgba(232,228,220,0.4)' : '#0a0f1e', cursor: (!fbAccuracy && !fbRevisit && !fbComment.trim()) ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+                  >
+                    フィードバックを送る
+                  </button>
+                </>
+              )}
             </div>
           )}
 

@@ -1,5 +1,10 @@
 import Link from 'next/link';
 
+// 利用者の「気づき」の声。admin/feedback の実コメントから本人同意の取れたものだけを貼る。
+// 空のあいだは下記セクションは描画されない（捏造防止）。
+// 形式: { text: '本文', meta: '20代・初挑戦 など属性（任意）' }
+const MIRROR_VOICES = [];
+
 export const metadata = {
   title: '写真1枚で「変われる余白」がわかる | Fineme Mirror',
   description: '写真をアップロードするだけ。AIが眉・肌・ヘア・姿勢・体型・服・爪の7軸を分析し、今のあなたが最も変わりやすい場所を可視化します。¥500。写真は保存されません。',
@@ -323,6 +328,29 @@ export default function MirrorLpPage() {
             </div>
           </div>
         </section>
+
+        {/* ── 利用者の、最初の気づき（声が集まれば表示）── */}
+        {MIRROR_VOICES.length > 0 && (
+          <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+              <div className="m-tag">利用者の、最初の気づき</div>
+              <h2 style={{ fontSize: 'clamp(18px,4vw,26px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
+                「どこを変えるか」が、<br />わかった瞬間。
+              </h2>
+              <p style={{ fontSize: '13px', color: 'rgba(240,236,228,0.4)', marginTop: '10px', lineHeight: 1.8 }}>
+                Mirrorを使った方の声です。外見の変化ではなく、<br />「何から始めるか」が見えた、という気づきの記録。
+              </p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {MIRROR_VOICES.map((v, i) => (
+                <div key={i} style={{ background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: '14px', padding: '18px 20px' }}>
+                  <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.82)', lineHeight: 1.85, margin: 0 }}>「{v.text}」</p>
+                  {v.meta && <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.4)', margin: '8px 0 0' }}>— {v.meta}</p>}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ── なぜ専用設計か ── */}
         <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
