@@ -17,6 +17,31 @@ const X_API_SECRET = process.env.X_API_SECRET;
 const X_ACCESS_TOKEN = process.env.X_ACCESS_TOKEN;
 const X_ACCESS_TOKEN_SECRET = process.env.X_ACCESS_TOKEN_SECRET;
 const BASE_URL = 'https://www.fineme.me';
+const OWNER_EMAIL = process.env.OWNER_EMAIL || 'h.watanabe@fineme.me';
+
+// 本日のX投稿文をオーナーにメール送信（自動投稿の成否に応じて文面を出し分け）
+async function emailDailyDraft({ tweetText, posted }) {
+  if (!process.env.RESEND_API_KEY) return;
+  try {
+    const { Resend } = await import('resend');
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const subject = posted
+      ? '【Fineme X】本日の投稿（自動投稿済み・操作不要）'
+      : '【Fineme X】本日の投稿（コピーして手動投稿してください）';
+    const lead = posted
+      ? 'X APIで自動投稿しました。記録用です（操作不要）。'
+      : 'X APIの書き込み枠が無いため自動投稿していません。下記をコピーして @deo_fineme から投稿してください。';
+    const html = `
+      <h2 style="color:#111">📣 本日のX投稿</h2>
+      <p style="color:#666;font-size:13px">${lead}</p>
+      <div style="background:#f8f8fb;border:1px solid #e5e7eb;border-radius:10px;padding:18px 20px;margin:16px 0;max-width:560px;font-size:15px;color:#111;line-height:1.9;white-space:pre-line">${tweetText.replace(/</g, '&lt;')}</div>
+      <p style="font-size:12px;color:#999">※ リンクを含む投稿は、Xがリンク先のOGP画像をカード表示します（別途画像添付は不要）。</p>
+    `;
+    await resend.emails.send({ from: 'Fineme X <noreply@fineme.me>', to: OWNER_EMAIL, subject, html });
+  } catch (e) {
+    console.error('[x-post] email error:', e.message);
+  }
+}
 
 // OAuth 1.0a 署名生成
 function oauthSign(method, url, params, consumerSecret, tokenSecret) {
@@ -204,18 +229,23 @@ ${BASE_URL}/feature/${article.slug}
     }
   }
 
+  let posted = false, tweetId = null;
   try {
     const result = await postTweet(tweetText);
-    console.log(`[x-post] Posted: ${result.data?.id}`);
-    return Response.json({ success: true, type: postType, tweetId: result.data?.id });
+    posted = true;
+    tweetId = result.data?.id;
+    console.log(`[x-post] Posted: ${tweetId}`);
   } catch (e) {
-    // X APIの書き込みクレジット切れ／レート上限は「失敗」ではなくスキップ扱い（毎日の500ノイズを防ぐ）
     const msg = e.message || '';
     if (msg.includes('problems/credits') || msg.includes('CreditsDepleted') || msg.includes('usage-capped')) {
-      console.warn('[x-post] Skipped: X API credits/quota depleted. 手動投稿に切替中。');
-      return Response.json({ skipped: true, reason: 'x_credits_depleted' });
+      console.warn('[x-post] Auto-post skipped: X API credits/quota depleted. メールで手動投稿用に送信。');
+    } else {
+      console.error('[x-post] Auto-post error:', msg);
     }
-    console.error('[x-post] Error:', msg);
-    return Response.json({ error: msg }, { status: 500 });
   }
+
+  // 成否にかかわらず本日の投稿文をオーナーにメール（手動投稿できるように）
+  await emailDailyDraft({ tweetText, posted });
+
+  return Response.json({ posted, emailed: !!process.env.RESEND_API_KEY, type: postType, tweetId });
 }
