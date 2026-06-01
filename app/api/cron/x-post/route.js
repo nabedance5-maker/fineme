@@ -209,7 +209,13 @@ ${BASE_URL}/feature/${article.slug}
     console.log(`[x-post] Posted: ${result.data?.id}`);
     return Response.json({ success: true, type: postType, tweetId: result.data?.id });
   } catch (e) {
-    console.error('[x-post] Error:', e.message);
-    return Response.json({ error: e.message }, { status: 500 });
+    // X APIの書き込みクレジット切れ／レート上限は「失敗」ではなくスキップ扱い（毎日の500ノイズを防ぐ）
+    const msg = e.message || '';
+    if (msg.includes('problems/credits') || msg.includes('CreditsDepleted') || msg.includes('usage-capped')) {
+      console.warn('[x-post] Skipped: X API credits/quota depleted. 手動投稿に切替中。');
+      return Response.json({ skipped: true, reason: 'x_credits_depleted' });
+    }
+    console.error('[x-post] Error:', msg);
+    return Response.json({ error: msg }, { status: 500 });
   }
 }
