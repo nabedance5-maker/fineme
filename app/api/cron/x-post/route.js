@@ -19,25 +19,48 @@ const X_ACCESS_TOKEN_SECRET = process.env.X_ACCESS_TOKEN_SECRET;
 const BASE_URL = 'https://www.fineme.me';
 const OWNER_EMAIL = process.env.OWNER_EMAIL || 'h.watanabe@fineme.me';
 
-// 本日のX投稿文をオーナーにメール送信（自動投稿の成否に応じて文面を出し分け）
-async function emailDailyDraft({ tweetText, posted }) {
+// 添付用のブランド画像を取得しbase64化（失敗時はnull）
+async function fetchPromoImage(postType) {
+  try {
+    const res = await fetch(`${BASE_URL}/api/og/x-promo?type=${encodeURIComponent(postType)}`);
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    return buf.toString('base64');
+  } catch (e) {
+    console.error('[x-post] promo image fetch error:', e.message);
+    return null;
+  }
+}
+
+// 本日のX投稿文をオーナーにメール送信（自動投稿の成否に応じて文面を出し分け／画像は時々添付）
+async function emailDailyDraft({ tweetText, posted, postType, withImage }) {
   if (!process.env.RESEND_API_KEY) return;
   try {
     const { Resend } = await import('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
+
+    const imageBase64 = withImage ? await fetchPromoImage(postType) : null;
     const subject = posted
       ? '【Fineme X】本日の投稿（自動投稿済み・操作不要）'
       : '【Fineme X】本日の投稿（コピーして手動投稿してください）';
     const lead = posted
       ? 'X APIで自動投稿しました。記録用です（操作不要）。'
       : 'X APIの書き込み枠が無いため自動投稿していません。下記をコピーして @deo_fineme から投稿してください。';
+    const imageNote = imageBase64
+      ? '<p style="font-size:13px;color:#b8860b;font-weight:700">🖼 今日は画像つき推奨。添付の fineme-x.png を投稿に追加してください。</p>'
+      : '<p style="font-size:12px;color:#999">※ リンクを含む投稿は、Xがリンク先のOGP画像をカード表示します。</p>';
     const html = `
       <h2 style="color:#111">📣 本日のX投稿</h2>
       <p style="color:#666;font-size:13px">${lead}</p>
       <div style="background:#f8f8fb;border:1px solid #e5e7eb;border-radius:10px;padding:18px 20px;margin:16px 0;max-width:560px;font-size:15px;color:#111;line-height:1.9;white-space:pre-line">${tweetText.replace(/</g, '&lt;')}</div>
-      <p style="font-size:12px;color:#999">※ リンクを含む投稿は、Xがリンク先のOGP画像をカード表示します（別途画像添付は不要）。</p>
+      ${imageNote}
     `;
-    await resend.emails.send({ from: 'Fineme X <noreply@fineme.me>', to: OWNER_EMAIL, subject, html });
+
+    const payload = { from: 'Fineme X <noreply@fineme.me>', to: OWNER_EMAIL, subject, html };
+    if (imageBase64) {
+      payload.attachments = [{ filename: 'fineme-x.png', content: imageBase64 }];
+    }
+    await resend.emails.send(payload);
   } catch (e) {
     console.error('[x-post] email error:', e.message);
   }
@@ -245,7 +268,9 @@ ${BASE_URL}/feature/${article.slug}
   }
 
   // 成否にかかわらず本日の投稿文をオーナーにメール（手動投稿できるように）
-  await emailDailyDraft({ tweetText, posted });
+  // 画像は3〜4回に1回（dayOfYear % 4 === 0）添付
+  const withImage = dayOfYear % 4 === 0;
+  await emailDailyDraft({ tweetText, posted, postType, withImage });
 
-  return Response.json({ posted, emailed: !!process.env.RESEND_API_KEY, type: postType, tweetId });
+  return Response.json({ posted, emailed: !!process.env.RESEND_API_KEY, withImage, type: postType, tweetId });
 }
