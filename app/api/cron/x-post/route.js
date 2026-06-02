@@ -250,12 +250,12 @@ function angleFor(postType, article) {
   }
 }
 
-// Claudeで当日のX投稿を生成（失敗時は null）
-async function generateTweet(postType, article) {
-  if (!process.env.ANTHROPIC_API_KEY) return null;
-  try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    const system = `あなたはFinemeのSNS担当兼コピーライター。X(@deo_fineme)はオーナー「でお」＝元・モテなかった→現役モデル、恋愛に悩む男性向け外見磨きサービスFinemeの運営者。
+function extractText(content) {
+  if (!Array.isArray(content)) return '';
+  return content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+}
+
+const X_SYSTEM = `あなたはFinemeのSNS担当兼コピーライター。X(@deo_fineme)はオーナー「でお」＝元・モテなかった→現役モデル、恋愛に悩む男性向け外見磨きサービスFinemeの運営者。
 【ブランド】変容の旅・地図と羅針盤・誠実で前向き。点数化/他者否定/誇大表現/煽りすぎは禁止。
 【強いX投稿の条件】
 - 1行目で手を止めるフック（問い・意外性・具体的痛点・本音）
@@ -263,16 +263,43 @@ async function generateTweet(postType, article) {
 - 1投稿1メッセージ。改行で余白を作る
 - 全体120〜140字程度。ハッシュタグは2〜3個、末尾に
 - 指定があればリンクを必ず本文に入れる
-出力は投稿本文のみ（説明・前置き・引用符は不要）。`;
+最終出力は投稿本文のみ（調査メモ・説明・前置き・引用符は一切不要）。`;
+
+// Claudeで当日のX投稿を生成。まずWeb検索で“今のトレンド”を分析し反映（失敗時はnull）
+async function generateTweet(postType, article) {
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const userMsg = `今日のテーマ：${angleFor(postType, article)}
+
+まずWeb検索で、メンズ美容・外見磨き・垢抜け・恋愛領域で「今この時期にXで反応が良い切り口・言い回し・フック・話題」をリアルタイムに調べること。
+そのトレンドを取り入れつつ、いつもと被らない強い投稿を1本だけ作る。最終出力は投稿本文のみ。`;
+
+  // ① Web検索つきで生成（リアルタイムのトレンド分析）
+  try {
+    const msg = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 900,
+      temperature: 1,
+      system: X_SYSTEM,
+      tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }],
+      messages: [{ role: 'user', content: userMsg }],
+    });
+    const text = extractText(msg.content);
+    if (text) return text;
+  } catch (e) {
+    console.error('[x-post] web_search generate failed, fallback:', e.message);
+  }
+
+  // ② フォールバック：Web検索なしで生成
+  try {
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 400,
       temperature: 1,
-      system,
-      messages: [{ role: 'user', content: `今日のテーマ：${angleFor(postType, article)}\n\nこのテーマで、いつもと言い回しが被らない強い投稿を1本作って。` }],
+      system: X_SYSTEM,
+      messages: [{ role: 'user', content: `今日のテーマ：${angleFor(postType, article)}\n\nこのテーマで、いつもと言い回しが被らない強い投稿を1本作って。投稿本文のみ。` }],
     });
-    const text = msg.content?.[0]?.text?.trim();
-    return text || null;
+    return extractText(msg.content) || null;
   } catch (e) {
     console.error('[x-post] AI generate error:', e.message);
     return null;
