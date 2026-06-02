@@ -266,13 +266,18 @@ const X_SYSTEM = `あなたはFinemeのSNS担当兼コピーライター。X(@de
 最終出力は投稿本文のみ（調査メモ・説明・前置き・引用符は一切不要）。`;
 
 // Claudeで当日のX投稿を生成。まずWeb検索で“今のトレンド”を分析し反映（失敗時はnull）
-async function generateTweet(postType, article) {
+// context = { strategy: 今週の方針, recentTexts: 直近投稿（被り回避用） }
+async function generateTweet(postType, article, context = {}) {
   if (!process.env.ANTHROPIC_API_KEY) return null;
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const stratLine = context.strategy ? `\n\n【今週の方針（レトロスペクティブより）】\n${context.strategy}` : '';
+  const recentLine = (context.recentTexts && context.recentTexts.length)
+    ? `\n\n【直近の投稿（言い回し・切り口が被らないように）】\n- ${context.recentTexts.slice(0, 8).join('\n- ')}`
+    : '';
   const userMsg = `今日のテーマ：${angleFor(postType, article)}
 
 まずWeb検索で、メンズ美容・外見磨き・垢抜け・恋愛領域で「今この時期にXで反応が良い切り口・言い回し・フック・話題」をリアルタイムに調べること。
-そのトレンドを取り入れつつ、いつもと被らない強い投稿を1本だけ作る。最終出力は投稿本文のみ。`;
+そのトレンドを取り入れつつ、いつもと被らない強い投稿を1本だけ作る。最終出力は投稿本文のみ。${stratLine}${recentLine}`;
 
   // ① Web検索つきで生成（リアルタイムのトレンド分析）
   try {
@@ -342,8 +347,22 @@ export async function GET(request) {
   else if (postType === 'article' && article) tweetText = `${article.title}\n\n${BASE_URL}/feature/${article.slug}\n\n#外見磨き #メンズ #Fineme`;
   else tweetText = DIAGNOSIS_POSTS[0];
 
+  // PDCA: 今週の方針（strategy）と直近投稿（被り回避）を読み込む
+  const sb = getSupabase();
+  let strategy = null, recentTexts = [];
+  try {
+    const { data: stratRow } = await sb.from('sns_posts')
+      .select('text').eq('channel', 'strategy')
+      .order('created_at', { ascending: false }).limit(1).maybeSingle();
+    strategy = stratRow?.text || null;
+    const { data: recent } = await sb.from('sns_posts')
+      .select('text').eq('channel', 'x')
+      .order('created_at', { ascending: false }).limit(8);
+    recentTexts = (recent || []).map(r => r.text).filter(Boolean);
+  } catch {}
+
   // AI生成を優先（失敗時は上のフォールバックのまま）
-  const aiText = await generateTweet(postType, article);
+  const aiText = await generateTweet(postType, article, { strategy, recentTexts });
   if (aiText) tweetText = aiText;
 
   let posted = false, tweetId = null;
@@ -360,6 +379,11 @@ export async function GET(request) {
       console.error('[x-post] Auto-post error:', msg);
     }
   }
+
+  // 投稿ログ保存（PDCA・被り防止・振り返り材料）
+  try {
+    await sb.from('sns_posts').insert({ channel: 'x', post_type: postType, text: tweetText, posted });
+  } catch {}
 
   // 成否にかかわらず本日の投稿文をオーナーにメール（手動投稿できるように）
   // 画像は3〜4回に1回（dayOfYear % 4 === 0）添付

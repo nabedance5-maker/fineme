@@ -3,9 +3,11 @@
 // 最適化したX投稿ドラフト等をオーナーへメール提案する（ハイブリッド：人が承認して投稿）
 // Schedule: "0 0 * * 0"
 import Anthropic from '@anthropic-ai/sdk';
+import { getSupabase } from '@/lib/supabase';
+import { computeMirrorStats } from '@/app/api/admin/mirror-stats/route';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const CRON_SECRET = process.env.CRON_SECRET;
 const OWNER_EMAIL = process.env.OWNER_EMAIL || 'h.watanabe@fineme.me';
@@ -27,6 +29,44 @@ const USER = `今週のSNS投稿ドラフトを作ってください。Web検索
 function extractText(content) {
   if (!Array.isArray(content)) return '';
   return content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+}
+
+// PDCAのCheck/Act：先週の投稿ログ＋Mirror流入を振り返り「来週の方針」を生成し保存
+async function runRetrospective(client) {
+  const sb = getSupabase();
+  const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  let recentPosts = [];
+  try {
+    const { data } = await sb.from('sns_posts')
+      .select('post_type, text, created_at').eq('channel', 'x')
+      .gte('created_at', weekAgo).order('created_at', { ascending: false }).limit(20);
+    recentPosts = data || [];
+  } catch {}
+
+  let stats = null;
+  try { stats = await computeMirrorStats(); } catch {}
+
+  const funnel = stats ? `Mirror直近7日: 分析${stats.last7d.total} / ¥500購入${stats.last7d.purchases} / 転換${stats.last7d.conversionRate}% / 紹介${stats.referral.last7d} / サブスク${stats.subscription.active}` : '（ファネル数値取得不可）';
+  const postsDump = recentPosts.length
+    ? recentPosts.map(p => `[${p.post_type}] ${String(p.text).replace(/\n/g, ' ').slice(0, 80)}`).join('\n')
+    : '（先週の投稿ログなし）';
+
+  try {
+    const msg = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 700,
+      system: SYSTEM + '\nこのタスクではCSOとして、先週のSNS活動を振り返り「来週の方針」を出す。',
+      messages: [{ role: 'user', content: `先週のFineme SNSを振り返って、来週の方針を出してください。\n\n【先週のX投稿ログ】\n${postsDump}\n\n【ファネル】\n${funnel}\n\n出力（日本語・簡潔）:\n■ 振り返り（2文：効いていそうな切り口/被り/弱点）\n■ 来週の方針（箇条書き3つ以内：強化する切り口・避ける言い回し・試す新フック）\n※ X流入の個別計測は無いため、投稿テーマの偏り・トレンド適合・ファネルの動きから推論すること。` }],
+    });
+    const guidance = msg.content?.[0]?.text?.trim();
+    if (guidance) {
+      try { await sb.from('sns_posts').insert({ channel: 'strategy', post_type: 'retro', text: guidance }); } catch {}
+      return guidance;
+    }
+  } catch (e) {
+    console.error('[sns-trend-draft] retro error:', e.message);
+  }
+  return null;
 }
 
 async function generateDrafts() {
@@ -65,11 +105,20 @@ export async function GET(request) {
   }
 
   try {
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    // Check/Act：先に先週の振り返り→来週の方針を生成・保存（日次生成が参照する）
+    const guidance = await runRetrospective(client);
+
     const { text, searched } = await generateDrafts();
     if (!text) return Response.json({ error: 'no draft generated' }, { status: 500 });
 
+    const retroHtml = guidance
+      ? `<div style="background:#fffaf0;border:1px solid #f0e0b8;border-radius:10px;padding:16px 20px;margin:16px 0;max-width:560px"><div style="font-size:12px;font-weight:700;color:#b8860b;margin-bottom:8px">🔁 先週の振り返り・来週の方針（日次X生成に自動反映）</div><div style="font-size:13px;color:#444;line-height:1.85;white-space:pre-line">${guidance.replace(/</g, '&lt;')}</div></div>`
+      : '';
+
     const html = `
       <h2 style="color:#111">📣 今週のSNS最適化ドラフト</h2>
+      ${retroHtml}
       <p style="color:#666;font-size:13px">AIが${searched ? '最新トレンドを調査して' : '（検索なしで）'}生成した今週の投稿案です。良いものを選んで @deo_fineme から投稿してください。</p>
       <div style="background:#f8f8fb;border:1px solid #e5e7eb;border-radius:10px;padding:18px 20px;margin:16px 0;max-width:560px;font-size:14px;color:#222;line-height:1.85;white-space:pre-line">${text.replace(/</g, '&lt;')}</div>
       <p style="font-size:12px;color:#999">素材ツール → business/sns-content-gen.html ／ ダッシュボード → fineme.me/admin/mirror</p>
