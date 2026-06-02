@@ -7,9 +7,11 @@
 //   3. 記事リンク（Supabaseの公開済み記事から1本）
 
 import crypto from 'crypto';
+import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 const CRON_SECRET = process.env.CRON_SECRET;
 const X_API_KEY = process.env.X_API_KEY;
@@ -116,8 +118,8 @@ async function postTweet(text) {
   return data;
 }
 
-// 投稿タイプ別テンプレート（日付ベースでローテーション）
-const POST_TYPES = ['diagnosis', 'philosophy', 'mirror', 'article'];
+// 投稿タイプ（日付ベースでローテーション）。本文はAI生成、失敗時は下記テンプレにフォールバック
+const POST_TYPES = ['mirror', 'diagnosis', 'philosophy', 'story', 'article'];
 
 const DIAGNOSIS_POSTS = [
   `恋愛がうまくいかない理由、外見だけじゃないかもしれない。
@@ -207,6 +209,76 @@ ${BASE_URL}/mirror
 #外見改善 #メンズ美容 #Fineme`,
 ];
 
+const STORY_POSTS = [
+  `昔、マッチングアプリで全くマッチしなかった。
+
+「清潔感がない」と言われても、何を直せばいいか分からなかった。
+眉を整えるところから始めたら、反応が変わった。
+
+順番があるんです。
+${BASE_URL}/diagnosis
+
+#外見磨き #自己投資`,
+
+  `元・モテなかった自分が、現役モデルになるまでにやったこと。
+
+才能じゃない。「どこから変えるか」を間違えなかっただけ。
+その地図をFinemeにしました。
+
+${BASE_URL}/mirror
+
+#垢抜け #メンズ美容`,
+];
+
+// 投稿タイプ別の生成方針（AI用）
+function angleFor(postType, article) {
+  switch (postType) {
+    case 'mirror':
+      return `Fineme Mirror（写真1枚をAIが眉/肌/ヘア/姿勢/体型/服/爪の7軸で分析。無料プレビューあり・続きは¥500）への誘導。必ず ${BASE_URL}/mirror を入れる。`;
+    case 'diagnosis':
+      return `Me Scan（無料の外見診断・3分で自分の優先軸＝Compassが分かる）への誘導。必ず ${BASE_URL}/diagnosis を入れる。`;
+    case 'philosophy':
+      return `外見磨きの思想・共感（外見を起点に自信を再設計する／変わるには順番がある等）。リンクは任意（入れるなら ${BASE_URL}）。`;
+    case 'story':
+      return `オーナー「でお」の実体験（元・モテなかった→現役モデル、清潔感が無いと言われた、眉から始めた等）で共感を生む。リンクは ${BASE_URL}/mirror か ${BASE_URL}/diagnosis を任意で。`;
+    case 'article':
+      return article
+        ? `公開記事「${article.title}」を、続きを読みたくなるフックで紹介。必ず ${BASE_URL}/feature/${article.slug} を入れる。`
+        : `Me Scan（無料診断）への誘導。必ず ${BASE_URL}/diagnosis を入れる。`;
+    default:
+      return `Fineme（外見を起点に自信を再設計するサービス）の紹介。`;
+  }
+}
+
+// Claudeで当日のX投稿を生成（失敗時は null）
+async function generateTweet(postType, article) {
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  try {
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const system = `あなたはFinemeのSNS担当兼コピーライター。X(@deo_fineme)はオーナー「でお」＝元・モテなかった→現役モデル、恋愛に悩む男性向け外見磨きサービスFinemeの運営者。
+【ブランド】変容の旅・地図と羅針盤・誠実で前向き。点数化/他者否定/誇大表現/煽りすぎは禁止。
+【強いX投稿の条件】
+- 1行目で手を止めるフック（問い・意外性・具体的痛点・本音）
+- 具体性のある言葉（抽象論を避ける）。共感→気づき→行動の流れ
+- 1投稿1メッセージ。改行で余白を作る
+- 全体120〜140字程度。ハッシュタグは2〜3個、末尾に
+- 指定があればリンクを必ず本文に入れる
+出力は投稿本文のみ（説明・前置き・引用符は不要）。`;
+    const msg = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 400,
+      temperature: 1,
+      system,
+      messages: [{ role: 'user', content: `今日のテーマ：${angleFor(postType, article)}\n\nこのテーマで、いつもと言い回しが被らない強い投稿を1本作って。` }],
+    });
+    const text = msg.content?.[0]?.text?.trim();
+    return text || null;
+  } catch (e) {
+    console.error('[x-post] AI generate error:', e.message);
+    return null;
+  }
+}
+
 export async function GET(request) {
   const authHeader = request.headers.get('authorization');
   if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET}`) {
@@ -221,16 +293,9 @@ export async function GET(request) {
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
   const postType = POST_TYPES[dayOfYear % POST_TYPES.length];
 
-  let tweetText = '';
-
-  if (postType === 'diagnosis') {
-    tweetText = DIAGNOSIS_POSTS[dayOfYear % DIAGNOSIS_POSTS.length];
-  } else if (postType === 'philosophy') {
-    tweetText = PHILOSOPHY_POSTS[dayOfYear % PHILOSOPHY_POSTS.length];
-  } else if (postType === 'mirror') {
-    tweetText = MIRROR_POSTS[dayOfYear % MIRROR_POSTS.length];
-  } else {
-    // article: Supabaseから公開済み記事を1本取得
+  // article タイプは紹介する記事を1本取得
+  let article = null;
+  if (postType === 'article') {
     const db = getSupabase();
     const { data: features } = await db
       .from('features')
@@ -238,19 +303,21 @@ export async function GET(request) {
       .eq('published', true)
       .order('created_at', { ascending: false })
       .limit(30);
-
-    if (features && features.length > 0) {
-      const article = features[dayOfYear % features.length];
-      tweetText = `${article.title}
-
-${BASE_URL}/feature/${article.slug}
-
-#外見磨き #メンズ #Fineme`;
-    } else {
-      // 記事がなければ診断投稿にフォールバック
-      tweetText = DIAGNOSIS_POSTS[0];
-    }
+    if (features && features.length > 0) article = features[dayOfYear % features.length];
   }
+
+  // 静的フォールバック（AI生成が失敗したとき用）
+  let tweetText;
+  if (postType === 'diagnosis') tweetText = DIAGNOSIS_POSTS[dayOfYear % DIAGNOSIS_POSTS.length];
+  else if (postType === 'philosophy') tweetText = PHILOSOPHY_POSTS[dayOfYear % PHILOSOPHY_POSTS.length];
+  else if (postType === 'mirror') tweetText = MIRROR_POSTS[dayOfYear % MIRROR_POSTS.length];
+  else if (postType === 'story') tweetText = STORY_POSTS[dayOfYear % STORY_POSTS.length];
+  else if (postType === 'article' && article) tweetText = `${article.title}\n\n${BASE_URL}/feature/${article.slug}\n\n#外見磨き #メンズ #Fineme`;
+  else tweetText = DIAGNOSIS_POSTS[0];
+
+  // AI生成を優先（失敗時は上のフォールバックのまま）
+  const aiText = await generateTweet(postType, article);
+  if (aiText) tweetText = aiText;
 
   let posted = false, tweetId = null;
   try {
