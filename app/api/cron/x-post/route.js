@@ -250,9 +250,25 @@ function angleFor(postType, article) {
   }
 }
 
+// レスポンスから「最後のまとまったテキストブロック」を取り出す（検索前の前置きを除外）
 function extractText(content) {
   if (!Array.isArray(content)) return '';
-  return content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+  const texts = content.filter(b => b.type === 'text').map(b => (b.text || '').trim()).filter(Boolean);
+  if (!texts.length) return '';
+  for (let i = texts.length - 1; i >= 0; i--) {
+    if (texts[i].length >= 30) return texts[i];
+  }
+  return texts[texts.length - 1];
+}
+
+// 質問返し・前置き・短すぎ・リンク欠落などの「弱い/不正な出力」を弾く
+const QUESTION_MARKERS = ['確認させ', 'ご指示', 'どちらでしょう', 'お教えいただけ', '不明な点', '申し訳ございません', 'いただけますでしょうか', 'すればよいでしょうか', 'でしょうか？\n', '教えてください'];
+function isUsableTweet(text, postType, article) {
+  if (!text || text.length < 40) return false;
+  if (QUESTION_MARKERS.some(m => text.includes(m))) return false;
+  const needsLink = postType === 'mirror' || postType === 'diagnosis' || (postType === 'article' && article);
+  if (needsLink && !text.includes('fineme.me')) return false;
+  return true;
 }
 
 const X_SYSTEM = `あなたはFinemeのSNS担当兼コピーライター。X(@deo_fineme)はオーナー「でお」＝元・モテなかった→現役モデル、恋愛に悩む男性向け外見磨きサービスFinemeの運営者。
@@ -263,48 +279,52 @@ const X_SYSTEM = `あなたはFinemeのSNS担当兼コピーライター。X(@de
 - 1投稿1メッセージ。改行で余白を作る
 - 全体120〜140字程度。ハッシュタグは2〜3個、末尾に
 - 指定があればリンクを必ず本文に入れる
-最終出力は投稿本文のみ（調査メモ・説明・前置き・引用符は一切不要）。`;
+【厳守】ユーザーに質問・確認を返してはいけない。情報が足りなくても最も妥当な前提を自分で置き、投稿本文を必ず1本完成させる。出力は完成した投稿本文のみ（前置き・調査メモ・説明・引用符・「承知しました」等は一切不要）。`;
 
 // Claudeで当日のX投稿を生成。まずWeb検索で“今のトレンド”を分析し反映（失敗時はnull）
 // context = { strategy: 今週の方針, recentTexts: 直近投稿（被り回避用） }
 async function generateTweet(postType, article, context = {}) {
   if (!process.env.ANTHROPIC_API_KEY) return null;
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  const stratLine = context.strategy ? `\n\n【今週の方針（レトロスペクティブより）】\n${context.strategy}` : '';
+  const stratLine = context.strategy ? `\n\n【今週の方針（参考・反映するが質問はしない）】\n${context.strategy}` : '';
   const recentLine = (context.recentTexts && context.recentTexts.length)
-    ? `\n\n【直近の投稿（言い回し・切り口が被らないように）】\n- ${context.recentTexts.slice(0, 8).join('\n- ')}`
+    ? `\n\n【直近の投稿（言い回し・切り口を被らせない）】\n- ${context.recentTexts.slice(0, 8).join('\n- ')}`
     : '';
-  const userMsg = `今日のテーマ：${angleFor(postType, article)}
-
-まずWeb検索で、メンズ美容・外見磨き・垢抜け・恋愛領域で「今この時期にXで反応が良い切り口・言い回し・フック・話題」をリアルタイムに調べること。
-そのトレンドを取り入れつつ、いつもと被らない強い投稿を1本だけ作る。最終出力は投稿本文のみ。${stratLine}${recentLine}`;
 
   // ① Web検索つきで生成（リアルタイムのトレンド分析）
   try {
+    const userMsg = `今日のテーマ：${angleFor(postType, article)}
+
+Web検索でメンズ美容・外見磨き・垢抜け・恋愛領域の「今Xで反応が良い切り口・フック・話題」を調べ、それを踏まえて投稿を1本完成させる。質問は返さず、最後に完成した投稿本文だけを出力。${stratLine}${recentLine}`;
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 900,
-      temperature: 1,
+      max_tokens: 1200,
+      temperature: 0.9,
       system: X_SYSTEM,
       tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }],
       messages: [{ role: 'user', content: userMsg }],
     });
     const text = extractText(msg.content);
-    if (text) return text;
+    if (isUsableTweet(text, postType, article)) return text;
+    console.warn('[x-post] web_search output rejected (weak/question). fallback.');
   } catch (e) {
     console.error('[x-post] web_search generate failed, fallback:', e.message);
   }
 
   // ② フォールバック：Web検索なしで生成
   try {
+    const userMsg = `今日のテーマ：${angleFor(postType, article)}\n\nこのテーマで、いつもと言い回しが被らない強い投稿を1本「完成」させる。質問は返さず、投稿本文のみ出力。${stratLine}${recentLine}`;
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 400,
-      temperature: 1,
+      max_tokens: 500,
+      temperature: 0.9,
       system: X_SYSTEM,
-      messages: [{ role: 'user', content: `今日のテーマ：${angleFor(postType, article)}\n\nこのテーマで、いつもと言い回しが被らない強い投稿を1本作って。投稿本文のみ。` }],
+      messages: [{ role: 'user', content: userMsg }],
     });
-    return extractText(msg.content) || null;
+    const text = extractText(msg.content);
+    if (isUsableTweet(text, postType, article)) return text;
+    console.warn('[x-post] fallback output rejected. テンプレ使用。');
+    return null;
   } catch (e) {
     console.error('[x-post] AI generate error:', e.message);
     return null;
