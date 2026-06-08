@@ -272,6 +272,21 @@ ${mirrorDataLines}` : ''}`;
     return Response.json({ error: `Claude error: ${e.message}` }, { status: 500 });
   }
 
+  // スナップショット：上書き前に現月のデータを保存（既存月は無視）
+  const existingSteps = profile?.navi_steps;
+  if (existingSteps?.generated_at) {
+    const snapMonth = existingSteps.generated_at.slice(0, 7); // 'YYYY-MM'
+    await supabase.from('navi_snapshots').upsert(
+      {
+        user_id: user.id,
+        year_month: snapMonth,
+        navi_steps: existingSteps,
+        axis_progress: profile?.axis_progress ?? null,
+      },
+      { onConflict: 'user_id,year_month', ignoreDuplicates: true }
+    ).catch(e => console.warn('navi_snapshots upsert failed (non-fatal):', e));
+  }
+
   const navi_steps = {
     steps: generated.steps,
     generated_at: new Date().toISOString(),
