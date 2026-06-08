@@ -126,9 +126,9 @@ export async function POST(request) {
 
   const tv = derivedDiagnosis?.transform_vectors || {};
   const bd = body_data || {};
-  const budget = diagnosis.budget || null;
-  const goalScene = diagnosis.goal_scene || null;
-  const triggerType = diagnosis.trigger_type || null;
+  const budget = diagnosis?.budget || null;
+  const goalScene = diagnosis?.goal_scene || null;
+  const triggerType = diagnosis?.trigger_type || null;
 
   // 各軸情報をテキスト化（ギャップが0以下の軸は変容済みとして除外）
   const axisLines = Object.entries(AXIS_LABELS).map(([id, label]) => {
@@ -273,18 +273,22 @@ ${mirrorDataLines}` : ''}`;
   }
 
   // スナップショット：上書き前に現月のデータを保存（既存月は無視）
-  const existingSteps = profile?.navi_steps;
-  if (existingSteps?.generated_at) {
-    const snapMonth = existingSteps.generated_at.slice(0, 7); // 'YYYY-MM'
-    await supabase.from('navi_snapshots').upsert(
-      {
-        user_id: user.id,
-        year_month: snapMonth,
-        navi_steps: existingSteps,
-        axis_progress: profile?.axis_progress ?? null,
-      },
-      { onConflict: 'user_id,year_month', ignoreDuplicates: true }
-    ).catch(e => console.warn('navi_snapshots upsert failed (non-fatal):', e));
+  try {
+    const existingSteps = profile?.navi_steps;
+    if (existingSteps?.generated_at) {
+      const snapMonth = String(existingSteps.generated_at).slice(0, 7); // 'YYYY-MM'
+      await supabase.from('navi_snapshots').upsert(
+        {
+          user_id: user.id,
+          year_month: snapMonth,
+          navi_steps: existingSteps,
+          axis_progress: profile?.axis_progress ?? null,
+        },
+        { onConflict: 'user_id,year_month', ignoreDuplicates: true }
+      );
+    }
+  } catch (e) {
+    console.warn('navi_snapshots snapshot failed (non-fatal):', e);
   }
 
   const navi_steps = {
