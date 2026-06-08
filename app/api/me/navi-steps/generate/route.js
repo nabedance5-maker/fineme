@@ -91,6 +91,7 @@ export async function POST(request) {
 
   // Mirror最新セッション取得（写真ベースの変容余地データ）
   let mirrorAxes = null;
+  let mirrorSessionDate = null;
   try {
     const { data: mirrorSession } = await getSupabase()
       .from('mirror_sessions')
@@ -101,6 +102,7 @@ export async function POST(request) {
       .single();
     if (mirrorSession?.analysis?.axes?.length) {
       mirrorAxes = mirrorSession.analysis.axes;
+      mirrorSessionDate = mirrorSession.created_at || null;
     }
   } catch {}
 
@@ -130,12 +132,33 @@ export async function POST(request) {
   const goalScene = diagnosis?.goal_scene || null;
   const triggerType = diagnosis?.trigger_type || null;
 
-  // 各軸情報をテキスト化（ギャップが0以下の軸は変容済みとして除外）
+  // Mirror軸をNavi軸IDで引けるMapを構築（Mode B: gap=0軸のMirror観察表示用）
+  const mirrorByNaviAxis = {};
+  if (mirrorAxes) {
+    const _mirrorToNavi = { eyebrow: 'eyebrow', skin: 'skin', hair: 'hair', body: 'body', posture: 'body', fashion: 'fashion' };
+    for (const ax of mirrorAxes) {
+      const naviId = _mirrorToNavi[ax.id];
+      if (naviId && !mirrorByNaviAxis[naviId]) mirrorByNaviAxis[naviId] = ax;
+    }
+  }
+  const mirrorMonthLabel = mirrorSessionDate ? mirrorSessionDate.slice(0, 7) : null;
+
+  // 各軸情報をテキスト化（Mode A: 外見評価禁止注記 / Mode B: Mirror観察を追記）
   const axisLines = Object.entries(AXIS_LABELS).map(([id, label]) => {
     const v = tv[id];
     if (!v) return null;
     const gap = (v.ideal || 3) - (v.current || 1);
-    if (gap <= 0) return `- ${label}: 変容済み・維持フェーズ（ケア状況：${CARE_LABELS[v.care_type] || '不明'}）`;
+    if (gap <= 0) {
+      if (mirrorAxes) {
+        const mAx = mirrorByNaviAxis[id];
+        const mirrorNote = mAx
+          ? ` Mirror観察（${mirrorMonthLabel}）: 変容余地=${mAx.potential_level}${mAx.summary ? `「${mAx.summary}」` : ''}`
+          : ` Mirror観察なし（この軸は写真分析対象外）`;
+        return `- ${label}: ケア済み申告: 現状${v.current || 1}/${v.ideal || 3}。${mirrorNote}`;
+      } else {
+        return `- ${label}: ケア済み申告: 現状${v.current || 1}/${v.ideal || 3} ※写真による観察データなし。外見の評価は行わないこと`;
+      }
+    }
     return `- ${label}: 現在${v.current || 1}/理想${v.ideal || 3}（ギャップ${gap}）、状況：${CARE_LABELS[v.care_type] || '未着手'}`;
   }).filter(Boolean).join('\n');
 
@@ -173,10 +196,14 @@ export async function POST(request) {
         .join('\n')
     : null;
 
+  const bodyDataSectionHeader = mirrorAxes
+    ? '## 現状把握データ（本人申告）'
+    : '## 現状把握データ（本人申告のみ・写真による確認なし）';
+
   const userContext = `## ユーザーの変容軸データ
 ${axisLines || '（データなし）'}
 
-## 現状把握データ（本人が確認・入力済み）
+${bodyDataSectionHeader}
 ${bodyDataLines || '（まだ入力なし）'}
 
 ## 予算・ゴール・きっかけ
@@ -187,6 +214,28 @@ ${triggerType ? `- 変容のきっかけ: ${triggerType}` : ''}${mirrorDataLines
 ## Fineme Mirror 写真分析データ（最新セッション）
 写真から直接観察された変容余地データ。体型・外見のリアルな現状を反映。
 ${mirrorDataLines}` : ''}`;
+
+  const modeRules = mirrorAxes ? `
+## ⚠️ 外見評価のルール（Mirror撮影済み）
+- 外見の状態評価（「整っている」「きれいな」「透明感がある」「清潔感がある」等）は、
+  「Fineme Mirror 写真分析データ」の観察テキストに根拠がある場合のみ許可
+- potential_level=低 の軸にのみ「すでに良い状態のため維持を」のような表現可
+- Mirrorデータに記載のない軸への外見評価は、最優先ルールと同様に禁止
+
+## Mirror分析データの活用ルール
+「Fineme Mirror 写真分析データ」が提供されている場合は以下のルールに従う。
+- 変容余地「高」の軸：その軸のステップを早めに配置し、より具体的・熱量の高い文章で書く
+- 変容余地「低」（すでに整っている）の軸：維持ステップのみ1〜2件に絞り、称賛として書く
+- このデータは写真から直接観察された情報なので、ユーザーの自己申告より優先度が高い
+- Mirror軸とNavi軸の対応: eyebrow→eyebrow, skin→skin, hair→hair, body→body, fashion→fashion, posture→body
+` : `
+## ⚠️ 外見評価の追加禁止ルール（Mirror未撮影・最優先）
+Mirrorデータが提供されていないため、以下を厳守すること：
+- 外見の状態評価を一切出力しない：「整っている」「きれいな」「透明感がある」「すっきりしている」
+  「清潔感がある」「良い状態」等、外見を評価するすべての表現が禁止
+- 「ケア済み申告」の軸でも外見状態は不明。写真がなければ実態はわからない
+- 書いてよいのは「行動（何をするか）」のみ。「外見状態（どう見えるか）」は書いてはいけない
+`;
 
   const systemPrompt = `あなたは「変容の旅コンシェルジュ」です。
 恋愛・外見に悩む男性ユーザーの診断データをもとに、この人専用の変容ステップリストを生成してください。
@@ -209,14 +258,7 @@ ${mirrorDataLines}` : ''}`;
 - Mirrorデータに「くせ毛が目立ちスタイリングで改善余地あり」という観察がある → くせ毛に関連したステップを書いてよい
 - 現状把握データに「肌タイプ: 脂性肌」がある → 脂性肌向けステップを書いてよい
 - どちらにも肌タイプ記載がない → 「まず肌タイプを確認するためセルフチェックを行う」のような汎用ステップにする
-
-## Mirror分析データの活用ルール
-「Fineme Mirror 写真分析データ」が提供されている場合は以下のルールに従う。
-- 変容余地「高」の軸：その軸のステップを早めに配置し、より具体的・熱量の高い文章で書く
-- 変容余地「低」（すでに整っている）の軸：維持ステップのみ1〜2件に絞り、称賛として書く
-- このデータは写真から直接観察された情報なので、ユーザーの自己申告より優先度が高い
-- Mirror軸とNavi軸の対応: eyebrow→eyebrow, skin→skin, hair→hair, body→body, fashion→fashion, posture→body
-
+${modeRules}
 ## 生成ルール
 
 1. ステップは変容の旅の**一本の道**として25〜35件生成する
@@ -225,6 +267,7 @@ ${mirrorDataLines}` : ''}`;
    例: ひげが薄い人に医療ヒゲ脱毛の高コストステップは不要
    例: すでにプロ通い中の軸に入門ステップは不要
    例: 変容済みの軸は維持ステップのみ1〜2件に絞る
+   例: ケア済み申告（gap=0）の軸でMirrorデータがない場合は、今月は省いてよい
 4. ステップテキストはこのユーザーの状況に即した**具体的な言葉**で書く（汎用表現を避ける）
    悪い例: 「肌ケアを始める」
    良い例（肌タイプが脂性肌と判明している場合）: 「脂性肌向けの洗顔料をドラッグストアで1本選んで今日から使い始める」
@@ -236,6 +279,7 @@ ${mirrorDataLines}` : ''}`;
    - 爪（nail）は必ず全体の後半（23件目以降）に配置すること。序盤・中盤に爪ステップを入れない
    - ギャップ数値が大きい軸ほど序盤に多く登場させる（ギャップ3の軸 > ギャップ1の軸）
    - 最初の3ステップは必ずaction_type:quickにする
+   - Mirrorデータがある場合: 変容余地「高」の軸のステップを特に序盤に優先配置する
 6. action_type（行動タイプ）:
    - quick = 今日〜数日で完結する一回限りの行動
    - habit = 毎日または毎週繰り返す習慣
@@ -248,9 +292,14 @@ ${mirrorDataLines}` : ''}`;
 8. 予算が低い場合、guide:HIGH のステップは最小限にして後半に配置する
 9. hint は省略可。必要なときだけ1〜2文で具体的に書く
 10. id は「軸名-3桁連番」形式（例: hair-001, body-002）
+11. eval_type（月次振り返り判定タイプ）:
+    - action = 自分でやったかどうかで確認できるステップ（行動実績のみ）
+    - mirror = 次のMirror撮影で外見変化を確認するステップ
+    - both = 行動実績とMirror変化の両方で確認するステップ（多くの継続型ステップ）
+    hairremoval / teeth / nail 軸は必ず "action" にすること
 
 ## 出力形式（JSONのみ・コードブロック不要）
-{"steps":[{"id":"eyebrow-001","axis":"eyebrow","text":"...","action_type":"quick","guide":"none","hint":"..."},{"id":"hair-001","axis":"hair","text":"...","action_type":"quick","guide":"none"},...]}'`;
+{"steps":[{"id":"eyebrow-001","axis":"eyebrow","eval_type":"both","text":"...","action_type":"quick","guide":"none","hint":"..."},{"id":"hair-001","axis":"hair","eval_type":"action","text":"...","action_type":"quick","guide":"none"},...]}'`;
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   let generated;
@@ -262,10 +311,18 @@ ${mirrorDataLines}` : ''}`;
       messages: [{ role: 'user', content: userContext }],
     });
     const raw = msg.content[0]?.text?.trim() || '';
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    generated = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+    // コードフェンス（```json...```）を除去してからJSONを抽出
+    const stripped = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+    const jsonMatch = stripped.match(/\{[\s\S]*\}/);
+    generated = JSON.parse(jsonMatch ? jsonMatch[0] : stripped);
     if (!Array.isArray(generated?.steps) || generated.steps.length === 0) {
       throw new Error('steps配列が空または不正');
+    }
+    // eval_type の後処理: hairremoval/teeth/nail は強制 action、未設定は both
+    const FORCE_ACTION_AXES = new Set(['hairremoval', 'teeth', 'nail']);
+    for (const step of generated.steps) {
+      if (FORCE_ACTION_AXES.has(step.axis)) step.eval_type = 'action';
+      else if (!step.eval_type) step.eval_type = 'both';
     }
   } catch (e) {
     console.error('Claude navi-steps error:', e);
