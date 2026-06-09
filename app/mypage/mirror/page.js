@@ -71,6 +71,41 @@ function AnalysisView({ analysis }) {
   );
 }
 
+const DIR_ICON  = { improved: '↑', stable: '→' };
+const DIR_COLOR = { improved: '#50c88c', stable: 'rgba(232,228,220,0.35)' };
+const POT_COLOR_COMP = { '高': '#c9a84c', '中': '#7aadff', '低': '#50c88c' };
+
+function ComparisonCard({ data }) {
+  if (!data?.has_comparison) return null;
+  return (
+    <div style={{ background: 'rgba(10,15,30,0.6)', border: '1px solid rgba(201,168,76,0.22)', borderRadius: '14px', padding: '18px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.12em', color: 'rgba(201,168,76,0.55)', textTransform: 'uppercase', margin: 0 }}>変容の軌跡</p>
+        <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.45)', margin: 0 }}>{data.prev_month} → {data.new_month}</p>
+      </div>
+      {data.improved_count > 0 && (
+        <p style={{ fontSize: '12px', color: '#50c88c', margin: '0 0 12px', fontWeight: 700 }}>
+          📈 {data.improved_count}軸で改善が見られました
+        </p>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {data.changes.map(c => (
+          <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+            <span style={{ width: '20px', textAlign: 'center' }}>{c.icon}</span>
+            <span style={{ flex: 1, color: 'rgba(232,228,220,0.75)', fontWeight: 600 }}>{c.name}</span>
+            <span style={{ color: POT_COLOR_COMP[c.from], fontSize: '12px', fontWeight: 700, minWidth: '20px' }}>{c.from}</span>
+            <span style={{ color: 'rgba(232,228,220,0.25)', fontSize: '11px' }}>━▶</span>
+            <span style={{ color: POT_COLOR_COMP[c.to], fontSize: '12px', fontWeight: 700, minWidth: '20px' }}>{c.to}</span>
+            <span style={{ color: DIR_COLOR[c.direction], fontWeight: 800, minWidth: '16px', textAlign: 'right' }}>
+              {DIR_ICON[c.direction]}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const FREE_LIMIT = 5; // 非会員が閲覧できるセッション数
 
 export default function MirrorHistoryPage() {
@@ -82,6 +117,7 @@ export default function MirrorHistoryPage() {
   const [expandedAnalysis, setExpandedAnalysis] = useState({});
   const [loadingId, setLoadingId] = useState(null);
   const [error, setError]         = useState('');
+  const [comparison, setComparison] = useState(null);
 
   useEffect(() => {
     let uid = null;
@@ -101,13 +137,15 @@ export default function MirrorHistoryPage() {
     }
     setUserId(uid);
 
-    // セッション一覧とサブスク状態を並行取得
+    // セッション一覧・サブスク状態・月次比較を並行取得
     Promise.all([
       fetch(`/api/mirror/sessions?user_id=${uid}`).then(r => r.json()),
       tok ? fetch('/api/subscription/status', { headers: { Authorization: `Bearer ${tok}` } }).then(r => r.json()) : Promise.resolve(null),
-    ]).then(([sessionData, subData]) => {
+      tok ? fetch('/api/me/mirror-comparison', { headers: { Authorization: `Bearer ${tok}` } }).then(r => r.json()) : Promise.resolve(null),
+    ]).then(([sessionData, subData, compData]) => {
       setSessions(sessionData.sessions || []);
       setIsSubscriber(subData?.isActive === true);
+      setComparison(compData);
       setLoading(false);
     }).catch(() => { setError('データの読み込みに失敗しました。'); setLoading(false); });
   }, []);
@@ -180,6 +218,8 @@ export default function MirrorHistoryPage() {
           <Link href="/mirror" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', background: 'rgba(201,168,76,0.08)', border: '1.5px dashed rgba(201,168,76,0.4)', borderRadius: '12px', color: '#c9a84c', fontSize: '14px', fontWeight: 700, textDecoration: 'none', marginBottom: '24px', transition: 'all .15s' }}>
             🪞 新しい写真を分析する
           </Link>
+
+          <ComparisonCard data={comparison} />
 
           {error && <p style={{ color: '#f87171', fontSize: '13px', marginBottom: '16px' }}>{error}</p>}
 
