@@ -628,6 +628,16 @@ export default function NewMeNaviPage() {
       .navi-done-toggle { font-size: 12px; color: #9ca3af; background: none; border: none; cursor: pointer; padding: 0 0 10px; display: block; width: 100%; text-align: left; }
       .navi-done-list { display: none; }
       .navi-done-list.open { display: block; }
+.mirror-basis-card { background: rgba(100,160,255,0.05); border: 1px solid rgba(100,160,255,0.18); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; }
+.mb-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.mb-icon { font-size: 20px; flex-shrink: 0; }
+.mb-title { font-size: 12px; font-weight: 700; color: rgba(100,160,255,0.85); margin: 0 0 2px; }
+.mb-sub { font-size: 11px; color: rgba(232,228,220,0.4); margin: 0; }
+.mb-axes { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }
+.mb-axis-row { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+.mb-axis-name { font-weight: 700; color: rgba(232,228,220,0.8); min-width: 42px; }
+.mb-axis-level { font-weight: 600; min-width: 82px; }
+.mb-axis-placement { color: rgba(232,228,220,0.4); }
     `;
     document.head.appendChild(style);
 
@@ -733,7 +743,9 @@ export default function NewMeNaviPage() {
 
     // ── AI生成パーソナライズステップ ──
     let naviStepsData = null;
-    let hasMirrorData = false;
+    let hasMirrorData      = false;
+    let mirrorAnalysisAxes = null;
+    let mirrorSessionDate  = null;
 
     // ── 進捗データ読み込み（Supabase優先） ──
     let axisProgress = {};
@@ -842,8 +854,15 @@ export default function NewMeNaviPage() {
           const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
           const uid = JSON.parse(localStorage.getItem(sbKey) || 'null')?.user?.id;
           if (uid) {
-            const mRes = await fetchWithTimeout(`/api/mirror/sessions?user_id=${uid}&limit=1`);
-            if (mRes?.ok) { const d = await mRes.json(); hasMirrorData = !!(d.sessions?.length); }
+            const mRes = await fetchWithTimeout(`/api/mirror/sessions?user_id=${uid}&limit=1&include_axes=1`);
+            if (mRes?.ok) {
+              const d = await mRes.json();
+              if (d.sessions?.length) {
+                hasMirrorData      = true;
+                mirrorAnalysisAxes = d.sessions[0]?.axes || null;
+                mirrorSessionDate  = d.sessions[0]?.created_at || null;
+              }
+            }
           }
         } catch {}
       }
@@ -923,8 +942,20 @@ export default function NewMeNaviPage() {
       }
     }
 
-    // Me Scan ユーザー向け: Mirrorから生成したMapがあれば hasMirrorData=true とみなす
     if (!hasMirrorData && naviStepsData?.source === 'mirror') hasMirrorData = true;
+    if (!hasMirrorData && currentUid) {
+      try {
+        const mRes = await fetchWithTimeout(`/api/mirror/sessions?user_id=${currentUid}&limit=1&include_axes=1`);
+        if (mRes?.ok) {
+          const d = await mRes.json();
+          if (d.sessions?.length) {
+            hasMirrorData      = true;
+            mirrorAnalysisAxes = d.sessions[0]?.axes || null;
+            mirrorSessionDate  = d.sessions[0]?.created_at || null;
+          }
+        }
+      } catch {}
+    }
 
     function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -1498,7 +1529,7 @@ export default function NewMeNaviPage() {
         : '';
       const fogSection = fogHtml
         ? `<div class="navi-fog-divider">霧の向こう</div>${hasMirrorData
-            ? `<div class="navi-fog-cta">📸 あなたのMirror分析をもとに組み立てた道が続きます。<br>Mirrorで変化を確認すると、先の航路が開けていきます。</div>`
+            ? `<div class="navi-fog-cta">📸 このステップをやり切ったら、次のMirrorで変化を確認してみよう。<br>変化が確認されると先の航路が開けていきます。</div>`
             : `<div class="navi-fog-cta">🔭 この先 ${_fogCount} つの行程が待っています。<br><a href="/mypage/mirror">Mirrorで写真を分析する →</a> と先の道が見えてきます。</div>`
           }${fogHtml}`
         : '';
@@ -1508,6 +1539,41 @@ export default function NewMeNaviPage() {
         <button id="navi-regen-btn" style="display:block;width:100%;padding:10px;background:rgba(10,15,30,0.5);border:1px solid rgba(232,228,220,0.12);border-radius:8px;color:rgba(232,228,220,0.4);font-size:11px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-top:24px;letter-spacing:.05em">
           ↻ 旅を再生成する
         </button>` : '';
+
+      const AXIS_JA_MAP = { eyebrow:'眉', skin:'肌', hair:'髪', body:'体型', fashion:'服', hairremoval:'脱毛', teeth:'歯', nail:'爪', posture:'姿勢', color:'カラー', expression:'表情' };
+      const PLACEMENT_MAP = { '高':'序盤に優先配置', '中':'中盤に配置', '低':'維持ステップのみ' };
+      const LEVEL_COLOR   = { '高':'#c9a84c', '中':'#60a5fa', '低':'#34d399' };
+      const mirrorBasisHtml = mirrorAnalysisAxes?.length
+        ? (() => {
+            const dateLabel = mirrorSessionDate
+              ? new Date(mirrorSessionDate).toLocaleDateString('ja-JP', { year:'numeric', month:'long' })
+              : '';
+            const axisRows = mirrorAnalysisAxes
+              .filter(ax => ax.id !== 'overall')
+              .slice(0, 5)
+              .map(ax => {
+                const name  = AXIS_JA_MAP[ax.id] || ax.name || ax.id;
+                const level = ax.potential_level || '中';
+                const color = LEVEL_COLOR[level]   || '#9ca3af';
+                const place = PLACEMENT_MAP[level] || '';
+                return `<div class="mb-axis-row">
+                  <span class="mb-axis-name">${esc(name)}</span>
+                  <span class="mb-axis-level" style="color:${color}">変容余地 ${esc(level)}</span>
+                  <span class="mb-axis-placement">→ ${esc(place)}</span>
+                </div>`;
+              }).join('');
+            return `<div class="mirror-basis-card">
+              <div class="mb-header">
+                <span class="mb-icon">📸</span>
+                <div>
+                  <p class="mb-title">${dateLabel ? `${esc(dateLabel)}のMirror分析がこのMapに反映されています` : 'Mirror分析がこのMapに反映されています'}</p>
+                  <p class="mb-sub">以下の変容余地データをもとに優先順位を決定しました</p>
+                </div>
+              </div>
+              <div class="mb-axes">${axisRows}</div>
+            </div>`;
+          })()
+        : '';
 
       const mirrorOnlyBanner = naviStepsData.source === 'mirror' ? `
         <div style="margin-bottom:16px;padding:12px 16px;background:rgba(100,160,255,0.07);border:1px solid rgba(100,160,255,0.25);border-radius:12px;display:flex;align-items:center;gap:12px">
@@ -1536,6 +1602,7 @@ export default function NewMeNaviPage() {
             </div>
           </div>
         </div>
+        ${mirrorBasisHtml}
         <div class="route-container">${nodesHtml}</div>
         ${regenBtn}`;
     }

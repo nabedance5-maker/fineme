@@ -27,13 +27,14 @@ export async function GET(request) {
   const { data, error } = await query;
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  // 分析結果はfirst_impressionのみ返す（詳細は別途result APIで取得）
+  const includeAxes = searchParams.get('include_axes') === '1';
   const sessions = (data || []).map(s => ({
     id: s.id,
     created_at: s.created_at,
     paid: s.paid,
     first_impression: s.analysis?.first_impression || '',
     axes_count: s.analysis?.axes?.length || 0,
+    ...(includeAxes ? { axes: s.analysis?.axes || [] } : {}),
   }));
 
   return Response.json({ sessions });
