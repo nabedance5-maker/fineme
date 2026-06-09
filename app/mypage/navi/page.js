@@ -638,6 +638,17 @@ export default function NewMeNaviPage() {
 .mb-axis-name { font-weight: 700; color: rgba(232,228,220,0.8); min-width: 42px; }
 .mb-axis-level { font-weight: 600; min-width: 82px; }
 .mb-axis-placement { color: rgba(232,228,220,0.4); }
+.voyage-log { background: rgba(10,15,30,0.5); border: 1px solid rgba(201,168,76,0.2); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+.voyage-log-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.voyage-log-title { font-size: 10px; font-weight: 800; letter-spacing: .1em; color: rgba(201,168,76,0.55); text-transform: uppercase; margin: 0; }
+.voyage-log-mirror { font-size: 10px; color: rgba(100,160,255,0.7); }
+.voyage-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.voyage-stat { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px 8px; text-align: center; }
+.voyage-stat-num { font-size: 24px; font-weight: 800; color: rgba(201,168,76,0.9); line-height: 1; display: block; margin-bottom: 3px; }
+.voyage-stat-label { font-size: 9px; color: rgba(232,228,220,0.4); letter-spacing: .05em; }
+.voyage-recent-title { font-size: 10px; color: rgba(232,228,220,0.35); margin: 0 0 6px; }
+.voyage-recent-item { font-size: 11px; color: rgba(232,228,220,0.65); display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; line-height: 1.5; }
+.voyage-recent-check { color: rgba(201,168,76,0.7); flex-shrink: 0; font-size: 10px; }
     `;
     document.head.appendChild(style);
 
@@ -1575,6 +1586,46 @@ export default function NewMeNaviPage() {
           })()
         : '';
 
+      const _doneSteps = steps.filter(s => stepDone[s.id]);
+      const voyageLogHtml = _doneSteps.length > 0
+        ? (() => {
+            const doneCount = _doneSteps.length;
+            const daysSince = naviStepsData.generated_at
+              ? Math.max(0, Math.floor((Date.now() - new Date(naviStepsData.generated_at).getTime()) / 86400000))
+              : 0;
+            const recentItems = _doneSteps.slice(-3).reverse().map(s => {
+              const def = AREA_DEFS[s.axis] || {};
+              const label = def.label || s.axis;
+              const txt = s.text.length > 28 ? s.text.slice(0, 28) + '…' : s.text;
+              return `<div class="voyage-recent-item">
+                <span class="voyage-recent-check">✓</span>
+                <span>${esc(label)}：${esc(txt)}</span>
+              </div>`;
+            }).join('');
+            const mirrorBadge = mirrorAnalysisAxes?.length
+              ? `<span class="voyage-log-mirror">📸 Mirror分析済み</span>`
+              : '';
+            return `<div class="voyage-log">
+              <div class="voyage-log-header">
+                <p class="voyage-log-title">あなたの航海記録</p>
+                ${mirrorBadge}
+              </div>
+              <div class="voyage-stats">
+                <div class="voyage-stat">
+                  <span class="voyage-stat-num">${doneCount}</span>
+                  <span class="voyage-stat-label">達成ステップ</span>
+                </div>
+                <div class="voyage-stat">
+                  <span class="voyage-stat-num">${daysSince}</span>
+                  <span class="voyage-stat-label">日間の航海</span>
+                </div>
+              </div>
+              <p class="voyage-recent-title">直近の達成</p>
+              ${recentItems}
+            </div>`;
+          })()
+        : '';
+
       const mirrorOnlyBanner = naviStepsData.source === 'mirror' ? `
         <div style="margin-bottom:16px;padding:12px 16px;background:rgba(100,160,255,0.07);border:1px solid rgba(100,160,255,0.25);border-radius:12px;display:flex;align-items:center;gap:12px">
           <span style="font-size:22px;flex-shrink:0">📸</span>
@@ -1603,6 +1654,7 @@ export default function NewMeNaviPage() {
           </div>
         </div>
         ${mirrorBasisHtml}
+        ${voyageLogHtml}
         <div class="route-container">${nodesHtml}</div>
         ${regenBtn}`;
     }
