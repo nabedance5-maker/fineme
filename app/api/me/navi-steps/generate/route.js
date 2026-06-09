@@ -92,10 +92,11 @@ export async function POST(request) {
   // Mirror最新セッション取得（写真ベースの変容余地データ）
   let mirrorAxes = null;
   let mirrorSessionDate = null;
+  let mirrorSessionId = null;
   try {
     const { data: mirrorSession } = await getSupabase()
       .from('mirror_sessions')
-      .select('analysis, created_at')
+      .select('id, analysis, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -103,6 +104,22 @@ export async function POST(request) {
     if (mirrorSession?.analysis?.axes?.length) {
       mirrorAxes = mirrorSession.analysis.axes;
       mirrorSessionDate = mirrorSession.created_at || null;
+      mirrorSessionId = mirrorSession.id || null;
+    }
+  } catch {}
+
+  // 過去の行動×結果記録を取得（step_outcomesがあれば生成プロンプトに注入）
+  let pastOutcomes = [];
+  try {
+    const { data: snapshots } = await getSupabase()
+      .from('navi_snapshots')
+      .select('year_month, step_outcomes')
+      .eq('user_id', user.id)
+      .not('step_outcomes', 'is', null)
+      .order('year_month', { ascending: false })
+      .limit(3);
+    if (snapshots?.length) {
+      pastOutcomes = snapshots;
     }
   } catch {}
 
@@ -196,6 +213,26 @@ export async function POST(request) {
         .join('\n')
     : null;
 
+  // 過去の行動×結果の記録をテキスト化（step_outcomesが空の場合はスキップ）
+  const pastOutcomesSection = (() => {
+    const blocks = pastOutcomes
+      .map(snap => {
+        const outcomes = Array.isArray(snap.step_outcomes) ? snap.step_outcomes : [];
+        if (!outcomes.length) return null;
+        const lines = outcomes.map(o => {
+          const done = o.done ? '完了' : '未完了';
+          const mc = o.mirror_change === true  ? '・Mirror変化あり'
+            : o.mirror_change === false ? '・Mirror変化なし'
+            : '';
+          const note = o.note ? `「${o.note}」` : '';
+          return `  - ${o.step_id || '?'}（${o.axis || '?'}軸）: ${done}${mc}${note}`;
+        }).filter(Boolean).join('\n');
+        return lines ? `【${snap.year_month}】\n${lines}` : null;
+      })
+      .filter(Boolean);
+    return blocks.length ? blocks.join('\n\n') : null;
+  })();
+
   const bodyDataSectionHeader = mirrorAxes
     ? '## 現状把握データ（本人申告）'
     : '## 現状把握データ（本人申告のみ・写真による確認なし）';
@@ -213,7 +250,11 @@ ${triggerType ? `- 変容のきっかけ: ${triggerType}` : ''}${mirrorDataLines
 
 ## Fineme Mirror 写真分析データ（最新セッション）
 写真から直接観察された変容余地データ。体型・外見のリアルな現状を反映。
-${mirrorDataLines}` : ''}`;
+${mirrorDataLines}` : ''}${pastOutcomesSection ? `
+
+## 過去の変容記録（行動×結果）
+このユーザーの過去の取り組みデータ。効いたアプローチ・継続できた習慣を今月のステップ選びに活かすこと。
+${pastOutcomesSection}` : ''}`;
 
   const modeRules = mirrorAxes ? `
 ## ⚠️ 外見評価のルール（Mirror撮影済み）
@@ -297,6 +338,10 @@ ${modeRules}
     - mirror = 次のMirror撮影で外見変化を確認するステップ
     - both = 行動実績とMirror変化の両方で確認するステップ（多くの継続型ステップ）
     hairremoval / teeth / nail 軸は必ず "action" にすること
+12. 「過去の変容記録」が提供されている場合:
+    - 「完了・Mirror変化あり」のステップと同じ軸・アプローチは積極的に継続・発展させる
+    - 「未完了」が続いているステップは、難易度を下げたバリエーションに差し替えるか省く
+    - 「完了・Mirror変化なし」のステップは、同じアプローチを繰り返さず別の切り口で提案する
 
 ## 出力形式（JSONのみ・コードブロック不要）
 {"steps":[{"id":"eyebrow-001","axis":"eyebrow","eval_type":"both","text":"...","action_type":"quick","guide":"none","hint":"..."},{"id":"hair-001","axis":"hair","eval_type":"action","text":"...","action_type":"quick","guide":"none"},...]}'`;
@@ -340,6 +385,7 @@ ${modeRules}
           year_month: snapMonth,
           navi_steps: existingSteps,
           axis_progress: profile?.axis_progress ?? null,
+          mirror_session_id: mirrorSessionId ?? null,
         },
         { onConflict: 'user_id,year_month', ignoreDuplicates: true }
       );

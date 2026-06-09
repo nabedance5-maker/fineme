@@ -616,6 +616,18 @@ export default function NewMeNaviPage() {
       .gmap-article-body { flex: 1; min-width: 0; }
       .gmap-article-label { font-size: 10px; color: rgba(232,228,220,0.40); margin: 0 0 2px; }
       .gmap-article-title { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.75); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      /* === Stage 4: 霧の向こう === */
+      .path-node.pn-fog { opacity: 0.48; pointer-events: none; }
+      .path-node.pn-fog .path-node-detail { display: none !important; }
+      .path-node.pn-fog .gmap-node-text { color: #9ca3af; }
+      .path-node.pn-fog .gmap-node-axis-name { opacity: 0.4; }
+      .navi-fog-divider { display: flex; align-items: center; gap: 10px; padding: 22px 0 6px; font-size: 12px; color: #9ca3af; letter-spacing: .08em; }
+      .navi-fog-divider::before, .navi-fog-divider::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, transparent, #d1d5db, transparent); }
+      .navi-fog-cta { background: rgba(201,168,76,.06); border: 1px solid rgba(201,168,76,.18); border-radius: 10px; padding: 12px 16px; margin: 4px 0 16px; font-size: 13px; color: #6b7280; line-height: 1.65; }
+      .navi-fog-cta a { color: #c9a84c; text-decoration: none; font-weight: 600; }
+      .navi-done-toggle { font-size: 12px; color: #9ca3af; background: none; border: none; cursor: pointer; padding: 0 0 10px; display: block; width: 100%; text-align: left; }
+      .navi-done-list { display: none; }
+      .navi-done-list.open { display: block; }
     `;
     document.head.appendChild(style);
 
@@ -1382,43 +1394,60 @@ export default function NewMeNaviPage() {
       const compassNextId   = steps.find(s => s.axis === compassAxis && !stepDone[s.id])?.id ?? null;
 
       const POS_CYCLE = ['gnr-left', 'gnr-right'];
+      // Stage 4: グループ分け用変数
+      const NAVI_VISIBLE_UNDONE = 8;
+      const _undoneInOrder = steps.filter(s => !stepDone[s.id]);
+      const _activeIds  = new Set(_undoneInOrder.slice(0, NAVI_VISIBLE_UNDONE).map(s => s.id));
+      const _fogCount   = Math.max(0, _undoneInOrder.length - NAVI_VISIBLE_UNDONE);
+      const _doneCount  = steps.length - _undoneInOrder.length;
+      let completedHtml = '';
+      let activeHtml    = '';
+      let fogHtml       = '';
+
       let posIdx = 0;
-      const nodesHtml = steps.map((step, i) => {
+      let _stepIdx = 0;
+      for (const step of steps) {
+        const i = _stepIdx;
         const def = AREA_DEFS[step.axis] || {};
         const isDone        = !!stepDone[step.id];
+        const isFog         = !isDone && !_activeIds.has(step.id);
         const isCurrentStep = step.id === currentStepId;   // 「今ここ」バッジ
-        const isCompassNext = step.id === compassNextId;    // gnr-center + 🧭強調
+        const isCompassNext = step.id === compassNextId;    // gnr-center + 🧭強調（位置計算のため fog でも保持）
 
         const posClass = isCompassNext ? 'gnr-center' : POS_CYCLE[posIdx % 2];
         if (!isCompassNext) posIdx++;
 
         const circleClass = isDone ? 'gm-c-done'
-          : isCompassNext ? 'gm-c-compass'
+          : isCompassNext && !isFog ? 'gm-c-compass'
           : (step.guide === 'HIGH' || step.guide === 'MID') ? 'gm-c-active'
           : 'gm-c-future';
-        const nodeClasses = ['path-node', isDone ? 'pn-done' : '', isCompassNext ? 'pn-compass' : ''].filter(Boolean).join(' ');
+        const nodeClasses = ['path-node', isDone ? 'pn-done' : '', isCompassNext && !isFog ? 'pn-compass' : '', isFog ? 'pn-fog' : ''].filter(Boolean).join(' ');
 
-        // 「今ここ」バッジはcurrentStepId、🧭バッジはcompassNextId（重複なら両方統合）
+        // 「今ここ」バッジはcurrentStepId、🧭バッジはcompassNextId（霧の中では表示しない）
         let nowBadge = '';
-        if (isCurrentStep && isCompassNext) nowBadge = `<span class="gmap-now-badge">🧭 今ここ</span><br>`;
-        else if (isCurrentStep)             nowBadge = `<span class="gmap-now-badge">📍 今ここ</span><br>`;
-        else if (isCompassNext)             nowBadge = `<span class="gmap-now-badge">🧭 重点</span><br>`;
+        if (!isFog) {
+          if (isCurrentStep && isCompassNext) nowBadge = `<span class="gmap-now-badge">🧭 今ここ</span><br>`;
+          else if (isCurrentStep)             nowBadge = `<span class="gmap-now-badge">📍 今ここ</span><br>`;
+          else if (isCompassNext)             nowBadge = `<span class="gmap-now-badge">🧭 重点</span><br>`;
+        }
 
         const actionLabel = { quick:'⚡', habit:'🔄', ongoing:'🌊' }[step.action_type] || '';
 
         let guideBadgeHtml = '';
-        if (step.guide === 'HIGH') {
-          const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
-          guideBadgeHtml = `<div class="guide-badge guide-high"><span>🏥 ここはプロに任せると確実に変わる</span>${btn}</div>`;
-        } else if (step.guide === 'MID') {
-          const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
-          guideBadgeHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${btn}</div>`;
+        if (!isFog) {
+          if (step.guide === 'HIGH') {
+            const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
+            guideBadgeHtml = `<div class="guide-badge guide-high"><span>🏥 ここはプロに任せると確実に変わる</span>${btn}</div>`;
+          } else if (step.guide === 'MID') {
+            const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
+            guideBadgeHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${btn}</div>`;
+          }
         }
-        const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
+        const hintHtml = !isFog && step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
 
-        // ongoingステップにサービスログバッジを表示
+        // ongoingステップにサービスログバッジを表示（霧の中は非表示）
         let logBadgeHtml = '';
-        if (step.action_type === 'ongoing') {
+        if (!isFog && step.action_type === 'ongoing') {
           const linkedLog = serviceLogByAxis[step.axis];
           if (linkedLog) {
             const diff = linkedLog.next_visit ? Math.round((new Date(linkedLog.next_visit) - new Date()) / 86400000) : null;
@@ -1437,7 +1466,7 @@ export default function NewMeNaviPage() {
           : POS_CYCLE[(posIdx - (isCompassNext ? 1 : 2) + 100) % 2];
         const connHtml = i > 0 ? connectorSvg(prevPos || 'gnr-left', posClass, isDone) : '';
 
-        return `${connHtml}<div class="${nodeClasses}" data-done-key="${esc(step.id)}">
+        const nodeHtml = `${connHtml}<div class="${nodeClasses}" data-done-key="${esc(step.id)}">
           <div class="gmap-node-row ${posClass}">
             <div class="gmap-node" data-toggle-node="${esc(step.id)}">
               <div class="gm-circle ${circleClass}">${esc(def.icon || '•')}</div>
@@ -1455,7 +1484,22 @@ export default function NewMeNaviPage() {
             </div>
           </div>
         </div>`;
-      }).join('');
+        if (isDone)      completedHtml += nodeHtml;
+        else if (!isFog) activeHtml    += nodeHtml;
+        else             fogHtml       += nodeHtml;
+        _stepIdx++;
+      }
+      // Stage 4: セクション組み立て（完了折りたたみ → アクティブ → 霧の向こう）
+      const completedSection = _doneCount > 0
+        ? `<button class="navi-done-toggle" onclick="const l=this.nextElementSibling;l.classList.toggle('open');this.textContent=(l.classList.contains('open')?'▴':'▾')+' 完了した行程 ${_doneCount}件';">▾ 完了した行程 ${_doneCount}件</button><div class="navi-done-list">${completedHtml}</div>`
+        : '';
+      const fogSection = fogHtml
+        ? `<div class="navi-fog-divider">霧の向こう</div>${hasMirrorData
+            ? `<div class="navi-fog-cta">📸 あなたのMirror分析をもとに組み立てた道が続きます。<br>Mirrorで変化を確認すると、先の航路が開けていきます。</div>`
+            : `<div class="navi-fog-cta">🔭 この先 ${_fogCount} つの行程が待っています。<br><a href="/mypage/mirror">Mirrorで写真を分析する →</a> と先の道が見えてきます。</div>`
+          }${fogHtml}`
+        : '';
+      const nodesHtml = completedSection + activeHtml + fogSection;
 
       const regenBtn = token ? `
         <button id="navi-regen-btn" style="display:block;width:100%;padding:10px;background:rgba(10,15,30,0.5);border:1px solid rgba(232,228,220,0.12);border-radius:8px;color:rgba(232,228,220,0.4);font-size:11px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-top:24px;letter-spacing:.05em">
