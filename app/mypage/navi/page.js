@@ -733,6 +733,7 @@ export default function NewMeNaviPage() {
 
     // ── AI生成パーソナライズステップ ──
     let naviStepsData = null;
+    let hasMirrorData = false;
 
     // ── 進捗データ読み込み（Supabase優先） ──
     let axisProgress = {};
@@ -836,7 +837,6 @@ export default function NewMeNaviPage() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       // Mirror履歴があればMirror-only Map生成を提案
-      let hasMirrorData = false;
       if (token) {
         try {
           const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
@@ -922,6 +922,9 @@ export default function NewMeNaviPage() {
         root.innerHTML = '';
       }
     }
+
+    // Me Scan ユーザー向け: Mirrorから生成したMapがあれば hasMirrorData=true とみなす
+    if (!hasMirrorData && naviStepsData?.source === 'mirror') hasMirrorData = true;
 
     function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
