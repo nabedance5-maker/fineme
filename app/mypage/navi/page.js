@@ -1441,10 +1441,12 @@ export default function NewMeNaviPage() {
       const POS_CYCLE = ['gnr-left', 'gnr-right'];
       // Stage 4: グループ分け用変数
       const NAVI_VISIBLE_UNDONE = 8;
+      // 霧の境界は全ステップ基準（軸フィルター状態に関わらず一定）
+      const _globalUndone  = allNaviSteps.filter(s => !stepDone[s.id]);
+      const _activeIds     = new Set(_globalUndone.slice(0, NAVI_VISIBLE_UNDONE).map(s => s.id));
       const _undoneInOrder = steps.filter(s => !stepDone[s.id]);
-      const _activeIds  = new Set(_undoneInOrder.slice(0, NAVI_VISIBLE_UNDONE).map(s => s.id));
-      const _fogCount   = Math.max(0, _undoneInOrder.length - NAVI_VISIBLE_UNDONE);
-      const _doneCount  = steps.length - _undoneInOrder.length;
+      const _fogCount      = _undoneInOrder.filter(s => !_activeIds.has(s.id)).length;
+      const _doneCount     = steps.length - _undoneInOrder.length;
       let completedHtml = '';
       let activeHtml    = '';
       let fogHtml       = '';
@@ -2229,6 +2231,8 @@ export default function NewMeNaviPage() {
     }
 
     function buildCompassHtml() {
+      if (naviStepsData?.steps?.length)
+        return '<div class="compass-strip" id="compass-strip" style="display:none"></div>';
       let nextText = '', nextDef = {};
       if (naviStepsData?.steps?.length) {
         // AI生成パス: Compass軸の未完了ステップ → 全体の未完了ステップ の順で探す
@@ -2961,6 +2965,7 @@ export default function NewMeNaviPage() {
 
     // ── Today's Quest ──
     function buildTodayQuestHtml() {
+      if (naviStepsData?.steps?.length) return ''; // AI Mapでは地図上の🧭バッジで代替
       const steps = getNextUndoneSteps(3);
       if (!steps.length) return '';
       const itemsHtml = steps.map((s, i) => {
