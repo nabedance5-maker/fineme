@@ -14,18 +14,19 @@ const AXIS_TO_SEARCH = {
 };
 
 function buildCompassInstruction(userState, diagnosisInfo) {
+  const actionInstruction = `この軸について、今日または今週中にできる具体的な行動を1文で書く（何を・どこで・どのくらいの費用かを含める。「〇〇を始めましょう」などの抽象表現は禁止。「〇〇プログラム」「〇〇診断」などの架空の機能名も禁止）。`;
   if (userState === 'guest') {
-    return `この軸を改善するために最初にすべきことを1文で述べる。その後に必ず以下のいずれか1つだけを付け加える（実在するURLのみ使用。「〇〇プログラム」「〇〇診断」などの架空の機能名は絶対禁止）:\n「Me Scan（無料の外見診断）を受けると自分の優先軸がわかります → /diagnosis」\nまたは\n「会員登録すると分析結果が保存され行動ロードマップも作れます → /auth/login」`;
+    return `${actionInstruction}その後に必ず以下のいずれか1つだけを付け加える（実在するURLのみ）:\n「Me Scan（無料の外見診断）で優先軸と行動ロードマップが作れます → /diagnosis」\nまたは\n「会員登録で分析結果を保存・行動ロードマップも作れます → /auth/login」`;
   }
   if (userState === 'member') {
-    return `この軸を改善するために最初にすべきことを1文で述べる。その後に必ず以下を付け加える（実在するURLのみ使用。架空の機能名は禁止）:\n「Me Scan（無料診断）を受けると、この分析と連携した行動ロードマップ『New Me Navi』が使えます → /diagnosis」`;
+    return `${actionInstruction}その後に必ず以下を付け加える（実在するURLのみ）:\n「Me Scan（無料診断）を受けると、この分析と連携した行動ロードマップ『New Me Navi』が使えます → /diagnosis」`;
   }
   // diagnosed: Me Scan受診済み
   const compassAxis = diagnosisInfo?.compass_first || null;
   const searchCat = compassAxis ? (AXIS_TO_SEARCH[compassAxis] || null) : null;
-  const naviLine = `New Me Navi でこの軸の具体的なステップを確認できます → /mypage/navi`;
+  const naviLine = `New Me Navi でこの軸の詳しいステップを確認できます → /mypage/navi`;
   const searchLine = searchCat ? `\nまたは「関連サービスを探す → /search?category=${searchCat}」` : '';
-  return `この軸を改善するために最初にすべきことを1文で述べる。その後に必ず以下を付け加える（実在するURLのみ使用。「〇〇プログラム」などの架空の機能名は絶対禁止）:\n「${naviLine}」${searchLine}`;
+  return `${actionInstruction}その後に必ず以下を付け加える（実在するURLのみ）:\n「${naviLine}」${searchLine}`;
 }
 
 function buildSystemPrompt(userState, diagnosisInfo) {

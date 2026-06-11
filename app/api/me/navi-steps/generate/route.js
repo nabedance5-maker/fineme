@@ -129,9 +129,10 @@ export async function POST(request) {
   //                     Me Scan なし → Mirror 軸データから transform_vectors を合成
   const MIRROR_AXIS_MAP = { eyebrow: 'eyebrow', skin: 'skin', hair: 'hair', body: 'body', posture: 'body', fashion: 'fashion' };
   const POTENTIAL_TO_TV = {
-    '高': { current: 1, ideal: 3, care_type: 'none' },
-    '中': { current: 2, ideal: 3, care_type: 'concerned' },
-    '低': { current: 3, ideal: 3, care_type: 'self' },
+    // '高'は「改善余地が大きい」であって「未着手」ではない。concerned（気になっているが始めていない）が適切
+    '高': { current: 1, ideal: 3, care_type: 'concerned' },
+    '中': { current: 2, ideal: 3, care_type: 'self' },
+    '低': { current: 3, ideal: 3, care_type: 'self_regular' }, // gap=0で axisLines には使われないが念のため
   };
   let derivedDiagnosis = diagnosis;
   if (mirror_only) {
