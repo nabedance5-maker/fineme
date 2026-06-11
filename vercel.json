@@ -17,7 +17,8 @@
     { "path": "/api/cron/reservation-alert", "schedule": "0 15 * * *" },
     { "path": "/api/cron/story-reminder", "schedule": "0 12 * * *" },
     { "path": "/api/cron/weekly-nudge", "schedule": "0 0 * * 1" },
-    { "path": "/api/cron/monthly-report", "schedule": "0 0 1 * *" }
+    { "path": "/api/cron/monthly-report", "schedule": "0 0 1 * *" },
+    { "path": "/api/cron/mirror-voice-request", "schedule": "0 * * * *" }
   ],
   "redirects": [
     {
