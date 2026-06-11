@@ -305,11 +305,17 @@ export default function HomePage() {
           line-height: 1.85;
           margin: 28px 0 40px;
         }
+        .hero-nav-cta-pair {
+          display: flex;
+          gap: 12px;
+          justify-content: center;
+          flex-wrap: wrap;
+        }
         .hero-nav-cta {
           display: inline-flex;
           align-items: center;
           gap: 10px;
-          padding: 16px 40px;
+          padding: 16px 36px;
           border: 1.5px solid #c9a84c;
           color: #0a0f1e;
           background: #c9a84c;
@@ -324,6 +330,17 @@ export default function HomePage() {
         .hero-nav-cta:hover {
           opacity: .88;
           box-shadow: 0 0 48px rgba(201,168,76,0.55);
+        }
+        .hero-nav-cta--mirror {
+          background: transparent;
+          border-color: rgba(100,160,255,0.55);
+          color: rgba(180,210,255,0.92);
+          box-shadow: 0 0 24px rgba(100,160,255,0.18);
+        }
+        .hero-nav-cta--mirror:hover {
+          background: rgba(100,160,255,0.10);
+          opacity: 1;
+          box-shadow: 0 0 36px rgba(100,160,255,0.32);
         }
         .hero-nav-badges {
           display: flex;
@@ -341,6 +358,25 @@ export default function HomePage() {
           border-radius: 2px;
           letter-spacing: .06em;
         }
+        /* ── Dual section ── */
+        .dual-section { padding: 64px 20px; background: rgba(10,15,30,0.78); }
+        .dual-inner { max-width: 760px; margin: 0 auto; text-align: center; }
+        .dual-eyebrow { font-size: 11px; font-weight: 800; color: rgba(201,168,76,0.55); letter-spacing: .12em; text-transform: uppercase; margin: 0 0 10px; }
+        .dual-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(20px,3.5vw,28px); font-weight: 700; color: rgba(232,228,220,0.92); margin: 0 0 40px; line-height: 1.5; }
+        .dual-cards { display: flex; align-items: stretch; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .dual-card { flex: 1; min-width: 200px; max-width: 280px; padding: 24px 20px; border-radius: 14px; text-align: left; }
+        .dual-card--scan { background: rgba(201,168,76,0.06); border: 1.5px solid rgba(201,168,76,0.25); }
+        .dual-card--mirror { background: rgba(100,160,255,0.05); border: 1.5px solid rgba(100,160,255,0.22); }
+        .dual-card-icon { font-size: 28px; margin: 0 0 10px; }
+        .dual-card-name { font-size: 16px; font-weight: 800; color: rgba(232,228,220,0.92); margin: 0 0 2px; }
+        .dual-card-role { font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.55); letter-spacing: .06em; margin: 0 0 10px; text-transform: uppercase; }
+        .dual-card--mirror .dual-card-role { color: rgba(100,160,255,0.65); }
+        .dual-card-desc { font-size: 13px; color: rgba(232,228,220,0.55); line-height: 1.7; margin: 0 0 16px; }
+        .dual-card-link { font-size: 13px; font-weight: 700; color: #c9a84c; text-decoration: none; }
+        .dual-card--mirror .dual-card-link { color: rgba(100,160,255,0.85); }
+        .dual-card-plus { font-size: 32px; color: rgba(201,168,76,0.3); font-weight: 200; flex-shrink: 0; align-self: center; }
+        .dual-merge { margin-top: 32px; font-size: 14px; color: rgba(232,228,220,0.45); line-height: 1.8; }
+        .dual-merge strong { color: rgba(201,168,76,0.85); font-weight: 700; }
         .hero-nav-sub {
           font-size: 12px;
           color: rgba(255,255,255,0.25);
@@ -491,13 +527,18 @@ export default function HomePage() {
               その問いが生まれたなら、<br />もう準備はできています。
             </p>
 
-            <Link href="/diagnosis" className="hero-nav-cta">
-              Me Scanを受ける（無料）
-            </Link>
+            <div className="hero-nav-cta-pair">
+              <Link href="/diagnosis" className="hero-nav-cta">
+                🧬 Me Scan（無料）
+              </Link>
+              <Link href="/mypage/mirror" className="hero-nav-cta hero-nav-cta--mirror">
+                📸 Mirror（まずは無料）
+              </Link>
+            </div>
 
             <div className="hero-nav-badges">
-              <span className="hero-nav-badge">約15分</span>
-              <span className="hero-nav-badge">匿名・登録不要</span>
+              <span className="hero-nav-badge">15分・匿名</span>
+              <span className="hero-nav-badge">写真1枚から</span>
               <span className="hero-nav-badge">7軸コンパス生成</span>
             </div>
 
@@ -521,6 +562,32 @@ export default function HomePage() {
                 <strong>正しい地図と羅針盤があれば、誰でも更新できる。</strong>
               </p>
             </div>
+          </div>
+        </section>
+
+        {/* ── 2ツール統合価値 ── */}
+        <section className="dual-section">
+          <div className="dual-inner">
+            <p className="dual-eyebrow">2つの地図が揃うと</p>
+            <h2 className="dual-title">本当のあなたが、見えてくる。</h2>
+            <div className="dual-cards">
+              <div className="dual-card dual-card--scan">
+                <div className="dual-card-icon">🧬</div>
+                <p className="dual-card-name">Me Scan</p>
+                <p className="dual-card-role">あなたが見ている自分</p>
+                <p className="dual-card-desc">現在地・ゴール・7軸のギャップを自分の言葉で測る。変わりたい動機も一緒に記録する。</p>
+                <Link href="/diagnosis" className="dual-card-link">受ける（無料）→</Link>
+              </div>
+              <div className="dual-card-plus">＋</div>
+              <div className="dual-card dual-card--mirror">
+                <div className="dual-card-icon">📸</div>
+                <p className="dual-card-name">Mirror</p>
+                <p className="dual-card-role">他人から見えている自分</p>
+                <p className="dual-card-desc">写真から、もうひとつの視点を見つける。自分では気づかない印象・変容の余白を読み取る。</p>
+                <Link href="/mypage/mirror" className="dual-card-link">分析する（まずは無料）→</Link>
+              </div>
+            </div>
+            <p className="dual-merge">両方揃うと → <strong>New Me Map</strong> の精度が最大化される</p>
           </div>
         </section>
 

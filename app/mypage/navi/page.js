@@ -621,10 +621,14 @@ export default function NewMeNaviPage() {
       .path-node.pn-fog .path-node-detail { display: none !important; }
       .path-node.pn-fog .gmap-node-text { color: #9ca3af; }
       .path-node.pn-fog .gmap-node-axis-name { opacity: 0.4; }
+      .navi-fog-zone { position: relative; padding-bottom: 30px; }
+      .navi-fog-zone::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 260px; background: linear-gradient(to bottom, transparent 0%, #0a0f1e 100%); pointer-events: none; z-index: 2; }
       .navi-fog-divider { display: flex; align-items: center; gap: 10px; padding: 22px 0 6px; font-size: 12px; color: #9ca3af; letter-spacing: .08em; }
       .navi-fog-divider::before, .navi-fog-divider::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, transparent, #d1d5db, transparent); }
       .navi-fog-cta { background: rgba(201,168,76,.06); border: 1px solid rgba(201,168,76,.18); border-radius: 10px; padding: 12px 16px; margin: 4px 0 16px; font-size: 13px; color: #6b7280; line-height: 1.65; }
       .navi-fog-cta a { color: #c9a84c; text-decoration: none; font-weight: 600; }
+      .mirror-promo-strip { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(100,160,255,0.05); border: 1px solid rgba(100,160,255,0.2); border-radius: 10px; font-size: 12px; color: rgba(232,228,220,0.55); margin-bottom: 14px; }
+      .mirror-promo-strip a { color: rgba(100,160,255,0.85); font-weight: 700; text-decoration: none; margin-left: auto; white-space: nowrap; }
       .navi-done-toggle { font-size: 12px; color: #9ca3af; background: none; border: none; cursor: pointer; padding: 0 0 10px; display: block; width: 100%; text-align: left; }
       .navi-done-list { display: none; }
       .navi-done-list.open { display: block; }
@@ -1450,6 +1454,7 @@ export default function NewMeNaviPage() {
       let completedHtml = '';
       let activeHtml    = '';
       let fogHtml       = '';
+      let fogNodeIdx    = 0;
 
       let posIdx = 0;
       let _stepIdx = 0;
@@ -1513,7 +1518,9 @@ export default function NewMeNaviPage() {
           : POS_CYCLE[(posIdx - (isCompassNext ? 1 : 2) + 100) % 2];
         const connHtml = i > 0 ? connectorSvg(prevPos || 'gnr-left', posClass, isDone) : '';
 
-        const nodeHtml = `${connHtml}<div class="${nodeClasses}" data-done-key="${esc(step.id)}">
+        const FOG_BLUR = [0.8, 1.5, 2.5, 3.5];
+        const fogBlurStyle = isFog ? ` style="filter:blur(${FOG_BLUR[Math.min(fogNodeIdx, 3)]}px)"` : '';
+        const nodeHtml = `${connHtml}<div class="${nodeClasses}" data-done-key="${esc(step.id)}"${fogBlurStyle}>
           <div class="gmap-node-row ${posClass}">
             <div class="gmap-node" data-toggle-node="${esc(step.id)}">
               <div class="gm-circle ${circleClass}">${esc(def.icon || '•')}</div>
@@ -1533,7 +1540,7 @@ export default function NewMeNaviPage() {
         </div>`;
         if (isDone)      completedHtml += nodeHtml;
         else if (!isFog) activeHtml    += nodeHtml;
-        else             fogHtml       += nodeHtml;
+        else             { fogHtml += nodeHtml; fogNodeIdx++; }
         _stepIdx++;
       }
       // Stage 4: セクション組み立て（完了折りたたみ → アクティブ → 霧の向こう）
@@ -1544,7 +1551,7 @@ export default function NewMeNaviPage() {
         ? `<div class="navi-fog-divider">霧の向こう</div>${hasMirrorData
             ? `<div class="navi-fog-cta">📸 このステップをやり切ったら、次のMirrorで変化を確認してみよう。<br>変化が確認されると先の航路が開けていきます。</div>`
             : `<div class="navi-fog-cta">🔭 この先 ${_fogCount} つの行程が待っています。<br><a href="/mypage/mirror">Mirrorで写真を分析する →</a> と先の道が見えてきます。</div>`
-          }${fogHtml}`
+          }<div class="navi-fog-zone">${fogHtml}</div>`
         : '';
       const nodesHtml = completedSection + activeHtml + fogSection;
 
@@ -1628,6 +1635,10 @@ export default function NewMeNaviPage() {
           })()
         : '';
 
+      const mirrorPromoBanner = (!hasMirrorData && naviStepsData.source === 'diagnosis_only')
+        ? `<div class="mirror-promo-strip"><span>📸</span><span>Mirrorで写真を分析すると、この地図の精度が上がります</span><a href="/mypage/mirror">試す（まずは無料）→</a></div>`
+        : '';
+
       const mirrorOnlyBanner = naviStepsData.source === 'mirror_only' ? `
         <div style="margin-bottom:16px;padding:12px 16px;background:rgba(100,160,255,0.07);border:1px solid rgba(100,160,255,0.25);border-radius:12px;display:flex;align-items:center;gap:12px">
           <span style="font-size:22px;flex-shrink:0">📸</span>
@@ -1640,6 +1651,7 @@ export default function NewMeNaviPage() {
 
       return `
         ${mirrorOnlyBanner}
+        ${mirrorPromoBanner}
         <div style="margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <span style="font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(201,168,76,0.55);text-transform:uppercase">あなただけの変容の道</span>
