@@ -39,7 +39,7 @@ export default function DiagnosisPage() {
       .diag-option-body { flex: 1; }
       .diag-option-title { font-size: 15px; font-weight: 700; color: #0a0f1e; line-height: 1.4; display: block; }
       .diag-option-desc { display: none; }
-      .diag-option.multi .diag-check { width: 18px; height: 18px; border: 2px solid rgba(201,168,76,0.3); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all .12s; }
+      .diag-option.multi .diag-check { width: 18px; height: 18px; border: 2px solid rgba(201,168,76,0.3); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all .12s; color: transparent; }
       .diag-option.multi.selected .diag-check { background: #c9a84c; border-color: #c9a84c; color: #0a0f1e; font-size: 11px; font-weight: 900; }
       .care-level-item { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(201,168,76,0.12); }
       .care-level-item:last-child { border-bottom: none; margin-bottom: 0; }
@@ -1094,7 +1094,7 @@ export default function DiagnosisPage() {
           <div className="diag-card">
             <p className="diag-step-label">ゴール｜場面</p>
             <h2 className="diag-q">外見が変わったとき、<br />どんな場面で実感したいですか？</h2>
-            <p className="diag-hint">当てはまるものをすべて選んでください（複数可）</p>
+            <p className="diag-hint">当てはまるものをすべて選んでください（複数選択可）</p>
             <div className="diag-options" id="opts-q_goal_a">
               <button className="diag-option" data-value="first_impression">
                 <span className="diag-option-icon">🫀</span>
@@ -1342,8 +1342,7 @@ export default function DiagnosisPage() {
             <div className="q3-intro-card">
               <p style={{fontSize:'11px',fontWeight:'700',color:'#6366f1',letterSpacing:'.06em',textTransform:'uppercase',margin:'0 0 12px'}}>Phase 3 ｜ 軸別スキャン</p>
               <h2 style={{fontSize:'clamp(18px,4vw,22px)',fontWeight:'800',lineHeight:'1.35',margin:'0 0 12px'}}>ここからは、8つの軸を<br />1ページで一気に答えてもらいます</h2>
-              <p style={{fontSize:'14px',color:'#6b7280',lineHeight:'1.7',margin:'0 0 6px'}}>各軸で「来た道」「他者からの見え方」「恋愛への影響」を聞きます。</p>
-              <p style={{fontSize:'13px',color:'#9ca3af',margin:'0 0 4px'}}>この答えが、あなたの変容ナビの「現在地」になります。</p>
+              <p style={{fontSize:'14px',color:'#6b7280',lineHeight:'1.7',margin:'0 0 12px'}}>各軸で「来た道」「他者からの見え方」「恋愛への影響」を聞きます。</p>
               <p style={{fontSize:'12px',color:'#a78bfa',fontWeight:'600',margin:'0 0 20px'}}>正直な答えほど、精度の高いマップになります。</p>
               <div className="q3-intro-axes">
                 {[['💪','体型'],['✂️','眉毛'],['👔','服'],['💇','髪'],['✨','肌'],['🪒','脱毛'],['🦷','歯'],['💅','爪']].map(([icon, label], i) => (
@@ -1376,7 +1375,7 @@ export default function DiagnosisPage() {
           <div className="diag-card">
             <p className="diag-step-label">Q4｜これまでの試み</p>
             <h2 className="diag-q">外見について、<br />これまでに試したことはありますか？</h2>
-            <p className="diag-hint">当てはまるものをすべて選んでください。（複数選択可）</p>
+            <p className="diag-hint">当てはまるものをすべて選んでください（複数選択可）</p>
             <div className="diag-options" id="opts-q5">
               <button className="diag-option multi" data-value="gym">
                 <span className="diag-check">✓</span>
@@ -1486,7 +1485,7 @@ export default function DiagnosisPage() {
           <div className="diag-card">
             <p className="diag-step-label">Q5｜理想の関係</p>
             <h2 className="diag-q">プロと一緒に変わるとしたら、<br />どんな関係が理想ですか？</h2>
-            <p className="diag-hint">当てはまるものを全て選んでください。（複数選択可）</p>
+            <p className="diag-hint">当てはまるものをすべて選んでください（複数選択可）</p>
             <div className="diag-options" id="opts-q6">
               <button className="diag-option multi" data-value="explanation_autonomy">
                 <span className="diag-check">✓</span>
