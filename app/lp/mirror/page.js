@@ -7,8 +7,8 @@ const MIRROR_VOICES = [];
 
 export const metadata = {
   title: '写真1枚で「変われる余白」がわかる | Fineme Mirror',
-  description: '写真をアップロードするだけ。AIが眉・肌・ヘア・姿勢・体型・服・爪の7軸を分析し、今のあなたが最も変わりやすい場所を可視化します。¥500。写真は保存されません。',
-  robots: { index: false, follow: false },
+  description: '写真をアップロードするだけ。AIが眉・肌・ヘア・表情・姿勢・体型・服装の最大7軸を分析し、今のあなたが最も変わりやすい場所を可視化します。無料プレビューあり、続きは¥500。写真は保存されません。',
+  robots: { index: true, follow: true },
 };
 
 export default function MirrorLpPage() {
@@ -102,7 +102,7 @@ export default function MirrorLpPage() {
               鏡だけでは気づけない伸びしろを、AIが映し出す。
             </p>
             <p className="m-fade m-fade-d2" style={{ fontSize: 'clamp(14px,2.8vw,17px)', color: 'rgba(240,236,228,0.65)', lineHeight: 2.0, marginBottom: '36px' }}>
-              AIが7軸で分析。眉・肌・ヘア・姿勢・体型・服・爪。<br />
+              AIが最大7軸で分析。眉・肌・ヘア・表情・姿勢・体型・服装。<br />
               今のあなたが「最も変わりやすい場所」を地図にします。
             </p>
             <div className="m-fade m-fade-d3">
@@ -252,7 +252,7 @@ export default function MirrorLpPage() {
               ['🧍', '姿勢', '見た目の若さ'],
               ['💪', '体型', '全体シルエット'],
               ['👔', '服装', 'センスの可視化'],
-              ['💅', '爪', '細部の誠実さ'],
+              ['😊', '表情・雰囲気', '醸し出す空気感'],
             ].map(([icon, label, sub]) => (
               <div key={label} className="m-axis-card">
                 <div style={{ fontSize: '24px', marginBottom: '6px' }}>{icon}</div>
@@ -538,9 +538,18 @@ export default function MirrorLpPage() {
               </div>
             ))}
           </div>
+          <div style={{ background: 'rgba(100,160,255,0.05)', border: '1px solid rgba(100,160,255,0.2)', borderRadius: '12px', padding: '16px 20px', marginBottom: '16px' }}>
+            <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.75)', lineHeight: 1.9, margin: 0 }}>
+              Mirrorは「1回の分析」で終わりません。<br />
+              <strong style={{ color: 'rgba(240,236,228,0.92)' }}>分析結果はそのままあなた専用の行動ロードマップ「New Me Map」へ変換されます。</strong><br />
+              <span style={{ color: 'rgba(240,236,228,0.5)', fontSize: '13px' }}>
+                変容余地の高い軸から順に行動ステップが並び、「何を、どこで、どのくらいのコストで」が見えます。
+              </span>
+            </p>
+          </div>
           <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '12px', padding: '14px 18px', fontSize: '12px', color: 'rgba(240,236,228,0.5)', lineHeight: 1.8, marginBottom: '28px' }}>
             <strong style={{ color: '#c9a84c' }}>Me Scan + Mirror の組み合わせが最高精度。</strong><br />
-            Me Scan（無料・3分）を受診済みの場合、診断データと Mirror データを統合して、さらに精度の高い Map が生成されます。
+            Me Scan（無料・15分）を受診済みの場合、自己診断データと Mirror の他者目線データが統合され、あなた専用の Map 精度が最大化されます。
           </div>
           <div style={{ textAlign: 'center' }}>
             <Link href="/mirror" className="m-cta-btn" style={{ display: 'inline-block', padding: '14px 44px', borderRadius: '12px', color: '#0a0f1e', fontWeight: 900, fontSize: '16px', textDecoration: 'none', boxShadow: '0 6px 24px rgba(201,168,76,0.35)' }}>
@@ -672,7 +681,7 @@ export default function MirrorLpPage() {
             </div>
             {[
               ['どんな写真を使えばいいですか？', '顔写真または全身写真を推奨します。自撮りでも構いません。明るい場所で撮影した正面・斜め45度の写真が最も精度が高くなります。'],
-              ['決済はどうなりますか？', 'Stripe（クレジットカード）での一回払いです。定期課金や自動更新はありません。決済後、即座に詳細分析結果が表示されます。'],
+              ['決済はどうなりますか？', 'Mirrorは単発¥500で利用できます（Stripe 一回払い・自動更新なし）。決済後、即座に詳細分析が表示されます。また、毎月の変化を追跡したい方向けに月額¥780のサブスクプランもあります（マイページから）。'],
               ['スマートフォンでも使えますか？', 'はい。PCでもスマートフォンでもご利用いただけます。写真はカメラロールから選択またはカメラで撮影して直接アップロードできます。'],
               ['分析にどのくらい時間がかかりますか？', '通常、写真のアップロードから分析結果表示まで20〜40秒程度です。通信環境によって多少前後します。'],
               ['過去の分析結果は保存されますか？', 'ログイン済みの場合、過去の分析セッションを復元できます。未ログインの場合はブラウザのローカルに1件のみ保存されます。'],
