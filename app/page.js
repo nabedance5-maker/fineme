@@ -313,15 +313,14 @@ export default function HomePage() {
         }
         .hero-nav-cta {
           display: inline-flex;
+          flex-direction: column;
           align-items: center;
-          gap: 10px;
-          padding: 16px 36px;
+          gap: 4px;
+          padding: 14px 36px;
           border: 1.5px solid #c9a84c;
           color: #0a0f1e;
           background: #c9a84c;
           border-radius: 3px;
-          font-size: 15px;
-          font-weight: 700;
           text-decoration: none;
           letter-spacing: .08em;
           box-shadow: 0 0 32px rgba(201,168,76,0.35);
@@ -331,6 +330,9 @@ export default function HomePage() {
           opacity: .88;
           box-shadow: 0 0 48px rgba(201,168,76,0.55);
         }
+        .hero-nav-cta-main { font-size: 15px; font-weight: 700; }
+        .hero-nav-cta-sub { font-size: 11px; font-weight: 500; opacity: .7; letter-spacing: .04em; }
+        .hero-nav-cta--mirror .hero-nav-cta-sub { opacity: .65; }
         .hero-nav-cta--mirror {
           background: transparent;
           border-color: rgba(100,160,255,0.55);
@@ -529,10 +531,12 @@ export default function HomePage() {
 
             <div className="hero-nav-cta-pair">
               <Link href="/diagnosis" className="hero-nav-cta">
-                🧬 Me Scan（無料）
+                <span className="hero-nav-cta-main">🧬 Me Scan（無料）</span>
+                <span className="hero-nav-cta-sub">7軸で外見を自己診断</span>
               </Link>
               <Link href="/mypage/mirror" className="hero-nav-cta hero-nav-cta--mirror">
-                📸 Mirror（まずは無料）
+                <span className="hero-nav-cta-main">📸 Mirror（まずは無料）</span>
+                <span className="hero-nav-cta-sub">写真から他者目線を分析</span>
               </Link>
             </div>
 
