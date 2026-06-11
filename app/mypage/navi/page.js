@@ -953,7 +953,7 @@ export default function NewMeNaviPage() {
       }
     }
 
-    if (!hasMirrorData && naviStepsData?.source === 'mirror') hasMirrorData = true;
+    if (!hasMirrorData && (naviStepsData?.source === 'mirror_only' || naviStepsData?.source === 'diagnosis_mirror')) hasMirrorData = true;
     if (!hasMirrorData && currentUid) {
       try {
         const mRes = await fetchWithTimeout(`/api/mirror/sessions?user_id=${currentUid}&limit=1&include_axes=1`);
@@ -1628,7 +1628,7 @@ export default function NewMeNaviPage() {
           })()
         : '';
 
-      const mirrorOnlyBanner = naviStepsData.source === 'mirror' ? `
+      const mirrorOnlyBanner = naviStepsData.source === 'mirror_only' ? `
         <div style="margin-bottom:16px;padding:12px 16px;background:rgba(100,160,255,0.07);border:1px solid rgba(100,160,255,0.25);border-radius:12px;display:flex;align-items:center;gap:12px">
           <span style="font-size:22px;flex-shrink:0">📸</span>
           <div style="flex:1">

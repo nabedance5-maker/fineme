@@ -48,7 +48,9 @@ export async function POST(request) {
   const user = await getUser(request);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { diagnosis, body_data, mirror_only } = await request.json().catch(() => ({}));
+  const _req = await request.json().catch(() => ({}));
+  const { diagnosis, mirror_only } = _req;
+  let body_data = _req.body_data;
   if (!mirror_only && !diagnosis?.transform_vectors) {
     return Response.json({ error: 'diagnosis.transform_vectors が必要です' }, { status: 400 });
   }
@@ -57,7 +59,7 @@ export async function POST(request) {
   // ただし mirror_only の場合: 最新Mirrorセッションが既存Mapより新しければ通す
   const { data: profile } = await getSupabase()
     .from('profiles')
-    .select('navi_steps')
+    .select('navi_steps, body_data')
     .eq('id', user.id)
     .single();
   if (profile?.navi_steps?.generated_at) {
@@ -123,7 +125,8 @@ export async function POST(request) {
     }
   } catch {}
 
-  // mirror_only モード: Mirror軸データからtransform_vectorsを合成
+  // mirror_only モード: Me Scan あり → 土台として使用（Mirror は合成で優先）
+  //                     Me Scan なし → Mirror 軸データから transform_vectors を合成
   const MIRROR_AXIS_MAP = { eyebrow: 'eyebrow', skin: 'skin', hair: 'hair', body: 'body', posture: 'body', fashion: 'fashion' };
   const POTENTIAL_TO_TV = {
     '高': { current: 1, ideal: 3, care_type: 'none' },
@@ -131,16 +134,31 @@ export async function POST(request) {
     '低': { current: 3, ideal: 3, care_type: 'self' },
   };
   let derivedDiagnosis = diagnosis;
-  if (mirror_only && mirrorAxes) {
-    const tv_derived = {};
-    for (const ax of mirrorAxes) {
-      const naviAxis = MIRROR_AXIS_MAP[ax.id];
-      if (!naviAxis) continue;
-      tv_derived[naviAxis] = POTENTIAL_TO_TV[ax.potential_level] || { current: 2, ideal: 3, care_type: 'concerned' };
+  if (mirror_only) {
+    const { data: diagResult } = await supabase
+      .from('diagnosis_results')
+      .select('raw_data')
+      .eq('user_id', user.id)
+      .single().catch(() => ({ data: null }));
+
+    if (diagResult?.raw_data?.transform_vectors) {
+      // Me Scan あり → 土台として使用（Mirror はプロンプト内で優先）
+      derivedDiagnosis = diagResult.raw_data;
+      if (!body_data || !Object.keys(body_data).length) {
+        body_data = profile?.body_data || {};
+      }
+    } else if (mirrorAxes) {
+      // Me Scan なし → Mirror 軸から transform_vectors を合成
+      const tv_derived = {};
+      for (const ax of mirrorAxes) {
+        const naviAxis = MIRROR_AXIS_MAP[ax.id];
+        if (!naviAxis) continue;
+        tv_derived[naviAxis] = POTENTIAL_TO_TV[ax.potential_level] || { current: 2, ideal: 3, care_type: 'concerned' };
+      }
+      derivedDiagnosis = { transform_vectors: tv_derived };
+    } else {
+      return Response.json({ error: 'Mirror分析データが見つかりません。先にMirrorで写真を分析してください。' }, { status: 400 });
     }
-    derivedDiagnosis = { transform_vectors: tv_derived };
-  } else if (mirror_only && !mirrorAxes) {
-    return Response.json({ error: 'Mirror分析データが見つかりません。先にMirrorで写真を分析してください。' }, { status: 400 });
   }
 
   const tv = derivedDiagnosis?.transform_vectors || {};
@@ -398,7 +416,7 @@ ${modeRules}
     steps: generated.steps,
     generated_at: new Date().toISOString(),
     diagnosis_at: derivedDiagnosis?.at || null,
-    source: mirror_only ? 'mirror' : 'diagnosis',
+    source: !mirror_only ? 'diagnosis_only' : derivedDiagnosis?.at ? 'diagnosis_mirror' : 'mirror_only',
   };
 
   const { error: saveError } = await supabase
