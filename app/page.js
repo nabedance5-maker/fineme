@@ -293,10 +293,10 @@ export default function HomePage() {
           color: rgba(255,255,255,0.92);
           line-height: 1.7;
           padding: 10px 0 0 0;
-          border-left: 2px solid rgba(201,168,76,0.5);
-          margin: 12px 0 0 8px;
-          padding-left: 16px;
-          text-align: left;
+          border-left: none;
+          margin: 12px 0 0 0;
+          padding-left: 0;
+          text-align: center;
         }
         .hero-nav-tagline {
           font-family: 'Noto Serif JP', 'Noto Serif', Georgia, serif;
