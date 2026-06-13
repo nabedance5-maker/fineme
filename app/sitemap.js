@@ -6,6 +6,8 @@ const STATIC_PAGES = [
   { url: '/', priority: 1.0, changeFrequency: 'daily' },
   { url: '/search', priority: 0.9, changeFrequency: 'daily' },
   { url: '/diagnosis', priority: 0.9, changeFrequency: 'weekly' },
+  { url: '/lp/mirror', priority: 0.9, changeFrequency: 'weekly' },
+  { url: '/mirror', priority: 0.8, changeFrequency: 'weekly' },
   { url: '/diagnosis/result', priority: 0.7, changeFrequency: 'weekly' },
   { url: '/feature', priority: 0.8, changeFrequency: 'daily' },
   { url: '/provider/join', priority: 0.8, changeFrequency: 'monthly' },
