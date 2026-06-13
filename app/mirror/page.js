@@ -84,6 +84,7 @@ export default function MirrorPage() {
   const [linkCopied, setLinkCopied] = useState(false);
   const [myUserId, setMyUserId] = useState(null);
   const [inviteCopied, setInviteCopied] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
   const fileInputRef = useRef(null);
   const dropRef = useRef(null);
 
@@ -255,6 +256,26 @@ export default function MirrorPage() {
       setError(e.message);
       setPurchasing(false);
     }
+  };
+
+  const handleSubscribeCheckout = async () => {
+    setSubscribing(true);
+    try {
+      const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      const token = sbKey ? JSON.parse(localStorage.getItem(sbKey) || 'null')?.access_token : null;
+      if (!token) {
+        window.location.href = '/auth/login?redirect=/mypage/subscription';
+        return;
+      }
+      const res = await fetch('/api/subscription/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else setError('サブスク申込みに失敗しました');
+    } catch (e) { setError(e.message); }
+    finally { setSubscribing(false); }
   };
 
   const submitFeedback = async () => {
@@ -605,21 +626,28 @@ export default function MirrorPage() {
                 </button>
 
                 {!subStatus?.isActive && (
-                  <a
-                    href="/mypage/subscription"
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '8px',
-                      padding: '13px 28px',
-                      border: '1px solid rgba(201,168,76,0.5)',
-                      borderRadius: '12px',
-                      fontSize: '14px', fontWeight: '800',
-                      color: '#c9a84c',
-                      textDecoration: 'none',
-                      background: 'rgba(201,168,76,0.06)',
-                    }}
-                  >
-                    ♾️ ¥780/月 — 月3回まで無料で使う
-                  </a>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                    <button
+                      onClick={handleSubscribeCheckout}
+                      disabled={subscribing}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '8px',
+                        padding: '13px 28px',
+                        border: '1px solid rgba(201,168,76,0.5)',
+                        borderRadius: '12px',
+                        fontSize: '14px', fontWeight: '800',
+                        color: '#c9a84c',
+                        background: 'rgba(201,168,76,0.06)',
+                        cursor: subscribing ? 'not-allowed' : 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      {subscribing ? '処理中…' : '♾️ ¥780/月 — 月3回まで無料で使う'}
+                    </button>
+                    <span style={{ fontSize: '11px', color: 'rgba(232,228,220,0.35)' }}>
+                      ¥500 で1回 → 月3回使うなら ¥780/月 のほうがお得
+                    </span>
+                  </div>
                 )}
               </div>
 
@@ -687,6 +715,38 @@ export default function MirrorPage() {
               >
                 🗺️ New Me Map を生成する →
               </button>
+            </div>
+          )}
+
+          {/* サブスク upsell（full・非サブスク加入者のみ） */}
+          {state === 'full' && !subStatus?.isActive && (
+            <div style={{ marginTop: '16px', background: 'rgba(10,30,20,0.7)', border: '1px solid rgba(80,200,140,0.3)', borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
+              <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.12em', color: 'rgba(80,200,140,0.6)', textTransform: 'uppercase', margin: '0 0 10px' }}>
+                毎月続ける
+              </p>
+              <p style={{ fontSize: '16px', fontWeight: 800, color: '#e8e4dc', margin: '0 0 6px' }}>
+                ¥780/月で、毎月この分析が3回無料に
+              </p>
+              <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', margin: '0 0 16px', lineHeight: 1.7 }}>
+                今回の ¥500 は1回分。サブスクなら月3回まで追加料金なし。<br />
+                変容の軌跡（月次比較）も自動で蓄積されます。
+              </p>
+              <div style={{ display: 'inline-flex', gap: '12px', alignItems: 'center', background: 'rgba(80,200,140,0.08)', border: '1px solid rgba(80,200,140,0.2)', borderRadius: '10px', padding: '8px 16px', marginBottom: '20px', fontSize: '12px', color: 'rgba(232,228,220,0.7)' }}>
+                <span>¥500 × 3回 = ¥1,500</span>
+                <span style={{ color: 'rgba(232,228,220,0.3)' }}>vs</span>
+                <span style={{ color: '#50c88c', fontWeight: 800 }}>¥780/月 で3回</span>
+              </div>
+              <br />
+              <button
+                onClick={handleSubscribeCheckout}
+                disabled={subscribing}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: subscribing ? 'rgba(80,200,140,0.3)' : 'linear-gradient(135deg,#50c88c,#3aaa78)', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 800, color: '#0a0f1e', cursor: subscribing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+              >
+                {subscribing ? '処理中…' : '♾️ ¥780/月 のサブスクに切り替える'}
+              </button>
+              <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.35)', margin: '12px 0 0' }}>
+                いつでも解約可能 / Stripe で安全決済
+              </p>
             </div>
           )}
 
