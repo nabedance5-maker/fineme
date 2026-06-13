@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-06-13
 -- Mirror フィードバック LP 承認カラム追加
 -- mirror_feedback テーブルに LP 表示用のカラムを追加する
 -- lp_approved: LP に表示するか（管理者が承認したもののみ true）
