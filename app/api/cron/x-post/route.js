@@ -186,7 +186,7 @@ const MIRROR_POSTS = [
 今いちばん変わりやすい場所がわかります。
 
 まずは無料で👇
-${BASE_URL}/mirror
+${BASE_URL}/lp/mirror
 
 #外見磨き #メンズ美容 #AI`,
 
@@ -195,7 +195,7 @@ ${BASE_URL}/mirror
 その"どこ"を、写真1枚からAIが特定します。
 無料で7軸の概要が見れる。続きが要らなければ0円。
 
-${BASE_URL}/mirror
+${BASE_URL}/lp/mirror
 
 #垢抜け #メンズ #自己投資`,
 
@@ -204,7 +204,7 @@ ${BASE_URL}/mirror
 スコアじゃない。「今、何から変えると最も効くか」の見取り図。
 写真はAI分析後に削除されます。
 
-${BASE_URL}/mirror
+${BASE_URL}/lp/mirror
 
 #外見改善 #メンズ美容 #Fineme`,
 ];
@@ -225,7 +225,7 @@ ${BASE_URL}/diagnosis
 才能じゃない。「どこから変えるか」を間違えなかっただけ。
 その地図をFinemeにしました。
 
-${BASE_URL}/mirror
+${BASE_URL}/lp/mirror
 
 #垢抜け #メンズ美容`,
 ];
@@ -234,13 +234,13 @@ ${BASE_URL}/mirror
 function angleFor(postType, article) {
   switch (postType) {
     case 'mirror':
-      return `Fineme Mirror（写真1枚をAIが眉/肌/ヘア/姿勢/体型/服/爪の7軸で分析。無料プレビューあり・続きは¥500）への誘導。必ず ${BASE_URL}/mirror を入れる。`;
+      return `Fineme Mirror（写真1枚をAIが眉/肌/ヘア/姿勢/体型/服/爪の7軸で分析。無料プレビューあり・続きは¥500）への誘導。必ず ${BASE_URL}/lp/mirror を入れる。`;
     case 'diagnosis':
       return `Me Scan（無料の外見診断・3分で自分の優先軸＝Compassが分かる）への誘導。必ず ${BASE_URL}/diagnosis を入れる。`;
     case 'philosophy':
       return `外見磨きの思想・共感（外見を起点に自信を再設計する／変わるには順番がある等）。リンクは任意（入れるなら ${BASE_URL}）。`;
     case 'story':
-      return `オーナー「でお」の実体験（元・モテなかった→現役モデル、清潔感が無いと言われた、眉から始めた等）で共感を生む。リンクは ${BASE_URL}/mirror か ${BASE_URL}/diagnosis を任意で。`;
+      return `オーナー「でお」の実体験（元・モテなかった→現役モデル、清潔感が無いと言われた、眉から始めた等）で共感を生む。リンクは ${BASE_URL}/lp/mirror か ${BASE_URL}/diagnosis を任意で。`;
     case 'article':
       return article
         ? `公開記事「${article.title}」を、続きを読みたくなるフックで紹介。必ず ${BASE_URL}/feature/${article.slug} を入れる。`

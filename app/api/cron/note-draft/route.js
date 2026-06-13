@@ -28,7 +28,7 @@ async function generateNote(topic) {
 note記事を書く。読者は「変わりたいが何から始めればいいか分からない男性」。
 【トーン】変容の旅・地図と羅針盤・誠実で前向き。上から目線・点数化・他者否定はしない。自分の実体験を交える。
 【構成】惹きつける導入 → 共感（読者の痛み）→ 本質（順番・考え方）→ 具体的な一歩 → 自然なCTA。
-【CTA】記事末に Me Scan（${BASE_URL}/diagnosis）か Fineme Mirror（${BASE_URL}/mirror）への自然な導線を1つ。押し売りしない。
+【CTA】記事末に Me Scan（${BASE_URL}/diagnosis）か Fineme Mirror（${BASE_URL}/lp/mirror）への自然な導線を1つ。押し売りしない。
 【長さ】1800〜2600字程度。見出し（##）を3〜5個使う。
 出力フォーマット：1行目に「タイトル：〜」、空行のあと本文（Markdown）。`;
   const msg = await client.messages.create({
@@ -65,7 +65,7 @@ export async function GET(request) {
         <h2 style="color:#111">📝 今週のnote記事ドラフト</h2>
         <p style="color:#666;font-size:13px">テーマ：${topic}<br>note（抜けアドバイザー）にコピーして、見出し・改行を整えて公開してください。</p>
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:20px 22px;margin:16px 0;max-width:620px;font-size:14px;color:#111;line-height:1.95;white-space:pre-wrap">${article.replace(/</g, '&lt;')}</div>
-        <p style="font-size:12px;color:#999">※ note公開後、記事末のリンクが ${BASE_URL}/diagnosis または ${BASE_URL}/mirror になっているか確認を。被リンク獲得にもなります。</p>
+        <p style="font-size:12px;color:#999">※ note公開後、記事末のリンクが ${BASE_URL}/diagnosis または ${BASE_URL}/lp/mirror になっているか確認を。被リンク獲得にもなります。</p>
       `;
       await resend.emails.send({ from: 'Fineme note <noreply@fineme.me>', to: OWNER_EMAIL, subject: `【Fineme note】今週の記事ドラフト：${topic}`, html });
     }
