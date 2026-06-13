@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-06-13
 -- Mirror 声収集フロー用マイグレーション
 -- ① mirror_sessions に voice_requested_at カラムを追加
 -- ② mirror_feedback テーブルを新規作成
