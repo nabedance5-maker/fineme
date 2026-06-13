@@ -1,9 +1,5 @@
 import Link from 'next/link';
-
-// 利用者の「気づき」の声。admin/feedback の実コメントから本人同意の取れたものだけを貼る。
-// 空のあいだは下記セクションは描画されない（捏造防止）。
-// 形式: { text: '本文', meta: '20代・初挑戦 など属性（任意）' }
-const MIRROR_VOICES = [];
+import { createClient } from '@supabase/supabase-js';
 
 export const metadata = {
   title: '写真1枚で「変われる余白」がわかる | Fineme Mirror',
@@ -11,7 +7,24 @@ export const metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function MirrorLpPage() {
+export const revalidate = 300; // 5分キャッシュ
+
+async function getApprovedVoices() {
+  try {
+    const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const { data } = await db
+      .from('mirror_feedback')
+      .select('text, lp_meta')
+      .eq('lp_approved', true)
+      .order('created_at', { ascending: false });
+    return (data || []).map(v => ({ text: v.text, meta: v.lp_meta || null }));
+  } catch {
+    return [];
+  }
+}
+
+export default async function MirrorLpPage() {
+  const MIRROR_VOICES = await getApprovedVoices();
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `
