@@ -61,9 +61,21 @@ async function postReply(text, inReplyToTweetId) {
   return data;
 }
 
+// 認証済みアカウント自身の user ID を取得（X_USER_ID 環境変数の代替）
+async function getMyUserId() {
+  if (X_USER_ID) return X_USER_ID;
+  const url = 'https://api.twitter.com/2/users/me';
+  const authHeader = buildOAuthHeader('GET', url);
+  const res = await fetch(url, { headers: { Authorization: authHeader } });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data?.data?.id || null;
+}
+
 async function followUser(targetUserId) {
-  if (!X_USER_ID) return null;
-  const url = `https://api.twitter.com/2/users/${X_USER_ID}/following`;
+  const myId = await getMyUserId();
+  if (!myId) return null;
+  const url = `https://api.twitter.com/2/users/${myId}/following`;
   const body = JSON.stringify({ target_user_id: targetUserId });
   const authHeader = buildOAuthHeader('POST', url);
   const res = await fetch(url, {
