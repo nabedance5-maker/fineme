@@ -307,11 +307,17 @@ export default function DiagnosisPage() {
       style_priorities: [],
       style_priority_top: null,
       urgency: null,
-      budget: null
+      budget: null,
+      // 新5問
+      self_score: null,
+      reference_type: null,
+      rel_status: null,
+      key_scene_type: null,
+      past_change_exp: null
     };
 
-    const MAIN_SCREENS = ['q1','q_goal_a','q_goal_b','q_goal_c','q2','q3','q3_path','q5b','q6','q6b','q7','q8'];
-    const TOTAL_STEPS = 12;
+    const MAIN_SCREENS = ['q1','q_goal_a','q_goal_b','q_goal_c','q_score','q_refstyle','q2','q3','q3_path','q5b','q6','q6b','q7','q_relstatus','q8','q_event','q_pastchange'];
+    const TOTAL_STEPS = 17;
 
     let currentScreen = 'landing';
     let screenHistory = ['landing'];
@@ -378,11 +384,16 @@ export default function DiagnosisPage() {
         case 'q5b':    enabled = state.failure_patterns.length > 0; break;
         case 'q6':       enabled = state.style_priorities.length > 0; break;
         case 'q6b':      enabled = !!state.style_priority_top; break;
-        case 'q7':       enabled = !!state.urgency; break;
-        case 'q8':       enabled = !!state.budget; break;
+        case 'q7':          enabled = !!state.urgency; break;
+        case 'q8':          enabled = !!state.budget; break;
+        case 'q_score':     enabled = !!state.self_score; break;
+        case 'q_refstyle':  enabled = !!state.reference_type; break;
+        case 'q_relstatus': enabled = !!state.rel_status; break;
+        case 'q_event':     enabled = !!state.key_scene_type; break;
+        case 'q_pastchange':enabled = !!state.past_change_exp; break;
       }
       btnNext.disabled = !enabled;
-      btnNext.textContent = (currentScreen === 'q8') ? 'New Me Naviを生成する' : '次へ';
+      btnNext.textContent = (currentScreen === 'q_pastchange') ? 'New Me Naviを生成する' : '次へ';
     }
 
     function goNext() {
@@ -391,7 +402,9 @@ export default function DiagnosisPage() {
         case 'q1':       next = 'q_goal_a'; break;
         case 'q_goal_a': next = 'q_goal_b'; break;
         case 'q_goal_b': next = 'q_goal_c'; break;
-        case 'q_goal_c': next = 'q2'; break;
+        case 'q_goal_c': next = 'q_score'; break;
+        case 'q_score':  next = 'q_refstyle'; break;
+        case 'q_refstyle': next = 'q2'; break;
         case 'q2':       next = 'q3'; break;
         case 'q3':
           next = state.aga_concern === 'yes' ? 'q3_aga' : 'q3_intro';
@@ -413,8 +426,11 @@ export default function DiagnosisPage() {
           }
           break;
         case 'q6b': next = 'q7'; break;
-        case 'q7':  next = 'q8'; break;
-        case 'q8':
+        case 'q7':  next = 'q_relstatus'; break;
+        case 'q_relstatus': next = 'q8'; break;
+        case 'q8':  next = 'q_event'; break;
+        case 'q_event': next = 'q_pastchange'; break;
+        case 'q_pastchange':
           saveAndFinish();
           return;
       }
@@ -647,7 +663,13 @@ export default function DiagnosisPage() {
         style: styleRel.style,
         relationship: styleRel.relationship,
         urgency: state.urgency,
-        budget: state.budget
+        budget: state.budget,
+        // 新5問
+        self_score: state.self_score ? parseInt(state.self_score, 10) : null,
+        reference_type: state.reference_type,
+        rel_status: state.rel_status,
+        key_scene_type: state.key_scene_type,
+        past_change_exp: state.past_change_exp
       };
 
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); } catch (e) {}
@@ -878,6 +900,11 @@ export default function DiagnosisPage() {
     bindMultiChoice('opts-q5b', state.failure_patterns);
     bindSingleChoice('opts-q7', 'urgency');
     bindSingleChoice('opts-q8', 'budget');
+    bindSingleChoice('opts-q_score', 'self_score');
+    bindSingleChoice('opts-q_refstyle', 'reference_type');
+    bindSingleChoice('opts-q_relstatus', 'rel_status');
+    bindSingleChoice('opts-q_event', 'key_scene_type');
+    bindSingleChoice('opts-q_pastchange', 'past_change_exp');
 
     // Multi choice handler
     function bindMultiChoice(containerId, stateArray, noneExcludes) {
@@ -1209,6 +1236,63 @@ export default function DiagnosisPage() {
                 <span className="diag-option-body">
                   <span className="diag-option-title">自信が「自然な状態」になっている</span>
                   <span className="diag-option-desc">頑張って出す自信ではなく、あって当たり前の自信</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* SCREEN Q_SCORE: 自己採点 */}
+        <div className="diag-screen" id="screen-q_score">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div className="diag-card">
+            <p className="diag-step-label">自己採点</p>
+            <h2 className="diag-q">今の自分の外見、<br />10段階で何点ですか？</h2>
+            <p className="diag-hint">直感で選んでください。正解はありません。</p>
+            <div id="opts-q_score" style={{display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:'8px', marginTop:'4px'}}>
+              {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                <button key={n} className="diag-option" data-value={String(n)}
+                  style={{flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'14px 4px', gap:'2px'}}>
+                  <span style={{fontSize:'22px', fontWeight:900, color:'#0a0f1e'}}>{n}</span>
+                  {n === 1 && <span style={{fontSize:'9px', color:'#9ca3af'}}>最低</span>}
+                  {n === 5 && <span style={{fontSize:'9px', color:'#9ca3af'}}>普通</span>}
+                  {n === 10 && <span style={{fontSize:'9px', color:'#9ca3af'}}>最高</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* SCREEN Q_REFSTYLE: スタイルイメージ */}
+        <div className="diag-screen" id="screen-q_refstyle">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div className="diag-card">
+            <p className="diag-step-label">スタイルイメージ</p>
+            <h2 className="diag-q">目指したいスタイルの<br />イメージはありますか？</h2>
+            <p className="diag-hint">なんとなくでも大丈夫です。</p>
+            <div className="diag-options" id="opts-q_refstyle">
+              <button className="diag-option" data-value="person">
+                <span className="diag-option-icon">👤</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">特定の人・モデルのイメージがある</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="category">
+                <span className="diag-option-icon">🎨</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">スタイルのカテゴリはある（ナチュラル・清潔感系など）</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="none_yet">
+                <span className="diag-option-icon">🌫️</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">まだイメージはない</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="find_self">
+                <span className="diag-option-icon">🔍</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">「自分らしさ」を探したい</span>
                 </span>
               </button>
             </div>
@@ -1569,6 +1653,42 @@ export default function DiagnosisPage() {
           </div>
         </div>
 
+        {/* SCREEN Q_RELSTATUS: 恋愛・出会いの状況 */}
+        <div className="diag-screen" id="screen-q_relstatus">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div className="diag-card">
+            <p className="diag-step-label">状況</p>
+            <h2 className="diag-q">今の恋愛・出会いの<br />状況は？</h2>
+            <p className="diag-hint">Map のアクション優先順位に反映します。</p>
+            <div className="diag-options" id="opts-q_relstatus">
+              <button className="diag-option" data-value="crush">
+                <span className="diag-option-icon">❤️</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">気になる人がいる</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="active_dating">
+                <span className="diag-option-icon">📱</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">マッチングアプリ・婚活中</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="want_to_meet">
+                <span className="diag-option-icon">🌱</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">まず出会いを増やしたい段階</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="self_growth">
+                <span className="diag-option-icon">🎯</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">恋愛より自己成長・仕事・友人関係を優先</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* SCREEN Q8: 投資感覚 */}
         <div className="diag-screen" id="screen-q8">
           <button className="diag-back-btn" data-back="">← 戻る</button>
@@ -1603,6 +1723,78 @@ export default function DiagnosisPage() {
                 <span className="diag-option-body">
                   <span className="diag-option-title">¥30,000以上</span>
                   <span className="diag-option-desc">本気でやるなら惜しまない</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* SCREEN Q_EVENT: 直近のシーン */}
+        <div className="diag-screen" id="screen-q_event">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div className="diag-card">
+            <p className="diag-step-label">シーン</p>
+            <h2 className="diag-q">外見を変えたいと感じる<br />直近のシーンは？</h2>
+            <p className="diag-hint">最もリアルに感じるものを選んでください。</p>
+            <div className="diag-options" id="opts-q_event">
+              <button className="diag-option" data-value="romance">
+                <span className="diag-option-icon">💌</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">好きな人・デートでの印象</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="career">
+                <span className="diag-option-icon">💼</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">仕事・面接・キャリアの場面</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="social">
+                <span className="diag-option-icon">🤝</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">友人・グループでの存在感</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="general">
+                <span className="diag-option-icon">🌟</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">特定のシーンはないが、とにかく変わりたい</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* SCREEN Q_PASTCHANGE: 過去の変化経験 */}
+        <div className="diag-screen" id="screen-q_pastchange">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div className="diag-card">
+            <p className="diag-step-label">過去の経験</p>
+            <h2 className="diag-q">外見を本格的に<br />変えようとしたことがある？</h2>
+            <p className="diag-hint">以前の経験が Map の精度を上げます。</p>
+            <div className="diag-options" id="opts-q_pastchange">
+              <button className="diag-option" data-value="success">
+                <span className="diag-option-icon">✅</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">ある（一定の効果があった）</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="tried_no_effect">
+                <span className="diag-option-icon">🔄</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">ある（あまり変わらなかった）</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="short_term">
+                <span className="diag-option-icon">⏱️</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">少しだけ（続かなかった）</span>
+                </span>
+              </button>
+              <button className="diag-option" data-value="none">
+                <span className="diag-option-icon">🌱</span>
+                <span className="diag-option-body">
+                  <span className="diag-option-title">ほとんどない</span>
                 </span>
               </button>
             </div>

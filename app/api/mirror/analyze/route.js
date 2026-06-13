@@ -29,8 +29,33 @@ function buildCompassInstruction(userState, diagnosisInfo) {
   return `${actionInstruction}その後に必ず以下を付け加える（実在するURLのみ）:\n「${naviLine}」${searchLine}`;
 }
 
+function buildDiagnosisContext(diagnosisInfo) {
+  if (!diagnosisInfo) return '';
+  const lines = [];
+  if (diagnosisInfo.self_score != null) lines.push(`自己採点: ${diagnosisInfo.self_score}/10`);
+  if (diagnosisInfo.rel_status) {
+    const relMap = { crush:'気になる人がいる', active_dating:'マッチング・婚活中', want_to_meet:'出会いを増やしたい段階', self_growth:'自己成長・仕事優先' };
+    lines.push(`恋愛状況: ${relMap[diagnosisInfo.rel_status] || diagnosisInfo.rel_status}`);
+  }
+  if (diagnosisInfo.key_scene_type) {
+    const sceneMap = { romance:'好きな人・デート', career:'仕事・面接・キャリア', social:'友人・グループ', general:'特定シーンなし' };
+    lines.push(`最重要シーン: ${sceneMap[diagnosisInfo.key_scene_type] || diagnosisInfo.key_scene_type}`);
+  }
+  if (diagnosisInfo.reference_type) {
+    const refMap = { person:'特定の人・モデルがいる', category:'スタイルカテゴリがある', none_yet:'イメージなし', find_self:'自分らしさを探したい' };
+    lines.push(`スタイルイメージ: ${refMap[diagnosisInfo.reference_type] || diagnosisInfo.reference_type}`);
+  }
+  if (diagnosisInfo.past_change_exp) {
+    const pastMap = { success:'過去に変化経験あり（効果あった）', tried_no_effect:'試したが効果薄', short_term:'短期で挫折', none:'変化経験ほぼなし' };
+    lines.push(`過去の経験: ${pastMap[diagnosisInfo.past_change_exp] || diagnosisInfo.past_change_exp}`);
+  }
+  if (lines.length === 0) return '';
+  return `\n\n【ユーザー補足情報（compass_actionの優先度・表現の参考に）】\n${lines.join('\n')}`;
+}
+
 function buildSystemPrompt(userState, diagnosisInfo) {
   const compassInstruction = buildCompassInstruction(userState, diagnosisInfo);
+  const diagnosisContext = buildDiagnosisContext(diagnosisInfo);
   return `あなたは、外見の変容可能性を温かく・誠実に分析する専門家です。
 Fineme（外見を起点に自信を再設計するサービス）の「Fineme Mirror」機能として機能します。
 
@@ -92,7 +117,7 @@ overall → 総合変容余地
 potential_levelについて:
 「高」= 少しの変化で大きく印象が変わる余地がある
 「中」= 磨けば確実に向上する余地がある
-「低」= すでに整っている（称賛すべき点として伝える）`;
+「低」= すでに整っている（称賛すべき点として伝える）${diagnosisContext}`;
 }
 
 export async function POST(request) {

@@ -77,30 +77,46 @@ const POT_COLOR_COMP = { '高': '#c9a84c', '中': '#7aadff', '低': '#50c88c' };
 
 function ComparisonCard({ data }) {
   if (!data?.has_comparison) return null;
+  const total = data.changes.length;
+  const improved = data.improved_count;
+  const rate = total > 0 ? Math.round(improved / total * 100) : 0;
+  const hasBigImprovement = data.changes.some(c => c.from === '高' && c.to === '低');
+
   return (
-    <div style={{ background: 'rgba(10,15,30,0.6)', border: '1px solid rgba(201,168,76,0.22)', borderRadius: '14px', padding: '18px', marginBottom: '24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-        <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.12em', color: 'rgba(201,168,76,0.55)', textTransform: 'uppercase', margin: 0 }}>変容の軌跡</p>
-        <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.45)', margin: 0 }}>{data.prev_month} → {data.new_month}</p>
+    <div style={{ background: improved > 0 ? 'rgba(10,30,20,0.7)' : 'rgba(10,15,30,0.6)', border: `1px solid ${improved > 0 ? 'rgba(80,200,140,0.35)' : 'rgba(201,168,76,0.22)'}`, borderRadius: '14px', padding: '18px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+        <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.12em', color: improved > 0 ? 'rgba(80,200,140,0.6)' : 'rgba(201,168,76,0.55)', textTransform: 'uppercase', margin: 0 }}>変容の軌跡</p>
+        <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.35)', margin: 0 }}>{data.prev_month} → {data.new_month}</p>
       </div>
-      {data.improved_count > 0 && (
-        <p style={{ fontSize: '12px', color: '#50c88c', margin: '0 0 12px', fontWeight: 700 }}>
-          📈 {data.improved_count}軸で改善が見られました
-        </p>
+
+      {improved > 0 ? (
+        <div style={{ background: 'rgba(80,200,140,0.1)', border: '1px solid rgba(80,200,140,0.25)', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <p style={{ fontSize: '14px', color: '#50c88c', margin: 0, fontWeight: 800 }}>
+            🎉 {total}軸中{improved}軸が整いました
+          </p>
+          <span style={{ fontSize: '12px', color: '#50c88c', fontWeight: 700, opacity: 0.8 }}>{rate}%</span>
+        </div>
+      ) : (
+        <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.4)', margin: '0 0 12px' }}>変容の軌跡を記録中</p>
       )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {data.changes.map(c => (
-          <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-            <span style={{ width: '20px', textAlign: 'center' }}>{c.icon}</span>
-            <span style={{ flex: 1, color: 'rgba(232,228,220,0.75)', fontWeight: 600 }}>{c.name}</span>
-            <span style={{ color: POT_COLOR_COMP[c.from], fontSize: '12px', fontWeight: 700, minWidth: '20px' }}>{c.from}</span>
-            <span style={{ color: 'rgba(232,228,220,0.25)', fontSize: '11px' }}>━▶</span>
-            <span style={{ color: POT_COLOR_COMP[c.to], fontSize: '12px', fontWeight: 700, minWidth: '20px' }}>{c.to}</span>
-            <span style={{ color: DIR_COLOR[c.direction], fontWeight: 800, minWidth: '16px', textAlign: 'right' }}>
-              {DIR_ICON[c.direction]}
-            </span>
-          </div>
-        ))}
+        {data.changes.map(c => {
+          const isBig = c.from === '高' && c.to === '低';
+          return (
+            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+              <span style={{ width: '20px', textAlign: 'center' }}>{c.icon}</span>
+              <span style={{ flex: 1, color: 'rgba(232,228,220,0.75)', fontWeight: 600 }}>{c.name}</span>
+              {isBig && <span style={{ fontSize: '11px' }}>✨</span>}
+              <span style={{ color: POT_COLOR_COMP[c.from], fontSize: '12px', fontWeight: 700, minWidth: '20px' }}>{c.from}</span>
+              <span style={{ color: 'rgba(232,228,220,0.25)', fontSize: '11px' }}>━▶</span>
+              <span style={{ color: POT_COLOR_COMP[c.to], fontSize: '12px', fontWeight: 700, minWidth: '20px' }}>{c.to}</span>
+              <span style={{ color: DIR_COLOR[c.direction], fontWeight: 800, minWidth: '16px', textAlign: 'right' }}>
+                {DIR_ICON[c.direction]}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

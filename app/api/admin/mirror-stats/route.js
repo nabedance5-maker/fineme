@@ -17,11 +17,13 @@ export async function computeMirrorStats() {
   const d7 = new Date(now - 7 * 86400000).toISOString();
   const d30 = new Date(now - 30 * 86400000).toISOString();
 
-  const [sessionsRes, subRes, refRes, fbRes] = await Promise.all([
+  const d90 = new Date(now - 90 * 86400000).toISOString();
+  const [sessionsRes, subRes, refRes, fbRes, cancelledRes] = await Promise.all([
     supabase.from('mirror_sessions').select('created_at, paid, stripe_payment_intent_id'),
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('subscription_status', 'active'),
     supabase.from('referrals').select('created_at'),
     supabase.from('feedback').select('rating_accuracy, rating_revisit, comment, created_at').eq('page', 'mirror'),
+    supabase.from('profiles').select('subscription_cancelled_at').eq('subscription_status', 'canceled').gte('subscription_cancelled_at', d90),
   ]);
 
   const sessions = sessionsRes.data || [];
@@ -49,11 +51,29 @@ export async function computeMirrorStats() {
   const avg = (arr) => arr.length ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10 : 0;
   const activeSubs = subRes.count ?? 0;
 
+  // 直近3ヶ月の解約を月別集計（JST +9h）
+  const cancelsByMonth = {};
+  for (const p of cancelledRes.data || []) {
+    const d = new Date(new Date(p.subscription_cancelled_at).getTime() + 9 * 3_600_000);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    cancelsByMonth[key] = (cancelsByMonth[key] || 0) + 1;
+  }
+  // 直近3ヶ月分（0件でも表示するため月リストを生成）
+  const recentMonths = [];
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(now - i * 30 * 86400000);
+    const jd = new Date(d.getTime() + 9 * 3_600_000);
+    recentMonths.push(`${jd.getFullYear()}-${String(jd.getMonth() + 1).padStart(2, '0')}`);
+  }
+  const cancellations = [...new Set(recentMonths)]
+    .sort((a, b) => b.localeCompare(a))
+    .map(month => ({ month, count: cancelsByMonth[month] || 0 }));
+
   return {
     all: agg(sessions),
     last30d: agg(inWindow(sessions, d30)),
     last7d: agg(inWindow(sessions, d7)),
-    subscription: { active: activeSubs, mrr: activeSubs * 780 },
+    subscription: { active: activeSubs, mrr: activeSubs * 780, cancellations },
     referral: {
       total: referrals.length,
       last7d: inWindow(referrals, d7).length,

@@ -66,6 +66,19 @@ export default function AdminMirrorPage() {
             <Card label="紹介成立（累計）" value={stats.referral.total} sub={`7日 ${stats.referral.last7d} / 30日 ${stats.referral.last30d}`} accent="#2563eb" />
           </div>
 
+          <h2 style={{ fontSize: 15, fontWeight: 800, color: '#374151', marginBottom: 12 }}>解約動向（直近3ヶ月）</h2>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 28 }}>
+            {(stats.subscription.cancellations || []).map(c => (
+              <Card
+                key={c.month}
+                label={`${c.month} 解約`}
+                value={c.count === 0 ? '—' : `${c.count}件`}
+                sub={c.count === 0 ? '解約なし' : undefined}
+                accent={c.count > 0 ? '#ef4444' : undefined}
+              />
+            ))}
+          </div>
+
           <h2 style={{ fontSize: 15, fontWeight: 800, color: '#374151', marginBottom: 12 }}>Mirror フィードバック（声）</h2>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
             <Card label="回答数" value={stats.feedback.count} />
