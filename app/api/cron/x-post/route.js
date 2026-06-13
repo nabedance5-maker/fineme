@@ -22,9 +22,11 @@ const BASE_URL = 'https://www.fineme.me';
 const OWNER_EMAIL = process.env.OWNER_EMAIL || 'h.watanabe@fineme.me';
 
 // 添付用のブランド画像を取得しbase64化（失敗時はnull）
-async function fetchPromoImage(postType) {
+async function fetchPromoImage(postType, tweetText) {
   try {
-    const res = await fetch(`${BASE_URL}/api/og/x-promo?type=${encodeURIComponent(postType)}`);
+    const hook = tweetText ? tweetText.split('\n')[0].slice(0, 55) : '';
+    const url = `${BASE_URL}/api/og/x-promo?type=${encodeURIComponent(postType)}&hook=${encodeURIComponent(hook)}`;
+    const res = await fetch(url);
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());
     return buf.toString('base64');
@@ -41,7 +43,7 @@ async function emailDailyDraft({ tweetText, posted, postType, withImage }) {
     const { Resend } = await import('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    const imageBase64 = withImage ? await fetchPromoImage(postType) : null;
+    const imageBase64 = withImage ? await fetchPromoImage(postType, tweetText) : null;
     const subject = posted
       ? '【Fineme X】本日の投稿（自動投稿済み・操作不要）'
       : '【Fineme X】本日の投稿（コピーして手動投稿してください）';
@@ -119,7 +121,7 @@ async function postTweet(text) {
 }
 
 // 投稿タイプ（日付ベースでローテーション）。本文はAI生成、失敗時は下記テンプレにフォールバック
-const POST_TYPES = ['mirror', 'diagnosis', 'philosophy', 'story', 'article'];
+const POST_TYPES = ['tips', 'story', 'tips', 'philosophy', 'story', 'diagnosis', 'mirror'];
 
 const DIAGNOSIS_POSTS = [
   `恋愛がうまくいかない理由、外見だけじゃないかもしれない。
@@ -230,21 +232,66 @@ ${BASE_URL}/lp/mirror
 #垢抜け #メンズ美容`,
 ];
 
+const STORY_CONTEXTS = [
+  {
+    seed: '眉毛サロンに初めて行った日の帰り道',
+    hint: '鏡を見るたびに何かが違う感覚。でも何が変わったのかしばらく気づかなかった',
+  },
+  {
+    seed: '骨格診断を受けて、10年間の服選びが根本的に間違っていたと気づいた',
+    hint: 'サイズじゃなく、形が問題だった。ずっと自分のせいだと思っていた',
+  },
+  {
+    seed: '知り合いに「最近整えてる？」と言われた瞬間',
+    hint: '褒め言葉なのに、なぜか気恥ずかしかった。変わることを認めるのが怖かった',
+  },
+];
+
+const TIPS_POSTS = [
+  `眉毛を整えるとき、形より「毛量」を先に減らす。
+
+毛が多いままだと、どう整えても野暮ったく見える。
+まず間引いてから、形を作る順番が正解。
+
+眉毛サロンでも最初にやることはここです。
+
+#外見磨き #メンズ美容 #清潔感`,
+
+  `清潔感と垢ぬけは、別の話。
+
+清潔感 = 不快感を与えない（最低ライン）
+垢ぬけ = 印象が良くなる（加点）
+
+多くの人は垢ぬけを目指して、清潔感を飛ばしてる。
+順番が逆だと、何をやっても効きにくい。
+
+#外見磨き #メンズ #自己投資`,
+
+  `スキンケアで最初に買うべきものは、洗顔料じゃなくて保湿剤。
+
+洗顔は「引き算」、保湿は「土台作り」。
+土台がないところに洗顔だけしても、乾燥が進むだけ。
+
+まず保湿から始めると、他の全部が効いてくる。
+
+#スキンケア #メンズ美容 #外見磨き`,
+];
+
 // 投稿タイプ別の生成方針（AI用）
-function angleFor(postType, article) {
+function angleFor(postType, article, dayOfYear = 0) {
   switch (postType) {
+    case 'tips':
+      return `外見磨きの実用的な知識・Tip を1つ届ける。「なぜそうなのか」の理由を1文入れる。リンク不要。読んだだけで何か得した気分になる内容。テーマ候補（今日のWeb検索トレンドを踏まえて選ぶ）：眉毛の整え方・清潔感 vs 垢ぬけの違い・スキンケアの優先順位・服のサイズ感の見極め・ヘアスタイルと顔型・シャンプーの選び方。`;
+    case 'story': {
+      const ctx = STORY_CONTEXTS[dayOfYear % STORY_CONTEXTS.length];
+      return `オーナー「でお」の実体験を素材に投稿を書く。素材：「${ctx.seed}」。ヒント：「${ctx.hint}」。この出来事から読者が得られる気づき・共感を中心に。最後のリンクは任意（入れるなら ${BASE_URL}/lp/mirror か ${BASE_URL}/diagnosis）。自分語りではなく「読者が自分に重ねられる」角度で書く。`;
+    }
     case 'mirror':
-      return `Fineme Mirror（写真1枚をAIが眉/肌/ヘア/姿勢/体型/服/爪の7軸で分析。無料プレビューあり・続きは¥500）への誘導。必ず ${BASE_URL}/lp/mirror を入れる。`;
+      return `Fineme Mirror を使って「自分の変われる余白」を可視化した体験・気づきをシェアする角度で書く。「試してみたら分かった」「意外だった」という発見ベースのトーンで。必ず ${BASE_URL}/lp/mirror を入れる。押し売り・広告感は厳禁。`;
     case 'diagnosis':
       return `Me Scan（無料の外見診断・3分で自分の優先軸＝Compassが分かる）への誘導。必ず ${BASE_URL}/diagnosis を入れる。`;
     case 'philosophy':
-      return `外見磨きの思想・共感（外見を起点に自信を再設計する／変わるには順番がある等）。リンクは任意（入れるなら ${BASE_URL}）。`;
-    case 'story':
-      return `オーナー「でお」の実体験（元・モテなかった→現役モデル、清潔感が無いと言われた、眉から始めた等）で共感を生む。リンクは ${BASE_URL}/lp/mirror か ${BASE_URL}/diagnosis を任意で。`;
-    case 'article':
-      return article
-        ? `公開記事「${article.title}」を、続きを読みたくなるフックで紹介。必ず ${BASE_URL}/feature/${article.slug} を入れる。`
-        : `Me Scan（無料診断）への誘導。必ず ${BASE_URL}/diagnosis を入れる。`;
+      return `外見磨きの思想・共感（外見を起点に自信を再設計する／変わるには順番がある等）。リンク不要。純粋に「共感・気づき」だけで完結させる。`;
     default:
       return `Fineme（外見を起点に自信を再設計するサービス）の紹介。`;
   }
@@ -266,7 +313,7 @@ const QUESTION_MARKERS = ['確認させ', 'ご指示', 'どちらでしょう', 
 function isUsableTweet(text, postType, article) {
   if (!text || text.length < 40) return false;
   if (QUESTION_MARKERS.some(m => text.includes(m))) return false;
-  const needsLink = postType === 'mirror' || postType === 'diagnosis' || (postType === 'article' && article);
+  const needsLink = postType === 'mirror' || postType === 'diagnosis';
   if (needsLink && !text.includes('fineme.me')) return false;
   return true;
 }
@@ -283,7 +330,7 @@ const X_SYSTEM = `あなたはFinemeのSNS担当兼コピーライター。X(@de
 
 // Claudeで当日のX投稿を生成。まずWeb検索で“今のトレンド”を分析し反映（失敗時はnull）
 // context = { strategy: 今週の方針, recentTexts: 直近投稿（被り回避用） }
-async function generateTweet(postType, article, context = {}) {
+async function generateTweet(postType, article, context = {}, dayOfYear = 0) {
   if (!process.env.ANTHROPIC_API_KEY) return null;
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const stratLine = context.strategy ? `\n\n【今週の方針（参考・反映するが質問はしない）】\n${context.strategy}` : '';
@@ -293,9 +340,12 @@ async function generateTweet(postType, article, context = {}) {
 
   // ① Web検索つきで生成（リアルタイムのトレンド分析）
   try {
-    const userMsg = `今日のテーマ：${angleFor(postType, article)}
+    const userMsg = `今日のテーマ：${angleFor(postType, article, dayOfYear)}
 
-Web検索でメンズ美容・外見磨き・垢抜け・恋愛領域の「今Xで反応が良い切り口・フック・話題」を調べ、それを踏まえて投稿を1本完成させる。質問は返さず、最後に完成した投稿本文だけを出力。${stratLine}${recentLine}`;
+Web検索で次の2点を調べてから投稿を作る。
+①「メンズ 外見 美容 垢抜け 今週」などで検索し、今Xで話題になっているテーマ・切り口を1つ特定する。
+②「X 伸びる投稿 フォーマット 2025」「Twitter バズる文体 外見」などで検索し、今バズっている投稿の文体・構成スタイル（箇条書き／短文連打／問いかけ型／数字入りTips／最初の1行フック型など）を把握する。
+①のテーマを②のフォーマットで、でおの視点（元・非モテ→現役モデル）から語る投稿を1本完成させる。トレンドをそのまま使わず、必ずでおの文脈に変換する。質問は返さず、最後に完成した投稿本文だけを出力。${stratLine}${recentLine}`;
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1200,
@@ -313,7 +363,7 @@ Web検索でメンズ美容・外見磨き・垢抜け・恋愛領域の「今X�
 
   // ② フォールバック：Web検索なしで生成
   try {
-    const userMsg = `今日のテーマ：${angleFor(postType, article)}\n\nこのテーマで、いつもと言い回しが被らない強い投稿を1本「完成」させる。質問は返さず、投稿本文のみ出力。${stratLine}${recentLine}`;
+    const userMsg = `今日のテーマ：${angleFor(postType, article, dayOfYear)}\n\nこのテーマで、いつもと言い回しが被らない強い投稿を1本「完成」させる。質問は返さず、投稿本文のみ出力。${stratLine}${recentLine}`;
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 500,
@@ -345,26 +395,13 @@ export async function GET(request) {
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
   const postType = POST_TYPES[dayOfYear % POST_TYPES.length];
 
-  // article タイプは紹介する記事を1本取得
-  let article = null;
-  if (postType === 'article') {
-    const db = getSupabase();
-    const { data: features } = await db
-      .from('features')
-      .select('slug, title')
-      .eq('published', true)
-      .order('created_at', { ascending: false })
-      .limit(30);
-    if (features && features.length > 0) article = features[dayOfYear % features.length];
-  }
-
   // 静的フォールバック（AI生成が失敗したとき用）
   let tweetText;
-  if (postType === 'diagnosis') tweetText = DIAGNOSIS_POSTS[dayOfYear % DIAGNOSIS_POSTS.length];
+  if (postType === 'tips') tweetText = TIPS_POSTS[dayOfYear % TIPS_POSTS.length];
+  else if (postType === 'diagnosis') tweetText = DIAGNOSIS_POSTS[dayOfYear % DIAGNOSIS_POSTS.length];
   else if (postType === 'philosophy') tweetText = PHILOSOPHY_POSTS[dayOfYear % PHILOSOPHY_POSTS.length];
   else if (postType === 'mirror') tweetText = MIRROR_POSTS[dayOfYear % MIRROR_POSTS.length];
   else if (postType === 'story') tweetText = STORY_POSTS[dayOfYear % STORY_POSTS.length];
-  else if (postType === 'article' && article) tweetText = `${article.title}\n\n${BASE_URL}/feature/${article.slug}\n\n#外見磨き #メンズ #Fineme`;
   else tweetText = DIAGNOSIS_POSTS[0];
 
   // PDCA: 今週の方針（strategy）と直近投稿（被り回避）を読み込む
@@ -382,7 +419,7 @@ export async function GET(request) {
   } catch {}
 
   // AI生成を優先（失敗時は上のフォールバックのまま）
-  const aiText = await generateTweet(postType, article, { strategy, recentTexts });
+  const aiText = await generateTweet(postType, null, { strategy, recentTexts }, dayOfYear);
   if (aiText) tweetText = aiText;
 
   let posted = false, tweetId = null;

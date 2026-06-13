@@ -2,75 +2,89 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-const PROMO = {
-  mirror: {
-    badge: '🪞 FINEME MIRROR',
-    title: '写真1枚で、\n「変われる余白」を地図にする。',
-    cta: '無料で試す → fineme.me/mirror',
-  },
-  diagnosis: {
-    badge: '🧭 FINEME — Me Scan',
-    title: '何から始めるかを、\n3分の無料診断で。',
-    cta: 'あなたも診断する → fineme.me/diagnosis',
-  },
-  philosophy: {
-    badge: 'FINEME',
-    title: '外見を起点に、\n自信を再設計する。',
-    cta: 'fineme.me',
-  },
-  article: {
-    badge: 'FINEME',
-    title: '変わりたい男性のための、\n外見磨きの地図。',
-    cta: 'fineme.me',
-  },
+const TYPE_LABELS = {
+  tips:      { badge: 'TIPS',      color: '#10b981' },
+  story:     { badge: 'STORY',     color: '#8b5cf6' },
+  mirror:    { badge: 'MIRROR',    color: '#3b82f6' },
+  diagnosis: { badge: 'Me Scan',   color: '#f59e0b' },
+  philosophy:{ badge: 'COLUMN',    color: '#6b7280' },
+};
+
+const FALLBACK_TEXTS = {
+  tips:       '外見磨きの、\n正しい順番がある。',
+  story:      'あの日の帰り道、\n鏡が違って見えた。',
+  mirror:     '写真1枚で、\n「変われる余白」を地図にする。',
+  diagnosis:  '何から始めるかを、\n3分の無料診断で。',
+  philosophy: '外見を起点に、\n自信を再設計する。',
 };
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type') || 'mirror';
-  const p = PROMO[type] || PROMO.mirror;
+  const hook = searchParams.get('hook') || '';
+
+  const label = TYPE_LABELS[type] || TYPE_LABELS.mirror;
+  const displayText = hook.trim() || FALLBACK_TEXTS[type] || FALLBACK_TEXTS.mirror;
 
   return new ImageResponse(
     (
       <div style={{
         width: '1200px', height: '630px',
-        background: 'linear-gradient(135deg, #04081a 0%, #0d1528 60%, #060c1a 100%)',
+        background: '#0f172a',
         display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        fontFamily: 'sans-serif', position: 'relative', overflow: 'hidden', padding: '70px',
+        padding: '72px 80px',
+        fontFamily: 'sans-serif',
+        position: 'relative',
       }}>
+        {/* プロフィール行 */}
         <div style={{
-          position: 'absolute', top: '-120px', left: '50%', transform: 'translateX(-50%)',
-          width: '700px', height: '700px',
-          background: 'radial-gradient(circle, rgba(201,168,76,0.14) 0%, transparent 65%)',
-          borderRadius: '50%',
-        }} />
-        <div style={{
-          fontSize: '22px', fontWeight: 800, color: '#c9a84c',
-          letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: '36px', display: 'flex',
+          display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '56px',
         }}>
-          {p.badge}
+          <div style={{
+            width: '52px', height: '52px', borderRadius: '50%',
+            background: '#1e293b',
+            border: '2px solid #334155',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '22px', fontWeight: 800, color: '#94a3b8',
+          }}>
+            D
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '18px', fontWeight: 700, color: '#e2e8f0' }}>でお</span>
+            <span style={{ fontSize: '15px', color: '#64748b' }}>@deo_fineme</span>
+          </div>
         </div>
+
+        {/* フックテキスト */}
         <div style={{
-          fontSize: '58px', fontWeight: 900, color: '#fff',
-          textAlign: 'center', lineHeight: 1.4, marginBottom: '44px',
-          whiteSpace: 'pre-line', display: 'flex', flexDirection: 'column',
-          fontFamily: 'Georgia, serif',
+          flex: 1,
+          fontSize: '52px', fontWeight: 800, color: '#f8fafc',
+          lineHeight: 1.35, whiteSpace: 'pre-line',
+          display: 'flex', alignItems: 'flex-start',
+          letterSpacing: '-0.01em',
         }}>
-          {p.title}
+          {displayText}
         </div>
+
+        {/* 下部: 区切り + ブランド + タイプバッジ */}
         <div style={{
-          padding: '16px 40px',
-          background: 'linear-gradient(135deg, #c9a84c, #e8c97a)',
-          borderRadius: '10px', color: '#0a0f1e', fontWeight: 800, fontSize: '22px', display: 'flex',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          borderTop: '1px solid #1e293b', paddingTop: '28px',
         }}>
-          {p.cta}
-        </div>
-        <div style={{
-          position: 'absolute', bottom: '32px',
-          fontSize: '14px', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.1em', display: 'flex',
-        }}>
-          fineme.me — 外見を起点に、自信を再設計する。
+          <span style={{ fontSize: '18px', color: '#475569', letterSpacing: '0.12em' }}>
+            Fineme — 外見を起点に、自信を再設計する。
+          </span>
+          <div style={{
+            padding: '8px 20px',
+            background: label.color + '22',
+            border: `1px solid ${label.color}55`,
+            borderRadius: '6px',
+            fontSize: '14px', fontWeight: 700, color: label.color,
+            letterSpacing: '0.1em',
+            display: 'flex',
+          }}>
+            {label.badge}
+          </div>
         </div>
       </div>
     ),
