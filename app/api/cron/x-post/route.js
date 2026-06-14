@@ -315,6 +315,8 @@ function isUsableTweet(text, postType, article) {
   if (QUESTION_MARKERS.some(m => text.includes(m))) return false;
   const needsLink = postType === 'mirror' || postType === 'diagnosis';
   if (needsLink && !text.includes('fineme.me')) return false;
+  // /mirror（誤）が /lp/mirror（正）なしに使われていたら弾く
+  if (text.includes('fineme.me/mirror') && !text.includes('fineme.me/lp/mirror')) return false;
   return true;
 }
 
@@ -328,10 +330,58 @@ const X_SYSTEM = `あなたはFinemeのSNS担当兼コピーライター。X(@de
 - 指定があればリンクを必ず本文に入れる
 【厳守】ユーザーに質問・確認を返してはいけない。情報が足りなくても最も妥当な前提を自分で置き、投稿本文を必ず1本完成させる。出力は完成した投稿本文のみ（前置き・調査メモ・説明・引用符・「承知しました」等は一切不要）。`;
 
-// Claudeで当日のX投稿を生成。まずWeb検索で“今のトレンド”を分析し反映（失敗時はnull）
+// story タイプ専用の生成関数（seed を必ず使う、web_search 不要）
+async function generateStoryTweet(context = {}, dayOfYear = 0) {
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const ctx = STORY_CONTEXTS[dayOfYear % STORY_CONTEXTS.length];
+  const stratLine = context.strategy ? `\n\n【今週の方針（参考）】\n${context.strategy}` : '';
+  const recentLine = (context.recentTexts?.length)
+    ? `\n\n【直近投稿（言い回しを被らせない）】\n- ${context.recentTexts.slice(0, 5).join('\n- ')}`
+    : '';
+
+  const userMsg = `今日の投稿は「体験談」タイプです。以下の素材を使って投稿を書いてください。
+
+【素材（必ず使う）】
+「${ctx.seed}」
+
+【ヒント】
+${ctx.hint}
+
+【書き方のルール】
+- 1行目: その日・その瞬間の場面を起点に（例:「初めて眉毛サロンに行った帰り道、」）
+- 自分語りではなく「読者が自分にも重ねられる」角度で書く
+- 改行を活かして余白をつくる
+- リンク不要（入れるなら ${BASE_URL}/lp/mirror のみ。${BASE_URL}/mirror は使わない）
+- ハッシュタグ2〜3個、末尾
+- 投稿本文のみ出力（前置き・説明不要）${stratLine}${recentLine}`;
+
+  try {
+    const msg = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 500,
+      temperature: 0.92,
+      system: X_SYSTEM,
+      messages: [{ role: 'user', content: userMsg }],
+    });
+    const text = extractText(msg.content);
+    if (isUsableTweet(text, 'story')) return text;
+    console.warn('[x-post] story gen rejected. テンプレ使用。');
+    return null;
+  } catch (e) {
+    console.error('[x-post] story gen error:', e.message);
+    return null;
+  }
+}
+
+// Claudeで当日のX投稿を生成。まずWeb検索で”今のトレンド”を分析し反映（失敗時はnull）
 // context = { strategy: 今週の方針, recentTexts: 直近投稿（被り回避用） }
 async function generateTweet(postType, article, context = {}, dayOfYear = 0) {
   if (!process.env.ANTHROPIC_API_KEY) return null;
+
+  // story タイプは seed 強制ルートで生成（web_search はスキップ）
+  if (postType === 'story') return generateStoryTweet(context, dayOfYear);
+
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const stratLine = context.strategy ? `\n\n【今週の方針（参考・反映するが質問はしない）】\n${context.strategy}` : '';
   const recentLine = (context.recentTexts && context.recentTexts.length)
@@ -340,18 +390,19 @@ async function generateTweet(postType, article, context = {}, dayOfYear = 0) {
 
   // ① Web検索つきで生成（リアルタイムのトレンド分析）
   try {
-    const userMsg = `今日のテーマ：${angleFor(postType, article, dayOfYear)}
+    const userMsg = postType === 'tips'
+      ? `今日のテーマ：${angleFor(postType, article, dayOfYear)}
 
-Web検索で次の2点を調べてから投稿を作る。
-①「メンズ 外見 美容 垢抜け 今週」などで検索し、今Xで話題になっているテーマ・切り口を1つ特定する。
-②「X 伸びる投稿 フォーマット 2025」「Twitter バズる文体 外見」などで検索し、今バズっている投稿の文体・構成スタイル（箇条書き／短文連打／問いかけ型／数字入りTips／最初の1行フック型など）を把握する。
-①のテーマを②のフォーマットで、でおの視点（元・非モテ→現役モデル）から語る投稿を1本完成させる。トレンドをそのまま使わず、必ずでおの文脈に変換する。質問は返さず、最後に完成した投稿本文だけを出力。${stratLine}${recentLine}`;
+Web検索で「メンズ 外見 美容 今週 話題」を1回検索し、今週よく出ているキーワードを1つ特定する。そのキーワードに関連した「外見磨きの実用的な知識（Tip）」を1つ選び、でおの視点で投稿を1本書く。質問は返さず、投稿本文のみ出力。${stratLine}${recentLine}`
+      : `今日のテーマ：${angleFor(postType, article, dayOfYear)}
+
+Web検索で「メンズ 外見 美容 垢抜け 今週」などで検索し、今Xで具体的に話題になっている言葉・切り口を1つ特定する。その切り口をでおの視点（元・非モテ→現役モデル）で語り直した投稿を1本完成させる。トレンドをそのまま使わずでおの文脈に変換する。質問は返さず、投稿本文のみ出力。${stratLine}${recentLine}`;
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1200,
       temperature: 0.9,
       system: X_SYSTEM,
-      tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 2 }],
+      tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: postType === 'tips' ? 1 : 2 }],
       messages: [{ role: 'user', content: userMsg }],
     });
     const text = extractText(msg.content);
