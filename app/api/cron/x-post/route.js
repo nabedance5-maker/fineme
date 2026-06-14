@@ -37,26 +37,38 @@ async function fetchPromoImage(postType, tweetText) {
 }
 
 // 本日のX投稿文をオーナーにメール送信（自動投稿の成否に応じて文面を出し分け／画像は時々添付）
-async function emailDailyDraft({ tweetText, posted, postType, withImage }) {
+async function emailDailyDraft({ tweetText, storyReply, posted, postType, withImage }) {
   if (!process.env.RESEND_API_KEY) return;
   try {
     const { Resend } = await import('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     const imageBase64 = withImage ? await fetchPromoImage(postType, tweetText) : null;
+    const isStoryThread = postType === 'story' && !!storyReply;
     const subject = posted
-      ? '【Fineme X】本日の投稿（自動投稿済み・操作不要）'
-      : '【Fineme X】本日の投稿（コピーして手動投稿してください）';
+      ? `【Fineme X】本日の投稿（自動投稿済み・操作不要）${isStoryThread ? '【スレッド】' : ''}`
+      : `【Fineme X】本日の投稿（コピーして手動投稿してください）${isStoryThread ? '【スレッド2枚】' : ''}`;
     const lead = posted
       ? 'X APIで自動投稿しました。記録用です（操作不要）。'
       : 'X APIの書き込み枠が無いため自動投稿していません。下記をコピーして @deo_fineme から投稿してください。';
+    const manualNote = (!posted && isStoryThread)
+      ? '<p style="font-size:13px;color:#1d4ed8;font-weight:700">📌 スレッド投稿: ①本文を投稿 → ②自分の投稿にリプとしてリプ欄を投稿してください。</p>'
+      : '';
     const imageNote = imageBase64
       ? '<p style="font-size:13px;color:#b8860b;font-weight:700">🖼 今日は画像つき推奨。添付の fineme-x.png を投稿に追加してください。</p>'
       : '<p style="font-size:12px;color:#999">※ リンクを含む投稿は、Xがリンク先のOGP画像をカード表示します。</p>';
+    const replyBlock = isStoryThread
+      ? `<h3 style="color:#111;margin-top:20px">② リプ欄（スレッド続き）</h3>
+         <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:18px 20px;margin:8px 0;max-width:560px;font-size:15px;color:#111;line-height:1.9;white-space:pre-line">${storyReply.replace(/</g, '&lt;')}</div>`
+      : '';
+    const mainLabel = isStoryThread ? '<h3 style="color:#111">① 本文</h3>' : '';
     const html = `
       <h2 style="color:#111">📣 本日のX投稿</h2>
       <p style="color:#666;font-size:13px">${lead}</p>
-      <div style="background:#f8f8fb;border:1px solid #e5e7eb;border-radius:10px;padding:18px 20px;margin:16px 0;max-width:560px;font-size:15px;color:#111;line-height:1.9;white-space:pre-line">${tweetText.replace(/</g, '&lt;')}</div>
+      ${manualNote}
+      ${mainLabel}
+      <div style="background:#f8f8fb;border:1px solid #e5e7eb;border-radius:10px;padding:18px 20px;margin:8px 0;max-width:560px;font-size:15px;color:#111;line-height:1.9;white-space:pre-line">${tweetText.replace(/</g, '&lt;')}</div>
+      ${replyBlock}
       ${imageNote}
     `;
 
@@ -115,6 +127,20 @@ async function postTweet(text) {
     body,
   });
 
+  const data = await res.json();
+  if (!res.ok) throw new Error(JSON.stringify(data));
+  return data;
+}
+
+async function postReply(text, inReplyToTweetId) {
+  const url = 'https://api.twitter.com/2/tweets';
+  const body = JSON.stringify({ text, reply: { in_reply_to_tweet_id: inReplyToTweetId } });
+  const authHeader = buildOAuthHeader('POST', url);
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: authHeader, 'Content-Type': 'application/json' },
+    body,
+  });
   const data = await res.json();
   if (!res.ok) throw new Error(JSON.stringify(data));
   return data;
@@ -245,6 +271,30 @@ const STORY_CONTEXTS = [
     seed: '知り合いに「最近整えてる？」と言われた瞬間',
     hint: '褒め言葉なのに、なぜか気恥ずかしかった。変わることを認めるのが怖かった',
   },
+  {
+    seed: '美容師に初めて「どんな印象にしたいですか？」と聞かれた日',
+    hint: '今まで「短く整えて」しか言ったことがなかった。自分のなりたい像を言語化したことがなかったと気づいた',
+  },
+  {
+    seed: '服のサイズをワンサイズ落としたら「別人みたい」と言われた',
+    hint: '大きめを着るのがラクだと思ってた。でも隠してたのは体型じゃなくて自信だったかもしれない',
+  },
+  {
+    seed: '写真を撮られるのが嫌いだった頃と、今',
+    hint: '集合写真は端っこか欠席してた。今は自分から撮ってもらえるようになった。何かが変わった',
+  },
+  {
+    seed: '「男がスキンケアとか」と思ってた時期があった',
+    hint: '始めてみたら3ヶ月で周りの反応が変わった。偏見を持ってたのは、変わることが怖かったからだと後から気づいた',
+  },
+  {
+    seed: '好きな人ができて、初めて鏡をちゃんと見た日',
+    hint: '恋愛のためだったけど、気づいたら「自分のために整える」に変わっていた',
+  },
+  {
+    seed: '清潔感がないと、面と向かって言われた日',
+    hint: '傷ついた。でもあの一言がなければ、何も変わっていなかった気がする',
+  },
 ];
 
 const TIPS_POSTS = [
@@ -330,7 +380,8 @@ const X_SYSTEM = `あなたはFinemeのSNS担当兼コピーライター。X(@de
 - 指定があればリンクを必ず本文に入れる
 【厳守】ユーザーに質問・確認を返してはいけない。情報が足りなくても最も妥当な前提を自分で置き、投稿本文を必ず1本完成させる。出力は完成した投稿本文のみ（前置き・調査メモ・説明・引用符・「承知しました」等は一切不要）。`;
 
-// story タイプ専用の生成関数（seed を必ず使う、web_search 不要）
+// story タイプ専用の生成関数（seed 強制・web_search なし・本文+リプ欄の2段生成）
+// 返り値: { main: string, reply: string | null } | null
 async function generateStoryTweet(context = {}, dayOfYear = 0) {
   if (!process.env.ANTHROPIC_API_KEY) return null;
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -340,7 +391,8 @@ async function generateStoryTweet(context = {}, dayOfYear = 0) {
     ? `\n\n【直近投稿（言い回しを被らせない）】\n- ${context.recentTexts.slice(0, 5).join('\n- ')}`
     : '';
 
-  const userMsg = `今日の投稿は「体験談」タイプです。以下の素材を使って投稿を書いてください。
+  // STEP 1: 本文（フック + 変わる前の箇条書き + ↓↓ で締める）
+  const mainMsg = `今日の投稿は「体験談・スレッド本文」タイプです。
 
 【素材（必ず使う）】
 「${ctx.seed}」
@@ -348,30 +400,68 @@ async function generateStoryTweet(context = {}, dayOfYear = 0) {
 【ヒント】
 ${ctx.hint}
 
-【書き方のルール】
-- 1行目: その日・その瞬間の場面を起点に（例:「初めて眉毛サロンに行った帰り道、」）
-- 自分語りではなく「読者が自分にも重ねられる」角度で書く
-- 改行を活かして余白をつくる
-- リンク不要（入れるなら ${BASE_URL}/lp/mirror のみ。${BASE_URL}/mirror は使わない）
-- ハッシュタグ2〜3個、末尾
-- 投稿本文のみ出力（前置き・説明不要）${stratLine}${recentLine}`;
+【フォーマット（このとおりに書く）】
+1行目: でおの体験を読者が自分に重ねられるフック
 
+■変わる前の自分
+・具体的な行動や思い込み（3〜4個）
+・〃
+・〃
+
+■変わった後↓↓
+
+【ルール】
+- 必ず「■変わった後↓↓」で終わる（続きはリプ欄に書く）
+- リンクなし、ハッシュタグなし（リプ欄に入れる）
+- 投稿本文のみ出力（前置き不要）${stratLine}${recentLine}`;
+
+  let mainText = null;
   try {
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 500,
+      max_tokens: 400,
       temperature: 0.92,
       system: X_SYSTEM,
-      messages: [{ role: 'user', content: userMsg }],
+      messages: [{ role: 'user', content: mainMsg }],
     });
     const text = extractText(msg.content);
-    if (isUsableTweet(text, 'story')) return text;
-    console.warn('[x-post] story gen rejected. テンプレ使用。');
-    return null;
+    if (text && text.length >= 40) mainText = text;
+    else console.warn('[x-post] story main rejected, テンプレ使用。');
   } catch (e) {
-    console.error('[x-post] story gen error:', e.message);
-    return null;
+    console.error('[x-post] story main gen error:', e.message);
   }
+
+  if (!mainText) return null;
+
+  // STEP 2: リプ欄（続き: 変わった後の箇条書き + 哲学的展開 + 結論）
+  const replyMsg = `以下のX投稿の「リプ欄の続き」を書いてください。
+
+【本文（投稿済み）】
+${mainText}
+
+【リプ欄のルール】
+- 「■変わった後」の箇条書き（3〜4個）を書く
+- その後、口語でテンポよく哲学的に展開（「なんだよね」「だから」「でも」等）
+- 最後はシンプルな1行結論
+- ハッシュタグ2〜3個を末尾に
+- リプ欄本文のみ出力（前置き不要）`;
+
+  let replyText = null;
+  try {
+    const msg = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 600,
+      temperature: 0.92,
+      system: X_SYSTEM,
+      messages: [{ role: 'user', content: replyMsg }],
+    });
+    const text = extractText(msg.content);
+    if (text && text.length >= 30) replyText = text;
+  } catch (e) {
+    console.error('[x-post] story reply gen error:', e.message);
+  }
+
+  return { main: mainText, reply: replyText };
 }
 
 // Claudeで当日のX投稿を生成。まずWeb検索で”今のトレンド”を分析し反映（失敗時はnull）
@@ -470,21 +560,47 @@ export async function GET(request) {
   } catch {}
 
   // AI生成を優先（失敗時は上のフォールバックのまま）
-  const aiText = await generateTweet(postType, null, { strategy, recentTexts }, dayOfYear);
-  if (aiText) tweetText = aiText;
+  const aiResult = await generateTweet(postType, null, { strategy, recentTexts }, dayOfYear);
 
-  let posted = false, tweetId = null;
-  try {
-    const result = await postTweet(tweetText);
-    posted = true;
-    tweetId = result.data?.id;
-    console.log(`[x-post] Posted: ${tweetId}`);
-  } catch (e) {
-    const msg = e.message || '';
-    if (msg.includes('problems/credits') || msg.includes('CreditsDepleted') || msg.includes('usage-capped')) {
-      console.warn('[x-post] Auto-post skipped: X API credits/quota depleted. メールで手動投稿用に送信。');
-    } else {
-      console.error('[x-post] Auto-post error:', msg);
+  let posted = false, tweetId = null, storyReply = null;
+
+  if (postType === 'story' && aiResult && typeof aiResult === 'object' && aiResult.main) {
+    // story: 本文 + リプ欄の2ツイート
+    tweetText = aiResult.main;
+    storyReply = aiResult.reply || null;
+    try {
+      const mainResult = await postTweet(tweetText);
+      posted = true;
+      tweetId = mainResult.data?.id;
+      console.log(`[x-post] story main posted: ${tweetId}`);
+      if (tweetId && storyReply) {
+        await new Promise(r => setTimeout(r, 2000));
+        const replyResult = await postReply(storyReply, tweetId);
+        console.log(`[x-post] story reply posted: ${replyResult.data?.id}`);
+      }
+    } catch (e) {
+      const msg = e.message || '';
+      if (msg.includes('problems/credits') || msg.includes('CreditsDepleted') || msg.includes('usage-capped')) {
+        console.warn('[x-post] story post skipped: X API credits depleted.');
+      } else {
+        console.error('[x-post] story post error:', msg);
+      }
+    }
+  } else {
+    // story 以外（or story の AI 失敗）
+    if (aiResult && typeof aiResult === 'string') tweetText = aiResult;
+    try {
+      const result = await postTweet(tweetText);
+      posted = true;
+      tweetId = result.data?.id;
+      console.log(`[x-post] Posted: ${tweetId}`);
+    } catch (e) {
+      const msg = e.message || '';
+      if (msg.includes('problems/credits') || msg.includes('CreditsDepleted') || msg.includes('usage-capped')) {
+        console.warn('[x-post] Auto-post skipped: X API credits/quota depleted. メールで手動投稿用に送信。');
+      } else {
+        console.error('[x-post] Auto-post error:', msg);
+      }
     }
   }
 
@@ -496,7 +612,7 @@ export async function GET(request) {
   // 成否にかかわらず本日の投稿文をオーナーにメール（手動投稿できるように）
   // 画像は3〜4回に1回（dayOfYear % 4 === 0）添付
   const withImage = dayOfYear % 4 === 0;
-  await emailDailyDraft({ tweetText, posted, postType, withImage });
+  await emailDailyDraft({ tweetText, storyReply, posted, postType, withImage });
 
   return Response.json({ posted, emailed: !!process.env.RESEND_API_KEY, withImage, type: postType, tweetId });
 }
