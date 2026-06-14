@@ -3,28 +3,24 @@ import { ImageResponse } from 'next/og';
 export const runtime = 'edge';
 
 const TYPE_LABELS = {
-  tips:      { badge: 'TIPS',      color: '#10b981' },
-  story:     { badge: 'STORY',     color: '#8b5cf6' },
-  mirror:    { badge: 'MIRROR',    color: '#3b82f6' },
-  diagnosis: { badge: 'Me Scan',   color: '#f59e0b' },
-  philosophy:{ badge: 'COLUMN',    color: '#6b7280' },
+  tips:      { badge: 'TIPS',   color: '#10b981' },
+  story:     { badge: 'STORY',  color: '#8b5cf6' },
+  philosophy:{ badge: 'COLUMN', color: '#6b7280' },
 };
 
 const FALLBACK_TEXTS = {
   tips:       '外見磨きの、\n正しい順番がある。',
   story:      'あの日の帰り道、\n鏡が違って見えた。',
-  mirror:     '写真1枚で、\n「変われる余白」を地図にする。',
-  diagnosis:  '何から始めるかを、\n3分の無料診断で。',
   philosophy: '外見を起点に、\n自信を再設計する。',
 };
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const type = searchParams.get('type') || 'mirror';
+  const type = searchParams.get('type') || 'tips';
   const hook = searchParams.get('hook') || '';
 
-  const label = TYPE_LABELS[type] || TYPE_LABELS.mirror;
-  const displayText = hook.trim() || FALLBACK_TEXTS[type] || FALLBACK_TEXTS.mirror;
+  const label = TYPE_LABELS[type] || TYPE_LABELS.tips;
+  const displayText = hook.trim() || FALLBACK_TEXTS[type] || FALLBACK_TEXTS.tips;
 
   return new ImageResponse(
     (
