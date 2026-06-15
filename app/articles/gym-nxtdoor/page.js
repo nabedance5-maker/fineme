@@ -3,7 +3,7 @@ import { AnimatedSection, HeroTitle } from './_components/ArticleClient'
 
 export const metadata = {
   title: '「変われない」と思っていた元ガリガリ男が、今日も誰かの体を変えている。| Fineme',
-  description: 'JR高円寺駅徒歩7分のパーソナルジム「GYM NXT DOOR」トレーナー・後藤かいへのインタビュー。',
+  description: 'JR高円寺駅徒歩7分のパーソナルジム「GYM NXT DOOR」トレーナー・後藤海へのインタビュー。',
   robots: { index: false, follow: false },
 }
 
@@ -331,7 +331,7 @@ export default function NxtdoorArticlePage() {
         <div className="art-hero">
           <Image
             src="/articles/nxtdoor/IMG_6402.PNG"
-            alt="GYM NXT DOOR トレーナー後藤かい"
+            alt="GYM NXT DOOR トレーナー後藤海"
             fill
             className="art-hero__img"
             priority
@@ -346,7 +346,7 @@ export default function NxtdoorArticlePage() {
                 元ガリガリ男が、今日も誰かの体を変えている。
               </h1>
               <p className="art-hero__sub">
-                パーソナルトレーナー・後藤かい ／ GYM NXT DOOR（高円寺）
+                パーソナルトレーナー・後藤 海 ／ GYM NXT DOOR（高円寺）
               </p>
             </HeroTitle>
           </div>
@@ -373,7 +373,7 @@ export default function NxtdoorArticlePage() {
                 <div className="art-img-right">
                   <Image
                     src="/articles/nxtdoor/IMG_6404.PNG"
-                    alt="後藤かい トレーナー"
+                    alt="後藤海 トレーナー"
                     fill
                     style={{ objectFit: 'cover' }}
                     sizes="(max-width:600px) 100vw, 320px"
@@ -679,7 +679,7 @@ export default function NxtdoorArticlePage() {
           <div className="art-section">
             <AnimatedSection direction="up">
               <span className="art-section__num">07</span>
-              <h2 className="art-section__heading">自信のない男性へ、<br />後藤かいが伝えたいこと</h2>
+              <h2 className="art-section__heading">自信のない男性へ、<br />後藤 海が伝えたいこと</h2>
             </AnimatedSection>
 
             <AnimatedSection direction="left" delay={100}>
@@ -699,7 +699,7 @@ export default function NxtdoorArticlePage() {
                 <div className="art-img-grid__item">
                   <Image
                     src="/articles/nxtdoor/IMG_6409.PNG"
-                    alt="後藤かい インタビュー"
+                    alt="後藤海 インタビュー"
                     fill
                     style={{ objectFit: 'cover' }}
                     sizes="(max-width:600px) 100vw, 380px"
@@ -740,7 +740,7 @@ export default function NxtdoorArticlePage() {
                   <span>📍</span>東京都杉並区｜JR高円寺駅 徒歩7分
                 </li>
                 <li className="art-card__item">
-                  <span>👤</span>トレーナー：後藤かい（GOTO KAI）
+                  <span>👤</span>トレーナー：後藤 海（GOTO KAI）
                 </li>
               </ul>
               <a
