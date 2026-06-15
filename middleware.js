@@ -42,6 +42,20 @@ export function middleware(request) {
     }
   }
 
+  // プレビュー記事はパスワード認証が必要
+  if (
+    request.nextUrl.pathname.startsWith('/articles/gym-nxtdoor') &&
+    !request.nextUrl.pathname.startsWith('/articles/gym-nxtdoor/login')
+  ) {
+    const previewCookie = request.cookies.get('preview_nxtdoor')
+    const token = process.env.PREVIEW_PASSWORD
+    if (!previewCookie?.value || previewCookie.value !== token) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/articles/gym-nxtdoor/login'
+      return NextResponse.redirect(url, { status: 302 })
+    }
+  }
+
   return NextResponse.next()
 }
 
