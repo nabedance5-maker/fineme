@@ -3,6 +3,7 @@
 // Schedule: "0 0 * * 3"
 // メールにHTML整形済み記事 + アイキャッチ画像を添付 → コピペですぐ投稿できる
 import Anthropic from '@anthropic-ai/sdk';
+import { fetchAgentMemory, withMemory } from '@/lib/agent-memory';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
@@ -24,7 +25,7 @@ const TOPICS = [
 
 async function generateNote(topic) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  const system = `あなたはFineme代表「でお」（note名義「抜けアドバイザー」）。元・モテなかった→現役モデル。恋愛に悩む男性向けの外見磨きサービスFineme（無料診断 Me Scan / 写真AI分析 Fineme Mirror）を運営。
+  const baseSystem = `あなたはFineme代表「でお」（note名義「抜けアドバイザー」）。元・モテなかった→現役モデル。恋愛に悩む男性向けの外見磨きサービスFineme（無料診断 Me Scan / 写真AI分析 Fineme Mirror）を運営。
 note記事を書く。読者は「変わりたいが何から始めればいいか分からない男性」。
 【トーン】変容の旅・地図と羅針盤・誠実で前向き。上から目線・点数化・他者否定はしない。自分の実体験を交える。
 【構成】惹きつける導入 → 共感（読者の痛み）→ 本質（順番・考え方）→ 具体的な一歩 → 自然なCTA。
@@ -35,6 +36,9 @@ note記事を書く。読者は「変わりたいが何から始めればいい�
 2行目: 空行
 3行目以降: 本文（Markdownで見出し##, 段落, **太字** を使う）
 前置き・説明文は不要。記事のみ出力。`;
+
+  const memory = await fetchAgentMemory();
+  const system = withMemory(baseSystem, memory);
 
   const msg = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',

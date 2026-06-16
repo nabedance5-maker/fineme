@@ -8,6 +8,7 @@
 import crypto from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
+import { fetchAgentMemory, withMemory } from '@/lib/agent-memory';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -305,7 +306,7 @@ const X_SYSTEM = `あなたはFinemeのSNS担当兼コピーライター。X(@de
 
 // 全タイプ共通のスレッド生成関数
 // 返り値: { main: string, reply: string | null } | null
-async function generateThreadPost(postType, context = {}, dayOfYear = 0) {
+async function generateThreadPost(postType, context = {}, dayOfYear = 0, system = X_SYSTEM) {
   if (!process.env.ANTHROPIC_API_KEY) return null;
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -425,7 +426,7 @@ ${ctx.angle}
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 400,
       temperature: 0.92,
-      system: X_SYSTEM,
+      system,
       messages: [{ role: 'user', content: mainMsg }],
     });
     const text = extractText(msg.content);
@@ -451,7 +452,7 @@ ${replyRules}`;
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 600,
       temperature: 0.92,
-      system: X_SYSTEM,
+      system,
       messages: [{ role: 'user', content: replyMsg }],
     });
     const text = extractText(msg.content);
@@ -496,7 +497,10 @@ export async function GET(request) {
     recentTexts = (recent || []).map(r => r.text).filter(Boolean);
   } catch {}
 
-  const aiResult = await generateThreadPost(postType, { strategy, recentTexts }, dayOfYear);
+  const memory = await fetchAgentMemory();
+  const systemWithMemory = withMemory(X_SYSTEM, memory);
+
+  const aiResult = await generateThreadPost(postType, { strategy, recentTexts }, dayOfYear, systemWithMemory);
 
   let posted = false, tweetId = null, threadReply = null;
 

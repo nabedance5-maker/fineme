@@ -5,6 +5,7 @@
 import { getSupabase } from '@/lib/supabase';
 import { sendLinePush } from '@/lib/line-push';
 import Anthropic from '@anthropic-ai/sdk';
+import { fetchAgentMemory, withMemory } from '@/lib/agent-memory';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,8 +30,11 @@ async function generateNudge(compassAxis, goalChange, trigger, stepCount) {
     ? `これまでに${stepCount}個のステップを完了しています。`
     : 'まだステップを始めていません。';
 
-  const prompt = `あなたはFineme（男性向け外見変容診断ポータル）の変容コーチです。
-以下のユーザーに、今週の行動を後押しする短いLINEメッセージを書いてください。
+  const baseSystem = 'あなたはFineme（男性向け外見変容診断ポータル）の変容コーチです。でおのブランドボイス（誠実・温かい・押しつけない）で書いてください。';
+  const memory = await fetchAgentMemory();
+  const system = withMemory(baseSystem, memory);
+
+  const prompt = `以下のユーザーに、今週の行動を後押しする短いLINEメッセージを書いてください。
 
 【ユーザー情報】
 - 今週取り組むべき軸（Compass）: ${axisLabel}
@@ -50,6 +54,7 @@ async function generateNudge(compassAxis, goalChange, trigger, stepCount) {
   const res = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 300,
+    system,
     messages: [{ role: 'user', content: prompt }],
   });
 
