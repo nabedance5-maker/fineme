@@ -586,32 +586,6 @@ export default function DiagnosisResultPage() {
       ],
     };
 
-    function buildNaviBaselineSection() {
-      const AXIS_JA = { eyebrow:'眉', skin:'肌', hair:'髪', body:'体型', fashion:'服', teeth:'歯', nail:'爪', hairremoval:'脱毛' };
-      const eligibleAxes = Object.keys(BASELINE_STEPS);
-      if (eligibleAxes.length === 0) return '';
-      const axisGroups = eligibleAxes.map(axis => {
-        const steps = BASELINE_STEPS[axis];
-        const doneInAxis = steps.filter(s => stepDone[s.id]).length;
-        const allDone = doneInAxis === steps.length;
-        const cards = steps.map(step => {
-          const done = !!stepDone[step.id];
-          return `<div class="bl-card${done ? ' bl-card-done' : ''}">
-            <div class="bl-card-check" data-done-key="${esc(step.id)}">${done ? '✓' : ''}</div>
-            <p class="bl-card-text">${esc(step.text)}</p>
-          </div>`;
-        }).join('');
-        return `<div class="bl-axis-group${allDone ? ' bl-axis-done' : ''}">
-          <div class="bl-axis-header">
-            <span class="bl-axis-label">${esc(AXIS_JA[axis] || axis)}</span>
-            <span class="bl-axis-count">${doneInAxis}/${steps.length}</span>
-          </div>
-          <div class="bl-scroll-row">${cards}</div>
-        </div>`;
-      }).join('');
-      return `<div class="bl-navi-section"><div class="sec-label">基礎チェックリスト</div>${axisGroups}</div>`;
-    }
-
     const priorityOrder = p.priority_order || [];
     const compassCalculated = p.compass_first || priorityOrder[0] || 'body';
     const compassOverride = localStorage.getItem('fineme:compass:override');
@@ -875,12 +849,16 @@ export default function DiagnosisResultPage() {
     // ─── 変容ベクトルリスト ───
     function buildVectorList() {
       if (!priorityOrder.length) return '';
-      const topAreas = priorityOrder.filter(id => AREA_DEFS[id]).slice(0, 5);
-      if (!topAreas.length) return '';
+      // 全軸を優先度順で表示（上位5件に絞らない）
+      const orderedIds = priorityOrder.filter(id => AREA_DEFS[id]);
+      // BASELINE_STEPSにあるがpriorityOrderにない軸を末尾に追加
+      const extra = Object.keys(BASELINE_STEPS).filter(id => AREA_DEFS[id] && !orderedIds.includes(id));
+      const allAreas = [...orderedIds, ...extra];
+      if (!allAreas.length) return '';
 
       const CARE_LABELS = { none:'未着手', concerned:'気になっている', self:'自己ケア中', self_regular:'自己流・定期', pro:'プロ通い中' };
 
-      const rows = topAreas.map((id, idx) => {
+      const rows = allAreas.map((id, idx) => {
         const def = AREA_DEFS[id];
         const v   = tv[id] || { current:1, ideal:3, gap:2, tier:def.tier };
         const currentPct = ((v.current / 5) * 100).toFixed(1);
@@ -893,6 +871,23 @@ export default function DiagnosisResultPage() {
         const pathColStr = PATH_COLORS[v.path_type] || '';
         const [pathBg, pathFg] = pathColStr ? pathColStr.split(':') : ['#f3f4f6','#374151'];
         const viewAlert  = v.self_view ? VIEW_ALERTS[v.self_view] || '' : '';
+
+        const baseSteps = BASELINE_STEPS[id] || [];
+        const baseCardsHtml = baseSteps.length === 0 ? '' : (() => {
+          const doneCount = baseSteps.filter(s => stepDone[s.id]).length;
+          const cards = baseSteps.map(step => {
+            const done = !!stepDone[step.id];
+            return `<div class="bl-card${done ? ' bl-card-done' : ''}">
+              <div class="bl-card-check" data-done-key="${esc(step.id)}">${done ? '✓' : ''}</div>
+              <p class="bl-card-text">${esc(step.text)}</p>
+            </div>`;
+          }).join('');
+          return `<div style="margin-top:12px">
+            <div style="font-size:10px;font-weight:700;color:rgba(201,168,76,0.6);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">基礎の一手 <span style="color:rgba(201,168,76,0.45);font-weight:400">${doneCount}/${baseSteps.length}</span></div>
+            <div class="bl-scroll-row">${cards}</div>
+          </div>`;
+        })();
+
         return `
           <div class="vector-item${idx === 0 ? ' priority-1' : ''}">
             <div class="vector-item-header">
@@ -913,6 +908,7 @@ export default function DiagnosisResultPage() {
                 <div class="vector-bar-labels"><span>現在地</span><span>理想 ★</span></div>
               </div>
             </div>
+            ${baseCardsHtml}
           </div>
         `;
       }).join('');
@@ -1131,8 +1127,6 @@ export default function DiagnosisResultPage() {
           <span style="font-size:11px;font-weight:800;color:#0a0f1e;background:linear-gradient(135deg,#c9a84c,#e8c97a);border-radius:20px;padding:5px 14px;flex-shrink:0;white-space:nowrap">詳しく見る →</span>
         </div>
       </a>
-
-      ${buildNaviBaselineSection()}
 
       ${buildProductCarousel(priorityOrder.filter(id => AXIS_PRODUCTS[id]).slice(0, 5), getUserLevel())}
 
