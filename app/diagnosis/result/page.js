@@ -533,6 +533,86 @@ export default function DiagnosisResultPage() {
     };
 
     const tv = p.transform_vectors || {};
+
+    // ── 基礎チェックリスト（New Me Navi用・横スクロール）──
+    const stepDone = (() => { try { return JSON.parse(localStorage.getItem('fineme:step:done') || '{}'); } catch { return {}; } })();
+
+    const BASELINE_STEPS = {
+      eyebrow: [
+        { id: 'eyebrow-b-01', axis: 'eyebrow', text: '眉用コームを今日買って、鏡の前で毛流れを整えてみる（3分でできる、顔の印象が変わる）' },
+        { id: 'eyebrow-b-02', axis: 'eyebrow', text: '余分な産毛・単独毛を電動フェイスシェーバーで週1回除去する（コームで整えた後の産毛が対象）' },
+        { id: 'eyebrow-b-03', axis: 'eyebrow', text: '鏡で左右の眉の高さと長さを比べて、どちらがズレているか確認する（非対称の現状把握）' },
+      ],
+      skin: [
+        { id: 'skin-b-01', axis: 'skin', text: '朝晩2回の洗顔を今日から習慣にする（今の洗顔料でOK。まず頻度が先）' },
+        { id: 'skin-b-02', axis: 'skin', text: '洗顔後30秒以内に化粧水をつける（コットンでも手でも可。水分を閉じ込めるのが目的）' },
+        { id: 'skin-b-03', axis: 'skin', text: '化粧水の後に乳液またはクリームで蓋をする（ニベア青缶500円台でOK）' },
+        { id: 'skin-b-04', axis: 'skin', text: '外出前にUV（日焼け止めSPF30以上）を塗る習慣を作る（老化の最大原因は紫外線）' },
+        { id: 'skin-b-05', axis: 'skin', text: '美容液を1本導入する（ビタミンC誘導体配合が毛穴・シミに効果的）' },
+      ],
+      hair: [
+        { id: 'hair-b-01', axis: 'hair', text: '洗髪後は自然乾燥禁止。今日からドライヤーで根元から乾かす（清潔感が1日で変わる）' },
+        { id: 'hair-b-02', axis: 'hair', text: 'シャンプーは頭皮で泡立ててから揉み込む（髪をこすらない。頭皮の血行が変わる）' },
+        { id: 'hair-b-03', axis: 'hair', text: 'トリートメントを毎回使う（毛先に馴染ませて2分置いてから流す）' },
+        { id: 'hair-b-04', axis: 'hair', text: 'ドライヤー後にヘアオイルまたはアウトバストリートメントをつける（ツヤが変わる）' },
+      ],
+      fashion: [
+        { id: 'fashion-b-01', axis: 'fashion', text: 'クローゼットからサイズが合っている服だけ取り出して今日着る（ゆるい服は見た目を5kg太らせる）' },
+        { id: 'fashion-b-02', axis: 'fashion', text: '着る前にシワを確認する。シワがある服は蒸気またはアイロンで伸ばす（清潔感の9割はシワで決まる）' },
+        { id: 'fashion-b-03', axis: 'fashion', text: '1コーデを白・グレー・ネイビーの無地3色以内にまとめる（色は少ない方が清潔感が出る）' },
+        { id: 'fashion-b-04', axis: 'fashion', text: '靴を今日拭く・磨く（靴の汚れは全体の印象を下げる。週1回10分の手入れで変わる）' },
+      ],
+      body: [
+        { id: 'body-b-01', axis: 'body', text: '壁を背にして立ち、後頭部・肩・お尻・かかとを全部つける。正しい姿勢を30秒キープして鏡で確認する' },
+        { id: 'body-b-02', axis: 'body', text: '歩くとき「頭のてっぺんを引っ張られている」イメージで歩く。姿勢を意識するだけで見た目が変わる' },
+        { id: 'body-b-03', axis: 'body', text: 'スマホのヘルスケアアプリで歩数を記録し始める（目標：1日7,000歩）' },
+        { id: 'body-b-04', axis: 'body', text: '体幹プランク30秒×3セットを毎朝始める（姿勢の維持が楽になる）' },
+      ],
+      teeth: [
+        { id: 'teeth-b-01', axis: 'teeth', text: '歯磨きを食後30分以内に固定し、2分以上かける（頻度と時間の習慣化が最初の一歩）' },
+        { id: 'teeth-b-02', axis: 'teeth', text: 'デンタルフロスを今日買って今夜使う。歯ブラシだけでは取れない汚れが一目瞭然になる' },
+        { id: 'teeth-b-03', axis: 'teeth', text: '歯磨き粉をホワイトニング成分（ポリリン酸・フッ素配合）に切り替える' },
+        { id: 'teeth-b-04', axis: 'teeth', text: 'コーヒー・お茶を飲んだ後は水でゆすぐ。着色を防ぐ最小コストの習慣' },
+      ],
+      nail: [
+        { id: 'nail-b-01', axis: 'nail', text: '今すぐ爪を「白い部分1〜2mm残る長さ」に切り揃える（10分で手の印象が別人になる）' },
+        { id: 'nail-b-02', axis: 'nail', text: '爪やすり（100均）で角を丸く整える。週1回切るたびに必ずセットでやる' },
+        { id: 'nail-b-03', axis: 'nail', text: '爪周りの甘皮・ささくれにネイルオイルを塗る（手全体の印象が変わる）' },
+      ],
+      hairremoval: [
+        { id: 'hairremoval-b-01', axis: 'hairremoval', text: 'ひげのスタイル（完全除去 or 整えて残す）を今日決める。迷いをなくすと清潔感が上がる' },
+        { id: 'hairremoval-b-02', axis: 'hairremoval', text: '毎日同じタイミング（洗顔後など）でひげを処理する習慣を作る。生えかけの状態をなくす' },
+        { id: 'hairremoval-b-03', axis: 'hairremoval', text: '現在のシェーバーの刃を確認する。3〜6ヶ月が交換目安。切れ味が落ちると肌荒れの原因になる' },
+      ],
+    };
+
+    function buildNaviBaselineSection() {
+      const ELIGIBLE = new Set(['none', 'concerned']);
+      const AXIS_JA = { eyebrow:'眉', skin:'肌', hair:'髪', body:'体型', fashion:'服', teeth:'歯', nail:'爪', hairremoval:'脱毛' };
+      const eligibleAxes = Object.keys(BASELINE_STEPS).filter(axis => tv[axis] && ELIGIBLE.has(tv[axis].care_type));
+      if (eligibleAxes.length === 0) return '';
+      const axisGroups = eligibleAxes.map(axis => {
+        const steps = BASELINE_STEPS[axis];
+        const doneInAxis = steps.filter(s => stepDone[s.id]).length;
+        const allDone = doneInAxis === steps.length;
+        const cards = steps.map(step => {
+          const done = !!stepDone[step.id];
+          return `<div class="bl-card${done ? ' bl-card-done' : ''}">
+            <div class="bl-card-check" data-done-key="${esc(step.id)}">${done ? '✓' : ''}</div>
+            <p class="bl-card-text">${esc(step.text)}</p>
+          </div>`;
+        }).join('');
+        return `<div class="bl-axis-group${allDone ? ' bl-axis-done' : ''}">
+          <div class="bl-axis-header">
+            <span class="bl-axis-label">${esc(AXIS_JA[axis] || axis)}</span>
+            <span class="bl-axis-count">${doneInAxis}/${steps.length}</span>
+          </div>
+          <div class="bl-scroll-row">${cards}</div>
+        </div>`;
+      }).join('');
+      return `<div class="bl-navi-section"><div class="sec-label">基礎チェックリスト</div>${axisGroups}</div>`;
+    }
+
     const priorityOrder = p.priority_order || [];
     const compassCalculated = p.compass_first || priorityOrder[0] || 'body';
     const compassOverride = localStorage.getItem('fineme:compass:override');
@@ -1053,6 +1133,8 @@ export default function DiagnosisResultPage() {
         </div>
       </a>
 
+      ${buildNaviBaselineSection()}
+
       ${buildProductCarousel(priorityOrder.filter(id => AXIS_PRODUCTS[id]).slice(0, 5), getUserLevel())}
 
       <div id="share-block" style="margin: 0 0 20px; text-align: center;"></div>
@@ -1100,6 +1182,31 @@ export default function DiagnosisResultPage() {
     `;
 
     root.innerHTML = html;
+
+    // ── 基礎チェックリスト チェック処理 ──
+    root.addEventListener('click', e => {
+      const btn = e.target.closest('.bl-card-check');
+      if (!btn) return;
+      const key = btn.dataset.doneKey;
+      if (!key) return;
+      const newDone = !stepDone[key];
+      if (newDone) stepDone[key] = true; else delete stepDone[key];
+      try { localStorage.setItem('fineme:step:done', JSON.stringify(stepDone)); } catch {}
+      btn.classList.toggle('checked', newDone);
+      btn.textContent = newDone ? '✓' : '';
+      const card = btn.closest('.bl-card');
+      if (card) {
+        card.classList.toggle('bl-card-done', newDone);
+        const group = card.closest('.bl-axis-group');
+        if (group) {
+          const allCards = group.querySelectorAll('.bl-card');
+          const doneCards = group.querySelectorAll('.bl-card-done');
+          group.classList.toggle('bl-axis-done', allCards.length === doneCards.length);
+          const countEl = group.querySelector('.bl-axis-count');
+          if (countEl) countEl.textContent = `${doneCards.length}/${allCards.length}`;
+        }
+      }
+    });
 
     // ── フィードバックウィジェット ──
     const fbWidget = document.getElementById('feedback-widget');
@@ -1387,6 +1494,23 @@ export default function DiagnosisResultPage() {
           .result-sidenav .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; }
           .map-wrap { padding: 0 0 40px !important; width: 100%; box-sizing: border-box; overflow-x: hidden; }
         }
+        .bl-navi-section { margin-bottom: 28px; }
+        .bl-axis-group { margin-bottom: 18px; }
+        .bl-axis-group.bl-axis-done { opacity: 0.5; }
+        .bl-axis-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 0 2px; }
+        .bl-axis-label { font-size: 12px; font-weight: 800; color: rgba(232,228,220,0.75); }
+        .bl-axis-count { font-size: 11px; color: rgba(201,168,76,0.7); font-weight: 700; }
+        .bl-scroll-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+        .bl-scroll-row::-webkit-scrollbar { height: 3px; }
+        .bl-scroll-row::-webkit-scrollbar-track { background: transparent; }
+        .bl-scroll-row::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 2px; }
+        .bl-card { flex: 0 0 200px; scroll-snap-align: start; background: rgba(10,15,30,0.55); border: 1px solid rgba(232,228,220,0.12); border-radius: 12px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; transition: border-color .15s; }
+        .bl-card:hover { border-color: rgba(201,168,76,0.35); }
+        .bl-card-done { background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.25); }
+        .bl-card-check { width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid rgba(232,228,220,0.25); background: rgba(10,15,30,0.65); display: flex; align-items: center; justify-content: center; font-size: 11px; color: #10b981; flex-shrink: 0; transition: all .15s; cursor: pointer; }
+        .bl-card-check.checked { background: #10b981; border-color: #10b981; color: #fff; }
+        .bl-card-text { font-size: 12px; color: rgba(232,228,220,0.75); line-height: 1.55; flex: 1; }
+        .bl-card-done .bl-card-text { text-decoration: line-through; color: #9ca3af; }
       `}</style>
       <main style={{overflowX:'hidden', width:'100%'}}>
         <div className="result-layout">

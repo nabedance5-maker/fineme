@@ -3305,41 +3305,6 @@ export default function NewMeNaviPage() {
         </div>`;
     }
 
-    function buildNaviBaselineSection() {
-      const ELIGIBLE = new Set(['none', 'concerned']);
-      const AXIS_JA  = { eyebrow:'眉', skin:'肌', hair:'髪', body:'体型', fashion:'服', teeth:'歯', nail:'爪', hairremoval:'脱毛' };
-
-      const eligibleAxes = Object.keys(BASELINE_STEPS)
-        .filter(axis => tv[axis] && ELIGIBLE.has(tv[axis].care_type));
-      if (eligibleAxes.length === 0) return '';
-
-      const axisGroups = eligibleAxes.map(axis => {
-        const steps = BASELINE_STEPS[axis];
-        const axisLabel = AXIS_JA[axis] || axis;
-        const doneInAxis = steps.filter(s => stepDone[s.id]).length;
-        const allDone = doneInAxis === steps.length;
-        const cards = steps.map(step => {
-          const done = !!stepDone[step.id];
-          return `<div class="bl-card${done ? ' bl-card-done' : ''}">
-            <div class="bl-card-check prereq-box${done ? ' checked' : ''}" data-done-key="${esc(step.id)}">${done ? '✓' : ''}</div>
-            <p class="bl-card-text">${esc(step.text)}</p>
-          </div>`;
-        }).join('');
-        return `<div class="bl-axis-group${allDone ? ' bl-axis-done' : ''}">
-          <div class="bl-axis-header">
-            <span class="bl-axis-label">${esc(axisLabel)}</span>
-            <span class="bl-axis-count">${doneInAxis}/${steps.length}</span>
-          </div>
-          <div class="bl-scroll-row">${cards}</div>
-        </div>`;
-      }).join('');
-
-      return `<div class="bl-navi-section">
-        <div class="sec-label">基礎チェックリスト</div>
-        ${axisGroups}
-      </div>`;
-    }
-
     function buildAxisFilterBar() {
       return `<div class="axis-filter-bar" id="axis-filter-bar">` +
         `<button class="axis-filter-chip${!activeAxisFilter ? ' active' : ''}" data-axis-filter="">全て</button>` +
@@ -3370,10 +3335,6 @@ export default function NewMeNaviPage() {
       </div>
 
       ${buildCompassHtml()}
-
-      <div id="navi-baseline-container">
-        ${buildNaviBaselineSection()}
-      </div>
 
       ${buildAxisFilterBar()}
 
@@ -3678,19 +3639,6 @@ export default function NewMeNaviPage() {
       const prereqItem = btn.closest('.prereq-item');
       if (prereqItem) {
         prereqItem.classList.toggle('step-done', newDone);
-      }
-      // 基礎チェックリスト横スクロールカード
-      const blCard = btn.closest('.bl-card');
-      if (blCard) {
-        blCard.classList.toggle('bl-card-done', newDone);
-        const group = blCard.closest('.bl-axis-group');
-        if (group) {
-          const cards = group.querySelectorAll('.bl-card');
-          const doneCards = group.querySelectorAll('.bl-card-done');
-          group.classList.toggle('bl-axis-done', cards.length === doneCards.length);
-          const countEl = group.querySelector('.bl-axis-count');
-          if (countEl) countEl.textContent = `${doneCards.length}/${cards.length}`;
-        }
       }
       // step-card (旧ジグザグルート 互換)
       const stepCard = btn.closest('.step-card');
@@ -4000,24 +3948,6 @@ export default function NewMeNaviPage() {
           .navi-wrap { padding: 0 0 40px !important; width: 100%; box-sizing: border-box; overflow-x: hidden; }
         }
 
-        /* ── 基礎チェックリスト（Navi用横スクロール） ── */
-        .bl-navi-section { margin-bottom: 28px; }
-        .bl-axis-group { margin-bottom: 18px; }
-        .bl-axis-group.bl-axis-done { opacity: 0.5; }
-        .bl-axis-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 0 2px; }
-        .bl-axis-label { font-size: 12px; font-weight: 800; color: rgba(232,228,220,0.75); }
-        .bl-axis-count { font-size: 11px; color: rgba(201,168,76,0.7); font-weight: 700; }
-        .bl-scroll-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
-        .bl-scroll-row::-webkit-scrollbar { height: 3px; }
-        .bl-scroll-row::-webkit-scrollbar-track { background: transparent; }
-        .bl-scroll-row::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 2px; }
-        .bl-card { flex: 0 0 200px; scroll-snap-align: start; background: rgba(10,15,30,0.55); border: 1px solid rgba(232,228,220,0.12); border-radius: 12px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; transition: border-color .15s; }
-        .bl-card:hover { border-color: rgba(201,168,76,0.35); }
-        .bl-card-done { background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.25); }
-        .bl-card-check { width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid rgba(232,228,220,0.25); background: rgba(10,15,30,0.65); display: flex; align-items: center; justify-content: center; font-size: 11px; color: #10b981; flex-shrink: 0; transition: all .15s; cursor: pointer; }
-        .bl-card-check.checked { background: #10b981; border-color: #10b981; color: #fff; }
-        .bl-card-text { font-size: 12px; color: rgba(232,228,220,0.75); line-height: 1.55; flex: 1; }
-        .bl-card-done .bl-card-text { text-decoration: line-through; color: #9ca3af; }
       `}</style>
       <main style={{overflowX:'hidden', width:'100%'}}>
         <div className="navi-layout">
