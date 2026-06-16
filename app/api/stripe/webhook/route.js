@@ -1,6 +1,7 @@
 // POST /api/stripe/webhook
-import { getSupabase } from '@/lib/supabase';
 // Stripeイベントを受信してSupabaseを更新する
+// billing_status: free → active（payment_succeeded）/ cancelled / past_due
+import { getSupabase } from '@/lib/supabase';
 import Stripe from 'stripe';
 import { getPlanKeyByPriceId } from '@/lib/stripe-plans';
 import { sendReservationCreatedEmails } from '@/lib/email';

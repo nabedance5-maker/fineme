@@ -8,17 +8,18 @@ const _sb = createClient(
 );
 
 const PLANS = {
-  A: { name: 'ライト', amount: 5000, commission: 8.3, color: '#3b82f6' },
-  B: { name: 'スタンダード', amount: 7000, commission: 7.0, color: '#8b5cf6' },
-  C: { name: 'プレミアム', amount: 10000, commission: 5.5, color: '#f59e0b' },
+  A: { name: 'ライト',      amount: 5000,  commission: 8.3, color: '#3b82f6' },
+  B: { name: 'スタンダード', amount: 7000,  commission: 7.0, color: '#8b5cf6' },
+  C: { name: 'プレミアム',   amount: 10000, commission: 5.5, color: '#f59e0b' },
 };
 
 export default function BillingPage() {
   const initialized = useRef(false);
   const [currentPlan, setCurrentPlan] = useState('A');
-  const [billingStatus, setBillingStatus] = useState('trialing');
+  const [billingStatus, setBillingStatus] = useState('free');
   const [connectStatus, setConnectStatus] = useState(null);
   const [calcMonthly, setCalcMonthly] = useState(150000);
+  const [subscribing, setSubscribing] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function BillingPage() {
       .plan-savings{font-size:12px;color:#10b981;font-weight:600;margin-top:6px;min-height:18px}
       .plan-btn{width:100%;padding:8px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;margin-top:12px;transition:opacity .15s}
       .plan-btn.current-btn{background:rgba(232,228,220,0.1);color:#9ca3af;cursor:default}
+      .plan-btn.subscribe-btn{color:#fff}
       .plan-btn.upgrade-btn{color:#fff}
       .kpi-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
       .kpi-card{padding:20px;border:1px solid rgba(232,228,220,0.15);border-radius:14px;background:rgba(10,15,30,0.65);backdrop-filter:blur(8px)}
@@ -55,12 +57,11 @@ export default function BillingPage() {
       .connect-active{border-color:#10b981}
       .status-hero{padding:20px;border-radius:14px;display:flex;align-items:center;gap:16px}
       .status-hero.active{background:linear-gradient(120deg,rgba(16,185,129,.15),rgba(16,185,129,.05));border:1px solid rgba(16,185,129,.3)}
-      .status-hero.trialing{background:linear-gradient(120deg,rgba(59,130,246,.15),rgba(59,130,246,.05));border:1px solid rgba(59,130,246,.3)}
+      .status-hero.free{background:linear-gradient(120deg,rgba(99,102,241,.12),rgba(99,102,241,.04));border:1px solid rgba(99,102,241,.3)}
       .status-hero.past_due{background:linear-gradient(120deg,rgba(245,158,11,.15),rgba(245,158,11,.05));border:1px solid rgba(245,158,11,.3)}
       .badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}
       .badge-active{background:#065f46;color:#fff}
-      .badge-trialing{background:#1e40af;color:#fff}
-      .badge-pending{background:#92400e;color:#fff}
+      .badge-free{background:#312e81;color:#a5b4fc}
       .badge-past_due{background:#7f1d1d;color:#fff}
       .badge-paid{background:rgba(16,185,129,.2);color:#10b981}
       .badge-referral{background:rgba(139,92,246,.2);color:#8b5cf6}
@@ -74,10 +75,17 @@ export default function BillingPage() {
       .timeline-dot.done{background:#10b981;border-color:#10b981}
       .timeline-dot.current{background:var(--color-primary,#e8e4dc);border-color:var(--color-primary,#e8e4dc);animation:pulse 2s infinite}
       @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,228,220,.3)}50%{box-shadow:0 0 0 6px rgba(232,228,220,0)}}
+      .navi-lock-banner{background:rgba(201,168,76,0.07);border:1.5px solid rgba(201,168,76,0.25);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:14px}
+      .navi-lock-icon{font-size:28px;flex-shrink:0}
       @media(max-width:720px){.plan-cards{grid-template-columns:1fr}.calc-row{grid-template-columns:1fr}.kpi-row{grid-template-columns:1fr 1fr}}
       @media(max-width:480px){.kpi-row{grid-template-columns:1fr}}
     `;
     document.head.appendChild(style);
+
+    // URLパラメータ確認（Checkout成功/キャンセル）
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('subscribed') === '1') showToast('New Me Mapへの掲載を開始しました！');
+    if (params.get('canceled') === '1') showToast('プランの選択をキャンセルしました');
 
     return () => { try { document.head.removeChild(style); } catch {} };
   }, []);
@@ -101,7 +109,7 @@ export default function BillingPage() {
           const me = providers.find(p => p.email === session.user.email);
           if (me) {
             setCurrentPlan(me.plan || 'A');
-            setBillingStatus(me.subscriptionStatus || 'trialing');
+            setBillingStatus(me.billing_status || 'free');
           }
         }
 
@@ -115,10 +123,34 @@ export default function BillingPage() {
 
   function calcSavings(plan, monthlyRevenue) {
     const { amount, commission } = PLANS[plan];
-    const fee = monthlyRevenue * (commission / 100);
-    return amount + fee;
+    return amount + monthlyRevenue * (commission / 100);
   }
 
+  // 無料→有料：Stripe Checkoutにリダイレクト
+  async function handleSubscribe(plan) {
+    if (subscribing) return;
+    setSubscribing(true);
+    try {
+      const { data: { session } } = await _sb.auth.getSession();
+      const res = await fetch('/api/stripe/provider-subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert('エラー: ' + (data.error || '不明なエラー'));
+      }
+    } catch (e) {
+      alert('通信エラー: ' + e.message);
+    } finally {
+      setSubscribing(false);
+    }
+  }
+
+  // 有料→別プランへ変更（既存サブスク更新）
   async function handleUpgrade(newPlan) {
     if (upgrading || newPlan === currentPlan) return;
     if (!confirm(`プランを${PLANS[newPlan].name}（¥${PLANS[newPlan].amount.toLocaleString()}/月・手数料${PLANS[newPlan].commission}%）に変更しますか？`)) return;
@@ -168,18 +200,21 @@ export default function BillingPage() {
     setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 250); }, 2500);
   }
 
+  const isFree   = billingStatus === 'free' || !billingStatus;
+  const isActive = billingStatus === 'active';
+  const plan     = PLANS[currentPlan] || PLANS.A;
+
   const statusMap = {
-    active: { icon: '✅', cls: 'badge-active', label: '課金中', heroClass: 'active', title: '掲載料が発生中です', desc: '毎月自動引き落とし。紹介報酬は自動的に差し引かれます。' },
-    trialing: { icon: '⏳', cls: 'badge-trialing', label: '初回予約待ち', heroClass: 'trialing', title: '初回予約が入ったら課金開始', desc: 'Fineme経由で最初の予約が入った月から月額課金が始まります。' },
-    past_due: { icon: '⚠️', cls: 'badge-past_due', label: '支払い遅延', heroClass: 'past_due', title: '支払いに問題が発生しています', desc: 'カード情報を更新してください。' },
+    active:   { icon: '✅', cls: 'badge-active', label: 'New Me Map 掲載中', heroClass: 'active',   title: 'ユーザーのロードマップに表示されています', desc: '毎月自動引き落とし。紹介報酬は自動的に差し引かれます。' },
+    free:     { icon: '🗺️', cls: 'badge-free',   label: '無料掲載中',       heroClass: 'free',     title: '掲載ページ公開中・検索には表示されています', desc: '有料プランに移行するとユーザーの New Me Map（行動ロードマップ）にも表示されます。' },
+    past_due: { icon: '⚠️', cls: 'badge-past_due', label: '支払い遅延',     heroClass: 'past_due', title: '支払いに問題が発生しています', desc: 'カード情報を更新してください。' },
   };
-  const st = statusMap[billingStatus] || statusMap.trialing;
-  const plan = PLANS[currentPlan] || PLANS.A;
+  const st = statusMap[billingStatus] || statusMap.free;
 
   return (
     <main className="section">
       <div className="container stack">
-        <h1 className="section-title">課金・報酬</h1>
+        <h1 className="section-title">掲載プラン・課金</h1>
 
         {/* ステータス */}
         <div className={`status-hero ${st.heroClass}`}>
@@ -187,24 +222,37 @@ export default function BillingPage() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
               <span className={`badge ${st.cls}`}>{st.label}</span>
-              <span className="muted" style={{ fontSize: '13px' }}>現在のプラン: <strong style={{ color: plan.color }}>{plan.name} ¥{plan.amount.toLocaleString()}/月</strong></span>
+              {isActive && (
+                <span className="muted" style={{ fontSize: '13px' }}>現在のプラン: <strong style={{ color: plan.color }}>{plan.name} ¥{plan.amount.toLocaleString()}/月</strong></span>
+              )}
             </div>
             <div style={{ fontWeight: 700, fontSize: '17px' }}>{st.title}</div>
             <div className="muted" style={{ fontSize: '13px', marginTop: '4px' }}>{st.desc}</div>
           </div>
         </div>
 
+        {/* New Me Map 掲載バナー（無料ティアのみ表示） */}
+        {isFree && (
+          <div className="navi-lock-banner">
+            <div className="navi-lock-icon">🧭</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: '15px', marginBottom: '4px' }}>New Me Map への掲載で、ユーザーから選ばれる</div>
+              <div className="muted" style={{ fontSize: '13px' }}>診断を受けたユーザーが「次に行くべきサービス」として選ぶのが New Me Map です。<br />有料プランに移行すると、あなたのサービスがユーザーのロードマップに表示されます。</div>
+            </div>
+          </div>
+        )}
+
         {/* KPI */}
         <div className="kpi-row">
           <div className="kpi-card">
             <div className="kpi-label">今月の掲載料</div>
-            <div className="kpi-value">¥{billingStatus === 'active' ? plan.amount.toLocaleString() : '0'}</div>
-            <div className="kpi-sub">{billingStatus !== 'active' ? '初回予約後に課金開始' : `¥${plan.amount.toLocaleString()}/月`}</div>
+            <div className="kpi-value">¥{isActive ? plan.amount.toLocaleString() : '0'}</div>
+            <div className="kpi-sub">{isFree ? '無料掲載中' : `¥${plan.amount.toLocaleString()}/月`}</div>
           </div>
           <div className="kpi-card">
             <div className="kpi-label">予約手数料率</div>
-            <div className="kpi-value">{plan.commission}%</div>
-            <div className="kpi-sub">予約成立額の{plan.commission}%</div>
+            <div className="kpi-value">{isActive ? `${plan.commission}%` : '—'}</div>
+            <div className="kpi-sub">{isActive ? `予約成立額の${plan.commission}%` : '有料プランで設定されます'}</div>
           </div>
           <div className="kpi-card">
             <div className="kpi-label">紹介報酬（今月）</div>
@@ -213,14 +261,18 @@ export default function BillingPage() {
           </div>
         </div>
 
-        {/* プランアップグレード */}
+        {/* プラン選択（無料ティア：全プランで「掲載を始める」ボタン / 有料ティア：変更ボタン） */}
         <div className="card" style={{ padding: '24px' }}>
-          <h2 style={{ margin: '0 0 6px' }}>掲載プラン</h2>
-          <p className="muted" style={{ fontSize: '13px', marginBottom: '16px' }}>月額が上がるほど予約手数料率が下がります。予約が増えるほど上位プランがお得です。</p>
+          <h2 style={{ margin: '0 0 6px' }}>{isFree ? 'New Me Map 掲載プランを選ぶ' : '掲載プラン'}</h2>
+          <p className="muted" style={{ fontSize: '13px', marginBottom: '16px' }}>
+            {isFree
+              ? '月額が上がるほど予約手数料率が下がります。プランはいつでも変更できます。'
+              : '月額が上がるほど予約手数料率が下がります。予約が増えるほど上位プランがお得です。'}
+          </p>
           <div className="plan-cards">
             {Object.entries(PLANS).map(([key, p]) => {
-              const isCurrent = key === currentPlan;
-              const isUpgrade = key > currentPlan;
+              const isCurrent = isActive && key === currentPlan;
+              const isUpgrade  = isActive && key > currentPlan;
               return (
                 <div
                   key={key}
@@ -231,24 +283,40 @@ export default function BillingPage() {
                   <div className="plan-amount">¥{p.amount.toLocaleString()}<span style={{ fontSize: '13px', fontWeight: 400, color: '#9ca3af' }}>/月</span></div>
                   <div className="plan-commission">予約手数料 {p.commission}%</div>
                   <div className="plan-savings">
-                    {key === 'B' && currentPlan === 'A' && `月30万円の予約で月額差額を回収`}
-                    {key === 'C' && currentPlan !== 'C' && `最大手数料削減`}
+                    {key === 'B' && (!isActive || currentPlan === 'A') && `月30万円の予約で月額差額を回収`}
+                    {key === 'C' && (!isActive || currentPlan !== 'C') && `最大手数料削減`}
                   </div>
-                  <button
-                    className={`plan-btn ${isCurrent ? 'current-btn' : 'upgrade-btn'}`}
-                    style={isCurrent ? {} : { background: p.color }}
-                    disabled={isCurrent || upgrading || !isUpgrade}
-                    onClick={() => handleUpgrade(key)}
-                  >
-                    {isCurrent ? '現在のプラン' : isUpgrade ? (upgrading ? '変更中...' : `${p.name}にアップグレード`) : ''}
-                  </button>
+
+                  {/* 無料ティア：全プランに「掲載を始める」ボタン */}
+                  {isFree && (
+                    <button
+                      className="plan-btn subscribe-btn"
+                      style={{ background: p.color }}
+                      disabled={subscribing}
+                      onClick={() => handleSubscribe(key)}
+                    >
+                      {subscribing ? '処理中...' : 'このプランで掲載を始める'}
+                    </button>
+                  )}
+
+                  {/* 有料ティア：現在プランは表示のみ、上位プランは変更ボタン */}
+                  {isActive && (
+                    <button
+                      className={`plan-btn ${isCurrent ? 'current-btn' : 'upgrade-btn'}`}
+                      style={isCurrent ? {} : { background: p.color }}
+                      disabled={isCurrent || upgrading || !isUpgrade}
+                      onClick={() => handleUpgrade(key)}
+                    >
+                      {isCurrent ? '現在のプラン' : isUpgrade ? (upgrading ? '変更中...' : `${p.name}にアップグレード`) : ''}
+                    </button>
+                  )}
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* 試算ツール */}
+        {/* 月次コスト試算 */}
         <div className="card" style={{ padding: '24px' }}>
           <h2 style={{ margin: '0 0 6px' }}>月次コスト試算</h2>
           <p className="muted" style={{ fontSize: '13px', marginBottom: '12px' }}>Fineme経由の月間予約売上を入力すると、各プランのコストを比較できます。</p>
@@ -267,10 +335,10 @@ export default function BillingPage() {
           <div className="calc-row">
             {Object.entries(PLANS).map(([key, p]) => {
               const total = calcSavings(key, calcMonthly);
-              const vsA = key !== 'A' ? calcSavings('A', calcMonthly) - total : 0;
+              const vsA   = key !== 'A' ? calcSavings('A', calcMonthly) - total : 0;
               return (
-                <div key={key} className="calc-plan" style={{ borderColor: key === currentPlan ? p.color : 'rgba(232,228,220,0.1)' }}>
-                  <div className="calc-plan-name" style={{ color: key === currentPlan ? p.color : '#9ca3af' }}>{p.name}{key === currentPlan ? ' ★' : ''}</div>
+                <div key={key} className="calc-plan" style={{ borderColor: (isActive && key === currentPlan) ? p.color : 'rgba(232,228,220,0.1)' }}>
+                  <div className="calc-plan-name" style={{ color: (isActive && key === currentPlan) ? p.color : '#9ca3af' }}>{p.name}{isActive && key === currentPlan ? ' ★' : ''}</div>
                   <div className="calc-plan-fee" style={{ fontSize: '12px', color: '#6b7280' }}>月額 ¥{p.amount.toLocaleString()} + 手数料 ¥{Math.round(calcMonthly * p.commission / 100).toLocaleString()}</div>
                   <div className="calc-plan-total">¥{Math.round(total).toLocaleString()}</div>
                   {vsA > 0 && <div className="calc-plan-save">ライトより ¥{Math.round(vsA).toLocaleString()} お得</div>}
@@ -290,15 +358,11 @@ export default function BillingPage() {
             </div>
             {connectStatus?.connected
               ? <span className="badge badge-active">✓ 振込設定済み</span>
-              : <span className="badge badge-pending">未設定</span>
+              : <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '99px', fontSize: '12px', fontWeight: 600, background: '#92400e', color: '#fde68a' }}>未設定</span>
             }
           </div>
           {!connectStatus?.connected && (
-            <button
-              className="btn btn-primary"
-              style={{ marginTop: '16px' }}
-              onClick={handleConnectOnboard}
-            >
+            <button className="btn btn-primary" style={{ marginTop: '16px' }} onClick={handleConnectOnboard}>
               振込口座を設定する（Stripe）
             </button>
           )}
@@ -309,27 +373,27 @@ export default function BillingPage() {
 
         {/* 課金の流れ */}
         <div className="card" style={{ padding: '20px' }}>
-          <h2 style={{ margin: '0 0 16px' }}>課金の流れ</h2>
+          <h2 style={{ margin: '0 0 16px' }}>掲載の流れ</h2>
           <div className="timeline">
             <div className="timeline-item">
               <div className="timeline-dot done"></div>
               <div>
-                <div style={{ fontWeight: 600 }}>Finemeに掲載登録</div>
-                <div className="muted" style={{ fontSize: '13px' }}>プロフィール・サービスを公開済み</div>
+                <div style={{ fontWeight: 600 }}>Finemeに無料掲載登録</div>
+                <div className="muted" style={{ fontSize: '13px' }}>プロフィール・サービスを公開。検索から見つけてもらえます。</div>
               </div>
             </div>
             <div className="timeline-item">
-              <div className={`timeline-dot ${billingStatus === 'active' ? 'done' : 'current'}`}></div>
+              <div className={`timeline-dot ${isActive ? 'done' : 'current'}`}></div>
               <div>
-                <div style={{ fontWeight: 600 }}>Fineme経由で初回予約が入る</div>
-                <div className="muted" style={{ fontSize: '13px' }}>この瞬間から課金カウントが開始。その月から月額が発生します。</div>
+                <div style={{ fontWeight: 600 }}>有料プランに移行（月額先払い）</div>
+                <div className="muted" style={{ fontSize: '13px' }}>上のプランカードから選ぶとStripe決済画面に進みます。決済完了後すぐに有効になります。</div>
               </div>
             </div>
             <div className="timeline-item">
-              <div className={`timeline-dot ${billingStatus === 'active' ? 'current' : ''}`}></div>
+              <div className={`timeline-dot ${isActive ? 'current' : ''}`}></div>
               <div>
-                <div style={{ fontWeight: 600 }}>毎月自動請求 + 予約手数料</div>
-                <div className="muted" style={{ fontSize: '13px' }}>月額＋予約売上×手数料率が翌月初旬に請求されます。</div>
+                <div style={{ fontWeight: 600 }}>ユーザーの New Me Map に表示される</div>
+                <div className="muted" style={{ fontSize: '13px' }}>診断を受けたユーザーの行動ロードマップに、あなたのサービスが「次のステップ」として表示されます。</div>
               </div>
             </div>
             <div className="timeline-item" style={{ paddingBottom: 0 }}>
@@ -342,29 +406,31 @@ export default function BillingPage() {
           </div>
         </div>
 
-        {/* 支払い方法 */}
-        <div className="card" style={{ padding: '20px' }}>
-          <h2 style={{ margin: '0 0 4px' }}>支払い方法</h2>
-          <p className="muted" style={{ fontSize: '14px', marginBottom: '12px' }}>クレジットカード（Stripe）で管理しています。</p>
-          <button
-            className="btn btn-ghost"
-            onClick={async () => {
-              try {
-                const { data: { session } } = await _sb.auth.getSession();
-                const token = session?.access_token;
-                if (!token) { alert('ログインが必要です'); return; }
-                const res = await fetch('/api/billing/portal-session', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                  body: JSON.stringify({}),
-                });
-                const data = await res.json();
-                if (data.url) { window.location.href = data.url; }
-                else { alert('エラー: ' + (data.error || '不明なエラー')); }
-              } catch (e) { alert('通信エラー: ' + e.message); }
-            }}
-          >カード情報を変更・確認する</button>
-        </div>
+        {/* 支払い方法（有料ティアのみ） */}
+        {isActive && (
+          <div className="card" style={{ padding: '20px' }}>
+            <h2 style={{ margin: '0 0 4px' }}>支払い方法</h2>
+            <p className="muted" style={{ fontSize: '14px', marginBottom: '12px' }}>クレジットカード（Stripe）で管理しています。</p>
+            <button
+              className="btn btn-ghost"
+              onClick={async () => {
+                try {
+                  const { data: { session } } = await _sb.auth.getSession();
+                  const token = session?.access_token;
+                  if (!token) { alert('ログインが必要です'); return; }
+                  const res = await fetch('/api/billing/portal-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({}),
+                  });
+                  const data = await res.json();
+                  if (data.url) { window.location.href = data.url; }
+                  else { alert('エラー: ' + (data.error || '不明なエラー')); }
+                } catch (e) { alert('通信エラー: ' + e.message); }
+              }}
+            >カード情報を変更・確認する（解約もこちら）</button>
+          </div>
+        )}
 
         {/* 紹介コード */}
         <div className="card" style={{ padding: '20px' }}>
@@ -388,13 +454,4 @@ export default function BillingPage() {
       </div>
     </main>
   );
-
-  function showToast(msg) {
-    const t = document.createElement('div');
-    t.textContent = msg;
-    Object.assign(t.style, { position: 'fixed', bottom: '24px', right: '24px', background: '#111', color: '#fff', padding: '10px 18px', borderRadius: '8px', fontSize: '14px', zIndex: 9999, opacity: '0', transition: 'opacity .2s' });
-    document.body.appendChild(t);
-    requestAnimationFrame(() => { t.style.opacity = '1'; });
-    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 250); }, 2500);
-  }
 }

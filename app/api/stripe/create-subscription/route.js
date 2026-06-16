@@ -1,9 +1,8 @@
 // POST /api/stripe/create-subscription
+// 掲載者登録時に Stripe Customer のみ作成（Subscription は作らない）
+// 課金は掲載者が自らアップグレードを選んだときに開始する（freemium モデル）
 import { getSupabase } from '@/lib/supabase';
-// 掲載者登録時にStripe Customer + Subscription（trial）を作成
-// 初回予約まで課金は発生しない（trial_end を遠い未来に設定）
 import Stripe from 'stripe';
-import { PLANS } from '@/lib/stripe-plans';
 
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) return null;
@@ -17,15 +16,13 @@ export async function POST(request) {
   if (!stripe) return Response.json({ error: 'Stripe は未設定です' }, { status: 503 });
 
   try {
-    const { providerId, email, displayName, plan = 'A', referralCode } = await request.json();
+    const { providerId, email, displayName, referralCode } = await request.json();
 
     if (!providerId || !email) {
       return Response.json({ error: 'providerId と email は必須です' }, { status: 400 });
     }
 
-    const planConfig = PLANS[plan] || PLANS['A'];
-
-    // Stripe Customer 作成
+    // Stripe Customer 作成（Subscription は後からアップグレード時に作成）
     const customer = await stripe.customers.create({
       email,
       name: displayName || email,
@@ -35,33 +32,18 @@ export async function POST(request) {
       },
     });
 
-    // Subscription 作成（trial_end = 20年後 → 初回予約検知時に即時課金に切り替え）
-    const trialEnd = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365 * 20;
-    const subscription = await stripe.subscriptions.create({
-      customer: customer.id,
-      items: [{ price: planConfig.price_id }],
-      trial_end: trialEnd,
-      payment_behavior: 'default_incomplete',
-      metadata: { fineme_provider_id: String(providerId) },
-    });
-
-    // Supabase providers テーブルに保存
+    // Supabase providers テーブルに保存（billing_status = 'free'）
     await supabaseAdmin.from('providers').upsert({
       id: String(providerId),
       email,
       name: displayName || email,
-      plan,
       stripe_customer_id: customer.id,
-      stripe_subscription_id: subscription.id,
-      billing_status: 'trialing',
+      billing_status: 'free',
     }, { onConflict: 'id' });
 
     return Response.json({
       customerId: customer.id,
-      subscriptionId: subscription.id,
-      status: subscription.status,
-      plan,
-      planAmount: planConfig.amount,
+      status: 'free',
     });
   } catch (err) {
     console.error('[create-subscription]', err);

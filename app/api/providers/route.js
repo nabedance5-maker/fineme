@@ -64,6 +64,8 @@ function calcScore({ provider, services, staffCount, trigger, failure, compassAx
   }
   // AI分析済みプロフィールのボーナス（文章をちゃんと書いた掲載者を優遇）
   if (ai) score += 6;
+  // 有料掲載者（New Me Map掲載中）を検索でも優先表示
+  if (provider.billing_status === 'active') score += 15;
   // ユーザーの優先軸トップ3と、掲載者サービスの対象軸が一致
   if (priorityAxes?.length && services?.length) {
     let axisMatchCount = 0;
@@ -164,6 +166,7 @@ function calcScore({ provider, services, staffCount, trigger, failure, compassAx
 export async function GET(request) {
   try {
   const { searchParams } = new URL(request.url);
+  const naviMode      = searchParams.get('navi') === 'true'; // New Me Map専用：有料掲載者のみ
   const category      = searchParams.get('category');
   const area          = searchParams.get('area');
   const axis          = searchParams.get('axis');          // 軸ハードフィルター（検索ページ）
@@ -183,6 +186,9 @@ export async function GET(request) {
     .select('*')
     .eq('published', true)
     .or('admin_hidden.eq.false,admin_hidden.is.null');
+
+  // New Me Map モードでは有料掲載者（active）のみを対象にする
+  if (naviMode) query = query.eq('billing_status', 'active');
 
   if (category) query = query.eq('main_category', category);
   // エリアフィルター：アフィリエイト（area=null）は全国対応のため常に含める

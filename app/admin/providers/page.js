@@ -56,7 +56,7 @@ export default function AdminProvidersPage() {
         providers = await res.json();
         const kpiTotal = document.getElementById('kpi-total'); if (kpiTotal) kpiTotal.textContent = providers.length;
         const kpiPub = document.getElementById('kpi-pub'); if (kpiPub) kpiPub.textContent = providers.filter(p => p.published && !p.admin_hidden).length;
-        const kpiBilling = document.getElementById('kpi-billing'); if (kpiBilling) kpiBilling.textContent = providers.filter(p => p.billing_started && p.plan !== 'free').length;
+        const kpiBilling = document.getElementById('kpi-billing'); if (kpiBilling) kpiBilling.textContent = providers.filter(p => p.billing_status === 'active').length;
         if (!providers.length) { listEl.innerHTML = '<p class="muted">掲載者がいません。「掲載者を登録」から追加してください。</p>'; return; }
         listEl.innerHTML = '';
         providers.forEach(p => {
@@ -71,8 +71,8 @@ export default function AdminProvidersPage() {
                   <strong style="font-size:15px;color:#111">${esc(p.name)}</strong>
                   <span class="badge ${statusClass}">${statusLabel}</span>
                   <span class="badge badge-gray">${catLabel(p.main_category)}</span>
-                  ${p.billing_started && p.plan !== 'free' ? '<span class="badge badge-green">課金中</span>' : ''}
-                  ${p.plan ? `<span class="badge badge-gray">${{ A: 'プランA', B: 'プランB', C: 'プランC', free: '特例（無料）' }[p.plan] || p.plan}</span>` : ''}
+                  ${p.billing_status === 'active' ? '<span class="badge badge-green">New Me Map掲載中</span>' : '<span class="badge badge-gray">無料掲載</span>'}
+                  ${p.plan && p.billing_status === 'active' ? `<span class="badge badge-gray">${{ A: 'プランA', B: 'プランB', C: 'プランC' }[p.plan] || p.plan}</span>` : ''}
                 </div>
                 <div style="font-size:12px;color:#6b7280;margin-top:4px">
                   ${p.area ? `📍 ${esc(p.area)} ` : ''}${p.price_from ? `¥${Number(p.price_from).toLocaleString()}〜 ` : ''}
@@ -221,12 +221,11 @@ export default function AdminProvidersPage() {
               <div className="form-field form-field-full"><label>メールアドレス * （ログイン・通知用）</label><input name="email" type="email" required placeholder="provider@example.com" /><small style={{color:'#6b7280',fontSize:'11px'}}>登録すると掲載者にパスワード設定メールが自動送信されます</small></div>
               <div className="form-field"><label>LINE User ID（通知用）</label><input name="line_user_id" placeholder="Uxxxxxxxxxxxxxxxxx" /></div>
               <div className="form-field"><label>写真URL</label><input name="photo_url" type="url" placeholder="https://..." /></div>
-              <div className="form-field"><label>プラン</label>
+              <div className="form-field"><label>プラン（有料移行時のみ設定）</label>
                 <select name="plan">
-                  <option value="A">A（¥5,000/月）</option>
-                  <option value="B">B（¥7,000/月）</option>
-                  <option value="C">C（¥10,000/月）</option>
-                  <option value="free">【特例】無料プラン（課金なし）</option>
+                  <option value="A">A・ライト（¥5,000/月 / New Me Map掲載）</option>
+                  <option value="B">B・スタンダード（¥7,000/月 / New Me Map掲載）</option>
+                  <option value="C">C・プレミアム（¥10,000/月 / New Me Map掲載）</option>
                 </select>
               </div>
               <div className="form-field form-field-full"><label>キャッチコピー</label><input name="catchphrase" placeholder="初デートで堂々としていたい男性のための3ヶ月プログラム" /></div>

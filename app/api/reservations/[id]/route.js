@@ -56,7 +56,7 @@ export async function PATCH(request, context) {
     if (error) return Response.json({ error: error.message, hint: error.hint }, { status: 500 });
 
     const { data: provider } = await db
-      .from('providers').select('name, email, line_user_id, stripe_subscription_id, billing_started, plan').eq('id', data.provider_id).single();
+      .from('providers').select('name, email, line_user_id').eq('id', data.provider_id).single();
 
     const notifyStatuses = ['approved', 'rejected', 'counter_proposed'];
     if (notifyStatuses.includes(newStatus)) {
@@ -77,26 +77,6 @@ export async function PATCH(request, context) {
       try {
         await sendVisitConfirmedEmail({ reservation: data, userEmail: data.user_contact, userName: data.user_name, providerName: provider?.name });
       } catch (e) { console.error('[visit email]', e); }
-    }
-
-    // 初回来店 → 課金開始（無料プラン除く）
-    if (newStatus === 'visited' && provider && !provider.billing_started && provider.plan !== 'free') {
-      try {
-        if (provider.stripe_subscription_id) {
-          const activateRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fineme.me'}/api/stripe/activate-billing`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ stripeSubscriptionId: provider.stripe_subscription_id, providerId: data.provider_id }),
-          });
-          if (!activateRes.ok) {
-            const err = await activateRes.json();
-            console.error('[activate-billing] failed:', err);
-          }
-        }
-        // billing_started を記録（Stripe未設定でも記録）
-        await db.from('providers').update({ billing_started: new Date().toISOString() }).eq('id', data.provider_id);
-        console.log(`[billing] provider ${data.provider_id} billing_started set`);
-      } catch (e) { console.error('[billing activate on visit]', e); }
     }
 
     // ユーザーがキャンセルした場合：掲載者に通知
