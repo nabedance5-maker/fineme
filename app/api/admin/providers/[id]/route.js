@@ -20,7 +20,7 @@ export async function PATCH(request, { params }) {
   const allowed = ['name','slug','catchphrase','description','target_desc','philosophy',
     'main_category','sub_categories','area','price_from','booking_url','photo_url',
     'email','line_user_id',
-    'published','admin_hidden','plan','billing_started',
+    'published','admin_hidden','plan','billing_status','billing_started',
     'stripe_customer_id','stripe_subscription_id',
     'suitable_triggers','handles_failure_patterns','provider_style'];
 

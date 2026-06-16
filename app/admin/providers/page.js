@@ -71,8 +71,8 @@ export default function AdminProvidersPage() {
                   <strong style="font-size:15px;color:#111">${esc(p.name)}</strong>
                   <span class="badge ${statusClass}">${statusLabel}</span>
                   <span class="badge badge-gray">${catLabel(p.main_category)}</span>
-                  ${p.billing_status === 'active' ? '<span class="badge badge-green">New Me Map掲載中</span>' : '<span class="badge badge-gray">無料掲載</span>'}
-                  ${p.plan && p.billing_status === 'active' ? `<span class="badge badge-gray">${{ A: 'プランA', B: 'プランB', C: 'プランC' }[p.plan] || p.plan}</span>` : ''}
+                  ${p.plan === 'special' ? '<span class="badge badge-green">特例無料</span>' : p.billing_status === 'active' ? '<span class="badge badge-green">New Me Map掲載中</span>' : '<span class="badge badge-gray">無料掲載</span>'}
+                  ${p.plan && p.billing_status === 'active' && p.plan !== 'special' ? `<span class="badge badge-gray">${{ A: 'プランA', B: 'プランB', C: 'プランC' }[p.plan] || p.plan}</span>` : ''}
                 </div>
                 <div style="font-size:12px;color:#6b7280;margin-top:4px">
                   ${p.area ? `📍 ${esc(p.area)} ` : ''}${p.price_from ? `¥${Number(p.price_from).toLocaleString()}〜 ` : ''}
@@ -120,6 +120,17 @@ export default function AdminProvidersPage() {
         form.querySelectorAll('[name=suitable_triggers]').forEach(cb => { cb.checked = (data.suitable_triggers || []).includes(cb.value); });
         form.querySelectorAll('[name=handles_failure_patterns]').forEach(cb => { cb.checked = (data.handles_failure_patterns || []).includes(cb.value); });
         form.elements['_id'].value = data.id;
+        // プランセレクトの初期値を billing_status と plan から正しく復元
+        const planSel = form.querySelector('select[name="plan"]');
+        if (planSel) {
+          if (data.plan === 'special') {
+            planSel.value = 'special';
+          } else if (!data.billing_status || data.billing_status === 'free') {
+            planSel.value = 'free';
+          } else {
+            planSel.value = data.plan || 'A';
+          }
+        }
       }
       modal.style.display = 'flex';
     }
@@ -138,7 +149,14 @@ export default function AdminProvidersPage() {
       data.price_from = data.price_from ? Number(data.price_from) : null;
       // plan: select要素から明示的に取得（FormData取りこぼし対策）
       const planEl = form.querySelector('select[name="plan"]');
-      if (planEl) data.plan = planEl.value || 'A';
+      if (planEl) data.plan = planEl.value || 'free';
+      // プラン選択に応じて billing_status を自動設定
+      if (data.plan === 'special') {
+        data.billing_status = 'active'; // 特例無料：有料機能すべて有効
+      } else if (data.plan === 'free') {
+        data.billing_status = 'free';   // 無料掲載：New Me Map非表示
+      }
+      // A/B/C はStripe側が billing_status を管理するため管理画面からは変更しない
       const id = data._id; delete data._id;
       const res = await fetch(id ? `/api/admin/providers/${id}` : '/api/admin/providers', { method: id ? 'PATCH' : 'POST', headers: h(), body: JSON.stringify(data) });
       if (res.ok) {
@@ -221,11 +239,13 @@ export default function AdminProvidersPage() {
               <div className="form-field form-field-full"><label>メールアドレス * （ログイン・通知用）</label><input name="email" type="email" required placeholder="provider@example.com" /><small style={{color:'#6b7280',fontSize:'11px'}}>登録すると掲載者にパスワード設定メールが自動送信されます</small></div>
               <div className="form-field"><label>LINE User ID（通知用）</label><input name="line_user_id" placeholder="Uxxxxxxxxxxxxxxxxx" /></div>
               <div className="form-field"><label>写真URL</label><input name="photo_url" type="url" placeholder="https://..." /></div>
-              <div className="form-field"><label>プラン（有料移行時のみ設定）</label>
+              <div className="form-field"><label>プラン</label>
                 <select name="plan">
+                  <option value="free">無料掲載（検索のみ・New Me Map非表示）</option>
                   <option value="A">A・ライト（¥5,000/月 / New Me Map掲載）</option>
                   <option value="B">B・スタンダード（¥7,000/月 / New Me Map掲載）</option>
                   <option value="C">C・プレミアム（¥10,000/月 / New Me Map掲載）</option>
+                  <option value="special">【特例無料】有料機能すべて使用可（支払いなし）</option>
                 </select>
               </div>
               <div className="form-field form-field-full"><label>キャッチコピー</label><input name="catchphrase" placeholder="初デートで堂々としていたい男性のための3ヶ月プログラム" /></div>
