@@ -1649,6 +1649,35 @@ export default function NewMeNaviPage() {
           <a href="/diagnosis" style="font-size:11px;font-weight:700;padding:7px 14px;border:1px solid rgba(100,160,255,0.4);border-radius:8px;color:rgba(100,160,255,0.9);text-decoration:none;flex-shrink:0;white-space:nowrap">Me Scanを受ける →</a>
         </div>` : '';
 
+      // 基礎チェックリスト（Map用：上位5件をpriority×gapスコアで選定）
+      const _mapBaselineItems = computeBaselineItems();
+      const AXIS_JA_BL = { eyebrow:'眉', skin:'肌', hair:'髪', body:'体型', fashion:'服', teeth:'歯', nail:'爪', hairremoval:'脱毛' };
+      const mapBaselineHtml = _mapBaselineItems.length === 0 ? '' : (() => {
+        const itemsHtml = _mapBaselineItems.map(step => {
+          const done = !!stepDone[step.id];
+          return `<div class="prereq-item${done ? ' step-done' : ''}">
+            <div class="prereq-box${done ? ' checked' : ''}" data-done-key="${esc(step.id)}">${done ? '✓' : ''}</div>
+            <div style="flex:1">
+              <span style="font-size:10px;font-weight:700;color:rgba(201,168,76,0.55);display:block;margin-bottom:2px">${esc(AXIS_JA_BL[step.axis] || step.axis)}</span>
+              <span class="prereq-text">${esc(step.text)}</span>
+            </div>
+          </div>`;
+        }).join('');
+        const blDone = _mapBaselineItems.filter(s => stepDone[s.id]).length;
+        return `<div id="baseline-banner-wrap" style="margin-bottom:20px">
+          <div class="prereq-banner" id="baseline-banner">
+            <div class="prereq-banner-icon">⚡</div>
+            <div class="prereq-banner-body">
+              <p class="prereq-banner-title">今日やったら変わる基礎の一手</p>
+              <p class="prereq-banner-desc">あなたの診断結果から優先表示 · <span class="prereq-banner-count">${blDone}/${_mapBaselineItems.length} 完了</span></p>
+            </div>
+          </div>
+          <div class="prereq-section" id="baseline-section" style="margin-top:10px">
+            ${itemsHtml}
+          </div>
+        </div>`;
+      })();
+
       return `
         ${mirrorOnlyBanner}
         ${mirrorPromoBanner}
@@ -1667,6 +1696,7 @@ export default function NewMeNaviPage() {
             </div>
           </div>
         </div>
+        ${mapBaselineHtml}
         ${mirrorBasisHtml}
         ${voyageLogHtml}
         <div class="route-container">${nodesHtml}</div>
@@ -2113,6 +2143,109 @@ export default function NewMeNaviPage() {
     }
 
     const tv = p.transform_vectors || {};
+
+    // ── 基礎チェックリスト（BASELINE_STEPS） ──
+    const BASELINE_STEPS = {
+      eyebrow: [
+        { id: 'eyebrow-b-01', axis: 'eyebrow', priority: 9, action_type: 'quick',
+          text: '眉用コームを今日買って、鏡の前で毛流れを整えてみる（3分でできる、顔の印象が変わる）' },
+        { id: 'eyebrow-b-02', axis: 'eyebrow', priority: 8, action_type: 'habit',
+          text: '余分な産毛・単独毛を電動フェイスシェーバーで週1回除去する（コームで整えた後の産毛が対象）' },
+        { id: 'eyebrow-b-03', axis: 'eyebrow', priority: 6, action_type: 'quick',
+          text: '鏡で左右の眉の高さと長さを比べて、どちらがズレているか確認する（非対称の現状把握）' },
+      ],
+      skin: [
+        { id: 'skin-b-01', axis: 'skin', priority: 10, action_type: 'habit',
+          text: '朝晩2回の洗顔を今日から習慣にする（今の洗顔料でOK。まず頻度が先）' },
+        { id: 'skin-b-02', axis: 'skin', priority: 9, action_type: 'habit',
+          text: '洗顔後30秒以内に化粧水をつける（コットンでも手でも可。水分を閉じ込めるのが目的）' },
+        { id: 'skin-b-03', axis: 'skin', priority: 8, action_type: 'habit',
+          text: '化粧水の後に乳液またはクリームで蓋をする（ニベア青缶500円台でOK）' },
+        { id: 'skin-b-04', axis: 'skin', priority: 7, action_type: 'habit',
+          text: '外出前にUV（日焼け止めSPF30以上）を塗る習慣を作る（老化の最大原因は紫外線）' },
+        { id: 'skin-b-05', axis: 'skin', priority: 5, action_type: 'habit',
+          text: '美容液を1本導入する（ビタミンC誘導体配合が毛穴・シミに効果的）' },
+      ],
+      hair: [
+        { id: 'hair-b-01', axis: 'hair', priority: 10, action_type: 'habit',
+          text: '洗髪後は自然乾燥禁止。今日からドライヤーで根元から乾かす（清潔感が1日で変わる）' },
+        { id: 'hair-b-02', axis: 'hair', priority: 8, action_type: 'habit',
+          text: 'シャンプーは頭皮で泡立ててから揉み込む（髪をこすらない。頭皮の血行が変わる）' },
+        { id: 'hair-b-03', axis: 'hair', priority: 7, action_type: 'habit',
+          text: 'トリートメントを毎回使う（毛先に馴染ませて2分置いてから流す）' },
+        { id: 'hair-b-04', axis: 'hair', priority: 6, action_type: 'habit',
+          text: 'ドライヤー後にヘアオイルまたはアウトバストリートメントをつける（ツヤが変わる）' },
+      ],
+      fashion: [
+        { id: 'fashion-b-01', axis: 'fashion', priority: 10, action_type: 'quick',
+          text: 'クローゼットからサイズが合っている服だけ取り出して今日着る（ゆるい服は見た目を5kg太らせる）' },
+        { id: 'fashion-b-02', axis: 'fashion', priority: 9, action_type: 'habit',
+          text: '着る前にシワを確認する。シワがある服は蒸気またはアイロンで伸ばす（清潔感の9割はシワで決まる）' },
+        { id: 'fashion-b-03', axis: 'fashion', priority: 8, action_type: 'quick',
+          text: '1コーデを白・グレー・ネイビーの無地3色以内にまとめる（色は少ない方が清潔感が出る）' },
+        { id: 'fashion-b-04', axis: 'fashion', priority: 7, action_type: 'habit',
+          text: '靴を今日拭く・磨く（靴の汚れは全体の印象を下げる。週1回10分の手入れで変わる）' },
+      ],
+      body: [
+        { id: 'body-b-01', axis: 'body', priority: 10, action_type: 'quick',
+          text: '壁を背にして立ち、後頭部・肩・お尻・かかとを全部つける。正しい姿勢を30秒キープして鏡で確認する' },
+        { id: 'body-b-02', axis: 'body', priority: 9, action_type: 'habit',
+          text: '歩くとき「頭のてっぺんを引っ張られている」イメージで歩く。姿勢を意識するだけで見た目が変わる' },
+        { id: 'body-b-03', axis: 'body', priority: 7, action_type: 'habit',
+          text: 'スマホのヘルスケアアプリで歩数を記録し始める（目標：1日7,000歩）' },
+        { id: 'body-b-04', axis: 'body', priority: 5, action_type: 'habit',
+          text: '体幹プランク30秒×3セットを毎朝始める（姿勢の維持が楽になる）' },
+      ],
+      teeth: [
+        { id: 'teeth-b-01', axis: 'teeth', priority: 10, action_type: 'habit',
+          text: '歯磨きを食後30分以内に固定し、2分以上かける（頻度と時間の習慣化が最初の一歩）' },
+        { id: 'teeth-b-02', axis: 'teeth', priority: 9, action_type: 'quick',
+          text: 'デンタルフロスを今日買って今夜使う。歯ブラシだけでは取れない汚れが一目瞭然になる' },
+        { id: 'teeth-b-03', axis: 'teeth', priority: 8, action_type: 'habit',
+          text: '歯磨き粉をホワイトニング成分（ポリリン酸・フッ素配合）に切り替える' },
+        { id: 'teeth-b-04', axis: 'teeth', priority: 6, action_type: 'habit',
+          text: 'コーヒー・お茶を飲んだ後は水でゆすぐ。着色を防ぐ最小コストの習慣' },
+      ],
+      nail: [
+        { id: 'nail-b-01', axis: 'nail', priority: 10, action_type: 'quick',
+          text: '今すぐ爪を「白い部分1〜2mm残る長さ」に切り揃える（10分で手の印象が別人になる）' },
+        { id: 'nail-b-02', axis: 'nail', priority: 9, action_type: 'habit',
+          text: '爪やすり（100均）で角を丸く整える。週1回切るたびに必ずセットでやる' },
+        { id: 'nail-b-03', axis: 'nail', priority: 6, action_type: 'habit',
+          text: '爪周りの甘皮・ささくれにネイルオイルを塗る（手全体の印象が変わる）' },
+      ],
+      hairremoval: [
+        { id: 'hairremoval-b-01', axis: 'hairremoval', priority: 10, action_type: 'quick',
+          text: 'ひげのスタイル（完全除去 or 整えて残す）を今日決める。迷いをなくすと清潔感が上がる' },
+        { id: 'hairremoval-b-02', axis: 'hairremoval', priority: 9, action_type: 'habit',
+          text: '毎日同じタイミング（洗顔後など）でひげを処理する習慣を作る。生えかけの状態をなくす' },
+        { id: 'hairremoval-b-03', axis: 'hairremoval', priority: 7, action_type: 'quick',
+          text: '現在のシェーバーの刃を確認する。3〜6ヶ月が交換目安。切れ味が落ちると肌荒れの原因になる' },
+      ],
+    };
+
+    // Map用: priority×gap スコアで上位5件を選定
+    function computeBaselineItems() {
+      const ELIGIBLE = new Set(['none', 'concerned']);
+      const mirrorMap = {};
+      (mirrorAnalysisAxes || []).forEach(ax => { mirrorMap[ax.id] = ax.potential_level; });
+
+      const candidates = [];
+      for (const [axis, steps] of Object.entries(BASELINE_STEPS)) {
+        const v = tv[axis];
+        if (!v || !ELIGIBLE.has(v.care_type)) continue;
+        const gap = (v.ideal || 3) - (v.current || 1);
+        const mirrorBoost = mirrorMap[axis] === '高' ? 3 : mirrorMap[axis] === '中' ? 1 : 0;
+        const axisWeight = gap + mirrorBoost;
+        for (const step of steps) {
+          if (stepDone[step.id]) continue;
+          candidates.push({ ...step, _score: step.priority * axisWeight });
+        }
+      }
+      candidates.sort((a, b) => b._score - a._score);
+      return candidates.slice(0, 5);
+    }
+
     const _diagPriorityOrder = p.priority_order || Object.keys(AREA_DEFS);
     // ③ 軸ごとの実ステップ完了率を算出するヘルパー（③④で共用）
     // naviStepsData（AI生成）があればそちらのstep.idを使う
@@ -3172,6 +3305,41 @@ export default function NewMeNaviPage() {
         </div>`;
     }
 
+    function buildNaviBaselineSection() {
+      const ELIGIBLE = new Set(['none', 'concerned']);
+      const AXIS_JA  = { eyebrow:'眉', skin:'肌', hair:'髪', body:'体型', fashion:'服', teeth:'歯', nail:'爪', hairremoval:'脱毛' };
+
+      const eligibleAxes = Object.keys(BASELINE_STEPS)
+        .filter(axis => tv[axis] && ELIGIBLE.has(tv[axis].care_type));
+      if (eligibleAxes.length === 0) return '';
+
+      const axisGroups = eligibleAxes.map(axis => {
+        const steps = BASELINE_STEPS[axis];
+        const axisLabel = AXIS_JA[axis] || axis;
+        const doneInAxis = steps.filter(s => stepDone[s.id]).length;
+        const allDone = doneInAxis === steps.length;
+        const cards = steps.map(step => {
+          const done = !!stepDone[step.id];
+          return `<div class="bl-card${done ? ' bl-card-done' : ''}">
+            <div class="bl-card-check prereq-box${done ? ' checked' : ''}" data-done-key="${esc(step.id)}">${done ? '✓' : ''}</div>
+            <p class="bl-card-text">${esc(step.text)}</p>
+          </div>`;
+        }).join('');
+        return `<div class="bl-axis-group${allDone ? ' bl-axis-done' : ''}">
+          <div class="bl-axis-header">
+            <span class="bl-axis-label">${esc(axisLabel)}</span>
+            <span class="bl-axis-count">${doneInAxis}/${steps.length}</span>
+          </div>
+          <div class="bl-scroll-row">${cards}</div>
+        </div>`;
+      }).join('');
+
+      return `<div class="bl-navi-section">
+        <div class="sec-label">基礎チェックリスト</div>
+        ${axisGroups}
+      </div>`;
+    }
+
     function buildAxisFilterBar() {
       return `<div class="axis-filter-bar" id="axis-filter-bar">` +
         `<button class="axis-filter-chip${!activeAxisFilter ? ' active' : ''}" data-axis-filter="">全て</button>` +
@@ -3202,6 +3370,10 @@ export default function NewMeNaviPage() {
       </div>
 
       ${buildCompassHtml()}
+
+      <div id="navi-baseline-container">
+        ${buildNaviBaselineSection()}
+      </div>
 
       ${buildAxisFilterBar()}
 
@@ -3335,12 +3507,28 @@ export default function NewMeNaviPage() {
     const STATUS_CYCLE = { '': 'active', 'active': 'done', 'done': '' };
 
     function updatePrereqBanner() {
+      // TRACK_MILESTONES の出発前チェックバナー
       const banner = document.getElementById('prereq-banner');
-      if (!banner) return;
-      const { done, total, allDone } = getAllPrereqInfo();
-      if (allDone) { banner.remove(); return; }
-      const countEl = banner.querySelector('.prereq-banner-count');
-      if (countEl) countEl.textContent = `${done}/${total} チェック済み`;
+      if (banner) {
+        const { done, total, allDone } = getAllPrereqInfo();
+        if (allDone) { banner.remove(); }
+        else {
+          const countEl = banner.querySelector('.prereq-banner-count');
+          if (countEl) countEl.textContent = `${done}/${total} チェック済み`;
+        }
+      }
+      // Map用 基礎チェックリストバナー
+      const blBanner = document.getElementById('baseline-banner');
+      if (blBanner) {
+        const blItems = document.querySelectorAll('#baseline-section .prereq-box');
+        const blChecked = document.querySelectorAll('#baseline-section .prereq-box.checked');
+        if (blItems.length > 0 && blItems.length === blChecked.length) {
+          document.getElementById('baseline-banner-wrap')?.remove();
+        } else {
+          const countEl = blBanner.querySelector('.prereq-banner-count');
+          if (countEl) countEl.textContent = `${blChecked.length}/${blItems.length} 完了`;
+        }
+      }
     }
 
     function showPrereqCelebration() {
@@ -3491,6 +3679,19 @@ export default function NewMeNaviPage() {
       if (prereqItem) {
         prereqItem.classList.toggle('step-done', newDone);
       }
+      // 基礎チェックリスト横スクロールカード
+      const blCard = btn.closest('.bl-card');
+      if (blCard) {
+        blCard.classList.toggle('bl-card-done', newDone);
+        const group = blCard.closest('.bl-axis-group');
+        if (group) {
+          const cards = group.querySelectorAll('.bl-card');
+          const doneCards = group.querySelectorAll('.bl-card-done');
+          group.classList.toggle('bl-axis-done', cards.length === doneCards.length);
+          const countEl = group.querySelector('.bl-axis-count');
+          if (countEl) countEl.textContent = `${doneCards.length}/${cards.length}`;
+        }
+      }
       // step-card (旧ジグザグルート 互換)
       const stepCard = btn.closest('.step-card');
       if (stepCard) {
@@ -3542,7 +3743,7 @@ export default function NewMeNaviPage() {
         return;
       }
       updatePrereqBanner();
-      if (newDone && key.startsWith('prereq-')) {
+      if (newDone && (key.startsWith('prereq-') || key.includes('-b-'))) {
         const allBoxes     = document.querySelectorAll('.prereq-box');
         const checkedBoxes = document.querySelectorAll('.prereq-box.checked');
         if (allBoxes.length > 0 && allBoxes.length === checkedBoxes.length) {
@@ -3798,6 +3999,25 @@ export default function NewMeNaviPage() {
           .navi-sidenav .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; }
           .navi-wrap { padding: 0 0 40px !important; width: 100%; box-sizing: border-box; overflow-x: hidden; }
         }
+
+        /* ── 基礎チェックリスト（Navi用横スクロール） ── */
+        .bl-navi-section { margin-bottom: 28px; }
+        .bl-axis-group { margin-bottom: 18px; }
+        .bl-axis-group.bl-axis-done { opacity: 0.5; }
+        .bl-axis-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 0 2px; }
+        .bl-axis-label { font-size: 12px; font-weight: 800; color: rgba(232,228,220,0.75); }
+        .bl-axis-count { font-size: 11px; color: rgba(201,168,76,0.7); font-weight: 700; }
+        .bl-scroll-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+        .bl-scroll-row::-webkit-scrollbar { height: 3px; }
+        .bl-scroll-row::-webkit-scrollbar-track { background: transparent; }
+        .bl-scroll-row::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 2px; }
+        .bl-card { flex: 0 0 200px; scroll-snap-align: start; background: rgba(10,15,30,0.55); border: 1px solid rgba(232,228,220,0.12); border-radius: 12px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; transition: border-color .15s; }
+        .bl-card:hover { border-color: rgba(201,168,76,0.35); }
+        .bl-card-done { background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.25); }
+        .bl-card-check { width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid rgba(232,228,220,0.25); background: rgba(10,15,30,0.65); display: flex; align-items: center; justify-content: center; font-size: 11px; color: #10b981; flex-shrink: 0; transition: all .15s; cursor: pointer; }
+        .bl-card-check.checked { background: #10b981; border-color: #10b981; color: #fff; }
+        .bl-card-text { font-size: 12px; color: rgba(232,228,220,0.75); line-height: 1.55; flex: 1; }
+        .bl-card-done .bl-card-text { text-decoration: line-through; color: #9ca3af; }
       `}</style>
       <main style={{overflowX:'hidden', width:'100%'}}>
         <div className="navi-layout">

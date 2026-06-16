@@ -164,6 +164,13 @@ export async function POST(request) {
 
   const tv = derivedDiagnosis?.transform_vectors || {};
   const bd = body_data || {};
+
+  // 基礎チェックリスト対象軸（UIでステップ0を別表示するため、AI生成では入門ステップを省略させる）
+  const BASELINE_AXES = new Set(['eyebrow', 'skin', 'hair', 'fashion', 'body', 'teeth', 'nail', 'hairremoval']);
+  const BASELINE_TRIGGER = new Set(['none', 'concerned']);
+  const baselineAxes = Object.keys(tv).filter(
+    axis => BASELINE_AXES.has(axis) && BASELINE_TRIGGER.has(tv[axis]?.care_type)
+  );
   const budget = diagnosis?.budget || null;
   const goalScene = diagnosis?.goal_scene || null;
   const triggerType = diagnosis?.trigger_type || null;
@@ -361,6 +368,9 @@ ${modeRules}
     - 「完了・Mirror変化あり」のステップと同じ軸・アプローチは積極的に継続・発展させる
     - 「未完了」が続いているステップは、難易度を下げたバリエーションに差し替えるか省く
     - 「完了・Mirror変化なし」のステップは、同じアプローチを繰り返さず別の切り口で提案する
+${baselineAxes.length ? `13. 以下の軸は「基礎習慣チェックリスト」が別途UIから提供される。
+    この軸について「現状把握・道具購入・最低限の頻度習慣の開始」系のステップは省略し、
+    製品選択・記録・プロ活用・比較・継続改善 のレベルから生成すること: ${baselineAxes.join('・')}` : ''}
 
 ## 出力形式（JSONのみ・コードブロック不要）
 {"steps":[{"id":"eyebrow-001","axis":"eyebrow","eval_type":"both","text":"...","action_type":"quick","guide":"none","hint":"..."},{"id":"hair-001","axis":"hair","eval_type":"action","text":"...","action_type":"quick","guide":"none"},...]}'`;
