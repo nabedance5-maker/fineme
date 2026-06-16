@@ -587,9 +587,8 @@ export default function DiagnosisResultPage() {
     };
 
     function buildNaviBaselineSection() {
-      const ELIGIBLE = new Set(['none', 'concerned']);
       const AXIS_JA = { eyebrow:'眉', skin:'肌', hair:'髪', body:'体型', fashion:'服', teeth:'歯', nail:'爪', hairremoval:'脱毛' };
-      const eligibleAxes = Object.keys(BASELINE_STEPS).filter(axis => tv[axis] && ELIGIBLE.has(tv[axis].care_type));
+      const eligibleAxes = Object.keys(BASELINE_STEPS);
       if (eligibleAxes.length === 0) return '';
       const axisGroups = eligibleAxes.map(axis => {
         const steps = BASELINE_STEPS[axis];
