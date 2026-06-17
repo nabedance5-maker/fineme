@@ -166,11 +166,11 @@ export async function POST(request) {
   const bd = body_data || {};
 
   // 基礎チェックリスト対象軸（UIでステップ0を別表示するため、AI生成では入門ステップを省略させる）
+  // priority_order 上位5軸を対象にする（care_typeではなくCompass優先度で判定）
   const BASELINE_AXES = new Set(['eyebrow', 'skin', 'hair', 'fashion', 'body', 'teeth', 'nail', 'hairremoval']);
-  const BASELINE_TRIGGER = new Set(['none', 'concerned']);
-  const baselineAxes = Object.keys(tv).filter(
-    axis => BASELINE_AXES.has(axis) && BASELINE_TRIGGER.has(tv[axis]?.care_type)
-  );
+  const baselineAxes = (derivedDiagnosis?.priority_order || [])
+    .filter(axis => BASELINE_AXES.has(axis))
+    .slice(0, 5);
   const budget = diagnosis?.budget || null;
   const goalScene = diagnosis?.goal_scene || null;
   const triggerType = diagnosis?.trigger_type || null;

@@ -2224,19 +2224,23 @@ export default function NewMeNaviPage() {
       ],
     };
 
-    // Map用: priority×gap スコアで上位5件を選定
+    // Map用: priority×(gap + mirrorBoost + compassBonus) スコアで上位5件を選定
     function computeBaselineItems() {
-      const ELIGIBLE = new Set(['none', 'concerned']);
       const mirrorMap = {};
       (mirrorAnalysisAxes || []).forEach(ax => { mirrorMap[ax.id] = ax.potential_level; });
+
+      // Compassランクボーナス: priorityOrder 1位=+10.5, 2位=+9, ... 8位=+1.5
+      const compassRank = {};
+      (p.priority_order || []).forEach((id, i) => { compassRank[id] = Math.max(0, 8 - i) * 1.5; });
 
       const candidates = [];
       for (const [axis, steps] of Object.entries(BASELINE_STEPS)) {
         const v = tv[axis];
-        if (!v || !ELIGIBLE.has(v.care_type)) continue;
-        const gap = (v.ideal || 3) - (v.current || 1);
+        if (!v || v.care_type === 'pro') continue;  // プロ通い中のみ除外
+        const gap = Math.max(0, (v.ideal || 3) - (v.current || 1));
         const mirrorBoost = mirrorMap[axis] === '高' ? 3 : mirrorMap[axis] === '中' ? 1 : 0;
-        const axisWeight = gap + mirrorBoost;
+        const axisWeight = gap + mirrorBoost + (compassRank[axis] || 0);
+        if (axisWeight === 0) continue;
         for (const step of steps) {
           if (stepDone[step.id]) continue;
           candidates.push({ ...step, _score: step.priority * axisWeight });
