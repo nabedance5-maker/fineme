@@ -1116,17 +1116,21 @@ export default function DiagnosisResultPage() {
 
       <div id="match-providers-slot"></div>
 
-      <a href="/lp/mirror" style="display:block;text-decoration:none;margin-bottom:20px">
+      ${(() => {
+        const _mt = priorityOrder.slice(0, 3).map(id => AREA_DEFS[id]?.label).filter(Boolean);
+        const _title = _mt.length >= 2 ? _mt.join('・') + 'の変容余地を写真で見る' : '写真1枚で変容余地を可視化する';
+        return `<a href="/lp/mirror" style="display:block;text-decoration:none;margin-bottom:20px">
         <div style="display:flex;align-items:center;gap:16px;padding:18px 20px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.35);border-radius:14px;transition:border-color 0.2s">
           <span style="font-size:28px;flex-shrink:0">🪞</span>
           <div style="flex:1">
             <p style="font-size:10px;font-weight:800;letter-spacing:.14em;color:#c9a84c;text-transform:uppercase;margin:0 0 4px">Fineme Mirror — ¥500</p>
-            <p style="font-size:14px;font-weight:700;color:rgba(232,228,220,0.95);margin:0 0 3px">写真1枚で変容余地を可視化する</p>
-            <p style="font-size:12px;color:rgba(232,228,220,0.55);margin:0;line-height:1.5">AIが7軸を分析。あなたの「最初に変えるべき場所」が地図になります。</p>
+            <p style="font-size:14px;font-weight:700;color:rgba(232,228,220,0.95);margin:0 0 3px">${esc(_title)}</p>
+            <p style="font-size:12px;color:rgba(232,228,220,0.55);margin:0;line-height:1.5">Compassが示す軸を中心にAIが深掘り。あなたの「今すぐ変えるべき場所」が可視化されます。</p>
           </div>
           <span style="font-size:11px;font-weight:800;color:#0a0f1e;background:linear-gradient(135deg,#c9a84c,#e8c97a);border-radius:20px;padding:5px 14px;flex-shrink:0;white-space:nowrap">詳しく見る →</span>
         </div>
-      </a>
+      </a>`;
+      })()}
 
       ${buildProductCarousel(priorityOrder.filter(id => AXIS_PRODUCTS[id]).slice(0, 5), getUserLevel())}
 
