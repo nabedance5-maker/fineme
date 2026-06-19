@@ -11,6 +11,21 @@ const STATUS_CONFIG = {
 
 const CAST_LABEL = { solo: 'でお solo', duo: '2人' };
 
+const PLATFORM_CONFIG = {
+  tiktok:    { color: '#f72585', bg: 'rgba(247,37,133,0.12)' },
+  instagram: { color: '#e1306c', bg: 'rgba(225,48,108,0.12)' },
+  youtube:   { color: '#ff4444', bg: 'rgba(255,68,68,0.1)' },
+  other:     { color: '#9ca3af', bg: 'rgba(156,163,175,0.1)' },
+};
+
+const CANVAS_AXES = [
+  { key: 'hook',       label: '① フック設計',         hint: '最初の3秒で何を見せるか？視聴者が止まる理由' },
+  { key: 'emotion',    label: '② 感情軸',             hint: '何を感じさせるか（「これ俺だ」の具体的瞬間）' },
+  { key: 'diff',       label: '③ 差別化ポイント',     hint: '他の恋愛/外見系ショートドラマと何が違うか' },
+  { key: 'rules',      label: '④ シリーズ統一ルール', hint: '必ず守るフォーマットルール（尺・オチ構造など）' },
+  { key: 'mirror_cta', label: '⑤ Mirror導線',         hint: '視聴 → フォロー → Mirror購買の流れ' },
+];
+
 const CHECKLIST_ITEMS = [
   { id: 'tiktok_account',    label: 'TikTok @fineme.drama 開設' },
   { id: 'youtube_account',   label: 'YouTube @fineme_drama チャンネル作成' },
@@ -28,7 +43,7 @@ const ACCOUNT_INFO = [
   { platform: 'YouTube',   handle: '@fineme_drama' },
 ];
 
-function EpisodeForm({ initial, onSave, onCancel, adminKey }) {
+function EpisodeForm({ initial, onSave, onCancel }) {
   const [form, setForm] = useState(initial || {
     episode_no: '', title: '', cast_type: 'solo', status: 'idea',
     publish_date: '', tiktok_url: '', instagram_url: '', youtube_url: '',
@@ -37,17 +52,11 @@ function EpisodeForm({ initial, onSave, onCancel, adminKey }) {
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
-  async function submit(e) {
-    e.preventDefault();
-    const data = { ...form, episode_no: Number(form.episode_no) || 1 };
-    onSave(data);
-  }
-
   const inp = { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 6, color: '#e8e4dc', padding: '6px 10px', width: '100%', fontSize: 14 };
   const lbl = { color: '#9ca3af', fontSize: 12, marginBottom: 3, display: 'block' };
 
   return (
-    <form onSubmit={submit} style={{ background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: 10, padding: 20, marginTop: 12 }}>
+    <form onSubmit={e => { e.preventDefault(); onSave({ ...form, episode_no: Number(form.episode_no) || 1 }); }} style={{ background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: 10, padding: 20, marginTop: 12 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
         <div><label style={lbl}># 話数</label><input style={inp} type="number" value={form.episode_no} onChange={e => set('episode_no', e.target.value)} required /></div>
         <div style={{ gridColumn: 'span 2' }}><label style={lbl}>タイトル / テーマ</label><input style={inp} value={form.title} onChange={e => set('title', e.target.value)} required /></div>
@@ -89,6 +98,7 @@ function EpisodeForm({ initial, onSave, onCancel, adminKey }) {
 }
 
 export default function DramaPage() {
+  // ── 既存 state ────────────────────────────────────────────────────────────
   const [episodes, setEpisodes] = useState([]);
   const [ideas, setIdeas] = useState([]);
   const [kpis, setKpis] = useState({ tiktok_followers: 0, instagram_followers: 0, youtube_followers: 0, updated_at: null });
@@ -105,6 +115,25 @@ export default function DramaPage() {
   const [newIdea, setNewIdea] = useState('');
   const [editingKpi, setEditingKpi] = useState(false);
   const [kpiForm, setKpiForm] = useState({ tiktok_followers: 0, instagram_followers: 0, youtube_followers: 0 });
+
+  // ── コンセプトキャンバス state ────────────────────────────────────────────
+  const [canvas, setCanvas] = useState({});
+  const [canvasEdit, setCanvasEdit] = useState(false);
+  const [canvasForm, setCanvasForm] = useState({ hook: '', emotion: '', diff: '', rules: '', mirror_cta: '' });
+  const [generatingCanvas, setGeneratingCanvas] = useState(false);
+
+  // ── 競合リサーチ state ────────────────────────────────────────────────────
+  const [refs, setRefs] = useState([]);
+  const [ytQuery, setYtQuery] = useState('ショートドラマ 恋愛');
+  const [ytResults, setYtResults] = useState([]);
+  const [searchingYT, setSearchingYT] = useState(false);
+  const [analyzingVideo, setAnalyzingVideo] = useState({});
+  const [videoAnalysis, setVideoAnalysis] = useState({});
+  const [patternsResult, setPatternsResult] = useState('');
+  const [analyzingPatterns, setAnalyzingPatterns] = useState(false);
+  const [showRefForm, setShowRefForm] = useState(false);
+  const [newRef, setNewRef] = useState({ platform: 'tiktok', title: '', url: '', user_notes: '' });
+  const [savingRef, setSavingRef] = useState({});
 
   useEffect(() => {
     const saved = localStorage.getItem('drama:checklist');
@@ -124,6 +153,10 @@ export default function DramaPage() {
       setKpis(json.kpis || {});
       setMirrorPaid(json.mirrorPaid || 0);
       setKpiForm({ tiktok_followers: json.kpis?.tiktok_followers || 0, instagram_followers: json.kpis?.instagram_followers || 0, youtube_followers: json.kpis?.youtube_followers || 0 });
+      const c = json.config?.canvas || {};
+      setCanvas(c);
+      setCanvasForm({ hook: c.hook || '', emotion: c.emotion || '', diff: c.diff || '', rules: c.rules || '', mirror_cta: c.mirror_cta || '' });
+      setRefs(json.refs || []);
     } catch {}
     setLoading(false);
   }
@@ -153,6 +186,7 @@ export default function DramaPage() {
     return res.json();
   }
 
+  // ── エピソード操作 ────────────────────────────────────────────────────────
   async function saveEpisode(data) {
     if (editingEp) {
       const row = await apiCall('PUT', { type: 'episode', id: editingEp.id, data });
@@ -218,6 +252,109 @@ export default function DramaPage() {
     setEditingKpi(false);
   }
 
+  // ── コンセプトキャンバス ─────────────────────────────────────────────────
+  async function generateCanvas() {
+    setGeneratingCanvas(true);
+    try {
+      const res = await fetch('/api/drama/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ type: 'concept', episodes }),
+      });
+      const { canvas: draft } = await res.json();
+      if (draft && Object.keys(draft).length > 0) {
+        setCanvasForm(f => ({ ...f, ...draft }));
+        setCanvas(draft);
+        setCanvasEdit(true);
+      }
+    } finally {
+      setGeneratingCanvas(false);
+    }
+  }
+
+  async function saveCanvas(e) {
+    e.preventDefault();
+    await apiCall('POST', { type: 'config', data: canvasForm });
+    setCanvas(canvasForm);
+    setCanvasEdit(false);
+  }
+
+  // ── 競合リサーチ ─────────────────────────────────────────────────────────
+  async function searchYoutube() {
+    setSearchingYT(true);
+    setYtResults([]);
+    try {
+      const res = await fetch(`/api/drama/youtube-search?q=${encodeURIComponent(ytQuery)}&maxResults=10`, {
+        headers: { 'x-admin-key': adminKey },
+      });
+      const data = await res.json();
+      setYtResults(Array.isArray(data) ? data : []);
+    } catch {}
+    setSearchingYT(false);
+  }
+
+  async function analyzeVideo(video) {
+    setAnalyzingVideo(v => ({ ...v, [video.videoId]: true }));
+    try {
+      const res = await fetch('/api/drama/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ type: 'video', videoId: video.videoId, title: video.title, description: video.description }),
+      });
+      const data = await res.json();
+      setVideoAnalysis(v => ({ ...v, [video.videoId]: data }));
+    } catch {}
+    setAnalyzingVideo(v => ({ ...v, [video.videoId]: false }));
+  }
+
+  async function saveVideoAsRef(video) {
+    const analysis = videoAnalysis[video.videoId];
+    setSavingRef(v => ({ ...v, [video.videoId]: true }));
+    try {
+      const row = await apiCall('POST', { type: 'ref', data: {
+        platform: 'youtube',
+        title: video.title,
+        url: video.url,
+        view_count: video.viewCount,
+        like_count: video.likeCount,
+        claude_analysis: analysis?.analysis || '',
+        user_notes: '',
+      }});
+      setRefs(r => [row, ...r]);
+    } finally {
+      setSavingRef(v => ({ ...v, [video.videoId]: false }));
+    }
+  }
+
+  async function deleteRef(ref) {
+    if (!confirm(`「${ref.title}」を参照リストから削除しますか？`)) return;
+    await apiCall('DELETE', null, `?type=ref&id=${ref.id}`);
+    setRefs(r => r.filter(x => x.id !== ref.id));
+  }
+
+  async function addManualRef(e) {
+    e.preventDefault();
+    const row = await apiCall('POST', { type: 'ref', data: { ...newRef, claude_analysis: '' }});
+    setRefs(r => [row, ...r]);
+    setNewRef({ platform: 'tiktok', title: '', url: '', user_notes: '' });
+    setShowRefForm(false);
+  }
+
+  async function analyzePatterns() {
+    if (refs.length === 0) return;
+    setAnalyzingPatterns(true);
+    try {
+      const res = await fetch('/api/drama/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ type: 'refs', refs }),
+      });
+      const { patterns } = await res.json();
+      setPatternsResult(patterns || '');
+    } catch {}
+    setAnalyzingPatterns(false);
+  }
+
   const checkedCount = CHECKLIST_ITEMS.filter(i => checklist[i.id]).length;
 
   const s = {
@@ -242,6 +379,8 @@ export default function DramaPage() {
     ideaRow: { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid rgba(232,228,220,0.06)', fontSize: 14 },
     addBtn: { background: 'rgba(201,168,76,0.1)', border: '1px dashed rgba(201,168,76,0.4)', color: '#c9a84c', borderRadius: 6, padding: '8px 16px', cursor: 'pointer', fontSize: 13, marginTop: 10 },
     smallBtn: { background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 12, padding: '2px 6px', borderRadius: 4 },
+    inp: { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 6, color: '#e8e4dc', padding: '6px 10px', width: '100%', fontSize: 14 },
+    lbl: { color: '#9ca3af', fontSize: 12, marginBottom: 3, display: 'block' },
   };
 
   if (loading) return <div style={{ ...s.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: '#c9a84c' }}>読み込み中...</span></div>;
@@ -265,6 +404,63 @@ export default function DramaPage() {
           <button onClick={toggleEdit} style={s.editBtn}>
             {editMode ? '✕ 編集終了' : '✎ 編集'}
           </button>
+        </div>
+
+        {/* ── コンセプトキャンバス ─────────────────────────────────────────── */}
+        <div style={{ ...s.card, marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: canvasEdit ? 16 : (Object.values(canvas).some(Boolean) ? 16 : 0) }}>
+            <span style={s.cardTitle}>🎯 コンセプトキャンバス</span>
+            {editMode && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={generateCanvas}
+                  disabled={generatingCanvas}
+                  style={{ ...s.smallBtn, color: '#a78bfa', border: '1px solid rgba(167,139,250,0.4)', padding: '4px 10px', fontSize: 12, opacity: generatingCanvas ? 0.6 : 1 }}
+                >
+                  {generatingCanvas ? '⏳ 生成中...' : '✨ AI草案を生成する'}
+                </button>
+                <button
+                  onClick={() => { setCanvasEdit(v => !v); setCanvasForm({ hook: canvas.hook || '', emotion: canvas.emotion || '', diff: canvas.diff || '', rules: canvas.rules || '', mirror_cta: canvas.mirror_cta || '' }); }}
+                  style={{ ...s.smallBtn, color: '#c9a84c', border: '1px solid rgba(201,168,76,0.3)', padding: '4px 10px', fontSize: 12 }}
+                >
+                  {canvasEdit ? 'キャンセル' : '編集'}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {canvasEdit && editMode ? (
+            <form onSubmit={saveCanvas}>
+              {CANVAS_AXES.map(ax => (
+                <div key={ax.key} style={{ marginBottom: 14 }}>
+                  <label style={{ ...s.lbl, fontSize: 13, color: '#c9a84c', fontWeight: 600 }}>{ax.label}</label>
+                  <p style={{ fontSize: 11, color: 'rgba(232,228,220,0.35)', margin: '0 0 4px' }}>{ax.hint}</p>
+                  <textarea
+                    style={{ ...s.inp, minHeight: 60, resize: 'vertical' }}
+                    value={canvasForm[ax.key] || ''}
+                    onChange={e => setCanvasForm(f => ({ ...f, [ax.key]: e.target.value }))}
+                    placeholder={ax.hint}
+                  />
+                </div>
+              ))}
+              <button type="submit" style={{ background: '#c9a84c', color: '#0a0f1e', border: 'none', borderRadius: 6, padding: '7px 18px', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>保存</button>
+            </form>
+          ) : Object.values(canvas).some(Boolean) ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {CANVAS_AXES.map(ax => canvas[ax.key] ? (
+                <div key={ax.key} style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.12)', borderRadius: 8, padding: '10px 14px' }}>
+                  <p style={{ fontSize: 11, color: '#c9a84c', fontWeight: 700, margin: '0 0 5px', letterSpacing: '0.03em' }}>{ax.label}</p>
+                  <p style={{ fontSize: 13, color: '#e8e4dc', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{canvas[ax.key]}</p>
+                </div>
+              ) : null)}
+            </div>
+          ) : (
+            <p style={{ color: 'rgba(232,228,220,0.3)', fontSize: 13, margin: 0 }}>
+              {editMode
+                ? '「✨ AI草案を生成する」でエピソードリストから5軸を自動設計できます。'
+                : 'コンセプトはまだ設計されていません。'}
+            </p>
+          )}
         </div>
 
         {/* チェックリスト + KPI */}
@@ -350,7 +546,7 @@ export default function DramaPage() {
           {episodes.map(ep => (
             <div key={ep.id} style={s.epRow}>
               {editingEp?.id === ep.id ? (
-                <EpisodeForm initial={ep} onSave={saveEpisode} onCancel={() => setEditingEp(null)} adminKey={adminKey} />
+                <EpisodeForm initial={ep} onSave={saveEpisode} onCancel={() => setEditingEp(null)} />
               ) : (
                 <>
                   <div style={s.epHeader}>
@@ -419,7 +615,7 @@ export default function DramaPage() {
           ))}
 
           {showEpForm && !editingEp && (
-            <EpisodeForm initial={{ episode_no: (episodes.length + 1) }} onSave={saveEpisode} onCancel={() => setShowEpForm(false)} adminKey={adminKey} />
+            <EpisodeForm initial={{ episode_no: (episodes.length + 1) }} onSave={saveEpisode} onCancel={() => setShowEpForm(false)} />
           )}
 
           {editMode && !showEpForm && !editingEp && (
@@ -471,6 +667,198 @@ export default function DramaPage() {
               >
                 📋 プロンプトをコピー
               </button>
+            </div>
+          )}
+        </div>
+
+        {/* ── 競合リサーチボード ───────────────────────────────────────────── */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <span style={s.sectionTitle}>🔍 競合リサーチ</span>
+            {refs.length > 0 && (
+              <button
+                onClick={analyzePatterns}
+                disabled={analyzingPatterns}
+                style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.35)', color: '#34d399', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontSize: 12, opacity: analyzingPatterns ? 0.6 : 1 }}
+              >
+                {analyzingPatterns ? '⏳ 分析中...' : '📊 全体パターン分析する'}
+              </button>
+            )}
+          </div>
+
+          {/* YouTube 検索（編集モードのみ） */}
+          {editMode && (
+            <div style={{ ...s.card, marginBottom: 16 }}>
+              <p style={{ fontSize: 12, color: 'rgba(232,228,220,0.45)', margin: '0 0 10px' }}>
+                YouTube でバズっているショートドラマを再生数順で検索します。気になる動画は「Claudeに分析させる」→「参考に保存する」。
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  value={ytQuery}
+                  onChange={e => setYtQuery(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && searchYoutube()}
+                  placeholder="ショートドラマ 恋愛"
+                  style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: 6, color: '#e8e4dc', padding: '7px 12px', fontSize: 14 }}
+                />
+                <button
+                  onClick={searchYoutube}
+                  disabled={searchingYT}
+                  style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)', color: '#f87171', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap', opacity: searchingYT ? 0.6 : 1 }}
+                >
+                  {searchingYT ? '検索中...' : '🔎 YouTube検索'}
+                </button>
+              </div>
+
+              {/* YouTube 検索結果 */}
+              {ytResults.length > 0 && (
+                <div style={{ marginTop: 14 }}>
+                  <p style={{ fontSize: 11, color: 'rgba(232,228,220,0.4)', marginBottom: 10 }}>{ytResults.length}件が見つかりました。「Claudeに分析させる」で台本構造を自動分析できます。</p>
+                  {ytResults.map(video => {
+                    const analysis = videoAnalysis[video.videoId];
+                    const isAnalyzing = !!analyzingVideo[video.videoId];
+                    const isSaved = refs.some(r => r.url === video.url);
+                    const isSaving = !!savingRef[video.videoId];
+                    return (
+                      <div key={video.videoId} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, padding: 12, marginBottom: 10 }}>
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                          {video.thumbnail && (
+                            <img src={video.thumbnail} alt="" style={{ width: 120, height: 68, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 13, fontWeight: 600, margin: '0 0 3px', lineHeight: 1.4, wordBreak: 'break-word' }}>{video.title}</p>
+                            <p style={{ fontSize: 11, color: 'rgba(232,228,220,0.4)', margin: '0 0 8px' }}>
+                              {video.channelTitle} · 再生 {video.viewCount.toLocaleString()} · 👍 {video.likeCount.toLocaleString()}
+                            </p>
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                              <a
+                                href={video.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ fontSize: 12, color: '#f87171', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 4, padding: '2px 8px', textDecoration: 'none' }}
+                              >
+                                ▶ YouTubeで見る
+                              </a>
+                              {!analysis && !isAnalyzing && (
+                                <button
+                                  onClick={() => analyzeVideo(video)}
+                                  style={{ ...s.smallBtn, color: '#a78bfa', border: '1px solid rgba(167,139,250,0.4)', fontSize: 12, padding: '2px 8px' }}
+                                >
+                                  ✨ Claudeに分析させる
+                                </button>
+                              )}
+                              {isAnalyzing && <span style={{ fontSize: 12, color: 'rgba(232,228,220,0.4)' }}>⏳ 分析中（10〜20秒）...</span>}
+                              {analysis && !isSaved && (
+                                <button
+                                  onClick={() => saveVideoAsRef(video)}
+                                  disabled={isSaving}
+                                  style={{ ...s.smallBtn, color: '#34d399', border: '1px solid rgba(52,211,153,0.35)', fontSize: 12, padding: '2px 8px', opacity: isSaving ? 0.6 : 1 }}
+                                >
+                                  {isSaving ? '保存中...' : '✅ 参考に保存する'}
+                                </button>
+                              )}
+                              {isSaved && <span style={{ fontSize: 12, color: 'rgba(52,211,153,0.5)' }}>✅ 保存済み</span>}
+                            </div>
+                          </div>
+                        </div>
+                        {analysis && (
+                          <div style={{ marginTop: 10, padding: '10px 12px', background: 'rgba(167,139,250,0.04)', border: '1px solid rgba(167,139,250,0.15)', borderRadius: 6 }}>
+                            <p style={{ fontSize: 11, color: 'rgba(167,139,250,0.7)', margin: '0 0 6px' }}>
+                              Claude分析 — {analysis.transcriptNote}
+                            </p>
+                            <pre style={{ fontSize: 12, color: '#e8e4dc', whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'inherit', lineHeight: 1.6 }}>{analysis.analysis}</pre>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 保存済みRef一覧 */}
+          {refs.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              {refs.map(ref => {
+                const pc = PLATFORM_CONFIG[ref.platform] || PLATFORM_CONFIG.other;
+                return (
+                  <div key={ref.id} style={s.epRow}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: (ref.claude_analysis || ref.user_notes) ? 8 : 0, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11, padding: '1px 8px', borderRadius: 10, background: pc.bg, color: pc.color, fontWeight: 700 }}>
+                        {(ref.platform || 'other').toUpperCase()}
+                      </span>
+                      <span style={{ flex: 1, fontSize: 13, fontWeight: 600, minWidth: 0, wordBreak: 'break-word' }}>{ref.title}</span>
+                      {ref.view_count > 0 && (
+                        <span style={{ fontSize: 11, color: 'rgba(232,228,220,0.4)', whiteSpace: 'nowrap' }}>再生 {Number(ref.view_count).toLocaleString()}</span>
+                      )}
+                      {ref.url && (
+                        <a href={ref.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#c9a84c', whiteSpace: 'nowrap' }}>▶ 見る</a>
+                      )}
+                      {editMode && (
+                        <button onClick={() => deleteRef(ref)} style={{ ...s.smallBtn, color: '#f87171', border: '1px solid rgba(248,113,113,0.3)', fontSize: 11 }}>削除</button>
+                      )}
+                    </div>
+                    {ref.claude_analysis && (
+                      <pre style={{ fontSize: 12, color: 'rgba(232,228,220,0.65)', whiteSpace: 'pre-wrap', margin: '0 0 6px', fontFamily: 'inherit', lineHeight: 1.55, borderLeft: '2px solid rgba(167,139,250,0.35)', paddingLeft: 10 }}>{ref.claude_analysis}</pre>
+                    )}
+                    {ref.user_notes && (
+                      <p style={{ fontSize: 12, color: 'rgba(232,228,220,0.5)', margin: 0, fontStyle: 'italic' }}>でおメモ：{ref.user_notes}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {refs.length === 0 && !editMode && (
+            <p style={{ color: 'rgba(232,228,220,0.3)', fontSize: 13 }}>まだ参考動画がありません。編集モードでYouTube検索を使って参考を集めましょう。</p>
+          )}
+
+          {/* 全体パターン分析結果 */}
+          {patternsResult && (
+            <div style={{ background: 'rgba(52,211,153,0.03)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: 10, padding: '16px 18px', marginTop: 14 }}>
+              <p style={{ fontSize: 12, color: '#34d399', fontWeight: 700, margin: '0 0 10px' }}>📊 全体パターン分析結果</p>
+              <pre style={{ fontSize: 13, color: '#e8e4dc', whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'inherit', lineHeight: 1.7 }}>{patternsResult}</pre>
+            </div>
+          )}
+
+          {/* 手動追加（TikTok / Instagram / その他） */}
+          {editMode && (
+            <div style={{ marginTop: 14 }}>
+              <button onClick={() => setShowRefForm(v => !v)} style={s.addBtn}>
+                + TikTok / Instagram を手動追加
+              </button>
+              {showRefForm && (
+                <form onSubmit={addManualRef} style={{ background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: 10, padding: 16, marginTop: 10 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: 10, marginBottom: 10 }}>
+                    <div>
+                      <label style={s.lbl}>プラットフォーム</label>
+                      <select style={s.inp} value={newRef.platform} onChange={e => setNewRef(r => ({ ...r, platform: e.target.value }))}>
+                        <option value="tiktok">TikTok</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="youtube">YouTube</option>
+                        <option value="other">その他</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={s.lbl}>タイトル / 概要</label>
+                      <input required style={s.inp} value={newRef.title} onChange={e => setNewRef(r => ({ ...r, title: e.target.value }))} placeholder="動画タイトルや概要" />
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: 10 }}>
+                    <label style={s.lbl}>URL（任意）</label>
+                    <input style={s.inp} value={newRef.url} onChange={e => setNewRef(r => ({ ...r, url: e.target.value }))} placeholder="https://..." />
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={s.lbl}>観察メモ（なぜバズったか・フック・オチ等）</label>
+                    <textarea style={{ ...s.inp, minHeight: 72, resize: 'vertical' }} value={newRef.user_notes} onChange={e => setNewRef(r => ({ ...r, user_notes: e.target.value }))} placeholder="最初の3秒は〇〇で止める。オチは〜" />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button type="submit" style={{ background: '#c9a84c', color: '#0a0f1e', border: 'none', borderRadius: 6, padding: '7px 16px', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>保存</button>
+                    <button type="button" onClick={() => setShowRefForm(false)} style={{ background: 'transparent', color: '#9ca3af', border: '1px solid #374151', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 13 }}>キャンセル</button>
+                  </div>
+                </form>
+              )}
             </div>
           )}
         </div>

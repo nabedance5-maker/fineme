@@ -17,11 +17,13 @@ function checkAdminKey(request) {
 export async function GET() {
   const supabase = getSupabase();
 
-  const [episodesRes, ideasRes, kpisRes, mirrorRes] = await Promise.all([
+  const [episodesRes, ideasRes, kpisRes, mirrorRes, configRes, refsRes] = await Promise.all([
     supabase.from('drama_episodes').select('*').order('episode_no', { ascending: true }),
     supabase.from('drama_ideas').select('*').order('created_at', { ascending: true }),
     supabase.from('drama_kpis').select('*').order('updated_at', { ascending: false }).limit(1),
     supabase.from('mirror_sessions').select('id', { count: 'exact', head: true }).eq('paid', true),
+    supabase.from('drama_config').select('*').eq('id', 1).single(),
+    supabase.from('drama_refs').select('*').order('created_at', { ascending: false }),
   ]);
 
   return NextResponse.json({
@@ -29,6 +31,8 @@ export async function GET() {
     ideas: ideasRes.data ?? [],
     kpis: kpisRes.data?.[0] ?? { tiktok_followers: 0, instagram_followers: 0, youtube_followers: 0 },
     mirrorPaid: mirrorRes.count ?? 0,
+    config: configRes.data ?? { canvas: {} },
+    refs: refsRes.data ?? [],
   });
 }
 
@@ -56,6 +60,24 @@ export async function POST(request) {
     const { data: row, error } = await supabase
       .from('drama_ideas')
       .insert({ idea: data.idea })
+      .select()
+      .single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(row);
+  }
+
+  if (type === 'config') {
+    const { error } = await supabase
+      .from('drama_config')
+      .upsert({ id: 1, canvas: data, updated_at: new Date().toISOString() });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (type === 'ref') {
+    const { data: row, error } = await supabase
+      .from('drama_refs')
+      .insert(data)
       .select()
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -135,7 +157,8 @@ export async function DELETE(request) {
 
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  const table = type === 'idea' ? 'drama_ideas' : 'drama_episodes';
+  const tableMap = { idea: 'drama_ideas', episode: 'drama_episodes', ref: 'drama_refs' };
+  const table = tableMap[type] || 'drama_episodes';
   const { error } = await supabase.from(table).delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
