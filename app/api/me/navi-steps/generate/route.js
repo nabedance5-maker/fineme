@@ -3,6 +3,7 @@
 // この人専用の変容ステップリストを生成し profiles.navi_steps に保存する
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
+import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -371,6 +372,9 @@ ${modeRules}
 ${baselineAxes.length ? `13. 以下の軸は「基礎習慣チェックリスト」が別途UIから提供される。
     この軸について「現状把握・道具購入・最低限の頻度習慣の開始」系のステップは省略し、
     製品選択・記録・プロ活用・比較・継続改善 のレベルから生成すること: ${baselineAxes.join('・')}` : ''}
+
+${BRAND_PHILOSOPHY}
+※上記の思想はステップ文（text）の言葉選び・温度にのみ効かせる。最優先ルール（提供データ外の身体的特性に言及しない）と生成ルール・並び順・JSON構造は一切変えない。
 
 ## 出力形式（JSONのみ・コードブロック不要）
 {"steps":[{"id":"eyebrow-001","axis":"eyebrow","eval_type":"both","text":"...","action_type":"quick","guide":"none","hint":"..."},{"id":"hair-001","axis":"hair","eval_type":"action","text":"...","action_type":"quick","guide":"none"},...]}'`;

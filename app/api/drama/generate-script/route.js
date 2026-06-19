@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { DRAMA_PHILOSOPHY } from '@/lib/brand-philosophy';
 
 function getSupabase() {
   return createClient(
@@ -43,7 +44,9 @@ const SYSTEM_PROMPT = `あなたはショートドラマの台本作家です。
 【世界観】
 シリーズ名：「変わる前夜の話。」
 外見を起点に自信を再設計する前夜の男たちを描くコメディドラマ。
-主人公は変わりたいのに変われない、あるいはそもそもまだ変わろうとすら思っていない男。`;
+主人公は変わりたいのに変われない、あるいはそもそもまだ変わろうとすら思っていない男。
+
+${DRAMA_PHILOSOPHY}`;
 
 export async function POST(request) {
   if (!checkAdminKey(request)) {

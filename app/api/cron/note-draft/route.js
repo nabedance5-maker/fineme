@@ -4,6 +4,7 @@
 // メールにHTML整形済み記事 + アイキャッチ画像を添付 → コピペですぐ投稿できる
 import Anthropic from '@anthropic-ai/sdk';
 import { fetchAgentMemory, withMemory } from '@/lib/agent-memory';
+import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
@@ -133,7 +134,10 @@ async function generateNote(topic) {
 でも大丈夫じゃなかったりするんですよね(笑)
 ---
 
-上の例のように：「！」で終わる文が大多数・1センテンス1行・空行で余白・読者への問いかけ・自己突っ込み(笑)・短文の連続でリズムを作る。これを必ず守ること。`;
+上の例のように：「！」で終わる文が大多数・1センテンス1行・空行で余白・読者への問いかけ・自己突っ込み(笑)・短文の連続でリズムを作る。これを必ず守ること。
+
+${BRAND_PHILOSOPHY}
+※思想は記事の根っこに流れる温度として効かせる。上の文体ルール（後輩目線・「！」文末・短文リズム）は引き続き厳守する。`;
 
   const memory = await fetchAgentMemory();
   const system = withMemory(baseSystem, memory);

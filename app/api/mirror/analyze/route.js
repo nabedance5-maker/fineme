@@ -3,6 +3,7 @@
 // 写真はサーバーに保存しない。分析結果（テキスト）のみSupabaseに保存。
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
+import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
 
 export const maxDuration = 60;
 
@@ -117,7 +118,10 @@ overall → 総合変容余地
 potential_levelについて:
 「高」= 少しの変化で大きく印象が変わる余地がある
 「中」= 磨けば確実に向上する余地がある
-「低」= すでに整っている（称賛すべき点として伝える）${diagnosisContext}`;
+「低」= すでに整っている（称賛すべき点として伝える）${diagnosisContext}
+
+${BRAND_PHILOSOPHY}
+※上記の思想は first_impression / summary / detail / overall_message 等の自由記述の言葉選び・温度にのみ効かせる。上記JSON形式・項目・点数化禁止などの既存ルールは厳守し変更しない。`;
 }
 
 export async function POST(request) {

@@ -9,6 +9,7 @@ import crypto from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
 import { fetchAgentMemory, withMemory } from '@/lib/agent-memory';
+import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -302,7 +303,9 @@ const X_SYSTEM = `あなたはFinemeのSNS担当兼コピーライター。X(@de
 - 1投稿1メッセージ。改行で余白を作る
 - 全体120〜140字程度。ハッシュタグは2〜3個、末尾に
 - 指定があればリンクを必ず本文に入れる
-【厳守】ユーザーに質問・確認を返してはいけない。情報が足りなくても最も妥当な前提を自分で置き、投稿本文を必ず1本完成させる。出力は完成した投稿本文のみ（前置き・調査メモ・説明・引用符・「承知しました」等は一切不要）。`;
+【厳守】ユーザーに質問・確認を返してはいけない。情報が足りなくても最も妥当な前提を自分で置き、投稿本文を必ず1本完成させる。出力は完成した投稿本文のみ（前置き・調査メモ・説明・引用符・「承知しました」等は一切不要）。
+
+${BRAND_PHILOSOPHY}`;
 
 // 全タイプ共通のスレッド生成関数
 // 返り値: { main: string, reply: string | null } | null
