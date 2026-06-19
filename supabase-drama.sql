@@ -1,4 +1,4 @@
--- ✅ 本番適用要 2026-06-19
+-- ✅ 本番適用済 2026-06-19
 -- ── drama_episodes テーブル（ショートドラマ エピソード管理）────────────
 CREATE TABLE IF NOT EXISTS drama_episodes (
   id               uuid DEFAULT gen_random_uuid() PRIMARY KEY,
