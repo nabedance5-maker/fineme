@@ -181,8 +181,17 @@ SQLでカラムを追加・変更したとき、そのカラムを参照して�
 
 ## 最優先の前提（毎回必ず読む）
 
-起動時にまず `/home/nabedance5/fineme/master.md`（小文字 fineme）を読むこと。
-特に「## 0. 究極目標と第一フェーズ戦略」を最優先の判断基準とする。
+起動時に、作業に入る前に**必ず次の順で読む**こと：
+
+1. `/home/nabedance5/fineme/master.md`（小文字 fineme）— 事業前提・究極目標（SSoT）
+2. `/home/nabedance5/MyBrain/Memory.md` — でおは誰で・何をしていて・どんな判断基準か（Obsidian第二の脳の事実置き場）
+3. `/home/nabedance5/MyBrain/rules/corrections.md` — でおから受けた修正指示（**ここに書かれた指示は恒久的に守る**）
+4. `/home/nabedance5/MyBrain/rules/mistakes.md` — 過去のやらかしと再発防止ルール（同じ失敗を繰り返さない）
+
+> ⚠️ MyBrain（Obsidian）は Hermes だけでなく **Claude Code も毎回読む**。読み飛ばし禁止。
+> 作業中にでおから訂正・要望を受けたら、その場で `~/MyBrain/rules/corrections.md` に追記して資産化する（同じことを二度言わせない）。
+
+特に master.md「## 0. 究極目標と第一フェーズ戦略」を最優先の判断基準とする。
 
 - 究極目標：3年で年商10億・でお個人年収1億
 - 第一フェーズ：6ヶ月で月商50万（Mirror ¥780サブスク約640人継続）
