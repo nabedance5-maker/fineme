@@ -1,4 +1,4 @@
--- ✅ 本番適用済 YYYY-MM-DD（Supabase SQL Editorで実行後に日付を記入してください）
+-- ✅ 本番適用済 2026-06-20
 -- ── drama_config（コンセプトキャンバス 1行固定）────────────────────────
 CREATE TABLE IF NOT EXISTS drama_config (
   id         int PRIMARY KEY DEFAULT 1,
