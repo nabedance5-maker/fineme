@@ -100,6 +100,8 @@ export default function DramaPage() {
   const [showEpForm, setShowEpForm] = useState(false);
   const [editingEp, setEditingEp] = useState(null);
   const [openScript, setOpenScript] = useState({});
+  const [generatingScript, setGeneratingScript] = useState({});
+  const [showPrompt, setShowPrompt] = useState(false);
   const [newIdea, setNewIdea] = useState('');
   const [editingKpi, setEditingKpi] = useState(false);
   const [kpiForm, setKpiForm] = useState({ tiktok_followers: 0, instagram_followers: 0, youtube_followers: 0 });
@@ -186,6 +188,22 @@ export default function DramaPage() {
     const next = idea.status === 'stock' ? 'used' : 'stock';
     const row = await apiCall('PUT', { type: 'idea', id: idea.id, data: { status: next } });
     setIdeas(ids => ids.map(i => i.id === idea.id ? row : i));
+  }
+
+  async function generateScript(ep) {
+    setGeneratingScript(s => ({ ...s, [ep.id]: true }));
+    setOpenScript(s => ({ ...s, [ep.id]: true }));
+    try {
+      const res = await fetch('/api/drama/generate-script', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ episode_id: ep.id, title: ep.title, cast_type: ep.cast_type, notes: ep.notes }),
+      });
+      const { script } = await res.json();
+      if (script) setEpisodes(eps => eps.map(e => e.id === ep.id ? { ...e, script } : e));
+    } finally {
+      setGeneratingScript(s => ({ ...s, [ep.id]: false }));
+    }
   }
 
   async function deleteIdea(idea) {
@@ -380,10 +398,17 @@ export default function DramaPage() {
                   </div>
 
                   {editMode && (
-                    <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                       <select onChange={e => updateEpStatus(ep, e.target.value)} value={ep.status} style={{ fontSize: 12, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(201,168,76,0.2)', color: '#e8e4dc', borderRadius: 5, padding: '3px 6px', cursor: 'pointer' }}>
                         {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
+                      <button
+                        onClick={() => generateScript(ep)}
+                        disabled={generatingScript[ep.id]}
+                        style={{ ...s.smallBtn, color: '#a78bfa', border: '1px solid rgba(167,139,250,0.4)', opacity: generatingScript[ep.id] ? 0.6 : 1 }}
+                      >
+                        {generatingScript[ep.id] ? '⏳ 生成中...' : '✨ 台本を自動生成'}
+                      </button>
                       <button onClick={() => { setEditingEp(ep); setShowEpForm(false); }} style={{ ...s.smallBtn, color: '#c9a84c', border: '1px solid rgba(201,168,76,0.3)' }}>編集</button>
                       <button onClick={() => deleteEpisode(ep)} style={{ ...s.smallBtn, color: '#f87171', border: '1px solid rgba(248,113,113,0.3)' }}>削除</button>
                     </div>
@@ -399,6 +424,54 @@ export default function DramaPage() {
 
           {editMode && !showEpForm && !editingEp && (
             <button onClick={() => setShowEpForm(true)} style={s.addBtn}>+ エピソード追加</button>
+          )}
+        </div>
+
+        {/* AIプロンプト（ChatGPT/Gemini用） */}
+        <div style={{ ...s.card, marginBottom: 20 }}>
+          <button
+            onClick={() => setShowPrompt(v => !v)}
+            style={{ background: 'transparent', border: 'none', color: 'rgba(232,228,220,0.4)', fontSize: 13, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            {showPrompt ? '▲' : '▼'} ChatGPT / Gemini 用プロンプトを見る
+          </button>
+          {showPrompt && (
+            <div style={{ marginTop: 14 }}>
+              <p style={{ fontSize: 12, color: 'rgba(232,228,220,0.45)', marginBottom: 10 }}>以下のプロンプトを ChatGPT / Gemini に貼り付けて使えます。「このエピソードのポイント」部分を書き換えてください。</p>
+              <pre style={{
+                background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: 8,
+                padding: 16, fontSize: 12, color: '#e8e4dc', whiteSpace: 'pre-wrap', lineHeight: 1.7,
+                fontFamily: 'monospace'
+              }}>{`あなたはショートドラマの台本作家です。以下の条件で台本を書いてください。
+
+【スタイル】
+- コメディーチック。くすっと笑える
+- オチあり（笑えるオチ）。ただし主人公の問題は解決しない
+- 「これ俺だ」と視聴者が自分に重ね合わせる等身大のリアル
+- 「変わろう」メッセージは一切出さない。サービス名・商品名も出さない
+
+【フォーマット】
+縦型ショート動画（60〜90秒）の台本。
+【シーン1】場所・状況／動き・ト書き／セリフ（表情指定）... の形式で書く。
+最後に【オチ】を必ず入れる。
+
+【世界観】
+シリーズ「変わる前夜の話。」
+外見を起点に自信を再設計する前夜の男たちを描くコメディドラマ。
+主人公は変わりたいのに変われない男。
+
+---
+
+タイトル：【ここにタイトルを入れる】
+出演：【solo = でお1人の一人芝居 / duo = でお+友人の2人芝居】
+このエピソードのポイント：【ここにコメディの核とオチの方向性を書く】`}</pre>
+              <button
+                onClick={() => navigator.clipboard.writeText(`あなたはショートドラマの台本作家です。以下の条件で台本を書いてください。\n\n【スタイル】\n- コメディーチック。くすっと笑える\n- オチあり（笑えるオチ）。ただし主人公の問題は解決しない\n- 「これ俺だ」と視聴者が自分に重ね合わせる等身大のリアル\n- 「変わろう」メッセージは一切出さない。サービス名・商品名も出さない\n\n【フォーマット】\n縦型ショート動画（60〜90秒）の台本。\n【シーン1】場所・状況／動き・ト書き／セリフ（表情指定）... の形式で書く。\n最後に【オチ】を必ず入れる。\n\n【世界観】\nシリーズ「変わる前夜の話。」\n外見を起点に自信を再設計する前夜の男たちを描くコメディドラマ。\n主人公は変わりたいのに変われない男。`)}
+                style={{ marginTop: 10, background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.3)', color: '#c9a84c', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontSize: 12 }}
+              >
+                📋 プロンプトをコピー
+              </button>
+            </div>
           )}
         </div>
 
