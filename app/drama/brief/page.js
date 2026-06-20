@@ -95,7 +95,7 @@ export default function ActorBriefPage() {
           <section style={{ marginBottom: '48px' }}>
             <SectionHeader num="01" title="このプロジェクトについて" />
             <p style={{ fontSize: '15px', lineHeight: '1.9', color: 'rgba(232,228,220,0.85)' }}>
-              Fineme（フィネーム）は「外見を起点に自信を再設計する」プラットフォームです。
+              Fineme（ファインミ）は「外見を起点に自信を再設計する」プラットフォームです。
               ターゲットは、恋愛や人間関係で躓き、変わりたいと思っている男性。
             </p>
             <p style={{ fontSize: '15px', lineHeight: '1.9', color: 'rgba(232,228,220,0.85)', marginTop: '12px' }}>
