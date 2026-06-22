@@ -1,6 +1,25 @@
-'use client';
+import { createClient } from '@supabase/supabase-js';
+import PrintButton from './PrintButton';
 
-export default function ActorBriefPage() {
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+}
+
+export const metadata = {
+  title: '役者向けプロジェクトブリーフ | Fineme',
+  robots: { index: false },
+};
+
+export default async function ActorBriefPage() {
+  const supabase = getSupabase();
+  const { data: episodes } = await supabase
+    .from('drama_episodes')
+    .select('episode_no, title')
+    .order('episode_no', { ascending: true });
+
   return (
     <>
       <style>{`
@@ -20,7 +39,6 @@ export default function ActorBriefPage() {
           .brief-episode { border-color: #ccc !important; }
           .brief-episode-num { color: #666 !important; }
           .brief-episode-title { color: black !important; }
-          .brief-next-item::before { color: #666 !important; }
           .brief-footer-text { color: #666 !important; border-color: #ccc !important; }
         }
       `}</style>
@@ -33,26 +51,8 @@ export default function ActorBriefPage() {
         alignItems: 'center',
         gap: '24px',
       }}>
-        {/* Print button */}
-        <button
-          className="no-print"
-          onClick={() => window.print()}
-          style={{
-            background: '#c9a84c',
-            color: '#0a0f1e',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '12px 32px',
-            fontSize: '15px',
-            fontWeight: '700',
-            cursor: 'pointer',
-            letterSpacing: '0.04em',
-          }}
-        >
-          PDFで保存する
-        </button>
+        <PrintButton />
 
-        {/* Document */}
         <div className="brief-doc" style={{
           background: 'rgba(255,255,255,0.04)',
           border: '1px solid rgba(201,168,76,0.2)',
@@ -110,6 +110,7 @@ export default function ActorBriefPage() {
             <SectionHeader num="02" title="フォーマットルール" />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <Rule label="尺" value="45〜75秒" />
+              <Rule label="撮影ペース" value="週1本" />
               <Rule label="フック" value="最初の3秒でスクロールを止める。セリフより動作・表情で引く。" />
               <Rule label="オチ" value="必ず入れる。問題は解決しない。変わる「前夜」で終わる。" />
               <Rule label="テロップ" value="説明テロップなし。" />
@@ -141,28 +142,28 @@ export default function ActorBriefPage() {
 
           {/* 04 */}
           <section style={{ marginBottom: '48px' }}>
-            <SectionHeader num="04" title="最初の3話テーマ" />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[
-                '今日も誰ともマッチしなかった',
-                '鏡を見るのをやめた夜',
-                '写真撮りましょうと言われて逃げた',
-              ].map((title, i) => (
-                <div key={i} className="brief-episode" style={{
-                  borderLeft: '2px solid rgba(201,168,76,0.4)',
-                  paddingLeft: '16px',
-                  paddingTop: '4px',
-                  paddingBottom: '4px',
-                }}>
-                  <span className="brief-episode-num" style={{ fontSize: '12px', color: '#c9a84c', display: 'block', marginBottom: '2px' }}>
-                    #{i + 1}
-                  </span>
-                  <span className="brief-episode-title" style={{ fontSize: '17px', fontFamily: "'Noto Serif JP', serif", color: '#e8e4dc' }}>
-                    「{title}」
-                  </span>
-                </div>
-              ))}
-            </div>
+            <SectionHeader num="04" title="エピソードリスト" />
+            {episodes && episodes.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {episodes.map((ep) => (
+                  <div key={ep.episode_no} className="brief-episode" style={{
+                    borderLeft: '2px solid rgba(201,168,76,0.4)',
+                    paddingLeft: '16px',
+                    paddingTop: '4px',
+                    paddingBottom: '4px',
+                  }}>
+                    <span className="brief-episode-num" style={{ fontSize: '12px', color: '#c9a84c', display: 'block', marginBottom: '2px' }}>
+                      #{ep.episode_no}
+                    </span>
+                    <span className="brief-episode-title" style={{ fontSize: '16px', fontFamily: "'Noto Serif JP', serif", color: '#e8e4dc' }}>
+                      「{ep.title}」
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ fontSize: '15px', color: 'rgba(232,228,220,0.45)' }}>エピソード未登録</p>
+            )}
             <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.45)', marginTop: '16px' }}>
               脚本は別途AIで初稿を出してから一緒にブラッシュアップします。
             </p>
@@ -177,7 +178,7 @@ export default function ActorBriefPage() {
                 '脚本草案を作成（AI初稿 → 一緒にブラッシュアップ）',
                 '撮影 → TikTok @fineme.drama 開設 → 第1話投稿',
               ].map((step, i) => (
-                <li key={i} className="brief-next-item" style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', fontSize: '15px', color: 'rgba(232,228,220,0.8)' }}>
+                <li key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', fontSize: '15px', color: 'rgba(232,228,220,0.8)' }}>
                   <span style={{ color: '#c9a84c', fontWeight: '700', minWidth: '20px' }}>{i + 1}.</span>
                   {step}
                 </li>
