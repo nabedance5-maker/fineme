@@ -913,7 +913,7 @@ export default function HomePage() {
         )}
 
         {/* FAQ Section */}
-        <section style={{ padding: '80px 24px', background: 'var(--color-bg)', borderTop: '1px solid rgba(201,168,76,0.12)' }}>
+        <section style={{ padding: '80px 24px', background: "linear-gradient(rgba(10,15,30,0.82), rgba(10,15,30,0.82)), url('/assets/images/hero-bg.png') center / cover no-repeat", borderTop: '1px solid rgba(201,168,76,0.12)' }}>
           <div style={{ maxWidth: '720px', margin: '0 auto' }}>
             <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.18em', color: 'rgba(201,168,76,0.7)', textTransform: 'uppercase', margin: '0 0 12px', textAlign: 'center' }}>FAQ</p>
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 700, color: 'var(--color-heading)', textAlign: 'center', margin: '0 0 48px', lineHeight: 1.4 }}>よくある質問</h2>
