@@ -195,7 +195,7 @@ export default function DramaPage() {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       if (res.status === 401) {
-        alert('認証エラー：管理キーを確認してください（ページ右上の編集ボタンから再入力）');
+        alert('認証エラー(401)：入力したキーが正しくありません。\n.env.local の ADMIN_API_KEY と同じ値を入力してください。\nVercelにも同じ値が設定されているか確認してください。');
       } else {
         alert(`エラー: ${err.error || res.status}`);
       }
@@ -258,7 +258,11 @@ export default function DramaPage() {
         headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
         body: JSON.stringify({ episode_id: ep.id, title: ep.title, cast_type: ep.cast_type, notes: ep.notes }),
       });
-      if (!res.ok) { alert(`台本生成エラー: ${res.status}`); return; }
+      if (!res.ok) {
+        if (res.status === 401) alert('台本生成エラー(401)：管理キーが正しくありません。右上の編集ボタンでキーを再入力してください。');
+        else alert(`台本生成エラー: ${res.status}`);
+        return;
+      }
       const { script } = await res.json();
       if (script) setEpisodes(eps => eps.map(e => e.id === ep.id ? { ...e, script } : e));
     } finally {
