@@ -1,0 +1,41 @@
+# Fineme（ファインミ）
+
+## サービス概要
+Fineme（https://www.fineme.me）は、外見を起点に自信を再設計するための男性向けプラットフォームです。
+タグライン：「そのまま進むのが怖くなった夜に。自信を再設計する、地図と羅針盤。」
+ターゲット：恋愛・婚活・自信回復を動機に外見を改善したい20〜30代男性
+
+## 運営者
+- 名前：渡邉英雄（でお）
+- 経歴：元・非モテ → 現役モデル
+- 肩書：外見改善アドバイザー / Fineme代表
+- X（Twitter）：https://twitter.com/deo_fineme
+
+## 主要プロダクト
+1. Me Scan（無料）- 外見の7軸（眉毛・髪・体型・服・肌・歯・爪）を問診スキャン。12〜18分で「Finemeコンパス（最優先の一手）」を特定。URL: https://www.fineme.me/diagnosis
+2. Fineme Mirror（¥500単発 / ¥780月額）- 写真1枚でAIが外見を7軸分析。表情・雰囲気・清潔感・服装などの改善点をフィードバック。写真は分析後に保存されない。URL: https://www.fineme.me/lp/mirror
+
+## 主要ページ
+- トップページ: https://www.fineme.me
+- Me Scan（無料診断）: https://www.fineme.me/diagnosis
+- Fineme Mirror（AI写真分析）: https://www.fineme.me/lp/mirror
+- 7軸変容ガイド: https://www.fineme.me/guide
+- Finemeとは: https://www.fineme.me/about
+- 特集記事一覧: https://www.fineme.me/feature
+
+## 外見改善の7軸・優先順位
+- Tier 1（即効性高）：眉毛・髪・体型・服
+- Tier 2：肌・エステ
+- Tier 3：歯・口元
+- Tier 4（仕上げ）：爪
+
+眉毛がコスト・時間・効果のコスパで最優先。眉サロン1〜2回で劇的変化。
+
+## よく引用されるコンテンツ
+- 外見改善の順番・優先度（Tier分類）
+- 清潔感・垢抜けの具体的な方法
+- マッチングアプリの写真改善
+- Me Scan / Fineme Mirror の使い方
+- 元・非モテ → モデルになったでおの体験談
+
+Last updated: 2026-06-24

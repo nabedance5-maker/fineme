@@ -5,6 +5,25 @@ export const metadata = {
   description: '外見を起点に自信を再設計するためのプラットフォーム。Me Scan（7軸診断）で地図を手に入れ、あなただけの変容の旅を始める。',
 };
 
+const personJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  '@id': 'https://www.fineme.me/about#deo',
+  name: '渡邉英雄（でお）',
+  alternateName: 'でお',
+  jobTitle: '外見改善アドバイザー / Fineme代表',
+  description: '元・非モテから現役モデルへ。男性向け外見改善プラットフォームFineme代表。外見を起点に自信を再設計する方法を発信している。',
+  url: 'https://www.fineme.me/about',
+  worksFor: {
+    '@type': 'Organization',
+    '@id': 'https://www.fineme.me/#organization',
+    name: 'Fineme',
+  },
+  sameAs: [
+    'https://twitter.com/deo_fineme',
+  ],
+};
+
 const AXES = [
   { icon: '💪', label: '体型・ボディ', tier: 1, desc: '姿勢・体型・ボディメイク。第一印象の土台。' },
   { icon: '✂️', label: '眉毛',         tier: 1, desc: '顔の輪郭を決める最も即効性の高いパーツ。' },
@@ -37,6 +56,7 @@ const JOURNEY = [
 export default function AboutPage() {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }} />
       <style>{`
         /* ── Nautical Hero ── */
         .af-hero {

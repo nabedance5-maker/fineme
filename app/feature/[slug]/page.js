@@ -168,7 +168,7 @@ export default async function ArticlePage({ params }) {
     image: article.thumbnail || undefined,
     datePublished: article.published_at,
     dateModified: article.updated_at || article.published_at,
-    author: { '@type': 'Organization', name: 'Fineme' },
+    author: { '@type': 'Person', '@id': 'https://www.fineme.me/about#deo', name: '渡邉英雄（でお）', url: 'https://www.fineme.me/about' },
     publisher: { '@type': 'Organization', name: 'Fineme', url: 'https://www.fineme.me' },
   };
 
