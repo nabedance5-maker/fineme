@@ -177,12 +177,30 @@ export default function DramaPage() {
     localStorage.setItem('drama:checklist', JSON.stringify(next));
   }
 
+  function getOrRequestKey() {
+    if (adminKey) return adminKey;
+    const key = prompt('管理APIキーを入力してください：') || '';
+    if (!key) return '';
+    sessionStorage.setItem('fineme:admin:key', key);
+    setAdminKey(key);
+    return key;
+  }
+
   async function apiCall(method, body, queryParams = '') {
     const res = await fetch('/api/drama' + queryParams, {
       method,
       headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
       body: body ? JSON.stringify(body) : undefined,
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        alert('認証エラー：管理キーを確認してください（ページ右上の編集ボタンから再入力）');
+      } else {
+        alert(`エラー: ${err.error || res.status}`);
+      }
+      return null;
+    }
     return res.json();
   }
 
@@ -190,9 +208,11 @@ export default function DramaPage() {
   async function saveEpisode(data) {
     if (editingEp) {
       const row = await apiCall('PUT', { type: 'episode', id: editingEp.id, data });
+      if (!row) return;
       setEpisodes(eps => eps.map(e => e.id === editingEp.id ? row : e));
     } else {
       const row = await apiCall('POST', { type: 'episode', data });
+      if (!row) return;
       setEpisodes(eps => [...eps, row].sort((a, b) => a.episode_no - b.episode_no));
     }
     setShowEpForm(false);
@@ -207,6 +227,7 @@ export default function DramaPage() {
 
   async function updateEpStatus(ep, status) {
     const row = await apiCall('PUT', { type: 'episode', id: ep.id, data: { status } });
+    if (!row) return;
     setEpisodes(eps => eps.map(e => e.id === ep.id ? row : e));
   }
 
@@ -214,6 +235,7 @@ export default function DramaPage() {
     e.preventDefault();
     if (!newIdea.trim()) return;
     const row = await apiCall('POST', { type: 'idea', data: { idea: newIdea.trim() } });
+    if (!row) return;
     setIdeas(ids => [...ids, row]);
     setNewIdea('');
   }
@@ -221,18 +243,22 @@ export default function DramaPage() {
   async function toggleIdeaStatus(idea) {
     const next = idea.status === 'stock' ? 'used' : 'stock';
     const row = await apiCall('PUT', { type: 'idea', id: idea.id, data: { status: next } });
+    if (!row) return;
     setIdeas(ids => ids.map(i => i.id === idea.id ? row : i));
   }
 
   async function generateScript(ep) {
+    const key = getOrRequestKey();
+    if (!key) return;
     setGeneratingScript(s => ({ ...s, [ep.id]: true }));
     setOpenScript(s => ({ ...s, [ep.id]: true }));
     try {
       const res = await fetch('/api/drama/generate-script', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
         body: JSON.stringify({ episode_id: ep.id, title: ep.title, cast_type: ep.cast_type, notes: ep.notes }),
       });
+      if (!res.ok) { alert(`台本生成エラー: ${res.status}`); return; }
       const { script } = await res.json();
       if (script) setEpisodes(eps => eps.map(e => e.id === ep.id ? { ...e, script } : e));
     } finally {
@@ -248,19 +274,23 @@ export default function DramaPage() {
   async function saveKpi(e) {
     e.preventDefault();
     const row = await apiCall('PUT', { type: 'kpi', data: { tiktok_followers: Number(kpiForm.tiktok_followers), instagram_followers: Number(kpiForm.instagram_followers), youtube_followers: Number(kpiForm.youtube_followers) } });
+    if (!row) return;
     setKpis(row);
     setEditingKpi(false);
   }
 
   // ── コンセプトキャンバス ─────────────────────────────────────────────────
   async function generateCanvas() {
+    const key = getOrRequestKey();
+    if (!key) return;
     setGeneratingCanvas(true);
     try {
       const res = await fetch('/api/drama/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
         body: JSON.stringify({ type: 'concept', episodes }),
       });
+      if (!res.ok) { alert(`キャンバス生成エラー: ${res.status}`); return; }
       const { canvas: draft } = await res.json();
       if (draft && Object.keys(draft).length > 0) {
         setCanvasForm(f => ({ ...f, ...draft }));
@@ -281,26 +311,32 @@ export default function DramaPage() {
 
   // ── 競合リサーチ ─────────────────────────────────────────────────────────
   async function searchYoutube() {
+    const key = getOrRequestKey();
+    if (!key) return;
     setSearchingYT(true);
     setYtResults([]);
     try {
       const res = await fetch(`/api/drama/youtube-search?q=${encodeURIComponent(ytQuery)}&maxResults=10`, {
-        headers: { 'x-admin-key': adminKey },
+        headers: { 'x-admin-key': key },
       });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); alert(`YouTube検索エラー: ${e.error || res.status}`); return; }
       const data = await res.json();
       setYtResults(Array.isArray(data) ? data : []);
-    } catch {}
+    } catch (err) { alert(`YouTube検索エラー: ${err.message}`); }
     setSearchingYT(false);
   }
 
   async function analyzeVideo(video) {
+    const key = getOrRequestKey();
+    if (!key) return;
     setAnalyzingVideo(v => ({ ...v, [video.videoId]: true }));
     try {
       const res = await fetch('/api/drama/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
         body: JSON.stringify({ type: 'video', videoId: video.videoId, title: video.title, description: video.description }),
       });
+      if (!res.ok) { alert(`動画分析エラー: ${res.status}`); return; }
       const data = await res.json();
       setVideoAnalysis(v => ({ ...v, [video.videoId]: data }));
     } catch {}
@@ -320,6 +356,7 @@ export default function DramaPage() {
         claude_analysis: analysis?.analysis || '',
         user_notes: '',
       }});
+      if (!row) return;
       setRefs(r => [row, ...r]);
     } finally {
       setSavingRef(v => ({ ...v, [video.videoId]: false }));
@@ -335,6 +372,7 @@ export default function DramaPage() {
   async function addManualRef(e) {
     e.preventDefault();
     const row = await apiCall('POST', { type: 'ref', data: { ...newRef, claude_analysis: '' }});
+    if (!row) return;
     setRefs(r => [row, ...r]);
     setNewRef({ platform: 'tiktok', title: '', url: '', user_notes: '' });
     setShowRefForm(false);
@@ -342,13 +380,16 @@ export default function DramaPage() {
 
   async function analyzePatterns() {
     if (refs.length === 0) return;
+    const key = getOrRequestKey();
+    if (!key) return;
     setAnalyzingPatterns(true);
     try {
       const res = await fetch('/api/drama/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
         body: JSON.stringify({ type: 'refs', refs }),
       });
+      if (!res.ok) { alert(`パターン分析エラー: ${res.status}`); return; }
       const { patterns } = await res.json();
       setPatternsResult(patterns || '');
     } catch {}

@@ -60,8 +60,8 @@ export async function POST(request) {
   }
 
   const castDescription = cast_type === 'duo'
-    ? 'でお（主人公）と友人（1名）の2人芝居'
-    : 'でお（主人公）の一人芝居';
+    ? '役者（主演）とでお（サブキャスト）の2人芝居'
+    : '役者（主演）の一人芝居';
 
   const userPrompt = `以下のエピソードの台本を書いてください。
 
