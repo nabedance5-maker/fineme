@@ -12,7 +12,7 @@ function getSupabase() {
 
 function checkAdminKey(request) {
   const key = request.headers.get('x-admin-key');
-  return key === process.env.ADMIN_API_KEY;
+  return key === process.env.DRAMA_ADMIN_KEY;
 }
 
 const SYSTEM_PROMPT = `あなたはショートドラマの台本作家です。以下の条件に従って台本を書いてください。

@@ -195,7 +195,7 @@ export default function DramaPage() {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       if (res.status === 401) {
-        alert('認証エラー(401)：入力したキーが正しくありません。\n.env.local の ADMIN_API_KEY と同じ値を入力してください。\nVercelにも同じ値が設定されているか確認してください。');
+        alert('認証エラー(401)：入力したキーが正しくありません。\n.env.local の DRAMA_ADMIN_KEY の値を入力してください。\nVercelにも DRAMA_ADMIN_KEY が設定されているか確認してください。');
       } else {
         alert(`エラー: ${err.error || res.status}`);
       }

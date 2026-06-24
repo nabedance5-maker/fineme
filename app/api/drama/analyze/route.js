@@ -5,7 +5,7 @@ import { DRAMA_PHILOSOPHY } from '@/lib/brand-philosophy';
 
 function checkAdminKey(request) {
   const key = request.headers.get('x-admin-key');
-  return key === process.env.ADMIN_API_KEY;
+  return key === process.env.DRAMA_ADMIN_KEY;
 }
 
 function getClient() {

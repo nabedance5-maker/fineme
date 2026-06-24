@@ -10,7 +10,7 @@ function getSupabase() {
 
 function checkAdminKey(request) {
   const key = request.headers.get('x-admin-key');
-  return key === process.env.ADMIN_API_KEY;
+  return key === process.env.DRAMA_ADMIN_KEY;
 }
 
 // GET — 認証不要（公開）

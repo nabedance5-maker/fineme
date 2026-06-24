@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 function checkAdminKey(request) {
   const key = request.headers.get('x-admin-key');
-  return key === process.env.ADMIN_API_KEY;
+  return key === process.env.DRAMA_ADMIN_KEY;
 }
 
 export async function GET(request) {
