@@ -111,9 +111,11 @@ export default async function ActorBriefPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <Rule label="尺" value="45〜75秒" />
               <Rule label="撮影ペース" value="週1本" />
-              <Rule label="フック" value="最初の3秒でスクロールを止める。セリフより動作・表情で引く。" />
-              <Rule label="オチ" value="必ず入れる。問題は解決しない。変わる「前夜」で終わる。" />
-              <Rule label="テロップ" value="説明テロップなし。" />
+              <Rule label="フック" value="冒頭1秒は「事件がすでに起きている状態」から始める。起承転結の「起」から入らない。動作・表情で引く。" />
+              <Rule label="オチ" value="必ず入れる。問題は解決しない。「次が気になるひっかかり」を残して終わる。" />
+              <Rule label="テロップ" value="重要なリアクション・台詞は字幕で強調（音なし視聴対応）。説明的・解説的なテロップは入れない。" />
+              <Rule label="SE / BGM" value="効果音・BGMの指示を台本に含める（例：SE: 通知音、BGM: テンポの速いコメディBGM）。" />
+              <Rule label="笑いの作り方" value="笑いはセリフで作らない。状況・行動・反射で作る。「外見が原因とわかるが、それを本人が言わない」設計。" />
             </div>
           </section>
 

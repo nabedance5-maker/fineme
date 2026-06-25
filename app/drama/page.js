@@ -9,7 +9,7 @@ const STATUS_CONFIG = {
   published: { label: '✅ 投稿済',   color: '#065f46', bg: '#d1fae5' },
 };
 
-const CAST_LABEL = { solo: 'でお solo', duo: '2人' };
+const CAST_LABEL = { solo: '役者 solo', duo: '役者＋でお' };
 
 const PLATFORM_CONFIG = {
   tiktok:    { color: '#f72585', bg: 'rgba(247,37,133,0.12)' },
@@ -21,20 +21,20 @@ const PLATFORM_CONFIG = {
 const CANVAS_AXES = [
   { key: 'hook',       label: '① フック設計',         hint: '最初の3秒で何を見せるか？視聴者が止まる理由' },
   { key: 'emotion',    label: '② 感情軸',             hint: '何を感じさせるか（「これ俺だ」の具体的瞬間）' },
-  { key: 'diff',       label: '③ 差別化ポイント',     hint: '他の恋愛/外見系ショートドラマと何が違うか' },
+  { key: 'diff',       label: '③ 差別化ポイント',     hint: '「外見コンプレックス × マッチングあるある」という未開拓ニッチ。他の恋愛系は胸キュン主軸。うちは「これ俺だ」の笑いと共感が武器' },
   { key: 'rules',      label: '④ シリーズ統一ルール', hint: '必ず守るフォーマットルール（尺・オチ構造など）' },
   { key: 'mirror_cta', label: '⑤ Mirror導線',         hint: '視聴 → フォロー → Mirror購買の流れ' },
 ];
 
 const CHECKLIST_ITEMS = [
-  { id: 'tiktok_account',    label: 'TikTok @fineme.drama 開設' },
-  { id: 'youtube_account',   label: 'YouTube @fineme_drama チャンネル作成' },
-  { id: 'ig_profile',        label: '@deo_fineme プロフィール bio・リンク設定' },
-  { id: 'pin_comment',       label: 'ピンコメ設定テンプレート準備' },
-  { id: 'ep1_theme',         label: '第1話テーマ確定' },
-  { id: 'ep1_shoot',         label: '撮影実施' },
-  { id: 'ep1_edit',          label: '編集・テロップ' },
-  { id: 'ep1_post',          label: '3プラットフォーム同時投稿' },
+  { id: 'concept_done',     label: 'コンセプト・禁止ワード確定' },
+  { id: 'tiktok_account',   label: 'TikTok @fineme.drama 開設' },
+  { id: 'ig_profile',       label: '@deo_fineme bio・リンク設定' },
+  { id: 'actor_confirmed',  label: '役者キャスト確定' },
+  { id: 'ep1_script',       label: '第1話台本ブラッシュアップ完了' },
+  { id: 'ep1_shoot',        label: '撮影実施' },
+  { id: 'ep1_edit',         label: '編集・テロップ・SE仕上げ' },
+  { id: 'ep1_post',         label: '3プラットフォーム同時投稿' },
 ];
 
 const ACCOUNT_INFO = [
@@ -63,8 +63,8 @@ function EpisodeForm({ initial, onSave, onCancel }) {
         <div>
           <label style={lbl}>出演</label>
           <select style={inp} value={form.cast_type} onChange={e => set('cast_type', e.target.value)}>
-            <option value="solo">でお solo</option>
-            <option value="duo">2人</option>
+            <option value="solo">役者 solo（主演のみ）</option>
+            <option value="duo">役者＋でお（2人芝居）</option>
           </select>
         </div>
       </div>
@@ -109,6 +109,7 @@ export default function DramaPage() {
   const [checklist, setChecklist] = useState({});
   const [showEpForm, setShowEpForm] = useState(false);
   const [editingEp, setEditingEp] = useState(null);
+  const [newEpTitle, setNewEpTitle] = useState('');
   const [openScript, setOpenScript] = useState({});
   const [generatingScript, setGeneratingScript] = useState({});
   const [showPrompt, setShowPrompt] = useState(false);
@@ -638,18 +639,22 @@ export default function DramaPage() {
                     )}
                   </div>
 
+                  {/* 台本生成ボタン：常時表示（認証は内部で要求） */}
+                  <div style={{ marginTop: 8 }}>
+                    <button
+                      onClick={() => generateScript(ep)}
+                      disabled={generatingScript[ep.id]}
+                      style={{ ...s.smallBtn, color: '#a78bfa', border: '1px solid rgba(167,139,250,0.4)', opacity: generatingScript[ep.id] ? 0.6 : 1 }}
+                    >
+                      {generatingScript[ep.id] ? '⏳ 生成中...' : '✨ 台本を自動生成'}
+                    </button>
+                  </div>
+
                   {editMode && (
-                    <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                       <select onChange={e => updateEpStatus(ep, e.target.value)} value={ep.status} style={{ fontSize: 12, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(201,168,76,0.2)', color: '#e8e4dc', borderRadius: 5, padding: '3px 6px', cursor: 'pointer' }}>
                         {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
-                      <button
-                        onClick={() => generateScript(ep)}
-                        disabled={generatingScript[ep.id]}
-                        style={{ ...s.smallBtn, color: '#a78bfa', border: '1px solid rgba(167,139,250,0.4)', opacity: generatingScript[ep.id] ? 0.6 : 1 }}
-                      >
-                        {generatingScript[ep.id] ? '⏳ 生成中...' : '✨ 台本を自動生成'}
-                      </button>
                       <button onClick={() => { setEditingEp(ep); setShowEpForm(false); }} style={{ ...s.smallBtn, color: '#c9a84c', border: '1px solid rgba(201,168,76,0.3)' }}>編集</button>
                       <button onClick={() => deleteEpisode(ep)} style={{ ...s.smallBtn, color: '#f87171', border: '1px solid rgba(248,113,113,0.3)' }}>削除</button>
                     </div>
@@ -660,7 +665,9 @@ export default function DramaPage() {
           ))}
 
           {showEpForm && !editingEp && (
-            <EpisodeForm initial={{ episode_no: (episodes.length + 1) }} onSave={saveEpisode} onCancel={() => setShowEpForm(false)} />
+            <div data-ep-form>
+              <EpisodeForm initial={{ episode_no: (episodes.length + 1), title: newEpTitle }} onSave={saveEpisode} onCancel={() => { setShowEpForm(false); setNewEpTitle(''); }} />
+            </div>
           )}
 
           {editMode && !showEpForm && !editingEp && (
@@ -686,13 +693,17 @@ export default function DramaPage() {
               }}>{`あなたはショートドラマの台本作家です。以下の条件で台本を書いてください。
 
 【スタイル】
+- 冒頭シーン（最初の1〜3秒相当）は「事件がすでに起きている状態」から始める。起承転結の"起"から入らない
+- 主人公の状態は「悩んでいる」と説明せず、具体的な行動・反射・癖で描く（Wi-Fiを確認する、鏡を避けて歯を磨く、など）
 - コメディーチック。くすっと笑える
-- オチあり（笑えるオチ）。ただし主人公の問題は解決しない
-- 「これ俺だ」と視聴者が自分に重ね合わせる等身大のリアル
+- オチあり（笑えるオチ）。ただし主人公の問題は解決しない。次が気になるひっかかりを残す
+- 「これ俺だ」「わかる」とコメントしたくなるオチを設計する
 - 「変わろう」メッセージは一切出さない。サービス名・商品名も出さない
+- 重要なリアクションや台詞にはテロップ（字幕）での強調を指示する
+- 効果音・BGMの指示を台本に含める（例：SE: 通知音、BGM: テンポの速いコメディBGM）
 
 【フォーマット】
-縦型ショート動画（60〜90秒）の台本。
+縦型ショート動画（45〜75秒）の台本。
 【シーン1】場所・状況／動き・ト書き／セリフ（表情指定）... の形式で書く。
 最後に【オチ】を必ず入れる。
 
@@ -704,10 +715,10 @@ export default function DramaPage() {
 ---
 
 タイトル：【ここにタイトルを入れる】
-出演：【solo = でお1人の一人芝居 / duo = でお+友人の2人芝居】
-このエピソードのポイント：【ここにコメディの核とオチの方向性を書く】`}</pre>
+出演：【solo = 役者1人の一人芝居 / duo = 役者（主演）+でお（サブ）の2人芝居】
+このエピソードのポイント：【コメディの核とオチの方向性を書く】`}</pre>
               <button
-                onClick={() => navigator.clipboard.writeText(`あなたはショートドラマの台本作家です。以下の条件で台本を書いてください。\n\n【スタイル】\n- コメディーチック。くすっと笑える\n- オチあり（笑えるオチ）。ただし主人公の問題は解決しない\n- 「これ俺だ」と視聴者が自分に重ね合わせる等身大のリアル\n- 「変わろう」メッセージは一切出さない。サービス名・商品名も出さない\n\n【フォーマット】\n縦型ショート動画（60〜90秒）の台本。\n【シーン1】場所・状況／動き・ト書き／セリフ（表情指定）... の形式で書く。\n最後に【オチ】を必ず入れる。\n\n【世界観】\nシリーズ「変わる前夜の話。」\n外見を起点に自信を再設計する前夜の男たちを描くコメディドラマ。\n主人公は変わりたいのに変われない男。`)}
+                onClick={() => navigator.clipboard.writeText(`あなたはショートドラマの台本作家です。以下の条件で台本を書いてください。\n\n【スタイル】\n- 冒頭シーン（最初の1〜3秒相当）は「事件がすでに起きている状態」から始める。起承転結の"起"から入らない\n- 主人公の状態は「悩んでいる」と説明せず、具体的な行動・反射・癖で描く（Wi-Fiを確認する、鏡を避けて歯を磨く、など）\n- コメディーチック。くすっと笑える\n- オチあり（笑えるオチ）。ただし主人公の問題は解決しない。次が気になるひっかかりを残す\n- 「これ俺だ」「わかる」とコメントしたくなるオチを設計する\n- 「変わろう」メッセージは一切出さない。サービス名・商品名も出さない\n- 重要なリアクションや台詞にはテロップ（字幕）での強調を指示する\n- 効果音・BGMの指示を台本に含める（例：SE: 通知音、BGM: テンポの速いコメディBGM）\n\n【フォーマット】\n縦型ショート動画（45〜75秒）の台本。\n【シーン1】場所・状況／動き・ト書き／セリフ（表情指定）... の形式で書く。\n最後に【オチ】を必ず入れる。\n\n【世界観】\nシリーズ「変わる前夜の話。」\n外見を起点に自信を再設計する前夜の男たちを描くコメディドラマ。\n主人公は変わりたいのに変われない男。`)}
                 style={{ marginTop: 10, background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.3)', color: '#c9a84c', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontSize: 12 }}
               >
                 📋 プロンプトをコピー
@@ -914,10 +925,18 @@ export default function DramaPage() {
           {ideas.map(idea => (
             <div key={idea.id} style={{ ...s.ideaRow, opacity: idea.status === 'used' ? 0.35 : 1 }}>
               <span style={{ flex: 1, textDecoration: idea.status === 'used' ? 'line-through' : 'none' }}>{idea.idea}</span>
+              {editMode && idea.status !== 'used' && (
+                <button
+                  onClick={() => { setNewEpTitle(idea.idea); setShowEpForm(true); setEditingEp(null); const el = document.querySelector('[data-ep-form]'); el?.scrollIntoView({ behavior: 'smooth' }); }}
+                  style={{ ...s.smallBtn, color: '#c9a84c', border: '1px solid rgba(201,168,76,0.3)', whiteSpace: 'nowrap' }}
+                >
+                  → EP化
+                </button>
+              )}
               {editMode && (
                 <>
                   <button onClick={() => toggleIdeaStatus(idea)} style={{ ...s.smallBtn, color: idea.status === 'used' ? '#6b7280' : '#34d399', border: `1px solid ${idea.status === 'used' ? 'rgba(107,114,128,0.3)' : 'rgba(52,211,153,0.3)'}` }}>
-                    {idea.status === 'used' ? '未使用に戻す' : '使用済みにする'}
+                    {idea.status === 'used' ? '戻す' : '使用済み'}
                   </button>
                   <button onClick={() => deleteIdea(idea)} style={{ ...s.smallBtn, color: '#f87171', border: '1px solid rgba(248,113,113,0.3)' }}>削除</button>
                 </>
