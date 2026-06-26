@@ -94,10 +94,7 @@ export async function POST(request) {
       model: 'claude-sonnet-4-6',
       max_tokens: 1500,
       system: SYSTEM_PROMPT,
-      messages: [
-        { role: 'user', content: userPrompt },
-        { role: 'assistant', content: '【シーン1 - 冒頭0〜3秒】' },
-      ],
+      messages: [{ role: 'user', content: userPrompt }],
     });
   } catch (err) {
     console.error('Anthropic API error:', err);
@@ -107,7 +104,7 @@ export async function POST(request) {
     );
   }
 
-  const script = '【シーン1 - 冒頭0〜3秒】\n' + (message.content[0]?.text ?? '');
+  const script = message.content[0]?.text ?? '';
 
   if (episode_id && script) {
     const supabase = getSupabase();
