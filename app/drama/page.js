@@ -271,7 +271,10 @@ export default function DramaPage() {
           clearAdminKey();
           alert('台本生成エラー(401)：キーが正しくありませんでした。もう一度ボタンを押して再入力してください。');
         }
-        else alert(`台本生成エラー: ${res.status}`);
+        else {
+          const errBody = await res.json().catch(() => ({}));
+          alert(`台本生成エラー: ${res.status}\n${errBody.error || ''}`);
+        }
         return;
       }
       const { script } = await res.json();

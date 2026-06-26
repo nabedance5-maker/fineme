@@ -102,7 +102,7 @@ export async function POST(request) {
   } catch (err) {
     console.error('Anthropic API error:', err);
     return NextResponse.json(
-      { error: 'AI生成エラー。しばらく待ってから再試行してください。' },
+      { error: `AI生成エラー: ${err?.status ?? ''}  ${err?.message ?? String(err)}` },
       { status: 502 }
     );
   }
