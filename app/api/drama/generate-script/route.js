@@ -88,15 +88,24 @@ export async function POST(request) {
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1500,
-    system: SYSTEM_PROMPT,
-    messages: [
-      { role: 'user', content: userPrompt },
-      { role: 'assistant', content: '【シーン1 - 冒頭0〜3秒】\n' },
-    ],
-  });
+  let message;
+  try {
+    message = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1500,
+      system: SYSTEM_PROMPT,
+      messages: [
+        { role: 'user', content: userPrompt },
+        { role: 'assistant', content: '【シーン1 - 冒頭0〜3秒】' },
+      ],
+    });
+  } catch (err) {
+    console.error('Anthropic API error:', err);
+    return NextResponse.json(
+      { error: 'AI生成エラー。しばらく待ってから再試行してください。' },
+      { status: 502 }
+    );
+  }
 
   const script = '【シーン1 - 冒頭0〜3秒】\n' + (message.content[0]?.text ?? '');
 
