@@ -178,6 +178,12 @@ export default function DramaPage() {
     localStorage.setItem('drama:checklist', JSON.stringify(next));
   }
 
+  function clearAdminKey() {
+    sessionStorage.removeItem('fineme:admin:key');
+    setAdminKey('');
+    setEditMode(false);
+  }
+
   function getOrRequestKey() {
     if (adminKey) return adminKey;
     const key = prompt('管理APIキーを入力してください：') || '';
@@ -196,7 +202,8 @@ export default function DramaPage() {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       if (res.status === 401) {
-        alert('認証エラー(401)：入力したキーが正しくありません。\n.env.local の DRAMA_ADMIN_KEY の値を入力してください。\nVercelにも DRAMA_ADMIN_KEY が設定されているか確認してください。');
+        clearAdminKey();
+        alert('認証エラー(401)：キーが正しくありませんでした。\n次の操作時に再入力してください。');
       } else {
         alert(`エラー: ${err.error || res.status}`);
       }
@@ -260,7 +267,10 @@ export default function DramaPage() {
         body: JSON.stringify({ episode_id: ep.id, title: ep.title, cast_type: ep.cast_type, notes: ep.notes }),
       });
       if (!res.ok) {
-        if (res.status === 401) alert('台本生成エラー(401)：管理キーが正しくありません。右上の編集ボタンでキーを再入力してください。');
+        if (res.status === 401) {
+          clearAdminKey();
+          alert('台本生成エラー(401)：キーが正しくありませんでした。もう一度ボタンを押して再入力してください。');
+        }
         else alert(`台本生成エラー: ${res.status}`);
         return;
       }
