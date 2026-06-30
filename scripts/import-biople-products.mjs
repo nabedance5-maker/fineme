@@ -90,12 +90,30 @@ function cleanName(raw) {
 
 // ─── スクレイプ ───────────────────────────────────────────────────────────────
 
+async function fetchWithRetry(url, retries = 3, delayMs = 5000) {
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'ja,en-US;q=0.7,en;q=0.3',
+    'Cache-Control': 'no-cache',
+  };
+  for (let i = 0; i < retries; i++) {
+    const res = await fetch(url, { headers });
+    if (res.ok) return res;
+    const retryAfter = res.headers.get('retry-after');
+    const wait = retryAfter ? parseInt(retryAfter) * 1000 : delayMs * (i + 1);
+    if (i < retries - 1) {
+      console.log(`    503 → ${wait / 1000}秒後にリトライ...`);
+      await sleep(wait);
+    } else {
+      throw new Error(`HTTP ${res.status} (${retries}回試みた後)`);
+    }
+  }
+}
+
 async function fetchCategoryProducts(cat) {
   const url = `${BASE_SITE}?shop=0&cat=${cat}`;
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FinemeBot/1.0)' },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const res = await fetchWithRetry(url);
   const html = await res.text();
 
   const names = [...html.matchAll(/item_name:\s*"([^"]+)"/g)].map(m => m[1]);
