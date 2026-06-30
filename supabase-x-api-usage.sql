@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-07-01
 -- X API 従量課金の月次使用量トラッキング（$20ハードキャップのための自己計測）
 -- month は 'YYYY-MM'（UTC基準）。est_cost = reads*0.005 + writes_plain*0.015 + writes_link*0.20
 -- x-post / x-engage が実行前に当月行を読み、上限手前ならスキップ。実行後に加算。
