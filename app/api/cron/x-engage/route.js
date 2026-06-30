@@ -1,10 +1,14 @@
 // GET /api/cron/x-engage
-// 週3回（月・水・金 0:00 UTC = 9:00 JST）
-// 外見磨き/男磨き系の伸びている投稿にリプライ＋フォローし、でおのX存在感を高める
-// Schedule: "0 0 * * 1,3,5"
+// 毎日 0:00 UTC = 9:00 JST
+// 恋愛系の「直近24h」投稿を X recent search で発見し、でお口調のリプ下書き＋
+// いいね/フォロー候補をメールで届ける（=ドラフト支援）。
+// ★自動リプ・自動フォローはしない（凍結リスク回避・self-serve API廃止のため）。
+// ★$20/月ハードキャップ：_x-budget で当月コストを監視し、上限手前で縮小／停止。
+// Schedule: "0 0 * * *"
 
 import crypto from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
+import { loadMonth, addUsage, allowedReads, estCost, MONTHLY_CAP, ALERT_AT } from '../_x-budget';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -14,22 +18,30 @@ const X_API_KEY = process.env.X_API_KEY;
 const X_API_SECRET = process.env.X_API_SECRET;
 const X_ACCESS_TOKEN = process.env.X_ACCESS_TOKEN;
 const X_ACCESS_TOKEN_SECRET = process.env.X_ACCESS_TOKEN_SECRET;
-const X_USER_ID = process.env.X_USER_ID;
 const OWNER_EMAIL = process.env.OWNER_EMAIL || 'h.watanabe@fineme.me';
 
-// OAuth 1.0a 署名
-function oauthSign(method, url, params, consumerSecret, tokenSecret) {
-  const sortedParams = Object.keys(params)
-    .sort()
-    .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`)
-    .join('&');
-  const base = `${method}&${encodeURIComponent(url)}&${encodeURIComponent(sortedParams)}`;
-  const signingKey = `${encodeURIComponent(consumerSecret)}&${encodeURIComponent(tokenSecret)}`;
+// 禁止ワード（master.md §3）。リプ下書きで絶対に使わない。
+const BANNED = ['外見改善', 'モテる', '非モテ', 'イケメン', 'ブサイク', '清潔感'];
+
+// 恋愛系の悩み投稿を狙う検索クエリ（日本語・RT/リプ除外）
+const SEARCH_QUERY =
+  '(マッチングアプリ OR マッチアプリ OR 婚活 OR 恋愛 OR デート) (疲れた OR うまくいかない OR 自信ない OR つらい OR 緊張 OR いいね来ない) lang:ja -is:retweet -is:reply';
+
+// RFC3986 厳密エンコード（OAuth 1.0a 用。!*'() も%エンコード）
+function enc(str) {
+  return encodeURIComponent(str).replace(/[!*'()]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase());
+}
+
+function oauthSign(method, baseUrl, allParams) {
+  const sorted = Object.keys(allParams).sort().map(k => `${enc(k)}=${enc(allParams[k])}`).join('&');
+  const base = `${method}&${enc(baseUrl)}&${enc(sorted)}`;
+  const signingKey = `${enc(X_API_SECRET)}&${enc(X_ACCESS_TOKEN_SECRET)}`;
   return crypto.createHmac('sha1', signingKey).update(base).digest('base64');
 }
 
-function buildOAuthHeader(method, url, extraParams = {}) {
-  const oauthParams = {
+// 署名付き GET（クエリパラメータを署名に含める）
+async function signedGet(baseUrl, queryParams) {
+  const oauth = {
     oauth_consumer_key: X_API_KEY,
     oauth_nonce: crypto.randomBytes(16).toString('hex'),
     oauth_signature_method: 'HMAC-SHA1',
@@ -37,176 +49,114 @@ function buildOAuthHeader(method, url, extraParams = {}) {
     oauth_token: X_ACCESS_TOKEN,
     oauth_version: '1.0',
   };
-  const allParams = { ...oauthParams, ...extraParams };
-  oauthParams.oauth_signature = oauthSign(method, url, allParams, X_API_SECRET, X_ACCESS_TOKEN_SECRET);
-
-  const headerStr = Object.keys(oauthParams)
-    .filter(k => k.startsWith('oauth_'))
-    .map(k => `${encodeURIComponent(k)}="${encodeURIComponent(oauthParams[k])}"`)
-    .join(', ');
-  return `OAuth ${headerStr}`;
-}
-
-async function postReply(text, inReplyToTweetId) {
-  const url = 'https://api.twitter.com/2/tweets';
-  const body = JSON.stringify({ text, reply: { in_reply_to_tweet_id: inReplyToTweetId } });
-  const authHeader = buildOAuthHeader('POST', url);
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { Authorization: authHeader, 'Content-Type': 'application/json' },
-    body,
-  });
+  const all = { ...oauth, ...queryParams };
+  oauth.oauth_signature = oauthSign('GET', baseUrl, all);
+  const header = 'OAuth ' + Object.keys(oauth).sort()
+    .map(k => `${enc(k)}="${enc(oauth[k])}"`).join(', ');
+  const qs = Object.keys(queryParams).map(k => `${enc(k)}=${enc(queryParams[k])}`).join('&');
+  const res = await fetch(`${baseUrl}?${qs}`, { headers: { Authorization: header } });
   const data = await res.json();
-  if (!res.ok) throw new Error(JSON.stringify(data));
-  return data;
+  return { ok: res.ok, status: res.status, data };
 }
 
-// 認証済みアカウント自身の user ID を取得（X_USER_ID 環境変数の代替）
-async function getMyUserId() {
-  if (X_USER_ID) return X_USER_ID;
-  const url = 'https://api.twitter.com/2/users/me';
-  const authHeader = buildOAuthHeader('GET', url);
-  const res = await fetch(url, { headers: { Authorization: authHeader } });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data?.data?.id || null;
-}
-
-async function followUser(targetUserId) {
-  const myId = await getMyUserId();
-  if (!myId) return null;
-  const url = `https://api.twitter.com/2/users/${myId}/following`;
-  const body = JSON.stringify({ target_user_id: targetUserId });
-  const authHeader = buildOAuthHeader('POST', url);
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { Authorization: authHeader, 'Content-Type': 'application/json' },
-    body,
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(JSON.stringify(data));
-  return data;
-}
-
-// web_search でトレンド投稿を探し、tweet URL と本文テキストを最大 maxCount 件返す
-async function findTrendingTweets(client, maxCount = 3) {
-  const queries = [
-    'site:x.com 外見磨き 男磨き',
-    'site:x.com メンズ美容 垢抜け',
-    'site:x.com 清潔感 外見 男性',
-  ];
-  const results = [];
-
-  for (const q of queries) {
-    if (results.length >= maxCount) break;
-    try {
-      const msg = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 600,
-        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 1 }],
-        messages: [{
-          role: 'user',
-          content: `「${q}」で検索し、最近の投稿URL（x.com/xxx/status/数字 形式）を最大2件抽出。
-その投稿のテキスト内容も合わせて返す。
-形式：
-URL: https://x.com/xxx/status/123456
-TEXT: （投稿本文）
----
-URLやテキストが見つからなければ「NONE」と返す。`,
-        }],
-      });
-      const rawText = (msg.content || [])
-        .filter(b => b.type === 'text')
-        .map(b => b.text || '')
-        .join('\n');
-
-      if (rawText.includes('NONE')) continue;
-
-      const blocks = rawText.split('---').map(s => s.trim()).filter(Boolean);
-      for (const block of blocks) {
-        const urlMatch = block.match(/URL:\s*(https:\/\/x\.com\/\S+\/status\/(\d+))/i);
-        const textMatch = block.match(/TEXT:\s*([\s\S]+)/i);
-        if (urlMatch && textMatch && results.length < maxCount) {
-          results.push({
-            tweetId: urlMatch[2],
-            tweetUrl: urlMatch[1],
-            tweetText: textMatch[1].trim().slice(0, 280),
-            authorHandle: urlMatch[1].split('/')[3] || '',
-          });
-        }
-      }
-    } catch (e) {
-      console.error('[x-engage] search error:', e.message);
-    }
+// recent search で直近24hの恋愛系投稿を取得（最大 maxResults 件）。返り値の各件＝1read。
+async function searchRecent(maxResults) {
+  const baseUrl = 'https://api.twitter.com/2/tweets/search/recent';
+  const params = {
+    query: SEARCH_QUERY,
+    max_results: String(Math.max(10, Math.min(100, maxResults))),
+    'tweet.fields': 'created_at,author_id,public_metrics',
+    expansions: 'author_id',
+    'user.fields': 'username,name',
+  };
+  const { ok, status, data } = await signedGet(baseUrl, params);
+  if (!ok) {
+    console.error('[x-engage] search failed', status, JSON.stringify(data).slice(0, 300));
+    return { error: data?.title || `HTTP ${status}`, tweets: [], reads: 0 };
   }
-
-  return results;
+  const users = {};
+  (data?.includes?.users || []).forEach(u => { users[u.id] = u; });
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const tweets = (data?.data || [])
+    .filter(t => t.created_at && new Date(t.created_at).getTime() >= cutoff) // 24h以内のみ
+    .map(t => {
+      const u = users[t.author_id] || {};
+      return {
+        id: t.id,
+        text: t.text,
+        createdAt: t.created_at,
+        handle: u.username || '',
+        name: u.name || '',
+        url: u.username ? `https://x.com/${u.username}/status/${t.id}` : `https://x.com/i/status/${t.id}`,
+      };
+    });
+  return { tweets, reads: (data?.data || []).length }; // 課金は返却件数ベース
 }
 
-// でおの視点でリプライ文案を生成。投稿と無関係なら 'SKIP' を返す
-async function generateReply(client, tweetText) {
-  if (!tweetText || tweetText.length < 10) return 'SKIP';
+// でお口調のリプ下書き生成。無関係なら 'SKIP'。
+async function draftReply(client, tweetText) {
+  if (!tweetText || tweetText.length < 8) return 'SKIP';
   try {
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 200,
+      max_tokens: 220,
       messages: [{
         role: 'user',
-        content: `あなたは外見磨きを実践する「でお」（元・非モテ→現役モデル）のアカウント運営担当。
-以下のツイートに対して、でおの視点で自然なリプライを1つ生成せよ。
+        content: `あなたは恋愛・人間関係で悩む男性向けサービス「Fineme」運営者「でお」（元・非モテ→現役モデル）のX運用担当。
+次の投稿への自然なリプライ下書きを1つ作る。
 
-ツイート内容:
+投稿:
 ${tweetText}
 
 要件:
-- 150文字以内
-- 共感 or 補足 + でお自身の体験を1文
-- Finemeへの誘導は厳禁
-- このツイートの内容と関係ない・または返信が不自然なら「SKIP」とだけ返す
-- 絵文字使用可（1〜2個まで）
-
-出力はリプライ本文のみ（前置き不要）。`,
+- 120文字以内・共感ファースト・でお口調（先輩感、温かい、「！」可、絵文字1個まで）
+- 相手をジャッジしない／説教しない／宣伝しない／リンクなし
+- 次の語は絶対に使わない: ${BANNED.join(' / ')}
+- 投稿と無関係・絡むのが不自然なら「SKIP」だけ返す
+出力はリプ本文のみ。`,
       }],
     });
     const text = ((msg.content || []).find(b => b.type === 'text')?.text || '').trim();
-    return text || 'SKIP';
+    if (!text || text === 'SKIP') return 'SKIP';
+    if (BANNED.some(w => text.includes(w))) return 'SKIP'; // 念のため禁止ワード混入を弾く
+    return text;
   } catch (e) {
-    console.error('[x-engage] reply gen error:', e.message);
+    console.error('[x-engage] draft error:', e.message);
     return 'SKIP';
   }
 }
 
-async function sendReport({ replies, follows }) {
+async function sendDraftEmail({ drafts, monthRow, note }) {
   if (!process.env.RESEND_API_KEY) return;
   try {
     const { Resend } = await import('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
-
-    const replyRows = replies.map(r =>
-      `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee"><a href="${r.tweetUrl}">${r.tweetUrl}</a></td><td style="padding:6px 8px;border-bottom:1px solid #eee;color:#333">${r.reply}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;color:${r.ok ? '#16a34a' : '#dc2626'}">${r.ok ? '✅ 投稿済' : '❌ 失敗'}</td></tr>`
-    ).join('');
-
-    const followRows = follows.map(f =>
-      `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">@${f.handle}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;color:${f.ok ? '#16a34a' : '#dc2626'}">${f.ok ? '✅ フォロー済' : '❌ 失敗'}</td></tr>`
-    ).join('');
-
+    const rows = drafts.map(d => `
+      <tr>
+        <td style="padding:8px;border-bottom:1px solid #eee;font-size:12px;color:#666">${d.createdAt}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee"><a href="${d.url}">${d.url}</a><br><span style="color:#888;font-size:12px">@${d.handle}</span></td>
+        <td style="padding:8px;border-bottom:1px solid #eee;color:#333">${d.text}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;color:#111;font-weight:600">${d.reply}</td>
+      </tr>`).join('');
+    const cost = estCost(monthRow);
     const html = `
-      <h2 style="color:#111">🤝 X エンゲージメントレポート</h2>
-      <h3>リプライ (${replies.length}件)</h3>
-      <table style="border-collapse:collapse;width:100%;font-size:14px">
-        <thead><tr><th style="text-align:left;padding:6px 8px;background:#f8f8fb">元ツイート</th><th style="text-align:left;padding:6px 8px;background:#f8f8fb">投稿したリプライ</th><th style="padding:6px 8px;background:#f8f8fb">結果</th></tr></thead>
-        <tbody>${replyRows || '<tr><td colspan="3" style="padding:8px;color:#999">なし</td></tr>'}</tbody>
-      </table>
-      <h3 style="margin-top:24px">フォロー (${follows.length}件)</h3>
-      <table style="border-collapse:collapse;width:100%;font-size:14px">
-        <thead><tr><th style="text-align:left;padding:6px 8px;background:#f8f8fb">アカウント</th><th style="padding:6px 8px;background:#f8f8fb">結果</th></tr></thead>
-        <tbody>${followRows || '<tr><td colspan="2" style="padding:8px;color:#999">なし</td></tr>'}</tbody>
-      </table>
-    `;
+      <h2 style="color:#111">📝 X 恋愛エンゲージ下書き（手動で実行してください）</h2>
+      <p style="color:#555">対象=直近24hの恋愛系投稿。<b>いいね/フォロー/リプはでおが手動で。</b>自動投稿はしていません。</p>
+      ${note ? `<p style="color:#b45309"><b>注記：</b>${note}</p>` : ''}
+      <p style="color:#555;font-size:13px">当月X APIコスト（推定）：<b>$${cost.toFixed(2)}</b> / 上限 $${MONTHLY_CAP}（読${monthRow.reads}・投稿${monthRow.writes_plain + monthRow.writes_link}）</p>
+      <table style="border-collapse:collapse;width:100%;font-size:13px">
+        <thead><tr>
+          <th style="text-align:left;padding:8px;background:#f8f8fb">投稿時刻</th>
+          <th style="text-align:left;padding:8px;background:#f8f8fb">投稿(URL/@)</th>
+          <th style="text-align:left;padding:8px;background:#f8f8fb">本文</th>
+          <th style="text-align:left;padding:8px;background:#f8f8fb">リプ下書き</th>
+        </tr></thead>
+        <tbody>${rows || '<tr><td colspan="4" style="padding:10px;color:#999">24h以内の対象なし</td></tr>'}</tbody>
+      </table>`;
     await resend.emails.send({
       from: 'Fineme X <noreply@fineme.me>',
       to: OWNER_EMAIL,
-      subject: '【Fineme X】エンゲージメントレポート',
+      subject: `【Fineme X】恋愛エンゲージ下書き ${drafts.length}件（当月$${cost.toFixed(2)}）`,
       html,
     });
   } catch (e) {
@@ -219,77 +169,49 @@ export async function GET(request) {
   if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET}`) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
   if (!X_API_KEY || !X_API_SECRET || !X_ACCESS_TOKEN || !X_ACCESS_TOKEN_SECRET) {
     return Response.json({ error: 'X API credentials not configured' }, { status: 500 });
   }
-
   if (!process.env.ANTHROPIC_API_KEY) {
     return Response.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 });
   }
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-  // トレンド投稿を検索（最大3件）
-  const tweets = await findTrendingTweets(client, 3);
-  console.log(`[x-engage] found ${tweets.length} tweets`);
-
-  const replies = [];
-  const follows = [];
-  let replyCount = 0;
-  let followDone = false;
-
-  for (const tweet of tweets) {
-    if (replyCount >= 2) break;
-
-    const replyText = await generateReply(client, tweet.tweetText);
-    if (replyText === 'SKIP' || !replyText) {
-      console.log(`[x-engage] SKIP: ${tweet.tweetUrl}`);
-      continue;
-    }
-
-    let ok = false;
-    try {
-      await postReply(replyText, tweet.tweetId);
-      ok = true;
-      replyCount++;
-      console.log(`[x-engage] replied to ${tweet.tweetId}`);
-    } catch (e) {
-      console.error(`[x-engage] reply failed: ${e.message}`);
-    }
-
-    replies.push({ tweetUrl: tweet.tweetUrl, reply: replyText, ok });
-
-    // 最初の成功リプライ相手を1アカウントフォロー
-    if (ok && !followDone && tweet.authorHandle) {
-      try {
-        // author handle → user id は X API v2 で取得
-        const lookupUrl = `https://api.twitter.com/2/users/by/username/${tweet.authorHandle}`;
-        const authH = buildOAuthHeader('GET', lookupUrl);
-        const lookupRes = await fetch(lookupUrl, { headers: { Authorization: authH } });
-        if (lookupRes.ok) {
-          const lookupData = await lookupRes.json();
-          const targetId = lookupData?.data?.id;
-          if (targetId) {
-            await followUser(targetId);
-            follows.push({ handle: tweet.authorHandle, ok: true });
-            followDone = true;
-            console.log(`[x-engage] followed @${tweet.authorHandle}`);
-          }
-        }
-      } catch (e) {
-        console.error(`[x-engage] follow failed: ${e.message}`);
-        follows.push({ handle: tweet.authorHandle, ok: false });
-        followDone = true;
-      }
-    }
+  // ── 予算ゲート（$20ハードキャップ）──
+  const monthRow = await loadMonth();
+  const budget = allowedReads(monthRow);
+  if (budget <= 0) {
+    await sendDraftEmail({ drafts: [], monthRow, note: `当月の上限（$${MONTHLY_CAP}）に達したため、今月は発見を停止しています。` });
+    return Response.json({ skipped: 'budget cap reached', cost: estCost(monthRow) });
   }
 
-  await sendReport({ replies, follows });
+  // ── 発見（残予算ぶんだけ）──
+  const { tweets, reads, error } = await searchRecent(budget);
+  if (reads > 0) await addUsage({ reads }); // 実読み取り件数を即計上
+
+  if (error) {
+    await sendDraftEmail({ drafts: [], monthRow, note: `検索エラー：${error}（recent searchのアクセス階層/課金設定をご確認ください）` });
+    return Response.json({ error, reads });
+  }
+
+  // ── 下書き生成（投稿はしない）──
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const drafts = [];
+  for (const t of tweets) {
+    const reply = await draftReply(client, t.text);
+    if (reply === 'SKIP') continue;
+    drafts.push({ ...t, reply });
+  }
+
+  const after = await loadMonth();
+  const note = estCost(after) >= ALERT_AT
+    ? `⚠️ 当月コストが$${ALERT_AT}を超えました（$${estCost(after).toFixed(2)}）。上限$${MONTHLY_CAP}に近づいています。`
+    : '';
+  await sendDraftEmail({ drafts, monthRow: after, note });
 
   return Response.json({
-    replies: replies.length,
-    repliesPosted: replies.filter(r => r.ok).length,
-    follows: follows.filter(f => f.ok).length,
+    found: tweets.length,
+    drafts: drafts.length,
+    reads,
+    monthCost: estCost(after),
   });
 }

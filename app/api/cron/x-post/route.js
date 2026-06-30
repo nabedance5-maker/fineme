@@ -10,6 +10,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
 import { fetchAgentMemory, withMemory } from '@/lib/agent-memory';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
+import { loadMonth, addUsage, canWrite, MONTHLY_CAP } from '../_x-budget';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -318,11 +319,10 @@ async function generateThreadPost(postType, context = {}, dayOfYear = 0, system 
     ? `\n\n【直近投稿（言い回しを被らせない）】\n- ${context.recentTexts.slice(0, 5).join('\n- ')}`
     : '';
 
-  // リプ欄 CTA: 1/3 → diagnosis, 1/3 → mirror, 1/3 → なし
-  const ctaMod = dayOfYear % 3;
-  const ctaLine = ctaMod === 1
-    ? `\n\n最後の1行（ハッシュタグの直前）:\n「外見のどこから変えるかを整理したい人は→ ${BASE_URL}/diagnosis（無料・3分）」`
-    : ctaMod === 2
+  // リプ欄 CTA（リンク）は週1回のみ（月曜UTC）。コスト：リンク投稿$0.20 → 週1で月~$0.8に抑制。
+  // 他の曜日はリンクなし（$0.015）。
+  const isLinkDay = new Date().getUTCDay() === 1; // 月曜のみリンク
+  const ctaLine = isLinkDay
     ? `\n\n最後の1行（ハッシュタグの直前）:\n「変われる余白を可視化したい人は→ ${BASE_URL}/lp/mirror」`
     : '';
 
@@ -477,6 +477,13 @@ export async function GET(request) {
     return Response.json({ error: 'X API credentials not configured' }, { status: 500 });
   }
 
+  // ── 予算ゲート（$20ハードキャップ）：投稿1本ぶんの余地が無ければ投稿せずメール下書きのみ ──
+  const monthRow = await loadMonth();
+  const budgetOk = canWrite(monthRow, { withLink: new Date().getUTCDay() === 1 });
+  if (!budgetOk) {
+    console.warn(`[x-post] 予算上限($${MONTHLY_CAP})到達のため投稿スキップ。メール下書きのみ。`);
+  }
+
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
   const postType = POST_TYPES[dayOfYear % POST_TYPES.length];
 
@@ -506,8 +513,13 @@ export async function GET(request) {
   const aiResult = await generateThreadPost(postType, { strategy, recentTexts }, dayOfYear, systemWithMemory);
 
   let posted = false, tweetId = null, threadReply = null;
+  let wPlain = 0, wLink = 0; // 当回の書き込み計上用
+  const hasLink = (s) => /https?:\/\//.test(s || '');
 
-  if (aiResult && aiResult.main) {
+  if (!budgetOk) {
+    // 予算上限：投稿しない。下書き生成だけ行いメール送信へ。
+    if (aiResult && aiResult.main) { tweetText = aiResult.main; threadReply = aiResult.reply || null; }
+  } else if (aiResult && aiResult.main) {
     // AI生成成功 → スレッド形式で投稿（本文 + リプ欄）
     tweetText = aiResult.main;
     threadReply = aiResult.reply || null;
@@ -515,10 +527,12 @@ export async function GET(request) {
       const mainResult = await postTweet(tweetText);
       posted = true;
       tweetId = mainResult.data?.id;
+      hasLink(tweetText) ? wLink++ : wPlain++;
       console.log(`[x-post] posted main: ${tweetId}`);
       if (tweetId && threadReply) {
         await new Promise(r => setTimeout(r, 2000));
         const replyResult = await postReply(threadReply, tweetId);
+        hasLink(threadReply) ? wLink++ : wPlain++;
         console.log(`[x-post] posted reply: ${replyResult.data?.id}`);
       }
     } catch (e) {
@@ -529,12 +543,13 @@ export async function GET(request) {
         console.error('[x-post] post error:', msg);
       }
     }
-  } else {
+  } else if (budgetOk) {
     // AI生成失敗 → 静的フォールバック（単ツイート）
     try {
       const result = await postTweet(tweetText);
       posted = true;
       tweetId = result.data?.id;
+      hasLink(tweetText) ? wLink++ : wPlain++;
       console.log(`[x-post] fallback posted: ${tweetId}`);
     } catch (e) {
       const msg = e.message || '';
@@ -545,6 +560,9 @@ export async function GET(request) {
       }
     }
   }
+
+  // 実際に投稿した書き込みぶんを当月コストへ計上
+  if (wPlain > 0 || wLink > 0) await addUsage({ writes_plain: wPlain, writes_link: wLink });
 
   try {
     await sb.from('sns_posts').insert({ channel: 'x', post_type: postType, text: tweetText, posted });
