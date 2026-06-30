@@ -1,3 +1,5 @@
+export const revalidate = 86400;
+
 import { getSupabase } from '@/lib/supabase';
 
 const BASE_URL = 'https://www.fineme.me';

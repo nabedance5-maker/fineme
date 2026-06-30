@@ -62,7 +62,6 @@ export async function generateStaticParams() {
     const articles = await getAllArticles();
     return articles
       .filter(a => a.slug)
-      .slice(0, 50)
       .map(a => ({ slug: a.slug }));
   } catch { return []; }
 }
@@ -73,6 +72,9 @@ export async function generateMetadata({ params }) {
   return {
     title: `${article.title} | Fineme`,
     description: article.description || article.summary || '',
+    alternates: {
+      canonical: `https://www.fineme.me/feature/${params.slug}`,
+    },
     openGraph: {
       title: article.title,
       description: article.description || article.summary || '',
