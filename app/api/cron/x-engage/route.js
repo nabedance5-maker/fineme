@@ -27,9 +27,15 @@ const BANNED = ['外見改善', 'モテる', '非モテ', 'イケメン', 'ブ�
 const SEARCH_QUERY =
   '(マッチングアプリ OR マッチアプリ OR 婚活 OR 恋愛 OR デート) (疲れた OR うまくいかない OR 自信ない OR つらい OR 緊張 OR いいね来ない) lang:ja -is:retweet -is:reply';
 
-// Vercel関数の60秒制限に収めるため、1回の発見・下書き件数の上限。
-// 下書きは並列生成（Promise.all）するので、この件数でも数秒で終わる。
-const MAX_RESULTS = 30;
+// 発見の取得件数（読み取り課金＝返却件数。フィルタで多くが除外されるので少し多め）。
+// 60秒制限は下書きの並列生成で吸収。
+const FETCH_MAX = 50;
+// リプ対象は「表示回数1万以上」だけ（高リーチ投稿に絞る）。
+const MIN_IMPRESSIONS = 10000;
+// 表示回数が他人投稿で取得できない階層のフォールバック：いいね数で高リーチを近似。
+const FALLBACK_MIN_LIKES = 50;
+// 下書き生成する最大件数（60秒制限・下書き数の抑制）。
+const MAX_DRAFTS = 20;
 
 // RFC3986 厳密エンコード（OAuth 1.0a 用。!*'() も%エンコード）
 function enc(str) {
@@ -69,6 +75,7 @@ async function searchRecent(maxResults) {
   const params = {
     query: SEARCH_QUERY,
     max_results: String(Math.max(10, Math.min(100, maxResults))),
+    sort_order: 'relevancy', // 人気/関連度の高い投稿を上位に
     'tweet.fields': 'created_at,author_id,public_metrics',
     expansions: 'author_id',
     'user.fields': 'username,name',
@@ -85,6 +92,7 @@ async function searchRecent(maxResults) {
     .filter(t => t.created_at && new Date(t.created_at).getTime() >= cutoff) // 24h以内のみ
     .map(t => {
       const u = users[t.author_id] || {};
+      const pm = t.public_metrics || {};
       return {
         id: t.id,
         text: t.text,
@@ -92,6 +100,9 @@ async function searchRecent(maxResults) {
         handle: u.username || '',
         name: u.name || '',
         url: u.username ? `https://x.com/${u.username}/status/${t.id}` : `https://x.com/i/status/${t.id}`,
+        impressions: pm.impression_count ?? 0,
+        likes: pm.like_count ?? 0,
+        rts: pm.retweet_count ?? 0,
       };
     });
   return { tweets, reads: (data?.data || []).length }; // 課金は返却件数ベース
@@ -138,6 +149,7 @@ async function sendDraftEmail({ drafts, monthRow, note }) {
     const rows = drafts.map(d => `
       <tr>
         <td style="padding:8px;border-bottom:1px solid #eee;font-size:12px;color:#666">${d.createdAt}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;font-size:12px;color:#111;white-space:nowrap">👁${(d.impressions || 0).toLocaleString()}<br>❤${(d.likes || 0).toLocaleString()} 🔁${(d.rts || 0).toLocaleString()}</td>
         <td style="padding:8px;border-bottom:1px solid #eee"><a href="${d.url}">${d.url}</a><br><span style="color:#888;font-size:12px">@${d.handle}</span></td>
         <td style="padding:8px;border-bottom:1px solid #eee;color:#333">${d.text}</td>
         <td style="padding:8px;border-bottom:1px solid #eee;color:#111;font-weight:600">${d.reply}</td>
@@ -151,11 +163,12 @@ async function sendDraftEmail({ drafts, monthRow, note }) {
       <table style="border-collapse:collapse;width:100%;font-size:13px">
         <thead><tr>
           <th style="text-align:left;padding:8px;background:#f8f8fb">投稿時刻</th>
+          <th style="text-align:left;padding:8px;background:#f8f8fb">👁表示/反応</th>
           <th style="text-align:left;padding:8px;background:#f8f8fb">投稿(URL/@)</th>
           <th style="text-align:left;padding:8px;background:#f8f8fb">本文</th>
           <th style="text-align:left;padding:8px;background:#f8f8fb">リプ下書き</th>
         </tr></thead>
-        <tbody>${rows || '<tr><td colspan="4" style="padding:10px;color:#999">24h以内の対象なし</td></tr>'}</tbody>
+        <tbody>${rows || '<tr><td colspan="5" style="padding:10px;color:#999">条件に該当する投稿なし</td></tr>'}</tbody>
       </table>`;
     await resend.emails.send({
       from: 'Fineme X <noreply@fineme.me>',
@@ -183,7 +196,7 @@ export async function GET(request) {
   try {
   // ── 予算ゲート（$20ハードキャップ）＋ 60秒制限のため件数上限 ──
   const monthRow = await loadMonth();
-  const budget = Math.min(allowedReads(monthRow), MAX_RESULTS);
+  const budget = Math.min(allowedReads(monthRow), FETCH_MAX);
   if (budget <= 0) {
     await sendDraftEmail({ drafts: [], monthRow, note: `当月の上限（$${MONTHLY_CAP}）に達したため、今月は発見を停止しています。` });
     return Response.json({ skipped: 'budget cap reached', cost: estCost(monthRow) });
@@ -198,9 +211,24 @@ export async function GET(request) {
     return Response.json({ error, reads });
   }
 
+  // ── 品質フィルタ：表示回数1万以上。取れない階層なら いいね数で代替 ──
+  const anyImpressions = tweets.some(t => (t.impressions || 0) > 0);
+  let filterLabel;
+  let targets;
+  if (anyImpressions) {
+    targets = tweets.filter(t => (t.impressions || 0) >= MIN_IMPRESSIONS)
+                    .sort((a, b) => b.impressions - a.impressions);
+    filterLabel = `表示回数 ${MIN_IMPRESSIONS.toLocaleString()}回以上`;
+  } else {
+    // impression が全件0＝APIが他人の表示回数を返さない → いいね数で高リーチを近似
+    targets = tweets.filter(t => (t.likes || 0) >= FALLBACK_MIN_LIKES)
+                    .sort((a, b) => b.likes - a.likes);
+    filterLabel = `⚠️表示回数がAPIで取得できないため「いいね ${FALLBACK_MIN_LIKES}以上」で代替`;
+  }
+  targets = targets.slice(0, MAX_DRAFTS);
+
   // ── 下書き生成（投稿はしない）。並列生成で60秒制限に収める ──
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  const targets = tweets.slice(0, MAX_RESULTS);
   const results = await Promise.all(targets.map(async (t) => {
     const reply = await draftReply(client, t.text);
     return reply === 'SKIP' ? null : { ...t, reply };
@@ -208,15 +236,18 @@ export async function GET(request) {
   const drafts = results.filter(Boolean);
 
   const after = await loadMonth();
-  const note = estCost(after) >= ALERT_AT
-    ? `⚠️ 当月コストが$${ALERT_AT}を超えました（$${estCost(after).toFixed(2)}）。上限$${MONTHLY_CAP}に近づいています。`
+  const costNote = estCost(after) >= ALERT_AT
+    ? `⚠️ 当月コストが$${ALERT_AT}を超えました（$${estCost(after).toFixed(2)}）。上限$${MONTHLY_CAP}に近づいています。 `
     : '';
+  const note = `対象条件：${filterLabel}（24h以内）。発見${tweets.length}件→該当${targets.length}件。 ${costNote}`;
   await sendDraftEmail({ drafts, monthRow: after, note });
 
   return Response.json({
     found: tweets.length,
+    matched: targets.length,
     drafts: drafts.length,
     reads,
+    filter: filterLabel,
     monthCost: estCost(after),
   });
   } catch (e) {
