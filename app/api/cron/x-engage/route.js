@@ -27,6 +27,10 @@ const BANNED = ['外見改善', 'モテる', '非モテ', 'イケメン', 'ブ�
 const SEARCH_QUERY =
   '(マッチングアプリ OR マッチアプリ OR 婚活 OR 恋愛 OR デート) (疲れた OR うまくいかない OR 自信ない OR つらい OR 緊張 OR いいね来ない) lang:ja -is:retweet -is:reply';
 
+// Vercel関数の60秒制限に収めるため、1回の発見・下書き件数の上限。
+// 下書きは並列生成（Promise.all）するので、この件数でも数秒で終わる。
+const MAX_RESULTS = 30;
+
 // RFC3986 厳密エンコード（OAuth 1.0a 用。!*'() も%エンコード）
 function enc(str) {
   return encodeURIComponent(str).replace(/[!*'()]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase());
@@ -176,9 +180,10 @@ export async function GET(request) {
     return Response.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 });
   }
 
-  // ── 予算ゲート（$20ハードキャップ）──
+  try {
+  // ── 予算ゲート（$20ハードキャップ）＋ 60秒制限のため件数上限 ──
   const monthRow = await loadMonth();
-  const budget = allowedReads(monthRow);
+  const budget = Math.min(allowedReads(monthRow), MAX_RESULTS);
   if (budget <= 0) {
     await sendDraftEmail({ drafts: [], monthRow, note: `当月の上限（$${MONTHLY_CAP}）に達したため、今月は発見を停止しています。` });
     return Response.json({ skipped: 'budget cap reached', cost: estCost(monthRow) });
@@ -193,14 +198,14 @@ export async function GET(request) {
     return Response.json({ error, reads });
   }
 
-  // ── 下書き生成（投稿はしない）──
+  // ── 下書き生成（投稿はしない）。並列生成で60秒制限に収める ──
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  const drafts = [];
-  for (const t of tweets) {
+  const targets = tweets.slice(0, MAX_RESULTS);
+  const results = await Promise.all(targets.map(async (t) => {
     const reply = await draftReply(client, t.text);
-    if (reply === 'SKIP') continue;
-    drafts.push({ ...t, reply });
-  }
+    return reply === 'SKIP' ? null : { ...t, reply };
+  }));
+  const drafts = results.filter(Boolean);
 
   const after = await loadMonth();
   const note = estCost(after) >= ALERT_AT
@@ -214,4 +219,12 @@ export async function GET(request) {
     reads,
     monthCost: estCost(after),
   });
+  } catch (e) {
+    // 想定外エラーでも必ずでおへ通知（サイレント失敗を防ぐ）
+    console.error('[x-engage] fatal:', e?.message);
+    try {
+      await sendDraftEmail({ drafts: [], monthRow: await loadMonth(), note: `想定外エラー：${e?.message || e}` });
+    } catch {}
+    return Response.json({ error: String(e?.message || e) }, { status: 500 });
+  }
 }
