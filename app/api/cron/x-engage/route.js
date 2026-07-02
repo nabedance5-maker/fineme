@@ -20,12 +20,12 @@ const X_ACCESS_TOKEN = process.env.X_ACCESS_TOKEN;
 const X_ACCESS_TOKEN_SECRET = process.env.X_ACCESS_TOKEN_SECRET;
 const OWNER_EMAIL = process.env.OWNER_EMAIL || 'h.watanabe@fineme.me';
 
-// 禁止ワード（master.md §3）。リプ下書きで絶対に使わない。
-const BANNED = ['外見改善', 'モテる', '非モテ', 'イケメン', 'ブサイク', '清潔感'];
+// ※禁止ワード（外見改善/モテる/非モテ等）は「ショートドラマ限定」。X(@deo_fineme)では適用しない。
 
-// 恋愛系の悩み投稿を狙う検索クエリ（日本語・RT/リプ除外）
+// 恋愛戦略・モテ系の「持論/あるある」発信を狙う検索クエリ（日本語・RT/リプ除外）。
+// 広めに取り、relevancy＋表示1万フィルタ＋下書きSKIPゲートで持論/あるあるを選別する。
 const SEARCH_QUERY =
-  '(マッチングアプリ OR マッチアプリ OR 婚活 OR 恋愛 OR デート) (疲れた OR うまくいかない OR 自信ない OR つらい OR 緊張 OR いいね来ない) lang:ja -is:retweet -is:reply';
+  '(モテ OR 非モテ OR 恋愛 OR マッチングアプリ OR ナンパ OR 婚活 OR デート OR 女性心理 OR 自分磨き OR 体脂肪) lang:ja -is:retweet -is:reply';
 
 // 発見の取得件数（読み取り課金＝返却件数。フィルタで多くが除外されるので少し多め）。
 // 60秒制限は下書きの並列生成で吸収。
@@ -117,23 +117,22 @@ async function draftReply(client, tweetText) {
       max_tokens: 220,
       messages: [{
         role: 'user',
-        content: `あなたは恋愛・人間関係で悩む男性向けサービス「Fineme」運営者「でお」（元・非モテ→現役モデル）のX運用担当。
-次の投稿への自然なリプライ下書きを1つ作る。
+        content: `あなたは「でお」＝元・非モテ→現役モデルの、恋愛戦略・モテ発信者（X: @deo_fineme）。
+下の投稿は恋愛・モテ・女性心理・デート・自分磨き系の「持論・あるある」投稿。これに、絡む価値のあるリプ下書きを1つ作る。
 
 投稿:
 ${tweetText}
 
 要件:
-- 120文字以内・共感ファースト・でお口調（先輩感、温かい、「！」可、絵文字1個まで）
-- 相手をジャッジしない／説教しない／宣伝しない／リンクなし
-- 次の語は絶対に使わない: ${BANNED.join(' / ')}
-- 投稿と無関係・絡むのが不自然なら「SKIP」だけ返す
+- 90文字前後・でお口調（実践者の先輩感・温かいが芯がある・「！」可・絵文字1個まで）
+- 「同意＋自分の視点や具体を一言足す」or「あるあるに乗っかって一歩踏み込む」。ただの称賛や質問返しはしない
+- 宣伝・リンク・自社誘導はしない。人を見下さない。センシティブ配慮
+- 恋愛/モテ/女性心理/デート/自分磨き系の発信・持論・あるある以外（個人の弱音・宣伝・無関係・過度に過激）なら「SKIP」だけ返す
 出力はリプ本文のみ。`,
       }],
     });
     const text = ((msg.content || []).find(b => b.type === 'text')?.text || '').trim();
     if (!text || text === 'SKIP') return 'SKIP';
-    if (BANNED.some(w => text.includes(w))) return 'SKIP'; // 念のため禁止ワード混入を弾く
     return text;
   } catch (e) {
     console.error('[x-engage] draft error:', e.message);
