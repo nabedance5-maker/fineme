@@ -16,7 +16,8 @@ const OWNER_EMAIL = process.env.OWNER_EMAIL || 'h.watanabe@fineme.me';
 const HOST = 'www.fineme.me';
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '4fbd52dc-784e-4ab8-97c4-f1f99e48b504';
 
-const MAX_PAGES = 3;          // 週あたり改善件数
+const MAX_PAGES = 2;          // 1日あたり改善件数（毎日実行・少量ずつ）
+const COOLDOWN_DAYS = 14;     // 同じページを短期間で再改稿しない（バックログを巡回）
 const MIN_IMPRESSIONS = 80;   // 「表示が付いている」下限（28日）
 const LOW_CTR = 0.012;        // 1.2%未満＝タイトル/メタが弱い候補
 const POS_MIN = 8, POS_MAX = 20; // あと一歩で1ページ目
@@ -45,9 +46,21 @@ async function indexNowSubmit(urls) {
   } catch (e) { console.error('[seo-improve] indexnow', e.message); return 0; }
 }
 
-// 既存の自動改善ブロックを剥がす（冪等化）
+// 既存の自動改善ブロックを剥がす（冪等化）。日付入り/旧形式どちらも対応
 function stripBlock(body) {
-  return (body || '').replace(/<!-- seo-improve:start -->[\s\S]*?<!-- seo-improve:end -->/g, '').trim();
+  return (body || '').replace(/<!-- seo-improve:[^>]*start -->[\s\S]*?<!-- seo-improve:end -->/g, '').trim();
+}
+
+// body に埋めた最後の改善日を取得（クールダウン判定用）
+function lastImprovedAt(body) {
+  const m = [...(body || '').matchAll(/<!-- seo-improve:(\d{4}-\d{2}-\d{2}):start -->/g)];
+  if (!m.length) return null;
+  return m.map(x => x[1]).sort().pop();
+}
+function withinCooldown(body, days) {
+  const d = lastImprovedAt(body);
+  if (!d) return false;
+  return (Date.now() - new Date(d + 'T00:00:00Z').getTime()) < days * 86400000;
 }
 
 export async function GET(request) {
@@ -63,7 +76,7 @@ export async function GET(request) {
     const range = dateRange(28);
     const rows = await querySearchConsole(token, { ...range, dimensions: ['page'], rowLimit: 200 });
 
-    const candidates = rows
+    const scored = rows
       .map(r => ({
         url: r.keys?.[0] || '',
         slug: slugFromUrl(r.keys?.[0]),
@@ -75,7 +88,6 @@ export async function GET(request) {
       .map(c => {
         const lowCtr = c.ctr < LOW_CTR;
         const almost = c.position >= POS_MIN && c.position <= POS_MAX;
-        // スコア：表示数×（惜しさ）。低CTR or 8〜20位 を優先
         const reasons = [];
         if (lowCtr) reasons.push(`高表示・低CTR(${(c.ctr * 100).toFixed(1)}%)`);
         if (almost) reasons.push(`平均${c.position.toFixed(1)}位（あと一歩）`);
@@ -83,14 +95,24 @@ export async function GET(request) {
       })
       .filter(c => c.lowCtr || c.almost)
       .sort((a, b) => b.impressions - a.impressions)
+      .slice(0, 15); // 上位プールからクールダウンで除外して当日分を選ぶ
+
+    const sb = getSupabase();
+    // プール記事の本体を取得（クールダウン判定＋改稿に使う）
+    const { data: poolArts } = await sb.from('features')
+      .select('*').in('slug', scored.map(c => c.slug));
+    const artBySlug = Object.fromEntries((poolArts || []).map(a => [a.slug, a]));
+
+    // 直近 COOLDOWN_DAYS 以内に改稿したページは今日は触らない（バックログを毎日巡回）
+    const candidates = scored
+      .filter(c => artBySlug[c.slug] && !withinCooldown(artBySlug[c.slug].body, COOLDOWN_DAYS))
       .slice(0, MAX_PAGES);
 
     if (candidates.length === 0) {
-      await sendMail('【Fineme SEO】改善候補なし', `<p>今週は改善条件（表示≥${MIN_IMPRESSIONS} かつ CTR<${LOW_CTR * 100}% or 8〜20位）に該当するページがありませんでした。</p>`);
+      await sendMail('【Fineme SEO】本日の改善対象なし', `<p>本日は改善条件（表示≥${MIN_IMPRESSIONS} かつ CTR<${LOW_CTR * 100}% or 8〜20位／直近${COOLDOWN_DAYS}日未改稿）に該当するページがありませんでした。</p>`);
       return Response.json({ candidates: 0 });
     }
 
-    const sb = getSupabase();
     // 内部リンク候補（公開記事の一覧）
     const { data: allArticles } = await sb.from('features')
       .select('slug,title,category').eq('status', 'published').limit(120);
@@ -110,7 +132,7 @@ export async function GET(request) {
         topQueries = qrows.map(q => q.keys?.[0]).filter(Boolean);
       } catch {}
 
-      const { data: art } = await sb.from('features').select('*').eq('slug', c.slug).maybeSingle();
+      const art = artBySlug[c.slug];
       if (!art) continue;
 
       const poolForPrompt = linkPool.filter(a => a.slug !== c.slug).slice(0, 40)
@@ -151,10 +173,11 @@ ${poolForPrompt}
         .filter(Boolean).slice(0, 3);
       const linksHtml = links.length
         ? `<h3>関連記事</h3><ul>${links.map(l => `<li><a href="/feature/${l.slug}">${l.title}</a></li>`).join('')}</ul>` : '';
-      const block = (gen.addition_html || linksHtml)
-        ? `<!-- seo-improve:start -->\n<div class="seo-improve">${gen.addition_html || ''}${linksHtml}</div>\n<!-- seo-improve:end -->`
-        : '';
-      const newBody = block ? `${stripBlock(art.body)}\n\n${block}` : art.body;
+      // 改稿日マーカーは常に埋める（クールダウン判定に使う）。中身は追記/内部リンクがあれば入れる
+      const today = new Date().toISOString().slice(0, 10);
+      const inner = `${gen.addition_html || ''}${linksHtml}`;
+      const block = `<!-- seo-improve:${today}:start -->${inner ? `\n<div class="seo-improve">${inner}</div>` : ''}\n<!-- seo-improve:end -->`;
+      const newBody = `${stripBlock(art.body)}\n\n${block}`;
 
       const record = {
         slug: c.slug,
