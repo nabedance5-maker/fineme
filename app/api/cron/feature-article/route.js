@@ -5,6 +5,32 @@ import Anthropic from '@anthropic-ai/sdk';
 import { revalidatePath } from 'next/cache';
 import { getSupabase } from '@/lib/supabase';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
+import { getGoogleAccessToken, querySearchConsole, dateRange } from '@/lib/gsc';
+
+const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '4fbd52dc-784e-4ab8-97c4-f1f99e48b504';
+
+// GSCで「勝てそうなクエリ」を探す：表示があり順位15〜70位（=土台はあるが上げ切れてない）長めのクエリ
+async function pickOpportunityTheme() {
+  try {
+    const token = await getGoogleAccessToken();
+    const rows = await querySearchConsole(token, { ...dateRange(28), dimensions: ['query'], rowLimit: 100 });
+    const opp = rows
+      .map(r => ({ q: r.keys?.[0] || '', imp: r.impressions || 0, pos: r.position || 99, clicks: r.clicks || 0 }))
+      .filter(r => r.q && r.imp >= 1 && r.pos >= 8 && r.pos <= 70 && r.q.length >= 6) // 長めロングテール優先
+      .sort((a, b) => b.imp - a.imp)[0];
+    if (!opp) return null;
+    return { axis: opp.q, prompt: `検索クエリ「${opp.q}」の検索意図に、他のどのページより丁寧に答える実用記事（現在${Math.round(opp.pos)}位・表示${opp.imp}/月＝上げ切る余地あり）。タイトルと見出しにこのクエリの語を自然に含める。` };
+  } catch { return null; }
+}
+
+async function indexNowSubmit(urls) {
+  try {
+    await fetch('https://api.indexnow.org/indexnow', {
+      method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({ host: 'www.fineme.me', key: INDEXNOW_KEY, keyLocation: `https://www.fineme.me/${INDEXNOW_KEY}.txt`, urlList: urls }),
+    });
+  } catch {}
+}
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
@@ -85,11 +111,15 @@ function parseArticle(raw) {
   };
 }
 
-async function generateArticle(theme, existingTitles) {
+async function generateArticle(theme, existingTitles, linkPool = []) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const existingList = existingTitles.length > 0
     ? `\n\n【カバー済みテーマ（重複禁止）】\n以下と同じ切り口・タイトルの記事は書かないこと：\n${existingTitles.map(t => `・${t}`).join('\n')}`
+    : '';
+
+  const linkList = linkPool.length > 0
+    ? `\n\n【内部リンク（本文中に自然に2〜3本入れる・関連するものだけ）】\n形式：[アンカーテキスト](${BASE_URL}/feature/スラッグ)\n候補：\n${linkPool.slice(0, 30).map(a => `・/feature/${a.slug} : ${a.title}`).join('\n')}`
     : '';
 
   const system = `あなたはFineme（外見を起点に自信を再設計する男性向けプラットフォーム）のSEOコンテンツライター。でおの視点・体験談を引用しながら、恋愛・外見改善に悩む20〜30代男性向けの実用的な情報記事を書く。
@@ -122,7 +152,7 @@ description: SEO用説明文（100〜120字、記事の要点と検索意図を�
 2. H2 × 3〜5個（具体的な情報・ステップ・判断軸）
 3. まとめ（Me Scan または Mirror への自然な誘導で締める）
 
-【長さ】2000〜3000字。${existingList}
+【長さ】2000〜3000字。${existingList}${linkList}
 
 ${BRAND_PHILOSOPHY}
 ※思想は記事の温度として効かせる。フォーマットと禁止ルールは引き続き厳守。`;
@@ -152,19 +182,20 @@ export async function GET(request) {
 
   const supabase = getSupabase();
 
-  // 週番号でテーマ選択
-  const week = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / (7 * 86400000));
-  const theme = THEMES[week % THEMES.length];
+  // テーマ選択：まずGSCの「勝てそうなクエリ」を狙う（土台強化）。無ければ固定テーマを日替わりで
+  const day = Math.floor(Date.now() / 86400000);
+  const theme = (await pickOpportunityTheme()) || THEMES[day % THEMES.length];
 
-  // 既存公開記事タイトル一覧を取得（重複回避）
+  // 既存公開記事（重複回避＋内部リンク候補）
   const { data: existing } = await supabase
     .from('features')
-    .select('title')
+    .select('slug,title')
     .eq('status', 'published');
   const existingTitles = (existing || []).map(a => a.title);
+  const linkPool = (existing || []).filter(a => a.slug);
 
   try {
-    const raw = await generateArticle(theme, existingTitles);
+    const raw = await generateArticle(theme, existingTitles, linkPool);
     if (!raw) return Response.json({ error: 'no article generated' }, { status: 500 });
 
     const { slug, title, category, description, body } = parseArticle(raw);
@@ -195,6 +226,7 @@ export async function GET(request) {
 
     revalidatePath('/feature');
     revalidatePath(`/feature/${finalSlug}`);
+    await indexNowSubmit([`${BASE_URL}/feature/${finalSlug}`]); // 即インデックス申請
 
     if (process.env.RESEND_API_KEY) {
       const { Resend } = await import('resend');
