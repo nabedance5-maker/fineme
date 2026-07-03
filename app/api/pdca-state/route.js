@@ -37,14 +37,19 @@ export async function GET(request) {
   } catch (e) {
     state.seo = { connected: false, error: e.message.slice(0, 200) };
     const disabled = /SERVICE_DISABLED|has not been used|accessNotConfigured/.test(e.message);
+    const noPerm = /sufficient permission|permission for site/.test(e.message);
     issues.push({
       id: 'seo-gsc-disconnected',
       area: '集客SEO',
       severity: 'blocker',
       needs_human: true,
-      title: disabled ? 'Google Search Console API が無効（要有効化）' : 'GSC連携エラー',
+      title: disabled ? 'Google Search Console API が無効（要有効化）'
+        : noPerm ? 'サービスアカウントがSearch Console未登録（要ユーザー追加）'
+        : 'GSC連携エラー',
       action_for_human: disabled
         ? 'https://console.developers.google.com/apis/api/searchconsole.googleapis.com/overview?project=97876395107 で「有効にする」を押す（1回）'
+        : noPerm
+        ? 'Google Search Console → プロパティ fineme.me → 設定 → ユーザーと権限 → 「ユーザーを追加」→ サービスアカウントのメール(GOOGLE_SERVICE_ACCOUNT_EMAILの値)を権限「フル」で追加'
         : 'GOOGLE_SERVICE_ACCOUNT_EMAIL / GOOGLE_PRIVATE_KEY をVercelで確認',
       detail: e.message.slice(0, 300),
     });
