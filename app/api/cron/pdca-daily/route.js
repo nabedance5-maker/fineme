@@ -77,6 +77,27 @@ export async function GET(request) {
     if (usage) monthCost = (usage.reads * 0.005 + usage.writes_plain * 0.015 + usage.writes_link * 0.20).toFixed(2);
   } catch (e) { console.error('[pdca-daily] activity', e.message); }
 
+  // ── トレンド（過去分析用・今週7日 vs 先週7日＋累計） ──
+  const d7 = new Date(Date.now() - 7 * 86400000).toISOString();
+  const d14 = new Date(Date.now() - 14 * 86400000).toISOString();
+  const trend = {};
+  try {
+    const cnt = (tbl, filt) => filt(sb.from(tbl).select('id', { count: 'exact', head: true }));
+    const [artTotal, art7, artP7, x7, xP7, m7, mP7] = await Promise.all([
+      cnt('features', q => q.eq('status', 'published')),
+      cnt('features', q => q.eq('status', 'published').gte('published_at', d7)),
+      cnt('features', q => q.eq('status', 'published').gte('published_at', d14).lt('published_at', d7)),
+      cnt('sns_posts', q => q.eq('channel', 'x').gte('created_at', d7)),
+      cnt('sns_posts', q => q.eq('channel', 'x').gte('created_at', d14).lt('created_at', d7)),
+      cnt('mirror_sessions', q => q.gte('created_at', d7)),
+      cnt('mirror_sessions', q => q.gte('created_at', d14).lt('created_at', d7)),
+    ]);
+    trend.articlesTotal = artTotal.count || 0;
+    trend.articles = { now: art7.count || 0, prev: artP7.count || 0 };
+    trend.xPosts = { now: x7.count || 0, prev: xP7.count || 0 };
+    trend.mirror = { now: m7.count || 0, prev: mP7.count || 0 };
+  } catch (e) { console.error('[pdca-daily] trend', e.message); }
+
   const signals = {
     集客_SEO: seo.ok ? `表示${seo.impressions}(${seo.impressionsPct}) / クリック${seo.clicks}(${seo.clicksPct}) / 主要KW: ${seo.topQueries.join(', ')}` : `GSC未連携(${seo.error})`,
     集客_X: `今週投稿${xPostsWeek}本 / 現方針: ${strategy ? strategy.slice(0, 80) : '未設定'}`,
@@ -84,30 +105,38 @@ export async function GET(request) {
     商品_サブスク: `継続${activeSubs}件（目標640）`,
   };
 
-  // ── Act提案：今日の一手をClaudeが決める ──
+  // ── 分析：過去→現状→これから をClaudeが書く ──
+  const wow = (t) => t ? `${t.now}（先週${t.prev}）` : '—';
   let board = '';
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const msg = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001', max_tokens: 700, temperature: 0.6,
-      messages: [{ role: 'user', content: `Finemeの日次PDCAボードを作る。第一フェーズ=月商50万(Mirror¥780サブスク640人)。現在は利用者ほぼ0の集客フェーズ。判断軸=①継続価値 ②集客。
+      model: 'claude-haiku-4-5-20251001', max_tokens: 1000, temperature: 0.6,
+      messages: [{ role: 'user', content: `Finemeの日次事業レポートの「分析」部分を書く。単なる数字報告ではなく、数字を根拠に過去→現状→これからを語る。
+北極星＝3年で年商10億・でお個人年収1億。通過点＝6ヶ月で月商50万(Mirror¥780サブスク約640人)。現在は利用者ほぼ0の集客フェーズ。判断軸＝「10億へ効くか・速いか」＋「①継続価値＞②集客」。
 
-今日(${today})の指標:
-- 集客SEO: ${signals.集客_SEO}
-- 集客X: ${signals.集客_X}
-- 販売Mirror: ${signals.販売_Mirror}
-- 商品サブスク: ${signals.商品_サブスク}
+【今日(${today})の指標】
+- SEO: ${signals.集客_SEO}
+- X: ${signals.集客_X}
+- Mirror購入(今週): ${mirrorWeek}件 / サブスク継続: ${activeSubs}件
 
-自動で毎日回っている改善: seo-improve(毎日・惜しいページ自動改稿), x-post(毎日投稿), x-engage(毎日リプ下書き)。
+【トレンド（今週7日 vs 先週7日）】
+- 記事累計: ${trend.articlesTotal ?? '—'}本 / 今週公開: ${wow(trend.articles)}
+- X投稿: ${wow(trend.xPosts)}
+- Mirror購入: ${wow(trend.mirror)}
 
-次を簡潔な日本語で出力(HTMLの<p>/<ul>のみ):
-■今日の所見(直近の変化・良し悪しを2〜3行)
-■今日の一手(でお/人間がやるべき最重要アクション1つ・具体・5分で着手できる粒度)
-■観測(明日見るべき数字1つ)
-盛らない。データが薄い項目は正直に「まだ0」と書く。` }],
+【昨日の自動アクティビティ】記事公開${newArticles.length}本 / 既存改稿${improvedCount}件 / X投稿${xPosts24}本 / 自己観測issue:${seo.ok ? 0 : 1}
+
+【毎日自動で回っている施策】feature-article(勝てるクエリで記事量産), seo-improve(改稿), x-post(投稿), x-engage(リプ下書き), 自己観測(issue自動対処)。
+
+次を簡潔な日本語・HTMLの<p>/<ul>のみで出力：
+■過去（ここまでの流れ）… トレンドから何が伸び/停滞しているか2〜3行。憶測でなく数字に基づく
+■現状（診断）… 北極星10億/通過点50万に対して今どの局面か、ボトルネックは何か2〜3行
+■これからのアクション … 箇条書きで具体的に。各項目に【AI自動】か【要でお】を明記し、優先順に。AI自動＝明日以降クロンが自動で回すこと／要でお＝人間しかできないこと(初期設定・不可逆・外部交渉)。5分で着手できる粒度。
+盛らない・データが薄い項目は「まだ0」と正直に。` }],
     });
     board = ((msg.content || []).find(b => b.type === 'text')?.text || '').trim();
-  } catch (e) { board = `<p>ボード生成失敗: ${e.message}</p>`; }
+  } catch (e) { board = `<p>分析生成失敗: ${e.message}</p>`; }
 
   if (process.env.RESEND_API_KEY) {
     const { Resend } = await import('resend');
@@ -118,6 +147,9 @@ export async function GET(request) {
     const seoStatus = seo.ok ? '✅ 稼働' : '⚠️ 要対応（自己観測が起票済）';
     const html = `
       <h2 style="color:#111">📊 Fineme 事業日報 ${today}</h2>
+
+      <h3 style="color:#111;margin:18px 0 6px">🧭 分析：過去 → 現状 → これから</h3>
+      <div style="background:#f8fafc;border-left:3px solid #c9a84c;padding:8px 16px">${board}</div>
 
       <h3 style="color:#111;margin:18px 0 6px">🤖 昨日、自動で回ったこと（直近24h）</h3>
       <table style="border-collapse:collapse;font-size:13px">
@@ -135,9 +167,6 @@ export async function GET(request) {
         <tr><td style="padding:4px 10px;color:#888">販売Mirror</td><td style="padding:4px 10px">${signals.販売_Mirror}</td></tr>
         <tr><td style="padding:4px 10px;color:#888">商品サブスク</td><td style="padding:4px 10px">${signals.商品_サブスク}</td></tr>
       </table>
-
-      <h3 style="color:#111;margin:18px 0 6px">🧭 今日の所見・一手</h3>
-      ${board}
       <hr style="margin:20px 0;border:none;border-top:1px solid #eee">
       <p style="color:#999;font-size:12px">北極星=年商10億・年収1億／通過点=月商50万。毎日自動: feature-article(勝てるクエリで記事) / seo-improve(改稿) / x-post(投稿) / x-engage(リプ下書き) / 自己観測(issue自動対処)。</p>`;
     await resend.emails.send({ from: 'Fineme 日報 <noreply@fineme.me>', to: OWNER_EMAIL, subject: `📊 Fineme 事業日報 ${today}｜記事${newArticles.length}・X${xPosts24}・購入${mirrorWeek}(週)`, html });
