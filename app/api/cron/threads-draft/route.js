@@ -1,5 +1,5 @@
 // GET /api/cron/threads-draft
-// 毎日8時JST(23時UTC)に Threads 投稿の下書きを3本生成してオーナーへメール
+// 毎日8時JST(23時UTC)に Threads 投稿の下書きを4本生成してオーナーへメール
 // Schedule: "0 23 * * *"
 // ⚠️ Threadsは投稿APIを持たない → 生成のみ自動・投稿は手動（でおがコピペ）
 // 型は business/threads-playbook.md の5型。実数が要る①実績・⑤予告はプレースホルダ(◯)で生成
@@ -25,16 +25,16 @@ const THREADS_TYPES = {
   teaser:      { label: 'note予告・希少性', numbers: true },
 };
 
-// 週次カレンダー（threads-playbook.md）＝ 朝/昼/夜 の3枠を曜日でローテ
-// 実数の要る achievement/teaser は週の一部に配置し、多くの日は実数不要の型で回す（虚偽実績を機械生成しない）
+// 週次カレンダー（threads-playbook.md）＝ 朝/昼/夕/夜 の4枠を曜日でローテ
+// 実数の要る achievement/teaser は週の一部に配置し、多くの枠は実数不要の型で回す（虚偽実績を機械生成しない）
 const WEEKLY_PLAN = {
-  0: ['story', 'insight', 'behindscene'],       // 日
-  1: ['achievement', 'insight', 'teaser'],      // 月
-  2: ['story', 'insight', 'behindscene'],       // 火
-  3: ['behindscene', 'insight', 'story'],       // 水
-  4: ['achievement', 'insight', 'behindscene'], // 木
-  5: ['story', 'insight', 'teaser'],            // 金
-  6: ['behindscene', 'insight', 'story'],       // 土
+  0: ['story', 'insight', 'behindscene', 'insight'],       // 日
+  1: ['achievement', 'insight', 'behindscene', 'teaser'],  // 月
+  2: ['story', 'insight', 'behindscene', 'story'],         // 火
+  3: ['behindscene', 'insight', 'story', 'insight'],       // 水
+  4: ['achievement', 'insight', 'behindscene', 'story'],   // 木
+  5: ['story', 'insight', 'behindscene', 'teaser'],        // 金
+  6: ['behindscene', 'insight', 'story', 'insight'],       // 土
 };
 
 const THREADS_SYSTEM = `あなたは「でお」＝元・非モテ→現役モデルで、いまはAIで自分の事業(Fineme)を丸ごと自動化・収益化している発信者。Threads(でお個人名義)の投稿を書く。
@@ -134,8 +134,8 @@ async function emailDrafts(posts) {
 
     const html = `
       <div style="font-family:sans-serif;max-width:640px;margin:0 auto">
-        <h2 style="color:#111;font-size:20px;margin:0 0 4px">🧵 本日のThreads下書き（3本）</h2>
-        <p style="color:#666;font-size:13px;margin:0 0 4px">Threadsは自動投稿できないので、下をコピーして手動で投稿してください（朝/昼/夜の3本）。</p>
+        <h2 style="color:#111;font-size:20px;margin:0 0 4px">🧵 本日のThreads下書き（4本）</h2>
+        <p style="color:#666;font-size:13px;margin:0 0 4px">Threadsは自動投稿できないので、下をコピーして手動で投稿してください（朝/昼/夕/夜の4本）。</p>
         <p style="color:#999;font-size:12px;margin:0 0 8px">運用テンプレ：business/threads-playbook.md ／ プロフィールに note リンクを設定。</p>
         ${cards}
         <p style="font-size:12px;color:#999;margin:24px 0 0">※「◯」が入っている投稿は、実際の部数・日数などの数字に置き換えてから投稿してください（虚偽の数字は書かない）。</p>
@@ -144,7 +144,7 @@ async function emailDrafts(posts) {
     await resend.emails.send({
       from: 'Fineme Threads <noreply@fineme.me>',
       to: OWNER_EMAIL,
-      subject: '【Fineme Threads】本日の下書き3本（手動投稿）',
+      subject: '【Fineme Threads】本日の下書き4本（手動投稿）',
       html,
     });
   } catch (e) {
@@ -171,12 +171,12 @@ export async function GET(request) {
   try {
     const { data: recent } = await sb.from('sns_posts')
       .select('text').eq('channel', 'threads')
-      .order('created_at', { ascending: false }).limit(9);
+      .order('created_at', { ascending: false }).limit(12);
     recentTexts = (recent || []).map(r => r.text).filter(Boolean);
   } catch {}
 
   const dow = new Date().getUTCDay();
-  const plan = WEEKLY_PLAN[dow] || ['story', 'insight', 'behindscene'];
+  const plan = WEEKLY_PLAN[dow] || ['story', 'insight', 'behindscene', 'insight'];
 
   const posts = [];
   for (const typeKey of plan) {
