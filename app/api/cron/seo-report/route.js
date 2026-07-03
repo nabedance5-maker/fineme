@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 const CRON_SECRET = process.env.CRON_SECRET;
 const OWNER_EMAIL = process.env.OWNER_EMAIL || 'h.watanabe@fineme.me';
 const OWNER_LINE_USER_ID = process.env.OWNER_LINE_USER_ID;
-const SITE_URL = 'sc-domain:fineme.me';
+const SITE_URL = 'https://www.fineme.me/'; // URLプレフィックス型プロパティ
 
 // Google Service Account JWT を生成してアクセストークンを取得
 async function getGoogleAccessToken() {
