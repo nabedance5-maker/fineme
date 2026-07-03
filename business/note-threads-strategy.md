@@ -67,7 +67,17 @@
 - **Threads（新規・でお名義）**：AI×事業自動化・収益化のナラティブ＋実数＋note送客
 - **note（既存・でお名義）**：フロント／メインの有料note。既存の集客記事（抜けアドバイザー）とは別ラインとして共存
 
-> Threadsはコード連携ゼロ。当面は**手動投稿**（テンプレは threads-playbook.md）。
+> Threadsは投稿APIなし＝**投稿は手動**。ただし**下書き生成は自動化済み**（下記）。
+
+### 自動化（2026-07-03 実装・でお「基本は自動化・Threads投稿は手動」）
+
+| cron | スケジュール | 中身 |
+|---|---|---|
+| `app/api/cron/threads-draft` | 毎日8:00 JST | その日のThreads下書き3本（5型ローテ）を生成しメール。**投稿は手動**。実数が要る型は「◯」プレースホルダ |
+| `app/api/cron/note-money-draft` | 金9:00 JST | フロントnote本文の完全下書き＋OG画像をメール（既定 `mode=front`）。`?mode=main` でメインnote（実数は「◯」プレースホルダ・実績が出てから手動実行） |
+
+- どちらも Resend でオーナーメールへ届く（既存 note-draft / x-post と同パターン）。note公開・Threads投稿は手動
+- `sns_posts`（`channel='threads'`）で被り回避。SQLマイグレーション・新規env・外部cron登録は不要（vercel.json 追記のみ）
 
 ---
 
