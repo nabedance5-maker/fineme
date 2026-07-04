@@ -26,15 +26,16 @@ const THREADS_TYPES = {
 };
 
 // 週次カレンダー（threads-playbook.md）＝ 朝/昼/夕/夜 の4枠を曜日でローテ
-// 実数の要る achievement/teaser は週の一部に配置し、多くの枠は実数不要の型で回す（虚偽実績を機械生成しない）
+// ★1日の中で同じ型を重複させない（4つとも別々の型）＝ 投稿の被りを防ぐ
+// 実数の要る achievement/teaser は週の一部に配置（虚偽実績を機械生成しない）
 const WEEKLY_PLAN = {
-  0: ['story', 'insight', 'behindscene', 'insight'],       // 日
-  1: ['achievement', 'insight', 'behindscene', 'teaser'],  // 月
-  2: ['story', 'insight', 'behindscene', 'story'],         // 火
-  3: ['behindscene', 'insight', 'story', 'insight'],       // 水
-  4: ['achievement', 'insight', 'behindscene', 'story'],   // 木
-  5: ['story', 'insight', 'behindscene', 'teaser'],        // 金
-  6: ['behindscene', 'insight', 'story', 'insight'],       // 土
+  0: ['story', 'insight', 'behindscene', 'teaser'],       // 日
+  1: ['achievement', 'insight', 'behindscene', 'story'],  // 月
+  2: ['story', 'insight', 'behindscene', 'teaser'],       // 火
+  3: ['behindscene', 'insight', 'story', 'teaser'],       // 水
+  4: ['achievement', 'insight', 'behindscene', 'story'],  // 木
+  5: ['story', 'insight', 'behindscene', 'teaser'],       // 金
+  6: ['behindscene', 'insight', 'story', 'teaser'],       // 土
 };
 
 const THREADS_SYSTEM = `あなたは「でお」＝元・非モテ→現役モデルで、いまはAIで自分の事業(Fineme)を丸ごと自動化・収益化している発信者。Threads(でお個人名義)の投稿を書く。
@@ -78,11 +79,15 @@ Threadsは入口。全投稿が最終的に「note(有料)を読みたい／プ�
 ${BRAND_PHILOSOPHY}
 ※思想は投稿の根っこに流れる温度として効かせる。上の文体ルールは引き続き厳守する。`;
 
-function typePrompt(typeKey, recentTexts) {
+function typePrompt(typeKey, recentTexts, withNoteCta) {
   const t = THREADS_TYPES[typeKey];
   const recentLine = recentTexts?.length
     ? `\n\n【直近の投稿（言い回し・切り口を被らせない）】\n- ${recentTexts.slice(0, 6).join('\n- ')}`
     : '';
+
+  const ctaLine = withNoteCta
+    ? `\n【締めのCTA】この投稿は"送客枠"。好奇心のギャップ（続き・具体・手順はnoteに）で締め、プロフ/固定のnoteを見るよう自然に促す（URLは書かない）。`
+    : `\n【締め】この投稿は"価値/共感枠"。note誘導はしない。保存したくなる一言 or 読者への問いかけで締める（毎回"noteに書いた"で終わらせない）。`;
 
   const numbersRule = t.numbers
     ? `\n【実数の扱い（重要）】売れた部数・日数・金額・view等の具体数字は、実際の数字を僕がまだ渡していない。だから断言せず「◯部」「◯日」「◯円」のように必ず ◯ のプレースホルダで書く。あとで僕が実数を入れる。`
@@ -113,7 +118,7 @@ function typePrompt(typeKey, recentTexts) {
 
   return `今日のこの1本は「${t.label}」タイプで書いてください。
 
-${bodies[typeKey]}${numbersRule}${recentLine}
+${bodies[typeKey]}${numbersRule}${recentLine}${ctaLine}
 
 上の骨はあくまで方向性。丸写しにせず、でお本人が今日思いついたように自然に書く。1行目の強いフックと、収益化への接続を必ず効かせる。投稿本文のみ出力。`;
 }
@@ -124,14 +129,14 @@ function extractText(content) {
   return texts.length ? texts[texts.length - 1] : '';
 }
 
-async function generatePost(client, system, typeKey, recentTexts) {
+async function generatePost(client, system, typeKey, recentTexts, withNoteCta) {
   try {
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 500,
       temperature: 0.92,
       system,
-      messages: [{ role: 'user', content: typePrompt(typeKey, recentTexts) }],
+      messages: [{ role: 'user', content: typePrompt(typeKey, recentTexts, withNoteCta) }],
     });
     const text = extractText(msg.content);
     return text && text.length >= 20 ? text : null;
@@ -205,10 +210,13 @@ export async function GET(request) {
   const dow = new Date().getUTCDay();
   const plan = WEEKLY_PLAN[dow] || ['story', 'insight', 'behindscene', 'insight'];
 
+  // note誘導は"送客枠"だけ（予告 or その日の最後の1本）。残りは価値/共感で締めCTA過多を避ける
   const posts = [];
-  for (const typeKey of plan) {
-    const text = await generatePost(client, system, typeKey, [...recentTexts, ...posts.map(p => p.text)]);
-    if (text) posts.push({ typeKey, text });
+  for (let idx = 0; idx < plan.length; idx++) {
+    const typeKey = plan[idx];
+    const withNoteCta = typeKey === 'teaser' || idx === plan.length - 1;
+    const text = await generatePost(client, system, typeKey, [...recentTexts, ...posts.map(p => p.text)], withNoteCta);
+    if (text) posts.push({ typeKey, text, cta: withNoteCta });
   }
 
   if (!posts.length) {
