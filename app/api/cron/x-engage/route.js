@@ -9,6 +9,7 @@
 import crypto from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import { loadMonth, addUsage, allowedReads, estCost, MONTHLY_CAP, ALERT_AT } from '../_x-budget';
+import { getSupabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -32,6 +33,9 @@ const SEARCH_QUERY =
 const FETCH_MAX = 50;
 // リプ対象は「表示回数1万以上」だけ（高リーチ投稿に絞る）。
 const MIN_IMPRESSIONS = 10000;
+// 発見の時間窓（時間）。表示回数は時間をかけて溜まるため、24hだと1万以上がほぼ0件になる。
+// 3日以内の高インプレ投稿はリプ価値が十分あるので72hに。0件が続くなら自己観測で更に調整。
+const WINDOW_HOURS = 72;
 // 表示回数が他人投稿で取得できない階層のフォールバック：いいね数で高リーチを近似。
 const FALLBACK_MIN_LIKES = 50;
 // 下書き生成する最大件数（60秒制限・下書き数の抑制）。
@@ -87,7 +91,7 @@ async function searchRecent(maxResults) {
   }
   const users = {};
   (data?.includes?.users || []).forEach(u => { users[u.id] = u; });
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const cutoff = Date.now() - WINDOW_HOURS * 60 * 60 * 1000;
   const tweets = (data?.data || [])
     .filter(t => t.created_at && new Date(t.created_at).getTime() >= cutoff) // 24h以内のみ
     .map(t => {
@@ -238,8 +242,17 @@ export async function GET(request) {
   const costNote = estCost(after) >= ALERT_AT
     ? `⚠️ 当月コストが$${ALERT_AT}を超えました（$${estCost(after).toFixed(2)}）。上限$${MONTHLY_CAP}に近づいています。 `
     : '';
-  const note = `対象条件：${filterLabel}（24h以内）。発見${tweets.length}件→該当${targets.length}件。 ${costNote}`;
+  const note = `対象条件：${filterLabel}（${WINDOW_HOURS}h以内）。発見${tweets.length}件→該当${targets.length}件。 ${costNote}`;
   await sendDraftEmail({ drafts, monthRow: after, note });
+
+  // 自己観測用ログ：日々の発見/該当/下書き数を記録（0件が続いたらpdca-stateが検知して課題化）
+  try {
+    await getSupabase().from('sns_posts').insert({
+      channel: 'x-engage-log', post_type: 'log',
+      text: JSON.stringify({ found: tweets.length, matched: targets.length, drafts: drafts.length, filter: filterLabel }),
+      posted: false,
+    });
+  } catch {}
 
   return Response.json({
     found: tweets.length,

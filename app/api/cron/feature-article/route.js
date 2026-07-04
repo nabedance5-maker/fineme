@@ -74,17 +74,18 @@ function mdToHtml(md) {
     const lines = block.split('\n');
     const first = lines[0];
 
-    if (first.startsWith('# '))   return `<h1 style="font-size:26px;font-weight:800;color:#111;line-height:1.4;margin:0 0 24px">${inline(first.slice(2))}</h1>`;
-    if (first.startsWith('## '))  return `<h2 style="font-size:22px;font-weight:700;color:#111;margin:40px 0 12px;padding-bottom:8px;border-bottom:2px solid #f0ede6">${inline(first.slice(3))}</h2>`;
-    if (first.startsWith('### ')) return `<h3 style="font-size:18px;font-weight:700;color:#1a1a1a;margin:28px 0 8px">${inline(first.slice(4))}</h3>`;
+    // 色はページ側 .article-html-body CSS に任せる（インラインで色を焼き込まない＝テーマ非依存）
+    if (first.startsWith('# '))   return `<h1>${inline(first.slice(2))}</h1>`;
+    if (first.startsWith('## '))  return `<h2>${inline(first.slice(3))}</h2>`;
+    if (first.startsWith('### ')) return `<h3>${inline(first.slice(4))}</h3>`;
 
     if (lines.every(l => /^[-*] /.test(l))) {
-      const items = lines.map(l => `<li style="margin:4px 0;line-height:1.8">${inline(l.slice(2))}</li>`).join('');
-      return `<ul style="margin:0 0 18px;padding-left:24px;color:#222">${items}</ul>`;
+      const items = lines.map(l => `<li>${inline(l.slice(2))}</li>`).join('');
+      return `<ul>${items}</ul>`;
     }
 
     const text = lines.map(l => inline(l)).join('<br>');
-    return `<p style="margin:0 0 18px;line-height:1.95;color:#222;font-size:15px">${text}</p>`;
+    return `<p>${text}</p>`;
   }).join('\n');
 }
 

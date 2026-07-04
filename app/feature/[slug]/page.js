@@ -297,6 +297,15 @@ export default async function ArticlePage({ params }) {
                   .article-html-body .fb-slide{flex-shrink:0;width:240px;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:16px}
                   .article-html-body .fb-text{font-size:15px;color:rgba(240,236,228,0.85);line-height:1.9}
                   .article-html-body .fb-heading{font-weight:800;font-size:clamp(16px,2.5vw,20px);font-family:var(--font-serif);color:#fff;margin:0 0 8px}
+                  /* 記事本文に埋まった旧インライン黒文字(color:#111等)をダークテーマ用に強制上書き（既存記事の可読性修復） */
+                  .article-html-body h1{color:#fff !important}
+                  .article-html-body h2{color:#fff !important}
+                  .article-html-body h3{color:rgba(255,255,255,0.92) !important}
+                  .article-html-body p{color:rgba(240,236,228,0.88) !important}
+                  .article-html-body li{color:rgba(240,236,228,0.85) !important}
+                  .article-html-body em{color:rgba(240,236,228,0.85) !important}
+                  .article-html-body a{color:#c9a84c !important}
+                  .article-html-body strong{color:#fff !important}
                 `}</style>
                 <div className="article-html-body" dangerouslySetInnerHTML={{ __html: article.body }} />
                 {relatedProducts.length > 0 && (

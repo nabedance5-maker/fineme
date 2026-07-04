@@ -70,6 +70,17 @@ export async function GET(request) {
     state.subs = { active: sc || 0, target: 640 };
     state.x = { weekPosts: xc || 0, strategyUpdatedAt: strat?.created_at || null, hasStrategy: !!strat?.text };
     if ((xc || 0) === 0) issues.push({ id: 'x-no-posts', area: '集客X', severity: 'warn', needs_human: false, title: '今週のX投稿が0本（x-post稼働確認）', action_for_ai: 'x-post cronの稼働・エラーを確認' });
+
+    // x-engage の下書きが3日連続0件なら、窓/閾値/クエリの調整が必要（AIが検知して直す）
+    const { data: eng } = await sb.from('sns_posts').select('text').eq('channel', 'x-engage-log')
+      .order('created_at', { ascending: false }).limit(3);
+    if ((eng || []).length >= 3 && eng.every(r => { try { return JSON.parse(r.text).drafts === 0; } catch { return false; } })) {
+      issues.push({
+        id: 'x-engage-zero-streak', area: '集客X', severity: 'warn', needs_human: false,
+        title: 'x-engageのリプ下書きが3日連続0件',
+        action_for_ai: 'x-engageの時間窓(WINDOW_HOURS)・表示回数しきい値(MIN_IMPRESSIONS)・検索クエリ(SEARCH_QUERY)を緩める/見直すコード修正をred起票。0件を放置しない。',
+      });
+    }
   } catch (e) {
     state.dbError = e.message.slice(0, 200);
     issues.push({ id: 'db-error', area: '基盤', severity: 'blocker', needs_human: false, title: 'Supabase取得エラー', detail: e.message.slice(0, 200) });
