@@ -18,7 +18,7 @@ export async function generateMetadata({ params }) {
       .eq('slug', params.slug)
       .single();
 
-    if (!affiliate) return { title: 'サービス詳細 | Fineme' };
+    if (!affiliate) return { title: 'サービス詳細 | Fineme', robots: { index: false, follow: false } };
 
     const catLabel = CATEGORY_LABELS[affiliate.main_category] || 'サービス';
     const title = `${affiliate.name} — ${catLabel} | Fineme`;

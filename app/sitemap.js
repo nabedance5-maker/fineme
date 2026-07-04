@@ -24,7 +24,7 @@ export default async function sitemap() {
 
   const [providersRes, affiliatesRes, featuresRes] = await Promise.all([
     supabase.from('providers').select('slug, updated_at').eq('status', 'active'),
-    supabase.from('affiliates').select('slug, updated_at'),
+    supabase.from('affiliates').select('slug, updated_at').eq('is_active', true),
     supabase.from('features').select('slug, updated_at').eq('status', 'published'),
   ]);
 

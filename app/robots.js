@@ -4,7 +4,7 @@ export default function robots() {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/admin/', '/api/', '/mypage/', '/provider/dashboard', '/auth/'],
+        disallow: ['/admin/', '/api/', '/mypage/', '/provider/dashboard', '/auth/', '/search?'],
       },
     ],
     sitemap: 'https://www.fineme.me/sitemap.xml',
