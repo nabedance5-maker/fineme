@@ -73,7 +73,7 @@ Threadsは入口。全投稿が最終的に「note(有料)を読みたい／プ�
 ・過去の非モテ/ダサさを嘲笑うこと（始点は通過点。敬意を持って扱う）
 ・実際には無い数字を勝手に断言すること（実数は必ず「◯」プレースホルダのまま残す）
 
-【長さ】1投稿 100〜280字程度。Threadsで読みやすい短さ。ハッシュタグは付けない（or 1個まで）。
+【長さ（厳守）】1投稿 280字以内。長くしない。1つのメッセージに絞って、キレよく短く。途中で切れないよう必ず1投稿として完結させる。ハッシュタグは付けない（or 1個まで）。
 【出力】投稿本文のみ。前置き・説明・引用符・「承知しました」等は一切不要。
 
 ${BRAND_PHILOSOPHY}
@@ -82,7 +82,7 @@ ${BRAND_PHILOSOPHY}
 function typePrompt(typeKey, recentTexts, withNoteCta) {
   const t = THREADS_TYPES[typeKey];
   const recentLine = recentTexts?.length
-    ? `\n\n【直近の投稿（言い回し・切り口を被らせない）】\n- ${recentTexts.slice(0, 6).join('\n- ')}`
+    ? `\n\n【直近の投稿（絶対に被らせない）】\n以下と同じフレーズ・エピソード・締めの言い回しを使わない。特に「朝起きたら〜投稿が待ってる」「寝てる間に売上」等の言い回しや同じ数字の例えは1日1回まで。切り口ごと変える。\n- ${recentTexts.slice(0, 6).join('\n- ')}`
     : '';
 
   const ctaLine = withNoteCta
@@ -133,7 +133,7 @@ async function generatePost(client, system, typeKey, recentTexts, withNoteCta) {
   try {
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 500,
+      max_tokens: 800,
       temperature: 0.92,
       system,
       messages: [{ role: 'user', content: typePrompt(typeKey, recentTexts, withNoteCta) }],
