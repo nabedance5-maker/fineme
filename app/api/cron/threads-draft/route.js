@@ -74,6 +74,7 @@ Threadsは入口。全投稿が最終的に「note(有料)を読みたい／プ�
 ・実際には無い数字を勝手に断言すること（実数は必ず「◯」プレースホルダのまま残す）
 
 【長さ（厳守）】1投稿 280字以内。長くしない。1つのメッセージに絞って、キレよく短く。途中で切れないよう必ず1投稿として完結させる。ハッシュタグは付けない（or 1個まで）。
+【使用文字（厳守）】日本語（ひらがな・カタカナ・漢字）と半角英数・一般記号のみ。韓国語（ハングル）等の外国語スクリプトを混ぜない。
 【出力】投稿本文のみ。前置き・説明・引用符・「承知しました」等は一切不要。
 
 ${BRAND_PHILOSOPHY}
@@ -129,6 +130,14 @@ function extractText(content) {
   return texts.length ? texts[texts.length - 1] : '';
 }
 
+// 生成物にごく稀に混入する非日本語スクリプト（ハングル等）を除去（日本語本文には出現しない）
+function stripStrayScripts(s) {
+  if (!s) return s;
+  const cleaned = s.replace(/[가-힣ᄀ-ᇿ㄰-㆏ꥠ-꥿ힰ-퟿]/g, '');
+  if (cleaned !== s) console.warn('[threads-draft] stripped stray non-JP (Hangul) chars');
+  return cleaned.replace(/[ \t]{2,}/g, ' ');
+}
+
 async function generatePost(client, system, typeKey, recentTexts, withNoteCta) {
   try {
     const msg = await client.messages.create({
@@ -138,7 +147,7 @@ async function generatePost(client, system, typeKey, recentTexts, withNoteCta) {
       system,
       messages: [{ role: 'user', content: typePrompt(typeKey, recentTexts, withNoteCta) }],
     });
-    const text = extractText(msg.content);
+    const text = stripStrayScripts(extractText(msg.content));
     return text && text.length >= 20 ? text : null;
   } catch (e) {
     console.error(`[threads-draft] gen error (${typeKey}):`, e.message);

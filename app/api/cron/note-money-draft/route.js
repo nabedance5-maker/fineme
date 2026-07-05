@@ -53,7 +53,9 @@ const STYLE_RULES = `【この文章の根本的な立場（最重要）】
 【絶対禁止】
 ・教科書的文体（〜が大切です／〜が重要です／〜しましょう）・上から目線・「〜である」調
 ・長い段落（3文以上を同じ段落に入れない）
-・過去の非モテ/ダサさを嘲笑うこと（始点は通過点・敬意を持つ）`;
+・過去の非モテ/ダサさを嘲笑うこと（始点は通過点・敬意を持つ）
+
+【使用文字（厳守）】日本語（ひらがな・カタカナ・漢字）と半角英数・一般的な記号のみで書く。韓国語（ハングル）・タイ語・その他の外国語スクリプトを一切混ぜない。`;
 
 // ── 売れている有料note／セールスレターの型を移植（構造のみ・表現の丸写しはしない）──
 // 出典：ロールモデル @baby_ponpoko の販売note構造 ＋ PASONA・売れるnote構成テンプレの定石
@@ -222,6 +224,19 @@ function parseArticle(raw) {
   return { title, body };
 }
 
+// 生成物にごく稀に混入する非日本語スクリプト（ハングル等）を除去する
+// 日本語本文（かな/カナ/漢字/英数/記号）には出現しないため、除去は安全
+function stripStrayScripts(s) {
+  if (!s) return s;
+  // ハングル音節・字母・互換字母・拡張
+  const cleaned = s.replace(/[가-힣ᄀ-ᇿ㄰-㆏ꥠ-꥿ힰ-퟿]/g, '');
+  if (cleaned !== s) {
+    console.warn('[note-money-draft] stripped stray non-JP (Hangul) chars from generated article');
+  }
+  // 除去で生じた不自然な二重スペースだけ軽く整える
+  return cleaned.replace(/[ \t]{2,}/g, ' ');
+}
+
 async function fetchNoteCover(title) {
   try {
     const url = `${BASE_URL}/api/og/note-cover?title=${encodeURIComponent(title)}`;
@@ -252,8 +267,9 @@ export async function GET(request) {
   const topic = topics[week % topics.length];
 
   try {
-    const raw = await generateNote(mode, topic);
-    if (!raw) return Response.json({ error: 'no article generated' }, { status: 500 });
+    const rawGen = await generateNote(mode, topic);
+    if (!rawGen) return Response.json({ error: 'no article generated' }, { status: 500 });
+    const raw = stripStrayScripts(rawGen); // 稀に混入するハングル等を除去
 
     const { title, body } = parseArticle(raw);
     const displayTitle = title || topic;
