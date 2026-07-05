@@ -1,6 +1,12 @@
 # note×Threads 収益化戦略（SSoT）— テーマ：AI×外見磨き＝Fineme
 
-<!-- SOURCE: でお × Claude Code / 最終更新: 2026-07-03 -->
+<!-- SOURCE: でお × Claude Code / 最終更新: 2026-07-05 -->
+
+> **🚀 ローンチ実績**
+> - 2026-07-05：**フロントnote 公開**（でお）→ https://note.com/deo_fineme/n/nf920a721aa95
+>   - 「プログラミング未経験の僕が、AIで"自動で回る事業"を作るためにやったこと」
+>   - 価格：早期購入 最初の10部限定 ¥500 → 売れたら値上げ／手法軸＝Claude Code
+>   - 次：Threadsで送客・実績（部数）を貯める → 実数が出たらbio/メインnoteに反映
 
 > このファイルは note×Threads 収益化ラインの **Single Source of Truth**。
 > 個別アセット（threads-playbook.md / note-front-draft.md / note-main-draft.md / note-launch-sequence.md）はここに従う。
