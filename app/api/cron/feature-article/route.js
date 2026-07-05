@@ -9,6 +9,34 @@ import { getGoogleAccessToken, querySearchConsole, dateRange } from '@/lib/gsc';
 
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '4fbd52dc-784e-4ab8-97c4-f1f99e48b504';
 
+const UNSPLASH_PHOTOS = {
+  '眉毛':             ['1503951914875-452162b0f3f1', '1621605815971-a6e613a8e4af'],
+  '清潔感':           ['1507003211169-0a1dd7228f2d', '1619895862022-09114b41f16f'],
+  'ヘア':             ['1622286342621-4bd786c2447c', '1503951914875-452162b0f3f1'],
+  'ファッション':     ['1516914943479-89db7d9ae7f2', '1490578474895-399ad4ea0078'],
+  'Mirror活用':       ['1611532736597-de2d4265fba3', '1558618666-fcd25c85cd64'],
+  '体型':             ['1517836357463-d25dfeac3438', '1571019613454-1cb2f99b2d8b'],
+  'マッチングアプリ': ['1611532736597-de2d4265fba3', '1516914943479-89db7d9ae7f2'],
+  '肌':               ['1598300042247-d088f8ab3a91', '1559599076-9bfed934a7fb'],
+  '垢抜け':           ['1507003211169-0a1dd7228f2d', '1622286342621-4bd786c2447c'],
+  '歯':               ['1607748862144-7a75854b0dee', '1581591524425-c7e0978865fc'],
+  '7軸優先順位':     ['1484480974693-6ca0a78fb36b', '1499750310107-5fef28a66643'],
+  '自己肯定感':       ['1605296867304-46d5465a13f1', '1507003211169-0a1dd7228f2d'],
+  '骨格診断':         ['1490578474895-399ad4ea0078', '1516914943479-89db7d9ae7f2'],
+  '清潔感チェック':   ['1507003211169-0a1dd7228f2d', '1619895862022-09114b41f16f'],
+  '爪':               ['1604654894610-df63bc536371', '1605296867304-46d5465a13f1'],
+  'でお変容':         ['1599566150163-29194dcaad36', '1507003211169-0a1dd7228f2d'],
+  '恋愛と外見':       ['1516914943479-89db7d9ae7f2', '1502323703110-88f8df51d9a2'],
+  'ヘアサロン':       ['1622286342621-4bd786c2447c', '1503951914875-452162b0f3f1'],
+  'マッチングアプリ写真': ['1611532736597-de2d4265fba3', '1516914943479-89db7d9ae7f2'],
+  '眉毛サロン選び':   ['1503951914875-452162b0f3f1', '1621605815971-a6e613a8e4af'],
+};
+const DEFAULT_PHOTOS = ['1507003211169-0a1dd7228f2d', '1516914943479-89db7d9ae7f2'];
+
+function unsplashUrl(id) {
+  return `https://images.unsplash.com/photo-${id}?w=900&q=80&auto=format&fit=crop`;
+}
+
 // GSCで「勝てそうなクエリ」を探す：表示があり順位15〜70位（=土台はあるが上げ切れてない）長めのクエリ
 async function pickOpportunityTheme() {
   try {
@@ -79,6 +107,11 @@ function mdToHtml(md) {
     if (first.startsWith('## '))  return `<h2>${inline(first.slice(3))}</h2>`;
     if (first.startsWith('### ')) return `<h3>${inline(first.slice(4))}</h3>`;
 
+    if (lines.every(l => l.startsWith('> '))) {
+      const text = lines.map(l => inline(l.slice(2))).join('<br>');
+      return `<div style="border-left:3px solid #c9a84c;background:rgba(201,168,76,0.06);border-radius:0 10px 10px 0;padding:14px 20px;margin:24px 0;line-height:1.8">${text}</div>`;
+    }
+
     if (lines.every(l => /^[-*] /.test(l))) {
       const items = lines.map(l => `<li>${inline(l.slice(2))}</li>`).join('');
       return `<ul>${items}</ul>`;
@@ -110,6 +143,31 @@ function parseArticle(raw) {
     description: meta.description || '',
     body:        lines.slice(bodyStart).join('\n').trim(),
   };
+}
+
+function injectImages(html, axis) {
+  const photos = UNSPLASH_PHOTOS[axis] || DEFAULT_PHOTOS;
+  const imgHtml = (id) =>
+    `<figure style="margin:28px 0"><img src="${unsplashUrl(id)}" alt="" loading="lazy" style="width:100%;border-radius:12px;display:block;box-shadow:0 8px 32px rgba(10,15,30,0.3)"/></figure>`;
+
+  let h2s = [...html.matchAll(/<\/h2>/g)];
+  if (h2s.length >= 2) {
+    const pos = h2s[1].index + 5;
+    html = html.slice(0, pos) + imgHtml(photos[0]) + html.slice(pos);
+  } else if (h2s.length === 1) {
+    const pos = h2s[0].index + 5;
+    html = html.slice(0, pos) + imgHtml(photos[0]) + html.slice(pos);
+  }
+
+  if (photos[1]) {
+    h2s = [...html.matchAll(/<\/h2>/g)];
+    const idx = Math.floor(h2s.length * 0.6);
+    if (h2s[idx]) {
+      const pos2 = h2s[idx].index + 5;
+      html = html.slice(0, pos2) + imgHtml(photos[1]) + html.slice(pos2);
+    }
+  }
+  return html;
 }
 
 async function generateArticle(theme, existingTitles, linkPool = []) {
@@ -147,6 +205,10 @@ description: SEO用説明文（100〜120字、記事の要点と検索意図を�
 ---
 ## 最初のH2見出し
 本文...
+
+【視覚効果（必須）】
+重要なポイント・でおの体験談の核心・読者への問いかけは > から始まる引用形式で書く（1〜3行）。
+記事全体で必ず2〜3か所使う（例: > でおも最初はここで詰まった。〜だったからだ。）
 
 【構成】
 1. 導入（読者の悩みへの共感 + この記事で得られる価値）
@@ -205,6 +267,8 @@ export async function GET(request) {
     const dateStr = new Date().toISOString().slice(0, 10);
     const finalSlug = `${slug || 'feature'}-${dateStr}`;
     const bodyHtml = mdToHtml(body);
+    const thumbnailUrl = `${BASE_URL}/api/og/feature-cover?title=${encodeURIComponent(title)}&category=${encodeURIComponent(category || theme.axis)}`;
+    const bodyHtmlWithImages = injectImages(bodyHtml, theme.axis);
     const now = new Date().toISOString();
 
     const { data: inserted, error: insertError } = await supabase
@@ -215,7 +279,8 @@ export async function GET(request) {
         category:    category    || '',
         description: description || '',
         summary:     description || '',
-        body:        bodyHtml,
+        body:        bodyHtmlWithImages,
+        thumbnail:   thumbnailUrl,
         reading_time: 8,
         status:      'published',
         published_at: now,
