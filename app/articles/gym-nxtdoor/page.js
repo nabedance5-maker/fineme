@@ -4,7 +4,6 @@ import { AnimatedSection, HeroTitle } from './_components/ArticleClient'
 export const metadata = {
   title: '「変われない」と思っていた元ガリガリ男が、今日も誰かの体を変えている。| Fineme',
   description: 'JR高円寺駅徒歩7分のパーソナルジム「GYM NXT DOOR」トレーナー・後藤海へのインタビュー。',
-  robots: { index: false, follow: false },
 }
 
 export default function NxtdoorArticlePage() {
