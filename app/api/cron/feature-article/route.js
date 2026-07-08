@@ -1,6 +1,6 @@
 // GET /api/cron/feature-article
-// 毎週火曜9時JST（0時UTC火曜）に /feature SEO記事を1本生成してSupabaseに自動公開
-// Schedule: "0 0 * * 2"
+// 毎日3時JST（毎日）に /feature SEO記事を1本生成してSupabaseに自動公開
+// Schedule: "0 3 * * *"
 import Anthropic from '@anthropic-ai/sdk';
 import { revalidatePath } from 'next/cache';
 import { getSupabase } from '@/lib/supabase';
@@ -9,44 +9,68 @@ import { getGoogleAccessToken, querySearchConsole, dateRange } from '@/lib/gsc';
 
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '4fbd52dc-784e-4ab8-97c4-f1f99e48b504';
 
-const UNSPLASH_PHOTOS = {
-  '眉毛':             ['1503951914875-452162b0f3f1', '1621605815971-a6e613a8e4af'],
-  '清潔感':           ['1507003211169-0a1dd7228f2d', '1619895862022-09114b41f16f'],
-  'ヘア':             ['1622286342621-4bd786c2447c', '1503951914875-452162b0f3f1'],
-  'ファッション':     ['1516914943479-89db7d9ae7f2', '1490578474895-399ad4ea0078'],
-  'Mirror活用':       ['1611532736597-de2d4265fba3', '1558618666-fcd25c85cd64'],
-  '体型':             ['1517836357463-d25dfeac3438', '1571019613454-1cb2f99b2d8b'],
-  'マッチングアプリ': ['1611532736597-de2d4265fba3', '1516914943479-89db7d9ae7f2'],
-  '肌':               ['1598300042247-d088f8ab3a91', '1559599076-9bfed934a7fb'],
-  '垢抜け':           ['1507003211169-0a1dd7228f2d', '1622286342621-4bd786c2447c'],
-  '歯':               ['1607748862144-7a75854b0dee', '1581591524425-c7e0978865fc'],
-  '7軸優先順位':     ['1484480974693-6ca0a78fb36b', '1499750310107-5fef28a66643'],
-  '自己肯定感':       ['1605296867304-46d5465a13f1', '1507003211169-0a1dd7228f2d'],
-  '骨格診断':         ['1490578474895-399ad4ea0078', '1516914943479-89db7d9ae7f2'],
-  '清潔感チェック':   ['1507003211169-0a1dd7228f2d', '1619895862022-09114b41f16f'],
-  '爪':               ['1604654894610-df63bc536371', '1605296867304-46d5465a13f1'],
-  'でお変容':         ['1599566150163-29194dcaad36', '1507003211169-0a1dd7228f2d'],
-  '恋愛と外見':       ['1516914943479-89db7d9ae7f2', '1502323703110-88f8df51d9a2'],
-  'ヘアサロン':       ['1622286342621-4bd786c2447c', '1503951914875-452162b0f3f1'],
-  'マッチングアプリ写真': ['1611532736597-de2d4265fba3', '1516914943479-89db7d9ae7f2'],
-  '眉毛サロン選び':   ['1503951914875-452162b0f3f1', '1621605815971-a6e613a8e4af'],
+// theme.axis → Claudeが生成するcategoryの対応表（重複チェック用）
+const AXIS_CATEGORY_MAP = {
+  '眉毛': '眉毛',               '眉毛サロン選び': '眉毛',
+  '清潔感': '清潔感',           '清潔感チェック': '清潔感',
+  'ヘア': 'ヘア',               'ヘアサロン': 'ヘア',
+  'ファッション': 'ファッション', '骨格診断': 'ファッション',
+  'Mirror活用': '外見改善',     '垢抜け': '外見改善',     '7軸優先順位': '外見改善',
+  '体型': '体型',
+  'マッチングアプリ': 'マッチングアプリ', 'マッチングアプリ写真': 'マッチングアプリ',
+  '肌': '肌',
+  '歯': '歯',
+  '爪': '爪',
+  '自己肯定感': '変容の思想',   'でお変容': '変容の思想',  '恋愛と外見': '変容の思想',
 };
-const DEFAULT_PHOTOS = ['1507003211169-0a1dd7228f2d', '1516914943479-89db7d9ae7f2'];
+
+const UNSPLASH_PHOTOS = {
+  '眉毛':             ['1503951914875-452162b0f3f1', '1621605815971-a6e613a8e4af', '1500648767791-00dcc994a43e', '1544005139-4c2743543a26'],
+  '清潔感':           ['1507003211169-0a1dd7228f2d', '1619895862022-09114b41f16f', '1472099645785-5658abf4ff4e', '1519085360753-af0119f7cbe7'],
+  'ヘア':             ['1622286342621-4bd786c2447c', '1503951914875-452162b0f3f1', '1514866487916-cfe9d28d95ae', '1584308666744-5e3ff8b79f5c'],
+  'ファッション':     ['1516914943479-89db7d9ae7f2', '1490578474895-399ad4ea0078', '1519085360753-af0119f7cbe7', '1544005139-4c2743543a26'],
+  'Mirror活用':       ['1611532736597-de2d4265fba3', '1558618666-fcd25c85cd64', '1586297135537-94bc81ba3404', '1472099645785-5658abf4ff4e'],
+  '体型':             ['1517836357463-d25dfeac3438', '1571019613454-1cb2f99b2d8b', '1493256338651-d82f7acb2b38', '1599058945845-196e7f66aa32'],
+  'マッチングアプリ': ['1611532736597-de2d4265fba3', '1516914943479-89db7d9ae7f2', '1586297135537-94bc81ba3404', '1519085360753-af0119f7cbe7'],
+  '肌':               ['1598300042247-d088f8ab3a91', '1559599076-9bfed934a7fb', '1559181567-c3190b7c2c3d', '1522338242992-e1d3aba00e05'],
+  '垢抜け':           ['1507003211169-0a1dd7228f2d', '1622286342621-4bd786c2447c', '1519085360753-af0119f7cbe7', '1544005139-4c2743543a26'],
+  '歯':               ['1607748862144-7a75854b0dee', '1581591524425-c7e0978865fc', '1500648767791-00dcc994a43e', '1472099645785-5658abf4ff4e'],
+  '7軸優先順位':     ['1484480974693-6ca0a78fb36b', '1499750310107-5fef28a66643', '1454165205-1bf3cf398ef9', '1606857521015-7463de785e52'],
+  '自己肯定感':       ['1605296867304-46d5465a13f1', '1507003211169-0a1dd7228f2d', '1544005139-4c2743543a26', '1519085360753-af0119f7cbe7'],
+  '骨格診断':         ['1490578474895-399ad4ea0078', '1516914943479-89db7d9ae7f2', '1519085360753-af0119f7cbe7', '1544005139-4c2743543a26'],
+  '清潔感チェック':   ['1507003211169-0a1dd7228f2d', '1619895862022-09114b41f16f', '1472099645785-5658abf4ff4e', '1500648767791-00dcc994a43e'],
+  '爪':               ['1604654894610-df63bc536371', '1605296867304-46d5465a13f1', '1519085360753-af0119f7cbe7', '1544005139-4c2743543a26'],
+  'でお変容':         ['1599566150163-29194dcaad36', '1507003211169-0a1dd7228f2d', '1544005139-4c2743543a26', '1472099645785-5658abf4ff4e'],
+  '恋愛と外見':       ['1516914943479-89db7d9ae7f2', '1502323703110-88f8df51d9a2', '1519085360753-af0119f7cbe7', '1544005139-4c2743543a26'],
+  'ヘアサロン':       ['1622286342621-4bd786c2447c', '1503951914875-452162b0f3f1', '1514866487916-cfe9d28d95ae', '1584308666744-5e3ff8b79f5c'],
+  'マッチングアプリ写真': ['1611532736597-de2d4265fba3', '1516914943479-89db7d9ae7f2', '1586297135537-94bc81ba3404', '1472099645785-5658abf4ff4e'],
+  '眉毛サロン選び':   ['1503951914875-452162b0f3f1', '1621605815971-a6e613a8e4af', '1500648767791-00dcc994a43e', '1514866487916-cfe9d28d95ae'],
+};
+const DEFAULT_PHOTOS = ['1507003211169-0a1dd7228f2d', '1516914943479-89db7d9ae7f2', '1472099645785-5658abf4ff4e', '1544005139-4c2743543a26'];
 
 function unsplashUrl(id) {
   return `https://images.unsplash.com/photo-${id}?w=900&q=80&auto=format&fit=crop`;
 }
 
-// GSCで「勝てそうなクエリ」を探す：表示があり順位15〜70位（=土台はあるが上げ切れてない）長めのクエリ
-async function pickOpportunityTheme() {
+function slugHash(s) {
+  return Math.abs([...s].reduce((h, c) => (Math.imul(31, h) + c.charCodeAt(0)) | 0, 0));
+}
+
+// GSCで「勝てそうなクエリ」を探す。最近使用済みカテゴリに近いクエリはスキップ
+async function pickOpportunityTheme(recentCategories = new Set()) {
   try {
     const token = await getGoogleAccessToken();
     const rows = await querySearchConsole(token, { ...dateRange(28), dimensions: ['query'], rowLimit: 100 });
     const opp = rows
       .map(r => ({ q: r.keys?.[0] || '', imp: r.impressions || 0, pos: r.position || 99, clicks: r.clicks || 0 }))
-      .filter(r => r.q && r.imp >= 1 && r.pos >= 8 && r.pos <= 70 && r.q.length >= 6) // 長めロングテール優先
+      .filter(r => r.q && r.imp >= 1 && r.pos >= 8 && r.pos <= 70 && r.q.length >= 6)
       .sort((a, b) => b.imp - a.imp)[0];
     if (!opp) return null;
+    // 30日以内に同じカテゴリを書いていたらスキップ（カニバリゼーション防止）
+    const dominated = [...recentCategories].some(cat =>
+      opp.q.includes(cat) || cat.includes(opp.q.slice(0, 3))
+    );
+    if (dominated) return null;
     return { axis: opp.q, prompt: `検索クエリ「${opp.q}」の検索意図に、他のどのページより丁寧に答える実用記事（現在${Math.round(opp.pos)}位・表示${opp.imp}/月＝上げ切る余地あり）。タイトルと見出しにこのクエリの語を自然に含める。` };
   } catch { return null; }
 }
@@ -145,36 +169,41 @@ function parseArticle(raw) {
   };
 }
 
-function injectImages(html, axis) {
+// slugHash をシードに写真インデックスをずらす → 同テーマでも記事ごとに異なる写真
+function injectImages(html, axis, seedStr = '') {
   const photos = UNSPLASH_PHOTOS[axis] || DEFAULT_PHOTOS;
+  const seed = slugHash(seedStr);
+  const i1 = seed % photos.length;
+  const i2 = (seed + 1) % photos.length;
+
   const imgHtml = (id) =>
     `<figure style="margin:28px 0"><img src="${unsplashUrl(id)}" alt="" loading="lazy" style="width:100%;border-radius:12px;display:block;box-shadow:0 8px 32px rgba(10,15,30,0.3)"/></figure>`;
 
   let h2s = [...html.matchAll(/<\/h2>/g)];
   if (h2s.length >= 2) {
     const pos = h2s[1].index + 5;
-    html = html.slice(0, pos) + imgHtml(photos[0]) + html.slice(pos);
+    html = html.slice(0, pos) + imgHtml(photos[i1]) + html.slice(pos);
   } else if (h2s.length === 1) {
     const pos = h2s[0].index + 5;
-    html = html.slice(0, pos) + imgHtml(photos[0]) + html.slice(pos);
+    html = html.slice(0, pos) + imgHtml(photos[i1]) + html.slice(pos);
   }
 
-  if (photos[1]) {
-    h2s = [...html.matchAll(/<\/h2>/g)];
-    const idx = Math.floor(h2s.length * 0.6);
-    if (h2s[idx]) {
-      const pos2 = h2s[idx].index + 5;
-      html = html.slice(0, pos2) + imgHtml(photos[1]) + html.slice(pos2);
-    }
+  h2s = [...html.matchAll(/<\/h2>/g)];
+  const idx = Math.floor(h2s.length * 0.6);
+  if (h2s[idx]) {
+    const pos2 = h2s[idx].index + 5;
+    html = html.slice(0, pos2) + imgHtml(photos[i2]) + html.slice(pos2);
   }
   return html;
 }
 
-async function generateArticle(theme, existingTitles, linkPool = []) {
+async function generateArticle(theme, existing = [], linkPool = []) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-  const existingList = existingTitles.length > 0
-    ? `\n\n【カバー済みテーマ（重複禁止）】\n以下と同じ切り口・タイトルの記事は書かないこと：\n${existingTitles.map(t => `・${t}`).join('\n')}`
+  const existingList = existing.length > 0
+    ? `\n\n【カバー済みテーマ（重複禁止）】\n以下と同じ切り口・タイトルの記事は書かないこと：\n${
+        existing.slice(-40).map(a => `・${a.title}${a.description ? `（${a.description.slice(0, 50)}）` : ''}`).join('\n')
+      }`
     : '';
 
   const linkList = linkPool.length > 0
@@ -245,20 +274,36 @@ export async function GET(request) {
 
   const supabase = getSupabase();
 
-  // テーマ選択：まずGSCの「勝てそうなクエリ」を狙う（土台強化）。無ければ固定テーマを日替わりで
-  const day = Math.floor(Date.now() / 86400000);
-  const theme = (await pickOpportunityTheme()) || THEMES[day % THEMES.length];
-
-  // 既存公開記事（重複回避＋内部リンク候補）
+  // 既存記事をまず取得（テーマ重複チェック＋内部リンク候補＋Claude重複回避リスト）
   const { data: existing } = await supabase
     .from('features')
-    .select('slug,title')
+    .select('slug, title, category, description, published_at')
     .eq('status', 'published');
-  const existingTitles = (existing || []).map(a => a.title);
+
+  // 過去30日に使用済みカテゴリを抽出（カニバリゼーション防止）
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const recentCategories = new Set(
+    (existing || [])
+      .filter(a => a.published_at && new Date(a.published_at).getTime() > thirtyDaysAgo)
+      .map(a => a.category)
+      .filter(Boolean)
+  );
+
+  // 未使用カテゴリのテーマに絞ってローテーション
+  const day = Math.floor(Date.now() / 86400000);
+  const availableThemes = THEMES.filter(t => {
+    const cat = AXIS_CATEGORY_MAP[t.axis];
+    return !cat || !recentCategories.has(cat);
+  });
+  const fallbackTheme = (availableThemes.length > 0 ? availableThemes : THEMES)[day % (availableThemes.length || THEMES.length)];
+
+  // テーマ選択：GSCの「勝てそうなクエリ」を優先。最近使用済みカテゴリと被るならスキップ
+  const theme = (await pickOpportunityTheme(recentCategories)) || fallbackTheme;
+
   const linkPool = (existing || []).filter(a => a.slug);
 
   try {
-    const raw = await generateArticle(theme, existingTitles, linkPool);
+    const raw = await generateArticle(theme, existing || [], linkPool);
     if (!raw) return Response.json({ error: 'no article generated' }, { status: 500 });
 
     const { slug, title, category, description, body } = parseArticle(raw);
@@ -268,7 +313,7 @@ export async function GET(request) {
     const finalSlug = `${slug || 'feature'}-${dateStr}`;
     const bodyHtml = mdToHtml(body);
     const thumbnailUrl = `${BASE_URL}/api/og/feature-cover?title=${encodeURIComponent(title)}&category=${encodeURIComponent(category || theme.axis)}`;
-    const bodyHtmlWithImages = injectImages(bodyHtml, theme.axis);
+    const bodyHtmlWithImages = injectImages(bodyHtml, theme.axis, finalSlug);
     const now = new Date().toISOString();
 
     const { data: inserted, error: insertError } = await supabase
@@ -292,7 +337,7 @@ export async function GET(request) {
 
     revalidatePath('/feature');
     revalidatePath(`/feature/${finalSlug}`);
-    await indexNowSubmit([`${BASE_URL}/feature/${finalSlug}`]); // 即インデックス申請
+    await indexNowSubmit([`${BASE_URL}/feature/${finalSlug}`]);
 
     if (process.env.RESEND_API_KEY) {
       const { Resend } = await import('resend');
@@ -304,7 +349,7 @@ export async function GET(request) {
         html: `
           <div style="font-family:sans-serif;max-width:680px;margin:0 auto">
             <h2 style="color:#111;font-size:20px;margin:0 0 16px">📝 今週の /feature 記事が自動公開されました</h2>
-            <p style="color:#555;font-size:13px;margin:0 0 4px">テーマ軸：${theme.axis} ／ カテゴリ：${category}</p>
+            <p style="color:#555;font-size:13px;margin:0 0 4px">テーマ軸：${theme.axis} ／ カテゴリ：${category}（除外済みカテゴリ数：${recentCategories.size}）</p>
             <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:16px 20px;margin:16px 0 24px">
               <p style="font-size:18px;font-weight:700;color:#0f172a;margin:0 0 8px">${title.replace(/</g, '&lt;')}</p>
               <p style="font-size:13px;color:#555;margin:0">${(description || '').replace(/</g, '&lt;')}</p>
@@ -316,7 +361,7 @@ export async function GET(request) {
       });
     }
 
-    console.log(`[feature-article] Published. slug="${finalSlug}" title="${title}"`);
+    console.log(`[feature-article] Published. slug="${finalSlug}" title="${title}" theme="${theme.axis}" recentCats=${[...recentCategories].join(',')}`);
     return Response.json({ success: true, slug: finalSlug, title, theme: theme.axis });
   } catch (e) {
     console.error('[feature-article] Error:', e.message);
