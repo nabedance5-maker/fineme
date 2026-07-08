@@ -34,6 +34,20 @@ const WEEKLY_PLAN = {
   6: ['value', 'value', 'diary'], // 土
 };
 
+// value（70%枠）の切り口プール。同日に value が複数入る日でも被らせない
+const VALUE_ANGLES = [
+  '権限設計＝提案/判断/承認/実行の4つを分ける',
+  'AIに"役職"を与えて組織にする発想',
+  '定時起動で"自分が起点"をやめる設計',
+  '失敗した自動化構造から学んだこと',
+  '「効率化」と「AIに経営させる」の決定的な違い',
+  '人間が最後に残す仕事＝承認と方向づけだけ',
+  'AI社員に"監査役(懐疑役)"を置く理由',
+  'コスト/時間でなく"自分が抜けられるか"で設計する',
+  'AIの出力がブレる本当の原因＝前提(引き継ぎ)の設計不足',
+  '事業を止めないための"承認フロー"の作り方',
+];
+
 // 一次情報を鮮度づけて取り出す（seeds=でお生ネタ最優先 → facts → 無ければ空）
 function pickPrimarySource(dayOffset = 0) {
   const seeds = Array.isArray(THREADS_FACTS.seeds) ? THREADS_FACTS.seeds.filter(Boolean) : [];
@@ -81,7 +95,7 @@ const THREADS_SYSTEM = `あなたは日本トップクラスのThreads編集長�
 ${BRAND_PHILOSOPHY}
 ※思想は投稿の根に流れる温度として効かせる。上のルールは厳守。`;
 
-function categoryPrompt(category, primary, recentTexts, strategy) {
+function categoryPrompt(category, primary, recentTexts, strategy, angle) {
   const c = CATEGORIES[category];
   const seedLine = primary.seeds.length
     ? `\n【今日の生ネタ（でお提供・最優先で使う）】\n- ${primary.seeds.slice(0, 3).join('\n- ')}`
@@ -97,8 +111,8 @@ function categoryPrompt(category, primary, recentTexts, strategy) {
     : '';
 
   const focus = {
-    value: `カテゴリ：価値提供（70%枠）。中級者の"盲点"を突く新視点を1つ。
-狙い：保存されること。「AIを作ったのに自分が一番働いてる」等の痛点→AIに経営させる側の考え方へ。`,
+    value: `カテゴリ：価値提供（70%枠）。中級者の"盲点"を突く新視点を1つ。${angle ? `\n★今日のこの1本の切り口＝「${angle}」に絞る（直近の投稿と角度を変える）。` : ''}
+狙い：保存されること。中級者の痛点（例：AIを作ったのに自分が一番働いてる）から逆算→AIに経営させる側の考え方へ。`,
     diary: `カテゴリ：AI経営日誌（20%枠）。一次情報（生ネタ/事実）から"今日のAI会社のリアル"を1つ。
 狙い：この人ホンモノだ、と思わせる信頼。AI社員がやったこと/失敗/改善/AI役員会で決めたこと、を現場の温度で。`,
     note: `カテゴリ：note誘導（10%枠）。価値提供の延長で、続き・全体像を"プロフの固定"に置いてある、と好奇心ギャップで示す。
@@ -163,19 +177,22 @@ function parsePackage(raw) {
       const n = raw.indexOf(nl, after);
       if (n >= 0 && n < end) end = n;
     }
-    out[key] = stripStrayScripts(raw.slice(after, end).replace(/^[\s:：]*\n?/, '').trim());
+    let seg = raw.slice(after, end).replace(/^[\s:：]*\n?/, '').trim();
+    // 見出し前後に混入する区切り線(---)を除去（コピペ時のノイズ回避）
+    seg = seg.replace(/^(?:\s*-{3,}\s*\n?)+/, '').replace(/(?:\n?\s*-{3,}\s*)+$/, '').trim();
+    out[key] = stripStrayScripts(seg);
   }
   return out;
 }
 
-async function generatePackage(client, system, category, primary, recentTexts, strategy) {
+async function generatePackage(client, system, category, primary, recentTexts, strategy, angle) {
   try {
     const msg = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       temperature: 0.9,
       system,
-      messages: [{ role: 'user', content: categoryPrompt(category, primary, recentTexts, strategy) }],
+      messages: [{ role: 'user', content: categoryPrompt(category, primary, recentTexts, strategy, angle) }],
     });
     const raw = extractText(msg.content);
     if (!raw) return null;
@@ -286,12 +303,19 @@ export async function GET(request) {
   const plan = WEEKLY_PLAN[dow] || ['value', 'value', 'diary'];
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
 
+  // 同日に value が複数入っても切り口を分けるため、value出現順に別angleを割り当て
+  let valueSeen = 0;
   const packages = [];
   for (let idx = 0; idx < plan.length; idx++) {
     const primary = pickPrimarySource(dayOfYear + idx);
+    let angle = null;
+    if (plan[idx] === 'value') {
+      angle = VALUE_ANGLES[(dayOfYear + valueSeen) % VALUE_ANGLES.length];
+      valueSeen++;
+    }
     const pkg = await generatePackage(
       client, system, plan[idx], primary,
-      [...recentTexts, ...packages.map(p => p.body)], strategy,
+      [...recentTexts, ...packages.map(p => p.body)], strategy, angle,
     );
     if (pkg) packages.push(pkg);
   }
