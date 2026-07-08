@@ -79,7 +79,7 @@
 
 | cron | スケジュール | 中身 |
 |---|---|---|
-| `app/api/cron/threads-draft` | 毎日8:00 JST | その日のThreads下書き3本（5型ローテ）を生成しメール。**投稿は手動**。実数が要る型は「◯」プレースホルダ |
+| `app/api/cron/threads-draft` | 毎日8:00 JST | **【2026-07-09 刷新】「AI経営」編集長システム**（Sonnet）。本文＋リプ①＋リプ②＋編集長メモを生成しメール。ターゲット=AI中級者／構造=スレッド／比率70:20:10／一次情報=`data/threads-facts.json`。正式仕様=`business/threads-ai-keiei-spec.md`。**投稿は手動** |
 | `app/api/cron/note-money-draft` | 金9:00 JST | フロントnote本文の完全下書き＋OG画像をメール（既定 `mode=front`）。`?mode=main` でメインnote（実数は「◯」プレースホルダ・実績が出てから手動実行） |
 
 - どちらも Resend でオーナーメールへ届く（既存 note-draft / x-post と同パターン）。note公開・Threads投稿は手動

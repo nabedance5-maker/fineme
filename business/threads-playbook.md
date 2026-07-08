@@ -1,9 +1,18 @@
 # Threads 運用テンプレ（でお名義）— AI×事業自動化・収益化ナラティブ
 
-<!-- SOURCE: でお × Claude Code / 最終更新: 2026-07-03 -->
+<!-- SOURCE: でお × Claude Code / 最終更新: 2026-07-09 -->
 
-> 親戦略：`business/note-threads-strategy.md`。文体：memory `user-deo-writing-style`（僕・「！」多用・改行多め・先輩後輩感・「。」控えめ・教科書調禁止）。
-> ⚠️ 当面は**手動投稿**（Threads連携コードはゼロ）。ロールモデル @ponpokomama_note は1日4投稿・予約投稿。
+> ⚠️ **方針転換（2026-07-09）**：Threadsは「AI経営」編集長システムへ刷新。**最新の正式仕様は `business/threads-ai-keiei-spec.md`（SSoT）**。
+> テーマ＝「AI会社の経営日誌」／ターゲット＝AI中級者／構造＝本文＋リプ①＋リプ②／比率70:20:10／文体＝短文・断言・一文40字。
+> 生成は `app/api/cron/threads-draft`（Sonnet・毎日8:00 JST・本文＋リプ2＋編集長メモをメール）。一次情報＝`data/threads-facts.json`。
+> 以下の「5型・稼ぎたい人向け」節は**旧版（履歴）**。文体も旧版はnote用（！多用）。Threadsの現行文体は新スペックに従う。
+
+### note アカウント bio（AI経営版・2026-07-09 追加）
+既存noteアカウント流用。bioは中級者に一撃で刺す（初心者向けにしない）。
+```
+AIに自分の会社を"経営させて"る非エンジニア｜Claude Codeで事業を丸ごと自動化・運営中｜「AIを使う側」から「AIに働かせる側」へ。AI経営のリアルを毎日発信｜全体像は固定のnoteに
+```
+> Threads bio も同アングルに寄せてよい。固定＝最も保存された投稿 or note入口。
 
 ---
 
