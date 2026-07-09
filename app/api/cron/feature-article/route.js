@@ -169,12 +169,25 @@ function parseArticle(raw) {
   };
 }
 
-// slugHash をシードに写真インデックスをずらす → 同テーマでも記事ごとに異なる写真
-function injectImages(html, axis, seedStr = '') {
-  const photos = UNSPLASH_PHOTOS[axis] || DEFAULT_PHOTOS;
+// 画像の多様性を広げる共通プール（金太郎飴防止・直近使用は除外）
+const EXTRA_PHOTOS = [
+  '1488161628813-04466f872be2', '1519085360753-af0119f7cbe7', '1506794778202-cad84cf45f1d',
+  '1500648767791-00dcc994a43e', '1508341591423-4347099e1f19', '1492562080023-ab3db95bfbde',
+  '1521119989659-a83eee488004', '1534030347209-467a5b0ad3e6', '1463453091185-61582044d556',
+  '1552374196-c4e7ffc6e126', '1531384441138-2736e62e0919', '1507591064344-4c6ce005b128',
+  '1500648767791-00dcc994a43e', '1489980557514-251d61e3eeb6', '1618987333535-9f1f0f0e7a7f',
+];
+
+// slugHash をシードに写真を選ぶ。直近で使った画像は避けて毎回違う絵にする。
+function injectImages(html, axis, seedStr = '', usedIds = new Set()) {
+  const merged = [...new Set([...(UNSPLASH_PHOTOS[axis] || []), ...DEFAULT_PHOTOS, ...EXTRA_PHOTOS])]
+    .filter(id => !/\s/.test(id)); // タイポ防止
+  let pool = merged.filter(id => !usedIds.has(id));
+  if (pool.length < 2) pool = merged; // 全部使い切っていたら全プールから
   const seed = slugHash(seedStr);
+  const photos = pool;
   const i1 = seed % photos.length;
-  const i2 = (seed + 1) % photos.length;
+  const i2 = (seed + Math.max(1, Math.floor(photos.length / 2))) % photos.length;
 
   const imgHtml = (id) =>
     `<figure style="margin:28px 0"><img src="${unsplashUrl(id)}" alt="" loading="lazy" style="width:100%;border-radius:12px;display:block;box-shadow:0 8px 32px rgba(10,15,30,0.3)"/></figure>`;
@@ -210,7 +223,20 @@ async function generateArticle(theme, existing = [], linkPool = []) {
     ? `\n\n【内部リンク（本文中に自然に2〜3本入れる・関連するものだけ）】\n形式：[アンカーテキスト](${BASE_URL}/feature/スラッグ)\n候補：\n${linkPool.slice(0, 30).map(a => `・/feature/${a.slug} : ${a.title}`).join('\n')}`
     : '';
 
+  // 直近タイトルと"かぶらないフック型"をローテ（金太郎飴防止）
+  const HOOKS = [
+    '数字で断定（例:「9割の男が間違える〜」「3ステップで〜」）',
+    '問いかけ（例:「なぜ〜なのか？」）',
+    '逆張り・common misconception（例:「〜は実は逆効果」）',
+    '体験談起点（例:「元・非モテのでおが〜で変わった話」）',
+    '比較（例:「モテる男とそうでない男の〜の違い」）',
+    'チェックリスト/診断（例:「当てはまったら要注意な〜」）',
+  ];
+  const hook = HOOKS[Math.floor(Date.now() / 86400000) % HOOKS.length];
+
   const system = `あなたはFineme（外見を起点に自信を再設計する男性向けプラットフォーム）のSEOコンテンツライター。でおの視点・体験談を引用しながら、恋愛・外見改善に悩む20〜30代男性向けの実用的な情報記事を書く。
+
+【最重要・受け身をやめる】直近の自作記事と"似せない"。タイトルの骨格・切り口・語り口を毎回変える。今回のタイトルは必ず次のフック型で作る：**${hook}**。「〜する方法」「〜のコツ」など直近と同じ定型の連発は禁止。中身も他の記事と差別化し、読者が具体的に得する角度を自分で選ぶ。
 
 【記事の目的】
 Google検索で上位表示し、読者がFineme Mirror（${BASE_URL}/lp/mirror）またはMe Scan（${BASE_URL}/diagnosis）に進む導線を自然に作る。
@@ -313,7 +339,13 @@ export async function GET(request) {
     const finalSlug = `${slug || 'feature'}-${dateStr}`;
     const bodyHtml = mdToHtml(body);
     const thumbnailUrl = `${BASE_URL}/api/og/feature-cover?title=${encodeURIComponent(title)}&category=${encodeURIComponent(category || theme.axis)}`;
-    const bodyHtmlWithImages = injectImages(bodyHtml, theme.axis, finalSlug);
+    // 直近12記事で使った画像IDを集めて重複回避（金太郎飴防止）
+    const usedIds = new Set();
+    try {
+      const { data: recent } = await supabase.from('features').select('body').eq('status', 'published').order('published_at', { ascending: false }).limit(12);
+      (recent || []).forEach(r => [...(r.body || '').matchAll(/photo-([0-9a-z]+)\?/g)].forEach(m => usedIds.add(m[1])));
+    } catch {}
+    const bodyHtmlWithImages = injectImages(bodyHtml, theme.axis, finalSlug, usedIds);
     const now = new Date().toISOString();
 
     const { data: inserted, error: insertError } = await supabase

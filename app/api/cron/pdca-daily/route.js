@@ -77,6 +77,14 @@ export async function GET(request) {
     if (usage) monthCost = (usage.reads * 0.005 + usage.writes_plain * 0.015 + usage.writes_link * 0.20).toFixed(2);
   } catch (e) { console.error('[pdca-daily] activity', e.message); }
 
+  // ── 自己批評ループの結果（改善キュー） ──
+  let improvements = [];
+  try {
+    const { data: q } = await sb.from('sns_posts').select('text,created_at').eq('channel', 'improvement-queue')
+      .order('created_at', { ascending: false }).limit(4);
+    improvements = (q || []).map(r => r.text).filter(Boolean);
+  } catch (e) { console.error('[pdca-daily] improvements', e.message); }
+
   // ── トレンド（過去分析用・今週7日 vs 先週7日＋累計） ──
   const d7 = new Date(Date.now() - 7 * 86400000).toISOString();
   const d14 = new Date(Date.now() - 14 * 86400000).toISOString();
@@ -167,6 +175,9 @@ export async function GET(request) {
         <tr><td style="padding:4px 10px;color:#888">販売Mirror</td><td style="padding:4px 10px">${signals.販売_Mirror}</td></tr>
         <tr><td style="padding:4px 10px;color:#888">商品サブスク</td><td style="padding:4px 10px">${signals.商品_サブスク}</td></tr>
       </table>
+
+      <h3 style="color:#111;margin:18px 0 6px">🔎 自己批評から出た改善課題（AIが自分で拾い中）</h3>
+      <ul style="font-size:13px;margin:0">${improvements.length ? improvements.map(s => `<li>${s.replace(/</g, '&lt;')}</li>`).join('') : '<li style="color:#999">なし</li>'}</ul>
       <hr style="margin:20px 0;border:none;border-top:1px solid #eee">
       <p style="color:#999;font-size:12px">北極星=年商10億・年収1億／通過点=月商50万。毎日自動: feature-article(勝てるクエリで記事) / seo-improve(改稿) / x-post(投稿) / x-engage(リプ下書き) / 自己観測(issue自動対処)。</p>`;
     await resend.emails.send({ from: 'Fineme 日報 <noreply@fineme.me>', to: OWNER_EMAIL, subject: `📊 Fineme 事業日報 ${today}｜記事${newArticles.length}・X${xPosts24}・購入${mirrorWeek}(週)`, html });
