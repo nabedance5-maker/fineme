@@ -28,18 +28,19 @@ const OWNER_EMAIL = process.env.OWNER_EMAIL || 'h.watanabe@fineme.me';
 const SEARCH_QUERY =
   '(モテ OR 非モテ OR 恋愛 OR マッチングアプリ OR ナンパ OR 婚活 OR デート OR 女性心理 OR 自分磨き OR 体脂肪) lang:ja -is:retweet -is:reply';
 
-// 発見の取得件数（読み取り課金＝返却件数。フィルタで多くが除外されるので少し多め）。
+// 発見の取得件数（読み取り課金＝返却件数。フィルタで多くが除外されるので多めに）。
 // 60秒制限は下書きの並列生成で吸収。
-const FETCH_MAX = 50;
-// リプ対象は「表示回数1万以上」だけ（高リーチ投稿に絞る）。
-const MIN_IMPRESSIONS = 10000;
-// 発見の時間窓（時間）。表示回数は時間をかけて溜まるため、24hだと1万以上がほぼ0件になる。
-// 3日以内の高インプレ投稿はリプ価値が十分あるので72hに。0件が続くなら自己観測で更に調整。
+const FETCH_MAX = 100;
+// リプ対象の最低表示回数。多くの人と交流するため広めに設定。
+const MIN_IMPRESSIONS = 500;
+// 発見の時間窓（時間）。
 const WINDOW_HOURS = 72;
 // 表示回数が他人投稿で取得できない階層のフォールバック：いいね数で高リーチを近似。
-const FALLBACK_MIN_LIKES = 50;
-// 下書き生成する最大件数（60秒制限・下書き数の抑制）。
+const FALLBACK_MIN_LIKES = 5;
+// 下書き生成する最大件数。
 const MAX_DRAFTS = 20;
+// 同じ投稿への重複リプを防ぐ確認期間（日数）。
+const DEDUP_DAYS = 7;
 
 // RFC3986 厳密エンコード（OAuth 1.0a 用。!*'() も%エンコード）
 function enc(str) {
@@ -79,7 +80,7 @@ async function searchRecent(maxResults) {
   const params = {
     query: SEARCH_QUERY,
     max_results: String(Math.max(10, Math.min(100, maxResults))),
-    sort_order: 'relevancy', // 人気/関連度の高い投稿を上位に
+    sort_order: 'recency', // 新着順：毎日違う投稿が来るよう変更
     'tweet.fields': 'created_at,author_id,public_metrics',
     expansions: 'author_id',
     'user.fields': 'username,name',
@@ -205,6 +206,21 @@ export async function GET(request) {
     return Response.json({ skipped: 'budget cap reached', cost: estCost(monthRow) });
   }
 
+  // ── 過去7日間に下書きした投稿ID を取得（重複排除用）──
+  let seenIds = new Set();
+  try {
+    const { data: recentLogs } = await getSupabase()
+      .from('sns_posts')
+      .select('text')
+      .eq('channel', 'x-engage-log')
+      .gte('created_at', new Date(Date.now() - DEDUP_DAYS * 24 * 60 * 60 * 1000).toISOString());
+    seenIds = new Set(
+      (recentLogs || []).flatMap(row => {
+        try { return JSON.parse(row.text).shownIds || []; } catch { return []; }
+      })
+    );
+  } catch {}
+
   // ── 発見（残予算ぶんだけ）──
   const { tweets, reads, error } = await searchRecent(budget);
   if (reads > 0) await addUsage({ reads }); // 実読み取り件数を即計上
@@ -214,19 +230,22 @@ export async function GET(request) {
     return Response.json({ error, reads });
   }
 
-  // ── 品質フィルタ：表示回数1万以上。取れない階層なら いいね数で代替 ──
-  const anyImpressions = tweets.some(t => (t.impressions || 0) > 0);
+  // ── 重複排除（過去7日間に下書き済みの投稿を除外）──
+  const freshTweets = tweets.filter(t => !seenIds.has(t.id));
+
+  // ── 品質フィルタ：表示回数500以上。取れない階層なら いいね数で代替 ──
+  const anyImpressions = freshTweets.some(t => (t.impressions || 0) > 0);
   let filterLabel;
   let targets;
   if (anyImpressions) {
-    targets = tweets.filter(t => (t.impressions || 0) >= MIN_IMPRESSIONS)
-                    .sort((a, b) => b.impressions - a.impressions);
-    filterLabel = `表示回数 ${MIN_IMPRESSIONS.toLocaleString()}回以上`;
+    targets = freshTweets.filter(t => (t.impressions || 0) >= MIN_IMPRESSIONS)
+                         .sort((a, b) => b.impressions - a.impressions);
+    filterLabel = `表示回数 ${MIN_IMPRESSIONS.toLocaleString()}回以上（重複除外${seenIds.size}件）`;
   } else {
     // impression が全件0＝APIが他人の表示回数を返さない → いいね数で高リーチを近似
-    targets = tweets.filter(t => (t.likes || 0) >= FALLBACK_MIN_LIKES)
-                    .sort((a, b) => b.likes - a.likes);
-    filterLabel = `⚠️表示回数がAPIで取得できないため「いいね ${FALLBACK_MIN_LIKES}以上」で代替`;
+    targets = freshTweets.filter(t => (t.likes || 0) >= FALLBACK_MIN_LIKES)
+                         .sort((a, b) => b.likes - a.likes);
+    filterLabel = `⚠️表示回数がAPIで取得できないため「いいね ${FALLBACK_MIN_LIKES}以上」で代替（重複除外${seenIds.size}件）`;
   }
   targets = targets.slice(0, MAX_DRAFTS);
 
@@ -249,7 +268,7 @@ export async function GET(request) {
   try {
     await getSupabase().from('sns_posts').insert({
       channel: 'x-engage-log', post_type: 'log',
-      text: JSON.stringify({ found: tweets.length, matched: targets.length, drafts: drafts.length, filter: filterLabel }),
+      text: JSON.stringify({ found: tweets.length, matched: targets.length, drafts: drafts.length, filter: filterLabel, shownIds: drafts.map(d => d.id) }),
       posted: false,
     });
   } catch {}
