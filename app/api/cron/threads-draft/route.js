@@ -9,6 +9,7 @@ import { getSupabase } from '@/lib/supabase';
 import { fetchAgentMemory, withMemory } from '@/lib/agent-memory';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
 import THREADS_FACTS from '@/data/threads-facts.json';
+import { threadsAutopostEnabled, publishThread, getUserInsights } from '@/lib/threads-api';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -205,7 +206,7 @@ async function generatePackage(client, system, category, primary, recentTexts, s
   }
 }
 
-async function emailPackages(packages) {
+async function emailPackages(packages, posted = 0) {
   if (!process.env.RESEND_API_KEY) return;
   try {
     const { Resend } = await import('resend');
@@ -229,7 +230,9 @@ async function emailPackages(packages) {
     const html = `
       <div style="font-family:sans-serif;max-width:660px;margin:0 auto">
         <h2 style="color:#111;font-size:20px;margin:0 0 4px">🧵 本日のThreads「AI経営」スレッド（${packages.length}本）</h2>
-        <p style="color:#666;font-size:13px;margin:0 0 4px">各パッケージ＝本文→リプ①→リプ②の順で手動投稿（本文を投稿→自分の投稿にリプでぶら下げる）。</p>
+        <p style="color:#666;font-size:13px;margin:0 0 4px">${posted > 0
+          ? `✅ うち ${posted} 本は Threads API で<b>自動投稿済み</b>（記録用）。`
+          : '各パッケージ＝本文→リプ①→リプ②の順で手動投稿（本文を投稿→自分の投稿にリプでぶら下げる）。'}</p>
         <p style="color:#999;font-size:12px;margin:0 0 8px">狙う指標：保存・プロフクリック・コメント・note購入（フォロワー数は追わない）。仕様：business/threads-ai-keiei-spec.md</p>
         ${cards}
         <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px 18px;margin:8px 0 0">
@@ -335,11 +338,33 @@ export async function GET(request) {
     }
   } catch {}
 
+  // ★自動投稿（THREADS_AUTOPOST=1 の時だけ発火。未設定なら従来どおりメール下書きのみ）
+  let posted = 0;
+  if (threadsAutopostEnabled()) {
+    let followersAt = null;
+    try { followersAt = (await getUserInsights())?.followers_count ?? null; } catch {}
+    for (const p of packages) {
+      try {
+        const mediaId = await publishThread({ body: p.body, reply1: p.reply1, reply2: p.reply2 });
+        posted++;
+        try {
+          await sb.from('threads_posts').insert({
+            media_id: mediaId, category: p.category,
+            body: p.body, reply1: p.reply1, reply2: p.reply2,
+            followers_at: followersAt,
+          });
+        } catch (e) { console.error('[threads-draft] threads_posts insert error:', e.message); }
+      } catch (e) {
+        console.error('[threads-draft] autopost error:', e.message);
+      }
+    }
+  }
+
   // 自走PDCA：日曜はでおのfeedbackから来週方針を更新
   if (dow === 0) await maybeUpdateStrategy(client, system, sb, recentTexts);
 
-  await emailPackages(packages);
+  await emailPackages(packages, posted);
 
-  console.log(`[threads-draft] Sent ${packages.length} AI-keiei packages. cats=${plan.join(',')}`);
-  return Response.json({ success: true, count: packages.length, categories: plan, emailed: !!process.env.RESEND_API_KEY });
+  console.log(`[threads-draft] ${packages.length} packages, autoposted=${posted}. cats=${plan.join(',')}`);
+  return Response.json({ success: true, count: packages.length, autoposted: posted, categories: plan, emailed: !!process.env.RESEND_API_KEY });
 }
