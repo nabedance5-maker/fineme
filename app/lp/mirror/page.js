@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
+import PixelTrack from './_PixelTrack';
 
 export const metadata = {
   title: '写真1枚で「変われる余白」がわかる | Fineme Mirror',
@@ -27,6 +28,7 @@ export default async function MirrorLpPage() {
   const MIRROR_VOICES = await getApprovedVoices();
   return (
     <>
+      <PixelTrack />
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.4); } 50% { box-shadow: 0 0 0 14px rgba(201,168,76,0); } }

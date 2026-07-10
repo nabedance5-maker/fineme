@@ -1,5 +1,6 @@
 'use client';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
+import PixelPurchase from './_PixelPurchase';
 
 const LS_SESSIONS_KEY = 'fineme:mirror:sessions'; // ['session_id1', 'session_id2', ...]
 
@@ -311,6 +312,7 @@ export default function MirrorPage() {
 
   return (
     <main style={{ minHeight: '100vh', background: 'rgba(10,15,30,0.97)', paddingBottom: '80px' }}>
+      <Suspense fallback={null}><PixelPurchase /></Suspense>
       <style>{`
         .mirror-hero { padding: 64px 20px 40px; text-align: center; }
         .mirror-badge { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .18em; color: rgba(201,168,76,0.7); text-transform: uppercase; margin-bottom: 16px; }
