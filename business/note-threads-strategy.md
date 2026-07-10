@@ -80,9 +80,10 @@
 | cron | スケジュール | 中身 |
 |---|---|---|
 | `app/api/cron/threads-draft` | 毎日8:00 JST | **【2026-07-09 刷新】「AI経営」編集長システム**（Sonnet）。本文＋リプ①＋リプ②＋編集長メモを生成しメール。ターゲット=AI中級者／構造=スレッド／比率70:20:10／一次情報=`data/threads-facts.json`。正式仕様=`business/threads-ai-keiei-spec.md`。**投稿は手動** |
-| `app/api/cron/note-money-draft` | 金9:00 JST | フロントnote本文の完全下書き＋OG画像をメール（既定 `mode=front`）。`?mode=main` でメインnote（実数は「◯」プレースホルダ・実績が出てから手動実行） |
+| `app/api/cron/note-money-draft` | **手動専用（定期cronから除外・2026-07-10）** | フロントnoteは**公開済み**（https://note.com/deo_fineme/n/nf920a721aa95）。noteは一度公開したら完成品なので毎週生成しない。新版が欲しい時／メインnote(`?mode=main`)着手時に手で叩く |
 
-- どちらも Resend でオーナーメールへ届く（既存 note-draft / x-post と同パターン）。note公開・Threads投稿は手動
+- Threads下書きは Resend でオーナーメールへ届く（毎日・手動投稿）。noteは**公開済み**＝定期生成は止めた（ノイズ回避）
+- `sns_posts`（`channel='threads'`）で被り回避
 - `sns_posts`（`channel='threads'`）で被り回避。SQLマイグレーション・新規env・外部cron登録は不要（vercel.json 追記のみ）
 
 ---

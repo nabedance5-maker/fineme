@@ -1,8 +1,9 @@
 // GET /api/cron/note-money-draft
 // 収益note（有料note販売ライン）の本文ドラフトをAIが書いてオーナーへメール
-// Schedule: "0 0 * * 5"（金9時JST）— 水のnote-draft(集客)とは別ライン
-// mode: front（既定・「AIで事業を自動化・収益化する方法」＝結果不要の汎用ノウハウ）
-//       main （?mode=main・「AI×外見磨き(=Fineme)で収益化した方法」＝実数はプレースホルダ）
+// ★手動トリガー専用（定期cronから外した／2026-07-10）。noteは"一度公開したら完成品"であり、
+//   毎週生成し続けるのはノイズになるだけ。新しい版が欲しい時 or メインnote着手時に手で叩く。
+// mode: front（既定・中級者向け「AIを"経営させる側"へ」＝フロントは公開済み）
+//       main （?mode=main・「AI×外見磨き(=Fineme)で収益化した方法」＝実績が出たら手動で）
 // 設計：business/note-threads-strategy.md / note-front-draft.md / note-main-draft.md
 import Anthropic from '@anthropic-ai/sdk';
 import { fetchAgentMemory, withMemory } from '@/lib/agent-memory';
