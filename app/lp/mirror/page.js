@@ -24,6 +24,14 @@ async function getApprovedVoices() {
   }
 }
 
+// 創業者本人の記録（利用者の声ではない・誠実ラベル必須）。
+// 実顧客の声が0件でも trust barrier を塞ぐための橋渡し。主役は「変容の軌跡」（高スコアの誇示ではない）。
+// ※文面はでお本人が確認・調整してよい（D-20260711-2）。
+const FOUNDER_VOICE = {
+  text: '昔の自分は、鏡を見るのが嫌いだった。どこをどう直せばいいのかも分からないまま、自信だけがすり減っていった。変われたのは、才能でも生まれつきでもない。「どこから手をつけるか」が分かったからだ。Mirrorは、あのときの自分がいちばん欲しかった地図を、そのまま形にしたもの。',
+  meta: 'Fineme 創業者・でお（元・非モテ → 現役モデル）本人の記録',
+};
+
 export default async function MirrorLpPage() {
   const MIRROR_VOICES = await getApprovedVoices();
   return (
@@ -344,28 +352,38 @@ export default async function MirrorLpPage() {
           </div>
         </section>
 
-        {/* ── 利用者の、最初の気づき（声が集まれば表示）── */}
-        {MIRROR_VOICES.length > 0 && (
-          <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-              <div className="m-tag">利用者の、最初の気づき</div>
-              <h2 style={{ fontSize: 'clamp(18px,4vw,26px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
-                「どこを変えるか」が、<br />わかった瞬間。
-              </h2>
-              <p style={{ fontSize: '13px', color: 'rgba(240,236,228,0.4)', marginTop: '10px', lineHeight: 1.8 }}>
-                Mirrorを使った方の声です。外見の変化ではなく、<br />「何から始めるか」が見えた、という気づきの記録。
-              </p>
+        {/* ── 最初の気づき（利用者の声＋創業者本人の記録・常時表示で trust barrier を塞ぐ）── */}
+        <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+            <div className="m-tag">{MIRROR_VOICES.length > 0 ? '最初の気づき' : '創業者自身の、はじまり'}</div>
+            <h2 style={{ fontSize: 'clamp(18px,4vw,26px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.4 }}>
+              「どこを変えるか」が、<br />わかった瞬間。
+            </h2>
+            <p style={{ fontSize: '13px', color: 'rgba(240,236,228,0.4)', marginTop: '10px', lineHeight: 1.8 }}>
+              外見の変化ではなく、<br />「何から始めるか」が見えた、という気づきの記録。
+            </p>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* 利用者の声（承認済みがあれば上に積む） */}
+            {MIRROR_VOICES.map((v, i) => (
+              <div key={i} style={{ background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: '14px', padding: '18px 20px' }}>
+                <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.82)', lineHeight: 1.85, margin: 0 }}>「{v.text}」</p>
+                {v.meta && <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.4)', margin: '8px 0 0' }}>— {v.meta}</p>}
+              </div>
+            ))}
+            {/* 創業者本人の記録（利用者の声ではない・誠実ラベル） */}
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,168,76,0.28)', borderRadius: '14px', padding: '18px 20px' }}>
+              <div style={{ display: 'inline-block', fontSize: '10.5px', letterSpacing: '0.08em', color: '#c9a84c', border: '1px solid rgba(201,168,76,0.4)', borderRadius: '999px', padding: '3px 10px', marginBottom: '12px' }}>
+                創業者本人の記録
+              </div>
+              <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.88)', lineHeight: 1.9, margin: 0 }}>「{FOUNDER_VOICE.text}」</p>
+              <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.42)', margin: '10px 0 0' }}>— {FOUNDER_VOICE.meta}</p>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {MIRROR_VOICES.map((v, i) => (
-                <div key={i} style={{ background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: '14px', padding: '18px 20px' }}>
-                  <p style={{ fontSize: '14px', color: 'rgba(240,236,228,0.82)', lineHeight: 1.85, margin: 0 }}>「{v.text}」</p>
-                  {v.meta && <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.4)', margin: '8px 0 0' }}>— {v.meta}</p>}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+          </div>
+          <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.3)', textAlign: 'center', marginTop: '16px', lineHeight: 1.8 }}>
+            ※「創業者本人の記録」は利用者の声ではありません。実際に使った方の声は、ご本人の許可を得て順次ここに積み重ねていきます。
+          </p>
+        </section>
 
         {/* ── なぜ専用設計か ── */}
         <section style={{ padding: 'clamp(44px,8vw,68px) 20px', maxWidth: '700px', margin: '0 auto' }}>
