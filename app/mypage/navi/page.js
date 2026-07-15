@@ -3340,6 +3340,8 @@ export default function NewMeNaviPage() {
 
       ${buildCompassHtml()}
 
+      ${(() => { const _mDef = AREA_DEFS[compassFirst] || {}; if (!_mDef.label) return ''; return `<div style="margin:0 0 16px;padding:16px 18px;background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.28);border-radius:12px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(8px)"><span style="font-size:26px;flex-shrink:0">🪞</span><div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px;line-height:1.55">${esc(_mDef.icon||'')} ${esc(_mDef.label)}が、あなたの最初の一手。<br>今の${esc(_mDef.label)}、写真1枚で確かめてみる？</p><p style="font-size:11px;color:rgba(232,228,220,0.4);margin:0">写真は保存しません</p></div><a href="/mirror" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(201,168,76,0.1);border:1.5px solid #c9a84c;color:#c9a84c;border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">Mirror<br><span style="font-size:10px;font-weight:600">¥500</span></a></div>`; })()}
+
       ${buildAxisFilterBar()}
 
       <div id="sections-container">
