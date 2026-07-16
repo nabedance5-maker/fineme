@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import PixelPurchase from './_PixelPurchase';
 
 const LS_SESSIONS_KEY = 'fineme:mirror:sessions'; // ['session_id1', 'session_id2', ...]
+const LS_ONE_POINT_KEY = 'fineme:mirror:one-point';
 
 function saveSessionToLocal(sessionId) {
   try {
@@ -16,6 +17,25 @@ function saveSessionToLocal(sessionId) {
 
 function getLocalSessionIds() {
   try { return JSON.parse(localStorage.getItem(LS_SESSIONS_KEY) || '[]'); } catch { return []; }
+}
+
+const COMPASS_TO_MIRROR_IDS = {
+  body: ['body', 'posture'], eyebrow: ['eyebrow'], fashion: ['fashion', 'color'],
+  hair: ['hair'], skin: ['skin'], teeth: [], nail: [],
+};
+
+function determineOnePoint(axes, compassFirst) {
+  if (!axes?.length) return null;
+  const visible = axes.filter(a => a.id !== 'overall');
+  if (!visible.length) return null;
+  if (compassFirst) {
+    const mirrorIds = COMPASS_TO_MIRROR_IDS[compassFirst] || [];
+    const hiMatch = visible.find(a => mirrorIds.includes(a.id) && a.potential_level === '高');
+    if (hiMatch) return hiMatch;
+    const anyMatch = visible.find(a => mirrorIds.includes(a.id));
+    if (anyMatch) return anyMatch;
+  }
+  return visible.find(a => a.potential_level === '高') || visible[0];
 }
 
 function parseCompassAction(text) {
@@ -86,6 +106,8 @@ export default function MirrorPage() {
   const [myUserId, setMyUserId] = useState(null);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
+  const [onePointStatus, setOnePointStatus] = useState(null); // null | 'active' | 'done'
+  const [determinedOnePoint, setDeterminedOnePoint] = useState(null);
   const fileInputRef = useRef(null);
   const dropRef = useRef(null);
 
@@ -164,7 +186,15 @@ export default function MirrorPage() {
     loadSubStatus();
 
     try { if (localStorage.getItem('fineme:mirror:feedback:sent') === '1') setFbSent(true); } catch {}
+    try { const op = JSON.parse(localStorage.getItem(LS_ONE_POINT_KEY) || 'null'); if (op?.status) setOnePointStatus(op.status); } catch {}
   }, []);
+
+  useEffect(() => {
+    if (state !== 'full' || !analysis?.axes?.length) return;
+    let cf = null;
+    try { const d = JSON.parse(localStorage.getItem('fineme:diagnosis:latest') || 'null'); cf = d?.compass_first || null; } catch {}
+    setDeterminedOnePoint(determineOnePoint(analysis.axes, cf));
+  }, [state, analysis]);
 
   const handleFile = useCallback((file) => {
     if (!file || !file.type.startsWith('image/')) {
@@ -691,6 +721,45 @@ export default function MirrorPage() {
               {analysis.overall_message}
             </div>
           )}
+
+          {/* 動かす1点（fullのみ） */}
+          {state === 'full' && determinedOnePoint && (() => {
+            const isDone = onePointStatus === 'done';
+            const isActive = onePointStatus === 'active';
+            const saveOnePoint = (nextStatus) => {
+              const entry = { axisId: determinedOnePoint.id, axisName: determinedOnePoint.name, axisIcon: determinedOnePoint.icon, status: nextStatus, savedAt: new Date().toISOString() };
+              try { localStorage.setItem(LS_ONE_POINT_KEY, JSON.stringify(entry)); } catch {}
+              setOnePointStatus(nextStatus);
+            };
+            return (
+              <div style={{ marginTop: '24px', background: isDone ? 'rgba(16,185,129,0.06)' : 'rgba(201,168,76,0.05)', border: `1px solid ${isDone ? 'rgba(16,185,129,0.3)' : 'rgba(201,168,76,0.25)'}`, borderRadius: '16px', padding: '20px 22px' }}>
+                <p style={{ fontSize: '10px', fontWeight: 800, color: isDone ? 'rgba(16,185,129,0.7)' : 'rgba(201,168,76,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', margin: '0 0 10px' }}>
+                  {isDone ? '✓ この30日で動かした1点' : 'この30日で動かす1点'}
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: isDone ? '0' : '14px' }}>
+                  <span style={{ fontSize: '28px', flexShrink: 0 }}>{determinedOnePoint.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '15px', fontWeight: 800, color: '#e8e4dc', margin: '0 0 3px' }}>{determinedOnePoint.name}</p>
+                    <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: 0, lineHeight: 1.55 }}>この1点だけ、今月やってみよう</p>
+                  </div>
+                  {isDone && <span style={{ fontSize: '22px', color: '#10b981', flexShrink: 0 }}>✓</span>}
+                </div>
+                {!isDone && (
+                  <button
+                    onClick={() => saveOnePoint(isActive ? 'done' : 'active')}
+                    style={{ display: 'block', width: '100%', padding: '12px', background: isActive ? 'rgba(16,185,129,0.12)' : 'rgba(201,168,76,0.08)', border: `1px solid ${isActive ? 'rgba(16,185,129,0.35)' : 'rgba(201,168,76,0.3)'}`, borderRadius: '10px', fontSize: '13px', fontWeight: 800, color: isActive ? '#10b981' : '#c9a84c', cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    {isActive ? 'やった！（完了を記録）' : '今月やってみる →'}
+                  </button>
+                )}
+                {isDone && (
+                  <p style={{ fontSize: '11px', color: 'rgba(16,185,129,0.6)', margin: 0, textAlign: 'center' }}>
+                    New Me Map で進捗を確認 → <a href="/mypage/navi" style={{ color: '#10b981', textDecoration: 'none' }}>マイページ</a>
+                  </p>
+                )}
+              </div>
+            );
+          })()}
 
           {/* New Me Map 生成CTA（fullのみ） */}
           {state === 'full' && (

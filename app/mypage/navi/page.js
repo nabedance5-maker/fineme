@@ -750,6 +750,8 @@ export default function NewMeNaviPage() {
     let allNaviArticles = [];
     let stepDone = {};
     try { const s = localStorage.getItem(STEP_DONE_KEY); if (s) stepDone = JSON.parse(s); } catch {}
+    let mirrorOnePoint = null;
+    try { mirrorOnePoint = JSON.parse(localStorage.getItem('fineme:mirror:one-point') || 'null'); } catch {}
 
     // ── 現状把握データ読み込み ──
     const BODY_DATA_KEY = 'fineme:body:data';
@@ -3342,6 +3344,20 @@ export default function NewMeNaviPage() {
 
       ${(() => { const _mDef = AREA_DEFS[compassFirst] || {}; if (!_mDef.label) return ''; return `<div style="margin:0 0 16px;padding:16px 18px;background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.28);border-radius:12px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(8px)"><span style="font-size:26px;flex-shrink:0">🪞</span><div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px;line-height:1.55">${esc(_mDef.icon||'')} ${esc(_mDef.label)}が、あなたの最初の一手。<br>今の${esc(_mDef.label)}、写真1枚で確かめてみる？</p><p style="font-size:11px;color:rgba(232,228,220,0.4);margin:0">写真は保存しません</p></div><a href="/mirror" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(201,168,76,0.1);border:1.5px solid #c9a84c;color:#c9a84c;border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">Mirror<br><span style="font-size:10px;font-weight:600">¥500</span></a></div>`; })()}
 
+      ${(() => {
+        if (!mirrorOnePoint?.axisId) return '';
+        const _isDone = mirrorOnePoint.status === 'done';
+        const _isActive = mirrorOnePoint.status === 'active';
+        const _axIcon = esc(mirrorOnePoint.axisIcon || '');
+        const _axName = esc(mirrorOnePoint.axisName || '');
+        const _bg    = _isDone ? 'rgba(16,185,129,0.06)' : 'rgba(201,168,76,0.05)';
+        const _bd    = _isDone ? 'rgba(16,185,129,0.3)'  : 'rgba(201,168,76,0.22)';
+        const _lbClr = _isDone ? 'rgba(16,185,129,0.7)'  : 'rgba(201,168,76,0.6)';
+        const _btnHtml = _isDone ? '' : `<button id="mirror-one-point-btn" data-curstat="${_isActive ? 'active' : ''}" style="display:block;width:100%;padding:10px;margin-top:12px;background:${_isActive ? 'rgba(16,185,129,0.12)' : 'rgba(201,168,76,0.08)'};border:1px solid ${_isActive ? 'rgba(16,185,129,0.35)' : 'rgba(201,168,76,0.3)'};border-radius:8px;font-size:13px;font-weight:700;color:${_isActive ? '#10b981' : '#c9a84c'};cursor:pointer;font-family:inherit">${_isActive ? 'やった！（完了を記録）' : '今月やってみる →'}</button>`;
+        const _checkMark = _isDone ? `<span style="font-size:18px;color:#10b981;flex-shrink:0">✓</span>` : '';
+        return `<div id="mirror-one-point-widget" style="margin:0 0 16px;padding:16px 18px;background:${_bg};border:1px solid ${_bd};border-radius:12px"><p style="font-size:10px;font-weight:800;color:${_lbClr};letter-spacing:.12em;text-transform:uppercase;margin:0 0 10px">Mirror — この30日で動かす1点</p><div style="display:flex;align-items:center;gap:12px"><span style="font-size:24px;flex-shrink:0">${_axIcon}</span><div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.9);margin:0 0 2px">${_axName}</p><p style="font-size:11px;color:rgba(232,228,220,0.5);margin:0">この1点だけ、今月やってみよう</p></div>${_checkMark}</div>${_btnHtml}</div>`;
+      })()}
+
       ${buildAxisFilterBar()}
 
       <div id="sections-container">
@@ -3382,6 +3398,35 @@ export default function NewMeNaviPage() {
     `;
 
     root.innerHTML = html;
+
+    // 動かす1点 トグルボタン
+    document.getElementById('mirror-one-point-btn')?.addEventListener('click', () => {
+      try {
+        const saved = JSON.parse(localStorage.getItem('fineme:mirror:one-point') || 'null');
+        if (!saved) return;
+        const nextStatus = saved.status === 'active' ? 'done' : 'active';
+        saved.status = nextStatus;
+        localStorage.setItem('fineme:mirror:one-point', JSON.stringify(saved));
+        const widget = document.getElementById('mirror-one-point-widget');
+        const btn = document.getElementById('mirror-one-point-btn');
+        if (!widget || !btn) return;
+        if (nextStatus === 'done') {
+          widget.style.background = 'rgba(16,185,129,0.06)';
+          widget.style.borderColor = 'rgba(16,185,129,0.3)';
+          const lbl = widget.querySelector('p[style*="letter-spacing"]');
+          if (lbl) lbl.style.color = 'rgba(16,185,129,0.7)';
+          const flex = widget.querySelector('[style*="display:flex"]');
+          if (flex) flex.insertAdjacentHTML('beforeend', '<span style="font-size:18px;color:#10b981;flex-shrink:0">✓</span>');
+          btn.remove();
+        } else {
+          btn.dataset.curstat = 'active';
+          btn.textContent = 'やった！（完了を記録）';
+          btn.style.background = 'rgba(16,185,129,0.12)';
+          btn.style.borderColor = 'rgba(16,185,129,0.35)';
+          btn.style.color = '#10b981';
+        }
+      } catch {}
+    });
 
     // サービスカードを非同期注入
     injectServiceCards();
