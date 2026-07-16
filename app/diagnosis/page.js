@@ -8,6 +8,13 @@ export default function DiagnosisPage() {
     if (initialized.current) return;
     initialized.current = true;
 
+    // ?src= パラメータを読み取りlocalStorage保存＋ログ（D-20260712-3）
+    const diagSrc = new URLSearchParams(window.location.search).get('src');
+    if (diagSrc) {
+      try { localStorage.setItem('fineme:diagnosis:src', diagSrc); } catch {}
+      fetch('/api/track/src?src=' + encodeURIComponent(diagSrc)).catch(() => {});
+    }
+
     // ─── ページ固有スタイル ───
     const style = document.createElement('style');
     style.textContent = `

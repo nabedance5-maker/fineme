@@ -307,7 +307,7 @@ async function generateThreadPost(postType, context = {}, dayOfYear = 0, system 
   // 他の曜日はリンクなし（$0.015）。
   const isLinkDay = new Date().getUTCDay() === 1; // 月曜のみリンク
   const ctaLine = isLinkDay
-    ? `\n\n最後の1行（ハッシュタグの直前）:\n「変われる余白を可視化したい人は→ ${BASE_URL}/lp/mirror」`
+    ? `\n\n最後の1行（ハッシュタグの直前）:\n「自分の最初の一手が1つだけ分かる→ ${BASE_URL}/diagnosis?src=x_deo」`
     : '';
 
   let mainMsg = '';

@@ -75,7 +75,7 @@ async function generateNote(topic) {
 ・長い段落（3文以上を同じ段落に入れない）
 
 【構成】問いかけの導入（読者に問いかけ）→ 共感（読者の痛み）→ 本質（順番・考え方）→ 具体的な一歩 → 自然なCTA
-【CTA】記事末に Me Scan（${BASE_URL}/diagnosis）か Fineme Mirror（${BASE_URL}/lp/mirror）への自然な導線を1つ。押し売りしない。
+【CTA】記事末に無料 Me Scan（${BASE_URL}/diagnosis?src=note）への自然な導線を1つ（押し売りしない・¥500 Mirror への直接誘導は診断後の流れに任せる）。
 【長さ】1800〜2600字。見出し（##）を3〜5個使う。
 【出力形式】
 1行目: # {タイトル}
@@ -272,7 +272,7 @@ export async function GET(request) {
 
           <!-- 確認事項 -->
           <p style="font-size:12px;color:#999;margin:0">
-            ※ 本文末のリンクが <strong>${BASE_URL}/diagnosis</strong> または <strong>${BASE_URL}/lp/mirror</strong> になっているか確認を。
+            ※ 本文末のリンクが <strong>${BASE_URL}/diagnosis?src=note</strong> になっているか確認を。
           </p>
         </div>
       `;
