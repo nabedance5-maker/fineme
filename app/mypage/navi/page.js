@@ -653,6 +653,26 @@ export default function NewMeNaviPage() {
 .voyage-recent-title { font-size: 10px; color: rgba(232,228,220,0.35); margin: 0 0 6px; }
 .voyage-recent-item { font-size: 11px; color: rgba(232,228,220,0.65); display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; line-height: 1.5; }
 .voyage-recent-check { color: rgba(201,168,76,0.7); flex-shrink: 0; font-size: 10px; }
+
+      /* ── 週次チェックイン ── */
+      .wcw { background: rgba(10,15,30,0.65); border: 1px solid rgba(201,168,76,0.22); border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; backdrop-filter: blur(8px); }
+      .wcw.wcw-done { border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.04); }
+      .wcw-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(201,168,76,0.65); margin: 0 0 12px; }
+      .wcw-prev { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.08); border-radius: 8px; margin-bottom: 6px; }
+      .wcw-prev-label { font-size: 9px; font-weight: 800; letter-spacing: .08em; color: rgba(232,228,220,0.35); white-space: nowrap; text-transform: uppercase; }
+      .wcw-prev-text { flex: 1; font-size: 11px; color: rgba(232,228,220,0.45); line-height: 1.4; }
+      .wcw-prev-done { color: rgba(16,185,129,0.7); font-weight: 700; flex-shrink: 0; font-size: 12px; }
+      .wcw-prev-arrow { font-size: 11px; color: rgba(201,168,76,0.4); margin-bottom: 6px; }
+      .wcw-current { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+      .wcw-axis-icon { font-size: 24px; flex-shrink: 0; }
+      .wcw-body { flex: 1; }
+      .wcw-axis-name { font-size: 13px; font-weight: 800; color: rgba(232,228,220,0.85); margin: 0 0 3px; }
+      .wcw-step-text { font-size: 13px; color: rgba(232,228,220,0.65); margin: 0; line-height: 1.55; }
+      .wcw-check { font-size: 18px; color: #10b981; flex-shrink: 0; padding-top: 2px; }
+      .wcw-note { font-size: 11px; color: rgba(232,228,220,0.35); margin: 0 0 10px; line-height: 1.5; }
+      .wcw-done-msg { font-size: 12px; color: rgba(16,185,129,0.75); font-weight: 700; padding: 6px 0 0; margin: 0; }
+      .wcw-btn { display: block; width: 100%; padding: 10px; background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.3); border-radius: 8px; font-size: 13px; font-weight: 700; color: #c9a84c; cursor: pointer; font-family: inherit; transition: background .12s; }
+      .wcw-btn:hover { background: rgba(201,168,76,0.14); }
     `;
     document.head.appendChild(style);
 
@@ -3320,6 +3340,67 @@ export default function NewMeNaviPage() {
       `</div>`;
     }
 
+    function buildWeeklyCheckinHtml() {
+      if (!compassFirst || !AREA_DEFS[compassFirst]) return '';
+      const WEEKLY_STEPS = {
+        hair:        '今週の洗髪後に、根元だけ鏡で1か所確認してみる',
+        skin:        '洗顔後に保湿を1ステップ足してみる（乳液か化粧水を1プッシュだけ）',
+        fashion:     '今週1日、服の肩幅が合っているかだけ鏡で確認してみる',
+        body:        '今週、階段を使える機会があれば1回使ってみる',
+        eyebrow:     '眉の一番濃い1本の生え方を、鏡で1回だけ見てみる',
+        teeth:       '今週1回、奥歯まで丁寧に磨いてみる（いつもより30秒だけ）',
+        hairremoval: '今週、気になる1か所だけ確認してみる',
+        nail:        '今週1回、爪の長さだけ確認してみる',
+      };
+      function weekStartISO() {
+        const d = new Date();
+        const day = d.getDay();
+        d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+        return d.toISOString().slice(0, 10);
+      }
+      const CHECKIN_KEY = 'fineme:navi:weekly-checkin';
+      const thisWeek = weekStartISO();
+      let cd = null;
+      try { cd = JSON.parse(localStorage.getItem(CHECKIN_KEY) || 'null'); } catch {}
+      let prev = null;
+      if (cd) {
+        if (cd.weekStart !== thisWeek) {
+          prev = { weekStart: cd.weekStart, axisId: cd.axisId, stepText: cd.stepText, status: cd.status };
+          cd = null;
+        } else {
+          prev = cd.prev || null;
+        }
+      }
+      if (!cd) {
+        const stepText = WEEKLY_STEPS[compassFirst] || (AREA_DEFS[compassFirst].label + 'について、今週1つだけやってみる');
+        cd = { axisId: compassFirst, weekStart: thisWeek, stepText, status: 'todo', prev };
+        try { localStorage.setItem(CHECKIN_KEY, JSON.stringify(cd)); } catch {}
+      }
+      const def = AREA_DEFS[compassFirst];
+      const isDone = cd.status === 'done';
+      const prevHtml = prev
+        ? `<div class="wcw-prev"><span class="wcw-prev-label">先週</span><span class="wcw-prev-text">${esc(prev.stepText)}</span>${prev.status === 'done' ? '<span class="wcw-prev-done">✓</span>' : ''}</div><div class="wcw-prev-arrow">↓ 今週</div>`
+        : '';
+      const checkHtml = isDone ? '<span class="wcw-check">✓</span>' : '';
+      const actionHtml = isDone
+        ? '<p class="wcw-done-msg">1点、動かせたね。来週の羅針盤もここにある。</p>'
+        : `<button id="weekly-checkin-btn" class="wcw-btn">やった</button>`;
+      return `<div id="weekly-checkin-widget" class="wcw${isDone ? ' wcw-done' : ''}">
+        <p class="wcw-eyebrow">羅針盤 — 今週の1点</p>
+        ${prevHtml}
+        <div class="wcw-current">
+          <span class="wcw-axis-icon">${esc(def.icon)}</span>
+          <div class="wcw-body">
+            <p class="wcw-axis-name">${esc(def.label)}</p>
+            <p class="wcw-step-text">${esc(cd.stepText)}</p>
+          </div>
+          ${checkHtml}
+        </div>
+        <p class="wcw-note">やれなくても大丈夫。羅針盤はそのまま置いてある。</p>
+        ${actionHtml}
+      </div>`;
+    }
+
     const html = `
       <div class="navi-wrap">
       <div class="navi-header">
@@ -3341,6 +3422,8 @@ export default function NewMeNaviPage() {
       </div>
 
       ${buildCompassHtml()}
+
+      ${buildWeeklyCheckinHtml()}
 
       ${(() => { const _mDef = AREA_DEFS[compassFirst] || {}; if (!_mDef.label) return ''; return `<div style="margin:0 0 16px;padding:16px 18px;background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.28);border-radius:12px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(8px)"><span style="font-size:26px;flex-shrink:0">🪞</span><div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px;line-height:1.55">${esc(_mDef.icon||'')} ${esc(_mDef.label)}が、あなたの最初の一手。<br>今の${esc(_mDef.label)}、写真1枚で確かめてみる？</p><p style="font-size:11px;color:rgba(232,228,220,0.4);margin:0">写真は保存しません</p></div><a href="/mirror" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(201,168,76,0.1);border:1.5px solid #c9a84c;color:#c9a84c;border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">Mirror<br><span style="font-size:10px;font-weight:600">¥500</span></a></div>`; })()}
 
@@ -3425,6 +3508,29 @@ export default function NewMeNaviPage() {
           btn.style.borderColor = 'rgba(16,185,129,0.35)';
           btn.style.color = '#10b981';
         }
+      } catch {}
+    });
+
+    // 週次チェックイン やったボタン
+    document.getElementById('weekly-checkin-btn')?.addEventListener('click', () => {
+      try {
+        const CHECKIN_KEY = 'fineme:navi:weekly-checkin';
+        const cd = JSON.parse(localStorage.getItem(CHECKIN_KEY) || 'null');
+        if (!cd) return;
+        cd.status = 'done';
+        localStorage.setItem(CHECKIN_KEY, JSON.stringify(cd));
+        const widget = document.getElementById('weekly-checkin-widget');
+        const btn = document.getElementById('weekly-checkin-btn');
+        if (!widget || !btn) return;
+        widget.classList.add('wcw-done');
+        const eyebrow = widget.querySelector('.wcw-eyebrow');
+        if (eyebrow) eyebrow.style.color = 'rgba(16,185,129,0.65)';
+        const current = widget.querySelector('.wcw-current');
+        if (current) current.insertAdjacentHTML('beforeend', '<span class="wcw-check">✓</span>');
+        const msg = document.createElement('p');
+        msg.className = 'wcw-done-msg';
+        msg.textContent = '1点、動かせたね。来週の羅針盤もここにある。';
+        btn.replaceWith(msg);
       } catch {}
     });
 
