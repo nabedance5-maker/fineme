@@ -90,6 +90,16 @@ export default function DiagnosisPage() {
       .axis-chip.elsewhere { opacity:0.18; pointer-events:none; }
       /* Goal framing banner */
       .goal-frame-banner { background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.25); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; }
+      /* Instant tryout screens (D-20260713-2) */
+      .tryout-option { display:flex; align-items:center; gap:14px; padding:14px 16px; border:2px solid rgba(201,168,76,0.2); border-radius:12px; cursor:pointer; transition:border-color .12s, background .12s; text-align:left; background:rgba(255,255,255,0.72); width:100%; margin-bottom:10px; }
+      .tryout-option:hover { border-color:rgba(201,168,76,0.55); background:rgba(245,240,232,0.85); }
+      .tryout-option-icon { font-size:22px; flex-shrink:0; }
+      .tryout-option-title { font-size:15px; font-weight:700; color:#0a0f1e; line-height:1.4; }
+      .tryout-result-axis { background:rgba(201,168,76,0.08); border:1.5px solid rgba(201,168,76,0.35); border-radius:14px; padding:24px 20px; margin:12px 0; text-align:center; }
+      .tryout-result-axis-icon { font-size:40px; display:block; margin-bottom:10px; }
+      .tryout-result-axis-name { font-size:26px; font-weight:900; color:#0a0f1e; margin:0 0 8px; }
+      .tryout-result-axis-desc { font-size:14px; color:#5a4e45; line-height:1.6; margin:0; }
+      .tryout-framing { font-size:12px; color:#9ca3af; margin:14px 0 0; line-height:1.7; text-align:center; }
     `;
     document.head.appendChild(style);
 
@@ -364,7 +374,7 @@ export default function DiagnosisPage() {
     }
 
     function updateNav() {
-      const noNavScreens = ['landing', 'q3_intro'];
+      const noNavScreens = ['landing', 'q3_intro', 'instant-tryout', 'instant-tryout-result'];
       if (noNavScreens.includes(currentScreen)) {
         navEl.style.display = 'none';
         return;
@@ -950,8 +960,8 @@ export default function DiagnosisPage() {
 
     // Button handlers
     document.getElementById('btn-start').addEventListener('click', function () {
-      screenHistory.push('q1');
-      showScreen('q1');
+      screenHistory.push('instant-tryout');
+      showScreen('instant-tryout');
     });
     document.getElementById('btn-start-from-preview')?.addEventListener('click', function () {
       document.getElementById('btn-start')?.click();
@@ -974,6 +984,45 @@ export default function DiagnosisPage() {
         showScreen('q3_path');
       });
     }
+
+    // ─── Instant Tryout（D-20260713-2）───
+    const TRYOUT_AXIS_MAP = {
+      matching_photo: { icon: '💇‍♂️', label: '髪・ヘア',    desc: '第一印象に最も直結する軸です。' },
+      matching_date:  { icon: '👔',    label: '服・コーデ',  desc: '長時間いっしょにいる人ほど、ここが効きます。' },
+      love_now:       { icon: '👔',    label: '服・コーデ',  desc: '長時間いっしょにいる人ほど、ここが効きます。' },
+      career:         { icon: '✨',    label: '肌・清潔感',  desc: '清潔感は信頼感の土台です。' },
+      mirror:         { icon: '✂️',   label: '眉毛',        desc: '顔全体の印象で最も変化が出やすい場所です。' },
+      word:           { icon: '✂️',   label: '眉毛',        desc: '顔全体の印象で最も変化が出やすい場所です。' },
+      comparison:     { icon: '✂️',   label: '眉毛',        desc: '顔全体の印象で最も変化が出やすい場所です。' },
+      vague:          { icon: '✂️',   label: '眉毛',        desc: '変化体験の最短経路です。変わった実感が継続の動機になります。' },
+    };
+
+    document.getElementById('opts-instant-tryout')?.querySelectorAll('.tryout-option').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const val = this.dataset.value;
+        const axis = TRYOUT_AXIS_MAP[val] || { icon: '✂️', label: '眉毛', desc: '顔全体の印象で最も変化が出やすい場所です。' };
+        const resultEl = document.getElementById('tryout-result-axis');
+        if (resultEl) {
+          resultEl.innerHTML =
+            '<span class="tryout-result-axis-icon">' + axis.icon + '</span>' +
+            '<p class="tryout-result-axis-name">' + axis.label + '</p>' +
+            '<p class="tryout-result-axis-desc">' + axis.desc + '</p>';
+        }
+        // お試し完了を計測
+        fetch('/api/track/src?src=instant-tryout-done').catch(function() {});
+        try { localStorage.setItem('fineme:diagnosis:src', 'instant-tryout-done'); } catch(e) {}
+        screenHistory.push('instant-tryout-result');
+        showScreen('instant-tryout-result');
+      });
+    });
+
+    document.getElementById('btn-tryout-continue')?.addEventListener('click', function() {
+      // 本問診開始を計測
+      fetch('/api/track/src?src=instant-tryout').catch(function() {});
+      try { localStorage.setItem('fineme:diagnosis:src', 'instant-tryout'); } catch(e) {}
+      screenHistory.push('q1');
+      showScreen('q1');
+    });
 
     showScreen('landing');
 
@@ -1047,6 +1096,38 @@ export default function DiagnosisPage() {
               <p style={{fontSize:'12px',color:'rgba(201,168,76,0.5)',margin:'0 0 10px',lineHeight:1.6}}>136タイプの中のあなたのタイプが生成されます</p>
               <button id="btn-start-from-preview" style={{background:'linear-gradient(135deg,#c9a84c,#e8c86a)',border:'none',cursor:'pointer',color:'#0a0f1e',fontSize:'14px',fontWeight:'800',padding:'12px 28px',borderRadius:'10px',letterSpacing:'.04em'}}>あなたのタイプを診断する →</button>
             </div>
+          </div>
+        </div>
+
+        {/* SCREEN: instant-tryout（30秒・1問お試し D-20260713-2） */}
+        <div className="diag-screen" id="screen-instant-tryout">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div className="diag-card">
+            <p className="diag-step-label">30秒 お試し</p>
+            <h2 className="diag-q">なぜ今、外見を変えようと<br />思いましたか？</h2>
+            <p className="diag-hint">一番近いものを1つ選んでください。すぐに「最初の1点」をお伝えします。</p>
+            <div id="opts-instant-tryout">
+              <button className="tryout-option" data-value="matching_photo"><span className="tryout-option-icon">📱</span><span className="tryout-option-title">マッチングアプリの写真で損している</span></button>
+              <button className="tryout-option" data-value="matching_date"><span className="tryout-option-icon">💔</span><span className="tryout-option-title">マッチングはできるが、会うと続かない</span></button>
+              <button className="tryout-option" data-value="love_now"><span className="tryout-option-icon">❤️</span><span className="tryout-option-title">好きな人に会う前に変わりたい</span></button>
+              <button className="tryout-option" data-value="career"><span className="tryout-option-icon">💼</span><span className="tryout-option-title">就職・転職など大事な場面が近い</span></button>
+              <button className="tryout-option" data-value="mirror"><span className="tryout-option-icon">🪞</span><span className="tryout-option-title">毎朝鏡を見て気分が上がらない</span></button>
+              <button className="tryout-option" data-value="word"><span className="tryout-option-icon">💬</span><span className="tryout-option-title">言われた一言が頭から離れない</span></button>
+              <button className="tryout-option" data-value="comparison"><span className="tryout-option-icon">😔</span><span className="tryout-option-title">同世代と並んで差が気になった</span></button>
+              <button className="tryout-option" data-value="vague"><span className="tryout-option-icon">🌱</span><span className="tryout-option-title">明確な理由はないが変わりたい</span></button>
+            </div>
+          </div>
+        </div>
+
+        {/* SCREEN: instant-tryout-result */}
+        <div className="diag-screen" id="screen-instant-tryout-result">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div className="diag-card">
+            <p className="diag-step-label">最初の1点</p>
+            <h2 className="diag-q" style={{marginBottom:'8px'}}>あなたの最初の1点は</h2>
+            <div className="tryout-result-axis" id="tryout-result-axis"></div>
+            <p className="tryout-framing">これはあなたの動機から導き出した「最初の1点」です。<br />7軸すべてを測ると、別の軸が前に出ることもあります。</p>
+            <button className="diag-nav-next" id="btn-tryout-continue" style={{width:'100%',marginTop:'16px'}}>7軸すべての優先順を知る（Me Scan・約15分）→</button>
           </div>
         </div>
 
