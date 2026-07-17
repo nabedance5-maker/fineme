@@ -41,7 +41,7 @@ export const metadata = {
 
 import './globals.css';
 import '../styles/style.css';
-import Navbar from './_components/Navbar';
+import SmartNavbar from './_components/SmartNavbar';
 import Footer from './_components/Footer';
 import ServiceWorkerRegister from './_components/ServiceWorkerRegister';
 import GoogleAnalytics from './_components/GoogleAnalytics';
@@ -153,7 +153,7 @@ export default function RootLayout({ children }) {
             </noscript>
           </>
         )}
-        <Navbar />
+        <SmartNavbar />
         {children}
         <Footer />
         <ServiceWorkerRegister />
