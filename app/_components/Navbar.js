@@ -86,6 +86,10 @@ export default function Navbar() {
           <Link href="/feature" onClick={closeMenu}>Journal</Link>
           <Link href="/mirror" onClick={closeMenu}>Mirror</Link>
           <Link href="/diagnosis" className="btn-diagnosis" onClick={closeMenu}>診断する</Link>
+          <Link href="/belle" onClick={closeMenu}
+            style={{ fontSize: '13px', color: 'rgba(200,100,140,0.85)', fontWeight: 700 }}>
+            Belle（女性）
+          </Link>
           {authState === null ? null : authState ? (
             <>
               <a href="#" onClick={(e) => { e.preventDefault(); handleSignOut(); }}>ログアウト</a>

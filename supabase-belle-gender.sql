@@ -1,0 +1,6 @@
+-- Fineme Belle: gender フィールドについて
+-- gender は diagnosis_results.raw_data（JSONB）内に格納するため、
+-- スキーマ変更は不要。Belle の Me Scan から raw_data に gender:'female' が含まれる。
+--
+-- 必要になった場合（クエリ最適化目的でカラムを切り出したい場合）:
+-- ALTER TABLE diagnosis_results ADD COLUMN IF NOT EXISTS gender TEXT GENERATED ALWAYS AS (raw_data->>'gender') STORED;

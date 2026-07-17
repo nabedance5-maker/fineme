@@ -123,6 +123,14 @@ const URGENCY_LABELS = {
 function buildNarrative(profile, stage2) {
   const lines = ['【ユーザープロファイル】', ''];
 
+  // 性別コンテキスト（Belle / 女性版）
+  if (profile.gender === 'female') {
+    lines.push('【重要】このユーザーは女性です。');
+    lines.push('スキンケア・メイク・ヘアケア・ネイル・ファッションを女性の視点で分析してください。');
+    lines.push('「彼女」として扱い、女性の外見磨きに向けた内容を生成してください。');
+    lines.push('');
+  }
+
   // きっかけ
   const triggerLabel = TRIGGER_LABELS[profile.trigger] || profile.trigger || '未回答';
   lines.push(`■ きっかけ: ${triggerLabel}`);

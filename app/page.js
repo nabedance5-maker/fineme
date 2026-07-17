@@ -306,44 +306,67 @@ export default function HomePage() {
           margin: 28px 0 40px;
         }
         .hero-nav-cta-pair {
-          display: flex;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
           gap: 12px;
-          justify-content: center;
-          flex-wrap: wrap;
+          max-width: 560px;
+          margin: 0 auto;
         }
+        @media (max-width: 480px) {
+          .hero-nav-cta-pair { grid-template-columns: 1fr; }
+        }
+        .hero-gender-col {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 12px;
+          padding: 16px 14px 14px;
+        }
+        .hero-gender-col--male { border-color: rgba(201,168,76,0.25); }
+        .hero-gender-col--female { border-color: rgba(200,100,140,0.25); }
+        .hero-gender-label {
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: .1em;
+          text-transform: uppercase;
+          margin: 0 0 10px;
+          text-align: center;
+        }
+        .hero-gender-col--male .hero-gender-label { color: rgba(201,168,76,0.7); }
+        .hero-gender-col--female .hero-gender-label { color: rgba(200,100,140,0.8); }
+        .hero-gender-btns { display: flex; flex-direction: column; gap: 6px; }
         .hero-nav-cta {
-          display: inline-flex;
+          display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 4px;
-          padding: 14px 36px;
-          border: 1.5px solid #c9a84c;
-          color: #0a0f1e;
-          background: #c9a84c;
-          border-radius: 3px;
+          gap: 2px;
+          padding: 10px 12px;
+          border-radius: 8px;
           text-decoration: none;
-          letter-spacing: .08em;
-          box-shadow: 0 0 32px rgba(201,168,76,0.35);
-          transition: background .2s, color .2s, box-shadow .2s, opacity .2s;
+          transition: opacity .18s;
         }
-        .hero-nav-cta:hover {
-          opacity: .88;
-          box-shadow: 0 0 48px rgba(201,168,76,0.55);
+        .hero-nav-cta:hover { opacity: .82; }
+        .hero-nav-cta--scan-m {
+          background: #c9a84c;
+          color: #0a0f1e;
+          border: 1.5px solid #c9a84c;
         }
-        .hero-nav-cta-main { font-size: 15px; font-weight: 700; }
-        .hero-nav-cta-sub { font-size: 11px; font-weight: 500; opacity: .7; letter-spacing: .04em; }
-        .hero-nav-cta--mirror .hero-nav-cta-sub { opacity: .65; }
-        .hero-nav-cta--mirror {
+        .hero-nav-cta--mirror-m {
           background: transparent;
-          border-color: rgba(100,160,255,0.55);
-          color: rgba(180,210,255,0.92);
-          box-shadow: 0 0 24px rgba(100,160,255,0.18);
+          border: 1.5px solid rgba(201,168,76,0.4);
+          color: rgba(201,168,76,0.9);
         }
-        .hero-nav-cta--mirror:hover {
-          background: rgba(100,160,255,0.10);
-          opacity: 1;
-          box-shadow: 0 0 36px rgba(100,160,255,0.32);
+        .hero-nav-cta--scan-f {
+          background: rgba(200,100,140,0.85);
+          color: #fff;
+          border: 1.5px solid rgba(200,100,140,0.85);
         }
+        .hero-nav-cta--mirror-f {
+          background: transparent;
+          border: 1.5px solid rgba(200,100,140,0.4);
+          color: rgba(220,140,170,0.9);
+        }
+        .hero-nav-cta-main { font-size: 13px; font-weight: 700; }
+        .hero-nav-cta-sub { font-size: 10px; font-weight: 500; opacity: .75; letter-spacing: .03em; }
         .hero-nav-badges {
           display: flex;
           justify-content: center;
@@ -530,20 +553,34 @@ export default function HomePage() {
             </p>
 
             <div className="hero-nav-cta-pair">
-              <Link href="/diagnosis" className="hero-nav-cta">
-                <span className="hero-nav-cta-main">🧬 Me Scan（無料）</span>
-                <span className="hero-nav-cta-sub">7軸で外見を自己診断</span>
-              </Link>
-              <Link href="/mypage/mirror" className="hero-nav-cta hero-nav-cta--mirror">
-                <span className="hero-nav-cta-main">📸 Mirror（まずは無料）</span>
-                <span className="hero-nav-cta-sub">写真から他者目線を分析</span>
-              </Link>
-            </div>
-
-            <div className="hero-nav-badges">
-              <span className="hero-nav-badge">15分・匿名</span>
-              <span className="hero-nav-badge">写真1枚から</span>
-              <span className="hero-nav-badge">7軸コンパス生成</span>
+              {/* 男性 */}
+              <div className="hero-gender-col hero-gender-col--male">
+                <p className="hero-gender-label">男性の外見を変える</p>
+                <div className="hero-gender-btns">
+                  <Link href="/diagnosis" className="hero-nav-cta hero-nav-cta--scan-m">
+                    <span className="hero-nav-cta-main">🧬 Me Scan（無料）</span>
+                    <span className="hero-nav-cta-sub">7軸で外見を自己診断</span>
+                  </Link>
+                  <Link href="/mirror" className="hero-nav-cta hero-nav-cta--mirror-m">
+                    <span className="hero-nav-cta-main">📸 Mirror</span>
+                    <span className="hero-nav-cta-sub">写真から他者目線を分析</span>
+                  </Link>
+                </div>
+              </div>
+              {/* 女性 */}
+              <div className="hero-gender-col hero-gender-col--female">
+                <p className="hero-gender-label">女性の外見を変える</p>
+                <div className="hero-gender-btns">
+                  <Link href="/belle/diagnosis" className="hero-nav-cta hero-nav-cta--scan-f">
+                    <span className="hero-nav-cta-main">🧬 Me Scan（無料）</span>
+                    <span className="hero-nav-cta-sub">女性向け外見診断</span>
+                  </Link>
+                  <Link href="/belle/mirror" className="hero-nav-cta hero-nav-cta--mirror-f">
+                    <span className="hero-nav-cta-main">📸 Mirror</span>
+                    <span className="hero-nav-cta-sub">写真から他者目線を分析</span>
+                  </Link>
+                </div>
+              </div>
             </div>
 
             {/* 診断済みユーザー向けバナー（ログイン済みのみ） */}

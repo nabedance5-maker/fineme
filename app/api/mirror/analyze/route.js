@@ -54,11 +54,14 @@ function buildDiagnosisContext(diagnosisInfo) {
   return `\n\n【ユーザー補足情報（compass_actionの優先度・表現の参考に）】\n${lines.join('\n')}`;
 }
 
-function buildSystemPrompt(userState, diagnosisInfo) {
+function buildSystemPrompt(userState, diagnosisInfo, gender) {
   const compassInstruction = buildCompassInstruction(userState, diagnosisInfo);
   const diagnosisContext = buildDiagnosisContext(diagnosisInfo);
+  const genderContext = gender === 'female'
+    ? '\n\n【対象ユーザー】女性の外見分析。メイク・スキンケア・ヘアスタイル・服装・ネイルを女性的な観点で分析してください。肌の印象にはメイクの仕上がりも含めて評価してください。'
+    : '';
   return `あなたは、外見の変容可能性を温かく・誠実に分析する専門家です。
-Fineme（外見を起点に自信を再設計するサービス）の「Fineme Mirror」機能として機能します。
+Fineme（外見を起点に自信を再設計するサービス）の「Fineme Mirror」機能として機能します。${genderContext}
 
 【絶対禁止】
 - 外見を点数化・ランク付けする表現（「○点」「上位○%」等）
@@ -126,7 +129,7 @@ ${BRAND_PHILOSOPHY}
 
 export async function POST(request) {
   try {
-    const { photo_base64, media_type, user_id, user_state, diagnosis_info, ref } = await request.json();
+    const { photo_base64, media_type, user_id, user_state, diagnosis_info, ref, gender } = await request.json();
 
     if (!photo_base64 || !media_type) {
       return Response.json({ error: '写真データが必要です' }, { status: 400 });
@@ -140,7 +143,7 @@ export async function POST(request) {
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    const systemPrompt = buildSystemPrompt(user_state || 'guest', diagnosis_info || null);
+    const systemPrompt = buildSystemPrompt(user_state || 'guest', diagnosis_info || null, gender || null);
 
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
