@@ -13,6 +13,6 @@ export default function SmartNavbar() {
   }, []);
 
   if (pathname?.startsWith('/belle')) return null;
-  if (belleMode) return <BelleNavbar />;
+  if (belleMode && pathname?.startsWith('/mypage')) return <BelleNavbar />;
   return <Navbar />;
 }

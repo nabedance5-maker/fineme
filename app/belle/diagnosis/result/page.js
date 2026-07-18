@@ -763,7 +763,7 @@ export default function BelleDiagnosisResultPage() {
               data-tagline="${esc(desc)}">
               📷 カードを画像保存
             </button>
-            <a href="/types" class="type-hero-share-btn" style="text-decoration:none">全136タイプを見る →</a>
+            <a href="/belle/diagnosis/types" class="type-hero-share-btn" style="text-decoration:none">全136タイプを見る →</a>
           </div>
           <div class="type-hero-divider"></div>
         </div>
@@ -1287,7 +1287,7 @@ export default function BelleDiagnosisResultPage() {
           // 画像を先にロード（CORSあり）
           const typeImg = new Image();
           typeImg.crossOrigin = 'anonymous';
-          await new Promise(res => { typeImg.onload = res; typeImg.onerror = res; typeImg.src = `/images/types/TYPE-${tc}.png`; });
+          await new Promise(res => { typeImg.onload = res; typeImg.onerror = res; typeImg.src = `/images/types/belle/TYPE-${tc}.png`; });
 
           const W = 540, S = 2;
           // テキスト行数を事前計測してカード高さを動的算出
