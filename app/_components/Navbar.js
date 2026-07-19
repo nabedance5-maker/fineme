@@ -61,6 +61,7 @@ export default function Navbar() {
           .nav-links a { padding: 12px 8px; border-bottom: 1px solid rgba(232,228,220,0.12); font-size: 15px; }
           .nav-links a:last-child { border-bottom: none; }
           .btn-diagnosis { text-align: center; margin-top: 4px; }
+          .btn-belle { text-align: center; margin-top: 4px; }
           .hamburger { display: block; }
         }
       `}</style>
@@ -86,9 +87,9 @@ export default function Navbar() {
           <Link href="/feature" onClick={closeMenu}>Journal</Link>
           <Link href="/mirror" onClick={closeMenu}>Mirror</Link>
           <Link href="/diagnosis" className="btn-diagnosis" onClick={closeMenu}>診断する</Link>
-          <Link href="/belle" onClick={closeMenu}
-            style={{ fontSize: '13px', color: 'rgba(200,100,140,0.85)', fontWeight: 700 }}>
-            Belle（女性）
+          <Link href="/belle" className="btn-belle" onClick={closeMenu}
+            style={{ background: 'linear-gradient(135deg,#c8648c,#e8789e)', color: '#fff', padding: '8px 18px', borderRadius: '8px', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>
+            Belle
           </Link>
           {authState === null ? null : authState ? (
             <>
