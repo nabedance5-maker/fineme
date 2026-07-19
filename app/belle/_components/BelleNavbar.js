@@ -80,6 +80,18 @@ export default function BelleNavbar() {
         </button>
 
         <nav className={`belle-nav-links${menuOpen ? ' is-open' : ''}`}>
+          <Link href="/search" onClick={closeMenu}
+            style={{ color: 'rgba(240,216,224,0.75)', textDecoration: 'none', fontSize: 14, padding: '6px 10px' }}>
+            検索
+          </Link>
+          <Link href="/about" onClick={closeMenu}
+            style={{ color: 'rgba(240,216,224,0.75)', textDecoration: 'none', fontSize: 14, padding: '6px 10px' }}>
+            Finemeとは？
+          </Link>
+          <Link href="/belle/journal" onClick={closeMenu}
+            style={{ color: 'rgba(240,216,224,0.75)', textDecoration: 'none', fontSize: 14, padding: '6px 10px' }}>
+            Journal
+          </Link>
           <Link href="/belle/diagnosis" onClick={closeMenu}
             style={{ color: 'rgba(240,216,224,0.75)', textDecoration: 'none', fontSize: 14, padding: '6px 10px' }}>
             Me Scan
