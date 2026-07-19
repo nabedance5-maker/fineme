@@ -6,8 +6,10 @@ import { revalidatePath } from 'next/cache';
 import { getSupabase } from '@/lib/supabase';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
 import { getGoogleAccessToken, querySearchConsole, dateRange } from '@/lib/gsc';
+import { UNSPLASH_PHOTOS, DEFAULT_PHOTOS, EXTRA_PHOTOS, unsplashUrl as unsplashUrlBase, slugHash } from '@/lib/thumbnail-photos';
 
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '4fbd52dc-784e-4ab8-97c4-f1f99e48b504';
+const unsplashUrl = (id) => unsplashUrlBase(id, '&w=900&q=80');
 
 // theme.axis → Claudeが生成するcategoryの対応表（重複チェック用）
 const AXIS_CATEGORY_MAP = {
@@ -24,54 +26,33 @@ const AXIS_CATEGORY_MAP = {
   '自己肯定感': '変容の思想',   'でお変容': '変容の思想',  '恋愛と外見': '変容の思想',
 };
 
-const UNSPLASH_PHOTOS = {
-  '眉毛':             ['1503951914875-452162b0f3f1', '1621605815971-a6e613a8e4af', '1500648767791-00dcc994a43e', '1544005139-4c2743543a26'],
-  '清潔感':           ['1507003211169-0a1dd7228f2d', '1619895862022-09114b41f16f', '1472099645785-5658abf4ff4e', '1519085360753-af0119f7cbe7'],
-  'ヘア':             ['1622286342621-4bd786c2447c', '1503951914875-452162b0f3f1', '1514866487916-cfe9d28d95ae', '1584308666744-5e3ff8b79f5c'],
-  'ファッション':     ['1516914943479-89db7d9ae7f2', '1490578474895-399ad4ea0078', '1519085360753-af0119f7cbe7', '1544005139-4c2743543a26'],
-  'Mirror活用':       ['1611532736597-de2d4265fba3', '1558618666-fcd25c85cd64', '1586297135537-94bc81ba3404', '1472099645785-5658abf4ff4e'],
-  '体型':             ['1517836357463-d25dfeac3438', '1571019613454-1cb2f99b2d8b', '1493256338651-d82f7acb2b38', '1599058945845-196e7f66aa32'],
-  'マッチングアプリ': ['1611532736597-de2d4265fba3', '1516914943479-89db7d9ae7f2', '1586297135537-94bc81ba3404', '1519085360753-af0119f7cbe7'],
-  '肌':               ['1598300042247-d088f8ab3a91', '1559599076-9bfed934a7fb', '1559181567-c3190b7c2c3d', '1522338242992-e1d3aba00e05'],
-  '垢抜け':           ['1507003211169-0a1dd7228f2d', '1622286342621-4bd786c2447c', '1519085360753-af0119f7cbe7', '1544005139-4c2743543a26'],
-  '歯':               ['1607748862144-7a75854b0dee', '1581591524425-c7e0978865fc', '1500648767791-00dcc994a43e', '1472099645785-5658abf4ff4e'],
-  '7軸優先順位':     ['1484480974693-6ca0a78fb36b', '1499750310107-5fef28a66643', '1454165205-1bf3cf398ef9', '1606857521015-7463de785e52'],
-  '自己肯定感':       ['1605296867304-46d5465a13f1', '1507003211169-0a1dd7228f2d', '1544005139-4c2743543a26', '1519085360753-af0119f7cbe7'],
-  '骨格診断':         ['1490578474895-399ad4ea0078', '1516914943479-89db7d9ae7f2', '1519085360753-af0119f7cbe7', '1544005139-4c2743543a26'],
-  '清潔感チェック':   ['1507003211169-0a1dd7228f2d', '1619895862022-09114b41f16f', '1472099645785-5658abf4ff4e', '1500648767791-00dcc994a43e'],
-  '爪':               ['1604654894610-df63bc536371', '1605296867304-46d5465a13f1', '1519085360753-af0119f7cbe7', '1544005139-4c2743543a26'],
-  'でお変容':         ['1599566150163-29194dcaad36', '1507003211169-0a1dd7228f2d', '1544005139-4c2743543a26', '1472099645785-5658abf4ff4e'],
-  '恋愛と外見':       ['1516914943479-89db7d9ae7f2', '1502323703110-88f8df51d9a2', '1519085360753-af0119f7cbe7', '1544005139-4c2743543a26'],
-  'ヘアサロン':       ['1622286342621-4bd786c2447c', '1503951914875-452162b0f3f1', '1514866487916-cfe9d28d95ae', '1584308666744-5e3ff8b79f5c'],
-  'マッチングアプリ写真': ['1611532736597-de2d4265fba3', '1516914943479-89db7d9ae7f2', '1586297135537-94bc81ba3404', '1472099645785-5658abf4ff4e'],
-  '眉毛サロン選び':   ['1503951914875-452162b0f3f1', '1621605815971-a6e613a8e4af', '1500648767791-00dcc994a43e', '1514866487916-cfe9d28d95ae'],
-};
-const DEFAULT_PHOTOS = ['1507003211169-0a1dd7228f2d', '1516914943479-89db7d9ae7f2', '1472099645785-5658abf4ff4e', '1544005139-4c2743543a26'];
-
-function unsplashUrl(id) {
-  return `https://images.unsplash.com/photo-${id}?w=900&q=80&auto=format&fit=crop`;
+// クエリ・タイトルから2文字以上の漢字/ひらがな/カタカナ塊（＝主要キーワード相当）を抽出
+function extractKeywords(s) {
+  return (s.match(/[一-龠々ぁ-んァ-ヴー]{2,}/g) || []);
 }
 
-function slugHash(s) {
-  return Math.abs([...s].reduce((h, c) => (Math.imul(31, h) + c.charCodeAt(0)) | 0, 0));
-}
-
-// GSCで「勝てそうなクエリ」を探す。最近使用済みカテゴリに近いクエリはスキップ
-async function pickOpportunityTheme(recentCategories = new Set()) {
+// GSCで「勝てそうなクエリ」を探す。直近記事タイトルとキーワード重複率が高いものはスキップ（カニバリゼーション防止）
+// 旧実装は opp.q.includes(recentCategory) のようなクエリ文字列とカテゴリ名(例:「外見改善」)の直接比較で、
+// 語彙が全く異なるため実質常にfalseとなり機能していなかった（2026-07 でお指摘：同一テーマが15日連続で生成されていた）。
+async function pickOpportunityTheme(recentTitles = []) {
   try {
     const token = await getGoogleAccessToken();
     const rows = await querySearchConsole(token, { ...dateRange(28), dimensions: ['query'], rowLimit: 100 });
-    const opp = rows
+    const candidates = rows
       .map(r => ({ q: r.keys?.[0] || '', imp: r.impressions || 0, pos: r.position || 99, clicks: r.clicks || 0 }))
       .filter(r => r.q && r.imp >= 1 && r.pos >= 8 && r.pos <= 70 && r.q.length >= 6)
-      .sort((a, b) => b.imp - a.imp)[0];
-    if (!opp) return null;
-    // 30日以内に同じカテゴリを書いていたらスキップ（カニバリゼーション防止）
-    const dominated = [...recentCategories].some(cat =>
-      opp.q.includes(cat) || cat.includes(opp.q.slice(0, 3))
-    );
-    if (dominated) return null;
-    return { axis: opp.q, prompt: `検索クエリ「${opp.q}」の検索意図に、他のどのページより丁寧に答える実用記事（現在${Math.round(opp.pos)}位・表示${opp.imp}/月＝上げ切る余地あり）。タイトルと見出しにこのクエリの語を自然に含める。` };
+      .sort((a, b) => b.imp - a.imp);
+
+    const recentKeywords = new Set(recentTitles.flatMap(extractKeywords));
+
+    for (const opp of candidates) {
+      const oppKeywords = extractKeywords(opp.q);
+      const overlap = oppKeywords.filter(k => recentKeywords.has(k)).length;
+      // クエリの主要語の半分以上が直近30日のタイトルに既出ならスキップ（同一テーマの言い換え連発を防ぐ）
+      if (oppKeywords.length > 0 && overlap / oppKeywords.length >= 0.5) continue;
+      return { axis: opp.q, prompt: `検索クエリ「${opp.q}」の検索意図に、他のどのページより丁寧に答える実用記事（現在${Math.round(opp.pos)}位・表示${opp.imp}/月＝上げ切る余地あり）。タイトルと見出しにこのクエリの語を自然に含める。` };
+    }
+    return null;
   } catch { return null; }
 }
 
@@ -168,15 +149,6 @@ function parseArticle(raw) {
     body:        lines.slice(bodyStart).join('\n').trim(),
   };
 }
-
-// 画像の多様性を広げる共通プール（金太郎飴防止・直近使用は除外）
-const EXTRA_PHOTOS = [
-  '1488161628813-04466f872be2', '1519085360753-af0119f7cbe7', '1506794778202-cad84cf45f1d',
-  '1500648767791-00dcc994a43e', '1508341591423-4347099e1f19', '1492562080023-ab3db95bfbde',
-  '1521119989659-a83eee488004', '1534030347209-467a5b0ad3e6', '1463453091185-61582044d556',
-  '1552374196-c4e7ffc6e126', '1531384441138-2736e62e0919', '1507591064344-4c6ce005b128',
-  '1500648767791-00dcc994a43e', '1489980557514-251d61e3eeb6', '1618987333535-9f1f0f0e7a7f',
-];
 
 // slugHash をシードに写真を選ぶ。直近で使った画像は避けて毎回違う絵にする。
 function injectImages(html, axis, seedStr = '', usedIds = new Set()) {
@@ -306,14 +278,12 @@ export async function GET(request) {
     .select('slug, title, category, description, published_at')
     .eq('status', 'published');
 
-  // 過去30日に使用済みカテゴリを抽出（カニバリゼーション防止）
-  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-  const recentCategories = new Set(
-    (existing || [])
-      .filter(a => a.published_at && new Date(a.published_at).getTime() > thirtyDaysAgo)
-      .map(a => a.category)
-      .filter(Boolean)
-  );
+  // 過去30日に使用済みカテゴリ・タイトルを抽出（カニバリゼーション防止）
+  const thirtyDaysAgo = Date.now() - 30 * 60 * 60 * 24 * 1000;
+  const recentPublished = (existing || [])
+    .filter(a => a.published_at && new Date(a.published_at).getTime() > thirtyDaysAgo);
+  const recentCategories = new Set(recentPublished.map(a => a.category).filter(Boolean));
+  const recentTitles = recentPublished.map(a => a.title).filter(Boolean);
 
   // 未使用カテゴリのテーマに絞ってローテーション
   const day = Math.floor(Date.now() / 86400000);
@@ -323,8 +293,8 @@ export async function GET(request) {
   });
   const fallbackTheme = (availableThemes.length > 0 ? availableThemes : THEMES)[day % (availableThemes.length || THEMES.length)];
 
-  // テーマ選択：GSCの「勝てそうなクエリ」を優先。最近使用済みカテゴリと被るならスキップ
-  const theme = (await pickOpportunityTheme(recentCategories)) || fallbackTheme;
+  // テーマ選択：GSCの「勝てそうなクエリ」を優先。直近タイトルとキーワードが被るならスキップ
+  const theme = (await pickOpportunityTheme(recentTitles)) || fallbackTheme;
 
   const linkPool = (existing || []).filter(a => a.slug);
 
