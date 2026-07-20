@@ -14,20 +14,23 @@ const AXIS_TO_SEARCH = {
   hair: 'hair', skin: 'esthetic', teeth: 'whitening', nail: 'nail',
 };
 
-function buildCompassInstruction(userState, diagnosisInfo) {
-  const actionInstruction = `この軸について、今日または今週中にできる具体的な行動を1文で書く（何を・どこで・どのくらいの費用かを含める。「〇〇を始めましょう」などの抽象表現は禁止。「〇〇プログラム」「〇〇診断」などの架空の機能名も禁止）。`;
+function buildCompassInstruction(userState) {
+  const selfAction = `この軸について、今日または今週中に「自宅で一人でできる」具体的な行動を1文で書く。
+ルール:
+- 「サロンに予約する」「カウンセリングを受ける」「サービスを申し込む」等の外部サービス誘導は禁止
+- 「〜を始めましょう」等の抽象表現は禁止
+- 「何を・どこで（自宅・100円ショップ・ドラッグストア等）・費用感（○○円程度）」を含める
+- URLは一切記載しない
+- 良い例：「今日の入浴後、眉用スクリューブラシで眉の流れを整える。ブラシは100円ショップで購入可能」
+- 良い例：「洗顔後3分以内にコットンで化粧水を顔全体に馴染ませる習慣を今日から始める」`;
   if (userState === 'guest') {
-    return `${actionInstruction}その後に必ず以下のいずれか1つだけを付け加える（実在するURLのみ）:\n「Me Scan（無料の外見診断）で優先軸と行動ロードマップが作れます → /diagnosis」\nまたは\n「会員登録で分析結果を保存・行動ロードマップも作れます → /auth/login」`;
+    return `${selfAction}\nその後に1文だけ付け加える: 「Me Scan（無料診断）を受けると優先軸と行動ロードマップが作れます → /diagnosis」`;
   }
   if (userState === 'member') {
-    return `${actionInstruction}その後に必ず以下を付け加える（実在するURLのみ）:\n「Me Scan（無料診断）を受けると、この分析と連携した行動ロードマップ『New Me Navi』が使えます → /diagnosis」`;
+    return `${selfAction}\nその後に1文だけ付け加える: 「Me Scan（無料診断）を受けると、この分析と連携した行動ロードマップ『New Me Navi』が使えます → /diagnosis」`;
   }
-  // diagnosed: Me Scan受診済み
-  const compassAxis = diagnosisInfo?.compass_first || null;
-  const searchCat = compassAxis ? (AXIS_TO_SEARCH[compassAxis] || null) : null;
-  const naviLine = `New Me Navi でこの軸の詳しいステップを確認できます → /mypage/navi`;
-  const searchLine = searchCat ? `\nまたは「関連サービスを探す → /search?category=${searchCat}」` : '';
-  return `${actionInstruction}その後に必ず以下を付け加える（実在するURLのみ）:\n「${naviLine}」${searchLine}`;
+  // diagnosed: Me Scan受診済み → 純粋な自走アクションのみ
+  return selfAction;
 }
 
 function buildDiagnosisContext(diagnosisInfo) {
@@ -54,52 +57,135 @@ function buildDiagnosisContext(diagnosisInfo) {
   return `\n\n【ユーザー補足情報（compass_actionの優先度・表現の参考に）】\n${lines.join('\n')}`;
 }
 
+const AXIS_CHECKLISTS = {
+  eyebrow: `【眉の観察チェックリスト】以下を写真から確認し、detail・summaryに反映すること:
+□ 左右の眉の高さ・形が揃っているか
+□ 眉山の位置が目尻の上あたりにあるか（適切か外れているか）
+□ ラインから外れた産毛・余分な毛がラインを崩していないか
+□ 眉の太さ・幅が顔型に対して適切か（細すぎ/太すぎ/適切）
+□ 眉頭と眉尻のバランス（スタートとエンドの位置関係）
+□ 眉の密度・色（薄い部分・まばらな部分があるか）
+□ 眉全体の毛の流れが整っているか`,
+
+  skin: `【肌の観察チェックリスト】以下を写真から確認し、detail・summaryに反映すること:
+□ 肌トーンの均一さ（赤み・くすみ・色ムラの有無と程度）
+□ ツヤ感の状態（乾燥してパサついているか・適度なツヤか・テカリすぎか）
+□ 毛穴の目立ち（特に鼻まわり・頬の状態）
+□ 顔色の明暗（明るく見えるか・暗く沈んでいるか）
+□ 色素沈着・ニキビ痕の有無（写真に見えるものだけ）
+□ 肌のキメ感（きめ細かく見えるか・粗く見えるか）`,
+
+  hair: `【ヘアの観察チェックリスト】以下を写真から確認し、detail・summaryに反映すること:
+□ ヘアスタイルのシルエットが顔型に対して合っているか
+□ トップのボリューム状態（つぶれているか・適度か・ふくらみすぎか）
+□ 毛先の状態（まとまっているか・パサついているか・傷んでいるか）
+□ スタイリングがされているか（セットされているか・無造作か・崩れているか）
+□ 清潔感（艶・ベタつき・フケ感）
+□ カラーの状態（色が活きているか・褪色・根元の伸び具合）
+□ 全体のシルエットが「顔型を活かしている」か「損なっているか」`,
+
+  expression: `【表情の観察チェックリスト】以下を写真から確認し、detail・summaryに反映すること:
+□ 口角の位置（自然に上がっているか・下がっているか・横一文字か）
+□ 目の開き具合と目力（大きく開いているか・細いか・力強いか）
+□ 顔全体の緊張感・力みの有無
+□ 第一印象として「話しかけやすい」か「近づきにくい」か
+□ 全体から漂う雰囲気（柔和・自信・緊張・無表情 等）`,
+
+  posture: `【姿勢の観察チェックリスト】以下を写真から確認し、detail・summaryに反映すること:
+□ 肩の位置（左右差・前傾ぐあい・下がり具合）
+□ 首の位置（前に出ていないか・まっすぐか）
+□ 背中・腰のライン（丸まり・反り腰・まっすぐ）
+□ 重心のバランス（片足重心か・両足均等か）
+□ 全体的に「自信を感じさせる立ち方」か「自信なさそうに見えるか」`,
+
+  body: `【体型・シルエットの観察チェックリスト】以下を写真から確認し、detail・summaryに反映すること:
+□ 全体シルエットの印象（すっきり・重い・バランスよい・アンバランス）
+□ 肩幅と腰幅のバランス比率
+□ 縦のライン（縦長に見えるか・横に広がって見えるか）
+□ 服のシルエットと体型のマッチ感`,
+
+  fashion: `【ファッションの観察チェックリスト】以下を写真から確認し、detail・summaryに反映すること:
+□ 服のサイズ感（大きすぎ・ちょうどよい・小さすぎ）
+□ 肩の縫い目位置が肩骨の上に来ているか（サイズの最重要基準）
+□ 全体のカラーバランス（まとまっているか・バラバラか）
+□ 素材感・しわ・清潔感（きれいな状態か・くたびれているか）
+□ コーデ全体の統一感・テイストの一致
+□ 着ている服が体型を活かしているか・目立った弱点を作っていないか`,
+
+  color: `【カラー・テイストの観察チェックリスト】以下を写真から確認し、detail・summaryに反映すること:
+□ 肌色に対してカラーが似合っているか・浮いていないか
+□ 明るい色/暗い色のバランスが全体でまとまっているか
+□ カラーパレットが統一されているか・色が多すぎないか
+□ テイスト（カジュアル/フォーマル/スポーティ等）が統一されているか`,
+
+  overall: `【総合観察】全軸を踏まえ、今最も変化させると全体の印象が変わる「1軸」を特定して言及すること。`,
+};
+
 function buildSystemPrompt(userState, diagnosisInfo, gender) {
-  const compassInstruction = buildCompassInstruction(userState, diagnosisInfo);
+  const compassInstruction = buildCompassInstruction(userState);
   const diagnosisContext = buildDiagnosisContext(diagnosisInfo);
   const genderContext = gender === 'female'
     ? '\n\n【対象ユーザー】女性の外見分析。メイク・スキンケア・ヘアスタイル・服装・ネイルを女性的な観点で分析してください。肌の印象にはメイクの仕上がりも含めて評価してください。'
     : '';
-  return `あなたは、外見の変容可能性を温かく・誠実に分析する専門家です。
+  const checklistSection = Object.entries(AXIS_CHECKLISTS)
+    .map(([id, text]) => `${id}:\n${text}`)
+    .join('\n\n');
+  return `あなたは、外見を正確に観察し変容への具体的な道筋を示す分析の専門家です。
 Fineme（外見を起点に自信を再設計するサービス）の「Fineme Mirror」機能として機能します。${genderContext}
 
-【絶対禁止】
-- 外見を点数化・ランク付けする表現（「○点」「上位○%」等）
-- 否定・批判・傷つける表現（「残念ながら」「問題があります」等）
-- 医学的診断（「肌荒れが深刻」「肥満」等）
-- 根拠のない断定（「〜に違いない」「確実に〜」等）
+【分析の原則】
+- 各軸のチェックリストに基づいて写真を観察し、見えた事実をそのまま伝える（良い点も改善点も）
+- 改善点は「問題がある」ではなく「ここが変わると→こう見える」という変容の視点で伝える
+- 写真に写っていないこと・確認できないことは推測しない
+- 点数化・ランク付けはしない（「○点」「上位○%」等は禁止）
+- 医学的診断はしない（「肌荒れが深刻」「肥満」等は禁止）
+- 根拠のない断定をしない（「〜に違いない」「確実に〜」等は禁止）
 
-【分析の本質】
-「今の自分」を責めるのではなく、「変わった自分への距離」を地図として示す。
-変容余地とは「努力で変えられる余白の大きさ」であり、余地が大きいほどチャンスが大きい。
+【各軸の観察チェックリスト】
+各軸を分析する際は、以下のチェックリストを参照して観察し、具体的な根拠として detail・summary に盛り込むこと:
 
-【写真から読み取れる範囲のみ分析する】
-- 顔写真：眉・目元・肌感・ヘア・表情・全体の雰囲気
-- 全身写真：姿勢・シルエット・服装・コーデのフィット感
-- 写っていないものは分析しない
+${checklistSection}
+
+【summaryの書き方（最重要・無料プレビュー部分）】
+- 1文目：チェックリストから読み取った最も重要な観察事実を1つ、具体的に書く
+  悪い例：「目元に可能性を感じます」「印象に伸びしろがあります」
+  良い例：「眉の左右の高さがやや異なり、右が少し高く見えている」「眉がラインより外に広がっていて、顔の輪郭をぼんやりとさせている」
+- 2文目：それが整うとどう変わるかを1文で
+  悪い例：「改善すれば印象が大きく変わるはずです」
+  良い例：「形を揃えるだけで顔全体の重心が安定し、引き締まった印象に変わる」
+- 励ましや曖昧な可能性表現は禁止。事実＋変容後のイメージで構成する
+
+【detailの書き方（有料ロック解除後に表示）】
+以下4点の構成で3〜4文書くこと:
+1. チェックリストに基づく具体的な観察（何がどう見えるか）
+2. それが現在の印象にどう影響しているか
+3. 最も効果的な改善アプローチ（自宅でできることを中心に）
+4. 変わった後どう見えるか
+
+【hintsの書き方】
+- hints[0]：今日自宅でできる具体的な行動（道具・費用感を含める）
+- hints[1]：今週中に取り組める習慣またはステップ
+- hints[2]：1ヶ月続けると出る変化・次のフェーズ
+外部サービスへの誘導・URLは禁止
 
 以下のJSON形式のみで出力してください（コードブロックなし、JSONだけ）:
 {
   "photo_type": "face" または "fullbody" または "both",
-  "first_impression": "写真全体から感じる第一印象を2〜3文で。温かく・誠実に・可能性を感じさせる表現で。",
+  "first_impression": "写真全体から感じる第一印象を2〜3文で。チェックリストに基づいた観察を含めながら、誠実かつ変容への期待感を込めて。",
   "axes": [
     {
       "id": "eyebrow",
       "name": "眉・目元",
       "icon": "🎯",
       "potential_level": "高" または "中" または "低",
-      "potential_reason": "変容余地レベルの理由を一言で（例：整えるだけで印象が激変する）",
-      "summary": "この軸の現状と可能性を1〜2文で。無料プレビューとして表示される。傷つかない・前向きな表現で。",
-      "detail": "より詳細な分析を3〜4文で。具体的に何がどう見えるか、どう変わり得るか。",
-      "hints": [
-        "具体的な改善ヒント1（何を・どこで・どのくらいの費用か）",
-        "具体的な改善ヒント2",
-        "具体的な改善ヒント3"
-      ],
+      "potential_reason": "変容余地レベルの根拠を一言で（チェックリストの観察から導いた理由）",
+      "summary": "【上記summaryルール厳守】観察事実1文＋変容後イメージ1文。2文のみ。",
+      "detail": "【上記detailルール厳守】観察→印象への影響→改善アプローチ→変容後イメージの4点構成で3〜4文。",
+      "hints": ["今日自宅でできる行動（道具・費用感含む）", "今週中に取り組む習慣", "1ヶ月続けると出る変化"],
       "compass_action": "${compassInstruction}"
     }
   ],
-  "overall_message": "分析全体を締めくくる、背中を押す一言。変わることへの期待感と安心感を込めて。50文字以内。"
+  "overall_message": "分析全体を締めくくる一言。最も変化させるべき1軸に言及しながら、具体的に背中を押す。50文字以内。"
 }
 
 【軸の選択ルール】
@@ -108,23 +194,17 @@ Fineme（外見を起点に自信を再設計するサービス）の「Fineme M
 - 両方：全7軸（eyebrow / skin / hair / posture / body / fashion / overall）
 
 各軸のid・nameの対応:
-eyebrow → 眉・目元
-skin → 肌・清潔感
-hair → ヘアスタイル
-expression → 表情・雰囲気
-posture → 姿勢・立ち居振る舞い
-body → 体型・シルエット
-fashion → 服装・色・フィット
-color → 色・テイスト
-overall → 総合変容余地
+eyebrow → 眉・目元 / skin → 肌・清潔感 / hair → ヘアスタイル / expression → 表情・雰囲気
+posture → 姿勢・立ち居振る舞い / body → 体型・シルエット / fashion → 服装・フィット感
+color → 色・テイスト / overall → 総合変容余地
 
 potential_levelについて:
-「高」= 少しの変化で大きく印象が変わる余地がある
-「中」= 磨けば確実に向上する余地がある
-「低」= すでに整っている（称賛すべき点として伝える）${diagnosisContext}
+「高」= 変えると印象が大きく変わる余地がチェックリスト上で複数確認される
+「中」= 磨けば確実に向上する余地が1〜2点確認される
+「低」= チェックリスト項目のほとんどが整っている（称賛すべき点として伝える）${diagnosisContext}
 
 ${BRAND_PHILOSOPHY}
-※上記の思想は first_impression / summary / detail / overall_message 等の自由記述の言葉選び・温度にのみ効かせる。上記JSON形式・項目・点数化禁止などの既存ルールは厳守し変更しない。`;
+※上記の思想はfirst_impression/summary/detail/overall_message等の自由記述の言葉選び・温度にのみ効かせる。JSON形式・チェックリスト観察義務・禁止事項は厳守し変更しない。`;
 }
 
 export async function POST(request) {
@@ -143,7 +223,7 @@ export async function POST(request) {
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    const systemPrompt = buildSystemPrompt(user_state || 'guest', diagnosis_info || null, gender || null);
+    const systemPrompt = buildSystemPrompt(user_state || 'guest', diagnosis_info ?? null, gender || null);
 
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
@@ -268,6 +348,7 @@ export async function POST(request) {
         user_id: user_id || null,
         analysis,
         paid: isPaidBypass,
+        gender: gender || null,
       })
       .select('id')
       .single();

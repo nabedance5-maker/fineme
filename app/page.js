@@ -205,7 +205,8 @@ export default function HomePage() {
       }
     } catch {}
     try {
-      const raw = localStorage.getItem('fineme:diagnosis:latest');
+      const raw = localStorage.getItem('fineme:diagnosis:latest')
+        || localStorage.getItem('fineme:diagnosis:belle');
       if (raw) setDiagnosis(JSON.parse(raw));
     } catch {}
   }, []);
@@ -609,26 +610,26 @@ export default function HomePage() {
         {/* ── 2ツール統合価値 ── */}
         <section className="dual-section">
           <div className="dual-inner">
-            <p className="dual-eyebrow">2つの地図が揃うと</p>
-            <h2 className="dual-title">本当のあなたが、見えてくる。</h2>
+            <p className="dual-eyebrow">推奨の使い方：Mirror → Me Scan → Map</p>
+            <h2 className="dual-title">2つの視点が揃うと、<br />変えるべき一点が見えてくる。</h2>
             <div className="dual-cards">
-              <div className="dual-card dual-card--scan">
-                <div className="dual-card-icon">🧬</div>
-                <p className="dual-card-name">Me Scan</p>
-                <p className="dual-card-role">あなたが見ている自分</p>
-                <p className="dual-card-desc">現在地・ゴール・7軸のギャップを自分の言葉で測る。変わりたい動機も一緒に記録する。</p>
-                <Link href="/diagnosis" className="dual-card-link">受ける（無料）→</Link>
-              </div>
-              <div className="dual-card-plus">＋</div>
               <div className="dual-card dual-card--mirror">
                 <div className="dual-card-icon">📸</div>
-                <p className="dual-card-name">Mirror</p>
-                <p className="dual-card-role">他人から見えている自分</p>
-                <p className="dual-card-desc">写真から、もうひとつの視点を見つける。自分では気づかない印象・変容の余白を読み取る。</p>
-                <Link href="/mypage/mirror" className="dual-card-link">分析する（まずは無料）→</Link>
+                <p className="dual-card-name">① Mirror</p>
+                <p className="dual-card-role">他人から見えている自分（What）</p>
+                <p className="dual-card-desc">写真から他者目線の外見分析が届く。自分では気づかない印象の差分と、変容の余白を正確に読み取る。</p>
+                <Link href="/mirror" className="dual-card-link">試してみる（まずは無料）→</Link>
+              </div>
+              <div className="dual-card-plus">→</div>
+              <div className="dual-card dual-card--scan">
+                <div className="dual-card-icon">🧬</div>
+                <p className="dual-card-name">② Me Scan</p>
+                <p className="dual-card-role">変容の経路を決める（Where）</p>
+                <p className="dual-card-desc">8軸の自己診断で現在地とゴールを地図化。Mirrorと照合して「何を・どの順で変えるか」が決まり、Fineme Compassが最初の一手を指す。</p>
+                <Link href="/diagnosis" className="dual-card-link">受ける（無料）→</Link>
               </div>
             </div>
-            <p className="dual-merge">両方揃うと → <strong>New Me Map</strong> の精度が最大化される</p>
+            <p className="dual-merge">両方揃うと → <strong>New Me Map</strong> が精度最大の自走ロードマップに</p>
           </div>
         </section>
 
@@ -663,37 +664,41 @@ export default function HomePage() {
             </div>
           </section>
         ) : (
-          /* 未診断：3ステップ説明 */
+          /* 未診断：3ステップ説明（Mirror→Me Scan→Map の推奨フロー） */
           <section className="steps-section">
             <div className="steps-inner">
-              <p className="steps-eyebrow">Me Scanを受けると</p>
-              <h2 className="steps-title">約15分で、あなたの「変容地図」が完成する</h2>
-              <p className="steps-sub">何を診断するか選ばなくていい。7軸の質問に答えるだけ。</p>
+              <p className="steps-eyebrow">Fineme の使い方</p>
+              <h2 className="steps-title">まず「今どう見えているか」を知る。<br />次に「何から変えるか」を決める。</h2>
+              <p className="steps-sub">外見改善の最大の障壁は「迷い」だ。Mirror と Me Scan の2ステップで迷いを消し、Map で今日から動き始める。</p>
               <div className="steps-grid">
                 <div className="step-card">
                   <div className="step-num">1</div>
-                  <div className="step-icon">🧬</div>
-                  <p className="step-name">Me Scan</p>
-                  <p className="step-desc">体型・眉・服・髪・肌・歯・爪の7軸で、現在地と理想のギャップを測定。恋愛・人生ゴールも紐づけて診断。</p>
+                  <div className="step-icon">📸</div>
+                  <p className="step-name">Mirror</p>
+                  <p className="step-desc">写真を撮るだけで、他人の目線での外見分析が届く。<strong style={{color:'#c9a84c'}}>「今どう見えているか」の事実</strong>を、正確に把握するところから始める。</p>
                 </div>
                 <div className="step-card">
                   <div className="step-num">2</div>
-                  <div className="step-icon">🧭</div>
-                  <p className="step-name">New Me Navi</p>
-                  <p className="step-desc">7軸のレーダーチャートと変容ベクトルが即座に生成。<strong style={{color:'#c9a84c'}}>Fineme Compass</strong>があなたの「最初の一手」を明示する。</p>
+                  <div className="step-icon">🧬</div>
+                  <p className="step-name">Me Scan</p>
+                  <p className="step-desc">8軸の自己診断でゴールと現在地を地図化。Mirrorと照合して<strong style={{color:'#c9a84c'}}>「何を・どの順で変えるか」</strong>を決める。Fineme Compass が最初の一手を指す。</p>
                 </div>
                 <div className="step-card">
                   <div className="step-num">3</div>
                   <div className="step-icon">🗺️</div>
                   <p className="step-name">New Me Map</p>
-                  <p className="step-desc">軸ごとの変容ロードマップと、来た道タイプ別の中継地点が表示される。迷わず次の一手へ。</p>
+                  <p className="step-desc">「今日から一人でできること」から積み上げる変容ロードマップ。自走できる習慣と行動の設計図が、軸ごとに整理されて届く。</p>
                 </div>
               </div>
               <div className="steps-cta-wrap">
-                <Link href="/diagnosis" className="btn" style={{ fontSize: '15px', padding: '12px 28px' }}>
-                  🧬 Me Scanを受ける（無料）
+                <Link href="/mirror" className="btn" style={{ fontSize: '15px', padding: '12px 28px' }}>
+                  📸 まずMirrorを試す
                 </Link>
-                <p style={{ fontSize: '12px', color: '#9ca3af', margin: '10px 0 0' }}>匿名・登録不要 / 営業なし / 約15分</p>
+                <p style={{ marginTop: '10px' }}>
+                  <Link href="/diagnosis" style={{ fontSize: '13px', color: 'rgba(201,168,76,0.7)', textDecoration: 'none' }}>
+                    Me Scanから始める（無料・約15分）→
+                  </Link>
+                </p>
               </div>
             </div>
           </section>
@@ -741,6 +746,36 @@ export default function HomePage() {
           </div>
         </section>}
 
+        {/* ── 継続価値：Map の中身を見せる ── */}
+        <section style={{ padding: 'clamp(56px,8vw,80px) 20px', background: 'rgba(10,15,30,0.78)' }}>
+          <div style={{ maxWidth: 800, margin: '0 auto' }}>
+            <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.18em', color: 'rgba(201,168,76,0.6)', textTransform: 'uppercase', textAlign: 'center', margin: '0 0 10px' }}>
+              続けると何が起きるか
+            </p>
+            <h2 style={{ fontFamily: "'Noto Serif JP', Georgia, serif", fontSize: 'clamp(20px,3.5vw,26px)', fontWeight: 700, color: '#fff', textAlign: 'center', margin: '0 0 8px', lineHeight: 1.5 }}>
+              Finemeは「診断で終わる」サービスじゃない。
+            </h2>
+            <p style={{ fontSize: 14, color: 'rgba(232,228,220,0.55)', textAlign: 'center', margin: '0 0 44px', lineHeight: 1.8 }}>
+              Map・チェックイン・Mirror——3つの仕組みが連動して、変化が目に見えていく。
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+              {[
+                { icon: '🗺️', title: 'New Me Map', sub: '毎日の自走ロードマップ', desc: '「今日家でできること」から積み上げる25〜35ステップ。一人でコツコツ続けられる行動設計図が届く。' },
+                { icon: '📅', title: '週次チェックイン', sub: '7日ごとの振り返り', desc: '先週やれたこと・やれなかったことを確認。できなかったステップは翌週に最適化される。習慣が育まれる。' },
+                { icon: '📊', title: '月次変化レポート', sub: 'Mirrorで変化を確認', desc: '1ヶ月前のMirrorと今のMirrorを比較。外見の変化が数値と言葉で記録される。「変わっている」が見える。' },
+              ].map((item, i) => (
+                <div key={i} style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 14, padding: 'clamp(18px,3vw,24px)' }}>
+                  <div style={{ fontSize: 28, marginBottom: 10 }}>{item.icon}</div>
+                  <p style={{ fontSize: 14, fontWeight: 800, color: '#fff', margin: '0 0 4px' }}>{item.title}</p>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(201,168,76,0.7)', margin: '0 0 10px', letterSpacing: '0.05em' }}>{item.sub}</p>
+                  <p style={{ fontSize: 13, color: 'rgba(232,228,220,0.55)', lineHeight: 1.7, margin: 0 }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+            <style>{`@media(max-width:640px){.cont-grid{grid-template-columns:1fr!important}}`}</style>
+          </div>
+        </section>
+
         {/* ── 変容ストーリー（体験談） ── */}
         <section className="stories-section">
           <div className="stories-inner">
@@ -774,9 +809,9 @@ export default function HomePage() {
             ) : (
               <div className="stories-grid">
                 {[
-                  { axis: 'hair',    before: '美容院に行くたびに「どうしたいですか？」と聞かれるのが怖かった', after: '初めて「こういうスタイルにしたい」と自分から言えた。鏡を見るのが少し好きになった。', milestone: '初回サロン訪問' },
-                  { axis: 'body',    before: '服を買っても似合わない気がして、ずっと同じ服を着ていた', after: '体型が変わると、選べる服の幅が広がった。それだけで外出が楽しくなった。', milestone: '3ヶ月継続達成' },
-                  { axis: 'fashion', before: 'デートで何を着ていけばいいか毎回悩んで、結局無難な服になっていた', after: 'スタイリストに相談したら「あなたに似合う型」が分かった。迷う時間が消えた。', milestone: '私服コーデ確立' },
+                  { axis: 'eyebrow', before: 'Mirrorで「眉の左右差が顔全体をアンバランスに見せている」と指摘された', after: '眉サロンで形を整えた翌日、鏡を見て初めて「あ、整っている」と思えた。小さな変化なのに全然違う。', milestone: '眉サロン初回' },
+                  { axis: 'skin',    before: 'スキンケアを何年もしてきたのに、何が正解かずっとわからなかった', after: 'Mapの「洗顔後3分以内に保湿」を1ヶ月続けたら、Mirrorで「肌のツヤが改善」と出た。やっと実感できた。', milestone: '習慣1ヶ月達成' },
+                  { axis: 'fashion', before: '服を買っても似合わない気がして、ずっと同じ服を着ていた', after: '体型が変わると、選べる服の幅が広がった。それだけで外出が楽しくなった。', milestone: '3ヶ月継続達成' },
                 ].map((s, i) => (
                   <div key={i} className="story-card">
                     <span className="story-axis">{AXIS_ICONS[s.axis]} {AXIS_LABELS[s.axis]}</span>

@@ -678,7 +678,10 @@ export default function NewMeNaviPage() {
 
     // ── データ（Supabase優先 → localStorage fallback）──
     ;(async () => {
-    const STORAGE_KEY = 'fineme:diagnosis:latest';
+    // Belleユーザーは 'fineme:diagnosis:belle' に保存されるためフォールバック
+    const STORAGE_KEY = localStorage.getItem('fineme:diagnosis:latest')
+      ? 'fineme:diagnosis:latest'
+      : (localStorage.getItem('fineme:diagnosis:belle') ? 'fineme:diagnosis:belle' : 'fineme:diagnosis:latest');
     const PROGRESS_KEY = 'fineme:axis:progress';
     const STEP_DONE_KEY = 'fineme:step:done';
     const root = document.getElementById('navi-root');
@@ -689,7 +692,7 @@ export default function NewMeNaviPage() {
       const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
       const isLoggedIn = !!(sbKey && JSON.parse(localStorage.getItem(sbKey) || 'null')?.user?.id);
       if (!isLoggedIn) {
-        const hasDiagData = !!(localStorage.getItem('fineme:diagnosis:latest'));
+        const hasDiagData = !!(localStorage.getItem('fineme:diagnosis:latest') || localStorage.getItem('fineme:diagnosis:belle'));
         root.innerHTML = `
           <div style="min-height:50vh;display:flex;align-items:center;justify-content:center;padding:48px 20px">
             <div style="max-width:480px;width:100%;background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.25);border-radius:18px;padding:40px 32px;text-align:center;box-shadow:0 4px 32px rgba(0,0,0,0.4);backdrop-filter:blur(8px)">
@@ -1337,7 +1340,7 @@ export default function NewMeNaviPage() {
         const _budgetRank = { low: 0, mid: 1, high: 2 };
         const _maxRank = _lvRank[_userLevel];
         let _budget = null;
-        try { const _raw = localStorage.getItem('fineme:diagnosis:latest'); if (_raw) _budget = JSON.parse(_raw).budget || null; } catch {}
+        try { const _raw = localStorage.getItem('fineme:diagnosis:latest') || localStorage.getItem('fineme:diagnosis:belle'); if (_raw) _budget = JSON.parse(_raw).budget || null; } catch {}
         const _maxBudgetRank = (!_budget || _budget === 'high' || _budget === 'premium') ? 2 : (_budget === 'mid' ? 1 : 0);
         const chips = step.products
           .filter(prod => (_lvRank[prod.level||'beginner']) <= _maxRank && (_budgetRank[prod.priceRange||'low']) <= _maxBudgetRank)
@@ -1971,7 +1974,7 @@ export default function NewMeNaviPage() {
         const _budgetRank = { low: 0, mid: 1, high: 2 };
         const _maxRank = _lvRank[_userLevel];
         let _budget = null;
-        try { const _raw = localStorage.getItem('fineme:diagnosis:latest'); if (_raw) _budget = JSON.parse(_raw).budget || null; } catch {}
+        try { const _raw = localStorage.getItem('fineme:diagnosis:latest') || localStorage.getItem('fineme:diagnosis:belle'); if (_raw) _budget = JSON.parse(_raw).budget || null; } catch {}
         const _maxBudgetRank = (!_budget || _budget === 'high' || _budget === 'premium') ? 2 : (_budget === 'mid' ? 1 : 0);
         const chips = step.products
           .filter(prod => (_lvRank[prod.level||'beginner']) <= _maxRank && (_budgetRank[prod.priceRange||'low']) <= _maxBudgetRank)
@@ -2679,7 +2682,7 @@ export default function NewMeNaviPage() {
           const _budgetRank = { low: 0, mid: 1, high: 2 };
           const _maxRank = _lvRank[_userLevel];
           let _budget = null;
-          try { const _raw = localStorage.getItem('fineme:diagnosis:latest'); if (_raw) _budget = JSON.parse(_raw).budget || null; } catch {}
+          try { const _raw = localStorage.getItem('fineme:diagnosis:latest') || localStorage.getItem('fineme:diagnosis:belle'); if (_raw) _budget = JSON.parse(_raw).budget || null; } catch {}
           const _maxBudgetRank = (!_budget || _budget === 'high' || _budget === 'premium') ? 2 : (_budget === 'mid' ? 1 : 0);
           const chips = step.products
             .map((prod, pi) => ({ prod, pi }))
@@ -4058,7 +4061,7 @@ export default function NewMeNaviPage() {
   useEffect(() => {
     let topAxes = [];
     try {
-      const raw = localStorage.getItem('fineme:diagnosis:latest');
+      const raw = localStorage.getItem('fineme:diagnosis:latest') || localStorage.getItem('fineme:diagnosis:belle');
       if (raw) {
         const p = JSON.parse(raw);
         topAxes = p.priority_order?.slice(0, 3) || (p.compass_first ? [p.compass_first] : []);

@@ -128,7 +128,8 @@ export async function POST(request) {
 
   // mirror_only モード: Me Scan あり → 土台として使用（Mirror は合成で優先）
   //                     Me Scan なし → Mirror 軸データから transform_vectors を合成
-  const MIRROR_AXIS_MAP = { eyebrow: 'eyebrow', skin: 'skin', hair: 'hair', body: 'body', posture: 'body', fashion: 'fashion' };
+  // color軸はfashionにマッピング（女性Mirrorでcolorが返ることがある）
+  const MIRROR_AXIS_MAP = { eyebrow: 'eyebrow', skin: 'skin', hair: 'hair', body: 'body', posture: 'body', fashion: 'fashion', color: 'fashion' };
   const POTENTIAL_TO_TV = {
     // '高'は「改善余地が大きい」であって「未着手」ではない。concerned（気になっているが始めていない）が適切
     '高': { current: 1, ideal: 3, care_type: 'concerned' },
@@ -179,7 +180,7 @@ export async function POST(request) {
   // Mirror軸をNavi軸IDで引けるMapを構築（Mode B: gap=0軸のMirror観察表示用）
   const mirrorByNaviAxis = {};
   if (mirrorAxes) {
-    const _mirrorToNavi = { eyebrow: 'eyebrow', skin: 'skin', hair: 'hair', body: 'body', posture: 'body', fashion: 'fashion' };
+    const _mirrorToNavi = { eyebrow: 'eyebrow', skin: 'skin', hair: 'hair', body: 'body', posture: 'body', fashion: 'fashion', color: 'fashion' };
     for (const ax of mirrorAxes) {
       const naviId = _mirrorToNavi[ax.id];
       if (naviId && !mirrorByNaviAxis[naviId]) mirrorByNaviAxis[naviId] = ax;
@@ -328,6 +329,26 @@ Mirrorデータが提供されていないため、以下を厳守すること�
 - 現状把握データに「肌タイプ: 脂性肌」がある → 脂性肌向けステップを書いてよい
 - どちらにも肌タイプ記載がない → 「まず肌タイプを確認するためセルフチェックを行う」のような汎用ステップにする
 ${modeRules}
+## ⚠️ 自走行動ルール（最優先・外部サービス誘導の排除）
+このステップリストは「今日から一人でできる自走ロードマップ」です。
+ユーザーが求めているのは「サービス紹介」ではなく「自分でコツコツできることの整理と継続支援」です。
+
+action_type別の制約:
+- quick: 完全に自力でできる行動のみ。「サロンに行く」「カウンセリングを予約する」「サービスを申し込む」等の外部サービス誘導は禁止
+- habit: 自宅でできる習慣行動。外部サービスへの言及は禁止
+- ongoing: 専門家サービスの利用を含めてよい唯一のaction_type。ただし「検索する」「Webで探す」等のナビゲーション表現は禁止
+
+guide別の制約:
+- none/LOW: 自力で完全にできる内容。外部サービスへの言及は禁止
+- MID: 「プロのアドバイスがあると精度が上がる」程度の言及はよいが、具体的なサービス名・URLは禁止
+- HIGH: 専門家サービスの利用を推奨してよい（ただしURLは禁止）
+
+ステップテキストの基本方針:
+- ステップの70%以上は guide:none（自力で完全にできる）にすること
+- 「道具が必要なら何を・どこで・いくらで手に入るか」を含める（ドラッグストア・100円ショップ等）
+- URLは一切記載しない（/search・/mypage等のFineme内URLも含めて禁止）
+- 「Finemeで確認する」「サイトをチェックする」等のナビゲーション表現は禁止
+
 ## 生成ルール
 
 1. ステップは変容の旅の**一本の道**として25〜35件生成する
