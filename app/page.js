@@ -269,6 +269,13 @@ export default function HomePage() {
           margin: 0 auto;
           filter: drop-shadow(0 2px 24px rgba(201,168,76,0.45));
         }
+        .hero-nav-guide {
+          font-family: 'Noto Serif JP', 'Noto Serif', Georgia, serif;
+          font-size: clamp(14px, 2vw, 17px);
+          color: rgba(232,228,220,0.70);
+          line-height: 1.8;
+          margin: 0 0 32px;
+        }
         .hero-nav-resolve {
           font-family: 'Noto Serif JP', 'Noto Serif', Georgia, serif;
           font-size: clamp(13px, 1.8vw, 15px);
@@ -561,24 +568,7 @@ export default function HomePage() {
             </h1>
             <p className="hero-nav-catchcopy">なんとなく、外見がひっかかっている。</p>
 
-            <div className="hero-nav-verse">
-              鏡の前でふと気づく瞬間がある。
-              <span className="hero-nav-verse-q">
-                「今の自分を、このまま<br />
-                &nbsp;好きだと言えるか？」
-              </span>
-            </div>
-
-            <p className="hero-nav-tagline">
-              その問いが生まれたなら、<br />もう準備はできています。
-            </p>
-
-            <p className="hero-nav-resolve">
-              外見は、運命じゃない。<br />
-              <strong>正しい地図と羅針盤があれば、誰でも更新できる。</strong>
-            </p>
-
-            <p className="hero-nav-h2">Find New Me.</p>
+            <p className="hero-nav-guide">質問に答えるか、写真を送るか。<br />それだけで外見の現在地がわかります。</p>
 
             <div className="hero-nav-cta-pair">
               {/* 男性 */}
@@ -627,35 +617,6 @@ export default function HomePage() {
 
           </div>
         </section>
-
-        {/* ── 2ツール統合価値 ── */}
-        <section className="dual-section">
-          <div className="dual-inner">
-            <p className="dual-eyebrow">推奨の使い方：Mirror → Me Scan → Map</p>
-            <h2 className="dual-title">2つの視点が揃うと、<br />変えるべき一点が見えてくる。</h2>
-            <div className="dual-cards">
-              <div className="dual-card dual-card--mirror">
-                <div className="dual-card-icon">📸</div>
-                <p className="dual-card-name">① Mirror</p>
-                <p className="dual-card-role">他人から見えている自分（What）</p>
-                <p className="dual-card-desc">写真から他者目線の外見分析が届く。自分では気づかない印象の差分と、変容の余白を正確に読み取る。</p>
-                <Link href="/mirror" className="dual-card-link">試してみる（まずは無料）→</Link>
-              </div>
-              <div className="dual-card-plus">→</div>
-              <div className="dual-card dual-card--scan">
-                <div className="dual-card-icon">🧬</div>
-                <p className="dual-card-name">② Me Scan</p>
-                <p className="dual-card-role">変容の経路を決める（Where）</p>
-                <p className="dual-card-desc">8軸の自己診断で現在地とゴールを地図化。Mirrorと照合して「何を・どの順で変えるか」が決まり、Fineme Compassが最初の一手を指す。</p>
-                <Link href="/diagnosis" className="dual-card-link">受ける（無料）→</Link>
-              </div>
-            </div>
-            <p className="dual-merge">両方揃うと → <strong>New Me Map</strong> が精度最大の自走ロードマップに</p>
-          </div>
-        </section>
-
-        {/* ── Before / After carousel ── */}
-        <BaCarousel />
 
         {/* ── 3ステップ or 診断済みパネル ── */}
         {diagnosis && loggedIn ? (
@@ -767,36 +728,6 @@ export default function HomePage() {
           </div>
         </section>}
 
-        {/* ── 継続価値：Map の中身を見せる ── */}
-        <section style={{ padding: 'clamp(56px,8vw,80px) 20px', background: 'rgba(10,15,30,0.78)' }}>
-          <div style={{ maxWidth: 800, margin: '0 auto' }}>
-            <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.18em', color: 'rgba(201,168,76,0.6)', textTransform: 'uppercase', textAlign: 'center', margin: '0 0 10px' }}>
-              続けると何が起きるか
-            </p>
-            <h2 style={{ fontFamily: "'Noto Serif JP', Georgia, serif", fontSize: 'clamp(20px,3.5vw,26px)', fontWeight: 700, color: '#fff', textAlign: 'center', margin: '0 0 8px', lineHeight: 1.5 }}>
-              Finemeは「診断で終わる」サービスじゃない。
-            </h2>
-            <p style={{ fontSize: 14, color: 'rgba(232,228,220,0.55)', textAlign: 'center', margin: '0 0 44px', lineHeight: 1.8 }}>
-              Map・チェックイン・Mirror——3つの仕組みが連動して、変化が目に見えていく。
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
-              {[
-                { icon: '🗺️', title: 'New Me Map', sub: '毎日の自走ロードマップ', desc: '「今日家でできること」から積み上げる25〜35ステップ。一人でコツコツ続けられる行動設計図が届く。' },
-                { icon: '📅', title: '週次チェックイン', sub: '7日ごとの振り返り', desc: '先週やれたこと・やれなかったことを確認。できなかったステップは翌週に最適化される。習慣が育まれる。' },
-                { icon: '📊', title: '月次変化レポート', sub: 'Mirrorで変化を確認', desc: '1ヶ月前のMirrorと今のMirrorを比較。外見の変化が数値と言葉で記録される。「変わっている」が見える。' },
-              ].map((item, i) => (
-                <div key={i} style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 14, padding: 'clamp(18px,3vw,24px)' }}>
-                  <div style={{ fontSize: 28, marginBottom: 10 }}>{item.icon}</div>
-                  <p style={{ fontSize: 14, fontWeight: 800, color: '#fff', margin: '0 0 4px' }}>{item.title}</p>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(201,168,76,0.7)', margin: '0 0 10px', letterSpacing: '0.05em' }}>{item.sub}</p>
-                  <p style={{ fontSize: 13, color: 'rgba(232,228,220,0.55)', lineHeight: 1.7, margin: 0 }}>{item.desc}</p>
-                </div>
-              ))}
-            </div>
-            <style>{`@media(max-width:640px){.cont-grid{grid-template-columns:1fr!important}}`}</style>
-          </div>
-        </section>
-
         {/* ── 変容ストーリー（体験談） ── */}
         <section className="stories-section">
           <div className="stories-inner">
@@ -846,6 +777,36 @@ export default function HomePage() {
             <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--color-muted)', marginTop: '24px' }}>
               <a href="/mypage/story-submit" style={{ color: 'var(--color-gold)', fontWeight: '700', textDecoration: 'none' }}>あなたの変容ストーリーを記録する →</a>
             </p>
+          </div>
+        </section>
+
+        {/* ── 継続価値：Map の中身を見せる ── */}
+        <section style={{ padding: 'clamp(56px,8vw,80px) 20px', background: 'rgba(10,15,30,0.78)' }}>
+          <div style={{ maxWidth: 800, margin: '0 auto' }}>
+            <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.18em', color: 'rgba(201,168,76,0.6)', textTransform: 'uppercase', textAlign: 'center', margin: '0 0 10px' }}>
+              続けると何が起きるか
+            </p>
+            <h2 style={{ fontFamily: "'Noto Serif JP', Georgia, serif", fontSize: 'clamp(20px,3.5vw,26px)', fontWeight: 700, color: '#fff', textAlign: 'center', margin: '0 0 8px', lineHeight: 1.5 }}>
+              Finemeは「診断で終わる」サービスじゃない。
+            </h2>
+            <p style={{ fontSize: 14, color: 'rgba(232,228,220,0.55)', textAlign: 'center', margin: '0 0 44px', lineHeight: 1.8 }}>
+              Map・チェックイン・Mirror——3つの仕組みが連動して、変化が目に見えていく。
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+              {[
+                { icon: '🗺️', title: 'New Me Map', sub: '毎日の自走ロードマップ', desc: '「今日家でできること」から積み上げる25〜35ステップ。一人でコツコツ続けられる行動設計図が届く。' },
+                { icon: '📅', title: '週次チェックイン', sub: '7日ごとの振り返り', desc: '先週やれたこと・やれなかったことを確認。できなかったステップは翌週に最適化される。習慣が育まれる。' },
+                { icon: '📊', title: '月次変化レポート', sub: 'Mirrorで変化を確認', desc: '1ヶ月前のMirrorと今のMirrorを比較。外見の変化が数値と言葉で記録される。「変わっている」が見える。' },
+              ].map((item, i) => (
+                <div key={i} style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 14, padding: 'clamp(18px,3vw,24px)' }}>
+                  <div style={{ fontSize: 28, marginBottom: 10 }}>{item.icon}</div>
+                  <p style={{ fontSize: 14, fontWeight: 800, color: '#fff', margin: '0 0 4px' }}>{item.title}</p>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(201,168,76,0.7)', margin: '0 0 10px', letterSpacing: '0.05em' }}>{item.sub}</p>
+                  <p style={{ fontSize: 13, color: 'rgba(232,228,220,0.55)', lineHeight: 1.7, margin: 0 }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+            <style>{`@media(max-width:640px){.cont-grid{grid-template-columns:1fr!important}}`}</style>
           </div>
         </section>
 
