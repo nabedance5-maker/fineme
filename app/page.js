@@ -229,8 +229,8 @@ export default function HomePage() {
           position: relative;
           padding: 120px 20px 100px;
           background:
-            linear-gradient(rgba(10,15,30,0.60), rgba(10,15,30,0.75)),
-            url('/assets/images/hero-bg.png') center / cover no-repeat;
+            linear-gradient(rgba(5,10,24,0.65) 0%, rgba(5,10,24,0.80) 100%),
+            url('/assets/images/hero-bg-c3.jpg') center / cover no-repeat;
           overflow: hidden;
           text-align: center;
           display: flex;
@@ -269,13 +269,22 @@ export default function HomePage() {
           margin: 0 auto;
           filter: drop-shadow(0 2px 24px rgba(201,168,76,0.45));
         }
+        .hero-nav-catchcopy {
+          font-family: 'Noto Serif JP', 'Noto Serif', Georgia, serif;
+          font-size: clamp(18px, 3vw, 24px);
+          font-weight: 700;
+          color: rgba(232,228,220,0.90);
+          margin: 0 0 32px;
+          line-height: 1.6;
+          letter-spacing: .02em;
+        }
         .hero-nav-h2 {
           font-family: 'Playfair Display', Georgia, serif;
           font-size: clamp(28px, 6vw, 52px);
           font-weight: 700;
           font-style: italic;
           color: rgba(201,168,76,0.65);
-          margin: 8px 0 44px;
+          margin: 32px 0 44px;
           letter-spacing: .02em;
         }
         .hero-nav-verse {
@@ -539,7 +548,7 @@ export default function HomePage() {
                 className="hero-nav-logo"
               />
             </h1>
-            <p className="hero-nav-h2">Find New Me.</p>
+            <p className="hero-nav-catchcopy">なんとなく、外見がひっかかっている。</p>
 
             <div className="hero-nav-verse">
               鏡の前でふと気づく瞬間がある。
@@ -552,6 +561,8 @@ export default function HomePage() {
             <p className="hero-nav-tagline">
               その問いが生まれたなら、<br />もう準備はできています。
             </p>
+
+            <p className="hero-nav-h2">Find New Me.</p>
 
             <div className="hero-nav-cta-pair">
               {/* 男性 */}
