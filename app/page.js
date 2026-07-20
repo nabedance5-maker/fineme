@@ -1,138 +1,6 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-
-// ── Before / After カルーセル ─────────────────────────────────────────
-const BA_SLIDES = [
-  { type: 'image', caption: <>外見が変わると、<strong>自信が変わる。</strong><br />自信が変わると、<strong>人生が変わる。</strong></> },
-  {
-    type: 'text', axis: '💇 髪・ヘア',
-    before: { state: 'BEFORE', body: '「いつも同じ、なんとなく」\nセットも面倒で毎朝同じ髪型。\n清潔感はあるつもり、でも指摘されたことがある。', quote: null },
-    after: { state: 'AFTER', body: '信頼できる美容師と出会い\nスタイリング習慣が変わった。\nマッチングアプリで「清潔感ある」と初めて言われた。', quote: '「朝が楽しくなった」' },
-  },
-  {
-    type: 'text', axis: '👔 服・コーデ',
-    before: { state: 'BEFORE', body: '「服に興味ない」\nコーデを考えるのが苦手で\nいつも無難な黒ばかり選んでいた。', quote: null },
-    after: { state: 'AFTER', body: '骨格診断で「自分に合う服」を知った。\n全身コーデが5分で決まるようになり\n「おしゃれになった？」と聞かれた。', quote: '「鏡を見るのが楽しくなった」' },
-  },
-];
-
-function BaCarousel() {
-  const [idx, setIdx] = useState(0);
-  const timerRef = useRef(null);
-
-  useEffect(() => {
-    timerRef.current = setInterval(() => setIdx(i => (i + 1) % BA_SLIDES.length), 4500);
-    return () => clearInterval(timerRef.current);
-  }, []);
-
-  const slide = BA_SLIDES[idx];
-
-  return (
-    <section className="ba-section">
-      <div className="ba-carousel">
-        {slide.type === 'image' ? (
-          <div className="ba-img-wrap">
-            <img src="/assets/images/before-after.webp" alt="外見と自信のBefore / After" className="ba-img" />
-            <div className="ba-overlay" />
-            <div className="ba-divider" />
-            <div className="ba-label-before"><span className="ba-label-text">Before</span></div>
-            <div className="ba-label-after"><span className="ba-label-text">After</span></div>
-          </div>
-        ) : (
-          <div className="ba-text-slide">
-            <div className="ba-text-half ba-text-half--before">
-              <div className="ba-text-axis">{slide.axis}</div>
-              <div className="ba-text-state ba-text-state--before">{slide.before.state}</div>
-              <p className="ba-text-body" style={{ whiteSpace: 'pre-line' }}>{slide.before.body}</p>
-            </div>
-            <div className="ba-text-half">
-              <div className="ba-text-axis">{slide.axis}</div>
-              <div className="ba-text-state ba-text-state--after">{slide.after.state}</div>
-              <p className="ba-text-body" style={{ whiteSpace: 'pre-line' }}>{slide.after.body}</p>
-              {slide.after.quote && <p className="ba-text-quote">{slide.after.quote}</p>}
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="ba-caption">
-        <p>外見が変わると、<strong>自信が変わる。</strong><br />自信が変わると、<strong>人生が変わる。</strong></p>
-        <div className="ba-dots">
-          {BA_SLIDES.map((_, i) => (
-            <button key={i} className={`ba-dot${i === idx ? ' active' : ''}`} onClick={() => { setIdx(i); clearInterval(timerRef.current); }} aria-label={`スライド${i + 1}`} />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── 変容シルエット SVG（Before / After 人物線画） ──────────────────────
-function HeroFigures() {
-  const s = 'rgba(201,168,76,0.65)';
-  const sw = 1.3;
-  return (
-    <svg viewBox="0 0 1200 580" width="100%" height="100%"
-      style={{ position: 'absolute', inset: 0, pointerEvents: 'none', userSelect: 'none' }}
-      aria-hidden="true" preserveAspectRatio="xMidYMid slice"
-    >
-      {/* 航路線：before → after（破線アーク） */}
-      <path d="M 248,310 C 420,130 800,130 958,292"
-        fill="none" stroke="rgba(201,168,76,0.1)" strokeWidth="1.2" strokeDasharray="10 7" />
-      {/* 始点・終点の小さな菱形マーク */}
-      <polygon points="248,300 254,310 248,320 242,310"
-        fill="none" stroke="rgba(201,168,76,0.12)" strokeWidth="1" />
-      <polygon points="958,282 964,292 958,302 952,292"
-        fill="none" stroke="rgba(201,168,76,0.15)" strokeWidth="1" />
-
-      {/* ── Before 人物（左・前傾・肩落ち） ── */}
-      <g transform="translate(248,310)" opacity="0.13">
-        <circle cx="0" cy="-100" r="20" fill="none" stroke={s} strokeWidth={sw}/>
-        <line x1="0" y1="-80" x2="-2" y2="-68" stroke={s} strokeWidth={sw}/>
-        {/* 肩ライン：不均等・やや垂れ下がり */}
-        <path d="M-22,-64 L-2,-68 L18,-62" fill="none" stroke={s} strokeWidth={sw}/>
-        {/* 背骨：前傾カーブ */}
-        <path d="M-2,-68 C-6,-28 -10,22 -7,80" fill="none" stroke={s} strokeWidth={sw}/>
-        {/* 左腕：内向きに垂れる */}
-        <path d="M-22,-64 C-28,-42 -26,-16 -22,16" fill="none" stroke={s} strokeWidth={sw}/>
-        {/* 右腕：内向きに垂れる */}
-        <path d="M18,-62 C22,-40 20,-14 16,16" fill="none" stroke={s} strokeWidth={sw}/>
-        {/* 腰 */}
-        <path d="M-16,78 L-7,80 L5,78" fill="none" stroke={s} strokeWidth={sw}/>
-        {/* 左脚：閉じ気味 */}
-        <path d="M-12,80 C-13,108 -12,140 -11,170" fill="none" stroke={s} strokeWidth={sw}/>
-        {/* 右脚：閉じ気味 */}
-        <path d="M2,80 C3,108 2,140 1,170" fill="none" stroke={s} strokeWidth={sw}/>
-        {/* 地図注記 */}
-        <text x="0" y="-128" textAnchor="middle" fill={s} fontSize="8.5"
-          fontFamily="Georgia,serif" opacity="0.6" letterSpacing="1">現在地</text>
-      </g>
-
-      {/* ── After 人物（右・直立・肩幅・自信） ── */}
-      <g transform="translate(958,292)" opacity="0.18">
-        <circle cx="0" cy="-112" r="20" fill="none" stroke={s} strokeWidth={sw}/>
-        <line x1="0" y1="-92" x2="0" y2="-78" stroke={s} strokeWidth={sw}/>
-        {/* 肩ライン：広く水平 */}
-        <path d="M-30,-72 L0,-78 L30,-72" fill="none" stroke={s} strokeWidth={sw}/>
-        {/* 背骨：まっすぐ */}
-        <line x1="0" y1="-78" x2="0" y2="80" stroke={s} strokeWidth={sw}/>
-        {/* 左腕：体から少し離れる */}
-        <path d="M-30,-72 C-38,-46 -36,-14 -32,18" fill="none" stroke={s} strokeWidth={sw}/>
-        {/* 右腕：体から少し離れる */}
-        <path d="M30,-72 C38,-46 36,-14 32,18" fill="none" stroke={s} strokeWidth={sw}/>
-        {/* 腰 */}
-        <path d="M-20,78 L0,80 L20,78" fill="none" stroke={s} strokeWidth={sw}/>
-        {/* 左脚：やや開いた安定感 */}
-        <path d="M-16,80 C-18,108 -17,142 -15,174" fill="none" stroke={s} strokeWidth={sw}/>
-        {/* 右脚：やや開いた安定感 */}
-        <path d="M16,80 C18,108 17,142 15,174" fill="none" stroke={s} strokeWidth={sw}/>
-        {/* 地図注記 */}
-        <text x="0" y="-142" textAnchor="middle" fill={s} fontSize="8.5"
-          fontFamily="Georgia,serif" opacity="0.6" letterSpacing="1">目的地</text>
-      </g>
-    </svg>
-  );
-}
 
 
 const AXIS_LABELS = { body:'体型・ボディ', eyebrow:'眉毛', fashion:'服・コーデ', hair:'髪・ヘア', skin:'肌・エステ', teeth:'歯・口元', nail:'爪' };
@@ -164,6 +32,7 @@ const STAGE2_CATEGORIES = [
 
 export default function HomePage() {
   const [diagnosis, setDiagnosis] = useState(null);
+  const [diagnosisType, setDiagnosisType] = useState(null); // 'male' | 'belle'
   const [loggedIn, setLoggedIn] = useState(false);
   const [stories, setStories] = useState([]);
   const [featuredArticles, setFeaturedArticles] = useState([]);
@@ -205,9 +74,17 @@ export default function HomePage() {
       }
     } catch {}
     try {
-      const raw = localStorage.getItem('fineme:diagnosis:latest')
-        || localStorage.getItem('fineme:diagnosis:belle');
-      if (raw) setDiagnosis(JSON.parse(raw));
+      const maleRaw = localStorage.getItem('fineme:diagnosis:latest');
+      if (maleRaw) {
+        setDiagnosis(JSON.parse(maleRaw));
+        setDiagnosisType('male');
+      } else {
+        const belleRaw = localStorage.getItem('fineme:diagnosis:belle');
+        if (belleRaw) {
+          setDiagnosis(JSON.parse(belleRaw));
+          setDiagnosisType('belle');
+        }
+      }
     } catch {}
   }, []);
 
@@ -296,43 +173,6 @@ export default function HomePage() {
           line-height: 1.6;
           letter-spacing: .02em;
         }
-        .hero-nav-h2 {
-          font-family: 'Playfair Display', Georgia, serif;
-          font-size: clamp(28px, 6vw, 52px);
-          font-weight: 700;
-          font-style: italic;
-          color: rgba(201,168,76,0.65);
-          margin: 32px 0 44px;
-          letter-spacing: .02em;
-        }
-        .hero-nav-verse {
-          font-family: 'Noto Serif JP', 'Noto Serif', Georgia, serif;
-          font-size: clamp(16px, 2.5vw, 19px);
-          color: rgba(255,255,255,0.75);
-          line-height: 1.9;
-          margin: 0 0 8px;
-          font-weight: 400;
-        }
-        .hero-nav-verse-q {
-          font-family: 'Noto Serif JP', 'Noto Serif', Georgia, serif;
-          display: block;
-          font-size: clamp(17px, 2.8vw, 21px);
-          font-weight: 700;
-          color: rgba(255,255,255,0.92);
-          line-height: 1.7;
-          padding: 10px 0 0 0;
-          border-left: none;
-          margin: 12px 0 0 0;
-          padding-left: 0;
-          text-align: center;
-        }
-        .hero-nav-tagline {
-          font-family: 'Noto Serif JP', 'Noto Serif', Georgia, serif;
-          font-size: 15px;
-          color: rgba(255,255,255,0.45);
-          line-height: 1.85;
-          margin: 28px 0 40px;
-        }
         .hero-nav-cta-pair {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -411,50 +251,6 @@ export default function HomePage() {
           border-radius: 2px;
           letter-spacing: .06em;
         }
-        /* ── Dual section ── */
-        .dual-section { padding: 64px 20px; background: rgba(10,15,30,0.78); }
-        .dual-inner { max-width: 760px; margin: 0 auto; text-align: center; }
-        .dual-eyebrow { font-size: 11px; font-weight: 800; color: rgba(201,168,76,0.55); letter-spacing: .12em; text-transform: uppercase; margin: 0 0 10px; }
-        .dual-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(20px,3.5vw,28px); font-weight: 700; color: rgba(232,228,220,0.92); margin: 0 0 40px; line-height: 1.5; }
-        .dual-cards { display: flex; align-items: stretch; gap: 16px; justify-content: center; flex-wrap: wrap; }
-        .dual-card { flex: 1; min-width: 200px; max-width: 280px; padding: 24px 20px; border-radius: 14px; text-align: left; }
-        .dual-card--scan { background: rgba(201,168,76,0.06); border: 1.5px solid rgba(201,168,76,0.25); }
-        .dual-card--mirror { background: rgba(100,160,255,0.05); border: 1.5px solid rgba(100,160,255,0.22); }
-        .dual-card-icon { font-size: 28px; margin: 0 0 10px; }
-        .dual-card-name { font-size: 16px; font-weight: 800; color: rgba(232,228,220,0.92); margin: 0 0 2px; }
-        .dual-card-role { font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.55); letter-spacing: .06em; margin: 0 0 10px; text-transform: uppercase; }
-        .dual-card--mirror .dual-card-role { color: rgba(100,160,255,0.65); }
-        .dual-card-desc { font-size: 13px; color: rgba(232,228,220,0.55); line-height: 1.7; margin: 0 0 16px; }
-        .dual-card-link { font-size: 13px; font-weight: 700; color: #c9a84c; text-decoration: none; }
-        .dual-card--mirror .dual-card-link { color: rgba(100,160,255,0.85); }
-        .dual-card-plus { font-size: 32px; color: rgba(201,168,76,0.3); font-weight: 200; flex-shrink: 0; align-self: center; }
-        .dual-merge { margin-top: 32px; font-size: 14px; color: rgba(232,228,220,0.45); line-height: 1.8; }
-        .dual-merge strong { color: rgba(201,168,76,0.85); font-weight: 700; }
-        .hero-nav-sub {
-          font-size: 12px;
-          color: rgba(255,255,255,0.25);
-          text-decoration: none;
-          border-bottom: 1px solid rgba(255,255,255,0.12);
-          padding-bottom: 2px;
-          transition: color .15s;
-          display: inline-block;
-        }
-        .hero-nav-sub:hover { color: rgba(255,255,255,0.55); }
-        .hero-nav-closing {
-          margin-top: 52px;
-          padding-top: 40px;
-          border-top: 1px solid rgba(201,168,76,0.1);
-        }
-        .hero-nav-closing p {
-          font-family: 'Noto Serif JP', 'Noto Serif', Georgia, serif;
-          font-size: 13px;
-          color: rgba(255,255,255,0.3);
-          line-height: 1.9;
-          margin: 0;
-          letter-spacing: .02em;
-        }
-        .hero-nav-closing strong { color: rgba(255,255,255,0.5); font-weight: 500; }
-
         /* ── Compass banner (diagnosed) ── */
         .compass-banner { max-width: 580px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 14px 20px; background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.25); border-radius: 4px; text-decoration: none; transition: background .15s; margin-top: 32px; }
         .compass-banner:hover { background: rgba(201,168,76,0.12); }
@@ -462,40 +258,6 @@ export default function HomePage() {
         .compass-banner-label { font-size: 10px; font-weight: 800; color: rgba(201,168,76,0.5); letter-spacing: .12em; text-transform: uppercase; margin: 0 0 3px; }
         .compass-banner-main { font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.85); margin: 0; }
         .compass-banner-arrow { font-size: 14px; color: rgba(201,168,76,0.5); }
-
-        /* ── Before / After carousel ── */
-        .ba-section { padding: 0; background: var(--color-bg-dark, #0a0f1e); overflow: hidden; }
-        .ba-carousel { position: relative; }
-        .ba-slides { display: flex; transition: transform .5s ease; }
-        .ba-slide { min-width: 100%; }
-        /* image slide */
-        .ba-img-wrap { position: relative; max-height: 420px; overflow: hidden; }
-        .ba-img { width: 100%; max-height: 420px; object-fit: cover; object-position: center top; display: block; }
-        .ba-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(10,15,30,0.35) 0%, rgba(10,15,30,0.1) 40%, rgba(10,15,30,0.1) 60%, rgba(10,15,30,0.55) 100%); }
-        .ba-label-before { position: absolute; left: 6%; top: 50%; transform: translateY(-50%); }
-        .ba-label-after  { position: absolute; right: 6%; top: 50%; transform: translateY(-50%); }
-        .ba-label-text { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; padding: 4px 12px; border-radius: 2px; }
-        .ba-label-before .ba-label-text { color: rgba(255,255,255,0.45); border: 1px solid rgba(255,255,255,0.18); }
-        .ba-label-after  .ba-label-text { color: #c9a84c; border: 1px solid rgba(201,168,76,0.4); }
-        .ba-divider { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(201,168,76,0.3); transform: translateX(-50%); }
-        .ba-divider::before { content: '→'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; color: rgba(201,168,76,0.7); background: #0a0f1e; padding: 4px 6px; border-radius: 50%; border: 1px solid rgba(201,168,76,0.3); line-height: 1; }
-        /* text slides */
-        .ba-text-slide { display: flex; min-height: 260px; }
-        .ba-text-half { flex: 1; padding: 40px 24px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
-        .ba-text-half--before { border-right: 1px solid rgba(201,168,76,0.2); }
-        .ba-text-axis { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(201,168,76,0.55); }
-        .ba-text-state { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 6px; }
-        .ba-text-state--before { color: rgba(255,255,255,0.35); }
-        .ba-text-state--after  { color: #c9a84c; }
-        .ba-text-body { font-size: 14px; color: rgba(255,255,255,0.78); line-height: 1.8; font-family: 'Noto Serif JP', Georgia, serif; font-weight: 500; }
-        .ba-text-quote { font-size: 13px; color: rgba(201,168,76,0.8); font-style: italic; margin-top: 8px; }
-        /* caption & dots */
-        .ba-caption { text-align: center; padding: 14px 20px 20px; }
-        .ba-caption p { font-family: 'Noto Serif JP', Georgia, serif; font-size: 13px; color: rgba(255,255,255,0.4); margin: 0 0 10px; line-height: 1.8; letter-spacing: .02em; }
-        .ba-caption strong { color: rgba(201,168,76,0.7); font-weight: 500; }
-        .ba-dots { display: flex; justify-content: center; gap: 6px; }
-        .ba-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2); border: none; cursor: pointer; padding: 0; transition: background .2s; }
-        .ba-dot.active { background: #c9a84c; }
 
         /* ── Steps section ── */
         .steps-section { padding: 72px 20px; background: rgba(10,15,30,0.50); }
@@ -584,6 +346,7 @@ export default function HomePage() {
                     <span className="hero-nav-cta-sub">写真から他者目線を分析</span>
                   </Link>
                 </div>
+                <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.30)', margin: '10px 0 0', textAlign: 'center' }}>Fineme</p>
               </div>
               {/* 女性 */}
               <div className="hero-gender-col hero-gender-col--female">
@@ -598,12 +361,13 @@ export default function HomePage() {
                     <span className="hero-nav-cta-sub">写真から他者目線を分析</span>
                   </Link>
                 </div>
+                <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(200,100,140,0.30)', margin: '10px 0 0', textAlign: 'center' }}>Fineme Belle</p>
               </div>
             </div>
 
             {/* 診断済みユーザー向けバナー（ログイン済みのみ） */}
             {loggedIn && compass && (
-              <Link href="/diagnosis/result" className="compass-banner">
+              <Link href={diagnosisType === 'belle' ? '/belle/diagnosis/result' : '/diagnosis/result'} className="compass-banner">
                 <span style={{ fontSize: '22px', color: '#c9a84c' }}>◎</span>
                 <div className="compass-banner-body">
                   <p className="compass-banner-label">あなたのFineme Compass</p>
@@ -627,7 +391,7 @@ export default function HomePage() {
               <h2 className="steps-title">New Me Naviが生成されています</h2>
               <p className="steps-sub">変容プロファイルを確認して、次の一手へ進みましょう。</p>
               <div className="steps-grid" style={{ gridTemplateColumns: '1fr 1fr', maxWidth: '520px', margin: '0 auto' }}>
-                <Link href="/diagnosis/result" className="step-card" style={{ textDecoration: 'none', cursor: 'pointer' }}>
+                <Link href={diagnosisType === 'belle' ? '/belle/diagnosis/result' : '/diagnosis/result'} className="step-card" style={{ textDecoration: 'none', cursor: 'pointer' }}>
                   <div className="step-icon">🧭</div>
                   <p className="step-name">New Me Navi</p>
                   <p className="step-desc">7軸変容プロファイルとFineme Compassを確認する</p>
@@ -967,7 +731,7 @@ export default function HomePage() {
         )}
 
         {/* FAQ Section */}
-        <section style={{ padding: '80px 24px', background: "linear-gradient(rgba(10,15,30,0.82), rgba(10,15,30,0.82)), url('/assets/images/hero-bg.png') center / cover no-repeat", borderTop: '1px solid rgba(201,168,76,0.12)' }}>
+        <section style={{ padding: '80px 24px', background: 'linear-gradient(rgba(10,15,30,0.82), rgba(10,15,30,0.82)), url(/assets/images/hero-bg-c3.jpg) center / cover no-repeat', borderTop: '1px solid rgba(201,168,76,0.12)' }}>
           <div style={{ maxWidth: '720px', margin: '0 auto' }}>
             <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.18em', color: 'rgba(201,168,76,0.7)', textTransform: 'uppercase', margin: '0 0 12px', textAlign: 'center' }}>FAQ</p>
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 700, color: 'var(--color-heading)', textAlign: 'center', margin: '0 0 48px', lineHeight: 1.4 }}>よくある質問</h2>

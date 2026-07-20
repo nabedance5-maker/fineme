@@ -137,7 +137,7 @@ export default async function MirrorLpPage() {
                 無料で7軸の概要が見れる。続きが要らなければ1円も払わなくていい。
               </p>
               <p style={{ fontSize: '11px', color: 'rgba(240,236,228,0.25)', marginTop: '6px' }}>
-                続きは¥500（任意）・Stripe決済・写真はAI分析後に削除
+                月額¥780で継続利用（いつでも解約可）/ ¥500の単発利用も可 · 写真はAI分析後に削除
               </p>
             </div>
           </div>

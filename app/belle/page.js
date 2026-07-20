@@ -48,7 +48,7 @@ const STEPS = [
     badge: 'Me Scan + Mirror完了後',
     desc: '2つのデータから、あなただけの変容ロードマップが生成される。「今日から一人でできること」から積み上げる行動設計図。誰かに頼らず、自分で動き始められる。',
     href: '/belle/diagnosis',
-    cta: '地図を手に入れる',
+    cta: 'まずMe Scanから始める',
   },
 ];
 
@@ -58,7 +58,7 @@ export default function BellePage() {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem('fineme:diagnosis:belle') || localStorage.getItem('fineme:diagnosis:v3');
+      const raw = localStorage.getItem('fineme:diagnosis:belle');
       if (raw) setDiagnosis(JSON.parse(raw));
     } catch {}
   }, []);
