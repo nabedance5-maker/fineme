@@ -1,7 +1,9 @@
 # Threads「AI経営」編集長システム 仕様（SSoT）
 
-<!-- SOURCE: でお（スペック）× Claude Code（学習統合・実装）/ 最終更新: 2026-07-09 -->
+<!-- SOURCE: でお（スペック）× Claude Code（学習統合・実装）/ 最終更新: 2026-07-20 -->
 
+> ⏸ **停止中（2026-07-20・でお判断）**：Threadsがnote誘導として反応ゼロのため、自動生成を**一旦停止**（vercel.json から threads-draft / threads-insights / threads-token-refresh を除外）。コード・データ・本仕様は残置。**再開＝この3本を vercel.json に戻すだけ**。以下の仕様は再開時にそのまま有効。
+>
 > `app/api/cron/threads-draft/route.js` はこの仕様に従う。一次情報は `data/threads-facts.json`。
 > 目的は変わらず **note収益**。Threadsは入口＝プロフ→note→ファン化の最上流。
 
