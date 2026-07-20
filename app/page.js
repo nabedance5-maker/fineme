@@ -269,6 +269,17 @@ export default function HomePage() {
           margin: 0 auto;
           filter: drop-shadow(0 2px 24px rgba(201,168,76,0.45));
         }
+        .hero-nav-resolve {
+          font-family: 'Noto Serif JP', 'Noto Serif', Georgia, serif;
+          font-size: clamp(13px, 1.8vw, 15px);
+          color: rgba(232,228,220,0.55);
+          line-height: 1.85;
+          margin: 28px 0 0;
+        }
+        .hero-nav-resolve strong {
+          color: rgba(232,228,220,0.80);
+          font-weight: 700;
+        }
         .hero-nav-catchcopy {
           font-family: 'Noto Serif JP', 'Noto Serif', Georgia, serif;
           font-size: clamp(18px, 3vw, 24px);
@@ -562,6 +573,11 @@ export default function HomePage() {
               その問いが生まれたなら、<br />もう準備はできています。
             </p>
 
+            <p className="hero-nav-resolve">
+              外見は、運命じゃない。<br />
+              <strong>正しい地図と羅針盤があれば、誰でも更新できる。</strong>
+            </p>
+
             <p className="hero-nav-h2">Find New Me.</p>
 
             <div className="hero-nav-cta-pair">
@@ -609,12 +625,6 @@ export default function HomePage() {
               </Link>
             )}
 
-            <div className="hero-nav-closing">
-              <p>
-                外見は、運命じゃない。<br />
-                <strong>正しい地図と羅針盤があれば、誰でも更新できる。</strong>
-              </p>
-            </div>
           </div>
         </section>
 
