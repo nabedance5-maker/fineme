@@ -115,7 +115,7 @@ export default async function BelleMirrorLpPage() {
             <div className="m-fade" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.18em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '20px' }}>
               🪞 Fineme Mirror
             </div>
-            <h1 className="m-fade m-fade-d1" style={{ fontSize: 'clamp(26px,6.5vw,48px)', fontWeight: 900, fontFamily: 'Georgia, "Times New Roman", serif', lineHeight: 1.3, color: '#fff', marginBottom: '22px' }}>
+            <h1 className="m-fade m-fade-d1" style={{ fontSize: 'clamp(26px,6.5vw,48px)', fontWeight: 900, fontFamily: 'Georgia, serif', lineHeight: 1.3, color: '#fff', marginBottom: '22px' }}>
               「清潔感がない」と言われた。<br />
               でも<span style={{ color: '#c9a84c' }}>“どこを”</span>とは、<br />
               誰も教えてくれなかった。<br />
@@ -171,7 +171,7 @@ export default async function BelleMirrorLpPage() {
             </div>
           </div>
 
-          <p style={{ fontSize: 'clamp(20px,4.5vw,30px)', fontWeight: 900, fontFamily: 'Georgia, "Times New Roman", serif', color: '#fff', lineHeight: 1.5, marginBottom: '28px', textAlign: 'center' }}>
+          <p style={{ fontSize: 'clamp(20px,4.5vw,30px)', fontWeight: 900, fontFamily: 'Georgia, serif', color: '#fff', lineHeight: 1.5, marginBottom: '28px', textAlign: 'center' }}>
             その間も、チャンスは<br /><span style={{ color: 'rgba(240,236,228,0.3)' }}>通り過ぎている。</span>
           </p>
           <div style={{ background: 'rgba(6,4,12,0.5)', border: '1px solid rgba(232,228,220,0.06)', borderRadius: '16px', padding: '4px 20px', marginBottom: '28px' }}>

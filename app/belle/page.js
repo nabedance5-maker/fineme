@@ -155,7 +155,7 @@ export default function BellePage() {
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         textAlign: 'center', padding: 'clamp(80px,14vw,120px) 20px clamp(60px,10vw,90px)',
         position: 'relative', overflow: 'hidden',
-        background: 'linear-gradient(rgba(10,6,16,0.68) 0%, rgba(12,8,16,0.82) 100%), url("/assets/images/belle-lp-hero-bg.jpg") center/cover no-repeat',
+        background: 'linear-gradient(rgba(10,6,16,0.68) 0%, rgba(12,8,16,0.82) 100%), url(/assets/images/belle-lp-hero-bg.jpg) center/cover no-repeat',
       }}>
         <div className="b-orb" style={{
           position: 'absolute', top: '-15%', left: '50%', transform: 'translateX(-50%)',
