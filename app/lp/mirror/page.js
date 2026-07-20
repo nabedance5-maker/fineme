@@ -88,7 +88,7 @@ export default async function MirrorLpPage() {
       <main style={{ background: '#080d1a', minHeight: '100vh', color: 'rgba(240,236,228,0.88)', fontFamily: '-apple-system, sans-serif' }}>
 
         {/* ── ① ヒーロー ── */}
-        <section style={{ background: 'linear-gradient(180deg, #04081a 0%, #070e1e 35%, #0a1228 65%, #060c1a 100%)', padding: 'clamp(72px,12vw,110px) 20px clamp(56px,10vw,88px)', textAlign: 'center', position: 'relative', overflow: 'hidden', minHeight: 'min(88vh,700px)', display: 'flex', alignItems: 'center' }}>
+        <section style={{ background: 'linear-gradient(rgba(4,8,26,0.70) 0%, rgba(6,10,22,0.82) 100%), url("/assets/images/lp-mirror-hero-bg.jpg") center/cover no-repeat', padding: 'clamp(72px,12vw,110px) 20px clamp(56px,10vw,88px)', textAlign: 'center', position: 'relative', overflow: 'hidden', minHeight: 'min(88vh,700px)', display: 'flex', alignItems: 'center' }}>
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(201,168,76,0.1) 1px, transparent 1px)', backgroundSize: '44px 44px', opacity: 0.35, pointerEvents: 'none' }} />
           <div className="m-orb-main" style={{ position: 'absolute', bottom: '-20%', left: '50%', width: '900px', height: '900px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(201,168,76,0.13) 0%, rgba(201,168,76,0.04) 45%, transparent 68%)', pointerEvents: 'none' }} />
           <div className="m-orb-l" style={{ position: 'absolute', top: '-5%', left: '-8%', width: '480px', height: '480px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(60,100,220,0.09) 0%, transparent 65%)', pointerEvents: 'none' }} />
@@ -115,18 +115,14 @@ export default async function MirrorLpPage() {
             <div className="m-fade" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.18em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '20px' }}>
               🪞 Fineme Mirror
             </div>
-            <h1 className="m-fade m-fade-d1" style={{ fontSize: 'clamp(26px,6.5vw,48px)', fontWeight: 900, fontFamily: 'Georgia, "Times New Roman", serif', lineHeight: 1.3, color: '#fff', marginBottom: '22px' }}>
-              「清潔感がない」と言われた。<br />
-              でも<span style={{ color: '#c9a84c' }}>“どこを”</span>とは、<br />
-              誰も教えてくれなかった。<br />
-              写真1枚が、その答えになる。
+            <h1 className=”m-fade m-fade-d1” style={{ fontSize: 'clamp(26px,6.5vw,52px)', fontWeight: 900, fontFamily: 'Georgia, “Times New Roman”, serif', lineHeight: 1.35, color: '#fff', marginBottom: '28px' }}>
+              失恋した夜に、鏡を見た。<br />
+              <span style={{ color: '#c9a84c' }}>変わるなら今だ</span>と思った。<br />
+              外見は、自分でコントロールできる<br />最初の場所だ。
             </h1>
-            <p className="m-fade m-fade-d2" style={{ fontSize: 'clamp(13px,2.5vw,16px)', color: 'rgba(240,236,228,0.55)', lineHeight: 1.85, marginBottom: '10px' }}>
-              鏡だけでは気づけない伸びしろを、AIが映し出す。
-            </p>
-            <p className="m-fade m-fade-d2" style={{ fontSize: 'clamp(14px,2.8vw,17px)', color: 'rgba(240,236,228,0.65)', lineHeight: 2.0, marginBottom: '36px' }}>
-              AIが最大7軸で分析。眉・肌・ヘア・表情・姿勢・体型・服装。<br />
-              今のあなたが「最も変わりやすい場所」を地図にします。
+            <p className=”m-fade m-fade-d2” style={{ fontSize: 'clamp(14px,2.5vw,17px)', color: 'rgba(240,236,228,0.65)', lineHeight: 2.0, marginBottom: '36px' }}>
+              でも、何から手をつければいいかわからなかった。<br />
+              Mirrorは、写真1枚で「最初に変えるべき場所」を地図にする。
             </p>
             <div className="m-fade m-fade-d3">
               <Link href="/mirror" className="m-cta-btn" style={{

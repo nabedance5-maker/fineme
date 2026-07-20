@@ -2,36 +2,53 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
-const BELLE_CATEGORIES = [
-  { cat: 'makeup',         icon: '💄', label: 'メイクアップ',         sub: '印象を意図的に作る' },
-  { cat: 'esthetic',       icon: '💆', label: '肌・エステ',           sub: '素肌から変える' },
-  { cat: 'eyebrow',        icon: '✂️', label: '眉毛サロン',           sub: '顔の印象を即日変える' },
-  { cat: 'hair',           icon: '💇', label: 'ヘア',                 sub: '毎日のスタイルを変える' },
-  { cat: 'nail',           icon: '💅', label: 'ネイル',               sub: '細部まで気を配る人になる' },
-  { cat: 'fashion',        icon: '👗', label: 'ファッション',         sub: '自分らしい服で自信をつくる' },
-  { cat: 'hairremoval',    icon: '🪒', label: '脱毛',                 sub: 'なめらかさで印象を変える' },
-  { cat: 'whitening',      icon: '✨', label: '歯のホワイトニング',   sub: '笑顔への自信をつくる' },
-  { cat: 'gym',            icon: '🏋️', label: 'パーソナルジム',       sub: '体型・姿勢を変える' },
-  { cat: 'colordiagnosis', icon: '🎨', label: 'パーソナルカラー診断', sub: '似合う色を知る' },
-  { cat: 'bonediagnosis',  icon: '🔍', label: '骨格診断',             sub: '自分の基準を知る' },
-];
-
 const BELLE_FAQ = [
   {
-    q: 'Fineme Belleとは何ですか？',
-    a: 'Fineme Belleは、女性の外見を起点に自信を再設計するプラットフォームです。Me Scan診断・Mirror写真AI分析を通じて、あなただけの変容ロードマップを提供します。',
+    q: 'Belle Me Scanとは何ですか？',
+    a: '女性の外見を7軸で自己診断する無料ツールです。メイク・肌・髪・眉・ファッション・爪・体型の現在地を把握し、あなたが最初に変えるべき場所（外見コンパス）を示します。約10分、登録不要で受けられます。',
+  },
+  {
+    q: 'Belle Mirrorとは？',
+    a: '写真を1枚アップロードするだけで、AIが外見の変容余地を分析します。「他の人の目に自分がどう見えているか」を可視化し、最も変わりやすい場所を正確に教えます。月額¥780のサブスクリプションです。',
+  },
+  {
+    q: 'New Me Mapとは？',
+    a: 'Me ScanとMirrorの両方のデータから生成される、あなただけの変容ロードマップです。「今日から一人でできること」から積み上げる25〜35ステップが届きます。サービス任せではなく、自走できる習慣を設計します。',
   },
   {
     q: '何から始めればいいですか？',
-    a: 'まずはMe Scan（無料診断）で自分の「外見コンパス（最優先の一手）」を把握することをおすすめします。メイク・肌・髪・服装・眉の順で多くの方が変化を感じています。',
+    a: 'Me Scan（無料・約10分）から始めることをおすすめします。診断後、あなたの「最初の一手」が明確になります。Mirrorはその後、他者目線での確認として受けると効果的です。',
   },
   {
-    q: 'Fineme Mirrorとは？',
-    a: '写真を1枚アップロードするだけで、AIが外見の変容余地を分析します。メイク・肌感・ヘアスタイル・服装など複数の軸で分析し、具体的な改善ヒントを提供します。',
+    q: '写真は保存されますか？',
+    a: 'Mirror分析に使用した写真は暗号化して保存されます。月次変化レポートで過去のMirrorと比較するために使用しますが、第三者に共有されることはありません。',
+  },
+];
+
+const STEPS = [
+  {
+    num: '01',
+    name: 'Me Scan',
+    badge: '無料・約10分',
+    desc: '7軸の質問に答えるだけで、外見の現在地と「最初に変えるべき場所」がわかる。今どこにいるかが見えなければ、どこへも進めない。',
+    href: '/belle/diagnosis',
+    cta: 'Me Scanを始める',
   },
   {
-    q: 'Me ScanとMirrorの違いは？',
-    a: 'Me Scanは質問に答えて自分の現在地と変容ルートを把握する診断です。Mirrorは実際の写真をAIが分析して外見の変容余地を可視化します。両方受けると変容の地図が完成します。',
+    num: '02',
+    name: 'Mirror',
+    badge: '¥780 / 月',
+    desc: '写真を1枚送る。AIが他者目線で外見を分析し、変容余地の大きい場所を可視化する。自分では気づけない伸びしろが、数値と言葉で届く。',
+    href: '/belle/mirror',
+    cta: 'Mirrorで分析する',
+  },
+  {
+    num: '03',
+    name: 'New Me Map',
+    badge: 'Me Scan + Mirror完了後',
+    desc: '2つのデータから、あなただけの変容ロードマップが生成される。「今日から一人でできること」から積み上げる行動設計図。誰かに頼らず、自分で動き始められる。',
+    href: '/belle/diagnosis',
+    cta: '地図を手に入れる',
   },
 ];
 
@@ -46,55 +63,27 @@ export default function BellePage() {
     } catch {}
   }, []);
 
+  const rose = 'rgba(200,100,140,1)';
+  const roseFaint = 'rgba(200,100,140,0.15)';
+  const roseBorder = 'rgba(200,100,140,0.25)';
+  const ink = 'rgba(240,216,224,0.88)';
+  const inkMuted = 'rgba(240,216,224,0.55)';
+
   return (
-    <main>
+    <main style={{ background: '#0c0810', minHeight: '100vh', color: ink, fontFamily: '-apple-system, sans-serif' }}>
       <style>{`
-        .belle-hero {
-          min-height: 80vh;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          text-align: center;
-          padding: 80px 20px 60px;
-          background: radial-gradient(ellipse 120% 60% at 50% 0%, rgba(180,80,120,0.12) 0%, transparent 70%);
-        }
-        .belle-eyebrow {
-          font-size: 11px;
-          font-weight: 800;
-          letter-spacing: 0.18em;
-          color: rgba(210,140,170,0.8);
-          text-transform: uppercase;
-          margin: 0 0 16px;
-        }
-        .belle-hero-title {
-          font-family: 'Noto Serif JP', Georgia, serif;
-          font-size: clamp(24px, 5vw, 42px);
-          font-weight: 700;
-          color: #f0d8e0;
-          line-height: 1.45;
-          margin: 0 0 12px;
-          max-width: 680px;
-        }
-        .belle-hero-sub {
-          font-size: clamp(14px, 2vw, 17px);
-          color: rgba(240,216,224,0.6);
-          line-height: 1.8;
-          max-width: 520px;
-          margin: 0 auto 40px;
-        }
-        .belle-cta-row {
-          display: flex;
-          gap: 14px;
-          justify-content: center;
-          flex-wrap: wrap;
-          margin-bottom: 12px;
-        }
-        .belle-btn-primary {
+        @keyframes belle-fade-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes belle-orb { 0%,100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.15); opacity: 1; } }
+        .b-fade { animation: belle-fade-up 0.7s ease both; }
+        .b-fade-d1 { animation-delay: 0.1s; }
+        .b-fade-d2 { animation-delay: 0.25s; }
+        .b-fade-d3 { animation-delay: 0.4s; }
+        .b-orb { animation: belle-orb 7s ease-in-out infinite; }
+        .b-btn-primary {
           display: inline-block;
-          background: linear-gradient(135deg, rgba(200,100,140,0.9), rgba(160,80,120,0.9));
+          background: linear-gradient(135deg, rgba(200,100,140,0.95), rgba(160,70,110,0.95));
           color: #fff;
-          padding: 14px 28px;
+          padding: 15px 32px;
           border-radius: 10px;
           font-weight: 700;
           font-size: 15px;
@@ -102,59 +91,39 @@ export default function BellePage() {
           border: 1px solid rgba(220,120,160,0.4);
           transition: opacity .2s;
         }
-        .belle-btn-primary:hover { opacity: .88; }
-        .belle-btn-ghost {
+        .b-btn-primary:hover { opacity: .88; }
+        .b-btn-ghost {
           display: inline-block;
-          background: rgba(200,100,140,0.08);
+          background: rgba(200,100,140,0.07);
           color: rgba(240,216,224,0.85);
-          padding: 14px 28px;
+          padding: 15px 32px;
           border-radius: 10px;
           font-weight: 700;
           font-size: 15px;
           text-decoration: none;
-          border: 1px solid rgba(200,100,140,0.3);
+          border: 1px solid rgba(200,100,140,0.28);
           transition: opacity .2s;
         }
-        .belle-btn-ghost:hover { opacity: .8; }
-        .belle-cats {
-          padding: 64px 20px 48px;
-          background: rgba(20,10,18,0.5);
-        }
-        .belle-cats-inner { max-width: 900px; margin: 0 auto; }
-        .belle-cats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-          gap: 10px;
-        }
-        .belle-cat-card {
-          background: rgba(200,100,140,0.07);
+        .b-btn-ghost:hover { opacity: .8; }
+        .b-step-card {
+          background: rgba(200,100,140,0.04);
           border: 1px solid rgba(200,100,140,0.18);
+          border-radius: 16px;
+          padding: clamp(20px,4vw,28px);
+          flex: 1;
+          min-width: 0;
+        }
+        .b-empathy-item {
+          display: flex;
+          gap: 12px;
+          align-items: flex-start;
+          padding: 14px 16px;
+          background: rgba(200,100,140,0.04);
+          border: 1px solid rgba(200,100,140,0.12);
           border-radius: 10px;
-          padding: 14px 10px;
-          text-align: center;
-          text-decoration: none;
-          transition: background .2s, border-color .2s;
-          display: block;
         }
-        .belle-cat-card:hover {
-          background: rgba(200,100,140,0.14);
-          border-color: rgba(200,100,140,0.35);
-        }
-        .belle-cat-icon { font-size: 24px; display: block; margin-bottom: 6px; }
-        .belle-cat-label { font-size: 12px; font-weight: 700; color: rgba(240,216,224,0.85); display: block; }
-        .belle-cat-sub { font-size: 10px; color: rgba(240,216,224,0.4); display: block; margin-top: 3px; }
-        .belle-section-title {
-          font-family: 'Noto Serif JP', Georgia, serif;
-          font-size: clamp(17px, 2.5vw, 21px);
-          font-weight: 700;
-          color: rgba(240,216,224,0.9);
-          text-align: center;
-          margin: 0 0 28px;
-        }
-        .belle-faq { padding: 64px 20px 80px; }
-        .belle-faq-inner { max-width: 680px; margin: 0 auto; }
-        .belle-faq-item { border-bottom: 1px solid rgba(200,100,140,0.15); }
-        .belle-faq-q {
+        .b-faq-item { border-bottom: 1px solid rgba(200,100,140,0.15); }
+        .b-faq-q {
           width: 100%;
           background: none;
           border: none;
@@ -169,108 +138,210 @@ export default function BellePage() {
           color: rgba(240,216,224,0.85);
           gap: 12px;
         }
-        .belle-faq-a {
-          font-size: 14px;
-          line-height: 1.8;
-          color: rgba(240,216,224,0.65);
+        .b-faq-a {
+          font-size: 13px;
+          line-height: 1.85;
+          color: rgba(240,216,224,0.6);
           padding: 0 4px 18px;
         }
-        .belle-scan-nudge {
-          background: rgba(200,100,140,0.06);
-          border: 1px solid rgba(200,100,140,0.2);
-          border-radius: 14px;
-          padding: 28px 24px;
-          text-align: center;
-          margin: 0 auto 48px;
-          max-width: 480px;
+        @media (max-width: 640px) {
+          .b-steps-grid { flex-direction: column !important; }
         }
       `}</style>
 
-      {/* ─── ヒーロー ─── */}
-      <section className="belle-hero">
-        <p className="belle-eyebrow">Fineme Belle</p>
-        <h1 className="belle-hero-title">
-          そのまま進むのが<br />怖くなった夜に。<br />
-          <span style={{ color: 'rgba(210,140,170,0.9)' }}>外見を起点に、自信を再設計する。</span>
-        </h1>
-        <p className="belle-hero-sub">
-          変わりたいと思ったとき、<br />外見は自分でコントロールできる、最初の一歩。
-        </p>
+      {/* ── ① ヒーロー ── */}
+      <section style={{
+        minHeight: 'min(90vh, 720px)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        textAlign: 'center', padding: 'clamp(80px,14vw,120px) 20px clamp(60px,10vw,90px)',
+        position: 'relative', overflow: 'hidden',
+        background: 'linear-gradient(rgba(10,6,16,0.68) 0%, rgba(12,8,16,0.82) 100%), url("/assets/images/belle-lp-hero-bg.jpg") center/cover no-repeat',
+      }}>
+        <div className="b-orb" style={{
+          position: 'absolute', top: '-15%', left: '50%', transform: 'translateX(-50%)',
+          width: 'clamp(500px, 80vw, 900px)', height: 'clamp(500px, 80vw, 900px)',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(200,100,140,0.10) 0%, rgba(160,60,100,0.04) 45%, transparent 68%)',
+          pointerEvents: 'none',
+        }} />
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 680, width: '100%' }}>
+          <p className="b-fade" style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.18em', color: 'rgba(210,140,170,0.8)', textTransform: 'uppercase', margin: '0 0 24px' }}>
+            Fineme Belle
+          </p>
+          <h1 className="b-fade b-fade-d1" style={{
+            fontFamily: '"Noto Serif JP", Georgia, serif',
+            fontSize: 'clamp(26px, 6vw, 50px)',
+            fontWeight: 700, lineHeight: 1.45, color: '#f5e0ea', margin: '0 0 28px',
+          }}>
+            誰かに選ばれるために、<br />
+            磨くんじゃない。<br />
+            <span style={{ color: 'rgba(220,140,175,0.95)' }}>
+              自分が自分を幸せにすると<br />決めた日から、外見は変わる。
+            </span>
+          </h1>
+          <p className="b-fade b-fade-d2" style={{ fontSize: 'clamp(14px,2.5vw,17px)', color: inkMuted, lineHeight: 1.9, margin: '0 0 40px' }}>
+            でも、何から始めればいいかわからなかった。<br />
+            Belleは、その「どこから」を一緒に見つける。
+          </p>
 
-        {diagnosis ? (
-          <div className="belle-scan-nudge">
-            <p style={{ fontSize: 13, color: 'rgba(240,216,224,0.55)', margin: '0 0 12px' }}>診断済み</p>
-            <p style={{ fontSize: 15, fontWeight: 700, color: '#f0d8e0', margin: '0 0 16px' }}>
-              変容の地図を確認する
-            </p>
-            <div className="belle-cta-row" style={{ marginBottom: 0 }}>
-              <Link href="/belle/diagnosis/result" className="belle-btn-primary">New Me Naviを見る</Link>
-              <Link href="/belle/mirror" className="belle-btn-ghost">Mirrorで写真分析</Link>
+          {diagnosis ? (
+            <div className="b-fade b-fade-d3" style={{
+              background: roseFaint, border: `1px solid ${roseBorder}`,
+              borderRadius: 14, padding: '24px 20px', maxWidth: 460, margin: '0 auto',
+            }}>
+              <p style={{ fontSize: 13, color: inkMuted, margin: '0 0 10px' }}>診断済み — 変容の地図があります</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#f5e0ea', margin: '0 0 18px' }}>続きから始める</p>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <Link href="/belle/diagnosis/result" className="b-btn-primary">New Me Naviを見る</Link>
+                <Link href="/belle/mirror" className="b-btn-ghost">📸 Mirrorで写真分析</Link>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="belle-cta-row">
-            <Link href="/belle/diagnosis" className="belle-btn-primary">Me Scanを始める（無料）</Link>
-            <Link href="/belle/mirror" className="belle-btn-ghost">📸 Mirrorで写真分析</Link>
-          </div>
-        )}
+          ) : (
+            <div className="b-fade b-fade-d3" style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link href="/belle/diagnosis" className="b-btn-primary">🧬 Me Scanを始める（無料）</Link>
+              <Link href="/belle/mirror" className="b-btn-ghost">📸 Mirrorで写真分析</Link>
+            </div>
+          )}
+
+          <p className="b-fade b-fade-d3" style={{ fontSize: 12, color: 'rgba(240,216,224,0.3)', margin: '16px 0 0' }}>
+            Me Scan：約10分 · 無料 · 登録不要
+          </p>
+        </div>
       </section>
 
-      {/* ─── サービス説明 ─── */}
-      <section style={{ padding: '48px 20px', textAlign: 'center', maxWidth: 600, margin: '0 auto' }}>
-        <p style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.15em', color: 'rgba(210,140,170,0.7)', marginBottom: 12, textTransform: 'uppercase' }}>
-          What is Fineme Belle
-        </p>
-        <p style={{ fontSize: 15, lineHeight: 1.9, color: 'rgba(240,216,224,0.7)' }}>
-          Me Scan診断で「今の現在地」と「最初の一手」を把握し、<br />
-          Mirror写真AIで「変容余地」を可視化する。<br />
-          この2つが、あなただけの変容ロードマップをつくります。
-        </p>
+      {/* ── ② 共感 ── */}
+      <section style={{ padding: 'clamp(56px,8vw,80px) 20px', background: 'rgba(15,8,14,0.8)' }}>
+        <div style={{ maxWidth: 640, margin: '0 auto' }}>
+          <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.16em', color: 'rgba(210,140,170,0.7)', textTransform: 'uppercase', margin: '0 0 12px', textAlign: 'center' }}>
+            こんな気持ち、ありませんか
+          </p>
+          <h2 style={{ fontFamily: '"Noto Serif JP", Georgia, serif', fontSize: 'clamp(19px,3.5vw,26px)', fontWeight: 700, color: '#f5e0ea', textAlign: 'center', margin: '0 0 36px', lineHeight: 1.5 }}>
+            外見を変えたいと、ずっと思っていた。<br />でも、手が出なかった。
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+              '何から始めればいいかわからないまま、時間だけが過ぎた',
+              'サロンに行っても、自分に何が合っているかわからなかった',
+              '「変わりたい」気持ちだけが空回りして、結局何も変わらなかった',
+            ].map((text, i) => (
+              <div key={i} className="b-empathy-item">
+                <span style={{ color: 'rgba(200,100,140,0.7)', fontSize: 18, flexShrink: 0, marginTop: 1 }}>—</span>
+                <p style={{ fontSize: 14, lineHeight: 1.7, color: inkMuted, margin: 0 }}>{text}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#f5e0ea', textAlign: 'center', margin: '36px 0 0', lineHeight: 1.7, fontFamily: '"Noto Serif JP", Georgia, serif' }}>
+            「どこから」がわかれば、今日から動ける。<br />
+            <span style={{ color: 'rgba(220,140,175,0.9)' }}>Belleはその「どこから」を、正確に見つける。</span>
+          </p>
+        </div>
       </section>
 
-      {/* ─── カテゴリ ─── */}
-      <section className="belle-cats">
-        <div className="belle-cats-inner">
-          <p style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(210,140,170,0.7)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '.1em', textAlign: 'center' }}>カテゴリ</p>
-          <h2 className="belle-section-title">専門家・サービスから次の一手を選ぶ</h2>
-          <div className="belle-cats-grid">
-            {BELLE_CATEGORIES.map(({ cat, icon, label, sub }) => (
-              <Link key={cat} href={`/search?category=${cat}`} className="belle-cat-card">
-                <span className="belle-cat-icon">{icon}</span>
-                <span className="belle-cat-label">{label}</span>
-                <span className="belle-cat-sub">{sub}</span>
-              </Link>
+      {/* ── ③ 3ステップ ── */}
+      <section style={{ padding: 'clamp(56px,8vw,80px) 20px' }}>
+        <div style={{ maxWidth: 880, margin: '0 auto' }}>
+          <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.16em', color: 'rgba(210,140,170,0.7)', textTransform: 'uppercase', margin: '0 0 12px', textAlign: 'center' }}>
+            How it works
+          </p>
+          <h2 style={{ fontFamily: '"Noto Serif JP", Georgia, serif', fontSize: 'clamp(19px,3.5vw,26px)', fontWeight: 700, color: '#f5e0ea', textAlign: 'center', margin: '0 0 40px', lineHeight: 1.5 }}>
+            3つのステップで、変容の地図が手に入る。
+          </h2>
+          <div className="b-steps-grid" style={{ display: 'flex', gap: 16 }}>
+            {STEPS.map((s) => (
+              <div key={s.num} className="b-step-card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.12em', color: 'rgba(200,100,140,0.6)' }}>STEP {s.num}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(200,100,140,0.7)', border: '1px solid rgba(200,100,140,0.3)', borderRadius: 20, padding: '2px 9px' }}>{s.badge}</span>
+                </div>
+                <p style={{ fontSize: 18, fontWeight: 800, color: '#f5e0ea', margin: '0 0 12px', fontFamily: '"Noto Serif JP", Georgia, serif' }}>{s.name}</p>
+                <p style={{ fontSize: 13, color: inkMuted, lineHeight: 1.75, margin: '0 0 20px' }}>{s.desc}</p>
+                <Link href={s.href} style={{ fontSize: 13, color: 'rgba(220,140,175,0.85)', textDecoration: 'none', fontWeight: 700 }}>
+                  {s.cta} →
+                </Link>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ─── FAQ ─── */}
-      <section className="belle-faq">
-        <div className="belle-faq-inner">
-          <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.18em', color: 'rgba(210,140,170,0.7)', textTransform: 'uppercase', margin: '0 0 8px', textAlign: 'center' }}>FAQ</p>
-          <h2 className="belle-section-title" style={{ marginBottom: 32 }}>よくある質問</h2>
+      {/* ── ④ Mirror詳細 ── */}
+      <section style={{ padding: 'clamp(56px,8vw,80px) 20px', background: 'rgba(15,8,14,0.8)' }}>
+        <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
+          <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.16em', color: 'rgba(210,140,170,0.7)', textTransform: 'uppercase', margin: '0 0 12px' }}>Mirror</p>
+          <h2 style={{ fontFamily: '"Noto Serif JP", Georgia, serif', fontSize: 'clamp(19px,3.5vw,26px)', fontWeight: 700, color: '#f5e0ea', margin: '0 0 16px', lineHeight: 1.5 }}>
+            「他人の目に自分がどう見えているか」を<br />初めて正確に知る。
+          </h2>
+          <p style={{ fontSize: 14, color: inkMuted, lineHeight: 1.85, margin: '0 0 36px' }}>
+            自分の外見は、自分では正確に見えない。<br />
+            Mirrorは写真1枚から、メイク・肌・髪・眉・ファッション・表情の6軸で分析し、<br />
+            「今のあなたが最も変わりやすい場所」を数値と言葉で届ける。
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 36, textAlign: 'left' }}>
+            {[
+              { axis: 'メイク', desc: '印象を操作できているか' },
+              { axis: '肌感', desc: '清潔感・ツヤ・透明度' },
+              { axis: 'ヘア', desc: 'スタイリングと似合う形' },
+              { axis: '眉', desc: '顔の印象を決める軸' },
+              { axis: 'ファッション', desc: '自分らしさと清潔感' },
+              { axis: '表情', desc: '第一印象の温度感' },
+            ].map((item) => (
+              <div key={item.axis} style={{ background: roseFaint, border: `1px solid ${roseBorder}`, borderRadius: 10, padding: '12px 14px' }}>
+                <p style={{ fontSize: 12, fontWeight: 800, color: '#f5e0ea', margin: '0 0 4px' }}>{item.axis}</p>
+                <p style={{ fontSize: 11, color: inkMuted, margin: 0 }}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+          <Link href="/belle/mirror" className="b-btn-primary">📸 Mirrorで写真分析する（¥780/月）</Link>
+          <p style={{ fontSize: 12, color: 'rgba(240,216,224,0.3)', margin: '12px 0 0' }}>いつでもキャンセル可 · 写真は暗号化保存</p>
+        </div>
+      </section>
+
+      {/* ── ⑤ 最終CTA ── */}
+      <section style={{ padding: 'clamp(64px,10vw,96px) 20px', textAlign: 'center' }}>
+        <div style={{ maxWidth: 560, margin: '0 auto' }}>
+          <h2 style={{ fontFamily: '"Noto Serif JP", Georgia, serif', fontSize: 'clamp(20px,4vw,30px)', fontWeight: 700, color: '#f5e0ea', margin: '0 0 16px', lineHeight: 1.5 }}>
+            自分のために磨くと決めた日が、<br />
+            <span style={{ color: 'rgba(220,140,175,0.95)' }}>変わり始める最初の日になる。</span>
+          </h2>
+          <p style={{ fontSize: 14, color: inkMuted, lineHeight: 1.85, margin: '0 0 36px' }}>
+            まず、外見の現在地を知ることから始める。<br />10分の診断が、最初の一手を教えてくれる。
+          </p>
+          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href="/belle/diagnosis" className="b-btn-primary">🧬 Me Scanを始める（無料）</Link>
+            <Link href="/belle/mirror" className="b-btn-ghost">📸 Mirrorで写真分析</Link>
+          </div>
+          <p style={{ fontSize: 12, color: 'rgba(240,216,224,0.28)', margin: '16px 0 0' }}>
+            Me Scan：約10分 · 無料 · 登録不要
+          </p>
+        </div>
+      </section>
+
+      {/* ── ⑥ FAQ ── */}
+      <section style={{ padding: 'clamp(48px,7vw,72px) 20px 80px', background: 'rgba(15,8,14,0.6)' }}>
+        <div style={{ maxWidth: 680, margin: '0 auto' }}>
+          <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.16em', color: 'rgba(210,140,170,0.7)', textTransform: 'uppercase', margin: '0 0 8px', textAlign: 'center' }}>FAQ</p>
+          <h2 style={{ fontFamily: '"Noto Serif JP", Georgia, serif', fontSize: 'clamp(17px,2.5vw,21px)', fontWeight: 700, color: '#f5e0ea', textAlign: 'center', margin: '0 0 32px' }}>よくある質問</h2>
           {BELLE_FAQ.map((item, i) => (
-            <div key={i} className="belle-faq-item">
-              <button className="belle-faq-q" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
+            <div key={i} className="b-faq-item">
+              <button className="b-faq-q" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
                 <span>Q. {item.q}</span>
                 <span style={{ fontSize: 18, color: 'rgba(210,140,170,0.6)', flexShrink: 0 }}>
                   {openFaq === i ? '−' : '+'}
                 </span>
               </button>
-              {openFaq === i && <p className="belle-faq-a">A. {item.a}</p>}
+              {openFaq === i && <p className="b-faq-a">A. {item.a}</p>}
             </div>
           ))}
         </div>
       </section>
 
-      {/* ─── 男性版へのリンク ─── */}
-      <section style={{ padding: '32px 20px 64px', textAlign: 'center' }}>
-        <p style={{ fontSize: 13, color: 'rgba(240,216,224,0.35)', marginBottom: 10 }}>
-          男性の外見診断・分析をお探しの方は
+      {/* ── フッターリンク ── */}
+      <section style={{ padding: '24px 20px 48px', textAlign: 'center' }}>
+        <p style={{ fontSize: 12, color: 'rgba(240,216,224,0.28)', marginBottom: 8 }}>
+          男性向け外見診断・分析をお探しの方
         </p>
-        <Link href="/" style={{ fontSize: 13, color: 'rgba(210,140,170,0.6)', textDecoration: 'underline' }}>
-          Fineme（男性版）はこちら →
+        <Link href="/" style={{ fontSize: 13, color: 'rgba(210,140,170,0.5)', textDecoration: 'underline' }}>
+          Finemeトップページへ →
         </Link>
       </section>
     </main>

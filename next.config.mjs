@@ -8,6 +8,16 @@ const nextConfig = {
   experimental: {
     typedRoutes: false
   },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        bufferutil: false,
+        'utf-8-validate': false,
+      };
+    }
+    return config;
+  },
   async redirects() {
     return [
       // www なし → www あり（canonical統一）
