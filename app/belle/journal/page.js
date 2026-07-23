@@ -1,5 +1,7 @@
 import Link from 'next/link';
-import { getAllBelleArticles } from '@/lib/belle-articles';
+import { getAllBelleArticles, getAllBelleArticlesFromDB } from '@/lib/belle-articles';
+
+export const revalidate = 3600;
 
 export const metadata = {
   title: 'Belle Journal | Fineme Belle',
@@ -12,20 +14,59 @@ export const metadata = {
   },
 };
 
-const AXIS_COLORS = {
-  E: { bg: 'rgba(180,120,160,0.15)', border: 'rgba(180,120,160,0.4)', text: '#d49ab8', label: '眉軸' },
-  S: { bg: 'rgba(120,160,180,0.15)', border: 'rgba(120,160,180,0.4)', text: '#8bbdd4', label: '肌軸' },
-  H: { bg: 'rgba(160,140,200,0.15)', border: 'rgba(160,140,200,0.4)', text: '#b8a8e8', label: 'ヘア軸' },
-  F: { bg: 'rgba(200,160,100,0.15)', border: 'rgba(200,160,100,0.4)', text: '#d4b870', label: 'ファッション軸' },
-  W: { bg: 'rgba(180,100,180,0.15)', border: 'rgba(180,100,180,0.4)', text: '#c87cc8', label: '爪・手元軸' },
-  R: { bg: 'rgba(100,160,140,0.15)', border: 'rgba(100,160,140,0.4)', text: '#70b8a4', label: '脱毛軸' },
-  T: { bg: 'rgba(220,180,80,0.15)', border: 'rgba(220,180,80,0.4)', text: '#e8c84a', label: '歯・笑顔軸' },
-  B: { bg: 'rgba(140,180,120,0.15)', border: 'rgba(140,180,120,0.4)', text: '#8eb87a', label: 'ボディ軸' },
-  null: { bg: 'rgba(200,100,140,0.1)', border: 'rgba(200,100,140,0.3)', text: '#c8648c', label: 'Belle' },
+const CATEGORY_EMOJI = {
+  eyebrow: '✂️', skincare: '✨', hair: '💇', fashion: '👗',
+  nail: '💅', hairremoval: '🌿', teeth: '😁', body: '💪',
+  philosophy: '🌸', guide: '🔮',
+  '眉毛': '✂️', 'スキンケア': '✨', 'ヘア': '💇', 'ファッション': '👗',
+  'ネイル': '💅', '脱毛': '🌿', '歯・笑顔': '😁', '歯': '😁', 'ボディ': '💪',
+  '考え方': '🌸', '垢抜け': '💫',
 };
 
-export default function BelleJournalPage() {
-  const articles = getAllBelleArticles();
+function categoryEmoji(cat) {
+  return CATEGORY_EMOJI[cat] ?? '🌸';
+}
+
+// Supabase記事 → カード表示用に正規化
+function normalizeDbArticle(a) {
+  return {
+    slug: a.slug,
+    title: a.title,
+    description: a.description || '',
+    category: a.category || '',
+    readingTime: a.reading_time || 8,
+    publishedAt: a.published_at?.slice(0, 10) || '',
+    thumbnail: a.thumbnail || null,
+    source: 'db',
+  };
+}
+
+// 静的JSON記事 → カード表示用に正規化
+function normalizeStaticArticle(a) {
+  return {
+    slug: a.slug,
+    title: a.title,
+    description: a.description || '',
+    category: a.category || '',
+    readingTime: a.readingTime || 6,
+    publishedAt: a.publishedAt || '',
+    thumbnail: null,
+    source: 'static',
+  };
+}
+
+export default async function BelleJournalPage() {
+  // Supabase + 静的JSONを合算（slug で重複除去）
+  const [dbArticles, staticList] = await Promise.all([
+    getAllBelleArticlesFromDB(),
+    Promise.resolve(getAllBelleArticles()),
+  ]);
+
+  const dbNorm = dbArticles.map(normalizeDbArticle);
+  const dbSlugs = new Set(dbNorm.map(a => a.slug));
+  const staticNorm = staticList.map(normalizeStaticArticle).filter(a => !dbSlugs.has(a.slug));
+
+  const articles = [...dbNorm, ...staticNorm];
 
   return (
     <main style={{ minHeight: '100vh', padding: '0 0 80px' }}>
@@ -70,11 +111,10 @@ export default function BelleJournalPage() {
             background: rgba(20,10,18,0.6);
             border: 1px solid rgba(200,140,160,0.15);
             border-radius: 16px;
-            padding: 24px;
+            overflow: hidden;
             text-decoration: none;
             display: flex;
             flex-direction: column;
-            gap: 12px;
             transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
           }
           .belle-article-card:hover {
@@ -82,85 +122,94 @@ export default function BelleJournalPage() {
             transform: translateY(-2px);
             box-shadow: 0 8px 32px rgba(200,100,140,0.12);
           }
+          .belle-article-card-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+          }
         `}</style>
-        <div className="belle-journal-grid">
-          {articles.map((article) => {
-            const axisStyle = AXIS_COLORS[article.axisCode] ?? AXIS_COLORS[null];
-            return (
+
+        {articles.length === 0 ? (
+          <p style={{ textAlign: 'center', color: 'rgba(240,216,224,0.4)', padding: '48px 0' }}>記事を準備中です。</p>
+        ) : (
+          <div className="belle-journal-grid">
+            {articles.map((article) => (
               <Link key={article.slug} href={`/belle/journal/${article.slug}`} className="belle-article-card">
-                {/* Gradient placeholder */}
-                <div style={{
-                  height: 120,
-                  borderRadius: 10,
-                  background: `linear-gradient(135deg, rgba(200,100,140,0.25) 0%, rgba(120,60,100,0.35) 100%)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  overflow: 'hidden',
-                }}>
-                  <span style={{ fontSize: 36, opacity: 0.6 }}>
-                    { article.category === 'eyebrow' ? '✂️'
-                    : article.category === 'skincare' ? '✨'
-                    : article.category === 'hair' ? '💇'
-                    : article.category === 'fashion' ? '👗'
-                    : article.category === 'nail' ? '💅'
-                    : article.category === 'hairremoval' ? '🌿'
-                    : article.category === 'teeth' ? '😁'
-                    : article.category === 'body' ? '💪'
-                    : article.category === 'philosophy' ? '🌸'
-                    : '🔮' }
-                  </span>
-                </div>
+                {/* サムネイル */}
+                {article.thumbnail ? (
+                  <div style={{ height: 140, overflow: 'hidden', flexShrink: 0 }}>
+                    <img
+                      src={article.thumbnail}
+                      alt={article.title}
+                      style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }}
+                    />
+                  </div>
+                ) : (
+                  <div style={{
+                    height: 120,
+                    background: 'linear-gradient(135deg, rgba(200,100,140,0.25) 0%, rgba(120,60,100,0.35) 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <span style={{ fontSize: 36, opacity: 0.6 }}>{categoryEmoji(article.category)}</span>
+                  </div>
+                )}
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {article.axisCode && (
+                <div className="belle-article-card-body">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{
-                      fontSize: 11, fontWeight: 800, letterSpacing: '0.12em',
+                      fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase',
                       padding: '2px 8px', borderRadius: 99,
-                      background: axisStyle.bg, border: `1px solid ${axisStyle.border}`,
-                      color: axisStyle.text,
+                      background: 'rgba(200,100,140,0.12)', border: '1px solid rgba(200,100,140,0.3)',
+                      color: '#d498b4',
                     }}>
-                      {axisStyle.label}
+                      {article.category || 'Belle'}
                     </span>
-                  )}
-                  <span style={{ fontSize: 11, color: 'rgba(240,216,224,0.35)' }}>
-                    {article.readingTime}分で読める
+                    {article.readingTime && (
+                      <span style={{ fontSize: 11, color: 'rgba(240,216,224,0.35)' }}>
+                        {article.readingTime}分で読める
+                      </span>
+                    )}
+                  </div>
+
+                  <h2 style={{
+                    fontFamily: "'Noto Serif JP', Georgia, serif",
+                    fontSize: 'clamp(15px,2.5vw,17px)',
+                    fontWeight: 700,
+                    color: 'rgba(240,216,224,0.90)',
+                    margin: 0,
+                    lineHeight: 1.55,
+                  }}>
+                    {article.title}
+                  </h2>
+
+                  <p style={{
+                    fontSize: 13,
+                    color: 'rgba(240,216,224,0.50)',
+                    lineHeight: 1.75,
+                    margin: 0,
+                  }}>
+                    {article.description}
+                  </p>
+
+                  <span style={{
+                    marginTop: 'auto',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: 'rgba(200,100,140,0.7)',
+                    letterSpacing: '0.05em',
+                  }}>
+                    読む →
                   </span>
                 </div>
-
-                <h2 style={{
-                  fontFamily: "'Noto Serif JP', Georgia, serif",
-                  fontSize: 'clamp(15px,2.5vw,17px)',
-                  fontWeight: 700,
-                  color: 'rgba(240,216,224,0.90)',
-                  margin: 0,
-                  lineHeight: 1.55,
-                }}>
-                  {article.title}
-                </h2>
-
-                <p style={{
-                  fontSize: 13,
-                  color: 'rgba(240,216,224,0.50)',
-                  lineHeight: 1.75,
-                  margin: 0,
-                }}>
-                  {article.description}
-                </p>
-
-                <span style={{
-                  marginTop: 'auto',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: 'rgba(200,100,140,0.7)',
-                  letterSpacing: '0.05em',
-                }}>
-                  読む →
-                </span>
               </Link>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Me Scan CTA */}
