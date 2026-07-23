@@ -403,7 +403,7 @@ export default function HomePage() {
                 </Link>
               </div>
               <div className="steps-cta-wrap">
-                <Link href="/diagnosis" className="btn btn-ghost" style={{ fontSize: '13px', padding: '9px 22px' }}>
+                <Link href={diagnosisType === 'belle' ? '/belle/diagnosis' : '/diagnosis'} className="btn btn-ghost" style={{ fontSize: '13px', padding: '9px 22px' }}>
                   診断をやり直す
                 </Link>
               </div>
@@ -437,11 +437,11 @@ export default function HomePage() {
                 </div>
               </div>
               <div className="steps-cta-wrap">
-                <Link href="/mirror" className="btn" style={{ fontSize: '15px', padding: '12px 28px' }}>
+                <Link href={diagnosisType === 'belle' ? '/belle/mirror' : '/mirror'} className="btn" style={{ fontSize: '15px', padding: '12px 28px' }}>
                   📸 まずMirrorを試す
                 </Link>
                 <p style={{ marginTop: '10px' }}>
-                  <Link href="/diagnosis" style={{ fontSize: '13px', color: 'rgba(201,168,76,0.7)', textDecoration: 'none' }}>
+                  <Link href={diagnosisType === 'belle' ? '/belle/diagnosis' : '/diagnosis'} style={{ fontSize: '13px', color: 'rgba(201,168,76,0.7)', textDecoration: 'none' }}>
                     Me Scanから始める（無料・約15分）→
                   </Link>
                 </p>
@@ -648,9 +648,9 @@ export default function HomePage() {
             </h2>
             <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.6)', margin: '0 0 36px', lineHeight: 1.9 }}>
               カテゴリから選ぶことはできる。でも何から始めるべきかは、<br />あなたの現在地を測ってから分かる。<br />
-              Me Scanが、7軸の中で「今のあなたに効く順番」を教えてくれる。
+              Me Scanが、{diagnosisType === 'belle' ? '8' : '7'}軸の中で「今のあなたに効く順番」を教えてくれる。
             </p>
-            <Link href="/diagnosis" className="hero-nav-cta">
+            <Link href={diagnosisType === 'belle' ? '/belle/diagnosis' : '/diagnosis'} className="hero-nav-cta">
               🧬 Me Scanで地図を描く（無料）
             </Link>
             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.25)', margin: '16px 0 0' }}>約15分 · 匿名 · 登録不要</p>
