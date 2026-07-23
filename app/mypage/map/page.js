@@ -184,6 +184,17 @@ export default function MapPage() {
     return m ? `${m}月` : ym;
   };
 
+  // Phase 1-A: 過去スナップショットのstep_outcomesから「分かってきたこと」を軸ごとに集計
+  const confirmedByAxis = {};
+  for (const snap of snapshots) {
+    for (const o of snap.step_outcomes || []) {
+      if (o.done && o.mirror_change === true && T[o.axis]) {
+        confirmedByAxis[o.axis] = (confirmedByAxis[o.axis] || 0) + 1;
+      }
+    }
+  }
+  const confirmedAxisIds = Object.keys(confirmedByAxis).sort((a, b) => confirmedByAxis[b] - confirmedByAxis[a]);
+
   const improvedCount = mirrorComp?.improved_count ?? 0;
   const summary = viewMonth === 'now' && mirrorComp
     ? (improvedCount > 0
@@ -246,6 +257,20 @@ export default function MapPage() {
           <div style={{margin:'14px 16px 0',background: improvedCount > 0 ? 'rgba(52,211,153,0.06)' : 'rgba(201,168,76,0.05)', border: `1px solid ${improvedCount > 0 ? 'rgba(52,211,153,0.24)' : 'rgba(201,168,76,.18)'}`, borderRadius:14, padding:'13px 16px', display:'flex', alignItems:'center', gap:11}}>
             <span style={{fontSize:20}}>{summary.icon}</span>
             <span style={{fontSize:12.5,color:'rgba(232,228,220,.85)',lineHeight:1.55}}>{summary.text}</span>
+          </div>
+        )}
+
+        {/* Phase 1-A: あなたについて分かってきたこと（旅の記録） */}
+        {viewMonth === 'now' && confirmedAxisIds.length > 0 && (
+          <div style={{margin:'10px 16px 0',background:'rgba(100,160,255,0.05)',border:'1px solid rgba(100,160,255,0.18)',borderRadius:14,padding:'13px 16px'}}>
+            <div style={{fontSize:11,fontWeight:800,color:'rgba(100,160,255,0.85)',marginBottom:8}}>🪞 あなたについて分かってきたこと</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+              {confirmedAxisIds.map(id => (
+                <span key={id} style={{fontSize:11.5,color:'rgba(232,228,220,.75)',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:99,padding:'4px 10px'}}>
+                  {T[id]?.icon} {T[id]?.label} — {confirmedByAxis[id]}件の変化を確認
+                </span>
+              ))}
+            </div>
           </div>
         )}
 

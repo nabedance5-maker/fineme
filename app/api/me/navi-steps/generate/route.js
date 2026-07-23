@@ -454,6 +454,9 @@ ${BRAND_PHILOSOPHY}
     generated_at: new Date().toISOString(),
     diagnosis_at: derivedDiagnosis?.at || null,
     source: !mirror_only ? 'diagnosis_only' : derivedDiagnosis?.at ? 'diagnosis_mirror' : 'mirror_only',
+    // 次回Mirror撮影時に navi-steps/mirror-sync で部分更新（30件を作り直さない）できるよう、
+    // このMapの元になったMirrorセッションを比較ベースラインとして記録する
+    ...(mirrorSessionId ? { mirror_baseline_session_id: mirrorSessionId } : {}),
   };
 
   const { error: saveError } = await supabase

@@ -15,20 +15,25 @@ export async function GET(request) {
   const db = getSupabase();
   const now = new Date().toISOString();
 
-  // 期限切れの counter_proposed を cancelled に変更
-  const { data, error } = await db
-    .from('reservations')
-    .update({ status: 'cancelled', counter_expires_at: null })
-    .eq('status', 'counter_proposed')
-    .lt('counter_expires_at', now)
-    .select('id, user_name, user_contact');
+  try {
+    // 期限切れの counter_proposed を cancelled に変更
+    const { data, error } = await db
+      .from('reservations')
+      .update({ status: 'cancelled', counter_expires_at: null })
+      .eq('status', 'counter_proposed')
+      .lt('counter_expires_at', now)
+      .select('id, user_name, user_contact');
 
-  if (error) {
-    console.error('[cron/expire-counters]', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error('[cron/expire-counters]', error);
+      return Response.json({ error: error.message }, { status: 500 });
+    }
+
+    const count = data?.length || 0;
+    console.log(`[cron/expire-counters] expired ${count} counter-proposals`);
+    return Response.json({ expired: count, at: now });
+  } catch (e) {
+    console.error('[cron/expire-counters] unexpected error', e);
+    return Response.json({ error: 'internal_error' }, { status: 500 });
   }
-
-  const count = data?.length || 0;
-  console.log(`[cron/expire-counters] expired ${count} counter-proposals`);
-  return Response.json({ expired: count, at: now });
 }

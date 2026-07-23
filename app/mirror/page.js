@@ -156,6 +156,18 @@ export default function MirrorPage() {
     } catch {}
     if (authUserId) setMyUserId(authUserId);
 
+    // ゲスト時代（未ログイン決済）のMirrorセッションをログイン中のアカウントに紐付ける
+    if (authUserId && authToken) {
+      const localIdsForClaim = getLocalSessionIds();
+      if (localIdsForClaim.length) {
+        fetch('/api/mirror/claim-sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify({ session_ids: localIdsForClaim }),
+        }).catch(() => {});
+      }
+    }
+
     const loadPastSessions = async () => {
       const localIds = getLocalSessionIds();
       if (!authUserId && !localIds.length) return;

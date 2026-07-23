@@ -4,13 +4,7 @@
 // navi_snapshots.step_outcomes に書き込む。
 // Stage 2-3 の歴史注入の燃料となる。
 import { getSupabase } from '@/lib/supabase';
-
-const AXIS_LABELS_JA = {
-  eyebrow: '眉', skin: '肌ケア', hair: '髪', body: '体型',
-  fashion: '服', hairremoval: '脱毛', teeth: '歯', nail: '爪',
-};
-
-const LEVEL_ORDER = { '高': 2, '中': 1, '低': 0 };
+import { AXIS_LABELS_JA, buildAxisLevelMap, isImproved } from '@/lib/mirror-axis-diff';
 
 async function getUser(request) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
@@ -44,10 +38,7 @@ export async function POST(request) {
   }
 
   // 新 Mirror の軸マップ（axisId → potential_level）
-  const newMirrorAxesMap = {};
-  for (const ax of newMirror.analysis.axes) {
-    newMirrorAxesMap[ax.id] = ax.potential_level;
-  }
+  const newMirrorAxesMap = buildAxisLevelMap(newMirror.analysis);
 
   // 今月より前の最新スナップショットを取得（＝先月の Map）
   const mirrorMonth = newMirror.created_at.slice(0, 7); // 'YYYY-MM'
@@ -75,10 +66,7 @@ export async function POST(request) {
         .eq('id', snapshot.mirror_session_id)
         .single();
       if (prevMirror?.analysis?.axes) {
-        prevMirrorAxesMap = {};
-        for (const ax of prevMirror.analysis.axes) {
-          prevMirrorAxesMap[ax.id] = ax.potential_level;
-        }
+        prevMirrorAxesMap = buildAxisLevelMap(prevMirror.analysis);
       }
     } catch {}
   }
@@ -102,14 +90,11 @@ export async function POST(request) {
     if (evalType !== 'action' && prevMirrorAxesMap) {
       const prevLevel = prevMirrorAxesMap[step.axis] ?? null;
       const newLevel  = newMirrorAxesMap[step.axis]  ?? null;
-      if (prevLevel && newLevel) {
-        // potential_level が下がった（余地が減った）＝改善傾向
-        const improved = (LEVEL_ORDER[prevLevel] ?? -1) > (LEVEL_ORDER[newLevel] ?? -1);
-        mirror_change = improved;
-        if (improved) {
-          const axisName = AXIS_LABELS_JA[step.axis] || step.axis;
-          note = `改善傾向が見られた（${axisName}: ${prevLevel}→${newLevel}）`;
-        }
+      const improved = isImproved(prevLevel, newLevel);
+      mirror_change = improved;
+      if (improved) {
+        const axisName = AXIS_LABELS_JA[step.axis] || step.axis;
+        note = `改善傾向が見られた（${axisName}: ${prevLevel}→${newLevel}）`;
       }
       // prevLevel or newLevel が null（Mirror対象外の軸）: mirror_change = null のまま
     }

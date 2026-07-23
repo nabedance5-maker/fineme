@@ -609,6 +609,11 @@ export default function NewMeNaviPage() {
       .gmap-check-btn.checked { background: rgba(16,185,129,0.15); border-color: #10b981; color: #10b981; }
       .gmap-check-btn.checked:hover { background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.45); color: rgba(239,68,68,0.8); }
       .gmap-check-btn.checked:hover::before { content: '× '; }
+      .mirror-confirmed-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: rgba(100,160,255,0.9); background: rgba(100,160,255,0.08); border: 1px solid rgba(100,160,255,0.25); border-radius: 99px; padding: 3px 10px; align-self: flex-start; }
+      .confirmed-insights-widget { margin: 0 0 16px; padding: 14px 16px; background: rgba(100,160,255,0.05); border: 1px solid rgba(100,160,255,0.18); border-radius: 12px; }
+      .confirmed-insights-label { font-size: 11px; font-weight: 800; color: rgba(100,160,255,0.85); margin: 0 0 8px; }
+      .confirmed-insights-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+      .confirmed-insight-chip { font-size: 11.5px; color: rgba(232,228,220,0.75); background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 99px; padding: 4px 10px; }
       .gmap-article-row { display: flex; justify-content: center; padding: 2px 8px; }
       .gmap-article-node { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(10,15,30,0.45); border: 1px solid rgba(232,228,220,0.12); border-radius: 10px; text-decoration: none; width: 100%; max-width: 310px; }
       .gmap-article-node:hover { border-color: rgba(201,168,76,0.3); }
@@ -818,6 +823,24 @@ export default function NewMeNaviPage() {
       }
     } catch {}
 
+    // ── あなたについて分かってきたこと: 過去の月次スナップショットのstep_outcomesを軸ごとに集計 ──
+    let confirmedByAxis = {};
+    if (token) {
+      try {
+        const snapRes = await fetchWithTimeout('/api/me/navi-snapshots', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (snapRes?.ok) {
+          const snapData = await snapRes.json();
+          for (const snap of (snapData.snapshots || [])) {
+            for (const o of (snap.step_outcomes || [])) {
+              if (o.done && o.mirror_change === true) {
+                confirmedByAxis[o.axis] = (confirmedByAxis[o.axis] || 0) + 1;
+              }
+            }
+          }
+        }
+      } catch {}
+    }
+
     // ── from=mirror: Mirrorから来た場合、Mapを自動更新 ──
     const fromMirror = new URLSearchParams(location.search).get('from') === 'mirror';
     if (fromMirror && token) {
@@ -827,6 +850,50 @@ export default function NewMeNaviPage() {
           <p style="font-size:15px;font-weight:700;color:rgba(232,228,220,0.85)">Mirrorデータを反映してMapを更新しています…</p>
           <p style="font-size:12px;color:rgba(232,228,220,0.4)">20〜40秒ほどかかります。そのままお待ちください。</p>
         </div>`;
+
+        // 直近のMirrorセッションIDを取得（先月の振り返り接続・部分更新の両方に使う）
+        let latestMirrorSessionId = null;
+        try {
+          const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+          const uidForMirror = JSON.parse(localStorage.getItem(sbKey) || 'null')?.user?.id;
+          if (uidForMirror) {
+            const sRes = await fetchWithTimeout(`/api/mirror/sessions?user_id=${uidForMirror}&limit=1`);
+            if (sRes?.ok) {
+              const sd = await sRes.json();
+              latestMirrorSessionId = sd.sessions?.[0]?.id || null;
+            }
+          }
+        } catch {}
+
+        // 先月の振り返り接続（失敗しても続行。前月スナップショットのstep_outcomesを埋める）
+        if (latestMirrorSessionId) {
+          try {
+            await fetch('/api/me/navi-reconcile', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({ mirror_session_id: latestMirrorSessionId }),
+            });
+          } catch {}
+        }
+
+        // ロードマップ（既存ステップ・stepDoneの紐付け）を温存できるなら部分更新、
+        // baselineが無ければ（初回Mirror）差分比較不能なのでフル生成にフォールバック
+        if (naviStepsData?.mirror_baseline_session_id && latestMirrorSessionId) {
+          try {
+            const syncRes = await fetch('/api/me/navi-steps/mirror-sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({ mirror_session_id: latestMirrorSessionId }),
+            });
+            if (syncRes.ok) {
+              const url = new URL(location.href);
+              url.searchParams.delete('from');
+              window.location.replace(url.toString());
+              return;
+            }
+          } catch {}
+        }
+
         const genRes = await fetch('/api/me/navi-steps/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -1448,6 +1515,20 @@ export default function NewMeNaviPage() {
         </div>`;
     }
 
+    // ── あなたについて分かってきたこと（過去の月次スナップショットのstep_outcomes集計） ──
+    function buildConfirmedInsightsHtml() {
+      const axisIds = Object.keys(confirmedByAxis).sort((a, b) => confirmedByAxis[b] - confirmedByAxis[a]);
+      if (!axisIds.length) return '';
+      const chips = axisIds.map(id => {
+        const def = AREA_DEFS[id] || {};
+        return `<span class="confirmed-insight-chip">${esc(def.icon || '')} ${esc(def.label || id)} — ${confirmedByAxis[id]}件の変化を確認</span>`;
+      }).join('');
+      return `<div class="confirmed-insights-widget">
+        <p class="confirmed-insights-label">🪞 あなたについて分かってきたこと</p>
+        <div class="confirmed-insights-chips">${chips}</div>
+      </div>`;
+    }
+
     // ── AI生成「一本の道」ビュー（ゲームマップ形式） ──
     function buildOnePathHtml() {
       if (!naviStepsData?.steps?.length) return null;
@@ -1466,6 +1547,10 @@ export default function NewMeNaviPage() {
       const currentStepId   = steps.find(s => !stepDone[s.id])?.id ?? null;
       // Compass軸の最初の未完了ステップ（gnr-center強調表示、「今ここ」と同じ場合もある）
       const compassNextId   = steps.find(s => s.axis === compassAxis && !stepDone[s.id])?.id ?? null;
+      // Mirrorで変化が裏付けられたステップ（完了判定・霧の境界には影響させず、実績バッジの表示にのみ使う）
+      const mirrorConfirmedIds = new Set(
+        (naviStepsData.step_outcomes || []).filter(o => o.mirror_change === true).map(o => o.step_id)
+      );
 
       const POS_CYCLE = ['gnr-left', 'gnr-right'];
       // Stage 4: グループ分け用変数
@@ -1521,6 +1606,8 @@ export default function NewMeNaviPage() {
           }
         }
         const hintHtml = !isFog && step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
+        const mirrorConfirmedHtml = isDone && mirrorConfirmedIds.has(step.id)
+          ? `<span class="mirror-confirmed-badge">✓ 変化を確認できました</span>` : '';
 
         // ongoingステップにサービスログバッジを表示（霧の中は非表示）
         let logBadgeHtml = '';
@@ -1558,7 +1645,7 @@ export default function NewMeNaviPage() {
           <div class="path-node-detail${isCurrentStep ? ' pnd-open' : ''}">
             <div class="gmap-detail-card">
               <p class="gmap-detail-title">${esc(step.text)}</p>
-              ${hintHtml}${guideBadgeHtml}${logBadgeHtml}
+              ${mirrorConfirmedHtml}${hintHtml}${guideBadgeHtml}${logBadgeHtml}
               <button class="step-check-btn gmap-check-btn${isDone?' checked':''}" data-done-key="${esc(step.id)}">${isDone ? '✓ 完了済み' : '✓ やった！'}</button>
             </div>
           </div>
@@ -1574,7 +1661,7 @@ export default function NewMeNaviPage() {
         : '';
       const fogSection = fogHtml
         ? `<div class="navi-fog-divider">霧の向こう</div>${hasMirrorData
-            ? `<div class="navi-fog-cta">📸 このステップをやり切ったら、次のMirrorで変化を確認してみよう。<br>変化が確認されると先の航路が開けていきます。</div>`
+            ? `<div class="navi-fog-cta">📸 このステップをやり切ったら、次のMirrorで変化を確認してみよう。<br>確認できた変化はこの旅の記録として刻まれていきます。</div>`
             : `<div class="navi-fog-cta">🔭 この先 ${_fogCount} つの行程が待っています。<br><a href="/mypage/mirror">Mirrorで写真を分析する →</a> と先の道が見えてきます。</div>`
           }<div class="navi-fog-zone">${fogHtml}</div>`
         : '';
@@ -3443,6 +3530,8 @@ export default function NewMeNaviPage() {
         const _checkMark = _isDone ? `<span style="font-size:18px;color:#10b981;flex-shrink:0">✓</span>` : '';
         return `<div id="mirror-one-point-widget" style="margin:0 0 16px;padding:16px 18px;background:${_bg};border:1px solid ${_bd};border-radius:12px"><p style="font-size:10px;font-weight:800;color:${_lbClr};letter-spacing:.12em;text-transform:uppercase;margin:0 0 10px">Mirror — この30日で動かす1点</p><div style="display:flex;align-items:center;gap:12px"><span style="font-size:24px;flex-shrink:0">${_axIcon}</span><div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.9);margin:0 0 2px">${_axName}</p><p style="font-size:11px;color:rgba(232,228,220,0.5);margin:0">この1点だけ、今月やってみよう</p></div>${_checkMark}</div>${_btnHtml}</div>`;
       })()}
+
+      ${buildConfirmedInsightsHtml()}
 
       ${buildAxisFilterBar()}
 
