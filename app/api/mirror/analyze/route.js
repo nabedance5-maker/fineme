@@ -227,7 +227,7 @@ export async function POST(request) {
 
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 4000,
+      max_tokens: 8000,
       system: systemPrompt,
       messages: [{
         role: 'user',
@@ -342,16 +342,28 @@ export async function POST(request) {
     }
 
     // 写真は保存せず、分析結果（テキスト）のみ保存
-    const { data: session, error: dbError } = await supabase
+    const insertRow = {
+      user_id: user_id || null,
+      analysis,
+      paid: isPaidBypass,
+      gender: gender || null,
+    };
+    let { data: session, error: dbError } = await supabase
       .from('mirror_sessions')
-      .insert({
-        user_id: user_id || null,
-        analysis,
-        paid: isPaidBypass,
-        gender: gender || null,
-      })
+      .insert(insertRow)
       .select('id')
       .single();
+
+    // 後方互換: 本番に gender カラム未適用（PGRST204）でも分析を失敗させない。
+    // supabase-mirror-gender.sql 適用後は通常経路で gender が保存される。
+    if (dbError && dbError.code === 'PGRST204' && /gender/.test(dbError.message || '')) {
+      const { gender: _omitGender, ...legacyRow } = insertRow;
+      ({ data: session, error: dbError } = await supabase
+        .from('mirror_sessions')
+        .insert(legacyRow)
+        .select('id')
+        .single());
+    }
 
     if (dbError) {
       console.error('mirror_sessions insert error:', dbError);
