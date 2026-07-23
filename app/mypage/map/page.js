@@ -15,6 +15,10 @@ const T = {
 
 const AXIS_TOTALS = { body:12, eyebrow:8, fashion:10, hair:10, skin:8, hairremoval:7, teeth:6, nail:6 };
 
+// Mirror（AI写真分析）が対応する軸のみ「AIが確認した変化」を反映できる。
+// hairremoval/teeth/nailはMirrorの分析軸に存在しないため常に自己申告のみ扱い。
+const MIRROR_COMMON_AXES = new Set(['eyebrow', 'body', 'fashion', 'hair', 'skin']);
+
 const MAP_PATHS = [
   'M 180,95 Q 115,148 74,194',
   'M 180,95 Q 245,148 286,194',
@@ -25,6 +29,20 @@ const MAP_PATHS = [
   'M 282,318 Q 272,374 248,408',
   'M 140,408 Q 194,424 248,408',
 ];
+
+function currentYearMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function getAuth() {
+  try {
+    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    if (!sbKey) return { token: null, uid: null };
+    const obj = JSON.parse(localStorage.getItem(sbKey) || 'null');
+    return { token: obj?.access_token || null, uid: obj?.user?.id || null };
+  } catch { return { token: null, uid: null }; }
+}
 
 function FbStarRow({ label, onChange }) {
   const [val, setVal] = useState(0);
@@ -54,37 +72,124 @@ export default function MapPage() {
   const [fbSent, setFbSent]   = useState(false);
   const fbRatings = useRef({ accuracy: 0, usability: 0, revisit: 0 });
 
-  useEffect(() => {
-    try {
-      const stepDone = JSON.parse(localStorage.getItem('fineme:step:done') || '{}');
-      const axisProg = JSON.parse(localStorage.getItem('fineme:axis:progress') || '{}');
-      const override = localStorage.getItem('fineme:compass:override');
+  // ── フェーズ1: 月次スナップショット ──
+  const [snapshots, setSnapshots] = useState([]); // navi_snapshots（新しい順）
+  const [viewMonth, setViewMonth] = useState('now'); // 'now' | 'YYYY-MM'
+  // ── フェーズ2: Mirrorで確認された変化 ──
+  const [mirrorComp, setMirrorComp] = useState(null);
 
+  useEffect(() => {
+    let axisProg = {};
+    let stepDone = {};
+    try { axisProg = JSON.parse(localStorage.getItem('fineme:axis:progress') || '{}'); } catch {}
+    try { stepDone = JSON.parse(localStorage.getItem('fineme:step:done') || '{}'); } catch {}
+
+    const computeProg = (ap, sd) => {
       const p = {};
       for (const id of Object.keys(T)) {
-        const doneCount = Object.keys(stepDone).filter(k => k.startsWith(id + ':') && stepDone[k]).length;
+        const doneCount = Object.keys(sd).filter(k => k.startsWith(id + ':') && sd[k]).length;
         const total     = AXIS_TOTALS[id] ?? 10;
         const pct       = Math.min(100, Math.round(doneCount / total * 100));
-        p[id] = { done: doneCount, total, pct, isDone: axisProg[id] === 'done' };
+        p[id] = { done: doneCount, total, pct, isDone: ap[id] === 'done' };
       }
-      setProg(p);
+      return p;
+    };
 
-      const cId = (override && T[override]) ? override
-        : Object.keys(T).find(id => (p[id]?.done ?? 0) > 0 && !p[id]?.isDone)
-        ?? 'body';
-      setCompass(cId);
-    } catch {}
+    const computeCompass = (p) => {
+      try {
+        const override = localStorage.getItem('fineme:compass:override');
+        if (override && T[override]) return override;
+        const diagRaw = localStorage.getItem('fineme:diagnosis:latest');
+        const diag = diagRaw ? JSON.parse(diagRaw) : null;
+        // フェーズ4: 診断結果（Fineme Compass）の最優先軸をMapの現在地にも使う。
+        // Mapだけが「進捗がある未完了の最初の軸」という別ロジックで現在地を決めるのを避ける。
+        if (diag?.compass_first && T[diag.compass_first]) return diag.compass_first;
+      } catch {}
+      return Object.keys(T).find(id => (p[id]?.done ?? 0) > 0 && !p[id]?.isDone) ?? 'body';
+    };
+
+    // 初期表示（localStorageのみ・体感速度優先）
+    const initialProg = computeProg(axisProg, stepDone);
+    setProg(initialProg);
+    setCompass(computeCompass(initialProg));
     setFbDone(!!localStorage.getItem('fineme:feedback:map'));
+
+    // フェーズ3: サーバー側の進捗・フェーズ1の月次スナップショット・フェーズ2のMirror変化を取得
+    const { token } = getAuth();
+    if (!token) return;
+
+    Promise.all([
+      fetch('/api/me/profile', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/me/navi-snapshots', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/me/mirror-comparison', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([profileData, snapData, mirrorData]) => {
+      // フェーズ3: サーバーに進捗があればlocalStorageより優先し、端末間で同期させる
+      let nextAxisProg = axisProg, nextStepDone = stepDone, changed = false;
+      if (profileData?.axis_progress && Object.keys(profileData.axis_progress).length > 0) {
+        nextAxisProg = profileData.axis_progress;
+        changed = true;
+        try { localStorage.setItem('fineme:axis:progress', JSON.stringify(nextAxisProg)); } catch {}
+      }
+      if (profileData?.step_done && Object.keys(profileData.step_done).length > 0) {
+        nextStepDone = { ...stepDone, ...profileData.step_done };
+        changed = true;
+        try { localStorage.setItem('fineme:step:done', JSON.stringify(nextStepDone)); } catch {}
+      }
+      if (changed) {
+        const p2 = computeProg(nextAxisProg, nextStepDone);
+        setProg(p2);
+        setCompass(computeCompass(p2));
+      }
+
+      if (snapData?.snapshots?.length > 0) setSnapshots(snapData.snapshots);
+      if (mirrorData?.has_comparison) setMirrorComp(mirrorData);
+    }).catch(() => {});
   }, []);
 
+  // 選択中の月の進捗を返す（'now' = リアルタイム、過去月 = スナップショットのdone/not doneのみ）
+  const progForView = (() => {
+    if (viewMonth === 'now') return prog;
+    const snap = snapshots.find(s => s.year_month === viewMonth);
+    if (!snap) return prog;
+    const ap = snap.axis_progress || {};
+    const p = {};
+    for (const id of Object.keys(T)) {
+      const isDone = ap[id] === 'done';
+      p[id] = { done: isDone ? 1 : 0, total: 1, pct: isDone ? 100 : 0, isDone };
+    }
+    return p;
+  })();
+
+  const mirrorStatusFor = (id) => {
+    if (viewMonth !== 'now' || !mirrorComp || !MIRROR_COMMON_AXES.has(id)) return null;
+    const c = mirrorComp.changes?.find(ch => ch.id === id);
+    return c ? c.direction : null; // 'improved' | 'stable' | null
+  };
+
   const fogOf = id => {
-    const p = prog[id];
+    const p = progForView[id];
     if (!p || p.done === 0) return 'full';
     if (p.isDone) return 'clear';
     return 'partial';
   };
 
-  const selData = selected ? { id: selected, ...T[selected], ...(prog[selected] ?? {}) } : null;
+  const selData = selected ? { id: selected, ...T[selected], ...(progForView[selected] ?? {}) } : null;
+  const selMirrorStatus = selected ? mirrorStatusFor(selected) : null;
+
+  // 直近スナップショット（今月と異なる年月のうち最新）を「先月」として1つだけ表示
+  const cym = currentYearMonth();
+  const prevSnapshot = snapshots.find(s => s.year_month !== cym);
+  const monthLabel = (ym) => {
+    const m = parseInt((ym || '').split('-')[1] || '0', 10);
+    return m ? `${m}月` : ym;
+  };
+
+  const improvedCount = mirrorComp?.improved_count ?? 0;
+  const summary = viewMonth === 'now' && mirrorComp
+    ? (improvedCount > 0
+        ? { icon: '✨', text: `${mirrorComp.prev_month}から${mirrorComp.new_month}にかけて、Mirrorが ${improvedCount} 軸で変化を確認しました。` }
+        : { icon: '🧭', text: `${mirrorComp.prev_month}から変化はまだ確認できていません。行動は積み上がっています。` })
+    : null;
 
   return (
     <>
@@ -102,6 +207,11 @@ export default function MapPage() {
         @keyframes su { from{transform:translateY(8px);opacity:0} to{transform:translateY(0);opacity:1} }
         .dp-cta { display:block; text-align:center; padding:11px; background:rgba(201,168,76,.09); border:1px solid rgba(201,168,76,.32); border-radius:99px; color:#c9a84c; text-decoration:none; font-size:13px; font-weight:700; margin-top:14px; transition:background .15s; }
         .dp-cta:hover { background:rgba(201,168,76,.18); }
+        .mtoggle { display:inline-flex; background:rgba(255,255,255,0.04); border:1px solid rgba(201,168,76,.2); border-radius:99px; padding:3px; }
+        .mtoggle button { font-family:inherit; font-size:11.5px; font-weight:700; padding:7px 16px; border-radius:99px; border:none; background:transparent; color:rgba(232,228,220,.45); cursor:pointer; transition:all .2s; }
+        .mtoggle button.active { background:rgba(201,168,76,.16); color:#e3c26e; }
+        .mpill { font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:99px; border:1px solid rgba(52,211,153,.4); color:#34d399; background:rgba(52,211,153,.08); display:inline-block; }
+        .mpill.stable { border-color:rgba(201,168,76,.35); color:#e3c26e; background:rgba(201,168,76,.06); }
       `}</style>
 
       <div className="map-pg">
@@ -110,10 +220,34 @@ export default function MapPage() {
           <div>
             <div style={{fontSize:9,fontWeight:800,letterSpacing:'.16em',color:'rgba(201,168,76,.5)',textTransform:'uppercase',marginBottom:2}}>New Me</div>
             <div style={{fontSize:26,fontWeight:900,letterSpacing:'.02em',lineHeight:1}}>Map</div>
-            <div style={{fontSize:11,color:'rgba(232,228,220,.3)',marginTop:4}}>7つの領域を同時に探索する</div>
+            <div style={{fontSize:11,color:'rgba(232,228,220,.3)',marginTop:4}}>
+              {viewMonth === 'now' ? '7つの領域を同時に探索する' : `${monthLabel(viewMonth)}時点の記録`}
+            </div>
           </div>
           <Link href="/mypage/navi" style={{fontSize:12,color:'rgba(201,168,76,.7)',textDecoration:'none',border:'1px solid rgba(201,168,76,.22)',padding:'7px 14px',borderRadius:99,marginTop:6,display:'inline-block',whiteSpace:'nowrap'}}>Navi →</Link>
         </div>
+
+        {/* フェーズ1: 月次トグル（過去のスナップショットがある時だけ表示） */}
+        {prevSnapshot && (
+          <div style={{display:'flex',justifyContent:'center',padding:'14px 18px 0'}}>
+            <div className="mtoggle">
+              <button className={viewMonth === prevSnapshot.year_month ? 'active' : ''} onClick={() => { setViewMonth(prevSnapshot.year_month); setSel(null); }}>
+                {monthLabel(prevSnapshot.year_month)}の地図
+              </button>
+              <button className={viewMonth === 'now' ? 'active' : ''} onClick={() => { setViewMonth('now'); setSel(null); }}>
+                {monthLabel(cym)}の地図（今）
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* フェーズ2: Mirrorで確認された変化のサマリー */}
+        {summary && (
+          <div style={{margin:'14px 16px 0',background: improvedCount > 0 ? 'rgba(52,211,153,0.06)' : 'rgba(201,168,76,0.05)', border: `1px solid ${improvedCount > 0 ? 'rgba(52,211,153,0.24)' : 'rgba(201,168,76,.18)'}`, borderRadius:14, padding:'13px 16px', display:'flex', alignItems:'center', gap:11}}>
+            <span style={{fontSize:20}}>{summary.icon}</span>
+            <span style={{fontSize:12.5,color:'rgba(232,228,220,.85)',lineHeight:1.55}}>{summary.text}</span>
+          </div>
+        )}
 
         {/* Map SVG */}
         <div style={{display:'flex',justifyContent:'center',padding:'0 10px'}}>
@@ -147,11 +281,13 @@ export default function MapPage() {
               const fog  = fogOf(id);
               const isC  = id === compass;
               const isSel = id === selected;
-              const p    = prog[id] ?? {};
+              const p    = progForView[id] ?? {};
               const pct  = p.isDone ? 100 : (p.pct ?? 0);
               const arcR = t.r + 9;
               const circ = +(2 * Math.PI * arcR).toFixed(2);
               const offset = +(circ * (1 - pct / 100)).toFixed(2);
+              const mStatus = mirrorStatusFor(id);
+              const arcColor = mStatus === 'improved' ? '#34d399' : (isC ? '#c9a84c' : 'rgba(96,165,250,.6)');
 
               return (
                 <g key={id} className="tg" onClick={() => setSel(isSel ? null : id)}>
@@ -184,7 +320,7 @@ export default function MapPage() {
                   {/* Progress arc */}
                   {pct > 0 && (
                     <circle cx={t.x} cy={t.y} r={arcR} fill="none"
-                      stroke={isC ? '#c9a84c' : 'rgba(96,165,250,.6)'}
+                      stroke={arcColor}
                       strokeWidth="2.5" strokeLinecap="round"
                       strokeDasharray={circ} strokeDashoffset={offset}
                       transform={`rotate(-90,${t.x},${t.y})`}/>
@@ -208,10 +344,10 @@ export default function MapPage() {
                     </text>
                   )}
 
-                  {/* Done check mark */}
-                  {p.isDone && (
+                  {/* Done check mark: Mirror確認済みは明るい緑、自己申告のみは控えめな緑 */}
+                  {(p.isDone || mStatus === 'improved') && (
                     <text x={t.x + t.r * .58} y={t.y - t.r * .5}
-                      fontSize="13" fill="rgba(52,211,153,.82)">✓</text>
+                      fontSize="13" fill={mStatus === 'improved' ? 'rgba(52,211,153,.95)' : 'rgba(52,211,153,.55)'}>✓</text>
                   )}
 
                   {/* Transparent hit target */}
@@ -293,6 +429,16 @@ export default function MapPage() {
                 ? `${selData.done}ステップ踏破済み`
                 : '⚡ まだ足を踏み入れていない領域'}
             </div>
+            {/* フェーズ2: Mirrorで確認された変化かどうかを正直に区別する */}
+            {viewMonth === 'now' && MIRROR_COMMON_AXES.has(selData.id) && (
+              <div style={{marginTop:10}}>
+                {selMirrorStatus === 'improved' ? (
+                  <span className="mpill">✓ Mirrorで変化確認済み</span>
+                ) : (
+                  <span className="mpill stable">◯ 自己申告のみ・Mirror未確認</span>
+                )}
+              </div>
+            )}
             <Link href="/mypage/navi" className="dp-cta">
               この領域のナビを開く →
             </Link>
