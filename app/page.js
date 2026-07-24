@@ -337,13 +337,13 @@ export default function HomePage() {
               <div className="hero-gender-col hero-gender-col--male">
                 <p className="hero-gender-label">男性の外見を変える</p>
                 <div className="hero-gender-btns">
-                  <Link href="/diagnosis" className="hero-nav-cta hero-nav-cta--scan-m">
-                    <span className="hero-nav-cta-main">🧬 Me Scan（無料）</span>
-                    <span className="hero-nav-cta-sub">7軸で外見を自己診断</span>
-                  </Link>
                   <Link href="/mirror" className="hero-nav-cta hero-nav-cta--mirror-m">
                     <span className="hero-nav-cta-main">📸 Mirror</span>
                     <span className="hero-nav-cta-sub">写真から他者目線を分析</span>
+                  </Link>
+                  <Link href="/diagnosis" className="hero-nav-cta hero-nav-cta--scan-m">
+                    <span className="hero-nav-cta-main">🧬 Me Scan（無料）</span>
+                    <span className="hero-nav-cta-sub">7軸で外見を自己診断</span>
                   </Link>
                 </div>
                 <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.30)', margin: '10px 0 0', textAlign: 'center' }}>Fineme</p>
@@ -352,13 +352,13 @@ export default function HomePage() {
               <div className="hero-gender-col hero-gender-col--female">
                 <p className="hero-gender-label">女性の外見を変える</p>
                 <div className="hero-gender-btns">
-                  <Link href="/belle/diagnosis" className="hero-nav-cta hero-nav-cta--scan-f">
-                    <span className="hero-nav-cta-main">🧬 Me Scan（無料）</span>
-                    <span className="hero-nav-cta-sub">女性向け外見診断</span>
-                  </Link>
                   <Link href="/belle/mirror" className="hero-nav-cta hero-nav-cta--mirror-f">
                     <span className="hero-nav-cta-main">📸 Mirror</span>
                     <span className="hero-nav-cta-sub">写真から他者目線を分析</span>
+                  </Link>
+                  <Link href="/belle/diagnosis" className="hero-nav-cta hero-nav-cta--scan-f">
+                    <span className="hero-nav-cta-main">🧬 Me Scan（無料）</span>
+                    <span className="hero-nav-cta-sub">女性向け外見診断</span>
                   </Link>
                 </div>
                 <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(200,100,140,0.30)', margin: '10px 0 0', textAlign: 'center' }}>Fineme Belle</p>
