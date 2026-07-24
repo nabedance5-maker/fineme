@@ -8,11 +8,12 @@ export async function POST(request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { slug } = await request.json();
+  const { slug, track } = await request.json();
   if (!slug) return Response.json({ error: 'slug is required' }, { status: 400 });
 
-  revalidatePath('/feature');
-  revalidatePath(`/feature/${slug}`);
+  const base = track === 'belle' ? '/belle/journal' : '/feature';
+  revalidatePath(base);
+  revalidatePath(`${base}/${slug}`);
 
-  return Response.json({ ok: true, revalidated: [`/feature/${slug}`] });
+  return Response.json({ ok: true, revalidated: [`${base}/${slug}`] });
 }

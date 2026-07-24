@@ -4,7 +4,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { revalidatePath } from 'next/cache';
 import { getSupabase } from '@/lib/supabase';
-import { BELLE_PHOTOS, BELLE_DEFAULT_PHOTOS, EXTRA_PHOTOS, unsplashUrl as unsplashUrlBase, slugHash } from '@/lib/thumbnail-photos';
+import { BELLE_PHOTOS, BELLE_DEFAULT_PHOTOS, unsplashUrl as unsplashUrlBase, slugHash } from '@/lib/thumbnail-photos';
 
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '4fbd52dc-784e-4ab8-97c4-f1f99e48b504';
 const unsplashUrl = (id) => unsplashUrlBase(id, '&w=900&q=80');
@@ -114,7 +114,8 @@ function parseArticle(raw) {
 }
 
 function injectImages(html, axis, seedStr = '', usedIds = new Set()) {
-  const axisPool = [...new Set([...(BELLE_PHOTOS[axis] || []), ...BELLE_DEFAULT_PHOTOS, ...EXTRA_PHOTOS])]
+  // EXTRA_PHOTOSはFineme（男性向け）の補完プールなので、Belle記事には混ぜない
+  const axisPool = [...new Set([...(BELLE_PHOTOS[axis] || []), ...BELLE_DEFAULT_PHOTOS])]
     .filter(id => !/\s/.test(id));
   let pool = axisPool.filter(id => !usedIds.has(id));
   if (pool.length < 2) pool = axisPool;

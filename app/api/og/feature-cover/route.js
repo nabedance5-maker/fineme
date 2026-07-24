@@ -7,10 +7,16 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const title    = searchParams.get('title')    || '外見磨きの、正しい順番がある。';
   const category = searchParams.get('category') || '';
+  const track    = searchParams.get('track')    || 'fineme';
+  const isBelle  = track === 'belle';
 
   // 記事本文の挿入画像と同じUnsplashプールから、タイトルをシードに1枚選ぶ（記事ごとに変える＝金太郎飴防止）
-  const photoId = pickThumbnailPhoto(category, title);
+  // track=belle の場合はBelle（女性向け）専用プールから選ぶ
+  const photoId = pickThumbnailPhoto(category, title, track);
   const bgImageUrl = unsplashUrl(photoId, '&w=1200&h=630');
+  const accentColor = isBelle ? '#c8648c' : '#c9a84c';
+  const accentColorLight = isBelle ? '#e89ab3' : '#e8c878';
+  const brandLabel = isBelle ? 'Fineme Belle — 外見を起点に、自信を再設計する。' : 'Fineme — 外見を起点に、自信を再設計する。';
 
   return new ImageResponse(
     (
@@ -35,10 +41,10 @@ export async function GET(request) {
           display: 'flex',
         }} />
 
-        {/* ゴールドライン */}
+        {/* アクセントライン */}
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: '4px',
-          background: 'linear-gradient(90deg, #c9a84c, #e8c878, #c9a84c)',
+          background: `linear-gradient(90deg, ${accentColor}, ${accentColorLight}, ${accentColor})`,
           display: 'flex',
         }} />
 
@@ -48,12 +54,12 @@ export async function GET(request) {
             display: 'flex', alignItems: 'center', marginBottom: '28px',
           }}>
             <div style={{
-              border: '1px solid #c9a84c',
+              border: `1px solid ${accentColor}`,
               borderRadius: '6px',
               padding: '4px 14px',
               fontSize: '15px',
               fontWeight: 600,
-              color: '#c9a84c',
+              color: accentColor,
               letterSpacing: '0.06em',
               display: 'flex',
             }}>
@@ -80,13 +86,13 @@ export async function GET(request) {
         {/* 下部バー */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          borderTop: '1px solid rgba(201,168,76,0.35)', paddingTop: '24px',
+          borderTop: `1px solid ${isBelle ? 'rgba(200,100,140,0.35)' : 'rgba(201,168,76,0.35)'}`, paddingTop: '24px',
         }}>
           <span style={{ fontSize: '15px', color: 'rgba(248,250,252,0.65)', letterSpacing: '0.08em' }}>
-            Fineme — 外見を起点に、自信を再設計する。
+            {brandLabel}
           </span>
           <span style={{
-            fontSize: '14px', fontWeight: 700, color: '#c9a84c',
+            fontSize: '14px', fontWeight: 700, color: accentColor,
             letterSpacing: '0.06em',
             display: 'flex',
           }}>
