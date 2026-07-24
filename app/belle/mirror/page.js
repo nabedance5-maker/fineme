@@ -142,7 +142,22 @@ export default function BelleMirrorPage() {
     }
 
     if (sid) {
-      window.history.replaceState({}, '', '/mirror');
+      // ログイン後のリダイレクト等でsession_idが付いている場合、プレビューを復元
+      setState('analyzing');
+      setSessionId(sid);
+      saveSessionToLocal(sid);
+      fetch(`/api/mirror/result?session_id=${sid}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.analysis) {
+            setAnalysis(data.analysis);
+            setState(data.paid ? 'full' : 'preview');
+          } else {
+            setState('idle');
+          }
+        })
+        .catch(() => setState('idle'));
+      window.history.replaceState({}, '', '/belle/mirror');
     }
 
     let authUserId = null, authToken = null;
@@ -273,6 +288,11 @@ export default function BelleMirrorPage() {
 
   const handlePurchase = async () => {
     if (!sessionId) return;
+    // 未ログインなら決済前にアカウント作成/ログインへ誘導（払い損防止）
+    if (!myUserId) {
+      window.location.href = '/auth/login?redirect=' + encodeURIComponent('/belle/mirror?session_id=' + sessionId);
+      return;
+    }
     setPurchasing(true);
     try {
       const res = await fetch('/api/mirror/purchase', {
@@ -295,7 +315,10 @@ export default function BelleMirrorPage() {
       const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
       const token = sbKey ? JSON.parse(localStorage.getItem(sbKey) || 'null')?.access_token : null;
       if (!token) {
-        window.location.href = '/auth/login?redirect=/mypage/subscription';
+        const redirectTarget = sessionId
+          ? '/belle/mirror?session_id=' + sessionId
+          : '/mypage/subscription';
+        window.location.href = '/auth/login?redirect=' + encodeURIComponent(redirectTarget);
         return;
       }
       const res = await fetch('/api/subscription/checkout', {
