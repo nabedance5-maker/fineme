@@ -661,59 +661,113 @@ export default function BelleMirrorPage() {
           })}
 
           {/* ペイウォールCTA（previewのみ） */}
-          {state === 'preview' && (
-            <div style={{ background: 'rgba(10,15,30,0.97)', borderRadius: '16px', padding: '32px 24px', textAlign: 'center', border: '1px solid rgba(201,168,76,0.2)', marginTop: '8px' }}>
-              <p style={{ fontSize: '11px', color: 'rgba(201,168,76,0.6)', fontWeight: '800', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '12px' }}>
-                残り {(analysis.axes?.length || 0) - 1} 軸の詳細分析
-              </p>
-              <p className="paywall-title">詳細な地図を手に入れる</p>
-              <p className="paywall-desc">
-                各軸の詳細分析・具体的な改善ヒント・<br />
-                Me ScanのCompassに連動した「最初の一手」提案
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
-                <button
-                  className="purchase-btn"
-                  onClick={handlePurchase}
-                  disabled={purchasing}
-                >
-                  {purchasing ? '決済画面に移動中…' : '🪞 ¥500 で全体を見る'}
-                </button>
+          {state === 'preview' && (() => {
+            const lockedAxes = (analysis.axes || []).filter((_, i) => i >= 1 && (_ => true)(_));
+            const teaserAxis = lockedAxes.find(a => a.potential_level === '高') || lockedAxes[0];
+            const teaserText = teaserAxis?.summary ? teaserAxis.summary.slice(0, 44) : '';
+            return (
+              <div style={{ background: 'rgba(10,15,30,0.97)', borderRadius: '20px', border: '1px solid rgba(200,100,140,0.18)', marginTop: '8px', overflow: 'hidden' }}>
 
-                {!subStatus?.isActive && (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                {/* Section 1: フック（価格なし） */}
+                <div style={{ padding: '28px 24px 24px', textAlign: 'center' }}>
+                  {/* ロック軸ミニカード */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginBottom: '20px' }}>
+                    {lockedAxes.map((ax, i) => {
+                      const col = POTENTIAL_COLORS[ax.potential_level] || POTENTIAL_COLORS['中'];
+                      return (
+                        <div key={i} style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '6px',
+                          padding: '6px 12px',
+                          background: col.bg,
+                          border: `1px solid ${col.border}`,
+                          borderRadius: '99px',
+                          fontSize: '12px', fontWeight: '700',
+                          color: col.text,
+                        }}>
+                          <span>{ax.icon}</span>
+                          <span>{ax.name}</span>
+                          <span style={{ fontSize: '10px', opacity: 0.7 }}>· {col.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* 見出し */}
+                  <p style={{
+                    fontFamily: "'Noto Serif JP', Georgia, serif",
+                    fontSize: 'clamp(18px,3.5vw,22px)',
+                    fontWeight: 700,
+                    color: 'rgba(240,216,224,0.92)',
+                    margin: '0 0 16px',
+                    lineHeight: 1.5,
+                  }}>
+                    まだ、{lockedAxes.length}軸が見えていない。
+                  </p>
+
+                  {/* ティーザー */}
+                  {teaserText && (
+                    <div style={{ maxWidth: '400px', margin: '0 auto 8px', textAlign: 'left' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.1em', color: 'rgba(200,100,140,0.55)', textTransform: 'uppercase', margin: '0 0 6px' }}>
+                        {teaserAxis?.icon} {teaserAxis?.name} — AIの観察
+                      </p>
+                      <div style={{ position: 'relative', maxHeight: '2.8em', overflow: 'hidden' }}>
+                        <p style={{ fontSize: '14px', color: 'rgba(240,216,224,0.70)', lineHeight: 1.8, margin: 0 }}>
+                          {teaserText}…
+                        </p>
+                        <div style={{
+                          position: 'absolute', bottom: 0, left: 0, right: 0, height: '1.8em',
+                          background: 'linear-gradient(transparent, rgba(10,15,30,0.97))',
+                          pointerEvents: 'none',
+                        }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 区切り */}
+                <div style={{ height: '1px', background: 'rgba(200,100,140,0.12)', margin: '0 24px' }} />
+
+                {/* Section 2: 価格提示 */}
+                <div style={{ padding: '24px', textAlign: 'center' }}>
+                  <p style={{ fontSize: '13px', color: 'rgba(240,216,224,0.50)', margin: '0 0 16px', lineHeight: 1.7 }}>
+                    続きを読むと、今日何をするかが決まります。
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
+                    {/* ¥780 primary */}
+                    {!subStatus?.isActive && (
+                      <button
+                        className="purchase-btn"
+                        onClick={handleSubscribeCheckout}
+                        disabled={subscribing}
+                        style={{ width: '100%', maxWidth: '340px' }}
+                      >
+                        {subscribing ? '処理中…' : '♾️ ¥780/月 — 続きを読む（月3回使える）'}
+                      </button>
+                    )}
+
+                    {/* ¥500 secondary */}
                     <button
-                      onClick={handleSubscribeCheckout}
-                      disabled={subscribing}
+                      onClick={handlePurchase}
+                      disabled={purchasing}
                       style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '8px',
-                        padding: '13px 28px',
-                        border: '1px solid rgba(201,168,76,0.5)',
-                        borderRadius: '12px',
-                        fontSize: '14px', fontWeight: '800',
-                        color: '#c9a84c',
-                        background: 'rgba(201,168,76,0.06)',
-                        cursor: subscribing ? 'not-allowed' : 'pointer',
-                        fontFamily: 'inherit',
+                        background: 'none', border: 'none', cursor: purchasing ? 'not-allowed' : 'pointer',
+                        fontSize: '13px', color: 'rgba(200,100,140,0.6)', fontFamily: 'inherit',
+                        padding: '4px 0', textDecoration: 'underline', textUnderlineOffset: '3px',
                       }}
                     >
-                      {subscribing ? '処理中…' : '♾️ ¥780/月 — 月3回まで無料で使う'}
+                      {purchasing ? '決済画面に移動中…' : '¥500で今回だけ見る →'}
                     </button>
-                    <span style={{ fontSize: '11px', color: 'rgba(232,228,220,0.35)' }}>
-                      ¥500 で1回 → 月3回使うなら ¥780/月 のほうがお得
-                    </span>
                   </div>
-                )}
-              </div>
 
-              <p className="purchase-note" style={{ marginTop: '12px' }}>
-                {subStatus?.isActive
-                  ? 'クレジットカード決済 / 7日間有効 / 一度購入すると再閲覧可能'
-                  : '単発¥500 または サブスク¥780/月（月3回分含む・いつでも解約可）'}
-              </p>
-              {error && <p className="error-msg" style={{ marginTop: '12px' }}>{error}</p>}
-            </div>
-          )}
+                  <p style={{ fontSize: '11px', color: 'rgba(240,216,224,0.28)', marginTop: '14px', lineHeight: 1.7 }}>
+                    いつでも解約可 · クレカ決済 · 写真は分析後に削除
+                  </p>
+                  {error && <p className="error-msg" style={{ marginTop: '10px' }}>{error}</p>}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* シェア（preview / full 共通・sessionIdがある時） */}
           {sessionId && (
