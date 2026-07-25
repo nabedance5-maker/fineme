@@ -5,6 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { revalidatePath } from 'next/cache';
 import { getSupabase } from '@/lib/supabase';
 import { BELLE_PHOTOS, BELLE_DEFAULT_PHOTOS, unsplashUrl as unsplashUrlBase, slugHash } from '@/lib/thumbnail-photos';
+import { slugify, uniqueSlug } from '@/lib/slugify';
 
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '4fbd52dc-784e-4ab8-97c4-f1f99e48b504';
 const unsplashUrl = (id) => unsplashUrlBase(id, '&w=900&q=80');
@@ -263,8 +264,9 @@ export async function GET(request) {
     const { slug, title, category, description, body } = parseArticle(raw);
     if (!title || !body) return Response.json({ error: 'parse failed' }, { status: 500 });
 
-    const dateStr = new Date().toISOString().slice(0, 10);
-    const finalSlug = `${slug || 'belle'}-${dateStr}`;
+    // URLに日付は入れない（恒久ルール）。非ASCII混入を除去し、衝突時のみ連番を付ける。
+    const existingSlugs = new Set((existing || []).map(a => a.slug).filter(Boolean));
+    const finalSlug = uniqueSlug(slugify(slug, 'belle'), existingSlugs);
     const bodyHtml = mdToHtml(body);
 
     // 直近12記事で使用済み画像IDを収集（金太郎飴防止）

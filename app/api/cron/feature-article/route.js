@@ -7,6 +7,7 @@ import { getSupabase } from '@/lib/supabase';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
 import { getGoogleAccessToken, querySearchConsole, dateRange } from '@/lib/gsc';
 import { UNSPLASH_PHOTOS, DEFAULT_PHOTOS, EXTRA_PHOTOS, unsplashUrl as unsplashUrlBase, slugHash } from '@/lib/thumbnail-photos';
+import { slugify, uniqueSlug } from '@/lib/slugify';
 
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '4fbd52dc-784e-4ab8-97c4-f1f99e48b504';
 const unsplashUrl = (id) => unsplashUrlBase(id, '&w=900&q=80');
@@ -305,8 +306,9 @@ export async function GET(request) {
     const { slug, title, category, description, body } = parseArticle(raw);
     if (!title || !body) return Response.json({ error: 'parse failed' }, { status: 500 });
 
-    const dateStr = new Date().toISOString().slice(0, 10);
-    const finalSlug = `${slug || 'feature'}-${dateStr}`;
+    // URLに日付は入れない（恒久ルール）。非ASCII混入を除去し、衝突時のみ連番を付ける。
+    const existingSlugs = new Set((existing || []).map(a => a.slug).filter(Boolean));
+    const finalSlug = uniqueSlug(slugify(slug, 'feature'), existingSlugs);
     const bodyHtml = mdToHtml(body);
     const thumbnailUrl = `${BASE_URL}/api/og/feature-cover?title=${encodeURIComponent(title)}&category=${encodeURIComponent(category || theme.axis)}`;
     // 直近12記事で使った画像IDを集めて重複回避（金太郎飴防止）
