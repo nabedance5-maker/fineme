@@ -98,14 +98,14 @@ export default function ProviderPhilosophyPage() {
               <div className="phil-flow-num">1</div>
               <div className="phil-flow-body">
                 <strong>Me Scan（外見診断）</strong> を受ける<br />
-                体型・眉・服・髪・肌・歯・爪の7軸で現在地を可視化。変わりたい理由・シーン・ビジョンも入力する。
+                体型・眉・服・髪・肌・脱毛・歯・爪の8軸で現在地を可視化。変わりたい理由・シーン・ビジョンも入力する。
               </div>
             </div>
             <div className="phil-flow-step">
               <div className="phil-flow-num">2</div>
               <div className="phil-flow-body">
                 <strong>New Me Navi（変容ナビ）</strong> を受け取る<br />
-                7軸レーダーチャートで「現在地×理想」を可視化。ユーザーが「自分のどこから手をつけるべきか」を自覚する。
+                8軸レーダーチャートで「現在地×理想」を可視化。ユーザーが「自分のどこから手をつけるべきか」を自覚する。
               </div>
             </div>
             <div className="phil-flow-step">

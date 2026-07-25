@@ -278,7 +278,7 @@ function NewMeMapSection({ diagnosis, matchData }) {
     return (
       <div style={{ padding: '24px', borderRadius: '16px', border: '1.5px solid rgba(232,228,220,0.15)', background: 'rgba(10,15,30,0.50)', backdropFilter: 'blur(8px)' }}>
         <p style={{ fontSize: '15px', fontWeight: '700', color: 'rgba(232,228,220,0.90)', margin: '0 0 6px' }}>Me Scanを受けると、このガイドとの接点がわかります</p>
-        <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', margin: '0 0 16px', lineHeight: '1.7' }}>あなたの変容プロファイル（最優先トラック・来た道・ゴール）とこのガイドが合っているかを、7軸で確認できます。</p>
+        <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', margin: '0 0 16px', lineHeight: '1.7' }}>あなたの変容プロファイル（最優先トラック・来た道・ゴール）とこのガイドが合っているかを、8軸で確認できます。</p>
         <a href="/diagnosis" style={{ display: 'inline-block', padding: '10px 22px', background: '#111', color: '#fff', borderRadius: '10px', fontSize: '14px', fontWeight: '700', textDecoration: 'none' }}>
           無料でMe Scanを受ける（約12〜18分）
         </a>
@@ -308,7 +308,7 @@ function NewMeMapSection({ diagnosis, matchData }) {
                 <span style={{ fontSize: '12px', fontWeight: '700', padding: '4px 12px', background: '#1d4ed8', color: '#fff', borderRadius: '99px' }}>🧭 コンパス一致</span>
               )}
             </div>
-            <p style={{ fontSize: '11px', color: '#93c5fd', margin: '6px 0 0', lineHeight: '1.5' }}>※ Me Scan 7軸診断（変容ベクトル・来た道・ギャップ）との相性スコア</p>
+            <p style={{ fontSize: '11px', color: '#93c5fd', margin: '6px 0 0', lineHeight: '1.5' }}>※ Me Scan 8軸診断（変容ベクトル・来た道・ギャップ）との相性スコア</p>
           </>
         ) : (
           <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', margin: 0 }}>診断結果と照らし合わせています。</p>

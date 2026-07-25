@@ -93,7 +93,7 @@ export default function AuthGate({ children, pageName = 'このページ' }) {
               ここはあなただけの<br />{pageName}が届く場所です。
             </h2>
             <p className="auth-gate-desc">
-              Me Scanを受けると、7軸の現在地と変容ロードマップ<br />
+              Me Scanを受けると、8軸の現在地と変容ロードマップ<br />
               （Fineme Compass）がここに保存されます。<br />
               診断はアカウントなしで受けられます。
             </p>

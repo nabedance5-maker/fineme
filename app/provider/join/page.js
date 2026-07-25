@@ -319,7 +319,7 @@ export default function ProviderJoinPage() {
                 <div>
                   <div className="scan-step-label">STEP 1 — Me Scan</div>
                   <div className="scan-step-title">ユーザーは外見診断を受ける</div>
-                  <p className="scan-step-desc">体型・眉・服・髪・肌・歯・爪の7軸で現在地とゴールを測定。なぜ変わりたいか・どこから変えるかを言語化します。<strong>恋愛・対人・就活・自己投資など、動機も全部記録します。</strong></p>
+                  <p className="scan-step-desc">体型・眉・服・髪・肌・脱毛・歯・爪の8軸で現在地とゴールを測定。なぜ変わりたいか・どこから変えるかを言語化します。<strong>恋愛・対人・就活・自己投資など、動機も全部記録します。</strong></p>
                 </div>
               </div>
               <div className="scan-step">
@@ -327,7 +327,7 @@ export default function ProviderJoinPage() {
                 <div>
                   <div className="scan-step-label">STEP 2 — New Me Navi</div>
                   <div className="scan-step-title">変容プロファイルが生成される</div>
-                  <p className="scan-step-desc">7軸レーダーチャートと変容ベクトルが可視化された「自分だけの地図」が生成されます。これが<strong>マッチングの起点</strong>です。</p>
+                  <p className="scan-step-desc">8軸レーダーチャートと変容ベクトルが可視化された「自分だけの地図」が生成されます。これが<strong>マッチングの起点</strong>です。</p>
                 </div>
               </div>
               <div className="scan-step">
@@ -335,7 +335,7 @@ export default function ProviderJoinPage() {
                 <div>
                   <div className="scan-step-label">STEP 3 — Fineme Compass</div>
                   <div className="scan-step-title">「最初の一手」が決まる</div>
-                  <p className="scan-step-desc">7軸の優先順位から「今のあなたに最も効く軸」が導き出されます。ユーザーはその軸のガイドを探し、相談します。</p>
+                  <p className="scan-step-desc">8軸の優先順位から「今のあなたに最も効く軸」が導き出されます。ユーザーはその軸のガイドを探し、相談します。</p>
                 </div>
               </div>
               <div className="scan-step">

@@ -1142,7 +1142,7 @@ export default function DiagnosisResultPage() {
 
       <p class="sec-label" style="margin-top:28px">Radar Map</p>
       <div class="radar-card">
-        <div class="radar-title">📡 7軸変容レーダー</div>
+        <div class="radar-title">📡 8軸変容レーダー</div>
         <div class="radar-subtitle">現在地（紺）と理想（金点線）。面積の差が変容の余白</div>
         ${buildRadarChart()}
       </div>
@@ -1170,14 +1170,14 @@ export default function DiagnosisResultPage() {
           <span class="navi-btn-icon">🧭</span>
           <span class="navi-btn-body">
             <span class="navi-btn-title">New Me Mapを開く</span>
-            <span class="navi-btn-desc">出発前チェック・7軸変容トラック・今向くべき方角が一画面で見える</span>
+            <span class="navi-btn-desc">出発前チェック・8軸変容トラック・今向くべき方角が一画面で見える</span>
           </span>
           <span class="navi-btn-arrow">→</span>
         </a>
         <a href="/guide" class="navi-btn navi-btn-secondary">
           <span class="navi-btn-icon">🗺️</span>
           <span class="navi-btn-body">
-            <span class="navi-btn-title">7軸変容ガイドを読む</span>
+            <span class="navi-btn-title">8軸変容ガイドを読む</span>
             <span class="navi-btn-desc">各軸の意味・始め方・来た道別アドバイス</span>
           </span>
           <span class="navi-btn-arrow">→</span>

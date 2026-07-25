@@ -710,7 +710,7 @@ export default function NewMeNaviPage() {
                     ✅ Me Scanのデータは保存されています。<br>ログインまたは登録してマップに反映させましょう。
                   </p>`
                 : `<p style="font-size:14px;color:rgba(232,228,220,0.55);line-height:1.85;margin:0 0 20px">
-                    7軸の現在地と変容ロードマップ（Fineme Compass）が<br>ここに届きます。まずログイン / 新規登録してください。
+                    8軸の現在地と変容ロードマップ（Fineme Compass）が<br>ここに届きます。まずログイン / 新規登録してください。
                   </p>`
               }
               <a href="/login" style="display:block;width:100%;padding:15px 24px;background:#c9a84c;color:#0a0f1e;font-size:15px;font-weight:700;border-radius:6px;text-decoration:none;letter-spacing:.05em;margin-bottom:12px;box-sizing:border-box">
@@ -3378,7 +3378,7 @@ export default function NewMeNaviPage() {
       const overallPct = totalCount > 0 ? Math.round(doneCount / totalCount * 100) : 0;
 
       return `
-        <div class="sec-label">🗺️ 変容マップ — 7軸同時進行</div>
+        <div class="sec-label">🗺️ 変容マップ — 8軸同時進行</div>
         <div class="journey-map-wrap">
           <svg viewBox="0 0 300 300" class="journey-map-svg">
             ${spokes}

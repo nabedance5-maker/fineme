@@ -344,7 +344,7 @@ export default async function ArticlePage({ params }) {
                 あなたに合う変容ルートを<br />診断で見つけてみませんか？
               </h3>
               <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.55)', marginBottom: '24px', lineHeight: 1.8, fontFamily: 'var(--font-sans)' }}>
-                体型・眉・ヘア・肌・服・歯・爪。7軸の診断で、<br />今のあなたに最も効く「最初の一手」がわかります。
+                体型・眉・ヘア・肌・服・脱毛・歯・爪。8軸の診断で、<br />今のあなたに最も効く「最初の一手」がわかります。
               </p>
               <Link href="/diagnosis" style={{
                 display: 'inline-block', padding: '14px 36px',
@@ -374,7 +374,7 @@ export default async function ArticlePage({ params }) {
                 写真1枚で、「変えるべき場所」の地図が手に入る
               </h3>
               <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', marginBottom: '22px', lineHeight: 1.85, fontFamily: 'var(--font-sans)' }}>
-                AIが7軸（眉・肌・ヘア・姿勢・体型・服・爪）を分析。<br />
+                AIが最大7軸（眉・目元／肌／ヘア／表情／姿勢／体型／服装）を分析。<br />
                 今のあなたが最も変わりやすい場所と、最初の一手がわかります。¥500。
               </p>
               <Link href="/lp/mirror" style={{

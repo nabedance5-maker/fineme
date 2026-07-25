@@ -347,20 +347,26 @@ export default function AboutPage() {
               <div className="af-diff-label" style={{ color: 'rgba(201,168,76,0.6)' }}>男性向け</div>
               <div className="af-diff-title" style={{ color: '#fff' }}>Fineme</div>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,.7)', lineHeight: 1.8, margin: '0 0 14px' }}>
-                このページで説明しているトラック。タイプは136種の「生き物」で表されます。
+                8軸・136タイプ・Compass・New Me Map。<br />タイプは136種の「生き物」で表されます。
               </p>
-              <Link href="/diagnosis" style={{ fontSize: 13, color: '#c9a84c', textDecoration: 'none', fontWeight: 700 }}>
-                Me Scanを受ける →
+              <Link href="/diagnosis" style={{ fontSize: 13, color: '#c9a84c', textDecoration: 'none', fontWeight: 700, display: 'block', marginBottom: 6 }}>
+                Me Scanを受ける（無料）→
+              </Link>
+              <Link href="/" style={{ fontSize: 12, color: 'rgba(255,255,255,.45)', textDecoration: 'none' }}>
+                Finemeのトップを見る →
               </Link>
             </div>
             <div className="af-diff-card" style={{ background: 'rgba(30,10,22,0.55)', borderColor: 'rgba(200,120,155,0.35)' }}>
               <div className="af-diff-label" style={{ color: 'rgba(220,140,175,0.75)' }}>女性向け</div>
               <div className="af-diff-title" style={{ color: '#f5e0ea' }}>Fineme Belle</div>
               <p style={{ fontSize: 13, color: 'rgba(245,224,234,.7)', lineHeight: 1.8, margin: '0 0 14px' }}>
-                8軸・136タイプ・Compass・New Me Mapの構造は同じ。タイプは136種の「花」で表されます。
+                8軸・136タイプ・Compass・New Me Map。<br />タイプは136種の「花」で表されます。
               </p>
-              <Link href="/belle" style={{ fontSize: 13, color: 'rgba(220,140,175,0.95)', textDecoration: 'none', fontWeight: 700 }}>
-                Belleを見る →
+              <Link href="/belle/diagnosis" style={{ fontSize: 13, color: 'rgba(220,140,175,0.95)', textDecoration: 'none', fontWeight: 700, display: 'block', marginBottom: 6 }}>
+                Me Scanを受ける（無料）→
+              </Link>
+              <Link href="/belle" style={{ fontSize: 12, color: 'rgba(245,224,234,.45)', textDecoration: 'none' }}>
+                Belleのトップを見る →
               </Link>
             </div>
           </div>

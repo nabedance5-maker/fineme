@@ -302,14 +302,14 @@ export default function ProviderDashboardPage() {
         if (coveredAxes.length > 0) {
           infoEl.innerHTML = `
             <div style="padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px">
-              <p style="font-size:12px;font-weight:700;color:#059669;margin:0 0 8px">✓ 自動検出されたカバー軸（7軸のうち）</p>
+              <p style="font-size:12px;font-weight:700;color:#059669;margin:0 0 8px">✓ 自動検出されたカバー軸（8軸のうち）</p>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 ${coveredAxes.map(ax => `<span style="font-size:13px;font-weight:700;padding:4px 12px;background:#dcfce7;color:#15803d;border-radius:99px">${AXIS_ICONS[ax]} ${AXIS_LABELS[ax]}</span>`).join('')}
               </div>
               <p style="font-size:12px;color:#6b7280;margin:8px 0 0">このサービスがカバーする軸のギャップが大きいユーザーほど一致度が高くなります。</p>
             </div>`;
         } else {
-          infoEl.innerHTML = `<div style="padding:10px 14px;background:#fef9c3;border:1px solid #fde68a;border-radius:10px;font-size:13px;color:#92400e">このサービスのカテゴリは7軸外（photo / consulting等）のため、軸一致スコアは計算されません。きっかけ・スタイルの一致で判定されます。</div>`;
+          infoEl.innerHTML = `<div style="padding:10px 14px;background:#fef9c3;border:1px solid #fde68a;border-radius:10px;font-size:13px;color:#92400e">このサービスのカテゴリは8軸外（photo / consulting等）のため、軸一致スコアは計算されません。きっかけ・スタイルの一致で判定されます。</div>`;
         }
       }
     }
@@ -1701,7 +1701,7 @@ export default function ProviderDashboardPage() {
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: '8px', marginBottom: '12px' }}>
               {[
-                { icon: '🧬', text: 'Me Scanで7軸をスキャン済み' },
+                { icon: '🧬', text: 'Me Scanで8軸をスキャン済み' },
                 { icon: '🧭', text: 'コンパス軸（最優先テーマ）が決まっている' },
                 { icon: '💬', text: '「来た道（タイプ）」が明確' },
                 { icon: '🎯', text: '対応軸が一致すれば優先表示' },
@@ -1763,7 +1763,7 @@ export default function ProviderDashboardPage() {
 
               {/* 対応軸（新） */}
               <div className="form-field">
-                <label>対応軸（Me Scan 7軸）</label>
+                <label>対応軸（Me Scan 8軸）</label>
                 <select name="target_axis">
                   <option value="">選択しない</option>
                   <option value="body">💪 体型・ボディ</option>
@@ -1859,7 +1859,7 @@ export default function ProviderDashboardPage() {
           </div>
           <div className="card" style={{ padding: '24px' }}>
             <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>New Me Navi マッチング設定</h2>
-            <p className="muted" style={{ fontSize: '13px', margin: '0 0 12px', lineHeight: '1.6' }}>ユーザーのNew Me Naviに基づいて「あなたとの一致度」が自動計算されます。カバーする7軸は登録カテゴリから自動検出されます。</p>
+            <p className="muted" style={{ fontSize: '13px', margin: '0 0 12px', lineHeight: '1.6' }}>ユーザーのNew Me Naviに基づいて「あなたとの一致度」が自動計算されます。カバーする8軸は登録カテゴリから自動検出されます。</p>
             <div id="axis-coverage-info" style={{ marginBottom: '16px' }}></div>
             <form id="service-form">
               <div className="form-field"><label>サービス説明文（料金・メニューなど）</label><textarea name="description" placeholder="提供するサービスの詳細をここに書いてください"></textarea></div>

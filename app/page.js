@@ -648,7 +648,7 @@ export default function HomePage() {
             </h2>
             <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.6)', margin: '0 0 36px', lineHeight: 1.9 }}>
               カテゴリから選ぶことはできる。でも何から始めるべきかは、<br />あなたの現在地を測ってから分かる。<br />
-              Me Scanが、{diagnosisType === 'belle' ? '8' : '7'}軸の中で「今のあなたに効く順番」を教えてくれる。
+              Me Scanが、8軸の中で「今のあなたに効く順番」を教えてくれる。
             </p>
             <Link href={diagnosisType === 'belle' ? '/belle/diagnosis' : '/diagnosis'} className="hero-nav-cta">
               🧬 Me Scanで地図を描く（無料）

@@ -4,7 +4,7 @@ import { getSupabase } from '@/lib/supabase';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
-// Me Scan 7軸 → カテゴリのマッピング
+// Me Scan 8軸 → カテゴリのマッピング
 const AXIS_TO_CATEGORY = {
   body:    'gym',
   eyebrow: 'eyebrow',

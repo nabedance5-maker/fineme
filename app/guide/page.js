@@ -67,6 +67,19 @@ const AXES = [
     },
   },
   {
+    id: 'hairremoval', icon: '🪒', label: '脱毛・ムダ毛', tier: 2,
+    quick_win: 'ひげ・体毛を整えるだけで、清潔感の底が一段上がる軸。',
+    start: 'ひげ脱毛の無料カウンセリング',
+    effect: '肌の印象・毎朝の手間が減る',
+    href: '/search?category=hairremoval',
+    paths: {
+      virgin: '「男が脱毛するのは」と思う必要はない。整えることは、誰かのためではなく自分の手間を減らすため。',
+      quit: '途中で止まった人は「回数と期間の見通し」を持たずに始めたことが多い。総回数を最初に確認する。',
+      blind: '自分では気づきにくいのが体毛。首・指・耳まわりは他人の視界に入りやすい。',
+      lapsed: '再開は途中の回数から。ゼロに戻るわけではない。',
+    },
+  },
+  {
     id: 'teeth', icon: '🦷', label: '歯・口元', tier: 3,
     quick_win: '笑顔への自信が変わる。投資対効果が高い中期プロジェクト。',
     start: 'ホワイトニング or 歯科相談',
@@ -220,9 +233,9 @@ export default function GuidePage() {
 
       <section className="guide-hero">
         <p className="guide-hero-eyebrow">7-Axis Transformation Guide</p>
-        <h1>7軸 変容ガイド</h1>
+        <h1>8軸 変容ガイド</h1>
         <p>
-          外見を7つの軸に分解し、どこから・どう変えるかを整理した地図。<br />
+          外見を8つの軸に分解し、どこから・どう変えるかを整理した地図。<br />
           Me Scanを受けると、あなた専用の優先順位が生成されます。
         </p>
       </section>

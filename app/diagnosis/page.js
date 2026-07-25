@@ -688,7 +688,7 @@ export default function DiagnosisPage() {
         // 場面
         scene: state.scenes[0] || null,
         scenes: state.scenes,
-        // 7軸スコア
+        // 8軸スコア
         transform_vectors: transformVectors,
         priority_order: priorityOrder,
         compass_first: priorityOrder[0] || null,
