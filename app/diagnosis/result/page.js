@@ -734,19 +734,30 @@ export default function DiagnosisResultPage() {
       `;
     }
 
+    // ─── タイプ判定（Compass軸の care_type × path_type で136通りが確定する）───
+    // ヒーロー表示・シェア文・OG画像で共用する
+    function computeTypeIdentity() {
+      const axisCode = AXIS_TYPE_CODE[compassFirst];
+      if (!axisCode) return null;
+      const v = tv[compassFirst] || {};
+      const careCode = CARE_CODE_MAP[v.care_type] || 'N';
+      const pathCode = PATH_CODE_MAP[v.path_type] || 'V';
+      const creature = TYPE_CREATURE[careCode + pathCode];
+      if (!creature) return null;
+      const modifier = TYPE_MODIFIER[careCode + pathCode] || '';
+      const axisWord = AXIS_WORD[axisCode] || '';
+      return {
+        axisCode, careCode, pathCode, creature, modifier, axisWord,
+        typeCode: `${axisCode}${careCode}${pathCode}`,
+        fullName: `${axisWord}${modifier}${creature}`,
+      };
+    }
+    const typeIdentity = computeTypeIdentity();
+
     // ─── タイプヒーロー（Naviの最初のセクション） ───
     function buildTypeHero() {
-      const axisCode = AXIS_TYPE_CODE[compassFirst];
-      if (!axisCode) return '';
-      const v = tv[compassFirst] || {};
-      const careCode  = CARE_CODE_MAP[v.care_type] || 'N';
-      const pathCode  = PATH_CODE_MAP[v.path_type] || 'V';
-      const creature  = TYPE_CREATURE[careCode + pathCode];
-      if (!creature) return '';
-      const typeCode  = `${axisCode}${careCode}${pathCode}`;
-      const modifier  = TYPE_MODIFIER[careCode + pathCode] || '';
-      const axisWord  = AXIS_WORD[axisCode] || '';
-      const fullName  = `${axisWord}${modifier}${creature}`;
+      if (!typeIdentity) return '';
+      const { axisCode, creature, typeCode, fullName } = typeIdentity;
       const desc      = TYPE_DESCRIPTION[typeCode] || '';
       const color     = AXIS_ACCENT_COLOR[axisCode] || '#c9a84c';
       const axisLabel = AREA_DEFS[compassFirst]?.label || '';
@@ -1105,10 +1116,10 @@ export default function DiagnosisResultPage() {
       ${!isLoggedIn ? `
       <div class="auth-hero-banner">
         <div class="auth-hero-banner-top">
-          <span class="auth-hero-banner-icon">⚠️</span>
-          <div class="auth-hero-banner-title">この診断結果は、今ページを閉じると消えます</div>
+          <span class="auth-hero-banner-icon">💾</span>
+          <div class="auth-hero-banner-title">この地図は、この端末に保存されています</div>
         </div>
-        <p class="auth-hero-banner-body">未登録の状態では、この結果も変容の旅の地図も保存されません。<br>無料登録すれば、スマホ・PCどこからでも見返せます。</p>
+        <p class="auth-hero-banner-body">アカウントを作ると、スマホ・PCどこからでも同じ地図を開けます。<br>描き込んだ内容も、Mirror の記録も、まとめて引き継がれます。</p>
         <div class="auth-hero-banner-btns">
           <a href="/login?mode=signup&next=/diagnosis/result" class="auth-hero-banner-btn-primary">無料で登録して保存する</a>
           <a href="/login?next=/diagnosis/result" class="auth-hero-banner-btn-secondary">ログインはこちら</a>
@@ -1145,10 +1156,10 @@ export default function DiagnosisResultPage() {
       <div class="save-map-cta">
         <div class="save-map-cta-icon">🧬</div>
         <div class="save-map-cta-body">
-          <div class="save-map-cta-title">この変容プロファイルを保存する</div>
-          <div class="save-map-cta-desc">今このページを閉じると、あなたの地図は消えます。<br>無料登録すれば、どこからでも続きを見られます。</div>
-          <a href="/login?mode=signup&next=/diagnosis/result" class="save-map-cta-btn">無料アカウントを作って保存する →</a>
-          <p class="save-map-cta-note">登録すると診断データがクラウドに同期され、スマホ・PCどこからでも閲覧できます</p>
+          <div class="save-map-cta-title">この地図を、どの端末からでも開けるようにする</div>
+          <div class="save-map-cta-desc">今はこの端末にだけ保存されています。<br>アカウントを作ると、続きをどこからでも描き込めます。</div>
+          <a href="/login?mode=signup&next=/diagnosis/result" class="save-map-cta-btn">無料アカウントを作る →</a>
+          <p class="save-map-cta-note">登録1分 · クレカ不要 · いつでも削除可</p>
         </div>
       </div>
       ` : ''}
@@ -1187,14 +1198,14 @@ export default function DiagnosisResultPage() {
 
       ${(() => {
         const _mt = priorityOrder.slice(0, 3).map(id => AREA_DEFS[id]?.label).filter(Boolean);
-        const _title = _mt.length >= 2 ? _mt.join('・') + 'の変容余地を写真で見る' : '写真1枚で変容余地を可視化する';
+        const _title = _mt.length >= 2 ? _mt.join('・') + 'の現在地を写真で測る' : '写真1枚で、今の現在地を測る';
         return `<a href="/lp/mirror" style="display:block;text-decoration:none;margin-bottom:20px">
         <div style="display:flex;align-items:center;gap:16px;padding:18px 20px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.35);border-radius:14px;transition:border-color 0.2s">
           <span style="font-size:28px;flex-shrink:0">🪞</span>
           <div style="flex:1">
-            <p style="font-size:10px;font-weight:800;letter-spacing:.14em;color:#c9a84c;text-transform:uppercase;margin:0 0 4px">Fineme Mirror — ¥500</p>
+            <p style="font-size:10px;font-weight:800;letter-spacing:.14em;color:#c9a84c;text-transform:uppercase;margin:0 0 4px">Fineme Mirror — ¥780/月</p>
             <p style="font-size:14px;font-weight:700;color:rgba(232,228,220,0.95);margin:0 0 3px">${esc(_title)}</p>
-            <p style="font-size:12px;color:rgba(232,228,220,0.55);margin:0;line-height:1.5">Compassが示す軸を中心にAIが深掘り。あなたの「今すぐ変えるべき場所」が可視化されます。</p>
+            <p style="font-size:12px;color:rgba(232,228,220,0.55);margin:0;line-height:1.5">地図を描くのがMe Scan、現在地を測るのがMirror。毎月測り直すと、地図に変化の軌跡が残ります。<span style="color:rgba(232,228,220,0.35)">（1回だけなら ¥500）</span></p>
           </div>
           <span style="font-size:11px;font-weight:800;color:#0a0f1e;background:linear-gradient(135deg,#c9a84c,#e8c97a);border-radius:20px;padding:5px 14px;flex-shrink:0;white-space:nowrap">詳しく見る →</span>
         </div>
@@ -1209,10 +1220,10 @@ export default function DiagnosisResultPage() {
       <div class="save-map-cta" style="margin-bottom:24px">
         <div class="save-map-cta-icon">🔑</div>
         <div class="save-map-cta-body">
-          <div class="save-map-cta-title">あなたの地図はまだ保存されていません</div>
-          <div class="save-map-cta-desc">ページを閉じると診断データは消えます。<br>無料登録するとNew Me Mapにすぐ反映されます。</div>
-          <a href="/login?mode=signup&next=/mypage/navi" class="save-map-cta-btn">無料アカウントを作って保存する →</a>
-          <p class="save-map-cta-note">登録後すぐにNew Me Mapが開きます</p>
+          <div class="save-map-cta-title">この地図を New Me Map に引き継ぐ</div>
+          <div class="save-map-cta-desc">アカウントを作ると、描き込んだ内容がそのまま<br>New Me Map に反映され、月ごとの変化も追えます。</div>
+          <a href="/login?mode=signup&next=/mypage/navi" class="save-map-cta-btn">無料アカウントを作る →</a>
+          <p class="save-map-cta-note">登録後すぐに New Me Map が開きます</p>
         </div>
       </div>
       ` : ''}
@@ -1461,9 +1472,11 @@ export default function DiagnosisResultPage() {
     // ── Xシェアボタン生成 ──
     const shareBlock = document.getElementById('share-block');
     if (shareBlock) {
-      const ogUrl = `https://www.fineme.me/api/og/diagnosis?compass=${encodeURIComponent(compassFirst)}&goal=${encodeURIComponent(p.goal_change||'')}&trigger=${encodeURIComponent(p.trigger||'')}`;
+      const ogUrl = `https://www.fineme.me/api/og/diagnosis?compass=${encodeURIComponent(compassFirst)}&type=${encodeURIComponent(typeIdentity?.typeCode||'')}&name=${encodeURIComponent(typeIdentity?.fullName||'')}&goal=${encodeURIComponent(p.goal_change||'')}&trigger=${encodeURIComponent(p.trigger||'')}`;
       const axisLabel = AREA_DEFS[compassFirst]?.label || '外見';
-      const shareText = `Me Scan を受けた。\n今の私に一番効くのは「${axisLabel}」からだった。\n\nあなたも試してみて👇\n#Fineme`;
+      const shareText = typeIdentity
+        ? `Me Scan を受けた。\n私は「${typeIdentity.fullName}」だった。\n最初の一手は「${axisLabel}」から。\n\n136タイプ、あなたはどれ？👇\n#Fineme`
+        : `Me Scan を受けた。\n今の私に一番効くのは「${axisLabel}」からだった。\n\nあなたも試してみて👇\n#Fineme`;
       const shareUrl = `https://www.fineme.me/diagnosis`;
       const twitterHref = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
       shareBlock.innerHTML = `
@@ -1473,7 +1486,7 @@ export default function DiagnosisResultPage() {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
           この診断結果をXでシェアする
         </a>
-        <p style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:10px;">シェアするとあなたのCompass軸が表示されます</p>
+        <p style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:10px;">シェアするとあなたのタイプが表示されます</p>
       `;
     }
 
