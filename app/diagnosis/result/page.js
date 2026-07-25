@@ -851,6 +851,59 @@ export default function DiagnosisResultPage() {
       `;
     }
 
+    // ─── 次に描き込む1軸（第3層への導き）───
+    // 軸を並べて選ばせない。羅針盤は方角を1つ指すもの。
+    const DEEPEN_FIELDS = ['path_type', 'self_view', 'love_impact'];
+    function isAxisDrawn(id) {
+      const v = tv[id] || {};
+      return DEEPEN_FIELDS.every(k => !!v[k]);
+    }
+    function buildNextDrawBlock() {
+      const allIds = Object.keys(AREA_DEFS);
+      const ordered = priorityOrder.length
+        ? priorityOrder.concat(allIds.filter(id => !priorityOrder.includes(id)))
+        : allIds;
+      const remaining = ordered.filter(id => AREA_DEFS[id] && !isAxisDrawn(id));
+      const drawn = allIds.filter(id => isAxisDrawn(id)).length;
+
+      // 全軸を描き終えた → 地図と現在地のサイクルへ接続する（順番ではなく循環）
+      if (!remaining.length) {
+        let lastMirrorAt = null;
+        try {
+          const raw = localStorage.getItem('fineme:mirror:one-point');
+          if (raw) lastMirrorAt = JSON.parse(raw)?.savedAt || null;
+        } catch (e) {}
+        const days = lastMirrorAt
+          ? Math.max(0, Math.floor((Date.now() - new Date(lastMirrorAt).getTime()) / 86400000))
+          : null;
+        const title = days === null
+          ? 'あとは、今の現在地を測るだけです'
+          : `前回の観測から ${days} 日`;
+        const body = days === null
+          ? '地図はすべて描けました。写真1枚で、自分では見えていない今の現在地がわかります。'
+          : '地図が変わったなら、現在地も変わっています。同じ場所から、もう一度測ってみましょう。';
+        return `
+          <div style="margin:16px 0 20px;padding:20px 18px;background:rgba(10,15,30,0.7);border:1px solid rgba(201,168,76,0.3);border-radius:14px;text-align:center">
+            <p style="font-size:10px;font-weight:800;letter-spacing:.16em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin:0 0 8px">Map ✓ Complete</p>
+            <p style="font-size:15px;font-weight:800;color:#e8e4dc;margin:0 0 6px;line-height:1.5">${esc(title)}</p>
+            <p style="font-size:12px;color:rgba(232,228,220,0.5);margin:0 0 16px;line-height:1.75">${esc(body)}</p>
+            <a href="/mirror" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#c9a84c,#e8c86a);color:#0a0f1e;font-size:14px;font-weight:800;border-radius:10px;text-decoration:none">🪞 現在地を測る →</a>
+          </div>`;
+      }
+
+      const nextId = remaining[0];
+      const def = AREA_DEFS[nextId];
+      const total = allIds.length;
+      return `
+        <div style="margin:16px 0 20px;padding:20px 18px;background:rgba(10,15,30,0.7);border:1px solid rgba(201,168,76,0.28);border-radius:14px;text-align:center">
+          <p style="font-size:10px;font-weight:800;letter-spacing:.16em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin:0 0 10px">Map ${drawn} / ${total}</p>
+          <p style="font-size:13px;color:rgba(232,228,220,0.55);margin:0 0 4px">地図はまだ骨格の状態です</p>
+          <p style="font-size:17px;font-weight:800;color:#e8e4dc;margin:0 0 16px;line-height:1.4">次に描き込むのは —— ${esc(def.icon)} ${esc(def.label)}</p>
+          <a href="/diagnosis?deepen=${esc(nextId)}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#c9a84c,#e8c86a);color:#0a0f1e;font-size:14px;font-weight:800;border-radius:10px;text-decoration:none">${esc(def.label)}の地図を描き込む（3問・1分）→</a>
+          <p style="font-size:11px;color:rgba(232,228,220,0.32);margin:12px 0 0;line-height:1.6">描き込むほど、New Me Navi のステップが具体的になります</p>
+        </div>`;
+    }
+
     // ─── 変容ベクトルリスト ───
     function buildVectorList() {
       if (!priorityOrder.length) return '';
@@ -1065,13 +1118,15 @@ export default function DiagnosisResultPage() {
 
       ${buildCompass()}
 
+      ${buildNextDrawBlock()}
+
       ${compassFirstDef.label ? `<div style="margin:12px 0 20px;padding:16px 18px;background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.28);border-radius:12px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(8px)">
         <span style="font-size:26px;flex-shrink:0">🪞</span>
         <div style="flex:1;min-width:0">
-          <p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px;line-height:1.55">${esc(compassFirstDef.icon||'')} ${esc(compassFirstDef.label)}が、あなたの最初の一手。<br>今の${esc(compassFirstDef.label)}、写真1枚で確かめてみる？</p>
+          <p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px;line-height:1.55">地図では ${esc(compassFirstDef.icon||'')} ${esc(compassFirstDef.label)} が最初の一手。<br>実際の現在地は、写真1枚で測れます。</p>
           <p style="font-size:11px;color:rgba(232,228,220,0.4);margin:0">写真は保存しません</p>
         </div>
-        <a href="/mirror" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(201,168,76,0.1);border:1.5px solid #c9a84c;color:#c9a84c;border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">Mirror<br><span style="font-size:10px;font-weight:600">¥500</span></a>
+        <a href="/mirror" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(201,168,76,0.1);border:1.5px solid #c9a84c;color:#c9a84c;border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">現在地を<br>測る</a>
       </div>` : ''}
 
       <p class="sec-label" style="margin-top:28px">Radar Map</p>

@@ -379,7 +379,7 @@ export default function DiagnosisPage() {
     }
 
     function updateNav() {
-      const noNavScreens = ['landing', 'q3_intro', 'instant-tryout', 'instant-tryout-result'];
+      const noNavScreens = ['landing', 'q3_intro', 'instant-tryout', 'instant-tryout-result', 'deepen'];
       if (noNavScreens.includes(currentScreen)) {
         navEl.style.display = 'none';
         return;
@@ -1060,7 +1060,83 @@ export default function DiagnosisPage() {
       showScreen('q3');
     });
 
-    showScreen('landing');
+    // ─── 軸ごとの描き込み（?deepen=<axisId>）───
+    // 結果画面が示した1軸だけをここで深める。既存のCATEGORY_PHASE3をそのまま使う
+    function startDeepen(axisId) {
+      const cat = CATEGORY_PHASE3.find(c => c.id === axisId);
+      const container = document.getElementById('deepen-content');
+      if (!cat || !container) return false;
+
+      let profile = null;
+      try { profile = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) {}
+      if (!profile) return false;
+
+      const answers = { path_type: null, self_view: null, love_impact: null };
+      const QUESTIONS = [
+        { key:'path_type',   q:cat.path_q, opts:cat.path_opts.map(o => ({ v:o.v, t:o.t, d:o.d })) },
+        { key:'self_view',   q:cat.view_q, opts:cat.view_opts.map(o => ({ v:o.v, t:o.t, d:o.d || '' })) },
+        { key:'love_impact', q:cat.love_q, opts:cat.love_opts.map(o => ({ v:o.v, t:o.t, d:o.d || '' })) },
+      ];
+
+      const labelEl = document.getElementById('deepen-label');
+      const headEl  = document.getElementById('deepen-heading');
+      if (labelEl) labelEl.textContent = `地図を描き込む｜${cat.label}`;
+      if (headEl) headEl.innerHTML = `${cat.icon} ${cat.label}のことを、<br>もう少しだけ聞かせてください`;
+
+      container.innerHTML = QUESTIONS.map((qq, qi) => `
+        <div class="diag-card" style="margin-bottom:12px">
+          <p style="font-size:15px;font-weight:800;color:#e8e4dc;margin:0 0 12px;line-height:1.5">${qq.q}</p>
+          <div class="diag-options" data-qkey="${qq.key}">
+            ${qq.opts.map(o => `
+              <button class="diag-option" data-qkey="${qq.key}" data-value="${o.v}">
+                <span class="diag-option-body">
+                  <span class="diag-option-title">${o.t}</span>
+                  ${o.d ? `<span class="diag-option-desc">${o.d}</span>` : ''}
+                </span>
+              </button>`).join('')}
+          </div>
+        </div>`).join('');
+
+      const saveBtn = document.getElementById('btn-deepen-save');
+      function refreshSaveBtn() {
+        if (saveBtn) saveBtn.disabled = !Object.values(answers).every(v => !!v);
+      }
+
+      container.querySelectorAll('.diag-option').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const key = this.dataset.qkey;
+          answers[key] = this.dataset.value;
+          container.querySelectorAll(`.diag-option[data-qkey="${key}"]`).forEach(b => b.classList.remove('selected'));
+          this.classList.add('selected');
+          refreshSaveBtn();
+        });
+      });
+      refreshSaveBtn();
+
+      saveBtn?.addEventListener('click', function () {
+        try {
+          profile.transform_vectors = profile.transform_vectors || {};
+          profile.transform_vectors[axisId] = Object.assign({}, profile.transform_vectors[axisId], answers);
+          profile.path_types  = Object.assign({}, profile.path_types,  { [axisId]: answers.path_type });
+          profile.self_views  = Object.assign({}, profile.self_views,  { [axisId]: answers.self_view });
+          profile.love_impact = Object.assign({}, profile.love_impact, { [axisId]: answers.love_impact });
+          profile.at = Date.now();
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+        } catch (e) {}
+        if (typeof window.gtag === 'function') window.gtag('event', 'mescan_axis_drawn', { axis: axisId });
+        window.location.href = '/diagnosis/result';
+      });
+
+      showScreen('deepen');
+      return true;
+    }
+
+    const deepenAxis = new URLSearchParams(window.location.search).get('deepen');
+    if (deepenAxis && startDeepen(deepenAxis)) {
+      // 描き込み画面を直接開いた
+    } else {
+      showScreen('landing');
+    }
 
     return () => {
       document.head.removeChild(style);
@@ -1572,6 +1648,18 @@ export default function DiagnosisPage() {
             <p id="q3path-progress" style={{fontSize:'12px',fontWeight:'700',color:'rgba(201,168,76,0.8)',margin:'8px 0 0'}}></p>
           </div>
           <div id="q3_path_content"></div>
+        </div>
+
+        {/* SCREEN DEEPEN: 軸ごとの描き込み（結果画面から1軸ずつ導かれて来る） */}
+        <div className="diag-screen" id="screen-deepen">
+          <div className="diag-card" style={{marginBottom:'16px'}}>
+            <p className="diag-step-label" id="deepen-label">地図を描き込む</p>
+            <h2 className="diag-q" id="deepen-heading"></h2>
+            <p className="diag-hint">3問だけ。答えるほど、この軸のステップが具体的になります。</p>
+          </div>
+          <div id="deepen-content"></div>
+          <button className="diag-nav-next" id="btn-deepen-save" style={{width:'100%',maxWidth:'600px',marginTop:'8px'}} disabled>地図に描き込む</button>
+          <a href="/diagnosis/result" style={{display:'block',textAlign:'center',marginTop:'14px',fontSize:'13px',color:'#9ca3af',textDecoration:'none'}}>あとにする →</a>
         </div>
 
         {/* SCREEN Q5: 過去の試み（フローからは除外、後方互換で残す） */}

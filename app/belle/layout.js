@@ -1,5 +1,4 @@
-import BelleNavbar from './_components/BelleNavbar';
-import Footer from '../_components/Footer';
+import BelleTrackBadge from './_components/BelleTrackBadge';
 
 export const metadata = {
   title: {
@@ -20,9 +19,8 @@ export const metadata = {
 export default function BelleLayout({ children }) {
   return (
     <>
-      <BelleNavbar />
+      <BelleTrackBadge />
       {children}
-      <Footer />
     </>
   );
 }
