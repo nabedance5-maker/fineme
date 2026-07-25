@@ -25,7 +25,8 @@ export const revalidate = 3600; // 1時間キャッシュ
 
 export default async function FeatureListPage({ searchParams }) {
   const q = (searchParams?.q || '').toLowerCase();
-  const articles = (await getAllArticles()).filter(a =>
+  // /feature は男性トラックの記事一覧（Belle は /belle/journal）
+  const articles = (await getAllArticles('fineme')).filter(a =>
     !q || a.title.toLowerCase().includes(q) || (a.description || '').toLowerCase().includes(q)
   );
 

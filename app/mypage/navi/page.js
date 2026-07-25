@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { TRACKS, getTrackId, syncTrackWithServer } from '@/lib/track';
 
 // 軸 → 関連カテゴリのマッピング（記事のcategoryフィールドと照合）
 const AXIS_RELATED_CATS = {
@@ -17,6 +18,14 @@ const AXIS_RELATED_CATS = {
 export default function NewMeNaviPage() {
   const initialized = useRef(false);
   const [relatedArticles, setRelatedArticles] = useState([]);
+  const [trackId, setTrackId] = useState('fineme');
+  const track = TRACKS[trackId] || TRACKS.fineme;
+
+  // ログイン済みならサーバのトラックを正として取り込む
+  useEffect(() => {
+    setTrackId(getTrackId());
+    syncTrackWithServer().then((t) => { if (t) setTrackId(t); }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (initialized.current) return;
@@ -683,10 +692,11 @@ export default function NewMeNaviPage() {
 
     // ── データ（Supabase優先 → localStorage fallback）──
     ;(async () => {
-    // Belleユーザーは 'fineme:diagnosis:belle' に保存されるためフォールバック
-    const STORAGE_KEY = localStorage.getItem('fineme:diagnosis:latest')
-      ? 'fineme:diagnosis:latest'
-      : (localStorage.getItem('fineme:diagnosis:belle') ? 'fineme:diagnosis:belle' : 'fineme:diagnosis:latest');
+    // 読むデータはユーザーのトラックで決まる（lib/track.js が単一の真実）。
+    // 以前は「latestがあればlatest」という順で、両方受けた人は必ず男性版が勝っていた。
+    const TRACK_ID = getTrackId();
+    const TRACK = TRACKS[TRACK_ID] || TRACKS.fineme;
+    const STORAGE_KEY = TRACK.storageKey;
     const PROGRESS_KEY = 'fineme:axis:progress';
     const STEP_DONE_KEY = 'fineme:step:done';
     const root = document.getElementById('navi-root');
@@ -716,7 +726,7 @@ export default function NewMeNaviPage() {
               <a href="/login" style="display:block;width:100%;padding:15px 24px;background:#c9a84c;color:#0a0f1e;font-size:15px;font-weight:700;border-radius:6px;text-decoration:none;letter-spacing:.05em;margin-bottom:12px;box-sizing:border-box">
                 ログイン / 新規登録
               </a>
-              <a href="/diagnosis" style="font-size:13px;color:rgba(232,228,220,0.40);text-decoration:none;border-bottom:1px solid rgba(232,228,220,0.15);padding-bottom:2px">
+              <a href="${TRACK.diagnosis}" style="font-size:13px;color:rgba(232,228,220,0.40);text-decoration:none;border-bottom:1px solid rgba(232,228,220,0.15);padding-bottom:2px">
                 まだMe Scanを受けていない方はこちら
               </a>
             </div>
@@ -946,7 +956,7 @@ export default function NewMeNaviPage() {
 
     // ── 記事フェッチ（非同期・失敗しても無視） ──
     try {
-      const artRes = await fetchWithTimeout('/api/features', {}, 5000);
+      const artRes = await fetchWithTimeout(`/api/features?track=${TRACK_ID}`, {}, 5000);
       if (artRes?.ok) {
         const arts = await artRes.json();
         if (Array.isArray(arts)) allNaviArticles = arts;
@@ -988,7 +998,7 @@ export default function NewMeNaviPage() {
           <p class="no-data-text">Mirror分析の変容余地データから、<br>あなた専用の New Me Map を生成できます。</p>
           <button id="mirror-map-gen-btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px;background:linear-gradient(135deg,#c9a84c,#e8c97a);border:none;border-radius:10px;color:#0a0f1e;cursor:pointer;font-family:inherit;box-shadow:0 6px 24px rgba(201,168,76,0.3)">📸 Mirrorデータでマップを生成 →</button>
           <p style="margin-top:14px;font-size:11px;color:rgba(232,228,220,0.3)">Me Scan（無料診断）を受けるとさらに精度が上がります</p>
-          <a href="/diagnosis" style="display:block;margin-top:8px;font-size:12px;color:rgba(201,168,76,0.55);text-decoration:none">Me Scanも受ける（推奨）→</a>
+          <a href="${TRACK.diagnosis}" style="display:block;margin-top:8px;font-size:12px;color:rgba(201,168,76,0.55);text-decoration:none">Me Scanも受ける（推奨）→</a>
         </div>`;
         document.getElementById('mirror-map-gen-btn')?.addEventListener('click', async (e) => {
           const btn = e.currentTarget;
@@ -1010,8 +1020,8 @@ export default function NewMeNaviPage() {
           <h2 class="no-data-title">まだ地図がありません</h2>
           <p class="no-data-text">Me Scanを受けるか、Mirrorで写真を分析すると、<br>あなただけの変容マップが生成されます。</p>
           <div style="display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:4px">
-            <a href="/diagnosis" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px">Me Scanを受ける（無料）</a>
-            <a href="/mirror" style="font-size:13px;color:rgba(201,168,76,0.7);text-decoration:none">写真でMirror分析 →</a>
+            <a href="${TRACK.diagnosis}" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px">Me Scanを受ける（無料）</a>
+            <a href="${TRACK.mirror}" style="font-size:13px;color:rgba(201,168,76,0.7);text-decoration:none">写真でMirror分析 →</a>
           </div>
         </div>`;
       }
@@ -1019,7 +1029,7 @@ export default function NewMeNaviPage() {
     }
     let p;
     try { p = JSON.parse(raw); } catch {
-      root.innerHTML = `<div class="no-data"><p>データエラー。</p><a href="/diagnosis" class="btn">再スキャン</a></div>`;
+      root.innerHTML = `<div class="no-data"><p>データエラー。</p><a href="${TRACK.diagnosis}" class="btn">再スキャン</a></div>`;
       return;
     }
     if (!p.transform_vectors) {
@@ -1027,7 +1037,7 @@ export default function NewMeNaviPage() {
         <div class="no-data-icon">🗺️</div>
         <h2 class="no-data-title">新しいMe Scanが必要です</h2>
         <p class="no-data-text">診断をアップデートしました。<br>新しいMe Scanで変容マップを生成します。</p>
-        <a href="/diagnosis" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px">Me Scanを受ける（新版）</a>
+        <a href="${TRACK.diagnosis}" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px">Me Scanを受ける（新版）</a>
       </div>`;
       return;
     }
@@ -1765,7 +1775,7 @@ export default function NewMeNaviPage() {
             <p style="font-size:11px;font-weight:800;color:rgba(100,160,255,0.8);margin:0 0 3px;letter-spacing:.06em">MIRROR データから生成</p>
             <p style="font-size:12px;color:rgba(232,228,220,0.55);margin:0;line-height:1.6">Me Scan（無料診断）を受けるとさらに精度の高いマップに更新されます</p>
           </div>
-          <a href="/diagnosis" style="font-size:11px;font-weight:700;padding:7px 14px;border:1px solid rgba(100,160,255,0.4);border-radius:8px;color:rgba(100,160,255,0.9);text-decoration:none;flex-shrink:0;white-space:nowrap">Me Scanを受ける →</a>
+          <a href="${TRACK.diagnosis}" style="font-size:11px;font-weight:700;padding:7px 14px;border:1px solid rgba(100,160,255,0.4);border-radius:8px;color:rgba(100,160,255,0.9);text-decoration:none;flex-shrink:0;white-space:nowrap">Me Scanを受ける →</a>
         </div>` : '';
 
       // 基礎チェックリスト（Map用：上位5件をpriority×gapスコアで選定）
@@ -1918,7 +1928,7 @@ export default function NewMeNaviPage() {
         const stepCardsHtml = sectionSteps.map((s, i) => {
           const art = insertBefore.get(i);
           const artHtml = art ? `
-            <a href="/feature/${esc(art.slug)}" class="trail-article-node" target="_blank">
+            <a href="${esc(TRACK.articlePath(art.slug))}" class="trail-article-node" target="_blank">
               <span class="trail-article-icon">📖</span>
               <div class="trail-article-body">
                 <p class="trail-article-label">この一歩を踏み出す前に読む</p>
@@ -2176,7 +2186,7 @@ export default function NewMeNaviPage() {
           const art = insertBefore.get(i);
           if (art) {
             html += `<div class="gmap-article-row">
-              <a href="/feature/${esc(art.slug)}" class="gmap-article-node" target="_blank">
+              <a href="${esc(TRACK.articlePath(art.slug))}" class="gmap-article-node" target="_blank">
                 <span class="gmap-article-icon">📖</span>
                 <div class="gmap-article-body">
                   <p class="gmap-article-label">この一歩を踏み出す前に読む</p>
@@ -3004,7 +3014,7 @@ export default function NewMeNaviPage() {
             </div>
 
             ${def.articleQ ? `
-            <a href="/feature?q=${esc(def.articleQ)}" class="track-article-link">
+            <a href="${esc(TRACK.articlesSearch(def.articleQ))}" class="track-article-link">
               📖 この軸に関連する読み物を見る →
             </a>` : ''}
 
@@ -3522,7 +3532,7 @@ export default function NewMeNaviPage() {
 
       ${buildWeeklyCheckinHtml()}
 
-      ${(() => { const _mDef = AREA_DEFS[compassFirst] || {}; if (!_mDef.label) return ''; return `<div style="margin:0 0 16px;padding:16px 18px;background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.28);border-radius:12px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(8px)"><span style="font-size:26px;flex-shrink:0">🪞</span><div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px;line-height:1.55">${esc(_mDef.icon||'')} ${esc(_mDef.label)}が、あなたの最初の一手。<br>今の${esc(_mDef.label)}、写真1枚で確かめてみる？</p><p style="font-size:11px;color:rgba(232,228,220,0.4);margin:0">写真は保存しません</p></div><a href="/mirror" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(201,168,76,0.1);border:1.5px solid #c9a84c;color:#c9a84c;border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">Mirror<br><span style="font-size:10px;font-weight:600">¥500</span></a></div>`; })()}
+      ${(() => { const _mDef = AREA_DEFS[compassFirst] || {}; if (!_mDef.label) return ''; return `<div style="margin:0 0 16px;padding:16px 18px;background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.28);border-radius:12px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(8px)"><span style="font-size:26px;flex-shrink:0">🪞</span><div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px;line-height:1.55">${esc(_mDef.icon||'')} ${esc(_mDef.label)}が、あなたの最初の一手。<br>今の${esc(_mDef.label)}、写真1枚で確かめてみる？</p><p style="font-size:11px;color:rgba(232,228,220,0.4);margin:0">写真は保存しません</p></div><a href="${TRACK.mirror}" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(201,168,76,0.1);border:1.5px solid #c9a84c;color:#c9a84c;border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">Mirror<br><span style="font-size:10px;font-weight:600">¥500</span></a></div>`; })()}
 
       ${(() => {
         if (!mirrorOnePoint?.axisId) return '';
@@ -3558,8 +3568,8 @@ export default function NewMeNaviPage() {
 
       <div class="navi-footer">
         <a href="/mypage/log" class="navi-footer-btn nfb-secondary" style="border-color:rgba(201,168,76,0.45)">📖 New Me Log — サービスを管理する</a>
-        <a href="/diagnosis/result" class="navi-footer-btn nfb-secondary">🗺️ New Me Naviに戻る</a>
-        <a href="/diagnosis" class="navi-footer-btn nfb-ghost">Me Scanを再スキャンする</a>
+        <a href="${TRACK.diagnosisResult}" class="navi-footer-btn nfb-secondary">🗺️ New Me Naviに戻る</a>
+        <a href="${TRACK.diagnosis}" class="navi-footer-btn nfb-ghost">Me Scanを再スキャンする</a>
       </div>
       </div>
 
@@ -4142,7 +4152,7 @@ export default function NewMeNaviPage() {
           <h2 class="no-data-title">読み込みエラー</h2>
           <p class="no-data-text">データの読み込みに失敗しました。<br>ページを再読み込みするか、Me Scanを受け直してください。</p>
           <p style="font-size:11px;color:#9ca3af;margin-bottom:20px">${err.message || ''}</p>
-          <a href="/diagnosis" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px;margin-right:10px">Me Scanを受ける</a>
+          <a href="${TRACK.diagnosis}" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px;margin-right:10px">Me Scanを受ける</a>
           <button onclick="location.reload()" style="font-size:14px;font-weight:600;padding:12px 24px;border:1.5px solid #e5e7eb;border-radius:8px;background:#fff;cursor:pointer">再読み込み</button>
         </div>`;
       } catch {}
@@ -4153,18 +4163,18 @@ export default function NewMeNaviPage() {
     return () => { document.head.removeChild(style); };
   }, []);
 
-  // 診断軸に基づいて関連記事を取得
+  // 診断軸に基づいて関連記事を取得（自分のトラックの記事だけ）
   useEffect(() => {
     let topAxes = [];
     try {
-      const raw = localStorage.getItem('fineme:diagnosis:latest') || localStorage.getItem('fineme:diagnosis:belle');
+      const raw = localStorage.getItem(track.storageKey);
       if (raw) {
         const p = JSON.parse(raw);
         topAxes = p.priority_order?.slice(0, 3) || (p.compass_first ? [p.compass_first] : []);
       }
     } catch {}
 
-    fetch('/api/features')
+    fetch(`/api/features?track=${trackId}`)
       .then(r => r.ok ? r.json() : [])
       .then(articles => {
         if (!Array.isArray(articles) || articles.length === 0) return;
@@ -4183,7 +4193,7 @@ export default function NewMeNaviPage() {
         setRelatedArticles(scored.slice(0, 3));
       })
       .catch(() => {});
-  }, []);
+  }, [trackId, track.storageKey]);
 
   return (
     <>
@@ -4210,7 +4220,7 @@ export default function NewMeNaviPage() {
           <aside className="navi-sidenav">
             <nav className="stack" style={{ gap: '4px' }}>
               <Link href="/mypage" className="sidenav-link">ホーム</Link>
-              <Link href="/diagnosis/result" className="sidenav-link">New Me Navi</Link>
+              <Link href={track.diagnosisResult} className="sidenav-link">New Me Navi</Link>
               <Link href="/mypage/navi" className="sidenav-link sidenav-link--active">New Me Map</Link>
               <Link href="/mypage/log" className="sidenav-link">New Me Log</Link>
               <Link href="/mypage/mirror" className="sidenav-link">Mirror履歴</Link>
@@ -4228,22 +4238,22 @@ export default function NewMeNaviPage() {
 
             {/* 関連する読み物 */}
             {relatedArticles.length > 0 && (
-              <div style={{ marginTop: '40px', paddingTop: '32px', borderTop: '1px solid rgba(201,168,76,0.15)' }}>
-                <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.7)', margin: '0 0 16px' }}>
+              <div style={{ marginTop: '40px', paddingTop: '32px', borderTop: `1px solid rgba(${track.accentRgb},0.15)` }}>
+                <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: `rgba(${track.accentRgb},0.7)`, margin: '0 0 16px' }}>
                   あなたの変容に関連する読み物
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {relatedArticles.map(a => (
-                    <Link key={a.id} href={`/feature/${a.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <Link key={a.id} href={track.articlePath(a.slug)} style={{ textDecoration: 'none', color: 'inherit' }}>
                       <div style={{
                         display: 'flex', gap: '14px', alignItems: 'center',
                         padding: '14px', borderRadius: '12px',
-                        border: '1px solid rgba(201,168,76,0.15)',
+                        border: `1px solid rgba(${track.accentRgb},0.15)`,
                         background: 'rgba(255,255,255,0.6)',
                         transition: 'border-color 0.15s',
                       }}
-                        onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)'}
-                        onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)'}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = `rgba(${track.accentRgb},0.4)`}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = `rgba(${track.accentRgb},0.15)`}
                       >
                         {a.thumbnail && (
                           <img src={a.thumbnail} alt={a.title}
@@ -4252,19 +4262,19 @@ export default function NewMeNaviPage() {
                         )}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           {a.category && (
-                            <span style={{ fontSize: '10px', fontWeight: 800, color: '#c9a84c', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{a.category}</span>
+                            <span style={{ fontSize: '10px', fontWeight: 800, color: track.accent, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{a.category}</span>
                           )}
                           <p style={{ fontSize: '14px', fontWeight: 700, margin: '4px 0 4px', lineHeight: 1.45, fontFamily: 'var(--font-serif)', color: '#0a0f1e' }}>{a.title}</p>
                           <span style={{ fontSize: '11px', color: '#9ca3af' }}>{a.reading_time || 5}分で読める</span>
                         </div>
-                        <span style={{ fontSize: '16px', color: 'rgba(201,168,76,0.6)', flexShrink: 0 }}>→</span>
+                        <span style={{ fontSize: '16px', color: `rgba(${track.accentRgb},0.6)`, flexShrink: 0 }}>→</span>
                       </div>
                     </Link>
                   ))}
                 </div>
                 <div style={{ textAlign: 'right', marginTop: '12px' }}>
-                  <Link href="/feature" style={{ fontSize: '12px', color: 'var(--color-gold)', textDecoration: 'none', fontWeight: 700 }}>
-                    Fineme Journal を読む →
+                  <Link href={track.articles} style={{ fontSize: '12px', color: track.accent, textDecoration: 'none', fontWeight: 700 }}>
+                    {track.label} {track.articlesLabel} を読む →
                   </Link>
                 </div>
               </div>

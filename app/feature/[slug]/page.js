@@ -59,7 +59,8 @@ async function getRelatedProviders(category) {
 
 export async function generateStaticParams() {
   try {
-    const articles = await getAllArticles();
+    // 静的生成の対象は男性トラックの記事だけ（Belle は /belle/journal/[slug] が持つ）
+    const articles = await getAllArticles('fineme');
     return articles
       .filter(a => a.slug)
       .map(a => ({ slug: a.slug }));

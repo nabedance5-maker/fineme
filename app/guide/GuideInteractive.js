@@ -50,7 +50,7 @@ export default function GuideInteractive({ axes, tierInfo }) {
             今は一般的な順番（Tier順）で表示しています。<br />
             あなたの現在地・来た道・ゴールに合わせた地図が欲しい方は無料のMe Scanを。
           </p>
-          <Link href="/diagnosis" className="guide-axis-cta">🧬 Me Scanを受ける（無料・約15分）</Link>
+          <Link href="/diagnosis" className="guide-axis-cta">🧬 Me Scanを受ける（無料・約3分）</Link>
         </div>
       )}
 

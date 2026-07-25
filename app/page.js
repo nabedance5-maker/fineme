@@ -442,7 +442,7 @@ export default function HomePage() {
                 </Link>
                 <p style={{ marginTop: '10px' }}>
                   <Link href={diagnosisType === 'belle' ? '/belle/diagnosis' : '/diagnosis'} style={{ fontSize: '13px', color: 'rgba(201,168,76,0.7)', textDecoration: 'none' }}>
-                    Me Scanから始める（無料・約15分）→
+                    Me Scanから始める（無料・約3分）→
                   </Link>
                 </p>
               </div>
@@ -653,7 +653,7 @@ export default function HomePage() {
             <Link href={diagnosisType === 'belle' ? '/belle/diagnosis' : '/diagnosis'} className="hero-nav-cta">
               🧬 Me Scanで地図を描く（無料）
             </Link>
-            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.25)', margin: '16px 0 0' }}>約15分 · 匿名 · 登録不要</p>
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.25)', margin: '16px 0 0' }}>約3分 · 匿名 · 登録不要</p>
             <div style={{ marginTop: '36px', paddingTop: '28px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
               <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', margin: '0 0 12px' }}>すでに始める場所が決まっている方</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
