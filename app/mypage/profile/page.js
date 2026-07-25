@@ -1,9 +1,27 @@
 'use client';
+import useTrack from '@/app/_hooks/useTrack';
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
+import { TRACKS, setTrackExplicit, saveTrackToServer } from '@/lib/track';
 
 export default function MypageProfilePage() {
+  const { track, trackId: resolvedTrackId } = useTrack();
+  const [trackId, setTrackId] = useState('fineme');
+  const [trackMsg, setTrackMsg] = useState('');
+
+  useEffect(() => { setTrackId(resolvedTrackId); }, [resolvedTrackId]);
+
+  // トラックの明示切替。入口では選ばせず、ここは「間違えた人が戻すための訂正手段」。
+  function switchTrack(id) {
+    if (id === trackId) return;
+    setTrackExplicit(id);
+    setTrackId(id);
+    saveTrackToServer(id).catch(() => {});
+    setTrackMsg(`${TRACKS[id].label} に切り替えました`);
+    // マイページ全体（リンク・記事・色）を新しいトラックで描き直す
+    setTimeout(() => window.location.reload(), 600);
+  }
   const [accessToken, setAccessToken] = useState(null);
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -129,7 +147,7 @@ export default function MypageProfilePage() {
         <aside className="mypage-sidenav">
           <nav className="stack" style={{ gap: '4px' }}>
             <Link href="/mypage" className="sidenav-link">ホーム</Link>
-            <Link href="/diagnosis/result" className="sidenav-link">New Me Navi</Link>
+            <Link href={track.diagnosisResult} className="sidenav-link">New Me Navi</Link>
             <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
             <Link href="/mypage/log" className="sidenav-link">New Me Log</Link>
             <Link href="/mypage/mirror" className="sidenav-link">Mirror履歴</Link>
@@ -233,6 +251,46 @@ export default function MypageProfilePage() {
                     style={{ padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box', maxWidth: '240px' }}
                   />
                 </div>
+              </div>
+
+              {/* 表示中のトラック（Me Scan / Mirror の初回で決まる。ここは訂正手段） */}
+              <div style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px' }}>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 6px' }}>表示中のトラック</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>
+                  最初に受けた Me Scan / Mirror で決まります。診断・Mirror・読み物・New Me Map がこの内容に切り替わります。
+                </p>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  {['fineme', 'belle'].map((id) => {
+                    const t = TRACKS[id];
+                    const isActive = trackId === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => switchTrack(id)}
+                        style={{
+                          flex: '1 1 160px', textAlign: 'left', cursor: isActive ? 'default' : 'pointer',
+                          padding: '14px 16px', borderRadius: '12px', fontFamily: 'inherit',
+                          background: isActive ? `rgba(${t.accentRgb},0.12)` : 'rgba(255,255,255,0.03)',
+                          border: `1.5px solid rgba(${t.accentRgb},${isActive ? 0.55 : 0.2})`,
+                        }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <span style={{
+                            width: '14px', height: '14px', borderRadius: '50%', flexShrink: 0,
+                            border: `1.5px solid rgba(${t.accentRgb},0.7)`,
+                            background: isActive ? t.accent : 'transparent',
+                          }} />
+                          <span style={{ fontSize: '14px', fontWeight: 800, color: 'rgba(232,228,220,0.92)' }}>{t.label}</span>
+                        </span>
+                        <span style={{ display: 'block', fontSize: '11px', color: 'rgba(232,228,220,0.5)', paddingLeft: '22px' }}>{t.subLabel}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {trackMsg && (
+                  <p style={{ margin: '10px 0 0', fontSize: '13px', color: '#059669' }}>{trackMsg}</p>
+                )}
               </div>
 
               {/* LINE 連携セクション */}

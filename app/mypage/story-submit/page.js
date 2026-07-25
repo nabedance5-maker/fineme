@@ -1,4 +1,5 @@
 'use client';
+import useTrack from '@/app/_hooks/useTrack';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
@@ -7,6 +8,7 @@ const AXIS_ICONS  = { body:'💪', eyebrow:'✂️', fashion:'👔', hair:'💇'
 const PATH_LABELS = { virgin:'初挑戦タイプ', quit:'リスタートタイプ', blind:'客観化タイプ', lapsed:'再開タイプ' };
 
 export default function StorySubmitPage() {
+  const { track } = useTrack();
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
   const [diagnosis, setDiagnosis] = useState(null);
@@ -150,7 +152,7 @@ export default function StorySubmitPage() {
         <aside className="mypage-sidenav">
           <nav className="stack" style={{ gap: '4px' }}>
             <Link href="/mypage" className="sidenav-link">ホーム</Link>
-            <Link href="/diagnosis/result" className="sidenav-link">New Me Navi</Link>
+            <Link href={track.diagnosisResult} className="sidenav-link">New Me Navi</Link>
             <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
             <Link href="/mypage/log" className="sidenav-link">New Me Log</Link>
             <Link href="/mypage/mirror" className="sidenav-link">Mirror履歴</Link>

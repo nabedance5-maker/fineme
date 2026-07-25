@@ -312,7 +312,7 @@ export default function DiagnosisResultPage() {
           isLoggedIn = true;
           authToken = token;
           setAccessToken(token);
-          const res = await fetch('/api/me/diagnosis', { headers: { 'Authorization': `Bearer ${token}` } });
+          const res = await fetch('/api/me/diagnosis?track=fineme', { headers: { 'Authorization': `Bearer ${token}` } });
           if (res.ok) { const data = await res.json(); if (data) {
             // 共有リモート行（/api/me/diagnosis は user_id 単一行）にはBelle（女性版）の
             // データも入りうる。男性版の結果ページは女性版データを採用しない

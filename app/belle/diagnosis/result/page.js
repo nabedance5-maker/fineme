@@ -312,7 +312,7 @@ export default function BelleDiagnosisResultPage() {
           isLoggedIn = true;
           authToken = token;
           setAccessToken(token);
-          const res = await fetch('/api/me/diagnosis', { headers: { 'Authorization': `Bearer ${token}` } });
+          const res = await fetch('/api/me/diagnosis?track=belle', { headers: { 'Authorization': `Bearer ${token}` } });
           if (res.ok) { const data = await res.json(); if (data) {
             // 共有リモート行（/api/me/diagnosis は user_id 単一行）には男性版Me Scanの
             // データも入りうる。Belle（女性版）の結果ページは女性版データ以外を採用しない。

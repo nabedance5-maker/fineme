@@ -1,4 +1,5 @@
 'use client';
+import useTrack from '@/app/_hooks/useTrack';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
@@ -16,6 +17,7 @@ const AXIS_TO_CATEGORY = { body:'gym', eyebrow:'eyebrow', fashion:'fashion', hai
 const TIER_LABEL = { 1:'基盤', 2:'深化', 3:'補完', 4:'仕上げ' };
 
 export default function MypagePage() {
+  const { track } = useTrack();
   const [loading, setLoading] = useState(true);
   const [resvSummary, setResvSummary] = useState(null);
   const [nextVisit, setNextVisit] = useState(null);
@@ -102,7 +104,7 @@ export default function MypagePage() {
         <aside className="mypage-sidenav">
           <nav className="stack" style={{ gap: '4px' }}>
             <Link href="/mypage" className="sidenav-link sidenav-link--active">ホーム</Link>
-            <Link href="/diagnosis/result" className="sidenav-link">New Me Navi</Link>
+            <Link href={track.diagnosisResult} className="sidenav-link">New Me Navi</Link>
             <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
             <Link href="/mypage/log" className="sidenav-link">New Me Log</Link>
             <Link href="/mypage/mirror" className="sidenav-link">Mirror履歴</Link>
@@ -127,7 +129,7 @@ export default function MypagePage() {
                   <p className="map-eyebrow">🗺 New Me Navi</p>
                   <p className="map-scan-date">スキャン済み {scanDate && `· ${scanDate}`}</p>
                 </div>
-                <Link href="/diagnosis/result" className="map-cta-btn">マップを見る →</Link>
+                <Link href={track.diagnosisResult} className="map-cta-btn">マップを見る →</Link>
               </div>
 
               {/* ゴール表示 */}
@@ -187,7 +189,7 @@ export default function MypagePage() {
 
               <div className="map-card-footer">
                 <Link href="/mypage/navi" className="btn btn-ghost" style={{ fontSize: '13px', padding: '7px 14px' }}>New Me Map でロードマップを見る</Link>
-                <Link href="/diagnosis" className="muted" style={{ fontSize: '12px' }}>再スキャン</Link>
+                <Link href={track.diagnosis} className="muted" style={{ fontSize: '12px' }}>再スキャン</Link>
               </div>
             </div>
           ) : (
@@ -195,7 +197,7 @@ export default function MypagePage() {
               <p className="map-eyebrow" style={{ color: '#9ca3af' }}>🗺 New Me Navi</p>
               <h2 style={{ fontSize: '18px', fontWeight: 800, margin: '8px 0 6px', color: '#111' }}>まだスキャンが<br />完了していません</h2>
               <p className="muted" style={{ fontSize: '14px', margin: '0 0 16px', lineHeight: 1.6 }}>Me Scanを受けると、あなたの変容ナビと<br />最初の一手が生成されます。</p>
-              <Link href="/diagnosis" className="btn" style={{ fontSize: '14px', padding: '10px 20px' }}>Me Scanをはじめる →</Link>
+              <Link href={track.diagnosis} className="btn" style={{ fontSize: '14px', padding: '10px 20px' }}>Me Scanをはじめる →</Link>
             </div>
           )}
 
@@ -243,7 +245,7 @@ export default function MypagePage() {
           )}
 
           {/* ── Fineme Mirror CTA ── */}
-          <a href="/lp/mirror" style={{ display: 'block', textDecoration: 'none' }}>
+          <a href={track.lpMirror} style={{ display: 'block', textDecoration: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: '16px' }}>
               <span style={{ fontSize: '32px', flexShrink: 0 }}>🪞</span>
               <div style={{ flex: 1, minWidth: 0 }}>

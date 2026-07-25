@@ -1,8 +1,24 @@
-// GET  /api/me/diagnosis - 自分の最新診断結果を取得
-// POST /api/me/diagnosis - 診断結果をSupabaseに保存（upsert）
+// GET  /api/me/diagnosis?track=fineme|belle - 自分の診断結果を取得
+// POST /api/me/diagnosis - 診断結果をSupabaseに保存（トラックごとにupsert）
+//
+// トラックごとに1行持つ（supabase-diagnosis-track.sql）。
+// 従来は user_id 単独の1行だったため、男性版のあとにBelle版を受けると上書きされていた。
+// 未適用の環境では従来どおりの1行運用にフォールバックする。
 import { getSupabase } from '@/lib/supabase';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
+
+const VALID_TRACKS = ['fineme', 'belle'];
+
+// track カラム未適用（42703 undefined_column / PGRST204 schema cache）を判定
+function isMissingTrackColumn(error) {
+  if (!error) return false;
+  return (error.code === '42703' || error.code === 'PGRST204') && /track/i.test(error.message || '');
+}
+
+function normalizeTrack(v, fallback = 'fineme') {
+  return VALID_TRACKS.includes(v) ? v : fallback;
+}
 
 async function getUser(request) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
@@ -15,13 +31,31 @@ export async function GET(request) {
   const user = await getUser(request);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const { searchParams } = new URL(request.url);
+  const track = normalizeTrack(searchParams.get('track'));
+
   const { data, error } = await supabase
     .from('diagnosis_results')
     .select('raw_data, created_at')
     .eq('user_id', user.id)
-    .single();
+    .eq('track', track)
+    .maybeSingle();
 
-  if (error || !data) return Response.json(null);
+  if (error) {
+    if (!isMissingTrackColumn(error)) return Response.json(null);
+    // 未適用：1行しか無いので gender で照合し、トラック違いのデータは返さない
+    const legacy = await supabase
+      .from('diagnosis_results')
+      .select('raw_data, created_at')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (legacy.error || !legacy.data) return Response.json(null);
+    const rowIsFemale = legacy.data.raw_data?.gender === 'female';
+    if (rowIsFemale !== (track === 'belle')) return Response.json(null);
+    return Response.json(legacy.data.raw_data);
+  }
+
+  if (!data) return Response.json(null);
   return Response.json(data.raw_data);
 }
 
@@ -29,16 +63,33 @@ export async function POST(request) {
   const user = await getUser(request);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { raw_data } = await request.json();
+  const body = await request.json();
+  const raw_data = body?.raw_data;
   if (!raw_data) return Response.json({ error: 'raw_data は必須です' }, { status: 400 });
+
+  // 明示指定 → raw_data.gender からの導出 の順で決める
+  const track = normalizeTrack(body?.track, raw_data.gender === 'female' ? 'belle' : 'fineme');
 
   const { error } = await supabase
     .from('diagnosis_results')
     .upsert(
-      { user_id: user.id, raw_data, scores: null, result: null },
-      { onConflict: 'user_id' }
+      { user_id: user.id, track, raw_data, scores: null, result: null },
+      { onConflict: 'user_id,track' }
     );
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json({ ok: true });
+  if (!error) return Response.json({ ok: true });
+
+  if (isMissingTrackColumn(error)) {
+    // 未適用：従来どおり user_id 単独でupsert（1ユーザー1行のまま）
+    const legacy = await supabase
+      .from('diagnosis_results')
+      .upsert(
+        { user_id: user.id, raw_data, scores: null, result: null },
+        { onConflict: 'user_id' }
+      );
+    if (legacy.error) return Response.json({ error: legacy.error.message }, { status: 500 });
+    return Response.json({ ok: true, pending_migration: true });
+  }
+
+  return Response.json({ error: error.message }, { status: 500 });
 }

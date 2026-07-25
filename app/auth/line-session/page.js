@@ -3,6 +3,7 @@
 // Supabase が URL ハッシュ (#access_token=...) を自動検出してセッションをセットする
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { syncLocalDiagnosisToServer } from '@/lib/track';
 
 const sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -11,19 +12,8 @@ const sb = createClient(
 );
 
 async function syncLocalDiagnosis(accessToken) {
-  try {
-    const raw = localStorage.getItem('fineme:diagnosis:latest');
-    if (!raw) return;
-    const parsed = JSON.parse(raw);
-    if (!parsed) return;
-    const res = await fetch('/api/me/diagnosis', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ raw_data: parsed }),
-    });
-    // 同期成功後はローカルから削除（別アカウントへの誤引き継ぎを防ぐ）
-    if (res.ok) localStorage.removeItem('fineme:diagnosis:latest');
-  } catch {}
+  // 男性版・Belle版の両方を引き継ぐ（lib/track.js に共通化）
+  await syncLocalDiagnosisToServer(accessToken);
 }
 
 export default function LineSessionPage() {

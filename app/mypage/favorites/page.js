@@ -1,4 +1,5 @@
 'use client';
+import useTrack from '@/app/_hooks/useTrack';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
@@ -39,6 +40,7 @@ function removeFavorite(href) {
 }
 
 export default function MypageFavoritesPage() {
+  const { track } = useTrack();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
@@ -75,7 +77,7 @@ export default function MypageFavoritesPage() {
         <aside className="mypage-sidenav">
           <nav className="stack" style={{ gap: '4px' }}>
             <Link href="/mypage" className="sidenav-link">ホーム</Link>
-            <Link href="/diagnosis/result" className="sidenav-link">New Me Navi</Link>
+            <Link href={track.diagnosisResult} className="sidenav-link">New Me Navi</Link>
             <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
             <Link href="/mypage/log" className="sidenav-link">New Me Log</Link>
             <Link href="/mypage/mirror" className="sidenav-link">Mirror履歴</Link>

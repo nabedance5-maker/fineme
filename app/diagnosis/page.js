@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
 
 export default function DiagnosisPage() {
   const initialized = useRef(false);
@@ -724,6 +725,10 @@ export default function DiagnosisPage() {
 
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); } catch (e) {}
 
+      // トラックを初回確定（すでに確定済みなら何もしない）
+      setTrackOnce('fineme');
+      syncTrackWithServer().catch(() => {});
+
       try {
         const histKey = 'fineme:diagnosis:history';
         const raw = localStorage.getItem(histKey);
@@ -743,7 +748,7 @@ export default function DiagnosisPage() {
             fetch('/api/me/diagnosis', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-              body: JSON.stringify({ raw_data: profile }),
+              body: JSON.stringify({ raw_data: profile, track: 'fineme' }),
             }).catch(() => {});
             // 診断完了と同時にパーソナライズされた変容ステップを非同期生成
             try {

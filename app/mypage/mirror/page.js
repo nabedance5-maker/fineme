@@ -1,4 +1,5 @@
 'use client';
+import useTrack from '@/app/_hooks/useTrack';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
@@ -125,6 +126,7 @@ function ComparisonCard({ data }) {
 const FREE_LIMIT = 5; // 非会員が閲覧できるセッション数
 
 export default function MirrorHistoryPage() {
+  const { track } = useTrack();
   const [userId, setUserId]       = useState(null);
   const [sessions, setSessions]   = useState([]);
   const [isSubscriber, setIsSubscriber] = useState(false);
@@ -202,7 +204,7 @@ export default function MirrorHistoryPage() {
     <aside className="mypage-sidenav">
       <nav className="stack" style={{ gap: '4px' }}>
         <Link href="/mypage" className="sidenav-link">ホーム</Link>
-        <Link href="/diagnosis/result" className="sidenav-link">New Me Navi</Link>
+        <Link href={track.diagnosisResult} className="sidenav-link">New Me Navi</Link>
         <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
         <Link href="/mypage/log" className="sidenav-link">New Me Log</Link>
         <Link href="/mypage/mirror" className="sidenav-link sidenav-link--active">Mirror履歴</Link>
@@ -231,7 +233,7 @@ export default function MirrorHistoryPage() {
             </p>
           </div>
 
-          <Link href="/mirror" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', background: 'rgba(201,168,76,0.08)', border: '1.5px dashed rgba(201,168,76,0.4)', borderRadius: '12px', color: '#c9a84c', fontSize: '14px', fontWeight: 700, textDecoration: 'none', marginBottom: '24px', transition: 'all .15s' }}>
+          <Link href={track.mirror} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', background: 'rgba(201,168,76,0.08)', border: '1.5px dashed rgba(201,168,76,0.4)', borderRadius: '12px', color: '#c9a84c', fontSize: '14px', fontWeight: 700, textDecoration: 'none', marginBottom: '24px', transition: 'all .15s' }}>
             🪞 新しい写真を分析する
           </Link>
 
@@ -317,7 +319,7 @@ export default function MirrorHistoryPage() {
                               <p style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(201,168,76,0.6)', letterSpacing: '.1em', textTransform: 'uppercase', margin: '0 0 6px' }}>First Impression</p>
                               {s.first_impression}
                             </div>
-                            <Link href="/mirror" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', borderRadius: '10px', fontSize: '14px', fontWeight: 800, color: '#0a0f1e', textDecoration: 'none' }}>
+                            <Link href={track.mirror} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', borderRadius: '10px', fontSize: '14px', fontWeight: 800, color: '#0a0f1e', textDecoration: 'none' }}>
                               🪞 Mirrorページで購入する
                             </Link>
                           </div>

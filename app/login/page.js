@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { syncLocalDiagnosisToServer } from '@/lib/track';
 
 const SUPABASE_URL = 'https://qsfpzlvucqzmjldshwwd.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODM1MzIsImV4cCI6MjA4ODU1OTUzMn0.9mBlP8-0l9jotex_UkX7Ba8ZodYtailaxoK_RIy3Kq8';
@@ -9,19 +10,8 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 const SITE_URL = 'https://fineme.me';
 
 async function syncLocalDiagnosis(accessToken) {
-  try {
-    const raw = localStorage.getItem('fineme:diagnosis:latest');
-    if (!raw) return;
-    const parsed = JSON.parse(raw);
-    if (!parsed) return;
-    const res = await fetch('/api/me/diagnosis', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ raw_data: parsed }),
-    });
-    // 同期成功後はローカルから削除（別アカウントへの誤引き継ぎを防ぐ）
-    if (res.ok) localStorage.removeItem('fineme:diagnosis:latest');
-  } catch {}
+  // 男性版・Belle版の両方を引き継ぐ（lib/track.js に共通化）
+  await syncLocalDiagnosisToServer(accessToken);
 }
 
 export default function LoginPage() {

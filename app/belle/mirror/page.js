@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import PixelPurchase from './_PixelPurchase';
+import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
 
 const LS_SESSIONS_KEY = 'fineme:mirror:sessions'; // ['session_id1', 'session_id2', ...]
 const LS_ONE_POINT_KEY = 'fineme:mirror:one-point';
@@ -348,6 +349,9 @@ export default function BelleMirrorPage() {
       setSessionId(data.session_id);
       setAnalysis(data.analysis);
       saveSessionToLocal(data.session_id);
+      // トラックを初回確定（すでに確定済みなら何もしない）
+      setTrackOnce('belle');
+      syncTrackWithServer().catch(() => {});
       setState(data.paid ? 'full' : 'preview');
     } catch (e) {
       setError(e.message);

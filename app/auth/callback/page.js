@@ -2,25 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { syncLocalDiagnosisToServer } from '@/lib/track';
 
 const SUPABASE_URL = 'https://qsfpzlvucqzmjldshwwd.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODM1MzIsImV4cCI6MjA4ODU1OTUzMn0.9mBlP8-0l9jotex_UkX7Ba8ZodYtailaxoK_RIy3Kq8';
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 async function syncLocalDiagnosis(accessToken) {
-  try {
-    const raw = localStorage.getItem('fineme:diagnosis:latest');
-    if (!raw) return false;
-    const parsed = JSON.parse(raw);
-    if (!parsed) return false;
-    const res = await fetch('/api/me/diagnosis', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ raw_data: parsed }),
-    });
-    if (res.ok) { localStorage.removeItem('fineme:diagnosis:latest'); return true; }
-  } catch {}
-  return false;
+  // 男性版・Belle版の両方を引き継ぐ（lib/track.js に共通化）
+  return syncLocalDiagnosisToServer(accessToken);
 }
 
 // パスワード設定フォーム

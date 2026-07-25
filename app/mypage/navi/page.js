@@ -772,7 +772,7 @@ export default function NewMeNaviPage() {
     // ── 診断データ読み込み（Supabase優先） ──
     try {
       if (token) {
-        const res = await fetchWithTimeout('/api/me/diagnosis', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetchWithTimeout(`/api/me/diagnosis?track=${TRACK_ID}`, { headers: { 'Authorization': `Bearer ${token}` } });
         if (res?.ok) { const data = await res.json(); if (data) {
           // 共有リモート行（/api/me/diagnosis は user_id 単一行）には男女両方のMe Scanが
           // 入りうる。STORAGE_KEY で決まる性別トラックと一致するデータ以外は採用しない

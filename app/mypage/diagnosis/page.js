@@ -1,4 +1,5 @@
 'use client';
+import useTrack from '@/app/_hooks/useTrack';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
@@ -75,6 +76,7 @@ function fmtDate(ts) {
 }
 
 export default function MypageDiagnosisPage() {
+  const { track } = useTrack();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [diagProfile, setDiagProfile] = useState(null);
@@ -158,7 +160,7 @@ export default function MypageDiagnosisPage() {
             <div className="card" style={{ padding: '20px' }}>
               <p className="muted">診断結果がまだありません。</p>
               <div className="action-grid" style={{ marginTop: '14px' }}>
-                <Link href="/diagnosis" className="action-btn action-btn-primary">診断する（5〜8分）</Link>
+                <Link href={track.diagnosis} className="action-btn action-btn-primary">Me Scanを受ける（約3分）</Link>
                 <Link href="/search" className="action-btn action-btn-secondary">診断せずに探す</Link>
               </div>
             </div>
@@ -168,7 +170,7 @@ export default function MypageDiagnosisPage() {
             <div className="card" style={{ padding: '20px' }}>
               <p style={{ fontWeight: 700, margin: '0 0 8px' }}>診断データを更新してください</p>
               <p className="muted" style={{ margin: '0 0 14px' }}>新しい変容プロファイル診断を受けると、より詳細な分析が表示されます。</p>
-              <Link href="/diagnosis" className="action-btn action-btn-primary" style={{ display: 'inline-block', padding: '12px 24px' }}>新しい診断を受ける</Link>
+              <Link href={track.diagnosis} className="action-btn action-btn-primary" style={{ display: 'inline-block', padding: '12px 24px' }}>新しい診断を受ける</Link>
             </div>
           )}
 
@@ -215,8 +217,8 @@ export default function MypageDiagnosisPage() {
                 <div className="action-grid">
                   <Link href="/?scrollTo=roadmap" className="action-btn action-btn-primary">変容ロードマップを見る</Link>
                   <Link href="/search?diag=1" className="action-btn action-btn-secondary">サービスを探す</Link>
-                  <Link href="/diagnosis" className="action-btn action-btn-secondary">再診断する</Link>
-                  <Link href="/diagnosis-result" className="action-btn action-btn-secondary">詳細な結果を見る</Link>
+                  <Link href={track.diagnosis} className="action-btn action-btn-secondary">再診断する</Link>
+                  <Link href={track.diagnosisResult} className="action-btn action-btn-secondary">詳細な結果を見る</Link>
                 </div>
               </div>
 
@@ -302,7 +304,7 @@ export default function MypageDiagnosisPage() {
         </section>
 
         {/* Fineme Mirror CTA */}
-        <a href="/lp/mirror" style={{ display: 'block', textDecoration: 'none', marginTop: '16px' }}>
+        <a href={track.lpMirror} style={{ display: 'block', textDecoration: 'none', marginTop: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: '14px' }}>
             <span style={{ fontSize: '28px', flexShrink: 0 }}>🪞</span>
             <div style={{ flex: 1 }}>
