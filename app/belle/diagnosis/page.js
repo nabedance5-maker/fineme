@@ -331,8 +331,9 @@ export default function BelleDiagnosisPage() {
       past_change_exp: null
     };
 
-    const MAIN_SCREENS = ['q1','q_goal_a','q_goal_b','q_goal_c','q_score','q_refstyle','q2','q3','q3_path','q5b','q6','q6b','q7','q_relstatus','q8','q_event','q_pastchange'];
-    const TOTAL_STEPS = 17;
+    // コアフロー＝地図の骨格ができるまでの画面。残りの設問は結果画面から1軸ずつ導く
+    const MAIN_SCREENS = ['q3','q3_path'];
+    const TOTAL_STEPS = MAIN_SCREENS.length;
 
     let currentScreen = 'landing';
     let screenHistory = ['landing'];
@@ -348,6 +349,10 @@ export default function BelleDiagnosisPage() {
       const el = document.getElementById('screen-' + id);
       if (el) el.classList.add('is-active');
       currentScreen = id;
+      // 画面ごとの到達をGA4へ（SPA遷移でURLが変わらないため明示送信）
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'mescan_screen', { screen_id: id, track: 'belle' });
+      }
       const previewBlock = document.getElementById('sample-preview-block');
       if (previewBlock) previewBlock.style.display = id === 'landing' ? '' : 'none';
       updateProgress();
@@ -365,10 +370,10 @@ export default function BelleDiagnosisPage() {
       {
         const idx = MAIN_SCREENS.indexOf(baseScreen);
         if (idx === -1) return;
-        pct = Math.round((idx / TOTAL_STEPS) * 100);
+        pct = Math.round(((idx + 1) / TOTAL_STEPS) * 100);
       }
       progressFill.style.width = pct + '%';
-      progressText.textContent = 'マップ ' + pct + '% 完成';
+      progressText.textContent = '地図の骨格 ' + pct + '%';
     }
 
     function updateNav() {
@@ -391,8 +396,8 @@ export default function BelleDiagnosisPage() {
         case 'q2':       enabled = state.scenes.length > 0; break;
         case 'q3':     enabled = Object.values(state.care_levels).some(v => v && v !== ''); break;
         case 'q3_path': {
-          const activeAreas = CONCERN_AREAS.filter(a => state.care_levels[a.id] && state.care_levels[a.id] !== 'none');
-          enabled = activeAreas.length === 0 || activeAreas.every(a => !!state.path_types[a.id]);
+          // コアではCompass軸1つだけ答えれば地図の骨格が完成する
+          enabled = !!state.path_types[currentCompassAxis()];
           break;
         }
         case 'q5b':    enabled = state.failure_patterns.length > 0; break;
@@ -407,7 +412,7 @@ export default function BelleDiagnosisPage() {
         case 'q_pastchange':enabled = !!state.past_change_exp; break;
       }
       btnNext.disabled = !enabled;
-      btnNext.textContent = (currentScreen === 'q_pastchange') ? 'New Me Naviを生成する' : '次へ';
+      btnNext.textContent = (currentScreen === 'q3_path') ? '地図をつくる' : '次へ';
     }
 
     function goNext() {
@@ -421,11 +426,14 @@ export default function BelleDiagnosisPage() {
         case 'q_refstyle': next = 'q2'; break;
         case 'q2':       next = 'q3'; break;
         case 'q3':
-          next = 'q3_intro';
+          next = 'q3_path';
+          buildAllCategoryCards();
           break;
         case 'q3_path':
-          next = 'q5b';
-          break;
+          // ここが「地図の骨格ができた」地点。残りの軸は結果画面から1軸ずつ導く
+          if (typeof window.gtag === 'function') window.gtag('event', 'mescan_core_complete', { track: 'belle' });
+          saveAndFinish();
+          return;
         case 'q5b': next = 'q6'; break;
         case 'q6':
           if (state.style_priorities.length >= 2) {
@@ -511,13 +519,24 @@ export default function BelleDiagnosisPage() {
       const container = document.getElementById('q3_path_content');
       if (!container) return;
 
-      // care_level:none の軸はvirginで自動設定し、表示対象から除外
-      const activeAreas = CONCERN_AREAS.filter(a => state.care_levels[a.id] && state.care_levels[a.id] !== 'none');
+      // コアではCompass軸1つだけを描き込む。残りの軸は結果画面から1軸ずつ導く
+      const compassAxis = currentCompassAxis();
+      const activeAreas = CONCERN_AREAS.filter(a => a.id === compassAxis);
       CONCERN_AREAS.forEach(a => {
-        if (!state.care_levels[a.id] || state.care_levels[a.id] === 'none') {
-          state.path_types[a.id] = 'virgin';
+        if (a.id !== compassAxis && !state.path_types[a.id]) {
+          state.path_types[a.id] = null;
         }
       });
+
+      // 見出しにCompass軸を差し込む（「あなたに最初に効く軸」を明示する）
+      const compassArea = CONCERN_AREAS.find(a => a.id === compassAxis);
+      if (compassArea) {
+        const labelEl = document.getElementById('q3path-label');
+        const headEl  = document.getElementById('q3path-heading');
+        if (labelEl) labelEl.textContent = `最後の1問｜${compassArea.label}`;
+        if (headEl) headEl.innerHTML =
+          `あなたに最初に効くのは<br><strong style="color:#c86496">${compassArea.icon} ${compassArea.label}</strong><br>ここまで、どんな道を歩いてきましたか？`;
+      }
 
       const PATH_OPTIONS = [
         { v:'virgin', icon:'🌱', short:'まだ何もやったことがない',    desc:'取り組んだことがない・考えたことがなかった' },
@@ -553,11 +572,10 @@ export default function BelleDiagnosisPage() {
       const progressEl = document.getElementById('q3path-progress');
       function updateQ3Progress() {
         if (!progressEl) return;
-        const assigned = activeAreas.filter(a => !!state.path_types[a.id]).length;
-        const remaining = activeAreas.length - assigned;
-        progressEl.textContent = remaining > 0
-          ? `残り ${remaining} 分野 — すべて割り当てると「次へ」が有効になります`
-          : `✓ 全 ${activeAreas.length} 分野 割り当て完了`;
+        const done = activeAreas.every(a => !!state.path_types[a.id]);
+        progressEl.textContent = done
+          ? '✓ 地図の骨格がそろいました'
+          : 'あてはまるものを1つ選んでください';
       }
       updateQ3Progress();
 
@@ -587,6 +605,44 @@ export default function BelleDiagnosisPage() {
       });
     }
 
+    // 変容ベクトル（理想 - 現状）。q3の回答だけで確定する
+    function computeTransformVectors() {
+      const vectors = {};
+      CONCERN_AREAS.forEach(area => {
+        const currentScore = { none:1, concerned:2, self:3, self_regular:3, pro:4 }[state.care_levels[area.id]] || 1;
+        const idealScore = parseInt(state.ideal_levels[area.id] || String(Math.max(currentScore, 3)), 10);
+        vectors[area.id] = {
+          current: currentScore,
+          ideal: idealScore,
+          gap: Math.max(0, idealScore - currentScore),
+          tier: area.tier,
+          care_type: state.care_levels[area.id] || 'none',
+          path_type:   state.path_types[area.id]  || null,
+          self_view:   state.self_views[area.id]  || null,
+          love_impact: state.love_impact[area.id] || null,
+        };
+      });
+      return vectors;
+    }
+
+    // 優先順位：tier → gap → 速効性。q3完了時点でCompass軸が決まる
+    const AXIS_SPEED = { eyebrow:5, fashion:5, hair:4, body:3, skin:3, hairremoval:3, teeth:2, nail:2 };
+    function computePriorityOrder(vectors) {
+      return Object.entries(vectors || computeTransformVectors())
+        .filter(([, v]) => v.gap > 0)
+        .sort((a, b) => {
+          if (a[1].tier !== b[1].tier) return a[1].tier - b[1].tier;
+          if (b[1].gap !== a[1].gap) return b[1].gap - a[1].gap;
+          return (AXIS_SPEED[b[0]] || 3) - (AXIS_SPEED[a[0]] || 3);
+        })
+        .map(([id]) => id);
+    }
+
+    // Compass軸（＝最初の一手）。q3_pathで描き込む対象を1軸に絞るのに使う
+    function currentCompassAxis() {
+      return computePriorityOrder()[0] || CONCERN_AREAS[0].id;
+    }
+
     function saveAndFinish() {
       const concernAreas = {};
       Object.entries(state.care_levels).forEach(([id, level]) => {
@@ -608,33 +664,8 @@ export default function BelleDiagnosisPage() {
 
       const styleRel = STYLE_MAP[state.style_priority_top] || { style: null, relationship: null };
 
-      // 変容ベクトル：理想スコア - 現状スコア = ギャップ
-      const transformVectors = {};
-      CONCERN_AREAS.forEach(area => {
-        const currentScore = { none:1, concerned:2, self:3, self_regular:3, pro:4 }[state.care_levels[area.id]] || 1;
-        const idealScore = parseInt(state.ideal_levels[area.id] || String(Math.max(currentScore, 3)), 10);
-        transformVectors[area.id] = {
-          current: currentScore,
-          ideal: idealScore,
-          gap: Math.max(0, idealScore - currentScore),
-          tier: area.tier,
-          care_type: state.care_levels[area.id] || 'none',
-          path_type:   state.path_types[area.id]  || null,
-          self_view:   state.self_views[area.id]  || null,
-          love_impact: state.love_impact[area.id] || null,
-        };
-      });
-
-      // 優先順位：tier → gap → 速効性
-      const SPEED = { eyebrow:5, fashion:5, hair:4, body:3, skin:3, hairremoval:3, teeth:2, nail:2 };
-      const priorityOrder = Object.entries(transformVectors)
-        .filter(([, v]) => v.gap > 0)
-        .sort((a, b) => {
-          if (a[1].tier !== b[1].tier) return a[1].tier - b[1].tier;
-          if (b[1].gap !== a[1].gap) return b[1].gap - a[1].gap;
-          return (SPEED[b[0]] || 3) - (SPEED[a[0]] || 3);
-        })
-        .map(([id]) => id);
+      const transformVectors = computeTransformVectors();
+      const priorityOrder = computePriorityOrder(transformVectors);
 
       const profile = {
         version: 'v9_me_scan',
@@ -960,6 +991,8 @@ export default function BelleDiagnosisPage() {
     document.getElementById('opts-instant-tryout')?.querySelectorAll('.tryout-option').forEach(function(btn) {
       btn.addEventListener('click', function() {
         const val = this.dataset.value;
+        // お試しの回答＝Q1の回答。同じことを二度聞かない
+        if (val && !state.triggers.includes(val)) state.triggers.push(val);
         const axis = TRYOUT_AXIS_MAP[val] || { icon: '✂️', label: '眉毛', desc: '顔全体の印象で最も変化が出やすい場所です。' };
         const resultEl = document.getElementById('tryout-result-axis');
         if (resultEl) {
@@ -980,8 +1013,9 @@ export default function BelleDiagnosisPage() {
       // 本問診開始を計測
       fetch('/api/track/src?src=instant-tryout').catch(function() {});
       try { localStorage.setItem('fineme:diagnosis:src', 'instant-tryout'); } catch(e) {}
-      screenHistory.push('q1');
-      showScreen('q1');
+      // Q1はお試しで回答済みなので飛ばし、8軸の測定（q3）へ直行する
+      screenHistory.push('q3');
+      showScreen('q3');
     });
 
     showScreen('landing');
@@ -1012,13 +1046,10 @@ export default function BelleDiagnosisPage() {
               <p>今のあなたを丁寧にスキャンして、<br />あなただけの変容ナビを生成します。</p>
               <p style={{fontSize:'13px',color:'#9ca3af'}}>外見より先に、「あなたの状況」を聞きます。<br />だから答えが、本物になる。</p>
               <div className="diag-badges">
-                <span className="diag-badge" style={{fontWeight:'800',background:'rgba(201,168,76,0.15)',color:'#a07830',border:'1px solid rgba(201,168,76,0.4)',fontSize:'13px',padding:'7px 14px'}}>⏱️ 所要時間：約12〜18分</span>
+                <span className="diag-badge" style={{fontWeight:'800',background:'rgba(201,168,76,0.15)',color:'#a07830',border:'1px solid rgba(201,168,76,0.4)',fontSize:'13px',padding:'7px 14px'}}>🐉 136タイプからあなたのタイプを判定</span>
+                <span className="diag-badge">⏱️ 約3分</span>
                 <span className="diag-badge">🕶️ 登録不要</span>
-                <span className="diag-badge">🗺️ New Me Navi生成</span>
               </div>
-              <p style={{fontSize:'12px',color:'#9ca3af',margin:'-10px 0 16px',lineHeight:'1.5'}}>
-                ※ ゆっくり考えながら進めると15分前後かかります
-              </p>
               <button className="diag-nav-next" id="btn-start" style={{width:'100%',fontSize:'18px',padding:'16px'}}>Me Scanをはじめる</button>
             </div>
           </div>
@@ -1087,7 +1118,7 @@ export default function BelleDiagnosisPage() {
             <h2 className="diag-q" style={{marginBottom:'8px'}}>あなたの最初の1点は</h2>
             <div className="tryout-result-axis" id="tryout-result-axis"></div>
             <p className="tryout-framing">これはあなたの動機から導き出した「最初の1点」です。<br />7軸すべてを測ると、別の軸が前に出ることもあります。</p>
-            <button className="diag-nav-next" id="btn-tryout-continue" style={{width:'100%',marginTop:'16px'}}>7軸すべての優先順を知る（Me Scan・約15分）→</button>
+            <button className="diag-nav-next" id="btn-tryout-continue" style={{width:'100%',marginTop:'16px'}}>8軸を測ってタイプを判定する（約3分）→</button>
           </div>
         </div>
 
@@ -1457,9 +1488,9 @@ export default function BelleDiagnosisPage() {
         <div className="diag-screen" id="screen-q3_path">
           <button className="diag-back-btn" data-back="">← 戻る</button>
           <div className="diag-card" style={{marginBottom:'16px'}}>
-            <p className="diag-step-label">Phase 3｜来た道の記録</p>
-            <h2 className="diag-q">各分野を、当てはまる<br />「来た道」に割り当ててください</h2>
-            <p className="diag-hint">各項目の下に表示される分野チップをタップして割り当てます。すべての分野を割り当てると次に進めます。</p>
+            <p className="diag-step-label" id="q3path-label">最後の1問｜来た道</p>
+            <h2 className="diag-q" id="q3path-heading">これまで、どんな道を<br />歩いてきましたか？</h2>
+            <p className="diag-hint">下のチップをタップして選びます。ここまで答えると、あなたの地図の骨格が完成します。</p>
             <p id="q3path-progress" style={{fontSize:'12px',fontWeight:'700',color:'rgba(201,168,76,0.8)',margin:'8px 0 0'}}></p>
           </div>
           <div id="q3_path_content"></div>
