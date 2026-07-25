@@ -828,7 +828,7 @@ export default function BelleMirrorPage() {
                 {/* Section 2: 価格提示 */}
                 <div style={{ padding: '24px', textAlign: 'center' }}>
                   <p style={{ fontSize: '13px', color: 'rgba(240,216,224,0.50)', margin: '0 0 16px', lineHeight: 1.7 }}>
-                    続きを読むと、今日何をするかが決まります。
+                    この地図の解像度を上げると、今日何をするかが決まります。
                   </p>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
@@ -840,7 +840,7 @@ export default function BelleMirrorPage() {
                         disabled={subscribing}
                         style={{ width: '100%', maxWidth: '340px' }}
                       >
-                        {subscribing ? '処理中…' : '♾️ ¥780/月 — 続きを読む（月3回使える）'}
+                        {subscribing ? '処理中…' : '♾️ ¥780/月 — 地図を完成させる（月3回）'}
                       </button>
                     )}
 
@@ -1067,6 +1067,30 @@ export default function BelleMirrorPage() {
               >
                 {inviteCopied ? '✓ 招待リンクをコピーしました' : '🔗 招待リンクをコピー'}
               </button>
+            </div>
+          )}
+
+          {/* アカウント保存CTA（未ログイン・fullのみ） */}
+          {state === 'full' && !myUserId && sessionId && (
+            <div style={{ marginTop: '20px', background: 'linear-gradient(160deg, rgba(18,10,18,0.98), rgba(12,8,16,0.98))', border: '1px solid rgba(200,100,140,0.28)', borderRadius: '18px', padding: '28px 24px', textAlign: 'center', boxShadow: '0 0 40px rgba(200,100,140,0.06)' }}>
+              <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(200,100,140,0.1)', border: '1px solid rgba(200,100,140,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: '20px' }}>
+                🗺️
+              </div>
+              <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '16px', fontWeight: '800', color: '#f0d8e0', margin: '0 0 8px', lineHeight: 1.4 }}>
+                この地図を保存して、変化を続ける
+              </p>
+              <p style={{ fontSize: '12px', color: 'rgba(240,216,224,0.45)', margin: '0 0 20px', lineHeight: 1.75 }}>
+                Mirror の分析 · New Me Map · 30日コンパスが<br />すべて1か所に集まります
+              </p>
+              <button
+                onClick={() => { window.location.href = '/auth/login?redirect=' + encodeURIComponent('/belle/mirror?session_id=' + sessionId + '&from=map_save'); }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: 'linear-gradient(135deg,rgba(220,130,160,1),rgba(200,100,140,0.85))', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: '800', color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 0 28px rgba(200,100,140,0.22)', marginBottom: '10px' }}
+              >
+                無料アカウントを作る →
+              </button>
+              <p style={{ fontSize: '10px', color: 'rgba(240,216,224,0.22)', margin: 0, letterSpacing: '.05em' }}>
+                登録1分 · クレカ不要 · いつでも削除可
+              </p>
             </div>
           )}
 
