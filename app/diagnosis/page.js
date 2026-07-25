@@ -645,6 +645,7 @@ export default function DiagnosisPage() {
       const profile = {
         version: 'v9_me_scan',
         at: Date.now(),
+        gender: 'male',
         // 文脈
         trigger: state.triggers[0] || null,
         triggers: state.triggers,

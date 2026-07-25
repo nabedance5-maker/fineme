@@ -314,13 +314,17 @@ export default function BelleDiagnosisResultPage() {
           setAccessToken(token);
           const res = await fetch('/api/me/diagnosis', { headers: { 'Authorization': `Bearer ${token}` } });
           if (res.ok) { const data = await res.json(); if (data) {
-            // localStorageの方が新しい場合は上書きしない（新規診断直後を保護）
-            try {
-              const local = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-              const localAt = local?.at ? new Date(local.at).getTime() : 0;
-              const remoteAt = data?.at ? new Date(data.at).getTime() : 0;
-              if (remoteAt >= localAt) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
-            } catch { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+            // 共有リモート行（/api/me/diagnosis は user_id 単一行）には男性版Me Scanの
+            // データも入りうる。Belle（女性版）の結果ページは女性版データ以外を採用しない。
+            if (data.gender === 'female') {
+              // localStorageの方が新しい場合は上書きしない（新規診断直後を保護）
+              try {
+                const local = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+                const localAt = local?.at ? new Date(local.at).getTime() : 0;
+                const remoteAt = data?.at ? new Date(data.at).getTime() : 0;
+                if (remoteAt >= localAt) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+              } catch { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+            }
           } }
         }
       }

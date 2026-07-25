@@ -314,13 +314,18 @@ export default function DiagnosisResultPage() {
           setAccessToken(token);
           const res = await fetch('/api/me/diagnosis', { headers: { 'Authorization': `Bearer ${token}` } });
           if (res.ok) { const data = await res.json(); if (data) {
-            // localStorageの方が新しい場合は上書きしない（新規診断直後を保護）
-            try {
-              const local = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-              const localAt = local?.at ? new Date(local.at).getTime() : 0;
-              const remoteAt = data?.at ? new Date(data.at).getTime() : 0;
-              if (remoteAt >= localAt) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
-            } catch { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+            // 共有リモート行（/api/me/diagnosis は user_id 単一行）にはBelle（女性版）の
+            // データも入りうる。男性版の結果ページは女性版データを採用しない
+            // （旧データは gender 未設定＝男性版なので !== 'female' で判定）。
+            if (data.gender !== 'female') {
+              // localStorageの方が新しい場合は上書きしない（新規診断直後を保護）
+              try {
+                const local = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+                const localAt = local?.at ? new Date(local.at).getTime() : 0;
+                const remoteAt = data?.at ? new Date(data.at).getTime() : 0;
+                if (remoteAt >= localAt) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+              } catch { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+            }
           } }
         }
       }

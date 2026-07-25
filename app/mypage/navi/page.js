@@ -764,12 +764,19 @@ export default function NewMeNaviPage() {
       if (token) {
         const res = await fetchWithTimeout('/api/me/diagnosis', { headers: { 'Authorization': `Bearer ${token}` } });
         if (res?.ok) { const data = await res.json(); if (data) {
-          try {
-            const local = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-            const localAt = local?.at ? new Date(local.at).getTime() : 0;
-            const remoteAt = data?.at ? new Date(data.at).getTime() : 0;
-            if (remoteAt >= localAt) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
-          } catch { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {} }
+          // 共有リモート行（/api/me/diagnosis は user_id 単一行）には男女両方のMe Scanが
+          // 入りうる。STORAGE_KEY で決まる性別トラックと一致するデータ以外は採用しない
+          // （belle=女性版 / lat=旧データは gender 未設定＝男性版）。
+          const expectFemale = STORAGE_KEY === 'fineme:diagnosis:belle';
+          const genderMatch = expectFemale ? (data.gender === 'female') : (data.gender !== 'female');
+          if (genderMatch) {
+            try {
+              const local = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+              const localAt = local?.at ? new Date(local.at).getTime() : 0;
+              const remoteAt = data?.at ? new Date(data.at).getTime() : 0;
+              if (remoteAt >= localAt) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+            } catch { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {} }
+          }
         } }
       }
     } catch {}
