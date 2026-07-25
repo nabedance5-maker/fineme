@@ -363,10 +363,10 @@ function SearchContent() {
         </button>
       </form>
 
-      {/* 7軸チップフィルター */}
+      {/* 8軸チップフィルター */}
       <div style={{ marginBottom: '24px' }}>
         <p style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(232,228,220,0.40)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '.06em' }}>
-          Me Scan 7軸で絞り込む
+          Me Scan 8軸で絞り込む
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
           {Object.entries(AXIS_LABELS).map(([id, label]) => {

@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export const metadata = {
   title: 'Finemeとは？ | 変容の旅のインフラ',
-  description: '外見を起点に自信を再設計するためのプラットフォーム。Me Scan（7軸診断）で地図を手に入れ、あなただけの変容の旅を始める。',
+  description: '外見を起点に自信を再設計するためのプラットフォーム。Me Scan（8軸診断・無料・コア約3分）で地図を描き、Mirror（写真1枚のAI分析）で現在地を測る。男性向けFinemeと女性向けBelleの二つのトラックで展開しています。',
 };
 
 const personJsonLd = {
@@ -12,7 +12,7 @@ const personJsonLd = {
   name: '渡邉英雄（でお）',
   alternateName: 'でお',
   jobTitle: '外見改善アドバイザー / Fineme代表',
-  description: '元・非モテから現役モデルへ。男性向け外見改善プラットフォームFineme代表。外見を起点に自信を再設計する方法を発信している。',
+  description: '元・非モテから現役モデルへ。外見改善プラットフォームFineme（男性向けFineme・女性向けBelle）代表。外見を起点に自信を再設計する方法を発信している。',
   url: 'https://www.fineme.me/about',
   worksFor: {
     '@type': 'Organization',
@@ -25,30 +25,35 @@ const personJsonLd = {
 };
 
 const AXES = [
-  { icon: '💪', label: '体型・ボディ', tier: 1, desc: '姿勢・体型・ボディメイク。第一印象の土台。' },
-  { icon: '✂️', label: '眉毛',         tier: 1, desc: '顔の輪郭を決める最も即効性の高いパーツ。' },
-  { icon: '👔', label: '服・コーデ',   tier: 1, desc: 'シルエットと色で全体の印象を設計する。' },
-  { icon: '💇', label: '髪・ヘア',     tier: 1, desc: '毎日目に入る。変化の実感が最も得やすい軸。' },
-  { icon: '✨', label: '肌・エステ',   tier: 2, desc: '清潔感の底上げ。継続で確実に変わる。' },
-  { icon: '🦷', label: '歯・口元',     tier: 3, desc: '笑顔の自信は人間関係の質を変える。' },
-  { icon: '💅', label: '爪',           tier: 4, desc: '細部への気遣いが「丁寧な人」の印象をつくる。' },
+  { icon: '💪', label: '体型・ボディ',       tier: 1, desc: '姿勢・体型・ボディメイク。第一印象の土台。' },
+  { icon: '✂️', label: '眉毛',               tier: 1, desc: '顔の輪郭を決める最も即効性の高いパーツ。' },
+  { icon: '👔', label: '服・コーデ',         tier: 1, desc: 'シルエットと色で全体の印象を設計する。' },
+  { icon: '💇', label: '髪・ヘア',           tier: 1, desc: '毎日目に入る。変化の実感が最も得やすい軸。' },
+  { icon: '✨', label: '肌・ニキビ・エステ', tier: 2, desc: '清潔感の底上げ。継続で確実に変わる。' },
+  { icon: '🪒', label: '脱毛・ムダ毛',       tier: 2, desc: 'ひげ・体毛の処理。整えるだけで印象が静かに変わる。' },
+  { icon: '🦷', label: '歯・口元',           tier: 3, desc: '笑顔の自信は人間関係の質を変える。' },
+  { icon: '💅', label: '爪',                 tier: 4, desc: '細部への気遣いが「丁寧な人」の印象をつくる。' },
 ];
 
 const JOURNEY = [
   {
-    step: '01', label: 'Me Scan', sublabel: '7軸診断', icon: '🧬',
-    desc: 'あなたの現在地・理想・来た道を7つの軸でスキャン。12〜18分で、変容プロファイルが完成する。',
+    step: '01', label: 'Me Scan', sublabel: '地図を描く・無料', icon: '🧬',
+    desc: 'あなたの現在地・理想・来た道を8つの軸でスキャン。コア約3分で地図の骨格ができ、136タイプの中のあなたと「最初の一手」が確定する。そのあとは1軸ずつ描き込んで、地図を育てていける。',
   },
   {
-    step: '02', label: 'New Me Navi', sublabel: '変容ナビ', icon: '🧭',
-    desc: 'ギャップを可視化したレーダーチャートと、あなた専用の「Finemeコンパス（最優先の一手）」が生成される。',
+    step: '02', label: 'Mirror', sublabel: '現在地を測る', icon: '📸',
+    desc: '写真を1枚送ると、AIが「他人の目に自分がどう見えているか」を分析し、今いちばん変わりやすい場所を教える。写真は保存しない。無料プレビューあり、詳細分析は¥500。',
   },
   {
-    step: '03', label: 'New Me Map', sublabel: '変容マップ', icon: '🗺️',
-    desc: '7軸それぞれのロードマップ。どの順で、どんな中継地点を経て変わっていくかを可視化した羅針盤。',
+    step: '03', label: 'New Me Navi', sublabel: '変容ナビ', icon: '🧭',
+    desc: 'ギャップを可視化したレーダーチャートと、あなた専用の「Fineme Compass（最優先の一手）」が生成される。迷いを一点に絞るための羅針盤。',
   },
   {
-    step: '04', label: 'ガイドと出会う', sublabel: 'マッチング', icon: '🤝',
+    step: '04', label: 'New Me Map', sublabel: '変容マップ', icon: '🗺️',
+    desc: '8軸それぞれのロードマップ。どの順で、どんな中継地点を経て変わっていくかを可視化した航海図。描き込むほど、測るほど精度が上がる。',
+  },
+  {
+    step: '05', label: 'ガイドと出会う', sublabel: 'マッチング', icon: '🤝',
     desc: 'あなたの変容ベクトルと「来た道」に合ったガイドを一致度で表示。偶然ではなく、必然の出会いへ。',
   },
 ];
@@ -245,8 +250,18 @@ export default function AboutPage() {
           <p className="af-sec-lead">
             診断を受けて終わり、ではありません。<br />
             あなたの現在地から理想への道のりを可視化し、<br />
-            旅のパートナーとなるガイドと繋ぐ——4ステップの変容インフラです。
+            旅のパートナーとなるガイドと繋ぐ——変容のためのインフラです。
           </p>
+          <div style={{
+            border: '1px solid rgba(201,168,76,0.28)', borderRadius: 10,
+            background: 'rgba(10,15,30,0.55)', padding: '18px 20px', margin: '0 0 20px',
+          }}>
+            <p style={{ fontSize: 13, color: 'rgba(232,228,220,0.75)', lineHeight: 1.9, margin: 0 }}>
+              <strong style={{ color: '#c9a84c' }}>Me Scan と Mirror に順番はありません。</strong><br />
+              地図を描くのが Me Scan、今の現在地を測るのが Mirror。<br />
+              描いて、測って、また描き足す——この循環が New Me Map を育てていきます。
+            </p>
+          </div>
           <div className="af-journey">
             {JOURNEY.map(j => (
               <div key={j.step} className="af-journey-step">
@@ -264,14 +279,14 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* 7軸システム */}
+        {/* 8軸システム */}
         <section className="af-sec">
-          <p className="af-sec-label">The 7-Axis System</p>
-          <h2>外見を7つの軸で見る</h2>
+          <p className="af-sec-label">The 8-Axis System</p>
+          <h2>外見を8つの軸で見る</h2>
           <p className="af-sec-lead">
-            Me Scanは、外見を7つの軸でスキャンします。<br />
+            Me Scanは、外見を8つの軸でスキャンします。<br />
             Tier（優先順位）は「即効性・コスト・継続難易度」から算出。<br />
-            あなたのギャップが最も大きいTier 1の軸が、Finemeコンパスの最初の一手になります。
+            あなたのギャップが最も大きいTier 1の軸が、Fineme Compassの最初の一手になります。
           </p>
           <div className="af-axis-grid">
             {AXES.map(ax => (
@@ -309,13 +324,50 @@ export default function AboutPage() {
               <div className="af-diff-label" style={{ color: 'rgba(201,168,76,0.6)' }}>Fineme</div>
               <div className="af-diff-title" style={{ color: '#fff' }}>「今の自分に合う一手」を知る</div>
               <ul className="af-diff-list" style={{ color: 'rgba(255,255,255,.75)' }}>
-                <li data-icon="✅">7軸で現在地・理想・ギャップを可視化</li>
+                <li data-icon="✅">8軸で現在地・理想・ギャップを可視化</li>
                 <li data-icon="✅">「来た道」を元に最適なガイドをマッチング</li>
                 <li data-icon="✅">変容ロードマップで旅を継続させる</li>
                 <li data-icon="✅">再来店の動機が「続きの旅」</li>
               </ul>
             </div>
           </div>
+        </section>
+
+        {/* 二トラック */}
+        <section className="af-sec">
+          <p className="af-sec-label">Two tracks</p>
+          <h2>Fineme と Fineme Belle</h2>
+          <p className="af-sec-lead">
+            外見の悩みは、男女で言葉も選択肢も変わります。<br />
+            だからFinemeは、内容を薄く共通化するのではなく、<br />
+            <strong style={{ color: 'rgba(232,228,220,0.8)', fontWeight: 500 }}>2つのトラック</strong>に分けて設計しています。
+          </p>
+          <div className="af-diff-grid">
+            <div className="af-diff-card" style={{ background: 'var(--color-bg-dark, #0a0f1e)', borderColor: 'rgba(201,168,76,0.35)' }}>
+              <div className="af-diff-label" style={{ color: 'rgba(201,168,76,0.6)' }}>男性向け</div>
+              <div className="af-diff-title" style={{ color: '#fff' }}>Fineme</div>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,.7)', lineHeight: 1.8, margin: '0 0 14px' }}>
+                このページで説明しているトラック。タイプは136種の「生き物」で表されます。
+              </p>
+              <Link href="/diagnosis" style={{ fontSize: 13, color: '#c9a84c', textDecoration: 'none', fontWeight: 700 }}>
+                Me Scanを受ける →
+              </Link>
+            </div>
+            <div className="af-diff-card" style={{ background: 'rgba(30,10,22,0.55)', borderColor: 'rgba(200,120,155,0.35)' }}>
+              <div className="af-diff-label" style={{ color: 'rgba(220,140,175,0.75)' }}>女性向け</div>
+              <div className="af-diff-title" style={{ color: '#f5e0ea' }}>Fineme Belle</div>
+              <p style={{ fontSize: 13, color: 'rgba(245,224,234,.7)', lineHeight: 1.8, margin: '0 0 14px' }}>
+                8軸・136タイプ・Compass・New Me Mapの構造は同じ。タイプは136種の「花」で表されます。
+              </p>
+              <Link href="/belle" style={{ fontSize: 13, color: 'rgba(220,140,175,0.95)', textDecoration: 'none', fontWeight: 700 }}>
+                Belleを見る →
+              </Link>
+            </div>
+          </div>
+          <p style={{ fontSize: 13, color: 'rgba(232,228,220,0.45)', lineHeight: 1.9, margin: '18px 0 0' }}>
+            分けているのは届け方であって、思想ではありません。<br />
+            外見を起点に自信を再設計できることに、性別は関係ない——というのがFinemeの前提です。
+          </p>
         </section>
 
         {/* Philosophy */}
@@ -356,13 +408,19 @@ export default function AboutPage() {
           <h2>まず、あなたの現在地を知ることから。</h2>
           <p>
             Me Scanは無料で受けられます。<br />
-            約12〜18分で、7軸の変容プロファイルが完成します。
+            コア約3分で、8軸の地図の骨格と136タイプのあなたが確定します。
           </p>
-          <Link href="/diagnosis" className="af-cta-btn" style={{ fontSize: '16px', padding: '16px 36px' }}>
-            🧬 Me Scanを受ける（無料）
-          </Link>
+          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href="/diagnosis" className="af-cta-btn" style={{ fontSize: '16px', padding: '16px 36px' }}>
+              🧬 Me Scanを受ける（無料）
+            </Link>
+            <Link href="/lp/mirror" className="af-cta-btn" style={{ fontSize: '16px', padding: '16px 36px' }}>
+              📸 Mirrorで現在地を測る
+            </Link>
+          </div>
           <p className="af-bottom-note">
-            診断後、New Me Navi（変容ナビ）と New Me Map（変容マップ）が即座に生成されます
+            診断後、New Me Navi（変容ナビ）と New Me Map（変容マップ）が即座に生成されます<br />
+            女性の方は <Link href="/belle" style={{ color: 'rgba(220,140,175,0.85)' }}>Fineme Belle</Link> へ
           </p>
         </div>
 

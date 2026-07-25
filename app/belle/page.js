@@ -5,11 +5,11 @@ import { useState, useEffect } from 'react';
 const BELLE_FAQ = [
   {
     q: 'Belle Me Scanとは何ですか？',
-    a: '女性の外見を7軸で自己診断する無料ツールです。メイク・肌・髪・眉・ファッション・爪・体型の現在地を把握し、あなたが最初に変えるべき場所（外見コンパス）を示します。約10分、登録不要で受けられます。',
+    a: '女性の外見を8軸で自己診断する無料ツールです。体型・眉・ファッション・ヘア・肌・脱毛・歯・爪の現在地を把握し、あなたが最初に変えるべき場所（外見コンパス）と136タイプの中のあなたのタイプを示します。約3分で地図の骨格ができ、そのあとは1軸ずつ描き込んで育てていけます。登録不要。',
   },
   {
     q: 'Belle Mirrorとは？',
-    a: '写真を1枚アップロードするだけで、AIが外見の変容余地を分析します。「他の人の目に自分がどう見えているか」を可視化し、最も変わりやすい場所を正確に教えます。月額¥780のサブスクリプションです。',
+    a: '写真を1枚アップロードするだけで、AIが外見の変容余地を分析します。「他の人の目に自分がどう見えているか」を可視化し、最も変わりやすい場所を正確に教えます。無料プレビューがあり、詳細分析は¥500（単発）。毎月記録し続けたい方には月額¥780のサブスクもあります（毎月3回分込み）。',
   },
   {
     q: 'New Me Mapとは？',
@@ -17,11 +17,11 @@ const BELLE_FAQ = [
   },
   {
     q: '何から始めればいいですか？',
-    a: 'Me Scan（無料・約10分）から始めることをおすすめします。診断後、あなたの「最初の一手」が明確になります。Mirrorはその後、他者目線での確認として受けると効果的です。',
+    a: 'どちらから始めても大丈夫です。地図を描くのがMe Scan、今の現在地を測るのがMirror。この2つは順番ではなく、描いて・測って・また描き足すという循環の関係です。迷ったら、無料のMe Scan（約3分）から。',
   },
   {
     q: '写真は保存されますか？',
-    a: 'Mirror分析に使用した写真は暗号化して保存されます。月次変化レポートで過去のMirrorと比較するために使用しますが、第三者に共有されることはありません。',
+    a: 'いいえ。Mirror分析に使った写真はサーバーに保存していません。AIの分析が終わった時点で破棄され、残るのは分析結果のテキストだけです。過去との比較も、写真ではなく分析結果同士を比べています。',
   },
 ];
 
@@ -29,24 +29,24 @@ const STEPS = [
   {
     num: '01',
     name: 'Me Scan',
-    badge: '無料・約10分',
-    desc: '7軸の質問に答えるだけで、外見の現在地と「最初に変えるべき場所」がわかる。今どこにいるかが見えなければ、どこへも進めない。',
+    badge: '無料・コア約3分',
+    desc: '8軸の質問に答えるだけで、外見の現在地と「最初に変えるべき場所」、そして136タイプの中のあなたがわかる。約3分で地図の骨格ができ、そのあとは1軸ずつ描き込んで育てていける。',
     href: '/belle/diagnosis',
     cta: 'Me Scanを始める',
   },
   {
     num: '02',
     name: 'Mirror',
-    badge: '¥780 / 月',
-    desc: '写真を1枚送る。AIが他者目線で外見を分析し、変容余地の大きい場所を可視化する。自分では気づけない伸びしろが、数値と言葉で届く。',
+    badge: '無料プレビュー / 詳細¥500',
+    desc: '写真を1枚送る。AIが他者目線で外見を分析し、変容余地の大きい場所を可視化する。自分では気づけない伸びしろが、言葉で届く。写真は保存しない。',
     href: '/belle/mirror',
     cta: 'Mirrorで分析する',
   },
   {
     num: '03',
     name: 'New Me Map',
-    badge: 'Me Scan + Mirror完了後',
-    desc: '2つのデータから、あなただけの変容ロードマップが生成される。「今日から一人でできること」から積み上げる行動設計図。誰かに頼らず、自分で動き始められる。',
+    badge: '描くほど精度が上がる',
+    desc: 'Me ScanとMirrorのデータから、あなただけの変容ロードマップが生成される。「今日から一人でできること」から積み上げる行動設計図。誰かに頼らず、自分で動き始められる。',
     href: '/belle/diagnosis',
     cta: 'まずMe Scanから始める',
   },
@@ -204,7 +204,7 @@ export default function BellePage() {
           )}
 
           <p className="b-fade b-fade-d3" style={{ fontSize: 12, color: 'rgba(240,216,224,0.3)', margin: '16px 0 0' }}>
-            Me Scan：約10分 · 無料 · 登録不要
+            Me Scan：コア約3分 · 無料 · 登録不要
           </p>
         </div>
       </section>
@@ -244,8 +244,12 @@ export default function BellePage() {
             How it works
           </p>
           <h2 style={{ fontFamily: '"Noto Serif JP", Georgia, serif', fontSize: 'clamp(19px,3.5vw,26px)', fontWeight: 700, color: '#f5e0ea', textAlign: 'center', margin: '0 0 40px', lineHeight: 1.5 }}>
-            3つのステップで、変容の地図が手に入る。
+            3つの道具で、変容の地図が手に入る。
           </h2>
+          <p style={{ fontSize: 13, color: inkMuted, textAlign: 'center', lineHeight: 1.9, margin: '-24px 0 32px' }}>
+            地図を描くのが Me Scan、今の現在地を測るのが Mirror。<br />
+            順番はありません。描いて、測って、また描き足す——その循環が New Me Map を育てます。
+          </p>
           <div className="b-steps-grid" style={{ display: 'flex', gap: 16 }}>
             {STEPS.map((s) => (
               <div key={s.num} className="b-step-card">
@@ -273,8 +277,12 @@ export default function BellePage() {
           </h2>
           <p style={{ fontSize: 14, color: inkMuted, lineHeight: 1.85, margin: '0 0 36px' }}>
             自分の外見は、自分では正確に見えない。<br />
-            Mirrorは写真1枚から、メイク・肌・髪・眉・ファッション・表情の6軸で分析し、<br />
-            「今のあなたが最も変わりやすい場所」を数値と言葉で届ける。
+            Mirrorは写真1枚から、眉・目元／肌・清潔感／ヘアスタイル／表情・雰囲気／<br />
+            姿勢／体型・シルエット／服装・フィット感の軸で分析し、<br />
+            「今のあなたが最も変わりやすい場所」を言葉で届ける。
+          </p>
+          <p style={{ fontSize: 12, color: 'rgba(240,216,224,0.4)', lineHeight: 1.8, margin: '-24px 0 32px' }}>
+            ※ 分析する軸は写真の種類で変わります（顔のみ／全身／その両方）。
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 36, textAlign: 'left' }}>
             {[
@@ -291,8 +299,8 @@ export default function BellePage() {
               </div>
             ))}
           </div>
-          <Link href="/belle/mirror" className="b-btn-primary">📸 Mirrorで写真分析する（¥780/月）</Link>
-          <p style={{ fontSize: 12, color: 'rgba(240,216,224,0.3)', margin: '12px 0 0' }}>いつでもキャンセル可 · 写真は暗号化保存</p>
+          <Link href="/belle/mirror" className="b-btn-primary">📸 Mirrorで写真分析する</Link>
+          <p style={{ fontSize: 12, color: 'rgba(240,216,224,0.3)', margin: '12px 0 0' }}>無料プレビューあり · 詳細分析は¥500（任意）· 写真は保存しません</p>
         </div>
       </section>
 
@@ -304,14 +312,14 @@ export default function BellePage() {
             <span style={{ color: 'rgba(220,140,175,0.95)' }}>変わり始める最初の日になる。</span>
           </h2>
           <p style={{ fontSize: 14, color: inkMuted, lineHeight: 1.85, margin: '0 0 36px' }}>
-            まず、外見の現在地を知ることから始める。<br />10分の診断が、最初の一手を教えてくれる。
+            まず、外見の現在地を知ることから始める。<br />3分の診断が、最初の一手を教えてくれる。
           </p>
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/belle/diagnosis" className="b-btn-primary">🧬 Me Scanを始める（無料）</Link>
             <Link href="/belle/mirror" className="b-btn-ghost">📸 Mirrorで写真分析</Link>
           </div>
           <p style={{ fontSize: 12, color: 'rgba(240,216,224,0.28)', margin: '16px 0 0' }}>
-            Me Scan：約10分 · 無料 · 登録不要
+            Me Scan：コア約3分 · 無料 · 登録不要
           </p>
         </div>
       </section>

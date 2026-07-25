@@ -112,7 +112,7 @@ export default async function FeatureListPage({ searchParams }) {
               記事を読んだら、次は診断で「最初の一手」を見つけよう
             </h2>
             <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.55)', marginBottom: '20px', lineHeight: 1.8, fontFamily: 'var(--font-sans)' }}>
-              体型・眉・ヘア・肌・服・歯・爪。7軸で分析して、今の自分に最も効く変容ルートを教えます。
+              体型・眉・ヘア・肌・服・脱毛・歯・爪。8軸で分析して、今の自分に最も効く変容ルートを教えます。
             </p>
             <Link href="/diagnosis" style={{
               display: 'inline-block', padding: '13px 32px',

@@ -1235,7 +1235,7 @@ export default function DiagnosisPage() {
             <p className="diag-step-label">最初の1点</p>
             <h2 className="diag-q" style={{marginBottom:'8px'}}>あなたの最初の1点は</h2>
             <div className="tryout-result-axis" id="tryout-result-axis"></div>
-            <p className="tryout-framing">これはあなたの動機から導き出した「最初の1点」です。<br />7軸すべてを測ると、別の軸が前に出ることもあります。</p>
+            <p className="tryout-framing">これはあなたの動機から導き出した「最初の1点」です。<br />8軸すべてを測ると、別の軸が前に出ることもあります。</p>
             <button className="diag-nav-next" id="btn-tryout-continue" style={{width:'100%',marginTop:'16px'}}>8軸を測ってタイプを判定する（約3分）→</button>
           </div>
         </div>

@@ -104,7 +104,7 @@ export default function DiagnosisTypesPage() {
           <p style={{ fontSize: '11px', fontWeight: 800, color: '#818cf8', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '.08em' }}>あなたはどのタイプ？</p>
           <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'rgba(232,228,220,0.90)', margin: '0 0 10px' }}>Me Scanを受けて確認しよう</h2>
           <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.55)', lineHeight: 1.7, margin: '0 0 20px' }}>
-            7軸の診断から、あなたの現在地・理想・最初の一手を生成します。
+            8軸の診断から、あなたの現在地・理想・最初の一手を生成します。
           </p>
           <Link href="/diagnosis" className="btn" style={{ fontSize: '14px', padding: '12px 26px' }}>
             無料で診断する →

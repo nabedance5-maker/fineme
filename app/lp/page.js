@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export const metadata = {
   title: '恋愛に悩む男性の外見を変える診断 | Fineme',
-  description: '体型・眉・ヘア・肌・服・歯・爪。7軸の診断で、今のあなたに最も効く「最初の一手」がわかります。無料・3分・登録不要。',
+  description: '体型・眉・ヘア・肌・服・脱毛・歯・爪。8軸の診断で、今のあなたに最も効く「最初の一手」がわかります。無料・約3分・登録不要。',
   robots: { index: false, follow: false }, // 広告LP はインデックス除外
 };
 
@@ -44,7 +44,7 @@ export default function LpPage() {
             </div>
             <h1 className="lp-fade lp-fade-d1" style={{ fontSize: 'clamp(24px,6vw,42px)', fontWeight: 800, fontFamily: 'Georgia, serif', lineHeight: 1.35, color: '#fff', marginBottom: '20px' }}>
               「何から変えればいい？」<br />
-              <span style={{ color: '#c9a84c' }}>7軸で分析</span>して、<br />
+              <span style={{ color: '#c9a84c' }}>8軸で分析</span>して、<br />
               最初の一手を教えます。
             </h1>
             <p className="lp-fade lp-fade-d2" style={{ fontSize: 'clamp(14px,2.5vw,16px)', color: 'rgba(240,236,228,0.65)', lineHeight: 1.9, marginBottom: '32px' }}>
@@ -95,10 +95,10 @@ export default function LpPage() {
             </h2>
             <p style={{ fontSize: '15px', color: 'rgba(240,236,228,0.65)', lineHeight: 1.9, marginBottom: '32px' }}>
               外見改善に失敗する男性の多くは、「順番」を間違えています。<br />
-              Fineme の診断は、7軸の分析で「今の自分に最も効く一手」を特定します。
+              Fineme の診断は、8軸の分析で「今の自分に最も効く一手」を特定します。
             </p>
             <div className="axis-grid">
-              {[['💪','体型'],['✂️','眉毛'],['💈','ヘア'],['🌿','肌'],['👔','服'],['🦷','歯'],['💅','爪']].map(([icon, label]) => (
+              {[['💪','体型'],['✂️','眉毛'],['💈','ヘア'],['🌿','肌'],['👔','服'],['🪒','脱毛'],['🦷','歯'],['💅','爪']].map(([icon, label]) => (
                 <div className="axis-item" key={label}>
                   <div className="axis-icon">{icon}</div>
                   <div className="axis-label">{label}</div>
@@ -112,7 +112,7 @@ export default function LpPage() {
         <section style={{ padding: 'clamp(40px,8vw,64px) 20px', maxWidth: '680px', margin: '0 auto' }}>
           <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '20px', textAlign: 'center' }}>3ステップで始まる変容の旅</p>
           {[
-            ['🔍', 'Me Scan を受ける（3分）', '7軸の設問に答えると、今の自分の「変容地図」が生成されます。無料・登録不要。'],
+            ['🔍', 'Me Scan を受ける（3分）', '8軸の設問に答えると、今の自分の「変容地図」が生成されます。無料・登録不要。'],
             ['🧭', 'Compass（最初の一手）を確認する', '今向くべき軸と、最初に取り組むべきサービスが提示されます。'],
             ['🏆', '専門家に繋がる', '診断結果と相性の高いパーソナルジム・眉毛サロン・美容院などが表示されます。'],
           ].map(([icon, title, desc], i) => (
