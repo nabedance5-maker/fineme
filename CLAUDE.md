@@ -6,7 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Fineme は「外見を起点に自信を再設計するための、地図と羅針盤を提供するプラットフォーム」。
 タグライン「そのまま進むのが怖くなった夜に。自信を再設計する、地図と羅針盤。」
-ターゲットは恋愛・人間関係で挫折を経験し、変わりたい男性。（MVP 段階）
+ターゲットは恋愛・人間関係で挫折を経験し、変わりたい人。（MVP 段階）
+
+**二トラック構造（2026-07-17〜）**
+
+| トラック | 対象 | ルート |
+|---|---|---|
+| Fineme（男性トラック） | 20〜30代男性 | `/diagnosis` `/mirror` `/lp/mirror` `/mypage/*` `/feature` |
+| Fineme Belle（女性トラック） | 女性 | `/belle` `/belle/diagnosis` `/belle/mirror` `/belle/lp/mirror` `/belle/journal` |
+
+- 8軸 Me Scan・136タイプ・Compass・New Me Map・Mirror（¥500 / ¥780）は**両トラック共通**
+- 分けているもの：タイプ命名（男性＝生き物名／女性＝花名）、タイプ画像（`/images/types/` ↔ `/images/types/belle/`）、記事の写真プール（`lib/thumbnail-photos.js` の `track`）、Mirror分析プロンプト（`gender` / `mirror_sessions.gender`）
+- 判定キー：`localStorage['fineme:diagnosis:belle']`。`/mypage/*` は `fineme:diagnosis:latest` 優先→Belleキーへフォールバック
+- ⚠️ **Belle 側を触るときは「画像プール・タイプデータ・診断結果・Mirrorプロンプト」の4箇所すべてで女性側を向いているか確認する**（2026-07-24〜25 に男女混在バグを3件修正済み）
+- ⚠️ 「実態は男性専用サイト」という表現は**あらゆる文脈で使わない**（でお指摘2回）。二トラックは意図した設計
 
 ---
 
