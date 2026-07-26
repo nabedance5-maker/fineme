@@ -15,6 +15,13 @@ export const metadata = {
     siteName: 'Fineme',
     locale: 'ja_JP',
     type: 'website',
+    images: [{ url: 'https://www.fineme.me/api/og/log', width: 1200, height: 630, alt: '自分への投資 — New Me Log' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '「前いつ行ったっけ？」を、なくす — New Me Log',
+    description: '美容室・眉サロン・ネイル・ジム。そろそろの時期をLINEで知らせて、月にいくら使っているかも分かる記録帳。',
+    images: ['https://www.fineme.me/api/og/log'],
   },
 };
 

@@ -105,21 +105,63 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-modal-save:hover { opacity: .88; }
       .log-modal-cancel { padding: 14px 20px; background: transparent; border: 1px solid rgba(232,228,220,0.15); border-radius: 11px; font-size: 14px; font-weight: 700; color: rgba(232,228,220,0.5); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; }
 
-      /* ── 費用サマリー ── */
-      .log-cost-card { background: rgba(10,15,30,0.65); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 20px 20px 18px; margin-bottom: 20px; }
-      .log-cost-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(201,168,76,0.6); margin: 0 0 10px; }
-      .log-cost-main { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
-      .log-cost-month { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(24px,6vw,32px); font-weight: 800; color: #c9a84c; }
-      .log-cost-year { font-size: 13px; color: rgba(232,228,220,0.45); }
-      .log-cost-bars { display: flex; flex-direction: column; gap: 7px; }
-      .log-cost-row { display: flex; align-items: center; gap: 10px; font-size: 12px; }
-      .log-cost-row-label { flex: 0 0 auto; min-width: 96px; color: rgba(232,228,220,0.72); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .log-cost-bar { flex: 1; height: 6px; background: rgba(232,228,220,0.07); border-radius: 99px; overflow: hidden; }
-      .log-cost-bar-fill { display: block; height: 100%; background: linear-gradient(90deg, rgba(201,168,76,0.85), rgba(232,201,122,0.6)); border-radius: 99px; }
-      .log-cost-row-val { flex: 0 0 auto; color: rgba(232,228,220,0.55); font-variant-numeric: tabular-nums; }
-      .log-cost-note { font-size: 11px; color: rgba(232,228,220,0.35); margin: 12px 0 0; }
-      .log-cost-budget { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(201,168,76,0.14); }
-      .log-cost-budget p { font-size: 12px; color: rgba(232,228,220,0.55); margin: 0 0 3px; line-height: 1.7; }
+      /* ── FVカード（海図に記した投資額）── */
+      .lfv-wrap { margin-bottom: 22px; }
+      .lfv-card {
+        width: 100%; max-width: 400px; margin: 0 auto; aspect-ratio: 4 / 5;
+        background: #0a0f1e; border-radius: 18px; position: relative; overflow: hidden;
+        display: flex; flex-direction: column; padding: 26px 26px 22px;
+        box-shadow: 0 24px 60px rgba(0,0,0,.5); font-feature-settings: "palt";
+      }
+      .lfv-wash { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(120% 80% at 22% 18%, rgba(30,48,84,.55) 0%, transparent 60%),
+                    radial-gradient(90% 70% at 82% 88%, rgba(24,38,68,.5) 0%, transparent 62%); }
+      .lfv-grid { position: absolute; inset: 0; opacity: .1; pointer-events: none;
+        background-image: linear-gradient(to right, #c9a84c 1px, transparent 1px),
+                          linear-gradient(to bottom, #c9a84c 1px, transparent 1px);
+        background-size: 64px 64px; }
+      .lfv-rose { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+      .lfv-rose svg { width: 74%; opacity: .13; }
+      .lfv-corner { position: absolute; width: 30px; height: 30px; opacity: .5; pointer-events: none; }
+      .lfv-corner svg { width: 100%; height: 100%; display: block; }
+      .lfv-corner.tl { top: 13px; left: 13px; }
+      .lfv-corner.tr { top: 13px; right: 13px; transform: scaleX(-1); }
+      .lfv-corner.bl { bottom: 13px; left: 13px; transform: scaleY(-1); }
+      .lfv-corner.br { bottom: 13px; right: 13px; transform: scale(-1); }
+      .lfv-card > *:not(.lfv-wash):not(.lfv-grid):not(.lfv-rose):not(.lfv-corner) { position: relative; z-index: 1; }
+
+      .lfv-head { display: flex; justify-content: space-between; align-items: baseline; }
+      .lfv-brand { font-size: 8.5px; font-weight: 800; letter-spacing: .3em; color: rgba(201,168,76,.72); text-transform: uppercase; }
+      .lfv-date { font-size: 9.5px; letter-spacing: .1em; color: rgba(232,228,220,.3); font-variant-numeric: tabular-nums; }
+      .lfv-rule { height: 1px; background: linear-gradient(90deg, transparent, rgba(201,168,76,.38), transparent); margin-top: 11px; }
+
+      .lfv-amount { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+      .lfv-label { font-family: 'Noto Serif JP', serif; font-size: 11.5px; letter-spacing: .26em; color: rgba(232,228,220,.5); margin-bottom: 10px; }
+      .lfv-month { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(46px,14vw,62px); font-weight: 700; line-height: 1; color: #e8c86a; letter-spacing: -.01em; font-variant-numeric: tabular-nums; text-shadow: 0 0 34px rgba(201,168,76,.3); }
+      .lfv-month-unit { font-size: 11px; letter-spacing: .22em; color: rgba(201,168,76,.6); margin-top: 9px; }
+      .lfv-year { margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(201,168,76,.16); width: 168px; text-align: center; font-size: 11.5px; letter-spacing: .06em; color: rgba(232,228,220,.42); font-variant-numeric: tabular-nums; }
+      .lfv-year b { font-weight: 700; color: rgba(232,228,220,.66); }
+
+      .lfv-breakdown { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; }
+      .lfv-bd-head { font-size: 8.5px; letter-spacing: .22em; color: rgba(201,168,76,.5); text-transform: uppercase; margin-bottom: 3px; }
+      .lfv-row { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+      .lfv-row-ico { width: 15px; flex-shrink: 0; text-align: center; font-size: 12px; }
+      .lfv-row-name { flex: 0 0 78px; color: rgba(232,228,220,.66); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .lfv-row-bar { flex: 1; height: 3px; background: rgba(232,228,220,.07); border-radius: 99px; overflow: hidden; }
+      .lfv-row-fill { display: block; height: 100%; background: linear-gradient(90deg, rgba(201,168,76,.9), rgba(232,200,106,.55)); border-radius: 99px; }
+      .lfv-row-val { flex: 0 0 auto; color: rgba(232,228,220,.5); font-variant-numeric: tabular-nums; font-size: 10.5px; min-width: 52px; text-align: right; }
+
+      .lfv-foot { margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(201,168,76,.16); display: flex; justify-content: space-between; align-items: center; }
+      .lfv-ports { font-family: 'Noto Serif JP', serif; font-size: 11px; color: rgba(232,228,220,.55); }
+      .lfv-site { font-size: 9px; font-weight: 700; letter-spacing: .2em; color: rgba(201,168,76,.55); }
+
+      .lfv-budget, .lfv-note { font-size: 11px; color: rgba(232,228,220,.38); margin: 10px auto 0; max-width: 400px; line-height: 1.75; }
+      .lfv-budget { color: rgba(232,228,220,.5); }
+
+      .lfv-prompt { background: rgba(201,168,76,0.06); border: 1px dashed rgba(201,168,76,0.3); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; }
+      .lfv-prompt-title { font-size: 13px; font-weight: 700; color: rgba(232,228,220,0.82); margin: 0 0 4px; }
+      .lfv-prompt-desc { font-size: 11.5px; color: rgba(232,228,220,0.45); margin: 0; line-height: 1.7; }
+
       .log-chip-cost { border-color: rgba(201,168,76,0.35) !important; color: rgba(201,168,76,0.85) !important; }
 
       /* ── 頻度（数値＋単位／プリセット） ── */
@@ -210,38 +252,102 @@ export default function ServiceLog({ withSideNav = false }) {
 
     // ── 費用サマリー ──
     // 頻度が無いものは月額換算せず合計にも入れない（推測で数字を作らない）
-    function renderCostSummary() {
+    // ── FVカード（海図に記した投資額。スクショ1枚でそのまま素材になる）──
+    // 月額を主役にする。年額は「このペースが続くとこうなる」を示す補足に留める。
+    function renderCostCard() {
       const s = costSummary(logs);
-      if (!s.counted && !s.irregular) return '';
+      if (!s.counted) return '';
 
-      const bars = s.byAxis.slice(0, 6).map(row => {
+      const max = s.byAxis[0]?.monthly || 1;
+      const rows = s.byAxis.slice(0, 4).map(row => {
         const def = resolveAxis(row.axis, row.customIcon);
-        const pct = s.monthly ? Math.max(4, Math.round((row.monthly / s.monthly) * 100)) : 0;
+        const pct = Math.max(6, Math.round((row.monthly / max) * 100));
         return `
-          <div class="log-cost-row">
-            <span class="log-cost-row-label">${def.icon} ${esc(def.label)}</span>
-            <span class="log-cost-bar"><span class="log-cost-bar-fill" style="width:${pct}%"></span></span>
-            <span class="log-cost-row-val">${row.estimated ? '約' : ''}${formatYen(row.monthly)}</span>
+          <div class="lfv-row">
+            <span class="lfv-row-ico">${def.icon}</span>
+            <span class="lfv-row-name">${esc(def.label)}</span>
+            <span class="lfv-row-bar"><span class="lfv-row-fill" style="width:${pct}%"></span></span>
+            <span class="lfv-row-val">${row.estimated ? '約' : ''}${formatYen(row.monthly)}</span>
           </div>`;
       }).join('');
 
-      const budgetLine = budget && BUDGET_LABELS[budget] && s.counted ? `
-        <div class="log-cost-budget">
-          <p>Me Scan では「${BUDGET_LABELS[budget]}」と答えていました</p>
-          <p>いま登録されている分の合計は 月 ${formatYen(s.monthly)} です</p>
-        </div>` : '';
+      const now = new Date();
+      const ym = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const portCount = logs.length;
+
+      const budgetLine = budget && BUDGET_LABELS[budget] ? `
+        <p class="lfv-budget">Me Scan では「${BUDGET_LABELS[budget]}」と答えていました</p>` : '';
+      const noteLines = [
+        s.estimated ? '「約」は軸ごとの目安の頻度で計算した分です（頻度を入れると実額に変わります）' : '',
+        s.unknown ? `＋ ${s.unknown}件は頻度の目安がないため合計に入れていません` : '',
+      ].filter(Boolean).map(t => `<p class="lfv-note">${t}</p>`).join('');
 
       return `
-        <div class="log-cost-card">
-          <p class="log-cost-eyebrow">自分に使っている額</p>
-          <div class="log-cost-main">
-            <span class="log-cost-month">月 ${formatYen(s.monthly)}</span>
-            <span class="log-cost-year">年 ${formatYen(s.yearly)}</span>
+        <div class="lfv-wrap">
+          <div class="lfv-card">
+            <div class="lfv-wash"></div>
+            <div class="lfv-grid"></div>
+            <div class="lfv-rose">
+              <svg viewBox="0 0 200 200" fill="none" aria-hidden="true">
+                <circle cx="100" cy="100" r="86" stroke="#c9a84c" stroke-width=".7"/>
+                <circle cx="100" cy="100" r="66" stroke="#c9a84c" stroke-width=".5"/>
+                <circle cx="100" cy="100" r="30" stroke="#c9a84c" stroke-width=".5"/>
+                <path d="M100 8 L110 92 L100 100 L90 92 Z" fill="#c9a84c"/>
+                <path d="M100 192 L110 108 L100 100 L90 108 Z" fill="#c9a84c" opacity=".55"/>
+                <path d="M8 100 L92 110 L100 100 L92 90 Z" fill="#c9a84c" opacity=".55"/>
+                <path d="M192 100 L108 110 L100 100 L108 90 Z" fill="#c9a84c" opacity=".55"/>
+                <g opacity=".4">
+                  <path d="M35 35 L96 96 L100 100 L96 104 Z" fill="#c9a84c"/>
+                  <path d="M165 35 L104 96 L100 100 L104 104 Z" fill="#c9a84c"/>
+                  <path d="M35 165 L96 104 L100 100 L104 104 Z" fill="#c9a84c"/>
+                  <path d="M165 165 L104 104 L100 100 L96 104 Z" fill="#c9a84c"/>
+                </g>
+                <g stroke="#c9a84c" stroke-width=".6" opacity=".5">
+                  <path d="M100 14v8M100 178v8M14 100h8M178 100h8"/>
+                  <path d="M39 39l6 6M161 39l-6 6M39 161l6-6M161 161l-6-6"/>
+                </g>
+              </svg>
+            </div>
+            ${['tl','tr','bl','br'].map(c => `
+              <div class="lfv-corner ${c}"><svg viewBox="0 0 32 32" fill="none"><path d="M1 1h13M1 1v13M5 5h6M5 5v6" stroke="#c9a84c" stroke-width="1.1"/><circle cx="14" cy="14" r="1.6" fill="#c9a84c"/></svg></div>`).join('')}
+
+            <div class="lfv-head">
+              <span class="lfv-brand">New Me Log</span>
+              <span class="lfv-date">${ym}</span>
+            </div>
+            <div class="lfv-rule"></div>
+
+            <div class="lfv-amount">
+              <div class="lfv-label">自分への投資</div>
+              <div class="lfv-month">${formatYen(s.monthly)}</div>
+              <div class="lfv-month-unit">1ヶ月あたり</div>
+              <div class="lfv-year">このまま1年で <b>${formatYen(s.yearly)}</b></div>
+            </div>
+
+            <div class="lfv-breakdown">
+              <div class="lfv-bd-head">内訳</div>
+              ${rows}
+            </div>
+
+            <div class="lfv-foot">
+              <span class="lfv-ports">${portCount}つの港を巡っている</span>
+              <span class="lfv-site">fineme.me</span>
+            </div>
           </div>
-          ${bars ? `<div class="log-cost-bars">${bars}</div>` : ''}
-          ${s.estimated ? `<p class="log-cost-note">「約」がついた分は、軸ごとの目安の頻度で計算しています（頻度を入れると実額に変わります）</p>` : ''}
-          ${s.unknown ? `<p class="log-cost-note">＋ ${s.unknown}件は頻度の目安がないため合計に入れていません</p>` : ''}
           ${budgetLine}
+          ${noteLines}
+        </div>`;
+    }
+
+    // 費用がまだ1件も入っていない時は、カードの代わりに一言だけ置く。
+    // 空のカードや ¥0 を見せても意味がないため（推測で数字を作らない）。
+    function renderCostPrompt() {
+      const s = costSummary(logs);
+      if (s.counted || !logs.length) return '';
+      return `
+        <div class="lfv-prompt">
+          <p class="lfv-prompt-title">💰 1回いくらか入れると、月にいくら使っているかが出ます</p>
+          <p class="lfv-prompt-desc">編集から「1回あたりの費用」を入れるだけ。頻度から自動で計算します。</p>
         </div>`;
     }
 
@@ -347,9 +453,12 @@ export default function ServiceLog({ withSideNav = false }) {
         </div>`;
       }).join('');
 
+      // 費用が入っていれば投資額カードが FV。まだなら従来のヘッダーを出す
+      // （空のカードや ¥0 を見せないため）
+      const card = renderCostCard();
       root.innerHTML = `
-        ${header}
-        ${renderCostSummary()}
+        ${card || header}
+        ${renderCostPrompt()}
         <button class="log-add-btn" id="log-open-add">＋ 追加する</button>
         ${sectionsHtml}
         ${renderGuestCta()}`;
