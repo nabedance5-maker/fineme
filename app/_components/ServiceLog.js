@@ -217,7 +217,7 @@ export default function ServiceLog({ withSideNav = false }) {
           <div class="log-cost-row">
             <span class="log-cost-row-label">${def.icon} ${esc(def.label)}</span>
             <span class="log-cost-bar"><span class="log-cost-bar-fill" style="width:${pct}%"></span></span>
-            <span class="log-cost-row-val">${formatYen(row.monthly)}</span>
+            <span class="log-cost-row-val">${row.estimated ? '約' : ''}${formatYen(row.monthly)}</span>
           </div>`;
       }).join('');
 
@@ -235,7 +235,8 @@ export default function ServiceLog({ withSideNav = false }) {
             <span class="log-cost-year">年 ${formatYen(s.yearly)}</span>
           </div>
           ${bars ? `<div class="log-cost-bars">${bars}</div>` : ''}
-          ${s.irregular ? `<p class="log-cost-note">＋ 不定期 ${s.irregular}件（頻度が未設定のため合計に含めていません）</p>` : ''}
+          ${s.estimated ? `<p class="log-cost-note">「約」がついた分は、軸ごとの目安の頻度で計算しています（頻度を入れると実額に変わります）</p>` : ''}
+          ${s.unknown ? `<p class="log-cost-note">＋ ${s.unknown}件は頻度の目安がないため合計に入れていません</p>` : ''}
           ${budgetLine}
         </div>`;
     }
@@ -289,9 +290,11 @@ export default function ServiceLog({ withSideNav = false }) {
           const providerHref = log.provider_slug
             ? (log.provider_type === 'affiliate' ? `/affiliate/${log.provider_slug}` : `/provider/${log.provider_slug}`)
             : null;
-          const m = monthlyCost(log.cost, log.frequency_weeks);
           const since = weeksSince(log.last_visit);
           const freq = effectiveFreqWeeks(log);
+          // 頻度が未設定でも軸の推奨で月額を出す（出さないと合計と食い違って見える）
+          const m = monthlyCost(log.cost, freq);
+          const costIsEstimated = !log.frequency_weeks;
           const untilIdeal = daysUntilIdeal(log);
 
           // 予約日が未設定でも「そろそろ」を出す（前回＋頻度から算出）
@@ -322,7 +325,7 @@ export default function ServiceLog({ withSideNav = false }) {
                 ${log.last_visit ? `<span class="log-chip">前回 ${log.last_visit}${since !== null ? `（${since}週前）` : ''}</span>` : '<span class="log-chip" style="opacity:.45">前回未記録</span>'}
                 ${log.next_visit ? `<span class="log-chip ${chipClass}">次回 ${log.next_visit}${nextDays ? `（${nextDays}）` : ''}</span>` : dueChip}
                 ${freq ? `<span class="log-chip">🔄 ${freq}週ごと${log.frequency_weeks ? '' : '（目安）'}</span>` : ''}
-                ${log.cost ? `<span class="log-chip log-chip-cost">1回 ${formatYen(log.cost)}${m !== null ? ` · 月 ${formatYen(m)} 相当` : ''}</span>` : ''}
+                ${log.cost ? `<span class="log-chip log-chip-cost">1回 ${formatYen(log.cost)}${m !== null ? ` · 月 ${costIsEstimated ? '約' : ''}${formatYen(m)}` : ''}</span>` : ''}
               </div>
               ${log.memo ? `<p class="log-card-memo">📝 ${esc(log.memo)}</p>` : ''}
               <div class="log-card-visit">

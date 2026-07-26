@@ -72,24 +72,28 @@ export async function GET(request) {
   }
   if (!logs?.length) return Response.json({ sent: 0, date: todayStr });
 
-  // 予約済みの再送を防ぐ窓（この日数以内に送っていたら送らない）
-  const RESEND_GUARD_DAYS = 10;
   // 予約がまだの時に声をかけ始める日数（目安日の何日前から）
   const BOOKING_LEAD_DAYS = 5;
+  // 予約がまだのまま目安を過ぎている間は、この間隔で声をかけ続ける（でお要望 2026-07-26）。
+  // 次回予約日を登録すれば booking から外れるので、そこで自動的に止まる。
+  const OVERDUE_INTERVAL_DAYS = 7;
+  // 予約済みリマインドの再送を防ぐ窓
+  const REMINDER_GUARD_DAYS = 10;
+
+  const daysSinceNotified = (l) => l.last_notified_at
+    ? (today - new Date(l.last_notified_at)) / 86400000
+    : Infinity;
 
   // 通知すべきものを2種類に分けて拾う
   //   A: 予約日が近い（リマインド）
-  //   B: 予約はまだだが、前回＋頻度の目安が近い（予約を促す）— でお要望 2026-07-26
+  //   B: 予約はまだだが、前回＋頻度の目安が近い／過ぎている（予約を促す）
   const due = [];
   for (const l of logs) {
     if (l.notify_enabled === false) continue;
 
-    // 同じサイクルで送信済みなら飛ばす（毎日ナグらない）
-    const notifiedRecently = l.last_notified_at
-      && (today - new Date(l.last_notified_at)) / 86400000 < RESEND_GUARD_DAYS;
-    if (notifiedRecently) continue;
-
     if (l.next_visit) {
+      // 予約済み：同じ予約について何度も送らない
+      if (daysSinceNotified(l) < REMINDER_GUARD_DAYS) continue;
       const daysBefore = Number.isInteger(l.notify_days_before) ? l.notify_days_before : 3;
       const diff = Math.round((new Date(l.next_visit) - today) / 86400000);
       if (diff <= daysBefore) due.push({ ...l, kind: 'reminder', diff });
@@ -100,7 +104,15 @@ export async function GET(request) {
     const ideal = idealNextDate(l);
     if (!ideal) continue;
     const diff = Math.round((new Date(ideal) - today) / 86400000);
-    if (diff <= BOOKING_LEAD_DAYS) due.push({ ...l, kind: 'booking', diff });
+    if (diff > BOOKING_LEAD_DAYS) continue;
+
+    // 目安前は1回だけ、過ぎている間は一定間隔で声をかけ続ける。
+    // 放っておくほど遠のく類のものなので、超過中に黙るとツールの意味がなくなる。
+    const gap = daysSinceNotified(l);
+    const needed = diff < 0 ? OVERDUE_INTERVAL_DAYS : REMINDER_GUARD_DAYS;
+    if (gap < needed) continue;
+
+    due.push({ ...l, kind: 'booking', diff });
   }
 
   if (!due.length) return Response.json({ sent: 0, date: todayStr });
