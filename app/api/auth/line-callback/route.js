@@ -74,6 +74,22 @@ export async function GET(request) {
     return Response.redirect(`${BASE_URL}/login?line_error=profile_fetch_failed`);
   }
 
+  // ── 連携モード ──
+  // マイページからの「LINEで連携する」はここに合流する（state.link_user_id あり）。
+  // 専用の /api/me/line-callback を使うと Callback URL の登録がもう1本必要になり、
+  // 登録漏れで Invalid redirect_uri になるため、登録済みのこのURLに相乗りさせている。
+  if (stateData.link_user_id) {
+    const { error: linkError } = await supabase
+      .from('profiles')
+      .update({ line_user_id: lineUserId, updated_at: new Date().toISOString() })
+      .eq('id', stateData.link_user_id);
+    if (linkError) {
+      console.error('[line-callback] link error:', linkError);
+      return Response.redirect(`${BASE_URL}/mypage/profile?line_error=db_update_failed`);
+    }
+    return Response.redirect(`${BASE_URL}/mypage/profile?line_connected=1`);
+  }
+
   // LINE ユーザー専用メールアドレス（Supabase auth の識別子として使用）
   const lineEmail = `line_${lineUserId}@line.fineme.me`;
 

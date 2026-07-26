@@ -14,8 +14,16 @@ export async function GET(request) {
   }
 
   // state に user_id とタイムスタンプを埋め込む（10分間有効）
-  const state = Buffer.from(JSON.stringify({ user_id: userId, ts: Date.now() })).toString('base64url');
-  const callbackUrl = 'https://fineme.me/api/me/line-callback';
+  // link_user_id があると /api/auth/line-callback が「連携モード」で処理する
+  const state = Buffer.from(JSON.stringify({
+    link_user_id: userId,
+    user_id: userId, // 旧 /api/me/line-callback との互換のため残す
+    ts: Date.now(),
+  })).toString('base64url');
+
+  // LINE Developers に登録済みの Callback URL を使う。
+  // 専用URL（/api/me/line-callback）は未登録で Invalid redirect_uri になっていた。
+  const callbackUrl = 'https://fineme.me/api/auth/line-callback';
 
   const lineAuthUrl = new URL('https://access.line.me/oauth2/v2.1/authorize');
   lineAuthUrl.searchParams.set('response_type', 'code');

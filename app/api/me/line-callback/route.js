@@ -1,4 +1,10 @@
 // GET /api/me/line-callback?code=xxx&state=xxx
+//
+// ⚠️ 2026-07-26 以降、通常フローではここに来ない。
+// このURLは LINE Developers の Callback URL に登録されておらず、
+// マイページの「LINEで連携する」が Invalid redirect_uri で弾かれていた。
+// 連携は登録済みの /api/auth/line-callback に合流させている（state.link_user_id で分岐）。
+// このルートは、Callback URL に本URLを登録している環境のための後方互換として残す。
 // LINE Login OAuth2.0 コールバック（ユーザー側 LINE アカウント連携）
 import { getSupabase } from '@/lib/supabase';
 
