@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { TRACKS, setTrackExplicit, saveTrackToServer } from '@/lib/track';
+import { VOICES, NOTIFY_LEVELS, defaultVoiceFor, DEFAULT_NOTIFY_LEVEL } from '@/lib/log-voice';
 
 export default function MypageProfilePage() {
   const { track, trackId: resolvedTrackId } = useTrack();
@@ -41,6 +42,30 @@ export default function MypageProfilePage() {
   const [saving, setSaving] = useState(false);
   const [lineMsg, setLineMsg] = useState('');
   const [lineTesting, setLineTesting] = useState(false);
+  const [logVoice, setLogVoice] = useState(null);     // null = トラックの既定
+  const [logLevel, setLogLevel] = useState(DEFAULT_NOTIFY_LEVEL);
+
+  // New Me Log の通知設定を読む
+  useEffect(() => {
+    if (!accessToken) return;
+    fetch('/api/me/log-prefs', { headers: { Authorization: `Bearer ${accessToken}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) { setLogVoice(d.voice ?? null); setLogLevel(d.level || DEFAULT_NOTIFY_LEVEL); } })
+      .catch(() => {});
+  }, [accessToken]);
+
+  async function saveLogPrefs(next) {
+    const body = { voice: next.voice !== undefined ? next.voice : logVoice, level: next.level || logLevel };
+    if (next.voice !== undefined) setLogVoice(next.voice);
+    if (next.level) setLogLevel(next.level);
+    try {
+      await fetch('/api/me/log-prefs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify(body),
+      });
+    } catch {}
+  }
 
   // 連携できていても公式アカウントを友だち追加していないと届かないため、
   // 本人がその場で切り分けられるようにする
@@ -359,6 +384,75 @@ export default function MypageProfilePage() {
                 {lineMsg && (
                   <p style={{ margin: '10px 0 0', fontSize: '13px', color: lineMsg.includes('エラー') ? '#dc2626' : '#059669' }}>{lineMsg}</p>
                 )}
+              </div>
+
+              {/* New Me Log の通知設定（声・頻度） */}
+              <div style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px' }}>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 6px' }}>New Me Log の通知</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>
+                  知らせ方と回数を選べます。いつでも変えられます。
+                </p>
+
+                {/* 声のテイスト */}
+                <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(232,228,220,0.5)', margin: '0 0 8px' }}>知らせ方</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '18px' }}>
+                  {Object.values(VOICES).map(v => {
+                    const effective = logVoice || defaultVoiceFor(trackId);
+                    const isActive = effective === v.id;
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => saveLogPrefs({ voice: v.id })}
+                        style={{
+                          textAlign: 'left', cursor: 'pointer', padding: '12px 14px', borderRadius: '11px', fontFamily: 'inherit',
+                          background: isActive ? 'rgba(201,168,76,0.1)' : 'rgba(255,255,255,0.03)',
+                          border: `1.5px solid rgba(201,168,76,${isActive ? 0.5 : 0.15})`,
+                        }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                          <span style={{ width: '12px', height: '12px', borderRadius: '50%', flexShrink: 0, border: '1.5px solid rgba(201,168,76,0.7)', background: isActive ? '#c9a84c' : 'transparent' }} />
+                          <span style={{ fontSize: '13px', fontWeight: 800, color: 'rgba(232,228,220,0.9)' }}>{v.label}</span>
+                          {!logVoice && isActive && (
+                            <span style={{ fontSize: '10px', color: 'rgba(232,228,220,0.35)' }}>（既定）</span>
+                          )}
+                        </span>
+                        <span style={{ display: 'block', fontSize: '11px', color: 'rgba(232,228,220,0.45)', paddingLeft: '20px', marginBottom: '4px' }}>{v.description}</span>
+                        <span style={{ display: 'block', fontSize: '12px', color: 'rgba(201,168,76,0.75)', paddingLeft: '20px' }}>{v.sample}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* 頻度 */}
+                <p style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(232,228,220,0.5)', margin: '0 0 8px' }}>回数</p>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {Object.values(NOTIFY_LEVELS).map(lv => {
+                    const isActive = logLevel === lv.id;
+                    const isOff = lv.id === 'off';
+                    return (
+                      <button
+                        key={lv.id}
+                        type="button"
+                        onClick={() => saveLogPrefs({ level: lv.id })}
+                        title={lv.description}
+                        style={{
+                          flex: '1 1 108px', textAlign: 'center', cursor: 'pointer', padding: '10px 8px', borderRadius: '10px', fontFamily: 'inherit',
+                          background: isActive ? (isOff ? 'rgba(239,68,68,0.1)' : 'rgba(201,168,76,0.12)') : 'rgba(255,255,255,0.03)',
+                          border: `1.5px solid ${isActive ? (isOff ? 'rgba(239,68,68,0.45)' : 'rgba(201,168,76,0.5)') : 'rgba(232,228,220,0.14)'}`,
+                        }}
+                      >
+                        <span style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: isActive && isOff ? '#f87171' : 'rgba(232,228,220,0.9)', marginBottom: '2px' }}>
+                          {lv.label}{lv.id === DEFAULT_NOTIFY_LEVEL ? ' ★' : ''}
+                        </span>
+                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(232,228,220,0.4)', lineHeight: 1.5 }}>{lv.description}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.3)', margin: '10px 0 0', lineHeight: 1.7 }}>
+                  ★ が推奨です。多いと感じたら「控えめ」に、いらなければ「止める」を選んでください。
+                </p>
               </div>
 
               {/* 掲載者への公開設定 */}

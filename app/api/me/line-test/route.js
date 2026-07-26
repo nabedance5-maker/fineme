@@ -43,11 +43,19 @@ export async function POST(request) {
   const user = await getUser(request);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data: profile } = await supabase
+  // 声・トラックも取る（未適用環境では line_user_id だけに落とす）
+  let profile = null;
+  const full = await supabase
     .from('profiles')
-    .select('line_user_id')
+    .select('line_user_id, log_voice, track')
     .eq('id', user.id)
     .maybeSingle();
+  if (!full.error) {
+    profile = full.data;
+  } else {
+    const basic = await supabase.from('profiles').select('line_user_id').eq('id', user.id).maybeSingle();
+    profile = basic.data;
+  }
 
   if (!profile?.line_user_id) {
     return Response.json({
@@ -96,7 +104,7 @@ export async function POST(request) {
   }
 
   const text = (booking.length || reminder.length)
-    ? buildLogMessage(booking, reminder, resolveAxis)
+    ? buildLogMessage(booking, reminder, resolveAxis, { voiceId: profile.log_voice, trackId: profile.track })
     : [
         'お頭、通信の試験でさぁ📡',
         '',

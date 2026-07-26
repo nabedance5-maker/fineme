@@ -6,7 +6,7 @@
 import { getSupabase } from '@/lib/supabase';
 import { sendLinePush } from '@/lib/line-push';
 import { resolveAxis, effectiveFreqWeeks, idealNextDate } from '@/lib/log-axes';
-import { buildLogMessage } from '@/lib/log-voice';
+import { buildLogMessage, getNotifyLevel } from '@/lib/log-voice';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,70 +72,83 @@ export async function GET(request) {
   }
   if (!logs?.length) return Response.json({ sent: 0, date: todayStr });
 
-  // 予約がまだの時に声をかけ始める日数（目安日の何日前から）
-  const BOOKING_LEAD_DAYS = 5;
-  // 予約がまだのまま目安を過ぎている間は、この間隔で声をかけ続ける（でお要望 2026-07-26）。
-  // 次回予約日を登録すれば booking から外れるので、そこで自動的に止まる。
-  const OVERDUE_INTERVAL_DAYS = 7;
-  // 予約済みリマインドの再送を防ぐ窓
-  const REMINDER_GUARD_DAYS = 10;
-
   const daysSinceNotified = (l) => l.last_notified_at
     ? (today - new Date(l.last_notified_at)) / 86400000
     : Infinity;
 
+  // まずユーザーごとに束ねる（判定に本人の通知設定が要るため）
+  const logsByUser = {};
+  for (const l of logs) {
+    if (!l.user_id) continue;
+    (logsByUser[l.user_id] = logsByUser[l.user_id] || []).push(l);
+  }
+  const userIds = Object.keys(logsByUser);
+  if (!userIds.length) return Response.json({ sent: 0, date: todayStr });
+
+  // 通知設定（声・頻度）と配信先をまとめて取る。
+  // supabase-log-prefs.sql / profiles-track 未適用でも動くよう段階的に落とす。
+  let profiles = [];
+  const full = await db
+    .from('profiles')
+    .select('id, line_user_id, log_voice, log_notify_level, track')
+    .in('id', userIds);
+  if (!full.error) {
+    profiles = full.data || [];
+  } else {
+    const basic = await db.from('profiles').select('id, line_user_id').in('id', userIds);
+    profiles = basic.data || [];
+  }
+  const profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
+
   // 通知すべきものを2種類に分けて拾う
   //   A: 予約日が近い（リマインド）
   //   B: 予約はまだだが、前回＋頻度の目安が近い／過ぎている（予約を促す）
-  const due = [];
-  for (const l of logs) {
-    if (l.notify_enabled === false) continue;
-
-    if (l.next_visit) {
-      // 予約済み：同じ予約について何度も送らない
-      if (daysSinceNotified(l) < REMINDER_GUARD_DAYS) continue;
-      const daysBefore = Number.isInteger(l.notify_days_before) ? l.notify_days_before : 3;
-      const diff = Math.round((new Date(l.next_visit) - today) / 86400000);
-      if (diff <= daysBefore) due.push({ ...l, kind: 'reminder', diff });
-      continue;
-    }
-
-    // 予約日が未設定：前回＋頻度の目安から判定する
-    const ideal = idealNextDate(l);
-    if (!ideal) continue;
-    const diff = Math.round((new Date(ideal) - today) / 86400000);
-    if (diff > BOOKING_LEAD_DAYS) continue;
-
-    // 目安前は1回だけ、過ぎている間は一定間隔で声をかけ続ける。
-    // 放っておくほど遠のく類のものなので、超過中に黙るとツールの意味がなくなる。
-    const gap = daysSinceNotified(l);
-    const needed = diff < 0 ? OVERDUE_INTERVAL_DAYS : REMINDER_GUARD_DAYS;
-    if (gap < needed) continue;
-
-    due.push({ ...l, kind: 'booking', diff });
-  }
-
-  if (!due.length) return Response.json({ sent: 0, date: todayStr });
-
-  // ユーザーごとにまとめる（複数の軸が重なっても1通）
   const byUser = {};
-  for (const l of due) {
-    if (!l.user_id) continue;
-    (byUser[l.user_id] = byUser[l.user_id] || []).push(l);
+  for (const userId of userIds) {
+    const profile = profileMap[userId];
+    if (!profile?.line_user_id) continue;
+
+    // うるさく感じてブロックされたら元も子もないので、本人の設定を必ず尊重する
+    const level = getNotifyLevel(profile.log_notify_level);
+    if (level.id === 'off') continue;
+
+    for (const l of logsByUser[userId]) {
+      if (l.notify_enabled === false) continue;
+
+      if (l.next_visit) {
+        // 予約済み：同じ予約について何度も送らない
+        if (daysSinceNotified(l) < level.reminderGuard) continue;
+        const daysBefore = Number.isInteger(l.notify_days_before) ? l.notify_days_before : 3;
+        const diff = Math.round((new Date(l.next_visit) - today) / 86400000);
+        if (diff <= daysBefore) (byUser[userId] = byUser[userId] || []).push({ ...l, kind: 'reminder', diff });
+        continue;
+      }
+
+      // 予約日が未設定：前回＋頻度の目安から判定する
+      const ideal = idealNextDate(l);
+      if (!ideal) continue;
+      const diff = Math.round((new Date(ideal) - today) / 86400000);
+      if (diff > level.leadDays) continue;
+
+      // 目安前は1回だけ、過ぎている間は一定間隔で声をかけ続ける。
+      // 放っておくほど遠のく類のものなので、超過中に黙るとツールの意味がなくなる。
+      const gap = daysSinceNotified(l);
+      const needed = diff < 0 ? level.overdueInterval : level.reminderGuard;
+      if (gap < needed) continue;
+
+      (byUser[userId] = byUser[userId] || []).push({ ...l, kind: 'booking', diff });
+    }
   }
 
-  const userIds = Object.keys(byUser);
-  const { data: profiles } = await db
-    .from('profiles')
-    .select('id, line_user_id')
-    .in('id', userIds);
-  const lineMap = Object.fromEntries((profiles || []).map(p => [p.id, p.line_user_id]));
+  const dueUserIds = Object.keys(byUser);
+  if (!dueUserIds.length) return Response.json({ sent: 0, date: todayStr });
 
   let sent = 0;
   const notifiedIds = [];
 
-  for (const userId of userIds) {
-    const lineUserId = lineMap[userId];
+  for (const userId of dueUserIds) {
+    const profile = profileMap[userId];
+    const lineUserId = profile?.line_user_id;
     if (!lineUserId) continue;
 
     const mine = byUser[userId];
@@ -160,7 +173,11 @@ export async function GET(request) {
       }));
 
     // 文面は lib/log-voice.js（航海のクルーの声・日替わりで言い回しが変わる）
-    const text = buildLogMessage(booking, reminder, resolveAxis);
+    // 声は本人の選択（未設定ならトラックごとの既定）
+    const text = buildLogMessage(booking, reminder, resolveAxis, {
+      voiceId: profile.log_voice,
+      trackId: profile.track,
+    });
 
     const res = await sendLinePush(lineUserId, text);
     if (res.ok) {
@@ -180,5 +197,6 @@ export async function GET(request) {
     }
   }
 
-  return Response.json({ sent, candidates: due.length, date: todayStr });
+  const candidates = dueUserIds.reduce((n, id) => n + byUser[id].length, 0);
+  return Response.json({ sent, candidates, users: dueUserIds.length, date: todayStr });
 }
