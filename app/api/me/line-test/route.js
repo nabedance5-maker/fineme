@@ -6,7 +6,7 @@
 // 対象が無ければ、直近の1件を使ってプレビューする。
 import { getSupabase } from '@/lib/supabase';
 import { sendLinePush } from '@/lib/line-push';
-import { resolveAxis, effectiveFreqWeeks, idealNextDate } from '@/lib/log-axes';
+import { resolveAxis, effectiveFreq, formatFreq, idealNextDate } from '@/lib/log-axes';
 import { buildLogMessage } from '@/lib/log-voice';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -34,7 +34,7 @@ function toBooking(l, diff) {
     custom_icon: l.custom_icon,
     name: l.name,
     weeksSince: weeksSince(l.last_visit),
-    freq: effectiveFreqWeeks(l),
+    freq: formatFreq(effectiveFreq(l)),
     overdueDays: diff < 0 ? -diff : 0,
   };
 }

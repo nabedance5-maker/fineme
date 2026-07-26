@@ -5,7 +5,7 @@
 // 1ユーザー1通にまとめ、同じ next_visit サイクルでは二度送らない。
 import { getSupabase } from '@/lib/supabase';
 import { sendLinePush } from '@/lib/line-push';
-import { resolveAxis, effectiveFreqWeeks, idealNextDate } from '@/lib/log-axes';
+import { resolveAxis, effectiveFreq, formatFreq, idealNextDate } from '@/lib/log-axes';
 import { buildLogMessage, getNotifyLevel } from '@/lib/log-voice';
 
 export const dynamic = 'force-dynamic';
@@ -159,7 +159,7 @@ export async function GET(request) {
         custom_icon: l.custom_icon,
         name: l.name,
         weeksSince: weeksSince(l.last_visit),
-        freq: effectiveFreqWeeks(l),
+        freq: formatFreq(effectiveFreq(l)),
         overdueDays: l.diff < 0 ? -l.diff : 0,
       }));
     const reminder = mine

@@ -4,17 +4,12 @@ import useTrack from '@/app/_hooks/useTrack';
 import {
   axisChoicesFor, resolveAxis, CUSTOM_AXIS, CUSTOM_ICON_CHOICES, DEFAULT_CUSTOM_ICON,
   monthlyCost, costSummary, formatYen, BUDGET_LABELS,
-  effectiveFreqWeeks, idealNextDate, daysUntilIdeal,
+  effectiveFreq, formatFreq, idealNextDate, daysUntilIdeal, FREQ_PRESETS,
 } from '@/lib/log-axes';
 import { listLogs, createLog, updateLog, removeLog, getAccessToken } from '@/lib/log-store';
 
-// 前回日 + 頻度(週) → 推奨次回日
-function calcIdealNext(lastVisit, freqWeeks) {
-  if (!lastVisit || !freqWeeks) return null;
-  const d = new Date(lastVisit);
-  d.setDate(d.getDate() + freqWeeks * 7);
-  return d.toISOString().slice(0, 10);
-}
+// 次回日の算出は lib/log-axes.js の idealNextDate に統一した
+// （週・月の両単位を扱うため。ここに週専用の計算を残すと二重管理になる）
 
 // 日付 → 「〇日後」「今日」「〇日前」
 function daysFromToday(dateStr) {
@@ -126,6 +121,15 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-cost-budget { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(201,168,76,0.14); }
       .log-cost-budget p { font-size: 12px; color: rgba(232,228,220,0.55); margin: 0 0 3px; line-height: 1.7; }
       .log-chip-cost { border-color: rgba(201,168,76,0.35) !important; color: rgba(201,168,76,0.85) !important; }
+
+      /* ── 頻度（数値＋単位／プリセット） ── */
+      .log-freq-row { display: flex; gap: 8px; }
+      .log-freq-row input { flex: 1; }
+      .log-freq-row select { flex: 0 0 108px; }
+      .log-freq-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+      .log-freq-chip { font-size: 11.5px; font-weight: 700; padding: 6px 12px; border-radius: 99px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); transition: all .12s; }
+      .log-freq-chip:hover { border-color: rgba(201,168,76,0.5); color: rgba(232,228,220,0.9); }
+      .log-freq-chip.selected { border-color: #c9a84c; background: rgba(201,168,76,0.14); color: #c9a84c; }
 
       /* ── 「行った」の記録（1タップ） ── */
       .log-card-visit { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(232,228,220,0.07); }
@@ -291,10 +295,10 @@ export default function ServiceLog({ withSideNav = false }) {
             ? (log.provider_type === 'affiliate' ? `/affiliate/${log.provider_slug}` : `/provider/${log.provider_slug}`)
             : null;
           const since = weeksSince(log.last_visit);
-          const freq = effectiveFreqWeeks(log);
+          const freq = effectiveFreq(log);
           // 頻度が未設定でも軸の推奨で月額を出す（出さないと合計と食い違って見える）
           const m = monthlyCost(log.cost, freq);
-          const costIsEstimated = !log.frequency_weeks;
+          const costIsEstimated = !!freq?.estimated;
           const untilIdeal = daysUntilIdeal(log);
 
           // 予約日が未設定でも「そろそろ」を出す（前回＋頻度から算出）
@@ -303,7 +307,7 @@ export default function ServiceLog({ withSideNav = false }) {
             if (untilIdeal < 0) {
               dueChip = `<span class="log-chip chip-next-overdue">目安を ${-untilIdeal}日 過ぎています</span>`;
             } else if (untilIdeal <= 7) {
-              dueChip = `<span class="log-chip chip-next-soon">あと${untilIdeal}日で ${freq}週</span>`;
+              dueChip = `<span class="log-chip chip-next-soon">あと${untilIdeal}日で ${esc(formatFreq(freq))}</span>`;
             } else {
               dueChip = `<span class="log-chip" style="opacity:.5">次の目安 ${idealNextDate(log)}</span>`;
             }
@@ -324,7 +328,7 @@ export default function ServiceLog({ withSideNav = false }) {
               <div class="log-card-schedule">
                 ${log.last_visit ? `<span class="log-chip">前回 ${log.last_visit}${since !== null ? `（${since}週前）` : ''}</span>` : '<span class="log-chip" style="opacity:.45">前回未記録</span>'}
                 ${log.next_visit ? `<span class="log-chip ${chipClass}">次回 ${log.next_visit}${nextDays ? `（${nextDays}）` : ''}</span>` : dueChip}
-                ${freq ? `<span class="log-chip">🔄 ${freq}週ごと${log.frequency_weeks ? '' : '（目安）'}</span>` : ''}
+                ${freq ? `<span class="log-chip">🔄 ${esc(formatFreq(freq))}${freq.estimated ? '（目安）' : ''}</span>` : ''}
                 ${log.cost ? `<span class="log-chip log-chip-cost">1回 ${formatYen(log.cost)}${m !== null ? ` · 月 ${costIsEstimated ? '約' : ''}${formatYen(m)}` : ''}</span>` : ''}
               </div>
               ${log.memo ? `<p class="log-card-memo">📝 ${esc(log.memo)}</p>` : ''}
@@ -370,7 +374,9 @@ export default function ServiceLog({ withSideNav = false }) {
       document.getElementById('log-f-axis').innerHTML = axisOptions;
       document.getElementById('log-f-custom-label').value = isCustom ? log.axis : '';
       document.getElementById('log-f-name').value = log?.name || '';
-      document.getElementById('log-f-freq').value = log?.frequency_weeks || '';
+      document.getElementById('log-f-freq').value = log?.frequency_months || log?.frequency_weeks || '';
+      document.getElementById('log-f-freq-unit').value = log?.frequency_months ? 'month' : 'week';
+      renderFreqPresets();
       document.getElementById('log-f-last').value = log?.last_visit || '';
       document.getElementById('log-f-next').value = log?.next_visit || '';
       document.getElementById('log-f-cost').value = log?.cost || '';
@@ -415,13 +421,37 @@ export default function ServiceLog({ withSideNav = false }) {
       }
     }
 
+    // ── 頻度（週 / ヶ月）──
+    function freqNumValue() {
+      return parseInt(document.getElementById('log-f-freq')?.value) || null;
+    }
+    function freqUnitValue() {
+      return document.getElementById('log-f-freq-unit')?.value === 'month' ? 'month' : 'week';
+    }
+
+    // よく使う頻度をワンタップで入れられるようにする（毎回数字を打たせない）
+    function renderFreqPresets() {
+      const el = document.getElementById('log-freq-presets');
+      if (!el) return;
+      const curVal = freqNumValue();
+      const curUnit = freqUnitValue();
+      el.innerHTML = FREQ_PRESETS.map(p => {
+        const active = curVal === p.value && curUnit === p.unit;
+        return `<button type="button" class="log-freq-chip${active ? ' selected' : ''}" data-fv="${p.value}" data-fu="${p.unit}">${p.label}</button>`;
+      }).join('');
+    }
+
     function autoFillNext() {
       const last = document.getElementById('log-f-last')?.value;
-      const freq = parseInt(document.getElementById('log-f-freq')?.value);
+      const num = freqNumValue();
       const nextInput = document.getElementById('log-f-next');
-      if (last && freq && nextInput && !nextInput.value) {
-        nextInput.value = calcIdealNext(last, freq) || '';
-      }
+      if (!last || !num || !nextInput || nextInput.value) return;
+      // 月単位は月で加算する（4週=28日で回すと月をまたぐたびにズレるため）
+      nextInput.value = idealNextDate({
+        last_visit: last,
+        frequency_weeks: freqUnitValue() === 'week' ? num : null,
+        frequency_months: freqUnitValue() === 'month' ? num : null,
+      }) || '';
     }
 
     // ── 保存 ──
@@ -437,7 +467,8 @@ export default function ServiceLog({ withSideNav = false }) {
         axis: axisSel === CUSTOM_AXIS ? customLabel : axisSel,
         custom_icon: axisSel === CUSTOM_AXIS ? customIcon : null,
         name,
-        frequency_weeks: parseInt(document.getElementById('log-f-freq').value) || null,
+        frequency_weeks: freqUnitValue() === 'week' ? freqNumValue() : null,
+        frequency_months: freqUnitValue() === 'month' ? freqNumValue() : null,
         last_visit: document.getElementById('log-f-last').value || null,
         next_visit: document.getElementById('log-f-next').value || null,
         cost: parseInt(document.getElementById('log-f-cost').value) || null,
@@ -516,7 +547,16 @@ export default function ServiceLog({ withSideNav = false }) {
     });
     document.getElementById('log-f-axis')?.addEventListener('change', updateAxisUi);
     document.getElementById('log-f-last')?.addEventListener('change', autoFillNext);
-    document.getElementById('log-f-freq')?.addEventListener('change', autoFillNext);
+    document.getElementById('log-f-freq')?.addEventListener('change', () => { renderFreqPresets(); autoFillNext(); });
+    document.getElementById('log-f-freq-unit')?.addEventListener('change', () => { renderFreqPresets(); autoFillNext(); });
+    document.getElementById('log-freq-presets')?.addEventListener('click', e => {
+      const chip = e.target.closest('.log-freq-chip');
+      if (!chip) return;
+      document.getElementById('log-f-freq').value = chip.dataset.fv;
+      document.getElementById('log-f-freq-unit').value = chip.dataset.fu;
+      renderFreqPresets();
+      autoFillNext();
+    });
     document.getElementById('log-icon-picker')?.addEventListener('click', e => {
       const btn = e.target.closest('.log-icon-choice');
       if (!btn) return;
@@ -583,17 +623,23 @@ export default function ServiceLog({ withSideNav = false }) {
             <div id="log-provider-results" className="log-provider-result" />
           </div>
 
-          <div className="log-modal-row">
-            <div className="log-field">
-              <label>頻度（週ごと）</label>
-              <input id="log-f-freq" type="number" placeholder="例：4" min="1" max="52" />
-              <p id="log-freq-hint" className="log-field-hint" />
+          <div className="log-field">
+            <label>頻度</label>
+            <div id="log-freq-presets" className="log-freq-presets" />
+            <div className="log-freq-row">
+              <input id="log-f-freq" type="number" placeholder="例：1" min="1" max="52" />
+              <select id="log-f-freq-unit">
+                <option value="week">週ごと</option>
+                <option value="month">ヶ月ごと</option>
+              </select>
             </div>
-            <div className="log-field">
-              <label>1回あたりの費用（任意）</label>
-              <input id="log-f-cost" type="number" placeholder="例：6000" min="0" step="100" />
-              <p className="log-field-hint">頻度と合わせて月額を計算します</p>
-            </div>
+            <p id="log-freq-hint" className="log-field-hint" />
+          </div>
+
+          <div className="log-field">
+            <label>1回あたりの費用（任意）</label>
+            <input id="log-f-cost" type="number" placeholder="例：6000" min="0" step="100" />
+            <p className="log-field-hint">頻度と合わせて月額を計算します</p>
           </div>
 
           <div className="log-modal-row">

@@ -8,7 +8,7 @@ const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function isMissingV2Column(error) {
   if (!error) return false;
   return (error.code === '42703' || error.code === 'PGRST204')
-    && /custom_icon|cost/i.test(error.message || '');
+    && /custom_icon|cost|frequency_months/i.test(error.message || '');
 }
 
 async function getUser(request) {
@@ -24,7 +24,7 @@ export async function PUT(request, { params }) {
 
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
-  const { axis, name, custom_icon, provider_slug, provider_type, frequency_weeks, last_visit, next_visit, memo, cost } = body;
+  const { axis, name, custom_icon, provider_slug, provider_type, frequency_weeks, frequency_months, last_visit, next_visit, memo, cost } = body;
 
   const update = { updated_at: new Date().toISOString() };
   if (axis            !== undefined) update.axis            = String(axis).trim();
@@ -32,6 +32,7 @@ export async function PUT(request, { params }) {
   if (provider_slug   !== undefined) update.provider_slug   = provider_slug || null;
   if (provider_type   !== undefined) update.provider_type   = provider_type || null;
   if (frequency_weeks !== undefined) update.frequency_weeks = frequency_weeks ? Number(frequency_weeks) : null;
+  if (frequency_months !== undefined) update.frequency_months = frequency_months ? Number(frequency_months) : null;
   if (last_visit      !== undefined) update.last_visit      = last_visit || null;
   if (next_visit      !== undefined) update.next_visit      = next_visit || null;
   if (memo            !== undefined) update.memo            = memo ? String(memo).trim() : null;
@@ -56,7 +57,7 @@ export async function PUT(request, { params }) {
 
   // v2カラム未適用でも更新自体は通す
   if (isMissingV2Column(error) || /last_notified_at/i.test(error.message || '')) {
-    const { custom_icon: _i, cost: _c, last_notified_at: _n, ...legacyUpdate } = update;
+    const { custom_icon: _i, cost: _c, frequency_months: _fm, last_notified_at: _n, ...legacyUpdate } = update;
     const legacy = await run(legacyUpdate);
     if (legacy.error) return Response.json({ error: legacy.error.message }, { status: 500 });
     return Response.json({ ok: true, log: legacy.data, pending_migration: true });
