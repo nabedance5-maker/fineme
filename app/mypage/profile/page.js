@@ -40,6 +40,26 @@ export default function MypageProfilePage() {
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [lineMsg, setLineMsg] = useState('');
+  const [lineTesting, setLineTesting] = useState(false);
+
+  // 連携できていても公式アカウントを友だち追加していないと届かないため、
+  // 本人がその場で切り分けられるようにする
+  async function sendLineTest() {
+    setLineMsg('');
+    setLineTesting(true);
+    try {
+      const r = await fetch('/api/me/line-test', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const d = await r.json();
+      setLineMsg(d.message || (d.ok ? '送信しました' : '送信できませんでした'));
+    } catch {
+      setLineMsg('送信できませんでした。時間をおいて試してください。');
+    } finally {
+      setLineTesting(false);
+    }
+  }
 
   useEffect(() => {
     const sbKey = Object.keys(localStorage).find(
@@ -296,13 +316,35 @@ export default function MypageProfilePage() {
               {/* LINE 連携セクション */}
               <div style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px' }}>
                 <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 6px' }}>LINE 連携</p>
-                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>連携すると、診断完了後に変容リマインドがLINEで届きます。</p>
+                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>
+                  連携すると、New Me Log の「そろそろの時期」や予約リマインドがLINEで届きます。
+                  <br />
+                  <span style={{ color: 'rgba(232,228,220,0.4)' }}>※ Fineme公式アカウントを友だち追加していないと届きません（連携時に一緒に追加できます）</span>
+                </p>
                 {lineUserId ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(6,200,99,0.07)', border: '1px solid rgba(6,200,99,0.3)', borderRadius: '10px', padding: '10px 14px' }}>
-                    <span style={{ fontSize: '18px' }}>✅</span>
-                    <div>
-                      <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#059669' }}>LINE連携済み</p>
-                      <p style={{ margin: 0, fontSize: '11px', color: 'rgba(232,228,220,0.55)' }}>リマインドが届く設定になっています</p>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(6,200,99,0.07)', border: '1px solid rgba(6,200,99,0.3)', borderRadius: '10px', padding: '10px 14px' }}>
+                      <span style={{ fontSize: '18px' }}>✅</span>
+                      <div>
+                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#059669' }}>LINE連携済み</p>
+                        <p style={{ margin: 0, fontSize: '11px', color: 'rgba(232,228,220,0.55)' }}>実際に届くかは、下のボタンで確認できます</p>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={sendLineTest}
+                        disabled={lineTesting}
+                        style={{ padding: '9px 18px', background: 'rgba(6,200,99,0.1)', border: '1px solid rgba(6,200,99,0.4)', borderRadius: '9px', fontSize: '13px', fontWeight: 700, color: '#059669', cursor: lineTesting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+                      >
+                        {lineTesting ? '送信中…' : '📡 テスト通知を送る'}
+                      </button>
+                      <a
+                        href={`/api/me/line-connect?user_id=${userId || ''}`}
+                        style={{ padding: '9px 18px', background: 'transparent', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '9px', fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.5)', textDecoration: 'none' }}
+                      >
+                        連携をやり直す
+                      </a>
                     </div>
                   </div>
                 ) : (

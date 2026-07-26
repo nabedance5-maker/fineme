@@ -23,6 +23,11 @@ export async function GET(request) {
   lineAuthUrl.searchParams.set('redirect_uri', callbackUrl);
   lineAuthUrl.searchParams.set('state', state);
   lineAuthUrl.searchParams.set('scope', 'profile');
+  // 同意画面で公式アカウントの友だち追加も促す。
+  // Messaging API の push は「友だちになっているユーザー」にしか送れないため、
+  // LINE Login で連携しただけでは通知が届かない（403 になる）。
+  // ※ LINE Developers で Login チャネルに公式アカウントがリンクされている必要がある
+  lineAuthUrl.searchParams.set('bot_prompt', 'aggressive');
 
   return Response.redirect(lineAuthUrl.toString());
 }
