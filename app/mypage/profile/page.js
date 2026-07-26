@@ -319,7 +319,7 @@ export default function MypageProfilePage() {
                 <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>
                   連携すると、New Me Log の「そろそろの時期」や予約リマインドがLINEで届きます。
                   <br />
-                  <span style={{ color: 'rgba(232,228,220,0.4)' }}>※ Fineme公式アカウントを友だち追加していないと届きません（連携時に一緒に追加できます）</span>
+                  <span style={{ color: 'rgba(232,228,220,0.4)' }}>連携時に Fineme公式アカウントの友だち追加もあわせて行われます</span>
                 </p>
                 {lineUserId ? (
                   <div>
@@ -327,7 +327,7 @@ export default function MypageProfilePage() {
                       <span style={{ fontSize: '18px' }}>✅</span>
                       <div>
                         <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#059669' }}>LINE連携済み</p>
-                        <p style={{ margin: 0, fontSize: '11px', color: 'rgba(232,228,220,0.55)' }}>実際に届くかは、下のボタンで確認できます</p>
+                        <p style={{ margin: 0, fontSize: '11px', color: 'rgba(232,228,220,0.55)' }}>New Me Log の通知は、下のボタンで実物を確認できます</p>
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
@@ -337,7 +337,7 @@ export default function MypageProfilePage() {
                         disabled={lineTesting}
                         style={{ padding: '9px 18px', background: 'rgba(6,200,99,0.1)', border: '1px solid rgba(6,200,99,0.4)', borderRadius: '9px', fontSize: '13px', fontWeight: 700, color: '#059669', cursor: lineTesting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
                       >
-                        {lineTesting ? '送信中…' : '📡 テスト通知を送る'}
+                        {lineTesting ? '送信中…' : '📡 Logの通知を試し送りする'}
                       </button>
                       <a
                         href={`/api/me/line-connect?user_id=${userId || ''}`}
