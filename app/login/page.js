@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { syncLocalDiagnosisToServer } from '@/lib/track';
+import { syncLocalLogsToServer } from '@/lib/log-store';
 
 const SUPABASE_URL = 'https://qsfpzlvucqzmjldshwwd.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODM1MzIsImV4cCI6MjA4ODU1OTUzMn0.9mBlP8-0l9jotex_UkX7Ba8ZodYtailaxoK_RIy3Kq8';
@@ -12,6 +13,8 @@ const SITE_URL = 'https://fineme.me';
 async function syncLocalDiagnosis(accessToken) {
   // 男性版・Belle版の両方を引き継ぐ（lib/track.js に共通化）
   await syncLocalDiagnosisToServer(accessToken);
+  // New Me Log のゲスト記録も同じタイミングで引き継ぐ
+  await syncLocalLogsToServer(accessToken);
 }
 
 export default function LoginPage() {

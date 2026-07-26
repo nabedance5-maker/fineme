@@ -1,4 +1,4 @@
--- ⏳ 未適用（Supabase SQL Editor で実行してください）
+-- ✅ 本番適用済 2026-07-26
 -- diagnosis_results を「1ユーザー1行」から「1ユーザー×トラックごとに1行」へ。
 --
 -- 問題：/api/me/diagnosis が .single() ＋ upsert(onConflict:'user_id') だったため、

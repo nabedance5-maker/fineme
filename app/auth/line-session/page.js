@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { syncLocalDiagnosisToServer } from '@/lib/track';
+import { syncLocalLogsToServer } from '@/lib/log-store';
 
 const sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -14,6 +15,8 @@ const sb = createClient(
 async function syncLocalDiagnosis(accessToken) {
   // 男性版・Belle版の両方を引き継ぐ（lib/track.js に共通化）
   await syncLocalDiagnosisToServer(accessToken);
+  // New Me Log のゲスト記録も同じタイミングで引き継ぐ
+  await syncLocalLogsToServer(accessToken);
 }
 
 export default function LineSessionPage() {
