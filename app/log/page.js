@@ -2,15 +2,15 @@ import ServiceLog from '@/app/_components/ServiceLog';
 import Link from 'next/link';
 
 export const metadata = {
-  title: '通っているものを1枚で管理 | New Me Log — Fineme',
+  title: '美容室、前いつ行ったっけ？をなくす | New Me Log — Fineme',
   description:
-    '美容室・ネイル・ジム・エステ…。定期的に通っているものを1枚で管理して、次に行くタイミングと、月にかかっている費用が一目で分かります。登録不要ですぐ使えます。',
+    '美容室・眉サロン・ネイル・ジム。前回行った日を入れるだけで、次に行く時期を自動計算。そろそろの時期にLINEで知らせます。月にいくら使っているかも分かります。登録不要ですぐ使えます。',
   alternates: { canonical: 'https://www.fineme.me/log' },
   robots: { index: true, follow: true },
   openGraph: {
-    title: '通っているものを1枚で管理 — New Me Log',
+    title: '「前いつ行ったっけ？」を、なくす — New Me Log',
     description:
-      '次に行くタイミングと、月にかかっている費用が一目で分かる。美容室・ネイル・ジムの記録帳。',
+      '美容室・眉サロン・ネイル・ジム。そろそろの時期をLINEで知らせて、月にいくら使っているかも分かる記録帳。',
     url: 'https://www.fineme.me/log',
     siteName: 'Fineme',
     locale: 'ja_JP',

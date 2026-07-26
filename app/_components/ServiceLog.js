@@ -4,6 +4,7 @@ import useTrack from '@/app/_hooks/useTrack';
 import {
   axisChoicesFor, resolveAxis, CUSTOM_AXIS, CUSTOM_ICON_CHOICES, DEFAULT_CUSTOM_ICON,
   monthlyCost, costSummary, formatYen, BUDGET_LABELS,
+  effectiveFreqWeeks, idealNextDate, daysUntilIdeal,
 } from '@/lib/log-axes';
 import { listLogs, createLog, updateLog, removeLog, getAccessToken } from '@/lib/log-store';
 
@@ -126,6 +127,16 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-cost-budget p { font-size: 12px; color: rgba(232,228,220,0.55); margin: 0 0 3px; line-height: 1.7; }
       .log-chip-cost { border-color: rgba(201,168,76,0.35) !important; color: rgba(201,168,76,0.85) !important; }
 
+      /* ── 「行った」の記録（1タップ） ── */
+      .log-card-visit { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(232,228,220,0.07); }
+      .log-visit-today, .log-visit-pick { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; box-sizing: border-box; }
+      .log-visit-today { background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.4); color: #c9a84c; }
+      .log-visit-today:hover { background: rgba(201,168,76,0.2); }
+      .log-visit-pick { background: rgba(232,228,220,0.04); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); position: relative; }
+      .log-visit-pick:hover { border-color: rgba(201,168,76,0.4); color: rgba(232,228,220,0.85); }
+      /* input はラベル内に隠すが、クリック領域として生かす（ネイティブのカレンダーが開く） */
+      .log-visit-pick input[type="date"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: none; padding: 0; }
+
       /* ── カスタム軸のアイコン選択 ── */
       .log-icon-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
       .log-icon-choice { width: 38px; height: 38px; font-size: 18px; line-height: 1; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.12); border-radius: 10px; cursor: pointer; transition: all .12s; }
@@ -234,10 +245,10 @@ export default function ServiceLog({ withSideNav = false }) {
       if (isLoggedIn() || !logs.length) return '';
       return `
         <div class="log-guest-cta">
-          <p class="log-guest-cta-title">🔔 そろそろの時期にLINEで知らせる</p>
+          <p class="log-guest-cta-title">🔔「そろそろ眉、予約したら？」をLINEで受け取る</p>
           <p class="log-guest-cta-desc">
-            いまはこの端末に保存されています。アカウントを作ると、次のタイミングが近づいた時に
-            LINEで届き、どの端末からでも同じ記録を開けます。
+            いまはこの端末に保存されています。アカウントを作ると、
+            前回から目安の時期が近づいた時にLINEで届き、どの端末からでも同じ記録を開けます。
           </p>
           <a href="/login?mode=signup&next=/mypage/log" class="log-guest-cta-btn">無料アカウントを作る →</a>
           <p class="log-guest-cta-note">登録1分 · クレカ不要 · 登録済みの内容はそのまま引き継がれます</p>
@@ -249,17 +260,17 @@ export default function ServiceLog({ withSideNav = false }) {
       const header = `
         <div class="log-header">
           <p class="log-header-eyebrow">New Me Log</p>
-          <h1><em>通っているものを、1枚で</em></h1>
-          <p class="log-header-sub">美容室・ネイル・ジム…。次のタイミングと、かかっている費用が一目で分かります。</p>
+          <h1><em>「前いつ行ったっけ？」を、なくす</em></h1>
+          <p class="log-header-sub">美容室・眉サロン・ネイル・ジム。登録しておくと、そろそろの時期にLINEで知らせます。月にいくら使っているかも分かります。</p>
         </div>`;
 
       if (!logs.length) {
         root.innerHTML = `
           ${header}
-          <button class="log-add-btn" id="log-open-add">＋ 最初の1件を登録する</button>
+          <button class="log-add-btn" id="log-open-add">＋ 美容室から登録してみる</button>
           <div class="log-empty">
-            <div class="log-empty-icon">📖</div>
-            <p class="log-empty-text">美容室・ネイル・ジム・エステなど、<br>定期的に通っているものを登録してください。<br>次に行くタイミングを自動で計算します。</p>
+            <div class="log-empty-icon">💇</div>
+            <p class="log-empty-text">まず1つ、通っているところを登録してください。<br>前回行った日を入れるだけで、<br>次に行く時期を自動で計算します。</p>
           </div>`;
         bindEvents();
         return;
@@ -279,10 +290,22 @@ export default function ServiceLog({ withSideNav = false }) {
             ? (log.provider_type === 'affiliate' ? `/affiliate/${log.provider_slug}` : `/provider/${log.provider_slug}`)
             : null;
           const m = monthlyCost(log.cost, log.frequency_weeks);
-          const idealFreqText = def.freq
-            ? `理想：${def.freq.min === def.freq.max ? def.freq.min : `${def.freq.min}〜${def.freq.max}`}${def.freq.unit}ごと`
-            : '';
           const since = weeksSince(log.last_visit);
+          const freq = effectiveFreqWeeks(log);
+          const untilIdeal = daysUntilIdeal(log);
+
+          // 予約日が未設定でも「そろそろ」を出す（前回＋頻度から算出）
+          let dueChip = '';
+          if (!log.next_visit && untilIdeal !== null) {
+            if (untilIdeal < 0) {
+              dueChip = `<span class="log-chip chip-next-overdue">目安を ${-untilIdeal}日 過ぎています</span>`;
+            } else if (untilIdeal <= 7) {
+              dueChip = `<span class="log-chip chip-next-soon">あと${untilIdeal}日で ${freq}週</span>`;
+            } else {
+              dueChip = `<span class="log-chip" style="opacity:.5">次の目安 ${idealNextDate(log)}</span>`;
+            }
+          }
+
           return `
             <div class="log-card" data-id="${log.id}">
               <div class="log-card-top">
@@ -296,13 +319,19 @@ export default function ServiceLog({ withSideNav = false }) {
                 </div>
               </div>
               <div class="log-card-schedule">
-                ${log.last_visit ? `<span class="log-chip">前回 ${log.last_visit}${since !== null ? `（${since}週前）` : ''}</span>` : ''}
-                ${log.next_visit ? `<span class="log-chip ${chipClass}">次回 ${log.next_visit}${nextDays ? `（${nextDays}）` : ''}</span>` : '<span class="log-chip" style="opacity:.45">次回未設定</span>'}
-                ${log.frequency_weeks ? `<span class="log-chip">🔄 ${log.frequency_weeks}週ごと</span>` : ''}
+                ${log.last_visit ? `<span class="log-chip">前回 ${log.last_visit}${since !== null ? `（${since}週前）` : ''}</span>` : '<span class="log-chip" style="opacity:.45">前回未記録</span>'}
+                ${log.next_visit ? `<span class="log-chip ${chipClass}">次回 ${log.next_visit}${nextDays ? `（${nextDays}）` : ''}</span>` : dueChip}
+                ${freq ? `<span class="log-chip">🔄 ${freq}週ごと${log.frequency_weeks ? '' : '（目安）'}</span>` : ''}
                 ${log.cost ? `<span class="log-chip log-chip-cost">1回 ${formatYen(log.cost)}${m !== null ? ` · 月 ${formatYen(m)} 相当` : ''}</span>` : ''}
               </div>
               ${log.memo ? `<p class="log-card-memo">📝 ${esc(log.memo)}</p>` : ''}
-              ${idealFreqText && !log.frequency_weeks ? `<p class="log-card-ideal">💡 ${idealFreqText}</p>` : ''}
+              <div class="log-card-visit">
+                <button class="log-visit-today" data-visit-today="${log.id}">✓ 今日行った</button>
+                <label class="log-visit-pick">
+                  📅 日付を選ぶ
+                  <input type="date" data-visit-date="${log.id}" />
+                </label>
+              </div>
             </div>`;
         }).join('');
         return `<div class="log-axis-section">
@@ -429,6 +458,20 @@ export default function ServiceLog({ withSideNav = false }) {
       }
     }
 
+    // 「行った」を1タップで記録する。
+    // 予約日（next_visit）は消化されたので空に戻し、次のサイクルを始める。
+    // 次に行く目安は last_visit + 頻度 から自動で出るため、入力させない。
+    async function markVisited(id, dateStr) {
+      if (!dateStr) return;
+      try {
+        await updateLog(id, { last_visit: dateStr, next_visit: null });
+        await fetchLogs();
+        render();
+      } catch (e) {
+        alert('記録に失敗しました: ' + e.message);
+      }
+    }
+
     async function deleteLog(id) {
       if (!confirm('この記録を削除しますか？')) return;
       await removeLog(id);
@@ -449,6 +492,18 @@ export default function ServiceLog({ withSideNav = false }) {
       if (editBtn) { openModal(logs.find(l => String(l.id) === editBtn.dataset.edit)); return; }
       const delBtn = e.target.closest('[data-del]');
       if (delBtn) { deleteLog(delBtn.dataset.del); return; }
+      const todayBtn = e.target.closest('[data-visit-today]');
+      if (todayBtn) {
+        markVisited(todayBtn.dataset.visitToday, new Date().toISOString().slice(0, 10));
+        return;
+      }
+    });
+
+    // 日付を選んで記録（label 内の date input がネイティブのカレンダーを開く）
+    root.addEventListener('change', e => {
+      const dateInput = e.target.closest('[data-visit-date]');
+      if (!dateInput) return;
+      markVisited(dateInput.dataset.visitDate, dateInput.value);
     });
 
     document.getElementById('log-modal-save')?.addEventListener('click', saveLog);

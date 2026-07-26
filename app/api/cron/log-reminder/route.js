@@ -5,7 +5,7 @@
 // 1ユーザー1通にまとめ、同じ next_visit サイクルでは二度送らない。
 import { getSupabase } from '@/lib/supabase';
 import { sendLinePush } from '@/lib/line-push';
-import { resolveAxis } from '@/lib/log-axes';
+import { resolveAxis, effectiveFreqWeeks, idealNextDate } from '@/lib/log-axes';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,26 +44,19 @@ export async function GET(request) {
     return Response.json({ sent: 0, skipped: 'weekly-nudge-day', date: todayStr });
   }
 
-  // 通知対象の上限日（notify_days_before の最大を見込んで広めに取り、後で個別判定する）
-  const horizon = new Date(today);
-  horizon.setDate(horizon.getDate() + 14);
-  const horizonStr = horizon.toISOString().slice(0, 10);
+  // next_visit がある行（予約済み）と無い行（前回だけ記録）の両方を見るため、
+  // active な行をまとめて取り、判定はアプリ側で行う。
+  const COLS_V2 = 'id, user_id, axis, custom_icon, name, last_visit, next_visit, frequency_weeks, notify_enabled, notify_days_before, last_notified_at';
+  const COLS_LEGACY = 'id, user_id, axis, name, last_visit, next_visit, frequency_weeks';
 
   let { data: logs, error } = await db
     .from('user_service_logs')
-    .select('id, user_id, axis, custom_icon, name, last_visit, next_visit, frequency_weeks, notify_enabled, notify_days_before, last_notified_at')
-    .eq('active', true)
-    .not('next_visit', 'is', null)
-    .lte('next_visit', horizonStr);
+    .select(COLS_V2)
+    .eq('active', true);
 
   if (error && isMissingColumn(error)) {
     // マイグレーション未適用：通知設定カラム無しで取得し、既定値で扱う
-    const legacy = await db
-      .from('user_service_logs')
-      .select('id, user_id, axis, name, last_visit, next_visit, frequency_weeks')
-      .eq('active', true)
-      .not('next_visit', 'is', null)
-      .lte('next_visit', horizonStr);
+    const legacy = await db.from('user_service_logs').select(COLS_LEGACY).eq('active', true);
     if (legacy.error) {
       console.error('[cron/log-reminder] fetch error', legacy.error);
       return Response.json({ error: legacy.error.message }, { status: 500 });
@@ -78,18 +71,36 @@ export async function GET(request) {
   }
   if (!logs?.length) return Response.json({ sent: 0, date: todayStr });
 
-  // 個別に「通知すべきか」を判定する
-  const due = logs.filter(l => {
-    if (l.notify_enabled === false) return false;
-    const daysBefore = Number.isInteger(l.notify_days_before) ? l.notify_days_before : 3;
-    const diff = Math.round((new Date(l.next_visit) - today) / 86400000);
-    if (diff > daysBefore) return false;
-    // 同じサイクルで送信済みならスキップ（毎日ナグらない）
-    if (l.last_notified_at && new Date(l.last_notified_at) >= new Date(l.next_visit).getTime() - daysBefore * 86400000) {
-      return false;
+  // 予約済みの再送を防ぐ窓（この日数以内に送っていたら送らない）
+  const RESEND_GUARD_DAYS = 10;
+  // 予約がまだの時に声をかけ始める日数（目安日の何日前から）
+  const BOOKING_LEAD_DAYS = 5;
+
+  // 通知すべきものを2種類に分けて拾う
+  //   A: 予約日が近い（リマインド）
+  //   B: 予約はまだだが、前回＋頻度の目安が近い（予約を促す）— でお要望 2026-07-26
+  const due = [];
+  for (const l of logs) {
+    if (l.notify_enabled === false) continue;
+
+    // 同じサイクルで送信済みなら飛ばす（毎日ナグらない）
+    const notifiedRecently = l.last_notified_at
+      && (today - new Date(l.last_notified_at)) / 86400000 < RESEND_GUARD_DAYS;
+    if (notifiedRecently) continue;
+
+    if (l.next_visit) {
+      const daysBefore = Number.isInteger(l.notify_days_before) ? l.notify_days_before : 3;
+      const diff = Math.round((new Date(l.next_visit) - today) / 86400000);
+      if (diff <= daysBefore) due.push({ ...l, kind: 'reminder', diff });
+      continue;
     }
-    return true;
-  });
+
+    // 予約日が未設定：前回＋頻度の目安から判定する
+    const ideal = idealNextDate(l);
+    if (!ideal) continue;
+    const diff = Math.round((new Date(ideal) - today) / 86400000);
+    if (diff <= BOOKING_LEAD_DAYS) due.push({ ...l, kind: 'booking', diff });
+  }
 
   if (!due.length) return Response.json({ sent: 0, date: todayStr });
 
@@ -114,21 +125,42 @@ export async function GET(request) {
     const lineUserId = lineMap[userId];
     if (!lineUserId) continue;
 
-    const items = byUser[userId].map(l => {
-      const def = resolveAxis(l.axis, l.custom_icon);
-      const w = weeksSince(l.last_visit);
-      const since = w !== null ? ` — 前回から${w}週間` : '';
-      return `${def.icon} ${def.label}（${l.name}）${since}`;
-    });
+    const mine = byUser[userId];
+    const booking = mine.filter(l => l.kind === 'booking');
+    const reminder = mine.filter(l => l.kind === 'reminder');
 
-    const text = [
-      'おはようございます。',
-      '',
-      ...items,
-      '',
-      'そろそろのタイミングです。',
-      '▸ https://www.fineme.me/mypage/log',
-    ].join('\n');
+    const lines = ['おはようございます。', ''];
+
+    // 予約がまだのもの＝「そろそろ予約どうですか」
+    if (booking.length) {
+      for (const l of booking) {
+        const def = resolveAxis(l.axis, l.custom_icon);
+        const w = weeksSince(l.last_visit);
+        const freq = effectiveFreqWeeks(l);
+        const since = w !== null ? `前回から${w}週間` : '';
+        const cycle = freq ? `（${freq}週ごとが目安）` : '';
+        lines.push(`${def.icon} ${def.label}（${l.name}）`);
+        lines.push(`　${since}${cycle}`);
+      }
+      lines.push('');
+      lines.push('そろそろ予約しておくと安心です。');
+    }
+
+    // 予約済みで日が近いもの＝リマインド
+    if (reminder.length) {
+      if (booking.length) lines.push('');
+      for (const l of reminder) {
+        const def = resolveAxis(l.axis, l.custom_icon);
+        const when = l.diff <= 0 ? '今日' : `${l.diff}日後`;
+        lines.push(`${def.icon} ${def.label}（${l.name}）— ${when} ${l.next_visit}`);
+      }
+      lines.push('');
+      lines.push('予約が近づいています。');
+    }
+
+    lines.push('');
+    lines.push('▸ https://www.fineme.me/mypage/log');
+    const text = lines.join('\n');
 
     const res = await sendLinePush(lineUserId, text);
     if (res.ok) {
