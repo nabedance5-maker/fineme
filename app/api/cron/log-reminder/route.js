@@ -6,6 +6,7 @@
 import { getSupabase } from '@/lib/supabase';
 import { sendLinePush } from '@/lib/line-push';
 import { resolveAxis, effectiveFreqWeeks, idealNextDate } from '@/lib/log-axes';
+import { buildLogMessage } from '@/lib/log-voice';
 
 export const dynamic = 'force-dynamic';
 
@@ -126,41 +127,28 @@ export async function GET(request) {
     if (!lineUserId) continue;
 
     const mine = byUser[userId];
-    const booking = mine.filter(l => l.kind === 'booking');
-    const reminder = mine.filter(l => l.kind === 'reminder');
+    const booking = mine
+      .filter(l => l.kind === 'booking')
+      .map(l => ({
+        axis: l.axis,
+        custom_icon: l.custom_icon,
+        name: l.name,
+        weeksSince: weeksSince(l.last_visit),
+        freq: effectiveFreqWeeks(l),
+        overdueDays: l.diff < 0 ? -l.diff : 0,
+      }));
+    const reminder = mine
+      .filter(l => l.kind === 'reminder')
+      .map(l => ({
+        axis: l.axis,
+        custom_icon: l.custom_icon,
+        name: l.name,
+        next_visit: l.next_visit,
+        diff: l.diff,
+      }));
 
-    const lines = ['おはようございます。', ''];
-
-    // 予約がまだのもの＝「そろそろ予約どうですか」
-    if (booking.length) {
-      for (const l of booking) {
-        const def = resolveAxis(l.axis, l.custom_icon);
-        const w = weeksSince(l.last_visit);
-        const freq = effectiveFreqWeeks(l);
-        const since = w !== null ? `前回から${w}週間` : '';
-        const cycle = freq ? `（${freq}週ごとが目安）` : '';
-        lines.push(`${def.icon} ${def.label}（${l.name}）`);
-        lines.push(`　${since}${cycle}`);
-      }
-      lines.push('');
-      lines.push('そろそろ予約しておくと安心です。');
-    }
-
-    // 予約済みで日が近いもの＝リマインド
-    if (reminder.length) {
-      if (booking.length) lines.push('');
-      for (const l of reminder) {
-        const def = resolveAxis(l.axis, l.custom_icon);
-        const when = l.diff <= 0 ? '今日' : `${l.diff}日後`;
-        lines.push(`${def.icon} ${def.label}（${l.name}）— ${when} ${l.next_visit}`);
-      }
-      lines.push('');
-      lines.push('予約が近づいています。');
-    }
-
-    lines.push('');
-    lines.push('▸ https://www.fineme.me/mypage/log');
-    const text = lines.join('\n');
+    // 文面は lib/log-voice.js（航海のクルーの声・日替わりで言い回しが変わる）
+    const text = buildLogMessage(booking, reminder, resolveAxis);
 
     const res = await sendLinePush(lineUserId, text);
     if (res.ok) {
