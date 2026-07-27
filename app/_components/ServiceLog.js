@@ -122,34 +122,37 @@ export default function ServiceLog({ withSideNav = false }) {
       /* 背景の罫線に合わせた絶対配置。単位は cqw（カード幅基準）で拡縮に追従させる */
       .lfv-abs { position: absolute; left: 0; right: 0; text-align: center; }
 
-      .lfv-brand { top: 9.4%; font-size: 4.6cqw; letter-spacing: .12em; color: #473020;
+      .lfv-brand { top: 13.67%; transform: translateY(-100%); padding-bottom: 1cqw; font-size: 4.2cqw; letter-spacing: .12em; color: #473020;
                    font-family: 'Noto Serif JP', Georgia, serif; }
-      .lfv-date  { top: 9.4%; font-size: 3.1cqw; letter-spacing: .06em; color: rgba(71,48,32,.75);
+      .lfv-date  { top: 13.67%; transform: translateY(-100%); padding-bottom: 1.2cqw; font-size: 3.1cqw; letter-spacing: .06em; color: rgba(71,48,32,.75);
                    font-variant-numeric: tabular-nums; }
 
-      .lfv-label { top: 20.5%; font-size: 3.1cqw; letter-spacing: .3em; color: rgba(71,48,32,.8);
+      .lfv-label { top: 21.5%; font-size: 3.1cqw; letter-spacing: .3em; color: rgba(71,48,32,.8);
                    font-family: 'Noto Serif JP', serif; }
-      .lfv-month { top: 24.5%; font-size: 13.4cqw; line-height: 1; color: #472000;
+      .lfv-month { top: 25.5%; font-size: 13.4cqw; line-height: 1; color: #472000;
                    font-family: 'Noto Serif JP', Georgia, serif; font-weight: 500;
                    font-variant-numeric: tabular-nums; }
-      .lfv-month-unit { top: 38.5%; font-size: 3.7cqw; letter-spacing: .08em; color: #473020;
+      .lfv-month-unit { top: 39.5%; font-size: 3.7cqw; letter-spacing: .08em; color: #473020;
                         font-family: 'Noto Serif JP', serif; }
-      .lfv-year  { top: 53.5%; font-size: 3.1cqw; letter-spacing: .04em; color: rgba(71,48,32,.72);
+      .lfv-year  { top: 45.2%; font-size: 3.1cqw; letter-spacing: .04em; color: rgba(71,48,32,.72);
                    font-variant-numeric: tabular-nums; }
       .lfv-year b { font-weight: 600; color: #472000; }
 
-      .lfv-bd-head { top: 46.2%; font-size: 2.5cqw; letter-spacing: .28em; color: rgba(71,48,32,.8);
+      .lfv-bd-head { top: 54.5%; font-size: 2.5cqw; letter-spacing: .28em; color: rgba(71,48,32,.8);
                      font-family: 'Noto Serif JP', serif; }
 
-      /* 内訳は背景の罫線5本の上に載せる（1本目 y=64.9% / 行間 5.05%） */
-      .lfv-breakdown { position: absolute; left: 18%; right: 18%; top: 0; bottom: 0; }
-      .lfv-row { position: absolute; left: 0; right: 0; display: flex; align-items: baseline;
-                 gap: 1.6cqw; font-size: 3.1cqw; }
+      /* 内訳は件数が可変（6件以上もある）。背景から罫線を消したので、
+         エリア内に flex で流し、リーダー線は CSS で描く。 */
+      .lfv-breakdown { position: absolute; left: 21%; right: 21%; top: 57%; bottom: 12.5%;
+                       display: flex; flex-direction: column; justify-content: center; gap: 1.1cqw; }
+      .lfv-row { display: flex; align-items: baseline; gap: 1.3cqw; line-height: 1.35; }
       .lfv-row-ico  { flex-shrink: 0; }
-      .lfv-row-name { flex-shrink: 0; color: rgba(71,48,32,.9); white-space: nowrap; }
-      .lfv-row-val  { margin-left: auto; flex-shrink: 0; color: #472000;
-                      font-family: 'Noto Serif JP', Georgia, serif;
+      .lfv-row-name { flex-shrink: 0; color: rgba(71,48,32,.9); white-space: nowrap;
+                      overflow: hidden; text-overflow: ellipsis; max-width: 46%; }
+      .lfv-row-lead { flex: 1; border-bottom: 1px dotted rgba(71,48,32,.45); transform: translateY(-0.35cqw); }
+      .lfv-row-val  { flex-shrink: 0; color: #472000; font-family: 'Noto Serif JP', Georgia, serif;
                       font-variant-numeric: tabular-nums; }
+      .lfv-more { text-align: center; font-size: 2.3cqw; color: rgba(71,48,32,.6); margin-top: .4cqw; }
 
       .lfv-foot { position: absolute; left: 12%; right: 12%; top: 90.5%;
                   display: flex; justify-content: space-between; align-items: baseline; }
@@ -281,17 +284,21 @@ export default function ServiceLog({ withSideNav = false }) {
       const s = costSummary(logs);
       if (!s.counted) return '';
 
-      // 背景画像の罫線5本の上に載せる（1本目 top=64.9% / 行間 5.05%）
-      const ROW_TOP = 63.4, ROW_GAP = 5.05;
-      const rows = s.byAxis.slice(0, 5).map((row, i) => {
+      // 件数は可変。多いほど小さく組み、8件を超える分はまとめて示す。
+      const MAX_ROWS = 8;
+      const shown = s.byAxis.slice(0, MAX_ROWS);
+      const rest = s.byAxis.length - shown.length;
+      const fs = shown.length <= 5 ? 2.9 : shown.length <= 7 ? 2.6 : 2.35;
+      const rows = shown.map(row => {
         const def = resolveAxis(row.axis, row.customIcon);
         return `
-          <div class="lfv-row" style="top:${ROW_TOP + i * ROW_GAP}%">
+          <div class="lfv-row" style="font-size:${fs}cqw">
             <span class="lfv-row-ico">${def.icon}</span>
             <span class="lfv-row-name">${esc(def.label)}</span>
+            <span class="lfv-row-lead"></span>
             <span class="lfv-row-val">${row.estimated ? '約' : ''}${formatYen(row.monthly)}</span>
           </div>`;
-      }).join('');
+      }).join('') + (rest > 0 ? `<div class="lfv-more">ほか ${rest}件</div>` : '');
 
       const now = new Date();
       const ym = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}`;
