@@ -24,14 +24,16 @@ export async function POST(request) {
     return Response.json({ error: 'slug と related_slugs は必須です' }, { status: 400 });
   }
 
-  const { error } = await db()
+  const { data: updated, error } = await db()
     .from('features')
     .update({ related_slugs, updated_at: new Date().toISOString() })
-    .eq('slug', slug);
+    .eq('slug', slug)
+    .select('track')
+    .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  revalidatePath(`/feature/${slug}`);
+  revalidatePath(updated?.track === 'belle' ? `/belle/journal/${slug}` : `/feature/${slug}`);
   return Response.json({ ok: true, slug, related_slugs });
 }
 
@@ -53,9 +55,11 @@ export async function GET(request) {
   }
 
   // slug未指定 → 全記事のslug/title/category/related_slugsを返す（ツール用）
+  // trackを含める：related_slugsを設定する側がFineme/Belleを跨いで
+  // 関連記事を紐付けてしまわないようにするため
   const { data, error } = await db()
     .from('features')
-    .select('slug, title, category, description, related_slugs')
+    .select('slug, title, category, description, track, related_slugs')
     .eq('status', 'published')
     .order('published_at', { ascending: false });
 

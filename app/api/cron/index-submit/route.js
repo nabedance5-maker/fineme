@@ -35,16 +35,17 @@ export async function GET(request) {
     }
   }
 
-  // 特集記事
+  // 特集記事（track=belle は /belle/journal 配下のURL）
   const { data: features } = await db
     .from('features')
-    .select('slug')
+    .select('slug, track')
     .gte('created_at', since)
     .eq('published', true);
 
   if (features) {
     for (const f of features) {
-      urls.push(`${BASE_URL}/feature/${f.slug}`);
+      const path = f.track === 'belle' ? `/belle/journal/${f.slug}` : `/feature/${f.slug}`;
+      urls.push(`${BASE_URL}${path}`);
     }
   }
 

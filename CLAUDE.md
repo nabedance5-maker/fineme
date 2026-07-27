@@ -20,6 +20,7 @@ Fineme は「外見を起点に自信を再設計するための、地図と羅�
 - 判定キー：`localStorage['fineme:diagnosis:belle']`。`/mypage/*` は `fineme:diagnosis:latest` 優先→Belleキーへフォールバック
 - ⚠️ **Belle 側を触るときは「画像プール・タイプデータ・診断結果・Mirrorプロンプト」の4箇所すべてで女性側を向いているか確認する**（2026-07-24〜25 に男女混在バグを3件修正済み）
 - ⚠️ 「実態は男性専用サイト」という表現は**あらゆる文脈で使わない**（でお指摘2回）。二トラックは意図した設計
+- ⚠️ **`features` テーブル（記事）を読み書き・AIに判断させる cron/API は、必ず `track` で Fineme（男性向け）/ Belle（女性向け）を区別すること。** `select`/`update`/`insert` に `track` フィルタを付け忘れると、AIへのプロンプトが暗黙に男性向け前提のまま Belle 記事を評価・改変してしまい、実際に Belle 記事のタイトルを男性向けへ自動書き換えする実害が出た（`pdca-critic` 2026-07-27、同種の穴を `seo-improve`・`feature-article`・`index-submit`・`seo-bulk-submit`・`admin/articles/related` でも横展開修正済み）。新しい cron/API を `features` に追加するときは、①select に `track` を含める ②AI プロンプトに対象記事のトラックを明記する ③内部リンク候補・重複チェック・使用済み画像等の「関連データ収集」も同トラック内に絞る ④URL・`revalidatePath` を `track==='belle'` なら `/belle/journal/...`、それ以外は `/feature/...` に出し分ける、の4点を確認する
 
 ---
 

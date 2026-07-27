@@ -274,10 +274,13 @@ export async function GET(request) {
   const supabase = getSupabase();
 
   // 既存記事をまず取得（テーマ重複チェック＋内部リンク候補＋Claude重複回避リスト）
+  // track='fineme'に限定：Belle（女性向け）記事のカテゴリ・タイトル・リンクが
+  // 男性向け記事のカニバリ判定/内部リンク候補に混入するのを防ぐ
   const { data: existing } = await supabase
     .from('features')
     .select('slug, title, category, description, published_at')
-    .eq('status', 'published');
+    .eq('status', 'published')
+    .eq('track', 'fineme');
 
   // 過去30日に使用済みカテゴリ・タイトルを抽出（カニバリゼーション防止）
   const thirtyDaysAgo = Date.now() - 30 * 60 * 60 * 24 * 1000;
@@ -314,7 +317,7 @@ export async function GET(request) {
     // 直近12記事で使った画像IDを集めて重複回避（金太郎飴防止）
     const usedIds = new Set();
     try {
-      const { data: recent } = await supabase.from('features').select('body').eq('status', 'published').order('published_at', { ascending: false }).limit(12);
+      const { data: recent } = await supabase.from('features').select('body').eq('status', 'published').eq('track', 'fineme').order('published_at', { ascending: false }).limit(12);
       (recent || []).forEach(r => [...(r.body || '').matchAll(/photo-([0-9a-z]+)\?/g)].forEach(m => usedIds.add(m[1])));
     } catch {}
     const bodyHtmlWithImages = injectImages(bodyHtml, theme.axis, finalSlug, usedIds);

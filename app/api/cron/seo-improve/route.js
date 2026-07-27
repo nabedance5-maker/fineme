@@ -113,10 +113,11 @@ export async function GET(request) {
       return Response.json({ candidates: 0 });
     }
 
-    // 内部リンク候補（公開記事の一覧）
+    // 内部リンク候補（公開記事の一覧）。track（Fineme/Belle）ごとに分けて保持し、
+    // 改善対象記事と異なるトラックの記事を内部リンクとして提案しないようにする
     const { data: allArticles } = await sb.from('features')
-      .select('slug,title,category').eq('status', 'published').limit(120);
-    const linkPool = (allArticles || []).filter(a => a.slug);
+      .select('slug,title,category,track').eq('status', 'published').limit(240);
+    const allLinkable = (allArticles || []).filter(a => a.slug);
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const results = [];
@@ -134,11 +135,13 @@ export async function GET(request) {
 
       const art = artBySlug[c.slug];
       if (!art) continue;
+      const artTrack = art.track || 'fineme';
+      const trackPool = allLinkable.filter(a => (a.track || 'fineme') === artTrack);
 
-      const poolForPrompt = linkPool.filter(a => a.slug !== c.slug).slice(0, 40)
+      const poolForPrompt = trackPool.filter(a => a.slug !== c.slug).slice(0, 40)
         .map(a => `- ${a.slug} : ${a.title}`).join('\n');
 
-      const prompt = `Finemeの既存SEO記事を改善する。事実を盛らず、既存の主張を壊さず、検索意図に素直に寄せること。
+      const prompt = `Finemeの既存SEO記事を改善する。この記事は「${artTrack === 'belle' ? 'Fineme Belle（女性向け外見改善トラック）' : 'Fineme（男性向け外見改善トラック）'}」に属する。改善後も同トラックの読者に向けた内容・語り口を保つこと。内部リンク候補も同トラック内のみ。事実を盛らず、既存の主張を壊さず、検索意図に素直に寄せること。
 
 【記事】slug=${c.slug} / カテゴリ=${art.category}
 現タイトル：${art.title}
@@ -169,10 +172,11 @@ ${poolForPrompt}
       if (!gen?.title || !gen?.description) continue;
 
       const links = (gen.link_slugs || [])
-        .map(s => linkPool.find(a => a.slug === s))
+        .map(s => trackPool.find(a => a.slug === s))
         .filter(Boolean).slice(0, 3);
+      const linkBase = artTrack === 'belle' ? '/belle/journal' : '/feature';
       const linksHtml = links.length
-        ? `<h3>関連記事</h3><ul>${links.map(l => `<li><a href="/feature/${l.slug}">${l.title}</a></li>`).join('')}</ul>` : '';
+        ? `<h3>関連記事</h3><ul>${links.map(l => `<li><a href="${linkBase}/${l.slug}">${l.title}</a></li>`).join('')}</ul>` : '';
       // 改稿日マーカーは常に埋める（クールダウン判定に使う）。中身は追記/内部リンクがあれば入れる
       const today = new Date().toISOString().slice(0, 10);
       const inner = `${gen.addition_html || ''}${linksHtml}`;
@@ -195,7 +199,7 @@ ${poolForPrompt}
           .eq('slug', c.slug);
         if (!error) {
           record.applied = true;
-          try { revalidatePath(`/feature/${c.slug}`); } catch {}
+          try { revalidatePath(`${linkBase}/${c.slug}`); } catch {}
         } else { record.error = error.message; }
       }
       results.push(record);

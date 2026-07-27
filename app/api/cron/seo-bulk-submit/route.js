@@ -24,15 +24,17 @@ export async function GET(request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  // 全公開記事を取得
+  // 全公開記事を取得（track=belle は /belle/journal 配下のURL）
   const { data: articles, error } = await db
     .from('features')
-    .select('slug')
+    .select('slug, track')
     .eq('status', 'published');
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  const articleUrls = (articles || []).map(a => `${BASE_URL}/feature/${a.slug}`);
+  const articleUrls = (articles || []).map(a =>
+    `${BASE_URL}${a.track === 'belle' ? '/belle/journal' : '/feature'}/${a.slug}`
+  );
 
   // 静的ページ + プロバイダー
   const { data: providers } = await db
