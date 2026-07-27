@@ -114,7 +114,7 @@ export default function ServiceLog({ withSideNav = false }) {
       .lfv-card {
         width: 100%; max-width: 400px; margin: 0 auto;
         aspect-ratio: 1080 / 1350; position: relative;
-        background: url('/assets/images/log-parchment.webp') center/cover no-repeat;
+        background: url('/assets/images/log-parchment-v2.webp') center/cover no-repeat;
         border-radius: 6px; box-shadow: 0 24px 60px rgba(0,0,0,.45);
         color: #3a2712; font-feature-settings: "palt";
         container-type: inline-size;

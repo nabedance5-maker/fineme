@@ -7,7 +7,7 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-const BG = 'https://www.fineme.me/assets/images/log-parchment.webp';
+const BG = 'https://www.fineme.me/assets/images/log-parchment-v2.webp';
 const INK = '#472000';
 const INK_SOFT = 'rgba(71,48,32,0.85)';
 const INK_FAINT = 'rgba(71,48,32,0.7)';
