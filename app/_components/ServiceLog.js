@@ -7,6 +7,7 @@ import {
   effectiveFreq, formatFreq, idealNextDate, daysUntilIdeal, FREQ_PRESETS,
 } from '@/lib/log-axes';
 import { listLogs, createLog, updateLog, removeLog, getAccessToken } from '@/lib/log-store';
+import { TRACKS, DEFAULT_TRACK } from '@/lib/track';
 
 // 次回日の算出は lib/log-axes.js の idealNextDate に統一した
 // （週・月の両単位を扱うため。ここに週専用の計算を残すと二重管理になる）
@@ -158,6 +159,19 @@ export default function ServiceLog({ withSideNav = false }) {
       .lfv-budget, .lfv-note { font-size: 11px; color: rgba(232,228,220,.38); margin: 10px auto 0; max-width: 400px; line-height: 1.75; }
       .lfv-budget { color: rgba(232,228,220,.5); }
 
+      /* ── 次の1つ（Mirror / Me Scan / Map への接続）── */
+      .lnx { display: block; text-decoration: none; background: rgba(10,15,30,0.6); border: 1px solid rgba(201,168,76,0.26); border-radius: 14px; padding: 18px 20px; margin-bottom: 18px; transition: border-color .15s, background .15s; }
+      .lnx:hover { border-color: rgba(201,168,76,0.55); background: rgba(201,168,76,0.05); }
+      .lnx-eyebrow { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: rgba(201,168,76,0.6); margin-bottom: 8px; }
+      .lnx-title { display: block; font-family: 'Noto Serif JP', Georgia, serif; font-size: 15px; font-weight: 700; color: rgba(232,228,220,0.92); line-height: 1.55; margin-bottom: 6px; }
+      .lnx-desc { display: block; font-size: 12px; color: rgba(232,228,220,0.45); line-height: 1.8; margin-bottom: 12px; }
+      .lnx-cta { display: inline-block; font-size: 12.5px; font-weight: 800; color: #c9a84c; }
+
+      /* Compass / Mirror が指している軸の印 */
+      .log-card-mark { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 7px; margin-top: 5px; }
+      .lcm-compass { background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.38); color: #c9a84c; }
+      .lcm-mirror { background: rgba(100,160,255,0.1); border: 1px solid rgba(100,160,255,0.32); color: rgba(140,185,255,0.95); }
+
       .lfv-prompt { background: rgba(201,168,76,0.06); border: 1px dashed rgba(201,168,76,0.3); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; }
       .lfv-prompt-title { font-size: 13px; font-weight: 700; color: rgba(232,228,220,0.82); margin: 0 0 4px; }
       .lfv-prompt-desc { font-size: 11.5px; color: rgba(232,228,220,0.45); margin: 0; line-height: 1.7; }
@@ -207,12 +221,30 @@ export default function ServiceLog({ withSideNav = false }) {
     let selectedProvider = null;
     let customIcon = DEFAULT_CUSTOM_ICON;
     let budget = null;
+    let compassAxis = null;   // Me Scan が指す最初の一手
+    let mirrorAxis = null;    // Mirror が指した1点
+    let hasDiagnosis = false;
+    let hasMirror = false;
 
-    // Me Scan の予算回答（あれば実費と並べる）
+    // Me Scan / Mirror の結果を読む。
+    // 軸IDが Log と共通なので、通っている軸と突き合わせられる。
     try {
       const raw = localStorage.getItem('fineme:diagnosis:latest') || localStorage.getItem('fineme:diagnosis:belle');
-      if (raw) budget = JSON.parse(raw)?.budget || null;
+      if (raw) {
+        const p = JSON.parse(raw);
+        budget = p?.budget || null;
+        compassAxis = p?.compass_first || p?.priority_order?.[0] || null;
+        hasDiagnosis = !!compassAxis;
+      }
     } catch {}
+    try {
+      const op = JSON.parse(localStorage.getItem('fineme:mirror:one-point') || 'null');
+      if (op?.axisId) { mirrorAxis = op.axisId; hasMirror = true; }
+    } catch {}
+    // one-point が無くてもMirror実施済みのことがあるためセッションでも判定する
+    if (!hasMirror) {
+      try { hasMirror = !!JSON.parse(localStorage.getItem('fineme:mirror:sessions') || '[]').length; } catch {}
+    }
 
     const isLoggedIn = () => !!getAccessToken();
 
@@ -339,6 +371,61 @@ export default function ServiceLog({ withSideNav = false }) {
         </div>`;
     }
 
+    // ── 次の1つ（Mirror / Me Scan / Map への接続）──
+    // 3択を並べない。状態を見て1つだけ出す（corrections.md「選ばせない。導く」）。
+    // 誘い文に金額を使わない。航路＝順番・優先度の話に限る（でお決定 2026-07-27）。
+    function renderNextStep() {
+      if (!logs.length) return '';
+      const ports = logs.length;
+      const TRACK = TRACKS[trackRef.current] || TRACKS[DEFAULT_TRACK];
+
+      // Me Scan 済みなのに Compass の軸が Log に無い → その軸の登録へ
+      if (hasDiagnosis && compassAxis && !logs.some(l => l.axis === compassAxis)) {
+        const def = resolveAxis(compassAxis);
+        return `
+          <a class="lnx" href="#" data-add-axis="${esc(compassAxis)}">
+            <span class="lnx-eyebrow">🧭 Compass</span>
+            <span class="lnx-title">最初の一手は ${def.icon} ${esc(def.label)} です</span>
+            <span class="lnx-desc">まだ記録がありません。通っているところがあれば登録しておくと、次の時期も追えます。</span>
+            <span class="lnx-cta">${esc(def.label)}を登録する →</span>
+          </a>`;
+      }
+
+      // Me Scan 未実施 → 地図を作る
+      if (!hasDiagnosis) {
+        return `
+          <a class="lnx" href="${TRACK.diagnosis}">
+            <span class="lnx-eyebrow">Me Scan · 無料 約3分</span>
+            <span class="lnx-title">${ports}つの港を巡っている。この航路で合っているか</span>
+            <span class="lnx-desc">どの順番で手をつけると効くかは、地図があると分かります。いま巡っている港も、その上に置けます。</span>
+            <span class="lnx-cta">地図をつくる →</span>
+          </a>`;
+      }
+
+      // 未ログインには有料のMirrorを出さない（先にアカウントの導線がある）
+      if (!isLoggedIn()) return '';
+
+      // Me Scan 済み・Mirror 未実施 → 現在地を測る
+      if (!hasMirror) {
+        return `
+          <a class="lnx" href="${TRACK.mirror}">
+            <span class="lnx-eyebrow">Mirror</span>
+            <span class="lnx-title">地図はある。いま自分がどこにいるか</span>
+            <span class="lnx-desc">写真1枚で、自分では見えていない現在地が分かります。地図に現在地が入ると、次の一歩が決まります。</span>
+            <span class="lnx-cta">現在地を測る →</span>
+          </a>`;
+      }
+
+      // 両方済み → Map へ
+      return `
+        <a class="lnx" href="/mypage/navi">
+          <span class="lnx-eyebrow">New Me Map</span>
+          <span class="lnx-title">地図と現在地が揃っています</span>
+          <span class="lnx-desc">巡っている港は Navi の各ステップにも出ています。今月の一歩はそこにあります。</span>
+          <span class="lnx-cta">New Me Map を開く →</span>
+        </a>`;
+    }
+
     // 費用がまだ1件も入っていない時は、カードの代わりに一言だけ置く。
     // 空のカードや ¥0 を見せても意味がないため（推測で数字を作らない）。
     function renderCostPrompt() {
@@ -419,11 +506,22 @@ export default function ServiceLog({ withSideNav = false }) {
             }
           }
 
+          // Compass / Mirror が指している軸なら、その情報を重ねる。
+          // 誘導ではなく事実の統合。両方該当する時は Compass を優先し、
+          // 1枚のカードにバッジを2つ出さない。
+          let markHtml = '';
+          if (compassAxis && log.axis === compassAxis) {
+            markHtml = '<span class="log-card-mark lcm-compass">🧭 Compass の最初の一手</span>';
+          } else if (mirrorAxis && log.axis === mirrorAxis) {
+            markHtml = '<span class="log-card-mark lcm-mirror">🪞 Mirror が指した1点</span>';
+          }
+
           return `
             <div class="log-card" data-id="${log.id}">
               <div class="log-card-top">
                 <div>
                   <p class="log-card-name">${esc(log.name)}</p>
+                  ${markHtml}
                   ${providerHref ? `<a class="log-card-provider-link" href="${providerHref}">🔗 Finemeに掲載中</a>` : ''}
                 </div>
                 <div class="log-card-actions">
@@ -458,6 +556,7 @@ export default function ServiceLog({ withSideNav = false }) {
       const card = renderCostCard();
       root.innerHTML = `
         ${card || header}
+        ${renderNextStep()}
         ${renderCostPrompt()}
         <button class="log-add-btn" id="log-open-add">＋ 追加する</button>
         ${sectionsHtml}
@@ -466,7 +565,8 @@ export default function ServiceLog({ withSideNav = false }) {
     }
 
     // ── モーダル ──
-    function openModal(log = null) {
+    // presetAxis: 新規登録時に最初から選んでおく軸（Compass の導線から来た時に使う）
+    function openModal(log = null, presetAxis = null) {
       editingId = log?.id || null;
       selectedProvider = log?.provider_slug ? { slug: log.provider_slug, type: log.provider_type } : null;
       customIcon = log?.custom_icon || DEFAULT_CUSTOM_ICON;
@@ -474,9 +574,10 @@ export default function ServiceLog({ withSideNav = false }) {
       const choices = axisChoicesFor(trackRef.current);
       const known = choices.some(c => c.id === log?.axis);
       const isCustom = !!log && !known;
+      const wantAxis = log?.axis || presetAxis;
 
       const axisOptions = choices.map(c =>
-        `<option value="${c.id}"${log?.axis === c.id ? ' selected' : ''}>${c.icon} ${esc(c.label)}</option>`
+        `<option value="${c.id}"${wantAxis === c.id ? ' selected' : ''}>${c.icon} ${esc(c.label)}</option>`
       ).join('') + `<option value="${CUSTOM_AXIS}"${isCustom ? ' selected' : ''}>${DEFAULT_CUSTOM_ICON} その他（自分で決める）</option>`;
 
       document.getElementById('log-modal-title').textContent = log ? '記録を編集' : '新しく登録する';
@@ -638,6 +739,13 @@ export default function ServiceLog({ withSideNav = false }) {
       const todayBtn = e.target.closest('[data-visit-today]');
       if (todayBtn) {
         markVisited(todayBtn.dataset.visitToday, new Date().toISOString().slice(0, 10));
+        return;
+      }
+      // Compass が指す軸の登録へ（その軸を選んだ状態でモーダルを開く）
+      const addAxis = e.target.closest('[data-add-axis]');
+      if (addAxis) {
+        e.preventDefault();
+        openModal(null, addAxis.dataset.addAxis);
         return;
       }
     });

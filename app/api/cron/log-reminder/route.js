@@ -100,6 +100,36 @@ export async function GET(request) {
   }
   const profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
 
+  // 月1回だけ添える一文の材料：Me Scan / Mirror をやっているか
+  const doneDiagnosis = new Set();
+  const doneMirror = new Set();
+  try {
+    const d = await db.from('diagnosis_results').select('user_id').in('user_id', userIds);
+    (d.data || []).forEach(r => r.user_id && doneDiagnosis.add(r.user_id));
+  } catch {}
+  try {
+    const m = await db.from('mirror_sessions').select('user_id').in('user_id', userIds);
+    (m.data || []).forEach(r => r.user_id && doneMirror.add(r.user_id));
+  } catch {}
+
+  // その月に一度も通知していなければ「今月初回」。
+  // ログ単位の last_notified_at の最大値で判定するのでカラム追加が要らない。
+  function monthlyNudgeFor(userId, userLogs) {
+    const times = userLogs
+      .map(l => (l.last_notified_at ? new Date(l.last_notified_at).getTime() : 0))
+      .filter(Boolean);
+    if (times.length) {
+      const last = new Date(Math.max(...times));
+      const lastJst = new Date(last.getTime() + 9 * 60 * 60 * 1000);
+      const sameMonth = lastJst.getUTCFullYear() === today.getUTCFullYear()
+        && lastJst.getUTCMonth() === today.getUTCMonth();
+      if (sameMonth) return null; // 今月はもう送っている
+    }
+    if (!doneDiagnosis.has(userId)) return 'diagnosis';
+    if (!doneMirror.has(userId)) return 'mirror';
+    return null; // 両方済み＝添えるものが無い月は静かにする
+  }
+
   // 通知すべきものを2種類に分けて拾う
   //   A: 予約日が近い（リマインド）
   //   B: 予約はまだだが、前回＋頻度の目安が近い／過ぎている（予約を促す）
@@ -177,6 +207,7 @@ export async function GET(request) {
     const text = buildLogMessage(booking, reminder, resolveAxis, {
       voiceId: profile.log_voice,
       trackId: profile.track,
+      monthlyNudge: monthlyNudgeFor(userId, logsByUser[userId]),
     });
 
     const res = await sendLinePush(lineUserId, text);

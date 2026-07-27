@@ -69,10 +69,40 @@ export async function POST(request) {
   let logs = [];
   const sel = await supabase
     .from('user_service_logs')
-    .select('id, axis, custom_icon, name, last_visit, next_visit, frequency_weeks, notify_enabled')
+    .select('id, axis, custom_icon, name, last_visit, next_visit, frequency_weeks, frequency_months, notify_enabled, last_notified_at')
     .eq('user_id', user.id)
     .eq('active', true);
-  if (!sel.error) logs = sel.data || [];
+  if (!sel.error) {
+    logs = sel.data || [];
+  } else {
+    const legacy = await supabase
+      .from('user_service_logs')
+      .select('id, axis, name, last_visit, next_visit, frequency_weeks, notify_enabled')
+      .eq('user_id', user.id)
+      .eq('active', true);
+    logs = legacy.data || [];
+  }
+
+  // 月1回の一文（cron と同じ条件）。試し送りでも実際に届く形を再現する。
+  let monthlyNudge = null;
+  {
+    const times = logs.map(l => (l.last_notified_at ? new Date(l.last_notified_at).getTime() : 0)).filter(Boolean);
+    const nowJst = new Date(Date.now() + 9 * 3600000);
+    let sameMonth = false;
+    if (times.length) {
+      const lastJst = new Date(Math.max(...times) + 9 * 3600000);
+      sameMonth = lastJst.getUTCFullYear() === nowJst.getUTCFullYear()
+        && lastJst.getUTCMonth() === nowJst.getUTCMonth();
+    }
+    if (!sameMonth) {
+      const d = await supabase.from('diagnosis_results').select('id').eq('user_id', user.id).limit(1);
+      if (!d.data?.length) monthlyNudge = 'diagnosis';
+      else {
+        const m = await supabase.from('mirror_sessions').select('id').eq('user_id', user.id).limit(1);
+        if (!m.data?.length) monthlyNudge = 'mirror';
+      }
+    }
+  }
 
   const today = new Date();
   const booking = [];
@@ -104,7 +134,7 @@ export async function POST(request) {
   }
 
   const text = (booking.length || reminder.length)
-    ? buildLogMessage(booking, reminder, resolveAxis, { voiceId: profile.log_voice, trackId: profile.track })
+    ? buildLogMessage(booking, reminder, resolveAxis, { voiceId: profile.log_voice, trackId: profile.track, monthlyNudge })
     : [
         'お頭、通信の試験でさぁ📡',
         '',
