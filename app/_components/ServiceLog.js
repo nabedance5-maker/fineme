@@ -169,6 +169,22 @@ export default function ServiceLog({ withSideNav = false }) {
       .lnx-desc { font-size: 12.5px; color: rgba(232,228,220,0.5); line-height: 1.95; margin: 0 0 18px; }
       .lnx-cta { display: inline-block; padding: 12px 26px; background: linear-gradient(135deg,#c9a84c,#e8c86a); color: #0a0f1e; font-size: 13.5px; font-weight: 800; border-radius: 10px; text-decoration: none; }
       .lnx-note { font-size: 11px; color: rgba(232,228,220,0.32); margin: 10px 0 0; }
+      .lnx-peek { background: rgba(201,168,76,0.05); border: 1px solid rgba(201,168,76,0.2); border-radius: 11px; padding: 15px 16px; margin: 0 0 18px; }
+      .lnx-peek-head { font-size: 9.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(201,168,76,0.65); margin: 0 0 11px; }
+      .lnx-peek-type { text-align: center; margin-bottom: 11px; }
+      .lnx-peek-code { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .22em; color: rgba(201,168,76,0.7); margin-bottom: 3px; }
+      .lnx-peek-name { display: block; font-family: 'Noto Serif JP', Georgia, serif; font-size: 19px; font-weight: 700; color: #e8e4dc; margin-bottom: 3px; }
+      .lnx-peek-sub { display: block; font-size: 10px; color: rgba(232,228,220,0.35); }
+      .lnx-peek-line { height: 1px; background: linear-gradient(90deg,transparent,rgba(201,168,76,0.22),transparent); margin-bottom: 11px; }
+      .lnx-peek-first { font-size: 12px; color: rgba(232,228,220,0.8); margin: 0; line-height: 1.7; text-align: center; }
+      .lnx-peek-first b { color: #c9a84c; }
+      .lnx-peek-first span { font-size: 11px; color: rgba(232,228,220,0.42); }
+      .lnx-peek-axis { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: rgba(232,228,220,0.75); padding: 5px 0; border-bottom: 1px solid rgba(232,228,220,0.06); }
+      .lnx-peek-axis b { font-size: 11px; font-weight: 700; }
+      .lnx-peek-axis .p3 { color: #c9a84c; }
+      .lnx-peek-axis .p2 { color: rgba(201,168,76,0.6); }
+      .lnx-peek-axis .p1 { color: rgba(232,228,220,0.3); }
+      .lnx-peek-quote { font-size: 11.5px; color: rgba(232,228,220,0.55); line-height: 1.8; margin: 11px 0 0; padding-left: 10px; border-left: 2px solid rgba(201,168,76,0.3); }
 
       .log-chip-cost { border-color: rgba(201,168,76,0.35) !important; color: rgba(201,168,76,0.85) !important; }
 
@@ -338,72 +354,117 @@ export default function ServiceLog({ withSideNav = false }) {
     // ── 一番下に置く「次の一歩」──
     //
     // FV直下には置かない。Log に来る人の大半は Fineme を知らず、まだ「変わりたい」とも
-    // 認めていない。最も目立つ場所に理解できないものがあると、ツール全体が使いづらそうに見える。
-    // 記録として使い切った後（＝一番下）で、初めて次の話が耳に入る。
+    // 認めていない。記録として使い切った後（＝一番下）で初めて次の話が耳に入る。
     //
-    // 金額は「多い/少ない」の評価には使わない。「どう振り分けるか」の材料として使う。
+    // 文面の原則（でお指摘 2026-07-27）：
+    //   ・内部用語（New Me Map / Me Scan / Mirror / 現在地）を説明なしで使わない。
+    //     読む人の頭の中に無い言葉で書くと「は？」で終わる
+    //   ・LPと同じ組み立てにする＝ 問いかけ → 共感 → でも実はこう → だからこれ → 行動
+    //   ・金額は「多い/少ない」の評価ではなく「何を根拠に配分したか」の材料として使う
+    //   ・CTAのラベルに機能名を使わない。何が起きるかで書く
     function renderNextStep() {
       if (!logs.length) return '';
       const TRACK = TRACKS[trackRef.current] || TRACKS[DEFAULT_TRACK];
       const s = costSummary(logs);
       const loggedIn = isLoggedIn();
 
-      // ① 費用がまだ無い → 金額起点のロジックが成立しないので、まず費用を入れてもらう
+      // ① 費用がまだ無い
       if (!s.counted) {
         return `
           <div class="lnx">
-            <p class="lnx-title">1回いくらか入れると、月にいくら使っているかが出ます</p>
-            <p class="lnx-desc">編集から「1回あたりの費用」を入れるだけ。頻度から自動で計算します。</p>
+            <p class="lnx-title">1回いくら払っているか、覚えていますか</p>
+            <p class="lnx-desc">
+              金額を入れると、月にいくら・年にいくら使っているかが出ます。<br>
+              どこにどれだけかけているかが見えると、見直す時の土台になります。
+            </p>
           </div>`;
       }
 
-      // ② Me Scan 未実施 → 配分の最適化という文脈で誘う（本命）
+      // 上位2件を文中で使う（自分の話だと分かるように）
+      const top = s.byAxis.slice(0, 2).map(r => {
+        const d = resolveAxis(r.axis, r.customIcon);
+        return `${d.label}に月 ${formatYen(r.monthly)}`;
+      }).join('、');
+
+      // ② 診断がまだ → 順番の話。
+      // 文章だけでは動かないので「何が返ってくるか」を見せ、入口は30秒の1問に下げる
+      // （/diagnosis は最初に1問お試しが出る作りになっている）。
       if (!hasDiagnosis) {
         return `
           <div class="lnx">
-            <p class="lnx-title">この配分、最適だと思いますか</p>
+            <p class="lnx-title">その配分、何を根拠に決めましたか</p>
             <p class="lnx-desc">
-              月 ${formatYen(s.monthly)} を ${s.counted}つに分けて使っています。年にすると ${formatYen(s.yearly)}。<br><br>
-              ただ、この記録だけでは<br>
-              　・どこにもっとかけるべきか<br>
-              　・どこは減らしてもいいか<br>
-              　・どの順番で手をつけるか<br>
-              までは分かりません。<br><br>
-              理想の自分と、今の自分。その差を測ると、順番が整理されます。
+              ${esc(top)}。<br>
+              たぶん「なんとなく気になるところ」から順に始めたはずです。<br><br>
+              ただ、見た目が変わって見えるかどうかは、手をつける順番でかなり変わります。
+              髪を変える前に眉を整えた方が効く人もいれば、その逆の人もいる。
+              いま多くかけている場所を減らしても、印象がほとんど落ちないこともあります。
             </p>
-            <a class="lnx-cta" href="${TRACK.diagnosis}">Me Scan を受ける（無料・約3分）→</a>
-            <p class="lnx-note">受けると New Me Map が手に入ります。</p>
+
+            <div class="lnx-peek">
+              <p class="lnx-peek-head">答えると、こういうものが出ます</p>
+              <div class="lnx-peek-type">
+                <span class="lnx-peek-code">TYPE-HND</span>
+                <span class="lnx-peek-name">黒髪の臥す伏竜</span>
+                <span class="lnx-peek-sub">136タイプのうちの1つ</span>
+              </div>
+              <div class="lnx-peek-line"></div>
+              <p class="lnx-peek-first">最初の一手 — <b>💇 髪・ヘア</b><br>
+                <span>髪型は第一印象の3割。美容院1回で変化を体感できる</span></p>
+            </div>
+
+            <a class="lnx-cta" href="${TRACK.diagnosis}">まず1問だけ、30秒で →</a>
+            <p class="lnx-note">登録不要。1問で「最初の一手」が出ます。もっと知りたければそのまま8軸へ（約3分）。</p>
           </div>`;
       }
 
-      // ③ Mirror 未実施 → 地図の精度を上げると配分が絞れる
+      // ③ Mirror がまだ → 自分では見えない、の話。
+      // 写真を送るのはハードルが高いので、返ってくるものを具体的に見せる。
       if (!hasMirror) {
         return `
           <div class="lnx">
-            <p class="lnx-title">地図の精度を上げると、配分はもっと絞れます</p>
+            <p class="lnx-title">鏡で見ているのは、見慣れた自分です</p>
             <p class="lnx-desc">
-              New Me Map は手元にあります。ただ、そこに「今の自分」がまだ入っていません。<br><br>
-              Mirror は写真1枚から、自分では気づけない現在地を測ります。
-              地図の解像度が上がると、どこにかけるべきか・どこは今じゃなくていいかが、はっきりします。
+              ${esc(top)}。<br>
+              その配分は、自分が気になるところから決めたはずです。<br><br>
+              ただ、人が最初に見ている場所と、自分が気にしている場所は、だいたいズレます。
+              自分の顔を他人の目で見ることは、どうやってもできないからです。
             </p>
-            <a class="lnx-cta" href="${TRACK.mirror}">現在地を測る →</a>
+
+            <div class="lnx-peek">
+              <p class="lnx-peek-head">写真1枚で、こう返ってきます</p>
+              <div class="lnx-peek-axis"><span>💇 髪・ヘア</span><b class="p3">変わる余地 ★★★</b></div>
+              <div class="lnx-peek-axis"><span>✂️ 眉</span><b class="p2">★★☆</b></div>
+              <div class="lnx-peek-axis"><span>✨ 肌</span><b class="p1">★☆☆</b></div>
+              <p class="lnx-peek-quote">「毛先の重さが顔の輪郭を覆っていて、
+                縦のラインが出ていません。長さを変えずに量を落とすだけで印象が変わります」</p>
+            </div>
+
+            <a class="lnx-cta" href="${TRACK.mirror}">写真で確かめる →</a>
+            <p class="lnx-note">8つの要素を1つずつ見て、いちばん動かす価値がある場所を返します。写真は分析後に削除。</p>
           </div>`;
       }
 
-      // ④ 両方済み。未ログインならログイン画面に突き当たらせず、アカウント作成へ送る
+      // ④ 両方済み → 次にやることが決まっている
       if (!loggedIn) {
         return `
           <div class="lnx">
-            <p class="lnx-title">地図と現在地が揃っています</p>
-            <p class="lnx-desc">アカウントを作ると、この記録と地図が New Me Map にまとまります。</p>
-            <a class="lnx-cta" href="/login?mode=signup&next=/mypage/navi">無料アカウントを作る →</a>
+            <p class="lnx-title">次にやることは、もう出ています</p>
+            <p class="lnx-desc">
+              診断と写真の結果から、いま動かすと効く一点が決まっています。
+              アカウントを作ると、その一点と、ここに登録した通い先が1つの画面にまとまります。
+            </p>
+            <a class="lnx-cta" href="/login?mode=signup&next=/mypage/navi">無料で受け取る →</a>
           </div>`;
       }
       return `
         <div class="lnx">
-          <p class="lnx-title">地図と現在地が揃っています</p>
-          <p class="lnx-desc">巡っている港は New Me Map の各ステップにも出ています。今月の一歩はそこに。</p>
-          <a class="lnx-cta" href="/mypage/navi">New Me Map を開く →</a>
+          <p class="lnx-title">次にやることは、もう出ています</p>
+          <p class="lnx-desc">
+            診断と写真の結果から、いま動かすと効く一点が決まっています。
+            ここに登録した通い先も、その画面に並んでいます。
+          </p>
+          <a class="lnx-cta" href="/mypage/navi">今月やることを見る →</a>
         </div>`;
     }
 
