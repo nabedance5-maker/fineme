@@ -106,57 +106,55 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-modal-save:hover { opacity: .88; }
       .log-modal-cancel { padding: 14px 20px; background: transparent; border: 1px solid rgba(232,228,220,0.15); border-radius: 11px; font-size: 14px; font-weight: 700; color: rgba(232,228,220,0.5); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; }
 
-      /* ── FVカード（海図に記した投資額）── */
+      /* ── FVカード（羊皮紙の航海日誌）──
+         紙の繊維・シミ・焼けた縁・海岸線・コンパスローズを SVG と CSS で描く。
+         金額が実データで動くので背景画像には焼き込まない。 */
       .lfv-wrap { margin-bottom: 22px; }
       .lfv-card {
         width: 100%; max-width: 400px; margin: 0 auto; aspect-ratio: 4 / 5;
-        background: #0a0f1e; border-radius: 18px; position: relative; overflow: hidden;
-        display: flex; flex-direction: column; padding: 26px 26px 22px;
-        box-shadow: 0 24px 60px rgba(0,0,0,.5); font-feature-settings: "palt";
+        border-radius: 10px; position: relative; overflow: hidden;
+        display: flex; flex-direction: column; padding: 30px 30px 24px;
+        box-shadow: 0 24px 60px rgba(0,0,0,.45); font-feature-settings: "palt";
+        /* 中央が明るく、外側にいくほど焼けた羊皮紙 */
+        background:
+          radial-gradient(78% 62% at 50% 42%, #e2d4b0 0%, #d2bf94 45%, #b99f70 78%, #9c7f52 100%),
+          #c6b083;
+        color: #3f2d18;
       }
-      .lfv-wash { position: absolute; inset: 0; pointer-events: none;
-        background: radial-gradient(120% 80% at 22% 18%, rgba(30,48,84,.55) 0%, transparent 60%),
-                    radial-gradient(90% 70% at 82% 88%, rgba(24,38,68,.5) 0%, transparent 62%); }
-      .lfv-grid { position: absolute; inset: 0; opacity: .1; pointer-events: none;
-        background-image: linear-gradient(to right, #c9a84c 1px, transparent 1px),
-                          linear-gradient(to bottom, #c9a84c 1px, transparent 1px);
-        background-size: 64px 64px; }
-      .lfv-rose { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
-      .lfv-rose svg { width: 74%; opacity: .13; }
-      .lfv-corner { position: absolute; width: 30px; height: 30px; opacity: .5; pointer-events: none; }
-      .lfv-corner svg { width: 100%; height: 100%; display: block; }
-      .lfv-corner.tl { top: 13px; left: 13px; }
-      .lfv-corner.tr { top: 13px; right: 13px; transform: scaleX(-1); }
-      .lfv-corner.bl { bottom: 13px; left: 13px; transform: scaleY(-1); }
-      .lfv-corner.br { bottom: 13px; right: 13px; transform: scale(-1); }
-      .lfv-card > *:not(.lfv-wash):not(.lfv-grid):not(.lfv-rose):not(.lfv-corner) { position: relative; z-index: 1; }
+      .lfv-layer { position: absolute; inset: 0; pointer-events: none; }
+      .lfv-card > *:not(.lfv-layer) { position: relative; z-index: 3; }
 
       .lfv-head { display: flex; justify-content: space-between; align-items: baseline; }
-      .lfv-brand { font-size: 8.5px; font-weight: 800; letter-spacing: .3em; color: rgba(201,168,76,.72); text-transform: uppercase; }
-      .lfv-date { font-size: 9.5px; letter-spacing: .1em; color: rgba(232,228,220,.3); font-variant-numeric: tabular-nums; }
-      .lfv-rule { height: 1px; background: linear-gradient(90deg, transparent, rgba(201,168,76,.38), transparent); margin-top: 11px; }
+      .lfv-brand { font-size: 8.5px; font-weight: 800; letter-spacing: .3em; color: rgba(63,45,24,.62); text-transform: uppercase; }
+      .lfv-date { font-size: 9.5px; letter-spacing: .1em; color: rgba(63,45,24,.5); font-variant-numeric: tabular-nums; }
+      .lfv-rule { height: 1px; background: linear-gradient(90deg, transparent, rgba(90,66,34,.5), transparent); margin-top: 11px; }
 
       .lfv-amount { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-      .lfv-label { font-family: 'Noto Serif JP', serif; font-size: 11.5px; letter-spacing: .26em; color: rgba(232,228,220,.5); margin-bottom: 10px; }
-      .lfv-month { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(46px,14vw,62px); font-weight: 700; line-height: 1; color: #e8c86a; letter-spacing: -.01em; font-variant-numeric: tabular-nums; text-shadow: 0 0 34px rgba(201,168,76,.3); }
-      .lfv-month-unit { font-size: 11px; letter-spacing: .22em; color: rgba(201,168,76,.6); margin-top: 9px; }
-      .lfv-year { margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(201,168,76,.16); width: 168px; text-align: center; font-size: 11.5px; letter-spacing: .06em; color: rgba(232,228,220,.42); font-variant-numeric: tabular-nums; }
-      .lfv-year b { font-weight: 700; color: rgba(232,228,220,.66); }
+      .lfv-label { font-family: 'Noto Serif JP', serif; font-size: 11px; letter-spacing: .3em; color: rgba(63,45,24,.6); margin-bottom: 12px; }
+      .lfv-month {
+        font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(46px,14vw,62px);
+        font-weight: 700; line-height: 1; color: #3a2712; letter-spacing: .01em;
+        font-variant-numeric: tabular-nums; text-shadow: 0 1px 0 rgba(255,255,255,.25);
+      }
+      .lfv-month-unit { font-size: 11px; letter-spacing: .22em; color: rgba(90,66,34,.8); margin-top: 11px; }
+      .lfv-year { margin-top: 16px; padding-top: 13px; border-top: 1px solid rgba(90,66,34,.32); width: 190px; text-align: center; font-size: 11.5px; letter-spacing: .04em; color: rgba(63,45,24,.62); font-variant-numeric: tabular-nums; }
+      .lfv-year b { font-weight: 700; color: rgba(50,34,16,.9); }
 
-      .lfv-breakdown { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; }
-      .lfv-bd-head { font-size: 8.5px; letter-spacing: .22em; color: rgba(201,168,76,.5); text-transform: uppercase; margin-bottom: 3px; }
-      .lfv-row { display: flex; align-items: center; gap: 8px; font-size: 11px; }
-      .lfv-row-ico { width: 15px; flex-shrink: 0; text-align: center; font-size: 12px; }
-      .lfv-row-name { flex: 0 0 78px; color: rgba(232,228,220,.66); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .lfv-row-bar { flex: 1; height: 3px; background: rgba(232,228,220,.07); border-radius: 99px; overflow: hidden; }
-      .lfv-row-fill { display: block; height: 100%; background: linear-gradient(90deg, rgba(201,168,76,.9), rgba(232,200,106,.55)); border-radius: 99px; }
-      .lfv-row-val { flex: 0 0 auto; color: rgba(232,228,220,.5); font-variant-numeric: tabular-nums; font-size: 10.5px; min-width: 52px; text-align: right; }
+      /* 内訳は古文書のリーダー線（点線）で左右をつなぐ */
+      .lfv-breakdown { display: flex; flex-direction: column; gap: 7px; margin-top: 18px; }
+      .lfv-bd-head { font-family: 'Noto Serif JP', serif; font-size: 10px; letter-spacing: .28em; color: rgba(90,66,34,.75); text-align: center; margin-bottom: 5px; }
+      .lfv-row { display: flex; align-items: baseline; gap: 7px; font-size: 11px; }
+      .lfv-row-ico { flex-shrink: 0; font-size: 12px; }
+      .lfv-row-name { flex-shrink: 0; color: rgba(63,45,24,.85); white-space: nowrap; }
+      .lfv-row-lead { flex: 1; border-bottom: 1px dotted rgba(90,66,34,.5); transform: translateY(-3px); }
+      .lfv-row-val { flex-shrink: 0; color: rgba(50,34,16,.92); font-variant-numeric: tabular-nums; font-size: 11.5px; font-family: 'Noto Serif JP', Georgia, serif; }
 
-      .lfv-foot { margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(201,168,76,.16); display: flex; justify-content: space-between; align-items: center; }
-      .lfv-ports { font-family: 'Noto Serif JP', serif; font-size: 11px; color: rgba(232,228,220,.55); }
-      .lfv-site { font-size: 9px; font-weight: 700; letter-spacing: .2em; color: rgba(201,168,76,.55); }
+      .lfv-foot { margin-top: 16px; padding-top: 13px; border-top: 1px solid rgba(90,66,34,.32); display: flex; justify-content: space-between; align-items: center; }
+      .lfv-ports { font-family: 'Noto Serif JP', serif; font-size: 11px; color: rgba(63,45,24,.72); }
+      .lfv-site { font-size: 9px; font-weight: 700; letter-spacing: .2em; color: rgba(90,66,34,.7); }
 
       .lfv-budget, .lfv-note { font-size: 11px; color: rgba(232,228,220,.38); margin: 10px auto 0; max-width: 400px; line-height: 1.75; }
+      .lfv-note { color: rgba(232,228,220,.3); }
       .lfv-budget { color: rgba(232,228,220,.5); }
 
       /* ── 次の1つ（Mirror / Me Scan / Map への接続）── */
@@ -290,15 +288,15 @@ export default function ServiceLog({ withSideNav = false }) {
       const s = costSummary(logs);
       if (!s.counted) return '';
 
-      const max = s.byAxis[0]?.monthly || 1;
+      // 古文書のリーダー線（点線）で軸名と金額をつなぐ。
+      // 横棒グラフは羊皮紙だと近代的すぎて浮くので使わない。
       const rows = s.byAxis.slice(0, 4).map(row => {
         const def = resolveAxis(row.axis, row.customIcon);
-        const pct = Math.max(6, Math.round((row.monthly / max) * 100));
         return `
           <div class="lfv-row">
             <span class="lfv-row-ico">${def.icon}</span>
             <span class="lfv-row-name">${esc(def.label)}</span>
-            <span class="lfv-row-bar"><span class="lfv-row-fill" style="width:${pct}%"></span></span>
+            <span class="lfv-row-lead"></span>
             <span class="lfv-row-val">${row.estimated ? '約' : ''}${formatYen(row.monthly)}</span>
           </div>`;
       }).join('');
@@ -317,31 +315,59 @@ export default function ServiceLog({ withSideNav = false }) {
       return `
         <div class="lfv-wrap">
           <div class="lfv-card">
-            <div class="lfv-wash"></div>
-            <div class="lfv-grid"></div>
-            <div class="lfv-rose">
-              <svg viewBox="0 0 200 200" fill="none" aria-hidden="true">
-                <circle cx="100" cy="100" r="86" stroke="#c9a84c" stroke-width=".7"/>
-                <circle cx="100" cy="100" r="66" stroke="#c9a84c" stroke-width=".5"/>
-                <circle cx="100" cy="100" r="30" stroke="#c9a84c" stroke-width=".5"/>
-                <path d="M100 8 L110 92 L100 100 L90 92 Z" fill="#c9a84c"/>
-                <path d="M100 192 L110 108 L100 100 L90 108 Z" fill="#c9a84c" opacity=".55"/>
-                <path d="M8 100 L92 110 L100 100 L92 90 Z" fill="#c9a84c" opacity=".55"/>
-                <path d="M192 100 L108 110 L100 100 L108 90 Z" fill="#c9a84c" opacity=".55"/>
+            <svg class="lfv-layer" viewBox="0 0 400 500" preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <filter id="lfvFiber"><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="5" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+                <filter id="lfvStain"><feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="3"/><feColorMatrix type="saturate" values="0"/></filter>
+                <radialGradient id="lfvBurn" cx="50%" cy="44%" r="74%">
+                  <stop offset="46%" stop-color="#5a3a16" stop-opacity="0"/>
+                  <stop offset="100%" stop-color="#4a2c10" stop-opacity=".62"/>
+                </radialGradient>
+              </defs>
+              <rect width="400" height="500" filter="url(#lfvStain)" opacity=".2" style="mix-blend-mode:multiply"/>
+              <g stroke="#6b4a20" stroke-width=".5" opacity=".2">
+                <path d="M0 62h400M0 124h400M0 186h400M0 248h400M0 310h400M0 372h400M0 434h400"/>
+                <path d="M62 0v500M124 0v500M186 0v500M248 0v500M310 0v500M372 0v500"/>
+              </g>
+              <g stroke="#5a3e20" fill="none" opacity=".4">
+                <path d="M-16 92c34 8 56-14 88-6 26 7 34 30 62 28 30-2 40-26 70-22 26 4 36 22 62 18 20-3 30-14 48-12" stroke-width="1.2"/>
+                <path d="M-10 114c30 6 50-10 78-4 24 5 32 24 56 22 26-2 34-20 60-17" stroke-width=".6" opacity=".6"/>
+                <path d="M266 386c22-16 54-12 72 6 16 16 10 44-12 54-24 11-56 2-66-20-8-18 0-30 6-40z" stroke-width="1.1"/>
+                <path d="M278 398c16-11 38-8 50 5 11 11 7 30-8 37-16 8-38 1-45-14" stroke-width=".5" opacity=".6"/>
+                <path d="M26 414c18-10 40-4 48 12 7 14-2 30-18 34-18 5-38-4-42-18-3-12 4-23 12-28z" stroke-width="1.1"/>
+              </g>
+              <g stroke="#5a3e20" fill="none" opacity=".18" stroke-dasharray="3 5">
+                <ellipse cx="322" cy="418" rx="70" ry="52"/>
+                <ellipse cx="322" cy="418" rx="92" ry="70"/>
+                <ellipse cx="50" cy="430" rx="52" ry="38"/>
+              </g>
+              <g stroke-width="1"><path d="M200 0v500M0 250h400" stroke="#6b4a20" opacity=".12"/><path d="M202 0v500M0 252h400" stroke="#fff" opacity=".28"/></g>
+              <rect width="400" height="500" filter="url(#lfvFiber)" opacity=".12" style="mix-blend-mode:multiply"/>
+              <rect width="400" height="500" fill="url(#lfvBurn)"/>
+            </svg>
+
+            <div class="lfv-layer" style="display:grid;place-items:center;padding-bottom:14%">
+              <svg viewBox="0 0 200 200" style="width:56%;opacity:.22" fill="none" aria-hidden="true">
+                <circle cx="100" cy="100" r="86" stroke="#5a3e20" stroke-width=".8"/>
+                <circle cx="100" cy="100" r="66" stroke="#5a3e20" stroke-width=".5"/>
+                <circle cx="100" cy="100" r="30" stroke="#5a3e20" stroke-width=".5"/>
+                <path d="M100 8 L110 92 L100 100 L90 92 Z" fill="#5a3e20"/>
+                <path d="M100 192 L110 108 L100 100 L90 108 Z" fill="#5a3e20" opacity=".55"/>
+                <path d="M8 100 L92 110 L100 100 L92 90 Z" fill="#5a3e20" opacity=".55"/>
+                <path d="M192 100 L108 110 L100 100 L108 90 Z" fill="#5a3e20" opacity=".55"/>
                 <g opacity=".4">
-                  <path d="M35 35 L96 96 L100 100 L96 104 Z" fill="#c9a84c"/>
-                  <path d="M165 35 L104 96 L100 100 L104 104 Z" fill="#c9a84c"/>
-                  <path d="M35 165 L96 104 L100 100 L104 104 Z" fill="#c9a84c"/>
-                  <path d="M165 165 L104 104 L100 100 L96 104 Z" fill="#c9a84c"/>
-                </g>
-                <g stroke="#c9a84c" stroke-width=".6" opacity=".5">
-                  <path d="M100 14v8M100 178v8M14 100h8M178 100h8"/>
-                  <path d="M39 39l6 6M161 39l-6 6M39 161l6-6M161 161l-6-6"/>
+                  <path d="M35 35 L96 96 L100 100 L96 104 Z" fill="#5a3e20"/>
+                  <path d="M165 35 L104 96 L100 100 L104 104 Z" fill="#5a3e20"/>
+                  <path d="M35 165 L96 104 L100 100 L104 104 Z" fill="#5a3e20"/>
+                  <path d="M165 165 L104 104 L100 100 L96 104 Z" fill="#5a3e20"/>
                 </g>
               </svg>
             </div>
-            ${['tl','tr','bl','br'].map(c => `
-              <div class="lfv-corner ${c}"><svg viewBox="0 0 32 32" fill="none"><path d="M1 1h13M1 1v13M5 5h6M5 5v6" stroke="#c9a84c" stroke-width="1.1"/><circle cx="14" cy="14" r="1.6" fill="#c9a84c"/></svg></div>`).join('')}
+
+            <svg class="lfv-layer" viewBox="0 0 400 500" aria-hidden="true">
+              <rect x="14" y="14" width="372" height="472" rx="4" fill="none" stroke="#5a3e20" stroke-width="1.3" opacity=".5"/>
+              <rect x="19" y="19" width="362" height="462" rx="2" fill="none" stroke="#5a3e20" stroke-width=".5" opacity=".32"/>
+            </svg>
 
             <div class="lfv-head">
               <span class="lfv-brand">New Me Log</span>
@@ -357,7 +383,7 @@ export default function ServiceLog({ withSideNav = false }) {
             </div>
 
             <div class="lfv-breakdown">
-              <div class="lfv-bd-head">内訳</div>
+              <div class="lfv-bd-head">投 資 記 録</div>
               ${rows}
             </div>
 
