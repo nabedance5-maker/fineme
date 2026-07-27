@@ -107,72 +107,65 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-modal-cancel { padding: 14px 20px; background: transparent; border: 1px solid rgba(232,228,220,0.15); border-radius: 11px; font-size: 14px; font-weight: 700; color: rgba(232,228,220,0.5); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; }
 
       /* ── FVカード（羊皮紙の航海日誌）──
-         紙の繊維・シミ・焼けた縁・海岸線・コンパスローズを SVG と CSS で描く。
-         金額が実データで動くので背景画像には焼き込まない。 */
-      .lfv-wrap { margin-bottom: 22px; }
+         背景は Canva で作った案3そのもの（文字だけ削除して書き出したもの）。
+         金額・内訳は実データで動くのでテキストで上に重ねる。
+         背景画像に罫線が入っているので、テキストはその位置(%)に合わせて置く。 */
+      .lfv-wrap { margin-bottom: 26px; }
       .lfv-card {
-        width: 100%; max-width: 400px; margin: 0 auto; aspect-ratio: 4 / 5;
-        border-radius: 10px; position: relative; overflow: hidden;
-        display: flex; flex-direction: column; padding: 30px 30px 24px;
-        box-shadow: 0 24px 60px rgba(0,0,0,.45); font-feature-settings: "palt";
-        /* 中央が明るく、外側にいくほど焼けた羊皮紙 */
-        background:
-          radial-gradient(78% 62% at 50% 42%, #e2d4b0 0%, #d2bf94 45%, #b99f70 78%, #9c7f52 100%),
-          #c6b083;
-        color: #3f2d18;
+        width: 100%; max-width: 400px; margin: 0 auto;
+        aspect-ratio: 1080 / 1350; position: relative;
+        background: url('/assets/images/log-parchment.webp') center/cover no-repeat;
+        border-radius: 6px; box-shadow: 0 24px 60px rgba(0,0,0,.45);
+        color: #3a2712; font-feature-settings: "palt";
+        container-type: inline-size;
       }
-      .lfv-layer { position: absolute; inset: 0; pointer-events: none; }
-      .lfv-card > *:not(.lfv-layer) { position: relative; z-index: 3; }
+      /* 背景の罫線に合わせた絶対配置。単位は cqw（カード幅基準）で拡縮に追従させる */
+      .lfv-abs { position: absolute; left: 0; right: 0; text-align: center; }
 
-      .lfv-head { display: flex; justify-content: space-between; align-items: baseline; }
-      .lfv-brand { font-size: 8.5px; font-weight: 800; letter-spacing: .3em; color: rgba(63,45,24,.62); text-transform: uppercase; }
-      .lfv-date { font-size: 9.5px; letter-spacing: .1em; color: rgba(63,45,24,.5); font-variant-numeric: tabular-nums; }
-      .lfv-rule { height: 1px; background: linear-gradient(90deg, transparent, rgba(90,66,34,.5), transparent); margin-top: 11px; }
+      .lfv-brand { top: 9.4%; font-size: 4.6cqw; letter-spacing: .12em; color: #473020;
+                   font-family: 'Noto Serif JP', Georgia, serif; }
+      .lfv-date  { top: 9.4%; font-size: 3.1cqw; letter-spacing: .06em; color: rgba(71,48,32,.75);
+                   font-variant-numeric: tabular-nums; }
 
-      .lfv-amount { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-      .lfv-label { font-family: 'Noto Serif JP', serif; font-size: 11px; letter-spacing: .3em; color: rgba(63,45,24,.6); margin-bottom: 12px; }
-      .lfv-month {
-        font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(46px,14vw,62px);
-        font-weight: 700; line-height: 1; color: #3a2712; letter-spacing: .01em;
-        font-variant-numeric: tabular-nums; text-shadow: 0 1px 0 rgba(255,255,255,.25);
-      }
-      .lfv-month-unit { font-size: 11px; letter-spacing: .22em; color: rgba(90,66,34,.8); margin-top: 11px; }
-      .lfv-year { margin-top: 16px; padding-top: 13px; border-top: 1px solid rgba(90,66,34,.32); width: 190px; text-align: center; font-size: 11.5px; letter-spacing: .04em; color: rgba(63,45,24,.62); font-variant-numeric: tabular-nums; }
-      .lfv-year b { font-weight: 700; color: rgba(50,34,16,.9); }
+      .lfv-label { top: 20.5%; font-size: 3.1cqw; letter-spacing: .3em; color: rgba(71,48,32,.8);
+                   font-family: 'Noto Serif JP', serif; }
+      .lfv-month { top: 24.5%; font-size: 13.4cqw; line-height: 1; color: #472000;
+                   font-family: 'Noto Serif JP', Georgia, serif; font-weight: 500;
+                   font-variant-numeric: tabular-nums; }
+      .lfv-month-unit { top: 38.5%; font-size: 3.7cqw; letter-spacing: .08em; color: #473020;
+                        font-family: 'Noto Serif JP', serif; }
+      .lfv-year  { top: 53.5%; font-size: 3.1cqw; letter-spacing: .04em; color: rgba(71,48,32,.72);
+                   font-variant-numeric: tabular-nums; }
+      .lfv-year b { font-weight: 600; color: #472000; }
 
-      /* 内訳は古文書のリーダー線（点線）で左右をつなぐ */
-      .lfv-breakdown { display: flex; flex-direction: column; gap: 7px; margin-top: 18px; }
-      .lfv-bd-head { font-family: 'Noto Serif JP', serif; font-size: 10px; letter-spacing: .28em; color: rgba(90,66,34,.75); text-align: center; margin-bottom: 5px; }
-      .lfv-row { display: flex; align-items: baseline; gap: 7px; font-size: 11px; }
-      .lfv-row-ico { flex-shrink: 0; font-size: 12px; }
-      .lfv-row-name { flex-shrink: 0; color: rgba(63,45,24,.85); white-space: nowrap; }
-      .lfv-row-lead { flex: 1; border-bottom: 1px dotted rgba(90,66,34,.5); transform: translateY(-3px); }
-      .lfv-row-val { flex-shrink: 0; color: rgba(50,34,16,.92); font-variant-numeric: tabular-nums; font-size: 11.5px; font-family: 'Noto Serif JP', Georgia, serif; }
+      .lfv-bd-head { top: 46.2%; font-size: 2.5cqw; letter-spacing: .28em; color: rgba(71,48,32,.8);
+                     font-family: 'Noto Serif JP', serif; }
 
-      .lfv-foot { margin-top: 16px; padding-top: 13px; border-top: 1px solid rgba(90,66,34,.32); display: flex; justify-content: space-between; align-items: center; }
-      .lfv-ports { font-family: 'Noto Serif JP', serif; font-size: 11px; color: rgba(63,45,24,.72); }
-      .lfv-site { font-size: 9px; font-weight: 700; letter-spacing: .2em; color: rgba(90,66,34,.7); }
+      /* 内訳は背景の罫線5本の上に載せる（1本目 y=64.9% / 行間 5.05%） */
+      .lfv-breakdown { position: absolute; left: 18%; right: 18%; top: 0; bottom: 0; }
+      .lfv-row { position: absolute; left: 0; right: 0; display: flex; align-items: baseline;
+                 gap: 1.6cqw; font-size: 3.1cqw; }
+      .lfv-row-ico  { flex-shrink: 0; }
+      .lfv-row-name { flex-shrink: 0; color: rgba(71,48,32,.9); white-space: nowrap; }
+      .lfv-row-val  { margin-left: auto; flex-shrink: 0; color: #472000;
+                      font-family: 'Noto Serif JP', Georgia, serif;
+                      font-variant-numeric: tabular-nums; }
+
+      .lfv-foot { position: absolute; left: 12%; right: 12%; top: 90.5%;
+                  display: flex; justify-content: space-between; align-items: baseline; }
+      .lfv-ports { font-family: 'Noto Serif JP', serif; font-size: 2.9cqw; color: rgba(71,48,32,.8); }
+      .lfv-site  { font-size: 2.4cqw; letter-spacing: .18em; color: rgba(71,48,32,.7); }
 
       .lfv-budget, .lfv-note { font-size: 11px; color: rgba(232,228,220,.38); margin: 10px auto 0; max-width: 400px; line-height: 1.75; }
       .lfv-note { color: rgba(232,228,220,.3); }
       .lfv-budget { color: rgba(232,228,220,.5); }
 
-      /* ── 次の1つ（Mirror / Me Scan / Map への接続）── */
-      .lnx { display: block; text-decoration: none; background: rgba(10,15,30,0.6); border: 1px solid rgba(201,168,76,0.26); border-radius: 14px; padding: 18px 20px; margin-bottom: 18px; transition: border-color .15s, background .15s; }
-      .lnx:hover { border-color: rgba(201,168,76,0.55); background: rgba(201,168,76,0.05); }
-      .lnx-eyebrow { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: rgba(201,168,76,0.6); margin-bottom: 8px; }
-      .lnx-title { display: block; font-family: 'Noto Serif JP', Georgia, serif; font-size: 15px; font-weight: 700; color: rgba(232,228,220,0.92); line-height: 1.55; margin-bottom: 6px; }
-      .lnx-desc { display: block; font-size: 12px; color: rgba(232,228,220,0.45); line-height: 1.8; margin-bottom: 12px; }
-      .lnx-cta { display: inline-block; font-size: 12.5px; font-weight: 800; color: #c9a84c; }
-
-      /* Compass / Mirror が指している軸の印 */
-      .log-card-mark { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 7px; margin-top: 5px; }
-      .lcm-compass { background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.38); color: #c9a84c; }
-      .lcm-mirror { background: rgba(100,160,255,0.1); border: 1px solid rgba(100,160,255,0.32); color: rgba(140,185,255,0.95); }
-
-      .lfv-prompt { background: rgba(201,168,76,0.06); border: 1px dashed rgba(201,168,76,0.3); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; }
-      .lfv-prompt-title { font-size: 13px; font-weight: 700; color: rgba(232,228,220,0.82); margin: 0 0 4px; }
-      .lfv-prompt-desc { font-size: 11.5px; color: rgba(232,228,220,0.45); margin: 0; line-height: 1.7; }
+      /* ── 一番下の「次の一歩」── */
+      .lnx { background: rgba(10,15,30,0.6); border: 1px solid rgba(201,168,76,0.26); border-radius: 14px; padding: 22px 22px 20px; margin: 28px 0 18px; }
+      .lnx-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: 16px; font-weight: 700; color: rgba(232,228,220,0.94); line-height: 1.6; margin: 0 0 12px; }
+      .lnx-desc { font-size: 12.5px; color: rgba(232,228,220,0.5); line-height: 1.95; margin: 0 0 18px; }
+      .lnx-cta { display: inline-block; padding: 12px 26px; background: linear-gradient(135deg,#c9a84c,#e8c86a); color: #0a0f1e; font-size: 13.5px; font-weight: 800; border-radius: 10px; text-decoration: none; }
+      .lnx-note { font-size: 11px; color: rgba(232,228,220,0.32); margin: 10px 0 0; }
 
       .log-chip-cost { border-color: rgba(201,168,76,0.35) !important; color: rgba(201,168,76,0.85) !important; }
 
@@ -288,15 +281,14 @@ export default function ServiceLog({ withSideNav = false }) {
       const s = costSummary(logs);
       if (!s.counted) return '';
 
-      // 古文書のリーダー線（点線）で軸名と金額をつなぐ。
-      // 横棒グラフは羊皮紙だと近代的すぎて浮くので使わない。
-      const rows = s.byAxis.slice(0, 4).map(row => {
+      // 背景画像の罫線5本の上に載せる（1本目 top=64.9% / 行間 5.05%）
+      const ROW_TOP = 63.4, ROW_GAP = 5.05;
+      const rows = s.byAxis.slice(0, 5).map((row, i) => {
         const def = resolveAxis(row.axis, row.customIcon);
         return `
-          <div class="lfv-row">
+          <div class="lfv-row" style="top:${ROW_TOP + i * ROW_GAP}%">
             <span class="lfv-row-ico">${def.icon}</span>
             <span class="lfv-row-name">${esc(def.label)}</span>
-            <span class="lfv-row-lead"></span>
             <span class="lfv-row-val">${row.estimated ? '約' : ''}${formatYen(row.monthly)}</span>
           </div>`;
       }).join('');
@@ -315,77 +307,16 @@ export default function ServiceLog({ withSideNav = false }) {
       return `
         <div class="lfv-wrap">
           <div class="lfv-card">
-            <svg class="lfv-layer" viewBox="0 0 400 500" preserveAspectRatio="none" aria-hidden="true">
-              <defs>
-                <filter id="lfvFiber"><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="5" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
-                <filter id="lfvStain"><feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="3"/><feColorMatrix type="saturate" values="0"/></filter>
-                <radialGradient id="lfvBurn" cx="50%" cy="44%" r="74%">
-                  <stop offset="46%" stop-color="#5a3a16" stop-opacity="0"/>
-                  <stop offset="100%" stop-color="#4a2c10" stop-opacity=".62"/>
-                </radialGradient>
-              </defs>
-              <rect width="400" height="500" filter="url(#lfvStain)" opacity=".2" style="mix-blend-mode:multiply"/>
-              <g stroke="#6b4a20" stroke-width=".5" opacity=".2">
-                <path d="M0 62h400M0 124h400M0 186h400M0 248h400M0 310h400M0 372h400M0 434h400"/>
-                <path d="M62 0v500M124 0v500M186 0v500M248 0v500M310 0v500M372 0v500"/>
-              </g>
-              <g stroke="#5a3e20" fill="none" opacity=".4">
-                <path d="M-16 92c34 8 56-14 88-6 26 7 34 30 62 28 30-2 40-26 70-22 26 4 36 22 62 18 20-3 30-14 48-12" stroke-width="1.2"/>
-                <path d="M-10 114c30 6 50-10 78-4 24 5 32 24 56 22 26-2 34-20 60-17" stroke-width=".6" opacity=".6"/>
-                <path d="M266 386c22-16 54-12 72 6 16 16 10 44-12 54-24 11-56 2-66-20-8-18 0-30 6-40z" stroke-width="1.1"/>
-                <path d="M278 398c16-11 38-8 50 5 11 11 7 30-8 37-16 8-38 1-45-14" stroke-width=".5" opacity=".6"/>
-                <path d="M26 414c18-10 40-4 48 12 7 14-2 30-18 34-18 5-38-4-42-18-3-12 4-23 12-28z" stroke-width="1.1"/>
-              </g>
-              <g stroke="#5a3e20" fill="none" opacity=".18" stroke-dasharray="3 5">
-                <ellipse cx="322" cy="418" rx="70" ry="52"/>
-                <ellipse cx="322" cy="418" rx="92" ry="70"/>
-                <ellipse cx="50" cy="430" rx="52" ry="38"/>
-              </g>
-              <g stroke-width="1"><path d="M200 0v500M0 250h400" stroke="#6b4a20" opacity=".12"/><path d="M202 0v500M0 252h400" stroke="#fff" opacity=".28"/></g>
-              <rect width="400" height="500" filter="url(#lfvFiber)" opacity=".12" style="mix-blend-mode:multiply"/>
-              <rect width="400" height="500" fill="url(#lfvBurn)"/>
-            </svg>
+            <div class="lfv-abs lfv-brand" style="left:12%;right:auto;text-align:left">New Me Log</div>
+            <div class="lfv-abs lfv-date" style="left:auto;right:12%;text-align:right">${ym}</div>
 
-            <div class="lfv-layer" style="display:grid;place-items:center;padding-bottom:14%">
-              <svg viewBox="0 0 200 200" style="width:56%;opacity:.22" fill="none" aria-hidden="true">
-                <circle cx="100" cy="100" r="86" stroke="#5a3e20" stroke-width=".8"/>
-                <circle cx="100" cy="100" r="66" stroke="#5a3e20" stroke-width=".5"/>
-                <circle cx="100" cy="100" r="30" stroke="#5a3e20" stroke-width=".5"/>
-                <path d="M100 8 L110 92 L100 100 L90 92 Z" fill="#5a3e20"/>
-                <path d="M100 192 L110 108 L100 100 L90 108 Z" fill="#5a3e20" opacity=".55"/>
-                <path d="M8 100 L92 110 L100 100 L92 90 Z" fill="#5a3e20" opacity=".55"/>
-                <path d="M192 100 L108 110 L100 100 L108 90 Z" fill="#5a3e20" opacity=".55"/>
-                <g opacity=".4">
-                  <path d="M35 35 L96 96 L100 100 L96 104 Z" fill="#5a3e20"/>
-                  <path d="M165 35 L104 96 L100 100 L104 104 Z" fill="#5a3e20"/>
-                  <path d="M35 165 L96 104 L100 100 L104 104 Z" fill="#5a3e20"/>
-                  <path d="M165 165 L104 104 L100 100 L96 104 Z" fill="#5a3e20"/>
-                </g>
-              </svg>
-            </div>
+            <div class="lfv-abs lfv-label">自分への投資</div>
+            <div class="lfv-abs lfv-month">${formatYen(s.monthly)}</div>
+            <div class="lfv-abs lfv-month-unit">1ヶ月あたり</div>
+            <div class="lfv-abs lfv-year">このまま1年で <b>${formatYen(s.yearly)}</b></div>
 
-            <svg class="lfv-layer" viewBox="0 0 400 500" aria-hidden="true">
-              <rect x="14" y="14" width="372" height="472" rx="4" fill="none" stroke="#5a3e20" stroke-width="1.3" opacity=".5"/>
-              <rect x="19" y="19" width="362" height="462" rx="2" fill="none" stroke="#5a3e20" stroke-width=".5" opacity=".32"/>
-            </svg>
-
-            <div class="lfv-head">
-              <span class="lfv-brand">New Me Log</span>
-              <span class="lfv-date">${ym}</span>
-            </div>
-            <div class="lfv-rule"></div>
-
-            <div class="lfv-amount">
-              <div class="lfv-label">自分への投資</div>
-              <div class="lfv-month">${formatYen(s.monthly)}</div>
-              <div class="lfv-month-unit">1ヶ月あたり</div>
-              <div class="lfv-year">このまま1年で <b>${formatYen(s.yearly)}</b></div>
-            </div>
-
-            <div class="lfv-breakdown">
-              <div class="lfv-bd-head">投 資 記 録</div>
-              ${rows}
-            </div>
+            <div class="lfv-abs lfv-bd-head">投 資 記 録</div>
+            <div class="lfv-breakdown">${rows}</div>
 
             <div class="lfv-foot">
               <span class="lfv-ports">${portCount}つの港を巡っている</span>
@@ -397,70 +328,75 @@ export default function ServiceLog({ withSideNav = false }) {
         </div>`;
     }
 
-    // ── 次の1つ（Mirror / Me Scan / Map への接続）──
-    // 3択を並べない。状態を見て1つだけ出す（corrections.md「選ばせない。導く」）。
-    // 誘い文に金額を使わない。航路＝順番・優先度の話に限る（でお決定 2026-07-27）。
+    // ── 一番下に置く「次の一歩」──
+    //
+    // FV直下には置かない。Log に来る人の大半は Fineme を知らず、まだ「変わりたい」とも
+    // 認めていない。最も目立つ場所に理解できないものがあると、ツール全体が使いづらそうに見える。
+    // 記録として使い切った後（＝一番下）で、初めて次の話が耳に入る。
+    //
+    // 金額は「多い/少ない」の評価には使わない。「どう振り分けるか」の材料として使う。
     function renderNextStep() {
       if (!logs.length) return '';
-      const ports = logs.length;
       const TRACK = TRACKS[trackRef.current] || TRACKS[DEFAULT_TRACK];
+      const s = costSummary(logs);
+      const loggedIn = isLoggedIn();
 
-      // Me Scan 済みなのに Compass の軸が Log に無い → その軸の登録へ
-      if (hasDiagnosis && compassAxis && !logs.some(l => l.axis === compassAxis)) {
-        const def = resolveAxis(compassAxis);
+      // ① 費用がまだ無い → 金額起点のロジックが成立しないので、まず費用を入れてもらう
+      if (!s.counted) {
         return `
-          <a class="lnx" href="#" data-add-axis="${esc(compassAxis)}">
-            <span class="lnx-eyebrow">🧭 Compass</span>
-            <span class="lnx-title">最初の一手は ${def.icon} ${esc(def.label)} です</span>
-            <span class="lnx-desc">まだ記録がありません。通っているところがあれば登録しておくと、次の時期も追えます。</span>
-            <span class="lnx-cta">${esc(def.label)}を登録する →</span>
-          </a>`;
+          <div class="lnx">
+            <p class="lnx-title">1回いくらか入れると、月にいくら使っているかが出ます</p>
+            <p class="lnx-desc">編集から「1回あたりの費用」を入れるだけ。頻度から自動で計算します。</p>
+          </div>`;
       }
 
-      // Me Scan 未実施 → 地図を作る
+      // ② Me Scan 未実施 → 配分の最適化という文脈で誘う（本命）
       if (!hasDiagnosis) {
         return `
-          <a class="lnx" href="${TRACK.diagnosis}">
-            <span class="lnx-eyebrow">Me Scan · 無料 約3分</span>
-            <span class="lnx-title">${ports}つの港を巡っている。この航路で合っているか</span>
-            <span class="lnx-desc">どの順番で手をつけると効くかは、地図があると分かります。いま巡っている港も、その上に置けます。</span>
-            <span class="lnx-cta">地図をつくる →</span>
-          </a>`;
+          <div class="lnx">
+            <p class="lnx-title">この配分、最適だと思いますか</p>
+            <p class="lnx-desc">
+              月 ${formatYen(s.monthly)} を ${s.counted}つに分けて使っています。年にすると ${formatYen(s.yearly)}。<br><br>
+              ただ、この記録だけでは<br>
+              　・どこにもっとかけるべきか<br>
+              　・どこは減らしてもいいか<br>
+              　・どの順番で手をつけるか<br>
+              までは分かりません。<br><br>
+              理想の自分と、今の自分。その差を測ると、順番が整理されます。
+            </p>
+            <a class="lnx-cta" href="${TRACK.diagnosis}">Me Scan を受ける（無料・約3分）→</a>
+            <p class="lnx-note">受けると New Me Map が手に入ります。</p>
+          </div>`;
       }
 
-      // 未ログインには有料のMirrorを出さない（先にアカウントの導線がある）
-      if (!isLoggedIn()) return '';
-
-      // Me Scan 済み・Mirror 未実施 → 現在地を測る
+      // ③ Mirror 未実施 → 地図の精度を上げると配分が絞れる
       if (!hasMirror) {
         return `
-          <a class="lnx" href="${TRACK.mirror}">
-            <span class="lnx-eyebrow">Mirror</span>
-            <span class="lnx-title">地図はある。いま自分がどこにいるか</span>
-            <span class="lnx-desc">写真1枚で、自分では見えていない現在地が分かります。地図に現在地が入ると、次の一歩が決まります。</span>
-            <span class="lnx-cta">現在地を測る →</span>
-          </a>`;
+          <div class="lnx">
+            <p class="lnx-title">地図の精度を上げると、配分はもっと絞れます</p>
+            <p class="lnx-desc">
+              New Me Map は手元にあります。ただ、そこに「今の自分」がまだ入っていません。<br><br>
+              Mirror は写真1枚から、自分では気づけない現在地を測ります。
+              地図の解像度が上がると、どこにかけるべきか・どこは今じゃなくていいかが、はっきりします。
+            </p>
+            <a class="lnx-cta" href="${TRACK.mirror}">現在地を測る →</a>
+          </div>`;
       }
 
-      // 両方済み → Map へ
+      // ④ 両方済み。未ログインならログイン画面に突き当たらせず、アカウント作成へ送る
+      if (!loggedIn) {
+        return `
+          <div class="lnx">
+            <p class="lnx-title">地図と現在地が揃っています</p>
+            <p class="lnx-desc">アカウントを作ると、この記録と地図が New Me Map にまとまります。</p>
+            <a class="lnx-cta" href="/login?mode=signup&next=/mypage/navi">無料アカウントを作る →</a>
+          </div>`;
+      }
       return `
-        <a class="lnx" href="/mypage/navi">
-          <span class="lnx-eyebrow">New Me Map</span>
-          <span class="lnx-title">地図と現在地が揃っています</span>
-          <span class="lnx-desc">巡っている港は Navi の各ステップにも出ています。今月の一歩はそこにあります。</span>
-          <span class="lnx-cta">New Me Map を開く →</span>
-        </a>`;
-    }
-
-    // 費用がまだ1件も入っていない時は、カードの代わりに一言だけ置く。
-    // 空のカードや ¥0 を見せても意味がないため（推測で数字を作らない）。
-    function renderCostPrompt() {
-      const s = costSummary(logs);
-      if (s.counted || !logs.length) return '';
-      return `
-        <div class="lfv-prompt">
-          <p class="lfv-prompt-title">💰 1回いくらか入れると、月にいくら使っているかが出ます</p>
-          <p class="lfv-prompt-desc">編集から「1回あたりの費用」を入れるだけ。頻度から自動で計算します。</p>
+        <div class="lnx">
+          <p class="lnx-title">地図と現在地が揃っています</p>
+          <p class="lnx-desc">巡っている港は New Me Map の各ステップにも出ています。今月の一歩はそこに。</p>
+          <a class="lnx-cta" href="/mypage/navi">New Me Map を開く →</a>
         </div>`;
     }
 
@@ -579,13 +515,14 @@ export default function ServiceLog({ withSideNav = false }) {
 
       // 費用が入っていれば投資額カードが FV。まだなら従来のヘッダーを出す
       // （空のカードや ¥0 を見せないため）
+      // FV直下には何も挟まない。記録として使い切るまでが上半分。
+      // 次の一歩とアカウントの話は、一覧を見終わった一番下に置く。
       const card = renderCostCard();
       root.innerHTML = `
         ${card || header}
-        ${renderNextStep()}
-        ${renderCostPrompt()}
         <button class="log-add-btn" id="log-open-add">＋ 追加する</button>
         ${sectionsHtml}
+        ${renderNextStep()}
         ${renderGuestCta()}`;
       bindEvents();
     }
