@@ -12,20 +12,25 @@ const CATEGORY_LABELS = {
 
 export async function generateMetadata({ params }) {
   try {
+    // アフィリエイトは providers テーブル（entity_type='affiliate'）に格納されている。
+    // 以前は存在しない 'affiliates' テーブルを参照していたため常に null となり、
+    // robots:{index:false} にフォールバックして全 /affiliate/* が noindex 化していた（GSC検証失敗の原因）。
     const { data: affiliate } = await getSupabase()
-      .from('affiliates')
-      .select('name, tagline, description, main_category, thumbnail')
+      .from('providers')
+      .select('name, catchphrase, description, main_category, photo_url, cover_image_url')
       .eq('slug', params.slug)
+      .eq('entity_type', 'affiliate')
+      .eq('published', true)
       .single();
 
     if (!affiliate) return { title: 'サービス詳細 | Fineme', robots: { index: false, follow: false } };
 
     const catLabel = CATEGORY_LABELS[affiliate.main_category] || 'サービス';
     const title = `${affiliate.name} — ${catLabel} | Fineme`;
-    const description = affiliate.tagline
+    const description = affiliate.catchphrase
       || (affiliate.description ? affiliate.description.slice(0, 120) : '')
       || `${catLabel}のおすすめサービス。Finemeで詳細を見る。`;
-    const image = affiliate.thumbnail || `${BASE_URL}/assets/images/og-image.png`;
+    const image = affiliate.cover_image_url || affiliate.photo_url || `${BASE_URL}/assets/images/og-image.png`;
     const url = `${BASE_URL}/affiliate/${params.slug}`;
 
     return {
