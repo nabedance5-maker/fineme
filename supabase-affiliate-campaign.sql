@@ -1,4 +1,4 @@
--- ⚠️ 本番Supabase（SQL Editor）で実行してから、この行の下に「✅ 本番適用済 YYYY-MM-DD」を追記すること。
+-- ✅ 本番適用済 2026-07-28
 --
 -- アフィリエイト期間限定キャンペーン用の campaign フィールド。
 -- providers.campaign(jsonb) に { active, label, starts_at, ends_at, items[], disclaimers[] } を格納する。
