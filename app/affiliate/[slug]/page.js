@@ -114,6 +114,15 @@ function AffiliatePageInner() {
   const effectiveFailures = affiliate.ai_match_profile?.handles_failure_patterns?.length
     ? affiliate.ai_match_profile.handles_failure_patterns : (affiliate.handles_failure_patterns || []);
 
+  // ── 期間限定キャンペーン（campaign フィールド） ─────────────────────────────
+  // starts_at〜ends_at（JST・YYYY-MM-DD）の期間内のみ自動表示。期間を過ぎると自動的に消える。
+  // 掲載を完全に取り消すには providers.campaign を NULL にする。
+  const campaign = affiliate.campaign;
+  const todayJST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(new Date());
+  const campaignActive = !!campaign && campaign.active !== false
+    && (!campaign.starts_at || todayJST >= campaign.starts_at)
+    && (!campaign.ends_at || todayJST <= campaign.ends_at);
+
   return (
     <div style={{ maxWidth: '720px', margin: '0 auto', padding: '0 0 80px' }}>
 
@@ -185,6 +194,54 @@ function AffiliatePageInner() {
       </div>
 
       <div style={{ padding: '0 16px' }}>
+
+        {/* ── 期間限定キャンペーン（バナー＋注釈。期間内のみ自動表示） ───── */}
+        {campaignActive && (
+          <div style={{
+            background: 'rgba(201,168,76,0.08)',
+            border: '1.5px solid rgba(201,168,76,0.55)', borderRadius: '18px',
+            padding: '20px 22px', marginBottom: '20px',
+          }}>
+            <div style={{
+              display: 'inline-block', fontSize: '11px', fontWeight: '800', color: '#0a0f1e',
+              background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', borderRadius: '99px',
+              padding: '4px 12px', letterSpacing: '.06em', marginBottom: '14px',
+            }}>
+              {campaign.label || '期間限定キャンペーン'}
+            </div>
+
+            {(campaign.items || []).length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
+                {campaign.items.map((item, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: '10px',
+                    fontSize: '15px', fontWeight: '800', color: '#e8e4dc', lineHeight: '1.5',
+                  }}>
+                    <span style={{ color: '#e8c97a', flexShrink: 0 }}>◆</span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* バナー直下の注釈（必須表示） */}
+            {(campaign.disclaimers || []).length > 0 && (
+              <ul style={{
+                listStyle: 'none', margin: 0, padding: '12px 0 0',
+                borderTop: '1px solid rgba(201,168,76,0.25)',
+              }}>
+                {campaign.disclaimers.map((d, i) => (
+                  <li key={i} style={{
+                    fontSize: '11px', color: 'rgba(232,228,220,0.62)', lineHeight: '1.7',
+                    paddingLeft: '14px', textIndent: '-14px',
+                  }}>
+                    ※ {d}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         {/* ── ガイドからのひと言 ────────────────────────────────────── */}
         {affiliate.guide_message && (
