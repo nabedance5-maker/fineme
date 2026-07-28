@@ -202,10 +202,29 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-visit-today, .log-visit-pick { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; box-sizing: border-box; }
       .log-visit-today { background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.4); color: #c9a84c; }
       .log-visit-today:hover { background: rgba(201,168,76,0.2); }
-      .log-visit-pick { background: rgba(232,228,220,0.04); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); position: relative; }
+      .log-visit-pick { background: rgba(232,228,220,0.04); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); }
       .log-visit-pick:hover { border-color: rgba(201,168,76,0.4); color: rgba(232,228,220,0.85); }
-      /* input はラベル内に隠すが、クリック領域として生かす（ネイティブのカレンダーが開く） */
-      .log-visit-pick input[type="date"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: none; padding: 0; }
+      /* showPicker() を呼ぶための実体。display:none だと呼べないので opacity で隠す */
+      .log-visit-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; border: 0; padding: 0; margin: 0; }
+      .log-visit-today:disabled, .log-visit-pick:disabled { opacity: .6; cursor: default; }
+
+      /* 記録できたことを目に見える形で返す */
+      .log-toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(18px);
+        background: linear-gradient(135deg,#c9a84c,#e8c86a); color: #0a0f1e; padding: 12px 24px; border-radius: 99px;
+        font-size: 13.5px; font-weight: 800; font-family: 'Noto Sans JP', sans-serif; white-space: nowrap;
+        opacity: 0; pointer-events: none; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,.45);
+        transition: opacity .22s ease, transform .22s ease; }
+      .log-toast.is-on { opacity: 1; transform: translateX(-50%) translateY(0); }
+      .log-card.is-flash { animation: logCardFlash 1.5s ease-out; }
+      @keyframes logCardFlash {
+        0%   { border-color: #c9a84c; background: rgba(201,168,76,0.20); }
+        60%  { border-color: rgba(201,168,76,0.5); background: rgba(201,168,76,0.08); }
+        100% { border-color: rgba(232,228,220,0.12); background: rgba(10,15,30,0.65); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .log-toast { transition: none; }
+        .log-card.is-flash { animation: none; box-shadow: 0 0 0 2px rgba(201,168,76,.6); }
+      }
 
       /* ── カスタム軸のアイコン選択 ── */
       .log-icon-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
@@ -568,10 +587,8 @@ export default function ServiceLog({ withSideNav = false }) {
               ${log.memo ? `<p class="log-card-memo">📝 ${esc(log.memo)}</p>` : ''}
               <div class="log-card-visit">
                 <button class="log-visit-today" data-visit-today="${log.id}">✓ 今日行った</button>
-                <label class="log-visit-pick">
-                  📅 日付を選ぶ
-                  <input type="date" data-visit-date="${log.id}" />
-                </label>
+                <button class="log-visit-pick" data-visit-pick="${log.id}">📅 日付を選ぶ</button>
+                <input type="date" class="log-visit-input" data-visit-date="${log.id}" tabindex="-1" aria-hidden="true" />
               </div>
             </div>`;
         }).join('');
@@ -733,18 +750,71 @@ export default function ServiceLog({ withSideNav = false }) {
       }
     }
 
+    // 記録できたことを目に見える形で返す（押しただけでは伝わらない）
+    function showToast(msg) {
+      let el = document.getElementById('log-toast');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'log-toast';
+        el.className = 'log-toast';
+        document.body.appendChild(el);
+      }
+      el.textContent = msg;
+      requestAnimationFrame(() => el.classList.add('is-on'));
+      clearTimeout(el._hideTimer);
+      el._hideTimer = setTimeout(() => el.classList.remove('is-on'), 2400);
+    }
+
+    function flashCard(id) {
+      const card = root.querySelector(`.log-card[data-id="${id}"]`);
+      if (!card) return;
+      card.classList.add('is-flash');
+      card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      setTimeout(() => card.classList.remove('is-flash'), 1600);
+    }
+
+    function fmtJa(dateStr) {
+      const d = new Date(dateStr);
+      if (isNaN(d)) return dateStr;
+      const today = new Date().toISOString().slice(0, 10);
+      if (dateStr === today) return '今日';
+      return `${d.getMonth() + 1}月${d.getDate()}日`;
+    }
+
     // 「行った」を1タップで記録する。
     // 予約日（next_visit）は消化されたので空に戻し、次のサイクルを始める。
     // 次に行く目安は last_visit + 頻度 から自動で出るため、入力させない。
-    async function markVisited(id, dateStr) {
+    async function markVisited(id, dateStr, btn) {
       if (!dateStr) return;
+      const label = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = '記録中…'; }
       try {
         await updateLog(id, { last_visit: dateStr, next_visit: null });
         await fetchLogs();
         render();
+        const log = logs.find(l => String(l.id) === String(id));
+        const next = log ? idealNextDate(log) : null;
+        showToast(next
+          ? `✓ ${fmtJa(dateStr)}の記録をつけました — 次の目安は ${fmtJa(next)}`
+          : `✓ ${fmtJa(dateStr)}の記録をつけました`);
+        flashCard(id);
       } catch (e) {
+        if (btn) { btn.disabled = false; btn.textContent = label; }
         alert('記録に失敗しました: ' + e.message);
       }
+    }
+
+    // date input は opacity:0 だとクリックしてもピッカーが開かないため、
+    // ボタン経由で showPicker() を明示的に呼ぶ。
+    function openDatePicker(id) {
+      const input = root.querySelector(`input[data-visit-date="${id}"]`);
+      if (!input) return;
+      input.value = '';
+      input.max = new Date().toISOString().slice(0, 10); // 未来の「行った」は無い
+      if (typeof input.showPicker === 'function') {
+        try { input.showPicker(); return; } catch (e) {}
+      }
+      input.click();
     }
 
     async function deleteLog(id) {
@@ -769,9 +839,11 @@ export default function ServiceLog({ withSideNav = false }) {
       if (delBtn) { deleteLog(delBtn.dataset.del); return; }
       const todayBtn = e.target.closest('[data-visit-today]');
       if (todayBtn) {
-        markVisited(todayBtn.dataset.visitToday, new Date().toISOString().slice(0, 10));
+        markVisited(todayBtn.dataset.visitToday, new Date().toISOString().slice(0, 10), todayBtn);
         return;
       }
+      const pickBtn = e.target.closest('[data-visit-pick]');
+      if (pickBtn) { openDatePicker(pickBtn.dataset.visitPick); return; }
       // Compass が指す軸の登録へ（その軸を選んだ状態でモーダルを開く）
       const addAxis = e.target.closest('[data-add-axis]');
       if (addAxis) {
@@ -784,8 +856,10 @@ export default function ServiceLog({ withSideNav = false }) {
     // 日付を選んで記録（label 内の date input がネイティブのカレンダーを開く）
     root.addEventListener('change', e => {
       const dateInput = e.target.closest('[data-visit-date]');
-      if (!dateInput) return;
-      markVisited(dateInput.dataset.visitDate, dateInput.value);
+      if (!dateInput || !dateInput.value) return;
+      const id = dateInput.dataset.visitDate;
+      const btn = root.querySelector(`[data-visit-pick="${id}"]`);
+      markVisited(id, dateInput.value, btn);
     });
 
     document.getElementById('log-modal-save')?.addEventListener('click', saveLog);
