@@ -766,7 +766,7 @@ export default function DiagnosisResultPage() {
           <p class="type-hero-lead">あなたのタイプは →</p>
           <p class="type-hero-code" style="color:${color}">${esc(typeCode)}</p>
           <div class="type-hero-img-wrap" style="border:2px solid ${color}44;box-shadow:0 0 36px ${color}22">
-            <img class="type-hero-img" src="/images/types/TYPE-${esc(typeCode)}.png" alt="${esc(creature)}" />
+            <img class="type-hero-img" src="/images/types/TYPE-${esc(typeCode)}.webp" alt="${esc(creature)}" />
           </div>
           <h1 class="type-hero-name">～ ${esc(fullName)} ～</h1>
           <p class="type-hero-axis">（${esc(axisLabel)}軸）</p>
@@ -1359,7 +1359,7 @@ export default function DiagnosisResultPage() {
           // 画像を先にロード（CORSあり）
           const typeImg = new Image();
           typeImg.crossOrigin = 'anonymous';
-          await new Promise(res => { typeImg.onload = res; typeImg.onerror = res; typeImg.src = `/images/types/TYPE-${tc}.png`; });
+          await new Promise(res => { typeImg.onload = res; typeImg.onerror = res; typeImg.src = `/images/types/TYPE-${tc}.webp`; });
 
           const W = 540, S = 2;
           // テキスト行数を事前計測してカード高さを動的算出

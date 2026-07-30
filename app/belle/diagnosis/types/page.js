@@ -100,7 +100,7 @@ export default function BelleTypesPage() {
                     {/* 花画像 */}
                     <div style={{ position: 'relative', width: '100%', aspectRatio: '3/4', background: `${color}11` }}>
                       <Image
-                        src={`/images/types/belle/TYPE-${t.code}.png`}
+                        src={`/images/types/belle/TYPE-${t.code}.webp`}
                         alt={t.name}
                         fill
                         sizes="(max-width:600px) 50vw, 160px"

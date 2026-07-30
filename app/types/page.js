@@ -276,7 +276,7 @@ export default function TypesPage() {
       const typeCode = axisCode + cp;
       const isMyType = typeCode === myType;
       return '<div class="type-card' + (isMyType ? ' my-type' : '') + '" onclick="openTypeModal(\'' + typeCode + '\')">'
-        + '<img class="type-card-img" src="/images/types/TYPE-' + typeCode + '.png" alt="' + esc(fullName) + '" loading="lazy" />'
+        + '<img class="type-card-img" src="/images/types/TYPE-' + typeCode + '.webp" alt="' + esc(fullName) + '" loading="lazy" />'
         + '<div class="type-card-body">'
         + '<div class="type-card-code" style="color:' + ax.color + '">' + typeCode + '</div>'
         + '<div class="type-card-name">' + esc(fullName) + '</div>'
@@ -357,7 +357,7 @@ export default function TypesPage() {
         + '<div class="type-modal-code" style="color:' + ax.color + '">' + typeCode + '</div>'
         + '<div class="type-modal-name">～ ' + esc(fullName) + ' ～</div>'
         + (isMyType ? '<div style="font-size:11px;font-weight:800;color:#c9a84c;margin-bottom:12px">★ あなたの現在のタイプ</div>' : '')
-        + '<img class="type-modal-img" src="/images/types/TYPE-' + typeCode + '.png" alt="' + esc(creature) + '" style="border:2px solid ' + ax.color + '44" />'
+        + '<img class="type-modal-img" src="/images/types/TYPE-' + typeCode + '.webp" alt="' + esc(creature) + '" style="border:2px solid ' + ax.color + '44" />'
         + '<p class="type-modal-desc">' + esc(desc) + '</p>'
         + '<a href="/diagnosis" class="type-modal-cta">このタイプか確かめる →</a>';
       document.getElementById('type-modal-overlay').style.display = 'flex';

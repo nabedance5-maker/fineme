@@ -20,3 +20,9 @@ Thumbs.db
 .vercel
 .env*.local
 __pycache__/
+
+# 作業用（タイプ画像の生成原本PNG・退避した旧画像・生成ログ等。数百MBになる）
+tmp/
+tsconfig.tsbuildinfo
+.vscode/
+public/type-preview.html

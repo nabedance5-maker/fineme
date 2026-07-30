@@ -1145,7 +1145,7 @@ export default function BelleDiagnosisPage() {
             <p style={{fontSize:'10px',fontWeight:'800',letterSpacing:'.18em',color:'rgba(200,100,140,0.8)',textTransform:'uppercase',margin:'0 0 12px'}}>TYPE-ECV · 眉軸</p>
             <h2 style={{fontFamily:"'Noto Serif JP',Georgia,serif",fontSize:'clamp(22px,6vw,34px)',fontWeight:'900',color:'#fff',margin:'0 0 20px',lineHeight:1.2}}>眉の凍れる蕾</h2>
             <div style={{width:'min(200px,60vw)',height:'min(268px,80vw)',margin:'0 auto 18px',borderRadius:'16px',overflow:'hidden',border:'2px solid rgba(200,100,140,0.4)',boxShadow:'0 0 28px rgba(200,100,140,0.18)',position:'relative',display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(200,100,140,0.08)'}}>
-              <img src="/images/types/belle/TYPE-ECV.png" alt="凍れる蕾" style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,borderRadius:'14px'}} onError={(e)=>{e.currentTarget.style.display='none';const s=e.currentTarget.nextElementSibling;if(s)s.style.visibility='visible';}} />
+              <img src="/images/types/belle/TYPE-ECV.webp" alt="凍れる蕾" style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,borderRadius:'14px'}} onError={(e)=>{e.currentTarget.style.display='none';const s=e.currentTarget.nextElementSibling;if(s)s.style.visibility='visible';}} />
               <span style={{fontSize:'56px',position:'relative',zIndex:0,visibility:'hidden'}}>🌸</span>
             </div>
             <p style={{fontSize:'13px',color:'rgba(232,228,220,0.5)',lineHeight:1.85,maxWidth:'260px',margin:'0 auto'}}>気になっているのに、まだ動けていない。その一歩が、全てを変える。</p>
