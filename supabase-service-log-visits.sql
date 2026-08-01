@@ -1,4 +1,4 @@
--- ⏳ 未適用（オーナーが本番Supabaseで実行してください）
+-- ✅ 本番適用済 2026-08-01
 --
 -- New Me Log: 来店1回＝1行の履歴テーブル。
 -- user_service_logs は「サービス1件＝1行」で last_visit/next_visit しか持てないため、
