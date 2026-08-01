@@ -5,8 +5,9 @@ import {
   axisChoicesFor, resolveAxis, CUSTOM_AXIS, CUSTOM_ICON_CHOICES, DEFAULT_CUSTOM_ICON,
   monthlyCost, costSummary, formatYen, BUDGET_LABELS,
   effectiveFreq, formatFreq, idealNextDate, daysUntilIdeal, FREQ_PRESETS,
+  monthlyTrend, trendInsights,
 } from '@/lib/log-axes';
-import { listLogs, createLog, updateLog, removeLog, getAccessToken } from '@/lib/log-store';
+import { listLogs, createLog, updateLog, removeLog, recordVisit, getAccessToken } from '@/lib/log-store';
 import { TRACKS, DEFAULT_TRACK } from '@/lib/track';
 
 // 次回日の算出は lib/log-axes.js の idealNextDate に統一した
@@ -238,6 +239,26 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-guest-cta-desc { font-size: 12px; color: rgba(232,228,220,0.5); margin: 0 0 18px; line-height: 1.8; }
       .log-guest-cta-btn { display: inline-block; padding: 13px 30px; background: linear-gradient(135deg,#c9a84c,#e8c86a); color: #0a0f1e; font-size: 14px; font-weight: 800; border-radius: 11px; text-decoration: none; }
       .log-guest-cta-note { font-size: 10px; color: rgba(232,228,220,0.25); margin: 10px 0 0; letter-spacing: .04em; }
+
+      /* ── 支出の推移（.ltr- = Log TRend） ── */
+      .ltr-wrap { background: rgba(10,15,30,0.6); border: 1px solid rgba(201,168,76,0.18); border-radius: 14px; padding: 22px 20px 20px; margin: 20px 0; }
+      .ltr-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: 15px; font-weight: 700; color: rgba(232,228,220,0.92); margin: 0 0 4px; }
+      .ltr-caption { font-size: 11px; color: rgba(232,228,220,0.4); margin: 0 0 16px; }
+      .ltr-chart-wrap { width: 100%; max-width: 336px; margin: 0 auto; }
+      .ltr-svg { width: 100%; height: auto; display: block; }
+      .ltr-baseline { stroke: rgba(232,228,220,0.15); stroke-width: 1; }
+      .ltr-bar-label { font-size: 9px; fill: rgba(232,228,220,0.55); font-family: -apple-system, sans-serif; }
+      .ltr-axis-label { font-size: 9.5px; fill: rgba(232,228,220,0.4); font-family: -apple-system, sans-serif; }
+      .ltr-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 14px 0 0; padding-top: 14px; border-top: 1px solid rgba(232,228,220,0.08); }
+      .ltr-legend-item { font-size: 11px; color: rgba(232,228,220,0.65); display: inline-flex; align-items: center; gap: 5px; }
+      .ltr-legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+      .ltr-note { font-size: 10.5px; color: rgba(232,228,220,0.32); margin: 10px 0 0; }
+      .ltr-insights { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+      .ltr-insight { font-size: 12.5px; color: rgba(232,228,220,0.75); line-height: 1.7; margin: 0; padding: 10px 12px; background: rgba(201,168,76,0.06); border-radius: 9px; }
+      .ltr-insight-empty { font-size: 11.5px; color: rgba(232,228,220,0.32); margin: 0; }
+      .ltr-empty { text-align: center; padding: 20px 10px 6px; }
+      .ltr-empty-icon { font-size: 26px; margin-bottom: 10px; opacity: .5; }
+      .ltr-empty-text { font-size: 12px; color: rgba(232,228,220,0.4); line-height: 1.8; margin: 0; }
     `;
     document.head.appendChild(style);
 
@@ -367,6 +388,102 @@ export default function ServiceLog({ withSideNav = false }) {
           </div>
           ${budgetLine}
           ${noteLines}
+        </div>`;
+    }
+
+    // ── 支出の推移（サブスクBox的なグラフ・傾向分析）──
+    //
+    // costSummary()（FVカード）は「今の設定から計算した現時点のスナップショット」。
+    // こちらは実際に記録した来店（log.visits）を月ごとに積み上げた時系列で、
+    // 「✓ 今日行った」を押すたびに少しずつ精度が上がっていく。
+    //
+    // 記録一覧の下・次の一歩ブロックの上に置く：ここもまだ「ツールとして使い切る」区間の
+    // 続きであり、他機能への誘導ではないため、FV直下を避けるルールとは別枠。
+    const TREND_COLORS = ['#3987e5', '#d95926', '#199e70']; // 青・橙・アクア（dataviz skillでdark background検証済）
+    const TREND_OTHER_COLOR = '#6b7280'; // 4位以下をまとめる「その他」
+
+    function renderTrendSection() {
+      if (!logs.length) return '';
+      const trend = monthlyTrend(logs, 6);
+
+      if (!trend.hasAnyVisit) {
+        return `
+          <div class="ltr-wrap">
+            <p class="ltr-title">支出の推移</p>
+            <div class="ltr-empty">
+              <div class="ltr-empty-icon">📈</div>
+              <p class="ltr-empty-text">「✓ 今日行った」を記録していくと、<br>ここに月ごとの推移が表示されます。</p>
+            </div>
+          </div>`;
+      }
+
+      // 色は「この時点での期間合計ランキング」で上位3軸に固定割り当て、4位以下は「その他」
+      const topAxes = trend.totalByAxis.slice(0, 3).map((a, i) => ({ ...a, color: TREND_COLORS[i] }));
+      const axisColor = {};
+      topAxes.forEach(a => { axisColor[a.axis] = a.color; });
+      const otherTotal = trend.totalByAxis.filter(a => !axisColor[a.axis]).reduce((s, a) => s + a.amount, 0);
+
+      // ── SVG積み上げ棒グラフ（viewBox 0 0 336 168）──
+      const bandW = 336 / trend.months.length;
+      const barW = 22;
+      const baseline = 148;
+      const plotH = 126;
+      const svgBars = trend.months.map((m, i) => {
+        const x = i * bandW + (bandW - barW) / 2;
+        const segments = [
+          ...topAxes.map(a => ({ color: a.color, amount: m.byAxis.find(x2 => x2.axis === a.axis)?.amount || 0 })),
+          { color: TREND_OTHER_COLOR, amount: m.byAxis.filter(x2 => !axisColor[x2.axis]).reduce((s, x2) => s + x2.amount, 0) },
+        ].filter(s => s.amount > 0);
+        let y = baseline;
+        const rects = segments.map(s => {
+          const h = trend.max > 0 ? Math.max(2, (s.amount / trend.max) * plotH) : 0;
+          y -= h;
+          return `<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${Math.max(0, h - 1).toFixed(1)}" rx="3" fill="${s.color}" />`;
+        }).join('');
+        const totalLabel = m.total > 0
+          ? `<text x="${x + barW / 2}" y="${(y - 6).toFixed(1)}" text-anchor="middle" class="ltr-bar-label">${esc(formatYen(m.total))}</text>`
+          : '';
+        return `${rects}${totalLabel}<text x="${x + barW / 2}" y="164" text-anchor="middle" class="ltr-axis-label">${esc(m.label)}</text>`;
+      }).join('');
+
+      const svg = `
+        <svg class="ltr-svg" viewBox="0 0 336 168" role="img" aria-label="直近6ヶ月の月別支出推移グラフ">
+          <line x1="0" y1="${baseline}" x2="336" y2="${baseline}" class="ltr-baseline" />
+          ${svgBars}
+        </svg>`;
+
+      // ── 凡例 ──
+      const legendItems = [
+        ...topAxes.filter(a => a.amount > 0),
+        ...(otherTotal > 0 ? [{ icon: '✦', label: 'その他', color: TREND_OTHER_COLOR, amount: otherTotal }] : []),
+      ];
+      const legend = legendItems.length ? `
+        <div class="ltr-legend">
+          ${legendItems.map(a => `
+            <span class="ltr-legend-item">
+              <span class="ltr-legend-dot" style="background:${a.color}"></span>
+              ${a.icon} ${esc(a.label)} ${esc(formatYen(a.amount))}
+            </span>`).join('')}
+        </div>` : '';
+
+      const unknownCount = trend.months.reduce((s, m) => s + m.unknownCostCount, 0);
+      const unknownNote = unknownCount
+        ? `<p class="ltr-note">金額未入力の記録が${unknownCount}件あり、合計には含めていません</p>` : '';
+
+      // ── 気づき ──
+      const insights = trendInsights(logs, 6);
+      const insightsHtml = insights.length
+        ? insights.map(ins => `<p class="ltr-insight">${ins.icon} ${esc(ins.text)}</p>`).join('')
+        : `<p class="ltr-insight-empty">気づきはまだありません。記録が数ヶ月分たまると、ここに表示されます。</p>`;
+
+      return `
+        <div class="ltr-wrap">
+          <p class="ltr-title">支出の推移</p>
+          <p class="ltr-caption">直近6ヶ月、記録した来店から</p>
+          <div class="ltr-chart-wrap">${svg}</div>
+          ${legend}
+          ${unknownNote}
+          <div class="ltr-insights">${insightsHtml}</div>
         </div>`;
     }
 
@@ -607,6 +724,7 @@ export default function ServiceLog({ withSideNav = false }) {
         ${card || header}
         <button class="log-add-btn" id="log-open-add">＋ 追加する</button>
         ${sectionsHtml}
+        ${renderTrendSection()}
         ${renderNextStep()}
         ${renderGuestCta()}`;
       bindEvents();
@@ -789,7 +907,7 @@ export default function ServiceLog({ withSideNav = false }) {
       const label = btn ? btn.textContent : '';
       if (btn) { btn.disabled = true; btn.textContent = '記録中…'; }
       try {
-        await updateLog(id, { last_visit: dateStr, next_visit: null });
+        await recordVisit(id, dateStr);
         await fetchLogs();
         render();
         const log = logs.find(l => String(l.id) === String(id));
