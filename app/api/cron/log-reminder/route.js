@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 function isMissingColumn(error) {
   if (!error) return false;
   return (error.code === '42703' || error.code === 'PGRST204')
-    && /notify_enabled|notify_days_before|last_notified_at/i.test(error.message || '');
+    && /notify_enabled|notify_days_before|last_notified_at|entry_type/i.test(error.message || '');
 }
 
 function jstToday() {
@@ -47,7 +47,7 @@ export async function GET(request) {
 
   // next_visit がある行（予約済み）と無い行（前回だけ記録）の両方を見るため、
   // active な行をまとめて取り、判定はアプリ側で行う。
-  const COLS_V2 = 'id, user_id, axis, custom_icon, name, last_visit, next_visit, frequency_weeks, notify_enabled, notify_days_before, last_notified_at';
+  const COLS_V2 = 'id, user_id, axis, custom_icon, name, last_visit, next_visit, frequency_weeks, notify_enabled, notify_days_before, last_notified_at, entry_type';
   const COLS_LEGACY = 'id, user_id, axis, name, last_visit, next_visit, frequency_weeks';
 
   let { data: logs, error } = await db
@@ -188,6 +188,7 @@ export async function GET(request) {
         axis: l.axis,
         custom_icon: l.custom_icon,
         name: l.name,
+        entry_type: l.entry_type,
         weeksSince: weeksSince(l.last_visit),
         freq: formatFreq(effectiveFreq(l)),
         overdueDays: l.diff < 0 ? -l.diff : 0,

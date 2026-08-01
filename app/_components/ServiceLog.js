@@ -6,6 +6,7 @@ import {
   monthlyCost, costSummary, formatYen, BUDGET_LABELS,
   effectiveFreq, formatFreq, idealNextDate, daysUntilIdeal, FREQ_PRESETS,
   monthlyTrend, trendInsights,
+  ENTRY_TYPES, DEFAULT_ENTRY_TYPE, resolveEntryType,
 } from '@/lib/log-axes';
 import { listLogs, createLog, updateLog, removeLog, recordVisit, getAccessToken } from '@/lib/log-store';
 import { TRACKS, DEFAULT_TRACK, getKnownTrackId } from '@/lib/track';
@@ -189,6 +190,12 @@ export default function ServiceLog({ withSideNav = false }) {
 
       .log-chip-cost { border-color: rgba(201,168,76,0.35) !important; color: rgba(201,168,76,0.85) !important; }
 
+      /* ── 種別（通う／買う） ── */
+      .log-type-toggle { display: flex; gap: 8px; }
+      .log-type-chip { flex: 1; text-align: center; font-size: 13px; font-weight: 700; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); transition: all .12s; }
+      .log-type-chip:hover { border-color: rgba(201,168,76,0.5); color: rgba(232,228,220,0.9); }
+      .log-type-chip.selected { border-color: #c9a84c; background: rgba(201,168,76,0.14); color: #c9a84c; }
+
       /* ── 頻度（数値＋単位／プリセット） ── */
       .log-freq-row { display: flex; gap: 8px; }
       .log-freq-row input { flex: 1; }
@@ -270,6 +277,7 @@ export default function ServiceLog({ withSideNav = false }) {
     let providerSearchResults = [];
     let selectedProvider = null;
     let customIcon = DEFAULT_CUSTOM_ICON;
+    let entryType = DEFAULT_ENTRY_TYPE; // 'visit' | 'purchase'（モーダルで選ぶ種別）
     let budget = null;
     let compassAxis = null;   // Me Scan が指す最初の一手
     let mirrorAxis = null;    // Mirror が指した1点
@@ -643,16 +651,16 @@ export default function ServiceLog({ withSideNav = false }) {
         <div class="log-header">
           <p class="log-header-eyebrow">New Me Log</p>
           <h1><em>「前いつ行ったっけ？」を、なくす</em></h1>
-          <p class="log-header-sub">美容室・眉サロン・ネイル・ジム。登録しておくと、そろそろの時期にLINEで知らせます。月にいくら使っているかも分かります。</p>
+          <p class="log-header-sub">美容室・エステ・ジムから、スキンケアやプロテインなどの購入まで。登録しておくと、そろそろの時期にLINEで知らせます。月の美容代がまるごと分かります。</p>
         </div>`;
 
       if (!logs.length) {
         root.innerHTML = `
           ${header}
-          <button class="log-add-btn" id="log-open-add">＋ 美容室から登録してみる</button>
+          <button class="log-add-btn" id="log-open-add">＋ まず1つ登録してみる</button>
           <div class="log-empty">
             <div class="log-empty-icon">💇</div>
-            <p class="log-empty-text">まず1つ、通っているところを登録してください。<br>前回行った日を入れるだけで、<br>次に行く時期を自動で計算します。</p>
+            <p class="log-empty-text">通っている場所でも、使っているものでもOKです。<br>前回の日を入れるだけで、<br>次の目安を自動で計算します。</p>
           </div>`;
         bindEvents();
         return;
@@ -672,6 +680,7 @@ export default function ServiceLog({ withSideNav = false }) {
             ? (log.provider_type === 'affiliate' ? `/affiliate/${log.provider_slug}` : `/provider/${log.provider_slug}`)
             : null;
           const since = weeksSince(log.last_visit);
+          const etDef = resolveEntryType(log.entry_type);
           const freq = effectiveFreq(log);
           // 頻度が未設定でも軸の推奨で月額を出す（出さないと合計と食い違って見える）
           const m = monthlyCost(log.cost, freq);
@@ -721,7 +730,7 @@ export default function ServiceLog({ withSideNav = false }) {
               </div>
               ${log.memo ? `<p class="log-card-memo">📝 ${esc(log.memo)}</p>` : ''}
               <div class="log-card-visit">
-                <button class="log-visit-today" data-visit-today="${log.id}">✓ 今日行った</button>
+                <button class="log-visit-today" data-visit-today="${log.id}">${esc(etDef.recordDoneLabel)}</button>
                 <button class="log-visit-pick" data-visit-pick="${log.id}">📅 日付を選ぶ</button>
                 <input type="date" class="log-visit-input" data-visit-date="${log.id}" tabindex="-1" aria-hidden="true" />
               </div>
@@ -754,6 +763,8 @@ export default function ServiceLog({ withSideNav = false }) {
       editingId = log?.id || null;
       selectedProvider = log?.provider_slug ? { slug: log.provider_slug, type: log.provider_type } : null;
       customIcon = log?.custom_icon || DEFAULT_CUSTOM_ICON;
+      entryType = log?.entry_type === 'purchase' ? 'purchase' : DEFAULT_ENTRY_TYPE;
+      renderTypeToggle();
 
       const choices = axisChoicesFor(trackRef.current);
       const known = choices.some(c => c.id === log?.axis);
@@ -781,6 +792,29 @@ export default function ServiceLog({ withSideNav = false }) {
       renderIconPicker();
       document.getElementById('log-modal-overlay').classList.remove('hidden');
       updateAxisUi();
+      updateEntryTypeUi();
+    }
+
+    function renderTypeToggle() {
+      const el = document.getElementById('log-type-toggle');
+      if (!el) return;
+      el.innerHTML = Object.values(ENTRY_TYPES).map(t =>
+        `<button type="button" class="log-type-chip${t.id === entryType ? ' selected' : ''}" data-entry-type="${t.id}">${esc(t.label)}</button>`
+      ).join('');
+    }
+
+    // 種別（通う／買う）に応じてフォームの文言・項目を出し分ける。
+    // Fineme掲載サービスは「行く」場所のみのため、買う記録では紐付け欄を隠す。
+    function updateEntryTypeUi() {
+      const def = resolveEntryType(entryType);
+      const nameInput = document.getElementById('log-f-name');
+      if (nameInput) nameInput.placeholder = def.namePlaceholder;
+      const lastLabel = document.getElementById('log-f-last-label');
+      if (lastLabel) lastLabel.textContent = def.lastLabel;
+      const nextLabel = document.getElementById('log-f-next-label');
+      if (nextLabel) nextLabel.textContent = def.nextLabel;
+      const providerWrap = document.getElementById('log-provider-wrap');
+      if (providerWrap) providerWrap.style.display = entryType === 'purchase' ? 'none' : '';
     }
 
     function closeModal() {
@@ -860,6 +894,7 @@ export default function ServiceLog({ withSideNav = false }) {
       const data = {
         axis: axisSel === CUSTOM_AXIS ? customLabel : axisSel,
         custom_icon: axisSel === CUSTOM_AXIS ? customIcon : null,
+        entry_type: entryType,
         name,
         frequency_weeks: freqUnitValue() === 'week' ? freqNumValue() : null,
         frequency_months: freqUnitValue() === 'month' ? freqNumValue() : null,
@@ -1003,6 +1038,13 @@ export default function ServiceLog({ withSideNav = false }) {
     document.getElementById('log-modal-overlay')?.addEventListener('click', e => {
       if (e.target === e.currentTarget) closeModal();
     });
+    document.getElementById('log-type-toggle')?.addEventListener('click', e => {
+      const chip = e.target.closest('.log-type-chip');
+      if (!chip) return;
+      entryType = chip.dataset.entryType;
+      renderTypeToggle();
+      updateEntryTypeUi();
+    });
     document.getElementById('log-f-axis')?.addEventListener('change', updateAxisUi);
     document.getElementById('log-f-last')?.addEventListener('change', autoFillNext);
     document.getElementById('log-f-freq')?.addEventListener('change', () => { renderFreqPresets(); autoFillNext(); });
@@ -1056,6 +1098,11 @@ export default function ServiceLog({ withSideNav = false }) {
           <p id="log-modal-title" className="log-modal-title">新しく登録する</p>
 
           <div className="log-field">
+            <label>種別</label>
+            <div id="log-type-toggle" className="log-type-toggle" />
+          </div>
+
+          <div className="log-field">
             <label>カテゴリ</label>
             <select id="log-f-axis" />
           </div>
@@ -1072,7 +1119,7 @@ export default function ServiceLog({ withSideNav = false }) {
             <input id="log-f-name" type="text" placeholder="例：〇〇美容室、△△ジム" />
           </div>
 
-          <div className="log-field">
+          <div className="log-field" id="log-provider-wrap">
             <label>Finemeサービスと紐づける（任意）</label>
             <div className="log-provider-search">
               <input id="log-provider-search-input" type="text" placeholder="サービス名で検索..." />
@@ -1102,11 +1149,11 @@ export default function ServiceLog({ withSideNav = false }) {
 
           <div className="log-modal-row">
             <div className="log-field">
-              <label>前回利用日</label>
+              <label id="log-f-last-label">前回利用日</label>
               <input id="log-f-last" type="date" />
             </div>
             <div className="log-field">
-              <label>次回予約日</label>
+              <label id="log-f-next-label">次回予約日</label>
               <input id="log-f-next" type="date" />
             </div>
           </div>

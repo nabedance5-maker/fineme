@@ -11,6 +11,13 @@ function isMissingV2Column(error) {
     && /custom_icon|cost|frequency_months/i.test(error.message || '');
 }
 
+// supabase-service-log-entry-type.sql（entry_type）未適用かどうか
+function isMissingEntryType(error) {
+  if (!error) return false;
+  return (error.code === '42703' || error.code === 'PGRST204')
+    && /entry_type/i.test(error.message || '');
+}
+
 // supabase-service-log-visits.sql 未適用（テーブル/リレーション未検出）かどうか
 function isMissingVisitsTable(error) {
   if (!error) return false;
@@ -59,7 +66,7 @@ export async function POST(request) {
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
-  const { axis, name, custom_icon, provider_slug, provider_type, frequency_weeks, frequency_months, last_visit, next_visit, memo, cost } = body;
+  const { axis, name, custom_icon, provider_slug, provider_type, frequency_weeks, frequency_months, last_visit, next_visit, memo, cost, entry_type } = body;
 
   if (!axis || !name) {
     return Response.json({ error: 'axis と name は必須です' }, { status: 400 });
@@ -78,6 +85,7 @@ export async function POST(request) {
     memo:            memo ? String(memo).trim() : null,
     custom_icon:     custom_icon || null,
     cost:            cost ? Number(cost) : null,
+    entry_type:      entry_type === 'purchase' ? 'purchase' : 'visit',
   };
 
   const { data, error } = await supabase
@@ -88,9 +96,17 @@ export async function POST(request) {
 
   if (!error) return Response.json({ ok: true, log: data });
 
+  // supabase-service-log-entry-type.sql 未適用でも登録自体は通す（種別だけ落ちる）
+  if (isMissingEntryType(error)) {
+    const { entry_type: _et, ...legacyRow } = row;
+    const legacy = await supabase.from('user_service_logs').insert(legacyRow).select().single();
+    if (!legacy.error) return Response.json({ ok: true, log: legacy.data, pending_migration: true });
+    return Response.json({ error: legacy.error.message }, { status: 500 });
+  }
+
   // supabase-service-logs-v2.sql 未適用でも登録自体は通す（費用・アイコンだけ落ちる）
   if (isMissingV2Column(error)) {
-    const { custom_icon: _i, cost: _c, frequency_months: _fm, ...legacyRow } = row;
+    const { custom_icon: _i, cost: _c, frequency_months: _fm, entry_type: _et2, ...legacyRow } = row;
     const legacy = await supabase.from('user_service_logs').insert(legacyRow).select().single();
     if (legacy.error) return Response.json({ error: legacy.error.message }, { status: 500 });
     return Response.json({ ok: true, log: legacy.data, pending_migration: true });

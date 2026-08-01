@@ -11,6 +11,13 @@ function isMissingV2Column(error) {
     && /custom_icon|cost|frequency_months/i.test(error.message || '');
 }
 
+// supabase-service-log-entry-type.sql（entry_type）未適用かどうか
+function isMissingEntryType(error) {
+  if (!error) return false;
+  return (error.code === '42703' || error.code === 'PGRST204')
+    && /entry_type/i.test(error.message || '');
+}
+
 async function getUser(request) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   if (!token) return null;
@@ -24,7 +31,7 @@ export async function PUT(request, { params }) {
 
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
-  const { axis, name, custom_icon, provider_slug, provider_type, frequency_weeks, frequency_months, last_visit, next_visit, memo, cost } = body;
+  const { axis, name, custom_icon, provider_slug, provider_type, frequency_weeks, frequency_months, last_visit, next_visit, memo, cost, entry_type } = body;
 
   const update = { updated_at: new Date().toISOString() };
   if (axis            !== undefined) update.axis            = String(axis).trim();
@@ -38,6 +45,7 @@ export async function PUT(request, { params }) {
   if (memo            !== undefined) update.memo            = memo ? String(memo).trim() : null;
   if (custom_icon     !== undefined) update.custom_icon     = custom_icon || null;
   if (cost            !== undefined) update.cost            = cost ? Number(cost) : null;
+  if (entry_type      !== undefined) update.entry_type      = entry_type === 'purchase' ? 'purchase' : 'visit';
 
   // 次回日を変えたら通知サイクルもリセットする（新しい予定として通知し直す）
   if (next_visit !== undefined) update.last_notified_at = null;
@@ -55,9 +63,17 @@ export async function PUT(request, { params }) {
   const { data, error } = await run(update);
   if (!error) return Response.json({ ok: true, log: data });
 
+  // entry_type未適用でも更新自体は通す
+  if (isMissingEntryType(error)) {
+    const { entry_type: _et, ...legacyUpdate } = update;
+    const legacy = await run(legacyUpdate);
+    if (!legacy.error) return Response.json({ ok: true, log: legacy.data, pending_migration: true });
+    return Response.json({ error: legacy.error.message }, { status: 500 });
+  }
+
   // v2カラム未適用でも更新自体は通す
   if (isMissingV2Column(error) || /last_notified_at/i.test(error.message || '')) {
-    const { custom_icon: _i, cost: _c, frequency_months: _fm, last_notified_at: _n, ...legacyUpdate } = update;
+    const { custom_icon: _i, cost: _c, frequency_months: _fm, last_notified_at: _n, entry_type: _et2, ...legacyUpdate } = update;
     const legacy = await run(legacyUpdate);
     if (legacy.error) return Response.json({ error: legacy.error.message }, { status: 500 });
     return Response.json({ ok: true, log: legacy.data, pending_migration: true });
