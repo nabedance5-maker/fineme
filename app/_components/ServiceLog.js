@@ -8,7 +8,7 @@ import {
   monthlyTrend, trendInsights,
 } from '@/lib/log-axes';
 import { listLogs, createLog, updateLog, removeLog, recordVisit, getAccessToken } from '@/lib/log-store';
-import { TRACKS, DEFAULT_TRACK } from '@/lib/track';
+import { TRACKS, DEFAULT_TRACK, getKnownTrackId } from '@/lib/track';
 
 // 次回日の算出は lib/log-axes.js の idealNextDate に統一した
 // （週・月の両単位を扱うため。ここに週専用の計算を残すと二重管理になる）
@@ -500,6 +500,10 @@ export default function ServiceLog({ withSideNav = false }) {
     //   ・CTAのラベルに機能名を使わない。何が起きるかで書く
     function renderNextStep() {
       if (!logs.length) return '';
+      // trackRef.current は不明でも DEFAULT_TRACK（男性版）に決め打ちされる。
+      // 表示文言はそれで構わないが、男女で行き先が変わるリンクは
+      // knownTrack が無い（＝本当に不明）時だけ /choose-track を経由させる。
+      const knownTrack = getKnownTrackId();
       const TRACK = TRACKS[trackRef.current] || TRACKS[DEFAULT_TRACK];
       const s = costSummary(logs);
       const loggedIn = isLoggedIn();
@@ -526,6 +530,24 @@ export default function ServiceLog({ withSideNav = false }) {
       // 文章だけでは動かないので「何が返ってくるか」を見せ、入口は30秒の1問に下げる
       // （/diagnosis は最初に1問お試しが出る作りになっている）。
       if (!hasDiagnosis) {
+        // 結果プレビュー例はトラック固定の文言（タイプ名は男女で呼び方が違う）。
+        // トラックが分からない段階では、特定の性別向けの例を見せない。
+        const typeExample = knownTrack === 'belle'
+          ? `<div class="lnx-peek-type">
+              <span class="lnx-peek-code">TYPE-HND</span>
+              <span class="lnx-peek-name">光髪の咲き続ける野菫</span>
+              <span class="lnx-peek-sub">136タイプのうちの1つ</span>
+            </div>
+            <div class="lnx-peek-line"></div>`
+          : knownTrack === 'fineme'
+          ? `<div class="lnx-peek-type">
+              <span class="lnx-peek-code">TYPE-HND</span>
+              <span class="lnx-peek-name">黒髪の臥す伏竜</span>
+              <span class="lnx-peek-sub">136タイプのうちの1つ</span>
+            </div>
+            <div class="lnx-peek-line"></div>`
+          : '';
+        const diagnosisHref = knownTrack ? TRACK.diagnosis : '/choose-track?dest=diagnosis';
         return `
           <div class="lnx">
             <p class="lnx-title">その配分、何を根拠に決めましたか</p>
@@ -539,17 +561,12 @@ export default function ServiceLog({ withSideNav = false }) {
 
             <div class="lnx-peek">
               <p class="lnx-peek-head">答えると、こういうものが出ます</p>
-              <div class="lnx-peek-type">
-                <span class="lnx-peek-code">TYPE-HND</span>
-                <span class="lnx-peek-name">黒髪の臥す伏竜</span>
-                <span class="lnx-peek-sub">136タイプのうちの1つ</span>
-              </div>
-              <div class="lnx-peek-line"></div>
+              ${typeExample}
               <p class="lnx-peek-first">最初の一手 — <b>💇 髪・ヘア</b><br>
                 <span>髪型は第一印象の3割。美容院1回で変化を体感できる</span></p>
             </div>
 
-            <a class="lnx-cta" href="${TRACK.diagnosis}">まず1問だけ、30秒で →</a>
+            <a class="lnx-cta" href="${diagnosisHref}">まず1問だけ、30秒で →</a>
             <p class="lnx-note">登録不要。1問で「最初の一手」が出ます。もっと知りたければそのまま8軸へ（約3分）。</p>
           </div>`;
       }
@@ -557,6 +574,7 @@ export default function ServiceLog({ withSideNav = false }) {
       // ③ Mirror がまだ → 自分では見えない、の話。
       // 写真を送るのはハードルが高いので、返ってくるものを具体的に見せる。
       if (!hasMirror) {
+        const mirrorHref = knownTrack ? TRACK.mirror : '/choose-track?dest=mirror';
         return `
           <div class="lnx">
             <p class="lnx-title">鏡で見ているのは、見慣れた自分です</p>
@@ -576,7 +594,7 @@ export default function ServiceLog({ withSideNav = false }) {
                 縦のラインが出ていません。長さを変えずに量を落とすだけで印象が変わります」</p>
             </div>
 
-            <a class="lnx-cta" href="${TRACK.mirror}">写真で確かめる →</a>
+            <a class="lnx-cta" href="${mirrorHref}">写真で確かめる →</a>
             <p class="lnx-note">8つの要素を1つずつ見て、いちばん動かす価値がある場所を返します。写真は分析後に削除。</p>
           </div>`;
       }

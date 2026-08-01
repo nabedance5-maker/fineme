@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { TRACKS, getKnownTrackId } from '@/lib/track';
 
 
 const AXIS_LABELS = { body:'体型・ボディ', eyebrow:'眉毛', fashion:'服・コーデ', hair:'髪・ヘア', skin:'肌・エステ', teeth:'歯・口元', nail:'爪' };
@@ -33,6 +34,9 @@ const STAGE2_CATEGORIES = [
 export default function HomePage() {
   const [diagnosis, setDiagnosis] = useState(null);
   const [diagnosisType, setDiagnosisType] = useState(null); // 'male' | 'belle'
+  // 未診断セクションのリンク用。diagnosisTypeは診断データの有無しか見ないため
+  // Mirrorだけ経由した人を拾えない。lib/track.js の単一の真実を別途引く
+  const [knownTrack, setKnownTrack] = useState(null);
   const [loggedIn, setLoggedIn] = useState(false);
   const [stories, setStories] = useState([]);
   const [featuredArticles, setFeaturedArticles] = useState([]);
@@ -86,6 +90,7 @@ export default function HomePage() {
         }
       }
     } catch {}
+    setKnownTrack(getKnownTrackId());
   }, []);
 
   // 体験談取得
@@ -437,11 +442,11 @@ export default function HomePage() {
                 </div>
               </div>
               <div className="steps-cta-wrap">
-                <Link href={diagnosisType === 'belle' ? '/belle/mirror' : '/mirror'} className="btn" style={{ fontSize: '15px', padding: '12px 28px' }}>
+                <Link href={knownTrack ? TRACKS[knownTrack].mirror : '/choose-track?dest=mirror'} className="btn" style={{ fontSize: '15px', padding: '12px 28px' }}>
                   📸 まずMirrorを試す
                 </Link>
                 <p style={{ marginTop: '10px' }}>
-                  <Link href={diagnosisType === 'belle' ? '/belle/diagnosis' : '/diagnosis'} style={{ fontSize: '13px', color: 'rgba(201,168,76,0.7)', textDecoration: 'none' }}>
+                  <Link href={knownTrack ? TRACKS[knownTrack].diagnosis : '/choose-track?dest=diagnosis'} style={{ fontSize: '13px', color: 'rgba(201,168,76,0.7)', textDecoration: 'none' }}>
                     Me Scanから始める（無料・約3分）→
                   </Link>
                 </p>
@@ -650,7 +655,7 @@ export default function HomePage() {
               カテゴリから選ぶことはできる。でも何から始めるべきかは、<br />あなたの現在地を測ってから分かる。<br />
               Me Scanが、8軸の中で「今のあなたに効く順番」を教えてくれる。
             </p>
-            <Link href={diagnosisType === 'belle' ? '/belle/diagnosis' : '/diagnosis'} className="hero-nav-cta">
+            <Link href={knownTrack ? TRACKS[knownTrack].diagnosis : '/choose-track?dest=diagnosis'} className="hero-nav-cta">
               🧬 Me Scanで地図を描く（無料）
             </Link>
             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.25)', margin: '16px 0 0' }}>約3分 · 匿名 · 登録不要</p>
