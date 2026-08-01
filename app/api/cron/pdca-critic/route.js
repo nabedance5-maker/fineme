@@ -56,7 +56,7 @@ ${xList || '（なし）'}
 
   let critique = { verdict: '', rewriteTitles: [], strategicIssues: [] };
   try {
-    const msg = await client.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 1200, temperature: 0.5, messages: [{ role: 'user', content: prompt }] });
+    const msg = await client.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 2500, temperature: 0.5, messages: [{ role: 'user', content: prompt }] });
     const txt = ((msg.content || []).find(b => b.type === 'text')?.text || '').trim().replace(/^```json?|```$/g, '').trim();
     critique = { ...critique, ...JSON.parse(txt) };
   } catch (e) { return Response.json({ error: 'critique parse failed: ' + e.message }, { status: 500 }); }
