@@ -32,9 +32,19 @@ function extractKeywords(s) {
   return (s.match(/[一-龠々ぁ-んァ-ヴー]{2,}/g) || []);
 }
 
+// クエリ・タイトルの表記ゆらぎを揃える（記号・空白・数字を除去）。フレーズの完全一致判定用
+function normalizePhrase(s) {
+  return (s || '').replace(/[\s　「」『』・、。！？!?：:0-9０-９]/g, '');
+}
+
 // GSCで「勝てそうなクエリ」を探す。直近記事タイトルとキーワード重複率が高いものはスキップ（カニバリゼーション防止）
 // 旧実装は opp.q.includes(recentCategory) のようなクエリ文字列とカテゴリ名(例:「外見改善」)の直接比較で、
 // 語彙が全く異なるため実質常にfalseとなり機能していなかった（2026-07 でお指摘：同一テーマが15日連続で生成されていた）。
+// キーワード重複率50%判定に直した後も、AIがプロンプト指示通り「クエリの語をタイトルに自然に含める」ため、
+// 枕詞（「なぜ」「9割が」「3ステップで」等）だけ変えれば重複率判定をすり抜けてしまい、
+// 「イケメンになる方法」が9日連続で生成される再発が起きた（2026-08-01 でお指摘）。
+// クエリのフレーズそのものが直近タイトルに含まれるかを直接チェックする判定を追加し、
+// 言い換えでの回避を塞ぐ。
 async function pickOpportunityTheme(recentTitles = []) {
   try {
     const token = await getGoogleAccessToken();
@@ -45,12 +55,18 @@ async function pickOpportunityTheme(recentTitles = []) {
       .sort((a, b) => b.imp - a.imp);
 
     const recentKeywords = new Set(recentTitles.flatMap(extractKeywords));
+    const normalizedRecentTitles = recentTitles.map(normalizePhrase);
 
     for (const opp of candidates) {
       const oppKeywords = extractKeywords(opp.q);
       const overlap = oppKeywords.filter(k => recentKeywords.has(k)).length;
-      // クエリの主要語の半分以上が直近30日のタイトルに既出ならスキップ（同一テーマの言い換え連発を防ぐ）
-      if (oppKeywords.length > 0 && overlap / oppKeywords.length >= 0.5) continue;
+      // クエリの主要語の半分以上が直近タイトルに既出ならスキップ（同一テーマの言い換え連発を防ぐ）
+      const keywordOverlapHigh = oppKeywords.length > 0 && overlap / oppKeywords.length >= 0.5;
+      // クエリのフレーズ自体が直近タイトルにそのまま含まれているならスキップ
+      // （枕詞だけ変えたタイトルはキーワード重複率では検出できないため、フレーズ一致で直接塞ぐ）
+      const normQ = normalizePhrase(opp.q);
+      const phraseRepeated = normQ.length >= 4 && normalizedRecentTitles.some(t => t.includes(normQ));
+      if (keywordOverlapHigh || phraseRepeated) continue;
       return { axis: opp.q, prompt: `検索クエリ「${opp.q}」の検索意図に、他のどのページより丁寧に答える実用記事（現在${Math.round(opp.pos)}位・表示${opp.imp}/月＝上げ切る余地あり）。タイトルと見出しにこのクエリの語を自然に含める。` };
     }
     return null;
@@ -282,10 +298,11 @@ export async function GET(request) {
     .eq('status', 'published')
     .eq('track', 'fineme');
 
-  // 過去30日に使用済みカテゴリ・タイトルを抽出（カニバリゼーション防止）
-  const thirtyDaysAgo = Date.now() - 30 * 60 * 60 * 24 * 1000;
+  // 過去90日に使用済みカテゴリ・タイトルを抽出（カニバリゼーション防止）
+  // 30日だと「イケメンになる方法」のような強いクエリが月をまたいで何度も選ばれ続けたため90日に拡大（2026-08-01）
+  const ninetyDaysAgo = Date.now() - 90 * 60 * 60 * 24 * 1000;
   const recentPublished = (existing || [])
-    .filter(a => a.published_at && new Date(a.published_at).getTime() > thirtyDaysAgo);
+    .filter(a => a.published_at && new Date(a.published_at).getTime() > ninetyDaysAgo);
   const recentCategories = new Set(recentPublished.map(a => a.category).filter(Boolean));
   const recentTitles = recentPublished.map(a => a.title).filter(Boolean);
 
