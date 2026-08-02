@@ -181,8 +181,17 @@ export default function ServiceLog({ withSideNav = false }) {
 
       /* 羊皮紙カード内から「支出から見えること」へ飛ぶリンク。
          横スクロールできることに気づいてもらうのと同じ理由で、カード内に置いて見つけやすくする */
-      .lfv-jump { top: 95.5%; font-size: 2.5cqw; font-weight: 600; letter-spacing: .05em; color: rgba(71,48,32,.75); text-decoration: none; }
-      .lfv-jump:hover { color: #472000; }
+      .lfv-jump {
+        top: 94%; display: flex; justify-content: center;
+      }
+      .lfv-jump-btn {
+        display: inline-flex; align-items: center; gap: 2px;
+        font-size: 2.3cqw; font-weight: 700; letter-spacing: .03em; font-family: 'Noto Sans JP', sans-serif;
+        color: #3a2712; text-decoration: none;
+        background: rgba(255,250,235,.85); border: 1px solid rgba(71,48,32,.35); border-radius: 999px;
+        padding: 1.3cqw 3cqw; box-shadow: 0 2px 6px rgba(71,48,32,.15);
+      }
+      .lfv-jump-btn:hover { background: rgba(255,250,235,.98); border-color: rgba(71,48,32,.55); }
 
       .lfv-budget, .lfv-note { font-size: 11px; color: rgba(232,228,220,.38); margin: 10px auto 0; max-width: 400px; line-height: 1.75; }
       .lfv-note { color: rgba(232,228,220,.3); }
@@ -433,7 +442,9 @@ export default function ServiceLog({ withSideNav = false }) {
               <span class="lfv-ports">${portCount}つの港を巡っている</span>
               <span class="lfv-site">fineme.me</span>
             </div>
-            <a class="lfv-abs lfv-jump" href="#log-analysis-section" data-jump="analysis">支出から見えること →</a>
+            <div class="lfv-abs lfv-jump">
+              <a class="lfv-jump-btn" href="#log-analysis-section" data-jump="analysis">支出から見えること →</a>
+            </div>
           </div>
           ${budgetLine}
           ${noteLines}
@@ -475,7 +486,9 @@ export default function ServiceLog({ withSideNav = false }) {
                 <span class="lfv-ports">まだ記録がありません</span>
                 <span class="lfv-site">fineme.me</span>
               </div>
-              <a class="lfv-abs lfv-jump" href="#log-analysis-section" data-jump="analysis">支出から見えること →</a>
+              <div class="lfv-abs lfv-jump">
+                <a class="lfv-jump-btn" href="#log-analysis-section" data-jump="analysis">支出から見えること →</a>
+              </div>
             </div>
           </div>`;
       }
@@ -549,7 +562,9 @@ export default function ServiceLog({ withSideNav = false }) {
               <span class="lfv-ports">${totalVisits}回分の記録から</span>
               <span class="lfv-site">fineme.me</span>
             </div>
-            <a class="lfv-abs lfv-jump" href="#log-analysis-section" data-jump="analysis">支出から見えること →</a>
+            <div class="lfv-abs lfv-jump">
+              <a class="lfv-jump-btn" href="#log-analysis-section" data-jump="analysis">支出から見えること →</a>
+            </div>
           </div>
           ${unknownNote}
         </div>`;
