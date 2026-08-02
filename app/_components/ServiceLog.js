@@ -114,15 +114,18 @@ export default function ServiceLog({ withSideNav = false }) {
          背景画像に罫線が入っているので、テキストはその位置(%)に合わせて置く。 */
       .lfv-wrap { margin-bottom: 26px; }
 
-      /* ── FVカード／支出推移カードのスワイプカルーセル ── */
+      /* ── FVカード／支出推移カードのスワイプカルーセル ──
+         スライド幅を100%よりわずかに狭くし、右端に次のカードの端を覗かせる（peek）。
+         横スクロールできることに気づいてもらうための唯一の手がかりがドット・ヒント文だけでは
+         弱いという指摘（でお 2026-08-02）を受けて、視覚的にも気づけるようにした。 */
       .lfv-carousel-wrap { margin-bottom: 26px; }
       .lfv-carousel-track {
-        display: flex; overflow-x: auto; overflow-y: hidden;
+        display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden;
         scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
         scrollbar-width: none; -ms-overflow-style: none;
       }
       .lfv-carousel-track::-webkit-scrollbar { display: none; }
-      .lfv-carousel-slide { flex: 0 0 100%; scroll-snap-align: center; margin-bottom: 0; }
+      .lfv-carousel-slide { flex: 0 0 88%; scroll-snap-align: start; margin-bottom: 0; }
       .lfv-carousel-dots { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
       .lfv-carousel-dot { width: 7px; height: 7px; border-radius: 50%; border: none; padding: 0;
         background: rgba(232,228,220,0.22); cursor: pointer; transition: background .15s, transform .15s; }
@@ -175,6 +178,11 @@ export default function ServiceLog({ withSideNav = false }) {
                   display: flex; justify-content: space-between; align-items: baseline; }
       .lfv-ports { font-family: 'Noto Serif JP', serif; font-size: 2.9cqw; color: rgba(71,48,32,.8); }
       .lfv-site  { font-size: 2.4cqw; letter-spacing: .18em; color: rgba(71,48,32,.7); }
+
+      /* 羊皮紙カード内から「支出から見えること」へ飛ぶリンク。
+         横スクロールできることに気づいてもらうのと同じ理由で、カード内に置いて見つけやすくする */
+      .lfv-jump { top: 95.5%; font-size: 2.5cqw; font-weight: 600; letter-spacing: .05em; color: rgba(71,48,32,.75); text-decoration: none; }
+      .lfv-jump:hover { color: #472000; }
 
       .lfv-budget, .lfv-note { font-size: 11px; color: rgba(232,228,220,.38); margin: 10px auto 0; max-width: 400px; line-height: 1.75; }
       .lfv-note { color: rgba(232,228,220,.3); }
@@ -425,6 +433,7 @@ export default function ServiceLog({ withSideNav = false }) {
               <span class="lfv-ports">${portCount}つの港を巡っている</span>
               <span class="lfv-site">fineme.me</span>
             </div>
+            <a class="lfv-abs lfv-jump" href="#log-analysis-section" data-jump="analysis">支出から見えること →</a>
           </div>
           ${budgetLine}
           ${noteLines}
@@ -466,6 +475,7 @@ export default function ServiceLog({ withSideNav = false }) {
                 <span class="lfv-ports">まだ記録がありません</span>
                 <span class="lfv-site">fineme.me</span>
               </div>
+              <a class="lfv-abs lfv-jump" href="#log-analysis-section" data-jump="analysis">支出から見えること →</a>
             </div>
           </div>`;
       }
@@ -539,6 +549,7 @@ export default function ServiceLog({ withSideNav = false }) {
               <span class="lfv-ports">${totalVisits}回分の記録から</span>
               <span class="lfv-site">fineme.me</span>
             </div>
+            <a class="lfv-abs lfv-jump" href="#log-analysis-section" data-jump="analysis">支出から見えること →</a>
           </div>
           ${unknownNote}
         </div>`;
@@ -565,7 +576,7 @@ export default function ServiceLog({ withSideNav = false }) {
 
       if (!economic.length && !effect.length) {
         return `
-          <div class="lan-wrap">
+          <div class="lan-wrap" id="log-analysis-section">
             <p class="lan-title">支出から見えること</p>
             <p class="lan-empty">記録が増えると、ここに気づきや提案が表示されます。</p>
           </div>`;
@@ -576,7 +587,7 @@ export default function ServiceLog({ withSideNav = false }) {
         : '';
 
       return `
-        <div class="lan-wrap">
+        <div class="lan-wrap" id="log-analysis-section">
           <p class="lan-title">支出から見えること</p>
           <div class="lan-goal-toggle" id="log-goal-toggle">
             ${GOAL_OPTIONS.map(g => `
@@ -875,7 +886,7 @@ export default function ServiceLog({ withSideNav = false }) {
       // render()はinnerHTMLを丸ごと作り直すため、2枚目を見ていた場合はスクロール位置を復元する
       if (card && activeFvSlide === 1) {
         const track = root.querySelector('.lfv-carousel-track');
-        if (track) track.scrollLeft = track.clientWidth;
+        if (track) track.scrollLeft = slideStepPx(track);
       }
     }
 
@@ -1132,10 +1143,17 @@ export default function ServiceLog({ withSideNav = false }) {
       return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
+    // スライド1枚分の移動量（px）。CSSの .lfv-carousel-slide { flex: 0 0 88% } と
+    // track の gap:10px に合わせてここで計算する（次のカードを右端に覗かせるため、
+    // 1スライド=トラック幅そのものではなくなった）。
+    function slideStepPx(track) {
+      return track.clientWidth * 0.88 + 10;
+    }
+
     function scrollFvCarouselTo(i) {
       const track = root.querySelector('.lfv-carousel-track');
       if (!track) return;
-      track.scrollTo({ left: i * track.clientWidth, behavior: 'smooth' });
+      track.scrollTo({ left: i * slideStepPx(track), behavior: 'smooth' });
     }
 
     function bindEvents() {
@@ -1150,7 +1168,7 @@ export default function ServiceLog({ withSideNav = false }) {
         track.addEventListener('scroll', () => {
           clearTimeout(debounce);
           debounce = setTimeout(() => {
-            const i = Math.round(track.scrollLeft / track.clientWidth);
+            const i = Math.round(track.scrollLeft / slideStepPx(track));
             activeFvSlide = i;
             root.querySelectorAll('.lfv-carousel-dot').forEach((d, idx) => d.classList.toggle('is-active', idx === i));
           }, 80);
@@ -1186,6 +1204,13 @@ export default function ServiceLog({ withSideNav = false }) {
         analysisGoal = goalBtn.dataset.goal;
         try { localStorage.setItem('fineme:log:goal', analysisGoal); } catch {}
         render();
+        return;
+      }
+      // 羊皮紙カード内から「支出から見えること」へジャンプ
+      const jumpLink = e.target.closest('[data-jump="analysis"]');
+      if (jumpLink) {
+        e.preventDefault();
+        document.getElementById('log-analysis-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
     });
