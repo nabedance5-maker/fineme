@@ -5,7 +5,7 @@ import {
   axisChoicesFor, resolveAxis, CUSTOM_AXIS, CUSTOM_ICON_CHOICES, DEFAULT_CUSTOM_ICON,
   monthlyCost, costSummary, formatYen, BUDGET_LABELS,
   effectiveFreq, formatFreq, idealNextDate, daysUntilIdeal, FREQ_PRESETS,
-  monthlyTrend, trendInsights,
+  monthlyTrend, buildAnalysis,
   ENTRY_TYPES, DEFAULT_ENTRY_TYPE, resolveEntryType,
 } from '@/lib/log-axes';
 import { listLogs, createLog, updateLog, removeLog, recordVisit, getAccessToken } from '@/lib/log-store';
@@ -113,6 +113,21 @@ export default function ServiceLog({ withSideNav = false }) {
          金額・内訳は実データで動くのでテキストで上に重ねる。
          背景画像に罫線が入っているので、テキストはその位置(%)に合わせて置く。 */
       .lfv-wrap { margin-bottom: 26px; }
+
+      /* ── FVカード／支出推移カードのスワイプカルーセル ── */
+      .lfv-carousel-wrap { margin-bottom: 26px; }
+      .lfv-carousel-track {
+        display: flex; overflow-x: auto; overflow-y: hidden;
+        scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
+        scrollbar-width: none; -ms-overflow-style: none;
+      }
+      .lfv-carousel-track::-webkit-scrollbar { display: none; }
+      .lfv-carousel-slide { flex: 0 0 100%; scroll-snap-align: center; margin-bottom: 0; }
+      .lfv-carousel-dots { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
+      .lfv-carousel-dot { width: 7px; height: 7px; border-radius: 50%; border: none; padding: 0;
+        background: rgba(232,228,220,0.22); cursor: pointer; transition: background .15s, transform .15s; }
+      .lfv-carousel-dot.is-active { background: #c9a84c; transform: scale(1.3); }
+      .lfv-carousel-hint { text-align: center; font-size: 10.5px; color: rgba(232,228,220,0.3); margin: 8px 0 0; letter-spacing: .04em; }
       .lfv-card {
         width: 100%; max-width: 400px; margin: 0 auto;
         aspect-ratio: 1080 / 1350; position: relative;
@@ -206,14 +221,18 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-freq-chip.selected { border-color: #c9a84c; background: rgba(201,168,76,0.14); color: #c9a84c; }
 
       /* ── 「行った」の記録（1タップ） ── */
-      .log-card-visit { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(232,228,220,0.07); }
+      .log-card-visit { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(232,228,220,0.07); }
       .log-visit-today, .log-visit-pick { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; box-sizing: border-box; }
       .log-visit-today { background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.4); color: #c9a84c; }
       .log-visit-today:hover { background: rgba(201,168,76,0.2); }
       .log-visit-pick { background: rgba(232,228,220,0.04); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); }
       .log-visit-pick:hover { border-color: rgba(201,168,76,0.4); color: rgba(232,228,220,0.85); }
-      /* showPicker() を呼ぶための実体。display:none だと呼べないので opacity で隠す */
-      .log-visit-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; border: 0; padding: 0; margin: 0; }
+      /* showPicker() を呼ぶための実体。display:none だと呼べないので opacity で隠す。
+         pointer-events:none は付けない — 一部Chromeはこれが付いた要素を showPicker() でも
+         「操作不可」とみなし失敗させるため（でお報告 2026-08-02 の再発の原因） */
+      .log-visit-input { position: absolute; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; margin: 0; }
+      /* showPicker() が使えない/失敗した時の最終フォールバック。実体を見せてフォーカスする */
+      .log-visit-input.is-fallback-visible { position: static; width: auto; height: auto; opacity: 1; flex-basis: 100%; margin-top: 4px; padding: 9px 10px; border: 1px solid rgba(201,168,76,0.4); border-radius: 8px; background: rgba(232,228,220,0.05); color: rgba(232,228,220,0.85); font-family: inherit; font-size: 13px; }
       .log-visit-today:disabled, .log-visit-pick:disabled { opacity: .6; cursor: default; }
 
       /* 記録できたことを目に見える形で返す */
@@ -247,25 +266,34 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-guest-cta-btn { display: inline-block; padding: 13px 30px; background: linear-gradient(135deg,#c9a84c,#e8c86a); color: #0a0f1e; font-size: 14px; font-weight: 800; border-radius: 11px; text-decoration: none; }
       .log-guest-cta-note { font-size: 10px; color: rgba(232,228,220,0.25); margin: 10px 0 0; letter-spacing: .04em; }
 
-      /* ── 支出の推移（.ltr- = Log TRend） ── */
-      .ltr-wrap { background: rgba(10,15,30,0.6); border: 1px solid rgba(201,168,76,0.18); border-radius: 14px; padding: 22px 20px 20px; margin: 20px 0; }
-      .ltr-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: 15px; font-weight: 700; color: rgba(232,228,220,0.92); margin: 0 0 4px; }
-      .ltr-caption { font-size: 11px; color: rgba(232,228,220,0.4); margin: 0 0 16px; }
-      .ltr-chart-wrap { width: 100%; max-width: 336px; margin: 0 auto; }
-      .ltr-svg { width: 100%; height: auto; display: block; }
-      .ltr-baseline { stroke: rgba(232,228,220,0.15); stroke-width: 1; }
-      .ltr-bar-label { font-size: 9px; fill: rgba(232,228,220,0.55); font-family: -apple-system, sans-serif; }
-      .ltr-axis-label { font-size: 9.5px; fill: rgba(232,228,220,0.4); font-family: -apple-system, sans-serif; }
-      .ltr-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 14px 0 0; padding-top: 14px; border-top: 1px solid rgba(232,228,220,0.08); }
-      .ltr-legend-item { font-size: 11px; color: rgba(232,228,220,0.65); display: inline-flex; align-items: center; gap: 5px; }
-      .ltr-legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-      .ltr-note { font-size: 10.5px; color: rgba(232,228,220,0.32); margin: 10px 0 0; }
-      .ltr-insights { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
-      .ltr-insight { font-size: 12.5px; color: rgba(232,228,220,0.75); line-height: 1.7; margin: 0; padding: 10px 12px; background: rgba(201,168,76,0.06); border-radius: 9px; }
-      .ltr-insight-empty { font-size: 11.5px; color: rgba(232,228,220,0.32); margin: 0; }
-      .ltr-empty { text-align: center; padding: 20px 10px 6px; }
-      .ltr-empty-icon { font-size: 26px; margin-bottom: 10px; opacity: .5; }
-      .ltr-empty-text { font-size: 12px; color: rgba(232,228,220,0.4); line-height: 1.8; margin: 0; }
+      /* ── 支出の推移（羊皮紙カード内。.ltp- = Log Trend Parchment） ── */
+      .ltp-caption { top: 27%; font-size: 2.3cqw; letter-spacing: .04em; color: rgba(71,48,32,.6); }
+      .ltp-chart-wrap { position: absolute; left: 10%; right: 10%; top: 32%; bottom: 47%; }
+      .ltp-svg { width: 100%; height: 100%; display: block; }
+      .ltp-baseline { stroke: rgba(71,48,32,.35); stroke-width: 1; }
+      .ltp-bar-label { font-size: 9px; fill: rgba(71,48,32,.6); font-family: -apple-system, sans-serif; }
+      .ltp-axis-label { font-size: 9.5px; fill: rgba(71,48,32,.5); font-family: -apple-system, sans-serif; }
+      .ltp-legend { position: absolute; left: 10%; right: 10%; top: 56%; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; }
+      .ltp-legend-item { font-size: 2.2cqw; color: rgba(71,48,32,.75); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+      .ltp-legend-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+      .ltp-note { font-size: 10.5px; color: rgba(232,228,220,0.32); margin: 10px auto 0; max-width: 400px; line-height: 1.75; text-align: center; }
+      .ltp-empty { position: absolute; left: 12%; right: 12%; top: 30%; bottom: 15%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+      .ltp-empty-icon { font-size: 7cqw; margin-bottom: 10px; opacity: .55; }
+      .ltp-empty-text { font-size: 2.6cqw; color: rgba(71,48,32,.55); line-height: 1.8; margin: 0; }
+
+      /* ── 支出から見えること（.lan- = Log ANalysis） ── */
+      .lan-wrap { background: rgba(10,15,30,0.6); border: 1px solid rgba(201,168,76,0.26); border-radius: 14px; padding: 22px 20px 20px; margin: 20px 0; }
+      .lan-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: 15px; font-weight: 700; color: rgba(232,228,220,0.92); margin: 0 0 14px; }
+      .lan-goal-toggle { display: flex; gap: 8px; margin: 0 0 16px; }
+      .lan-goal-chip { flex: 1; text-align: center; font-size: 12px; font-weight: 700; padding: 9px 8px; border-radius: 10px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); transition: all .12s; }
+      .lan-goal-chip:hover { border-color: rgba(201,168,76,0.5); color: rgba(232,228,220,0.9); }
+      .lan-goal-chip.selected { border-color: #c9a84c; background: rgba(201,168,76,0.14); color: #c9a84c; }
+      .lan-list { display: flex; flex-direction: column; gap: 10px; }
+      .lan-item { padding: 12px 13px; background: rgba(201,168,76,0.06); border-radius: 9px; }
+      .lan-item-text { font-size: 12.5px; color: rgba(232,228,220,0.75); line-height: 1.7; margin: 0; }
+      .lan-item-suggestion { font-size: 11.5px; color: rgba(232,228,220,0.45); line-height: 1.7; margin: 6px 0 0; padding-top: 6px; border-top: 1px solid rgba(232,228,220,0.08); }
+      .lan-empty { font-size: 11.5px; color: rgba(232,228,220,0.32); margin: 0; }
+      .lan-hint { font-size: 11px; color: rgba(232,228,220,0.32); margin: 12px 0 0; }
     `;
     document.head.appendChild(style);
 
@@ -283,6 +311,9 @@ export default function ServiceLog({ withSideNav = false }) {
     let mirrorAxis = null;    // Mirror が指した1点
     let hasDiagnosis = false;
     let hasMirror = false;
+    let activeFvSlide = 0;    // FVカード／支出推移カルーセルの現在ページ（render()での再構築後も保持する）
+    let analysisGoal = 'both'; // 'save' | 'effect' | 'both'（「支出から見えること」の目的設定）
+    try { analysisGoal = localStorage.getItem('fineme:log:goal') || 'both'; } catch {}
 
     // Me Scan / Mirror の結果を読む。
     // 軸IDが Log と共通なので、通っている軸と突き合わせられる。
@@ -344,9 +375,10 @@ export default function ServiceLog({ withSideNav = false }) {
     // 頻度が無いものは月額換算せず合計にも入れない（推測で数字を作らない）
     // ── FVカード（海図に記した投資額。スクショ1枚でそのまま素材になる）──
     // 月額を主役にする。年額は「このペースが続くとこうなる」を示す補足に留める。
-    function renderCostCard() {
+    function renderCostCard(opts = {}) {
       const s = costSummary(logs);
       if (!s.counted) return '';
+      const wrapClass = opts.slide ? 'lfv-wrap lfv-carousel-slide' : 'lfv-wrap';
 
       // 件数は可変。多いほど小さく組み、8件を超える分はまとめて示す。
       const MAX_ROWS = 8;
@@ -376,7 +408,7 @@ export default function ServiceLog({ withSideNav = false }) {
       ].filter(Boolean).map(t => `<p class="lfv-note">${t}</p>`).join('');
 
       return `
-        <div class="lfv-wrap">
+        <div class="${wrapClass}">
           <div class="lfv-card">
             <div class="lfv-abs lfv-brand" style="left:12%;right:auto;text-align:left">New Me Log</div>
             <div class="lfv-abs lfv-date" style="left:auto;right:12%;text-align:right">${ym}</div>
@@ -399,28 +431,41 @@ export default function ServiceLog({ withSideNav = false }) {
         </div>`;
     }
 
-    // ── 支出の推移（サブスクBox的なグラフ・傾向分析）──
+    // ── 支出の推移（サブスクBox的なグラフ。羊皮紙のFVカードと同じ器を2ページ目として使う）──
     //
     // costSummary()（FVカード）は「今の設定から計算した現時点のスナップショット」。
-    // こちらは実際に記録した来店（log.visits）を月ごとに積み上げた時系列で、
-    // 「✓ 今日行った」を押すたびに少しずつ精度が上がっていく。
+    // こちらは実際に記録した来店・購入（log.visits）を月ごとに積み上げた時系列で、
+    // 「✓ 今日行った/買った」を押すたびに少しずつ精度が上がっていく。
     //
-    // 記録一覧の下・次の一歩ブロックの上に置く：ここもまだ「ツールとして使い切る」区間の
-    // 続きであり、他機能への誘導ではないため、FV直下を避けるルールとは別枠。
-    const TREND_COLORS = ['#3987e5', '#d95926', '#199e70']; // 青・橙・アクア（dataviz skillでdark background検証済）
-    const TREND_OTHER_COLOR = '#6b7280'; // 4位以下をまとめる「その他」
+    // 気づき・改善提案は renderAnalysisSection() に分離した（羊皮紙カードは
+    // スクショ映えするスナップショット用途のため、読み物系のコンテンツは持たせない）。
+    const TREND_COLORS = ['#2f4d6b', '#a8461f', '#3d6b52']; // 藍・朱赤・緑青（羊皮紙＝明るい背景向け）
+    const TREND_OTHER_COLOR = '#8a7a63'; // 4位以下をまとめる「その他」
 
-    function renderTrendSection() {
+    function renderTrendCard(opts = {}) {
       if (!logs.length) return '';
       const trend = monthlyTrend(logs, 6);
+      const wrapClass = opts.slide ? 'lfv-wrap lfv-carousel-slide' : 'lfv-wrap';
+      const now = new Date();
+      const ym = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const periodLabel = trend.months.length
+        ? `${trend.months[0].label}〜${trend.months[trend.months.length - 1].label}` : ym;
 
       if (!trend.hasAnyVisit) {
         return `
-          <div class="ltr-wrap">
-            <p class="ltr-title">支出の推移</p>
-            <div class="ltr-empty">
-              <div class="ltr-empty-icon">📈</div>
-              <p class="ltr-empty-text">「✓ 今日行った」を記録していくと、<br>ここに月ごとの推移が表示されます。</p>
+          <div class="${wrapClass}">
+            <div class="lfv-card">
+              <div class="lfv-abs lfv-brand" style="left:12%;right:auto;text-align:left">New Me Log</div>
+              <div class="lfv-abs lfv-date" style="left:auto;right:12%;text-align:right">${esc(periodLabel)}</div>
+              <div class="lfv-abs lfv-label">支出の推移</div>
+              <div class="ltp-empty">
+                <div class="ltp-empty-icon">📈</div>
+                <p class="ltp-empty-text">「✓ 今日行った/買った」を記録していくと、<br>ここに月ごとの推移が表示されます。</p>
+              </div>
+              <div class="lfv-foot">
+                <span class="lfv-ports">まだ記録がありません</span>
+                <span class="lfv-site">fineme.me</span>
+              </div>
             </div>
           </div>`;
       }
@@ -431,11 +476,11 @@ export default function ServiceLog({ withSideNav = false }) {
       topAxes.forEach(a => { axisColor[a.axis] = a.color; });
       const otherTotal = trend.totalByAxis.filter(a => !axisColor[a.axis]).reduce((s, a) => s + a.amount, 0);
 
-      // ── SVG積み上げ棒グラフ（viewBox 0 0 336 168）──
+      // ── SVG積み上げ棒グラフ（viewBox 0 0 336 130）──
       const bandW = 336 / trend.months.length;
       const barW = 22;
-      const baseline = 148;
-      const plotH = 126;
+      const baseline = 112;
+      const plotH = 92;
       const svgBars = trend.months.map((m, i) => {
         const x = i * bandW + (bandW - barW) / 2;
         const segments = [
@@ -449,14 +494,14 @@ export default function ServiceLog({ withSideNav = false }) {
           return `<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${Math.max(0, h - 1).toFixed(1)}" rx="3" fill="${s.color}" />`;
         }).join('');
         const totalLabel = m.total > 0
-          ? `<text x="${x + barW / 2}" y="${(y - 6).toFixed(1)}" text-anchor="middle" class="ltr-bar-label">${esc(formatYen(m.total))}</text>`
+          ? `<text x="${x + barW / 2}" y="${(y - 6).toFixed(1)}" text-anchor="middle" class="ltp-bar-label">${esc(formatYen(m.total))}</text>`
           : '';
-        return `${rects}${totalLabel}<text x="${x + barW / 2}" y="164" text-anchor="middle" class="ltr-axis-label">${esc(m.label)}</text>`;
+        return `${rects}${totalLabel}<text x="${x + barW / 2}" y="128" text-anchor="middle" class="ltp-axis-label">${esc(m.label)}</text>`;
       }).join('');
 
       const svg = `
-        <svg class="ltr-svg" viewBox="0 0 336 168" role="img" aria-label="直近6ヶ月の月別支出推移グラフ">
-          <line x1="0" y1="${baseline}" x2="336" y2="${baseline}" class="ltr-baseline" />
+        <svg class="ltp-svg" viewBox="0 0 336 130" role="img" aria-label="直近6ヶ月の月別支出推移グラフ">
+          <line x1="0" y1="${baseline}" x2="336" y2="${baseline}" class="ltp-baseline" />
           ${svgBars}
         </svg>`;
 
@@ -466,32 +511,85 @@ export default function ServiceLog({ withSideNav = false }) {
         ...(otherTotal > 0 ? [{ icon: '✦', label: 'その他', color: TREND_OTHER_COLOR, amount: otherTotal }] : []),
       ];
       const legend = legendItems.length ? `
-        <div class="ltr-legend">
+        <div class="ltp-legend">
           ${legendItems.map(a => `
-            <span class="ltr-legend-item">
-              <span class="ltr-legend-dot" style="background:${a.color}"></span>
-              ${a.icon} ${esc(a.label)} ${esc(formatYen(a.amount))}
+            <span class="ltp-legend-item">
+              <span class="ltp-legend-dot" style="background:${a.color}"></span>
+              ${a.icon} ${esc(a.label)}
             </span>`).join('')}
         </div>` : '';
 
+      const totalVisits = trend.months.reduce((s, m) => s + m.visitCount, 0);
       const unknownCount = trend.months.reduce((s, m) => s + m.unknownCostCount, 0);
       const unknownNote = unknownCount
-        ? `<p class="ltr-note">金額未入力の記録が${unknownCount}件あり、合計には含めていません</p>` : '';
-
-      // ── 気づき ──
-      const insights = trendInsights(logs, 6);
-      const insightsHtml = insights.length
-        ? insights.map(ins => `<p class="ltr-insight">${ins.icon} ${esc(ins.text)}</p>`).join('')
-        : `<p class="ltr-insight-empty">気づきはまだありません。記録が数ヶ月分たまると、ここに表示されます。</p>`;
+        ? `<p class="ltp-note">金額未入力の記録が${unknownCount}件あり、合計には含めていません</p>` : '';
 
       return `
-        <div class="ltr-wrap">
-          <p class="ltr-title">支出の推移</p>
-          <p class="ltr-caption">直近6ヶ月、記録した来店から</p>
-          <div class="ltr-chart-wrap">${svg}</div>
-          ${legend}
+        <div class="${wrapClass}">
+          <div class="lfv-card">
+            <div class="lfv-abs lfv-brand" style="left:12%;right:auto;text-align:left">New Me Log</div>
+            <div class="lfv-abs lfv-date" style="left:auto;right:12%;text-align:right">${esc(periodLabel)}</div>
+
+            <div class="lfv-abs lfv-label">支出の推移</div>
+            <div class="lfv-abs ltp-caption">直近6ヶ月の記録から</div>
+            <div class="ltp-chart-wrap">${svg}</div>
+            ${legend}
+
+            <div class="lfv-foot">
+              <span class="lfv-ports">${totalVisits}回分の記録から</span>
+              <span class="lfv-site">fineme.me</span>
+            </div>
+          </div>
           ${unknownNote}
-          <div class="ltr-insights">${insightsHtml}</div>
+        </div>`;
+    }
+
+    // ── 支出から見えること（気づき＋改善提案）──
+    //
+    // trendInsights() は「起きている事実」だけだったが、それだけでは「グラフが出ているだけ」に
+    // なってしまう（でお指摘 2026-08-02）。ここでは経済系（予算とのズレ）・効果系（Compass/Mirror
+    // が指す軸に実際お金がかかっているか）の両方を出し、目的設定（節約重視／効果重視／両方）で
+    // 採用件数・並び順を変える。羊皮紙カードの外＝プレーンな暗色カードに置く（.lnx/.ltr-wrapと
+    // 同じ「装飾＝羊皮紙、読み物＝プレーンカード」の使い分けに沿う）。
+    const GOAL_OPTIONS = [
+      { id: 'save', label: '節約重視' },
+      { id: 'effect', label: '効果重視' },
+      { id: 'both', label: '両方見る' },
+    ];
+
+    function renderAnalysisSection() {
+      if (!logs.length) return '';
+      const { economic, effect, items } = buildAnalysis(
+        logs, { budget, compassAxis, mirrorAxis }, analysisGoal, 6
+      );
+
+      if (!economic.length && !effect.length) {
+        return `
+          <div class="lan-wrap">
+            <p class="lan-title">支出から見えること</p>
+            <p class="lan-empty">記録が増えると、ここに気づきや提案が表示されます。</p>
+          </div>`;
+      }
+
+      const hintHtml = (!hasDiagnosis && !hasMirror)
+        ? `<p class="lan-hint">見た目づくりの効果からの気づきは、Me ScanかMirrorの結果があると出せます</p>`
+        : '';
+
+      return `
+        <div class="lan-wrap">
+          <p class="lan-title">支出から見えること</p>
+          <div class="lan-goal-toggle" id="log-goal-toggle">
+            ${GOAL_OPTIONS.map(g => `
+              <button type="button" class="lan-goal-chip${analysisGoal === g.id ? ' selected' : ''}" data-goal="${g.id}">${esc(g.label)}</button>`).join('')}
+          </div>
+          <div class="lan-list">
+            ${items.map(it => `
+              <div class="lan-item">
+                <p class="lan-item-text">${it.icon} ${esc(it.text)}</p>
+                ${it.suggestion ? `<p class="lan-item-suggestion">${esc(it.suggestion)}</p>` : ''}
+              </div>`).join('')}
+          </div>
+          ${hintHtml}
         </div>`;
     }
 
@@ -746,15 +844,39 @@ export default function ServiceLog({ withSideNav = false }) {
       // （空のカードや ¥0 を見せないため）
       // FV直下には何も挟まない。記録として使い切るまでが上半分。
       // 次の一歩とアカウントの話は、一覧を見終わった一番下に置く。
-      const card = renderCostCard();
+      //
+      // FVカードがある時は、支出推移カードとセットでスワイプカルーセルにする
+      // （でお要望 2026-08-02）。FVカードが無い（費用未入力）時はカルーセルを組まず、
+      // 支出推移だけ従来の位置（一覧の下）に単体で出す。
+      const card = renderCostCard({ slide: true });
+      const fvBlock = card ? `
+        <div class="lfv-carousel-wrap">
+          <div class="lfv-carousel-track" tabindex="0" role="region" aria-label="今月の投資額と支出の推移">
+            ${card}
+            ${renderTrendCard({ slide: true })}
+          </div>
+          <div class="lfv-carousel-dots">
+            <button type="button" class="lfv-carousel-dot${activeFvSlide === 0 ? ' is-active' : ''}" data-slide="0" aria-label="1/2 今月の投資額"></button>
+            <button type="button" class="lfv-carousel-dot${activeFvSlide === 1 ? ' is-active' : ''}" data-slide="1" aria-label="2/2 支出の推移"></button>
+          </div>
+          <p class="lfv-carousel-hint">スワイプで「支出の推移」も見られます</p>
+        </div>` : header;
+
       root.innerHTML = `
-        ${card || header}
+        ${fvBlock}
         <button class="log-add-btn" id="log-open-add">＋ 追加する</button>
         ${sectionsHtml}
-        ${renderTrendSection()}
+        ${card ? '' : renderTrendCard()}
+        ${renderAnalysisSection()}
         ${renderNextStep()}
         ${renderGuestCta()}`;
       bindEvents();
+
+      // render()はinnerHTMLを丸ごと作り直すため、2枚目を見ていた場合はスクロール位置を復元する
+      if (card && activeFvSlide === 1) {
+        const track = root.querySelector('.lfv-carousel-track');
+        if (track) track.scrollLeft = track.clientWidth;
+      }
     }
 
     // ── モーダル ──
@@ -982,10 +1104,21 @@ export default function ServiceLog({ withSideNav = false }) {
       if (!input) return;
       input.value = '';
       input.max = new Date().toISOString().slice(0, 10); // 未来の「行った」は無い
+
+      let opened = false;
       if (typeof input.showPicker === 'function') {
-        try { input.showPicker(); return; } catch (e) {}
+        try { input.showPicker(); opened = true; }
+        catch (err) { console.warn('[ServiceLog] showPicker() に失敗、手動入力にフォールバックします:', err); }
       }
-      input.click();
+      if (!opened) revealDateInputFallback(input);
+    }
+
+    // showPicker() が使えない/失敗した時の最終フォールバック。
+    // .click() はネイティブのカレンダーUIを確実には開かないため、実体を見せて直接入力させる。
+    function revealDateInputFallback(input) {
+      input.classList.add('is-fallback-visible');
+      input.focus();
+      input.addEventListener('blur', () => input.classList.remove('is-fallback-visible'), { once: true });
     }
 
     async function deleteLog(id) {
@@ -999,8 +1132,30 @@ export default function ServiceLog({ withSideNav = false }) {
       return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
+    function scrollFvCarouselTo(i) {
+      const track = root.querySelector('.lfv-carousel-track');
+      if (!track) return;
+      track.scrollTo({ left: i * track.clientWidth, behavior: 'smooth' });
+    }
+
     function bindEvents() {
       document.getElementById('log-open-add')?.addEventListener('click', () => openModal());
+
+      // 手動スワイプ時にドットの表示とスクロール位置の記憶を同期する。
+      // scrollイベントはバブリングしないため、委譲ではなくトラックに直接付ける
+      // （render()のたびにトラックごと作り直されるので、都度ここで付け直す）。
+      const track = root.querySelector('.lfv-carousel-track');
+      if (track) {
+        let debounce;
+        track.addEventListener('scroll', () => {
+          clearTimeout(debounce);
+          debounce = setTimeout(() => {
+            const i = Math.round(track.scrollLeft / track.clientWidth);
+            activeFvSlide = i;
+            root.querySelectorAll('.lfv-carousel-dot').forEach((d, idx) => d.classList.toggle('is-active', idx === i));
+          }, 80);
+        });
+      }
     }
 
     root.addEventListener('click', e => {
@@ -1020,6 +1175,17 @@ export default function ServiceLog({ withSideNav = false }) {
       if (addAxis) {
         e.preventDefault();
         openModal(null, addAxis.dataset.addAxis);
+        return;
+      }
+      // FV／支出推移カルーセルのドット
+      const dot = e.target.closest('[data-slide]');
+      if (dot) { scrollFvCarouselTo(Number(dot.dataset.slide)); return; }
+      // 「支出から見えること」の目的設定
+      const goalBtn = e.target.closest('[data-goal]');
+      if (goalBtn) {
+        analysisGoal = goalBtn.dataset.goal;
+        try { localStorage.setItem('fineme:log:goal', analysisGoal); } catch {}
+        render();
         return;
       }
     });
