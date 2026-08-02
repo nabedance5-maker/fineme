@@ -283,16 +283,18 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-guest-cta-btn { display: inline-block; padding: 13px 30px; background: linear-gradient(135deg,#c9a84c,#e8c86a); color: #0a0f1e; font-size: 14px; font-weight: 800; border-radius: 11px; text-decoration: none; }
       .log-guest-cta-note { font-size: 10px; color: rgba(232,228,220,0.25); margin: 10px 0 0; letter-spacing: .04em; }
 
-      /* ── 支出の推移（羊皮紙カード内。.ltp- = Log Trend Parchment） ── */
-      .ltp-caption { top: 27%; font-size: 2.3cqw; letter-spacing: .04em; color: rgba(71,48,32,.6); }
-      .ltp-chart-wrap { position: absolute; left: 10%; right: 10%; top: 32%; bottom: 47%; }
+      /* ── 支出の推移（羊皮紙カード内。.ltp- = Log Trend Parchment） ──
+         でお指摘：文字・グラフが小さくて見えにくい（2026-08-02）。
+         チャート枠の下に大きな空白ができていたので、そこまで枠を広げて拡大した */
+      .ltp-caption { top: 25.5%; font-size: 2.8cqw; letter-spacing: .04em; color: rgba(71,48,32,.6); }
+      .ltp-chart-wrap { position: absolute; left: 6%; right: 6%; top: 29%; bottom: 22%; }
       .ltp-svg { width: 100%; height: 100%; display: block; }
-      .ltp-baseline { stroke: rgba(71,48,32,.35); stroke-width: 1; }
-      .ltp-bar-label { font-size: 9px; fill: rgba(71,48,32,.6); font-family: -apple-system, sans-serif; }
-      .ltp-axis-label { font-size: 9.5px; fill: rgba(71,48,32,.5); font-family: -apple-system, sans-serif; }
-      .ltp-legend { position: absolute; left: 10%; right: 10%; top: 56%; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; }
-      .ltp-legend-item { font-size: 2.2cqw; color: rgba(71,48,32,.75); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-      .ltp-legend-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+      .ltp-baseline { stroke: rgba(71,48,32,.4); stroke-width: 1.2; }
+      .ltp-bar-label { font-size: 13px; font-weight: 600; fill: rgba(71,48,32,.75); font-family: -apple-system, sans-serif; }
+      .ltp-axis-label { font-size: 12px; fill: rgba(71,48,32,.55); font-family: -apple-system, sans-serif; }
+      .ltp-legend { position: absolute; left: 6%; right: 6%; top: 80.5%; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; }
+      .ltp-legend-item { font-size: 3.3cqw; color: rgba(71,48,32,.8); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+      .ltp-legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
       .ltp-note { font-size: 10.5px; color: rgba(232,228,220,0.32); margin: 10px auto 0; max-width: 400px; line-height: 1.75; text-align: center; }
       .ltp-empty { position: absolute; left: 12%; right: 12%; top: 30%; bottom: 15%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
       .ltp-empty-icon { font-size: 7cqw; margin-bottom: 10px; opacity: .55; }
@@ -499,11 +501,14 @@ export default function ServiceLog({ withSideNav = false }) {
       topAxes.forEach(a => { axisColor[a.axis] = a.color; });
       const otherTotal = trend.totalByAxis.filter(a => !axisColor[a.axis]).reduce((s, a) => s + a.amount, 0);
 
-      // ── SVG積み上げ棒グラフ（viewBox 0 0 336 130）──
-      const bandW = 336 / trend.months.length;
-      const barW = 22;
-      const baseline = 112;
-      const plotH = 92;
+      // ── SVG積み上げ棒グラフ（viewBox 0 0 320 190）──
+      // カード内でチャート枠を大きく取った分、viewBoxもそれに合わせて拡大し、
+      // 文字（.ltp-bar-label / .ltp-axis-label）が縮小されすぎないようにしてある。
+      const CHART_W = 320;
+      const bandW = CHART_W / trend.months.length;
+      const barW = 28;
+      const baseline = 148;
+      const plotH = 108;
       const svgBars = trend.months.map((m, i) => {
         const x = i * bandW + (bandW - barW) / 2;
         const segments = [
@@ -517,14 +522,14 @@ export default function ServiceLog({ withSideNav = false }) {
           return `<rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${Math.max(0, h - 1).toFixed(1)}" rx="3" fill="${s.color}" />`;
         }).join('');
         const totalLabel = m.total > 0
-          ? `<text x="${x + barW / 2}" y="${(y - 6).toFixed(1)}" text-anchor="middle" class="ltp-bar-label">${esc(formatYen(m.total))}</text>`
+          ? `<text x="${x + barW / 2}" y="${(y - 9).toFixed(1)}" text-anchor="middle" class="ltp-bar-label">${esc(formatYen(m.total))}</text>`
           : '';
-        return `${rects}${totalLabel}<text x="${x + barW / 2}" y="128" text-anchor="middle" class="ltp-axis-label">${esc(m.label)}</text>`;
+        return `${rects}${totalLabel}<text x="${x + barW / 2}" y="172" text-anchor="middle" class="ltp-axis-label">${esc(m.label)}</text>`;
       }).join('');
 
       const svg = `
-        <svg class="ltp-svg" viewBox="0 0 336 130" role="img" aria-label="直近6ヶ月の月別支出推移グラフ">
-          <line x1="0" y1="${baseline}" x2="336" y2="${baseline}" class="ltp-baseline" />
+        <svg class="ltp-svg" viewBox="0 0 ${CHART_W} 190" role="img" aria-label="直近6ヶ月の月別支出推移グラフ">
+          <line x1="0" y1="${baseline}" x2="${CHART_W}" y2="${baseline}" class="ltp-baseline" />
           ${svgBars}
         </svg>`;
 
