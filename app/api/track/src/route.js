@@ -6,7 +6,7 @@ import { getSupabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
-const SRC_ALLOW = /^[a-z0-9_]{1,60}$/;
+const SRC_ALLOW = /^[a-z0-9_-]{1,60}$/;
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);

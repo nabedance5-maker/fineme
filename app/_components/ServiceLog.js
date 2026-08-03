@@ -40,6 +40,15 @@ export default function ServiceLog({ withSideNav = false }) {
     if (initialized.current) return;
     initialized.current = true;
 
+    // ?src= パラメータを読み取り計測（提携店舗QR・Pinterest等の流入元を測る。D-20260712-3と同じ既存パターン）
+    try {
+      const logSrc = new URLSearchParams(window.location.search).get('src');
+      if (logSrc) {
+        localStorage.setItem('fineme:log:src', logSrc);
+        fetch('/api/track/src?src=' + encodeURIComponent(logSrc)).catch(() => {});
+      }
+    } catch {}
+
     const style = document.createElement('style');
     style.textContent = `
       .log-wrap { max-width: 100%; padding: 0 0 100px; }

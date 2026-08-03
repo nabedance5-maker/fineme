@@ -1,9 +1,10 @@
 // GET /api/cron/x-post
 // 毎日9時JST(0時UTC)にX（Twitter）へ自動投稿する
 // Schedule: "0 0 * * *"
-// 投稿タイプ: tips / story / philosophy の3種を7日サイクルでローテーション
+// 投稿タイプ: tips / story / philosophy / experience の4種を8日サイクルでローテーション
+// experience はでお本人の実話のみ使用。〔 〕未記入の間は自動でtipsに差し替わる
 // 全タイプ スレッド形式（本文 + リプ欄）で投稿
-// リプ欄末尾に dayOfYear % 3 で diagnosis/mirror への soft CTA を挿入（1/3の確率）
+// リプ欄末尾は月曜のみリンクCTA（コスト抑制）
 
 import crypto from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
@@ -140,9 +141,32 @@ async function postReply(text, inReplyToTweetId) {
   return data;
 }
 
-// 投稿タイプ（7日サイクルでローテーション）
+// 投稿タイプ（8日サイクルでローテーション）
 // diagnosis/mirror は廃止。リプ欄に soft CTA として入れる
-const POST_TYPES = ['tips', 'story', 'philosophy', 'tips', 'story', 'tips', 'philosophy'];
+// experience = D-20260713-1「Fineme標的レーン」。到達面=X（Threadsは反応ゼロで停止中のため確定）。
+// 8日に1回・でお本人の実体験のみ使用（架空値は絶対に書かない＝corrections 2026-07-09）
+const POST_TYPES = ['tips', 'story', 'philosophy', 'tips', 'story', 'tips', 'philosophy', 'experience'];
+
+// でお本人の実体験フック（fineme-target-lane-spec.md 型A/B/C・corrections 07-16整合版）
+// 〔 〕内はでお本人の実話に差し替えてから使う。〔 〕が残っている間は自動的に使用をスキップする（架空値禁止）。
+const EXPERIENCE_CONTEXTS = [
+  {
+    label: '型A：黒歴史の一点フリーズ',
+    text: '〔標的の今の状況を1行＝例：マッチングアプリで全然マッチしない、写真に映るのが嫌、鏡を見るのが嫌だった〕。俺もそこにいた。〔でおの当時の具体の瞬間を1つ＝実話〕。変えたのは1点だけだった。',
+    ctaTemp: 'low',
+  },
+  {
+    label: '型B：転機の最初の一歩の解像度',
+    text: '「外見を変えたい」で調べても「清潔感が大事」で終わる。具体的に何から始めればいいか、ずっと分からなかった。俺もそこで一番時間を無駄にした。最初に効いたのは〔でお実話の軸1つ〕だった。順番が全てだった。',
+    ctaTemp: 'mid',
+  },
+  {
+    label: '型C：現在地からの逆説',
+    text: '「元から顔が良くないと変わらない」って本気で思ってた。俺もずっとそう信じてた。〔でおが実際に持っていた思い込み＋それが外れた具体の瞬間＝でお実話〕。',
+    ctaTemp: 'low',
+  },
+];
+const isExperienceReady = (ctx) => !!ctx && !ctx.text.includes('〔');
 
 // フォールバック用静的テンプレート（AI生成失敗時のみ使用・理想型の見本）
 const PHILOSOPHY_POSTS = [
@@ -389,6 +413,28 @@ async function generateThreadPost(postType, context = {}, dayOfYear = 0, system 
 - 最後に「保存しておいて」${ctaLine}
 - リプ欄本文のみ出力（前置き不要・ハッシュタグは付けても1〜2個まで）`;
 
+  } else if (postType === 'experience') {
+    const ctx = EXPERIENCE_CONTEXTS[dayOfYear % EXPERIENCE_CONTEXTS.length];
+    if (!isExperienceReady(ctx)) return null; // 実話未記入＝架空で埋めず生成しない
+    const expCtaLine = ctx.ctaTemp === 'mid'
+      ? `\n\n最後の1行:\n「自分の"最初の一歩"がどこか、無料で出せる→ ${BASE_URL}/diagnosis?src=x_fineme_exp」`
+      : `\n\n最後の1行（興味があれば、くらいの温度で）:\n「同じ入口にいた人へ→ ${BASE_URL}/diagnosis?src=x_fineme_exp」`;
+    mainMsg = `今日は「でお本人の実体験」タイプ（${ctx.label}）。以下は事実の核。この核を壊さず、口語で自然な1投稿に整えて。新しい固有名詞・数字・エピソードを付け足さない（架空値禁止）。
+
+【事実の核（このまま使う）】
+${ctx.text}
+
+【ルール】
+- 一人称「俺」。抜けアドバイザーの三人称にしない
+- 定型・断定・煽り・「〜すべき」は禁止。素の感情で
+- 1投稿1つの具体の瞬間に絞る。リンク・ハッシュタグなし（本文）
+- 投稿本文のみ出力（前置き不要）${recentLine}`;
+
+    replyRules = `【リプ欄】
+- 本文の続き（何が変わったか・今どう思うか）を2〜3行、口語で
+- 押し売りしない${expCtaLine}
+- リプ欄本文のみ出力（前置き不要・ハッシュタグは付けても1個まで）`;
+
   } else {
     return null;
   }
@@ -456,13 +502,18 @@ export async function GET(request) {
   }
 
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-  const postType = POST_TYPES[dayOfYear % POST_TYPES.length];
+  let postType = POST_TYPES[dayOfYear % POST_TYPES.length];
+
+  // experience は でお本人の実話が〔 〕に入るまで自動的に tips へ差し替える（架空値で埋めない）
+  if (postType === 'experience' && !isExperienceReady(EXPERIENCE_CONTEXTS[dayOfYear % EXPERIENCE_CONTEXTS.length])) {
+    postType = 'tips';
+  }
 
   // 静的フォールバック（AI生成が失敗したとき用・単ツイート）
   let tweetText;
-  if (postType === 'tips') tweetText = TIPS_POSTS[dayOfYear % TIPS_POSTS.length];
-  else if (postType === 'philosophy') tweetText = PHILOSOPHY_POSTS[dayOfYear % PHILOSOPHY_POSTS.length];
-  else tweetText = STORY_POSTS[dayOfYear % STORY_POSTS.length];
+  if (postType === 'philosophy') tweetText = PHILOSOPHY_POSTS[dayOfYear % PHILOSOPHY_POSTS.length];
+  else if (postType === 'story') tweetText = STORY_POSTS[dayOfYear % STORY_POSTS.length];
+  else tweetText = TIPS_POSTS[dayOfYear % TIPS_POSTS.length]; // tips / experience(未記入時) 共通の安全なフォールバック
 
   // PDCA: 今週の方針と直近投稿（被り回避）を読み込む
   const sb = getSupabase();

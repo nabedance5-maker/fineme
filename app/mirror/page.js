@@ -1017,11 +1017,11 @@ export default function MirrorPage() {
                 毎月続ける
               </p>
               <p style={{ fontSize: '16px', fontWeight: 800, color: '#e8e4dc', margin: '0 0 6px' }}>
-                ¥780/月で、毎月この分析が3回無料に
+                写真は残らない。いつでも止められる。
               </p>
               <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', margin: '0 0 16px', lineHeight: 1.7 }}>
-                今回の ¥500 は1回分。サブスクなら月3回まで追加料金なし。<br />
-                変容の軌跡（月次比較）も自動で蓄積されます。
+                それでも続けているのは、変化を「感覚」でなく「記録」で知りたいから。<br />
+                毎月、前の自分と並べて見る——それだけで、少し前に進める気がした。
               </p>
               <div style={{ display: 'inline-flex', gap: '12px', alignItems: 'center', background: 'rgba(80,200,140,0.08)', border: '1px solid rgba(80,200,140,0.2)', borderRadius: '10px', padding: '8px 16px', marginBottom: '20px', fontSize: '12px', color: 'rgba(232,228,220,0.7)' }}>
                 <span>¥500 × 3回 = ¥1,500</span>
@@ -1037,7 +1037,7 @@ export default function MirrorPage() {
                 {subscribing ? '処理中…' : '♾️ ¥780/月 のサブスクに切り替える'}
               </button>
               <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.35)', margin: '12px 0 0' }}>
-                いつでも解約可能 / Stripe で安全決済
+                ¥780/月 ・ いつでも解約 ・ 写真は保存されません ・ Stripe で安全決済
               </p>
             </div>
           )}

@@ -10,18 +10,20 @@ const MENU_GROUPS = [
     label: '男性向け',
     accent: '#c9a84c',
     links: [
-      { href: '/feature',   label: 'Journal' },
-      { href: '/diagnosis', label: 'Me Scan' },
-      { href: '/mirror',    label: 'Mirror' },
+      { href: '/feature',        label: 'Journal' },
+      { href: '/diagnosis',      label: 'Me Scan' },
+      { href: '/mirror',         label: 'Mirror' },
+      { href: '/diagnosis/types', label: 'タイプ図鑑' },
     ],
   },
   {
     label: 'Belle（女性向け）',
     accent: '#e8789e',
     links: [
-      { href: '/belle/journal',   label: 'Journal' },
-      { href: '/belle/diagnosis', label: 'Me Scan' },
-      { href: '/belle/mirror',    label: 'Mirror' },
+      { href: '/belle/journal',        label: 'Journal' },
+      { href: '/belle/diagnosis',      label: 'Me Scan' },
+      { href: '/belle/mirror',         label: 'Mirror' },
+      { href: '/belle/diagnosis/types', label: 'タイプ図鑑' },
     ],
   },
 ];
