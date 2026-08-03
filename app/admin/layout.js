@@ -13,6 +13,7 @@ const NAV = [
   { href: '/admin/inquiries',    label: 'お問い合わせ',        icon: '📩' },
   { href: '/admin/analytics',    label: 'アナリティクス',      icon: '📈' },
   { href: '/admin/mirror',       label: 'Mirror計測',          icon: '🪞' },
+  { href: '/admin/acquisition',  label: '集客施策',            icon: '📣' },
   { href: '/admin/feedback',     label: 'フィードバック',       icon: '⭐' },
 ];
 

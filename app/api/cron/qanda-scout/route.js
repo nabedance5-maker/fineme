@@ -10,6 +10,7 @@
 //     メールするフォールバックのみ（note-draftと同じ「コピペ用ストック」方式）
 import Anthropic from '@anthropic-ai/sdk';
 import { fetchAgentMemory, withMemory } from '@/lib/agent-memory';
+import { getSupabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 90;
@@ -153,8 +154,16 @@ export async function GET(request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const logRun = async (mode, count) => {
+    try {
+      const sb = getSupabase();
+      await sb.from('sns_posts').insert({ channel: 'qanda_scout', post_type: mode, text: `count:${count}`, posted: true });
+    } catch {}
+  };
+
   if (!GOOGLE_CSE_API_KEY || !GOOGLE_CSE_CX) {
     await emailStockFallback();
+    await logRun('stock_fallback', STOCK_ANSWERS.length);
     return Response.json({ mode: 'stock_fallback', emailed: !!process.env.RESEND_API_KEY });
   }
 
@@ -168,5 +177,6 @@ export async function GET(request) {
   if (withAnswers.length) await emailCandidates(withAnswers);
   else await emailStockFallback();
 
+  await logRun('live_scout', withAnswers.length);
   return Response.json({ mode: 'live_scout', candidates: candidates.length, withAnswers: withAnswers.length });
 }
