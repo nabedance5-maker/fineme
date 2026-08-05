@@ -1181,6 +1181,25 @@ export default function ServiceLog({ withSideNav = false }) {
           scale: 2,
           useCORS: true,
           ignoreElements: el => el.classList?.contains('lfv-jump'),
+          // html2canvasは .lfv-breakdown（投資記録の行リスト）の高さを実際より
+          // 短く見積もり、最後の行の文字が下半分欠ける（でお報告 2026-08-02。
+          // letterRendering/foreignObjectRendering も試したが直らない・背景が
+          // 描画されなくなる等の副作用があり不採用。実際のレイアウトは崩さず、
+          // 撮影用クローンだけ余白を広げて回避する）。
+          onclone: (_doc, clonedCard) => {
+            const origEls = card.querySelectorAll('*');
+            const cloneEls = clonedCard.querySelectorAll('*');
+            origEls.forEach((orig, i) => {
+              const clone = cloneEls[i];
+              if (!clone) return;
+              const cs = getComputedStyle(orig);
+              clone.style.fontSize = cs.fontSize;
+              clone.style.lineHeight = cs.lineHeight;
+            });
+            clonedCard.style.fontSize = getComputedStyle(card).fontSize;
+            const breakdown = clonedCard.querySelector('.lfv-breakdown');
+            if (breakdown) breakdown.style.bottom = '3%';
+          },
         });
         const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
         if (!blob) throw new Error('画像の生成に失敗しました');
