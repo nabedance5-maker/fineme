@@ -1164,31 +1164,31 @@ export default function ServiceLog({ withSideNav = false }) {
     }
 
     // FVカードを画像化してシェア/保存する。
+    // でお指摘：サーバー側で別途組んだ画像だと羊皮紙にならない。画面に出ている
+    // カードそのものを撮ってそのまま出す（html2canvasでDOMを直接キャプチャ）。
     // 対応端末（主にモバイル）は共有シート（Web Share API）を開き、Instagram/X/LINE等に渡せる。
-    // 未対応（主にPC）はそのままダウンロードする。画像自体は /api/og/log（edge, next/og）で生成。
+    // 未対応（主にPC）はそのままダウンロードする。
     async function shareOrDownloadFvCard(btn) {
-      const s = costSummary(logs);
-      if (!s.counted) return;
+      const card = btn.closest('.lfv-card');
+      if (!card) return;
 
       const label = btn.textContent;
       btn.disabled = true; btn.textContent = '作成中…';
       try {
-        const rows = s.byAxis.slice(0, 4).map(row => {
-          const def = resolveAxis(row.axis, row.customIcon);
-          return { icon: def.icon, label: def.label, v: row.monthly };
+        const { default: html2canvas } = await import('html2canvas');
+        const canvas = await html2canvas(card, {
+          backgroundColor: null,
+          scale: 2,
+          useCORS: true,
+          ignoreElements: el => el.classList?.contains('lfv-jump'),
         });
-        const params = new URLSearchParams({
-          m: String(s.monthly),
-          y: String(s.yearly),
-          p: String(logs.length),
-          r: JSON.stringify(rows),
-        });
-        const res = await fetch(`/api/og/log?${params.toString()}`);
-        if (!res.ok) throw new Error('画像の生成に失敗しました');
-        const blob = await res.blob();
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        if (!blob) throw new Error('画像の生成に失敗しました');
+
         const now = new Date();
         const filename = `new-me-log-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}.png`;
         const file = new File([blob], filename, { type: 'image/png' });
+        const s = costSummary(logs);
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({

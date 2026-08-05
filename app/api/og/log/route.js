@@ -2,8 +2,7 @@
 // /log の OG画像。SNSに貼られた時に「月にいくら使っているか」が最初に目に入るようにする。
 //
 // 背景は Log の FVカードと同じ羊皮紙（Canvaで作った案3から文字を削除したもの）。
-// 既定はサンプル値。?m= &y= &p= &r= で差し替えできる。
-// r = 実際の内訳（[{icon,label,v}]をJSON→encodeURIComponent）。SNSシェア画像生成用（Log FVカード「シェア/保存」ボタン）
+// 既定はサンプル値。?m= &y= &p= で差し替えできる。
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
@@ -27,21 +26,6 @@ export async function GET(request) {
   const monthly = parseInt(searchParams.get('m')) || 23536;
   const yearly = parseInt(searchParams.get('y')) || monthly * 12;
   const ports = parseInt(searchParams.get('p')) || 5;
-
-  let rows = SAMPLE_ROWS;
-  const rParam = searchParams.get('r');
-  if (rParam) {
-    try {
-      const parsed = JSON.parse(rParam);
-      if (Array.isArray(parsed) && parsed.length) {
-        rows = parsed.slice(0, 4).map(r => ({
-          icon: String(r.icon || '✦').slice(0, 4),
-          label: String(r.label || '').slice(0, 20),
-          v: Math.max(0, parseInt(r.v) || 0),
-        }));
-      }
-    } catch {}
-  }
 
   const now = new Date();
   const ym = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -79,7 +63,7 @@ export async function GET(request) {
                         justifyContent: 'center', marginBottom: 24 }}>
             投 資 記 録
           </div>
-          {rows.map((r) => (
+          {SAMPLE_ROWS.map((r) => (
             <div key={r.label} style={{
               display: 'flex', alignItems: 'baseline', marginBottom: 16,
               borderBottom: '1px solid rgba(71,48,32,0.35)', paddingBottom: 8,
