@@ -366,8 +366,10 @@ export default function ServiceLog({ withSideNav = false }) {
 
     const isLoggedIn = () => !!getAccessToken();
 
+    let loadError = null;
     async function fetchLogs() {
-      try { logs = await listLogs(); } catch { logs = []; }
+      try { logs = await listLogs(); loadError = null; }
+      catch (e) { logs = []; loadError = e?.message === 'expired_session' ? 'expired_session' : 'load_failed'; }
     }
 
     // ── Finemeプロバイダー検索 ──
@@ -793,6 +795,23 @@ export default function ServiceLog({ withSideNav = false }) {
           <h1><em>「前いつ行ったっけ？」を、なくす</em></h1>
           <p class="log-header-sub">美容室・エステ・ジムから、スキンケアやプロテインなどの購入まで。登録しておくと、そろそろの時期にLINEで知らせます。月の美容代がまるごと分かります。</p>
         </div>`;
+
+      if (loadError) {
+        root.innerHTML = `
+          ${header}
+          <div class="log-empty">
+            <div class="log-empty-icon">⚠️</div>
+            <p class="log-empty-text">${loadError === 'expired_session'
+              ? 'ログインの有効期限が切れているようです。<br>再ログインすると、登録済みの記録が表示されます。'
+              : '記録の読み込みに失敗しました。<br>時間をおいて再度お試しください。'}</p>
+            ${loadError === 'expired_session'
+              ? `<a href="/login?redirect=${encodeURIComponent('/mypage/log')}" class="log-add-btn" style="display:inline-block;text-decoration:none;margin-top:12px">ログインし直す</a>`
+              : `<button class="log-add-btn" id="log-retry-btn" style="margin-top:12px">再読み込み</button>`}
+          </div>`;
+        const retryBtn = document.getElementById('log-retry-btn');
+        if (retryBtn) retryBtn.addEventListener('click', () => { fetchLogs().then(() => render()); });
+        return;
+      }
 
       if (!logs.length) {
         root.innerHTML = `
