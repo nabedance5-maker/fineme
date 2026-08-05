@@ -2,6 +2,11 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { TRACKS, getTrackId, syncTrackWithServer } from '@/lib/track';
+import {
+  SKINCARE_ITEM_LABELS, SKINCARE_ITEM_KEYS,
+  WORKOUT_TYPE_LABELS, WORKOUT_DONE_VALUES,
+  AXIS_HABIT_LABELS, AXIS_HABIT_DONE_VALUES, AXIS_HABIT_SKIP_VALUES,
+} from '@/lib/axis-habits';
 
 // 軸 → 関連カテゴリのマッピング（記事のcategoryフィールドと照合）
 const AXIS_RELATED_CATS = {
@@ -608,6 +613,7 @@ export default function NewMeNaviPage() {
       .path-node.pn-done .gmap-node-axis-name { opacity: 0.45; }
       .gmap-now-badge { display: inline-flex; align-items: center; gap: 2px; font-size: 9px; font-weight: 800; color: #c9a84c; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.32); border-radius: 99px; padding: 1px 6px; white-space: nowrap; margin-bottom: 2px; }
       .gmap-baseline-chip { font-size: 8px; font-weight: 800; color: rgba(52,211,153,0.9); background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.28); border-radius: 99px; padding: 1px 5px; margin-left: 2px; vertical-align: middle; }
+      .gmap-habit-chip { font-size: 8px; font-weight: 800; color: rgba(201,168,76,0.9); background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); border-radius: 99px; padding: 1px 5px; margin-left: 2px; vertical-align: middle; }
       .gmap-selfcheck-badge { font-size: 9px; font-weight: 700; color: rgba(52,211,153,0.85); background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); border-radius: 99px; padding: 1px 6px; display: inline-block; margin-bottom: 2px; }
       .path-node-detail { display: none; margin: 4px 0 8px; }
       .path-node-detail.pnd-open { display: block; }
@@ -1564,6 +1570,9 @@ export default function NewMeNaviPage() {
       if (!naviStepsData?.steps?.length) return null;
       const compassAxis = calcDynamicCompass();
       const allNaviSteps = naviStepsData.steps;
+      // MeScanの行動習慣回答をMapの初期状態に機械的に反映する（でお指摘 2026-08-06：
+      // AIの推測ではなく回答そのものを「実施済み／やってみる」として最初から反映したい）
+      const habitStatusNodes = computeHabitStatusItems();
       // 基礎チェックリストを独立バナーではなく、道の先頭ノードとして合流させる（でお指摘：
       // 「あらかじめ用意されたコンテンツとAI生成コンテンツが1つの場所に統合され」ていない見た目を直す）
       const baselineNodes = computeBaselineItems().map(item => ({
@@ -1572,7 +1581,10 @@ export default function NewMeNaviPage() {
         guide: item.guide || 'none',
         _isBaseline: true,
       }));
-      const combinedSteps = [...baselineNodes, ...allNaviSteps];
+      const combinedSteps = [...habitStatusNodes, ...baselineNodes, ...allNaviSteps];
+      // 「実施済み」ノードはstepDoneに書き込まず、未登録時のみ_autoDoneでdone扱いにする
+      // （手動で外すとpersistStepDone側がhabit-prefixにfalseを明示保存し、以後はそちらが優先される）
+      const isStepDone = (s) => (s.id in stepDone) ? !!stepDone[s.id] : !!s._autoDone;
       const steps = activeAxisFilter
         ? combinedSteps.filter(s => s.axis === activeAxisFilter)
         : combinedSteps;
@@ -1583,9 +1595,9 @@ export default function NewMeNaviPage() {
         : '';
 
       // 「今ここ」= 全体で最初の未完了ステップ（旅の先頭に立つ）
-      const currentStepId   = steps.find(s => !stepDone[s.id])?.id ?? null;
+      const currentStepId   = steps.find(s => !isStepDone(s))?.id ?? null;
       // Compass軸の最初の未完了ステップ（gnr-center強調表示、「今ここ」と同じ場合もある）
-      const compassNextId   = steps.find(s => s.axis === compassAxis && !stepDone[s.id])?.id ?? null;
+      const compassNextId   = steps.find(s => s.axis === compassAxis && !isStepDone(s))?.id ?? null;
       // Mirrorで変化が裏付けられたステップ（完了判定・霧の境界には影響させず、実績バッジの表示にのみ使う）
       const mirrorConfirmedIds = new Set(
         (naviStepsData.step_outcomes || []).filter(o => o.mirror_change === true).map(o => o.step_id)
@@ -1597,9 +1609,11 @@ export default function NewMeNaviPage() {
       // 霧の境界は全ステップ基準（軸フィルター状態に関わらず一定）
       const _globalUndone  = allNaviSteps.filter(s => !stepDone[s.id]);
       const _activeIds     = new Set(_globalUndone.slice(0, NAVI_VISIBLE_UNDONE).map(s => s.id));
-      // 基礎ノードは「今日やったら変わる」性質上、霧の中に隠さず常に見える状態にする
+      // 基礎ノード・行動習慣ノードは「今日やったら変わる／回答そのものの反映」という性質上、
+      // 霧の中に隠さず常に見える状態にする
       baselineNodes.forEach(b => _activeIds.add(b.id));
-      const _undoneInOrder = steps.filter(s => !stepDone[s.id]);
+      habitStatusNodes.forEach(h => _activeIds.add(h.id));
+      const _undoneInOrder = steps.filter(s => !isStepDone(s));
       const _fogCount      = _undoneInOrder.filter(s => !_activeIds.has(s.id)).length;
       const _doneCount     = steps.length - _undoneInOrder.length;
       let completedHtml = '';
@@ -1612,7 +1626,7 @@ export default function NewMeNaviPage() {
       for (const step of steps) {
         const i = _stepIdx;
         const def = AREA_DEFS[step.axis] || {};
-        const isDone        = !!stepDone[step.id];
+        const isDone        = isStepDone(step);
         const isFog         = !isDone && !_activeIds.has(step.id);
         const isCurrentStep = step.id === currentStepId;   // 「今ここ」バッジ
         const isCompassNext = step.id === compassNextId;    // gnr-center + 🧭強調（位置計算のため fog でも保持）
@@ -1636,6 +1650,7 @@ export default function NewMeNaviPage() {
 
         const actionLabel = { quick:'⚡', habit:'🔄', ongoing:'🌊' }[step.action_type] || '';
         const baselineChip = step._isBaseline ? ' <span class="gmap-baseline-chip">基礎</span>' : '';
+        const habitStatusChip = step._isHabitStatus ? ' <span class="gmap-habit-chip">あなたの回答</span>' : '';
 
         let guideBadgeHtml = '';
         if (!isFog) {
@@ -1680,7 +1695,7 @@ export default function NewMeNaviPage() {
               <div class="gm-circle ${circleClass}">${esc(def.icon || '•')}</div>
               <div class="gmap-node-label">
                 ${nowBadge}
-                <span class="gmap-node-axis-name">${esc(def.label || step.axis)} ${actionLabel}${baselineChip}</span>
+                <span class="gmap-node-axis-name">${esc(def.label || step.axis)} ${actionLabel}${baselineChip}${habitStatusChip}</span>
               </div>
             </div>
           </div>
@@ -1749,7 +1764,7 @@ export default function NewMeNaviPage() {
           })()
         : '';
 
-      const _doneSteps = steps.filter(s => stepDone[s.id]);
+      const _doneSteps = steps.filter(s => isStepDone(s));
       const voyageLogHtml = _doneSteps.length > 0
         ? (() => {
             const doneCount = _doneSteps.length;
@@ -2372,6 +2387,11 @@ export default function NewMeNaviPage() {
       const compassRank = {};
       (p.priority_order || []).forEach((id, i) => { compassRank[id] = Math.max(0, 8 - i) * 1.5; });
 
+      // MeScanでスキンケアアイテムの回答済み（=computeHabitStatusItems側が化粧水/乳液/美容液を
+      // 個別ノードとして担当済み）なら、内容が重なる固定リストの項目は候補から除外する（重複表示防止）
+      const skinHabitAnswered = !!p.skincare_habits?.items;
+      const SKIN_ITEM_OVERLAP_IDS = new Set(['skin-b-02', 'skin-b-03', 'skin-b-05']);
+
       const candidates = [];
       for (const [axis, steps] of Object.entries(BASELINE_STEPS)) {
         const v = tv[axis];
@@ -2382,11 +2402,63 @@ export default function NewMeNaviPage() {
         if (axisWeight === 0) continue;
         for (const step of steps) {
           if (stepDone[step.id]) continue;
+          if (skinHabitAnswered && SKIN_ITEM_OVERLAP_IDS.has(step.id)) continue;
           candidates.push({ ...step, _score: step.priority * axisWeight });
         }
       }
       candidates.sort((a, b) => b._score - a._score);
       return candidates.slice(0, 5);
+    }
+
+    // MeScanの行動習慣回答（skincare_habits/workout_type/axis_habits）を、New Me Mapの
+    // 初期状態（実施済み／やってみる）に機械的に反映する固定ノード（AI生成に頼らない・
+    // でお指摘 2026-08-06：回答内容がそのままMapの初期状態に反映されてほしい）
+    function computeHabitStatusItems() {
+      const items = [];
+
+      const skincareItems = p.skincare_habits?.items;
+      if (Array.isArray(skincareItems)) {
+        for (const key of SKINCARE_ITEM_KEYS) {
+          const done = skincareItems.includes(key);
+          const label = SKINCARE_ITEM_LABELS[key];
+          items.push({
+            id: `habit-skin-${key}`, axis: 'skin',
+            text: done ? `${label}は取り入れられている` : `${label}を試してみる`,
+            action_type: 'quick', guide: 'none',
+            _isHabitStatus: true, _autoDone: done,
+          });
+        }
+      }
+
+      const workoutType = p.workout_type;
+      if (workoutType) {
+        const done = WORKOUT_DONE_VALUES.includes(workoutType);
+        items.push({
+          id: 'habit-body-workout', axis: 'body',
+          text: done
+            ? `体を動かす習慣がある（${WORKOUT_TYPE_LABELS[workoutType] || workoutType}）`
+            : '体を動かす習慣を少し作ってみる（ジム・自重・宅トレ、どれでもOK）',
+          action_type: 'habit', guide: 'none',
+          _isHabitStatus: true, _autoDone: done,
+        });
+      }
+
+      const axisHabits = p.axis_habits || {};
+      for (const [axisId, value] of Object.entries(axisHabits)) {
+        if (!value) continue;
+        if (AXIS_HABIT_SKIP_VALUES[axisId]?.includes(value)) continue; // 本人が「気にしていない」→何も出さない
+        const label = AXIS_HABIT_LABELS[axisId]?.[value] || value;
+        const done = (AXIS_HABIT_DONE_VALUES[axisId] || []).includes(value);
+        const axisLabel = AREA_DEFS[axisId]?.label || axisId;
+        items.push({
+          id: `habit-${axisId}`, axis: axisId,
+          text: done ? `${axisLabel}のケアはできている（${label}）` : `${axisLabel}を軽く整えてみる`,
+          action_type: 'quick', guide: 'none',
+          _isHabitStatus: true, _autoDone: done,
+        });
+      }
+
+      return items;
     }
 
     const _diagPriorityOrder = p.priority_order || Object.keys(AREA_DEFS);
@@ -4012,7 +4084,15 @@ export default function NewMeNaviPage() {
     }
 
     function persistStepDone(key, newDone) {
-      if (newDone) { stepDone[key] = true; } else { delete stepDone[key]; }
+      if (newDone) {
+        stepDone[key] = true;
+      } else if (key.startsWith('habit-')) {
+        // 行動習慣ノードは未登録だと_autoDoneで「済み」に戻ってしまうため、
+        // 手動で外した場合は明示的にfalseを保存して恒久的に取り消す
+        stepDone[key] = false;
+      } else {
+        delete stepDone[key];
+      }
       try { localStorage.setItem(STEP_DONE_KEY, JSON.stringify(stepDone)); } catch {}
       if (token) {
         fetch('/api/me/profile', {
