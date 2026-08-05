@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
-import { AGE_BANDS, getLocalAttributes, hasRequiredAttributes, saveAttribute, syncAttributesWithServer } from '@/lib/attributes';
+import { AGE_BANDS, hasRequiredAttributes, saveAttribute, syncAttributesWithServer } from '@/lib/attributes';
 
 export default function DiagnosisPage() {
   const initialized = useRef(false);
@@ -1105,8 +1105,9 @@ export default function DiagnosisPage() {
       fetch('/api/track/src?src=instant-tryout').catch(function() {});
       try { localStorage.setItem('fineme:diagnosis:src', 'instant-tryout'); } catch(e) {}
       // 属性（年代）が必須。未登録なら登録画面、登録済みならログイン中の最新値で確認画面を出す
-      let attrs = getLocalAttributes();
-      if (hasRequiredAttributes(attrs)) attrs = await syncAttributesWithServer();
+      // ログイン済みなら必ずサーバと同期する（端末を変えた・キャッシュが消えた等でローカルが
+      // 空でも、サーバに既に登録済みなら確認画面を出す。毎回はじめから聞き直すのを防ぐ）
+      let attrs = await syncAttributesWithServer();
       renderAttrScreen(attrs);
       const next = hasRequiredAttributes(attrs) ? 'attr_confirm' : 'attr_register';
       screenHistory.push(next);
