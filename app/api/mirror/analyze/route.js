@@ -121,11 +121,22 @@ const AXIS_CHECKLISTS = {
   overall: `【総合観察】全軸を踏まえ、今最も変化させると全体の印象が変わる「1軸」を特定して言及すること。`,
 };
 
-function buildSystemPrompt(userState, diagnosisInfo, gender, photoTypeHint) {
+const AGE_SKIN_CONTEXT = {
+  '10s':      '10代。皮脂・ニキビ・毛穴の目立ちやすさに注目する（乾燥や老化の観点は持ち込まない）。',
+  '20s':      '20代。皮脂バランスの変化や毛穴・肌荒れに注目する。',
+  '30s':      '30代。乾燥・キメの粗さ・ハリの低下が出始めやすい時期という観点も踏まえる。',
+  '40s':      '40代。乾燥・ハリ低下・くすみが出やすい時期という観点も踏まえる。',
+  '50s_plus': '50代以上。乾燥・ハリ低下・くすみに加え、透明感の変化という観点も踏まえる。',
+};
+
+function buildSystemPrompt(userState, diagnosisInfo, gender, photoTypeHint, ageBand) {
   const compassInstruction = buildCompassInstruction(userState);
   const diagnosisContext = buildDiagnosisContext(diagnosisInfo);
   const genderContext = gender === 'female'
     ? '\n\n【対象ユーザー】女性の外見分析。メイク・スキンケア・ヘアスタイル・服装・ネイルを女性的な観点で分析してください。肌の印象にはメイクの仕上がりも含めて評価してください。'
+    : '';
+  const ageContext = AGE_SKIN_CONTEXT[ageBand]
+    ? `\n\n【対象ユーザーの年代（肌の観察観点の参考。年代だけで身体的特性を断定しない）】${AGE_SKIN_CONTEXT[ageBand]}`
     : '';
   const photoTypeContext = photoTypeHint === 'face'
     ? '\n\n【アップロード写真の種類（ユーザー申告）】この写真は「顔写真」としてアップロードされました。eyebrow / skin / hair / expression / overall を中心に分析し、posture / body / fashion / color 等、全身が写っていないと判断できない軸は無理に評価しないでください。'
@@ -136,7 +147,7 @@ function buildSystemPrompt(userState, diagnosisInfo, gender, photoTypeHint) {
     .map(([id, text]) => `${id}:\n${text}`)
     .join('\n\n');
   return `あなたは、外見を正確に観察し変容への具体的な道筋を示す分析の専門家です。
-Fineme（外見を起点に自信を再設計するサービス）の「Fineme Mirror」機能として機能します。${genderContext}
+Fineme（外見を起点に自信を再設計するサービス）の「Fineme Mirror」機能として機能します。${genderContext}${ageContext}
 
 【分析の原則】
 - 各軸のチェックリストに基づいて写真を観察し、見えた事実をそのまま伝える（良い点も改善点も）
@@ -225,7 +236,7 @@ function currentMonthJST() {
 
 export async function POST(request) {
   try {
-    const { photo_base64, media_type, user_id, user_state, diagnosis_info, ref, gender, photo_type } = await request.json();
+    const { photo_base64, media_type, user_id, user_state, diagnosis_info, ref, gender, photo_type, age_band } = await request.json();
 
     if (!photo_base64 || !media_type) {
       return Response.json({ error: '写真データが必要です' }, { status: 400 });
@@ -239,7 +250,7 @@ export async function POST(request) {
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    const systemPrompt = buildSystemPrompt(user_state || 'guest', diagnosis_info ?? null, gender || null, photo_type || null);
+    const systemPrompt = buildSystemPrompt(user_state || 'guest', diagnosis_info ?? null, gender || null, photo_type || null, age_band || null);
 
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
@@ -401,6 +412,7 @@ export async function POST(request) {
       analysis,
       paid: isPaidBypass,
       gender: gender || null,
+      age_band: age_band || null,
       photo_type: photo_type || null,
       client_ip: clientIp,
       trial_month: trialApplied ? currentMonth : null,
@@ -411,11 +423,11 @@ export async function POST(request) {
       .select('id')
       .single();
 
-    // 後方互換: 本番に新カラム（gender/photo_type/client_ip/trial_month）未適用でも分析を失敗させない。
+    // 後方互換: 本番に新カラム（gender/age_band/photo_type/client_ip/trial_month）未適用でも分析を失敗させない。
     // 該当のマイグレーションSQL適用後は通常経路でフル保存される。
     if (dbError && dbError.code === 'PGRST204') {
       let legacyRow = insertRow;
-      for (const col of ['gender', 'photo_type', 'client_ip', 'trial_month']) {
+      for (const col of ['gender', 'age_band', 'photo_type', 'client_ip', 'trial_month']) {
         if (new RegExp(col).test(dbError.message || '')) {
           const { [col]: _omit, ...rest } = legacyRow;
           legacyRow = rest;

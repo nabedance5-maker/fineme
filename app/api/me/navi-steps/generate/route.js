@@ -4,6 +4,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
+import { AGE_BANDS } from '@/lib/attributes';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -37,6 +38,25 @@ const BUDGET_LABELS = {
   high:    '積極的に投資',
   premium: 'プレミアム',
 };
+const CLEANSE_FREQ_LABELS = {
+  twice_plus: '1日2回以上', once: '1日1回', irregular: '不定期・週数回', rarely: 'ほとんどしない',
+};
+const SKINCARE_ITEM_LABELS = {
+  lotion: '化粧水', cream: '乳液・クリーム', serum: '美容液', sheet_mask: 'シートマスク',
+  cleansing: 'クレンジング（メイク落とし）', none: '特に使っていない',
+};
+const WORKOUT_TYPE_LABELS = {
+  gym: 'ジムに通っている', bodyweight: '自重トレーニング', home_equipment: '宅トレ器具を使っている', none: '特に取り組んでいない',
+};
+// app/diagnosis/page.js・app/belle/diagnosis/page.js の CATEGORY_PHASE3.habit_opts と対応
+const AXIS_HABIT_LABELS = {
+  eyebrow:     { self_diy: '自己処理（毛抜き・シェーバー）', salon_tattoo: 'サロン・眉毛アートメイク', none: '特にしていない' },
+  fashion:     { size_fit: 'サイズ感を最優先', trend: 'トレンドを意識', fixed_brand: '決まったブランド・店で揃える', none: '特にこだわりなし' },
+  hair:        { monthly: '美容院に月1回', bimonthly: '美容院に2〜3ヶ月に1回', half_year_plus: '美容院は半年以上空く', rarely: '美容院にほぼ行かない' },
+  hairremoval: { self_only: '自己処理のみ', salon_clinic: 'サロン・クリニックに通っている', none: 'どちらもしていない' },
+  teeth:       { whitening: 'ホワイトニング中', braces: '矯正中', interested: 'どちらもしていないが興味ある', not_concerned: '特に気にしていない' },
+  nail:        { self_care: '自分で整えている', salon: 'ネイルサロンに通っている', none: '特にケアしていない' },
+};
 const GOAL_SCENE_LABELS = {
   first_impression: '初対面の印象を変える',
   date_confidence:  'デートの自信をつける',
@@ -58,11 +78,19 @@ export async function POST(request) {
 
   // 1日1回制限: generated_at が今日(JST)なら拒否
   // ただし mirror_only の場合: 最新Mirrorセッションが既存Mapより新しければ通す
-  const { data: profile } = await getSupabase()
+  let { data: profile } = await getSupabase()
     .from('profiles')
-    .select('navi_steps, body_data')
+    .select('navi_steps, body_data, age_band')
     .eq('id', user.id)
     .single();
+  // 後方互換: age_band未マイグレーションのDBでも落とさない（supabase-profiles-age-band.sql 未適用時）
+  if (!profile) {
+    ({ data: profile } = await getSupabase()
+      .from('profiles')
+      .select('navi_steps, body_data')
+      .eq('id', user.id)
+      .single());
+  }
   if (profile?.navi_steps?.generated_at) {
     const jst = (d) => new Date(new Date(d).getTime() + 9 * 3600000);
     const lastJST = jst(profile.navi_steps.generated_at);
@@ -166,6 +194,12 @@ export async function POST(request) {
 
   const tv = derivedDiagnosis?.transform_vectors || {};
   const bd = body_data || {};
+  // 年代はprofiles.age_bandを正とする（診断後にマイページで訂正しても再診断なしで反映されるように）
+  const ageBand = profile?.age_band || derivedDiagnosis?.age_band || null;
+  const ageLabel = AGE_BANDS[ageBand]?.label || null;
+  const skincareHabits = derivedDiagnosis?.skincare_habits || null;
+  const workoutType = derivedDiagnosis?.workout_type || null;
+  const axisHabits = derivedDiagnosis?.axis_habits || null;
 
   // 基礎チェックリスト対象軸（UIでステップ0を別表示するため、AI生成では入門ステップを省略させる）
   // priority_order 上位5軸を対象にする（care_typeではなくCompass優先度で判定）
@@ -225,6 +259,18 @@ export async function POST(request) {
     bd.nail_concerns?.length && `- 爪の悩み: ${[].concat(bd.nail_concerns).join('・')}`,
   ].filter(Boolean).join('\n');
 
+  // 現在の行動習慣（Me Scanのq3_habits・?deepen=の4問目で取得。でお指摘 2026-08-01:
+  // 「今までやってきた」レベルの粗さでなく、頻度・アイテムまで具体的に聞いた情報をここで活かす）
+  const habitLines = [
+    skincareHabits?.cleanse_freq && `- 洗顔・クレンジングの頻度: ${CLEANSE_FREQ_LABELS[skincareHabits.cleanse_freq] || skincareHabits.cleanse_freq}`,
+    skincareHabits?.items?.length && `- 使用中のスキンケアアイテム: ${skincareHabits.items.map(v => SKINCARE_ITEM_LABELS[v] || v).join('・')}`,
+    workoutType && `- 体型づくりの取り組み方: ${WORKOUT_TYPE_LABELS[workoutType] || workoutType}`,
+    ...Object.entries(axisHabits || {}).map(([axisId, v]) => {
+      const label = AXIS_HABIT_LABELS[axisId]?.[v] || v;
+      return label ? `- ${AXIS_LABELS[axisId] || axisId}の今の習慣: ${label}` : null;
+    }),
+  ].filter(Boolean).join('\n');
+
   const goalSceneText = Array.isArray(goalScene)
     ? goalScene.map(g => GOAL_SCENE_LABELS[g] || g).join('、')
     : (GOAL_SCENE_LABELS[goalScene] || goalScene || '未設定');
@@ -268,8 +314,12 @@ export async function POST(request) {
   const userContext = `## ユーザーの変容軸データ
 ${axisLines || '（データなし）'}
 
-${bodyDataSectionHeader}
+${ageLabel ? `## 年代\n- ${ageLabel}\n\n` : ''}${bodyDataSectionHeader}
 ${bodyDataLines || '（まだ入力なし）'}
+${habitLines ? `
+
+## 現在の行動習慣（本人申告）
+${habitLines}` : ''}
 
 ## 予算・ゴール・きっかけ
 - 予算志向: ${BUDGET_LABELS[budget] || '不明'}
@@ -394,6 +444,12 @@ guide別の制約:
 ${baselineAxes.length ? `13. 以下の軸は「基礎習慣チェックリスト」が別途UIから提供される。
     この軸について「現状把握・道具購入・最低限の頻度習慣の開始」系のステップは省略し、
     製品選択・記録・プロ活用・比較・継続改善 のレベルから生成すること: ${baselineAxes.join('・')}` : ''}
+${ageLabel || habitLines ? `14. 「年代」「現在の行動習慣」が提供されている場合:
+    - 年代がある場合、肌ケア・体型づくり系ステップの切り口を年代に合わせる（例: 10代は皮脂・ニキビ、30代以降は乾燥・ハリの観点）。
+      ただし年代だけを根拠に肌タイプ・体質を断定しない（最優先ルールが優先）
+    - 「現在の行動習慣」に記載がある軸（洗顔頻度・使用アイテム・体型づくりの取り組み方・各軸の今の習慣）は、
+      その内容を踏まえた次の一歩を書く（例: 化粧水のみ使用中なら「乳液を追加する」、ジム通い中なら「ジムでの種目を1つ変える」）。
+      未着手の粗い入門ステップ（例: 「化粧水を使い始める」を化粧水使用中の人に出す）は書かない` : ''}
 
 ${BRAND_PHILOSOPHY}
 ※上記の思想はステップ文（text）の言葉選び・温度にのみ効かせる。最優先ルール（提供データ外の身体的特性に言及しない）と生成ルール・並び順・JSON構造は一切変えない。

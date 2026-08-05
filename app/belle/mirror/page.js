@@ -2,6 +2,8 @@
 import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import PixelPurchase from './_PixelPurchase';
 import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
+import { getLocalAttributes, hasRequiredAttributes, syncAttributesWithServer } from '@/lib/attributes';
+import AttributeStep from '@/app/_components/AttributeStep';
 
 const LS_SESSIONS_KEY = 'fineme:mirror:sessions'; // ['session_id1', 'session_id2', ...]
 const LS_ONE_POINT_KEY = 'fineme:mirror:one-point';
@@ -113,6 +115,8 @@ export default function BelleMirrorPage() {
   const [myUserId, setMyUserId] = useState(null);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
+  const [needsAttrs, setNeedsAttrs] = useState(false);
+  const [attrsChecked, setAttrsChecked] = useState(false);
   const [onePointStatus, setOnePointStatus] = useState(null); // null | 'active' | 'done'
   const [determinedOnePoint, setDeterminedOnePoint] = useState(null);
   const [photoType, setPhotoType] = useState(null); // null | 'face' | 'body'
@@ -181,6 +185,13 @@ export default function BelleMirrorPage() {
       }
     } catch {}
     if (authUserId) setMyUserId(authUserId);
+
+    // 属性（年代）が必須（でお指摘 2026-08-01）。写真アップロードの前に確認する
+    (async () => {
+      const attrs = authToken ? await syncAttributesWithServer() : getLocalAttributes();
+      setNeedsAttrs(!hasRequiredAttributes(attrs));
+      setAttrsChecked(true);
+    })();
 
     // ゲスト時代（未ログイン決済・お試し利用）のMirrorセッションをログイン中のアカウントに紐付ける
     if (authUserId && authToken) {
@@ -363,7 +374,7 @@ export default function BelleMirrorPage() {
       const res = await fetch('/api/mirror/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photo_base64: base64, media_type, user_id: userId, user_state: userState, diagnosis_info: diagnosisInfo, ref, gender: 'female', photo_type: photoType }),
+        body: JSON.stringify({ photo_base64: base64, media_type, user_id: userId, user_state: userState, diagnosis_info: diagnosisInfo, ref, gender: 'female', photo_type: photoType, age_band: getLocalAttributes()?.age_band || null }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '分析に失敗しました');
@@ -534,8 +545,13 @@ export default function BelleMirrorPage() {
         )}
       </div>
 
+      {/* 属性（年代）ゲート：写真アップロードの前に必須（でお指摘 2026-08-01） */}
+      {state === 'idle' && attrsChecked && needsAttrs && (
+        <AttributeStep mode="register" onDone={() => setNeedsAttrs(false)} />
+      )}
+
       {/* アップロード */}
-      {state === 'idle' && (
+      {state === 'idle' && attrsChecked && !needsAttrs && (
         <div className="upload-area">
           {/* 顔写真 / 全身写真の選択（軸のブレを防ぐため事前申告） */}
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '14px' }}>

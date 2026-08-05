@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
+import { AGE_BANDS, getLocalAttributes, hasRequiredAttributes, saveAttribute, syncAttributesWithServer } from '@/lib/attributes';
 
 export default function BelleDiagnosisPage() {
   const initialized = useRef(false);
@@ -157,6 +158,12 @@ export default function BelleDiagnosisPage() {
           {v:'lapsed', t:'😴 以前は通っていたが、最近サボっている',  d:'できていた時期があったが、間隔が空いている'},
           {v:'doing',  t:'✅ 継続してできている',                   d:'定期的に整えられている。さらに高みを目指したい'},
         ],
+        habit_q:'眉の手入れは、今どうしていますか？',
+        habit_opts:[
+          {v:'self_diy',    t:'自己処理（毛抜き・シェーバー）'},
+          {v:'salon_tattoo',t:'サロン・眉毛アートメイク'},
+          {v:'none',        t:'特にしていない'},
+        ],
         view_q:'自分の眉って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'整って見えていると思う'},
@@ -179,6 +186,13 @@ export default function BelleDiagnosisPage() {
           {v:'lapsed', t:'😴 以前は気を使っていたが、最近は後回し',  d:'できていた時期があったが、今は惰性になっている'},
           {v:'doing',  t:'✅ 継続してできている',                   d:'自分のスタイルが確立している。さらに磨きたい'},
         ],
+        habit_q:'服選びで、今意識していることは？',
+        habit_opts:[
+          {v:'size_fit',    t:'サイズ感を最優先'},
+          {v:'trend',       t:'トレンドを意識'},
+          {v:'fixed_brand', t:'決まったブランド・店で揃える'},
+          {v:'none',        t:'特にこだわりなし'},
+        ],
         view_q:'自分の着こなしって、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'整って見えていると思う'},
@@ -200,6 +214,13 @@ export default function BelleDiagnosisPage() {
           {v:'blind',  t:'🤔 定期的に行っているが、似合っているか不安',d:'美容院には通っているが、「これでいい」か正直わからない'},
           {v:'lapsed', t:'😴 以前は意識していたが、最近は間隔が空いている',d:'できていた時期があったが、なんとなく後回し'},
           {v:'doing',  t:'✅ 継続してできている',                   d:'定期的に美容院に通い、スタイルを維持できている'},
+        ],
+        habit_q:'美容院に通う頻度は？',
+        habit_opts:[
+          {v:'monthly',       t:'月1回'},
+          {v:'bimonthly',     t:'2〜3ヶ月に1回'},
+          {v:'half_year_plus',t:'半年以上空く'},
+          {v:'rarely',        t:'ほぼ行かない'},
         ],
         view_q:'自分の髪型って、他の人から見てどう見えていると思う？',
         view_opts:[
@@ -245,6 +266,12 @@ export default function BelleDiagnosisPage() {
           {v:'lapsed', t:'😴 以前は通っていたが、最近は後回し',       d:'サロンに行っていた時期があったが、今は間が空いている'},
           {v:'doing',  t:'✅ 定期的に通ってケアできている',           d:'照射・メンテナンスのサイクルが確立している'},
         ],
+        habit_q:'今の状況は？',
+        habit_opts:[
+          {v:'self_only',    t:'自己処理のみ'},
+          {v:'salon_clinic', t:'サロン・クリニックに通っている'},
+          {v:'none',         t:'どちらもしていない'},
+        ],
         view_q:'自分のムダ毛って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'気になるレベルではないと思う'},
@@ -261,6 +288,13 @@ export default function BelleDiagnosisPage() {
           {v:'blind',  t:'🤔 ケアはしているが、外から見てどうかわからない',d:'気を使っているが、人からどう見えているか不安'},
           {v:'lapsed', t:'😴 以前は気を使っていたが、最近は後回し',    d:'できていた時期があったが、今は惰性'},
           {v:'doing',  t:'✅ 継続してできている',                   d:'ホワイトニングや定期ケアを継続できている'},
+        ],
+        habit_q:'今の状況は？',
+        habit_opts:[
+          {v:'whitening',     t:'ホワイトニング中'},
+          {v:'braces',        t:'矯正中'},
+          {v:'interested',    t:'どちらもしていないが興味ある'},
+          {v:'not_concerned', t:'特に気にしていない'},
         ],
         view_q:'自分の歯・口元って、他の人から見てどう見えていると思う？',
         view_opts:[
@@ -283,6 +317,12 @@ export default function BelleDiagnosisPage() {
           {v:'blind',  t:'🤔 一応ケアしているが、基準がわからない',    d:'やっているが、これで十分かどうか判断できない'},
           {v:'lapsed', t:'😴 以前はちゃんとやっていたが、今は後回し',   d:'できていた時期があったが、今は疎かになっている'},
           {v:'doing',  t:'✅ 継続してできている',                   d:'定期的なケアが習慣化できている'},
+        ],
+        habit_q:'爪のケアは、今どうしていますか？',
+        habit_opts:[
+          {v:'self_care', t:'自分で整えている'},
+          {v:'salon',     t:'ネイルサロンに通っている'},
+          {v:'none',      t:'特にケアしていない'},
         ],
         view_q:'自分の爪・手元って、他の人から見てどう見えていると思う？',
         view_opts:[
@@ -329,11 +369,16 @@ export default function BelleDiagnosisPage() {
       reference_type: null,
       rel_status: null,
       key_scene_type: null,
-      past_change_exp: null
+      past_change_exp: null,
+      // 属性（でお指摘 2026-08-01：年代で肌ケア・体づくりのアプローチは変わるべき）
+      age_band: null,
+      // 現在の行動習慣（肌・体型のみコア必須。他6軸は結果画面からの deepen で聞く）
+      skincare_habits: { cleanse_freq: null, items: [] },
+      workout_type: null,
     };
 
     // コアフロー＝地図の骨格ができるまでの画面。残りの設問は結果画面から1軸ずつ導く
-    const MAIN_SCREENS = ['q3','q3_path'];
+    const MAIN_SCREENS = ['q3','q3_habits','q3_path'];
     const TOTAL_STEPS = MAIN_SCREENS.length;
 
     let currentScreen = 'landing';
@@ -378,7 +423,7 @@ export default function BelleDiagnosisPage() {
     }
 
     function updateNav() {
-      const noNavScreens = ['landing', 'q3_intro', 'instant-tryout', 'instant-tryout-result', 'deepen'];
+      const noNavScreens = ['landing', 'instant-tryout', 'instant-tryout-result', 'attr_register', 'attr_confirm', 'deepen'];
       if (noNavScreens.includes(currentScreen)) {
         navEl.style.display = 'none';
         return;
@@ -390,27 +435,16 @@ export default function BelleDiagnosisPage() {
     function updateNextBtn() {
       let enabled = false;
       switch (currentScreen) {
-        case 'q1':       enabled = state.triggers.length > 0; break;
-        case 'q_goal_a': enabled = state.goal_scene.length > 0; break;
-        case 'q_goal_b': enabled = !!state.goal_change; break;
-        case 'q_goal_c': enabled = !!state.goal_vision; break;
-        case 'q2':       enabled = state.scenes.length > 0; break;
         case 'q3':     enabled = Object.values(state.care_levels).some(v => v && v !== ''); break;
+        case 'q3_habits':
+          enabled = !!state.skincare_habits.cleanse_freq
+            && (state.care_levels.body === 'none' || !!state.workout_type);
+          break;
         case 'q3_path': {
           // コアではCompass軸1つだけ答えれば地図の骨格が完成する
           enabled = !!state.path_types[currentCompassAxis()];
           break;
         }
-        case 'q5b':    enabled = state.failure_patterns.length > 0; break;
-        case 'q6':       enabled = state.style_priorities.length > 0; break;
-        case 'q6b':      enabled = !!state.style_priority_top; break;
-        case 'q7':          enabled = !!state.urgency; break;
-        case 'q8':          enabled = !!state.budget; break;
-        case 'q_score':     enabled = !!state.self_score; break;
-        case 'q_refstyle':  enabled = !!state.reference_type; break;
-        case 'q_relstatus': enabled = !!state.rel_status; break;
-        case 'q_event':     enabled = !!state.key_scene_type; break;
-        case 'q_pastchange':enabled = !!state.past_change_exp; break;
       }
       btnNext.disabled = !enabled;
       btnNext.textContent = (currentScreen === 'q3_path') ? '地図をつくる' : '次へ';
@@ -419,38 +453,19 @@ export default function BelleDiagnosisPage() {
     function goNext() {
       let next = null;
       switch (currentScreen) {
-        case 'q1':       next = 'q_goal_a'; break;
-        case 'q_goal_a': next = 'q_goal_b'; break;
-        case 'q_goal_b': next = 'q_goal_c'; break;
-        case 'q_goal_c': next = 'q_score'; break;
-        case 'q_score':  next = 'q_refstyle'; break;
-        case 'q_refstyle': next = 'q2'; break;
-        case 'q2':       next = 'q3'; break;
-        case 'q3':
+        case 'q3': {
+          next = 'q3_habits';
+          const workoutBlock = document.getElementById('habits-workout-block');
+          if (workoutBlock) workoutBlock.style.display = state.care_levels.body === 'none' ? 'none' : '';
+          break;
+        }
+        case 'q3_habits':
           next = 'q3_path';
           buildAllCategoryCards();
           break;
         case 'q3_path':
           // ここが「地図の骨格ができた」地点。残りの軸は結果画面から1軸ずつ導く
           if (typeof window.gtag === 'function') window.gtag('event', 'mescan_core_complete', { track: 'belle' });
-          saveAndFinish();
-          return;
-        case 'q5b': next = 'q6'; break;
-        case 'q6':
-          if (state.style_priorities.length >= 2) {
-            buildQ6b();
-            next = 'q6b';
-          } else {
-            state.style_priority_top = state.style_priorities[0] || null;
-            next = 'q7';
-          }
-          break;
-        case 'q6b': next = 'q7'; break;
-        case 'q7':  next = 'q_relstatus'; break;
-        case 'q_relstatus': next = 'q8'; break;
-        case 'q8':  next = 'q_event'; break;
-        case 'q_event': next = 'q_pastchange'; break;
-        case 'q_pastchange':
           saveAndFinish();
           return;
       }
@@ -710,7 +725,11 @@ export default function BelleDiagnosisPage() {
         reference_type: state.reference_type,
         rel_status: state.rel_status,
         key_scene_type: state.key_scene_type,
-        past_change_exp: state.past_change_exp
+        past_change_exp: state.past_change_exp,
+        // 属性・現在の行動習慣（Mirror分析・New Me Map生成プロンプトで使う）
+        age_band: state.age_band,
+        skincare_habits: state.skincare_habits,
+        workout_type: state.workout_type,
       };
 
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); } catch (e) {}
@@ -757,6 +776,10 @@ export default function BelleDiagnosisPage() {
     }
 
     // Q3: care-level grid
+    // 年代で「変えたい度」の初期選択だけをヒント補正する（gap計算式やスコアリング自体は変えない。
+    // ユーザーはボタンでいつでも上書き可能）
+    const AGE_IDEAL_HINT = { skin: { '10s':2, '20s':3, '30s':4, '40s':4, '50s_plus':4 } };
+
     (function buildCareLevelGrid() {
       const grid = document.getElementById('care-level-grid');
       if (!grid) return;
@@ -801,7 +824,8 @@ export default function BelleDiagnosisPage() {
             // 理想スコアが現在地を下回らないよう自動補正
             const mappedScore = { none:1, concerned:2, self:3, pro:4 }[opt.value] || 1;
             if (!state.ideal_levels[area.id] || parseInt(state.ideal_levels[area.id]) < mappedScore) {
-              const newIdeal = String(Math.max(mappedScore, 3));
+              const ageHint = AGE_IDEAL_HINT[area.id]?.[state.age_band];
+              const newIdeal = String(Math.max(mappedScore, ageHint || 3));
               state.ideal_levels[area.id] = newIdeal;
               idealBtns.querySelectorAll('button').forEach(b => {
                 const sel = b.dataset.v === newIdeal;
@@ -865,33 +889,6 @@ export default function BelleDiagnosisPage() {
     })();
 
     // Q6b: 動的生成
-    function buildQ6b() {
-      const container = document.getElementById('opts-q6b');
-      container.innerHTML = '';
-      state.style_priority_top = null;
-
-      const Q6_LABELS = {
-        explanation_autonomy:       '「なぜそうするのか」の理由を説明してほしい',
-        consultation_accessibility: '相談しながら一緒に方向を決めていきたい',
-        delegate_directive:         '全部任せるから、確実に結果を出してほしい',
-        cautious_continuity:        '小さく試しながら積み上げたい'
-      };
-
-      state.style_priorities.forEach(val => {
-        const btn = document.createElement('button');
-        btn.className = 'diag-option';
-        btn.dataset.value = val;
-        btn.innerHTML = '<span class="diag-option-body"><span class="diag-option-title">' + Q6_LABELS[val] + '</span></span>';
-        btn.addEventListener('click', function () {
-          container.querySelectorAll('.diag-option').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          state.style_priority_top = val;
-          updateNextBtn();
-        });
-        container.appendChild(btn);
-      });
-    }
-
     // Single choice handlers
     function bindSingleChoice(containerId, stateKey) {
       const container = document.getElementById(containerId);
@@ -905,20 +902,6 @@ export default function BelleDiagnosisPage() {
         });
       });
     }
-    bindMultiChoice('opts-q1', state.triggers);
-    bindMultiChoice('opts-q_goal_a', state.goal_scene);
-    bindSingleChoice('opts-q_goal_b', 'goal_change');
-    bindSingleChoice('opts-q_goal_c', 'goal_vision');
-    bindMultiChoice('opts-q2', state.scenes);
-    bindMultiChoice('opts-q5b', state.failure_patterns);
-    bindSingleChoice('opts-q7', 'urgency');
-    bindSingleChoice('opts-q8', 'budget');
-    bindSingleChoice('opts-q_score', 'self_score');
-    bindSingleChoice('opts-q_refstyle', 'reference_type');
-    bindSingleChoice('opts-q_relstatus', 'rel_status');
-    bindSingleChoice('opts-q_event', 'key_scene_type');
-    bindSingleChoice('opts-q_pastchange', 'past_change_exp');
-
     // Multi choice handler
     function bindMultiChoice(containerId, stateArray, noneExcludes) {
       const container = document.getElementById(containerId);
@@ -951,9 +934,6 @@ export default function BelleDiagnosisPage() {
         });
       });
     }
-    bindMultiChoice('opts-q5', state.past_attempts, true);
-    bindMultiChoice('opts-q6', state.style_priorities, false);
-
     // Button handlers
     document.getElementById('btn-start').addEventListener('click', function () {
       screenHistory.push('instant-tryout');
@@ -1014,13 +994,79 @@ export default function BelleDiagnosisPage() {
       });
     });
 
-    document.getElementById('btn-tryout-continue')?.addEventListener('click', function() {
+    // 属性（年代）：登録・確認どちらも選ぶ／進むと即q3へ（でお指摘 2026-08-01）
+    function renderAttrScreen(attrs) {
+      state.age_band = attrs?.age_band || state.age_band;
+      const valueEl = document.getElementById('attr-confirm-value');
+      if (valueEl && hasRequiredAttributes(attrs)) valueEl.textContent = AGE_BANDS[attrs.age_band].label;
+    }
+    document.getElementById('opts-attr-register')?.querySelectorAll('.diag-option').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const ageBand = this.dataset.value;
+        state.age_band = ageBand;
+        saveAttribute({ age_band: ageBand });
+        screenHistory.push('q3');
+        showScreen('q3');
+      });
+    });
+    document.getElementById('btn-attr-confirm-proceed')?.addEventListener('click', function() {
+      screenHistory.push('q3');
+      showScreen('q3');
+    });
+    document.getElementById('btn-attr-confirm-edit')?.addEventListener('click', function() {
+      screenHistory.push('attr_register');
+      showScreen('attr_register');
+    });
+
+    // 肌・体型の現在の行動習慣（q3_habits）
+    document.getElementById('opts-habits-cleanse')?.querySelectorAll('.diag-option').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('#opts-habits-cleanse .diag-option').forEach(b => b.classList.remove('selected'));
+        this.classList.add('selected');
+        state.skincare_habits.cleanse_freq = this.dataset.value;
+        updateNextBtn();
+      });
+    });
+    document.getElementById('opts-habits-items')?.querySelectorAll('.diag-option').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const val = this.dataset.value;
+        const items = state.skincare_habits.items;
+        if (val === 'none') {
+          document.querySelectorAll('#opts-habits-items .diag-option').forEach(b => b.classList.remove('selected'));
+          items.length = 0;
+          this.classList.add('selected');
+          items.push('none');
+        } else {
+          const noneBtn = document.querySelector('#opts-habits-items [data-value="none"]');
+          if (noneBtn) noneBtn.classList.remove('selected');
+          const ni = items.indexOf('none');
+          if (ni > -1) items.splice(ni, 1);
+          const i = items.indexOf(val);
+          if (i > -1) { items.splice(i, 1); this.classList.remove('selected'); }
+          else { items.push(val); this.classList.add('selected'); }
+        }
+      });
+    });
+    document.getElementById('opts-habits-workout')?.querySelectorAll('.diag-option').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('#opts-habits-workout .diag-option').forEach(b => b.classList.remove('selected'));
+        this.classList.add('selected');
+        state.workout_type = this.dataset.value;
+        updateNextBtn();
+      });
+    });
+
+    document.getElementById('btn-tryout-continue')?.addEventListener('click', async function() {
       // 本問診開始を計測
       fetch('/api/track/src?src=instant-tryout').catch(function() {});
       try { localStorage.setItem('fineme:diagnosis:src', 'instant-tryout'); } catch(e) {}
-      // Q1はお試しで回答済みなので飛ばし、8軸の測定（q3）へ直行する
-      screenHistory.push('q3');
-      showScreen('q3');
+      // 属性（年代）が必須。未登録なら登録画面、登録済みならログイン中の最新値で確認画面を出す
+      let attrs = getLocalAttributes();
+      if (hasRequiredAttributes(attrs)) attrs = await syncAttributesWithServer();
+      renderAttrScreen(attrs);
+      const next = hasRequiredAttributes(attrs) ? 'attr_confirm' : 'attr_register';
+      screenHistory.push(next);
+      showScreen(next);
     });
 
     // ─── 軸ごとの描き込み（?deepen=<axisId>）───
@@ -1034,12 +1080,22 @@ export default function BelleDiagnosisPage() {
       try { profile = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) {}
       if (!profile) return false;
 
-      const answers = { path_type: null, self_view: null, love_impact: null };
+      const answers = { path_type: null, self_view: null };
       const QUESTIONS = [
         { key:'path_type',   q:cat.path_q, opts:cat.path_opts.map(o => ({ v:o.v, t:o.t, d:o.d })) },
         { key:'self_view',   q:cat.view_q, opts:cat.view_opts.map(o => ({ v:o.v, t:o.t, d:o.d || '' })) },
-        { key:'love_impact', q:cat.love_q, opts:cat.love_opts.map(o => ({ v:o.v, t:o.t, d:o.d || '' })) },
       ];
+      // hairremoval・nail は恋愛への影響を聞かない設計（has_love:false、love_q自体が無い）。
+      // 元々ここが無条件に cat.love_opts.map(...) していたため、この2軸のdeepenは実行時に落ちていた
+      if (cat.has_love) {
+        answers.love_impact = null;
+        QUESTIONS.push({ key:'love_impact', q:cat.love_q, opts:cat.love_opts.map(o => ({ v:o.v, t:o.t, d:o.d || '' })) });
+      }
+      // 残り6軸（肌・体型はコアq3_habitsで既に聞いているため対象外）は今の行動習慣を4問目として聞く
+      if (cat.habit_q) {
+        answers.habit_type = null;
+        QUESTIONS.push({ key:'habit_type', q:cat.habit_q, opts:cat.habit_opts.map(o => ({ v:o.v, t:o.t, d:o.d || '' })) });
+      }
 
       const labelEl = document.getElementById('deepen-label');
       const headEl  = document.getElementById('deepen-heading');
@@ -1078,11 +1134,19 @@ export default function BelleDiagnosisPage() {
 
       saveBtn?.addEventListener('click', function () {
         try {
+          // habit_type はスコア計算（transform_vectors）に混ぜない。優先軸を変えるためではなく
+          // AI生成文の解像度を上げるための情報なので、別の場所（axis_habits）に置く
+          const { habit_type, ...scoreAnswers } = answers;
           profile.transform_vectors = profile.transform_vectors || {};
-          profile.transform_vectors[axisId] = Object.assign({}, profile.transform_vectors[axisId], answers);
+          profile.transform_vectors[axisId] = Object.assign({}, profile.transform_vectors[axisId], scoreAnswers);
           profile.path_types  = Object.assign({}, profile.path_types,  { [axisId]: answers.path_type });
           profile.self_views  = Object.assign({}, profile.self_views,  { [axisId]: answers.self_view });
-          profile.love_impact = Object.assign({}, profile.love_impact, { [axisId]: answers.love_impact });
+          if (cat.has_love) {
+            profile.love_impact = Object.assign({}, profile.love_impact, { [axisId]: answers.love_impact });
+          }
+          if (cat.habit_q) {
+            profile.axis_habits = Object.assign({}, profile.axis_habits, { [axisId]: habit_type });
+          }
           profile.at = Date.now();
           localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
         } catch (e) {}
@@ -1203,320 +1267,32 @@ export default function BelleDiagnosisPage() {
           </div>
         </div>
 
-        {/* SCREEN Q1: きっかけ */}
-        <div className="diag-screen" id="screen-q1">
+        {/* SCREEN ATTR_REGISTER: 年代の登録（初回のみ）*/}
+        <div className="diag-screen" id="screen-attr_register">
           <button className="diag-back-btn" data-back="">← 戻る</button>
           <div className="diag-card">
-            <p className="diag-step-label">Q1｜きっかけ</p>
-            <h2 className="diag-q">なぜ今、外見を変えようと<br />思いましたか？</h2>
-            <p className="diag-hint">今の気持ちに一番近いものを選んでください。</p>
-            <div className="diag-options" id="opts-q1">
-              <button className="diag-option multi" data-value="matching_photo">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>📱</span>
-                  <span className="diag-option-title">マッチングアプリの写真で損している</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="matching_date">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>💔</span>
-                  <span className="diag-option-title">マッチングはできるが、会うと続かない</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="love_now">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>❤️</span>
-                  <span className="diag-option-title">好きな人に会う前に変わりたい</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="career">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>💼</span>
-                  <span className="diag-option-title">就職・転職など大事な場面が近い</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="mirror">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>🪞</span>
-                  <span className="diag-option-title">毎朝鏡を見て気分が上がらない</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="word">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>💬</span>
-                  <span className="diag-option-title">言われた一言が頭から離れない</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="comparison">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>😔</span>
-                  <span className="diag-option-title">同世代と並んで差が気になった</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="vague">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>🌱</span>
-                  <span className="diag-option-title">明確な理由はないが変わりたい</span>
-                </span>
-              </button>
+            <p className="diag-step-label">はじめに</p>
+            <h2 className="diag-q">年代を教えてください</h2>
+            <p className="diag-hint">同じ肌・体型の悩みでも、年代によって効くアプローチは変わります。あとからマイページで変更できます。</p>
+            <div className="diag-options" id="opts-attr-register">
+              <button className="diag-option" data-value="10s"><span className="diag-option-body"><span className="diag-option-title">10代</span></span></button>
+              <button className="diag-option" data-value="20s"><span className="diag-option-body"><span className="diag-option-title">20代</span></span></button>
+              <button className="diag-option" data-value="30s"><span className="diag-option-body"><span className="diag-option-title">30代</span></span></button>
+              <button className="diag-option" data-value="40s"><span className="diag-option-body"><span className="diag-option-title">40代</span></span></button>
+              <button className="diag-option" data-value="50s_plus"><span className="diag-option-body"><span className="diag-option-title">50代以上</span></span></button>
             </div>
           </div>
         </div>
 
-        {/* SCREEN Q_GOAL_A: ゴール深掘り①（Layer 2：行動・場面のゴール） */}
-        <div className="diag-screen" id="screen-q_goal_a">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="goal-frame-banner">
-            <p style={{fontSize:'12px',fontWeight:'700',color:'rgba(232,228,220,0.90)',margin:'0 0 4px'}}>🗺 あなたの地図の「目的地」を設定します</p>
-            <p style={{fontSize:'13px',color:'rgba(232,228,220,0.75)',margin:'0',lineHeight:'1.6'}}>まず、ここに来た理由を聞かせてください。<br/>この答えが、あなただけの変容ナビの目的地になります。</p>
-          </div>
-          <div className="diag-card">
-            <p className="diag-step-label">ゴール｜場面</p>
-            <h2 className="diag-q">外見が変わったとき、<br />どんな場面で実感したいですか？</h2>
-            <p className="diag-hint">当てはまるものをすべて選んでください（複数選択可）</p>
-            <div className="diag-options" id="opts-q_goal_a">
-              <button className="diag-option" data-value="first_impression">
-                <span className="diag-option-icon">🫀</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">初対面の瞬間、相手の反応が変わる</span>
-                  <span className="diag-option-desc">会った瞬間の空気感、目の動き、表情</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="date_confidence">
-                <span className="diag-option-icon">💫</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">好きな人といる時間、自信を持って振る舞える</span>
-                  <span className="diag-option-desc">外見を気にせず、相手に集中できる</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="photo_self">
-                <span className="diag-option-icon">📸</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">写真や動画の自分が、気にならなくなる</span>
-                  <span className="diag-option-desc">映った自分を見て、下がらなくなる</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="morning_mirror">
-                <span className="diag-option-icon">🌅</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">毎朝鏡を見て、気分が上がる</span>
-                  <span className="diag-option-desc">一日のスタートが変わる</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="approach">
-                <span className="diag-option-icon">🚀</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">自分から積極的に動けるようになる</span>
-                  <span className="diag-option-desc">外見への不安が、行動の邪魔をしなくなる</span>
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* SCREEN Q_GOAL_B: ゴール深掘り②（Layer 3：感情・状態のゴール） */}
-        <div className="diag-screen" id="screen-q_goal_b">
+        {/* SCREEN ATTR_CONFIRM: 年代の確認（2回目以降）*/}
+        <div className="diag-screen" id="screen-attr_confirm">
           <button className="diag-back-btn" data-back="">← 戻る</button>
           <div className="diag-card">
-            <p className="diag-step-label">ゴール｜変化</p>
-            <h2 className="diag-q">外見が変わったとき、<br />最も変わってほしいのは何ですか？</h2>
-            <p className="diag-hint">一番近いものを1つ選んでください。</p>
-            <div className="diag-options" id="opts-q_goal_b">
-              <button className="diag-option" data-value="others_perception">
-                <span className="diag-option-icon">👁️</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">他の人からの見られ方・評価</span>
-                  <span className="diag-option-desc">「あの人、なんか変わった」と気づかれたい</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="self_confidence">
-                <span className="diag-option-icon">🔥</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">自分の気持ち・自己肯定感</span>
-                  <span className="diag-option-desc">他人の目より、自分が自分を好きになりたい</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="action_ease">
-                <span className="diag-option-icon">⚡</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">行動のしやすさ・動けるようになること</span>
-                  <span className="diag-option-desc">外見が足を引っ張らなくなれば、動ける</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="life_options">
-                <span className="diag-option-icon">🗺️</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">人生で選べる選択肢の広さ</span>
-                  <span className="diag-option-desc">外見を理由に、諦めることを減らしたい</span>
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* SCREEN Q_GOAL_C: ゴール深掘り③（Layer 3→4への橋渡し） */}
-        <div className="diag-screen" id="screen-q_goal_c">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">ゴール｜未来</p>
-            <h2 className="diag-q">外見に自信が持てたとき、<br />今と何が変わっていると思いますか？</h2>
-            <p className="diag-hint">正直な直感で選んでください。</p>
-            <div className="diag-options" id="opts-q_goal_c">
-              <button className="diag-option" data-value="love_active">
-                <span className="diag-option-icon">❤️</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">恋愛で、躊躇せず動けるようになっている</span>
-                  <span className="diag-option-desc">告白も、連絡も、誘いも、外見を理由に止まらない</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="no_give_up">
-                <span className="diag-option-icon">🌱</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">外見を理由に何かを諦めることが減っている</span>
-                  <span className="diag-option-desc">「どうせ自分なんて」という言葉が頭に浮かばなくなる</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="like_self">
-                <span className="diag-option-icon">🪞</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">自分のことを、もう少し好きになっている</span>
-                  <span className="diag-option-desc">鏡を見て、下がらなくなっている</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="natural_confident">
-                <span className="diag-option-icon">✨</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">自信が「自然な状態」になっている</span>
-                  <span className="diag-option-desc">頑張って出す自信ではなく、あって当たり前の自信</span>
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* SCREEN Q_SCORE: 自己採点 */}
-        <div className="diag-screen" id="screen-q_score">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">自己採点</p>
-            <h2 className="diag-q">今の自分の外見、<br />10段階で何点ですか？</h2>
-            <p className="diag-hint">直感で選んでください。正解はありません。</p>
-            <div id="opts-q_score" style={{display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:'8px', marginTop:'4px'}}>
-              {[1,2,3,4,5,6,7,8,9,10].map(n => (
-                <button key={n} className="diag-option" data-value={String(n)}
-                  style={{flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'14px 4px', gap:'2px'}}>
-                  <span style={{fontSize:'22px', fontWeight:900, color:'#0a0f1e'}}>{n}</span>
-                  {n === 1 && <span style={{fontSize:'9px', color:'#9ca3af'}}>最低</span>}
-                  {n === 5 && <span style={{fontSize:'9px', color:'#9ca3af'}}>普通</span>}
-                  {n === 10 && <span style={{fontSize:'9px', color:'#9ca3af'}}>最高</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* SCREEN Q_REFSTYLE: スタイルイメージ */}
-        <div className="diag-screen" id="screen-q_refstyle">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">スタイルイメージ</p>
-            <h2 className="diag-q">目指したいスタイルの<br />イメージはありますか？</h2>
-            <p className="diag-hint">なんとなくでも大丈夫です。</p>
-            <div className="diag-options" id="opts-q_refstyle">
-              <button className="diag-option" data-value="person">
-                <span className="diag-option-icon">👤</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">特定の人・モデルのイメージがある</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="category">
-                <span className="diag-option-icon">🎨</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">スタイルのカテゴリはある（ナチュラル・清潔感系など）</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="none_yet">
-                <span className="diag-option-icon">🌫️</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">まだイメージはない</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="find_self">
-                <span className="diag-option-icon">🔍</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">「自分らしさ」を探したい</span>
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* SCREEN Q2: 場面 */}
-        <div className="diag-screen" id="screen-q2">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">Q2｜場面</p>
-            <h2 className="diag-q">「このままじゃ嫌だ」と<br />一番感じる場面は？</h2>
-            <p className="diag-hint">最もリアルに刺さるものを選んでください。</p>
-            <div className="diag-options" id="opts-q2">
-              <button className="diag-option multi" data-value="date_first">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>🫀</span>
-                  <span className="diag-option-title">初デートの前、緊張より不安の方が大きい</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="photo_gap">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>📸</span>
-                  <span className="diag-option-title">写真の自分が想像と全然違う</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="clothes_fit">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>👗</span>
-                  <span className="diag-option-title">気に入った服を試着したら似合わなかった</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="morning_mirror">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>🌅</span>
-                  <span className="diag-option-title">朝の鏡で一日のやる気が下がる</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="video_call">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>💻</span>
-                  <span className="diag-option-title">オンライン通話の画面の自分に落ち込んだ</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="group_scene">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>👥</span>
-                  <span className="diag-option-title">同世代と並んで差が気になった</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="daily_low">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>🌫️</span>
-                  <span className="diag-option-title">日常的に自信が持てない</span>
-                </span>
-              </button>
-            </div>
+            <p className="diag-step-label">はじめに</p>
+            <h2 className="diag-q">あなたの年代：<span id="attr-confirm-value" style={{color:'#6366f1'}}></span></h2>
+            <p className="diag-hint">前回登録した内容です。違っていればその場で変更できます。</p>
+            <button className="diag-nav-next" id="btn-attr-confirm-proceed" style={{width:'100%',marginTop:'8px'}}>この内容で進む →</button>
+            <button className="diag-back-btn" id="btn-attr-confirm-edit" style={{width:'100%',marginTop:'10px',textAlign:'center'}}>変更する</button>
           </div>
         </div>
 
@@ -1543,24 +1319,40 @@ export default function BelleDiagnosisPage() {
           </div>
         </div>
 
-        {/* SCREEN Q3_INTRO: Phase 3 入口カード */}
-        <div className="diag-screen" id="screen-q3_intro">
+        {/* SCREEN Q3_HABITS: 肌・体型の現在の行動習慣（でお指摘 2026-08-01：頻度・アイテムまで聞く） */}
+        <div className="diag-screen" id="screen-q3_habits">
           <button className="diag-back-btn" data-back="">← 戻る</button>
           <div className="diag-card">
-            <div className="q3-intro-card">
-              <p style={{fontSize:'11px',fontWeight:'700',color:'#6366f1',letterSpacing:'.06em',textTransform:'uppercase',margin:'0 0 12px'}}>Phase 3 ｜ 軸別スキャン</p>
-              <h2 style={{fontSize:'clamp(18px,4vw,22px)',fontWeight:'800',lineHeight:'1.35',margin:'0 0 12px'}}>ここからは、8つの軸を<br />1ページで一気に答えてもらいます</h2>
-              <p style={{fontSize:'14px',color:'#6b7280',lineHeight:'1.7',margin:'0 0 12px'}}>各軸で「来た道」「他者からの見え方」「恋愛への影響」を聞きます。</p>
-              <p style={{fontSize:'12px',color:'#a78bfa',fontWeight:'600',margin:'0 0 20px'}}>正直な答えほど、精度の高いマップになります。</p>
-              <div className="q3-intro-axes">
-                {[['💪','体型'],['✂️','眉毛'],['👗','服'],['💇','髪'],['✨','肌'],['🪒','脱毛'],['🦷','歯'],['💅','爪']].map(([icon, label], i) => (
-                  <div key={i} className="q3-intro-axis">
-                    <div className="q3-intro-axis-icon">{icon}</div>
-                    <span className="q3-intro-axis-label">{label}</span>
-                  </div>
-                ))}
+            <p className="diag-step-label">今やっていること</p>
+            <h2 className="diag-q">肌・体づくりで、<br />いま実際にやっていることは？</h2>
+            <p className="diag-hint">具体的なほど、提案の精度が上がります。</p>
+
+            <p style={{fontSize:'13px',fontWeight:800,color:'#374151',margin:'18px 0 8px'}}>✨ 洗顔・クレンジングの頻度</p>
+            <div className="diag-options" id="opts-habits-cleanse">
+              <button className="diag-option" data-value="twice_plus"><span className="diag-option-body"><span className="diag-option-title">1日2回以上</span></span></button>
+              <button className="diag-option" data-value="once"><span className="diag-option-body"><span className="diag-option-title">1日1回</span></span></button>
+              <button className="diag-option" data-value="irregular"><span className="diag-option-body"><span className="diag-option-title">不定期・週数回</span></span></button>
+              <button className="diag-option" data-value="rarely"><span className="diag-option-body"><span className="diag-option-title">ほとんどしない</span></span></button>
+            </div>
+
+            <p style={{fontSize:'13px',fontWeight:800,color:'#374151',margin:'18px 0 8px'}}>✨ 使っているアイテム（複数可）</p>
+            <div className="diag-options" id="opts-habits-items">
+              <button className="diag-option multi" data-value="lotion"><span className="diag-check">✓</span><span className="diag-option-body"><span className="diag-option-title">化粧水</span></span></button>
+              <button className="diag-option multi" data-value="cream"><span className="diag-check">✓</span><span className="diag-option-body"><span className="diag-option-title">乳液・クリーム</span></span></button>
+              <button className="diag-option multi" data-value="serum"><span className="diag-check">✓</span><span className="diag-option-body"><span className="diag-option-title">美容液</span></span></button>
+              <button className="diag-option multi" data-value="sheet_mask"><span className="diag-check">✓</span><span className="diag-option-body"><span className="diag-option-title">シートマスク</span></span></button>
+              <button className="diag-option multi" data-value="cleansing"><span className="diag-check">✓</span><span className="diag-option-body"><span className="diag-option-title">クレンジング（メイク落とし）</span></span></button>
+              <button className="diag-option multi" data-value="none"><span className="diag-check">✓</span><span className="diag-option-body"><span className="diag-option-title">特に使っていない</span></span></button>
+            </div>
+
+            <div id="habits-workout-block" style={{display:'none'}}>
+              <p style={{fontSize:'13px',fontWeight:800,color:'#374151',margin:'18px 0 8px'}}>💪 体型づくりの取り組み方</p>
+              <div className="diag-options" id="opts-habits-workout">
+                <button className="diag-option" data-value="gym"><span className="diag-option-body"><span className="diag-option-title">ジムに通っている</span></span></button>
+                <button className="diag-option" data-value="bodyweight"><span className="diag-option-body"><span className="diag-option-title">自重トレーニング（自宅・公園等）</span></span></button>
+                <button className="diag-option" data-value="home_equipment"><span className="diag-option-body"><span className="diag-option-title">宅トレ器具を使っている（ダンベル等）</span></span></button>
+                <button className="diag-option" data-value="none"><span className="diag-option-body"><span className="diag-option-title">特に取り組んでいない</span></span></button>
               </div>
-              <button className="diag-nav-next" id="btn-q3-intro-start" style={{width:'100%',fontSize:'16px'}}>スキャンを始める →</button>
             </div>
           </div>
         </div>
@@ -1587,354 +1379,6 @@ export default function BelleDiagnosisPage() {
           <div id="deepen-content"></div>
           <button className="diag-nav-next" id="btn-deepen-save" style={{width:'100%',maxWidth:'600px',marginTop:'8px'}} disabled>地図に描き込む</button>
           <a href="/belle/diagnosis/result" style={{display:'block',textAlign:'center',marginTop:'14px',fontSize:'13px',color:'#9ca3af',textDecoration:'none'}}>あとにする →</a>
-        </div>
-
-        {/* SCREEN Q5: 過去の試み（フローからは除外、後方互換で残す） */}
-        <div className="diag-screen" id="screen-q5" style={{display:'none'}}>
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">Q4｜これまでの試み</p>
-            <h2 className="diag-q">外見について、<br />これまでに試したことはありますか？</h2>
-            <p className="diag-hint">当てはまるものをすべて選んでください（複数選択可）</p>
-            <div className="diag-options" id="opts-q5">
-              <button className="diag-option multi" data-value="gym">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">ジム・筋トレを試したことがある</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="skincare">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">スキンケアや美容を変えたことがある</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="fashion">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">服・ファッションを見直したことがある</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="hair">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">髪型・美容院を変えたことがある</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="other">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">その他（眉毛・歯・脱毛など）試したことがある</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="none">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">まだほとんど何もしたことがない</span>
-                  <span className="diag-option-desc">ここが出発点です</span>
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* SCREEN Q5b: 壁の正体（横断的メタ認知） */}
-        <div className="diag-screen" id="screen-q5b">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">Q4｜壁の正体</p>
-            <h2 className="diag-q">外見を変えようとするとき、<br />一番の壁になってきたのは何だと思う？</h2>
-            <p className="diag-hint">カテゴリは関係なく、あなた自身の「傾向」を振り返ってください。正直な答えが、あなたに合うガイドを見つけます。</p>
-            <div className="diag-options" id="opts-q5b">
-              <button className="diag-option multi" data-value="cost">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>💸</span>
-                  <span className="diag-option-title">お金・コスト</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="no_continuation">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>⏰</span>
-                  <span className="diag-option-title">時間・習慣化</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="lost_direction">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>🧭</span>
-                  <span className="diag-option-title">方向・知識がわからない</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="no_result">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>📉</span>
-                  <span className="diag-option-title">実感・モチベーション</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="awkward">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>🤝</span>
-                  <span className="diag-option-title">プロとの相性・サポート</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="self_doubt">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>😔</span>
-                  <span className="diag-option-title">自信・マインド</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="ongoing">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-icon" style={{marginRight:'6px'}}>💡</span>
-                  <span className="diag-option-title">特に壁はない</span>
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* SCREEN Q6: プロとの関係スタイル */}
-        <div className="diag-screen" id="screen-q6">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">Q5｜理想の関係</p>
-            <h2 className="diag-q">プロと一緒に変わるとしたら、<br />どんな関係が理想ですか？</h2>
-            <p className="diag-hint">当てはまるものをすべて選んでください（複数選択可）</p>
-            <div className="diag-options" id="opts-q6">
-              <button className="diag-option multi" data-value="explanation_autonomy">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">「なぜそうするのか」の理由を説明してほしい</span>
-                  <span className="diag-option-desc">納得してから動きたい。理解が信頼につながる</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="consultation_accessibility">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">相談しながら一緒に方向を決めていきたい</span>
-                  <span className="diag-option-desc">気軽に質問できる関係がいい</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="delegate_directive">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">全部任せるから、確実に結果を出してほしい</span>
-                  <span className="diag-option-desc">自分で考えるより、プロの判断に従いたい</span>
-                </span>
-              </button>
-              <button className="diag-option multi" data-value="cautious_continuity">
-                <span className="diag-check">✓</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">小さく試しながら、毎回前回の続きで積み上げたい</span>
-                  <span className="diag-option-desc">急がずに、継続できる関係で長く付き合いたい</span>
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* SCREEN Q6b: 最優先スタイル */}
-        <div className="diag-screen" id="screen-q6b">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">Q5｜最優先</p>
-            <h2 className="diag-q">その中で、一番大事なのは<br />どれですか？</h2>
-            <div className="diag-options" id="opts-q6b">{/* JSで動的生成 */}</div>
-          </div>
-        </div>
-
-        {/* SCREEN Q7: タイムライン */}
-        <div className="diag-screen" id="screen-q7">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">Q6｜タイムライン</p>
-            <h2 className="diag-q">いつ頃までに<br />変化を感じたいですか？</h2>
-            <p className="diag-hint">あくまで目安として、今の気持ちに近いものを。</p>
-            <div className="diag-options" id="opts-q7">
-              <button className="diag-option" data-value="high">
-                <span className="diag-option-icon">⚡</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">できれば1ヶ月以内</span>
-                  <span className="diag-option-desc">具体的な予定がある</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="mid">
-                <span className="diag-option-icon">📅</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">2〜3ヶ月で少しずつ</span>
-                  <span className="diag-option-desc">焦らず、でも確実に変わっていきたい</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="low">
-                <span className="diag-option-icon">🌿</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">半年〜1年で根本から</span>
-                  <span className="diag-option-desc">じっくり、土台から作り直したい</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="continuous">
-                <span className="diag-option-icon">♾️</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">期限はないが、続けられるものがいい</span>
-                  <span className="diag-option-desc">ライフスタイルとして定着させたい</span>
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* SCREEN Q_RELSTATUS: 恋愛・出会いの状況 */}
-        <div className="diag-screen" id="screen-q_relstatus">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">状況</p>
-            <h2 className="diag-q">今の恋愛・出会いの<br />状況は？</h2>
-            <p className="diag-hint">Map のアクション優先順位に反映します。</p>
-            <div className="diag-options" id="opts-q_relstatus">
-              <button className="diag-option" data-value="crush">
-                <span className="diag-option-icon">❤️</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">気になる人がいる</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="active_dating">
-                <span className="diag-option-icon">📱</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">マッチングアプリ・婚活中</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="want_to_meet">
-                <span className="diag-option-icon">🌱</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">まず出会いを増やしたい段階</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="self_growth">
-                <span className="diag-option-icon">🎯</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">恋愛より自己成長・仕事・友人関係を優先</span>
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* SCREEN Q8: 投資感覚 */}
-        <div className="diag-screen" id="screen-q8">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">Q7｜投資感覚（任意）</p>
-            <h2 className="diag-q">変化のために、<br />月にどのくらい使えそうですか？</h2>
-            <p className="diag-hint">合う人が見つかれば予算を上げることもあります。今の感覚で選んでください。</p>
-            <div className="diag-options" id="opts-q8">
-              <button className="diag-option" data-value="low">
-                <span className="diag-option-icon">🌱</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">〜¥5,000</span>
-                  <span className="diag-option-desc">まずは試してみたい</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="mid">
-                <span className="diag-option-icon">💪</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">¥5,000〜¥15,000</span>
-                  <span className="diag-option-desc">効果があるなら続けたい</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="high">
-                <span className="diag-option-icon">🎯</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">¥15,000〜¥30,000</span>
-                  <span className="diag-option-desc">ちゃんとやるなら投資する</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="premium">
-                <span className="diag-option-icon">🏆</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">¥30,000以上</span>
-                  <span className="diag-option-desc">本気でやるなら惜しまない</span>
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* SCREEN Q_EVENT: 直近のシーン */}
-        <div className="diag-screen" id="screen-q_event">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">シーン</p>
-            <h2 className="diag-q">外見を変えたいと感じる<br />直近のシーンは？</h2>
-            <p className="diag-hint">最もリアルに感じるものを選んでください。</p>
-            <div className="diag-options" id="opts-q_event">
-              <button className="diag-option" data-value="romance">
-                <span className="diag-option-icon">💌</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">好きな人・デートでの印象</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="career">
-                <span className="diag-option-icon">💼</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">仕事・面接・キャリアの場面</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="social">
-                <span className="diag-option-icon">🤝</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">友人・グループでの存在感</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="general">
-                <span className="diag-option-icon">🌟</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">特定のシーンはないが、とにかく変わりたい</span>
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* SCREEN Q_PASTCHANGE: 過去の変化経験 */}
-        <div className="diag-screen" id="screen-q_pastchange">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">過去の経験</p>
-            <h2 className="diag-q">外見を本格的に<br />変えようとしたことがある？</h2>
-            <p className="diag-hint">以前の経験が Map の精度を上げます。</p>
-            <div className="diag-options" id="opts-q_pastchange">
-              <button className="diag-option" data-value="success">
-                <span className="diag-option-icon">✅</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">ある（一定の効果があった）</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="tried_no_effect">
-                <span className="diag-option-icon">🔄</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">ある（あまり変わらなかった）</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="short_term">
-                <span className="diag-option-icon">⏱️</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">少しだけ（続かなかった）</span>
-                </span>
-              </button>
-              <button className="diag-option" data-value="none">
-                <span className="diag-option-icon">🌱</span>
-                <span className="diag-option-body">
-                  <span className="diag-option-title">ほとんどない</span>
-                </span>
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Navigation */}

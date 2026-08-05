@@ -152,7 +152,7 @@ export default function StorySubmitPage() {
         <aside className="mypage-sidenav">
           <nav className="stack" style={{ gap: '4px' }}>
             <Link href="/mypage" className="sidenav-link">ホーム</Link>
-            <Link href={track.diagnosisResult} className="sidenav-link">New Me Navi</Link>
+            <Link href={track.diagnosisResult} className="sidenav-link">診断結果</Link>
             <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
             <Link href="/mypage/log" className="sidenav-link">New Me Log</Link>
             <Link href="/mypage/mirror" className="sidenav-link">Mirror履歴</Link>

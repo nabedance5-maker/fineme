@@ -607,6 +607,7 @@ export default function NewMeNaviPage() {
       .path-node.pn-done .gmap-node-text { text-decoration: line-through; color: #6b7280; }
       .path-node.pn-done .gmap-node-axis-name { opacity: 0.45; }
       .gmap-now-badge { display: inline-flex; align-items: center; gap: 2px; font-size: 9px; font-weight: 800; color: #c9a84c; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.32); border-radius: 99px; padding: 1px 6px; white-space: nowrap; margin-bottom: 2px; }
+      .gmap-baseline-chip { font-size: 8px; font-weight: 800; color: rgba(52,211,153,0.9); background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.28); border-radius: 99px; padding: 1px 5px; margin-left: 2px; vertical-align: middle; }
       .gmap-selfcheck-badge { font-size: 9px; font-weight: 700; color: rgba(52,211,153,0.85); background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); border-radius: 99px; padding: 1px 6px; display: inline-block; margin-bottom: 2px; }
       .path-node-detail { display: none; margin: 4px 0 8px; }
       .path-node-detail.pnd-open { display: block; }
@@ -687,6 +688,18 @@ export default function NewMeNaviPage() {
       .wcw-done-msg { font-size: 12px; color: rgba(16,185,129,0.75); font-weight: 700; padding: 6px 0 0; margin: 0; }
       .wcw-btn { display: block; width: 100%; padding: 10px; background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.3); border-radius: 8px; font-size: 13px; font-weight: 700; color: #c9a84c; cursor: pointer; font-family: inherit; transition: background .12s; }
       .wcw-btn:hover { background: rgba(201,168,76,0.14); }
+      .wcw-continuity { margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(232,228,220,0.12); }
+      .wcw-continuity-q { font-size: 12px; color: rgba(232,228,220,0.6); margin: 0 0 8px; line-height: 1.5; }
+      .wcw-continuity-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+      .wcw-continuity-opt { padding: 7px 10px; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.15); border-radius: 8px; font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.65); cursor: pointer; font-family: inherit; transition: border-color .12s; }
+      .wcw-continuity-opt:hover { border-color: rgba(201,168,76,0.4); color: #c9a84c; }
+      .wcw-continuity-ack { font-size: 11px; color: rgba(201,168,76,0.7); margin: 12px 0 0; padding-top: 12px; border-top: 1px dashed rgba(232,228,220,0.12); line-height: 1.5; }
+      .axis-habit-banner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.22); border-radius: 10px; margin-bottom: 16px; }
+      .axis-habit-banner-icon { font-size: 20px; flex-shrink: 0; }
+      .axis-habit-banner-body { flex: 1; min-width: 0; }
+      .axis-habit-banner-title { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.85); margin: 0 0 2px; line-height: 1.5; }
+      .axis-habit-banner-desc { font-size: 10px; color: rgba(232,228,220,0.4); margin: 0; }
+      .axis-habit-banner-btn { font-size: 11px; font-weight: 700; padding: 7px 12px; background: rgba(201,168,76,0.1); border: 1px solid #c9a84c; color: #c9a84c; border-radius: 8px; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
     `;
     document.head.appendChild(style);
 
@@ -1551,9 +1564,18 @@ export default function NewMeNaviPage() {
       if (!naviStepsData?.steps?.length) return null;
       const compassAxis = calcDynamicCompass();
       const allNaviSteps = naviStepsData.steps;
+      // 基礎チェックリストを独立バナーではなく、道の先頭ノードとして合流させる（でお指摘：
+      // 「あらかじめ用意されたコンテンツとAI生成コンテンツが1つの場所に統合され」ていない見た目を直す）
+      const baselineNodes = computeBaselineItems().map(item => ({
+        ...item,
+        action_type: item.action_type || 'quick',
+        guide: item.guide || 'none',
+        _isBaseline: true,
+      }));
+      const combinedSteps = [...baselineNodes, ...allNaviSteps];
       const steps = activeAxisFilter
-        ? allNaviSteps.filter(s => s.axis === activeAxisFilter)
-        : allNaviSteps;
+        ? combinedSteps.filter(s => s.axis === activeAxisFilter)
+        : combinedSteps;
       const totalDone = allNaviSteps.filter(s => stepDone[s.id]).length;
       const pct = allNaviSteps.length > 0 ? Math.round(totalDone / allNaviSteps.length * 100) : 0;
       const genDate = naviStepsData.generated_at
@@ -1575,6 +1597,8 @@ export default function NewMeNaviPage() {
       // 霧の境界は全ステップ基準（軸フィルター状態に関わらず一定）
       const _globalUndone  = allNaviSteps.filter(s => !stepDone[s.id]);
       const _activeIds     = new Set(_globalUndone.slice(0, NAVI_VISIBLE_UNDONE).map(s => s.id));
+      // 基礎ノードは「今日やったら変わる」性質上、霧の中に隠さず常に見える状態にする
+      baselineNodes.forEach(b => _activeIds.add(b.id));
       const _undoneInOrder = steps.filter(s => !stepDone[s.id]);
       const _fogCount      = _undoneInOrder.filter(s => !_activeIds.has(s.id)).length;
       const _doneCount     = steps.length - _undoneInOrder.length;
@@ -1611,6 +1635,7 @@ export default function NewMeNaviPage() {
         }
 
         const actionLabel = { quick:'⚡', habit:'🔄', ongoing:'🌊' }[step.action_type] || '';
+        const baselineChip = step._isBaseline ? ' <span class="gmap-baseline-chip">基礎</span>' : '';
 
         let guideBadgeHtml = '';
         if (!isFog) {
@@ -1655,7 +1680,7 @@ export default function NewMeNaviPage() {
               <div class="gm-circle ${circleClass}">${esc(def.icon || '•')}</div>
               <div class="gmap-node-label">
                 ${nowBadge}
-                <span class="gmap-node-axis-name">${esc(def.label || step.axis)} ${actionLabel}</span>
+                <span class="gmap-node-axis-name">${esc(def.label || step.axis)} ${actionLabel}${baselineChip}</span>
               </div>
             </div>
           </div>
@@ -1778,38 +1803,24 @@ export default function NewMeNaviPage() {
           <a href="${TRACK.diagnosis}" style="font-size:11px;font-weight:700;padding:7px 14px;border:1px solid rgba(100,160,255,0.4);border-radius:8px;color:rgba(100,160,255,0.9);text-decoration:none;flex-shrink:0;white-space:nowrap">Me Scanを受ける →</a>
         </div>` : '';
 
-      // 基礎チェックリスト（Map用：上位5件をpriority×gapスコアで選定）
-      const _mapBaselineItems = computeBaselineItems();
-      const AXIS_JA_BL = { eyebrow:'眉', skin:'肌', hair:'髪', body:'体型', fashion:'服', teeth:'歯', nail:'爪', hairremoval:'脱毛' };
-      const mapBaselineHtml = _mapBaselineItems.length === 0 ? '' : (() => {
-        const itemsHtml = _mapBaselineItems.map(step => {
-          const done = !!stepDone[step.id];
-          return `<div class="prereq-item${done ? ' step-done' : ''}">
-            <div class="prereq-box${done ? ' checked' : ''}" data-done-key="${esc(step.id)}">${done ? '✓' : ''}</div>
-            <div style="flex:1">
-              <span style="font-size:10px;font-weight:700;color:rgba(201,168,76,0.55);display:block;margin-bottom:2px">${esc(AXIS_JA_BL[step.axis] || step.axis)}</span>
-              <span class="prereq-text">${esc(step.text)}</span>
+      // 軸フィルタ中、その軸の習慣ヒアリング（?deepen=）が未回答ならMap上から入口を出す
+      // （でお指摘 2026-08-01：肌・体型以外の6軸も、別の場所で習慣を聞けるようにすべき）
+      const DEEPEN_HABIT_AXES = new Set(['eyebrow', 'fashion', 'hair', 'hairremoval', 'teeth', 'nail']);
+      const axisHabitsBanner = (activeAxisFilter && DEEPEN_HABIT_AXES.has(activeAxisFilter) && !p.axis_habits?.[activeAxisFilter])
+        ? `<div class="axis-habit-banner">
+            <span class="axis-habit-banner-icon">📝</span>
+            <div class="axis-habit-banner-body">
+              <p class="axis-habit-banner-title">${esc(AREA_DEFS[activeAxisFilter]?.label || activeAxisFilter)}の今の習慣を教えると、もっと的確な提案になります</p>
+              <p class="axis-habit-banner-desc">1分で回答できます</p>
             </div>
-          </div>`;
-        }).join('');
-        const blDone = _mapBaselineItems.filter(s => stepDone[s.id]).length;
-        return `<div id="baseline-banner-wrap" style="margin-bottom:20px">
-          <div class="prereq-banner" id="baseline-banner">
-            <div class="prereq-banner-icon">⚡</div>
-            <div class="prereq-banner-body">
-              <p class="prereq-banner-title">今日やったら変わる基礎の一手</p>
-              <p class="prereq-banner-desc">あなたの診断結果から優先表示 · <span class="prereq-banner-count">${blDone}/${_mapBaselineItems.length} 完了</span></p>
-            </div>
-          </div>
-          <div class="prereq-section" id="baseline-section" style="margin-top:10px">
-            ${itemsHtml}
-          </div>
-        </div>`;
-      })();
+            <a href="${TRACK.diagnosis}?deepen=${esc(activeAxisFilter)}" class="axis-habit-banner-btn">回答する →</a>
+          </div>`
+        : '';
 
       return `
         ${mirrorOnlyBanner}
         ${mirrorPromoBanner}
+        ${axisHabitsBanner}
         <div style="margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <span style="font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(201,168,76,0.55);text-transform:uppercase">あなただけの変容の道</span>
@@ -1825,7 +1836,6 @@ export default function NewMeNaviPage() {
             </div>
           </div>
         </div>
-        ${mapBaselineHtml}
         ${mirrorBasisHtml}
         ${voyageLogHtml}
         <div class="route-container">${nodesHtml}</div>
@@ -3466,6 +3476,7 @@ export default function NewMeNaviPage() {
         return d.toISOString().slice(0, 10);
       }
       const CHECKIN_KEY = 'fineme:navi:weekly-checkin';
+      const HISTORY_KEY = 'fineme:navi:weekly-checkin-history';
       const thisWeek = weekStartISO();
       let cd = null;
       try { cd = JSON.parse(localStorage.getItem(CHECKIN_KEY) || 'null'); } catch {}
@@ -3473,6 +3484,12 @@ export default function NewMeNaviPage() {
       if (cd) {
         if (cd.weekStart !== thisWeek) {
           prev = { weekStart: cd.weekStart, axisId: cd.axisId, stepText: cd.stepText, status: cd.status };
+          // 継続確認用：完了した週の記録を直近8件まで保持
+          try {
+            const hist = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+            hist.push({ weekStart: cd.weekStart, status: cd.status });
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(hist.slice(-8)));
+          } catch {}
           cd = null;
         } else {
           prev = cd.prev || null;
@@ -3492,6 +3509,26 @@ export default function NewMeNaviPage() {
       const actionHtml = isDone
         ? '<p class="wcw-done-msg">1点、動かせたね。来週の羅針盤もここにある。</p>'
         : `<button id="weekly-checkin-btn" class="wcw-btn">やった</button>`;
+
+      // 直近3週のうち2週以上未達なら「継続できていますか？」を出す（でお指摘：ルート途中に継続確認ステップを挟む）
+      let continuityHtml = '';
+      if (!isDone && !cd.continuityAsked) {
+        let hist = [];
+        try { hist = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch {}
+        const recent3 = hist.slice(-3);
+        const doneCount = recent3.filter(h => h.status === 'done').length;
+        if (recent3.length === 3 && doneCount <= 1) {
+          continuityHtml = `<div class="wcw-continuity" id="wcw-continuity">
+            <p class="wcw-continuity-q">直近3週、なかなかできていないみたい。継続できていますか？</p>
+            <div class="wcw-continuity-opts">
+              <button class="wcw-continuity-opt" data-choice="keep">このまま続ける</button>
+              <button class="wcw-continuity-opt" data-choice="slow">ペースを落とす</button>
+              <button class="wcw-continuity-opt" data-choice="change">別の一手に変える</button>
+            </div>
+          </div>`;
+        }
+      }
+
       return `<div id="weekly-checkin-widget" class="wcw${isDone ? ' wcw-done' : ''}">
         <p class="wcw-eyebrow">羅針盤 — 今週の1点</p>
         ${prevHtml}
@@ -3505,13 +3542,14 @@ export default function NewMeNaviPage() {
         </div>
         <p class="wcw-note">やれなくても大丈夫。羅針盤はそのまま置いてある。</p>
         ${actionHtml}
+        ${continuityHtml}
       </div>`;
     }
 
     const html = `
       <div class="navi-wrap">
       <div class="navi-header">
-        <p class="navi-header-eyebrow">New Me Navi &nbsp;<a href="/mypage/map" style="font-size:9px;font-weight:700;color:rgba(201,168,76,0.6);text-decoration:none;border:1px solid rgba(201,168,76,0.22);padding:2px 8px;border-radius:99px;vertical-align:middle;letter-spacing:.06em">🗺️ Map</a></p>
+        <p class="navi-header-eyebrow">New Me Navi &nbsp;<a href="/mypage/map" style="font-size:9px;font-weight:700;color:rgba(201,168,76,0.6);text-decoration:none;border:1px solid rgba(201,168,76,0.22);padding:2px 8px;border-radius:99px;vertical-align:middle;letter-spacing:.06em">🧭 部位マップ</a></p>
         <div class="navi-header-badge">🧭 ${naviStepsData ? 'あなただけの変容ロードマップ' : '行動タイプ別ロードマップ'}</div>
         <h1>ゴール：<em>${esc(overallGoal)}</em></h1>
         <p class="navi-header-sub">${naviStepsData ? 'Me Scanをもとに生成された、あなただけの変容の道。' : '「今すぐ動ける」から始めよう。<br>Compassが指す軸のステップが最優先で表示される。'}</p>
@@ -3568,7 +3606,7 @@ export default function NewMeNaviPage() {
 
       <div class="navi-footer">
         <a href="/mypage/log" class="navi-footer-btn nfb-secondary" style="border-color:rgba(201,168,76,0.45)">📖 New Me Log — サービスを管理する</a>
-        <a href="${TRACK.diagnosisResult}" class="navi-footer-btn nfb-secondary">🗺️ New Me Naviに戻る</a>
+        <a href="${TRACK.diagnosisResult}" class="navi-footer-btn nfb-secondary">📋 診断結果を見る</a>
         <a href="${TRACK.diagnosis}" class="navi-footer-btn nfb-ghost">Me Scanを再スキャンする</a>
       </div>
       </div>
@@ -3641,6 +3679,25 @@ export default function NewMeNaviPage() {
         msg.textContent = '1点、動かせたね。来週の羅針盤もここにある。';
         btn.replaceWith(msg);
       } catch {}
+    });
+
+    // 継続確認（このまま続ける／ペースを落とす／別の一手に変える）
+    document.getElementById('wcw-continuity')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.wcw-continuity-opt');
+      if (!btn) return;
+      const choice = btn.dataset.choice;
+      try {
+        const CHECKIN_KEY = 'fineme:navi:weekly-checkin';
+        const cd = JSON.parse(localStorage.getItem(CHECKIN_KEY) || 'null');
+        if (cd) {
+          cd.continuityAsked = true;
+          cd.continuityChoice = choice;
+          localStorage.setItem(CHECKIN_KEY, JSON.stringify(cd));
+        }
+      } catch {}
+      const ACK = { keep: 'そのまま続けよう。焦らなくて大丈夫。', slow: 'ペースを落として大丈夫。少しずつでいい。', change: '次のMap更新で、別の一手に切り替えます。' };
+      const wrap = document.getElementById('wcw-continuity');
+      if (wrap) wrap.outerHTML = `<p class="wcw-continuity-ack">${ACK[choice] || '記録しました。'}</p>`;
     });
 
     // サービスカードを非同期注入
@@ -3742,18 +3799,6 @@ export default function NewMeNaviPage() {
         else {
           const countEl = banner.querySelector('.prereq-banner-count');
           if (countEl) countEl.textContent = `${done}/${total} チェック済み`;
-        }
-      }
-      // Map用 基礎チェックリストバナー
-      const blBanner = document.getElementById('baseline-banner');
-      if (blBanner) {
-        const blItems = document.querySelectorAll('#baseline-section .prereq-box');
-        const blChecked = document.querySelectorAll('#baseline-section .prereq-box.checked');
-        if (blItems.length > 0 && blItems.length === blChecked.length) {
-          document.getElementById('baseline-banner-wrap')?.remove();
-        } else {
-          const countEl = blBanner.querySelector('.prereq-banner-count');
-          if (countEl) countEl.textContent = `${blChecked.length}/${blItems.length} 完了`;
         }
       }
     }
@@ -4220,7 +4265,7 @@ export default function NewMeNaviPage() {
           <aside className="navi-sidenav">
             <nav className="stack" style={{ gap: '4px' }}>
               <Link href="/mypage" className="sidenav-link">ホーム</Link>
-              <Link href={track.diagnosisResult} className="sidenav-link">New Me Navi</Link>
+              <Link href={track.diagnosisResult} className="sidenav-link">診断結果</Link>
               <Link href="/mypage/navi" className="sidenav-link sidenav-link--active">New Me Map</Link>
               <Link href="/mypage/log" className="sidenav-link">New Me Log</Link>
               <Link href="/mypage/mirror" className="sidenav-link">Mirror履歴</Link>

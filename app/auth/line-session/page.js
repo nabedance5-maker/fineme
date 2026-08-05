@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { syncLocalDiagnosisToServer } from '@/lib/track';
 import { syncLocalLogsToServer } from '@/lib/log-store';
+import { syncLocalAttributesToServer } from '@/lib/attributes';
 
 const sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -17,6 +18,8 @@ async function syncLocalDiagnosis(accessToken) {
   await syncLocalDiagnosisToServer(accessToken);
   // New Me Log のゲスト記録も同じタイミングで引き継ぐ
   await syncLocalLogsToServer(accessToken);
+  // 端末に保存済みの属性（年代）もサーバへ引き継ぐ
+  await syncLocalAttributesToServer(accessToken);
 }
 
 export default function LineSessionPage() {
