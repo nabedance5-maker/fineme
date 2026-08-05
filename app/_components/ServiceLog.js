@@ -1164,50 +1164,25 @@ export default function ServiceLog({ withSideNav = false }) {
     }
 
     // FVカードを画像化してシェア/保存する。
-    // でお指摘：サーバー側で別途組んだ画像だと羊皮紙にならない。画面に出ている
-    // カードそのものを撮ってそのまま出す（html2canvasでDOMを直接キャプチャ）。
-    // 対応端末（主にモバイル）は共有シート（Web Share API）を開き、Instagram/X/LINE等に渡せる。
-    // 未対応（主にPC）はそのままダウンロードする。
+    // でお指摘：サーバー側で別途組んだ画像だと羊皮紙にならない → html2canvasでDOMを直接
+    // キャプチャする方式にした → 投資記録が8行あると行の文字が潰れて重なる新たな不具合
+    // （2026-08-05）。html2canvas は3つの手（既定／letterRendering／foreignObjectRendering／
+    // クローンの余白拡張）すべてでこのカード特有の構成（cqw・flex中央寄せ・背景画像）を
+    // 正しく描けなかったため、html2canvasを諦め <canvas> に自前で描く方式に切り替えた。
+    // 座標は .lfv-card の各ゾーン（%指定）を1080×1350（背景画像の実寸）へ変換して使う。
     async function shareOrDownloadFvCard(btn) {
-      const card = btn.closest('.lfv-card');
-      if (!card) return;
+      const s = costSummary(logs);
+      if (!s.counted) return;
 
       const label = btn.textContent;
       btn.disabled = true; btn.textContent = '作成中…';
       try {
-        const { default: html2canvas } = await import('html2canvas');
-        const canvas = await html2canvas(card, {
-          backgroundColor: null,
-          scale: 2,
-          useCORS: true,
-          ignoreElements: el => el.classList?.contains('lfv-jump'),
-          // html2canvasは .lfv-breakdown（投資記録の行リスト）の高さを実際より
-          // 短く見積もり、最後の行の文字が下半分欠ける（でお報告 2026-08-02。
-          // letterRendering/foreignObjectRendering も試したが直らない・背景が
-          // 描画されなくなる等の副作用があり不採用。実際のレイアウトは崩さず、
-          // 撮影用クローンだけ余白を広げて回避する）。
-          onclone: (_doc, clonedCard) => {
-            const origEls = card.querySelectorAll('*');
-            const cloneEls = clonedCard.querySelectorAll('*');
-            origEls.forEach((orig, i) => {
-              const clone = cloneEls[i];
-              if (!clone) return;
-              const cs = getComputedStyle(orig);
-              clone.style.fontSize = cs.fontSize;
-              clone.style.lineHeight = cs.lineHeight;
-            });
-            clonedCard.style.fontSize = getComputedStyle(card).fontSize;
-            const breakdown = clonedCard.querySelector('.lfv-breakdown');
-            if (breakdown) breakdown.style.bottom = '3%';
-          },
-        });
-        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        const blob = await renderFvCardImage(s);
         if (!blob) throw new Error('画像の生成に失敗しました');
 
         const now = new Date();
         const filename = `new-me-log-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}.png`;
         const file = new File([blob], filename, { type: 'image/png' });
-        const s = costSummary(logs);
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
@@ -1227,6 +1202,141 @@ export default function ServiceLog({ withSideNav = false }) {
       } finally {
         btn.disabled = false; btn.textContent = label;
       }
+    }
+
+    function loadImageEl(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
+    // FVカードを1080×1350のcanvasに手描きする。ドット区切りの罫線を描く小関数
+    function drawDottedLine(ctx, x1, x2, y, color) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([2, 5]);
+      ctx.beginPath();
+      ctx.moveTo(x1, y);
+      ctx.lineTo(x2, y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    async function renderFvCardImage(s) {
+      const W = 1080, H = 1350;
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      try { await document.fonts.ready; } catch {}
+      const bg = await loadImageEl('/assets/images/log-parchment-v2.webp');
+      ctx.drawImage(bg, 0, 0, W, H);
+
+      const SERIF = "'Noto Serif JP', Georgia, serif";
+      const SANS = "'Noto Sans JP', sans-serif";
+      const INK_DARK = '#472000';
+      const INK_BRAND = '#473020';
+      const INK_SOFT = 'rgba(71,48,32,.85)';
+      const INK_MED = 'rgba(71,48,32,.8)';
+      const INK_ROW = 'rgba(71,48,32,.9)';
+      const INK_LEAD = 'rgba(71,48,32,.45)';
+
+      const now = new Date();
+      const ym = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+      // ── ブランド／日付（top:13.67%、CSSはtranslateY(-100%)＝この線がテキスト下端）──
+      ctx.textBaseline = 'alphabetic';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = INK_BRAND;
+      ctx.font = `${0.042 * W}px ${SERIF}`;
+      ctx.fillText('New Me Log', 0.12 * W, 0.1367 * H);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = 'rgba(71,48,32,.75)';
+      ctx.font = `${0.031 * W}px ${SANS}`;
+      ctx.fillText(ym, 0.88 * W, 0.1367 * H);
+
+      // ── 上から順に並ぶブロック（top:X% がテキスト上端、baselineはfontSize*0.8下と近似）──
+      ctx.textAlign = 'center';
+      ctx.fillStyle = INK_MED;
+      ctx.font = `${0.031 * W}px ${SERIF}`;
+      ctx.fillText('自分への投資', 0.5 * W, 0.215 * H + 0.031 * W * 0.8);
+
+      ctx.fillStyle = INK_DARK;
+      ctx.font = `${0.134 * W}px ${SERIF}`;
+      ctx.fillText(formatYen(s.monthly), 0.5 * W, 0.255 * H + 0.134 * W * 0.8);
+
+      ctx.fillStyle = INK_BRAND;
+      ctx.font = `${0.037 * W}px ${SERIF}`;
+      ctx.fillText('1ヶ月あたり', 0.5 * W, 0.395 * H + 0.037 * W * 0.8);
+
+      ctx.fillStyle = 'rgba(71,48,32,.72)';
+      ctx.font = `${0.031 * W}px ${SANS}`;
+      ctx.fillText(`このまま1年で ${formatYen(s.yearly)}`, 0.5 * W, 0.452 * H + 0.031 * W * 0.8);
+
+      ctx.fillStyle = INK_MED;
+      ctx.font = `${0.025 * W}px ${SERIF}`;
+      ctx.fillText('投 資 記 録', 0.5 * W, 0.545 * H + 0.025 * W * 0.8);
+
+      // ── 投資記録（左21%〜右79%の帯に、縦中央寄せで積み上げる）──
+      const MAX_ROWS = 8;
+      const shown = s.byAxis.slice(0, MAX_ROWS);
+      const rest = s.byAxis.length - shown.length;
+      const rowFs = (shown.length <= 5 ? 0.029 : shown.length <= 7 ? 0.026 : 0.0235) * W;
+      const rowGap = rowFs * 0.55;
+      const rowH = rowFs * 1.35;
+      const bandTop = 0.57 * H, bandBottom = 0.875 * H;
+      const totalRowsH = shown.length * rowH + Math.max(0, shown.length - 1) * rowGap + (rest > 0 ? rowFs * 1.3 : 0);
+      let y = bandTop + Math.max(0, (bandBottom - bandTop - totalRowsH) / 2) + rowH * 0.8;
+
+      const left = 0.21 * W, right = 0.79 * W;
+      shown.forEach(row => {
+        const def = resolveAxis(row.axis, row.customIcon);
+        const valueText = `${row.estimated ? '約' : ''}${formatYen(row.monthly)}`;
+
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#000';
+        ctx.font = `${rowFs}px ${SANS}`;
+        ctx.fillText(def.icon, left, y);
+        const iconW = ctx.measureText(def.icon).width + rowFs * 0.35;
+
+        ctx.fillStyle = INK_ROW;
+        ctx.fillText(def.label, left + iconW, y);
+        const nameW = ctx.measureText(def.label).width;
+
+        ctx.textAlign = 'right';
+        ctx.fillStyle = INK_DARK;
+        ctx.font = `${rowFs}px ${SERIF}`;
+        ctx.fillText(valueText, right, y);
+        const valueW = ctx.measureText(valueText).width;
+
+        drawDottedLine(ctx, left + iconW + nameW + rowFs * 0.4, right - valueW - rowFs * 0.4, y - rowFs * 0.32, INK_LEAD);
+
+        y += rowH + rowGap;
+      });
+      if (rest > 0) {
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(71,48,32,.6)';
+        ctx.font = `${rowFs * 0.85}px ${SANS}`;
+        ctx.fillText(`ほか ${rest}件`, W / 2, y);
+      }
+
+      // ── フッター（top:90.5%）──
+      ctx.textAlign = 'left';
+      ctx.fillStyle = INK_MED;
+      ctx.font = `${0.029 * W}px ${SERIF}`;
+      ctx.fillText(`${logs.length}つの港を巡っている`, 0.12 * W, 0.905 * H + 0.029 * W * 0.8);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = 'rgba(71,48,32,.7)';
+      ctx.font = `${0.024 * W}px ${SANS}`;
+      ctx.fillText('fineme.me', 0.88 * W, 0.905 * H + 0.024 * W * 0.8);
+
+      return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
     }
 
     async function deleteLog(id) {
