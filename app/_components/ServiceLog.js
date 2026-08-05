@@ -191,16 +191,17 @@ export default function ServiceLog({ withSideNav = false }) {
       /* 羊皮紙カード内から「支出から見えること」へ飛ぶリンク。
          横スクロールできることに気づいてもらうのと同じ理由で、カード内に置いて見つけやすくする */
       .lfv-jump {
-        top: 94%; display: flex; justify-content: center;
+        top: 94%; display: flex; justify-content: center; gap: 8px;
       }
       .lfv-jump-btn {
         display: inline-flex; align-items: center; gap: 2px;
         font-size: 2.3cqw; font-weight: 700; letter-spacing: .03em; font-family: 'Noto Sans JP', sans-serif;
-        color: #3a2712; text-decoration: none;
+        color: #3a2712; text-decoration: none; cursor: pointer;
         background: rgba(255,250,235,.85); border: 1px solid rgba(71,48,32,.35); border-radius: 999px;
         padding: 1.3cqw 3cqw; box-shadow: 0 2px 6px rgba(71,48,32,.15);
       }
       .lfv-jump-btn:hover { background: rgba(255,250,235,.98); border-color: rgba(71,48,32,.55); }
+      .lfv-jump-btn:disabled { opacity: .6; cursor: default; }
 
       .lfv-budget, .lfv-note { font-size: 11px; color: rgba(232,228,220,.38); margin: 10px auto 0; max-width: 400px; line-height: 1.75; }
       .lfv-note { color: rgba(232,228,220,.3); }
@@ -455,6 +456,7 @@ export default function ServiceLog({ withSideNav = false }) {
             </div>
             <div class="lfv-abs lfv-jump">
               <a class="lfv-jump-btn" href="#log-analysis-section" data-jump="analysis">支出から見えること →</a>
+              <button type="button" class="lfv-jump-btn" data-share-fv="1">📤 シェア/保存</button>
             </div>
           </div>
           ${budgetLine}
@@ -1161,6 +1163,53 @@ export default function ServiceLog({ withSideNav = false }) {
       input.addEventListener('blur', () => input.classList.remove('is-fallback-visible'), { once: true });
     }
 
+    // FVカードを画像化してシェア/保存する。
+    // 対応端末（主にモバイル）は共有シート（Web Share API）を開き、Instagram/X/LINE等に渡せる。
+    // 未対応（主にPC）はそのままダウンロードする。画像自体は /api/og/log（edge, next/og）で生成。
+    async function shareOrDownloadFvCard(btn) {
+      const s = costSummary(logs);
+      if (!s.counted) return;
+
+      const label = btn.textContent;
+      btn.disabled = true; btn.textContent = '作成中…';
+      try {
+        const rows = s.byAxis.slice(0, 4).map(row => {
+          const def = resolveAxis(row.axis, row.customIcon);
+          return { icon: def.icon, label: def.label, v: row.monthly };
+        });
+        const params = new URLSearchParams({
+          m: String(s.monthly),
+          y: String(s.yearly),
+          p: String(logs.length),
+          r: JSON.stringify(rows),
+        });
+        const res = await fetch(`/api/og/log?${params.toString()}`);
+        if (!res.ok) throw new Error('画像の生成に失敗しました');
+        const blob = await res.blob();
+        const now = new Date();
+        const filename = `new-me-log-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}.png`;
+        const file = new File([blob], filename, { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'New Me Log',
+            text: `今月の自分への投資は${formatYen(s.monthly)}でした`,
+          });
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = filename;
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 4000);
+        }
+      } catch (e) {
+        if (e?.name !== 'AbortError') alert('シェア/保存に失敗しました: ' + e.message);
+      } finally {
+        btn.disabled = false; btn.textContent = label;
+      }
+    }
+
     async function deleteLog(id) {
       if (!confirm('この記録を削除しますか？')) return;
       await removeLog(id);
@@ -1242,6 +1291,9 @@ export default function ServiceLog({ withSideNav = false }) {
         document.getElementById('log-analysis-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
+      // FVカードをシェア/保存
+      const shareBtn = e.target.closest('[data-share-fv]');
+      if (shareBtn) { shareOrDownloadFvCard(shareBtn); return; }
     });
 
     // 日付を選んで記録（label 内の date input がネイティブのカレンダーを開く）
