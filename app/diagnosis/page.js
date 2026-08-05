@@ -396,7 +396,13 @@ export default function DiagnosisPage() {
       document.querySelectorAll('.diag-screen').forEach(s => s.classList.remove('is-active'));
       const el = document.getElementById('screen-' + id);
       if (el) el.classList.add('is-active');
+      if (id === 'q3') {
+        // q3_habitsから「戻る」で入ってきた場合は最後に答えた軸（爪）から再開、
+        // それ以外（新規到達）は1軸目から
+        q3StepIndex = (currentScreen === 'q3_habits') ? CONCERN_AREAS.length - 1 : 0;
+      }
       currentScreen = id;
+      if (id === 'q3') renderQ3Step();
       // 画面ごとの到達をGA4へ（SPA遷移でURLが変わらないため明示送信）
       if (typeof window.gtag === 'function') {
         window.gtag('event', 'mescan_screen', { screen_id: id });
@@ -437,7 +443,11 @@ export default function DiagnosisPage() {
     function updateNextBtn() {
       let enabled = false;
       switch (currentScreen) {
-        case 'q3':     enabled = Object.values(state.care_levels).some(v => v && v !== ''); break;
+        case 'q3': {
+          const q3Axis = CONCERN_AREAS[q3StepIndex]?.id;
+          enabled = !!(q3Axis && state.care_levels[q3Axis]);
+          break;
+        }
         case 'q3_habits':
           enabled = !!state.skincare_habits.cleanse_freq
             && (state.care_levels.body === 'none' || !!state.workout_type);
@@ -457,6 +467,11 @@ export default function DiagnosisPage() {
       let next = null;
       switch (currentScreen) {
         case 'q3': {
+          if (q3StepIndex < CONCERN_AREAS.length - 1) {
+            q3StepIndex++;
+            renderQ3Step();
+            return;
+          }
           next = 'q3_habits';
           // 体型に無関心な人に手段を聞いても離脱要因にしかならないため出し分ける
           const workoutBlock = document.getElementById('habits-workout-block');
@@ -484,6 +499,11 @@ export default function DiagnosisPage() {
     }
 
     function goBack() {
+      if (currentScreen === 'q3' && q3StepIndex > 0) {
+        q3StepIndex--;
+        renderQ3Step();
+        return;
+      }
       if (screenHistory.length > 1) {
         screenHistory.pop();
         showScreen(screenHistory[screenHistory.length - 1]);
@@ -791,21 +811,66 @@ export default function DiagnosisPage() {
     // ユーザーはボタンでいつでも上書き可能）
     const AGE_IDEAL_HINT = { skin: { '10s':2, '20s':3, '30s':4, '40s':4, '50s_plus':4 } };
 
-    (function buildCareLevelGrid() {
+    const CARE_OPTIONS = [
+      { value: 'none',         label: '気にしていない',                          color: '#9ca3af' },
+      { value: 'concerned',    label: '気になっているが、まだ何もしていない',     color: '#f59e0b' },
+      { value: 'self',         label: '自分なりにやっている（自己流・不定期）',   color: '#3b82f6' },
+      { value: 'self_regular', label: '自己流だが、定期的に続けている',           color: '#60a5fa' },
+      { value: 'pro',          label: 'プロ・サロンに定期的に任せている',         color: '#10b981' }
+    ];
+    const IDEAL_LABELS = ['1','2','3','4','5'];
+
+    // 軸によって「自分なり」「プロ」の意味が実態とズレるため、4軸のみ文言を差し替える
+    // （でお指摘 2026-08-06：髪は誰でも美容師に切ってもらうので全員「プロ」になってしまう等）。
+    // valueは共通のまま（下流の136タイプ・優先順位計算・AI生成プロンプトは無改修で動く）
+    const AXIS_CARE_LABELS = {
+      fashion: {
+        none: '特に意識していない（いつも同じような服を何となく着ている）',
+        concerned: '気になっているが、まだ何も変えられていない',
+        self: '自分なりに気をつけている（サイズ感や色を意識することがある）',
+        self_regular: '自分の「勝ちパターン」が決まっていて、安定して選べている',
+        pro: 'パーソナルスタイリスト・パーソナルカラー診断などプロのアドバイスを受けたことがある',
+      },
+      hair: {
+        none: '特に何もしていない（セットもせず、そのまま）',
+        concerned: '気になっているが、特に何もできていない',
+        self: '自分でセット・スタイリングをしている（不定期）',
+        self_regular: '毎日のスタイリング・ケア（トリートメント等）が習慣になっている',
+        pro: '美容師にスタイリング・ケアまで相談しながら本格的に整えている',
+      },
+      hairremoval: {
+        none: '特に何もしていない',
+        concerned: '気になっているが、まだ何もしていない',
+        self: '自己処理をしている（カミソリ・除毛クリーム等、不定期）',
+        self_regular: '自己処理を習慣的に続けている',
+        pro: 'サロン・クリニックで脱毛している',
+      },
+      teeth: {
+        none: '歯科検診以外、特に何もしていない',
+        concerned: '気になっているが、まだ何もしていない',
+        self: '市販のホワイトニンググッズ等を使っている（不定期）',
+        self_regular: 'ホワイトニング・歯科ケアを習慣的に続けている',
+        pro: '歯科医院でホワイトニング・矯正など専門的なケアを受けている',
+      },
+    };
+
+    // Q3を1画面8軸まとめてではなく1軸ずつ表示する（でお指摘：全部答えなきゃいけない圧が面倒に見える）
+    let q3StepIndex = 0;
+
+    function renderQ3Step() {
       const grid = document.getElementById('care-level-grid');
       if (!grid) return;
+      grid.innerHTML = '';
+      const area = CONCERN_AREAS[q3StepIndex];
+      grid.appendChild(buildCareLevelCard(area));
+      const progressEl = document.getElementById('q3-step-progress');
+      if (progressEl) progressEl.textContent = (q3StepIndex + 1) + ' / ' + CONCERN_AREAS.length;
+      const overallBlock = document.getElementById('care-overall-block');
+      if (overallBlock) overallBlock.style.display = (q3StepIndex === CONCERN_AREAS.length - 1) ? '' : 'none';
+      updateNextBtn();
+    }
 
-      const CARE_OPTIONS = [
-        { value: 'none',         label: '気にしていない',                          color: '#9ca3af' },
-        { value: 'concerned',    label: '気になっているが、まだ何もしていない',     color: '#f59e0b' },
-        { value: 'self',         label: '自分なりにやっている（自己流・不定期）',   color: '#3b82f6' },
-        { value: 'self_regular', label: '自己流だが、定期的に続けている',           color: '#60a5fa' },
-        { value: 'pro',          label: 'プロ・サロンに定期的に任せている',         color: '#10b981' }
-      ];
-
-      const IDEAL_LABELS = ['1','2','3','4','5'];
-
-      CONCERN_AREAS.forEach(area => {
+    function buildCareLevelCard(area) {
         const wrap = document.createElement('div');
         wrap.className = 'care-level-item';
         wrap.id = 'care-item-' + area.id;
@@ -819,14 +884,16 @@ export default function DiagnosisPage() {
         const optGroup = document.createElement('div');
         optGroup.className = 'care-level-opts';
 
+        const axisLabels = AXIS_CARE_LABELS[area.id] || null;
         CARE_OPTIONS.forEach(opt => {
           const radioId = 'care-' + area.id + '-' + opt.value;
           const optEl = document.createElement('label');
           optEl.className = 'care-level-opt';
           optEl.htmlFor = radioId;
+          const optLabel = (axisLabels && axisLabels[opt.value]) || opt.label;
           optEl.innerHTML =
             '<input type="radio" id="' + radioId + '" name="care-' + area.id + '" value="' + opt.value + '">' +
-            '<span class="care-level-opt-text">' + opt.label + '</span>';
+            '<span class="care-level-opt-text">' + optLabel + '</span>';
 
           optEl.querySelector('input').addEventListener('change', function () {
             state.care_levels[area.id] = opt.value;
@@ -915,9 +982,10 @@ export default function DiagnosisPage() {
           wrap.appendChild(agaRow);
         }
 
-        grid.appendChild(wrap);
-      });
+        return wrap;
+    }
 
+    (function bindCareOverallCheckbox() {
       const overallCheck = document.getElementById('care-overall-check');
       const overallWrap  = document.getElementById('care-overall-wrap');
       if (overallCheck) {
@@ -1350,8 +1418,9 @@ export default function DiagnosisPage() {
             <p className="diag-step-label">Q3｜現在地の把握</p>
             <h2 className="diag-q">それぞれについて、<br />今のあなたの状態を教えてください</h2>
             <p className="diag-hint">「気にしていない」も大切な情報です。全て正直に教えてください。</p>
+            <p id="q3-step-progress" style={{fontSize:'12px',fontWeight:800,color:'#6366f1',margin:'-8px 0 4px'}}></p>
             <div id="care-level-grid">{/* JSで生成 */}</div>
-            <div style={{marginTop:'20px',paddingTop:'16px',borderTop:'2px dashed #e5e7eb'}}>
+            <div id="care-overall-block" style={{marginTop:'20px',paddingTop:'16px',borderTop:'2px dashed #e5e7eb'}}>
               <label className="care-overall-wrap" id="care-overall-wrap">
                 <input type="checkbox" id="care-overall-check" style={{width:'20px',height:'20px',accentColor:'#6366f1',flexShrink:'0',cursor:'pointer'}} />
                 <span className="care-overall-text">
