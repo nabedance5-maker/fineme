@@ -5,6 +5,12 @@ import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
 
 const LS_SESSIONS_KEY = 'fineme:mirror:sessions'; // ['session_id1', 'session_id2', ...]
 const LS_ONE_POINT_KEY = 'fineme:mirror:one-point';
+const LS_TRIAL_MONTH_KEY = 'fineme:mirror:freeTrialMonth';
+
+function currentMonthJST() {
+  const jst = new Date(Date.now() + 9 * 3600000);
+  return `${jst.getUTCFullYear()}-${String(jst.getUTCMonth() + 1).padStart(2, '0')}`;
+}
 
 function saveSessionToLocal(sessionId) {
   try {
@@ -109,6 +115,9 @@ export default function BelleMirrorPage() {
   const [subscribing, setSubscribing] = useState(false);
   const [onePointStatus, setOnePointStatus] = useState(null); // null | 'active' | 'done'
   const [determinedOnePoint, setDeterminedOnePoint] = useState(null);
+  const [photoType, setPhotoType] = useState(null); // null | 'face' | 'body'
+  const [trialUsedThisMonth, setTrialUsedThisMonth] = useState(false);
+  const [trialApplied, setTrialApplied] = useState(false);
   const fileInputRef = useRef(null);
   const dropRef = useRef(null);
   const mapCanvasRef = useRef(null);
@@ -173,6 +182,18 @@ export default function BelleMirrorPage() {
     } catch {}
     if (authUserId) setMyUserId(authUserId);
 
+    // ゲスト時代（未ログイン決済・お試し利用）のMirrorセッションをログイン中のアカウントに紐付ける
+    if (authUserId && authToken) {
+      const localIdsForClaim = getLocalSessionIds();
+      if (localIdsForClaim.length) {
+        fetch('/api/mirror/claim-sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify({ session_ids: localIdsForClaim }),
+        }).catch(() => {});
+      }
+    }
+
     const loadPastSessions = async () => {
       const localIds = getLocalSessionIds();
       if (!authUserId && !localIds.length) return;
@@ -202,6 +223,7 @@ export default function BelleMirrorPage() {
     loadPastSessions();
     loadSubStatus();
 
+    try { setTrialUsedThisMonth(localStorage.getItem(LS_TRIAL_MONTH_KEY) === currentMonthJST()); } catch {}
     try { if (localStorage.getItem('fineme:mirror:feedback:sent') === '1') setFbSent(true); } catch {}
     try { const op = JSON.parse(localStorage.getItem(LS_ONE_POINT_KEY) || 'null'); if (op?.status) setOnePointStatus(op.status); } catch {}
   }, []);
@@ -341,7 +363,7 @@ export default function BelleMirrorPage() {
       const res = await fetch('/api/mirror/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photo_base64: base64, media_type, user_id: userId, user_state: userState, diagnosis_info: diagnosisInfo, ref, gender: 'female' }),
+        body: JSON.stringify({ photo_base64: base64, media_type, user_id: userId, user_state: userState, diagnosis_info: diagnosisInfo, ref, gender: 'female', photo_type: photoType }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '分析に失敗しました');
@@ -349,6 +371,11 @@ export default function BelleMirrorPage() {
       setSessionId(data.session_id);
       setAnalysis(data.analysis);
       saveSessionToLocal(data.session_id);
+      if (data.trial_applied) {
+        setTrialApplied(true);
+        try { localStorage.setItem(LS_TRIAL_MONTH_KEY, currentMonthJST()); } catch {}
+        setTrialUsedThisMonth(true);
+      }
       // トラックを初回確定（すでに確定済みなら何もしない）
       setTrackOnce('belle');
       syncTrackWithServer().catch(() => {});
@@ -363,7 +390,7 @@ export default function BelleMirrorPage() {
     if (!sessionId) return;
     // 未ログインなら決済前にアカウント作成/ログインへ誘導（払い損防止）
     if (!myUserId) {
-      window.location.href = '/auth/login?redirect=' + encodeURIComponent('/belle/mirror?session_id=' + sessionId);
+      window.location.href = '/login?redirect=' + encodeURIComponent('/belle/mirror?session_id=' + sessionId);
       return;
     }
     setPurchasing(true);
@@ -391,7 +418,7 @@ export default function BelleMirrorPage() {
         const redirectTarget = sessionId
           ? '/belle/mirror?session_id=' + sessionId
           : '/mypage/subscription';
-        window.location.href = '/auth/login?redirect=' + encodeURIComponent(redirectTarget);
+        window.location.href = '/login?redirect=' + encodeURIComponent(redirectTarget);
         return;
       }
       const res = await fetch('/api/subscription/checkout', {
@@ -495,16 +522,40 @@ export default function BelleMirrorPage() {
           スコアじゃない。あなたの可能性の見取り図。
         </p>
         {state === 'idle' && (
-          <p className="privacy-note">
-            📷 写真はAI分析のみに使用し、サーバーには保存されません。<br />
-            分析完了と同時に削除されます。
-          </p>
+          <>
+            <p className="privacy-note" style={{ marginBottom: '10px' }}>
+              🎁 月1回は無料でまるごと見られます。まずは試して、気に入ったら続けてください。
+            </p>
+            <p className="privacy-note">
+              📷 写真はAI分析のみに使用し、サーバーには保存されません。<br />
+              分析完了と同時に削除されます。
+            </p>
+          </>
         )}
       </div>
 
       {/* アップロード */}
       {state === 'idle' && (
         <div className="upload-area">
+          {/* 顔写真 / 全身写真の選択（軸のブレを防ぐため事前申告） */}
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '14px' }}>
+            {[['face', '📷 顔写真で見る'], ['body', '🧍 全身写真で見る']].map(([val, label]) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => setPhotoType(photoType === val ? null : val)}
+                style={{
+                  padding: '9px 16px', borderRadius: '99px', fontSize: '13px', fontWeight: 700,
+                  cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s',
+                  border: `1px solid ${photoType === val ? 'rgba(201,168,76,0.6)' : 'rgba(232,228,220,0.15)'}`,
+                  background: photoType === val ? 'rgba(201,168,76,0.14)' : 'rgba(255,255,255,0.02)',
+                  color: photoType === val ? '#c9a84c' : 'rgba(232,228,220,0.55)',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <div
             ref={dropRef}
             className="drop-zone"
@@ -530,6 +581,31 @@ export default function BelleMirrorPage() {
             style={{ display: 'none' }}
             onChange={(e) => { const f = e.target.files[0]; if (f) handleFile(f); }}
           />
+          {/* 月1回無料お試しバッジ（非サブスク向け） */}
+          {!subStatus?.isActive && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '14px', marginBottom: '4px' }}>
+              {trialUsedThisMonth ? (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  background: 'rgba(232,228,220,0.05)', border: '1px solid rgba(232,228,220,0.12)',
+                  borderRadius: '20px', padding: '5px 14px',
+                  fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.4)',
+                }}>
+                  今月の無料お試しは使用済み（¥500/回 or サブスクで解除）
+                </span>
+              ) : (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  background: 'rgba(201,168,76,0.10)', border: '1px solid rgba(201,168,76,0.4)',
+                  borderRadius: '20px', padding: '5px 14px',
+                  fontSize: '12px', fontWeight: '800', color: '#c9a84c',
+                }}>
+                  🎁 今月はまだ無料でまるごと試せます
+                </span>
+              )}
+            </div>
+          )}
+
           {/* サブスク残回数バッジ */}
           {subStatus?.isActive && (
             <div style={{
@@ -651,7 +727,9 @@ export default function BelleMirrorPage() {
         <div className="results-wrap">
           {state === 'full' && (
             <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-              <span className="full-badge">✨ フル版 — 全軸の詳細分析</span>
+              <span className="full-badge">
+                {trialApplied ? '🎁 今月の無料お試し — 全軸の詳細分析' : '✨ フル版 — 全軸の詳細分析'}
+              </span>
             </div>
           )}
 
@@ -831,6 +909,11 @@ export default function BelleMirrorPage() {
 
                 {/* Section 2: 価格提示 */}
                 <div style={{ padding: '24px', textAlign: 'center' }}>
+                  {trialUsedThisMonth && !subStatus?.isActive && (
+                    <p style={{ fontSize: '11px', color: 'rgba(240,216,224,0.32)', margin: '0 0 12px', lineHeight: 1.6 }}>
+                      今月の無料お試しは使用済みです。来月また無料でまるごと見られます。
+                    </p>
+                  )}
                   <p style={{ fontSize: '13px', color: 'rgba(240,216,224,0.50)', margin: '0 0 16px', lineHeight: 1.7 }}>
                     この地図の解像度を上げると、今日何をするかが決まります。
                   </p>
@@ -959,7 +1042,7 @@ export default function BelleMirrorPage() {
                     const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
                     if (sbKey) loggedIn = !!JSON.parse(localStorage.getItem(sbKey) || 'null')?.user?.id;
                   } catch {}
-                  window.location.href = loggedIn ? '/mypage/navi?from=mirror' : '/auth/login?redirect=/mypage/navi?from=mirror';
+                  window.location.href = loggedIn ? '/mypage/navi?from=mirror' : '/login?redirect=/mypage/navi?from=mirror';
                 }}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '15px 32px', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '800', color: '#0a0f1e', cursor: 'pointer', boxShadow: '0 0 24px rgba(201,168,76,0.25)' }}
               >
@@ -1087,7 +1170,7 @@ export default function BelleMirrorPage() {
                 Mirror の分析 · New Me Map · 30日コンパスが<br />すべて1か所に集まります
               </p>
               <button
-                onClick={() => { window.location.href = '/auth/login?redirect=' + encodeURIComponent('/belle/mirror?session_id=' + sessionId + '&from=map_save'); }}
+                onClick={() => { window.location.href = '/login?redirect=' + encodeURIComponent('/belle/mirror?session_id=' + sessionId + '&from=map_save'); }}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: 'linear-gradient(135deg,rgba(220,130,160,1),rgba(200,100,140,0.85))', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: '800', color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 0 28px rgba(200,100,140,0.22)', marginBottom: '10px' }}
               >
                 無料アカウントを作る →

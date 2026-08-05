@@ -121,11 +121,16 @@ const AXIS_CHECKLISTS = {
   overall: `【総合観察】全軸を踏まえ、今最も変化させると全体の印象が変わる「1軸」を特定して言及すること。`,
 };
 
-function buildSystemPrompt(userState, diagnosisInfo, gender) {
+function buildSystemPrompt(userState, diagnosisInfo, gender, photoTypeHint) {
   const compassInstruction = buildCompassInstruction(userState);
   const diagnosisContext = buildDiagnosisContext(diagnosisInfo);
   const genderContext = gender === 'female'
     ? '\n\n【対象ユーザー】女性の外見分析。メイク・スキンケア・ヘアスタイル・服装・ネイルを女性的な観点で分析してください。肌の印象にはメイクの仕上がりも含めて評価してください。'
+    : '';
+  const photoTypeContext = photoTypeHint === 'face'
+    ? '\n\n【アップロード写真の種類（ユーザー申告）】この写真は「顔写真」としてアップロードされました。eyebrow / skin / hair / expression / overall を中心に分析し、posture / body / fashion / color 等、全身が写っていないと判断できない軸は無理に評価しないでください。'
+    : photoTypeHint === 'body'
+    ? '\n\n【アップロード写真の種類（ユーザー申告）】この写真は「全身写真」としてアップロードされました。posture / body / fashion / color / hair / overall を中心に分析してください。'
     : '';
   const checklistSection = Object.entries(AXIS_CHECKLISTS)
     .map(([id, text]) => `${id}:\n${text}`)
@@ -201,15 +206,26 @@ color → 色・テイスト / overall → 総合変容余地
 potential_levelについて:
 「高」= 変えると印象が大きく変わる余地がチェックリスト上で複数確認される
 「中」= 磨けば確実に向上する余地が1〜2点確認される
-「低」= チェックリスト項目のほとんどが整っている（称賛すべき点として伝える）${diagnosisContext}
+「低」= チェックリスト項目のほとんどが整っている（称賛すべき点として伝える）${photoTypeContext}${diagnosisContext}
 
 ${BRAND_PHILOSOPHY}
 ※上記の思想はfirst_impression/summary/detail/overall_message等の自由記述の言葉選び・温度にのみ効かせる。JSON形式・チェックリスト観察義務・禁止事項は厳守し変更しない。`;
 }
 
+function getClientIp(request) {
+  const fwd = request.headers.get('x-forwarded-for');
+  if (fwd) return fwd.split(',')[0].trim();
+  return request.headers.get('x-real-ip') || null;
+}
+
+function currentMonthJST() {
+  const jst = new Date(Date.now() + 9 * 3600000);
+  return `${jst.getFullYear()}-${String(jst.getMonth() + 1).padStart(2, '0')}`;
+}
+
 export async function POST(request) {
   try {
-    const { photo_base64, media_type, user_id, user_state, diagnosis_info, ref, gender } = await request.json();
+    const { photo_base64, media_type, user_id, user_state, diagnosis_info, ref, gender, photo_type } = await request.json();
 
     if (!photo_base64 || !media_type) {
       return Response.json({ error: '写真データが必要です' }, { status: 400 });
@@ -223,7 +239,7 @@ export async function POST(request) {
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    const systemPrompt = buildSystemPrompt(user_state || 'guest', diagnosis_info ?? null, gender || null);
+    const systemPrompt = buildSystemPrompt(user_state || 'guest', diagnosis_info ?? null, gender || null, photo_type || null);
 
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
@@ -258,8 +274,11 @@ export async function POST(request) {
       return Response.json({ error: '分析結果の形式が不正です。もう一度試してください。' }, { status: 500 });
     }
 
-    // paid判定: オーナーバイパス → サブスク月1無料 → 通常（未払い）の順で評価
+    // paid判定: オーナーバイパス → サブスク月3回無料 → 月1回無料お試し（非サブスク）→ 紹介クレジット → 通常（未払い）の順で評価
     let isPaidBypass = false;
+    let trialApplied = false;
+    const clientIp = getClientIp(request);
+    const currentMonth = currentMonthJST();
 
     // オーナーバイパス
     const ownerEmail = process.env.OWNER_EMAIL;
@@ -270,34 +289,69 @@ export async function POST(request) {
       } catch {}
     }
 
-    // サブスク会員の月3回無料判定
+    // ログイン済みユーザーのプロフィールを一度だけ取得（サブスク3回無料・月1トライアル判定の両方で使う）
+    let profile = null;
     if (!isPaidBypass && user_id) {
       try {
-        const { data: profile } = await getSupabase()
+        const { data } = await getSupabase()
           .from('profiles')
-          .select('subscription_status, mirror_monthly_free_count, mirror_monthly_free_month')
+          .select('subscription_status, mirror_monthly_free_count, mirror_monthly_free_month, mirror_trial_month')
           .eq('id', user_id)
           .single();
+        profile = data || null;
+      } catch {}
+    }
 
-        if (profile?.subscription_status === 'active') {
-          const MAX_FREE = 3;
-          const jst = (d) => new Date(new Date(d).getTime() + 9 * 3600000);
-          const nowJST = jst(new Date());
-          const currentMonth = `${nowJST.getFullYear()}-${String(nowJST.getMonth() + 1).padStart(2, '0')}`;
+    // サブスク会員の月3回無料判定
+    if (!isPaidBypass && profile?.subscription_status === 'active') {
+      const MAX_FREE = 3;
+      const storedMonth = profile.mirror_monthly_free_month;
+      const storedCount = storedMonth === currentMonth ? (profile.mirror_monthly_free_count || 0) : 0;
 
-          const storedMonth = profile.mirror_monthly_free_month;
-          const storedCount = storedMonth === currentMonth ? (profile.mirror_monthly_free_count || 0) : 0;
+      if (storedCount < MAX_FREE) {
+        isPaidBypass = true;
+        try {
+          await getSupabase()
+            .from('profiles')
+            .update({
+              mirror_monthly_free_count: storedCount + 1,
+              mirror_monthly_free_month: currentMonth,
+            })
+            .eq('id', user_id);
+        } catch {}
+      }
+    }
 
-          if (storedCount < MAX_FREE) {
+    // 月1回無料お試し（非サブスク・登録有無を問わず全員が対象）
+    // フリーミアム化: 課金前にまるごと1回、無料で体験できるようにする
+    if (!isPaidBypass && profile?.subscription_status !== 'active') {
+      try {
+        if (user_id) {
+          // 登録済み: profiles.mirror_trial_month で判定
+          if (profile?.mirror_trial_month !== currentMonth) {
             isPaidBypass = true;
+            trialApplied = true;
             await getSupabase()
               .from('profiles')
-              .update({
-                mirror_monthly_free_count: storedCount + 1,
-                mirror_monthly_free_month: currentMonth,
-              })
+              .update({ mirror_trial_month: currentMonth })
               .eq('id', user_id);
           }
+        } else if (clientIp) {
+          // 未登録: 同一IPからの当月お試し使用歴を mirror_sessions で確認（簡易チェック）
+          const { data: priorTrial } = await getSupabase()
+            .from('mirror_sessions')
+            .select('id')
+            .eq('client_ip', clientIp)
+            .eq('trial_month', currentMonth)
+            .limit(1);
+          if (!priorTrial?.length) {
+            isPaidBypass = true;
+            trialApplied = true;
+          }
+        } else {
+          // IPすら取得できない場合はクライアント側のlocalStorage判定に委ねて許可
+          isPaidBypass = true;
+          trialApplied = true;
         }
       } catch {}
     }
@@ -347,6 +401,9 @@ export async function POST(request) {
       analysis,
       paid: isPaidBypass,
       gender: gender || null,
+      photo_type: photo_type || null,
+      client_ip: clientIp,
+      trial_month: trialApplied ? currentMonth : null,
     };
     let { data: session, error: dbError } = await supabase
       .from('mirror_sessions')
@@ -354,10 +411,16 @@ export async function POST(request) {
       .select('id')
       .single();
 
-    // 後方互換: 本番に gender カラム未適用（PGRST204）でも分析を失敗させない。
-    // supabase-mirror-gender.sql 適用後は通常経路で gender が保存される。
-    if (dbError && dbError.code === 'PGRST204' && /gender/.test(dbError.message || '')) {
-      const { gender: _omitGender, ...legacyRow } = insertRow;
+    // 後方互換: 本番に新カラム（gender/photo_type/client_ip/trial_month）未適用でも分析を失敗させない。
+    // 該当のマイグレーションSQL適用後は通常経路でフル保存される。
+    if (dbError && dbError.code === 'PGRST204') {
+      let legacyRow = insertRow;
+      for (const col of ['gender', 'photo_type', 'client_ip', 'trial_month']) {
+        if (new RegExp(col).test(dbError.message || '')) {
+          const { [col]: _omit, ...rest } = legacyRow;
+          legacyRow = rest;
+        }
+      }
       ({ data: session, error: dbError } = await supabase
         .from('mirror_sessions')
         .insert(legacyRow)
@@ -370,7 +433,7 @@ export async function POST(request) {
       return Response.json({ error: 'セッション保存エラー' }, { status: 500 });
     }
 
-    return Response.json({ session_id: session.id, analysis, paid: isPaidBypass });
+    return Response.json({ session_id: session.id, analysis, paid: isPaidBypass, trial_applied: trialApplied });
   } catch (e) {
     console.error('mirror analyze error:', e);
     return Response.json({ error: `分析エラー: ${e.message}` }, { status: 500 });
