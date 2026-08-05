@@ -58,8 +58,6 @@ export async function POST(request) {
     return Response.json({ error: 'diagnosis.transform_vectors が必要です' }, { status: 400 });
   }
 
-  // 1日1回制限: generated_at が今日(JST)なら拒否
-  // ただし mirror_only の場合: 最新Mirrorセッションが既存Mapより新しければ通す
   let { data: profile } = await getSupabase()
     .from('profiles')
     .select('navi_steps, body_data, age_band')
@@ -73,32 +71,22 @@ export async function POST(request) {
       .eq('id', user.id)
       .single());
   }
-  if (profile?.navi_steps?.generated_at) {
-    const jst = (d) => new Date(new Date(d).getTime() + 9 * 3600000);
-    const lastJST = jst(profile.navi_steps.generated_at);
-    const nowJST  = jst(new Date());
-    const sameDay = lastJST.getFullYear() === nowJST.getFullYear()
-      && lastJST.getMonth() === nowJST.getMonth()
-      && lastJST.getDate()  === nowJST.getDate();
-    if (sameDay) {
-      // mirror_only の場合：最新Mirrorセッションが既存Mapの生成時刻より新しければ許可
-      if (mirror_only) {
-        const { data: latestMirror } = await getSupabase()
-          .from('mirror_sessions')
-          .select('created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-        const mapAt = new Date(profile.navi_steps.generated_at).getTime();
-        const mirrorAt = latestMirror?.created_at ? new Date(latestMirror.created_at).getTime() : 0;
-        if (mirrorAt <= mapAt) {
-          return Response.json({ error: 'daily_limit', message: 'Mirrorの最新分析はすでにMapに反映済みです。新しく分析してから更新してください。' }, { status: 429 });
-        }
-        // Mirror が Map より新しい → 日次制限を免除してfall-through
-      } else {
-        return Response.json({ error: 'daily_limit', message: '本日はすでに生成済みです。明日また生成できます。' }, { status: 429 });
-      }
+  // MeScan再受診による無制限の再生成は、MeScan側の「受け直すと今のMapが変わります」
+  // 確認ゲートで防ぐ設計に変更したため、ここでの一律の1日1回制限は撤廃した（2026-08-06）。
+  // mirror_only（Mirror分析からの部分反映）だけは、新しいMirrorデータが無いのに
+  // 同じ内容で再生成してAI呼び出しを無駄にしないよう、その場合のみ弾く
+  if (mirror_only && profile?.navi_steps?.generated_at) {
+    const { data: latestMirror } = await getSupabase()
+      .from('mirror_sessions')
+      .select('created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    const mapAt = new Date(profile.navi_steps.generated_at).getTime();
+    const mirrorAt = latestMirror?.created_at ? new Date(latestMirror.created_at).getTime() : 0;
+    if (mirrorAt <= mapAt) {
+      return Response.json({ error: 'daily_limit', message: 'Mirrorの最新分析はすでにMapに反映済みです。新しく分析してから更新してください。' }, { status: 429 });
     }
   }
 

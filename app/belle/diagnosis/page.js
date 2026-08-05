@@ -429,7 +429,7 @@ export default function BelleDiagnosisPage() {
     }
 
     function updateNav() {
-      const noNavScreens = ['landing', 'instant-tryout', 'instant-tryout-result', 'attr_register', 'attr_confirm', 'deepen'];
+      const noNavScreens = ['landing', 'rescan_confirm', 'instant-tryout', 'instant-tryout-result', 'attr_register', 'attr_confirm', 'deepen'];
       if (noNavScreens.includes(currentScreen)) {
         navEl.style.display = 'none';
         return;
@@ -1003,9 +1003,25 @@ export default function BelleDiagnosisPage() {
       });
     }
     // Button handlers
-    document.getElementById('btn-start').addEventListener('click', function () {
+    function startMeScan() {
       screenHistory.push('instant-tryout');
       showScreen('instant-tryout');
+    }
+    document.getElementById('btn-start').addEventListener('click', function () {
+      // 既にMe Scan済み（Map生成の元になる診断データがローカルにある）なら、
+      // 受け直すとMapが変わることを確認してから進める
+      let existing = null;
+      try { existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) {}
+      if (existing?.transform_vectors) {
+        screenHistory.push('rescan_confirm');
+        showScreen('rescan_confirm');
+        return;
+      }
+      startMeScan();
+    });
+    document.getElementById('btn-rescan-proceed')?.addEventListener('click', startMeScan);
+    document.getElementById('btn-rescan-cancel')?.addEventListener('click', function () {
+      window.location.href = '/mypage/navi';
     });
     document.getElementById('btn-start-from-preview')?.addEventListener('click', function () {
       document.getElementById('btn-start')?.click();
@@ -1301,6 +1317,19 @@ export default function BelleDiagnosisPage() {
               <p style={{fontSize:'12px',color:'rgba(200,100,140,0.6)',margin:'0 0 10px',lineHeight:1.6}}>136タイプの中のあなたのタイプが生成されます</p>
               <button id="btn-start-from-preview" style={{background:'linear-gradient(135deg,#c8648c,#e8789e)',border:'none',cursor:'pointer',color:'#fff',fontSize:'14px',fontWeight:'800',padding:'12px 28px',borderRadius:'10px',letterSpacing:'.04em'}}>あなたのタイプを診断する →</button>
             </div>
+          </div>
+        </div>
+
+        {/* SCREEN RESCAN_CONFIRM: 既にMe Scan済みのユーザーが再受診しようとした時の確認
+            （でお指摘 2026-08-06：Me Scanは何度も受け直すものではない。Mirrorは何度も、
+            Me Scanは受け直すと今のMapが変わることを自覚した上で、という設計に変更） */}
+        <div className="diag-screen" id="screen-rescan_confirm">
+          <div className="diag-card">
+            <p className="diag-step-label">確認</p>
+            <h2 className="diag-q">もう一度、Me Scanを受けますか？</h2>
+            <p className="diag-hint">すでにMe Scanを完了し、New Me Mapを作成済みです。もう一度受け直すと、今のMapの内容が変わります。</p>
+            <button id="btn-rescan-proceed" className="diag-nav-next" style={{width:'100%',fontSize:'16px',padding:'14px',marginTop:'8px'}}>それでも受け直す →</button>
+            <button id="btn-rescan-cancel" className="diag-back-btn" style={{width:'100%',textAlign:'center',marginTop:'12px',justifyContent:'center'}}>Mapに戻る</button>
           </div>
         </div>
 
