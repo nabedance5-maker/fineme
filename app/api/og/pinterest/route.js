@@ -2,13 +2,7 @@ import { ImageResponse } from 'next/og';
 import sharp from 'sharp';
 import { TYPE_CODES } from '@/lib/type-codes';
 import { unsplashUrl } from '@/lib/thumbnail-photos';
-
-// lib/thumbnail-photos.js の共有プールは目視確認したところ男女混在・無関係な写真（椅子等）が
-// 混入していたため使わない（2026-08-06）。Pinterest用に個別に目視確認済みのIDのみをここで直接指定する。
-const CURATED_PHOTOS = {
-  fineme: ['1503951914875-452162b0f3f1', '1507003211169-0a1dd7228f2d', '1519085360753-af0119f7cbe7', '1605296867304-46d5465a13f1'],
-  belle:  ['1522337360788-8b13dee7a37e', '1515886657613-9f3515b0c78f', '1506794778202-cad84cf45f1d'],
-};
+import { pickCuratedPhotoId } from '@/lib/curated-photos';
 
 // next/ogのレンダラー(Satori)はWebPを直接デコードできないため、Node runtimeで
 // sharpにより事前にPNGへ変換しdata URIとして埋め込む（edge runtimeでは使えない）。
@@ -32,8 +26,7 @@ function pickImageSourceUrl(source, seed) {
     const path = isBelle ? `/images/types/belle/TYPE-${code}.webp` : `/images/types/TYPE-${code}.webp`;
     return `https://www.fineme.me${path}`;
   }
-  const pool = isBelle ? CURATED_PHOTOS.belle : CURATED_PHOTOS.fineme;
-  const id = pool[seed % pool.length];
+  const id = pickCuratedPhotoId(isBelle ? 'belle' : 'fineme', seed);
   return unsplashUrl(id, '&w=1000&h=1500&q=80');
 }
 
