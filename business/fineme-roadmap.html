@@ -162,6 +162,31 @@
   .now-item-main{font-weight:700;color:#e8e2d4;display:block;margin-bottom:1px}
   .now-item-sub{font-size:11px;color:#7a7472}
 
+  /* Phase jump nav */
+  .phase-nav{display:flex;gap:8px;padding:14px 40px;background:rgba(6,12,26,0.97);border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:0;z-index:50;overflow-x:auto}
+  .phase-nav-item{flex-shrink:0;font-size:11px;font-weight:800;font-family:'Hiragino Kaku Gothic Pro',sans-serif;padding:6px 14px;border-radius:99px;text-decoration:none;white-space:nowrap;border:1px solid rgba(255,255,255,.08);color:#6b7280}
+  .phase-nav-item.done{color:#4ade80;border-color:rgba(74,222,128,.25)}
+  .phase-nav-item.now{color:#c9a84c;border-color:rgba(201,168,76,.5);background:rgba(201,168,76,.1)}
+  .phase-nav-item:hover{color:#e8e2d4}
+  @media(max-width:640px){.phase-nav{padding:10px 20px}}
+
+  /* Alert banner (隠さない赤信号) */
+  .alert-banner{display:flex;align-items:flex-start;gap:10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:#fca5a5;line-height:1.75}
+  .alert-banner strong{color:#f87171}
+  .now-item-dot.alert{background:#f87171}
+  .tag-alert{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#f87171}
+
+  /* Reality board（今の実数・隠さない） */
+  .reality-board{padding:32px 40px;background:rgba(239,68,68,.03);border-bottom:1px solid rgba(239,68,68,.12)}
+  .reality-eyebrow{font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(248,113,113,.75);font-family:'Hiragino Kaku Gothic Pro',sans-serif;margin-bottom:14px}
+  .reality-title{font-size:16px;font-weight:800;color:#f0ece4;margin-bottom:18px}
+  .reality-kpi-row{display:flex;gap:12px;flex-wrap:wrap}
+  .reality-kpi{flex:1;min-width:130px;background:rgba(0,0,0,.25);border:1px solid rgba(239,68,68,.15);border-radius:12px;padding:14px;text-align:center}
+  .reality-kpi .kpi-num{font-size:24px;font-weight:900;color:#f87171;font-family:'Hiragino Kaku Gothic Pro',sans-serif;line-height:1}
+  .reality-kpi .kpi-label{font-size:10px;color:#a09890;margin-top:6px;line-height:1.5}
+  .reality-note{font-size:11px;color:#7a7472;margin-top:14px;line-height:1.7}
+  @media(max-width:640px){.reality-board{padding:24px 20px}.reality-kpi-row{flex-direction:column}}
+
   /* Print */
   .print-btn{
     position:fixed;bottom:24px;right:24px;
@@ -193,44 +218,66 @@
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-eyebrow">Fineme（ファインミ）／ 事業ロードマップ ／ 2026年4月27日更新</div>
+  <div class="hero-eyebrow">Fineme（ファインミ）／ 事業ロードマップ ／ 2026年8月6日更新</div>
   <h1>そのまま進むのが怖くなった夜に。<br>自信を再設計する、地図と羅針盤。</h1>
   <p class="hero-sub">
     Mission: <strong>外見を起点に、自信を再設計する人を増やす</strong><br>
     Vision: 外見を理由に、人生を諦めなくていい世界をつくる<br>
-    目標: 年商10億円（個人年収9,000万円）
+    目標: 年商10億円（個人年収9,000万円）<br>
+    二トラック：Fineme（男性／20〜30代）＋ Fineme Belle（女性）— 2026年7月17日〜。Me Scan・Compass・New Me Map・Mirrorは共通基盤
   </p>
 </div>
 <!-- /HERO -->
 
+<nav class="phase-nav">
+  <a href="#phase-0" class="phase-nav-item done">P0 完了</a>
+  <a href="#phase-1" class="phase-nav-item now">P1 現在地</a>
+  <a href="#phase-2" class="phase-nav-item next">P2</a>
+  <a href="#phase-3" class="phase-nav-item next">P3</a>
+  <a href="#phase-4" class="phase-nav-item next">P4</a>
+</nav>
+
 
 <!-- NOW BOARD -->
 <div class="now-board">
-  <div class="now-board-eyebrow">今ここ — 2026年5月</div>
+  <div class="now-board-eyebrow">今ここ — 2026年8月</div>
   <div class="now-board-title">現在の進捗と直近アクション</div>
+
+  <div class="alert-banner">
+    <span>⚠️</span>
+    <div><strong>自走cron（Strategist／審査ボード／code-implementer）がLLM週次クォータ枯渇で2026年7月21日から17日間アウテージ中（tasks.md T-057）。</strong>でおGO済みのコードカード4件（Mirror LP hero改稿・Threadsリーチ強化・借り場リーチ実験・note抜けアドバイザー記事）が実装待ちで滞留中。外部顧客は引き続き0人。</div>
+  </div>
+
   <div class="now-cols">
 
     <div>
       <div class="now-col-label doing">🔄 進行中</div>
-      <div class="now-item" style="opacity:.45">
-        <div class="now-item-dot" style="background:#6b7280"></div>
+      <div class="now-item">
+        <div class="now-item-dot doing"></div>
         <div>
-          <span class="now-item-main" style="color:#6b7280">小川くん（コンテンツパートナー）— 白紙</span>
-          <span class="now-item-sub">ショートドラマ運用について折り合いつかず白紙（2026-04-27）。コンテンツパートナー探しは別の方向で継続。</span>
+          <span class="now-item-main">でお個人発信を軸にした集客（現フェーズの主エンジン）</span>
+          <span class="now-item-sub">X @deo_fineme・note・実写ショートドラマ（@fineme.drama 等、2026-06-19展開決定）。AIショート動画（ケンジ×リサ）は2026-05-01に一時停止済み・現在はでお個人の実写発信に軸足。</span>
         </div>
       </div>
       <div class="now-item">
         <div class="now-item-dot doing"></div>
         <div>
-          <span class="now-item-main">掲載者・創業パートナーDMアプローチ</span>
-          <span class="now-item-sub">dm-gen.htmlのスクリーニングパネル追加済み。Instagram手動探索→判定→DM送付。10通送付・返信待ち。</span>
+          <span class="now-item-main">Mirror ¥780サブスク定着（第一フェーズ主エンジン）</span>
+          <span class="now-item-sub">計測開始2026-06-14・達成期限2026-12-14。目標＝約640人の継続課金で月商50万円。現在サブスク継続0人・実ユーザーによる月次価値ループの検証パスがまだ無い状態。</span>
         </div>
       </div>
       <div class="now-item">
         <div class="now-item-dot doing"></div>
         <div>
-          <span class="now-item-main">ASP登録（A8.net / afb）</span>
-          <span class="now-item-sub">記事251本公開済み。アフィリエイト収益化に着手。</span>
+          <span class="now-item-main">Belle Journal記事量産・二トラック記事整備</span>
+          <span class="now-item-sub">女性トラック（Fineme Belle）記事を10→39本に拡充済み（2026-07-19）。男女混在バグの横展開修正を継続中。</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot doing"></div>
+        <div>
+          <span class="now-item-main">New Me Log 運用データ収集</span>
+          <span class="now-item-sub">費用管理・支出推移グラフ・LINE通知（「船のクルーの声」）を実装済み。SNS経由の発見流入がまだ0＝流入計測の前提（CTA）が未達（T-060）。</span>
         </div>
       </div>
     </div>
@@ -238,24 +285,24 @@
     <div>
       <div class="now-col-label todo">📋 次にやること</div>
       <div class="now-item">
-        <div class="now-item-dot todo"></div>
+        <div class="now-item-dot alert"></div>
         <div>
-          <span class="now-item-main">X — 個人アカウント「でお｜Finemeオーナー」として設計</span>
-          <span class="now-item-sub">@kenji_fineを@deo_finemeに変更。モデル・Finemeオーナーとして思想・制作裏側・日常を発信。俗人的アカウントの方がXでは伸びやすく、Finemeの説得力も高い。</span>
+          <span class="now-item-main">自走cronアウテージの解消（T-057）</span>
+          <span class="now-item-sub">週次LLMクォータ二択＝(A)cadence削減〔コスト0〕/(B)プラン増枠〔課金〕。でお決定待ち。解消後にGO済み4件の実装が再開する。</span>
         </div>
       </div>
       <div class="now-item">
         <div class="now-item-dot todo"></div>
         <div>
-          <span class="now-item-main">note投稿（タイプシステム記事）</span>
-          <span class="now-item-sub">下書き完成済み（note-draft-type-system.html）。今週中に投稿して被リンク獲得。インデックス数：6件（2→6に改善中）。</span>
+          <span class="now-item-main">借り場リーチ実験（知恵袋・note）</span>
+          <span class="now-item-sub">タイムボックス2026-08-04〜08-17。でお手動で最初の1スレッド投稿待ち。計測用?src=受け口は実装済み（commit acaa4c0）。</span>
         </div>
       </div>
       <div class="now-item">
         <div class="now-item-dot todo"></div>
         <div>
-          <span class="now-item-main">アフィリエイト商品ストックの拡充</span>
-          <span class="now-item-sub">全7軸×3レベル（beginner/intermediate/advanced）の商品ラインナップを揃える。ASP登録済みのリンクと紐付けて実際にアフィリエイト収益フローを構築。</span>
+          <span class="now-item-main">New Me Log のSNS紹介投稿</span>
+          <span class="now-item-sub">x-postテンプレ準備済み（daily-inbox）。でお任意で投稿・閾値設定。</span>
         </div>
       </div>
     </div>
@@ -265,99 +312,43 @@
       <div class="now-item">
         <div class="now-item-dot done"></div>
         <div>
-          <span class="now-item-main">PTキックオフ食事MTG完了（2026-05-01）</span>
-          <span class="now-item-sub">フィードバック取得。診断簡易版の提案はユーザーが増えてからデータで判断する方針に決定。</span>
+          <span class="now-item-main">note・X・Pinterest用OG/シェア画像を実写真ベースへ再設計（2026-08-05〜06）</span>
+          <span class="now-item-sub">「文字カード」中心のテンプレートから、実写真を主役にした構成へ全面刷新。</span>
         </div>
       </div>
       <div class="now-item">
         <div class="now-item-dot done"></div>
         <div>
-          <span class="now-item-main">AIショート動画 一時停止（2026-05-01）</span>
-          <span class="now-item-sub">11本投稿・フォロワー合計6でHedra停止。TikTok・YouTube停止。Instagram @Fineme_official は静止画投稿で継続。</span>
+          <span class="now-item-main">Me Scan：年代ヒアリング＋行動習慣の深掘り＋New Me Map統合（2026-08-05）</span>
+          <span class="now-item-sub">属性（年代）を聞き、行動習慣の回答をNew Me Mapの初期状態に反映。AI出力の過剰な具体性も抑制。</span>
         </div>
       </div>
       <div class="now-item">
         <div class="now-item-dot done"></div>
         <div>
-          <span class="now-item-main">New Me Map 初見ワクワク感刷新（2026-05-02）</span>
-          <span class="now-item-sub">横スクロール旅路ビジュアル（SVGリング進捗・7停留所）＋軸ステータスグリッド2列（🧭今ここ/✓完了バッジ）。vague手順6件に具体知識detail追加（折りたたみパネル）。HIGH/MIDステップにインライン掲載者カード埋め込み。Today's Questカード追加。sns-content-gen.html XセクションをでおFinemeオーナー個人声に刷新。</span>
+          <span class="now-item-main">Me Scan再受診の確認ゲート・New Me Map生成の1日1回制限撤廃（2026-08-04）</span>
+          <span class="now-item-sub">未ログインで受けたMe Scanがログイン後に既存Mapを無条件上書きする穴も修正。</span>
         </div>
       </div>
       <div class="now-item">
         <div class="now-item-dot done"></div>
         <div>
-          <span class="now-item-main">New Me Map 習慣ノード実装（2026-04-27）</span>
-          <span class="now-item-sub">各軸の「毎日の習慣」セクション追加・🔥連続記録カウンター・「継続・アップデートフェーズ」区切り線。ACTION_TYPE_MAP 'habit'タイプをNaviから分離表示</span>
+          <span class="now-item-main">New Me Log：投資記録・支出推移グラフ・LINE通知を実装（2026-07月）</span>
+          <span class="now-item-sub">羊皮紙の航海日誌モチーフのFVカード・SNSシェア/保存・頻度設定（月1回〜）・通知の声を選択可能に。</span>
         </div>
       </div>
       <div class="now-item">
         <div class="now-item-dot done"></div>
         <div>
-          <span class="now-item-main">診断タイプUX全面刷新 + 全タイプ一覧ページ（2026-04-27）</span>
-          <span class="now-item-sub">タイプヒーローを「あなたのタイプは → BAQ ～生き物名～（軸）」に刷新。119タイプの説明文を全パターン書き直し（4〜7文・MBTIスタイル）。カード保存をhtml2canvas廃止→Canvas API直接描画に変更（縦伸び問題解決・全文表示・動的高さ）。/types 全119タイプ一覧ページ新設（軸タブ・イラスト・モーダル・ユーザー現在タイプハイライト）。New Me Naviに「全119タイプを見る」ボタン追加。</span>
+          <span class="now-item-main">Fineme Belle（女性トラック）二トラック構造を導入（2026-07-17〜19）</span>
+          <span class="now-item-sub">Me Scan・Compass・New Me Map・Mirrorは共通基盤のまま、タイプ命名・タイプ画像・記事写真プール・Mirrorプロンプトを女性向けに分離。Belle Journal記事39本公開。</span>
         </div>
       </div>
       <div class="now-item">
         <div class="now-item-dot done"></div>
         <div>
-          <span class="now-item-main">変容の旅思想への構造的刷新（2026-04-18）</span>
-          <span class="now-item-sub">New Me Navi: 順序変更（障壁→Navi動線→変容環境条件→掲載者）+ "Pro Matching"→"あなたに合う変容環境" にリネーム。Navi: 各軸に関連記事リンク追加。budget×level 2軸商品フィルタリング実装（all axes対応・商品拡充）</span>
-        </div>
-      </div>
-      <div class="now-item">
-        <div class="now-item-dot done"></div>
-        <div>
-          <span class="now-item-main">掲載候補リスト自動生成ツール（2026-04-16）</span>
-          <span class="now-item-sub">find-providers.html — Google Places + Claude Haiku でDM候補を自動収集・スコアリング・CSV出力。Vercel本番で動作確認済み</span>
-        </div>
-      </div>
-      <div class="now-item">
-        <div class="now-item-dot done"></div>
-        <div>
-          <span class="now-item-main">Fineme Mirror 実装完了（Coming soon 中）（2026-04-15）</span>
-          <span class="now-item-sub">写真→7軸New Me Log生成 ¥500ペイウォール。Vercel Proへ移行次第 Coming soon 解除</span>
-        </div>
-      </div>
-      <div class="now-item">
-        <div class="now-item-dot done"></div>
-        <div>
-          <span class="now-item-main">特集記事 251本 全公開（2026-04-01）</span>
-          <span class="now-item-sub">article-gen.html で生成・Claude＋Replicateで画像自動生成・全記事に画像設定済み</span>
-        </div>
-      </div>
-      <div class="now-item">
-        <div class="now-item-dot done"></div>
-        <div>
-          <span class="now-item-main">アフィリエイト掲載機能完成（2026-03-25）</span>
-          <span class="now-item-sub">/affiliate/[slug] 公開ページ・PRバッジ・AI自動入力・検索/診断からルーティング</span>
-        </div>
-      </div>
-      <div class="now-item">
-        <div class="now-item-dot done"></div>
-        <div>
-          <span class="now-item-main">深海テーマ全面移行（2026-03-30）</span>
-          <span class="now-item-sub">サイト全ページの白背景をダークガラスに統一</span>
-        </div>
-      </div>
-      <div class="now-item" style="opacity:.4">
-        <div class="now-item-dot" style="background:#6b7280"></div>
-        <div>
-          <span class="now-item-main" style="color:#6b7280">小川くん向け提案資料完成 — 白紙</span>
-          <span class="now-item-sub">fineme-ogawa-pitch.html 送付済み → 折り合いつかず白紙（2026-04-27）</span>
-        </div>
-      </div>
-      <div class="now-item">
-        <div class="now-item-dot done"></div>
-        <div>
-          <span class="now-item-main">エリアマッチング（Haversine距離ベース）（2026-03-27）</span>
-          <span class="now-item-sub">GPS/手動セレクトで位置登録・10km以内+8pt など距離スコアリング・Nominatim自動ジオコーディング</span>
-        </div>
-      </div>
-      <div class="now-item">
-        <div class="now-item-dot done"></div>
-        <div>
-          <span class="now-item-main">掲載者基本情報整理（住所3段階入力）（2026-03-27）</span>
-          <span class="now-item-sub">都道府県→市区町村→番地以下の3段階入力・番地は非公開・Nominatim lat/lon保存</span>
+          <span class="now-item-main">会社としての意思決定パイプラインを確立（2026-07-11〜13）</span>
+          <span class="now-item-sub">Strategist（発案）→審査ボード（3関門審査）→でおGO/no-go→code-implementer（自動実装）の一連の仕組みが稼働開始。</span>
         </div>
       </div>
     </div>
@@ -366,8 +357,23 @@
 </div>
 <!-- /NOW BOARD -->
 
+<!-- REALITY BOARD -->
+<div class="reality-board">
+  <div class="reality-eyebrow">今の実数 — 隠さない</div>
+  <div class="reality-title">2026年8月6日時点の実測値</div>
+  <div class="reality-kpi-row">
+    <div class="reality-kpi"><div class="kpi-num">0/640</div><div class="kpi-label">Mirrorサブスク継続<br>（目標人数）</div></div>
+    <div class="reality-kpi"><div class="kpi-num">0件</div><div class="kpi-label">Mirror単発購入<br>（週間・08-03時点）</div></div>
+    <div class="reality-kpi"><div class="kpi-num">0人</div><div class="kpi-label">外部顧客<br>（累計）</div></div>
+    <div class="reality-kpi"><div class="kpi-num">0本</div><div class="kpi-label">X週間投稿<br>（cronアウテージ中）</div></div>
+    <div class="reality-kpi"><div class="kpi-num">11 / 0</div><div class="kpi-label">SEO表示回数/クリック<br>（07-18時点・微減傾向）</div></div>
+  </div>
+  <div class="reality-note">出典：weekly-kpi.md・execution-board.md・tasks.md（T-057）。良い数字も悪い数字も同じ扱いで載せる方針（master.md §0の原則）。</div>
+</div>
+<!-- /REALITY BOARD -->
+
 <!-- PHASE 0 -->
-<div class="phase">
+<div class="phase" id="phase-0">
   <div class="phase-header">
     <div class="phase-badge done">P<br>0</div>
     <div class="phase-meta">
@@ -429,39 +435,43 @@
 </div>
 
 <!-- PHASE 1 -->
-<div class="phase phase-now">
+<div class="phase phase-now" id="phase-1">
   <div class="phase-header">
     <div class="phase-badge now">P<br>1</div>
     <div class="phase-meta">
       <div class="phase-label now">Phase 1 — 現在地</div>
-      <div class="phase-title">初期掲載者獲得・提携基盤構築</div>
-      <div class="phase-period">2026年3月〜6月</div>
+      <div class="phase-title">集客エンジン始動：Mirrorサブスク×でお個人発信（掲載者基盤は並走）</div>
+      <div class="phase-period">2026年3月〜（当初目標6月末→現在も継続中）</div>
     </div>
   </div>
   <div class="status-tag status-now"><span class="status-dot now"></span>進行中</div>
 
   <div class="deliverables">
-    <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">PT業務委託（掲載者部門統括）</span>掲載者管理・営業を委託。報酬：有料掲載者数×¥500/月・最低保証¥10,000/月</div></div>
-    <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">創業パートナー制度（3〜5社）</span>月1回Zoom30分＋LINEレポート→掲載料¥5,000無料。3年間・バッジ永続</div></div>
-    <div class="del-item" style="opacity:.4;border-color:rgba(107,114,128,0.15)"><span class="del-icon">✗</span><div><span class="del-label" style="color:#6b7280">小川くん（コンテンツパートナー）— 白紙</span>ショートドラマ運用で折り合いつかず白紙（2026-04-27）。コンテンツパートナーは別途検討。</div></div>
-    <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">掲載者直接営業（PT＋オーナー並行）</span>個人PT・外見コンサル・スタイリスト等を中心に個別アプローチ</div></div>
+    <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">でお個人発信を軸にした集客</span>X @deo_fineme・note・実写ショートドラマ（@fineme.drama 等）。現フェーズの主エンジン</div></div>
+    <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">Mirror ¥780サブスク定着</span>計測開始2026-06-14・達成期限2026-12-14。約640人の継続課金＝月商50万円が第一フェーズの目標</div></div>
+    <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">意思決定パイプライン運用</span>Strategist→審査ボード→でおGO→code-implementerの自走サイクル。2026-07-21からLLM週次クォータ枯渇でアウテージ中（T-057）</div></div>
+    <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">掲載者基盤（PT業務委託・創業パートナー・B2B2C提携）</span>主エンジンではなく並走する補完チャネルとして継続</div></div>
+  </div>
+
+  <div class="insight">
+    <strong>フレームの再接地（2026-08-06）：</strong>当初このPhase 1は「掲載者社数拡大」を主指標としていたが、master.mdの北極星は<strong>Mirror ¥780サブスク×640人（月商50万円）</strong>に置き換わっている。掲載者拡大はB2B2C提携チャネルとして引き続き有効だが、現フェーズの一次KPIはサブスク継続数。
   </div>
 
   <div class="kpi-row">
     <div class="kpi-card">
+      <div class="kpi-num">0/640</div>
+      <div class="kpi-unit">人</div>
+      <div class="kpi-label">Mirrorサブスク継続<br>（達成期限 2026-12-14）</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-num">0</div>
+      <div class="kpi-unit">件</div>
+      <div class="kpi-label">Mirror単発購入<br>（週間・08-03時点）</div>
+    </div>
+    <div class="kpi-card next-kpi">
       <div class="kpi-num">10</div>
       <div class="kpi-unit">社</div>
-      <div class="kpi-label">Phase 1末<br>有料掲載者数 目標</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-num">3〜5</div>
-      <div class="kpi-unit">社</div>
-      <div class="kpi-label">創業パートナー<br>獲得目標</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-num">1</div>
-      <div class="kpi-unit">件</div>
-      <div class="kpi-label">コンテンツパートナー<br>始動</div>
+      <div class="kpi-label">有料掲載者数 目標<br>（補完チャネル）</div>
     </div>
   </div>
 
@@ -469,52 +479,41 @@
     <details>
       <summary>📋 やること</summary>
       <div class="detail-body">
-        <div class="detail-section" style="opacity:.45">
-          <div class="detail-section-title" style="color:#6b7280">小川くん（コンテンツパートナー）— 白紙（2026-04-27）</div>
+        <div class="detail-section">
+          <div class="detail-section-title">集客（でお個人発信・主エンジン）</div>
           <div class="detail-list">
-            <div class="detail-row"><span class="tag tag-done">完了</span>打ち合わせ実施・一緒にやりたいと表明（2026-03-25）</div>
-            <div class="detail-row"><span class="tag tag-done">完了</span>提案資料（fineme-ogawa-pitch.html）作成</div>
-            <div class="detail-row" style="color:#6b7280"><span class="tag" style="background:rgba(107,114,128,.08);border:1px solid rgba(107,114,128,.2);color:#6b7280">白紙</span>ショートドラマ運用について折り合いつかず白紙。以降は別候補で検討。</div>
+            <div class="detail-row"><span class="tag tag-done">完了</span>X @deo_fineme・note・実写ショートドラマ（@fineme.drama等）展開を意思決定（2026-06-19）</div>
+            <div class="detail-row"><span class="tag tag-doing">進行中</span>借り場リーチ実験（知恵袋・note）— タイムボックス08-04〜08-17。?src=計測受け口は実装済み（commit acaa4c0）。でお手動で最初の1スレッド投稿待ち</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>Mirror LP hero を痛み共鳴型コピーへ差し替え（GO済み・cronアウテージで実装待ち）</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>Threadsリーチ機構の画像/動画対応強化（GO済み・cronアウテージで実装待ち）</div>
           </div>
         </div>
         <div class="detail-section">
-          <div class="detail-section-title">PT業務委託</div>
+          <div class="detail-section-title">Mirrorサブスク・継続価値</div>
           <div class="detail-list">
-            <div class="detail-row"><span class="tag tag-done">完了</span>PT向け業務説明・掲載者管理画面を渡して実機体験依頼</div>
-            <div class="detail-row"><span class="tag tag-doing">進行中</span>PTが管理画面を触ってフィードバック収集中</div>
-            <div class="detail-row"><span class="tag tag-todo">未着手</span>キックオフMTG兼食事（日程未定）・業務委託契約締結</div>
-            <div class="detail-row"><span class="tag tag-todo">未着手</span>PT主導での掲載者営業スタート</div>
+            <div class="detail-row"><span class="tag tag-done">完了</span>New Me Map継続価値の4本柱を接続・New Me Log（費用管理・LINE通知）実装</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>実ユーザー第1号 or 信頼ベータ1名での月次価値ループのdogfood検証（現状は能動的な検証パスが無い）</div>
           </div>
         </div>
         <div class="detail-section">
-          <div class="detail-section-title">創業パートナー・掲載者営業</div>
+          <div class="detail-section-title">意思決定パイプラインの安定化</div>
           <div class="detail-list">
-            <div class="detail-row"><span class="tag tag-todo">未着手</span>創業パートナー候補リストアップ・個別アプローチ</div>
-            <div class="detail-row"><span class="tag tag-done">完了</span>DM営業ツール整備 — sns-content-gen.htmlのDMタブをClaude API個別化生成に強化。業種別テンプレート（PT・眉サロン・ファッションコーディネーター・美容師等）＋紹介報酬フック追加（2026-04-07）</div>
-            <div class="detail-row"><span class="tag tag-done">完了</span>掲載候補リスト自動生成ツール — find-providers.html（ブラウザ版）＋find-providers.mjs（CLI版）。Google Places API + Claude Haiku でスコアリング・CSV出力（2026-04-16）</div>
-            <div class="detail-row"><span class="tag tag-doing">進行中</span>掲載者への直接アプローチ — ツール整備完了・DM送付開始待ち</div>
-            <div class="detail-row"><span class="tag tag-done">完了</span>掲載者月次レポート自動送信 — 毎月1日にLINE/メールで閲覧数・予約数・紹介報酬を自動通知（2026-04-07）</div>
-            <div class="detail-row"><span class="tag tag-done">完了</span>予約未確認アラートCron — pending 24時間超で掲載者にLINE自動通知（2026-04-07）</div>
-            <div class="detail-row"><span class="tag tag-done">完了</span>体験談リマインドCron — 来店後3〜7日でユーザーにLINE自動通知（2026-04-07）</div>
-            <div class="detail-row"><span class="tag tag-done">完了</span>referral_rewards テーブルSQL作成（supabase-referral-rewards.sql）— 本番適用待ち</div>
-            <div class="detail-row"><span class="tag tag-todo">未着手</span>初期掲載者オンボーディング（fineme-onboarding-guide.html活用）</div>
+            <div class="detail-row"><span class="tag tag-alert">アウテージ</span>自走cron（Strategist/審査ボード/code-implementer）が2026-07-21から17日間停止中（T-057）。LLM週次クォータ枯渇＋crontab未修正が原因</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>GO済みカード4件（LP hero・Threads強化・借り場実験doc・note記事エンジン確認）の実装再開</div>
           </div>
         </div>
         <div class="detail-section">
-          <div class="detail-section-title">収益化（アフィリエイト・ASP）</div>
+          <div class="detail-section-title">掲載者基盤（補完チャネル）</div>
           <div class="detail-list">
-            <div class="detail-row"><span class="tag tag-done">完了</span>アフィリエイト掲載機能実装 — /affiliate/[slug]・PRバッジ・AI自動入力・検索/診断ルーティング</div>
-            <div class="detail-row"><span class="tag tag-done">完了</span>ASP登録（A8.net・afb等）— 登録完了済み</div>
+            <div class="detail-row"><span class="tag tag-done">完了</span>掲載候補リスト自動生成ツール（find-providers）・DM営業ツール整備・月次レポート/リマインド自動化</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>PT業務委託契約締結・掲載者営業スタート（利用者が増えてから優先度を上げる方針）</div>
           </div>
         </div>
         <div class="detail-section">
           <div class="detail-section-title">SEO・コンテンツ</div>
           <div class="detail-list">
-            <div class="detail-row"><span class="tag tag-done">完了</span>特集記事 251本 公開済み — Claude＋Replicateで画像自動生成・全記事に画像設定済み</div>
-            <div class="detail-row"><span class="tag tag-done">完了</span>動的sitemap.xml生成 — /provider/[slug]・/affiliate/[slug]・記事URLをSupabaseから動的取得（app/sitemap.js）</div>
-            <div class="detail-row"><span class="tag tag-todo">未着手</span>SEO流入確認 — Search Consoleでインデックス・クリック数チェック</div>
-            <div class="detail-row"><span class="tag tag-todo">未着手</span>SEO強化 — JSON-LD構造化データ・OGP画像・メタタイトル最適化</div>
-            <div class="detail-row"><span class="tag tag-done">完了</span>note AI記事生成機能 — sns-content-gen.htmlのnoteタブでClaude Haiku直接生成（でお文体・2,000字）（2026-04-07）</div>
+            <div class="detail-row"><span class="tag tag-done">完了</span>特集記事251本＋Belle記事39本を公開。記事カニバリゼーション事故（2026-07-19）を是正し、切り口単位で1テーマ1記事の原則を確立</div>
+            <div class="detail-row"><span class="tag tag-doing">進行中</span>SEO表示回数・クリックは横ばい〜微減（08-03時点 imp11/click0）。IndexNow・サイトマップは整備済み・反映待ち</div>
           </div>
         </div>
       </div>
@@ -523,11 +522,9 @@
       <summary>🔷 決めること</summary>
       <div class="detail-body">
         <div class="detail-list">
-          <div class="detail-row"><span class="tag tag-decide">要決定</span>Vercel Pro移行（$20/月）— 移行後にFineme Mirror Coming soonを解除・maxDuration=60が有効になりSonnet Vision が動作する</div>
-          <div class="detail-row" style="opacity:.4;color:#6b7280"><span class="tag" style="background:rgba(107,114,128,.08);border:1px solid rgba(107,114,128,.2);color:#6b7280">不要</span>小川くんとの正式提携条件 — 白紙のため削除</div>
-          <div class="detail-row"><span class="tag tag-decide">要決定</span>PT業務委託契約の開始日・支払いサイクル</div>
-          <div class="detail-row"><span class="tag tag-decide">要決定</span>創業パートナー候補の優先順位</div>
-          <div class="detail-row"><span class="tag tag-decide">要決定</span>初期掲載者の地域・カテゴリ集中戦略（全国か首都圏先行か）</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>LLM週次クォータ対応：(A)自走cronのcadence削減〔コスト0〕か(B)プラン増枠〔課金〕か</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>7月末〜08月GO案件のうち、でお1手待ちで止まっているものの優先順位づけ</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>PT業務委託契約の開始日・支払いサイクル（掲載者拡大を本格化するタイミング）</div>
         </div>
       </div>
     </details>
@@ -537,7 +534,7 @@
 <div class="connector"><div class="connector-line"></div></div>
 
 <!-- PHASE 2 -->
-<div class="phase">
+<div class="phase" id="phase-2">
   <div class="phase-header">
     <div class="phase-badge next">P<br>2</div>
     <div class="phase-meta">
@@ -549,7 +546,7 @@
   <div class="status-tag status-next"><span class="status-dot next"></span>予定</div>
 
   <div class="deliverables">
-    <div class="del-item"><span class="del-icon">📽</span><div><span class="del-label">AIショート動画 継続投稿（ケンジ×リサ）</span>TikTok・YouTube Shorts = AI非モテ男ケンジ（キャラクターアカウント）／Instagram = Fineme公式（@Fineme_official）。月18本ペース（週4〜5本）・Hedra Creator $30/月</div></div>
+    <div class="del-item now-item"><span class="del-icon">📽</span><div><span class="del-label">実写ショートドラマ＋でお個人発信（AIショート動画から乗り換え済み）</span>AIショート動画（ケンジ×リサ）は2026-05-01に11本・フォロワー計6で一時停止。以降は@fineme.drama等の実写ショートドラマとX @deo_fineme／note中心のでお個人発信に軸足を移して継続中</div></div>
     <div class="del-item"><span class="del-icon">📊</span><div><span class="del-label">Me Scan受診者の蓄積</span>ショートドラマ→診断の導線を確立。受診データから改善を継続</div></div>
     <div class="del-item"><span class="del-icon">💬</span><div><span class="del-label">体験談の初期蓄積</span>掲載者経由の初期ユーザーから体験談を収集。SEOコンテンツ化の準備</div></div>
     <div class="del-item"><span class="del-icon">🔁</span><div><span class="del-label">掲載者→掲載者紹介ループの稼働確認</span>ストック型紹介報酬（¥500/月）が自然に動き始めるかを検証</div></div>
@@ -582,8 +579,8 @@
         <div class="detail-section">
           <div class="detail-section-title">コンテンツ集客</div>
           <div class="detail-list">
-            <div class="detail-row"><span class="tag tag-doing">進行中</span>AIショート動画（ケンジ×リサ）継続投稿 — TikTok・YouTube Shorts = キャラクターアカウント / Instagram = Fineme公式（@Fineme_official）。週4〜5本・Hedra Creator $30/月</div>
-            <div class="detail-row"><span class="tag tag-todo">未着手</span>10本投稿後の反応分析・方向性調整</div>
+            <div class="detail-row"><span class="tag tag-doing">進行中</span>実写ショートドラマ（@fineme.drama等）＋でお個人発信（X @deo_fineme・note）— AIショート動画（ケンジ×リサ）は2026-05-01停止済み</div>
+            <div class="detail-row"><span class="tag tag-todo">未着手</span>投稿後の反応分析・方向性調整</div>
             <div class="detail-row"><span class="tag tag-todo">未着手</span>note継続投稿（New Me Mirror・タイプシステム等）・被リンク獲得</div>
             <div class="detail-row"><span class="tag tag-todo">未着手</span>コンテンツ経由の流入・Me Scan受診数の計測開始</div>
           </div>
@@ -631,7 +628,7 @@
 <div class="connector"><div class="connector-line"></div></div>
 
 <!-- PHASE 3 -->
-<div class="phase">
+<div class="phase" id="phase-3">
   <div class="phase-header">
     <div class="phase-badge next">P<br>3</div>
     <div class="phase-meta">
@@ -706,7 +703,7 @@
 <div class="connector"><div class="connector-line"></div></div>
 
 <!-- PHASE 4 -->
-<div class="phase">
+<div class="phase" id="phase-4">
   <div class="phase-header">
     <div class="phase-badge next">P<br>4</div>
     <div class="phase-meta">
@@ -788,7 +785,7 @@
 <!-- FOOTER -->
 <div class="footer">
   <div class="footer-brand">Fineme（ファインミ）</div>
-  <div class="footer-sub">外見を起点に、自信を再設計する人を増やす ／ 最終更新：2026年3月27日</div>
+  <div class="footer-sub">外見を起点に、自信を再設計する人を増やす ／ 最終更新：2026年8月6日</div>
 </div>
 
 </div>
