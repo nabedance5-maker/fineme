@@ -25,21 +25,21 @@ const SOURCES = [
     link: `${BASE_URL}/types?src=pinterest`,
     fallbackTitle: '136タイプ診断 | Fineme Me Scan',
     fallbackDesc: '8軸の質問で、あなたの"今のタイプ"が136種類の中から分かる。無料・3分から。',
-    hook: '136タイプ診断で、\n自分の"今"が分かる。',
+    caption: '136タイプ診断',
   },
   {
     key: 'log',
     link: `${BASE_URL}/log?src=pinterest`,
     fallbackTitle: '美容代、月いくら？ | New Me Log',
     fallbackDesc: '美容室・ジム・ネイル…バラバラの支出を1か所にまとめて可視化。ログイン不要、無料。',
-    hook: '美容代、\n月いくらか知ってる？',
+    caption: 'New Me Log',
   },
   {
     key: 'mirror',
     link: `${BASE_URL}/lp/mirror?src=pinterest`,
     fallbackTitle: '写真1枚で変われる余白が分かる | Fineme Mirror',
     fallbackDesc: 'AIが写真を分析し、変われる余白を7軸で可視化。¥500から。写真は保存されません。',
-    hook: '写真1枚で、\n変われる余白が見える。',
+    caption: 'Mirror',
   },
 ];
 
@@ -56,18 +56,17 @@ async function generateCopy(source) {
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 250,
       temperature: 0.8,
-      system: 'あなたはFinemeのPinterestピン文言を書くコピーライター。日本語、簡潔・温かい・誠実・煽らない・テンプレ感なし。出力は必ず「タイトル: 」「説明: 」「フック: 」の3行のみ（前置き不要）。フックは画像内に入る1〜2行の短い文（改行は\\nで表現、20字前後×2行まで）。',
+      system: 'あなたはFinemeのPinterestピン文言（画像には乗せない、Pinterest上のタイトル/説明のみ）を書くコピーライター。日本語、簡潔・温かい・誠実・煽らない・テンプレ感なし。出力は必ず「タイトル: 」「説明: 」の2行のみ（前置き不要）。',
       messages: [{
         role: 'user',
-        content: `Pinterestのピンを1枚作る。対象：${source.fallbackTitle}\n参考説明：${source.fallbackDesc}\nこのテーマで、タイトル（32字以内）・説明（100字以内）・フック（画像内の短い煽らないコピー）を書いて。`,
+        content: `Pinterestのピンを1枚作る。対象：${source.fallbackTitle}\n参考説明：${source.fallbackDesc}\nこのテーマで、タイトル（32字以内）・説明（100字以内）を書いて。`,
       }],
     });
     const text = msg.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
     const title = text.match(/タイトル[:：]\s*(.+)/)?.[1]?.trim();
     const description = text.match(/説明[:：]\s*(.+)/)?.[1]?.trim();
-    const hook = text.match(/フック[:：]\s*(.+)/)?.[1]?.trim();
     if (!title || !description) return null;
-    return { title, description, hook: hook || source.hook };
+    return { title, description };
   } catch (e) {
     console.error('[pinterest-draft] copy gen error:', e.message);
     return null;
@@ -128,12 +127,12 @@ export async function GET(request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const source = SOURCES[weekOfYear() % SOURCES.length];
+  const week = weekOfYear();
+  const source = SOURCES[week % SOURCES.length];
   const copy = await generateCopy(source);
   const title = copy?.title || source.fallbackTitle;
   const description = copy?.description || source.fallbackDesc;
-  const hook = copy?.hook || source.hook;
-  const imageUrl = `${BASE_URL}/api/og/pinterest?source=${encodeURIComponent(source.key)}&hook=${encodeURIComponent(hook)}`;
+  const imageUrl = `${BASE_URL}/api/og/pinterest?source=${encodeURIComponent(source.key)}&seed=${week}&caption=${encodeURIComponent(source.caption)}`;
 
   let posted = false;
   if (PINTEREST_ACCESS_TOKEN && PINTEREST_BOARD_ID) {
