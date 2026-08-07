@@ -1104,6 +1104,24 @@ export default function BelleDiagnosisResultPage() {
       } catch {}
     }
 
+    // 同じ軸で悩んでいた先輩の体験談（vision.md「卒業生が次の夜の人を照らす」の実装。
+    // 該当が無ければ何も表示しない。でお指摘 2026-08-07）
+    let matchedStoryHtml = '';
+    try {
+      const storyRes = await fetch(`/api/stories?axisId=${encodeURIComponent(compassFirst)}&status=approved`);
+      if (storyRes.ok) {
+        const storyList = await storyRes.json();
+        const story = Array.isArray(storyList) ? storyList[0] : null;
+        if (story?.change_after) {
+          matchedStoryHtml = `<div style="margin:12px 0 20px;padding:16px 18px;background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.28);border-radius:12px">
+            <p style="font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin:0 0 8px">同じ軸で悩んでいた、先輩の声</p>
+            ${story.concern_before ? `<p style="font-size:12px;color:rgba(232,228,220,0.5);margin:0 0 4px">${esc(story.concern_before)}</p>` : ''}
+            <p style="font-size:14px;font-weight:700;color:rgba(232,228,220,0.92);line-height:1.7;margin:0">${esc(story.change_after)}</p>
+          </div>`;
+        }
+      }
+    } catch {}
+
     // ─── HTML組み立て ───
     const hero = getHeroContent();
     const compassFirstDef = AREA_DEFS[compassFirst] || {};
@@ -1137,6 +1155,8 @@ export default function BelleDiagnosisResultPage() {
         </div>
         <a href="/belle/mirror" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(200,100,140,0.1);border:1.5px solid rgba(200,100,140,0.7);color:rgba(200,100,140,0.9);border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">現在地を<br>測る</a>
       </div>` : ''}
+
+      ${matchedStoryHtml}
 
       <p class="sec-label" style="margin-top:28px">Radar Map</p>
       <div class="radar-card">

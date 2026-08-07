@@ -40,6 +40,14 @@ export default function HomePage() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [stories, setStories] = useState([]);
   const [featuredArticles, setFeaturedArticles] = useState([]);
+  const [isLateNight, setIsLateNight] = useState(false);
+
+  // 深夜帯（22時〜3時JST）だけ迎える言葉を変える。
+  // vision.md「競合は夜の沈黙」——一人で自分を責める夜に開かれる前提でトーン設計する
+  useEffect(() => {
+    const jstHour = (new Date().getUTCHours() + 9) % 24;
+    setIsLateNight(jstHour >= 22 || jstHour < 3);
+  }, []);
 
   // 特集記事取得（Supabase経由）
   useEffect(() => {
@@ -333,9 +341,11 @@ export default function HomePage() {
                 className="hero-nav-logo"
               />
             </h1>
-            <p className="hero-nav-catchcopy">なんとなく、外見がひっかかっている。</p>
+            <p className="hero-nav-catchcopy">{isLateNight ? 'こんな時間に、ひとりで開いてくれてありがとう。' : 'なんとなく、外見がひっかかっている。'}</p>
 
-            <p className="hero-nav-guide">質問に答えるか、写真を送るか。<br />それだけで外見の現在地がわかります。</p>
+            <p className="hero-nav-guide">{isLateNight
+              ? <>眠れない夜に、少しだけ。<br />質問に答えるか、写真を送るだけで大丈夫です。</>
+              : <>質問に答えるか、写真を送るか。<br />それだけで外見の現在地がわかります。</>}</p>
 
             <div className="hero-nav-cta-pair">
               {/* 男性 */}

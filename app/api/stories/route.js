@@ -16,6 +16,7 @@ export async function GET(request) {
   const status = searchParams.get('status') || 'approved';
   const providerId = searchParams.get('providerId') || '';
   const tag = searchParams.get('tag') || '';
+  const axisId = searchParams.get('axisId') || '';
 
   let query = supabaseAdmin
     .from('stories')
@@ -26,6 +27,9 @@ export async function GET(request) {
 
   if (providerId) query = query.eq('provider_id', providerId);
   if (tag) query = query.contains('tags', [tag]);
+  // 診断結果画面で「同じ軸で悩んでいた先輩の声」を出すためのマッチング
+  // （でお指摘 2026-08-07：卒業生が新規を照らす導線が体験談ページで止まっていた）
+  if (axisId) query = query.eq('axis_id', axisId);
   // 掲載者が非表示にした体験談は除外
   query = query.eq('provider_hidden', false);
 

@@ -3618,6 +3618,26 @@ export default function NewMeNaviPage() {
       </div>`;
     }
 
+    // 月1回だけ「最近、誰かに優しくできた瞬間はあったか」を聞く。
+    // vision.md：北極星は継続率でなく「この人を起点に優しさがどれだけ広がったか」。
+    // それを実際に聞く場所がどこにも無かったので新設（でお指摘 2026-08-07）
+    function buildKindnessCheckinHtml() {
+      if (!token) return '';
+      const jst = new Date(Date.now() + 9 * 3600000);
+      const thisMonth = `${jst.getFullYear()}-${String(jst.getMonth() + 1).padStart(2, '0')}`;
+      const checkins = Array.isArray(bodyData.kindness_checkins) ? bodyData.kindness_checkins : [];
+      if (checkins.some(c => c.month === thisMonth)) return '';
+      return `<div id="kindness-checkin-widget" class="wcw">
+        <p class="wcw-eyebrow">ふと、聞かせてください</p>
+        <p style="font-size:13px;color:rgba(232,228,220,0.75);line-height:1.7;margin:0 0 12px">最近、誰かに少しでも優しくできた瞬間はありましたか？</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="kindness-checkin-btn" data-answer="yes" style="flex:1;min-width:100px;padding:10px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:8px;font-size:13px;font-weight:700;color:#c9a84c;cursor:pointer;font-family:inherit">あった</button>
+          <button class="kindness-checkin-btn" data-answer="no" style="flex:1;min-width:100px;padding:10px;background:rgba(10,15,30,0.5);border:1px solid rgba(232,228,220,0.15);border-radius:8px;font-size:13px;font-weight:700;color:rgba(232,228,220,0.6);cursor:pointer;font-family:inherit">特に無かった</button>
+        </div>
+        <button id="kindness-checkin-skip" style="display:block;width:100%;text-align:center;margin-top:8px;font-size:11px;color:rgba(232,228,220,0.3);background:none;border:none;cursor:pointer;font-family:inherit">今は答えない</button>
+      </div>`;
+    }
+
     const html = `
       <div class="navi-wrap">
       <div class="navi-header">
@@ -3641,6 +3661,8 @@ export default function NewMeNaviPage() {
       ${buildCompassHtml()}
 
       ${buildWeeklyCheckinHtml()}
+
+      ${buildKindnessCheckinHtml()}
 
       ${(() => { const _mDef = AREA_DEFS[compassFirst] || {}; if (!_mDef.label) return ''; return `<div style="margin:0 0 16px;padding:16px 18px;background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.28);border-radius:12px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(8px)"><span style="font-size:26px;flex-shrink:0">🪞</span><div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px;line-height:1.55">${esc(_mDef.icon||'')} ${esc(_mDef.label)}が、あなたの最初の一手。<br>今の${esc(_mDef.label)}、写真1枚で確かめてみる？</p><p style="font-size:11px;color:rgba(232,228,220,0.4);margin:0">写真は保存しません</p></div><a href="${TRACK.mirror}" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(201,168,76,0.1);border:1.5px solid #c9a84c;color:#c9a84c;border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">Mirror<br><span style="font-size:10px;font-weight:600">¥500</span></a></div>`; })()}
 
@@ -3728,6 +3750,30 @@ export default function NewMeNaviPage() {
           btn.style.color = '#10b981';
         }
       } catch {}
+    });
+
+    // 波及チェックイン（優しさの循環。答えはbody_dataに月1件だけ蓄積）
+    document.querySelectorAll('.kindness-checkin-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const jst = new Date(Date.now() + 9 * 3600000);
+        const thisMonth = `${jst.getFullYear()}-${String(jst.getMonth() + 1).padStart(2, '0')}`;
+        const checkins = Array.isArray(bodyData.kindness_checkins) ? bodyData.kindness_checkins : [];
+        checkins.push({ month: thisMonth, answer: btn.dataset.answer });
+        bodyData.kindness_checkins = checkins;
+        try { localStorage.setItem(BODY_DATA_KEY, JSON.stringify(bodyData)); } catch {}
+        if (token) {
+          fetch('/api/me/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ body_data: bodyData }),
+          }).catch(() => {});
+        }
+        const widget = document.getElementById('kindness-checkin-widget');
+        if (widget) widget.outerHTML = `<div class="wcw"><p style="font-size:12px;color:rgba(201,168,76,0.7);margin:0;line-height:1.6">教えてくれてありがとう。その小さな一つが、ちゃんと積み重なっています。</p></div>`;
+      });
+    });
+    document.getElementById('kindness-checkin-skip')?.addEventListener('click', () => {
+      document.getElementById('kindness-checkin-widget')?.remove();
     });
 
     // 週次チェックイン やったボタン
