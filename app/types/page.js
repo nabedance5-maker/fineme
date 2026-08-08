@@ -87,8 +87,20 @@ export default function TypesPage() {
     const VALID_CP = ['NV','NK','ND','CV','CQ','CK','CL','CD','AV','AQ','AK','AL','AD','PQ','PK','PL','PD'];
 
     const AXIS_TYPE_CODE = { body:'B', eyebrow:'E', fashion:'F', hair:'H', skin:'S', hairremoval:'R', teeth:'T', nail:'W' };
-    const CARE_CODE_MAP  = { none:'N', concerned:'C', self:'A', pro:'P' };
+    // self_regular が抜けていたバグを修正（自己流・定期継続の人の「あなたのタイプ」ハイライトが
+    // 効いていなかった。/diagnosis/result 側は元々 self_regular:'A' を含んでいた）
+    const CARE_CODE_MAP  = { none:'N', concerned:'C', self:'A', self_regular:'A', pro:'P' };
     const PATH_CODE_MAP  = { virgin:'V', quit:'Q', blind:'K', lapsed:'L', doing:'D' };
+    // 表示用タイプコード（でお指摘 2026-08-07）。内部の typeCode（3文字アルファベット）は
+    // 画像ファイル名・説明文のキー・onclick識別子として使い続けるため変更しない。
+    // 見せる文字列だけ toDisplayCode() で変換する
+    const CARE_DIGIT_MAP = { N:'0', C:'1', A:'2', P:'3' };
+    const PATH_DIGIT_MAP = { V:'0', Q:'1', K:'2', L:'3', D:'4' };
+    const TRACK_CODE_LETTER = 'M';
+    function toDisplayCode(typeCode) {
+      if (!typeCode || typeCode.length < 3) return typeCode;
+      return typeCode[0] + (CARE_DIGIT_MAP[typeCode[1]] || '0') + (PATH_DIGIT_MAP[typeCode[2]] || '0') + TRACK_CODE_LETTER;
+    }
 
     const TYPE_DESCRIPTION = {
       BNV:'体型をこれまで意識してこなかった。それはある意味、一番フラットな出発点だ。変えるべき習慣がまだ根付いていない分、正しい方向へ動けば誰より早く変わる可能性がある。まず自分の現在地を数値で知ることから始めよう。体重や体組成の計測が、最初の地図になる。体型は外見の中で最も「土台」になる軸だ。ここが変わると、服の見え方も印象も連動して変わっていく。',
@@ -278,7 +290,7 @@ export default function TypesPage() {
       return '<div class="type-card' + (isMyType ? ' my-type' : '') + '" onclick="openTypeModal(\'' + typeCode + '\')">'
         + '<img class="type-card-img" src="/images/types/TYPE-' + typeCode + '.webp" alt="' + esc(fullName) + '" loading="lazy" />'
         + '<div class="type-card-body">'
-        + '<div class="type-card-code" style="color:' + ax.color + '">' + typeCode + '</div>'
+        + '<div class="type-card-code" style="color:' + ax.color + '">' + toDisplayCode(typeCode) + '</div>'
         + '<div class="type-card-name">' + esc(fullName) + '</div>'
         + (isMyType ? '<span class="type-card-badge">あなたのタイプ</span>' : '')
         + '</div></div>';
@@ -305,12 +317,12 @@ export default function TypesPage() {
 
     const myAxisDef = myAxisCode ? AXES.find(a => a.code === myAxisCode) : null;
     const bannerHtml = (myType && myAxisDef)
-      ? '<div class="my-type-banner">あなたの現在のタイプは <strong style="color:' + myAxisDef.color + '">' + myType + '</strong>（' + myAxisDef.label + '軸）です。下のグリッドでハイライト表示されています。</div>'
+      ? '<div class="my-type-banner">あなたの現在のタイプは <strong style="color:' + myAxisDef.color + '">' + toDisplayCode(myType) + '</strong>（' + myAxisDef.label + '軸）です。下のグリッドでハイライト表示されています。</div>'
       : '';
 
     root.innerHTML = '<div class="types-wrap">'
       + '<h1 class="types-title">外見変容タイプ 全136</h1>'
-      + '<p class="types-subtitle">3文字のコードが、あなたの今の外見の地図を示す</p>'
+      + '<p class="types-subtitle">4文字のコードが、あなたの今の外見の地図を示す</p>'
       + bannerHtml
       + '<div class="code-legend">'
       + '<div class="code-legend-title">コードの読み方</div>'
@@ -354,7 +366,7 @@ export default function TypesPage() {
       const modal = document.getElementById('type-modal-content');
       modal.innerHTML = '<button class="type-modal-close" onclick="closeTypeModal()">✕</button>'
         + '<div style="clear:both"></div>'
-        + '<div class="type-modal-code" style="color:' + ax.color + '">' + typeCode + '</div>'
+        + '<div class="type-modal-code" style="color:' + ax.color + '">' + toDisplayCode(typeCode) + '</div>'
         + '<div class="type-modal-name">～ ' + esc(fullName) + ' ～</div>'
         + (isMyType ? '<div style="font-size:11px;font-weight:800;color:#c9a84c;margin-bottom:12px">★ あなたの現在のタイプ</div>' : '')
         + '<img class="type-modal-img" src="/images/types/TYPE-' + typeCode + '.webp" alt="' + esc(creature) + '" style="border:2px solid ' + ax.color + '44" />'

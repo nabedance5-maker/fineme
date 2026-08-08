@@ -370,6 +370,15 @@ export default function DiagnosisResultPage() {
     const AXIS_TYPE_CODE = { body:'B', eyebrow:'E', fashion:'F', hair:'H', skin:'S', hairremoval:'R', teeth:'T', nail:'W' };
     const CARE_CODE_MAP  = { none:'N', concerned:'C', self:'A', self_regular:'A', pro:'P' };
     const PATH_CODE_MAP  = { virgin:'V', quit:'Q', blind:'K', lapsed:'L', doing:'D' };
+    // 表示用タイプコード（でお指摘 2026-08-07：MBTIのような全アルファベットは飽和している。
+    // かといって全部数字だと「レベル」に見えてしまうので、先頭だけ軸のアルファベットを残し、
+    // ケア度・経路は数字にする。末尾のトラック文字（M=Fineme/L=Belle）は軸文字と衝突しない
+    // アルファベットを選び、男女で同じ軸・ケア・経路でもコードが重複しないようにする。
+    // 内部の typeCode（軸+ケア+経路のアルファベット3文字）は画像ファイル名・説明文の
+    // キーとして使い続けるため変更しない。ユーザーに見せる文字列だけ displayCode に分離する
+    const CARE_DIGIT_MAP = { N:'0', C:'1', A:'2', P:'3' };
+    const PATH_DIGIT_MAP = { V:'0', Q:'1', K:'2', L:'3', D:'4' };
+    const TRACK_CODE_LETTER = 'M';
     const TYPE_CREATURE  = {
       NV:'フェンリル', NK:'レヴィアタン', ND:'伏竜',
       CV:'蟠龍', CQ:'鵺', CK:'マンティコア', CL:'ヒュドラ', CD:'鳳凰',
@@ -749,6 +758,7 @@ export default function DiagnosisResultPage() {
       return {
         axisCode, careCode, pathCode, creature, modifier, axisWord,
         typeCode: `${axisCode}${careCode}${pathCode}`,
+        displayCode: `${axisCode}${CARE_DIGIT_MAP[careCode]}${PATH_DIGIT_MAP[pathCode]}${TRACK_CODE_LETTER}`,
         fullName: `${axisWord}${modifier}${creature}`,
       };
     }
@@ -757,14 +767,14 @@ export default function DiagnosisResultPage() {
     // ─── タイプヒーロー（Naviの最初のセクション） ───
     function buildTypeHero() {
       if (!typeIdentity) return '';
-      const { axisCode, creature, typeCode, fullName } = typeIdentity;
+      const { axisCode, creature, typeCode, displayCode, fullName } = typeIdentity;
       const desc      = TYPE_DESCRIPTION[typeCode] || '';
       const color     = AXIS_ACCENT_COLOR[axisCode] || '#c9a84c';
       const axisLabel = AREA_DEFS[compassFirst]?.label || '';
       return `
         <div class="type-hero" style="background:linear-gradient(180deg,${color}1a 0%,rgba(10,15,30,0) 100%)">
           <p class="type-hero-lead">あなたのタイプは →</p>
-          <p class="type-hero-code" style="color:${color}">${esc(typeCode)}</p>
+          <p class="type-hero-code" style="color:${color}">${esc(displayCode)}</p>
           <div class="type-hero-img-wrap" style="border:2px solid ${color}44;box-shadow:0 0 36px ${color}22">
             <img class="type-hero-img" src="/images/types/TYPE-${esc(typeCode)}.webp" alt="${esc(creature)}" />
           </div>
@@ -774,6 +784,7 @@ export default function DiagnosisResultPage() {
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
             <button id="share-type-card-btn" class="type-hero-share-btn"
               data-type-code="${esc(typeCode)}"
+              data-display-code="${esc(displayCode)}"
               data-creature="${esc(fullName)}"
               data-color="${esc(color)}"
               data-tagline="${esc(desc)}">
@@ -1369,6 +1380,7 @@ export default function DiagnosisResultPage() {
     if (shareTypeCardBtn) {
       shareTypeCardBtn.addEventListener('click', async () => {
         const tc  = shareTypeCardBtn.dataset.typeCode;
+        const dc  = shareTypeCardBtn.dataset.displayCode || tc;
         const cr  = shareTypeCardBtn.dataset.creature;
         const col = shareTypeCardBtn.dataset.color;
         const tl  = shareTypeCardBtn.dataset.tagline;
@@ -1443,7 +1455,7 @@ export default function DiagnosisResultPage() {
           ctx.globalAlpha = 0.7; ctx.fillStyle = col;
           ctx.font = '700 11px system-ui,-apple-system,sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText('TYPE-' + tc, W/2, ty); ctx.globalAlpha = 1;
+          ctx.fillText('TYPE-' + dc, W/2, ty); ctx.globalAlpha = 1;
 
           // クリーチャー名
           ty += 42;
@@ -1492,7 +1504,7 @@ export default function DiagnosisResultPage() {
     // ── Xシェアボタン生成 ──
     const shareBlock = document.getElementById('share-block');
     if (shareBlock) {
-      const ogUrl = `https://www.fineme.me/api/og/diagnosis?compass=${encodeURIComponent(compassFirst)}&type=${encodeURIComponent(typeIdentity?.typeCode||'')}&name=${encodeURIComponent(typeIdentity?.fullName||'')}&goal=${encodeURIComponent(p.goal_change||'')}&trigger=${encodeURIComponent(p.trigger||'')}`;
+      const ogUrl = `https://www.fineme.me/api/og/diagnosis?compass=${encodeURIComponent(compassFirst)}&type=${encodeURIComponent(typeIdentity?.displayCode||'')}&name=${encodeURIComponent(typeIdentity?.fullName||'')}&goal=${encodeURIComponent(p.goal_change||'')}&trigger=${encodeURIComponent(p.trigger||'')}`;
       const axisLabel = AREA_DEFS[compassFirst]?.label || '外見';
       const shareText = typeIdentity
         ? `Me Scan を受けた。\n私は「${typeIdentity.fullName}」だった。\n最初の一手は「${axisLabel}」から。\n\n136タイプ、あなたはどれ？👇\n#Fineme`

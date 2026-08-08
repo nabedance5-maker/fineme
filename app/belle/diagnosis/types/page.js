@@ -30,6 +30,16 @@ function fullName(axis, combo) {
   return `${AXIS_WORD[axis]}${TYPE_MODIFIER[combo]}${TYPE_CREATURE[combo]}`;
 }
 
+// 表示用タイプコード（でお指摘 2026-08-07）。内部の code（3文字アルファベット）は
+// 画像ファイル名のキーとして使い続けるため変更しない。見せる文字列だけ変換する
+const CARE_DIGIT_MAP = { N:'0', C:'1', A:'2', P:'3' };
+const PATH_DIGIT_MAP = { V:'0', Q:'1', K:'2', L:'3', D:'4' };
+const TRACK_CODE_LETTER = 'L';
+function toDisplayCode(code) {
+  if (!code || code.length < 3) return code;
+  return code[0] + (CARE_DIGIT_MAP[code[1]] || '0') + (PATH_DIGIT_MAP[code[2]] || '0') + TRACK_CODE_LETTER;
+}
+
 export default function BelleTypesPage() {
   const allTypes = AXES.flatMap(axis =>
     COMBOS.map(combo => ({
@@ -112,7 +122,7 @@ export default function BelleTypesPage() {
                     {/* テキスト */}
                     <div style={{ padding: '10px 12px 12px' }}>
                       <p style={{ fontSize: '9px', fontWeight: 800, color: `${color}cc`, letterSpacing: '.08em', margin: '0 0 4px', textTransform: 'uppercase' }}>
-                        {t.code}
+                        {toDisplayCode(t.code)}
                       </p>
                       <p style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(232,228,220,0.88)', margin: 0, lineHeight: 1.4 }}>
                         {t.name}
