@@ -637,17 +637,12 @@ export default function NewMeNaviPage() {
       .gmap-article-body { flex: 1; min-width: 0; }
       .gmap-article-label { font-size: 10px; color: rgba(232,228,220,0.40); margin: 0 0 2px; }
       .gmap-article-title { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.75); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      /* === Stage 4: 霧の向こう === */
-      .path-node.pn-fog { opacity: 0.48; pointer-events: none; }
-      .path-node.pn-fog .path-node-detail { display: none !important; }
-      .path-node.pn-fog .gmap-node-text { color: #9ca3af; }
-      .path-node.pn-fog .gmap-node-axis-name { opacity: 0.4; }
-      .navi-fog-zone { position: relative; padding-bottom: 30px; }
-      .navi-fog-zone::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 260px; background: linear-gradient(to bottom, transparent 0%, #0a0f1e 100%); pointer-events: none; z-index: 2; }
-      .navi-fog-divider { display: flex; align-items: center; gap: 10px; padding: 22px 0 6px; font-size: 12px; color: #9ca3af; letter-spacing: .08em; }
-      .navi-fog-divider::before, .navi-fog-divider::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, transparent, #d1d5db, transparent); }
-      .navi-fog-cta { background: rgba(201,168,76,.06); border: 1px solid rgba(201,168,76,.18); border-radius: 10px; padding: 12px 16px; margin: 4px 0 16px; font-size: 13px; color: #6b7280; line-height: 1.65; }
-      .navi-fog-cta a { color: #c9a84c; text-decoration: none; font-weight: 600; }
+      /* === チャンク設計（ゴール勾配効果。2026-08-10）：次チャンクの要約カード === */
+      .navi-next-chunk-card { background: rgba(201,168,76,.06); border: 1px solid rgba(201,168,76,.18); border-radius: 12px; padding: 16px 18px; margin: 12px 0 4px; text-align: center; }
+      .navi-next-chunk-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .12em; color: rgba(201,168,76,0.55); text-transform: uppercase; margin: 0 0 6px; }
+      .navi-next-chunk-text { font-size: 14px; font-weight: 700; color: rgba(232,228,220,0.85); margin: 0 0 6px; }
+      .navi-next-chunk-sub { font-size: 12px; color: #6b7280; line-height: 1.6; margin: 0; }
+      .navi-next-chunk-link { display: inline-block; margin-top: 10px; font-size: 12px; font-weight: 700; color: #c9a84c; text-decoration: none; }
       .mirror-promo-strip { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(100,160,255,0.05); border: 1px solid rgba(100,160,255,0.2); border-radius: 10px; font-size: 12px; color: rgba(232,228,220,0.55); margin-bottom: 14px; }
       .mirror-promo-strip a { color: rgba(100,160,255,0.85); font-weight: 700; text-decoration: none; margin-left: auto; white-space: nowrap; }
       .navi-done-toggle { font-size: 12px; color: #9ca3af; background: none; border: none; cursor: pointer; padding: 0 0 10px; display: block; width: 100%; text-align: left; }
@@ -1588,8 +1583,25 @@ export default function NewMeNaviPage() {
       const steps = activeAxisFilter
         ? combinedSteps.filter(s => s.axis === activeAxisFilter)
         : combinedSteps;
-      const totalDone = allNaviSteps.filter(s => stepDone[s.id]).length;
-      const pct = allNaviSteps.length > 0 ? Math.round(totalDone / allNaviSteps.length * 100) : 0;
+      // チャンク設計（ゴール勾配効果：ゴールは近くに刻む。2026-08-10 概念整理を実装）。
+      // 全ステップを4分割し、「今ここ」が属するチャンクだけを個別展開する。
+      // 次のチャンクは件数だけの要約カードで示し、その先は存在の痕跡も出さない。
+      // 基礎・行動習慣ノードはチャンク区切りに関わらず常にアクティブ扱い（従来の「霧に隠さない」を踏襲）
+      const CHUNK_COUNT = 4;
+      const _chunkSize = Math.max(1, Math.ceil(combinedSteps.length / CHUNK_COUNT));
+      const _chunkIndexById = new Map();
+      combinedSteps.forEach((s, idx) => _chunkIndexById.set(s.id, Math.floor(idx / _chunkSize)));
+      const isForcedActive = (s) => !!(s._isBaseline || s._isHabitStatus);
+      const stepChunkIndex = (s) => _chunkIndexById.get(s.id) ?? 0;
+      const _globalFirstUndone = combinedSteps.find(s => !isStepDone(s));
+      const activeChunkIndex = _globalFirstUndone
+        ? stepChunkIndex(_globalFirstUndone)
+        : Math.floor((combinedSteps.length - 1) / _chunkSize);
+
+      // 進捗の主役は「今の一手」（アクティブチャンク内）。全体の総数は前面に出さない
+      const activeChunkAllSteps = combinedSteps.filter(s => isForcedActive(s) || stepChunkIndex(s) === activeChunkIndex);
+      const totalDone = activeChunkAllSteps.filter(isStepDone).length;
+      const pct = activeChunkAllSteps.length > 0 ? Math.round(totalDone / activeChunkAllSteps.length * 100) : 0;
       const genDate = naviStepsData.generated_at
         ? new Date(naviStepsData.generated_at).toLocaleDateString('ja-JP', { month:'numeric', day:'numeric' })
         : '';
@@ -1604,71 +1616,56 @@ export default function NewMeNaviPage() {
       );
 
       const POS_CYCLE = ['gnr-left', 'gnr-right'];
-      // Stage 4: グループ分け用変数
-      const NAVI_VISIBLE_UNDONE = 8;
-      // 霧の境界は全ステップ基準（軸フィルター状態に関わらず一定）
-      const _globalUndone  = allNaviSteps.filter(s => !stepDone[s.id]);
-      const _activeIds     = new Set(_globalUndone.slice(0, NAVI_VISIBLE_UNDONE).map(s => s.id));
-      // 基礎ノード・行動習慣ノードは「今日やったら変わる／回答そのものの反映」という性質上、
-      // 霧の中に隠さず常に見える状態にする
-      baselineNodes.forEach(b => _activeIds.add(b.id));
-      habitStatusNodes.forEach(h => _activeIds.add(h.id));
-      const _undoneInOrder = steps.filter(s => !isStepDone(s));
-      const _fogCount      = _undoneInOrder.filter(s => !_activeIds.has(s.id)).length;
-      const _doneCount     = steps.length - _undoneInOrder.length;
+      // このチャンク境界を超える未完了ステップは描画しない（完全非表示）。
+      // 次チャンクぶんだけ件数を集計し、後で要約カード1枚として表示する（個別ノードは出さない）
+      const visibleSteps   = steps.filter(s => isStepDone(s) || isForcedActive(s) || stepChunkIndex(s) <= activeChunkIndex);
+      const nextChunkItems = steps.filter(s => !isStepDone(s) && !isForcedActive(s) && stepChunkIndex(s) === activeChunkIndex + 1);
+      const _doneCount     = steps.filter(s => isStepDone(s)).length;
       let completedHtml = '';
       let activeHtml    = '';
-      let fogHtml       = '';
-      let fogNodeIdx    = 0;
 
       let posIdx = 0;
       let _stepIdx = 0;
-      for (const step of steps) {
+      for (const step of visibleSteps) {
         const i = _stepIdx;
         const def = AREA_DEFS[step.axis] || {};
         const isDone        = isStepDone(step);
-        const isFog         = !isDone && !_activeIds.has(step.id);
         const isCurrentStep = step.id === currentStepId;   // 「今ここ」バッジ
-        const isCompassNext = step.id === compassNextId;    // gnr-center + 🧭強調（位置計算のため fog でも保持）
+        const isCompassNext = step.id === compassNextId;    // gnr-center + 🧭強調
 
         const posClass = isCompassNext ? 'gnr-center' : POS_CYCLE[posIdx % 2];
         if (!isCompassNext) posIdx++;
 
         const circleClass = isDone ? 'gm-c-done'
-          : isCompassNext && !isFog ? 'gm-c-compass'
+          : isCompassNext ? 'gm-c-compass'
           : (step.guide === 'HIGH' || step.guide === 'MID') ? 'gm-c-active'
           : 'gm-c-future';
-        const nodeClasses = ['path-node', isDone ? 'pn-done' : '', isCompassNext && !isFog ? 'pn-compass' : '', isFog ? 'pn-fog' : ''].filter(Boolean).join(' ');
+        const nodeClasses = ['path-node', isDone ? 'pn-done' : '', isCompassNext ? 'pn-compass' : ''].filter(Boolean).join(' ');
 
-        // 「今ここ」バッジはcurrentStepId、🧭バッジはcompassNextId（霧の中では表示しない）
         let nowBadge = '';
-        if (!isFog) {
-          if (isCurrentStep && isCompassNext) nowBadge = `<span class="gmap-now-badge">🧭 今ここ</span><br>`;
-          else if (isCurrentStep)             nowBadge = `<span class="gmap-now-badge">📍 今ここ</span><br>`;
-          else if (isCompassNext)             nowBadge = `<span class="gmap-now-badge">🧭 重点</span><br>`;
-        }
+        if (isCurrentStep && isCompassNext) nowBadge = `<span class="gmap-now-badge">🧭 今ここ</span><br>`;
+        else if (isCurrentStep)             nowBadge = `<span class="gmap-now-badge">📍 今ここ</span><br>`;
+        else if (isCompassNext)             nowBadge = `<span class="gmap-now-badge">🧭 重点</span><br>`;
 
         const actionLabel = { quick:'⚡', habit:'🔄', ongoing:'🌊' }[step.action_type] || '';
         const baselineChip = step._isBaseline ? ' <span class="gmap-baseline-chip">基礎</span>' : '';
         const habitStatusChip = step._isHabitStatus ? ' <span class="gmap-habit-chip">あなたの回答</span>' : '';
 
         let guideBadgeHtml = '';
-        if (!isFog) {
-          if (step.guide === 'HIGH') {
-            const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
-            guideBadgeHtml = `<div class="guide-badge guide-high"><span>🏥 ここはプロに任せると確実に変わる</span>${btn}</div>`;
-          } else if (step.guide === 'MID') {
-            const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
-            guideBadgeHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${btn}</div>`;
-          }
+        if (step.guide === 'HIGH') {
+          const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
+          guideBadgeHtml = `<div class="guide-badge guide-high"><span>🏥 ここはプロに任せると確実に変わる</span>${btn}</div>`;
+        } else if (step.guide === 'MID') {
+          const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
+          guideBadgeHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${btn}</div>`;
         }
-        const hintHtml = !isFog && step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
+        const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
         const mirrorConfirmedHtml = isDone && mirrorConfirmedIds.has(step.id)
           ? `<span class="mirror-confirmed-badge">✓ 変化を確認できました</span>` : '';
 
-        // ongoingステップにサービスログバッジを表示（霧の中は非表示）
+        // ongoingステップにサービスログバッジを表示
         let logBadgeHtml = '';
-        if (!isFog && step.action_type === 'ongoing') {
+        if (step.action_type === 'ongoing') {
           const linkedLog = serviceLogByAxis[step.axis];
           if (linkedLog) {
             const diff = linkedLog.next_visit ? Math.round((new Date(linkedLog.next_visit) - new Date()) / 86400000) : null;
@@ -1681,15 +1678,13 @@ export default function NewMeNaviPage() {
         }
 
         // prevPos: posIdxはnon-compassNextのみインクリメント済みのため2引く
-        const prevIsCompassNext = steps[i-1]?.id === compassNextId;
+        const prevIsCompassNext = visibleSteps[i-1]?.id === compassNextId;
         const prevPos = i === 0 ? null
           : prevIsCompassNext ? 'gnr-center'
           : POS_CYCLE[(posIdx - (isCompassNext ? 1 : 2) + 100) % 2];
         const connHtml = i > 0 ? connectorSvg(prevPos || 'gnr-left', posClass, isDone) : '';
 
-        const FOG_BLUR = [0.8, 1.5, 2.5, 3.5];
-        const fogBlurStyle = isFog ? ` style="filter:blur(${FOG_BLUR[Math.min(fogNodeIdx, 3)]}px)"` : '';
-        const nodeHtml = `${connHtml}<div class="${nodeClasses}" data-done-key="${esc(step.id)}"${fogBlurStyle}>
+        const nodeHtml = `${connHtml}<div class="${nodeClasses}" data-done-key="${esc(step.id)}">
           <div class="gmap-node-row ${posClass}">
             <div class="gmap-node" data-toggle-node="${esc(step.id)}">
               <div class="gm-circle ${circleClass}">${esc(def.icon || '•')}</div>
@@ -1707,22 +1702,27 @@ export default function NewMeNaviPage() {
             </div>
           </div>
         </div>`;
-        if (isDone)      completedHtml += nodeHtml;
-        else if (!isFog) activeHtml    += nodeHtml;
-        else             { fogHtml += nodeHtml; fogNodeIdx++; }
+        if (isDone) completedHtml += nodeHtml;
+        else        activeHtml    += nodeHtml;
         _stepIdx++;
       }
-      // Stage 4: セクション組み立て（完了折りたたみ → アクティブ → 霧の向こう）
+      // セクション組み立て（完了折りたたみ → アクティブ → 次チャンクの要約カード）
       const completedSection = _doneCount > 0
         ? `<button class="navi-done-toggle" onclick="const l=this.nextElementSibling;l.classList.toggle('open');this.textContent=(l.classList.contains('open')?'▴':'▾')+' 完了した行程 ${_doneCount}件';">▾ 完了した行程 ${_doneCount}件</button><div class="navi-done-list">${completedHtml}</div>`
         : '';
-      const fogSection = fogHtml
-        ? `<div class="navi-fog-divider">霧の向こう</div>${hasMirrorData
-            ? `<div class="navi-fog-cta">📸 このステップをやり切ったら、次のMirrorで変化を確認してみよう。<br>確認できた変化はこの旅の記録として刻まれていきます。</div>`
-            : `<div class="navi-fog-cta">🔭 この先 ${_fogCount} つの行程が待っています。<br><a href="/mypage/mirror">Mirrorで写真を分析する →</a> と先の道が見えてきます。</div>`
-          }<div class="navi-fog-zone">${fogHtml}</div>`
+      // 次のチャンクは個別ノードを出さず、件数だけの要約カード1枚にする。
+      // その先のチャンクは存在の痕跡も出さない（でお決定 2026-08-10：ゴールを近くに刻む）
+      const nextChunkSection = nextChunkItems.length > 0
+        ? `<div class="navi-next-chunk-card">
+            <p class="navi-next-chunk-eyebrow">この先</p>
+            <p class="navi-next-chunk-text">まだ ${nextChunkItems.length} つの一手が続きます。</p>
+            <p class="navi-next-chunk-sub">${hasMirrorData
+              ? '今の一手をやり切ったら、次のMirrorで変化を確認してみよう。'
+              : 'Mirrorで写真を分析すると、先の道の精度が上がります。'}</p>
+            ${!hasMirrorData ? `<a href="/mypage/mirror" class="navi-next-chunk-link">Mirrorで写真を分析する →</a>` : ''}
+          </div>`
         : '';
-      const nodesHtml = completedSection + activeHtml + fogSection;
+      const nodesHtml = completedSection + activeHtml + nextChunkSection;
 
       const regenBtn = token ? `
         <button id="navi-regen-btn" style="display:block;width:100%;padding:10px;background:rgba(10,15,30,0.5);border:1px solid rgba(232,228,220,0.12);border-radius:8px;color:rgba(232,228,220,0.4);font-size:11px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-top:24px;letter-spacing:.05em">
@@ -1843,7 +1843,7 @@ export default function NewMeNaviPage() {
           </div>
           <div style="background:rgba(10,15,30,0.4);border:1px solid rgba(201,168,76,0.12);border-radius:10px;padding:12px 14px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-              <span style="font-size:11px;color:rgba(232,228,220,0.50)">${totalDone} / ${steps.length} ステップ完了</span>
+              <span style="font-size:11px;color:rgba(232,228,220,0.50)">今の一手：${totalDone} / ${activeChunkAllSteps.length}</span>
               <span style="font-size:12px;font-weight:800;color:rgba(201,168,76,0.8)">${pct}%</span>
             </div>
             <div style="height:3px;background:rgba(232,228,220,0.08);border-radius:2px;overflow:hidden">
