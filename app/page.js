@@ -357,7 +357,7 @@ export default function HomePage() {
                     <span className="hero-nav-cta-sub">写真から他者目線を分析</span>
                   </Link>
                   <Link href="/diagnosis" className="hero-nav-cta hero-nav-cta--scan-m">
-                    <span className="hero-nav-cta-main">🧬 Me Scan（無料）</span>
+                    <span className="hero-nav-cta-main">🧬 Me Scan</span>
                     <span className="hero-nav-cta-sub">8軸で外見を自己診断</span>
                   </Link>
                 </div>
@@ -372,7 +372,7 @@ export default function HomePage() {
                     <span className="hero-nav-cta-sub">写真から他者目線を分析</span>
                   </Link>
                   <Link href="/belle/diagnosis" className="hero-nav-cta hero-nav-cta--scan-f">
-                    <span className="hero-nav-cta-main">🧬 Me Scan（無料）</span>
+                    <span className="hero-nav-cta-main">🧬 Me Scan</span>
                     <span className="hero-nav-cta-sub">女性向け外見診断</span>
                   </Link>
                 </div>
@@ -666,7 +666,7 @@ export default function HomePage() {
               Me Scanが、8軸の中で「今のあなたに効く順番」を教えてくれる。
             </p>
             <Link href={knownTrack ? TRACKS[knownTrack].diagnosis : '/choose-track?dest=diagnosis'} className="hero-nav-cta">
-              🧬 Me Scanで地図を描く（無料）
+              🧬 Me Scanで地図を描く
             </Link>
             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.25)', margin: '16px 0 0' }}>約3分 · 匿名 · 登録不要</p>
             <div style={{ marginTop: '36px', paddingTop: '28px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
