@@ -3,6 +3,8 @@
 // Stripeのcheckout session statusを直接確認（webhookに依存しない）
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
+import { sendLinePush } from '@/lib/line-push';
+import { isOwnerTestEmail } from '@/lib/is-owner-email';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -36,14 +38,27 @@ export async function GET(request) {
       );
 
       if (checkoutSession.payment_status === 'paid') {
+        const purchaserEmail = checkoutSession.customer_details?.email || null;
+        const isOwnerTest = isOwnerTestEmail(purchaserEmail);
+
         // DBを更新してpaidにする
         await supabase
           .from('mirror_sessions')
           .update({
             paid: true,
             stripe_payment_intent_id: String(checkoutSession.payment_intent || ''),
+            purchaser_email: purchaserEmail,
+            is_owner_test: isOwnerTest,
           })
           .eq('id', session_id);
+
+        // でお本人のテストでなければ、外部の実購入として即時通知（曖昧な後日確認をなくす）
+        if (!isOwnerTest && process.env.OWNER_LINE_USER_ID) {
+          await sendLinePush(
+            process.env.OWNER_LINE_USER_ID,
+            `🎉 外部の実購入を検知\nMirror単発 ¥500\nemail: ${purchaserEmail || '不明'}`
+          );
+        }
 
         return Response.json({ paid: true, analysis: mirrorSession.analysis });
       }

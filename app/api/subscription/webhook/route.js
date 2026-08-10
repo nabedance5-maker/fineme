@@ -7,6 +7,8 @@
 //   invoice.payment_failed
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
+import { sendLinePush } from '@/lib/line-push';
+import { isOwnerTestEmail } from '@/lib/is-owner-email';
 
 export const runtime = 'nodejs';
 
@@ -31,6 +33,18 @@ export async function POST(request) {
     case 'customer.subscription.created':
     case 'customer.subscription.updated': {
       const sub = event.data.object;
+
+      // 既にこのsubscription_idを記録済みか（Stripeの再送・updated連発による二重通知を防ぐ）
+      const { data: prevProfile } = await sb
+        .from('profiles')
+        .select('subscription_id')
+        .eq('stripe_customer_id', sub.customer)
+        .single();
+      const isFirstTimeActive =
+        event.type === 'customer.subscription.created' &&
+        sub.status === 'active' &&
+        prevProfile?.subscription_id !== sub.id;
+
       await sb
         .from('profiles')
         .update({
@@ -39,6 +53,21 @@ export async function POST(request) {
           subscription_period_end: new Date(sub.current_period_end * 1000).toISOString(),
         })
         .eq('stripe_customer_id', sub.customer);
+
+      if (isFirstTimeActive) {
+        try {
+          const customer = await stripe.customers.retrieve(sub.customer);
+          const email = customer?.deleted ? null : customer?.email || null;
+          if (!isOwnerTestEmail(email) && process.env.OWNER_LINE_USER_ID) {
+            await sendLinePush(
+              process.env.OWNER_LINE_USER_ID,
+              `🎉 外部の実購入を検知\nMirrorサブスク ¥780/月\nemail: ${email || '不明'}`
+            );
+          }
+        } catch (e) {
+          console.error('[subscription/webhook] owner-notify error:', e.message);
+        }
+      }
       break;
     }
 
