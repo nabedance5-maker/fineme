@@ -28,6 +28,7 @@ export default function AdminCuratedPostsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [msg, setMsg] = useState('');
 
   async function fetchPosts() {
@@ -54,6 +55,33 @@ export default function AdminCuratedPostsPage() {
   }
 
   function cancelEdit() { setEditId(null); setForm(EMPTY_FORM); }
+
+  async function analyzePost() {
+    if (!form.post_url.trim()) { setMsg('投稿URLを入力してください'); return; }
+    setAnalyzing(true);
+    setMsg('');
+    try {
+      const res = await fetch('/api/admin/curated-posts/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': getAdminKey() },
+        body: JSON.stringify({ post_url: form.post_url.trim() }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setMsg(`自動入力エラー: ${d.error || ''}`); setAnalyzing(false); return; }
+      setForm(f => ({
+        ...f,
+        platform: d.platform || f.platform,
+        thumbnail_url: d.thumbnail_url || f.thumbnail_url,
+        creator_handle: d.creator_handle || f.creator_handle,
+        axis: d.axis || f.axis,
+        topic_tags: d.topic_tags?.length ? d.topic_tags.join('、') : f.topic_tags,
+        target_concerns: d.target_concerns?.length ? d.target_concerns.join('、') : f.target_concerns,
+        caption: d.caption || f.caption,
+      }));
+      setMsg(d.warning || '自動入力完了。内容を確認してください');
+    } catch (e) { setMsg(`自動入力エラー: ${e.message}`); }
+    setAnalyzing(false);
+  }
 
   async function save() {
     if (!form.post_url.trim() || !form.caption.trim()) { setMsg('投稿URLとキャプションは必須です'); return; }
@@ -125,6 +153,14 @@ export default function AdminCuratedPostsPage() {
 
       <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 12, padding: '20px 24px', marginBottom: 32 }}>
         <h2 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700 }}>{editId ? '候補を編集' : '候補を追加'}</h2>
+        <label style={{ ...labelStyle, display: 'flex', flexDirection: 'column', marginBottom: 8 }}>
+          投稿URL
+          <input value={form.post_url} onChange={e => setForm(f => ({ ...f, post_url: e.target.value }))} style={{ ...inputStyle, width: '100%' }} placeholder="https://www.instagram.com/p/... または https://www.tiktok.com/@.../video/..." />
+        </label>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+          <button onClick={analyzePost} disabled={analyzing} style={{ ...btnPrimary, background: '#4f46e5' }}>{analyzing ? '取得中…' : '🔗 URLから自動入力'}</button>
+          <span style={{ fontSize: 11, color: '#9ca3af' }}>サムネ・投稿者・軸・トピック・対象・キャプションを自動推定します</span>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 12 }}>
           <label style={labelStyle}>
             プラットフォーム
@@ -144,12 +180,8 @@ export default function AdminCuratedPostsPage() {
           </label>
         </div>
         <label style={{ ...labelStyle, display: 'flex', flexDirection: 'column', marginBottom: 10 }}>
-          投稿URL
-          <input value={form.post_url} onChange={e => setForm(f => ({ ...f, post_url: e.target.value }))} style={{ ...inputStyle, width: '100%' }} placeholder="https://www.instagram.com/p/..." />
-        </label>
-        <label style={{ ...labelStyle, display: 'flex', flexDirection: 'column', marginBottom: 10 }}>
-          サムネイル画像URL（許諾取得後に入力。未許諾のうちは空欄でOK）
-          <input value={form.thumbnail_url} onChange={e => setForm(f => ({ ...f, thumbnail_url: e.target.value }))} style={{ ...inputStyle, width: '100%' }} placeholder="https://..." />
+          サムネイル画像URL（自動入力されます。許諾が取れるまではサムネ自体は表示されません）
+          <input value={form.thumbnail_url} onChange={e => setForm(f => ({ ...f, thumbnail_url: e.target.value }))} style={{ ...inputStyle, width: '100%' }} placeholder="自動入力、または手入力" />
         </label>
         <label style={{ ...labelStyle, display: 'flex', flexDirection: 'column', marginBottom: 10 }}>
           キャプション（AIへの文脈提供用の要約。表示にも使う）
