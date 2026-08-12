@@ -171,6 +171,24 @@ export async function POST(request) {
   const workoutType = derivedDiagnosis?.workout_type || null;
   const axisHabits = derivedDiagnosis?.axis_habits || null;
 
+  // キュレーション済みInstagram/TikTok投稿プール（でお承認済みのみ）。
+  // ステップ本文の具体的な内容に本当に合う場合だけAIが related_post_id を付ける
+  // （でお指摘 2026-08-12：軸単位の粗い割り当てはNG。洗顔と美容液は同じ軸でも別物）
+  let curatedPostsPrompt = '';
+  try {
+    const { data: curatedPosts } = await supabase
+      .from('curated_posts')
+      .select('id, axis, topic_tags, target_concerns, caption')
+      .eq('status', 'approved')
+      .eq('is_active', true);
+    if (curatedPosts?.length) {
+      const lines = curatedPosts.map(cp =>
+        `- id:${cp.id} 軸:${cp.axis || '?'} トピック:${(cp.topic_tags || []).join('/')} 対象:${(cp.target_concerns || []).join('/') || '指定なし'} 内容:${cp.caption}`
+      ).join('\n');
+      curatedPostsPrompt = `\n\n## 紹介してよい投稿一覧（でお承認済み。本当に合う場合だけ使う）\n${lines}`;
+    }
+  } catch {}
+
   // 基礎チェックリスト対象軸（UIでステップ0を別表示するため、AI生成では入門ステップを省略させる）
   // priority_order 上位5軸を対象にする（care_typeではなくCompass優先度で判定）
   const BASELINE_AXES = new Set(['eyebrow', 'skin', 'hair', 'fashion', 'body', 'teeth', 'nail', 'hairremoval']);
@@ -453,12 +471,21 @@ ${ageLabel || habitLines ? `14. 「年代」「現在の行動習慣」が提供
       （例: 美容液を使っている人に「配合成分を見直す」、ジム通いの人に「種目を1つ変える」）
     - 洗顔・クレンジングの頻度（cleanse_freq）は上記の固定ノードの対象外。あなたが上記「一般知見の使い方」に
       従って扱うこと` : ''}
+${curatedPostsPrompt ? `15. 「紹介してよい投稿一覧」が提供されている場合:
+    - 各stepの**具体的な文章内容**が、投稿のトピック・対象と本当に合致する場合だけ、そのstepに
+      \`related_post_id\`（投稿のid）を付けてよい。軸が同じというだけで付けない
+      （例: 同じ肌軸でも「洗顔の仕方」のstepには洗顔がトピックの投稿を、「美容液の使い方」のstepには
+      美容液がトピックの投稿を——両者を混同しない）
+    - ユーザーの現状把握データ（肌タイプ・悩み等）と投稿の「対象」が合っているかも判断材料にする
+    - 合う投稿が無いstepには付けない（\`related_post_id\`を省略するか null にする）。無理に全stepへ
+      割り当てようとしないこと。1つの投稿を複数のstepに使い回してもよいが、本当に合う場合のみ` : ''}
 
+${curatedPostsPrompt}
 ${BRAND_PHILOSOPHY}
 ※上記の思想はステップ文（text）の言葉選び・温度にのみ効かせる。最優先ルール（提供データ外の身体的特性に言及しない）と生成ルール・並び順・JSON構造は一切変えない。
 
 ## 出力形式（JSONのみ・コードブロック不要）
-{"steps":[{"id":"eyebrow-001","axis":"eyebrow","eval_type":"both","text":"...","action_type":"quick","guide":"none","hint":"..."},{"id":"hair-001","axis":"hair","eval_type":"action","text":"...","action_type":"quick","guide":"none"},...]}'`;
+{"steps":[{"id":"eyebrow-001","axis":"eyebrow","eval_type":"both","text":"...","action_type":"quick","guide":"none","hint":"...","related_post_id":null},{"id":"hair-001","axis":"hair","eval_type":"action","text":"...","action_type":"quick","guide":"none","related_post_id":"（本当に合う投稿があればそのid、無ければnullまたは省略）"},...]}'`;
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   let generated;

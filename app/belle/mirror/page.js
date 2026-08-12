@@ -115,6 +115,7 @@ export default function BelleMirrorPage() {
   const [myUserId, setMyUserId] = useState(null);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
+  const [curatedPosts, setCuratedPosts] = useState({});
   const [needsAttrs, setNeedsAttrs] = useState(false);
   const [attrsChecked, setAttrsChecked] = useState(false);
   const [onePointStatus, setOnePointStatus] = useState(null); // null | 'active' | 'done'
@@ -245,6 +246,20 @@ export default function BelleMirrorPage() {
     try { const d = JSON.parse(localStorage.getItem('fineme:diagnosis:belle') || 'null'); cf = d?.compass_first || null; } catch {}
     setDeterminedOnePoint(determineOnePoint(analysis.axes, cf));
   }, [state, analysis]);
+
+  // 各軸の内容に合う投稿があれば取得（New Me Mapと同じ仕組み。2026-08-12）
+  useEffect(() => {
+    const ids = [...new Set((analysis?.axes || []).map(a => a.related_post_id).filter(Boolean))];
+    if (!ids.length) { setCuratedPosts({}); return; }
+    fetch(`/api/curated-posts?ids=${ids.join(',')}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(rows => {
+        const byId = {};
+        if (Array.isArray(rows)) rows.forEach(r => { byId[r.id] = r; });
+        setCuratedPosts(byId);
+      })
+      .catch(() => setCuratedPosts({}));
+  }, [analysis]);
 
   // ── New Me Map ルートマップ描画（Belle版・ピンク金アクセント）──
   useEffect(() => {
@@ -505,6 +520,12 @@ export default function BelleMirrorPage() {
         .axis-badge { font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 20px; letter-spacing: .06em; white-space: nowrap; }
         .axis-summary { font-size: 14px; color: rgba(232,228,220,0.7); line-height: 1.75; margin-bottom: 14px; }
         .axis-detail { font-size: 14px; color: rgba(232,228,220,0.7); line-height: 1.75; margin-bottom: 14px; }
+        .curated-post-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.12); border-radius: 10px; text-decoration: none; margin-bottom: 14px; }
+        .curated-post-card:hover { border-color: rgba(201,168,76,0.3); }
+        .curated-post-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+        .curated-post-body { flex: 1; min-width: 0; }
+        .curated-post-label { font-size: 10px; color: rgba(232,228,220,0.40); margin: 0 0 2px; }
+        .curated-post-caption { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.75); margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .axis-hints { list-style: none; padding: 0; margin: 0 0 14px; display: flex; flex-direction: column; gap: 6px; }
         .axis-hints li { font-size: 13px; color: rgba(232,228,220,0.65); padding-left: 18px; position: relative; line-height: 1.6; }
         .axis-hints li::before { content: '→'; position: absolute; left: 0; color: #c9a84c; font-weight: 700; }
@@ -833,6 +854,22 @@ export default function BelleMirrorPage() {
                   /* フル表示 */
                   <>
                     {axis.detail && <p className="axis-detail">{axis.detail}</p>}
+                    {axis.related_post_id && curatedPosts[axis.related_post_id] && (() => {
+                      const cp = curatedPosts[axis.related_post_id];
+                      const platformIcon = cp.platform === 'tiktok' ? '🎵' : '📷';
+                      const platformLabel = cp.platform === 'tiktok' ? 'TikTok' : 'Instagram';
+                      return (
+                        <a href={cp.post_url} target="_blank" rel="noopener noreferrer" className="curated-post-card">
+                          {cp.permission_confirmed && cp.thumbnail_url && (
+                            <img src={cp.thumbnail_url} alt="" className="curated-post-thumb" />
+                          )}
+                          <div className="curated-post-body">
+                            <p className="curated-post-label">{platformIcon} {platformLabel}で見る</p>
+                            <p className="curated-post-caption">{cp.caption}</p>
+                          </div>
+                        </a>
+                      );
+                    })()}
                     {axis.hints?.length > 0 && (
                       <ul className="axis-hints">
                         {axis.hints.map((h, j) => <li key={j}>{h}</li>)}

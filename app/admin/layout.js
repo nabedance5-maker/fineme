@@ -7,6 +7,7 @@ const NAV = [
   { href: '/admin/providers',    label: '掲載者管理',          icon: '🏢' },
   { href: '/admin/affiliates',   label: 'アフィリエイト管理',  icon: '🔗' },
   { href: '/admin/products',     label: '商品アフィリエイト',  icon: '🛒' },
+  { href: '/admin/curated-posts', label: '投稿キュレーション', icon: '📱' },
   { href: '/admin/payments',     label: '支払い管理',          icon: '💳' },
   { href: '/admin/features',     label: '特集管理',            icon: '📝' },
   { href: '/admin/stories',      label: '体験談管理',          icon: '💬' },

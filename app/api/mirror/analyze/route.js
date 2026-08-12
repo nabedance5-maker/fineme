@@ -129,7 +129,7 @@ const AGE_SKIN_CONTEXT = {
   '50s_plus': '50代以上。乾燥・ハリ低下・くすみに加え、透明感の変化という観点も踏まえる。',
 };
 
-function buildSystemPrompt(userState, diagnosisInfo, gender, photoTypeHint, ageBand) {
+function buildSystemPrompt(userState, diagnosisInfo, gender, photoTypeHint, ageBand, curatedPostsPrompt) {
   const compassInstruction = buildCompassInstruction(userState);
   const diagnosisContext = buildDiagnosisContext(diagnosisInfo);
   const genderContext = gender === 'female'
@@ -198,7 +198,8 @@ ${checklistSection}
       "summary": "【上記summaryルール厳守】観察事実1文＋変容後イメージ1文。2文のみ。",
       "detail": "【上記detailルール厳守】観察→印象への影響→改善アプローチ→変容後イメージの4点構成で3〜4文。",
       "hints": ["今日自宅でできる行動（道具・費用感含む）", "今週中に取り組む習慣", "1ヶ月続けると出る変化"],
-      "compass_action": "${compassInstruction}"
+      "compass_action": "${compassInstruction}",
+      "related_post_id": null
     }
   ],
   "overall_message": "分析全体を締めくくる一言。最も変化させるべき1軸に言及しながら、具体的に背中を押す。50文字以内。"
@@ -218,6 +219,7 @@ potential_levelについて:
 「高」= 変えると印象が大きく変わる余地がチェックリスト上で複数確認される
 「中」= 磨けば確実に向上する余地が1〜2点確認される
 「低」= チェックリスト項目のほとんどが整っている（称賛すべき点として伝える）${photoTypeContext}${diagnosisContext}
+${curatedPostsPrompt || ''}
 
 ${BRAND_PHILOSOPHY}
 ※上記の思想はfirst_impression/summary/detail/overall_message等の自由記述の言葉選び・温度にのみ効かせる。JSON形式・チェックリスト観察義務・禁止事項は厳守し変更しない。`;
@@ -250,7 +252,24 @@ export async function POST(request) {
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    const systemPrompt = buildSystemPrompt(user_state || 'guest', diagnosis_info ?? null, gender || null, photo_type || null, age_band || null);
+    // キュレーション済みInstagram/TikTok投稿プール（New Me Mapと同じ仕組み。
+    // 軸の観察内容に本当に合う場合だけAIがrelated_post_idを付ける）
+    let curatedPostsPrompt = '';
+    try {
+      const { data: curatedPosts } = await supabase
+        .from('curated_posts')
+        .select('id, axis, topic_tags, target_concerns, caption')
+        .eq('status', 'approved')
+        .eq('is_active', true);
+      if (curatedPosts?.length) {
+        const lines = curatedPosts.map(cp =>
+          `- id:${cp.id} 軸:${cp.axis || '?'} トピック:${(cp.topic_tags || []).join('/')} 対象:${(cp.target_concerns || []).join('/') || '指定なし'} 内容:${cp.caption}`
+        ).join('\n');
+        curatedPostsPrompt = `\n\n## 紹介してよい投稿一覧（でお承認済み。本当に合う場合だけ使う）\n${lines}\n\n各軸の観察内容が投稿のトピック・対象と本当に合致する場合だけ、その軸のオブジェクトに\`related_post_id\`（投稿のid）を付けてよい。写真から見えていないことの根拠に投稿を使わない。合う投稿が無ければ付けない（省略またはnull）。`;
+      }
+    } catch {}
+
+    const systemPrompt = buildSystemPrompt(user_state || 'guest', diagnosis_info ?? null, gender || null, photo_type || null, age_band || null, curatedPostsPrompt);
 
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',

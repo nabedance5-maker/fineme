@@ -620,6 +620,12 @@ export default function NewMeNaviPage() {
       .gmap-detail-card { background: rgba(8,12,26,0.92); border: 1px solid rgba(232,228,220,0.12); border-radius: 12px; padding: 16px; margin: 0 4px; display: flex; flex-direction: column; gap: 10px; }
       .path-node.pn-compass .gmap-detail-card { border-color: rgba(201,168,76,0.3); }
       .gmap-detail-title { font-size: 14px; font-weight: 700; color: rgba(232,228,220,0.90); line-height: 1.6; margin: 0; }
+      .curated-post-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.12); border-radius: 10px; text-decoration: none; }
+      .curated-post-card:hover { border-color: rgba(201,168,76,0.3); }
+      .curated-post-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+      .curated-post-body { flex: 1; min-width: 0; }
+      .curated-post-label { font-size: 10px; color: rgba(232,228,220,0.40); margin: 0 0 2px; }
+      .curated-post-caption { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.75); margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
       .gmap-check-btn { position: static; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 13px; background: rgba(16,185,129,0.1); border: 1.5px solid rgba(16,185,129,0.35); border-radius: 10px; color: rgba(16,185,129,0.85); font-size: 15px; font-weight: 800; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; flex-shrink: 0; transform: none; }
       .gmap-check-btn:hover { background: rgba(16,185,129,0.18); border-color: #10b981; }
       .gmap-check-btn.checked { background: rgba(16,185,129,0.15); border-color: #10b981; color: #10b981; }
@@ -982,6 +988,20 @@ export default function NewMeNaviPage() {
     try {
       const prRes = await fetchWithTimeout('/api/products', {}, 5000);
       if (prRes?.ok) { const rows = await prRes.json(); if (Array.isArray(rows)) naviProducts = rows; }
+    } catch {}
+
+    // ── キュレーション済み投稿フェッチ（ステップに紐づくInstagram/TikTok。
+    //     でお指摘 2026-08-12：AI生成時にstep本文の内容に合う投稿だけrelated_post_idで紐付け済み） ──
+    let curatedPostsById = {};
+    try {
+      const relatedIds = [...new Set((naviStepsData?.steps || []).map(s => s.related_post_id).filter(Boolean))];
+      if (relatedIds.length) {
+        const cpRes = await fetchWithTimeout(`/api/curated-posts?ids=${relatedIds.join(',')}`, {}, 5000);
+        if (cpRes?.ok) {
+          const rows = await cpRes.json();
+          if (Array.isArray(rows)) rows.forEach(r => { curatedPostsById[r.id] = r; });
+        }
+      }
     } catch {}
 
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -1677,6 +1697,25 @@ export default function NewMeNaviPage() {
           }
         }
 
+        // このstepの内容に合う投稿があれば軽量カードで表示。permission_confirmedの値で
+        // プレーンリンク／サムネ付きを出し分ける（管理画面で許諾フラグを立てるだけで
+        // Map再生成なしに次回描画から自動でサムネ付きへ切り替わる）
+        let curatedPostHtml = '';
+        const relatedPost = step.related_post_id ? curatedPostsById[step.related_post_id] : null;
+        if (relatedPost) {
+          const platformIcon = relatedPost.platform === 'tiktok' ? '🎵' : '📷';
+          const platformLabel = relatedPost.platform === 'tiktok' ? 'TikTok' : 'Instagram';
+          const thumbHtml = relatedPost.permission_confirmed && relatedPost.thumbnail_url
+            ? `<img src="${esc(relatedPost.thumbnail_url)}" alt="" class="curated-post-thumb" />` : '';
+          curatedPostHtml = `<a href="${esc(relatedPost.post_url)}" target="_blank" rel="noopener noreferrer" class="curated-post-card">
+            ${thumbHtml}
+            <div class="curated-post-body">
+              <p class="curated-post-label">${platformIcon} ${platformLabel}で見る</p>
+              <p class="curated-post-caption">${esc(relatedPost.caption)}</p>
+            </div>
+          </a>`;
+        }
+
         // prevPos: posIdxはnon-compassNextのみインクリメント済みのため2引く
         const prevIsCompassNext = visibleSteps[i-1]?.id === compassNextId;
         const prevPos = i === 0 ? null
@@ -1697,7 +1736,7 @@ export default function NewMeNaviPage() {
           <div class="path-node-detail${isCurrentStep ? ' pnd-open' : ''}">
             <div class="gmap-detail-card">
               <p class="gmap-detail-title">${esc(step.text)}</p>
-              ${mirrorConfirmedHtml}${hintHtml}${guideBadgeHtml}${logBadgeHtml}
+              ${mirrorConfirmedHtml}${hintHtml}${guideBadgeHtml}${logBadgeHtml}${curatedPostHtml}
               <button class="step-check-btn gmap-check-btn${isDone?' checked':''}" data-done-key="${esc(step.id)}">${isDone ? '✓ 完了済み' : '✓ やった！'}</button>
             </div>
           </div>
