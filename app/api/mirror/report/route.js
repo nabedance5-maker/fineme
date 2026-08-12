@@ -113,7 +113,7 @@ export async function POST(request) {
 
       const message = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 14000,
+        max_tokens: 16000, // STEP2-10のサブ項目まで含む大きなスキーマのため増量（2026-08-12）
         system: systemPrompt,
         messages: [{
           role: 'user',
