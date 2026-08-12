@@ -8,6 +8,8 @@ import MirrorReportCard from '@/app/_components/MirrorReportCard';
 
 const LS_SESSIONS_KEY = 'fineme:mirror:sessions'; // ['session_id1', 'session_id2', ...]
 const LS_TRIAL_MONTH_KEY = 'fineme:mirror:freeTrialMonth';
+const LS_LAST_ACTIVE_KEY = 'fineme:mirror:lastActiveAt';
+const RESTORE_WINDOW_MS = 10 * 60 * 1000; // 直近10分以内のセッションのみ自動復元（それ以前は新規分析の邪魔になる）
 
 function currentMonthJST() {
   const jst = new Date(Date.now() + 9 * 3600000);
@@ -21,6 +23,7 @@ function saveSessionToLocal(sessionId) {
       existing.unshift(sessionId);
       localStorage.setItem(LS_SESSIONS_KEY, JSON.stringify(existing.slice(0, 10)));
     }
+    localStorage.setItem(LS_LAST_ACTIVE_KEY, String(Date.now()));
   } catch {}
 }
 
@@ -127,8 +130,9 @@ export default function MirrorPage() {
         .then(data => {
           if (data.paid && data.analysis) {
             setAnalysis(data.analysis);
-            setState('full');
-            triggerReportGeneration(sid);
+            // state='analyzing'のまま維持し、レポート生成完了で初めて'full'にする
+            // （コンテナが切り替わって表示が途切れて見えるのを防ぐ）
+            triggerReportGeneration(sid).then(() => setState('full'));
             window.history.replaceState({}, '', '/mirror');
           } else {
             setError('支払確認中にエラーが発生しました。しばらくしてから再度お試しください。');
@@ -149,8 +153,11 @@ export default function MirrorPage() {
         .then(data => {
           if (data.analysis) {
             setAnalysis(data.analysis);
-            setState(data.paid ? 'full' : 'preview');
-            if (data.paid) triggerReportGeneration(sid);
+            if (data.paid) {
+              triggerReportGeneration(sid).then(() => setState('full'));
+            } else {
+              setState('preview');
+            }
           } else {
             setState('idle');
           }
@@ -158,9 +165,15 @@ export default function MirrorPage() {
         .catch(() => setState('idle'));
       window.history.replaceState({}, '', '/mirror');
     } else {
-      // URLにsession_idが無い通常訪問時も、直前の分析結果があれば復元する
-      // （別ページへ移動して戻ってきた際に結果が消えたように見えるのを防ぐ）
-      const lastId = getLocalSessionIds()[0];
+      // URLにsession_idが無い通常訪問時も、直前（10分以内）の分析結果があれば復元する
+      // （別ページへ移動して戻ってきた際に結果が消えたように見えるのを防ぐ。ただし
+      // 時間が経った再訪問では新規分析の邪魔になるため、直近だけに限定する）
+      let lastActiveRecent = false;
+      try {
+        const lastActiveAt = Number(localStorage.getItem(LS_LAST_ACTIVE_KEY) || 0);
+        lastActiveRecent = lastActiveAt > 0 && (Date.now() - lastActiveAt) < RESTORE_WINDOW_MS;
+      } catch {}
+      const lastId = lastActiveRecent ? getLocalSessionIds()[0] : null;
       if (lastId) {
         setState('analyzing');
         setSessionId(lastId);
@@ -169,8 +182,11 @@ export default function MirrorPage() {
           .then(data => {
             if (data.analysis) {
               setAnalysis(data.analysis);
-              setState(data.paid ? 'full' : 'preview');
-              if (data.paid) triggerReportGeneration(lastId);
+              if (data.paid) {
+                triggerReportGeneration(lastId).then(() => setState('full'));
+              } else {
+                setState('preview');
+              }
             } else {
               setState('idle');
             }
@@ -353,8 +369,14 @@ export default function MirrorPage() {
       // トラックを初回確定（すでに確定済みなら何もしない）
       setTrackOnce('fineme');
       syncTrackWithServer().catch(() => {});
-      setState(data.paid ? 'full' : 'preview');
-      if (data.paid) triggerReportGeneration(data.session_id);
+      if (data.paid) {
+        // state='analyzing'のまま維持し、レポート生成まで一貫したローディング表示にする
+        // （でお指摘: 「分析中」→「レポート作成中」でコンテナが切り替わり途切れて見えていた）
+        await triggerReportGeneration(data.session_id);
+        setState('full');
+      } else {
+        setState('preview');
+      }
     } catch (e) {
       setError(e.message);
       setState('idle');
@@ -706,16 +728,33 @@ export default function MirrorPage() {
         </div>
       )}
 
-      {/* 分析中 */}
+      {/* 分析中〜レポート作成中（paidの場合はレポート生成完了までstateを切り替えず、
+          同じコンテナ・同じアニメーションで一貫して表示する） */}
       {state === 'analyzing' && (
         <div className="analyzing-wrap">
           <div className="analyzing-spinner" />
-          <p style={{ color: 'rgba(232,228,220,0.6)', fontSize: '15px', marginBottom: '8px' }}>
-            AIが外見を分析中…
-          </p>
-          <p style={{ color: 'rgba(232,228,220,0.35)', fontSize: '12px' }}>
-            30〜60秒ほどかかります。そのままお待ちください。
-          </p>
+          {!reportLoading ? (
+            <>
+              <p style={{ color: 'rgba(232,228,220,0.6)', fontSize: '15px', marginBottom: '8px' }}>
+                AIが外見を分析中…
+              </p>
+              <p style={{ color: 'rgba(232,228,220,0.35)', fontSize: '12px' }}>
+                30〜60秒ほどかかります。そのままお待ちください。
+              </p>
+            </>
+          ) : (
+            <>
+              <p style={{ color: 'rgba(232,228,220,0.6)', fontSize: '15px', marginBottom: '8px' }}>
+                ビジュアルレポートを作成中…
+              </p>
+              <p style={{ color: 'rgba(232,228,220,0.35)', fontSize: '12px', marginBottom: '16px' }}>
+                情報量が多いため1〜2分ほどかかります。そのままお待ちください。
+              </p>
+              <div className="report-progress-track">
+                <div className="report-progress-bar" />
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -723,21 +762,8 @@ export default function MirrorPage() {
       {(state === 'preview' || state === 'full') && analysis && (
         <div className="results-wrap">
 
-          {/* ビジュアルレポート（fullのみ・FVはこれが最優先。他コンテンツより先に出す） */}
-          {state === 'full' && reportLoading && !reportContent && (
-            <div className="report-loading-wrap">
-              <div className="report-loading-spinner" />
-              <p style={{ fontSize: '14px', fontWeight: 700, color: 'rgba(232,228,220,0.8)', margin: '0 0 4px' }}>
-                ビジュアルレポートを作成中…
-              </p>
-              <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.45)', margin: 0, lineHeight: 1.6 }}>
-                情報量が多いため1〜2分ほどかかります。このままお待ちください。
-              </p>
-              <div className="report-progress-track">
-                <div className="report-progress-bar" />
-              </div>
-            </div>
-          )}
+          {/* ビジュアルレポート（fullのみ・FVはこれが最優先。他コンテンツより先に出す。
+              生成中は state==='analyzing' のまま表示するため、ここに来る時点で常に生成済み） */}
           {state === 'full' && reportContent && (
             <MirrorReportCard reportContent={reportContent} photoUrl={reportPhotoUrl} gender="male" />
           )}
