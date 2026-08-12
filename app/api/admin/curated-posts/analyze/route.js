@@ -20,9 +20,11 @@ const AXIS_CONCERNS = {
   nail: ['爪が割れやすい','爪が薄い','二枚爪になりやすい','縦線が目立つ','凸凹がある','爪が黄ばんでいる','甘皮が気になる','噛み癖がある','爪の形を整えたい','長さが揃わない'],
   fashion: ['キレイめ','カジュアル','キレイめカジュアル','ストリート','モード・個性派','まずは清潔感から','ストレート骨格','ウェーブ骨格','ナチュラル骨格','体型カバーしたい','何を買えばいいかわからない','清潔感が出ない'],
   hairremoval: ['自己処理のみ','サロン・クリニックに通っている','ムダ毛が気になる'],
+  other: ['姿勢が悪い','猫背が気になる','立ち振る舞いに自信がない','所作が雑に見える','歩き方に自信がない','声が小さい・聞き取りにくい','表情が硬い','清潔感が出ない'],
 };
 const AXES = Object.keys(AXIS_CONCERNS);
 const CONCERN_VOCABULARY = Object.values(AXIS_CONCERNS).flat();
+const TRACKS = ['fineme', 'belle', 'common'];
 
 function detectPlatform(url) {
   if (/tiktok\.com/i.test(url)) return 'tiktok';
@@ -81,7 +83,7 @@ export async function POST(req) {
   if (!meta.rawText) {
     return NextResponse.json({
       platform, thumbnail_url: meta.thumbnail_url || '', creator_handle: meta.creator_handle || '',
-      axis: null, topic_tags: [], target_concerns: [], caption: '',
+      axis: null, topic_tags: [], target_concerns: [], caption: '', track: 'common',
       warning: '投稿本文の自動取得に失敗しました。キャプション・軸などは手入力してください。',
     });
   }
@@ -96,10 +98,11 @@ ${meta.rawText.slice(0, 800)}
 
 以下のJSON形式のみで出力してください（他のテキスト不要）:
 {
-  "axis": "skin/eyebrow/hair/body/teeth/nail/fashion/hairremoval のいずれか1つ",
+  "axis": "skin/eyebrow/hair/body/teeth/nail/fashion/hairremoval/other のいずれか1つ（姿勢・立ち振る舞い・所作など既存軸に当てはまらない内容はotherにする）",
   "topic_tags": ["投稿の具体的なサブトピック（例:洗顔、美容液、毛穴）を1〜3個"],
   "target_concerns": ["この投稿が対象とする悩み・属性を語彙リストから最大5個"],
-  "caption": "投稿内容の要約。40文字以内。Finemeユーザーへの案内文として自然な日本語で"
+  "caption": "投稿内容の要約。40文字以内。Finemeユーザーへの案内文として自然な日本語で",
+  "track": "fineme/belle/common のいずれか1つ。投稿が明確に男性向け（メンズコスメ・髭・メンズファッション等）ならfineme、明確に女性向け（レディースメイク・花柄ネイル等）ならbelle、性別を問わず有益ならcommon。判断できなければcommon"
 }
 
 target_concernsは以下の語彙リストから選ぶこと（リスト外の文字列は使わない。無ければ空配列）:
@@ -120,6 +123,7 @@ ${CONCERN_VOCABULARY.join('、')}`;
 
   const axis = AXES.includes(parsed.axis) ? parsed.axis : null;
   const validConcerns = Array.isArray(parsed.target_concerns) ? parsed.target_concerns.filter(c => CONCERN_VOCABULARY.includes(c)) : [];
+  const track = TRACKS.includes(parsed.track) ? parsed.track : 'common';
 
   return NextResponse.json({
     platform,
@@ -129,5 +133,6 @@ ${CONCERN_VOCABULARY.join('、')}`;
     topic_tags: Array.isArray(parsed.topic_tags) ? parsed.topic_tags.slice(0, 3) : [],
     target_concerns: validConcerns,
     caption: parsed.caption || '',
+    track,
   });
 }

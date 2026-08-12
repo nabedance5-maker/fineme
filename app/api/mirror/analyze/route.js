@@ -256,11 +256,13 @@ export async function POST(request) {
     // 軸の観察内容に本当に合う場合だけAIがrelated_post_idを付ける）
     let curatedPostsPrompt = '';
     try {
+      const userTrack = gender === 'female' ? 'belle' : 'fineme';
       const { data: curatedPosts } = await supabase
         .from('curated_posts')
         .select('id, axis, topic_tags, target_concerns, caption')
         .eq('status', 'approved')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .in('track', [userTrack, 'common']);
       if (curatedPosts?.length) {
         const lines = curatedPosts.map(cp =>
           `- id:${cp.id} 軸:${cp.axis || '?'} トピック:${(cp.topic_tags || []).join('/')} 対象:${(cp.target_concerns || []).join('/') || '指定なし'} 内容:${cp.caption}`

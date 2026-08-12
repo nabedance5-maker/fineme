@@ -4,12 +4,14 @@ import Link from 'next/link';
 
 const PLATFORMS = ['instagram', 'tiktok'];
 const PLATFORM_LABELS = { instagram: 'Instagram', tiktok: 'TikTok' };
-const AXES = ['skin', 'eyebrow', 'hair', 'body', 'teeth', 'nail', 'fashion', 'hairremoval'];
-const AXIS_LABELS = { skin: '肌', eyebrow: '眉', hair: '髪', body: '体型', teeth: '歯', nail: '爪', fashion: '服', hairremoval: '脱毛' };
+const AXES = ['skin', 'eyebrow', 'hair', 'body', 'teeth', 'nail', 'fashion', 'hairremoval', 'other'];
+const AXIS_LABELS = { skin: '肌', eyebrow: '眉', hair: '髪', body: '体型', teeth: '歯', nail: '爪', fashion: '服', hairremoval: '脱毛', other: 'その他（姿勢・所作等）' };
+const TRACKS = ['fineme', 'belle', 'common'];
+const TRACK_LABELS = { fineme: '男性向け', belle: '女性向け', common: '共通（性別問わず）' };
 
 const EMPTY_FORM = {
   platform: 'instagram', post_url: '', thumbnail_url: '', creator_handle: '',
-  axis: 'skin', topic_tags: '', target_concerns: '', caption: '',
+  axis: 'skin', track: 'common', topic_tags: '', target_concerns: '', caption: '',
 };
 
 function getAdminKey() {
@@ -47,7 +49,7 @@ export default function AdminCuratedPostsPage() {
     setEditId(p.id);
     setForm({
       platform: p.platform, post_url: p.post_url, thumbnail_url: p.thumbnail_url || '',
-      creator_handle: p.creator_handle || '', axis: p.axis || 'skin',
+      creator_handle: p.creator_handle || '', axis: p.axis || 'skin', track: p.track || 'common',
       topic_tags: (p.topic_tags || []).join('、'), target_concerns: (p.target_concerns || []).join('、'),
       caption: p.caption || '',
     });
@@ -74,6 +76,7 @@ export default function AdminCuratedPostsPage() {
         thumbnail_url: d.thumbnail_url || f.thumbnail_url,
         creator_handle: d.creator_handle || f.creator_handle,
         axis: d.axis || f.axis,
+        track: d.track || f.track,
         topic_tags: d.topic_tags?.length ? d.topic_tags.join('、') : f.topic_tags,
         target_concerns: d.target_concerns?.length ? d.target_concerns.join('、') : f.target_concerns,
         caption: d.caption || f.caption,
@@ -88,7 +91,7 @@ export default function AdminCuratedPostsPage() {
     setSaving(true);
     const payload = {
       platform: form.platform, post_url: form.post_url.trim(), thumbnail_url: form.thumbnail_url.trim() || null,
-      creator_handle: form.creator_handle.trim() || null, axis: form.axis,
+      creator_handle: form.creator_handle.trim() || null, axis: form.axis, track: form.track,
       topic_tags: form.topic_tags.split(/[、,]/).map(s => s.trim()).filter(Boolean),
       target_concerns: form.target_concerns.split(/[、,]/).map(s => s.trim()).filter(Boolean),
       caption: form.caption.trim(),
@@ -178,6 +181,12 @@ export default function AdminCuratedPostsPage() {
             投稿者ハンドル
             <input value={form.creator_handle} onChange={e => setForm(f => ({ ...f, creator_handle: e.target.value }))} style={inputStyle} placeholder="@example" />
           </label>
+          <label style={labelStyle}>
+            対象トラック
+            <select value={form.track} onChange={e => setForm(f => ({ ...f, track: e.target.value }))} style={selectStyle}>
+              {TRACKS.map(t => <option key={t} value={t}>{TRACK_LABELS[t]}</option>)}
+            </select>
+          </label>
         </div>
         <label style={{ ...labelStyle, display: 'flex', flexDirection: 'column', marginBottom: 10 }}>
           サムネイル画像URL（自動入力されます。許諾が取れるまではサムネ自体は表示されません）
@@ -225,6 +234,7 @@ export default function AdminCuratedPostsPage() {
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 11, fontWeight: 700, background: '#e0e7ff', color: '#4f46e5', borderRadius: 4, padding: '2px 6px' }}>{PLATFORM_LABELS[p.platform]}</span>
                     <span style={{ fontSize: 11, fontWeight: 700, background: '#dbeafe', color: '#1e40af', borderRadius: 4, padding: '2px 6px' }}>{AXIS_LABELS[p.axis] || p.axis}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, background: '#fce7f3', color: '#9d174d', borderRadius: 4, padding: '2px 6px' }}>{TRACK_LABELS[p.track] || TRACK_LABELS.common}</span>
                     {p.creator_handle && <span style={{ fontSize: 11, color: '#9ca3af' }}>{p.creator_handle}</span>}
                     <a href={p.post_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#2563eb' }}>投稿を見る →</a>
                   </div>
