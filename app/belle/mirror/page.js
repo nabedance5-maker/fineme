@@ -273,6 +273,8 @@ export default function BelleMirrorPage() {
 
   const triggerReportGeneration = useCallback(async (sid) => {
     if (!sid) return;
+    setReportContent(null); // 前回セッションの古いレポートが残って一瞬表示されるのを防ぐ
+    setReportPhotoUrl(null);
     setReportLoading(true);
     try {
       const res = await fetch('/api/mirror/report', {
@@ -1151,6 +1153,9 @@ export default function BelleMirrorPage() {
               setAnalysis(null);
               setSessionId(null);
               setPreviewFile(null);
+              setReportContent(null);
+              setReportPhotoUrl(null);
+              setReportLoading(false);
               setError('');
               if (fileInputRef.current) fileInputRef.current.value = '';
             }}
