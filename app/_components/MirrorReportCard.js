@@ -122,7 +122,10 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender }) {
 
       {scoreEntries.length > 0 && (
         <div style={{ margin: '8px 22px 20px' }}>
-          <p style={{ fontSize: '10px', fontWeight: 800, color: accent, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '10px' }}>Scoring</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <p style={{ fontSize: '10px', fontWeight: 800, color: accent, letterSpacing: '.1em', textTransform: 'uppercase', margin: 0 }}>Scoring</p>
+            <a href="/mirror/scoring" style={{ fontSize: '10px', color: 'rgba(232,228,220,0.35)', textDecoration: 'underline' }}>採点方法について</a>
+          </div>
           {scoreEntries.map(([key, val]) => (
             <div key={key} style={{ marginBottom: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'rgba(232,228,220,0.6)', marginBottom: '3px' }}>
