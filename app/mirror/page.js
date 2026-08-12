@@ -696,7 +696,10 @@ export default function MirrorPage() {
                         if (data.paid && data.analysis) {
                           setAnalysis(data.analysis);
                           setSessionId(s.id);
-                          setState('full');
+                          triggerReportGeneration(s.id).then(() => setState('full'));
+                        } else {
+                          setError('読み込みエラーが発生しました。');
+                          setState('idle');
                         }
                       })
                       .catch(() => { setError('読み込みエラーが発生しました。'); setState('idle'); });
