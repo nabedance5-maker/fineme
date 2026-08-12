@@ -114,9 +114,13 @@ export async function POST(request) {
         curatedPostsPrompt,
       });
 
-      const message = await client.messages.create({
+      // STEP2-10のサブ項目まで含む大きなスキーマのためmax_tokensを大きく取る必要があり、
+      // 非ストリーミングだとSDKが「10分を超えうる処理はストリーミング必須」として拒否する
+      // （実測: 16000で生成が途中で切れJSONパース失敗。24000は非ストリーミングでは弾かれた）。
+      // stream()を使うことで長時間生成に対応する（2026-08-12）。
+      const stream = client.messages.stream({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 16000, // STEP2-10のサブ項目まで含む大きなスキーマのため増量（2026-08-12）
+        max_tokens: 24000,
         system: systemPrompt,
         messages: [{
           role: 'user',
@@ -126,6 +130,7 @@ export async function POST(request) {
           ],
         }],
       });
+      const message = await stream.finalMessage();
 
       const raw = message.content[0]?.text?.trim() || '{}';
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
