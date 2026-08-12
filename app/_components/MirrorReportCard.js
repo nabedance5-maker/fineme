@@ -36,6 +36,13 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender }) {
 
   const visibleSteps = STEP_SECTIONS.filter(s => reportContent[s.key]?.summary || reportContent[s.key]?.features_summary);
   const scoreEntries = Object.entries(reportContent.scores || {}).filter(([, v]) => v != null);
+  const topWeightKey = scoreEntries.length
+    ? scoreEntries.reduce((top, [key]) => {
+        const w = reportContent.score_weights?.[key] || 0;
+        const topW = reportContent.score_weights?.[top] || 0;
+        return w > topW ? key : top;
+      }, scoreEntries[0][0])
+    : null;
 
   return (
     <div style={{ background: '#05080F', borderRadius: '20px', overflow: 'hidden', border: `1px solid ${accentBorder}`, marginTop: '28px', boxShadow: '0 24px 60px rgba(0,0,0,0.8)' }}>
@@ -55,7 +62,7 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender }) {
 
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: '6px', padding: '20px 22px 4px' }}>
         <span style={{ fontSize: '44px', fontWeight: 800, color: accent, lineHeight: 1 }}>{reportContent.visual_score}</span>
-        <span style={{ fontSize: '14px', color: 'rgba(232,228,220,0.4)' }}>/ 100 VISUAL SCORE</span>
+        <span style={{ fontSize: '14px', color: 'rgba(232,228,220,0.4)' }}>/ {reportContent.visual_score_max || 888} VISUAL SCORE</span>
       </div>
 
       {reportContent.visual_type_keywords?.length > 0 && (
@@ -118,8 +125,15 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender }) {
           <p style={{ fontSize: '10px', fontWeight: 800, color: accent, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '10px' }}>Scoring</p>
           {scoreEntries.map(([key, val]) => (
             <div key={key} style={{ marginBottom: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'rgba(232,228,220,0.6)', marginBottom: '3px' }}>
-                <span>{SCORE_LABELS[key] || key}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'rgba(232,228,220,0.6)', marginBottom: '3px' }}>
+                <span>
+                  {SCORE_LABELS[key] || key}
+                  {key === topWeightKey && (
+                    <span style={{ marginLeft: '6px', fontSize: '9px', fontWeight: 800, padding: '1px 7px', borderRadius: '99px', background: accentSoft, border: `1px solid ${accentBorder}`, color: accent }}>
+                      この写真で最も効いている要素
+                    </span>
+                  )}
+                </span>
                 <span>{val}</span>
               </div>
               <div style={{ height: '4px', borderRadius: '99px', background: 'rgba(232,228,220,0.08)', overflow: 'hidden' }}>
