@@ -10,7 +10,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
 import { buildReportPrompt } from '@/lib/mirror-report-prompt';
-import { validateReportContent, validateAxesPayload, REPORT_SCHEMA_VERSION } from '@/lib/mirror-report-content';
+import { validateReportContent, validateAxesPayload, REPORT_SCHEMA_VERSION, VISUAL_TIERS } from '@/lib/mirror-report-content';
 import { fetchCuratedPostsPrompt } from '@/lib/mirror-analysis-shared';
 
 // スキーマ拡大（STEP2-10のサブ項目まで含む）でHaiku生成が90秒を超えることがあり、
@@ -31,6 +31,41 @@ async function signPhotoUrl(photoPath) {
   const { data, error } = await supabase.storage.from('mirror-photos').createSignedUrl(photoPath, 300);
   if (error) return null;
   return data.signedUrl;
+}
+
+// 直近の別月の有料セッションと階級（visual_tier）を比較し、昇格していれば知らせる。
+// でお指摘: 階級システム＋月次の「昇格」演出（既存の月次比較機能の再利用）。
+// 昇格のみ知らせ、降格は知らせない（Mirror精度の揺れで自信を折らないため。
+// 既存の /api/me/mirror-comparison が worsened を stable に吸収するのと同じ方針）。
+async function computeTierComparison(userId, currentSessionId, currentTierName) {
+  if (!userId) return null;
+  try {
+    const { data: priorSessions } = await supabase
+      .from('mirror_sessions')
+      .select('id, created_at, report_content')
+      .eq('user_id', userId)
+      .eq('paid', true)
+      .not('report_content', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    const toJST = d => new Date(new Date(d).getTime() + 9 * 3_600_000);
+    const monthKey = d => { const j = toJST(d); return `${j.getFullYear()}-${j.getMonth()}`; };
+    const thisMonth = monthKey(new Date());
+
+    const prior = (priorSessions || []).find(s =>
+      s.id !== currentSessionId && monthKey(s.created_at) !== thisMonth && s.report_content?.visual_tier
+    );
+    if (!prior) return null;
+
+    const priorIdx = VISUAL_TIERS.findIndex(t => t.name === prior.report_content.visual_tier);
+    const currentIdx = VISUAL_TIERS.findIndex(t => t.name === currentTierName);
+    if (priorIdx < 0 || currentIdx < 0) return null;
+
+    return { previous_tier: prior.report_content.visual_tier, promoted: currentIdx > priorIdx };
+  } catch {
+    return null;
+  }
 }
 
 // ログイン済みユーザーの状態（guest/member/diagnosed）をサーバー側で判定。
@@ -83,6 +118,7 @@ export async function POST(request) {
         status: 'ready',
         report_content: sessionRow.report_content,
         photo_url: await signPhotoUrl(sessionRow.photo_path),
+        tier_comparison: await computeTierComparison(sessionRow.user_id, session_id, sessionRow.report_content.visual_tier),
       });
     }
 
@@ -153,6 +189,7 @@ export async function POST(request) {
         status: 'ready',
         report_content: reportContent,
         photo_url: await signPhotoUrl(sessionRow.photo_path),
+        tier_comparison: await computeTierComparison(sessionRow.user_id, session_id, reportContent.visual_tier),
       });
     } catch (genError) {
       console.error('mirror report generation error:', genError);

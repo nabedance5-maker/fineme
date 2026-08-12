@@ -151,7 +151,7 @@ export default function MirrorHistoryPage() {
       });
       const data = await res.json();
       if (res.ok && data.status === 'ready') {
-        setReportBySession(prev => ({ ...prev, [sessionId]: { content: data.report_content, photoUrl: data.photo_url } }));
+        setReportBySession(prev => ({ ...prev, [sessionId]: { content: data.report_content, photoUrl: data.photo_url, tierComparison: data.tier_comparison || null } }));
       }
     } catch {} finally {
       setReportLoadingId(null);
@@ -341,6 +341,7 @@ export default function MirrorHistoryPage() {
                                 reportContent={reportBySession[s.id].content}
                                 photoUrl={reportBySession[s.id].photoUrl}
                                 gender={trackId === 'belle' ? 'female' : 'male'}
+                                tierComparison={reportBySession[s.id].tierComparison}
                               />
                             )}
                           </>

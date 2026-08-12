@@ -8,9 +8,9 @@ export default function MirrorScoringPage() {
   return (
     <main className="section">
       <div className="container stack" style={{ maxWidth: 780 }}>
-        <h1 className="section-title">Mirrorのスコアはどう決まる？</h1>
+        <h1 className="section-title">Mirrorの診断はどう決まる？</h1>
         <p className="muted">
-          Fineme Mirrorの「VISUAL SCORE」がどう算出されているか、考え方を説明します。
+          Fineme Mirrorの「VISUAL TYPE」と「変容ステージ」がどう算出されているか、考え方を説明します。
         </p>
 
         <section className="card stack" style={{ padding: 20, gap: 12 }}>
@@ -32,16 +32,21 @@ export default function MirrorScoringPage() {
             <li>全身写真なら、体型の見せ方・服装・姿勢の重みが大きくなります</li>
           </ul>
           <p>
-            この重み付き平均を、888点満点のスケールに変換したものが「VISUAL SCORE」です。ここは決まった計算式で機械的に算出しており、
+            この重み付き平均を、888点満点のスケールに変換したものが総合スコアです。ここは決まった計算式で機械的に算出しており、
             表示されているカテゴリごとのスコアと矛盾しない数字になっています。
           </p>
         </section>
 
         <section className="card stack" style={{ padding: 20, gap: 12 }}>
-          <h2 style={{ margin: 0, fontSize: 18 }}>3. なぜ888点満点なのか</h2>
+          <h2 style={{ margin: 0, fontSize: 18 }}>3. VISUAL TYPEと変容ステージが主役</h2>
           <p>
-            100点満点にすると、学校のテストの点数のように無意識に比較してしまいがちです。Fineme独自の指標だと分かるように、
-            末広がりの888点満点にしています。
+            888点という数字そのものを前面に出す設計は、学校のテストのような優劣判定に見えてしまうため採用していません。
+            レポートの主役は「VISUAL TYPE」（あなたの雰囲気を表すタイプ診断）と「変容ステージ」（種火・芽吹き・息吹・手応え・兆し・開花前夜・開花・満開の8段階）です。
+          </p>
+          <p>
+            888点満点のスコアは、この8段階のどこに位置するかを機械的に決めるための裏付け数値として使っています（888を8等分した目安）。
+            低い段階は「劣っている」のではなく「これから変わる伸びしろが一番大きい段階」という位置づけです。継続して利用すると、
+            前回より段階が上がったタイミングでお知らせします。
           </p>
         </section>
 

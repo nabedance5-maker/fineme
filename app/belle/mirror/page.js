@@ -108,6 +108,7 @@ export default function BelleMirrorPage() {
   const [reportLoading, setReportLoading] = useState(false);
   const [reportContent, setReportContent] = useState(null);
   const [reportPhotoUrl, setReportPhotoUrl] = useState(null);
+  const [tierComparison, setTierComparison] = useState(null);
   const fileInputRef = useRef(null);
   const dropRef = useRef(null);
 
@@ -291,6 +292,7 @@ export default function BelleMirrorPage() {
     if (!sid) return;
     setReportContent(null); // 前回セッションの古いレポートが残って一瞬表示されるのを防ぐ
     setReportPhotoUrl(null);
+    setTierComparison(null);
     setReportLoading(true);
     try {
       const res = await fetch('/api/mirror/report', {
@@ -302,6 +304,7 @@ export default function BelleMirrorPage() {
       if (res.ok && data.status === 'ready') {
         setReportContent(data.report_content);
         setReportPhotoUrl(data.photo_url);
+        setTierComparison(data.tier_comparison || null);
       }
     } catch {} finally {
       setReportLoading(false);
@@ -763,7 +766,7 @@ export default function BelleMirrorPage() {
           {/* ビジュアルレポート（fullのみ・FVはこれが最優先。他コンテンツより先に出す。
               生成中は state==='analyzing' のまま表示するため、ここに来る時点で常に生成済み） */}
           {state === 'full' && reportContent && (
-            <MirrorReportCard reportContent={reportContent} photoUrl={reportPhotoUrl} gender="female" />
+            <MirrorReportCard reportContent={reportContent} photoUrl={reportPhotoUrl} gender="female" tierComparison={tierComparison} />
           )}
           {state === 'full' && reportContent && (
             <p className="privacy-note" style={{ margin: '10px auto 0' }}>

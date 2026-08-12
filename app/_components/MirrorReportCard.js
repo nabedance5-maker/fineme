@@ -64,7 +64,7 @@ function ChipList({ items, accent, accentSoft, accentBorder }) {
   );
 }
 
-export default function MirrorReportCard({ reportContent, photoUrl, gender }) {
+export default function MirrorReportCard({ reportContent, photoUrl, gender, tierComparison }) {
   if (!reportContent) return null;
 
   const accent = gender === 'female' ? '#E0A6C4' : '#C9A84C';
@@ -106,15 +106,12 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: '6px', padding: '20px 22px 4px' }}>
-        <span style={{ fontSize: '44px', fontWeight: 800, color: accent, lineHeight: 1 }}>{reportContent.visual_score}</span>
-        <span style={{ fontSize: '14px', color: 'rgba(232,228,220,0.4)' }}>/ {reportContent.visual_score_max || 888} VISUAL SCORE</span>
-      </div>
-
+      {/* VISUAL TYPEを主役に。888点の生スコアは階級の裏付けとして小さく添えるだけにする
+          （でお指摘: 点数だけの見せ方は優劣判定に見える。タイプ診断＋変容ステージを主役にする） */}
       {reportContent.visual_type_keywords?.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', padding: '4px 22px 16px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', padding: '20px 22px 4px' }}>
           {reportContent.visual_type_keywords.map((kw, i) => (
-            <span key={i} style={{ fontSize: '11px', fontWeight: 700, padding: '5px 12px', borderRadius: '99px', background: accentSoft, border: `1px solid ${accentBorder}`, color: accent }}>
+            <span key={i} style={{ fontSize: '13px', fontWeight: 800, padding: '6px 14px', borderRadius: '99px', background: accentSoft, border: `1px solid ${accentBorder}`, color: accent }}>
               {kw}
             </span>
           ))}
@@ -122,9 +119,36 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender }) {
       )}
 
       {reportContent.visual_type_description && (
-        <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', textAlign: 'center', padding: '0 24px 8px', lineHeight: 1.7 }}>
+        <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.65)', textAlign: 'center', padding: '8px 24px 0', lineHeight: 1.7 }}>
           {reportContent.visual_type_description}
         </p>
+      )}
+
+      {reportContent.visual_tier && (
+        <div style={{ textAlign: 'center', padding: '18px 22px 4px' }}>
+          <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '.2em', color: 'rgba(232,228,220,0.35)', textTransform: 'uppercase', margin: '0 0 6px' }}>
+            現在の変容ステージ
+          </p>
+          <p style={{ fontFamily: "'Noto Serif JP', Georgia, serif", fontSize: '28px', fontWeight: 800, color: accent, margin: '0 0 4px' }}>
+            {reportContent.visual_tier}
+          </p>
+          {reportContent.visual_tier_description && (
+            <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: '0 0 6px', lineHeight: 1.6 }}>
+              {reportContent.visual_tier_description}
+            </p>
+          )}
+          <p style={{ fontSize: '10px', color: 'rgba(232,228,220,0.25)', margin: 0 }}>
+            {reportContent.visual_score} / {reportContent.visual_score_max || 888}
+          </p>
+        </div>
+      )}
+
+      {tierComparison?.promoted && (
+        <div style={{ margin: '12px 22px 0', padding: '12px 16px', borderRadius: '12px', background: accentSoft, border: `1px solid ${accentBorder}`, textAlign: 'center' }}>
+          <p style={{ fontSize: '12px', fontWeight: 800, color: accent, margin: 0, lineHeight: 1.6 }}>
+            🎉 前回の「{tierComparison.previous_tier}」から「{reportContent.visual_tier}」へ変容が進みました
+          </p>
+        </div>
       )}
 
       {reportContent.first_impression && (
