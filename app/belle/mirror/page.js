@@ -954,7 +954,7 @@ export default function BelleMirrorPage() {
           {/* ビジュアルレポート（fullのみ・Claude Haikuが生成するSTEP形式のリッチレポート） */}
           {state === 'full' && reportLoading && !reportContent && (
             <div style={{ textAlign: 'center', padding: '32px 0', color: 'rgba(232,228,220,0.4)', fontSize: '12px' }}>
-              ビジュアルレポートを生成中...
+              ビジュアルレポートを生成中...（情報量が多いため1〜2分ほどかかることがあります）
             </div>
           )}
           {state === 'full' && reportContent && (

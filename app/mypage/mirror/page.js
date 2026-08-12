@@ -333,7 +333,7 @@ export default function MirrorHistoryPage() {
                             <AnalysisView analysis={fullData} />
                             {reportLoadingId === s.id && !reportBySession[s.id] && (
                               <p style={{ textAlign: 'center', padding: '20px 0', color: 'rgba(232,228,220,0.4)', fontSize: '12px' }}>
-                                ビジュアルレポートを生成中...
+                                ビジュアルレポートを生成中...（情報量が多いため1〜2分ほどかかることがあります）
                               </p>
                             )}
                             {reportBySession[s.id] && (

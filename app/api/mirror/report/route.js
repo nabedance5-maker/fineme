@@ -13,7 +13,10 @@ import { buildReportPrompt } from '@/lib/mirror-report-prompt';
 import { validateReportContent, validateAxesPayload, REPORT_SCHEMA_VERSION } from '@/lib/mirror-report-content';
 import { fetchCuratedPostsPrompt } from '@/lib/mirror-analysis-shared';
 
-export const maxDuration = 90;
+// スキーマ拡大（STEP2-10のサブ項目まで含む）でHaiku生成が90秒を超えることがあり、
+// 実際に「Task timed out after 90 seconds」で失敗していた（2026-08-12）。他ルートの
+// 実績値に合わせて300秒に増量。
+export const maxDuration = 300;
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
