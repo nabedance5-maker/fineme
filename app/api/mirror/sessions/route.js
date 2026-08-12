@@ -9,22 +9,29 @@ export async function GET(request) {
   const userId = searchParams.get('user_id');
   const ids = searchParams.get('ids'); // カンマ区切りのsession_id群（未ログイン用）
 
-  let query = supabase
-    .from('mirror_sessions')
-    .select('id, created_at, paid, analysis')
-    .order('created_at', { ascending: false })
-    .limit(10);
+  function buildQuery(selectCols) {
+    let q = supabase
+      .from('mirror_sessions')
+      .select(selectCols)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (userId) return q.eq('user_id', userId);
+    if (ids) {
+      const idList = ids.split(',').filter(Boolean).slice(0, 10);
+      return q.in('id', idList);
+    }
+    return null;
+  }
 
-  if (userId) {
-    query = query.eq('user_id', userId);
-  } else if (ids) {
-    const idList = ids.split(',').filter(Boolean).slice(0, 10);
-    query = query.in('id', idList);
-  } else {
+  if (!userId && !ids) {
     return Response.json({ sessions: [] });
   }
 
-  const { data, error } = await query;
+  let { data, error } = await buildQuery('id, created_at, paid, analysis, report_status');
+  // 後方互換: 本番に report_status 未適用でも一覧取得を失敗させない
+  if (error?.code === 'PGRST204' || /report_status/.test(error?.message || '')) {
+    ({ data, error } = await buildQuery('id, created_at, paid, analysis'));
+  }
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
   const includeAxes = searchParams.get('include_axes') === '1';
@@ -34,6 +41,7 @@ export async function GET(request) {
     paid: s.paid,
     first_impression: s.analysis?.first_impression || '',
     axes_count: s.analysis?.axes?.length || 0,
+    report_status: s.report_status || 'none',
     ...(includeAxes ? { axes: s.analysis?.axes || [] } : {}),
   }));
 

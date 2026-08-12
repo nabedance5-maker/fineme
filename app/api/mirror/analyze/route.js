@@ -427,7 +427,6 @@ export async function POST(request) {
       } catch {}
     }
 
-    // 写真は保存せず、分析結果（テキスト）のみ保存
     const insertRow = {
       user_id: user_id || null,
       analysis,
@@ -437,6 +436,7 @@ export async function POST(request) {
       photo_type: photo_type || null,
       client_ip: clientIp,
       trial_month: trialApplied ? currentMonth : null,
+      photo_path: null,
     };
     let { data: session, error: dbError } = await supabase
       .from('mirror_sessions')
@@ -444,11 +444,11 @@ export async function POST(request) {
       .select('id')
       .single();
 
-    // 後方互換: 本番に新カラム（gender/age_band/photo_type/client_ip/trial_month）未適用でも分析を失敗させない。
+    // 後方互換: 本番に新カラム（gender/age_band/photo_type/client_ip/trial_month/photo_path）未適用でも分析を失敗させない。
     // 該当のマイグレーションSQL適用後は通常経路でフル保存される。
     if (dbError && dbError.code === 'PGRST204') {
       let legacyRow = insertRow;
-      for (const col of ['gender', 'age_band', 'photo_type', 'client_ip', 'trial_month']) {
+      for (const col of ['gender', 'age_band', 'photo_type', 'client_ip', 'trial_month', 'photo_path']) {
         if (new RegExp(col).test(dbError.message || '')) {
           const { [col]: _omit, ...rest } = legacyRow;
           legacyRow = rest;
@@ -464,6 +464,22 @@ export async function POST(request) {
     if (dbError) {
       console.error('mirror_sessions insert error:', dbError);
       return Response.json({ error: 'セッション保存エラー' }, { status: 500 });
+    }
+
+    // 写真をStorageに保存（ビジュアルレポート生成用。失敗しても分析結果自体はブロックしない）。
+    // 未購入セッションの写真は app/api/cron/cleanup-unpaid-mirror-photos が数日で自動削除する。
+    try {
+      const ext = media_type === 'image/png' ? 'png' : media_type === 'image/webp' ? 'webp' : 'jpg';
+      const photoPath = `${session.id}.${ext}`;
+      const buffer = Buffer.from(photo_base64, 'base64');
+      const { error: uploadError } = await supabase.storage
+        .from('mirror-photos')
+        .upload(photoPath, buffer, { contentType: media_type, upsert: true });
+      if (!uploadError) {
+        await supabase.from('mirror_sessions').update({ photo_path: photoPath }).eq('id', session.id);
+      }
+    } catch (e) {
+      console.error('mirror photo upload error:', e);
     }
 
     return Response.json({ session_id: session.id, analysis, paid: isPaidBypass, trial_applied: trialApplied });

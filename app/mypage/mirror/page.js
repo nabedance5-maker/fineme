@@ -2,6 +2,7 @@
 import useTrack from '@/app/_hooks/useTrack';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import MirrorReportCard from '@/app/_components/MirrorReportCard';
 
 function parseCompassAction(text) {
   const urlMatch = text.match(/→\s*(\/[^\s」\n]+)/);
@@ -126,7 +127,7 @@ function ComparisonCard({ data }) {
 const FREE_LIMIT = 5; // 非会員が閲覧できるセッション数
 
 export default function MirrorHistoryPage() {
-  const { track } = useTrack();
+  const { track, trackId } = useTrack();
   const [userId, setUserId]       = useState(null);
   const [sessions, setSessions]   = useState([]);
   const [isSubscriber, setIsSubscriber] = useState(false);
@@ -136,6 +137,26 @@ export default function MirrorHistoryPage() {
   const [loadingId, setLoadingId] = useState(null);
   const [error, setError]         = useState('');
   const [comparison, setComparison] = useState(null);
+  const [reportBySession, setReportBySession] = useState({});
+  const [reportLoadingId, setReportLoadingId] = useState(null);
+
+  async function loadReport(sessionId) {
+    if (reportBySession[sessionId]) return;
+    setReportLoadingId(sessionId);
+    try {
+      const res = await fetch('/api/mirror/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'ready') {
+        setReportBySession(prev => ({ ...prev, [sessionId]: { content: data.report_content, photoUrl: data.photo_url } }));
+      }
+    } catch {} finally {
+      setReportLoadingId(null);
+    }
+  }
 
   useEffect(() => {
     let uid = null;
@@ -182,6 +203,7 @@ export default function MirrorHistoryPage() {
     // 既にキャッシュ済みなら即展開
     if (expandedAnalysis[session.id]) {
       setExpandedId(session.id);
+      loadReport(session.id);
       return;
     }
 
@@ -192,6 +214,7 @@ export default function MirrorHistoryPage() {
       if (data.paid && data.analysis) {
         setExpandedAnalysis(prev => ({ ...prev, [session.id]: data.analysis }));
         setExpandedId(session.id);
+        loadReport(session.id);
       }
     } catch {
       setError('読み込みに失敗しました。');
@@ -306,7 +329,21 @@ export default function MirrorHistoryPage() {
                     {isExpanded && (
                       <div style={{ padding: '0 18px 20px', borderTop: '1px solid rgba(232,228,220,0.08)' }}>
                         {s.paid && fullData ? (
-                          <AnalysisView analysis={fullData} />
+                          <>
+                            <AnalysisView analysis={fullData} />
+                            {reportLoadingId === s.id && !reportBySession[s.id] && (
+                              <p style={{ textAlign: 'center', padding: '20px 0', color: 'rgba(232,228,220,0.4)', fontSize: '12px' }}>
+                                ビジュアルレポートを生成中...
+                              </p>
+                            )}
+                            {reportBySession[s.id] && (
+                              <MirrorReportCard
+                                reportContent={reportBySession[s.id].content}
+                                photoUrl={reportBySession[s.id].photoUrl}
+                                gender={trackId === 'belle' ? 'female' : 'male'}
+                              />
+                            )}
+                          </>
                         ) : s.paid ? (
                           <p style={{ color: 'rgba(232,228,220,0.35)', fontSize: '13px', padding: '20px 0', textAlign: 'center' }}>読み込み中...</p>
                         ) : (

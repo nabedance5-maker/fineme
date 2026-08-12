@@ -4,6 +4,7 @@ import PixelPurchase from './_PixelPurchase';
 import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
 import { getLocalAttributes, hasRequiredAttributes, syncAttributesWithServer } from '@/lib/attributes';
 import AttributeStep from '@/app/_components/AttributeStep';
+import MirrorReportCard from '@/app/_components/MirrorReportCard';
 
 const LS_SESSIONS_KEY = 'fineme:mirror:sessions'; // ['session_id1', 'session_id2', ...]
 const LS_ONE_POINT_KEY = 'fineme:mirror:one-point';
@@ -123,6 +124,9 @@ export default function MirrorPage() {
   const [photoType, setPhotoType] = useState(null); // null | 'face' | 'body'
   const [trialUsedThisMonth, setTrialUsedThisMonth] = useState(false);
   const [trialApplied, setTrialApplied] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportContent, setReportContent] = useState(null);
+  const [reportPhotoUrl, setReportPhotoUrl] = useState(null);
   const fileInputRef = useRef(null);
   const dropRef = useRef(null);
   const mapCanvasRef = useRef(null);
@@ -147,6 +151,7 @@ export default function MirrorPage() {
           if (data.paid && data.analysis) {
             setAnalysis(data.analysis);
             setState('full');
+            triggerReportGeneration(sid);
             window.history.replaceState({}, '', '/mirror');
           } else {
             setError('支払確認中にエラーが発生しました。しばらくしてから再度お試しください。');
@@ -168,6 +173,7 @@ export default function MirrorPage() {
           if (data.analysis) {
             setAnalysis(data.analysis);
             setState(data.paid ? 'full' : 'preview');
+            if (data.paid) triggerReportGeneration(sid);
           } else {
             setState('idle');
           }
@@ -371,6 +377,25 @@ export default function MirrorPage() {
     if (file) handleFile(file);
   }, [handleFile]);
 
+  const triggerReportGeneration = useCallback(async (sid) => {
+    if (!sid) return;
+    setReportLoading(true);
+    try {
+      const res = await fetch('/api/mirror/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sid }),
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'ready') {
+        setReportContent(data.report_content);
+        setReportPhotoUrl(data.photo_url);
+      }
+    } catch {} finally {
+      setReportLoading(false);
+    }
+  }, []);
+
   const handleAnalyze = async () => {
     const file = fileInputRef.current?.files[0];
     if (!file) { setError('写真を選択してください'); return; }
@@ -433,6 +458,7 @@ export default function MirrorPage() {
       setTrackOnce('fineme');
       syncTrackWithServer().catch(() => {});
       setState(data.paid ? 'full' : 'preview');
+      if (data.paid) triggerReportGeneration(data.session_id);
     } catch (e) {
       setError(e.message);
       setState('idle');
@@ -1065,6 +1091,16 @@ export default function MirrorPage() {
             <div className="overall-msg">
               {analysis.overall_message}
             </div>
+          )}
+
+          {/* ビジュアルレポート（fullのみ・Claude Haikuが生成するSTEP形式のリッチレポート） */}
+          {state === 'full' && reportLoading && !reportContent && (
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'rgba(232,228,220,0.4)', fontSize: '12px' }}>
+              ビジュアルレポートを生成中...
+            </div>
+          )}
+          {state === 'full' && reportContent && (
+            <MirrorReportCard reportContent={reportContent} photoUrl={reportPhotoUrl} gender="male" />
           )}
 
           {/* 動かす1点（fullのみ） */}

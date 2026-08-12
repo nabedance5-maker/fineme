@@ -33,6 +33,21 @@ export async function GET(request) {
 
   const userIds = profiles.map(p => p.id);
 
+  // DB行を削除する前に、対象セッションの写真をStorageから削除する（順序: Storage→DB）
+  const { data: targetSessions } = await db
+    .from('mirror_sessions')
+    .select('photo_path')
+    .in('user_id', userIds)
+    .not('photo_path', 'is', null);
+  const photoPaths = (targetSessions || []).map(s => s.photo_path).filter(Boolean);
+  if (photoPaths.length) {
+    const { error: removeError } = await db.storage.from('mirror-photos').remove(photoPaths);
+    if (removeError) {
+      console.error('[cron/cleanup-mirror-sessions] storage remove error:', removeError);
+      // Storage削除が失敗してもDB削除自体は止めない（ベストエフォート）
+    }
+  }
+
   const { error: deleteError, count } = await db
     .from('mirror_sessions')
     .delete({ count: 'exact' })
