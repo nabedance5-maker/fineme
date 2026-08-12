@@ -7,6 +7,12 @@
 const SCORE_LABELS = {
   face_balance: '顔全体のバランス',
   parts_layout: 'パーツ配置',
+  eyes: '目元',
+  eyebrows: '眉',
+  nose: '鼻',
+  mouth: '口元',
+  faceline: 'フェイスライン',
+  symmetry: '左右バランス',
   hair: '髪型',
   skin: '肌・清潔感',
   body_shaping: '体型の見せ方',

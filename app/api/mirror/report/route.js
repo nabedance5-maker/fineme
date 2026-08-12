@@ -10,7 +10,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
 import { buildReportPrompt } from '@/lib/mirror-report-prompt';
-import { validateReportContent, validateAxesPayload } from '@/lib/mirror-report-content';
+import { validateReportContent, validateAxesPayload, REPORT_SCHEMA_VERSION } from '@/lib/mirror-report-content';
 import { fetchCuratedPostsPrompt } from '@/lib/mirror-analysis-shared';
 
 export const maxDuration = 90;
@@ -68,8 +68,14 @@ export async function POST(request) {
       return Response.json({ error: '未購入のセッションです' }, { status: 403 });
     }
 
-    // 冪等: 生成済みならHaikuを再呼び出しせず、写真の署名URLだけ再発行して返す
-    if (sessionRow.report_status === 'ready' && sessionRow.report_content) {
+    // 冪等: 生成済みかつ現行のスコアリングロジックと同じバージョンならHaikuを
+    // 再呼び出しせず、写真の署名URLだけ再発行して返す。バージョンが古い場合は
+    // （採点ロジック変更後の再生成漏れバグの再発防止）キャッシュを使わず再生成する。
+    if (
+      sessionRow.report_status === 'ready' &&
+      sessionRow.report_content &&
+      sessionRow.report_content.schema_version === REPORT_SCHEMA_VERSION
+    ) {
       return Response.json({
         status: 'ready',
         report_content: sessionRow.report_content,
