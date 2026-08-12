@@ -135,10 +135,10 @@ export default function MirrorHistoryPage() {
     <aside className="mypage-sidenav">
       <nav className="stack" style={{ gap: '4px' }}>
         <Link href="/mypage" className="sidenav-link">ホーム</Link>
+        <Link href="/mypage/mirror" className="sidenav-link sidenav-link--active">Mirror履歴</Link>
         <Link href={track.diagnosisResult} className="sidenav-link">診断結果</Link>
         <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
         <Link href="/mypage/log" className="sidenav-link">New Me Log</Link>
-        <Link href="/mypage/mirror" className="sidenav-link sidenav-link--active">Mirror履歴</Link>
         <Link href="/mypage/favorites" className="sidenav-link">お気に入り</Link>
         <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
         <Link href="/my-reservations" className="sidenav-link">予約履歴</Link>
