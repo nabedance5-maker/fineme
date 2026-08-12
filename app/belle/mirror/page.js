@@ -107,7 +107,6 @@ export default function BelleMirrorPage() {
   const [reportPhotoUrl, setReportPhotoUrl] = useState(null);
   const fileInputRef = useRef(null);
   const dropRef = useRef(null);
-  const mapCanvasRef = useRef(null);
 
   // Stripe支払い完了後のリダイレクト処理 + 過去セッション読み込み
   useEffect(() => {
@@ -158,6 +157,26 @@ export default function BelleMirrorPage() {
         })
         .catch(() => setState('idle'));
       window.history.replaceState({}, '', '/belle/mirror');
+    } else {
+      // URLにsession_idが無い通常訪問時も、直前の分析結果があれば復元する
+      // （別ページへ移動して戻ってきた際に結果が消えたように見えるのを防ぐ）
+      const lastId = getLocalSessionIds()[0];
+      if (lastId) {
+        setState('analyzing');
+        setSessionId(lastId);
+        fetch(`/api/mirror/result?session_id=${lastId}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.analysis) {
+              setAnalysis(data.analysis);
+              setState(data.paid ? 'full' : 'preview');
+              if (data.paid) triggerReportGeneration(lastId);
+            } else {
+              setState('idle');
+            }
+          })
+          .catch(() => setState('idle'));
+      }
     }
 
     let authUserId = null, authToken = null;
@@ -236,74 +255,6 @@ export default function BelleMirrorPage() {
       })
       .catch(() => setCuratedPosts({}));
   }, [analysis]);
-
-  // ── New Me Map ルートマップ描画（Belle版・ピンク金アクセント）──
-  useEffect(() => {
-    if (!analysis?.axes?.length || !mapCanvasRef.current) return;
-    const canvas = mapCanvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const W = 304, H = 400, DPR = 2;
-    canvas.width = W * DPR;
-    canvas.height = H * DPR;
-    ctx.scale(DPR, DPR);
-    const axes = analysis.axes;
-    const heroAxis = axes.find(a => a.potential_level === '高') || axes[0];
-    const others = axes.filter(a => a !== heroAxis).slice(0, 7);
-    const n = others.length;
-    const goalY = 32, heroY = 364, satStartY = 84;
-    const satStep = n > 0 ? (heroY - 44 - satStartY) / n : 0;
-    const WAYPOINTS = [
-      { x: W/2, y: goalY, role: 'goal' },
-      ...others.map((ax, i) => ({ x: i%2===0?Math.round(W*0.27):Math.round(W*0.73), y: Math.round(satStartY+(i+0.5)*satStep), role:'sat', axis:ax })),
-      { x: W/2, y: heroY, role:'hero', axis:heroAxis },
-    ];
-    const potAlpha = p => p==='高'?0.72:p==='中'?0.42:0.18;
-    function drawSmoothPath(pts,color,width,dashed){
-      if(pts.length<2)return; ctx.save(); if(dashed)ctx.setLineDash([6,10]);
-      ctx.strokeStyle=color; ctx.lineWidth=width; ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
-      for(let i=0;i<pts.length-1;i++){const p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)],t=0.4;ctx.bezierCurveTo(p1.x+(p2.x-p0.x)*t/2,p1.y+(p2.y-p0.y)*t/2,p2.x-(p3.x-p1.x)*t/2,p2.y-(p3.y-p1.y)*t/2,p2.x,p2.y);}
-      ctx.stroke(); ctx.restore();
-    }
-    let animId, frame=0;
-    function draw(){
-      ctx.clearRect(0,0,W,H);
-      for(let gx=38;gx<W;gx+=38){ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,H);ctx.strokeStyle='rgba(200,100,140,0.025)';ctx.lineWidth=1;ctx.stroke();}
-      for(let gy=36;gy<H;gy+=36){ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(W,gy);ctx.strokeStyle='rgba(200,100,140,0.018)';ctx.lineWidth=1;ctx.stroke();}
-      const pts=WAYPOINTS.map(w=>({x:w.x,y:w.y}));
-      drawSmoothPath(pts,'rgba(200,100,140,0.22)',1.5,true);
-      if(pts.length>=2)drawSmoothPath([pts[pts.length-2],pts[pts.length-1]],'rgba(220,130,160,0.72)',2,false);
-      const g=WAYPOINTS[0];
-      const gG=ctx.createRadialGradient(g.x,g.y,0,g.x,g.y,26);gG.addColorStop(0,'rgba(255,180,210,0.32)');gG.addColorStop(1,'transparent');
-      ctx.fillStyle=gG;ctx.beginPath();ctx.arc(g.x,g.y,26,0,Math.PI*2);ctx.fill();
-      ctx.font='17px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('⭐',g.x,g.y);
-      ctx.font='700 8px -apple-system,sans-serif';ctx.fillStyle='rgba(200,100,140,0.55)';ctx.textBaseline='top';ctx.fillText('GOAL',g.x,g.y+13);
-      WAYPOINTS.slice(1,-1).forEach(wp=>{
-        const sat=wp.axis,r=17,a=potAlpha(sat.potential_level),isLeft=wp.x<W/2;
-        const sG=ctx.createRadialGradient(wp.x,wp.y,0,wp.x,wp.y,r*2.2);sG.addColorStop(0,`rgba(200,100,140,${a*0.2})`);sG.addColorStop(1,'transparent');
-        ctx.fillStyle=sG;ctx.beginPath();ctx.arc(wp.x,wp.y,r*2.2,0,Math.PI*2);ctx.fill();
-        ctx.beginPath();ctx.arc(wp.x,wp.y,r,0,Math.PI*2);ctx.fillStyle='#05080F';ctx.fill();
-        ctx.strokeStyle=`rgba(200,100,140,${a})`;ctx.lineWidth=1.5;ctx.stroke();
-        ctx.globalAlpha=a*0.9;ctx.font='12px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(sat.icon,wp.x,wp.y);ctx.globalAlpha=1;
-        const lx=isLeft?wp.x+r+5:wp.x-r-5;
-        ctx.font='600 10px -apple-system,sans-serif';ctx.textAlign=isLeft?'left':'right';ctx.textBaseline='middle';ctx.fillStyle=`rgba(240,216,224,${a*0.65})`;ctx.fillText(sat.name,lx,wp.y-2);
-        ctx.font='9px -apple-system,sans-serif';ctx.fillStyle=`rgba(200,100,140,${a*0.7})`;ctx.fillText('· '+sat.potential_level,lx,wp.y+9);
-      });
-      const hero=WAYPOINTS[WAYPOINTS.length-1],R=29,pulse=0.5+0.5*Math.sin(frame*0.038);
-      const oG=ctx.createRadialGradient(hero.x,hero.y,R*0.3,hero.x,hero.y,R*3.4);oG.addColorStop(0,'rgba(200,100,140,0.28)');oG.addColorStop(0.5,'rgba(200,100,140,0.09)');oG.addColorStop(1,'transparent');
-      ctx.fillStyle=oG;ctx.beginPath();ctx.arc(hero.x,hero.y,R*3.4,0,Math.PI*2);ctx.fill();
-      ctx.beginPath();ctx.arc(hero.x,hero.y,R+8+pulse*6,0,Math.PI*2);ctx.strokeStyle=`rgba(200,100,140,${0.1+pulse*0.12})`;ctx.lineWidth=1.5;ctx.stroke();
-      const hF=ctx.createRadialGradient(hero.x,hero.y-R*0.3,0,hero.x,hero.y,R);hF.addColorStop(0,'#1A0510');hF.addColorStop(1,'#07090E');
-      ctx.fillStyle=hF;ctx.beginPath();ctx.arc(hero.x,hero.y,R,0,Math.PI*2);ctx.fill();
-      const rG=ctx.createLinearGradient(hero.x-R,hero.y-R,hero.x+R,hero.y+R);rG.addColorStop(0,'rgba(255,180,210,1)');rG.addColorStop(0.5,'rgba(200,100,140,0.85)');rG.addColorStop(1,'rgba(140,60,90,0.9)');
-      ctx.strokeStyle=rG;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(hero.x,hero.y,R,0,Math.PI*2);ctx.stroke();
-      ctx.font='20px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(hero.axis.icon,hero.x,hero.y);
-      ctx.font='700 8px -apple-system,sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillStyle='rgba(200,100,140,0.65)';ctx.fillText('▲ 今ここ',hero.x,hero.y-R-4);
-      ctx.font=`600 20px 'Hiragino Mincho ProN','YuMincho',Georgia,serif`;ctx.textAlign='center';ctx.textBaseline='top';ctx.fillStyle='rgba(240,216,224,0.95)';ctx.fillText(hero.axis.name,hero.x,hero.y+R+8);
-      frame++; animId=requestAnimationFrame(draw);
-    }
-    draw();
-    return () => cancelAnimationFrame(animId);
-  }, [analysis?.axes]);
 
   const handleFile = useCallback((file) => {
     if (!file || !file.type.startsWith('image/')) {
@@ -555,8 +506,8 @@ export default function BelleMirrorPage() {
               🎁 月1回は無料でまるごと見られます。まずは試して、気に入ったら続けてください。
             </p>
             <p className="privacy-note">
-              📷 写真はAI分析のみに使用し、サーバーには保存されません。<br />
-              分析完了と同時に削除されます。
+              📷 写真はAI分析・ビジュアルレポート生成に使用されます。<br />
+              無料プレビューのみの場合は数日以内に自動削除、購入・お試し解放後の分析は写真ごとレポートとして保存されます。
             </p>
           </>
         )}
@@ -766,34 +717,6 @@ export default function BelleMirrorPage() {
             </div>
           )}
 
-          {/* ── New Me Map FV Card（シェアしたくなる一画面目）── */}
-          <div style={{ background:'#05080F', borderRadius:'20px', overflow:'hidden', border:'1px solid rgba(200,100,140,0.13)', marginBottom:'28px', boxShadow:'0 24px 60px rgba(0,0,0,0.8)' }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'22px 22px 0' }}>
-              <span style={{ fontSize:'9px', fontWeight:800, letterSpacing:'.28em', color:'rgba(200,100,140,0.55)', textTransform:'uppercase' }}>New Me Map</span>
-              <span style={{ fontSize:'9px', color:'rgba(232,228,220,0.18)', letterSpacing:'.05em' }}>
-                {new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'.')}
-              </span>
-            </div>
-            <div style={{ display:'flex', justifyContent:'center', padding:'10px 16px 4px' }}>
-              <canvas ref={mapCanvasRef} style={{ width:'304px', height:'400px', display:'block' }} />
-            </div>
-            <div style={{ padding:'4px 22px 22px', textAlign:'center' }}>
-              {(() => {
-                const h = analysis.axes?.find(a => a.potential_level === '高') || analysis.axes?.[0];
-                return h ? (
-                  <div style={{ display:'inline-flex', alignItems:'center', gap:'7px', padding:'6px 16px', border:'1px solid rgba(200,100,140,0.35)', borderRadius:'99px', background:'rgba(200,100,140,0.05)', fontSize:'11px', fontWeight:700, color:'rgba(220,130,160,1)', letterSpacing:'.07em', marginBottom:'14px' }}>
-                    <span style={{ width:'5px', height:'5px', borderRadius:'50%', background:'rgba(220,130,160,1)', boxShadow:'0 0 6px rgba(200,100,140,0.9)', flexShrink:0, display:'inline-block' }} />
-                    変容余地 — {h.potential_level}
-                  </div>
-                ) : null;
-              })()}
-              <div style={{ height:'1px', background:'linear-gradient(90deg,transparent,rgba(200,100,140,0.1),transparent)', marginBottom:'12px' }} />
-              <p style={{ fontSize:'10px', color:'rgba(232,228,220,0.22)', letterSpacing:'.04em', lineHeight:1.8, marginBottom:'10px' }}>
-                Mirror AI があなたの写真に見つけた最初に動かすべき一点
-              </p>
-              <p style={{ fontSize:'9px', fontWeight:600, letterSpacing:'.2em', color:'rgba(232,228,220,0.1)' }}>fineme.me</p>
-            </div>
-          </div>
 
           {/* 第一印象・軸カード（previewのみ。fullは新ビジュアルレポートに統合済み） */}
           {state === 'preview' && (
@@ -996,7 +919,7 @@ export default function BelleMirrorPage() {
                   </div>
 
                   <p style={{ fontSize: '11px', color: 'rgba(240,216,224,0.28)', marginTop: '14px', lineHeight: 1.7 }}>
-                    いつでも解約可 · クレカ決済 · 写真は分析後に削除
+                    いつでも解約可 · クレカ決済 · 写真はレポート表示のため保存
                   </p>
                   {error && <p className="error-msg" style={{ marginTop: '10px' }}>{error}</p>}
                 </div>
