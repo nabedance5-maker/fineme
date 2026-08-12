@@ -7,7 +7,6 @@ import AttributeStep from '@/app/_components/AttributeStep';
 import MirrorReportCard from '@/app/_components/MirrorReportCard';
 
 const LS_SESSIONS_KEY = 'fineme:mirror:sessions'; // ['session_id1', 'session_id2', ...]
-const LS_ONE_POINT_KEY = 'fineme:mirror:one-point';
 const LS_TRIAL_MONTH_KEY = 'fineme:mirror:freeTrialMonth';
 
 function currentMonthJST() {
@@ -27,25 +26,6 @@ function saveSessionToLocal(sessionId) {
 
 function getLocalSessionIds() {
   try { return JSON.parse(localStorage.getItem(LS_SESSIONS_KEY) || '[]'); } catch { return []; }
-}
-
-const COMPASS_TO_MIRROR_IDS = {
-  body: ['body', 'posture'], eyebrow: ['eyebrow'], fashion: ['fashion', 'color'],
-  hair: ['hair'], skin: ['skin'], teeth: [], nail: [],
-};
-
-function determineOnePoint(axes, compassFirst) {
-  if (!axes?.length) return null;
-  const visible = axes.filter(a => a.id !== 'overall');
-  if (!visible.length) return null;
-  if (compassFirst) {
-    const mirrorIds = COMPASS_TO_MIRROR_IDS[compassFirst] || [];
-    const hiMatch = visible.find(a => mirrorIds.includes(a.id) && a.potential_level === '高');
-    if (hiMatch) return hiMatch;
-    const anyMatch = visible.find(a => mirrorIds.includes(a.id));
-    if (anyMatch) return anyMatch;
-  }
-  return visible.find(a => a.potential_level === '高') || visible[0];
 }
 
 function parseCompassAction(text) {
@@ -119,8 +99,6 @@ export default function BelleMirrorPage() {
   const [curatedPosts, setCuratedPosts] = useState({});
   const [needsAttrs, setNeedsAttrs] = useState(false);
   const [attrsChecked, setAttrsChecked] = useState(false);
-  const [onePointStatus, setOnePointStatus] = useState(null); // null | 'active' | 'done'
-  const [determinedOnePoint, setDeterminedOnePoint] = useState(null);
   const [photoType, setPhotoType] = useState(null); // null | 'face' | 'body'
   const [trialUsedThisMonth, setTrialUsedThisMonth] = useState(false);
   const [trialApplied, setTrialApplied] = useState(false);
@@ -243,15 +221,7 @@ export default function BelleMirrorPage() {
 
     try { setTrialUsedThisMonth(localStorage.getItem(LS_TRIAL_MONTH_KEY) === currentMonthJST()); } catch {}
     try { if (localStorage.getItem('fineme:mirror:feedback:sent') === '1') setFbSent(true); } catch {}
-    try { const op = JSON.parse(localStorage.getItem(LS_ONE_POINT_KEY) || 'null'); if (op?.status) setOnePointStatus(op.status); } catch {}
   }, []);
-
-  useEffect(() => {
-    if (state !== 'full' || !analysis?.axes?.length) return;
-    let cf = null;
-    try { const d = JSON.parse(localStorage.getItem('fineme:diagnosis:belle') || 'null'); cf = d?.compass_first || null; } catch {}
-    setDeterminedOnePoint(determineOnePoint(analysis.axes, cf));
-  }, [state, analysis]);
 
   // 各軸の内容に合う投稿があれば取得（New Me Mapと同じ仕組み。2026-08-12）
   useEffect(() => {
@@ -825,99 +795,100 @@ export default function BelleMirrorPage() {
             </div>
           </div>
 
-          {previewFile && (
-            <div style={{ position: 'relative', width: '96px', margin: '0 auto 24px' }}>
-              <img
-                src={previewFile}
-                alt="分析した写真"
-                style={{ width: '96px', height: '96px', objectFit: 'cover', objectPosition: 'center top', borderRadius: '50%', border: '2px solid rgba(201,168,76,0.4)', display: 'block' }}
-              />
-              <span style={{ position: 'absolute', bottom: 0, right: 0, fontSize: '16px', lineHeight: 1 }}>🪞</span>
-            </div>
-          )}
-
-          {/* 第一印象 */}
-          <div className="first-impression">
-            <p style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(201,168,76,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '10px' }}>First Impression</p>
-            {analysis.first_impression}
-          </div>
-
-          {/* 軸カード */}
-          {analysis.axes?.map((axis, i) => {
-            const pot = POTENTIAL_COLORS[axis.potential_level] || POTENTIAL_COLORS['中'];
-            const isPaywalled = state === 'preview' && i >= 1;
-
-            return (
-              <div
-                key={axis.id || i}
-                className="axis-card"
-                style={{ border: `1px solid ${pot.border}` }}
-              >
-                <div className="axis-header">
-                  <span className="axis-icon">{axis.icon}</span>
-                  <span className="axis-name">{axis.name}</span>
-                  <span
-                    className="axis-badge"
-                    style={{ background: pot.bg, border: `1px solid ${pot.border}`, color: pot.text }}
-                  >
-                    {pot.label}
-                  </span>
+          {/* 第一印象・軸カード（previewのみ。fullは新ビジュアルレポートに統合済み） */}
+          {state === 'preview' && (
+            <>
+              {previewFile && (
+                <div style={{ position: 'relative', width: '96px', margin: '0 auto 24px' }}>
+                  <img
+                    src={previewFile}
+                    alt="分析した写真"
+                    style={{ width: '96px', height: '96px', objectFit: 'cover', objectPosition: 'center top', borderRadius: '50%', border: '2px solid rgba(201,168,76,0.4)', display: 'block' }}
+                  />
+                  <span style={{ position: 'absolute', bottom: 0, right: 0, fontSize: '16px', lineHeight: 1 }}>🪞</span>
                 </div>
+              )}
 
-                <p className="axis-summary">{axis.summary}</p>
-
-                {isPaywalled ? (
-                  /* ペイウォール */
-                  <div className="paywall-overlay">
-                    <div className="paywall-blur">
-                      <p className="axis-detail">{axis.detail}</p>
-                      <ul className="axis-hints">
-                        {(axis.hints || []).map((h, j) => <li key={j}>{h}</li>)}
-                      </ul>
-                    </div>
-                  </div>
-                ) : (
-                  /* フル表示 */
-                  <>
-                    {axis.detail && <p className="axis-detail">{axis.detail}</p>}
-                    {axis.related_post_id && curatedPosts[axis.related_post_id] && (() => {
-                      const cp = curatedPosts[axis.related_post_id];
-                      const platformIcon = cp.platform === 'tiktok' ? '🎵' : '📷';
-                      const platformLabel = cp.platform === 'tiktok' ? 'TikTok' : 'Instagram';
-                      return (
-                        <a href={cp.post_url} target="_blank" rel="noopener noreferrer" className="curated-post-card">
-                          {cp.permission_confirmed && cp.thumbnail_url && (
-                            <img src={cp.thumbnail_url} alt="" className="curated-post-thumb" />
-                          )}
-                          <div className="curated-post-body">
-                            <p className="curated-post-label">{platformIcon} {platformLabel}で見る</p>
-                            <p className="curated-post-caption">{cp.caption}</p>
-                          </div>
-                        </a>
-                      );
-                    })()}
-                    {axis.hints?.length > 0 && (
-                      <ul className="axis-hints">
-                        {axis.hints.map((h, j) => <li key={j}>{h}</li>)}
-                      </ul>
-                    )}
-                    {axis.compass_action && (() => {
-                      const { cleanText, url } = parseCompassAction(axis.compass_action);
-                      const inner = (
-                        <div className="compass-action" style={url ? { cursor: 'pointer' } : {}}>
-                          <p className="compass-action-label">🧭 Compass アクション {url && '→'}</p>
-                          {cleanText}
-                        </div>
-                      );
-                      return url
-                        ? <a href={url} style={{ textDecoration: 'none', display: 'block' }}>{inner}</a>
-                        : inner;
-                    })()}
-                  </>
-                )}
+              <div className="first-impression">
+                <p style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(201,168,76,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '10px' }}>First Impression</p>
+                {analysis.first_impression}
               </div>
-            );
-          })}
+
+              {analysis.axes?.map((axis, i) => {
+                const pot = POTENTIAL_COLORS[axis.potential_level] || POTENTIAL_COLORS['中'];
+                const isPaywalled = i >= 1;
+
+                return (
+                  <div
+                    key={axis.id || i}
+                    className="axis-card"
+                    style={{ border: `1px solid ${pot.border}` }}
+                  >
+                    <div className="axis-header">
+                      <span className="axis-icon">{axis.icon}</span>
+                      <span className="axis-name">{axis.name}</span>
+                      <span
+                        className="axis-badge"
+                        style={{ background: pot.bg, border: `1px solid ${pot.border}`, color: pot.text }}
+                      >
+                        {pot.label}
+                      </span>
+                    </div>
+
+                    <p className="axis-summary">{axis.summary}</p>
+
+                    {isPaywalled ? (
+                      <div className="paywall-overlay">
+                        <div className="paywall-blur">
+                          <p className="axis-detail">{axis.detail}</p>
+                          <ul className="axis-hints">
+                            {(axis.hints || []).map((h, j) => <li key={j}>{h}</li>)}
+                          </ul>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {axis.detail && <p className="axis-detail">{axis.detail}</p>}
+                        {axis.related_post_id && curatedPosts[axis.related_post_id] && (() => {
+                          const cp = curatedPosts[axis.related_post_id];
+                          const platformIcon = cp.platform === 'tiktok' ? '🎵' : '📷';
+                          const platformLabel = cp.platform === 'tiktok' ? 'TikTok' : 'Instagram';
+                          return (
+                            <a href={cp.post_url} target="_blank" rel="noopener noreferrer" className="curated-post-card">
+                              {cp.permission_confirmed && cp.thumbnail_url && (
+                                <img src={cp.thumbnail_url} alt="" className="curated-post-thumb" />
+                              )}
+                              <div className="curated-post-body">
+                                <p className="curated-post-label">{platformIcon} {platformLabel}で見る</p>
+                                <p className="curated-post-caption">{cp.caption}</p>
+                              </div>
+                            </a>
+                          );
+                        })()}
+                        {axis.hints?.length > 0 && (
+                          <ul className="axis-hints">
+                            {axis.hints.map((h, j) => <li key={j}>{h}</li>)}
+                          </ul>
+                        )}
+                        {axis.compass_action && (() => {
+                          const { cleanText, url } = parseCompassAction(axis.compass_action);
+                          const inner = (
+                            <div className="compass-action" style={url ? { cursor: 'pointer' } : {}}>
+                              <p className="compass-action-label">🧭 Compass アクション {url && '→'}</p>
+                              {cleanText}
+                            </div>
+                          );
+                          return url
+                            ? <a href={url} style={{ textDecoration: 'none', display: 'block' }}>{inner}</a>
+                            : inner;
+                        })()}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          )}
 
           {/* ペイウォールCTA（previewのみ） */}
           {state === 'preview' && (() => {
@@ -1056,12 +1027,6 @@ export default function BelleMirrorPage() {
             </div>
           )}
 
-          {/* 全体メッセージ（fullのみ） */}
-          {state === 'full' && analysis.overall_message && (
-            <div className="overall-msg">
-              {analysis.overall_message}
-            </div>
-          )}
 
           {/* ビジュアルレポート（fullのみ・Claude Haikuが生成するSTEP形式のリッチレポート） */}
           {state === 'full' && reportLoading && !reportContent && (
@@ -1072,45 +1037,6 @@ export default function BelleMirrorPage() {
           {state === 'full' && reportContent && (
             <MirrorReportCard reportContent={reportContent} photoUrl={reportPhotoUrl} gender="female" />
           )}
-
-          {/* 動かす1点（fullのみ） */}
-          {state === 'full' && determinedOnePoint && (() => {
-            const isDone = onePointStatus === 'done';
-            const isActive = onePointStatus === 'active';
-            const saveOnePoint = (nextStatus) => {
-              const entry = { axisId: determinedOnePoint.id, axisName: determinedOnePoint.name, axisIcon: determinedOnePoint.icon, status: nextStatus, savedAt: new Date().toISOString() };
-              try { localStorage.setItem(LS_ONE_POINT_KEY, JSON.stringify(entry)); } catch {}
-              setOnePointStatus(nextStatus);
-            };
-            return (
-              <div style={{ marginTop: '24px', background: isDone ? 'rgba(16,185,129,0.06)' : 'rgba(201,168,76,0.05)', border: `1px solid ${isDone ? 'rgba(16,185,129,0.3)' : 'rgba(201,168,76,0.25)'}`, borderRadius: '16px', padding: '20px 22px' }}>
-                <p style={{ fontSize: '10px', fontWeight: 800, color: isDone ? 'rgba(16,185,129,0.7)' : 'rgba(201,168,76,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', margin: '0 0 10px' }}>
-                  {isDone ? '✓ この30日で動かした1点' : 'この30日で動かす1点'}
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: isDone ? '0' : '14px' }}>
-                  <span style={{ fontSize: '28px', flexShrink: 0 }}>{determinedOnePoint.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '15px', fontWeight: 800, color: '#e8e4dc', margin: '0 0 3px' }}>{determinedOnePoint.name}</p>
-                    <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: 0, lineHeight: 1.55 }}>この1点だけ、今月やってみよう</p>
-                  </div>
-                  {isDone && <span style={{ fontSize: '22px', color: '#10b981', flexShrink: 0 }}>✓</span>}
-                </div>
-                {!isDone && (
-                  <button
-                    onClick={() => saveOnePoint(isActive ? 'done' : 'active')}
-                    style={{ display: 'block', width: '100%', padding: '12px', background: isActive ? 'rgba(16,185,129,0.12)' : 'rgba(201,168,76,0.08)', border: `1px solid ${isActive ? 'rgba(16,185,129,0.35)' : 'rgba(201,168,76,0.3)'}`, borderRadius: '10px', fontSize: '13px', fontWeight: 800, color: isActive ? '#10b981' : '#c9a84c', cursor: 'pointer', fontFamily: 'inherit' }}
-                  >
-                    {isActive ? 'やった！（完了を記録）' : '今月やってみる →'}
-                  </button>
-                )}
-                {isDone && (
-                  <p style={{ fontSize: '11px', color: 'rgba(16,185,129,0.6)', margin: 0, textAlign: 'center' }}>
-                    New Me Map で進捗を確認 → <a href="/mypage/navi" style={{ color: '#10b981', textDecoration: 'none' }}>マイページ</a>
-                  </p>
-                )}
-              </div>
-            );
-          })()}
 
           {/* New Me Map 生成CTA（fullのみ） */}
           {state === 'full' && (

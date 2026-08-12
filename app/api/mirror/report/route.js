@@ -1,13 +1,19 @@
 // POST /api/mirror/report
 // paid=true が確定したMirrorセッションについて、保存済み写真を使いClaude Haikuで
-// ビジュアルレポート（STEP1-15相当のリッチ構造化JSON）を生成・キャッシュする。
-// 画像生成AIは使わない。生成結果は app/_components/MirrorReportCard.js がHTML/CSSで描画する。
+// 「フル統合分析」を1回だけ生成・キャッシュする。統合分析は以下の両方を兼ねる:
+//   - mirror_sessions.analysis（旧axes形式。New Me Map / New Me Navi / 月次比較が
+//     依存する唯一のデータソース。ここを更新することで新しいMirror結果がそのまま
+//     Map・Naviのパーソナライズに反映される）
+//   - mirror_sessions.report_content（STEP1-15相当のリッチなビジュアルレポート。
+//     MirrorReportCardがHTML/CSSで描画する）
+// 画像生成AIは使わない。
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
 import { buildReportPrompt } from '@/lib/mirror-report-prompt';
-import { validateReportContent } from '@/lib/mirror-report-content';
+import { validateReportContent, validateAxesPayload } from '@/lib/mirror-report-content';
+import { fetchCuratedPostsPrompt } from '@/lib/mirror-analysis-shared';
 
-export const maxDuration = 60;
+export const maxDuration = 90;
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -24,6 +30,24 @@ async function signPhotoUrl(photoPath) {
   return data.signedUrl;
 }
 
+// ログイン済みユーザーの状態（guest/member/diagnosed）をサーバー側で判定。
+// クライアントの自己申告に頼らず diagnosis_results の実在で判定する。
+async function resolveUserState(userId, gender) {
+  if (!userId) return 'guest';
+  try {
+    const track = gender === 'female' ? 'belle' : 'fineme';
+    const { data } = await supabase
+      .from('diagnosis_results')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('track', track)
+      .limit(1);
+    return data?.length ? 'diagnosed' : 'member';
+  } catch {
+    return 'member';
+  }
+}
+
 export async function POST(request) {
   try {
     const { session_id } = await request.json();
@@ -33,7 +57,7 @@ export async function POST(request) {
 
     const { data: sessionRow, error: fetchError } = await supabase
       .from('mirror_sessions')
-      .select('id, paid, gender, photo_type, age_band, photo_path, report_status, report_content')
+      .select('id, user_id, paid, gender, photo_type, age_band, photo_path, report_status, report_content')
       .eq('id', session_id)
       .single();
 
@@ -67,22 +91,29 @@ export async function POST(request) {
       const photoBase64 = photoBuffer.toString('base64');
       const mediaType = mediaTypeFromPath(sessionRow.photo_path);
 
+      const [userState, curatedPostsPrompt] = await Promise.all([
+        resolveUserState(sessionRow.user_id, sessionRow.gender),
+        fetchCuratedPostsPrompt(sessionRow.gender),
+      ]);
+
       const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
       const systemPrompt = buildReportPrompt({
         gender: sessionRow.gender,
         photoTypeHint: sessionRow.photo_type,
         ageBand: sessionRow.age_band,
+        userState,
+        curatedPostsPrompt,
       });
 
       const message = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 12000,
+        max_tokens: 14000,
         system: systemPrompt,
         messages: [{
           role: 'user',
           content: [
             { type: 'image', source: { type: 'base64', media_type: mediaType, data: photoBase64 } },
-            { type: 'text', text: 'この写真を分析して、Fineme Mirror のビジュアルレポートをJSON形式で出力してください。' },
+            { type: 'text', text: 'この写真を分析して、Fineme Mirror のフル分析（axes + ビジュアルレポート）をJSON形式で出力してください。' },
           ],
         }],
       });
@@ -90,12 +121,18 @@ export async function POST(request) {
       const raw = message.content[0]?.text?.trim() || '{}';
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+
+      const axesPayload = validateAxesPayload(parsed);
+      if (!axesPayload) throw new Error('axes の形式が不正です');
       const reportContent = validateReportContent(parsed);
       if (!reportContent) throw new Error('レポート内容の形式が不正です');
 
+      // analysis を更新することで、New Me Map / New Me Navi / 月次比較が
+      // このセッションを読む際、次回から自動的に今回の分析結果を使うようになる
+      // （それらのコード側は一切変更不要 — mirror_sessions.analysis だけを見ているため）
       await supabase
         .from('mirror_sessions')
-        .update({ report_status: 'ready', report_content: reportContent, report_error: null })
+        .update({ analysis: axesPayload, report_status: 'ready', report_content: reportContent, report_error: null })
         .eq('id', session_id);
 
       return Response.json({
