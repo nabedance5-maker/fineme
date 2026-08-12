@@ -4,75 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import MirrorReportCard from '@/app/_components/MirrorReportCard';
 
-function parseCompassAction(text) {
-  const urlMatch = text.match(/→\s*(\/[^\s」\n]+)/);
-  const url = urlMatch ? urlMatch[1].replace(/」/g, '') : null;
-  const cleanText = url ? text.slice(0, text.indexOf('→')).trim() : text;
-  return { cleanText, url };
-}
-
-const POTENTIAL_COLORS = {
-  '高': { bg: 'rgba(201,168,76,0.12)', border: 'rgba(201,168,76,0.5)', text: '#c9a84c', label: '変容余地 高' },
-  '中': { bg: 'rgba(100,160,255,0.10)', border: 'rgba(100,160,255,0.4)', text: '#7aadff', label: '変容余地 中' },
-  '低': { bg: 'rgba(80,200,140,0.10)', border: 'rgba(80,200,140,0.4)', text: '#50c88c', label: 'すでに整っている' },
-};
-
-function AnalysisView({ analysis }) {
-  return (
-    <div style={{ marginTop: '16px' }}>
-      <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '20px', fontSize: '14px', color: 'rgba(232,228,220,0.85)', lineHeight: 1.8 }}>
-        <p style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(201,168,76,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', margin: '0 0 8px' }}>First Impression</p>
-        {analysis.first_impression}
-      </div>
-
-      {analysis.axes?.map((axis, i) => {
-        const pot = POTENTIAL_COLORS[axis.potential_level] || POTENTIAL_COLORS['中'];
-        return (
-          <div key={axis.id || i} style={{ background: 'rgba(10,15,30,0.6)', border: `1px solid ${pot.border}`, borderRadius: '12px', padding: '16px', marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              <span style={{ fontSize: '20px' }}>{axis.icon}</span>
-              <span style={{ fontSize: '14px', fontWeight: 800, color: '#e8e4dc', flex: 1 }}>{axis.name}</span>
-              <span style={{ fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', background: pot.bg, border: `1px solid ${pot.border}`, color: pot.text }}>
-                {pot.label}
-              </span>
-            </div>
-            <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.7)', lineHeight: 1.75, margin: '0 0 10px' }}>{axis.summary}</p>
-            {axis.detail && <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.7)', lineHeight: 1.75, margin: '0 0 10px' }}>{axis.detail}</p>}
-            {axis.hints?.length > 0 && (
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                {axis.hints.map((h, j) => (
-                  <li key={j} style={{ fontSize: '12px', color: 'rgba(232,228,220,0.65)', paddingLeft: '16px', position: 'relative', lineHeight: 1.6 }}>
-                    <span style={{ position: 'absolute', left: 0, color: '#c9a84c', fontWeight: 700 }}>→</span>
-                    {h}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {axis.compass_action && (() => {
-              const { cleanText, url } = parseCompassAction(axis.compass_action);
-              const inner = (
-                <div style={{ background: 'rgba(201,168,76,0.07)', borderLeft: '3px solid rgba(201,168,76,0.5)', padding: '8px 12px', borderRadius: '0 8px 8px 0', fontSize: '12px', color: 'rgba(232,228,220,0.75)', lineHeight: 1.6, transition: 'background .15s', ...(url ? { cursor: 'pointer' } : {}) }}>
-                  <p style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(201,168,76,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', margin: '0 0 4px' }}>🧭 Compass アクション {url && '→'}</p>
-                  {cleanText}
-                </div>
-              );
-              return url
-                ? <a href={url} style={{ textDecoration: 'none', display: 'block' }}>{inner}</a>
-                : inner;
-            })()}
-          </div>
-        );
-      })}
-
-      {analysis.overall_message && (
-        <div style={{ background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: '12px', padding: '20px', textAlign: 'center', marginTop: '16px', fontSize: '15px', color: 'rgba(232,228,220,0.85)', lineHeight: 1.8, fontFamily: "'Noto Serif JP', Georgia, serif" }}>
-          {analysis.overall_message}
-        </div>
-      )}
-    </div>
-  );
-}
-
 const DIR_ICON  = { improved: '↑', stable: '→' };
 const DIR_COLOR = { improved: '#50c88c', stable: 'rgba(232,228,220,0.35)' };
 const POT_COLOR_COMP = { '高': '#c9a84c', '中': '#7aadff', '低': '#50c88c' };
@@ -133,8 +64,6 @@ export default function MirrorHistoryPage() {
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [loading, setLoading]     = useState(true);
   const [expandedId, setExpandedId]           = useState(null);
-  const [expandedAnalysis, setExpandedAnalysis] = useState({});
-  const [loadingId, setLoadingId] = useState(null);
   const [error, setError]         = useState('');
   const [comparison, setComparison] = useState(null);
   const [reportBySession, setReportBySession] = useState({});
@@ -189,38 +118,17 @@ export default function MirrorHistoryPage() {
     }).catch(() => { setError('データの読み込みに失敗しました。'); setLoading(false); });
   }, []);
 
-  async function toggleSession(session) {
+  function toggleSession(session) {
     if (expandedId === session.id) {
       setExpandedId(null);
       return;
     }
-
-    if (!session.paid) {
-      setExpandedId(session.id);
-      return;
-    }
-
-    // 既にキャッシュ済みなら即展開
-    if (expandedAnalysis[session.id]) {
-      setExpandedId(session.id);
-      loadReport(session.id);
-      return;
-    }
-
-    setLoadingId(session.id);
-    try {
-      const res = await fetch(`/api/mirror/result?session_id=${session.id}`);
-      const data = await res.json();
-      if (data.paid && data.analysis) {
-        setExpandedAnalysis(prev => ({ ...prev, [session.id]: data.analysis }));
-        setExpandedId(session.id);
-        loadReport(session.id);
-      }
-    } catch {
-      setError('読み込みに失敗しました。');
-    } finally {
-      setLoadingId(null);
-    }
+    setExpandedId(session.id);
+    // ビジュアルレポート（新Mirror）はpaid確定済みセッションのみ生成対象。
+    // /api/mirror/report側でもpaid確認するため、ここでは呼ぶだけでよい
+    // （旧AnalysisView用の/api/mirror/result呼び出しは廃止 — でお指摘:
+    // 履歴ページだけ旧表示が先頭に残っていた。新レポートのみを表示する）。
+    if (session.paid) loadReport(session.id);
   }
 
   const SIDENAV = (
@@ -293,8 +201,6 @@ export default function MirrorHistoryPage() {
 
               {(isSubscriber ? sessions : sessions.slice(0, FREE_LIMIT)).map(s => {
                 const isExpanded = expandedId === s.id;
-                const isLoading  = loadingId === s.id;
-                const fullData   = expandedAnalysis[s.id];
 
                 return (
                   <div key={s.id} style={{ background: 'rgba(10,15,30,0.65)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '14px', marginBottom: '12px', overflow: 'hidden', transition: 'border-color .2s', ...(isExpanded ? { borderColor: 'rgba(201,168,76,0.35)' } : {}) }}>
@@ -321,32 +227,35 @@ export default function MirrorHistoryPage() {
                           {s.paid ? '購入済み' : '無料版'}
                         </span>
                         <span style={{ color: 'rgba(232,228,220,0.4)', fontSize: '12px' }}>
-                          {isLoading ? '…' : isExpanded ? '▲' : '▼'}
+                          {isExpanded ? '▲' : '▼'}
                         </span>
                       </div>
                     </button>
 
                     {isExpanded && (
                       <div style={{ padding: '0 18px 20px', borderTop: '1px solid rgba(232,228,220,0.08)' }}>
-                        {s.paid && fullData ? (
-                          <>
-                            <AnalysisView analysis={fullData} />
-                            {reportLoadingId === s.id && !reportBySession[s.id] && (
-                              <p style={{ textAlign: 'center', padding: '20px 0', color: 'rgba(232,228,220,0.4)', fontSize: '12px' }}>
-                                ビジュアルレポートを生成中...（情報量が多いため1〜2分ほどかかることがあります）
+                        {s.paid ? (
+                          reportBySession[s.id] ? (
+                            <MirrorReportCard
+                              reportContent={reportBySession[s.id].content}
+                              photoUrl={reportBySession[s.id].photoUrl}
+                              gender={trackId === 'belle' ? 'female' : 'male'}
+                              tierComparison={reportBySession[s.id].tierComparison}
+                            />
+                          ) : (
+                            <div className="report-loading-wrap" style={{ margin: '20px auto' }}>
+                              <div className="report-loading-spinner" />
+                              <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.8)', margin: '0 0 4px' }}>
+                                ビジュアルレポートを作成中…
                               </p>
-                            )}
-                            {reportBySession[s.id] && (
-                              <MirrorReportCard
-                                reportContent={reportBySession[s.id].content}
-                                photoUrl={reportBySession[s.id].photoUrl}
-                                gender={trackId === 'belle' ? 'female' : 'male'}
-                                tierComparison={reportBySession[s.id].tierComparison}
-                              />
-                            )}
-                          </>
-                        ) : s.paid ? (
-                          <p style={{ color: 'rgba(232,228,220,0.35)', fontSize: '13px', padding: '20px 0', textAlign: 'center' }}>読み込み中...</p>
+                              <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.45)', margin: 0, lineHeight: 1.6 }}>
+                                情報量が多いため1〜2分ほどかかります。このままお待ちください。
+                              </p>
+                              <div className="report-progress-track">
+                                <div className="report-progress-bar" />
+                              </div>
+                            </div>
+                          )
                         ) : (
                           <div style={{ padding: '20px 0', textAlign: 'center' }}>
                             <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', marginBottom: '16px', lineHeight: 1.7 }}>
@@ -379,6 +288,12 @@ export default function MirrorHistoryPage() {
         .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
         .sidenav-link:hover { background: rgba(201,168,76,0.1); }
         .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #c9a84c; border-left: 3px solid #c9a84c; padding-left: 9px; }
+        .report-loading-wrap { max-width: 480px; text-align: center; padding: 28px 24px; background: rgba(201,168,76,0.05); border: 1px solid rgba(201,168,76,0.2); border-radius: 16px; }
+        .report-loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(201,168,76,0.2); border-top-color: #c9a84c; border-radius: 50%; animation: mirrorSpin 1s linear infinite; margin: 0 auto 14px; }
+        @keyframes mirrorSpin { to { transform: rotate(360deg); } }
+        .report-progress-track { width: 100%; height: 6px; border-radius: 99px; background: rgba(232,228,220,0.08); overflow: hidden; margin-top: 16px; }
+        .report-progress-bar { width: 35%; height: 100%; border-radius: 99px; background: linear-gradient(90deg, transparent, #c9a84c, transparent); animation: mirrorProgress 1.7s ease-in-out infinite; }
+        @keyframes mirrorProgress { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
       `}</style>
     </main>
   );
