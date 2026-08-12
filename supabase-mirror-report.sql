@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-08-12
 -- Mirror ビジュアルレポート: アップロード写真の保存 + Claude Haikuによるリッチ分析結果保存
 -- app/api/mirror/analyze/route.js が photo_path 保存に使用（写真はStorageバケット mirror-photos へ）。
 -- app/api/mirror/report/route.js が report_status/report_content/report_error の読み書きに使用。

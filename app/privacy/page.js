@@ -20,6 +20,7 @@ export default function PrivacyPage() {
             <li>外見診断の回答・結果データ（悩みの種類、変わりたい方向性、現状スコア等）</li>
             <li>予約・問い合わせに関する情報（氏名、希望日時、メモ等）</li>
             <li>サービス利用履歴（閲覧したサービス、診断回数等）</li>
+            <li>Fineme Mirror（AI写真診断）にアップロードした写真（有料版利用時のみ保存。詳細は下記2-2）</li>
             <li>技術情報（ブラウザ、端末、IPアドレス、Cookie等）</li>
           </ul>
 
@@ -44,6 +45,19 @@ export default function PrivacyPage() {
         </section>
 
         <section className="card stack" style={{ padding: 20, gap: 12 }}>
+          <h2 style={{ margin: 0, fontSize: 18 }}>2-2. Fineme Mirror（AI写真診断）の写真の取り扱い</h2>
+          <p>Fineme Mirrorは、アップロードされた写真をAI（Anthropic社のClaude）で解析し、ビジュアルレポートを生成する機能です。写真の取り扱いは以下の方針とします。</p>
+          <ul className="stack" style={{ gap: 6 }}>
+            <li>✅ <strong>無料プレビュー段階の写真は、購入されない限り数日以内に自動削除します。</strong>アクセス制御されたストレージに一時保存し、期限を過ぎると写真データのみを削除します（分析結果テキストは残ります）。</li>
+            <li>✅ <strong>購入済み（有料）の分析については、レポートの再表示のため写真を保存します。</strong>アクセス制御された非公開のストレージに保存し、閲覧の都度、本人確認のうえ期限付きの署名付きURLでのみ表示します。</li>
+            <li>✅ <strong>サブスクリプション解約後90日が経過したアカウントの写真・分析データは自動削除します。</strong></li>
+            <li>❌ <strong>取得した写真をAIモデルの学習データとして提供することはありません。</strong>診断・レポート生成の目的にのみ使用します。</li>
+            <li>❌ <strong>第三者への写真データの販売・提供・広告配信への利用は行いません。</strong></li>
+          </ul>
+          <p>写真の削除をご希望の場合は、下記「8. 開示・訂正・削除等の請求」の連絡先までご連絡ください。</p>
+        </section>
+
+        <section className="card stack" style={{ padding: 20, gap: 12 }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>3. 利用目的</h2>
           <ul className="stack" style={{ gap: 6 }}>
             <li>アカウントの作成・認証・本人確認のため</li>
@@ -61,7 +75,8 @@ export default function PrivacyPage() {
           <h2 style={{ margin: 0, fontSize: 18 }}>4. 利用する第三者サービス</h2>
           <p>当サービスは以下の第三者サービスを利用しており、各サービスのプライバシーポリシーが適用されます。</p>
           <ul className="stack" style={{ gap: 8 }}>
-            <li><strong>Supabase（Supabase Inc.）</strong>：ユーザー認証・データベース管理<br /><a href="https://supabase.com/privacy" target="_blank" rel="noopener" style={{ fontSize: 13 }}>https://supabase.com/privacy</a></li>
+            <li><strong>Supabase（Supabase Inc.）</strong>：ユーザー認証・データベース管理・写真ストレージ<br /><a href="https://supabase.com/privacy" target="_blank" rel="noopener" style={{ fontSize: 13 }}>https://supabase.com/privacy</a></li>
+            <li><strong>Anthropic（Anthropic PBC）</strong>：Fineme Mirrorの写真診断・レポート生成（Claude API）<br /><a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener" style={{ fontSize: 13 }}>https://www.anthropic.com/legal/privacy</a></li>
             <li><strong>Stripe（Stripe, Inc.）</strong>：決済処理・課金管理<br /><a href="https://stripe.com/jp/privacy" target="_blank" rel="noopener" style={{ fontSize: 13 }}>https://stripe.com/jp/privacy</a></li>
             <li><strong>Vercel（Vercel Inc.）</strong>：ホスティング・インフラ<br /><a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener" style={{ fontSize: 13 }}>https://vercel.com/legal/privacy-policy</a></li>
             <li><strong>Cloudflare（Cloudflare, Inc.）</strong>：DNS・CDN・メール転送<br /><a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener" style={{ fontSize: 13 }}>https://www.cloudflare.com/privacypolicy/</a></li>
@@ -103,7 +118,7 @@ export default function PrivacyPage() {
           <p>本ポリシーに関するお問い合わせ：<a href="mailto:contact@fineme.me">contact@fineme.me</a></p>
         </section>
 
-        <p className="muted" style={{ textAlign: 'right', fontSize: 13 }}>制定日: 2026-03-09</p>
+        <p className="muted" style={{ textAlign: 'right', fontSize: 13 }}>制定日: 2026-03-09 / 改定日: 2026-08-12（Mirror写真保存に関する条項を追加）</p>
       </div>
     </main>
   );
