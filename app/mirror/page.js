@@ -459,6 +459,11 @@ export default function MirrorPage() {
         .analyzing-wrap { max-width: 400px; margin: 60px auto; text-align: center; padding: 0 20px; }
         .analyzing-spinner { width: 56px; height: 56px; border: 3px solid rgba(201,168,76,0.2); border-top-color: #c9a84c; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 24px; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .report-loading-wrap { max-width: 480px; margin: 24px auto; text-align: center; padding: 28px 24px; background: rgba(201,168,76,0.05); border: 1px solid rgba(201,168,76,0.2); border-radius: 16px; }
+        .report-loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(201,168,76,0.2); border-top-color: #c9a84c; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 14px; }
+        .report-progress-track { width: 100%; height: 6px; border-radius: 99px; background: rgba(232,228,220,0.08); overflow: hidden; margin-top: 16px; }
+        .report-progress-bar { width: 35%; height: 100%; border-radius: 99px; background: linear-gradient(90deg, transparent, #c9a84c, transparent); animation: reportProgress 1.7s ease-in-out infinite; }
+        @keyframes reportProgress { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
         .results-wrap { max-width: 680px; margin: 0 auto; padding: 0 20px; }
         .first-impression { background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.2); border-radius: 16px; padding: 24px; margin-bottom: 32px; font-size: 15px; color: rgba(232,228,220,0.85); line-height: 1.8; }
         .axis-card { background: rgba(10,15,30,0.6); border-radius: 14px; padding: 20px; margin-bottom: 16px; position: relative; overflow: hidden; }
@@ -494,25 +499,30 @@ export default function MirrorPage() {
         .retry-btn:hover { border-color: rgba(232,228,220,0.4); color: rgba(232,228,220,0.7); }
       `}</style>
 
-      {/* ヒーロー */}
-      <div className="mirror-hero">
-        <p className="mirror-badge">Fineme Mirror</p>
-        <p className="mirror-subtitle">
-          写真1枚。AIがあなたの「変われる余白」を地図にする。<br />
-          スコアじゃない。あなたの可能性の見取り図。
-        </p>
-        {state === 'idle' && (
-          <>
-            <p className="privacy-note" style={{ marginBottom: '10px' }}>
-              🎁 月1回は無料でまるごと見られます。まずは試して、気に入ったら続けてください。
-            </p>
-            <p className="privacy-note">
-              📷 写真はAI分析・ビジュアルレポート生成に使用されます。<br />
-              無料プレビューのみの場合は数日以内に自動削除、購入・お試し解放後の分析は写真ごとレポートとして保存されます。
-            </p>
-          </>
-        )}
-      </div>
+      {/* ヒーロー（fullではFV最上部をビジュアルレポートに譲るため非表示） */}
+      {state !== 'full' && (
+        <div className="mirror-hero">
+          <p className="mirror-badge">Fineme Mirror</p>
+          <p className="mirror-subtitle">
+            写真1枚。AIがあなたの「変われる余白」を地図にする。<br />
+            スコアじゃない。あなたの可能性の見取り図。
+          </p>
+          <p className="privacy-note" style={{ marginBottom: '10px' }}>
+            ⚠️ この分析はAIが写真から視覚的に読み取った内容です。写真の角度・光・表情などによって結果がぶれたり、実際の印象と異なる場合があります。
+          </p>
+          {state === 'idle' && (
+            <>
+              <p className="privacy-note" style={{ marginBottom: '10px' }}>
+                🎁 月1回は無料でまるごと見られます。まずは試して、気に入ったら続けてください。
+              </p>
+              <p className="privacy-note">
+                📷 写真はAI分析・ビジュアルレポート生成に使用されます。<br />
+                無料プレビューのみの場合は数日以内に自動削除、購入・お試し解放後の分析は写真ごとレポートとして保存されます。
+              </p>
+            </>
+          )}
+        </div>
+      )}
 
       {/* 属性（年代）ゲート：写真アップロードの前に必須（でお指摘 2026-08-01） */}
       {state === 'idle' && attrsChecked && needsAttrs && (
@@ -711,8 +721,32 @@ export default function MirrorPage() {
       {(state === 'preview' || state === 'full') && analysis && (
         <div className="results-wrap">
 
+          {/* ビジュアルレポート（fullのみ・FVはこれが最優先。他コンテンツより先に出す） */}
+          {state === 'full' && reportLoading && !reportContent && (
+            <div className="report-loading-wrap">
+              <div className="report-loading-spinner" />
+              <p style={{ fontSize: '14px', fontWeight: 700, color: 'rgba(232,228,220,0.8)', margin: '0 0 4px' }}>
+                ビジュアルレポートを作成中…
+              </p>
+              <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.45)', margin: 0, lineHeight: 1.6 }}>
+                情報量が多いため1〜2分ほどかかります。このままお待ちください。
+              </p>
+              <div className="report-progress-track">
+                <div className="report-progress-bar" />
+              </div>
+            </div>
+          )}
+          {state === 'full' && reportContent && (
+            <MirrorReportCard reportContent={reportContent} photoUrl={reportPhotoUrl} gender="male" />
+          )}
+          {state === 'full' && reportContent && (
+            <p className="privacy-note" style={{ margin: '10px auto 0' }}>
+              ⚠️ この分析はAIが写真から視覚的に読み取った内容です。写真の角度・光・表情などによって結果がぶれたり、実際の印象と異なる場合があります。
+            </p>
+          )}
+
           {state === 'full' && (
-            <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+            <div style={{ textAlign: 'center', margin: '20px 0 8px' }}>
               <span className="full-badge">
                 {trialApplied ? '🎁 今月の無料お試し — 全軸の詳細分析' : '✨ フル版 — 全軸の詳細分析'}
               </span>
@@ -950,16 +984,6 @@ export default function MirrorPage() {
                 </button>
               </div>
             </div>
-          )}
-
-          {/* ビジュアルレポート（fullのみ・Claude Haikuが生成するSTEP形式のリッチレポート） */}
-          {state === 'full' && reportLoading && !reportContent && (
-            <div style={{ textAlign: 'center', padding: '32px 0', color: 'rgba(232,228,220,0.4)', fontSize: '12px' }}>
-              ビジュアルレポートを生成中...（情報量が多いため1〜2分ほどかかることがあります）
-            </div>
-          )}
-          {state === 'full' && reportContent && (
-            <MirrorReportCard reportContent={reportContent} photoUrl={reportPhotoUrl} gender="male" />
           )}
 
           {/* New Me Map 生成CTA（fullのみ） */}
