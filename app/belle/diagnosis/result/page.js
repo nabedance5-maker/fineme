@@ -1626,10 +1626,10 @@ export default function BelleDiagnosisResultPage() {
           <aside className="result-sidenav">
             <nav className="stack" style={{ gap: '4px' }}>
               <Link href="/mypage" className="sidenav-link">ホーム</Link>
+              <Link href="/mypage/mirror" className="sidenav-link">Mirror履歴</Link>
               <Link href="/belle/diagnosis/result" className="sidenav-link sidenav-link--active">New Me Navi</Link>
               <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
               <Link href="/mypage/log" className="sidenav-link">New Me Log</Link>
-              <Link href="/mypage/mirror" className="sidenav-link">Mirror履歴</Link>
               <Link href="/mypage/subscription" className="sidenav-link">サブスク設定</Link>
               <Link href="/mypage/favorites" className="sidenav-link">お気に入り</Link>
               <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
