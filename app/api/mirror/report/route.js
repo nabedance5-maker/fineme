@@ -10,7 +10,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
 import { buildReportPrompt } from '@/lib/mirror-report-prompt';
-import { validateReportContent, validateAxesPayload, REPORT_SCHEMA_VERSION, VISUAL_TIERS } from '@/lib/mirror-report-content';
+import { validateReportContent, validateAxesPayload, alignAxesWithScores, REPORT_SCHEMA_VERSION, VISUAL_TIERS } from '@/lib/mirror-report-content';
 import { fetchCuratedPostsPrompt } from '@/lib/mirror-analysis-shared';
 
 // スキーマ拡大（STEP2-10のサブ項目まで含む）でHaiku生成が90秒を超えることがあり、
@@ -177,12 +177,18 @@ export async function POST(request) {
       const reportContent = validateReportContent(parsed);
       if (!reportContent) throw new Error('レポート内容の形式が不正です');
 
+      // 軸のpotential_level（高/中/低）を、Haikuの自己申告のままではなく
+      // STEP14で誠実に計算済みのscoresから決定的に上書きする。New Me Mapの
+      // 精度がそのまま事業の継続価値に直結するため、詳細観察を軸判定に必ず反映させる
+      // （でお指摘: 「反映させなきゃダメ」。visual_scoreと同じ「計算はサーバー側」原則）。
+      const alignedAxesPayload = { ...axesPayload, axes: alignAxesWithScores(axesPayload.axes, reportContent.scores) };
+
       // analysis を更新することで、New Me Map / New Me Navi / 月次比較が
       // このセッションを読む際、次回から自動的に今回の分析結果を使うようになる
       // （それらのコード側は一切変更不要 — mirror_sessions.analysis だけを見ているため）
       await supabase
         .from('mirror_sessions')
-        .update({ analysis: axesPayload, report_status: 'ready', report_content: reportContent, report_error: null })
+        .update({ analysis: alignedAxesPayload, report_status: 'ready', report_content: reportContent, report_error: null })
         .eq('id', session_id);
 
       return Response.json({
