@@ -1,4 +1,4 @@
--- ⏳ 未適用（オーナーが本番Supabaseで実行してください）
+-- ✅ 本番適用済 2026-08-12
 --
 -- curated_posts: New Me Map・Mirror結果面に紐づける、キュレーション済みの
 -- Instagram/TikTok投稿プール。
