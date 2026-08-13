@@ -168,6 +168,12 @@ export async function POST(request) {
   const ageBand = profile?.age_band || derivedDiagnosis?.age_band || null;
   const ageLabel = AGE_BANDS[ageBand]?.label || null;
   const axisHabits = derivedDiagnosis?.axis_habits || {};
+  // 基本情報（任意・でお指摘 2026-08-13）
+  const heightCm = derivedDiagnosis?.height_cm || null;
+  const weightKg = derivedDiagnosis?.weight_kg || null;
+  const bodyFatPct = derivedDiagnosis?.body_fat_pct || null;
+  const personalColor = derivedDiagnosis?.personal_color || null;
+  const mbti = derivedDiagnosis?.mbti || null;
 
   // キュレーション済みInstagram/TikTok投稿プール（でお承認済みのみ）。
   // ステップ本文の具体的な内容に本当に合う場合だけAIが related_post_id を付ける
@@ -305,10 +311,18 @@ export async function POST(request) {
     ? '## 現状把握データ（本人申告）'
     : '## 現状把握データ（本人申告のみ・写真による確認なし）';
 
+  const basicProfileLines = [
+    heightCm && `- 身長: ${heightCm}cm`,
+    weightKg && `- 体重: ${weightKg}kg`,
+    bodyFatPct && `- 体脂肪率: ${bodyFatPct}%`,
+    personalColor && `- パーソナルカラー: ${personalColor}`,
+    mbti && `- MBTI: ${mbti}`,
+  ].filter(Boolean).join('\n');
+
   const userContext = `## ユーザーの変容軸データ
 ${axisLines || '（データなし）'}
 
-${ageLabel ? `## 年代\n- ${ageLabel}\n\n` : ''}${bodyDataSectionHeader}
+${basicProfileLines ? `## 基本情報（任意入力・本人申告）\n${basicProfileLines}\n\n` : ''}${ageLabel ? `## 年代\n- ${ageLabel}\n\n` : ''}${bodyDataSectionHeader}
 ${bodyDataLines || '（まだ入力なし）'}
 ${habitLines ? `
 
@@ -477,6 +491,11 @@ ${ageLabel || habitLines ? `14. 「年代」「現在の行動習慣」が提供
       （例: 美容液を使っている人に「配合成分を見直す」、ジム通いの人に「種目を1つ変える」）
     - 洗顔・クレンジングの頻度（cleanse_freq）は上記の固定ノードの対象外。あなたが上記「一般知見の使い方」に
       従って扱うこと` : ''}
+${mbti ? `15. 「MBTI」が提供されている場合:
+    - ステップの粒度・進め方の提案（一度に大きく変えるか、小さく積み重ねるか）や文章のトーンを
+      このタイプ傾向に軽く寄せてよい（例: 直感型には全体像から、感覚型には具体的な手順から）
+    - ただし性格を断定・決めつけない。「あなたは〇〇なタイプだから」のような性格診断的な物言いは禁止。
+      あくまで書き方の参考程度に留め、本文中でMBTIそのものやタイプ名（INTJ等）に言及しないこと` : ''}
 ${curatedPostsPrompt ? `15. 「紹介してよい投稿一覧」が提供されている場合:
     - 各stepの**具体的な文章内容**が、投稿のトピック・対象と本当に合致する場合だけ、そのstepに
       \`related_post_id\`（投稿のid）を付けてよい。軸が同じというだけで付けない

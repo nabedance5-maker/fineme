@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
 import { AGE_BANDS, hasRequiredAttributes, saveAttribute, syncAttributesWithServer } from '@/lib/attributes';
 import { AXIS_HABIT_ITEM_LABELS, CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, HAIR_SALON_FREQ_LABELS, inferPathType, PATH_TO_CARE_LEVEL, CARE_LEVEL_SCORE } from '@/lib/axis-habits';
+import { FACE_TYPE_OPTIONS, SKELETAL_TYPE_OPTIONS, PERSONAL_COLOR_OPTIONS, MBTI_OPTIONS, isMeaningfulProfileValue } from '@/lib/profile-basics';
 
 export default function DiagnosisPage() {
   const initialized = useRef(false);
@@ -253,7 +254,24 @@ export default function DiagnosisPage() {
       // 現在の具体的行動（8軸すべて、Q3で軸ごとに複数選択で聞く）
       // { body:{items:[],freq:null,parts:[]}, skin:{items:[],freq:null}, hair:{items:[],salon_freq:null}, eyebrow:{items:[]}, ... }
       axis_habits: {},
+      // 基本情報（任意・でお指摘 2026-08-13）。face_type/skeletal_typeは
+      // fineme:body:data と語彙を共有し、Navi側の自己申告とも同期する
+      height_cm: null,
+      weight_kg: null,
+      body_fat_pct: null,
+      personal_color: null,
+      face_type: null,
+      skeletal_type: null,
+      mbti: null,
     };
+
+    // 既存のfineme:body:data（Naviの自己申告）に値があれば先に反映しておく
+    // （Me Scanで初めて聞く場合も、Naviで既に答えていれば聞き直さない）
+    try {
+      const existingBodyData = JSON.parse(localStorage.getItem('fineme:body:data') || '{}');
+      if (isMeaningfulProfileValue(existingBodyData.face_type)) state.face_type = existingBodyData.face_type;
+      if (isMeaningfulProfileValue(existingBodyData.skeletal_type)) state.skeletal_type = existingBodyData.skeletal_type;
+    } catch (e) {}
 
     // コアフロー＝地図の骨格ができるまでの画面。残りの設問（他人からの見え方・恋愛への影響）は
     // 結果画面から1軸ずつ deepen で導く
@@ -280,6 +298,7 @@ export default function DiagnosisPage() {
       }
       currentScreen = id;
       if (id === 'q3') renderQ3Step();
+      if (id === 'profile_basics') renderProfileBasics();
       // 画面ごとの到達をGA4へ（SPA遷移でURLが変わらないため明示送信）
       if (typeof window.gtag === 'function') {
         window.gtag('event', 'mescan_screen', { screen_id: id });
@@ -308,7 +327,7 @@ export default function DiagnosisPage() {
     }
 
     function updateNav() {
-      const noNavScreens = ['landing', 'rescan_confirm', 'attr_register', 'attr_confirm', 'deepen'];
+      const noNavScreens = ['landing', 'rescan_confirm', 'attr_register', 'attr_confirm', 'profile_basics', 'deepen'];
       if (noNavScreens.includes(currentScreen)) {
         navEl.style.display = 'none';
         return;
@@ -483,9 +502,30 @@ export default function DiagnosisPage() {
         // 属性・現在の具体的行動（Mirror分析・New Me Map生成プロンプトで使う）
         age_band: state.age_band,
         axis_habits: state.axis_habits,
+        // 基本情報（任意）
+        height_cm: state.height_cm,
+        weight_kg: state.weight_kg,
+        body_fat_pct: state.body_fat_pct,
+        personal_color: isMeaningfulProfileValue(state.personal_color) ? state.personal_color : null,
+        face_type: isMeaningfulProfileValue(state.face_type) ? state.face_type : null,
+        skeletal_type: isMeaningfulProfileValue(state.skeletal_type) ? state.skeletal_type : null,
+        mbti: isMeaningfulProfileValue(state.mbti) ? state.mbti : null,
       };
 
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); } catch (e) {}
+
+      // 顔タイプ・骨格タイプはfineme:body:data（Naviの自己申告）にも書き戻す。
+      // Naviでは引き続き答え直せる（でお指摘：Me Scan時点で分からなかった／後で違うと
+      // 分かった場合のため）
+      try {
+        if (profile.face_type || profile.skeletal_type) {
+          const bdKey = 'fineme:body:data';
+          const bd = JSON.parse(localStorage.getItem(bdKey) || '{}');
+          if (profile.face_type) bd.face_type = profile.face_type;
+          if (profile.skeletal_type) bd.skeletal_type = profile.skeletal_type;
+          localStorage.setItem(bdKey, JSON.stringify(bd));
+        }
+      } catch (e) {}
 
       // トラックを初回確定（すでに確定済みなら何もしない）
       setTrackOnce('fineme');
@@ -626,6 +666,55 @@ export default function DiagnosisPage() {
       p.style.cssText = 'font-size:13px;font-weight:800;color:#374151;margin:18px 0 8px';
       p.textContent = text;
       return p;
+    }
+
+    // 基本情報（任意）：身長・体重・体脂肪率・パーソナルカラー・顔タイプ・骨格タイプ・MBTI
+    // 全項目スキップ可。face_type/skeletal_typeはfineme:body:data（Naviの自己申告）と
+    // 語彙を共有し、Me Scan完了時にそちらへも書き戻す（でお指摘 2026-08-13）
+    function buildNumberField(id, placeholder, current, onInput) {
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.id = id;
+      input.placeholder = placeholder;
+      if (current != null) input.value = current;
+      input.style.cssText = 'width:100%;padding:12px 14px;border:2px solid rgba(201,168,76,0.2);border-radius:10px;font-size:15px;background:rgba(255,255,255,0.72);margin-bottom:10px;';
+      input.addEventListener('input', function () { onInput(this.value ? Number(this.value) : null); });
+      return input;
+    }
+
+    function renderProfileBasics() {
+      const container = document.getElementById('profile-basics-content');
+      if (!container) return;
+      container.innerHTML = '';
+
+      container.appendChild(sectionHeading('身長・体重・体脂肪率'));
+      container.appendChild(buildNumberField('input-height', '身長（cm）', state.height_cm, v => { state.height_cm = v; }));
+      container.appendChild(buildNumberField('input-weight', '体重（kg）', state.weight_kg, v => { state.weight_kg = v; }));
+      container.appendChild(buildNumberField('input-bodyfat', '体脂肪率（%）', state.body_fat_pct, v => { state.body_fat_pct = v; }));
+
+      container.appendChild(sectionHeading('パーソナルカラー'));
+      container.appendChild(buildSingleSelectList(
+        PERSONAL_COLOR_OPTIONS.map(v => ({ v, t: v })), state.personal_color,
+        v => { state.personal_color = v; }
+      ));
+
+      container.appendChild(sectionHeading('顔タイプ'));
+      container.appendChild(buildSingleSelectList(
+        FACE_TYPE_OPTIONS.map(v => ({ v, t: v })), state.face_type,
+        v => { state.face_type = v; }
+      ));
+
+      container.appendChild(sectionHeading('骨格タイプ'));
+      container.appendChild(buildSingleSelectList(
+        SKELETAL_TYPE_OPTIONS.map(v => ({ v, t: v })), state.skeletal_type,
+        v => { state.skeletal_type = v; }
+      ));
+
+      container.appendChild(sectionHeading('MBTI'));
+      container.appendChild(buildSingleSelectList(
+        MBTI_OPTIONS.map(v => ({ v, t: v })), state.mbti,
+        v => { state.mbti = v; }
+      ));
     }
 
     function buildCareLevelCard(area) {
@@ -819,17 +908,21 @@ export default function DiagnosisPage() {
         const ageBand = this.dataset.value;
         state.age_band = ageBand;
         saveAttribute({ age_band: ageBand });
-        screenHistory.push('q3');
-        showScreen('q3');
+        screenHistory.push('profile_basics');
+        showScreen('profile_basics');
       });
     });
     document.getElementById('btn-attr-confirm-proceed')?.addEventListener('click', function() {
-      screenHistory.push('q3');
-      showScreen('q3');
+      screenHistory.push('profile_basics');
+      showScreen('profile_basics');
     });
     document.getElementById('btn-attr-confirm-edit')?.addEventListener('click', function() {
       screenHistory.push('attr_register');
       showScreen('attr_register');
+    });
+    document.getElementById('btn-profile-basics-proceed')?.addEventListener('click', function() {
+      screenHistory.push('q3');
+      showScreen('q3');
     });
 
 
@@ -1025,6 +1118,18 @@ export default function DiagnosisPage() {
             <p className="diag-hint">前回登録した内容です。違っていればその場で変更できます。</p>
             <button className="diag-nav-next" id="btn-attr-confirm-proceed" style={{width:'100%',marginTop:'8px'}}>この内容で進む →</button>
             <button className="diag-back-btn" id="btn-attr-confirm-edit" style={{width:'100%',marginTop:'10px',textAlign:'center'}}>変更する</button>
+          </div>
+        </div>
+
+        {/* SCREEN PROFILE_BASICS: 基本情報（任意・でお指摘 2026-08-13） */}
+        <div className="diag-screen" id="screen-profile_basics">
+          <button className="diag-back-btn" data-back="">← 戻る</button>
+          <div className="diag-card">
+            <p className="diag-step-label">基本情報（任意）</p>
+            <h2 className="diag-q">分かる範囲でだけ<br />教えてください</h2>
+            <p className="diag-hint">すべて任意です。答えなくても診断は進められます。あとからマイページでも変更できます。</p>
+            <div id="profile-basics-content">{/* JSで生成 */}</div>
+            <button className="diag-nav-next" id="btn-profile-basics-proceed" style={{width:'100%',marginTop:'16px'}}>この内容で進む →</button>
           </div>
         </div>
 
