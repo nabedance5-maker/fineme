@@ -1,10 +1,206 @@
 'use client';
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 // Mirror ビジュアルレポート表示カード。
 // app/api/mirror/report が返す report_content（Claude Haiku生成のSTEP1-15相当の構造化JSON。
 // 2026-08-12に元プロンプトのサブ項目粒度に合わせて全面拡張）と photo_url（署名付きURL）を
 // HTML/CSSでレンダリングする。画像生成AIは使わない。
 // app/mirror/page.js・app/belle/mirror/page.js・app/mypage/mirror/page.js から共有利用。
+//
+// 画像保存ボタン：html2canvasは使わない。app/_components/ServiceLog.js の
+// FVカード画像化（2026-08-05）で、cqw・flex中央寄せ・背景画像を含む構成を
+// html2canvasの3手法いずれでも正しく描けず断念し、<canvas>手描き方式に切り替えた
+// 前例がある。同じ轍を踏まないよう、この保存機能も最初から手描きcanvas方式にする。
+
+function loadImageEl(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+// 日本語は単語境界が無いため、測定幅ベースで1文字ずつ改行判定する簡易ワードラップ。
+function wrapLines(ctx, text, maxWidth) {
+  const lines = [];
+  let line = '';
+  for (const ch of String(text || '')) {
+    const test = line + ch;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = ch;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function drawWrappedText(ctx, text, centerX, startY, maxWidth, lineHeight) {
+  const lines = wrapLines(ctx, text, maxWidth);
+  lines.forEach((line, i) => ctx.fillText(line, centerX, startY + i * lineHeight));
+  return startY + lines.length * lineHeight;
+}
+
+// VISUAL TYPEのピル型バッジを中央揃え・折り返しで描画する。
+function drawPillRow(ctx, items, centerX, startY, maxWidth, { fontSize, color, bg, border }) {
+  ctx.font = `700 ${fontSize}px 'Noto Sans JP', sans-serif`;
+  const padX = fontSize * 0.9, gap = fontSize * 0.5, pillH = fontSize * 2.2;
+  const rows = [];
+  let row = [], rowWidth = 0;
+  items.forEach(text => {
+    const w = ctx.measureText(text).width + padX * 2;
+    if (rowWidth + w + (row.length ? gap : 0) > maxWidth && row.length) {
+      rows.push({ row, rowWidth });
+      row = []; rowWidth = 0;
+    }
+    row.push({ text, w });
+    rowWidth += w + (row.length > 1 ? gap : 0);
+  });
+  if (row.length) rows.push({ row, rowWidth });
+
+  let y = startY;
+  rows.forEach(({ row, rowWidth }) => {
+    let x = centerX - rowWidth / 2;
+    row.forEach(({ text, w }) => {
+      ctx.fillStyle = bg;
+      ctx.strokeStyle = border;
+      ctx.lineWidth = 2;
+      const rectY = y - pillH * 0.72;
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(x, rectY, w, pillH, pillH / 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.fillStyle = color;
+      ctx.textAlign = 'left';
+      ctx.fillText(text, x + padX, y);
+      x += w + gap;
+    });
+    y += pillH + fontSize * 0.4;
+  });
+  return y;
+}
+
+// シェア用カードを1080×1920（スマホ縦画面比）のcanvasに手描きする。
+async function renderShareCardImage(reportContent, photoUrl, accentHex, tierComparison) {
+  const W = 1080, H = 1920;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  try { await document.fonts.ready; } catch {}
+
+  ctx.fillStyle = '#05080F';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = accentHex;
+  ctx.globalAlpha = 0.35;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(24, 24, W - 48, H - 48);
+  ctx.globalAlpha = 1;
+
+  const SERIF = "'Noto Serif JP', Georgia, serif";
+  const SANS = "'Noto Sans JP', sans-serif";
+  let y = 96;
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = accentHex;
+  ctx.font = `800 26px ${SANS}`;
+  ctx.fillText('F I N E M E   M I R R O R', W / 2, y);
+  y += 56;
+
+  let photoImg = null;
+  if (photoUrl) {
+    try { photoImg = await loadImageEl(photoUrl); } catch { photoImg = null; }
+  }
+  if (photoImg) {
+    const boxW = 720, boxH = 620, boxX = (W - boxW) / 2, boxY = y, radius = 28;
+    ctx.save();
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(boxX, boxY, boxW, boxH, radius);
+    else ctx.rect(boxX, boxY, boxW, boxH);
+    ctx.clip();
+    const scale = Math.max(boxW / photoImg.width, boxH / photoImg.height);
+    const dw = photoImg.width * scale, dh = photoImg.height * scale;
+    ctx.drawImage(photoImg, boxX + (boxW - dw) / 2, boxY + (boxH - dh) / 2, dw, dh);
+    ctx.restore();
+    ctx.strokeStyle = accentHex;
+    ctx.globalAlpha = 0.4;
+    ctx.lineWidth = 2;
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(boxX, boxY, boxW, boxH, radius); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+    y = boxY + boxH + 64;
+  } else {
+    y += 20;
+  }
+
+  if (reportContent.visual_tier) {
+    ctx.fillStyle = 'rgba(232,228,220,0.4)';
+    ctx.font = `700 24px ${SANS}`;
+    ctx.fillText('現在の変容ステージ', W / 2, y);
+    y += 66;
+
+    ctx.fillStyle = accentHex;
+    ctx.font = `800 88px ${SERIF}`;
+    ctx.fillText(reportContent.visual_tier, W / 2, y);
+    y += 84;
+  }
+
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = 'rgba(232,228,220,0.92)';
+  ctx.font = `800 60px ${SANS}`;
+  const scoreText = String(reportContent.visual_score);
+  const maxText = ` / ${reportContent.visual_score_max || 888}`;
+  const scoreW = ctx.measureText(scoreText).width;
+  ctx.font = `700 30px ${SANS}`;
+  const maxW = ctx.measureText(maxText).width;
+  const totalW = scoreW + maxW;
+  ctx.textAlign = 'left';
+  ctx.font = `800 60px ${SANS}`;
+  ctx.fillStyle = 'rgba(232,228,220,0.92)';
+  ctx.fillText(scoreText, W / 2 - totalW / 2, y);
+  ctx.font = `700 30px ${SANS}`;
+  ctx.fillStyle = 'rgba(232,228,220,0.4)';
+  ctx.fillText(maxText, W / 2 - totalW / 2 + scoreW, y);
+  ctx.textAlign = 'center';
+  y += 52;
+
+  if (reportContent.visual_tier_description) {
+    ctx.fillStyle = 'rgba(232,228,220,0.55)';
+    ctx.font = `400 26px ${SANS}`;
+    y = drawWrappedText(ctx, reportContent.visual_tier_description, W / 2, y + 20, 820, 38) + 20;
+  }
+
+  if (reportContent.visual_type_keywords?.length) {
+    y = drawPillRow(ctx, reportContent.visual_type_keywords, W / 2, y + 10, 880, {
+      fontSize: 26, color: accentHex, bg: 'rgba(255,255,255,0.03)', border: accentHex,
+    });
+    y += 8;
+  }
+
+  if (reportContent.visual_type_description) {
+    ctx.fillStyle = 'rgba(232,228,220,0.6)';
+    ctx.font = `400 26px ${SANS}`;
+    y = drawWrappedText(ctx, reportContent.visual_type_description, W / 2, y + 16, 820, 38) + 16;
+  }
+
+  if (tierComparison?.promoted) {
+    const text = `🎉 前回の「${tierComparison.previous_tier}」から「${reportContent.visual_tier}」へ変容が進みました`;
+    ctx.fillStyle = accentHex;
+    ctx.font = `700 26px ${SANS}`;
+    y = drawWrappedText(ctx, text, W / 2, y + 30, 820, 38) + 10;
+  }
+
+  ctx.fillStyle = 'rgba(232,228,220,0.22)';
+  ctx.font = `700 24px ${SANS}`;
+  ctx.fillText('fineme.me', W / 2, H - 72);
+
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+}
 
 const SCORE_LABELS = {
   face_balance: '顔全体のバランス',
@@ -65,11 +261,38 @@ function ChipList({ items, accent, accentSoft, accentBorder }) {
 }
 
 export default function MirrorReportCard({ reportContent, photoUrl, gender, tierComparison }) {
+  const [saving, setSaving] = useState(false);
+
   if (!reportContent) return null;
 
   const accent = gender === 'female' ? '#E0A6C4' : '#C9A84C';
   const accentSoft = gender === 'female' ? 'rgba(224,166,196,0.12)' : 'rgba(201,168,76,0.12)';
   const accentBorder = gender === 'female' ? 'rgba(224,166,196,0.4)' : 'rgba(201,168,76,0.4)';
+
+  async function handleSaveImage() {
+    setSaving(true);
+    try {
+      const blob = await renderShareCardImage(reportContent, photoUrl, accent, tierComparison);
+      if (!blob) throw new Error('画像の生成に失敗しました');
+
+      const filename = `fineme-mirror-${new Date().toISOString().slice(0, 10)}.png`;
+      const file = new File([blob], filename, { type: 'image/png' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Fineme Mirror', text: reportContent.visual_tier ? `変容ステージ: ${reportContent.visual_tier}` : 'Fineme Mirror の診断結果' });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      }
+    } catch (e) {
+      if (e?.name !== 'AbortError') alert('画像の保存に失敗しました。');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const scoreEntries = Object.entries(reportContent.scores || {}).filter(([, v]) => v != null);
   const topWeightKey = scoreEntries.length
@@ -92,64 +315,79 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
 
   return (
     <div style={{ background: '#05080F', borderRadius: '20px', overflow: 'hidden', border: `1px solid ${accentBorder}`, marginTop: '28px', boxShadow: '0 24px 60px rgba(0,0,0,0.8)' }}>
-      <div style={{ padding: '22px 22px 0' }}>
-        <span style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '.28em', color: accent, textTransform: 'uppercase' }}>Visual Analysis Report</span>
+      {/* シェア用カード（スクショ・保存ボタン両対応の1画面。でお指定の階層：
+          階級（最大の主役）→点数（次点で大きく）→VISUAL TYPE→写真→透かし） */}
+      <div style={{ padding: '22px 22px 26px', textAlign: 'center' }}>
+        <span style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '.28em', color: accent, textTransform: 'uppercase' }}>Fineme Mirror</span>
+
+        {photoUrl && (
+          <div style={{ padding: '14px 0 0' }}>
+            <img
+              src={photoUrl}
+              alt="診断写真"
+              style={{ maxWidth: '100%', maxHeight: '360px', borderRadius: '14px', border: `1px solid ${accentBorder}`, objectFit: 'cover' }}
+            />
+          </div>
+        )}
+
+        {reportContent.visual_tier && (
+          <div style={{ padding: '20px 0 0' }}>
+            <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '.2em', color: 'rgba(232,228,220,0.35)', textTransform: 'uppercase', margin: '0 0 6px' }}>
+              現在の変容ステージ
+            </p>
+            <p style={{ fontFamily: "'Noto Serif JP', Georgia, serif", fontSize: '40px', fontWeight: 800, color: accent, margin: 0, lineHeight: 1.2 }}>
+              {reportContent.visual_tier}
+            </p>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: '6px', padding: '10px 0 0' }}>
+          <span style={{ fontSize: '32px', fontWeight: 800, color: 'rgba(232,228,220,0.9)', lineHeight: 1 }}>{reportContent.visual_score}</span>
+          <span style={{ fontSize: '13px', color: 'rgba(232,228,220,0.4)' }}>/ {reportContent.visual_score_max || 888}</span>
+        </div>
+
+        {reportContent.visual_tier_description && (
+          <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: '6px 0 0', lineHeight: 1.6 }}>
+            {reportContent.visual_tier_description}
+          </p>
+        )}
+
+        {reportContent.visual_type_keywords?.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', padding: '16px 0 0' }}>
+            {reportContent.visual_type_keywords.map((kw, i) => (
+              <span key={i} style={{ fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '99px', background: accentSoft, border: `1px solid ${accentBorder}`, color: accent }}>
+                {kw}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {reportContent.visual_type_description && (
+          <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '8px 0 0', lineHeight: 1.7 }}>
+            {reportContent.visual_type_description}
+          </p>
+        )}
+
+        {tierComparison?.promoted && (
+          <div style={{ margin: '16px 0 0', padding: '10px 14px', borderRadius: '12px', background: accentSoft, border: `1px solid ${accentBorder}` }}>
+            <p style={{ fontSize: '11px', fontWeight: 800, color: accent, margin: 0, lineHeight: 1.6 }}>
+              🎉 前回の「{tierComparison.previous_tier}」から「{reportContent.visual_tier}」へ変容が進みました
+            </p>
+          </div>
+        )}
+
+        <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '.2em', color: 'rgba(232,228,220,0.18)', margin: '20px 0 0' }}>fineme.me</p>
       </div>
 
-      {photoUrl && (
-        <div style={{ padding: '16px 22px 0', textAlign: 'center' }}>
-          <img
-            src={photoUrl}
-            alt="診断写真"
-            style={{ maxWidth: '100%', maxHeight: '420px', borderRadius: '14px', border: `1px solid ${accentBorder}`, objectFit: 'cover' }}
-          />
-        </div>
-      )}
-
-      {/* VISUAL TYPEを主役に。888点の生スコアは階級の裏付けとして小さく添えるだけにする
-          （でお指摘: 点数だけの見せ方は優劣判定に見える。タイプ診断＋変容ステージを主役にする） */}
-      {reportContent.visual_type_keywords?.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', padding: '20px 22px 4px' }}>
-          {reportContent.visual_type_keywords.map((kw, i) => (
-            <span key={i} style={{ fontSize: '13px', fontWeight: 800, padding: '6px 14px', borderRadius: '99px', background: accentSoft, border: `1px solid ${accentBorder}`, color: accent }}>
-              {kw}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {reportContent.visual_type_description && (
-        <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.65)', textAlign: 'center', padding: '8px 24px 0', lineHeight: 1.7 }}>
-          {reportContent.visual_type_description}
-        </p>
-      )}
-
-      {reportContent.visual_tier && (
-        <div style={{ textAlign: 'center', padding: '18px 22px 4px' }}>
-          <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '.2em', color: 'rgba(232,228,220,0.35)', textTransform: 'uppercase', margin: '0 0 6px' }}>
-            現在の変容ステージ
-          </p>
-          <p style={{ fontFamily: "'Noto Serif JP', Georgia, serif", fontSize: '28px', fontWeight: 800, color: accent, margin: '0 0 4px' }}>
-            {reportContent.visual_tier}
-          </p>
-          {reportContent.visual_tier_description && (
-            <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: '0 0 6px', lineHeight: 1.6 }}>
-              {reportContent.visual_tier_description}
-            </p>
-          )}
-          <p style={{ fontSize: '10px', color: 'rgba(232,228,220,0.25)', margin: 0 }}>
-            {reportContent.visual_score} / {reportContent.visual_score_max || 888}
-          </p>
-        </div>
-      )}
-
-      {tierComparison?.promoted && (
-        <div style={{ margin: '12px 22px 0', padding: '12px 16px', borderRadius: '12px', background: accentSoft, border: `1px solid ${accentBorder}`, textAlign: 'center' }}>
-          <p style={{ fontSize: '12px', fontWeight: 800, color: accent, margin: 0, lineHeight: 1.6 }}>
-            🎉 前回の「{tierComparison.previous_tier}」から「{reportContent.visual_tier}」へ変容が進みました
-          </p>
-        </div>
-      )}
+      <div style={{ padding: '0 22px 4px', textAlign: 'center' }}>
+        <button
+          onClick={handleSaveImage}
+          disabled={saving}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 20px', background: 'none', border: `1px solid ${accentBorder}`, borderRadius: '99px', color: accent, fontSize: '12px', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+        >
+          {saving ? '作成中…' : '📸 この結果を画像で保存'}
+        </button>
+      </div>
 
       {reportContent.first_impression && (
         <div style={{ margin: '12px 22px', padding: '16px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(232,228,220,0.08)' }}>
