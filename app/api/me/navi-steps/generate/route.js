@@ -262,7 +262,7 @@ export async function POST(request) {
     const lines = [];
     if (h.items?.length) {
       // 'other' は固定選択肢に無い自由記述枠。ラベル解決せず、other_noteを別出しする
-      const namedItems = h.items.filter(v => v !== 'other').map(v => habitItemLabel(axisId, v));
+      const namedItems = h.items.filter(v => v !== 'other').map(v => habitItemLabel(axisId, v, derivedDiagnosis?.gender));
       const otherText = h.items.includes('other') && h.other_note ? [`その他: ${h.other_note}`] : [];
       const combined = [...namedItems, ...otherText];
       if (combined.length) lines.push(`- ${axisLabel}で今やっていること: ${combined.join('・')}`);

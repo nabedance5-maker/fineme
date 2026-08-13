@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { TRACKS, getTrackId, syncTrackWithServer } from '@/lib/track';
-import { AXIS_HABIT_ITEM_LABELS, BELLE_MAKEUP_ITEM_LABELS } from '@/lib/axis-habits';
+import { AXIS_HABIT_ITEM_LABELS, BELLE_MAKEUP_ITEM_LABELS, BELLE_HAIRREMOVAL_ITEM_LABELS } from '@/lib/axis-habits';
 
 // 軸 → 関連カテゴリのマッピング（記事のcategoryフィールドと照合）
 const AXIS_RELATED_CATS = {
@@ -2441,8 +2441,11 @@ export default function NewMeNaviPage() {
         const selected = axisHabits[axisId]?.items;
         if (!Array.isArray(selected)) continue; // その軸の回答自体がまだ無い（未診断・旧データ）
         const axisLabel = AREA_DEFS[axisId]?.label || axisId;
-        // skin軸はBelleのメイク回答も同じitems配列に混ざって入る
-        const itemLabels = axisId === 'skin' ? { ...baseLabels, ...BELLE_MAKEUP_ITEM_LABELS } : baseLabels;
+        // skin軸はBelleのメイク回答も同じitems配列に混ざって入る。hairremovalは男女で
+        // 悩みの中心が違う（男性=ひげ、女性=VIO・脚腕ワキ）ため語彙自体を出し分ける
+        const itemLabels = axisId === 'skin' ? { ...baseLabels, ...BELLE_MAKEUP_ITEM_LABELS }
+          : axisId === 'hairremoval' && p.gender === 'female' ? BELLE_HAIRREMOVAL_ITEM_LABELS
+          : baseLabels;
         for (const [key, label] of Object.entries(itemLabels)) {
           const done = selected.includes(key);
           items.push({

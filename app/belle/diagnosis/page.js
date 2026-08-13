@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
 import { AGE_BANDS, hasRequiredAttributes, saveAttribute, syncAttributesWithServer } from '@/lib/attributes';
-import { AXIS_HABIT_ITEM_LABELS, BELLE_MAKEUP_ITEM_LABELS, CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, HAIR_SALON_FREQ_LABELS, inferPathType, PATH_TO_CARE_LEVEL, CARE_LEVEL_SCORE } from '@/lib/axis-habits';
+import { AXIS_HABIT_ITEM_LABELS, BELLE_MAKEUP_ITEM_LABELS, BELLE_HAIRREMOVAL_ITEM_LABELS, CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, HAIR_SALON_FREQ_LABELS, inferPathType, PATH_TO_CARE_LEVEL, CARE_LEVEL_SCORE } from '@/lib/axis-habits';
 import { FACE_TYPE_OPTIONS, SKELETAL_TYPE_OPTIONS, PERSONAL_COLOR_OPTIONS, MBTI_OPTIONS, isMeaningfulProfileValue } from '@/lib/profile-basics';
 
 export default function BelleDiagnosisPage() {
@@ -578,9 +578,9 @@ export default function BelleDiagnosisPage() {
         { title:'メイク',         keys: Object.keys(BELLE_MAKEUP_ITEM_LABELS), labels: BELLE_MAKEUP_ITEM_LABELS },
       ],
       hairremoval: [
-        { title:'自己処理',     keys:['razor_diy','shave_gel','cream_diy','suppress_lotion','electric_trimmer'] },
-        { title:'自宅美容機器', keys:['waxing_diy','home_ipl','home_laser','part_specific'] },
-        { title:'プロに頼る',   keys:['salon','brazilian_salon','clinic'] },
+        { title:'自己処理',       keys:['razor_diy','shave_gel','cream_diy','suppress_lotion'], labels: BELLE_HAIRREMOVAL_ITEM_LABELS },
+        { title:'自宅美容機器',   keys:['waxing_diy','home_ipl'], labels: BELLE_HAIRREMOVAL_ITEM_LABELS },
+        { title:'VIO・プロに頼る', keys:['vio_care','salon','brazilian_salon','clinic'], labels: BELLE_HAIRREMOVAL_ITEM_LABELS },
       ],
       teeth: [
         { title:'毎日のケア',     keys:['electric_toothbrush','floss','tongue_care','mouthwash','breath_care'] },

@@ -603,9 +603,9 @@ export default function DiagnosisPage() {
         { title:'プロに頼る',         keys:['derm_visit','esthe_clinic'] },
       ],
       hairremoval: [
-        { title:'自己処理',       keys:['razor_diy','shave_gel','cream_diy','suppress_lotion','electric_trimmer'] },
-        { title:'自宅美容機器',   keys:['waxing_diy','home_ipl','home_laser','part_specific'] },
-        { title:'プロに頼る',     keys:['salon','brazilian_salon','clinic'] },
+        { title:'ひげのケア',     keys:['razor_diy','shave_gel','beard_trim','beard_style'] },
+        { title:'自宅美容機器',   keys:['cream_diy','waxing_diy','home_ipl','home_laser'] },
+        { title:'プロに頼る',     keys:['salon','clinic'] },
       ],
       teeth: [
         { title:'毎日のケア',     keys:['electric_toothbrush','floss','tongue_care','mouthwash','breath_care'] },
