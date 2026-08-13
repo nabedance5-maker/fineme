@@ -550,18 +550,46 @@ export default function BelleDiagnosisPage() {
     // skinはBelle限定でメイクのグループを追加する（他軸はAXIS_HABIT_ITEM_LABELSの全キーを1グループ）
     const HABIT_GROUPS = {
       body: [
-        { title:'自宅・自重トレーニング', keys:['pushup','situp','squat_bodyweight','plank'] },
-        { title:'ジム・器具トレーニング', keys:['bench_press','chest_press_machine','squat_barbell','deadlift','lat_pulldown','dumbbell'] },
-        { title:'有酸素運動',            keys:['running','walking','cycling'] },
-        { title:'その他',                keys:['diet_management','personal_trainer'] },
+        { title:'自宅・自重トレーニング', keys:['pushup','situp','squat_bodyweight','plank','pull_up','ab_roller','stretch','jump_rope'] },
+        { title:'ジム・器具トレーニング', keys:['bench_press','chest_press_machine','squat_barbell','deadlift','lat_pulldown','dumbbell','shoulder_press','leg_press','kettlebell','hip_thrust'] },
+        { title:'有酸素運動',            keys:['running','walking','cycling','swimming','stair_climbing','hiit'] },
+        { title:'その他',                keys:['diet_management','protein','body_composition_tracking','yoga_pilates','personal_trainer'] },
+      ],
+      eyebrow: [
+        { title:'自己処理',       keys:['tweezer','shaver','scissors','thread_epi','wax_epi'] },
+        { title:'メイクで整える', keys:['pencil','powder','gel','home_tint','stencil','concealer_shape','growth_serum'] },
+        { title:'サロン',         keys:['salon_shape','lamination','salon_tattoo'] },
+      ],
+      fashion: [
+        { title:'選び方',         keys:['fit_check','color_coordinate','skin_tone_match','pattern_balance','fabric_texture','silhouette','body_cover'] },
+        { title:'こだわりポイント', keys:['shoe_focus','accessory_coordinate','fragrance','layering','tpo'] },
+        { title:'情報収集・管理', keys:['fixed_brand','trend_check','secondhand','personal_diagnosis','coordinate_record','capsule_wardrobe','seasonal_update'] },
       ],
       hair: [
-        { title:'使っているケアアイテム', keys:['shampoo_market','shampoo_salon','treatment','milk','oil'] },
-        { title:'スタイリング習慣',       keys:['daily_set','styling_product','iron'] },
+        { title:'使っているケアアイテム', keys:['shampoo_market','shampoo_salon','treatment','milk','oil','scalp_care','scalp_tonic','hair_mask','hair_supplement','heat_protectant','uv_protect'] },
+        { title:'スタイリング習慣',       keys:['daily_set','styling_product','iron','towel_dry','silk_pillow'] },
+        { title:'カラー・パーマ',         keys:['perm_or_color','color_treatment','gray_coverage'] },
       ],
       skin: [
-        { title:'使っているアイテム', keys: Object.keys(AXIS_HABIT_ITEM_LABELS.skin) },
-        { title:'メイク',           keys: Object.keys(BELLE_MAKEUP_ITEM_LABELS), labels: BELLE_MAKEUP_ITEM_LABELS },
+        { title:'基礎ケア',       keys:['lotion','cream','serum','vitamin_c','retinol','sheet_mask','sunscreen'] },
+        { title:'集中ケア',       keys:['exfoliant','eye_cream','acne_care','acne_patch','spot_treatment','pore_care','cleansing'] },
+        { title:'器具・生活習慣', keys:['face_massage','beauty_device','mist_carry','sleep_hydration','inner_care'] },
+        { title:'プロに頼る',     keys:['derm_visit','esthe_clinic'] },
+        { title:'メイク',         keys: Object.keys(BELLE_MAKEUP_ITEM_LABELS), labels: BELLE_MAKEUP_ITEM_LABELS },
+      ],
+      hairremoval: [
+        { title:'自己処理',     keys:['razor_diy','shave_gel','cream_diy','suppress_lotion','electric_trimmer'] },
+        { title:'自宅美容機器', keys:['waxing_diy','home_ipl','home_laser','part_specific'] },
+        { title:'プロに頼る',   keys:['salon','brazilian_salon','clinic'] },
+      ],
+      teeth: [
+        { title:'毎日のケア',     keys:['electric_toothbrush','floss','tongue_care','mouthwash','breath_care'] },
+        { title:'ホワイトニング', keys:['whitening_otc','whitening_strips','whitening_pro'] },
+        { title:'歯科でのケア',   keys:['nightguard','braces','consult_only','checkup','scaling'] },
+      ],
+      nail: [
+        { title:'セルフケア',       keys:['self_trim','self_file','file_variety','cuticle_care','nail_oil','nail_strengthener','hand_cream','top_coat'] },
+        { title:'サロン・特別ケア', keys:['gel_nail','foot_care','salon'] },
       ],
     };
     function habitGroupsFor(axisId) {
