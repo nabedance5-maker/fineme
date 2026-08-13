@@ -5,7 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
 import { AGE_BANDS } from '@/lib/attributes';
-import { CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, BODY_PART_LABELS, HAIR_SALON_FREQ_LABELS, habitItemLabel } from '@/lib/axis-habits';
+import { CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, HAIR_SALON_FREQ_LABELS, habitItemLabel } from '@/lib/axis-habits';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -262,7 +262,6 @@ export async function POST(request) {
     if (axisId === 'skin' && h.freq) lines.push(`- 洗顔・クレンジングの頻度: ${CLEANSE_FREQ_LABELS[h.freq] || h.freq}`);
     if (axisId === 'hair' && h.salon_freq) lines.push(`- 美容院に通う頻度: ${HAIR_SALON_FREQ_LABELS[h.salon_freq] || h.salon_freq}`);
     if (axisId === 'body' && h.freq) lines.push(`- 筋トレの頻度: ${BODY_FREQ_LABELS[h.freq] || h.freq}`);
-    if (axisId === 'body' && h.parts?.length) lines.push(`- 鍛えている部位: ${h.parts.map(v => BODY_PART_LABELS[v] || v).join('・')}`);
     return lines;
   }).join('\n');
 

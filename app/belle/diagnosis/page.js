@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
 import { AGE_BANDS, hasRequiredAttributes, saveAttribute, syncAttributesWithServer } from '@/lib/attributes';
-import { AXIS_HABIT_ITEM_LABELS, BELLE_MAKEUP_ITEM_LABELS, CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, BODY_PART_LABELS, HAIR_SALON_FREQ_LABELS } from '@/lib/axis-habits';
+import { AXIS_HABIT_ITEM_LABELS, BELLE_MAKEUP_ITEM_LABELS, CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, HAIR_SALON_FREQ_LABELS, inferPathType, PATH_TO_CARE_LEVEL, CARE_LEVEL_SCORE } from '@/lib/axis-habits';
 
 export default function BelleDiagnosisPage() {
   const initialized = useRef(false);
@@ -111,16 +111,10 @@ export default function BelleDiagnosisPage() {
       cautious_continuity:        { style: 'cautious',     relationship: 'continuity' }
     };
 
+    // 来た道の自己申告（path_q/path_opts）は廃止。view_q/love_qはdeepen（結果画面から
+    // 1軸ずつ導く客観視・恋愛への影響）でのみ使う
     const CATEGORY_PHASE3 = [
       { id:'body',    icon:'💪', label:'体型・ボディ',
-        path_q:'体型について、これまでどんな道を歩いてきた？',
-        path_opts:[
-          {v:'virgin', t:'🌱 ほとんど何もしてこなかった',          d:'「どうせ変わらない」という気持ちがあったかも'},
-          {v:'quit',   t:'🔄 試したが、続かなかった',              d:'筋トレ・食事制限など、途中で止まった'},
-          {v:'blind',  t:'🤔 自分なりにやっているが、効果が不明',   d:'やり方が正しいか、客観的な評価を受けたことがない'},
-          {v:'lapsed', t:'😴 以前はやっていたが、今は後回し',       d:'できていた時期があったが、疎かになっている'},
-          {v:'doing',  t:'✅ 継続してできている',                   d:'今の習慣・ペースで問題ない。さらに高みを目指したい'},
-        ],
         view_q:'他の人から見た自分の体型、実際どう見えていると思う？',
         view_opts:[
           {v:'better',   t:'自分が思っているより良く見えていると思う'},
@@ -135,14 +129,6 @@ export default function BelleDiagnosisPage() {
           {v:'rarely',   t:'あまりない'},
         ], has_love:true },
       { id:'eyebrow', icon:'✂️', label:'眉毛',
-        path_q:'眉毛について、これまでどんな道を歩いてきた？',
-        path_opts:[
-          {v:'virgin', t:'🌱 整えたことがない / ずっと自己流',      d:'眉毛サロンやプロに頼んだことがない'},
-          {v:'quit',   t:'🔄 サロンに行ったが続いていない',         d:'一度は試したが、習慣にならなかった'},
-          {v:'blind',  t:'🤔 自分で整えているが、似合っているか不安',d:'鏡では確認しているが、第三者の目がわからない'},
-          {v:'lapsed', t:'😴 以前は通っていたが、最近サボっている',  d:'できていた時期があったが、間隔が空いている'},
-          {v:'doing',  t:'✅ 継続してできている',                   d:'定期的に整えられている。さらに高みを目指したい'},
-        ],
         view_q:'自分の眉って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'整って見えていると思う'},
@@ -156,15 +142,7 @@ export default function BelleDiagnosisPage() {
           {v:'sometimes',t:'たまにある'},
           {v:'rarely',   t:'あまりない'},
         ], has_love:true },
-      { id:'fashion', icon:'👗', label:'服・コーデ',
-        path_q:'服・コーデについて、これまでどんな道を歩いてきた？',
-        path_opts:[
-          {v:'virgin', t:'🌱 あまり考えてこなかった',              d:'いつも同じ系統のものを何となく買っている'},
-          {v:'quit',   t:'🔄 変えようとしたが、しっくりこなかった', d:'試みたことはあるが、自分に合うかわからなかった'},
-          {v:'blind',  t:'🤔 自分なりにこだわっているが、客観評価なし',d:'気を使っているが、外から見てどうかわからない'},
-          {v:'lapsed', t:'😴 以前は気を使っていたが、最近は後回し',  d:'できていた時期があったが、今は惰性になっている'},
-          {v:'doing',  t:'✅ 継続してできている',                   d:'自分のスタイルが確立している。さらに磨きたい'},
-        ],
+      { id:'fashion', icon:'👔', label:'服・コーデ',
         view_q:'自分の着こなしって、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'整って見えていると思う'},
@@ -179,14 +157,6 @@ export default function BelleDiagnosisPage() {
           {v:'rarely',   t:'あまりない'},
         ], has_love:true },
       { id:'hair', icon:'💇', label:'髪・ヘア',
-        path_q:'髪・ヘアについて、これまでどんな道を歩いてきた？',
-        path_opts:[
-          {v:'virgin', t:'🌱 特に気を使ってこなかった',             d:'安いところに行くだけで、スタイリングもほぼしない'},
-          {v:'quit',   t:'🔄 変えようとしたが、思い通りにならなかった',d:'オーダーがうまく伝わらない、また同じスタイルに戻る'},
-          {v:'blind',  t:'🤔 定期的に行っているが、似合っているか不安',d:'美容院には通っているが、「これでいい」か正直わからない'},
-          {v:'lapsed', t:'😴 以前は意識していたが、最近は間隔が空いている',d:'できていた時期があったが、なんとなく後回し'},
-          {v:'doing',  t:'✅ 継続してできている',                   d:'定期的に美容院に通い、スタイルを維持できている'},
-        ],
         view_q:'自分の髪型って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'整って見えていると思う'},
@@ -201,14 +171,6 @@ export default function BelleDiagnosisPage() {
           {v:'rarely',   t:'あまりない'},
         ], has_love:true },
       { id:'skin', icon:'✨', label:'肌・ニキビ・エステ',
-        path_q:'肌・スキンケアについて、これまでどんな道を歩いてきた？',
-        path_opts:[
-          {v:'virgin', t:'🌱 洗顔以外ほとんど何もしてこなかった',    d:'スキンケアのことをあまり考えてこなかった'},
-          {v:'quit',   t:'🔄 スキンケアを始めたことはあるが続かなかった',d:'少し試みたが、習慣にならなかった'},
-          {v:'blind',  t:'🤔 スキンケアは習慣だが、効果が実感できない',d:'やっているが、本当に改善しているか正直わからない'},
-          {v:'lapsed', t:'😴 以前はちゃんとやっていたが、最近は手を抜いている',d:'できていた時期があったが、今は惰性'},
-          {v:'doing',  t:'✅ 継続してできている',                   d:'スキンケアが習慣化し、肌の状態を維持できている'},
-        ],
         view_q:'自分の肌って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'清潔感があると思われていると思う'},
@@ -223,14 +185,6 @@ export default function BelleDiagnosisPage() {
           {v:'rarely',   t:'あまりない'},
         ], has_love:true },
       { id:'hairremoval', icon:'🪒', label:'脱毛・ムダ毛',
-        path_q:'脱毛・ムダ毛ケアについて、これまでどんな道を歩いてきた？',
-        path_opts:[
-          {v:'virgin', t:'🌱 ほとんど何もしてこなかった',            d:'脱毛やムダ毛ケアを真剣に考えたことがなかった'},
-          {v:'quit',   t:'🔄 自己処理はしているが、サロンには行っていない',d:'カミソリや除毛クリームで対処している'},
-          {v:'blind',  t:'🤔 自己処理しているが、これで十分か不安',   d:'サロンと比べてどうなのか正直わからない'},
-          {v:'lapsed', t:'😴 以前は通っていたが、最近は後回し',       d:'サロンに行っていた時期があったが、今は間が空いている'},
-          {v:'doing',  t:'✅ 定期的に通ってケアできている',           d:'照射・メンテナンスのサイクルが確立している'},
-        ],
         view_q:'自分のムダ毛って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'気になるレベルではないと思う'},
@@ -240,14 +194,6 @@ export default function BelleDiagnosisPage() {
         ],
         has_love:false },
       { id:'teeth', icon:'🦷', label:'歯・口元',
-        path_q:'歯・口元について、これまでどんな道を歩いてきた？',
-        path_opts:[
-          {v:'virgin', t:'🌱 歯科検診以外、特に何もしてこなかった',   d:'ホワイトニングや矯正などは考えたことがなかった'},
-          {v:'quit',   t:'🔄 検討したことはあるが、踏み出せていない',  d:'興味はあるが、まだアクションを起こせていない'},
-          {v:'blind',  t:'🤔 ケアはしているが、外から見てどうかわからない',d:'気を使っているが、人からどう見えているか不安'},
-          {v:'lapsed', t:'😴 以前は気を使っていたが、最近は後回し',    d:'できていた時期があったが、今は惰性'},
-          {v:'doing',  t:'✅ 継続してできている',                   d:'ホワイトニングや定期ケアを継続できている'},
-        ],
         view_q:'自分の歯・口元って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'清潔感があると思われていると思う'},
@@ -262,14 +208,6 @@ export default function BelleDiagnosisPage() {
           {v:'rarely',   t:'あまりない'},
         ], has_love:true },
       { id:'nail', icon:'💅', label:'爪',
-        path_q:'爪のケアについて、これまでどんな道を歩いてきた？',
-        path_opts:[
-          {v:'virgin', t:'🌱 切るだけで、ケアらしいことはしてこなかった',d:'ネイルケアを意識したことがほとんどなかった'},
-          {v:'quit',   t:'🔄 ネイルサロンなど試したことはあるが続かなかった',d:'少し試みたが、習慣にならなかった'},
-          {v:'blind',  t:'🤔 一応ケアしているが、基準がわからない',    d:'やっているが、これで十分かどうか判断できない'},
-          {v:'lapsed', t:'😴 以前はちゃんとやっていたが、今は後回し',   d:'できていた時期があったが、今は疎かになっている'},
-          {v:'doing',  t:'✅ 継続してできている',                   d:'定期的なケアが習慣化できている'},
-        ],
         view_q:'自分の爪・手元って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'整って見えていると思う'},
@@ -280,13 +218,6 @@ export default function BelleDiagnosisPage() {
         has_love:false },
     ];
 
-    const PATH_LABELS = {
-      virgin: 'ほとんどしてこなかった',
-      quit:   '試したが続かなかった',
-      blind:  '自分なりにやっているが客観評価なし',
-      lapsed: '以前はやっていたが後回し',
-      doing:  '継続してできている',
-    };
 
     const state = {
       trigger: null,
@@ -384,10 +315,9 @@ export default function BelleDiagnosisPage() {
       let enabled = false;
       switch (currentScreen) {
         case 'q3': {
-          const q3Axis = CONCERN_AREAS[q3StepIndex]?.id;
-          // 来た道（path_type）だけが必須。具体行動（items）は複数選択で「未選択＝何もしていない」も
-          // 有効な回答なので必須にしない
-          enabled = !!(q3Axis && state.path_types[q3Axis]);
+          // 具体行動（items）は複数選択で「未選択＝何もしていない」も有効な回答なので、
+          // タップ必須の項目はない（現在地は選択内容から自動算出される）
+          enabled = true;
           break;
         }
       }
@@ -425,13 +355,7 @@ export default function BelleDiagnosisPage() {
       }
     }
 
-    // 来た道（path_type）→ 内部の現在値バケット。ラダー質問はもう出さないが、
-    // AI生成プロンプトや旧フィールド（care_levels/concern_areas等）の互換のため内部的に保持する
-    const PATH_TO_CARE_LEVEL = { virgin: 'concerned', quit: 'concerned', blind: 'self', lapsed: 'self', doing: 'pro' };
-    const CARE_LEVEL_SCORE = { none: 1, concerned: 2, self: 3, self_regular: 3, pro: 4 };
-
-    // 変容ベクトル（理想 - 現状）。来た道（path_type）の回答だけで確定する。
-    // 理想値は「現在値+固定オフセット」で自動算出（変えたい度の個別質問はもう出さない）
+    // 変容ベクトル（理想 - 現状）。具体的行動（items・freq）から自動算出したcare_levelで確定する。
     function computeTransformVectors() {
       const vectors = {};
       CONCERN_AREAS.forEach(area => {
@@ -582,9 +506,15 @@ export default function BelleDiagnosisPage() {
     // 年代で「理想値」の自動算出だけをヒント補正する（gap計算式やスコアリング自体は変えない）
     const AGE_IDEAL_HINT = { skin: { '10s':2, '20s':3, '30s':4, '40s':4, '50s_plus':4 } };
 
-    // 軸ごとの「今の具体的行動」multi-select。hairはアイテムとスタイリングを分け、
+    // 軸ごとの「今の具体的行動」multi-select。body・hairは種目/アイテムの種類でグループを分け、
     // skinはBelle限定でメイクのグループを追加する（他軸はAXIS_HABIT_ITEM_LABELSの全キーを1グループ）
     const HABIT_GROUPS = {
+      body: [
+        { title:'自宅・自重トレーニング', keys:['pushup','situp','squat_bodyweight','plank'] },
+        { title:'ジム・器具トレーニング', keys:['bench_press','chest_press_machine','squat_barbell','deadlift','lat_pulldown','dumbbell'] },
+        { title:'有酸素運動',            keys:['running','walking','cycling'] },
+        { title:'その他',                keys:['diet_management','personal_trainer'] },
+      ],
       hair: [
         { title:'使っているケアアイテム', keys:['shampoo_market','shampoo_salon','treatment','milk','oil'] },
         { title:'スタイリング習慣',       keys:['daily_set','styling_product','iron'] },
@@ -616,9 +546,13 @@ export default function BelleDiagnosisPage() {
       updateNextBtn();
     }
 
-    // 来た道（path_type）から内部の現在値バケット・理想値を自動算出する
-    // （変えたい度の個別質問は出さない。ユーザーには path_type だけを聞く）
-    function applyPathType(area, pathVal) {
+    // 具体的行動（items・freq）から現在地・理想値を自動算出する。ユーザーへの自己申告質問は
+    // 一切出さない（でお指摘：「継続してできている」等の自己評価は、家で腕立て1回だけの人と
+    // 本気でトレーニングしている人を区別できず意味がない。区別できるのはプロ・専門サービスへの
+    // 実際の関与だけ、という考え方でinferPathTypeが判定する）
+    function recomputeAxisLevel(area) {
+      const habits = state.axis_habits[area.id];
+      const pathVal = inferPathType(area.id, habits);
       state.path_types[area.id] = pathVal;
       const careLevel = PATH_TO_CARE_LEVEL[pathVal] || 'concerned';
       state.care_levels[area.id] = careLevel;
@@ -682,33 +616,22 @@ export default function BelleDiagnosisPage() {
         labelEl.innerHTML = '<span class="care-level-icon">' + area.icon + '</span><span>' + area.label + '</span>';
         wrap.appendChild(labelEl);
 
-        const cat = CATEGORY_PHASE3.find(c => c.id === area.id);
         if (!state.axis_habits[area.id]) state.axis_habits[area.id] = { items: [] };
         const habits = state.axis_habits[area.id];
+        recomputeAxisLevel(area); // 未選択でも「何もしていない」として現在地を確定させる
 
-        // ① 来た道（現在地の唯一の質問。これまでのQ3ラダーと最後の1問は統合済み）
-        wrap.appendChild(sectionHeading('これまで、どんな道を歩いてきた？'));
-        const pathList = buildSingleSelectList(cat.path_opts, state.path_types[area.id], function (v) {
-          applyPathType(area, v);
-          updateNextBtn();
-        });
-        wrap.appendChild(pathList);
+        // 今の具体的行動（事実ベース・複数選択）。現在地はこの回答から自動算出される
+        wrap.appendChild(sectionHeading('今、実際にやっていることは？'));
 
-        // ② 今の具体的行動（事実ベース・複数選択）
-        // 体型のみ、筋トレ系を選んだ人だけに頻度・部位を追加で出す（無関係な人に聞いても離脱要因）
+        // 体型のみ、何か選んだ人だけに頻度を追加で出す（無関係な人に聞いても離脱要因）
         let bodyExtra = null;
         if (area.id === 'body') {
           bodyExtra = document.createElement('div');
           bodyExtra.id = 'body-training-extra';
-          const showTraining = habits.items.includes('gym_strength') || habits.items.includes('home_strength');
-          bodyExtra.style.display = showTraining ? '' : 'none';
-          bodyExtra.appendChild(sectionHeading('筋トレの頻度'));
+          bodyExtra.style.display = habits.items.length ? '' : 'none';
+          bodyExtra.appendChild(sectionHeading('取り組んでいる頻度'));
           const freqOpts = Object.entries(BODY_FREQ_LABELS).map(([v, t]) => ({ v, t }));
           bodyExtra.appendChild(buildSingleSelectList(freqOpts, habits.freq, function (v) { habits.freq = v; }));
-          bodyExtra.appendChild(sectionHeading('鍛えている部位（複数可）'));
-          if (!habits.parts) habits.parts = [];
-          const partOpts = Object.entries(BODY_PART_LABELS).map(([v, t]) => ({ v, t }));
-          bodyExtra.appendChild(buildMultiSelectList(partOpts, habits.parts, function () {}));
         }
 
         habitGroupsFor(area.id).forEach(group => {
@@ -716,7 +639,8 @@ export default function BelleDiagnosisPage() {
           const labelSrc = group.labels || AXIS_HABIT_ITEM_LABELS[area.id];
           const opts = group.keys.map(k => ({ v:k, t: labelSrc[k] }));
           wrap.appendChild(buildMultiSelectList(opts, habits.items, function (arr) {
-            if (bodyExtra) bodyExtra.style.display = (arr.includes('gym_strength') || arr.includes('home_strength')) ? '' : 'none';
+            if (bodyExtra) bodyExtra.style.display = arr.length ? '' : 'none';
+            recomputeAxisLevel(area);
           }));
         });
 
@@ -731,7 +655,7 @@ export default function BelleDiagnosisPage() {
         if (area.id === 'hair') {
           wrap.appendChild(sectionHeading('美容院に通う頻度'));
           const freqOpts = Object.entries(HAIR_SALON_FREQ_LABELS).map(([v, t]) => ({ v, t }));
-          wrap.appendChild(buildSingleSelectList(freqOpts, habits.salon_freq, function (v) { habits.salon_freq = v; }));
+          wrap.appendChild(buildSingleSelectList(freqOpts, habits.salon_freq, function (v) { habits.salon_freq = v; recomputeAxisLevel(area); }));
         }
 
         return wrap;
