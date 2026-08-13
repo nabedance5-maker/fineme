@@ -2,11 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { TRACKS, getTrackId, syncTrackWithServer } from '@/lib/track';
-import {
-  SKINCARE_ITEM_LABELS, SKINCARE_ITEM_KEYS,
-  WORKOUT_TYPE_LABELS, WORKOUT_DONE_VALUES,
-  AXIS_HABIT_LABELS, AXIS_HABIT_DONE_VALUES, AXIS_HABIT_SKIP_VALUES,
-} from '@/lib/axis-habits';
+import { AXIS_HABIT_ITEM_LABELS, BELLE_MAKEUP_ITEM_LABELS } from '@/lib/axis-habits';
 
 // 軸 → 関連カテゴリのマッピング（記事のcategoryフィールドと照合）
 const AXIS_RELATED_CATS = {
@@ -1857,24 +1853,9 @@ export default function NewMeNaviPage() {
           <a href="${TRACK.diagnosis}" style="font-size:11px;font-weight:700;padding:7px 14px;border:1px solid rgba(100,160,255,0.4);border-radius:8px;color:rgba(100,160,255,0.9);text-decoration:none;flex-shrink:0;white-space:nowrap">Me Scanを受ける →</a>
         </div>` : '';
 
-      // 軸フィルタ中、その軸の習慣ヒアリング（?deepen=）が未回答ならMap上から入口を出す
-      // （でお指摘 2026-08-01：肌・体型以外の6軸も、別の場所で習慣を聞けるようにすべき）
-      const DEEPEN_HABIT_AXES = new Set(['eyebrow', 'fashion', 'hair', 'hairremoval', 'teeth', 'nail']);
-      const axisHabitsBanner = (activeAxisFilter && DEEPEN_HABIT_AXES.has(activeAxisFilter) && !p.axis_habits?.[activeAxisFilter])
-        ? `<div class="axis-habit-banner">
-            <span class="axis-habit-banner-icon">📝</span>
-            <div class="axis-habit-banner-body">
-              <p class="axis-habit-banner-title">${esc(AREA_DEFS[activeAxisFilter]?.label || activeAxisFilter)}の今の習慣を教えると、もっと的確な提案になります</p>
-              <p class="axis-habit-banner-desc">1分で回答できます</p>
-            </div>
-            <a href="${TRACK.diagnosis}?deepen=${esc(activeAxisFilter)}" class="axis-habit-banner-btn">回答する →</a>
-          </div>`
-        : '';
-
       return `
         ${mirrorOnlyBanner}
         ${mirrorPromoBanner}
-        ${axisHabitsBanner}
         <div style="margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <span style="font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(201,168,76,0.55);text-transform:uppercase">あなただけの変容の道</span>
@@ -2449,52 +2430,28 @@ export default function NewMeNaviPage() {
       return candidates.slice(0, 5);
     }
 
-    // MeScanの行動習慣回答（skincare_habits/workout_type/axis_habits）を、New Me Mapの
+    // MeScanの行動習慣回答（axis_habits、全軸共通の複数選択items）を、New Me Mapの
     // 初期状態（実施済み／やってみる）に機械的に反映する固定ノード（AI生成に頼らない・
     // でお指摘 2026-08-06：回答内容がそのままMapの初期状態に反映されてほしい）
     function computeHabitStatusItems() {
       const items = [];
+      const axisHabits = p.axis_habits || {};
 
-      const skincareItems = p.skincare_habits?.items;
-      if (Array.isArray(skincareItems)) {
-        for (const key of SKINCARE_ITEM_KEYS) {
-          const done = skincareItems.includes(key);
-          const label = SKINCARE_ITEM_LABELS[key];
+      for (const [axisId, baseLabels] of Object.entries(AXIS_HABIT_ITEM_LABELS)) {
+        const selected = axisHabits[axisId]?.items;
+        if (!Array.isArray(selected)) continue; // その軸の回答自体がまだ無い（未診断・旧データ）
+        const axisLabel = AREA_DEFS[axisId]?.label || axisId;
+        // skin軸はBelleのメイク回答も同じitems配列に混ざって入る
+        const itemLabels = axisId === 'skin' ? { ...baseLabels, ...BELLE_MAKEUP_ITEM_LABELS } : baseLabels;
+        for (const [key, label] of Object.entries(itemLabels)) {
+          const done = selected.includes(key);
           items.push({
-            id: `habit-skin-${key}`, axis: 'skin',
-            text: done ? `${label}は取り入れられている` : `${label}を試してみる`,
+            id: `habit-${axisId}-${key}`, axis: axisId,
+            text: `${done ? '✓' : '☐'} ${label}`,
             action_type: 'quick', guide: 'none',
             _isHabitStatus: true, _autoDone: done,
           });
         }
-      }
-
-      const workoutType = p.workout_type;
-      if (workoutType) {
-        const done = WORKOUT_DONE_VALUES.includes(workoutType);
-        items.push({
-          id: 'habit-body-workout', axis: 'body',
-          text: done
-            ? `体を動かす習慣がある（${WORKOUT_TYPE_LABELS[workoutType] || workoutType}）`
-            : '体を動かす習慣を少し作ってみる（ジム・自重・宅トレ、どれでもOK）',
-          action_type: 'habit', guide: 'none',
-          _isHabitStatus: true, _autoDone: done,
-        });
-      }
-
-      const axisHabits = p.axis_habits || {};
-      for (const [axisId, value] of Object.entries(axisHabits)) {
-        if (!value) continue;
-        if (AXIS_HABIT_SKIP_VALUES[axisId]?.includes(value)) continue; // 本人が「気にしていない」→何も出さない
-        const label = AXIS_HABIT_LABELS[axisId]?.[value] || value;
-        const done = (AXIS_HABIT_DONE_VALUES[axisId] || []).includes(value);
-        const axisLabel = AREA_DEFS[axisId]?.label || axisId;
-        items.push({
-          id: `habit-${axisId}`, axis: axisId,
-          text: done ? `${axisLabel}のケアはできている（${label}）` : `${axisLabel}を軽く整えてみる`,
-          action_type: 'quick', guide: 'none',
-          _isHabitStatus: true, _autoDone: done,
-        });
       }
 
       return items;

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
 import { AGE_BANDS, hasRequiredAttributes, saveAttribute, syncAttributesWithServer } from '@/lib/attributes';
+import { AXIS_HABIT_ITEM_LABELS, BELLE_MAKEUP_ITEM_LABELS, CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, BODY_PART_LABELS, HAIR_SALON_FREQ_LABELS } from '@/lib/axis-habits';
 
 export default function BelleDiagnosisPage() {
   const initialized = useRef(false);
@@ -74,22 +75,6 @@ export default function BelleDiagnosisPage() {
       .diag-landing p { font-size: 15px; color: #5a4e45; line-height: 1.7; margin: 0 0 6px; }
       .diag-badges { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 16px 0 24px; }
       .diag-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; background: rgba(201,168,76,0.1); padding: 6px 12px; border-radius: 99px; color: #7a6e65; border: 1px solid rgba(201,168,76,0.25); }
-      /* Phase 3 intro */
-      .q3-intro-card { text-align: center; padding: 8px 0; }
-      .q3-intro-axes { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 20px 0 24px; }
-      .q3-intro-axis { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-      .q3-intro-axis-icon { width: 44px; height: 44px; border-radius: 50%; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.25); display: flex; align-items: center; justify-content: center; font-size: 20px; }
-      .q3-intro-axis-label { font-size: 10px; color: #7a6e65; font-weight: 600; }
-      /* Path-type chip assignment (q3_path) */
-      .path-row { background:rgba(10,15,30,0.65); border:1px solid rgba(232,228,220,0.12); border-radius:14px; padding:14px 16px; margin-bottom:10px; }
-      .path-row-label { display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }
-      .path-row-icon { font-size:22px; line-height:1.2; flex-shrink:0; margin-top:1px; }
-      .path-row-short { font-size:14px; font-weight:800; color:rgba(232,228,220,0.9); margin:0 0 2px; }
-      .path-row-desc { font-size:11px; color:rgba(232,228,220,0.42); margin:0; }
-      .axis-chips { display:flex; flex-wrap:wrap; gap:7px; }
-      .axis-chip { padding:6px 12px; border-radius:99px; font-size:12px; font-weight:700; border:1.5px solid rgba(232,228,220,0.15); background:rgba(232,228,220,0.05); color:rgba(232,228,220,0.45); cursor:pointer; transition:all .14s; white-space:nowrap; user-select:none; }
-      .axis-chip.assigned { background:rgba(201,168,76,0.18); border-color:rgba(201,168,76,0.65); color:#c9a84c; }
-      .axis-chip.elsewhere { opacity:0.18; pointer-events:none; }
       /* Goal framing banner */
       .goal-frame-banner { background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.25); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; }
       /* Instant tryout screens (D-20260713-2) */
@@ -158,12 +143,6 @@ export default function BelleDiagnosisPage() {
           {v:'lapsed', t:'😴 以前は通っていたが、最近サボっている',  d:'できていた時期があったが、間隔が空いている'},
           {v:'doing',  t:'✅ 継続してできている',                   d:'定期的に整えられている。さらに高みを目指したい'},
         ],
-        habit_q:'眉の手入れは、今どうしていますか？',
-        habit_opts:[
-          {v:'self_diy',    t:'自己処理（毛抜き・シェーバー）'},
-          {v:'salon_tattoo',t:'サロン・眉毛アートメイク'},
-          {v:'none',        t:'特にしていない'},
-        ],
         view_q:'自分の眉って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'整って見えていると思う'},
@@ -186,13 +165,6 @@ export default function BelleDiagnosisPage() {
           {v:'lapsed', t:'😴 以前は気を使っていたが、最近は後回し',  d:'できていた時期があったが、今は惰性になっている'},
           {v:'doing',  t:'✅ 継続してできている',                   d:'自分のスタイルが確立している。さらに磨きたい'},
         ],
-        habit_q:'服選びで、今意識していることは？',
-        habit_opts:[
-          {v:'size_fit',    t:'サイズ感を最優先'},
-          {v:'trend',       t:'トレンドを意識'},
-          {v:'fixed_brand', t:'決まったブランド・店で揃える'},
-          {v:'none',        t:'特にこだわりなし'},
-        ],
         view_q:'自分の着こなしって、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'整って見えていると思う'},
@@ -214,13 +186,6 @@ export default function BelleDiagnosisPage() {
           {v:'blind',  t:'🤔 定期的に行っているが、似合っているか不安',d:'美容院には通っているが、「これでいい」か正直わからない'},
           {v:'lapsed', t:'😴 以前は意識していたが、最近は間隔が空いている',d:'できていた時期があったが、なんとなく後回し'},
           {v:'doing',  t:'✅ 継続してできている',                   d:'定期的に美容院に通い、スタイルを維持できている'},
-        ],
-        habit_q:'美容院に通う頻度は？',
-        habit_opts:[
-          {v:'monthly',       t:'月1回'},
-          {v:'bimonthly',     t:'2〜3ヶ月に1回'},
-          {v:'half_year_plus',t:'半年以上空く'},
-          {v:'rarely',        t:'ほぼ行かない'},
         ],
         view_q:'自分の髪型って、他の人から見てどう見えていると思う？',
         view_opts:[
@@ -266,12 +231,6 @@ export default function BelleDiagnosisPage() {
           {v:'lapsed', t:'😴 以前は通っていたが、最近は後回し',       d:'サロンに行っていた時期があったが、今は間が空いている'},
           {v:'doing',  t:'✅ 定期的に通ってケアできている',           d:'照射・メンテナンスのサイクルが確立している'},
         ],
-        habit_q:'今の状況は？',
-        habit_opts:[
-          {v:'self_only',    t:'自己処理のみ'},
-          {v:'salon_clinic', t:'サロン・クリニックに通っている'},
-          {v:'none',         t:'どちらもしていない'},
-        ],
         view_q:'自分のムダ毛って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'気になるレベルではないと思う'},
@@ -288,13 +247,6 @@ export default function BelleDiagnosisPage() {
           {v:'blind',  t:'🤔 ケアはしているが、外から見てどうかわからない',d:'気を使っているが、人からどう見えているか不安'},
           {v:'lapsed', t:'😴 以前は気を使っていたが、最近は後回し',    d:'できていた時期があったが、今は惰性'},
           {v:'doing',  t:'✅ 継続してできている',                   d:'ホワイトニングや定期ケアを継続できている'},
-        ],
-        habit_q:'今の状況は？',
-        habit_opts:[
-          {v:'whitening',     t:'ホワイトニング中'},
-          {v:'braces',        t:'矯正中'},
-          {v:'interested',    t:'どちらもしていないが興味ある'},
-          {v:'not_concerned', t:'特に気にしていない'},
         ],
         view_q:'自分の歯・口元って、他の人から見てどう見えていると思う？',
         view_opts:[
@@ -317,12 +269,6 @@ export default function BelleDiagnosisPage() {
           {v:'blind',  t:'🤔 一応ケアしているが、基準がわからない',    d:'やっているが、これで十分かどうか判断できない'},
           {v:'lapsed', t:'😴 以前はちゃんとやっていたが、今は後回し',   d:'できていた時期があったが、今は疎かになっている'},
           {v:'doing',  t:'✅ 継続してできている',                   d:'定期的なケアが習慣化できている'},
-        ],
-        habit_q:'爪のケアは、今どうしていますか？',
-        habit_opts:[
-          {v:'self_care', t:'自分で整えている'},
-          {v:'salon',     t:'ネイルサロンに通っている'},
-          {v:'none',      t:'特にケアしていない'},
         ],
         view_q:'自分の爪・手元って、他の人から見てどう見えていると思う？',
         view_opts:[
@@ -351,8 +297,8 @@ export default function BelleDiagnosisPage() {
       goal_vision: null,
       scene: null,
       scenes: [],
-      care_levels: {},
-      ideal_levels: {},   // 各カテゴリの理想スコア（1〜5）
+      care_levels: {},    // 自動算出（path_typeから導出。ラダー質問はもう出さない）
+      ideal_levels: {},   // 自動算出（現在値を基準に固定オフセット。数値ピッカーはもう出さない）
       // Phase 3: カテゴリ別来た道・客観視・恋愛
       path_types: {},     // { body: 'virgin'|'quit'|'blind'|'lapsed', ... }
       self_views: {},     // { body: 'better'|'accurate'|'worse'|'unknown', ... }
@@ -372,13 +318,13 @@ export default function BelleDiagnosisPage() {
       past_change_exp: null,
       // 属性（でお指摘 2026-08-01：年代で肌ケア・体づくりのアプローチは変わるべき）
       age_band: null,
-      // 現在の行動習慣（肌・体型のみコア必須。他6軸は結果画面からの deepen で聞く）
-      skincare_habits: { cleanse_freq: null, items: [] },
-      workout_type: null,
+      // 現在の具体的行動（8軸すべて、Q3で軸ごとに複数選択で聞く）
+      axis_habits: {},
     };
 
-    // コアフロー＝地図の骨格ができるまでの画面。残りの設問は結果画面から1軸ずつ導く
-    const MAIN_SCREENS = ['q3','q3_habits','q3_path'];
+    // コアフロー＝地図の骨格ができるまでの画面。残りの設問（他人からの見え方・恋愛への影響）は
+    // 結果画面から1軸ずつ deepen で導く
+    const MAIN_SCREENS = ['q3'];
     const TOTAL_STEPS = MAIN_SCREENS.length;
 
     let currentScreen = 'landing';
@@ -394,11 +340,7 @@ export default function BelleDiagnosisPage() {
       document.querySelectorAll('.diag-screen').forEach(s => s.classList.remove('is-active'));
       const el = document.getElementById('screen-' + id);
       if (el) el.classList.add('is-active');
-      if (id === 'q3') {
-        // q3_habitsから「戻る」で入ってきた場合は最後に答えた軸（爪）から再開、
-        // それ以外（新規到達）は1軸目から
-        q3StepIndex = (currentScreen === 'q3_habits') ? CONCERN_AREAS.length - 1 : 0;
-      }
+      if (id === 'q3') q3StepIndex = 0;
       currentScreen = id;
       if (id === 'q3') renderQ3Step();
       // 画面ごとの到達をGA4へ（SPA遷移でURLが変わらないため明示送信）
@@ -429,7 +371,7 @@ export default function BelleDiagnosisPage() {
     }
 
     function updateNav() {
-      const noNavScreens = ['landing', 'rescan_confirm', 'instant-tryout', 'instant-tryout-result', 'attr_register', 'attr_confirm', 'deepen'];
+      const noNavScreens = ['landing', 'rescan_confirm', 'attr_register', 'attr_confirm', 'deepen'];
       if (noNavScreens.includes(currentScreen)) {
         navEl.style.display = 'none';
         return;
@@ -443,25 +385,18 @@ export default function BelleDiagnosisPage() {
       switch (currentScreen) {
         case 'q3': {
           const q3Axis = CONCERN_AREAS[q3StepIndex]?.id;
-          enabled = !!(q3Axis && state.care_levels[q3Axis]);
-          break;
-        }
-        case 'q3_habits':
-          enabled = !!state.skincare_habits.cleanse_freq
-            && (state.care_levels.body === 'none' || !!state.workout_type);
-          break;
-        case 'q3_path': {
-          // コアではCompass軸1つだけ答えれば地図の骨格が完成する
-          enabled = !!state.path_types[currentCompassAxis()];
+          // 来た道（path_type）だけが必須。具体行動（items）は複数選択で「未選択＝何もしていない」も
+          // 有効な回答なので必須にしない
+          enabled = !!(q3Axis && state.path_types[q3Axis]);
           break;
         }
       }
       btnNext.disabled = !enabled;
-      btnNext.textContent = (currentScreen === 'q3_path') ? '地図をつくる' : '次へ';
+      const isFinalTap = currentScreen === 'q3' && q3StepIndex === CONCERN_AREAS.length - 1;
+      btnNext.textContent = isFinalTap ? '地図をつくる' : '次へ';
     }
 
     function goNext() {
-      let next = null;
       switch (currentScreen) {
         case 'q3': {
           if (q3StepIndex < CONCERN_AREAS.length - 1) {
@@ -469,24 +404,12 @@ export default function BelleDiagnosisPage() {
             renderQ3Step();
             return;
           }
-          next = 'q3_habits';
-          const workoutBlock = document.getElementById('habits-workout-block');
-          if (workoutBlock) workoutBlock.style.display = state.care_levels.body === 'none' ? 'none' : '';
-          break;
-        }
-        case 'q3_habits':
-          next = 'q3_path';
-          buildAllCategoryCards();
-          break;
-        case 'q3_path':
-          // ここが「地図の骨格ができた」地点。残りの軸は結果画面から1軸ずつ導く
+          // ここが「地図の骨格ができた」地点。残りの軸（他人からの見え方・恋愛への影響）は
+          // 結果画面から1軸ずつ導く
           if (typeof window.gtag === 'function') window.gtag('event', 'mescan_core_complete', { track: 'belle' });
           saveAndFinish();
           return;
-      }
-      if (next) {
-        screenHistory.push(next);
-        showScreen(next);
+        }
       }
     }
 
@@ -502,146 +425,13 @@ export default function BelleDiagnosisPage() {
       }
     }
 
-    function buildMiniRadarSVG(doneUpTo) {
-      const n = CONCERN_AREAS.length;
-      const cx = 80, cy = 80, r = 62, SIZE = 160;
-      const AXIS_COLORS = ['#3b82f6','#8b5cf6','#f59e0b','#10b981','#ec4899','#06b6d4','#f97316','#6366f1'];
+    // 来た道（path_type）→ 内部の現在値バケット。ラダー質問はもう出さないが、
+    // AI生成プロンプトや旧フィールド（care_levels/concern_areas等）の互換のため内部的に保持する
+    const PATH_TO_CARE_LEVEL = { virgin: 'concerned', quit: 'concerned', blind: 'self', lapsed: 'self', doing: 'pro' };
+    const CARE_LEVEL_SCORE = { none: 1, concerned: 2, self: 3, self_regular: 3, pro: 4 };
 
-      function ptStr(val, i) {
-        const angle = -Math.PI / 2 + i * (2 * Math.PI / n);
-        const rv = r * (Math.max(val, 0.12) / 5);
-        return `${(cx + rv * Math.cos(angle)).toFixed(1)},${(cy + rv * Math.sin(angle)).toFixed(1)}`;
-      }
-      function ptXY(scale, i) {
-        const angle = -Math.PI / 2 + i * (2 * Math.PI / n);
-        return { x: cx + r * scale * Math.cos(angle), y: cy + r * scale * Math.sin(angle) };
-      }
-
-      const gridLines = [1, 2, 3, 4, 5].map(v =>
-        `<polygon points="${CONCERN_AREAS.map((_, i) => ptStr(v, i)).join(' ')}" fill="none" stroke="#f1f5f9" stroke-width="1"/>`
-      ).join('');
-
-      const axisLines = CONCERN_AREAS.map((area, i) => {
-        const ep = ptXY(1, i);
-        const done = i <= doneUpTo;
-        return `<line x1="${cx}" y1="${cy}" x2="${ep.x.toFixed(1)}" y2="${ep.y.toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>` +
-               `<circle cx="${ep.x.toFixed(1)}" cy="${ep.y.toFixed(1)}" r="5" fill="${done ? AXIS_COLORS[i] : '#e5e7eb'}"/>`;
-      }).join('');
-
-      const currentVals = CONCERN_AREAS.map((area, i) => {
-        const level = state.care_levels[area.id] || 'none';
-        const v = { none: 1, concerned: 2, self: 3, pro: 4 }[level] || 1;
-        return i <= doneUpTo ? v : 1;
-      });
-
-      const idealVals = CONCERN_AREAS.map((area, i) => {
-        const currentV = { none:1, concerned:2, self:3, pro:4 }[state.care_levels[area.id]] || 1;
-        const v = parseInt(state.ideal_levels[area.id] || String(Math.max(currentV, 3)), 10);
-        return i <= doneUpTo ? v : 1;
-      });
-
-      const currentPts = currentVals.map((v, i) => ptStr(v, i)).join(' ');
-      const idealPts = idealVals.map((v, i) => ptStr(v, i)).join(' ');
-
-      return `<svg viewBox="0 0 ${SIZE} ${SIZE}" width="${SIZE}" height="${SIZE}" style="display:block;margin:0 auto">
-        ${gridLines}
-        ${axisLines}
-        <polygon points="${idealPts}" fill="rgba(99,102,241,.1)" stroke="#a5b4fc" stroke-width="1.5" stroke-linejoin="round"/>
-        <polygon points="${currentPts}" fill="rgba(37,99,235,.22)" stroke="#2563eb" stroke-width="2" stroke-linejoin="round"/>
-      </svg>`;
-    }
-
-    function buildAllCategoryCards() {
-      const container = document.getElementById('q3_path_content');
-      if (!container) return;
-
-      // コアではCompass軸1つだけを描き込む。残りの軸は結果画面から1軸ずつ導く
-      const compassAxis = currentCompassAxis();
-      const activeAreas = CONCERN_AREAS.filter(a => a.id === compassAxis);
-      CONCERN_AREAS.forEach(a => {
-        if (a.id !== compassAxis && !state.path_types[a.id]) {
-          state.path_types[a.id] = null;
-        }
-      });
-
-      // 見出しにCompass軸を差し込む（「あなたに最初に効く軸」を明示する）
-      const compassArea = CONCERN_AREAS.find(a => a.id === compassAxis);
-      if (compassArea) {
-        const labelEl = document.getElementById('q3path-label');
-        const headEl  = document.getElementById('q3path-heading');
-        if (labelEl) labelEl.textContent = `最後の1問｜${compassArea.label}`;
-        if (headEl) headEl.innerHTML =
-          `あなたに最初に効くのは<br><strong style="color:#c86496">${compassArea.icon} ${compassArea.label}</strong><br>ここまで、どんな道を歩いてきましたか？`;
-      }
-
-      const PATH_OPTIONS = [
-        { v:'virgin', icon:'🌱', short:'まだ何もやったことがない',    desc:'取り組んだことがない・考えたことがなかった' },
-        { v:'quit',   icon:'🔄', short:'試したが、続かなかった',       desc:'始めたことはあるが習慣にならなかった' },
-        { v:'blind',  icon:'🤔', short:'自己流でやっているが不安',      desc:'正しいのか客観的な評価を受けたことがない' },
-        { v:'lapsed', icon:'😴', short:'以前はやっていたが後回し中',    desc:'できていた時期があるが、今は疎かになっている' },
-        { v:'doing',  icon:'✅', short:'継続できている',                desc:'今の習慣・ペースで問題なく続けられている' },
-      ];
-
-      function renderChips(pathVal) {
-        return activeAreas.map(area => {
-          const cur = state.path_types[area.id];
-          const isAssigned  = cur === pathVal;
-          const isElsewhere = cur && cur !== pathVal;
-          return `<button class="axis-chip${isAssigned ? ' assigned' : ''}${isElsewhere ? ' elsewhere' : ''}"
-            data-axis="${area.id}" data-pathval="${pathVal}">${area.icon} ${area.label}</button>`;
-        }).join('');
-      }
-
-      container.innerHTML = PATH_OPTIONS.map(opt => `
-        <div class="path-row" data-pathval="${opt.v}">
-          <div class="path-row-label">
-            <span class="path-row-icon">${opt.icon}</span>
-            <div>
-              <p class="path-row-short">${opt.short}</p>
-              <p class="path-row-desc">${opt.desc}</p>
-            </div>
-          </div>
-          <div class="axis-chips" data-pathval="${opt.v}">${renderChips(opt.v)}</div>
-        </div>
-      `).join('');
-
-      const progressEl = document.getElementById('q3path-progress');
-      function updateQ3Progress() {
-        if (!progressEl) return;
-        const done = activeAreas.every(a => !!state.path_types[a.id]);
-        progressEl.textContent = done
-          ? '✓ 地図の骨格がそろいました'
-          : 'あてはまるものを1つ選んでください';
-      }
-      updateQ3Progress();
-
-      container.querySelectorAll('.axis-chip').forEach(chip => {
-        chip.addEventListener('click', function () {
-          const axisId  = this.dataset.axis;
-          const pathVal = this.dataset.pathval;
-
-          // すでに同じ選択肢に割り当て済みならトグルで未選択に戻す
-          if (state.path_types[axisId] === pathVal) {
-            delete state.path_types[axisId];
-          } else {
-            state.path_types[axisId] = pathVal;
-          }
-          const newVal = state.path_types[axisId];
-
-          // 同軸の全チップを更新
-          container.querySelectorAll(`.axis-chip[data-axis="${axisId}"]`).forEach(c => {
-            const cv = c.dataset.pathval;
-            c.classList.toggle('assigned',  !!newVal && cv === newVal);
-            c.classList.toggle('elsewhere', !!newVal && cv !== newVal);
-          });
-
-          updateQ3Progress();
-          updateNextBtn();
-        });
-      });
-    }
-
-    // 変容ベクトル（理想 - 現状）。q3の回答だけで確定する
+    // 変容ベクトル（理想 - 現状）。来た道（path_type）の回答だけで確定する。
+    // 理想値は「現在値+固定オフセット」で自動算出（変えたい度の個別質問はもう出さない）
     function computeTransformVectors() {
       const vectors = {};
       CONCERN_AREAS.forEach(area => {
@@ -672,11 +462,6 @@ export default function BelleDiagnosisPage() {
           return (AXIS_SPEED[b[0]] || 3) - (AXIS_SPEED[a[0]] || 3);
         })
         .map(([id]) => id);
-    }
-
-    // Compass軸（＝最初の一手）。q3_pathで描き込む対象を1軸に絞るのに使う
-    function currentCompassAxis() {
-      return computePriorityOrder()[0] || CONCERN_AREAS[0].id;
     }
 
     function saveAndFinish() {
@@ -746,10 +531,9 @@ export default function BelleDiagnosisPage() {
         rel_status: state.rel_status,
         key_scene_type: state.key_scene_type,
         past_change_exp: state.past_change_exp,
-        // 属性・現在の行動習慣（Mirror分析・New Me Map生成プロンプトで使う）
+        // 属性・現在の具体的行動（Mirror分析・New Me Map生成プロンプトで使う）
         age_band: state.age_band,
-        skincare_habits: state.skincare_habits,
-        workout_type: state.workout_type,
+        axis_habits: state.axis_habits,
       };
 
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); } catch (e) {}
@@ -795,53 +579,26 @@ export default function BelleDiagnosisPage() {
       window.location.href = '/belle/diagnosis/result';
     }
 
-    // Q3: care-level grid
-    // 年代で「変えたい度」の初期選択だけをヒント補正する（gap計算式やスコアリング自体は変えない。
-    // ユーザーはボタンでいつでも上書き可能）
+    // 年代で「理想値」の自動算出だけをヒント補正する（gap計算式やスコアリング自体は変えない）
     const AGE_IDEAL_HINT = { skin: { '10s':2, '20s':3, '30s':4, '40s':4, '50s_plus':4 } };
 
-    const CARE_OPTIONS = [
-      { value: 'none',         label: '気にしていない',                          color: '#9ca3af' },
-      { value: 'concerned',    label: '気になっているが、まだ何もしていない',     color: '#f59e0b' },
-      { value: 'self',         label: '自分なりにやっている（自己流・不定期）',   color: '#3b82f6' },
-      { value: 'self_regular', label: '自己流だが、定期的に続けている',           color: '#60a5fa' },
-      { value: 'pro',          label: 'プロ・サロンに定期的に任せている',         color: '#10b981' }
-    ];
-    const IDEAL_LABELS = ['1','2','3','4','5'];
-
-    // 軸によって「自分なり」「プロ」の意味が実態とズレるため、4軸のみ文言を差し替える
-    // （でお指摘 2026-08-06：髪は誰でも美容師に切ってもらうので全員「プロ」になってしまう等）。
-    // valueは共通のまま（下流の136タイプ・優先順位計算・AI生成プロンプトは無改修で動く）
-    const AXIS_CARE_LABELS = {
-      fashion: {
-        none: '特に意識していない（いつも同じような服を何となく着ている）',
-        concerned: '気になっているが、まだ何も変えられていない',
-        self: '自分なりに気をつけている（サイズ感や色を意識することがある）',
-        self_regular: '自分の「勝ちパターン」が決まっていて、安定して選べている',
-        pro: 'パーソナルスタイリスト・パーソナルカラー診断などプロのアドバイスを受けたことがある',
-      },
-      hair: {
-        none: '特に何もしていない（セットもせず、そのまま）',
-        concerned: '気になっているが、特に何もできていない',
-        self: '自分でセット・スタイリングをしている（不定期）',
-        self_regular: '毎日のスタイリング・ケア（トリートメント等）が習慣になっている',
-        pro: '美容師にスタイリング・ケアまで相談しながら本格的に整えている',
-      },
-      hairremoval: {
-        none: '特に何もしていない',
-        concerned: '気になっているが、まだ何もしていない',
-        self: '自己処理をしている（カミソリ・除毛クリーム等、不定期）',
-        self_regular: '自己処理を習慣的に続けている',
-        pro: 'サロン・クリニックで脱毛している',
-      },
-      teeth: {
-        none: '歯科検診以外、特に何もしていない',
-        concerned: '気になっているが、まだ何もしていない',
-        self: '市販のホワイトニンググッズ等を使っている（不定期）',
-        self_regular: 'ホワイトニング・歯科ケアを習慣的に続けている',
-        pro: '歯科医院でホワイトニング・矯正など専門的なケアを受けている',
-      },
+    // 軸ごとの「今の具体的行動」multi-select。hairはアイテムとスタイリングを分け、
+    // skinはBelle限定でメイクのグループを追加する（他軸はAXIS_HABIT_ITEM_LABELSの全キーを1グループ）
+    const HABIT_GROUPS = {
+      hair: [
+        { title:'使っているケアアイテム', keys:['shampoo_market','shampoo_salon','treatment','milk','oil'] },
+        { title:'スタイリング習慣',       keys:['daily_set','styling_product','iron'] },
+      ],
+      skin: [
+        { title:'使っているアイテム', keys: Object.keys(AXIS_HABIT_ITEM_LABELS.skin) },
+        { title:'メイク',           keys: Object.keys(BELLE_MAKEUP_ITEM_LABELS), labels: BELLE_MAKEUP_ITEM_LABELS },
+      ],
     };
+    function habitGroupsFor(axisId) {
+      if (HABIT_GROUPS[axisId]) return HABIT_GROUPS[axisId];
+      const labels = AXIS_HABIT_ITEM_LABELS[axisId] || {};
+      return [{ title:'いま実際にやっていること', keys: Object.keys(labels) }];
+    }
 
     // Q3を1画面8軸まとめてではなく1軸ずつ表示する（でお指摘：全部答えなきゃいけない圧が面倒に見える）
     let q3StepIndex = 0;
@@ -859,6 +616,62 @@ export default function BelleDiagnosisPage() {
       updateNextBtn();
     }
 
+    // 来た道（path_type）から内部の現在値バケット・理想値を自動算出する
+    // （変えたい度の個別質問は出さない。ユーザーには path_type だけを聞く）
+    function applyPathType(area, pathVal) {
+      state.path_types[area.id] = pathVal;
+      const careLevel = PATH_TO_CARE_LEVEL[pathVal] || 'concerned';
+      state.care_levels[area.id] = careLevel;
+      const mappedScore = CARE_LEVEL_SCORE[careLevel] || 1;
+      const ageHint = AGE_IDEAL_HINT[area.id]?.[state.age_band];
+      state.ideal_levels[area.id] = String(Math.max(mappedScore, ageHint || 4));
+    }
+
+    function buildSingleSelectList(opts, current, onSelect) {
+      const wrap = document.createElement('div');
+      wrap.className = 'diag-options';
+      opts.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'diag-option' + (current === opt.v ? ' selected' : '');
+        btn.innerHTML = '<span class="diag-option-body"><span class="diag-option-title">' + opt.t + '</span>'
+          + (opt.d ? '<span class="diag-option-desc" style="display:block">' + opt.d + '</span>' : '') + '</span>';
+        btn.addEventListener('click', function () {
+          wrap.querySelectorAll('.diag-option').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          onSelect(opt.v);
+        });
+        wrap.appendChild(btn);
+      });
+      return wrap;
+    }
+
+    function buildMultiSelectList(opts, currentArr, onToggle) {
+      const wrap = document.createElement('div');
+      wrap.className = 'diag-options';
+      opts.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'diag-option multi' + (currentArr.includes(opt.v) ? ' selected' : '');
+        btn.innerHTML = '<span class="diag-check">✓</span><span class="diag-option-body"><span class="diag-option-title">' + opt.t + '</span></span>';
+        btn.addEventListener('click', function () {
+          const i = currentArr.indexOf(opt.v);
+          if (i > -1) { currentArr.splice(i, 1); btn.classList.remove('selected'); }
+          else { currentArr.push(opt.v); btn.classList.add('selected'); }
+          onToggle(currentArr);
+        });
+        wrap.appendChild(btn);
+      });
+      return wrap;
+    }
+
+    function sectionHeading(text) {
+      const p = document.createElement('p');
+      p.style.cssText = 'font-size:13px;font-weight:800;color:#374151;margin:18px 0 8px';
+      p.textContent = text;
+      return p;
+    }
+
     function buildCareLevelCard(area) {
         const wrap = document.createElement('div');
         wrap.className = 'care-level-item';
@@ -869,76 +682,57 @@ export default function BelleDiagnosisPage() {
         labelEl.innerHTML = '<span class="care-level-icon">' + area.icon + '</span><span>' + area.label + '</span>';
         wrap.appendChild(labelEl);
 
-        // 現在地（来た道）
-        const optGroup = document.createElement('div');
-        optGroup.className = 'care-level-opts';
+        const cat = CATEGORY_PHASE3.find(c => c.id === area.id);
+        if (!state.axis_habits[area.id]) state.axis_habits[area.id] = { items: [] };
+        const habits = state.axis_habits[area.id];
 
-        const axisLabels = AXIS_CARE_LABELS[area.id] || null;
-        CARE_OPTIONS.forEach(opt => {
-          const radioId = 'care-' + area.id + '-' + opt.value;
-          const optEl = document.createElement('label');
-          optEl.className = 'care-level-opt';
-          optEl.htmlFor = radioId;
-          const optLabel = (axisLabels && axisLabels[opt.value]) || opt.label;
-          optEl.innerHTML =
-            '<input type="radio" id="' + radioId + '" name="care-' + area.id + '" value="' + opt.value + '">' +
-            '<span class="care-level-opt-text">' + optLabel + '</span>';
-
-          optEl.querySelector('input').addEventListener('change', function () {
-            state.care_levels[area.id] = opt.value;
-            wrap.querySelectorAll('.care-level-opt').forEach(el => el.classList.remove('selected'));
-            optEl.classList.add('selected');
-            // 理想スコアが現在地を下回らないよう自動補正
-            const mappedScore = { none:1, concerned:2, self:3, pro:4 }[opt.value] || 1;
-            if (!state.ideal_levels[area.id] || parseInt(state.ideal_levels[area.id]) < mappedScore) {
-              const ageHint = AGE_IDEAL_HINT[area.id]?.[state.age_band];
-              const newIdeal = String(Math.max(mappedScore, ageHint || 3));
-              state.ideal_levels[area.id] = newIdeal;
-              idealBtns.querySelectorAll('button').forEach(b => {
-                const sel = b.dataset.v === newIdeal;
-                b.style.background    = sel ? '#2563eb' : '#fff';
-                b.style.borderColor   = sel ? '#2563eb' : '#e5e7eb';
-                b.style.color         = sel ? '#fff'    : '#374151';
-              });
-            }
-            updateNextBtn();
-          });
-
-          optGroup.appendChild(optEl);
+        // ① 来た道（現在地の唯一の質問。これまでのQ3ラダーと最後の1問は統合済み）
+        wrap.appendChild(sectionHeading('これまで、どんな道を歩いてきた？'));
+        const pathList = buildSingleSelectList(cat.path_opts, state.path_types[area.id], function (v) {
+          applyPathType(area, v);
+          updateNextBtn();
         });
-        wrap.appendChild(optGroup);
+        wrap.appendChild(pathList);
 
-        // 理想スコア（変えたい度 1〜5）
-        const idealWrap = document.createElement('div');
-        idealWrap.style.cssText = 'margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;';
-        idealWrap.innerHTML = '<span style="font-size:11px;font-weight:700;color:#6b7280;white-space:nowrap;">変えたい度:</span>';
-        const idealBtns = document.createElement('div');
-        idealBtns.style.cssText = 'display:flex;gap:4px;';
-        IDEAL_LABELS.forEach(v => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.textContent = v;
-          btn.dataset.v = v;
-          btn.style.cssText = 'width:32px;height:32px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-weight:700;background:#fff;cursor:pointer;color:#374151;transition:all .12s;';
-          btn.addEventListener('click', function () {
-            idealBtns.querySelectorAll('button').forEach(b => {
-              b.style.background = '#fff';
-              b.style.borderColor = '#e5e7eb';
-              b.style.color = '#374151';
-            });
-            btn.style.background = '#2563eb';
-            btn.style.borderColor = '#2563eb';
-            btn.style.color = '#fff';
-            state.ideal_levels[area.id] = v;
-          });
-          idealBtns.appendChild(btn);
+        // ② 今の具体的行動（事実ベース・複数選択）
+        // 体型のみ、筋トレ系を選んだ人だけに頻度・部位を追加で出す（無関係な人に聞いても離脱要因）
+        let bodyExtra = null;
+        if (area.id === 'body') {
+          bodyExtra = document.createElement('div');
+          bodyExtra.id = 'body-training-extra';
+          const showTraining = habits.items.includes('gym_strength') || habits.items.includes('home_strength');
+          bodyExtra.style.display = showTraining ? '' : 'none';
+          bodyExtra.appendChild(sectionHeading('筋トレの頻度'));
+          const freqOpts = Object.entries(BODY_FREQ_LABELS).map(([v, t]) => ({ v, t }));
+          bodyExtra.appendChild(buildSingleSelectList(freqOpts, habits.freq, function (v) { habits.freq = v; }));
+          bodyExtra.appendChild(sectionHeading('鍛えている部位（複数可）'));
+          if (!habits.parts) habits.parts = [];
+          const partOpts = Object.entries(BODY_PART_LABELS).map(([v, t]) => ({ v, t }));
+          bodyExtra.appendChild(buildMultiSelectList(partOpts, habits.parts, function () {}));
+        }
+
+        habitGroupsFor(area.id).forEach(group => {
+          wrap.appendChild(sectionHeading(group.title));
+          const labelSrc = group.labels || AXIS_HABIT_ITEM_LABELS[area.id];
+          const opts = group.keys.map(k => ({ v:k, t: labelSrc[k] }));
+          wrap.appendChild(buildMultiSelectList(opts, habits.items, function (arr) {
+            if (bodyExtra) bodyExtra.style.display = (arr.includes('gym_strength') || arr.includes('home_strength')) ? '' : 'none';
+          }));
         });
-        idealWrap.appendChild(idealBtns);
-        const idealHint = document.createElement('span');
-        idealHint.style.cssText = 'font-size:10px;color:#9ca3af;margin-left:4px;';
-        idealHint.textContent = '低←→高';
-        idealWrap.appendChild(idealHint);
-        wrap.appendChild(idealWrap);
+
+        if (bodyExtra) wrap.appendChild(bodyExtra);
+
+        // 軸別の付帯情報（頻度など。AI生成の解像度用でスコアには使わない）
+        if (area.id === 'skin') {
+          wrap.appendChild(sectionHeading('洗顔・クレンジングの頻度'));
+          const freqOpts = Object.entries(CLEANSE_FREQ_LABELS).map(([v, t]) => ({ v, t }));
+          wrap.appendChild(buildSingleSelectList(freqOpts, habits.freq, function (v) { habits.freq = v; }));
+        }
+        if (area.id === 'hair') {
+          wrap.appendChild(sectionHeading('美容院に通う頻度'));
+          const freqOpts = Object.entries(HAIR_SALON_FREQ_LABELS).map(([v, t]) => ({ v, t }));
+          wrap.appendChild(buildSingleSelectList(freqOpts, habits.salon_freq, function (v) { habits.salon_freq = v; }));
+        }
 
         return wrap;
     }
@@ -1003,9 +797,13 @@ export default function BelleDiagnosisPage() {
       });
     }
     // Button handlers
-    function startMeScan() {
-      screenHistory.push('instant-tryout');
-      showScreen('instant-tryout');
+    // 30秒お試し（instant-tryout）は廃止。年代確認へ直結し、そのままQ3（8軸×来た道）へ進む
+    async function startMeScan() {
+      let attrs = await syncAttributesWithServer();
+      renderAttrScreen(attrs);
+      const next = hasRequiredAttributes(attrs) ? 'attr_confirm' : 'attr_register';
+      screenHistory.push(next);
+      showScreen(next);
     }
     document.getElementById('btn-start').addEventListener('click', function () {
       // 既にMe Scan済み（Map生成の元になる診断データがローカルにある）なら、
@@ -1036,48 +834,6 @@ export default function BelleDiagnosisPage() {
       btn.addEventListener('click', goBack);
     });
 
-    const introStartBtn = document.getElementById('btn-q3-intro-start');
-    if (introStartBtn) {
-      introStartBtn.addEventListener('click', function() {
-        buildAllCategoryCards();
-        screenHistory.push('q3_path');
-        showScreen('q3_path');
-      });
-    }
-
-    // ─── Instant Tryout（D-20260713-2）───
-    const TRYOUT_AXIS_MAP = {
-      matching_photo: { icon: '💇', label: '髪・ヘア',    desc: '第一印象に最も直結する軸です。' },
-      matching_date:  { icon: '👗',    label: '服・コーデ',  desc: '長時間いっしょにいる人ほど、ここが効きます。' },
-      love_now:       { icon: '👗',    label: '服・コーデ',  desc: '長時間いっしょにいる人ほど、ここが効きます。' },
-      career:         { icon: '✨',    label: '肌・清潔感',  desc: '清潔感は信頼感の土台です。' },
-      mirror:         { icon: '✂️',   label: '眉毛',        desc: '顔全体の印象で最も変化が出やすい場所です。' },
-      word:           { icon: '✂️',   label: '眉毛',        desc: '顔全体の印象で最も変化が出やすい場所です。' },
-      comparison:     { icon: '✂️',   label: '眉毛',        desc: '顔全体の印象で最も変化が出やすい場所です。' },
-      vague:          { icon: '✂️',   label: '眉毛',        desc: '変化体験の最短経路です。変わった実感が継続の動機になります。' },
-    };
-
-    document.getElementById('opts-instant-tryout')?.querySelectorAll('.tryout-option').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        const val = this.dataset.value;
-        // お試しの回答＝Q1の回答。同じことを二度聞かない
-        if (val && !state.triggers.includes(val)) state.triggers.push(val);
-        const axis = TRYOUT_AXIS_MAP[val] || { icon: '✂️', label: '眉毛', desc: '顔全体の印象で最も変化が出やすい場所です。' };
-        const resultEl = document.getElementById('tryout-result-axis');
-        if (resultEl) {
-          resultEl.innerHTML =
-            '<span class="tryout-result-axis-icon">' + axis.icon + '</span>' +
-            '<p class="tryout-result-axis-name">' + axis.label + '</p>' +
-            '<p class="tryout-result-axis-desc">' + axis.desc + '</p>';
-        }
-        // お試し完了を計測
-        fetch('/api/track/src?src=instant-tryout-done').catch(function() {});
-        try { localStorage.setItem('fineme:diagnosis:src', 'instant-tryout-done'); } catch(e) {}
-        screenHistory.push('instant-tryout-result');
-        showScreen('instant-tryout-result');
-      });
-    });
-
     // 属性（年代）：登録・確認どちらも選ぶ／進むと即q3へ（でお指摘 2026-08-01）
     function renderAttrScreen(attrs) {
       state.age_band = attrs?.age_band || state.age_band;
@@ -1102,57 +858,6 @@ export default function BelleDiagnosisPage() {
       showScreen('attr_register');
     });
 
-    // 肌・体型の現在の行動習慣（q3_habits）
-    document.getElementById('opts-habits-cleanse')?.querySelectorAll('.diag-option').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('#opts-habits-cleanse .diag-option').forEach(b => b.classList.remove('selected'));
-        this.classList.add('selected');
-        state.skincare_habits.cleanse_freq = this.dataset.value;
-        updateNextBtn();
-      });
-    });
-    document.getElementById('opts-habits-items')?.querySelectorAll('.diag-option').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        const val = this.dataset.value;
-        const items = state.skincare_habits.items;
-        if (val === 'none') {
-          document.querySelectorAll('#opts-habits-items .diag-option').forEach(b => b.classList.remove('selected'));
-          items.length = 0;
-          this.classList.add('selected');
-          items.push('none');
-        } else {
-          const noneBtn = document.querySelector('#opts-habits-items [data-value="none"]');
-          if (noneBtn) noneBtn.classList.remove('selected');
-          const ni = items.indexOf('none');
-          if (ni > -1) items.splice(ni, 1);
-          const i = items.indexOf(val);
-          if (i > -1) { items.splice(i, 1); this.classList.remove('selected'); }
-          else { items.push(val); this.classList.add('selected'); }
-        }
-      });
-    });
-    document.getElementById('opts-habits-workout')?.querySelectorAll('.diag-option').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('#opts-habits-workout .diag-option').forEach(b => b.classList.remove('selected'));
-        this.classList.add('selected');
-        state.workout_type = this.dataset.value;
-        updateNextBtn();
-      });
-    });
-
-    document.getElementById('btn-tryout-continue')?.addEventListener('click', async function() {
-      // 本問診開始を計測
-      fetch('/api/track/src?src=instant-tryout').catch(function() {});
-      try { localStorage.setItem('fineme:diagnosis:src', 'instant-tryout'); } catch(e) {}
-      // 属性（年代）が必須。未登録なら登録画面、登録済みならログイン中の最新値で確認画面を出す
-      // ログイン済みなら必ずサーバと同期する（端末を変えた・キャッシュが消えた等でローカルが
-      // 空でも、サーバに既に登録済みなら確認画面を出す。毎回はじめから聞き直すのを防ぐ）
-      let attrs = await syncAttributesWithServer();
-      renderAttrScreen(attrs);
-      const next = hasRequiredAttributes(attrs) ? 'attr_confirm' : 'attr_register';
-      screenHistory.push(next);
-      showScreen(next);
-    });
 
     // ─── 軸ごとの描き込み（?deepen=<axisId>）───
     // 結果画面が示した1軸だけをここで深める。既存のCATEGORY_PHASE3をそのまま使う
@@ -1165,21 +870,15 @@ export default function BelleDiagnosisPage() {
       try { profile = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) {}
       if (!profile) return false;
 
-      const answers = { path_type: null, self_view: null };
+      // path_type（来た道）はQ3で全軸すでに回答済みなので、ここでは聞き直さない
+      const answers = { path_type: profile.path_types?.[axisId] || null, self_view: null };
       const QUESTIONS = [
-        { key:'path_type',   q:cat.path_q, opts:cat.path_opts.map(o => ({ v:o.v, t:o.t, d:o.d })) },
         { key:'self_view',   q:cat.view_q, opts:cat.view_opts.map(o => ({ v:o.v, t:o.t, d:o.d || '' })) },
       ];
-      // hairremoval・nail は恋愛への影響を聞かない設計（has_love:false、love_q自体が無い）。
-      // 元々ここが無条件に cat.love_opts.map(...) していたため、この2軸のdeepenは実行時に落ちていた
+      // hairremoval・nail は恋愛への影響を聞かない設計（has_love:false、love_q自体が無い）
       if (cat.has_love) {
         answers.love_impact = null;
         QUESTIONS.push({ key:'love_impact', q:cat.love_q, opts:cat.love_opts.map(o => ({ v:o.v, t:o.t, d:o.d || '' })) });
-      }
-      // 残り6軸（肌・体型はコアq3_habitsで既に聞いているため対象外）は今の行動習慣を4問目として聞く
-      if (cat.habit_q) {
-        answers.habit_type = null;
-        QUESTIONS.push({ key:'habit_type', q:cat.habit_q, opts:cat.habit_opts.map(o => ({ v:o.v, t:o.t, d:o.d || '' })) });
       }
 
       const labelEl = document.getElementById('deepen-label');
@@ -1219,18 +918,11 @@ export default function BelleDiagnosisPage() {
 
       saveBtn?.addEventListener('click', function () {
         try {
-          // habit_type はスコア計算（transform_vectors）に混ぜない。優先軸を変えるためではなく
-          // AI生成文の解像度を上げるための情報なので、別の場所（axis_habits）に置く
-          const { habit_type, ...scoreAnswers } = answers;
           profile.transform_vectors = profile.transform_vectors || {};
-          profile.transform_vectors[axisId] = Object.assign({}, profile.transform_vectors[axisId], scoreAnswers);
-          profile.path_types  = Object.assign({}, profile.path_types,  { [axisId]: answers.path_type });
+          profile.transform_vectors[axisId] = Object.assign({}, profile.transform_vectors[axisId], answers);
           profile.self_views  = Object.assign({}, profile.self_views,  { [axisId]: answers.self_view });
           if (cat.has_love) {
             profile.love_impact = Object.assign({}, profile.love_impact, { [axisId]: answers.love_impact });
-          }
-          if (cat.habit_q) {
-            profile.axis_habits = Object.assign({}, profile.axis_habits, { [axisId]: habit_type });
           }
           profile.at = Date.now();
           localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
@@ -1277,7 +969,7 @@ export default function BelleDiagnosisPage() {
               <p style={{fontSize:'13px',color:'#9ca3af'}}>外見より先に、「あなたの状況」を聞きます。<br />だから答えが、本物になる。</p>
               <div className="diag-badges">
                 <span className="diag-badge" style={{fontWeight:'800',background:'rgba(201,168,76,0.15)',color:'#a07830',border:'1px solid rgba(201,168,76,0.4)',fontSize:'13px',padding:'7px 14px'}}>🐉 136タイプからあなたのタイプを判定</span>
-                <span className="diag-badge">⏱️ 約3分</span>
+                <span className="diag-badge">⏱️ 約4分</span>
                 <span className="diag-badge">🕶️ 登録不要</span>
               </div>
               <button className="diag-nav-next" id="btn-start" style={{width:'100%',fontSize:'18px',padding:'16px'}}>Me Scanをはじめる</button>
@@ -1333,38 +1025,6 @@ export default function BelleDiagnosisPage() {
           </div>
         </div>
 
-        {/* SCREEN: instant-tryout（30秒・1問お試し D-20260713-2） */}
-        <div className="diag-screen" id="screen-instant-tryout">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">30秒 お試し</p>
-            <h2 className="diag-q">なぜ今、外見を変えようと<br />思いましたか？</h2>
-            <p className="diag-hint">一番近いものを1つ選んでください。すぐに「最初の1点」をお伝えします。</p>
-            <div id="opts-instant-tryout">
-              <button className="tryout-option" data-value="matching_photo"><span className="tryout-option-icon">📱</span><span className="tryout-option-title">マッチングアプリの写真で損している</span></button>
-              <button className="tryout-option" data-value="matching_date"><span className="tryout-option-icon">💔</span><span className="tryout-option-title">マッチングはできるが、会うと続かない</span></button>
-              <button className="tryout-option" data-value="love_now"><span className="tryout-option-icon">❤️</span><span className="tryout-option-title">好きな人に会う前に変わりたい</span></button>
-              <button className="tryout-option" data-value="career"><span className="tryout-option-icon">💼</span><span className="tryout-option-title">就職・転職など大事な場面が近い</span></button>
-              <button className="tryout-option" data-value="mirror"><span className="tryout-option-icon">🪞</span><span className="tryout-option-title">毎朝鏡を見て気分が上がらない</span></button>
-              <button className="tryout-option" data-value="word"><span className="tryout-option-icon">💬</span><span className="tryout-option-title">言われた一言が頭から離れない</span></button>
-              <button className="tryout-option" data-value="comparison"><span className="tryout-option-icon">😔</span><span className="tryout-option-title">同世代と並んで差が気になった</span></button>
-              <button className="tryout-option" data-value="vague"><span className="tryout-option-icon">🌱</span><span className="tryout-option-title">明確な理由はないが変わりたい</span></button>
-            </div>
-          </div>
-        </div>
-
-        {/* SCREEN: instant-tryout-result */}
-        <div className="diag-screen" id="screen-instant-tryout-result">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">最初の1点</p>
-            <h2 className="diag-q" style={{marginBottom:'8px'}}>あなたの最初の1点は</h2>
-            <div className="tryout-result-axis" id="tryout-result-axis"></div>
-            <p className="tryout-framing">これはあなたの動機から導き出した「最初の1点」です。<br />8軸すべてを測ると、別の軸が前に出ることもあります。</p>
-            <button className="diag-nav-next" id="btn-tryout-continue" style={{width:'100%',marginTop:'16px'}}>8軸を測ってタイプを判定する（約3分）→</button>
-          </div>
-        </div>
-
         {/* SCREEN ATTR_REGISTER: 年代の登録（初回のみ）*/}
         <div className="diag-screen" id="screen-attr_register">
           <button className="diag-back-btn" data-back="">← 戻る</button>
@@ -1394,13 +1054,13 @@ export default function BelleDiagnosisPage() {
           </div>
         </div>
 
-        {/* SCREEN Q3: care-level grid */}
+        {/* SCREEN Q3: 軸ごとに「来た道」＋「今の具体的行動」を聞く */}
         <div className="diag-screen" id="screen-q3">
           <button className="diag-back-btn" data-back="">← 戻る</button>
           <div className="diag-card">
-            <p className="diag-step-label">Q3｜現在地の把握</p>
-            <h2 className="diag-q">それぞれについて、<br />今のあなたの状態を教えてください</h2>
-            <p className="diag-hint">「気にしていない」も大切な情報です。全て正直に教えてください。</p>
+            <p className="diag-step-label">現在地の把握</p>
+            <h2 className="diag-q">それぞれについて、<br />今のあなたを教えてください</h2>
+            <p className="diag-hint">自己評価ではなく、実際にやっていることで教えてください。</p>
             <p id="q3-step-progress" style={{fontSize:'12px',fontWeight:800,color:'#6366f1',margin:'-8px 0 4px'}}></p>
             <div id="care-level-grid">{/* JSで生成 */}</div>
             <div id="care-overall-block" style={{marginTop:'20px',paddingTop:'16px',borderTop:'2px dashed #e5e7eb'}}>
@@ -1418,62 +1078,12 @@ export default function BelleDiagnosisPage() {
           </div>
         </div>
 
-        {/* SCREEN Q3_HABITS: 肌・体型の現在の行動習慣（でお指摘 2026-08-01：頻度・アイテムまで聞く） */}
-        <div className="diag-screen" id="screen-q3_habits">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card">
-            <p className="diag-step-label">今やっていること</p>
-            <h2 className="diag-q">肌・体づくりで、<br />いま実際にやっていることは？</h2>
-            <p className="diag-hint">具体的なほど、提案の精度が上がります。</p>
-
-            <p style={{fontSize:'13px',fontWeight:800,color:'#374151',margin:'18px 0 8px'}}>✨ 洗顔・クレンジングの頻度</p>
-            <div className="diag-options" id="opts-habits-cleanse">
-              <button className="diag-option" data-value="twice_plus"><span className="diag-option-body"><span className="diag-option-title">1日2回以上</span></span></button>
-              <button className="diag-option" data-value="once"><span className="diag-option-body"><span className="diag-option-title">1日1回</span></span></button>
-              <button className="diag-option" data-value="irregular"><span className="diag-option-body"><span className="diag-option-title">不定期・週数回</span></span></button>
-              <button className="diag-option" data-value="rarely"><span className="diag-option-body"><span className="diag-option-title">ほとんどしない</span></span></button>
-            </div>
-
-            <p style={{fontSize:'13px',fontWeight:800,color:'#374151',margin:'18px 0 8px'}}>✨ 使っているアイテム（複数可）</p>
-            <div className="diag-options" id="opts-habits-items">
-              <button className="diag-option multi" data-value="lotion"><span className="diag-check">✓</span><span className="diag-option-body"><span className="diag-option-title">化粧水</span></span></button>
-              <button className="diag-option multi" data-value="cream"><span className="diag-check">✓</span><span className="diag-option-body"><span className="diag-option-title">乳液・クリーム</span></span></button>
-              <button className="diag-option multi" data-value="serum"><span className="diag-check">✓</span><span className="diag-option-body"><span className="diag-option-title">美容液</span></span></button>
-              <button className="diag-option multi" data-value="sheet_mask"><span className="diag-check">✓</span><span className="diag-option-body"><span className="diag-option-title">シートマスク</span></span></button>
-              <button className="diag-option multi" data-value="cleansing"><span className="diag-check">✓</span><span className="diag-option-body"><span className="diag-option-title">クレンジング（メイク落とし）</span></span></button>
-              <button className="diag-option multi" data-value="none"><span className="diag-check">✓</span><span className="diag-option-body"><span className="diag-option-title">特に使っていない</span></span></button>
-            </div>
-
-            <div id="habits-workout-block" style={{display:'none'}}>
-              <p style={{fontSize:'13px',fontWeight:800,color:'#374151',margin:'18px 0 8px'}}>💪 体型づくりの取り組み方</p>
-              <div className="diag-options" id="opts-habits-workout">
-                <button className="diag-option" data-value="gym"><span className="diag-option-body"><span className="diag-option-title">ジムに通っている</span></span></button>
-                <button className="diag-option" data-value="bodyweight"><span className="diag-option-body"><span className="diag-option-title">自重トレーニング（自宅・公園等）</span></span></button>
-                <button className="diag-option" data-value="home_equipment"><span className="diag-option-body"><span className="diag-option-title">宅トレ器具を使っている（ダンベル等）</span></span></button>
-                <button className="diag-option" data-value="none"><span className="diag-option-body"><span className="diag-option-title">特に取り組んでいない</span></span></button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* SCREEN Q3_PATH: Phase 3 軸別スキャン（全軸1ページ） */}
-        <div className="diag-screen" id="screen-q3_path">
-          <button className="diag-back-btn" data-back="">← 戻る</button>
-          <div className="diag-card" style={{marginBottom:'16px'}}>
-            <p className="diag-step-label" id="q3path-label">最後の1問｜来た道</p>
-            <h2 className="diag-q" id="q3path-heading">これまで、どんな道を<br />歩いてきましたか？</h2>
-            <p className="diag-hint">下のチップをタップして選びます。ここまで答えると、あなたの地図の骨格が完成します。</p>
-            <p id="q3path-progress" style={{fontSize:'12px',fontWeight:'700',color:'rgba(201,168,76,0.8)',margin:'8px 0 0'}}></p>
-          </div>
-          <div id="q3_path_content"></div>
-        </div>
-
         {/* SCREEN DEEPEN: 軸ごとの描き込み（結果画面から1軸ずつ導かれて来る） */}
         <div className="diag-screen" id="screen-deepen">
           <div className="diag-card" style={{marginBottom:'16px'}}>
             <p className="diag-step-label" id="deepen-label">地図を描き込む</p>
             <h2 className="diag-q" id="deepen-heading"></h2>
-            <p className="diag-hint">3問だけ。答えるほど、この軸のステップが具体的になります。</p>
+            <p className="diag-hint">あと少しだけ。答えるほど、この軸のステップが具体的になります。</p>
           </div>
           <div id="deepen-content"></div>
           <button className="diag-nav-next" id="btn-deepen-save" style={{width:'100%',maxWidth:'600px',marginTop:'8px'}} disabled>地図に描き込む</button>

@@ -5,7 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
 import { BRAND_PHILOSOPHY } from '@/lib/brand-philosophy';
 import { AGE_BANDS } from '@/lib/attributes';
-import { CLEANSE_FREQ_LABELS, SKINCARE_ITEM_LABELS, WORKOUT_TYPE_LABELS, AXIS_HABIT_LABELS } from '@/lib/axis-habits';
+import { CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, BODY_PART_LABELS, HAIR_SALON_FREQ_LABELS, habitItemLabel } from '@/lib/axis-habits';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -167,9 +167,7 @@ export async function POST(request) {
   // 年代はprofiles.age_bandを正とする（診断後にマイページで訂正しても再診断なしで反映されるように）
   const ageBand = profile?.age_band || derivedDiagnosis?.age_band || null;
   const ageLabel = AGE_BANDS[ageBand]?.label || null;
-  const skincareHabits = derivedDiagnosis?.skincare_habits || null;
-  const workoutType = derivedDiagnosis?.workout_type || null;
-  const axisHabits = derivedDiagnosis?.axis_habits || null;
+  const axisHabits = derivedDiagnosis?.axis_habits || {};
 
   // キュレーション済みInstagram/TikTok投稿プール（でお承認済みのみ）。
   // ステップ本文の具体的な内容に本当に合う場合だけAIが related_post_id を付ける
@@ -249,17 +247,24 @@ export async function POST(request) {
     bd.nail_concerns?.length && `- 爪の悩み: ${[].concat(bd.nail_concerns).join('・')}`,
   ].filter(Boolean).join('\n');
 
-  // 現在の行動習慣（Me Scanのq3_habits・?deepen=の4問目で取得。でお指摘 2026-08-01:
-  // 「今までやってきた」レベルの粗さでなく、頻度・アイテムまで具体的に聞いた情報をここで活かす）
-  const habitLines = [
-    skincareHabits?.cleanse_freq && `- 洗顔・クレンジングの頻度: ${CLEANSE_FREQ_LABELS[skincareHabits.cleanse_freq] || skincareHabits.cleanse_freq}`,
-    skincareHabits?.items?.length && `- 使用中のスキンケアアイテム: ${skincareHabits.items.map(v => SKINCARE_ITEM_LABELS[v] || v).join('・')}`,
-    workoutType && `- 体型づくりの取り組み方: ${WORKOUT_TYPE_LABELS[workoutType] || workoutType}`,
-    ...Object.entries(axisHabits || {}).map(([axisId, v]) => {
-      const label = AXIS_HABIT_LABELS[axisId]?.[v] || v;
-      return label ? `- ${AXIS_LABELS[axisId] || axisId}の今の習慣: ${label}` : null;
-    }),
-  ].filter(Boolean).join('\n');
+  // 現在の行動習慣（Me ScanのQ3で全軸共通、事実ベースの複数選択で取得。でお指摘 2026-08-01:
+  // 「今までやってきた」レベルの粗さでなく、頻度・アイテムまで具体的に聞いた情報をここで活かす。
+  // でお指摘 2026-08-13: 自己申告の「来た道」だけでなく、実際にやっていることを根拠にする）
+  const habitLines = Object.entries(axisHabits).flatMap(([axisId, h]) => {
+    if (!h) return [];
+    const axisLabel = AXIS_LABELS[axisId] || axisId;
+    const lines = [];
+    if (h.items?.length) {
+      lines.push(`- ${axisLabel}で今やっていること: ${h.items.map(v => habitItemLabel(axisId, v)).join('・')}`);
+    } else if (Array.isArray(h.items)) {
+      lines.push(`- ${axisLabel}で今やっていること: 特になし`);
+    }
+    if (axisId === 'skin' && h.freq) lines.push(`- 洗顔・クレンジングの頻度: ${CLEANSE_FREQ_LABELS[h.freq] || h.freq}`);
+    if (axisId === 'hair' && h.salon_freq) lines.push(`- 美容院に通う頻度: ${HAIR_SALON_FREQ_LABELS[h.salon_freq] || h.salon_freq}`);
+    if (axisId === 'body' && h.freq) lines.push(`- 筋トレの頻度: ${BODY_FREQ_LABELS[h.freq] || h.freq}`);
+    if (axisId === 'body' && h.parts?.length) lines.push(`- 鍛えている部位: ${h.parts.map(v => BODY_PART_LABELS[v] || v).join('・')}`);
+    return lines;
+  }).join('\n');
 
   const goalSceneText = Array.isArray(goalScene)
     ? goalScene.map(g => GOAL_SCENE_LABELS[g] || g).join('、')

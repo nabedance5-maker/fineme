@@ -874,10 +874,13 @@ export default function BelleDiagnosisResultPage() {
 
     // ─── 次に描き込む1軸（第3層への導き）───
     // 軸を並べて選ばせない。羅針盤は方角を1つ指すもの。
-    const DEEPEN_FIELDS = ['path_type', 'self_view', 'love_impact'];
+    // hairremoval・nailは恋愛への影響を聞かない設計（has_love:false）なので、
+    // love_impactを必須から外さないと永遠に「未完了」のまま残ってしまう
+    const NO_LOVE_AXES = new Set(['hairremoval', 'nail']);
     function isAxisDrawn(id) {
       const v = tv[id] || {};
-      return DEEPEN_FIELDS.every(k => !!v[k]);
+      const fields = NO_LOVE_AXES.has(id) ? ['path_type', 'self_view'] : ['path_type', 'self_view', 'love_impact'];
+      return fields.every(k => !!v[k]);
     }
     function buildNextDrawBlock() {
       const allIds = Object.keys(AREA_DEFS);
@@ -915,12 +918,14 @@ export default function BelleDiagnosisResultPage() {
       const nextId = remaining[0];
       const def = AREA_DEFS[nextId];
       const total = allIds.length;
+      // 来た道はQ3で既に回答済みなので、deepenで残っているのは自己視点(+恋愛への影響)のみ
+      const qCount = NO_LOVE_AXES.has(nextId) ? 1 : 2;
       return `
         <div style="margin:16px 0 20px;padding:20px 18px;background:rgba(18,10,18,0.7);border:1px solid rgba(200,100,140,0.28);border-radius:14px;text-align:center">
           <p style="font-size:10px;font-weight:800;letter-spacing:.16em;color:rgba(200,100,140,0.6);text-transform:uppercase;margin:0 0 10px">Map ${drawn} / ${total}</p>
           <p style="font-size:13px;color:rgba(240,216,224,0.55);margin:0 0 4px">地図はまだ骨格の状態です</p>
           <p style="font-size:17px;font-weight:800;color:#f0d8e0;margin:0 0 16px;line-height:1.4">次に描き込むのは —— ${esc(def.icon)} ${esc(def.label)}</p>
-          <a href="/belle/diagnosis?deepen=${esc(nextId)}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,rgba(220,130,160,1),rgba(200,100,140,0.85));color:#fff;font-size:14px;font-weight:800;border-radius:10px;text-decoration:none">${esc(def.label)}の地図を描き込む（3問・1分）→</a>
+          <a href="/belle/diagnosis?deepen=${esc(nextId)}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,rgba(220,130,160,1),rgba(200,100,140,0.85));color:#fff;font-size:14px;font-weight:800;border-radius:10px;text-decoration:none">${esc(def.label)}の地図を描き込む（${qCount}問・30秒）→</a>
           <p style="font-size:11px;color:rgba(240,216,224,0.32);margin:12px 0 0;line-height:1.6">描き込むほど、New Me Navi のステップが具体的になります</p>
         </div>`;
     }
