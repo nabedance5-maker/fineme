@@ -63,6 +63,19 @@ export default function MirrorScoringPage() {
         </section>
 
         <section className="card stack" style={{ padding: 20, gap: 12 }}>
+          <h2 style={{ margin: 0, fontSize: 18 }}>4-2. なぜ言葉が厳しいのか（STOIC MIRROR）</h2>
+          <p>
+            Fineme Mirrorは、あえて優しいだけの言葉を選びません。伸びしろは遠慮なくはっきり指摘します。
+            誰にでも平等に厳しい鏡だからこそ、「自分だけが悪く言われた」という受け取り方にならないようにしています。
+          </p>
+          <p>
+            ただし、指摘して終わりにはしません。厳しく伝えたあとは必ず、変わった先の姿を具体的に見せ、
+            隣で並んで進む言葉で背中を押し、最後は温かい言葉で締めくくります。外見磨きに終わりはなく、
+            誰にでも常に次の段階がある——という前提のもとでの厳しさです。
+          </p>
+        </section>
+
+        <section className="card stack" style={{ padding: 20, gap: 12 }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>5. 注意点</h2>
           <p>
             この分析はAIによる視覚的な観察に基づくものであり、医学的診断や絶対的な評価ではありません。撮影時の角度・光・距離によって見え方が変わることがあります。

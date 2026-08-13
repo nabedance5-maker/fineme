@@ -148,7 +148,7 @@ async function renderShareCardImage(reportContent, photoUrl, accentHex, tierComp
   let y = 100;
 
   ctx.fillStyle = accentHex;
-  fillCenteredText(ctx, 'F I N E M E   M I R R O R', W / 2, y, { font: `800 26px ${SANS}` });
+  fillCenteredText(ctx, 'F I N E M E   S T O I C   M I R R O R', W / 2, y, { font: `800 26px ${SANS}`, maxWidth: 980, minFont: 18 });
   y += 70;
 
   // 写真は「切り抜かず全体を収める」contain方式（オンスクリーン表示と同じ見え方にする。
@@ -349,7 +349,7 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
       {/* シェア用カード（スクショ・保存ボタン両対応の1画面。でお指定の階層：
           階級（最大の主役）→点数（次点で大きく）→VISUAL TYPE→写真→透かし） */}
       <div style={{ padding: '22px 22px 26px', textAlign: 'center' }}>
-        <span style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '.28em', color: accent, textTransform: 'uppercase' }}>Fineme Mirror</span>
+        <span style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '.28em', color: accent, textTransform: 'uppercase' }}>Fineme Mirror — Stoic Mirror</span>
 
         {photoUrl && (
           <div style={{ padding: '14px 0 0' }}>

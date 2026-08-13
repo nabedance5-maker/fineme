@@ -527,10 +527,13 @@ export default function BelleMirrorPage() {
       {/* ヒーロー（fullではFV最上部をビジュアルレポートに譲るため非表示） */}
       {state !== 'full' && (
         <div className="mirror-hero">
-          <p className="mirror-badge">Fineme Mirror</p>
+          <p className="mirror-badge">Fineme Mirror — STOIC MIRROR</p>
           <p className="mirror-subtitle">
-            写真1枚。AIがあなたの「変われる余白」を地図にする。<br />
-            スコアじゃない。あなたの可能性の見取り図。
+            これは、優しいだけの鏡じゃない。<br />
+            AIがあなたの伸びしろを、遠慮なく言葉にする。
+          </p>
+          <p className="privacy-note" style={{ marginBottom: '10px' }}>
+            🪞 誰にでも平等に厳しい鏡です。だからこそ最後は、ちゃんと未来まで見せます。
           </p>
           <p className="privacy-note" style={{ marginBottom: '10px' }}>
             ⚠️ この分析はAIが写真から視覚的に読み取った内容です。写真の角度・光・表情などによって結果がぶれたり、実際の印象と異なる場合があります。
