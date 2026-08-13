@@ -85,6 +85,29 @@ function drawPillRow(ctx, items, centerX, startY, maxWidth, { fontSize, color, b
   return y;
 }
 
+// 中央揃えテキストを描く共通ヘルパー。呼び出しごとに font/align/baseline を
+// 必ず明示的に設定し直す（前の呼び出しの状態に依存しない。overflow時は
+// maxWidthに収まるまでフォントサイズを自動で縮める）。
+function fillCenteredText(ctx, text, centerX, y, { font, maxWidth, minFont }) {
+  let fontStr = font;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  if (maxWidth) {
+    const sizeMatch = font.match(/(\d+)px/);
+    let size = sizeMatch ? parseInt(sizeMatch[1], 10) : null;
+    if (size) {
+      ctx.font = fontStr;
+      while (ctx.measureText(text).width > maxWidth && size > (minFont || 12)) {
+        size -= 2;
+        fontStr = font.replace(/\d+px/, `${size}px`);
+        ctx.font = fontStr;
+      }
+    }
+  }
+  ctx.font = fontStr;
+  ctx.fillText(text, centerX, y);
+}
+
 // シェア用カードを1080×1920（スマホ縦画面比）のcanvasに手描きする。
 async function renderShareCardImage(reportContent, photoUrl, accentHex, tierComparison) {
   const W = 1080, H = 1920;
@@ -92,7 +115,25 @@ async function renderShareCardImage(reportContent, photoUrl, accentHex, tierComp
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
 
-  try { await document.fonts.ready; } catch {}
+  const SERIF = "'Noto Serif JP', Georgia, serif";
+  const SANS = "'Noto Sans JP', sans-serif";
+
+  // document.fonts.ready だけだと、そのページでまだ一度も使われていない
+  // ウェイト/サイズの組み合わせは待たれないことがある（フォールバック書体で
+  // 幅が想定と大きくズレ、はみ出し・行間崩れの原因になっていた）。
+  // 実際にcanvasで使う組み合わせを個別にloadして確実に揃える。
+  try {
+    await Promise.all([
+      document.fonts.load(`800 26px ${SANS}`),
+      document.fonts.load(`700 24px ${SANS}`),
+      document.fonts.load(`800 72px ${SERIF}`),
+      document.fonts.load(`800 56px ${SANS}`),
+      document.fonts.load(`700 26px ${SANS}`),
+      document.fonts.load(`400 24px ${SANS}`),
+      document.fonts.load(`700 22px ${SANS}`),
+    ]);
+    await document.fonts.ready;
+  } catch {}
 
   ctx.fillStyle = '#05080F';
   ctx.fillRect(0, 0, W, H);
@@ -103,101 +144,91 @@ async function renderShareCardImage(reportContent, photoUrl, accentHex, tierComp
   ctx.strokeRect(24, 24, W - 48, H - 48);
   ctx.globalAlpha = 1;
 
-  const SERIF = "'Noto Serif JP', Georgia, serif";
-  const SANS = "'Noto Sans JP', sans-serif";
-  let y = 96;
+  const CARD_MAX_W = 880; // 左右余白を確保した安全テキスト幅
+  let y = 100;
 
-  ctx.textAlign = 'center';
   ctx.fillStyle = accentHex;
-  ctx.font = `800 26px ${SANS}`;
-  ctx.fillText('F I N E M E   M I R R O R', W / 2, y);
-  y += 56;
+  fillCenteredText(ctx, 'F I N E M E   M I R R O R', W / 2, y, { font: `800 26px ${SANS}` });
+  y += 70;
 
+  // 写真は「切り抜かず全体を収める」contain方式（オンスクリーン表示と同じ見え方にする。
+  // 以前はcoverで固定枠に切り抜いており、アスペクト比が変わって見える不具合があった）。
   let photoImg = null;
   if (photoUrl) {
     try { photoImg = await loadImageEl(photoUrl); } catch { photoImg = null; }
   }
   if (photoImg) {
-    const boxW = 720, boxH = 620, boxX = (W - boxW) / 2, boxY = y, radius = 28;
+    const maxW = 820, maxH = 760;
+    const scale = Math.min(maxW / photoImg.width, maxH / photoImg.height, 1);
+    const dw = photoImg.width * scale, dh = photoImg.height * scale;
+    const boxX = (W - dw) / 2, boxY = y, radius = 28;
     ctx.save();
     ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(boxX, boxY, boxW, boxH, radius);
-    else ctx.rect(boxX, boxY, boxW, boxH);
+    if (ctx.roundRect) ctx.roundRect(boxX, boxY, dw, dh, radius);
+    else ctx.rect(boxX, boxY, dw, dh);
     ctx.clip();
-    const scale = Math.max(boxW / photoImg.width, boxH / photoImg.height);
-    const dw = photoImg.width * scale, dh = photoImg.height * scale;
-    ctx.drawImage(photoImg, boxX + (boxW - dw) / 2, boxY + (boxH - dh) / 2, dw, dh);
+    ctx.drawImage(photoImg, boxX, boxY, dw, dh);
     ctx.restore();
     ctx.strokeStyle = accentHex;
     ctx.globalAlpha = 0.4;
     ctx.lineWidth = 2;
-    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(boxX, boxY, boxW, boxH, radius); ctx.stroke(); }
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(boxX, boxY, dw, dh, radius); ctx.stroke(); }
     ctx.globalAlpha = 1;
-    y = boxY + boxH + 64;
+    y = boxY + dh + 70;
   } else {
     y += 20;
   }
 
   if (reportContent.visual_tier) {
-    ctx.fillStyle = 'rgba(232,228,220,0.4)';
-    ctx.font = `700 24px ${SANS}`;
-    ctx.fillText('現在の変容ステージ', W / 2, y);
-    y += 66;
+    ctx.fillStyle = 'rgba(232,228,220,0.45)';
+    fillCenteredText(ctx, '現在の変容ステージ', W / 2, y, { font: `700 24px ${SANS}` });
+    y += 76;
 
     ctx.fillStyle = accentHex;
-    ctx.font = `800 88px ${SERIF}`;
-    ctx.fillText(reportContent.visual_tier, W / 2, y);
-    y += 84;
+    fillCenteredText(ctx, reportContent.visual_tier, W / 2, y, { font: `800 72px ${SERIF}`, maxWidth: CARD_MAX_W, minFont: 40 });
+    y += 96;
   }
 
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = 'rgba(232,228,220,0.92)';
-  ctx.font = `800 60px ${SANS}`;
-  const scoreText = String(reportContent.visual_score);
-  const maxText = ` / ${reportContent.visual_score_max || 888}`;
-  const scoreW = ctx.measureText(scoreText).width;
-  ctx.font = `700 30px ${SANS}`;
-  const maxW = ctx.measureText(maxText).width;
-  const totalW = scoreW + maxW;
-  ctx.textAlign = 'left';
-  ctx.font = `800 60px ${SANS}`;
-  ctx.fillStyle = 'rgba(232,228,220,0.92)';
-  ctx.fillText(scoreText, W / 2 - totalW / 2, y);
-  ctx.font = `700 30px ${SANS}`;
-  ctx.fillStyle = 'rgba(232,228,220,0.4)';
-  ctx.fillText(maxText, W / 2 - totalW / 2 + scoreW, y);
-  ctx.textAlign = 'center';
-  y += 52;
+  const scoreText = `${reportContent.visual_score} / ${reportContent.visual_score_max || 888}`;
+  ctx.fillStyle = 'rgba(232,228,220,0.9)';
+  fillCenteredText(ctx, scoreText, W / 2, y, { font: `800 56px ${SANS}`, maxWidth: CARD_MAX_W, minFont: 32 });
+  y += 74;
 
   if (reportContent.visual_tier_description) {
     ctx.fillStyle = 'rgba(232,228,220,0.55)';
-    ctx.font = `400 26px ${SANS}`;
-    y = drawWrappedText(ctx, reportContent.visual_tier_description, W / 2, y + 20, 820, 38) + 20;
+    ctx.font = `400 24px ${SANS}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    y = drawWrappedText(ctx, reportContent.visual_tier_description, W / 2, y + 16, CARD_MAX_W, 38) + 24;
   }
 
   if (reportContent.visual_type_keywords?.length) {
-    y = drawPillRow(ctx, reportContent.visual_type_keywords, W / 2, y + 10, 880, {
-      fontSize: 26, color: accentHex, bg: 'rgba(255,255,255,0.03)', border: accentHex,
+    ctx.textBaseline = 'alphabetic';
+    y = drawPillRow(ctx, reportContent.visual_type_keywords, W / 2, y, CARD_MAX_W, {
+      fontSize: 24, color: accentHex, bg: 'rgba(255,255,255,0.03)', border: accentHex,
     });
-    y += 8;
+    y += 16;
   }
 
   if (reportContent.visual_type_description) {
     ctx.fillStyle = 'rgba(232,228,220,0.6)';
-    ctx.font = `400 26px ${SANS}`;
-    y = drawWrappedText(ctx, reportContent.visual_type_description, W / 2, y + 16, 820, 38) + 16;
+    ctx.font = `400 24px ${SANS}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    y = drawWrappedText(ctx, reportContent.visual_type_description, W / 2, y + 12, CARD_MAX_W, 38) + 24;
   }
 
   if (tierComparison?.promoted) {
     const text = `🎉 前回の「${tierComparison.previous_tier}」から「${reportContent.visual_tier}」へ変容が進みました`;
     ctx.fillStyle = accentHex;
-    ctx.font = `700 26px ${SANS}`;
-    y = drawWrappedText(ctx, text, W / 2, y + 30, 820, 38) + 10;
+    ctx.font = `700 24px ${SANS}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    y = drawWrappedText(ctx, text, W / 2, y + 16, CARD_MAX_W, 36) + 16;
   }
 
   ctx.fillStyle = 'rgba(232,228,220,0.22)';
-  ctx.font = `700 24px ${SANS}`;
-  ctx.fillText('fineme.me', W / 2, H - 72);
+  fillCenteredText(ctx, 'fineme.me', W / 2, H - 72, { font: `700 24px ${SANS}` });
 
   return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
 }
