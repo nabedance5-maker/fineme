@@ -39,7 +39,7 @@ export default function BelleDiagnosisPage() {
       .diag-back-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: #7a6e65; padding: 0 0 16px; display: flex; align-items: center; gap: 4px; font-weight: 600; }
       .diag-back-btn:hover { color: #0a0f1e; }
       .diag-card { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(201,168,76,0.25); border-radius: 18px; padding: 28px 24px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(10,15,30,.06); }
-      .diag-step-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: rgba(201,168,76,0.8); text-transform: uppercase; margin: 0 0 8px; }
+      .diag-step-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: #8a6a1a; text-transform: uppercase; margin: 0 0 8px; }
       .diag-q { font-size: clamp(17px, 4vw, 20px); font-weight: 800; line-height: 1.4; margin: 0 0 6px; color: #0a0f1e; }
       .diag-hint { font-size: 13px; color: #5a4e45; margin: 0 0 20px; line-height: 1.6; }
       .diag-options { display: flex; flex-direction: column; gap: 10px; }
