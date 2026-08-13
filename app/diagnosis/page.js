@@ -754,6 +754,19 @@ export default function DiagnosisPage() {
           }));
         });
 
+        // その他（自由記述・全軸共通、でお指摘 2026-08-13）
+        wrap.appendChild(sectionHeading('他にやっていることがあれば'));
+        const otherTextBox = document.createElement('textarea');
+        otherTextBox.placeholder = '具体的に教えてください';
+        otherTextBox.value = habits.other_note || '';
+        otherTextBox.style.cssText = 'width:100%;padding:12px 14px;border:2px solid rgba(201,168,76,0.2);border-radius:10px;font-size:14px;margin-top:8px;min-height:64px;font-family:inherit;background:rgba(255,255,255,0.72);display:' + (habits.items.includes('other') ? 'block' : 'none') + ';';
+        otherTextBox.addEventListener('input', function () { habits.other_note = this.value; });
+        wrap.appendChild(buildMultiSelectList([{ v:'other', t:'その他（自由記述）' }], habits.items, function (arr) {
+          otherTextBox.style.display = arr.includes('other') ? 'block' : 'none';
+          recomputeAxisLevel(area);
+        }));
+        wrap.appendChild(otherTextBox);
+
         if (bodyExtra) wrap.appendChild(bodyExtra);
 
         // 軸別の付帯情報（頻度など。AI生成の解像度用でスコアには使わない）
