@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
 import { AGE_BANDS, hasRequiredAttributes, saveAttribute, syncAttributesWithServer } from '@/lib/attributes';
-import { AXIS_HABIT_ITEM_LABELS, CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, HAIR_SALON_FREQ_LABELS, inferPathType, PATH_TO_CARE_LEVEL, CARE_LEVEL_SCORE } from '@/lib/axis-habits';
+import { AXIS_HABIT_ITEM_LABELS, CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, HAIR_SALON_FREQ_LABELS, inferPathType, PATH_TO_CARE_LEVEL, CARE_LEVEL_SCORE, essentialCoverageRatio, WANT_CHANGE_OPTIONS } from '@/lib/axis-habits';
 import { FACE_TYPE_OPTIONS, SKELETAL_TYPE_OPTIONS, PERSONAL_COLOR_OPTIONS, MBTI_OPTIONS, isMeaningfulProfileValue } from '@/lib/profile-basics';
 
 export default function DiagnosisPage() {
@@ -395,13 +395,22 @@ export default function DiagnosisPage() {
       }
     }
 
-    // 変容ベクトル（理想 - 現状）。具体的行動（items・freq）から自動算出したcare_levelで確定する。
-    // 理想値は「現在値+固定オフセット」で自動算出（変えたい度の個別質問はもう出さない）
+    // 変容ベクトル（理想 - 現状）。現状は具体的行動（items）から自動算出したcare_levelを
+    // 基準に、基本セットのカバー率で細分化する（でお指摘：選択肢は同等じゃない。化粧水は
+    // やっててほしいが、ピーリングは必須ではない）。理想は変えたい度の回答があればそれを
+    // 使い、無ければ現在値ベースで自動算出する
     function computeTransformVectors() {
       const vectors = {};
       CONCERN_AREAS.forEach(area => {
-        const currentScore = { none:1, concerned:2, self:3, self_regular:3, pro:4 }[state.care_levels[area.id]] || 1;
-        const idealScore = parseInt(state.ideal_levels[area.id] || String(Math.max(currentScore, 3)), 10);
+        const careLevel = state.care_levels[area.id];
+        let currentScore = { none:1, concerned:2, self:3, self_regular:3, pro:4 }[careLevel] || 1;
+        if (careLevel === 'self') {
+          const ratio = essentialCoverageRatio(area.id, state.axis_habits[area.id]?.items || []);
+          if (ratio !== null) currentScore = 2 + ratio * 1.5; // 基本を何も押さえていない2.0〜全部押さえている3.5
+        }
+        // idealは1〜5の整数スケールで固定（配列インデックスとして使う下流箇所があるため、
+        // currentのような小数の精緻化はしない）
+        const idealScore = Math.round(parseFloat(state.ideal_levels[area.id] || String(Math.max(currentScore, 3))));
         vectors[area.id] = {
           current: currentScore,
           ideal: idealScore,
@@ -651,7 +660,8 @@ export default function DiagnosisPage() {
       state.care_levels[area.id] = careLevel;
       const mappedScore = CARE_LEVEL_SCORE[careLevel] || 1;
       const ageHint = AGE_IDEAL_HINT[area.id]?.[state.age_band];
-      state.ideal_levels[area.id] = String(Math.max(mappedScore, ageHint || 4));
+      // 変えたい度の回答があればそれを理想値として使う。未回答なら現在値ベースで自動算出
+      state.ideal_levels[area.id] = habits.want_change || String(Math.max(mappedScore, ageHint || 4));
     }
 
     function buildSingleSelectList(opts, current, onSelect) {
@@ -797,6 +807,13 @@ export default function DiagnosisPage() {
           recomputeAxisLevel(area);
         }));
         wrap.appendChild(otherTextBox);
+
+        // 変えたい度（でお指摘 2026-08-14：具体行動に加えて、カテゴリごとの変えたい度も聞く）
+        wrap.appendChild(sectionHeading('この軸、変えたい度は？'));
+        wrap.appendChild(buildSingleSelectList(
+          WANT_CHANGE_OPTIONS.map(o => ({ v:o.v, t:o.t })), habits.want_change,
+          function (v) { habits.want_change = v; recomputeAxisLevel(area); }
+        ));
 
         if (bodyExtra) wrap.appendChild(bodyExtra);
 
