@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
+import { ALL_AXES } from '@/lib/log-axes';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -768,6 +769,59 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'stories') loadStories();
     })();
 
+    // ── New Me Log 顧客一覧タブ ───────────────────────────────────
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const listEl = document.getElementById('customers-list');
+
+      function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      function fmtDate(d) {
+        if (!d) return '未設定';
+        return new Date(d).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
+      }
+      function fmtFreq(c) {
+        if (c.frequency_months) return c.frequency_months === 1 ? '月1回' : `${c.frequency_months}ヶ月に1回`;
+        if (c.frequency_weeks) return c.frequency_weeks === 1 ? '週1回' : `${c.frequency_weeks}週ごと`;
+        return '未設定';
+      }
+
+      async function loadCustomers() {
+        if (!listEl) return;
+        listEl.innerHTML = '<p class="muted">読み込み中…</p>';
+        const res = await fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) { listEl.innerHTML = '<p style="color:#ef4444" class="muted">取得エラー</p>'; return; }
+        const items = await res.json();
+        if (!items.length) {
+          listEl.innerHTML = '<p class="muted">まだ紐づいているお客様はいません。QRコードでNew Me Logをご案内ください。</p>';
+          return;
+        }
+        listEl.innerHTML = '';
+        items.forEach(c => {
+          const def = ALL_AXES[c.axis];
+          const axisLabel = def ? `${def.icon} ${esc(def.label)}` : esc(c.axis);
+          const row = document.createElement('div');
+          row.style.cssText = 'border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px;background:#fff;';
+          row.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:4px;">${esc(c.customer_name)}</div>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+                  <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
+                  <span style="font-size:11px;color:#9ca3af;">${esc(c.name)}</span>
+                </div>
+                <p style="font-size:12px;color:#6b7280;margin:0;">前回：${fmtDate(c.last_visit)}／次回目安：${fmtDate(c.next_visit)}／頻度：${fmtFreq(c)}</p>
+              </div>
+            </div>
+          `;
+          listEl.appendChild(row);
+        });
+      }
+
+      document.querySelectorAll('[data-tab="customers"]').forEach(btn => btn.addEventListener('click', loadCustomers, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'customers') loadCustomers();
+    })();
+
     // ── 画像圧縮ヘルパー（Canvas, max 1200px, JPEG/WebP 0.85） ────
     function compressImage(file, maxPx = 1200, quality = 0.85) {
       return new Promise((resolve) => {
@@ -1419,6 +1473,7 @@ export default function ProviderDashboardPage() {
           <button className="tab-btn" data-tab="profile">プロフィール</button>
           <button className="tab-btn" data-tab="staff">👤 スタッフ</button>
           <button className="tab-btn" data-tab="stories">📝 体験談</button>
+          <button className="tab-btn" data-tab="customers">🗒️ New Me Log</button>
           <button className="tab-btn" data-tab="service">サービス設定</button>
           <button className="tab-btn" data-tab="publish">公開設定</button>
           <button className="tab-btn" data-tab="billing">課金・プラン</button>
@@ -1976,6 +2031,22 @@ export default function ProviderDashboardPage() {
               </p>
             </div>
             <div id="stories-list"><p className="muted">読み込み中…</p></div>
+          </div>
+        </div>
+
+        {/* New Me Log：紐づいている顧客の一覧 */}
+        <div className="tab-pane" id="tab-customers">
+          <div className="card" style={{ padding: '24px' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>New Me Log で紐づいているお客様</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                お客様がNew Me Log（無料の来店サイクル管理ツール）にご自身で登録し、お店を紐づけると、ここに表示されます。<br />
+                リマインドはFineme公式LINEから自動で送られます。まだ案内していない場合は
+                <a href="/provider/log-toolkit" style={{ color: 'inherit', textDecoration: 'underline' }}>紹介用QRコード</a>
+                をお店に置いてください。
+              </p>
+            </div>
+            <div id="customers-list"><p className="muted">読み込み中…</p></div>
           </div>
         </div>
 

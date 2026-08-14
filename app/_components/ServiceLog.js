@@ -1546,6 +1546,7 @@ export default function ServiceLog({ withSideNav = false }) {
               <button className="log-provider-clear" id="log-provider-clear">解除</button>
             </div>
             <div id="log-provider-results" className="log-provider-result" />
+            <p className="log-field-hint">紐づけると、あなたの名前とこの記録がそのお店にも見えるようになります。</p>
           </div>
 
           <div className="log-field">
