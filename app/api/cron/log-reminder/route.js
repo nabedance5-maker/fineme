@@ -8,6 +8,26 @@ import { sendLinePush } from '@/lib/line-push';
 import { resolveAxis, effectiveFreq, formatFreq, idealNextDate } from '@/lib/log-axes';
 import { buildLogMessage, getNotifyLevel } from '@/lib/log-voice';
 
+// 店舗の公式LINEチャネルから送る分は、Fineme独自の航海クルー口調ではなく
+// 店舗からの通知として自然な、簡潔な文面にする（フェーズ2・店舗別LINE連携）。
+function buildStoreLogMessage(booking, reminder, resolveAxisFn) {
+  const lines = [];
+  booking.forEach(b => {
+    const def = resolveAxisFn(b.axis, b.custom_icon);
+    lines.push(
+      b.overdueDays > 0
+        ? `${def.icon} ${b.name}：前回から${b.weeksSince ?? '?'}週が経ちました。そろそろのお時間です。`
+        : `${def.icon} ${b.name}：前回のペース（${b.freq || '未設定'}）から、そろそろのお時間が近づいています。`
+    );
+  });
+  reminder.forEach(r => {
+    const def = resolveAxisFn(r.axis, r.custom_icon);
+    const d = new Date(r.next_visit).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
+    lines.push(`${def.icon} ${r.name}：次回のご予約は${d}です。`);
+  });
+  return ['New Me Logからのお知らせです', '', ...lines].join('\n');
+}
+
 export const dynamic = 'force-dynamic';
 
 // notify カラム未適用（42703 / PGRST204）でも落とさない
@@ -47,8 +67,8 @@ export async function GET(request) {
 
   // next_visit がある行（予約済み）と無い行（前回だけ記録）の両方を見るため、
   // active な行をまとめて取り、判定はアプリ側で行う。
-  const COLS_V2 = 'id, user_id, axis, custom_icon, name, last_visit, next_visit, frequency_weeks, notify_enabled, notify_days_before, last_notified_at, entry_type';
-  const COLS_LEGACY = 'id, user_id, axis, name, last_visit, next_visit, frequency_weeks';
+  const COLS_V2 = 'id, user_id, axis, custom_icon, name, last_visit, next_visit, frequency_weeks, notify_enabled, notify_days_before, last_notified_at, entry_type, provider_slug';
+  const COLS_LEGACY = 'id, user_id, axis, name, last_visit, next_visit, frequency_weeks, provider_slug';
 
   let { data: logs, error } = await db
     .from('user_service_logs')
@@ -173,48 +193,101 @@ export async function GET(request) {
   const dueUserIds = Object.keys(byUser);
   if (!dueUserIds.length) return Response.json({ sent: 0, date: todayStr });
 
+  // ── 店舗別LINE連携（フェーズ2）の解決に必要な材料をまとめて取る ──
+  // 対象：due な行のうち provider_slug を持つもの。
+  // 「連携済み」＝provider_line_channels に verified_at があり、かつその顧客との
+  // provider_customer_line_links が存在する場合のみ。どちらか欠けたらFineme公式へフォールバック。
+  const dueSlugs = [...new Set(
+    dueUserIds.flatMap(uid => byUser[uid].map(l => l.provider_slug).filter(Boolean))
+  )];
+  let providerBySlug = {};   // slug -> { id, channelToken }
+  let linksByProviderUser = {}; // `${providerId}:${userId}` -> store_line_user_id
+  if (dueSlugs.length) {
+    const { data: providersRows } = await db.from('providers').select('id, slug').in('slug', dueSlugs);
+    const providerIds = (providersRows || []).map(p => p.id);
+    let channelsById = {};
+    if (providerIds.length) {
+      const { data: channels } = await db
+        .from('provider_line_channels')
+        .select('provider_id, channel_access_token, verified_at')
+        .in('provider_id', providerIds);
+      (channels || []).forEach(c => {
+        if (c.channel_access_token && c.verified_at) channelsById[c.provider_id] = c.channel_access_token;
+      });
+    }
+    (providersRows || []).forEach(p => {
+      if (channelsById[p.id]) providerBySlug[p.slug] = { id: p.id, channelToken: channelsById[p.id] };
+    });
+    const connectedProviderIds = Object.values(providerBySlug).map(p => p.id);
+    if (connectedProviderIds.length) {
+      const { data: links } = await db
+        .from('provider_customer_line_links')
+        .select('provider_id, user_id, store_line_user_id')
+        .in('provider_id', connectedProviderIds)
+        .in('user_id', dueUserIds);
+      (links || []).forEach(l => { linksByProviderUser[`${l.provider_id}:${l.user_id}`] = l.store_line_user_id; });
+    }
+  }
+
+  function storeTargetFor(userId, log) {
+    const p = log.provider_slug && providerBySlug[log.provider_slug];
+    if (!p) return null;
+    const storeLineUserId = linksByProviderUser[`${p.id}:${userId}`];
+    if (!storeLineUserId) return null;
+    return { token: p.channelToken, lineUserId: storeLineUserId };
+  }
+
   let sent = 0;
   const notifiedIds = [];
 
   for (const userId of dueUserIds) {
     const profile = profileMap[userId];
-    const lineUserId = profile?.line_user_id;
-    if (!lineUserId) continue;
-
     const mine = byUser[userId];
-    const booking = mine
-      .filter(l => l.kind === 'booking')
-      .map(l => ({
-        axis: l.axis,
-        custom_icon: l.custom_icon,
-        name: l.name,
-        entry_type: l.entry_type,
-        weeksSince: weeksSince(l.last_visit),
-        freq: formatFreq(effectiveFreq(l)),
+
+    // 店舗別LINE連携済みの行と、Fineme公式フォールバックの行に分ける
+    const byStore = new Map(); // key -> { target, logs: [] }
+    const fallbackLogs = [];
+    for (const l of mine) {
+      const target = storeTargetFor(userId, l);
+      if (target) {
+        const key = target.lineUserId;
+        if (!byStore.has(key)) byStore.set(key, { target, logs: [] });
+        byStore.get(key).logs.push(l);
+      } else {
+        fallbackLogs.push(l);
+      }
+    }
+
+    function toBookingReminder(logs) {
+      const booking = logs.filter(l => l.kind === 'booking').map(l => ({
+        axis: l.axis, custom_icon: l.custom_icon, name: l.name, entry_type: l.entry_type,
+        weeksSince: weeksSince(l.last_visit), freq: formatFreq(effectiveFreq(l)),
         overdueDays: l.diff < 0 ? -l.diff : 0,
       }));
-    const reminder = mine
-      .filter(l => l.kind === 'reminder')
-      .map(l => ({
-        axis: l.axis,
-        custom_icon: l.custom_icon,
-        name: l.name,
-        next_visit: l.next_visit,
-        diff: l.diff,
+      const reminder = logs.filter(l => l.kind === 'reminder').map(l => ({
+        axis: l.axis, custom_icon: l.custom_icon, name: l.name, next_visit: l.next_visit, diff: l.diff,
       }));
+      return { booking, reminder };
+    }
 
-    // 文面は lib/log-voice.js（航海のクルーの声・日替わりで言い回しが変わる）
-    // 声は本人の選択（未設定ならトラックごとの既定）
-    const text = buildLogMessage(booking, reminder, resolveAxis, {
-      voiceId: profile.log_voice,
-      trackId: profile.track,
-      monthlyNudge: monthlyNudgeFor(userId, logsByUser[userId]),
-    });
+    // 店舗別LINEチャネルへの送信（店舗からの通知として自然な、簡潔な文面）
+    for (const { target, logs } of byStore.values()) {
+      const { booking, reminder } = toBookingReminder(logs);
+      const text = buildStoreLogMessage(booking, reminder, resolveAxis);
+      const res = await sendLinePush(target.lineUserId, text, target.token);
+      if (res.ok) { sent++; notifiedIds.push(...logs.map(l => l.id)); }
+    }
 
-    const res = await sendLinePush(lineUserId, text);
-    if (res.ok) {
-      sent++;
-      notifiedIds.push(...byUser[userId].map(l => l.id));
+    // Fineme公式LINEへの送信（既存の航海クルー口調・従来通り1通にまとめる）
+    if (fallbackLogs.length && profile?.line_user_id) {
+      const { booking, reminder } = toBookingReminder(fallbackLogs);
+      const text = buildLogMessage(booking, reminder, resolveAxis, {
+        voiceId: profile.log_voice,
+        trackId: profile.track,
+        monthlyNudge: monthlyNudgeFor(userId, logsByUser[userId]),
+      });
+      const res = await sendLinePush(profile.line_user_id, text);
+      if (res.ok) { sent++; notifiedIds.push(...fallbackLogs.map(l => l.id)); }
     }
   }
 

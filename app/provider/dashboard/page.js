@@ -822,6 +822,65 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'customers') loadCustomers();
     })();
 
+    // ── LINE連携タブ ──────────────────────────────────────────────
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const statusEl = document.getElementById('line-channel-status');
+      const form = document.getElementById('line-channel-form');
+      const msgEl = document.getElementById('lc-msg');
+      const submitBtn = document.getElementById('lc-submit-btn');
+
+      async function loadStatus() {
+        if (!statusEl) return;
+        statusEl.textContent = '読み込み中…';
+        const res = await fetch('/api/provider/line-channel', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) { statusEl.textContent = '取得エラー'; return; }
+        const data = await res.json();
+        if (data.connected) {
+          statusEl.innerHTML = `✅ 連携済み（${data.verified_at ? new Date(data.verified_at).toLocaleDateString('ja-JP') : ''}確認・${data.connected_by === 'staff' ? '運営代行設定' : '自己設定'}）`;
+        } else {
+          statusEl.textContent = '未連携（Fineme公式LINEからリマインドが送られます）';
+        }
+      }
+
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          submitBtn.disabled = true; submitBtn.textContent = '確認中…'; msgEl.textContent = '';
+          try {
+            const res = await fetch('/api/provider/line-channel', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({
+                channel_id: document.getElementById('lc-channel-id').value.trim(),
+                channel_secret: document.getElementById('lc-channel-secret').value.trim(),
+                channel_access_token: document.getElementById('lc-channel-token').value.trim(),
+                liff_id: document.getElementById('lc-liff-id').value.trim(),
+              }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+              msgEl.style.color = '#059669';
+              msgEl.textContent = `✓ 連携できました（${data.botDisplayName || ''}）`;
+              document.getElementById('lc-channel-token').value = '';
+              loadStatus();
+            } else {
+              msgEl.style.color = '#ef4444';
+              msgEl.textContent = data.error || '保存に失敗しました';
+            }
+          } catch (err) {
+            msgEl.style.color = '#ef4444';
+            msgEl.textContent = '通信エラーが発生しました';
+          }
+          submitBtn.disabled = false; submitBtn.textContent = '保存して確認する';
+        });
+      }
+
+      document.querySelectorAll('[data-tab="line-channel"]').forEach(btn => btn.addEventListener('click', loadStatus, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'line-channel') loadStatus();
+    })();
+
     // ── 画像圧縮ヘルパー（Canvas, max 1200px, JPEG/WebP 0.85） ────
     function compressImage(file, maxPx = 1200, quality = 0.85) {
       return new Promise((resolve) => {
@@ -1474,6 +1533,7 @@ export default function ProviderDashboardPage() {
           <button className="tab-btn" data-tab="staff">👤 スタッフ</button>
           <button className="tab-btn" data-tab="stories">📝 体験談</button>
           <button className="tab-btn" data-tab="customers">🗒️ New Me Log</button>
+          <button className="tab-btn" data-tab="line-channel">💬 LINE連携</button>
           <button className="tab-btn" data-tab="service">サービス設定</button>
           <button className="tab-btn" data-tab="publish">公開設定</button>
           <button className="tab-btn" data-tab="billing">課金・プラン</button>
@@ -2041,12 +2101,48 @@ export default function ProviderDashboardPage() {
               <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>New Me Log で紐づいているお客様</h2>
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
                 お客様がNew Me Log（無料の来店サイクル管理ツール）にご自身で登録し、お店を紐づけると、ここに表示されます。<br />
-                リマインドはFineme公式LINEから自動で送られます。まだ案内していない場合は
+                リマインドは、店舗の公式LINEを連携している場合はそちらから、未連携の場合はFineme公式LINEから自動で送られます。まだ案内していない場合は
                 <a href="/provider/log-toolkit" style={{ color: 'inherit', textDecoration: 'underline' }}>紹介用QRコード</a>
                 をお店に置いてください。
               </p>
             </div>
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
+          </div>
+        </div>
+
+        {/* LINE連携：店舗の公式LINEアカウントを連携し、そちらからリマインドを送る */}
+        <div className="tab-pane" id="tab-line-channel">
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>店舗の公式LINEと連携する</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                連携すると、お客様への来店リマインドがFineme公式LINEではなく、この店舗の公式LINEから届くようになります。<br />
+                既に公式LINEを友だち追加しているお客様に届きやすくなります。<br />
+                設定にはLINE Official Account ManagerでのMessaging API有効化・チャネルアクセストークンの発行が必要です。ご不明な場合はサポートいたしますのでお気軽にお問い合わせください。
+              </p>
+            </div>
+            <div id="line-channel-status" className="muted" style={{ fontSize: '13px' }}>読み込み中…</div>
+            <form id="line-channel-form" className="stack" style={{ gap: '10px' }}>
+              <div className="form-field">
+                <label>チャネルID</label>
+                <input id="lc-channel-id" type="text" placeholder="任意（控えとして保存）" />
+              </div>
+              <div className="form-field">
+                <label>チャネルシークレット</label>
+                <input id="lc-channel-secret" type="text" placeholder="任意（控えとして保存）" />
+              </div>
+              <div className="form-field">
+                <label>チャネルアクセストークン *</label>
+                <input id="lc-channel-token" type="text" placeholder="LINE Official Account Managerで発行したトークン" required />
+              </div>
+              <div className="form-field">
+                <label>LIFF ID</label>
+                <small className="muted" style={{ display: 'block', marginBottom: '4px' }}>お客様の連携ページ（LIFF）を作成した場合のみ入力してください</small>
+                <input id="lc-liff-id" type="text" placeholder="任意" />
+              </div>
+              <button type="submit" className="btn" id="lc-submit-btn">保存して確認する</button>
+              <p id="lc-msg" className="muted" style={{ fontSize: '13px' }}></p>
+            </form>
           </div>
         </div>
 

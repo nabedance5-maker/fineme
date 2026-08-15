@@ -82,6 +82,7 @@ export default function AdminProvidersPage() {
               </div>
               <div style="display:flex;gap:6px;flex-wrap:wrap">
                 <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-edit="${p.id}">編集</button>
+                <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-line-channel="${p.id}" data-name="${esc(p.name)}">LINE連携（代行設定）</button>
                 <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-toggle="${p.id}" data-pub="${p.published}" data-hidden="${p.admin_hidden}">
                   ${p.admin_hidden ? '強制非公開解除' : p.published ? '非公開にする' : '公開する'}
                 </button>
@@ -102,6 +103,21 @@ export default function AdminProvidersPage() {
         listEl.querySelectorAll('[data-force-hide]').forEach(btn => btn.addEventListener('click', async () => {
           if (!confirm('強制非公開にしますか？')) return;
           await fetch(`/api/admin/providers/${btn.dataset.forceHide}`, { method: 'PATCH', headers: h(), body: JSON.stringify({ admin_hidden: true }) }); load();
+        }));
+        listEl.querySelectorAll('[data-line-channel]').forEach(btn => btn.addEventListener('click', async () => {
+          const id = btn.dataset.lineChannel;
+          const name = btn.dataset.name;
+          const channel_access_token = prompt(`${name}\nLINE Official Account Managerで発行したチャネルアクセストークンを入力してください（伴走型オンボーディング）`);
+          if (!channel_access_token) return;
+          const channel_id = prompt('チャネルID（任意・分かれば入力）') || '';
+          const liff_id = prompt('LIFF ID（お客様連携ページ用・未作成なら空欄でOK）') || '';
+          const res = await fetch(`/api/admin/providers/${id}/line-channel`, {
+            method: 'PATCH', headers: h(),
+            body: JSON.stringify({ channel_access_token, channel_id, liff_id }),
+          });
+          const data = await res.json();
+          if (res.ok) alert(`連携できました（${data.botDisplayName || ''}）`);
+          else alert('エラー: ' + (data.error || '不明'));
         }));
         listEl.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async () => {
           if (!confirm(`「${btn.dataset.name}」を完全に削除しますか？\nこの操作は元に戻せません。`)) return;

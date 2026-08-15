@@ -8,9 +8,9 @@ const _sb = createClient(
 );
 
 const PLANS = {
-  A: { name: 'ライト',      amount: 5000,  commission: 8.3, color: '#3b82f6' },
-  B: { name: 'スタンダード', amount: 7000,  commission: 7.0, color: '#8b5cf6' },
-  C: { name: 'プレミアム',   amount: 10000, commission: 5.5, color: '#f59e0b' },
+  A: { name: 'ライト',      amount: 5000,  commission: 8.3, color: '#3b82f6', lineFeature: 'Fineme公式LINEでリマインド' },
+  B: { name: 'スタンダード', amount: 7000,  commission: 7.0, color: '#8b5cf6', lineFeature: 'Fineme公式LINEでリマインド' },
+  C: { name: 'プレミアム',   amount: 10000, commission: 5.5, color: '#f59e0b', lineFeature: '店舗の公式LINEでリマインド可' },
 };
 
 export default function BillingPage() {
@@ -268,6 +268,7 @@ export default function BillingPage() {
             {isFree
               ? '月額が上がるほど予約手数料率が下がります。プランはいつでも変更できます。'
               : '月額が上がるほど予約手数料率が下がります。予約が増えるほど上位プランがお得です。'}
+            <br />プレミアムプランは、New Me Log（来店サイクル管理）のリマインドを店舗の公式LINEから送れます（設定は「LINE連携」タブから）。
           </p>
           <div className="plan-cards">
             {Object.entries(PLANS).map(([key, p]) => {
@@ -282,6 +283,7 @@ export default function BillingPage() {
                   <div className="plan-name" style={{ color: isCurrent ? p.color : '#e8e4dc' }}>{p.name}</div>
                   <div className="plan-amount">¥{p.amount.toLocaleString()}<span style={{ fontSize: '13px', fontWeight: 400, color: '#9ca3af' }}>/月</span></div>
                   <div className="plan-commission">予約手数料 {p.commission}%</div>
+                  <div className="plan-line-feature" style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>💬 {p.lineFeature}</div>
                   <div className="plan-savings">
                     {key === 'B' && (!isActive || currentPlan === 'A') && `月30万円の予約で月額差額を回収`}
                     {key === 'C' && (!isActive || currentPlan !== 'C') && `最大手数料削減`}
