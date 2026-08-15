@@ -839,9 +839,15 @@ export default function ProviderDashboardPage() {
         const data = await res.json();
         if (data.connected) {
           statusEl.innerHTML = `✅ 連携済み（${data.verified_at ? new Date(data.verified_at).toLocaleDateString('ja-JP') : ''}確認・${data.connected_by === 'staff' ? '運営代行設定' : '自己設定'}）`;
+          const tokenInput = document.getElementById('lc-channel-token');
+          if (tokenInput) tokenInput.placeholder = '変更する場合のみ入力（LIFF IDだけの追記なら空欄でOK）';
         } else {
           statusEl.textContent = '未連携（Fineme公式LINEからリマインドが送られます）';
         }
+        const idInput = document.getElementById('lc-channel-id');
+        const liffInput = document.getElementById('lc-liff-id');
+        if (idInput && data.channel_id && !idInput.value) idInput.value = data.channel_id;
+        if (liffInput && data.liff_id && !liffInput.value) liffInput.value = data.liff_id;
       }
 
       if (form) {
@@ -2133,7 +2139,8 @@ export default function ProviderDashboardPage() {
               </div>
               <div className="form-field">
                 <label>チャネルアクセストークン *</label>
-                <input id="lc-channel-token" type="text" placeholder="LINE Official Account Managerで発行したトークン" required />
+                <input id="lc-channel-token" type="text" placeholder="LINE Official Account Managerで発行したトークン" />
+                <small className="muted" style={{ display: 'block', marginTop: '4px' }}>初回連携時は必須です。連携済みでLIFF IDだけ追記・変更する場合は空欄のままで構いません。</small>
               </div>
               <div className="form-field">
                 <label>LIFF ID</label>

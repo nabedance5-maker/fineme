@@ -41,8 +41,28 @@ export async function POST(request) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { channel_id, channel_secret, channel_access_token, liff_id } = await request.json();
+
+  // 既に連携済みの場合、LIFF IDだけの追記・更新ならトークン再入力を求めない
+  // （LIFFはチャネルアクセストークン発行後の追加設定のため、別の日に設定することが多い）
   if (!channel_access_token) {
-    return Response.json({ error: 'チャネルアクセストークンを入力してください' }, { status: 400 });
+    const { data: existing } = await supabase
+      .from('provider_line_channels')
+      .select('verified_at')
+      .eq('provider_id', provider.id)
+      .single();
+    if (!existing?.verified_at) {
+      return Response.json({ error: 'チャネルアクセストークンを入力してください' }, { status: 400 });
+    }
+    const { error } = await supabase
+      .from('provider_line_channels')
+      .update({
+        channel_id: channel_id || null,
+        liff_id: liff_id || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('provider_id', provider.id);
+    if (error) return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ ok: true });
   }
 
   const check = await validateLineChannelToken(channel_access_token);

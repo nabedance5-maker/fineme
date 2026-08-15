@@ -94,9 +94,33 @@ export default function LineConnectGuideContent() {
           </div>
 
           <div className="lcg-step">
-            <p style={{ marginTop: 0 }}><span className="lcg-step-num">4</span><strong>（任意）お客様の連携ページ（LIFF）を用意する</strong></p>
+            <p style={{ marginTop: 0 }}><span className="lcg-step-num">4</span><strong>お客様の連携ページ（LIFF）を作る</strong></p>
             <p style={{ marginLeft: 18 }}>
-              お客様が貴店の公式LINEを友だち追加した上で通知を受け取れるようにするには、LINE側で「LIFF」という追加設定が必要です。ここは専門的な設定になるため、<a href="/provider/inquiry">お問い合わせフォーム</a>またはメール（<a href="mailto:contact@fineme.me">contact@fineme.me</a>）よりご連絡いただければ、Finemeサポートが代わりに設定いたします。
+              LINEのアカウント識別ID（userId）は、公式LINEアカウントごとに別の値になる仕組みです。そのため「お客様が貴店の公式LINEでも通知を受け取れる」ようにするには、お客様お一人おひとりに、貴店の公式LINE上でのIDをFinemeに一度だけ登録していただく専用ページ（LIFF＝LINE公式アカウント内で開けるWebページ）が必要です。設定は次の手順で行います。
+            </p>
+            <ol className="stack" style={{ gap: 6, marginLeft: 18 }}>
+              <li><a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer">LINE Developersコンソール</a> で、ステップ2と同じチャネル（貴店のアカウント）を開き、「LIFF」タブを選びます。</li>
+              <li>「追加」（LIFFアプリを追加）を押します。</li>
+              <li>
+                入力欄が表示されるので、以下の通り入力します。
+                <ul style={{ marginTop: 4 }}>
+                  <li><strong>LIFFアプリ名：</strong>任意（例：Fineme連携）</li>
+                  <li><strong>サイズ：</strong>Full</li>
+                  <li>
+                    <strong>エンドポイントURL：</strong>
+                    <code style={{ background: '#f3f4f6', padding: '2px 6px', borderRadius: 4 }}>https://www.fineme.me/l/【貴店のスラッグ】</code>
+                    <br />
+                    <span className="muted" style={{ fontSize: 13 }}>「貴店のスラッグ」は、掲載者ダッシュボードに表示されている「fineme.me/provider/◯◯◯」の◯◯◯部分です。</span>
+                  </li>
+                  <li><strong>Scope：</strong>「profile」にチェック（chat_message.write・openidも合わせてチェックして問題ありません）</li>
+                  <li><strong>友だち追加オプション：</strong>「On（Normal）」を選択</li>
+                </ul>
+              </li>
+              <li>「追加」を押すと、「liff-」で始まるLIFF IDが発行されます。これをコピーします。</li>
+              <li>Finemeダッシュボードの「LINE連携」タブに戻り、「LIFF ID」欄に貼り付けて「保存して確認する」を押します。</li>
+            </ol>
+            <p className="muted" style={{ fontSize: 13, marginLeft: 18 }}>
+              ここまでの設定でつまずいた場合は、無理をせず<a href="/provider/inquiry">お問い合わせフォーム</a>またはメール（<a href="mailto:contact@fineme.me">contact@fineme.me</a>）にご連絡ください。Finemeサポートが代わりに設定いたします。
             </p>
           </div>
 
