@@ -155,7 +155,7 @@ function ProviderCard({ provider }) {
             </p>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-            {provider.price_from
+            {provider.entity_type !== 'affiliate' && provider.price_from
               ? <span style={{ fontSize: '15px', fontWeight: '800', color: 'rgba(232,228,220,0.85)' }}>¥{provider.price_from.toLocaleString()}〜</span>
               : <span style={{ fontSize: '13px', color: 'rgba(232,228,220,0.40)' }}>要問合せ</span>
             }

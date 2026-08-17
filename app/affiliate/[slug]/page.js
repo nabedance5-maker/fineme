@@ -184,13 +184,6 @@ function AffiliatePageInner() {
             {affiliate.catchphrase}
           </p>
         )}
-
-        {/* 価格目安 */}
-        {affiliate.price_from && (
-          <div style={{ marginTop: '16px', fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
-            ¥{Number(affiliate.price_from).toLocaleString()}〜
-          </div>
-        )}
       </div>
 
       <div style={{ padding: '0 16px' }}>

@@ -1112,7 +1112,7 @@ export default function DiagnosisResultPage() {
                   <div class="pmc-name">${esc(prov.name)}</div>
                   ${prov.catchphrase ? `<div class="pmc-catch">${esc(prov.catchphrase)}</div>` : ''}
                   ${prov.match_tags?.length ? `<div class="pmc-tags">${prov.match_tags.map(t => `<span class="pmc-tag">${esc(t)}</span>`).join('')}</div>` : ''}
-                  <div class="pmc-meta">${esc(prov.area||'')}${prov.price_from?` ・ ¥${Number(prov.price_from).toLocaleString()}〜`:''}</div>
+                  <div class="pmc-meta">${esc(prov.area||'')}${(prov.entity_type!=='affiliate'&&prov.price_from)?` ・ ¥${Number(prov.price_from).toLocaleString()}〜`:''}</div>
                 </div>
                 <div class="pmc-arrow">→</div>
               </a>
