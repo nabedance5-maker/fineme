@@ -31,7 +31,8 @@ export default function LineConnectGuideContent() {
           margin-right: 8px;
         }
         .lcg-faq dt { font-weight: 700; margin-top: 12px; }
-        .lcg-faq dd { margin: 4px 0 0; color: #4b5563; }
+        .lcg-faq dd { margin: 4px 0 0; color: var(--color-muted); }
+        .lcg-code { background: #f3f4f6; color: #111827; padding: 2px 6px; border-radius: 4px; }
       `}</style>
 
       <div className="container stack" style={{ maxWidth: 780, margin: '0 auto' }}>
@@ -108,7 +109,7 @@ export default function LineConnectGuideContent() {
                   <li><strong>サイズ：</strong>Full</li>
                   <li>
                     <strong>エンドポイントURL：</strong>
-                    <code style={{ background: '#f3f4f6', padding: '2px 6px', borderRadius: 4 }}>https://www.fineme.me/l/【貴店のスラッグ】</code>
+                    <code className="lcg-code">https://www.fineme.me/l/【貴店のスラッグ】</code>
                     <br />
                     <span className="muted" style={{ fontSize: 13 }}>「貴店のスラッグ」は、掲載者ダッシュボードに表示されている「fineme.me/provider/◯◯◯」の◯◯◯部分です。</span>
                   </li>
@@ -120,7 +121,7 @@ export default function LineConnectGuideContent() {
               <li>Finemeダッシュボードの「LINE連携」タブに戻り、「LIFF ID」欄に貼り付けて「保存して確認する」を押します。</li>
             </ol>
             <p className="muted" style={{ fontSize: 13, marginLeft: 18 }}>
-              ここまでの設定でつまずいた場合は、無理をせず<a href="/provider/inquiry">お問い合わせフォーム</a>またはメール（<a href="mailto:contact@fineme.me">contact@fineme.me</a>）にご連絡ください。Finemeサポートが代わりに設定いたします。
+              ここまでの設定でつまずいた場合は、無理をせずメール（<a href="mailto:contact@fineme.me">contact@fineme.me</a>）にご連絡ください。Finemeサポートが代わりに設定いたします。
             </p>
           </div>
 
@@ -146,7 +147,7 @@ export default function LineConnectGuideContent() {
             <dd>Finemeサポートが代わりに設定いたします。チャネルアクセストークンの発行までお手伝いできますので、お気軽にご連絡ください。</dd>
 
             <dt>連携をやめたい・別のLINEアカウントに変更したいです</dt>
-            <dd><a href="/provider/inquiry">お問い合わせフォーム</a>よりご連絡ください。</dd>
+            <dd>メール（<a href="mailto:contact@fineme.me">contact@fineme.me</a>）よりご連絡ください。</dd>
           </dl>
         </section>
 
@@ -154,7 +155,6 @@ export default function LineConnectGuideContent() {
           <h2 style={{ fontSize: 18, margin: '8px 0' }}>お問い合わせ</h2>
           <p>設定代行も承っております。お気軽にご連絡ください。</p>
           <p>
-            お問い合わせフォーム：<a href="/provider/inquiry">/provider/inquiry</a><br />
             メール：<a href="mailto:contact@fineme.me">contact@fineme.me</a>
           </p>
         </section>
