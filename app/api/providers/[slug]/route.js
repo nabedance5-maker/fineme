@@ -11,5 +11,5 @@ export async function GET(request, { params }) {
   const { data, error } = await supabase.rpc('get_provider_by_slug', { p_slug: slug });
 
   if (error || !data) return Response.json({ error: 'Not found' }, { status: 404 });
-  return Response.json(data);
+  return Response.json(data, { headers: { 'Cache-Control': 'no-store' } });
 }
