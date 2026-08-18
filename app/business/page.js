@@ -9,156 +9,211 @@ export const metadata = {
 export default function BusinessPage() {
   return (
     <div className={styles.page}>
-      <div className={styles.sheet}>
-        <div className={styles.inner}>
+      <div className={styles.frame}>
 
-          {/* HERO */}
-          <div className={styles.hero}>
-            <div className={styles.mark}>Fineme Business Brief</div>
-            <h1 className={`${styles.h1} ${styles.serif}`}>Fineme</h1>
-            <div className={styles.yomi}>フ ァ イ ン ミ</div>
-            <p className={styles.tagline}>そのまま進むのが怖くなった夜に。<br />自信を再設計する、地図と羅針盤。</p>
-            <div className={styles.doctype}>事業説明資料 ／ 協力のお願い</div>
+        {/* HERO */}
+        <header className={styles.hero}>
+          <div className={styles.mark}>Fineme Business Brief</div>
+          <h1 className={`${styles.h1} ${styles.serif}`}>Fineme</h1>
+          <div className={styles.yomi}>フ ァ イ ン ミ</div>
+          <p className={styles.tagline}>そのまま進むのが怖くなった夜に。<br />自信を再設計する、地図と羅針盤。</p>
+          <p className={styles.invite}>一人でここまで来た。<br /><em>ここから先は、一緒に創る人</em>が要る。</p>
+          <div className={styles.statstrip}>
+            <div className={styles.statpill}><b>290本+</b><span>記事資産（男性251＋Belle39）</span></div>
+            <div className={styles.statpill}><b>2トラック</b><span>男女それぞれに展開</span></div>
+            <div className={styles.statpill}><b>AI×ソロ</b><span>身軽に動ける体制</span></div>
           </div>
+        </header>
 
-          {/* 01. 事業の全体像 */}
+        <main className={styles.body}>
+
+          {/* 01. 何をしているか */}
           <section className={styles.section}>
             <div className={styles.kicker}>What We Are</div>
-            <h2 className={`${styles.h2} ${styles.serif}`}><span className={styles.no}>01</span>事業の全体像</h2>
+            <h2 className={`${styles.h2} ${styles.serif}`}>自信を、外見から立て直す</h2>
+            <p className={styles.lead}>恋愛や人間関係でつまずいて自信を失った人が、もう一度自分を肯定して一歩を踏み出すための Web サービス。</p>
 
-            <p className={styles.lead}>Fineme は「外見を起点に、自信を再設計するための<strong>地図と羅針盤</strong>」を提供する Web サービス。恋愛や人間関係でつまずいて自信を失った人が、外見という<strong>自分でコントロールできる最初の一歩</strong>から、もう一度自分を肯定できるようにするプラットフォーム。</p>
+            <div className={styles.quote}>Fineme＝<em>Find New Me</em>。<br />「外見を整える」とは、新しい自分を見つけること。</div>
 
-            <div className={styles.quote}>Fineme ＝ <em>Find New Me</em>。<br />「外見を整える」とは、新しい自分を見つけること。</div>
-
-            <h3 className={`${styles.h3} ${styles.serif}`}>なぜ外見からなのか</h3>
-            <p>内面や環境を変えるのは時間がかかるし、他人や過去は自分の意志だけではどうにもならない。でも外見は、今日から自分の手で変えられる数少ないもの。「変わった」という手応えを一番早く得られる入口だから、Fineme はここを起点にしている。</p>
-
-            <h3 className={`${styles.h3} ${styles.serif}`}>誰に向けたサービスか</h3>
-            <p>ターゲットは「今日、恋愛や人間関係でつまずいて自信を失っている人」。変わりたい気持ちはあるが、何から始めればいいか分からない人。鏡を見るのが怖い夜、自撮りにゾッとする夜——そういう<strong>夜に隣で寄り添う存在</strong>でありたい、というのがコンセプト。</p>
-
-            <div className={styles.grid2}>
-              <div className={styles.card}><h4><span className={styles.ic}>♂</span>Fineme（男性トラック）</h4><p>20〜30代男性向け。診断・Mirror・マイページなど中核機能を提供。</p></div>
-              <div className={styles.card}><h4><span className={styles.ic}>♀</span>Fineme Belle（女性トラック）</h4><p>女性向け。同じ思想・機能を、タイプ名やビジュアルは女性向けに再設計して提供。</p></div>
+            <div className={styles.iconRow}>
+              <div className={styles.iconCard}>
+                <span className={styles.ic}>🪞</span>
+                <h4>なぜ外見からか</h4>
+                <p>内面や環境より先に、今日から自分の手で変えられる。一番早く手応えを得られる入口だから。</p>
+              </div>
+              <div className={styles.iconCard}>
+                <span className={styles.ic}>🌙</span>
+                <h4>誰のためか</h4>
+                <p>鏡を見るのが怖い夜、自撮りにゾッとする夜。そんな夜に隣で寄り添う存在でありたい。</p>
+              </div>
+              <div className={styles.iconCard}>
+                <span className={styles.ic}>🧭</span>
+                <h4>二トラック</h4>
+                <p>男性向け Fineme・女性向け Fineme Belle。入口は分けて、思想はひとつ。</p>
+              </div>
             </div>
-            <p className={styles.note}>※ 入口（ブランド名・見た目）は分けているが、根っこの思想と機能は共通。男女どちらか専用のサービスではなく、二つの入口を持つ一つの事業。</p>
+            <p className={styles.note}>男女どちらか専用のサービスではなく、二つの入口を持つひとつの事業。</p>
           </section>
 
-          {/* 02. サービス・プロダクト構成 */}
+          {/* 02. プロダクト */}
           <section className={styles.section}>
             <div className={styles.kicker}>What We Offer</div>
-            <h2 className={`${styles.h2} ${styles.serif}`}><span className={styles.no}>02</span>サービス・プロダクト構成</h2>
-            <p className={styles.lead}>「何から始めればいいか分からない」を解消し、変化を継続させるための設計。入口を複数持ちつつ、すべて同じ思想でつながっている。</p>
+            <h2 className={`${styles.h2} ${styles.serif}`}>4つの入口、ひとつの地図</h2>
+            <p className={styles.lead}>「何から始めればいいか分からない」をなくし、変化を続けさせるための設計。</p>
 
-            <table className={styles.table}>
-              <thead><tr><th>プロダクト</th><th>内容</th><th>役割</th><th>価格</th></tr></thead>
-              <tbody>
-                <tr><td><strong>①Me Scan</strong></td><td>7軸の問診に答えるだけの無料診断</td><td>今やるべき「最初の一手」を一点に絞り込む</td><td>無料</td></tr>
-                <tr><td><strong>②Mirror</strong></td><td>写真1枚をAIが分析（眉・肌・ヘア・表情・姿勢・体型・服装）。写真は保存しない</td><td>「変われる余白」を可視化し、変化への距離を地図で示す</td><td><span className={styles.yen}>¥500</span>単発／<span className={styles.yen}>¥780</span>月額</td></tr>
-                <tr><td><strong>③New Me Log</strong></td><td>美容室・ジム等の通っている店を登録すると、頻度と費用から次回タイミング・月額換算を自動計算。通知も届く</td><td>「変わりたい」と認めなくても使える、3つ目の入口。予定管理の顔をした習慣の記録帳</td><td>無料</td></tr>
-                <tr><td><strong>④New Me Map</strong></td><td>診断結果をもとに、今週やることを具体化。7軸の現在地を毎月更新</td><td>診断から実行への橋渡し。継続の核</td><td>サブスクに内包</td></tr>
-              </tbody>
-            </table>
+            <div className={styles.productGrid}>
+              <div className={styles.productCard}>
+                <span className={styles.pic}>🧭</span>
+                <h4>Me Scan</h4>
+                <p>7軸に答えるだけの無料診断。今やるべき「最初の一手」を一点に絞り込む。</p>
+                <span className={`${styles.priceTag} ${styles.free}`}>無料</span>
+              </div>
+              <div className={styles.productCard}>
+                <span className={styles.pic}>🪞</span>
+                <h4>Mirror</h4>
+                <p>写真1枚をAIが分析。「変われる余白」を地図で示す。写真は保存しない。</p>
+                <span className={styles.priceTag}>¥500〜</span>
+              </div>
+              <div className={styles.productCard}>
+                <span className={styles.pic}>📓</span>
+                <h4>New Me Log</h4>
+                <p>通っている美容室・ジムを登録すると、頻度と費用を自動計算。「変わりたい」と認めなくても使える入口。</p>
+                <span className={`${styles.priceTag} ${styles.free}`}>無料</span>
+              </div>
+              <div className={styles.productCard}>
+                <span className={styles.pic}>🗺️</span>
+                <h4>New Me Map</h4>
+                <p>今週やることを毎月更新。診断から実行への橋渡し役、継続の核。</p>
+                <span className={styles.priceTag}>サブスク内</span>
+              </div>
+            </div>
 
-            <h3 className={`${styles.h3} ${styles.serif}`}>店舗・サービス掲載事業</h3>
-            <p>個人向けの診断・分析に加えて、美容室・パーソナルジム・メイクサロンなど「外見を整える店舗・サービス」の<strong>検索・予約導線</strong>もサイト内に持っている。ユーザーは診断結果から実際の店舗にたどり着ける。店舗側には掲載管理用の<strong>SaaS機能</strong>（プラン管理・問い合わせ対応など）を新たに実装し、今まさに展開を始めている段階。</p>
+            <div className={styles.wideCard}>
+              <h4>店舗・サービス掲載事業</h4>
+              <p>美容室・パーソナルジム・メイクサロンなど「外見を整える店舗」の検索・予約導線もサイト内に持つ。店舗向けの掲載管理SaaSを新たに実装し、今まさに展開を始めている段階。</p>
+            </div>
 
             <div className={styles.callout}>
               <div className={styles.kicker}>今、一番大事にしていること</div>
-              <p className={styles.big}>New Me Map の質＝サブスク継続率の生命線</p>
-              <p>新規獲得より先に、すでに使ってくれている人が「続ける理由」を持てるかを優先している。穴の空いたバケツに水を注がない、という考え方。</p>
+              <p className={styles.big}>New Me Map の質＝継続率の生命線</p>
+              <p>新規獲得より先に、すでに使ってくれている人が「続ける理由」を持てるかを優先している。</p>
             </div>
           </section>
 
           {/* 03. 現在地 */}
           <section className={styles.section}>
             <div className={styles.kicker}>Where We Are</div>
-            <h2 className={`${styles.h2} ${styles.serif}`}><span className={styles.no}>03</span>現在地・目指す先</h2>
-            <p>正直なところ、まだ立ち上げ期。プロダクトと販売の仕組みは整ったが、集客・売上はこれから本格的に伸ばしていくフェーズ。</p>
+            <h2 className={`${styles.h2} ${styles.serif}`}>正直な現在地</h2>
+            <p className={styles.lead}>プロダクトと販売の仕組みは整った。今は集客と売上をこれから伸ばすフェーズ。</p>
 
             <div className={styles.statgrid}>
-              <div className={styles.stat}><b>251本+</b><span>Fineme特集記事（男性向けSEO資産）</span></div>
-              <div className={styles.stat}><b>39本</b><span>Belle Journal記事（女性向けSEO資産）</span></div>
-              <div className={styles.stat}><b>2026.07</b><span>Belle（女性トラック）ローンチ月</span></div>
+              <div className={styles.stat}><b>290本+</b><span>記事資産（男性251＋Belle39）</span></div>
+              <div className={styles.stat}><b>2026.07</b><span>Belle（女性トラック）ローンチ</span></div>
+              <div className={styles.stat}><b>1人＋AI</b><span>今の体制</span></div>
             </div>
 
-            <div className={styles.grid2}>
-              <div className={styles.card}><h4>🎯 6ヶ月目標</h4><p>月商50万円。Mirrorの月額サブスクを軸に、継続課金の土台をつくる。</p></div>
-              <div className={styles.card}><h4>🏔 3年目標</h4><p>年商10億円。個人の外見改善の入口から、外見・恋愛・自信領域のプラットフォームへ育てる。</p></div>
+            <div className={styles.goalRow}>
+              <div className={styles.goalCard}><h4>🎯 6ヶ月目標</h4><p>月商50万円。Mirrorの月額サブスクを軸に。</p></div>
+              <div className={styles.goalCard}><h4>🏔 3年目標</h4><p>年商10億円。外見・恋愛・自信領域のプラットフォームへ。</p></div>
             </div>
-
-            <h3 className={`${styles.h3} ${styles.serif}`}>体制</h3>
-            <p>でお一人のソロ起業に、AIエージェント組織を組み合わせて運営。コードの実装・記事生成・SNS運用の下書きなど、多くの実務をAIが自走し、意思決定と承認をでおが担う体制で進めている。</p>
           </section>
 
-          {/* 04. お願いしたい業務 */}
+          {/* 04. なぜ今声をかけたか */}
+          <section className={styles.section}>
+            <div className={styles.kicker}>Why You</div>
+            <h2 className={`${styles.h2} ${styles.serif}`}>なぜ、今声をかけたか</h2>
+            <div className={styles.askBox}>
+              <p>一人で作れるところまでは作った。プロダクトも、記事の土台も、集客の仕組みも動き始めている。</p>
+              <p>ここから先に要るのは、コードやAIだけでは埋まらない部分——<strong>言葉と絵のセンス、人に会って話す力</strong>。</p>
+              <p>一番信頼していて、一番得意なことを持っている人に、まず声をかけたい。</p>
+            </div>
+          </section>
+
+          {/* 05. お願いしたい業務（ロードマップ） */}
           <section className={styles.section}>
             <div className={styles.kicker}>The Ask</div>
-            <h2 className={`${styles.h2} ${styles.serif}`}><span className={styles.no}>04</span>お願いしたい業務（想定）</h2>
-            <p className={styles.note}>最初から全部ではなく、まず隙間時間でできる範囲から。慣れてきたら一緒に広げていくイメージ。</p>
+            <h2 className={`${styles.h2} ${styles.serif}`}>一緒にやってほしいこと</h2>
+            <p className={styles.lead}>最初から全部じゃなくていい。隙間時間でできることから、少しずつ広げていく。</p>
 
-            <div className={styles.tasklist}>
-              <div className={styles.task}>
-                <span className={`${styles.tag} ${styles.tagPri}`}>最優先</span>
-                <div className={styles.taskTxt}>
-                  <h4>SNS運用・更新（X / Instagram）</h4>
-                  <p>Xは現在ノーコードツールで自動生成しているが、内容が「男性向け・モテ」寄りに偏り、サイトの思想（男女両方に向けた自信の再設計）とズレてきている。男女どちらにも向く、Finemeらしい発信に改善したい（アカウントを分けるか出し分けるかは検討中）。Instagramはほぼ未稼働なので、少しずつ立ち上げていきたい。</p>
+            <div className={styles.phases}>
+              <div className={styles.phase}>
+                <div className={styles.phaseLabel}>
+                  <div className={styles.step}>Step 0</div>
+                  <div className={styles.when}>今すぐ</div>
+                </div>
+                <div className={styles.phaseCards}>
+                  <div className={styles.phaseCard}>
+                    <h4>SNS運用・更新（X / Instagram）</h4>
+                    <p>Xは現在ノーコードで自動生成しているが「男性向け・モテ」寄りに偏り、サイトの思想とズレてきている。男女どちらにも向く発信へ改善したい。Instagramはほぼ未稼働、少しずつ立ち上げ。</p>
+                  </div>
+                  <div className={styles.phaseCard}>
+                    <h4>記事のクオリティチェック</h4>
+                    <p>執筆自体ではなく、AIが生成した記事の確認・レビュー。</p>
+                  </div>
+                  <div className={styles.phaseCard}>
+                    <h4>デザイン・イラスト（単発）</h4>
+                    <p>得意分野なので、必要なタイミングで単発で依頼したい。</p>
+                  </div>
                 </div>
               </div>
-              <div className={styles.task}>
-                <span className={`${styles.tag} ${styles.tagPri}`}>優先</span>
-                <div className={styles.taskTxt}>
-                  <h4>記事の精査・クオリティチェック</h4>
-                  <p>執筆自体ではなく、AIが生成・更新した記事の確認とクオリティチェック。おかしな内容や表現になっていないかの目視レビュー。</p>
+
+              <div className={styles.phase}>
+                <div className={styles.phaseLabel}>
+                  <div className={styles.step}>Step 1</div>
+                  <div className={styles.when}>慣れてきたら</div>
+                </div>
+                <div className={styles.phaseCards}>
+                  <div className={styles.phaseCard}>
+                    <h4>店舗向けSaaSの営業サポート</h4>
+                    <p>知り合いのパーソナルトレーナーへのヒアリングから開始。改善点の洗い出し、紹介獲得、DM送付などの実務サポート。</p>
+                  </div>
+                  <div className={styles.phaseCard}>
+                    <h4>ショートドラマの進行管理</h4>
+                    <p>制作自体は別チームが担当。スケジュールや進行管理を一部サポート。</p>
+                  </div>
                 </div>
               </div>
-              <div className={styles.task}>
-                <span className={`${styles.tag} ${styles.tagPri}`}>優先</span>
-                <div className={styles.taskTxt}>
-                  <h4>店舗向けSaaSの営業サポート</h4>
-                  <p>新しく実装した店舗向け掲載機能の展開に向け、知り合いのパーソナルトレーナーへのヒアリングから開始。改善点の洗い出し、紹介の獲得、掲載候補へのDM送付などの実務サポート。</p>
+
+              <div className={styles.phase}>
+                <div className={styles.phaseLabel}>
+                  <div className={styles.step}>Step 2</div>
+                  <div className={styles.when}>ゆくゆくは</div>
                 </div>
-              </div>
-              <div className={styles.task}>
-                <span className={`${styles.tag} ${styles.tagSub}`}>サブ</span>
-                <div className={styles.taskTxt}>
-                  <h4>ショートドラマの進行管理</h4>
-                  <p>制作自体は別チームが担当。スケジュールや進行の管理を一部手伝ってもらう可能性あり。</p>
-                </div>
-              </div>
-              <div className={styles.task}>
-                <span className={`${styles.tag} ${styles.tagSub}`}>単発</span>
-                <div className={styles.taskTxt}>
-                  <h4>デザイン・イラスト制作</h4>
-                  <p>得意分野なので、必要なタイミングで単発で依頼したい。</p>
-                </div>
-              </div>
-              <div className={styles.task}>
-                <span className={`${styles.tag} ${styles.tagSub}`}>将来</span>
-                <div className={styles.taskTxt}>
-                  <h4>データ分析と改善提案</h4>
-                  <p>Google Search Console・Google Analytics の数値を見ながら、サイトの改善提案をしてもらえると嬉しい。</p>
+                <div className={styles.phaseCards}>
+                  <div className={styles.phaseCard}>
+                    <h4>データ分析と改善提案</h4>
+                    <p>Google Search Console・Google Analytics の数値を見ながらの改善提案。</p>
+                  </div>
+                  <div className={styles.phaseCard}>
+                    <h4>事業への関わり方そのもの</h4>
+                    <p>ここまで一緒に進めてきた先で、どう関わっていくかも一緒に考えたい。</p>
+                  </div>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* 05. 進め方 */}
+          {/* 06. 進め方 */}
           <section className={styles.section}>
             <div className={styles.kicker}>How We'll Work</div>
-            <h2 className={`${styles.h2} ${styles.serif}`}><span className={styles.no}>05</span>進め方について</h2>
-            <div className={styles.principle}><div className={styles.num}>1</div><div className={styles.body}><b>まず負担のない範囲から。</b>いきなり全業務ではなく、隙間時間でできる1〜2個から始める。</div></div>
-            <div className={styles.principle}><div className={styles.num}>2</div><div className={styles.body}><b>副業ベース。</b>本業やプライベートを圧迫しない前提で、ペースは相談しながら決める。</div></div>
-            <div className={styles.principle}><div className={styles.num}>3</div><div className={styles.body}><b>大枠はこちらが作る。</b>AIも活用して方向性や下書きは用意するので、そこから具体の作業に落とし込む形で手伝ってほしい。</div></div>
-            <div className={styles.principle}><div className={styles.num}>4</div><div className={styles.body}><b>報酬・条件は話しながら決める。</b>まずは試しながら、お互いに無理のない形をすり合わせたい。</div></div>
+            <h2 className={`${styles.h2} ${styles.serif}`}>進め方について</h2>
+            <div className={styles.principleGrid}>
+              <div className={styles.principle}><div className={styles.num}>1</div><div className={styles.body}><b>負担のない範囲から</b>隙間時間でできる1〜2個から始める。</div></div>
+              <div className={styles.principle}><div className={styles.num}>2</div><div className={styles.body}><b>副業ベース</b>本業やプライベートを圧迫しない前提で。</div></div>
+              <div className={styles.principle}><div className={styles.num}>3</div><div className={styles.body}><b>大枠はこちらが作る</b>用意した方向性を、具体の作業に落とし込んでほしい。</div></div>
+              <div className={styles.principle}><div className={styles.num}>4</div><div className={styles.body}><b>条件は話しながら決める</b>まずは試しながらすり合わせる。</div></div>
+            </div>
           </section>
 
-          <div className={styles.foot}>
-            <span>Fineme ／ 事業説明資料</span>
-            <span className={styles.note}>fineme.me/business</span>
-            <span className={styles.compass}>🧭</span>
-          </div>
+        </main>
 
+        <div className={styles.closing}>
+          <div className={styles.compassBig}>🧭</div>
+          <p className={styles.big}>外見が、誰かを萎縮させる理由ではなく、<br />自分を好きになる入口になっている世界へ。</p>
+          <p className={styles.sub}>その最初の一滴を、一緒に増やしてほしい。</p>
+          <div className={styles.url}>fineme.me/business</div>
         </div>
+
       </div>
     </div>
   );
