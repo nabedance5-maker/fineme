@@ -147,6 +147,10 @@ export default function BusinessPage() {
                     <p>Xは現在ノーコードで自動生成しているが「男性向け・モテ」寄りに偏り、サイトの思想とズレてきている。男女どちらにも向く発信へ改善したい。Instagramはほぼ未稼働、少しずつ立ち上げ。</p>
                   </div>
                   <div className={styles.phaseCard}>
+                    <h4>掲載者集めのDM送付</h4>
+                    <p>美容室・ジムなど掲載候補への打診DM送付。掲載者を増やす、優先度の高い実務。</p>
+                  </div>
+                  <div className={styles.phaseCard}>
                     <h4>記事のクオリティチェック</h4>
                     <p>執筆自体ではなく、AIが生成した記事の確認・レビュー。</p>
                   </div>
@@ -165,7 +169,7 @@ export default function BusinessPage() {
                 <div className={styles.phaseCards}>
                   <div className={styles.phaseCard}>
                     <h4>店舗向けSaaSの営業サポート</h4>
-                    <p>知り合いのパーソナルトレーナーへのヒアリングから開始。改善点の洗い出し、紹介獲得、DM送付などの実務サポート。</p>
+                    <p>知り合いのパーソナルトレーナーへのヒアリングから開始。改善点の洗い出し、紹介獲得の実務サポート。</p>
                   </div>
                   <div className={styles.phaseCard}>
                     <h4>ショートドラマの進行管理</h4>
