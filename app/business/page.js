@@ -47,14 +47,15 @@ export default function BusinessPage() {
           <section className={styles.section}>
             <div className={styles.kicker}>What We Offer</div>
             <h2 className={`${styles.h2} ${styles.serif}`}><span className={styles.no}>02</span>サービス・プロダクト構成</h2>
-            <p className={styles.lead}>「何から始めればいいか分からない」を解消し、変化を継続させるための3ステップ設計。</p>
+            <p className={styles.lead}>「何から始めればいいか分からない」を解消し、変化を継続させるための設計。入口を複数持ちつつ、すべて同じ思想でつながっている。</p>
 
             <table className={styles.table}>
               <thead><tr><th>プロダクト</th><th>内容</th><th>役割</th><th>価格</th></tr></thead>
               <tbody>
                 <tr><td><strong>①Me Scan</strong></td><td>7軸の問診に答えるだけの無料診断</td><td>今やるべき「最初の一手」を一点に絞り込む</td><td>無料</td></tr>
                 <tr><td><strong>②Mirror</strong></td><td>写真1枚をAIが分析（眉・肌・ヘア・表情・姿勢・体型・服装）。写真は保存しない</td><td>「変われる余白」を可視化し、変化への距離を地図で示す</td><td><span className={styles.yen}>¥500</span>単発／<span className={styles.yen}>¥780</span>月額</td></tr>
-                <tr><td><strong>③New Me Map</strong></td><td>診断結果をもとに、今週やることを具体化。7軸の現在地を毎月更新</td><td>診断から実行への橋渡し。継続の核</td><td>サブスクに内包</td></tr>
+                <tr><td><strong>③New Me Log</strong></td><td>美容室・ジム等の通っている店を登録すると、頻度と費用から次回タイミング・月額換算を自動計算。通知も届く</td><td>「変わりたい」と認めなくても使える、3つ目の入口。予定管理の顔をした習慣の記録帳</td><td>無料</td></tr>
+                <tr><td><strong>④New Me Map</strong></td><td>診断結果をもとに、今週やることを具体化。7軸の現在地を毎月更新</td><td>診断から実行への橋渡し。継続の核</td><td>サブスクに内包</td></tr>
               </tbody>
             </table>
 
