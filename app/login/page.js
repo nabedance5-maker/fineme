@@ -101,7 +101,11 @@ export default function LoginPage() {
       return;
     }
     setSignupLoading(true);
-    const { data, error } = await sb.auth.signUp({ email: signupEmail, password: signupPassword });
+    const { data, error } = await sb.auth.signUp({
+      email: signupEmail,
+      password: signupPassword,
+      options: { emailRedirectTo: `${SITE_URL}/auth/callback` },
+    });
     if (error) {
       setSignupError('登録エラー: ' + error.message);
       setSignupLoading(false);
