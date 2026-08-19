@@ -769,11 +769,70 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'stories') loadStories();
     })();
 
+    // ── 推奨来店周期の設定 ────────────────────────────────────────
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const axisSel = document.getElementById('rf-axis');
+      const listEl = document.getElementById('rf-list');
+      if (!axisSel || !listEl) return;
+
+      axisSel.innerHTML = Object.entries(ALL_AXES).map(([id, def]) => `<option value="${id}">${def.icon} ${def.label}</option>`).join('');
+
+      async function loadRecommended() {
+        listEl.textContent = '読み込み中…';
+        const res = await fetch('/api/provider/recommended-frequencies', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) { listEl.textContent = '取得エラー'; return; }
+        const items = await res.json();
+        if (!items.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px;margin:4px 0 0">まだ設定していません。</p>'; return; }
+        listEl.innerHTML = items.map(r => {
+          const def = ALL_AXES[r.axis];
+          const freqLabel = r.frequency_months
+            ? (r.frequency_months === 1 ? '月1回' : `${r.frequency_months}ヶ月に1回`)
+            : (r.frequency_weeks === 1 ? '週1回' : `${r.frequency_weeks}週ごと`);
+          return `<span class="badge" style="display:inline-flex;align-items:center;gap:6px;margin:4px 6px 0 0;padding:4px 10px;border-radius:99px;background:rgba(232,228,220,0.1);font-size:12px;">
+            ${def ? def.icon : ''} ${def ? def.label : r.axis}：${freqLabel}
+            <button type="button" data-rf-del="${r.axis}" style="border:none;background:none;color:#ef4444;cursor:pointer;font-size:12px;">✕</button>
+          </span>`;
+        }).join('');
+        listEl.querySelectorAll('[data-rf-del]').forEach(btn => btn.addEventListener('click', async () => {
+          await fetch('/api/provider/recommended-frequencies', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ axis: btn.dataset.rfDel, frequency_weeks: null, frequency_months: null }),
+          });
+          loadRecommended();
+        }));
+      }
+
+      const saveBtn = document.getElementById('rf-save-btn');
+      if (saveBtn) saveBtn.addEventListener('click', async () => {
+        const value = Number(document.getElementById('rf-value').value);
+        const unit = document.getElementById('rf-unit').value;
+        if (!value || value < 1) { showToast('周期を入力してください'); return; }
+        saveBtn.disabled = true;
+        await fetch('/api/provider/recommended-frequencies', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            axis: axisSel.value,
+            frequency_weeks: unit === 'week' ? value : null,
+            frequency_months: unit === 'month' ? value : null,
+          }),
+        });
+        document.getElementById('rf-value').value = '';
+        saveBtn.disabled = false;
+        loadRecommended();
+      });
+
+      document.querySelectorAll('[data-tab="customers"]').forEach(btn => btn.addEventListener('click', loadRecommended, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'customers') loadRecommended();
+    })();
+
     // ── New Me Log 顧客一覧タブ ───────────────────────────────────
     (() => {
       const token = getSupabaseToken();
       if (!token) return;
       const listEl = document.getElementById('customers-list');
+      const filterSel = document.getElementById('customers-filter');
 
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
       function fmtDate(d) {
@@ -785,15 +844,23 @@ export default function ProviderDashboardPage() {
         if (c.frequency_weeks) return c.frequency_weeks === 1 ? '週1回' : `${c.frequency_weeks}週ごと`;
         return '未設定';
       }
+      function overdueBadge(label, days) {
+        if (typeof days !== 'number' || days >= 0) return '';
+        return `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#fef2f2;color:#dc2626;border-radius:99px;">${label}${-days}日超過</span>`;
+      }
 
-      async function loadCustomers() {
+      let allItems = [];
+
+      function render() {
         if (!listEl) return;
-        listEl.innerHTML = '<p class="muted">読み込み中…</p>';
-        const res = await fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${token}` } });
-        if (!res.ok) { listEl.innerHTML = '<p style="color:#ef4444" class="muted">取得エラー</p>'; return; }
-        const items = await res.json();
+        const filter = filterSel?.value || 'all';
+        const items = allItems.filter(c => {
+          if (filter === 'user-overdue') return typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0;
+          if (filter === 'store-overdue') return typeof c.storeOverdueDays === 'number' && c.storeOverdueDays < 0;
+          return true;
+        });
         if (!items.length) {
-          listEl.innerHTML = '<p class="muted">まだ紐づいているお客様はいません。QRコードでNew Me Logをご案内ください。</p>';
+          listEl.innerHTML = '<p class="muted">該当するお客様はいません。</p>';
           return;
         }
         listEl.innerHTML = '';
@@ -805,19 +872,79 @@ export default function ProviderDashboardPage() {
           row.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
               <div style="flex:1;min-width:0;">
-                <div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:4px;">${esc(c.customer_name)}</div>
+                <div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:4px;">${esc(c.customer_name)}${c.hasStoreNote ? ' <span title="店舗メモあり" style="font-size:12px;">📝</span>' : ''}</div>
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
                   <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
                   <span style="font-size:11px;color:#9ca3af;">${esc(c.name)}</span>
+                  ${overdueBadge('ユーザー想定', c.userOverdueDays)}
+                  ${overdueBadge('店舗推奨', c.storeOverdueDays)}
                 </div>
-                <p style="font-size:12px;color:#6b7280;margin:0;">前回：${fmtDate(c.last_visit)}／次回目安：${fmtDate(c.next_visit)}／頻度：${fmtFreq(c)}</p>
+                <p style="font-size:12px;color:#6b7280;margin:0 0 8px;">前回：${fmtDate(c.last_visit)}／次回目安：${fmtDate(c.next_visit)}／頻度：${fmtFreq(c)}</p>
+                <div class="cluster" style="gap:8px;">
+                  <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;" data-nudge="${c.user_id}">声かけメッセージを送る</button>
+                  <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;" data-note="${c.user_id}">${c.hasStoreNote ? 'メモを見る/編集' : 'メモを追加'}</button>
+                </div>
+                <div class="note-box" id="note-box-${c.user_id}" style="display:none;margin-top:8px;"></div>
               </div>
             </div>
           `;
           listEl.appendChild(row);
         });
+
+        listEl.querySelectorAll('[data-nudge]').forEach(btn => btn.addEventListener('click', async () => {
+          const message = prompt('お客様に送るメッセージを入力してください（店舗の公式LINE連携済みならそちらから、未連携ならFineme公式LINEから届きます）');
+          if (!message?.trim()) return;
+          btn.disabled = true;
+          const res = await fetch(`/api/provider/customers/${btn.dataset.nudge}/nudge`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ message }),
+          });
+          const data = await res.json();
+          showToast(res.ok ? '送信しました' : `送信エラー：${data.error || '不明'}`);
+          btn.disabled = false;
+        }));
+
+        listEl.querySelectorAll('[data-note]').forEach(btn => btn.addEventListener('click', async () => {
+          const uid = btn.dataset.note;
+          const box = document.getElementById(`note-box-${uid}`);
+          if (!box) return;
+          if (box.style.display === 'block') { box.style.display = 'none'; return; }
+          box.style.display = 'block';
+          box.innerHTML = '<p class="muted" style="font-size:12px;">読み込み中…</p>';
+          const res = await fetch(`/api/provider/customers/${uid}/note`, { headers: { 'Authorization': `Bearer ${token}` } });
+          const data = await res.json();
+          box.innerHTML = `
+            <textarea data-note-input="${uid}" style="width:100%;min-height:70px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;" placeholder="この店舗だけが見られるメモ（要望・注意点など）。お客様には表示されません。">${esc(data.note || '')}</textarea>
+            <button type="button" class="btn" style="font-size:12px;padding:5px 10px;margin-top:6px;" data-note-save="${uid}">メモを保存</button>
+          `;
+          box.querySelector(`[data-note-save="${uid}"]`).addEventListener('click', async (e) => {
+            const btnSave = e.currentTarget;
+            const note = box.querySelector(`[data-note-input="${uid}"]`).value;
+            btnSave.disabled = true;
+            await fetch(`/api/provider/customers/${uid}/note`, {
+              method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({ note }),
+            });
+            showToast('メモを保存しました');
+            btnSave.disabled = false;
+          });
+        }));
       }
 
+      async function loadCustomers() {
+        if (!listEl) return;
+        listEl.innerHTML = '<p class="muted">読み込み中…</p>';
+        const res = await fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) { listEl.innerHTML = '<p style="color:#ef4444" class="muted">取得エラー</p>'; return; }
+        allItems = await res.json();
+        if (!allItems.length) {
+          listEl.innerHTML = '<p class="muted">まだ紐づいているお客様はいません。QRコードでNew Me Logをご案内ください。</p>';
+          return;
+        }
+        render();
+      }
+
+      if (filterSel) filterSel.addEventListener('change', render);
       document.querySelectorAll('[data-tab="customers"]').forEach(btn => btn.addEventListener('click', loadCustomers, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'customers') loadCustomers();
     })();
@@ -2102,6 +2229,32 @@ export default function ProviderDashboardPage() {
 
         {/* New Me Log：紐づいている顧客の一覧 */}
         <div className="tab-pane" id="tab-customers">
+          <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>推奨来店周期の設定</h2>
+            <p className="muted" style={{ fontSize: '13px', margin: 0 }}>
+              設定すると、お客様がNew Me Logで貴店を選んだ時に頻度欄へ自動で入力されます（任意・お客様は自分で書き換えられます）。
+            </p>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="form-field" style={{ minWidth: '160px' }}>
+                <label>軸</label>
+                <select id="rf-axis"></select>
+              </div>
+              <div className="form-field" style={{ minWidth: '90px' }}>
+                <label>周期</label>
+                <input id="rf-value" type="number" min="1" placeholder="例：6" />
+              </div>
+              <div className="form-field" style={{ minWidth: '110px' }}>
+                <label>単位</label>
+                <select id="rf-unit">
+                  <option value="week">週ごと</option>
+                  <option value="month">ヶ月ごと</option>
+                </select>
+              </div>
+              <button className="btn" id="rf-save-btn" type="button">設定する</button>
+            </div>
+            <div id="rf-list"></div>
+          </div>
+
           <div className="card" style={{ padding: '24px' }}>
             <div style={{ marginBottom: '16px' }}>
               <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>New Me Log で紐づいているお客様</h2>
@@ -2111,6 +2264,14 @@ export default function ProviderDashboardPage() {
                 <a href="/provider/log-toolkit" style={{ color: 'inherit', textDecoration: 'underline' }}>紹介用QRコード</a>
                 をお店に置いてください。
               </p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '12px' }}>
+              <label className="muted" style={{ fontSize: '13px' }}>表示：</label>
+              <select id="customers-filter">
+                <option value="all">すべて</option>
+                <option value="user-overdue">ユーザー想定超過のみ</option>
+                <option value="store-overdue">店舗推奨超過のみ</option>
+              </select>
             </div>
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
           </div>

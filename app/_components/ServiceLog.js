@@ -1496,7 +1496,31 @@ export default function ServiceLog({ withSideNav = false }) {
       document.getElementById('log-provider-search-input').value = decodeURIComponent(item.dataset.name);
       providerSearchResults = [];
       renderProviderResults();
+      prefillProviderFrequency();
     });
+
+    // 店舗が推奨来店周期を設定していれば、頻度が未入力の時だけ自動入力する
+    // （本人が既に入力している値は上書きしない）
+    async function prefillProviderFrequency() {
+      const freqInput = document.getElementById('log-f-freq');
+      const axisSel = document.getElementById('log-f-axis');
+      if (!selectedProvider?.slug || !freqInput || freqInput.value || !axisSel?.value || axisSel.value === CUSTOM_AXIS) return;
+      try {
+        const res = await fetch(`/api/providers/${selectedProvider.slug}/recommended-frequencies`);
+        if (!res.ok) return;
+        const list = await res.json();
+        const rec = list.find(r => r.axis === axisSel.value);
+        if (!rec || freqInput.value) return;
+        if (rec.frequency_months) {
+          freqInput.value = rec.frequency_months;
+          document.getElementById('log-f-freq-unit').value = 'month';
+        } else if (rec.frequency_weeks) {
+          freqInput.value = rec.frequency_weeks;
+          document.getElementById('log-f-freq-unit').value = 'week';
+        }
+        renderFreqPresets();
+      } catch {}
+    }
     document.getElementById('log-provider-clear')?.addEventListener('click', () => {
       selectedProvider = null;
       document.getElementById('log-provider-search-input').value = '';
