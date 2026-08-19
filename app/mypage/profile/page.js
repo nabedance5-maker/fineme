@@ -31,6 +31,7 @@ export default function MypageProfilePage() {
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [phone, setPhone] = useState('');
+  const [birthday, setBirthday] = useState('');
   const [area, setArea] = useState('');  // 都道府県
   const [city, setCity] = useState('');  // 市区町村
   const cityOptions = useMemo(() => JAPAN_CITIES[area] || [], [area]);
@@ -109,6 +110,7 @@ export default function MypageProfilePage() {
                 setLastName(data.last_name || '');
                 setFirstName(data.first_name || '');
                 setPhone(data.phone || '');
+                setBirthday(data.birthday || '');
                 setArea(data.area || localStorage.getItem('fineme:user:area') || '');
                 setCity(data.city || localStorage.getItem('fineme:user:city') || '');
                 setShareDiagnosis(!!data.share_diagnosis);
@@ -156,6 +158,7 @@ export default function MypageProfilePage() {
           city: city.trim(),
           share_diagnosis: shareDiagnosis,
           share_roadmap: shareRoadmap,
+          birthday: birthday || null,
         }),
       });
       const data = await res.json();
@@ -295,6 +298,16 @@ export default function MypageProfilePage() {
                     onChange={e => setPhone(e.target.value)}
                     style={{ padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box', maxWidth: '240px' }}
                   />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(232,228,220,0.75)' }}>誕生日（任意）</label>
+                  <input
+                    type="date"
+                    value={birthday}
+                    onChange={e => setBirthday(e.target.value)}
+                    style={{ padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box', maxWidth: '240px' }}
+                  />
+                  <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.5)', margin: 0 }}>New Me Logで紐づけているお店からのお祝いメッセージに使う場合があります。未入力でも利用に支障はありません。</p>
                 </div>
               </div>
 

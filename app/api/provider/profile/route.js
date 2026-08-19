@@ -22,6 +22,7 @@ const ALLOWED_FIELDS = [
   'transformation_pattern',
   'best_fit_desc',
   'ai_match_profile',
+  'google_review_url',
 ];
 const BOOLEAN_FIELDS  = new Set(['online_available', 'trial_available', 'published']);
 const NUMBER_FIELDS   = new Set(['price_from', 'experience_years', 'response_hours']);

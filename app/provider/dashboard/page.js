@@ -1014,6 +1014,43 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'line-channel') loadStatus();
     })();
 
+    // ── クチコミ依頼タブ ──────────────────────────────────────────
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const urlInput = document.getElementById('rv-url');
+      const form = document.getElementById('review-form');
+      const msgEl = document.getElementById('rv-msg');
+      if (!form) return;
+
+      if (urlInput && provider?.google_review_url) urlInput.value = provider.google_review_url;
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = document.getElementById('rv-submit-btn');
+        submitBtn.disabled = true; msgEl.textContent = '';
+        try {
+          const res = await fetch('/api/provider/profile', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ google_review_url: urlInput.value.trim() }),
+          });
+          if (res.ok) {
+            msgEl.style.color = '#059669';
+            msgEl.textContent = '✓ 保存しました';
+          } else {
+            const data = await res.json();
+            msgEl.style.color = '#ef4444';
+            msgEl.textContent = data.error || '保存に失敗しました';
+          }
+        } catch {
+          msgEl.style.color = '#ef4444';
+          msgEl.textContent = '通信エラーが発生しました';
+        }
+        submitBtn.disabled = false;
+      });
+    })();
+
     // ── 画像圧縮ヘルパー（Canvas, max 1200px, JPEG/WebP 0.85） ────
     function compressImage(file, maxPx = 1200, quality = 0.85) {
       return new Promise((resolve) => {
@@ -1667,6 +1704,7 @@ export default function ProviderDashboardPage() {
           <button className="tab-btn" data-tab="stories">📝 体験談</button>
           <button className="tab-btn" data-tab="customers">🗒️ New Me Log</button>
           <button className="tab-btn" data-tab="line-channel">💬 LINE連携</button>
+          <button className="tab-btn" data-tab="reviews">⭐ クチコミ</button>
           <button className="tab-btn" data-tab="service">サービス設定</button>
           <button className="tab-btn" data-tab="publish">公開設定</button>
           <button className="tab-btn" data-tab="billing">課金・プラン</button>
@@ -2310,6 +2348,28 @@ export default function ProviderDashboardPage() {
               </div>
               <button type="submit" className="btn" id="lc-submit-btn">保存して確認する</button>
               <p id="lc-msg" className="muted" style={{ fontSize: '13px' }}></p>
+            </form>
+          </div>
+        </div>
+
+        {/* クチコミ依頼の自動化：来店確定の1〜2日後にGoogleクチコミ投稿を促すLINEを自動送信 */}
+        <div className="tab-pane" id="tab-reviews">
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>来店後クチコミ依頼の自動化</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                GoogleクチコミのURLを設定すると、予約が「来店済み」になった1〜2日後に、自動でクチコミ投稿をお願いするメッセージをお客様に送ります（店舗の公式LINE連携済みならそちらから、未連携ならFineme公式LINEから）。<br />
+                未設定の場合はこの機能は動作しません。
+              </p>
+            </div>
+            <form id="review-form" className="stack" style={{ gap: '10px' }}>
+              <div className="form-field">
+                <label>GoogleクチコミURL</label>
+                <input id="rv-url" type="url" placeholder="https://g.page/r/..." />
+                <small className="muted" style={{ display: 'block', marginTop: '4px' }}>Googleビジネスプロフィールの「クチコミを増やす」から取得できるリンクです。</small>
+              </div>
+              <button type="submit" className="btn" id="rv-submit-btn">保存する</button>
+              <p id="rv-msg" className="muted" style={{ fontSize: '13px' }}></p>
             </form>
           </div>
         </div>
