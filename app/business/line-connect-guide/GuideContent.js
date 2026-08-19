@@ -132,6 +132,13 @@ export default function LineConnectGuideContent() {
               <li>レジ横や会計時に、お客様へこのQRコードをご案内ください。</li>
             </ol>
           </div>
+
+          <div className="lcg-step">
+            <p style={{ marginTop: 0 }}><span className="lcg-step-num">6</span><strong>（任意）予約前日の来店確認（ノーショー対策）を有効にする</strong></p>
+            <p style={{ marginLeft: 18 }}>
+              有効にすると、予約前日リマインドに「行きます」「予定が変わりそう」のボタンが付き、お客様がその場で回答できるようになります。設定はステップ3完了後、掲載者ダッシュボードの「LINE連携」タブに表示される専用のURLをコピーし、LINE Official Account Managerの「応答設定」の中にあるWebhook欄に貼り付けて有効化するだけです。
+            </p>
+          </div>
         </section>
 
         <section className="card stack" style={{ padding: 20, gap: 4 }}>

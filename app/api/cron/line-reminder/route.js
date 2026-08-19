@@ -2,6 +2,7 @@
 // Vercel Cron: 毎日15:00 UTC（深夜0時 JST）に翌日の予約をリマインド
 import { getSupabase } from '@/lib/supabase';
 import { sendLinePush } from '@/lib/line-push';
+import { resolveLineTarget } from '@/lib/line-channel';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,15 +62,23 @@ export async function GET(request) {
     const profile = r.user_id ? profileMap[r.user_id] : null;
     const timeStr = r.start_time || '';
 
-    // ユーザーへの通知
-    if (profile?.line_user_id) {
+    // ユーザーへの通知（店舗別LINE連携済みならそちらから・ノーショー対策のクイックリプライ付き）
+    const target = await resolveLineTarget(db, {
+      providerId: r.provider_id,
+      userId: r.user_id,
+      fallbackLineUserId: profile?.line_user_id,
+    });
+    if (target.lineUserId) {
       const msg = [
         '【Fineme】明日の予約リマインダー',
         `明日（${tomorrowStr}${timeStr ? ' ' + timeStr : ''}）のご予約があります。`,
         provider ? `ガイド: ${provider.name}` : '',
-        'キャンセルの場合はお早めにご連絡ください。',
       ].filter(Boolean).join('\n');
-      const result = await sendLinePush(profile.line_user_id, msg);
+      const quickReplyItems = [
+        { label: '行きます', data: `action=confirm&rid=${r.id}` },
+        { label: '予定が変わりそう', data: `action=reschedule&rid=${r.id}` },
+      ];
+      const result = await sendLinePush(target.lineUserId, msg, target.token, quickReplyItems);
       if (result.ok) sent++;
       results.push({ type: 'user', reservationId: r.id, ok: result.ok });
     }

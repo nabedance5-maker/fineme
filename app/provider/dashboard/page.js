@@ -968,6 +968,12 @@ export default function ProviderDashboardPage() {
           statusEl.innerHTML = `✅ 連携済み（${data.verified_at ? new Date(data.verified_at).toLocaleDateString('ja-JP') : ''}確認・${data.connected_by === 'staff' ? '運営代行設定' : '自己設定'}）`;
           const tokenInput = document.getElementById('lc-channel-token');
           if (tokenInput) tokenInput.placeholder = '変更する場合のみ入力（LIFF IDだけの追記なら空欄でOK）';
+          const webhookBox = document.getElementById('lc-webhook-url-box');
+          const webhookUrlEl = document.getElementById('lc-webhook-url');
+          if (webhookBox && webhookUrlEl && provider?.id) {
+            webhookUrlEl.textContent = `https://www.fineme.me/api/line/webhook/${provider.id}`;
+            webhookBox.style.display = 'block';
+          }
         } else {
           statusEl.textContent = '未連携（Fineme公式LINEからリマインドが送られます）';
         }
@@ -2327,6 +2333,10 @@ export default function ProviderDashboardPage() {
               </p>
             </div>
             <div id="line-channel-status" className="muted" style={{ fontSize: '13px' }}>読み込み中…</div>
+            <div id="lc-webhook-url-box" style={{ display: 'none', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', padding: '12px' }}>
+              <p className="muted" style={{ fontSize: '12px', margin: '0 0 4px' }}>予約前日リマインドの「行きます」ボタン等（ノーショー対策）を使う場合は、LINE Official Account Managerの「応答設定」→Webhookで以下のURLを設定してください（任意）：</p>
+              <code id="lc-webhook-url" style={{ background: '#f3f4f6', color: '#111827', padding: '4px 8px', borderRadius: 4, fontSize: 12, wordBreak: 'break-all', display: 'inline-block' }}></code>
+            </div>
             <form id="line-channel-form" className="stack" style={{ gap: '10px' }}>
               <div className="form-field">
                 <label>チャネルID</label>
