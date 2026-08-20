@@ -286,7 +286,15 @@ export async function GET(request) {
         trackId: profile.track,
         monthlyNudge: monthlyNudgeFor(userId, logsByUser[userId]),
       });
-      const res = await sendLinePush(profile.line_user_id, text);
+      // アプリを開かなくてもLINEから「行った」を記録できるクイックリプライ
+      // （でお要望 2026-08-05）。予約前日リマインドのノーショー対策と同じ仕組み
+      // （lib/line-push.js の quickReplyItems・app/api/line/webhook）を使う。
+      const quickReplyItems = fallbackLogs.slice(0, 13).map(l => ({
+        label: `${(l.name || '').slice(0, 10)} 行った`.slice(0, 20), // LINEのlabelは20文字上限
+        data: `action=log_visit&lid=${l.id}`,
+        displayText: `${l.name} に行ったことを記録`,
+      }));
+      const res = await sendLinePush(profile.line_user_id, text, undefined, quickReplyItems);
       if (res.ok) { sent++; notifiedIds.push(...fallbackLogs.map(l => l.id)); }
     }
   }

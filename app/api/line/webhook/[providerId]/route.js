@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { sendLineReply } from '@/lib/line-push';
 import { verifyLineSignature } from '@/lib/line-channel';
+import { idealNextDate } from '@/lib/log-axes';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -19,6 +20,65 @@ async function resolveChannel(providerId) {
     .eq('provider_id', providerId)
     .single();
   return { secret: data?.channel_secret, token: data?.channel_access_token };
+}
+
+function isMissingVisitsTable(error) {
+  if (!error) return false;
+  return error.code === 'PGRST205' || error.code === 'PGRST200' || error.code === '42P01';
+}
+
+function fmtJa(dateStr) {
+  const d = new Date(dateStr);
+  if (isNaN(d)) return dateStr;
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+// New Me Log のリマインドに付けたクイックリプライ「〇〇 行った」から呼ばれる。
+// LINEのWebhookにはSupabaseのJWTが無いため、profiles.line_user_id と
+// タップした本人（event.source.userId）を突き合わせて本人確認する
+// （予約確認Webhookのconfirm/rescheduleはUUIDの推測不可能性だけに頼っているが、
+// こちらは書き込み系のうえ安価に照合できるので一段強くしてある）。
+async function recordLineVisit(logId, lineUserId) {
+  if (!lineUserId) return '本人確認ができませんでした。';
+
+  const { data: log, error: findError } = await supabase
+    .from('user_service_logs')
+    .select('id, user_id, name, axis, custom_icon, frequency_weeks, frequency_months, last_visit')
+    .eq('id', logId)
+    .single();
+  if (findError || !log) return 'この記録が見つかりませんでした。';
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('line_user_id')
+    .eq('id', log.user_id)
+    .single();
+  if (!profile?.line_user_id || profile.line_user_id !== lineUserId) {
+    console.warn('[line/webhook] log_visit: line_user_id mismatch', { logId });
+    return '本人確認ができませんでした。';
+  }
+
+  const todayStr = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  const { error: insertError } = await supabase
+    .from('user_service_log_visits')
+    .insert({ log_id: logId, user_id: log.user_id, visited_at: todayStr, cost: null });
+  if (insertError && !isMissingVisitsTable(insertError)) {
+    console.error('[line/webhook] log_visit insert error', insertError);
+  }
+
+  const { error: updateError } = await supabase
+    .from('user_service_logs')
+    .update({ last_visit: todayStr, next_visit: null, updated_at: new Date().toISOString() })
+    .eq('id', logId)
+    .eq('user_id', log.user_id);
+  if (updateError) {
+    console.error('[line/webhook] log_visit update error', updateError);
+    return '記録に失敗しました。New Me Logから直接登録してください。';
+  }
+
+  const next = idealNextDate({ ...log, last_visit: todayStr });
+  return `✓ ${fmtJa(todayStr)}の記録をつけました${next ? ` — 次の目安は ${fmtJa(next)}` : ''}`;
 }
 
 export async function POST(request, { params }) {
@@ -39,14 +99,22 @@ export async function POST(request, { params }) {
     if (event.type !== 'postback') continue;
     const data = new URLSearchParams(event.postback?.data || '');
     const action = data.get('action');
-    const rid = data.get('rid');
-    if (!action || !rid) continue;
+    if (!action) continue;
 
-    if (action === 'confirm') {
-      await supabase.from('reservations').update({ confirmed_by_customer: true }).eq('id', rid);
-      if (event.replyToken) await sendLineReply(event.replyToken, 'ご確認ありがとうございます。当日お待ちしております。', token);
-    } else if (action === 'reschedule') {
-      if (event.replyToken) await sendLineReply(event.replyToken, 'かしこまりました。恐れ入りますが、変更・キャンセルは店舗まで直接ご連絡をお願いいたします。', token);
+    if (action === 'confirm' || action === 'reschedule') {
+      const rid = data.get('rid');
+      if (!rid) continue;
+      if (action === 'confirm') {
+        await supabase.from('reservations').update({ confirmed_by_customer: true }).eq('id', rid);
+        if (event.replyToken) await sendLineReply(event.replyToken, 'ご確認ありがとうございます。当日お待ちしております。', token);
+      } else {
+        if (event.replyToken) await sendLineReply(event.replyToken, 'かしこまりました。恐れ入りますが、変更・キャンセルは店舗まで直接ご連絡をお願いいたします。', token);
+      }
+    } else if (action === 'log_visit') {
+      const lid = data.get('lid');
+      if (!lid) continue;
+      const message = await recordLineVisit(lid, event.source?.userId);
+      if (event.replyToken) await sendLineReply(event.replyToken, message, token);
     }
   }
 
