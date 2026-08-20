@@ -110,6 +110,45 @@
 .principle .body{font-size:12.5px; color:#39414f; line-height:1.7;}
 .principle .body b{color:var(--navy); display:block; margin-bottom:2px; font-size:13px;}
 
+/* jump nav */
+.toc{display:flex; flex-wrap:wrap; justify-content:center; gap:8px; padding:22px 32px 0; max-width:760px; margin:0 auto;}
+.tocLink{font-size:11.5px; color:var(--navy); background:var(--cream); border:1px solid var(--line); border-radius:999px; padding:6px 14px; text-decoration:none; font-weight:600; letter-spacing:.02em;}
+.tocLink:hover{background:#fff8e6; border-color:#e0be6a;}
+
+/* flow diagram */
+.flow{display:flex; align-items:stretch; gap:0; margin:18px 0 8px; flex-wrap:wrap;}
+.flowStep{flex:1; min-width:96px; background:var(--cream); border:1px solid var(--line); border-radius:8px; padding:12px 10px; text-align:center;}
+.flowStep b{display:block; font-family:"Noto Serif JP",serif; color:var(--navy); font-size:12.5px; font-weight:700;}
+.flowStep span{font-size:10.5px; color:var(--muted);}
+.flowArrow{display:flex; align-items:center; justify-content:center; color:var(--gold); font-size:16px; padding:0 6px; flex:0 0 auto;}
+
+/* 4-up icon grid (なぜ) */
+.iconRow4{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:8px;}
+.iconRow4 .iconCard{padding:18px 14px;}
+
+/* simple table (ビジネスモデル/集客チャネル) */
+.tableWrap{overflow-x:auto; margin:14px 0;}
+.table{width:100%; border-collapse:collapse; font-size:12.5px;}
+.table th, .table td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+.table thead th{background:var(--navy); color:#f1ecdd; font-weight:600; letter-spacing:.02em; border:none; font-size:11.5px;}
+.table thead th:first-child{border-radius:6px 0 0 0;} .table thead th:last-child{border-radius:0 6px 0 0;}
+.table tbody tr:nth-child(even){background:var(--cream);}
+.yen{font-family:"Playfair Display",serif; color:var(--navy); font-weight:600;}
+
+/* bullet list */
+.bullets{margin:14px 0 0; padding:0; list-style:none; text-align:left;}
+.bullets li{position:relative; padding-left:20px; margin-bottom:8px; font-size:13px; color:#39414f; line-height:1.75;}
+.bullets li::before{content:"◆"; color:var(--gold); position:absolute; left:0; font-size:9px; top:6px;}
+
+/* org flow (提案→判断→承認→実行) */
+.orgGrid{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:18px 0;}
+.orgCard{background:var(--cream); border:1px solid var(--line); border-radius:8px; padding:14px 12px; text-align:center;}
+.orgCard .role{font-family:"Playfair Display",serif; font-size:11px; letter-spacing:.1em; color:var(--gold); text-transform:uppercase;}
+.orgCard b{display:block; font-family:"Noto Serif JP",serif; font-size:13px; color:var(--navy); margin:4px 0 4px;}
+.orgCard span{font-size:11px; color:var(--muted); line-height:1.6;}
+
+.subhead{font-family:"Noto Serif JP",serif; font-size:15px; color:var(--navy); font-weight:700; margin:24px 0 10px; text-align:left;}
+
 /* closing */
 .closing{
   background:radial-gradient(120% 90% at 50% 100%,#16213f 0%,var(--navy) 55%,#05080f 100%);
@@ -123,9 +162,10 @@
 @media (max-width:680px){
   .h1{font-size:40px;}
   .body{padding:48px 22px 0;}
-  .iconRow, .productGrid, .goalRow, .principleGrid, .statgrid{grid-template-columns:1fr;}
+  .iconRow, .iconRow4, .productGrid, .goalRow, .principleGrid, .statgrid, .orgGrid{grid-template-columns:1fr;}
   .phase{grid-template-columns:1fr; gap:8px;}
   .statstrip{transform:none; margin-top:24px;}
+  .toc{padding:18px 16px 0;}
 }
 
 @media print{
