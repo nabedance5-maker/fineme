@@ -35,8 +35,10 @@ export default function BusinessPage() {
           <a className={styles.tocLink} href="#now">現在地</a>
           <a className={styles.tocLink} href="#goals">目標・戦略</a>
           <a className={styles.tocLink} href="#acquisition">集客</a>
-          <a className={styles.tocLink} href="#org">運営体制</a>
+          <a className={styles.tocLink} href="#org">日々の回し方</a>
+          <a className={styles.tocLink} href="#cases">判断の実例</a>
           <a className={styles.tocLink} href="#principles">判断の軸</a>
+          <a className={styles.tocLink} href="#map">システム地図</a>
           <a className={styles.tocLink} href="#ask">お願いしたいこと</a>
         </nav>
 
@@ -258,10 +260,10 @@ export default function BusinessPage() {
             </div>
           </section>
 
-          {/* 09. 運営体制 */}
+          {/* 09. 日々の回し方 */}
           <section className={styles.section} id="org">
             <div className={styles.kicker}>How It Runs</div>
-            <h2 className={`${styles.h2} ${styles.serif}`}>運営体制・意思決定の仕組み</h2>
+            <h2 className={`${styles.h2} ${styles.serif}`}>日々の回し方——でおは実際何をしているか</h2>
             <p className={styles.lead}>でお一人のソロ起業に、AIエージェント組織を組み合わせて運営。指揮命令の階層ではなく「権限の種類」で役割を分けている。</p>
 
             <div className={styles.orgGrid}>
@@ -270,10 +272,47 @@ export default function BusinessPage() {
               <div className={styles.orgCard}><div className={styles.role}>Approve</div><b>承認</b><span>でおただ一人。最終GOを出す</span></div>
               <div className={styles.orgCard}><div className={styles.role}>Execute</div><b>実行</b><span>Claude Code。ファイル反映の唯一の窓口</span></div>
             </div>
-            <p className={styles.note}>コードの実装・記事生成・SNS下書きなど実務の大半をAIが自走し、でおは意思決定と承認に集中する体制。可逆な作業はAIが自律実行し、不可逆な判断だけ人に上がる。</p>
+
+            <div className={styles.subhead}>提案から実装までの実際のパイプライン</div>
+            <div className={styles.askBox}>
+              <p><strong>①発案</strong> — Strategist（自走取締役・cron）が、その時点の実データとゴールから「今一番レバレッジの高い一手」を発案する。</p>
+              <p><strong>②審査</strong> — reviewboard（cron）が3つの関門（戦略として妥当か／リスクは現実的か／辛口の反対意見に耐えるか）で審査。粗い案はここで差し戻される。</p>
+              <p><strong>③上申</strong> — 通過した案だけをflush-decisionsがSlackにカード形式で1枚流す。</p>
+              <p><strong>④裁定</strong> — でおがそのカードに「GO」「no-go」「修正＋一言」のどれかを返す。これがでおの実務の大半。</p>
+              <p><strong>⑤記録と振り分け</strong> — inbound-verdicts（LLM不使用の自動処理）がSlackの返信を読み取り、decision-ledgerに記録。文書系の指示はtasks.mdへ、コード変更はclaude-code-inboxへ自動振り分けする。</p>
+              <p><strong>⑥実行</strong> — Claude Code（毎時cron）が承認済みタスクを実装し、ファイルに反映する。</p>
+              <p><strong>⑦報告</strong> — 翌朝、進捗ダイジェストがSlackに1通届く。進んでいないこと・結果が測れていないことも隠さず書く設計。</p>
+            </div>
+            <p className={styles.note}>要するに、でおの日々の仕事は「Slackに来るカードにGO／no-go／修正を一言返す」がほとんど。コードを書く・記事を書く・分析するといった実務のほぼ全てはAIが自走している。</p>
           </section>
 
-          {/* 10. 判断の5原則 */}
+          {/* 10. 判断の実例 */}
+          <section className={styles.section} id="cases">
+            <div className={styles.kicker}>Judgment In Practice</div>
+            <h2 className={`${styles.h2} ${styles.serif}`}>判断の実例——でおならどう答えるか</h2>
+            <p className={styles.lead}>原則は抽象的で分かりにくい。実際にあった裁定を見た方が、判断の勘所は伝わる。</p>
+
+            <div className={styles.iconRow}>
+              <div className={styles.iconCard}>
+                <span className={styles.ic}>🙅</span>
+                <h4>no-go｜自腹購入を実績にしない</h4>
+                <p>「累計10人のMirror購入者へメッセージを送ろう」という提案に、でおは差し戻した。理由：「10人の購入は全て私自身が試験的に購入したもの」。実ユーザーの検証になっていないデータを、検証できた前提で次の施策に進めない。</p>
+              </div>
+              <div className={styles.iconCard}>
+                <span className={styles.ic}>🙅</span>
+                <h4>no-go｜弱さの開示と誠実さを混同しない</h4>
+                <p>LPの体験談欄が空だったとき「正直に0件と書こう」という提案が出た。でおの返答：「正直に0だなんて書くな。誰も導いたことのないメンターに誰がお金を払う？」。今を否定せず、静かに自信を保つ——原則4の実践形。</p>
+              </div>
+              <div className={styles.iconCard}>
+                <span className={styles.ic}>✅</span>
+                <h4>GO｜悪い数字ほど直視する</h4>
+                <p>既存記事が「28日で20インプレッション・0クリック」という厳しい実測が出たとき、でおは施策変更にGOを出した。都合の悪い数字を隠さず、そこから動く。</p>
+              </div>
+            </div>
+            <p className={styles.note}>共通しているのは「自分を騙すデータで安心しない」「弱さを売り文句にはしない」「悪い事実からは逃げない」。この3つの感覚が、原則よりも実際の判断を左右している。</p>
+          </section>
+
+          {/* 11. 判断の5原則 */}
           <section className={styles.section} id="principles">
             <div className={styles.kicker}>Operating Principles</div>
             <h2 className={`${styles.h2} ${styles.serif}`}>判断の軸——5つの原則</h2>
@@ -286,9 +325,36 @@ export default function BusinessPage() {
               <div className={styles.principle}><div className={styles.num}>4</div><div className={styles.body}><b>始点を絶対に嘲笑わない</b>今の姿は欠陥ではなく通過点。Before/Afterを「お前はダメだった→こうなれ」に滑らせない。</div></div>
               <div className={styles.principle}><div className={styles.num}>5</div><div className={styles.body}><b>川の終着点</b>一滴が川になるのは滴がつながったとき。いつか「変わった人が、次の夜にいる人へ渡す」構造へ育てる。</div></div>
             </div>
+
+            <div className={styles.subhead}>迷ったときの優先順位</div>
+            <ul className={styles.bullets}>
+              <li>すでにGOした承認済みタスク・仕様があるか先に確認する。新しい提案を積み増す前に、決まっていることを終わらせる</li>
+              <li>継続価値（New Me Map／Logの質）と新規集客がぶつかったら、継続価値を優先する。穴の空いたバケツに水を注がない</li>
+              <li>横展開（他業界・他事業への拡張）はしない。Fineme一本で成功を証明してから</li>
+              <li>判断に迷う・実データが読めない・でおの意図が推測できない時は、進めずに止めて確認する</li>
+            </ul>
           </section>
 
-          {/* 11. なぜ今声をかけたか */}
+          {/* 12. システム地図 */}
+          <section className={styles.section} id="map">
+            <div className={styles.kicker}>System Map</div>
+            <h2 className={`${styles.h2} ${styles.serif}`}>どこに何があるか</h2>
+            <p className={styles.lead}>実務を引き継ぐ・手伝う上で知っておくべき、事業を構成するシステムの地図。</p>
+
+            <ul className={styles.bullets}>
+              <li><strong>コード本体</strong> — GitHubで管理、Vercelで本番デプロイ（Next.js）</li>
+              <li><strong>データベース・認証</strong> — Supabase</li>
+              <li><strong>決済</strong> — Stripe（Mirror単発・サブスク課金）</li>
+              <li><strong>LINE連携</strong> — LINEログイン・通知用に専用サーバーを別プロセスで運用</li>
+              <li><strong>画像アップロード</strong> — AWS S3</li>
+              <li><strong>事業のSSoT（唯一の正）</strong> — でおが持つ運営ドキュメント一式。事業の全方針・原則・進行中の判断がここに集約されている</li>
+              <li><strong>意思決定ログ</strong> — GO／no-go／修正の全履歴。判断の実例で紹介した2件も、ここから引いている</li>
+              <li><strong>AIエージェント組織の定義</strong> — Strategist・reviewboard・Hermes・Claude Codeなど各役割の権限とトリガーを定義したドキュメント</li>
+            </ul>
+            <p className={styles.note}>実際のアクセス権限や認証情報はこのページには置かない。関わる範囲が具体化した時点で、必要な分だけでおから渡す。</p>
+          </section>
+
+          {/* 13. なぜ今声をかけたか */}
           <section className={styles.section} id="why-you">
             <div className={styles.kicker}>Why You</div>
             <h2 className={`${styles.h2} ${styles.serif}`}>なぜ、今声をかけたか</h2>
