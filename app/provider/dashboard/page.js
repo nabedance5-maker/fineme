@@ -827,6 +827,39 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'customers') loadRecommended();
     })();
 
+    // ── 休眠判定の設定 ────────────────────────────────────────────
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const daysInput = document.getElementById('ds-days');
+      const saveBtn = document.getElementById('ds-save-btn');
+      const msgEl = document.getElementById('ds-msg');
+      if (!daysInput || !saveBtn) return;
+
+      async function loadDormantSettings() {
+        const res = await fetch('/api/provider/dormant-settings', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) return;
+        const data = await res.json();
+        daysInput.value = data.no_visit_days;
+      }
+
+      saveBtn.addEventListener('click', async () => {
+        const days = Number(daysInput.value);
+        if (!days || days < 1) { msgEl.textContent = '1以上の日数を入力してください'; msgEl.style.color = '#ef4444'; return; }
+        saveBtn.disabled = true;
+        const res = await fetch('/api/provider/dormant-settings', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ no_visit_days: days }),
+        });
+        if (res.ok) { msgEl.style.color = '#059669'; msgEl.textContent = '✓ 保存しました'; }
+        else { const d = await res.json(); msgEl.style.color = '#ef4444'; msgEl.textContent = d.error || '保存に失敗しました'; }
+        saveBtn.disabled = false;
+      });
+
+      document.querySelectorAll('[data-tab="customers"]').forEach(btn => btn.addEventListener('click', loadDormantSettings, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'customers') loadDormantSettings();
+    })();
+
     // ── New Me Log 顧客一覧タブ ───────────────────────────────────
     (() => {
       const token = getSupabaseToken();
@@ -848,8 +881,18 @@ export default function ProviderDashboardPage() {
         if (typeof days !== 'number' || days >= 0) return '';
         return `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#fef2f2;color:#dc2626;border-radius:99px;">${label}${-days}日超過</span>`;
       }
+      const STATUS_LABEL = {
+        active: { label: 'アクティブ', bg: '#f0fdf4', fg: '#16a34a' },
+        dormant: { label: '休眠', bg: '#fffbeb', fg: '#d97706' },
+        churned: { label: '離脱', bg: '#f3f4f6', fg: '#6b7280' },
+      };
+      function statusBadge(status) {
+        const s = STATUS_LABEL[status] || STATUS_LABEL.active;
+        return `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:${s.bg};color:${s.fg};border-radius:99px;">${s.label}</span>`;
+      }
 
       let allItems = [];
+      let staffList = [];
 
       function render() {
         if (!listEl) return;
@@ -857,6 +900,7 @@ export default function ProviderDashboardPage() {
         const items = allItems.filter(c => {
           if (filter === 'user-overdue') return typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0;
           if (filter === 'store-overdue') return typeof c.storeOverdueDays === 'number' && c.storeOverdueDays < 0;
+          if (filter === 'dormant') return c.status === 'dormant' || c.status === 'churned';
           return true;
         });
         if (!items.length) {
@@ -869,6 +913,9 @@ export default function ProviderDashboardPage() {
           const axisLabel = def ? `${def.icon} ${esc(def.label)}` : esc(c.axis);
           const row = document.createElement('div');
           row.style.cssText = 'border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px;background:#fff;';
+          const staffOptions = ['<option value="">担当未割当</option>']
+            .concat(staffList.map(s => `<option value="${s.id}"${c.assignedStaffId === s.id ? ' selected' : ''}>${esc(s.name)}</option>`))
+            .join('');
           row.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
               <div style="flex:1;min-width:0;">
@@ -876,13 +923,17 @@ export default function ProviderDashboardPage() {
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
                   <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
                   <span style="font-size:11px;color:#9ca3af;">${esc(c.name)}</span>
+                  ${statusBadge(c.status)}
                   ${overdueBadge('ユーザー想定', c.userOverdueDays)}
                   ${overdueBadge('店舗推奨', c.storeOverdueDays)}
+                  ${c.meScanDone ? '<span style="font-size:11px;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;">Me Scan済</span>' : ''}
+                  ${c.mirror?.visualTier ? `<span style="font-size:11px;padding:2px 8px;background:#fff7ed;color:#c2410c;border-radius:99px;">Mirror: ${esc(c.mirror.visualTier)}</span>` : ''}
                 </div>
-                <p style="font-size:12px;color:#6b7280;margin:0 0 8px;">前回：${fmtDate(c.last_visit)}／次回目安：${fmtDate(c.next_visit)}／頻度：${fmtFreq(c)}</p>
-                <div class="cluster" style="gap:8px;">
+                <p style="font-size:12px;color:#6b7280;margin:0 0 8px;">前回：${fmtDate(c.last_visit)}／次回目安：${fmtDate(c.next_visit)}／頻度：${fmtFreq(c)}／来店回数：${c.visitCount ?? 0}回</p>
+                <div class="cluster" style="gap:8px;align-items:center;">
                   <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;" data-nudge="${c.user_id}">声かけメッセージを送る</button>
                   <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;" data-note="${c.user_id}">${c.hasStoreNote ? 'メモを見る/編集' : 'メモを追加'}</button>
+                  <select data-assign="${c.user_id}" style="font-size:12px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">${staffOptions}</select>
                 </div>
                 <div class="note-box" id="note-box-${c.user_id}" style="display:none;margin-top:8px;"></div>
               </div>
@@ -890,6 +941,17 @@ export default function ProviderDashboardPage() {
           `;
           listEl.appendChild(row);
         });
+
+        listEl.querySelectorAll('[data-assign]').forEach(sel => sel.addEventListener('change', async () => {
+          const uid = sel.dataset.assign;
+          sel.disabled = true;
+          const res = await fetch(`/api/provider/customers/${uid}/note`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ assigned_staff_id: sel.value || null }),
+          });
+          showToast(res.ok ? '担当を更新しました' : '更新に失敗しました');
+          sel.disabled = false;
+        }));
 
         listEl.querySelectorAll('[data-nudge]').forEach(btn => btn.addEventListener('click', async () => {
           const message = prompt('お客様に送るメッセージを入力してください（店舗の公式LINE連携済みならそちらから、未連携ならFineme公式LINEから届きます）');
@@ -934,8 +996,12 @@ export default function ProviderDashboardPage() {
       async function loadCustomers() {
         if (!listEl) return;
         listEl.innerHTML = '<p class="muted">読み込み中…</p>';
-        const res = await fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${token}` } });
+        const [res, staffRes] = await Promise.all([
+          fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/provider/staff', { headers: { 'Authorization': `Bearer ${token}` } }),
+        ]);
         if (!res.ok) { listEl.innerHTML = '<p style="color:#ef4444" class="muted">取得エラー</p>'; return; }
+        staffList = staffRes.ok ? await staffRes.json() : [];
         allItems = await res.json();
         if (!allItems.length) {
           listEl.innerHTML = '<p class="muted">まだ紐づいているお客様はいません。QRコードでNew Me Logをご案内ください。</p>';
@@ -2299,6 +2365,21 @@ export default function ProviderDashboardPage() {
             <div id="rf-list"></div>
           </div>
 
+          <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>休眠判定の設定</h2>
+            <p className="muted" style={{ fontSize: '13px', margin: 0 }}>
+              最終来店からこの日数を超えたお客様を「休眠」として一覧に表示します（既定90日）。
+            </p>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="form-field" style={{ minWidth: '120px' }}>
+                <label>未来店日数</label>
+                <input id="ds-days" type="number" min="1" placeholder="90" />
+              </div>
+              <button className="btn" id="ds-save-btn" type="button">設定する</button>
+              <span id="ds-msg" className="muted" style={{ fontSize: '13px' }}></span>
+            </div>
+          </div>
+
           <div className="card" style={{ padding: '24px' }}>
             <div style={{ marginBottom: '16px' }}>
               <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>New Me Log で紐づいているお客様</h2>
@@ -2315,6 +2396,7 @@ export default function ProviderDashboardPage() {
                 <option value="all">すべて</option>
                 <option value="user-overdue">ユーザー想定超過のみ</option>
                 <option value="store-overdue">店舗推奨超過のみ</option>
+                <option value="dormant">休眠のみ</option>
               </select>
             </div>
             <div id="customers-list"><p className="muted">読み込み中…</p></div>

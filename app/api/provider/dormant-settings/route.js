@@ -1,6 +1,5 @@
-// GET /api/provider/customers/[user_id]/note → 店舗専用メモを取得（認証済み）
-// PUT /api/provider/customers/[user_id]/note → 店舗専用メモを保存（認証済み）
-// ユーザー本人には見せない前提のメモ（簡易カルテ）
+// GET  /api/provider/dormant-settings → 自店舗の休眠判定しきい値を取得（認証済み）
+// POST /api/provider/dormant-settings → 休眠判定しきい値を保存（認証済み・セルフサービス）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 
@@ -13,44 +12,36 @@ async function getProviderByToken(token) {
   return data || null;
 }
 
-export async function GET(request, { params }) {
+export async function GET(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { data } = await supabase
-    .from('provider_customer_notes')
-    .select('note, updated_at, assigned_staff_id')
+    .from('provider_dormant_settings')
+    .select('no_visit_days')
     .eq('provider_id', provider.id)
-    .eq('user_id', params.user_id)
-    .single();
+    .maybeSingle();
 
-  return Response.json({
-    note: data?.note || '',
-    updated_at: data?.updated_at || null,
-    assigned_staff_id: data?.assigned_staff_id || null,
-  });
+  return Response.json({ no_visit_days: data?.no_visit_days ?? 90 });
 }
 
-export async function PUT(request, { params }) {
+export async function POST(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const body = await request.json();
-  const upsertData = {
-    provider_id: provider.id,
-    user_id: params.user_id,
-    updated_at: new Date().toISOString(),
-  };
-  if (body.note !== undefined) upsertData.note = body.note || '';
-  if (body.assigned_staff_id !== undefined) upsertData.assigned_staff_id = body.assigned_staff_id || null;
+  const { no_visit_days } = await request.json();
+  const days = Number(no_visit_days);
+  if (!Number.isInteger(days) || days < 1) {
+    return Response.json({ error: 'no_visit_days は1以上の整数で指定してください' }, { status: 400 });
+  }
 
   const { error } = await supabase
-    .from('provider_customer_notes')
-    .upsert(upsertData, { onConflict: 'provider_id,user_id' });
+    .from('provider_dormant_settings')
+    .upsert({ provider_id: provider.id, no_visit_days: days, updated_at: new Date().toISOString() }, { onConflict: 'provider_id' });
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });
