@@ -219,7 +219,7 @@
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-eyebrow">Fineme（ファインミ）／ 事業ロードマップ ／ 2026年8月17日更新</div>
+  <div class="hero-eyebrow">Fineme（ファインミ）／ 事業ロードマップ ／ 2026年8月24日更新</div>
   <h1>そのまま進むのが怖くなった夜に。<br>自信を再設計する、地図と羅針盤。</h1>
   <p class="hero-sub">
     Mission: <strong>外見を起点に、自信を再設計する人を増やす</strong><br>
@@ -241,12 +241,12 @@
 
 <!-- NOW BOARD -->
 <div class="now-board">
-  <div class="now-board-eyebrow">今ここ — 2026年8月17日</div>
+  <div class="now-board-eyebrow">今ここ — 2026年8月24日</div>
   <div class="now-board-title">現在の進捗と直近アクション</div>
 
   <div class="alert-banner">
     <span>⚠️</span>
-    <div><strong>自走cron（Strategist／審査ボード／code-implementer）がLLM週次クォータ枯渇で2026年7月21日から27日間以上アウテージ継続中（tasks.md T-057）。</strong>GO済みコードカード4件（Mirror LP hero改稿・Threadsリーチ強化・note記事エンジン・リーチコックピット）がでお手動アクション待ちで滞留中（D-20260813-3）。借り場リーチ実験は08-17撤退確定（D-20260817-1）。外部顧客は引き続き0人（7月外部0件確定・D-20260813-2）。</div>
+    <div><strong>Strategist/X投稿cronは2026-08-16に復活（週6本確認済）。継続稼働にはcrontab修正（0 2→0 6、でお手動）が未了（T-057）。</strong>でお手動アクション4件（D-0813-3: LPヒーロー写真+コピー選択・Threads毎日リプ・借り場テーマ確定+実在10件・note索引記事公開）が引き続き未着手。外部顧客は引き続き0人（7月外部0件確定・D-20260813-2）。</div>
   </div>
 
   <div class="now-cols">
@@ -256,8 +256,8 @@
       <div class="now-item">
         <div class="now-item-dot doing"></div>
         <div>
-          <span class="now-item-main">でお個人発信を軸にした集客（現フェーズの主エンジン）</span>
-          <span class="now-item-sub">X @deo_fineme・note・実写ショートドラマ（@fineme.drama 等、2026-06-19展開決定）。AIショート動画（ケンジ×リサ）は2026-05-01に一時停止済み・現在はでお個人の実写発信に軸足。</span>
+          <span class="now-item-main">でお個人発信を軸にした集客（X cron 08-16復活・週6本）</span>
+          <span class="now-item-sub">X @deo_fineme・note・実写ショートドラマ（@fineme.drama 等）。Strategist週6本投稿が08-16に復活確認済み。継続的な稼働にはcrontab修正（でお手動）が必要。</span>
         </div>
       </div>
       <div class="now-item">
@@ -270,15 +270,15 @@
       <div class="now-item">
         <div class="now-item-dot doing"></div>
         <div>
-          <span class="now-item-main">Belle Journal記事量産・二トラック記事整備</span>
-          <span class="now-item-sub">女性トラック（Fineme Belle）記事を10→39本に拡充済み（2026-07-19）。男女混在バグの横展開修正を継続中。</span>
+          <span class="now-item-main">掲載者向けSaaS機能の整備（補完チャネル強化）</span>
+          <span class="now-item-sub">LINE通知・予約前日リマインド・誕生日メッセージ・来店後クチコミ依頼・推奨来店周期・休眠顧客セグメント・店舗専用メモを実装済み（2026-08-24週）。掲載者CRM基盤を大幅強化。</span>
         </div>
       </div>
       <div class="now-item">
         <div class="now-item-dot doing"></div>
         <div>
           <span class="now-item-main">New Me Log — 集客入口としての検証を待つ機能は揃った</span>
-          <span class="now-item-sub">費用管理・支出推移グラフ・LINE通知（「船のクルーの声」）を実装済み。低摩擦入口としての設計思想はmaster.md §2-6に明記済みだが、SNS経由の発見流入がまだ0＝検証がまだ始まっていない（T-060）。</span>
+          <span class="now-item-sub">費用管理・支出推移グラフ・LINE通知（「船のクルーの声」）・LINEから「行った」記録ボタンを実装済み。低摩擦入口の設計は完了だが、SNS経由の発見流入がまだ0＝検証がまだ始まっていない（T-060）。</span>
         </div>
       </div>
     </div>
@@ -288,15 +288,22 @@
       <div class="now-item">
         <div class="now-item-dot alert"></div>
         <div>
-          <span class="now-item-main">自走cronアウテージの解消（T-057）</span>
-          <span class="now-item-sub">週次LLMクォータ二択＝(A)cadence削減〔コスト0〕/(B)プラン増枠〔課金〕。でお決定待ち。解消後にGO済み4件（LP hero・Threads・note・コックピット）の実装が再開する。</span>
+          <span class="now-item-main">crontab修正 `0 2→0 6` の1行（でお手動・T-057完全解消）</span>
+          <span class="now-item-sub">Strategist復活は確認済みだが、crontab修正が未了のため次回再発リスクあり。でおがサーバーで1行編集するだけで完了する。</span>
         </div>
       </div>
       <div class="now-item">
         <div class="now-item-dot alert"></div>
         <div>
           <span class="now-item-main">ショートドラマ第1話：アカウント開設→投稿実行（でお待ち）</span>
-          <span class="now-item-sub">D-20260813-1 GO済み。T-063チェックリスト着手中。でおが1プラットフォーム開設→投稿するだけで計測が始まる。集客エンジンの最重要実験。</span>
+          <span class="now-item-sub">D-20260813-1 GO済み。T-063チェックリスト完了済み。でおが1プラットフォーム開設→投稿するだけで計測が始まる。集客エンジンの最重要実験。</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot alert"></div>
+        <div>
+          <span class="now-item-main">でお手動4件（D-0813-3）の着手</span>
+          <span class="now-item-sub">①LPヒーロー写真選択+コピー3案から1案 ②Threads毎日リプ ③借り場テーマ確定+実在10件入力 ④note索引記事公開。この4件が揃わないとcode層が動かない。</span>
         </div>
       </div>
       <div class="now-item">
@@ -310,6 +317,27 @@
 
     <div>
       <div class="now-col-label done">✅ 最近完了</div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
+          <span class="now-item-main">事業説明資料の全面整備・リデザイン（2026-08-24週）</span>
+          <span class="now-item-sub">思想・戦略・体制・運営実態・判断実例・システム地図を含む総合版に拡充。視覚重視・参加意欲重視のリデザインも完了。/business/ に本番配信済み（fineme_admin Cookie必須）。</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
+          <span class="now-item-main">掲載者向けSaaS機能追加（2026-08-24週）</span>
+          <span class="now-item-sub">予約前日リマインド+ノーショー対策（クイックリプライ+Webhook）・誕生日メッセージ・来店後クチコミ依頼自動化・推奨来店周期・休眠顧客セグメント・店舗専用メモを実装。掲載者向けCRM基盤を大幅強化。</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
+          <span class="now-item-main">New Me Log LINE通知バグ修正・「行った」ボタン追加（2026-08-24週）</span>
+          <span class="now-item-sub">過ぎたタスクを「本日」と誤表示していたバグを修正。LINEから直接「行った」を記録できるボタンを追加し、記録摩擦を削減。</span>
+        </div>
+      </div>
       <div class="now-item">
         <div class="now-item-dot done"></div>
         <div>
@@ -331,34 +359,6 @@
           <span class="now-item-sub">タイムボックス終端（08-04〜08-17）。でお実投稿なし・src_inbound 0件。「読まれてもクリックされない」判定で撤退確定（D-20260817-1）。帯域をドラマ/Xへ戻す。</span>
         </div>
       </div>
-      <div class="now-item">
-        <div class="now-item-dot done"></div>
-        <div>
-          <span class="now-item-main">7月外部Mirror購入者0件確定（2026-08-13）</span>
-          <span class="now-item-sub">でおがSupabase purchasesを確認。7月はでお試験購入のみ＝外部顧客0件が数字で確定（D-20260813-2）。サブスク継続者も0名確定。最優先の穴＝継続価値未実証。</span>
-        </div>
-      </div>
-      <div class="now-item">
-        <div class="now-item-dot done"></div>
-        <div>
-          <span class="now-item-main">思想（vision.md）とプロダクトの間の3つの空白を埋める（2026-08-10）</span>
-          <span class="now-item-sub">Finemeの創業思想とプロダクト体験の断絶を解消。vision.mdの世界観をプロダクト内の動線・言葉に接続。</span>
-        </div>
-      </div>
-      <div class="now-item">
-        <div class="now-item-dot done"></div>
-        <div>
-          <span class="now-item-main">note・X・Pinterest用OG/シェア画像を実写真ベースへ再設計（2026-08-05〜06）</span>
-          <span class="now-item-sub">「文字カード」中心のテンプレートから、実写真を主役にした構成へ全面刷新。</span>
-        </div>
-      </div>
-      <div class="now-item">
-        <div class="now-item-dot done"></div>
-        <div>
-          <span class="now-item-main">Me Scan：年代ヒアリング＋行動習慣の深掘り＋New Me Map統合（2026-08-05）</span>
-          <span class="now-item-sub">属性（年代）を聞き、行動習慣の回答をNew Me Mapの初期状態に反映。AI出力の過剰な具体性も抑制。</span>
-        </div>
-      </div>
     </div>
 
   </div>
@@ -368,15 +368,15 @@
 <!-- REALITY BOARD -->
 <div class="reality-board">
   <div class="reality-eyebrow">今の実数 — 隠さない</div>
-  <div class="reality-title">2026年8月17日時点の実測値</div>
+  <div class="reality-title">2026年8月24日時点の実測値</div>
   <div class="reality-kpi-row">
     <div class="reality-kpi"><div class="kpi-num">0/640</div><div class="kpi-label">Mirrorサブスク継続<br>（目標人数）</div></div>
-    <div class="reality-kpi"><div class="kpi-num">0件</div><div class="kpi-label">Mirror単発購入<br>（週間・08-17時点）</div></div>
+    <div class="reality-kpi"><div class="kpi-num">0件</div><div class="kpi-label">Mirror単発購入<br>（週間・08-24時点）</div></div>
     <div class="reality-kpi"><div class="kpi-num">0人</div><div class="kpi-label">外部顧客<br>（累計・7月外部0確定）</div></div>
-    <div class="reality-kpi"><div class="kpi-num">0本</div><div class="kpi-label">X週間投稿<br>（cronアウテージ継続中）</div></div>
-    <div class="reality-kpi"><div class="kpi-num">19 / 0</div><div class="kpi-label">SEO表示回数/クリック<br>（08-10時点・最新未取得）</div></div>
+    <div class="reality-kpi"><div class="kpi-num">6本</div><div class="kpi-label">X週間投稿<br>（08-16 cron復活・crontab修正未了）</div></div>
+    <div class="reality-kpi"><div class="kpi-num">0 / 0</div><div class="kpi-label">SEO表示回数/クリック<br>（GSC・08-24時点）</div></div>
   </div>
-  <div class="reality-note">出典：weekly-kpi.md・execution-board.md・tasks.md（T-057）。7月外部Mirror購入者0件確定（D-20260813-2）。良い数字も悪い数字も同じ扱いで載せる方針（master.md §0の原則）。</div>
+  <div class="reality-note">出典：weekly-kpi.md・execution-board.md・tasks.md（T-057）。7月外部Mirror購入者0件確定（D-20260813-2）。X投稿は08-16にStrategist復活・週6本確認済みだがcrontab修正（でお手動）未了。良い数字も悪い数字も同じ扱いで載せる方針（master.md §0の原則）。</div>
 </div>
 <!-- /REALITY BOARD -->
 
@@ -457,7 +457,7 @@
   <div class="deliverables">
     <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">でお個人発信を軸にした集客</span>X @deo_fineme・note・実写ショートドラマ（@fineme.drama 等）。現フェーズの主エンジン</div></div>
     <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">Mirror ¥780サブスク定着</span>計測開始2026-06-14・達成期限2026-12-14。約640人の継続課金＝月商50万円が第一フェーズの目標</div></div>
-    <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">意思決定パイプライン運用</span>Strategist→審査ボード→でおGO→code-implementerの自走サイクル。2026-07-21からLLM週次クォータ枯渇でアウテージ中（T-057）</div></div>
+    <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">意思決定パイプライン運用</span>Strategist→審査ボード→でおGO→code-implementerの自走サイクル。2026-08-16にStrategist/X投稿が復活（週6本確認）。crontab修正（0 2→0 6）はでお手動待ち（T-057）</div></div>
     <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">掲載者基盤（PT業務委託・創業パートナー・B2B2C提携）</span>主エンジンではなく並走する補完チャネルとして継続</div></div>
     <div class="del-item now-item"><span class="del-icon">🆕</span><div><span class="del-label">New Me Log — 3つ目の低摩擦入口（候補・未検証）</span>Me Scan/Mirrorは「自分は変わる必要がある」と認めないと始められないが、Logは通っている美容室・ジム等の予定管理という顔をしているため、何も認めずに使い始められる。集客入口としての仮説は立っているが、SNS CTAが無く流入計測がまだ動いていない（下記参照）</div></div>
   </div>
@@ -483,7 +483,7 @@
     <div class="kpi-card">
       <div class="kpi-num">0</div>
       <div class="kpi-unit">件</div>
-      <div class="kpi-label">Mirror単発購入<br>（週間・08-17時点）</div>
+      <div class="kpi-label">Mirror単発購入<br>（週間・08-24時点）</div>
     </div>
     <div class="kpi-card next-kpi">
       <div class="kpi-num">10</div>
@@ -802,7 +802,7 @@
 <!-- FOOTER -->
 <div class="footer">
   <div class="footer-brand">Fineme（ファインミ）</div>
-  <div class="footer-sub">外見を起点に、自信を再設計する人を増やす ／ 最終更新：2026年8月17日</div>
+  <div class="footer-sub">外見を起点に、自信を再設計する人を増やす ／ 最終更新：2026年8月24日</div>
 </div>
 
 </div>
