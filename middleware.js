@@ -31,8 +31,16 @@ export function middleware(request) {
     return NextResponse.redirect(url, { status: 301 })
   }
 
-  // business/ ディレクトリは管理者のみアクセス可
-  if (request.nextUrl.pathname.startsWith('/business/')) {
+  // business/ ディレクトリは管理者のみアクセス可（社内ツール保護用）。
+  // ただし店舗向け営業資料など外部の人に見せる前提のページは個別に除外する。
+  const BUSINESS_PUBLIC_PATHS = [
+    '/business/store-saas-pitch-deck.html',
+    '/business/line-connect-guide',
+  ]
+  if (
+    request.nextUrl.pathname.startsWith('/business/') &&
+    !BUSINESS_PUBLIC_PATHS.includes(request.nextUrl.pathname)
+  ) {
     const adminCookie = request.cookies.get('fineme_admin')
     if (!adminCookie?.value) {
       const url = request.nextUrl.clone()
