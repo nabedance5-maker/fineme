@@ -1,10 +1,10 @@
 export const metadata = {
-  title: '男性客の集客方法：個人・フリーランスの外見系サービス提供者へ | Fineme',
-  description: 'パーソナルジム・眉毛サロン・美容師・外見コンサルなど、男性客の集客に悩む個人・フリーランス向け。Finemeは「変わりたい男性」が診断を経て辿り着くプラットフォームです。クーポン集客ではなく、相性で選ばれる仕組みを提供します。',
-  keywords: ['男性客 集客', 'パーソナルジム 集客 個人', '眉毛サロン 男性客 増やす', 'フリーランス 美容師 集客', '外見コンサル 集客 個人'],
+  title: '個人・フリーランスの外見系サービス提供者へ：Fineme掲載のご案内',
+  description: 'パーソナルジム・眉毛サロン・美容師・外見コンサルなど、集客に悩む個人・フリーランス向け。Finemeは「変わりたい」男女どちらのお客様も診断を経て辿り着くプラットフォームです。クーポン集客ではなく相性で選ばれる仕組みと、来店後の顧客管理・リマインドまでを一つで提供します。',
+  keywords: ['個人事業主 集客', 'パーソナルジム 集客 個人', '眉毛サロン 集客', 'フリーランス 美容師 集客', '外見コンサル 集客', '店舗 顧客管理 SaaS'],
   openGraph: {
-    title: '男性客の集客に悩む個人・フリーランスへ | Fineme',
-    description: '診断を経た「本気で変わりたい男性」との出会いを設計します。',
+    title: '集客に悩む個人・フリーランスの外見系サービス提供者へ | Fineme',
+    description: '診断を経た「本気で変わりたい」お客様との出会いから、来店後の顧客管理まで。',
   },
 };
 
@@ -98,6 +98,8 @@ export default function ProviderJoinPage() {
 
         /* ─── Problem cards ─── */
         .problem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        @media (max-width: 680px) { .tools-grid { grid-template-columns: 1fr; } }
         .problem-card {
           background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(232,228,220,0.15); border-radius: 14px; padding: 20px;
           box-shadow: 0 4px 24px rgba(0,0,0,.4);
@@ -146,15 +148,18 @@ export default function ProviderJoinPage() {
         .score-insight strong { color: #fff; }
 
         /* ─── Plan card ─── */
+        .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
         .plan-card {
-          border: 1.5px solid rgba(201,168,76,.45); border-radius: 16px; padding: 28px 32px;
-          background: #0a0f1e; max-width: 420px; margin: 0 auto;
+          border: 1.5px solid rgba(201,168,76,.25); border-radius: 16px; padding: 24px 22px;
+          background: #0a0f1e; text-align: left;
         }
-        .plan-price { font-size: 36px; font-weight: 900; color: #c9a84c; line-height: 1; }
-        .plan-price small { font-size: 16px; font-weight: 700; color: #c9a84c; }
+        .plan-card.highlight { border-color: rgba(201,168,76,.7); box-shadow: 0 8px 32px rgba(201,168,76,.15); }
+        .plan-price { font-size: 30px; font-weight: 900; color: #c9a84c; line-height: 1; }
+        .plan-price small { font-size: 14px; font-weight: 700; color: #c9a84c; }
         .plan-list { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-direction: column; gap: 8px; }
-        .plan-list li { font-size: 14px; color: #e8e2d4; line-height: 1.6; font-family: 'Noto Sans JP', sans-serif; display: flex; gap: 8px; }
+        .plan-list li { font-size: 13px; color: #e8e2d4; line-height: 1.6; font-family: 'Noto Sans JP', sans-serif; display: flex; gap: 8px; }
         .plan-list li::before { content: '✓'; color: #c9a84c; font-weight: 900; flex-shrink: 0; }
+        @media (max-width: 820px) { .plan-grid { grid-template-columns: 1fr; } }
 
         /* ─── Fit cards ─── */
         .fit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -394,26 +399,83 @@ export default function ProviderJoinPage() {
           </div>
         </section>
 
+        {/* ④.5 掲載後の管理機能 */}
+        <section className="join-section-dark" style={{paddingTop:0}}>
+          <div className="join-container">
+            <div className="sec-eyebrow">Store Management Tools</div>
+            <h2 className="sec-h2 sec-h2-dark">掲載後に使える、店舗運営ツール</h2>
+            <p className="sec-lead sec-lead-dark">掲載は「載せて終わり」ではありません。出会った後のリピート・育成までを一つの管理画面でサポートします。</p>
+            <div className="problem-grid tools-grid">
+              <div className="problem-card">
+                <div className="problem-card-icon">📋</div>
+                <h3>顧客カルテ</h3>
+                <p>来店履歴・Me Scan受診有無・Mirrorスコア・担当スタッフを自動で一覧化。休眠しそうなお客様も一目で分かります。店舗だけに見える非公開メモも残せます。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+              <div className="problem-card">
+                <div className="problem-card-icon">🔔</div>
+                <h3>リマインド一式</h3>
+                <p>予約前日の確認・来店間隔が空いたお客様の自動掘り起こし・誕生日メッセージ・クチコミ依頼まで自動配信。送り忘れを仕組みで防ぎます。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+              <div className="problem-card">
+                <div className="problem-card-icon">🌐</div>
+                <h3>診断起点LP自動生成</h3>
+                <p>Me Scanでタイプが判定されたお客様専用のランディングページを自動生成。体験メニュー・症例（Before/After）を登録するだけで、デザイン不要の専用入口ができます。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+              <div className="problem-card">
+                <div className="problem-card-icon">🪞</div>
+                <h3>Mirrorマッチング</h3>
+                <p>写真分析（Mirror）で「改善余地が大きい軸」を特定し、その軸を得意とする店舗・メニューを自動提示。ミスマッチの少ない出会いを設計します。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+            </div>
+            <p style={{marginTop:'18px', fontSize:'12.5px', color:'rgba(255,255,255,.55)', lineHeight:'1.7', fontFamily:"'Noto Sans JP', sans-serif"}}>
+              エリア需要の可視化・メニュー別LTV分析なども開発中です。画面イメージ・導入フローなど詳しい機能一覧は<a href="/business/store-saas-pitch-deck.html" style={{color:'#c9a84c'}}>店舗SaaS営業資料</a>をご覧ください。
+            </p>
+          </div>
+        </section>
+
         {/* ⑤ 掲載プラン */}
         <section className="join-section-tinted">
           <div className="join-container" style={{textAlign:'center'}}>
             <div className="sec-eyebrow" style={{justifyContent:'center'}}>Plan</div>
             <h2 className="sec-h2 sec-h2-light">掲載プラン</h2>
-            <p className="sec-lead sec-lead-light">広告費を積み上げるモデルではなく、「合う人に届く仕組み」への投資です。</p>
+            <p className="sec-lead sec-lead-light">登録料 ¥1,100（初回のみ）＋ 月額プラン3段階。広告費を積み上げるモデルではなく、「合う人に届く仕組み」への投資です。</p>
 
-            <div className="plan-card">
-              <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', color:'rgba(201,168,76,.7)', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif"}}>STANDARD PLAN</div>
-              <div className="plan-price">¥5,000<small> / 月</small></div>
-              <ul className="plan-list">
-                <li>プロフィールページ（無制限）</li>
-                <li>サービスメニュー登録（複数対応）</li>
-                <li>スタッフ紹介・Before/After掲載</li>
-                <li>Me Scanマッチング（総合スコア順）</li>
-                <li>ダッシュボード（統計・問い合わせ管理）</li>
-                <li>紹介報酬プログラム参加資格</li>
-              </ul>
-              <p style={{fontSize:'12px', color:'rgba(201,168,76,.8)', marginTop:'16px', fontFamily:"'Noto Sans JP', sans-serif"}}>草創期限定プランです。今後の価格変更は事前告知します。</p>
+            <div className="plan-grid">
+              <div className="plan-card">
+                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', color:'rgba(201,168,76,.7)', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif"}}>LIGHT</div>
+                <div className="plan-price">¥5,000<small> / 月</small></div>
+                <ul className="plan-list">
+                  <li>プロフィールページ（無制限）</li>
+                  <li>サービスメニュー登録（複数対応）</li>
+                  <li>スタッフ紹介・Before/After掲載</li>
+                  <li>Me Scanマッチング（総合スコア順）</li>
+                  <li>顧客カルテ・リマインド一式</li>
+                  <li>紹介報酬プログラム参加資格</li>
+                </ul>
+              </div>
+              <div className="plan-card highlight">
+                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', color:'rgba(201,168,76,.9)', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif"}}>STANDARD</div>
+                <div className="plan-price">¥7,000<small> / 月</small></div>
+                <ul className="plan-list">
+                  <li>ライトの内容すべて</li>
+                  <li>予約手数料率の優遇</li>
+                  <li>検索結果での優先表示</li>
+                </ul>
+              </div>
+              <div className="plan-card">
+                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', color:'rgba(201,168,76,.7)', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif"}}>PREMIUM</div>
+                <div className="plan-price">¥10,000<small> / 月</small></div>
+                <ul className="plan-list">
+                  <li>スタンダードの内容すべて</li>
+                  <li>店舗独自の公式LINEからリマインド配信</li>
+                </ul>
+              </div>
             </div>
+            <p style={{fontSize:'12px', color:'rgba(201,168,76,.8)', marginTop:'20px', fontFamily:"'Noto Sans JP', sans-serif"}}>草創期限定プランです。今後の価格変更は事前告知します。管理機能の詳しい画面イメージは<a href="/business/store-saas-pitch-deck.html" style={{color:'#c9a84c'}}>店舗SaaS営業資料</a>をご覧ください。</p>
           </div>
         </section>
 
