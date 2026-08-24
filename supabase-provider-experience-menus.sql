@@ -1,4 +1,4 @@
--- 未適用（本番Supabaseで実行してください）
+-- ✅ 本番適用済 2026-08-24
 -- 診断起点LP自動生成（店舗SaaS実装仕様書 SAAS-015・SAAS-016）
 -- store_experience_menus / store_cases（元仕様）を、既存のprovidersテーブルに
 -- 合わせてprovider_*に読み替えて実装。

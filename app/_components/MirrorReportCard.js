@@ -684,6 +684,15 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
           ))}
         </div>
       )}
+
+      <div style={{ margin: '0 22px 22px', textAlign: 'center' }}>
+        <a
+          href="/mirror/match"
+          style={{ display: 'inline-block', padding: '12px 24px', borderRadius: '999px', background: accent, color: '#0a0f1e', fontWeight: 800, fontSize: '13px', textDecoration: 'none' }}
+        >
+          このスコアを改善できるメニューを探す
+        </a>
+      </div>
     </div>
   );
 }

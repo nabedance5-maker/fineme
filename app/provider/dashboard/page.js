@@ -1260,6 +1260,37 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'landing') loadLandingTab();
     })();
 
+    // ── エリア需要タブ ────────────────────────────────────────────
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const contentEl = document.getElementById('area-demand-content');
+      if (!contentEl) return;
+      const AXIS_LABEL_AD = { eyebrow: '眉', skin: '肌', hair: 'ヘア', expression: '表情', posture: '姿勢', body: '体型', fashion: 'ファッション' };
+
+      async function loadAreaDemand() {
+        contentEl.innerHTML = '<p class="muted" style="font-size:13px;">読み込み中…</p>';
+        const res = await fetch('/api/provider/area-demand', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) { contentEl.innerHTML = '<p class="muted" style="font-size:13px;color:#ef4444;">取得エラー</p>'; return; }
+        const data = await res.json();
+        if (data.note) { contentEl.innerHTML = `<p class="muted" style="font-size:13px;">${data.note}</p>`; return; }
+        const area = data.areas?.[0];
+        if (!area || !area.axisGaps?.length) {
+          contentEl.innerHTML = '<p class="muted" style="font-size:13px;">まだ十分なデータがありません。</p>';
+          return;
+        }
+        contentEl.innerHTML = area.axisGaps.map(g => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(232,228,220,0.1);">
+            <span style="font-size:13px;">${AXIS_LABEL_AD[g.axis] || g.axis}</span>
+            <span style="font-size:12px;color:rgba(232,228,220,0.6);">需要 ${g.demand}人 ／ 対応店舗 ${g.supply}軒</span>
+          </div>
+        `).join('');
+      }
+
+      document.querySelectorAll('[data-tab="area-demand"]').forEach(btn => btn.addEventListener('click', loadAreaDemand, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'area-demand') loadAreaDemand();
+    })();
+
     // ── 画像圧縮ヘルパー（Canvas, max 1200px, JPEG/WebP 0.85） ────
     function compressImage(file, maxPx = 1200, quality = 0.85) {
       return new Promise((resolve) => {
@@ -1915,6 +1946,7 @@ export default function ProviderDashboardPage() {
           <button className="tab-btn" data-tab="line-channel">💬 LINE連携</button>
           <button className="tab-btn" data-tab="reviews">⭐ クチコミ</button>
           <button className="tab-btn" data-tab="landing">🌐 LP設定</button>
+          <button className="tab-btn" data-tab="area-demand">📍 エリア需要</button>
           <button className="tab-btn" data-tab="service">サービス設定</button>
           <button className="tab-btn" data-tab="publish">公開設定</button>
           <button className="tab-btn" data-tab="billing">課金・プラン</button>
@@ -2692,6 +2724,19 @@ export default function ProviderDashboardPage() {
               <p id="case-msg" className="muted" style={{ fontSize: '13px' }}></p>
             </form>
             <div id="case-list" style={{ marginTop: '8px' }}></div>
+          </div>
+        </div>
+
+        {/* エリア需要：Mirrorスコアの伸びしろ分布(需要)と、同エリアの店舗の対応軸数(供給)の比較 */}
+        <div className="tab-pane" id="tab-area-demand">
+          <div className="card stack" style={{ padding: '24px', gap: '12px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>エリア需要</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                貴店の都道府県で、Mirror診断を受けた方の「伸びしろが大きい軸」の人数（需要）と、対応できる掲載店舗数（供給）を比較します。需要に対して供給が少ない軸ほど、狙い目です。
+              </p>
+            </div>
+            <div id="area-demand-content"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
           </div>
         </div>
 
