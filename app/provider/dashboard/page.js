@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
+import { CUSTOMER_SCRIPT_AXES } from '@/lib/customer-scripts';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -1947,6 +1948,7 @@ export default function ProviderDashboardPage() {
           <button className="tab-btn" data-tab="reviews">⭐ クチコミ</button>
           <button className="tab-btn" data-tab="landing">🌐 LP設定</button>
           <button className="tab-btn" data-tab="area-demand">📍 エリア需要</button>
+          <button className="tab-btn" data-tab="scripts">💡 接客の引き出し</button>
           <button className="tab-btn" data-tab="service">サービス設定</button>
           <button className="tab-btn" data-tab="publish">公開設定</button>
           <button className="tab-btn" data-tab="billing">課金・プラン</button>
@@ -2737,6 +2739,33 @@ export default function ProviderDashboardPage() {
               </p>
             </div>
             <div id="area-demand-content"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
+          </div>
+        </div>
+
+        {/* 接客の引き出し：軸別の声かけ例・カルテの着眼点（あくまで参考・貴店のスタイルを優先） */}
+        <div className="tab-pane" id="tab-scripts">
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>接客の引き出し</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                困ったときの参考にしてください。貴店のスタイルを優先してかまいません。
+              </p>
+            </div>
+            {CUSTOMER_SCRIPT_AXES.map(a => (
+              <div key={a.axis} style={{ borderTop: '1px solid rgba(232,228,220,0.1)', paddingTop: '14px' }}>
+                <h3 style={{ margin: '0 0 8px', fontSize: '14px' }}>{a.label}</h3>
+                <p className="muted" style={{ fontSize: '12px', margin: '0 0 6px', fontWeight: 700 }}>声かけ例</p>
+                <ul style={{ margin: '0 0 10px', paddingLeft: '18px' }}>
+                  {a.openers.map((o, i) => <li key={i} style={{ fontSize: '13px', marginBottom: '4px' }}>{o}</li>)}
+                </ul>
+                <p className="muted" style={{ fontSize: '12px', margin: '0 0 6px', fontWeight: 700 }}>カルテの着眼点</p>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {a.notePoints.map((n, i) => (
+                    <span key={i} style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '99px', background: 'rgba(232,228,220,0.06)', border: '1px solid rgba(232,228,220,0.12)' }}>{n}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
