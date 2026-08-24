@@ -22,7 +22,7 @@ export async function POST(request) {
   const supabase = getSupabaseClient();
   try {
     const body = await request.json();
-    const { bizName, contactName, email, phone, category, contactPref, message } = body;
+    const { bizName, contactName, email, phone, category, contactPref, message, referralCode } = body;
 
     if (!bizName || !contactName || !email) {
       return NextResponse.json({ error: '必須項目が未入力です' }, { status: 400 });
@@ -36,6 +36,7 @@ export async function POST(request) {
       category: category || null,
       contact_pref: contactPref || 'email',
       message: message || null,
+      referral_code: referralCode || null,
     });
 
     if (error) throw error;
@@ -62,6 +63,7 @@ export async function POST(request) {
               phone ? `電話: ${phone}` : '',
               `カテゴリ: ${categoryLabel}`,
               `希望連絡方法: ${contactPrefLabel}`,
+              referralCode ? `紹介コード: ${referralCode}` : '',
               '',
               '相談内容:',
               message || '（未記入）',

@@ -194,7 +194,7 @@ export default function BusinessPage() {
                   <tr><td>ユーザー</td><td>Mirror 単発分析</td><td><span className={styles.yen}>¥500</span></td></tr>
                   <tr><td>ユーザー</td><td>Mirror サブスク（月3回相当）</td><td><span className={styles.yen}>¥780</span> / 月</td></tr>
                   <tr><td>掲載者</td><td>登録料</td><td><span className={styles.yen}>¥1,100</span></td></tr>
-                  <tr><td>掲載者</td><td>ライト／スタンダード／プレミアム</td><td><span className={styles.yen}>¥5,000〜10,000</span> / 月</td></tr>
+                  <tr><td>掲載者</td><td>ライト／プレミアム（¥7,000はキャンペーン用特別価格として温存）</td><td><span className={styles.yen}>¥5,000〜10,000</span> / 月</td></tr>
                   <tr><td>掲載者</td><td>紹介報酬</td><td><span className={styles.yen}>¥500</span> / 月 × 紹介数</td></tr>
                 </tbody>
               </table>

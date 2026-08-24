@@ -8,7 +8,9 @@ export const metadata = {
   },
 };
 
-export default function ProviderJoinPage() {
+export default function ProviderJoinPage({ searchParams }) {
+  const ref = searchParams?.ref;
+  const inquiryHref = ref ? `/provider/inquiry?ref=${encodeURIComponent(ref)}` : '/provider/inquiry';
   return (
     <main>
       <style>{`
@@ -216,7 +218,7 @@ export default function ProviderJoinPage() {
             </p>
             <p className="join-hero-note">「合わなかった」のではなく「まだ出会っていなかった」。そのユーザーが、今ここにいます。</p>
             <div className="join-cta-row">
-              <a className="btn-gold" href="/provider/inquiry">掲載について相談する</a>
+              <a className="btn-gold" href={inquiryHref}>掲載について相談する</a>
               <a className="btn-ghost-white" href="/provider/philosophy">Finemeの考え方を読む</a>
             </div>
           </div>
@@ -442,9 +444,9 @@ export default function ProviderJoinPage() {
           <div className="join-container" style={{textAlign:'center'}}>
             <div className="sec-eyebrow" style={{justifyContent:'center'}}>Plan</div>
             <h2 className="sec-h2 sec-h2-light">掲載プラン</h2>
-            <p className="sec-lead sec-lead-light">登録料 ¥1,100（初回のみ）＋ 月額プラン3段階。広告費を積み上げるモデルではなく、「合う人に届く仕組み」への投資です。</p>
+            <p className="sec-lead sec-lead-light">登録料 ¥1,100（初回のみ）＋ 月額プラン2段階。広告費を積み上げるモデルではなく、「合う人に届く仕組み」への投資です。</p>
 
-            <div className="plan-grid">
+            <div className="plan-grid" style={{gridTemplateColumns:'1fr 1fr', maxWidth:'620px', margin:'0 auto'}}>
               <div className="plan-card">
                 <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', color:'rgba(201,168,76,.7)', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif"}}>LIGHT</div>
                 <div className="plan-price">¥5,000<small> / 月</small></div>
@@ -458,19 +460,12 @@ export default function ProviderJoinPage() {
                 </ul>
               </div>
               <div className="plan-card highlight">
-                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', color:'rgba(201,168,76,.9)', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif"}}>STANDARD</div>
-                <div className="plan-price">¥7,000<small> / 月</small></div>
+                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', color:'rgba(201,168,76,.9)', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif"}}>PREMIUM</div>
+                <div className="plan-price">¥10,000<small> / 月</small></div>
                 <ul className="plan-list">
                   <li>ライトの内容すべて</li>
                   <li>予約手数料率の優遇</li>
                   <li>検索結果での優先表示</li>
-                </ul>
-              </div>
-              <div className="plan-card">
-                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', color:'rgba(201,168,76,.7)', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif"}}>PREMIUM</div>
-                <div className="plan-price">¥10,000<small> / 月</small></div>
-                <ul className="plan-list">
-                  <li>スタンダードの内容すべて</li>
                   <li>店舗独自の公式LINEからリマインド配信</li>
                 </ul>
               </div>
@@ -542,7 +537,7 @@ export default function ProviderJoinPage() {
               この考え方に少しでも共感したなら——あなたは、Finemeに向いています。
             </p>
             <div className="join-cta-row" style={{justifyContent:'center'}}>
-              <a className="btn-gold" href="/provider/inquiry">まずは話を聞いてみる</a>
+              <a className="btn-gold" href={inquiryHref}>まずは話を聞いてみる</a>
             </div>
             <p className="join-cta-note">※ 無理な勧誘は一切ありません　※ 合わない場合は正直にお伝えします</p>
           </div>

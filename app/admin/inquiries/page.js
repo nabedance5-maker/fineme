@@ -65,7 +65,7 @@ export default function AdminInquiriesPage() {
         if (cat && it.category !== cat) return false;
         if (status && it.status !== status) return false;
         if (q) {
-          const hay = [it.biz_name, it.contact_name, it.email, it.phone, it.message].map(v => (v||'').toLowerCase()).join(' ');
+          const hay = [it.biz_name, it.contact_name, it.email, it.phone, it.referral_code, it.message].map(v => (v||'').toLowerCase()).join(' ');
           if (!hay.includes(q)) return false;
         }
         return true;
@@ -100,6 +100,7 @@ export default function AdminInquiriesPage() {
         td2.colSpan = 8;
         td2.innerHTML = `
           <div class="stack" style="gap:6px;padding:8px 0">
+            ${it.referral_code ? `<div class="badge" style="width:fit-content">紹介コード: ${esc(it.referral_code)}</div>` : ''}
             <div class="msg">${esc(it.message || '')}</div>
             <div class="cluster" style="gap:8px">
               <button class="btn btn-ghost" data-act="done">${isDone ? '未対応に戻す' : '対応済みにする'}</button>
@@ -116,7 +117,7 @@ export default function AdminInquiriesPage() {
           render();
         });
         td2.querySelector('[data-act="copy"]').addEventListener('click', () => {
-          const text = [`【会社/屋号】${it.biz_name||''}`,`【担当者】${it.contact_name||''}`,`【メール】${it.email||''}`,it.phone?`【電話】${it.phone}`:'',`【カテゴリ】${labelCategory(it.category)}`,`【連絡希望】${it.contact_pref||''}`,`【内容】${(it.message||'').trim()}`].filter(Boolean).join('\n');
+          const text = [`【会社/屋号】${it.biz_name||''}`,`【担当者】${it.contact_name||''}`,`【メール】${it.email||''}`,it.phone?`【電話】${it.phone}`:'',`【カテゴリ】${labelCategory(it.category)}`,`【連絡希望】${it.contact_pref||''}`,it.referral_code?`【紹介コード】${it.referral_code}`:'',`【内容】${(it.message||'').trim()}`].filter(Boolean).join('\n');
           navigator.clipboard.writeText(text).catch(()=>{});
         });
         td2.querySelector('[data-act="delete"]').addEventListener('click', async () => {
@@ -139,7 +140,7 @@ export default function AdminInquiriesPage() {
 
     function exportCSV() {
       const arr = filterData(allData);
-      const headers = ['id','created_at','status','biz_name','contact_name','email','phone','category','contact_pref','message'];
+      const headers = ['id','created_at','status','biz_name','contact_name','email','phone','category','contact_pref','referral_code','message'];
       const esc2 = v => '"' + String(v||'').replace(/"/g,'""') + '"';
       const lines = [headers.join(','), ...arr.map(it => headers.map(h => esc2(it[h])).join(','))];
       const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });

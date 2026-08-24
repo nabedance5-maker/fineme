@@ -37,6 +37,11 @@ export default function ProviderInquiryPage() {
         font-size: 13px; color: rgba(255,255,255,.65);
         margin: 0 0 32px; line-height: 1.75;
       }
+      .inq-referral-note {
+        font-size: 12.5px; color: #c9a84c; background: rgba(201,168,76,.08);
+        border: 1px solid rgba(201,168,76,.25); border-radius: 8px;
+        padding: 8px 14px; margin: -16px 0 24px;
+      }
 
       /* ─── Form card ─── */
       .inq-card {
@@ -154,6 +159,15 @@ export default function ProviderInquiryPage() {
     `;
     document.head.appendChild(style);
 
+    const refCode = new URLSearchParams(window.location.search).get('ref');
+    if (refCode) {
+      const noteEl = document.getElementById('inqReferralNote');
+      if (noteEl) {
+        noteEl.textContent = `紹介コード「${refCode}」が適用されます。`;
+        noteEl.style.display = 'block';
+      }
+    }
+
     async function saveInquiry(data) {
       const res = await fetch('/api/provider/inquiry', {
         method: 'POST',
@@ -186,6 +200,7 @@ export default function ProviderInquiryPage() {
         data.phone ? `【電話】${data.phone}` : '',
         data.category ? `【カテゴリ】${mapCategoryLabel(data.category)}` : '',
         `【連絡希望】${data.contactPref}`,
+        data.referralCode ? `【紹介コード】${data.referralCode}` : '',
         `【内容】${(data.message || '').trim()}`
       ].filter(Boolean).join('\n');
     }
@@ -205,7 +220,8 @@ export default function ProviderInquiryPage() {
           phone: fd.get('phone')?.toString().trim(),
           category: fd.get('category')?.toString(),
           contactPref: fd.get('contactPref')?.toString(),
-          message: fd.get('message')?.toString()
+          message: fd.get('message')?.toString(),
+          referralCode: new URLSearchParams(window.location.search).get('ref') || undefined
         };
         const consent = document.getElementById('consent')?.checked;
         if (!data.bizName || !data.contactName || !data.email || !consent) {
@@ -241,7 +257,8 @@ export default function ProviderInquiryPage() {
           phone: fd.get('phone')?.toString().trim() || '',
           category: fd.get('category')?.toString() || '',
           contactPref: fd.get('contactPref')?.toString() || '',
-          message: fd.get('message')?.toString() || ''
+          message: fd.get('message')?.toString() || '',
+          referralCode: refCode || ''
         };
         const text = summarize(data);
         navigator.clipboard.writeText(text).then(() => {
@@ -263,6 +280,7 @@ export default function ProviderInquiryPage() {
         <p className="inq-eyebrow">Provider Inquiry</p>
         <h1 className="inq-title">資料請求・掲載についてのご相談</h1>
         <p className="inq-lead">最短で相談したい方向けの簡易フォームです。2分で完了。</p>
+        <p className="inq-referral-note" id="inqReferralNote" style={{ display: 'none' }}></p>
 
         <div className="inq-card">
           <form id="provider-inquiry-form" noValidate>
