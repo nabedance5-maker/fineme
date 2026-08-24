@@ -28,6 +28,8 @@ export async function PATCH(request, { params }) {
   if (body.credentials !== undefined)      updates.credentials      = body.credentials ? String(body.credentials).slice(0, 400) : null;
   if (body.is_featured !== undefined)      updates.is_featured      = !!body.is_featured;
   if (body.sort_order !== undefined)       updates.sort_order       = Number(body.sort_order) || 0;
+  if (body.strong_types !== undefined)     updates.strong_types     = Array.isArray(body.strong_types) ? body.strong_types : [];
+  if (body.strong_axes !== undefined)      updates.strong_axes      = Array.isArray(body.strong_axes) ? body.strong_axes : [];
 
   const { data, error } = await supabase
     .from('provider_staff')

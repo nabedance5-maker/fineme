@@ -592,6 +592,7 @@ export default function ProviderDashboardPage() {
       const editTitle = document.getElementById('staff-edit-title');
 
       function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+      const STAFF_AXIS_LABEL = { eyebrow: '眉', skin: '肌', hair: 'ヘア', expression: '表情', posture: '姿勢', body: '体型', fashion: 'ファッション' };
 
       async function loadStaff() {
         if (!listEl) return;
@@ -617,6 +618,8 @@ export default function ProviderDashboardPage() {
               </div>
               ${s.experience_years ? `<span style="font-size:11px;color:#059669">経験${s.experience_years}年</span>` : ''}
               ${s.bio ? `<p style="font-size:12px;color:#9ca3af;margin:4px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.bio.slice(0, 60))}${s.bio.length > 60 ? '…' : ''}</p>` : ''}
+              ${(s.strong_axes || []).length ? `<div style="margin-top:4px;">${(s.strong_axes || []).map(a => `<span style="font-size:10px;padding:1px 6px;border-radius:99px;background:#eff6ff;color:#2563eb;margin-right:4px;">${esc(STAFF_AXIS_LABEL[a] || a)}</span>`).join('')}</div>` : ''}
+              ${s.assignedCount != null ? `<p style="font-size:11px;color:#9ca3af;margin:4px 0 0;">担当${s.assignedCount}人${s.repeatRate != null ? `／リピート率${s.repeatRate}%` : ''}${s.designationRate != null ? `／指名率${s.designationRate}%` : ''}</p>` : ''}
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0">
               <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" data-staff-edit="${s.id}">編集</button>
@@ -635,6 +638,8 @@ export default function ProviderDashboardPage() {
           editForm.elements['is_featured'].checked = !!s.is_featured;
           editForm.elements['sort_order'].value   = s.sort_order ?? 0;
           editForm.elements['_staff_id'].value    = s.id;
+          editForm.elements['strong_types_text'].value = (s.strong_types || []).join(', ');
+          document.querySelectorAll('#staff-strong-axes input').forEach(cb => { cb.checked = (s.strong_axes || []).includes(cb.value); });
           const prev = document.getElementById('staff-photo-preview');
           const prevWrap = document.getElementById('staff-photo-preview-wrap');
           const urlEl  = document.getElementById('staff-photo-url');
@@ -671,6 +676,8 @@ export default function ProviderDashboardPage() {
           credentials: fd.get('credentials') || null,
           is_featured: !!editForm.elements['is_featured'].checked,
           sort_order: Number(fd.get('sort_order')) || 0,
+          strong_axes: Array.from(document.querySelectorAll('#staff-strong-axes input:checked')).map(i => i.value),
+          strong_types: String(fd.get('strong_types_text') || '').split(',').map(s => s.trim()).filter(Boolean),
         };
         const url = id ? `/api/provider/staff/${id}` : '/api/provider/staff';
         const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(body) });
@@ -1292,6 +1299,59 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'area-demand') loadAreaDemand();
     })();
 
+    // ── LTV/CACタブ ───────────────────────────────────────────────
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const adCostInput = document.getElementById('lc-ad-cost');
+      const marginInput = document.getElementById('lc-margin');
+      const settingsSaveBtn = document.getElementById('lc-settings-save-btn');
+      const settingsMsg = document.getElementById('lc-settings-msg');
+      const contentEl = document.getElementById('ltv-cac-content');
+      if (!contentEl) return;
+
+      async function loadSettings() {
+        const res = await fetch('/api/provider/ltv-cac-settings', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) return;
+        const data = await res.json();
+        adCostInput.value = data.monthly_ad_cost;
+        marginInput.value = data.gross_margin_pct;
+      }
+
+      async function loadContent() {
+        contentEl.innerHTML = '<p class="muted" style="font-size:13px;">読み込み中…</p>';
+        const res = await fetch('/api/provider/ltv-cac', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) { contentEl.innerHTML = '<p class="muted" style="font-size:13px;color:#ef4444;">取得エラー</p>'; return; }
+        const d = await res.json();
+        if (!d.hasData) { contentEl.innerHTML = '<p class="muted" style="font-size:13px;">まだ来店済みの予約データがありません。</p>'; return; }
+        contentEl.innerHTML = `
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+            <div class="stat-card"><div class="stat-value">¥${d.ltv.toLocaleString()}</div><div class="stat-label">LTV（概算）</div></div>
+            <div class="stat-card"><div class="stat-value">${d.cac != null ? '¥' + d.cac.toLocaleString() : '—'}</div><div class="stat-label">CAC（概算・直近12ヶ月）</div></div>
+            <div class="stat-card"><div class="stat-value">${d.paybackVisits ?? '—'}</div><div class="stat-label">回収に必要な来店回数</div></div>
+          </div>
+          <p class="muted" style="font-size:12px;margin-top:12px;">
+            顧客数${d.customerCount}人／来店${d.totalVisits}回／平均客単価¥${d.avgSpend.toLocaleString()}／平均リピート回数${d.avgRepeatVisits}回／直近12ヶ月の新規${d.newCustomersLast12Months}人
+          </p>
+        `;
+      }
+
+      if (settingsSaveBtn) settingsSaveBtn.addEventListener('click', async () => {
+        settingsSaveBtn.disabled = true; settingsMsg.textContent = '';
+        const res = await fetch('/api/provider/ltv-cac-settings', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ monthly_ad_cost: adCostInput.value, gross_margin_pct: marginInput.value }),
+        });
+        if (res.ok) { settingsMsg.style.color = '#059669'; settingsMsg.textContent = '✓ 保存しました'; loadContent(); }
+        else { settingsMsg.style.color = '#ef4444'; settingsMsg.textContent = '保存に失敗しました'; }
+        settingsSaveBtn.disabled = false;
+      });
+
+      function loadLtvCacTab() { loadSettings(); loadContent(); }
+      document.querySelectorAll('[data-tab="ltv-cac"]').forEach(btn => btn.addEventListener('click', loadLtvCacTab, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'ltv-cac') loadLtvCacTab();
+    })();
+
     // ── 画像圧縮ヘルパー（Canvas, max 1200px, JPEG/WebP 0.85） ────
     function compressImage(file, maxPx = 1200, quality = 0.85) {
       return new Promise((resolve) => {
@@ -1808,7 +1868,7 @@ export default function ProviderDashboardPage() {
 
       document.getElementById('copy-referral-url-btn')?.addEventListener('click', () => {
         if (!fnCode) { showToast('紹介コードが設定されていません'); return; }
-        const url = `https://www.fineme.me/pages/provider/join.html?ref=${encodeURIComponent(fnCode)}`;
+        const url = `https://www.fineme.me/provider/join?ref=${encodeURIComponent(fnCode)}`;
         navigator.clipboard.writeText(url).then(() => showToast('紹介URLをコピーしました')).catch(() => {});
       });
 
@@ -1949,6 +2009,7 @@ export default function ProviderDashboardPage() {
           <button className="tab-btn" data-tab="landing">🌐 LP設定</button>
           <button className="tab-btn" data-tab="area-demand">📍 エリア需要</button>
           <button className="tab-btn" data-tab="scripts">💡 接客の引き出し</button>
+          <button className="tab-btn" data-tab="ltv-cac">📊 LTV/CAC</button>
           <button className="tab-btn" data-tab="service">サービス設定</button>
           <button className="tab-btn" data-tab="publish">公開設定</button>
           <button className="tab-btn" data-tab="billing">課金・プラン</button>
@@ -2206,6 +2267,22 @@ export default function ProviderDashboardPage() {
               </div>
               <div className="form-field"><label>資格・経歴</label><textarea name="credentials" placeholder={"例: NSCA認定パーソナルトレーナー\n元プロサッカー選手 8年"} style={{ minHeight: '80px' }}></textarea></div>
               <div className="form-field"><label>自己紹介・一言メッセージ</label><textarea name="bio" placeholder="例: 「外見を整えることは、生き方を整えること」。一人ひとりのペースで、一緒に歩んでいきます。" style={{ minHeight: '100px' }}></textarea></div>
+              <div className="form-field">
+                <label>得意軸（複数選択可）</label>
+                <div className="checkbox-group" id="staff-strong-axes">
+                  <label className="checkbox-item"><input type="checkbox" value="eyebrow" /> 眉</label>
+                  <label className="checkbox-item"><input type="checkbox" value="skin" /> 肌</label>
+                  <label className="checkbox-item"><input type="checkbox" value="hair" /> ヘア</label>
+                  <label className="checkbox-item"><input type="checkbox" value="expression" /> 表情</label>
+                  <label className="checkbox-item"><input type="checkbox" value="posture" /> 姿勢</label>
+                  <label className="checkbox-item"><input type="checkbox" value="body" /> 体型</label>
+                  <label className="checkbox-item"><input type="checkbox" value="fashion" /> ファッション</label>
+                </div>
+              </div>
+              <div className="form-field">
+                <label>得意タイプ（任意・カンマ区切り）</label>
+                <input name="strong_types_text" placeholder="例: 知的クール, 信頼アクティブ" />
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                 <input type="checkbox" name="is_featured" id="staff-is-featured" />
                 <label htmlFor="staff-is-featured" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>担当スタッフとして優先表示する</label>
@@ -2766,6 +2843,38 @@ export default function ProviderDashboardPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* LTV/CAC：店舗単位の概算（メニュー別の紐づけデータが無いため店舗全体で算出） */}
+        <div className="tab-pane" id="tab-ltv-cac">
+          <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>LTV・CAC設定</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                広告費（Fineme経由以外で払っている集客コスト）と粗利率を入力すると、下の概算に反映されます。
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="form-field" style={{ minWidth: '160px' }}>
+                <label>月間広告費（円・任意）</label>
+                <input id="lc-ad-cost" type="number" min="0" placeholder="0" />
+              </div>
+              <div className="form-field" style={{ minWidth: '140px' }}>
+                <label>粗利率（%）</label>
+                <input id="lc-margin" type="number" min="0" max="100" placeholder="70" />
+              </div>
+              <button className="btn" id="lc-settings-save-btn" type="button">保存する</button>
+              <span id="lc-settings-msg" className="muted" style={{ fontSize: '13px' }}></span>
+            </div>
+          </div>
+
+          <div className="card stack" style={{ padding: '24px', gap: '12px' }}>
+            <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>概算（店舗全体）</h2>
+            <p className="muted" style={{ fontSize: '12px', margin: 0 }}>
+              メニュー別の来店データが無いため、店舗全体での概算です。予約（来店済み）の実績から算出しています。
+            </p>
+            <div id="ltv-cac-content"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
           </div>
         </div>
 
