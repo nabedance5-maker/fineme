@@ -1100,13 +1100,27 @@ export default function DiagnosisResultPage() {
         const hasMatch = (top3[0]?.match_score || 0) > 0;
         const title    = hasMatch ? 'あなたのプロファイルに一致するプロ' : '掲載中のプロ';
         const subtitle = hasMatch ? 'スキャン結果・変容軸・プロフィール充実度から自動マッチング' : '現在掲載中のプロをご覧ください';
+
+        // 診断起点LP（店舗が該当軸のメニューを公開していれば専用ページへ、無ければ通常の店舗ページへ）
+        const landingHrefs = {};
+        if (compassFirst) {
+          await Promise.all(top3.filter(prov => prov.entity_type !== 'affiliate').map(async (prov) => {
+            try {
+              const lres = await fetch(`/api/providers/${prov.slug}/landing?axis=${encodeURIComponent(compassFirst)}`);
+              if (!lres.ok) return;
+              const ldata = await lres.json();
+              if (ldata?.hasContent) landingHrefs[prov.slug] = `/provider/${prov.slug}/for/${encodeURIComponent(compassFirst)}`;
+            } catch {}
+          }));
+        }
+
         slot.innerHTML = `
           <p class="sec-label" style="margin-top:28px">Pro Match</p>
           <div class="result-card">
             <div class="result-card-title">✨ ${esc(title)}</div>
             <div class="result-card-subtitle">${esc(subtitle)}</div>
             ${top3.map((prov, i) => `
-              <a href="${prov.entity_type === 'affiliate' ? '/affiliate' : '/provider'}/${esc(prov.slug)}" class="pmc-card${i===0&&hasMatch?' top':''}">
+              <a href="${landingHrefs[prov.slug] || (prov.entity_type === 'affiliate' ? '/affiliate' : '/provider') + '/' + esc(prov.slug)}" class="pmc-card${i===0&&hasMatch?' top':''}">
                 <div class="pmc-photo">${prov.photo_url ? `<img src="${esc(prov.photo_url)}" alt="${esc(prov.name)}" loading="lazy">` : '<span class="pmc-photo-icon">🧑</span>'}</div>
                 <div class="pmc-body">
                   <div class="pmc-name">${esc(prov.name)}</div>

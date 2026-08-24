@@ -490,6 +490,9 @@ export default function MypageProfilePage() {
                   />
                   <span style={{ fontSize: '14px', color: 'rgba(232,228,220,0.90)' }}>変容ロードマップを公開する</span>
                 </label>
+                <p style={{ fontSize: '13px', margin: '14px 0 0' }}>
+                  <a href="/mypage/case-approvals" style={{ color: 'rgba(232,228,220,0.85)' }}>店舗からの施術事例（Before/After）公開リクエストを確認する →</a>
+                </p>
               </div>
 
               <div className="row" style={{ gap: '12px', alignItems: 'center' }}>

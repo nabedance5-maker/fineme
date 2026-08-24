@@ -1,4 +1,4 @@
--- 未適用（本番Supabaseで実行してください）
+-- ✅ 本番適用済 2026-08-24
 -- 顧客カルテ拡張（店舗SaaS実装仕様書 SAAS-001・簡略版）
 -- 元チケットは visit_count/last_visit_at/ltv_predicted も列として持つ設計だったが、
 -- 来店回数・最終来店日は user_service_logs / user_service_log_visits から都度算出する方が

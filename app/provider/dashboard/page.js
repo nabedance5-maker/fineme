@@ -1123,6 +1123,143 @@ export default function ProviderDashboardPage() {
       });
     })();
 
+    // ── LP設定タブ（メニュー・施術事例） ─────────────────────────
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+
+      function escLp(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      const AXIS_LABEL_LP = { eyebrow: '眉', skin: '肌', hair: 'ヘア', expression: '表情', posture: '姿勢', body: '体型', fashion: 'ファッション' };
+
+      // ── メニュー ──
+      const menuForm = document.getElementById('menu-form');
+      const menuList = document.getElementById('menu-list');
+      const menuMsg = document.getElementById('menu-msg');
+
+      async function loadMenus() {
+        if (!menuList) return;
+        menuList.innerHTML = '<p class="muted" style="font-size:13px;">読み込み中…</p>';
+        const res = await fetch('/api/provider/experience-menus', { headers: { 'Authorization': `Bearer ${token}` } });
+        const items = res.ok ? await res.json() : [];
+        if (!items.length) { menuList.innerHTML = '<p class="muted" style="font-size:13px;">まだメニューがありません。</p>'; return; }
+        menuList.innerHTML = items.map(m => `
+          <div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:8px;background:#fff;">
+            <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+              <strong style="color:#111827;">${escLp(m.name)}</strong>
+              <span style="font-size:13px;color:#6b7280;">¥${Number(m.price).toLocaleString()}／${m.duration_min}分</span>
+            </div>
+            <div style="font-size:12px;color:#9ca3af;margin-top:4px;">${(m.axes || []).map(a => AXIS_LABEL_LP[a] || a).join('・') || '軸未設定'}</div>
+            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:4px 10px;margin-top:6px;" data-menu-del="${m.id}">削除</button>
+          </div>
+        `).join('');
+        menuList.querySelectorAll('[data-menu-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('このメニューを削除しますか？')) return;
+          await fetch(`/api/provider/experience-menus/${btn.dataset.menuDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+          loadMenus();
+        }));
+      }
+
+      if (menuForm) {
+        menuForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const submitBtn = document.getElementById('menu-submit-btn');
+          submitBtn.disabled = true; menuMsg.textContent = '';
+          const axes = Array.from(document.querySelectorAll('#menu-axes input:checked')).map(i => i.value);
+          const res = await fetch('/api/provider/experience-menus', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+              name: document.getElementById('menu-name').value,
+              price: document.getElementById('menu-price').value,
+              duration_min: document.getElementById('menu-duration').value,
+              axes,
+              description: document.getElementById('menu-desc').value,
+            }),
+          });
+          if (res.ok) {
+            menuMsg.style.color = '#059669'; menuMsg.textContent = '✓ 追加しました';
+            menuForm.reset();
+            loadMenus();
+          } else {
+            const d = await res.json(); menuMsg.style.color = '#ef4444'; menuMsg.textContent = d.error || '追加に失敗しました';
+          }
+          submitBtn.disabled = false;
+        });
+      }
+
+      // ── 施術事例 ──
+      const caseForm = document.getElementById('case-form');
+      const caseUserSel = document.getElementById('case-user');
+      const caseList = document.getElementById('case-list');
+      const caseMsg = document.getElementById('case-msg');
+
+      async function loadCaseCustomers() {
+        if (!caseUserSel) return;
+        const res = await fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${token}` } });
+        const items = res.ok ? await res.json() : [];
+        const seen = new Set();
+        const opts = ['<option value="">お客様を選択</option>'];
+        items.forEach(c => {
+          if (seen.has(c.user_id)) return;
+          seen.add(c.user_id);
+          opts.push(`<option value="${c.user_id}">${escLp(c.customer_name)}</option>`);
+        });
+        caseUserSel.innerHTML = opts.join('');
+      }
+
+      async function loadCases() {
+        if (!caseList) return;
+        caseList.innerHTML = '<p class="muted" style="font-size:13px;">読み込み中…</p>';
+        const res = await fetch('/api/provider/cases', { headers: { 'Authorization': `Bearer ${token}` } });
+        const items = res.ok ? await res.json() : [];
+        if (!items.length) { caseList.innerHTML = '<p class="muted" style="font-size:13px;">まだ事例がありません。</p>'; return; }
+        caseList.innerHTML = items.map(c => `
+          <div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:8px;background:#fff;">
+            <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;">
+              <span style="font-size:13px;color:#111827;">${AXIS_LABEL_LP[c.axis] || c.axis}：${c.before_score} → ${c.after_score}</span>
+              <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;${c.approved_by_user ? 'background:#f0fdf4;color:#16a34a;' : 'background:#fffbeb;color:#d97706;'}">${c.approved_by_user ? '公開中' : '承認待ち'}</span>
+            </div>
+            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:4px 10px;margin-top:6px;" data-case-del="${c.id}">削除</button>
+          </div>
+        `).join('');
+        caseList.querySelectorAll('[data-case-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('この事例を削除しますか？')) return;
+          await fetch(`/api/provider/cases/${btn.dataset.caseDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+          loadCases();
+        }));
+      }
+
+      if (caseForm) {
+        caseForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const submitBtn = document.getElementById('case-submit-btn');
+          if (!caseUserSel.value) { caseMsg.style.color = '#ef4444'; caseMsg.textContent = 'お客様を選択してください'; return; }
+          submitBtn.disabled = true; caseMsg.textContent = '';
+          const res = await fetch('/api/provider/cases', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+              user_id: caseUserSel.value,
+              axis: document.getElementById('case-axis').value,
+              before_score: document.getElementById('case-before').value,
+              after_score: document.getElementById('case-after').value,
+              image_url: document.getElementById('case-image').value || null,
+            }),
+          });
+          if (res.ok) {
+            caseMsg.style.color = '#059669'; caseMsg.textContent = '✓ 登録しました。お客様の承認をお待ちください';
+            caseForm.reset();
+            loadCases();
+          } else {
+            const d = await res.json(); caseMsg.style.color = '#ef4444'; caseMsg.textContent = d.error || '登録に失敗しました';
+          }
+          submitBtn.disabled = false;
+        });
+      }
+
+      function loadLandingTab() { loadMenus(); loadCaseCustomers(); loadCases(); }
+      document.querySelectorAll('[data-tab="landing"]').forEach(btn => btn.addEventListener('click', loadLandingTab, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'landing') loadLandingTab();
+    })();
+
     // ── 画像圧縮ヘルパー（Canvas, max 1200px, JPEG/WebP 0.85） ────
     function compressImage(file, maxPx = 1200, quality = 0.85) {
       return new Promise((resolve) => {
@@ -1777,6 +1914,7 @@ export default function ProviderDashboardPage() {
           <button className="tab-btn" data-tab="customers">🗒️ New Me Log</button>
           <button className="tab-btn" data-tab="line-channel">💬 LINE連携</button>
           <button className="tab-btn" data-tab="reviews">⭐ クチコミ</button>
+          <button className="tab-btn" data-tab="landing">🌐 LP設定</button>
           <button className="tab-btn" data-tab="service">サービス設定</button>
           <button className="tab-btn" data-tab="publish">公開設定</button>
           <button className="tab-btn" data-tab="billing">課金・プラン</button>
@@ -2463,6 +2601,97 @@ export default function ProviderDashboardPage() {
               <button type="submit" className="btn" id="rv-submit-btn">保存する</button>
               <p id="rv-msg" className="muted" style={{ fontSize: '13px' }}></p>
             </form>
+          </div>
+        </div>
+
+        {/* LP設定：診断起点で表示される専用ページ用のメニュー・施術事例 */}
+        <div className="tab-pane" id="tab-landing">
+          <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>体験メニュー</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                診断結果からの専用ページ（fineme.me/provider/{'{'}あなたの店舗{'}'}/for/{'{'}軸{'}'}）に表示するメニューです。対応する軸（Mirrorの7軸）を選んでください。
+              </p>
+            </div>
+            <form id="menu-form" className="stack" style={{ gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div className="form-field" style={{ flex: '1 1 200px' }}>
+                  <label>メニュー名</label>
+                  <input id="menu-name" type="text" placeholder="例：眉デザイン×スキンケア体験" required />
+                </div>
+                <div className="form-field" style={{ minWidth: '110px' }}>
+                  <label>価格（円）</label>
+                  <input id="menu-price" type="number" min="0" required />
+                </div>
+                <div className="form-field" style={{ minWidth: '110px' }}>
+                  <label>所要時間（分）</label>
+                  <input id="menu-duration" type="number" min="0" required />
+                </div>
+              </div>
+              <div className="form-field">
+                <label>対応軸（複数選択可）</label>
+                <div className="checkbox-group" id="menu-axes">
+                  <label className="checkbox-item"><input type="checkbox" value="eyebrow" /> 眉</label>
+                  <label className="checkbox-item"><input type="checkbox" value="skin" /> 肌</label>
+                  <label className="checkbox-item"><input type="checkbox" value="hair" /> ヘア</label>
+                  <label className="checkbox-item"><input type="checkbox" value="expression" /> 表情</label>
+                  <label className="checkbox-item"><input type="checkbox" value="posture" /> 姿勢</label>
+                  <label className="checkbox-item"><input type="checkbox" value="body" /> 体型</label>
+                  <label className="checkbox-item"><input type="checkbox" value="fashion" /> ファッション</label>
+                </div>
+              </div>
+              <div className="form-field">
+                <label>説明</label>
+                <textarea id="menu-desc" placeholder="メニューの内容・特徴など"></textarea>
+              </div>
+              <button type="submit" className="btn" id="menu-submit-btn">メニューを追加する</button>
+              <p id="menu-msg" className="muted" style={{ fontSize: '13px' }}></p>
+            </form>
+            <div id="menu-list" style={{ marginTop: '8px' }}></div>
+          </div>
+
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>施術事例（Before/After）</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                New Me Logで紐づいているお客様の事例を登録できます。<strong>お客様本人が承認するまで公開されません</strong>（マイページから承認）。
+              </p>
+            </div>
+            <form id="case-form" className="stack" style={{ gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div className="form-field" style={{ flex: '1 1 200px' }}>
+                  <label>お客様</label>
+                  <select id="case-user" required></select>
+                </div>
+                <div className="form-field" style={{ minWidth: '140px' }}>
+                  <label>軸</label>
+                  <select id="case-axis">
+                    <option value="eyebrow">眉</option>
+                    <option value="skin">肌</option>
+                    <option value="hair">ヘア</option>
+                    <option value="expression">表情</option>
+                    <option value="posture">姿勢</option>
+                    <option value="body">体型</option>
+                    <option value="fashion">ファッション</option>
+                  </select>
+                </div>
+                <div className="form-field" style={{ minWidth: '90px' }}>
+                  <label>Before</label>
+                  <input id="case-before" type="number" min="0" max="100" required />
+                </div>
+                <div className="form-field" style={{ minWidth: '90px' }}>
+                  <label>After</label>
+                  <input id="case-after" type="number" min="0" max="100" required />
+                </div>
+              </div>
+              <div className="form-field">
+                <label>画像URL（任意）</label>
+                <input id="case-image" type="url" placeholder="https://..." />
+              </div>
+              <button type="submit" className="btn" id="case-submit-btn">事例を登録する（承認依頼を送る）</button>
+              <p id="case-msg" className="muted" style={{ fontSize: '13px' }}></p>
+            </form>
+            <div id="case-list" style={{ marginTop: '8px' }}></div>
           </div>
         </div>
 
