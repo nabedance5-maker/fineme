@@ -1868,7 +1868,7 @@ export default function ProviderDashboardPage() {
 
       document.getElementById('copy-referral-url-btn')?.addEventListener('click', () => {
         if (!fnCode) { showToast('紹介コードが設定されていません'); return; }
-        const url = `https://www.fineme.me/provider/join?ref=${encodeURIComponent(fnCode)}`;
+        const url = `https://www.fineme.me/business/fineme-referral.html?ref=${encodeURIComponent(fnCode)}`;
         navigator.clipboard.writeText(url).then(() => showToast('紹介URLをコピーしました')).catch(() => {});
       });
 

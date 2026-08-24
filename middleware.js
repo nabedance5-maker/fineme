@@ -36,6 +36,8 @@ export function middleware(request) {
   const BUSINESS_PUBLIC_PATHS = [
     '/business/store-saas-pitch-deck.html',
     '/business/line-connect-guide',
+    '/business/fineme-provider-pitch.html',
+    '/business/fineme-referral.html',
   ]
   if (
     request.nextUrl.pathname.startsWith('/business/') &&
