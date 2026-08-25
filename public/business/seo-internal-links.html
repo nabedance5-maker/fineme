@@ -279,8 +279,9 @@ function removeRelated(fromSlug, toSlug) {
 function openAddRelated(fromSlug) {
   const art = allArticles.find(a => a.slug === fromSlug);
   const current = pendingChanges[fromSlug] ?? (art?.related_slugs || []);
+  const fromTrack = art?.track || 'male';
   const options = allArticles
-    .filter(a => a.slug !== fromSlug && !current.includes(a.slug))
+    .filter(a => a.slug !== fromSlug && !current.includes(a.slug) && (a.track || 'male') === fromTrack)
     .map(a => `<option value="${a.slug}">[${a.category||''}] ${a.title.slice(0,50)}</option>`)
     .join('');
   const sel = document.createElement('select');
@@ -374,6 +375,7 @@ function tokenize(text) {
 
 function scoreRelation(a, b) {
   if (a.slug === b.slug) return -1;
+  if ((a.track || 'male') !== (b.track || 'male')) return -1; // Fineme/Belleを跨いで紐付けない
   let score = 0;
   // カテゴリ一致ボーナス
   if (a.category && a.category === b.category) score += 10;
@@ -469,7 +471,8 @@ async function startGenerate() {
 
   const byCategory = {};
   targets.forEach(a => {
-    const cat = a.category || 'その他';
+    const track = a.track || 'male';
+    const cat = `${track}::${a.category || 'その他'}`;
     if (!byCategory[cat]) byCategory[cat] = [];
     byCategory[cat].push(a);
   });
@@ -484,6 +487,7 @@ async function startGenerate() {
     for (let i = 0; i < articles.length; i += batchSize) {
       if (stopFlag) break;
       const batch = articles.slice(i, i + batchSize);
+      // articlesは既にtrack::category単位でグルーピング済み（Fineme/Belleを跨がない）
       const allInCat = articles;
 
       const prompt = buildPrompt(batch, allInCat);
