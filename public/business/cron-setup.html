@@ -49,6 +49,8 @@
   .badge-weekly { background: rgba(201,168,76,0.15); color: var(--gold); }
   .badge-monthly { background: rgba(100,150,255,0.15); color: #6496ff; }
   .badge-2h { background: rgba(255,100,100,0.12); color: #ff6464; }
+  .badge-hourly { background: rgba(255,180,80,0.15); color: #ffb450; }
+  .badge-manual { background: rgba(255,255,255,0.08); color: var(--muted); }
   .tip { font-size: 12px; color: var(--muted); margin-top: 16px; line-height: 1.7; padding: 12px 16px; background: rgba(201,168,76,0.04); border-left: 3px solid rgba(201,168,76,0.3); border-radius: 0 8px 8px 0; }
   .status-btn { padding: 6px 12px; background: transparent; border: 1px solid var(--border); border-radius: 7px; color: var(--muted); font-size: 11px; cursor: pointer; }
   .status-btn:hover { border-color: var(--gold); color: var(--gold); }
@@ -81,7 +83,7 @@
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <div class="step-body">下の表の各行の設定を入力して保存（9件 × 3〜4分 = 約30分）</div>
+      <div class="step-body">下の表の各行の設定を入力して保存（32件 × 3〜4分 = 約2時間。バッジ「手動」の1件はcron-job.org登録不要）</div>
     </div>
     <div class="step">
       <div class="step-num">4</div>
@@ -110,7 +112,8 @@
   </div>
 
   <!-- Cron一覧 -->
-  <div class="section-label">Cronジョブ一覧（9件）</div>
+  <div class="section-label">Cronジョブ一覧（33件・うち手動専用1件）</div>
+  <p class="intro" style="margin-top:-24px">2026-08-07に app/api/cron/ 配下の実ファイルと突き合わせて全件洗い出し。時刻に「要確認」と付いているものはコード内に明記が無く暫定値です。cron-job.org設定前にコードを直接確認してください。</p>
   <table class="cron-table">
     <thead>
       <tr>
@@ -219,10 +222,228 @@ const JOBS = [
     authHeader: 'Authorization',
     authValue: `Bearer ${CRON_SECRET}`,
   },
+  {
+    name: 'Belle記事自動生成',
+    path: '/api/cron/belle-article',
+    cron: '0 4 * * *',
+    jst: '毎日 13:00',
+    badge: 'daily',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: '誕生日ナッジ（New Me Log連携店舗）',
+    path: '/api/cron/birthday-nudge',
+    cron: '0 0 * * *',
+    jst: '毎日 9:00（要確認）',
+    badge: 'daily',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: 'Mirrorセッション削除（解約90日後）',
+    path: '/api/cron/cleanup-mirror-sessions',
+    cron: '0 2 * * *',
+    jst: '毎日 11:00',
+    badge: 'daily',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: '未購入Mirror写真の削除（期限超過）',
+    path: '/api/cron/cleanup-unpaid-mirror-photos',
+    cron: '0 3 * * *',
+    jst: '毎日 12:00',
+    badge: 'daily',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: '特集記事自動生成（男性向け）',
+    path: '/api/cron/feature-article',
+    cron: '0 3 * * *',
+    jst: '毎日 12:00',
+    badge: 'daily',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: 'New Me Log リマインド',
+    path: '/api/cron/log-reminder',
+    cron: '0 0 * * *',
+    jst: '毎日 9:00（月曜はweekly-nudgeに譲る）',
+    badge: 'daily',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: 'Mirror再撮影ナッジ（14/30日後）',
+    path: '/api/cron/mirror-reshoot-nudge',
+    cron: '0 0 * * *',
+    jst: '毎日 9:00（要確認）',
+    badge: 'daily',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+    note: '⚠️ supabase-reshoot-nudge.sqlが本番未適用の場合は安全にスキップされる',
+  },
+  {
+    name: 'Mirror購入後アンケート依頼メール',
+    path: '/api/cron/mirror-voice-request',
+    cron: '0 * * * *',
+    jst: '毎時',
+    badge: 'hourly',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: 'note下書き生成（集客用）',
+    path: '/api/cron/note-draft',
+    cron: '0 0 * * 3',
+    jst: '毎週水曜 9:00',
+    badge: 'weekly',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: '収益note下書き生成',
+    path: '/api/cron/note-money-draft',
+    cron: '—',
+    jst: '手動トリガー専用（cron登録不要）',
+    badge: 'manual',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+    note: '2026-07-10に定期cronから除外済み。noteは公開後は完成品のため定期生成しない',
+  },
+  {
+    name: 'PDCA批評（辛口レビュー）',
+    path: '/api/cron/pdca-critic',
+    cron: '0 21 * * *',
+    jst: '毎日 6:00',
+    badge: 'daily',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: 'PDCA日次（中枢）',
+    path: '/api/cron/pdca-daily',
+    cron: '0 22 * * *',
+    jst: '毎日 7:00',
+    badge: 'daily',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: 'Pinterestピン下書き生成',
+    path: '/api/cron/pinterest-draft',
+    cron: '0 1 * * 4',
+    jst: '毎週木曜 10:00',
+    badge: 'weekly',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: '掲載者へNew Me Log紹介案内',
+    path: '/api/cron/provider-log-toolkit-announce',
+    cron: '0 1 * * *',
+    jst: '毎日 10:00',
+    badge: 'daily',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: '借り場リーチ候補スカウト（知恵袋等）',
+    path: '/api/cron/qanda-scout',
+    cron: '0 1 * * 1',
+    jst: '毎週月曜 10:00',
+    badge: 'weekly',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: 'Googleクチコミ依頼',
+    path: '/api/cron/review-request',
+    cron: '0 0 * * *',
+    jst: '毎日 9:00（要確認）',
+    badge: 'daily',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: 'SEO一括インデックス送信',
+    path: '/api/cron/seo-bulk-submit',
+    cron: '0 0 * * 1',
+    jst: '毎週月曜 9:00（要確認・手動実行でも可）',
+    badge: 'weekly',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: 'SEO改善（内部リンク等）',
+    path: '/api/cron/seo-improve',
+    cron: '30 0 * * 1',
+    jst: '毎週月曜 9:30',
+    badge: 'weekly',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: 'SNSトレンド下書き生成',
+    path: '/api/cron/sns-trend-draft',
+    cron: '0 0 * * 0',
+    jst: '毎週日曜 9:00',
+    badge: 'weekly',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: 'Threads下書き生成',
+    path: '/api/cron/threads-draft',
+    cron: '0 23 * * *',
+    jst: '毎日 8:00（翌日）',
+    badge: 'daily',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: 'Threadsインサイト取得',
+    path: '/api/cron/threads-insights',
+    cron: '0 16 * * *',
+    jst: '毎日 1:00（翌日）',
+    badge: 'daily',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: 'Threadsトークンリフレッシュ',
+    path: '/api/cron/threads-token-refresh',
+    cron: '0 0 1 * *',
+    jst: '毎月1日 9:00',
+    badge: 'monthly',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: 'X自動リプライ・エンゲージ',
+    path: '/api/cron/x-engage',
+    cron: '0 0 * * *',
+    jst: '毎日 9:00',
+    badge: 'daily',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
+  {
+    name: 'X自動投稿',
+    path: '/api/cron/x-post',
+    cron: '0 0 * * *',
+    jst: '毎日 9:00',
+    badge: 'daily',
+    authHeader: 'Authorization',
+    authValue: `Bearer ${CRON_SECRET}`,
+  },
 ];
 
-const badgeClass = { daily: 'badge-daily', weekly: 'badge-weekly', monthly: 'badge-monthly', '2h': 'badge-2h' };
-const badgeLabel = { daily: '毎日', weekly: '毎週', monthly: '毎月', '2h': '2時間' };
+const badgeClass = { daily: 'badge-daily', weekly: 'badge-weekly', monthly: 'badge-monthly', '2h': 'badge-2h', hourly: 'badge-hourly', manual: 'badge-manual' };
+const badgeLabel = { daily: '毎日', weekly: '毎週', monthly: '毎月', '2h': '2時間', hourly: '毎時', manual: '手動' };
 
 function renderTable() {
   const tbody = document.getElementById('cron-tbody');
