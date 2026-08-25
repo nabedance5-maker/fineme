@@ -188,6 +188,46 @@
   .reality-note{font-size:11px;color:#7a7472;margin-top:14px;line-height:1.7}
   @media(max-width:640px){.reality-board{padding:24px 20px}.reality-kpi-row{flex-direction:column}}
 
+  /* Resource menu（資料・ツール一覧） */
+  .resource-fab{
+    position:fixed;bottom:24px;left:24px;
+    display:flex;align-items:center;gap:8px;
+    padding:11px 20px;
+    background:rgba(10,15,30,.95);
+    color:#e8e2d4;border:1.5px solid rgba(201,168,76,.5);border-radius:99px;
+    font-size:13px;font-weight:800;font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.4);
+    z-index:100;
+  }
+  .resource-overlay{
+    display:none;position:fixed;inset:0;background:rgba(4,7,16,.75);z-index:200;
+  }
+  .resource-overlay.open{display:block}
+  .resource-panel{
+    position:fixed;top:0;left:0;bottom:0;width:min(420px,88vw);
+    background:#0a0f1e;border-right:1px solid rgba(201,168,76,.25);
+    overflow-y:auto;padding:24px 22px 80px;
+    box-shadow:8px 0 40px rgba(0,0,0,.5);
+  }
+  .resource-panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .resource-panel-title{font-size:16px;font-weight:800;color:#f0ece4}
+  .resource-close{background:none;border:none;color:#a09890;font-size:20px;cursor:pointer;line-height:1;padding:4px}
+  .resource-cat{margin-bottom:22px}
+  .resource-cat-title{
+    font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:rgba(201,168,76,.7);font-family:'Hiragino Kaku Gothic Pro',sans-serif;
+    margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  .resource-link{
+    display:block;padding:9px 10px;border-radius:8px;
+    font-size:13px;color:#e8e2d4;text-decoration:none;line-height:1.5;
+    margin-bottom:2px;
+  }
+  .resource-link:hover{background:rgba(201,168,76,.08)}
+  .resource-link-sub{display:block;font-size:11px;color:#7a7472;margin-top:1px}
+  .resource-note{font-size:11px;color:#7a7472;line-height:1.7;margin-top:4px}
+  @media(max-width:640px){.resource-fab{left:14px;bottom:14px;padding:9px 16px;font-size:12px}}
+
   /* Print */
   .print-btn{
     position:fixed;bottom:24px;right:24px;
@@ -213,8 +253,71 @@
   }
 </style>
 <button class="print-btn" onclick="window.print()">🖨 PDF保存</button>
+<button class="resource-fab" onclick="document.getElementById('resource-overlay').classList.add('open')">📂 資料・ツール</button>
 </head>
 <body>
+
+<!-- RESOURCE MENU -->
+<div class="resource-overlay" id="resource-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="resource-panel">
+    <div class="resource-panel-header">
+      <div class="resource-panel-title">📂 資料・ツール一覧</div>
+      <button class="resource-close" onclick="document.getElementById('resource-overlay').classList.remove('open')">✕</button>
+    </div>
+
+    <div class="resource-cat">
+      <div class="resource-cat-title">掲載者向け</div>
+      <a class="resource-link" href="https://www.fineme.me/provider/join" target="_blank">掲載募集LP（サイト内）</a>
+      <a class="resource-link" href="fineme-provider-pitch.html" target="_blank">Fineme 掲載のご案内</a>
+      <a class="resource-link" href="fineme-founding-partner.html" target="_blank">創業パートナー制度</a>
+      <a class="resource-link" href="fineme-referral.html" target="_blank">ストック型紹介報酬制度</a>
+      <a class="resource-link" href="fineme-onboarding-guide.html" target="_blank">セットアップガイド（掲載者向け）</a>
+      <a class="resource-link" href="fineme-pt-manual.html" target="_blank">PT業務マニュアル</a>
+    </div>
+
+    <div class="resource-cat">
+      <div class="resource-cat-title">店舗向け</div>
+      <a class="resource-link" href="store-saas-pitch-deck.html" target="_blank">Store SaaS 営業ピッチデッキ</a>
+      <a class="resource-link" href="https://www.fineme.me/business/line-connect-guide" target="_blank">公式LINE連携ガイド（サイト内）</a>
+    </div>
+
+    <div class="resource-cat">
+      <div class="resource-cat-title">ユーザー向け</div>
+      <a class="resource-link" href="https://www.fineme.me/diagnosis" target="_blank">Me Scan 診断（サイト内）</a>
+      <a class="resource-link" href="https://www.fineme.me/mirror" target="_blank">Mirror（サイト内）</a>
+      <a class="resource-link" href="https://www.fineme.me/log" target="_blank">New Me Log（サイト内）</a>
+      <a class="resource-link" href="https://www.fineme.me/types" target="_blank">全136タイプ一覧（サイト内）</a>
+      <a class="resource-link" href="note-draft-mirror.html" target="_blank">note下書き：New Me Mirror解説</a>
+      <a class="resource-link" href="note-draft-type-system.html" target="_blank">note下書き：119通りの言葉</a>
+    </div>
+
+    <div class="resource-cat">
+      <div class="resource-cat-title">運営・社内向け</div>
+      <a class="resource-link" href="https://www.fineme.me/business" target="_blank">事業説明資料（協業候補者向け）</a>
+      <a class="resource-link" href="fineme-sales-playbook.html" target="_blank">営業プレイブック</a>
+      <a class="resource-link" href="pt-meeting-prep.html" target="_blank">PT商談準備メモ</a>
+      <a class="resource-link" href="fineme-diagnosis-logic.html" target="_blank">Me Scan診断ロジック解説（技術仕様）</a>
+      <a class="resource-link" href="fineme-belle-concept.html" target="_blank">Fineme Belle 構想概要</a>
+      <a class="resource-link" href="fineme-business-card.html" target="_blank">名刺モックアップ</a>
+      <a class="resource-link" href="fineme-drama-partner.html" target="_blank">ショートドラマ パートナー提案<span class="resource-link-sub">アーカイブ</span></a>
+      <a class="resource-link" href="fineme-ogawa-pitch.html" target="_blank">小川くんへの提案<span class="resource-link-sub">アーカイブ・白紙済み</span></a>
+      <a class="resource-link" href="fineme-gorilla-house.html" target="_blank">ゴリラハウス コラボ提案<span class="resource-link-sub">アーカイブ</span></a>
+      <a class="resource-link" href="article-gen.html" target="_blank">記事生成ツール</a>
+      <a class="resource-link" href="interview-gen.html" target="_blank">インタビュー記事生成ツール</a>
+      <a class="resource-link" href="video-gen.html" target="_blank">AI動画生成ツール</a>
+      <a class="resource-link" href="dm-gen.html" target="_blank">DMジェネレーター</a>
+      <a class="resource-link" href="sns-content-gen.html" target="_blank">SNS発信素材ジェネレーター</a>
+      <a class="resource-link" href="find-providers.html" target="_blank">掲載候補リスト生成ツール</a>
+      <a class="resource-link" href="seo-internal-links.html" target="_blank">SEO内部リンク担当ツール</a>
+      <a class="resource-link" href="cron-setup.html" target="_blank">Cron設定ガイド</a>
+      <a class="resource-link" href="tasks.html" target="_blank">タスク管理ツール</a>
+      <a class="resource-link" href="x-posts-type-system.html" target="_blank">X投稿案：タイプシステム刷新</a>
+      <div class="resource-note">note/Threads/X下書きストック（.md）は public/business/ 内に別途あり（一覧化は省略）</div>
+    </div>
+
+  </div>
+</div>
+<!-- /RESOURCE MENU -->
 <div class="page">
 
 <!-- HERO -->

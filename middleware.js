@@ -31,27 +31,9 @@ export function middleware(request) {
     return NextResponse.redirect(url, { status: 301 })
   }
 
-  // business/ ディレクトリは管理者のみアクセス可（社内ツール保護用）。
-  // ただし店舗向け営業資料など外部の人に見せる前提のページは個別に除外する。
-  const BUSINESS_PUBLIC_PATHS = [
-    '/business/store-saas-pitch-deck.html',
-    '/business/line-connect-guide',
-    '/business/fineme-provider-pitch.html',
-    '/business/fineme-referral.html',
-  ]
-  if (
-    request.nextUrl.pathname.startsWith('/business/') &&
-    !BUSINESS_PUBLIC_PATHS.includes(request.nextUrl.pathname)
-  ) {
-    const adminCookie = request.cookies.get('fineme_admin')
-    if (!adminCookie?.value) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/admin'
-      url.search = ''
-      return NextResponse.redirect(url, { status: 302 })
-    }
-  }
-
+  // business/ 配下は一般公開はしない（noindex + robots.js disallow）が、
+  // 協業先へ都度URLを渡す運用のため管理者Cookie認証は課さない。
+  // URLを知っている人のみアクセスできる状態（2026-08-07 でお判断）。
 
   return NextResponse.next()
 }

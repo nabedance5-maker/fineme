@@ -48,6 +48,7 @@
   .target-btn { flex: 1; padding: 14px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.1); background: transparent; color: rgba(255,255,255,0.4); font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.2s; text-align: center; }
   .target-btn.active.provider { border-color: #63b3ed; background: rgba(99,179,237,0.1); color: #63b3ed; }
   .target-btn.active.partner { border-color: #a78bfa; background: rgba(167,139,250,0.1); color: #a78bfa; }
+  .target-btn.active.interview { border-color: #c9a84c; background: rgba(201,168,76,0.1); color: #c9a84c; }
   .target-btn:hover:not(.active) { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.7); }
   .target-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; opacity: 0.7; display: block; margin-top: 2px; }
 
@@ -136,6 +137,30 @@
   .hashtag:hover { background: rgba(99,179,237,0.15); }
   .hashtag.copied { background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.3); color: #34d399; }
 
+  /* スクリーニングパネル */
+  .screening-panel { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px 22px; margin-bottom: 20px; }
+  .screening-panel h3 { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 14px; }
+  .screening-url-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .screening-url-row input { flex: 1; background: rgba(10,15,30,0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 9px 12px; font-size: 13px; color: #e8e4dc; font-family: inherit; outline: none; }
+  .screening-url-row input:focus { border-color: rgba(201,168,76,0.4); }
+  .screening-url-open { padding: 9px 16px; background: rgba(99,179,237,0.1); border: 1px solid rgba(99,179,237,0.3); border-radius: 8px; color: #63b3ed; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; text-decoration: none; display: flex; align-items: center; }
+  .screening-url-open:hover { background: rgba(99,179,237,0.18); }
+  .screening-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media(max-width:600px){ .screening-sections { grid-template-columns: 1fr; } }
+  .screening-section-title { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+  .screening-section-title.must { color: rgba(74,222,128,0.7); }
+  .screening-section-title.ng { color: rgba(248,113,113,0.7); }
+  .screening-check-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer; user-select: none; }
+  .screening-check-item:last-child { border-bottom: none; }
+  .screening-box { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid rgba(255,255,255,0.18); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 10px; transition: all 0.15s; }
+  .screening-check-item.checked-ok .screening-box { background: rgba(74,222,128,0.15); border-color: #4ade80; color: #4ade80; }
+  .screening-check-item.checked-ng .screening-box { background: rgba(248,113,113,0.15); border-color: #f87171; color: #f87171; }
+  .screening-check-text { font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.5; }
+  .screening-result { margin-top: 16px; padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; text-align: center; display: none; }
+  .screening-result.pass { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.35); color: #4ade80; }
+  .screening-result.caution { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.35); color: #fbbf24; }
+  .screening-result.fail { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.25); color: rgba(248,113,113,0.8); }
+
   /* empty state */
   .empty-state { text-align: center; padding: 60px 24px; color: rgba(255,255,255,0.25); }
   .empty-state p { font-size: 13px; line-height: 1.8; }
@@ -168,9 +193,9 @@
 <div class="workflow" style="max-width:960px;margin:0 auto 28px;padding:18px 22px;">
   <h2>ワークフロー</h2>
   <div class="steps-flow">
-    <div class="step-item">① Apifyでアカウント収集</div>
+    <div class="step-item">① Instagramで候補を探す</div>
     <span class="step-arrow">→</span>
-    <div class="step-item">② CSVをここに貼り付け</div>
+    <div class="step-item">② スクリーニング判定（単体入力タブ上部）</div>
     <span class="step-arrow">→</span>
     <div class="step-item">③ プロンプト生成・コピー</div>
     <span class="step-arrow">→</span>
@@ -192,8 +217,19 @@
 <!-- ========== TAB: 単体入力 ========== -->
 <div class="tab-content active" id="tab-single">
 
+  <!-- スクリーニングパネル -->
+  <div class="screening-panel">
+    <h3>① スクリーニング — Instagram を見ながらその場でチェック</h3>
+    <div class="screening-url-row">
+      <input type="text" id="screen-url" placeholder="https://www.instagram.com/username/" oninput="updateScreenOpenBtn()">
+      <a id="screen-open-btn" href="#" target="_blank" class="screening-url-open" onclick="return openScreenUrl()">Instagramを開く</a>
+    </div>
+    <div class="screening-sections" id="screening-items"></div>
+    <div class="screening-result" id="screening-result"></div>
+  </div>
+
   <div class="form-card">
-    <h3>ターゲット種別</h3>
+    <h3>② ターゲット種別・アカウント情報入力</h3>
     <div class="target-toggle">
       <button class="target-btn active provider" onclick="setTarget('provider', this)">
         掲載者
@@ -202,6 +238,10 @@
       <button class="target-btn partner" onclick="setTarget('partner', this)">
         創業パートナー
         <span class="target-label">月1FB＋紹介</span>
+      </button>
+      <button class="target-btn interview" onclick="setTarget('interview', this)">
+        インタビュー記事
+        <span class="target-label">記事掲載＋掲載打診</span>
       </button>
     </div>
 
@@ -272,6 +312,7 @@
       <div class="field">
         <label>ターゲット種別</label>
         <select id="csv-target">
+          <option value="interview">インタビュー記事＋掲載打診</option>
           <option value="provider">掲載者</option>
           <option value="partner">創業パートナー</option>
         </select>
@@ -436,6 +477,169 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2200);
 }
 
+// ========== スクリーニング ==========
+const SCREENING_DEFS = {
+  provider: {
+    must: [
+      'フォロワー 500〜10,000（活動中の個人規模）',
+      '個人事業主 or 小規模サロン（チェーン・フランチャイズではない）',
+      '男性向け or 男女両対応（女性専門ではない）',
+    ],
+    good: [
+      '男性クライアントのBefore/After or 変容系の投稿あり',
+      'キャプションに「自信」「変わりたい」「なりたい自分」系がある',
+      '直近1ヶ月以内に投稿している',
+      'プロフィール文に変容・コンプレックス解消への言及あり',
+    ],
+    ng: [
+      '最終投稿が3ヶ月以上前',
+      '投稿がほぼ宣伝・料金表・クーポンのみ',
+      'フォロワー10万超（大手法人の可能性）',
+    ],
+  },
+  partner: {
+    must: [
+      'フォロワー 1,000〜20,000（ある程度の発信力）',
+      '個人事業主（業界の紹介ハブになれる人）',
+      '男性向け実績・投稿が明確にある',
+    ],
+    good: [
+      'キャプションに「思想・哲学・変容」系のメッセージがある',
+      '自分の言葉で発信している（コピペ感のない投稿）',
+      '業界内のつながりがありそう（タグ付けやコラボ投稿）',
+      '外見と自信・内面の変容を結びつけている',
+    ],
+    ng: [
+      '最終投稿が3ヶ月以上前',
+      '投稿が商品宣伝・アフィリエイト色が強い',
+      'フォロワー10万超（法人アカウントの可能性）',
+    ],
+  },
+  interview: {
+    must: [
+      'フォロワー 500 以上（一定の読者がいる）',
+      '男性向けの外見・ライフスタイル系コンテンツあり',
+    ],
+    good: [
+      'ストーリー性・変容エピソードを発信している',
+      '自分自身の変化を記録・発信しているタイプ',
+      'テキスト量が多い（記事化しやすい語り口）',
+    ],
+    ng: [
+      '最終投稿が3ヶ月以上前',
+      '企業アカウント（個人の顔が見えない）',
+    ],
+  },
+};
+
+let screenState = {};
+
+function renderScreening() {
+  const def = SCREENING_DEFS[currentTarget] || SCREENING_DEFS.provider;
+  const wrap = document.getElementById('screening-items');
+  screenState = {};
+
+  const mustHtml = def.must.map((txt, i) => {
+    const key = 'must-' + i;
+    return `<div class="screening-check-item" id="si-${key}" onclick="toggleScreen('${key}','ok')">
+      <div class="screening-box" id="sb-${key}"></div>
+      <div class="screening-check-text">${txt}</div>
+    </div>`;
+  }).join('');
+
+  const goodHtml = def.good.map((txt, i) => {
+    const key = 'good-' + i;
+    return `<div class="screening-check-item" id="si-${key}" onclick="toggleScreen('${key}','ok')">
+      <div class="screening-box" id="sb-${key}"></div>
+      <div class="screening-check-text">${txt}</div>
+    </div>`;
+  }).join('');
+
+  const ngHtml = def.ng.map((txt, i) => {
+    const key = 'ng-' + i;
+    return `<div class="screening-check-item" id="si-${key}" onclick="toggleScreen('${key}','ng')">
+      <div class="screening-box" id="sb-${key}"></div>
+      <div class="screening-check-text">${txt}</div>
+    </div>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div>
+      <div class="screening-section-title must">✅ 必須（全部該当でGO）</div>
+      ${mustHtml}
+      <div class="screening-section-title must" style="margin-top:14px">👍 あるといい（2つ以上）</div>
+      ${goodHtml}
+    </div>
+    <div>
+      <div class="screening-section-title ng">🚫 NG（1つでも該当なら見送り）</div>
+      ${ngHtml}
+    </div>`;
+
+  document.getElementById('screening-result').style.display = 'none';
+}
+
+function toggleScreen(key, type) {
+  const item = document.getElementById('si-' + key);
+  const box = document.getElementById('sb-' + key);
+  const isChecked = item.classList.contains('checked-ok') || item.classList.contains('checked-ng');
+  item.classList.remove('checked-ok', 'checked-ng');
+  box.textContent = '';
+  if (!isChecked) {
+    const cls = type === 'ng' ? 'checked-ng' : 'checked-ok';
+    item.classList.add(cls);
+    box.textContent = type === 'ng' ? '✕' : '✓';
+  }
+  evalScreening();
+}
+
+function evalScreening() {
+  const def = SCREENING_DEFS[currentTarget] || SCREENING_DEFS.provider;
+  const mustTotal = def.must.length;
+  let mustChecked = 0;
+  for (let i = 0; i < mustTotal; i++) {
+    if (document.getElementById('si-must-' + i)?.classList.contains('checked-ok')) mustChecked++;
+  }
+  let goodChecked = 0;
+  for (let i = 0; i < def.good.length; i++) {
+    if (document.getElementById('si-good-' + i)?.classList.contains('checked-ok')) goodChecked++;
+  }
+  let ngChecked = 0;
+  for (let i = 0; i < def.ng.length; i++) {
+    if (document.getElementById('si-ng-' + i)?.classList.contains('checked-ng')) ngChecked++;
+  }
+
+  const anyChecked = mustChecked + goodChecked + ngChecked > 0;
+  if (!anyChecked) { document.getElementById('screening-result').style.display = 'none'; return; }
+
+  const res = document.getElementById('screening-result');
+  res.style.display = 'block';
+  if (ngChecked > 0) {
+    res.className = 'screening-result fail';
+    res.textContent = '🚫 NG — 見送り推奨。NGチェックが入っています。';
+  } else if (mustChecked === mustTotal && goodChecked >= 2) {
+    res.className = 'screening-result pass';
+    res.textContent = '✅ GO — 優先度高。このままDM生成に進みましょう。';
+  } else if (mustChecked === mustTotal) {
+    res.className = 'screening-result caution';
+    res.textContent = `⚠️ 条件付きGO — 必須は満たしています。「あるといい」は ${goodChecked} / ${def.good.length} 。送ってみる価値はあり。`;
+  } else {
+    res.className = 'screening-result caution';
+    res.textContent = `⚠️ 様子見 — 必須条件が ${mustChecked} / ${mustTotal} しか確認できていません。`;
+  }
+}
+
+function updateScreenOpenBtn() {
+  // URLが入ったらInstagramを開くリンクを更新するだけ（特に何もしなくてよい）
+}
+
+function openScreenUrl() {
+  const url = document.getElementById('screen-url').value.trim();
+  if (!url) return false;
+  const fixedUrl = url.startsWith('http') ? url : 'https://www.instagram.com/' + url.replace(/^@/,'') + '/';
+  window.open(fixedUrl, '_blank');
+  return false;
+}
+
 function copyText(text, btn) {
   navigator.clipboard.writeText(text).then(() => {
     if (btn) { btn.textContent = 'コピー済'; btn.classList.add('copied'); setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000); }
@@ -467,8 +671,9 @@ function closeModal(e) {
 // ========== Target Toggle ==========
 function setTarget(type, btn) {
   currentTarget = type;
-  document.querySelectorAll('.target-btn').forEach(b => b.classList.remove('active', 'provider', 'partner'));
+  document.querySelectorAll('.target-btn').forEach(b => b.classList.remove('active', 'provider', 'partner', 'interview'));
   btn.classList.add('active', type);
+  renderScreening();
 }
 
 // ========== Prompt Generator ==========
@@ -477,10 +682,56 @@ function categoryLabel(cat) {
 }
 
 function buildPrompt(data) {
-  const isPartner = data.target === 'partner';
   const catLabel = categoryLabel(data.category);
 
-  if (isPartner) {
+  if (data.target === 'interview') {
+    return `以下のアカウントについて、2つのタスクを実行してください。
+
+【アカウント情報】
+アカウント名: ${data.name || '（不明）'}
+フォロワー数: ${data.followers || '不明'}
+カテゴリ: ${catLabel}
+プロフィール文:
+${data.bio || '（なし）'}
+${data.notes ? `\n投稿の雰囲気・メモ:\n${data.notes}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━
+【タスク1: インタビュー記事候補スクリーニング】
+
+以下の基準で1〜5のスコアと理由を2文で評価してください：
+- 男性の外見変容・自信向上に関わる仕事をしているか
+- 思想・哲学・こだわりがプロフィールや投稿から読み取れるか
+- 読者（変わりたい男性）が参考になる実績・知見があるか
+- 誠実さ・熱量を感じるか
+
+出力形式:
+スコア: X/5
+理由: （2文以内）
+
+━━━━━━━━━━━━━━━━━━━━━━
+【タスク2: インタビュー記事オファーDM文案】
+
+以下の構造で、XまたはInstagramのダイレクトメッセージを作成してください。
+
+構造:
+① 「突然のDMすみません🙏」で始める
+② プロフィール・投稿から具体的なフレーズや実績を1つ引用し、共鳴した理由を1文で
+③ 「外見改善に取り組むプロへのインタビュー記事を制作しているのですが、${data.name || 'こちら'}のお仕事・考え方をぜひFinemeで紹介させていただけないかと思い、ご連絡しました。」
+④ 記事は完全無料・こちらで執筆・公開後にSNSでもシェアする旨を1文で
+⑤ 「また、もし掲載にご興味があれば、Finemeへの掲載者としてご案内できる場合もあります。」（押しつけにならない、案内できる"場合もある"トーン）
+⑥ 「よろしければ一言お返事いただけますと嬉しいです！」
+
+条件:
+- 文字数: 280〜330字
+- トーン: 誠実・熱量あり・押し売りゼロ
+- 掲載は「お願い」ではなく「ご案内できる場合もある」という表現。Fineme側が選ぶニュアンス
+- NG: テンプレ感・ビジネスメール調・掲載を前面に出す
+
+Fineme補足情報:
+Finemeは「外見を変えたい男性が自分に合った道筋を見つけられるサービス」。ミッションは「外見を起点に、自信を再設計する人を増やす」。眉毛サロン・パーソナルジム・スタイリスト等のプロを紹介するメディアでもある。`;
+  }
+
+  if (data.target === 'partner') {
     return `以下のInstagramアカウントについて、2つのタスクを実行してください。
 
 【アカウント情報】
@@ -844,6 +1095,7 @@ function copyHashtag(el) {
 
 // ========== Init ==========
 renderPipeline();
+renderScreening();
 </script>
 </body>
 </html>
