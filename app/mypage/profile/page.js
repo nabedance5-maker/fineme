@@ -6,6 +6,13 @@ import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { TRACKS, setTrackExplicit, saveTrackToServer } from '@/lib/track';
 import { VOICES, NOTIFY_LEVELS, defaultVoiceFor, DEFAULT_NOTIFY_LEVEL } from '@/lib/log-voice';
 
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
 export default function MypageProfilePage() {
   const { track, trackId: resolvedTrackId } = useTrack();
   const [trackId, setTrackId] = useState('fineme');
@@ -45,6 +52,68 @@ export default function MypageProfilePage() {
   const [lineTesting, setLineTesting] = useState(false);
   const [logVoice, setLogVoice] = useState(null);     // null = トラックの既定
   const [logLevel, setLogLevel] = useState(DEFAULT_NOTIFY_LEVEL);
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushMsg, setPushMsg] = useState('');
+
+  // ブラウザ通知（Web Push）の現在の購読状態を確認
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    setPushSupported(true);
+    navigator.serviceWorker.ready
+      .then(reg => reg.pushManager.getSubscription())
+      .then(sub => setPushSubscribed(!!sub))
+      .catch(() => {});
+  }, []);
+
+  async function subscribeWebPush() {
+    if (!accessToken) { setPushMsg('先にログインしてください'); return; }
+    setPushBusy(true);
+    setPushMsg('');
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') { setPushMsg('通知が許可されませんでした'); setPushBusy(false); return; }
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY),
+      });
+      const json = sub.toJSON();
+      const res = await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
+      });
+      if (res.ok) { setPushSubscribed(true); setPushMsg('ブラウザ通知を有効にしました'); }
+      else { setPushMsg('登録に失敗しました'); }
+    } catch (e) {
+      setPushMsg('通知の設定に失敗しました：' + e.message);
+    }
+    setPushBusy(false);
+  }
+
+  async function unsubscribeWebPush() {
+    setPushBusy(true);
+    setPushMsg('');
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await fetch('/api/push/unsubscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ endpoint: sub.endpoint }),
+        });
+        await sub.unsubscribe();
+      }
+      setPushSubscribed(false);
+      setPushMsg('ブラウザ通知を停止しました');
+    } catch (e) {
+      setPushMsg('停止に失敗しました：' + e.message);
+    }
+    setPushBusy(false);
+  }
 
   // New Me Log の通知設定を読む
   useEffect(() => {
@@ -398,6 +467,44 @@ export default function MypageProfilePage() {
                   <p style={{ margin: '10px 0 0', fontSize: '13px', color: lineMsg.includes('エラー') ? '#dc2626' : '#059669' }}>{lineMsg}</p>
                 )}
               </div>
+
+              {/* ブラウザ通知（Web Push） */}
+              {pushSupported && (
+                <div style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 6px' }}>ブラウザ通知</p>
+                  <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>
+                    LINEを友だち追加していなくても、このブラウザ・アプリに直接通知が届きます。
+                  </p>
+                  {pushSubscribed ? (
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(6,200,99,0.07)', border: '1px solid rgba(6,200,99,0.3)', borderRadius: '10px', padding: '10px 14px' }}>
+                        <span style={{ fontSize: '18px' }}>✅</span>
+                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#059669' }}>ブラウザ通知：有効</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={unsubscribeWebPush}
+                        disabled={pushBusy}
+                        style={{ marginTop: '10px', padding: '9px 18px', background: 'transparent', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '9px', fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.5)', cursor: pushBusy ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+                      >
+                        停止する
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={subscribeWebPush}
+                      disabled={pushBusy}
+                      style={{ padding: '10px 20px', background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.5)', borderRadius: '10px', fontWeight: 700, fontSize: '14px', color: '#c9a84c', cursor: pushBusy ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+                    >
+                      🔔 ブラウザ通知を有効にする
+                    </button>
+                  )}
+                  {pushMsg && (
+                    <p style={{ margin: '10px 0 0', fontSize: '13px', color: pushMsg.includes('失敗') || pushMsg.includes('されません') ? '#dc2626' : '#059669' }}>{pushMsg}</p>
+                  )}
+                </div>
+              )}
 
               {/* New Me Log の通知設定（声・頻度） */}
               <div style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px' }}>

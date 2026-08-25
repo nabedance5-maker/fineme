@@ -5,7 +5,7 @@
  * - APIリクエスト (localhost:3001): Network First → 失敗時はキャッシュ
  * - 画像: Stale While Revalidate → 高速表示 + バックグラウンド更新
  */
-const CACHE_NAME = 'fineme-v5';
+const CACHE_NAME = 'fineme-v6';
 const SHELL_URLS = [
   '/',
   '/search',
@@ -61,6 +61,36 @@ self.addEventListener('fetch', event => {
 
   // CSS/JS/fonts → Cache First
   event.respondWith(cacheFirst(request));
+});
+
+// ---- Web Push受信 ----
+self.addEventListener('push', event => {
+  if (!event.data) return;
+  let payload = {};
+  try { payload = event.data.json(); } catch { payload = { title: 'Fineme', body: event.data.text() }; }
+
+  const title = payload.title || 'Fineme';
+  const options = {
+    body: payload.body || '',
+    icon: '/assets/images/icon-192.png',
+    badge: '/assets/images/icon-192.png',
+    data: { url: payload.url || '/' },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// ---- 通知タップ ----
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if (client.url.includes(url) && 'focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+    })
+  );
 });
 
 // ---- 戦略実装 ----

@@ -5,6 +5,7 @@
 // 1ユーザー1通にまとめ、同じ next_visit サイクルでは二度送らない。
 import { getSupabase } from '@/lib/supabase';
 import { sendLinePush } from '@/lib/line-push';
+import { sendWebPush } from '@/lib/web-push';
 import { resolveAxis, effectiveFreq, formatFreq, idealNextDate } from '@/lib/log-axes';
 import { buildLogMessage, getNotifyLevel } from '@/lib/log-voice';
 
@@ -120,6 +121,17 @@ export async function GET(request) {
   }
   const profileMap = Object.fromEntries(profiles.map(p => [p.id, p]));
 
+  // ブラウザ通知（Web Push）の購読。LINE未連携でもここに購読があれば届けられる
+  // （LINE友だち追加の壁を迂回する独立チャネル・2026-08-07追加）。
+  const pushSubsByUser = {};
+  try {
+    const { data: subs } = await db
+      .from('push_subscriptions')
+      .select('user_id, endpoint, p256dh, auth')
+      .in('user_id', userIds);
+    (subs || []).forEach(s => { (pushSubsByUser[s.user_id] = pushSubsByUser[s.user_id] || []).push(s); });
+  } catch {}
+
   // 月1回だけ添える一文の材料：Me Scan / Mirror をやっているか
   const doneDiagnosis = new Set();
   const doneMirror = new Set();
@@ -156,7 +168,7 @@ export async function GET(request) {
   const byUser = {};
   for (const userId of userIds) {
     const profile = profileMap[userId];
-    if (!profile?.line_user_id) continue;
+    if (!profile?.line_user_id && !pushSubsByUser[userId]?.length) continue;
 
     // うるさく感じてブロックされたら元も子もないので、本人の設定を必ず尊重する
     const level = getNotifyLevel(profile.log_notify_level);
@@ -296,6 +308,22 @@ export async function GET(request) {
       }));
       const res = await sendLinePush(profile.line_user_id, text, undefined, quickReplyItems);
       if (res.ok) { sent++; notifiedIds.push(...fallbackLogs.map(l => l.id)); }
+    }
+
+    // ブラウザ通知（Web Push）— LINE未連携ユーザーにも届く独立チャネル。
+    // LINE連携済みでも購読していれば両方に送る（本人がブラウザ通知を選んだ結果のため）。
+    if (fallbackLogs.length && pushSubsByUser[userId]?.length) {
+      const first = fallbackLogs[0];
+      const body = fallbackLogs.length === 1
+        ? `${first.name}：そろそろのお時間です`
+        : `${fallbackLogs.length}件のケアがそろそろのお時間です`;
+      for (const sub of pushSubsByUser[userId]) {
+        const res = await sendWebPush(sub, { title: 'New Me Log', body, url: '/mypage/log' });
+        if (res.ok) { sent++; notifiedIds.push(...fallbackLogs.map(l => l.id)); }
+        else if (res.expired) {
+          await db.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+        }
+      }
     }
   }
 
