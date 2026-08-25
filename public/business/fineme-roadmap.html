@@ -559,6 +559,7 @@
     <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">意思決定パイプライン運用</span>Strategist→審査ボード→でおGO→code-implementerの自走サイクル。2026-08-16にStrategist/X投稿が復活（週6本確認）。crontab修正（0 2→0 6）はでお手動待ち（T-057）</div></div>
     <div class="del-item now-item"><span class="del-icon">🔄</span><div><span class="del-label">掲載者基盤（PT業務委託・創業パートナー・B2B2C提携）</span>主エンジンではなく並走する補完チャネルとして継続</div></div>
     <div class="del-item now-item"><span class="del-icon">🆕</span><div><span class="del-label">New Me Log — 3つ目の低摩擦入口（候補・未検証）</span>Me Scan/Mirrorは「自分は変わる必要がある」と認めないと始められないが、Logは通っている美容室・ジム等の予定管理という顔をしているため、何も認めずに使い始められる。集客入口としての仮説は立っているが、SNS CTAが無く流入計測がまだ動いていない（下記参照）</div></div>
+    <div class="del-item now-item"><span class="del-icon">📲</span><div><span class="del-label">PWA完成（Web Push通知・ホーム画面インストール導線）</span>2026-08-07実装。LINE友だち追加の壁（403エラー）を迂回する独立通知チャネルとしてWeb Pushを追加、New Me Logリマインドに接続済み。「アプリ化」構想の第一段階（下記アプリ化ロードマップ参照）</div></div>
   </div>
 
   <div class="insight">
@@ -760,6 +761,7 @@
     <div class="del-item"><span class="del-icon">💰</span><div><span class="del-label">診断サブスク検討・設計</span>月額300〜500円・再診断×変容追跡設計。掲載者・ユーザーが十分集まってから着手</div></div>
     <div class="del-item"><span class="del-icon">🌐</span><div><span class="del-label">SEO・オーガニック流入の確立</span>体験談コンテンツがSEO資産として機能し始める</div></div>
     <div class="del-item"><span class="del-icon">📣</span><div><span class="del-label">コンテンツパートナーの拡張検討</span>小川くん以外のクリエイターとの提携可能性を検討</div></div>
+    <div class="del-item"><span class="del-icon">📱</span><div><span class="del-label">ネイティブアプリ化の判断（Capacitor等でのストア配布）</span>PWA（2026-08-07実装済み）だけで足りるか、App Store/Google Play配布まで踏み込むかをこの段階の実データで判断する。判断材料が揃うまでは着手しない</div></div>
   </div>
 
   <div class="kpi-row">
@@ -810,6 +812,7 @@
           <div class="detail-row"><span class="tag tag-decide">要決定</span>コンテンツパートナー追加基準（どんなアカウントと組むか）</div>
           <div class="detail-row"><span class="tag tag-decide">要決定</span>ターゲット拡張タイミングの判断基準（何をもって拡張するか）</div>
           <div class="detail-row"><span class="tag tag-decide">要決定</span>法人化・税務設計のタイミング</div>
+          <div class="detail-row"><span class="tag tag-decide">要決定</span>ネイティブアプリ化（②Capacitor等でのストア配布 vs ③フルネイティブ再構築）。結論（2026-08-07検討）：Finemeの機能要件（フォーム・記事・写真アップロード・地図的UI・通知・決済）はどれもWebView包装で足りるため<strong>③フルネイティブは不要</strong>、②で十分という見立て。判断すべきは「②に踏み込むタイミング」のみ——Mirrorサブスクが一定規模（数百人〜）に達し、PWAでは足りない具体的な離脱・エンゲージメント低下が実データで出た時。②実施時はApple/Googleのアプリ内課金規約（デジタルコンテンツ課金に15〜30%の手数料）を踏まえ、決済はブラウザ（Stripe）へ逃がす設計にする</div>
         </div>
       </div>
     </details>
