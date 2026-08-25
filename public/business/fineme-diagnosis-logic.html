@@ -191,9 +191,9 @@
     <div class="cover-badge">Internal Document — Fineme</div>
     <h1>Me Scan 診断ロジック解説<br><em>なぜこの設計なのか、どう動くのか</em></h1>
     <p class="cover-lead">
-      PTおよび掲載者（ガイド）向けに、Finemeの中核機能「Me Scan」の設計思想・質問構造・スコア計算・マッチングへの接続を解説します。
+      PTおよび掲載者（ガイド）向けに、Finemeの中核機能「Me Scan」の設計思想・質問構造・スコア計算・マッチングへの接続を解説します。男性トラック（Fineme）・女性トラック（Fineme Belle）共通の仕組みです。
     </p>
-    <p class="cover-meta">Version: v11_area_matching　／　2026-03-27　／　Fineme</p>
+    <p class="cover-meta">Version: v14_8axis_growing-map　／　2026-08-07　／　Fineme</p>
   </div>
 
   <!-- 00: 設計思想 -->
@@ -210,7 +210,7 @@
 
     <div class="card">
       <h3>診断データが担う3つの役割</h3>
-      <p>① <strong>New Me Navi（地図）の生成</strong> — 現在地・理想・ギャップを7軸で可視化</p>
+      <p>① <strong>New Me Navi（地図）の生成</strong> — 現在地・理想・ギャップを8軸で可視化</p>
       <p>② <strong>Fineme Compass（羅針盤）の決定</strong> — 最初に動かすべき軸を1つ示す</p>
       <p>③ <strong>掲載者マッチングのスコアリング</strong> — ユーザーの文脈と掲載者のプロフィールを照合</p>
     </div>
@@ -225,79 +225,81 @@
   <!-- 01: 全体フロー -->
   <div class="section">
     <div class="sec-num">01</div>
-    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Scan Flow — 全体フロー</div></div>
-    <p class="lead">4つのフェーズで<br>「文脈 → 現在地 → 来た道 → 行動スタイル」を取得</p>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Scan Flow — 全体フロー（2026-07-25「育つ地図」再設計）</div></div>
+    <p class="lead">まず約4分で「地図の骨格」を作り、<br>深掘りは結果画面から任意で1軸ずつ</p>
+
+    <div class="card-gold">
+      <h3>設計の転換点</h3>
+      <p>旧フローは全8軸×複数問（最大30問超）を先に答えさせてから結果を出す構成でした。2026-07-25に「深さを前払いさせない」方針へ転換し、<strong>コア部分を約4分に圧縮</strong>。深掘りは結果を見た後、必要な軸だけ任意で進める構成に変わりました。</p>
+    </div>
 
     <div class="phase-list">
       <div class="phase-item">
         <div class="phase-num">1</div>
         <div class="phase-body">
-          <div class="phase-label">Phase 1 — Context</div>
-          <div class="phase-title">文脈・動機の把握（5問）</div>
+          <div class="phase-label">Step 1 — 属性確認</div>
+          <div class="phase-title">年代の確認</div>
           <p class="phase-desc">
-            変わりたい<strong>きっかけ</strong>（trigger）、<strong>ゴールの4層</strong>（何の場面で / 何をどう変えたいか / 変わった後のビジョン / 具体的な状況）を取得します。<br>
-            「なぜ今か」を最初に聞くことで、後続の質問に感情的な意味を持たせます。
+            年代（age_band）を確認します（2026-08-01追加）。ログイン済みユーザーは再度は聞かれません。
           </p>
           <div class="phase-tags">
-            <span class="phase-tag">trigger</span>
-            <span class="phase-tag">goal_scene</span>
-            <span class="phase-tag">goal_change</span>
-            <span class="phase-tag">goal_vision</span>
-            <span class="phase-tag">scene</span>
+            <span class="phase-tag">attr_register / attr_confirm</span>
+            <span class="phase-tag">age_band</span>
           </div>
         </div>
       </div>
       <div class="phase-item">
         <div class="phase-num">2</div>
         <div class="phase-body">
-          <div class="phase-label">Phase 2 — Baseline</div>
-          <div class="phase-title">7軸の現在地・理想スコア（9〜11問）</div>
+          <div class="phase-label">Step 2 — プロフィール基本情報（全項目任意）</div>
+          <div class="phase-title">身長・体重・体脂肪率・パーソナルカラー・顔タイプ・骨格タイプ・MBTI</div>
           <p class="phase-desc">
-            体型・眉・服・髪・肌・歯・爪の7軸について、<strong>現状の関わり方（care_level）</strong>と<strong>理想スコア（1〜5）</strong>を取得します。<br>
-            care_levelは「気にしていない（1点）→ 気にはなっている（2点）→ 自己流でやっている（3点）→ プロに頼んでいる（4点）」の4段階。<br>
-            髪軸には<strong>AGA分岐</strong>（薄毛・抜け毛の懸念）が独立した1問として存在します。
+            2026-08-13追加。回答してもしなくても診断は完了しますが、答えるほどNew Me Navi以降の提案精度が上がります。
           </p>
           <div class="phase-tags">
-            <span class="phase-tag">care_levels</span>
-            <span class="phase-tag">ideal_levels</span>
-            <span class="phase-tag">aga_concern / aga_status</span>
+            <span class="phase-tag">profile_basics</span>
           </div>
         </div>
       </div>
       <div class="phase-item">
         <div class="phase-num">3</div>
         <div class="phase-body">
-          <div class="phase-label">Phase 3 — Path Scan</div>
-          <div class="phase-title">7軸×3問の「来た道・客観視・恋愛紐付け」（最大21問）</div>
+          <div class="phase-label">Step 3 — Q3（コアの中心・約4分）</div>
+          <div class="phase-title">8軸を1軸ずつループ：やっていること選択＋変えたい度</div>
           <p class="phase-desc">
-            Phase 2でスコアが入った各軸に対し、3つの角度で深掘りします。<br>
-            <strong>① 来た道（path_type）</strong> — その軸とどんな経緯で関わってきたか（virgin/quit/blind/lapsed）<br>
-            <strong>② 客観視（self_view）</strong> — 他者から自分がどう見えていると思うか（better/accurate/worse/unknown）<br>
-            <strong>③ 恋愛への影響（love_impact）</strong> — その軸への不安が恋愛・出会いに影響したことがあるか（体型・眉・服・髪・肌・歯のみ）
+            8軸それぞれについて、<strong>①すでにやっている具体的な行動をグループ別に複数選択</strong>（例：スキンケアなら「化粧水を使う」「日焼け止めを塗る」等）、<strong>②その他自由記述</strong>、<strong>③変えたい度（1〜5段階）</strong>を答えます。<br>
+            <strong>「気にしていない／自己流／プロに頼んでいる」のような経路の自己申告は一切ありません</strong>。care_level・理想スコアはすべて選択した行動項目から自動算出されます（下記03参照）。
           </p>
           <div class="phase-tags">
-            <span class="phase-tag">path_types</span>
-            <span class="phase-tag">self_views</span>
-            <span class="phase-tag">love_impact</span>
+            <span class="phase-tag">q3</span>
+            <span class="phase-tag">axis_habits</span>
+            <span class="phase-tag">want_change</span>
           </div>
         </div>
       </div>
       <div class="phase-item">
         <div class="phase-num">4</div>
         <div class="phase-body">
-          <div class="phase-label">Phase 4 — Behavior Style</div>
-          <div class="phase-title">行動スタイル・コンテキスト（4問）</div>
+          <div class="phase-label">Step 4 — AGA分岐（条件付き）</div>
+          <div class="phase-title">髪軸でAGA懸念ありの場合のみ追加質問</div>
           <p class="phase-desc">
-            <strong>失敗パターン（failure_pattern）</strong> — 過去の挫折の文脈（継続不足・自己流・情報過多など）<br>
-            <strong>スタイル優先軸（style_priority_top）</strong> — 「説明重視×自己判断」「相談重視×通いやすさ」「おまかせ×指示がほしい」「慎重派×継続重視」の4タイプ<br>
-            <strong>緊急度（urgency）</strong> — いつまでに変わりたいか<br>
-            <strong>予算感（budget）</strong> — 月の投資可能額
+            Q3で髪の行動選択に薄毛・抜け毛への懸念が含まれる場合のみ、AGAの状況を追加で確認します。
           </p>
           <div class="phase-tags">
-            <span class="phase-tag">failure_pattern</span>
-            <span class="phase-tag">style_priority_top</span>
-            <span class="phase-tag">urgency</span>
-            <span class="phase-tag">budget</span>
+            <span class="phase-tag">q3_aga</span>
+          </div>
+        </div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-num">5</div>
+        <div class="phase-body">
+          <div class="phase-label">Step 5 — 結果画面</div>
+          <div class="phase-title">136タイプ＋Fineme Compass＋New Me Navi</div>
+          <p class="phase-desc">
+            ここまで約4分。ここから先は任意の深掘り（04参照）で、必要な軸だけ精度を上げていきます。
+          </p>
+          <div class="phase-tags">
+            <span class="phase-tag">result</span>
           </div>
         </div>
       </div>
@@ -309,11 +311,11 @@
   <!-- 02: 7軸の設計 -->
   <div class="section">
     <div class="sec-num">02</div>
-    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">7 Axes — 7軸の設計</div></div>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">8 Axes — 8軸の設計</div></div>
     <p class="lead">Tier構造で「変わりやすさ」を設計</p>
 
     <p style="font-size:13px;color:#b8b0a8;line-height:1.8;margin-bottom:16px">
-      7軸にはTier（1〜4）が設定されています。Tierは「その軸の変化がもたらすインパクトの大きさと速さ」を表し、Compassの計算に使われます。
+      8軸にはTier（1〜4）が設定されています。Tierは「その軸の変化がもたらすインパクトの大きさと速さ」を表し、Compassの計算に使われます。
     </p>
 
     <div class="axis-grid">
@@ -352,10 +354,18 @@
       <div class="axis-card">
         <div class="axis-card-head">
           <span class="axis-icon">✨</span>
-          <span class="axis-name">肌・エステ・脱毛</span>
+          <span class="axis-name">肌・ニキビ・エステ</span>
           <span class="axis-tier tier-badge-2">Tier 2 / 速効度3</span>
         </div>
         <p class="axis-desc">清潔感・近距離の印象に影響。スキンケア習慣の構築からプロのケアまで幅広い。</p>
+      </div>
+      <div class="axis-card">
+        <div class="axis-card-head">
+          <span class="axis-icon">🪒</span>
+          <span class="axis-name">脱毛・ムダ毛</span>
+          <span class="axis-tier tier-badge-2">Tier 2 / 速効度3</span>
+        </div>
+        <p class="axis-desc">ひげ・体毛の処理。清潔感への寄与度が高く、脱毛サロン・クリニックが対応。</p>
       </div>
       <div class="axis-card">
         <div class="axis-card-head">
@@ -394,9 +404,9 @@
     </div>
 
     <div class="formula-box">
-      <div class="formula-line">current_score = care_level の変換</div>
-      <div class="formula-comment">  none → 1　／　concerned → 2　／　self → 3　／　pro → 4</div>
-      <div class="formula-line" style="margin-top:10px">ideal_score = ユーザーが選んだ理想スコア（1〜5）</div>
+      <div class="formula-line">current_score = Q3の行動選択から自動算出</div>
+      <div class="formula-comment">  none→1／concerned→2／self→3〜3.5（選択した行動のカバー率で細分化）／pro→4</div>
+      <div class="formula-line" style="margin-top:10px">ideal_score = 「変えたい度」の回答（1〜5）。無回答時は max(current_score, 3)</div>
       <div class="formula-line" style="margin-top:10px">gap = max(0, ideal_score − current_score)</div>
       <div class="formula-comment">  ※ gap が 0 = 現状で十分、またはすでに理想以上</div>
     </div>
@@ -411,12 +421,12 @@
       <div class="formula-line">同Tierの場合: gap が大きいほど優先</div>
       <div class="formula-line">同gapの場合: 速効度（SPEED値）が高いほど優先</div>
       <div class="formula-comment" style="margin-top:8px">
-        SPEED値: 眉=5, 服=5, 髪=4, 体型=3, 肌=3, 歯=2, 爪=2
+        SPEED値: 眉=5, 服=5, 髪=4, 体型=3, 肌=3, 脱毛=3, 歯=2, 爪=2
       </div>
     </div>
 
     <div class="insight">
-      <p>例：体型(gap=3)と眉(gap=2)が同じTier 1にある場合、gapは体型が大きいが、速効度は眉(5)&gt;体型(3)なので<strong>Compassは体型を指す</strong>。ただしユーザーは「最初の一手」を7軸チップで上書きできます（Compass override機能）。</p>
+      <p>例：体型(gap=3)と眉(gap=2)が同じTier 1にある場合、gapは体型が大きいが、速効度は眉(5)&gt;体型(3)なので<strong>Compassは体型を指す</strong>。ただしユーザーは「最初の一手」を8軸チップで上書きできます（Compass override機能）。</p>
     </div>
   </div>
 
@@ -425,13 +435,18 @@
   <!-- 04: Phase 3の3問の意味 -->
   <div class="section">
     <div class="sec-num">04</div>
-    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">Phase 3 — 3問の設計意図</div></div>
-    <p class="lead">「来た道」「客観視」「恋愛紐付け」の<br>それぞれが何のためにあるか</p>
+    <div class="sec-label"><div class="sec-label-line"></div><div class="sec-label-text">深掘り（任意・結果画面から1軸ずつ）</div></div>
+    <p class="lead">結果画面から`?deepen=軸ID`で誘導。<br>1軸につき最大2問（脱毛・爪は1問）</p>
+
+    <div class="card-gold">
+      <h3>「来た道（path_type）」はもう質問しない</h3>
+      <p>旧フローは経路を自己申告で聞いていましたが、現在はQ3で選んだ行動項目の組み合わせから<strong>自動判定</strong>されます（下記4分類）。深掘りで実際に聞くのは<strong>①自己視点（self_view）</strong>と<strong>②恋愛への影響（love_impact）</strong>の最大2問だけです。</p>
+    </div>
 
     <div class="path-grid">
       <div class="path-card" style="grid-column: 1 / -1">
-        <div class="phase-label" style="color:rgba(201,168,76,.7);margin-bottom:8px">問い① — 来た道（path_type）</div>
-        <p style="font-size:13px;color:#c0bab2;line-height:1.8">その軸とこれまでどんな経緯で関わってきたかを4分類で取得します。これは<strong>掲載者との照合に使われる最重要データ</strong>です。「初めての人（virgin）」と「挫折経験者（quit）」では、必要なガイドの種類が根本的に違います。</p>
+        <div class="phase-label" style="color:rgba(201,168,76,.7);margin-bottom:8px">Q3の行動選択から自動判定される4パターン（path_type）</div>
+        <p style="font-size:13px;color:#c0bab2;line-height:1.8">その軸とこれまでどんな経緯で関わってきたかを4分類で自動判定します。これは<strong>掲載者との照合に使われる最重要データ</strong>です。「初めての人（virgin）」と「挫折経験者（quit）」では、必要なガイドの種類が根本的に違います。</p>
       </div>
       <div class="path-card">
         <div class="path-key">virgin</div>
@@ -456,15 +471,15 @@
     </div>
 
     <div class="card" style="margin-top:16px">
-      <h3>問い② — 客観視（self_view）</h3>
+      <h3>深掘りの問い① — 客観視（self_view）</h3>
       <p>「他者から自分がどう見えていると思うか」の推測を取得します（better / accurate / worse / unknown）。</p>
       <p><strong>worse（自分より悪く見えているかも）や unknown（わからない）は強い不安の指標</strong>です。New Me Mapの「障壁分析」セクションに使われ、「まず客観評価を受けることが先決」というアドバイスの根拠になります。</p>
     </div>
 
     <div class="card" style="margin-top:10px">
-      <h3>問い③ — 恋愛への影響（love_impact）</h3>
+      <h3>深掘りの問い② — 恋愛への影響（love_impact）</h3>
       <p>「その軸への不安が恋愛・出会いの場面で影響したことがあるか」（often / sometimes / rarely）。</p>
-      <p>love_impactが「often（よくある）」の軸は、New Me Naviで<strong>恋愛バッジ</strong>として強調表示されます。また、外見への不安と恋愛の結びつきはFineme全体の動機文脈として機能します。爪軸のみhas_love=falseで、この問いをスキップします（近距離印象には影響するが恋愛への文脈が薄いため）。</p>
+      <p>love_impactが「often（よくある）」の軸は、New Me Naviで<strong>恋愛バッジ</strong>として強調表示されます。また、外見への不安と恋愛の結びつきはFineme全体の動機文脈として機能します。<strong>脱毛・爪の2軸のみこの問いをスキップ</strong>し1問構成になります（近距離印象には影響するが恋愛への文脈が薄いため）。</p>
     </div>
   </div>
 
@@ -480,7 +495,7 @@
       <div class="output-card">
         <div class="output-icon">🧭</div>
         <div class="output-name">New Me Navi</div>
-        <div class="output-desc">7軸レーダーチャート、変容ベクトルリスト、ゴール4層、プロマッチング。「自分だけの地図」として保存・参照される。</div>
+        <div class="output-desc">8軸レーダーチャート、変容ベクトルリスト、プロマッチング。「自分だけの地図」として保存・参照される。</div>
       </div>
       <div class="output-card">
         <div class="output-icon">🧭</div>
@@ -490,7 +505,7 @@
       <div class="output-card">
         <div class="output-icon">🛤️</div>
         <div class="output-name">New Me Map</div>
-        <div class="output-desc">7軸をルート状に並べた変容ロードマップ。Compassが指す軸だけ全幅展開、他は折りたたみ表示。停留所が左右交互にずれるジグザグ設計。ルートパターン3種（推奨・印象インパクト・取り組みやすさ）から選択可。</div>
+        <div class="output-desc">8軸をルート状に並べた変容ロードマップ。Compassが指す軸だけ全幅展開、他は折りたたみ表示。通っている店舗・費用を記録する「New Me Log」（診断を経ずに使える3つ目の入口）とも軸IDで接続される。</div>
       </div>
     </div>
 
@@ -515,11 +530,16 @@
     </div>
 
     <div class="card" style="margin-top:12px">
-      <h3>掲載者が書く4つのフィールド</h3>
+      <h3>掲載者が書く6つのフィールド</h3>
       <p>ダッシュボード「サービス設定」タブの「AIマッチングプロフィール」欄に以下を記述します。</p>
     </div>
 
     <div class="path-grid" style="margin-top:10px">
+      <div class="path-card">
+        <div class="path-key">target_desc</div>
+        <div class="path-label">狙いたいターゲット像</div>
+        <div class="path-use">どんな人に来てほしいか、狙っている客層を自由に記述する。</div>
+      </div>
       <div class="path-card">
         <div class="path-key">ideal_client_desc</div>
         <div class="path-label">よく来るお客様の状況・背景</div>
@@ -539,6 +559,11 @@
         <div class="path-key">best_fit_desc</div>
         <div class="path-label">特に向いている人・状況</div>
         <div class="path-use">どんな人・タイミングに最もマッチするか。逆に向かない人についても書くと精度が上がる。</div>
+      </div>
+      <div class="path-card">
+        <div class="path-key">description</div>
+        <div class="path-label">サービス全体の説明</div>
+        <div class="path-use">サービス単位のbefore/afterを含む一般的な紹介文。</div>
       </div>
     </div>
 
@@ -728,7 +753,7 @@
 
   <!-- Footer -->
   <div class="footer">
-    <p>Fineme Internal Document — Me Scan v11 Diagnostic Logic + AI Matching + Area Matching　／　配布先：PT・掲載者（ガイド）</p>
+    <p>Fineme Internal Document — Me Scan v14 Diagnostic Logic（8軸・育つ地図構造）+ AI Matching + Area Matching　／　配布先：PT・掲載者（ガイド）・掲載検討者</p>
     <p style="margin-top:4px">Fineme（ファインミ）　<a href="https://www.fineme.me" target="_blank" style="color:inherit">www.fineme.me</a></p>
   </div>
 
