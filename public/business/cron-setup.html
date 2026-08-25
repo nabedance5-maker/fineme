@@ -66,6 +66,7 @@
 <div class="container">
   <h2>Cron設定ガイド</h2>
   <p class="intro">Vercel Hobby プランのCron上限（2件）を超えたため、外部Cronサービス「cron-job.org」に移行します。無料で全件設定できます。</p>
+  <p class="intro" style="color:#ef4444;margin-top:-24px">⚠️ <strong>YOUR_CRON_SECRET</strong> はプレースホルダーです。実際の値はVercelの環境変数 <code>CRON_SECRET</code> をご確認のうえ入力してください（このページ自体には実際の値を書きません）。</p>
 
   <!-- STEP -->
   <div class="section-label">手順</div>
@@ -102,10 +103,10 @@
     </div>
     <div class="field-row">
       <div class="field-label">Header Value</div>
-      <div class="field-value" id="header-value">Bearer vQjR8nL5wTxK9mP2</div>
+      <div class="field-value" id="header-value">Bearer YOUR_CRON_SECRET</div>
       <button class="copy-btn" onclick="copy('header-value', this)">コピー</button>
     </div>
-    <p class="tip">※ auto-visited のみ Header Name が <strong>x-internal-key</strong>、Header Value が <strong>vQjR8nL5wTxK9mP2</strong>（Bearer不要）</p>
+    <p class="tip">※ auto-visited のみ Header Name が <strong>x-internal-key</strong>、Header Value が <strong>YOUR_CRON_SECRET</strong>（Bearer不要）</p>
   </div>
 
   <!-- Cron一覧 -->
@@ -132,7 +133,7 @@
 </div>
 
 <script>
-const CRON_SECRET = 'vQjR8nL5wTxK9mP2';
+const CRON_SECRET = 'YOUR_CRON_SECRET';
 const BASE = 'https://www.fineme.me';
 
 const JOBS = [
