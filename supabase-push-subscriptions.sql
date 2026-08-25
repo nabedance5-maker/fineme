@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-08-26
 -- Web Push購読の保存
 -- app/api/push/subscribe, app/api/push/unsubscribe, app/api/cron/log-reminder等が使用する。
 -- LINE友だち追加の壁（403エラー）を迂回する独立通知チャネルとして追加。
