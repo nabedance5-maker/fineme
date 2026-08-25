@@ -11,7 +11,7 @@
     background-color:#060c1a;
     background-image:
       linear-gradient(rgba(6,12,26,0.93),rgba(6,12,26,0.93)),
-      url('../public/assets/images/bg-parchment.webp');
+      url('../assets/images/bg-parchment.webp');
     background-size:auto, 500px auto;
     color:#c4bfb5;line-height:1.8;font-size:15px;
   }
@@ -23,7 +23,7 @@
     padding:72px 40px 60px;
     background:
       linear-gradient(rgba(6,12,26,0.72), rgba(10,15,30,0.90)),
-      url('../public/assets/images/hero-bg.webp') center / cover no-repeat;
+      url('../assets/images/hero-bg.webp') center / cover no-repeat;
     border-bottom:1px solid rgba(201,168,76,.2);
   }
   .hero::before{
@@ -49,7 +49,7 @@
   .section:nth-child(even){
     background:
       linear-gradient(rgba(8,14,28,0.97),rgba(8,14,28,0.97)),
-      url('../public/assets/images/bg-parchment.webp') center / 400px auto;
+      url('../assets/images/bg-parchment.webp') center / 400px auto;
   }
   .sec-num{font-size:110px;font-weight:900;color:rgba(201,168,76,.04);position:absolute;top:16px;right:32px;line-height:1;font-family:'Hiragino Kaku Gothic Pro',sans-serif;pointer-events:none;user-select:none}
   .sec-label{display:inline-flex;align-items:center;gap:8px;margin-bottom:14px}
@@ -66,7 +66,7 @@
 
   /* ── Cards ── */
   .card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:22px;margin-bottom:12px}
-  .card-gold{background:linear-gradient(rgba(8,14,28,0.88),rgba(8,14,28,0.88)),url('../public/assets/images/bg-parchment.webp') center/300px auto;border:1px solid rgba(201,168,76,.22);border-radius:14px;padding:22px;margin-bottom:12px}
+  .card-gold{background:linear-gradient(rgba(8,14,28,0.88),rgba(8,14,28,0.88)),url('../assets/images/bg-parchment.webp') center/300px auto;border:1px solid rgba(201,168,76,.22);border-radius:14px;padding:22px;margin-bottom:12px}
   .card-title{font-size:15px;font-weight:800;color:#e8e2d4;margin-bottom:8px;font-family:'Hiragino Kaku Gothic Pro',sans-serif}
   .card-sub{font-size:13px;color:#a09890;line-height:1.75}
 
@@ -246,7 +246,7 @@
     </div>
 
     <div class="warn">
-      <strong>⚠️ business/ 配下のURLは管理者ログイン後のみ閲覧可能です。</strong>掲載者への共有は fineme-provider-pitch.html と fineme-onboarding-guide.html のみとし、他の内部資料のご共有はお控えいただきますようお願いいたします。
+      <strong>⚠️ business/ 配下のURLはログイン不要で誰でも開けます（URLを知っている人のみ・一般公開はしていません）。</strong>掲載者への共有は fineme-provider-pitch.html・fineme-onboarding-guide.html・fineme-diagnosis-logic.html の3点に留め、他の内部資料（このマニュアル含む）のURLは掲載者へお渡ししないようお願いいたします。
     </div>
   </div>
 
@@ -299,7 +299,7 @@
         <div class="j-body">
           <div class="j-title">プロフィール充実サポート <span class="j-tag j-tag-gold">ここが差をつけるポイント</span></div>
           <div class="j-desc">
-            セットアップガイドを渡して自分で入力してもらう。特に「きっかけ（suitable_triggers）」「失敗パターン（handles_failure_patterns）」の2項目がマッチングスコアに最も影響する。ここを埋めてもらえるかが勝負。
+            セットアップガイドを渡して自分で入力してもらう。ダッシュボード「AIマッチングプロフィール」欄の6項目（狙いたい客層・よく来るお客様・来る前の状態・変化のパターン・向いている人・サービス説明）をAIが読み取り、マッチングスコアに使う推論データを自動生成する。文章が具体的なほど精度が上がる。ここを丁寧に埋めてもらえるかが勝負。
           </div>
         </div>
       </div>
@@ -351,7 +351,7 @@
     </table>
 
     <div class="warn">
-      管理者キーはオーナーからお伝えします。第三者への共有はセキュリティ上お控えいただきますようお願いいたします。business/ 配下の内部資料へのアクセスにも同じキーを使います。
+      管理者キーはオーナーからお伝えします。第三者への共有はセキュリティ上お控えいただきますようお願いいたします。
     </div>
   </div>
 
@@ -362,22 +362,24 @@
     <div class="lead">課金ルール（掲載者への説明用）</div>
 
     <div class="card-gold">
-      <div class="card-title">課金開始トリガー：Fineme経由の初回予約が入った月から</div>
+      <div class="card-title">登録料 ¥1,100（初回のみ）＋ 月額プラン</div>
       <div class="card-sub" style="margin-top:8px">
-        登録しただけでは課金されない。成果が出るまで費用は発生しない設計。<br>
-        「無料で使えるもの」ではなく「成果連動の有料掲載」というスタンスで伝える。
+        「無料で使えるもの」ではなく「合う人に届く仕組みへの投資」というスタンスで伝える。予約手数料率は個別プラン参照。
       </div>
     </div>
 
     <table class="tbl" style="margin-top:16px">
       <tr><th>プラン</th><th>月額</th><th>予約手数料</th><th>特徴</th></tr>
-      <tr><td><strong>A</strong></td><td>¥5,000</td><td>8.3%</td><td>スタンダード</td></tr>
-      <tr><td><strong>B</strong></td><td>¥7,000</td><td>7.0%</td><td>手数料を抑えたい場合</td></tr>
-      <tr><td><strong>C</strong></td><td>¥10,000</td><td>5.5%</td><td>予約単価が高い掲載者向け</td></tr>
+      <tr><td><strong>ライト</strong></td><td>¥5,000</td><td>8.3%</td><td>プロフィール・サービスメニュー・顧客カルテ・紹介報酬プログラム参加資格</td></tr>
+      <tr><td><strong>プレミアム</strong></td><td>¥10,000</td><td>5.5%</td><td>ライトの内容すべて＋手数料優遇・検索結果優先表示・店舗独自の公式LINEリマインド配信</td></tr>
     </table>
 
+    <div class="warn">
+      <strong>¥7,000／手数料7.0%の中間プラン（システム上は現存）は、現在は通常営業では提示しません。</strong>草創期のキャンペーン用に温存されている特別価格です。オーナーから指示があった場合のみ提示してください。
+    </div>
+
     <div class="insight">
-      プランの選び方の目安：平均予約単価が¥7,000以下ならA、¥10,000以上ならCがお得になります。迷ったらAを勧めてOKです。
+      プランの選び方の目安：迷ったらライトを勧めてOK。予約単価が高い・検索露出を重視する掲載者にはプレミアムを提案してください。
     </div>
   </div>
 
@@ -427,11 +429,11 @@
     </div>
     <div class="faq-item">
       <div class="faq-q">「どんな情報を登録すればいい？」</div>
-      <div class="faq-a">セットアップガイド（<a href="https://www.fineme.me/business/fineme-onboarding-guide.html" target="_blank">fineme.me/business/fineme-onboarding-guide.html</a>）を見てもらうのが一番です。特に「どんな人の悩みを得意とするか（きっかけ）」と「どんな失敗パターンを持つ人を助けてきたか」が最もマッチングに影響します。</div>
+      <div class="faq-a">セットアップガイド（<a href="https://www.fineme.me/business/fineme-onboarding-guide.html" target="_blank">fineme.me/business/fineme-onboarding-guide.html</a>）を見てもらうのが一番です。特に「AIマッチングプロフィール」欄（狙いたい客層・よく来るお客様の背景・変化のパターン・向いている人）を具体的に書いてもらうことが最もマッチングに影響します。</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">「掲載者から「予約が来ない」と言われたら？」</div>
-      <div class="faq-a">まずプロフィールの充実度を確認してください。特に「きっかけ」「失敗パターン」が空白のままだとマッチングスコアが低くなります。次に管理画面でページビューを確認し、閲覧はあるが予約に繋がっていないのか、そもそも閲覧が少ないのかを判断してください。</div>
+      <div class="faq-a">まずプロフィールの充実度を確認してください。特に「AIマッチングプロフィール」の6項目が空白のままだとAI推論の精度が落ち、マッチングスコアが低くなります。次に管理画面でページビューを確認し、閲覧はあるが予約に繋がっていないのか、そもそも閲覧が少ないのかを判断してください。</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">「掲載者がやめたいと言ってきたら？」</div>
