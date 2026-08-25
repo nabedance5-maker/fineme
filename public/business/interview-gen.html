@@ -139,6 +139,7 @@
       <button class="axis-btn" data-axis="eyebrow" onclick="selectAxis('eyebrow')">✂️ 眉</button>
       <button class="axis-btn" data-axis="hair" onclick="selectAxis('hair')">💇 髪</button>
       <button class="axis-btn" data-axis="skin" onclick="selectAxis('skin')">✨ 肌・ひげ</button>
+      <button class="axis-btn" data-axis="hairremoval" onclick="selectAxis('hairremoval')">🪒 脱毛</button>
       <button class="axis-btn" data-axis="fashion" onclick="selectAxis('fashion')">👔 ファッション</button>
       <button class="axis-btn" data-axis="teeth" onclick="selectAxis('teeth')">🦷 歯</button>
       <button class="axis-btn" data-axis="nail" onclick="selectAxis('nail')">💅 爪</button>
@@ -581,6 +582,27 @@ const QUESTION_BANK = {
           'カミソリ・電動シェーバー・医療脱毛、それぞれのメリット・デメリットは？',
           'ひげが濃い男性と薄い男性で、アプローチは変わりますか？',
           '剃り後の肌荒れを防ぐためにやるべきことは？',
+        ]
+      },
+    ]
+  },
+  hairremoval: {
+    label: '脱毛・ムダ毛専門',
+    categories: [
+      {
+        name: '脱毛の基礎知識',
+        questions: [
+          '医療脱毛・光脱毛・自己処理、それぞれのメリット・デメリットは？',
+          '男性が脱毛を始めるベストなタイミング・部位の優先順位は？',
+          '脱毛を始めるのが恥ずかしいという男性に、どう伝えますか？',
+        ]
+      },
+      {
+        name: '効果・継続',
+        questions: [
+          '効果を実感できるまでの回数・期間の目安は？',
+          '痛み・肌荒れが心配な人へのアドバイスは？',
+          '途中でやめてしまう人に共通する理由は？',
         ]
       },
     ]
