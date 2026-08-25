@@ -56,6 +56,27 @@ export default function MypageProfilePage() {
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushMsg, setPushMsg] = useState('');
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [isIos, setIsIos] = useState(false);
+
+  // ホーム画面に追加（PWAインストール）導線
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const standalone = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    setIsStandalone(!!standalone);
+    setIsIos(/iphone|ipad|ipod/i.test(window.navigator.userAgent) && !window.MSStream);
+    const handler = (e) => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  async function installApp() {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+  }
 
   // ブラウザ通知（Web Push）の現在の購読状態を確認
   useEffect(() => {
@@ -467,6 +488,31 @@ export default function MypageProfilePage() {
                   <p style={{ margin: '10px 0 0', fontSize: '13px', color: lineMsg.includes('エラー') ? '#dc2626' : '#059669' }}>{lineMsg}</p>
                 )}
               </div>
+
+              {/* ホーム画面に追加（PWAインストール） */}
+              {!isStandalone && (installPrompt || isIos) && (
+                <div style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 6px' }}>アプリとして使う</p>
+                  {installPrompt ? (
+                    <>
+                      <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 14px' }}>
+                        ホーム画面に追加すると、アプリのようにワンタップで開けます。
+                      </p>
+                      <button
+                        type="button"
+                        onClick={installApp}
+                        style={{ padding: '10px 20px', background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.5)', borderRadius: '10px', fontWeight: 700, fontSize: '14px', color: '#c9a84c', cursor: 'pointer', fontFamily: 'inherit' }}
+                      >
+                        📲 ホーム画面に追加
+                      </button>
+                    </>
+                  ) : (
+                    <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: 0 }}>
+                      Safariの共有ボタン（<span style={{ color: '#c9a84c' }}>□↑</span>）→「ホーム画面に追加」でアプリのように使えます。
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* ブラウザ通知（Web Push） */}
               {pushSupported && (
