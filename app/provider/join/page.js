@@ -1,10 +1,10 @@
 export const metadata = {
-  title: '個人・フリーランスの外見系サービス提供者へ：Fineme掲載のご案内',
-  description: 'パーソナルジム・眉毛サロン・美容師・外見コンサルなど、集客に悩む個人・フリーランス向け。Finemeは「変わりたい」男女どちらのお客様も診断を経て辿り着くプラットフォームです。クーポン集客ではなく相性で選ばれる仕組みと、来店後の顧客管理・リマインドまでを一つで提供します。',
-  keywords: ['個人事業主 集客', 'パーソナルジム 集客 個人', '眉毛サロン 集客', 'フリーランス 美容師 集客', '外見コンサル 集客', '店舗 顧客管理 SaaS'],
+  title: 'いま抱えているお客様を、逃さない：Fineme 店舗向け掲載のご案内',
+  description: '顧客カルテ・リマインド自動化・休眠顧客の掘り起こしなど、掲載すれば今日から使える店舗運営SaaS。パーソナルジム・眉毛サロン・美容師・外見コンサルなど、個人・フリーランス向け。新規集客の有無に関わらず、いま抱えているお客様との関係を強くします。',
+  keywords: ['店舗 顧客管理 SaaS', 'リピート対策 サロン', '休眠顧客 掘り起こし', 'パーソナルジム 顧客管理', '美容室 予約リマインド 自動化', '個人事業主 集客'],
   openGraph: {
-    title: '集客に悩む個人・フリーランスの外見系サービス提供者へ | Fineme',
-    description: '診断を経た「本気で変わりたい」お客様との出会いから、来店後の顧客管理まで。',
+    title: 'いま抱えているお客様を、逃さない | Fineme 店舗向け掲載のご案内',
+    description: '顧客カルテ・リマインド自動化・休眠顧客の掘り起こし。掲載すれば今日から使える店舗運営SaaSです。',
   },
 };
 
@@ -203,23 +203,23 @@ export default function ProviderJoinPage({ searchParams }) {
         <section className="join-hero">
           <div className="join-container">
             <div className="join-hero-chips">
-              <span className="join-chip">変容の旅のインフラ</span>
-              <span className="join-chip">診断から始まる出会い</span>
-              <span className="join-chip">ガイドとしての参加</span>
+              <span className="join-chip">顧客管理・リピートSaaS</span>
+              <span className="join-chip">既存のお客様に今日から使える</span>
+              <span className="join-chip">新規の出会いは伸びしろとして追加</span>
             </div>
             <h1>
-              探してきたのではなく、<br/>
-              <em>旅の途中で辿り着く。</em>
+              新規集客の前に、<br/>
+              <em>今のお客様を、離さない。</em>
             </h1>
             <p className="join-hero-lead">
-              Finemeのユーザーは、診断で生成された自分だけの変容ロードマップを持っています。<br/>
-              あなたのページには「次のステップに必要だから」という理由で辿り着きます。<br/>
-              比較して迷っているのではなく、地図の指示に従って進んでいる人たちです。
+              予約の取りこぼし、いつの間にか来なくなった常連、スタッフの頭の中にしかない顧客情報——<br/>
+              Finemeは、いま抱えているお客様との関係を強くする店舗運営SaaSです。<br/>
+              顧客カルテ・リマインド・休眠顧客の掘り起こしは、新しいお客様がまだいなくても今日から動きます。
             </p>
-            <p className="join-hero-note">「合わなかった」のではなく「まだ出会っていなかった」。そのユーザーが、今ここにいます。</p>
+            <p className="join-hero-note">掲載すれば、診断を経て「本気で変わりたい」お客様との新しい出会いも、伸びしろとして加わります。</p>
             <div className="join-cta-row">
               <a className="btn-gold" href={inquiryHref}>掲載について相談する</a>
-              <a className="btn-ghost-white" href="/provider/philosophy">Finemeの考え方を読む</a>
+              <a className="btn-ghost-white" href="#tools">SaaS機能を見る</a>
             </div>
           </div>
         </section>
@@ -279,45 +279,91 @@ export default function ProviderJoinPage({ searchParams }) {
         <section className="join-section">
           <div className="join-container">
             <div className="sec-eyebrow">Problem</div>
-            <h2 className="sec-h2 sec-h2-light">今の集客に、違和感はありませんか？</h2>
-            <p className="sec-lead sec-lead-light">「合う人」に届く仕組みがないと、価格と数のゲームに巻き込まれます。</p>
+            <h2 className="sec-h2 sec-h2-light">こんな悩み、抱えていませんか？</h2>
+            <p className="sec-lead sec-lead-light">新規集客より先に、今のお客様との関係で困っていることはありませんか。</p>
             <div className="problem-grid">
+              <div className="problem-card">
+                <div className="problem-card-icon">🗒️</div>
+                <h3>顧客管理が属人的</h3>
+                <p>常連の来店タイミング・好み・注意点が、スタッフの頭の中にしかありません。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+              <div className="problem-card">
+                <div className="problem-card-icon">📉</div>
+                <h3>気づいたら来なくなっている</h3>
+                <p>休眠したお客様を追いきれず、離れたことにすら気づけないまま時間が過ぎます。</p>
+                <div className="problem-card-bar"></div>
+              </div>
               <div className="problem-card">
                 <div className="problem-card-icon">🏷️</div>
                 <h3>クーポン目当てのお客様ばかり</h3>
                 <p>値引き前提の比較は価値を削り、本来の魅力を伝え切れません。</p>
                 <div className="problem-card-bar"></div>
               </div>
-              <div className="problem-card">
-                <div className="problem-card-icon">🤔</div>
-                <h3>なぜ選ばれたのか分からない</h3>
-                <p>「選ばれる理由」が言語化されていないと、再現性のある出会いは育ちません。</p>
-                <div className="problem-card-bar"></div>
-              </div>
-              <div className="problem-card">
-                <div className="problem-card-icon">⚖️</div>
-                <h3>価格で比較され、疲弊する</h3>
-                <p>価格以外の比較軸を提示できなければ、消耗戦に陥ります。</p>
-                <div className="problem-card-bar"></div>
-              </div>
             </div>
             <div style={{marginTop:'16px', padding:'18px 22px', background:'#0a0f1e', borderRadius:'14px', border:'1px solid rgba(201,168,76,.2)'}}>
               <p style={{margin:0, fontSize:'15px', fontWeight:'700', color:'#fff', lineHeight:'1.7', fontFamily:"'Noto Sans JP', sans-serif"}}>
-                それはあなたのサービスの問題ではありません。
+                それは接客の問題ではありません。
                 <span style={{color:'#c9a84c'}}> 仕組みの問題です。</span><br/>
-                <span style={{fontSize:'13px', fontWeight:'400', color:'rgba(255,255,255,.6)'}}>Finemeは「どう出会うか」の設計から変えます。</span>
+                <span style={{fontSize:'13px', fontWeight:'400', color:'rgba(255,255,255,.6)'}}>Finemeは「今いるお客様との関係」から仕組み化します。</span>
               </p>
             </div>
           </div>
         </section>
 
-        {/* ③ なぜ合う人が来るのか */}
+        {/* ③.5 掲載後すぐ使える店舗運営ツール */}
+        <section className="join-section-dark" id="tools">
+          <div className="join-container">
+            <div className="sec-eyebrow">Store Management Tools</div>
+            <h2 className="sec-h2 sec-h2-dark">新しいお客様がいなくても、今日から使えます</h2>
+            <p className="sec-lead sec-lead-dark">掲載は「載せて終わり」ではありません。いま抱えているお客様との関係を強くする管理画面が、掲載と同時に使えます。</p>
+            <div className="problem-grid tools-grid">
+              <div className="problem-card">
+                <div className="problem-card-icon">📋</div>
+                <h3>顧客カルテ</h3>
+                <p>来店履歴・Me Scan受診有無・Mirrorスコア・担当スタッフを自動で一覧化。休眠しそうなお客様も一目で分かります。店舗だけに見える非公開メモも残せます。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+              <div className="problem-card">
+                <div className="problem-card-icon">🔔</div>
+                <h3>リマインド一式</h3>
+                <p>予約前日の確認・来店間隔が空いたお客様の自動掘り起こし・誕生日メッセージ・クチコミ依頼まで自動配信。送り忘れを仕組みで防ぎます。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+              <div className="problem-card">
+                <div className="problem-card-icon">🎯</div>
+                <h3>スタッフの接客の引き出し</h3>
+                <p>スタッフごとの得意軸・接客スクリプトを登録。担当したお客様のリピート率・指名率も自動で見える化されます。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+              <div className="problem-card">
+                <div className="problem-card-icon">📊</div>
+                <h3>LTV・CAC概算</h3>
+                <p>来店データから顧客生涯価値と広告費の回収状況を自動算出。感覚ではなく数字で、今の集客が割に合っているか確認できます。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+            </div>
+            <div style={{marginTop:'16px', padding:'18px 22px', background:'rgba(201,168,76,.08)', borderRadius:'14px', border:'1px solid rgba(201,168,76,.3)'}}>
+              <p style={{margin:0, fontSize:'14px', color:'#e8e2d4', lineHeight:'1.8', fontFamily:"'Noto Sans JP', sans-serif"}}>
+                <strong style={{color:'#fff'}}>💰 休眠客1人の呼び戻しで、ライトプラン（¥5,000/月）は元が取れます。</strong><br/>
+                客単価¥10,000〜¥30,000なら、リマインド経由の再来店が月1件あるだけで回収完了です。
+              </p>
+            </div>
+            <p style={{marginTop:'14px', fontSize:'12.5px', color:'rgba(255,255,255,.55)', lineHeight:'1.7', fontFamily:"'Noto Sans JP', sans-serif"}}>
+              エリア需要の可視化なども開発中です。画面イメージ・導入フローなど詳しい機能一覧は<a href="/business/store-saas-pitch-deck.html" style={{color:'#c9a84c'}}>店舗SaaS営業資料</a>をご覧ください。
+            </p>
+          </div>
+        </section>
+
+        {/* ④ なぜ合う人が来るのか（今後の伸びしろ） */}
         <section className="join-section-dark">
           <div className="join-container">
-            <div className="sec-eyebrow">How It Works</div>
-            <h2 className="sec-h2 sec-h2-dark">なぜ、合う人が来るのか</h2>
+            <div className="sec-eyebrow">Fineme Matching（今後の伸びしろ）</div>
+            <h2 className="sec-h2 sec-h2-dark">掲載しておけば、新しい出会いも増えていく</h2>
             <p className="sec-lead sec-lead-dark">
-              ユーザーは「検索して探す」のではなく、「診断を受けてから届く」設計になっています。
+              正直にお伝えすると、Finemeはまだユーザー基盤を育てている段階です。<br/>
+              それでも今のうちに掲載しておく理由は、この仕組みが「検索して探す」のではなく「診断を受けてから届く」設計だから——<br/>
+              ユーザーが増えるほど、この価値もそのまま伸びていきます。
             </p>
 
             <div className="scan-flow">
@@ -398,28 +444,9 @@ export default function ProviderJoinPage({ searchParams }) {
             <div className="score-insight" style={{marginTop:'16px'}}>
               <p>「きっかけ」と「失敗パターン」はスコアへの影響が特に大きい項目ですが、<strong>ページ全体の充実度が積み重なってスコアが決まります。</strong> テキトーに2項目入れただけでは上位には出ません——これが、Finemeに「合う人」が集まる理由です。</p>
             </div>
-          </div>
-        </section>
 
-        {/* ④.5 掲載後の管理機能 */}
-        <section className="join-section-dark" style={{paddingTop:0}}>
-          <div className="join-container">
-            <div className="sec-eyebrow">Store Management Tools</div>
-            <h2 className="sec-h2 sec-h2-dark">掲載後に使える、店舗運営ツール</h2>
-            <p className="sec-lead sec-lead-dark">掲載は「載せて終わり」ではありません。出会った後のリピート・育成までを一つの管理画面でサポートします。</p>
-            <div className="problem-grid tools-grid">
-              <div className="problem-card">
-                <div className="problem-card-icon">📋</div>
-                <h3>顧客カルテ</h3>
-                <p>来店履歴・Me Scan受診有無・Mirrorスコア・担当スタッフを自動で一覧化。休眠しそうなお客様も一目で分かります。店舗だけに見える非公開メモも残せます。</p>
-                <div className="problem-card-bar"></div>
-              </div>
-              <div className="problem-card">
-                <div className="problem-card-icon">🔔</div>
-                <h3>リマインド一式</h3>
-                <p>予約前日の確認・来店間隔が空いたお客様の自動掘り起こし・誕生日メッセージ・クチコミ依頼まで自動配信。送り忘れを仕組みで防ぎます。</p>
-                <div className="problem-card-bar"></div>
-              </div>
+            <p style={{marginTop:'24px', fontSize:'11px', fontWeight:'800', letterSpacing:'.1em', color:'rgba(201,168,76,.6)', textTransform:'uppercase'}}>ユーザーが増えるほど効いてくる機能</p>
+            <div className="tools-grid" style={{marginTop:'10px'}}>
               <div className="problem-card">
                 <div className="problem-card-icon">🌐</div>
                 <h3>診断起点LP自動生成</h3>
@@ -433,9 +460,6 @@ export default function ProviderJoinPage({ searchParams }) {
                 <div className="problem-card-bar"></div>
               </div>
             </div>
-            <p style={{marginTop:'18px', fontSize:'12.5px', color:'rgba(255,255,255,.55)', lineHeight:'1.7', fontFamily:"'Noto Sans JP', sans-serif"}}>
-              エリア需要の可視化・メニュー別LTV分析なども開発中です。画面イメージ・導入フローなど詳しい機能一覧は<a href="/business/store-saas-pitch-deck.html" style={{color:'#c9a84c'}}>店舗SaaS営業資料</a>をご覧ください。
-            </p>
           </div>
         </section>
 
@@ -507,9 +531,9 @@ export default function ProviderJoinPage({ searchParams }) {
                 <h3>Finemeに向いている</h3>
                 <ul className="fit-list">
                   <li><span className="fit-icon-yes">✓</span>自分の仕事に誇りがある</li>
-                  <li><span className="fit-icon-yes">✓</span>合う人と、長く関係を築きたい</li>
+                  <li><span className="fit-icon-yes">✓</span>今のお客様との関係をもっと大事にしたい</li>
+                  <li><span className="fit-icon-yes">✓</span>顧客管理・リマインドを楽にしたい</li>
                   <li><span className="fit-icon-yes">✓</span>選ばれる理由を言語化したい</li>
-                  <li><span className="fit-icon-yes">✓</span>ビフォーアフターが伝えられる</li>
                   <li><span className="fit-icon-yes">✓</span>外見から自信を取り戻す仕事だと思っている</li>
                 </ul>
               </div>
@@ -532,9 +556,9 @@ export default function ProviderJoinPage({ searchParams }) {
           <div className="join-container">
             <h2>最後に</h2>
             <p>
-              Finemeは、「載せれば集客できる場所」ではありません。<br/>
-              選ばれる理由を、一緒につくる場所です。<br/>
-              この考え方に少しでも共感したなら——あなたは、Finemeに向いています。
+              Finemeは、「新規客が来るのを待つ場所」ではありません。<br/>
+              今いるお客様との関係を強くしながら、新しい出会いも育てていく場所です。<br/>
+              顧客管理・リマインドに悩みがあるなら——あなたは、Finemeに向いています。
             </p>
             <div className="join-cta-row" style={{justifyContent:'center'}}>
               <a className="btn-gold" href={inquiryHref}>まずは話を聞いてみる</a>
