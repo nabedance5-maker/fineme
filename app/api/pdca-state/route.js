@@ -60,15 +60,21 @@ export async function GET(request) {
     const sb = getSupabase();
     const d = new Date(Date.now() + 9 * 3600000);
     const monday = (() => { const m = new Date(d); m.setUTCDate(m.getUTCDate() - ((m.getUTCDay() + 6) % 7)); return m.toISOString().slice(0, 10); })();
-    const [{ count: mc }, { count: sc }, { count: xc }, { data: strat }] = await Promise.all([
+    const [{ count: mc }, { count: sc }, { count: xc }, { data: strat }, { data: recentXPosts }] = await Promise.all([
       sb.from('mirror_sessions').select('id', { count: 'exact', head: true }).gte('created_at', `${monday}T00:00:00Z`),
       sb.from('profiles').select('id', { count: 'exact', head: true }).eq('subscription_status', 'active'),
       sb.from('sns_posts').select('id', { count: 'exact', head: true }).eq('channel', 'x').gte('created_at', `${monday}T00:00:00Z`),
       sb.from('sns_posts').select('text,created_at').eq('channel', 'strategy').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      sb.from('sns_posts').select('text,post_type,created_at').eq('channel', 'x').order('created_at', { ascending: false }).limit(5),
     ]);
     state.mirror = { weekPurchases: mc || 0 };
     state.subs = { active: sc || 0, target: 640 };
-    state.x = { weekPosts: xc || 0, strategyUpdatedAt: strat?.created_at || null, hasStrategy: !!strat?.text };
+    state.x = {
+      weekPosts: xc || 0,
+      strategyUpdatedAt: strat?.created_at || null,
+      hasStrategy: !!strat?.text,
+      recentPosts: (recentXPosts || []).map(r => ({ text: r.text, type: r.post_type, at: r.created_at })),
+    };
     if ((xc || 0) === 0) issues.push({ id: 'x-no-posts', area: '集客X', severity: 'warn', needs_human: false, title: '今週のX投稿が0本（x-post稼働確認）', action_for_ai: 'x-post cronの稼働・エラーを確認' });
 
     // x-engage の下書きが3日連続0件なら、窓/閾値/クエリの調整が必要（AIが検知して直す）
