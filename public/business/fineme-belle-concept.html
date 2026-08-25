@@ -98,7 +98,7 @@
 
   <!-- HERO -->
   <div class="hero">
-    <div class="hero-eyebrow">Future Expansion Concept</div>
+    <div class="hero-eyebrow">2026-05-04作成の構想メモ（2026-07-17に実装・稼働開始済み）</div>
     <h1 class="hero-title">Fineme <span class="belle">belle</span></h1>
     <p class="hero-sub">
       「変わりたい人に、地図と羅針盤を届ける」という仕組みを、女性にも。<br>
@@ -206,7 +206,7 @@
       <span class="file">&nbsp;&nbsp;&nbsp;&nbsp;belle/mypage/</span><span class="comment">&nbsp;&nbsp;← 女性向けマイページ</span><br>
     </div>
     <div class="note">
-      <strong>混乱防止設計：</strong> belle へのリンクは男性向けページの<strong>フッターにのみ</strong>設置。流入経路（SEO・広告・SNS）は belle 配下に直接誘導するため、男性ユーザーが誤って迷い込むリスクは極めて低い。SEO 流入は /belle/ ページに直接着地するため混乱は発生しない。
+      <strong>⚠️ 実装時に訂正済み：</strong> 当初「belleへのリンクは男性向けページのフッターにのみ」という混乱防止設計を想定していたが、実装時に「男女対等な導線」へ是正された（2026-07-24 commit「/aboutの二トラックを対等な導線に是正」）。現在は流入経路（SEO・広告・SNS）が belle 配下に直接誘導する設計は維持しつつ、サイト内の主要導線でも両トラックが対等に見える形になっている。
     </div>
   </div>
 
@@ -331,17 +331,20 @@
     <div class="section-label">Status</div>
     <h2 class="section-title">現在のステータス</h2>
     <div class="card" style="display:flex;align-items:center;gap:16px;">
-      <span class="status-badge status-future">構想段階</span>
+      <span class="status-badge" style="background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);color:#4ade80">実装済み・稼働中</span>
       <div class="card-body">
-        男性向け Fineme の掲載者・収益が軌道に乗ったタイミングで具体設計に移行する。URL構造・管理画面設計・マネタイズ方針の基本方向は確定済み。
+        2026-07-17にローンチ済み。URL構造は本ドキュメント想定通り<code>fineme.me/belle/</code>配下。ただし管理画面・データ設計は下記「⚠️実装時の訂正」の通り一部異なる形で実装された。
       </div>
+    </div>
+    <div class="note" style="margin-top:12px;border-color:rgba(212,160,192,.3)">
+      <strong>⚠️ 実装時の訂正（2026-08-07追記）：</strong>本ドキュメントは「男性向けFinemeが本体・belleは後発の拡張」という前提で書かれているが、実装時にこの前提は明確に是正された。<strong>二トラックは対等な設計であり、「実態は男性専用サイト」という表現はあらゆる文脈で使わない</strong>（でお指摘・2回）。以降の「男性向けフッターにのみbelleリンク」「渡邉が両方管理する共通target フィールド」等の設計は、実際には<strong>タイプ命名（生き物名/花名）・タイプ画像パス・記事写真プール・Mirror分析プロンプト（gender列）で個別管理</strong>する方式に変更され、導線も男女対等に是正済み（/aboutページ等）。正確な現状は CLAUDE.md の「二トラック構造」節を参照。
     </div>
   </div>
 
 </div>
 
 <div class="footer-note">
-  Fineme belle 構想概要 — 作成日 2026-05-04 &nbsp;|&nbsp; 内部資料
+  Fineme belle 構想概要 — 作成日 2026-05-04（構想時点の記録・2026-08-07に実装後の訂正を追記） &nbsp;|&nbsp; 内部資料
 </div>
 
 </body>
