@@ -224,57 +224,6 @@ export default function ProviderJoinPage({ searchParams }) {
           </div>
         </section>
 
-        {/* ② 対象業種 */}
-        <section className="categories-section">
-          <div className="join-container">
-            <div className="sec-eyebrow">対象業種</div>
-            <h2 className="sec-h2 sec-h2-light" style={{marginBottom:'8px'}}>こんな業種の方が参加しています</h2>
-            <p className="sec-lead sec-lead-light" style={{marginBottom:'24px'}}>個人経営・フリーランス・小規模サロン、すべて歓迎です。</p>
-            <div className="cat-grid">
-              <div className="cat-item">
-                <div className="cat-item-icon">🏋️</div>
-                <div className="cat-item-name">パーソナルジム</div>
-                <p className="cat-item-desc">フリーランスPT・個人ジム</p>
-              </div>
-              <div className="cat-item">
-                <div className="cat-item-icon">✂️</div>
-                <div className="cat-item-name">眉毛サロン</div>
-                <p className="cat-item-desc">アイブロウスタイリスト</p>
-              </div>
-              <div className="cat-item">
-                <div className="cat-item-icon">💈</div>
-                <div className="cat-item-name">美容室・美容師</div>
-                <p className="cat-item-desc">フリーランス・個人サロン</p>
-              </div>
-              <div className="cat-item">
-                <div className="cat-item-icon">🪞</div>
-                <div className="cat-item-name">外見コンサル</div>
-                <p className="cat-item-desc">外見・印象改善コンサル</p>
-              </div>
-              <div className="cat-item">
-                <div className="cat-item-icon">👔</div>
-                <div className="cat-item-name">ファッション</div>
-                <p className="cat-item-desc">パーソナルスタイリスト</p>
-              </div>
-              <div className="cat-item">
-                <div className="cat-item-icon">✨</div>
-                <div className="cat-item-name">脱毛サロン</div>
-                <p className="cat-item-desc">メンズ脱毛・医療脱毛</p>
-              </div>
-              <div className="cat-item">
-                <div className="cat-item-icon">💊</div>
-                <div className="cat-item-name">AGAクリニック</div>
-                <p className="cat-item-desc">薄毛・AGA治療院</p>
-              </div>
-              <div className="cat-item">
-                <div className="cat-item-icon">📸</div>
-                <div className="cat-item-name">写真撮影・その他</div>
-                <p className="cat-item-desc">婚活・マッチングアプリ写真</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* ③ 問題提起 */}
         <section className="join-section">
           <div className="join-container">
@@ -458,6 +407,57 @@ export default function ProviderJoinPage({ searchParams }) {
                 <h3>Mirrorマッチング</h3>
                 <p>写真分析（Mirror）で「改善余地が大きい軸」を特定し、その軸を得意とする店舗・メニューを自動提示。ミスマッチの少ない出会いを設計します。</p>
                 <div className="problem-card-bar"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ④.5 対象業種 */}
+        <section className="categories-section">
+          <div className="join-container">
+            <div className="sec-eyebrow">対象業種</div>
+            <h2 className="sec-h2 sec-h2-light" style={{marginBottom:'8px'}}>こんな業種の方が参加しています</h2>
+            <p className="sec-lead sec-lead-light" style={{marginBottom:'24px'}}>個人経営・フリーランス・小規模サロン、すべて歓迎です。</p>
+            <div className="cat-grid">
+              <div className="cat-item">
+                <div className="cat-item-icon">🏋️</div>
+                <div className="cat-item-name">パーソナルジム</div>
+                <p className="cat-item-desc">フリーランスPT・個人ジム</p>
+              </div>
+              <div className="cat-item">
+                <div className="cat-item-icon">✂️</div>
+                <div className="cat-item-name">眉毛サロン</div>
+                <p className="cat-item-desc">アイブロウスタイリスト</p>
+              </div>
+              <div className="cat-item">
+                <div className="cat-item-icon">💈</div>
+                <div className="cat-item-name">美容室・美容師</div>
+                <p className="cat-item-desc">フリーランス・個人サロン</p>
+              </div>
+              <div className="cat-item">
+                <div className="cat-item-icon">🪞</div>
+                <div className="cat-item-name">外見コンサル</div>
+                <p className="cat-item-desc">外見・印象改善コンサル</p>
+              </div>
+              <div className="cat-item">
+                <div className="cat-item-icon">👔</div>
+                <div className="cat-item-name">ファッション</div>
+                <p className="cat-item-desc">パーソナルスタイリスト</p>
+              </div>
+              <div className="cat-item">
+                <div className="cat-item-icon">✨</div>
+                <div className="cat-item-name">脱毛サロン</div>
+                <p className="cat-item-desc">メンズ脱毛・医療脱毛</p>
+              </div>
+              <div className="cat-item">
+                <div className="cat-item-icon">💊</div>
+                <div className="cat-item-name">AGAクリニック</div>
+                <p className="cat-item-desc">薄毛・AGA治療院</p>
+              </div>
+              <div className="cat-item">
+                <div className="cat-item-icon">📸</div>
+                <div className="cat-item-name">写真撮影・その他</div>
+                <p className="cat-item-desc">婚活・マッチングアプリ写真</p>
               </div>
             </div>
           </div>
