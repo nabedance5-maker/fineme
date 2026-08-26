@@ -11,7 +11,7 @@ export async function GET(request, { params }) {
 
   const { data: provider } = await supabase
     .from('providers')
-    .select('id, slug, name, catchphrase, photo_url, area, price_from')
+    .select('id, slug, name, catchphrase, photo_url, area, price_from, main_category')
     .eq('slug', slug)
     .eq('published', true)
     .single();

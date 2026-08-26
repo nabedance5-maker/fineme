@@ -56,7 +56,8 @@ export default function ServiceLog({ withSideNav = false }) {
             .then(r => r.ok ? r.json() : null)
             .then(d => {
               if (d?.provider) {
-                defaultProviderFromSrc = { slug: d.provider.slug, type: 'provider', name: d.provider.name };
+                defaultProviderFromSrc = { slug: d.provider.slug, type: 'provider', name: d.provider.name, category: d.provider.main_category };
+                partnerConfirmState = 'pending';
                 render();
               }
             })
@@ -75,7 +76,13 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-header h1 { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(18px,4vw,24px); font-weight: 700; color: #fff; margin: 0 0 6px; }
       .log-header h1 em { font-style: normal; color: #c9a84c; }
       .log-header-sub { font-size: 12px; color: rgba(232,228,220,0.45); margin: 0; line-height: 1.6; }
-      .log-partner-banner { margin-top: 14px; padding: 10px 14px; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.35); border-radius: 10px; font-size: 12.5px; color: #e8e4dc; line-height: 1.6; }
+      .log-partner-banner { margin-top: 14px; padding: 14px; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.35); border-radius: 10px; font-size: 12.5px; color: #e8e4dc; line-height: 1.6; }
+      .log-partner-banner-btns { display: flex; gap: 8px; }
+      .log-partner-btn-yes, .log-partner-btn-no { flex: 1; padding: 10px 12px; border-radius: 9px; font-size: 12.5px; font-weight: 800; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; }
+      .log-partner-btn-yes { background: #c9a84c; border: none; color: #0a0f1e; }
+      .log-partner-btn-yes:hover { opacity: .88; }
+      .log-partner-btn-yes:disabled, .log-partner-btn-no:disabled { opacity: .5; cursor: default; }
+      .log-partner-btn-no { background: transparent; border: 1px solid rgba(232,228,220,0.2); color: rgba(232,228,220,0.55); }
 
       /* ── Add button ── */
       .log-add-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: rgba(201,168,76,0.08); border: 1.5px dashed rgba(201,168,76,0.4); border-radius: 12px; color: #c9a84c; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; margin-bottom: 24px; }
@@ -351,6 +358,8 @@ export default function ServiceLog({ withSideNav = false }) {
     let providerSearchResults = [];
     let selectedProvider = null;
     let defaultProviderFromSrc = null; // 店舗紹介QR（?src=partner_{slug}）経由で来た場合のデフォルト紐づけ先
+    let partnerConfirmState = null; // 'pending' | 'done' | null（店舗紹介QRの追加確認バナーの状態）
+    let partnerConfirmBusy = false;
     let customIcon = DEFAULT_CUSTOM_ICON;
     let entryType = DEFAULT_ENTRY_TYPE; // 'visit' | 'purchase'（モーダルで選ぶ種別）
     let budget = null;
@@ -381,6 +390,20 @@ export default function ServiceLog({ withSideNav = false }) {
     if (!hasMirror) {
       try { hasMirror = !!JSON.parse(localStorage.getItem('fineme:mirror:sessions') || '[]').length; } catch {}
     }
+
+    // 店舗紹介QR確認時に main_category から Log の軸へ変換する
+    // （app/affiliate/[slug]/page.js の CAT_TO_AXIS と同じ対応表）
+    const PARTNER_CAT_TO_AXIS = {
+      gym: 'body', eyebrow: 'eyebrow', fashion: 'fashion',
+      hair: 'hair', aga: 'hair',
+      makeup: 'skin', hairremoval: 'skin', esthetic: 'skin',
+      whitening: 'teeth', orthodontics: 'teeth',
+      nail: 'nail',
+    };
+    const PARTNER_CAT_LABELS = {
+      consulting: '外見トータルサポート', diagnosis: '診断', colordiagnosis: 'パーソナルカラー診断',
+      bonediagnosis: '骨格診断', photo: '写真撮影', marriage: '結婚関連サービス',
+    };
 
     const isLoggedIn = () => !!getAccessToken();
 
@@ -807,10 +830,24 @@ export default function ServiceLog({ withSideNav = false }) {
 
     // ── メインレンダリング ──
     function render() {
-      const partnerBanner = defaultProviderFromSrc ? `
-        <div class="log-partner-banner">
-          🏬 ${esc(defaultProviderFromSrc.name || defaultProviderFromSrc.slug)}からのご案内です。ここで登録すると、記録がこのお店に自動で紐づきます。
-        </div>` : '';
+      let partnerBanner = '';
+      if (defaultProviderFromSrc && partnerConfirmState === 'pending') {
+        const name = esc(defaultProviderFromSrc.name || defaultProviderFromSrc.slug);
+        partnerBanner = `
+          <div class="log-partner-banner">
+            <p style="margin:0 0 10px;">🏬 ${name}からのご案内です。New Me Logに追加して、今日の来店を記録しますか？</p>
+            <div class="log-partner-banner-btns">
+              <button type="button" class="log-partner-btn-yes" id="log-partner-yes"${partnerConfirmBusy ? ' disabled' : ''}>${partnerConfirmBusy ? '追加中…' : 'はい、追加する'}</button>
+              <button type="button" class="log-partner-btn-no" id="log-partner-no"${partnerConfirmBusy ? ' disabled' : ''}>あとで</button>
+            </div>
+          </div>`;
+      } else if (defaultProviderFromSrc && partnerConfirmState === 'done') {
+        const name = esc(defaultProviderFromSrc.name || defaultProviderFromSrc.slug);
+        partnerBanner = `
+          <div class="log-partner-banner">
+            ✓ ${name}を追加し、今日の来店を記録しました。
+          </div>`;
+      }
 
       const header = `
         <div class="log-header">
@@ -1186,6 +1223,45 @@ export default function ServiceLog({ withSideNav = false }) {
       }
     }
 
+    // 店舗紹介QR（?src=partner_{slug}）のバナーで「はい、追加する」を押した時。
+    // 軸・名前を店舗情報から自動で決め、新規登録＋今日の来店記録までを1タップで行う
+    // （でお指摘：QRを読んでも紐づけが見えず、来店記録も残らなかった問題）。
+    async function confirmPartnerAdd() {
+      if (partnerConfirmBusy || !defaultProviderFromSrc) return;
+      partnerConfirmBusy = true;
+      render();
+      try {
+        const axis = PARTNER_CAT_TO_AXIS[defaultProviderFromSrc.category] || null;
+        const today = new Date().toISOString().slice(0, 10);
+        const data = {
+          axis: axis || (PARTNER_CAT_LABELS[defaultProviderFromSrc.category] || defaultProviderFromSrc.name),
+          custom_icon: axis ? null : DEFAULT_CUSTOM_ICON,
+          entry_type: 'visit',
+          name: defaultProviderFromSrc.name,
+          last_visit: today,
+          next_visit: null,
+          provider_slug: defaultProviderFromSrc.slug,
+          provider_type: defaultProviderFromSrc.type,
+        };
+        const created = await createLog(data);
+        await recordVisit(created.id, today);
+        await fetchLogs();
+        partnerConfirmState = 'done';
+        render();
+        showToast(`✓ ${defaultProviderFromSrc.name}を追加し、今日の来店を記録しました`);
+        flashCard(created.id);
+      } catch (e) {
+        alert('追加に失敗しました: ' + e.message);
+      } finally {
+        partnerConfirmBusy = false;
+      }
+    }
+
+    function dismissPartnerBanner() {
+      partnerConfirmState = null;
+      render();
+    }
+
     // date input は opacity:0 だとクリックしてもピッカーが開かないため、
     // ボタン経由で showPicker() を明示的に呼ぶ。
     function openDatePicker(id) {
@@ -1470,6 +1546,9 @@ export default function ServiceLog({ withSideNav = false }) {
       // FVカードをシェア/保存
       const shareBtn = e.target.closest('[data-share-fv]');
       if (shareBtn) { shareOrDownloadFvCard(shareBtn); return; }
+      // 店舗紹介QRの追加確認バナー
+      if (e.target.closest('#log-partner-yes')) { confirmPartnerAdd(); return; }
+      if (e.target.closest('#log-partner-no')) { dismissPartnerBanner(); return; }
     });
 
     // 日付を選んで記録（label 内の date input がネイティブのカレンダーを開く）
