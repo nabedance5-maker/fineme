@@ -134,7 +134,23 @@ export default function LineConnectGuideContent() {
           </div>
 
           <div className="lcg-step">
-            <p style={{ marginTop: 0 }}><span className="lcg-step-num">5</span><strong>店頭にQRコードを設置する</strong></p>
+            <p style={{ marginTop: 0 }}><span className="lcg-step-num">5</span><strong>ちゃんと届くかテストする</strong></p>
+            <p style={{ marginLeft: 18 }}>
+              ステップ3の「保存して確認する」は、チャネルアクセストークンが有効かどうかを確認しているだけで、実際にお客様のスマホに通知が届くかまでは確認できていません。ご自身のスマホを使って、お客様と同じ手順を先に試すことができます。
+            </p>
+            <ol className="stack" style={{ gap: 6, marginLeft: 18 }}>
+              <li>ご自身のスマホで、貴店の公式LINEを友だち追加します。</li>
+              <li>掲載者ダッシュボードにログインした状態のブラウザで「💬 LINE連携」タブを開くと、「ちゃんと届くかテストする」という欄にリンク（<code className="lcg-code">fineme.me/l/【貴店のスラッグ】</code>）が表示されます。これを開きます。</li>
+              <li>画面の案内に従い、Finemeへログインした上で連携を完了させます。「貴店名の公式LINEと連携しました」と表示されれば成功です。</li>
+              <li>掲載者ダッシュボードの「LINE連携」タブに戻り、「テスト送信する」ボタンを押します。数秒以内に、ステップ①で友だち追加したご自身のLINEにテストメッセージが届けば、お客様への通知も問題なく届きます。</li>
+            </ol>
+            <p className="muted" style={{ fontSize: 13, marginLeft: 18 }}>
+              テスト送信が失敗する場合は、画面に表示されるメッセージが原因を示しています（例：「まだ友だち追加していない」「まだ連携が完了していない」等）。案内に従ってやり直してください。
+            </p>
+          </div>
+
+          <div className="lcg-step">
+            <p style={{ marginTop: 0 }}><span className="lcg-step-num">6</span><strong>店頭にQRコードを設置する</strong></p>
             <ol className="stack" style={{ gap: 6, marginLeft: 18 }}>
               <li><a href="/provider/log-toolkit">New Me Log 紹介ツール</a> のページから、QRコード付きの案内カードを印刷できます。</li>
               <li>レジ横や会計時に、お客様へこのQRコードをご案内ください。</li>
@@ -142,7 +158,7 @@ export default function LineConnectGuideContent() {
           </div>
 
           <div className="lcg-step">
-            <p style={{ marginTop: 0 }}><span className="lcg-step-num">6</span><strong>（任意）予約前日の来店確認（ノーショー対策）を有効にする</strong></p>
+            <p style={{ marginTop: 0 }}><span className="lcg-step-num">7</span><strong>（任意）予約前日の来店確認（ノーショー対策）を有効にする</strong></p>
             <p style={{ marginLeft: 18 }}>
               有効にすると、予約前日リマインドに「行きます」「予定が変わりそう」のボタンが付き、お客様がその場で回答できるようになります。設定はステップ3完了後、掲載者ダッシュボードの「LINE連携」タブに表示される専用のURLをコピーし、LINE Official Account Managerの「応答設定」の中にあるWebhook欄に貼り付けて有効化するだけです。
             </p>
@@ -157,6 +173,12 @@ export default function LineConnectGuideContent() {
 
             <dt>LIFFのページに「LINEログインチャネルを使用してください」と出てLIFFを作成できません</dt>
             <dd>正常です。2019年の仕様変更でMessaging APIチャネルには直接LIFFを追加できなくなりました。ステップ4の手順通り、同じプロバイダー内に新しく「LINEログイン」チャネルを作成し、そちらでLIFFアプリを作成してください。</dd>
+
+            <dt>テスト送信を押すと「自分のLINEがまだ連携されていません」と出ます</dt>
+            <dd>ステップ5の②③（連携ページ<code className="lcg-code">fineme.me/l/【スラッグ】</code>を開いて連携を完了させる）がまだ済んでいません。先にそちらを完了させてから、もう一度テスト送信をお試しください。</dd>
+
+            <dt>テスト送信で「送信に失敗しました」と出ます</dt>
+            <dd>多くは、ご自身のスマホで貴店の公式LINEをまだ友だち追加していないことが原因です（LINEの仕様上、友だち追加していない相手にはメッセージを送れません）。友だち追加してから再度お試しください。</dd>
 
             <dt>無料のLINE公式アカウントでも使えますか？</dt>
             <dd>使えます。プランに関わらずMessaging APIの有効化だけ行っていただければ設定可能です。</dd>
