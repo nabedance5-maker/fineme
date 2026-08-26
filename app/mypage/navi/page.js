@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { TRACKS, getTrackId, syncTrackWithServer } from '@/lib/track';
 import { AXIS_HABIT_ITEM_LABELS, BELLE_MAKEUP_ITEM_LABELS, BELLE_HAIRREMOVAL_ITEM_LABELS } from '@/lib/axis-habits';
+import { FACE_TYPE_OPTIONS, FACE_TYPE_OPTIONS_BELLE } from '@/lib/profile-basics';
 import MypageSideNav from '../_components/MypageSideNav';
 
 // 軸 → 関連カテゴリのマッピング（記事のcategoryフィールドと照合）
@@ -1186,7 +1187,7 @@ export default function NewMeNaviPage() {
     // isCurrentFor: そのcareTypeの「現在地」マーカー
     // guide: 'none'|'LOW'|'MID'|'HIGH' — ガイド推奨度
     // note: 注意書き（任意）
-    const MILESTONES = {
+    const MILESTONES_RAW = {
       body: [
         { text: '自分の体型で気になる部分を1つ言語化できている（例：「腹まわりが気になる」）', guide: 'none', isCurrentFor: 'none', isSelfCheck: true, bodyDataKey: 'body_concern', bodyDataOptions: ['腹まわり', '胸（上半身）', '背中', '脚（太もも・ふくらはぎ）', '全体的に気になる'] },
         { text: '自分の体型目標を1つ言葉にしてみる（筋肉をつける・引き締めるなど）', guide: 'none', hint: '目標の方向性で取り組むべきことが変わる。まず「どっちを目指すか」を決める', isSelfCheck: true, bodyDataKey: 'body_goal', bodyDataOptions: ['筋肉をつけたい', '体重を落としたい', '引き締めたい', '猫背を改善したい', 'O脚・X脚を改善したい'] },
@@ -1195,7 +1196,7 @@ export default function NewMeNaviPage() {
         { text: '今週1週間、体を動かした回数を数えてみる', guide: 'none', hint: 'ゼロでも正直に。現状を知ることが出発点' },
         { text: '日常的に歩く・階段を使うなど、生活のなかに動きを取り入れている', guide: 'none' },
         { text: '週1回以上、意識的な運動習慣がある', guide: 'none',
-          products: [{ name: 'プロテイン（SAVAS ホエイ）', url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=whero523-22', level: 'intermediate', priceRange: 'low' }, { name: 'トレーニングウェア', url: 'https://www.amazon.co.jp/s?k=メンズ+トレーニングウェア&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
+          products: [{ name: 'プロテイン（SAVAS ホエイ）', url: 'https://www.amazon.co.jp/s?k=ザバスホエイプロテイン&tag=whero523-22', level: 'intermediate', priceRange: 'low' }, { name: 'トレーニングウェア', url: 'https://www.amazon.co.jp/s?k=トレーニングウェア&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
         { text: '食事の基本ルールを1つ調べてみる（例：タンパク質を毎食とる）', guide: 'LOW', isCurrentFor: 'concerned', hint: '「タンパク質を毎食とる」だけ覚えれば今日から実践できる',
           detail: 'タンパク質の目安：体重(kg)×1.5g/日。体重70kgなら約105g。食材別：鶏むね肉100g→約20g、卵1個→約6g、サバ缶1缶→約25g、納豆1パック→約8g、プロテイン1杯→約20g。まず「毎食に1品タンパク源を足す」だけで十分。炭水化物を減らすより先に、たんぱく質を増やすことの方が体型改善には効果が出やすい。',
           products: [{ name: 'プロテインバー（手軽なタンパク源）', url: 'https://www.amazon.co.jp/s?k=プロテインバー&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
@@ -1227,7 +1228,7 @@ export default function NewMeNaviPage() {
           detail: '肩幅の合わせ方：試着時に「肩線（肩の縫い目）がちょうど肩の端で終わっているか」を確認する。外にはみ出ていたら大きすぎ、内側に入っていたら小さすぎ。肩さえ合えば、袖の長さや丈の多少のズレは着こなしで吸収できる。上半身アウターは特に肩幅が最優先で、ウエスト・ヒップは二の次。ボトムスは太もも→ウエストの順に確認。' },
         { text: 'ベーシックアイテムが揃っている（白シャツ・ダークデニム・シンプルスニーカーなど）', guide: 'LOW' },
         { text: 'パーソナルカラー診断を受けたことがある', guide: 'HIGH', isCurrentFor: 'concerned' },
-        { text: '顔タイプ診断を受けたことがある', guide: 'HIGH', isSelfCheck: true, bodyDataKey: 'face_type', bodyDataOptions: ['チャーミングソフト', 'チャーミングハード', 'フレッシュソフト', 'フレッシュハード', 'エレガントソフト', 'エレガントハード', 'クールソフト', 'クールハード', '診断したことがない'] },
+        { text: '顔タイプ診断を受けたことがある', guide: 'HIGH', isSelfCheck: true, bodyDataKey: 'face_type', bodyDataOptions: trackId === 'belle' ? FACE_TYPE_OPTIONS_BELLE : FACE_TYPE_OPTIONS },
         { text: '骨格診断を受けたことがある', guide: 'HIGH', isSelfCheck: true, bodyDataKey: 'skeletal_type', bodyDataOptions: ['ストレート骨格', 'ウェーブ骨格', 'ナチュラル骨格', '診断したことがない'] },
         { text: '診断結果を踏まえて服を1アイテム以上選び直したことがある', guide: 'MID', isCurrentFor: 'self' },
         { text: 'ショップスタッフやスタイリストに「自分に似合うもの」を相談したことがある', guide: 'MID' },
@@ -1242,19 +1243,19 @@ export default function NewMeNaviPage() {
         { text: '自分の髪・頭皮の悩みを確認してみる（薄毛・スタイリングなど）', guide: 'LOW', hint: '薄毛が気になる人は早めの対応が有効。スタイリングが決まらない場合は美容師相談が近道', isSelfCheck: true, bodyDataKey: 'hair_additional', bodyDataMulti: true, bodyDataOptions: ['薄毛・抜け毛が気になる', 'ボリュームが出ない', '頭皮がべたつく', 'フケが気になる', 'セットが決まらない', 'すぐにペタンとなる', 'まとまらない'] },
         { text: '自分の顔型を確認してみる（丸・面長・卵型など）', guide: 'LOW', hint: '髪を後ろにまとめて鏡の前に立つ。輪郭が丸・面長・卵型・逆三角形のどれかを見る', isSelfCheck: true, bodyDataKey: 'face_shape', bodyDataOptions: ['丸顔', '面長', '卵型', '逆三角形（逆卵型）', '四角（ベース型）', '顔の輪郭がわからない'] },
         { text: '髪質に合ったシャンプーを使っている', guide: 'LOW',
-          products: [{ name: 'BOTANIST ボタニカルシャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー+メンズ&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'スカルプシャンプー（薄毛が気になる方）', url: 'https://www.amazon.co.jp/s?k=スカルプシャンプー+メンズ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
+          products: [{ name: 'BOTANIST ボタニカルシャンプー', url: 'https://www.amazon.co.jp/s?k=BOTANIST+シャンプー&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'スカルプシャンプー（薄毛が気になる方）', url: 'https://www.amazon.co.jp/s?k=スカルプシャンプー&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
         { text: 'ドライヤーで根元から乾かしている（自然乾燥していない）', guide: 'none',
-          products: [{ name: 'ドライヤー（速乾・髪に優しい）', url: 'https://www.amazon.co.jp/s?k=ドライヤー+速乾+メンズ&tag=whero523-22', level: 'beginner', priceRange: 'mid' }] },
+          products: [{ name: 'ドライヤー（速乾・髪に優しい）', url: 'https://www.amazon.co.jp/s?k=ドライヤー+速乾&tag=whero523-22', level: 'beginner', priceRange: 'mid' }] },
         { text: 'スタイリング剤を使っている', guide: 'none',
-          products: [{ name: 'ウーノ スーパーハード（定番）', url: 'https://www.amazon.co.jp/s?k=ウーノ+スーパーハード&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'バーム系スタイリング剤（ナチュラル仕上げ）', url: 'https://www.amazon.co.jp/s?k=ヘアバーム+メンズ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
+          products: [{ name: 'ウーノ スーパーハード（定番）', url: 'https://www.amazon.co.jp/s?k=ウーノ+スーパーハード&tag=whero523-22', level: 'beginner', priceRange: 'low', track: 'fineme' }, { name: 'バーム系スタイリング剤（ナチュラル仕上げ）', url: 'https://www.amazon.co.jp/s?k=ヘアバーム&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
         { text: 'トリートメントまたはアウトバスケアをしている', guide: 'LOW', isCurrentFor: 'concerned',
-          products: [{ name: 'アウトバストリートメント（洗い流さないタイプ）', url: 'https://www.amazon.co.jp/s?k=洗い流さないトリートメント+メンズ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
+          products: [{ name: 'アウトバストリートメント（洗い流さないタイプ）', url: 'https://www.amazon.co.jp/s?k=洗い流さないトリートメント&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
         { text: '美容師に「顔型・骨格に合う髪型」を相談したことがある', guide: 'HIGH', isCurrentFor: 'self' },
         { text: '定期的に通う美容師を1人決めている', guide: 'MID' },
         { text: '自宅でのセット方法を美容師に教わったことがある', guide: 'HIGH' },
         { text: '毎朝のセットを5分以内に迷いなく再現できている', guide: 'LOW', isCurrentFor: 'pro' },
         { text: '季節や場面に合わせてスタイルを変えた経験がある', guide: 'MID' },
-        { text: 'AGA・薄毛が気になる場合、専門クリニックに相談したことがある', guide: 'HIGH' },
+        { text: 'AGA・薄毛が気になる場合、専門クリニックに相談したことがある', guide: 'HIGH', track: 'fineme' },
       ],
       nail: [
         { text: '定期的に爪を切っている（1〜2週間に1回）', guide: 'none', isCurrentFor: 'none' },
@@ -1265,7 +1266,7 @@ export default function NewMeNaviPage() {
           products: [{ name: 'ニベア リッチケアハンドクリーム', url: 'https://www.amazon.co.jp/s?k=ニベア+ハンドクリーム&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
         { text: '爪の形を丸・スクエアなど意識して整えている', guide: 'LOW', isCurrentFor: 'concerned' },
         { text: 'ネイルオイルを使っている', guide: 'LOW',
-          products: [{ name: 'OPI プロスパ ネイルオイル', url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=whero523-22', level: 'intermediate', priceRange: 'low' }, { name: 'ネイルオイル（プチプラ）', url: 'https://www.amazon.co.jp/s?k=ネイルオイル+メンズ&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
+          products: [{ name: 'OPI プロスパ ネイルオイル', url: 'https://www.amazon.co.jp/s?k=OPI+ネイルオイル&tag=whero523-22', level: 'intermediate', priceRange: 'low' }, { name: 'ネイルオイル（プチプラ）', url: 'https://www.amazon.co.jp/s?k=ネイルオイル&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
         { text: '爪のケアを自分なりのルーティンにしている（切る・やすり・オイル）', guide: 'none', isCurrentFor: 'self' },
         { text: 'ネイルケアサロンでプロのケアを受けたことがある', guide: 'HIGH' },
         { text: '定期的にサロンでメンテナンスしている', guide: 'HIGH', isCurrentFor: 'pro' },
@@ -1284,17 +1285,17 @@ export default function NewMeNaviPage() {
     };
 
     // ── サブトラック（肌・歯の内訳別・統合リスト形式） ──
-    const MILESTONES_SUB = {
+    const MILESTONES_SUB_RAW = {
       skin_care: {
         steps: [
           { text: '洗顔・化粧水・乳液の3ステップが毎日できている', guide: 'none', isCurrentFor: 'none',
             products: [{ name: '肌ラボ 極潤 洗顔フォーム', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+洗顔&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: '肌ラボ 極潤 ヒアルロン液（化粧水）', url: 'https://www.amazon.co.jp/s?k=肌ラボ+極潤+化粧水&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'ニベア フェイス 乳液', url: 'https://www.amazon.co.jp/s?k=ニベア+フェイス+乳液&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
           { text: 'クレンジング（夜）と日焼け止め（朝）が習慣になっている', guide: 'none',
-            products: [{ name: 'ビオレUV アクアリッチ（日焼け止め）', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'メンズビオレ クレンジング', url: 'https://www.amazon.co.jp/s?k=メンズ+クレンジング+洗顔&tag=whero523-22', level: 'beginner', priceRange: 'low' }] },
+            products: [{ name: 'ビオレUV アクアリッチ（日焼け止め）', url: 'https://www.amazon.co.jp/s?k=ビオレUV+アクアリッチ&tag=whero523-22', level: 'beginner', priceRange: 'low' }, { name: 'メンズビオレ クレンジング', url: 'https://www.amazon.co.jp/s?k=メンズビオレ+クレンジング&tag=whero523-22', level: 'beginner', priceRange: 'low', track: 'fineme' }] },
           { text: '自分の肌タイプを確認してみる（乾燥・脂性・混合）', guide: 'LOW', isCurrentFor: 'concerned', hint: '朝、何もつけずに1〜2時間過ごす。Tゾーンが脂っぽければ混合、全体的に突っ張れば乾燥肌', isSelfCheck: true, bodyDataKey: 'skin_type', bodyDataOptions: ['乾燥肌', '脂性肌（オイリー）', '混合肌', '普通肌', '敏感肌', '肌タイプがわからない'] },
           { text: '自分の肌悩みを1つ言葉にしてみる（ニキビ・毛穴・くすみ・赤みなど）', guide: 'LOW', hint: '鏡を見て「一番気になるのは？」と問いかけるだけ。答えがそのまま肌悩みになる', isSelfCheck: true, bodyDataKey: 'skin_concerns', bodyDataMulti: true, bodyDataOptions: ['毛穴', 'ニキビ・吹き出物', 'くすみ', '赤み', '乾燥・カサつき', 'テカリ', 'シミ・そばかす', 'ハリ・弾力不足', '色ムラ'] },
           { text: '角質ケアを取り入れている', guide: 'MID', isCurrentFor: 'self',
-            products: [{ name: 'ピーリングジェル（週1回）', url: 'https://www.amazon.co.jp/s?k=ピーリングジェル+メンズ&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
+            products: [{ name: 'ピーリングジェル（週1回）', url: 'https://www.amazon.co.jp/s?k=ピーリングジェル&tag=whero523-22', level: 'intermediate', priceRange: 'low' }] },
           { text: '皮膚科またはエステで今の肌状態を1回診てもらったことがある', guide: 'HIGH', isCurrentFor: 'pro' },
           { text: '診断をもとにスキンケアを1アイテム以上アップデートした', guide: 'HIGH',
             products: [{ name: 'WELEDA スキンフード（天然成分・有機認証）', url: 'https://www.amazon.co.jp/s?k=WELEDA+スキンフード&tag=whero523-22', level: 'advanced', priceRange: 'low' }] },
@@ -1302,6 +1303,7 @@ export default function NewMeNaviPage() {
         ],
       },
       skin_hige: {
+        track: 'fineme',
         headerNote: 'カミソリ・毛抜き・ワックスはNG。電動シェーバーのみ推奨。ひげが普通〜濃い人は医療脱毛が本命。',
         steps: [
           { text: '電動シェーバーを使っている（カミソリ・毛抜きNG）', guide: 'none', note: 'カミソリは剃るたびに皮膚まで削るため肌へのダメージが大きい', isCurrentFor: 'none' },
@@ -1347,6 +1349,28 @@ export default function NewMeNaviPage() {
         ],
       },
     };
+
+    // MILESTONES_RAW/MILESTONES_SUB_RAWは男性向け内容を前提に書かれた項目が
+    // 一部あり（AGA相談・ひげケア・特定ブランドの商品リンクなど）、男女共通で
+    // 出すと不自然なため、trackタグ付きの項目・商品・サブトラックを現在の
+    // トラックでフィルタしてから使う（でお指摘 2026-08-26）。
+    // タグなし＝男女共通としてそのまま両トラックに表示する。
+    function filterStepsForTrack(steps) {
+      return (steps || [])
+        .filter(s => !s.track || s.track === trackId)
+        .map(s => s.products
+          ? { ...s, products: s.products.filter(p => !p.track || p.track === trackId) }
+          : s
+        );
+    }
+    const MILESTONES = Object.fromEntries(
+      Object.entries(MILESTONES_RAW).map(([k, steps]) => [k, filterStepsForTrack(steps)])
+    );
+    const MILESTONES_SUB = Object.fromEntries(
+      Object.entries(MILESTONES_SUB_RAW)
+        .filter(([, sub]) => !sub.track || sub.track === trackId)
+        .map(([k, sub]) => [k, { ...sub, steps: filterStepsForTrack(sub.steps) }])
+    );
 
     // ── アクションタイプ: quick=即日一回 / habit=毎日毎週 / ongoing=数週間〜数ヶ月 ──
     const ACTION_TYPE_MAP = {
@@ -2390,11 +2414,13 @@ export default function NewMeNaviPage() {
           text: '爪周りの甘皮・ささくれにネイルオイルを塗る（手全体の印象が変わる）' },
       ],
       hairremoval: [
-        { id: 'hairremoval-b-01', axis: 'hairremoval', priority: 10, action_type: 'quick',
+        // 3件ともひげ前提の内容（男女で悩みの中心が違う。computeHabitStatusItemsの
+        // BELLE_HAIRREMOVAL_ITEM_LABELS分岐と同じ理由）のためfineme限定にする
+        { id: 'hairremoval-b-01', axis: 'hairremoval', priority: 10, action_type: 'quick', track: 'fineme',
           text: 'ひげのスタイル（完全除去 or 整えて残す）を今日決める。迷いをなくすと清潔感が上がる' },
-        { id: 'hairremoval-b-02', axis: 'hairremoval', priority: 9, action_type: 'habit',
+        { id: 'hairremoval-b-02', axis: 'hairremoval', priority: 9, action_type: 'habit', track: 'fineme',
           text: '毎日同じタイミング（洗顔後など）でひげを処理する習慣を作る。生えかけの状態をなくす' },
-        { id: 'hairremoval-b-03', axis: 'hairremoval', priority: 7, action_type: 'quick',
+        { id: 'hairremoval-b-03', axis: 'hairremoval', priority: 7, action_type: 'quick', track: 'fineme',
           text: '現在のシェーバーの刃を確認する。3〜6ヶ月が交換目安。切れ味が落ちると肌荒れの原因になる' },
       ],
     };
@@ -2422,6 +2448,7 @@ export default function NewMeNaviPage() {
         const axisWeight = gap + mirrorBoost + (compassRank[axis] || 0);
         if (axisWeight === 0) continue;
         for (const step of steps) {
+          if (step.track && step.track !== trackId) continue;
           if (stepDone[step.id]) continue;
           if (skinHabitAnswered && SKIN_ITEM_OVERLAP_IDS.has(step.id)) continue;
           candidates.push({ ...step, _score: step.priority * axisWeight });
@@ -3031,7 +3058,7 @@ export default function NewMeNaviPage() {
         milestoneHtml = `
           <div class="subtab-wrap">
             <button class="subtab-btn${skinFocus==='care'?' active':''}" data-subtab="skin" data-val="care">✨ スキンケア</button>
-            <button class="subtab-btn${skinFocus==='hige'?' active':''}" data-subtab="skin" data-val="hige">🪒 ひげケア</button>
+            ${trackId === 'fineme' ? `<button class="subtab-btn${skinFocus==='hige'?' active':''}" data-subtab="skin" data-val="hige">🪒 ひげケア</button>` : ''}
           </div>
           ${headerNoteHtml}
           ${buildMilestoneItems(steps, careType, true, def.catLink, subKey)}
