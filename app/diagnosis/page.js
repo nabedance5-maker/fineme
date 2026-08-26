@@ -360,6 +360,7 @@ export default function DiagnosisPage() {
           if (q3StepIndex < CONCERN_AREAS.length - 1) {
             q3StepIndex++;
             renderQ3Step();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
           }
           if (state.aga_concern === 'yes') {
@@ -387,6 +388,7 @@ export default function DiagnosisPage() {
       if (currentScreen === 'q3' && q3StepIndex > 0) {
         q3StepIndex--;
         renderQ3Step();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
       if (screenHistory.length > 1) {

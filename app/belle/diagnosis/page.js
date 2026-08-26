@@ -351,6 +351,7 @@ export default function BelleDiagnosisPage() {
           if (q3StepIndex < CONCERN_AREAS.length - 1) {
             q3StepIndex++;
             renderQ3Step();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
           }
           // ここが「地図の骨格ができた」地点。残りの軸（他人からの見え方・恋愛への影響）は
@@ -366,6 +367,7 @@ export default function BelleDiagnosisPage() {
       if (currentScreen === 'q3' && q3StepIndex > 0) {
         q3StepIndex--;
         renderQ3Step();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
       if (screenHistory.length > 1) {
