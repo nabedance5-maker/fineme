@@ -397,6 +397,24 @@ export default function DiagnosisPage() {
       }
     }
 
+    // 身長・体重・体脂肪率から「体型は自己申告より客観的に伸びしろがあるか」を判定する。
+    // でお指摘 2026-08-26：身長体重体脂肪率を聞いておきながらスコアに一切使っていなかった。
+    // 自己申告(care_level)が「もう十分」でも、数値的に伸びしろがあるならbody軸のcurrentを
+    // 下げてgap（＝優先度）に反映する。低体重・低体脂肪側は指摘しない（過度な痩身を煽らない）。
+    // 日本肥満学会のBMI区分（25以上=肥満1度、30以上=肥満2度）を基準値として採用。
+    function bodyObjectiveConcern(heightCm, weightKg, bodyFatPct) {
+      if (!heightCm || !weightKg) return 0;
+      if (bodyFatPct != null && bodyFatPct > 0) {
+        if (bodyFatPct >= 25) return 2;
+        if (bodyFatPct >= 20) return 1;
+        return 0;
+      }
+      const bmi = weightKg / ((heightCm / 100) ** 2);
+      if (bmi >= 30) return 2;
+      if (bmi >= 25) return 1;
+      return 0;
+    }
+
     // 変容ベクトル（理想 - 現状）。現状は具体的行動（items）から自動算出したcare_levelを
     // 基準に、基本セットのカバー率で細分化する（でお指摘：選択肢は同等じゃない。化粧水は
     // やっててほしいが、ピーリングは必須ではない）。理想は変えたい度の回答があればそれを
@@ -409,6 +427,10 @@ export default function DiagnosisPage() {
         if (careLevel === 'self') {
           const ratio = essentialCoverageRatio(area.id, state.axis_habits[area.id]?.items || []);
           if (ratio !== null) currentScore = 2 + ratio * 1.5; // 基本を何も押さえていない2.0〜全部押さえている3.5
+        }
+        if (area.id === 'body') {
+          const concern = bodyObjectiveConcern(state.height_cm, state.weight_kg, state.body_fat_pct);
+          if (concern > 0) currentScore = Math.max(1, currentScore - concern);
         }
         // idealは1〜5の整数スケールで固定（配列インデックスとして使う下流箇所があるため、
         // currentのような小数の精緻化はしない）
