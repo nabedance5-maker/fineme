@@ -87,7 +87,7 @@ export default function ProviderDashboardPage() {
       if (!token) return null;
       try {
         const res = await fetch('/api/provider/me', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` }
         });
         if (!res.ok) return null;
         const data = await res.json();
@@ -335,7 +335,7 @@ export default function ProviderDashboardPage() {
         try {
           const res = await fetch('/api/provider/profile', {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
             body: JSON.stringify(updates)
           });
           if (res.ok) {
@@ -437,7 +437,7 @@ export default function ProviderDashboardPage() {
       try {
         const res = await fetch('/api/provider/analyze', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
+          headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` },
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || '分析に失敗しました');
@@ -482,7 +482,7 @@ export default function ProviderDashboardPage() {
 
       async function loadServices() {
         if (!listEl) return;
-        const res = await fetch('/api/provider/services', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch('/api/provider/services', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         if (!res.ok) { listEl.innerHTML = '<p class="muted" style="color:#ef4444">取得エラー</p>'; return; }
         const items = await res.json();
         renderPageScore(provider, items);
@@ -538,7 +538,7 @@ export default function ProviderDashboardPage() {
         }));
         listEl.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', async () => {
           if (!confirm('このサービスを削除しますか？')) return;
-          await fetch(`/api/provider/services/${btn.dataset.del}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+          await fetch(`/api/provider/services/${btn.dataset.del}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
           loadServices();
         }));
       }
@@ -573,7 +573,7 @@ export default function ProviderDashboardPage() {
         const benefitList = benefitListRaw.split('\n').map(s => s.replace(/^[・▶→✓\s]+/, '').trim()).filter(Boolean);
         const body = { name: fd.get('name'), price: Number(fd.get('price')), duration: fd.get('duration') || null, is_featured: !!editForm.elements['is_featured'].checked, image_url: fd.get('image_url') || null, suitable_path_types: suitablePathTypes.length > 0 ? suitablePathTypes : null, target_axis: fd.get('target_axis') || null, transformation_promise: fd.get('transformation_promise') || null, before_text: fd.get('before_text') || null, after_text: fd.get('after_text') || null, before_image_url: fd.get('before_image_url') || null, after_image_url: fd.get('after_image_url') || null, benefit_list: benefitList.length > 0 ? benefitList : null, category: fd.get('category') || null };
         const url = id ? `/api/provider/services/${id}` : '/api/provider/services';
-        const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(body) });
+        const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` }, body: JSON.stringify(body) });
         if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadServices(); showToast('保存しました'); }
         else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
       });
@@ -596,7 +596,7 @@ export default function ProviderDashboardPage() {
 
       async function loadStaff() {
         if (!listEl) return;
-        const res = await fetch('/api/provider/staff', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch('/api/provider/staff', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         if (!res.ok) { listEl.innerHTML = '<p class="muted" style="color:#ef4444">取得エラー</p>'; return; }
         const items = await res.json();
         if (!items.length) { listEl.innerHTML = '<p class="muted">まだスタッフが登録されていません。「＋ 追加」から登録してください。</p>'; return; }
@@ -649,7 +649,7 @@ export default function ProviderDashboardPage() {
         }));
         listEl.querySelectorAll('[data-staff-del]').forEach(btn => btn.addEventListener('click', async () => {
           if (!confirm('このスタッフを削除しますか？')) return;
-          await fetch(`/api/provider/staff/${btn.dataset.staffDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+          await fetch(`/api/provider/staff/${btn.dataset.staffDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
           loadStaff();
         }));
       }
@@ -680,7 +680,7 @@ export default function ProviderDashboardPage() {
           strong_types: String(fd.get('strong_types_text') || '').split(',').map(s => s.trim()).filter(Boolean),
         };
         const url = id ? `/api/provider/staff/${id}` : '/api/provider/staff';
-        const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(body) });
+        const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` }, body: JSON.stringify(body) });
         if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadStaff(); showToast('保存しました'); }
         else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
       });
@@ -698,7 +698,7 @@ export default function ProviderDashboardPage() {
         staffImgMsg.textContent = 'アップロード中…'; staffImgMsg.style.display = 'block'; staffImgBtn.disabled = true;
         const fd = new FormData(); fd.append('photo', file);
         try {
-          const res  = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+          const res  = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` }, body: fd });
           const data = await res.json();
           if (res.ok && data.url) {
             staffImgPrev.src = data.url; staffImgPrevW.style.display = 'block';
@@ -724,7 +724,7 @@ export default function ProviderDashboardPage() {
       async function loadStories() {
         if (!listEl) return;
         listEl.innerHTML = '<p class="muted">読み込み中…</p>';
-        const res = await fetch('/api/provider/stories', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch('/api/provider/stories', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         if (!res.ok) { listEl.innerHTML = '<p style="color:#ef4444" class="muted">取得エラー</p>'; return; }
         const items = await res.json();
         if (!items.length) { listEl.innerHTML = '<p class="muted">まだ体験談はありません。</p>'; return; }
@@ -764,7 +764,7 @@ export default function ProviderDashboardPage() {
             btn.disabled = true; btn.textContent = '更新中…';
             const res = await fetch(`/api/provider/stories/${id}`, {
               method: 'PATCH',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
               body: JSON.stringify({ provider_hidden: !nowHidden }),
             });
             if (res.ok) { loadStories(); showToast(nowHidden ? '体験談を表示しました' : '体験談を非表示にしました'); }
@@ -789,7 +789,7 @@ export default function ProviderDashboardPage() {
 
       async function loadRecommended() {
         listEl.textContent = '読み込み中…';
-        const res = await fetch('/api/provider/recommended-frequencies', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch('/api/provider/recommended-frequencies', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         if (!res.ok) { listEl.textContent = '取得エラー'; return; }
         const items = await res.json();
         if (!items.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px;margin:4px 0 0">まだ設定していません。</p>'; return; }
@@ -805,7 +805,7 @@ export default function ProviderDashboardPage() {
         }).join('');
         listEl.querySelectorAll('[data-rf-del]').forEach(btn => btn.addEventListener('click', async () => {
           await fetch('/api/provider/recommended-frequencies', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
             body: JSON.stringify({ axis: btn.dataset.rfDel, frequency_weeks: null, frequency_months: null }),
           });
           loadRecommended();
@@ -819,7 +819,7 @@ export default function ProviderDashboardPage() {
         if (!value || value < 1) { showToast('周期を入力してください'); return; }
         saveBtn.disabled = true;
         await fetch('/api/provider/recommended-frequencies', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
           body: JSON.stringify({
             axis: axisSel.value,
             frequency_weeks: unit === 'week' ? value : null,
@@ -845,7 +845,7 @@ export default function ProviderDashboardPage() {
       if (!daysInput || !saveBtn) return;
 
       async function loadDormantSettings() {
-        const res = await fetch('/api/provider/dormant-settings', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch('/api/provider/dormant-settings', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         if (!res.ok) return;
         const data = await res.json();
         daysInput.value = data.no_visit_days;
@@ -856,7 +856,7 @@ export default function ProviderDashboardPage() {
         if (!days || days < 1) { msgEl.textContent = '1以上の日数を入力してください'; msgEl.style.color = '#ef4444'; return; }
         saveBtn.disabled = true;
         const res = await fetch('/api/provider/dormant-settings', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
           body: JSON.stringify({ no_visit_days: days }),
         });
         if (res.ok) { msgEl.style.color = '#059669'; msgEl.textContent = '✓ 保存しました'; }
@@ -954,7 +954,7 @@ export default function ProviderDashboardPage() {
           const uid = sel.dataset.assign;
           sel.disabled = true;
           const res = await fetch(`/api/provider/customers/${uid}/note`, {
-            method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
             body: JSON.stringify({ assigned_staff_id: sel.value || null }),
           });
           showToast(res.ok ? '担当を更新しました' : '更新に失敗しました');
@@ -966,7 +966,7 @@ export default function ProviderDashboardPage() {
           if (!message?.trim()) return;
           btn.disabled = true;
           const res = await fetch(`/api/provider/customers/${btn.dataset.nudge}/nudge`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
             body: JSON.stringify({ message }),
           });
           const data = await res.json();
@@ -981,7 +981,7 @@ export default function ProviderDashboardPage() {
           if (box.style.display === 'block') { box.style.display = 'none'; return; }
           box.style.display = 'block';
           box.innerHTML = '<p class="muted" style="font-size:12px;">読み込み中…</p>';
-          const res = await fetch(`/api/provider/customers/${uid}/note`, { headers: { 'Authorization': `Bearer ${token}` } });
+          const res = await fetch(`/api/provider/customers/${uid}/note`, { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
           const data = await res.json();
           box.innerHTML = `
             <textarea data-note-input="${uid}" style="width:100%;min-height:70px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;" placeholder="この店舗だけが見られるメモ（要望・注意点など）。お客様には表示されません。">${esc(data.note || '')}</textarea>
@@ -992,7 +992,7 @@ export default function ProviderDashboardPage() {
             const note = box.querySelector(`[data-note-input="${uid}"]`).value;
             btnSave.disabled = true;
             await fetch(`/api/provider/customers/${uid}/note`, {
-              method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
               body: JSON.stringify({ note }),
             });
             showToast('メモを保存しました');
@@ -1005,8 +1005,8 @@ export default function ProviderDashboardPage() {
         if (!listEl) return;
         listEl.innerHTML = '<p class="muted">読み込み中…</p>';
         const [res, staffRes] = await Promise.all([
-          fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('/api/provider/staff', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } }),
+          fetch('/api/provider/staff', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } }),
         ]);
         if (!res.ok) { listEl.innerHTML = '<p style="color:#ef4444" class="muted">取得エラー</p>'; return; }
         staffList = staffRes.ok ? await staffRes.json() : [];
@@ -1035,7 +1035,7 @@ export default function ProviderDashboardPage() {
       async function loadStatus() {
         if (!statusEl) return;
         statusEl.textContent = '読み込み中…';
-        const res = await fetch('/api/provider/line-channel', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch('/api/provider/line-channel', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         if (!res.ok) { statusEl.textContent = '取得エラー'; return; }
         const data = await res.json();
         if (data.connected) {
@@ -1064,7 +1064,7 @@ export default function ProviderDashboardPage() {
           try {
             const res = await fetch('/api/provider/line-channel', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
               body: JSON.stringify({
                 channel_id: document.getElementById('lc-channel-id').value.trim(),
                 channel_secret: document.getElementById('lc-channel-secret').value.trim(),
@@ -1112,7 +1112,7 @@ export default function ProviderDashboardPage() {
         try {
           const res = await fetch('/api/provider/profile', {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
             body: JSON.stringify({ google_review_url: urlInput.value.trim() }),
           });
           if (res.ok) {
@@ -1147,7 +1147,7 @@ export default function ProviderDashboardPage() {
       async function loadMenus() {
         if (!menuList) return;
         menuList.innerHTML = '<p class="muted" style="font-size:13px;">読み込み中…</p>';
-        const res = await fetch('/api/provider/experience-menus', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch('/api/provider/experience-menus', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         const items = res.ok ? await res.json() : [];
         if (!items.length) { menuList.innerHTML = '<p class="muted" style="font-size:13px;">まだメニューがありません。</p>'; return; }
         menuList.innerHTML = items.map(m => `
@@ -1162,7 +1162,7 @@ export default function ProviderDashboardPage() {
         `).join('');
         menuList.querySelectorAll('[data-menu-del]').forEach(btn => btn.addEventListener('click', async () => {
           if (!confirm('このメニューを削除しますか？')) return;
-          await fetch(`/api/provider/experience-menus/${btn.dataset.menuDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+          await fetch(`/api/provider/experience-menus/${btn.dataset.menuDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
           loadMenus();
         }));
       }
@@ -1174,7 +1174,7 @@ export default function ProviderDashboardPage() {
           submitBtn.disabled = true; menuMsg.textContent = '';
           const axes = Array.from(document.querySelectorAll('#menu-axes input:checked')).map(i => i.value);
           const res = await fetch('/api/provider/experience-menus', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
             body: JSON.stringify({
               name: document.getElementById('menu-name').value,
               price: document.getElementById('menu-price').value,
@@ -1202,7 +1202,7 @@ export default function ProviderDashboardPage() {
 
       async function loadCaseCustomers() {
         if (!caseUserSel) return;
-        const res = await fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         const items = res.ok ? await res.json() : [];
         const seen = new Set();
         const opts = ['<option value="">お客様を選択</option>'];
@@ -1217,7 +1217,7 @@ export default function ProviderDashboardPage() {
       async function loadCases() {
         if (!caseList) return;
         caseList.innerHTML = '<p class="muted" style="font-size:13px;">読み込み中…</p>';
-        const res = await fetch('/api/provider/cases', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch('/api/provider/cases', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         const items = res.ok ? await res.json() : [];
         if (!items.length) { caseList.innerHTML = '<p class="muted" style="font-size:13px;">まだ事例がありません。</p>'; return; }
         caseList.innerHTML = items.map(c => `
@@ -1231,7 +1231,7 @@ export default function ProviderDashboardPage() {
         `).join('');
         caseList.querySelectorAll('[data-case-del]').forEach(btn => btn.addEventListener('click', async () => {
           if (!confirm('この事例を削除しますか？')) return;
-          await fetch(`/api/provider/cases/${btn.dataset.caseDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+          await fetch(`/api/provider/cases/${btn.dataset.caseDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
           loadCases();
         }));
       }
@@ -1243,7 +1243,7 @@ export default function ProviderDashboardPage() {
           if (!caseUserSel.value) { caseMsg.style.color = '#ef4444'; caseMsg.textContent = 'お客様を選択してください'; return; }
           submitBtn.disabled = true; caseMsg.textContent = '';
           const res = await fetch('/api/provider/cases', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
             body: JSON.stringify({
               user_id: caseUserSel.value,
               axis: document.getElementById('case-axis').value,
@@ -1278,7 +1278,7 @@ export default function ProviderDashboardPage() {
 
       async function loadAreaDemand() {
         contentEl.innerHTML = '<p class="muted" style="font-size:13px;">読み込み中…</p>';
-        const res = await fetch('/api/provider/area-demand', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch('/api/provider/area-demand', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         if (!res.ok) { contentEl.innerHTML = '<p class="muted" style="font-size:13px;color:#ef4444;">取得エラー</p>'; return; }
         const data = await res.json();
         if (data.note) { contentEl.innerHTML = `<p class="muted" style="font-size:13px;">${data.note}</p>`; return; }
@@ -1311,7 +1311,7 @@ export default function ProviderDashboardPage() {
       if (!contentEl) return;
 
       async function loadSettings() {
-        const res = await fetch('/api/provider/ltv-cac-settings', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch('/api/provider/ltv-cac-settings', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         if (!res.ok) return;
         const data = await res.json();
         adCostInput.value = data.monthly_ad_cost;
@@ -1320,7 +1320,7 @@ export default function ProviderDashboardPage() {
 
       async function loadContent() {
         contentEl.innerHTML = '<p class="muted" style="font-size:13px;">読み込み中…</p>';
-        const res = await fetch('/api/provider/ltv-cac', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch('/api/provider/ltv-cac', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         if (!res.ok) { contentEl.innerHTML = '<p class="muted" style="font-size:13px;color:#ef4444;">取得エラー</p>'; return; }
         const d = await res.json();
         if (!d.hasData) { contentEl.innerHTML = '<p class="muted" style="font-size:13px;">まだ来店済みの予約データがありません。</p>'; return; }
@@ -1339,7 +1339,7 @@ export default function ProviderDashboardPage() {
       if (settingsSaveBtn) settingsSaveBtn.addEventListener('click', async () => {
         settingsSaveBtn.disabled = true; settingsMsg.textContent = '';
         const res = await fetch('/api/provider/ltv-cac-settings', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
           body: JSON.stringify({ monthly_ad_cost: adCostInput.value, gross_margin_pct: marginInput.value }),
         });
         if (res.ok) { settingsMsg.style.color = '#059669'; settingsMsg.textContent = '✓ 保存しました'; loadContent(); }
@@ -1409,7 +1409,7 @@ export default function ProviderDashboardPage() {
           try {
             const res = await fetch('/api/provider/upload-facility-photo', {
               method: 'POST',
-              headers: { 'Authorization': `Bearer ${token}` },
+              headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` },
               body: fd,
             });
             let data; try { data = await res.json(); } catch { data = {}; }
@@ -1462,7 +1462,7 @@ export default function ProviderDashboardPage() {
         try {
           const res = await fetch('/api/provider/upload-photo', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
+            headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` },
             body: fd
           });
           const data = await res.json();
@@ -1499,7 +1499,7 @@ export default function ProviderDashboardPage() {
         msg.textContent = 'アップロード中…';
         const fd = new FormData(); fd.append('photo', compressedCover, 'photo.jpg');
         try {
-          const res = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+          const res = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` }, body: fd });
           let data; try { data = await res.json(); } catch { data = {}; }
           if (res.ok && data.url) {
             preview.src = data.url; previewWrap.style.display = 'block';
@@ -1544,7 +1544,7 @@ export default function ProviderDashboardPage() {
         try {
           const res = await fetch('/api/provider/upload-service-image', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
+            headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` },
             body: fd
           });
           let data; try { data = await res.json(); } catch { data = {}; }
@@ -1583,7 +1583,7 @@ export default function ProviderDashboardPage() {
           if (msg) msg.textContent = 'アップロード中…';
           const fd = new FormData(); fd.append('photo', compressed, 'photo.jpg');
           try {
-            const res = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
+            const res = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` }, body: fd });
             let data; try { data = await res.json(); } catch { data = {}; }
             if (res.ok && data.url) {
               if (preview) preview.src = data.url;
@@ -1960,7 +1960,7 @@ export default function ProviderDashboardPage() {
         if (!token) { showToast('ログインが必要です'); return; }
         const res = await fetch('/api/billing/portal-session', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
           body: JSON.stringify({}),
         });
         const data = await res.json();
