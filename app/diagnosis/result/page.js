@@ -606,6 +606,23 @@ export default function DiagnosisResultPage() {
     const isOverrideActive = !!(compassOverride && AREA_DEFS[compassOverride]);
     const compassFirst = isOverrideActive ? compassOverride : compassCalculated;
 
+    // ─── タイプ（識別軸）は「一番できてる軸」、Compass（次の一手）は従来どおり
+    // 「一番優先度が高い軸」——でお指摘 2026-08-26：優先順位＝タイプだと、タイプが
+    // 常に「これから頑張るところ」になってしまう。タイプは現在地(current)が
+    // 一番高い軸（＝すでに強みの軸）にし、優先度の高さとは切り離す。
+    // 上書き（fineme:compass:override）はシェア用に「見せたい軸」を選ぶ機能のため、
+    // 有効なときはタイプ側にもそのまま適用する。
+    function computeStrengthAxis() {
+      const entries = Object.entries(tv);
+      if (!entries.length) return compassCalculated;
+      entries.sort((a, b) => {
+        if (b[1].current !== a[1].current) return b[1].current - a[1].current;
+        return (a[1].tier || 9) - (b[1].tier || 9);
+      });
+      return entries[0][0];
+    }
+    const identityAxis = isOverrideActive ? compassOverride : computeStrengthAxis();
+
     // ─── Hero headline ───
     function getHeroContent() {
       const gc = p.goal_change;
@@ -746,9 +763,9 @@ export default function DiagnosisResultPage() {
     // ─── タイプ判定（Compass軸の care_type × path_type で136通りが確定する）───
     // ヒーロー表示・シェア文・OG画像で共用する
     function computeTypeIdentity() {
-      const axisCode = AXIS_TYPE_CODE[compassFirst];
+      const axisCode = AXIS_TYPE_CODE[identityAxis];
       if (!axisCode) return null;
-      const v = tv[compassFirst] || {};
+      const v = tv[identityAxis] || {};
       const careCode = CARE_CODE_MAP[v.care_type] || 'N';
       const pathCode = PATH_CODE_MAP[v.path_type] || 'V';
       const creature = TYPE_CREATURE[careCode + pathCode];
@@ -770,7 +787,7 @@ export default function DiagnosisResultPage() {
       const { axisCode, creature, typeCode, displayCode, fullName } = typeIdentity;
       const desc      = TYPE_DESCRIPTION[typeCode] || '';
       const color     = AXIS_ACCENT_COLOR[axisCode] || '#c9a84c';
-      const axisLabel = AREA_DEFS[compassFirst]?.label || '';
+      const axisLabel = AREA_DEFS[identityAxis]?.label || '';
       return `
         <div class="type-hero" style="background:linear-gradient(180deg,${color}1a 0%,rgba(10,15,30,0) 100%)">
           <p class="type-hero-lead">あなたのタイプは →</p>
@@ -1523,7 +1540,7 @@ export default function DiagnosisResultPage() {
     // ── Xシェアボタン生成 ──
     const shareBlock = document.getElementById('share-block');
     if (shareBlock) {
-      const ogUrl = `https://www.fineme.me/api/og/diagnosis?compass=${encodeURIComponent(compassFirst)}&type=${encodeURIComponent(typeIdentity?.displayCode||'')}&name=${encodeURIComponent(typeIdentity?.fullName||'')}&goal=${encodeURIComponent(p.goal_change||'')}&trigger=${encodeURIComponent(p.trigger||'')}`;
+      const ogUrl = `https://www.fineme.me/api/og/diagnosis?compass=${encodeURIComponent(identityAxis)}&type=${encodeURIComponent(typeIdentity?.displayCode||'')}&name=${encodeURIComponent(typeIdentity?.fullName||'')}&goal=${encodeURIComponent(p.goal_change||'')}&trigger=${encodeURIComponent(p.trigger||'')}`;
       const axisLabel = AREA_DEFS[compassFirst]?.label || '外見';
       const shareText = typeIdentity
         ? `Me Scan を受けた。\n私は「${typeIdentity.fullName}」だった。\n最初の一手は「${axisLabel}」から。\n\n136タイプ、あなたはどれ？👇\n#Fineme`
