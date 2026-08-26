@@ -87,14 +87,15 @@ export default function Navbar() {
         .nav-link { color: #e8e4dc; text-decoration: none; font-size: 14px; padding: 8px 10px; }
         .nav-link:hover { color: #fff; }
         .menu-toggle {
-          display: inline-flex; align-items: center; gap: 8px;
+          display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; white-space: nowrap;
           background: none; border: 1px solid rgba(201,168,76,0.35); color: #e8e4dc;
           cursor: pointer; padding: 8px 14px; border-radius: 8px; font-size: 14px; font-weight: 600;
         }
         .menu-toggle:hover { border-color: rgba(201,168,76,0.7); color: #fff; }
-        .menu-toggle .bars { display: inline-flex; flex-direction: column; gap: 3px; }
+        .menu-toggle .bars { display: inline-flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
         .menu-toggle .bars span { display: block; width: 16px; height: 2px; background: currentColor; border-radius: 2px; }
         .menu-caret { font-size: 10px; opacity: .8; }
+        .nav-link, .nav-right .btn { flex-shrink: 0; white-space: nowrap; }
         .menu-panel {
           position: absolute; top: 100%; right: 0; margin-top: 8px;
           min-width: 320px; background: rgba(10,15,30,0.98);
@@ -113,6 +114,10 @@ export default function Navbar() {
           .nav-search-inline { display: none; }
           .nav-search-mobile { display: inline; }
           .menu-panel { position: fixed; left: 12px; right: 12px; min-width: 0; grid-template-columns: 1fr; }
+        }
+        @media (max-width: 420px) {
+          .menu-toggle-label { display: none; }
+          .menu-toggle { padding: 8px 10px; }
         }
       `}</style>
       <div className="container navbar-inner" style={{ position: 'relative' }}>
@@ -137,7 +142,7 @@ export default function Navbar() {
             aria-label="メニュー"
           >
             <span className="bars"><span /><span /><span /></span>
-            メニュー<span className="menu-caret">▼</span>
+            <span className="menu-toggle-label">メニュー</span><span className="menu-caret">▼</span>
           </button>
 
           {authState === null ? null : authState ? (
