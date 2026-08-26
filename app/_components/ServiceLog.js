@@ -94,6 +94,14 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-add-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: rgba(201,168,76,0.08); border: 1.5px dashed rgba(201,168,76,0.4); border-radius: 12px; color: #c9a84c; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; margin-bottom: 24px; }
       .log-add-btn:hover { background: rgba(201,168,76,0.14); border-color: #c9a84c; }
 
+      /* ── カテゴリータブ（でお要望 2026-08-07） ── */
+      .log-axis-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin: 0 0 20px; scrollbar-width: none; -ms-overflow-style: none; }
+      .log-axis-tabs::-webkit-scrollbar { display: none; }
+      .log-axis-tab { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; padding: 8px 14px; border-radius: 99px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); transition: all .12s; white-space: nowrap; }
+      .log-axis-tab:hover { border-color: rgba(201,168,76,0.5); color: rgba(232,228,220,0.9); }
+      .log-axis-tab.selected { border-color: #c9a84c; background: rgba(201,168,76,0.14); color: #c9a84c; }
+      .log-axis-tab-count { font-size: 10.5px; opacity: .6; }
+
       /* ── Service card ── */
       .log-axis-section { margin-bottom: 24px; }
       .log-axis-label { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(201,168,76,0.6); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
@@ -383,6 +391,7 @@ export default function ServiceLog({ withSideNav = false }) {
     let lineConnectMsg = '';
     let customIcon = DEFAULT_CUSTOM_ICON;
     let entryType = DEFAULT_ENTRY_TYPE; // 'visit' | 'purchase'（モーダルで選ぶ種別）
+    let activeAxisFilter = 'all'; // 'all' | 軸id（一覧のカテゴリータブ。でお要望2026-08-07）
     let budget = null;
     let compassAxis = null;   // Me Scan が指す最初の一手
     let mirrorAxis = null;    // Mirror が指した1点
@@ -958,10 +967,25 @@ export default function ServiceLog({ withSideNav = false }) {
       logs.forEach(log => {
         (grouped[log.axis] = grouped[log.axis] || []).push(log);
       });
+      const axisKeys = Object.keys(grouped);
+      // カテゴリを削除・変更してタブが消えていたら「すべて」に戻す
+      if (activeAxisFilter !== 'all' && !axisKeys.includes(activeAxisFilter)) activeAxisFilter = 'all';
 
       const todayStr = new Date().toISOString().slice(0, 10); // 「日付を選ぶ」で未来日を選べないようにする上限
 
-      const sectionsHtml = Object.keys(grouped).map(axisId => {
+      // カテゴリタブ（1軸しか無ければ出す意味が無いので省略）
+      const axisTabsHtml = axisKeys.length > 1 ? `
+        <div class="log-axis-tabs">
+          <button type="button" class="log-axis-tab${activeAxisFilter === 'all' ? ' selected' : ''}" data-axis-tab="all">すべて <span class="log-axis-tab-count">${logs.length}</span></button>
+          ${axisKeys.map(axisId => {
+            const def = resolveAxis(axisId, grouped[axisId][0]?.custom_icon);
+            return `<button type="button" class="log-axis-tab${activeAxisFilter === axisId ? ' selected' : ''}" data-axis-tab="${axisId}">${def.icon} ${esc(def.label)} <span class="log-axis-tab-count">${grouped[axisId].length}</span></button>`;
+          }).join('')}
+        </div>` : '';
+
+      const visibleAxisKeys = activeAxisFilter === 'all' ? axisKeys : axisKeys.filter(k => k === activeAxisFilter);
+
+      const sectionsHtml = visibleAxisKeys.map(axisId => {
         const def = resolveAxis(axisId, grouped[axisId][0]?.custom_icon);
         const cards = grouped[axisId].map(log => {
           const nextDays = daysFromToday(log.next_visit);
@@ -1060,6 +1084,7 @@ export default function ServiceLog({ withSideNav = false }) {
         ${fvBlock}
         ${partnerBanner}
         <button class="log-add-btn" id="log-open-add">＋ 追加する</button>
+        ${axisTabsHtml}
         ${sectionsHtml}
         ${card ? '' : renderTrendCard()}
         ${renderAnalysisSection()}
@@ -1661,6 +1686,9 @@ export default function ServiceLog({ withSideNav = false }) {
       // FV／支出推移カルーセルのドット
       const dot = e.target.closest('[data-slide]');
       if (dot) { scrollFvCarouselTo(Number(dot.dataset.slide)); return; }
+      // 一覧のカテゴリータブ
+      const axisTab = e.target.closest('[data-axis-tab]');
+      if (axisTab) { activeAxisFilter = axisTab.dataset.axisTab; render(); return; }
       // 「支出から見えること」の目的設定
       const goalBtn = e.target.closest('[data-goal]');
       if (goalBtn) {
