@@ -2662,6 +2662,27 @@ export default function ProviderDashboardPage() {
                 既に公式LINEを友だち追加しているお客様に届きやすくなります。<br />
                 設定にはLINE Official Account ManagerでのMessaging API有効化・チャネルアクセストークンの発行が必要です。ご不明な場合はサポートいたしますのでお気軽にお問い合わせください。
               </p>
+              <a
+                href="/business/line-connect-guide"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn"
+                style={{
+                  background: '#06c755',
+                  color: '#fff',
+                  border: 'none',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 20px',
+                  borderRadius: '10px',
+                  marginTop: '12px',
+                }}
+              >
+                📖 連携のやり方を見る（設定ガイド） ↗
+              </a>
             </div>
             <div id="line-channel-status" className="muted" style={{ fontSize: '13px' }}>読み込み中…</div>
             <div id="lc-webhook-url-box" style={{ display: 'none', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', padding: '12px' }}>
