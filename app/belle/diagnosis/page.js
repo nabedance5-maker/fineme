@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
 import { AGE_BANDS, hasRequiredAttributes, saveAttribute, syncAttributesWithServer } from '@/lib/attributes';
 import { AXIS_HABIT_ITEM_LABELS, BELLE_MAKEUP_ITEM_LABELS, BELLE_HAIRREMOVAL_ITEM_LABELS, CLEANSE_FREQ_LABELS, BODY_FREQ_LABELS, HAIR_SALON_FREQ_LABELS, inferPathType, PATH_TO_CARE_LEVEL, CARE_LEVEL_SCORE, essentialCoverageRatio, WANT_CHANGE_OPTIONS } from '@/lib/axis-habits';
-import { FACE_TYPE_OPTIONS, SKELETAL_TYPE_OPTIONS, PERSONAL_COLOR_OPTIONS, MBTI_OPTIONS, isMeaningfulProfileValue } from '@/lib/profile-basics';
+import { FACE_TYPE_OPTIONS_BELLE, SKELETAL_TYPE_OPTIONS, PERSONAL_COLOR_OPTIONS, MBTI_OPTIONS, isMeaningfulProfileValue } from '@/lib/profile-basics';
 
 export default function BelleDiagnosisPage() {
   const initialized = useRef(false);
@@ -376,6 +376,23 @@ export default function BelleDiagnosisPage() {
       }
     }
 
+    // 身長・体重・体脂肪率から「体型は自己申告より客観的に伸びしろがあるか」を判定する。
+    // 男性版と同じ理由で導入（でお指摘 2026-08-26）。体脂肪率の基準値は女性向けの一般的な
+    // 目安（30%以上でやや高め、35%以上で高め）を使用し、男性版とは別の値にする。
+    // 低体重・低体脂肪側は指摘しない（過度な痩身を煽らない）。
+    function bodyObjectiveConcern(heightCm, weightKg, bodyFatPct) {
+      if (!heightCm || !weightKg) return 0;
+      if (bodyFatPct != null && bodyFatPct > 0) {
+        if (bodyFatPct >= 35) return 2;
+        if (bodyFatPct >= 30) return 1;
+        return 0;
+      }
+      const bmi = weightKg / ((heightCm / 100) ** 2);
+      if (bmi >= 30) return 2;
+      if (bmi >= 25) return 1;
+      return 0;
+    }
+
     // 変容ベクトル（理想 - 現状）。具体的行動（items・freq）から自動算出したcare_levelで確定する。
     function computeTransformVectors() {
       const vectors = {};
@@ -385,6 +402,10 @@ export default function BelleDiagnosisPage() {
         if (careLevel === 'self') {
           const ratio = essentialCoverageRatio(area.id, state.axis_habits[area.id]?.items || []);
           if (ratio !== null) currentScore = 2 + ratio * 1.5; // 基本を何も押さえていない2.0〜全部押さえている3.5
+        }
+        if (area.id === 'body') {
+          const concern = bodyObjectiveConcern(state.height_cm, state.weight_kg, state.body_fat_pct);
+          if (concern > 0) currentScore = Math.max(1, currentScore - concern);
         }
         // idealは1〜5の整数スケールで固定（配列インデックスとして使う下流箇所があるため、
         // currentのような小数の精緻化はしない）
@@ -716,7 +737,7 @@ export default function BelleDiagnosisPage() {
 
       container.appendChild(sectionHeading('顔タイプ'));
       container.appendChild(buildSingleSelectList(
-        FACE_TYPE_OPTIONS.map(v => ({ v, t: v })), state.face_type,
+        FACE_TYPE_OPTIONS_BELLE.map(v => ({ v, t: v })), state.face_type,
         v => { state.face_type = v; }
       ));
 
