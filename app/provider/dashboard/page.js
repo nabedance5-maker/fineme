@@ -1048,8 +1048,16 @@ export default function ProviderDashboardPage() {
             webhookUrlEl.textContent = `https://www.fineme.me/api/line/webhook/${provider.id}`;
             webhookBox.style.display = 'block';
           }
+          const testBox = document.getElementById('lc-test-send-box');
+          const testLiffEl = document.getElementById('lc-test-liff-link');
+          if (testBox && testLiffEl && provider?.slug) {
+            testLiffEl.textContent = `https://www.fineme.me/l/${provider.slug}`;
+            testBox.style.display = 'block';
+          }
         } else {
           statusEl.textContent = '未連携（Fineme公式LINEからリマインドが送られます）';
+          const testBox = document.getElementById('lc-test-send-box');
+          if (testBox) testBox.style.display = 'none';
         }
         const idInput = document.getElementById('lc-channel-id');
         const liffInput = document.getElementById('lc-liff-id');
@@ -1087,6 +1095,30 @@ export default function ProviderDashboardPage() {
             msgEl.textContent = '通信エラーが発生しました';
           }
           submitBtn.disabled = false; submitBtn.textContent = '保存して確認する';
+        });
+      }
+
+      const testSendBtn = document.getElementById('lc-test-send-btn');
+      const testSendMsg = document.getElementById('lc-test-send-msg');
+      if (testSendBtn) {
+        testSendBtn.addEventListener('click', async () => {
+          testSendBtn.disabled = true; testSendBtn.textContent = '送信中…';
+          if (testSendMsg) testSendMsg.textContent = '';
+          try {
+            const res = await fetch('/api/provider/line-channel/test-send', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok) {
+              if (testSendMsg) { testSendMsg.style.color = '#059669'; testSendMsg.textContent = '✓ 送信しました。自分のLINEに届いているか確認してください'; }
+            } else {
+              if (testSendMsg) { testSendMsg.style.color = '#ef4444'; testSendMsg.textContent = data.error || '送信に失敗しました'; }
+            }
+          } catch {
+            if (testSendMsg) { testSendMsg.style.color = '#ef4444'; testSendMsg.textContent = '通信エラーが発生しました'; }
+          }
+          testSendBtn.disabled = false; testSendBtn.textContent = 'テスト送信する';
         });
       }
 
@@ -2720,6 +2752,17 @@ export default function ProviderDashboardPage() {
             <div id="lc-webhook-url-box" style={{ display: 'none', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', padding: '12px' }}>
               <p className="muted" style={{ fontSize: '12px', margin: '0 0 4px' }}>予約前日リマインドの「行きます」ボタン等（ノーショー対策）を使う場合は、LINE Official Account Managerの「応答設定」→Webhookで以下のURLを設定してください（任意）：</p>
               <code id="lc-webhook-url" style={{ background: '#f3f4f6', color: '#111827', padding: '4px 8px', borderRadius: 4, fontSize: 12, wordBreak: 'break-all', display: 'inline-block' }}></code>
+            </div>
+            <div id="lc-test-send-box" style={{ display: 'none', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', padding: '14px' }}>
+              <p style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 6px' }}>ちゃんと届くかテストする</p>
+              <p className="muted" style={{ fontSize: '12px', margin: '0 0 10px', lineHeight: '1.7' }}>
+                ① 店舗の公式LINEを自分のスマホで友だち追加する<br />
+                ② 下のリンクを、そのアカウントでFinemeにログインした状態のブラウザで開いて連携する：<br />
+                <code id="lc-test-liff-link" style={{ background: '#f3f4f6', color: '#111827', padding: '3px 6px', borderRadius: 4, fontSize: 11.5, wordBreak: 'break-all', display: 'inline-block', margin: '4px 0' }}></code><br />
+                ③ 連携できたら下のボタンでテストメッセージを送る
+              </p>
+              <button type="button" className="btn" id="lc-test-send-btn">テスト送信する</button>
+              <p id="lc-test-send-msg" className="muted" style={{ fontSize: '13px', margin: '8px 0 0' }}></p>
             </div>
             <form id="line-channel-form" className="stack" style={{ gap: '10px' }}>
               <div className="form-field">
