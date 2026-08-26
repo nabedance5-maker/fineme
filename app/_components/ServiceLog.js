@@ -360,6 +360,7 @@ export default function ServiceLog({ withSideNav = false }) {
     let defaultProviderFromSrc = null; // 店舗紹介QR（?src=partner_{slug}）経由で来た場合のデフォルト紐づけ先
     let partnerConfirmState = null; // 'pending' | 'done' | null（店舗紹介QRの追加確認バナーの状態）
     let partnerConfirmBusy = false;
+    let partnerConfirmDoneMsg = '';
     let customIcon = DEFAULT_CUSTOM_ICON;
     let entryType = DEFAULT_ENTRY_TYPE; // 'visit' | 'purchase'（モーダルで選ぶ種別）
     let budget = null;
@@ -833,19 +834,28 @@ export default function ServiceLog({ withSideNav = false }) {
       let partnerBanner = '';
       if (defaultProviderFromSrc && partnerConfirmState === 'pending') {
         const name = esc(defaultProviderFromSrc.name || defaultProviderFromSrc.slug);
+        // 同じ店舗を何度もQRで読むたびに新規項目を作らないよう、既存の紐づけ済みログが
+        // あれば「来店を記録」に、無ければ「追加＋記録」に文言・挙動を出し分ける
+        // （でお指摘：来店するたびに同じ店舗が別項目として増えてしまっていた）
+        const existing = logs.find(l => l.provider_slug === defaultProviderFromSrc.slug);
+        const today = new Date().toISOString().slice(0, 10);
+        const alreadyToday = existing && existing.last_visit === today;
+        const question = existing
+          ? (alreadyToday ? `今日はすでに記録済みです。` : `今日の来店を記録しますか？`)
+          : `New Me Logに追加して、今日の来店を記録しますか？`;
+        const yesLabel = partnerConfirmBusy ? (existing ? '記録中…' : '追加中…') : (existing ? 'はい、記録する' : 'はい、追加する');
         partnerBanner = `
           <div class="log-partner-banner">
-            <p style="margin:0 0 10px;">🏬 ${name}からのご案内です。New Me Logに追加して、今日の来店を記録しますか？</p>
+            <p style="margin:0 0 10px;">🏬 ${name}${existing ? 'に登録済みです。' : 'からのご案内です。'}${question}</p>
             <div class="log-partner-banner-btns">
-              <button type="button" class="log-partner-btn-yes" id="log-partner-yes"${partnerConfirmBusy ? ' disabled' : ''}>${partnerConfirmBusy ? '追加中…' : 'はい、追加する'}</button>
-              <button type="button" class="log-partner-btn-no" id="log-partner-no"${partnerConfirmBusy ? ' disabled' : ''}>あとで</button>
+              ${alreadyToday ? '' : `<button type="button" class="log-partner-btn-yes" id="log-partner-yes"${partnerConfirmBusy ? ' disabled' : ''}>${yesLabel}</button>`}
+              <button type="button" class="log-partner-btn-no" id="log-partner-no"${partnerConfirmBusy ? ' disabled' : ''}>${alreadyToday ? '閉じる' : 'あとで'}</button>
             </div>
           </div>`;
       } else if (defaultProviderFromSrc && partnerConfirmState === 'done') {
-        const name = esc(defaultProviderFromSrc.name || defaultProviderFromSrc.slug);
         partnerBanner = `
           <div class="log-partner-banner">
-            ✓ ${name}を追加し、今日の来店を記録しました。
+            ✓ ${esc(partnerConfirmDoneMsg || '記録しました。')}
           </div>`;
       }
 
@@ -1225,36 +1235,48 @@ export default function ServiceLog({ withSideNav = false }) {
       }
     }
 
-    // 店舗紹介QR（?src=partner_{slug}）のバナーで「はい、追加する」を押した時。
-    // 軸・名前を店舗情報から自動で決め、新規登録＋今日の来店記録までを1タップで行う
-    // （でお指摘：QRを読んでも紐づけが見えず、来店記録も残らなかった問題）。
+    // 店舗紹介QR（?src=partner_{slug}）のバナーで「はい」を押した時。
+    // 既にその店舗を登録済みなら、新規項目を増やさず既存ログに来店記録だけを積む。
+    // 未登録なら軸・名前を店舗情報から自動で決め、新規登録＋今日の来店記録を1タップで行う
+    // （でお指摘：来店するたびに同じ店舗が別項目として何個も増えてしまっていた）。
     async function confirmPartnerAdd() {
       if (partnerConfirmBusy || !defaultProviderFromSrc) return;
+      const today = new Date().toISOString().slice(0, 10);
+      const existing = logs.find(l => l.provider_slug === defaultProviderFromSrc.slug);
+      if (existing && existing.last_visit === today) return; // 同日の二重記録を防ぐ
       partnerConfirmBusy = true;
       render();
       try {
-        const axis = PARTNER_CAT_TO_AXIS[defaultProviderFromSrc.category] || null;
-        const today = new Date().toISOString().slice(0, 10);
-        const data = {
-          axis: axis || (PARTNER_CAT_LABELS[defaultProviderFromSrc.category] || defaultProviderFromSrc.name),
-          custom_icon: axis ? null : DEFAULT_CUSTOM_ICON,
-          entry_type: 'visit',
-          name: defaultProviderFromSrc.name,
-          last_visit: today,
-          next_visit: null,
-          provider_slug: defaultProviderFromSrc.slug,
-          provider_type: defaultProviderFromSrc.type,
-        };
-        const created = await createLog(data);
-        const createdLog = created?.log || created; // ログイン時は{ok,log}、ゲスト時はrowそのものを返すため両対応
-        await recordVisit(createdLog.id, today);
+        let targetId;
+        if (existing) {
+          await recordVisit(existing.id, today);
+          targetId = existing.id;
+          partnerConfirmDoneMsg = `${defaultProviderFromSrc.name}の来店を記録しました`;
+        } else {
+          const axis = PARTNER_CAT_TO_AXIS[defaultProviderFromSrc.category] || null;
+          const data = {
+            axis: axis || (PARTNER_CAT_LABELS[defaultProviderFromSrc.category] || defaultProviderFromSrc.name),
+            custom_icon: axis ? null : DEFAULT_CUSTOM_ICON,
+            entry_type: 'visit',
+            name: defaultProviderFromSrc.name,
+            last_visit: today,
+            next_visit: null,
+            provider_slug: defaultProviderFromSrc.slug,
+            provider_type: defaultProviderFromSrc.type,
+          };
+          const created = await createLog(data);
+          const createdLog = created?.log || created; // ログイン時は{ok,log}、ゲスト時はrowそのものを返すため両対応
+          await recordVisit(createdLog.id, today);
+          targetId = createdLog.id;
+          partnerConfirmDoneMsg = `${defaultProviderFromSrc.name}を追加し、今日の来店を記録しました`;
+        }
         await fetchLogs();
         partnerConfirmState = 'done';
         render();
-        showToast(`✓ ${defaultProviderFromSrc.name}を追加し、今日の来店を記録しました`);
-        flashCard(createdLog.id);
+        showToast(`✓ ${partnerConfirmDoneMsg}`);
+        flashCard(targetId);
       } catch (e) {
-        alert('追加に失敗しました: ' + e.message);
+        alert('記録に失敗しました: ' + e.message);
       } finally {
         partnerConfirmBusy = false;
       }
