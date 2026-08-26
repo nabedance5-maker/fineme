@@ -150,12 +150,18 @@ export async function POST(request) {
         curatedPostsPrompt,
       });
 
+      // でお指摘（2026-08-12）: 二重顎の見落とし等、細かい観察の精度不足が疑われた。
+      // このセッションはpaid確定後に1回だけ生成・キャッシュされる（analyze/route.js側の
+      // 無料プレビューは呼び出し頻度が高くHaikuのまま据え置き）ため、コスト影響を抑えつつ
+      // 視覚精度を上げられる。47項目超の細部観察を1回のHaikuに詰め込んでいたのが精度不足の
+      // 主因と判断し、有料コア体験であるここだけSonnetに引き上げる。
+      //
       // STEP2-10のサブ項目まで含む大きなスキーマのためmax_tokensを大きく取る必要があり、
       // 非ストリーミングだとSDKが「10分を超えうる処理はストリーミング必須」として拒否する
       // （実測: 16000で生成が途中で切れJSONパース失敗。24000は非ストリーミングでは弾かれた）。
       // stream()を使うことで長時間生成に対応する（2026-08-12）。
       const stream = client.messages.stream({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-sonnet-5',
         max_tokens: 24000,
         system: systemPrompt,
         messages: [{
