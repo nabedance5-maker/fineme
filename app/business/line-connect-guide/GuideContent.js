@@ -97,13 +97,16 @@ export default function LineConnectGuideContent() {
           <div className="lcg-step">
             <p style={{ marginTop: 0 }}><span className="lcg-step-num">4</span><strong>お客様の連携ページ（LIFF）を作る</strong></p>
             <p style={{ marginLeft: 18 }}>
-              LINEのアカウント識別ID（userId）は、公式LINEアカウントごとに別の値になる仕組みです。そのため「お客様が貴店の公式LINEでも通知を受け取れる」ようにするには、お客様お一人おひとりに、貴店の公式LINE上でのIDをFinemeに一度だけ登録していただく専用ページ（LIFF＝LINE公式アカウント内で開けるWebページ）が必要です。設定は次の手順で行います。
+              LINEのアカウント識別ID（userId）は、公式LINEアカウントごとに別の値になる仕組みです。そのため「お客様が貴店の公式LINEでも通知を受け取れる」ようにするには、お客様お一人おひとりに、貴店の公式LINE上でのIDをFinemeに一度だけ登録していただく専用ページ（LIFF＝LINE公式アカウント内で開けるWebページ）が必要です。
+            </p>
+            <p style={{ marginLeft: 18, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px', fontSize: 13.5 }}>
+              ⚠️ 2019年のLINE仕様変更により、<strong>Messaging APIチャネル（ステップ2で開いたチャネル）には直接LIFFアプリを追加できません</strong>。同じ「プロバイダー」の中に、もう1つ「LINEログインチャネル」を新規作成し、そちらにLIFFアプリを追加します（下記手順）。
             </p>
             <ol className="stack" style={{ gap: 6, marginLeft: 18 }}>
-              <li><a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer">LINE Developersコンソール</a> で、ステップ2と同じチャネル（貴店のアカウント）を開き、「LIFF」タブを選びます。</li>
-              <li>「追加」（LIFFアプリを追加）を押します。</li>
-              <li>
-                入力欄が表示されるので、以下の通り入力します。
+              <li><a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer">LINE Developersコンソール</a> を開き、ステップ2で使ったチャネルが属する「プロバイダー」（会社名・店舗名の見出し）をクリックします（個別のチャネルではなく、その上の一覧画面です）。</li>
+              <li>「新規チャネル作成」を押し、チャネルの種類で「<strong>LINEログイン</strong>」を選びます。チャネル名・メールアドレス等、必須項目を入力して作成します。</li>
+              <li>作成した「LINEログイン」チャネルを開き、「LIFF」タブを選びます。</li>
+              <li>「追加」（LIFFアプリを追加）を押し、以下の通り入力します。
                 <ul style={{ marginTop: 4 }}>
                   <li><strong>LIFFアプリ名：</strong>任意（例：Fineme連携）</li>
                   <li><strong>サイズ：</strong>Full</li>
@@ -118,10 +121,13 @@ export default function LineConnectGuideContent() {
                 </ul>
               </li>
               <li>「追加」を押すと、「liff-」で始まるLIFF IDが発行されます。これをコピーします。</li>
+              <li>
+                （推奨）作成した「LINEログイン」チャネルの設定画面で「リンクされたLINE公式アカウント」に、ステップ2のMessaging APIチャネル（貴店の公式アカウント）を指定します。これを設定しておくと、お客様がこのページを開いた時に「友だち追加」も一緒に案内されるため、通知が届きやすくなります。
+              </li>
               <li>Finemeダッシュボードの「LINE連携」タブに戻り、「LIFF ID」欄に貼り付けて「保存して確認する」を押します。</li>
             </ol>
             <p className="muted" style={{ fontSize: 13, marginLeft: 18 }}>
-              ここまでの設定でつまずいた場合は、無理をせずメール（<a href="mailto:contact@fineme.me">contact@fineme.me</a>）にご連絡ください。Finemeサポートが代わりに設定いたします。
+              同じ「プロバイダー」内であれば、LINEログインチャネルとMessaging APIチャネルのユーザーIDは自動的に同じものになるため、この連携ページ経由の通知はそのままステップ2〜3で設定した貴店の公式LINEから届きます。ここまでの設定でつまずいた場合は、無理をせずメール（<a href="mailto:contact@fineme.me">contact@fineme.me</a>）にご連絡ください。Finemeサポートが代わりに設定いたします。
             </p>
           </div>
 
@@ -146,6 +152,9 @@ export default function LineConnectGuideContent() {
           <dl className="lcg-faq">
             <dt>「保存して確認する」を押すとエラーになります</dt>
             <dd>チャネルアクセストークンのコピーミス（前後に余分な空白が入っている等）が多い原因です。もう一度コピーし直してお試しください。改善しない場合はお問い合わせください。</dd>
+
+            <dt>LIFFのページに「LINEログインチャネルを使用してください」と出てLIFFを作成できません</dt>
+            <dd>正常です。2019年の仕様変更でMessaging APIチャネルには直接LIFFを追加できなくなりました。ステップ4の手順通り、同じプロバイダー内に新しく「LINEログイン」チャネルを作成し、そちらでLIFFアプリを作成してください。</dd>
 
             <dt>無料のLINE公式アカウントでも使えますか？</dt>
             <dd>使えます。プランに関わらずMessaging APIの有効化だけ行っていただければ設定可能です。</dd>
