@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { TRACKS, setTrackExplicit, saveTrackToServer } from '@/lib/track';
 import { VOICES, NOTIFY_LEVELS, defaultVoiceFor, DEFAULT_NOTIFY_LEVEL } from '@/lib/log-voice';
+import MypageSideNav from '../_components/MypageSideNav';
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -14,7 +15,7 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 export default function MypageProfilePage() {
-  const { track, trackId: resolvedTrackId } = useTrack();
+  const { trackId: resolvedTrackId } = useTrack();
   const [trackId, setTrackId] = useState('fineme');
   const [trackMsg, setTrackMsg] = useState('');
 
@@ -282,21 +283,7 @@ export default function MypageProfilePage() {
   return (
     <main className="section">
       <div className="container mypage-layout">
-        <aside className="mypage-sidenav">
-          <nav className="stack" style={{ gap: '4px' }}>
-            <Link href="/mypage" className="sidenav-link">ホーム</Link>
-            <Link href="/mypage/mirror" className="sidenav-link">Mirror履歴</Link>
-            <Link href={track.diagnosisResult} className="sidenav-link">診断結果</Link>
-            <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
-            <Link href="/mypage/log" className="sidenav-link">New Me Log</Link>
-            <Link href="/mypage/subscription" className="sidenav-link">サブスク設定</Link>
-            <Link href="/mypage/favorites" className="sidenav-link">お気に入り</Link>
-            <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
-            <Link href="/my-reservations" className="sidenav-link">予約履歴</Link>
-            <Link href="/mypage/story-submit" className="sidenav-link">体験談を書く</Link>
-            <Link href="/mypage/profile" className="sidenav-link sidenav-link--active">プロフィール編集</Link>
-          </nav>
-        </aside>
+        <MypageSideNav />
 
         <section className="stack">
           <h1 className="section-title">プロフィール編集</h1>

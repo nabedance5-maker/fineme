@@ -3,6 +3,7 @@ import useTrack from '@/app/_hooks/useTrack';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
+import MypageSideNav from './_components/MypageSideNav';
 
 const supabaseAnon = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -100,22 +101,7 @@ export default function MypagePage() {
   return (
     <main className="section">
       <div className="container mypage-layout">
-        {/* サイドナビ */}
-        <aside className="mypage-sidenav">
-          <nav className="stack" style={{ gap: '4px' }}>
-            <Link href="/mypage" className="sidenav-link sidenav-link--active">ホーム</Link>
-            <Link href="/mypage/mirror" className="sidenav-link">Mirror履歴</Link>
-            <Link href={track.diagnosisResult} className="sidenav-link">診断結果</Link>
-            <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
-            <Link href="/mypage/log" className="sidenav-link">New Me Log</Link>
-            <Link href="/mypage/subscription" className="sidenav-link">サブスク設定</Link>
-            <Link href="/mypage/favorites" className="sidenav-link">お気に入り</Link>
-            <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
-            <Link href="/my-reservations" className="sidenav-link">予約履歴</Link>
-            <Link href="/mypage/story-submit" className="sidenav-link">体験談を書く</Link>
-            <Link href="/mypage/profile" className="sidenav-link">プロフィール編集</Link>
-          </nav>
-        </aside>
+        <MypageSideNav />
 
         <section className="stack">
           <h1 className="section-title" style={{ marginBottom: '4px' }}>変容ダッシュボード</h1>
