@@ -275,20 +275,27 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-freq-chip:hover { border-color: rgba(201,168,76,0.5); color: rgba(232,228,220,0.9); }
       .log-freq-chip.selected { border-color: #c9a84c; background: rgba(201,168,76,0.14); color: #c9a84c; }
 
-      /* ── 「行った」の記録（1タップ） ── */
+      /* ── 「行った」の記録（1タップ） ──
+         「日付を選ぶ」はJSでshowPicker()を呼ぶ方式だとiOS Safariで完全に無反応になる
+         （でお報告 2026-08-07）。delegated click handler経由の呼び出しがWebKitの
+         ジェスチャー判定に弾かれる模様。JSを介さず、本物のinput type=dateを
+         ボタンと同じ見た目・同じ大きさで重ねて置き、タップ自体をブラウザに
+         直接処理させる方式に変更（Chrome/iOS Safariとも標準のネイティブ挙動）。 */
       .log-card-visit { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(232,228,220,0.07); }
-      .log-visit-today, .log-visit-pick { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; box-sizing: border-box; }
+      .log-visit-today, .log-visit-pick-wrap { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; box-sizing: border-box; position: relative; }
       .log-visit-today { background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.4); color: #c9a84c; }
       .log-visit-today:hover { background: rgba(201,168,76,0.2); }
-      .log-visit-pick { background: rgba(232,228,220,0.04); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); }
-      .log-visit-pick:hover { border-color: rgba(201,168,76,0.4); color: rgba(232,228,220,0.85); }
-      /* showPicker() を呼ぶための実体。display:none だと呼べないので opacity で隠す。
-         pointer-events:none は付けない — 一部Chromeはこれが付いた要素を showPicker() でも
-         「操作不可」とみなし失敗させるため（でお報告 2026-08-02 の再発の原因） */
-      .log-visit-input { position: absolute; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; margin: 0; }
-      /* showPicker() が使えない/失敗した時の最終フォールバック。実体を見せてフォーカスする */
-      .log-visit-input.is-fallback-visible { position: static; width: auto; height: auto; opacity: 1; flex-basis: 100%; margin-top: 4px; padding: 9px 10px; border: 1px solid rgba(201,168,76,0.4); border-radius: 8px; background: rgba(232,228,220,0.05); color: rgba(232,228,220,0.85); font-family: inherit; font-size: 13px; }
-      .log-visit-today:disabled, .log-visit-pick:disabled { opacity: .6; cursor: default; }
+      .log-visit-pick-wrap { background: rgba(232,228,220,0.04); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); }
+      .log-visit-pick-wrap:hover { border-color: rgba(201,168,76,0.4); color: rgba(232,228,220,0.85); }
+      .log-visit-pick-label { pointer-events: none; } /* 見た目だけ。タップは下のinputが直接受ける */
+      /* ボタンと同じ大きさで重ねた、実体のinput。opacity:0で見た目は消すが
+         サイズはボタンいっぱいのまま＝どこをタップしても本物のinputへの
+         タップになる（1px要素にしない。それだとタップ判定が狭すぎる） */
+      .log-visit-pick-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; margin: 0; cursor: pointer; }
+      /* Chromeは空のdate inputだと「カレンダーアイコン以外をクリックしても開かない」ため、
+         アイコンの当たり判定自体をinput全体に広げる */
+      .log-visit-pick-input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+      .log-visit-today:disabled { opacity: .6; cursor: default; }
 
       /* 記録できたことを目に見える形で返す */
       .log-toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(18px);
@@ -924,6 +931,8 @@ export default function ServiceLog({ withSideNav = false }) {
         (grouped[log.axis] = grouped[log.axis] || []).push(log);
       });
 
+      const todayStr = new Date().toISOString().slice(0, 10); // 「日付を選ぶ」で未来日を選べないようにする上限
+
       const sectionsHtml = Object.keys(grouped).map(axisId => {
         const def = resolveAxis(axisId, grouped[axisId][0]?.custom_icon);
         const cards = grouped[axisId].map(log => {
@@ -984,8 +993,10 @@ export default function ServiceLog({ withSideNav = false }) {
               ${log.memo ? `<p class="log-card-memo">📝 ${esc(log.memo)}</p>` : ''}
               <div class="log-card-visit">
                 <button class="log-visit-today" data-visit-today="${log.id}">${esc(etDef.recordDoneLabel)}</button>
-                <button class="log-visit-pick" data-visit-pick="${log.id}">📅 日付を選ぶ</button>
-                <input type="date" class="log-visit-input" data-visit-date="${log.id}" tabindex="-1" aria-hidden="true" />
+                <label class="log-visit-pick-wrap">
+                  <span class="log-visit-pick-label" data-visit-pick-label="${log.id}">📅 日付を選ぶ</span>
+                  <input type="date" class="log-visit-pick-input" data-visit-date="${log.id}" max="${todayStr}" />
+                </label>
               </div>
             </div>`;
         }).join('');
@@ -1318,30 +1329,6 @@ export default function ServiceLog({ withSideNav = false }) {
       render();
     }
 
-    // date input は opacity:0 だとクリックしてもピッカーが開かないため、
-    // ボタン経由で showPicker() を明示的に呼ぶ。
-    function openDatePicker(id) {
-      const input = root.querySelector(`input[data-visit-date="${id}"]`);
-      if (!input) return;
-      input.value = '';
-      input.max = new Date().toISOString().slice(0, 10); // 未来の「行った」は無い
-
-      let opened = false;
-      if (typeof input.showPicker === 'function') {
-        try { input.showPicker(); opened = true; }
-        catch (err) { console.warn('[ServiceLog] showPicker() に失敗、手動入力にフォールバックします:', err); }
-      }
-      if (!opened) revealDateInputFallback(input);
-    }
-
-    // showPicker() が使えない/失敗した時の最終フォールバック。
-    // .click() はネイティブのカレンダーUIを確実には開かないため、実体を見せて直接入力させる。
-    function revealDateInputFallback(input) {
-      input.classList.add('is-fallback-visible');
-      input.focus();
-      input.addEventListener('blur', () => input.classList.remove('is-fallback-visible'), { once: true });
-    }
-
     // FVカードを画像化してシェア/保存する。
     // でお指摘：サーバー側で別途組んだ画像だと羊皮紙にならない → html2canvasでDOMを直接
     // キャプチャする方式にした → 投資記録が8行あると行の文字が潰れて重なる新たな不具合
@@ -1572,8 +1559,8 @@ export default function ServiceLog({ withSideNav = false }) {
         markVisited(todayBtn.dataset.visitToday, new Date().toISOString().slice(0, 10), todayBtn);
         return;
       }
-      const pickBtn = e.target.closest('[data-visit-pick]');
-      if (pickBtn) { openDatePicker(pickBtn.dataset.visitPick); return; }
+      // 「日付を選ぶ」は本物のinput type=dateへの直接タップで開く（JSでの仲介なし）ため、
+      // ここでのクリックハンドリングは不要
       // Compass が指す軸の登録へ（その軸を選んだ状態でモーダルを開く）
       const addAxis = e.target.closest('[data-add-axis]');
       if (addAxis) {
@@ -1612,7 +1599,7 @@ export default function ServiceLog({ withSideNav = false }) {
       const dateInput = e.target.closest('[data-visit-date]');
       if (!dateInput || !dateInput.value) return;
       const id = dateInput.dataset.visitDate;
-      const btn = root.querySelector(`[data-visit-pick="${id}"]`);
+      const btn = root.querySelector(`[data-visit-pick-label="${id}"]`);
       markVisited(id, dateInput.value, btn);
     });
 
