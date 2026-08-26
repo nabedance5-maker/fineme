@@ -1246,12 +1246,13 @@ export default function ServiceLog({ withSideNav = false }) {
           provider_type: defaultProviderFromSrc.type,
         };
         const created = await createLog(data);
-        await recordVisit(created.id, today);
+        const createdLog = created?.log || created; // ログイン時は{ok,log}、ゲスト時はrowそのものを返すため両対応
+        await recordVisit(createdLog.id, today);
         await fetchLogs();
         partnerConfirmState = 'done';
         render();
         showToast(`✓ ${defaultProviderFromSrc.name}を追加し、今日の来店を記録しました`);
-        flashCard(created.id);
+        flashCard(createdLog.id);
       } catch (e) {
         alert('追加に失敗しました: ' + e.message);
       } finally {
