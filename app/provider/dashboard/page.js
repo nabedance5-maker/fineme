@@ -1352,6 +1352,37 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'ltv-cac') loadLtvCacTab();
     })();
 
+    // ── 紹介QRタブ ────────────────────────────────────────────────
+    (() => {
+      const contentEl = document.getElementById('qr-tab-content');
+      if (!contentEl) return;
+      let rendered = false;
+
+      async function loadQrTab() {
+        if (rendered) return;
+        const slug = provider?.slug;
+        if (!slug) { contentEl.innerHTML = '<p class="muted" style="font-size:13px;">店舗情報の読み込みを待っています…もう一度タブを開いてください。</p>'; return; }
+        rendered = true;
+        const link = `https://www.fineme.me/log?src=partner_${slug}`;
+        contentEl.innerHTML = '<p class="muted" style="font-size:13px;">QRコードを生成中…</p>';
+        try {
+          const QRCode = (await import('qrcode')).default || (await import('qrcode'));
+          const dataUrl = await QRCode.toDataURL(link, { width: 280, margin: 1, color: { dark: '#0a0f1e', light: '#ffffff' } });
+          contentEl.innerHTML = `
+            <img src="${dataUrl}" alt="New Me Log 紹介QRコード" style="width:220px;height:220px;border-radius:12px;background:#fff;padding:12px;" />
+            <p class="muted" style="font-size:12px;margin-top:10px;word-break:break-all;">${link}</p>
+            <button type="button" class="btn" id="qr-print-btn" style="margin-top:8px;">印刷する</button>
+          `;
+          document.getElementById('qr-print-btn')?.addEventListener('click', () => window.open('/provider/log-toolkit', '_blank'));
+        } catch {
+          contentEl.innerHTML = '<p class="muted" style="font-size:13px;color:#ef4444;">QRコードの生成に失敗しました。</p>';
+        }
+      }
+
+      document.querySelectorAll('[data-tab="qr"]').forEach(btn => btn.addEventListener('click', loadQrTab, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'qr') loadQrTab();
+    })();
+
     // ── 画像圧縮ヘルパー（Canvas, max 1200px, JPEG/WebP 0.85） ────
     function compressImage(file, maxPx = 1200, quality = 0.85) {
       return new Promise((resolve) => {
@@ -2010,6 +2041,7 @@ export default function ProviderDashboardPage() {
           <button className="tab-btn" data-tab="area-demand">📍 エリア需要</button>
           <button className="tab-btn" data-tab="scripts">💡 接客の引き出し</button>
           <button className="tab-btn" data-tab="ltv-cac">📊 LTV/CAC</button>
+          <button className="tab-btn" data-tab="qr">🔗 紹介QR</button>
           <button className="tab-btn" data-tab="service">サービス設定</button>
           <button className="tab-btn" data-tab="publish">公開設定</button>
           <button className="tab-btn" data-tab="billing">課金・プラン</button>
@@ -2896,6 +2928,21 @@ export default function ProviderDashboardPage() {
               メニュー別の来店データが無いため、店舗全体での概算です。予約（来店済み）の実績から算出しています。
             </p>
             <div id="ltv-cac-content"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
+          </div>
+        </div>
+
+        {/* 紹介QR：貴店専用のNew Me Log紹介QRコード。/log?src=partner_{slug}経由の登録は自動で貴店に紐づく */}
+        <div className="tab-pane" id="tab-qr">
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>New Me Log 紹介QRコード</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                このQRコードから登録すると、お客様の記録が自動で貴店に紐づき、「New Me Log」タブに表示されます。店頭に置いてご案内ください。
+              </p>
+            </div>
+            <div id="qr-tab-content" style={{ textAlign: 'center' }}>
+              <p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p>
+            </div>
           </div>
         </div>
 

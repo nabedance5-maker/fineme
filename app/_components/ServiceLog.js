@@ -57,6 +57,7 @@ export default function ServiceLog({ withSideNav = false }) {
             .then(d => {
               if (d?.provider) {
                 defaultProviderFromSrc = { slug: d.provider.slug, type: 'provider', name: d.provider.name };
+                render();
               }
             })
             .catch(() => {});
@@ -74,6 +75,7 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-header h1 { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(18px,4vw,24px); font-weight: 700; color: #fff; margin: 0 0 6px; }
       .log-header h1 em { font-style: normal; color: #c9a84c; }
       .log-header-sub { font-size: 12px; color: rgba(232,228,220,0.45); margin: 0; line-height: 1.6; }
+      .log-partner-banner { margin-top: 14px; padding: 10px 14px; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.35); border-radius: 10px; font-size: 12.5px; color: #e8e4dc; line-height: 1.6; }
 
       /* ── Add button ── */
       .log-add-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: rgba(201,168,76,0.08); border: 1.5px dashed rgba(201,168,76,0.4); border-radius: 12px; color: #c9a84c; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; margin-bottom: 24px; }
@@ -805,12 +807,18 @@ export default function ServiceLog({ withSideNav = false }) {
 
     // ── メインレンダリング ──
     function render() {
+      const partnerBanner = defaultProviderFromSrc ? `
+        <div class="log-partner-banner">
+          🏬 ${esc(defaultProviderFromSrc.name || defaultProviderFromSrc.slug)}からのご案内です。ここで登録すると、記録がこのお店に自動で紐づきます。
+        </div>` : '';
+
       const header = `
         <div class="log-header">
           <p class="log-header-eyebrow">New Me Log</p>
           <h1><em>「前いつ行ったっけ？」を、なくす</em></h1>
           <p class="log-header-sub">美容室・エステ・ジムから、スキンケアやプロテインなどの購入まで。登録しておくと、そろそろの時期にLINEで知らせます。月の美容代がまるごと分かります。</p>
-        </div>`;
+        </div>
+        ${partnerBanner}`;
 
       if (loadError) {
         root.innerHTML = `
