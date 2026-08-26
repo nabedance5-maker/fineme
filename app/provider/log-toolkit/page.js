@@ -77,7 +77,7 @@ export default function ProviderLogToolkitPage() {
           <div className="no-print">
             <p className="no-print-note">
               印刷してお店に置いていただくか、QRコードをそのままご利用ください。<br />
-              このQRコード経由の利用は店舗ごとに計測されます（リンク：<code>{trackingLink}</code>）。
+              このQRコードから登録すると、お客様の記録が自動で貴店に紐づきます（掲載者ダッシュボードの「New Me Log」タブに表示されます。リンク：<code>{trackingLink}</code>）。
             </p>
             <div className="cluster" style={{ justifyContent: 'center', marginTop: '16px' }}>
               <button className="btn" onClick={() => window.print()}>印刷する</button>

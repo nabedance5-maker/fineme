@@ -41,11 +41,26 @@ export default function ServiceLog({ withSideNav = false }) {
     initialized.current = true;
 
     // ?src= パラメータを読み取り計測（提携店舗QR・Pinterest等の流入元を測る。D-20260712-3と同じ既存パターン）
+    // src が partner_{slug} 形式（店舗の紹介QR）の場合、その店舗を新規登録のデフォルトとして
+    // 紐づける（でお指摘：QRを読んでもNew Me Logに飛ぶだけで店舗と繋がっていなかった問題）。
     try {
       const logSrc = new URLSearchParams(window.location.search).get('src');
       if (logSrc) {
         localStorage.setItem('fineme:log:src', logSrc);
         fetch('/api/track/src?src=' + encodeURIComponent(logSrc)).catch(() => {});
+
+        const partnerMatch = /^partner_(.+)$/.exec(logSrc);
+        if (partnerMatch && partnerMatch[1] !== 'unknown') {
+          const slug = partnerMatch[1];
+          fetch(`/api/providers/${encodeURIComponent(slug)}/landing`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => {
+              if (d?.provider) {
+                defaultProviderFromSrc = { slug: d.provider.slug, type: 'provider', name: d.provider.name };
+              }
+            })
+            .catch(() => {});
+        }
       }
     } catch {}
 
@@ -333,6 +348,7 @@ export default function ServiceLog({ withSideNav = false }) {
     let editingId = null;
     let providerSearchResults = [];
     let selectedProvider = null;
+    let defaultProviderFromSrc = null; // 店舗紹介QR（?src=partner_{slug}）経由で来た場合のデフォルト紐づけ先
     let customIcon = DEFAULT_CUSTOM_ICON;
     let entryType = DEFAULT_ENTRY_TYPE; // 'visit' | 'purchase'（モーダルで選ぶ種別）
     let budget = null;
@@ -944,7 +960,9 @@ export default function ServiceLog({ withSideNav = false }) {
     // presetAxis: 新規登録時に最初から選んでおく軸（Compass の導線から来た時に使う）
     function openModal(log = null, presetAxis = null) {
       editingId = log?.id || null;
-      selectedProvider = log?.provider_slug ? { slug: log.provider_slug, type: log.provider_type } : null;
+      selectedProvider = log?.provider_slug
+        ? { slug: log.provider_slug, type: log.provider_type }
+        : (!log ? defaultProviderFromSrc : null);
       customIcon = log?.custom_icon || DEFAULT_CUSTOM_ICON;
       entryType = log?.entry_type === 'purchase' ? 'purchase' : DEFAULT_ENTRY_TYPE;
       renderTypeToggle();
@@ -969,7 +987,9 @@ export default function ServiceLog({ withSideNav = false }) {
       document.getElementById('log-f-next').value = log?.next_visit || '';
       document.getElementById('log-f-cost').value = log?.cost || '';
       document.getElementById('log-f-memo').value = log?.memo || '';
-      document.getElementById('log-provider-search-input').value = log?.provider_slug ? `（登録済み）${log.provider_slug}` : '';
+      document.getElementById('log-provider-search-input').value = log?.provider_slug
+        ? `（登録済み）${log.provider_slug}`
+        : (selectedProvider ? `（お店から案内）${selectedProvider.name || selectedProvider.slug}` : '');
       providerSearchResults = [];
       renderProviderResults();
       renderIconPicker();
