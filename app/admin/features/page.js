@@ -244,7 +244,7 @@ export default function AdminFeaturesPage() {
               <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,15,30,.05) 0%,rgba(10,15,30,.35) 40%,rgba(10,15,30,.88) 78%,rgba(10,15,30,.97) 100%)"></div>
               <div style="position:absolute;bottom:0;left:0;right:0;padding:0 20px 24px">
                 ${catBadge}
-                <div style="font-size:clamp(16px,3vw,22px);font-weight:800;line-height:1.45;color:#fff;margin-bottom:10px;text-shadow:0 2px 12px rgba(0,0,0,.35)">${title}</div>
+                <div style="font-size:clamp(16px,3vw,22px);font-weight:800;line-height:1.45;color:#fff;margin-bottom:10px">${title}</div>
                 <div style="font-size:12px;color:rgba(255,255,255,.55)">📖 ${readTime}分で読める</div>
               </div>
             </div>
