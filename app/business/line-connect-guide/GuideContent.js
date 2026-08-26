@@ -99,7 +99,7 @@ export default function LineConnectGuideContent() {
             <p style={{ marginLeft: 18 }}>
               LINEのアカウント識別ID（userId）は、公式LINEアカウントごとに別の値になる仕組みです。そのため「お客様が貴店の公式LINEでも通知を受け取れる」ようにするには、お客様お一人おひとりに、貴店の公式LINE上でのIDをFinemeに一度だけ登録していただく専用ページ（LIFF＝LINE公式アカウント内で開けるWebページ）が必要です。
             </p>
-            <p style={{ marginLeft: 18, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px', fontSize: 13.5 }}>
+            <p style={{ marginLeft: 18, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px', fontSize: 13.5, color: '#111827', textShadow: 'none' }}>
               ⚠️ 2019年のLINE仕様変更により、<strong>Messaging APIチャネル（ステップ2で開いたチャネル）には直接LIFFアプリを追加できません</strong>。同じ「プロバイダー」の中に、もう1つ「LINEログインチャネル」を新規作成し、そちらにLIFFアプリを追加します（下記手順）。
             </p>
             <ol className="stack" style={{ gap: 6, marginLeft: 18 }}>
