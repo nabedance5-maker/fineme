@@ -854,12 +854,12 @@ export default function ServiceLog({ withSideNav = false }) {
           <p class="log-header-eyebrow">New Me Log</p>
           <h1><em>「前いつ行ったっけ？」を、なくす</em></h1>
           <p class="log-header-sub">美容室・エステ・ジムから、スキンケアやプロテインなどの購入まで。登録しておくと、そろそろの時期にLINEで知らせます。月の美容代がまるごと分かります。</p>
-        </div>
-        ${partnerBanner}`;
+        </div>`;
 
       if (loadError) {
         root.innerHTML = `
           ${header}
+          ${partnerBanner}
           <div class="log-empty">
             <div class="log-empty-icon">⚠️</div>
             <p class="log-empty-text">${loadError === 'expired_session'
@@ -877,6 +877,7 @@ export default function ServiceLog({ withSideNav = false }) {
       if (!logs.length) {
         root.innerHTML = `
           ${header}
+          ${partnerBanner}
           <button class="log-add-btn" id="log-open-add">＋ まず1つ登録してみる</button>
           <div class="log-empty">
             <div class="log-empty-icon">💇</div>
@@ -986,6 +987,7 @@ export default function ServiceLog({ withSideNav = false }) {
 
       root.innerHTML = `
         ${fvBlock}
+        ${partnerBanner}
         <button class="log-add-btn" id="log-open-add">＋ 追加する</button>
         ${sectionsHtml}
         ${card ? '' : renderTrendCard()}
