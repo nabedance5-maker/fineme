@@ -114,7 +114,9 @@ export default function LineConnectGuideContent() {
                     <strong>エンドポイントURL：</strong>
                     <code className="lcg-code">https://www.fineme.me/l/【貴店のスラッグ】</code>
                     <br />
-                    <span className="muted" style={{ fontSize: 13 }}>「貴店のスラッグ」は、掲載者ダッシュボードに表示されている「fineme.me/provider/◯◯◯」の◯◯◯部分です。</span>
+                    <span className="muted" style={{ fontSize: 13 }}>
+                      上の<code className="lcg-code" style={{ fontSize: 12 }}>https://www.fineme.me/l/</code>に続けて、貴店のスラッグを入力してください（末尾に貴店の公開ページのURLをそのまま貼らないでください）。スラッグの調べ方：掲載者ダッシュボードを開くと、店舗の公開ページのアドレスが「fineme.me/provider/◯◯◯」の形で表示されています。この◯◯◯の部分だけをコピーして使ってください。
+                    </span>
                   </li>
                   <li><strong>Scope：</strong>「profile」にチェック（chat_message.write・openidも合わせてチェックして問題ありません）</li>
                   <li><strong>友だち追加オプション：</strong>「On（Normal）」を選択</li>
