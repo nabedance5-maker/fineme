@@ -180,6 +180,23 @@ export async function GET(request) {
   const userLon  = parseFloat(searchParams.get('lon')  || '') || null;
   const priorityAxes = axesParam ? axesParam.split(',').filter(Boolean) : [];
 
+  // ── 名前検索（New Me Logの「Finemeサービスと紐づける」欄など・型当てquery）──
+  // マッチングスコア計算をスキップした軽量パス。qが付いた時だけこちらを使う。
+  const q = searchParams.get('q');
+  if (q && q.trim()) {
+    const limit = parseInt(searchParams.get('limit')) || 20;
+    const { data, error } = await supabase
+      .from('providers')
+      .select('id, slug, name, entity_type, main_category, area')
+      .eq('published', true)
+      .or('admin_hidden.eq.false,admin_hidden.is.null')
+      .ilike('name', `%${q.trim()}%`)
+      .order('name')
+      .limit(limit);
+    if (error) return Response.json({ error: error.message }, { status: 500 });
+    return Response.json(data || []);
+  }
+
   // ── プロバイダー一覧取得（充実度判定に必要なフィールドも含む）──
   let query = supabase
     .from('providers')

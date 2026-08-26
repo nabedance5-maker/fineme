@@ -420,7 +420,9 @@ export default function ServiceLog({ withSideNav = false }) {
       try {
         const r = await fetch(`/api/providers?q=${encodeURIComponent(q)}&limit=5`);
         const d = await r.json();
-        providerSearchResults = (d.providers || []).slice(0, 5);
+        // /api/providers はオブジェクトの配列をそのまま返す（{providers:[]}ではない）。
+        // ここが食い違っていたため検索結果が常に空になっていた（でお報告 2026-08-07）
+        providerSearchResults = (Array.isArray(d) ? d : []).slice(0, 5);
       } catch { providerSearchResults = []; }
       renderProviderResults();
     }
@@ -1041,7 +1043,9 @@ export default function ServiceLog({ withSideNav = false }) {
       document.getElementById('log-f-freq-unit').value = log?.frequency_months ? 'month' : 'week';
       renderFreqPresets();
       document.getElementById('log-f-last').value = log?.last_visit || '';
-      document.getElementById('log-f-next').value = log?.next_visit || '';
+      const nextInputEl = document.getElementById('log-f-next');
+      nextInputEl.value = log?.next_visit || '';
+      nextInputEl.dataset.auto = ''; // モーダルは使い回すため、前回開いた時のフラグを必ず消す
       document.getElementById('log-f-cost').value = log?.cost || '';
       document.getElementById('log-f-memo').value = log?.memo || '';
       document.getElementById('log-provider-search-input').value = log?.provider_slug
@@ -1133,13 +1137,18 @@ export default function ServiceLog({ withSideNav = false }) {
       const last = document.getElementById('log-f-last')?.value;
       const num = freqNumValue();
       const nextInput = document.getElementById('log-f-next');
-      if (!last || !num || !nextInput || nextInput.value) return;
+      if (!last || !num || !nextInput) return;
+      // 次回予約日を手で入力/選択した場合はそれを優先し上書きしない。
+      // ただし「自動計算で入った値」はdataset.autoで区別し、頻度を変えたら
+      // 追従して更新し直す（でお報告：頻度だけ変えても次回予約日が古いままだった）。
+      if (nextInput.value && nextInput.dataset.auto !== '1') return;
       // 月単位は月で加算する（4週=28日で回すと月をまたぐたびにズレるため）
       nextInput.value = idealNextDate({
         last_visit: last,
         frequency_weeks: freqUnitValue() === 'week' ? num : null,
         frequency_months: freqUnitValue() === 'month' ? num : null,
       }) || '';
+      nextInput.dataset.auto = '1';
     }
 
     // ── 保存 ──
@@ -1599,6 +1608,8 @@ export default function ServiceLog({ withSideNav = false }) {
     });
     document.getElementById('log-f-axis')?.addEventListener('change', updateAxisUi);
     document.getElementById('log-f-last')?.addEventListener('change', autoFillNext);
+    // ユーザーが次回予約日を直接編集したら、以後は自動計算で上書きしない
+    document.getElementById('log-f-next')?.addEventListener('input', e => { e.target.dataset.auto = ''; });
     document.getElementById('log-f-freq')?.addEventListener('change', () => { renderFreqPresets(); autoFillNext(); });
     document.getElementById('log-f-freq-unit')?.addEventListener('change', () => { renderFreqPresets(); autoFillNext(); });
     document.getElementById('log-freq-presets')?.addEventListener('click', e => {
