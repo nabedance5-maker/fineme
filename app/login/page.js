@@ -34,6 +34,7 @@ export default function LoginPage() {
   // 新規登録フォームの状態
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
+  const [signupPasswordConfirm, setSignupPasswordConfirm] = useState('');
   const [signupError, setSignupError] = useState('');
   const [signupOk, setSignupOk] = useState('');
   const [signupLoading, setSignupLoading] = useState(false);
@@ -98,6 +99,10 @@ export default function LoginPage() {
     }
     if (signupPassword.length < 8) {
       setSignupError('パスワードは8文字以上にしてください');
+      return;
+    }
+    if (signupPassword !== signupPasswordConfirm) {
+      setSignupError('パスワードが一致しません');
       return;
     }
     setSignupLoading(true);
@@ -319,6 +324,19 @@ export default function LoginPage() {
                 type="password"
                 value={signupPassword}
                 onChange={e => setSignupPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSignup()}
+                placeholder="••••••••"
+                autoComplete="new-password"
+                style={{ padding: '12px 14px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '15px', width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>パスワード（確認用）</label>
+              <input
+                type="password"
+                value={signupPasswordConfirm}
+                onChange={e => setSignupPasswordConfirm(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSignup()}
                 placeholder="••••••••"
                 autoComplete="new-password"
