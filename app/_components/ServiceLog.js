@@ -132,10 +132,14 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
       .log-provider-search { display: flex; gap: 8px; align-items: center; }
       .log-provider-search input { flex: 1; }
+      .log-provider-search-btn { flex-shrink: 0; padding: 11px 14px; background: rgba(201,168,76,0.14); border: 1px solid rgba(201,168,76,0.4); border-radius: 9px; color: #c9a84c; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; white-space: nowrap; transition: all .12s; }
+      .log-provider-search-btn:hover { background: rgba(201,168,76,0.22); }
+      .log-provider-search-btn:disabled { opacity: .6; cursor: default; }
       .log-provider-clear { font-size: 11px; color: rgba(239,68,68,0.7); background: none; border: none; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; padding: 0; white-space: nowrap; }
       .log-provider-result { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
       .log-provider-item { padding: 8px 12px; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.1); border-radius: 8px; cursor: pointer; font-size: 12px; color: rgba(232,228,220,0.75); transition: all .12s; }
       .log-provider-item:hover, .log-provider-item.selected { border-color: rgba(201,168,76,0.4); color: #c9a84c; background: rgba(201,168,76,0.06); }
+      .log-provider-hint { font-size: 11px; color: rgba(232,228,220,0.4); margin: 6px 0 0; line-height: 1.6; }
       .log-modal-btns { display: flex; gap: 10px; margin-top: 24px; }
       .log-modal-save { flex: 1; padding: 14px; background: #c9a84c; border: none; border-radius: 11px; font-size: 15px; font-weight: 800; color: #0a0f1e; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: opacity .15s; }
       .log-modal-save:hover { opacity: .88; }
@@ -415,22 +419,38 @@ export default function ServiceLog({ withSideNav = false }) {
     }
 
     // ── Finemeプロバイダー検索 ──
+    // 「自由記述だけで検索ボタンが無いのはおかしい」という指摘（でお 2026-08-07）を受け、
+    // 入力に応じた自動検索（既存）に加えてボタンでも即座に検索できるようにした。
+    // lastProviderQuery は「検索したが0件だった」を「まだ検索していない」と区別するために持つ。
+    let lastProviderQuery = '';
+    let providerSearchInFlight = false;
+
     async function searchProviders(q) {
-      if (!q.trim()) { providerSearchResults = []; renderProviderResults(); return; }
+      lastProviderQuery = q.trim();
+      if (!lastProviderQuery) { providerSearchResults = []; renderProviderResults(); return; }
+      providerSearchInFlight = true;
+      renderProviderResults();
       try {
-        const r = await fetch(`/api/providers?q=${encodeURIComponent(q)}&limit=5`);
+        const r = await fetch(`/api/providers?q=${encodeURIComponent(lastProviderQuery)}&limit=8`);
         const d = await r.json();
         // /api/providers はオブジェクトの配列をそのまま返す（{providers:[]}ではない）。
         // ここが食い違っていたため検索結果が常に空になっていた（でお報告 2026-08-07）
-        providerSearchResults = (Array.isArray(d) ? d : []).slice(0, 5);
+        providerSearchResults = (Array.isArray(d) ? d : []).slice(0, 8);
       } catch { providerSearchResults = []; }
+      providerSearchInFlight = false;
       renderProviderResults();
     }
 
     function renderProviderResults() {
       const el = document.getElementById('log-provider-results');
       if (!el) return;
-      if (!providerSearchResults.length) { el.innerHTML = ''; return; }
+      if (providerSearchInFlight) { el.innerHTML = '<p class="log-provider-hint">検索中…</p>'; return; }
+      if (!providerSearchResults.length) {
+        el.innerHTML = lastProviderQuery
+          ? '<p class="log-provider-hint">該当するサービスが見つかりませんでした。紐づけずに名前欄へ直接入力できます</p>'
+          : '';
+        return;
+      }
       el.innerHTML = providerSearchResults.map(p => {
         const isSelected = selectedProvider?.slug === p.slug;
         return `<div class="log-provider-item${isSelected ? ' selected' : ''}" data-slug="${p.slug}" data-type="${p.entity_type || 'provider'}" data-name="${encodeURIComponent(p.name || '')}">${p.entity_type === 'affiliate' ? '🔗 ' : '🏥 '}${esc(p.name)}</div>`;
@@ -1052,6 +1072,8 @@ export default function ServiceLog({ withSideNav = false }) {
         ? `（登録済み）${log.provider_slug}`
         : (selectedProvider ? `（お店から案内）${selectedProvider.name || selectedProvider.slug}` : '');
       providerSearchResults = [];
+      lastProviderQuery = '';
+      providerSearchInFlight = false;
       renderProviderResults();
       renderIconPicker();
       document.getElementById('log-modal-overlay').classList.remove('hidden');
@@ -1632,12 +1654,22 @@ export default function ServiceLog({ withSideNav = false }) {
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => searchProviders(e.target.value), 350);
     });
+    // 入力しただけで検索されると気づけない人向けに、ボタンでも即座に検索できるようにする
+    // （でお指摘 2026-08-07：「自由記述だけで検索ボタンが無いのはおかしい」）
+    document.getElementById('log-provider-search-input')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimer); searchProviders(e.target.value); }
+    });
+    document.getElementById('log-provider-search-btn')?.addEventListener('click', () => {
+      clearTimeout(searchTimer);
+      searchProviders(document.getElementById('log-provider-search-input').value);
+    });
     document.getElementById('log-provider-results')?.addEventListener('click', e => {
       const item = e.target.closest('.log-provider-item');
       if (!item) return;
       selectedProvider = { slug: item.dataset.slug, type: item.dataset.type };
       document.getElementById('log-provider-search-input').value = decodeURIComponent(item.dataset.name);
       providerSearchResults = [];
+      lastProviderQuery = '';
       renderProviderResults();
       prefillProviderFrequency();
     });
@@ -1668,6 +1700,7 @@ export default function ServiceLog({ withSideNav = false }) {
       selectedProvider = null;
       document.getElementById('log-provider-search-input').value = '';
       providerSearchResults = [];
+      lastProviderQuery = '';
       renderProviderResults();
     });
 
@@ -1710,6 +1743,7 @@ export default function ServiceLog({ withSideNav = false }) {
             <label>Finemeサービスと紐づける（任意）</label>
             <div className="log-provider-search">
               <input id="log-provider-search-input" type="text" placeholder="サービス名で検索..." />
+              <button type="button" className="log-provider-search-btn" id="log-provider-search-btn">🔍 検索</button>
               <button className="log-provider-clear" id="log-provider-clear">解除</button>
             </div>
             <div id="log-provider-results" className="log-provider-result" />
