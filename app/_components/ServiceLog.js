@@ -56,9 +56,15 @@ export default function ServiceLog({ withSideNav = false }) {
             .then(r => r.ok ? r.json() : null)
             .then(d => {
               if (d?.provider) {
-                defaultProviderFromSrc = { slug: d.provider.slug, type: 'provider', name: d.provider.name, category: d.provider.main_category };
+                defaultProviderFromSrc = { slug: d.provider.slug, type: 'provider', name: d.provider.name, category: d.provider.main_category, liffId: d.lineLiffId || null };
                 partnerConfirmState = 'pending';
                 render();
+                // LINE連携のためliff.login()でLINEの認証画面へ飛んだ後、このページに戻ってきた場合の再開
+                // （でお指摘：QRを読んだその場で店舗の公式LINEと連携させないと、帰宅後にわざわざ
+                // 連携しに来る人はいないため、New Me Log登録の直後に連携まで続けて行う）
+                try {
+                  if (sessionStorage.getItem(LINE_LINK_PENDING_KEY) === slug) resumeLineLinkIfPending();
+                } catch {}
               }
             })
             .catch(() => {});
@@ -372,6 +378,9 @@ export default function ServiceLog({ withSideNav = false }) {
     let partnerConfirmState = null; // 'pending' | 'done' | null（店舗紹介QRの追加確認バナーの状態）
     let partnerConfirmBusy = false;
     let partnerConfirmDoneMsg = '';
+    const LINE_LINK_PENDING_KEY = 'fineme:pending-line-link';
+    let lineConnectState = null; // null | 'connecting' | 'done' | 'error'
+    let lineConnectMsg = '';
     let customIcon = DEFAULT_CUSTOM_ICON;
     let entryType = DEFAULT_ENTRY_TYPE; // 'visit' | 'purchase'（モーダルで選ぶ種別）
     let budget = null;
@@ -861,8 +870,8 @@ export default function ServiceLog({ withSideNav = false }) {
     // ── メインレンダリング ──
     function render() {
       let partnerBanner = '';
+      const partnerName = defaultProviderFromSrc ? esc(defaultProviderFromSrc.name || defaultProviderFromSrc.slug) : '';
       if (defaultProviderFromSrc && partnerConfirmState === 'pending') {
-        const name = esc(defaultProviderFromSrc.name || defaultProviderFromSrc.slug);
         // 同じ店舗を何度もQRで読むたびに新規項目を作らないよう、既存の紐づけ済みログが
         // あれば「来店を記録」に、無ければ「追加＋記録」に文言・挙動を出し分ける
         // （でお指摘：来店するたびに同じ店舗が別項目として増えてしまっていた）
@@ -875,7 +884,7 @@ export default function ServiceLog({ withSideNav = false }) {
         const yesLabel = partnerConfirmBusy ? (existing ? '記録中…' : '追加中…') : (existing ? 'はい、記録する' : 'はい、追加する');
         partnerBanner = `
           <div class="log-partner-banner">
-            <p style="margin:0 0 10px;">🏬 ${name}${existing ? 'に登録済みです。' : 'からのご案内です。'}${question}</p>
+            <p style="margin:0 0 10px;">🏬 ${partnerName}${existing ? 'に登録済みです。' : 'からのご案内です。'}${question}</p>
             <div class="log-partner-banner-btns">
               ${alreadyToday ? '' : `<button type="button" class="log-partner-btn-yes" id="log-partner-yes"${partnerConfirmBusy ? ' disabled' : ''}>${yesLabel}</button>`}
               <button type="button" class="log-partner-btn-no" id="log-partner-no"${partnerConfirmBusy ? ' disabled' : ''}>${alreadyToday ? '閉じる' : 'あとで'}</button>
@@ -887,6 +896,25 @@ export default function ServiceLog({ withSideNav = false }) {
             ✓ ${esc(partnerConfirmDoneMsg || '記録しました。')}
           </div>`;
       }
+
+      // 店舗の公式LINE連携（New Me Log登録直後にその場で行う。app/l/[slug]/page.js と同じLIFFフロー）
+      let lineConnectBanner = '';
+      if (defaultProviderFromSrc?.liffId) {
+        if (lineConnectState === 'connecting') {
+          lineConnectBanner = `<div class="log-partner-banner">📲 ${partnerName}の公式LINEと連携中…</div>`;
+        } else if (lineConnectState === 'done') {
+          lineConnectBanner = `<div class="log-partner-banner">✓ ${partnerName}の公式LINEと連携しました。次回のお知らせはこちらから届きます。</div>`;
+        } else if (lineConnectState === 'error') {
+          lineConnectBanner = `
+            <div class="log-partner-banner">
+              <p style="margin:0 0 10px;">⚠️ ${partnerName}の公式LINE連携に失敗しました（${esc(lineConnectMsg)}）。公式LINEを友だち追加した上で、もう一度お試しください。</p>
+              <button type="button" class="log-partner-btn-yes" id="log-line-retry">もう一度試す</button>
+            </div>`;
+        } else if (partnerConfirmState === 'done' && !isLoggedIn()) {
+          lineConnectBanner = `<div class="log-partner-banner">ℹ️ アカウントを作ると、${partnerName}の公式LINEから直接お知らせを受け取れるようになります。</div>`;
+        }
+      }
+      partnerBanner += lineConnectBanner;
 
       const header = `
         <div class="log-header">
@@ -1317,6 +1345,13 @@ export default function ServiceLog({ withSideNav = false }) {
         render();
         showToast(`✓ ${partnerConfirmDoneMsg}`);
         flashCard(targetId);
+
+        // 続けて店舗の公式LINE連携へ（この店舗がLINE連携済み・ログイン中の場合のみ）。
+        // ここで案内せず後回しにすると、来店時のQRを読んだ人はまず戻ってこないため、
+        // New Me Log登録の勢いのまま同じ流れで連携まで済ませる。
+        if (defaultProviderFromSrc.liffId && isLoggedIn()) {
+          connectStoreLine();
+        }
       } catch (e) {
         alert('記録に失敗しました: ' + e.message);
       } finally {
@@ -1327,6 +1362,61 @@ export default function ServiceLog({ withSideNav = false }) {
     function dismissPartnerBanner() {
       partnerConfirmState = null;
       render();
+    }
+
+    function loadLiffSdk() {
+      return new Promise((resolve, reject) => {
+        if (window.liff) return resolve();
+        const s = document.createElement('script');
+        s.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js';
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('LIFF SDKの読み込みに失敗しました'));
+        document.head.appendChild(s);
+      });
+    }
+
+    // 店舗の公式LINEと連携する（app/l/[slug]/page.js と同じLIFFフローを、
+    // New Me Log登録の直後にその場で行う）。liff.login()はページ遷移を伴うため、
+    // 遷移前にどの店舗への連携中だったかをsessionStorageへ残し、戻ってきた時に再開する。
+    async function connectStoreLine() {
+      if (!defaultProviderFromSrc?.liffId) return;
+      lineConnectState = 'connecting';
+      lineConnectMsg = '';
+      render();
+      try {
+        await loadLiffSdk();
+        // eslint-disable-next-line no-undef
+        await liff.init({ liffId: defaultProviderFromSrc.liffId });
+        // eslint-disable-next-line no-undef
+        if (!liff.isLoggedIn()) {
+          try { sessionStorage.setItem(LINE_LINK_PENDING_KEY, defaultProviderFromSrc.slug); } catch {}
+          // eslint-disable-next-line no-undef
+          liff.login({ redirectUri: window.location.href });
+          return; // ここでページ遷移する
+        }
+        // eslint-disable-next-line no-undef
+        const profile = await liff.getProfile();
+        const token = getAccessToken();
+        const res = await fetch('/api/me/line-links', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ provider_slug: defaultProviderFromSrc.slug, store_line_user_id: profile.userId }),
+        });
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || '連携に失敗しました');
+        try { sessionStorage.removeItem(LINE_LINK_PENDING_KEY); } catch {}
+        lineConnectState = 'done';
+        render();
+      } catch (e) {
+        lineConnectState = 'error';
+        lineConnectMsg = e.message;
+        render();
+      }
+    }
+
+    // liff.login()での遷移から戻ってきた時に自動で連携を完了させる
+    function resumeLineLinkIfPending() {
+      if (!isLoggedIn()) return; // 未ログインでは連携できない（アカウントが前提のため）
+      connectStoreLine();
     }
 
     // FVカードを画像化してシェア/保存する。
@@ -1592,6 +1682,7 @@ export default function ServiceLog({ withSideNav = false }) {
       // 店舗紹介QRの追加確認バナー
       if (e.target.closest('#log-partner-yes')) { confirmPartnerAdd(); return; }
       if (e.target.closest('#log-partner-no')) { dismissPartnerBanner(); return; }
+      if (e.target.closest('#log-line-retry')) { connectStoreLine(); return; }
     });
 
     // 日付を選んで記録（label 内の date input がネイティブのカレンダーを開く）
