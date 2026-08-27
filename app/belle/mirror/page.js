@@ -103,6 +103,8 @@ export default function BelleMirrorPage() {
   const [needsAttrs, setNeedsAttrs] = useState(false);
   const [attrsChecked, setAttrsChecked] = useState(false);
   const [photoType, setPhotoType] = useState(null); // null | 'face' | 'body'
+  const [mirrorConsent, setMirrorConsent] = useState(false);
+  const [mirrorConsentChecked, setMirrorConsentChecked] = useState(false); // 初回判定が終わるまでチェックボックスの誤表示を防ぐ
   const [trialUsedThisMonth, setTrialUsedThisMonth] = useState(false);
   const [trialApplied, setTrialApplied] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
@@ -214,6 +216,28 @@ export default function BelleMirrorPage() {
       setAttrsChecked(true);
     })();
 
+    // Mirror初回同意（でお指摘 2026-08-12: 顔写真の第三者AI送信・保存を伴うため
+    // 明示的な同意チェックを一度だけ取る）。localStorageに無くてもログイン済みなら
+    // サーバー側の同意記録（他端末での同意）を確認する
+    (async () => {
+      let consented = false;
+      try { consented = localStorage.getItem('fineme:mirror:privacyConsent') === '1'; } catch {}
+      if (!consented && authToken) {
+        try {
+          const res = await fetch('/api/me/profile', { headers: { Authorization: `Bearer ${authToken}` } });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.mirror_privacy_consent_at) {
+              consented = true;
+              try { localStorage.setItem('fineme:mirror:privacyConsent', '1'); } catch {}
+            }
+          }
+        } catch {}
+      }
+      setMirrorConsent(consented);
+      setMirrorConsentChecked(true);
+    })();
+
     // ゲスト時代（未ログイン決済・お試し利用）のMirrorセッションをログイン中のアカウントに紐付ける
     if (authUserId && authToken) {
       const localIdsForClaim = getLocalSessionIds();
@@ -287,6 +311,23 @@ export default function BelleMirrorPage() {
     const file = e.dataTransfer.files[0];
     if (file) handleFile(file);
   }, [handleFile]);
+
+  const handleConsentChange = useCallback((checked) => {
+    setMirrorConsent(checked);
+    if (!checked) return;
+    try { localStorage.setItem('fineme:mirror:privacyConsent', '1'); } catch {}
+    try {
+      const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      const token = sbKey ? JSON.parse(localStorage.getItem(sbKey) || 'null')?.access_token : null;
+      if (token) {
+        fetch('/api/me/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ mirror_privacy_consent: true }),
+        }).catch(() => {});
+      }
+    } catch {}
+  }, []);
 
   const triggerReportGeneration = useCallback(async (sid) => {
     if (!sid) return;
@@ -657,10 +698,27 @@ export default function BelleMirrorPage() {
             </div>
           )}
 
+          {/* 初回のみ: プライバシーポリシー同意（でお指摘 2026-08-12。顔写真の第三者AI送信・
+              保存を伴うため明示的な同意チェックを一度だけ取る。同意済みなら以降は非表示） */}
+          {mirrorConsentChecked && !mirrorConsent && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', margin: '16px 0 4px', fontSize: '12px', color: 'rgba(232,228,220,0.6)', lineHeight: 1.6, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={mirrorConsent}
+                onChange={(e) => handleConsentChange(e.target.checked)}
+                style={{ marginTop: '3px', flexShrink: 0 }}
+              />
+              <span>
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#c9a84c', textDecoration: 'underline' }}>プライバシーポリシー</a>
+                に同意します（写真はAI分析に使用され、購入・お試し解放後は保存されます）
+              </span>
+            </label>
+          )}
+
           <button
             className="analyze-btn"
             onClick={handleAnalyze}
-            disabled={!previewFile || compressing}
+            disabled={!previewFile || compressing || !mirrorConsent}
           >
             {compressing ? '📐 画像を最適化中…' : '🔍 変容余地を分析する'}
           </button>
