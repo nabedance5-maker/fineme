@@ -878,6 +878,10 @@ export default function ServiceLog({ withSideNav = false }) {
 
     // ── メインレンダリング ──
     function render() {
+      // render()はinnerHTMLを丸ごと作り直すため、カテゴリータブの横スクロール位置も復元する
+      // （でお指摘：タブを押すたびに一番左端に戻ってしまっていた 2026-08-27）
+      const axisTabsScrollLeft = root.querySelector('.log-axis-tabs')?.scrollLeft || 0;
+
       let partnerBanner = '';
       const partnerName = defaultProviderFromSrc ? esc(defaultProviderFromSrc.name || defaultProviderFromSrc.slug) : '';
       if (defaultProviderFromSrc && partnerConfirmState === 'pending') {
@@ -1097,6 +1101,8 @@ export default function ServiceLog({ withSideNav = false }) {
         const track = root.querySelector('.lfv-carousel-track');
         if (track) track.scrollLeft = slideStepPx(track);
       }
+      const axisTabsEl = root.querySelector('.log-axis-tabs');
+      if (axisTabsEl) axisTabsEl.scrollLeft = axisTabsScrollLeft;
     }
 
     // ── モーダル ──
