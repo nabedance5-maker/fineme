@@ -1606,8 +1606,11 @@ export default function BelleDiagnosisResultPage() {
     <>
       <style>{`
         .result-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; overflow-x: hidden; width: 100%; box-sizing: border-box; }
-        /* グリッド子要素のはみ出し防止 — これがないとinnerHTMLコンテンツが幅を押し広げる */
-        .result-layout > * { min-width: 0; }
+        /* グリッド子要素のはみ出し防止用ルールは削除した。子は.result-sidenavと
+           直下divのみで、どちらも自分のルール／インラインstyleで既にmin-width:0を
+           持つため冗長だった上、直接子孫を選ぶ記号を使うとJSXのstyleタグ内では
+           SSR時にエンティティへ変換されてしまいhydrationミスマッチを起こしていた
+           （でお報告2026-08-27の原因。stackタグ内では記号そのものを書かないこと） */
         .result-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; min-width: 0; }
         .result-sidenav .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
         .result-sidenav .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
@@ -1617,7 +1620,7 @@ export default function BelleDiagnosisResultPage() {
           .result-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
           .result-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; }
           .result-sidenav nav::-webkit-scrollbar { display: none; }
-          .result-sidenav nav > * { margin-top: 0 !important; }
+          .result-sidenav nav .sidenav-link { margin-top: 0 !important; }
           .result-sidenav .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; }
           .map-wrap { padding: 0 0 40px !important; width: 100%; box-sizing: border-box; overflow-x: hidden; }
         }

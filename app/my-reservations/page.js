@@ -215,7 +215,7 @@ function MyReservationsContent() {
         .resv-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
         .resv-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; }
         .resv-sidenav nav::-webkit-scrollbar { display: none; }
-        .resv-sidenav nav > * { margin-top: 0 !important; }
+        .resv-sidenav nav .sidenav-link { margin-top: 0 !important; }
         .resv-sidenav .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; }
       }
     `}</style>
