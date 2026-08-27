@@ -38,7 +38,10 @@ function fmtJa(dateStr) {
 // タップした本人（event.source.userId）を突き合わせて本人確認する
 // （予約確認Webhookのconfirm/rescheduleはUUIDの推測不可能性だけに頼っているが、
 // こちらは書き込み系のうえ安価に照合できるので一段強くしてある）。
-async function recordLineVisit(logId, lineUserId) {
+// visitedDateStr: datetimepicker（「日付を選ぶ」）から来た YYYY-MM-DD。
+// 省略時・不正値・未来日は今日にフォールバックする（アプリ側の
+// /api/me/service-logs/[id]/visits と同じ「未来日は記録しない」方針に揃える）。
+async function recordLineVisit(logId, lineUserId, visitedDateStr) {
   if (!lineUserId) return '本人確認ができませんでした。';
 
   const { data: log, error: findError } = await supabase
@@ -59,17 +62,20 @@ async function recordLineVisit(logId, lineUserId) {
   }
 
   const todayStr = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const visitDate = (visitedDateStr && /^\d{4}-\d{2}-\d{2}$/.test(visitedDateStr) && visitedDateStr <= todayStr)
+    ? visitedDateStr
+    : todayStr;
 
   const { error: insertError } = await supabase
     .from('user_service_log_visits')
-    .insert({ log_id: logId, user_id: log.user_id, visited_at: todayStr, cost: null });
+    .insert({ log_id: logId, user_id: log.user_id, visited_at: visitDate, cost: null });
   if (insertError && !isMissingVisitsTable(insertError)) {
     console.error('[line/webhook] log_visit insert error', insertError);
   }
 
   const { error: updateError } = await supabase
     .from('user_service_logs')
-    .update({ last_visit: todayStr, next_visit: null, updated_at: new Date().toISOString() })
+    .update({ last_visit: visitDate, next_visit: null, updated_at: new Date().toISOString() })
     .eq('id', logId)
     .eq('user_id', log.user_id);
   if (updateError) {
@@ -77,8 +83,8 @@ async function recordLineVisit(logId, lineUserId) {
     return '記録に失敗しました。New Me Logから直接登録してください。';
   }
 
-  const next = idealNextDate({ ...log, last_visit: todayStr });
-  return `✓ ${fmtJa(todayStr)}の記録をつけました${next ? ` — 次の目安は ${fmtJa(next)}` : ''}`;
+  const next = idealNextDate({ ...log, last_visit: visitDate });
+  return `✓ ${fmtJa(visitDate)}の記録をつけました${next ? ` — 次の目安は ${fmtJa(next)}` : ''}`;
 }
 
 export async function POST(request, { params }) {
@@ -114,6 +120,12 @@ export async function POST(request, { params }) {
       const lid = data.get('lid');
       if (!lid) continue;
       const message = await recordLineVisit(lid, event.source?.userId);
+      if (event.replyToken) await sendLineReply(event.replyToken, message, token);
+    } else if (action === 'log_visit_pick') {
+      const lid = data.get('lid');
+      if (!lid) continue;
+      const pickedDate = event.postback?.params?.date;
+      const message = await recordLineVisit(lid, event.source?.userId, pickedDate);
       if (event.replyToken) await sendLineReply(event.replyToken, message, token);
     }
   }

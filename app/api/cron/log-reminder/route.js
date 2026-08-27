@@ -4,7 +4,7 @@
 // 追い立てない（vision.md §8-4「始点を絶対に嘲笑わない」）。事実を並べるだけにする。
 // 1ユーザー1通にまとめ、同じ next_visit サイクルでは二度送らない。
 import { getSupabase } from '@/lib/supabase';
-import { sendLinePush } from '@/lib/line-push';
+import { sendLinePush, sendLineLogReminder } from '@/lib/line-push';
 import { sendWebPush } from '@/lib/web-push';
 import { resolveAxis, effectiveFreq, formatFreq, idealNextDate } from '@/lib/log-axes';
 import { buildLogMessage, getNotifyLevel } from '@/lib/log-voice';
@@ -298,15 +298,26 @@ export async function GET(request) {
         trackId: profile.track,
         monthlyNudge: monthlyNudgeFor(userId, logsByUser[userId]),
       });
-      // アプリを開かなくてもLINEから「行った」を記録できるクイックリプライ
-      // （でお要望 2026-08-05）。予約前日リマインドのノーショー対策と同じ仕組み
-      // （lib/line-push.js の quickReplyItems・app/api/line/webhook）を使う。
-      const quickReplyItems = fallbackLogs.slice(0, 13).map(l => ({
-        label: `${(l.name || '').slice(0, 10)} 行った`.slice(0, 20), // LINEのlabelは20文字上限
-        data: `action=log_visit&lid=${l.id}`,
-        displayText: `${l.name} に行ったことを記録`,
-      }));
-      const res = await sendLinePush(profile.line_user_id, text, undefined, quickReplyItems);
+      // アプリを開かなくてもLINEから「行った」を記録できるボタン（でお要望 2026-08-05）。
+      // 当初はクイックリプライで実装したが、1メッセージに複数ボタンを載せると
+      // どれか1つ押した時点で残り全部が消えてしまうため（でお報告2026-08-27）、
+      // 押しても消えないテンプレートメッセージのカルーセルに置き換えた。
+      // 「今日行った」に加え、datetimepickerで「今日じゃない日」も選べるようにしてある。
+      const columns = fallbackLogs.slice(0, 10).map(l => {
+        const def = resolveAxis(l.axis, l.custom_icon);
+        const statusText = l.kind === 'reminder'
+          ? (l.diff < 0 ? `${-l.diff}日過ぎています` : l.diff === 0 ? '本日が予定日です' : l.diff === 1 ? '明日が予定日です' : `${l.diff}日後が予定日です`)
+          : (l.diff < 0 ? `目安から${-l.diff}日過ぎています` : 'そろそろの時期です');
+        return {
+          title: `${def.icon} ${l.name}`.slice(0, 40),
+          text: statusText.slice(0, 60),
+          actions: [
+            { type: 'postback', label: '今日行った', data: `action=log_visit&lid=${l.id}`, displayText: `${l.name} に今日行ったことを記録` },
+            { type: 'datetimepicker', label: '日付を選ぶ', data: `action=log_visit_pick&lid=${l.id}`, mode: 'date', initial: todayStr, max: todayStr },
+          ],
+        };
+      });
+      const res = await sendLineLogReminder(profile.line_user_id, text, columns);
       if (res.ok) { sent++; notifiedIds.push(...fallbackLogs.map(l => l.id)); }
     }
 
