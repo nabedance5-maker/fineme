@@ -269,6 +269,7 @@ export default function BillingPage() {
               ? '月額が上がるほど予約手数料率が下がります。プランはいつでも変更できます。'
               : '月額が上がるほど予約手数料率が下がります。予約が増えるほど上位プランがお得です。'}
             <br />プレミアムプランは、New Me Log（来店サイクル管理）のリマインドを店舗の公式LINEから送れます（設定は「LINE連携」タブから）。
+            <br />ライトプランはNew Me Log連携の顧客表示が先着30人までです（連携自体・お客様への通知は制限されません）。プレミアムは無制限です。
           </p>
           <div className="plan-cards">
             {Object.entries(PLANS).map(([key, p]) => {

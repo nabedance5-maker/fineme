@@ -479,7 +479,7 @@ export default function ProviderJoinPage({ searchParams }) {
                   <li>サービスメニュー登録（複数対応）</li>
                   <li>スタッフ紹介・Before/After掲載</li>
                   <li>Me Scanマッチング（総合スコア順）</li>
-                  <li>顧客カルテ・リマインド一式</li>
+                  <li>顧客カルテ・リマインド一式（New Me Log連携表示は先着30人まで）</li>
                   <li>紹介報酬プログラム参加資格</li>
                 </ul>
               </div>
@@ -489,7 +489,7 @@ export default function ProviderJoinPage({ searchParams }) {
                 <ul className="plan-list">
                   <li>ライトの内容すべて</li>
                   <li>予約手数料率の優遇</li>
-                  <li>検索結果での優先表示</li>
+                  <li>New Me Log連携表示が無制限</li>
                   <li>店舗独自の公式LINEからリマインド配信</li>
                 </ul>
               </div>

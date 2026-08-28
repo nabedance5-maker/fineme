@@ -11,9 +11,14 @@ const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id, slug').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, slug, plan').eq('email', user.email).single();
   return data || null;
 }
+
+// ライトプラン（A）はNew Me Log連携の「表示」を先着30人までに制限する
+// （でお決定 2026-08-28）。連携自体・本人へのリマインド等は制限しない。
+// パッケージ機能の顧客選択など内部用途は scope=all でこの制限を無視する。
+const LIGHT_PLAN_VISIBLE_LIMIT = 30;
 
 // 店舗が設定した推奨周期に基づく「目安日」を、ユーザー自身の頻度は無視して計算する
 // （lib/log-axes.js の idealNextDate はログ自身の frequency_weeks/months を見るため、
@@ -127,6 +132,33 @@ export async function GET(request) {
       assignedStaffName: assignedStaffId ? (staffNameMap[assignedStaffId] || null) : null,
     };
   });
+
+  const { searchParams } = new URL(request.url);
+  const bypassCap = searchParams.get('scope') === 'all';
+
+  if (provider.plan === 'A' && !bypassCap) {
+    // 先着30人（連携＝最初のログ作成日time順）までを表示対象にする。
+    // 連携自体・本人への通知は制限しない。表示のみプランで絞る。
+    const firstSeenByUser = {};
+    result.forEach(r => {
+      const t = new Date(r.created_at).getTime();
+      if (!firstSeenByUser[r.user_id] || t < firstSeenByUser[r.user_id]) firstSeenByUser[r.user_id] = t;
+    });
+    const visibleUserIds = new Set(
+      Object.entries(firstSeenByUser)
+        .sort((a, b) => a[1] - b[1])
+        .slice(0, LIGHT_PLAN_VISIBLE_LIMIT)
+        .map(([uid]) => uid)
+    );
+    const totalConnected = Object.keys(firstSeenByUser).length;
+    const visible = result.filter(r => visibleUserIds.has(r.user_id));
+    return Response.json(visible, {
+      headers: {
+        'X-Fineme-Total-Connected': String(totalConnected),
+        'X-Fineme-Visible-Limit': String(LIGHT_PLAN_VISIBLE_LIMIT),
+      },
+    });
+  }
 
   return Response.json(result);
 }

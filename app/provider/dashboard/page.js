@@ -1011,6 +1011,18 @@ export default function ProviderDashboardPage() {
         if (!res.ok) { listEl.innerHTML = '<p style="color:#ef4444" class="muted">取得エラー</p>'; return; }
         staffList = staffRes.ok ? await staffRes.json() : [];
         allItems = await res.json();
+
+        const capBanner = document.getElementById('customers-cap-banner');
+        if (capBanner) {
+          const totalConnected = res.headers.get('X-Fineme-Total-Connected');
+          const visibleLimit = res.headers.get('X-Fineme-Visible-Limit');
+          capBanner.innerHTML = totalConnected
+            ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:13px;color:#92400e">
+                🔒 現在ライトプランのため、New Me Log連携は先着${visibleLimit}人まで表示（実際の連携数：${totalConnected}人）。連携自体・お客様への通知は制限されません。プレミアムプランで無制限になります。
+              </div>`
+            : '';
+        }
+
         if (!allItems.length) {
           listEl.innerHTML = '<p class="muted">まだ紐づいているお客様はいません。QRコードでNew Me Logをご案内ください。</p>';
           return;
@@ -1065,7 +1077,8 @@ export default function ProviderDashboardPage() {
 
       async function loadUsersForSelect() {
         if (!userSel) return;
-        const res = await fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        // パッケージ機能はライトプランの表示上限(30人)の対象外（でお決定 2026-08-28）
+        const res = await fetch('/api/provider/customers?scope=all', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         if (!res.ok) return;
         const rows = await res.json();
         const seen = new Set();
@@ -2892,6 +2905,7 @@ export default function ProviderDashboardPage() {
                 をお店に置いてください。
               </p>
             </div>
+            <div id="customers-cap-banner"></div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '12px' }}>
               <label className="muted" style={{ fontSize: '13px' }}>表示：</label>
               <select id="customers-filter">
