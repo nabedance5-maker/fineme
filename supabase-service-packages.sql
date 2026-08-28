@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-08-29
 -- 回数券・パッケージの記録機能（決済はFinemeが仲介しない・記録のみ）
 -- 店舗が自分で徴収し、Fineme上では「何回分買った・何回消化した」を店舗・顧客双方が確認できる。
 -- app/api/provider/packages, app/api/provider/customer-packages,
