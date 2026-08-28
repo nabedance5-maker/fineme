@@ -20,6 +20,7 @@ export default function MypageSideNav({ asideClassName = 'mypage-sidenav' }) {
     { href: track.diagnosisResult, label: '診断結果', active: pathname === track.diagnosisResult || pathname.startsWith('/mypage/diagnosis') },
     { href: '/mypage/navi', label: 'New Me Map', active: pathname.startsWith('/mypage/navi') },
     { href: '/mypage/log', label: 'New Me Log', active: pathname.startsWith('/mypage/log') },
+    { href: '/mypage/packages', label: 'パッケージ・回数券', active: pathname.startsWith('/mypage/packages') },
     { href: '/mypage/subscription', label: 'サブスク設定', active: pathname.startsWith('/mypage/subscription') },
     { href: '/mypage/favorites', label: 'お気に入り', active: pathname.startsWith('/mypage/favorites') },
     { href: '/mypage/history', label: '閲覧履歴', active: pathname.startsWith('/mypage/history') },

@@ -1023,6 +1023,152 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'customers') loadCustomers();
     })();
 
+    // ── 回数券・パッケージタブ ────────────────────────────────────
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const defListEl = document.getElementById('pkg-def-list');
+      const customerListEl = document.getElementById('pkg-customer-list');
+      const userSel = document.getElementById('pkg-assign-user');
+      const pkgSel = document.getElementById('pkg-assign-package');
+      let defs = [];
+
+      async function loadDefs() {
+        const res = await fetch('/api/provider/packages', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        if (!res.ok) { if (defListEl) defListEl.innerHTML = '<p style="color:#ef4444" class="muted">取得エラー</p>'; return; }
+        defs = await res.json();
+        renderDefs();
+        renderPkgSelect();
+      }
+
+      function renderDefs() {
+        if (!defListEl) return;
+        if (!defs.length) { defListEl.innerHTML = '<p class="muted" style="font-size:13px">まだパッケージがありません。上のフォームから作成してください。</p>'; return; }
+        defListEl.innerHTML = defs.map(d => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;${d.active ? '' : 'opacity:.5'}">
+            <div style="flex:1;min-width:0">
+              <strong style="font-size:13px">${esc(d.name)}</strong>
+              <span class="muted" style="font-size:12px;margin-left:8px">${d.total_sessions}回${d.price ? ` ／ ¥${Number(d.price).toLocaleString()}` : ''}${d.validity_days ? ` ／ 有効期限${d.validity_days}日` : ' ／ 無期限'}</span>
+            </div>
+            <button class="btn btn-ghost" style="font-size:11px;padding:6px 12px" onclick="togglePackageActive('${d.id}', ${!d.active})">${d.active ? '停止する' : '再開する'}</button>
+          </div>
+        `).join('');
+      }
+
+      function renderPkgSelect() {
+        if (!pkgSel) return;
+        const active = defs.filter(d => d.active);
+        pkgSel.innerHTML = active.length
+          ? active.map(d => `<option value="${d.id}">${esc(d.name)}（${d.total_sessions}回）</option>`).join('')
+          : '<option value="">先にパッケージを作成してください</option>';
+      }
+
+      async function loadUsersForSelect() {
+        if (!userSel) return;
+        const res = await fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        if (!res.ok) return;
+        const rows = await res.json();
+        const seen = new Set();
+        const opts = [];
+        rows.forEach(r => {
+          if (seen.has(r.user_id)) return;
+          seen.add(r.user_id);
+          opts.push(`<option value="${r.user_id}">${esc(r.customer_name)}</option>`);
+        });
+        userSel.innerHTML = opts.length ? opts.join('') : '<option value="">New Me Log連携済みの顧客がいません</option>';
+      }
+
+      async function loadCustomerPackages() {
+        if (!customerListEl) return;
+        customerListEl.innerHTML = '<p class="muted">読み込み中…</p>';
+        const res = await fetch('/api/provider/customer-packages', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        if (!res.ok) { customerListEl.innerHTML = '<p style="color:#ef4444" class="muted">取得エラー</p>'; return; }
+        const rows = await res.json();
+        if (!rows.length) { customerListEl.innerHTML = '<p class="muted">まだ購入記録がありません。</p>'; return; }
+        customerListEl.innerHTML = rows.map(r => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;${r.expired ? 'opacity:.5' : ''}">
+            <div style="flex:1;min-width:0">
+              <strong style="font-size:13px">${esc(r.customer_name)}</strong>
+              <span class="muted" style="font-size:12px;margin-left:8px">${esc(r.package_name)}｜残り${r.remaining_sessions}/${r.total_sessions}回${r.expired ? '（期限切れ）' : ''}</span>
+            </div>
+            ${r.last_usage_id ? `<button class="btn btn-ghost" style="font-size:11px;padding:6px 12px;color:#ef4444" onclick="undoPackageUsage('${r.id}', this)">直近1回を取り消す</button>` : ''}
+          </div>
+        `).join('');
+      }
+
+      window.togglePackageActive = async function (id, active) {
+        await fetch(`/api/provider/packages/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+          body: JSON.stringify({ active }),
+        });
+        loadDefs();
+      };
+
+      window.undoPackageUsage = async function (customerPackageId, btn) {
+        if (!confirm('直近1回分の消化を取り消しますか？')) return;
+        if (btn) btn.disabled = true;
+        const res = await fetch(`/api/provider/customer-packages/${customerPackageId}/usages`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+        });
+        if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); if (btn) btn.disabled = false; return; }
+        showToast('取り消しました');
+        loadCustomerPackages();
+      };
+
+      const createBtn = document.getElementById('pkg-create-btn');
+      if (createBtn) {
+        createBtn.addEventListener('click', async () => {
+          const name = document.getElementById('pkg-name')?.value.trim();
+          const sessions = document.getElementById('pkg-sessions')?.value;
+          const price = document.getElementById('pkg-price')?.value;
+          const validity = document.getElementById('pkg-validity')?.value;
+          if (!name || !sessions) { showToast('パッケージ名と回数を入力してください'); return; }
+          createBtn.disabled = true;
+          const res = await fetch('/api/provider/packages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+            body: JSON.stringify({ name, total_sessions: sessions, price: price || null, validity_days: validity || null }),
+          });
+          createBtn.disabled = false;
+          if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
+          document.getElementById('pkg-name').value = '';
+          document.getElementById('pkg-sessions').value = '';
+          document.getElementById('pkg-price').value = '';
+          document.getElementById('pkg-validity').value = '';
+          showToast('パッケージを作成しました');
+          loadDefs();
+        });
+      }
+
+      const assignBtn = document.getElementById('pkg-assign-btn');
+      const assignMsg = document.getElementById('pkg-assign-msg');
+      if (assignBtn) {
+        assignBtn.addEventListener('click', async () => {
+          const user_id = userSel?.value;
+          const package_id = pkgSel?.value;
+          if (!user_id || !package_id) { if (assignMsg) assignMsg.textContent = '顧客とパッケージを選んでください'; return; }
+          assignBtn.disabled = true;
+          const res = await fetch('/api/provider/customer-packages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+            body: JSON.stringify({ user_id, package_id }),
+          });
+          assignBtn.disabled = false;
+          if (!res.ok) { const e = await res.json().catch(() => {}); if (assignMsg) { assignMsg.style.color = '#ef4444'; assignMsg.textContent = e?.error || '記録に失敗しました'; } return; }
+          if (assignMsg) { assignMsg.style.color = '#059669'; assignMsg.textContent = '記録しました'; }
+          loadCustomerPackages();
+        });
+      }
+
+      async function loadAll() {
+        await Promise.all([loadDefs(), loadUsersForSelect(), loadCustomerPackages()]);
+      }
+      document.querySelectorAll('[data-tab="packages"]').forEach(btn => btn.addEventListener('click', loadAll, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'packages') loadAll();
+    })();
+
     // ── LINE連携タブ ──────────────────────────────────────────────
     (() => {
       const token = getSupabaseToken();
@@ -1694,6 +1840,23 @@ export default function ProviderDashboardPage() {
     }
 
     let _allRequests = [];
+    let _activePackagesByUser = {}; // user_id -> [{id, package_name, remaining_sessions}]
+
+    async function loadActivePackagesByUser() {
+      const _pkgToken = getSupabaseToken();
+      if (!_pkgToken) return;
+      try {
+        const res = await fetch('/api/provider/customer-packages', { headers: { 'Authorization': `Bearer ${_pkgToken}` } });
+        if (!res.ok) return;
+        const rows = await res.json();
+        const map = {};
+        rows.forEach(r => {
+          if (r.expired || r.remaining_sessions <= 0) return;
+          (map[r.user_id] = map[r.user_id] || []).push(r);
+        });
+        _activePackagesByUser = map;
+      } catch {}
+    }
 
     async function loadRequests() {
       const k = document.getElementById('req-filter-kw'); if (k) k.value = '';
@@ -1701,9 +1864,10 @@ export default function ProviderDashboardPage() {
       const providerId = provider?.id || loadProviderData()?.id;
       if (!providerId) { document.getElementById('requests-list').innerHTML = '<p class="muted">掲載者IDが見つかりません。</p>'; return; }
       const _reqToken = getSupabaseToken();
-      const res = await fetch(`/api/reservations?providerId=${providerId}`, {
-        headers: _reqToken ? { 'Authorization': `Bearer ${_reqToken}` } : {}
-      });
+      const [res] = await Promise.all([
+        fetch(`/api/reservations?providerId=${providerId}`, { headers: _reqToken ? { 'Authorization': `Bearer ${_reqToken}` } : {} }),
+        loadActivePackagesByUser(),
+      ]);
       if (!res.ok) { document.getElementById('requests-list').innerHTML = '<p class="muted" style="color:#ef4444">取得エラー</p>'; return; }
       const items = await res.json();
       _allRequests = items;
@@ -1786,7 +1950,11 @@ export default function ProviderDashboardPage() {
               <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap" onclick="showCounterModal('${r.id}')">代替提案を送る</button>
               <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;color:#ef4444;white-space:nowrap" onclick="rejectRequest('${r.id}')">お断り</button>
             </div>` : r.status === 'approved' ? `
-            <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px" onclick="markVisited('${r.id}')">来店確認</button>` : ''}
+            <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;min-width:120px">
+              <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap" onclick="markVisited('${r.id}')">来店確認</button>
+              ${(_activePackagesByUser[r.user_id] || []).map(p => `
+              <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#7c3aed;border-color:#c4b5fd" onclick="consumePackage('${p.id}','${r.id}',this)">🎫 ${esc(p.package_name)}を消化（残${p.remaining_sessions}）</button>`).join('')}
+            </div>` : ''}
           </div>
         `;
         el.appendChild(card);
@@ -1832,6 +2000,26 @@ export default function ProviderDashboardPage() {
       const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...(_visitToken ? { 'Authorization': `Bearer ${_visitToken}` } : {}) }, body: JSON.stringify({ status: 'visited' }) });
       if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
       await loadRequests(); showToast('来店を確認しました');
+    };
+
+    // パッケージ消化：予約カードから並列で押せるボタン。誤操作は
+    // 「回数券」タブの「取り消す」から直近1回分を戻せる。
+    window.consumePackage = async function (customerPackageId, reservationId, btn) {
+      if (btn) btn.disabled = true;
+      const _pkgToken = getSupabaseToken();
+      try {
+        const res = await fetch(`/api/provider/customer-packages/${customerPackageId}/usages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(_pkgToken ? { 'Authorization': `Bearer ${_pkgToken}` } : {}) },
+          body: JSON.stringify({ reservation_id: reservationId }),
+        });
+        if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); if (btn) btn.disabled = false; return; }
+        showToast('パッケージを1回消化しました（誤操作は「回数券」タブから取り消せます）');
+        await loadRequests();
+      } catch {
+        showToast('通信エラーが発生しました');
+        if (btn) btn.disabled = false;
+      }
     };
 
     window.showCounterModal = function (id) {
@@ -2067,6 +2255,7 @@ export default function ProviderDashboardPage() {
           <button className="tab-btn" data-tab="staff">👤 スタッフ</button>
           <button className="tab-btn" data-tab="stories">📝 体験談</button>
           <button className="tab-btn" data-tab="customers">🗒️ New Me Log</button>
+          <button className="tab-btn" data-tab="packages">🎫 回数券</button>
           <button className="tab-btn" data-tab="line-channel">💬 LINE連携</button>
           <button className="tab-btn" data-tab="reviews">⭐ クチコミ</button>
           <button className="tab-btn" data-tab="landing">🌐 LP設定</button>
@@ -2713,6 +2902,58 @@ export default function ProviderDashboardPage() {
               </select>
             </div>
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
+          </div>
+        </div>
+
+        {/* 回数券・パッケージ：決済はFinemeが仲介せず記録のみ。店舗・顧客双方が残り回数を確認できる */}
+        <div className="tab-pane" id="tab-packages">
+          <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>パッケージを作る</h2>
+            <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+              決済はFineme上では行いません（お店で直接徴収してください）。ここでは「何回分・いくらで売ったか」を記録し、店舗と購入した顧客の両方がFinemeで残り回数を確認できるようにするだけです。
+            </p>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="form-field" style={{ minWidth: '180px' }}>
+                <label>パッケージ名</label>
+                <input id="pkg-name" type="text" placeholder="例：パーソナルトレーニング10回券" />
+              </div>
+              <div className="form-field" style={{ minWidth: '100px' }}>
+                <label>回数</label>
+                <input id="pkg-sessions" type="number" min="1" placeholder="10" />
+              </div>
+              <div className="form-field" style={{ minWidth: '120px' }}>
+                <label>参考価格（任意）</label>
+                <input id="pkg-price" type="number" min="0" placeholder="80000" />
+              </div>
+              <div className="form-field" style={{ minWidth: '120px' }}>
+                <label>有効期限・日数（任意）</label>
+                <input id="pkg-validity" type="number" min="1" placeholder="180" />
+              </div>
+              <button className="btn" id="pkg-create-btn" type="button">作成する</button>
+            </div>
+            <div id="pkg-def-list"></div>
+          </div>
+
+          <div className="card" style={{ padding: '24px' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>顧客への購入記録・残り回数</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                購入があったら下で顧客とパッケージを選んで記録してください。予約カードの「来店確認」の隣にも消化ボタンが出るようになります。誤って消化した場合はここから直近1回分を取り消せます。
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '16px' }}>
+              <div className="form-field" style={{ minWidth: '200px' }}>
+                <label>顧客（New Me Log連携済み）</label>
+                <select id="pkg-assign-user"></select>
+              </div>
+              <div className="form-field" style={{ minWidth: '200px' }}>
+                <label>パッケージ</label>
+                <select id="pkg-assign-package"></select>
+              </div>
+              <button className="btn" id="pkg-assign-btn" type="button">購入を記録する</button>
+              <span id="pkg-assign-msg" className="muted" style={{ fontSize: '13px' }}></span>
+            </div>
+            <div id="pkg-customer-list"><p className="muted">読み込み中…</p></div>
           </div>
         </div>
 
