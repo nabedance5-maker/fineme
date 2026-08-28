@@ -454,6 +454,20 @@
       <div class="now-item">
         <div class="now-item-dot done"></div>
         <div>
+          <span class="now-item-main">回数券・パッケージ記録機能追加（2026-08-28〜29）</span>
+          <span class="now-item-sub">決済はFinemeが仲介しない（店舗が自分で徴収・Finemeは購入回数と消化回数の記録のみ）。ダッシュボードに専用タブ・来店確認と並列の消化ボタン（誤操作の取り消し可）・顧客側マイページ（/mypage/packages）を実装。本番Supabase適用済み。</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
+          <span class="now-item-main">ライトプランのNew Me Log連携表示に先着30人の上限（2026-08-28）</span>
+          <span class="now-item-sub">連携自体・お客様への通知は制限せず、店舗ダッシュボードの表示のみ先着30人に絞る（ソフトな制限）。プレミアムは無制限のまま。パッケージ機能の顧客選択はこの上限の対象外。あわせて未実装だった「検索結果での優先表示」の訴求をjoin/billingページから削除。</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
           <span class="now-item-main">New Me Log LINE通知バグ修正・「行った」ボタン追加（2026-08-24週）</span>
           <span class="now-item-sub">過ぎたタスクを「本日」と誤表示していたバグを修正。LINEから直接「行った」を記録できるボタンを追加し、記録摩擦を削減。</span>
         </div>
@@ -649,6 +663,8 @@
           <div class="detail-list">
             <div class="detail-row"><span class="tag tag-done">完了</span>掲載候補リスト自動生成ツール（find-providers）・DM営業ツール整備・月次レポート/リマインド自動化</div>
             <div class="detail-row"><span class="tag tag-done">完了</span>店舗向けSaaS機能一式（予約前日リマインド・誕生日メッセージ・クチコミ依頼自動化・推奨来店周期・休眠顧客セグメント・店舗専用メモ）実装（2026-08-24週）</div>
+            <div class="detail-row"><span class="tag tag-done">完了</span>回数券・パッケージ記録機能（決済はFinemeが仲介せず記録のみ・来店確認と並列の消化ボタン・取り消し可・顧客側マイページ）実装（2026-08-28〜29）</div>
+            <div class="detail-row"><span class="tag tag-done">完了</span>ライトプランのNew Me Log表示に先着30人の上限を設定。プレミアムは無制限。未実装だった「検索結果での優先表示」訴求を削除（2026-08-28）</div>
             <div class="detail-row"><span class="tag tag-todo">未着手</span>協業候補の友人へ連絡（でお着手予定）</div>
             <div class="detail-row"><span class="tag tag-todo">未着手</span>PTと改めて打ち合わせ（業務委託契約・SaaS活用の再確認、店舗SaaS営業資料を活用）</div>
           </div>
