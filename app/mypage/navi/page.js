@@ -3011,7 +3011,8 @@ export default function NewMeNaviPage() {
       const v = tv[id] || { current:1, ideal:3, gap:2, tier:def.tier, care_type:'none' };
       const careType = v.care_type || 'none';
       const currentPct = Math.min((v.current / 5) * 100, 100).toFixed(1);
-      const idealPct   = Math.min((v.ideal   / 5) * 100, 100).toFixed(1);
+      // 理想マーカーが現在地バーより左に来ないよう下限をクランプ（でお指摘 2026-08-14）
+      const idealPct   = Math.min((Math.max(v.ideal, v.current) / 5) * 100, 100).toFixed(1);
       const idealGoalText = (IDEAL_GOALS[id] || [])[Math.min(v.ideal - 1, 4)] || `${def.label}の理想を実現する`;
       const statusVal = axisProgress[id] || '';
       const isDoneAxis = statusVal === 'done';

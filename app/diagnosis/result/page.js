@@ -719,9 +719,11 @@ export default function DiagnosisResultPage() {
         axes += `<line x1="${cx}" y1="${cy}" x2="${(cx+R*Math.cos(a)).toFixed(1)}" y2="${(cy+R*Math.sin(a)).toFixed(1)}" stroke="rgba(201,168,76,0.12)" stroke-width="1"/>`;
       });
 
-      // Ideal polygon (dashed gold)
+      // Ideal polygon (dashed gold)。理想が現在地を下回って見えることのないよう、
+      // 描画時にも現在地を下限にクランプする（でお指摘 2026-08-14。この修正前に保存された
+      // 診断データを持つユーザーの表示も直すため、算出側だけでなくここでも防御する）
       const idealPts = areas.map((id, i) => {
-        const score = Math.min(tv[id]?.ideal || 3, 5);
+        const score = Math.min(Math.max(tv[id]?.ideal || 3, tv[id]?.current || 1), 5);
         const a = -Math.PI/2 + (2*Math.PI*i/7);
         const r = (score/5)*R;
         return `${(cx+r*Math.cos(a)).toFixed(1)},${(cy+r*Math.sin(a)).toFixed(1)}`;
@@ -964,7 +966,8 @@ export default function DiagnosisResultPage() {
         const def = AREA_DEFS[id];
         const v   = tv[id] || { current:1, ideal:3, gap:2, tier:def.tier };
         const currentPct = ((v.current / 5) * 100).toFixed(1);
-        const idealPct   = ((v.ideal   / 5) * 100).toFixed(1);
+        // 理想マーカーが現在地バーより左に来ないよう下限をクランプ（でお指摘 2026-08-14）
+        const idealPct   = ((Math.max(v.ideal, v.current) / 5) * 100).toFixed(1);
         const gapClass   = v.gap >= 3 ? '' : v.gap >= 1 ? ' small' : ' none';
         const gapLabel   = v.gap > 0 ? `ギャップ${v.gap}` : '達成済み';
         const tierLabel  = TIER_LABELS[def.tier] || '';

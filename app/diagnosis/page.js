@@ -433,8 +433,12 @@ export default function DiagnosisPage() {
           if (concern > 0) currentScore = Math.max(1, currentScore - concern);
         }
         // idealは1〜5の整数スケールで固定（配列インデックスとして使う下流箇所があるため、
-        // currentのような小数の精緻化はしない）
-        const idealScore = Math.round(parseFloat(state.ideal_levels[area.id] || String(Math.max(currentScore, 3))));
+        // currentのような小数の精緻化はしない）。
+        // でお指摘 2026-08-14：どんな回答でも理想が現在地を下回ってはいけない（レーダーチャートで
+        // 現在地が理想を追い越して見えるのはおかしい）。「今のままでいい」等、変えたい度を低く
+        // 選んだ人の理想が現在地より低くなるケースがあったため、現在地の切り上げ値で下限を敷く
+        const idealRaw = Math.round(parseFloat(state.ideal_levels[area.id] || String(Math.max(currentScore, 3))));
+        const idealScore = Math.max(idealRaw, Math.ceil(currentScore));
         vectors[area.id] = {
           current: currentScore,
           ideal: idealScore,
