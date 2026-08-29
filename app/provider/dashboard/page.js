@@ -2262,24 +2262,24 @@ export default function ProviderDashboardPage() {
 
         {/* タブナビ */}
         <div className="tab-nav">
-          <button className="tab-btn active" data-tab="stats">📊 概況</button>
-          <button className="tab-btn" data-tab="requests">📬 予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
           <button className="tab-btn" data-tab="profile">プロフィール</button>
+          <button className="tab-btn" data-tab="service">サービス設定</button>
           <button className="tab-btn" data-tab="staff">👤 スタッフ</button>
           <button className="tab-btn" data-tab="stories">📝 体験談</button>
-          <button className="tab-btn" data-tab="customers">🗒️ New Me Log</button>
           <button className="tab-btn" data-tab="packages">🎫 回数券</button>
-          <button className="tab-btn" data-tab="line-channel">💬 LINE連携</button>
-          <button className="tab-btn" data-tab="reviews">⭐ クチコミ</button>
           <button className="tab-btn" data-tab="landing">🌐 LP設定</button>
+          <button className="tab-btn" data-tab="qr">🔗 紹介QR</button>
+          <button className="tab-btn" data-tab="publish">公開設定</button>
+          <button className="tab-btn active" data-tab="stats">📊 概況</button>
+          <button className="tab-btn" data-tab="requests">📬 予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
+          <button className="tab-btn" data-tab="customers">🗒️ New Me Log</button>
+          <button className="tab-btn" data-tab="reviews">⭐ クチコミ</button>
           <button className="tab-btn" data-tab="area-demand">📍 エリア需要</button>
           <button className="tab-btn" data-tab="scripts">💡 接客の引き出し</button>
           <button className="tab-btn" data-tab="ltv-cac">📊 LTV/CAC</button>
-          <button className="tab-btn" data-tab="qr">🔗 紹介QR</button>
-          <button className="tab-btn" data-tab="service">サービス設定</button>
-          <button className="tab-btn" data-tab="publish">公開設定</button>
-          <button className="tab-btn" data-tab="billing">課金・プラン</button>
           <button className="tab-btn" data-tab="referral">紹介報酬</button>
+          <button className="tab-btn" data-tab="line-channel">💬 LINE連携</button>
+          <button className="tab-btn" data-tab="billing">課金・プラン</button>
         </div>
 
         {/* タブ①：概況 */}
