@@ -146,6 +146,8 @@ export default function ProviderDashboardPage() {
       if (slug) {
         document.getElementById('provider-page-link').textContent = `fineme.me/provider/${slug}`;
         document.getElementById('view-page-btn').href = `/provider/${slug}`;
+        const lpPreviewBtn = document.getElementById('lp-preview-btn');
+        if (lpPreviewBtn) lpPreviewBtn.href = `/provider/${slug}/for/eyebrow`;
       }
       document.getElementById('billing-plan').textContent = PLAN_LABELS[provider.plan || 'A'] || 'プランA';
       if (provider.plan === 'free') {
@@ -1334,6 +1336,23 @@ export default function ProviderDashboardPage() {
       const menuForm = document.getElementById('menu-form');
       const menuList = document.getElementById('menu-list');
       const menuMsg = document.getElementById('menu-msg');
+      const menuFromService = document.getElementById('menu-from-service');
+
+      async function loadServiceOptions() {
+        if (!menuFromService) return;
+        const res = await fetch('/api/provider/services', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const items = res.ok ? await res.json() : [];
+        menuFromService.innerHTML = '<option value="">－ 選択するとメニュー名・価格を自動入力 －</option>'
+          + items.map(s => `<option value="${s.id}">${escLp(s.name)}（¥${Number(s.price).toLocaleString()}）</option>`).join('');
+        menuFromService.onchange = () => {
+          const s = items.find(x => String(x.id) === menuFromService.value);
+          if (!s) return;
+          document.getElementById('menu-name').value = s.name || '';
+          document.getElementById('menu-price').value = s.price || '';
+          const durationMatch = String(s.duration || '').match(/\d+/);
+          document.getElementById('menu-duration').value = durationMatch ? durationMatch[0] : '';
+        };
+      }
 
       async function loadMenus() {
         if (!menuList) return;
@@ -1454,7 +1473,7 @@ export default function ProviderDashboardPage() {
         });
       }
 
-      function loadLandingTab() { loadMenus(); loadCaseCustomers(); loadCases(); }
+      function loadLandingTab() { loadMenus(); loadServiceOptions(); loadCaseCustomers(); loadCases(); }
       document.querySelectorAll('[data-tab="landing"]').forEach(btn => btn.addEventListener('click', loadLandingTab, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'landing') loadLandingTab();
     })();
@@ -3074,8 +3093,24 @@ export default function ProviderDashboardPage() {
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
                 診断結果からの専用ページ（fineme.me/provider/{'{'}あなたの店舗{'}'}/for/{'{'}軸{'}'}）に表示するメニューです。対応する軸（Mirrorの7軸）を選んでください。
               </p>
+              <a
+                id="lp-preview-btn"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-ghost"
+                style={{ fontSize: '13px', marginTop: '8px', display: 'inline-block' }}
+              >
+                見本を見る（自分のLPを確認） ↗
+              </a>
             </div>
             <form id="menu-form" className="stack" style={{ gap: '10px' }}>
+              <div className="form-field">
+                <label>サービス設定から選ぶ（任意）</label>
+                <select id="menu-from-service">
+                  <option value="">－ 選択するとメニュー名・価格を自動入力 －</option>
+                </select>
+              </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <div className="form-field" style={{ flex: '1 1 200px' }}>
                   <label>メニュー名</label>
