@@ -220,19 +220,23 @@ export async function POST(request) {
   const axisLines = Object.entries(AXIS_LABELS).map(([id, label]) => {
     const v = tv[id];
     if (!v) return null;
-    const gap = (v.ideal || 3) - (v.current || 1);
+    const current = v.current || 1;
+    // 理想が現在地を下回って見えることのないようクランプ（でお指摘 2026-08-14。この修正前に
+    // 保存された診断データにも効くよう、算出側・表示側だけでなくAIプロンプト生成でも防御する）
+    const ideal = Math.max(v.ideal || 3, current);
+    const gap = ideal - current;
     if (gap <= 0) {
       if (mirrorAxes) {
         const mAx = mirrorByNaviAxis[id];
         const mirrorNote = mAx
           ? ` Mirror観察（${mirrorMonthLabel}）: 変容余地=${mAx.potential_level}${mAx.summary ? `「${mAx.summary}」` : ''}`
           : ` Mirror観察なし（この軸は写真分析対象外）`;
-        return `- ${label}: ケア済み申告: 現状${v.current || 1}/${v.ideal || 3}。${mirrorNote}`;
+        return `- ${label}: ケア済み申告: 現状${current}/${ideal}。${mirrorNote}`;
       } else {
-        return `- ${label}: ケア済み申告: 現状${v.current || 1}/${v.ideal || 3} ※写真による観察データなし。外見の評価は行わないこと`;
+        return `- ${label}: ケア済み申告: 現状${current}/${ideal} ※写真による観察データなし。外見の評価は行わないこと`;
       }
     }
-    return `- ${label}: 現在${v.current || 1}/理想${v.ideal || 3}（ギャップ${gap}）、状況：${CARE_LABELS[v.care_type] || '未着手'}`;
+    return `- ${label}: 現在${current}/理想${ideal}（ギャップ${gap}）、状況：${CARE_LABELS[v.care_type] || '未着手'}`;
   }).filter(Boolean).join('\n');
 
   const bodyDataLines = [
