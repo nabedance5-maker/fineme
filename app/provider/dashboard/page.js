@@ -1352,6 +1352,13 @@ export default function ProviderDashboardPage() {
           document.getElementById('menu-price').value = s.price || '';
           const durationMatch = String(s.duration || '').match(/\d+/);
           document.getElementById('menu-duration').value = durationMatch ? durationMatch[0] : '';
+          const imgInput = document.getElementById('menu-image-url');
+          const imgPreview = document.getElementById('menu-image-preview');
+          if (imgInput) imgInput.value = s.image_url || '';
+          if (imgPreview) {
+            if (s.image_url) { imgPreview.src = s.image_url; imgPreview.style.display = 'inline-block'; }
+            else { imgPreview.style.display = 'none'; }
+          }
         };
       }
 
@@ -1362,13 +1369,16 @@ export default function ProviderDashboardPage() {
         const items = res.ok ? await res.json() : [];
         if (!items.length) { menuList.innerHTML = '<p class="muted" style="font-size:13px;">まだメニューがありません。</p>'; return; }
         menuList.innerHTML = items.map(m => `
-          <div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:8px;background:#fff;">
-            <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-              <strong style="color:#111827;">${escLp(m.name)}</strong>
-              <span style="font-size:13px;color:#6b7280;">¥${Number(m.price).toLocaleString()}／${m.duration_min}分</span>
+          <div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:8px;background:#fff;display:flex;gap:12px;">
+            ${m.images?.[0] ? `<img src="${m.images[0]}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;" />` : ''}
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                <strong style="color:#111827;">${escLp(m.name)}</strong>
+                <span style="font-size:13px;color:#6b7280;">¥${Number(m.price).toLocaleString()}／${m.duration_min}分</span>
+              </div>
+              <div style="font-size:12px;color:#9ca3af;margin-top:4px;">${(m.axes || []).map(a => AXIS_LABEL_LP[a] || a).join('・') || '軸未設定'}</div>
+              <button type="button" class="btn btn-ghost" style="font-size:12px;padding:4px 10px;margin-top:6px;" data-menu-del="${m.id}">削除</button>
             </div>
-            <div style="font-size:12px;color:#9ca3af;margin-top:4px;">${(m.axes || []).map(a => AXIS_LABEL_LP[a] || a).join('・') || '軸未設定'}</div>
-            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:4px 10px;margin-top:6px;" data-menu-del="${m.id}">削除</button>
           </div>
         `).join('');
         menuList.querySelectorAll('[data-menu-del]').forEach(btn => btn.addEventListener('click', async () => {
@@ -1384,6 +1394,7 @@ export default function ProviderDashboardPage() {
           const submitBtn = document.getElementById('menu-submit-btn');
           submitBtn.disabled = true; menuMsg.textContent = '';
           const axes = Array.from(document.querySelectorAll('#menu-axes input:checked')).map(i => i.value);
+          const imageUrl = document.getElementById('menu-image-url')?.value || '';
           const res = await fetch('/api/provider/experience-menus', {
             method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
             body: JSON.stringify({
@@ -1392,11 +1403,14 @@ export default function ProviderDashboardPage() {
               duration_min: document.getElementById('menu-duration').value,
               axes,
               description: document.getElementById('menu-desc').value,
+              images: imageUrl ? [imageUrl] : [],
             }),
           });
           if (res.ok) {
             menuMsg.style.color = '#059669'; menuMsg.textContent = '✓ 追加しました';
             menuForm.reset();
+            const imgPreview = document.getElementById('menu-image-preview');
+            if (imgPreview) imgPreview.style.display = 'none';
             loadMenus();
           } else {
             const d = await res.json(); menuMsg.style.color = '#ef4444'; menuMsg.textContent = d.error || '追加に失敗しました';
@@ -3110,8 +3124,10 @@ export default function ProviderDashboardPage() {
               <div className="form-field">
                 <label>サービス設定から選ぶ（任意）</label>
                 <select id="menu-from-service">
-                  <option value="">－ 選択するとメニュー名・価格を自動入力 －</option>
+                  <option value="">－ 選択するとメニュー名・価格・写真を自動入力 －</option>
                 </select>
+                <input type="hidden" id="menu-image-url" />
+                <img id="menu-image-preview" alt="" style={{ display: 'none', width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px' }} />
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <div className="form-field" style={{ flex: '1 1 200px' }}>
