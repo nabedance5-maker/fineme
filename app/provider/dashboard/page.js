@@ -2264,9 +2264,9 @@ export default function ProviderDashboardPage() {
         <div className="tab-nav">
           <button className="tab-btn" data-tab="profile">プロフィール</button>
           <button className="tab-btn" data-tab="service">サービス設定</button>
+          <button className="tab-btn" data-tab="packages">🎫 回数券</button>
           <button className="tab-btn" data-tab="staff">👤 スタッフ</button>
           <button className="tab-btn" data-tab="stories">📝 体験談</button>
-          <button className="tab-btn" data-tab="packages">🎫 回数券</button>
           <button className="tab-btn" data-tab="landing">🌐 LP設定</button>
           <button className="tab-btn" data-tab="qr">🔗 紹介QR</button>
           <button className="tab-btn" data-tab="publish">公開設定</button>
