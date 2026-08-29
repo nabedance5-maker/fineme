@@ -3,11 +3,9 @@
 // Me Scan/Mirrorの優先軸に一致する店舗の体験メニュー・施術事例・スタッフを表示する。
 // 事例(cases)はユーザー本人が承認済み(approved_by_user=true)のものだけがAPI側で返る。
 import { useEffect, useState } from 'react';
+import { PROVIDER_AXIS_LABELS } from '@/lib/provider-axes';
 
-const AXIS_LABELS = {
-  eyebrow: '眉', skin: '肌', hair: 'ヘア', expression: '表情',
-  posture: '姿勢', body: '体型', fashion: 'ファッション',
-};
+const AXIS_LABELS = PROVIDER_AXIS_LABELS;
 
 export default function ProviderLandingPage({ params }) {
   const { slug, axis } = params;

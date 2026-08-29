@@ -57,8 +57,8 @@ export default function AdminStoriesPage() {
 
     const LABELS = ['変容前の悩み', 'どんな変化があったか', '恋愛・人間関係への影響', 'おすすめしたい人'];
 
-    const AXIS_LABELS = { body:'体型・ボディ', eyebrow:'眉毛', fashion:'服・コーデ', hair:'髪・ヘア', skin:'肌・エステ', teeth:'歯・口元', nail:'爪' };
-    const AXIS_ICONS  = { body:'💪', eyebrow:'✂️', fashion:'👔', hair:'💇', skin:'✨', teeth:'🦷', nail:'💅' };
+    const AXIS_LABELS = { body:'体型・ボディ', eyebrow:'眉毛', fashion:'服・コーデ', hair:'髪・ヘア', skin:'肌・エステ', hairremoval:'脱毛・ムダ毛', teeth:'歯・口元', nail:'爪' };
+    const AXIS_ICONS  = { body:'💪', eyebrow:'✂️', fashion:'👔', hair:'💇', skin:'✨', hairremoval:'🪒', teeth:'🦷', nail:'💅' };
     const PATH_LABELS = { virgin:'🌱 初挑戦', quit:'🔄 リスタート', blind:'🤔 客観化', lapsed:'😴 再開' };
 
     async function loadStories() {

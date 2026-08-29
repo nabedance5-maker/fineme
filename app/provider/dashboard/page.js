@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { PROVIDER_AXES } from '@/lib/provider-axes';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
 import { CUSTOMER_SCRIPT_AXES } from '@/lib/customer-scripts';
@@ -493,8 +494,8 @@ export default function ProviderDashboardPage() {
         items.forEach(s => {
           const row = document.createElement('div');
           row.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;padding:12px 0;border-bottom:1px solid #f3f4f6;gap:10px';
-          const AXIS_LABELS_D = { body:'体型', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
-          const AXIS_ICONS_D  = { body:'💪', eyebrow:'✏️', fashion:'👔', hair:'💇', skin:'✨', teeth:'😁', nail:'💅' };
+          const AXIS_LABELS_D = { body:'体型', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', hairremoval:'脱毛', teeth:'歯', nail:'爪' };
+          const AXIS_ICONS_D  = { body:'💪', eyebrow:'✏️', fashion:'👔', hair:'💇', skin:'✨', hairremoval:'🪒', teeth:'😁', nail:'💅' };
           row.innerHTML = `
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
@@ -1330,7 +1331,7 @@ export default function ProviderDashboardPage() {
       if (!token) return;
 
       function escLp(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-      const AXIS_LABEL_LP = { eyebrow: '眉', skin: '肌', hair: 'ヘア', expression: '表情', posture: '姿勢', body: '体型', fashion: 'ファッション' };
+      const AXIS_LABEL_LP = Object.fromEntries(PROVIDER_AXES.map(a => [a.key, a.label]));
 
       // ── メニュー ──
       const menuForm = document.getElementById('menu-form');
@@ -2663,6 +2664,7 @@ export default function ProviderDashboardPage() {
                   <option value="fashion">👔 服・コーデ</option>
                   <option value="hair">💇 髪・ヘア</option>
                   <option value="skin">✨ 肌・エステ</option>
+                  <option value="hairremoval">🪒 脱毛・ムダ毛</option>
                   <option value="teeth">😁 歯・口元</option>
                   <option value="nail">💅 爪</option>
                 </select>
@@ -3128,13 +3130,11 @@ export default function ProviderDashboardPage() {
               <div className="form-field">
                 <label>対応軸（複数選択可）</label>
                 <div className="checkbox-group" id="menu-axes">
-                  <label className="checkbox-item"><input type="checkbox" value="eyebrow" /> 眉</label>
-                  <label className="checkbox-item"><input type="checkbox" value="skin" /> 肌</label>
-                  <label className="checkbox-item"><input type="checkbox" value="hair" /> ヘア</label>
-                  <label className="checkbox-item"><input type="checkbox" value="expression" /> 表情</label>
-                  <label className="checkbox-item"><input type="checkbox" value="posture" /> 姿勢</label>
-                  <label className="checkbox-item"><input type="checkbox" value="body" /> 体型</label>
-                  <label className="checkbox-item"><input type="checkbox" value="fashion" /> ファッション</label>
+                  {PROVIDER_AXES.map(a => (
+                    <label className="checkbox-item" key={a.key}>
+                      <input type="checkbox" value={a.key} /> {a.icon} {a.label}
+                    </label>
+                  ))}
                 </div>
               </div>
               <div className="form-field">
@@ -3163,13 +3163,9 @@ export default function ProviderDashboardPage() {
                 <div className="form-field" style={{ minWidth: '140px' }}>
                   <label>軸</label>
                   <select id="case-axis">
-                    <option value="eyebrow">眉</option>
-                    <option value="skin">肌</option>
-                    <option value="hair">ヘア</option>
-                    <option value="expression">表情</option>
-                    <option value="posture">姿勢</option>
-                    <option value="body">体型</option>
-                    <option value="fashion">ファッション</option>
+                    {PROVIDER_AXES.map(a => (
+                      <option value={a.key} key={a.key}>{a.icon} {a.label}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="form-field" style={{ minWidth: '90px' }}>
