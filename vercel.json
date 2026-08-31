@@ -7,7 +7,6 @@
     { "path": "/api/cron/cleanup-unpaid-mirror-photos", "schedule": "0 3 * * *" },
     { "path": "/api/cron/mirror-report", "schedule": "0 0 * * 1" },
     { "path": "/api/cron/sns-trend-draft", "schedule": "0 0 * * 0" },
-    { "path": "/api/cron/note-draft", "schedule": "0 0 * * 3" },
     { "path": "/api/cron/auto-visited", "schedule": "0 */2 * * *" },
     { "path": "/api/cron/index-submit", "schedule": "0 2 * * *" },
     { "path": "/api/cron/seo-bulk-submit", "schedule": "0 1 * * 0" },
