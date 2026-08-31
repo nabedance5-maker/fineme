@@ -83,6 +83,23 @@ export default function ProviderDashboardPage() {
       } catch { return null; }
     }
 
+    // getSupabaseToken()はlocalStorageのaccess_tokenを直接読むだけでSupabase SDKの
+    // 自動リフレッシュを経由しない。タブを長時間開いたまま、またはブラウザを閉じて
+    // 後日再訪すると期限切れのトークンのままAPIを叩き続け、各タブが軒並み
+    // 「取得エラー」になっていた（でお報告：再ログインすると直る＝セッション切れが原因）。
+    // ここでSDK経由のgetSession()を一度呼んでおくと、必要な場合は裏側でリフレッシュされ
+    // localStorageの値も更新される（以降のgetSupabaseToken()の読み取り値が新しくなる）。
+    _sb.auth.getSession().catch(() => {});
+
+    // 上のgetSession()呼び出しでも直せない場合（リフレッシュトークン自体も失効等）に、
+    // 各タブの「取得エラー」を401の時だけ再ログイン導線付きに出し分けるための共通ヘルパー。
+    function authErrorHtml(res) {
+      if (res?.status === 401) {
+        return '<p style="color:#ef4444" class="muted">セッションの有効期限が切れています。<a href="/login?redirect=%2Fprovider%2Fdashboard" style="color:inherit;text-decoration:underline;font-weight:700;">再ログインしてください</a></p>';
+      }
+      return '<p style="color:#ef4444" class="muted">取得エラー</p>';
+    }
+
     async function fetchAndCacheProviderData() {
       const token = getSupabaseToken();
       if (!token) return null;
@@ -486,7 +503,7 @@ export default function ProviderDashboardPage() {
       async function loadServices() {
         if (!listEl) return;
         const res = await fetch('/api/provider/services', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
-        if (!res.ok) { listEl.innerHTML = '<p class="muted" style="color:#ef4444">取得エラー</p>'; return; }
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
         const items = await res.json();
         renderPageScore(provider, items);
         if (!items.length) { listEl.innerHTML = '<p class="muted">まだサービスがありません。「＋ 追加」から登録してください。</p>'; return; }
@@ -600,7 +617,7 @@ export default function ProviderDashboardPage() {
       async function loadStaff() {
         if (!listEl) return;
         const res = await fetch('/api/provider/staff', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
-        if (!res.ok) { listEl.innerHTML = '<p class="muted" style="color:#ef4444">取得エラー</p>'; return; }
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
         const items = await res.json();
         if (!items.length) { listEl.innerHTML = '<p class="muted">まだスタッフが登録されていません。「＋ 追加」から登録してください。</p>'; return; }
         listEl.innerHTML = '';
@@ -728,7 +745,7 @@ export default function ProviderDashboardPage() {
         if (!listEl) return;
         listEl.innerHTML = '<p class="muted">読み込み中…</p>';
         const res = await fetch('/api/provider/stories', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
-        if (!res.ok) { listEl.innerHTML = '<p style="color:#ef4444" class="muted">取得エラー</p>'; return; }
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
         const items = await res.json();
         if (!items.length) { listEl.innerHTML = '<p class="muted">まだ体験談はありません。</p>'; return; }
         listEl.innerHTML = '';
@@ -793,7 +810,7 @@ export default function ProviderDashboardPage() {
       async function loadRecommended() {
         listEl.textContent = '読み込み中…';
         const res = await fetch('/api/provider/recommended-frequencies', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
-        if (!res.ok) { listEl.textContent = '取得エラー'; return; }
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
         const items = await res.json();
         if (!items.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px;margin:4px 0 0">まだ設定していません。</p>'; return; }
         listEl.innerHTML = items.map(r => {
@@ -1011,7 +1028,7 @@ export default function ProviderDashboardPage() {
           fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } }),
           fetch('/api/provider/staff', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } }),
         ]);
-        if (!res.ok) { listEl.innerHTML = '<p style="color:#ef4444" class="muted">取得エラー</p>'; return; }
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
         staffList = staffRes.ok ? await staffRes.json() : [];
         allItems = await res.json();
 
@@ -1139,7 +1156,7 @@ export default function ProviderDashboardPage() {
 
       async function loadDefs() {
         const res = await fetch('/api/provider/packages', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
-        if (!res.ok) { if (defListEl) defListEl.innerHTML = '<p style="color:#ef4444" class="muted">取得エラー</p>'; return; }
+        if (!res.ok) { if (defListEl) defListEl.innerHTML = authErrorHtml(res); return; }
         defs = await res.json();
         renderDefs();
         renderPkgSelect();
@@ -1187,7 +1204,7 @@ export default function ProviderDashboardPage() {
         if (!customerListEl) return;
         customerListEl.innerHTML = '<p class="muted">読み込み中…</p>';
         const res = await fetch('/api/provider/customer-packages', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
-        if (!res.ok) { customerListEl.innerHTML = '<p style="color:#ef4444" class="muted">取得エラー</p>'; return; }
+        if (!res.ok) { customerListEl.innerHTML = authErrorHtml(res); return; }
         const rows = await res.json();
         if (!rows.length) { customerListEl.innerHTML = '<p class="muted">まだ購入記録がありません。</p>'; return; }
         customerListEl.innerHTML = rows.map(r => `
@@ -1287,7 +1304,7 @@ export default function ProviderDashboardPage() {
         if (!statusEl) return;
         statusEl.textContent = '読み込み中…';
         const res = await fetch('/api/provider/line-channel', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
-        if (!res.ok) { statusEl.textContent = '取得エラー'; return; }
+        if (!res.ok) { statusEl.innerHTML = authErrorHtml(res); return; }
         const data = await res.json();
         if (data.connected) {
           statusEl.innerHTML = `✅ 連携済み（${data.verified_at ? new Date(data.verified_at).toLocaleDateString('ja-JP') : ''}確認・${data.connected_by === 'staff' ? '運営代行設定' : '自己設定'}）`;
@@ -1593,7 +1610,7 @@ export default function ProviderDashboardPage() {
       async function loadAreaDemand() {
         contentEl.innerHTML = '<p class="muted" style="font-size:13px;">読み込み中…</p>';
         const res = await fetch('/api/provider/area-demand', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
-        if (!res.ok) { contentEl.innerHTML = '<p class="muted" style="font-size:13px;color:#ef4444;">取得エラー</p>'; return; }
+        if (!res.ok) { contentEl.innerHTML = authErrorHtml(res); return; }
         const data = await res.json();
         if (data.note) { contentEl.innerHTML = `<p class="muted" style="font-size:13px;">${data.note}</p>`; return; }
         const area = data.areas?.[0];
@@ -1635,7 +1652,7 @@ export default function ProviderDashboardPage() {
       async function loadContent() {
         contentEl.innerHTML = '<p class="muted" style="font-size:13px;">読み込み中…</p>';
         const res = await fetch('/api/provider/ltv-cac', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
-        if (!res.ok) { contentEl.innerHTML = '<p class="muted" style="font-size:13px;color:#ef4444;">取得エラー</p>'; return; }
+        if (!res.ok) { contentEl.innerHTML = authErrorHtml(res); return; }
         const d = await res.json();
         if (!d.hasData) { contentEl.innerHTML = '<p class="muted" style="font-size:13px;">まだ来店済みの予約データがありません。</p>'; return; }
         contentEl.innerHTML = `
@@ -2004,7 +2021,7 @@ export default function ProviderDashboardPage() {
         fetch(`/api/reservations?providerId=${providerId}`, { headers: _reqToken ? { 'Authorization': `Bearer ${_reqToken}` } : {} }),
         loadActivePackagesByUser(),
       ]);
-      if (!res.ok) { document.getElementById('requests-list').innerHTML = '<p class="muted" style="color:#ef4444">取得エラー</p>'; return; }
+      if (!res.ok) { document.getElementById('requests-list').innerHTML = authErrorHtml(res); return; }
       const items = await res.json();
       _allRequests = items;
       const pending = items.filter(r => r.status === 'pending').length;
@@ -2266,7 +2283,7 @@ export default function ProviderDashboardPage() {
 
         try {
           const res = await fetch(`/api/billing/referrals?provider_id=${encodeURIComponent(pid)}`);
-          if (!res.ok) { if (listEl) listEl.innerHTML = '<p class="muted" style="color:#ef4444">取得エラーが発生しました。</p>'; return; }
+          if (!res.ok) { if (listEl) listEl.innerHTML = authErrorHtml(res); return; }
           const data = await res.json();
           const { referrals, summary } = data;
 
