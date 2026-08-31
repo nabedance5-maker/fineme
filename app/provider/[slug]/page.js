@@ -796,7 +796,7 @@ function ProgramTab({ services, onConsult, userPathType, provider, matchData }) 
 }
 
 // ── タブ③「相談する」────────────────────────────────────────────────────────
-function ConsultTab({ provider, services, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData }) {
+function ConsultTab({ provider, services, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint }) {
   const today = new Date().toISOString().split('T')[0];
   const [formState, setFormState] = useState({ name: '', email: '', phone: '', date: '', time: '', date2: '', time2: '', date3: '', time3: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -856,6 +856,7 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
         : '';
       const noteParts = [
         selectedService ? `【プログラム】${selectedService.name}（¥${selectedService.price.toLocaleString()}）` : '',
+        (!selectedService && menuNameHint) ? `【ご希望のメニュー】${menuNameHint}` : '',
         formState.date2 ? `【第2希望】${formState.date2} ${formState.time2}` : '',
         formState.date3 ? `【第3希望】${formState.date3} ${formState.time3}` : '',
         formState.message,
@@ -1276,6 +1277,7 @@ function ProviderPageContent() {
           setSubmitted={setSubmitted}
           diagnosis={diagnosis}
           matchData={matchData}
+          menuNameHint={searchParams.get('menu_name') || ''}
         />
       )}
     </div>

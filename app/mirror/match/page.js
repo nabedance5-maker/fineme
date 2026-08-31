@@ -27,7 +27,7 @@ export default function MirrorMatchPage() {
         .then(r => r.json().then(d => ({ ok: r.ok, d })))
         .then(({ ok, d }) => {
           if (!ok) { setStatus('error'); setErrorMsg(d.error || '取得に失敗しました'); return; }
-          setResults(d.providers || []);
+          setResults((d.providers || []).map(r => ({ ...r, axisScore: r.bestAxis ? d.axisScores?.[r.bestAxis] : null })));
           setStatus('ready');
         })
         .catch(() => { setStatus('error'); setErrorMsg('通信エラーが発生しました'); });
@@ -62,7 +62,7 @@ export default function MirrorMatchPage() {
         {results.map(r => (
           <a
             key={r.providerId}
-            href={r.bestAxis ? `/provider/${r.slug}/for/${r.bestAxis}` : `/provider/${r.slug}`}
+            href={r.bestAxis ? `/provider/${r.slug}/for/${r.bestAxis}${Number.isFinite(r.axisScore) ? `?score=${Math.round(r.axisScore)}` : ''}` : `/provider/${r.slug}`}
             className="card"
             style={{ display: 'flex', gap: 14, padding: 16, textDecoration: 'none', color: 'inherit', alignItems: 'center' }}
             onClick={() => { if (typeof window.gtag === 'function') window.gtag('event', 'mirror_match_click', { provider_slug: r.slug, match_score: r.matchScore }); }}
