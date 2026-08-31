@@ -17,15 +17,16 @@
 // だけ）。無料である事実は⑪オファー欄でのみ明示する。でお指摘（2026-08-31）。
 //
 // ビジュアル: スクロール時のフェードイン(Reveal)・Before/Afterのゲージ表示・
-// 軸アイコンバッジ・CTAの控えめなパルスを追加。外部アニメーションライブラリは
-// 使わずCSSキーフレーム+IntersectionObserverのみ（既存の依存ゼロ方針を踏襲）。
+// 統一ラインアイコン(AxisIcon)・地図/羅針盤モチーフ(Fineme「地図と羅針盤」の
+// タグラインに準拠)・CTAの控えめなパルスを追加。Gemini画像生成は課金停止のため
+// 使わず（でお判断、2026-08-31）、外部アセット無し・手描きSVG+CSSのみで構成。
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { PROVIDER_AXES, PROVIDER_AXIS_LABELS } from '@/lib/provider-axes';
+import { PROVIDER_AXIS_LABELS } from '@/lib/provider-axes';
 import { AXIS_NARRATIVES, AXIS_FUTURE_VISION, CONSULT_STEPS } from '@/lib/axis-narratives';
+import { AxisIcon } from '@/lib/axis-icons';
 
 const AXIS_LABELS = PROVIDER_AXIS_LABELS;
-const AXIS_ICON = Object.fromEntries(PROVIDER_AXES.map(a => [a.key, a.icon]));
 const PAYMENT_METHOD_LABELS = {
   cash: '現金', credit: 'クレジットカード', paypay: 'PayPay',
   rakuten_pay: '楽天Pay', line_pay: 'LINE Pay', bank: '銀行振込', other: 'その他',
@@ -82,6 +83,49 @@ function ScoreGauge({ before, after }) {
   );
 }
 
+// ヒーロー背景の装飾（cover_image_urlが無い店舗用）。Finemeのタグライン
+// 「地図と羅針盤」に準拠し、航路線+ピン+羅針盤のラインアートを淡く敷く。
+function HeroMapPattern() {
+  return (
+    <svg viewBox="0 0 780 340" preserveAspectRatio="xMidYMid slice" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.5 }}>
+      <path d="M-20,260 C120,220 180,300 320,240 C460,180 520,120 680,150 C740,160 780,120 820,90"
+        fill="none" stroke="#c9a84c" strokeWidth="1.4" strokeDasharray="2 10" strokeLinecap="round" opacity="0.55" />
+      <path d="M-40,60 C100,90 160,40 280,70 C420,105 520,40 680,80"
+        fill="none" stroke="#c9a84c" strokeWidth="1" strokeDasharray="1 8" strokeLinecap="round" opacity="0.3" />
+      <circle cx="320" cy="240" r="3.5" fill="#c9a84c" opacity="0.7" />
+      <circle cx="680" cy="150" r="3.5" fill="#c9a84c" opacity="0.7" />
+      <g transform="translate(640,60)" opacity="0.5">
+        <circle r="26" fill="none" stroke="#c9a84c" strokeWidth="1" />
+        <path d="M0,-20 L5,0 L0,20 L-5,0 Z" fill="#c9a84c" />
+        <path d="M-20,0 L0,-5 L20,0 L0,5 Z" fill="#c9a84c" opacity="0.5" />
+      </g>
+    </svg>
+  );
+}
+
+// スタッフ/流れセクションに使う小さな羅針盤アイコン（ブランドの一貫性用）
+function CompassGlyph({ size = 28, color = 'var(--color-gold)' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9.5" stroke={color} strokeWidth="1.3" />
+      <path d="M15.5 8.5l-2 5-5 2 2-5z" fill={color} />
+      <circle cx="12" cy="12" r="1" fill={color} />
+    </svg>
+  );
+}
+
+// STEPカードの上に置く、点線の「航路」ストリップ（地図モチーフの一貫性）
+function RouteStrip() {
+  return (
+    <svg viewBox="0 0 400 24" preserveAspectRatio="none" style={{ width: '100%', height: 20, display: 'block', marginBottom: 4 }}>
+      <line x1="10" y1="12" x2="390" y2="12" stroke="var(--color-gold)" strokeWidth="1.2" strokeDasharray="1 9" strokeLinecap="round" opacity="0.6" />
+      {[10, 136.6, 263.3, 390].map((x, i) => (
+        <circle key={i} cx={x} cy="12" r="3" fill="var(--color-gold)" opacity="0.85" />
+      ))}
+    </svg>
+  );
+}
+
 export default function ProviderLandingPage({ params }) {
   const { slug, axis } = params;
   const searchParams = useSearchParams();
@@ -125,7 +169,6 @@ export default function ProviderLandingPage({ params }) {
 
   const { provider, menus, cases, stories, staff, copy } = data;
   const axisLabel = AXIS_LABELS[axis] || axis;
-  const axisIcon = AXIS_ICON[axis] || '✨';
   const facilityPhotos = (provider.facility_photos || []).filter(Boolean).slice(0, 4);
   const narrative = AXIS_NARRATIVES[axis] || AXIS_NARRATIVES.other;
 
@@ -175,12 +218,13 @@ export default function ProviderLandingPage({ params }) {
               : 'linear-gradient(135deg,#0a0f1e 0%,#1c2438 100%)',
           }}
         >
+          {!provider.cover_image_url && <HeroMapPattern />}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(10,15,30,0.35) 10%, rgba(10,15,30,0.94) 100%)' }} />
           <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(201,168,76,0.25), transparent 70%)', filter: 'blur(4px)' }} />
           <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minHeight: 340, padding: '28px 20px 32px' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-              <span className="lp-badge-shimmer" style={{ fontSize: 12, fontWeight: 700, padding: '5px 14px', color: 'var(--color-bg-dark)', borderRadius: 99 }}>
-                {axisIcon} {axisLabel}向けのご提案
+              <span className="lp-badge-shimmer" style={{ fontSize: 12, fontWeight: 700, padding: '5px 14px', color: 'var(--color-bg-dark)', borderRadius: 99, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <AxisIcon axis={axis} size={13} color="var(--color-bg-dark)" strokeWidth={2} />{axisLabel}向けのご提案
               </span>
               {provider.area && <span style={{ fontSize: 12, padding: '5px 14px', background: 'rgba(255,255,255,0.12)', color: '#fff', borderRadius: 99, backdropFilter: 'blur(4px)' }}>📍 {provider.area}</span>}
             </div>
@@ -205,7 +249,9 @@ export default function ProviderLandingPage({ params }) {
               <div className="stack" style={{ gap: 10 }}>
                 {narrative.empathy.map((line, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                    <span style={{ flexShrink: 0, width: 22, height: 22, borderRadius: '50%', background: 'rgba(201,168,76,0.14)', color: 'var(--color-gold)', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>{axisIcon}</span>
+                    <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: '50%', background: 'rgba(201,168,76,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+                      <AxisIcon axis={axis} size={13} color="var(--color-gold)" />
+                    </span>
                     <p style={{ margin: 0, fontSize: 14, color: 'var(--color-fg)', lineHeight: 1.6 }}>{line}</p>
                   </div>
                 ))}
@@ -227,7 +273,7 @@ export default function ProviderLandingPage({ params }) {
 
           {/* ── ⑤希望の提示 ── */}
           <Reveal>
-            <div style={{ position: 'relative', marginTop: 20, padding: '18px 20px', textAlign: 'center' }}>
+            <div className="lp-dot-grid" style={{ position: 'relative', marginTop: 20, padding: '22px 20px', textAlign: 'center', borderRadius: 16 }}>
               <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, rgba(201,168,76,0.12), transparent 75%)' }} />
               <p style={{ position: 'relative', margin: 0, fontSize: 16, lineHeight: 1.8, color: 'var(--color-gold)', fontWeight: 700 }}>{narrative.hope}</p>
             </div>
@@ -259,7 +305,9 @@ export default function ProviderLandingPage({ params }) {
           {/* ── ⑦得られる未来を具体的に見せる ── */}
           <Reveal>
             <section className="card lp-hover" style={{ marginTop: 40, padding: '24px 24px', background: 'rgba(201,168,76,0.08)', borderColor: 'var(--color-gold)', position: 'relative', overflow: 'hidden' }}>
-              <span style={{ position: 'absolute', top: -18, right: -10, fontSize: 72, opacity: 0.08 }}>{axisIcon}</span>
+              <span style={{ position: 'absolute', top: -14, right: -14, opacity: 0.1 }}>
+                <AxisIcon axis={axis} size={110} color="var(--color-gold)" strokeWidth={1} />
+              </span>
               <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: 'var(--color-gold)', textTransform: 'uppercase' }}>この先に待っているもの</p>
               <p style={{ margin: 0, fontSize: 15, lineHeight: 1.9, color: 'var(--color-fg)', position: 'relative' }}>{futureVision}</p>
             </section>
@@ -365,6 +413,7 @@ export default function ProviderLandingPage({ params }) {
           {/* ── 相談の流れ ── */}
           <Reveal>
             <Section title="相談から施術までの流れ">
+              <RouteStrip />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
                 {CONSULT_STEPS.map(s => (
                   <div key={s.step} className="card lp-hover" style={{ padding: '16px 14px', textAlign: 'center' }}>
@@ -415,6 +464,7 @@ export default function ProviderLandingPage({ params }) {
           {/* ── ⑫CTA ── */}
           <Reveal>
             <section className="card stack" style={{ marginTop: 20, padding: '28px 24px', gap: 14, textAlign: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center' }}><CompassGlyph /></div>
               <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: 'var(--color-fg)' }}>{closingLine}</p>
               <a className="btn btn--primary lp-cta-pulse" href={consultHref} {...consultLinkProps} onClick={() => trackCta('final_consult')} style={{ fontSize: 15, padding: '13px 28px' }}>
                 {ctaLabel}
@@ -461,6 +511,11 @@ export default function ProviderLandingPage({ params }) {
           animation: lp-shimmer 2.8s ease-in-out infinite;
         }
         @keyframes lp-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .lp-dot-grid {
+          background-image: radial-gradient(rgba(201,168,76,0.35) 1px, transparent 1.4px);
+          background-size: 14px 14px;
+        }
 
         .lp-cta-pulse { animation: lp-pulse 2.4s ease-in-out infinite; }
         @keyframes lp-pulse {
