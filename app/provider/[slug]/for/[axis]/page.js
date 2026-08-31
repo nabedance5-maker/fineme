@@ -17,6 +17,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PROVIDER_AXIS_LABELS } from '@/lib/provider-axes';
+import { AXIS_NARRATIVES, CONSULT_STEPS } from '@/lib/axis-narratives';
 
 const AXIS_LABELS = PROVIDER_AXIS_LABELS;
 const PAYMENT_METHOD_LABELS = {
@@ -73,6 +74,7 @@ export default function ProviderLandingPage({ params }) {
   const intro = copy?.intro || provider.catchphrase || '';
   const closingLine = copy?.closingLine || `${provider.name}に相談してみる`;
 
+  const narrative = AXIS_NARRATIVES[axis] || AXIS_NARRATIVES.other;
   const consultHref = `/provider/${slug}?tab=consult`;
   function menuConsultHref(menuName) {
     return `/provider/${slug}?tab=consult&menu_name=${encodeURIComponent(menuName)}`;
@@ -148,6 +150,22 @@ export default function ProviderLandingPage({ params }) {
         </div>
 
         <div style={{ padding: '0 20px' }}>
+          {/* ── 共感（あなた、こんな状態じゃない？） ── */}
+          <section style={{ marginTop: 28 }}>
+            <div className="stack" style={{ gap: 8 }}>
+              {narrative.empathy.map((line, i) => (
+                <p key={i} style={{ margin: 0, fontSize: 14, color: 'var(--color-fg)', paddingLeft: 20, position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 0, color: 'var(--color-gold)' }}>・</span>{line}
+                </p>
+              ))}
+            </div>
+          </section>
+
+          {/* ── 問題の本質の再定義 ── */}
+          <section className="card" style={{ marginTop: 20, padding: '20px 22px' }}>
+            <p style={{ margin: 0, fontSize: 15, lineHeight: 1.9, color: 'var(--color-fg)', fontWeight: 600 }}>{narrative.reframe}</p>
+          </section>
+
           {/* ── 店舗の写真（早い段階の信頼） ── */}
           {facilityPhotos.length > 0 && (
             <section style={{ marginTop: 20 }}>
@@ -216,6 +234,19 @@ export default function ProviderLandingPage({ params }) {
               </div>
             </section>
           )}
+
+          {/* ── 利用の流れ ── */}
+          <section style={{ marginTop: 36 }}>
+            <h2 style={{ fontFamily: 'var(--font-serif-ja)', fontSize: 20, margin: '0 0 16px', color: 'var(--color-fg)' }}>相談から施術までの流れ</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
+              {CONSULT_STEPS.map(s => (
+                <div key={s.step} className="card" style={{ padding: '16px 14px', textAlign: 'center' }}>
+                  <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 800, color: 'var(--color-gold)', letterSpacing: 1 }}>STEP {s.step}</p>
+                  <p style={{ margin: 0, fontSize: 13, color: 'var(--color-fg)', fontWeight: 600 }}>{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </section>
 
           {/* ── 反論処理：よくある質問 ── */}
           {faqs.length > 0 && (
