@@ -134,10 +134,20 @@ export default function ProviderLandingPage({ params }) {
   const futureVision = provider.transformation_pattern || AXIS_FUTURE_VISION[axis] || AXIS_FUTURE_VISION.other;
   const closingLine = copy?.closingLine || `${provider.name}に相談してみる`;
 
-  const consultHref = `/provider/${slug}?tab=consult`;
-  function menuConsultHref(menuName) {
-    return `/provider/${slug}?tab=consult&menu_name=${encodeURIComponent(menuName)}`;
+  // CTAの遷移先: 店舗が外部予約システム(booking_url)を設定していればそちらを最優先で使う
+  // （店舗自身が能動的に設定した唯一の信頼できるシグナル）。無い場合は内部の相談フォームに
+  // つなぐが、全店舗が予約リクエストに反応しているわけではない実態があるため
+  // （app/api/cron/reservation-alert が24時間以上未回答の店舗にLINEで催促する仕組みが
+  // 既にあること自体、この問題が既知であることの証拠）、「予約する」と言い切らず
+  // 「問い合わせる」+返信目安の注記にとどめる。でお指摘（2026-08-31）。
+  const hasExternalBooking = !!provider.booking_url;
+  const consultHref = hasExternalBooking ? provider.booking_url : `/provider/${slug}?tab=consult`;
+  const consultLinkProps = hasExternalBooking ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+  const ctaLabel = hasExternalBooking ? '予約する' : '問い合わせる';
+  function menuCtaHref(menuName) {
+    return hasExternalBooking ? provider.booking_url : `/provider/${slug}?tab=consult&menu_name=${encodeURIComponent(menuName)}`;
   }
+  const menuCtaLabel = hasExternalBooking ? 'このメニューで予約する' : 'このメニューについて問い合わせる';
   function trackCta(kind) {
     if (typeof window.gtag === 'function') window.gtag('event', 'provider_lp_cta_click', { provider_slug: slug, axis, kind });
   }
@@ -289,8 +299,8 @@ export default function ProviderLandingPage({ params }) {
                           </div>
                           {hook && <p style={{ fontSize: 13, color: 'var(--color-gold)', fontWeight: 700, margin: '8px 0 0' }}>✨ {hook}</p>}
                           {m.description && <p className="muted" style={{ fontSize: 13, margin: '8px 0 0', lineHeight: 1.7 }}>{m.description}</p>}
-                          <a href={menuConsultHref(m.name)} onClick={() => trackCta('menu_consult')} className="btn" style={{ fontSize: 13, padding: '8px 16px', marginTop: 12, display: 'inline-block' }}>
-                            このメニューで相談する
+                          <a href={menuCtaHref(m.name)} {...consultLinkProps} onClick={() => trackCta('menu_consult')} className="btn" style={{ fontSize: 13, padding: '8px 16px', marginTop: 12, display: 'inline-block' }}>
+                            {menuCtaLabel}
                           </a>
                         </div>
                       </div>
@@ -388,9 +398,10 @@ export default function ProviderLandingPage({ params }) {
               <h2 style={{ fontFamily: 'var(--font-serif-ja)', fontSize: 18, margin: 0, color: 'var(--color-fg)' }}>今、ここから始められること</h2>
               <div className="stack" style={{ gap: 8 }}>
                 {[
-                  '相談・お問い合わせは無料',
+                  'お問い合わせは無料',
                   provider.price_from ? `施術・セッションは¥${Number(provider.price_from).toLocaleString()}〜` : null,
                   provider.trial_available ? (provider.trial_desc || 'お試し・体験からのスタートが可能') : null,
+                  !hasExternalBooking ? '店舗からの返信までお時間をいただく場合があります' : null,
                 ].filter(Boolean).map((line, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                     <span style={{ flexShrink: 0, color: 'var(--color-gold)', fontWeight: 800, fontSize: 14, marginTop: 1 }}>✓</span>
@@ -405,8 +416,8 @@ export default function ProviderLandingPage({ params }) {
           <Reveal>
             <section className="card stack" style={{ marginTop: 20, padding: '28px 24px', gap: 14, textAlign: 'center' }}>
               <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: 'var(--color-fg)' }}>{closingLine}</p>
-              <a className="btn btn--primary lp-cta-pulse" href={consultHref} onClick={() => trackCta('final_consult')} style={{ fontSize: 15, padding: '13px 28px' }}>
-                相談する
+              <a className="btn btn--primary lp-cta-pulse" href={consultHref} {...consultLinkProps} onClick={() => trackCta('final_consult')} style={{ fontSize: 15, padding: '13px 28px' }}>
+                {ctaLabel}
               </a>
               <a href={`/provider/${slug}`} onClick={() => trackCta('view_profile')} style={{ fontSize: 12, color: 'var(--color-muted)' }}>
                 店舗の詳細プロフィールを見る
@@ -427,8 +438,8 @@ export default function ProviderLandingPage({ params }) {
         }}
         className="lp-sticky-cta"
       >
-        <a href={consultHref} onClick={() => trackCta('sticky_consult')} className="btn btn--primary lp-cta-pulse" style={{ width: '100%', maxWidth: 420, textAlign: 'center', fontSize: 15, padding: '13px 0' }}>
-          {provider.name}に相談する
+        <a href={consultHref} {...consultLinkProps} onClick={() => trackCta('sticky_consult')} className="btn btn--primary lp-cta-pulse" style={{ width: '100%', maxWidth: 420, textAlign: 'center', fontSize: 15, padding: '13px 0' }}>
+          {provider.name}に{ctaLabel}
         </a>
       </div>
 

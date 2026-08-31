@@ -106,7 +106,7 @@ export async function GET(request, { params }) {
 
   const { data: provider } = await supabase
     .from('providers')
-    .select('id, slug, name, catchphrase, photo_url, cover_image_url, facility_photos, area, price_from, main_category, unique_strengths, philosophy, guide_message, best_fit_desc, transformation_pattern, online_available, trial_available, trial_desc, first_session_desc, cancellation_policy, response_hours, payment_methods')
+    .select('id, slug, name, catchphrase, photo_url, cover_image_url, facility_photos, area, price_from, main_category, unique_strengths, philosophy, guide_message, best_fit_desc, transformation_pattern, online_available, trial_available, trial_desc, first_session_desc, cancellation_policy, response_hours, payment_methods, booking_url')
     .eq('slug', slug)
     .eq('published', true)
     .single();
