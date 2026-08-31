@@ -1038,6 +1038,95 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'customers') loadCustomers();
     })();
 
+    // ── カルテタブ ─────────────────────────────────────────────
+    // New Me Logタブの中に埋もれていた店舗メモ機能を、店舗の人が馴染みのある
+    // 「カルテ」という独立タブとして出す（でお指摘：見つけづらい）。データ元は同じ
+    // /api/provider/customers・/api/provider/customers/[user_id]/note。
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const listEl = document.getElementById('karte-list');
+      const searchInput = document.getElementById('karte-search');
+      if (!listEl) return;
+
+      function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      function fmtDate(d) {
+        if (!d) return '未設定';
+        return new Date(d).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
+      }
+
+      let allItems = [];
+
+      function render() {
+        const kw = (searchInput?.value || '').trim().toLowerCase();
+        const items = kw ? allItems.filter(c => (c.customer_name || '').toLowerCase().includes(kw)) : allItems;
+        if (!items.length) {
+          listEl.innerHTML = '<p class="muted">該当するお客様はいません。</p>';
+          return;
+        }
+        listEl.innerHTML = items.map(c => {
+          const def = ALL_AXES[c.axis];
+          const axisLabel = def ? `${def.icon} ${esc(def.label)}` : esc(c.axis);
+          return `
+            <div style="border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px;background:#fff;">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+                <div style="font-size:14px;font-weight:700;color:#111827;">${esc(c.customer_name)}</div>
+                <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
+              </div>
+              <p style="font-size:12px;color:#6b7280;margin:0 0 8px;">前回来店：${fmtDate(c.last_visit)}</p>
+              <textarea data-karte-input="${c.user_id}" style="width:100%;min-height:80px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;box-sizing:border-box;" placeholder="読み込み中…" disabled></textarea>
+              <button type="button" class="btn" style="font-size:12px;padding:5px 10px;margin-top:6px;" data-karte-save="${c.user_id}" disabled>保存する</button>
+            </div>`;
+        }).join('');
+
+        // メモ本文は行数分だけ別APIのため、表示後に並列で埋める
+        items.forEach(c => {
+          fetch(`/api/provider/customers/${c.user_id}/note`, { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } })
+            .then(r => r.ok ? r.json() : { note: '' })
+            .then(d => {
+              const ta = listEl.querySelector(`[data-karte-input="${c.user_id}"]`);
+              const btn = listEl.querySelector(`[data-karte-save="${c.user_id}"]`);
+              if (ta) { ta.value = d.note || ''; ta.disabled = false; ta.placeholder = 'この店舗だけが見られるメモ（要望・使った薬剤・注意点など）。お客様には表示されません。'; }
+              if (btn) btn.disabled = false;
+            })
+            .catch(() => {});
+        });
+
+        listEl.querySelectorAll('[data-karte-save]').forEach(btn => btn.addEventListener('click', async () => {
+          const uid = btn.dataset.karteSave;
+          const ta = listEl.querySelector(`[data-karte-input="${uid}"]`);
+          btn.disabled = true;
+          const label = btn.textContent;
+          btn.textContent = '保存中…';
+          try {
+            await fetch(`/api/provider/customers/${uid}/note`, {
+              method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+              body: JSON.stringify({ note: ta.value }),
+            });
+            showToast('メモを保存しました');
+          } finally {
+            btn.disabled = false; btn.textContent = label;
+          }
+        }));
+      }
+
+      async function loadKarte() {
+        listEl.innerHTML = '<p class="muted">読み込み中…</p>';
+        try {
+          const res = await fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+          if (!res.ok) throw new Error();
+          allItems = await res.json();
+          render();
+        } catch {
+          listEl.innerHTML = '<p class="muted">読み込みに失敗しました</p>';
+        }
+      }
+
+      if (searchInput) searchInput.addEventListener('input', render);
+      document.querySelectorAll('[data-tab="karte"]').forEach(btn => btn.addEventListener('click', loadKarte, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'karte') loadKarte();
+    })();
+
     // ── 回数券・パッケージタブ ────────────────────────────────────
     (() => {
       const token = getSupabaseToken();
@@ -2307,6 +2396,7 @@ export default function ProviderDashboardPage() {
           <button className="tab-btn active" data-tab="stats">📊 概況</button>
           <button className="tab-btn" data-tab="requests">📬 予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
           <button className="tab-btn" data-tab="customers">🗒️ New Me Log</button>
+          <button className="tab-btn" data-tab="karte">📋 カルテ</button>
           <button className="tab-btn" data-tab="reviews">⭐ クチコミ</button>
           <button className="tab-btn" data-tab="area-demand">📍 エリア需要</button>
           <button className="tab-btn" data-tab="scripts">💡 接客の引き出し</button>
@@ -2951,6 +3041,23 @@ export default function ProviderDashboardPage() {
               </select>
             </div>
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
+          </div>
+        </div>
+
+        {/* 顧客カルテ：New Me Logタブのメモ機能と同じデータだが、店舗の人が探しやすいよう
+            独立タブとして名前をそのまま出す（でお指摘：メモ機能がNew Me Logタブの中に埋もれていて分かりづらい） */}
+        <div className="tab-pane" id="tab-karte">
+          <div className="card" style={{ padding: '24px' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>お客様カルテ</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                貴店だけが見られる自由記述のメモです（要望・使った薬剤・注意点など）。お客様には表示されません。New Me Logで貴店と紐づいているお客様が対象です。
+              </p>
+            </div>
+            <div className="form-field" style={{ maxWidth: '320px', marginBottom: '12px' }}>
+              <input id="karte-search" type="text" placeholder="お客様の名前で絞り込み" />
+            </div>
+            <div id="karte-list"><p className="muted">読み込み中…</p></div>
           </div>
         </div>
 
