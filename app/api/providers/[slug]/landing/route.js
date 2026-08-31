@@ -18,7 +18,7 @@ const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function sourceFacts(provider, axisLabel, menus) {
   const parts = [
     provider.catchphrase, provider.unique_strengths, provider.philosophy,
-    provider.guide_message, provider.best_fit_desc,
+    provider.guide_message, provider.best_fit_desc, provider.transformation_pattern,
     ...(menus || []).map(m => `${m.name}:${m.description || ''}`),
   ].filter(Boolean);
   return { parts, hash: createHash('sha256').update(axisLabel + '|' + parts.join('|')).digest('hex') };
@@ -106,17 +106,18 @@ export async function GET(request, { params }) {
 
   const { data: provider } = await supabase
     .from('providers')
-    .select('id, slug, name, catchphrase, photo_url, cover_image_url, facility_photos, area, price_from, main_category, unique_strengths, philosophy, guide_message, best_fit_desc, online_available, trial_available, trial_desc, first_session_desc, cancellation_policy, response_hours, payment_methods')
+    .select('id, slug, name, catchphrase, photo_url, cover_image_url, facility_photos, area, price_from, main_category, unique_strengths, philosophy, guide_message, best_fit_desc, transformation_pattern, online_available, trial_available, trial_desc, first_session_desc, cancellation_policy, response_hours, payment_methods')
     .eq('slug', slug)
     .eq('published', true)
     .single();
   if (!provider) return Response.json({ error: 'not-found' }, { status: 404 });
 
-  const [{ data: menus }, { data: cases }, { data: staff }, { data: lineChannel }] = await Promise.all([
+  const [{ data: menus }, { data: cases }, { data: staff }, { data: lineChannel }, { data: stories }] = await Promise.all([
     supabase.from('provider_experience_menus').select('*').eq('provider_id', provider.id).eq('is_active', true).order('sort_order', { ascending: true }),
     supabase.from('provider_cases').select('id, user_type, axis, before_score, after_score, image_url, published_at').eq('provider_id', provider.id).eq('approved_by_user', true).order('published_at', { ascending: false }),
     supabase.from('provider_staff').select('id, name, role, bio, photo_url, is_featured').eq('provider_id', provider.id),
     supabase.from('provider_line_channels').select('liff_id, verified_at').eq('provider_id', provider.id).single(),
+    supabase.from('stories').select('id, concern_before, change_after, tags').eq('provider_id', provider.id).eq('status', 'approved').order('created_at', { ascending: false }).limit(6),
   ]);
 
   const filteredMenus = axis ? (menus || []).filter(m => (m.axes || []).includes(axis)) : (menus || []);
@@ -130,12 +131,16 @@ export async function GET(request, { params }) {
     copy = null; // AI生成に何が起きても本体データは返す
   }
 
+  const filteredStories = axis ? (stories || []).filter(s => (s.tags || []).includes(axis)) : [];
+  const finalStories = (filteredStories.length ? filteredStories : (stories || [])).slice(0, 3);
+
   return Response.json({
     provider,
     hasContent: (menus || []).length > 0,
     axis,
     menus: finalMenus,
     cases: axis ? (cases || []).filter(c => c.axis === axis) : (cases || []),
+    stories: finalStories,
     staff: (staff || []).sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0)),
     copy, // { headline, intro, closingLine, menuHooks } | null
     // 店舗紹介QR経由の着地時、その場で店舗の公式LINE連携まで導くために使う（liff_id無しなら連携不可）
