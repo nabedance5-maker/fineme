@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { PROVIDER_AXES } from '@/lib/provider-axes';
-import { TAB_TUTORIALS, TUTORIAL_MUTED_KEY, tutorialSeenKey } from '@/lib/dashboard-tutorial';
+import { TAB_TUTORIALS, TUTORIAL_GROUPS, TUTORIAL_MUTED_KEY, tutorialSeenKey } from '@/lib/dashboard-tutorial';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
 import { CUSTOMER_SCRIPT_AXES } from '@/lib/customer-scripts';
@@ -101,10 +101,23 @@ export default function ProviderDashboardPage() {
       localStorage.removeItem(tutorialSeenKey(activeTab));
       renderTutorial(activeTab);
     });
+    document.getElementById('tutorial-unmute-btn')?.addEventListener('click', () => {
+      localStorage.removeItem(TUTORIAL_MUTED_KEY);
+      Object.keys(TAB_TUTORIALS).forEach(key => localStorage.removeItem(tutorialSeenKey(key)));
+      showToast('各タブの案内を出し直しました');
+    });
 
     const tabParam = new URLSearchParams(location.search).get('tab');
-    if (tabParam) switchTab(tabParam);
-    else renderTutorial(document.querySelector('.tab-btn.active')?.dataset.tab || 'stats');
+    const DASHBOARD_VISITED_KEY = 'fineme:provider:dashboard-visited';
+    if (tabParam) {
+      switchTab(tabParam);
+    } else if (!localStorage.getItem(DASHBOARD_VISITED_KEY)) {
+      // 初めてのダッシュボード訪問はチュートリアルタブから
+      switchTab('tutorial');
+    } else {
+      renderTutorial(document.querySelector('.tab-btn.active')?.dataset.tab || 'stats');
+    }
+    localStorage.setItem(DASHBOARD_VISITED_KEY, '1');
 
     // ── Provider data helpers ────────────────────────────────────
     function loadProviderData() {
@@ -2443,6 +2456,7 @@ export default function ProviderDashboardPage() {
 
         {/* タブナビ */}
         <div className="tab-nav">
+          <button className="tab-btn" data-tab="tutorial">📘 チュートリアル</button>
           <button className="tab-btn" data-tab="profile">プロフィール</button>
           <button className="tab-btn" data-tab="service">サービス設定</button>
           <button className="tab-btn" data-tab="packages">🎫 回数券</button>
@@ -2466,6 +2480,43 @@ export default function ProviderDashboardPage() {
 
         {/* 初回チュートリアル（タブごとに初回のみ表示） */}
         <div id="tab-tutorial-banner" />
+
+        {/* タブ：チュートリアル一覧（全タブの使い方まとめ） */}
+        <div className="tab-pane" id="tab-tutorial">
+          <div className="card" style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
+              <div>
+                <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>チュートリアル</h2>
+                <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                  各タブの使い方をまとめています。タブを初めて開いた時にも同じ内容が短く表示されます。
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <a href="/business/provider-guide" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '12px' }}>📖 PDFで見る ↗</a>
+                <button type="button" id="tutorial-unmute-btn" className="btn btn-ghost" style={{ fontSize: '12px' }}>各タブの案内を出し直す</button>
+              </div>
+            </div>
+            {TUTORIAL_GROUPS.map(group => (
+              <div key={group.heading} style={{ marginBottom: '20px' }}>
+                <h3 style={{ fontSize: '14px', margin: '0 0 10px', color: 'rgba(232,228,220,0.9)' }}>{group.heading}</h3>
+                <div className="stack" style={{ gap: '10px' }}>
+                  {group.keys.map(key => {
+                    const entry = TAB_TUTORIALS[key];
+                    if (!entry) return null;
+                    return (
+                      <div key={key} style={{ border: '1px solid rgba(232,228,220,0.12)', borderRadius: '10px', padding: '12px 14px' }}>
+                        <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '13px' }}>{entry.title}</p>
+                        <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12.5px', lineHeight: '1.7' }} className="muted">
+                          {entry.tips.map((tip, i) => <li key={i}>{tip}</li>)}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* タブ①：概況 */}
         <div className="tab-pane active" id="tab-stats">
