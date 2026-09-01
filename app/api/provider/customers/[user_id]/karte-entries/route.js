@@ -1,0 +1,74 @@
+// GET  /api/provider/customers/[user_id]/karte-entries → その顧客の来店記録ログ一覧（認証済み・新しい順）
+// POST /api/provider/customers/[user_id]/karte-entries → 来店記録を1件追加（認証済み）
+export const dynamic = 'force-dynamic';
+import { getSupabase } from '@/lib/supabase';
+
+const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
+
+async function getProviderByToken(token) {
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) return null;
+  const { data } = await supabase.from('providers').select('id, slug').eq('email', user.email).single();
+  return data || null;
+}
+
+// 対象ユーザーが実際にこの店舗にNew Me Logを紐づけているか確認（他店舗の顧客への書き込みを防ぐ）
+async function isLinkedCustomer(providerSlug, userId) {
+  const { data } = await supabase
+    .from('user_service_logs')
+    .select('id')
+    .eq('provider_slug', providerSlug)
+    .eq('user_id', userId)
+    .eq('active', true)
+    .limit(1)
+    .single();
+  return !!data;
+}
+
+export async function GET(request, { params }) {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
+  if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { data, error } = await supabase
+    .from('provider_karte_entries')
+    .select('id, note, custom_values, staff_id, created_at')
+    .eq('provider_id', provider.id)
+    .eq('user_id', params.user_id)
+    .order('created_at', { ascending: false });
+
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json(data || []);
+}
+
+export async function POST(request, { params }) {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
+  if (!provider?.slug) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+  if (!(await isLinkedCustomer(provider.slug, params.user_id))) {
+    return Response.json({ error: '対象のお客様が見つかりません' }, { status: 404 });
+  }
+
+  const { note, custom_values, staff_id } = await request.json();
+  if (!note?.trim() && !(custom_values && Object.keys(custom_values).length)) {
+    return Response.json({ error: 'メモかカスタム項目のどちらかは入力してください' }, { status: 400 });
+  }
+
+  const { data, error } = await supabase
+    .from('provider_karte_entries')
+    .insert({
+      provider_id: provider.id,
+      user_id: params.user_id,
+      note: note?.trim() || null,
+      custom_values: custom_values || {},
+      staff_id: staff_id || null,
+    })
+    .select()
+    .single();
+
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json(data);
+}

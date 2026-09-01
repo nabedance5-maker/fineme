@@ -1107,13 +1107,21 @@ export default function ProviderDashboardPage() {
 
     // ── カルテタブ ─────────────────────────────────────────────
     // New Me Logタブの中に埋もれていた店舗メモ機能を、店舗の人が馴染みのある
-    // 「カルテ」という独立タブとして出す（でお指摘：見つけづらい）。データ元は同じ
-    // /api/provider/customers・/api/provider/customers/[user_id]/note。
+    // 「カルテ」という独立タブとして出す（でお指摘：見つけづらい）。
+    // 2026-09拡張：固定メモ1本だけでなく、店舗が自由に定義したカスタム項目
+    // （自由記述／選択肢／5段階評価）付きの来店記録を追記していける履歴、
+    // その履歴からAIが傾向を出す機能を追加（でお要望）。
     (() => {
       const token = getSupabaseToken();
       if (!token) return;
       const listEl = document.getElementById('karte-list');
       const searchInput = document.getElementById('karte-search');
+      const kfListEl = document.getElementById('kf-list');
+      const kfLabelInput = document.getElementById('kf-label');
+      const kfTypeSel = document.getElementById('kf-type');
+      const kfOptionsWrap = document.getElementById('kf-options-wrap');
+      const kfOptionsInput = document.getElementById('kf-options');
+      const kfAddBtn = document.getElementById('kf-add-btn');
       if (!listEl) return;
 
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -1121,8 +1129,134 @@ export default function ProviderDashboardPage() {
         if (!d) return '未設定';
         return new Date(d).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
       }
+      function fmtDateTime(d) {
+        return new Date(d).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+      }
+      function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` }; }
 
       let allItems = [];
+      let karteFields = [];
+      const FIELD_TYPE_LABEL = { text: '自由記述', select: '選択肢', stars: '5段階評価' };
+
+      // ── カルテ項目（カスタムフィールド）の管理 ──
+      function renderFieldsPanel() {
+        if (!kfListEl) return;
+        if (!karteFields.length) { kfListEl.innerHTML = '<p class="muted" style="font-size:13px;">まだ項目がありません。下のフォームから追加してください。</p>'; return; }
+        kfListEl.innerHTML = karteFields.map((f, i) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+            <span style="flex:1;font-size:13px;">${esc(f.label)}${f.field_type === 'select' ? `<span class="muted" style="font-size:11px;"> (${(f.options || []).map(esc).join('・')})</span>` : ''}</span>
+            <span style="font-size:11px;padding:2px 8px;background:#f3f4f6;border-radius:99px;">${FIELD_TYPE_LABEL[f.field_type] || f.field_type}</span>
+            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;" data-kf-up="${f.id}"${i === 0 ? ' disabled' : ''}>↑</button>
+            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;" data-kf-down="${f.id}"${i === karteFields.length - 1 ? ' disabled' : ''}>↓</button>
+            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;color:#ef4444;" data-kf-del="${f.id}">削除</button>
+          </div>`).join('');
+
+        kfListEl.querySelectorAll('[data-kf-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('この項目を削除しますか？（過去の記録に入力済みの値は残ります）')) return;
+          await fetch(`/api/provider/karte-fields/${btn.dataset.kfDel}`, { method: 'DELETE', headers: authHeaders() });
+          await loadFields();
+        }));
+        kfListEl.querySelectorAll('[data-kf-up]').forEach(btn => btn.addEventListener('click', () => swapFieldOrder(btn.dataset.kfUp, -1)));
+        kfListEl.querySelectorAll('[data-kf-down]').forEach(btn => btn.addEventListener('click', () => swapFieldOrder(btn.dataset.kfDown, 1)));
+      }
+
+      async function swapFieldOrder(id, dir) {
+        const idx = karteFields.findIndex(f => f.id === id);
+        const otherIdx = idx + dir;
+        if (idx < 0 || otherIdx < 0 || otherIdx >= karteFields.length) return;
+        const a = karteFields[idx], b = karteFields[otherIdx];
+        await Promise.all([
+          fetch(`/api/provider/karte-fields/${a.id}`, { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ sort_order: b.sort_order }) }),
+          fetch(`/api/provider/karte-fields/${b.id}`, { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ sort_order: a.sort_order }) }),
+        ]);
+        await loadFields();
+      }
+
+      async function loadFields() {
+        const res = await fetch('/api/provider/karte-fields', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        karteFields = res.ok ? await res.json() : [];
+        renderFieldsPanel();
+      }
+
+      if (kfTypeSel) kfTypeSel.addEventListener('change', () => {
+        if (kfOptionsWrap) kfOptionsWrap.style.display = kfTypeSel.value === 'select' ? '' : 'none';
+      });
+
+      if (kfAddBtn) kfAddBtn.addEventListener('click', async () => {
+        const label = kfLabelInput?.value.trim();
+        const field_type = kfTypeSel?.value;
+        if (!label) { showToast('項目名を入力してください'); return; }
+        let options;
+        if (field_type === 'select') {
+          options = (kfOptionsInput?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+          if (!options.length) { showToast('選択肢を入力してください'); return; }
+        }
+        kfAddBtn.disabled = true;
+        try {
+          const res = await fetch('/api/provider/karte-fields', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ label, field_type, options }) });
+          if (!res.ok) { const d = await res.json().catch(() => ({})); showToast(d.error || '追加に失敗しました'); return; }
+          if (kfLabelInput) kfLabelInput.value = '';
+          if (kfOptionsInput) kfOptionsInput.value = '';
+          await loadFields();
+          showToast('項目を追加しました');
+        } finally {
+          kfAddBtn.disabled = false;
+        }
+      });
+
+      // ── 来店記録の追加フォーム（カスタム項目をtype別にレンダリング）──
+      function renderFieldInputHtml(f) {
+        if (f.field_type === 'select') {
+          const opts = (f.options || []).map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('');
+          return `<div class="form-field"><label>${esc(f.label)}</label><select data-kv="${f.id}"><option value="">（未入力）</option>${opts}</select></div>`;
+        }
+        if (f.field_type === 'stars') {
+          const stars = [1, 2, 3, 4, 5].map(n => `<button type="button" class="karte-star" data-star="${n}" style="font-size:22px;background:none;border:none;cursor:pointer;color:#d1d5db;padding:2px;">★</button>`).join('');
+          return `<div class="form-field"><label>${esc(f.label)}</label><div data-kv-stars="${f.id}" data-kv-value="0">${stars}</div></div>`;
+        }
+        return `<div class="form-field"><label>${esc(f.label)}</label><input type="text" data-kv="${f.id}" /></div>`;
+      }
+
+      function renderAddFormHtml(uid) {
+        const fieldsHtml = karteFields.map(renderFieldInputHtml).join('');
+        return `
+          <div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;background:#fafafa;">
+            ${fieldsHtml || '<p class="muted" style="font-size:12px;margin:0 0 8px;">カスタム項目は未設定です（上の「カルテ項目を設定」から追加できます）。</p>'}
+            <div class="form-field"><label>メモ</label><textarea data-karte-entry-note="${uid}" style="min-height:70px;"></textarea></div>
+            <button type="button" class="btn" style="font-size:12px;padding:6px 12px;" data-karte-entry-save="${uid}">記録を保存する</button>
+          </div>`;
+      }
+
+      function bindStarWidgets(container) {
+        container.querySelectorAll('[data-kv-stars]').forEach(wrap => {
+          const stars = wrap.querySelectorAll('.karte-star');
+          function paint(n) { stars.forEach(s => { s.style.color = Number(s.dataset.star) <= n ? '#f59e0b' : '#d1d5db'; }); }
+          stars.forEach(s => s.addEventListener('click', () => { wrap.dataset.kvValue = s.dataset.star; paint(Number(s.dataset.star)); }));
+        });
+      }
+
+      function collectCustomValues(container) {
+        const values = {};
+        container.querySelectorAll('[data-kv]').forEach(el => { if (el.value) values[el.dataset.kv] = el.value; });
+        container.querySelectorAll('[data-kv-stars]').forEach(el => { if (Number(el.dataset.kvValue) > 0) values[el.dataset.kvStars] = Number(el.dataset.kvValue); });
+        return values;
+      }
+
+      // ── 過去の記録の履歴表示 ──
+      function renderHistoryHtml(entries) {
+        if (!entries.length) return '<p class="muted" style="font-size:12px;">まだ記録がありません。</p>';
+        const labelMap = {};
+        karteFields.forEach(f => { labelMap[f.id] = f.label; });
+        return entries.map(e => {
+          const custom = Object.entries(e.custom_values || {}).map(([fid, val]) => `${esc(labelMap[fid] || fid)}: ${esc(val)}`).join(' / ');
+          return `
+            <div style="padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:12.5px;">
+              <div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">${fmtDateTime(e.created_at)}</div>
+              ${e.note ? `<div>${esc(e.note)}</div>` : ''}
+              ${custom ? `<div class="muted">${custom}</div>` : ''}
+            </div>`;
+        }).join('');
+      }
 
       function render() {
         const kw = (searchInput?.value || '').trim().toLowerCase();
@@ -1141,8 +1275,19 @@ export default function ProviderDashboardPage() {
                 <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
               </div>
               <p style="font-size:12px;color:#6b7280;margin:0 0 8px;">前回来店：${fmtDate(c.last_visit)}</p>
-              <textarea data-karte-input="${c.user_id}" style="width:100%;min-height:80px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;box-sizing:border-box;" placeholder="読み込み中…" disabled></textarea>
+
+              <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;margin-bottom:4px;">📌 固定メモ</label>
+              <textarea data-karte-input="${c.user_id}" style="width:100%;min-height:60px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;box-sizing:border-box;" placeholder="読み込み中…" disabled></textarea>
               <button type="button" class="btn" style="font-size:12px;padding:5px 10px;margin-top:6px;" data-karte-save="${c.user_id}" disabled>保存する</button>
+
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid #f3f4f6;">
+                <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;" data-karte-add-toggle="${c.user_id}">＋ 来店記録を追加</button>
+                <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;" data-karte-history-toggle="${c.user_id}">記録を見る</button>
+                <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;" data-karte-insight="${c.user_id}">🤖 AIに傾向を聞く</button>
+              </div>
+              <div class="karte-add-form" id="karte-add-form-${c.user_id}" style="display:none;margin-top:10px;"></div>
+              <div class="karte-history" id="karte-history-${c.user_id}" style="display:none;margin-top:10px;"></div>
+              <div class="karte-insight-box" id="karte-insight-${c.user_id}" style="display:none;margin-top:10px;"></div>
             </div>`;
         }).join('');
 
@@ -1166,13 +1311,91 @@ export default function ProviderDashboardPage() {
           const label = btn.textContent;
           btn.textContent = '保存中…';
           try {
-            await fetch(`/api/provider/customers/${uid}/note`, {
-              method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
-              body: JSON.stringify({ note: ta.value }),
-            });
+            await fetch(`/api/provider/customers/${uid}/note`, { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ note: ta.value }) });
             showToast('メモを保存しました');
           } finally {
             btn.disabled = false; btn.textContent = label;
+          }
+        }));
+
+        listEl.querySelectorAll('[data-karte-add-toggle]').forEach(btn => btn.addEventListener('click', () => {
+          const uid = btn.dataset.karteAddToggle;
+          const box = document.getElementById(`karte-add-form-${uid}`);
+          if (!box) return;
+          const opening = box.style.display === 'none';
+          box.style.display = opening ? 'block' : 'none';
+          if (opening && !box.dataset.built) {
+            box.innerHTML = renderAddFormHtml(uid);
+            box.dataset.built = '1';
+            bindStarWidgets(box);
+            box.querySelector(`[data-karte-entry-save="${uid}"]`)?.addEventListener('click', async (e) => {
+              const saveBtn = e.currentTarget;
+              const noteEl = box.querySelector(`[data-karte-entry-note="${uid}"]`);
+              saveBtn.disabled = true;
+              try {
+                const res = await fetch(`/api/provider/customers/${uid}/karte-entries`, {
+                  method: 'POST', headers: authHeaders(),
+                  body: JSON.stringify({ note: noteEl?.value || '', custom_values: collectCustomValues(box) }),
+                });
+                if (!res.ok) { const d = await res.json().catch(() => ({})); showToast(d.error || '保存に失敗しました'); return; }
+                showToast('記録を保存しました');
+                box.style.display = 'none';
+                box.dataset.built = '';
+                const histBox = document.getElementById(`karte-history-${uid}`);
+                if (histBox) { histBox.dataset.built = ''; } // 次に開いた時に最新の履歴を取り直す
+              } finally {
+                saveBtn.disabled = false;
+              }
+            });
+          }
+        }));
+
+        listEl.querySelectorAll('[data-karte-history-toggle]').forEach(btn => btn.addEventListener('click', async () => {
+          const uid = btn.dataset.karteHistoryToggle;
+          const box = document.getElementById(`karte-history-${uid}`);
+          if (!box) return;
+          const opening = box.style.display === 'none';
+          box.style.display = opening ? 'block' : 'none';
+          if (opening && !box.dataset.built) {
+            box.innerHTML = '<p class="muted" style="font-size:12px;">読み込み中…</p>';
+            box.dataset.built = '1';
+            try {
+              const res = await fetch(`/api/provider/customers/${uid}/karte-entries`, { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+              const entries = res.ok ? await res.json() : [];
+              box.innerHTML = renderHistoryHtml(entries);
+            } catch {
+              box.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
+            }
+          }
+        }));
+
+        listEl.querySelectorAll('[data-karte-insight]').forEach(btn => btn.addEventListener('click', async () => {
+          const uid = btn.dataset.karteInsight;
+          const box = document.getElementById(`karte-insight-${uid}`);
+          if (!box) return;
+          box.style.display = 'block';
+          box.innerHTML = '<p class="muted" style="font-size:12px;">分析中…</p>';
+          btn.disabled = true;
+          try {
+            const res = await fetch(`/api/provider/customers/${uid}/karte-insight`, { method: 'POST', headers: authHeaders() });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              box.innerHTML = `<p class="muted" style="font-size:12px;color:#ef4444;">${esc(data.error || '分析に失敗しました')}</p>`;
+            } else if (data.insufficientData) {
+              box.innerHTML = `<p class="muted" style="font-size:12px;">まだ記録が少なく（${data.count}件）、傾向を出すには早いです。3件以上たまると分析できます。</p>`;
+            } else {
+              box.innerHTML = `
+                <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px 12px;">
+                  <p style="font-size:11px;font-weight:700;color:#6d28d9;margin:0 0 6px;">🤖 AIが気づいた傾向</p>
+                  <ul style="margin:0;padding-left:18px;font-size:12.5px;color:#4c1d95;">
+                    ${data.insights.map(i => `<li>${esc(i)}</li>`).join('')}
+                  </ul>
+                </div>`;
+            }
+          } catch {
+            box.innerHTML = '<p class="muted" style="font-size:12px;color:#ef4444;">分析に失敗しました</p>';
+          } finally {
+            btn.disabled = false;
           }
         }));
       }
@@ -1181,7 +1404,7 @@ export default function ProviderDashboardPage() {
         listEl.innerHTML = '<p class="muted">読み込み中…</p>';
         try {
           const res = await fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
-          if (!res.ok) throw new Error();
+          if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
           allItems = await res.json();
           render();
         } catch {
@@ -1190,8 +1413,8 @@ export default function ProviderDashboardPage() {
       }
 
       if (searchInput) searchInput.addEventListener('input', render);
-      document.querySelectorAll('[data-tab="karte"]').forEach(btn => btn.addEventListener('click', loadKarte, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'karte') loadKarte();
+      document.querySelectorAll('[data-tab="karte"]').forEach(btn => btn.addEventListener('click', () => { loadFields(); loadKarte(); }, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'karte') { loadFields(); loadKarte(); }
     })();
 
     // ── 回数券・パッケージタブ ────────────────────────────────────
@@ -3156,14 +3379,43 @@ export default function ProviderDashboardPage() {
           </div>
         </div>
 
-        {/* 顧客カルテ：New Me Logタブのメモ機能と同じデータだが、店舗の人が探しやすいよう
-            独立タブとして名前をそのまま出す（でお指摘：メモ機能がNew Me Logタブの中に埋もれていて分かりづらい） */}
+        {/* 顧客カルテ：店舗が自由に定義したカスタム項目（自由記述／選択肢／5段階評価）付きの
+            来店記録を追記していける履歴＋AI傾向分析（でお要望 2026-09）。固定の1行メモも別途残す。 */}
         <div className="tab-pane" id="tab-karte">
+          <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>カルテ項目を設定</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                自由記述だけでなく、貴店で欲しい項目（例：気をつける点・特徴・癖など）を自由に追加できます。項目は貴店だけに表示され、お客様には見えません。
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="form-field" style={{ minWidth: '160px' }}>
+                <label>項目名</label>
+                <input id="kf-label" type="text" placeholder="例：癖・注意点" />
+              </div>
+              <div className="form-field" style={{ minWidth: '140px' }}>
+                <label>種類</label>
+                <select id="kf-type">
+                  <option value="text">自由記述</option>
+                  <option value="select">選択肢</option>
+                  <option value="stars">5段階評価</option>
+                </select>
+              </div>
+              <div className="form-field" id="kf-options-wrap" style={{ minWidth: '220px', display: 'none' }}>
+                <label>選択肢（カンマ区切り）</label>
+                <input id="kf-options" type="text" placeholder="例：右巻き,左巻き,直毛" />
+              </div>
+              <button className="btn" id="kf-add-btn" type="button">追加する</button>
+            </div>
+            <div id="kf-list"></div>
+          </div>
+
           <div className="card" style={{ padding: '24px' }}>
             <div style={{ marginBottom: '16px' }}>
               <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>お客様カルテ</h2>
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-                貴店だけが見られる自由記述のメモです（要望・使った薬剤・注意点など）。お客様には表示されません。New Me Logで貴店と紐づいているお客様が対象です。
+                固定メモに加えて、来店ごとに記録を追記できます。記録が貯まると、AIが傾向を分析します。お客様には表示されません。New Me Logで貴店と紐づいているお客様が対象です。
               </p>
             </div>
             <div className="form-field" style={{ maxWidth: '320px', marginBottom: '12px' }}>
