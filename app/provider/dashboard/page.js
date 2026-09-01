@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { PROVIDER_AXES } from '@/lib/provider-axes';
+import { TAB_TUTORIALS, TUTORIAL_MUTED_KEY, tutorialSeenKey } from '@/lib/dashboard-tutorial';
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
 import { CUSTOMER_SCRIPT_AXES } from '@/lib/customer-scripts';
@@ -62,12 +63,48 @@ export default function ProviderDashboardPage() {
       const pane = document.getElementById('tab-' + tabId);
       if (btn) btn.classList.add('active');
       if (pane) pane.classList.add('active');
+      renderTutorial(tabId);
     }
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
+
+    // ── 初回チュートリアル（タブごとに初回だけ要点を表示） ─────────
+    function renderTutorial(tabId) {
+      const box = document.getElementById('tab-tutorial-banner');
+      if (!box) return;
+      if (localStorage.getItem(TUTORIAL_MUTED_KEY)) { box.innerHTML = ''; return; }
+      const entry = TAB_TUTORIALS[tabId];
+      if (!entry || localStorage.getItem(tutorialSeenKey(tabId))) { box.innerHTML = ''; return; }
+      box.innerHTML = `
+        <div style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.35);border-radius:12px;padding:16px 18px;margin-bottom:16px;">
+          <p style="margin:0 0 8px;font-weight:700;color:#c9a84c;font-size:13px;">💡 ${entry.title}タブの使い方</p>
+          <ol style="margin:0 0 12px;padding-left:20px;font-size:13px;line-height:1.8;color:#e8e4dc;">
+            ${entry.tips.map(t => `<li>${t}</li>`).join('')}
+          </ol>
+          <button type="button" id="tutorial-dismiss-btn" class="btn btn-ghost" style="font-size:12px;padding:6px 14px;">わかった</button>
+          <button type="button" id="tutorial-mute-btn" class="btn btn-ghost" style="font-size:12px;padding:6px 14px;margin-left:8px;">すべて非表示にする</button>
+        </div>
+      `;
+      document.getElementById('tutorial-dismiss-btn')?.addEventListener('click', () => {
+        localStorage.setItem(tutorialSeenKey(tabId), '1');
+        box.innerHTML = '';
+      });
+      document.getElementById('tutorial-mute-btn')?.addEventListener('click', () => {
+        localStorage.setItem(TUTORIAL_MUTED_KEY, '1');
+        box.innerHTML = '';
+      });
+    }
+    document.getElementById('tutorial-show-btn')?.addEventListener('click', () => {
+      const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'stats';
+      localStorage.removeItem(TUTORIAL_MUTED_KEY);
+      localStorage.removeItem(tutorialSeenKey(activeTab));
+      renderTutorial(activeTab);
+    });
+
     const tabParam = new URLSearchParams(location.search).get('tab');
     if (tabParam) switchTab(tabParam);
+    else renderTutorial(document.querySelector('.tab-btn.active')?.dataset.tab || 'stats');
 
     // ── Provider data helpers ────────────────────────────────────
     function loadProviderData() {
@@ -2397,7 +2434,11 @@ export default function ProviderDashboardPage() {
             </div>
             <p className="muted" id="provider-page-link" style={{ margin: '0' }}></p>
           </div>
-          <a id="view-page-btn" href="#" target="_blank" className="btn btn-ghost" style={{ fontSize: '13px' }}>自分のページを見る ↗</a>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button type="button" id="tutorial-show-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>💡 使い方を見る</button>
+            <a href="/business/provider-guide" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px' }}>📖 使い方説明書 ↗</a>
+            <a id="view-page-btn" href="#" target="_blank" className="btn btn-ghost" style={{ fontSize: '13px' }}>自分のページを見る ↗</a>
+          </div>
         </div>
 
         {/* タブナビ */}
@@ -2422,6 +2463,9 @@ export default function ProviderDashboardPage() {
           <button className="tab-btn" data-tab="line-channel">💬 LINE連携</button>
           <button className="tab-btn" data-tab="billing">課金・プラン</button>
         </div>
+
+        {/* 初回チュートリアル（タブごとに初回のみ表示） */}
+        <div id="tab-tutorial-banner" />
 
         {/* タブ①：概況 */}
         <div className="tab-pane active" id="tab-stats">
