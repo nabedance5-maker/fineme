@@ -1009,8 +1009,8 @@ export default function ProviderDashboardPage() {
                 </div>
                 <p style="font-size:12px;color:#6b7280;margin:0 0 8px;">前回：${fmtDate(c.last_visit)}／次回目安：${fmtDate(c.next_visit)}／頻度：${fmtFreq(c)}／来店回数：${c.visitCount ?? 0}回</p>
                 <div class="cluster" style="gap:8px;align-items:center;">
-                  <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;" data-nudge="${c.user_id}">声かけメッセージを送る</button>
-                  <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;" data-note="${c.user_id}">${c.hasStoreNote ? 'メモを見る/編集' : 'メモを追加'}</button>
+                  <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#374151;border-color:#d1d5db;" data-nudge="${c.user_id}">声かけメッセージを送る</button>
+                  <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#374151;border-color:#d1d5db;" data-note="${c.user_id}">${c.hasStoreNote ? 'メモを見る/編集' : 'メモを追加'}</button>
                   <select data-assign="${c.user_id}" style="font-size:12px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">${staffOptions}</select>
                 </div>
                 <div class="note-box" id="note-box-${c.user_id}" style="display:none;margin-top:8px;"></div>
@@ -1281,9 +1281,9 @@ export default function ProviderDashboardPage() {
               <button type="button" class="btn" style="font-size:12px;padding:5px 10px;margin-top:6px;" data-karte-save="${c.user_id}" disabled>保存する</button>
 
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid #f3f4f6;">
-                <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;" data-karte-add-toggle="${c.user_id}">＋ 来店記録を追加</button>
-                <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;" data-karte-history-toggle="${c.user_id}">記録を見る</button>
-                <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;" data-karte-insight="${c.user_id}">🤖 AIに傾向を聞く</button>
+                <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#374151;border-color:#d1d5db;" data-karte-add-toggle="${c.user_id}">＋ 来店記録を追加</button>
+                <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#374151;border-color:#d1d5db;" data-karte-history-toggle="${c.user_id}">記録を見る</button>
+                <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#374151;border-color:#d1d5db;" data-karte-insight="${c.user_id}">🤖 AIに傾向を聞く</button>
               </div>
               <div class="karte-add-form" id="karte-add-form-${c.user_id}" style="display:none;margin-top:10px;"></div>
               <div class="karte-history" id="karte-history-${c.user_id}" style="display:none;margin-top:10px;"></div>
