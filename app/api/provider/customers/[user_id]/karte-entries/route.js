@@ -33,7 +33,7 @@ export async function GET(request, { params }) {
 
   const { data, error } = await supabase
     .from('provider_karte_entries')
-    .select('id, note, custom_values, staff_id, created_at')
+    .select('id, note, custom_values, menu_name, staff_id, created_at')
     .eq('provider_id', provider.id)
     .eq('user_id', params.user_id)
     .order('created_at', { ascending: false });
@@ -52,9 +52,9 @@ export async function POST(request, { params }) {
     return Response.json({ error: '対象のお客様が見つかりません' }, { status: 404 });
   }
 
-  const { note, custom_values, staff_id } = await request.json();
-  if (!note?.trim() && !(custom_values && Object.keys(custom_values).length)) {
-    return Response.json({ error: 'メモかカスタム項目のどちらかは入力してください' }, { status: 400 });
+  const { note, custom_values, staff_id, menu_name } = await request.json();
+  if (!note?.trim() && !(custom_values && Object.keys(custom_values).length) && !menu_name) {
+    return Response.json({ error: 'メモ・カスタム項目・利用メニューのいずれかは入力してください' }, { status: 400 });
   }
 
   const { data, error } = await supabase
@@ -65,6 +65,7 @@ export async function POST(request, { params }) {
       note: note?.trim() || null,
       custom_values: custom_values || {},
       staff_id: staff_id || null,
+      menu_name: menu_name || null,
     })
     .select()
     .single();

@@ -1136,7 +1136,17 @@ export default function ProviderDashboardPage() {
 
       let allItems = [];
       let karteFields = [];
+      let providerMenus = [];
       const FIELD_TYPE_LABEL = { text: '自由記述', select: '選択肢', stars: '5段階評価' };
+
+      // サービス設定タブで登録済みの自店メニュー一覧を、来店記録の「利用メニュー」選択肢として流用する。
+      // 予約データ(reservations)とメニュー(provider_experience_menus)がID単位で綺麗に紐づいていないため
+      // 自動検出はできず、記録追加時に店舗側が選ぶ方式にした（でお相談・2026-09合意）。
+      async function loadMenus() {
+        const res = await fetch('/api/provider/experience-menus', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const all = res.ok ? await res.json() : [];
+        providerMenus = all.filter(m => m.is_active !== false);
+      }
 
       // ── カルテ項目（カスタムフィールド）の管理 ──
       function renderFieldsPanel() {
@@ -1226,8 +1236,13 @@ export default function ProviderDashboardPage() {
 
       function renderAddFormHtml(uid) {
         const fieldsHtml = karteFields.map(renderFieldInputHtml).join('');
+        const menuOptions = providerMenus.map(m => `<option value="${esc(m.name)}">${esc(m.name)}</option>`).join('');
+        const menuHtml = providerMenus.length
+          ? `<div class="form-field"><label>利用メニュー</label><select data-karte-entry-menu="${uid}"><option value="">（選択しない）</option>${menuOptions}</select></div>`
+          : '';
         return `
           <div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;background:#fafafa;">
+            ${menuHtml}
             ${fieldsHtml || '<p class="muted" style="font-size:12px;margin:0 0 8px;">カスタム項目は未設定です（上の「カルテ項目を設定」から追加できます）。</p>'}
             <div class="form-field"><label>メモ</label><textarea data-karte-entry-note="${uid}" style="min-height:70px;"></textarea></div>
             <button type="button" class="btn" style="font-size:12px;padding:6px 12px;" data-karte-entry-save="${uid}">記録を保存する</button>
@@ -1250,15 +1265,22 @@ export default function ProviderDashboardPage() {
       }
 
       // ── 過去の記録の履歴表示 ──
+      // entriesは新しい順（API側でcreated_at降順）。1つ後ろの要素が直前の来店にあたるため、
+      // 差分から「前回から何日」を自動計算する（でお要望：来店間隔を自動で出したい）。
       function renderHistoryHtml(entries) {
         if (!entries.length) return '<p class="muted" style="font-size:12px;">まだ記録がありません。</p>';
         const labelMap = {};
         karteFields.forEach(f => { labelMap[f.id] = f.label; });
-        return entries.map(e => {
+        return entries.map((e, i) => {
           const custom = Object.entries(e.custom_values || {}).map(([fid, val]) => `${esc(labelMap[fid] || fid)}: ${esc(val)}`).join(' / ');
+          const prev = entries[i + 1];
+          const intervalLabel = prev
+            ? `・前回から${Math.round((new Date(e.created_at) - new Date(prev.created_at)) / 86400000)}日`
+            : '・初回の記録';
           return `
             <div style="padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:12.5px;">
-              <div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">${fmtDateTime(e.created_at)}</div>
+              <div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">${fmtDateTime(e.created_at)} <span class="muted">${intervalLabel}</span></div>
+              ${e.menu_name ? `<div style="font-size:11.5px;color:#2563eb;">📋 ${esc(e.menu_name)}</div>` : ''}
               ${e.note ? `<div>${esc(e.note)}</div>` : ''}
               ${custom ? `<div class="muted">${custom}</div>` : ''}
             </div>`;
@@ -1338,11 +1360,12 @@ export default function ProviderDashboardPage() {
             box.querySelector(`[data-karte-entry-save="${uid}"]`)?.addEventListener('click', async (e) => {
               const saveBtn = e.currentTarget;
               const noteEl = box.querySelector(`[data-karte-entry-note="${uid}"]`);
+              const menuEl = box.querySelector(`[data-karte-entry-menu="${uid}"]`);
               saveBtn.disabled = true;
               try {
                 const res = await fetch(`/api/provider/customers/${uid}/karte-entries`, {
                   method: 'POST', headers: authHeaders(),
-                  body: JSON.stringify({ note: noteEl?.value || '', custom_values: collectCustomValues(box) }),
+                  body: JSON.stringify({ note: noteEl?.value || '', custom_values: collectCustomValues(box), menu_name: menuEl?.value || null }),
                 });
                 if (!res.ok) { const d = await res.json().catch(() => ({})); showToast(d.error || '保存に失敗しました'); return; }
                 showToast('記録を保存しました');
@@ -1420,8 +1443,8 @@ export default function ProviderDashboardPage() {
       }
 
       if (searchInput) searchInput.addEventListener('input', render);
-      document.querySelectorAll('[data-tab="karte"]').forEach(btn => btn.addEventListener('click', () => { loadFields(); loadKarte(); }, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'karte') { loadFields(); loadKarte(); }
+      document.querySelectorAll('[data-tab="karte"]').forEach(btn => btn.addEventListener('click', () => { loadFields(); loadMenus(); loadKarte(); }, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'karte') { loadFields(); loadMenus(); loadKarte(); }
     })();
 
     // ── 回数券・パッケージタブ ────────────────────────────────────
