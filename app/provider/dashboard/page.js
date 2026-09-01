@@ -1176,6 +1176,13 @@ export default function ProviderDashboardPage() {
         const res = await fetch('/api/provider/karte-fields', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         karteFields = res.ok ? await res.json() : [];
         renderFieldsPanel();
+        // 項目の追加・編集・削除のたびに呼ばれるため、既に開かれたお客様の「来店記録を追加」
+        // フォームは古い項目セットでキャッシュされたままになる。次に開いた時に最新の項目で
+        // 組み立て直させる（でお報告：項目を追加しても下のお客様側で使えるようにならなかった）。
+        listEl.querySelectorAll('.karte-add-form').forEach(box => {
+          box.dataset.built = '';
+          box.style.display = 'none';
+        });
       }
 
       if (kfTypeSel) kfTypeSel.addEventListener('change', () => {
