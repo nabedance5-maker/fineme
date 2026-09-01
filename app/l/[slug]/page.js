@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
 const _sb = createClient(
@@ -11,8 +12,21 @@ const _sb = createClient(
 // その店舗チャネル上のuserIdをFinemeのアカウントに連携する（フェーズ2）。
 // LINEのuserIdはチャネル(公式アカウント)ごとに別の値になるため、
 // Fineme公式チャネルのuserIdとは別にこの連携が必要になる。
+//
+// このページのURL自体がLIFFアプリの「エンドポイントURL」として登録されている必要がある
+// （LINE仕様：liff.init()・liff.login()はエンドポイントURLと同じか、その配下のURLでしか
+// 動作しない。でお報告：New Me Log側(/log)に埋め込んで直接連携させようとしたところ
+// 「連携済みのはずなのに毎回失敗する」不具合が発生し、この制約が原因と判明）。
+// そのため/log側からは「はい」を押した直後にこのページへ一度実際に画面遷移させ、
+// 連携完了後は?returnで渡されたURLへ自動で戻す設計にしている。
+function isSafeReturnUrl(url) {
+  return typeof url === 'string' && url.startsWith('/log');
+}
+
 export default function LineConnectPage({ params }) {
   const { slug } = params;
+  const searchParams = useSearchParams();
+  const returnUrl = isSafeReturnUrl(searchParams.get('return')) ? searchParams.get('return') : null;
   const [status, setStatus] = useState('loading'); // loading | need-login | not-connected | connecting | done | error
   const [providerName, setProviderName] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -69,6 +83,13 @@ export default function LineConnectPage({ params }) {
     return () => { cancelled = true; };
   }, [slug]);
 
+  // 連携完了後、呼び出し元（New Me Log）へ自動で戻す。少しだけ完了メッセージを見せてから遷移する
+  useEffect(() => {
+    if (status !== 'done' || !returnUrl) return;
+    const t = setTimeout(() => { window.location.href = returnUrl; }, 1400);
+    return () => clearTimeout(t);
+  }, [status, returnUrl]);
+
   function loadLiffSdk() {
     return new Promise((resolve, reject) => {
       if (window.liff) return resolve();
@@ -92,8 +113,8 @@ export default function LineConnectPage({ params }) {
         {status === 'need-login' && (
           <>
             <p>{providerName}の公式LINEと連携するには、先にFinemeにログインしてください。</p>
-            <p><a className="btn" href="/user/login">ログインする</a></p>
-            <p className="muted" style={{ fontSize: '13px' }}>ログイン後、もう一度このQRコードを読み取ってください。</p>
+            <p><a className="btn" href={`/user/login?next=${encodeURIComponent(returnUrl ? `/l/${slug}?return=${encodeURIComponent(returnUrl)}` : `/l/${slug}`)}`}>ログインする</a></p>
+            <p className="muted" style={{ fontSize: '13px' }}>ログイン後、このページに自動で戻ります。</p>
           </>
         )}
 
@@ -102,7 +123,10 @@ export default function LineConnectPage({ params }) {
         {status === 'done' && (
           <>
             <p>{providerName}の公式LINEと連携しました。</p>
-            <p className="muted" style={{ fontSize: '13px' }}>これで、New Me Logの次回タイミングのお知らせがこの店舗の公式LINEから届くようになります。</p>
+            <p className="muted" style={{ fontSize: '13px' }}>
+              これで、New Me Logの次回タイミングのお知らせがこの店舗の公式LINEから届くようになります。
+              {returnUrl ? '（自動的に元の画面へ戻ります…）' : ''}
+            </p>
           </>
         )}
 
