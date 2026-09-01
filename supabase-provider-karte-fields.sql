@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-09-01
 -- 店舗が自由に定義するカルテのカスタム項目（スキーマ）。カルテ拡張フェーズA。
 -- 値そのものはprovider_karte_entries.custom_valuesに{field_id: value}として入る。
 -- ユーザー本人には一切見せない前提のため、public read policyは作らずservice_role(APIルート)のみに絞る。
