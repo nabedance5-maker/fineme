@@ -49,12 +49,32 @@ export default function HomePage() {
     setIsLateNight(jstHour >= 22 || jstHour < 3);
   }, []);
 
-  // 特集記事取得（Supabase経由）
+  // 特集記事取得（Supabase経由）。トラック未確定の訪問者（大半の初回訪問者）に
+  // 男性向け記事だけを見せていた不具合を修正（でお指摘 2026-09-02）。
+  // トラックが分かっている場合はそのトラックの記事、未確定の場合は両トラックを
+  // 混在させて出す（トップはデュアルCTAで男女を対等に扱う設計のため）。
   useEffect(() => {
-    fetch('/api/features')
-      .then(r => r.ok ? r.json() : [])
-      .then(data => { if (Array.isArray(data) && data.length) setFeaturedArticles(data.slice(0, 3)); })
-      .catch(() => {});
+    const kt = getKnownTrackId();
+    if (kt === 'belle' || kt === 'fineme') {
+      fetch(`/api/features?track=${kt}`)
+        .then(r => r.ok ? r.json() : [])
+        .then(data => { if (Array.isArray(data) && data.length) setFeaturedArticles(data.slice(0, 3).map(a => ({ ...a, _track: kt }))); })
+        .catch(() => {});
+      return;
+    }
+    Promise.all([
+      fetch('/api/features?track=fineme').then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/features?track=belle').then(r => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([fineme, belle]) => {
+      const f = Array.isArray(fineme) ? fineme : [];
+      const b = Array.isArray(belle) ? belle : [];
+      const mixed = [];
+      for (let i = 0; i < 2; i++) {
+        if (f[i]) mixed.push({ ...f[i], _track: 'fineme' });
+        if (b[i]) mixed.push({ ...b[i], _track: 'belle' });
+      }
+      if (mixed.length) setFeaturedArticles(mixed);
+    });
   }, []);
 
   // スクリプト（おすすめ・最近閲覧）
@@ -717,12 +737,14 @@ export default function HomePage() {
           <section className="section">
             <div className="container stack">
               <div className="cluster space-between">
-                <h2 className="section-title">Fineme Journal</h2>
-                <Link className="btn btn-ghost" href="/feature">一覧を見る</Link>
+                <h2 className="section-title">{knownTrack === 'belle' ? 'Belle Journal' : knownTrack === 'fineme' ? 'Fineme Journal' : 'Journal'}</h2>
+                {knownTrack && (
+                  <Link className="btn btn-ghost" href={knownTrack === 'belle' ? '/belle/journal' : '/feature'}>一覧を見る</Link>
+                )}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
                 {featuredArticles.map(a => (
-                  <Link key={a.id} href={`/feature/${a.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <Link key={a.id} href={a._track === 'belle' ? `/belle/journal/${a.slug}` : `/feature/${a.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                     <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(201,168,76,0.15)', background: 'rgba(255,255,255,0.03)', transition: 'border-color 0.2s' }}
                       onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)'}
                       onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)'}
