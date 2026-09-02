@@ -81,7 +81,7 @@ export async function GET(request) {
     supabase.from('provider_dormant_settings').select('no_visit_days').eq('provider_id', provider.id).maybeSingle(),
     supabase.from('provider_staff').select('id, name').eq('provider_id', provider.id),
     supabase.from('user_service_log_visits').select('log_id').in('log_id', logIds),
-    supabase.from('diagnosis_results').select('user_id').in('user_id', userIds),
+    supabase.from('diagnosis_results').select('user_id, result').in('user_id', userIds),
     supabase.from('mirror_sessions')
       .select('user_id, report_content, created_at')
       .in('user_id', userIds)
@@ -105,6 +105,11 @@ export async function GET(request) {
   (visitRows || []).forEach(v => { visitCountByLog[v.log_id] = (visitCountByLog[v.log_id] || 0) + 1; });
 
   const meScanDoneSet = new Set((diagnosisRows || []).map(d => d.user_id));
+  // 1ユーザーが複数トラック行(fineme/belle)を持ちうるため、result(タイプ判定)がある行を優先
+  const typeMap = {};
+  (diagnosisRows || []).forEach(d => {
+    if (d.result?.fullName && !typeMap[d.user_id]) typeMap[d.user_id] = d.result;
+  });
 
   // ユーザーごとの最新Mirror結果（created_at降順で取得済みなので最初の1件を採用）
   const mirrorByUser = {};
@@ -127,6 +132,7 @@ export async function GET(request) {
       visitCount: visitCountByLog[l.id] || 0,
       status: computeStatus(l, noVisitDays),
       meScanDone: meScanDoneSet.has(l.user_id),
+      meScanType: typeMap[l.user_id] || null, // { fullName, typeCode, displayCode, ... } | null
       mirror: mirrorByUser[l.user_id] || null,
       assignedStaffId,
       assignedStaffName: assignedStaffId ? (staffNameMap[assignedStaffId] || null) : null,

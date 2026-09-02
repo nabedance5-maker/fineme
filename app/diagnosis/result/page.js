@@ -782,6 +782,15 @@ export default function DiagnosisResultPage() {
       };
     }
     const typeIdentity = computeTypeIdentity();
+    // 掲載店舗のカルテ等から参照できるよう、計算済みのタイプ判定結果をDBへ保存する
+    // （判定ロジック自体はここでのみ計算・サーバー側では再実装しない）
+    if (typeIdentity && authToken) {
+      fetch('/api/me/diagnosis?track=fineme', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+        body: JSON.stringify({ result: typeIdentity }),
+      }).catch(() => {});
+    }
 
     // ─── タイプヒーロー（Naviの最初のセクション） ───
     function buildTypeHero() {

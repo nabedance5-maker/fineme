@@ -59,6 +59,36 @@ export async function GET(request) {
   return Response.json(data.raw_data);
 }
 
+// PATCH /api/me/diagnosis?track=... - 計算済みのタイプ判定結果(136タイプ等)だけを保存する。
+// 判定ロジック自体はapp/diagnosis/result/page.js・app/belle/diagnosis/result/page.jsの
+// computeTypeIdentity()がクライアント側で行う（サーバー側では再実装しない＝男女トラック間の
+// 語彙ズレを再発させないため）。ここは結果を店舗のカルテ等から参照できるよう保存するだけ。
+export async function PATCH(request) {
+  const user = await getUser(request);
+  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { searchParams } = new URL(request.url);
+  const track = normalizeTrack(searchParams.get('track'));
+  const body = await request.json();
+  const result = body?.result;
+  if (!result || typeof result !== 'object') return Response.json({ error: 'result は必須です' }, { status: 400 });
+
+  const { error } = await supabase
+    .from('diagnosis_results')
+    .update({ result })
+    .eq('user_id', user.id)
+    .eq('track', track);
+
+  if (!error) return Response.json({ ok: true });
+
+  if (isMissingTrackColumn(error)) {
+    const legacy = await supabase.from('diagnosis_results').update({ result }).eq('user_id', user.id);
+    if (legacy.error) return Response.json({ error: legacy.error.message }, { status: 500 });
+    return Response.json({ ok: true, pending_migration: true });
+  }
+  return Response.json({ error: error.message }, { status: 500 });
+}
+
 export async function POST(request) {
   const user = await getUser(request);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });

@@ -1302,6 +1302,7 @@ export default function ProviderDashboardPage() {
               <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
                 <div style="font-size:14px;font-weight:700;color:#111827;">${esc(c.customer_name)}</div>
                 <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
+                ${c.meScanType?.fullName ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;" title="Me Scanタイプ">🧬 ${esc(c.meScanType.fullName)}</span>` : ''}
               </div>
               <p style="font-size:12px;color:#6b7280;margin:0 0 8px;">前回来店：${fmtDate(c.last_visit)}</p>
 
