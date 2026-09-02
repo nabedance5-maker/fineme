@@ -149,6 +149,17 @@
 
 .subhead{font-family:"Noto Serif JP",serif; font-size:15px; color:var(--navy); font-weight:700; margin:24px 0 10px; text-align:left;}
 
+/* feature groups (店舗向け機能) */
+.featureGroups{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:14px 0;}
+.featureGroup{background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:16px 18px;}
+.featureGroup h4{font-family:"Noto Serif JP",serif; font-size:14px; color:var(--navy); margin:0 0 10px; font-weight:700; display:flex; align-items:center; gap:8px;}
+.featureGroup h4 .gic{font-size:17px;}
+.featureGroup ul{margin:0; padding:0; list-style:none;}
+.featureGroup li{position:relative; padding-left:18px; margin-bottom:9px; font-size:12.5px; color:#39414f; line-height:1.7;}
+.featureGroup li:last-child{margin-bottom:0;}
+.featureGroup li::before{content:"◆"; color:var(--gold); position:absolute; left:0; font-size:8.5px; top:6px;}
+.featureGroup li b{color:var(--navy); font-weight:700;}
+
 /* closing */
 .closing{
   background:radial-gradient(120% 90% at 50% 100%,#16213f 0%,var(--navy) 55%,#05080f 100%);
@@ -162,7 +173,7 @@
 @media (max-width:680px){
   .h1{font-size:40px;}
   .body{padding:48px 22px 0;}
-  .iconRow, .iconRow4, .productGrid, .goalRow, .principleGrid, .statgrid, .orgGrid{grid-template-columns:1fr;}
+  .iconRow, .iconRow4, .productGrid, .goalRow, .principleGrid, .statgrid, .orgGrid, .featureGroups{grid-template-columns:1fr;}
   .phase{grid-template-columns:1fr; gap:8px;}
   .statstrip{transform:none; margin-top:24px;}
   .toc{padding:18px 16px 0;}
