@@ -31,15 +31,38 @@ export async function GET(request, { params }) {
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data, error } = await supabase
-    .from('provider_karte_entries')
-    .select('id, note, custom_values, menu_name, staff_id, created_at')
-    .eq('provider_id', provider.id)
-    .eq('user_id', params.user_id)
-    .order('created_at', { ascending: false });
+  // この会員に紐付け済みの非会員時代の記録も合算する（でお要望 2026-09-01。
+  // supabase-provider-manual-customers.sql 未適用の環境では provider_manual_customers
+  // が無くエラーになるため、失敗しても本題（会員自身の記録）は返す）
+  const [{ data, error }, manualLinked] = await Promise.all([
+    supabase
+      .from('provider_karte_entries')
+      .select('id, note, custom_values, menu_name, staff_id, created_at')
+      .eq('provider_id', provider.id)
+      .eq('user_id', params.user_id)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('provider_manual_customers')
+      .select('id')
+      .eq('provider_id', provider.id)
+      .eq('linked_user_id', params.user_id)
+      .then(r => r.data || [])
+      .catch(() => []),
+  ]);
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json(data || []);
+
+  let merged = data || [];
+  if (manualLinked.length) {
+    const { data: manualEntries } = await supabase
+      .from('provider_karte_entries')
+      .select('id, note, custom_values, menu_name, staff_id, created_at')
+      .eq('provider_id', provider.id)
+      .in('manual_customer_id', manualLinked.map(m => m.id));
+    merged = [...merged, ...(manualEntries || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+
+  return Response.json(merged);
 }
 
 export async function POST(request, { params }) {

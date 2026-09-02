@@ -1438,14 +1438,120 @@ export default function ProviderDashboardPage() {
           if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
           allItems = await res.json();
           render();
+          renderManual(); // 会員一覧が揃ったので非会員側の「会員と紐付ける」候補も更新
         } catch {
           listEl.innerHTML = '<p class="muted">読み込みに失敗しました</p>';
         }
       }
 
+      // ── 非会員のお客様（Fineme未登録）のカルテ ─────────────────
+      // 既存の会員向けカルテ(user_id紐付け)とは別テーブル(provider_manual_customers)。
+      // カスタム項目(karteFields)には未対応（まずはメモ+利用メニューのみ。でお要望の
+      // 本題である「非会員でも記録を残せる」「会員化後に引き継がれる」を優先した）。
+      const manualListEl = document.getElementById('manual-karte-list');
+      const manualAddBtn = document.getElementById('manual-add-btn');
+      const manualNameInput = document.getElementById('manual-name-input');
+      const manualMemoInput = document.getElementById('manual-memo-input');
+      let manualItems = [];
+      let manualOpenId = null;
+
+      async function loadManualCustomers() {
+        if (!manualListEl) return;
+        manualListEl.innerHTML = '<p class="muted">読み込み中…</p>';
+        try {
+          const res = await fetch('/api/provider/customers/manual', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+          manualItems = res.ok ? await res.json() : [];
+          renderManual();
+        } catch { manualListEl.innerHTML = '<p class="muted">読み込みに失敗しました</p>'; }
+      }
+
+      function renderManual() {
+        if (!manualListEl) return;
+        const unlinked = manualItems.filter(m => !m.linked_user_id);
+        if (!unlinked.length) { manualListEl.innerHTML = '<p class="muted" style="font-size:13px;">まだ非会員のお客様はいません。</p>'; return; }
+        const memberOptions = [...new Map(allItems.map(c => [c.user_id, c.customer_name])).entries()]
+          .map(([uid, name]) => `<option value="${uid}">${esc(name)}</option>`).join('');
+        manualListEl.innerHTML = unlinked.map(m => `
+          <div style="border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px;background:#fff;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+              <div style="font-size:14px;font-weight:700;color:#111827;">${esc(m.display_name)} <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:99px;">非会員</span></div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <select data-manual-link="${m.id}" style="font-size:12px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">
+                  <option value="">会員と紐付ける…</option>
+                  ${memberOptions}
+                </select>
+                <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444;" data-manual-del="${m.id}">削除</button>
+              </div>
+            </div>
+            ${m.memo ? `<p class="muted" style="font-size:12px;margin:0 0 8px;">${esc(m.memo)}</p>` : ''}
+            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;" data-manual-toggle="${m.id}">${manualOpenId === m.id ? '記録フォームを閉じる' : '＋ 来店記録を追加／履歴を見る'}</button>
+            ${manualOpenId === m.id ? `<div id="manual-form-${m.id}" style="margin-top:10px;"><p class="muted" style="font-size:12px;">読み込み中…</p></div>` : ''}
+          </div>
+        `).join('');
+
+        manualListEl.querySelectorAll('[data-manual-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('この非会員のお客様を削除しますか？（カルテ記録も削除されます）')) return;
+          await fetch(`/api/provider/customers/manual/${btn.dataset.manualDel}`, { method: 'DELETE', headers: authHeaders() });
+          loadManualCustomers();
+        }));
+        manualListEl.querySelectorAll('[data-manual-link]').forEach(sel => sel.addEventListener('change', async () => {
+          const id = sel.dataset.manualLink;
+          if (!sel.value) return;
+          if (!confirm('選択した会員と紐付けます。よろしいですか？（後から取り消せません）')) { sel.value = ''; return; }
+          const res = await fetch(`/api/provider/customers/manual/${id}/link`, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ user_id: sel.value }) });
+          if (res.ok) { showToast('紐付けました。以降このお客様のカルテに記録が引き継がれます'); loadManualCustomers(); }
+          else { const d = await res.json(); showToast('エラー: ' + (d.error || '不明')); sel.value = ''; }
+        }));
+        manualListEl.querySelectorAll('[data-manual-toggle]').forEach(btn => btn.addEventListener('click', () => {
+          const id = btn.dataset.manualToggle;
+          manualOpenId = manualOpenId === id ? null : id;
+          renderManual();
+          if (manualOpenId) loadManualForm(manualOpenId);
+        }));
+      }
+
+      async function loadManualForm(id) {
+        const box = document.getElementById(`manual-form-${id}`);
+        if (!box) return;
+        box.innerHTML = '<p class="muted" style="font-size:12px;">読み込み中…</p>';
+        const res = await fetch(`/api/provider/customers/manual/${id}/karte-entries`, { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const entries = res.ok ? await res.json() : [];
+        const menuOptions = ['<option value="">利用メニュー（任意）</option>'].concat(providerMenus.map(m => `<option value="${esc(m.name)}">${esc(m.name)}</option>`)).join('');
+        box.innerHTML = `
+          <select data-manual-menu style="font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;width:100%;box-sizing:border-box;margin-bottom:8px;">${menuOptions}</select>
+          <textarea data-manual-note placeholder="メモ（要望・使った薬剤・注意点など）" style="width:100%;min-height:60px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;box-sizing:border-box;margin-bottom:8px;"></textarea>
+          <button type="button" class="btn" style="font-size:12px;padding:6px 14px;" data-manual-save="${id}">記録を追加</button>
+          <div style="margin-top:12px;border-top:1px solid #f3f4f6;padding-top:8px;">${renderHistoryHtml(entries)}</div>
+        `;
+        box.querySelector('[data-manual-save]')?.addEventListener('click', async () => {
+          const note = box.querySelector('[data-manual-note]')?.value || '';
+          const menu_name = box.querySelector('[data-manual-menu]')?.value || '';
+          if (!note.trim() && !menu_name) { showToast('メモか利用メニューのどちらかは入力してください'); return; }
+          const res2 = await fetch(`/api/provider/customers/manual/${id}/karte-entries`, {
+            method: 'POST', headers: authHeaders(), body: JSON.stringify({ note, menu_name: menu_name || null }),
+          });
+          if (res2.ok) { showToast('記録を追加しました'); loadManualForm(id); }
+          else { const d = await res2.json(); showToast('エラー: ' + (d.error || '不明')); }
+        });
+      }
+
+      manualAddBtn?.addEventListener('click', async () => {
+        const display_name = manualNameInput?.value || '';
+        if (!display_name.trim()) { showToast('お名前を入力してください'); return; }
+        const res = await fetch('/api/provider/customers/manual', {
+          method: 'POST', headers: authHeaders(), body: JSON.stringify({ display_name, memo: manualMemoInput?.value || '' }),
+        });
+        if (res.ok) {
+          if (manualNameInput) manualNameInput.value = '';
+          if (manualMemoInput) manualMemoInput.value = '';
+          showToast('非会員のお客様を作成しました');
+          loadManualCustomers();
+        } else { const d = await res.json(); showToast('エラー: ' + (d.error || '不明')); }
+      });
+
       if (searchInput) searchInput.addEventListener('input', render);
-      document.querySelectorAll('[data-tab="karte"]').forEach(btn => btn.addEventListener('click', () => { loadFields(); loadMenus(); loadKarte(); }, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'karte') { loadFields(); loadMenus(); loadKarte(); }
+      document.querySelectorAll('[data-tab="karte"]').forEach(btn => btn.addEventListener('click', () => { loadFields(); loadMenus(); loadKarte(); loadManualCustomers(); }, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'karte') { loadFields(); loadMenus(); loadKarte(); loadManualCustomers(); }
     })();
 
     // ── 回数券・パッケージタブ ────────────────────────────────────
@@ -3500,13 +3606,30 @@ export default function ProviderDashboardPage() {
             <div style={{ marginBottom: '16px' }}>
               <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>お客様カルテ</h2>
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-                固定メモに加えて、来店ごとに記録を追記できます。記録が貯まると、AIが傾向を分析します。お客様には表示されません。New Me Logで貴店と紐づいているお客様が対象です。
+                固定メモに加えて、来店ごとに記録を追記できます。記録が貯まると、AIが傾向を分析します。お客様には表示されません。New Me Logで貴店と紐づいている（Finemeに登録済みの）お客様が対象です。Fineme未登録のお客様は下の「非会員のお客様」から記録できます。
               </p>
             </div>
             <div className="form-field" style={{ maxWidth: '320px', marginBottom: '12px' }}>
               <input id="karte-search" type="text" placeholder="お客様の名前で絞り込み" />
             </div>
             <div id="karte-list"><p className="muted">読み込み中…</p></div>
+          </div>
+
+          <div className="card" style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
+              <div>
+                <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>非会員のお客様</h2>
+                <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                  Finemeに登録していないお客様のカルテです。後から会員だと分かった場合は「会員と紐付ける」で紐付けると、この記録がそのお客様のカルテに引き継がれます。
+                </p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+              <input id="manual-name-input" type="text" placeholder="お客様のお名前" style={{ flex: '1 1 160px', padding: '10px 12px', border: '1.5px solid rgba(232,228,220,0.2)', borderRadius: '10px', background: 'rgba(255,255,255,0.06)', color: '#e8e4dc' }} />
+              <input id="manual-memo-input" type="text" placeholder="メモ（任意）" style={{ flex: '2 1 200px', padding: '10px 12px', border: '1.5px solid rgba(232,228,220,0.2)', borderRadius: '10px', background: 'rgba(255,255,255,0.06)', color: '#e8e4dc' }} />
+              <button type="button" id="manual-add-btn" className="btn">＋ 新規作成</button>
+            </div>
+            <div id="manual-karte-list"><p className="muted">読み込み中…</p></div>
           </div>
         </div>
 
