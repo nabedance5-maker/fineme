@@ -94,7 +94,8 @@ export default function ProvidersBriefPage() {
                 <tbody>
                   <tr><td>登録料</td><td>初回のみ</td><td><span className={styles.yen}>¥1,100</span></td></tr>
                   <tr><td>掲載プラン</td><td>ライト／スタンダード／プレミアム</td><td><span className={styles.yen}>¥5,000〜10,000</span> / 月</td></tr>
-                  <tr><td>紹介報酬</td><td>紹介した有料掲載者の数に応じて</td><td><span className={styles.yen}>¥500</span> / 月 × 紹介数</td></tr>
+                  <tr><td>紹介報酬（初月）</td><td>紹介した掲載店舗の初回課金額の</td><td><span className={styles.yen}>90%</span></td></tr>
+                  <tr><td>紹介報酬（継続）</td><td>その店舗が掲載を続ける限り</td><td><span className={styles.yen}>¥500</span> / 月</td></tr>
                 </tbody>
               </table>
             </div>
@@ -106,10 +107,10 @@ export default function ProvidersBriefPage() {
             <h2 className={`${styles.h2} ${styles.serif}`}>紹介してくれる人への還元</h2>
             <div className={styles.callout}>
               <div className={styles.kicker}>還元の仕組み</div>
-              <p className={styles.big}>紹介した当月：プラン金額の8〜9割バック</p>
-              <p>＋ 有料掲載者数 × ¥500 / 毎月（自分の紹介かどうかは関係なく、全体に対して）</p>
+              <p className={styles.big}>紹介した初月：その店舗の初回課金額の90%バック</p>
+              <p>＋ その店舗が掲載を続ける限り、毎月¥500</p>
             </div>
-            <p className={styles.note}>最初は小さくても、掲載者が増えるほど積み上がっていく設計。</p>
+            <p className={styles.note}>最初は小さくても、紹介が積み重なるほど積み上がっていく設計。</p>
           </section>
 
         </main>

@@ -40,6 +40,7 @@ export default function BusinessPage() {
           <a className={styles.tocLink} href="#principles">判断の軸</a>
           <a className={styles.tocLink} href="#map">システム地図</a>
           <a className={styles.tocLink} href="#ask">お願いしたいこと</a>
+          <a className={styles.tocLink} href="#reward">協業者への還元</a>
         </nav>
 
         <main className={styles.body}>
@@ -361,9 +362,9 @@ export default function BusinessPage() {
             <div className={styles.kicker}>Why You</div>
             <h2 className={`${styles.h2} ${styles.serif}`}>なぜ、今声をかけたか</h2>
             <div className={styles.askBox}>
-              <p>一人で作れるところまでは作った。プロダクトも、記事の土台も、集客の仕組みも動き始めている。実務の大半はAIが自走している。</p>
-              <p>それでも埋まらないのが、<strong>言葉と絵のセンス、人に会って話す力</strong>。ここはAIに任せきれない、人にしか出せない部分。</p>
-              <p>一番信頼していて、一番得意なことを持っている人に、まず声をかけたい。</p>
+              <p>一人で作れるところまでは作った。プロダクトも、記事の土台も、店舗営業の仕組みも動き始めている。実務の大半はAIが自走している。</p>
+              <p>それでも埋まらないのが、<strong>現場の感覚と、人に会って話す力</strong>。ここはAIに任せきれない、人にしか出せない部分。</p>
+              <p>一番信頼していて、それぞれの得意なことを持っている人たちに、声をかけている。</p>
             </div>
           </section>
 
@@ -371,7 +372,7 @@ export default function BusinessPage() {
           <section className={styles.section} id="ask">
             <div className={styles.kicker}>The Ask</div>
             <h2 className={`${styles.h2} ${styles.serif}`}>一緒にやってほしいこと</h2>
-            <p className={styles.lead}>最初から全部じゃなくていい。隙間時間でできることから、少しずつ広げていく。</p>
+            <p className={styles.lead}>最初から全部じゃなくていい。それぞれの得意分野・本業に合わせて、隙間時間でできることから少しずつ広げていく。全員が全部やる必要はなく、下から選んで分担するイメージ。</p>
 
             <div className={styles.phases}>
               <div className={styles.phase}>
@@ -394,7 +395,7 @@ export default function BusinessPage() {
                   </div>
                   <div className={styles.phaseCard}>
                     <h4>デザイン・イラスト（単発）</h4>
-                    <p>得意分野なので、必要なタイミングで単発で依頼したい。</p>
+                    <p>得意な人がいれば、必要なタイミングで単発で依頼したい。</p>
                   </div>
                 </div>
               </div>
@@ -407,7 +408,7 @@ export default function BusinessPage() {
                 <div className={styles.phaseCards}>
                   <div className={styles.phaseCard}>
                     <h4>店舗向けSaaSの営業サポート</h4>
-                    <p>知り合いのパーソナルトレーナーへのヒアリングから開始。改善点の洗い出し、紹介獲得の実務サポート。</p>
+                    <p>既存掲載店舗への有料転換提案、新規開拓先へのヒアリング・改善点の洗い出し。現場に近い人ほど強い実務。</p>
                   </div>
                   <div className={styles.phaseCard}>
                     <h4>ショートドラマの進行管理</h4>
@@ -433,6 +434,19 @@ export default function BusinessPage() {
                 </div>
               </div>
             </div>
+          </section>
+
+          {/* 12.5. 協業者への還元 */}
+          <section className={styles.section} id="reward">
+            <div className={styles.kicker}>For Collaborators</div>
+            <h2 className={`${styles.h2} ${styles.serif}`}>協業者への還元</h2>
+            <p className={styles.lead}>経営陣格として関わってくれる人には、一般の掲載者・外部紹介者向けの紹介報酬（初月90%＋紹介した店舗ごとに継続¥500/月）とは別枠の還元を用意している。</p>
+            <div className={styles.callout}>
+              <div className={styles.kicker}>還元の仕組み</div>
+              <p className={styles.big}>掲載2ヶ月目以降：掲載者数 × 掲載料の10%を毎月</p>
+              <p>自分が紹介したかどうかに関係なく、全体の掲載者数に対して。＋自分が紹介した掲載者が入った場合は、初月分の90%バックも別途受け取れる。</p>
+            </div>
+            <p className={styles.note}>掲載者が増えるほど積み上がっていく設計。詳細は個別にすり合わせる。</p>
           </section>
 
           {/* 13. 進め方 */}
