@@ -459,24 +459,21 @@ const VIEW_MAP = {
   'line-channel': LineChannelView, billing: BillingView,
 };
 
-// 「売上管理」は本番にまだ存在しない新規提案タブのため、共有ソース(TAB_TUTORIALS)
-// には追加せず、このサンプルページ内だけでラベル・挿入位置を持つ（本番のチュートリアル
-// タブ一覧に、まだ無い機能が紛れ込まないようにするため）。
-const SALES_LABEL = '売上管理（新規提案）';
+// 「売上管理」は本番実装済み（lib/dashboard-tutorial.jsのTAB_TUTORIALS/
+// TUTORIAL_GROUPSに正式追加済み、2026-09-04）。サンプル側の特別扱いは不要になった。
 const NAV_GROUPS = [
   { heading: null, items: [{ key: 'tutorial', icon: '📘', label: 'チュートリアル' }] },
-  ...TUTORIAL_GROUPS.map(g => {
-    const items = g.keys.map(k => ({ key: k, icon: null, label: TAB_TUTORIALS[k]?.title || k }));
-    if (g.heading.startsWith('②')) items.push({ key: 'sales', icon: '💰', label: SALES_LABEL });
-    return { heading: g.heading, items };
-  }),
+  ...TUTORIAL_GROUPS.map(g => ({
+    heading: g.heading,
+    items: g.keys.map(k => ({ key: k, icon: k === 'sales' ? '💰' : null, label: TAB_TUTORIALS[k]?.title || k })),
+  })),
 ];
 
 export default function DashboardDesignSample() {
   const [active, setActive] = useState('stats');
   const [navOpen, setNavOpen] = useState(false);
   const ActiveView = VIEW_MAP[active] || (() => null);
-  const activeLabel = active === 'sales' ? SALES_LABEL : (TAB_TUTORIALS[active]?.title || (active === 'tutorial' ? 'チュートリアル' : active));
+  const activeLabel = TAB_TUTORIALS[active]?.title || (active === 'tutorial' ? 'チュートリアル' : active);
 
   function selectNav(key) {
     setActive(key);

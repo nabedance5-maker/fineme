@@ -2436,6 +2436,9 @@ export default function ProviderDashboardPage() {
 
     let _allRequests = [];
     let _activePackagesByUser = {}; // user_id -> [{id, package_name, remaining_sessions}]
+    let _requestsById = {}; // reservation_id -> reservation（来店確認モーダル用）
+    let _salesServicesCache = null; // 来店確認モーダルのメニュー選択肢（services遅延キャッシュ）
+    let _salesStaffCache = null;
 
     async function loadActivePackagesByUser() {
       const _pkgToken = getSupabaseToken();
@@ -2497,6 +2500,7 @@ export default function ProviderDashboardPage() {
       if (!items.length) { el.innerHTML = '<p class="muted">条件に一致するリクエストはありません。</p>'; return; }
       el.innerHTML = '';
       items.forEach(r => {
+        _requestsById[r.id] = r; // 来店確認モーダルでメニューの下書きに使う
         const choices = parseDateChoices(r);
         const menuMatch = (r.note || '').match(/【メニュー】([^\n]+)/);
         const menuText = menuMatch ? menuMatch[1] : '';
@@ -2546,7 +2550,7 @@ export default function ProviderDashboardPage() {
               <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;color:#ef4444;white-space:nowrap" onclick="rejectRequest('${r.id}')">お断り</button>
             </div>` : r.status === 'approved' ? `
             <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;min-width:120px">
-              <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap" onclick="markVisited('${r.id}')">来店確認</button>
+              <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap" onclick="showVisitModal('${r.id}')">来店確認</button>
               ${(_activePackagesByUser[r.user_id] || []).map(p => `
               <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#7c3aed;border-color:#c4b5fd" onclick="consumePackage('${p.id}','${r.id}',this)">🎫 ${esc(p.package_name)}を消化（残${p.remaining_sessions}）</button>`).join('')}
             </div>` : ''}
@@ -2589,11 +2593,115 @@ export default function ProviderDashboardPage() {
       await loadRequests(); showToast('お断りを送りました');
     };
 
-    window.markVisited = async function (id) {
-      if (!confirm('来店を確認しますか？')) return;
+    // 来店確認モーダル：来店確認と同時に、実際のメニュー・金額・スタッフ・支払い方法を
+    // 店舗が確認/修正して売上として確定する（でお要望2026-09-04。予約価格を無条件に
+    // 売上へ自動計上しない方針のため、必ずこの確認を経由する）。
+    async function loadSalesModalOptions() {
+      if (!_salesServicesCache) {
+        const res = await fetch('/api/provider/services', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
+        _salesServicesCache = res.ok ? await res.json() : [];
+      }
+      if (!_salesStaffCache) {
+        const res = await fetch('/api/provider/staff', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
+        _salesStaffCache = res.ok ? await res.json() : [];
+      }
+    }
+
+    function visitModalRowHtml(idx, presetName) {
+      const preset = _salesServicesCache.find(s => s.name === presetName);
+      const menuOptions = ['<option value="">メニューを選択（任意）</option>']
+        .concat(_salesServicesCache.map(s => `<option value="${esc(s.name)}" data-amount="${s.price}"${s.name === presetName ? ' selected' : ''}>${esc(s.name)}（¥${Number(s.price).toLocaleString()}）</option>`))
+        .join('');
+      return `
+        <div class="visit-row" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+          <select class="vr-menu" style="flex:1 1 180px;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">${menuOptions}</select>
+          <input class="vr-amount" type="number" min="1" placeholder="金額" value="${preset ? preset.price : ''}" style="width:110px;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">
+          <button type="button" class="vr-del" style="padding:6px 10px;background:#f3f4f6;color:#6b7280;border:none;border-radius:8px;font-size:12px;cursor:pointer;">×</button>
+        </div>`;
+    }
+
+    window.showVisitModal = async function (id) {
+      const existing = document.getElementById('visit-modal-overlay'); if (existing) existing.remove();
+      await loadSalesModalOptions();
+      const r = _requestsById[id] || {};
+      const menuMatch = (r.note || '').match(/【メニュー】([^\n]+)/);
+      const presetName = menuMatch ? menuMatch[1].trim() : '';
+
+      const staffOptions = ['<option value="">スタッフ（任意）</option>'].concat(_salesStaffCache.map(s => `<option value="${s.id}">${esc(s.name)}</option>`)).join('');
+      const overlay = document.createElement('div');
+      overlay.id = 'visit-modal-overlay';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
+      overlay.innerHTML = `
+        <div style="background:#fff;border-radius:18px;padding:28px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto">
+          <h2 style="font-size:16px;font-weight:800;margin:0 0 6px">来店を確認</h2>
+          <p style="font-size:13px;color:#6b7280;margin:0 0 18px">実際にご利用いただいたメニュー・金額を確認してください。予約時の内容から自動で入っていますが、変更・追加できます。</p>
+          <div id="visit-rows">${visitModalRowHtml(0, presetName)}</div>
+          <button type="button" id="visit-add-row-btn" style="font-size:12px;padding:6px 12px;background:none;border:1px dashed #d1d5db;border-radius:8px;color:#6b7280;cursor:pointer;margin-bottom:14px;">＋ メニューを追加</button>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px">担当スタッフ（任意）</label>
+          <select id="visit-staff" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:12px">${staffOptions}</select>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px">支払い方法（任意）</label>
+          <select id="visit-payment" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:16px">
+            <option value="">選択なし</option>
+            <option value="現金">現金</option><option value="クレジットカード">クレジットカード</option>
+            <option value="PayPay">PayPay</option><option value="楽天Pay">楽天Pay</option>
+            <option value="LINE Pay">LINE Pay</option><option value="銀行振込">銀行振込</option><option value="その他">その他</option>
+          </select>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <button onclick="confirmVisit('${id}')" style="flex:1;padding:12px;background:#10b981;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">来店確認して売上を記録</button>
+            <button onclick="document.getElementById('visit-modal-overlay').remove()" style="padding:12px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:14px;cursor:pointer">キャンセル</button>
+          </div>
+          <button onclick="confirmVisit('${id}', true)" style="width:100%;padding:8px;background:none;border:none;font-size:12px;color:#9ca3af;cursor:pointer;text-decoration:underline;">売上を入力せず来店確認だけする</button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+      document.getElementById('visit-add-row-btn').addEventListener('click', () => {
+        document.getElementById('visit-rows').insertAdjacentHTML('beforeend', visitModalRowHtml());
+        wireVisitRowEvents();
+      });
+      wireVisitRowEvents();
+    };
+
+    function wireVisitRowEvents() {
+      document.querySelectorAll('#visit-rows .visit-row').forEach(row => {
+        const menuSel = row.querySelector('.vr-menu');
+        const amountInput = row.querySelector('.vr-amount');
+        const delBtn = row.querySelector('.vr-del');
+        if (menuSel && !menuSel.dataset.wired) {
+          menuSel.dataset.wired = '1';
+          menuSel.addEventListener('change', () => {
+            const opt = menuSel.selectedOptions[0];
+            if (opt?.dataset.amount) amountInput.value = opt.dataset.amount;
+          });
+        }
+        if (delBtn && !delBtn.dataset.wired) {
+          delBtn.dataset.wired = '1';
+          delBtn.addEventListener('click', () => { if (document.querySelectorAll('#visit-rows .visit-row').length > 1) row.remove(); });
+        }
+      });
+    }
+
+    window.confirmVisit = async function (id, skipSales) {
       const _visitToken = getSupabaseToken();
-      const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...(_visitToken ? { 'Authorization': `Bearer ${_visitToken}` } : {}) }, body: JSON.stringify({ status: 'visited' }) });
+      const headers = { 'Content-Type': 'application/json', ...(_visitToken ? { 'Authorization': `Bearer ${_visitToken}` } : {}) };
+      const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers, body: JSON.stringify({ status: 'visited' }) });
       if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
+
+      if (!skipSales) {
+        const staffId = document.getElementById('visit-staff')?.value || null;
+        const paymentMethod = document.getElementById('visit-payment')?.value || null;
+        const items = [...document.querySelectorAll('#visit-rows .visit-row')].map(row => ({
+          reservation_id: id,
+          amount: row.querySelector('.vr-amount')?.value,
+          menu_name: row.querySelector('.vr-menu')?.value || null,
+          staff_id: staffId,
+          payment_method: paymentMethod,
+        })).filter(it => Number(it.amount) > 0);
+        if (items.length) {
+          await fetch('/api/provider/sales-entries', { method: 'POST', headers, body: JSON.stringify({ items }) });
+        }
+      }
+      document.getElementById('visit-modal-overlay')?.remove();
       await loadRequests(); showToast('来店を確認しました');
     };
 
@@ -2815,6 +2923,129 @@ export default function ProviderDashboardPage() {
       } catch (err) { showToast('ポータルへのアクセスに失敗しました: ' + err.message); }
     });
 
+    // ── 売上管理 ──────────────────────────────────────────────
+    (function setupSales() {
+      const t = getSupabaseToken();
+      if (!t) return;
+      const csvBtn = document.getElementById('sales-csv-btn');
+      const periodThisBtn = document.getElementById('sales-period-this');
+      const periodLastBtn = document.getElementById('sales-period-last');
+      const manualForm = document.getElementById('sales-manual-form');
+      if (!manualForm) return;
+
+      function escSl(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      function authHeadersSl() { return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || t}` }; }
+
+      let salesPeriod = 'thisMonth';
+      let currentEntries = [];
+      let salesServices = [];
+
+      async function loadSalesOptions() {
+        const res = await fetch('/api/provider/services', { headers: { Authorization: `Bearer ${getSupabaseToken() || t}` } });
+        salesServices = res.ok ? await res.json() : [];
+        const menuSel = document.getElementById('sm-menu');
+        if (menuSel) menuSel.innerHTML = '<option value="">選択なし</option>' + salesServices.map(s => `<option value="${escSl(s.name)}" data-amount="${s.price}">${escSl(s.name)}（¥${Number(s.price).toLocaleString()}）</option>`).join('');
+        const staffRes = await fetch('/api/provider/staff', { headers: { Authorization: `Bearer ${getSupabaseToken() || t}` } });
+        const staffRows = staffRes.ok ? await staffRes.json() : [];
+        const staffSel = document.getElementById('sm-staff');
+        if (staffSel) staffSel.innerHTML = '<option value="">選択なし</option>' + staffRows.map(s => `<option value="${s.id}">${escSl(s.name)}</option>`).join('');
+      }
+
+      document.getElementById('sm-menu')?.addEventListener('change', e => {
+        const opt = e.target.selectedOptions[0];
+        const amountInput = document.getElementById('sm-amount');
+        if (opt?.dataset.amount && amountInput && !amountInput.value) amountInput.value = opt.dataset.amount;
+      });
+
+      async function loadSales() {
+        const res = await fetch(`/api/provider/sales-entries?period=${salesPeriod}`, { headers: { Authorization: `Bearer ${getSupabaseToken() || t}` } });
+        if (!res.ok) return;
+        const d = await res.json();
+        currentEntries = d.entries || [];
+        document.getElementById('sales-total-finance').textContent = `¥${d.financeTotal.toLocaleString()}`;
+        document.getElementById('sales-total-manual').textContent = `¥${d.manualTotal.toLocaleString()}`;
+        document.getElementById('sales-total-all').textContent = `¥${d.total.toLocaleString()}`;
+
+        function renderBreakdown(elId, rows) {
+          const el = document.getElementById(elId);
+          if (!el) return;
+          el.innerHTML = rows.length ? rows.map(r => `<div style="display:flex;justify-content:space-between;padding:3px 0;">${escSl(r.l)}<span style="color:#c9a84c;font-weight:700;">¥${r.v.toLocaleString()}</span></div>`).join('') : 'まだ記録がありません';
+        }
+        renderBreakdown('sales-by-menu', d.byMenu);
+        renderBreakdown('sales-by-staff', d.byStaff);
+        renderBreakdown('sales-by-payment', d.byPayment);
+
+        const listEl = document.getElementById('sales-entries-list');
+        if (listEl) {
+          listEl.innerHTML = currentEntries.length ? currentEntries.map(en => `
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(232,228,220,0.08);font-size:13px;flex-wrap:wrap;">
+              <div>
+                <span style="color:rgba(232,228,220,0.5);font-size:12px;">${en.entry_date}</span>
+                ${en.menu_name ? ` ${escSl(en.menu_name)}` : ''}
+                ${en.source === 'reservation' ? ' <span style="font-size:10px;padding:1px 6px;border-radius:99px;background:rgba(201,168,76,0.15);color:#c9a84c;">来店確認</span>' : ''}
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <strong>¥${Number(en.amount).toLocaleString()}</strong>
+                <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;color:#ef4444;" data-sales-del="${en.id}">削除</button>
+              </div>
+            </div>`).join('') : '<p class="muted" style="font-size:13px;">まだ記録がありません。</p>';
+          listEl.querySelectorAll('[data-sales-del]').forEach(btn => btn.addEventListener('click', async () => {
+            if (!confirm('この記録を削除しますか？')) return;
+            await fetch(`/api/provider/sales-entries/${btn.dataset.salesDel}`, { method: 'DELETE', headers: authHeadersSl() });
+            loadSales();
+          }));
+        }
+      }
+
+      periodThisBtn?.addEventListener('click', () => {
+        salesPeriod = 'thisMonth';
+        periodThisBtn.className = 'btn'; periodLastBtn.className = 'btn btn-ghost';
+        loadSales();
+      });
+      periodLastBtn?.addEventListener('click', () => {
+        salesPeriod = 'lastMonth';
+        periodLastBtn.className = 'btn'; periodThisBtn.className = 'btn btn-ghost';
+        loadSales();
+      });
+
+      manualForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const msg = document.getElementById('sm-msg');
+        const body = {
+          entry_date: document.getElementById('sm-date').value,
+          amount: document.getElementById('sm-amount').value,
+          menu_name: document.getElementById('sm-menu').value || null,
+          staff_id: document.getElementById('sm-staff').value || null,
+          payment_method: document.getElementById('sm-payment').value || null,
+          memo: document.getElementById('sm-memo').value || null,
+        };
+        const res = await fetch('/api/provider/sales-entries', { method: 'POST', headers: authHeadersSl(), body: JSON.stringify(body) });
+        if (res.ok) {
+          msg.style.color = '#059669'; msg.textContent = '✓ 記録しました';
+          manualForm.reset();
+          document.getElementById('sm-date').value = new Date().toISOString().split('T')[0];
+          loadSales();
+        } else { const d = await res.json(); msg.style.color = '#ef4444'; msg.textContent = d.error || '記録に失敗しました'; }
+      });
+
+      csvBtn?.addEventListener('click', () => {
+        const header = '日付,金額,メニュー,支払い方法,由来,メモ\n';
+        const rows = currentEntries.map(e => [e.entry_date, e.amount, e.menu_name || '', e.payment_method || '', e.source === 'reservation' ? '来店確認' : '手動', (e.memo || '').replace(/,/g, '、')].join(',')).join('\n');
+        const blob = new Blob(['﻿' + header + rows], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `fineme-売上_${salesPeriod}.csv`;
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      });
+
+      const dateInput = document.getElementById('sm-date');
+      if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+
+      document.querySelectorAll('[data-tab="sales"]').forEach(btn => btn.addEventListener('click', () => { loadSalesOptions(); loadSales(); }, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'sales') { loadSalesOptions(); loadSales(); }
+    })();
+
     // ── 接客の引き出し：お店専用パーソナライズ ───────────────────
     (function setupCustomerScripts() {
       const t = getSupabaseToken();
@@ -2874,7 +3105,8 @@ export default function ProviderDashboardPage() {
       // Clean up window globals
       delete window.approveRequest;
       delete window.rejectRequest;
-      delete window.markVisited;
+      delete window.showVisitModal;
+      delete window.confirmVisit;
       delete window.showCounterModal;
       delete window.submitCounter;
     };
@@ -2915,6 +3147,7 @@ export default function ProviderDashboardPage() {
             <button className="tab-btn" data-tab="customers">🗒️ New Me Log</button>
             <button className="tab-btn" data-tab="karte">📋 カルテ</button>
             <button className="tab-btn" data-tab="reviews">⭐ クチコミ</button>
+            <button className="tab-btn" data-tab="sales">💰 売上管理</button>
             <p className="pd-nav-heading">③ 伸ばすためのタブ</p>
             <button className="tab-btn" data-tab="area-demand">📍 エリア需要</button>
             <button className="tab-btn" data-tab="scripts">💡 接客の引き出し</button>
@@ -3828,6 +4061,89 @@ export default function ProviderDashboardPage() {
               <button type="submit" className="btn" id="rv-submit-btn">保存する</button>
               <p id="rv-msg" className="muted" style={{ fontSize: '13px' }}></p>
             </form>
+          </div>
+        </div>
+
+        {/* 売上管理：予約リクエストの「来店確認」時に確定した記録＋手動記録の集計。
+            Finemeは決済を仲介していないため、予約価格やNew Me Logの自己申告costを
+            無条件に売上として自動合算することはしない（でお合意 2026-09-04）。 */}
+        <div className="tab-pane" id="tab-sales">
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>売上管理</h2>
+                <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                  「予約リクエスト」で来店確認した際に確定した記録と、手動で追加した記録の合計です。店舗が確認・確定した金額のみを記録します。
+                </p>
+              </div>
+              <button type="button" id="sales-csv-btn" className="btn btn-ghost" style={{ fontSize: '12px' }}>CSVエクスポート ↓</button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" id="sales-period-this" className="btn" style={{ fontSize: '12px', padding: '7px 16px' }}>今月</button>
+              <button type="button" id="sales-period-last" className="btn btn-ghost" style={{ fontSize: '12px', padding: '7px 16px' }}>先月</button>
+            </div>
+
+            <div id="sales-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: '12px' }}>
+              <div className="stat-card"><div className="stat-value" id="sales-total-finance">—</div><div className="stat-label">来店確認からの売上</div></div>
+              <div className="stat-card"><div className="stat-value" id="sales-total-manual">—</div><div className="stat-label">手動追加の売上</div></div>
+              <div className="stat-card"><div className="stat-value" id="sales-total-all" style={{ color: '#c9a84c' }}>—</div><div className="stat-label">合計売上</div></div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '12px' }}>
+              <div><h3 style={{ fontSize: '13px', margin: '0 0 8px' }}>メニュー別</h3><div id="sales-by-menu" className="muted" style={{ fontSize: '12px' }}>—</div></div>
+              <div><h3 style={{ fontSize: '13px', margin: '0 0 8px' }}>スタッフ別</h3><div id="sales-by-staff" className="muted" style={{ fontSize: '12px' }}>—</div></div>
+              <div><h3 style={{ fontSize: '13px', margin: '0 0 8px' }}>支払い方法別</h3><div id="sales-by-payment" className="muted" style={{ fontSize: '12px' }}>—</div></div>
+            </div>
+
+            <div style={{ borderTop: '1px solid rgba(232,228,220,0.1)', paddingTop: '16px' }}>
+              <h3 style={{ fontSize: '14px', margin: '0 0 10px' }}>＋ 手動で売上を追加</h3>
+              <p className="muted" style={{ fontSize: '12px', margin: '0 0 10px' }}>Fineme経由でない売上（非会員のお客様・他チャネル経由）を直接記録します。</p>
+              <form id="sales-manual-form" className="stack" style={{ gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div className="form-field" style={{ flex: '1 1 140px' }}>
+                    <label>日付</label>
+                    <input id="sm-date" type="date" required />
+                  </div>
+                  <div className="form-field" style={{ flex: '1 1 120px' }}>
+                    <label>金額</label>
+                    <input id="sm-amount" type="number" min="1" placeholder="円" required />
+                  </div>
+                  <div className="form-field" style={{ flex: '1 1 160px' }}>
+                    <label>メニュー（任意）</label>
+                    <select id="sm-menu"><option value="">選択なし</option></select>
+                  </div>
+                  <div className="form-field" style={{ flex: '1 1 140px' }}>
+                    <label>スタッフ（任意）</label>
+                    <select id="sm-staff"><option value="">選択なし</option></select>
+                  </div>
+                  <div className="form-field" style={{ flex: '1 1 140px' }}>
+                    <label>支払い方法（任意）</label>
+                    <select id="sm-payment">
+                      <option value="">選択なし</option>
+                      <option value="現金">現金</option>
+                      <option value="クレジットカード">クレジットカード</option>
+                      <option value="PayPay">PayPay</option>
+                      <option value="楽天Pay">楽天Pay</option>
+                      <option value="LINE Pay">LINE Pay</option>
+                      <option value="銀行振込">銀行振込</option>
+                      <option value="その他">その他</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="form-field">
+                  <label>メモ（任意）</label>
+                  <input id="sm-memo" type="text" placeholder="例：店頭現金売上" />
+                </div>
+                <button type="submit" className="btn" id="sm-submit-btn">記録する</button>
+                <p id="sm-msg" className="muted" style={{ fontSize: '13px' }}></p>
+              </form>
+            </div>
+
+            <div style={{ borderTop: '1px solid rgba(232,228,220,0.1)', paddingTop: '16px' }}>
+              <h3 style={{ fontSize: '14px', margin: '0 0 10px' }}>記録一覧</h3>
+              <div id="sales-entries-list"><p className="muted">読み込み中…</p></div>
+            </div>
           </div>
         </div>
 
