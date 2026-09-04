@@ -75,7 +75,7 @@ export async function POST(request) {
 
         // 紹介報酬を計算・記録（月次）
         const yearMonth = new Date().toISOString().slice(0, 7);
-        await recordReferralReward(providerId, yearMonth);
+        await recordReferralReward(providerId, yearMonth, invoice.amount_paid);
 
         console.log(`[webhook] payment succeeded for provider ${providerId}: ¥${invoice.amount_paid}`);
         break;
@@ -99,7 +99,10 @@ export async function POST(request) {
 }
 
 // 紹介報酬の月次記録
-async function recordReferralReward(referredId, yearMonth) {
+// ストック型紹介報酬の仕様（でお確定）：
+//   ①初月：紹介した掲載店舗の初回課金額の90%を成果報酬としてキャッシュバック
+//   ②継続：その掲載店舗が掲載を続ける限り、1社につき月¥500をストック報酬として支払う
+async function recordReferralReward(referredId, yearMonth, invoiceAmount) {
   try {
     // この掲載者を紹介した人を探す
     const { data: referral } = await supabaseAdmin
@@ -111,16 +114,29 @@ async function recordReferralReward(referredId, yearMonth) {
 
     if (!referral) return;
 
+    // この紹介ペアで過去に報酬記録が無ければ「初月」＝①成果報酬90%を適用
+    const { count } = await supabaseAdmin
+      .from('referral_rewards')
+      .select('id', { count: 'exact', head: true })
+      .eq('referrer_id', referral.referrer_id)
+      .eq('referred_id', referredId);
+
+    const isFirstMonth = !count;
+    const amount = isFirstMonth
+      ? Math.round((invoiceAmount || 0) * 0.9)
+      : (referral.reward_per_month || 500);
+
     // 月次報酬を記録（重複は UNIQUE制約でスキップ）
     await supabaseAdmin.from('referral_rewards').upsert({
       referrer_id: referral.referrer_id,
       referred_id: referredId,
       year_month: yearMonth,
-      amount: referral.reward_per_month || 500,
+      amount,
+      is_first_month: isFirstMonth,
       paid: false,
     }, { onConflict: 'referrer_id,referred_id,year_month', ignoreDuplicates: true });
 
-    console.log(`[webhook] referral reward recorded: ${referral.referrer_id} ← ${referredId} (${yearMonth})`);
+    console.log(`[webhook] referral reward recorded: ${referral.referrer_id} ← ${referredId} (${yearMonth}, ¥${amount}${isFirstMonth ? ' ※初月90%成果報酬' : ' ※継続ストック'})`);
   } catch (e) {
     console.warn('[webhook] referral reward error:', e.message);
   }
