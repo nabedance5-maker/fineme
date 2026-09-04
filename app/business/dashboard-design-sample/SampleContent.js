@@ -343,6 +343,96 @@ function BillingView() {
   );
 }
 
+// ── 売上管理（新規提案タブ・でお要望 2026-09-04） ──────────
+// 設計思想: 併用可能な入口（Fineme経由は自動集計・それ以外は手軽な手動入力）を
+// 用意しつつ、最終的に他ツールをやめてFinemeに一本化したくなるレベルの深さ
+// （メニュー別・スタッフ別・支払い方法別内訳、推移、CSV出力）を備える。
+const SALES_TREND = [820000, 910000, 880000, 1020000, 1150000, 1234567];
+const SALES_BY_MENU = [{ l: 'カット＋カラー', v: 420000 }, { l: '眉デザイン体験', v: 280000 }, { l: '肌質改善コース', v: 190000 }];
+const SALES_BY_STAFF = [{ l: '店長・佐藤', v: 560000 }, { l: 'スタイリスト・鈴木', v: 340000 }];
+const SALES_BY_PAYMENT = [{ l: '現金', v: 45 }, { l: 'クレジットカード', v: 38 }, { l: 'PayPay', v: 17 }];
+
+function BreakdownBars({ rows, unit }) {
+  const max = Math.max(...rows.map(r => r.v));
+  return (
+    <div className="stack" style={{ gap: 10 }}>
+      {rows.map(r => (
+        <div key={r.l}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+            <span>{r.l}</span><span style={{ color: GOLD, fontWeight: 700 }}>{unit === '%' ? `${r.v}%` : `¥${r.v.toLocaleString()}`}</span>
+          </div>
+          <div style={{ height: 6, borderRadius: 99, background: 'rgba(232,228,220,0.1)' }}>
+            <div style={{ height: '100%', width: `${(r.v / max) * 100}%`, borderRadius: 99, background: GOLD }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SalesView() {
+  const [period, setPeriod] = useState('thisMonth');
+  const financeSales = 968567;
+  const manualSales = 266000;
+  const total = financeSales + manualSales;
+  return (
+    <div className="dds-fade stack" style={{ gap: 20 }}>
+      <div style={{ display: 'flex', gap: 8 }}>
+        {[{ k: 'thisMonth', l: '今月' }, { k: 'lastMonth', l: '先月' }].map(p => (
+          <button key={p.k} type="button" onClick={() => setPeriod(p.k)} style={p.k === period ? btnPrimary : btnGhost}>{p.l}</button>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+        <StatCard label="Fineme経由売上（自動集計）" value={`¥${financeSales.toLocaleString()}`} />
+        <StatCard label="その他売上（手動入力）" value={`¥${manualSales.toLocaleString()}`} />
+        <StatCard label="合計売上" value={`¥${total.toLocaleString()}`} accent />
+      </div>
+
+      <div className="dds-grid-2" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) minmax(0,1fr)', gap: 16 }}>
+        <div style={cardStyle}>
+          <p style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>売上推移（直近6ヶ月・合計）</p>
+          <svg viewBox="0 0 560 140" style={{ width: '100%', height: 140, display: 'block' }}>
+            <polyline points={sparklinePoints(SALES_TREND)} fill="none" stroke={GOLD} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            {SALES_TREND.map((v, i) => {
+              const pts = sparklinePoints(SALES_TREND).split(' ')[i].split(',');
+              return <circle key={i} cx={pts[0]} cy={pts[1]} r="3" fill="#0a0f1e" stroke={GOLD} strokeWidth="2" />;
+            })}
+          </svg>
+        </div>
+        <div style={cardStyle}>
+          <p style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>その他売上を追加</p>
+          <div className="stack" style={{ gap: 8 }}>
+            <input readOnly placeholder="日付" value="2026/09/04" style={{ fontSize: 12, padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(232,228,220,0.15)', background: 'rgba(255,255,255,0.04)', color: '#e8e4dc' }} />
+            <input readOnly placeholder="金額" value="¥18,000" style={{ fontSize: 12, padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(232,228,220,0.15)', background: 'rgba(255,255,255,0.04)', color: '#e8e4dc' }} />
+            <input readOnly placeholder="メモ（任意）" value="店頭現金売上" style={{ fontSize: 12, padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(232,228,220,0.15)', background: 'rgba(255,255,255,0.04)', color: '#e8e4dc' }} />
+            <button type="button" style={btnPrimary}>追加する</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="dds-grid-2" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 16 }}>
+        <div style={cardStyle}>
+          <p style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>メニュー別内訳</p>
+          <BreakdownBars rows={SALES_BY_MENU} />
+        </div>
+        <div style={cardStyle}>
+          <p style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>スタッフ別内訳（歩合計算の参考に）</p>
+          <BreakdownBars rows={SALES_BY_STAFF} />
+        </div>
+      </div>
+
+      <div style={cardStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>支払い方法別内訳</p>
+          <button type="button" style={btnGhost}>CSVエクスポート ↓</button>
+        </div>
+        <BreakdownBars rows={SALES_BY_PAYMENT} unit="%" />
+      </div>
+    </div>
+  );
+}
+
 // ── チュートリアル（実データをそのまま流用） ──────────
 function TutorialView() {
   return (
@@ -364,24 +454,29 @@ const VIEW_MAP = {
   tutorial: TutorialView,
   profile: ProfileView, service: ServiceView, packages: PackagesView, staff: StaffView,
   stories: StoriesView, landing: LandingView, qr: QrView, publish: PublishView,
-  stats: DashboardView, requests: RequestsView, customers: CustomersView, karte: KarteView, reviews: ReviewsView,
+  stats: DashboardView, requests: RequestsView, customers: CustomersView, karte: KarteView, reviews: ReviewsView, sales: SalesView,
   'area-demand': AreaDemandView, scripts: ScriptsView, 'ltv-cac': LtvCacView, referral: ReferralView,
   'line-channel': LineChannelView, billing: BillingView,
 };
 
+// 「売上管理」は本番にまだ存在しない新規提案タブのため、共有ソース(TAB_TUTORIALS)
+// には追加せず、このサンプルページ内だけでラベル・挿入位置を持つ（本番のチュートリアル
+// タブ一覧に、まだ無い機能が紛れ込まないようにするため）。
+const SALES_LABEL = '売上管理（新規提案）';
 const NAV_GROUPS = [
   { heading: null, items: [{ key: 'tutorial', icon: '📘', label: 'チュートリアル' }] },
-  ...TUTORIAL_GROUPS.map(g => ({
-    heading: g.heading,
-    items: g.keys.map(k => ({ key: k, icon: null, label: TAB_TUTORIALS[k]?.title || k })),
-  })),
+  ...TUTORIAL_GROUPS.map(g => {
+    const items = g.keys.map(k => ({ key: k, icon: null, label: TAB_TUTORIALS[k]?.title || k }));
+    if (g.heading.startsWith('②')) items.push({ key: 'sales', icon: '💰', label: SALES_LABEL });
+    return { heading: g.heading, items };
+  }),
 ];
 
 export default function DashboardDesignSample() {
   const [active, setActive] = useState('stats');
   const [navOpen, setNavOpen] = useState(false);
   const ActiveView = VIEW_MAP[active] || (() => null);
-  const activeLabel = TAB_TUTORIALS[active]?.title || (active === 'tutorial' ? 'チュートリアル' : active);
+  const activeLabel = active === 'sales' ? SALES_LABEL : (TAB_TUTORIALS[active]?.title || (active === 'tutorial' ? 'チュートリアル' : active));
 
   function selectNav(key) {
     setActive(key);
