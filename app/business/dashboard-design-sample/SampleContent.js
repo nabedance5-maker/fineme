@@ -62,7 +62,7 @@ function DashboardView() {
         <StatCard label="売上（今月）" value="¥1,234,567" accent />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) minmax(0,1fr)', gap: 16 }}>
+      <div className="dds-grid-2" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) minmax(0,1fr)', gap: 16 }}>
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: 16, padding: 22 }}>
           <p style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700, color: '#e8e4dc' }}>来店推移</p>
           <svg viewBox="0 0 560 140" style={{ width: '100%', height: 140, display: 'block' }}>
@@ -134,7 +134,13 @@ function PlaceholderView({ label }) {
 
 export default function DashboardDesignSample() {
   const [active, setActive] = useState('dashboard');
+  const [navOpen, setNavOpen] = useState(false);
   const activeItem = NAV_ITEMS.find(n => n.key === active);
+
+  function selectNav(key) {
+    setActive(key);
+    setNavOpen(false);
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0f1e', display: 'flex', color: '#e8e4dc', fontFamily: 'var(--font-sans)' }}>
@@ -144,23 +150,53 @@ export default function DashboardDesignSample() {
         .dds-nav-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 16px; border-radius: 10px; border: none; background: transparent; color: rgba(232,228,220,0.65); font-size: 13px; font-weight: 600; cursor: pointer; text-align: left; transition: background .15s, color .15s; }
         .dds-nav-item:hover { background: rgba(255,255,255,0.05); color: #e8e4dc; }
         .dds-nav-item.active { background: rgba(201,168,76,0.14); color: #c9a84c; }
+
+        .dds-topbar { display: none; }
+        .dds-sidebar { width: 220px; flex-shrink: 0; }
+        .dds-backdrop { display: none; }
+
+        @media (max-width: 780px) {
+          .dds-topbar { display: flex; }
+          .dds-sidebar {
+            position: fixed; top: 0; bottom: 0; left: 0; z-index: 60; width: 240px;
+            transform: translateX(-100%); transition: transform .25s ease;
+            background: #0a0f1e; box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+          }
+          .dds-sidebar.dds-open { transform: translateX(0); }
+          .dds-backdrop.dds-open {
+            display: block; position: fixed; inset: 0; z-index: 55;
+            background: rgba(0,0,0,0.5);
+          }
+          .dds-main { padding: 16px 16px 60px !important; }
+          .dds-grid-2 { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
+      {/* モバイル用トップバー */}
+      <div className="dds-topbar" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 40, alignItems: 'center', gap: 12, padding: '12px 16px', background: '#0a0f1e', borderBottom: '1px solid rgba(201,168,76,0.15)' }}>
+        <button type="button" onClick={() => setNavOpen(v => !v)} aria-label="メニューを開く" style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(201,168,76,0.3)', background: 'transparent', color: '#c9a84c', fontSize: 16, cursor: 'pointer' }}>☰</button>
+        <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 17, fontWeight: 700, color: '#c9a84c' }}>fineme</p>
+      </div>
+
+      {/* サイドバー背景（モバイルのみ表示、タップで閉じる） */}
+      <div className={`dds-backdrop${navOpen ? ' dds-open' : ''}`} onClick={() => setNavOpen(false)} />
+
       {/* サイドバー */}
-      <aside style={{ width: 220, flexShrink: 0, borderRight: '1px solid rgba(201,168,76,0.15)', padding: '24px 14px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <aside className={`dds-sidebar${navOpen ? ' dds-open' : ''}`} style={{ borderRight: '1px solid rgba(201,168,76,0.15)', padding: '24px 14px', display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ padding: '0 10px', marginBottom: 28 }}>
           <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 700, color: '#c9a84c', letterSpacing: 1 }}>fineme</p>
           <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(232,228,220,0.4)', letterSpacing: 1 }}>顧客管理システム</p>
         </div>
         {NAV_ITEMS.map(item => (
-          <button key={item.key} type="button" className={`dds-nav-item${active === item.key ? ' active' : ''}`} onClick={() => setActive(item.key)}>
+          <button key={item.key} type="button" className={`dds-nav-item${active === item.key ? ' active' : ''}`} onClick={() => selectNav(item.key)}>
             <span style={{ fontSize: 15, width: 18, textAlign: 'center' }}>{item.icon}</span>{item.label}
           </button>
         ))}
       </aside>
 
       {/* メイン */}
-      <main style={{ flex: 1, minWidth: 0, padding: '24px 32px 60px' }}>
+      <main className="dds-main" style={{ flex: 1, minWidth: 0, padding: '24px 32px 60px', paddingTop: 'max(24px, env(safe-area-inset-top))' }}>
+        <div className="dds-topbar-spacer" style={{ height: 0 }} />
         <div style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 10, padding: '10px 16px', fontSize: 12, color: '#c9a84c', marginBottom: 20 }}>
           🎨 これはビジュアルデザインのサンプルです。実データ・実機能とは連動していません。本番の掲載者ダッシュボードはまだ変更していません。
         </div>
@@ -170,6 +206,12 @@ export default function DashboardDesignSample() {
         {active === 'customers' && <CustomersView />}
         {(active === 'karte' || active === 'analytics' || active === 'settings') && <PlaceholderView label={activeItem?.label} />}
       </main>
+
+      <style>{`
+        @media (max-width: 780px) {
+          .dds-main { margin-top: 58px; }
+        }
+      `}</style>
     </div>
   );
 }
