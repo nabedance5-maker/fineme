@@ -21,9 +21,30 @@ export default function ProviderDashboardPage() {
 
     const style = document.createElement('style');
     style.textContent = `
-      .tab-nav { display: flex; gap: 0; border-bottom: 2px solid rgba(232,228,220,0.2); margin-bottom: 24px; overflow-x: auto; }
-      .tab-btn { padding: 10px 20px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 600; color: rgba(232,228,220,0.5); border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: color .15s; }
-      .tab-btn.active { color: #e8e4dc; border-bottom-color: rgba(232,228,220,0.85); }
+      /* サイドバー型ナビ（2026-09 デザイン刷新。/business/dashboard-design-sample の
+         方向性を本番に反映。switchTab()はグローバルな.tab-btn/.tab-paneセレクタで
+         動くため、この見た目変更だけなら既存のJSロジックには影響しない） */
+      .pd-layout { display: flex; align-items: flex-start; gap: 0; }
+      .pd-topbar { display: none; }
+      .pd-backdrop { display: none; }
+      .tab-nav { width: 232px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; position: sticky; top: 24px; }
+      .pd-nav-heading { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: rgba(232,228,220,0.35); text-transform: uppercase; padding: 14px 12px 4px; }
+      .pd-nav-heading:first-child { padding-top: 0; }
+      .tab-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 12px; border: none; border-radius: 10px; background: none; cursor: pointer; font-size: 13px; font-weight: 600; color: rgba(232,228,220,0.65); text-align: left; white-space: normal; transition: background .15s, color .15s; }
+      .tab-btn:hover { background: rgba(255,255,255,0.05); color: #e8e4dc; }
+      .tab-btn.active { background: rgba(201,168,76,0.14); color: #c9a84c; }
+      .pd-main { flex: 1; min-width: 0; padding-left: 28px; }
+      @media (max-width: 900px) {
+        .pd-topbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #0a0f1e; border-bottom: 1px solid rgba(201,168,76,0.15); position: fixed; top: 0; left: 0; right: 0; z-index: 40; }
+        .tab-nav {
+          position: fixed; top: 0; bottom: 0; left: 0; z-index: 60; width: 250px; height: 100vh;
+          background: #0a0f1e; padding: 20px 14px; overflow-y: auto; box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+          transform: translateX(-100%); transition: transform .25s ease;
+        }
+        .tab-nav.pd-open { transform: translateX(0); }
+        .pd-backdrop.pd-open { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(0,0,0,0.5); }
+        .pd-main { padding-left: 0; padding-top: 58px; }
+      }
       .tab-pane { display: none; }
       .tab-pane.active { display: block; }
       .form-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
@@ -66,8 +87,19 @@ export default function ProviderDashboardPage() {
       renderTutorial(tabId);
     }
     document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      btn.addEventListener('click', () => { switchTab(btn.dataset.tab); closeMobileNav(); });
     });
+
+    // ── モバイル用サイドバードロワー開閉 ──────────────────────────
+    function closeMobileNav() {
+      document.getElementById('pd-sidebar')?.classList.remove('pd-open');
+      document.getElementById('pd-backdrop')?.classList.remove('pd-open');
+    }
+    document.getElementById('pd-menu-btn')?.addEventListener('click', () => {
+      document.getElementById('pd-sidebar')?.classList.add('pd-open');
+      document.getElementById('pd-backdrop')?.classList.add('pd-open');
+    });
+    document.getElementById('pd-backdrop')?.addEventListener('click', closeMobileNav);
 
     // ── 初回チュートリアル（タブごとに初回だけ要点を表示） ─────────
     function renderTutorial(tabId) {
@@ -2852,48 +2884,67 @@ export default function ProviderDashboardPage() {
     <main className="section">
       <div className="container" style={{ maxWidth: '800px' }}>
 
-        {/* ダッシュボードヘッダー */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <span id="provider-number-badge" style={{ display: 'none', fontSize: '13px', fontWeight: '800', padding: '3px 12px', background: '#111', color: '#fff', borderRadius: '99px' }}></span>
-              <h1 className="section-title" style={{ margin: '0 0 4px' }} id="provider-name-header">掲載者ダッシュボード</h1>
+        {/* モバイル用トップバー */}
+        <div className="pd-topbar">
+          <button type="button" id="pd-menu-btn" aria-label="メニューを開く" style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(201,168,76,0.3)', background: 'transparent', color: '#c9a84c', fontSize: 16, cursor: 'pointer' }}>☰</button>
+          <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 17, fontWeight: 700, color: '#c9a84c' }}>fineme</p>
+        </div>
+        <div id="pd-backdrop" className="pd-backdrop" />
+
+        <div className="pd-layout">
+          {/* サイドバー */}
+          <div className="tab-nav" id="pd-sidebar">
+            <div style={{ padding: '0 12px', marginBottom: 18 }}>
+              <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: '#c9a84c', letterSpacing: 1 }}>fineme</p>
+              <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(232,228,220,0.4)', letterSpacing: 1 }}>顧客管理システム</p>
             </div>
-            <p className="muted" id="provider-page-link" style={{ margin: '0' }}></p>
+            <p className="pd-nav-heading">チュートリアル</p>
+            <button className="tab-btn" data-tab="tutorial">📘 チュートリアル</button>
+            <p className="pd-nav-heading">① 店舗の中身を作る</p>
+            <button className="tab-btn" data-tab="profile">プロフィール</button>
+            <button className="tab-btn" data-tab="service">サービス設定</button>
+            <button className="tab-btn" data-tab="packages">🎫 回数券</button>
+            <button className="tab-btn" data-tab="staff">👤 スタッフ</button>
+            <button className="tab-btn" data-tab="stories">📝 体験談</button>
+            <button className="tab-btn" data-tab="landing">🌐 LP設定</button>
+            <button className="tab-btn" data-tab="qr">🔗 紹介QR</button>
+            <button className="tab-btn" data-tab="publish">公開設定</button>
+            <p className="pd-nav-heading">② 毎日触るタブ</p>
+            <button className="tab-btn active" data-tab="stats">📊 概況</button>
+            <button className="tab-btn" data-tab="requests">📬 予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
+            <button className="tab-btn" data-tab="customers">🗒️ New Me Log</button>
+            <button className="tab-btn" data-tab="karte">📋 カルテ</button>
+            <button className="tab-btn" data-tab="reviews">⭐ クチコミ</button>
+            <p className="pd-nav-heading">③ 伸ばすためのタブ</p>
+            <button className="tab-btn" data-tab="area-demand">📍 エリア需要</button>
+            <button className="tab-btn" data-tab="scripts">💡 接客の引き出し</button>
+            <button className="tab-btn" data-tab="ltv-cac">📊 LTV/CAC</button>
+            <button className="tab-btn" data-tab="referral">紹介報酬</button>
+            <p className="pd-nav-heading">④ アカウント周り</p>
+            <button className="tab-btn" data-tab="line-channel">💬 LINE連携</button>
+            <button className="tab-btn" data-tab="billing">課金・プラン</button>
           </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button type="button" id="tutorial-show-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>💡 使い方を見る</button>
-            <a href="/business/provider-guide" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px' }}>📖 使い方説明書 ↗</a>
-            <a id="view-page-btn" href="#" target="_blank" className="btn btn-ghost" style={{ fontSize: '13px' }}>自分のページを見る ↗</a>
-          </div>
-        </div>
 
-        {/* タブナビ */}
-        <div className="tab-nav">
-          <button className="tab-btn" data-tab="tutorial">📘 チュートリアル</button>
-          <button className="tab-btn" data-tab="profile">プロフィール</button>
-          <button className="tab-btn" data-tab="service">サービス設定</button>
-          <button className="tab-btn" data-tab="packages">🎫 回数券</button>
-          <button className="tab-btn" data-tab="staff">👤 スタッフ</button>
-          <button className="tab-btn" data-tab="stories">📝 体験談</button>
-          <button className="tab-btn" data-tab="landing">🌐 LP設定</button>
-          <button className="tab-btn" data-tab="qr">🔗 紹介QR</button>
-          <button className="tab-btn" data-tab="publish">公開設定</button>
-          <button className="tab-btn active" data-tab="stats">📊 概況</button>
-          <button className="tab-btn" data-tab="requests">📬 予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
-          <button className="tab-btn" data-tab="customers">🗒️ New Me Log</button>
-          <button className="tab-btn" data-tab="karte">📋 カルテ</button>
-          <button className="tab-btn" data-tab="reviews">⭐ クチコミ</button>
-          <button className="tab-btn" data-tab="area-demand">📍 エリア需要</button>
-          <button className="tab-btn" data-tab="scripts">💡 接客の引き出し</button>
-          <button className="tab-btn" data-tab="ltv-cac">📊 LTV/CAC</button>
-          <button className="tab-btn" data-tab="referral">紹介報酬</button>
-          <button className="tab-btn" data-tab="line-channel">💬 LINE連携</button>
-          <button className="tab-btn" data-tab="billing">課金・プラン</button>
-        </div>
+          {/* メイン */}
+          <div className="pd-main">
+            {/* ダッシュボードヘッダー */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <span id="provider-number-badge" style={{ display: 'none', fontSize: '13px', fontWeight: '800', padding: '3px 12px', background: '#111', color: '#fff', borderRadius: '99px' }}></span>
+                  <h1 className="section-title" style={{ margin: '0 0 4px' }} id="provider-name-header">掲載者ダッシュボード</h1>
+                </div>
+                <p className="muted" id="provider-page-link" style={{ margin: '0' }}></p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button type="button" id="tutorial-show-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>💡 使い方を見る</button>
+                <a href="/business/provider-guide" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px' }}>📖 使い方説明書 ↗</a>
+                <a id="view-page-btn" href="#" target="_blank" className="btn btn-ghost" style={{ fontSize: '13px' }}>自分のページを見る ↗</a>
+              </div>
+            </div>
 
-        {/* 初回チュートリアル（タブごとに初回のみ表示） */}
-        <div id="tab-tutorial-banner" />
+            {/* 初回チュートリアル（タブごとに初回のみ表示） */}
+            <div id="tab-tutorial-banner" />
 
         {/* タブ：チュートリアル一覧（全タブの使い方まとめ） */}
         <div className="tab-pane" id="tab-tutorial">
@@ -4060,6 +4111,8 @@ export default function ProviderDashboardPage() {
           </div>
         </div>
 
+          </div>
+        </div>
       </div>
     </main>
   );
