@@ -4101,23 +4101,23 @@ export default function ProviderDashboardPage() {
               <p className="muted" style={{ fontSize: '12px', margin: '0 0 10px' }}>Fineme経由でない売上（非会員のお客様・他チャネル経由）を直接記録します。</p>
               <form id="sales-manual-form" className="stack" style={{ gap: '10px' }}>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <div className="form-field" style={{ flex: '1 1 140px' }}>
+                  <div className="form-field" style={{ flex: '1 1 140px', minWidth: 0 }}>
                     <label>日付</label>
-                    <input id="sm-date" type="date" required />
+                    <input id="sm-date" type="date" required style={{ minWidth: 0 }} />
                   </div>
-                  <div className="form-field" style={{ flex: '1 1 120px' }}>
+                  <div className="form-field" style={{ flex: '1 1 120px', minWidth: 0 }}>
                     <label>金額</label>
                     <input id="sm-amount" type="number" min="1" placeholder="円" required />
                   </div>
-                  <div className="form-field" style={{ flex: '1 1 160px' }}>
+                  <div className="form-field" style={{ flex: '1 1 160px', minWidth: 0 }}>
                     <label>メニュー（任意）</label>
                     <select id="sm-menu"><option value="">選択なし</option></select>
                   </div>
-                  <div className="form-field" style={{ flex: '1 1 140px' }}>
+                  <div className="form-field" style={{ flex: '1 1 140px', minWidth: 0 }}>
                     <label>スタッフ（任意）</label>
                     <select id="sm-staff"><option value="">選択なし</option></select>
                   </div>
-                  <div className="form-field" style={{ flex: '1 1 140px' }}>
+                  <div className="form-field" style={{ flex: '1 1 140px', minWidth: 0 }}>
                     <label>支払い方法（任意）</label>
                     <select id="sm-payment">
                       <option value="">選択なし</option>
