@@ -185,17 +185,18 @@ export default function BusinessPage() {
           <section className={styles.section} id="model">
             <div className={styles.kicker}>Business Model</div>
             <h2 className={`${styles.h2} ${styles.serif}`}>ビジネスモデル・収益源</h2>
-            <p className={styles.lead}>ユーザー課金と、掲載店舗からの収益の二本柱。</p>
+            <p className={styles.lead}>ユーザー課金と、掲載店舗からの収益の二本柱。今の主エンジンは<strong>掲載店舗からの収益</strong>（詳しくは次の「現在地」参照）。</p>
 
             <div className={styles.tableWrap}>
               <table className={styles.table}>
                 <thead><tr><th>対象</th><th>商品</th><th>価格</th></tr></thead>
                 <tbody>
-                  <tr><td>ユーザー</td><td>Mirror 単発分析</td><td><span className={styles.yen}>¥500</span></td></tr>
-                  <tr><td>ユーザー</td><td>Mirror サブスク（月3回相当）</td><td><span className={styles.yen}>¥780</span> / 月</td></tr>
                   <tr><td>掲載者</td><td>登録料</td><td><span className={styles.yen}>¥1,100</span></td></tr>
                   <tr><td>掲載者</td><td>ライト／プレミアム（¥7,000はキャンペーン用特別価格として温存）</td><td><span className={styles.yen}>¥5,000〜10,000</span> / 月</td></tr>
-                  <tr><td>掲載者</td><td>紹介報酬</td><td><span className={styles.yen}>¥500</span> / 月 × 紹介数</td></tr>
+                  <tr><td>掲載者</td><td>紹介報酬（初月）</td><td>紹介した掲載店舗の初回課金額の<span className={styles.yen}>90%</span></td></tr>
+                  <tr><td>掲載者</td><td>紹介報酬（継続）</td><td>その店舗が掲載を続ける限り<span className={styles.yen}>¥500</span> / 月</td></tr>
+                  <tr><td>ユーザー</td><td>Mirror 単発分析</td><td><span className={styles.yen}>¥500</span></td></tr>
+                  <tr><td>ユーザー</td><td>Mirror サブスク（月3回相当）</td><td><span className={styles.yen}>¥780</span> / 月</td></tr>
                 </tbody>
               </table>
             </div>
@@ -206,13 +207,14 @@ export default function BusinessPage() {
           <section className={styles.section} id="now">
             <div className={styles.kicker}>Where We Are</div>
             <h2 className={`${styles.h2} ${styles.serif}`}>正直な現在地</h2>
-            <p className={styles.lead}>プロダクトと販売の仕組みは整った。今は集客と売上をこれから伸ばすフェーズ。</p>
+            <p className={styles.lead}>プロダクトと販売の仕組みは整った。第一フェーズの主エンジンは<strong>店舗SaaSの有料契約を増やす直接営業</strong>に切り替えている（2026-09〜）。</p>
 
             <div className={styles.statgrid}>
+              <div className={styles.stat}><b>21社</b><span>掲載店舗（有料契約はまだ0）</span></div>
+              <div className={styles.stat}><b>67店舗</b><span>月商50万円に必要な有料契約数</span></div>
               <div className={styles.stat}><b>290本+</b><span>記事資産（男性251＋Belle39）</span></div>
-              <div className={styles.stat}><b>2026.07</b><span>Belle（女性トラック）ローンチ</span></div>
-              <div className={styles.stat}><b>1人＋AI</b><span>今の体制</span></div>
             </div>
+            <p className={styles.note}>店舗SaaS導入店舗が増える→掲載者が増える→ポータルサイトとしてユーザーも集めやすくなる、という二面市場の好循環を狙っている。ユーザーに見せる「顔」（Me Scan・Compass・New Me Map・Mirror）は変えず、販売チャネルだけを直接営業に振り直した形。</p>
           </section>
 
           {/* 07. 目標・フェーズ戦略 */}
@@ -221,28 +223,28 @@ export default function BusinessPage() {
             <h2 className={`${styles.h2} ${styles.serif}`}>目標とフェーズ戦略</h2>
 
             <div className={styles.goalRow}>
-              <div className={styles.goalCard}><h4>🎯 6ヶ月目標</h4><p>月商50万円。Mirrorの¥780/月サブスク（約640人継続）が主エンジン。</p></div>
+              <div className={styles.goalCard}><h4>🎯 6ヶ月目標</h4><p>月商50万円。店舗SaaSの有料契約67店舗が主エンジン（平均単価¥7,500想定）。</p></div>
               <div className={styles.goalCard}><h4>🏔 3年目標</h4><p>年商10億円・ファウンダー個人年収1億円。外見・恋愛・自信領域のプラットフォームへ。</p></div>
             </div>
 
-            <div className={styles.subhead}>進行順序：商品 → 販売 → 集客</div>
+            <div className={styles.subhead}>進行順序：商品 → 店舗営業 → 二面市場の好循環</div>
             <div className={styles.flow}>
-              <div className={styles.flowStep}><b>商品 ✅</b><span>New Me Mapの継続価値</span></div>
+              <div className={styles.flowStep}><b>商品 ✅</b><span>SaaS機能・New Me Mapの継続価値</span></div>
               <div className={styles.flowArrow}>→</div>
-              <div className={styles.flowStep}><b>販売 ✅</b><span>Mirror LP・¥500→¥780</span></div>
+              <div className={styles.flowStep}><b>店舗営業 ◉現在地</b><span>既存21社の有料転換＋新規開拓</span></div>
               <div className={styles.flowArrow}>→</div>
-              <div className={styles.flowStep}><b>集客 ◉現在地</b><span>でお個人発信＋ドラマ</span></div>
+              <div className={styles.flowStep}><b>掲載者増加</b><span>選べる店舗が増える</span></div>
               <div className={styles.flowArrow}>→</div>
-              <div className={styles.flowStep}><b>次フェーズ</b><span>掲載者募集</span></div>
+              <div className={styles.flowStep}><b>ユーザー集客</b><span>ポータルとして集めやすく</span></div>
             </div>
-            <p className={styles.note}>商品・販売は整備済み。判断軸は①サブスク継続価値＞②新規獲得を維持したまま、今は集客にフォーカス。</p>
+            <p className={styles.note}>でお個人のSNS発信だけでは消費者への直接リーチが構造的に弱いことが分かったため（2026-06〜09、サブスク継続0人のまま停滞）、再現可能な販売チャネルとして店舗への直接営業を主エンジンに選び直した。</p>
           </section>
 
           {/* 08. 集客戦略 */}
           <section className={styles.section} id="acquisition">
             <div className={styles.kicker}>Acquisition</div>
             <h2 className={`${styles.h2} ${styles.serif}`}>集客戦略——最初の一滴を増やす</h2>
-            <p className={styles.lead}>ファウンダー「でお」個人を主軸に発信。実写ショートドラマ「変わる前夜の話。」を縦型プラットフォームへ展開中。</p>
+            <p className={styles.lead}>ユーザー向けの集客は、今は主エンジンではなく並行運用。ファウンダー「でお」個人を主軸に発信し、実写ショートドラマ「変わる前夜の話。」を縦型プラットフォームへ展開中。</p>
 
             <div className={styles.tableWrap}>
               <table className={styles.table}>
