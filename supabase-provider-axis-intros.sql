@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-09-04
 -- 診断起点LP(/provider/[slug]/for/[axis])の見出し・導入文・メニューごとの一言・締めの
 -- AI生成コピーのキャッシュ。店舗が自分で書いた実テキスト(unique_strengths/philosophy/
 -- guide_message/best_fit_desc/catchphrase/各メニューのdescription)だけを事実として渡し
