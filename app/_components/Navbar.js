@@ -1,6 +1,7 @@
 "use client";
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 
 // 男女共通の統一ヘッダー。両トラック（男性向け / Belle）を対等に1つのメニューへ畳む。
@@ -29,6 +30,7 @@ const MENU_GROUPS = [
 ];
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [authState, setAuthState] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -79,6 +81,10 @@ export default function Navbar() {
   };
 
   const closeMenu = () => setMenuOpen(false);
+
+  // 掲載者ダッシュボードは独自のヘッダー（サイドバー含む）を持つアプリ画面のため、
+  // サイト共通のヘッダーは表示しない（でお指摘：2つのヘッダーが重なって見える、2026-09-05）
+  if (pathname?.startsWith('/provider/dashboard')) return null;
 
   return (
     <header className="navbar">
