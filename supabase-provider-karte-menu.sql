@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-09-04
 -- 来店記録（provider_karte_entries）に利用メニューを追加。カルテ拡張フェーズD。
 -- でお要望：来店時のメニューを紐づけたい。ただしreservations.service_idと
 -- provider_experience_menus.idはシステム的に綺麗に結びついていない（別々に発展した
