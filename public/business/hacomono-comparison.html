@@ -200,6 +200,11 @@
             <td><span class="pill good">◎</span></td>
           </tr>
           <tr class="feat-row">
+            <td><span class="feat-name">売上管理</span><span class="feat-note">来店確認時の確定額＋手動記録を、メニュー別・スタッフ別・支払い方法別に集計。月次CSV出力対応（2026-09-04実装）。Fineme自体は決済を仲介しないため、店舗が金額を確認・確定する運用</span></td>
+            <td><span class="pill good">◎</span></td>
+            <td><span class="pill good">◎</span><span class="feat-note">POSレジと連動したリアルタイム集計で、確認・入力の手間がFinemeより少ない</span></td>
+          </tr>
+          <tr class="feat-row">
             <td><span class="feat-name">POSレジ・物販決済</span></td>
             <td><span class="pill gap">✕</span></td>
             <td><span class="pill good">◎</span></td>
@@ -233,7 +238,7 @@
           </tr>
           <tr class="feat-row">
             <td><span class="feat-name">スタッフ指名・担当制</span></td>
-            <td><span class="pill partial">△</span><span class="feat-note">スタッフ登録はあるが、指名予約・担当別の売上集計は未確認</span></td>
+            <td><span class="pill partial">△</span><span class="feat-note">売上管理でスタッフ別集計はできるが、予約時の指名機能自体は未確認</span></td>
             <td><span class="pill partial">△</span></td>
           </tr>
 
@@ -297,7 +302,7 @@
     <div class="gaps">
       <div class="gap-item">
         <div class="gap-head"><span class="rank">1</span><span class="gap-title">決済代行（月謝・回数券のクレカ/口座振替自動課金）</span></div>
-        <p class="gap-body">現状は<b>「店舗が自分で集金する」を前提</b>にした記録ツール。ここが無いと、hacomono等の既存システムを使っている店舗を乗り換えさせる理由がスイッチングコスト以外に無い。Stripeは既にMirror課金で使用実績があるため、店舗の顧客向け課金への拡張は技術的には現実的な範囲。ただし決済代行は資金移動・特商法まわりの検討が要るため、着手前に扱いを整理する。</p>
+        <p class="gap-body">現状は<b>「店舗が自分で集金する」を前提</b>にした記録ツール。売上管理タブ（2026-09-04実装）で来店確認・手動記録から売上の集計はできるようになったが、これは「記録・集計」であって「実際にお客様から徴収する」機能ではない。ここが無いと、hacomono等の既存システムを使っている店舗を乗り換えさせる理由がスイッチングコスト以外に無い。Stripeは既にMirror課金で使用実績があるため、店舗の顧客向け課金への拡張は技術的には現実的な範囲。ただし決済代行は資金移動・特商法まわりの検討が要るため、着手前に扱いを整理する。</p>
       </div>
       <div class="gap-item">
         <div class="gap-head"><span class="rank">2</span><span class="gap-title">定員・重複防止付きの予約カレンダーを本線タブに統合</span></div>
