@@ -54,7 +54,11 @@ export async function POST(request, { params }) {
     .single();
   if (!provider) return Response.json({ error: '店舗情報が見つかりませんでした' }, { status: 404 });
 
-  // LINEの「予約をリクエスト」ボタンと合わせて、24時間以内の重複リクエストを防ぐ
+  // LINEの「予約をリクエスト」ボタンと合わせて、24時間以内の重複リクエストを防ぐ。
+  // status: 'pending'（店舗がまだ返答していない）に限定する——でお報告2026-09-09で発覚：
+  // 承認・来店確認まで済ませた後に再リクエストしようとしても「送信済みです」で
+  // 弾かれていた。防ぎたいのは「返答を待っている間の連打」だけで、既に処理済みの
+  // 古いリクエストが半永久的にブロックし続けるのは意図しない挙動だった。
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { data: recent } = await supabase
     .from('reservations')
@@ -62,10 +66,11 @@ export async function POST(request, { params }) {
     .eq('user_id', user.id)
     .eq('provider_id', provider.id)
     .in('origin', ['line_log', 'newme_log'])
+    .eq('status', 'pending')
     .gte('created_at', since)
     .limit(1);
   if (recent?.length) {
-    return Response.json({ error: `${provider.name}へは既に予約リクエストを送信済みです。店舗からのご連絡をお待ちください。` }, { status: 409 });
+    return Response.json({ error: `${provider.name}への予約リクエストが返答待ちです。店舗からのご連絡をお待ちください。` }, { status: 409 });
   }
 
   const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single();

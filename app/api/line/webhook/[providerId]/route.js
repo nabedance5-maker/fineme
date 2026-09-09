@@ -131,7 +131,10 @@ async function createLineBookingRequest(logId, channelProviderId, lineUserId, pr
     .single();
   if (!provider) return '店舗情報が見つかりませんでした。';
 
-  // 同じ記録から24時間以内に既にリクエスト済みなら二重送信しない
+  // 同じ記録から24時間以内に既にリクエスト済み（かつ未返答）なら二重送信しない。
+  // status: 'pending' に限定——返答待ちの連打だけ防ぎたく、承認・来店確認まで
+  // 済んだ古いリクエストが半永久的にブロックし続けるのは意図しない挙動だった
+  // （でお報告2026-09-09）。
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { data: recent } = await supabase
     .from('reservations')
@@ -139,9 +142,10 @@ async function createLineBookingRequest(logId, channelProviderId, lineUserId, pr
     .eq('user_id', log.user_id)
     .eq('provider_id', provider.id)
     .eq('origin', 'line_log')
+    .eq('status', 'pending')
     .gte('created_at', since)
     .limit(1);
-  if (recent?.length) return `${provider.name}へは既に予約リクエストを送信済みです。店舗からのご連絡をお待ちください。`;
+  if (recent?.length) return `${provider.name}への予約リクエストが返答待ちです。店舗からのご連絡をお待ちください。`;
 
   const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', log.user_id).single();
   const userName = profile?.display_name || 'Fineme会員（LINEより）';
