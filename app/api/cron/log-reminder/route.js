@@ -24,9 +24,43 @@ function buildStoreLogMessage(booking, reminder, resolveAxisFn) {
   reminder.forEach(r => {
     const def = resolveAxisFn(r.axis, r.custom_icon);
     const d = new Date(r.next_visit).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
-    lines.push(`${def.icon} ${r.name}：次回のご予約は${d}です。`);
+    // 予定日を過ぎても同じ「次回は◯月◯日です」が延々届いていた
+    // （でお報告2026-09-09：9/2の予定が9/9になってもそのまま）。
+    // 過ぎている間は「過ぎています」に切り替える。実際に来店したかは
+    // 下のボタン（今日行った／日付を選ぶ）で本人に記録してもらう。
+    const when = r.diff < 0
+      ? `予定日（${d}）を${-r.diff}日過ぎています。ご来店されましたか？`
+      : `次回のご予約は${d}です。`;
+    lines.push(`${def.icon} ${r.name}：${when}`);
   });
   return ['New Me Logからのお知らせです', '', ...lines].join('\n');
+}
+
+// LINEから直接操作できるボタン付きカルーセルを組み立てる（でお要望2026-08-05）。
+// 「今日行った」「日付を選ぶ」はテキストだけの通知だと結局New Me Logを開かないと
+// 何もできず埋もれてしまうための対策。店舗別LINEチャネル宛は元々このボタンが無く
+// プレーンテキストのみだったため、同じ対策が効いていなかった（でお報告2026-09-09）。
+// provider_slug を持つ行（＝店舗と紐づいている）かつ来店予定日がまだ無い行には
+// 「予約をリクエスト」も足す（来店日はLINEのトーク上で店舗と相談する前提）。
+function buildLogColumns(logs, todayStr) {
+  return logs.slice(0, 10).map(l => {
+    const def = resolveAxis(l.axis, l.custom_icon);
+    const statusText = l.kind === 'reminder'
+      ? (l.diff < 0 ? `${-l.diff}日過ぎています` : l.diff === 0 ? '本日が予定日です' : l.diff === 1 ? '明日が予定日です' : `${l.diff}日後が予定日です`)
+      : (l.diff < 0 ? `目安から${-l.diff}日過ぎています` : 'そろそろの時期です');
+    const actions = [
+      { type: 'postback', label: '今日行った', data: `action=log_visit&lid=${l.id}`, displayText: `${l.name} に今日行ったことを記録` },
+      { type: 'datetimepicker', label: '日付を選ぶ', data: `action=log_visit_pick&lid=${l.id}`, mode: 'date', initial: todayStr, max: todayStr },
+    ];
+    if (l.kind === 'booking' && l.provider_slug) {
+      actions.push({ type: 'postback', label: '予約をリクエスト', data: `action=book_request&lid=${l.id}`, displayText: `${l.name} に予約をリクエスト` });
+    }
+    return {
+      title: `${def.icon} ${l.name}`.slice(0, 40),
+      text: statusText.slice(0, 60),
+      actions,
+    };
+  });
 }
 
 export const dynamic = 'force-dynamic';
@@ -282,11 +316,14 @@ export async function GET(request) {
       return { booking, reminder };
     }
 
-    // 店舗別LINEチャネルへの送信（店舗からの通知として自然な、簡潔な文面）
+    // 店舗別LINEチャネルへの送信（店舗からの通知として自然な、簡潔な文面）。
+    // 以前はテキストのみで、開かないと何もできず埋もれていた（でお報告2026-09-09）。
+    // Fineme公式と同じボタン付きカルーセルを2通目として付ける。
     for (const { target, logs } of byStore.values()) {
       const { booking, reminder } = toBookingReminder(logs);
       const text = buildStoreLogMessage(booking, reminder, resolveAxis);
-      const res = await sendLinePush(target.lineUserId, text, target.token);
+      const columns = buildLogColumns(logs, todayStr);
+      const res = await sendLineLogReminder(target.lineUserId, text, columns, target.token);
       if (res.ok) { sent++; notifiedIds.push(...logs.map(l => l.id)); }
     }
 
@@ -303,20 +340,7 @@ export async function GET(request) {
       // どれか1つ押した時点で残り全部が消えてしまうため（でお報告2026-08-27）、
       // 押しても消えないテンプレートメッセージのカルーセルに置き換えた。
       // 「今日行った」に加え、datetimepickerで「今日じゃない日」も選べるようにしてある。
-      const columns = fallbackLogs.slice(0, 10).map(l => {
-        const def = resolveAxis(l.axis, l.custom_icon);
-        const statusText = l.kind === 'reminder'
-          ? (l.diff < 0 ? `${-l.diff}日過ぎています` : l.diff === 0 ? '本日が予定日です' : l.diff === 1 ? '明日が予定日です' : `${l.diff}日後が予定日です`)
-          : (l.diff < 0 ? `目安から${-l.diff}日過ぎています` : 'そろそろの時期です');
-        return {
-          title: `${def.icon} ${l.name}`.slice(0, 40),
-          text: statusText.slice(0, 60),
-          actions: [
-            { type: 'postback', label: '今日行った', data: `action=log_visit&lid=${l.id}`, displayText: `${l.name} に今日行ったことを記録` },
-            { type: 'datetimepicker', label: '日付を選ぶ', data: `action=log_visit_pick&lid=${l.id}`, mode: 'date', initial: todayStr, max: todayStr },
-          ],
-        };
-      });
+      const columns = buildLogColumns(fallbackLogs, todayStr);
       const res = await sendLineLogReminder(profile.line_user_id, text, columns);
       if (res.ok) { sent++; notifiedIds.push(...fallbackLogs.map(l => l.id)); }
     }

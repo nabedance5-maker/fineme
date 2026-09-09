@@ -4,9 +4,10 @@
 // （1エンドポイントで複数チャネルを受けるとdestinationだけでは検証前にチャネルを特定できないため）。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
-import { sendLineReply } from '@/lib/line-push';
+import { sendLineReply, sendLinePush } from '@/lib/line-push';
 import { verifyLineSignature } from '@/lib/line-channel';
 import { idealNextDate } from '@/lib/log-axes';
+import { sendLineBookingRequestEmail } from '@/lib/email';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -33,15 +34,35 @@ function fmtJa(dateStr) {
   return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
+// タップした本人確認：LINEのuserIdはチャネルごとに別の値になるため
+// （lib/line-channel.js冒頭コメント参照）、どのチャネルから届いたイベントかで
+// 突き合わせ先を変える。Fineme公式チャネルなら profiles.line_user_id、
+// 店舗別チャネルなら provider_customer_line_links.store_line_user_id と照合する
+// （2026-09-09・店舗チャネルへのボタン追加に合わせて channel-aware 化）。
+async function verifyLineIdentity(channelProviderId, userId, lineUserId) {
+  if (!lineUserId || !userId) return false;
+  if (channelProviderId === 'fineme') {
+    const { data: profile } = await supabase.from('profiles').select('line_user_id').eq('id', userId).single();
+    return !!profile?.line_user_id && profile.line_user_id === lineUserId;
+  }
+  const { data: link } = await supabase
+    .from('provider_customer_line_links')
+    .select('store_line_user_id')
+    .eq('provider_id', channelProviderId)
+    .eq('user_id', userId)
+    .single();
+  return !!link?.store_line_user_id && link.store_line_user_id === lineUserId;
+}
+
 // New Me Log のリマインドに付けたクイックリプライ「〇〇 行った」から呼ばれる。
-// LINEのWebhookにはSupabaseのJWTが無いため、profiles.line_user_id と
-// タップした本人（event.source.userId）を突き合わせて本人確認する
-// （予約確認Webhookのconfirm/rescheduleはUUIDの推測不可能性だけに頼っているが、
-// こちらは書き込み系のうえ安価に照合できるので一段強くしてある）。
+// LINEのWebhookにはSupabaseのJWTが無いため、タップした本人（event.source.userId）を
+// verifyLineIdentity で突き合わせて本人確認する（予約確認Webhookのconfirm/rescheduleは
+// UUIDの推測不可能性だけに頼っているが、こちらは書き込み系のうえ安価に照合できるので
+// 一段強くしてある）。
 // visitedDateStr: datetimepicker（「日付を選ぶ」）から来た YYYY-MM-DD。
 // 省略時・不正値・未来日は今日にフォールバックする（アプリ側の
 // /api/me/service-logs/[id]/visits と同じ「未来日は記録しない」方針に揃える）。
-async function recordLineVisit(logId, lineUserId, visitedDateStr) {
+async function recordLineVisit(logId, channelProviderId, lineUserId, visitedDateStr) {
   if (!lineUserId) return '本人確認ができませんでした。';
 
   const { data: log, error: findError } = await supabase
@@ -51,13 +72,8 @@ async function recordLineVisit(logId, lineUserId, visitedDateStr) {
     .single();
   if (findError || !log) return 'この記録が見つかりませんでした。';
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('line_user_id')
-    .eq('id', log.user_id)
-    .single();
-  if (!profile?.line_user_id || profile.line_user_id !== lineUserId) {
-    console.warn('[line/webhook] log_visit: line_user_id mismatch', { logId });
+  if (!(await verifyLineIdentity(channelProviderId, log.user_id, lineUserId))) {
+    console.warn('[line/webhook] log_visit: identity mismatch', { logId, channelProviderId });
     return '本人確認ができませんでした。';
   }
 
@@ -85,6 +101,78 @@ async function recordLineVisit(logId, lineUserId, visitedDateStr) {
 
   const next = idealNextDate({ ...log, last_visit: visitDate });
   return `✓ ${fmtJa(visitDate)}の記録をつけました${next ? ` — 次の目安は ${fmtJa(next)}` : ''}`;
+}
+
+// New Me Log のリマインドに付けた「予約をリクエスト」から呼ばれる（でお要望2026-09-09）。
+// フォーム入力を挟まずボタン1つで送るため、来店日はまだ決めない＝reservationsに
+// reserved_date/start_timeを入れずpendingで作るだけ。続きはLINEのトーク画面で
+// 店舗と直接すり合わせてもらう前提（user_contactにその旨を明記して送る）。
+async function createLineBookingRequest(logId, channelProviderId, lineUserId) {
+  if (!lineUserId) return '本人確認ができませんでした。';
+
+  const { data: log, error: findError } = await supabase
+    .from('user_service_logs')
+    .select('id, user_id, name, provider_slug')
+    .eq('id', logId)
+    .single();
+  if (findError || !log) return 'この記録が見つかりませんでした。';
+  if (!log.provider_slug) return 'この記録には連携店舗がありません。';
+
+  if (!(await verifyLineIdentity(channelProviderId, log.user_id, lineUserId))) {
+    console.warn('[line/webhook] book_request: identity mismatch', { logId, channelProviderId });
+    return '本人確認ができませんでした。';
+  }
+
+  const { data: provider } = await supabase
+    .from('providers')
+    .select('id, name, email, line_user_id')
+    .eq('slug', log.provider_slug)
+    .single();
+  if (!provider) return '店舗情報が見つかりませんでした。';
+
+  // 同じ記録から24時間以内に既にリクエスト済みなら二重送信しない
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data: recent } = await supabase
+    .from('reservations')
+    .select('id')
+    .eq('user_id', log.user_id)
+    .eq('provider_id', provider.id)
+    .eq('origin', 'line_log')
+    .gte('created_at', since)
+    .limit(1);
+  if (recent?.length) return `${provider.name}へは既に予約リクエストを送信済みです。店舗からのご連絡をお待ちください。`;
+
+  const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', log.user_id).single();
+  const userName = profile?.display_name || 'Fineme会員（LINEより）';
+  const note = `New Me LogのLINEから予約をリクエストしました（${log.name}）。来店日はLINEでご相談ください。`;
+
+  const { error: insertError } = await supabase
+    .from('reservations')
+    .insert({
+      provider_id: provider.id,
+      user_id: log.user_id,
+      user_name: userName,
+      user_contact: 'LINEからの予約リクエスト（トーク画面でご連絡ください）',
+      note,
+      status: 'pending',
+      origin: 'line_log',
+    });
+  if (insertError) {
+    console.error('[line/webhook] book_request insert error', insertError);
+    return 'リクエストの送信に失敗しました。New Me Logから直接お問い合わせください。';
+  }
+
+  try {
+    await sendLineBookingRequestEmail({ providerEmail: provider.email, providerName: provider.name, userName, note });
+  } catch (e) { console.error('[line/webhook] book_request email', e); }
+
+  if (provider.line_user_id) {
+    try {
+      await sendLinePush(provider.line_user_id, `【Fineme】New Me Logから予約リクエストが届きました\nお客様: ${userName}\n${log.name}\n来店日はLINEでご相談ください。管理画面からもご確認いただけます。`);
+    } catch (e) { console.error('[line/webhook] book_request provider push', e); }
+  }
+
+  return `✓ ${provider.name}へ予約をリクエストしました。店舗からのご連絡をお待ちください。`;
 }
 
 export async function POST(request, { params }) {
@@ -119,13 +207,18 @@ export async function POST(request, { params }) {
     } else if (action === 'log_visit') {
       const lid = data.get('lid');
       if (!lid) continue;
-      const message = await recordLineVisit(lid, event.source?.userId);
+      const message = await recordLineVisit(lid, providerId, event.source?.userId);
       if (event.replyToken) await sendLineReply(event.replyToken, message, token);
     } else if (action === 'log_visit_pick') {
       const lid = data.get('lid');
       if (!lid) continue;
       const pickedDate = event.postback?.params?.date;
-      const message = await recordLineVisit(lid, event.source?.userId, pickedDate);
+      const message = await recordLineVisit(lid, providerId, event.source?.userId, pickedDate);
+      if (event.replyToken) await sendLineReply(event.replyToken, message, token);
+    } else if (action === 'book_request') {
+      const lid = data.get('lid');
+      if (!lid) continue;
+      const message = await createLineBookingRequest(lid, providerId, event.source?.userId);
       if (event.replyToken) await sendLineReply(event.replyToken, message, token);
     }
   }
