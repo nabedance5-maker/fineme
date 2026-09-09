@@ -94,9 +94,17 @@ export async function PATCH(request, context) {
       const lineMsgs = {
         approved: `【${pname}】予約が承認されました✓\n確定日時: ${cd || data.reserved_date || 'ご確認ください'} ${ct || data.start_time || ''}\n直接店舗へご連絡のうえご来店ください。`,
         rejected: `【${pname}】予約リクエストについてご連絡です。\nご希望の日時での対応が難しいとのことです。${comment ? `\nメッセージ: ${comment}` : ''}`,
-        counter_proposed: `【${pname}】代替日時の提案が届きました。\n提案日時: ${kd || ''} ${kt || ''}\nマイページ（予約一覧）からご確認ください。`,
+        counter_proposed: `【${pname}】代替日時の提案が届きました。\n提案日時: ${kd || ''} ${kt || ''}\n下のボタンから直接お答えいただけます。`,
       };
-      await notifyCustomerLine(db, { userId: data.user_id, providerId: data.provider_id, message: lineMsgs[newStatus] });
+      // 代替提案は文字だけだと何も操作できず、マイページに移動しないと返答できなかった
+      // （でお報告2026-09-09）。LINEから直接「承認する」「キャンセルする」を選べる
+      // ボタンを付ける（app/api/line/webhook/[providerId]/route.js の
+      // acceptCounterProposal / cancelReservationFromLine で処理する）。
+      const quickReplyItems = newStatus === 'counter_proposed' ? [
+        { label: 'この日時で承認する', data: `action=accept_counter&rid=${id}`, displayText: 'この日時で承認します' },
+        { label: 'キャンセルする', data: `action=cancel_reservation&rid=${id}`, displayText: '予約をキャンセルします' },
+      ] : undefined;
+      await notifyCustomerLine(db, { userId: data.user_id, providerId: data.provider_id, message: lineMsgs[newStatus], quickReplyItems });
     }
 
     if (newStatus === 'visited' && data.user_contact?.includes('@')) {

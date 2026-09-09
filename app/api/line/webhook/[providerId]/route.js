@@ -7,7 +7,7 @@ import { getSupabase } from '@/lib/supabase';
 import { sendLineReply, sendLinePush } from '@/lib/line-push';
 import { verifyLineSignature } from '@/lib/line-channel';
 import { idealNextDate } from '@/lib/log-axes';
-import { sendLineBookingRequestEmail } from '@/lib/email';
+import { sendLineBookingRequestEmail, sendCancelledByUserEmail } from '@/lib/email';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -190,6 +190,66 @@ async function createLineBookingRequest(logId, channelProviderId, lineUserId, pr
   return `✓ ${provider.name}へ予約をリクエストしました（希望日時: ${whenText}）。店舗からのご連絡をお待ちください。`;
 }
 
+// 代替日時の提案（counter_proposed）の通知に付けた「この日時で承認する」から呼ばれる
+// （でお報告2026-09-09：代替案の通知が文字だけで、そこからの操作ができなかった）。
+// app/my-reservations/page.js の「この日時で承認する」ボタンと同じ効果
+// （status→'approved'、confirmed_date/timeにcounter_date/timeを反映）を、
+// Supabaseの認証トークンを持たないLINEのトーク画面から起こすため、
+// ここではservice-role権限で直接更新する（本人確認はverifyLineIdentityで行う）。
+async function acceptCounterProposal(rid, channelProviderId, lineUserId) {
+  if (!lineUserId) return '本人確認ができませんでした。';
+  const { data: r, error } = await supabase.from('reservations').select('*').eq('id', rid).single();
+  if (error || !r) return 'この予約が見つかりませんでした。';
+  if (r.status !== 'counter_proposed') return 'この提案は既に対応済みです。';
+
+  if (!(await verifyLineIdentity(channelProviderId, r.user_id, lineUserId))) {
+    console.warn('[line/webhook] accept_counter: identity mismatch', { rid, channelProviderId });
+    return '本人確認ができませんでした。';
+  }
+
+  const { error: updateError } = await supabase
+    .from('reservations')
+    .update({ status: 'approved', confirmed_date: r.counter_date, confirmed_time: r.counter_time, counter_expires_at: null })
+    .eq('id', rid);
+  if (updateError) {
+    console.error('[line/webhook] accept_counter update error', updateError);
+    return '承認に失敗しました。マイページから直接お試しください。';
+  }
+  return `✓ ${fmtJa(r.counter_date)} ${r.counter_time || ''}で承認しました。当日お待ちしております。`;
+}
+
+// 同じ通知の「キャンセルする」から呼ばれる。掲載者への通知（メール・LINE）は
+// PATCH /api/reservations/[id] のcancelled分岐と同じ内容をここでも行う
+// （LINE発の操作はそちらを経由しないため、通知が漏れないよう複製している）。
+async function cancelReservationFromLine(rid, channelProviderId, lineUserId) {
+  if (!lineUserId) return '本人確認ができませんでした。';
+  const { data: r, error } = await supabase.from('reservations').select('*').eq('id', rid).single();
+  if (error || !r) return 'この予約が見つかりませんでした。';
+  if (['cancelled', 'visited', 'rejected'].includes(r.status)) return 'この予約は既に対応済みです。';
+
+  if (!(await verifyLineIdentity(channelProviderId, r.user_id, lineUserId))) {
+    console.warn('[line/webhook] cancel_reservation: identity mismatch', { rid, channelProviderId });
+    return '本人確認ができませんでした。';
+  }
+
+  const { error: updateError } = await supabase.from('reservations').update({ status: 'cancelled' }).eq('id', rid);
+  if (updateError) {
+    console.error('[line/webhook] cancel_reservation update error', updateError);
+    return 'キャンセルに失敗しました。マイページから直接お試しください。';
+  }
+
+  const { data: provider } = await supabase.from('providers').select('name, email, line_user_id').eq('id', r.provider_id).single();
+  try {
+    await sendCancelledByUserEmail({ reservation: r, providerEmail: provider?.email, providerName: provider?.name });
+  } catch (e) { console.error('[line/webhook] cancel_reservation email', e); }
+  if (provider?.line_user_id) {
+    try {
+      await sendLinePush(provider.line_user_id, `【Fineme】${r.user_name}様が予約をキャンセルしました。\n元の希望日: ${r.reserved_date || ''} ${r.start_time || ''}`);
+    } catch (e) { console.error('[line/webhook] cancel_reservation provider push', e); }
+  }
+  return '予約をキャンセルしました。';
+}
+
 export async function POST(request, { params }) {
   const { providerId } = params;
   const { secret, token } = await resolveChannel(providerId);
@@ -235,6 +295,16 @@ export async function POST(request, { params }) {
       if (!lid) continue;
       const preferredDateTime = event.postback?.params?.datetime;
       const message = await createLineBookingRequest(lid, providerId, event.source?.userId, preferredDateTime);
+      if (event.replyToken) await sendLineReply(event.replyToken, message, token);
+    } else if (action === 'accept_counter') {
+      const rid = data.get('rid');
+      if (!rid) continue;
+      const message = await acceptCounterProposal(rid, providerId, event.source?.userId);
+      if (event.replyToken) await sendLineReply(event.replyToken, message, token);
+    } else if (action === 'cancel_reservation') {
+      const rid = data.get('rid');
+      if (!rid) continue;
+      const message = await cancelReservationFromLine(rid, providerId, event.source?.userId);
       if (event.replyToken) await sendLineReply(event.replyToken, message, token);
     }
   }
