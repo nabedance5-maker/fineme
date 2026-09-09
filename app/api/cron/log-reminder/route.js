@@ -41,7 +41,9 @@ function buildStoreLogMessage(booking, reminder, resolveAxisFn) {
 // 何もできず埋もれてしまうための対策。店舗別LINEチャネル宛は元々このボタンが無く
 // プレーンテキストのみだったため、同じ対策が効いていなかった（でお報告2026-09-09）。
 // provider_slug を持つ行（＝店舗と紐づいている）かつ来店予定日がまだ無い行には
-// 「予約をリクエスト」も足す（来店日はLINEのトーク上で店舗と相談する前提）。
+// 「予約をリクエスト」も足す（希望日時をdatetimepickerで一緒に取る。当初は日時を
+// 聞かずpostback即送信だったが、でお指摘「日時をその場で希望を送れないと使えない」を
+// 受けて変更。来店日は確定ではなくLINEのトーク上で最終すり合わせる前提）。
 function buildLogColumns(logs, todayStr) {
   return logs.slice(0, 10).map(l => {
     const def = resolveAxis(l.axis, l.custom_icon);
@@ -53,7 +55,7 @@ function buildLogColumns(logs, todayStr) {
       { type: 'datetimepicker', label: '日付を選ぶ', data: `action=log_visit_pick&lid=${l.id}`, mode: 'date', initial: todayStr, max: todayStr },
     ];
     if (l.kind === 'booking' && l.provider_slug) {
-      actions.push({ type: 'postback', label: '予約をリクエスト', data: `action=book_request&lid=${l.id}`, displayText: `${l.name} に予約をリクエスト` });
+      actions.push({ type: 'datetimepicker', label: '予約をリクエスト', data: `action=book_request&lid=${l.id}`, mode: 'datetime', initial: `${todayStr}T10:00` });
     }
     return {
       title: `${def.icon} ${l.name}`.slice(0, 40),

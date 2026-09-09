@@ -1,7 +1,9 @@
 // POST /api/me/service-logs/[id]/book-request — New Me LogのカードからFineme掲載店舗へ予約をリクエストする
 // でお要望2026-09-09：「Log内のその店舗の項目に、予約リクエストをLog内のまま送れる
-// 仕組みがないと使いづらい」。フォーム入力を挟まず、任意の一言メッセージだけで送る
-// （来店日はまだ決めない＝pendingで作成し、店舗からの連絡を待つ）。
+// 仕組みがないと使いづらい」。初版は日時を聞かずに送る設計だったが、続けてでお指摘
+// 「日時をその場で希望を送れないと使えない」を受け、希望日（必須）・希望時間（任意）を
+// 追加した。あくまで「希望」であり確定ではない＝pendingで作成し、店舗からの連絡を待つ
+// （カレンダーの空き枠から選ぶapp/booking/scheduleの本格フローとは別の、もっと軽い経路）。
 // LINEの「予約をリクエスト」ボタン（app/api/line/webhook/[providerId]/route.js の
 // createLineBookingRequest）と設計思想は同じ。こちらはログイン中の本人確認ができるため、
 // 連絡先には実際のメールアドレスを使える。
@@ -27,6 +29,11 @@ export async function POST(request, { params }) {
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
   const message = (body.message || '').trim().slice(0, 500);
+  const preferredDate = body.preferred_date || '';
+  const preferredTime = body.preferred_time || '';
+  if (!preferredDate || !/^\d{4}-\d{2}-\d{2}$/.test(preferredDate)) {
+    return Response.json({ error: '希望日を選んでください' }, { status: 400 });
+  }
 
   const { data: log, error: findError } = await supabase
     .from('user_service_logs')
@@ -62,7 +69,8 @@ export async function POST(request, { params }) {
 
   const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single();
   const userName = profile?.display_name || user.email || 'Fineme会員';
-  const note = `New Me Logから予約をリクエストしました（${log.name}）。${message ? `メッセージ: ${message}` : '来店日はご相談させてください。'}`;
+  const whenText = `${preferredDate}${preferredTime ? ` ${preferredTime}` : ''}`;
+  const note = `New Me Logから予約をリクエストしました（${log.name}）。希望日時: ${whenText}（確定ではありません）${message ? ` / メッセージ: ${message}` : ''}`;
 
   const { data: reservation, error: insertError } = await supabase
     .from('reservations')
@@ -74,17 +82,22 @@ export async function POST(request, { params }) {
       note,
       status: 'pending',
       origin: 'newme_log',
+      reserved_date: preferredDate,
+      start_time: preferredTime || null,
     })
     .select()
     .single();
   if (insertError) return Response.json({ error: insertError.message }, { status: 500 });
 
   try {
-    await sendLineBookingRequestEmail({ providerEmail: provider.email, providerName: provider.name, userName, note });
+    await sendLineBookingRequestEmail({
+      providerEmail: provider.email, providerName: provider.name, userName, note,
+      preferredDate, preferredTime,
+    });
   } catch (e) { console.error('[book-request] email', e); }
   if (provider.line_user_id) {
     try {
-      await sendLinePush(provider.line_user_id, `【Fineme】New Me Logから予約リクエストが届きました\nお客様: ${userName}\n${log.name}\n${message ? `メッセージ: ${message}\n` : ''}管理画面からご確認ください。`);
+      await sendLinePush(provider.line_user_id, `【Fineme】New Me Logから予約リクエストが届きました\nお客様: ${userName}\n${log.name}\n希望日時: ${whenText}（確定ではありません）\n${message ? `メッセージ: ${message}\n` : ''}管理画面からご確認ください。`);
     } catch (e) { console.error('[book-request] provider push', e); }
   }
 

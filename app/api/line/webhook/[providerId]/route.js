@@ -104,10 +104,11 @@ async function recordLineVisit(logId, channelProviderId, lineUserId, visitedDate
 }
 
 // New Me Log のリマインドに付けた「予約をリクエスト」から呼ばれる（でお要望2026-09-09）。
-// フォーム入力を挟まずボタン1つで送るため、来店日はまだ決めない＝reservationsに
-// reserved_date/start_timeを入れずpendingで作るだけ。続きはLINEのトーク画面で
-// 店舗と直接すり合わせてもらう前提（user_contactにその旨を明記して送る）。
-async function createLineBookingRequest(logId, channelProviderId, lineUserId) {
+// 初版はpostbackボタン1つで日時を聞かずに送る設計だったが、でお指摘「日時をその場で
+// 希望を送れないと使えない」を受け、datetimepicker（mode:'datetime'）に変更して
+// 希望日時を一緒に取れるようにした。preferredDateTime は "YYYY-MM-DDTHH:mm" 形式
+// （LINEの仕様）。取れなかった場合のみ、従来通り日時未定として送る。
+async function createLineBookingRequest(logId, channelProviderId, lineUserId, preferredDateTime) {
   if (!lineUserId) return '本人確認ができませんでした。';
 
   const { data: log, error: findError } = await supabase
@@ -144,7 +145,12 @@ async function createLineBookingRequest(logId, channelProviderId, lineUserId) {
 
   const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', log.user_id).single();
   const userName = profile?.display_name || 'Fineme会員（LINEより）';
-  const note = `New Me LogのLINEから予約をリクエストしました（${log.name}）。来店日はLINEでご相談ください。`;
+
+  const m = preferredDateTime && /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})$/.exec(preferredDateTime);
+  const preferredDate = m ? m[1] : null;
+  const preferredTime = m ? m[2] : null;
+  const whenText = preferredDate ? `${preferredDate} ${preferredTime}（確定ではありません）` : 'LINEでご相談ください';
+  const note = `New Me LogのLINEから予約をリクエストしました（${log.name}）。希望日時: ${whenText}`;
 
   const { error: insertError } = await supabase
     .from('reservations')
@@ -156,6 +162,8 @@ async function createLineBookingRequest(logId, channelProviderId, lineUserId) {
       note,
       status: 'pending',
       origin: 'line_log',
+      reserved_date: preferredDate,
+      start_time: preferredTime,
     });
   if (insertError) {
     console.error('[line/webhook] book_request insert error', insertError);
@@ -163,16 +171,19 @@ async function createLineBookingRequest(logId, channelProviderId, lineUserId) {
   }
 
   try {
-    await sendLineBookingRequestEmail({ providerEmail: provider.email, providerName: provider.name, userName, note });
+    await sendLineBookingRequestEmail({
+      providerEmail: provider.email, providerName: provider.name, userName, note,
+      preferredDate, preferredTime,
+    });
   } catch (e) { console.error('[line/webhook] book_request email', e); }
 
   if (provider.line_user_id) {
     try {
-      await sendLinePush(provider.line_user_id, `【Fineme】New Me Logから予約リクエストが届きました\nお客様: ${userName}\n${log.name}\n来店日はLINEでご相談ください。管理画面からもご確認いただけます。`);
+      await sendLinePush(provider.line_user_id, `【Fineme】New Me Logから予約リクエストが届きました\nお客様: ${userName}\n${log.name}\n希望日時: ${whenText}\n管理画面からもご確認いただけます。`);
     } catch (e) { console.error('[line/webhook] book_request provider push', e); }
   }
 
-  return `✓ ${provider.name}へ予約をリクエストしました。店舗からのご連絡をお待ちください。`;
+  return `✓ ${provider.name}へ予約をリクエストしました（希望日時: ${whenText}）。店舗からのご連絡をお待ちください。`;
 }
 
 export async function POST(request, { params }) {
@@ -218,7 +229,8 @@ export async function POST(request, { params }) {
     } else if (action === 'book_request') {
       const lid = data.get('lid');
       if (!lid) continue;
-      const message = await createLineBookingRequest(lid, providerId, event.source?.userId);
+      const preferredDateTime = event.postback?.params?.datetime;
+      const message = await createLineBookingRequest(lid, providerId, event.source?.userId, preferredDateTime);
       if (event.replyToken) await sendLineReply(event.replyToken, message, token);
     }
   }

@@ -317,6 +317,17 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-book-request-btn { flex: 1 1 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; background: rgba(107,155,255,0.1); border: 1px solid rgba(107,155,255,0.35); color: #8fb3ff; }
       .log-book-request-btn:hover { background: rgba(107,155,255,0.18); }
       .log-book-request-btn:disabled { opacity: .6; cursor: default; }
+      /* 「予約をリクエスト」の希望日時フォーム。.log-fieldはモーダルと共通のスタイル */
+      .log-book-form { flex: 1 1 100%; margin-top: 10px; padding: 14px; background: rgba(107,155,255,0.06); border: 1px solid rgba(107,155,255,0.25); border-radius: 12px; }
+      .log-book-form .log-field { margin-bottom: 10px; }
+      .log-book-form .log-field:last-of-type { margin-bottom: 0; }
+      .log-book-form-actions { display: flex; gap: 8px; margin-top: 12px; }
+      .log-book-submit-btn, .log-book-cancel-btn { flex: 1; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; }
+      .log-book-submit-btn { background: rgba(107,155,255,0.16); border: 1px solid rgba(107,155,255,0.45); color: #8fb3ff; }
+      .log-book-submit-btn:hover { background: rgba(107,155,255,0.26); }
+      .log-book-submit-btn:disabled { opacity: .6; cursor: default; }
+      .log-book-cancel-btn { background: rgba(232,228,220,0.04); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); }
+      .log-book-cancel-btn:hover { border-color: rgba(232,228,220,0.3); color: rgba(232,228,220,0.85); }
 
       /* 記録できたことを目に見える形で返す */
       .log-toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(18px);
@@ -404,6 +415,7 @@ export default function ServiceLog({ withSideNav = false }) {
     let hasDiagnosis = false;
     let hasMirror = false;
     let activeFvSlide = 0;    // FVカード／支出推移カルーセルの現在ページ（render()での再構築後も保持する）
+    let bookFormOpenId = null; // 「予約をリクエスト」の希望日時フォームを開いているログid（でお指摘2026-09-09：日時の希望を送れないと使えない）
     let analysisGoal = 'both'; // 'save' | 'effect' | 'both'（「支出から見えること」の目的設定）
     try { analysisGoal = localStorage.getItem('fineme:log:goal') || 'both'; } catch {}
 
@@ -1067,8 +1079,27 @@ export default function ServiceLog({ withSideNav = false }) {
                   <span class="log-visit-pick-label" data-visit-pick-label="${log.id}">📅 日付を選ぶ</span>
                   <input type="date" class="log-visit-pick-input" data-visit-date="${log.id}" max="${todayStr}" />
                 </label>
-                ${canBookRequest ? `<button class="log-book-request-btn" data-book-request="${log.id}">📮 予約をリクエスト</button>` : ''}
+                ${canBookRequest && bookFormOpenId !== log.id ? `<button class="log-book-request-btn" data-book-request="${log.id}">📮 予約をリクエスト</button>` : ''}
               </div>
+              ${canBookRequest && bookFormOpenId === log.id ? `
+                <div class="log-book-form" data-book-form="${log.id}">
+                  <div class="log-field">
+                    <label>希望日</label>
+                    <input type="date" class="log-book-date" data-book-date="${log.id}" min="${todayStr}" />
+                  </div>
+                  <div class="log-field">
+                    <label>希望時間（任意）</label>
+                    <input type="time" class="log-book-time" data-book-time="${log.id}" />
+                  </div>
+                  <div class="log-field">
+                    <label>メッセージ（任意）</label>
+                    <textarea class="log-book-message" data-book-message="${log.id}" placeholder="伝えたいことがあれば"></textarea>
+                  </div>
+                  <div class="log-book-form-actions">
+                    <button class="log-book-submit-btn" data-book-submit="${log.id}">送信する</button>
+                    <button class="log-book-cancel-btn" data-book-cancel="${log.id}">キャンセル</button>
+                  </div>
+                </div>` : ''}
             </div>`;
         }).join('');
         return `<div class="log-axis-section">
@@ -1351,24 +1382,32 @@ export default function ServiceLog({ withSideNav = false }) {
       }
     }
 
-    // Logのカードから「予約をリクエスト」。日時は決めず、任意の一言メッセージだけで
-    // pending予約を作る（でお要望2026-09-09：Log内で完結しないと使いづらい）。
-    // 続きは店舗からの連絡を待つ。来店確認された時点でこのLogが自動更新される。
+    // Logのカードから「予約をリクエスト」。希望日（必須）・希望時間（任意）・
+    // メッセージ（任意）を入力して送る（でお指摘2026-09-09：日時の希望を送れないと
+    // 使えない。初版は任意メッセージのみだったが、実際の予約希望には日時が要る）。
+    // あくまで「希望」であり確定ではない——続きは店舗からの連絡を待つ。
+    // 来店確認された時点でこのLogが自動更新される。
     async function requestBookingFor(id, btn) {
       const log = logs.find(l => String(l.id) === String(id));
       if (!log) return;
-      const message = window.prompt(`${log.name} へ予約をリクエストします。伝えたいことがあれば入力してください（空欄でも送れます）`, '');
-      if (message === null) return; // キャンセル
+      const dateInput = root.querySelector(`[data-book-date="${id}"]`);
+      const timeInput = root.querySelector(`[data-book-time="${id}"]`);
+      const msgInput = root.querySelector(`[data-book-message="${id}"]`);
+      const preferredDate = dateInput?.value || '';
+      if (!preferredDate) { alert('希望日を選んでください'); dateInput?.focus(); return; }
+      const preferredTime = timeInput?.value || '';
+      const message = msgInput?.value || '';
       const label = btn.textContent;
       btn.disabled = true;
       btn.textContent = '送信中…';
       try {
-        const res = await requestBooking(id, message);
+        const res = await requestBooking(id, { preferredDate, preferredTime, message });
+        bookFormOpenId = null;
         showToast(`✓ ${res.providerName || log.name}へ予約をリクエストしました`);
+        render();
         flashCard(id);
       } catch (e) {
         alert(e.message);
-      } finally {
         btn.disabled = false;
         btn.textContent = label;
       }
@@ -1692,7 +1731,11 @@ export default function ServiceLog({ withSideNav = false }) {
         return;
       }
       const bookBtn = e.target.closest('[data-book-request]');
-      if (bookBtn) { requestBookingFor(bookBtn.dataset.bookRequest, bookBtn); return; }
+      if (bookBtn) { bookFormOpenId = bookBtn.dataset.bookRequest; render(); return; }
+      const bookCancelBtn = e.target.closest('[data-book-cancel]');
+      if (bookCancelBtn) { bookFormOpenId = null; render(); return; }
+      const bookSubmitBtn = e.target.closest('[data-book-submit]');
+      if (bookSubmitBtn) { requestBookingFor(bookSubmitBtn.dataset.bookSubmit, bookSubmitBtn); return; }
       // 「日付を選ぶ」は本物のinput type=dateへの直接タップで開く（JSでの仲介なし）ため、
       // ここでのクリックハンドリングは不要
       // Compass が指す軸の登録へ（その軸を選んだ状態でモーダルを開く）
