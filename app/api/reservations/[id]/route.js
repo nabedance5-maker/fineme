@@ -3,6 +3,7 @@
 import { getSupabase } from '@/lib/supabase';
 import { sendReservationStatusEmail, sendVisitConfirmedEmail, sendCancelledByUserEmail } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
+import { resolveLineTarget } from '@/lib/line-channel';
 
 export async function GET(request, context) {
   try {
@@ -75,6 +76,36 @@ export async function PATCH(request, context) {
           providerName: provider?.name,
         });
       } catch (e) { console.error('[status email]', e); }
+    }
+
+    // 承認・お断り・代替提案は、Logで店舗の公式LINEに連携済みならそちらから、
+    // 未連携ならFineme公式からお客様にも通知する（でお指摘2026-09-09）。
+    // これまでメールのみ（かつuser_contactがメール形式の時だけ）で、LINE経由
+    // （origin: line_log）で来たリクエストだと返事が何も届いていなかった。
+    if (notifyStatuses.includes(newStatus) && data.user_id) {
+      try {
+        const { data: profile } = await db.from('profiles').select('line_user_id').eq('id', data.user_id).single();
+        const target = await resolveLineTarget(db, {
+          providerId: data.provider_id,
+          userId: data.user_id,
+          fallbackLineUserId: profile?.line_user_id,
+        });
+        if (target.lineUserId) {
+          const pname = provider?.name || '店舗';
+          const cd = confirmed_date || data.confirmed_date;
+          const ct = confirmed_time || data.confirmed_time;
+          const kd = counter_date || data.counter_date;
+          const kt = counter_time || data.counter_time;
+          const comment = counter_proposal || data.provider_comment;
+          const lineMsgs = {
+            approved: `【${pname}】予約が承認されました✓\n確定日時: ${cd || data.reserved_date || 'ご確認ください'} ${ct || data.start_time || ''}\n直接店舗へご連絡のうえご来店ください。`,
+            rejected: `【${pname}】予約リクエストについてご連絡です。\nご希望の日時での対応が難しいとのことです。${comment ? `\nメッセージ: ${comment}` : ''}`,
+            counter_proposed: `【${pname}】代替日時の提案が届きました。\n提案日時: ${kd || ''} ${kt || ''}\nマイページ（予約一覧）からご確認ください。`,
+          };
+          const msg = lineMsgs[newStatus];
+          if (msg) await sendLinePush(target.lineUserId, msg, target.token);
+        }
+      } catch (e) { console.error('[status line to customer]', e); }
     }
 
     if (newStatus === 'visited' && data.user_contact?.includes('@')) {
