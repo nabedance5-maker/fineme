@@ -3,6 +3,7 @@
 import { getSupabase } from '@/lib/supabase';
 import { sendReservationCreatedEmails } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
+import { notifyCustomerLine } from '@/lib/reservation-notify';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -124,6 +125,14 @@ export async function POST(request) {
     try { await sendLinePush(provider.line_user_id, lineMsg); }
     catch (e) { console.error('[reservation line]', e); }
   }
+
+  // お客様にも受付確認をLINEで送る（メールはuser_contactがメール形式の時だけだが、
+  // LINEなら電話番号で予約した人にも届く。でお指摘2026-09-09）
+  await notifyCustomerLine(getSupabase(), {
+    userId: user_id,
+    providerId: provider_id,
+    message: `【${provider?.name || '店舗'}】予約リクエストを受け付けました。\n希望日時: ${preferred_date} ${preferred_time}\n店舗からの返答をお待ちください。`,
+  });
 
   // 課金開始は「初回来店時」に行う（PATCH /api/reservations/[id] の visited 処理で実施）
   // 予約作成時点では billing_started を変更しない

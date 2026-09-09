@@ -416,6 +416,7 @@ export default function ServiceLog({ withSideNav = false }) {
     let hasMirror = false;
     let activeFvSlide = 0;    // FVカード／支出推移カルーセルの現在ページ（render()での再構築後も保持する）
     let bookFormOpenId = null; // 「予約をリクエスト」の希望日時フォームを開いているログid（でお指摘2026-09-09：日時の希望を送れないと使えない）
+    const bookServicesCache = {}; // provider_slug -> 公開サービス一覧（予約リクエストのメニュー選択用。でお指摘2026-09-09：メニューが選べないと意味がない）
     let analysisGoal = 'both'; // 'save' | 'effect' | 'both'（「支出から見えること」の目的設定）
     try { analysisGoal = localStorage.getItem('fineme:log:goal') || 'both'; } catch {}
 
@@ -1083,7 +1084,14 @@ export default function ServiceLog({ withSideNav = false }) {
                 </label>
                 ${canBookRequest && bookFormOpenId !== log.id ? `<button class="log-book-request-btn" data-book-request="${log.id}">📮 予約をリクエスト</button>` : ''}
               </div>
-              ${canBookRequest && bookFormOpenId === log.id ? `
+              ${canBookRequest && bookFormOpenId === log.id ? (() => {
+                const svc = bookServicesCache[log.provider_slug];
+                const menuOptionsHtml = svc === undefined
+                  ? '<option value="">読み込み中…</option>'
+                  : svc.length
+                    ? ['<option value="">選択してください（任意）</option>', ...svc.map(s => `<option value="${esc(s.name)}">${esc(s.name)}${s.price ? `（¥${Number(s.price).toLocaleString()}）` : ''}</option>`)].join('')
+                    : '<option value="">メニュー未登録（下のメッセージ欄へ）</option>';
+                return `
                 <div class="log-book-form" data-book-form="${log.id}">
                   <div class="log-field">
                     <label>希望日</label>
@@ -1094,9 +1102,15 @@ export default function ServiceLog({ withSideNav = false }) {
                     <input type="time" class="log-book-time" data-book-time="${log.id}" />
                   </div>
                   <div class="log-field">
+                    <label>利用したいメニュー（任意）</label>
+                    <select class="log-book-menu" data-book-menu="${log.id}">${menuOptionsHtml}</select>
+                  </div>
+                  <div class="log-field">
                     <label>メッセージ（任意）</label>
                     <textarea class="log-book-message" data-book-message="${log.id}" placeholder="伝えたいことがあれば"></textarea>
-                  </div>
+                  </div>`;
+              })() : ''}
+              ${canBookRequest && bookFormOpenId === log.id ? `
                   <div class="log-book-form-actions">
                     <button class="log-book-submit-btn" data-book-submit="${log.id}">送信する</button>
                     <button class="log-book-cancel-btn" data-book-cancel="${log.id}">キャンセル</button>
@@ -1384,9 +1398,26 @@ export default function ServiceLog({ withSideNav = false }) {
       }
     }
 
+    // 予約リクエストフォームのメニュー選択肢を取得する。掲載者ダッシュボードの
+    // 来店確認モーダルと同じ公開サービス一覧（/api/providers/[slug]/services、
+    // provider_servicesテーブル）を使う——名前を揃えることで、店舗が来店確認する時に
+    // 【メニュー】タグから自動でプリセット選択される（app/provider/dashboard/page.js の
+    // visitModalRowHtml がこの命名規則で照合している。でお指摘2026-09-09：
+    // 「Logからの予約リクエストの時にメニューが選べないと意味がない」）。
+    async function loadBookServices(slug) {
+      if (!slug || bookServicesCache[slug]) return;
+      bookServicesCache[slug] = []; // 二重フェッチ防止（取得後に上書き）
+      try {
+        const r = await fetch(`/api/providers/${encodeURIComponent(slug)}/services`);
+        bookServicesCache[slug] = r.ok ? await r.json() : [];
+      } catch { bookServicesCache[slug] = []; }
+      if (bookFormOpenId) render();
+    }
+
     // Logのカードから「予約をリクエスト」。希望日（必須）・希望時間（任意）・
-    // メッセージ（任意）を入力して送る（でお指摘2026-09-09：日時の希望を送れないと
-    // 使えない。初版は任意メッセージのみだったが、実際の予約希望には日時が要る）。
+    // 利用したいメニュー（任意）・メッセージ（任意）を入力して送る
+    // （でお指摘2026-09-09：日時の希望を送れないと使えない／メニューが選べないと
+    // 意味がない。初版は任意メッセージのみだったが、実際の予約希望には両方が要る）。
     // あくまで「希望」であり確定ではない——続きは店舗からの連絡を待つ。
     // 来店確認された時点でこのLogが自動更新される。
     async function requestBookingFor(id, btn) {
@@ -1394,16 +1425,18 @@ export default function ServiceLog({ withSideNav = false }) {
       if (!log) return;
       const dateInput = root.querySelector(`[data-book-date="${id}"]`);
       const timeInput = root.querySelector(`[data-book-time="${id}"]`);
+      const menuInput = root.querySelector(`[data-book-menu="${id}"]`);
       const msgInput = root.querySelector(`[data-book-message="${id}"]`);
       const preferredDate = dateInput?.value || '';
       if (!preferredDate) { alert('希望日を選んでください'); dateInput?.focus(); return; }
       const preferredTime = timeInput?.value || '';
+      const menuName = menuInput?.value || '';
       const message = msgInput?.value || '';
       const label = btn.textContent;
       btn.disabled = true;
       btn.textContent = '送信中…';
       try {
-        const res = await requestBooking(id, { preferredDate, preferredTime, message });
+        const res = await requestBooking(id, { preferredDate, preferredTime, menuName, message });
         bookFormOpenId = null;
         showToast(`✓ ${res.providerName || log.name}へ予約をリクエストしました`);
         render();
@@ -1733,7 +1766,12 @@ export default function ServiceLog({ withSideNav = false }) {
         return;
       }
       const bookBtn = e.target.closest('[data-book-request]');
-      if (bookBtn) { bookFormOpenId = bookBtn.dataset.bookRequest; render(); return; }
+      if (bookBtn) {
+        bookFormOpenId = bookBtn.dataset.bookRequest;
+        render();
+        loadBookServices(logs.find(l => String(l.id) === bookFormOpenId)?.provider_slug);
+        return;
+      }
       const bookCancelBtn = e.target.closest('[data-book-cancel]');
       if (bookCancelBtn) { bookFormOpenId = null; render(); return; }
       const bookSubmitBtn = e.target.closest('[data-book-submit]');

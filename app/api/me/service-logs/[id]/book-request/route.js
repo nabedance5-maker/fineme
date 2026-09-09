@@ -31,6 +31,7 @@ export async function POST(request, { params }) {
   const message = (body.message || '').trim().slice(0, 500);
   const preferredDate = body.preferred_date || '';
   const preferredTime = body.preferred_time || '';
+  const menuName = (body.menu_name || '').trim().slice(0, 100);
   if (!preferredDate || !/^\d{4}-\d{2}-\d{2}$/.test(preferredDate)) {
     return Response.json({ error: '希望日を選んでください' }, { status: 400 });
   }
@@ -70,7 +71,14 @@ export async function POST(request, { params }) {
   const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single();
   const userName = profile?.display_name || user.email || 'Fineme会員';
   const whenText = `${preferredDate}${preferredTime ? ` ${preferredTime}` : ''}`;
-  const note = `New Me Logから予約をリクエストしました（${log.name}）。希望日時: ${whenText}（確定ではありません）${message ? ` / メッセージ: ${message}` : ''}`;
+  // 【メニュー】タグは掲載者ダッシュボードの来店確認モーダルが読み取る命名規則
+  // （app/provider/dashboard/page.js の visitModalRowHtml）。名前を
+  // /api/providers/[slug]/services の値とそのまま揃えているので、店舗が来店確認する
+  // 時にメニューが自動でプリセット選択される（でお指摘2026-09-09）。
+  const note = [
+    menuName ? `【メニュー】${menuName}` : '',
+    `New Me Logから予約をリクエストしました（${log.name}）。希望日時: ${whenText}（確定ではありません）${message ? ` / メッセージ: ${message}` : ''}`,
+  ].filter(Boolean).join('\n');
 
   const { data: reservation, error: insertError } = await supabase
     .from('reservations')
@@ -97,7 +105,7 @@ export async function POST(request, { params }) {
   } catch (e) { console.error('[book-request] email', e); }
   if (provider.line_user_id) {
     try {
-      await sendLinePush(provider.line_user_id, `【Fineme】New Me Logから予約リクエストが届きました\nお客様: ${userName}\n${log.name}\n希望日時: ${whenText}（確定ではありません）\n${message ? `メッセージ: ${message}\n` : ''}管理画面からご確認ください。`);
+      await sendLinePush(provider.line_user_id, `【Fineme】New Me Logから予約リクエストが届きました\nお客様: ${userName}\n${log.name}\n希望日時: ${whenText}（確定ではありません）\n${menuName ? `メニュー: ${menuName}\n` : ''}${message ? `メッセージ: ${message}\n` : ''}管理画面からご確認ください。`);
     } catch (e) { console.error('[book-request] provider push', e); }
   }
 

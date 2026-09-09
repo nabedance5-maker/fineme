@@ -3,7 +3,7 @@
 import { getSupabase } from '@/lib/supabase';
 import { sendReservationStatusEmail, sendVisitConfirmedEmail, sendCancelledByUserEmail } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
-import { resolveLineTarget } from '@/lib/line-channel';
+import { notifyCustomerLine } from '@/lib/reservation-notify';
 
 export async function GET(request, context) {
   try {
@@ -78,40 +78,38 @@ export async function PATCH(request, context) {
       } catch (e) { console.error('[status email]', e); }
     }
 
-    // 承認・お断り・代替提案は、Logで店舗の公式LINEに連携済みならそちらから、
-    // 未連携ならFineme公式からお客様にも通知する（でお指摘2026-09-09）。
+    // 承認・お断り・代替提案・来店確認は、メールに加えてお客様にもLINEで通知する
+    // （でお指摘2026-09-09：「予約や来店に関してメールで通知してるやつ全部店舗の
+    // 公式LINEからも流した方がいい」）。店舗の公式LINEに連携済みならそちらから、
+    // 未連携ならFineme公式からのフォールバック（lib/reservation-notify.js）。
     // これまでメールのみ（かつuser_contactがメール形式の時だけ）で、LINE経由
     // （origin: line_log）で来たリクエストだと返事が何も届いていなかった。
-    if (notifyStatuses.includes(newStatus) && data.user_id) {
-      try {
-        const { data: profile } = await db.from('profiles').select('line_user_id').eq('id', data.user_id).single();
-        const target = await resolveLineTarget(db, {
-          providerId: data.provider_id,
-          userId: data.user_id,
-          fallbackLineUserId: profile?.line_user_id,
-        });
-        if (target.lineUserId) {
-          const pname = provider?.name || '店舗';
-          const cd = confirmed_date || data.confirmed_date;
-          const ct = confirmed_time || data.confirmed_time;
-          const kd = counter_date || data.counter_date;
-          const kt = counter_time || data.counter_time;
-          const comment = counter_proposal || data.provider_comment;
-          const lineMsgs = {
-            approved: `【${pname}】予約が承認されました✓\n確定日時: ${cd || data.reserved_date || 'ご確認ください'} ${ct || data.start_time || ''}\n直接店舗へご連絡のうえご来店ください。`,
-            rejected: `【${pname}】予約リクエストについてご連絡です。\nご希望の日時での対応が難しいとのことです。${comment ? `\nメッセージ: ${comment}` : ''}`,
-            counter_proposed: `【${pname}】代替日時の提案が届きました。\n提案日時: ${kd || ''} ${kt || ''}\nマイページ（予約一覧）からご確認ください。`,
-          };
-          const msg = lineMsgs[newStatus];
-          if (msg) await sendLinePush(target.lineUserId, msg, target.token);
-        }
-      } catch (e) { console.error('[status line to customer]', e); }
+    if (notifyStatuses.includes(newStatus)) {
+      const pname = provider?.name || '店舗';
+      const cd = confirmed_date || data.confirmed_date;
+      const ct = confirmed_time || data.confirmed_time;
+      const kd = counter_date || data.counter_date;
+      const kt = counter_time || data.counter_time;
+      const comment = counter_proposal || data.provider_comment;
+      const lineMsgs = {
+        approved: `【${pname}】予約が承認されました✓\n確定日時: ${cd || data.reserved_date || 'ご確認ください'} ${ct || data.start_time || ''}\n直接店舗へご連絡のうえご来店ください。`,
+        rejected: `【${pname}】予約リクエストについてご連絡です。\nご希望の日時での対応が難しいとのことです。${comment ? `\nメッセージ: ${comment}` : ''}`,
+        counter_proposed: `【${pname}】代替日時の提案が届きました。\n提案日時: ${kd || ''} ${kt || ''}\nマイページ（予約一覧）からご確認ください。`,
+      };
+      await notifyCustomerLine(db, { userId: data.user_id, providerId: data.provider_id, message: lineMsgs[newStatus] });
     }
 
     if (newStatus === 'visited' && data.user_contact?.includes('@')) {
       try {
         await sendVisitConfirmedEmail({ reservation: data, userEmail: data.user_contact, userName: data.user_name, providerName: provider?.name });
       } catch (e) { console.error('[visit email]', e); }
+    }
+    if (newStatus === 'visited') {
+      const pname = provider?.name || '店舗';
+      await notifyCustomerLine(db, {
+        userId: data.user_id, providerId: data.provider_id,
+        message: `【${pname}】ご来店ありがとうございました✓\nまたのお越しをお待ちしております。`,
+      });
     }
 
     // 来店確認：紐づくNew Me Logがあれば来店日を反映し、次回目安を再計算させる。
