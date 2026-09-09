@@ -114,9 +114,17 @@ export async function PATCH(request, context) {
     }
     if (newStatus === 'visited') {
       const pname = provider?.name || '店舗';
+      // 体験談への導線ボタンを添える（でお要望2026-09-09）。3〜7日後にも
+      // cron/story-reminderで別途リマインドが飛ぶが、来店直後の一番気持ちが
+      // 動いているタイミングでも書ける入口を用意しておく。マイページ経由の
+      // フォーム（/mypage/story-submit）は自分の予約履歴からメニュー・店舗が
+      // 選べるため、店舗紐づけの無い公開フォーム（/story-submit）より適している。
       await notifyCustomerLine(db, {
         userId: data.user_id, providerId: data.provider_id,
         message: `【${pname}】ご来店ありがとうございました✓\nまたのお越しをお待ちしております。`,
+        quickReplyItems: [
+          { label: '体験談を書く', type: 'uri', uri: 'https://www.fineme.me/mypage/story-submit' },
+        ],
       });
     }
 
