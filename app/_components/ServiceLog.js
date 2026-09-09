@@ -1019,10 +1019,12 @@ export default function ServiceLog({ withSideNav = false }) {
           const providerHref = log.provider_slug
             ? (log.provider_type === 'affiliate' ? `/affiliate/${log.provider_slug}` : `/provider/${log.provider_slug}`)
             : null;
-          // Fineme掲載店舗（アフィリエイト経由は除く）で、来店予定日がまだ無い行だけ
-          // 「予約をリクエスト」を出す（でお要望2026-09-09：Logのまま予約リクエストを
-          // 送れないと使いづらい。既に予約済みの行に重ねて出す意味は無いので隠す）
-          const canBookRequest = !!log.provider_slug && log.provider_type !== 'affiliate' && !log.next_visit && isLoggedIn();
+          // Fineme掲載店舗（アフィリエイト経由は除く）なら常に「予約をリクエスト」を出す。
+          // 当初はnext_visitが入っている行では隠していたが、でお報告2026-09-09で
+          // ボタンが出ないと気づかれた——next_visitが入っている行こそ、それが古い/不確かな
+          // 予定（例：店舗経由の予約が来店確認されずnext_visitが更新されないままの行）の
+          // ことがあり、そここそ再リクエストしたい場面なので隠す理由が無かった。
+          const canBookRequest = !!log.provider_slug && log.provider_type !== 'affiliate' && isLoggedIn();
           const since = weeksSince(log.last_visit);
           const etDef = resolveEntryType(log.entry_type);
           const freq = effectiveFreq(log);
