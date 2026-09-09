@@ -3,6 +3,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
+import MypageSideNav from '@/app/mypage/_components/MypageSideNav';
 
 const supabaseAnon = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -203,36 +204,19 @@ function MyReservationsContent() {
   }
 
   return (
-    <>
+    <main className="section">
     <style>{`
-      .resv-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; max-width: 980px; margin: 0 auto; padding: 40px 20px 80px; }
-      .resv-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; min-width: 0; }
-      .resv-sidenav .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-      .resv-sidenav .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
-      .resv-sidenav .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
-      @media (max-width: 640px) {
-        .resv-layout { grid-template-columns: 1fr; padding: 16px 16px 60px; }
-        .resv-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
-        .resv-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; }
-        .resv-sidenav nav::-webkit-scrollbar { display: none; }
-        .resv-sidenav nav .sidenav-link { margin-top: 0 !important; }
-        .resv-sidenav .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; }
-      }
+      .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
+      .mypage-sidenav, .mypage-content { min-width: 0; }
+      .mypage-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+      @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; min-width: 0; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; overflow-y: visible; gap: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav .sidenav-link { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
+      .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
+      .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
+      .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
     `}</style>
-    <div className="resv-layout">
-      <aside className="resv-sidenav">
-        <nav>
-          <Link href="/mypage" className="sidenav-link">ホーム</Link>
-          <Link href="/diagnosis/result" className="sidenav-link">New Me Navi</Link>
-          <Link href="/mypage/navi" className="sidenav-link">New Me Map</Link>
-          <Link href="/mypage/favorites" className="sidenav-link">お気に入り</Link>
-          <Link href="/mypage/history" className="sidenav-link">閲覧履歴</Link>
-          <Link href="/my-reservations" className="sidenav-link sidenav-link--active">予約履歴</Link>
-          <Link href="/mypage/story-submit" className="sidenav-link">体験談を書く</Link>
-          <Link href="/mypage/profile" className="sidenav-link">プロフィール編集</Link>
-        </nav>
-      </aside>
-    <div style={{ maxWidth: '680px', margin: '0 auto', padding: '0', minWidth: 0 }}>
+    <div className="container mypage-layout">
+      <MypageSideNav />
+    <section className="stack mypage-content" style={{ maxWidth: '680px', minWidth: 0 }}>
       <h1 style={{ fontSize: 'clamp(20px,4vw,26px)', fontWeight: '800', margin: '0 0 8px' }}>予約履歴</h1>
       <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 28px' }}>
         予約リクエストの状況を確認できます。代替提案への回答もこちらから行えます。
@@ -282,9 +266,9 @@ function MyReservationsContent() {
       <div style={{ marginTop: '32px', textAlign: 'center' }}>
         <Link href="/search" style={{ fontSize: '14px', color: '#6b7280', textDecoration: 'none' }}>← サービスを探す</Link>
       </div>
+    </section>
     </div>
-    </div>
-    </>
+    </main>
   );
 }
 
