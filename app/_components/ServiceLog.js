@@ -8,7 +8,7 @@ import {
   monthlyTrend, buildAnalysis,
   ENTRY_TYPES, DEFAULT_ENTRY_TYPE, resolveEntryType,
 } from '@/lib/log-axes';
-import { listLogs, createLog, updateLog, removeLog, recordVisit, getAccessToken } from '@/lib/log-store';
+import { listLogs, createLog, updateLog, removeLog, recordVisit, requestBooking, getAccessToken } from '@/lib/log-store';
 import { TRACKS, DEFAULT_TRACK, getKnownTrackId } from '@/lib/track';
 
 // 次回日の算出は lib/log-axes.js の idealNextDate に統一した
@@ -314,6 +314,9 @@ export default function ServiceLog({ withSideNav = false }) {
          アイコンの当たり判定自体をinput全体に広げる */
       .log-visit-pick-input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
       .log-visit-today:disabled { opacity: .6; cursor: default; }
+      .log-book-request-btn { flex: 1 1 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; background: rgba(107,155,255,0.1); border: 1px solid rgba(107,155,255,0.35); color: #8fb3ff; }
+      .log-book-request-btn:hover { background: rgba(107,155,255,0.18); }
+      .log-book-request-btn:disabled { opacity: .6; cursor: default; }
 
       /* 記録できたことを目に見える形で返す */
       .log-toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(18px);
@@ -1004,6 +1007,10 @@ export default function ServiceLog({ withSideNav = false }) {
           const providerHref = log.provider_slug
             ? (log.provider_type === 'affiliate' ? `/affiliate/${log.provider_slug}` : `/provider/${log.provider_slug}`)
             : null;
+          // Fineme掲載店舗（アフィリエイト経由は除く）で、来店予定日がまだ無い行だけ
+          // 「予約をリクエスト」を出す（でお要望2026-09-09：Logのまま予約リクエストを
+          // 送れないと使いづらい。既に予約済みの行に重ねて出す意味は無いので隠す）
+          const canBookRequest = !!log.provider_slug && log.provider_type !== 'affiliate' && !log.next_visit && isLoggedIn();
           const since = weeksSince(log.last_visit);
           const etDef = resolveEntryType(log.entry_type);
           const freq = effectiveFreq(log);
@@ -1060,6 +1067,7 @@ export default function ServiceLog({ withSideNav = false }) {
                   <span class="log-visit-pick-label" data-visit-pick-label="${log.id}">📅 日付を選ぶ</span>
                   <input type="date" class="log-visit-pick-input" data-visit-date="${log.id}" max="${todayStr}" />
                 </label>
+                ${canBookRequest ? `<button class="log-book-request-btn" data-book-request="${log.id}">📮 予約をリクエスト</button>` : ''}
               </div>
             </div>`;
         }).join('');
@@ -1340,6 +1348,29 @@ export default function ServiceLog({ withSideNav = false }) {
       } catch (e) {
         if (btn) { btn.disabled = false; btn.textContent = label; }
         alert('記録に失敗しました: ' + e.message);
+      }
+    }
+
+    // Logのカードから「予約をリクエスト」。日時は決めず、任意の一言メッセージだけで
+    // pending予約を作る（でお要望2026-09-09：Log内で完結しないと使いづらい）。
+    // 続きは店舗からの連絡を待つ。来店確認された時点でこのLogが自動更新される。
+    async function requestBookingFor(id, btn) {
+      const log = logs.find(l => String(l.id) === String(id));
+      if (!log) return;
+      const message = window.prompt(`${log.name} へ予約をリクエストします。伝えたいことがあれば入力してください（空欄でも送れます）`, '');
+      if (message === null) return; // キャンセル
+      const label = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '送信中…';
+      try {
+        const res = await requestBooking(id, message);
+        showToast(`✓ ${res.providerName || log.name}へ予約をリクエストしました`);
+        flashCard(id);
+      } catch (e) {
+        alert(e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = label;
       }
     }
 
@@ -1660,6 +1691,8 @@ export default function ServiceLog({ withSideNav = false }) {
         markVisited(todayBtn.dataset.visitToday, new Date().toISOString().slice(0, 10), todayBtn);
         return;
       }
+      const bookBtn = e.target.closest('[data-book-request]');
+      if (bookBtn) { requestBookingFor(bookBtn.dataset.bookRequest, bookBtn); return; }
       // 「日付を選ぶ」は本物のinput type=dateへの直接タップで開く（JSでの仲介なし）ため、
       // ここでのクリックハンドリングは不要
       // Compass が指す軸の登録へ（その軸を選んだ状態でモーダルを開く）
