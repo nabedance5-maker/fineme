@@ -1,0 +1,62 @@
+// GET /api/provider/calendar?from=YYYY-MM-DD&to=YYYY-MM-DD → 確定済み予約のカレンダー表示用データ
+// 申請制（承認済み）・即時予約（自動確定）どちらも同じ「確定した予約」として一覧に出す。
+// 未回答の申請中リクエストは対象外（そちらは既存の「予約リクエスト」タブの役割のまま）。
+export const dynamic = 'force-dynamic';
+import { getSupabase } from '@/lib/supabase';
+
+const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
+
+async function getProviderByToken(token) {
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) return null;
+  const { data } = await supabase.from('providers').select('id').eq('email', user.email).single();
+  return data || null;
+}
+
+export async function GET(request) {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
+  if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { searchParams } = new URL(request.url);
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
+  if (!from || !to) return Response.json({ error: 'fromとtoは必須です' }, { status: 400 });
+
+  // confirmed_date（承認済み予約の確定日）とreserved_date（即時予約はここに確定日が入る。
+  // POST /api/reservations の instant分岐でconfirmed_date/reserved_date両方に同じ値を設定済み）
+  // の両方にまたがる可能性があるため、範囲を広めに1ヶ月分見てからJS側で絞り込む方が
+  // シンプル・確実（OR条件でのANDレンジ絞り込みはSupabaseクエリビルダーで書きにくいため）。
+  const { data: rows, error } = await supabase
+    .from('reservations')
+    .select('id, user_name, note, status, reserved_date, start_time, confirmed_date, confirmed_time, staff_id, booking_mode')
+    .eq('provider_id', provider.id)
+    .in('status', ['approved', 'visited'])
+    .gte('reserved_date', from)
+    .lte('reserved_date', to);
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  const staffIds = [...new Set((rows || []).map(r => r.staff_id).filter(Boolean))];
+  let staffMap = {};
+  if (staffIds.length) {
+    const { data: staffRows } = await supabase.from('provider_staff').select('id, name').in('id', staffIds);
+    (staffRows || []).forEach(s => { staffMap[s.id] = s.name; });
+  }
+
+  const result = (rows || [])
+    .map(r => ({
+      id: r.id,
+      date: r.confirmed_date || r.reserved_date,
+      time: r.confirmed_time || r.start_time,
+      user_name: r.user_name,
+      note: r.note,
+      status: r.status,
+      booking_mode: r.booking_mode || 'request',
+      staff_name: r.staff_id ? staffMap[r.staff_id] || null : null,
+    }))
+    .filter(r => r.date >= from && r.date <= to)
+    .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
+
+  return Response.json(result);
+}

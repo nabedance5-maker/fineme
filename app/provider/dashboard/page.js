@@ -46,6 +46,27 @@ export default function ProviderDashboardPage() {
       .pd-page-root .btn-ghost { background: transparent; color: #1a1410; border-color: rgba(26,20,16,0.2); }
       .pd-page-root .btn-ghost:hover { background: rgba(26,20,16,0.05); color: #1a1410; box-shadow: none; }
       .pd-page-root .section-title { color: #1a1410; }
+      /* 予約カレンダー（2026-09-11・hacomono参考、今野くんの実地フィードバックで
+         PC用グリッドをそのままスマホに縮めない設計に）。 */
+      .cal-week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+      .cal-day-col { min-width: 0; }
+      .cal-day-head { text-align: center; font-size: 11px; font-weight: 700; color: rgba(26,20,16,0.55); padding: 6px 2px; border-radius: 8px 8px 0 0; }
+      .cal-day-head.is-today { color: #a8842f; background: rgba(201,168,76,0.12); }
+      .cal-day-body { min-height: 80px; border: 1px solid rgba(26,20,16,0.08); border-radius: 0 0 10px 10px; padding: 6px; display: flex; flex-direction: column; gap: 5px; }
+      .cal-chip { background: rgba(201,168,76,0.1); border-left: 3px solid #c9a84c; border-radius: 6px; padding: 4px 7px; font-size: 11px; line-height: 1.4; cursor: default; }
+      .cal-chip.is-visited { border-left-color: #9ca3af; background: rgba(26,20,16,0.04); opacity: .75; }
+      .cal-chip strong { display: block; font-size: 11.5px; }
+      .cal-mobile { display: none; }
+      .cal-day-pills { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+      .cal-day-pills::-webkit-scrollbar { display: none; }
+      .cal-day-pill { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 14px; border-radius: 12px; border: 1px solid rgba(26,20,16,0.1); background: #fff; font-size: 11px; color: rgba(26,20,16,0.65); cursor: pointer; }
+      .cal-day-pill .cal-pill-date { font-size: 15px; font-weight: 800; color: #1a1410; }
+      .cal-day-pill.is-active { background: rgba(201,168,76,0.16); border-color: #c9a84c; color: #a8842f; }
+      .cal-day-pill.is-active .cal-pill-date { color: #a8842f; }
+      @media (max-width: 640px) {
+        .cal-week-grid { display: none; }
+        .cal-mobile { display: block; }
+      }
       @media (max-width: 900px) {
         .pd-topbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #0a0f1e; border-bottom: 1px solid rgba(201,168,76,0.15); position: fixed; top: 0; left: 0; right: 0; z-index: 40; }
         .tab-nav {
@@ -3415,6 +3436,134 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'sales') { loadSalesOptions(); loadSales(); }
     })();
 
+    // ── 予約カレンダータブ（2026-09-11・でお要望、hacomono参考＋今野くんの実地
+    //    フィードバックでモバイルは横縦二重スクロールにならない専用UIに） ──────
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const authHeadersCal = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+      const labelEl = document.getElementById('cal-week-label');
+      const gridEl = document.getElementById('cal-week-grid');
+      const pillsEl = document.getElementById('cal-day-pills');
+      const agendaEl = document.getElementById('cal-agenda-list');
+      if (!gridEl) return;
+
+      const WEEKDAY_JA = ['日', '月', '火', '水', '木', '金', '土'];
+
+      function fmtDate(d) {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
+      function mondayOf(d) {
+        const day = d.getDay();
+        const diff = day === 0 ? -6 : 1 - day;
+        const m = new Date(d);
+        m.setDate(d.getDate() + diff);
+        m.setHours(0, 0, 0, 0);
+        return m;
+      }
+
+      const todayStr = fmtDate(new Date());
+      let weekStart = mondayOf(new Date());
+      let byDate = {};
+      let selectedMobileDate = todayStr;
+
+      function chipHtml(r) {
+        const timeLabel = r.time ? r.time.slice(0, 5) : '';
+        const staffLabel = r.staff_name ? `<span class="muted">👤 ${esc(r.staff_name)}</span>` : '';
+        return `
+          <div class="cal-chip${r.status === 'visited' ? ' is-visited' : ''}">
+            <strong>${timeLabel} ${esc(r.user_name || '')}</strong>
+            ${staffLabel}
+          </div>
+        `;
+      }
+
+      function weekDates() {
+        return Array.from({ length: 7 }, (_, i) => {
+          const d = new Date(weekStart);
+          d.setDate(weekStart.getDate() + i);
+          return d;
+        });
+      }
+
+      function renderGrid() {
+        const dates = weekDates();
+        gridEl.innerHTML = dates.map(d => {
+          const dateStr = fmtDate(d);
+          const isToday = dateStr === todayStr;
+          const items = (byDate[dateStr] || []);
+          return `
+            <div class="cal-day-col">
+              <div class="cal-day-head${isToday ? ' is-today' : ''}">${WEEKDAY_JA[d.getDay()]}<br>${d.getMonth() + 1}/${d.getDate()}</div>
+              <div class="cal-day-body">
+                ${items.length ? items.map(chipHtml).join('') : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function renderPills() {
+        const dates = weekDates();
+        pillsEl.innerHTML = dates.map(d => {
+          const dateStr = fmtDate(d);
+          const isActive = dateStr === selectedMobileDate;
+          const count = (byDate[dateStr] || []).length;
+          return `
+            <button type="button" class="cal-day-pill${isActive ? ' is-active' : ''}" data-cal-pill="${dateStr}">
+              <span>${WEEKDAY_JA[d.getDay()]}</span>
+              <span class="cal-pill-date">${d.getDate()}</span>
+              <span>${count ? count + '件' : ''}</span>
+            </button>
+          `;
+        }).join('');
+        pillsEl.querySelectorAll('[data-cal-pill]').forEach(btn => btn.addEventListener('click', () => {
+          selectedMobileDate = btn.dataset.calPill;
+          renderPills();
+          renderAgenda();
+        }));
+      }
+
+      function renderAgenda() {
+        const items = byDate[selectedMobileDate] || [];
+        if (!items.length) { agendaEl.innerHTML = '<p class="muted" style="font-size:13px">この日の予約はありません。</p>'; return; }
+        agendaEl.innerHTML = items.map(r => `
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid rgba(26,20,16,0.08);border-radius:10px;margin-bottom:6px;${r.status === 'visited' ? 'opacity:.6' : ''}">
+            <strong style="font-size:13px;flex-shrink:0">${r.time ? r.time.slice(0, 5) : '--:--'}</strong>
+            <div style="flex:1;min-width:0">
+              <strong style="font-size:13px">${esc(r.user_name || '')}</strong>
+              ${r.staff_name ? `<span class="muted" style="font-size:12px;margin-left:6px">👤 ${esc(r.staff_name)}</span>` : ''}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      async function loadWeek() {
+        const dates = weekDates();
+        const from = fmtDate(dates[0]);
+        const to = fmtDate(dates[6]);
+        if (labelEl) labelEl.textContent = `${from} 〜 ${to}`;
+        const res = await fetch(`/api/provider/calendar?from=${from}&to=${to}`, { headers: authHeadersCal() });
+        if (!res.ok) { gridEl.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        byDate = {};
+        rows.forEach(r => { (byDate[r.date] = byDate[r.date] || []).push(r); });
+        if (!dates.some(d => fmtDate(d) === selectedMobileDate)) selectedMobileDate = from;
+        renderGrid();
+        renderPills();
+        renderAgenda();
+      }
+
+      document.getElementById('cal-prev-btn')?.addEventListener('click', () => { weekStart.setDate(weekStart.getDate() - 7); loadWeek(); });
+      document.getElementById('cal-next-btn')?.addEventListener('click', () => { weekStart.setDate(weekStart.getDate() + 7); loadWeek(); });
+      document.getElementById('cal-today-btn')?.addEventListener('click', () => { weekStart = mondayOf(new Date()); selectedMobileDate = todayStr; loadWeek(); });
+
+      document.querySelectorAll('[data-tab="calendar"]').forEach(btn => btn.addEventListener('click', loadWeek, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'calendar') loadWeek();
+    })();
+
     // ── POS・在庫タブ（Phase 3・hacomono/STORES網羅計画） ──────────
     (() => {
       const token = getSupabaseToken();
@@ -3924,6 +4073,7 @@ export default function ProviderDashboardPage() {
             <button className="tab-btn" data-tab="publish">公開設定</button>
             <p className="pd-nav-heading">② 毎日触るタブ</p>
             <button className="tab-btn active" data-tab="stats">📊 概況</button>
+            <button className="tab-btn" data-tab="calendar">📅 予約カレンダー</button>
             <button className="tab-btn" data-tab="requests">📬 予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
             <button className="tab-btn" data-tab="customers">🗒️ New Me Log</button>
             <button className="tab-btn" data-tab="karte">📋 カルテ</button>
@@ -4034,6 +4184,35 @@ export default function ProviderDashboardPage() {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.070 9.436-6.975C23.176 14.393 24 12.458 24 10.314" /></svg>
                 LINEと連携する
               </a>
+            </div>
+          </div>
+        </div>
+
+        {/* 予約カレンダー：申請制（承認済み）・即時予約どちらも同じ「確定した予約」として表示。
+            hacomonoの管理画面カレンダーを参考にしたが、PC用グリッドをそのままスマホに縮めると
+            縦横二重スクロールになって見づらいという今野くんの実地フィードバック（2026-09-11）を
+            踏まえ、スマホでは日付ピル＋当日アジェンダのリスト表示に切り替える（CSSで出し分け）。 */}
+        <div className="tab-pane" id="tab-calendar">
+          <div className="card" style={{ padding: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>予約カレンダー</h2>
+                <p className="muted" style={{ fontSize: '12px', margin: 0 }} id="cal-week-label">読み込み中…</p>
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button type="button" className="btn btn-ghost" id="cal-prev-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>← 前週</button>
+                <button type="button" className="btn btn-ghost" id="cal-today-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>今週</button>
+                <button type="button" className="btn btn-ghost" id="cal-next-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>次週 →</button>
+              </div>
+            </div>
+
+            {/* デスクトップ：7日グリッド。640px以下はCSSで非表示 */}
+            <div id="cal-week-grid" className="cal-week-grid"></div>
+
+            {/* スマホ：日付ピル＋当日のみのアジェンダリスト。640px以下でのみCSSで表示 */}
+            <div id="cal-mobile" className="cal-mobile">
+              <div id="cal-day-pills" className="cal-day-pills"></div>
+              <div id="cal-agenda-list"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
             </div>
           </div>
         </div>
