@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { hasFeature } from '@/lib/feature-flags';
 
 const supabaseAnon = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -796,13 +797,40 @@ function ProgramTab({ services, onConsult, userPathType, provider, matchData }) 
 }
 
 // ── タブ③「相談する」────────────────────────────────────────────────────────
-function ConsultTab({ provider, services, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint }) {
+function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint }) {
   const today = new Date().toISOString().split('T')[0];
   const [formState, setFormState] = useState({ name: '', email: '', phone: '', date: '', time: '', date2: '', time2: '', date3: '', time3: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [userPrefilled, setUserPrefilled] = useState(false);
   const [includeMeScan, setIncludeMeScan] = useState(true);
+
+  // スタッフ指名予約・即時予約（hacomono/STORES網羅計画 Phase 1）。
+  // どちらも店舗が「機能設定」タブでON/OFFできる。OFFなら従来通りの3希望日時フォームのまま。
+  const staffDesignationOn = hasFeature(provider, 'staff_designation');
+  const instantBookingOn = hasFeature(provider, 'instant_booking');
+  const bookableStaff = (staff || []).filter(s => s.bookable !== false);
+  const [staffId, setStaffId] = useState('');
+  const selectedStaff = bookableStaff.find(s => s.id === staffId);
+
+  const [slots, setSlots] = useState(null); // null=未取得
+  const [selectedSlotId, setSelectedSlotId] = useState('');
+  const [lastWasInstant, setLastWasInstant] = useState(false);
+
+  useEffect(() => {
+    if (!instantBookingOn || !provider?.slug) return;
+    const params = new URLSearchParams({ from: today });
+    if (selectedService?.id) params.set('service_id', selectedService.id);
+    fetch(`/api/providers/${provider.slug}/availability?${params}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => { setSlots(data); setSelectedSlotId(''); })
+      .catch(() => setSlots([]));
+  }, [instantBookingOn, provider?.slug, selectedService?.id, today]);
+
+  const slotsByDate = (slots || []).reduce((acc, s) => { (acc[s.date] = acc[s.date] || []).push(s); return acc; }, {});
+  // 枠が1件も無い店舗は従来の3希望フォームにフォールバックする（機能ONにしただけで
+  // 枠を登録していない店舗が予約を受け付けられなくなるのを防ぐ）
+  const showInstantPicker = instantBookingOn && slots !== null && slots.length > 0;
 
   const meScanSummary = buildMeScanSummary(diagnosis, matchData);
 
@@ -835,12 +863,22 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
   }, []);
 
   useEffect(() => {
-    if (submitted) setFormState({ name: '', email: '', phone: '', date: '', time: '', date2: '', time2: '', date3: '', time3: '', message: '' });
+    if (submitted) {
+      setFormState({ name: '', email: '', phone: '', date: '', time: '', date2: '', time2: '', date3: '', time3: '', message: '' });
+      setStaffId(''); setSelectedSlotId('');
+    }
   }, [submitted]);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!formState.name || !formState.date || !formState.time) {
+    const useInstant = showInstantPicker;
+    if (!formState.name) {
+      setFormError('お名前は必須です');
+      return;
+    }
+    if (useInstant) {
+      if (!selectedSlotId) { setFormError('ご希望の日時を選んでください'); return; }
+    } else if (!formState.date || !formState.time) {
       setFormError('お名前・希望日時は必須です');
       return;
     }
@@ -857,8 +895,9 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
       const noteParts = [
         selectedService ? `【プログラム】${selectedService.name}（¥${selectedService.price.toLocaleString()}）` : '',
         (!selectedService && menuNameHint) ? `【ご希望のメニュー】${menuNameHint}` : '',
-        formState.date2 ? `【第2希望】${formState.date2} ${formState.time2}` : '',
-        formState.date3 ? `【第3希望】${formState.date3} ${formState.time3}` : '',
+        selectedStaff ? `【ご指名】${selectedStaff.name}${selectedStaff.booking_fee > 0 ? `（指名料¥${Number(selectedStaff.booking_fee).toLocaleString()}）` : ''}` : '',
+        (!useInstant && formState.date2) ? `【第2希望】${formState.date2} ${formState.time2}` : '',
+        (!useInstant && formState.date3) ? `【第3希望】${formState.date3} ${formState.time3}` : '',
         formState.message,
       ].filter(Boolean);
       // メール・電話を結合して user_contact に（既存APIと互換）
@@ -867,12 +906,14 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
         provider_id: provider.id,
         user_name: formState.name,
         user_contact,
-        preferred_date: formState.date,
-        preferred_time: formState.time,
         message: meScanNote + noteParts.join('\n'),
+        staff_id: staffId || null,
+        ...(useInstant
+          ? { booking_mode: 'instant', slot_id: selectedSlotId }
+          : { preferred_date: formState.date, preferred_time: formState.time }),
       };
       const res = await fetch('/api/reservations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (res.ok) { setSubmitted(true); }
+      if (res.ok) { setLastWasInstant(useInstant); setSubmitted(true); }
       else { const err = await res.json(); setFormError(err.error || '送信に失敗しました'); }
     } catch { setFormError('通信エラーが発生しました'); }
     finally { setSubmitting(false); }
@@ -882,9 +923,11 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
     return (
       <div style={{ padding: '40px 20px', textAlign: 'center' }}>
         <div style={{ fontSize: '48px', marginBottom: '16px' }}>✓</div>
-        <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#34d399', margin: '0 0 8px' }}>相談リクエストを送りました</h2>
+        <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#34d399', margin: '0 0 8px' }}>{lastWasInstant ? '予約が確定しました' : '相談リクエストを送りました'}</h2>
         <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.75)', margin: '0 0 24px', lineHeight: '1.7' }}>
-          このガイドからの返答をお待ちください。<br />連絡先にご連絡が届きます。
+          {lastWasInstant
+            ? <>選んだ日時で確定しました。当日お待ちしております。</>
+            : <>このガイドからの返答をお待ちください。<br />連絡先にご連絡が届きます。</>}
         </p>
         <button onClick={() => setSubmitted(false)} style={{ padding: '10px 24px', background: 'rgba(10,15,30,0.45)', color: 'rgba(232,228,220,0.75)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}>
           別のリクエストを送る
@@ -974,6 +1017,30 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
         </div>
       )}
 
+      {/* スタッフ指名（hacomono/STORES網羅計画 Phase 1）。店舗の「機能設定」でONの時だけ表示。
+          指名なし（お任せ）も選択肢として並べ、指名スタッフには指名料をその場で明示する
+          （hacomonoの「指名無し＝無料／実名スタッフ＝+指名料」表示に合わせた設計）。 */}
+      {staffDesignationOn && bookableStaff.length > 0 && (
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '8px' }}>スタッフの指名（任意）</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', border: `1.5px solid ${!staffId ? '#111' : '#e5e7eb'}`, borderRadius: '10px', cursor: 'pointer' }}>
+              <input type="radio" name="staff" checked={!staffId} onChange={() => setStaffId('')} style={{ accentColor: '#111' }} />
+              <span style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)' }}>指名なし（お任せ）</span>
+            </label>
+            {bookableStaff.map(s => (
+              <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', border: `1.5px solid ${staffId === s.id ? '#111' : '#e5e7eb'}`, borderRadius: '10px', cursor: 'pointer' }}>
+                <input type="radio" name="staff" checked={staffId === s.id} onChange={() => setStaffId(s.id)} style={{ accentColor: '#111' }} />
+                <span style={{ flex: 1, fontSize: '13px', color: 'rgba(232,228,220,0.75)' }}>{s.name}{s.role ? `（${s.role}）` : ''}</span>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: s.booking_fee > 0 ? '#c9a84c' : 'rgba(232,228,220,0.4)', flexShrink: 0 }}>
+                  {s.booking_fee > 0 ? `指名料 ¥${Number(s.booking_fee).toLocaleString()}` : '無料'}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div>
           <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '4px' }}>お名前（姓名） *</label>
@@ -1004,6 +1071,40 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
           />
           <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.75)', margin: '4px 0 0' }}>メールアドレス・電話番号のどちらか一方は必須です。</p>
         </div>
+        {showInstantPicker ? (
+          // 即時予約モード（hacomono/STORES網羅計画 Phase 1）。空き枠を選んだ時点で
+          // その場で確定する——店舗の承認を待たない。枠が無い日は表示自体がない。
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '8px' }}>ご希望の日時 *（選ぶとその場で予約確定します）</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '320px', overflowY: 'auto', padding: '2px' }}>
+              {Object.keys(slotsByDate).sort().map(date => (
+                <div key={date}>
+                  <p style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.9)', margin: '0 0 6px' }}>
+                    {new Date(date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' })}
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(90px,1fr))', gap: '6px' }}>
+                    {slotsByDate[date].map(s => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setSelectedSlotId(s.id)}
+                        style={{
+                          padding: '8px 6px', borderRadius: '8px', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer',
+                          border: selectedSlotId === s.id ? '1.5px solid #111' : '1px solid rgba(232,228,220,0.15)',
+                          background: selectedSlotId === s.id ? '#111' : 'transparent',
+                          color: selectedSlotId === s.id ? '#fff' : 'rgba(232,228,220,0.85)',
+                        }}
+                      >
+                        {s.start_time}{s.staff_name ? <><br /><span style={{ fontWeight: 400, fontSize: '10.5px' }}>{s.staff_name}</span></> : null}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
         <div>
           <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '6px' }}>希望日時（第1希望）*</label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -1034,6 +1135,8 @@ function ConsultTab({ provider, services, selectedService, onServiceSelect, subm
             </select>
           </div>
         </div>
+          </>
+        )}
         <div>
           <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '4px' }}>このガイドに一番聞きたいこと（任意）</label>
           <textarea value={formState.message} onChange={e => setFormState(p => ({ ...p, message: e.target.value }))} placeholder="今の状況や悩み、気になることがあれば教えてください" rows={3} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', resize: 'vertical' }} />
@@ -1271,6 +1374,7 @@ function ProviderPageContent() {
         <ConsultTab
           provider={provider}
           services={services}
+          staff={staff}
           selectedService={selectedService}
           onServiceSelect={setSelectedService}
           submitted={submitted}
