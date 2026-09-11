@@ -1836,6 +1836,61 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'line-channel') loadStatus();
     })();
 
+    // ── 機能設定タブ（Phase 0・でお要望2026-09-09〜11） ────────────────
+    // hacomono/STORES網羅計画で追加していく機能を店舗ごとにON/OFFできる基盤。
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const listEl = document.getElementById('features-list');
+
+      async function loadFeatures() {
+        if (!listEl) return;
+        listEl.textContent = '読み込み中…';
+        const res = await fetch('/api/provider/features', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
+        const { features, defs } = await res.json();
+        const groups = {};
+        Object.entries(defs).forEach(([key, def]) => {
+          (groups[def.group] = groups[def.group] || []).push({ key, ...def });
+        });
+        listEl.innerHTML = Object.entries(groups).map(([groupName, items]) => `
+          <div>
+            <p style="font-size:11px;font-weight:800;letter-spacing:.08em;color:rgba(201,168,76,.7);text-transform:uppercase;margin:0 0 8px">${esc(groupName)}</p>
+            <div class="stack" style="gap:10px">
+              ${items.map(item => `
+                <label style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(10,15,30,0.5);border:1px solid rgba(232,228,220,0.12);border-radius:10px;cursor:pointer">
+                  <input type="checkbox" data-feature-key="${item.key}" ${features[item.key] ? 'checked' : ''} style="margin-top:3px" />
+                  <span>
+                    <span style="display:block;font-weight:700;font-size:13.5px;color:rgba(232,228,220,0.9)">${esc(item.label)}</span>
+                    <span style="display:block;font-size:12px;color:rgba(232,228,220,0.5);margin-top:2px">${esc(item.help)}</span>
+                  </span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      listEl?.addEventListener('change', async (e) => {
+        const input = e.target.closest('[data-feature-key]');
+        if (!input) return;
+        const key = input.dataset.featureKey;
+        input.disabled = true;
+        try {
+          const res = await fetch('/api/provider/features', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+            body: JSON.stringify({ [key]: input.checked }),
+          });
+          if (!res.ok) { input.checked = !input.checked; alert('保存に失敗しました'); }
+        } catch { input.checked = !input.checked; alert('通信エラーが発生しました'); }
+        input.disabled = false;
+      });
+
+      document.querySelectorAll('[data-tab="features"]').forEach(btn => btn.addEventListener('click', loadFeatures, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'features') loadFeatures();
+    })();
+
     // ── クチコミ依頼タブ ──────────────────────────────────────────
     (() => {
       const token = getSupabaseToken();
@@ -3156,6 +3211,7 @@ export default function ProviderDashboardPage() {
             <p className="pd-nav-heading">④ アカウント周り</p>
             <button className="tab-btn" data-tab="line-channel">💬 LINE連携</button>
             <button className="tab-btn" data-tab="billing">課金・プラン</button>
+            <button className="tab-btn" data-tab="features">⚙️ 機能設定</button>
           </div>
 
           {/* メイン */}
@@ -4390,6 +4446,21 @@ export default function ProviderDashboardPage() {
             <div className="form-field"><label>新しいパスワード（確認）</label><input type="password" id="new-pw2" /></div>
             <p id="pw-change-msg" style={{ fontSize: '13px', margin: '0', display: 'none' }}></p>
             <button className="btn" id="pw-change-btn" style={{ alignSelf: 'flex-start' }}>パスワードを変更する</button>
+          </div>
+        </div>
+
+        {/* 機能設定：店舗ごとに使う機能を選べるようにする（Phase 0・でお要望2026-09-11）。
+            hacomono/STORES網羅計画で追加していく機能（スタッフ指名予約・POS・チェックイン等）は
+            店舗ごとにニーズが違うため、一通り実装した上で店舗が選んで使える形にする。 */}
+        <div className="tab-pane" id="tab-features">
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>機能設定</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                使いたい機能だけをオンにできます。オフの機能は左のメニューからも非表示になります。
+              </p>
+            </div>
+            <div id="features-list" className="stack" style={{ gap: '14px' }}>読み込み中…</div>
           </div>
         </div>
 
