@@ -3114,7 +3114,7 @@ export default function ProviderDashboardPage() {
 
   return (
     <main className="section">
-      <div className="container" style={{ maxWidth: '800px' }}>
+      <div className="container" style={{ maxWidth: '1600px' }}>
 
         {/* モバイル用トップバー */}
         <div className="pd-topbar">
