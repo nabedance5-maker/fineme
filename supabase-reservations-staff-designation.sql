@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-09-11
 -- スタッフ指名予約・即時予約モード（hacomono/STORES網羅計画 Phase 1）。
 -- 全カラムnullable/デフォルト値付き＝既存の申請制フロー（booking_mode省略時）は無変更。
 -- 詳細: ~/.claude/plans/fineme-1-newme-optimized-hopcroft.md「hacomono/STORES機能網羅計画」

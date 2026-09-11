@@ -1,3 +1,4 @@
+-- ✅ 本番適用済 2026-09-11（作成時は未適用のまま宙に浮いていたことが判明、hacomono/STORES網羅計画 Phase 1で発覚・適用）
 -- provider_slots: 掲載者の空き枠管理テーブル
 -- Supabase SQL Editor で実行してください
 
