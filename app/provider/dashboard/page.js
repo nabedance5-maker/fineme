@@ -3309,6 +3309,189 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'sales') { loadSalesOptions(); loadSales(); }
     })();
 
+    // ── POS・在庫タブ（Phase 3・hacomono/STORES網羅計画） ──────────
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const authHeadersPos = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` });
+
+      const gridEl = document.getElementById('pos-product-grid');
+      const cartListEl = document.getElementById('pos-cart-list');
+      const cartTotalEl = document.getElementById('pos-cart-total');
+      const checkoutBtn = document.getElementById('pos-checkout-btn');
+      const checkoutMsg = document.getElementById('pos-checkout-msg');
+      const staffSel = document.getElementById('pos-staff');
+      const prodListEl = document.getElementById('prod-list');
+      const txListEl = document.getElementById('pos-tx-list');
+
+      let products = [];
+      let cart = []; // [{product_id, name, unit_price, qty}]
+
+      function renderCart() {
+        if (!cartListEl) return;
+        if (!cart.length) {
+          cartListEl.innerHTML = '<p class="muted" style="font-size:13px">まだ商品が選ばれていません</p>';
+        } else {
+          cartListEl.innerHTML = cart.map((c, i) => `
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;">
+              <div style="flex:1;min-width:0"><strong style="font-size:13px">${esc(c.name)}</strong> <span class="muted" style="font-size:12px">¥${c.unit_price.toLocaleString()} × ${c.qty}</span></div>
+              <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-cart-dec="${i}">−</button>
+              <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-cart-inc="${i}">＋</button>
+              <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;color:#ef4444" data-cart-del="${i}">削除</button>
+            </div>
+          `).join('');
+          cartListEl.querySelectorAll('[data-cart-inc]').forEach(b => b.addEventListener('click', () => { cart[+b.dataset.cartInc].qty++; renderCart(); }));
+          cartListEl.querySelectorAll('[data-cart-dec]').forEach(b => b.addEventListener('click', () => { const it = cart[+b.dataset.cartDec]; it.qty--; if (it.qty <= 0) cart.splice(+b.dataset.cartDec, 1); renderCart(); }));
+          cartListEl.querySelectorAll('[data-cart-del]').forEach(b => b.addEventListener('click', () => { cart.splice(+b.dataset.cartDel, 1); renderCart(); }));
+        }
+        const total = cart.reduce((sum, c) => sum + c.unit_price * c.qty, 0);
+        if (cartTotalEl) cartTotalEl.textContent = total.toLocaleString();
+        if (checkoutBtn) checkoutBtn.disabled = !cart.length;
+      }
+
+      function renderGrid() {
+        if (!gridEl) return;
+        const active = products.filter(p => p.active);
+        if (!active.length) { gridEl.innerHTML = '<p class="muted">下の「商品・在庫管理」からまず商品を追加してください。</p>'; return; }
+        gridEl.innerHTML = active.map(p => `
+          <button type="button" class="btn btn-ghost" data-pos-add="${p.id}" style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:12px;height:auto;text-align:left;${p.track_stock && p.stock_qty <= 0 ? 'opacity:.4' : ''}">
+            <strong style="font-size:13px">${esc(p.name)}</strong>
+            <span class="muted" style="font-size:12px">¥${Number(p.price).toLocaleString()}${p.track_stock ? ` ／ 在庫${p.stock_qty}` : ''}</span>
+          </button>
+        `).join('');
+        gridEl.querySelectorAll('[data-pos-add]').forEach(btn => btn.addEventListener('click', () => {
+          const p = products.find(x => x.id === btn.dataset.posAdd);
+          if (!p) return;
+          if (p.track_stock && p.stock_qty <= 0) { showToast('在庫がありません'); return; }
+          const existing = cart.find(c => c.product_id === p.id);
+          if (existing) existing.qty++;
+          else cart.push({ product_id: p.id, name: p.name, unit_price: p.price, qty: 1 });
+          renderCart();
+        }));
+      }
+
+      function renderProductList() {
+        if (!prodListEl) return;
+        if (!products.length) { prodListEl.innerHTML = '<p class="muted" style="font-size:13px">まだ商品がありません。</p>'; return; }
+        prodListEl.innerHTML = products.map(p => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;${p.active ? '' : 'opacity:.5'}">
+            <div style="flex:1;min-width:0">
+              <strong style="font-size:13px">${esc(p.name)}</strong>
+              <span class="muted" style="font-size:12px;margin-left:8px">¥${Number(p.price).toLocaleString()}${p.track_stock ? ` ／ 在庫${p.stock_qty}` : ' ／ 在庫管理なし'}</span>
+            </div>
+            ${p.track_stock ? `
+              <button type="button" class="btn btn-ghost" style="font-size:11px;padding:6px 10px" data-prod-restock="${p.id}">＋入荷</button>
+            ` : ''}
+            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:6px 10px" data-prod-toggle="${p.id}">${p.active ? '非公開にする' : '再公開する'}</button>
+            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:6px 10px;color:#ef4444" data-prod-del="${p.id}">削除</button>
+          </div>
+        `).join('');
+        prodListEl.querySelectorAll('[data-prod-restock]').forEach(btn => btn.addEventListener('click', async () => {
+          const qty = prompt('入荷数を入力してください（マイナスで棚卸修正も可）');
+          const delta = parseInt(qty, 10);
+          if (!Number.isFinite(delta) || delta === 0) return;
+          await fetch(`/api/provider/products/${btn.dataset.prodRestock}`, { method: 'PATCH', headers: authHeadersPos(), body: JSON.stringify({ stock_delta: delta, reason: delta > 0 ? 'restock' : 'adjustment' }) });
+          loadProducts();
+        }));
+        prodListEl.querySelectorAll('[data-prod-toggle]').forEach(btn => btn.addEventListener('click', async () => {
+          const p = products.find(x => x.id === btn.dataset.prodToggle);
+          await fetch(`/api/provider/products/${btn.dataset.prodToggle}`, { method: 'PATCH', headers: authHeadersPos(), body: JSON.stringify({ active: !p.active }) });
+          loadProducts();
+        }));
+        prodListEl.querySelectorAll('[data-prod-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('この商品を削除しますか？（過去の会計履歴は残ります）')) return;
+          await fetch(`/api/provider/products/${btn.dataset.prodDel}`, { method: 'DELETE', headers: authHeadersPos() });
+          loadProducts();
+        }));
+      }
+
+      async function loadProducts() {
+        const res = await fetch('/api/provider/products', { headers: authHeadersPos() });
+        if (!res.ok) return;
+        products = await res.json();
+        renderGrid();
+        renderProductList();
+      }
+
+      async function loadStaffOptions() {
+        if (!staffSel) return;
+        const res = await fetch('/api/provider/staff', { headers: authHeadersPos() });
+        if (!res.ok) return;
+        const rows = await res.json();
+        staffSel.innerHTML = '<option value="">選択なし</option>' + rows.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+      }
+
+      async function loadTransactions() {
+        if (!txListEl) return;
+        const res = await fetch('/api/provider/pos/transactions', { headers: authHeadersPos() });
+        if (!res.ok) { txListEl.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        if (!rows.length) { txListEl.innerHTML = '<p class="muted">まだ会計履歴がありません。</p>'; return; }
+        txListEl.innerHTML = rows.map(t => `
+          <div style="padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;">
+            <div style="display:flex;justify-content:space-between;gap:10px">
+              <span style="font-size:12px" class="muted">${new Date(t.created_at).toLocaleString('ja-JP')}${t.staff_name ? ` ／ ${esc(t.staff_name)}` : ''}${t.payment_method ? ` ／ ${esc(t.payment_method)}` : ''}</span>
+              <strong style="font-size:13px">¥${Number(t.total_amount).toLocaleString()}</strong>
+            </div>
+            <div class="muted" style="font-size:12px;margin-top:4px">${t.items.map(it => `${esc(it.name_snapshot)}×${it.qty}`).join('、')}</div>
+          </div>
+        `).join('');
+      }
+
+      if (checkoutBtn) {
+        checkoutBtn.addEventListener('click', async () => {
+          if (!cart.length) return;
+          checkoutBtn.disabled = true;
+          if (checkoutMsg) checkoutMsg.textContent = '';
+          const res = await fetch('/api/provider/pos/checkout', {
+            method: 'POST',
+            headers: authHeadersPos(),
+            body: JSON.stringify({
+              items: cart.map(c => ({ product_id: c.product_id, qty: c.qty })),
+              staff_id: staffSel?.value || null,
+              payment_method: document.getElementById('pos-payment')?.value || null,
+            }),
+          });
+          checkoutBtn.disabled = false;
+          if (!res.ok) { const e = await res.json().catch(() => ({})); if (checkoutMsg) { checkoutMsg.style.color = '#ef4444'; checkoutMsg.textContent = e?.error || '会計に失敗しました'; } return; }
+          cart = [];
+          renderCart();
+          showToast('会計を記録しました');
+          loadProducts();
+          loadTransactions();
+        });
+      }
+
+      const createProdBtn = document.getElementById('prod-create-btn');
+      if (createProdBtn) {
+        createProdBtn.addEventListener('click', async () => {
+          const name = document.getElementById('prod-name')?.value.trim();
+          const price = document.getElementById('prod-price')?.value;
+          const stock = document.getElementById('prod-stock')?.value;
+          const trackStock = !!document.getElementById('prod-track-stock')?.checked;
+          if (!name) { showToast('商品名を入力してください'); return; }
+          createProdBtn.disabled = true;
+          const res = await fetch('/api/provider/products', {
+            method: 'POST', headers: authHeadersPos(),
+            body: JSON.stringify({ name, price: price || 0, track_stock: trackStock, stock_qty: stock || 0 }),
+          });
+          createProdBtn.disabled = false;
+          if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
+          document.getElementById('prod-name').value = '';
+          document.getElementById('prod-price').value = '';
+          document.getElementById('prod-stock').value = '';
+          showToast('商品を追加しました');
+          loadProducts();
+        });
+      }
+
+      async function loadAll() {
+        await Promise.all([loadProducts(), loadStaffOptions(), loadTransactions()]);
+      }
+      document.querySelectorAll('[data-tab="pos"]').forEach(btn => btn.addEventListener('click', loadAll, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'pos') loadAll();
+    })();
+
     // ── 接客の引き出し：お店専用パーソナライズ ───────────────────
     (function setupCustomerScripts() {
       const t = getSupabaseToken();
@@ -3413,6 +3596,7 @@ export default function ProviderDashboardPage() {
             <button className="tab-btn" data-tab="karte">📋 カルテ</button>
             <button className="tab-btn" data-tab="reviews">⭐ クチコミ</button>
             <button className="tab-btn" data-tab="sales">💰 売上管理</button>
+            <button className="tab-btn" data-tab="pos" data-feature="pos" style={{ display: 'none' }}>🧾 POS・在庫</button>
             <p className="pd-nav-heading">③ 伸ばすためのタブ</p>
             <button className="tab-btn" data-tab="area-demand">📍 エリア需要</button>
             <button className="tab-btn" data-tab="scripts">💡 接客の引き出し</button>
@@ -4498,6 +4682,78 @@ export default function ProviderDashboardPage() {
               <h3 style={{ fontSize: '14px', margin: '0 0 10px' }}>記録一覧</h3>
               <div id="sales-entries-list"><p className="muted">読み込み中…</p></div>
             </div>
+          </div>
+        </div>
+
+        {/* POS・在庫：hacomono同様、専用レジ機ではなくiPad等のWebアプリとして会計・物販在庫を記録する（hacomono/STORES網羅計画 Phase 3）。
+            会計確定時に集計1行だけ売上管理タブへ自動連携される。 */}
+        <div className="tab-pane" id="tab-pos">
+          <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>レジ会計</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                商品をタップしてカートに追加し、会計を確定してください。確定すると自動で「売上管理」タブにも反映されます。
+              </p>
+            </div>
+            <div id="pos-product-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: '10px' }}>
+              <p className="muted">読み込み中…</p>
+            </div>
+            <div style={{ borderTop: '1px solid rgba(232,228,220,0.1)', paddingTop: '16px' }}>
+              <h3 style={{ fontSize: '14px', margin: '0 0 10px' }}>カート</h3>
+              <div id="pos-cart-list"><p className="muted" style={{ fontSize: '13px' }}>まだ商品が選ばれていません</p></div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end', marginTop: '12px' }}>
+                <div className="form-field" style={{ minWidth: '140px' }}>
+                  <label>スタッフ（任意）</label>
+                  <select id="pos-staff"><option value="">選択なし</option></select>
+                </div>
+                <div className="form-field" style={{ minWidth: '140px' }}>
+                  <label>支払い方法（任意）</label>
+                  <select id="pos-payment">
+                    <option value="">選択なし</option>
+                    <option value="現金">現金</option>
+                    <option value="クレジットカード">クレジットカード</option>
+                    <option value="PayPay">PayPay</option>
+                    <option value="楽天Pay">楽天Pay</option>
+                    <option value="LINE Pay">LINE Pay</option>
+                    <option value="その他">その他</option>
+                  </select>
+                </div>
+                <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+                  <p style={{ margin: '0 0 6px', fontSize: '20px', fontWeight: 900 }}>合計 ¥<span id="pos-cart-total">0</span></p>
+                  <button type="button" id="pos-checkout-btn" className="btn" disabled>会計を確定する</button>
+                </div>
+              </div>
+              <p id="pos-checkout-msg" className="muted" style={{ fontSize: '13px' }}></p>
+            </div>
+          </div>
+
+          <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>商品・在庫管理</h2>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="form-field" style={{ minWidth: '180px' }}>
+                <label>商品名</label>
+                <input id="prod-name" type="text" placeholder="例：プロテインバー" />
+              </div>
+              <div className="form-field" style={{ minWidth: '100px' }}>
+                <label>価格</label>
+                <input id="prod-price" type="number" min="0" placeholder="500" />
+              </div>
+              <div className="form-field" style={{ minWidth: '100px' }}>
+                <label>初期在庫</label>
+                <input id="prod-stock" type="number" min="0" placeholder="20" />
+              </div>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                <input type="checkbox" id="prod-track-stock" defaultChecked />
+                在庫数を管理する
+              </label>
+              <button className="btn" id="prod-create-btn" type="button">追加する</button>
+            </div>
+            <div id="prod-list"><p className="muted">読み込み中…</p></div>
+          </div>
+
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>会計履歴</h2>
+            <div id="pos-tx-list"><p className="muted">読み込み中…</p></div>
           </div>
         </div>
 
