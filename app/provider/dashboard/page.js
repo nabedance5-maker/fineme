@@ -69,6 +69,12 @@ export default function ProviderDashboardPage() {
       .toggle-switch input:checked + .toggle-slider { background: #111; }
       .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); }
       .referral-code-box { padding: 16px; background: rgba(10,15,30,0.65); border: 1px solid rgba(232,228,220,0.15); border-radius: 12px; font-family: monospace; font-size: 18px; font-weight: 800; text-align: center; letter-spacing: 2px; color: #e8e4dc; }
+      /* 機能OFFのタブ：完全に隠すと「そもそも存在しない機能」に見えてしまい発見できないという
+         でお指摘（2026-09-11）を受け、常に一覧には出しつつ視覚的に区別する方式に変更。 */
+      .tab-btn.tab-feature-off { opacity: .45; }
+      .feature-off-badge { display: none; margin-left: 6px; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px; background: rgba(96,165,250,0.18); color: #60a5fa; vertical-align: middle; }
+      .tab-btn.tab-feature-off .feature-off-badge { display: inline-block; }
+      .feature-enable-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.35); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
     `;
     document.head.appendChild(style);
 
@@ -2065,6 +2071,18 @@ export default function ProviderDashboardPage() {
         const input = e.target.closest('[data-feature-key]');
         if (!input) return;
         const key = input.dataset.featureKey;
+        // 保存タイミングが分かりづらいというでお指摘（2026-09-11）：チェックのすぐ右に
+        // 「保存中…」→「✓ 保存しました」を一瞬出す。トグル＝即保存という設計自体は維持しつつ、
+        // 「今保存された」がその場で見えるようにする。
+        const row = input.closest('label');
+        let statusEl = row?.querySelector('.feature-save-status');
+        if (row && !statusEl) {
+          statusEl = document.createElement('span');
+          statusEl.className = 'feature-save-status muted';
+          statusEl.style.cssText = 'font-size:11px;margin-left:8px;white-space:nowrap';
+          row.querySelector('input')?.insertAdjacentElement('afterend', statusEl);
+        }
+        if (statusEl) { statusEl.style.color = ''; statusEl.textContent = '保存中…'; }
         input.disabled = true;
         try {
           const res = await fetch('/api/provider/features', {
@@ -2072,8 +2090,17 @@ export default function ProviderDashboardPage() {
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
             body: JSON.stringify({ [key]: input.checked }),
           });
-          if (!res.ok) { input.checked = !input.checked; alert('保存に失敗しました'); }
-        } catch { input.checked = !input.checked; alert('通信エラーが発生しました'); }
+          if (!res.ok) {
+            input.checked = !input.checked;
+            if (statusEl) { statusEl.style.color = '#ef4444'; statusEl.textContent = '保存に失敗しました'; }
+          } else {
+            if (statusEl) { statusEl.style.color = '#4ade80'; statusEl.textContent = '✓ 保存しました'; setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 2500); }
+            window.applyFeatureGating?.(key, input.checked);
+          }
+        } catch {
+          input.checked = !input.checked;
+          if (statusEl) { statusEl.style.color = '#ef4444'; statusEl.textContent = '通信エラーが発生しました'; }
+        }
         input.disabled = false;
       });
 
@@ -2082,21 +2109,88 @@ export default function ProviderDashboardPage() {
     })();
 
     // ── 機能フラグによるサイドバーの出し分け（Phase 0基盤） ────────────
-    // [data-feature="key"] を持つナビボタンは、その機能がOFFの店舗では非表示にする。
-    // 以降のフェーズ（POS・チェックイン等）のタブもこのdata-feature属性を付けるだけでよい。
-    (async () => {
+    // [data-feature="key"] を持つナビボタンは、その機能がOFFの店舗ではdisplay:noneで
+    // 完全に隠していたが、「そもそも機能の存在に気づけない」というでお指摘（2026-09-11）を
+    // 受け、常にサイドバーには出しつつ薄く表示＋「未設定」バッジで区別する方式に変更。
+    // タブを開くとOFFのままでも中身は見えず、代わりにその場でONにできる案内バナーを出す。
+    (() => {
       const token = getSupabaseToken();
       const gatedEls = document.querySelectorAll('[data-feature]');
       if (!token || !gatedEls.length) return;
-      try {
-        const res = await fetch('/api/provider/features', { headers: { Authorization: `Bearer ${token}` } });
-        if (!res.ok) return;
-        const { features } = await res.json();
+      let defsCache = {};
+
+      function bannerHtml(key, tabId) {
+        const def = defsCache[key];
+        const label = def?.label || key;
+        const help = def?.help || '';
+        return `
+          <div class="feature-enable-banner" data-feature-banner="${key}">
+            <div>
+              <strong style="font-size:13.5px;color:#e8e4dc">「${esc(label)}」はまだONになっていません</strong>
+              <p class="muted" style="font-size:12px;margin:4px 0 0">${esc(help)}</p>
+            </div>
+            <button type="button" class="btn" style="font-size:12px;padding:8px 16px;flex-shrink:0" data-feature-enable="${key}" data-feature-tab="${tabId}">ONにする</button>
+          </div>
+        `;
+      }
+
+      function applyGating(features) {
         gatedEls.forEach(el => {
           const key = el.dataset.feature;
-          el.style.display = features?.[key] ? '' : 'none';
+          const on = !!features?.[key];
+          el.classList.toggle('tab-feature-off', !on);
+          const badge = el.querySelector('[data-feature-badge]');
+          if (badge) badge.textContent = on ? '' : '未設定';
+
+          const tabId = el.dataset.tab;
+          const pane = document.getElementById('tab-' + tabId);
+          if (!pane) return;
+          const existing = pane.querySelector(`[data-feature-banner="${key}"]`);
+          if (on) {
+            existing?.remove();
+          } else if (!existing) {
+            pane.insertAdjacentHTML('afterbegin', bannerHtml(key, tabId));
+            pane.querySelector(`[data-feature-enable="${key}"]`)?.addEventListener('click', async (e) => {
+              const btn = e.currentTarget;
+              btn.disabled = true;
+              btn.textContent = '設定中…';
+              try {
+                const res = await fetch('/api/provider/features', {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+                  body: JSON.stringify({ [key]: true }),
+                });
+                if (!res.ok) { btn.disabled = false; btn.textContent = 'ONにする'; showToast('保存に失敗しました'); return; }
+                // ONにしたら、この機能の中身をすぐ使えるようリロードして表示する
+                // （各タブの読み込みはそれぞれ独立したIIFEのため、確実なのは再読み込み）
+                showToast(`✓ 「${defsCache[key]?.label || key}」をONにしました`);
+                location.href = location.pathname + '?tab=' + btn.dataset.featureTab;
+              } catch {
+                btn.disabled = false; btn.textContent = 'ONにする';
+                showToast('通信エラーが発生しました');
+              }
+            });
+          }
         });
-      } catch {}
+      }
+
+      // 機能設定タブのチェックボックスをON/OFFした直後にも、リロードなしでサイドバー・
+      // バナー表示へ即座に反映させるための橋渡し（features-list側のchangeハンドラから呼ばれる）。
+      window.applyFeatureGating = (key, value) => {
+        window.__providerFeatures = { ...(window.__providerFeatures || {}), [key]: value };
+        applyGating(window.__providerFeatures);
+      };
+
+      (async () => {
+        try {
+          const res = await fetch('/api/provider/features', { headers: { Authorization: `Bearer ${token}` } });
+          if (!res.ok) return;
+          const { features, defs } = await res.json();
+          defsCache = defs || {};
+          window.__providerFeatures = features || {};
+          applyGating(features);
+        } catch {}
+      })();
     })();
 
     // ── クチコミ依頼タブ ──────────────────────────────────────────
@@ -3810,8 +3904,8 @@ export default function ProviderDashboardPage() {
             <button className="tab-btn" data-tab="service">サービス設定</button>
             <button className="tab-btn" data-tab="packages">🎫 回数券</button>
             <button className="tab-btn" data-tab="staff">👤 スタッフ</button>
-            <button className="tab-btn" data-tab="resources" data-feature="resource_management" style={{ display: 'none' }}>🏠 部屋・設備</button>
-            <button className="tab-btn" data-tab="slots" data-feature="instant_booking" style={{ display: 'none' }}>📅 空き枠</button>
+            <button className="tab-btn" data-tab="resources" data-feature="resource_management">🏠 部屋・設備<span className="feature-off-badge" data-feature-badge></span></button>
+            <button className="tab-btn" data-tab="slots" data-feature="instant_booking">📅 空き枠<span className="feature-off-badge" data-feature-badge></span></button>
             <button className="tab-btn" data-tab="stories">📝 体験談</button>
             <button className="tab-btn" data-tab="landing">🌐 LP設定</button>
             <button className="tab-btn" data-tab="qr">🔗 紹介QR</button>
@@ -3823,9 +3917,9 @@ export default function ProviderDashboardPage() {
             <button className="tab-btn" data-tab="karte">📋 カルテ</button>
             <button className="tab-btn" data-tab="reviews">⭐ クチコミ</button>
             <button className="tab-btn" data-tab="sales">💰 売上管理</button>
-            <button className="tab-btn" data-tab="pos" data-feature="pos" style={{ display: 'none' }}>🧾 POS・在庫</button>
-            <button className="tab-btn" data-tab="checkin" data-feature="checkin_qr" style={{ display: 'none' }}>📷 チェックイン</button>
-            <button className="tab-btn" data-tab="events" data-feature="attendance_confirm" style={{ display: 'none' }}>🙋 出欠確認</button>
+            <button className="tab-btn" data-tab="pos" data-feature="pos">🧾 POS・在庫<span className="feature-off-badge" data-feature-badge></span></button>
+            <button className="tab-btn" data-tab="checkin" data-feature="checkin_qr">📷 チェックイン<span className="feature-off-badge" data-feature-badge></span></button>
+            <button className="tab-btn" data-tab="events" data-feature="attendance_confirm">🙋 出欠確認<span className="feature-off-badge" data-feature-badge></span></button>
             <p className="pd-nav-heading">③ 伸ばすためのタブ</p>
             <button className="tab-btn" data-tab="area-demand">📍 エリア需要</button>
             <button className="tab-btn" data-tab="scripts">💡 接客の引き出し</button>
