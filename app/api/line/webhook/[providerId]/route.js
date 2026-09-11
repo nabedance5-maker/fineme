@@ -250,6 +250,31 @@ async function cancelReservationFromLine(rid, channelProviderId, lineUserId) {
   return '予約をキャンセルしました。';
 }
 
+// 出欠確認の「参加する」「不参加」から呼ばれる（hacomono/STORES網羅計画 Phase 5）。
+// accept_counter/cancel_reservationと全く同じパターン：UUIDの推測不可能性＋
+// verifyLineIdentityでの本人確認。
+async function respondToEvent(attendanceId, status, channelProviderId, lineUserId) {
+  if (!lineUserId) return '本人確認ができませんでした。';
+  const { data: att, error } = await supabase.from('provider_event_attendances').select('*').eq('id', attendanceId).single();
+  if (error || !att) return 'このご案内が見つかりませんでした。';
+  if (att.status !== 'invited') return '既にご回答いただいています。';
+
+  if (!(await verifyLineIdentity(channelProviderId, att.user_id, lineUserId))) {
+    console.warn('[line/webhook] respond_event: identity mismatch', { attendanceId, channelProviderId });
+    return '本人確認ができませんでした。';
+  }
+
+  const { error: updateError } = await supabase
+    .from('provider_event_attendances')
+    .update({ status, responded_at: new Date().toISOString() })
+    .eq('id', attendanceId);
+  if (updateError) {
+    console.error('[line/webhook] respond_event update error', updateError);
+    return '回答の記録に失敗しました。恐れ入りますが店舗まで直接ご連絡ください。';
+  }
+  return status === 'attending' ? '✓ 参加でご回答いただきました。ありがとうございます！' : '✓ 不参加でご回答いただきました。かしこまりました。';
+}
+
 export async function POST(request, { params }) {
   const { providerId } = params;
   const { secret, token } = await resolveChannel(providerId);
@@ -305,6 +330,11 @@ export async function POST(request, { params }) {
       const rid = data.get('rid');
       if (!rid) continue;
       const message = await cancelReservationFromLine(rid, providerId, event.source?.userId);
+      if (event.replyToken) await sendLineReply(event.replyToken, message, token);
+    } else if (action === 'attend_event' || action === 'decline_event') {
+      const aid = data.get('aid');
+      if (!aid) continue;
+      const message = await respondToEvent(aid, action === 'attend_event' ? 'attending' : 'declined', providerId, event.source?.userId);
       if (event.replyToken) await sendLineReply(event.replyToken, message, token);
     }
   }

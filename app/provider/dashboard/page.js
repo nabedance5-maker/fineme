@@ -3604,6 +3604,121 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'checkin') loadList();
     })();
 
+    // ── 出欠確認タブ（Phase 5・hacomono/STORES網羅計画） ────────────
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const authHeadersEv = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` });
+
+      const listEl = document.getElementById('ev-list');
+      const inviteCard = document.getElementById('ev-invite-card');
+      const inviteTitleEl = document.getElementById('ev-invite-title');
+      const inviteUserSel = document.getElementById('ev-invite-user');
+      const attendanceListEl = document.getElementById('ev-attendance-list');
+      const inviteMsg = document.getElementById('ev-invite-msg');
+
+      let events = [];
+      let currentEventId = null;
+
+      function renderList() {
+        if (!listEl) return;
+        if (!events.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">まだイベントがありません。上のフォームから作成してください。</p>'; return; }
+        listEl.innerHTML = events.map(e => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;">
+            <div style="flex:1;min-width:0">
+              <strong style="font-size:13px">${esc(e.title)}</strong>
+              <span class="muted" style="font-size:12px;margin-left:8px">${e.event_date}${e.start_time ? ' ' + e.start_time : ''} ／ 参加${e.counts.attending}・不参加${e.counts.declined}・未回答${e.counts.invited}</span>
+            </div>
+            <button class="btn btn-ghost" style="font-size:11px;padding:6px 12px" data-ev-open="${e.id}">出欠を確認する</button>
+          </div>
+        `).join('');
+        listEl.querySelectorAll('[data-ev-open]').forEach(btn => btn.addEventListener('click', () => openInvite(btn.dataset.evOpen)));
+      }
+
+      async function loadEvents() {
+        const res = await fetch('/api/provider/events', { headers: authHeadersEv() });
+        if (!res.ok) { if (listEl) listEl.innerHTML = authErrorHtml(res); return; }
+        events = await res.json();
+        renderList();
+      }
+
+      async function loadInviteUsers() {
+        if (!inviteUserSel) return;
+        const res = await fetch('/api/provider/customers?scope=all', { headers: authHeadersEv() });
+        if (!res.ok) return;
+        const rows = await res.json();
+        const seen = new Set();
+        const opts = [];
+        rows.forEach(r => {
+          if (seen.has(r.user_id)) return;
+          seen.add(r.user_id);
+          opts.push(`<option value="${r.user_id}">${esc(r.customer_name)}</option>`);
+        });
+        inviteUserSel.innerHTML = opts.length ? opts.join('') : '<option value="">New Me Log連携済みの顧客がいません</option>';
+      }
+
+      async function loadAttendances(eventId) {
+        if (!attendanceListEl) return;
+        attendanceListEl.innerHTML = '<p class="muted">読み込み中…</p>';
+        const res = await fetch(`/api/provider/events/${eventId}/attendances`, { headers: authHeadersEv() });
+        if (!res.ok) { attendanceListEl.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        if (!rows.length) { attendanceListEl.innerHTML = '<p class="muted" style="font-size:13px">まだ招待していません。</p>'; return; }
+        const statusLabel = { invited: '未回答', attending: '参加', declined: '不参加' };
+        attendanceListEl.innerHTML = rows.map(r => `
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;">
+            <span style="flex:1;min-width:0;font-size:13px">${esc(r.customer_name)}</span>
+            <span class="muted" style="font-size:12px">${statusLabel[r.status] || r.status}</span>
+          </div>
+        `).join('');
+      }
+
+      function openInvite(eventId) {
+        currentEventId = eventId;
+        const ev = events.find(e => e.id === eventId);
+        if (inviteTitleEl) inviteTitleEl.textContent = ev ? ev.title : '';
+        if (inviteCard) inviteCard.style.display = '';
+        if (inviteMsg) inviteMsg.textContent = '';
+        loadInviteUsers();
+        loadAttendances(eventId);
+        inviteCard?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      document.getElementById('ev-invite-close')?.addEventListener('click', () => { if (inviteCard) inviteCard.style.display = 'none'; currentEventId = null; });
+
+      document.getElementById('ev-invite-send-btn')?.addEventListener('click', async () => {
+        const userId = inviteUserSel?.value;
+        if (!currentEventId || !userId) { if (inviteMsg) inviteMsg.textContent = '顧客を選んでください'; return; }
+        const res = await fetch(`/api/provider/events/${currentEventId}/attendances`, {
+          method: 'POST', headers: authHeadersEv(), body: JSON.stringify({ user_ids: [userId] }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { if (inviteMsg) { inviteMsg.style.color = '#ef4444'; inviteMsg.textContent = data?.error || '送信に失敗しました'; } return; }
+        if (inviteMsg) { inviteMsg.style.color = '#059669'; inviteMsg.textContent = data.sent ? 'LINEで送信しました' : '既に招待済みです'; }
+        loadAttendances(currentEventId);
+        loadEvents();
+      });
+
+      document.getElementById('ev-create-btn')?.addEventListener('click', async () => {
+        const title = document.getElementById('ev-title')?.value.trim();
+        const eventDate = document.getElementById('ev-date')?.value;
+        const startTime = document.getElementById('ev-time')?.value;
+        if (!title || !eventDate) { showToast('イベント名と日付を入力してください'); return; }
+        const res = await fetch('/api/provider/events', {
+          method: 'POST', headers: authHeadersEv(), body: JSON.stringify({ title, event_date: eventDate, start_time: startTime || null }),
+        });
+        if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
+        document.getElementById('ev-title').value = '';
+        document.getElementById('ev-date').value = '';
+        document.getElementById('ev-time').value = '';
+        showToast('イベントを作成しました');
+        loadEvents();
+      });
+
+      document.querySelectorAll('[data-tab="events"]').forEach(btn => btn.addEventListener('click', loadEvents, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'events') loadEvents();
+    })();
+
     // ── 接客の引き出し：お店専用パーソナライズ ───────────────────
     (function setupCustomerScripts() {
       const t = getSupabaseToken();
@@ -3710,6 +3825,7 @@ export default function ProviderDashboardPage() {
             <button className="tab-btn" data-tab="sales">💰 売上管理</button>
             <button className="tab-btn" data-tab="pos" data-feature="pos" style={{ display: 'none' }}>🧾 POS・在庫</button>
             <button className="tab-btn" data-tab="checkin" data-feature="checkin_qr" style={{ display: 'none' }}>📷 チェックイン</button>
+            <button className="tab-btn" data-tab="events" data-feature="attendance_confirm" style={{ display: 'none' }}>🙋 出欠確認</button>
             <p className="pd-nav-heading">③ 伸ばすためのタブ</p>
             <button className="tab-btn" data-tab="area-demand">📍 エリア需要</button>
             <button className="tab-btn" data-tab="scripts">💡 接客の引き出し</button>
@@ -4904,6 +5020,51 @@ export default function ProviderDashboardPage() {
           <div className="card stack" style={{ padding: '24px' }}>
             <h2 style={{ margin: 0, fontSize: '16px' }}>チェックイン履歴</h2>
             <div id="checkin-list"><p className="muted">読み込み中…</p></div>
+          </div>
+        </div>
+
+        {/* 出欠確認：既存のLINE往復インフラ（クイックリプライ・Webhook）をそのまま横展開
+            （hacomono/STORES網羅計画 Phase 5）。既存コードへの変更は追加のみで、リスクが低いフェーズ。 */}
+        <div className="tab-pane" id="tab-events">
+          <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>イベントを作る</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                作成後、下の一覧から「出欠を確認する」で招待したい顧客を選ぶと、LINEで出欠確認が届きます（参加/不参加をボタンで回答できます）。
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="form-field" style={{ minWidth: '200px' }}>
+                <label>イベント名</label>
+                <input id="ev-title" type="text" placeholder="例：グループレッスン体験会" />
+              </div>
+              <div className="form-field" style={{ minWidth: '140px' }}>
+                <label>日付</label>
+                <input id="ev-date" type="date" />
+              </div>
+              <div className="form-field" style={{ minWidth: '120px' }}>
+                <label>開始時刻（任意）</label>
+                <input id="ev-time" type="time" />
+              </div>
+              <button className="btn" id="ev-create-btn" type="button">作成する</button>
+            </div>
+            <div id="ev-list"><p className="muted">読み込み中…</p></div>
+          </div>
+
+          <div className="card stack" id="ev-invite-card" style={{ padding: '24px', gap: '16px', display: 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0, fontSize: '16px' }}>出欠を確認する：<span id="ev-invite-title"></span></h2>
+              <button className="btn btn-ghost" id="ev-invite-close" type="button" style={{ fontSize: '12px' }}>閉じる</button>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="form-field" style={{ minWidth: '220px' }}>
+                <label>招待する顧客（New Me Log連携済み）</label>
+                <select id="ev-invite-user"></select>
+              </div>
+              <button className="btn" id="ev-invite-send-btn" type="button">LINEで出欠確認を送る</button>
+              <span id="ev-invite-msg" className="muted" style={{ fontSize: '13px' }}></span>
+            </div>
+            <div id="ev-attendance-list"><p className="muted">読み込み中…</p></div>
           </div>
         </div>
 
