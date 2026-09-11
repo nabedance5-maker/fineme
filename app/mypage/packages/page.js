@@ -60,7 +60,11 @@ export default function MypagePackagesPage() {
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <p style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: p.expired ? '#9ca3af' : '#c9a84c' }}>
-                        {p.remaining_sessions} <span style={{ fontSize: '12px', fontWeight: 700 }}>/ {p.total_sessions}回</span>
+                        {p.package_type === 'unlimited' ? (
+                          '通い放題'
+                        ) : (
+                          <>{p.remaining_sessions} <span style={{ fontSize: '12px', fontWeight: 700 }}>/ {p.total_sessions}回</span></>
+                        )}
                       </p>
                       {p.expired && <p style={{ margin: 0, fontSize: '11px', color: '#dc2626' }}>期限切れ</p>}
                     </div>

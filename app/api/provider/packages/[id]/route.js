@@ -23,9 +23,24 @@ export async function PATCH(request, { params }) {
   const update = {};
   if (typeof body.active === 'boolean') update.active = body.active;
   if (typeof body.name === 'string' && body.name.trim()) update.name = body.name.trim();
-  if (Number.isInteger(parseInt(body.total_sessions, 10)) && body.total_sessions > 0) update.total_sessions = parseInt(body.total_sessions, 10);
   if (body.price !== undefined) update.price = Number.isFinite(parseInt(body.price, 10)) ? parseInt(body.price, 10) : null;
   if (body.validity_days !== undefined) update.validity_days = Number.isFinite(parseInt(body.validity_days, 10)) ? parseInt(body.validity_days, 10) : null;
+
+  // package_type変更時（hacomono/STORES網羅計画 Phase 2）：unlimitedはtotal_sessionsをNULLに、
+  // それ以外はNOT NULL＋正の整数のDB制約があるため、type変更とtotal_sessions更新は必ずセットで扱う。
+  if (['fixed_count', 'unlimited', 'combo'].includes(body.package_type)) {
+    update.package_type = body.package_type;
+  }
+  const nextType = update.package_type; // 既存レコードのtypeは分からないため、bodyでtypeが来た時だけtotal_sessionsも連動させる
+  if (nextType === 'unlimited') {
+    update.total_sessions = null;
+  } else if (Number.isInteger(parseInt(body.total_sessions, 10)) && body.total_sessions > 0) {
+    update.total_sessions = parseInt(body.total_sessions, 10);
+  }
+  if (body.combo_ticket_sessions !== undefined) {
+    const comboSessions = parseInt(body.combo_ticket_sessions, 10);
+    update.combo_ticket_sessions = (nextType === 'combo' || body.package_type === undefined) && Number.isInteger(comboSessions) && comboSessions > 0 ? comboSessions : null;
+  }
 
   if (!Object.keys(update).length) return Response.json({ error: '更新項目がありません' }, { status: 400 });
 

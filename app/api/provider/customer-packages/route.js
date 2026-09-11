@@ -20,7 +20,7 @@ export async function GET(request) {
 
   const { data: rows, error } = await supabase
     .from('customer_packages')
-    .select('id, user_id, package_id, package_name, total_sessions, purchased_at, expires_at')
+    .select('id, user_id, package_id, package_name, total_sessions, package_type, purchased_at, expires_at')
     .eq('provider_id', provider.id)
     .order('purchased_at', { ascending: false });
 
@@ -41,20 +41,33 @@ export async function GET(request) {
   const usageByPkg = {};
   (usages || []).forEach(u => { (usageByPkg[u.customer_package_id] = usageByPkg[u.customer_package_id] || []).push(u); });
 
-  const result = rows.map(r => {
+  let result = rows.map(r => {
     const list = (usageByPkg[r.id] || []).filter(u => !u.undone_at);
     const lastActiveUsage = (usageByPkg[r.id] || [])
       .filter(u => !u.undone_at)
       .sort((a, b) => new Date(b.used_at) - new Date(a.used_at))[0] || null;
+    const isUnlimited = r.package_type === 'unlimited';
+    const expired = r.expires_at ? new Date(r.expires_at) < new Date() : false;
     return {
       ...r,
       customer_name: nameMap[r.user_id] || '(名前未設定)',
       used_sessions: list.length,
-      remaining_sessions: r.total_sessions - list.length,
+      remaining_sessions: isUnlimited ? null : r.total_sessions - list.length,
       last_usage_id: lastActiveUsage?.id || null,
-      expired: r.expires_at ? new Date(r.expires_at) < new Date() : false,
+      expired,
+      used_up: !isUnlimited && !expired && (r.total_sessions - list.length) <= 0,
     };
   });
+
+  // 今野くんの実地メモ（hacomono/STORES網羅計画 Phase 2）：会員一覧に「有効な会員のみ表示」の
+  // 絞り込みが常時欲しい、使用済みチケットは後ろに回したい、という要望への対応
+  const { searchParams } = new URL(request.url);
+  if (searchParams.get('activeOnly') === 'true') {
+    result = result.filter(r => !r.expired && !r.used_up);
+  }
+  if (searchParams.get('hideUsedUp') === 'true') {
+    result = result.filter(r => !r.used_up);
+  }
 
   return Response.json(result);
 }
@@ -70,7 +83,7 @@ export async function POST(request) {
 
   const { data: pkg, error: pkgError } = await supabase
     .from('service_packages')
-    .select('id, name, total_sessions, validity_days')
+    .select('id, name, total_sessions, validity_days, package_type')
     .eq('id', package_id)
     .eq('provider_id', provider.id)
     .single();
@@ -87,6 +100,7 @@ export async function POST(request) {
       user_id,
       package_name: pkg.name,
       total_sessions: pkg.total_sessions,
+      package_type: pkg.package_type || 'fixed_count',
       purchased_at: purchasedAt.toISOString(),
       expires_at: expiresAt ? expiresAt.toISOString() : null,
     })

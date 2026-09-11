@@ -1764,22 +1764,27 @@ export default function ProviderDashboardPage() {
       function renderDefs() {
         if (!defListEl) return;
         if (!defs.length) { defListEl.innerHTML = '<p class="muted" style="font-size:13px">まだパッケージがありません。上のフォームから作成してください。</p>'; return; }
-        defListEl.innerHTML = defs.map(d => `
+        defListEl.innerHTML = defs.map(d => {
+          const typeLabel = d.package_type === 'unlimited' ? '通い放題'
+            : d.package_type === 'combo' ? `通い放題＋チケット${d.combo_ticket_sessions ? d.combo_ticket_sessions + '回' : ''}`
+            : `${d.total_sessions}回`;
+          return `
           <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;${d.active ? '' : 'opacity:.5'}">
             <div style="flex:1;min-width:0">
               <strong style="font-size:13px">${esc(d.name)}</strong>
-              <span class="muted" style="font-size:12px;margin-left:8px">${d.total_sessions}回${d.price ? ` ／ ¥${Number(d.price).toLocaleString()}` : ''}${d.validity_days ? ` ／ 有効期限${d.validity_days}日` : ' ／ 無期限'}</span>
+              <span class="muted" style="font-size:12px;margin-left:8px">${typeLabel}${d.price ? ` ／ ¥${Number(d.price).toLocaleString()}` : ''}${d.validity_days ? ` ／ 有効期限${d.validity_days}日` : ' ／ 無期限'}</span>
             </div>
             <button class="btn btn-ghost" style="font-size:11px;padding:6px 12px" onclick="togglePackageActive('${d.id}', ${!d.active})">${d.active ? '停止する' : '再開する'}</button>
           </div>
-        `).join('');
+        `;
+        }).join('');
       }
 
       function renderPkgSelect() {
         if (!pkgSel) return;
         const active = defs.filter(d => d.active);
         pkgSel.innerHTML = active.length
-          ? active.map(d => `<option value="${d.id}">${esc(d.name)}（${d.total_sessions}回）</option>`).join('')
+          ? active.map(d => `<option value="${d.id}">${esc(d.name)}（${d.package_type === 'unlimited' ? '通い放題' : d.total_sessions + '回'}）</option>`).join('')
           : '<option value="">先にパッケージを作成してください</option>';
       }
 
@@ -1802,19 +1807,26 @@ export default function ProviderDashboardPage() {
       async function loadCustomerPackages() {
         if (!customerListEl) return;
         customerListEl.innerHTML = '<p class="muted">読み込み中…</p>';
-        const res = await fetch('/api/provider/customer-packages', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        // 今野くんの実地メモ：有効な会員のみ表示・使用済みチケットは後ろに回したい（Phase 2）
+        const activeOnly = !!document.getElementById('pkg-active-only')?.checked;
+        const qs = activeOnly ? '?activeOnly=true' : '';
+        const res = await fetch(`/api/provider/customer-packages${qs}`, { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         if (!res.ok) { customerListEl.innerHTML = authErrorHtml(res); return; }
         const rows = await res.json();
         if (!rows.length) { customerListEl.innerHTML = '<p class="muted">まだ購入記録がありません。</p>'; return; }
-        customerListEl.innerHTML = rows.map(r => `
-          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;${r.expired ? 'opacity:.5' : ''}">
+        const sorted = [...rows].sort((a, b) => (a.used_up || a.expired ? 1 : 0) - (b.used_up || b.expired ? 1 : 0));
+        customerListEl.innerHTML = sorted.map(r => {
+          const countLabel = r.package_type === 'unlimited' ? '通い放題' : `残り${r.remaining_sessions}/${r.total_sessions}回${r.used_up ? '（使用済み）' : ''}`;
+          return `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;${r.expired || r.used_up ? 'opacity:.5' : ''}">
             <div style="flex:1;min-width:0">
               <strong style="font-size:13px">${esc(r.customer_name)}</strong>
-              <span class="muted" style="font-size:12px;margin-left:8px">${esc(r.package_name)}｜残り${r.remaining_sessions}/${r.total_sessions}回${r.expired ? '（期限切れ）' : ''}</span>
+              <span class="muted" style="font-size:12px;margin-left:8px">${esc(r.package_name)}｜${countLabel}${r.expired ? '（期限切れ）' : ''}</span>
             </div>
             ${r.last_usage_id ? `<button class="btn btn-ghost" style="font-size:11px;padding:6px 12px;color:#ef4444" onclick="undoPackageUsage('${r.id}', this)">直近1回を取り消す</button>` : ''}
           </div>
-        `).join('');
+        `;
+        }).join('');
       }
 
       window.togglePackageActive = async function (id, active) {
@@ -1838,24 +1850,45 @@ export default function ProviderDashboardPage() {
         loadCustomerPackages();
       };
 
+      const typeSel = document.getElementById('pkg-type');
+      const sessionsField = document.getElementById('pkg-sessions-field');
+      const comboSessionsField = document.getElementById('pkg-combo-sessions-field');
+      function syncTypeFields() {
+        const t = typeSel?.value || 'fixed_count';
+        if (sessionsField) sessionsField.style.display = t === 'unlimited' ? 'none' : '';
+        if (comboSessionsField) comboSessionsField.style.display = t === 'combo' ? '' : 'none';
+      }
+      if (typeSel) { typeSel.addEventListener('change', syncTypeFields); syncTypeFields(); }
+
+      const activeOnlyCheckbox = document.getElementById('pkg-active-only');
+      if (activeOnlyCheckbox) activeOnlyCheckbox.addEventListener('change', loadCustomerPackages);
+
       const createBtn = document.getElementById('pkg-create-btn');
       if (createBtn) {
         createBtn.addEventListener('click', async () => {
           const name = document.getElementById('pkg-name')?.value.trim();
+          const package_type = typeSel?.value || 'fixed_count';
           const sessions = document.getElementById('pkg-sessions')?.value;
+          const comboSessions = document.getElementById('pkg-combo-sessions')?.value;
           const price = document.getElementById('pkg-price')?.value;
           const validity = document.getElementById('pkg-validity')?.value;
-          if (!name || !sessions) { showToast('パッケージ名と回数を入力してください'); return; }
+          if (!name) { showToast('パッケージ名を入力してください'); return; }
+          if (package_type !== 'unlimited' && !sessions) { showToast('回数を入力してください'); return; }
           createBtn.disabled = true;
           const res = await fetch('/api/provider/packages', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
-            body: JSON.stringify({ name, total_sessions: sessions, price: price || null, validity_days: validity || null }),
+            body: JSON.stringify({
+              name, package_type, total_sessions: sessions || null,
+              combo_ticket_sessions: package_type === 'combo' ? comboSessions : null,
+              price: price || null, validity_days: validity || null,
+            }),
           });
           createBtn.disabled = false;
           if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
           document.getElementById('pkg-name').value = '';
           document.getElementById('pkg-sessions').value = '';
+          document.getElementById('pkg-combo-sessions').value = '';
           document.getElementById('pkg-price').value = '';
           document.getElementById('pkg-validity').value = '';
           showToast('パッケージを作成しました');
@@ -4231,9 +4264,21 @@ export default function ProviderDashboardPage() {
                 <label>パッケージ名</label>
                 <input id="pkg-name" type="text" placeholder="例：パーソナルトレーニング10回券" />
               </div>
-              <div className="form-field" style={{ minWidth: '100px' }}>
+              <div className="form-field" style={{ minWidth: '140px' }}>
+                <label>タイプ</label>
+                <select id="pkg-type">
+                  <option value="fixed_count">回数券</option>
+                  <option value="unlimited">通い放題</option>
+                  <option value="combo">通い放題＋チケット（複合）</option>
+                </select>
+              </div>
+              <div className="form-field" id="pkg-sessions-field" style={{ minWidth: '100px' }}>
                 <label>回数</label>
                 <input id="pkg-sessions" type="number" min="1" placeholder="10" />
+              </div>
+              <div className="form-field" id="pkg-combo-sessions-field" style={{ minWidth: '140px', display: 'none' }}>
+                <label>付帯チケット回数</label>
+                <input id="pkg-combo-sessions" type="number" min="1" placeholder="4" />
               </div>
               <div className="form-field" style={{ minWidth: '120px' }}>
                 <label>参考価格（任意）</label>
@@ -4245,6 +4290,9 @@ export default function ProviderDashboardPage() {
               </div>
               <button className="btn" id="pkg-create-btn" type="button">作成する</button>
             </div>
+            <p className="muted" style={{ fontSize: '12px', margin: '-4px 0 8px' }}>
+              「通い放題＋チケット」は今野くんの実地メモ通り、通い放題契約に付帯チケット分の回数を1契約で持たせられます（hacomono同等・STORESは2契約が必要）。
+            </p>
             <div id="pkg-def-list"></div>
           </div>
 
@@ -4267,6 +4315,10 @@ export default function ProviderDashboardPage() {
               <button className="btn" id="pkg-assign-btn" type="button">購入を記録する</button>
               <span id="pkg-assign-msg" className="muted" style={{ fontSize: '13px' }}></span>
             </div>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', marginBottom: '12px', cursor: 'pointer' }}>
+              <input type="checkbox" id="pkg-active-only" />
+              有効な会員のみ表示（期限切れ・使用済みを隠す）
+            </label>
             <div id="pkg-customer-list"><p className="muted">読み込み中…</p></div>
           </div>
         </div>

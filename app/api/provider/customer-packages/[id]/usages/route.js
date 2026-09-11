@@ -15,7 +15,7 @@ async function getProviderByToken(token) {
 async function getOwnedCustomerPackage(providerId, id) {
   const { data } = await supabase
     .from('customer_packages')
-    .select('id, total_sessions')
+    .select('id, total_sessions, package_type')
     .eq('id', id)
     .eq('provider_id', providerId)
     .single();
@@ -31,13 +31,16 @@ export async function POST(request, { params }) {
   const cp = await getOwnedCustomerPackage(provider.id, params.id);
   if (!cp) return Response.json({ error: 'パッケージが見つかりません' }, { status: 404 });
 
-  const { data: activeUsages } = await supabase
-    .from('package_usages')
-    .select('id')
-    .eq('customer_package_id', cp.id)
-    .is('undone_at', null);
-  if ((activeUsages?.length || 0) >= cp.total_sessions) {
-    return Response.json({ error: '残り回数がありません' }, { status: 400 });
+  // unlimited（通い放題）はセッション数の概念が無いため回数チェック自体をスキップする
+  if (cp.package_type !== 'unlimited') {
+    const { data: activeUsages } = await supabase
+      .from('package_usages')
+      .select('id')
+      .eq('customer_package_id', cp.id)
+      .is('undone_at', null);
+    if ((activeUsages?.length || 0) >= cp.total_sessions) {
+      return Response.json({ error: '残り回数がありません' }, { status: 400 });
+    }
   }
 
   const { reservation_id } = await request.json().catch(() => ({}));

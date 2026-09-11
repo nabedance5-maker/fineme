@@ -13,7 +13,7 @@ export async function GET(request) {
 
   const { data: rows, error } = await supabase
     .from('customer_packages')
-    .select('id, provider_id, package_name, total_sessions, purchased_at, expires_at')
+    .select('id, provider_id, package_name, total_sessions, package_type, purchased_at, expires_at')
     .eq('user_id', user.id)
     .order('purchased_at', { ascending: false });
 
@@ -37,18 +37,22 @@ export async function GET(request) {
     usedByPkg[u.customer_package_id] = (usedByPkg[u.customer_package_id] || 0) + 1;
   });
 
-  const result = rows.map(r => ({
-    id: r.id,
-    provider_name: providerMap[r.provider_id]?.name || '(店舗)',
-    provider_slug: providerMap[r.provider_id]?.slug || null,
-    package_name: r.package_name,
-    total_sessions: r.total_sessions,
-    used_sessions: usedByPkg[r.id] || 0,
-    remaining_sessions: r.total_sessions - (usedByPkg[r.id] || 0),
-    purchased_at: r.purchased_at,
-    expires_at: r.expires_at,
-    expired: r.expires_at ? new Date(r.expires_at) < new Date() : false,
-  }));
+  const result = rows.map(r => {
+    const isUnlimited = r.package_type === 'unlimited';
+    return {
+      id: r.id,
+      provider_name: providerMap[r.provider_id]?.name || '(店舗)',
+      provider_slug: providerMap[r.provider_id]?.slug || null,
+      package_name: r.package_name,
+      total_sessions: r.total_sessions,
+      package_type: r.package_type || 'fixed_count',
+      used_sessions: usedByPkg[r.id] || 0,
+      remaining_sessions: isUnlimited ? null : r.total_sessions - (usedByPkg[r.id] || 0),
+      purchased_at: r.purchased_at,
+      expires_at: r.expires_at,
+      expired: r.expires_at ? new Date(r.expires_at) < new Date() : false,
+    };
+  });
 
   return Response.json(result);
 }
