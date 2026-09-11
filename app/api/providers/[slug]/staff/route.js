@@ -19,7 +19,7 @@ export async function GET(request, { params }) {
 
   const { data, error } = await supabase
     .from('provider_staff')
-    .select('id, name, role, bio, photo_url, experience_years, credentials, is_featured, sort_order')
+    .select('id, name, role, bio, photo_url, experience_years, credentials, is_featured, sort_order, bookable, booking_fee')
     .eq('provider_id', provider.id)
     .order('is_featured', { ascending: false })
     .order('sort_order', { ascending: true })

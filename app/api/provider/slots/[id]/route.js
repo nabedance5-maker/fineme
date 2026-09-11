@@ -25,6 +25,8 @@ export async function PATCH(request, { params }) {
   if (body.start_time !== undefined) updates.start_time = body.start_time;
   if (body.end_time   !== undefined) updates.end_time   = body.end_time;
   if (body.service_id !== undefined) updates.service_id = body.service_id || null;
+  if (body.staff_id !== undefined) updates.staff_id = body.staff_id || null;
+  if (body.resource_id !== undefined) updates.resource_id = body.resource_id || null;
 
   const { data, error } = await supabase
     .from('provider_slots')

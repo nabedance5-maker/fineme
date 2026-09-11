@@ -58,6 +58,10 @@ export async function POST(request) {
     end_time:    s.end_time,
     capacity:    Number(s.capacity) || 1,
     is_open:     s.is_open !== false,
+    // 即時予約モード（hacomono/STORES網羅計画 Phase 1）。1枠=スタッフ+部屋の組として
+    // 管理することで、部屋のブロック忘れによる二重予約を構造的に防ぐ。
+    staff_id:    s.staff_id || null,
+    resource_id: s.resource_id || null,
   })).filter(s => s.date && s.start_time && s.end_time);
 
   if (rows.length === 0) {

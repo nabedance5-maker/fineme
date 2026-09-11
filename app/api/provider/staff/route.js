@@ -79,7 +79,7 @@ export async function POST(request) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json();
-  const { name, role, bio, photo_url, experience_years, credentials, is_featured, sort_order, strong_types, strong_axes } = body;
+  const { name, role, bio, photo_url, experience_years, credentials, is_featured, sort_order, strong_types, strong_axes, bookable, booking_fee } = body;
   if (!name?.trim()) return Response.json({ error: '名前は必須です' }, { status: 400 });
 
   const { data, error } = await supabase
@@ -96,6 +96,10 @@ export async function POST(request) {
       sort_order: sort_order ? Number(sort_order) : 0,
       strong_types: Array.isArray(strong_types) ? strong_types : [],
       strong_axes: Array.isArray(strong_axes) ? strong_axes : [],
+      // スタッフ指名予約（hacomono/STORES網羅計画 Phase 1）。bookable=falseなら
+      // 公開予約フォームの指名候補に出さない（裏方スタッフ等）。booking_feeは指名料（円）。
+      bookable: bookable === undefined ? true : !!bookable,
+      booking_fee: booking_fee ? Math.max(0, Number(booking_fee)) : 0,
     })
     .select()
     .single();
