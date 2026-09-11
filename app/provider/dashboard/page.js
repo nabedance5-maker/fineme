@@ -717,6 +717,7 @@ export default function ProviderDashboardPage() {
                 <strong style="font-size:14px">${esc(s.name)}</strong>
                 ${s.is_featured ? '<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:99px">担当</span>' : ''}
                 ${s.role ? `<span style="font-size:12px;color:#6b7280">${esc(s.role)}</span>` : ''}
+                ${s.bookable === false ? '<span style="font-size:10px;background:#f3f4f6;color:#9ca3af;padding:1px 6px;border-radius:99px">指名候補に出さない</span>' : s.booking_fee > 0 ? `<span style="font-size:10px;background:#eef2ff;color:#4338ca;padding:1px 6px;border-radius:99px">指名料¥${Number(s.booking_fee).toLocaleString()}</span>` : ''}
               </div>
               ${s.experience_years ? `<span style="font-size:11px;color:#059669">経験${s.experience_years}年</span>` : ''}
               ${s.bio ? `<p style="font-size:12px;color:#9ca3af;margin:4px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.bio.slice(0, 60))}${s.bio.length > 60 ? '…' : ''}</p>` : ''}
@@ -739,6 +740,8 @@ export default function ProviderDashboardPage() {
           editForm.elements['credentials'].value  = s.credentials || '';
           editForm.elements['is_featured'].checked = !!s.is_featured;
           editForm.elements['sort_order'].value   = s.sort_order ?? 0;
+          editForm.elements['bookable'].checked   = s.bookable !== false;
+          editForm.elements['booking_fee'].value  = s.booking_fee || '';
           editForm.elements['_staff_id'].value    = s.id;
           editForm.elements['strong_types_text'].value = (s.strong_types || []).join(', ');
           document.querySelectorAll('#staff-strong-axes input').forEach(cb => { cb.checked = (s.strong_axes || []).includes(cb.value); });
@@ -778,6 +781,8 @@ export default function ProviderDashboardPage() {
           credentials: fd.get('credentials') || null,
           is_featured: !!editForm.elements['is_featured'].checked,
           sort_order: Number(fd.get('sort_order')) || 0,
+          bookable: !!editForm.elements['bookable'].checked,
+          booking_fee: fd.get('booking_fee') ? Number(fd.get('booking_fee')) : 0,
           strong_axes: Array.from(document.querySelectorAll('#staff-strong-axes input:checked')).map(i => i.value),
           strong_types: String(fd.get('strong_types_text') || '').split(',').map(s => s.trim()).filter(Boolean),
         };
@@ -813,6 +818,158 @@ export default function ProviderDashboardPage() {
 
       document.querySelectorAll('[data-tab="staff"]').forEach(btn => btn.addEventListener('click', loadStaff, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'staff') loadStaff();
+    })();
+
+    // ── 部屋・設備タブ（hacomono/STORES網羅計画 Phase 1） ──────────────
+    (function setupResources() {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const listEl    = document.getElementById('resource-list');
+      const editCard  = document.getElementById('resource-edit-card');
+      const editForm  = document.getElementById('resource-edit-form');
+      const editTitle = document.getElementById('resource-edit-title');
+      function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+      const TYPE_LABEL = { room: '部屋', equipment: '設備・マシン', other: 'その他' };
+
+      async function loadResources() {
+        if (!listEl) return;
+        const res = await fetch('/api/provider/resources', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
+        const items = await res.json();
+        if (!items.length) { listEl.innerHTML = '<p class="muted">まだ登録されていません。「＋ 追加」から登録してください。</p>'; return; }
+        listEl.innerHTML = '';
+        items.forEach(r => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f3f4f6';
+          row.innerHTML = `
+            <div style="flex:1;min-width:0">
+              <strong style="font-size:14px">${esc(r.name)}</strong>
+              <span style="font-size:11px;color:#6b7280;margin-left:6px">${esc(TYPE_LABEL[r.type] || r.type)}</span>
+              ${!r.active ? '<span style="font-size:10px;background:#f3f4f6;color:#9ca3af;padding:1px 6px;border-radius:99px;margin-left:6px">停止中</span>' : ''}
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" data-resource-edit="${r.id}">編集</button>
+              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px;color:#ef4444" data-resource-del="${r.id}">削除</button>
+            </div>`;
+          listEl.appendChild(row);
+        });
+        listEl.querySelectorAll('[data-resource-edit]').forEach(btn => btn.addEventListener('click', () => {
+          const r = items.find(x => x.id === btn.dataset.resourceEdit); if (!r) return;
+          editTitle.textContent = '部屋・設備を編集'; editCard.style.display = 'block';
+          editForm.elements['name'].value = r.name || '';
+          editForm.elements['type'].value = r.type || 'room';
+          editForm.elements['active'].checked = r.active !== false;
+          editForm.elements['_resource_id'].value = r.id;
+          editCard.scrollIntoView({ behavior: 'smooth' });
+        }));
+        listEl.querySelectorAll('[data-resource-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('削除しますか？')) return;
+          await fetch(`/api/provider/resources/${btn.dataset.resourceDel}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+          loadResources();
+        }));
+      }
+
+      document.getElementById('btn-add-resource')?.addEventListener('click', () => {
+        editTitle.textContent = '部屋・設備を追加'; editCard.style.display = 'block';
+        editForm.reset(); editForm.elements['_resource_id'].value = '';
+        editCard.scrollIntoView({ behavior: 'smooth' });
+      });
+      document.getElementById('resource-cancel-btn')?.addEventListener('click', () => {
+        editCard.style.display = 'none'; editForm.reset();
+      });
+
+      editForm?.addEventListener('submit', async e => {
+        e.preventDefault();
+        const fd = new FormData(editForm);
+        const id = fd.get('_resource_id');
+        const body = { name: fd.get('name'), type: fd.get('type'), active: !!editForm.elements['active'].checked };
+        const url = id ? `/api/provider/resources/${id}` : '/api/provider/resources';
+        const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` }, body: JSON.stringify(body) });
+        if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadResources(); showToast('保存しました'); }
+        else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
+      });
+
+      document.querySelectorAll('[data-tab="resources"]').forEach(btn => btn.addEventListener('click', loadResources, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'resources') loadResources();
+    })();
+
+    // ── 空き枠タブ（即時予約モード用・hacomono/STORES網羅計画 Phase 1） ─────
+    (function setupSlots() {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const listEl  = document.getElementById('slot-list');
+      const form    = document.getElementById('slot-add-form');
+      const staffSel = document.getElementById('slot-staff-select');
+      const resourceSel = document.getElementById('slot-resource-select');
+      function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+      let staffOptionsLoaded = false;
+
+      async function loadSelectOptions() {
+        if (staffOptionsLoaded) return;
+        staffOptionsLoaded = true;
+        try {
+          const [staffRes, resourceRes] = await Promise.all([
+            fetch('/api/provider/staff', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } }),
+            fetch('/api/provider/resources', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } }),
+          ]);
+          if (staffRes.ok && staffSel) {
+            const staffList = await staffRes.json();
+            staffList.forEach(s => staffSel.insertAdjacentHTML('beforeend', `<option value="${s.id}">${esc(s.name)}</option>`));
+          }
+          if (resourceRes.ok && resourceSel) {
+            const resourceList = await resourceRes.json();
+            resourceList.forEach(r => resourceSel.insertAdjacentHTML('beforeend', `<option value="${r.id}">${esc(r.name)}</option>`));
+          }
+        } catch {}
+      }
+
+      async function loadSlots() {
+        if (!listEl) return;
+        await loadSelectOptions();
+        listEl.textContent = '読み込み中…';
+        const month = new Date().toISOString().slice(0, 7);
+        const res = await fetch(`/api/provider/slots?month=${month}`, { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
+        const slots = await res.json();
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const upcoming = slots.filter(s => s.date >= todayStr);
+        if (!upcoming.length) { listEl.innerHTML = '<p class="muted">今月分の今後の枠はまだありません。上のフォームから追加してください。</p>'; return; }
+        listEl.innerHTML = upcoming.map(s => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:700">${esc(s.date)} ${esc(s.start_time)}〜${esc(s.end_time)}</span>
+            <span style="font-size:12px;color:#6b7280">定員${s.capacity}</span>
+            ${!s.is_open ? '<span style="font-size:10px;background:#fef2f2;color:#ef4444;padding:1px 6px;border-radius:99px">締切</span>' : ''}
+            <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px;margin-left:auto" data-slot-toggle="${s.id}" data-open="${s.is_open}">${s.is_open ? '締め切る' : '再開する'}</button>
+            <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px;color:#ef4444" data-slot-del="${s.id}">削除</button>
+          </div>`).join('');
+        listEl.querySelectorAll('[data-slot-toggle]').forEach(btn => btn.addEventListener('click', async () => {
+          const isOpen = btn.dataset.open === 'true';
+          await fetch(`/api/provider/slots/${btn.dataset.slotToggle}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` }, body: JSON.stringify({ is_open: !isOpen }) });
+          loadSlots();
+        }));
+        listEl.querySelectorAll('[data-slot-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('この枠を削除しますか？')) return;
+          await fetch(`/api/provider/slots/${btn.dataset.slotDel}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+          loadSlots();
+        }));
+      }
+
+      form?.addEventListener('submit', async e => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const body = {
+          date: fd.get('date'), start_time: fd.get('start_time'), end_time: fd.get('end_time'),
+          capacity: Number(fd.get('capacity')) || 1,
+          staff_id: fd.get('staff_id') || null,
+          resource_id: fd.get('resource_id') || null,
+        };
+        const res = await fetch('/api/provider/slots', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` }, body: JSON.stringify(body) });
+        if (res.ok) { form.reset(); loadSlots(); showToast('枠を追加しました'); }
+        else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
+      });
+
+      document.querySelectorAll('[data-tab="slots"]').forEach(btn => btn.addEventListener('click', loadSlots, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'slots') loadSlots();
     })();
 
     // ── 体験談タブ ────────────────────────────────────────────────
@@ -1889,6 +2046,24 @@ export default function ProviderDashboardPage() {
 
       document.querySelectorAll('[data-tab="features"]').forEach(btn => btn.addEventListener('click', loadFeatures, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'features') loadFeatures();
+    })();
+
+    // ── 機能フラグによるサイドバーの出し分け（Phase 0基盤） ────────────
+    // [data-feature="key"] を持つナビボタンは、その機能がOFFの店舗では非表示にする。
+    // 以降のフェーズ（POS・チェックイン等）のタブもこのdata-feature属性を付けるだけでよい。
+    (async () => {
+      const token = getSupabaseToken();
+      const gatedEls = document.querySelectorAll('[data-feature]');
+      if (!token || !gatedEls.length) return;
+      try {
+        const res = await fetch('/api/provider/features', { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) return;
+        const { features } = await res.json();
+        gatedEls.forEach(el => {
+          const key = el.dataset.feature;
+          el.style.display = features?.[key] ? '' : 'none';
+        });
+      } catch {}
     })();
 
     // ── クチコミ依頼タブ ──────────────────────────────────────────
@@ -3192,6 +3367,8 @@ export default function ProviderDashboardPage() {
             <button className="tab-btn" data-tab="service">サービス設定</button>
             <button className="tab-btn" data-tab="packages">🎫 回数券</button>
             <button className="tab-btn" data-tab="staff">👤 スタッフ</button>
+            <button className="tab-btn" data-tab="resources" data-feature="resource_management" style={{ display: 'none' }}>🏠 部屋・設備</button>
+            <button className="tab-btn" data-tab="slots" data-feature="instant_booking" style={{ display: 'none' }}>📅 空き枠</button>
             <button className="tab-btn" data-tab="stories">📝 体験談</button>
             <button className="tab-btn" data-tab="landing">🌐 LP設定</button>
             <button className="tab-btn" data-tab="qr">🔗 紹介QR</button>
@@ -3543,12 +3720,81 @@ export default function ProviderDashboardPage() {
                 <input type="checkbox" name="is_featured" id="staff-is-featured" />
                 <label htmlFor="staff-is-featured" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>担当スタッフとして優先表示する</label>
               </div>
+              {/* スタッフ指名予約（hacomono/STORES網羅計画 Phase 1）。指名なしでもbookable=trueなら
+                  予約時の候補に出る。指名料は0円なら「無料」表示、0より大きければ指名料として案内する。 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <input type="checkbox" name="bookable" id="staff-bookable" defaultChecked />
+                <label htmlFor="staff-bookable" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>予約時の指名候補に出す</label>
+              </div>
+              <div className="form-field"><label>指名料（円・任意）</label><input name="booking_fee" type="number" min="0" placeholder="0（無料）" /></div>
               <input type="hidden" name="_staff_id" />
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button type="submit" className="btn">保存</button>
                 <button type="button" className="btn btn-ghost" id="staff-cancel-btn">キャンセル</button>
               </div>
             </form>
+          </div>
+        </div>
+
+        {/* 部屋・設備（hacomono/STORES網羅計画 Phase 1）。「機能設定」タブでONにした店舗のみ表示。
+            今野くんの実地メモ：スタッフだけブロックして部屋のブロックを忘れダブルブッキングが
+            起きていた——スタッフとは独立に部屋/設備を管理し、即時予約の枠でセットにする。 */}
+        <div className="tab-pane" id="tab-resources">
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>部屋・設備</h2>
+                <p className="muted" style={{ fontSize: '13px', margin: 0 }}>個室やマシンなど、予約に紐づく設備を登録します。</p>
+              </div>
+              <button className="btn" id="btn-add-resource">＋ 追加</button>
+            </div>
+            <div id="resource-edit-card" className="card" style={{ display: 'none', padding: '18px', background: '#f9fafb' }}>
+              <h3 id="resource-edit-title" style={{ fontSize: '14px', margin: '0 0 12px' }}>部屋・設備を追加</h3>
+              <form id="resource-edit-form">
+                <div className="form-field"><label>名前 *</label><input name="name" required placeholder="例: 個室A / マシン1" /></div>
+                <div className="form-field">
+                  <label>種類</label>
+                  <select name="type" defaultValue="room">
+                    <option value="room">部屋</option>
+                    <option value="equipment">設備・マシン</option>
+                    <option value="other">その他</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '10px 0 16px' }}>
+                  <input type="checkbox" name="active" id="resource-active" defaultChecked />
+                  <label htmlFor="resource-active" style={{ margin: 0, fontSize: '13px', fontWeight: 400 }}>予約可能にする</label>
+                </div>
+                <input type="hidden" name="_resource_id" />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="submit" className="btn">保存</button>
+                  <button type="button" className="btn btn-ghost" id="resource-cancel-btn">キャンセル</button>
+                </div>
+              </form>
+            </div>
+            <div id="resource-list">読み込み中…</div>
+          </div>
+        </div>
+
+        {/* 空き枠（即時予約モード用）。hacomono/STORES網羅計画 Phase 1。 */}
+        <div className="tab-pane" id="tab-slots">
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>空き枠（即時予約）</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                ここに登録した枠は、お客様が選んだ時点でその場で予約確定します（店舗の承認は不要）。<br />
+                「機能設定」タブで即時予約をOFFにすると、この機能を使わずに従来通りの申請制のままにできます。
+              </p>
+            </div>
+            <form id="slot-add-form" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: '10px', alignItems: 'end' }}>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>日付 *</label><input name="date" type="date" required /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>開始 *</label><input name="start_time" type="time" required /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>終了 *</label><input name="end_time" type="time" required /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>定員</label><input name="capacity" type="number" min="1" defaultValue="1" /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>スタッフ（任意）</label><select name="staff_id" id="slot-staff-select"><option value="">指定なし</option></select></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>部屋・設備（任意）</label><select name="resource_id" id="slot-resource-select"><option value="">指定なし</option></select></div>
+              <button type="submit" className="btn" style={{ height: '40px' }}>枠を追加</button>
+            </form>
+            <div id="slot-list">読み込み中…</div>
           </div>
         </div>
 
