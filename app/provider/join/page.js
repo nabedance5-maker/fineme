@@ -1,7 +1,7 @@
 export const metadata = {
   title: 'いま抱えているお客様を、逃さない：Fineme 店舗向け掲載のご案内',
-  description: '顧客カルテ・リマインド自動化・休眠顧客の掘り起こしなど、掲載すれば今日から使える店舗運営SaaS。パーソナルジム・眉毛サロン・美容師・外見コンサルなど、個人・フリーランス向け。新規集客の有無に関わらず、いま抱えているお客様との関係を強くします。',
-  keywords: ['店舗 顧客管理 SaaS', 'リピート対策 サロン', '休眠顧客 掘り起こし', 'パーソナルジム 顧客管理', '美容室 予約リマインド 自動化', '個人事業主 集客'],
+  description: '顧客カルテ（カスタム項目・AI傾向分析）・予約のやり取りがLINEで完結・リマインド自動化・売上管理まで、掲載すれば今日から使える店舗運営SaaS。パーソナルジム・眉毛サロン・美容師・外見コンサルなど、個人・フリーランス向け。新規集客の有無に関わらず、いま抱えているお客様との関係を強くします。',
+  keywords: ['店舗 顧客管理 SaaS', 'リピート対策 サロン', '休眠顧客 掘り起こし', 'パーソナルジム 顧客管理', '美容室 予約リマインド 自動化', '個人事業主 集客', '店舗公式LINE 予約管理'],
   openGraph: {
     title: 'いま抱えているお客様を、逃さない | Fineme 店舗向け掲載のご案内',
     description: '顧客カルテ・リマインド自動化・休眠顧客の掘り起こし。掲載すれば今日から使える店舗運営SaaSです。',
@@ -270,13 +270,25 @@ export default function ProviderJoinPage({ searchParams }) {
               <div className="problem-card">
                 <div className="problem-card-icon">📋</div>
                 <h3>顧客カルテ</h3>
-                <p>来店履歴・Me Scan受診有無・Mirrorスコア・担当スタッフを自動で一覧化。休眠しそうなお客様も一目で分かります。店舗だけに見える非公開メモも残せます。</p>
+                <p>来店履歴・Me Scan受診有無・Mirrorスコア・担当スタッフを自動で一覧化。店舗ごとに自由な項目（自由記述・選択式・5段階評価）を追加でき、蓄積した記録からAIが傾向・注意点を提案します。店舗だけに見える非公開メモも残せます。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+              <div className="problem-card">
+                <div className="problem-card-icon">📮</div>
+                <h3>予約のやり取りがLINEで完結</h3>
+                <p>お客様は普段のLINEトークから予約をリクエスト。店舗は承認・代替日時の提案・来店確認まで、全部その場のボタン操作で返せます。マイページを開かせる手間がありません。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
                 <div className="problem-card-icon">🔔</div>
                 <h3>リマインド一式</h3>
                 <p>予約前日の確認・来店間隔が空いたお客様の自動掘り起こし・誕生日メッセージ・クチコミ依頼まで自動配信。送り忘れを仕組みで防ぎます。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+              <div className="problem-card">
+                <div className="problem-card-icon">💰</div>
+                <h3>売上管理</h3>
+                <p>来店確認時の確定額と手動記録を、メニュー別・スタッフ別・支払い方法別に自動集計。月次のCSV出力で、いま使っている会計ソフトにもそのまま渡せます。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
@@ -479,7 +491,8 @@ export default function ProviderJoinPage({ searchParams }) {
                   <li>サービスメニュー登録（複数対応）</li>
                   <li>スタッフ紹介・Before/After掲載</li>
                   <li>Me Scanマッチング（総合スコア順）</li>
-                  <li>顧客カルテ・リマインド一式（New Me Log連携表示は先着30人まで）</li>
+                  <li>顧客カルテ・リマインド・売上管理一式（New Me Log連携表示は先着30人まで）</li>
+                  <li>予約のやり取り・LINE通知はFineme公式LINEから</li>
                   <li>紹介報酬プログラム参加資格</li>
                 </ul>
               </div>
@@ -490,7 +503,7 @@ export default function ProviderJoinPage({ searchParams }) {
                   <li>ライトの内容すべて</li>
                   <li>予約手数料率の優遇</li>
                   <li>New Me Log連携表示が無制限</li>
-                  <li>店舗独自の公式LINEからリマインド配信</li>
+                  <li>予約・リマインドの全通知が店舗独自の公式LINEから届く</li>
                 </ul>
               </div>
             </div>
