@@ -1,7 +1,13 @@
 "use client";
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function Footer() {
+  const pathname = usePathname();
+  // 掲載者ダッシュボードは白背景の業務ツールに刷新（2026-09-11）。ユーザー向け
+  // マーケティングフッターが下に付くと世界観が合わないため、Navbar同様に非表示にする。
+  if (pathname?.startsWith('/provider/dashboard')) return null;
+
   return (
     <footer className="footer">
       <div className="container" style={{display:'flex', flexDirection:'column', gap:'12px'}}>

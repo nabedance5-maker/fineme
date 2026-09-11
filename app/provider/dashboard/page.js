@@ -24,6 +24,12 @@ export default function ProviderDashboardPage() {
       /* サイドバー型ナビ（2026-09 デザイン刷新。/business/dashboard-design-sample の
          方向性を本番に反映。switchTab()はグローバルな.tab-btn/.tab-paneセレクタで
          動くため、この見た目変更だけなら既存のJSロジックには影響しない） */
+      /* 2026-09-11：管理画面を白背景の業務ツール然とした配色に刷新（でお指摘・hacomono参考）。
+         サイドバー／モバイル上部バーはブランドのネイビー×ゴールドのまま維持し、
+         メインの作業エリア（.pd-page-root配下）だけを白系に反転。ユーザー向けページ
+         （深海ネイビー×羊皮紙）の世界観とは切り離し、日々数字とフォームを見る道具として
+         可読性を優先する。 */
+      .pd-page-root { background: var(--color-bg); min-height: 100vh; color: #1a1410; }
       .pd-layout { display: flex; align-items: flex-start; gap: 0; }
       .pd-topbar { display: none; }
       .pd-backdrop { display: none; }
@@ -34,6 +40,12 @@ export default function ProviderDashboardPage() {
       .tab-btn:hover { background: rgba(255,255,255,0.05); color: #e8e4dc; }
       .tab-btn.active { background: rgba(201,168,76,0.14); color: #c9a84c; }
       .pd-main { flex: 1; min-width: 0; padding-left: 28px; }
+      .pd-page-root .card { background: #ffffff; border-color: rgba(26,20,16,0.08); box-shadow: 0 1px 3px rgba(10,15,30,0.05); }
+      .pd-page-root .btn { background: var(--color-gold); color: var(--color-bg-dark); border-color: var(--color-gold); }
+      .pd-page-root .btn:hover { opacity: .88; box-shadow: var(--shadow-gold); }
+      .pd-page-root .btn-ghost { background: transparent; color: #1a1410; border-color: rgba(26,20,16,0.2); }
+      .pd-page-root .btn-ghost:hover { background: rgba(26,20,16,0.05); color: #1a1410; box-shadow: none; }
+      .pd-page-root .section-title { color: #1a1410; }
       @media (max-width: 900px) {
         .pd-topbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #0a0f1e; border-bottom: 1px solid rgba(201,168,76,0.15); position: fixed; top: 0; left: 0; right: 0; z-index: 40; }
         .tab-nav {
@@ -48,27 +60,27 @@ export default function ProviderDashboardPage() {
       .tab-pane { display: none; }
       .tab-pane.active { display: block; }
       .form-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
-      .form-field label { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.9); }
-      .form-field input, .form-field textarea, .form-field select { padding: 10px 12px; border: 1.5px solid rgba(232,228,220,0.2); border-radius: 10px; font-size: 14px; width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.06); color: #e8e4dc; }
+      .form-field label { font-size: 12px; font-weight: 700; color: rgba(26,20,16,0.85); }
+      .form-field input, .form-field textarea, .form-field select { padding: 10px 12px; border: 1.5px solid rgba(26,20,16,0.15); border-radius: 10px; font-size: 14px; width: 100%; box-sizing: border-box; background: #ffffff; color: #1a1410; }
       .form-field input[type=checkbox] { width: auto; padding: 0; border: none; border-radius: 0; flex-shrink: 0; background: none; }
       .form-field textarea { min-height: 100px; resize: vertical; }
-      .form-field select option { background: #0a0f1e; color: #e8e4dc; }
-      .form-field input::placeholder, .form-field textarea::placeholder { color: rgba(232,228,220,0.35); }
+      .form-field select option { background: #ffffff; color: #1a1410; }
+      .form-field input::placeholder, .form-field textarea::placeholder { color: rgba(26,20,16,0.35); }
       .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
-      .checkbox-item { display: flex; flex-direction: row; align-items: center; gap: 6px; font-size: 14px; text-align: left; color: rgba(232,228,220,0.85); }
+      .checkbox-item { display: flex; flex-direction: row; align-items: center; gap: 6px; font-size: 14px; text-align: left; color: rgba(26,20,16,0.8); }
       @media (max-width: 640px) { .checkbox-group { flex-direction: column; gap: 8px; } .checkbox-item { width: 100%; flex-direction: row; align-items: flex-start; } }
-      .stat-card { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(232,228,220,0.15); border-radius: 12px; padding: 16px; text-align: center; }
-      .stat-value { font-size: 32px; font-weight: 800; color: #e8e4dc; }
-      .stat-label { font-size: 12px; color: rgba(232,228,220,0.6); margin-top: 2px; }
-      .muted { color: rgba(232,228,220,0.55); }
-      .publish-toggle { display: flex; align-items: center; gap: 12px; padding: 16px; background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border-radius: 12px; border: 1px solid rgba(232,228,220,0.15); }
+      .stat-card { background: #ffffff; border: 1px solid rgba(26,20,16,0.08); box-shadow: 0 1px 3px rgba(10,15,30,0.05); border-radius: 12px; padding: 16px; text-align: center; }
+      .stat-value { font-size: 32px; font-weight: 800; color: #1a1410; }
+      .stat-label { font-size: 12px; color: rgba(26,20,16,0.55); margin-top: 2px; }
+      .muted { color: rgba(26,20,16,0.55); }
+      .publish-toggle { display: flex; align-items: center; gap: 12px; padding: 16px; background: #ffffff; border-radius: 12px; border: 1px solid rgba(26,20,16,0.08); box-shadow: 0 1px 3px rgba(10,15,30,0.05); }
       .toggle-switch { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
       .toggle-switch input { opacity: 0; width: 0; height: 0; }
       .toggle-slider { position: absolute; inset: 0; background: #d1d5db; border-radius: 26px; cursor: pointer; transition: background .2s; }
       .toggle-slider:before { content:''; position: absolute; width: 18px; height: 18px; left: 4px; bottom: 4px; background: #fff; border-radius: 50%; transition: transform .2s; }
       .toggle-switch input:checked + .toggle-slider { background: #111; }
       .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); }
-      .referral-code-box { padding: 16px; background: rgba(10,15,30,0.65); border: 1px solid rgba(232,228,220,0.15); border-radius: 12px; font-family: monospace; font-size: 18px; font-weight: 800; text-align: center; letter-spacing: 2px; color: #e8e4dc; }
+      .referral-code-box { padding: 16px; background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.3); border-radius: 12px; font-family: monospace; font-size: 18px; font-weight: 800; text-align: center; letter-spacing: 2px; color: #1a1410; }
       /* 機能OFFのタブ：完全に隠すと「そもそも存在しない機能」に見えてしまい発見できないという
          でお指摘（2026-09-11）を受け、常に一覧には出しつつ視覚的に区別する方式に変更。 */
       .tab-btn.tab-feature-off { opacity: .45; }
@@ -117,7 +129,7 @@ export default function ProviderDashboardPage() {
       box.innerHTML = `
         <div style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.35);border-radius:12px;padding:16px 18px;margin-bottom:16px;">
           <p style="margin:0 0 8px;font-weight:700;color:#c9a84c;font-size:13px;">💡 ${entry.title}タブの使い方</p>
-          <ol style="margin:0 0 12px;padding-left:20px;font-size:13px;line-height:1.8;color:#e8e4dc;">
+          <ol style="margin:0 0 12px;padding-left:20px;font-size:13px;line-height:1.8;color:#1a1410;">
             ${entry.tips.map(t => `<li>${t}</li>`).join('')}
           </ol>
           <button type="button" id="tutorial-dismiss-btn" class="btn btn-ghost" style="font-size:12px;padding:6px 14px;">わかった</button>
@@ -226,10 +238,10 @@ export default function ProviderDashboardPage() {
       const msg = score >= 80 ? '掲載者として誇れるページです' : score >= 50 ? 'もう少しで魅力的なページになります' : 'まだ掲載者の魅力が伝わりにくい状態です';
       el.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <span style="font-size:12px;font-weight:700;color:rgba(232,228,220,0.9)">ページ完成度</span>
+          <span style="font-size:12px;font-weight:700;color:rgba(26,20,16,0.9)">ページ完成度</span>
           <span style="font-size:14px;font-weight:900;color:${color}">${score}%</span>
         </div>
-        <div style="height:8px;background:rgba(232,228,220,0.12);border-radius:99px;overflow:hidden;margin-bottom:6px">
+        <div style="height:8px;background:rgba(26,20,16,0.12);border-radius:99px;overflow:hidden;margin-bottom:6px">
           <div style="height:100%;width:${score}%;background:${color};border-radius:99px;transition:width .4s ease"></div>
         </div>
         <div style="font-size:11px;color:${color};font-weight:600">${msg}</div>
@@ -290,7 +302,7 @@ export default function ProviderDashboardPage() {
       if (provider.ai_match_profile) {
         const d = provider.ai_match_profile;
         const date = d.analyzed_at ? new Date(d.analyzed_at).toLocaleDateString('ja-JP') : '';
-        if (aiStatus) aiStatus.innerHTML = `<span style="color:#059669;font-weight:700">✅ AI分析済み（${date}）</span><br><span style="font-size:12px;color:rgba(232,228,220,0.6)">${d.summary || ''}</span>`;
+        if (aiStatus) aiStatus.innerHTML = `<span style="color:#059669;font-weight:700">✅ AI分析済み（${date}）</span><br><span style="font-size:12px;color:rgba(26,20,16,0.6)">${d.summary || ''}</span>`;
         setAnalyzeButtonState(true);
       } else {
         if (aiStatus) aiStatus.textContent = '未分析 — プロフィールを入力後「AIで分析する」ボタンを押してください';
@@ -1063,7 +1075,7 @@ export default function ProviderDashboardPage() {
           const freqLabel = r.frequency_months
             ? (r.frequency_months === 1 ? '月1回' : `${r.frequency_months}ヶ月に1回`)
             : (r.frequency_weeks === 1 ? '週1回' : `${r.frequency_weeks}週ごと`);
-          return `<span class="badge" style="display:inline-flex;align-items:center;gap:6px;margin:4px 6px 0 0;padding:4px 10px;border-radius:99px;background:rgba(232,228,220,0.1);font-size:12px;">
+          return `<span class="badge" style="display:inline-flex;align-items:center;gap:6px;margin:4px 6px 0 0;padding:4px 10px;border-radius:99px;background:rgba(26,20,16,0.1);font-size:12px;">
             ${def ? def.icon : ''} ${def ? def.label : r.axis}：${freqLabel}
             <button type="button" data-rf-del="${r.axis}" style="border:none;background:none;color:#ef4444;cursor:pointer;font-size:12px;">✕</button>
           </span>`;
@@ -2054,11 +2066,11 @@ export default function ProviderDashboardPage() {
             <p style="font-size:11px;font-weight:800;letter-spacing:.08em;color:rgba(201,168,76,.7);text-transform:uppercase;margin:0 0 8px">${esc(groupName)}</p>
             <div class="stack" style="gap:10px">
               ${items.map(item => `
-                <label style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(10,15,30,0.5);border:1px solid rgba(232,228,220,0.12);border-radius:10px;cursor:pointer">
+                <label style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:10px;cursor:pointer">
                   <input type="checkbox" data-feature-key="${item.key}" ${features[item.key] ? 'checked' : ''} style="margin-top:3px" />
                   <span>
-                    <span style="display:block;font-weight:700;font-size:13.5px;color:rgba(232,228,220,0.9)">${esc(item.label)}</span>
-                    <span style="display:block;font-size:12px;color:rgba(232,228,220,0.5);margin-top:2px">${esc(item.help)}</span>
+                    <span style="display:block;font-weight:700;font-size:13.5px;color:rgba(26,20,16,0.9)">${esc(item.label)}</span>
+                    <span style="display:block;font-size:12px;color:rgba(26,20,16,0.5);margin-top:2px">${esc(item.help)}</span>
                   </span>
                 </label>
               `).join('')}
@@ -2126,7 +2138,7 @@ export default function ProviderDashboardPage() {
         return `
           <div class="feature-enable-banner" data-feature-banner="${key}">
             <div>
-              <strong style="font-size:13.5px;color:#e8e4dc">「${esc(label)}」はまだONになっていません</strong>
+              <strong style="font-size:13.5px;color:#1a1410">「${esc(label)}」はまだONになっていません</strong>
               <p class="muted" style="font-size:12px;margin:4px 0 0">${esc(help)}</p>
             </div>
             <button type="button" class="btn" style="font-size:12px;padding:8px 16px;flex-shrink:0" data-feature-enable="${key}" data-feature-tab="${tabId}">ONにする</button>
@@ -2418,9 +2430,9 @@ export default function ProviderDashboardPage() {
           return;
         }
         contentEl.innerHTML = area.axisGaps.map(g => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(232,228,220,0.1);">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(26,20,16,0.1);">
             <span style="font-size:13px;">${AXIS_LABEL_AD[g.axis] || g.axis}</span>
-            <span style="font-size:12px;color:rgba(232,228,220,0.6);">需要 ${g.demand}人 ／ 対応店舗 ${g.supply}軒</span>
+            <span style="font-size:12px;color:rgba(26,20,16,0.6);">需要 ${g.demand}人 ／ 対応店舗 ${g.supply}軒</span>
           </div>
         `).join('');
       }
@@ -3335,9 +3347,9 @@ export default function ProviderDashboardPage() {
         const listEl = document.getElementById('sales-entries-list');
         if (listEl) {
           listEl.innerHTML = currentEntries.length ? currentEntries.map(en => `
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(232,228,220,0.08);font-size:13px;flex-wrap:wrap;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(26,20,16,0.08);font-size:13px;flex-wrap:wrap;">
               <div>
-                <span style="color:rgba(232,228,220,0.5);font-size:12px;">${en.entry_date}</span>
+                <span style="color:rgba(26,20,16,0.5);font-size:12px;">${en.entry_date}</span>
                 ${en.menu_name ? ` ${escSl(en.menu_name)}` : ''}
                 ${en.source === 'reservation' ? ' <span style="font-size:10px;padding:1px 6px;border-radius:99px;background:rgba(201,168,76,0.15);color:#c9a84c;">来店確認</span>' : ''}
               </div>
@@ -3880,7 +3892,7 @@ export default function ProviderDashboardPage() {
   }, []);
 
   return (
-    <main className="section">
+    <main className="section pd-page-root">
       <div className="container" style={{ maxWidth: '1600px' }}>
 
         {/* モバイル用トップバー */}
@@ -3969,13 +3981,13 @@ export default function ProviderDashboardPage() {
             </div>
             {TUTORIAL_GROUPS.map(group => (
               <div key={group.heading} style={{ marginBottom: '20px' }}>
-                <h3 style={{ fontSize: '14px', margin: '0 0 10px', color: 'rgba(232,228,220,0.9)' }}>{group.heading}</h3>
+                <h3 style={{ fontSize: '14px', margin: '0 0 10px', color: 'rgba(26,20,16,0.9)' }}>{group.heading}</h3>
                 <div className="stack" style={{ gap: '10px' }}>
                   {group.keys.map(key => {
                     const entry = TAB_TUTORIALS[key];
                     if (!entry) return null;
                     return (
-                      <div key={key} style={{ border: '1px solid rgba(232,228,220,0.12)', borderRadius: '10px', padding: '12px 14px' }}>
+                      <div key={key} style={{ border: '1px solid rgba(26,20,16,0.12)', borderRadius: '10px', padding: '12px 14px' }}>
                         <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '13px' }}>{entry.title}</p>
                         <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12.5px', lineHeight: '1.7' }} className="muted">
                           {entry.tips.map((tip, i) => <li key={i}>{tip}</li>)}
@@ -3998,7 +4010,7 @@ export default function ProviderDashboardPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', marginBottom: '20px' }}>
             <div className="stat-card"><div className="stat-value" id="stat-approved">—</div><div className="stat-label">予約確定数（今月）</div></div>
-            <div className="stat-card"><div className="stat-value" id="stat-cvr">—</div><div className="stat-label">予約転換率</div><div style={{fontSize:'11px',color:'rgba(232,228,220,0.4)',marginTop:'2px'}}>確定÷問い合わせ</div></div>
+            <div className="stat-card"><div className="stat-value" id="stat-cvr">—</div><div className="stat-label">予約転換率</div><div style={{fontSize:'11px',color:'rgba(26,20,16,0.4)',marginTop:'2px'}}>確定÷問い合わせ</div></div>
             <div className="stat-card"><div className="stat-value" id="stat-visited">—</div><div className="stat-label">来店完了数（今月）</div></div>
           </div>
           <div className="card" style={{ padding: '20px' }}>
@@ -4031,7 +4043,7 @@ export default function ProviderDashboardPage() {
           <div className="card" style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
               <h2 style={{ margin: '0', fontSize: '16px' }}>予約リクエスト</h2>
-              <span style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)' }} id="req-filter-count"></span>
+              <span style={{ fontSize: '12px', color: 'rgba(26,20,16,0.55)' }} id="req-filter-count"></span>
             </div>
 
             {/* 絞り込みバー */}
@@ -4073,7 +4085,7 @@ export default function ProviderDashboardPage() {
           {/* ページ完成度スコア */}
           <div className="card" style={{ padding: '18px 22px', marginBottom: '16px' }}>
             <div id="page-score-bar">
-              <div style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)' }}>ページ完成度を計算中…</div>
+              <div style={{ fontSize: '12px', color: 'rgba(26,20,16,0.5)' }}>ページ完成度を計算中…</div>
             </div>
           </div>
           <div className="card" style={{ padding: '24px' }}>
@@ -4121,10 +4133,10 @@ export default function ProviderDashboardPage() {
                 <input type="hidden" name="cover_image_url" />
               </div>
               {/* ── 掲載者情報・信頼シグナル ── */}
-              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(232,228,220,0.12)' }}>掲載者情報・信頼シグナル</h3>
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(26,20,16,0.12)' }}>掲載者情報・信頼シグナル</h3>
               <small className="muted" style={{ display: 'block', marginBottom: '14px', fontSize: '12px', lineHeight: '1.6' }}>ページ上部の「クイックファクト」として横一列で表示されます。同じカテゴリの他ガイドとの比較に直結します。</small>
               {/* ── 所在地 ── */}
-              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(232,228,220,0.12)' }}>所在地・アクセス</h3>
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(26,20,16,0.12)' }}>所在地・アクセス</h3>
               <small className="muted" style={{ display: 'block', marginBottom: '14px', fontSize: '12px', lineHeight: '1.6' }}>
                 入力した住所はAIマッチングの距離計算に使用されます。番地まで入力するほど精度が上がります。ユーザーには最寄り駅のみ表示されます。
               </small>
@@ -4160,7 +4172,7 @@ export default function ProviderDashboardPage() {
               </div>
 
               {/* ── 料金・支払い ── */}
-              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(232,228,220,0.12)' }}>料金・支払い</h3>
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(26,20,16,0.12)' }}>料金・支払い</h3>
               <div className="form-field">
                 <label>最低価格（円）</label>
                 <input name="price_from" type="number" placeholder="例: 10000" />
@@ -4355,7 +4367,7 @@ export default function ProviderDashboardPage() {
                 { icon: '💬', text: '「来た道（タイプ）」が明確' },
                 { icon: '🎯', text: '対応軸が一致すれば優先表示' },
               ].map(item => (
-                <div key={item.icon} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', background: 'rgba(255,255,255,0.7)', borderRadius: '10px', padding: '10px' }}>
+                <div key={item.icon} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', background: 'rgba(26,20,16,0.04)', borderRadius: '10px', padding: '10px' }}>
                   <span style={{ fontSize: '15px', flexShrink: 0 }}>{item.icon}</span>
                   <span style={{ fontSize: '11px', color: '#374151', lineHeight: '1.5', fontWeight: '600' }}>{item.text}</span>
                 </div>
@@ -4526,7 +4538,7 @@ export default function ProviderDashboardPage() {
               </div>
 
               {/* ── AIマッチングプロフィール ── */}
-              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(232,228,220,0.12)' }}>AIマッチングプロフィール</h3>
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(26,20,16,0.12)' }}>AIマッチングプロフィール</h3>
               <p className="muted" style={{ fontSize: '12px', margin: '0 0 14px', lineHeight: '1.6' }}>
                 ここに書いた内容をAIが読み取り、あなたのサービスにどんなユーザーが合うかを自動判定します。<br />
                 チェックボックスより精度の高いマッチングが実現します。書くほど効果的です。
@@ -4551,10 +4563,10 @@ export default function ProviderDashboardPage() {
               {/* AI分析ボタン */}
               <div style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
                 <div style={{ fontSize: '13px', fontWeight: '700', color: '#a5b4fc', marginBottom: '6px' }}>AIプロフィール分析</div>
-                <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.75)', margin: '0 0 12px', lineHeight: '1.6' }}>
+                <p style={{ fontSize: '12px', color: 'rgba(26,20,16,0.75)', margin: '0 0 12px', lineHeight: '1.6' }}>
                   上の4つのフィールドを保存した後、「AIで分析する」をクリックするとClaudeがプロフィール全体を読み取り、マッチング精度を向上させます。
                 </p>
-                <div id="ai-match-status" style={{ fontSize: '12px', color: 'rgba(232,228,220,0.6)', marginBottom: '10px' }}></div>
+                <div id="ai-match-status" style={{ fontSize: '12px', color: 'rgba(26,20,16,0.6)', marginBottom: '10px' }}></div>
                 <button type="button" id="ai-analyze-btn" className="btn" style={{ background: '#4f46e5', color: '#fff', fontSize: '13px', padding: '8px 18px' }}>
                   AIで分析する
                 </button>
@@ -4582,7 +4594,7 @@ export default function ProviderDashboardPage() {
                 </div>
               </div>
               {/* ── 予約・比較情報 ── */}
-              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(232,228,220,0.12)' }}>予約・比較情報</h3>
+              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(26,20,16,0.12)' }}>予約・比較情報</h3>
               <small className="muted" style={{ display: 'block', marginBottom: '14px', fontSize: '12px', lineHeight: '1.6' }}>相談フォームや比較時に表示される情報です。設定するほどユーザーの「踏み出せない理由」を減らせます。</small>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                 <input type="checkbox" name="trial_available" id="trial_available" />
@@ -4751,8 +4763,8 @@ export default function ProviderDashboardPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-              <input id="manual-name-input" type="text" placeholder="お客様のお名前" style={{ flex: '1 1 160px', padding: '10px 12px', border: '1.5px solid rgba(232,228,220,0.2)', borderRadius: '10px', background: 'rgba(255,255,255,0.06)', color: '#e8e4dc' }} />
-              <input id="manual-memo-input" type="text" placeholder="メモ（任意）" style={{ flex: '2 1 200px', padding: '10px 12px', border: '1.5px solid rgba(232,228,220,0.2)', borderRadius: '10px', background: 'rgba(255,255,255,0.06)', color: '#e8e4dc' }} />
+              <input id="manual-name-input" type="text" placeholder="お客様のお名前" style={{ flex: '1 1 160px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', background: 'rgba(26,20,16,0.04)', color: '#1a1410' }} />
+              <input id="manual-memo-input" type="text" placeholder="メモ（任意）" style={{ flex: '2 1 200px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', background: 'rgba(26,20,16,0.04)', color: '#1a1410' }} />
               <button type="button" id="manual-add-btn" className="btn">＋ 新規作成</button>
             </div>
             <div id="manual-karte-list"><p className="muted">読み込み中…</p></div>
@@ -4863,11 +4875,11 @@ export default function ProviderDashboardPage() {
               </a>
             </div>
             <div id="line-channel-status" className="muted" style={{ fontSize: '13px' }}>読み込み中…</div>
-            <div id="lc-webhook-url-box" style={{ display: 'none', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', padding: '12px' }}>
+            <div id="lc-webhook-url-box" style={{ display: 'none', background: 'rgba(26,20,16,0.04)', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', padding: '12px' }}>
               <p className="muted" style={{ fontSize: '12px', margin: '0 0 4px' }}>予約前日リマインドの「行きます」ボタン等（ノーショー対策）を使う場合は、LINE Official Account Managerの「応答設定」→Webhookで以下のURLを設定してください（任意）：</p>
               <code id="lc-webhook-url" style={{ background: '#f3f4f6', color: '#111827', padding: '4px 8px', borderRadius: 4, fontSize: 12, wordBreak: 'break-all', display: 'inline-block' }}></code>
             </div>
-            <div id="lc-test-send-box" style={{ display: 'none', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', padding: '14px' }}>
+            <div id="lc-test-send-box" style={{ display: 'none', background: 'rgba(26,20,16,0.04)', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', padding: '14px' }}>
               <p style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 6px' }}>ちゃんと届くかテストする</p>
               <p className="muted" style={{ fontSize: '12px', margin: '0 0 10px', lineHeight: '1.7' }}>
                 ① 店舗の公式LINEを自分のスマホで友だち追加する<br />
@@ -4957,7 +4969,7 @@ export default function ProviderDashboardPage() {
               <div><h3 style={{ fontSize: '13px', margin: '0 0 8px' }}>支払い方法別</h3><div id="sales-by-payment" className="muted" style={{ fontSize: '12px' }}>—</div></div>
             </div>
 
-            <div style={{ borderTop: '1px solid rgba(232,228,220,0.1)', paddingTop: '16px' }}>
+            <div style={{ borderTop: '1px solid rgba(26,20,16,0.1)', paddingTop: '16px' }}>
               <h3 style={{ fontSize: '14px', margin: '0 0 10px' }}>＋ 手動で売上を追加</h3>
               <p className="muted" style={{ fontSize: '12px', margin: '0 0 10px' }}>Fineme経由でない売上（非会員のお客様・他チャネル経由）を直接記録します。</p>
               <form id="sales-manual-form" className="stack" style={{ gap: '10px' }}>
@@ -5001,7 +5013,7 @@ export default function ProviderDashboardPage() {
               </form>
             </div>
 
-            <div style={{ borderTop: '1px solid rgba(232,228,220,0.1)', paddingTop: '16px' }}>
+            <div style={{ borderTop: '1px solid rgba(26,20,16,0.1)', paddingTop: '16px' }}>
               <h3 style={{ fontSize: '14px', margin: '0 0 10px' }}>記録一覧</h3>
               <div id="sales-entries-list"><p className="muted">読み込み中…</p></div>
             </div>
@@ -5021,7 +5033,7 @@ export default function ProviderDashboardPage() {
             <div id="pos-product-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: '10px' }}>
               <p className="muted">読み込み中…</p>
             </div>
-            <div style={{ borderTop: '1px solid rgba(232,228,220,0.1)', paddingTop: '16px' }}>
+            <div style={{ borderTop: '1px solid rgba(26,20,16,0.1)', paddingTop: '16px' }}>
               <h3 style={{ fontSize: '14px', margin: '0 0 10px' }}>カート</h3>
               <div id="pos-cart-list"><p className="muted" style={{ fontSize: '13px' }}>まだ商品が選ばれていません</p></div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end', marginTop: '12px' }}>
@@ -5099,7 +5111,7 @@ export default function ProviderDashboardPage() {
             <canvas id="checkin-canvas" style={{ display: 'none' }}></canvas>
             <p id="checkin-scan-msg" className="muted" style={{ fontSize: '13px' }}></p>
 
-            <div style={{ borderTop: '1px solid rgba(232,228,220,0.1)', paddingTop: '16px' }}>
+            <div style={{ borderTop: '1px solid rgba(26,20,16,0.1)', paddingTop: '16px' }}>
               <h3 style={{ fontSize: '14px', margin: '0 0 10px' }}>代理でチェックイン（非会員・スマホをお持ちでない方）</h3>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
                 <div className="form-field" style={{ minWidth: '200px' }}>
@@ -5293,7 +5305,7 @@ export default function ProviderDashboardPage() {
             <p id="scripts-status" className="muted" style={{ fontSize: '12px', margin: 0 }}></p>
             <div id="scripts-content">
               {CUSTOMER_SCRIPT_AXES.map(a => (
-                <div key={a.axis} data-axis={a.axis} style={{ borderTop: '1px solid rgba(232,228,220,0.1)', paddingTop: '14px' }}>
+                <div key={a.axis} data-axis={a.axis} style={{ borderTop: '1px solid rgba(26,20,16,0.1)', paddingTop: '14px' }}>
                   <h3 style={{ margin: '0 0 8px', fontSize: '14px' }}>{a.label}</h3>
                   <p className="muted" style={{ fontSize: '12px', margin: '0 0 6px', fontWeight: 700 }}>声かけ例</p>
                   <ul style={{ margin: '0 0 10px', paddingLeft: '18px' }}>
@@ -5302,7 +5314,7 @@ export default function ProviderDashboardPage() {
                   <p className="muted" style={{ fontSize: '12px', margin: '0 0 6px', fontWeight: 700 }}>カルテの着眼点</p>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {a.notePoints.map((n, i) => (
-                      <span key={i} style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '99px', background: 'rgba(232,228,220,0.06)', border: '1px solid rgba(232,228,220,0.12)' }}>{n}</span>
+                      <span key={i} style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '99px', background: 'rgba(26,20,16,0.06)', border: '1px solid rgba(26,20,16,0.12)' }}>{n}</span>
                     ))}
                   </div>
                 </div>
@@ -5380,19 +5392,19 @@ export default function ProviderDashboardPage() {
         <div className="tab-pane" id="tab-billing">
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
             <h2 style={{ margin: '0', fontSize: '16px' }}>課金・プラン</h2>
-            <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '12px', padding: '16px' }}>
-              <div style={{ fontSize: '12px', color: 'rgba(232,228,220,0.6)', marginBottom: '4px' }}>現在のプラン</div>
-              <div style={{ fontSize: '22px', fontWeight: '800', color: '#e8e4dc' }} id="billing-plan">読み込み中…</div>
-              <div style={{ fontSize: '13px', color: 'rgba(232,228,220,0.6)', marginTop: '4px' }} id="billing-status"></div>
+            <div style={{ background: 'rgba(26,20,16,0.04)', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ fontSize: '12px', color: 'rgba(26,20,16,0.6)', marginBottom: '4px' }}>現在のプラン</div>
+              <div style={{ fontSize: '22px', fontWeight: '800', color: '#1a1410' }} id="billing-plan">読み込み中…</div>
+              <div style={{ fontSize: '13px', color: 'rgba(26,20,16,0.6)', marginTop: '4px' }} id="billing-status"></div>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '12px', padding: '16px' }}>
-              <div style={{ fontSize: '12px', color: 'rgba(232,228,220,0.7)', marginBottom: '8px', fontWeight: '700' }}>紹介報酬制度</div>
+            <div style={{ background: 'rgba(26,20,16,0.04)', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ fontSize: '12px', color: 'rgba(26,20,16,0.7)', marginBottom: '8px', fontWeight: '700' }}>紹介報酬制度</div>
               <p className="muted" style={{ fontSize: '13px', margin: '0 0 10px' }}>あなたの紹介コードを共有すると、紹介した方が掲載を継続している限り¥500/月の報酬を受け取れます。</p>
               <div className="referral-code-box" id="referral-code">—</div>
               <button className="btn btn-ghost" style={{ fontSize: '13px', marginTop: '10px', width: '100%' }} id="copy-referral">コードをコピー</button>
             </div>
-            <div style={{ padding: '14px 16px', border: '1.5px solid rgba(232,228,220,0.15)', borderRadius: '12px', background: 'rgba(255,255,255,0.06)', textAlign: 'center' }}>
-              <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.9)', margin: '0 0 8px', fontWeight: '700' }}>プラン変更・解約について</p>
+            <div style={{ padding: '14px 16px', border: '1.5px solid rgba(26,20,16,0.15)', borderRadius: '12px', background: 'rgba(26,20,16,0.04)', textAlign: 'center' }}>
+              <p style={{ fontSize: '14px', color: 'rgba(26,20,16,0.9)', margin: '0 0 8px', fontWeight: '700' }}>プラン変更・解約について</p>
               <p className="muted" style={{ fontSize: '13px', margin: '0' }}>プランの変更や解約は、運営（Fineme）への申請が必要です。<br />下記よりご連絡ください。</p>
               <a href="mailto:contact@fineme.me?subject=プラン変更・解約申請" className="btn btn-ghost" style={{ marginTop: '12px', display: 'inline-block', fontSize: '13px' }}>contact@fineme.me に連絡する</a>
             </div>
@@ -5432,8 +5444,8 @@ export default function ProviderDashboardPage() {
             </p>
 
             {/* 自分の紹介コード */}
-            <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '12px', padding: '16px' }}>
-              <div style={{ fontSize: '12px', color: 'rgba(232,228,220,0.7)', fontWeight: '700', marginBottom: '8px' }}>あなたの紹介コード</div>
+            <div style={{ background: 'rgba(26,20,16,0.04)', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ fontSize: '12px', color: 'rgba(26,20,16,0.7)', fontWeight: '700', marginBottom: '8px' }}>あなたの紹介コード</div>
               <div className="referral-code-box" id="referral-code-tab">—</div>
               <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
                 <button className="btn btn-ghost" style={{ fontSize: '13px', flex: '1' }} id="copy-referral-code-btn">コードをコピー</button>
@@ -5451,7 +5463,7 @@ export default function ProviderDashboardPage() {
 
             {/* 紹介一覧テーブル */}
             <div>
-              <h3 style={{ fontSize: '14px', fontWeight: '700', margin: '0 0 10px', color: 'rgba(232,228,220,0.9)' }}>紹介パートナー一覧</h3>
+              <h3 style={{ fontSize: '14px', fontWeight: '700', margin: '0 0 10px', color: 'rgba(26,20,16,0.9)' }}>紹介パートナー一覧</h3>
               <div id="referral-list"><p className="muted">読み込み中…</p></div>
             </div>
           </div>
