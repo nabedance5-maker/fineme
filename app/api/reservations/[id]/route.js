@@ -4,6 +4,7 @@ import { getSupabase } from '@/lib/supabase';
 import { sendReservationStatusEmail, sendVisitConfirmedEmail, sendCancelledByUserEmail } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
 import { notifyCustomerLine } from '@/lib/reservation-notify';
+import { syncVisitToLog } from '@/lib/sync-visit';
 
 export async function GET(request, context) {
   try {
@@ -133,29 +134,15 @@ export async function PATCH(request, context) {
     // 予約通りに来店してもLogの次回予定が古いまま延々通知され続けていた
     // （でお報告2026-09-09：9/2の予定が9/9になっても「次回は9/2」のまま届いた）。
     if (newStatus === 'visited' && data.user_id) {
-      try {
-        const { data: providerRow } = await db.from('providers').select('slug').eq('id', data.provider_id).single();
-        if (providerRow?.slug) {
-          const visitDate = data.confirmed_date || data.reserved_date || new Date().toISOString().slice(0, 10);
-          const { data: logs } = await db
-            .from('user_service_logs')
-            .select('id')
-            .eq('user_id', data.user_id)
-            .eq('provider_slug', providerRow.slug)
-            .eq('active', true)
-            .limit(1);
-          const log = logs?.[0];
-          if (log) {
-            await db
-              .from('user_service_logs')
-              .update({ last_visit: visitDate, next_visit: null, updated_at: new Date().toISOString() })
-              .eq('id', log.id);
-            await db
-              .from('user_service_log_visits')
-              .insert({ log_id: log.id, user_id: data.user_id, visited_at: visitDate, cost: data.price || null });
-          }
-        }
-      } catch (e) { console.error('[reservation visited] log sync', e); }
+      const { data: providerRow } = await db.from('providers').select('slug').eq('id', data.provider_id).single();
+      if (providerRow?.slug) {
+        await syncVisitToLog(db, {
+          userId: data.user_id,
+          providerSlug: providerRow.slug,
+          visitDate: data.confirmed_date || data.reserved_date,
+          cost: data.price || null,
+        });
+      }
     }
 
     // ユーザーがキャンセルした場合：掲載者に通知

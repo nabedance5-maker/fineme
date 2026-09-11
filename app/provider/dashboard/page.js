@@ -3492,6 +3492,118 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'pos') loadAll();
     })();
 
+    // ── チェックインタブ（Phase 4・hacomono/STORES網羅計画） ────────
+    // iPad Safari優先のためjsQRを採用（BarcodeDetectorはSafari対応が不安定なため補助扱いにも使わない）。
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const authHeadersCk = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` });
+
+      const cameraBtn = document.getElementById('checkin-camera-btn');
+      const cameraStopBtn = document.getElementById('checkin-camera-stop-btn');
+      const video = document.getElementById('checkin-video');
+      const canvas = document.getElementById('checkin-canvas');
+      const scanMsg = document.getElementById('checkin-scan-msg');
+      const listEl = document.getElementById('checkin-list');
+      const manualNameInput = document.getElementById('checkin-manual-name');
+      const manualBtn = document.getElementById('checkin-manual-btn');
+
+      let stream = null;
+      let scanRafId = null;
+      let lastScannedCode = '';
+      let lastScannedAt = 0;
+
+      async function loadList() {
+        if (!listEl) return;
+        const res = await fetch('/api/provider/checkins', { headers: authHeadersCk() });
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        if (!rows.length) { listEl.innerHTML = '<p class="muted">まだチェックイン記録がありません。</p>'; return; }
+        listEl.innerHTML = rows.map(r => `
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;">
+            <span style="flex:1;min-width:0;font-size:13px">${esc(r.customer_name)}</span>
+            <span class="muted" style="font-size:12px">${r.method === 'qr' ? 'QR' : '代理入力'} ／ ${new Date(r.created_at).toLocaleString('ja-JP')}</span>
+          </div>
+        `).join('');
+      }
+
+      async function recordCheckin(body) {
+        const res = await fetch('/api/provider/checkins', { method: 'POST', headers: authHeadersCk(), body: JSON.stringify(body) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { showToast('エラー: ' + (data?.error || res.status)); return false; }
+        showToast(`✓ ${data.customer_name} をチェックインしました`);
+        loadList();
+        return true;
+      }
+
+      async function tickScan(jsQR) {
+        if (!stream || !video || video.readyState !== video.HAVE_ENOUGH_DATA) {
+          scanRafId = requestAnimationFrame(() => tickScan(jsQR));
+          return;
+        }
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        const now = Date.now();
+        if (code?.data && !(code.data === lastScannedCode && now - lastScannedAt < 5000)) {
+          lastScannedCode = code.data;
+          lastScannedAt = now;
+          if (scanMsg) scanMsg.textContent = '読み取りました…';
+          recordCheckin({ code: code.data }).then(ok => {
+            if (scanMsg) scanMsg.textContent = ok ? '✓ チェックイン完了。続けて次の方をスキャンできます' : '読み取りに失敗しました。もう一度お試しください';
+          });
+        }
+        scanRafId = requestAnimationFrame(() => tickScan(jsQR));
+      }
+
+      function stopCamera() {
+        if (scanRafId) cancelAnimationFrame(scanRafId);
+        scanRafId = null;
+        if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+        if (video) { video.style.display = 'none'; video.srcObject = null; }
+        if (cameraBtn) cameraBtn.style.display = '';
+        if (cameraStopBtn) cameraStopBtn.style.display = 'none';
+      }
+
+      if (cameraBtn) {
+        cameraBtn.addEventListener('click', async () => {
+          if (scanMsg) scanMsg.textContent = '';
+          try {
+            const jsQRModule = await import('jsqr');
+            const jsQR = jsQRModule.default || jsQRModule;
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            video.srcObject = stream;
+            video.style.display = '';
+            await video.play();
+            cameraBtn.style.display = 'none';
+            if (cameraStopBtn) cameraStopBtn.style.display = '';
+            tickScan(jsQR);
+          } catch (e) {
+            if (scanMsg) scanMsg.textContent = 'カメラを起動できませんでした（権限をご確認ください）';
+          }
+        });
+      }
+      if (cameraStopBtn) cameraStopBtn.addEventListener('click', stopCamera);
+
+      if (manualBtn) {
+        manualBtn.addEventListener('click', async () => {
+          const name = manualNameInput?.value.trim();
+          if (!name) { showToast('お名前を入力してください'); return; }
+          manualBtn.disabled = true;
+          const ok = await recordCheckin({ offline_member_name: name });
+          manualBtn.disabled = false;
+          if (ok && manualNameInput) manualNameInput.value = '';
+        });
+      }
+
+      document.querySelectorAll('[data-tab="checkin"]').forEach(btn => btn.addEventListener('click', loadList, { once: false }));
+      document.querySelectorAll('.tab-btn:not([data-tab="checkin"])').forEach(btn => btn.addEventListener('click', stopCamera));
+      if (new URLSearchParams(location.search).get('tab') === 'checkin') loadList();
+    })();
+
     // ── 接客の引き出し：お店専用パーソナライズ ───────────────────
     (function setupCustomerScripts() {
       const t = getSupabaseToken();
@@ -3597,6 +3709,7 @@ export default function ProviderDashboardPage() {
             <button className="tab-btn" data-tab="reviews">⭐ クチコミ</button>
             <button className="tab-btn" data-tab="sales">💰 売上管理</button>
             <button className="tab-btn" data-tab="pos" data-feature="pos" style={{ display: 'none' }}>🧾 POS・在庫</button>
+            <button className="tab-btn" data-tab="checkin" data-feature="checkin_qr" style={{ display: 'none' }}>📷 チェックイン</button>
             <p className="pd-nav-heading">③ 伸ばすためのタブ</p>
             <button className="tab-btn" data-tab="area-demand">📍 エリア需要</button>
             <button className="tab-btn" data-tab="scripts">💡 接客の引き出し</button>
@@ -4754,6 +4867,43 @@ export default function ProviderDashboardPage() {
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
             <h2 style={{ margin: 0, fontSize: '16px' }}>会計履歴</h2>
             <div id="pos-tx-list"><p className="muted">読み込み中…</p></div>
+          </div>
+        </div>
+
+        {/* チェックイン：入退館管理（スマートロック）は不要という方針のため、会員QRをカメラで
+            読み取って記録するだけのシンプルな機能（hacomono/STORES網羅計画 Phase 4）。
+            非会員は「代理でチェックイン」から手動記録できる（今野くんの実地メモ：高齢層向け運用）。 */}
+        <div className="tab-pane" id="tab-checkin">
+          <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>QRチェックイン</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                お客様のマイページに表示されるQRコードをカメラで読み取ると、チェックインを記録します。iPad等のカメラでご利用ください。
+              </p>
+            </div>
+            <div>
+              <button type="button" id="checkin-camera-btn" className="btn">📷 カメラを起動する</button>
+              <button type="button" id="checkin-camera-stop-btn" className="btn btn-ghost" style={{ display: 'none' }}>停止する</button>
+            </div>
+            <video id="checkin-video" playsInline muted style={{ width: '100%', maxWidth: '360px', borderRadius: '12px', display: 'none', background: '#000' }}></video>
+            <canvas id="checkin-canvas" style={{ display: 'none' }}></canvas>
+            <p id="checkin-scan-msg" className="muted" style={{ fontSize: '13px' }}></p>
+
+            <div style={{ borderTop: '1px solid rgba(232,228,220,0.1)', paddingTop: '16px' }}>
+              <h3 style={{ fontSize: '14px', margin: '0 0 10px' }}>代理でチェックイン（非会員・スマホをお持ちでない方）</h3>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                <div className="form-field" style={{ minWidth: '200px' }}>
+                  <label>お客様のお名前</label>
+                  <input id="checkin-manual-name" type="text" placeholder="例：山田太郎様" />
+                </div>
+                <button type="button" id="checkin-manual-btn" className="btn btn-ghost">記録する</button>
+              </div>
+            </div>
+          </div>
+
+          <div className="card stack" style={{ padding: '24px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px' }}>チェックイン履歴</h2>
+            <div id="checkin-list"><p className="muted">読み込み中…</p></div>
           </div>
         </div>
 
