@@ -30,7 +30,7 @@ export async function GET(request) {
   // シンプル・確実（OR条件でのANDレンジ絞り込みはSupabaseクエリビルダーで書きにくいため）。
   const { data: rows, error } = await supabase
     .from('reservations')
-    .select('id, user_name, note, status, reserved_date, start_time, confirmed_date, confirmed_time, staff_id, booking_mode')
+    .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, confirmed_date, confirmed_time, staff_id, booking_mode, slot_id')
     .eq('provider_id', provider.id)
     .in('status', ['approved', 'visited'])
     .gte('reserved_date', from)
@@ -44,16 +44,34 @@ export async function GET(request) {
     (staffRows || []).forEach(s => { staffMap[s.id] = s.name; });
   }
 
+  // 即時予約は紐づくprovider_slotsの実際の開始/終了時刻から所要時間を計算できる
+  // （申請制はメニューの所要時間を保持していないため、フロント側で目安値にフォールバックする）
+  const slotIds = [...new Set((rows || []).filter(r => r.booking_mode === 'instant' && r.slot_id).map(r => r.slot_id))];
+  let slotDurationMap = {};
+  if (slotIds.length) {
+    const { data: slotRows } = await supabase.from('provider_slots').select('id, start_time, end_time').in('id', slotIds);
+    (slotRows || []).forEach(s => {
+      if (!s.start_time || !s.end_time) return;
+      const [sh, sm] = s.start_time.split(':').map(Number);
+      const [eh, em] = s.end_time.split(':').map(Number);
+      slotDurationMap[s.id] = (eh * 60 + em) - (sh * 60 + sm);
+    });
+  }
+
   const result = (rows || [])
     .map(r => ({
       id: r.id,
       date: r.confirmed_date || r.reserved_date,
       time: r.confirmed_time || r.start_time,
+      user_id: r.user_id || null,
       user_name: r.user_name,
+      user_contact: r.user_contact || null,
       note: r.note,
       status: r.status,
       booking_mode: r.booking_mode || 'request',
+      staff_id: r.staff_id || null,
       staff_name: r.staff_id ? staffMap[r.staff_id] || null : null,
+      duration_minutes: r.slot_id ? slotDurationMap[r.slot_id] || null : null,
     }))
     .filter(r => r.date >= from && r.date <= to)
     .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));

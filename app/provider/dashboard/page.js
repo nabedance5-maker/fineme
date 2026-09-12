@@ -46,25 +46,42 @@ export default function ProviderDashboardPage() {
       .pd-page-root .btn-ghost { background: transparent; color: #1a1410; border-color: rgba(26,20,16,0.2); }
       .pd-page-root .btn-ghost:hover { background: rgba(26,20,16,0.05); color: #1a1410; box-shadow: none; }
       .pd-page-root .section-title { color: #1a1410; }
-      /* 予約カレンダー（2026-09-11・hacomono参考、今野くんの実地フィードバックで
-         PC用グリッドをそのままスマホに縮めない設計に）。 */
-      .cal-week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
-      .cal-day-col { min-width: 0; }
-      .cal-day-head { text-align: center; font-size: 11px; font-weight: 700; color: rgba(26,20,16,0.55); padding: 6px 2px; border-radius: 8px 8px 0 0; }
-      .cal-day-head.is-today { color: #a8842f; background: rgba(201,168,76,0.12); }
-      .cal-day-body { min-height: 80px; border: 1px solid rgba(26,20,16,0.08); border-radius: 0 0 10px 10px; padding: 6px; display: flex; flex-direction: column; gap: 5px; }
-      .cal-chip { background: rgba(201,168,76,0.1); border-left: 3px solid #c9a84c; border-radius: 6px; padding: 4px 7px; font-size: 11px; line-height: 1.4; cursor: default; }
-      .cal-chip.is-visited { border-left-color: #9ca3af; background: rgba(26,20,16,0.04); opacity: .75; }
-      .cal-chip strong { display: block; font-size: 11.5px; }
-      .cal-mobile { display: none; }
+      /* 予約カレンダー（2026-09-11〜12・hacomono参考、今野くんの実地フィードバックで
+         PC用グリッドをそのままスマホに縮めない設計に）。日付ピルはPC・スマホ共通、
+         その下をPCは時間×スタッフのグリッド、スマホはアジェンダリストで出し分ける。 */
       .cal-day-pills { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
       .cal-day-pills::-webkit-scrollbar { display: none; }
       .cal-day-pill { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 14px; border-radius: 12px; border: 1px solid rgba(26,20,16,0.1); background: #fff; font-size: 11px; color: rgba(26,20,16,0.65); cursor: pointer; }
       .cal-day-pill .cal-pill-date { font-size: 15px; font-weight: 800; color: #1a1410; }
       .cal-day-pill.is-active { background: rgba(201,168,76,0.16); border-color: #c9a84c; color: #a8842f; }
       .cal-day-pill.is-active .cal-pill-date { color: #a8842f; }
+      .cal-mobile { display: none; }
+      .cal-desktop { display: block; }
+      /* 時間×スタッフのグリッド（hacomono参考）。ヘッダー行（スタッフ名）は固定し、
+         時刻ラベル列＋スタッフ列だけを縦スクロールさせる（1軸スクロールに留める）。
+         30分刻みの行高を基準にJS側で予約ブロックをtop/heightで絶対配置する。 */
+      .cal-day-grid { border: 1px solid rgba(26,20,16,0.08); border-radius: 10px; overflow: hidden; }
+      .cal-day-grid-header { display: flex; background: #fff; border-bottom: 1px solid rgba(26,20,16,0.08); }
+      .cal-time-col-spacer { flex-shrink: 0; width: 48px; }
+      .cal-staff-head { flex: 1; min-width: 130px; text-align: center; font-size: 11.5px; font-weight: 700; padding: 6px 4px; border-right: 1px solid rgba(26,20,16,0.06); }
+      .cal-staff-head:last-child { border-right: none; }
+      .cal-day-grid-body { display: flex; max-height: 560px; overflow-y: auto; }
+      .cal-time-col { flex-shrink: 0; width: 48px; position: relative; background: rgba(26,20,16,0.02); border-right: 1px solid rgba(26,20,16,0.08); }
+      .cal-time-label { position: absolute; left: 0; right: 4px; text-align: right; font-size: 10px; color: rgba(26,20,16,0.4); transform: translateY(-50%); }
+      .cal-staff-col { flex: 1; min-width: 130px; position: relative; border-right: 1px solid rgba(26,20,16,0.06); }
+      .cal-staff-col:last-child { border-right: none; }
+      .cal-hour-line { position: absolute; left: 0; right: 0; border-top: 1px solid rgba(26,20,16,0.06); }
+      .cal-hour-line.is-half { border-top-style: dashed; border-top-color: rgba(26,20,16,0.04); }
+      .cal-block { position: absolute; left: 2px; right: 2px; background: rgba(201,168,76,0.16); border-left: 3px solid #c9a84c; border-radius: 5px; padding: 2px 5px; font-size: 10.5px; line-height: 1.3; overflow: hidden; cursor: pointer; }
+      .cal-block:hover { background: rgba(201,168,76,0.28); }
+      .cal-block.is-visited { border-left-color: #9ca3af; background: rgba(26,20,16,0.05); opacity: .7; }
+      .cal-block strong { display: block; font-size: 10.5px; }
+      .cal-agenda-row { cursor: pointer; }
+      .cal-agenda-row:hover { background: rgba(26,20,16,0.03); }
+      .cal-modal-overlay { position: fixed; inset: 0; background: rgba(10,15,30,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; }
+      .cal-modal-card { background: #fff; border-radius: 16px; padding: 22px; max-width: 460px; width: 100%; max-height: 84vh; overflow-y: auto; }
       @media (max-width: 640px) {
-        .cal-week-grid { display: none; }
+        .cal-desktop { display: none; }
         .cal-mobile { display: block; }
       }
       @media (max-width: 900px) {
@@ -3438,7 +3455,7 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'sales') { loadSalesOptions(); loadSales(); }
     })();
 
-    // ── 予約カレンダータブ（2026-09-11・でお要望、hacomono参考＋今野くんの実地
+    // ── 予約カレンダータブ（2026-09-11〜12・でお要望、hacomono参考＋今野くんの実地
     //    フィードバックでモバイルは横縦二重スクロールにならない専用UIに） ──────
     (() => {
       const token = getSupabaseToken();
@@ -3447,12 +3464,16 @@ export default function ProviderDashboardPage() {
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
       const labelEl = document.getElementById('cal-week-label');
-      const gridEl = document.getElementById('cal-week-grid');
       const pillsEl = document.getElementById('cal-day-pills');
+      const gridWrapEl = document.getElementById('cal-day-grid');
       const agendaEl = document.getElementById('cal-agenda-list');
-      if (!gridEl) return;
+      if (!pillsEl) return;
 
       const WEEKDAY_JA = ['日', '月', '火', '水', '木', '金', '土'];
+      // 営業時間の実データが無いため、一般的な店舗を想定した固定レンジ（9:00〜21:00）で表示する。
+      const RANGE_START_MIN = 9 * 60;
+      const RANGE_END_MIN = 21 * 60;
+      const DEFAULT_DURATION_MIN = 40; // 申請制はメニューの所要時間を保持していないため目安値
 
       function fmtDate(d) {
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -3465,22 +3486,19 @@ export default function ProviderDashboardPage() {
         m.setHours(0, 0, 0, 0);
         return m;
       }
+      function timeToMinutes(t) {
+        if (!t) return null;
+        const [h, m] = t.split(':').map(Number);
+        if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+        return h * 60 + m;
+      }
 
       const todayStr = fmtDate(new Date());
       let weekStart = mondayOf(new Date());
       let byDate = {};
-      let selectedMobileDate = todayStr;
-
-      function chipHtml(r) {
-        const timeLabel = r.time ? r.time.slice(0, 5) : '';
-        const staffLabel = r.staff_name ? `<span class="muted">👤 ${esc(r.staff_name)}</span>` : '';
-        return `
-          <div class="cal-chip${r.status === 'visited' ? ' is-visited' : ''}">
-            <strong>${timeLabel} ${esc(r.user_name || '')}</strong>
-            ${staffLabel}
-          </div>
-        `;
-      }
+      let byId = {};
+      let staffList = [];
+      let selectedDate = todayStr;
 
       function weekDates() {
         return Array.from({ length: 7 }, (_, i) => {
@@ -3490,28 +3508,18 @@ export default function ProviderDashboardPage() {
         });
       }
 
-      function renderGrid() {
-        const dates = weekDates();
-        gridEl.innerHTML = dates.map(d => {
-          const dateStr = fmtDate(d);
-          const isToday = dateStr === todayStr;
-          const items = (byDate[dateStr] || []);
-          return `
-            <div class="cal-day-col">
-              <div class="cal-day-head${isToday ? ' is-today' : ''}">${WEEKDAY_JA[d.getDay()]}<br>${d.getMonth() + 1}/${d.getDate()}</div>
-              <div class="cal-day-body">
-                ${items.length ? items.map(chipHtml).join('') : ''}
-              </div>
-            </div>
-          `;
-        }).join('');
+      async function loadStaff() {
+        const res = await fetch('/api/provider/staff', { headers: authHeadersCal() });
+        if (!res.ok) return;
+        const rows = await res.json();
+        staffList = (rows || []).filter(s => s.bookable !== false);
       }
 
       function renderPills() {
         const dates = weekDates();
         pillsEl.innerHTML = dates.map(d => {
           const dateStr = fmtDate(d);
-          const isActive = dateStr === selectedMobileDate;
+          const isActive = dateStr === selectedDate;
           const count = (byDate[dateStr] || []).length;
           return `
             <button type="button" class="cal-day-pill${isActive ? ' is-active' : ''}" data-cal-pill="${dateStr}">
@@ -3522,24 +3530,83 @@ export default function ProviderDashboardPage() {
           `;
         }).join('');
         pillsEl.querySelectorAll('[data-cal-pill]').forEach(btn => btn.addEventListener('click', () => {
-          selectedMobileDate = btn.dataset.calPill;
+          selectedDate = btn.dataset.calPill;
           renderPills();
-          renderAgenda();
+          renderDay();
         }));
       }
 
+      // 予約ブロックの所要時間：即時予約（枠に紐づく）はその枠の実際の時間、
+      // それ以外（申請制）はメニュー所要時間を保持していないため目安値を使う。
+      function durationOf(r) {
+        return r.duration_minutes || DEFAULT_DURATION_MIN;
+      }
+
+      function renderDesktopGrid() {
+        if (!gridWrapEl) return;
+        const items = byDate[selectedDate] || [];
+        const totalMin = RANGE_END_MIN - RANGE_START_MIN;
+        const rowH = 26; // 30分あたりの高さ(px)
+        const totalHeight = (totalMin / 30) * rowH;
+
+        let timeColHtml = `<div class="cal-time-col" style="height:${totalHeight}px">`;
+        for (let m = RANGE_START_MIN; m <= RANGE_END_MIN; m += 60) {
+          const top = ((m - RANGE_START_MIN) / totalMin) * totalHeight;
+          timeColHtml += `<div class="cal-time-label" style="top:${top}px">${String(Math.floor(m / 60)).padStart(2, '0')}:00</div>`;
+        }
+        timeColHtml += `</div>`;
+
+        const columns = [...staffList.map(s => ({ id: s.id, name: s.name })), { id: null, name: '指名なし' }];
+        const headerHtml = `<div class="cal-time-col-spacer"></div>` + columns.map(c => `<div class="cal-staff-head">${esc(c.name)}</div>`).join('');
+
+        const bodyColsHtml = columns.map(col => {
+          const colItems = items.filter(r => (r.staff_id || null) === col.id);
+          let hourLines = '';
+          for (let m = RANGE_START_MIN; m <= RANGE_END_MIN; m += 30) {
+            const top = ((m - RANGE_START_MIN) / totalMin) * totalHeight;
+            hourLines += `<div class="cal-hour-line${m % 60 !== 0 ? ' is-half' : ''}" style="top:${top}px"></div>`;
+          }
+          const blocksHtml = colItems.map(r => {
+            const startMin = timeToMinutes(r.time);
+            if (startMin === null) return '';
+            const clampedStart = Math.max(RANGE_START_MIN, Math.min(RANGE_END_MIN, startMin));
+            const top = ((clampedStart - RANGE_START_MIN) / totalMin) * totalHeight;
+            const height = Math.max(18, (durationOf(r) / totalMin) * totalHeight);
+            return `
+              <div class="cal-block${r.status === 'visited' ? ' is-visited' : ''}" style="top:${top}px;height:${height}px" data-cal-open="${r.id}">
+                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}
+              </div>
+            `;
+          }).join('');
+          return `<div class="cal-staff-col" style="height:${totalHeight}px">${hourLines}${blocksHtml}</div>`;
+        }).join('');
+
+        gridWrapEl.innerHTML = `
+          <div class="cal-day-grid-header">${headerHtml}</div>
+          <div class="cal-day-grid-body">${timeColHtml}${bodyColsHtml}</div>
+        `;
+        gridWrapEl.querySelectorAll('[data-cal-open]').forEach(el => el.addEventListener('click', () => openMemberModal(el.dataset.calOpen)));
+      }
+
       function renderAgenda() {
-        const items = byDate[selectedMobileDate] || [];
+        if (!agendaEl) return;
+        const items = byDate[selectedDate] || [];
         if (!items.length) { agendaEl.innerHTML = '<p class="muted" style="font-size:13px">この日の予約はありません。</p>'; return; }
         agendaEl.innerHTML = items.map(r => `
-          <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid rgba(26,20,16,0.08);border-radius:10px;margin-bottom:6px;${r.status === 'visited' ? 'opacity:.6' : ''}">
+          <div class="cal-agenda-row" data-cal-open="${r.id}" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid rgba(26,20,16,0.08);border-radius:10px;margin-bottom:6px;${r.status === 'visited' ? 'opacity:.6' : ''}">
             <strong style="font-size:13px;flex-shrink:0">${r.time ? r.time.slice(0, 5) : '--:--'}</strong>
             <div style="flex:1;min-width:0">
               <strong style="font-size:13px">${esc(r.user_name || '')}</strong>
-              ${r.staff_name ? `<span class="muted" style="font-size:12px;margin-left:6px">👤 ${esc(r.staff_name)}</span>` : ''}
+              ${r.staff_name ? `<span class="muted" style="font-size:12px;margin-left:6px">${esc(r.staff_name)}</span>` : ''}
             </div>
           </div>
         `).join('');
+        agendaEl.querySelectorAll('[data-cal-open]').forEach(el => el.addEventListener('click', () => openMemberModal(el.dataset.calOpen)));
+      }
+
+      function renderDay() {
+        renderDesktopGrid();
+        renderAgenda();
       }
 
       async function loadWeek() {
@@ -3548,22 +3615,102 @@ export default function ProviderDashboardPage() {
         const to = fmtDate(dates[6]);
         if (labelEl) labelEl.textContent = `${from} 〜 ${to}`;
         const res = await fetch(`/api/provider/calendar?from=${from}&to=${to}`, { headers: authHeadersCal() });
-        if (!res.ok) { gridEl.innerHTML = authErrorHtml(res); return; }
+        if (!res.ok) { if (gridWrapEl) gridWrapEl.innerHTML = authErrorHtml(res); return; }
         const rows = await res.json();
         byDate = {};
-        rows.forEach(r => { (byDate[r.date] = byDate[r.date] || []).push(r); });
-        if (!dates.some(d => fmtDate(d) === selectedMobileDate)) selectedMobileDate = from;
-        renderGrid();
+        byId = {};
+        rows.forEach(r => { (byDate[r.date] = byDate[r.date] || []).push(r); byId[r.id] = r; });
+        if (!dates.some(d => fmtDate(d) === selectedDate)) selectedDate = from;
         renderPills();
-        renderAgenda();
+        renderDay();
       }
+
+      // ── 予約ブロック／アジェンダ行クリック → 会員クイックビュー（氏名・連絡先・
+      //    固定メモ・来店記録履歴）。カルテタブの各APIをそのまま再利用する。 ──
+      const modalEl = document.getElementById('cal-member-modal');
+      const modalNameEl = document.getElementById('cal-modal-name');
+      const modalContactEl = document.getElementById('cal-modal-contact');
+      const modalReservationEl = document.getElementById('cal-modal-reservation');
+      const modalNoteEl = document.getElementById('cal-modal-note');
+      const modalNoteSaveBtn = document.getElementById('cal-modal-note-save');
+      const modalNoteMsgEl = document.getElementById('cal-modal-note-msg');
+      const modalHistoryEl = document.getElementById('cal-modal-history');
+      let modalUserId = null;
+
+      const STATUS_LABEL_CAL = { approved: '確定済み', visited: '来店済み' };
+
+      async function openMemberModal(reservationId) {
+        const r = byId[reservationId];
+        if (!r || !modalEl) return;
+        modalUserId = r.user_id || null;
+        if (modalNameEl) modalNameEl.textContent = r.user_name || '(お名前未登録)';
+        if (modalContactEl) modalContactEl.textContent = r.user_contact || '';
+        if (modalReservationEl) {
+          modalReservationEl.innerHTML = `
+            <strong>${esc(r.date)} ${r.time ? r.time.slice(0, 5) : ''}</strong>
+            ${r.staff_name ? ` ／ 担当：${esc(r.staff_name)}` : ''}
+            ／ <span class="muted">${STATUS_LABEL_CAL[r.status] || r.status}</span>
+            ${r.note ? `<p class="muted" style="margin:6px 0 0;font-size:12.5px">${esc(r.note)}</p>` : ''}
+          `;
+        }
+        modalEl.style.display = 'flex';
+
+        if (modalNoteEl) { modalNoteEl.value = ''; modalNoteEl.disabled = true; modalNoteEl.placeholder = modalUserId ? '読み込み中…' : 'Finemeアカウントに未登録のため記録できません'; }
+        if (modalNoteSaveBtn) modalNoteSaveBtn.disabled = true;
+        if (modalHistoryEl) modalHistoryEl.innerHTML = '<p class="muted" style="font-size:12px">読み込み中…</p>';
+        if (modalNoteMsgEl) modalNoteMsgEl.textContent = '';
+
+        if (!modalUserId) {
+          if (modalHistoryEl) modalHistoryEl.innerHTML = '<p class="muted" style="font-size:12px">Finemeアカウントに未登録のお客様です。</p>';
+          return;
+        }
+
+        const [noteRes, historyRes] = await Promise.all([
+          fetch(`/api/provider/customers/${modalUserId}/note`, { headers: authHeadersCal() }),
+          fetch(`/api/provider/customers/${modalUserId}/karte-entries`, { headers: authHeadersCal() }),
+        ]);
+        if (noteRes.ok) {
+          const noteData = await noteRes.json();
+          if (modalNoteEl) { modalNoteEl.value = noteData.note || ''; modalNoteEl.disabled = false; }
+          if (modalNoteSaveBtn) modalNoteSaveBtn.disabled = false;
+        }
+        if (historyRes.ok) {
+          const entries = await historyRes.json();
+          if (modalHistoryEl) {
+            modalHistoryEl.innerHTML = entries.length
+              ? entries.slice(0, 5).map(e => `
+                  <div style="padding:6px 0;border-bottom:1px solid rgba(26,20,16,0.06);font-size:12.5px">
+                    <strong>${new Date(e.created_at).toLocaleDateString('ja-JP')}</strong>
+                    ${e.menu_name ? ` ／ ${esc(e.menu_name)}` : ''}
+                    ${e.note ? `<div class="muted" style="margin-top:2px">${esc(e.note)}</div>` : ''}
+                  </div>
+                `).join('')
+              : '<p class="muted" style="font-size:12px">まだ記録がありません。</p>';
+          }
+        }
+      }
+
+      modalNoteSaveBtn?.addEventListener('click', async () => {
+        if (!modalUserId) return;
+        modalNoteSaveBtn.disabled = true;
+        const res = await fetch(`/api/provider/customers/${modalUserId}/note`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...authHeadersCal() },
+          body: JSON.stringify({ note: modalNoteEl.value }),
+        });
+        modalNoteSaveBtn.disabled = false;
+        if (modalNoteMsgEl) { modalNoteMsgEl.style.color = res.ok ? '#4ade80' : '#ef4444'; modalNoteMsgEl.textContent = res.ok ? '✓ 保存しました' : '保存に失敗しました'; }
+      });
+      document.getElementById('cal-modal-close')?.addEventListener('click', () => { if (modalEl) modalEl.style.display = 'none'; });
+      modalEl?.addEventListener('click', (e) => { if (e.target === modalEl) modalEl.style.display = 'none'; });
 
       document.getElementById('cal-prev-btn')?.addEventListener('click', () => { weekStart.setDate(weekStart.getDate() - 7); loadWeek(); });
       document.getElementById('cal-next-btn')?.addEventListener('click', () => { weekStart.setDate(weekStart.getDate() + 7); loadWeek(); });
-      document.getElementById('cal-today-btn')?.addEventListener('click', () => { weekStart = mondayOf(new Date()); selectedMobileDate = todayStr; loadWeek(); });
+      document.getElementById('cal-today-btn')?.addEventListener('click', () => { weekStart = mondayOf(new Date()); selectedDate = todayStr; loadWeek(); });
 
-      document.querySelectorAll('[data-tab="calendar"]').forEach(btn => btn.addEventListener('click', loadWeek, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'calendar') loadWeek();
+      async function initAndLoad() { await loadStaff(); await loadWeek(); }
+      document.querySelectorAll('[data-tab="calendar"]').forEach(btn => btn.addEventListener('click', initAndLoad, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'calendar') initAndLoad();
     })();
 
     // ── POS・在庫タブ（Phase 3・hacomono/STORES網羅計画） ──────────
@@ -4208,13 +4355,42 @@ export default function ProviderDashboardPage() {
               </div>
             </div>
 
-            {/* デスクトップ：7日グリッド。640px以下はCSSで非表示 */}
-            <div id="cal-week-grid" className="cal-week-grid"></div>
+            {/* 日付ピル：PC・スマホ共通。選んだ1日をデスクトップは時間×スタッフのグリッドで、
+                スマホはアジェンダリストで表示する（今野くんの実地フィードバック対応） */}
+            <div id="cal-day-pills" className="cal-day-pills"></div>
 
-            {/* スマホ：日付ピル＋当日のみのアジェンダリスト。640px以下でのみCSSで表示 */}
-            <div id="cal-mobile" className="cal-mobile">
-              <div id="cal-day-pills" className="cal-day-pills"></div>
-              <div id="cal-agenda-list"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
+            {/* デスクトップ：選んだ1日をhacomono風の時間×スタッフのグリッドで表示。
+                パッと見で空き時間が分かるようにする狙い。640px以下はCSSで非表示 */}
+            <div className="cal-desktop">
+              <div id="cal-day-grid" className="cal-day-grid"></div>
+              <p className="muted" style={{ fontSize: '11px', margin: '8px 0 0' }}>※ 所要時間はメニューごとの登録が無いため目安表示です（即時予約の枠はその枠の時間で正確に表示）</p>
+            </div>
+
+            {/* スマホ：選んだ1日のみのアジェンダリスト（二重スクロール回避） */}
+            <div id="cal-agenda-list" className="cal-mobile"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
+          </div>
+        </div>
+
+        {/* 予約カレンダーから開く会員クイックビュー（氏名・連絡先・固定メモ・来店記録履歴） */}
+        <div id="cal-member-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
+          <div className="cal-modal-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+              <div>
+                <h3 style={{ margin: '0 0 2px', fontSize: '16px' }} id="cal-modal-name"></h3>
+                <p className="muted" style={{ fontSize: '12px', margin: 0 }} id="cal-modal-contact"></p>
+              </div>
+              <button type="button" className="btn btn-ghost" id="cal-modal-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
+            </div>
+            <div id="cal-modal-reservation" style={{ margin: '12px 0', fontSize: '13px' }}></div>
+            <div style={{ borderTop: '1px solid rgba(26,20,16,0.08)', paddingTop: '12px', marginTop: '4px' }}>
+              <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700 }}>固定メモ（お客様には表示されません）</p>
+              <textarea id="cal-modal-note" style={{ width: '100%', minHeight: '60px', fontSize: '13px', padding: '8px', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', boxSizing: 'border-box' }} disabled placeholder="読み込み中…"></textarea>
+              <button type="button" className="btn" id="cal-modal-note-save" style={{ fontSize: '12px', padding: '6px 12px', marginTop: '6px' }} disabled>保存する</button>
+              <span id="cal-modal-note-msg" className="muted" style={{ fontSize: '12px', marginLeft: '8px' }}></span>
+            </div>
+            <div style={{ borderTop: '1px solid rgba(26,20,16,0.08)', paddingTop: '12px', marginTop: '12px' }}>
+              <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700 }}>来店記録履歴</p>
+              <div id="cal-modal-history"><p className="muted" style={{ fontSize: '12px' }}>読み込み中…</p></div>
             </div>
           </div>
         </div>
