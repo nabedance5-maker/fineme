@@ -3110,13 +3110,26 @@ export default function ProviderDashboardPage() {
       `;
     }
 
-    window.openRequestModal = function (id) {
-      const r = _requestsById[id];
+    function showRequestModal(r) {
       const modal = document.getElementById('request-detail-modal');
       const body = document.getElementById('request-detail-modal-body');
       if (!r || !modal || !body) return;
       body.innerHTML = buildRequestCardHtml(r);
       modal.style.display = 'flex';
+    }
+    window.openRequestModal = function (id) {
+      showRequestModal(_requestsById[id]);
+    };
+    // カレンダーから未確定のリクエスト（pending/counter_proposed）を開く時用。
+    // カレンダーAPIのレスポンスは一覧表示用に絞ってあり、承認/代替提案フォームが
+    // 必要とする生カラム（reserved_date・counter_date等）を持たないため、カレンダー側
+    // でGET /api/reservations/[id]から生データを取得し、こちらへ渡してもらう
+    // （でお要望2026-09-12：カレンダー上の未確定リクエストをクリックした時、確定済み
+    // 予約と同じ会員情報モーダルではなく、承認・代替提案ができるこのモーダルを開きたい）。
+    window.openRequestModalWithData = function (r) {
+      if (!r) return;
+      _requestsById[r.id] = r;
+      showRequestModal(r);
     };
     document.getElementById('request-modal-close')?.addEventListener('click', () => {
       document.getElementById('request-detail-modal').style.display = 'none';
@@ -3174,6 +3187,7 @@ export default function ProviderDashboardPage() {
       if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
       document.getElementById('request-detail-modal').style.display = 'none';
       await loadRequests(); showToast('承認しました');
+      window.__calReloadWeek?.();
     };
 
     window.rejectRequest = async function (id) {
@@ -3183,6 +3197,7 @@ export default function ProviderDashboardPage() {
       if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
       document.getElementById('request-detail-modal').style.display = 'none';
       await loadRequests(); showToast('お断りを送りました');
+      window.__calReloadWeek?.();
     };
 
     // 来店確認モーダル：来店確認と同時に、実際のメニュー・金額・スタッフ・支払い方法を
@@ -3295,6 +3310,7 @@ export default function ProviderDashboardPage() {
       }
       document.getElementById('visit-modal-overlay')?.remove();
       await loadRequests(); showToast('来店を確認しました');
+      window.__calReloadWeek?.();
     };
 
     // パッケージ消化：予約カードから並列で押せるボタン。誤操作は
@@ -3359,7 +3375,10 @@ export default function ProviderDashboardPage() {
       });
       if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
       document.getElementById('counter-modal-overlay').remove();
+      const _reqModal = document.getElementById('request-detail-modal');
+      if (_reqModal) _reqModal.style.display = 'none';
       await loadRequests(); showToast('代替提案を送りました');
+      window.__calReloadWeek?.();
     };
 
     document.querySelectorAll('[data-tab="requests"]').forEach(btn => {
@@ -3816,7 +3835,7 @@ export default function ProviderDashboardPage() {
         if (!gridWrapEl) return;
         const items = byDate[selectedDate] || [];
         gridWrapEl.innerHTML = buildGridHtml(items, currentColumns(), currentGroupKey());
-        gridWrapEl.querySelectorAll('[data-cal-open]').forEach(el => el.addEventListener('click', () => openMemberModal(el.dataset.calOpen)));
+        gridWrapEl.querySelectorAll('[data-cal-open]').forEach(el => el.addEventListener('click', () => openCalItem(el.dataset.calOpen)));
       }
 
       function renderViewToggle() {
@@ -3847,7 +3866,7 @@ export default function ProviderDashboardPage() {
             </div>
           </div>
         `).join('');
-        container.querySelectorAll('[data-cal-open]').forEach(el => el.addEventListener('click', () => openMemberModal(el.dataset.calOpen)));
+        container.querySelectorAll('[data-cal-open]').forEach(el => el.addEventListener('click', () => openCalItem(el.dataset.calOpen)));
       }
 
       function renderDay() {
@@ -3899,6 +3918,25 @@ export default function ProviderDashboardPage() {
       let modalReservationId = null;
 
       const STATUS_LABEL_CAL = { approved: '確定済み', visited: '来店済み', pending: '返答待ち（申請中）', counter_proposed: '代替提案中（お客様の返答待ち）' };
+
+      // まだ確定していないリクエスト（pending/counter_proposed）をカレンダー上でクリックした時は、
+      // 確定済み予約と同じ会員情報モーダルではなく、承認・代替提案・お断りができる
+      // リクエスト詳細モーダルを開く（でお要望2026-09-12：「確定してないから内容が
+      // 一緒じゃダメ」）。カレンダーAPIのレスポンスは一覧表示用に絞ってあるため、
+      // 承認・代替提案フォームが必要とする生カラムをGET /api/reservations/[id]で
+      // 別途取得してから渡す。
+      async function openCalItem(reservationId) {
+        const r = byId[reservationId];
+        if (!r) return;
+        if (r.status === 'pending' || r.status === 'counter_proposed') {
+          const res = await fetch(`/api/reservations/${reservationId}`, { headers: authHeadersCal() });
+          if (!res.ok) { showToast('取得エラー'); return; }
+          const full = await res.json();
+          window.openRequestModalWithData?.(full);
+          return;
+        }
+        openMemberModal(reservationId);
+      }
 
       async function openMemberModal(reservationId) {
         const r = byId[reservationId];
@@ -4014,6 +4052,11 @@ export default function ProviderDashboardPage() {
       }
       document.querySelectorAll('[data-tab="calendar"]').forEach(btn => btn.addEventListener('click', initAndLoad, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'calendar') initAndLoad();
+
+      // 予約リクエストタブ側（承認・お断り・代替提案・来店確認）から、カレンダーが
+      // 既に開かれていれば表示を追従させるための橋渡し（でお要望2026-09-12：
+      // 「代替案送ったらカレンダー上でその日時に移動するのが正解」）。
+      window.__calReloadWeek = loadWeek;
     })();
 
     // ── 今日の業務タブ（2026-09-12・でお要望：毎日の流れを1画面にまとめる） ──────
@@ -4580,6 +4623,8 @@ export default function ProviderDashboardPage() {
       delete window.showCounterModal;
       delete window.submitCounter;
       delete window.openRequestModal;
+      delete window.openRequestModalWithData;
+      delete window.__calReloadWeek;
     };
   }, []);
 

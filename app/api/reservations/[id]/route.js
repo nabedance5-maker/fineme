@@ -8,10 +8,25 @@ import { syncVisitToLog } from '@/lib/sync-visit';
 
 export async function GET(request, context) {
   try {
-    const id = context.params.id;
+    const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+    if (!token) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const db = getSupabase();
+    const { data: { user } } = await db.auth.getUser(token);
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const id = context.params.id;
     const { data, error } = await db.from('reservations').select('*').eq('id', id).single();
     if (error) return Response.json({ error: error.message }, { status: 500 });
+
+    // 予約の連絡先・氏名まで含む生データを返すため、この予約の店舗本人か
+    // 予約者本人（ゲスト予約=user_id無しは対象外）以外には見せない
+    // （でお報告2026-09-12関連の実装中に発見・修正：認証さえあれば誰でも
+    // IDだけで他人の予約を閲覧できてしまっていた）。
+    const { data: providerRow } = await db.from('providers').select('id').eq('email', user.email).single();
+    const isOwnerProvider = providerRow && providerRow.id === data.provider_id;
+    const isOwnerCustomer = data.user_id && data.user_id === user.id;
+    if (!isOwnerProvider && !isOwnerCustomer) return Response.json({ error: 'Forbidden' }, { status: 403 });
+
     return Response.json(data);
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
@@ -27,6 +42,9 @@ export async function PATCH(request, context) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const id = context.params.id;
+    const { data: existing, error: existingError } = await db.from('reservations').select('provider_id, user_id').eq('id', id).single();
+    if (existingError || !existing) return Response.json({ error: '予約が見つかりません' }, { status: 404 });
+
     const body = await request.json();
     const { status, action, counter_proposal, counter_date, counter_time, confirmed_date, confirmed_time } = body;
 
@@ -36,6 +54,25 @@ export async function PATCH(request, context) {
       action === 'visited' ? 'visited' : null
     );
     if (!newStatus) return Response.json({ error: '無効なステータスです' }, { status: 400 });
+
+    // 権限チェック：この予約の店舗本人（承認・お断り・代替提案・来店確認）か、
+    // この予約の本人（代替提案の承諾・キャンセルのみ、ゲスト予約は対象外）に限る
+    // （でお報告2026-09-12関連の実装中に発見・修正：認証さえあれば誰でもIDだけで
+    // 他人の予約のステータスを書き換えられてしまっていた）。
+    const { data: providerRow } = await db.from('providers').select('id').eq('email', user.email).single();
+    const isOwnerProvider = providerRow && providerRow.id === existing.provider_id;
+    const isOwnerCustomer = existing.user_id && existing.user_id === user.id;
+    if (isOwnerProvider) {
+      if (!['approved', 'rejected', 'counter_proposed', 'visited'].includes(newStatus)) {
+        return Response.json({ error: '無効な操作です' }, { status: 400 });
+      }
+    } else if (isOwnerCustomer) {
+      if (!['approved', 'cancelled'].includes(newStatus)) {
+        return Response.json({ error: '無効な操作です' }, { status: 400 });
+      }
+    } else {
+      return Response.json({ error: 'この予約を操作する権限がありません' }, { status: 403 });
+    }
 
     const updates = { status: newStatus };
     if (counter_proposal) updates.provider_comment = counter_proposal;
