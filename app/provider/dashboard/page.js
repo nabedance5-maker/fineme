@@ -3113,8 +3113,14 @@ export default function ProviderDashboardPage() {
     function showRequestModal(r) {
       const modal = document.getElementById('request-detail-modal');
       const body = document.getElementById('request-detail-modal-body');
-      if (!r || !modal || !body) return;
-      body.innerHTML = buildRequestCardHtml(r);
+      if (!r || !modal || !body) { showToast('このリクエストが見つかりません'); return; }
+      try {
+        body.innerHTML = buildRequestCardHtml(r);
+      } catch (e) {
+        console.error('[showRequestModal]', e);
+        showToast('表示エラー: ' + e.message);
+        return;
+      }
       modal.style.display = 'flex';
     }
     window.openRequestModal = function (id) {
@@ -3926,16 +3932,25 @@ export default function ProviderDashboardPage() {
       // 承認・代替提案フォームが必要とする生カラムをGET /api/reservations/[id]で
       // 別途取得してから渡す。
       async function openCalItem(reservationId) {
-        const r = byId[reservationId];
-        if (!r) return;
-        if (r.status === 'pending' || r.status === 'counter_proposed') {
-          const res = await fetch(`/api/reservations/${reservationId}`, { headers: authHeadersCal() });
-          if (!res.ok) { showToast('取得エラー'); return; }
-          const full = await res.json();
-          window.openRequestModalWithData?.(full);
-          return;
+        try {
+          const r = byId[reservationId];
+          if (!r) { showToast('この予約データが見つかりません（再読み込みしてください）'); return; }
+          if (r.status === 'pending' || r.status === 'counter_proposed') {
+            const res = await fetch(`/api/reservations/${reservationId}`, { headers: authHeadersCal() });
+            if (!res.ok) {
+              const e = await res.json().catch(() => ({}));
+              showToast('取得エラー: ' + (e.error || res.status));
+              return;
+            }
+            const full = await res.json();
+            window.openRequestModalWithData?.(full);
+            return;
+          }
+          openMemberModal(reservationId);
+        } catch (e) {
+          console.error('[openCalItem]', e);
+          showToast('エラー: ' + e.message);
         }
-        openMemberModal(reservationId);
       }
 
       async function openMemberModal(reservationId) {
