@@ -3461,6 +3461,7 @@ export default function ProviderDashboardPage() {
       const labelEl = document.getElementById('cal-week-label');
       const pillsEl = document.getElementById('cal-day-pills');
       const gridWrapEl = document.getElementById('cal-day-grid');
+      const viewToggleEl = document.getElementById('cal-view-toggle');
       if (!pillsEl) return;
 
       const WEEKDAY_JA = ['日', '月', '火', '水', '木', '金', '土'];
@@ -3492,7 +3493,10 @@ export default function ProviderDashboardPage() {
       let byDate = {};
       let byId = {};
       let staffList = [];
+      let resourceList = [];
+      let resourceFeatureOn = false;
       let selectedDate = todayStr;
+      let viewMode = 'staff'; // 'staff' | 'resource'（でお要望2026-09-12：カレンダーをスタッフ別/部屋別で切り替え）
 
       function weekDates() {
         return Array.from({ length: 7 }, (_, i) => {
@@ -3507,6 +3511,15 @@ export default function ProviderDashboardPage() {
         if (!res.ok) return;
         const rows = await res.json();
         staffList = (rows || []).filter(s => s.bookable !== false);
+      }
+
+      async function loadResourcesAndFeatures() {
+        const [featRes, resRes] = await Promise.all([
+          fetch('/api/provider/features', { headers: authHeadersCal() }),
+          fetch('/api/provider/resources', { headers: authHeadersCal() }),
+        ]);
+        if (featRes.ok) { const { features } = await featRes.json(); resourceFeatureOn = !!features?.resource_management; }
+        if (resRes.ok) { const rows = await resRes.json(); resourceList = (rows || []).filter(r => r.active !== false); }
       }
 
       function renderPills() {
@@ -3539,12 +3552,20 @@ export default function ProviderDashboardPage() {
       function staffColumns() {
         return [...staffList.map(s => ({ key: s.id, id: s.id, name: s.name })), { key: 'unassigned', id: null, name: '指名なし' }];
       }
+      function resourceColumns() {
+        return [...resourceList.map(r => ({ key: r.id, id: r.id, name: r.name })), { key: 'unassigned', id: null, name: '未割当' }];
+      }
+      function currentColumns() {
+        return viewMode === 'resource' ? resourceColumns() : staffColumns();
+      }
+      function currentGroupKey() {
+        return viewMode === 'resource' ? 'resource_id' : 'staff_id';
+      }
 
-      // 時間×スタッフのグリッドHTMLを組み立てる共通関数。デスクトップは全スタッフ列、
-      // モバイルは選んだ1人分の列だけを渡すことで同じグリッド表現を使い回す
-      // （でお要望2026-09-12：PC用グリッドをそのまま横に並べるとモバイルで2軸スクロールになる
-      // ため、列数を1つに絞ることで縦スクロールだけに保つ）。
-      function buildGridHtml(items, columns) {
+      // 時間×スタッフ（または部屋）のグリッドHTMLを組み立てる共通関数。groupKeyで
+      // reservationsのどのフィールドで列分けするかを切り替える（でお要望2026-09-12：
+      // スタッフ別/部屋別カレンダーの切り替え）。
+      function buildGridHtml(items, columns, groupKey) {
         const totalMin = RANGE_END_MIN - RANGE_START_MIN;
         const rowH = 26; // 30分あたりの高さ(px)
         const totalHeight = (totalMin / 30) * rowH;
@@ -3559,7 +3580,7 @@ export default function ProviderDashboardPage() {
         const headerHtml = `<div class="cal-time-col-spacer"></div>` + columns.map(c => `<div class="cal-staff-head">${esc(c.name)}</div>`).join('');
 
         const bodyColsHtml = columns.map(col => {
-          const colItems = items.filter(r => (r.staff_id || null) === col.id);
+          const colItems = items.filter(r => (r[groupKey] || null) === col.id);
           let hourLines = '';
           for (let m = RANGE_START_MIN; m <= RANGE_END_MIN; m += 30) {
             const top = ((m - RANGE_START_MIN) / totalMin) * totalHeight;
@@ -3589,8 +3610,23 @@ export default function ProviderDashboardPage() {
       function renderDesktopGrid() {
         if (!gridWrapEl) return;
         const items = byDate[selectedDate] || [];
-        gridWrapEl.innerHTML = buildGridHtml(items, staffColumns());
+        gridWrapEl.innerHTML = buildGridHtml(items, currentColumns(), currentGroupKey());
         gridWrapEl.querySelectorAll('[data-cal-open]').forEach(el => el.addEventListener('click', () => openMemberModal(el.dataset.calOpen)));
+      }
+
+      function renderViewToggle() {
+        if (!viewToggleEl) return;
+        if (!resourceFeatureOn) { viewToggleEl.style.display = 'none'; return; }
+        viewToggleEl.style.display = 'flex';
+        viewToggleEl.innerHTML = `
+          <button type="button" class="btn ${viewMode === 'staff' ? '' : 'btn-ghost'}" data-cal-view="staff" style="font-size:12px;padding:6px 12px">スタッフ別</button>
+          <button type="button" class="btn ${viewMode === 'resource' ? '' : 'btn-ghost'}" data-cal-view="resource" style="font-size:12px;padding:6px 12px">部屋別</button>
+        `;
+        viewToggleEl.querySelectorAll('[data-cal-view]').forEach(btn => btn.addEventListener('click', () => {
+          viewMode = btn.dataset.calView;
+          renderViewToggle();
+          renderDesktopGrid();
+        }));
       }
 
       function renderAgendaInto(container, items) {
@@ -3637,7 +3673,13 @@ export default function ProviderDashboardPage() {
       const modalNoteSaveBtn = document.getElementById('cal-modal-note-save');
       const modalNoteMsgEl = document.getElementById('cal-modal-note-msg');
       const modalHistoryEl = document.getElementById('cal-modal-history');
+      const modalStaffSelectEl = document.getElementById('cal-modal-staff-select');
+      const modalResourceFieldEl = document.getElementById('cal-modal-resource-field');
+      const modalResourceSelectEl = document.getElementById('cal-modal-resource-select');
+      const modalAssignSaveBtn = document.getElementById('cal-modal-assign-save');
+      const modalAssignMsgEl = document.getElementById('cal-modal-assign-msg');
       let modalUserId = null;
+      let modalReservationId = null;
 
       const STATUS_LABEL_CAL = { approved: '確定済み', visited: '来店済み' };
 
@@ -3645,16 +3687,25 @@ export default function ProviderDashboardPage() {
         const r = byId[reservationId];
         if (!r || !modalEl) return;
         modalUserId = r.user_id || null;
+        modalReservationId = reservationId;
         if (modalNameEl) modalNameEl.textContent = r.user_name || '(お名前未登録)';
         if (modalContactEl) modalContactEl.textContent = r.user_contact || '';
         if (modalReservationEl) {
           modalReservationEl.innerHTML = `
             <strong>${esc(r.date)} ${r.time ? r.time.slice(0, 5) : ''}</strong>
-            ${r.staff_name ? ` ／ 担当：${esc(r.staff_name)}` : ''}
             ／ <span class="muted">${STATUS_LABEL_CAL[r.status] || r.status}</span>
             ${r.note ? `<p class="muted" style="margin:6px 0 0;font-size:12.5px">${esc(r.note)}</p>` : ''}
           `;
         }
+        // 担当スタッフ・部屋の割り当て（指名の有無に関わらずいつでも変更できる。でお要望2026-09-12）
+        if (modalStaffSelectEl) {
+          modalStaffSelectEl.innerHTML = '<option value="">指名なし</option>' + staffList.map(s => `<option value="${s.id}"${s.id === r.staff_id ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
+        }
+        if (modalResourceFieldEl) modalResourceFieldEl.style.display = resourceFeatureOn ? '' : 'none';
+        if (modalResourceSelectEl) {
+          modalResourceSelectEl.innerHTML = '<option value="">未割当</option>' + resourceList.map(res => `<option value="${res.id}"${res.id === r.resource_id ? ' selected' : ''}>${esc(res.name)}</option>`).join('');
+        }
+        if (modalAssignMsgEl) modalAssignMsgEl.textContent = '';
         modalEl.style.display = 'flex';
 
         if (modalNoteEl) { modalNoteEl.value = ''; modalNoteEl.disabled = true; modalNoteEl.placeholder = modalUserId ? '読み込み中…' : 'Finemeアカウントに未登録のため記録できません'; }
@@ -3692,6 +3743,22 @@ export default function ProviderDashboardPage() {
         }
       }
 
+      modalAssignSaveBtn?.addEventListener('click', async () => {
+        if (!modalReservationId) return;
+        modalAssignSaveBtn.disabled = true;
+        const body = { staff_id: modalStaffSelectEl?.value || null };
+        if (resourceFeatureOn) body.resource_id = modalResourceSelectEl?.value || null;
+        const res = await fetch(`/api/provider/reservations/${modalReservationId}/assign`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', ...authHeadersCal() },
+          body: JSON.stringify(body),
+        });
+        modalAssignSaveBtn.disabled = false;
+        if (!res.ok) { if (modalAssignMsgEl) { modalAssignMsgEl.style.color = '#ef4444'; modalAssignMsgEl.textContent = '保存に失敗しました'; } return; }
+        if (modalAssignMsgEl) { modalAssignMsgEl.style.color = '#4ade80'; modalAssignMsgEl.textContent = '✓ 保存しました'; }
+        await loadWeek(); // グリッドの列分けに反映
+      });
+
       modalNoteSaveBtn?.addEventListener('click', async () => {
         if (!modalUserId) return;
         modalNoteSaveBtn.disabled = true;
@@ -3722,7 +3789,11 @@ export default function ProviderDashboardPage() {
       document.getElementById('cal-agenda-popup-close')?.addEventListener('click', () => { if (agendaPopupEl) agendaPopupEl.style.display = 'none'; });
       agendaPopupEl?.addEventListener('click', (e) => { if (e.target === agendaPopupEl) agendaPopupEl.style.display = 'none'; });
 
-      async function initAndLoad() { await loadStaff(); await loadWeek(); }
+      async function initAndLoad() {
+        await Promise.all([loadStaff(), loadResourcesAndFeatures()]);
+        renderViewToggle();
+        await loadWeek();
+      }
       document.querySelectorAll('[data-tab="calendar"]').forEach(btn => btn.addEventListener('click', initAndLoad, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'calendar') initAndLoad();
     })();
@@ -4369,6 +4440,9 @@ export default function ProviderDashboardPage() {
               </div>
             </div>
 
+            {/* 部屋・設備管理をONにした店舗のみ、スタッフ別/部屋別カレンダーを切り替えられる（でお要望2026-09-12） */}
+            <div id="cal-view-toggle" style={{ display: 'none', gap: '6px', marginBottom: '10px' }}></div>
+
             {/* 日付ピル：PC・スマホ共通で選んだ1日を切り替える */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div id="cal-day-pills" className="cal-day-pills" style={{ flex: 1 }}></div>
@@ -4405,7 +4479,19 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn btn-ghost" id="cal-modal-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
             </div>
             <div id="cal-modal-reservation" style={{ margin: '12px 0', fontSize: '13px' }}></div>
-            <div style={{ borderTop: '1px solid rgba(26,20,16,0.08)', paddingTop: '12px', marginTop: '4px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end', margin: '12px 0' }}>
+              <div className="form-field" style={{ flex: '1 1 140px', marginBottom: 0 }}>
+                <label>担当スタッフ</label>
+                <select id="cal-modal-staff-select"><option value="">指名なし</option></select>
+              </div>
+              <div className="form-field" id="cal-modal-resource-field" style={{ flex: '1 1 140px', marginBottom: 0, display: 'none' }}>
+                <label>部屋・設備</label>
+                <select id="cal-modal-resource-select"><option value="">未割当</option></select>
+              </div>
+              <button type="button" className="btn" id="cal-modal-assign-save" style={{ fontSize: '12px', padding: '8px 14px' }}>割り当てを保存</button>
+            </div>
+            <p id="cal-modal-assign-msg" className="muted" style={{ fontSize: '12px', margin: '-6px 0 0' }}></p>
+            <div style={{ borderTop: '1px solid rgba(26,20,16,0.08)', paddingTop: '12px', marginTop: '12px' }}>
               <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700 }}>固定メモ（お客様には表示されません）</p>
               <textarea id="cal-modal-note" style={{ width: '100%', minHeight: '60px', fontSize: '13px', padding: '8px', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', boxSizing: 'border-box' }} disabled placeholder="読み込み中…"></textarea>
               <button type="button" className="btn" id="cal-modal-note-save" style={{ fontSize: '12px', padding: '6px 12px', marginTop: '6px' }} disabled>保存する</button>

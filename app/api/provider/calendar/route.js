@@ -30,7 +30,7 @@ export async function GET(request) {
   // シンプル・確実（OR条件でのANDレンジ絞り込みはSupabaseクエリビルダーで書きにくいため）。
   const { data: rows, error } = await supabase
     .from('reservations')
-    .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, confirmed_date, confirmed_time, staff_id, booking_mode, slot_id')
+    .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, confirmed_date, confirmed_time, staff_id, resource_id, booking_mode, slot_id')
     .eq('provider_id', provider.id)
     .in('status', ['approved', 'visited'])
     .gte('reserved_date', from)
@@ -42,6 +42,13 @@ export async function GET(request) {
   if (staffIds.length) {
     const { data: staffRows } = await supabase.from('provider_staff').select('id, name').in('id', staffIds);
     (staffRows || []).forEach(s => { staffMap[s.id] = s.name; });
+  }
+
+  const resourceIds = [...new Set((rows || []).map(r => r.resource_id).filter(Boolean))];
+  let resourceMap = {};
+  if (resourceIds.length) {
+    const { data: resourceRows } = await supabase.from('provider_resources').select('id, name').in('id', resourceIds);
+    (resourceRows || []).forEach(r => { resourceMap[r.id] = r.name; });
   }
 
   // 即時予約は紐づくprovider_slotsの実際の開始/終了時刻から所要時間を計算できる
@@ -71,6 +78,8 @@ export async function GET(request) {
       booking_mode: r.booking_mode || 'request',
       staff_id: r.staff_id || null,
       staff_name: r.staff_id ? staffMap[r.staff_id] || null : null,
+      resource_id: r.resource_id || null,
+      resource_name: r.resource_id ? resourceMap[r.resource_id] || null : null,
       duration_minutes: r.slot_id ? slotDurationMap[r.slot_id] || null : null,
     }))
     .filter(r => r.date >= from && r.date <= to)
