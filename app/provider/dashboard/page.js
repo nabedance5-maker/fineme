@@ -40,6 +40,14 @@ export default function ProviderDashboardPage() {
       .tab-nav { width: 232px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; position: fixed; top: 0; left: 0; bottom: 0; z-index: 30; background: #0a0f1e; padding: 20px 0; overflow-y: auto; }
       .pd-nav-heading { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: rgba(255,255,255,0.6); text-transform: uppercase; padding: 14px 12px 4px; }
       .pd-nav-heading:first-child { padding-top: 0; }
+      /* サイドバーの折りたたみグループ（でお要望2026-09-12：縦に長すぎるのでコンパクトに）。
+         ネイティブの<details>/<summary>で開閉状態を管理し、開閉はlocalStorageに保存して
+         次回訪問時も維持する（JS側：groupTogglePrefix参照）。 */
+      .pd-nav-group summary.pd-nav-heading { cursor: pointer; display: flex; align-items: center; justify-content: space-between; list-style: none; user-select: none; }
+      .pd-nav-group summary.pd-nav-heading::-webkit-details-marker { display: none; }
+      .pd-nav-group summary.pd-nav-heading::after { content: '▾'; font-size: 9px; opacity: .6; transition: transform .15s; margin-right: 12px; }
+      .pd-nav-group:not([open]) summary.pd-nav-heading::after { transform: rotate(-90deg); }
+      .pd-nav-group summary.pd-nav-heading:hover { color: #fff; }
       .tab-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 12px; border: none; border-radius: 10px; background: none; cursor: pointer; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.88); text-align: left; white-space: normal; transition: background .15s, color .15s; }
       .tab-btn:hover { background: rgba(255,255,255,0.05); color: #e8e4dc; }
       .tab-btn.active { background: rgba(201,168,76,0.14); color: #c9a84c; }
@@ -135,9 +143,29 @@ export default function ProviderDashboardPage() {
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODM1MzIsImV4cCI6MjA4ODU1OTUzMn0.9mBlP8-0l9jotex_UkX7Ba8ZodYtailaxoK_RIy3Kq8';
 
     // ── Tab switching ────────────────────────────────────────────
+    // ── サイドバーの折りたたみグループ（2026-09-12でお要望：縦に長すぎるのでコンパクトに） ──
+    const NAV_GROUP_STATE_PREFIX = 'fineme:provider:navgroup:';
+    document.querySelectorAll('.pd-nav-group').forEach(details => {
+      const key = details.dataset.group;
+      const saved = localStorage.getItem(NAV_GROUP_STATE_PREFIX + key);
+      if (saved !== null) details.open = saved === '1';
+      details.addEventListener('toggle', () => {
+        localStorage.setItem(NAV_GROUP_STATE_PREFIX + key, details.open ? '1' : '0');
+      });
+    });
+    function openGroupFor(tabId) {
+      const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+      const group = btn?.closest('.pd-nav-group');
+      if (group && !group.open) {
+        group.open = true;
+        localStorage.setItem(NAV_GROUP_STATE_PREFIX + group.dataset.group, '1');
+      }
+    }
+
     function switchTab(tabId) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      openGroupFor(tabId);
       const btn = document.querySelector(`[data-tab="${tabId}"]`);
       const pane = document.getElementById('tab-' + tabId);
       if (btn) btn.classList.add('active');
@@ -4304,39 +4332,47 @@ export default function ProviderDashboardPage() {
               <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: '#c9a84c', letterSpacing: 1 }}>fineme</p>
               <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: 1 }}>顧客管理システム</p>
             </div>
-            <p className="pd-nav-heading">チュートリアル</p>
+            <details className="pd-nav-group" data-group="daily" open>
+              <summary className="pd-nav-heading">毎日触るタブ</summary>
+              <button className="tab-btn active" data-tab="stats">概況</button>
+              <button className="tab-btn" data-tab="calendar">予約カレンダー</button>
+              <button className="tab-btn" data-tab="requests">予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
+              <button className="tab-btn" data-tab="customers">New Me Log</button>
+              <button className="tab-btn" data-tab="karte">カルテ</button>
+              <button className="tab-btn" data-tab="reviews">クチコミ</button>
+              <button className="tab-btn" data-tab="sales">売上管理</button>
+              <button className="tab-btn" data-tab="pos" data-feature="pos">POS・在庫<span className="feature-off-badge" data-feature-badge></span></button>
+              <button className="tab-btn" data-tab="checkin" data-feature="checkin_qr">チェックイン<span className="feature-off-badge" data-feature-badge></span></button>
+              <button className="tab-btn" data-tab="events" data-feature="attendance_confirm">出欠確認<span className="feature-off-badge" data-feature-badge></span></button>
+            </details>
+            <details className="pd-nav-group" data-group="setup">
+              <summary className="pd-nav-heading">店舗の中身を作る</summary>
+              <button className="tab-btn" data-tab="profile">プロフィール</button>
+              <button className="tab-btn" data-tab="service">サービス設定</button>
+              <button className="tab-btn" data-tab="packages">回数券</button>
+              <button className="tab-btn" data-tab="staff">スタッフ</button>
+              <button className="tab-btn" data-tab="resources" data-feature="resource_management">部屋・設備<span className="feature-off-badge" data-feature-badge></span></button>
+              <button className="tab-btn" data-tab="slots" data-feature="instant_booking">空き枠<span className="feature-off-badge" data-feature-badge></span></button>
+              <button className="tab-btn" data-tab="stories">体験談</button>
+              <button className="tab-btn" data-tab="landing">LP設定</button>
+              <button className="tab-btn" data-tab="qr">紹介QR</button>
+              <button className="tab-btn" data-tab="publish">公開設定</button>
+            </details>
+            <details className="pd-nav-group" data-group="growth">
+              <summary className="pd-nav-heading">伸ばすためのタブ</summary>
+              <button className="tab-btn" data-tab="area-demand">エリア需要</button>
+              <button className="tab-btn" data-tab="scripts">接客の引き出し</button>
+              <button className="tab-btn" data-tab="ltv-cac">LTV/CAC</button>
+              <button className="tab-btn" data-tab="referral">紹介報酬</button>
+            </details>
+            <details className="pd-nav-group" data-group="account">
+              <summary className="pd-nav-heading">アカウント周り</summary>
+              <button className="tab-btn" data-tab="line-channel">LINE連携</button>
+              <button className="tab-btn" data-tab="billing">課金・プラン</button>
+              <button className="tab-btn" data-tab="features">機能設定</button>
+            </details>
+            <p className="pd-nav-heading" style={{ marginTop: 'auto' }}>チュートリアル</p>
             <button className="tab-btn" data-tab="tutorial">チュートリアル</button>
-            <p className="pd-nav-heading">① 店舗の中身を作る</p>
-            <button className="tab-btn" data-tab="profile">プロフィール</button>
-            <button className="tab-btn" data-tab="service">サービス設定</button>
-            <button className="tab-btn" data-tab="packages">回数券</button>
-            <button className="tab-btn" data-tab="staff">スタッフ</button>
-            <button className="tab-btn" data-tab="resources" data-feature="resource_management">部屋・設備<span className="feature-off-badge" data-feature-badge></span></button>
-            <button className="tab-btn" data-tab="slots" data-feature="instant_booking">空き枠<span className="feature-off-badge" data-feature-badge></span></button>
-            <button className="tab-btn" data-tab="stories">体験談</button>
-            <button className="tab-btn" data-tab="landing">LP設定</button>
-            <button className="tab-btn" data-tab="qr">紹介QR</button>
-            <button className="tab-btn" data-tab="publish">公開設定</button>
-            <p className="pd-nav-heading">② 毎日触るタブ</p>
-            <button className="tab-btn active" data-tab="stats">概況</button>
-            <button className="tab-btn" data-tab="calendar">予約カレンダー</button>
-            <button className="tab-btn" data-tab="requests">予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
-            <button className="tab-btn" data-tab="customers">New Me Log</button>
-            <button className="tab-btn" data-tab="karte">カルテ</button>
-            <button className="tab-btn" data-tab="reviews">クチコミ</button>
-            <button className="tab-btn" data-tab="sales">売上管理</button>
-            <button className="tab-btn" data-tab="pos" data-feature="pos">POS・在庫<span className="feature-off-badge" data-feature-badge></span></button>
-            <button className="tab-btn" data-tab="checkin" data-feature="checkin_qr">チェックイン<span className="feature-off-badge" data-feature-badge></span></button>
-            <button className="tab-btn" data-tab="events" data-feature="attendance_confirm">出欠確認<span className="feature-off-badge" data-feature-badge></span></button>
-            <p className="pd-nav-heading">③ 伸ばすためのタブ</p>
-            <button className="tab-btn" data-tab="area-demand">エリア需要</button>
-            <button className="tab-btn" data-tab="scripts">接客の引き出し</button>
-            <button className="tab-btn" data-tab="ltv-cac">LTV/CAC</button>
-            <button className="tab-btn" data-tab="referral">紹介報酬</button>
-            <p className="pd-nav-heading">④ アカウント周り</p>
-            <button className="tab-btn" data-tab="line-channel">LINE連携</button>
-            <button className="tab-btn" data-tab="billing">課金・プラン</button>
-            <button className="tab-btn" data-tab="features">機能設定</button>
           </div>
 
           {/* メイン */}
