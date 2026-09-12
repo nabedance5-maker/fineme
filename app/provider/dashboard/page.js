@@ -218,7 +218,7 @@ export default function ProviderDashboardPage() {
       });
     }
     document.getElementById('tutorial-show-btn')?.addEventListener('click', () => {
-      const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'stats';
+      const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'today';
       localStorage.removeItem(TUTORIAL_MUTED_KEY);
       localStorage.removeItem(tutorialSeenKey(activeTab));
       renderTutorial(activeTab);
@@ -3838,6 +3838,94 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'calendar') initAndLoad();
     })();
 
+    // ── 今日の業務タブ（2026-09-12・でお要望：毎日の流れを1画面にまとめる） ──────
+    // サイドバー4グループの中身を横断してダイジェスト表示する日次ハブ。デフォルトの
+    // 着地タブ（既存タブの置き換えではなく追加）。各カードの「開く」ボタンは実際の
+    // ナビボタンをクリックすることで、対応タブの読み込みロジックをそのまま再利用する。
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const authHeadersToday = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      async function loadTodayReservations() {
+        const el = document.getElementById('today-reservations-list');
+        if (!el) return;
+        const res = await fetch(`/api/provider/calendar?from=${todayStr}&to=${todayStr}`, { headers: authHeadersToday() });
+        if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        if (!rows.length) { el.innerHTML = '<p class="muted" style="font-size:13px">今日の予約はありません。</p>'; return; }
+        el.innerHTML = rows.map(r => `
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(26,20,16,0.06)">
+            <strong style="font-size:13px;flex-shrink:0">${r.time ? r.time.slice(0, 5) : '--:--'}</strong>
+            <span style="font-size:13px">${esc(r.user_name || '')}</span>
+            ${r.staff_name ? `<span class="muted" style="font-size:12px">${esc(r.staff_name)}</span>` : ''}
+          </div>
+        `).join('');
+      }
+
+      async function loadTodayRequests() {
+        const el = document.getElementById('today-requests-list');
+        if (!el) return;
+        const providerId = provider?.id || loadProviderData()?.id;
+        if (!providerId) { el.innerHTML = '<p class="muted" style="font-size:13px">掲載者情報が見つかりません。</p>'; return; }
+        const res = await fetch(`/api/reservations?providerId=${providerId}`, { headers: authHeadersToday() });
+        if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        const pending = rows.filter(r => r.status === 'pending');
+        if (!pending.length) { el.innerHTML = '<p class="muted" style="font-size:13px">未対応のリクエストはありません。</p>'; return; }
+        el.innerHTML = `<p style="margin:0 0 8px;font-size:20px;font-weight:800">${pending.length}件</p>` +
+          pending.slice(0, 5).map(r => `
+            <div style="padding:6px 0;border-bottom:1px solid rgba(26,20,16,0.06);font-size:13px">
+              ${esc(r.user_name || '')} <span class="muted" style="font-size:12px">${esc(r.reserved_date || '')} ${esc(r.start_time || '')}</span>
+            </div>
+          `).join('');
+      }
+
+      async function loadTodayCheckins() {
+        const card = document.getElementById('today-checkin-card');
+        const el = document.getElementById('today-checkin-list');
+        if (!card || !el) return;
+        const featRes = await fetch('/api/provider/features', { headers: authHeadersToday() });
+        if (!featRes.ok) return;
+        const { features } = await featRes.json();
+        if (!features?.checkin_qr) { card.style.display = 'none'; return; }
+        card.style.display = '';
+        const res = await fetch('/api/provider/checkins', { headers: authHeadersToday() });
+        if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        const todays = rows.filter(r => (r.created_at || '').slice(0, 10) === todayStr);
+        el.innerHTML = todays.length
+          ? `<p style="margin:0 0 8px;font-size:20px;font-weight:800">${todays.length}件</p>` +
+            todays.slice(0, 5).map(r => `<div style="padding:4px 0;font-size:13px">${esc(r.customer_name || '')}</div>`).join('')
+          : '<p class="muted" style="font-size:13px">今日のチェックインはまだありません。</p>';
+      }
+
+      async function loadTodaySales() {
+        const el = document.getElementById('today-sales-total');
+        if (!el) return;
+        const res = await fetch(`/api/provider/sales-entries?from=${todayStr}&to=${todayStr}`, { headers: authHeadersToday() });
+        if (!res.ok) return;
+        const data = await res.json();
+        el.textContent = `¥${Number(data.total || 0).toLocaleString()}`;
+      }
+
+      function loadToday() {
+        loadTodayReservations();
+        loadTodayRequests();
+        loadTodayCheckins();
+        loadTodaySales();
+      }
+
+      document.querySelectorAll('[data-today-goto]').forEach(btn => btn.addEventListener('click', () => {
+        document.querySelector(`.tab-btn[data-tab="${btn.dataset.todayGoto}"]`)?.click();
+      }));
+
+      document.querySelectorAll('[data-tab="today"]').forEach(btn => btn.addEventListener('click', loadToday, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'today' || document.getElementById('tab-today')?.classList.contains('active')) loadToday();
+    })();
+
     // ── POS・在庫タブ（Phase 3・hacomono/STORES網羅計画） ──────────
     (() => {
       const token = getSupabaseToken();
@@ -4332,9 +4420,10 @@ export default function ProviderDashboardPage() {
               <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: '#c9a84c', letterSpacing: 1 }}>fineme</p>
               <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: 1 }}>顧客管理システム</p>
             </div>
+            <button className="tab-btn active" data-tab="today" style={{ fontWeight: 800 }}>今日の業務</button>
             <details className="pd-nav-group" data-group="daily" open>
               <summary className="pd-nav-heading">毎日触るタブ</summary>
-              <button className="tab-btn active" data-tab="stats">概況</button>
+              <button className="tab-btn" data-tab="stats">概況</button>
               <button className="tab-btn" data-tab="calendar">予約カレンダー</button>
               <button className="tab-btn" data-tab="requests">予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
               <button className="tab-btn" data-tab="customers">New Me Log</button>
@@ -4396,6 +4485,49 @@ export default function ProviderDashboardPage() {
             {/* 初回チュートリアル（タブごとに初回のみ表示） */}
             <div id="tab-tutorial-banner" />
 
+        {/* 今日の業務：予約カレンダー・予約リクエスト・チェックイン・売上を1画面にまとめた
+            日次ハブ（でお要望2026-09-12：「毎日やる業務」の流れを1つのページで見られるように）。
+            サイドバー4グループの内容を横断してダイジェスト表示し、各カードの続きは
+            対応するタブへワンクリックで移動できる。 */}
+        <div className="tab-pane active" id="tab-today">
+          <div className="stack" style={{ gap: '16px' }}>
+            <div className="card" style={{ padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px' }}>今日の予約</h3>
+                <button type="button" className="btn btn-ghost" data-today-goto="calendar" style={{ fontSize: '12px', padding: '5px 10px' }}>カレンダーを開く</button>
+              </div>
+              <div id="today-reservations-list"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
+            </div>
+
+            <div className="card" style={{ padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px' }}>未対応の予約リクエスト</h3>
+                <button type="button" className="btn btn-ghost" data-today-goto="requests" style={{ fontSize: '12px', padding: '5px 10px' }}>予約リクエストを開く</button>
+              </div>
+              <div id="today-requests-list"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
+            </div>
+
+            <div className="card" id="today-checkin-card" style={{ padding: '20px', display: 'none' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px' }}>今日のチェックイン</h3>
+                <button type="button" className="btn btn-ghost" data-today-goto="checkin" style={{ fontSize: '12px', padding: '5px 10px' }}>チェックインを開く</button>
+              </div>
+              <div id="today-checkin-list"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
+            </div>
+
+            <div className="card" style={{ padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px' }}>今日の売上</h3>
+                <button type="button" className="btn btn-ghost" data-today-goto="sales" style={{ fontSize: '12px', padding: '5px 10px' }}>売上管理を開く</button>
+              </div>
+              <div className="stat-card" style={{ display: 'inline-block', minWidth: '160px' }}>
+                <div className="stat-value" id="today-sales-total">—</div>
+                <div className="stat-label">本日の確定売上</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* タブ：チュートリアル一覧（全タブの使い方まとめ） */}
         <div className="tab-pane" id="tab-tutorial">
           <div className="card" style={{ padding: '24px' }}>
@@ -4434,7 +4566,7 @@ export default function ProviderDashboardPage() {
         </div>
 
         {/* タブ①：概況 */}
-        <div className="tab-pane active" id="tab-stats">
+        <div className="tab-pane" id="tab-stats">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', marginBottom: '12px' }}>
             <div className="stat-card"><div className="stat-value" id="stat-views">—</div><div className="stat-label">今月のページ閲覧数</div></div>
             <div className="stat-card"><div className="stat-value" id="stat-inquiries">—</div><div className="stat-label">今月の問い合わせ数</div></div>
