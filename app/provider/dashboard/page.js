@@ -71,6 +71,9 @@ export default function ProviderDashboardPage() {
       .cal-block { position: absolute; left: 2px; right: 2px; background: rgba(201,168,76,0.16); border-left: 3px solid #c9a84c; border-radius: 5px; padding: 2px 5px; font-size: 10.5px; line-height: 1.3; overflow: hidden; cursor: pointer; }
       .cal-block:hover { background: rgba(201,168,76,0.28); }
       .cal-block.is-visited { border-left-color: #9ca3af; background: rgba(26,20,16,0.05); opacity: .7; }
+      .cal-block.is-manual-assign { background: rgba(96,165,250,0.16); border-left-color: #60a5fa; }
+      .cal-block.is-manual-assign:hover { background: rgba(96,165,250,0.28); }
+      .cal-block-tag { display: block; font-size: 9.5px; color: #3b82f6; font-weight: 700; }
       .cal-block strong { display: block; font-size: 10.5px; }
       .cal-agenda-row { cursor: pointer; }
       .cal-agenda-row:hover { background: rgba(26,20,16,0.03); }
@@ -3592,9 +3595,13 @@ export default function ProviderDashboardPage() {
             const clampedStart = Math.max(RANGE_START_MIN, Math.min(RANGE_END_MIN, startMin));
             const top = ((clampedStart - RANGE_START_MIN) / totalMin) * totalHeight;
             const height = Math.max(18, (durationOf(r) / totalMin) * totalHeight);
+            // スタッフ列で、お客様の指名ではなく店舗が後から割り当てた予約は色・表記を変える
+            // （でお要望2026-09-12：指名予約と見分けたい）。実際の担当スタッフ列でのみ意味を持つ
+            // 区別のため、groupKeyがstaff_idかつ「指名なし」バケット以外の列でだけ適用する。
+            const isManualAssign = groupKey === 'staff_id' && col.id !== null && r.staff_manually_assigned;
             return `
-              <div class="cal-block${r.status === 'visited' ? ' is-visited' : ''}" style="top:${top}px;height:${height}px" data-cal-open="${r.id}">
-                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}
+              <div class="cal-block${r.status === 'visited' ? ' is-visited' : ''}${isManualAssign ? ' is-manual-assign' : ''}" style="top:${top}px;height:${height}px" data-cal-open="${r.id}">
+                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}
               </div>
             `;
           }).join('');
@@ -3636,7 +3643,7 @@ export default function ProviderDashboardPage() {
             <strong style="font-size:13px;flex-shrink:0">${r.time ? r.time.slice(0, 5) : '--:--'}</strong>
             <div style="flex:1;min-width:0">
               <strong style="font-size:13px">${esc(r.user_name || '')}</strong>
-              ${r.staff_name ? `<span class="muted" style="font-size:12px;margin-left:6px">${esc(r.staff_name)}</span>` : ''}
+              ${r.staff_name ? `<span class="muted" style="font-size:12px;margin-left:6px">${esc(r.staff_name)}${r.staff_manually_assigned ? '<span style="color:#3b82f6;font-weight:700"> （指名なし）</span>' : ''}</span>` : ''}
             </div>
           </div>
         `).join('');
@@ -3694,6 +3701,7 @@ export default function ProviderDashboardPage() {
           modalReservationEl.innerHTML = `
             <strong>${esc(r.date)} ${r.time ? r.time.slice(0, 5) : ''}</strong>
             ／ <span class="muted">${STATUS_LABEL_CAL[r.status] || r.status}</span>
+            ${r.staff_id && r.staff_manually_assigned ? '<span style="color:#3b82f6;font-weight:700;font-size:12px;margin-left:6px">（指名なし・店舗が割当）</span>' : ''}
             ${r.note ? `<p class="muted" style="margin:6px 0 0;font-size:12.5px">${esc(r.note)}</p>` : ''}
           `;
         }

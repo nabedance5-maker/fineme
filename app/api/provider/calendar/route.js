@@ -30,7 +30,7 @@ export async function GET(request) {
   // シンプル・確実（OR条件でのANDレンジ絞り込みはSupabaseクエリビルダーで書きにくいため）。
   const { data: rows, error } = await supabase
     .from('reservations')
-    .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, confirmed_date, confirmed_time, staff_id, resource_id, booking_mode, slot_id')
+    .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, confirmed_date, confirmed_time, staff_id, staff_manually_assigned, resource_id, booking_mode, slot_id')
     .eq('provider_id', provider.id)
     .in('status', ['approved', 'visited'])
     .gte('reserved_date', from)
@@ -78,6 +78,7 @@ export async function GET(request) {
       booking_mode: r.booking_mode || 'request',
       staff_id: r.staff_id || null,
       staff_name: r.staff_id ? staffMap[r.staff_id] || null : null,
+      staff_manually_assigned: !!r.staff_manually_assigned,
       resource_id: r.resource_id || null,
       resource_name: r.resource_id ? resourceMap[r.resource_id] || null : null,
       duration_minutes: r.slot_id ? slotDurationMap[r.slot_id] || null : null,
