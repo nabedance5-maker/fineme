@@ -123,7 +123,6 @@ export default function ProviderDashboardPage() {
       const pane = document.getElementById('tab-' + tabId);
       if (btn) btn.classList.add('active');
       if (pane) pane.classList.add('active');
-      renderTutorial(tabId);
     }
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => { switchTab(btn.dataset.tab); closeMobileNav(); });
@@ -140,7 +139,12 @@ export default function ProviderDashboardPage() {
     });
     document.getElementById('pd-backdrop')?.addEventListener('click', closeMobileNav);
 
-    // ── 初回チュートリアル（タブごとに初回だけ要点を表示） ─────────
+    // ── チュートリアル（「💡 使い方を見る」ボタンで手動表示） ─────────
+    // 以前はタブを開くたびに（初回のみ）自動でこの案内を上部に出していたが、
+    // 「使い始めは助かるが慣れたら邪魔・毎回一番上に出るのがわかりづらい」という
+    // でお指摘（2026-09-12）を受けて自動表示は廃止。代わりに①初回ダッシュボード
+    // 訪問時だけ「📘 チュートリアル」タブ（全タブの案内をまとめて閲覧）に自動着地
+    // ②各タブのヘッダーにある「💡 使い方を見る」ボタンでいつでも手動表示、の2経路に統一した。
     function renderTutorial(tabId) {
       const box = document.getElementById('tab-tutorial-banner');
       if (!box) return;
@@ -185,8 +189,6 @@ export default function ProviderDashboardPage() {
     } else if (!localStorage.getItem(DASHBOARD_VISITED_KEY)) {
       // 初めてのダッシュボード訪問はチュートリアルタブから
       switchTab('tutorial');
-    } else {
-      renderTutorial(document.querySelector('.tab-btn.active')?.dataset.tab || 'stats');
     }
     localStorage.setItem(DASHBOARD_VISITED_KEY, '1');
 
