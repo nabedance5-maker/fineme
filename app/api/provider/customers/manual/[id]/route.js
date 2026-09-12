@@ -1,3 +1,4 @@
+// PATCH  /api/provider/customers/manual/[id] → 非会員のお客様の名前・メモを更新（認証済み）
 // DELETE /api/provider/customers/manual/[id] → 非会員のお客様を削除（認証済み・カルテも連鎖削除）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
@@ -9,6 +10,30 @@ async function getProviderByToken(token) {
   if (error || !user) return null;
   const { data } = await supabase.from('providers').select('id').eq('email', user.email).single();
   return data || null;
+}
+
+export async function PATCH(request, { params }) {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
+  if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const body = await request.json().catch(() => ({}));
+  const update = {};
+  if (typeof body.display_name === 'string' && body.display_name.trim()) update.display_name = body.display_name.trim();
+  if (body.memo !== undefined) update.memo = body.memo?.trim() || null;
+  if (!Object.keys(update).length) return Response.json({ error: '更新項目がありません' }, { status: 400 });
+
+  const { data, error } = await supabase
+    .from('provider_manual_customers')
+    .update(update)
+    .eq('id', params.id)
+    .eq('provider_id', provider.id)
+    .select()
+    .single();
+
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json(data);
 }
 
 export async function DELETE(request, { params }) {
