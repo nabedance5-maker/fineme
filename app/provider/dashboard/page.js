@@ -30,16 +30,20 @@ export default function ProviderDashboardPage() {
          （深海ネイビー×羊皮紙）の世界観とは切り離し、日々数字とフォームを見る道具として
          可読性を優先する。 */
       .pd-page-root { background: var(--color-bg); min-height: 100vh; color: #1a1410; }
+      /* サイドバーは画面左に完全に寄せて固定し、メイン画面と明確に分ける（でお要望2026-09-12：
+         「白背景に浮いた四角い枠」ではなく「左側が全部メニュー、右側がメイン画面」にしたい）。
+         .containerの中央寄せ・余白を使わず.pd-containerで独自にフルブリードにしている。 */
+      .pd-container { width: 100%; }
       .pd-layout { display: flex; align-items: flex-start; gap: 0; }
       .pd-topbar { display: none; }
       .pd-backdrop { display: none; }
-      .tab-nav { width: 232px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; position: sticky; top: 24px; background: #0a0f1e; border-radius: 14px; padding: 16px 0; }
-      .pd-nav-heading { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: rgba(232,228,220,0.35); text-transform: uppercase; padding: 14px 12px 4px; }
+      .tab-nav { width: 232px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; position: fixed; top: 0; left: 0; bottom: 0; z-index: 30; background: #0a0f1e; padding: 20px 0; overflow-y: auto; }
+      .pd-nav-heading { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: rgba(255,255,255,0.6); text-transform: uppercase; padding: 14px 12px 4px; }
       .pd-nav-heading:first-child { padding-top: 0; }
-      .tab-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 12px; border: none; border-radius: 10px; background: none; cursor: pointer; font-size: 13px; font-weight: 600; color: rgba(232,228,220,0.65); text-align: left; white-space: normal; transition: background .15s, color .15s; }
+      .tab-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 12px; border: none; border-radius: 10px; background: none; cursor: pointer; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.88); text-align: left; white-space: normal; transition: background .15s, color .15s; }
       .tab-btn:hover { background: rgba(255,255,255,0.05); color: #e8e4dc; }
       .tab-btn.active { background: rgba(201,168,76,0.14); color: #c9a84c; }
-      .pd-main { flex: 1; min-width: 0; padding-left: 28px; }
+      .pd-main { flex: 1; min-width: 0; margin-left: 232px; padding: 28px 32px; }
       .pd-page-root .card { background: #ffffff; border-color: rgba(26,20,16,0.08); box-shadow: 0 1px 3px rgba(10,15,30,0.05); }
       .pd-page-root .btn { background: var(--color-gold); color: var(--color-bg-dark); border-color: var(--color-gold); }
       .pd-page-root .btn:hover { opacity: .88; box-shadow: var(--shadow-gold); }
@@ -91,7 +95,7 @@ export default function ProviderDashboardPage() {
         }
         .tab-nav.pd-open { transform: translateX(0); }
         .pd-backdrop.pd-open { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(0,0,0,0.5); }
-        .pd-main { padding-left: 0; padding-top: 58px; }
+        .pd-main { margin-left: 0; padding: 16px; padding-top: 74px; }
       }
       .tab-pane { display: none; }
       .tab-pane.active { display: block; }
@@ -4284,7 +4288,7 @@ export default function ProviderDashboardPage() {
 
   return (
     <main className="section pd-page-root">
-      <div className="container" style={{ maxWidth: '1600px' }}>
+      <div className="pd-container">
 
         {/* モバイル用トップバー */}
         <div className="pd-topbar">
@@ -4298,7 +4302,7 @@ export default function ProviderDashboardPage() {
           <div className="tab-nav" id="pd-sidebar">
             <div style={{ padding: '0 12px', marginBottom: 18 }}>
               <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: '#c9a84c', letterSpacing: 1 }}>fineme</p>
-              <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(232,228,220,0.4)', letterSpacing: 1 }}>顧客管理システム</p>
+              <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: 1 }}>顧客管理システム</p>
             </div>
             <p className="pd-nav-heading">チュートリアル</p>
             <button className="tab-btn" data-tab="tutorial">チュートリアル</button>
