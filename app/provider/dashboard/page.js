@@ -3841,7 +3841,7 @@ export default function ProviderDashboardPage() {
         if (!gridWrapEl) return;
         const items = byDate[selectedDate] || [];
         gridWrapEl.innerHTML = buildGridHtml(items, currentColumns(), currentGroupKey());
-        gridWrapEl.querySelectorAll('[data-cal-open]').forEach(el => el.addEventListener('click', () => openCalItem(el.dataset.calOpen)));
+        bindCalOpenHandlers(gridWrapEl);
       }
 
       function renderViewToggle() {
@@ -3872,7 +3872,7 @@ export default function ProviderDashboardPage() {
             </div>
           </div>
         `).join('');
-        container.querySelectorAll('[data-cal-open]').forEach(el => el.addEventListener('click', () => openCalItem(el.dataset.calOpen)));
+        bindCalOpenHandlers(container);
       }
 
       function renderDay() {
@@ -3945,6 +3945,32 @@ export default function ProviderDashboardPage() {
       let modalReservationId = null;
 
       const STATUS_LABEL_CAL = { approved: '確定済み', visited: '来店済み', pending: '返答待ち（申請中）', counter_proposed: '代替提案中（お客様の返答待ち）' };
+
+      // カレンダーは縦横にスクロールできるコンテナ(overflow:auto)の中に予約ブロックを
+      // 置いているため、スマホでタップした時に指のわずかなブレをブラウザがスクロール
+      // ジェスチャーと誤判定し、clickイベント自体をキャンセルすることがある
+      // （でお報告2026-09-13：スマホでカレンダーのブロックを押してもポップアップが
+      // 開かない。PCでは発生しない既知のタッチUIの落とし穴）。
+      // touchstart→touchendの移動量が小さい時だけ「タップ」とみなして処理し、
+      // その場合はpreventDefaultで後続の合成clickイベントを抑止する（二重発火防止）。
+      // マウス操作（PC）はそのままclickイベントで拾う。
+      function bindCalOpenHandlers(container) {
+        container.querySelectorAll('[data-cal-open]').forEach(el => {
+          let startX = 0, startY = 0, moved = false;
+          el.addEventListener('touchstart', (e) => {
+            const t = e.touches[0];
+            startX = t.clientX; startY = t.clientY; moved = false;
+          }, { passive: true });
+          el.addEventListener('touchmove', (e) => {
+            const t = e.touches[0];
+            if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) moved = true;
+          }, { passive: true });
+          el.addEventListener('touchend', (e) => {
+            if (!moved) { e.preventDefault(); openCalItem(el.dataset.calOpen); }
+          });
+          el.addEventListener('click', () => openCalItem(el.dataset.calOpen));
+        });
+      }
 
       // まだ確定していないリクエスト（pending/counter_proposed）をカレンダー上でクリックした時は、
       // 確定済み予約と同じ会員情報モーダルではなく、承認・代替提案・お断りができる
