@@ -1176,8 +1176,8 @@ export default function ProviderDashboardPage() {
         loadRecommended();
       });
 
-      document.querySelectorAll('[data-tab="customers"]').forEach(btn => btn.addEventListener('click', loadRecommended, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'customers') loadRecommended();
+      document.querySelectorAll('[data-tab="visit-settings"]').forEach(btn => btn.addEventListener('click', loadRecommended, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'visit-settings') loadRecommended();
     })();
 
     // ── 休眠判定の設定 ────────────────────────────────────────────
@@ -1209,8 +1209,8 @@ export default function ProviderDashboardPage() {
         saveBtn.disabled = false;
       });
 
-      document.querySelectorAll('[data-tab="customers"]').forEach(btn => btn.addEventListener('click', loadDormantSettings, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'customers') loadDormantSettings();
+      document.querySelectorAll('[data-tab="visit-settings"]').forEach(btn => btn.addEventListener('click', loadDormantSettings, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'visit-settings') loadDormantSettings();
     })();
 
     // ── 顧客管理タブ（New Me Log ＋ カルテ 統合） ─────────────────────
@@ -4393,6 +4393,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="resources" data-feature="resource_management">部屋・設備<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="slots" data-feature="instant_booking">空き枠<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="stories">体験談</button>
+                  <button className="tab-btn" data-tab="visit-settings">来店設定</button>
                   <button className="tab-btn" data-tab="landing">LP設定</button>
                   <button className="tab-btn" data-tab="qr">紹介QR</button>
                   <button className="tab-btn" data-tab="publish">公開設定</button>
@@ -5238,8 +5239,9 @@ export default function ProviderDashboardPage() {
           </div>
         </div>
 
-        {/* New Me Log：紐づいている顧客の一覧 */}
-        <div className="tab-pane" id="tab-customers">
+        {/* 来店設定：推奨来店周期・休眠判定。顧客管理タブから移設（でお指摘2026-09-12：
+            設定系の項目は「店舗の中身を作る」側に置くべき）。 */}
+        <div className="tab-pane" id="tab-visit-settings">
           <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px' }}>
             <h2 style={{ margin: 0, fontSize: '16px' }}>推奨来店周期の設定</h2>
             <p className="muted" style={{ fontSize: '13px', margin: 0 }}>
@@ -5266,10 +5268,10 @@ export default function ProviderDashboardPage() {
             <div id="rf-list"></div>
           </div>
 
-          <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px' }}>
+          <div className="card stack" style={{ padding: '24px', gap: 12 }}>
             <h2 style={{ margin: 0, fontSize: '16px' }}>休眠判定の設定</h2>
             <p className="muted" style={{ fontSize: '13px', margin: 0 }}>
-              最終来店からこの日数を超えたお客様を「休眠」として一覧に表示します（既定90日）。
+              最終来店からこの日数を超えたお客様を「休眠」として顧客管理タブに表示します（既定90日）。
             </p>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div className="form-field" style={{ minWidth: '120px' }}>
@@ -5280,7 +5282,10 @@ export default function ProviderDashboardPage() {
               <span id="ds-msg" className="muted" style={{ fontSize: '13px' }}></span>
             </div>
           </div>
+        </div>
 
+        {/* New Me Log：紐づいている顧客の一覧 */}
+        <div className="tab-pane" id="tab-customers">
           <div className="card" style={{ padding: '24px' }}>
             <div style={{ marginBottom: '16px' }}>
               <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>顧客管理：New Me Log で紐づいているお客様</h2>
