@@ -215,6 +215,18 @@ async function acceptCounterProposal(rid, channelProviderId, lineUserId) {
     console.error('[line/webhook] accept_counter update error', updateError);
     return '承認に失敗しました。マイページから直接お試しください。';
   }
+
+  // 店舗への通知（でお報告2026-09-12：「代替案を承認するボタンを押したのに反映
+  // されない」の原因。cancelReservationFromLineは店舗へLINE通知しているのに、
+  // こちらだけ抜けていた——お客様がLINEで承諾しても店舗はダッシュボードを
+  // 開いて確認しない限り気づけない状態だった）。
+  const { data: provider } = await supabase.from('providers').select('name, line_user_id').eq('id', r.provider_id).single();
+  if (provider?.line_user_id) {
+    try {
+      await sendLinePush(provider.line_user_id, `【Fineme】${r.user_name}様が代替提案を承認しました。\n確定日時: ${r.counter_date} ${r.counter_time || ''}`);
+    } catch (e) { console.error('[line/webhook] accept_counter provider push', e); }
+  }
+
   return `✓ ${fmtJa(r.counter_date)} ${r.counter_time || ''}で承認しました。当日お待ちしております。`;
 }
 
