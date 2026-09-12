@@ -33,7 +33,7 @@ export default function ProviderDashboardPage() {
       .pd-layout { display: flex; align-items: flex-start; gap: 0; }
       .pd-topbar { display: none; }
       .pd-backdrop { display: none; }
-      .tab-nav { width: 232px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; position: sticky; top: 24px; }
+      .tab-nav { width: 232px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; position: sticky; top: 24px; background: #0a0f1e; border-radius: 14px; padding: 16px 0; }
       .pd-nav-heading { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: rgba(232,228,220,0.35); text-transform: uppercase; padding: 14px 12px 4px; }
       .pd-nav-heading:first-child { padding-top: 0; }
       .tab-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 12px; border: none; border-radius: 10px; background: none; cursor: pointer; font-size: 13px; font-weight: 600; color: rgba(232,228,220,0.65); text-align: left; white-space: normal; transition: background .15s, color .15s; }
