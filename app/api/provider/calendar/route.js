@@ -1,6 +1,8 @@
-// GET /api/provider/calendar?from=YYYY-MM-DD&to=YYYY-MM-DD → 確定済み予約のカレンダー表示用データ
-// 申請制（承認済み）・即時予約（自動確定）どちらも同じ「確定した予約」として一覧に出す。
-// 未回答の申請中リクエストは対象外（そちらは既存の「予約リクエスト」タブの役割のまま）。
+// GET /api/provider/calendar?from=YYYY-MM-DD&to=YYYY-MM-DD → カレンダー表示用データ
+// 申請制（承認済み）・即時予約（自動確定）はもちろん、返答待ちの申請中リクエスト（pending）も
+// 第1希望の日時・スタッフの場所に表示する（でお要望2026-09-12：予約リクエストが届いたら
+// カレンダー上でも該当の時間・スタッフのところが分かるようにしたい）。フロント側でpendingは
+// 見た目を変える（is-pending）ことで、確定済みと区別できるようにする。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 
@@ -32,7 +34,7 @@ export async function GET(request) {
     .from('reservations')
     .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, confirmed_date, confirmed_time, staff_id, staff_manually_assigned, resource_id, booking_mode, slot_id')
     .eq('provider_id', provider.id)
-    .in('status', ['approved', 'visited'])
+    .in('status', ['pending', 'approved', 'visited'])
     .gte('reserved_date', from)
     .lte('reserved_date', to);
   if (error) return Response.json({ error: error.message }, { status: 500 });
