@@ -3466,7 +3466,9 @@ export default function ProviderDashboardPage() {
       const labelEl = document.getElementById('cal-week-label');
       const pillsEl = document.getElementById('cal-day-pills');
       const gridWrapEl = document.getElementById('cal-day-grid');
-      const agendaEl = document.getElementById('cal-agenda-list');
+      const staffPillsEl = document.getElementById('cal-staff-pills');
+      const mobileViewEl = document.getElementById('cal-mobile-view');
+      const mobileNoteEl = document.getElementById('cal-mobile-note');
       if (!pillsEl) return;
 
       const WEEKDAY_JA = ['日', '月', '火', '水', '木', '金', '土'];
@@ -3499,6 +3501,7 @@ export default function ProviderDashboardPage() {
       let byId = {};
       let staffList = [];
       let selectedDate = todayStr;
+      let selectedStaffKey = null; // モバイル専用：選んだスタッフ1人分のグリッドを表示（初期値はloadStaff後に決定）
 
       function weekDates() {
         return Array.from({ length: 7 }, (_, i) => {
@@ -3513,6 +3516,7 @@ export default function ProviderDashboardPage() {
         if (!res.ok) return;
         const rows = await res.json();
         staffList = (rows || []).filter(s => s.bookable !== false);
+        if (!selectedStaffKey) selectedStaffKey = staffColumns()[0]?.key || 'unassigned';
       }
 
       function renderPills() {
@@ -3542,9 +3546,15 @@ export default function ProviderDashboardPage() {
         return r.duration_minutes || DEFAULT_DURATION_MIN;
       }
 
-      function renderDesktopGrid() {
-        if (!gridWrapEl) return;
-        const items = byDate[selectedDate] || [];
+      function staffColumns() {
+        return [...staffList.map(s => ({ key: s.id, id: s.id, name: s.name })), { key: 'unassigned', id: null, name: '指名なし' }];
+      }
+
+      // 時間×スタッフのグリッドHTMLを組み立てる共通関数。デスクトップは全スタッフ列、
+      // モバイルは選んだ1人分の列だけを渡すことで同じグリッド表現を使い回す
+      // （でお要望2026-09-12：PC用グリッドをそのまま横に並べるとモバイルで2軸スクロールになる
+      // ため、列数を1つに絞ることで縦スクロールだけに保つ）。
+      function buildGridHtml(items, columns) {
         const totalMin = RANGE_END_MIN - RANGE_START_MIN;
         const rowH = 26; // 30分あたりの高さ(px)
         const totalHeight = (totalMin / 30) * rowH;
@@ -3556,7 +3566,6 @@ export default function ProviderDashboardPage() {
         }
         timeColHtml += `</div>`;
 
-        const columns = [...staffList.map(s => ({ id: s.id, name: s.name })), { id: null, name: '指名なし' }];
         const headerHtml = `<div class="cal-time-col-spacer"></div>` + columns.map(c => `<div class="cal-staff-head">${esc(c.name)}</div>`).join('');
 
         const bodyColsHtml = columns.map(col => {
@@ -3581,18 +3590,22 @@ export default function ProviderDashboardPage() {
           return `<div class="cal-staff-col" style="height:${totalHeight}px">${hourLines}${blocksHtml}</div>`;
         }).join('');
 
-        gridWrapEl.innerHTML = `
+        return `
           <div class="cal-day-grid-header">${headerHtml}</div>
           <div class="cal-day-grid-body">${timeColHtml}${bodyColsHtml}</div>
         `;
+      }
+
+      function renderDesktopGrid() {
+        if (!gridWrapEl) return;
+        const items = byDate[selectedDate] || [];
+        gridWrapEl.innerHTML = buildGridHtml(items, staffColumns());
         gridWrapEl.querySelectorAll('[data-cal-open]').forEach(el => el.addEventListener('click', () => openMemberModal(el.dataset.calOpen)));
       }
 
-      function renderAgenda() {
-        if (!agendaEl) return;
-        const items = byDate[selectedDate] || [];
-        if (!items.length) { agendaEl.innerHTML = '<p class="muted" style="font-size:13px">この日の予約はありません。</p>'; return; }
-        agendaEl.innerHTML = items.map(r => `
+      function renderAgendaInto(container, items) {
+        if (!items.length) { container.innerHTML = '<p class="muted" style="font-size:13px">この日の予約はありません。</p>'; return; }
+        container.innerHTML = items.map(r => `
           <div class="cal-agenda-row" data-cal-open="${r.id}" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid rgba(26,20,16,0.08);border-radius:10px;margin-bottom:6px;${r.status === 'visited' ? 'opacity:.6' : ''}">
             <strong style="font-size:13px;flex-shrink:0">${r.time ? r.time.slice(0, 5) : '--:--'}</strong>
             <div style="flex:1;min-width:0">
@@ -3601,12 +3614,36 @@ export default function ProviderDashboardPage() {
             </div>
           </div>
         `).join('');
-        agendaEl.querySelectorAll('[data-cal-open]').forEach(el => el.addEventListener('click', () => openMemberModal(el.dataset.calOpen)));
+        container.querySelectorAll('[data-cal-open]').forEach(el => el.addEventListener('click', () => openMemberModal(el.dataset.calOpen)));
+      }
+
+      function renderStaffPills() {
+        if (!staffPillsEl) return;
+        const options = staffColumns();
+        staffPillsEl.innerHTML = options.map(o => `
+          <button type="button" class="cal-day-pill${selectedStaffKey === o.key ? ' is-active' : ''}" data-cal-staff="${o.key}">
+            <span class="cal-pill-date" style="font-size:12px">${esc(o.name)}</span>
+          </button>
+        `).join('');
+        staffPillsEl.querySelectorAll('[data-cal-staff]').forEach(btn => btn.addEventListener('click', () => {
+          selectedStaffKey = btn.dataset.calStaff;
+          renderStaffPills();
+          renderMobileView();
+        }));
+      }
+
+      function renderMobileView() {
+        if (!mobileViewEl) return;
+        const items = byDate[selectedDate] || [];
+        const col = staffColumns().find(c => c.key === selectedStaffKey);
+        mobileViewEl.innerHTML = buildGridHtml(items, col ? [col] : []);
+        mobileViewEl.querySelectorAll('[data-cal-open]').forEach(el => el.addEventListener('click', () => openMemberModal(el.dataset.calOpen)));
+        if (mobileNoteEl) mobileNoteEl.textContent = '※ 所要時間はメニューごとの登録が無いため目安表示です（即時予約の枠はその枠の時間で正確に表示）';
       }
 
       function renderDay() {
         renderDesktopGrid();
-        renderAgenda();
+        renderMobileView();
       }
 
       async function loadWeek() {
@@ -3708,7 +3745,19 @@ export default function ProviderDashboardPage() {
       document.getElementById('cal-next-btn')?.addEventListener('click', () => { weekStart.setDate(weekStart.getDate() + 7); loadWeek(); });
       document.getElementById('cal-today-btn')?.addEventListener('click', () => { weekStart = mondayOf(new Date()); selectedDate = todayStr; loadWeek(); });
 
-      async function initAndLoad() { await loadStaff(); await loadWeek(); }
+      const agendaPopupEl = document.getElementById('cal-agenda-popup');
+      const agendaPopupTitleEl = document.getElementById('cal-agenda-popup-title');
+      const agendaPopupListEl = document.getElementById('cal-agenda-popup-list');
+      document.getElementById('cal-agenda-popup-btn')?.addEventListener('click', () => {
+        if (!agendaPopupEl) return;
+        if (agendaPopupTitleEl) agendaPopupTitleEl.textContent = `予約一覧（${selectedDate}）`;
+        if (agendaPopupListEl) renderAgendaInto(agendaPopupListEl, byDate[selectedDate] || []);
+        agendaPopupEl.style.display = 'flex';
+      });
+      document.getElementById('cal-agenda-popup-close')?.addEventListener('click', () => { if (agendaPopupEl) agendaPopupEl.style.display = 'none'; });
+      agendaPopupEl?.addEventListener('click', (e) => { if (e.target === agendaPopupEl) agendaPopupEl.style.display = 'none'; });
+
+      async function initAndLoad() { await loadStaff(); renderStaffPills(); await loadWeek(); }
       document.querySelectorAll('[data-tab="calendar"]').forEach(btn => btn.addEventListener('click', initAndLoad, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'calendar') initAndLoad();
     })();
@@ -4355,9 +4404,11 @@ export default function ProviderDashboardPage() {
               </div>
             </div>
 
-            {/* 日付ピル：PC・スマホ共通。選んだ1日をデスクトップは時間×スタッフのグリッドで、
-                スマホはアジェンダリストで表示する（今野くんの実地フィードバック対応） */}
-            <div id="cal-day-pills" className="cal-day-pills"></div>
+            {/* 日付ピル：PC・スマホ共通で選んだ1日を切り替える */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div id="cal-day-pills" className="cal-day-pills" style={{ flex: 1 }}></div>
+              <button type="button" className="btn btn-ghost" id="cal-agenda-popup-btn" style={{ fontSize: '12px', padding: '6px 12px', flexShrink: 0 }}>予約一覧</button>
+            </div>
 
             {/* デスクトップ：選んだ1日をhacomono風の時間×スタッフのグリッドで表示。
                 パッと見で空き時間が分かるようにする狙い。640px以下はCSSで非表示 */}
@@ -4366,8 +4417,26 @@ export default function ProviderDashboardPage() {
               <p className="muted" style={{ fontSize: '11px', margin: '8px 0 0' }}>※ 所要時間はメニューごとの登録が無いため目安表示です（即時予約の枠はその枠の時間で正確に表示）</p>
             </div>
 
-            {/* スマホ：選んだ1日のみのアジェンダリスト（二重スクロール回避） */}
-            <div id="cal-agenda-list" className="cal-mobile"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
+            {/* スマホ：横スクロールで2軸スクロールになるPC版そのままの縮小は避けつつ、
+                スタッフを1人ずつ切り替えれば同じ時間軸グリッドの「パッと見」を再現できる
+                （でお要望2026-09-12：スマホにもグリッドが欲しい）。全員分をまとめて見たい時は
+                上の「予約一覧」ボタンからポップアップで時系列リストを開ける。 */}
+            <div className="cal-mobile">
+              <div id="cal-staff-pills" className="cal-day-pills" style={{ marginTop: '2px' }}></div>
+              <div id="cal-mobile-view"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
+              <p className="muted" style={{ fontSize: '11px', margin: '8px 0 0' }} id="cal-mobile-note"></p>
+            </div>
+          </div>
+        </div>
+
+        {/* 予約一覧ポップアップ：全スタッフ分を時系列でまとめて見たい時用（でお要望2026-09-12） */}
+        <div id="cal-agenda-popup" className="cal-modal-overlay" style={{ display: 'none' }}>
+          <div className="cal-modal-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h3 style={{ margin: 0, fontSize: '15px' }} id="cal-agenda-popup-title">予約一覧</h3>
+              <button type="button" className="btn btn-ghost" id="cal-agenda-popup-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
+            </div>
+            <div id="cal-agenda-popup-list"></div>
           </div>
         </div>
 
