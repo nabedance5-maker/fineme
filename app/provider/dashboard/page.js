@@ -97,6 +97,13 @@ export default function ProviderDashboardPage() {
       .cal-agenda-row:hover { background: rgba(26,20,16,0.03); }
       .cal-modal-overlay { position: fixed; inset: 0; background: rgba(10,15,30,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; }
       .cal-modal-card { background: #fff; border-radius: 16px; padding: 22px; max-width: 460px; width: 100%; max-height: 84vh; overflow-y: auto; }
+      /* 顧客一覧のコンパクト行（でお指摘2026-09-12：1画面に多く並べたい） */
+      .cust-row { display: grid; grid-template-columns: 1.6fr 1fr 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-bottom: 1px solid rgba(26,20,16,0.06); font-size: 13px; }
+      .cust-row[data-cust-open] { cursor: pointer; }
+      .cust-row[data-cust-open]:hover { background: rgba(26,20,16,0.03); }
+      .cust-row-head { font-size: 11px; font-weight: 700; color: rgba(26,20,16,0.45); text-transform: uppercase; letter-spacing: .03em; border-bottom: 1px solid rgba(26,20,16,0.1); }
+      .cust-row-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .cust-row-date { color: rgba(26,20,16,0.6); font-size: 12.5px; }
       @media (max-width: 640px) {
         .cal-day-grid { --cal-col-min: 90px; }
       }
@@ -1475,6 +1482,13 @@ export default function ProviderDashboardPage() {
         Array.from(filterSel.options).forEach(opt => { opt.textContent = `${labels[opt.value]}（${counts[opt.value] ?? 0}）`; });
       }
 
+      // 一覧はコンパクトな行のみ表示し、クリックでポップアップに詳細をまとめる方式に変更
+      // （でお指摘2026-09-12：カードが大きすぎる。今野くんの実地メモ：確度の高いお客様が埋もれる
+      // 対策として、1画面により多くの行を並べられるようにする）。
+      function isOverdue(c) {
+        return (typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0) || (typeof c.storeOverdueDays === 'number' && c.storeOverdueDays < 0);
+      }
+
       function render() {
         const filter = filterSel?.value || 'all';
         const kw = (searchInput?.value || '').trim().toLowerCase();
@@ -1489,179 +1503,188 @@ export default function ProviderDashboardPage() {
           listEl.innerHTML = '<p class="muted">該当するお客様はいません。</p>';
           return;
         }
-        listEl.innerHTML = items.map(c => {
-          const def = ALL_AXES[c.axis];
-          const axisLabel = def ? `${def.icon} ${esc(def.label)}` : esc(c.axis);
-          const staffOptions = ['<option value="">担当未割当</option>']
-            .concat(staffList.map(s => `<option value="${s.id}"${c.assignedStaffId === s.id ? ' selected' : ''}>${esc(s.name)}</option>`))
-            .join('');
-          return `
-            <div style="border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px;background:#fff;">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
-                <div style="font-size:14px;font-weight:700;color:#111827;">${esc(c.customer_name)}</div>
-                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                  <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
-                  ${statusBadge(c.status)}
-                  ${overdueBadge('ユーザー想定', c.userOverdueDays)}
-                  ${overdueBadge('店舗推奨', c.storeOverdueDays)}
-                  ${c.meScanType?.fullName ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;" title="Me Scanタイプ">🧬 ${esc(c.meScanType.fullName)}</span>` : c.meScanDone ? '<span style="font-size:11px;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;">Me Scan済</span>' : ''}
-                  ${c.mirror?.visualTier ? `<span style="font-size:11px;padding:2px 8px;background:#fff7ed;color:#c2410c;border-radius:99px;">Mirror: ${esc(c.mirror.visualTier)}</span>` : ''}
-                </div>
-              </div>
-              <p style="font-size:12px;color:#6b7280;margin:0 0 8px;">前回：${fmtDate(c.last_visit)}／次回目安：${fmtDate(c.next_visit)}／頻度：${fmtFreq(c)}／来店回数：${c.visitCount ?? 0}回</p>
-              <div class="cluster" style="gap:8px;align-items:center;margin-bottom:12px;">
-                <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#374151;border-color:#d1d5db;" data-nudge="${c.user_id}">声かけメッセージを送る</button>
-                <select data-assign="${c.user_id}" style="font-size:12px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">${staffOptions}</select>
-              </div>
-
-              <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;margin-bottom:4px;">📌 固定メモ</label>
-              <textarea data-karte-input="${c.user_id}" style="width:100%;min-height:60px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;box-sizing:border-box;" placeholder="読み込み中…" disabled></textarea>
-              <button type="button" class="btn" style="font-size:12px;padding:5px 10px;margin-top:6px;" data-karte-save="${c.user_id}" disabled>保存する</button>
-
-              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid #f3f4f6;">
-                <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#374151;border-color:#d1d5db;" data-karte-add-toggle="${c.user_id}">＋ 来店記録を追加</button>
-                <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#374151;border-color:#d1d5db;" data-karte-history-toggle="${c.user_id}">記録を見る</button>
-                <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#374151;border-color:#d1d5db;" data-karte-insight="${c.user_id}">🤖 AIに傾向を聞く</button>
-              </div>
-              <div class="karte-add-form" id="karte-add-form-${c.user_id}" style="display:none;margin-top:10px;"></div>
-              <div class="karte-history" id="karte-history-${c.user_id}" style="display:none;margin-top:10px;"></div>
-              <div class="karte-insight-box" id="karte-insight-${c.user_id}" style="display:none;margin-top:10px;"></div>
-            </div>`;
-        }).join('');
-
-        listEl.querySelectorAll('[data-assign]').forEach(sel => sel.addEventListener('change', async () => {
-          const uid = sel.dataset.assign;
-          sel.disabled = true;
-          const res = await fetch(`/api/provider/customers/${uid}/note`, {
-            method: 'PUT', headers: authHeaders(),
-            body: JSON.stringify({ assigned_staff_id: sel.value || null }),
-          });
-          showToast(res.ok ? '担当を更新しました' : '更新に失敗しました');
-          sel.disabled = false;
-        }));
-
-        listEl.querySelectorAll('[data-nudge]').forEach(btn => btn.addEventListener('click', async () => {
-          const message = prompt('お客様に送るメッセージを入力してください（店舗の公式LINE連携済みならそちらから、未連携ならFineme公式LINEから届きます）');
-          if (!message?.trim()) return;
-          btn.disabled = true;
-          const res = await fetch(`/api/provider/customers/${btn.dataset.nudge}/nudge`, {
-            method: 'POST', headers: authHeaders(),
-            body: JSON.stringify({ message }),
-          });
-          const data = await res.json();
-          showToast(res.ok ? '送信しました' : `送信エラー：${data.error || '不明'}`);
-          btn.disabled = false;
-        }));
-
-        // メモ本文は行数分だけ別APIのため、表示後に並列で埋める
-        items.forEach(c => {
-          fetch(`/api/provider/customers/${c.user_id}/note`, { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } })
-            .then(r => r.ok ? r.json() : { note: '' })
-            .then(d => {
-              const ta = listEl.querySelector(`[data-karte-input="${c.user_id}"]`);
-              const btn = listEl.querySelector(`[data-karte-save="${c.user_id}"]`);
-              if (ta) { ta.value = d.note || ''; ta.disabled = false; ta.placeholder = 'この店舗だけが見られるメモ（要望・使った薬剤・注意点など）。お客様には表示されません。'; }
-              if (btn) btn.disabled = false;
-            })
-            .catch(() => {});
-        });
-
-        listEl.querySelectorAll('[data-karte-save]').forEach(btn => btn.addEventListener('click', async () => {
-          const uid = btn.dataset.karteSave;
-          const ta = listEl.querySelector(`[data-karte-input="${uid}"]`);
-          btn.disabled = true;
-          const label = btn.textContent;
-          btn.textContent = '保存中…';
-          try {
-            await fetch(`/api/provider/customers/${uid}/note`, { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ note: ta.value }) });
-            showToast('メモを保存しました');
-          } finally {
-            btn.disabled = false; btn.textContent = label;
-          }
-        }));
-
-        listEl.querySelectorAll('[data-karte-add-toggle]').forEach(btn => btn.addEventListener('click', () => {
-          const uid = btn.dataset.karteAddToggle;
-          const box = document.getElementById(`karte-add-form-${uid}`);
-          if (!box) return;
-          const opening = box.style.display === 'none';
-          box.style.display = opening ? 'block' : 'none';
-          if (opening && !box.dataset.built) {
-            box.innerHTML = renderAddFormHtml(uid);
-            box.dataset.built = '1';
-            bindStarWidgets(box);
-            box.querySelector(`[data-karte-entry-save="${uid}"]`)?.addEventListener('click', async (e) => {
-              const saveBtn = e.currentTarget;
-              const noteEl = box.querySelector(`[data-karte-entry-note="${uid}"]`);
-              const menuEl = box.querySelector(`[data-karte-entry-menu="${uid}"]`);
-              saveBtn.disabled = true;
-              try {
-                const res = await fetch(`/api/provider/customers/${uid}/karte-entries`, {
-                  method: 'POST', headers: authHeaders(),
-                  body: JSON.stringify({ note: noteEl?.value || '', custom_values: collectCustomValues(box), menu_name: menuEl?.value || null }),
-                });
-                if (!res.ok) { const d = await res.json().catch(() => ({})); showToast(d.error || '保存に失敗しました'); return; }
-                showToast('記録を保存しました');
-                box.style.display = 'none';
-                box.dataset.built = '';
-                const histBox = document.getElementById(`karte-history-${uid}`);
-                if (histBox) { histBox.dataset.built = ''; } // 次に開いた時に最新の履歴を取り直す
-              } finally {
-                saveBtn.disabled = false;
-              }
-            });
-          }
-        }));
-
-        listEl.querySelectorAll('[data-karte-history-toggle]').forEach(btn => btn.addEventListener('click', async () => {
-          const uid = btn.dataset.karteHistoryToggle;
-          const box = document.getElementById(`karte-history-${uid}`);
-          if (!box) return;
-          const opening = box.style.display === 'none';
-          box.style.display = opening ? 'block' : 'none';
-          if (opening && !box.dataset.built) {
-            box.innerHTML = '<p class="muted" style="font-size:12px;">読み込み中…</p>';
-            box.dataset.built = '1';
-            try {
-              const res = await fetch(`/api/provider/customers/${uid}/karte-entries`, { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
-              const entries = res.ok ? await res.json() : [];
-              box.innerHTML = renderHistoryHtml(entries);
-            } catch {
-              box.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
-            }
-          }
-        }));
-
-        listEl.querySelectorAll('[data-karte-insight]').forEach(btn => btn.addEventListener('click', async () => {
-          const uid = btn.dataset.karteInsight;
-          const box = document.getElementById(`karte-insight-${uid}`);
-          if (!box) return;
-          box.style.display = 'block';
-          box.innerHTML = '<p class="muted" style="font-size:12px;">分析中…</p>';
-          btn.disabled = true;
-          try {
-            const res = await fetch(`/api/provider/customers/${uid}/karte-insight`, { method: 'POST', headers: authHeaders() });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) {
-              box.innerHTML = `<p class="muted" style="font-size:12px;color:#ef4444;">${esc(data.error || '分析に失敗しました')}</p>`;
-            } else if (data.insufficientData) {
-              box.innerHTML = `<p class="muted" style="font-size:12px;">まだ記録が少なく（${data.count}件）、傾向を出すには早いです。3件以上たまると分析できます。</p>`;
-            } else {
-              box.innerHTML = `
-                <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px 12px;">
-                  <p style="font-size:11px;font-weight:700;color:#6d28d9;margin:0 0 6px;">🤖 AIが気づいた傾向</p>
-                  <ul style="margin:0;padding-left:18px;font-size:12.5px;color:#4c1d95;">
-                    ${data.insights.map(i => `<li>${esc(i)}</li>`).join('')}
-                  </ul>
-                </div>`;
-            }
-          } catch {
-            box.innerHTML = '<p class="muted" style="font-size:12px;color:#ef4444;">分析に失敗しました</p>';
-          } finally {
-            btn.disabled = false;
-          }
-        }));
+        listEl.innerHTML = `
+          <div class="cust-row cust-row-head"><span>お客様</span><span>前回来店</span><span>次回目安</span><span></span></div>
+        ` + items.map(c => `
+          <div class="cust-row" data-cust-open="${c.user_id}">
+            <span class="cust-row-name">${esc(c.customer_name)}${c.hasStoreNote ? ' 📝' : ''}</span>
+            <span class="cust-row-date">${fmtDate(c.last_visit)}</span>
+            <span class="cust-row-date">${fmtDate(c.next_visit)}${isOverdue(c) ? ' ⚠️' : ''}</span>
+            <span>${statusBadge(c.status)}</span>
+          </div>
+        `).join('');
+        listEl.querySelectorAll('[data-cust-open]').forEach(row => row.addEventListener('click', () => openCustomerModal(row.dataset.custOpen)));
       }
+
+      // ── 顧客詳細ポップアップ（一覧の行クリックで開く。バッジ・固定メモ・声かけ・
+      //    担当割当・来店記録追加/履歴/AI傾向分析をここに集約） ──
+      const custModalEl = document.getElementById('customer-detail-modal');
+      const custModalNameEl = document.getElementById('cust-modal-name');
+      const custModalBadgesEl = document.getElementById('cust-modal-badges');
+      const custModalInfoEl = document.getElementById('cust-modal-info');
+      const custModalNudgeBtn = document.getElementById('cust-modal-nudge-btn');
+      const custModalAssignSel = document.getElementById('cust-modal-assign-select');
+      const custModalNoteTa = document.getElementById('cust-modal-note-textarea');
+      const custModalNoteSaveBtn = document.getElementById('cust-modal-note-save-btn');
+      const custModalAddToggle = document.getElementById('cust-modal-add-toggle');
+      const custModalAddForm = document.getElementById('cust-modal-add-form');
+      const custModalHistoryToggle = document.getElementById('cust-modal-history-toggle');
+      const custModalHistoryEl = document.getElementById('cust-modal-history');
+      const custModalInsightBtn = document.getElementById('cust-modal-insight-btn');
+      const custModalInsightEl = document.getElementById('cust-modal-insight');
+      let currentCustUid = null;
+
+      async function openCustomerModal(uid) {
+        const c = allItems.find(x => x.user_id === uid);
+        if (!c || !custModalEl) return;
+        currentCustUid = uid;
+        const def = ALL_AXES[c.axis];
+        const axisLabel = def ? `${def.icon} ${esc(def.label)}` : esc(c.axis);
+        custModalNameEl.textContent = c.customer_name;
+        custModalBadgesEl.innerHTML = `
+          <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
+          ${statusBadge(c.status)}
+          ${overdueBadge('ユーザー想定', c.userOverdueDays)}
+          ${overdueBadge('店舗推奨', c.storeOverdueDays)}
+          ${c.meScanType?.fullName ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;" title="Me Scanタイプ">🧬 ${esc(c.meScanType.fullName)}</span>` : c.meScanDone ? '<span style="font-size:11px;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;">Me Scan済</span>' : ''}
+          ${c.mirror?.visualTier ? `<span style="font-size:11px;padding:2px 8px;background:#fff7ed;color:#c2410c;border-radius:99px;">Mirror: ${esc(c.mirror.visualTier)}</span>` : ''}
+        `;
+        custModalInfoEl.textContent = `前回：${fmtDate(c.last_visit)}／次回目安：${fmtDate(c.next_visit)}／頻度：${fmtFreq(c)}／来店回数：${c.visitCount ?? 0}回`;
+        const staffOptions = ['<option value="">担当未割当</option>']
+          .concat(staffList.map(s => `<option value="${s.id}"${c.assignedStaffId === s.id ? ' selected' : ''}>${esc(s.name)}</option>`))
+          .join('');
+        custModalAssignSel.innerHTML = staffOptions;
+
+        custModalAddForm.style.display = 'none'; custModalAddForm.innerHTML = ''; custModalAddForm.dataset.built = '';
+        custModalHistoryEl.style.display = 'none'; custModalHistoryEl.innerHTML = ''; custModalHistoryEl.dataset.built = '';
+        custModalInsightEl.style.display = 'none'; custModalInsightEl.innerHTML = '';
+        custModalNoteTa.value = ''; custModalNoteTa.disabled = true; custModalNoteTa.placeholder = '読み込み中…';
+        custModalNoteSaveBtn.disabled = true;
+
+        custModalEl.style.display = 'flex';
+
+        const noteRes = await fetch(`/api/provider/customers/${uid}/note`, { headers: authHeaders() });
+        if (noteRes.ok) {
+          const d = await noteRes.json();
+          custModalNoteTa.value = d.note || '';
+          custModalNoteTa.disabled = false;
+          custModalNoteTa.placeholder = 'この店舗だけが見られるメモ（要望・使った薬剤・注意点など）。お客様には表示されません。';
+          custModalNoteSaveBtn.disabled = false;
+        }
+      }
+
+      custModalNudgeBtn?.addEventListener('click', async () => {
+        if (!currentCustUid) return;
+        const message = prompt('お客様に送るメッセージを入力してください（店舗の公式LINE連携済みならそちらから、未連携ならFineme公式LINEから届きます）');
+        if (!message?.trim()) return;
+        custModalNudgeBtn.disabled = true;
+        const res = await fetch(`/api/provider/customers/${currentCustUid}/nudge`, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ message }) });
+        const data = await res.json();
+        showToast(res.ok ? '送信しました' : `送信エラー：${data.error || '不明'}`);
+        custModalNudgeBtn.disabled = false;
+      });
+
+      custModalAssignSel?.addEventListener('change', async () => {
+        if (!currentCustUid) return;
+        custModalAssignSel.disabled = true;
+        const res = await fetch(`/api/provider/customers/${currentCustUid}/note`, { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ assigned_staff_id: custModalAssignSel.value || null }) });
+        showToast(res.ok ? '担当を更新しました' : '更新に失敗しました');
+        custModalAssignSel.disabled = false;
+        const c = allItems.find(x => x.user_id === currentCustUid); if (c) c.assignedStaffId = custModalAssignSel.value || null;
+      });
+
+      custModalNoteSaveBtn?.addEventListener('click', async () => {
+        if (!currentCustUid) return;
+        custModalNoteSaveBtn.disabled = true;
+        const label = custModalNoteSaveBtn.textContent;
+        custModalNoteSaveBtn.textContent = '保存中…';
+        try {
+          await fetch(`/api/provider/customers/${currentCustUid}/note`, { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ note: custModalNoteTa.value }) });
+          showToast('メモを保存しました');
+          const c = allItems.find(x => x.user_id === currentCustUid);
+          if (c && c.hasStoreNote !== !!custModalNoteTa.value) { c.hasStoreNote = !!custModalNoteTa.value; render(); }
+        } finally {
+          custModalNoteSaveBtn.disabled = false; custModalNoteSaveBtn.textContent = label;
+        }
+      });
+
+      custModalAddToggle?.addEventListener('click', () => {
+        if (!currentCustUid) return;
+        const opening = custModalAddForm.style.display === 'none';
+        custModalAddForm.style.display = opening ? 'block' : 'none';
+        if (opening && !custModalAddForm.dataset.built) {
+          custModalAddForm.innerHTML = renderAddFormHtml(currentCustUid);
+          custModalAddForm.dataset.built = '1';
+          bindStarWidgets(custModalAddForm);
+          custModalAddForm.querySelector(`[data-karte-entry-save="${currentCustUid}"]`)?.addEventListener('click', async (e) => {
+            const saveBtn = e.currentTarget;
+            const noteEl = custModalAddForm.querySelector(`[data-karte-entry-note="${currentCustUid}"]`);
+            const menuEl = custModalAddForm.querySelector(`[data-karte-entry-menu="${currentCustUid}"]`);
+            saveBtn.disabled = true;
+            try {
+              const res = await fetch(`/api/provider/customers/${currentCustUid}/karte-entries`, {
+                method: 'POST', headers: authHeaders(),
+                body: JSON.stringify({ note: noteEl?.value || '', custom_values: collectCustomValues(custModalAddForm), menu_name: menuEl?.value || null }),
+              });
+              if (!res.ok) { const d = await res.json().catch(() => ({})); showToast(d.error || '保存に失敗しました'); return; }
+              showToast('記録を保存しました');
+              custModalAddForm.style.display = 'none';
+              custModalAddForm.dataset.built = '';
+              custModalHistoryEl.dataset.built = ''; // 次に開いた時に最新の履歴を取り直す
+            } finally {
+              saveBtn.disabled = false;
+            }
+          });
+        }
+      });
+
+      custModalHistoryToggle?.addEventListener('click', async () => {
+        if (!currentCustUid) return;
+        const opening = custModalHistoryEl.style.display === 'none';
+        custModalHistoryEl.style.display = opening ? 'block' : 'none';
+        if (opening && !custModalHistoryEl.dataset.built) {
+          custModalHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込み中…</p>';
+          custModalHistoryEl.dataset.built = '1';
+          try {
+            const res = await fetch(`/api/provider/customers/${currentCustUid}/karte-entries`, { headers: authHeaders() });
+            const entries = res.ok ? await res.json() : [];
+            custModalHistoryEl.innerHTML = renderHistoryHtml(entries);
+          } catch {
+            custModalHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
+          }
+        }
+      });
+
+      custModalInsightBtn?.addEventListener('click', async () => {
+        if (!currentCustUid) return;
+        custModalInsightEl.style.display = 'block';
+        custModalInsightEl.innerHTML = '<p class="muted" style="font-size:12px;">分析中…</p>';
+        custModalInsightBtn.disabled = true;
+        try {
+          const res = await fetch(`/api/provider/customers/${currentCustUid}/karte-insight`, { method: 'POST', headers: authHeaders() });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            custModalInsightEl.innerHTML = `<p class="muted" style="font-size:12px;color:#ef4444;">${esc(data.error || '分析に失敗しました')}</p>`;
+          } else if (data.insufficientData) {
+            custModalInsightEl.innerHTML = `<p class="muted" style="font-size:12px;">まだ記録が少なく（${data.count}件）、傾向を出すには早いです。3件以上たまると分析できます。</p>`;
+          } else {
+            custModalInsightEl.innerHTML = `
+              <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px 12px;">
+                <p style="font-size:11px;font-weight:700;color:#6d28d9;margin:0 0 6px;">🤖 AIが気づいた傾向</p>
+                <ul style="margin:0;padding-left:18px;font-size:12.5px;color:#4c1d95;">
+                  ${data.insights.map(i => `<li>${esc(i)}</li>`).join('')}
+                </ul>
+              </div>`;
+          }
+        } catch {
+          custModalInsightEl.innerHTML = '<p class="muted" style="font-size:12px;color:#ef4444;">分析に失敗しました</p>';
+        } finally {
+          custModalInsightBtn.disabled = false;
+        }
+      });
+
+      document.getElementById('cust-modal-close')?.addEventListener('click', () => { custModalEl.style.display = 'none'; });
+      custModalEl?.addEventListener('click', (e) => { if (e.target === custModalEl) custModalEl.style.display = 'none'; });
 
       async function loadAll() {
         listEl.innerHTML = '<p class="muted">読み込み中…</p>';
@@ -5360,10 +5383,36 @@ export default function ProviderDashboardPage() {
               </select>
               <input id="karte-search" type="text" placeholder="お客様の名前で絞り込み" style={{ flex: '1 1 200px', maxWidth: '260px', padding: '8px 12px', border: '1.5px solid rgba(26,20,16,0.15)', borderRadius: '8px' }} />
             </div>
-            <p className="muted" style={{ fontSize: '12px', margin: '0 0 12px', lineHeight: '1.6' }}>
-              New Me Log（無料の来店サイクル管理ツール）で紐づいたお客様が表示されます。固定メモ・来店記録・AI傾向分析もこの一覧の各カードから行えます。まだ案内していない場合は<a href="/provider/log-toolkit" style={{ color: 'inherit', textDecoration: 'underline' }}>紹介用QRコード</a>をお店に置いてください。
-            </p>
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
+          </div>
+
+          {/* お客様一覧はコンパクトな行だけにし、クリックでポップアップに詳細（カルテ・メッセージ送信等）
+              をまとめる方式に変更（でお指摘2026-09-12：カードが大きすぎて一覧性が悪い＋今野くんの
+              実地メモ：スクロールが多いと確度の高いお客様が埋もれる）。1画面によりたくさん並べられる。 */}
+          <div id="customer-detail-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
+            <div className="cal-modal-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                <h3 style={{ margin: '0 0 4px', fontSize: '16px' }} id="cust-modal-name"></h3>
+                <button type="button" className="btn btn-ghost" id="cust-modal-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
+              </div>
+              <div id="cust-modal-badges" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '4px 0 8px' }}></div>
+              <p id="cust-modal-info" className="muted" style={{ fontSize: '12px', margin: '0 0 10px' }}></p>
+              <div className="cluster" style={{ gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+                <button type="button" className="btn btn-ghost" id="cust-modal-nudge-btn" style={{ fontSize: '12px', padding: '5px 10px' }}>声かけメッセージを送る</button>
+                <select id="cust-modal-assign-select" style={{ fontSize: '12px', padding: '5px 8px', border: '1px solid #e5e7eb', borderRadius: '8px' }}></select>
+              </div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6b7280', marginBottom: '4px' }}>📌 固定メモ</label>
+              <textarea id="cust-modal-note-textarea" style={{ width: '100%', minHeight: '60px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="読み込み中…" disabled></textarea>
+              <button type="button" className="btn" id="cust-modal-note-save-btn" style={{ fontSize: '12px', padding: '5px 10px', marginTop: '6px' }} disabled>保存する</button>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
+                <button type="button" className="btn btn-ghost" id="cust-modal-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>＋ 来店記録を追加</button>
+                <button type="button" className="btn btn-ghost" id="cust-modal-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>記録を見る</button>
+                <button type="button" className="btn btn-ghost" id="cust-modal-insight-btn" style={{ fontSize: '12px', padding: '5px 10px' }}>🤖 AIに傾向を聞く</button>
+              </div>
+              <div id="cust-modal-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
+              <div id="cust-modal-history" style={{ display: 'none', marginTop: '10px' }}></div>
+              <div id="cust-modal-insight" style={{ display: 'none', marginTop: '10px' }}></div>
+            </div>
           </div>
 
           <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px', marginTop: '16px' }}>
