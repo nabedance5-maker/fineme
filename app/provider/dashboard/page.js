@@ -68,20 +68,21 @@ export default function ProviderDashboardPage() {
       .cal-day-pill .cal-pill-date { font-size: 15px; font-weight: 800; color: #1a1410; }
       .cal-day-pill.is-active { background: rgba(201,168,76,0.16); border-color: #c9a84c; color: #a8842f; }
       .cal-day-pill.is-active .cal-pill-date { color: #a8842f; }
-      /* グリッド全体を1つのスクロールコンテナに統一（でお報告2026-09-12：スタッフが増えると
-         予約ブロックとヘッダーの列境界が少しズレる）。原因はヘッダー行・本体行を別々に
-         overflow-y/overflow-xさせていたことで、本体側だけ縦スクロールバー分の幅が
-         奪われ、同じflex:1でも列幅がヘッダーとズレていた。1つのコンテナに統一し、
-         ヘッダーはsticky top、時刻列はsticky leftで固定することで解消。 */
-      .cal-day-grid { border: 1px solid rgba(26,20,16,0.08); border-radius: 10px; overflow: auto; max-height: 560px; -webkit-overflow-scrolling: touch; }
-      .cal-day-grid-header { display: flex; width: max-content; min-width: 100%; background: #fff; border-bottom: 1px solid rgba(26,20,16,0.08); position: sticky; top: 0; z-index: 3; }
-      .cal-time-col-spacer { flex-shrink: 0; width: 40px; position: sticky; left: 0; z-index: 4; background: #fff; }
-      .cal-staff-head { flex: 1; min-width: 130px; text-align: center; font-size: 11.5px; font-weight: 700; padding: 6px 4px; border-right: 1px solid rgba(26,20,16,0.06); background: #fff; }
+      /* グリッドをCSS Gridの単一グリッドに再構成（でお再報告2026-09-12：前回のflexベースの
+         修正でも列境界のズレが直らなかった）。ヘッダー行・本体行を別々のflexコンテナに
+         分けていた構成そのものをやめ、両方を「同じgrid-template-columnsを持つ1つのグリッド」
+         のセルにする。これなら列幅はブラウザが1回だけ計算するため、行ごとに独立計算されて
+         ズレるという構造的な原因が原理的に起こり得ない。列数はJS側で動的なので
+         grid-template-columnsはインラインstyleで都度指定し、列の最小幅だけ
+         --cal-col-min カスタムプロパティ経由でCSS側（メディアクエリ含む）から制御する。 */
+      .cal-day-grid { border: 1px solid rgba(26,20,16,0.08); border-radius: 10px; overflow: auto; max-height: 560px; -webkit-overflow-scrolling: touch; --cal-col-min: 130px; }
+      .cal-grid-inner { display: grid; width: max-content; min-width: 100%; }
+      .cal-time-col-spacer { position: sticky; top: 0; left: 0; z-index: 4; background: #fff; border-bottom: 1px solid rgba(26,20,16,0.08); }
+      .cal-staff-head { position: sticky; top: 0; z-index: 3; background: #fff; text-align: center; font-size: 11.5px; font-weight: 700; padding: 6px 4px; border-right: 1px solid rgba(26,20,16,0.06); border-bottom: 1px solid rgba(26,20,16,0.08); }
       .cal-staff-head:last-child { border-right: none; }
-      .cal-day-grid-body { display: flex; width: max-content; min-width: 100%; }
-      .cal-time-col { flex-shrink: 0; width: 40px; position: sticky; left: 0; z-index: 1; background: rgba(250,248,243,0.97); border-right: 1px solid rgba(26,20,16,0.08); }
+      .cal-time-col { position: sticky; left: 0; z-index: 1; background: rgba(250,248,243,0.97); border-right: 1px solid rgba(26,20,16,0.08); }
       .cal-time-label { position: absolute; left: 0; right: 4px; text-align: right; font-size: 10px; color: rgba(26,20,16,0.4); transform: translateY(-50%); }
-      .cal-staff-col { flex: 1; min-width: 130px; position: relative; border-right: 1px solid rgba(26,20,16,0.06); }
+      .cal-staff-col { position: relative; border-right: 1px solid rgba(26,20,16,0.06); }
       .cal-staff-col:last-child { border-right: none; }
       .cal-hour-line { position: absolute; left: 0; right: 0; border-top: 1px solid rgba(26,20,16,0.06); }
       .cal-hour-line.is-half { border-top-style: dashed; border-top-color: rgba(26,20,16,0.04); }
@@ -97,7 +98,7 @@ export default function ProviderDashboardPage() {
       .cal-modal-overlay { position: fixed; inset: 0; background: rgba(10,15,30,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; }
       .cal-modal-card { background: #fff; border-radius: 16px; padding: 22px; max-width: 460px; width: 100%; max-height: 84vh; overflow-y: auto; }
       @media (max-width: 640px) {
-        .cal-staff-head, .cal-staff-col { min-width: 90px; }
+        .cal-day-grid { --cal-col-min: 90px; }
       }
       @media (max-width: 900px) {
         .pd-topbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #0a0f1e; border-bottom: 1px solid rgba(201,168,76,0.15); position: fixed; top: 0; left: 0; right: 0; z-index: 40; }
@@ -3589,7 +3590,7 @@ export default function ProviderDashboardPage() {
         }
         timeColHtml += `</div>`;
 
-        const headerHtml = `<div class="cal-time-col-spacer"></div>` + columns.map(c => `<div class="cal-staff-head">${esc(c.name)}</div>`).join('');
+        const headerCellsHtml = columns.map(c => `<div class="cal-staff-head">${esc(c.name)}</div>`).join('');
 
         const bodyColsHtml = columns.map(col => {
           const colItems = items.filter(r => (r[groupKey] || null) === col.id);
@@ -3617,9 +3618,18 @@ export default function ProviderDashboardPage() {
           return `<div class="cal-staff-col" style="height:${totalHeight}px">${hourLines}${blocksHtml}</div>`;
         }).join('');
 
+        // ヘッダー・本体を同じgrid-template-columnsを持つ1つのグリッドのセルとして並べる
+        // （2列×N行ではなく、ヘッダー用N+1セル→本体用N+1セルの順にDOMへ流し込み、
+        // grid-auto-flowの自動配置で1行目・2行目に収まる。列幅の計算は1回だけなので、
+        // ヘッダーと本体で列幅がズレることが構造的に起こらない）。
+        const gridTemplateColumns = `40px repeat(${columns.length}, minmax(var(--cal-col-min), 1fr))`;
         return `
-          <div class="cal-day-grid-header">${headerHtml}</div>
-          <div class="cal-day-grid-body">${timeColHtml}${bodyColsHtml}</div>
+          <div class="cal-grid-inner" style="grid-template-columns:${gridTemplateColumns}">
+            <div class="cal-time-col-spacer"></div>
+            ${headerCellsHtml}
+            ${timeColHtml}
+            ${bodyColsHtml}
+          </div>
         `;
       }
 
