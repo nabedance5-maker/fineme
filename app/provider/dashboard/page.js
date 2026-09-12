@@ -279,7 +279,19 @@ export default function ProviderDashboardPage() {
     // 「取得エラー」になっていた（でお報告：再ログインすると直る＝セッション切れが原因）。
     // ここでSDK経由のgetSession()を一度呼んでおくと、必要な場合は裏側でリフレッシュされ
     // localStorageの値も更新される（以降のgetSupabaseToken()の読み取り値が新しくなる）。
+    //
+    // ただしこれはページを開いた瞬間の1回きり。SDKのautoRefreshTokenはタブが
+    // バックグラウンドになっている間（他の作業・PCスリープ等）はタイマーが動かない
+    // ことがあり、アクセストークンの有効期限（既定1時間）が来た状態で長時間放置すると
+    // 復帰後もgetSupabaseToken()は古いトークンを返し続け、業務中に何度もログインし
+    // 直す羽目になっていた（でお報告2026-09-12：「セッションの有効期限がすぐ切れる」）。
+    // 対策として、①タブがバックグラウンドから戻った瞬間（visibilitychange）と
+    // ②念のための定期チェック（10分毎）の両方でgetSession()を呼び直し、
+    // 開きっぱなしでも裏側で自動延長され続けるようにする。
     _sb.auth.getSession().catch(() => {});
+    const sessionKeepAlive = setInterval(() => { _sb.auth.getSession().catch(() => {}); }, 10 * 60 * 1000);
+    const onVisible = () => { if (document.visibilityState === 'visible') _sb.auth.getSession().catch(() => {}); };
+    document.addEventListener('visibilitychange', onVisible);
 
     // 上のgetSession()呼び出しでも直せない場合（リフレッシュトークン自体も失効等）に、
     // 各タブの「取得エラー」を401の時だけ再ログイン導線付きに出し分けるための共通ヘルパー。
@@ -4558,6 +4570,8 @@ export default function ProviderDashboardPage() {
 
     return () => {
       try { document.head.removeChild(style); } catch {}
+      clearInterval(sessionKeepAlive);
+      document.removeEventListener('visibilitychange', onVisible);
       // Clean up window globals
       delete window.approveRequest;
       delete window.rejectRequest;
