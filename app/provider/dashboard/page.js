@@ -4061,38 +4061,38 @@ export default function ProviderDashboardPage() {
               <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(232,228,220,0.4)', letterSpacing: 1 }}>顧客管理システム</p>
             </div>
             <p className="pd-nav-heading">チュートリアル</p>
-            <button className="tab-btn" data-tab="tutorial">📘 チュートリアル</button>
+            <button className="tab-btn" data-tab="tutorial">チュートリアル</button>
             <p className="pd-nav-heading">① 店舗の中身を作る</p>
             <button className="tab-btn" data-tab="profile">プロフィール</button>
             <button className="tab-btn" data-tab="service">サービス設定</button>
-            <button className="tab-btn" data-tab="packages">🎫 回数券</button>
-            <button className="tab-btn" data-tab="staff">👤 スタッフ</button>
-            <button className="tab-btn" data-tab="resources" data-feature="resource_management">🏠 部屋・設備<span className="feature-off-badge" data-feature-badge></span></button>
-            <button className="tab-btn" data-tab="slots" data-feature="instant_booking">📅 空き枠<span className="feature-off-badge" data-feature-badge></span></button>
-            <button className="tab-btn" data-tab="stories">📝 体験談</button>
-            <button className="tab-btn" data-tab="landing">🌐 LP設定</button>
-            <button className="tab-btn" data-tab="qr">🔗 紹介QR</button>
+            <button className="tab-btn" data-tab="packages">回数券</button>
+            <button className="tab-btn" data-tab="staff">スタッフ</button>
+            <button className="tab-btn" data-tab="resources" data-feature="resource_management">部屋・設備<span className="feature-off-badge" data-feature-badge></span></button>
+            <button className="tab-btn" data-tab="slots" data-feature="instant_booking">空き枠<span className="feature-off-badge" data-feature-badge></span></button>
+            <button className="tab-btn" data-tab="stories">体験談</button>
+            <button className="tab-btn" data-tab="landing">LP設定</button>
+            <button className="tab-btn" data-tab="qr">紹介QR</button>
             <button className="tab-btn" data-tab="publish">公開設定</button>
             <p className="pd-nav-heading">② 毎日触るタブ</p>
-            <button className="tab-btn active" data-tab="stats">📊 概況</button>
-            <button className="tab-btn" data-tab="calendar">📅 予約カレンダー</button>
-            <button className="tab-btn" data-tab="requests">📬 予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
-            <button className="tab-btn" data-tab="customers">🗒️ New Me Log</button>
-            <button className="tab-btn" data-tab="karte">📋 カルテ</button>
-            <button className="tab-btn" data-tab="reviews">⭐ クチコミ</button>
-            <button className="tab-btn" data-tab="sales">💰 売上管理</button>
-            <button className="tab-btn" data-tab="pos" data-feature="pos">🧾 POS・在庫<span className="feature-off-badge" data-feature-badge></span></button>
-            <button className="tab-btn" data-tab="checkin" data-feature="checkin_qr">📷 チェックイン<span className="feature-off-badge" data-feature-badge></span></button>
-            <button className="tab-btn" data-tab="events" data-feature="attendance_confirm">🙋 出欠確認<span className="feature-off-badge" data-feature-badge></span></button>
+            <button className="tab-btn active" data-tab="stats">概況</button>
+            <button className="tab-btn" data-tab="calendar">予約カレンダー</button>
+            <button className="tab-btn" data-tab="requests">予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
+            <button className="tab-btn" data-tab="customers">New Me Log</button>
+            <button className="tab-btn" data-tab="karte">カルテ</button>
+            <button className="tab-btn" data-tab="reviews">クチコミ</button>
+            <button className="tab-btn" data-tab="sales">売上管理</button>
+            <button className="tab-btn" data-tab="pos" data-feature="pos">POS・在庫<span className="feature-off-badge" data-feature-badge></span></button>
+            <button className="tab-btn" data-tab="checkin" data-feature="checkin_qr">チェックイン<span className="feature-off-badge" data-feature-badge></span></button>
+            <button className="tab-btn" data-tab="events" data-feature="attendance_confirm">出欠確認<span className="feature-off-badge" data-feature-badge></span></button>
             <p className="pd-nav-heading">③ 伸ばすためのタブ</p>
-            <button className="tab-btn" data-tab="area-demand">📍 エリア需要</button>
-            <button className="tab-btn" data-tab="scripts">💡 接客の引き出し</button>
-            <button className="tab-btn" data-tab="ltv-cac">📊 LTV/CAC</button>
+            <button className="tab-btn" data-tab="area-demand">エリア需要</button>
+            <button className="tab-btn" data-tab="scripts">接客の引き出し</button>
+            <button className="tab-btn" data-tab="ltv-cac">LTV/CAC</button>
             <button className="tab-btn" data-tab="referral">紹介報酬</button>
             <p className="pd-nav-heading">④ アカウント周り</p>
-            <button className="tab-btn" data-tab="line-channel">💬 LINE連携</button>
+            <button className="tab-btn" data-tab="line-channel">LINE連携</button>
             <button className="tab-btn" data-tab="billing">課金・プラン</button>
-            <button className="tab-btn" data-tab="features">⚙️ 機能設定</button>
+            <button className="tab-btn" data-tab="features">機能設定</button>
           </div>
 
           {/* メイン */}
