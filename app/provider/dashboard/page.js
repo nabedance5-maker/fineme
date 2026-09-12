@@ -3815,7 +3815,7 @@ export default function ProviderDashboardPage() {
             const isPending = r.status === 'pending' || r.status === 'counter_proposed';
             return `
               <div class="cal-block${r.status === 'visited' ? ' is-visited' : ''}${isManualAssign ? ' is-manual-assign' : ''}${isPending ? ' is-pending' : ''}" style="top:${top}px;height:${height}px" data-cal-open="${r.id}">
-                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}
+                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}
               </div>
             `;
           }).join('');
@@ -3867,7 +3867,7 @@ export default function ProviderDashboardPage() {
             <div style="flex:1;min-width:0">
               <strong style="font-size:13px">${esc(r.user_name || '')}</strong>
               ${r.staff_name ? `<span class="muted" style="font-size:12px;margin-left:6px">${esc(r.staff_name)}${r.staff_manually_assigned ? '<span style="color:#3b82f6;font-weight:700"> （指名なし）</span>' : ''}</span>` : ''}
-              ${r.status === 'pending' ? '<span style="font-size:11px;font-weight:700;color:#b45309;margin-left:6px">返答待ち</span>' : ''}
+              ${r.status === 'pending' ? `<span style="font-size:11px;font-weight:700;color:#b45309;margin-left:6px">${r._choiceLabel ? r._choiceLabel + '・' : ''}返答待ち</span>` : ''}
               ${r.status === 'counter_proposed' ? '<span style="font-size:11px;font-weight:700;color:#b45309;margin-left:6px">代替提案中（返答待ち）</span>' : ''}
             </div>
           </div>
@@ -3889,7 +3889,28 @@ export default function ProviderDashboardPage() {
         const rows = await res.json();
         byDate = {};
         byId = {};
-        rows.forEach(r => { (byDate[r.date] = byDate[r.date] || []).push(r); byId[r.id] = r; });
+        rows.forEach(r => {
+          byId[r.id] = r; // 詳細モーダルは常にこの代表データ（第1希望の日時）を使う
+          // pending（返答待ち）の間は、第1〜第3希望それぞれの日時にブロックを表示する
+          // （でお要望2026-09-12：代替提案を送るまでは全ての候補日時が分かるように
+          // したい／代替提案した瞬間、提案した1件の表示に変わるのが正解）。
+          // counter_proposed以降は他の状態と同じく1件（date=confirmed||counter||reserved）に
+          // 統合される——calendar route.js側の計算そのままなのでここでは分岐不要。
+          if (r.status === 'pending') {
+            const choices = [{ date: r.date, time: r.time }];
+            const note = r.note || '';
+            const m2 = note.match(/【第2希望】(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2})/);
+            const m3 = note.match(/【第3希望】(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2})/);
+            if (m2) choices.push({ date: m2[1], time: m2[2] });
+            if (m3) choices.push({ date: m3[1], time: m3[2] });
+            choices.forEach((c, i) => {
+              const item = { ...r, date: c.date, time: c.time, _choiceLabel: i === 0 ? '第1希望' : i === 1 ? '第2希望' : '第3希望' };
+              (byDate[c.date] = byDate[c.date] || []).push(item);
+            });
+          } else {
+            (byDate[r.date] = byDate[r.date] || []).push(r);
+          }
+        });
         if (!dates.some(d => fmtDate(d) === selectedDate)) selectedDate = from;
         // 「今日」がデフォルト選択だと、明日以降に届いた予約リクエスト・確定予約が
         // 画面上は何も無いように見えてしまう（でお報告2026-09-12：承認したのに
