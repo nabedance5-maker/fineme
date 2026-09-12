@@ -104,6 +104,13 @@ export default function ProviderDashboardPage() {
       .cust-row-head { font-size: 11px; font-weight: 700; color: rgba(26,20,16,0.45); text-transform: uppercase; letter-spacing: .03em; border-bottom: 1px solid rgba(26,20,16,0.1); }
       .cust-row-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .cust-row-date { color: rgba(26,20,16,0.6); font-size: 12.5px; }
+      /* 予約リクエストのコンパクト行（顧客管理タブと同じ方式。でお要望2026-09-12） */
+      .req-row { display: grid; grid-template-columns: 1.4fr 1.2fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-bottom: 1px solid rgba(26,20,16,0.06); font-size: 13px; cursor: pointer; }
+      .req-row:hover { background: rgba(26,20,16,0.03); }
+      .req-row-head { font-size: 11px; font-weight: 700; color: rgba(26,20,16,0.45); text-transform: uppercase; letter-spacing: .03em; border-bottom: 1px solid rgba(26,20,16,0.1); cursor: default; }
+      .req-row-head:hover { background: none; }
+      .req-row-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .req-row-date { color: rgba(26,20,16,0.6); font-size: 12.5px; }
       @media (max-width: 640px) {
         .cal-day-grid { --cal-col-min: 90px; }
       }
@@ -1573,15 +1580,28 @@ export default function ProviderDashboardPage() {
         }
       }
 
-      custModalNudgeBtn?.addEventListener('click', async () => {
+      const nudgeModalEl = document.getElementById('nudge-modal');
+      const nudgeTextareaEl = document.getElementById('nudge-message-textarea');
+      const nudgeSendBtn = document.getElementById('nudge-send-btn');
+
+      custModalNudgeBtn?.addEventListener('click', () => {
+        if (!currentCustUid || !nudgeModalEl) return;
+        nudgeTextareaEl.value = '';
+        nudgeModalEl.style.display = 'flex';
+        nudgeTextareaEl.focus();
+      });
+      document.getElementById('nudge-cancel-btn')?.addEventListener('click', () => { nudgeModalEl.style.display = 'none'; });
+      nudgeModalEl?.addEventListener('click', (e) => { if (e.target === nudgeModalEl) nudgeModalEl.style.display = 'none'; });
+      nudgeSendBtn?.addEventListener('click', async () => {
         if (!currentCustUid) return;
-        const message = prompt('お客様に送るメッセージを入力してください（店舗の公式LINE連携済みならそちらから、未連携ならFineme公式LINEから届きます）');
-        if (!message?.trim()) return;
-        custModalNudgeBtn.disabled = true;
+        const message = nudgeTextareaEl.value.trim();
+        if (!message) { showToast('メッセージを入力してください'); return; }
+        nudgeSendBtn.disabled = true;
         const res = await fetch(`/api/provider/customers/${currentCustUid}/nudge`, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ message }) });
         const data = await res.json();
+        nudgeSendBtn.disabled = false;
         showToast(res.ok ? '送信しました' : `送信エラー：${data.error || '不明'}`);
-        custModalNudgeBtn.disabled = false;
+        if (res.ok) nudgeModalEl.style.display = 'none';
       });
 
       custModalAssignSel?.addEventListener('change', async () => {
@@ -2935,69 +2955,100 @@ export default function ProviderDashboardPage() {
       applyRequestFilters();
     });
 
+    // 予約リクエスト1件の詳細HTML（旧：一覧に直接表示していたカードの中身。
+    // 現在はポップアップ内に表示する。ロジック・アクションボタンは変更なし）。
+    function buildRequestCardHtml(r) {
+      const choices = parseDateChoices(r);
+      const menuMatch = (r.note || '').match(/【メニュー】([^\n]+)/);
+      const menuText = menuMatch ? menuMatch[1] : '';
+      const userMsg = noteWithoutChoices(r.note);
+      const statusColor = STATUS_COLORS[r.status] || '#6b7280';
+      const statusLabel = STATUS_LABELS[r.status] || r.status;
+
+      const choicesHtml = r.status === 'pending' ? choices.map((c, i) => `
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;cursor:pointer;margin-bottom:4px">
+          <input type="radio" name="choice-${r.id}" value="${i}" ${i === 0 ? 'checked' : ''} style="accentColor:#10b981">
+          <span style="font-size:13px;font-weight:700;color:#374151">${c.label}:</span>
+          <span style="font-size:13px;color:#374151">${c.date} ${c.time}</span>
+        </label>
+      `).join('') : `<p style="font-size:13px;color:#6b7280">第1希望: ${choices[0].date} ${choices[0].time}${r.confirmed_date ? ` → 確定: ${r.confirmed_date} ${r.confirmed_time || ''}` : ''}</p>`;
+
+      const meMapNote = parseMeMapNote(r.note);
+      return `
+        <div style="color:#111;text-shadow:none">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+            <strong style="font-size:16px">${esc(r.user_name)}</strong>
+            <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${statusColor}20;color:${statusColor}">${statusLabel}</span>
+          </div>
+          ${meMapNote ? `
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:10px">
+            <p style="font-size:11px;font-weight:700;color:#2563eb;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em">🗺 New Me Navi より</p>
+            ${meMapNote.split('\n').map(line => `<p style="font-size:13px;color:#1e40af;margin:0 0 2px;font-weight:${line.startsWith('最優先') ? '700' : '400'}">${esc(line)}</p>`).join('')}
+          </div>` : ''}
+          ${(r.status === 'approved' || r.status === 'visited') ? `
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-bottom:10px">
+            <p style="font-size:11px;font-weight:700;color:#15803d;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em">ユーザー情報</p>
+            <p style="font-size:13px;font-weight:700;color:#111;margin:0 0 2px">👤 ${esc(r.user_name)}</p>
+            <p style="font-size:13px;color:#374151;margin:0">📧 ${esc(r.user_contact)}</p>
+          </div>` : `<p style="font-size:12px;color:#9ca3af;margin:0 0 10px">連絡先: ${esc(r.user_contact)}</p>`}
+          ${menuText ? `<p style="font-size:13px;color:#374151;margin:0 0 8px;font-weight:700">🎯 ${esc(menuText)}</p>` : ''}
+          <div style="margin-bottom:8px">${choicesHtml}</div>
+          ${userMsg ? `<div style="font-size:13px;color:#374151;padding:8px 12px;background:#f9fafb;border-radius:8px;margin-bottom:8px">${esc(userMsg)}</div>` : ''}
+          ${r.provider_comment ? `<div style="font-size:13px;color:#6366f1;padding:8px 12px;background:#eef2ff;border-radius:8px">掲載者コメント: ${esc(r.provider_comment)}</div>` : ''}
+          ${r.counter_date ? `<div style="font-size:13px;color:#6366f1;padding:8px 12px;background:#eef2ff;border-radius:8px;margin-top:6px">代替提案日時: ${r.counter_date} ${r.counter_time || ''}</div>` : ''}
+          ${r.status === 'pending' ? `
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
+            <button class="btn" style="font-size:12px;padding:8px 14px;background:#10b981;white-space:nowrap" onclick="approveRequest('${r.id}')">✓ 承認する</button>
+            <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap" onclick="showCounterModal('${r.id}')">代替提案を送る</button>
+            <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;color:#ef4444;white-space:nowrap" onclick="rejectRequest('${r.id}')">お断り</button>
+          </div>` : r.status === 'approved' ? `
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
+            <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap" onclick="showVisitModal('${r.id}')">来店確認</button>
+            ${(_activePackagesByUser[r.user_id] || []).map(p => `
+            <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#7c3aed;border-color:#c4b5fd" onclick="consumePackage('${p.id}','${r.id}',this)">🎫 ${esc(p.package_name)}を消化（残${p.remaining_sessions}）</button>`).join('')}
+          </div>` : ''}
+        </div>
+      `;
+    }
+
+    window.openRequestModal = function (id) {
+      const r = _requestsById[id];
+      const modal = document.getElementById('request-detail-modal');
+      const body = document.getElementById('request-detail-modal-body');
+      if (!r || !modal || !body) return;
+      body.innerHTML = buildRequestCardHtml(r);
+      modal.style.display = 'flex';
+    };
+    document.getElementById('request-modal-close')?.addEventListener('click', () => {
+      document.getElementById('request-detail-modal').style.display = 'none';
+    });
+    document.getElementById('request-detail-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'request-detail-modal') e.currentTarget.style.display = 'none';
+    });
+
+    // 一覧はコンパクトな行のみ表示し、クリックでポップアップに詳細をまとめる方式に変更
+    // （でお要望2026-09-12：顧客管理タブと同じ方式に統一。今野くんの実地メモにも通じる
+    // 「一覧性が悪いと見落としが増える」への対策）。
     function renderRequests(items) {
       const el = document.getElementById('requests-list');
       if (!items.length) { el.innerHTML = '<p class="muted">条件に一致するリクエストはありません。</p>'; return; }
-      el.innerHTML = '';
-      items.forEach(r => {
-        _requestsById[r.id] = r; // 来店確認モーダルでメニューの下書きに使う
+      items.forEach(r => { _requestsById[r.id] = r; }); // ポップアップ・来店確認モーダルの下書きに使う
+      el.innerHTML = `
+        <div class="req-row req-row-head"><span>お客様</span><span>希望・確定日時</span><span></span></div>
+      ` + items.map(r => {
         const choices = parseDateChoices(r);
-        const menuMatch = (r.note || '').match(/【メニュー】([^\n]+)/);
-        const menuText = menuMatch ? menuMatch[1] : '';
-        const userMsg = noteWithoutChoices(r.note);
+        const dateLabel = r.confirmed_date ? `${r.confirmed_date} ${r.confirmed_time || ''}` : `${choices[0].date} ${choices[0].time}`;
         const statusColor = STATUS_COLORS[r.status] || '#6b7280';
         const statusLabel = STATUS_LABELS[r.status] || r.status;
-
-        const choicesHtml = r.status === 'pending' ? choices.map((c, i) => `
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;cursor:pointer;margin-bottom:4px">
-            <input type="radio" name="choice-${r.id}" value="${i}" ${i === 0 ? 'checked' : ''} style="accentColor:#10b981">
-            <span style="font-size:13px;font-weight:700;color:#374151">${c.label}:</span>
-            <span style="font-size:13px;color:#374151">${c.date} ${c.time}</span>
-          </label>
-        `).join('') : `<p style="font-size:13px;color:#6b7280">第1希望: ${choices[0].date} ${choices[0].time}${r.confirmed_date ? ` → 確定: ${r.confirmed_date} ${r.confirmed_time || ''}` : ''}</p>`;
-
-        const meMapNote = parseMeMapNote(r.note);
-        const card = document.createElement('div');
-        card.style.cssText = 'border:1.5px solid #e5e7eb;border-radius:14px;padding:18px;margin-bottom:12px;background:#fff;color:#111;text-shadow:none';
-        card.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-                <strong style="font-size:15px">${esc(r.user_name)}</strong>
-                <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${statusColor}20;color:${statusColor}">${statusLabel}</span>
-              </div>
-              ${meMapNote ? `
-              <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:10px">
-                <p style="font-size:11px;font-weight:700;color:#2563eb;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em">🗺 New Me Navi より</p>
-                ${meMapNote.split('\n').map(line => `<p style="font-size:13px;color:#1e40af;margin:0 0 2px;font-weight:${line.startsWith('最優先') ? '700' : '400'}">${esc(line)}</p>`).join('')}
-              </div>` : ''}
-              ${(r.status === 'approved' || r.status === 'visited') ? `
-              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-bottom:10px">
-                <p style="font-size:11px;font-weight:700;color:#15803d;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em">ユーザー情報</p>
-                <p style="font-size:13px;font-weight:700;color:#111;margin:0 0 2px">👤 ${esc(r.user_name)}</p>
-                <p style="font-size:13px;color:#374151;margin:0">📧 ${esc(r.user_contact)}</p>
-              </div>` : `<p style="font-size:12px;color:#9ca3af;margin:0 0 10px">連絡先: ${esc(r.user_contact)}</p>`}
-              ${menuText ? `<p style="font-size:13px;color:#374151;margin:0 0 8px;font-weight:700">🎯 ${esc(menuText)}</p>` : ''}
-              <div style="margin-bottom:8px">${choicesHtml}</div>
-              ${userMsg ? `<div style="font-size:13px;color:#374151;padding:8px 12px;background:#f9fafb;border-radius:8px;margin-bottom:8px">${esc(userMsg)}</div>` : ''}
-              ${r.provider_comment ? `<div style="font-size:13px;color:#6366f1;padding:8px 12px;background:#eef2ff;border-radius:8px">掲載者コメント: ${esc(r.provider_comment)}</div>` : ''}
-              ${r.counter_date ? `<div style="font-size:13px;color:#6366f1;padding:8px 12px;background:#eef2ff;border-radius:8px;margin-top:6px">代替提案日時: ${r.counter_date} ${r.counter_time || ''}</div>` : ''}
-            </div>
-            ${r.status === 'pending' ? `
-            <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;min-width:120px">
-              <button class="btn" style="font-size:12px;padding:8px 14px;background:#10b981;white-space:nowrap" onclick="approveRequest('${r.id}')">✓ 承認する</button>
-              <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap" onclick="showCounterModal('${r.id}')">代替提案を送る</button>
-              <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;color:#ef4444;white-space:nowrap" onclick="rejectRequest('${r.id}')">お断り</button>
-            </div>` : r.status === 'approved' ? `
-            <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;min-width:120px">
-              <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap" onclick="showVisitModal('${r.id}')">来店確認</button>
-              ${(_activePackagesByUser[r.user_id] || []).map(p => `
-              <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#7c3aed;border-color:#c4b5fd" onclick="consumePackage('${p.id}','${r.id}',this)">🎫 ${esc(p.package_name)}を消化（残${p.remaining_sessions}）</button>`).join('')}
-            </div>` : ''}
+        return `
+          <div class="req-row" data-req-open="${r.id}">
+            <span class="req-row-name">${esc(r.user_name)}</span>
+            <span class="req-row-date">${esc(dateLabel)}</span>
+            <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${statusColor}20;color:${statusColor};white-space:nowrap">${statusLabel}</span>
           </div>
         `;
-        el.appendChild(card);
-      });
+      }).join('');
+      el.querySelectorAll('[data-req-open]').forEach(row => row.addEventListener('click', () => window.openRequestModal(row.dataset.reqOpen)));
     }
 
     function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -3022,6 +3073,7 @@ export default function ProviderDashboardPage() {
       const _approveToken = getSupabaseToken();
       const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...(_approveToken ? { 'Authorization': `Bearer ${_approveToken}` } : {}) }, body: JSON.stringify(body) });
       if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
+      document.getElementById('request-detail-modal').style.display = 'none';
       await loadRequests(); showToast('承認しました');
     };
 
@@ -3030,6 +3082,7 @@ export default function ProviderDashboardPage() {
       const _rejectToken = getSupabaseToken();
       const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...(_rejectToken ? { 'Authorization': `Bearer ${_rejectToken}` } : {}) }, body: JSON.stringify({ status: 'rejected' }) });
       if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
+      document.getElementById('request-detail-modal').style.display = 'none';
       await loadRequests(); showToast('お断りを送りました');
     };
 
@@ -4409,6 +4462,7 @@ export default function ProviderDashboardPage() {
       delete window.confirmVisit;
       delete window.showCounterModal;
       delete window.submitCounter;
+      delete window.openRequestModal;
     };
   }, []);
 
@@ -4754,6 +4808,17 @@ export default function ProviderDashboardPage() {
             </div>
 
             <div id="requests-list"><p className="muted">読み込み中…</p></div>
+          </div>
+
+          {/* コンパクトな行をクリックすると詳細（希望日時・メニュー・メッセージ・承認/お断り等の
+              操作）がポップアップで開く（でお要望2026-09-12：顧客管理タブと同じ方式に）。 */}
+          <div id="request-detail-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
+            <div className="cal-modal-card" style={{ maxWidth: '520px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
+                <button type="button" className="btn btn-ghost" id="request-modal-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
+              </div>
+              <div id="request-detail-modal-body"></div>
+            </div>
           </div>
         </div>
 
@@ -5412,6 +5477,20 @@ export default function ProviderDashboardPage() {
               <div id="cust-modal-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
               <div id="cust-modal-history" style={{ display: 'none', marginTop: '10px' }}></div>
               <div id="cust-modal-insight" style={{ display: 'none', marginTop: '10px' }}></div>
+            </div>
+          </div>
+
+          {/* 声かけメッセージ入力（でお指摘2026-09-12：promptだと改行キーで即送信されてしまい
+              事故のもと。テキストエリア＋明示的な送信ボタンに変更しEnterでは送信されないようにした） */}
+          <div id="nudge-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
+            <div className="cal-modal-card" style={{ maxWidth: '380px' }}>
+              <h3 style={{ margin: '0 0 8px', fontSize: '15px' }}>声かけメッセージを送る</h3>
+              <p className="muted" style={{ fontSize: '12px', margin: '0 0 10px' }}>店舗の公式LINE連携済みならそちらから、未連携ならFineme公式LINEから届きます。</p>
+              <textarea id="nudge-message-textarea" style={{ width: '100%', minHeight: '90px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="メッセージを入力してください"></textarea>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                <button type="button" className="btn" id="nudge-send-btn">送信する</button>
+                <button type="button" className="btn btn-ghost" id="nudge-cancel-btn">キャンセル</button>
+              </div>
             </div>
           </div>
 
