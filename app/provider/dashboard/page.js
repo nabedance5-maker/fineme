@@ -68,12 +68,17 @@ export default function ProviderDashboardPage() {
       .cal-day-pill .cal-pill-date { font-size: 15px; font-weight: 800; color: #1a1410; }
       .cal-day-pill.is-active { background: rgba(201,168,76,0.16); border-color: #c9a84c; color: #a8842f; }
       .cal-day-pill.is-active .cal-pill-date { color: #a8842f; }
-      .cal-day-grid { border: 1px solid rgba(26,20,16,0.08); border-radius: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      .cal-day-grid-header { display: flex; width: max-content; min-width: 100%; background: #fff; border-bottom: 1px solid rgba(26,20,16,0.08); }
-      .cal-time-col-spacer { flex-shrink: 0; width: 40px; position: sticky; left: 0; z-index: 2; background: #fff; }
+      /* グリッド全体を1つのスクロールコンテナに統一（でお報告2026-09-12：スタッフが増えると
+         予約ブロックとヘッダーの列境界が少しズレる）。原因はヘッダー行・本体行を別々に
+         overflow-y/overflow-xさせていたことで、本体側だけ縦スクロールバー分の幅が
+         奪われ、同じflex:1でも列幅がヘッダーとズレていた。1つのコンテナに統一し、
+         ヘッダーはsticky top、時刻列はsticky leftで固定することで解消。 */
+      .cal-day-grid { border: 1px solid rgba(26,20,16,0.08); border-radius: 10px; overflow: auto; max-height: 560px; -webkit-overflow-scrolling: touch; }
+      .cal-day-grid-header { display: flex; width: max-content; min-width: 100%; background: #fff; border-bottom: 1px solid rgba(26,20,16,0.08); position: sticky; top: 0; z-index: 3; }
+      .cal-time-col-spacer { flex-shrink: 0; width: 40px; position: sticky; left: 0; z-index: 4; background: #fff; }
       .cal-staff-head { flex: 1; min-width: 130px; text-align: center; font-size: 11.5px; font-weight: 700; padding: 6px 4px; border-right: 1px solid rgba(26,20,16,0.06); background: #fff; }
       .cal-staff-head:last-child { border-right: none; }
-      .cal-day-grid-body { display: flex; width: max-content; min-width: 100%; max-height: 560px; overflow-y: auto; }
+      .cal-day-grid-body { display: flex; width: max-content; min-width: 100%; }
       .cal-time-col { flex-shrink: 0; width: 40px; position: sticky; left: 0; z-index: 1; background: rgba(250,248,243,0.97); border-right: 1px solid rgba(26,20,16,0.08); }
       .cal-time-label { position: absolute; left: 0; right: 4px; text-align: right; font-size: 10px; color: rgba(26,20,16,0.4); transform: translateY(-50%); }
       .cal-staff-col { flex: 1; min-width: 130px; position: relative; border-right: 1px solid rgba(26,20,16,0.06); }
