@@ -1230,6 +1230,7 @@ export default function ProviderDashboardPage() {
       if (!token) return;
       const listEl = document.getElementById('customers-list');
       const filterSel = document.getElementById('customers-filter');
+      const sortSel = document.getElementById('customers-sort');
       const searchInput = document.getElementById('karte-search');
       const kfListEl = document.getElementById('kf-list');
       const kfLabelInput = document.getElementById('kf-label');
@@ -1441,16 +1442,48 @@ export default function ProviderDashboardPage() {
         }).join('');
       }
 
+      // 今野くんの実地メモ（2026-09-12）：絞り込みが乏しいと、来なくなったお客様を
+      // 手作業で仕分ける手間が発生し、確度の高いお客様がリストに埋もれる。並び替えを
+      // 用意して「放っておいても目に付く」状態にする（デフォルトのnext_visit昇順に加え、
+      // 最終来店が古い順を選べば、来なくなった順に自然と上に出てくる）。
+      function applySortOrder(items) {
+        const sortMode = sortSel?.value || 'next_visit';
+        const sorted = [...items];
+        if (sortMode === 'last_visit_old') {
+          sorted.sort((a, b) => {
+            const at = a.last_visit ? new Date(a.last_visit).getTime() : -Infinity;
+            const bt = b.last_visit ? new Date(b.last_visit).getTime() : -Infinity;
+            return at - bt;
+          });
+        } else if (sortMode === 'name') {
+          sorted.sort((a, b) => (a.customer_name || '').localeCompare(b.customer_name || '', 'ja'));
+        }
+        return sorted;
+      }
+
+      // 各絞り込み条件に何人該当するかをオプションに表示（クリックしなくても状況が分かるように）
+      function updateFilterCounts() {
+        if (!filterSel) return;
+        const counts = { all: allItems.length, 'user-overdue': 0, 'store-overdue': 0, dormant: 0 };
+        allItems.forEach(c => {
+          if (typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0) counts['user-overdue']++;
+          if (typeof c.storeOverdueDays === 'number' && c.storeOverdueDays < 0) counts['store-overdue']++;
+          if (c.status === 'dormant' || c.status === 'churned') counts.dormant++;
+        });
+        const labels = { all: 'すべて', 'user-overdue': 'ユーザー想定超過のみ', 'store-overdue': '店舗推奨超過のみ', dormant: '休眠のみ' };
+        Array.from(filterSel.options).forEach(opt => { opt.textContent = `${labels[opt.value]}（${counts[opt.value] ?? 0}）`; });
+      }
+
       function render() {
         const filter = filterSel?.value || 'all';
         const kw = (searchInput?.value || '').trim().toLowerCase();
-        const items = allItems.filter(c => {
+        const items = applySortOrder(allItems.filter(c => {
           if (kw && !(c.customer_name || '').toLowerCase().includes(kw)) return false;
           if (filter === 'user-overdue') return typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0;
           if (filter === 'store-overdue') return typeof c.storeOverdueDays === 'number' && c.storeOverdueDays < 0;
           if (filter === 'dormant') return c.status === 'dormant' || c.status === 'churned';
           return true;
-        });
+        }));
         if (!items.length) {
           listEl.innerHTML = '<p class="muted">該当するお客様はいません。</p>';
           return;
@@ -1639,6 +1672,7 @@ export default function ProviderDashboardPage() {
           if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
           staffList = staffRes.ok ? await staffRes.json() : [];
           allItems = await res.json();
+          updateFilterCounts();
 
           const capBanner = document.getElementById('customers-cap-banner');
           if (capBanner) {
@@ -1769,6 +1803,7 @@ export default function ProviderDashboardPage() {
 
       if (searchInput) searchInput.addEventListener('input', render);
       if (filterSel) filterSel.addEventListener('change', render);
+      if (sortSel) sortSel.addEventListener('change', render);
       document.querySelectorAll('[data-tab="customers"]').forEach(btn => btn.addEventListener('click', () => { loadFields(); loadMenus(); loadAll(); loadManualCustomers(); }, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'customers') { loadFields(); loadMenus(); loadAll(); loadManualCustomers(); }
     })();
@@ -5298,17 +5333,8 @@ export default function ProviderDashboardPage() {
         {/* New Me Log：紐づいている顧客の一覧 */}
         <div className="tab-pane" id="tab-customers">
           <div className="card" style={{ padding: '24px' }}>
-            <div style={{ marginBottom: '16px' }}>
-              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>顧客管理：New Me Log で紐づいているお客様</h2>
-              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-                お客様がNew Me Log（無料の来店サイクル管理ツール）にご自身で登録し、お店を紐づけると、ここに表示されます。固定メモ・来店記録・AI傾向分析もこの一覧の各カードから行えます。<br />
-                リマインドは、店舗の公式LINEを連携している場合はそちらから、未連携の場合はFineme公式LINEから自動で送られます。まだ案内していない場合は
-                <a href="/provider/log-toolkit" style={{ color: 'inherit', textDecoration: 'underline' }}>紹介用QRコード</a>
-                をお店に置いてください。
-              </p>
-            </div>
             <div id="customers-cap-banner"></div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '8px' }}>
               <label className="muted" style={{ fontSize: '13px' }}>表示：</label>
               <select id="customers-filter">
                 <option value="all">すべて</option>
@@ -5316,8 +5342,17 @@ export default function ProviderDashboardPage() {
                 <option value="store-overdue">店舗推奨超過のみ</option>
                 <option value="dormant">休眠のみ</option>
               </select>
+              <label className="muted" style={{ fontSize: '13px', marginLeft: '4px' }}>並び替え：</label>
+              <select id="customers-sort">
+                <option value="next_visit">次回目安が近い順</option>
+                <option value="last_visit_old">最終来店が古い順</option>
+                <option value="name">名前順</option>
+              </select>
               <input id="karte-search" type="text" placeholder="お客様の名前で絞り込み" style={{ flex: '1 1 200px', maxWidth: '260px', padding: '8px 12px', border: '1.5px solid rgba(26,20,16,0.15)', borderRadius: '8px' }} />
             </div>
+            <p className="muted" style={{ fontSize: '12px', margin: '0 0 12px', lineHeight: '1.6' }}>
+              New Me Log（無料の来店サイクル管理ツール）で紐づいたお客様が表示されます。固定メモ・来店記録・AI傾向分析もこの一覧の各カードから行えます。まだ案内していない場合は<a href="/provider/log-toolkit" style={{ color: 'inherit', textDecoration: 'underline' }}>紹介用QRコード</a>をお店に置いてください。
+            </p>
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
           </div>
 
