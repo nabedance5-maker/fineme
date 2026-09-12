@@ -22,6 +22,7 @@ export async function GET(request) {
     .maybeSingle();
 
   return Response.json({
+    id: user.id,
     display_name: data?.display_name || '',
     share_diagnosis: !!data?.share_diagnosis,
     share_roadmap: !!data?.share_roadmap,

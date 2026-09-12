@@ -803,6 +803,10 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [userPrefilled, setUserPrefilled] = useState(false);
+  // ログイン中のお客様のFineme user_id。予約に紐づけておかないと、承認/代替提案の
+  // LINE通知（notifyCustomerLine）が送り先を特定できず届かない（でお報告2026-09-12：
+  // ログインして予約したのに代替提案のLINE通知が来なかった不具合の原因）。
+  const [userId, setUserId] = useState('');
   const [includeMeScan, setIncludeMeScan] = useState(true);
 
   // スタッフ指名予約・即時予約（hacomono/STORES網羅計画 Phase 1）。
@@ -846,6 +850,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         .then(r => r.json())
         .then(data => {
           if (!data || data.error) return;
+          if (data.id) setUserId(data.id);
           const fullName = [data.last_name, data.first_name].filter(Boolean).join(' ');
           // @line.fineme.me はシステム内部メールのため空欄にする
           const realEmail = (data.email || '').endsWith('@line.fineme.me') ? '' : (data.email || '');
@@ -904,6 +909,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       const user_contact = [formState.email, formState.phone].filter(Boolean).join(' / ');
       const body = {
         provider_id: provider.id,
+        user_id: userId || null,
         user_name: formState.name,
         user_contact,
         message: meScanNote + noteParts.join('\n'),
