@@ -3672,6 +3672,8 @@ export default function ProviderDashboardPage() {
       let resourceList = [];
       let resourceFeatureOn = false;
       let selectedDate = todayStr;
+      // ピルをクリックして手動で日付を選んだ後は、自動フォーカス（下記）を邪魔しないようにする
+      let userPickedDate = false;
       let viewMode = 'staff'; // 'staff' | 'resource'（でお要望2026-09-12：カレンダーをスタッフ別/部屋別で切り替え）
 
       function weekDates() {
@@ -3714,6 +3716,7 @@ export default function ProviderDashboardPage() {
         }).join('');
         pillsEl.querySelectorAll('[data-cal-pill]').forEach(btn => btn.addEventListener('click', () => {
           selectedDate = btn.dataset.calPill;
+          userPickedDate = true;
           renderPills();
           renderDay();
         }));
@@ -3772,7 +3775,7 @@ export default function ProviderDashboardPage() {
             // （でお要望2026-09-12：指名予約と見分けたい）。実際の担当スタッフ列でのみ意味を持つ
             // 区別のため、groupKeyがstaff_idかつ「指名なし」バケット以外の列でだけ適用する。
             const isManualAssign = groupKey === 'staff_id' && col.id !== null && r.staff_manually_assigned;
-            const isPending = r.status === 'pending';
+            const isPending = r.status === 'pending' || r.status === 'counter_proposed';
             return `
               <div class="cal-block${r.status === 'visited' ? ' is-visited' : ''}${isManualAssign ? ' is-manual-assign' : ''}${isPending ? ' is-pending' : ''}" style="top:${top}px;height:${height}px" data-cal-open="${r.id}">
                 <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}
@@ -3822,12 +3825,13 @@ export default function ProviderDashboardPage() {
       function renderAgendaInto(container, items) {
         if (!items.length) { container.innerHTML = '<p class="muted" style="font-size:13px">この日の予約はありません。</p>'; return; }
         container.innerHTML = items.map(r => `
-          <div class="cal-agenda-row" data-cal-open="${r.id}" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid rgba(26,20,16,0.08);border-radius:10px;margin-bottom:6px;${r.status === 'visited' ? 'opacity:.6' : ''}${r.status === 'pending' ? 'border-style:dashed;border-color:#f59e0b' : ''}">
+          <div class="cal-agenda-row" data-cal-open="${r.id}" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid rgba(26,20,16,0.08);border-radius:10px;margin-bottom:6px;${r.status === 'visited' ? 'opacity:.6' : ''}${(r.status === 'pending' || r.status === 'counter_proposed') ? 'border-style:dashed;border-color:#f59e0b' : ''}">
             <strong style="font-size:13px;flex-shrink:0">${r.time ? r.time.slice(0, 5) : '--:--'}</strong>
             <div style="flex:1;min-width:0">
               <strong style="font-size:13px">${esc(r.user_name || '')}</strong>
               ${r.staff_name ? `<span class="muted" style="font-size:12px;margin-left:6px">${esc(r.staff_name)}${r.staff_manually_assigned ? '<span style="color:#3b82f6;font-weight:700"> （指名なし）</span>' : ''}</span>` : ''}
               ${r.status === 'pending' ? '<span style="font-size:11px;font-weight:700;color:#b45309;margin-left:6px">返答待ち</span>' : ''}
+              ${r.status === 'counter_proposed' ? '<span style="font-size:11px;font-weight:700;color:#b45309;margin-left:6px">代替提案中（返答待ち）</span>' : ''}
             </div>
           </div>
         `).join('');
@@ -3850,6 +3854,16 @@ export default function ProviderDashboardPage() {
         byId = {};
         rows.forEach(r => { (byDate[r.date] = byDate[r.date] || []).push(r); byId[r.id] = r; });
         if (!dates.some(d => fmtDate(d) === selectedDate)) selectedDate = from;
+        // 「今日」がデフォルト選択だと、明日以降に届いた予約リクエスト・確定予約が
+        // 画面上は何も無いように見えてしまう（でお報告2026-09-12：承認したのに
+        // カレンダーに出ていないように見えた）。今日に予約が無く他の日にはある場合、
+        // 手動選択前に限り直近の予約がある日へ自動フォーカスする。
+        if (!userPickedDate && !(byDate[selectedDate] || []).length) {
+          const withData = dates.map(fmtDate).filter(d => (byDate[d] || []).length);
+          if (withData.length) {
+            selectedDate = withData.find(d => d >= todayStr) || withData[0];
+          }
+        }
         renderPills();
         renderDay();
       }
@@ -3872,7 +3886,7 @@ export default function ProviderDashboardPage() {
       let modalUserId = null;
       let modalReservationId = null;
 
-      const STATUS_LABEL_CAL = { approved: '確定済み', visited: '来店済み', pending: '返答待ち（申請中）' };
+      const STATUS_LABEL_CAL = { approved: '確定済み', visited: '来店済み', pending: '返答待ち（申請中）', counter_proposed: '代替提案中（お客様の返答待ち）' };
 
       async function openMemberModal(reservationId) {
         const r = byId[reservationId];
@@ -3965,9 +3979,9 @@ export default function ProviderDashboardPage() {
       document.getElementById('cal-modal-close')?.addEventListener('click', () => { if (modalEl) modalEl.style.display = 'none'; });
       modalEl?.addEventListener('click', (e) => { if (e.target === modalEl) modalEl.style.display = 'none'; });
 
-      document.getElementById('cal-prev-btn')?.addEventListener('click', () => { weekStart.setDate(weekStart.getDate() - 7); loadWeek(); });
-      document.getElementById('cal-next-btn')?.addEventListener('click', () => { weekStart.setDate(weekStart.getDate() + 7); loadWeek(); });
-      document.getElementById('cal-today-btn')?.addEventListener('click', () => { weekStart = mondayOf(new Date()); selectedDate = todayStr; loadWeek(); });
+      document.getElementById('cal-prev-btn')?.addEventListener('click', () => { weekStart.setDate(weekStart.getDate() - 7); userPickedDate = false; loadWeek(); });
+      document.getElementById('cal-next-btn')?.addEventListener('click', () => { weekStart.setDate(weekStart.getDate() + 7); userPickedDate = false; loadWeek(); });
+      document.getElementById('cal-today-btn')?.addEventListener('click', () => { weekStart = mondayOf(new Date()); selectedDate = todayStr; userPickedDate = false; loadWeek(); });
 
       const agendaPopupEl = document.getElementById('cal-agenda-popup');
       const agendaPopupTitleEl = document.getElementById('cal-agenda-popup-title');

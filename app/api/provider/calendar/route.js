@@ -3,6 +3,9 @@
 // 第1希望の日時・スタッフの場所に表示する（でお要望2026-09-12：予約リクエストが届いたら
 // カレンダー上でも該当の時間・スタッフのところが分かるようにしたい）。フロント側でpendingは
 // 見た目を変える（is-pending）ことで、確定済みと区別できるようにする。
+// counter_proposed（店舗が代替日時を提案し、お客様の返答待ち）も同様に対象に含める
+// （でお報告2026-09-12：代替提案後カレンダーから消えて見えなくなっていた漏れを修正）。
+// この場合の表示日時はお客様の第1希望ではなく、店舗が提案したcounter_date/counter_time。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 
@@ -32,9 +35,9 @@ export async function GET(request) {
   // シンプル・確実（OR条件でのANDレンジ絞り込みはSupabaseクエリビルダーで書きにくいため）。
   const { data: rows, error } = await supabase
     .from('reservations')
-    .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, confirmed_date, confirmed_time, staff_id, staff_manually_assigned, resource_id, booking_mode, slot_id')
+    .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, confirmed_date, confirmed_time, counter_date, counter_time, staff_id, staff_manually_assigned, resource_id, booking_mode, slot_id')
     .eq('provider_id', provider.id)
-    .in('status', ['pending', 'approved', 'visited'])
+    .in('status', ['pending', 'approved', 'visited', 'counter_proposed'])
     .gte('reserved_date', from)
     .lte('reserved_date', to);
   if (error) return Response.json({ error: error.message }, { status: 500 });
@@ -70,8 +73,8 @@ export async function GET(request) {
   const result = (rows || [])
     .map(r => ({
       id: r.id,
-      date: r.confirmed_date || r.reserved_date,
-      time: r.confirmed_time || r.start_time,
+      date: r.confirmed_date || r.counter_date || r.reserved_date,
+      time: r.confirmed_time || r.counter_time || r.start_time,
       user_id: r.user_id || null,
       user_name: r.user_name,
       user_contact: r.user_contact || null,
