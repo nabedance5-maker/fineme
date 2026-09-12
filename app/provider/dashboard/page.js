@@ -4426,7 +4426,7 @@ export default function ProviderDashboardPage() {
               <button className="tab-btn" data-tab="stats">概況</button>
               <button className="tab-btn" data-tab="calendar">予約カレンダー</button>
               <button className="tab-btn" data-tab="requests">予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
-              <button className="tab-btn" data-tab="customers">New Me Log</button>
+              <button className="tab-btn" data-tab="customers">顧客管理（New Me Log）</button>
               <button className="tab-btn" data-tab="karte">カルテ</button>
               <button className="tab-btn" data-tab="reviews">クチコミ</button>
               <button className="tab-btn" data-tab="sales">売上管理</button>
@@ -5332,7 +5332,7 @@ export default function ProviderDashboardPage() {
 
           <div className="card" style={{ padding: '24px' }}>
             <div style={{ marginBottom: '16px' }}>
-              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>New Me Log で紐づいているお客様</h2>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>顧客管理：New Me Log で紐づいているお客様</h2>
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
                 お客様がNew Me Log（無料の来店サイクル管理ツール）にご自身で登録し、お店を紐づけると、ここに表示されます。<br />
                 リマインドは、店舗の公式LINEを連携している場合はそちらから、未連携の場合はFineme公式LINEから自動で送られます。まだ案内していない場合は
