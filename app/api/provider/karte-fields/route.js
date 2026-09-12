@@ -12,7 +12,8 @@ async function getProviderByToken(token) {
   return data || null;
 }
 
-const FIELD_TYPES = ['text', 'select', 'stars'];
+// カルテのカスタム性拡張（でお要望2026-09-12）：数値・日付・チェックボックスを追加
+const FIELD_TYPES = ['text', 'select', 'stars', 'number', 'date', 'checkbox'];
 
 export async function GET(request) {
   const authHeader = request.headers.get('Authorization');

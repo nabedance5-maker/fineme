@@ -1215,17 +1215,34 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'customers') loadDormantSettings();
     })();
 
-    // ── New Me Log 顧客一覧タブ ───────────────────────────────────
+    // ── 顧客管理タブ（New Me Log ＋ カルテ 統合） ─────────────────────
+    // 元々「New Me Log」（お客様の自己申告する来店サイクル）と「カルテ」（店舗だけの
+    // 非公開メモ・履歴）は別タブだったが、どちらも同じ/api/provider/customersのデータを
+    // 元にした「この顧客はどうなってる？」を見るための画面であり、店舗からすると
+    // タブを跨いで探す必要があり非効率だった（でお指摘2026-09-12）。1つの顧客カードに
+    // 両方の情報を統合し、カルテのカスタム項目もtext/select/starsに加えてnumber/date/
+    // checkboxを追加してさらに自由度を高めた（でお要望）。
     (() => {
       const token = getSupabaseToken();
       if (!token) return;
       const listEl = document.getElementById('customers-list');
       const filterSel = document.getElementById('customers-filter');
+      const searchInput = document.getElementById('karte-search');
+      const kfListEl = document.getElementById('kf-list');
+      const kfLabelInput = document.getElementById('kf-label');
+      const kfTypeSel = document.getElementById('kf-type');
+      const kfOptionsWrap = document.getElementById('kf-options-wrap');
+      const kfOptionsInput = document.getElementById('kf-options');
+      const kfAddBtn = document.getElementById('kf-add-btn');
+      if (!listEl) return;
 
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
       function fmtDate(d) {
         if (!d) return '未設定';
         return new Date(d).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
+      }
+      function fmtDateTime(d) {
+        return new Date(d).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
       }
       function fmtFreq(c) {
         if (c.frequency_months) return c.frequency_months === 1 ? '月1回' : `${c.frequency_months}ヶ月に1回`;
@@ -1245,176 +1262,15 @@ export default function ProviderDashboardPage() {
         const s = STATUS_LABEL[status] || STATUS_LABEL.active;
         return `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:${s.bg};color:${s.fg};border-radius:99px;">${s.label}</span>`;
       }
-
-      let allItems = [];
-      let staffList = [];
-
-      function render() {
-        if (!listEl) return;
-        const filter = filterSel?.value || 'all';
-        const items = allItems.filter(c => {
-          if (filter === 'user-overdue') return typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0;
-          if (filter === 'store-overdue') return typeof c.storeOverdueDays === 'number' && c.storeOverdueDays < 0;
-          if (filter === 'dormant') return c.status === 'dormant' || c.status === 'churned';
-          return true;
-        });
-        if (!items.length) {
-          listEl.innerHTML = '<p class="muted">該当するお客様はいません。</p>';
-          return;
-        }
-        listEl.innerHTML = '';
-        items.forEach(c => {
-          const def = ALL_AXES[c.axis];
-          const axisLabel = def ? `${def.icon} ${esc(def.label)}` : esc(c.axis);
-          const row = document.createElement('div');
-          row.style.cssText = 'border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px;background:#fff;';
-          const staffOptions = ['<option value="">担当未割当</option>']
-            .concat(staffList.map(s => `<option value="${s.id}"${c.assignedStaffId === s.id ? ' selected' : ''}>${esc(s.name)}</option>`))
-            .join('');
-          row.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
-              <div style="flex:1;min-width:0;">
-                <div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:4px;">${esc(c.customer_name)}${c.hasStoreNote ? ' <span title="店舗メモあり" style="font-size:12px;">📝</span>' : ''}</div>
-                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
-                  <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
-                  <span style="font-size:11px;color:#9ca3af;">${esc(c.name)}</span>
-                  ${statusBadge(c.status)}
-                  ${overdueBadge('ユーザー想定', c.userOverdueDays)}
-                  ${overdueBadge('店舗推奨', c.storeOverdueDays)}
-                  ${c.meScanDone ? '<span style="font-size:11px;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;">Me Scan済</span>' : ''}
-                  ${c.mirror?.visualTier ? `<span style="font-size:11px;padding:2px 8px;background:#fff7ed;color:#c2410c;border-radius:99px;">Mirror: ${esc(c.mirror.visualTier)}</span>` : ''}
-                </div>
-                <p style="font-size:12px;color:#6b7280;margin:0 0 8px;">前回：${fmtDate(c.last_visit)}／次回目安：${fmtDate(c.next_visit)}／頻度：${fmtFreq(c)}／来店回数：${c.visitCount ?? 0}回</p>
-                <div class="cluster" style="gap:8px;align-items:center;">
-                  <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#374151;border-color:#d1d5db;" data-nudge="${c.user_id}">声かけメッセージを送る</button>
-                  <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#374151;border-color:#d1d5db;" data-note="${c.user_id}">${c.hasStoreNote ? 'メモを見る/編集' : 'メモを追加'}</button>
-                  <select data-assign="${c.user_id}" style="font-size:12px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">${staffOptions}</select>
-                </div>
-                <div class="note-box" id="note-box-${c.user_id}" style="display:none;margin-top:8px;"></div>
-              </div>
-            </div>
-          `;
-          listEl.appendChild(row);
-        });
-
-        listEl.querySelectorAll('[data-assign]').forEach(sel => sel.addEventListener('change', async () => {
-          const uid = sel.dataset.assign;
-          sel.disabled = true;
-          const res = await fetch(`/api/provider/customers/${uid}/note`, {
-            method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
-            body: JSON.stringify({ assigned_staff_id: sel.value || null }),
-          });
-          showToast(res.ok ? '担当を更新しました' : '更新に失敗しました');
-          sel.disabled = false;
-        }));
-
-        listEl.querySelectorAll('[data-nudge]').forEach(btn => btn.addEventListener('click', async () => {
-          const message = prompt('お客様に送るメッセージを入力してください（店舗の公式LINE連携済みならそちらから、未連携ならFineme公式LINEから届きます）');
-          if (!message?.trim()) return;
-          btn.disabled = true;
-          const res = await fetch(`/api/provider/customers/${btn.dataset.nudge}/nudge`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
-            body: JSON.stringify({ message }),
-          });
-          const data = await res.json();
-          showToast(res.ok ? '送信しました' : `送信エラー：${data.error || '不明'}`);
-          btn.disabled = false;
-        }));
-
-        listEl.querySelectorAll('[data-note]').forEach(btn => btn.addEventListener('click', async () => {
-          const uid = btn.dataset.note;
-          const box = document.getElementById(`note-box-${uid}`);
-          if (!box) return;
-          if (box.style.display === 'block') { box.style.display = 'none'; return; }
-          box.style.display = 'block';
-          box.innerHTML = '<p class="muted" style="font-size:12px;">読み込み中…</p>';
-          const res = await fetch(`/api/provider/customers/${uid}/note`, { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
-          const data = await res.json();
-          box.innerHTML = `
-            <textarea data-note-input="${uid}" style="width:100%;min-height:70px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;" placeholder="この店舗だけが見られるメモ（要望・注意点など）。お客様には表示されません。">${esc(data.note || '')}</textarea>
-            <button type="button" class="btn" style="font-size:12px;padding:5px 10px;margin-top:6px;" data-note-save="${uid}">メモを保存</button>
-          `;
-          box.querySelector(`[data-note-save="${uid}"]`).addEventListener('click', async (e) => {
-            const btnSave = e.currentTarget;
-            const note = box.querySelector(`[data-note-input="${uid}"]`).value;
-            btnSave.disabled = true;
-            await fetch(`/api/provider/customers/${uid}/note`, {
-              method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
-              body: JSON.stringify({ note }),
-            });
-            showToast('メモを保存しました');
-            btnSave.disabled = false;
-          });
-        }));
-      }
-
-      async function loadCustomers() {
-        if (!listEl) return;
-        listEl.innerHTML = '<p class="muted">読み込み中…</p>';
-        const [res, staffRes] = await Promise.all([
-          fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } }),
-          fetch('/api/provider/staff', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } }),
-        ]);
-        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
-        staffList = staffRes.ok ? await staffRes.json() : [];
-        allItems = await res.json();
-
-        const capBanner = document.getElementById('customers-cap-banner');
-        if (capBanner) {
-          const totalConnected = res.headers.get('X-Fineme-Total-Connected');
-          const visibleLimit = res.headers.get('X-Fineme-Visible-Limit');
-          capBanner.innerHTML = totalConnected
-            ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:13px;color:#92400e">
-                🔒 現在ライトプランのため、New Me Log連携は先着${visibleLimit}人まで表示（実際の連携数：${totalConnected}人）。連携自体・お客様への通知は制限されません。プレミアムプランで無制限になります。
-              </div>`
-            : '';
-        }
-
-        if (!allItems.length) {
-          listEl.innerHTML = '<p class="muted">まだ紐づいているお客様はいません。QRコードでNew Me Logをご案内ください。</p>';
-          return;
-        }
-        render();
-      }
-
-      if (filterSel) filterSel.addEventListener('change', render);
-      document.querySelectorAll('[data-tab="customers"]').forEach(btn => btn.addEventListener('click', loadCustomers, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'customers') loadCustomers();
-    })();
-
-    // ── カルテタブ ─────────────────────────────────────────────
-    // New Me Logタブの中に埋もれていた店舗メモ機能を、店舗の人が馴染みのある
-    // 「カルテ」という独立タブとして出す（でお指摘：見つけづらい）。
-    // 2026-09拡張：固定メモ1本だけでなく、店舗が自由に定義したカスタム項目
-    // （自由記述／選択肢／5段階評価）付きの来店記録を追記していける履歴、
-    // その履歴からAIが傾向を出す機能を追加（でお要望）。
-    (() => {
-      const token = getSupabaseToken();
-      if (!token) return;
-      const listEl = document.getElementById('karte-list');
-      const searchInput = document.getElementById('karte-search');
-      const kfListEl = document.getElementById('kf-list');
-      const kfLabelInput = document.getElementById('kf-label');
-      const kfTypeSel = document.getElementById('kf-type');
-      const kfOptionsWrap = document.getElementById('kf-options-wrap');
-      const kfOptionsInput = document.getElementById('kf-options');
-      const kfAddBtn = document.getElementById('kf-add-btn');
-      if (!listEl) return;
-
-      function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-      function fmtDate(d) {
-        if (!d) return '未設定';
-        return new Date(d).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
-      }
-      function fmtDateTime(d) {
-        return new Date(d).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
-      }
       function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` }; }
 
       let allItems = [];
+      let staffList = [];
       let karteFields = [];
       let providerMenus = [];
-      const FIELD_TYPE_LABEL = { text: '自由記述', select: '選択肢', stars: '5段階評価' };
+      // カルテのカスタム性を拡張（でお要望2026-09-12）：自由記述／選択肢／5段階評価に加え、
+      // 数値／日付／チェックボックスを追加。
+      const FIELD_TYPE_LABEL = { text: '自由記述', select: '選択肢', stars: '5段階評価', number: '数値', date: '日付', checkbox: 'チェック' };
 
       // サービス設定タブで登録済みの自店メニュー一覧を、来店記録の「利用メニュー」選択肢として流用する。
       // 予約データ(reservations)とメニュー(provider_experience_menus)がID単位で綺麗に紐づいていないため
@@ -1508,6 +1364,15 @@ export default function ProviderDashboardPage() {
           const stars = [1, 2, 3, 4, 5].map(n => `<button type="button" class="karte-star" data-star="${n}" style="font-size:22px;background:none;border:none;cursor:pointer;color:#d1d5db;padding:2px;">★</button>`).join('');
           return `<div class="form-field"><label>${esc(f.label)}</label><div data-kv-stars="${f.id}" data-kv-value="0">${stars}</div></div>`;
         }
+        if (f.field_type === 'number') {
+          return `<div class="form-field"><label>${esc(f.label)}</label><input type="number" data-kv="${f.id}" /></div>`;
+        }
+        if (f.field_type === 'date') {
+          return `<div class="form-field"><label>${esc(f.label)}</label><input type="date" data-kv="${f.id}" /></div>`;
+        }
+        if (f.field_type === 'checkbox') {
+          return `<label class="checkbox-item"><input type="checkbox" data-kv-checkbox="${f.id}" /> ${esc(f.label)}</label>`;
+        }
         return `<div class="form-field"><label>${esc(f.label)}</label><input type="text" data-kv="${f.id}" /></div>`;
       }
 
@@ -1538,6 +1403,7 @@ export default function ProviderDashboardPage() {
         const values = {};
         container.querySelectorAll('[data-kv]').forEach(el => { if (el.value) values[el.dataset.kv] = el.value; });
         container.querySelectorAll('[data-kv-stars]').forEach(el => { if (Number(el.dataset.kvValue) > 0) values[el.dataset.kvStars] = Number(el.dataset.kvValue); });
+        container.querySelectorAll('[data-kv-checkbox]').forEach(el => { if (el.checked) values[el.dataset.kvCheckbox] = true; });
         return values;
       }
 
@@ -1547,9 +1413,17 @@ export default function ProviderDashboardPage() {
       function renderHistoryHtml(entries) {
         if (!entries.length) return '<p class="muted" style="font-size:12px;">まだ記録がありません。</p>';
         const labelMap = {};
-        karteFields.forEach(f => { labelMap[f.id] = f.label; });
+        const typeMap = {};
+        karteFields.forEach(f => { labelMap[f.id] = f.label; typeMap[f.id] = f.field_type; });
+        function fmtCustomValue(fid, val) {
+          if (typeMap[fid] === 'checkbox') return val ? '✓' : '';
+          if (typeMap[fid] === 'date' && val) return new Date(val).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
+          return esc(val);
+        }
         return entries.map((e, i) => {
-          const custom = Object.entries(e.custom_values || {}).map(([fid, val]) => `${esc(labelMap[fid] || fid)}: ${esc(val)}`).join(' / ');
+          const custom = Object.entries(e.custom_values || {})
+            .filter(([fid, val]) => !(typeMap[fid] === 'checkbox' && !val))
+            .map(([fid, val]) => `${esc(labelMap[fid] || fid)}: ${fmtCustomValue(fid, val)}`).join(' / ');
           const prev = entries[i + 1];
           const intervalLabel = prev
             ? `・前回から${Math.round((new Date(e.created_at) - new Date(prev.created_at)) / 86400000)}日`
@@ -1565,8 +1439,15 @@ export default function ProviderDashboardPage() {
       }
 
       function render() {
+        const filter = filterSel?.value || 'all';
         const kw = (searchInput?.value || '').trim().toLowerCase();
-        const items = kw ? allItems.filter(c => (c.customer_name || '').toLowerCase().includes(kw)) : allItems;
+        const items = allItems.filter(c => {
+          if (kw && !(c.customer_name || '').toLowerCase().includes(kw)) return false;
+          if (filter === 'user-overdue') return typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0;
+          if (filter === 'store-overdue') return typeof c.storeOverdueDays === 'number' && c.storeOverdueDays < 0;
+          if (filter === 'dormant') return c.status === 'dormant' || c.status === 'churned';
+          return true;
+        });
         if (!items.length) {
           listEl.innerHTML = '<p class="muted">該当するお客様はいません。</p>';
           return;
@@ -1574,14 +1455,27 @@ export default function ProviderDashboardPage() {
         listEl.innerHTML = items.map(c => {
           const def = ALL_AXES[c.axis];
           const axisLabel = def ? `${def.icon} ${esc(def.label)}` : esc(c.axis);
+          const staffOptions = ['<option value="">担当未割当</option>']
+            .concat(staffList.map(s => `<option value="${s.id}"${c.assignedStaffId === s.id ? ' selected' : ''}>${esc(s.name)}</option>`))
+            .join('');
           return `
             <div style="border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px;background:#fff;">
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
                 <div style="font-size:14px;font-weight:700;color:#111827;">${esc(c.customer_name)}</div>
-                <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
-                ${c.meScanType?.fullName ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;" title="Me Scanタイプ">🧬 ${esc(c.meScanType.fullName)}</span>` : ''}
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
+                  ${statusBadge(c.status)}
+                  ${overdueBadge('ユーザー想定', c.userOverdueDays)}
+                  ${overdueBadge('店舗推奨', c.storeOverdueDays)}
+                  ${c.meScanType?.fullName ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;" title="Me Scanタイプ">🧬 ${esc(c.meScanType.fullName)}</span>` : c.meScanDone ? '<span style="font-size:11px;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;">Me Scan済</span>' : ''}
+                  ${c.mirror?.visualTier ? `<span style="font-size:11px;padding:2px 8px;background:#fff7ed;color:#c2410c;border-radius:99px;">Mirror: ${esc(c.mirror.visualTier)}</span>` : ''}
+                </div>
               </div>
-              <p style="font-size:12px;color:#6b7280;margin:0 0 8px;">前回来店：${fmtDate(c.last_visit)}</p>
+              <p style="font-size:12px;color:#6b7280;margin:0 0 8px;">前回：${fmtDate(c.last_visit)}／次回目安：${fmtDate(c.next_visit)}／頻度：${fmtFreq(c)}／来店回数：${c.visitCount ?? 0}回</p>
+              <div class="cluster" style="gap:8px;align-items:center;margin-bottom:12px;">
+                <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#374151;border-color:#d1d5db;" data-nudge="${c.user_id}">声かけメッセージを送る</button>
+                <select data-assign="${c.user_id}" style="font-size:12px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">${staffOptions}</select>
+              </div>
 
               <label style="display:block;font-size:11px;font-weight:700;color:#6b7280;margin-bottom:4px;">📌 固定メモ</label>
               <textarea data-karte-input="${c.user_id}" style="width:100%;min-height:60px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;box-sizing:border-box;" placeholder="読み込み中…" disabled></textarea>
@@ -1597,6 +1491,30 @@ export default function ProviderDashboardPage() {
               <div class="karte-insight-box" id="karte-insight-${c.user_id}" style="display:none;margin-top:10px;"></div>
             </div>`;
         }).join('');
+
+        listEl.querySelectorAll('[data-assign]').forEach(sel => sel.addEventListener('change', async () => {
+          const uid = sel.dataset.assign;
+          sel.disabled = true;
+          const res = await fetch(`/api/provider/customers/${uid}/note`, {
+            method: 'PUT', headers: authHeaders(),
+            body: JSON.stringify({ assigned_staff_id: sel.value || null }),
+          });
+          showToast(res.ok ? '担当を更新しました' : '更新に失敗しました');
+          sel.disabled = false;
+        }));
+
+        listEl.querySelectorAll('[data-nudge]').forEach(btn => btn.addEventListener('click', async () => {
+          const message = prompt('お客様に送るメッセージを入力してください（店舗の公式LINE連携済みならそちらから、未連携ならFineme公式LINEから届きます）');
+          if (!message?.trim()) return;
+          btn.disabled = true;
+          const res = await fetch(`/api/provider/customers/${btn.dataset.nudge}/nudge`, {
+            method: 'POST', headers: authHeaders(),
+            body: JSON.stringify({ message }),
+          });
+          const data = await res.json();
+          showToast(res.ok ? '送信しました' : `送信エラー：${data.error || '不明'}`);
+          btn.disabled = false;
+        }));
 
         // メモ本文は行数分だけ別APIのため、表示後に並列で埋める
         items.forEach(c => {
@@ -1708,13 +1626,33 @@ export default function ProviderDashboardPage() {
         }));
       }
 
-      async function loadKarte() {
+      async function loadAll() {
         listEl.innerHTML = '<p class="muted">読み込み中…</p>';
         try {
-          const res = await fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+          const [res, staffRes] = await Promise.all([
+            fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } }),
+            fetch('/api/provider/staff', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } }),
+          ]);
           if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
+          staffList = staffRes.ok ? await staffRes.json() : [];
           allItems = await res.json();
-          render();
+
+          const capBanner = document.getElementById('customers-cap-banner');
+          if (capBanner) {
+            const totalConnected = res.headers.get('X-Fineme-Total-Connected');
+            const visibleLimit = res.headers.get('X-Fineme-Visible-Limit');
+            capBanner.innerHTML = totalConnected
+              ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:13px;color:#92400e">
+                  🔒 現在ライトプランのため、New Me Log連携は先着${visibleLimit}人まで表示（実際の連携数：${totalConnected}人）。連携自体・お客様への通知は制限されません。プレミアムプランで無制限になります。
+                </div>`
+              : '';
+          }
+
+          if (!allItems.length) {
+            listEl.innerHTML = '<p class="muted">まだ紐づいているお客様はいません。QRコードでNew Me Logをご案内ください。</p>';
+          } else {
+            render();
+          }
           renderManual(); // 会員一覧が揃ったので非会員側の「会員と紐付ける」候補も更新
         } catch {
           listEl.innerHTML = '<p class="muted">読み込みに失敗しました</p>';
@@ -1827,8 +1765,9 @@ export default function ProviderDashboardPage() {
       });
 
       if (searchInput) searchInput.addEventListener('input', render);
-      document.querySelectorAll('[data-tab="karte"]').forEach(btn => btn.addEventListener('click', () => { loadFields(); loadMenus(); loadKarte(); loadManualCustomers(); }, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'karte') { loadFields(); loadMenus(); loadKarte(); loadManualCustomers(); }
+      if (filterSel) filterSel.addEventListener('change', render);
+      document.querySelectorAll('[data-tab="customers"]').forEach(btn => btn.addEventListener('click', () => { loadFields(); loadMenus(); loadAll(); loadManualCustomers(); }, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'customers') { loadFields(); loadMenus(); loadAll(); loadManualCustomers(); }
     })();
 
     // ── 回数券・パッケージタブ ────────────────────────────────────
@@ -4426,8 +4365,7 @@ export default function ProviderDashboardPage() {
               <button className="tab-btn" data-tab="stats">概況</button>
               <button className="tab-btn" data-tab="calendar">予約カレンダー</button>
               <button className="tab-btn" data-tab="requests">予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
-              <button className="tab-btn" data-tab="customers">顧客管理（New Me Log）</button>
-              <button className="tab-btn" data-tab="karte">カルテ</button>
+              <button className="tab-btn" data-tab="customers">顧客管理（New Me Log・カルテ）</button>
               <button className="tab-btn" data-tab="reviews">クチコミ</button>
               <button className="tab-btn" data-tab="sales">売上管理</button>
               <button className="tab-btn" data-tab="pos" data-feature="pos">POS・在庫<span className="feature-off-badge" data-feature-badge></span></button>
@@ -5334,7 +5272,7 @@ export default function ProviderDashboardPage() {
             <div style={{ marginBottom: '16px' }}>
               <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>顧客管理：New Me Log で紐づいているお客様</h2>
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-                お客様がNew Me Log（無料の来店サイクル管理ツール）にご自身で登録し、お店を紐づけると、ここに表示されます。<br />
+                お客様がNew Me Log（無料の来店サイクル管理ツール）にご自身で登録し、お店を紐づけると、ここに表示されます。固定メモ・来店記録・AI傾向分析もこの一覧の各カードから行えます。<br />
                 リマインドは、店舗の公式LINEを連携している場合はそちらから、未連携の場合はFineme公式LINEから自動で送られます。まだ案内していない場合は
                 <a href="/provider/log-toolkit" style={{ color: 'inherit', textDecoration: 'underline' }}>紹介用QRコード</a>
                 をお店に置いてください。
@@ -5349,19 +5287,16 @@ export default function ProviderDashboardPage() {
                 <option value="store-overdue">店舗推奨超過のみ</option>
                 <option value="dormant">休眠のみ</option>
               </select>
+              <input id="karte-search" type="text" placeholder="お客様の名前で絞り込み" style={{ flex: '1 1 200px', maxWidth: '260px', padding: '8px 12px', border: '1.5px solid rgba(26,20,16,0.15)', borderRadius: '8px' }} />
             </div>
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
           </div>
-        </div>
 
-        {/* 顧客カルテ：店舗が自由に定義したカスタム項目（自由記述／選択肢／5段階評価）付きの
-            来店記録を追記していける履歴＋AI傾向分析（でお要望 2026-09）。固定の1行メモも別途残す。 */}
-        <div className="tab-pane" id="tab-karte">
-          <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px' }}>
+          <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px', marginTop: '16px' }}>
             <div>
               <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>カルテ項目を設定</h2>
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-                自由記述だけでなく、貴店で欲しい項目（例：気をつける点・特徴・癖など）を自由に追加できます。項目は貴店だけに表示され、お客様には見えません。
+                自由記述・選択肢・5段階評価・数値・日付・チェックボックスから、貴店で欲しい項目（例：気をつける点・特徴・癖など）を自由に追加できます。項目は貴店だけに表示され、お客様には見えません。
               </p>
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
@@ -5375,6 +5310,9 @@ export default function ProviderDashboardPage() {
                   <option value="text">自由記述</option>
                   <option value="select">選択肢</option>
                   <option value="stars">5段階評価</option>
+                  <option value="number">数値</option>
+                  <option value="date">日付</option>
+                  <option value="checkbox">チェックボックス</option>
                 </select>
               </div>
               <div className="form-field" id="kf-options-wrap" style={{ minWidth: '220px', display: 'none' }}>
@@ -5384,19 +5322,6 @@ export default function ProviderDashboardPage() {
               <button className="btn" id="kf-add-btn" type="button">追加する</button>
             </div>
             <div id="kf-list"></div>
-          </div>
-
-          <div className="card" style={{ padding: '24px' }}>
-            <div style={{ marginBottom: '16px' }}>
-              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>お客様カルテ</h2>
-              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-                固定メモに加えて、来店ごとに記録を追記できます。記録が貯まると、AIが傾向を分析します。お客様には表示されません。New Me Logで貴店と紐づいている（Finemeに登録済みの）お客様が対象です。Fineme未登録のお客様は下の「非会員のお客様」から記録できます。
-              </p>
-            </div>
-            <div className="form-field" style={{ maxWidth: '320px', marginBottom: '12px' }}>
-              <input id="karte-search" type="text" placeholder="お客様の名前で絞り込み" />
-            </div>
-            <div id="karte-list"><p className="muted">読み込み中…</p></div>
           </div>
 
           <div className="card" style={{ padding: '24px' }}>
