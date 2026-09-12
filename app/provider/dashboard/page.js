@@ -46,27 +46,23 @@ export default function ProviderDashboardPage() {
       .pd-page-root .btn-ghost { background: transparent; color: #1a1410; border-color: rgba(26,20,16,0.2); }
       .pd-page-root .btn-ghost:hover { background: rgba(26,20,16,0.05); color: #1a1410; box-shadow: none; }
       .pd-page-root .section-title { color: #1a1410; }
-      /* 予約カレンダー（2026-09-11〜12・hacomono参考、今野くんの実地フィードバックで
-         PC用グリッドをそのままスマホに縮めない設計に）。日付ピルはPC・スマホ共通、
-         その下をPCは時間×スタッフのグリッド、スマホはアジェンダリストで出し分ける。 */
+      /* 予約カレンダー（2026-09-11〜12・hacomono参考）。日付ピルはPC・スマホ共通。
+         グリッドはPC・スマホとも同一構造：横スクロールでスタッフ列を、グリッド内の
+         縦スクロールで時間帯を確認する。時刻ラベル列はsticky leftで横スクロール中も
+         固定表示。640px以下はスタッフ列を狭くし、でお要望どおり画面内に3〜4人分見える幅に。 */
       .cal-day-pills { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
       .cal-day-pills::-webkit-scrollbar { display: none; }
       .cal-day-pill { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 14px; border-radius: 12px; border: 1px solid rgba(26,20,16,0.1); background: #fff; font-size: 11px; color: rgba(26,20,16,0.65); cursor: pointer; }
       .cal-day-pill .cal-pill-date { font-size: 15px; font-weight: 800; color: #1a1410; }
       .cal-day-pill.is-active { background: rgba(201,168,76,0.16); border-color: #c9a84c; color: #a8842f; }
       .cal-day-pill.is-active .cal-pill-date { color: #a8842f; }
-      .cal-mobile { display: none; }
-      .cal-desktop { display: block; }
-      /* 時間×スタッフのグリッド（hacomono参考）。ヘッダー行（スタッフ名）は固定し、
-         時刻ラベル列＋スタッフ列だけを縦スクロールさせる（1軸スクロールに留める）。
-         30分刻みの行高を基準にJS側で予約ブロックをtop/heightで絶対配置する。 */
-      .cal-day-grid { border: 1px solid rgba(26,20,16,0.08); border-radius: 10px; overflow: hidden; }
-      .cal-day-grid-header { display: flex; background: #fff; border-bottom: 1px solid rgba(26,20,16,0.08); }
-      .cal-time-col-spacer { flex-shrink: 0; width: 48px; }
-      .cal-staff-head { flex: 1; min-width: 130px; text-align: center; font-size: 11.5px; font-weight: 700; padding: 6px 4px; border-right: 1px solid rgba(26,20,16,0.06); }
+      .cal-day-grid { border: 1px solid rgba(26,20,16,0.08); border-radius: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .cal-day-grid-header { display: flex; width: max-content; min-width: 100%; background: #fff; border-bottom: 1px solid rgba(26,20,16,0.08); }
+      .cal-time-col-spacer { flex-shrink: 0; width: 40px; position: sticky; left: 0; z-index: 2; background: #fff; }
+      .cal-staff-head { flex: 1; min-width: 130px; text-align: center; font-size: 11.5px; font-weight: 700; padding: 6px 4px; border-right: 1px solid rgba(26,20,16,0.06); background: #fff; }
       .cal-staff-head:last-child { border-right: none; }
-      .cal-day-grid-body { display: flex; max-height: 560px; overflow-y: auto; }
-      .cal-time-col { flex-shrink: 0; width: 48px; position: relative; background: rgba(26,20,16,0.02); border-right: 1px solid rgba(26,20,16,0.08); }
+      .cal-day-grid-body { display: flex; width: max-content; min-width: 100%; max-height: 560px; overflow-y: auto; }
+      .cal-time-col { flex-shrink: 0; width: 40px; position: sticky; left: 0; z-index: 1; background: rgba(250,248,243,0.97); border-right: 1px solid rgba(26,20,16,0.08); }
       .cal-time-label { position: absolute; left: 0; right: 4px; text-align: right; font-size: 10px; color: rgba(26,20,16,0.4); transform: translateY(-50%); }
       .cal-staff-col { flex: 1; min-width: 130px; position: relative; border-right: 1px solid rgba(26,20,16,0.06); }
       .cal-staff-col:last-child { border-right: none; }
@@ -81,8 +77,7 @@ export default function ProviderDashboardPage() {
       .cal-modal-overlay { position: fixed; inset: 0; background: rgba(10,15,30,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; }
       .cal-modal-card { background: #fff; border-radius: 16px; padding: 22px; max-width: 460px; width: 100%; max-height: 84vh; overflow-y: auto; }
       @media (max-width: 640px) {
-        .cal-desktop { display: none; }
-        .cal-mobile { display: block; }
+        .cal-staff-head, .cal-staff-col { min-width: 90px; }
       }
       @media (max-width: 900px) {
         .pd-topbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #0a0f1e; border-bottom: 1px solid rgba(201,168,76,0.15); position: fixed; top: 0; left: 0; right: 0; z-index: 40; }
@@ -3466,9 +3461,6 @@ export default function ProviderDashboardPage() {
       const labelEl = document.getElementById('cal-week-label');
       const pillsEl = document.getElementById('cal-day-pills');
       const gridWrapEl = document.getElementById('cal-day-grid');
-      const staffPillsEl = document.getElementById('cal-staff-pills');
-      const mobileViewEl = document.getElementById('cal-mobile-view');
-      const mobileNoteEl = document.getElementById('cal-mobile-note');
       if (!pillsEl) return;
 
       const WEEKDAY_JA = ['日', '月', '火', '水', '木', '金', '土'];
@@ -3501,7 +3493,6 @@ export default function ProviderDashboardPage() {
       let byId = {};
       let staffList = [];
       let selectedDate = todayStr;
-      let selectedStaffKey = null; // モバイル専用：選んだスタッフ1人分のグリッドを表示（初期値はloadStaff後に決定）
 
       function weekDates() {
         return Array.from({ length: 7 }, (_, i) => {
@@ -3516,7 +3507,6 @@ export default function ProviderDashboardPage() {
         if (!res.ok) return;
         const rows = await res.json();
         staffList = (rows || []).filter(s => s.bookable !== false);
-        if (!selectedStaffKey) selectedStaffKey = staffColumns()[0]?.key || 'unassigned';
       }
 
       function renderPills() {
@@ -3617,33 +3607,8 @@ export default function ProviderDashboardPage() {
         container.querySelectorAll('[data-cal-open]').forEach(el => el.addEventListener('click', () => openMemberModal(el.dataset.calOpen)));
       }
 
-      function renderStaffPills() {
-        if (!staffPillsEl) return;
-        const options = staffColumns();
-        staffPillsEl.innerHTML = options.map(o => `
-          <button type="button" class="cal-day-pill${selectedStaffKey === o.key ? ' is-active' : ''}" data-cal-staff="${o.key}">
-            <span class="cal-pill-date" style="font-size:12px">${esc(o.name)}</span>
-          </button>
-        `).join('');
-        staffPillsEl.querySelectorAll('[data-cal-staff]').forEach(btn => btn.addEventListener('click', () => {
-          selectedStaffKey = btn.dataset.calStaff;
-          renderStaffPills();
-          renderMobileView();
-        }));
-      }
-
-      function renderMobileView() {
-        if (!mobileViewEl) return;
-        const items = byDate[selectedDate] || [];
-        const col = staffColumns().find(c => c.key === selectedStaffKey);
-        mobileViewEl.innerHTML = buildGridHtml(items, col ? [col] : []);
-        mobileViewEl.querySelectorAll('[data-cal-open]').forEach(el => el.addEventListener('click', () => openMemberModal(el.dataset.calOpen)));
-        if (mobileNoteEl) mobileNoteEl.textContent = '※ 所要時間はメニューごとの登録が無いため目安表示です（即時予約の枠はその枠の時間で正確に表示）';
-      }
-
       function renderDay() {
         renderDesktopGrid();
-        renderMobileView();
       }
 
       async function loadWeek() {
@@ -3757,7 +3722,7 @@ export default function ProviderDashboardPage() {
       document.getElementById('cal-agenda-popup-close')?.addEventListener('click', () => { if (agendaPopupEl) agendaPopupEl.style.display = 'none'; });
       agendaPopupEl?.addEventListener('click', (e) => { if (e.target === agendaPopupEl) agendaPopupEl.style.display = 'none'; });
 
-      async function initAndLoad() { await loadStaff(); renderStaffPills(); await loadWeek(); }
+      async function initAndLoad() { await loadStaff(); await loadWeek(); }
       document.querySelectorAll('[data-tab="calendar"]').forEach(btn => btn.addEventListener('click', initAndLoad, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'calendar') initAndLoad();
     })();
@@ -4410,22 +4375,11 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn btn-ghost" id="cal-agenda-popup-btn" style={{ fontSize: '12px', padding: '6px 12px', flexShrink: 0 }}>予約一覧</button>
             </div>
 
-            {/* デスクトップ：選んだ1日をhacomono風の時間×スタッフのグリッドで表示。
-                パッと見で空き時間が分かるようにする狙い。640px以下はCSSで非表示 */}
-            <div className="cal-desktop">
-              <div id="cal-day-grid" className="cal-day-grid"></div>
-              <p className="muted" style={{ fontSize: '11px', margin: '8px 0 0' }}>※ 所要時間はメニューごとの登録が無いため目安表示です（即時予約の枠はその枠の時間で正確に表示）</p>
-            </div>
-
-            {/* スマホ：横スクロールで2軸スクロールになるPC版そのままの縮小は避けつつ、
-                スタッフを1人ずつ切り替えれば同じ時間軸グリッドの「パッと見」を再現できる
-                （でお要望2026-09-12：スマホにもグリッドが欲しい）。全員分をまとめて見たい時は
-                上の「予約一覧」ボタンからポップアップで時系列リストを開ける。 */}
-            <div className="cal-mobile">
-              <div id="cal-staff-pills" className="cal-day-pills" style={{ marginTop: '2px' }}></div>
-              <div id="cal-mobile-view"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
-              <p className="muted" style={{ fontSize: '11px', margin: '8px 0 0' }} id="cal-mobile-note"></p>
-            </div>
+            {/* 時間×スタッフのグリッド（hacomono参考）。PC・スマホ共通の1つのグリッドで、
+                横スクロールでスタッフ列を、縦スクロールで時間帯を確認する。640px以下は
+                でお要望（2026-09-12）でスタッフ列を狭くし、画面内に3〜4人分見える形に調整。 */}
+            <div id="cal-day-grid" className="cal-day-grid"></div>
+            <p className="muted" style={{ fontSize: '11px', margin: '8px 0 0' }}>※ 所要時間はメニューごとの登録が無いため目安表示です（即時予約の枠はその枠の時間で正確に表示）</p>
           </div>
         </div>
 
