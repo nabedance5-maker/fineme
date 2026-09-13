@@ -631,6 +631,9 @@ export default function ProviderDashboardPage() {
         setTimeout(() => t.remove(), 2000);
       } catch {}
     }
+    // 動的HTML内のinline onclick属性はグローバルスコープで実行されるため、そこから
+    // 呼べるようwindowにも公開する（approveRequest等の既存グローバル関数と同じ理由）。
+    window.showToast = showToast;
 
     // 市区町村セレクトを都道府県に連動して更新
     function populateCitySelect(selectEl, prefecture) {
@@ -3242,7 +3245,7 @@ export default function ProviderDashboardPage() {
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
             <strong style="font-size:16px">${esc(r.user_name)}</strong>
             <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${statusColor}20;color:${statusColor}">${statusLabel}</span>
-            ${r.user_id ? `<button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="window.openCustomerModal && window.openCustomerModal('${r.user_id}','member')">👤 顧客情報を見る</button>` : ''}
+            ${r.user_id ? `<button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="window.openCustomerModal ? window.openCustomerModal('${r.user_id}','member') : showToast('読み込み中です。少し待ってから再度お試しください')">👤 顧客情報を見る</button>` : ''}
           </div>
           ${meMapNote ? `
           <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:10px">
@@ -4244,7 +4247,10 @@ export default function ProviderDashboardPage() {
           // フルの顧客情報ポップアップ（カルテ編集・回数券・声かけ・担当割当・AI傾向分析）を
           // その場で開けるようにする導線（でお要望2026-09-13：「他の場所でもポップアップを
           // 出す時はちゃんと顧客情報全部見れて編集できたりページ飛べたりできるように」）。
-          document.getElementById('cal-modal-open-cust-btn')?.addEventListener('click', () => window.openCustomerModal?.(r.user_id, 'member'));
+          document.getElementById('cal-modal-open-cust-btn')?.addEventListener('click', () => {
+            if (!window.openCustomerModal) { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
+            window.openCustomerModal(r.user_id, 'member');
+          });
         }
         // 担当スタッフ・部屋の割り当て（指名の有無に関わらずいつでも変更できる。でお要望2026-09-12）
         if (modalStaffSelectEl) {
@@ -4366,16 +4372,22 @@ export default function ProviderDashboardPage() {
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
       const todayStr = new Date().toISOString().split('T')[0];
 
-      // 会員（user_idあり）の名前だけクリック可能にし、フルの顧客情報ポップアップ
-      // （カルテ編集・回数券・声かけ・担当割当）をその場で開けるようにする
-      // （でお要望2026-09-13）。非会員（ゲスト予約）はuser_idが無いため対象外。
+      // 名前をタップするとフルの顧客情報ポップアップ（カルテ編集・回数券・声かけ・
+      // 担当割当）を開けるようにする（でお要望2026-09-13）。会員（user_idあり）以外は
+      // 対象外だが、以前は非対象の名前を見た目上も普通のテキストにしていたため
+      // 「タップしても何も起きない＝壊れてる」ように見えてしまっていた
+      // （でお報告2026-09-13：「名前タップしてもポップアップひらかない」）。
+      // 全ての名前をクリック可能にし、対象外の場合は理由をトーストで説明する。
       function custNameHtml(userId, name) {
-        return userId
-          ? `<span style="cursor:pointer;color:#2563eb;text-decoration:underline;text-underline-offset:2px" data-today-cust="${userId}">${esc(name || '')}</span>`
-          : `<span>${esc(name || '')}</span>`;
+        return `<span style="cursor:pointer;color:#2563eb;text-decoration:underline;text-underline-offset:2px" data-today-cust="${userId || ''}">${esc(name || '')}</span>`;
       }
       function bindTodayCustHandlers(container) {
-        container.querySelectorAll('[data-today-cust]').forEach(el => el.addEventListener('click', () => window.openCustomerModal?.(el.dataset.todayCust, 'member')));
+        container.querySelectorAll('[data-today-cust]').forEach(el => el.addEventListener('click', () => {
+          const uid = el.dataset.todayCust;
+          if (!uid) { showToast('Finemeに未登録のお客様のため、顧客情報がありません'); return; }
+          if (!window.openCustomerModal) { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
+          window.openCustomerModal(uid, 'member');
+        }));
       }
 
       async function loadTodayReservations() {
@@ -4926,6 +4938,7 @@ export default function ProviderDashboardPage() {
       clearInterval(sessionKeepAlive);
       document.removeEventListener('visibilitychange', onVisible);
       // Clean up window globals
+      delete window.showToast;
       delete window.approveRequest;
       delete window.rejectRequest;
       delete window.showVisitModal;
