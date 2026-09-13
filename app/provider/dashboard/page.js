@@ -4956,11 +4956,14 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="customers">顧客管理（New Me Log・カルテ）</button>
                   <button className="tab-btn" data-tab="reviews">クチコミ</button>
                   <button className="tab-btn" data-tab="visit-settings">来店設定</button>
+                  {/* 回数券は日々の売上集計ではなく「顧客ごとの発行・消化を管理する台帳」の
+                      性質が強いため、売上カテゴリーから顧客管理カテゴリーへ移動
+                      （でお指摘2026-09-13：「本当に売上タブ内が適切か？」）。 */}
+                  <button className="tab-btn" data-tab="packages">回数券</button>
                 </div>
                 <div className="pd-panel-section" data-panel="sales" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="sales">売上管理</button>
                   <button className="tab-btn" data-tab="pos" data-feature="pos">POS・在庫<span className="feature-off-badge" data-feature-badge></span></button>
-                  <button className="tab-btn" data-tab="packages">回数券</button>
                 </div>
                 <div className="pd-panel-section" data-panel="store" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="profile">プロフィール</button>
