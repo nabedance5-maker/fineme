@@ -206,12 +206,15 @@ export default function ProviderDashboardPage() {
     });
     document.getElementById('pd-backdrop')?.addEventListener('click', closeMobileNav);
 
-    // ── チュートリアル（「💡 使い方を見る」ボタンで手動表示） ─────────
+    // ── チュートリアル ─────────────────────────────────────────
     // 以前はタブを開くたびに（初回のみ）自動でこの案内を上部に出していたが、
     // 「使い始めは助かるが慣れたら邪魔・毎回一番上に出るのがわかりづらい」という
-    // でお指摘（2026-09-12）を受けて自動表示は廃止。代わりに①初回ダッシュボード
-    // 訪問時だけ「📘 チュートリアル」タブ（全タブの案内をまとめて閲覧）に自動着地
-    // ②各タブのヘッダーにある「💡 使い方を見る」ボタンでいつでも手動表示、の2経路に統一した。
+    // でお指摘（2026-09-12）を受けて自動表示は廃止。①初回ダッシュボード訪問時だけ
+    // 「📘 チュートリアル」タブ（全タブの案内をまとめて閲覧）に自動着地、②各タブの
+    // ヘッダーにあった「💡 使い方を見る」ボタンでその場に手動表示、の2経路にしていたが、
+    // ②は全タブヘッダーに常時表示されノイズになっていた上、内容は「チュートリアル」
+    // タブに既にまとまっているため重複していた（でお+奥様指摘2026-09-13：使い方
+    // メニューにまとめるだけで十分）。②のボタンは廃止し、①のみに統一。
     function renderTutorial(tabId) {
       const box = document.getElementById('tab-tutorial-banner');
       if (!box) return;
@@ -237,12 +240,6 @@ export default function ProviderDashboardPage() {
         box.innerHTML = '';
       });
     }
-    document.getElementById('tutorial-show-btn')?.addEventListener('click', () => {
-      const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'today';
-      localStorage.removeItem(TUTORIAL_MUTED_KEY);
-      localStorage.removeItem(tutorialSeenKey(activeTab));
-      renderTutorial(activeTab);
-    });
     document.getElementById('tutorial-unmute-btn')?.addEventListener('click', () => {
       localStorage.removeItem(TUTORIAL_MUTED_KEY);
       Object.keys(TAB_TUTORIALS).forEach(key => localStorage.removeItem(tutorialSeenKey(key)));
@@ -4784,11 +4781,11 @@ export default function ProviderDashboardPage() {
                 </div>
                 <p className="muted" id="provider-page-link" style={{ margin: '0' }}></p>
               </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <button type="button" id="tutorial-show-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>💡 使い方を見る</button>
-                <a href="/business/provider-guide" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px' }}>📖 使い方説明書 ↗</a>
-                <a id="view-page-btn" href="#" target="_blank" className="btn btn-ghost" style={{ fontSize: '13px' }}>自分のページを見る ↗</a>
-              </div>
+              {/* 「使い方を見る／使い方説明書／自分のページを見る」は全タブのヘッダーに
+                  常時表示されていて、スクロールするたびに視界に入る割に毎回使うもの
+                  ではなくノイズになっていた（でお+奥様指摘2026-09-13：「使い方」メニュー
+                  があるのだからそこにまとめるだけで十分では）。「使い方」タブに集約した
+                  ため、ここには何も置かない。 */}
             </div>
 
             {/* 初回チュートリアル（タブごとに初回のみ表示） */}
@@ -4848,6 +4845,7 @@ export default function ProviderDashboardPage() {
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <a id="view-page-btn" href="#" target="_blank" className="btn btn-ghost" style={{ fontSize: '12px' }}>マイページ ↗</a>
                 <a href="/business/provider-guide" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '12px' }}>📖 PDFで見る ↗</a>
                 <button type="button" id="tutorial-unmute-btn" className="btn btn-ghost" style={{ fontSize: '12px' }}>各タブの案内を出し直す</button>
               </div>
