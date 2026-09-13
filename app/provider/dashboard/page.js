@@ -4845,7 +4845,7 @@ export default function ProviderDashboardPage() {
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <a id="view-page-btn" href="#" target="_blank" className="btn btn-ghost" style={{ fontSize: '12px' }}>マイページ ↗</a>
+                <a id="view-page-btn" href="#" target="_blank" className="btn btn-ghost" style={{ fontSize: '12px' }}>公開ページを確認 ↗</a>
                 <a href="/business/provider-guide" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '12px' }}>📖 PDFで見る ↗</a>
                 <button type="button" id="tutorial-unmute-btn" className="btn btn-ghost" style={{ fontSize: '12px' }}>各タブの案内を出し直す</button>
               </div>
