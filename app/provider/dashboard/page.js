@@ -4787,10 +4787,17 @@ export default function ProviderDashboardPage() {
       // 全ての名前をクリック可能にし、対象外の場合は理由をトーストで説明する。
       // 名前をHTML属性に埋め込むとダブルクォート等でエスケープが崩れる懸念があるため、
       // uid→表示名のルックアップをJS側に持ち、属性にはuidだけ埋め込む。
+      //
+      // でお報告2026-09-14：名前だけ（テキストの文字ぴったりの<span>）をクリック領域に
+      // していたため、当たり判定が非常に狭く「押しても無反応」に見えていた
+      // （予約リクエスト一覧の.req-rowはpadding付きの行全体がクリック領域）。
+      // data-today-custは呼び出し側で行全体(<div>)に付けるよう変更する。
       const todayNameByUid = {};
-      function custNameHtml(userId, name) {
+      function rememberTodayName(userId, name) {
         if (userId) todayNameByUid[userId] = name || '';
-        return `<span style="cursor:pointer;color:#2563eb;text-decoration:underline;text-underline-offset:2px" data-today-cust="${userId || ''}">${esc(name || '')}</span>`;
+      }
+      function custNameSpan(userId, name) {
+        return `<span style="${userId ? 'color:#2563eb;text-decoration:underline;text-underline-offset:2px' : ''}">${esc(name || '')}</span>`;
       }
       // でお指摘2026-09-13：「予約リクエストの一覧ではできるんだから全く同じ仕組みに
       // すればいいだけ」。タッチ判定の独自対策（前回の推測）は的外れだったため撤去し、
@@ -4819,10 +4826,11 @@ export default function ProviderDashboardPage() {
         if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
         const rows = await res.json();
         if (!rows.length) { el.innerHTML = '<p class="muted" style="font-size:13px">今日の予約はありません。</p>'; return; }
+        rows.forEach(r => rememberTodayName(r.user_id, r.user_name));
         el.innerHTML = rows.map(r => `
-          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(26,20,16,0.06)">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(26,20,16,0.06);cursor:pointer" data-today-cust="${r.user_id || ''}">
             <strong style="font-size:13px;flex-shrink:0">${r.time ? r.time.slice(0, 5) : '--:--'}</strong>
-            <span style="font-size:13px">${custNameHtml(r.user_id, r.user_name)}</span>
+            <span style="font-size:13px">${custNameSpan(r.user_id, r.user_name)}</span>
             ${r.staff_name ? `<span class="muted" style="font-size:12px">${esc(r.staff_name)}</span>` : ''}
           </div>
         `).join('');
@@ -4839,10 +4847,11 @@ export default function ProviderDashboardPage() {
         const rows = await res.json();
         const pending = rows.filter(r => r.status === 'pending');
         if (!pending.length) { el.innerHTML = '<p class="muted" style="font-size:13px">未対応のリクエストはありません。</p>'; return; }
+        pending.forEach(r => rememberTodayName(r.user_id, r.user_name));
         el.innerHTML = `<p style="margin:0 0 8px;font-size:20px;font-weight:800">${pending.length}件</p>` +
           pending.slice(0, 5).map(r => `
-            <div style="padding:6px 0;border-bottom:1px solid rgba(26,20,16,0.06);font-size:13px">
-              ${custNameHtml(r.user_id, r.user_name)} <span class="muted" style="font-size:12px">${esc(r.reserved_date || '')} ${esc(r.start_time || '')}</span>
+            <div style="padding:6px 0;border-bottom:1px solid rgba(26,20,16,0.06);font-size:13px;cursor:pointer" data-today-cust="${r.user_id || ''}">
+              ${custNameSpan(r.user_id, r.user_name)} <span class="muted" style="font-size:12px">${esc(r.reserved_date || '')} ${esc(r.start_time || '')}</span>
             </div>
           `).join('');
         bindTodayCustHandlers(el);
@@ -5963,6 +5972,17 @@ export default function ProviderDashboardPage() {
           </div>
 
           <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
+            <h3 style={{ margin: 0, fontSize: '14px' }}>期間を作成</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: '10px', alignItems: 'end' }}>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>開始日 *</label><input type="date" id="shift-period-start" /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>終了日 *</label><input type="date" id="shift-period-end" /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>希望の提出締切（任意）</label><input type="date" id="shift-period-deadline" /></div>
+              <button type="button" className="btn" id="shift-period-add-btn">この期間を作成</button>
+            </div>
+            <div id="shift-period-list" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
+          </div>
+
+          <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
             <h3 style={{ margin: 0, fontSize: '14px' }}>シフト作成ルール</h3>
             <div className="form-field" style={{ marginBottom: 0 }}>
               <label>作り方</label>
@@ -5982,7 +6002,7 @@ export default function ProviderDashboardPage() {
               各日付にまとめて一括で割り当てる方式に変更）。 */}
           <div id="shift-patterns-wrap" className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px', display: 'none' }}>
             <h3 style={{ margin: 0, fontSize: '14px' }}>時間帯パターン</h3>
-            <p className="muted" style={{ fontSize: '12px', margin: 0 }}>時間帯×必要人数の組み合わせをパターンとして登録します。期間の詳細画面で、カレンダーから日付をまとめて選んでパターンを割り当てられます。</p>
+            <p className="muted" style={{ fontSize: '12px', margin: 0 }}>時間帯×必要人数の組み合わせをパターンとして登録します。パターンを作ったら、上で作成した期間の一覧から期間を開き、その中の「日付ごとの必要人数パターン」でカレンダーの日付にまとめて割り当ててください。</p>
             <div id="shift-patterns-list" className="stack" style={{ gap: '10px' }}>読み込み中…</div>
             <div style={{ borderTop: '1px solid rgba(26,20,16,0.1)', paddingTop: '14px' }}>
               <div className="form-field" style={{ marginBottom: '10px' }}><label>パターン名</label><input type="text" id="shift-pattern-name" placeholder="例：平日パターン" /></div>
@@ -6006,17 +6026,6 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn btn-ghost" id="shift-priorities-save-btn">優先度を保存</button>
               <span id="shift-priorities-save-msg" style={{ fontSize: '12px', marginLeft: '8px' }}></span>
             </div>
-          </div>
-
-          <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
-            <h3 style={{ margin: 0, fontSize: '14px' }}>期間を作成</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: '10px', alignItems: 'end' }}>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>開始日 *</label><input type="date" id="shift-period-start" /></div>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>終了日 *</label><input type="date" id="shift-period-end" /></div>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>希望の提出締切（任意）</label><input type="date" id="shift-period-deadline" /></div>
-              <button type="button" className="btn" id="shift-period-add-btn">この期間を作成</button>
-            </div>
-            <div id="shift-period-list" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
           </div>
 
           <div className="card stack" style={{ padding: '24px', gap: '16px', display: 'none' }} id="shift-detail-section">
