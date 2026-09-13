@@ -6,6 +6,7 @@ import { TAB_TUTORIALS, TUTORIAL_GROUPS, TUTORIAL_MUTED_KEY, tutorialSeenKey } f
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
 import { CUSTOMER_SCRIPT_AXES } from '@/lib/customer-scripts';
+import { CATEGORY_DEFS, LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS } from '@/lib/dashboard-prefs';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -86,15 +87,29 @@ export default function ProviderDashboardPage() {
       .cal-staff-col:last-child { border-right: none; }
       .cal-hour-line { position: absolute; left: 0; right: 0; border-top: 1px solid rgba(26,20,16,0.06); }
       .cal-hour-line.is-half { border-top-style: dashed; border-top-color: rgba(26,20,16,0.04); }
-      .cal-block { position: absolute; left: 2px; right: 2px; background: rgba(201,168,76,0.16); border-left: 3px solid #c9a84c; border-radius: 5px; padding: 2px 5px; font-size: 10.5px; line-height: 1.3; overflow: hidden; cursor: pointer; }
-      .cal-block:hover { background: rgba(201,168,76,0.28); }
-      .cal-block.is-visited { border-left-color: #9ca3af; background: rgba(26,20,16,0.05); opacity: .7; }
-      .cal-block.is-pending { background: repeating-linear-gradient(135deg, rgba(245,158,11,0.14), rgba(245,158,11,0.14) 6px, rgba(245,158,11,0.22) 6px, rgba(245,158,11,0.22) 12px); border-left-color: #f59e0b; border-left-style: dashed; }
-      .cal-block.is-pending:hover { background: rgba(245,158,11,0.28); }
-      .cal-block.is-manual-assign { background: rgba(96,165,250,0.16); border-left-color: #60a5fa; }
-      .cal-block.is-manual-assign:hover { background: rgba(96,165,250,0.28); }
+      .cal-block, .cal-block-h { background: rgba(201,168,76,0.16); border-left: 3px solid #c9a84c; border-radius: 5px; padding: 2px 5px; font-size: 10.5px; line-height: 1.3; overflow: hidden; cursor: pointer; }
+      .cal-block:hover, .cal-block-h:hover { background: rgba(201,168,76,0.28); }
+      .cal-block.is-visited, .cal-block-h.is-visited { border-left-color: #9ca3af; background: rgba(26,20,16,0.05); opacity: .7; }
+      .cal-block.is-pending, .cal-block-h.is-pending { background: repeating-linear-gradient(135deg, rgba(245,158,11,0.14), rgba(245,158,11,0.14) 6px, rgba(245,158,11,0.22) 6px, rgba(245,158,11,0.22) 12px); border-left-color: #f59e0b; border-left-style: dashed; }
+      .cal-block.is-pending:hover, .cal-block-h.is-pending:hover { background: rgba(245,158,11,0.28); }
+      .cal-block.is-manual-assign, .cal-block-h.is-manual-assign { background: rgba(96,165,250,0.16); border-left-color: #60a5fa; }
+      .cal-block.is-manual-assign:hover, .cal-block-h.is-manual-assign:hover { background: rgba(96,165,250,0.28); }
       .cal-block-tag { display: block; font-size: 9.5px; color: #3b82f6; font-weight: 700; }
-      .cal-block strong { display: block; font-size: 10.5px; }
+      .cal-block strong, .cal-block-h strong { display: block; font-size: 10.5px; }
+      .cal-block { position: absolute; left: 2px; right: 2px; }
+      /* 縦横入れ替え版（でお要望2026-09-13：店舗によって時間軸を横に置きたい／
+         部屋別をメインにしたい、というニーズがあるため設定でどちらも選べるようにした。
+         こちらは1時間あたりの幅を広めに取り、予約者名が途中で切れにくいようにする）。 */
+      .cal-day-grid-h { border: 1px solid rgba(26,20,16,0.08); border-radius: 10px; overflow: auto; max-height: 560px; -webkit-overflow-scrolling: touch; }
+      .cal-grid-inner-h { display: grid; width: max-content; min-width: 100%; }
+      .cal-hour-head-spacer { position: sticky; top: 0; left: 0; z-index: 4; background: #fff; border-bottom: 1px solid rgba(26,20,16,0.08); border-right: 1px solid rgba(26,20,16,0.08); }
+      .cal-hour-head-track { position: sticky; top: 0; z-index: 3; background: #fff; height: 32px; border-bottom: 1px solid rgba(26,20,16,0.08); }
+      .cal-hour-label-h { position: absolute; top: 50%; transform: translate(-6px,-50%); font-size: 11px; font-weight: 700; color: rgba(26,20,16,0.5); }
+      .cal-row-name-h { position: sticky; left: 0; z-index: 2; background: rgba(250,248,243,0.97); display: flex; align-items: center; padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-right: 1px solid rgba(26,20,16,0.08); border-bottom: 1px solid rgba(26,20,16,0.06); }
+      .cal-lane { position: relative; border-bottom: 1px solid rgba(26,20,16,0.06); }
+      .cal-vline { position: absolute; top: 0; bottom: 0; border-left: 1px solid rgba(26,20,16,0.06); }
+      .cal-vline.is-half { border-left-style: dashed; border-left-color: rgba(26,20,16,0.04); }
+      .cal-block-h { position: absolute; top: 4px; bottom: 4px; white-space: nowrap; }
       .cal-agenda-row { cursor: pointer; }
       .cal-agenda-row:hover { background: rgba(26,20,16,0.03); }
       .cal-modal-overlay { position: fixed; inset: 0; background: rgba(10,15,30,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; }
@@ -248,13 +263,47 @@ export default function ProviderDashboardPage() {
 
     const tabParam = new URLSearchParams(location.search).get('tab');
     const DASHBOARD_VISITED_KEY = 'fineme:provider:dashboard-visited';
+    let needsLandingTabApply = false;
     if (tabParam) {
       switchTab(tabParam);
     } else if (!localStorage.getItem(DASHBOARD_VISITED_KEY)) {
       // 初めてのダッシュボード訪問はチュートリアルタブから
       switchTab('tutorial');
+    } else {
+      // URL指定も初回訪問でもない、通常のログイン時。店舗が「起動時に開くタブ」を
+      // カスタマイズしていればそれを優先する（でお要望2026-09-13：予約カレンダーを
+      // 最初に開きたい、等）。設定はAPIから非同期取得するため、取得完了後
+      // （下のdashboardPrefs初期化処理）に一度だけ切り替える。
+      needsLandingTabApply = true;
     }
     localStorage.setItem(DASHBOARD_VISITED_KEY, '1');
+
+    // ── ダッシュボード表示カスタマイズ設定（でお要望2026-09-13） ─────────
+    // 起動時に開くタブ・サイドバーの並び順・カレンダーの向き/初期表示は店舗により
+    // ニーズが分かれるため、lib/dashboard-prefs.jsのデフォルト値を今の構成のまま
+    // 使いつつ、店舗ごとに変更できるようにする。calendar IIFE等、後方の複数の
+    // クロージャから読めるようダッシュボードのトップレベルで保持する。
+    let dashboardPrefs = null;
+    (async () => {
+      const _prefsToken = getSupabaseToken();
+      if (!_prefsToken) return;
+      const res = await fetch('/api/provider/dashboard-prefs', { headers: { Authorization: `Bearer ${_prefsToken}` } });
+      if (!res.ok) return;
+      const { prefs } = await res.json();
+      dashboardPrefs = prefs;
+
+      // サイドバーの並び順を適用（CSS flexのorderプロパティで見た目の順序だけ変える。
+      // DOM構造・data-category自体は変えないので他のロジックへの影響がない）。
+      prefs.sidebar_order.forEach((key, i) => {
+        const btn = document.querySelector(`.pd-rail-btn[data-category="${key}"]`);
+        if (btn) btn.style.order = String(i);
+      });
+
+      // 起動時タブの適用（今表示中が既定の「calendar」ならDOM操作自体をスキップする）。
+      if (needsLandingTabApply && prefs.landing_tab !== 'calendar') {
+        switchTab(prefs.landing_tab);
+      }
+    })();
 
     // ── Provider data helpers ────────────────────────────────────
     function loadProviderData() {
@@ -361,7 +410,6 @@ export default function ProviderDashboardPage() {
       if (badge && fnCode) { badge.textContent = fnCode; badge.style.display = 'inline'; }
       const slug = provider.slug || fnCode.toLowerCase() || '';
       if (slug) {
-        document.getElementById('provider-page-link').textContent = `fineme.me/provider/${slug}`;
         document.getElementById('view-page-btn').href = `/provider/${slug}`;
         const lpPreviewBtn = document.getElementById('lp-preview-btn');
         if (lpPreviewBtn) lpPreviewBtn.href = `/provider/${slug}/for/eyebrow`;
@@ -2307,6 +2355,114 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'features') loadFeatures();
     })();
 
+    // ── 表示設定タブ（でお要望2026-09-13） ──────────────────────────
+    // 起動時に開くタブ・メニューの並び順・予約カレンダーの向き/初期表示は店舗に
+    // よって使いやすさが違うため、lib/dashboard-prefs.jsの構成をそのままデフォルトに
+    // しつつ店舗ごとに変更できるようにする。dashboardPrefs（トップレベルのlet）は
+    // このIIFEの保存成功時にも書き換え、カレンダー等の他クロージャへ即時反映する。
+    (() => {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const landingSel = document.getElementById('ds-landing-tab');
+      const landingMsg = document.getElementById('ds-landing-tab-msg');
+      const orderEl = document.getElementById('ds-sidebar-order');
+      const orderMsg = document.getElementById('ds-sidebar-order-msg');
+      const axisEl = document.getElementById('ds-calendar-axis');
+      const axisMsg = document.getElementById('ds-calendar-axis-msg');
+      const viewEl = document.getElementById('ds-calendar-view');
+      const viewMsg = document.getElementById('ds-calendar-view-msg');
+
+      if (landingSel) landingSel.innerHTML = LANDING_TAB_OPTIONS.map(o => `<option value="${o.key}">${esc(o.label)}</option>`).join('');
+
+      function renderOrderList(order) {
+        if (!orderEl) return;
+        const labelOf = key => CATEGORY_DEFS.find(c => c.key === key)?.label || key;
+        orderEl.innerHTML = order.map((key, i) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:8px">
+            <span style="flex:1;font-size:13px;font-weight:600">${esc(labelOf(key))}</span>
+            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-ds-up="${key}"${i === 0 ? ' disabled' : ''}>↑</button>
+            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-ds-down="${key}"${i === order.length - 1 ? ' disabled' : ''}>↓</button>
+          </div>
+        `).join('');
+        orderEl.querySelectorAll('[data-ds-up]').forEach(btn => btn.addEventListener('click', () => moveOrder(btn.dataset.dsUp, -1)));
+        orderEl.querySelectorAll('[data-ds-down]').forEach(btn => btn.addEventListener('click', () => moveOrder(btn.dataset.dsDown, 1)));
+      }
+
+      function renderRadioGroup(el, options, name, current) {
+        if (!el) return;
+        el.innerHTML = options.map(o => `
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid ${current === o.key ? '#111' : '#e5e7eb'};border-radius:10px;cursor:pointer">
+            <input type="radio" name="${name}" value="${o.key}" ${current === o.key ? 'checked' : ''} />
+            <span style="font-size:13px">${esc(o.label)}</span>
+          </label>
+        `).join('');
+      }
+
+      async function save(patch, msgEl) {
+        if (msgEl) { msgEl.style.color = ''; msgEl.textContent = '保存中…'; }
+        const res = await fetch('/api/provider/dashboard-prefs', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+          body: JSON.stringify(patch),
+        });
+        if (res.ok) {
+          const { prefs } = await res.json();
+          dashboardPrefs = prefs; // カレンダー等、他のクロージャにも即時反映
+          if (msgEl) { msgEl.style.color = '#4ade80'; msgEl.textContent = '✓ 保存しました'; setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 2500); }
+        } else if (msgEl) {
+          msgEl.style.color = '#ef4444'; msgEl.textContent = '保存に失敗しました';
+        }
+        return res.ok;
+      }
+
+      function moveOrder(key, dir) {
+        if (!dashboardPrefs) return;
+        const order = [...dashboardPrefs.sidebar_order];
+        const idx = order.indexOf(key);
+        const swapIdx = idx + dir;
+        if (idx < 0 || swapIdx < 0 || swapIdx >= order.length) return;
+        [order[idx], order[swapIdx]] = [order[swapIdx], order[idx]];
+        renderOrderList(order);
+        save({ sidebar_order: order }, orderMsg).then(ok => {
+          if (ok) {
+            // サイドバーの実際の並び順にもその場で反映する
+            order.forEach((k, i) => {
+              const btn = document.querySelector(`.pd-rail-btn[data-category="${k}"]`);
+              if (btn) btn.style.order = String(i);
+            });
+          }
+        });
+      }
+
+      landingSel?.addEventListener('change', () => save({ landing_tab: landingSel.value }, landingMsg));
+      axisEl?.addEventListener('change', (e) => {
+        const input = e.target.closest('input[name="ds-axis"]');
+        if (!input) return;
+        renderRadioGroup(axisEl, CALENDAR_AXIS_OPTIONS, 'ds-axis', input.value);
+        save({ calendar_axis: input.value }, axisMsg).then(() => window.__calReloadWeek?.());
+      });
+      viewEl?.addEventListener('change', (e) => {
+        const input = e.target.closest('input[name="ds-view"]');
+        if (!input) return;
+        renderRadioGroup(viewEl, CALENDAR_DEFAULT_VIEW_OPTIONS, 'ds-view', input.value);
+        save({ calendar_default_view: input.value }, viewMsg);
+      });
+
+      async function loadDisplaySettings() {
+        const res = await fetch('/api/provider/dashboard-prefs', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+        if (!res.ok) return;
+        const { prefs } = await res.json();
+        dashboardPrefs = prefs;
+        if (landingSel) landingSel.value = prefs.landing_tab;
+        renderOrderList(prefs.sidebar_order);
+        renderRadioGroup(axisEl, CALENDAR_AXIS_OPTIONS, 'ds-axis', prefs.calendar_axis);
+        renderRadioGroup(viewEl, CALENDAR_DEFAULT_VIEW_OPTIONS, 'ds-view', prefs.calendar_default_view);
+      }
+
+      document.querySelectorAll('[data-tab="display-settings"]').forEach(btn => btn.addEventListener('click', loadDisplaySettings, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'display-settings') loadDisplaySettings();
+    })();
+
     // ── 機能フラグによるサイドバーの出し分け（Phase 0基盤） ────────────
     // [data-feature="key"] を持つナビボタンは、その機能がOFFの店舗ではdisplay:noneで
     // 完全に隠していたが、「そもそも機能の存在に気づけない」というでお指摘（2026-09-11）を
@@ -3709,6 +3865,7 @@ export default function ProviderDashboardPage() {
       // ピルをクリックして手動で日付を選んだ後は、自動フォーカス（下記）を邪魔しないようにする
       let userPickedDate = false;
       let viewMode = 'staff'; // 'staff' | 'resource'（でお要望2026-09-12：カレンダーをスタッフ別/部屋別で切り替え）
+      let viewModePicked = false; // 手動で切り替えた後は、店舗の既定値で上書きし直さない
 
       function weekDates() {
         return Array.from({ length: 7 }, (_, i) => {
@@ -3834,10 +3991,69 @@ export default function ProviderDashboardPage() {
         `;
       }
 
+      // 縦横入れ替え版：時間を横軸に、スタッフ/部屋を縦のレーンに置く（でお要望2026-09-13：
+      // 店舗によって見やすい向きが違う。1時間あたりの幅を広めに取り、予約者名が
+      // 途中で切れにくいようにする——横軸なら「1時間ごとの幅」がそのまま調整できる）。
+      // 位置計算の考え方はbuildGridHtmlと同じ連続座標方式で、top/height→left/widthに
+      // 置き換えただけ。ブロックの状態クラス（is-visited等）・タグ表示ロジックも共通。
+      const HOUR_WIDTH_PX = 90;
+      function buildGridHtmlHorizontal(items, columns, groupKey) {
+        const totalMin = RANGE_END_MIN - RANGE_START_MIN;
+        const totalWidth = (totalMin / 60) * HOUR_WIDTH_PX;
+        const rowH = 56; // 各行（スタッフ/部屋1人分）の高さ(px)
+        const nameColWidth = 120;
+
+        let hourHeadHtml = `<div class="cal-hour-head-track" style="width:${totalWidth}px">`;
+        for (let m = RANGE_START_MIN; m <= RANGE_END_MIN; m += 60) {
+          const left = ((m - RANGE_START_MIN) / totalMin) * totalWidth;
+          hourHeadHtml += `<div class="cal-hour-label-h" style="left:${left}px">${String(Math.floor(m / 60)).padStart(2, '0')}:00</div>`;
+        }
+        hourHeadHtml += `</div>`;
+
+        const rowsHtml = columns.map(col => {
+          const colItems = items.filter(r => (r[groupKey] || null) === col.id);
+          let vLines = '';
+          for (let m = RANGE_START_MIN; m <= RANGE_END_MIN; m += 30) {
+            const left = ((m - RANGE_START_MIN) / totalMin) * totalWidth;
+            vLines += `<div class="cal-vline${m % 60 !== 0 ? ' is-half' : ''}" style="left:${left}px"></div>`;
+          }
+          const blocksHtml = colItems.map(r => {
+            const startMin = timeToMinutes(r.time);
+            if (startMin === null) return '';
+            const clampedStart = Math.max(RANGE_START_MIN, Math.min(RANGE_END_MIN, startMin));
+            const left = ((clampedStart - RANGE_START_MIN) / totalMin) * totalWidth;
+            const width = Math.max(64, (durationOf(r) / totalMin) * totalWidth);
+            const isManualAssign = groupKey === 'staff_id' && col.id !== null && r.staff_manually_assigned;
+            const isPending = r.status === 'pending' || r.status === 'counter_proposed';
+            return `
+              <div class="cal-block-h${r.status === 'visited' ? ' is-visited' : ''}${isManualAssign ? ' is-manual-assign' : ''}${isPending ? ' is-pending' : ''}" style="left:${left}px;width:${width}px" data-cal-open="${r.id}">
+                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}
+              </div>
+            `;
+          }).join('');
+          return `
+            <div class="cal-row-name-h" style="height:${rowH}px">${esc(col.name)}</div>
+            <div class="cal-lane" style="height:${rowH}px;width:${totalWidth}px">${vLines}${blocksHtml}</div>
+          `;
+        }).join('');
+
+        return `
+          <div class="cal-grid-inner-h" style="grid-template-columns:${nameColWidth}px ${totalWidth}px">
+            <div class="cal-hour-head-spacer"></div>
+            ${hourHeadHtml}
+            ${rowsHtml}
+          </div>
+        `;
+      }
+
       function renderDesktopGrid() {
         if (!gridWrapEl) return;
         const items = byDate[selectedDate] || [];
-        gridWrapEl.innerHTML = buildGridHtml(items, currentColumns(), currentGroupKey());
+        const horizontal = dashboardPrefs?.calendar_axis === 'time-x';
+        gridWrapEl.className = horizontal ? 'cal-day-grid-h' : 'cal-day-grid';
+        gridWrapEl.innerHTML = horizontal
+          ? buildGridHtmlHorizontal(items, currentColumns(), currentGroupKey())
+          : buildGridHtml(items, currentColumns(), currentGroupKey());
         bindCalOpenHandlers(gridWrapEl);
       }
 
@@ -3851,6 +4067,7 @@ export default function ProviderDashboardPage() {
         `;
         viewToggleEl.querySelectorAll('[data-cal-view]').forEach(btn => btn.addEventListener('click', () => {
           viewMode = btn.dataset.calView;
+          viewModePicked = true;
           renderViewToggle();
           renderDesktopGrid();
         }));
@@ -4105,6 +4322,9 @@ export default function ProviderDashboardPage() {
       agendaPopupEl?.addEventListener('click', (e) => { if (e.target === agendaPopupEl) agendaPopupEl.style.display = 'none'; });
 
       async function initAndLoad() {
+        // 部屋・設備管理がONの店舗は、店舗設定の既定ビュー（スタッフ別/部屋別）を
+        // 初回だけ適用する（でお要望2026-09-13：部屋別をメインにしたい店舗もある）。
+        if (!viewModePicked && dashboardPrefs?.calendar_default_view === 'resource') viewMode = 'resource';
         await Promise.all([loadStaff(), loadResourcesAndFeatures()]);
         renderViewToggle();
         await loadWeek();
@@ -4711,8 +4931,8 @@ export default function ProviderDashboardPage() {
                 常にカテゴリー1つだけがアクティブになるので、開閉状態が曖昧にならない。 */}
             <div className="pd-rail-wrap">
               <div className="pd-rail" id="pd-rail">
-                <button type="button" className="pd-rail-btn active" data-category="home">ホーム</button>
-                <button type="button" className="pd-rail-btn" data-category="reservation">予約</button>
+                <button type="button" className="pd-rail-btn active" data-category="reservation">予約</button>
+                <button type="button" className="pd-rail-btn" data-category="home">ホーム</button>
                 <button type="button" className="pd-rail-btn" data-category="customer">顧客</button>
                 <button type="button" className="pd-rail-btn" data-category="sales">売上</button>
                 <button type="button" className="pd-rail-btn" data-category="store">店舗設定</button>
@@ -4721,12 +4941,12 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="pd-rail-btn" data-category="tutorial">使い方</button>
               </div>
               <div className="pd-rail-panel">
-                <div className="pd-panel-section" data-panel="home">
-                  <button className="tab-btn active" data-tab="today">今日の業務</button>
+                <div className="pd-panel-section" data-panel="home" style={{ display: 'none' }}>
+                  <button className="tab-btn" data-tab="today">今日の業務</button>
                   <button className="tab-btn" data-tab="stats">概況</button>
                 </div>
-                <div className="pd-panel-section" data-panel="reservation" style={{ display: 'none' }}>
-                  <button className="tab-btn" data-tab="calendar">予約カレンダー</button>
+                <div className="pd-panel-section" data-panel="reservation">
+                  <button className="tab-btn active" data-tab="calendar">予約カレンダー</button>
                   <button className="tab-btn" data-tab="requests">予約リクエスト <span id="requests-badge" style={{ display: 'none', background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', padding: '1px 6px', marginLeft: '4px' }}></span></button>
                   <button className="tab-btn" data-tab="slots" data-feature="instant_booking">空き枠<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="checkin" data-feature="checkin_qr">チェックイン<span className="feature-off-badge" data-feature-badge></span></button>
@@ -4762,6 +4982,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="line-channel">LINE連携</button>
                   <button className="tab-btn" data-tab="billing">課金・プラン</button>
                   <button className="tab-btn" data-tab="features">機能設定</button>
+                  <button className="tab-btn" data-tab="display-settings">表示設定</button>
                 </div>
                 <div className="pd-panel-section" data-panel="tutorial" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="tutorial">チュートリアル</button>
@@ -4772,14 +4993,15 @@ export default function ProviderDashboardPage() {
 
           {/* メイン */}
           <div className="pd-main">
-            {/* ダッシュボードヘッダー */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  <span id="provider-number-badge" style={{ display: 'none', fontSize: '13px', fontWeight: '800', padding: '3px 12px', background: '#111', color: '#fff', borderRadius: '99px' }}></span>
-                  <h1 className="section-title" style={{ margin: '0 0 4px' }} id="provider-name-header">掲載者ダッシュボード</h1>
-                </div>
-                <p className="muted" id="provider-page-link" style={{ margin: '0' }}></p>
+            {/* ダッシュボードヘッダー：以前は店舗名を大見出し(h1)＋公開URL文字列の2行で
+                毎タブ常時表示していたが、業務中は自明な情報で毎回視界に入るだけの
+                ノイズになっていた（でお+スタッフ指摘2026-09-13：「上部にずっと表示
+                されてて邪魔」）。1行の控えめな表示に縮小し、公開URL文字列は削除
+                （同じ情報は「使い方」タブの「公開ページを確認」から見られる）。 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span id="provider-number-badge" style={{ display: 'none', fontSize: '11px', fontWeight: '800', padding: '2px 10px', background: '#111', color: '#fff', borderRadius: '99px' }}></span>
+                <h1 style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'rgba(26,20,16,0.45)' }} id="provider-name-header">掲載者ダッシュボード</h1>
               </div>
               {/* 「使い方を見る／使い方説明書／自分のページを見る」は全タブのヘッダーに
                   常時表示されていて、スクロールするたびに視界に入る割に毎回使うもの
@@ -4795,7 +5017,7 @@ export default function ProviderDashboardPage() {
             日次ハブ（でお要望2026-09-12：「毎日やる業務」の流れを1つのページで見られるように）。
             サイドバー4グループの内容を横断してダイジェスト表示し、各カードの続きは
             対応するタブへワンクリックで移動できる。 */}
-        <div className="tab-pane active" id="tab-today">
+        <div className="tab-pane" id="tab-today">
           <div className="stack" style={{ gap: '16px' }}>
             <div className="card" style={{ padding: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -4913,7 +5135,7 @@ export default function ProviderDashboardPage() {
             hacomonoの管理画面カレンダーを参考にしたが、PC用グリッドをそのままスマホに縮めると
             縦横二重スクロールになって見づらいという今野くんの実地フィードバック（2026-09-11）を
             踏まえ、スマホでは日付ピル＋当日アジェンダのリスト表示に切り替える（CSSで出し分け）。 */}
-        <div className="tab-pane" id="tab-calendar">
+        <div className="tab-pane active" id="tab-calendar">
           <div className="card" style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
               <div>
@@ -6452,6 +6674,46 @@ export default function ProviderDashboardPage() {
               </p>
             </div>
             <div id="features-list" className="stack" style={{ gap: '14px' }}>読み込み中…</div>
+          </div>
+        </div>
+
+        {/* 表示設定：起動時タブ・メニュー並び順・カレンダーの向き/初期表示を店舗ごとに
+            カスタマイズ（でお要望2026-09-13）。今の構成がそのままデフォルト値。 */}
+        <div className="tab-pane" id="tab-display-settings">
+          <div className="card stack" style={{ padding: '24px', gap: '22px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>表示設定</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                起動時に開くタブ・メニューの並び順・予約カレンダーの表示方法は、店舗によって使いやすさが分かれます。お好みに合わせて変更できます（未設定なら今のままの構成が使われます）。
+              </p>
+            </div>
+
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px' }}>起動時に開くタブ</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <select id="ds-landing-tab" style={{ padding: '10px 12px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '14px' }}></select>
+                <span id="ds-landing-tab-msg" style={{ fontSize: '12px' }}></span>
+              </div>
+            </div>
+
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px' }}>メニューの並び順</p>
+              <div id="ds-sidebar-order" className="stack" style={{ gap: '6px', maxWidth: '340px' }}>読み込み中…</div>
+              <span id="ds-sidebar-order-msg" style={{ fontSize: '12px' }}></span>
+            </div>
+
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px' }}>予約カレンダーの向き</p>
+              <div id="ds-calendar-axis" className="stack" style={{ gap: '8px', maxWidth: '340px' }}></div>
+              <span id="ds-calendar-axis-msg" style={{ fontSize: '12px' }}></span>
+            </div>
+
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px' }}>予約カレンダーの初期表示</p>
+              <div id="ds-calendar-view" className="stack" style={{ gap: '8px', maxWidth: '340px' }}></div>
+              <span id="ds-calendar-view-msg" style={{ fontSize: '12px' }}></span>
+              <p className="muted" style={{ fontSize: '12px', margin: '8px 0 0' }}>「部屋・設備の空き管理」がONの店舗のみ意味を持ちます（機能設定タブ）。</p>
+            </div>
           </div>
         </div>
 
