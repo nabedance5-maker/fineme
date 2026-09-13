@@ -4418,13 +4418,32 @@ export default function ProviderDashboardPage() {
         if (userId) todayNameByUid[userId] = name || '';
         return `<span style="cursor:pointer;color:#2563eb;text-decoration:underline;text-underline-offset:2px" data-today-cust="${userId || ''}">${esc(name || '')}</span>`;
       }
+      function handleTodayCustTap(el) {
+        const uid = el.dataset.todayCust;
+        if (!uid) { showToast('Finemeに未登録のお客様のため、顧客情報がありません'); return; }
+        if (!window.openCustomerModal) { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
+        window.openCustomerModal(uid, 'member', todayNameByUid[uid]);
+      }
+      // iPhoneでタップしても反応しないというでお報告（2026-09-13）。カレンダーの
+      // 予約ブロックで直したのと同じ既知のタッチUIの落とし穴（指のわずかなブレを
+      // ブラウザがスクロールと誤判定し、合成clickイベント自体が発火しない）が
+      // ここにも入っていなかった。同じtouchstart/touchend判定に統一する。
       function bindTodayCustHandlers(container) {
-        container.querySelectorAll('[data-today-cust]').forEach(el => el.addEventListener('click', () => {
-          const uid = el.dataset.todayCust;
-          if (!uid) { showToast('Finemeに未登録のお客様のため、顧客情報がありません'); return; }
-          if (!window.openCustomerModal) { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
-          window.openCustomerModal(uid, 'member', todayNameByUid[uid]);
-        }));
+        container.querySelectorAll('[data-today-cust]').forEach(el => {
+          let startX = 0, startY = 0, moved = false;
+          el.addEventListener('touchstart', (e) => {
+            const t = e.touches[0];
+            startX = t.clientX; startY = t.clientY; moved = false;
+          }, { passive: true });
+          el.addEventListener('touchmove', (e) => {
+            const t = e.touches[0];
+            if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) moved = true;
+          }, { passive: true });
+          el.addEventListener('touchend', (e) => {
+            if (!moved) { e.preventDefault(); handleTodayCustTap(el); }
+          });
+          el.addEventListener('click', () => handleTodayCustTap(el));
+        });
       }
 
       async function loadTodayReservations() {
