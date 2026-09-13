@@ -1660,8 +1660,12 @@ export default function ProviderDashboardPage() {
       }
 
       async function openMemberModal(uid) {
-        const c = allItems.find(x => x.user_id === uid);
-        if (!c || !custModalEl) return;
+        // 今日の業務・予約カレンダー・予約リクエスト等、顧客管理タブを一度も開かずに
+        // 他タブから直接呼ばれる場合はallItemsが空のことがあるため、その場でロードする
+        // （でお要望2026-09-13：他の場所からもフルの顧客情報ポップアップを開けるように）。
+        let c = allItems.find(x => x.user_id === uid);
+        if (!c) { await loadAll(); c = allItems.find(x => x.user_id === uid); }
+        if (!c || !custModalEl) { showToast('顧客情報が見つかりませんでした'); return; }
         currentCustUid = uid;
         currentCustType = 'member';
         custModalMemberSection.style.display = '';
@@ -1702,8 +1706,9 @@ export default function ProviderDashboardPage() {
       }
 
       async function openManualModal(id) {
-        const m = manualItems.find(x => x.id === id);
-        if (!m || !custModalEl) return;
+        let m = manualItems.find(x => x.id === id);
+        if (!m) { await loadManualCustomers(); m = manualItems.find(x => x.id === id); }
+        if (!m || !custModalEl) { showToast('顧客情報が見つかりませんでした'); return; }
         currentCustUid = id;
         currentCustType = 'manual';
         custModalMemberSection.style.display = 'none';
@@ -1994,6 +1999,12 @@ export default function ProviderDashboardPage() {
       if (sortSel) sortSel.addEventListener('change', render);
       document.querySelectorAll('[data-tab="customers"]').forEach(btn => btn.addEventListener('click', () => { loadFields(); loadMenus(); loadAll(); loadManualCustomers(); }, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'customers') { loadFields(); loadMenus(); loadAll(); loadManualCustomers(); }
+
+      // 今日の業務・予約カレンダー・予約リクエスト等、他タブからもこのフルの顧客情報
+      // ポップアップ（カルテ編集・回数券・声かけ・担当割当）を開けるようにする
+      // （でお要望2026-09-13：「他の場所でもポップアップを出す時はちゃんと顧客情報
+      // 全部見れて、必要に応じて編集できたりページ飛べたりできるように」）。
+      window.openCustomerModal = openCustomerModal;
     })();
 
     // ── 回数券・パッケージタブ ────────────────────────────────────
@@ -3231,6 +3242,7 @@ export default function ProviderDashboardPage() {
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
             <strong style="font-size:16px">${esc(r.user_name)}</strong>
             <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${statusColor}20;color:${statusColor}">${statusLabel}</span>
+            ${r.user_id ? `<button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="window.openCustomerModal && window.openCustomerModal('${r.user_id}','member')">👤 顧客情報を見る</button>` : ''}
           </div>
           ${meMapNote ? `
           <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:10px">
@@ -4227,7 +4239,12 @@ export default function ProviderDashboardPage() {
             ／ <span class="muted">${STATUS_LABEL_CAL[r.status] || r.status}</span>
             ${r.staff_id && r.staff_manually_assigned ? '<span style="color:#3b82f6;font-weight:700;font-size:12px;margin-left:6px">（指名なし・店舗が割当）</span>' : ''}
             ${r.note ? `<p class="muted" style="margin:6px 0 0;font-size:12.5px">${esc(r.note)}</p>` : ''}
+            ${r.user_id ? '<button type="button" class="btn btn-ghost" id="cal-modal-open-cust-btn" style="font-size:12px;padding:5px 12px;margin-top:8px">👤 顧客情報を見る（カルテ・回数券など）</button>' : ''}
           `;
+          // フルの顧客情報ポップアップ（カルテ編集・回数券・声かけ・担当割当・AI傾向分析）を
+          // その場で開けるようにする導線（でお要望2026-09-13：「他の場所でもポップアップを
+          // 出す時はちゃんと顧客情報全部見れて編集できたりページ飛べたりできるように」）。
+          document.getElementById('cal-modal-open-cust-btn')?.addEventListener('click', () => window.openCustomerModal?.(r.user_id, 'member'));
         }
         // 担当スタッフ・部屋の割り当て（指名の有無に関わらずいつでも変更できる。でお要望2026-09-12）
         if (modalStaffSelectEl) {
@@ -4349,6 +4366,18 @@ export default function ProviderDashboardPage() {
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
       const todayStr = new Date().toISOString().split('T')[0];
 
+      // 会員（user_idあり）の名前だけクリック可能にし、フルの顧客情報ポップアップ
+      // （カルテ編集・回数券・声かけ・担当割当）をその場で開けるようにする
+      // （でお要望2026-09-13）。非会員（ゲスト予約）はuser_idが無いため対象外。
+      function custNameHtml(userId, name) {
+        return userId
+          ? `<span style="cursor:pointer;color:#2563eb;text-decoration:underline;text-underline-offset:2px" data-today-cust="${userId}">${esc(name || '')}</span>`
+          : `<span>${esc(name || '')}</span>`;
+      }
+      function bindTodayCustHandlers(container) {
+        container.querySelectorAll('[data-today-cust]').forEach(el => el.addEventListener('click', () => window.openCustomerModal?.(el.dataset.todayCust, 'member')));
+      }
+
       async function loadTodayReservations() {
         const el = document.getElementById('today-reservations-list');
         if (!el) return;
@@ -4359,10 +4388,11 @@ export default function ProviderDashboardPage() {
         el.innerHTML = rows.map(r => `
           <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(26,20,16,0.06)">
             <strong style="font-size:13px;flex-shrink:0">${r.time ? r.time.slice(0, 5) : '--:--'}</strong>
-            <span style="font-size:13px">${esc(r.user_name || '')}</span>
+            <span style="font-size:13px">${custNameHtml(r.user_id, r.user_name)}</span>
             ${r.staff_name ? `<span class="muted" style="font-size:12px">${esc(r.staff_name)}</span>` : ''}
           </div>
         `).join('');
+        bindTodayCustHandlers(el);
       }
 
       async function loadTodayRequests() {
@@ -4378,9 +4408,10 @@ export default function ProviderDashboardPage() {
         el.innerHTML = `<p style="margin:0 0 8px;font-size:20px;font-weight:800">${pending.length}件</p>` +
           pending.slice(0, 5).map(r => `
             <div style="padding:6px 0;border-bottom:1px solid rgba(26,20,16,0.06);font-size:13px">
-              ${esc(r.user_name || '')} <span class="muted" style="font-size:12px">${esc(r.reserved_date || '')} ${esc(r.start_time || '')}</span>
+              ${custNameHtml(r.user_id, r.user_name)} <span class="muted" style="font-size:12px">${esc(r.reserved_date || '')} ${esc(r.start_time || '')}</span>
             </div>
           `).join('');
+        bindTodayCustHandlers(el);
       }
 
       async function loadTodayCheckins() {
@@ -4903,6 +4934,7 @@ export default function ProviderDashboardPage() {
       delete window.submitCounter;
       delete window.openRequestModal;
       delete window.openRequestModalWithData;
+      delete window.openCustomerModal;
       delete window.__calReloadWeek;
     };
   }, []);
