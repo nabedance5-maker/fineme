@@ -197,6 +197,17 @@ export default function ProviderDashboardPage() {
       if (section) selectCategory(section.dataset.panel);
     }
 
+    // 各タブのデータ読み込みは「タブボタンをクリックした時」のイベントリスナー
+    // （data-tab="X"へのaddEventListener('click', loadX)）にしか紐づいておらず、
+    // switchTab()を直接呼ぶだけの経路（起動時タブのカスタマイズ等）だと見た目だけ
+    // 切り替わってデータが空のまま、という不具合があった（でお報告2026-09-13：
+    // 「予約カレンダーがログイン時は表示されず、更新や他タブから戻ると出る」）。
+    // JSXで最初からactiveなタブ（現在の既定=予約カレンダー）も「見た目はactiveだが
+    // 一度もクリックされていないのでロード未実行」という状態がありうるため、
+    // activeクラスの有無ではなく再入防止フラグでガードし、switchTab()経由の
+    // 切り替えでは毎回対応ボタンのclickイベントを発火させて既存のクリック時
+    // ロードをそのまま流用する。
+    let switchTabDispatching = false;
     function switchTab(tabId) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
@@ -205,6 +216,11 @@ export default function ProviderDashboardPage() {
       const pane = document.getElementById('tab-' + tabId);
       if (btn) btn.classList.add('active');
       if (pane) pane.classList.add('active');
+      if (btn && !switchTabDispatching) {
+        switchTabDispatching = true;
+        try { btn.dispatchEvent(new Event('click', { bubbles: false })); }
+        finally { switchTabDispatching = false; }
+      }
     }
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => { switchTab(btn.dataset.tab); closeMobileNav(); });
@@ -299,8 +315,10 @@ export default function ProviderDashboardPage() {
         if (btn) btn.style.order = String(i);
       });
 
-      // 起動時タブの適用（今表示中が既定の「calendar」ならDOM操作自体をスキップする）。
-      if (needsLandingTabApply && prefs.landing_tab !== 'calendar') {
+      // 起動時タブの適用。JSXの既定タブ（予約カレンダー）と一致していても、
+      // switchTab()を呼ばないとその場のデータロードが起きないため、必ず呼ぶ
+      // （switchTab自体は同じタブへの切り替えでも安全にデータロードを発火できる）。
+      if (needsLandingTabApply) {
         switchTab(prefs.landing_tab);
       }
     })();
@@ -1657,38 +1675,50 @@ export default function ProviderDashboardPage() {
       let currentCustUid = null;
       let currentCustType = 'member';
 
-      function openCustomerModal(uidOrId, type) {
+      function openCustomerModal(uidOrId, type, fallbackName) {
         if (type === 'manual') return openManualModal(uidOrId);
-        return openMemberModal(uidOrId);
+        return openMemberModal(uidOrId, fallbackName);
       }
 
-      async function openMemberModal(uid) {
+      async function openMemberModal(uid, fallbackName) {
         // 今日の業務・予約カレンダー・予約リクエスト等、顧客管理タブを一度も開かずに
         // 他タブから直接呼ばれる場合はallItemsが空のことがあるため、その場でロードする
         // （でお要望2026-09-13：他の場所からもフルの顧客情報ポップアップを開けるように）。
         let c = allItems.find(x => x.user_id === uid);
         if (!c) { await loadAll(); c = allItems.find(x => x.user_id === uid); }
-        if (!c || !custModalEl) { showToast('顧客情報が見つかりませんでした'); return; }
+        if (!custModalEl) return;
         currentCustUid = uid;
         currentCustType = 'member';
         custModalMemberSection.style.display = '';
         custModalManualSection.style.display = 'none';
-        const def = ALL_AXES[c.axis];
-        const axisLabel = def ? `${def.icon} ${esc(def.label)}` : esc(c.axis);
-        custModalNameEl.textContent = c.customer_name;
-        custModalBadgesEl.innerHTML = `
-          <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
-          ${statusBadge(c.status)}
-          ${overdueBadge('ユーザー想定', c.userOverdueDays)}
-          ${overdueBadge('店舗推奨', c.storeOverdueDays)}
-          ${c.meScanType?.fullName ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;" title="Me Scanタイプ">🧬 ${esc(c.meScanType.fullName)}</span>` : c.meScanDone ? '<span style="font-size:11px;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;">Me Scan済</span>' : ''}
-          ${c.mirror?.visualTier ? `<span style="font-size:11px;padding:2px 8px;background:#fff7ed;color:#c2410c;border-radius:99px;">Mirror: ${esc(c.mirror.visualTier)}</span>` : ''}
-        `;
-        custModalInfoEl.textContent = `前回：${fmtDate(c.last_visit)}／次回目安：${fmtDate(c.next_visit)}／頻度：${fmtFreq(c)}／来店回数：${c.visitCount ?? 0}回`;
-        const staffOptions = ['<option value="">担当未割当</option>']
-          .concat(staffList.map(s => `<option value="${s.id}"${c.assignedStaffId === s.id ? ' selected' : ''}>${esc(s.name)}</option>`))
-          .join('');
-        custModalAssignSel.innerHTML = staffOptions;
+
+        if (c) {
+          const def = ALL_AXES[c.axis];
+          const axisLabel = def ? `${def.icon} ${esc(def.label)}` : esc(c.axis);
+          custModalNameEl.textContent = c.customer_name;
+          custModalBadgesEl.innerHTML = `
+            <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
+            ${statusBadge(c.status)}
+            ${overdueBadge('ユーザー想定', c.userOverdueDays)}
+            ${overdueBadge('店舗推奨', c.storeOverdueDays)}
+            ${c.meScanType?.fullName ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;" title="Me Scanタイプ">🧬 ${esc(c.meScanType.fullName)}</span>` : c.meScanDone ? '<span style="font-size:11px;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;">Me Scan済</span>' : ''}
+            ${c.mirror?.visualTier ? `<span style="font-size:11px;padding:2px 8px;background:#fff7ed;color:#c2410c;border-radius:99px;">Mirror: ${esc(c.mirror.visualTier)}</span>` : ''}
+          `;
+          custModalInfoEl.textContent = `前回：${fmtDate(c.last_visit)}／次回目安：${fmtDate(c.next_visit)}／頻度：${fmtFreq(c)}／来店回数：${c.visitCount ?? 0}回`;
+          const staffOptions = ['<option value="">担当未割当</option>']
+            .concat(staffList.map(s => `<option value="${s.id}"${c.assignedStaffId === s.id ? ' selected' : ''}>${esc(s.name)}</option>`))
+            .join('');
+          custModalAssignSel.innerHTML = staffOptions;
+        } else {
+          // /api/provider/customers はNew Me Logを自店舗に連携している顧客しか返さない。
+          // 予約はしたがNew Me Logは未連携、という会員（でお報告2026-09-13：「会員なのに
+          // 開かない」の原因）でも、固定メモ・カルテはuser_idベースで連携有無と無関係に
+          // 使えるため、簡易表示でモーダル自体は開く。
+          custModalNameEl.textContent = fallbackName || '(お名前不明)';
+          custModalBadgesEl.innerHTML = '<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#f3f4f6;color:#6b7280;border-radius:99px;">New Me Log未連携</span>';
+          custModalInfoEl.textContent = 'このお客様はNew Me Log（無料の来店サイクル管理ツール）を貴店に連携していないため、来店サイクルの情報は表示できません。固定メモ・カルテの記録は通常どおり行えます。';
+          custModalAssignSel.innerHTML = ['<option value="">担当未割当</option>'].concat(staffList.map(s => `<option value="${s.id}">${esc(s.name)}</option>`)).join('');
+        }
 
         custModalAddForm.style.display = 'none'; custModalAddForm.innerHTML = ''; custModalAddForm.dataset.built = '';
         custModalHistoryEl.style.display = 'none'; custModalHistoryEl.innerHTML = ''; custModalHistoryEl.dataset.built = '';
@@ -3240,12 +3270,15 @@ export default function ProviderDashboardPage() {
       `).join('') : `<p style="font-size:13px;color:#6b7280">第1希望: ${choices[0].date} ${choices[0].time}${r.confirmed_date ? ` → 確定: ${r.confirmed_date} ${r.confirmed_time || ''}` : ''}</p>`;
 
       const meMapNote = parseMeMapNote(r.note);
+      // inline onclick用にJS文字列リテラルとしても安全になるようエスケープ（名前に
+      // シングルクォートが含まれるケースへの対策）。
+      const nameForJs = String(r.user_name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
       return `
         <div style="color:#111;text-shadow:none">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
             <strong style="font-size:16px">${esc(r.user_name)}</strong>
             <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${statusColor}20;color:${statusColor}">${statusLabel}</span>
-            ${r.user_id ? `<button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="window.openCustomerModal ? window.openCustomerModal('${r.user_id}','member') : showToast('読み込み中です。少し待ってから再度お試しください')">👤 顧客情報を見る</button>` : ''}
+            ${r.user_id ? `<button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="window.openCustomerModal ? window.openCustomerModal('${r.user_id}','member','${nameForJs}') : showToast('読み込み中です。少し待ってから再度お試しください')">👤 顧客情報を見る</button>` : ''}
           </div>
           ${meMapNote ? `
           <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:10px">
@@ -4249,7 +4282,7 @@ export default function ProviderDashboardPage() {
           // 出す時はちゃんと顧客情報全部見れて編集できたりページ飛べたりできるように」）。
           document.getElementById('cal-modal-open-cust-btn')?.addEventListener('click', () => {
             if (!window.openCustomerModal) { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
-            window.openCustomerModal(r.user_id, 'member');
+            window.openCustomerModal(r.user_id, 'member', r.user_name);
           });
         }
         // 担当スタッフ・部屋の割り当て（指名の有無に関わらずいつでも変更できる。でお要望2026-09-12）
@@ -4378,7 +4411,11 @@ export default function ProviderDashboardPage() {
       // 「タップしても何も起きない＝壊れてる」ように見えてしまっていた
       // （でお報告2026-09-13：「名前タップしてもポップアップひらかない」）。
       // 全ての名前をクリック可能にし、対象外の場合は理由をトーストで説明する。
+      // 名前をHTML属性に埋め込むとダブルクォート等でエスケープが崩れる懸念があるため、
+      // uid→表示名のルックアップをJS側に持ち、属性にはuidだけ埋め込む。
+      const todayNameByUid = {};
       function custNameHtml(userId, name) {
+        if (userId) todayNameByUid[userId] = name || '';
         return `<span style="cursor:pointer;color:#2563eb;text-decoration:underline;text-underline-offset:2px" data-today-cust="${userId || ''}">${esc(name || '')}</span>`;
       }
       function bindTodayCustHandlers(container) {
@@ -4386,7 +4423,7 @@ export default function ProviderDashboardPage() {
           const uid = el.dataset.todayCust;
           if (!uid) { showToast('Finemeに未登録のお客様のため、顧客情報がありません'); return; }
           if (!window.openCustomerModal) { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
-          window.openCustomerModal(uid, 'member');
+          window.openCustomerModal(uid, 'member', todayNameByUid[uid]);
         }));
       }
 
