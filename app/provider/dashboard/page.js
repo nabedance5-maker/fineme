@@ -1945,6 +1945,14 @@ export default function ProviderDashboardPage() {
       }
 
       async function openMemberModal(uid, fallbackName) {
+        try {
+          await openMemberModalInner(uid, fallbackName);
+        } catch (e) {
+          console.error('[openMemberModal]', e);
+          showToast('エラー: ' + e.message);
+        }
+      }
+      async function openMemberModalInner(uid, fallbackName) {
         // 今日の業務・予約カレンダー・予約リクエスト等、顧客管理タブを一度も開かずに
         // 他タブから直接呼ばれる場合はallItemsが空のことがあるため、その場でロードする
         // （でお要望2026-09-13：他の場所からもフルの顧客情報ポップアップを開けるように）。
@@ -4682,32 +4690,24 @@ export default function ProviderDashboardPage() {
         if (userId) todayNameByUid[userId] = name || '';
         return `<span style="cursor:pointer;color:#2563eb;text-decoration:underline;text-underline-offset:2px" data-today-cust="${userId || ''}">${esc(name || '')}</span>`;
       }
+      // でお指摘2026-09-13：「予約リクエストの一覧ではできるんだから全く同じ仕組みに
+      // すればいいだけ」。タッチ判定の独自対策（前回の推測）は的外れだったため撤去し、
+      // 予約リクエスト一覧（renderRequestsの.req-row）と全く同じ、単純なclickイベント
+      // だけのバインドに揃える。あわせて例外を握りつぶさずトーストに出すようにし、
+      // 次に同じ報告が来た場合に原因を一発で特定できるようにする。
       function handleTodayCustTap(el) {
-        const uid = el.dataset.todayCust;
-        if (!uid) { showToast('Finemeに未登録のお客様のため、顧客情報がありません'); return; }
-        if (!window.openCustomerModal) { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
-        window.openCustomerModal(uid, 'member', todayNameByUid[uid]);
+        try {
+          const uid = el.dataset.todayCust;
+          if (!uid) { showToast('Finemeに未登録のお客様のため、顧客情報がありません'); return; }
+          if (typeof window.openCustomerModal !== 'function') { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
+          window.openCustomerModal(uid, 'member', todayNameByUid[uid]);
+        } catch (e) {
+          console.error('[handleTodayCustTap]', e);
+          showToast('エラー: ' + e.message);
+        }
       }
-      // iPhoneでタップしても反応しないというでお報告（2026-09-13）。カレンダーの
-      // 予約ブロックで直したのと同じ既知のタッチUIの落とし穴（指のわずかなブレを
-      // ブラウザがスクロールと誤判定し、合成clickイベント自体が発火しない）が
-      // ここにも入っていなかった。同じtouchstart/touchend判定に統一する。
       function bindTodayCustHandlers(container) {
-        container.querySelectorAll('[data-today-cust]').forEach(el => {
-          let startX = 0, startY = 0, moved = false;
-          el.addEventListener('touchstart', (e) => {
-            const t = e.touches[0];
-            startX = t.clientX; startY = t.clientY; moved = false;
-          }, { passive: true });
-          el.addEventListener('touchmove', (e) => {
-            const t = e.touches[0];
-            if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) moved = true;
-          }, { passive: true });
-          el.addEventListener('touchend', (e) => {
-            if (!moved) { e.preventDefault(); handleTodayCustTap(el); }
-          });
-          el.addEventListener('click', () => handleTodayCustTap(el));
-        });
+        container.querySelectorAll('[data-today-cust]').forEach(el => el.addEventListener('click', () => handleTodayCustTap(el)));
       }
 
       async function loadTodayReservations() {
