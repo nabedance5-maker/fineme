@@ -11,9 +11,13 @@ import { getSupabase } from '@/lib/supabase';
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getStaffByToken(token) {
+  // provider_staff⇔providers間にprovider_shift_priorities経由の多対多関係も
+  // 生まれたため、あいまいな"providers(name)"だとPGRST201（複数経路エラー）に
+  // なる。外部キー名を明示して一意に指定する（でお報告2026-09-14：「リンクが
+  // 無効です」と出る不具合の原因。シフト機能を追加した副作用）。
   const { data } = await supabase
     .from('provider_staff')
-    .select('id, name, provider_id, providers(name)')
+    .select('id, name, provider_id, providers!provider_staff_provider_id_fkey(name)')
     .eq('shift_access_token', token)
     .single();
   return data || null;
