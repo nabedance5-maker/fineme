@@ -24,16 +24,25 @@ export async function POST(request, { params }) {
   const { data: period } = await supabase.from('provider_shift_periods').select('*').eq('id', params.id).eq('provider_id', provider.id).single();
   if (!period) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
 
-  const [{ data: settings }, { data: requests }, { data: priorities }] = await Promise.all([
-    supabase.from('provider_shift_settings').select('rule_type, staffing_targets').eq('provider_id', provider.id).single(),
+  const [{ data: settings }, { data: requests }, { data: priorities }, { data: dayPatternRows }, { data: patternRows }] = await Promise.all([
+    supabase.from('provider_shift_settings').select('rule_type').eq('provider_id', provider.id).single(),
     supabase.from('provider_shift_requests').select('staff_id, date, type, start_time, end_time').eq('period_id', period.id),
     supabase.from('provider_shift_priorities').select('staff_id, priority_score').eq('provider_id', provider.id),
+    supabase.from('provider_shift_period_day_patterns').select('date, pattern_id').eq('period_id', period.id),
+    supabase.from('provider_shift_patterns').select('id, slots').eq('provider_id', provider.id),
   ]);
+
+  const dayPatterns = {};
+  (dayPatternRows || []).forEach(r => { dayPatterns[r.date] = r.pattern_id; });
+  const patternsById = {};
+  (patternRows || []).forEach(p => { patternsById[p.id] = p; });
 
   const { entries, warnings } = generateShift({
     period,
     requests: requests || [],
-    settings: settings || { rule_type: 'as_requested', staffing_targets: {} },
+    ruleType: settings?.rule_type || 'as_requested',
+    dayPatterns,
+    patternsById,
     priorities: priorities || [],
   });
 

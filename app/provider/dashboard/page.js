@@ -1011,12 +1011,15 @@ export default function ProviderDashboardPage() {
       const token = getSupabaseToken();
       if (!token) return;
       const authHeadersShift = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
-      const WEEKDAY_LABEL = { mon: '月', tue: '火', wed: '水', thu: '木', fri: '金', sat: '土', sun: '日' };
 
       let shiftStaffList = [];
-      let stagingTargets = []; // [{weekday,start,end,required}]
       let currentPeriodId = null;
       let currentPeriodStatus = null;
+      let shiftPatterns = []; // [{id,name,slots}]
+      let stagingSlots = []; // 新規パターン作成フォーム用 [{start,end,required}]
+      let currentDayPatterns = {}; // 選択中の期間の date -> pattern_id
+      let currentPeriodStart = null;
+      let currentPeriodEnd = null;
 
       async function loadStaffLinks() {
         const el = document.getElementById('shift-staff-links');
@@ -1042,32 +1045,12 @@ export default function ProviderDashboardPage() {
       }
 
       // ── ルール設定 ──
-      function renderTargetsList() {
-        const el = document.getElementById('shift-targets-list');
-        if (!el) return;
-        if (!stagingTargets.length) { el.innerHTML = '<p class="muted" style="font-size:12px">まだ設定がありません。</p>'; return; }
-        el.innerHTML = stagingTargets.map((t, i) => `
-          <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:8px;font-size:13px">
-            <span style="flex:1">${WEEKDAY_LABEL[t.weekday]}曜 ${esc(t.start)}〜${esc(t.end)}　必要 ${t.required}人</span>
-            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-target-del="${i}">削除</button>
-          </div>
-        `).join('');
-        el.querySelectorAll('[data-target-del]').forEach(btn => btn.addEventListener('click', () => {
-          stagingTargets.splice(Number(btn.dataset.targetDel), 1);
-          renderTargetsList();
-        }));
-      }
-      document.getElementById('shift-target-add-btn')?.addEventListener('click', () => {
-        const weekday = document.getElementById('shift-target-weekday')?.value;
-        const start = document.getElementById('shift-target-start')?.value;
-        const end = document.getElementById('shift-target-end')?.value;
-        const required = Number(document.getElementById('shift-target-required')?.value) || 1;
-        if (!start || !end) { showToast('開始・終了時刻を入力してください'); return; }
-        stagingTargets.push({ weekday, start, end, required });
-        renderTargetsList();
-      });
       document.getElementById('shift-rule-type-select')?.addEventListener('change', (e) => {
-        document.getElementById('shift-staffing-targets-wrap').style.display = e.target.value === 'staffing_target' ? '' : 'none';
+        const on = e.target.value === 'staffing_target';
+        const patternsWrap = document.getElementById('shift-patterns-wrap');
+        if (patternsWrap) patternsWrap.style.display = on ? '' : 'none';
+        const dayPatternsWrap = document.getElementById('shift-day-patterns-wrap');
+        if (dayPatternsWrap) dayPatternsWrap.style.display = on ? '' : 'none';
       });
 
       async function loadRuleSettings() {
@@ -1076,28 +1059,89 @@ export default function ProviderDashboardPage() {
         const data = await res.json();
         const sel = document.getElementById('shift-rule-type-select');
         if (sel) { sel.value = data.rule_type; sel.dispatchEvent(new Event('change')); }
-        stagingTargets = [];
-        Object.entries(data.staffing_targets || {}).forEach(([weekday, slots]) => {
-          (slots || []).forEach(s => stagingTargets.push({ weekday, start: s.start, end: s.end, required: s.required }));
-        });
-        renderTargetsList();
       }
       document.getElementById('shift-rule-save-btn')?.addEventListener('click', async () => {
         const msg = document.getElementById('shift-rule-save-msg');
         const rule_type = document.getElementById('shift-rule-type-select')?.value;
-        const staffing_targets = {};
-        stagingTargets.forEach(t => {
-          (staffing_targets[t.weekday] = staffing_targets[t.weekday] || []).push({ start: t.start, end: t.end, required: t.required });
-        });
         if (msg) { msg.style.color = ''; msg.textContent = '保存中…'; }
         const res = await fetch('/api/provider/shift-settings', {
           method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
-          body: JSON.stringify({ rule_type, staffing_targets }),
+          body: JSON.stringify({ rule_type }),
         });
         if (msg) {
           if (res.ok) { msg.style.color = '#4ade80'; msg.textContent = '✓ 保存しました'; setTimeout(() => { if (msg) msg.textContent = ''; }, 2500); }
           else { msg.style.color = '#ef4444'; msg.textContent = '保存に失敗しました'; }
         }
+      });
+
+      // ── 時間帯パターン（でお要望2026-09-14） ──
+      function renderStagingSlots() {
+        const el = document.getElementById('shift-pattern-slot-rows');
+        if (!el) return;
+        if (!stagingSlots.length) { el.innerHTML = '<p class="muted" style="font-size:12px">まだ時間帯がありません。下のフォームから追加してください。</p>'; return; }
+        el.innerHTML = stagingSlots.map((s, i) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:8px;font-size:13px">
+            <span style="flex:1">${esc(s.start)}〜${esc(s.end)}　必要 ${s.required}人</span>
+            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-slot-del="${i}">削除</button>
+          </div>
+        `).join('');
+        el.querySelectorAll('[data-slot-del]').forEach(btn => btn.addEventListener('click', () => {
+          stagingSlots.splice(Number(btn.dataset.slotDel), 1);
+          renderStagingSlots();
+        }));
+      }
+      document.getElementById('shift-pattern-slot-add-btn')?.addEventListener('click', () => {
+        const start = document.getElementById('shift-pattern-slot-start')?.value;
+        const end = document.getElementById('shift-pattern-slot-end')?.value;
+        const required = Number(document.getElementById('shift-pattern-slot-required')?.value) || 1;
+        if (!start || !end) { showToast('開始・終了時刻を入力してください'); return; }
+        stagingSlots.push({ start, end, required });
+        renderStagingSlots();
+      });
+
+      function renderPatternsList() {
+        const el = document.getElementById('shift-patterns-list');
+        if (!el) return;
+        if (!shiftPatterns.length) { el.innerHTML = '<p class="muted" style="font-size:12px">まだパターンがありません。下のフォームから作成してください。</p>'; return; }
+        el.innerHTML = shiftPatterns.map(p => `
+          <div style="padding:10px 12px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:8px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <strong style="flex:1;font-size:13px">${esc(p.name)}</strong>
+              <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-pattern-del="${p.id}">削除</button>
+            </div>
+            <p class="muted" style="font-size:12px;margin:0">${(p.slots || []).map(s => `${esc(s.start)}〜${esc(s.end)}(${s.required}人)`).join('　')}</p>
+          </div>
+        `).join('');
+        el.querySelectorAll('[data-pattern-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('このパターンを削除しますか？')) return;
+          const res = await fetch(`/api/provider/shift-patterns/${btn.dataset.patternDel}`, { method: 'DELETE', headers: authHeadersShift() });
+          if (res.ok) { showToast('削除しました'); loadPatterns(); } else showToast('削除に失敗しました');
+        }));
+        // 日付ごとのパターン割当フォームの選択肢も揃える
+        const daySel = document.getElementById('shift-day-pattern-select');
+        if (daySel) daySel.innerHTML = shiftPatterns.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+      }
+      async function loadPatterns() {
+        const res = await fetch('/api/provider/shift-patterns', { headers: authHeadersShift() });
+        shiftPatterns = res.ok ? await res.json() : [];
+        renderPatternsList();
+      }
+      document.getElementById('shift-pattern-save-btn')?.addEventListener('click', async () => {
+        const msg = document.getElementById('shift-pattern-save-msg');
+        const name = document.getElementById('shift-pattern-name')?.value;
+        if (!name?.trim()) { showToast('パターン名を入力してください'); return; }
+        if (!stagingSlots.length) { showToast('時間帯を1つ以上追加してください'); return; }
+        if (msg) { msg.style.color = ''; msg.textContent = '保存中…'; }
+        const res = await fetch('/api/provider/shift-patterns', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
+          body: JSON.stringify({ name, slots: stagingSlots }),
+        });
+        if (res.ok) {
+          document.getElementById('shift-pattern-name').value = '';
+          stagingSlots = []; renderStagingSlots();
+          if (msg) { msg.style.color = '#4ade80'; msg.textContent = '✓ 保存しました'; setTimeout(() => { if (msg) msg.textContent = ''; }, 2500); }
+          loadPatterns();
+        } else if (msg) { msg.style.color = '#ef4444'; msg.textContent = '保存に失敗しました'; }
       });
 
       // ── 優先度 ──
@@ -1146,12 +1190,12 @@ export default function ProviderDashboardPage() {
         const periods = await res.json();
         if (!periods.length) { el.innerHTML = '<p class="muted" style="font-size:13px">まだ期間がありません。上のフォームから作成してください。</p>'; return; }
         el.innerHTML = periods.map(p => `
-          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:8px;cursor:pointer" data-period-open="${p.id}" data-period-status="${p.status}">
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:8px;cursor:pointer" data-period-open="${p.id}" data-period-status="${p.status}" data-period-start="${p.period_start}" data-period-end="${p.period_end}">
             <span style="flex:1;font-size:13px">${esc(p.period_start)} 〜 ${esc(p.period_end)}${p.request_deadline ? `（締切: ${esc(p.request_deadline)}）` : ''}</span>
             <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${PERIOD_STATUS_COLOR[p.status]}20;color:${PERIOD_STATUS_COLOR[p.status]}">${PERIOD_STATUS_LABEL[p.status] || p.status}</span>
           </div>
         `).join('');
-        el.querySelectorAll('[data-period-open]').forEach(row => row.addEventListener('click', () => selectPeriod(row.dataset.periodOpen, row.dataset.periodStatus)));
+        el.querySelectorAll('[data-period-open]').forEach(row => row.addEventListener('click', () => selectPeriod(row.dataset.periodOpen, row.dataset.periodStatus, row.dataset.periodStart, row.dataset.periodEnd)));
       }
       document.getElementById('shift-period-add-btn')?.addEventListener('click', async () => {
         const period_start = document.getElementById('shift-period-start')?.value;
@@ -1167,9 +1211,11 @@ export default function ProviderDashboardPage() {
       });
 
       // ── 期間の詳細（希望一覧・シフト表） ──
-      async function selectPeriod(id, status) {
+      async function selectPeriod(id, status, periodStart, periodEnd) {
         currentPeriodId = id;
         currentPeriodStatus = status;
+        currentPeriodStart = periodStart;
+        currentPeriodEnd = periodEnd;
         const section = document.getElementById('shift-detail-section');
         if (section) section.style.display = '';
         const title = document.getElementById('shift-detail-title');
@@ -1177,8 +1223,64 @@ export default function ProviderDashboardPage() {
         const confirmBtn = document.getElementById('shift-confirm-btn');
         if (confirmBtn) confirmBtn.disabled = status === 'confirmed';
         document.getElementById('shift-generate-warnings').innerHTML = '';
-        await Promise.all([loadRequestsSummary(), loadEntries()]);
+        await Promise.all([loadRequestsSummary(), loadEntries(), loadDayPatterns()]);
       }
+
+      // ── 日付ごとのパターン割当（でお要望2026-09-14） ──
+      function datesInRange(start, end) {
+        const dates = [];
+        const cur = new Date(start + 'T00:00:00Z');
+        const last = new Date(end + 'T00:00:00Z');
+        while (cur <= last) { dates.push(cur.toISOString().slice(0, 10)); cur.setUTCDate(cur.getUTCDate() + 1); }
+        return dates;
+      }
+      function renderDayPatternGrid() {
+        const el = document.getElementById('shift-day-pattern-grid');
+        if (!el || !currentPeriodStart || !currentPeriodEnd) return;
+        const patternName = pid => shiftPatterns.find(p => p.id === pid)?.name || '';
+        el.innerHTML = datesInRange(currentPeriodStart, currentPeriodEnd).map(date => {
+          const assigned = currentDayPatterns[date];
+          const day = Number(date.slice(-2));
+          return `
+            <label style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border:1.5px solid ${assigned ? '#c9a84c' : '#e5e7eb'};border-radius:8px;cursor:pointer;font-size:11px;background:${assigned ? 'rgba(201,168,76,0.08)' : '#fff'}">
+              <input type="checkbox" data-day-check="${date}" style="margin:0" />
+              <span>${day}日</span>
+              <span class="muted" style="font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:56px">${esc(patternName(assigned))}</span>
+            </label>
+          `;
+        }).join('');
+      }
+      async function loadDayPatterns() {
+        const wrap = document.getElementById('shift-day-patterns-wrap');
+        if (!currentPeriodId || !wrap || wrap.style.display === 'none') { currentDayPatterns = {}; return; }
+        const res = await fetch(`/api/provider/shift-periods/${currentPeriodId}/day-patterns`, { headers: authHeadersShift() });
+        currentDayPatterns = {};
+        if (res.ok) { (await res.json()).forEach(r => { currentDayPatterns[r.date] = r.pattern_id; }); }
+        renderDayPatternGrid();
+      }
+      document.getElementById('shift-day-pattern-select-all-btn')?.addEventListener('click', () => {
+        document.querySelectorAll('[data-day-check]').forEach(cb => { cb.checked = true; });
+      });
+      document.getElementById('shift-day-pattern-select-none-btn')?.addEventListener('click', () => {
+        document.querySelectorAll('[data-day-check]').forEach(cb => { cb.checked = false; });
+      });
+      document.getElementById('shift-day-pattern-apply-btn')?.addEventListener('click', async () => {
+        if (!currentPeriodId) return;
+        const msg = document.getElementById('shift-day-pattern-msg');
+        const pattern_id = document.getElementById('shift-day-pattern-select')?.value;
+        const dates = [...document.querySelectorAll('[data-day-check]:checked')].map(cb => cb.dataset.dayCheck);
+        if (!pattern_id) { showToast('パターンを選んでください'); return; }
+        if (!dates.length) { showToast('日付を選んでください'); return; }
+        if (msg) { msg.style.color = ''; msg.textContent = '適用中…'; }
+        const res = await fetch(`/api/provider/shift-periods/${currentPeriodId}/day-patterns`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
+          body: JSON.stringify({ dates, pattern_id }),
+        });
+        if (res.ok) {
+          if (msg) { msg.style.color = '#4ade80'; msg.textContent = `✓ ${dates.length}日に適用しました`; setTimeout(() => { if (msg) msg.textContent = ''; }, 2500); }
+          loadDayPatterns();
+        } else if (msg) { msg.style.color = '#ef4444'; msg.textContent = '適用に失敗しました'; }
+      });
 
       async function loadRequestsSummary() {
         const el = document.getElementById('shift-requests-summary');
@@ -1264,7 +1366,7 @@ export default function ProviderDashboardPage() {
 
       async function loadShiftTab() {
         await loadStaffLinks();
-        await Promise.all([loadRuleSettings(), loadPriorities(), loadPeriods()]);
+        await Promise.all([loadRuleSettings(), loadPatterns(), loadPriorities(), loadPeriods()]);
       }
       document.querySelectorAll('[data-tab="shift"]').forEach(btn => btn.addEventListener('click', loadShiftTab, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'shift') loadShiftTab();
@@ -5866,24 +5968,8 @@ export default function ProviderDashboardPage() {
               <label>作り方</label>
               <select id="shift-rule-type-select">
                 <option value="as_requested">出勤希望をそのまま全部入れる</option>
-                <option value="staffing_target">曜日・時間帯ごとの必要人数に沿って優先度で調整する</option>
+                <option value="staffing_target">時間帯パターンの必要人数に沿って優先度で調整する</option>
               </select>
-            </div>
-            <div id="shift-staffing-targets-wrap" style={{ display: 'none' }}>
-              <p className="muted" style={{ fontSize: '12px', margin: '4px 0 8px' }}>曜日・時間帯ごとに必要な人数を設定します。必要人数に対して希望者が多い枠は、下の「スタッフの優先度」が高い人から優先的に採用されます。</p>
-              <div id="shift-target-add-form" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(110px,1fr))', gap: '8px', alignItems: 'end', marginBottom: '10px' }}>
-                <div className="form-field" style={{ marginBottom: 0 }}><label>曜日</label>
-                  <select id="shift-target-weekday">
-                    <option value="mon">月</option><option value="tue">火</option><option value="wed">水</option>
-                    <option value="thu">木</option><option value="fri">金</option><option value="sat">土</option><option value="sun">日</option>
-                  </select>
-                </div>
-                <div className="form-field" style={{ marginBottom: 0 }}><label>開始</label><input type="time" id="shift-target-start" /></div>
-                <div className="form-field" style={{ marginBottom: 0 }}><label>終了</label><input type="time" id="shift-target-end" /></div>
-                <div className="form-field" style={{ marginBottom: 0 }}><label>必要人数</label><input type="number" id="shift-target-required" min="1" defaultValue="1" /></div>
-                <button type="button" className="btn btn-ghost" id="shift-target-add-btn">＋追加</button>
-              </div>
-              <div id="shift-targets-list" className="stack" style={{ gap: '6px' }}></div>
             </div>
             <div>
               <button type="button" className="btn" id="shift-rule-save-btn">ルールを保存</button>
@@ -5891,9 +5977,30 @@ export default function ProviderDashboardPage() {
             </div>
           </div>
 
+          {/* 時間帯パターン（でお要望2026-09-14：曜日ごとに1個ずつ作るのは大変。
+              時間帯×必要人数のセットを「パターン」として先に作っておき、期間内の
+              各日付にまとめて一括で割り当てる方式に変更）。 */}
+          <div id="shift-patterns-wrap" className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px', display: 'none' }}>
+            <h3 style={{ margin: 0, fontSize: '14px' }}>時間帯パターン</h3>
+            <p className="muted" style={{ fontSize: '12px', margin: 0 }}>時間帯×必要人数の組み合わせをパターンとして登録します。期間の詳細画面で、カレンダーから日付をまとめて選んでパターンを割り当てられます。</p>
+            <div id="shift-patterns-list" className="stack" style={{ gap: '10px' }}>読み込み中…</div>
+            <div style={{ borderTop: '1px solid rgba(26,20,16,0.1)', paddingTop: '14px' }}>
+              <div className="form-field" style={{ marginBottom: '10px' }}><label>パターン名</label><input type="text" id="shift-pattern-name" placeholder="例：平日パターン" /></div>
+              <div id="shift-pattern-slot-rows" className="stack" style={{ gap: '8px', marginBottom: '10px' }}></div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(100px,1fr))', gap: '8px', alignItems: 'end', marginBottom: '10px' }}>
+                <div className="form-field" style={{ marginBottom: 0 }}><label>開始</label><input type="time" id="shift-pattern-slot-start" /></div>
+                <div className="form-field" style={{ marginBottom: 0 }}><label>終了</label><input type="time" id="shift-pattern-slot-end" /></div>
+                <div className="form-field" style={{ marginBottom: 0 }}><label>必要人数</label><input type="number" id="shift-pattern-slot-required" min="1" defaultValue="1" /></div>
+                <button type="button" className="btn btn-ghost" id="shift-pattern-slot-add-btn">＋時間帯を追加</button>
+              </div>
+              <button type="button" className="btn" id="shift-pattern-save-btn">このパターンを保存</button>
+              <span id="shift-pattern-save-msg" style={{ fontSize: '12px', marginLeft: '8px' }}></span>
+            </div>
+          </div>
+
           <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
             <h3 style={{ margin: 0, fontSize: '14px' }}>スタッフの優先度</h3>
-            <p className="muted" style={{ fontSize: '12px', margin: 0 }}>自動作成で人員が足りない枠が出た時、ポイントが高い人から優先的に希望を採用します（店長・副店長を高くする、等）。</p>
+            <p className="muted" style={{ fontSize: '12px', margin: 0 }}>お店を回す上での人員配置の方針をそのまま反映します（店長・社員を高く、アルバイトは低め、等）。各時間帯の必要人数に対して希望者が多い場合、ポイントが高い人から優先的にその枠へ採用されます。</p>
             <div id="shift-priorities-list" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
             <div>
               <button type="button" className="btn btn-ghost" id="shift-priorities-save-btn">優先度を保存</button>
@@ -5921,6 +6028,20 @@ export default function ProviderDashboardPage() {
               </div>
             </div>
             <div id="shift-generate-warnings"></div>
+
+            {/* 日付ごとのパターン割当（でお要望2026-09-14：1日ずつ作るのは大変なので、
+                日付を複数選んでパターンをまとめて一括適用できるように）。 */}
+            <div id="shift-day-patterns-wrap" style={{ display: 'none' }}>
+              <h4 style={{ margin: '8px 0 8px', fontSize: '13px' }}>日付ごとの必要人数パターン</h4>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'end', flexWrap: 'wrap', marginBottom: '10px' }}>
+                <div className="form-field" style={{ marginBottom: 0 }}><label>適用するパターン</label><select id="shift-day-pattern-select"></select></div>
+                <button type="button" className="btn btn-ghost" id="shift-day-pattern-select-all-btn">全日選択</button>
+                <button type="button" className="btn btn-ghost" id="shift-day-pattern-select-none-btn">選択解除</button>
+                <button type="button" className="btn" id="shift-day-pattern-apply-btn">選んだ日にまとめて適用</button>
+                <span id="shift-day-pattern-msg" style={{ fontSize: '12px' }}></span>
+              </div>
+              <div id="shift-day-pattern-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(64px,1fr))', gap: '6px', marginBottom: '10px' }}></div>
+            </div>
 
             <h4 style={{ margin: '8px 0 0', fontSize: '13px' }}>提出された希望</h4>
             <div id="shift-requests-summary" className="stack" style={{ gap: '4px' }}>読み込み中…</div>

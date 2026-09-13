@@ -1,8 +1,5 @@
-// GET   /api/provider/shift-settings → 自店舗のシフト作成ルール設定（未作成なら既定値で返す）
-// PATCH /api/provider/shift-settings → ルール設定を更新
-// staffing_targets（曜日固定の必要人数）はパターン方式（provider_shift_patterns +
-// provider_shift_period_day_patterns）に置き換えたため、ここではrule_typeのみ扱う
-// （でお要望2026-09-14：曜日ごとに1個ずつ作るのは大変、パターンを日付へ一括割当したい）。
+// GET  /api/provider/shift-patterns → 自店舗のシフト必要人数パターン一覧
+// POST /api/provider/shift-patterns → パターンを新規作成（name, slots:[{start,end,required}]）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 
@@ -15,38 +12,38 @@ async function getProviderByToken(token) {
   return data || null;
 }
 
-const DEFAULT_SETTINGS = { rule_type: 'as_requested' };
-
 export async function GET(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data } = await supabase
-    .from('provider_shift_settings')
-    .select('rule_type')
+  const { data, error } = await supabase
+    .from('provider_shift_patterns')
+    .select('*')
     .eq('provider_id', provider.id)
-    .single();
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
+  if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  return Response.json(data || DEFAULT_SETTINGS);
+  return Response.json(data || []);
 }
 
-export async function PATCH(request) {
+export async function POST(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
-  if (!body.rule_type || !['as_requested', 'staffing_target'].includes(body.rule_type)) {
-    return Response.json({ error: 'rule_typeが不正です' }, { status: 400 });
-  }
+  const { name, slots } = body;
+  if (!name?.trim()) return Response.json({ error: 'パターン名は必須です' }, { status: 400 });
+  if (!Array.isArray(slots) || !slots.length) return Response.json({ error: '時間帯を1つ以上追加してください' }, { status: 400 });
 
   const { data, error } = await supabase
-    .from('provider_shift_settings')
-    .upsert({ provider_id: provider.id, rule_type: body.rule_type, updated_at: new Date().toISOString() }, { onConflict: 'provider_id' })
-    .select('rule_type')
+    .from('provider_shift_patterns')
+    .insert({ provider_id: provider.id, name: name.trim(), slots })
+    .select()
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
