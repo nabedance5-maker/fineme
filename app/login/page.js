@@ -11,6 +11,23 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 const SITE_URL = 'https://www.fineme.me';
 
+// Android Chromeなど一部ブラウザは、<form>のsubmitイベントを検知できないと
+// パスワードマネージャーの「保存しますか？」プロンプト自体が出ない（でお報告
+// 2026-09-13：今野くんのPixel 9で自動保存が機能しない／でおのiPhoneでは動く）。
+// iOS Safari・iOS Chrome（WebKit）はform無しでもヒューリスティックで保存を
+// 提案することが多いが、Android Chrome（Blink）はより厳格。根本原因はこの
+// ログインフォームに<form>要素が無かったこと（下のJSXで修正）。
+// あわせて、Credential Management APIに対応しているブラウザ（Android Chrome等。
+// Safariは未対応でこの関数は何もしない）では、ログイン成功時に明示的に
+// navigator.credentials.store()を呼び、保存プロンプトをより確実に出す。
+async function maybeStoreCredential(email, password) {
+  try {
+    if (typeof window === 'undefined' || !window.PasswordCredential || !navigator.credentials) return;
+    const cred = new window.PasswordCredential({ id: email, password, name: email });
+    await navigator.credentials.store(cred);
+  } catch {}
+}
+
 async function syncLocalDiagnosis(accessToken) {
   // 男性版・Belle版の両方を引き継ぐ（lib/track.js に共通化）
   await syncLocalDiagnosisToServer(accessToken);
@@ -51,7 +68,8 @@ export default function LoginPage() {
     if (params.get('type') === 'provider') setIsProvider(true);
   }, []);
 
-  async function handleLogin() {
+  async function handleLogin(e) {
+    e?.preventDefault();
     setLoginError('');
     if (!email || !password) {
       setLoginError('メールアドレスとパスワードを入力してください');
@@ -64,6 +82,8 @@ export default function LoginPage() {
       setLoginLoading(false);
       return;
     }
+    // ブラウザのパスワードマネージャーに保存を促す（Android Chrome対策。詳細は上の関数コメント）
+    await maybeStoreCredential(email, password);
     // 匿名診断データがあればクラウドに同期
     await syncLocalDiagnosis(data.session.access_token);
 
@@ -86,11 +106,8 @@ export default function LoginPage() {
     setLoginLoading(false);
   }
 
-  function handleLoginKeyDown(e) {
-    if (e.key === 'Enter') handleLogin();
-  }
-
-  async function handleSignup() {
+  async function handleSignup(e) {
+    e?.preventDefault();
     setSignupError('');
     setSignupOk('');
     if (!signupEmail || !signupPassword) {
@@ -118,6 +135,7 @@ export default function LoginPage() {
     }
     // セッションがある場合（メール確認不要設定）は即ログイン
     if (data.session?.access_token) {
+      await maybeStoreCredential(signupEmail, signupPassword);
       await syncLocalDiagnosis(data.session.access_token);
       const params = new URLSearchParams(window.location.search);
       const next = params.get('next');
@@ -129,7 +147,8 @@ export default function LoginPage() {
     setSignupLoading(false);
   }
 
-  async function handleReset() {
+  async function handleReset(e) {
+    e?.preventDefault();
     setResetError('');
     setResetOk('');
     if (!resetEmail) {
@@ -167,38 +186,19 @@ export default function LoginPage() {
               登録されたメールアドレスとパスワードを入力してください
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)' }}>メールアドレス</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                onKeyDown={handleLoginKeyDown}
-                placeholder="you@example.com"
-                autoComplete="email"
-                style={{
-                  padding: '12px 14px',
-                  border: '1px solid rgba(232,228,220,0.15)',
-                  borderRadius: '10px',
-                  fontSize: '15px',
-                  width: '100%',
-                  boxSizing: 'border-box',
-                }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)' }}>パスワード</label>
-              <div style={{ position: 'relative' }}>
+            {/* Android Chrome等でパスワードマネージャーの自動保存プロンプトを確実に出す
+                には<form>のsubmitイベントが必須（でお報告2026-09-13、詳細は上部コメント）。 */}
+            <form onSubmit={handleLogin}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)' }}>メールアドレス</label>
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  onKeyDown={handleLoginKeyDown}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="username"
                   style={{
-                    padding: '12px 44px 12px 14px',
+                    padding: '12px 14px',
                     border: '1px solid rgba(232,228,220,0.15)',
                     borderRadius: '10px',
                     fontSize: '15px',
@@ -206,40 +206,61 @@ export default function LoginPage() {
                     boxSizing: 'border-box',
                   }}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(v => !v)}
-                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', color: '#6b7280', padding: '4px' }}
-                  aria-label={showPassword ? 'パスワードを隠す' : 'パスワードを表示'}
-                >
-                  {showPassword ? '🙈' : '👁️'}
-                </button>
               </div>
-            </div>
 
-            {loginError && (
-              <p style={{ color: '#ef4444', fontSize: '13px', margin: '0 0 8px' }}>{loginError}</p>
-            )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)' }}>パスワード</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    style={{
+                      padding: '12px 44px 12px 14px',
+                      border: '1px solid rgba(232,228,220,0.15)',
+                      borderRadius: '10px',
+                      fontSize: '15px',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(v => !v)}
+                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', color: '#6b7280', padding: '4px' }}
+                    aria-label={showPassword ? 'パスワードを隠す' : 'パスワードを表示'}
+                  >
+                    {showPassword ? '🙈' : '👁️'}
+                  </button>
+                </div>
+              </div>
 
-            <button
-              onClick={handleLogin}
-              disabled={loginLoading}
-              style={{
-                width: '100%',
-                padding: '14px',
-                background: '#111',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '12px',
-                fontSize: '16px',
-                fontWeight: '700',
-                cursor: loginLoading ? 'not-allowed' : 'pointer',
-                opacity: loginLoading ? 0.4 : 1,
-                marginTop: '4px',
-              }}
-            >
-              {loginLoading ? 'ログイン中…' : 'ログイン'}
-            </button>
+              {loginError && (
+                <p style={{ color: '#ef4444', fontSize: '13px', margin: '0 0 8px' }}>{loginError}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loginLoading}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  background: '#111',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontSize: '16px',
+                  fontWeight: '700',
+                  cursor: loginLoading ? 'not-allowed' : 'pointer',
+                  opacity: loginLoading ? 0.4 : 1,
+                  marginTop: '4px',
+                }}
+              >
+                {loginLoading ? 'ログイン中…' : 'ログイン'}
+              </button>
+            </form>
 
             {!isProvider && (
               <>
@@ -305,55 +326,54 @@ export default function LoginPage() {
               診断結果をクラウドに保存して、どのデバイスからでも続きを見られます。
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>メールアドレス</label>
-              <input
-                type="email"
-                value={signupEmail}
-                onChange={e => setSignupEmail(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSignup()}
-                placeholder="you@example.com"
-                autoComplete="email"
-                style={{ padding: '12px 14px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '15px', width: '100%', boxSizing: 'border-box' }}
-              />
-            </div>
+            <form onSubmit={handleSignup}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>メールアドレス</label>
+                <input
+                  type="email"
+                  value={signupEmail}
+                  onChange={e => setSignupEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="username"
+                  style={{ padding: '12px 14px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '15px', width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>パスワード（8文字以上）</label>
-              <input
-                type="password"
-                value={signupPassword}
-                onChange={e => setSignupPassword(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSignup()}
-                placeholder="••••••••"
-                autoComplete="new-password"
-                style={{ padding: '12px 14px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '15px', width: '100%', boxSizing: 'border-box' }}
-              />
-            </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>パスワード（8文字以上）</label>
+                <input
+                  type="password"
+                  value={signupPassword}
+                  onChange={e => setSignupPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  style={{ padding: '12px 14px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '15px', width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>パスワード（確認用）</label>
-              <input
-                type="password"
-                value={signupPasswordConfirm}
-                onChange={e => setSignupPasswordConfirm(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSignup()}
-                placeholder="••••••••"
-                autoComplete="new-password"
-                style={{ padding: '12px 14px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '15px', width: '100%', boxSizing: 'border-box' }}
-              />
-            </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>パスワード（確認用）</label>
+                <input
+                  type="password"
+                  value={signupPasswordConfirm}
+                  onChange={e => setSignupPasswordConfirm(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  style={{ padding: '12px 14px', border: '1.5px solid #e5e7eb', borderRadius: '10px', fontSize: '15px', width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
 
-            {signupError && <p style={{ color: '#ef4444', fontSize: '13px', margin: '0 0 8px' }}>{signupError}</p>}
-            {signupOk && <p style={{ color: '#059669', fontSize: '13px', margin: '0 0 8px' }}>{signupOk}</p>}
+              {signupError && <p style={{ color: '#ef4444', fontSize: '13px', margin: '0 0 8px' }}>{signupError}</p>}
+              {signupOk && <p style={{ color: '#059669', fontSize: '13px', margin: '0 0 8px' }}>{signupOk}</p>}
 
-            <button
-              onClick={handleSignup}
-              disabled={signupLoading}
-              style={{ width: '100%', padding: '14px', background: '#c9a84c', color: '#0a0f1e', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: signupLoading ? 'not-allowed' : 'pointer', opacity: signupLoading ? 0.4 : 1, marginTop: '4px' }}
-            >
-              {signupLoading ? '登録中…' : '無料登録する'}
-            </button>
+              <button
+                type="submit"
+                disabled={signupLoading}
+                style={{ width: '100%', padding: '14px', background: '#c9a84c', color: '#0a0f1e', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: signupLoading ? 'not-allowed' : 'pointer', opacity: signupLoading ? 0.4 : 1, marginTop: '4px' }}
+              >
+                {signupLoading ? '登録中…' : '無料登録する'}
+              </button>
+            </form>
 
             {/* 区切り線 */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '16px 0 4px' }}>
@@ -407,51 +427,53 @@ export default function LoginPage() {
               登録済みのメールアドレスを入力すると、パスワード再設定メールをお送りします。
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>メールアドレス</label>
-              <input
-                type="email"
-                value={resetEmail}
-                onChange={e => setResetEmail(e.target.value)}
-                placeholder="you@example.com"
-                autoComplete="email"
+            <form onSubmit={handleReset}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>メールアドレス</label>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={e => setResetEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="username"
+                  style={{
+                    padding: '12px 14px',
+                    border: '1.5px solid #e5e7eb',
+                    borderRadius: '10px',
+                    fontSize: '15px',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              {resetError && (
+                <p style={{ color: '#ef4444', fontSize: '13px', margin: '0 0 8px' }}>{resetError}</p>
+              )}
+              {resetOk && (
+                <p style={{ color: '#059669', fontSize: '13px', margin: '0 0 8px' }}>{resetOk}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={resetLoading}
                 style={{
-                  padding: '12px 14px',
-                  border: '1.5px solid #e5e7eb',
-                  borderRadius: '10px',
-                  fontSize: '15px',
                   width: '100%',
-                  boxSizing: 'border-box',
+                  padding: '14px',
+                  background: '#111',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontSize: '16px',
+                  fontWeight: '700',
+                  cursor: resetLoading ? 'not-allowed' : 'pointer',
+                  opacity: resetLoading ? 0.4 : 1,
+                  marginTop: '4px',
                 }}
-              />
-            </div>
-
-            {resetError && (
-              <p style={{ color: '#ef4444', fontSize: '13px', margin: '0 0 8px' }}>{resetError}</p>
-            )}
-            {resetOk && (
-              <p style={{ color: '#059669', fontSize: '13px', margin: '0 0 8px' }}>{resetOk}</p>
-            )}
-
-            <button
-              onClick={handleReset}
-              disabled={resetLoading}
-              style={{
-                width: '100%',
-                padding: '14px',
-                background: '#111',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '12px',
-                fontSize: '16px',
-                fontWeight: '700',
-                cursor: resetLoading ? 'not-allowed' : 'pointer',
-                opacity: resetLoading ? 0.4 : 1,
-                marginTop: '4px',
-              }}
-            >
-              {resetLoading ? '送信中…' : '再設定メールを送る'}
-            </button>
+              >
+                {resetLoading ? '送信中…' : '再設定メールを送る'}
+              </button>
+            </form>
 
             <div style={{ textAlign: 'center', marginTop: '14px' }}>
               <button
