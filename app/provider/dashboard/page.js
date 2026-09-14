@@ -4558,7 +4558,7 @@ export default function ProviderDashboardPage() {
         // 「部屋が割り振られてなくてもちゃんと表示させろ」。割当済みだけ表示していたため、
         // 未割当の予約は部屋欄が何も出ず「合体ビューなのに部屋が出ない」ように見えていた）。
         const res = r.resource_id ? resourceList.find(x => x.id === r.resource_id) : null;
-        return `<span class="cal-block-tag">🏠${res ? esc(res.name) : '未割当'}</span>`;
+        return `<span class="cal-block-tag">${res ? esc(res.name) : '未割当'}</span>`;
       }
 
       function staffColumns() {
