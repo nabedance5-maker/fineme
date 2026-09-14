@@ -20,12 +20,37 @@ const SITE_URL = 'https://www.fineme.me';
 // あわせて、Credential Management APIに対応しているブラウザ（Android Chrome等。
 // Safariは未対応でこの関数は何もしない）では、ログイン成功時に明示的に
 // navigator.credentials.store()を呼び、保存プロンプトをより確実に出す。
+//
+// でお報告2026-09-14：今野くんのPixelで「保存はされたが次回ログイン時に自動入力
+// されなかった」。Chromeの自動入力はautocomplete属性だけでなくinputのname属性も
+// 強く見ており、name無しだと保存済みでも候補に出ない/入らないことがある。
+// 下のJSXの各inputにname属性を追加して対応。
 async function maybeStoreCredential(email, password) {
   try {
     if (typeof window === 'undefined' || !window.PasswordCredential || !navigator.credentials) return;
     const cred = new window.PasswordCredential({ id: email, password, name: email });
     await navigator.credentials.store(cred);
   } catch {}
+}
+
+// 掲載者判定が失敗すると、掲載者アカウントでログインしても一般ユーザーの
+// マイページへ飛ばされてしまう（でお報告2026-09-14：「今日最初にログインした時に
+// 何故かユーザーマイページに飛ばされた」「私もたまにそれが起こる」）。単発のfetch
+// 失敗（ログイン直後の一瞬のネットワーク不調・サーバーレス関数のコールドスタート等）
+// を「掲載者ではない」と誤判定しないよう、明確に「掲載者ではない」と分かる404以外は
+// 少し待って再試行する。
+async function checkIsProviderAccount(accessToken, attempts = 2) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch('/api/provider/me', {
+        headers: { 'Authorization': `Bearer ${accessToken}` },
+      });
+      if (res.ok) return true;
+      if (res.status === 404) return false; // 明確に「掲載者ではない」
+    } catch {}
+    if (i < attempts - 1) await new Promise(resolve => setTimeout(resolve, 600));
+  }
+  return false;
 }
 
 async function syncLocalDiagnosis(accessToken) {
@@ -87,22 +112,20 @@ export default function LoginPage() {
     // 匿名診断データがあればクラウドに同期
     await syncLocalDiagnosis(data.session.access_token);
 
-    // ?next= パラメータがあればそこへ（ユーザー側ログイン）
+    // ?next= パラメータがあればそこへ（ユーザー側ログイン）。セッション切れ時の
+    // 再ログイン導線の一部（mirror・ServiceLog・provider/dashboard等）は歴史的に
+    // ?redirect= という別名を使っており、このページが読んでいなかったため無視され、
+    // 意図した元のページではなく掲載者判定のフォールバック（/mypage等）に飛ばされて
+    // いた（でお報告2026-09-14：「何故かユーザーマイページに飛ばされた」）。両対応する。
     const params = new URLSearchParams(window.location.search);
-    const next = params.get('next');
+    const next = params.get('next') || params.get('redirect');
     if (next) {
       window.location.href = next;
       return;
     }
     // 掲載者かチェック（直接 /login アクセス時は掲載者ダッシュボードへ）
-    const res = await fetch('/api/provider/me', {
-      headers: { 'Authorization': `Bearer ${data.session.access_token}` },
-    });
-    if (res.ok) {
-      window.location.href = '/provider/dashboard';
-    } else {
-      window.location.href = '/mypage';
-    }
+    const isProviderAccount = await checkIsProviderAccount(data.session.access_token);
+    window.location.href = isProviderAccount ? '/provider/dashboard' : '/mypage';
     setLoginLoading(false);
   }
 
@@ -138,7 +161,7 @@ export default function LoginPage() {
       await maybeStoreCredential(signupEmail, signupPassword);
       await syncLocalDiagnosis(data.session.access_token);
       const params = new URLSearchParams(window.location.search);
-      const next = params.get('next');
+      const next = params.get('next') || params.get('redirect');
       window.location.href = next || '/mypage';
       return;
     }
@@ -193,6 +216,8 @@ export default function LoginPage() {
                 <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)' }}>メールアドレス</label>
                 <input
                   type="email"
+                  name="email"
+                  id="login-email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="you@example.com"
@@ -213,6 +238,8 @@ export default function LoginPage() {
                 <div style={{ position: 'relative' }}>
                   <input
                     type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    id="login-password"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"
@@ -273,7 +300,12 @@ export default function LoginPage() {
 
                 {/* LINE ログインボタン */}
                 <a
-                  href={`/api/auth/line-login?type=login${typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('next') ? '&next=' + encodeURIComponent(new URLSearchParams(window.location.search).get('next')) : ''}`}
+                  href={`/api/auth/line-login?type=login${(() => {
+                    if (typeof window === 'undefined') return '';
+                    const p = new URLSearchParams(window.location.search);
+                    const n = p.get('next') || p.get('redirect');
+                    return n ? '&next=' + encodeURIComponent(n) : '';
+                  })()}`}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -331,6 +363,8 @@ export default function LoginPage() {
                 <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>メールアドレス</label>
                 <input
                   type="email"
+                  name="email"
+                  id="signup-email"
                   value={signupEmail}
                   onChange={e => setSignupEmail(e.target.value)}
                   placeholder="you@example.com"
@@ -343,6 +377,8 @@ export default function LoginPage() {
                 <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>パスワード（8文字以上）</label>
                 <input
                   type="password"
+                  name="new-password"
+                  id="signup-password"
                   value={signupPassword}
                   onChange={e => setSignupPassword(e.target.value)}
                   placeholder="••••••••"
@@ -355,6 +391,8 @@ export default function LoginPage() {
                 <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>パスワード（確認用）</label>
                 <input
                   type="password"
+                  name="new-password-confirm"
+                  id="signup-password-confirm"
                   value={signupPasswordConfirm}
                   onChange={e => setSignupPasswordConfirm(e.target.value)}
                   placeholder="••••••••"
@@ -432,6 +470,8 @@ export default function LoginPage() {
                 <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>メールアドレス</label>
                 <input
                   type="email"
+                  name="email"
+                  id="reset-email"
                   value={resetEmail}
                   onChange={e => setResetEmail(e.target.value)}
                   placeholder="you@example.com"
