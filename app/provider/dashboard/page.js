@@ -89,6 +89,10 @@ export default function ProviderDashboardPage() {
       .cal-staff-head:last-child { border-right: none; }
       .cal-time-col { position: sticky; left: 0; z-index: 1; background: rgba(250,248,243,0.97); border-right: 1px solid rgba(26,20,16,0.08); }
       .cal-time-label { position: absolute; left: 0; right: 4px; text-align: right; font-size: 10px; color: rgba(26,20,16,0.4); transform: translateY(-50%); }
+      /* 先頭（表示範囲の開始時刻＝0:00等）はtranslateY(-50%)でグリッド上端より上にはみ出し、
+         overflow:autoの親にクリップされて文字が切れていた（でお報告2026-09-14）。
+         先頭だけ上寄せに変える。 */
+      .cal-time-label.is-first { transform: translateY(0); }
       .cal-staff-col { position: relative; border-right: 1px solid rgba(26,20,16,0.06); }
       .cal-staff-col:last-child { border-right: none; }
       .cal-hour-line { position: absolute; left: 0; right: 0; border-top: 1px solid rgba(26,20,16,0.06); }
@@ -111,6 +115,8 @@ export default function ProviderDashboardPage() {
       .cal-hour-head-spacer { position: sticky; top: 0; left: 0; z-index: 4; background: #fff; border-bottom: 1px solid rgba(26,20,16,0.08); border-right: 1px solid rgba(26,20,16,0.08); }
       .cal-hour-head-track { position: sticky; top: 0; z-index: 3; background: #fff; height: 32px; border-bottom: 1px solid rgba(26,20,16,0.08); }
       .cal-hour-label-h { position: absolute; top: 50%; transform: translate(-6px,-50%); font-size: 11px; font-weight: 700; color: rgba(26,20,16,0.5); }
+      /* 縦版と同じ理由：先頭（0:00等）は-6pxの左オフセットでグリッド左端より外に出てクリップされていた。 */
+      .cal-hour-label-h.is-first { transform: translateY(-50%); }
       .cal-row-name-h { position: sticky; left: 0; z-index: 2; background: rgba(250,248,243,0.97); display: flex; align-items: center; padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-right: 1px solid rgba(26,20,16,0.08); border-bottom: 1px solid rgba(26,20,16,0.06); }
       .cal-lane { position: relative; border-bottom: 1px solid rgba(26,20,16,0.06); }
       .cal-vline { position: absolute; top: 0; bottom: 0; border-left: 1px solid rgba(26,20,16,0.06); }
@@ -1573,13 +1579,32 @@ export default function ProviderDashboardPage() {
       // 保存後は既存のapplyFeatureGating()を呼び、サイドバーの表示・未設定バッジも即座に揃える。
       const instantToggle = document.getElementById('slots-instant-toggle');
       const instantToggleStatus = document.getElementById('slots-instant-toggle-status');
+      const requestToggle = document.getElementById('slots-request-toggle');
+      const requestToggleStatus = document.getElementById('slots-request-toggle-status');
       async function loadInstantToggleState() {
-        if (!instantToggle) return;
         const res = await fetch('/api/provider/features', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
         if (!res.ok) return;
         const { features } = await res.json();
-        instantToggle.checked = !!features?.instant_booking;
+        if (instantToggle) instantToggle.checked = !!features?.instant_booking;
+        // booking_requestはdefaultOn:trueのため、未設定(undefined)ならチェックON扱い
+        if (requestToggle) requestToggle.checked = features?.booking_request !== false;
       }
+      requestToggle?.addEventListener('change', async () => {
+        requestToggle.disabled = true;
+        if (requestToggleStatus) { requestToggleStatus.style.color = ''; requestToggleStatus.textContent = '保存中…'; }
+        const res = await fetch('/api/provider/features', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+          body: JSON.stringify({ booking_request: requestToggle.checked }),
+        });
+        requestToggle.disabled = false;
+        if (res.ok) {
+          if (requestToggleStatus) { requestToggleStatus.style.color = '#4ade80'; requestToggleStatus.textContent = '✓ 保存しました'; setTimeout(() => { if (requestToggleStatus) requestToggleStatus.textContent = ''; }, 2500); }
+        } else {
+          requestToggle.checked = !requestToggle.checked;
+          if (requestToggleStatus) { requestToggleStatus.style.color = '#ef4444'; requestToggleStatus.textContent = '保存に失敗しました'; }
+        }
+      });
       instantToggle?.addEventListener('change', async () => {
         instantToggle.disabled = true;
         if (instantToggleStatus) { instantToggleStatus.style.color = ''; instantToggleStatus.textContent = '保存中…'; }
@@ -1615,6 +1640,25 @@ export default function ProviderDashboardPage() {
 
       // ── 営業時間からの自動生成（でお要望2026-09-14） ──
       const WEEKDAY_LABEL_BH = { mon: '月', tue: '火', wed: '水', thu: '木', fri: '金', sat: '土', sun: '日' };
+      // 曜日ごとに1つずつ入力するのが面倒との指摘（でお要望2026-09-14：「まとめて設定
+      // できるようにもしてほしい」）。基準となる開始・終了時刻を1回入力し、「全曜日に
+      // 反映」ボタンで全ての曜日（休み設定は変えず、時間だけ）に一括コピーする。
+      function applyBulkBusinessHours() {
+        const el = document.getElementById('business-hours-editor');
+        const open = document.getElementById('bh-bulk-open')?.value;
+        const close = document.getElementById('bh-bulk-close')?.value;
+        if (!el || !open || !close) { showToast('開始・終了時刻を入力してください'); return; }
+        Object.keys(WEEKDAY_LABEL_BH).forEach(key => {
+          const closedCb = el.querySelector(`[data-bh-closed="${key}"]`);
+          const openInput = el.querySelector(`[data-bh-open="${key}"]`);
+          const closeInput = el.querySelector(`[data-bh-close="${key}"]`);
+          if (closedCb?.checked) return; // 休みの曜日は上書きしない
+          if (openInput) openInput.value = open;
+          if (closeInput) closeInput.value = close;
+        });
+        showToast('休み以外の全曜日に反映しました（保存ボタンを押して確定してください）');
+      }
+      document.getElementById('bh-bulk-apply-btn')?.addEventListener('click', applyBulkBusinessHours);
       function renderBusinessHoursEditor(hours) {
         const el = document.getElementById('business-hours-editor');
         if (!el) return;
@@ -4538,7 +4582,7 @@ export default function ProviderDashboardPage() {
         let timeColHtml = `<div class="cal-time-col" style="height:${totalHeight}px">`;
         for (let m = RANGE_START_MIN; m <= RANGE_END_MIN; m += 60) {
           const top = ((m - RANGE_START_MIN) / totalMin) * totalHeight;
-          timeColHtml += `<div class="cal-time-label" style="top:${top}px">${String(Math.floor(m / 60)).padStart(2, '0')}:00</div>`;
+          timeColHtml += `<div class="cal-time-label${m === RANGE_START_MIN ? ' is-first' : ''}" style="top:${top}px">${String(Math.floor(m / 60)).padStart(2, '0')}:00</div>`;
         }
         timeColHtml += `</div>`;
 
@@ -4601,7 +4645,7 @@ export default function ProviderDashboardPage() {
         let hourHeadHtml = `<div class="cal-hour-head-track" style="width:${totalWidth}px">`;
         for (let m = RANGE_START_MIN; m <= RANGE_END_MIN; m += 60) {
           const left = ((m - RANGE_START_MIN) / totalMin) * totalWidth;
-          hourHeadHtml += `<div class="cal-hour-label-h" style="left:${left}px">${String(Math.floor(m / 60)).padStart(2, '0')}:00</div>`;
+          hourHeadHtml += `<div class="cal-hour-label-h${m === RANGE_START_MIN ? ' is-first' : ''}" style="left:${left}px">${String(Math.floor(m / 60)).padStart(2, '0')}:00</div>`;
         }
         hourHeadHtml += `</div>`;
 
@@ -6418,6 +6462,14 @@ export default function ProviderDashboardPage() {
               <span style={{ fontSize: '14px', fontWeight: 600 }}>即時予約をこの店舗で使う</span>
               <span id="slots-instant-toggle-status" style={{ fontSize: '12px' }}></span>
             </label>
+
+            {/* 即時予約と独立して、従来の申請制（第1〜3希望→店舗が承認/代替提案）自体を
+                受け付けるかどうかも切り替えられるように（でお要望2026-09-14）。デフォルトON。 */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', background: 'var(--color-bg)', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer', width: 'fit-content' }}>
+              <input type="checkbox" id="slots-request-toggle" style={{ width: '18px', height: '18px' }} defaultChecked />
+              <span style={{ fontSize: '14px', fontWeight: 600 }}>予約リクエスト（第1〜3希望→承認）を受け付ける</span>
+              <span id="slots-request-toggle-status" style={{ fontSize: '12px' }}></span>
+            </label>
           </div>
 
           {/* 営業時間からの自動生成（でお要望2026-09-14：空き枠を1つずつ手動登録させる
@@ -6429,10 +6481,22 @@ export default function ProviderDashboardPage() {
                 曜日ごとの営業時間と枠の刻み幅を設定すると、即時予約ONの間は毎日自動で向こう2週間分の空き枠が補充されます（スタッフ指名予約がONの店舗は、対応可能な各スタッフの枠として生成します）。
               </p>
             </div>
+            {/* 曜日ごとに1つずつ入力するのが面倒との指摘に対応：基準時刻を1回入力して
+                「全曜日に反映」で一括コピー（でお要望2026-09-14）。休みの曜日は上書きしない。 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', padding: '10px 12px', background: 'var(--color-bg)', borderRadius: '10px' }}>
+              <span className="muted" style={{ fontSize: '12px' }}>まとめて設定：</span>
+              <input type="time" id="bh-bulk-open" style={{ width: '110px', padding: '4px 6px', border: '1px solid #e5e7eb', borderRadius: '6px' }} />
+              <span className="muted">〜</span>
+              <input type="time" id="bh-bulk-close" style={{ width: '110px', padding: '4px 6px', border: '1px solid #e5e7eb', borderRadius: '6px' }} />
+              <button type="button" className="btn btn-ghost" id="bh-bulk-apply-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>全曜日に反映</button>
+            </div>
             <div id="business-hours-editor" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
             <div className="form-field" style={{ marginBottom: 0, maxWidth: '220px' }}>
               <label>枠の刻み幅</label>
               <select id="slot-duration-select">
+                <option value="10">10分</option>
+                <option value="15">15分</option>
+                <option value="20">20分</option>
                 <option value="30">30分</option>
                 <option value="45">45分</option>
                 <option value="60">60分</option>

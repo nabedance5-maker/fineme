@@ -4,6 +4,7 @@ import { getSupabase } from '@/lib/supabase';
 import { sendReservationCreatedEmails } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
 import { notifyCustomerLine } from '@/lib/reservation-notify';
+import { hasFeature } from '@/lib/feature-flags';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -89,6 +90,16 @@ export async function POST(request) {
   }
   if (!isInstant && (!preferred_date || !preferred_time)) {
     return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
+  }
+
+  // 申請制（第1〜3希望→店舗が承認）は店舗ごとにON/OFFできる（でお要望2026-09-14：
+  // 「即時予約と同じように、予約リクエストも受け付けるかどうか設定できるように」）。
+  // 即時予約リクエストはこのフラグと無関係にそのまま処理する。
+  if (!isInstant) {
+    const { data: providerFeatureRow } = await supabase.from('providers').select('enabled_features').eq('id', provider_id).single();
+    if (!hasFeature(providerFeatureRow, 'booking_request')) {
+      return Response.json({ error: 'この店舗は現在、予約リクエストの受付を停止しています' }, { status: 403 });
+    }
   }
 
   // 1人のお客様が予約したら来店するまで同じ店舗で次の予約を取れないようにする

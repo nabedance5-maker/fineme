@@ -813,6 +813,10 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   // どちらも店舗が「機能設定」タブでON/OFFできる。OFFなら従来通りの3希望日時フォームのまま。
   const staffDesignationOn = hasFeature(provider, 'staff_designation');
   const instantBookingOn = hasFeature(provider, 'instant_booking');
+  // 予約リクエスト（第1〜3希望を送って店舗が承認/代替提案する従来方式）自体を
+  // 受け付けるかどうかの店舗ごとの設定（でお要望2026-09-14：「即時予約と同じように、
+  // 予約リクエストも受け付けるかどうか設定できるようにしたい」）。デフォルトON。
+  const bookingRequestOn = hasFeature(provider, 'booking_request');
   const bookableStaff = (staff || []).filter(s => s.bookable !== false);
   const [staffId, setStaffId] = useState('');
   const selectedStaff = bookableStaff.find(s => s.id === staffId);
@@ -835,6 +839,9 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   // 枠が1件も無い店舗は従来の3希望フォームにフォールバックする（機能ONにしただけで
   // 枠を登録していない店舗が予約を受け付けられなくなるのを防ぐ）
   const showInstantPicker = instantBookingOn && slots !== null && slots.length > 0;
+  // 即時予約の枠も予約リクエストも、どちらも受け付けられない状態（両方OFF、または
+  // 即時予約ONだが枠が無い＆予約リクエストOFF）の時は、フォーム自体を出さない。
+  const canBookAnything = showInstantPicker || bookingRequestOn;
 
   const meScanSummary = buildMeScanSummary(diagnosis, matchData);
 
@@ -1047,6 +1054,12 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         </div>
       )}
 
+      {!canBookAnything ? (
+        <div style={{ padding: '20px', background: 'rgba(10,15,30,0.50)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '14px', textAlign: 'center' }}>
+          <p style={{ fontSize: '14px', fontWeight: '700', color: 'rgba(232,228,220,0.90)', margin: '0 0 6px' }}>現在オンラインでのご予約受付を停止しています</p>
+          <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.6)', margin: 0, lineHeight: '1.7' }}>お手数ですが、店舗へ直接お問い合わせください。</p>
+        </div>
+      ) : (
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div>
           <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '4px' }}>お名前（姓名） *</label>
@@ -1152,6 +1165,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
           {submitting ? '送信中…' : '相談リクエストを送る'}
         </button>
       </form>
+      )}
 
       {/* キャンセルポリシー */}
       {provider.cancellation_policy && (
