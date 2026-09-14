@@ -422,10 +422,7 @@ export default function ProviderDashboardPage() {
     });
 
     if (provider) {
-      document.getElementById('provider-name-header').textContent = provider.name || '掲載者ダッシュボード';
       const fnCode = provider.referral_code || '';
-      const badge = document.getElementById('provider-number-badge');
-      if (badge && fnCode) { badge.textContent = fnCode; badge.style.display = 'inline'; }
       const slug = provider.slug || fnCode.toLowerCase() || '';
       if (slug) {
         document.getElementById('view-page-btn').href = `/provider/${slug}`;
@@ -4831,7 +4828,16 @@ export default function ProviderDashboardPage() {
         }
       }
       function bindTodayCustHandlers(container) {
-        container.querySelectorAll('[data-today-cust]').forEach(el => el.addEventListener('click', () => handleTodayCustTap(el)));
+        // 診断用（一時的）：clickが全く発火しないとの報告のため、pointerdown/touchstartでも
+        // 検知できるか切り分ける。要素にタッチ自体が届いていないのか、click変換の過程で
+        // キャンセルされているのかを判別する。
+        const els = container.querySelectorAll('[data-today-cust]');
+        console.log('[bindTodayCustHandlers] bound count =', els.length);
+        els.forEach(el => {
+          el.addEventListener('pointerdown', () => alert('DEBUG pointerdown 検知 uid=' + el.dataset.todayCust));
+          el.addEventListener('touchstart', () => alert('DEBUG touchstart 検知 uid=' + el.dataset.todayCust));
+          el.addEventListener('click', () => handleTodayCustTap(el));
+        });
       }
 
       async function loadTodayReservations() {
@@ -5503,22 +5509,12 @@ export default function ProviderDashboardPage() {
 
           {/* メイン */}
           <div className="pd-main">
-            {/* ダッシュボードヘッダー：以前は店舗名を大見出し(h1)＋公開URL文字列の2行で
-                毎タブ常時表示していたが、業務中は自明な情報で毎回視界に入るだけの
-                ノイズになっていた（でお+スタッフ指摘2026-09-13：「上部にずっと表示
-                されてて邪魔」）。1行の控えめな表示に縮小し、公開URL文字列は削除
-                （同じ情報は「使い方」タブの「公開ページを確認」から見られる）。 */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <span id="provider-number-badge" style={{ display: 'none', fontSize: '11px', fontWeight: '800', padding: '2px 10px', background: '#111', color: '#fff', borderRadius: '99px' }}></span>
-                <h1 style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'rgba(26,20,16,0.45)' }} id="provider-name-header">掲載者ダッシュボード</h1>
-              </div>
-              {/* 「使い方を見る／使い方説明書／自分のページを見る」は全タブのヘッダーに
-                  常時表示されていて、スクロールするたびに視界に入る割に毎回使うもの
-                  ではなくノイズになっていた（でお+奥様指摘2026-09-13：「使い方」メニュー
-                  があるのだからそこにまとめるだけで十分では）。「使い方」タブに集約した
-                  ため、ここには何も置かない。 */}
-            </div>
+            {/* ダッシュボードヘッダー（店舗名見出し・公開URL文字列・使い方リンク等）は
+                段階的に縮小してきたが、最終的に「文字が薄すぎて読めないのに空間だけ
+                占有している」状態になっていた（でお指摘2026-09-14：スマホ画面の写真で
+                上部の空白を指摘。ヘッダー全体を撤去し、各タブの中身をtopbarのすぐ下から
+                始まるようにした。店舗名・掲載者番号を確認したい時は「使い方」タブの
+                「公開ページを確認」から辿れる）。 */}
 
             {/* 初回チュートリアル（タブごとに初回のみ表示） */}
             <div id="tab-tutorial-banner" />
