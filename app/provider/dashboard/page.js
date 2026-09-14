@@ -146,7 +146,7 @@ export default function ProviderDashboardPage() {
         }
         .tab-nav.pd-open { transform: translateX(0); }
         .pd-backdrop.pd-open { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(0,0,0,0.5); }
-        .pd-main { margin-left: 0; padding: 16px; padding-top: 58px; }
+        .pd-main { margin-left: 0; padding: 16px; padding-top: 70px; }
       }
       .tab-pane { display: none; }
       .tab-pane.active { display: block; }
@@ -673,7 +673,6 @@ export default function ProviderDashboardPage() {
         if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) moved = true;
       }, { passive: true });
       el.addEventListener('touchend', (e) => {
-        alert('DEBUG touchend moved=' + moved); // 一時的な診断用。原因特定後に削除する
         if (!moved) { e.preventDefault(); handler(); }
       });
       el.addEventListener('click', handler);
@@ -2100,6 +2099,7 @@ export default function ProviderDashboardPage() {
         // （でお要望2026-09-13：他の場所からもフルの顧客情報ポップアップを開けるように）。
         let c = allItems.find(x => x.user_id === uid);
         if (!c) { await loadAll(); c = allItems.find(x => x.user_id === uid); }
+        alert('DEBUG: openMemberModalInner到達 custModalEl=' + !!custModalEl + ' c見つかった=' + !!c); // 一時的な診断用
         if (!custModalEl) return;
         currentCustUid = uid;
         currentCustType = 'member';
@@ -4834,10 +4834,12 @@ export default function ProviderDashboardPage() {
         try {
           const uid = el.dataset.todayCust;
           if (!uid) { showToast('Finemeに未登録のお客様のため、顧客情報がありません'); return; }
-          if (typeof window.openCustomerModal !== 'function') { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
+          if (typeof window.openCustomerModal !== 'function') { alert('DEBUG: openCustomerModalが未定義です'); showToast('読み込み中です。少し待ってから再度お試しください'); return; } // 一時的な診断用
+          alert('DEBUG: openCustomerModalを呼びます uid=' + uid); // 一時的な診断用
           window.openCustomerModal(uid, 'member', todayNameByUid[uid]);
         } catch (e) {
           console.error('[handleTodayCustTap]', e);
+          alert('DEBUG: 例外発生 ' + e.message); // 一時的な診断用
           showToast('エラー: ' + e.message);
         }
       }
