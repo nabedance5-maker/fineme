@@ -30,6 +30,15 @@ export async function PATCH(request, { params }) {
     update.staff_manually_assigned = !!body.staff_id;
   }
   if ('resource_id' in body) update.resource_id = body.resource_id || null;
+  // 手動登録した予約（電話予約等）を後からFineme会員と紐付ける（でお要望2026-09-14：
+  // 「Finemeの会員情報と後からでもその時でも紐づけられるように」）。既にuser_idが
+  // 付いている予約を上書きしないよう、店舗側の操作は「まだ未紐付けの予約に設定する」
+  // 用途のみ許可する（誤って別人に付け替えてしまう事故を防ぐ）。
+  if ('user_id' in body && body.user_id) {
+    const { data: existing } = await supabase.from('reservations').select('user_id').eq('id', params.id).eq('provider_id', provider.id).single();
+    if (existing?.user_id) return Response.json({ error: 'この予約は既にFineme会員と紐付いています' }, { status: 409 });
+    update.user_id = body.user_id;
+  }
   if (!Object.keys(update).length) return Response.json({ error: '更新項目がありません' }, { status: 400 });
 
   const { data, error } = await supabase
@@ -37,7 +46,7 @@ export async function PATCH(request, { params }) {
     .update(update)
     .eq('id', params.id)
     .eq('provider_id', provider.id)
-    .select('id, staff_id, resource_id, staff_manually_assigned')
+    .select('id, staff_id, resource_id, staff_manually_assigned, user_id')
     .single();
 
   if (error) return Response.json({ error: '予約が見つかりません' }, { status: 404 });

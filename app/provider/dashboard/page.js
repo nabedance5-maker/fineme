@@ -4838,21 +4838,68 @@ export default function ProviderDashboardPage() {
       const manualNoteEl = document.getElementById('cal-manual-note');
       const manualSaveBtn = document.getElementById('cal-manual-save');
       const manualMsgEl = document.getElementById('cal-manual-msg');
-      let manualCtx = null; // { date, time }
+      let manualCtx = null; // { date, time, userId }
 
       function roundToHalfHour(min) {
         return Math.round(min / 30) * 30;
       }
 
+      // Fineme会員検索の共通ヘルパー（でお要望2026-09-14：手動登録の予約を「その場で」
+      // または「後から」Fineme会員と紐付けられるようにする。入力欄・結果表示欄・
+      // 選択時コールバックを渡せば、手動予約モーダル・既存予約の詳細モーダル両方から使える）。
+      function bindMemberSearch(inputEl, resultsEl, onSelect) {
+        if (!inputEl || !resultsEl) return;
+        let timer = null;
+        inputEl.addEventListener('input', () => {
+          clearTimeout(timer);
+          const q = inputEl.value.trim();
+          if (q.length < 3) { resultsEl.innerHTML = ''; return; }
+          timer = setTimeout(async () => {
+            resultsEl.innerHTML = '<p class="muted" style="font-size:12px;margin:4px 0">検索中…</p>';
+            const res = await fetch(`/api/provider/customers/search-member?q=${encodeURIComponent(q)}`, { headers: authHeadersCal() });
+            if (!res.ok) { resultsEl.innerHTML = ''; return; }
+            const rows = await res.json();
+            if (!rows.length) { resultsEl.innerHTML = '<p class="muted" style="font-size:12px;margin:4px 0">見つかりませんでした</p>'; return; }
+            resultsEl.innerHTML = rows.map(r => `
+              <div data-member-pick="${r.id}" data-member-name="${esc(r.name)}" style="padding:6px 8px;border:1px solid rgba(26,20,16,0.1);border-radius:6px;margin-top:4px;cursor:pointer;font-size:12.5px;display:flex;justify-content:space-between;gap:8px">
+                <span>${esc(r.name)}</span><span class="muted">${esc(r.maskedPhone || '')}</span>
+              </div>
+            `).join('');
+            resultsEl.querySelectorAll('[data-member-pick]').forEach(row => row.addEventListener('click', () => {
+              onSelect(row.dataset.memberPick, row.dataset.memberName);
+              resultsEl.innerHTML = '';
+              inputEl.value = '';
+            }));
+          }, 350);
+        });
+      }
+
+      const manualMemberSearchWrap = document.getElementById('cal-manual-member-search-wrap');
+      const manualMemberSelectedEl = document.getElementById('cal-manual-member-selected');
+      const manualMemberSelectedNameEl = document.getElementById('cal-manual-member-selected-name');
+      function setManualSelectedMember(userId, name) {
+        if (manualCtx) manualCtx.userId = userId || null;
+        if (manualMemberSelectedEl) manualMemberSelectedEl.style.display = userId ? 'flex' : 'none';
+        if (manualMemberSearchWrap) manualMemberSearchWrap.style.display = userId ? 'none' : '';
+        if (manualMemberSelectedNameEl) manualMemberSelectedNameEl.textContent = name || '';
+      }
+      bindMemberSearch(
+        document.getElementById('cal-manual-member-search'),
+        document.getElementById('cal-manual-member-results'),
+        (userId, name) => setManualSelectedMember(userId, name),
+      );
+      document.getElementById('cal-manual-member-clear')?.addEventListener('click', () => setManualSelectedMember(null, ''));
+
       function openManualCreate(date, min, colId) {
         const clamped = Math.max(RANGE_START_MIN, Math.min(RANGE_END_MIN - 30, roundToHalfHour(min)));
         const time = `${String(Math.floor(clamped / 60)).padStart(2, '0')}:${String(clamped % 60).padStart(2, '0')}`;
-        manualCtx = { date, time };
+        manualCtx = { date, time, userId: null };
         if (manualWhenEl) manualWhenEl.textContent = `${date} ${time}〜 の予約を追加`;
         if (manualNameEl) manualNameEl.value = '';
         if (manualContactEl) manualContactEl.value = '';
         if (manualNoteEl) manualNoteEl.value = '';
         if (manualMsgEl) manualMsgEl.textContent = '';
+        setManualSelectedMember(null, '');
         const groupKey = currentGroupKey();
         if (manualStaffEl) {
           manualStaffEl.innerHTML = '<option value="">指名なし</option>' + staffList.map(s => `<option value="${s.id}"${groupKey === 'staff_id' && s.id === colId ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
@@ -4898,6 +4945,7 @@ export default function ProviderDashboardPage() {
           staff_id: manualStaffEl?.value || null,
           resource_id: resourceFeatureOn ? (manualResourceEl?.value || null) : null,
           note: manualNoteEl?.value.trim() || '',
+          user_id: manualCtx.userId || null,
         };
         const res = await fetch('/api/provider/reservations/manual', {
           method: 'POST',
@@ -4956,7 +5004,13 @@ export default function ProviderDashboardPage() {
             ／ <span class="muted">${STATUS_LABEL_CAL[r.status] || r.status}</span>
             ${r.staff_id && r.staff_manually_assigned ? '<span style="color:#3b82f6;font-weight:700;font-size:12px;margin-left:6px">（指名なし・店舗が割当）</span>' : ''}
             ${r.note ? `<p class="muted" style="margin:6px 0 0;font-size:12.5px">${esc(r.note)}</p>` : ''}
-            ${r.user_id ? '<button type="button" class="btn btn-ghost" id="cal-modal-open-cust-btn" style="font-size:12px;padding:5px 12px;margin-top:8px">👤 顧客情報を見る（カルテ・回数券など）</button>' : ''}
+            ${r.user_id ? '<button type="button" class="btn btn-ghost" id="cal-modal-open-cust-btn" style="font-size:12px;padding:5px 12px;margin-top:8px">👤 顧客情報を見る（カルテ・回数券など）</button>' : `
+              <div style="margin-top:8px;padding:8px 10px;background:var(--color-bg);border-radius:8px">
+                <label style="display:block;font-size:11px;font-weight:700;margin-bottom:4px">Fineme会員と紐付ける（任意・電話予約等で後から分かった場合）</label>
+                <input type="text" id="cal-modal-member-search" placeholder="お名前または電話番号で検索（3文字以上）" style="width:100%;padding:6px 8px;font-size:12.5px;border:1px solid rgba(26,20,16,0.15);border-radius:6px;box-sizing:border-box" />
+                <div id="cal-modal-member-results" style="margin-top:4px"></div>
+              </div>
+            `}
           `;
           // フルの顧客情報ポップアップ（カルテ編集・回数券・声かけ・担当割当・AI傾向分析）を
           // その場で開けるようにする導線（でお要望2026-09-13：「他の場所でもポップアップを
@@ -4965,6 +5019,25 @@ export default function ProviderDashboardPage() {
             if (!window.openCustomerModal) { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
             window.openCustomerModal(r.user_id, 'member', r.user_name);
           });
+          // 手動登録した予約に後からFineme会員を紐付ける（でお要望2026-09-14：
+          // 「Finemeの会員情報と後からでもその時でも紐づけられるように」）。
+          if (!r.user_id) {
+            bindMemberSearch(
+              document.getElementById('cal-modal-member-search'),
+              document.getElementById('cal-modal-member-results'),
+              async (userId, name) => {
+                const res = await fetch(`/api/provider/reservations/${reservationId}/assign`, {
+                  method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersCal() },
+                  body: JSON.stringify({ user_id: userId }),
+                });
+                if (!res.ok) { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); return; }
+                showToast(`${name}さんと紐付けました`);
+                r.user_id = userId;
+                if (byId[reservationId]) byId[reservationId].user_id = userId;
+                await openMemberModal(reservationId); // 表示を「顧客情報を見る」ボタン付きに更新
+              },
+            );
+          }
         }
         // 担当スタッフ・部屋の割り当て（指名の有無に関わらずいつでも変更できる。でお要望2026-09-12）
         if (modalStaffSelectEl) {
@@ -6025,6 +6098,22 @@ export default function ProviderDashboardPage() {
               <label>連絡先（電話番号など）</label>
               <input type="text" id="cal-manual-contact" placeholder="任意" />
             </div>
+
+            {/* このお客様が実はFineme会員だった場合、その場で紐付けておくとカルテ・
+                来店履歴が引き継がれる（でお要望2026-09-14：「Finemeの会員情報と後からでも
+                その時でも紐づけられるように」）。任意項目のため未紐付けのままでも作成できる。 */}
+            <div className="form-field">
+              <label>Fineme会員と紐付ける（任意）</label>
+              <div id="cal-manual-member-selected" style={{ display: 'none', alignItems: 'center', gap: '8px', padding: '8px 10px', background: '#eff6ff', borderRadius: '8px', fontSize: '13px' }}>
+                <span id="cal-manual-member-selected-name" style={{ fontWeight: 700, color: '#2563eb' }}></span>
+                <button type="button" className="btn btn-ghost" id="cal-manual-member-clear" style={{ fontSize: '11px', padding: '3px 8px', marginLeft: 'auto' }}>解除</button>
+              </div>
+              <div id="cal-manual-member-search-wrap">
+                <input type="text" id="cal-manual-member-search" placeholder="お名前または電話番号で検索（3文字以上）" />
+                <div id="cal-manual-member-results" style={{ marginTop: '4px' }}></div>
+              </div>
+            </div>
+
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <div className="form-field" style={{ flex: '1 1 140px' }}>
                 <label>担当スタッフ</label>

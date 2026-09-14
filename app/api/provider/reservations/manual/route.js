@@ -4,6 +4,9 @@
 // 手動で予約を入れられるようにして。電話来た時とかに入れる時あるから」）。
 // 公開側 POST /api/reservations とは別に用意し、ステータスはいきなり'approved'で確定させる
 // （申請〜承認のフローを踏む必要が無いため）。
+// user_idは任意：登録時点で「この電話番号のお客様は実はFineme会員だった」と分かった
+// 場合、/api/provider/customers/search-memberで検索して紐付けられる（でお要望2026-09-14。
+// 後から紐付ける場合は/api/provider/reservations/[id]/assignのuser_idを使う）。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 
@@ -23,7 +26,7 @@ export async function POST(request) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
-  const { date, time, user_name, user_contact, staff_id, resource_id, note } = body;
+  const { date, time, user_name, user_contact, staff_id, resource_id, note, user_id } = body;
 
   if (!date || !time || !user_name) {
     return Response.json({ error: '日時とお客様名は必須です' }, { status: 400 });
@@ -31,7 +34,7 @@ export async function POST(request) {
 
   const insertPayload = {
     provider_id: provider.id,
-    user_id: null, // 電話予約等、Finemeアカウントを持たないお客様が前提
+    user_id: user_id || null, // 検索で見つけたFineme会員と紐付ける場合のみ設定
     user_name,
     user_contact: user_contact || '',
     note: note || '',
