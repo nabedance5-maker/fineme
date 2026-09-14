@@ -197,17 +197,20 @@ export default function ProviderDashboardPage() {
       if (section) selectCategory(section.dataset.panel);
     }
 
-    // 各タブのデータ読み込みは「タブボタンをクリックした時」のイベントリスナー
-    // （data-tab="X"へのaddEventListener('click', loadX)）にしか紐づいておらず、
-    // switchTab()を直接呼ぶだけの経路（起動時タブのカスタマイズ等）だと見た目だけ
-    // 切り替わってデータが空のまま、という不具合があった（でお報告2026-09-13：
-    // 「予約カレンダーがログイン時は表示されず、更新や他タブから戻ると出る」）。
-    // JSXで最初からactiveなタブ（現在の既定=予約カレンダー）も「見た目はactiveだが
-    // 一度もクリックされていないのでロード未実行」という状態がありうるため、
-    // activeクラスの有無ではなく再入防止フラグでガードし、switchTab()経由の
-    // 切り替えでは毎回対応ボタンのclickイベントを発火させて既存のクリック時
-    // ロードをそのまま流用する。
-    let switchTabDispatching = false;
+    // switchTab()は見た目（activeクラス）の切り替えだけを行う純粋な関数。
+    // 各タブの実データ読み込みは「タブボタンをクリックした時」のイベントリスナー
+    // （data-tab="X"へのaddEventListener('click', loadX)）にしか紐づいていない。
+    //
+    // 過去にswitchTab内で対応ボタンのclickイベントを自前でdispatchしてこれを
+    // 補おうとしたが、ユーザーが本物のタブボタンをクリックした時に「共通リスナー
+    // →switchTab→dispatch→共通リスナーとloadXが再実行→dispatch完了後、元の
+    // ネイティブイベントの続きでloadXがもう一度実行」という二重発火を起こし、
+    // 2つの非同期ロードが競合してDOM・イベントバインドが不安定になっていた
+    // （でお報告2026-09-14：「今日の業務」の一覧クリックが直らない、の実際の原因）。
+    // 正しい修正：switchTabからdispatchを完全に排除し、プログラムからタブを
+    // 切り替えたい箇所（起動時タブの自動切り替え等）は、この関数ではなく
+    // 対応するタブボタンの.click()を直接呼ぶ（ネイティブクリックと全く同じ
+    // 経路を1回だけ通るため、二重発火が起こりようがない）。
     function switchTab(tabId) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
@@ -216,11 +219,6 @@ export default function ProviderDashboardPage() {
       const pane = document.getElementById('tab-' + tabId);
       if (btn) btn.classList.add('active');
       if (pane) pane.classList.add('active');
-      if (btn && !switchTabDispatching) {
-        switchTabDispatching = true;
-        try { btn.dispatchEvent(new Event('click', { bubbles: false })); }
-        finally { switchTabDispatching = false; }
-      }
     }
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => { switchTab(btn.dataset.tab); closeMobileNav(); });
@@ -315,11 +313,13 @@ export default function ProviderDashboardPage() {
         if (btn) btn.style.order = String(i);
       });
 
-      // 起動時タブの適用。JSXの既定タブ（予約カレンダー）と一致していても、
-      // switchTab()を呼ばないとその場のデータロードが起きないため、必ず呼ぶ
-      // （switchTab自体は同じタブへの切り替えでも安全にデータロードを発火できる）。
+      // 起動時タブの適用。switchTab()は見た目だけなので、対応するタブボタンの
+      // .click()を直接呼ぶ（ネイティブクリックと全く同じ経路を1回だけ通るため、
+      // switchTab側の共通リスナーとタブ固有ロードの両方が正しく1回ずつ動く）。
+      // このタイミングは非同期フェッチ完了後のため、各タブのクリックリスナーは
+      // 既に登録済みで安全に呼べる。
       if (needsLandingTabApply) {
-        switchTab(prefs.landing_tab);
+        document.querySelector(`[data-tab="${prefs.landing_tab}"]`)?.click();
       }
     })();
 

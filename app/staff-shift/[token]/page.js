@@ -61,6 +61,7 @@ export default function StaffShiftPage({ params }) {
   const [editStart, setEditStart] = useState('10:00');
   const [editEnd, setEditEnd] = useState('18:00');
   const [saving, setSaving] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
   const [submittingAll, setSubmittingAll] = useState(false);
 
   async function load() {
@@ -116,6 +117,11 @@ export default function StaffShiftPage({ params }) {
           ...prev,
           requests: [...(prev.requests || []).filter(r => !(r.date === date)), saved],
         }));
+        // でお指摘2026-09-14：端に小さく「保存中」と出るだけでは気づかず、何回も
+        // ボタンを押してしまう→画面上部に大きく帯で「保存中…」「✓保存しました」を
+        // 出し、見落としようがなくする。
+        setSavedFlash(true);
+        setTimeout(() => setSavedFlash(false), 1200);
       } else {
         const err = await res.json().catch(() => ({}));
         alert('エラー: ' + (err.error || '不明'));
@@ -162,6 +168,11 @@ export default function StaffShiftPage({ params }) {
 
   return (
     <div style={{ maxWidth: '480px', margin: '40px auto', padding: '0 20px 60px', color: '#e8e4dc' }}>
+      {(saving || savedFlash) && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 999, textAlign: 'center', padding: '13px', fontWeight: '800', fontSize: '14px', background: saving ? '#c9a84c' : '#4ade80', color: '#0a0f1e' }}>
+          {saving ? '保存中…' : '✓ 保存しました'}
+        </div>
+      )}
       <h1 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 4px' }}>{data.provider.name} シフト希望</h1>
       <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.6)', margin: '0 0 20px' }}>{data.staff.name}さん</p>
 
