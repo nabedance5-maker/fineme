@@ -1,10 +1,14 @@
 // GET    /api/staff-shift/[token] → スタッフ本人向け：現在募集中の期間・自分の提出済み希望
-// POST   /api/staff-shift/[token] → 希望を1件提出／更新（type='work'|'off'）
-// DELETE /api/staff-shift/[token] → 提出済みの希望を1件取り消す
+// POST   /api/staff-shift/[token] → 希望を1件、選んだ瞬間に自動保存（type='work'|'off'）
+// DELETE /api/staff-shift/[token] → 保存済みの希望を1件取り消す
 //
 // スタッフはFinemeの認証アカウントを持たないため、provider_staff.shift_access_token
 // （推測不可能なUUID）を本人確認の代わりに使う認証不要の公開エンドポイント
 // （予約確認Webhook等、既存の同種の設計と同じ方針）。
+//
+// でお指摘2026-09-14：「日付ごとに『提出する』ボタンを押すのがネック」→日付を選んだ
+// 瞬間に自動保存する方式に変更（このPOSTは1日1回の自動保存として都度呼ばれる）。
+// 「提出」ボタンは全体の完了を知らせる合図として別エンドポイント(submit/route.js)に分離。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 
@@ -38,13 +42,14 @@ export async function GET(request, { params }) {
     .maybeSingle();
 
   let requests = [];
+  let submitted = false;
   if (period) {
-    const { data } = await supabase
-      .from('provider_shift_requests')
-      .select('id, date, type, start_time, end_time, note')
-      .eq('period_id', period.id)
-      .eq('staff_id', staff.id);
+    const [{ data }, { data: sub }] = await Promise.all([
+      supabase.from('provider_shift_requests').select('id, date, type, start_time, end_time, note').eq('period_id', period.id).eq('staff_id', staff.id),
+      supabase.from('provider_shift_submissions').select('submitted_at').eq('period_id', period.id).eq('staff_id', staff.id).maybeSingle(),
+    ]);
     requests = data || [];
+    submitted = !!sub;
   }
 
   return Response.json({
@@ -52,6 +57,7 @@ export async function GET(request, { params }) {
     provider: { name: staff.providers?.name || '' },
     period: period || null,
     requests,
+    submitted,
   });
 }
 
@@ -72,6 +78,11 @@ export async function POST(request, { params }) {
   const { data: period } = await supabase.from('provider_shift_periods').select('id, provider_id, status').eq('id', period_id).single();
   if (!period || period.provider_id !== staff.provider_id) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
   if (period.status !== 'collecting') return Response.json({ error: 'この期間は希望の募集を締め切っています' }, { status: 400 });
+
+  // 同じ日にwork/off両方が残るのはおかしいため、逆typeの既存希望があれば消してから保存する
+  // （カレンダーで日付をタップして出勤/休みを選び直す新UIでは、両方残ると混乱するため）
+  const otherType = type === 'work' ? 'off' : 'work';
+  await supabase.from('provider_shift_requests').delete().eq('period_id', period_id).eq('staff_id', staff.id).eq('date', date).eq('type', otherType);
 
   const { data, error } = await supabase
     .from('provider_shift_requests')

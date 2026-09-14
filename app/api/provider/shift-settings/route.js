@@ -15,7 +15,8 @@ async function getProviderByToken(token) {
   return data || null;
 }
 
-const DEFAULT_SETTINGS = { rule_type: 'as_requested' };
+// でお要望2026-09-14：デフォルトは時間帯パターンの必要人数方式を表示する
+const DEFAULT_SETTINGS = { rule_type: 'staffing_target' };
 
 export async function GET(request) {
   const authHeader = request.headers.get('Authorization');

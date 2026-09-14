@@ -1286,12 +1286,26 @@ export default function ProviderDashboardPage() {
         const el = document.getElementById('shift-requests-summary');
         if (!el || !currentPeriodId) return;
         el.innerHTML = '読み込み中…';
-        const res = await fetch(`/api/provider/shift-requests?periodId=${currentPeriodId}`, { headers: authHeadersShift() });
-        if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
-        const requests = await res.json();
-        if (!requests.length) { el.innerHTML = '<p class="muted" style="font-size:13px">まだ希望が提出されていません。</p>'; return; }
         const nameOf = id => shiftStaffList.find(s => s.id === id)?.name || '(不明)';
-        el.innerHTML = requests.map(r => `
+        const [reqRes, subRes] = await Promise.all([
+          fetch(`/api/provider/shift-requests?periodId=${currentPeriodId}`, { headers: authHeadersShift() }),
+          fetch(`/api/provider/shift-submissions?periodId=${currentPeriodId}`, { headers: authHeadersShift() }),
+        ]);
+        if (!reqRes.ok) { el.innerHTML = authErrorHtml(reqRes); return; }
+        const requests = await reqRes.json();
+        const submissions = subRes.ok ? await subRes.json() : [];
+        const submittedIds = new Set(submissions.map(s => s.staff_id));
+
+        // 提出完了状況（でお要望2026-09-14：日付ごとの提出ボタンをやめた分、店舗側は
+        // 誰が「これで完了です」を押したか一目で分かるようにする）
+        const statusHtml = shiftStaffList.length
+          ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${shiftStaffList.map(s => `
+              <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${submittedIds.has(s.id) ? '#10b98120' : '#f3f4f6'};color:${submittedIds.has(s.id) ? '#10b981' : '#9ca3af'}">${submittedIds.has(s.id) ? '✓' : '…'} ${esc(s.name)}</span>
+            `).join('')}</div>`
+          : '';
+
+        if (!requests.length) { el.innerHTML = statusHtml + '<p class="muted" style="font-size:13px">まだ希望が提出されていません。</p>'; return; }
+        el.innerHTML = statusHtml + requests.map(r => `
           <div style="font-size:12.5px;padding:4px 0;border-bottom:1px solid rgba(26,20,16,0.06)">
             ${esc(nameOf(r.staff_id))}　${esc(r.date)}　${r.type === 'work' ? `<span style="color:#2563eb">出勤希望 ${esc(r.start_time || '')}〜${esc(r.end_time || '')}</span>` : '<span style="color:#dc2626">休み希望</span>'}${r.note ? `　<span class="muted">${esc(r.note)}</span>` : ''}
           </div>
@@ -4827,11 +4841,14 @@ export default function ProviderDashboardPage() {
         const rows = await res.json();
         if (!rows.length) { el.innerHTML = '<p class="muted" style="font-size:13px">今日の予約はありません。</p>'; return; }
         rows.forEach(r => rememberTodayName(r.user_id, r.user_name));
+        // でお指摘2026-09-14：「予約タブの予約リクエストの一覧と表示が違う」ため、
+        // 見た目・クリックの当たり判定ともに.req-row（予約リクエスト一覧で実際に
+        // 動いている実績のあるクラス）をそのまま使い、完全に同じ構造にする。
         el.innerHTML = rows.map(r => `
-          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(26,20,16,0.06);cursor:pointer" data-today-cust="${r.user_id || ''}">
-            <strong style="font-size:13px;flex-shrink:0">${r.time ? r.time.slice(0, 5) : '--:--'}</strong>
-            <span style="font-size:13px">${custNameSpan(r.user_id, r.user_name)}</span>
-            ${r.staff_name ? `<span class="muted" style="font-size:12px">${esc(r.staff_name)}</span>` : ''}
+          <div class="req-row" style="grid-template-columns:56px 1fr auto" data-today-cust="${r.user_id || ''}">
+            <span>${r.time ? r.time.slice(0, 5) : '--:--'}</span>
+            <span class="req-row-name">${custNameSpan(r.user_id, r.user_name)}</span>
+            <span class="muted" style="font-size:12px">${r.staff_name ? esc(r.staff_name) : ''}</span>
           </div>
         `).join('');
         bindTodayCustHandlers(el);
@@ -4847,14 +4864,25 @@ export default function ProviderDashboardPage() {
         const rows = await res.json();
         const pending = rows.filter(r => r.status === 'pending');
         if (!pending.length) { el.innerHTML = '<p class="muted" style="font-size:13px">未対応のリクエストはありません。</p>'; return; }
-        pending.forEach(r => rememberTodayName(r.user_id, r.user_name));
+        // これは予約リクエストタブに出るのと全く同じデータのため、顧客情報ではなく
+        // 予約リクエスト詳細モーダル（承認・代替提案ができる、既に確実に動いている
+        // window.openRequestModalWithData）をそのまま使う（でお指摘2026-09-14：
+        // 「予約リクエスト一覧と表示が違う」→.req-rowで完全に統一）。
+        const pendingById = {};
+        pending.forEach(r => { pendingById[r.id] = r; });
         el.innerHTML = `<p style="margin:0 0 8px;font-size:20px;font-weight:800">${pending.length}件</p>` +
           pending.slice(0, 5).map(r => `
-            <div style="padding:6px 0;border-bottom:1px solid rgba(26,20,16,0.06);font-size:13px;cursor:pointer" data-today-cust="${r.user_id || ''}">
-              ${custNameSpan(r.user_id, r.user_name)} <span class="muted" style="font-size:12px">${esc(r.reserved_date || '')} ${esc(r.start_time || '')}</span>
+            <div class="req-row" style="grid-template-columns:1fr auto" data-today-req="${r.id}">
+              <span class="req-row-name">${esc(r.user_name || '')}</span>
+              <span class="muted" style="font-size:12px">${esc(r.reserved_date || '')} ${esc(r.start_time || '')}</span>
             </div>
           `).join('');
-        bindTodayCustHandlers(el);
+        el.querySelectorAll('[data-today-req]').forEach(row => row.addEventListener('click', () => {
+          const r = pendingById[row.dataset.todayReq];
+          if (!r) { showToast('データが見つかりません'); return; }
+          if (typeof window.openRequestModalWithData !== 'function') { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
+          window.openRequestModalWithData(r);
+        }));
       }
 
       async function loadTodayCheckins() {
