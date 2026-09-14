@@ -4446,7 +4446,12 @@ export default function ProviderDashboardPage() {
       let selectedDate = todayStr;
       // ピルをクリックして手動で日付を選んだ後は、自動フォーカス（下記）を邪魔しないようにする
       let userPickedDate = false;
-      let viewMode = 'staff'; // 'staff' | 'resource'（でお要望2026-09-12：カレンダーをスタッフ別/部屋別で切り替え）
+      // 'combined'（スタッフ列＋各ブロックに部屋名を注記）| 'staff' | 'resource'
+      // （でお要望2026-09-12：カレンダーをスタッフ別/部屋別で切り替え／
+      //   でお要望2026-09-14：「合体させたやつが欲しい。デフォルトはそれを表示」）。
+      // 列組み・グループ分けは'combined'も'staff'と同じ（スタッフ列＋指名なし）で、
+      // 部屋・設備管理がONの店舗だけ各ブロックに担当部屋を注記する。
+      let viewMode = 'combined';
       let viewModePicked = false; // 手動で切り替えた後は、店舗の既定値で上書きし直さない
 
       function weekDates() {
@@ -4501,6 +4506,14 @@ export default function ProviderDashboardPage() {
         return r.duration_minutes || DEFAULT_DURATION_MIN;
       }
 
+      // 「スタッフ×部屋」合体ビュー用：スタッフ列に、担当部屋があれば注記として添える
+      // （でお要望2026-09-14：「スタッフ別と部屋別を合体させたやつが欲しい」）。
+      function resourceTagOf(r) {
+        if (viewMode !== 'combined' || !resourceFeatureOn || !r.resource_id) return '';
+        const res = resourceList.find(x => x.id === r.resource_id);
+        return res ? `<span class="cal-block-tag">🏠${esc(res.name)}</span>` : '';
+      }
+
       function staffColumns() {
         return [...staffList.map(s => ({ key: s.id, id: s.id, name: s.name })), { key: 'unassigned', id: null, name: '指名なし' }];
       }
@@ -4551,7 +4564,7 @@ export default function ProviderDashboardPage() {
             const isPending = r.status === 'pending' || r.status === 'counter_proposed';
             return `
               <div class="cal-block${r.status === 'visited' ? ' is-visited' : ''}${isManualAssign ? ' is-manual-assign' : ''}${isPending ? ' is-pending' : ''}" style="top:${top}px;height:${height}px" data-cal-open="${r.id}">
-                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}
+                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${resourceTagOf(r)}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}
               </div>
             `;
           }).join('');
@@ -4609,7 +4622,7 @@ export default function ProviderDashboardPage() {
             const isPending = r.status === 'pending' || r.status === 'counter_proposed';
             return `
               <div class="cal-block-h${r.status === 'visited' ? ' is-visited' : ''}${isManualAssign ? ' is-manual-assign' : ''}${isPending ? ' is-pending' : ''}" style="left:${left}px;width:${width}px" data-cal-open="${r.id}">
-                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}
+                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${resourceTagOf(r)}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}
               </div>
             `;
           }).join('');
@@ -4645,6 +4658,7 @@ export default function ProviderDashboardPage() {
         if (!resourceFeatureOn) { viewToggleEl.style.display = 'none'; return; }
         viewToggleEl.style.display = 'flex';
         viewToggleEl.innerHTML = `
+          <button type="button" class="btn ${viewMode === 'combined' ? '' : 'btn-ghost'}" data-cal-view="combined" style="font-size:12px;padding:6px 12px">スタッフ×部屋</button>
           <button type="button" class="btn ${viewMode === 'staff' ? '' : 'btn-ghost'}" data-cal-view="staff" style="font-size:12px;padding:6px 12px">スタッフ別</button>
           <button type="button" class="btn ${viewMode === 'resource' ? '' : 'btn-ghost'}" data-cal-view="resource" style="font-size:12px;padding:6px 12px">部屋別</button>
         `;
@@ -4993,7 +5007,9 @@ export default function ProviderDashboardPage() {
       async function initAndLoad() {
         // 部屋・設備管理がONの店舗は、店舗設定の既定ビュー（スタッフ別/部屋別）を
         // 初回だけ適用する（でお要望2026-09-13：部屋別をメインにしたい店舗もある）。
-        if (!viewModePicked && dashboardPrefs?.calendar_default_view === 'resource') viewMode = 'resource';
+        if (!viewModePicked && ['combined', 'staff', 'resource'].includes(dashboardPrefs?.calendar_default_view)) {
+          viewMode = dashboardPrefs.calendar_default_view;
+        }
         await Promise.all([loadStaff(), loadResourcesAndFeatures(), loadCalendarRange()]);
         renderViewToggle();
         await loadWeek();
