@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { syncVisitToLog } from '@/lib/sync-visit';
+import { notifyStoreIfAtRiskVisit } from '@/lib/at-risk-visit-notify';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -62,6 +63,8 @@ export async function POST(request) {
     if (error) return Response.json({ error: error.message }, { status: 500 });
 
     if (provider.slug) {
+      // syncVisitToLogがlast_visitを更新する前に「久しぶりの来店か」を判定する必要がある
+      await notifyStoreIfAtRiskVisit(supabase, { userId: profile.id, providerId: provider.id, providerSlug: provider.slug, memberName: profile.display_name });
       await syncVisitToLog(supabase, { userId: profile.id, providerSlug: provider.slug });
     }
     return Response.json({ ...row, customer_name: profile.display_name || '(名前未設定)' });

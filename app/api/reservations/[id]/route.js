@@ -5,6 +5,7 @@ import { sendReservationStatusEmail, sendVisitConfirmedEmail, sendCancelledByUse
 import { sendLinePush } from '@/lib/line-push';
 import { notifyCustomerLine } from '@/lib/reservation-notify';
 import { syncVisitToLog } from '@/lib/sync-visit';
+import { notifyStoreIfAtRiskVisit } from '@/lib/at-risk-visit-notify';
 
 export async function GET(request, context) {
   try {
@@ -173,6 +174,8 @@ export async function PATCH(request, context) {
     if (newStatus === 'visited' && data.user_id) {
       const { data: providerRow } = await db.from('providers').select('slug').eq('id', data.provider_id).single();
       if (providerRow?.slug) {
+        // syncVisitToLogがlast_visitを更新する前に「久しぶりの来店か」を判定する必要がある
+        await notifyStoreIfAtRiskVisit(db, { userId: data.user_id, providerId: data.provider_id, providerSlug: providerRow.slug, memberName: data.user_name });
         await syncVisitToLog(db, {
           userId: data.user_id,
           providerSlug: providerRow.slug,
