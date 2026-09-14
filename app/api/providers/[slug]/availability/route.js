@@ -41,7 +41,25 @@ export async function GET(request, { params }) {
   if (!slots?.length) return Response.json([]);
 
   // service_id指定時は「そのサービス専用の枠」＋「全サービス共通の枠(service_id=NULL)」を両方残す
-  const filtered = serviceId ? slots.filter(s => !s.service_id || s.service_id === serviceId) : slots;
+  let filtered = serviceId ? slots.filter(s => !s.service_id || s.service_id === serviceId) : slots;
+  if (!filtered.length) return Response.json([]);
+
+  // スタッフの休憩・外出ブロック（でお要望2026-09-14）と重なる枠は、お客様には見せない。
+  // 枠自体はauto-generate時点で除外済みのことが多いが、枠を生成した後にブロックが
+  // 追加された場合に備えて、公開一覧の取得時にも都度除外する（二重の安全策）。
+  const dates = [...new Set(filtered.map(s => s.date))];
+  const { data: blocks } = await supabase
+    .from('provider_staff_blocks')
+    .select('staff_id, date, start_time, end_time')
+    .eq('provider_id', provider.id)
+    .in('date', dates);
+  if (blocks?.length) {
+    const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    filtered = filtered.filter(s => {
+      if (!s.staff_id) return true;
+      return !blocks.some(b => b.staff_id === s.staff_id && b.date === s.date && toMin(s.start_time) < toMin(b.end_time) && toMin(s.end_time) > toMin(b.start_time));
+    });
+  }
   if (!filtered.length) return Response.json([]);
 
   const slotIds = filtered.map(s => s.id);

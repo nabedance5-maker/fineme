@@ -111,6 +111,14 @@ export default function ProviderDashboardPage() {
       .cal-block.is-manual-assign, .cal-block-h.is-manual-assign { background: rgba(96,165,250,0.16); border-left-color: #60a5fa; }
       .cal-block.is-manual-assign:hover, .cal-block-h.is-manual-assign:hover { background: rgba(96,165,250,0.28); }
       .cal-block-tag { display: block; font-size: 9.5px; color: #3b82f6; font-weight: 700; }
+      /* スタッフの休憩・外出ブロック／シフト外時間のグレー帯（でお要望2026-09-14：
+         「出勤してないスタッフの枠は予約が入らないように自動でブロックしてカレンダーでも
+         グレーで帯をかけて」）。予約ブロックより手前（下）に描画し、クリックは通さない。 */
+      .cal-grey-band { position: absolute; background: repeating-linear-gradient(135deg, rgba(26,20,16,0.05), rgba(26,20,16,0.05) 6px, rgba(26,20,16,0.09) 6px, rgba(26,20,16,0.09) 12px); pointer-events: none; z-index: 0; }
+      .cal-grey-band.is-deletable { pointer-events: auto; cursor: pointer; }
+      .cal-grey-band-v { left: 0; right: 0; }
+      .cal-grey-band-h { top: 0; bottom: 0; }
+      .cal-block, .cal-block-h { z-index: 1; }
       .cal-block strong, .cal-block-h strong { display: block; font-size: 10.5px; }
       .cal-block { position: absolute; left: 2px; right: 2px; }
       /* 縦横入れ替え版（でお要望2026-09-13：店舗によって時間軸を横に置きたい／
@@ -4675,6 +4683,12 @@ export default function ProviderDashboardPage() {
       let staffList = [];
       let resourceList = [];
       let resourceFeatureOn = false;
+      let shiftFeatureOn = false;
+      // スタッフの休憩・外出ブロック（でお要望2026-09-14）と、シフト確定済みの勤務時間帯を
+      // 週窓分キャッシュし、カレンダーのグレー表示（帯）に使う。
+      let staffBlocksCache = [];
+      let shiftWindowsByStaffDate = {}; // { [staffId]: { [date]: [{start,end}] } }
+      let shiftCoveredDates = new Set(); // シフトデータが存在する（＝グレー判定の対象になる）日付
       let selectedDate = todayStr;
       // ピルをクリックして手動で日付を選んだ後は、自動フォーカス（下記）を邪魔しないようにする
       let userPickedDate = false;
@@ -4706,8 +4720,57 @@ export default function ProviderDashboardPage() {
           fetch('/api/provider/features', { headers: authHeadersCal() }),
           fetch('/api/provider/resources', { headers: authHeadersCal() }),
         ]);
-        if (featRes.ok) { const { features } = await featRes.json(); resourceFeatureOn = !!features?.resource_management; }
+        if (featRes.ok) { const { features } = await featRes.json(); resourceFeatureOn = !!features?.resource_management; shiftFeatureOn = !!features?.shift_management; }
         if (resRes.ok) { const rows = await resRes.json(); resourceList = (rows || []).filter(r => r.active !== false); }
+      }
+
+      // スタッフの休憩・外出ブロック＋（シフト管理ONの店舗のみ）確定シフトの勤務時間帯を
+      // 表示中の週分まとめて取得する（でお要望2026-09-14：「出勤してないスタッフの枠は
+      // 予約が入らないように自動でブロックしてカレンダーでもグレーで帯をかけて」）。
+      async function loadStaffBlocksAndShifts() {
+        const dates = weekDates();
+        const from = fmtDate(dates[0]);
+        const to = fmtDate(dates[6]);
+        const requests = [fetch(`/api/provider/staff-blocks?from=${from}&to=${to}`, { headers: authHeadersCal() })];
+        if (shiftFeatureOn) requests.push(fetch(`/api/provider/shift-entries/for-range?from=${from}&to=${to}`, { headers: authHeadersCal() }));
+        const results = await Promise.all(requests);
+        staffBlocksCache = results[0].ok ? await results[0].json() : [];
+
+        shiftWindowsByStaffDate = {};
+        shiftCoveredDates = new Set();
+        if (shiftFeatureOn && results[1]?.ok) {
+          const { entries, coveredPeriods } = await results[1].json();
+          (coveredPeriods || []).forEach(p => {
+            let d = new Date(p.start + 'T00:00:00');
+            const end = new Date(p.end + 'T00:00:00');
+            while (d <= end) { shiftCoveredDates.add(fmtDate(d)); d.setDate(d.getDate() + 1); }
+          });
+          (entries || []).forEach(e => {
+            shiftWindowsByStaffDate[e.staff_id] = shiftWindowsByStaffDate[e.staff_id] || {};
+            (shiftWindowsByStaffDate[e.staff_id][e.date] = shiftWindowsByStaffDate[e.staff_id][e.date] || []).push({ start: e.start_time, end: e.end_time });
+          });
+        }
+      }
+
+      // 指定スタッフ・日付の「グレー表示すべき区間」（分単位、RANGE基準）を返す。
+      // ①休憩・外出ブロック ②（シフトデータがある日のみ）勤務時間外、の両方を合成する。
+      function greyIntervalsFor(staffId, dateStr) {
+        if (!staffId) return [];
+        const out = [];
+        staffBlocksCache.forEach(b => {
+          if (b.staff_id === staffId && b.date === dateStr) out.push({ start: timeToMinutes(b.start_time), end: timeToMinutes(b.end_time), kind: 'block', id: b.id });
+        });
+        if (shiftFeatureOn && shiftCoveredDates.has(dateStr)) {
+          const windows = (shiftWindowsByStaffDate[staffId] && shiftWindowsByStaffDate[staffId][dateStr]) || [];
+          const sorted = windows.map(w => ({ start: timeToMinutes(w.start), end: timeToMinutes(w.end) })).sort((a, b) => a.start - b.start);
+          let cursor = RANGE_START_MIN;
+          sorted.forEach(w => {
+            if (w.start > cursor) out.push({ start: cursor, end: w.start, kind: 'offshift' });
+            cursor = Math.max(cursor, w.end);
+          });
+          if (cursor < RANGE_END_MIN) out.push({ start: cursor, end: RANGE_END_MIN, kind: 'offshift' });
+        }
+        return out;
       }
 
       function renderPills() {
@@ -4736,6 +4799,24 @@ export default function ProviderDashboardPage() {
       // それ以外（申請制）はメニュー所要時間を保持していないため目安値を使う。
       function durationOf(r) {
         return r.duration_minutes || DEFAULT_DURATION_MIN;
+      }
+
+      // スタッフ列に、休憩・外出ブロック／シフト外時間のグレー帯を描く（でお要望2026-09-14：
+      // 「出勤してないスタッフの枠は予約が入らないように自動でブロックしてカレンダーでも
+      // グレーで帯をかけてわかるように」）。縦版(top/height)・横版(left/width)共通のロジックを
+      // 座標変換関数だけ差し替えて使う。
+      function greyBandsHtml(col, totalMin, totalSize, posKey, sizeKey, extraClass) {
+        if (col.groupKey !== 'staff_id' || !col.id) return '';
+        return greyIntervalsFor(col.id, selectedDate).map(iv => {
+          const s = Math.max(RANGE_START_MIN, iv.start);
+          const e = Math.min(RANGE_END_MIN, iv.end);
+          if (e <= s) return '';
+          const pos = ((s - RANGE_START_MIN) / totalMin) * totalSize;
+          const size = ((e - s) / totalMin) * totalSize;
+          const isBlock = iv.kind === 'block';
+          const label = isBlock ? 'タップで削除：休憩・外出ブロック' : 'シフト外（勤務予定なし）';
+          return `<div class="cal-grey-band${extraClass}${isBlock ? ' is-deletable' : ''}" style="${posKey}:${pos}px;${sizeKey}:${size}px" title="${esc(label)}"${isBlock ? ` data-staff-block-id="${iv.id}"` : ''}></div>`;
+        }).join('');
       }
 
       // 「スタッフ×部屋」合体ビュー：部屋を単なる注記（タグ）にすると①文字が
@@ -4803,7 +4884,8 @@ export default function ProviderDashboardPage() {
               </div>
             `;
           }).join('');
-          return `<div class="cal-staff-col${col.groupKey === 'resource_id' ? ' is-resource-col' : ''}${i === firstResourceIdx ? ' is-group-start' : ''}" style="height:${totalHeight}px" data-cal-col-id="${col.id || ''}" data-cal-col-group="${col.groupKey}">${hourLines}${blocksHtml}</div>`;
+          const greyHtml = greyBandsHtml(col, totalMin, totalHeight, 'top', 'height', '-v');
+          return `<div class="cal-staff-col${col.groupKey === 'resource_id' ? ' is-resource-col' : ''}${i === firstResourceIdx ? ' is-group-start' : ''}" style="height:${totalHeight}px" data-cal-col-id="${col.id || ''}" data-cal-col-group="${col.groupKey}">${hourLines}${greyHtml}${blocksHtml}</div>`;
         }).join('');
 
         // ヘッダー・本体を同じgrid-template-columnsを持つ1つのグリッドのセルとして並べる
@@ -4862,9 +4944,10 @@ export default function ProviderDashboardPage() {
               </div>
             `;
           }).join('');
+          const greyHtml = greyBandsHtml(col, totalMin, totalWidth, 'left', 'width', '-h');
           return `
             <div class="cal-row-name-h${col.groupKey === 'resource_id' ? ' is-resource-head' : ''}${i === firstResourceIdx ? ' is-group-start' : ''}" style="height:${rowH}px">${esc(col.name)}</div>
-            <div class="cal-lane${col.groupKey === 'resource_id' ? ' is-resource-col' : ''}${i === firstResourceIdx ? ' is-group-start' : ''}" style="height:${rowH}px;width:${totalWidth}px" data-cal-col-id="${col.id || ''}" data-cal-col-group="${col.groupKey}">${vLines}${blocksHtml}</div>
+            <div class="cal-lane${col.groupKey === 'resource_id' ? ' is-resource-col' : ''}${i === firstResourceIdx ? ' is-group-start' : ''}" style="height:${rowH}px;width:${totalWidth}px" data-cal-col-id="${col.id || ''}" data-cal-col-group="${col.groupKey}">${vLines}${greyHtml}${blocksHtml}</div>
           `;
         }).join('');
 
@@ -4887,6 +4970,7 @@ export default function ProviderDashboardPage() {
           : buildGridHtml(items, currentColumns());
         bindCalOpenHandlers(gridWrapEl);
         bindCalEmptyHandlers(gridWrapEl);
+        bindGreyBandHandlers(gridWrapEl);
       }
 
       function renderViewToggle() {
@@ -4931,6 +5015,7 @@ export default function ProviderDashboardPage() {
         const from = fmtDate(dates[0]);
         const to = fmtDate(dates[6]);
         if (labelEl) labelEl.textContent = `${from} 〜 ${to}`;
+        await loadStaffBlocksAndShifts();
         const res = await fetch(`/api/provider/calendar?from=${from}&to=${to}`, { headers: authHeadersCal() });
         if (!res.ok) { if (gridWrapEl) gridWrapEl.innerHTML = authErrorHtml(res); return; }
         const rows = await res.json();
@@ -5005,6 +5090,16 @@ export default function ProviderDashboardPage() {
         container.querySelectorAll('[data-cal-open]').forEach(el => bindTapHandler(el, () => openCalItem(el.dataset.calOpen)));
       }
 
+      // 休憩・外出ブロックのグレー帯をタップすると削除できるように（でお要望2026-09-14）。
+      function bindGreyBandHandlers(container) {
+        container.querySelectorAll('[data-staff-block-id]').forEach(el => bindTapHandler(el, async () => {
+          if (!confirm('この休憩・外出ブロックを削除しますか？')) return;
+          const res = await fetch(`/api/provider/staff-blocks/${el.dataset.staffBlockId}`, { method: 'DELETE', headers: authHeadersCal() });
+          if (res.ok) { showToast('ブロックを削除しました'); await loadStaffBlocksAndShifts(); renderDay(); }
+          else showToast('削除に失敗しました');
+        }));
+      }
+
       // 空き枠（予約ブロックが無い場所）をタップ/クリックしたら手動予約作成モーダルを開く
       // （でお要望2026-09-14：「電話来た時とかに入れる時あるから」）。列コンテナ
       // （.cal-staff-col / .cal-lane）自体にバインドし、実際にタップされたのが既存の
@@ -5020,7 +5115,30 @@ export default function ProviderDashboardPage() {
       const manualNoteEl = document.getElementById('cal-manual-note');
       const manualSaveBtn = document.getElementById('cal-manual-save');
       const manualMsgEl = document.getElementById('cal-manual-msg');
-      let manualCtx = null; // { date, time, userId }
+      const manualModeReservationBtn = document.getElementById('cal-manual-mode-reservation');
+      const manualModeBlockBtn = document.getElementById('cal-manual-mode-block');
+      const manualReservationFieldsEl = document.getElementById('cal-manual-reservation-fields');
+      const manualReservationFields2El = document.getElementById('cal-manual-reservation-fields-2');
+      const manualBlockFieldsEl = document.getElementById('cal-manual-block-fields');
+      const manualBlockReasonEl = document.getElementById('cal-manual-block-reason');
+      const manualBlockStartEl = document.getElementById('cal-manual-block-start');
+      const manualBlockEndEl = document.getElementById('cal-manual-block-end');
+      let manualCtx = null; // { date, time, userId, mode: 'reservation'|'block' }
+
+      // 予約追加／休憩・外出ブロックのモード切替（でお要望2026-09-14）。
+      function setManualMode(mode) {
+        if (manualCtx) manualCtx.mode = mode;
+        const isBlock = mode === 'block';
+        if (manualReservationFieldsEl) manualReservationFieldsEl.style.display = isBlock ? 'none' : '';
+        if (manualReservationFields2El) manualReservationFields2El.style.display = isBlock ? 'none' : '';
+        if (manualBlockFieldsEl) manualBlockFieldsEl.style.display = isBlock ? '' : 'none';
+        if (manualResourceFieldEl) manualResourceFieldEl.style.display = (!isBlock && resourceFeatureOn) ? '' : 'none';
+        if (manualModeReservationBtn) manualModeReservationBtn.className = `btn ${isBlock ? 'btn-ghost' : ''}`;
+        if (manualModeBlockBtn) manualModeBlockBtn.className = `btn ${isBlock ? '' : 'btn-ghost'}`;
+        if (manualSaveBtn) manualSaveBtn.textContent = isBlock ? 'この時間をブロックする' : 'この内容で予約を追加';
+      }
+      manualModeReservationBtn?.addEventListener('click', () => setManualMode('reservation'));
+      manualModeBlockBtn?.addEventListener('click', () => setManualMode('block'));
 
       function roundToHalfHour(min) {
         return Math.round(min / 30) * 30;
@@ -5075,11 +5193,17 @@ export default function ProviderDashboardPage() {
       function openManualCreate(date, min, colId, colGroupKey) {
         const clamped = Math.max(RANGE_START_MIN, Math.min(RANGE_END_MIN - 30, roundToHalfHour(min)));
         const time = `${String(Math.floor(clamped / 60)).padStart(2, '0')}:${String(clamped % 60).padStart(2, '0')}`;
-        manualCtx = { date, time, userId: null };
-        if (manualWhenEl) manualWhenEl.textContent = `${date} ${time}〜 の予約を追加`;
+        manualCtx = { date, time, userId: null, mode: 'reservation' };
+        if (manualWhenEl) manualWhenEl.textContent = `${date} ${time}〜`;
         if (manualNameEl) manualNameEl.value = '';
         if (manualContactEl) manualContactEl.value = '';
         if (manualNoteEl) manualNoteEl.value = '';
+        if (manualBlockReasonEl) manualBlockReasonEl.value = '';
+        if (manualBlockStartEl) manualBlockStartEl.value = time;
+        if (manualBlockEndEl) {
+          const endMin = Math.min(RANGE_END_MIN, clamped + 30);
+          manualBlockEndEl.value = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
+        }
         if (manualMsgEl) manualMsgEl.textContent = '';
         setManualSelectedMember(null, '');
         // 合体ビューではスタッフ列・部屋列どちらをタップしたかでcolGroupKeyが変わるため、
@@ -5087,10 +5211,13 @@ export default function ProviderDashboardPage() {
         if (manualStaffEl) {
           manualStaffEl.innerHTML = '<option value="">指名なし</option>' + staffList.map(s => `<option value="${s.id}"${colGroupKey === 'staff_id' && s.id === colId ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
         }
-        if (manualResourceFieldEl) manualResourceFieldEl.style.display = resourceFeatureOn ? '' : 'none';
         if (manualResourceEl) {
           manualResourceEl.innerHTML = '<option value="">未割当</option>' + resourceList.map(r => `<option value="${r.id}"${colGroupKey === 'resource_id' && r.id === colId ? ' selected' : ''}>${esc(r.name)}</option>`).join('');
         }
+        // 部屋列をタップして開いた場合は「休憩・外出ブロック」は意味を持たない
+        // （ブロックはスタッフ単位のみ）ため、予約追加モード固定でボタン自体を隠す。
+        if (manualModeBlockBtn) manualModeBlockBtn.style.display = colGroupKey === 'resource_id' ? 'none' : '';
+        setManualMode('reservation');
         if (manualModalEl) manualModalEl.style.display = 'flex';
         setTimeout(() => manualNameEl?.focus(), 50);
       }
@@ -5099,6 +5226,7 @@ export default function ProviderDashboardPage() {
         container.querySelectorAll('.cal-staff-col[data-cal-col-id], .cal-lane[data-cal-col-id]').forEach(col => {
           bindTapHandler(col, (e) => {
             if (e.target?.closest?.('[data-cal-open]')) return; // 既存の予約ブロック上のタップはそちらに任せる
+            if (e.target?.closest?.('[data-staff-block-id]')) return; // グレー帯（削除可能）のタップはそちらに任せる
             const rect = col.getBoundingClientRect();
             const totalMin = RANGE_END_MIN - RANGE_START_MIN;
             const horizontal = col.classList.contains('cal-lane');
@@ -5116,6 +5244,27 @@ export default function ProviderDashboardPage() {
 
       manualSaveBtn?.addEventListener('click', async () => {
         if (!manualCtx) return;
+        if (manualCtx.mode === 'block') {
+          const staff_id = manualStaffEl?.value || '';
+          const start_time = manualBlockStartEl?.value || '';
+          const end_time = manualBlockEndEl?.value || '';
+          if (!staff_id) { if (manualMsgEl) { manualMsgEl.style.color = '#ef4444'; manualMsgEl.textContent = 'ブロックするスタッフを選んでください'; } return; }
+          if (!start_time || !end_time || start_time >= end_time) { if (manualMsgEl) { manualMsgEl.style.color = '#ef4444'; manualMsgEl.textContent = '開始・終了時刻を正しく入力してください'; } return; }
+          manualSaveBtn.disabled = true;
+          if (manualMsgEl) { manualMsgEl.style.color = ''; manualMsgEl.textContent = '保存中…'; }
+          const res = await fetch('/api/provider/staff-blocks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeadersCal() },
+            body: JSON.stringify({ staff_id, date: manualCtx.date, start_time, end_time, reason: manualBlockReasonEl?.value.trim() || null }),
+          });
+          manualSaveBtn.disabled = false;
+          if (!res.ok) { const e = await res.json().catch(() => ({})); if (manualMsgEl) { manualMsgEl.style.color = '#ef4444'; manualMsgEl.textContent = e.error || '保存に失敗しました'; } return; }
+          if (manualModalEl) manualModalEl.style.display = 'none';
+          showToast('ブロックを追加しました');
+          await loadStaffBlocksAndShifts();
+          renderDay();
+          return;
+        }
         const user_name = manualNameEl?.value.trim();
         if (!user_name) { if (manualMsgEl) { manualMsgEl.style.color = '#ef4444'; manualMsgEl.textContent = 'お客様名を入力してください'; } return; }
         manualSaveBtn.disabled = true;
@@ -6269,37 +6418,48 @@ export default function ProviderDashboardPage() {
         <div id="cal-manual-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
           <div className="cal-modal-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <h3 style={{ margin: 0, fontSize: '15px' }}>手動で予約を追加</h3>
+              <h3 style={{ margin: 0, fontSize: '15px' }}>この時間に追加</h3>
               <button type="button" className="btn btn-ghost" id="cal-manual-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
             </div>
-            <p className="muted" id="cal-manual-when" style={{ fontSize: '13px', margin: '0 0 12px', fontWeight: 700 }}></p>
-            <div className="form-field">
-              <label>お客様名 *</label>
-              <input type="text" id="cal-manual-name" placeholder="例：山田 花子" />
-            </div>
-            <div className="form-field">
-              <label>連絡先（電話番号など）</label>
-              <input type="text" id="cal-manual-contact" placeholder="任意" />
+            <p className="muted" id="cal-manual-when" style={{ fontSize: '13px', margin: '0 0 10px', fontWeight: 700 }}></p>
+
+            {/* 予約追加／休憩・外出ブロックのモード切替（でお要望2026-09-14：「スタッフが
+                休憩だったり外出でいない時をブロックできるようにしてほしい」）。空き枠タップから
+                開く同じモーダルの中で、目的別に入力項目を出し分ける。 */}
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
+              <button type="button" className="btn" id="cal-manual-mode-reservation" style={{ fontSize: '12.5px', padding: '7px 12px', flex: 1 }}>予約を追加</button>
+              <button type="button" className="btn btn-ghost" id="cal-manual-mode-block" style={{ fontSize: '12.5px', padding: '7px 12px', flex: 1 }}>休憩・外出をブロック</button>
             </div>
 
-            {/* このお客様が実はFineme会員だった場合、その場で紐付けておくとカルテ・
-                来店履歴が引き継がれる（でお要望2026-09-14：「Finemeの会員情報と後からでも
-                その時でも紐づけられるように」）。任意項目のため未紐付けのままでも作成できる。 */}
-            <div className="form-field">
-              <label>Fineme会員と紐付ける（任意）</label>
-              <div id="cal-manual-member-selected" style={{ display: 'none', alignItems: 'center', gap: '8px', padding: '8px 10px', background: '#eff6ff', borderRadius: '8px', fontSize: '13px' }}>
-                <span id="cal-manual-member-selected-name" style={{ fontWeight: 700, color: '#2563eb' }}></span>
-                <button type="button" className="btn btn-ghost" id="cal-manual-member-clear" style={{ fontSize: '11px', padding: '3px 8px', marginLeft: 'auto' }}>解除</button>
+            <div id="cal-manual-reservation-fields">
+              <div className="form-field">
+                <label>お客様名 *</label>
+                <input type="text" id="cal-manual-name" placeholder="例：山田 花子" />
               </div>
-              <div id="cal-manual-member-search-wrap">
-                <input type="text" id="cal-manual-member-search" placeholder="お名前または電話番号で検索（3文字以上）" />
-                <div id="cal-manual-member-results" style={{ marginTop: '4px' }}></div>
+              <div className="form-field">
+                <label>連絡先（電話番号など）</label>
+                <input type="text" id="cal-manual-contact" placeholder="任意" />
+              </div>
+
+              {/* このお客様が実はFineme会員だった場合、その場で紐付けておくとカルテ・
+                  来店履歴が引き継がれる（でお要望2026-09-14：「Finemeの会員情報と後からでも
+                  その時でも紐づけられるように」）。任意項目のため未紐付けのままでも作成できる。 */}
+              <div className="form-field">
+                <label>Fineme会員と紐付ける（任意）</label>
+                <div id="cal-manual-member-selected" style={{ display: 'none', alignItems: 'center', gap: '8px', padding: '8px 10px', background: '#eff6ff', borderRadius: '8px', fontSize: '13px' }}>
+                  <span id="cal-manual-member-selected-name" style={{ fontWeight: 700, color: '#2563eb' }}></span>
+                  <button type="button" className="btn btn-ghost" id="cal-manual-member-clear" style={{ fontSize: '11px', padding: '3px 8px', marginLeft: 'auto' }}>解除</button>
+                </div>
+                <div id="cal-manual-member-search-wrap">
+                  <input type="text" id="cal-manual-member-search" placeholder="お名前または電話番号で検索（3文字以上）" />
+                  <div id="cal-manual-member-results" style={{ marginTop: '4px' }}></div>
+                </div>
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <div className="form-field" style={{ flex: '1 1 140px' }}>
-                <label>担当スタッフ</label>
+              <div className="form-field" id="cal-manual-staff-field" style={{ flex: '1 1 140px' }}>
+                <label id="cal-manual-staff-label">担当スタッフ</label>
                 <select id="cal-manual-staff"><option value="">指名なし</option></select>
               </div>
               <div className="form-field" id="cal-manual-resource-field" style={{ flex: '1 1 140px', display: 'none' }}>
@@ -6307,9 +6467,19 @@ export default function ProviderDashboardPage() {
                 <select id="cal-manual-resource"><option value="">未割当</option></select>
               </div>
             </div>
-            <div className="form-field">
+            <div id="cal-manual-reservation-fields-2" className="form-field">
               <label>メモ</label>
               <textarea id="cal-manual-note" style={{ width: '100%', minHeight: '50px', fontSize: '13px', padding: '8px', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="任意"></textarea>
+            </div>
+            <div id="cal-manual-block-fields" style={{ display: 'none' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div className="form-field" style={{ flex: '1 1 120px' }}><label>開始</label><input type="time" id="cal-manual-block-start" /></div>
+                <div className="form-field" style={{ flex: '1 1 120px' }}><label>終了</label><input type="time" id="cal-manual-block-end" /></div>
+              </div>
+              <div className="form-field">
+                <label>理由（任意）</label>
+                <input type="text" id="cal-manual-block-reason" placeholder="例：休憩／外出／早退" />
+              </div>
             </div>
             <button type="button" className="btn" id="cal-manual-save" style={{ fontSize: '13px', padding: '9px 18px', width: '100%' }}>この内容で予約を追加</button>
             <p id="cal-manual-msg" className="muted" style={{ fontSize: '12px', margin: '8px 0 0' }}></p>

@@ -32,6 +32,23 @@ export async function POST(request) {
     return Response.json({ error: '日時とお客様名は必須です' }, { status: 400 });
   }
 
+  // スタッフの休憩・外出ブロック（でお要望2026-09-14）中は手動予約も作らせない
+  // （誤って休憩中に予約を入れてしまう事故防止。ブロックを外せば入れられる）。
+  if (staff_id) {
+    const { data: blocking } = await supabase
+      .from('provider_staff_blocks')
+      .select('id')
+      .eq('provider_id', provider.id)
+      .eq('staff_id', staff_id)
+      .eq('date', date)
+      .lte('start_time', time)
+      .gt('end_time', time)
+      .limit(1);
+    if (blocking?.length) {
+      return Response.json({ error: 'このスタッフはこの時間、休憩・外出でブロックされています' }, { status: 409 });
+    }
+  }
+
   const insertPayload = {
     provider_id: provider.id,
     user_id: user_id || null, // 検索で見つけたFineme会員と紐付ける場合のみ設定

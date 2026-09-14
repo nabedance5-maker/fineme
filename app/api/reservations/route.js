@@ -148,6 +148,22 @@ export async function POST(request) {
     if ((bookedRows?.length || 0) >= slotRow.capacity) {
       return Response.json({ error: 'この枠は満席になりました。別の枠をお選びください' }, { status: 409 });
     }
+    // スタッフの休憩・外出ブロック（でお要望2026-09-14）と重なっていないか最終確認
+    // （公開一覧側でも除外しているが、枠取得後にブロックが追加されるタイミングもあり得るため）。
+    if (slotRow.staff_id) {
+      const { data: blocking } = await supabase
+        .from('provider_staff_blocks')
+        .select('id')
+        .eq('provider_id', provider_id)
+        .eq('staff_id', slotRow.staff_id)
+        .eq('date', slotRow.date)
+        .lt('start_time', slotRow.end_time)
+        .gt('end_time', slotRow.start_time)
+        .limit(1);
+      if (blocking?.length) {
+        return Response.json({ error: 'この枠は現在対応できません。別の枠をお選びください' }, { status: 409 });
+      }
+    }
     slot = slotRow;
     insertPayload.slot_id = slot_id;
     insertPayload.resource_id = slot.resource_id || null;
