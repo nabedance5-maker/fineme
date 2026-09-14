@@ -140,7 +140,7 @@ export default function ProviderDashboardPage() {
         }
         .tab-nav.pd-open { transform: translateX(0); }
         .pd-backdrop.pd-open { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(0,0,0,0.5); }
-        .pd-main { margin-left: 0; padding: 16px; padding-top: 74px; }
+        .pd-main { margin-left: 0; padding: 16px; padding-top: 58px; }
       }
       .tab-pane { display: none; }
       .tab-pane.active { display: block; }
@@ -649,6 +649,28 @@ export default function ProviderDashboardPage() {
     // 動的HTML内のinline onclick属性はグローバルスコープで実行されるため、そこから
     // 呼べるようwindowにも公開する（approveRequest等の既存グローバル関数と同じ理由）。
     window.showToast = showToast;
+
+    // 一覧の行タップで開くポップアップ等、複数箇所で必要になる共通のタップ判定。
+    // iOS Safariは指のわずかな動きをスクロールジェスチャーと誤判定し、合成click
+    // イベント自体をキャンセルすることがある（でお報告2026-09-14で原因確定：
+    // pointerdown/touchstartは発火するのにclickだけ発火しない）。touchstart→
+    // touchendの移動量が小さい場合だけ「タップ」として処理し、その場合は
+    // preventDefaultで後続の合成clickを抑止する（PC側のclickはそのまま生きる）。
+    function bindTapHandler(el, handler) {
+      let startX = 0, startY = 0, moved = false;
+      el.addEventListener('touchstart', (e) => {
+        const t = e.touches[0];
+        startX = t.clientX; startY = t.clientY; moved = false;
+      }, { passive: true });
+      el.addEventListener('touchmove', (e) => {
+        const t = e.touches[0];
+        if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) moved = true;
+      }, { passive: true });
+      el.addEventListener('touchend', (e) => {
+        if (!moved) { e.preventDefault(); handler(); }
+      });
+      el.addEventListener('click', handler);
+    }
 
     // 市区町村セレクトを都道府県に連動して更新
     function populateCitySelect(selectEl, prefecture) {
@@ -2020,7 +2042,7 @@ export default function ProviderDashboardPage() {
           </div>
         `;
         }).join('');
-        listEl.querySelectorAll('[data-cust-open]').forEach(row => row.addEventListener('click', () => openCustomerModal(row.dataset.custOpen, row.dataset.custType)));
+        listEl.querySelectorAll('[data-cust-open]').forEach(row => bindTapHandler(row, () => openCustomerModal(row.dataset.custOpen, row.dataset.custType)));
       }
 
       // ── 顧客詳細ポップアップ（一覧の行クリックで開く。バッジ・固定メモ・声かけ・
@@ -3752,7 +3774,7 @@ export default function ProviderDashboardPage() {
           </div>
         `;
       }).join('');
-      el.querySelectorAll('[data-req-open]').forEach(row => row.addEventListener('click', () => window.openRequestModal(row.dataset.reqOpen)));
+      el.querySelectorAll('[data-req-open]').forEach(row => bindTapHandler(row, () => window.openRequestModal(row.dataset.reqOpen)));
     }
 
     function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -4602,21 +4624,7 @@ export default function ProviderDashboardPage() {
       // その場合はpreventDefaultで後続の合成clickイベントを抑止する（二重発火防止）。
       // マウス操作（PC）はそのままclickイベントで拾う。
       function bindCalOpenHandlers(container) {
-        container.querySelectorAll('[data-cal-open]').forEach(el => {
-          let startX = 0, startY = 0, moved = false;
-          el.addEventListener('touchstart', (e) => {
-            const t = e.touches[0];
-            startX = t.clientX; startY = t.clientY; moved = false;
-          }, { passive: true });
-          el.addEventListener('touchmove', (e) => {
-            const t = e.touches[0];
-            if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) moved = true;
-          }, { passive: true });
-          el.addEventListener('touchend', (e) => {
-            if (!moved) { e.preventDefault(); openCalItem(el.dataset.calOpen); }
-          });
-          el.addEventListener('click', () => openCalItem(el.dataset.calOpen));
-        });
+        container.querySelectorAll('[data-cal-open]').forEach(el => bindTapHandler(el, () => openCalItem(el.dataset.calOpen)));
       }
 
       // まだ確定していないリクエスト（pending/counter_proposed）をカレンダー上でクリックした時は、
@@ -4816,7 +4824,6 @@ export default function ProviderDashboardPage() {
       // だけのバインドに揃える。あわせて例外を握りつぶさずトーストに出すようにし、
       // 次に同じ報告が来た場合に原因を一発で特定できるようにする。
       function handleTodayCustTap(el) {
-        alert('DEBUG: クリック検知しました uid=' + el.dataset.todayCust); // 一時的な診断用。原因特定後に削除する
         try {
           const uid = el.dataset.todayCust;
           if (!uid) { showToast('Finemeに未登録のお客様のため、顧客情報がありません'); return; }
@@ -4828,16 +4835,7 @@ export default function ProviderDashboardPage() {
         }
       }
       function bindTodayCustHandlers(container) {
-        // 診断用（一時的）：clickが全く発火しないとの報告のため、pointerdown/touchstartでも
-        // 検知できるか切り分ける。要素にタッチ自体が届いていないのか、click変換の過程で
-        // キャンセルされているのかを判別する。
-        const els = container.querySelectorAll('[data-today-cust]');
-        console.log('[bindTodayCustHandlers] bound count =', els.length);
-        els.forEach(el => {
-          el.addEventListener('pointerdown', () => alert('DEBUG pointerdown 検知 uid=' + el.dataset.todayCust));
-          el.addEventListener('touchstart', () => alert('DEBUG touchstart 検知 uid=' + el.dataset.todayCust));
-          el.addEventListener('click', () => handleTodayCustTap(el));
-        });
+        container.querySelectorAll('[data-today-cust]').forEach(el => bindTapHandler(el, () => handleTodayCustTap(el)));
       }
 
       async function loadTodayReservations() {
@@ -4884,13 +4882,13 @@ export default function ProviderDashboardPage() {
               <span class="muted" style="font-size:12px">${esc(r.reserved_date || '')} ${esc(r.start_time || '')}</span>
             </div>
           `).join('');
-        el.querySelectorAll('[data-today-req]').forEach(row => row.addEventListener('click', () => {
-          alert('DEBUG: クリック検知しました id=' + row.dataset.todayReq); // 一時的な診断用。原因特定後に削除する
+        function handleTodayReqTap(row) {
           const r = pendingById[row.dataset.todayReq];
           if (!r) { showToast('データが見つかりません'); return; }
           if (typeof window.openRequestModalWithData !== 'function') { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
           window.openRequestModalWithData(r);
-        }));
+        }
+        el.querySelectorAll('[data-today-req]').forEach(row => bindTapHandler(row, () => handleTodayReqTap(row)));
       }
 
       async function loadTodayCheckins() {
