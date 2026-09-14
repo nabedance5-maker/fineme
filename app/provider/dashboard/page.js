@@ -6,7 +6,7 @@ import { TAB_TUTORIALS, TUTORIAL_GROUPS, TUTORIAL_MUTED_KEY, tutorialSeenKey } f
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
 import { CUSTOMER_SCRIPT_AXES } from '@/lib/customer-scripts';
-import { CATEGORY_DEFS, LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS } from '@/lib/dashboard-prefs';
+import { CATEGORY_DEFS, LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS } from '@/lib/dashboard-prefs';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -162,6 +162,8 @@ export default function ProviderDashboardPage() {
       }
       @media (max-width: 900px) {
         .pd-topbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #0a0f1e; border-bottom: 1px solid rgba(201,168,76,0.15); position: fixed; top: 0; left: 0; right: 0; z-index: 40; }
+        .pd-topbar-shortcut-btn { flex-shrink: 0; padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(201,168,76,0.3); background: rgba(201,168,76,0.08); color: #c9a84c; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+        .pd-topbar-shortcut-btn:active { background: rgba(201,168,76,0.2); }
         .tab-nav {
           position: fixed; top: 0; bottom: 0; left: 0; z-index: 60; width: 264px; height: 100vh;
           background: #0a0f1e; padding: 20px 0 0; overflow-y: auto; box-shadow: 4px 0 24px rgba(0,0,0,0.4);
@@ -327,6 +329,26 @@ export default function ProviderDashboardPage() {
     // 使いつつ、店舗ごとに変更できるようにする。calendar IIFE等、後方の複数の
     // クロージャから読めるようダッシュボードのトップレベルで保持する。
     let dashboardPrefs = null;
+
+    // ヘッダー（モバイル用トップバー）のショートカットボタンを描画（でお要望2026-09-14）。
+    // サイドバーを開かずに主要タブへ直接飛べるようにする。タブボタン自体を.click()するだけ
+    // なので、対象タブ固有のデータ読み込みロジックもそのまま流用できる。
+    function renderHeaderShortcuts(prefs) {
+      const el = document.getElementById('pd-topbar-shortcuts');
+      if (!el) return;
+      const keys = prefs?.header_shortcuts || [];
+      el.innerHTML = keys.map(k => {
+        const opt = HEADER_SHORTCUT_OPTIONS.find(o => o.key === k);
+        if (!opt) return '';
+        return `<button type="button" class="pd-topbar-shortcut-btn" data-shortcut-tab="${k}">${opt.label}</button>`;
+      }).join('');
+      el.querySelectorAll('[data-shortcut-tab]').forEach(btn => btn.addEventListener('click', () => {
+        document.querySelector(`[data-tab="${btn.dataset.shortcutTab}"]`)?.click();
+        document.getElementById('pd-sidebar')?.classList.remove('pd-open');
+        document.getElementById('pd-backdrop')?.classList.remove('pd-open');
+      }));
+    }
+
     (async () => {
       const _prefsToken = getSupabaseToken();
       if (!_prefsToken) return;
@@ -334,6 +356,7 @@ export default function ProviderDashboardPage() {
       if (!res.ok) return;
       const { prefs } = await res.json();
       dashboardPrefs = prefs;
+      renderHeaderShortcuts(prefs);
 
       // サイドバーの並び順を適用（CSS flexのorderプロパティで見た目の順序だけ変える。
       // DOM構造・data-category自体は変えないので他のロジックへの影響がない）。
@@ -3501,8 +3524,31 @@ export default function ProviderDashboardPage() {
       const axisMsg = document.getElementById('ds-calendar-axis-msg');
       const viewEl = document.getElementById('ds-calendar-view');
       const viewMsg = document.getElementById('ds-calendar-view-msg');
+      const shortcutsEl = document.getElementById('ds-header-shortcuts');
+      const shortcutsMsg = document.getElementById('ds-header-shortcuts-msg');
 
       if (landingSel) landingSel.innerHTML = LANDING_TAB_OPTIONS.map(o => `<option value="${o.key}">${esc(o.label)}</option>`).join('');
+
+      // ヘッダーのショートカット（でお要望2026-09-14）：最大MAX_HEADER_SHORTCUTS個の
+      // チェックボックス。それを超えて選ぼうとしたら選択自体を戻し案内を出す。
+      function renderShortcutsList(selected) {
+        if (!shortcutsEl) return;
+        shortcutsEl.innerHTML = HEADER_SHORTCUT_OPTIONS.map(o => `
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:8px;cursor:pointer">
+            <input type="checkbox" data-shortcut-key="${o.key}" ${selected.includes(o.key) ? 'checked' : ''} />
+            <span style="font-size:13.5px">${esc(o.label)}</span>
+          </label>
+        `).join('');
+        shortcutsEl.querySelectorAll('[data-shortcut-key]').forEach(cb => cb.addEventListener('change', () => {
+          const checked = [...shortcutsEl.querySelectorAll('[data-shortcut-key]:checked')].map(c => c.dataset.shortcutKey);
+          if (checked.length > MAX_HEADER_SHORTCUTS) {
+            cb.checked = false;
+            if (shortcutsMsg) { shortcutsMsg.style.color = '#ef4444'; shortcutsMsg.textContent = `最大${MAX_HEADER_SHORTCUTS}つまでです`; }
+            return;
+          }
+          save({ header_shortcuts: checked }, shortcutsMsg).then(ok => { if (ok) renderHeaderShortcuts(dashboardPrefs); });
+        }));
+      }
 
       function renderOrderList(order) {
         if (!orderEl) return;
@@ -3587,6 +3633,7 @@ export default function ProviderDashboardPage() {
         renderOrderList(prefs.sidebar_order);
         renderRadioGroup(axisEl, CALENDAR_AXIS_OPTIONS, 'ds-axis', prefs.calendar_axis);
         renderRadioGroup(viewEl, CALENDAR_DEFAULT_VIEW_OPTIONS, 'ds-view', prefs.calendar_default_view);
+        renderShortcutsList(prefs.header_shortcuts || []);
       }
 
       document.querySelectorAll('[data-tab="display-settings"]').forEach(btn => btn.addEventListener('click', loadDisplaySettings, { once: false }));
@@ -6448,10 +6495,13 @@ export default function ProviderDashboardPage() {
     <main className="section pd-page-root">
       <div className="pd-container">
 
-        {/* モバイル用トップバー */}
+        {/* モバイル用トップバー。よく使うタブへのショートカット（でお要望2026-09-14：
+            「よく使うメニューを3つくらいここ（ヘッダー）に置いてあげると使いやすいかも。
+            カスタムできたらもっといい」）を店舗ごとにカスタマイズして表示する。 */}
         <div className="pd-topbar">
-          <button type="button" id="pd-menu-btn" aria-label="メニューを開く" style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(201,168,76,0.3)', background: 'transparent', color: '#c9a84c', fontSize: 16, cursor: 'pointer' }}>☰</button>
-          <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 17, fontWeight: 700, color: '#c9a84c' }}>fineme</p>
+          <button type="button" id="pd-menu-btn" aria-label="メニューを開く" style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(201,168,76,0.3)', background: 'transparent', color: '#c9a84c', fontSize: 16, cursor: 'pointer', flexShrink: 0 }}>☰</button>
+          <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 17, fontWeight: 700, color: '#c9a84c', flexShrink: 0 }}>fineme</p>
+          <div id="pd-topbar-shortcuts" style={{ display: 'flex', gap: 6, marginLeft: 'auto', overflowX: 'auto' }}></div>
         </div>
         <div id="pd-backdrop" className="pd-backdrop" />
 
@@ -8663,6 +8713,16 @@ export default function ProviderDashboardPage() {
               <div id="ds-calendar-view" className="stack" style={{ gap: '8px', maxWidth: '340px' }}></div>
               <span id="ds-calendar-view-msg" style={{ fontSize: '12px' }}></span>
               <p className="muted" style={{ fontSize: '12px', margin: '8px 0 0' }}>「部屋・設備の空き管理」がONの店舗のみ意味を持ちます（機能設定タブ）。</p>
+            </div>
+
+            {/* ヘッダーのショートカット（でお要望2026-09-14：「よく使うメニューを3つくらい
+                ヘッダーに置いてあげると使いやすいかも。カスタムできたらもっといい」）。
+                サイドバーを開かなくても主要タブへ直接飛べる。最大3つまで。 */}
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 4px' }}>ヘッダーのショートカット（最大{MAX_HEADER_SHORTCUTS}つ）</p>
+              <p className="muted" style={{ fontSize: '12px', margin: '0 0 8px' }}>スマホ画面上部にボタンとして表示され、タップですぐそのタブに移動できます。</p>
+              <div id="ds-header-shortcuts" className="stack" style={{ gap: '6px', maxWidth: '340px' }}></div>
+              <span id="ds-header-shortcuts-msg" style={{ fontSize: '12px' }}></span>
             </div>
           </div>
         </div>

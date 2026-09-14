@@ -9,6 +9,8 @@ import {
   CALENDAR_AXIS_OPTIONS,
   CALENDAR_DEFAULT_VIEW_OPTIONS,
   DEFAULT_SIDEBAR_ORDER,
+  HEADER_SHORTCUT_OPTIONS,
+  MAX_HEADER_SHORTCUTS,
 } from '@/lib/dashboard-prefs';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -52,6 +54,12 @@ export async function PATCH(request) {
     const valid = Array.isArray(order) && order.length === DEFAULT_SIDEBAR_ORDER.length &&
       DEFAULT_SIDEBAR_ORDER.every(k => order.includes(k));
     if (valid) updates.sidebar_order = order;
+  }
+  if ('header_shortcuts' in body) {
+    const shortcuts = body.header_shortcuts;
+    const valid = Array.isArray(shortcuts) && shortcuts.length <= MAX_HEADER_SHORTCUTS &&
+      shortcuts.every(k => HEADER_SHORTCUT_OPTIONS.some(o => o.key === k));
+    if (valid) updates.header_shortcuts = shortcuts;
   }
 
   if (!Object.keys(updates).length) {
