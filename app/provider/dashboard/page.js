@@ -4819,6 +4819,7 @@ export default function ProviderDashboardPage() {
       // だけのバインドに揃える。あわせて例外を握りつぶさずトーストに出すようにし、
       // 次に同じ報告が来た場合に原因を一発で特定できるようにする。
       function handleTodayCustTap(el) {
+        alert('DEBUG: クリック検知しました uid=' + el.dataset.todayCust); // 一時的な診断用。原因特定後に削除する
         try {
           const uid = el.dataset.todayCust;
           if (!uid) { showToast('Finemeに未登録のお客様のため、顧客情報がありません'); return; }
@@ -4878,6 +4879,7 @@ export default function ProviderDashboardPage() {
             </div>
           `).join('');
         el.querySelectorAll('[data-today-req]').forEach(row => row.addEventListener('click', () => {
+          alert('DEBUG: クリック検知しました id=' + row.dataset.todayReq); // 一時的な診断用。原因特定後に削除する
           const r = pendingById[row.dataset.todayReq];
           if (!r) { showToast('データが見つかりません'); return; }
           if (typeof window.openRequestModalWithData !== 'function') { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
