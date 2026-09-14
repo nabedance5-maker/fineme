@@ -7941,8 +7941,13 @@ export default function ProviderDashboardPage() {
               <button className="btn" id="pkg-assign-btn" type="button">購入を記録する</button>
               <span id="pkg-assign-msg" className="muted" style={{ fontSize: '13px' }}></span>
             </div>
+            {/* 今野くんの実地メモ2026-09-14：「使い切ったチケットが常に表示されて、
+                スタッフが手動で削除する時に手間がかかる」「体験だけしたメンバーが
+                ずっと表示されて探すのが手間」。トグル自体は前からあったが既定OFFだった
+                ため、初期表示では結局これまで通り全件出てしまっていた。既定ONに変更し、
+                見たい時だけ「すべて表示」する方式に反転する。 */}
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', marginBottom: '12px', cursor: 'pointer' }}>
-              <input type="checkbox" id="pkg-active-only" />
+              <input type="checkbox" id="pkg-active-only" defaultChecked />
               有効な会員のみ表示（期限切れ・使用済みを隠す）
             </label>
             <div id="pkg-customer-list"><p className="muted">読み込み中…</p></div>
