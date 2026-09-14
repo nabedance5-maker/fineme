@@ -2098,8 +2098,14 @@ export default function ProviderDashboardPage() {
         // 他タブから直接呼ばれる場合はallItemsが空のことがあるため、その場でロードする
         // （でお要望2026-09-13：他の場所からもフルの顧客情報ポップアップを開けるように）。
         let c = allItems.find(x => x.user_id === uid);
-        if (!c) { await loadAll(); c = allItems.find(x => x.user_id === uid); }
-        alert('DEBUG: openMemberModalInner到達 custModalEl=' + !!custModalEl + ' c見つかった=' + !!c); // 一時的な診断用
+        if (!c) {
+          // でお報告2026-09-14で確定：loadAll()（顧客一覧＋スタッフ一覧の同時取得、
+          // New Me Log連携判定等を含む重い処理）を無条件に待っていたため、詰まる/
+          // 遅延すると「押しても何も起きない」ように見えていた。3秒でタイムアウトし、
+          // 間に合わなければ簡易表示にフォールバックして必ずモーダル自体は開くようにする。
+          await Promise.race([loadAll(), new Promise(resolve => setTimeout(resolve, 3000))]);
+          c = allItems.find(x => x.user_id === uid);
+        }
         if (!custModalEl) return;
         currentCustUid = uid;
         currentCustType = 'member';
@@ -4834,12 +4840,10 @@ export default function ProviderDashboardPage() {
         try {
           const uid = el.dataset.todayCust;
           if (!uid) { showToast('Finemeに未登録のお客様のため、顧客情報がありません'); return; }
-          if (typeof window.openCustomerModal !== 'function') { alert('DEBUG: openCustomerModalが未定義です'); showToast('読み込み中です。少し待ってから再度お試しください'); return; } // 一時的な診断用
-          alert('DEBUG: openCustomerModalを呼びます uid=' + uid); // 一時的な診断用
+          if (typeof window.openCustomerModal !== 'function') { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
           window.openCustomerModal(uid, 'member', todayNameByUid[uid]);
         } catch (e) {
           console.error('[handleTodayCustTap]', e);
-          alert('DEBUG: 例外発生 ' + e.message); // 一時的な診断用
           showToast('エラー: ' + e.message);
         }
       }
