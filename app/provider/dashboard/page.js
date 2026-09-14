@@ -1586,6 +1586,19 @@ export default function ProviderDashboardPage() {
         if (res.ok) {
           if (instantToggleStatus) { instantToggleStatus.style.color = '#4ade80'; instantToggleStatus.textContent = '✓ 保存しました'; setTimeout(() => { if (instantToggleStatus) instantToggleStatus.textContent = ''; }, 2500); }
           window.applyFeatureGating?.('instant_booking', instantToggle.checked);
+          // ONにした瞬間、営業時間から向こう2週間分の空き枠を自動生成する
+          // （でお要望2026-09-14：手動で1つずつ登録させるフローを無くす）。
+          if (instantToggle.checked) {
+            const genRes = await fetch('/api/provider/slots/auto-generate', {
+              method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+              body: JSON.stringify({ days: 14 }),
+            });
+            if (genRes.ok) {
+              const g = await genRes.json();
+              showToast(g.createdCount > 0 ? `空き枠を${g.createdCount}件自動生成しました` : '営業時間が未設定のため枠を生成できませんでした。下の「営業時間」から設定してください');
+              loadSlots();
+            }
+          }
         } else {
           instantToggle.checked = !instantToggle.checked;
           if (instantToggleStatus) { instantToggleStatus.style.color = '#ef4444'; instantToggleStatus.textContent = '保存に失敗しました'; }
@@ -1593,6 +1606,81 @@ export default function ProviderDashboardPage() {
       });
       document.querySelectorAll('[data-tab="slots"]').forEach(btn => btn.addEventListener('click', loadInstantToggleState, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'slots') loadInstantToggleState();
+
+      // ── 営業時間からの自動生成（でお要望2026-09-14） ──
+      const WEEKDAY_LABEL_BH = { mon: '月', tue: '火', wed: '水', thu: '木', fri: '金', sat: '土', sun: '日' };
+      function renderBusinessHoursEditor(hours) {
+        const el = document.getElementById('business-hours-editor');
+        if (!el) return;
+        el.innerHTML = Object.entries(WEEKDAY_LABEL_BH).map(([key, label]) => {
+          const h = hours[key] || {};
+          return `
+            <div style="display:flex;align-items:center;gap:10px;padding:4px 0;flex-wrap:wrap">
+              <span style="width:24px;font-weight:700;font-size:13px">${label}</span>
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#6b7280">
+                <input type="checkbox" data-bh-closed="${key}" ${h.closed ? 'checked' : ''} /> 休み
+              </label>
+              <input type="time" data-bh-open="${key}" value="${h.open || ''}" style="width:110px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px" ${h.closed ? 'disabled' : ''} />
+              <span class="muted">〜</span>
+              <input type="time" data-bh-close="${key}" value="${h.close || ''}" style="width:110px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px" ${h.closed ? 'disabled' : ''} />
+            </div>
+          `;
+        }).join('');
+        el.querySelectorAll('[data-bh-closed]').forEach(cb => cb.addEventListener('change', () => {
+          const key = cb.dataset.bhClosed;
+          const openInput = el.querySelector(`[data-bh-open="${key}"]`);
+          const closeInput = el.querySelector(`[data-bh-close="${key}"]`);
+          if (openInput) openInput.disabled = cb.checked;
+          if (closeInput) closeInput.disabled = cb.checked;
+        }));
+      }
+      async function loadBusinessHours() {
+        const res = await fetch('/api/provider/business-hours', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+        if (!res.ok) return;
+        const data = await res.json();
+        renderBusinessHoursEditor(data.business_hours || {});
+        const durSel = document.getElementById('slot-duration-select');
+        if (durSel) durSel.value = String(data.slot_duration_minutes || 60);
+      }
+      document.getElementById('business-hours-save-btn')?.addEventListener('click', async () => {
+        const msg = document.getElementById('business-hours-save-msg');
+        const business_hours = {};
+        Object.keys(WEEKDAY_LABEL_BH).forEach(key => {
+          const closed = document.querySelector(`[data-bh-closed="${key}"]`)?.checked || false;
+          const open = document.querySelector(`[data-bh-open="${key}"]`)?.value || null;
+          const close = document.querySelector(`[data-bh-close="${key}"]`)?.value || null;
+          business_hours[key] = { closed, open, close };
+        });
+        const slot_duration_minutes = Number(document.getElementById('slot-duration-select')?.value) || 60;
+        if (msg) { msg.style.color = ''; msg.textContent = '保存中…'; }
+        const res = await fetch('/api/provider/business-hours', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+          body: JSON.stringify({ business_hours, slot_duration_minutes }),
+        });
+        if (msg) {
+          if (res.ok) { msg.style.color = '#4ade80'; msg.textContent = '✓ 保存しました'; setTimeout(() => { if (msg) msg.textContent = ''; }, 2500); }
+          else { msg.style.color = '#ef4444'; msg.textContent = '保存に失敗しました'; }
+        }
+      });
+      document.getElementById('slots-generate-now-btn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('slots-generate-now-btn');
+        btn.disabled = true; const origText = btn.textContent; btn.textContent = '生成中…';
+        const res = await fetch('/api/provider/slots/auto-generate', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+          body: JSON.stringify({ days: 14 }),
+        });
+        btn.disabled = false; btn.textContent = origText;
+        if (res.ok) {
+          const g = await res.json();
+          showToast(g.createdCount > 0 ? `${g.createdCount}件の枠を生成しました` : '新たに生成できる枠がありませんでした（営業時間を確認してください）');
+          loadSlots();
+        } else {
+          const e = await res.json().catch(() => ({}));
+          showToast('エラー: ' + (e.error || '不明'));
+        }
+      });
+      document.querySelectorAll('[data-tab="slots"]').forEach(btn => btn.addEventListener('click', loadBusinessHours, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'slots') loadBusinessHours();
     })();
 
     // ── 体験談タブ ────────────────────────────────────────────────
@@ -4299,9 +4387,29 @@ export default function ProviderDashboardPage() {
       if (!pillsEl) return;
 
       const WEEKDAY_JA = ['日', '月', '火', '水', '木', '金', '土'];
-      // 営業時間の実データが無いため、一般的な店舗を想定した固定レンジ（9:00〜21:00）で表示する。
-      const RANGE_START_MIN = 9 * 60;
-      const RANGE_END_MIN = 21 * 60;
+      // 以前は営業時間の実データが無く、一般的な店舗を想定した固定レンジ（9:00〜21:00）
+      // だった（でお質問2026-09-14：「なぜ9-21時なのか」）。営業時間設定
+      // (providers.business_hours)が追加されたので、そこから最も早い開始・最も遅い
+      // 終了（前後1時間の余裕を持たせる）を動的に算出する。設定が無い店舗は
+      // 24時間表示にフォールバックする。
+      let RANGE_START_MIN = 0;
+      let RANGE_END_MIN = 24 * 60;
+      async function loadCalendarRange() {
+        const res = await fetch('/api/provider/business-hours', { headers: authHeadersCal() });
+        if (!res.ok) return;
+        const { business_hours } = await res.json();
+        const opens = [], closes = [];
+        Object.values(business_hours || {}).forEach(h => {
+          if (h && !h.closed && h.open && h.close) {
+            opens.push(timeToMinutes(h.open));
+            closes.push(timeToMinutes(h.close));
+          }
+        });
+        if (opens.length) {
+          RANGE_START_MIN = Math.max(0, Math.min(...opens) - 60);
+          RANGE_END_MIN = Math.min(24 * 60, Math.max(...closes) + 60);
+        }
+      }
       const DEFAULT_DURATION_MIN = 40; // 申請制はメニューの所要時間を保持していないため目安値
 
       function fmtDate(d) {
@@ -4787,7 +4895,7 @@ export default function ProviderDashboardPage() {
         // 部屋・設備管理がONの店舗は、店舗設定の既定ビュー（スタッフ別/部屋別）を
         // 初回だけ適用する（でお要望2026-09-13：部屋別をメインにしたい店舗もある）。
         if (!viewModePicked && dashboardPrefs?.calendar_default_view === 'resource') viewMode = 'resource';
-        await Promise.all([loadStaff(), loadResourcesAndFeatures()]);
+        await Promise.all([loadStaff(), loadResourcesAndFeatures(), loadCalendarRange()]);
         renderViewToggle();
         await loadWeek();
       }
@@ -6158,6 +6266,37 @@ export default function ProviderDashboardPage() {
               <span style={{ fontSize: '14px', fontWeight: 600 }}>即時予約をこの店舗で使う</span>
               <span id="slots-instant-toggle-status" style={{ fontSize: '12px' }}></span>
             </label>
+          </div>
+
+          {/* 営業時間からの自動生成（でお要望2026-09-14：空き枠を1つずつ手動登録させる
+              フローは非効率。営業時間さえ分かれば自動で生成できるはず、との指摘）。 */}
+          <div className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px' }}>
+            <div>
+              <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>営業時間から自動生成</h3>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                曜日ごとの営業時間と枠の刻み幅を設定すると、即時予約ONの間は毎日自動で向こう2週間分の空き枠が補充されます（スタッフ指名予約がONの店舗は、対応可能な各スタッフの枠として生成します）。
+              </p>
+            </div>
+            <div id="business-hours-editor" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
+            <div className="form-field" style={{ marginBottom: 0, maxWidth: '220px' }}>
+              <label>枠の刻み幅</label>
+              <select id="slot-duration-select">
+                <option value="30">30分</option>
+                <option value="45">45分</option>
+                <option value="60">60分</option>
+                <option value="90">90分</option>
+                <option value="120">120分</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button type="button" className="btn" id="business-hours-save-btn">営業時間を保存</button>
+              <button type="button" className="btn btn-ghost" id="slots-generate-now-btn">今すぐ枠を生成する（向こう2週間）</button>
+              <span id="business-hours-save-msg" style={{ fontSize: '12px', alignSelf: 'center' }}></span>
+            </div>
+          </div>
+
+          <div className="card stack" style={{ padding: '24px', gap: '16px', marginTop: '16px' }}>
+            <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>個別に手動で追加</h3>
             <form id="slot-add-form" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: '10px', alignItems: 'end' }}>
               <div className="form-field" style={{ marginBottom: 0 }}><label>日付 *</label><input name="date" type="date" required /></div>
               <div className="form-field" style={{ marginBottom: 0 }}><label>開始 *</label><input name="start_time" type="time" required /></div>
