@@ -433,6 +433,13 @@
       <div class="now-item">
         <div class="now-item-dot done"></div>
         <div>
+          <span class="now-item-main">手動登録予約とFineme会員の紐付け機能を追加（2026-09-14）</span>
+          <span class="now-item-sub">電話予約等、カレンダーから店舗が手動で入れた予約を、お名前・電話番号で検索してFineme会員とその場で（登録時）または後からでも紐付けられるように。紐付けるとカルテ・来店履歴が引き継がれる。検索はプライバシー配慮のため3文字以上必須・電話番号は下4桁以外マスク。</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
           <span class="now-item-main">ログインの自動入力・誤リダイレクト不具合を修正（2026-09-14）</span>
           <span class="now-item-sub">今野くんのAndroid（Pixel）で「パスワード保存はされるが次回ログイン時に自動入力されない」不具合を確認・修正（input要素にname属性が無かったため）。あわせて、掲載者アカウントでログインしても稀に一般ユーザーのマイページへ飛ばされる不具合を修正：①掲載者判定APIの一時的な失敗を「掲載者ではない」と誤判定していたのを再試行するように変更 ②セッション切れ時の再ログイン導線の一部が異なるパラメータ名（redirect）を使っていてログインページ側が読んでおらず、意図した元のページへ戻れていなかったのを両対応に修正。</span>
         </div>
