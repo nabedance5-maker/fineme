@@ -1785,6 +1785,18 @@ export default function ProviderDashboardPage() {
         if (instantToggle) instantToggle.checked = !!features?.instant_booking;
         // booking_requestはdefaultOn:trueのため、未設定(undefined)ならチェックON扱い
         if (requestToggle) requestToggle.checked = features?.booking_request !== false;
+
+        const boardBox = document.getElementById('slots-board-link-box');
+        const boardLink = document.getElementById('slots-board-link');
+        if (boardBox && boardLink) {
+          const showBoard = !!features?.instant_booking && !!features?.booking_board && provider?.slug;
+          boardBox.style.display = showBoard ? 'block' : 'none';
+          if (showBoard) {
+            const url = `${window.location.origin}/provider/${provider.slug}/board`;
+            boardLink.href = url;
+            boardLink.textContent = url;
+          }
+        }
       }
       requestToggle?.addEventListener('change', async () => {
         requestToggle.disabled = true;
@@ -6967,6 +6979,14 @@ export default function ProviderDashboardPage() {
               <span style={{ fontSize: '14px', fontWeight: 600 }}>予約リクエスト（第1〜3希望→承認）を受け付ける</span>
               <span id="slots-request-toggle-status" style={{ fontSize: '12px' }}></span>
             </label>
+
+            {/* 店頭タブレット予約ボード（でお要望2026-09-14：hacomono「予約ボード」相当機能）。
+                機能設定タブでbooking_boardをONにすると、店内設置タブレットで開くURLが
+                ここに出る。即時予約もONでないと枠が出ないため両方必須。 */}
+            <div id="slots-board-link-box" style={{ display: 'none', padding: '12px 16px', background: '#eff6ff', borderRadius: '10px', fontSize: '13px' }}>
+              📱 店頭タブレット予約ボード：<a id="slots-board-link" href="#" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}></a>
+              <span className="muted" style={{ display: 'block', fontSize: '11.5px', marginTop: '4px' }}>店内のタブレットでこのURLを開いてブックマークすると、お客様がスタッフを介さず自分で予約できます。</span>
+            </div>
           </div>
 
           {/* 営業時間からの自動生成（でお要望2026-09-14：空き枠を1つずつ手動登録させる
