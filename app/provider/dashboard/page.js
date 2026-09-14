@@ -1557,6 +1557,145 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'member-referral') loadAll();
     })();
 
+    // ── クラス管理（スクール業態特化、でお要望2026-09-14） ─────
+    (function setupClasses() {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      const listEl = document.getElementById('cls-list');
+      const editCard = document.getElementById('cls-edit-card');
+      const editForm = document.getElementById('cls-edit-form');
+      const editTitle = document.getElementById('cls-edit-title');
+      const rosterCard = document.getElementById('cls-roster-card');
+      const rosterTitle = document.getElementById('cls-roster-title');
+      const rosterListEl = document.getElementById('cls-roster-list');
+      const enrollForm = document.getElementById('cls-enroll-form');
+      let classesCache = [];
+      let selectedClass = null;
+
+      async function loadClasses() {
+        if (!listEl) return;
+        const res = await fetch('/api/provider/classes', { headers: authH() });
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
+        classesCache = await res.json();
+        if (!classesCache.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">まだクラスがありません。「＋ クラスを追加」から作成してください。</p>'; return; }
+        listEl.innerHTML = classesCache.map(c => `
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--color-bg);border-radius:10px;flex-wrap:wrap" data-cls-row="${c.id}">
+            <div style="flex:1;min-width:0">
+              <strong style="font-size:14px">${esc(c.name)}</strong>
+              <span class="muted" style="font-size:12px;margin-left:8px">${c.enrolledCount}名${c.capacity ? `／定員${c.capacity}名` : ''}${c.waitlistedCount ? `（待機${c.waitlistedCount}名）` : ''}</span>
+            </div>
+            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-cls-roster="${c.id}">名簿・進級</button>
+            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-cls-edit="${c.id}">編集</button>
+            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-cls-del="${c.id}">削除</button>
+          </div>
+        `).join('');
+        listEl.querySelectorAll('[data-cls-edit]').forEach(btn => btn.addEventListener('click', () => {
+          const c = classesCache.find(x => x.id === btn.dataset.clsEdit); if (!c) return;
+          editTitle.textContent = 'クラスを編集'; editCard.style.display = 'block';
+          editForm.elements['_class_id'].value = c.id;
+          editForm.elements['name'].value = c.name || '';
+          editForm.elements['description'].value = c.description || '';
+          editForm.elements['capacity'].value = c.capacity || '';
+          editForm.elements['level_labels'].value = (c.level_labels || []).join(',');
+          editCard.scrollIntoView({ behavior: 'smooth' });
+        }));
+        listEl.querySelectorAll('[data-cls-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('このクラスを削除しますか？在籍者・進級履歴も全て削除されます。')) return;
+          await fetch(`/api/provider/classes/${btn.dataset.clsDel}`, { method: 'DELETE', headers: authH() });
+          loadClasses();
+        }));
+        listEl.querySelectorAll('[data-cls-roster]').forEach(btn => btn.addEventListener('click', () => openRoster(btn.dataset.clsRoster)));
+      }
+
+      document.getElementById('cls-add-btn')?.addEventListener('click', () => {
+        editTitle.textContent = 'クラスを追加'; editCard.style.display = 'block';
+        editForm.reset(); editForm.elements['_class_id'].value = '';
+        editCard.scrollIntoView({ behavior: 'smooth' });
+      });
+      document.getElementById('cls-cancel-btn')?.addEventListener('click', () => { editCard.style.display = 'none'; editForm.reset(); });
+      editForm?.addEventListener('submit', async e => {
+        e.preventDefault();
+        const fd = new FormData(editForm);
+        const id = fd.get('_class_id');
+        const body = {
+          name: fd.get('name'),
+          description: fd.get('description'),
+          capacity: fd.get('capacity'),
+          level_labels: String(fd.get('level_labels') || '').split(',').map(s => s.trim()).filter(Boolean),
+        };
+        const url = id ? `/api/provider/classes/${id}` : '/api/provider/classes';
+        const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify(body) });
+        if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadClasses(); showToast('保存しました'); }
+        else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
+      });
+
+      const STATUS_LABEL_CLS = { active: '在籍中', waitlisted: '待機中', withdrawn: '退会' };
+      function openRoster(classId) {
+        selectedClass = classesCache.find(c => c.id === classId);
+        if (!selectedClass || !rosterCard) return;
+        rosterTitle.textContent = `${selectedClass.name} の名簿・進級`;
+        rosterCard.style.display = 'block';
+        rosterCard.scrollIntoView({ behavior: 'smooth' });
+        loadRoster();
+      }
+
+      async function loadRoster() {
+        if (!selectedClass || !rosterListEl) return;
+        rosterListEl.innerHTML = '読み込み中…';
+        const res = await fetch(`/api/provider/classes/${selectedClass.id}/enrollments`, { headers: authH() });
+        if (!res.ok) { rosterListEl.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        if (!rows.length) { rosterListEl.innerHTML = '<p class="muted" style="font-size:13px">まだ生徒がいません。</p>'; return; }
+        const levels = selectedClass.level_labels || [];
+        rosterListEl.innerHTML = rows.map(en => {
+          const nextLevel = levels.length ? levels[Math.min(levels.indexOf(en.current_level) + 1, levels.length - 1)] : null;
+          const canPromote = levels.length && nextLevel && nextLevel !== en.current_level;
+          return `
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f3f4f6;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:700">${esc(en.student_name)}</span>
+            ${en.current_level ? `<span class="muted" style="font-size:12px">${esc(en.current_level)}</span>` : ''}
+            <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${en.status === 'active' ? '#f0fdf4' : en.status === 'waitlisted' ? '#fffbeb' : '#f3f4f6'};color:${en.status === 'active' ? '#16a34a' : en.status === 'waitlisted' ? '#d97706' : '#6b7280'}">${STATUS_LABEL_CLS[en.status] || en.status}</span>
+            <div style="display:flex;gap:6px;margin-left:auto">
+              ${canPromote ? `<button class="btn btn-ghost" style="font-size:11.5px;padding:4px 8px" data-cls-promote="${en.id}" data-cls-next-level="${esc(nextLevel)}">進級：${esc(nextLevel)}へ</button>` : ''}
+              ${en.status !== 'withdrawn' ? `<button class="btn btn-ghost" style="font-size:11.5px;padding:4px 8px" data-cls-withdraw="${en.id}">退会</button>` : ''}
+              <button class="btn btn-ghost" style="font-size:11.5px;padding:4px 8px;color:#ef4444" data-cls-enroll-del="${en.id}">削除</button>
+            </div>
+          </div>`;
+        }).join('');
+        rosterListEl.querySelectorAll('[data-cls-promote]').forEach(btn => btn.addEventListener('click', async () => {
+          const res = await fetch(`/api/provider/classes/${selectedClass.id}/enrollments/${btn.dataset.clsPromote}/progressions`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ to_level: btn.dataset.clsNextLevel }),
+          });
+          if (res.ok) { showToast('進級を記録しました'); loadRoster(); } else showToast('進級の記録に失敗しました');
+        }));
+        rosterListEl.querySelectorAll('[data-cls-withdraw]').forEach(btn => btn.addEventListener('click', async () => {
+          await fetch(`/api/provider/classes/${selectedClass.id}/enrollments/${btn.dataset.clsWithdraw}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ status: 'withdrawn' }) });
+          loadRoster(); loadClasses();
+        }));
+        rosterListEl.querySelectorAll('[data-cls-enroll-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('この生徒を名簿から削除しますか？（進級履歴も削除されます）')) return;
+          await fetch(`/api/provider/classes/${selectedClass.id}/enrollments/${btn.dataset.clsEnrollDel}`, { method: 'DELETE', headers: authH() });
+          loadRoster(); loadClasses();
+        }));
+      }
+
+      enrollForm?.addEventListener('submit', async e => {
+        e.preventDefault();
+        if (!selectedClass) return;
+        const fd = new FormData(enrollForm);
+        const res = await fetch(`/api/provider/classes/${selectedClass.id}/enrollments`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ student_name: fd.get('student_name') }),
+        });
+        if (res.ok) { enrollForm.reset(); loadRoster(); loadClasses(); showToast('生徒を追加しました'); }
+        else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
+      });
+
+      document.querySelectorAll('[data-tab="classes"]').forEach(btn => btn.addEventListener('click', loadClasses, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'classes') loadClasses();
+    })();
+
     // ── 空き枠タブ（即時予約モード用・hacomono/STORES網羅計画 Phase 1） ─────
     (function setupSlots() {
       const token = getSupabaseToken();
@@ -6231,6 +6370,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="service">サービス設定</button>
                   <button className="tab-btn" data-tab="staff">スタッフ</button>
                   <button className="tab-btn" data-tab="shift" data-feature="shift_management">シフト管理<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="classes" data-feature="class_management">🏫 クラス管理<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="resources" data-feature="resource_management">部屋・設備<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="stories">体験談</button>
                   <button className="tab-btn" data-tab="landing">LP設定</button>
@@ -6914,6 +7054,48 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn btn-ghost" id="shift-entry-add-btn">＋手動で追加</button>
             </div>
             <div id="shift-entries-list" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
+          </div>
+        </div>
+
+        {/* クラス管理（スクール業態特化、でお要望2026-09-14：hacomono機能比較で判明した
+            不足機能。「在籍制・定員制クラスの管理や進級結果の管理」相当）。「機能設定」で
+            ONにした店舗のみ表示。既存の予約カレンダーとは独立した名簿・進級記録機能。 */}
+        <div className="tab-pane" id="tab-classes">
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>🏫 クラス管理</h2>
+                <p className="muted" style={{ fontSize: '13px', margin: 0 }}>ダンス・スイミング等の定員制クラスの名簿・進級を管理します。</p>
+              </div>
+              <button type="button" className="btn" id="cls-add-btn">＋ クラスを追加</button>
+            </div>
+
+            <div id="cls-edit-card" style={{ display: 'none', background: 'var(--color-bg)', borderRadius: '12px', padding: '16px' }}>
+              <h3 id="cls-edit-title" style={{ margin: '0 0 10px', fontSize: '14px' }}>クラスを追加</h3>
+              <form id="cls-edit-form">
+                <input type="hidden" name="_class_id" />
+                <div className="form-field"><label>クラス名 *</label><input name="name" required /></div>
+                <div className="form-field"><label>説明</label><input name="description" placeholder="任意" /></div>
+                <div className="form-field"><label>定員</label><input name="capacity" type="number" min="1" placeholder="任意（空欄なら無制限）" /></div>
+                <div className="form-field"><label>進級の段階（カンマ区切り。例：白帯,黄帯,緑帯,黒帯）</label><input name="level_labels" placeholder="任意" /></div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="submit" className="btn">保存する</button>
+                  <button type="button" className="btn btn-ghost" id="cls-cancel-btn">キャンセル</button>
+                </div>
+              </form>
+            </div>
+
+            <div id="cls-list" className="stack" style={{ gap: '10px' }}>読み込み中…</div>
+          </div>
+
+          {/* 選択中のクラスの名簿・進級管理 */}
+          <div id="cls-roster-card" className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px', display: 'none' }}>
+            <h3 id="cls-roster-title" style={{ margin: 0, fontSize: '15px' }}></h3>
+            <form id="cls-enroll-form" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'end' }}>
+              <div className="form-field" style={{ marginBottom: 0, flex: '1 1 160px' }}><label>生徒名 *</label><input name="student_name" required /></div>
+              <button type="submit" className="btn">＋ 生徒を追加</button>
+            </form>
+            <div id="cls-roster-list" className="stack" style={{ gap: '8px' }}></div>
           </div>
         </div>
 
