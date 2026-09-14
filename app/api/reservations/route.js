@@ -92,28 +92,30 @@ export async function POST(request) {
     return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
   }
 
+  // enabled_features（申請制ON/OFF判定用）とmax_active_reservations（同時保持できる
+  // 予約数の上限、店舗ごとに変更可）をまとめて取得。
+  const { data: providerFeatureRow } = await supabase.from('providers').select('enabled_features, max_active_reservations').eq('id', provider_id).single();
+
   // 申請制（第1〜3希望→店舗が承認）は店舗ごとにON/OFFできる（でお要望2026-09-14：
   // 「即時予約と同じように、予約リクエストも受け付けるかどうか設定できるように」）。
   // 即時予約リクエストはこのフラグと無関係にそのまま処理する。
-  if (!isInstant) {
-    const { data: providerFeatureRow } = await supabase.from('providers').select('enabled_features').eq('id', provider_id).single();
-    if (!hasFeature(providerFeatureRow, 'booking_request')) {
-      return Response.json({ error: 'この店舗は現在、予約リクエストの受付を停止しています' }, { status: 403 });
-    }
+  if (!isInstant && !hasFeature(providerFeatureRow, 'booking_request')) {
+    return Response.json({ error: 'この店舗は現在、予約リクエストの受付を停止しています' }, { status: 403 });
   }
 
-  // 1人のお客様が予約したら来店するまで同じ店舗で次の予約を取れないようにする
-  // （でお要望2026-09-14）。ゲスト予約（user_id無し）は本人特定ができないため対象外。
+  // 1人のお客様が同時に保持できる「来店前の予約」の数には上限がある（でお要望2026-09-14。
+  // 既定は1件＝来店するまで次の予約を取れない。店舗ごとにmax_active_reservationsで
+  // 上限数を変更できる）。ゲスト予約（user_id無し）は本人特定ができないため対象外。
   if (user_id) {
-    const { data: activeExisting } = await supabase
+    const maxActive = providerFeatureRow?.max_active_reservations ?? 1;
+    const { count } = await supabase
       .from('reservations')
-      .select('id')
+      .select('id', { count: 'exact', head: true })
       .eq('provider_id', provider_id)
       .eq('user_id', user_id)
-      .in('status', ['pending', 'approved', 'counter_proposed'])
-      .limit(1);
-    if (activeExisting?.length) {
-      return Response.json({ error: 'この店舗への予約が既にあります。ご来店・キャンセル後に新しい予約リクエストを送ってください。' }, { status: 409 });
+      .in('status', ['pending', 'approved', 'counter_proposed']);
+    if ((count || 0) >= maxActive) {
+      return Response.json({ error: `この店舗への予約は同時に${maxActive}件までです。ご来店・キャンセル後に新しい予約リクエストを送ってください。` }, { status: 409 });
     }
   }
 

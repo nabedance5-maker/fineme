@@ -2079,6 +2079,27 @@ export default function ProviderDashboardPage() {
       });
       document.querySelectorAll('[data-tab="slots"]').forEach(btn => btn.addEventListener('click', loadBusinessHours, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'slots') loadBusinessHours();
+
+      // 同時に保持できる予約数の上限（でお要望2026-09-14）
+      async function loadBookingLimit() {
+        const input = document.getElementById('booking-limit-input');
+        if (!input) return;
+        const res = await fetch('/api/provider/booking-limits', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+        if (res.ok) { const d = await res.json(); input.value = d.max_active_reservations ?? 1; }
+      }
+      document.getElementById('booking-limit-save-btn')?.addEventListener('click', async () => {
+        const input = document.getElementById('booking-limit-input');
+        const msg = document.getElementById('booking-limit-msg');
+        const n = Number(input?.value);
+        if (!Number.isInteger(n) || n < 1) { if (msg) { msg.style.color = '#ef4444'; msg.textContent = '1以上の整数を入力してください'; } return; }
+        const res = await fetch('/api/provider/booking-limits', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+          body: JSON.stringify({ max_active_reservations: n }),
+        });
+        if (msg) { msg.style.color = res.ok ? '#4ade80' : '#ef4444'; msg.textContent = res.ok ? '✓ 保存しました' : '保存に失敗しました'; }
+      });
+      document.querySelectorAll('[data-tab="slots"]').forEach(btn => btn.addEventListener('click', loadBookingLimit, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'slots') loadBookingLimit();
     })();
 
     // ── 体験談タブ ────────────────────────────────────────────────
@@ -7168,6 +7189,18 @@ export default function ProviderDashboardPage() {
             <div id="slots-board-link-box" style={{ display: 'none', padding: '12px 16px', background: '#eff6ff', borderRadius: '10px', fontSize: '13px' }}>
               📱 店頭タブレット予約ボード：<a id="slots-board-link" href="#" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}></a>
               <span className="muted" style={{ display: 'block', fontSize: '11.5px', marginTop: '4px' }}>店内のタブレットでこのURLを開いてブックマークすると、お客様がスタッフを介さず自分で予約できます。</span>
+            </div>
+
+            {/* 同時に保持できる予約数の上限（でお要望2026-09-14）。既定は1件＝来店するまで
+                次の予約を取れない。上限を増やしたい店舗向けに変更可能にする。 */}
+            <div className="form-field" style={{ marginBottom: 0, maxWidth: '280px' }}>
+              <label>1人のお客様が同時に持てる予約数の上限</label>
+              <input type="number" id="booking-limit-input" min="1" style={{ width: '100px' }} />
+              <span className="muted" style={{ fontSize: '11.5px' }}>既定は1件（来店するまで次の予約は取れません）</span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <button type="button" className="btn btn-ghost" id="booking-limit-save-btn" style={{ fontSize: '12px', padding: '6px 14px' }}>保存する</button>
+              <span id="booking-limit-msg" className="muted" style={{ fontSize: '12px' }}></span>
             </div>
           </div>
 
