@@ -1696,6 +1696,91 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'classes') loadClasses();
     })();
 
+    // ── ロッカー月極管理（でお要望2026-09-14） ─────
+    (function setupLockers() {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      function fmtYen(n) { return n || n === 0 ? `¥${Number(n).toLocaleString()}` : '未設定'; }
+      const listEl = document.getElementById('lkr-list');
+      const editCard = document.getElementById('lkr-edit-card');
+      const editForm = document.getElementById('lkr-edit-form');
+      const contractCard = document.getElementById('lkr-contract-card');
+      const contractTitle = document.getElementById('lkr-contract-title');
+      const contractForm = document.getElementById('lkr-contract-form');
+      let selectedLockerId = null;
+
+      async function loadLockers() {
+        if (!listEl) return;
+        const res = await fetch('/api/provider/lockers', { headers: authH() });
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        if (!rows.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">まだロッカーがありません。「＋ ロッカーを追加」から作成してください。</p>'; return; }
+        listEl.innerHTML = rows.map(l => {
+          const c = l.activeContract;
+          return `
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--color-bg);border-radius:10px;flex-wrap:wrap">
+            <div style="flex:1;min-width:0">
+              <strong style="font-size:14px">${esc(l.name)}</strong>
+              <span class="muted" style="font-size:12px;margin-left:8px">月額${fmtYen(l.monthly_fee)}</span>
+              ${c
+                ? `<div style="margin-top:4px;font-size:12.5px"><span style="font-weight:700;color:#16a34a">契約中</span>：${esc(c.contractor_name)}（月額${fmtYen(c.monthly_fee)}）</div>`
+                : '<div style="margin-top:4px;font-size:12.5px;color:#9ca3af">空き</div>'}
+            </div>
+            ${c
+              ? `<button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-lkr-cancel-contract="${c.id}" data-lkr-locker-id="${l.id}">解約</button>`
+              : `<button type="button" class="btn" style="font-size:12px;padding:5px 10px" data-lkr-contract="${l.id}" data-lkr-name="${esc(l.name)}">契約する</button>`}
+            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-lkr-del="${l.id}">削除</button>
+          </div>`;
+        }).join('');
+
+        listEl.querySelectorAll('[data-lkr-contract]').forEach(btn => btn.addEventListener('click', () => {
+          selectedLockerId = btn.dataset.lkrContract;
+          contractTitle.textContent = `${btn.dataset.lkrName} を契約する`;
+          contractForm.reset();
+          contractCard.style.display = 'block';
+          contractCard.scrollIntoView({ behavior: 'smooth' });
+        }));
+        listEl.querySelectorAll('[data-lkr-cancel-contract]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('この契約を解約しますか？')) return;
+          const res = await fetch(`/api/provider/lockers/${btn.dataset.lkrLockerId}/contracts/${btn.dataset.lkrCancelContract}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ status: 'cancelled' }) });
+          if (res.ok) { showToast('解約しました'); loadLockers(); } else showToast('解約に失敗しました');
+        }));
+        listEl.querySelectorAll('[data-lkr-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('このロッカーを削除しますか？')) return;
+          const res = await fetch(`/api/provider/lockers/${btn.dataset.lkrDel}`, { method: 'DELETE', headers: authH() });
+          if (res.ok) loadLockers(); else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
+        }));
+      }
+
+      document.getElementById('lkr-add-btn')?.addEventListener('click', () => { editForm.reset(); editCard.style.display = 'block'; editCard.scrollIntoView({ behavior: 'smooth' }); });
+      document.getElementById('lkr-cancel-btn')?.addEventListener('click', () => { editCard.style.display = 'none'; });
+      editForm?.addEventListener('submit', async e => {
+        e.preventDefault();
+        const fd = new FormData(editForm);
+        const res = await fetch('/api/provider/lockers', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ name: fd.get('name'), monthly_fee: fd.get('monthly_fee') }) });
+        if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadLockers(); showToast('保存しました'); }
+        else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
+      });
+
+      document.getElementById('lkr-contract-cancel-btn')?.addEventListener('click', () => { contractCard.style.display = 'none'; });
+      contractForm?.addEventListener('submit', async e => {
+        e.preventDefault();
+        if (!selectedLockerId) return;
+        const fd = new FormData(contractForm);
+        const res = await fetch(`/api/provider/lockers/${selectedLockerId}/contracts`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() },
+          body: JSON.stringify({ contractor_name: fd.get('contractor_name'), monthly_fee: fd.get('monthly_fee'), note: fd.get('note') }),
+        });
+        if (res.ok) { contractCard.style.display = 'none'; loadLockers(); showToast('契約しました'); }
+        else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
+      });
+
+      document.querySelectorAll('[data-tab="lockers"]').forEach(btn => btn.addEventListener('click', loadLockers, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'lockers') loadLockers();
+    })();
+
     // ── 空き枠タブ（即時予約モード用・hacomono/STORES網羅計画 Phase 1） ─────
     (function setupSlots() {
       const token = getSupabaseToken();
@@ -6385,6 +6470,7 @@ export default function ProviderDashboardPage() {
                 <div className="pd-panel-section" data-panel="sales" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="sales">売上管理</button>
                   <button className="tab-btn" data-tab="pos" data-feature="pos">POS・在庫<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="lockers" data-feature="locker_rental">🔒 ロッカー管理<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="store" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="profile">プロフィール</button>
@@ -8110,6 +8196,48 @@ export default function ProviderDashboardPage() {
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
             <h2 style={{ margin: 0, fontSize: '16px' }}>会計履歴</h2>
             <div id="pos-tx-list"><p className="muted">読み込み中…</p></div>
+          </div>
+        </div>
+
+        {/* ロッカー月極管理（でお要望2026-09-14：hacomonoにあるロッカー機能）。
+            決済は仲介せず、契約状況の記録・管理のみ（service_packagesと同じ方針）。 */}
+        <div className="tab-pane" id="tab-lockers">
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>🔒 ロッカー管理</h2>
+                <p className="muted" style={{ fontSize: '13px', margin: 0 }}>お客様の月極ロッカー契約を記録・管理します。</p>
+              </div>
+              <button type="button" className="btn" id="lkr-add-btn">＋ ロッカーを追加</button>
+            </div>
+
+            <div id="lkr-edit-card" style={{ display: 'none', background: 'var(--color-bg)', borderRadius: '12px', padding: '16px' }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: '14px' }}>ロッカーを追加</h3>
+              <form id="lkr-edit-form">
+                <div className="form-field"><label>ロッカー名・番号 *</label><input name="name" placeholder="例：ロッカー12番" required /></div>
+                <div className="form-field"><label>月額（円）</label><input name="monthly_fee" type="number" min="0" placeholder="任意" /></div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="submit" className="btn">保存する</button>
+                  <button type="button" className="btn btn-ghost" id="lkr-cancel-btn">キャンセル</button>
+                </div>
+              </form>
+            </div>
+
+            <div id="lkr-list" className="stack" style={{ gap: '10px' }}>読み込み中…</div>
+          </div>
+
+          {/* 契約フォーム（空きロッカーの「契約する」から開く） */}
+          <div id="lkr-contract-card" className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px', display: 'none' }}>
+            <h3 id="lkr-contract-title" style={{ margin: 0, fontSize: '15px' }}></h3>
+            <form id="lkr-contract-form">
+              <div className="form-field"><label>契約者名 *</label><input name="contractor_name" required /></div>
+              <div className="form-field"><label>月額（円）</label><input name="monthly_fee" type="number" min="0" placeholder="ロッカーの既定額を使う場合は空欄" /></div>
+              <div className="form-field"><label>メモ</label><input name="note" placeholder="任意" /></div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button type="submit" className="btn">この内容で契約する</button>
+                <button type="button" className="btn btn-ghost" id="lkr-contract-cancel-btn">キャンセル</button>
+              </div>
+            </form>
           </div>
         </div>
 
