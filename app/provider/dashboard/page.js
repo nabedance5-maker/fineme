@@ -6821,72 +6821,6 @@ export default function ProviderDashboardPage() {
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
           </div>
 
-          {/* お客様一覧はコンパクトな行だけにし、クリックでポップアップに詳細（カルテ・メッセージ送信等）
-              をまとめる方式に変更（でお指摘2026-09-12：カードが大きすぎて一覧性が悪い＋今野くんの
-              実地メモ：スクロールが多いと確度の高いお客様が埋もれる）。1画面によりたくさん並べられる。 */}
-          <div id="customer-detail-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
-            <div className="cal-modal-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-                <h3 style={{ margin: '0 0 4px', fontSize: '16px' }} id="cust-modal-name"></h3>
-                <button type="button" className="btn btn-ghost" id="cust-modal-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
-              </div>
-              <div id="cust-modal-badges" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '4px 0 8px' }}></div>
-              <p id="cust-modal-info" className="muted" style={{ fontSize: '12px', margin: '0 0 10px' }}></p>
-
-              {/* 会員（New Me Log紐づき）用セクション */}
-              <div id="cust-modal-member-section">
-                <div className="cluster" style={{ gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
-                  <button type="button" className="btn btn-ghost" id="cust-modal-nudge-btn" style={{ fontSize: '12px', padding: '5px 10px' }}>声かけメッセージを送る</button>
-                  <select id="cust-modal-assign-select" style={{ fontSize: '12px', padding: '5px 8px', border: '1px solid #e5e7eb', borderRadius: '8px' }}></select>
-                </div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6b7280', marginBottom: '4px' }}>📌 固定メモ</label>
-                <textarea id="cust-modal-note-textarea" style={{ width: '100%', minHeight: '60px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="読み込み中…" disabled></textarea>
-                <button type="button" className="btn" id="cust-modal-note-save-btn" style={{ fontSize: '12px', padding: '5px 10px', marginTop: '6px' }} disabled>保存する</button>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
-                  <button type="button" className="btn btn-ghost" id="cust-modal-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>＋ 来店記録を追加</button>
-                  <button type="button" className="btn btn-ghost" id="cust-modal-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>記録を見る</button>
-                  <button type="button" className="btn btn-ghost" id="cust-modal-insight-btn" style={{ fontSize: '12px', padding: '5px 10px' }}>🤖 AIに傾向を聞く</button>
-                </div>
-                <div id="cust-modal-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
-                <div id="cust-modal-history" style={{ display: 'none', marginTop: '10px' }}></div>
-                <div id="cust-modal-insight" style={{ display: 'none', marginTop: '10px' }}></div>
-              </div>
-
-              {/* 非会員（Fineme未登録）用セクション（でお要望2026-09-12：一覧を統合したため
-                  ポップアップ側でも同じ場所から操作できるようにする） */}
-              <div id="cust-modal-manual-section" style={{ display: 'none' }}>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '12px' }}>
-                  <label className="muted" style={{ fontSize: '12px' }}>会員と紐付ける：</label>
-                  <select id="cust-modal-link-select" style={{ fontSize: '12px', padding: '5px 8px', border: '1px solid #e5e7eb', borderRadius: '8px' }}></select>
-                  <button type="button" className="btn btn-ghost" id="cust-modal-manual-delete-btn" style={{ fontSize: '12px', padding: '5px 10px', color: '#ef4444', marginLeft: 'auto' }}>削除</button>
-                </div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6b7280', marginBottom: '4px' }}>📌 メモ</label>
-                <textarea id="cust-modal-manual-memo-textarea" style={{ width: '100%', minHeight: '60px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="要望・使った薬剤・注意点など"></textarea>
-                <button type="button" className="btn" id="cust-modal-manual-save-btn" style={{ fontSize: '12px', padding: '5px 10px', marginTop: '6px' }}>保存する</button>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
-                  <button type="button" className="btn btn-ghost" id="cust-modal-manual-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>＋ 来店記録を追加</button>
-                  <button type="button" className="btn btn-ghost" id="cust-modal-manual-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>記録を見る</button>
-                </div>
-                <div id="cust-modal-manual-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
-                <div id="cust-modal-manual-history" style={{ display: 'none', marginTop: '10px' }}></div>
-              </div>
-            </div>
-          </div>
-
-          {/* 声かけメッセージ入力（でお指摘2026-09-12：promptだと改行キーで即送信されてしまい
-              事故のもと。テキストエリア＋明示的な送信ボタンに変更しEnterでは送信されないようにした） */}
-          <div id="nudge-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
-            <div className="cal-modal-card" style={{ maxWidth: '380px' }}>
-              <h3 style={{ margin: '0 0 8px', fontSize: '15px' }}>声かけメッセージを送る</h3>
-              <p className="muted" style={{ fontSize: '12px', margin: '0 0 10px' }}>店舗の公式LINE連携済みならそちらから、未連携ならFineme公式LINEから届きます。</p>
-              <textarea id="nudge-message-textarea" style={{ width: '100%', minHeight: '90px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="メッセージを入力してください"></textarea>
-              <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                <button type="button" className="btn" id="nudge-send-btn">送信する</button>
-                <button type="button" className="btn btn-ghost" id="nudge-cancel-btn">キャンセル</button>
-              </div>
-            </div>
-          </div>
-
           <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px', marginTop: '16px' }}>
             <div>
               <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>カルテ項目を設定</h2>
@@ -6930,6 +6864,79 @@ export default function ProviderDashboardPage() {
               <input id="manual-name-input" type="text" placeholder="お客様のお名前" style={{ flex: '1 1 160px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', background: 'rgba(26,20,16,0.04)', color: '#1a1410' }} />
               <input id="manual-memo-input" type="text" placeholder="メモ（任意）" style={{ flex: '2 1 200px', padding: '10px 12px', border: '1.5px solid rgba(26,20,16,0.2)', borderRadius: '10px', background: 'rgba(26,20,16,0.04)', color: '#1a1410' }} />
               <button type="button" id="manual-add-btn" className="btn">＋ 新規作成</button>
+            </div>
+          </div>
+        </div>
+
+        {/* 顧客詳細ポップアップ・声かけメッセージ入力は、以前は顧客管理タブ（.tab-pane#tab-customers）の
+            中に置かれていた。.tab-paneは非アクティブ時display:noneになるため、他のタブ（今日の業務・
+            予約カレンダー・予約リクエスト等）から開こうとしても親が非表示のままではモーダル自身に
+            display:flexを付けても画面に出ない（でお報告2026-09-14「今日の業務の顧客情報がやっぱり
+            開かない」の根本原因・確定）。他のカレンダー系モーダルと同じく、どのタブがアクティブでも
+            表示できるようタブ構造の外（トップレベル）に移動した。 */}
+
+        {/* お客様一覧はコンパクトな行だけにし、クリックでポップアップに詳細（カルテ・メッセージ送信等）
+            をまとめる方式に変更（でお指摘2026-09-12：カードが大きすぎて一覧性が悪い＋今野くんの
+            実地メモ：スクロールが多いと確度の高いお客様が埋もれる）。1画面によりたくさん並べられる。 */}
+        <div id="customer-detail-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
+          <div className="cal-modal-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+              <h3 style={{ margin: '0 0 4px', fontSize: '16px' }} id="cust-modal-name"></h3>
+              <button type="button" className="btn btn-ghost" id="cust-modal-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
+            </div>
+            <div id="cust-modal-badges" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '4px 0 8px' }}></div>
+            <p id="cust-modal-info" className="muted" style={{ fontSize: '12px', margin: '0 0 10px' }}></p>
+
+            {/* 会員（New Me Log紐づき）用セクション */}
+            <div id="cust-modal-member-section">
+              <div className="cluster" style={{ gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+                <button type="button" className="btn btn-ghost" id="cust-modal-nudge-btn" style={{ fontSize: '12px', padding: '5px 10px' }}>声かけメッセージを送る</button>
+                <select id="cust-modal-assign-select" style={{ fontSize: '12px', padding: '5px 8px', border: '1px solid #e5e7eb', borderRadius: '8px' }}></select>
+              </div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6b7280', marginBottom: '4px' }}>📌 固定メモ</label>
+              <textarea id="cust-modal-note-textarea" style={{ width: '100%', minHeight: '60px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="読み込み中…" disabled></textarea>
+              <button type="button" className="btn" id="cust-modal-note-save-btn" style={{ fontSize: '12px', padding: '5px 10px', marginTop: '6px' }} disabled>保存する</button>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
+                <button type="button" className="btn btn-ghost" id="cust-modal-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>＋ 来店記録を追加</button>
+                <button type="button" className="btn btn-ghost" id="cust-modal-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>記録を見る</button>
+                <button type="button" className="btn btn-ghost" id="cust-modal-insight-btn" style={{ fontSize: '12px', padding: '5px 10px' }}>🤖 AIに傾向を聞く</button>
+              </div>
+              <div id="cust-modal-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
+              <div id="cust-modal-history" style={{ display: 'none', marginTop: '10px' }}></div>
+              <div id="cust-modal-insight" style={{ display: 'none', marginTop: '10px' }}></div>
+            </div>
+
+            {/* 非会員（Fineme未登録）用セクション（でお要望2026-09-12：一覧を統合したため
+                ポップアップ側でも同じ場所から操作できるようにする） */}
+            <div id="cust-modal-manual-section" style={{ display: 'none' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '12px' }}>
+                <label className="muted" style={{ fontSize: '12px' }}>会員と紐付ける：</label>
+                <select id="cust-modal-link-select" style={{ fontSize: '12px', padding: '5px 8px', border: '1px solid #e5e7eb', borderRadius: '8px' }}></select>
+                <button type="button" className="btn btn-ghost" id="cust-modal-manual-delete-btn" style={{ fontSize: '12px', padding: '5px 10px', color: '#ef4444', marginLeft: 'auto' }}>削除</button>
+              </div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6b7280', marginBottom: '4px' }}>📌 メモ</label>
+              <textarea id="cust-modal-manual-memo-textarea" style={{ width: '100%', minHeight: '60px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="要望・使った薬剤・注意点など"></textarea>
+              <button type="button" className="btn" id="cust-modal-manual-save-btn" style={{ fontSize: '12px', padding: '5px 10px', marginTop: '6px' }}>保存する</button>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
+                <button type="button" className="btn btn-ghost" id="cust-modal-manual-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>＋ 来店記録を追加</button>
+                <button type="button" className="btn btn-ghost" id="cust-modal-manual-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>記録を見る</button>
+              </div>
+              <div id="cust-modal-manual-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
+              <div id="cust-modal-manual-history" style={{ display: 'none', marginTop: '10px' }}></div>
+            </div>
+          </div>
+        </div>
+
+        {/* 声かけメッセージ入力（でお指摘2026-09-12：promptだと改行キーで即送信されてしまい
+            事故のもと。テキストエリア＋明示的な送信ボタンに変更しEnterでは送信されないようにした） */}
+        <div id="nudge-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
+          <div className="cal-modal-card" style={{ maxWidth: '380px' }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: '15px' }}>声かけメッセージを送る</h3>
+            <p className="muted" style={{ fontSize: '12px', margin: '0 0 10px' }}>店舗の公式LINE連携済みならそちらから、未連携ならFineme公式LINEから届きます。</p>
+            <textarea id="nudge-message-textarea" style={{ width: '100%', minHeight: '90px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="メッセージを入力してください"></textarea>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+              <button type="button" className="btn" id="nudge-send-btn">送信する</button>
+              <button type="button" className="btn btn-ghost" id="nudge-cancel-btn">キャンセル</button>
             </div>
           </div>
         </div>
