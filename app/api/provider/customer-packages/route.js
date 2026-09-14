@@ -20,7 +20,7 @@ export async function GET(request) {
 
   const { data: rows, error } = await supabase
     .from('customer_packages')
-    .select('id, user_id, package_id, package_name, total_sessions, package_type, purchased_at, expires_at')
+    .select('id, user_id, package_id, package_name, total_sessions, package_type, purchased_at, expires_at, subscription_status, next_grant_at')
     .eq('provider_id', provider.id)
     .order('purchased_at', { ascending: false });
 
@@ -83,7 +83,7 @@ export async function POST(request) {
 
   const { data: pkg, error: pkgError } = await supabase
     .from('service_packages')
-    .select('id, name, total_sessions, validity_days, package_type')
+    .select('id, name, total_sessions, validity_days, package_type, recurring_sessions')
     .eq('id', package_id)
     .eq('provider_id', provider.id)
     .single();
@@ -91,6 +91,15 @@ export async function POST(request) {
 
   const purchasedAt = new Date();
   const expiresAt = pkg.validity_days ? new Date(purchasedAt.getTime() + pkg.validity_days * 86400000) : null;
+  const isSubscription = pkg.package_type === 'subscription';
+  // 月額会員への自動チケット付与（でお要望2026-09-14）：契約時に初回分を付与し、
+  // 以降は毎月のcron（/api/cron/grant-subscription-tickets）が自動付与する。
+  let nextGrantAt = null;
+  if (isSubscription) {
+    const d = new Date(purchasedAt);
+    d.setMonth(d.getMonth() + 1);
+    nextGrantAt = d.toISOString().slice(0, 10);
+  }
 
   const { data, error } = await supabase
     .from('customer_packages')
@@ -103,6 +112,8 @@ export async function POST(request) {
       package_type: pkg.package_type || 'fixed_count',
       purchased_at: purchasedAt.toISOString(),
       expires_at: expiresAt ? expiresAt.toISOString() : null,
+      subscription_status: isSubscription ? 'active' : null,
+      next_grant_at: nextGrantAt,
     })
     .select()
     .single();

@@ -73,6 +73,11 @@ export default function MypagePackagesPage() {
                     購入日：{new Date(p.purchased_at).toLocaleDateString('ja-JP')}
                     {p.expires_at && ` ／ 有効期限：${new Date(p.expires_at).toLocaleDateString('ja-JP')}`}
                   </p>
+                  {p.package_type === 'subscription' && (
+                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: p.subscription_status === 'cancelled' ? '#9ca3af' : '#c9a84c' }}>
+                      {p.subscription_status === 'cancelled' ? '月額会員：解約済み' : `月額会員：次回${p.next_grant_at ? new Date(p.next_grant_at).toLocaleDateString('ja-JP') : '未定'}に自動付与`}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>

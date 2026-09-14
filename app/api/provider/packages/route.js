@@ -20,7 +20,7 @@ export async function GET(request) {
 
   const { data, error } = await supabase
     .from('service_packages')
-    .select('id, name, total_sessions, price, validity_days, active, created_at, package_type, combo_ticket_sessions')
+    .select('id, name, total_sessions, price, validity_days, active, created_at, package_type, combo_ticket_sessions, recurring_sessions')
     .eq('provider_id', provider.id)
     .order('created_at', { ascending: false });
 
@@ -34,17 +34,23 @@ export async function POST(request) {
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { name, total_sessions, price, validity_days, package_type, combo_ticket_sessions } = await request.json().catch(() => ({}));
+  const { name, total_sessions, price, validity_days, package_type, combo_ticket_sessions, recurring_sessions } = await request.json().catch(() => ({}));
   if (!name?.trim()) return Response.json({ error: 'nameは必須です' }, { status: 400 });
 
   // 複合プラン（hacomono/STORES網羅計画 Phase 2）：通い放題（unlimited）はセッション数の
   // 概念が無いためtotal_sessions不要。fixed_count・comboは従来通り1以上の整数が必須。
-  const type = ['fixed_count', 'unlimited', 'combo'].includes(package_type) ? package_type : 'fixed_count';
+  // subscription（でお要望2026-09-14：「月額契約で毎月チケットが自動付与される」仕組み）は
+  // total_sessionsを「初回付与分」として使い、recurring_sessionsに毎月の付与数を持たせる。
+  const type = ['fixed_count', 'unlimited', 'combo', 'subscription'].includes(package_type) ? package_type : 'fixed_count';
   const sessions = parseInt(total_sessions, 10);
   if (type !== 'unlimited' && (!Number.isInteger(sessions) || sessions <= 0)) {
     return Response.json({ error: 'total_sessions（1以上の整数）は必須です' }, { status: 400 });
   }
   const comboSessions = parseInt(combo_ticket_sessions, 10);
+  const recurringSessions = parseInt(recurring_sessions, 10);
+  if (type === 'subscription' && (!Number.isInteger(recurringSessions) || recurringSessions <= 0)) {
+    return Response.json({ error: '毎月の付与回数（1以上の整数）は必須です' }, { status: 400 });
+  }
 
   const { data, error } = await supabase
     .from('service_packages')
@@ -56,6 +62,7 @@ export async function POST(request) {
       validity_days: Number.isFinite(parseInt(validity_days, 10)) ? parseInt(validity_days, 10) : null,
       package_type: type,
       combo_ticket_sessions: type === 'combo' && Number.isInteger(comboSessions) && comboSessions > 0 ? comboSessions : null,
+      recurring_sessions: type === 'subscription' ? recurringSessions : null,
     })
     .select()
     .single();

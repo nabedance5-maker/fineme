@@ -3119,6 +3119,7 @@ export default function ProviderDashboardPage() {
         defListEl.innerHTML = defs.map(d => {
           const typeLabel = d.package_type === 'unlimited' ? '通い放題'
             : d.package_type === 'combo' ? `通い放題＋チケット${d.combo_ticket_sessions ? d.combo_ticket_sessions + '回' : ''}`
+            : d.package_type === 'subscription' ? `月額会員（初回${d.total_sessions}回＋毎月${d.recurring_sessions}回自動付与）`
             : `${d.total_sessions}回`;
           return `
           <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;${d.active ? '' : 'opacity:.5'}">
@@ -3136,7 +3137,7 @@ export default function ProviderDashboardPage() {
         if (!pkgSel) return;
         const active = defs.filter(d => d.active);
         pkgSel.innerHTML = active.length
-          ? active.map(d => `<option value="${d.id}">${esc(d.name)}（${d.package_type === 'unlimited' ? '通い放題' : d.total_sessions + '回'}）</option>`).join('')
+          ? active.map(d => `<option value="${d.id}">${esc(d.name)}（${d.package_type === 'unlimited' ? '通い放題' : d.package_type === 'subscription' ? `月額・毎月${d.recurring_sessions}回` : d.total_sessions + '回'}）</option>`).join('')
           : '<option value="">先にパッケージを作成してください</option>';
       }
 
@@ -3169,17 +3170,38 @@ export default function ProviderDashboardPage() {
         const sorted = [...rows].sort((a, b) => (a.used_up || a.expired ? 1 : 0) - (b.used_up || b.expired ? 1 : 0));
         customerListEl.innerHTML = sorted.map(r => {
           const countLabel = r.package_type === 'unlimited' ? '通い放題' : `残り${r.remaining_sessions}/${r.total_sessions}回${r.used_up ? '（使用済み）' : ''}`;
+          // 月額会員（でお要望2026-09-14）：次回自動付与日・解約ボタンを表示
+          const isSub = r.package_type === 'subscription';
+          const subInfo = isSub
+            ? r.subscription_status === 'cancelled'
+              ? '<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#f3f4f6;color:#6b7280;border-radius:99px;margin-left:6px">解約済み</span>'
+              : `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;margin-left:6px">月額会員・次回付与${esc(r.next_grant_at || '未定')}</span>`
+            : '';
           return `
           <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;${r.expired || r.used_up ? 'opacity:.5' : ''}">
             <div style="flex:1;min-width:0">
               <strong style="font-size:13px">${esc(r.customer_name)}</strong>
-              <span class="muted" style="font-size:12px;margin-left:8px">${esc(r.package_name)}｜${countLabel}${r.expired ? '（期限切れ）' : ''}</span>
+              <span class="muted" style="font-size:12px;margin-left:8px">${esc(r.package_name)}｜${countLabel}${r.expired ? '（期限切れ）' : ''}</span>${subInfo}
             </div>
+            ${isSub && r.subscription_status !== 'cancelled' ? `<button class="btn btn-ghost" style="font-size:11px;padding:6px 12px;color:#ef4444" onclick="cancelSubscription('${r.id}', this)">解約する</button>` : ''}
             ${r.last_usage_id ? `<button class="btn btn-ghost" style="font-size:11px;padding:6px 12px;color:#ef4444" onclick="undoPackageUsage('${r.id}', this)">直近1回を取り消す</button>` : ''}
           </div>
         `;
         }).join('');
       }
+
+      window.cancelSubscription = async function (customerPackageId, btn) {
+        if (!confirm('この月額会員の自動付与を解約しますか？（発行済みの残り回数はそのまま使えます）')) return;
+        if (btn) btn.disabled = true;
+        const res = await fetch(`/api/provider/customer-packages/${customerPackageId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+          body: JSON.stringify({ subscription_status: 'cancelled' }),
+        });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); if (btn) btn.disabled = false; return; }
+        showToast('解約しました');
+        loadCustomerPackages();
+      };
 
       window.togglePackageActive = async function (id, active) {
         await fetch(`/api/provider/packages/${id}`, {
@@ -3204,11 +3226,16 @@ export default function ProviderDashboardPage() {
 
       const typeSel = document.getElementById('pkg-type');
       const sessionsField = document.getElementById('pkg-sessions-field');
+      const sessionsLabel = document.getElementById('pkg-sessions-label');
       const comboSessionsField = document.getElementById('pkg-combo-sessions-field');
+      const recurringSessionsField = document.getElementById('pkg-recurring-sessions-field');
       function syncTypeFields() {
         const t = typeSel?.value || 'fixed_count';
         if (sessionsField) sessionsField.style.display = t === 'unlimited' ? 'none' : '';
+        if (sessionsLabel) sessionsLabel.textContent = t === 'subscription' ? '初回付与回数' : '回数';
         if (comboSessionsField) comboSessionsField.style.display = t === 'combo' ? '' : 'none';
+        // 月額会員（でお要望2026-09-14：「月額契約で毎月チケットが自動付与される」仕組み）
+        if (recurringSessionsField) recurringSessionsField.style.display = t === 'subscription' ? '' : 'none';
       }
       if (typeSel) { typeSel.addEventListener('change', syncTypeFields); syncTypeFields(); }
 
@@ -3222,10 +3249,12 @@ export default function ProviderDashboardPage() {
           const package_type = typeSel?.value || 'fixed_count';
           const sessions = document.getElementById('pkg-sessions')?.value;
           const comboSessions = document.getElementById('pkg-combo-sessions')?.value;
+          const recurringSessions = document.getElementById('pkg-recurring-sessions')?.value;
           const price = document.getElementById('pkg-price')?.value;
           const validity = document.getElementById('pkg-validity')?.value;
           if (!name) { showToast('パッケージ名を入力してください'); return; }
           if (package_type !== 'unlimited' && !sessions) { showToast('回数を入力してください'); return; }
+          if (package_type === 'subscription' && !recurringSessions) { showToast('毎月の付与回数を入力してください'); return; }
           createBtn.disabled = true;
           const res = await fetch('/api/provider/packages', {
             method: 'POST',
@@ -3233,6 +3262,7 @@ export default function ProviderDashboardPage() {
             body: JSON.stringify({
               name, package_type, total_sessions: sessions || null,
               combo_ticket_sessions: package_type === 'combo' ? comboSessions : null,
+              recurring_sessions: package_type === 'subscription' ? recurringSessions : null,
               price: price || null, validity_days: validity || null,
             }),
           });
@@ -3241,6 +3271,7 @@ export default function ProviderDashboardPage() {
           document.getElementById('pkg-name').value = '';
           document.getElementById('pkg-sessions').value = '';
           document.getElementById('pkg-combo-sessions').value = '';
+          document.getElementById('pkg-recurring-sessions').value = '';
           document.getElementById('pkg-price').value = '';
           document.getElementById('pkg-validity').value = '';
           showToast('パッケージを作成しました');
@@ -7898,15 +7929,20 @@ export default function ProviderDashboardPage() {
                   <option value="fixed_count">回数券</option>
                   <option value="unlimited">通い放題</option>
                   <option value="combo">通い放題＋チケット（複合）</option>
+                  <option value="subscription">月額会員（毎月自動でチケット付与）</option>
                 </select>
               </div>
               <div className="form-field" id="pkg-sessions-field" style={{ minWidth: '100px' }}>
-                <label>回数</label>
+                <label id="pkg-sessions-label">回数</label>
                 <input id="pkg-sessions" type="number" min="1" placeholder="10" />
               </div>
               <div className="form-field" id="pkg-combo-sessions-field" style={{ minWidth: '140px', display: 'none' }}>
                 <label>付帯チケット回数</label>
                 <input id="pkg-combo-sessions" type="number" min="1" placeholder="4" />
+              </div>
+              <div className="form-field" id="pkg-recurring-sessions-field" style={{ minWidth: '140px', display: 'none' }}>
+                <label>毎月の付与回数</label>
+                <input id="pkg-recurring-sessions" type="number" min="1" placeholder="8" />
               </div>
               <div className="form-field" style={{ minWidth: '120px' }}>
                 <label>参考価格（任意）</label>
