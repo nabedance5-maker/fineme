@@ -4553,9 +4553,12 @@ export default function ProviderDashboardPage() {
       // 「スタッフ×部屋」合体ビュー用：スタッフ列に、担当部屋があれば注記として添える
       // （でお要望2026-09-14：「スタッフ別と部屋別を合体させたやつが欲しい」）。
       function resourceTagOf(r) {
-        if (viewMode !== 'combined' || !resourceFeatureOn || !r.resource_id) return '';
-        const res = resourceList.find(x => x.id === r.resource_id);
-        return res ? `<span class="cal-block-tag">🏠${esc(res.name)}</span>` : '';
+        if (viewMode !== 'combined' || !resourceFeatureOn) return '';
+        // 部屋が割り当たっていない予約でも「未割当」と出す（でお指摘2026-09-14：
+        // 「部屋が割り振られてなくてもちゃんと表示させろ」。割当済みだけ表示していたため、
+        // 未割当の予約は部屋欄が何も出ず「合体ビューなのに部屋が出ない」ように見えていた）。
+        const res = r.resource_id ? resourceList.find(x => x.id === r.resource_id) : null;
+        return `<span class="cal-block-tag">🏠${res ? esc(res.name) : '未割当'}</span>`;
       }
 
       function staffColumns() {
