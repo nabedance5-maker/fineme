@@ -91,6 +91,21 @@ export async function POST(request) {
     return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
   }
 
+  // 1人のお客様が予約したら来店するまで同じ店舗で次の予約を取れないようにする
+  // （でお要望2026-09-14）。ゲスト予約（user_id無し）は本人特定ができないため対象外。
+  if (user_id) {
+    const { data: activeExisting } = await supabase
+      .from('reservations')
+      .select('id')
+      .eq('provider_id', provider_id)
+      .eq('user_id', user_id)
+      .in('status', ['pending', 'approved', 'counter_proposed'])
+      .limit(1);
+    if (activeExisting?.length) {
+      return Response.json({ error: 'この店舗への予約が既にあります。ご来店・キャンセル後に新しい予約リクエストを送ってください。' }, { status: 409 });
+    }
+  }
+
   // 指名料のスナップショット（後から店舗が料金を変えても過去の予約には影響しない）
   let designationFee = 0;
   if (staff_id) {
