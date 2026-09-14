@@ -31,6 +31,12 @@ export default function ProviderDashboardPage() {
          （深海ネイビー×羊皮紙）の世界観とは切り離し、日々数字とフォームを見る道具として
          可読性を優先する。 */
       .pd-page-root { background: var(--color-bg); min-height: 100vh; color: #1a1410; }
+      /* <main>には共通クラス"section"（globals.cssでpadding:64px 0）も付いており、
+         ダッシュボードではこれが上下に意図しない大きな余白を作っていた
+         （でお指摘2026-09-14：「上部の空間は全然消えてない」の正体。今までの
+         padding-top調整はこれとは別の話で、この余白そのものには手を付けていなかった）。
+         ダッシュボードは独自にpd-main側で余白を管理するため、ここで打ち消す。 */
+      .pd-page-root.section { padding: 0; }
       /* サイドバーは画面左に完全に寄せて固定し、メイン画面と明確に分ける（でお要望2026-09-12：
          「白背景に浮いた四角い枠」ではなく「左側が全部メニュー、右側がメイン画面」にしたい）。
          .containerの中央寄せ・余白を使わず.pd-containerで独自にフルブリードにしている。 */
@@ -667,6 +673,7 @@ export default function ProviderDashboardPage() {
         if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) moved = true;
       }, { passive: true });
       el.addEventListener('touchend', (e) => {
+        alert('DEBUG touchend moved=' + moved); // 一時的な診断用。原因特定後に削除する
         if (!moved) { e.preventDefault(); handler(); }
       });
       el.addEventListener('click', handler);
