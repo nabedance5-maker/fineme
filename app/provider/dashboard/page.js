@@ -673,7 +673,13 @@ export default function ProviderDashboardPage() {
         if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) moved = true;
       }, { passive: true });
       el.addEventListener('touchend', (e) => {
-        if (!moved) { e.preventDefault(); handler(); }
+        if (!moved) {
+          e.preventDefault();
+          const t = e.changedTouches[0];
+          // クリック位置が必要なハンドラ（カレンダーの空き枠タップ等）のため、
+          // touch側でもclientX/clientY・targetをMouseEventと同じ形で渡す。
+          handler({ clientX: t.clientX, clientY: t.clientY, target: e.target, currentTarget: el });
+        }
       });
       el.addEventListener('click', handler);
     }
@@ -4549,7 +4555,7 @@ export default function ProviderDashboardPage() {
               </div>
             `;
           }).join('');
-          return `<div class="cal-staff-col" style="height:${totalHeight}px">${hourLines}${blocksHtml}</div>`;
+          return `<div class="cal-staff-col" style="height:${totalHeight}px" data-cal-col-id="${col.id || ''}" data-cal-col-name="${esc(col.name)}">${hourLines}${blocksHtml}</div>`;
         }).join('');
 
         // ヘッダー・本体を同じgrid-template-columnsを持つ1つのグリッドのセルとして並べる
@@ -4609,7 +4615,7 @@ export default function ProviderDashboardPage() {
           }).join('');
           return `
             <div class="cal-row-name-h" style="height:${rowH}px">${esc(col.name)}</div>
-            <div class="cal-lane" style="height:${rowH}px;width:${totalWidth}px">${vLines}${blocksHtml}</div>
+            <div class="cal-lane" style="height:${rowH}px;width:${totalWidth}px" data-cal-col-id="${col.id || ''}" data-cal-col-name="${esc(col.name)}">${vLines}${blocksHtml}</div>
           `;
         }).join('');
 
@@ -4631,6 +4637,7 @@ export default function ProviderDashboardPage() {
           ? buildGridHtmlHorizontal(items, currentColumns(), currentGroupKey())
           : buildGridHtml(items, currentColumns(), currentGroupKey());
         bindCalOpenHandlers(gridWrapEl);
+        bindCalEmptyHandlers(gridWrapEl);
       }
 
       function renderViewToggle() {
@@ -4747,6 +4754,98 @@ export default function ProviderDashboardPage() {
       function bindCalOpenHandlers(container) {
         container.querySelectorAll('[data-cal-open]').forEach(el => bindTapHandler(el, () => openCalItem(el.dataset.calOpen)));
       }
+
+      // 空き枠（予約ブロックが無い場所）をタップ/クリックしたら手動予約作成モーダルを開く
+      // （でお要望2026-09-14：「電話来た時とかに入れる時あるから」）。列コンテナ
+      // （.cal-staff-col / .cal-lane）自体にバインドし、実際にタップされたのが既存の
+      // 予約ブロック（data-cal-open付き）の上であれば何もしない（ブロック側の
+      // bindCalOpenHandlersに処理を譲る）。
+      const manualModalEl = document.getElementById('cal-manual-modal');
+      const manualWhenEl = document.getElementById('cal-manual-when');
+      const manualNameEl = document.getElementById('cal-manual-name');
+      const manualContactEl = document.getElementById('cal-manual-contact');
+      const manualStaffEl = document.getElementById('cal-manual-staff');
+      const manualResourceFieldEl = document.getElementById('cal-manual-resource-field');
+      const manualResourceEl = document.getElementById('cal-manual-resource');
+      const manualNoteEl = document.getElementById('cal-manual-note');
+      const manualSaveBtn = document.getElementById('cal-manual-save');
+      const manualMsgEl = document.getElementById('cal-manual-msg');
+      let manualCtx = null; // { date, time }
+
+      function roundToHalfHour(min) {
+        return Math.round(min / 30) * 30;
+      }
+
+      function openManualCreate(date, min, colId) {
+        const clamped = Math.max(RANGE_START_MIN, Math.min(RANGE_END_MIN - 30, roundToHalfHour(min)));
+        const time = `${String(Math.floor(clamped / 60)).padStart(2, '0')}:${String(clamped % 60).padStart(2, '0')}`;
+        manualCtx = { date, time };
+        if (manualWhenEl) manualWhenEl.textContent = `${date} ${time}〜 の予約を追加`;
+        if (manualNameEl) manualNameEl.value = '';
+        if (manualContactEl) manualContactEl.value = '';
+        if (manualNoteEl) manualNoteEl.value = '';
+        if (manualMsgEl) manualMsgEl.textContent = '';
+        const groupKey = currentGroupKey();
+        if (manualStaffEl) {
+          manualStaffEl.innerHTML = '<option value="">指名なし</option>' + staffList.map(s => `<option value="${s.id}"${groupKey === 'staff_id' && s.id === colId ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
+        }
+        if (manualResourceFieldEl) manualResourceFieldEl.style.display = resourceFeatureOn ? '' : 'none';
+        if (manualResourceEl) {
+          manualResourceEl.innerHTML = '<option value="">未割当</option>' + resourceList.map(r => `<option value="${r.id}"${groupKey === 'resource_id' && r.id === colId ? ' selected' : ''}>${esc(r.name)}</option>`).join('');
+        }
+        if (manualModalEl) manualModalEl.style.display = 'flex';
+        setTimeout(() => manualNameEl?.focus(), 50);
+      }
+
+      function bindCalEmptyHandlers(container) {
+        container.querySelectorAll('.cal-staff-col[data-cal-col-id], .cal-lane[data-cal-col-id]').forEach(col => {
+          bindTapHandler(col, (e) => {
+            if (e.target?.closest?.('[data-cal-open]')) return; // 既存の予約ブロック上のタップはそちらに任せる
+            const rect = col.getBoundingClientRect();
+            const totalMin = RANGE_END_MIN - RANGE_START_MIN;
+            const horizontal = col.classList.contains('cal-lane');
+            const ratio = horizontal
+              ? (e.clientX - rect.left) / (rect.width || 1)
+              : (e.clientY - rect.top) / (rect.height || 1);
+            const min = RANGE_START_MIN + Math.max(0, Math.min(1, ratio)) * totalMin;
+            openManualCreate(selectedDate, min, col.dataset.calColId || null);
+          });
+        });
+      }
+
+      document.getElementById('cal-manual-close')?.addEventListener('click', () => { if (manualModalEl) manualModalEl.style.display = 'none'; });
+      manualModalEl?.addEventListener('click', (e) => { if (e.target === manualModalEl) manualModalEl.style.display = 'none'; });
+
+      manualSaveBtn?.addEventListener('click', async () => {
+        if (!manualCtx) return;
+        const user_name = manualNameEl?.value.trim();
+        if (!user_name) { if (manualMsgEl) { manualMsgEl.style.color = '#ef4444'; manualMsgEl.textContent = 'お客様名を入力してください'; } return; }
+        manualSaveBtn.disabled = true;
+        if (manualMsgEl) { manualMsgEl.style.color = ''; manualMsgEl.textContent = '保存中…'; }
+        const body = {
+          date: manualCtx.date,
+          time: manualCtx.time,
+          user_name,
+          user_contact: manualContactEl?.value.trim() || '',
+          staff_id: manualStaffEl?.value || null,
+          resource_id: resourceFeatureOn ? (manualResourceEl?.value || null) : null,
+          note: manualNoteEl?.value.trim() || '',
+        };
+        const res = await fetch('/api/provider/reservations/manual', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeadersCal() },
+          body: JSON.stringify(body),
+        });
+        manualSaveBtn.disabled = false;
+        if (!res.ok) {
+          const e = await res.json().catch(() => ({}));
+          if (manualMsgEl) { manualMsgEl.style.color = '#ef4444'; manualMsgEl.textContent = e.error || '保存に失敗しました'; }
+          return;
+        }
+        if (manualModalEl) manualModalEl.style.display = 'none';
+        showToast('予約を追加しました');
+        await loadWeek();
+      });
 
       // まだ確定していないリクエスト（pending/counter_proposed）をカレンダー上でクリックした時は、
       // 確定済み予約と同じ会員情報モーダルではなく、承認・代替提案・お断りができる
@@ -5835,6 +5934,43 @@ export default function ProviderDashboardPage() {
               <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700 }}>来店記録履歴</p>
               <div id="cal-modal-history"><p className="muted" style={{ fontSize: '12px' }}>読み込み中…</p></div>
             </div>
+          </div>
+        </div>
+
+        {/* カレンダーの空き枠タップから開く、電話予約等の手動予約作成モーダル
+            （でお要望2026-09-14：「予約が入ってない枠をタップやクリックしたら、
+            手動で予約を入れられるようにして。電話来た時とかに入れる時あるから」） */}
+        <div id="cal-manual-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
+          <div className="cal-modal-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h3 style={{ margin: 0, fontSize: '15px' }}>手動で予約を追加</h3>
+              <button type="button" className="btn btn-ghost" id="cal-manual-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
+            </div>
+            <p className="muted" id="cal-manual-when" style={{ fontSize: '13px', margin: '0 0 12px', fontWeight: 700 }}></p>
+            <div className="form-field">
+              <label>お客様名 *</label>
+              <input type="text" id="cal-manual-name" placeholder="例：山田 花子" />
+            </div>
+            <div className="form-field">
+              <label>連絡先（電話番号など）</label>
+              <input type="text" id="cal-manual-contact" placeholder="任意" />
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div className="form-field" style={{ flex: '1 1 140px' }}>
+                <label>担当スタッフ</label>
+                <select id="cal-manual-staff"><option value="">指名なし</option></select>
+              </div>
+              <div className="form-field" id="cal-manual-resource-field" style={{ flex: '1 1 140px', display: 'none' }}>
+                <label>部屋・設備</label>
+                <select id="cal-manual-resource"><option value="">未割当</option></select>
+              </div>
+            </div>
+            <div className="form-field">
+              <label>メモ</label>
+              <textarea id="cal-manual-note" style={{ width: '100%', minHeight: '50px', fontSize: '13px', padding: '8px', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="任意"></textarea>
+            </div>
+            <button type="button" className="btn" id="cal-manual-save" style={{ fontSize: '13px', padding: '9px 18px', width: '100%' }}>この内容で予約を追加</button>
+            <p id="cal-manual-msg" className="muted" style={{ fontSize: '12px', margin: '8px 0 0' }}></p>
           </div>
         </div>
 
