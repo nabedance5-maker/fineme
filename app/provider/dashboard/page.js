@@ -1500,62 +1500,190 @@ export default function ProviderDashboardPage() {
     (function setupSlots() {
       const token = getSupabaseToken();
       if (!token) return;
+      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
       const listEl  = document.getElementById('slot-list');
       const form    = document.getElementById('slot-add-form');
+      const addDateEl = document.getElementById('slot-add-date');
       const staffSel = document.getElementById('slot-staff-select');
       const resourceSel = document.getElementById('slot-resource-select');
+      const filterStaffEl = document.getElementById('slot-filter-staff');
+      const filterResourceEl = document.getElementById('slot-filter-resource');
+      const pillsEl = document.getElementById('slot-date-pills');
+      const selDateLabelEl = document.getElementById('slot-selected-date-label');
       function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+      function fmtDate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+      const WEEKDAY_JA_S = ['日','月','火','水','木','金','土'];
       let staffOptionsLoaded = false;
+      let staffById = {};
+      let resourceById = {};
+
+      // 空き枠タブの一覧（でお指摘2026-09-14：「設定した空き枠が下にバーって出て
+      // めっちゃスクロール必要だし、編集もできないし、スタッフや部屋ごとの絞り込みも
+      // できない」）。月まとめの全件表示ではなく、1週間分の窓をfrom/toで取得し、
+      // 選んだ1日分だけをスタッフ/部屋フィルタつきで表示する。
+      let windowStart = new Date(); windowStart.setHours(0,0,0,0);
+      let selectedDate = fmtDate(windowStart);
+      let userPickedSlotDate = false;
+      let slotsWindowCache = [];
 
       async function loadSelectOptions() {
         if (staffOptionsLoaded) return;
         staffOptionsLoaded = true;
         try {
           const [staffRes, resourceRes] = await Promise.all([
-            fetch('/api/provider/staff', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } }),
-            fetch('/api/provider/resources', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } }),
+            fetch('/api/provider/staff', { headers: authH() }),
+            fetch('/api/provider/resources', { headers: authH() }),
           ]);
-          if (staffRes.ok && staffSel) {
+          if (staffRes.ok) {
             const staffList = await staffRes.json();
-            staffList.forEach(s => staffSel.insertAdjacentHTML('beforeend', `<option value="${s.id}">${esc(s.name)}</option>`));
+            staffList.forEach(s => { staffById[s.id] = s.name; });
+            const opts = staffList.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+            if (staffSel) staffSel.insertAdjacentHTML('beforeend', opts);
+            if (filterStaffEl) filterStaffEl.insertAdjacentHTML('beforeend', opts);
           }
-          if (resourceRes.ok && resourceSel) {
+          if (resourceRes.ok) {
             const resourceList = await resourceRes.json();
-            resourceList.forEach(r => resourceSel.insertAdjacentHTML('beforeend', `<option value="${r.id}">${esc(r.name)}</option>`));
+            resourceList.forEach(r => { resourceById[r.id] = r.name; });
+            const opts = resourceList.map(r => `<option value="${r.id}">${esc(r.name)}</option>`).join('');
+            if (resourceSel) resourceSel.insertAdjacentHTML('beforeend', opts);
+            if (filterResourceEl) filterResourceEl.insertAdjacentHTML('beforeend', opts);
           }
         } catch {}
       }
 
-      async function loadSlots() {
+      function windowDates() {
+        return Array.from({ length: 7 }, (_, i) => { const d = new Date(windowStart); d.setDate(windowStart.getDate() + i); return d; });
+      }
+
+      function filteredSlots(dateStr) {
+        const fs = filterStaffEl?.value || '';
+        const fr = filterResourceEl?.value || '';
+        return slotsWindowCache.filter(s => s.date === dateStr && (!fs || s.staff_id === fs) && (!fr || s.resource_id === fr));
+      }
+
+      function renderPills() {
+        if (!pillsEl) return;
+        const todayStr = fmtDate(new Date());
+        pillsEl.innerHTML = windowDates().map(d => {
+          const dateStr = fmtDate(d);
+          const count = filteredSlots(dateStr).length;
+          const isActive = dateStr === selectedDate;
+          return `
+            <button type="button" class="cal-day-pill${isActive ? ' is-active' : ''}" data-slot-pill="${dateStr}" style="flex-shrink:0">
+              <span>${WEEKDAY_JA_S[d.getDay()]}${dateStr === todayStr ? '・今日' : ''}</span>
+              <span class="cal-pill-date">${d.getDate()}</span>
+              <span>${count ? count + '件' : ''}</span>
+            </button>
+          `;
+        }).join('');
+        pillsEl.querySelectorAll('[data-slot-pill]').forEach(btn => btn.addEventListener('click', () => {
+          selectedDate = btn.dataset.slotPill;
+          userPickedSlotDate = true;
+          renderPills();
+          renderSelectedDateList();
+        }));
+      }
+
+      function slotEditFormHtml(s) {
+        return `
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 0" data-slot-edit-row="${s.id}">
+            <input type="time" value="${s.start_time?.slice(0,5) || ''}" data-edit-start style="width:100px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px" />
+            <span class="muted">〜</span>
+            <input type="time" value="${s.end_time?.slice(0,5) || ''}" data-edit-end style="width:100px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px" />
+            <input type="number" min="1" value="${s.capacity}" data-edit-capacity style="width:60px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px" />
+            <button type="button" class="btn" style="font-size:11.5px;padding:4px 10px" data-slot-edit-save="${s.id}">保存</button>
+            <button type="button" class="btn btn-ghost" style="font-size:11.5px;padding:4px 10px" data-slot-edit-cancel="${s.id}">キャンセル</button>
+          </div>
+        `;
+      }
+
+      function renderSelectedDateList() {
         if (!listEl) return;
-        await loadSelectOptions();
-        listEl.textContent = '読み込み中…';
-        const month = new Date().toISOString().slice(0, 7);
-        const res = await fetch(`/api/provider/slots?month=${month}`, { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
-        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
-        const slots = await res.json();
-        const todayStr = new Date().toISOString().slice(0, 10);
-        const upcoming = slots.filter(s => s.date >= todayStr);
-        if (!upcoming.length) { listEl.innerHTML = '<p class="muted">今月分の今後の枠はまだありません。上のフォームから追加してください。</p>'; return; }
-        listEl.innerHTML = upcoming.map(s => `
-          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6;flex-wrap:wrap">
-            <span style="font-size:13px;font-weight:700">${esc(s.date)} ${esc(s.start_time)}〜${esc(s.end_time)}</span>
+        if (selDateLabelEl) {
+          const d = new Date(selectedDate + 'T00:00:00');
+          selDateLabelEl.textContent = Number.isNaN(d.getTime()) ? selectedDate : `${selectedDate}（${WEEKDAY_JA_S[d.getDay()]}）`;
+        }
+        const rows = filteredSlots(selectedDate).sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+        if (!rows.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">この日の枠はありません。</p>'; return; }
+        listEl.innerHTML = rows.map(s => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6;flex-wrap:wrap" data-slot-row="${s.id}">
+            <span style="font-size:13px;font-weight:700">${esc(s.start_time?.slice(0,5))}〜${esc(s.end_time?.slice(0,5))}</span>
             <span style="font-size:12px;color:#6b7280">定員${s.capacity}</span>
+            ${s.staff_id ? `<span style="font-size:11px;color:#2563eb">${esc(staffById[s.staff_id] || 'スタッフ')}</span>` : ''}
+            ${s.resource_id ? `<span style="font-size:11px;color:#059669">${esc(resourceById[s.resource_id] || '部屋')}</span>` : ''}
             ${!s.is_open ? '<span style="font-size:10px;background:#fef2f2;color:#ef4444;padding:1px 6px;border-radius:99px">締切</span>' : ''}
-            <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px;margin-left:auto" data-slot-toggle="${s.id}" data-open="${s.is_open}">${s.is_open ? '締め切る' : '再開する'}</button>
-            <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px;color:#ef4444" data-slot-del="${s.id}">削除</button>
+            <div style="display:flex;gap:6px;margin-left:auto">
+              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" data-slot-edit="${s.id}">編集</button>
+              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" data-slot-toggle="${s.id}" data-open="${s.is_open}">${s.is_open ? '締め切る' : '再開する'}</button>
+              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px;color:#ef4444" data-slot-del="${s.id}">削除</button>
+            </div>
           </div>`).join('');
+
         listEl.querySelectorAll('[data-slot-toggle]').forEach(btn => btn.addEventListener('click', async () => {
           const isOpen = btn.dataset.open === 'true';
-          await fetch(`/api/provider/slots/${btn.dataset.slotToggle}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` }, body: JSON.stringify({ is_open: !isOpen }) });
-          loadSlots();
+          await fetch(`/api/provider/slots/${btn.dataset.slotToggle}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ is_open: !isOpen }) });
+          loadWindow();
         }));
         listEl.querySelectorAll('[data-slot-del]').forEach(btn => btn.addEventListener('click', async () => {
           if (!confirm('この枠を削除しますか？')) return;
-          await fetch(`/api/provider/slots/${btn.dataset.slotDel}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
-          loadSlots();
+          await fetch(`/api/provider/slots/${btn.dataset.slotDel}`, { method: 'DELETE', headers: authH() });
+          loadWindow();
+        }));
+        listEl.querySelectorAll('[data-slot-edit]').forEach(btn => btn.addEventListener('click', () => {
+          const id = btn.dataset.slotEdit;
+          const row = listEl.querySelector(`[data-slot-row="${id}"]`);
+          const s = rows.find(x => x.id === id);
+          if (!row || !s) return;
+          row.outerHTML = slotEditFormHtml(s);
+          const editRow = listEl.querySelector(`[data-slot-edit-row="${id}"]`);
+          editRow.querySelector(`[data-slot-edit-save="${id}"]`).addEventListener('click', async () => {
+            const start_time = editRow.querySelector('[data-edit-start]').value;
+            const end_time = editRow.querySelector('[data-edit-end]').value;
+            const capacity = Number(editRow.querySelector('[data-edit-capacity]').value) || 1;
+            const res = await fetch(`/api/provider/slots/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ start_time, end_time, capacity }) });
+            if (res.ok) { showToast('保存しました'); loadWindow(); }
+            else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
+          });
+          editRow.querySelector(`[data-slot-edit-cancel="${id}"]`).addEventListener('click', () => renderSelectedDateList());
         }));
       }
+
+      async function loadWindow() {
+        if (!listEl) return;
+        await loadSelectOptions();
+        listEl.textContent = '読み込み中…';
+        const dates = windowDates();
+        const from = fmtDate(dates[0]);
+        const to = fmtDate(dates[6]);
+        const res = await fetch(`/api/provider/slots?from=${from}&to=${to}`, { headers: authH() });
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
+        slotsWindowCache = await res.json();
+        if (!userPickedSlotDate) selectedDate = from;
+        renderPills();
+        renderSelectedDateList();
+      }
+
+      filterStaffEl?.addEventListener('change', () => { renderPills(); renderSelectedDateList(); });
+      filterResourceEl?.addEventListener('change', () => { renderPills(); renderSelectedDateList(); });
+      document.getElementById('slot-nav-prev')?.addEventListener('click', () => { windowStart.setDate(windowStart.getDate() - 7); userPickedSlotDate = false; loadWindow(); });
+      document.getElementById('slot-nav-next')?.addEventListener('click', () => { windowStart.setDate(windowStart.getDate() + 7); userPickedSlotDate = false; loadWindow(); });
+      document.getElementById('slot-nav-today')?.addEventListener('click', () => { windowStart = new Date(); windowStart.setHours(0,0,0,0); userPickedSlotDate = false; loadWindow(); });
+
+      // 日単位の一括操作（でお要望2026-09-14：祝日等で丸ごと締め切りたい時に1件ずつは辛い）。
+      // 現在のスタッフ/部屋フィルタが指定されていれば、その絞り込み範囲内だけに適用する。
+      async function bulkAction(action) {
+        const label = { open: '開放', close: '締切', delete: '削除' }[action];
+        if (action === 'delete' && !confirm(`${selectedDate}の枠を全て削除します。よろしいですか？`)) return;
+        const res = await fetch('/api/provider/slots/bulk', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() },
+          body: JSON.stringify({ action, date: selectedDate, staff_id: filterStaffEl?.value || null, resource_id: filterResourceEl?.value || null }),
+        });
+        if (res.ok) { const d = await res.json(); showToast(`${d.count}件を${label}しました`); loadWindow(); }
+        else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
+      }
+      document.getElementById('slot-bulk-open')?.addEventListener('click', () => bulkAction('open'));
+      document.getElementById('slot-bulk-close')?.addEventListener('click', () => bulkAction('close'));
+      document.getElementById('slot-bulk-delete')?.addEventListener('click', () => bulkAction('delete'));
 
       form?.addEventListener('submit', async e => {
         e.preventDefault();
@@ -1566,11 +1694,19 @@ export default function ProviderDashboardPage() {
           staff_id: fd.get('staff_id') || null,
           resource_id: fd.get('resource_id') || null,
         };
-        const res = await fetch('/api/provider/slots', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` }, body: JSON.stringify(body) });
-        if (res.ok) { form.reset(); loadSlots(); showToast('枠を追加しました'); }
-        else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
+        const res = await fetch('/api/provider/slots', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify(body) });
+        if (res.ok) {
+          form.reset();
+          if (body.date) { selectedDate = body.date; userPickedSlotDate = true; }
+          loadWindow();
+          showToast('枠を追加しました');
+        } else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
       });
 
+      function loadSlots() {
+        if (addDateEl && !addDateEl.value) addDateEl.value = selectedDate;
+        loadWindow();
+      }
       document.querySelectorAll('[data-tab="slots"]').forEach(btn => btn.addEventListener('click', loadSlots, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'slots') loadSlots();
 
@@ -6610,18 +6746,52 @@ export default function ProviderDashboardPage() {
             </div>
           </div>
 
-          <div className="card stack" style={{ padding: '24px', gap: '16px', marginTop: '16px' }}>
-            <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>個別に手動で追加</h3>
-            <form id="slot-add-form" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: '10px', alignItems: 'end' }}>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>日付 *</label><input name="date" type="date" required /></div>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>開始 *</label><input name="start_time" type="time" required /></div>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>終了 *</label><input name="end_time" type="time" required /></div>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>定員</label><input name="capacity" type="number" min="1" defaultValue="1" /></div>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>スタッフ（任意）</label><select name="staff_id" id="slot-staff-select"><option value="">指定なし</option></select></div>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>部屋・設備（任意）</label><select name="resource_id" id="slot-resource-select"><option value="">指定なし</option></select></div>
-              <button type="submit" className="btn" style={{ height: '40px' }}>枠を追加</button>
-            </form>
+          {/* 空き枠の一覧・管理（でお指摘2026-09-14：「設定した空き枠が下にバーって出て
+              めっちゃスクロール必要だし、編集もできないし、スタッフや部屋ごとの絞り込みも
+              できない」への全面改修）。月まとめの全件リストではなく1日ずつナビゲートし、
+              スタッフ・部屋で絞り込み、日単位でまとめて締切/削除できるようにする。
+              個々の枠も時間・定員をその場で編集できる。 */}
+          <div className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px' }}>
+            <div>
+              <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>空き枠の一覧・管理</h3>
+              <p className="muted" style={{ fontSize: '12.5px', margin: 0 }}>1日ずつ表示します。スタッフ・部屋で絞り込んだり、日ごとまとめて締切・削除できます。</p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <select id="slot-filter-staff" style={{ fontSize: '12.5px', padding: '6px 8px', border: '1px solid #e5e7eb', borderRadius: '8px' }}><option value="">スタッフ：すべて</option></select>
+              <select id="slot-filter-resource" style={{ fontSize: '12.5px', padding: '6px 8px', border: '1px solid #e5e7eb', borderRadius: '8px' }}><option value="">部屋・設備：すべて</option></select>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button type="button" className="btn btn-ghost" id="slot-nav-prev" style={{ fontSize: '12px', padding: '6px 10px' }}>← 前の7日</button>
+              <button type="button" className="btn btn-ghost" id="slot-nav-today" style={{ fontSize: '12px', padding: '6px 10px' }}>今日</button>
+              <button type="button" className="btn btn-ghost" id="slot-nav-next" style={{ fontSize: '12px', padding: '6px 10px' }}>次の7日 →</button>
+            </div>
+            <div id="slot-date-pills" style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}></div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', padding: '10px 12px', background: 'var(--color-bg)', borderRadius: '10px' }}>
+              <strong id="slot-selected-date-label" style={{ fontSize: '13px' }}></strong>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <button type="button" className="btn btn-ghost" id="slot-bulk-open" style={{ fontSize: '11.5px', padding: '5px 10px' }}>この日を全て開放</button>
+                <button type="button" className="btn btn-ghost" id="slot-bulk-close" style={{ fontSize: '11.5px', padding: '5px 10px' }}>この日を全て締切</button>
+                <button type="button" className="btn btn-ghost" id="slot-bulk-delete" style={{ fontSize: '11.5px', padding: '5px 10px', color: '#ef4444' }}>この日を全て削除</button>
+              </div>
+            </div>
+
             <div id="slot-list">読み込み中…</div>
+
+            <details style={{ marginTop: '4px' }}>
+              <summary style={{ cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>＋ 個別に1件だけ追加する（特別対応など）</summary>
+              <form id="slot-add-form" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: '10px', alignItems: 'end', marginTop: '10px' }}>
+                <div className="form-field" style={{ marginBottom: 0 }}><label>日付 *</label><input name="date" type="date" id="slot-add-date" required /></div>
+                <div className="form-field" style={{ marginBottom: 0 }}><label>開始 *</label><input name="start_time" type="time" required /></div>
+                <div className="form-field" style={{ marginBottom: 0 }}><label>終了 *</label><input name="end_time" type="time" required /></div>
+                <div className="form-field" style={{ marginBottom: 0 }}><label>定員</label><input name="capacity" type="number" min="1" defaultValue="1" /></div>
+                <div className="form-field" style={{ marginBottom: 0 }}><label>スタッフ（任意）</label><select name="staff_id" id="slot-staff-select"><option value="">指定なし</option></select></div>
+                <div className="form-field" style={{ marginBottom: 0 }}><label>部屋・設備（任意）</label><select name="resource_id" id="slot-resource-select"><option value="">指定なし</option></select></div>
+                <button type="submit" className="btn" style={{ height: '40px' }}>枠を追加</button>
+              </form>
+            </details>
           </div>
         </div>
 

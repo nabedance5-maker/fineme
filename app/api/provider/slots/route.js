@@ -19,6 +19,11 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url);
   const month = searchParams.get('month'); // YYYY-MM
+  // 空き枠タブの日単位ナビゲーション用（でお指摘2026-09-14：月まとめ表示だと
+  // 自動生成で増えた枠が一覧に全部バーッと出てスクロールが酷い）。month指定より
+  // 優先して使う。
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
 
   let query = supabase
     .from('provider_slots')
@@ -27,11 +32,13 @@ export async function GET(request) {
     .order('date')
     .order('start_time');
 
-  if (month) {
-    const [y, m] = month.split('-').map(Number);
-    const from = `${y}-${String(m).padStart(2,'0')}-01`;
-    const to   = `${y}-${String(m).padStart(2,'0')}-${new Date(y, m, 0).getDate()}`;
+  if (from && to) {
     query = query.gte('date', from).lte('date', to);
+  } else if (month) {
+    const [y, m] = month.split('-').map(Number);
+    const monthFrom = `${y}-${String(m).padStart(2,'0')}-01`;
+    const monthTo   = `${y}-${String(m).padStart(2,'0')}-${new Date(y, m, 0).getDate()}`;
+    query = query.gte('date', monthFrom).lte('date', monthTo);
   }
 
   const { data, error } = await query;
