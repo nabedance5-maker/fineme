@@ -6464,13 +6464,15 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="visit-settings">来店設定</button>
                   {/* 回数券は日々の売上集計ではなく「顧客ごとの発行・消化を管理する台帳」の
                       性質が強いため、売上カテゴリーから顧客管理カテゴリーへ移動
-                      （でお指摘2026-09-13：「本当に売上タブ内が適切か？」）。 */}
+                      （でお指摘2026-09-13：「本当に売上タブ内が適切か？」）。
+                      ロッカーも同じ理由（顧客ごとの契約管理台帳）で顧客管理に置く
+                      （でお指摘2026-09-14）。 */}
                   <button className="tab-btn" data-tab="packages">回数券</button>
+                  <button className="tab-btn" data-tab="lockers" data-feature="locker_rental">ロッカー管理<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="sales" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="sales">売上管理</button>
                   <button className="tab-btn" data-tab="pos" data-feature="pos">POS・在庫<span className="feature-off-badge" data-feature-badge></span></button>
-                  <button className="tab-btn" data-tab="lockers" data-feature="locker_rental">🔒 ロッカー管理<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="store" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="profile">プロフィール</button>
@@ -8210,7 +8212,7 @@ export default function ProviderDashboardPage() {
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
               <div>
-                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>🔒 ロッカー管理</h2>
+                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>ロッカー管理</h2>
                 <p className="muted" style={{ fontSize: '13px', margin: 0 }}>お客様の月極ロッカー契約を記録・管理します。</p>
               </div>
               <button type="button" className="btn" id="lkr-add-btn">＋ ロッカーを追加</button>
