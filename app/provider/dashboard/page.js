@@ -2296,24 +2296,34 @@ export default function ProviderDashboardPage() {
         return (typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0) || (typeof c.storeOverdueDays === 'number' && c.storeOverdueDays < 0);
       }
 
-      // 会員（New Me Log紐づき）・非会員（Fineme未登録）を1つのリストに統合（でお指摘
-      // 2026-09-12：店舗からすると分ける意味がなく、1箇所にまとまっていないと使えない）。
-      function render() {
+      // 現在の絞り込み条件（フィルター・検索キーワード）に一致する会員行だけを返す。
+      // 一覧の表示にも、一斉メール配信の「今の絞り込み結果全員に送る」にも使う共通ロジック
+      // （でお要望2026-09-14：hacomonoのメンバータイプ別一斉配信相当機能）。
+      function currentFilteredMemberRows() {
         const filter = filterSel?.value || 'all';
         const kw = (searchInput?.value || '').trim().toLowerCase();
-        const memberRows = allItems.filter(c => {
+        return allItems.filter(c => {
           if (kw && !(c.customer_name || '').toLowerCase().includes(kw)) return false;
           if (filter === 'user-overdue') return typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0;
           if (filter === 'store-overdue') return typeof c.storeOverdueDays === 'number' && c.storeOverdueDays < 0;
           if (filter === 'dormant') return c.status === 'dormant' || c.status === 'churned';
           return true;
         });
+      }
+
+      // 会員（New Me Log紐づき）・非会員（Fineme未登録）を1つのリストに統合（でお指摘
+      // 2026-09-12：店舗からすると分ける意味がなく、1箇所にまとまっていないと使えない）。
+      function render() {
+        const filter = filterSel?.value || 'all';
+        const kw = (searchInput?.value || '').trim().toLowerCase();
+        const memberRows = currentFilteredMemberRows();
         // 休眠・超過フィルターは非会員には概念自体が無いため、絞り込み中は一覧から外す
         // （「全て」の時だけ非会員も並べる）
         const manualRows = filter === 'all'
           ? manualItems.filter(m => !m.linked_user_id && (!kw || (m.display_name || '').toLowerCase().includes(kw)))
           : [];
         const items = [...applySortOrder(memberRows), ...manualRows];
+        updateBroadcastCount();
         if (!items.length) {
           listEl.innerHTML = '<p class="muted">該当するお客様はいません。</p>';
           return;
@@ -2333,6 +2343,39 @@ export default function ProviderDashboardPage() {
         }).join('');
         listEl.querySelectorAll('[data-cust-open]').forEach(row => bindTapHandler(row, () => openCustomerModal(row.dataset.custOpen, row.dataset.custType)));
       }
+
+      // ── セグメント一斉メール配信（でお要望2026-09-14：hacomonoのメンバータイプ別
+      //    一斉メール配信相当機能。凝ったテンプレートは持たず、件名＋本文の自由記述を
+      //    「今の絞り込み結果全員」に送るだけのシンプルな実装） ──
+      const bcCountEl = document.getElementById('bc-recipient-count');
+      const bcSubjectEl = document.getElementById('bc-subject');
+      const bcBodyEl = document.getElementById('bc-body');
+      const bcSendBtn = document.getElementById('bc-send-btn');
+      const bcMsgEl = document.getElementById('bc-msg');
+      function updateBroadcastCount() {
+        if (!bcCountEl) return;
+        const n = currentFilteredMemberRows().length;
+        bcCountEl.textContent = `今の絞り込み条件：${n}名に送信されます`;
+      }
+      bcSendBtn?.addEventListener('click', async () => {
+        const subject = bcSubjectEl?.value.trim();
+        const body_text = bcBodyEl?.value.trim();
+        const userIds = currentFilteredMemberRows().map(c => c.user_id).filter(Boolean);
+        if (!subject || !body_text) { showToast('件名と本文を入力してください'); return; }
+        if (!userIds.length) { showToast('送信対象がいません'); return; }
+        if (!confirm(`${userIds.length}名に一斉メールを送信します。よろしいですか？（取り消せません）`)) return;
+        bcSendBtn.disabled = true;
+        if (bcMsgEl) { bcMsgEl.style.color = ''; bcMsgEl.textContent = '送信中…'; }
+        const res = await fetch('/api/provider/customers/broadcast-email', {
+          method: 'POST', headers: authHeaders(), body: JSON.stringify({ user_ids: userIds, subject, body_text }),
+        });
+        bcSendBtn.disabled = false;
+        if (!res.ok) { const e = await res.json().catch(() => ({})); if (bcMsgEl) { bcMsgEl.style.color = '#ef4444'; bcMsgEl.textContent = 'エラー: ' + (e.error || '不明'); } return; }
+        const d = await res.json();
+        if (bcMsgEl) { bcMsgEl.style.color = '#4ade80'; bcMsgEl.textContent = `✓ ${d.sent}名に送信しました（メール未登録等で${d.skipped}名はスキップ）`; }
+        if (bcSubjectEl) bcSubjectEl.value = '';
+        if (bcBodyEl) bcBodyEl.value = '';
+      });
 
       // ── 顧客詳細ポップアップ（一覧の行クリックで開く。バッジ・固定メモ・声かけ・
       //    担当割当・来店記録追加/履歴/AI傾向分析をここに集約） ──
@@ -7156,6 +7199,27 @@ export default function ProviderDashboardPage() {
               <input id="karte-search" type="text" placeholder="お客様の名前で絞り込み" style={{ flex: '1 1 200px', maxWidth: '260px', padding: '8px 12px', border: '1.5px solid rgba(26,20,16,0.15)', borderRadius: '8px' }} />
             </div>
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
+          </div>
+
+          {/* セグメント一斉メール配信（でお要望2026-09-14：hacomonoの「メンバータイプ毎の
+              一斉メール配信」相当機能）。上の「表示：」フィルター・検索の絞り込み結果に
+              そのまま送信する。凝った差し込み変数等は持たず、件名＋本文の自由記述のみ。 */}
+          <div className="card stack" style={{ padding: '24px', gap: 10, marginTop: '16px' }}>
+            <div>
+              <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>📧 一斉メール配信</h3>
+              <p className="muted" style={{ fontSize: '12.5px', margin: 0 }}>上の「表示：」の絞り込み結果に、Finemeに登録されたメールアドレスへ一斉送信します（メール未登録の方はスキップされます）。</p>
+            </div>
+            <p id="bc-recipient-count" className="muted" style={{ fontSize: '13px', fontWeight: 700, margin: 0 }}></p>
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label>件名</label>
+              <input type="text" id="bc-subject" placeholder="例：秋の特別キャンペーンのご案内" />
+            </div>
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label>本文</label>
+              <textarea id="bc-body" style={{ width: '100%', minHeight: '110px', fontSize: '14px', padding: '10px', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="お客様への案内文を入力してください"></textarea>
+            </div>
+            <button type="button" className="btn" id="bc-send-btn" style={{ width: 'fit-content' }}>この絞り込み結果に送信する</button>
+            <p id="bc-msg" className="muted" style={{ fontSize: '12px', margin: 0 }}></p>
           </div>
 
           <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px', marginTop: '16px' }}>
