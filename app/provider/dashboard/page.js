@@ -4603,15 +4603,22 @@ export default function ProviderDashboardPage() {
             if (startMin === null) return '';
             const clampedStart = Math.max(RANGE_START_MIN, Math.min(RANGE_END_MIN, startMin));
             const top = ((clampedStart - RANGE_START_MIN) / totalMin) * totalHeight;
-            const height = Math.max(18, (durationOf(r) / totalMin) * totalHeight);
             // スタッフ列で、お客様の指名ではなく店舗が後から割り当てた予約は色・表記を変える
             // （でお要望2026-09-12：指名予約と見分けたい）。実際の担当スタッフ列でのみ意味を持つ
             // 区別のため、groupKeyがstaff_idかつ「指名なし」バケット以外の列でだけ適用する。
             const isManualAssign = groupKey === 'staff_id' && col.id !== null && r.staff_manually_assigned;
             const isPending = r.status === 'pending' || r.status === 'counter_proposed';
+            const tagsHtml = `${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${resourceTagOf(r)}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}`;
+            // 合体ビューの🏠タグ追加等でタグの行数が増えたのに、枠の高さは所要時間の目安値
+            // だけで決めていたため、短い予約枠だと文字がボックスの下からはみ出て見えなく
+            // なっていた（でお報告2026-09-14・スクショで確認）。実際に入るタグの行数分だけ
+            // 最低高さを底上げする。
+            const tagCount = (tagsHtml.match(/cal-block-tag/g) || []).length;
+            const minHeight = 16 + tagCount * 13;
+            const height = Math.max(minHeight, (durationOf(r) / totalMin) * totalHeight);
             return `
               <div class="cal-block${r.status === 'visited' ? ' is-visited' : ''}${isManualAssign ? ' is-manual-assign' : ''}${isPending ? ' is-pending' : ''}" style="top:${top}px;height:${height}px" data-cal-open="${r.id}">
-                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${resourceTagOf(r)}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}
+                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${tagsHtml}
               </div>
             `;
           }).join('');
