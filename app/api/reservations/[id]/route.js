@@ -167,6 +167,21 @@ export async function PATCH(request, context) {
       });
     }
 
+    // 友達紹介プログラム（でお要望2026-09-14）：予約時にpendingで記録された紹介実績を、
+    // 実際に来店した時点でcompletedに確定し、店舗へ「紹介経由のお客様が来店した」と通知する
+    // （特典の実際の付与は店舗の運用に委ねる。来店前に特典だけ確定してしまう事故を防ぐ）。
+    if (newStatus === 'visited') {
+      const { data: referral } = await db.from('provider_referrals').select('id, referrer_user_id').eq('reservation_id', id).eq('status', 'pending').maybeSingle();
+      if (referral) {
+        await db.from('provider_referrals').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', referral.id);
+        const { data: referralProvider } = await db.from('providers').select('line_user_id').eq('id', data.provider_id).single();
+        if (referralProvider?.line_user_id) {
+          try { await sendLinePush(referralProvider.line_user_id, `【Fineme】友達紹介経由のお客様（${data.user_name}様）が来店しました。特典の付与をお忘れなく。`); }
+          catch (e) { console.error('[referral visited notify]', e); }
+        }
+      }
+    }
+
     // 来店確認：紐づくNew Me Logがあれば来店日を反映し、次回目安を再計算させる。
     // これまでreservationsの来店確認とuser_service_logsが完全に無関係で、
     // 予約通りに来店してもLogの次回予定が古いまま延々通知され続けていた

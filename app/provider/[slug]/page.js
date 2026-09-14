@@ -817,6 +817,28 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   // 受け付けるかどうかの店舗ごとの設定（でお要望2026-09-14：「即時予約と同じように、
   // 予約リクエストも受け付けるかどうか設定できるようにしたい」）。デフォルトON。
   const bookingRequestOn = hasFeature(provider, 'booking_request');
+
+  // 友達紹介プログラム（でお要望2026-09-14）：ログイン中のお客様に、この店舗向けの
+  // 個人紹介リンクを発行して見せる。
+  const referralProgramOn = hasFeature(provider, 'referral_program');
+  const [referralCode, setReferralCode] = useState('');
+  const [referralRewardText, setReferralRewardText] = useState('');
+  const [referralCopied, setReferralCopied] = useState(false);
+  useEffect(() => {
+    if (!referralProgramOn || !userId || !provider?.slug) return;
+    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    if (!sbKey) return;
+    try {
+      const obj = JSON.parse(localStorage.getItem(sbKey));
+      const token = obj?.access_token;
+      if (!token) return;
+      fetch(`/api/me/referral-code?provider_slug=${provider.slug}`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.code) setReferralCode(d.code); if (d?.reward_text) setReferralRewardText(d.reward_text); })
+        .catch(() => {});
+    } catch {}
+  }, [referralProgramOn, userId, provider?.slug]);
+  const referralLink = referralCode && provider?.slug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/provider/${provider.slug}?ref=${referralCode}` : '';
   const bookableStaff = (staff || []).filter(s => s.bookable !== false);
   const [staffId, setStaffId] = useState('');
   const selectedStaff = bookableStaff.find(s => s.id === staffId);
@@ -914,6 +936,10 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       ].filter(Boolean);
       // メール・電話を結合して user_contact に（既存APIと互換）
       const user_contact = [formState.email, formState.phone].filter(Boolean).join(' / ');
+      // 友達紹介プログラム（でお要望2026-09-14）：このページ滞在中に?ref=で保存された
+      // コードがあれば予約に添える。自己紹介はサーバー側（attributeReferral）で弾かれる。
+      let referral_code;
+      try { referral_code = localStorage.getItem(`fineme:referral:${provider.slug}`) || undefined; } catch {}
       const body = {
         provider_id: provider.id,
         user_id: userId || null,
@@ -921,6 +947,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         user_contact,
         message: meScanNote + noteParts.join('\n'),
         staff_id: staffId || null,
+        referral_code,
         ...(useInstant
           ? { booking_mode: 'instant', slot_id: selectedSlotId }
           : { preferred_date: formState.date, preferred_time: formState.time }),
@@ -951,6 +978,26 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
 
   return (
     <div style={{ maxWidth: '520px' }}>
+      {/* 友達紹介プログラム（でお要望2026-09-14）：ログイン中かつ店舗が実施している場合のみ表示 */}
+      {referralProgramOn && userId && referralLink && (
+        <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '14px', padding: '16px 18px', marginBottom: '20px' }}>
+          <div style={{ fontSize: '13px', fontWeight: '800', color: '#b45309', marginBottom: '6px' }}>🎁 友達を紹介する</div>
+          <p style={{ fontSize: '12.5px', color: 'rgba(232,228,220,0.75)', margin: '0 0 10px', lineHeight: '1.6' }}>
+            {provider.name}を友達に紹介できます。{referralRewardText || 'このリンクから予約・来店すると特典があります（詳しくはお店にご確認ください）。'}
+          </p>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <input readOnly value={referralLink} onFocus={e => e.target.select()} style={{ flex: 1, padding: '8px 10px', fontSize: '12px', border: '1px solid #fde68a', borderRadius: '8px', background: '#fff', color: '#111', boxSizing: 'border-box' }} />
+            <button
+              type="button"
+              onClick={() => { navigator.clipboard?.writeText(referralLink); setReferralCopied(true); setTimeout(() => setReferralCopied(false), 2000); }}
+              style={{ padding: '8px 14px', background: '#b45309', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', flexShrink: 0 }}
+            >
+              {referralCopied ? 'コピー済み' : 'コピー'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ① 相談の流れ 3ステップ */}
       <div style={{ background: 'rgba(10,15,30,0.50)', borderRadius: '16px', padding: '20px', marginBottom: '20px', backdropFilter: 'blur(8px)', border: '1px solid rgba(232,228,220,0.10)' }}>
         <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(232,228,220,0.40)', letterSpacing: '.12em', marginBottom: '14px', textTransform: 'uppercase' }}>相談の流れ</div>
@@ -1205,6 +1252,15 @@ function ProviderPageContent() {
       setIsFavorited(favs.some(f => f.href === href));
     } catch {}
   }, [provider, slug]);
+
+  // 友達紹介プログラム（でお要望2026-09-14）：?ref=コード付きでこのページに来た場合、
+  // 予約リクエスト送信時まで持ち越せるようlocalStorageに保存しておく（店舗ごとに保持）。
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (ref && slug) {
+      try { localStorage.setItem(`fineme:referral:${slug}`, ref); } catch {}
+    }
+  }, [searchParams, slug]);
 
   // 閲覧履歴に保存
   useEffect(() => {

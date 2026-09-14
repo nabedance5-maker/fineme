@@ -3,7 +3,7 @@
 import { getSupabase } from '@/lib/supabase';
 import { sendReservationCreatedEmails } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
-import { notifyCustomerLine } from '@/lib/reservation-notify';
+import { notifyCustomerLine, attributeReferral } from '@/lib/reservation-notify';
 import { hasFeature } from '@/lib/feature-flags';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -79,7 +79,7 @@ export async function POST(request) {
   // スタッフ指名予約・即時予約モード（hacomono/STORES網羅計画 Phase 1）。
   // staff_idは申請制・即時予約どちらでも受け付ける（指名だけして日程は店舗と相談、も可）。
   // booking_mode省略時は完全に従来通りの申請制コードパス（既存挙動の回帰防止）。
-  const { staff_id, booking_mode, slot_id } = body;
+  const { staff_id, booking_mode, slot_id, referral_code } = body;
   const isInstant = booking_mode === 'instant';
 
   if (!provider_id || !user_name || !user_contact) {
@@ -186,6 +186,11 @@ export async function POST(request) {
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  // 友達紹介プログラム（でお要望2026-09-14）：紹介コード付きの予約なら記録・通知
+  if (referral_code) {
+    await attributeReferral(supabase, { providerId: provider_id, referralCode: referral_code, referredUserId: user_id, referredName: user_name, reservationId: data.id });
+  }
 
   // 掲載者情報を取得（通知用）
   const { data: provider } = await supabase

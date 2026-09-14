@@ -1513,6 +1513,50 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'resources') loadResources();
     })();
 
+    // ── 友達紹介プログラム（B2C・でお要望2026-09-14）タブ ─────
+    (function setupMemberReferral() {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      const rewardEl = document.getElementById('mref-reward-text');
+      const saveBtn = document.getElementById('mref-save-btn');
+      const msgEl = document.getElementById('mref-msg');
+      const listEl = document.getElementById('mref-list');
+
+      async function loadSettings() {
+        const res = await fetch('/api/provider/referral-settings', { headers: authH() });
+        if (res.ok) { const d = await res.json(); if (rewardEl) rewardEl.value = d.reward_text || ''; }
+      }
+      saveBtn?.addEventListener('click', async () => {
+        saveBtn.disabled = true;
+        if (msgEl) { msgEl.style.color = ''; msgEl.textContent = '保存中…'; }
+        const res = await fetch('/api/provider/referral-settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ reward_text: rewardEl?.value.trim() || '' }) });
+        saveBtn.disabled = false;
+        if (msgEl) { msgEl.style.color = res.ok ? '#4ade80' : '#ef4444'; msgEl.textContent = res.ok ? '✓ 保存しました' : '保存に失敗しました'; }
+      });
+
+      const STATUS_LABEL_MREF = { pending: '来店待ち', completed: '来店済み・特典対象' };
+      async function loadList() {
+        if (!listEl) return;
+        const res = await fetch('/api/provider/referrals', { headers: authH() });
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        if (!rows.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">まだ紹介実績はありません。</p>'; return; }
+        listEl.innerHTML = rows.map(r => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6;flex-wrap:wrap">
+            <span style="font-size:13px"><strong>${esc(r.referrer_name)}</strong>さんの紹介</span>
+            <span class="muted" style="font-size:12px">→ ${esc(r.referred_name || '(お名前不明)')}</span>
+            <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;margin-left:auto;background:${r.status === 'completed' ? '#f0fdf4' : '#fffbeb'};color:${r.status === 'completed' ? '#16a34a' : '#d97706'}">${STATUS_LABEL_MREF[r.status] || r.status}</span>
+          </div>
+        `).join('');
+      }
+
+      function loadAll() { loadSettings(); loadList(); }
+      document.querySelectorAll('[data-tab="member-referral"]').forEach(btn => btn.addEventListener('click', loadAll, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'member-referral') loadAll();
+    })();
+
     // ── 空き枠タブ（即時予約モード用・hacomono/STORES網羅計画 Phase 1） ─────
     (function setupSlots() {
       const token = getSupabaseToken();
@@ -6186,6 +6230,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="ltv-cac">LTV/CAC</button>
                   <button className="tab-btn" data-tab="referral">紹介報酬</button>
                   <button className="tab-btn" data-tab="qr">紹介QR</button>
+                  <button className="tab-btn" data-tab="member-referral" data-feature="referral_program">🎁 友達紹介<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="account" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="line-channel">LINE連携</button>
@@ -8246,6 +8291,29 @@ export default function ProviderDashboardPage() {
             <div>
               <h3 style={{ fontSize: '14px', fontWeight: '700', margin: '0 0 10px', color: 'rgba(26,20,16,0.9)' }}>紹介パートナー一覧</h3>
               <div id="referral-list"><p className="muted">読み込み中…</p></div>
+            </div>
+          </div>
+        </div>
+
+        {/* 友達紹介プログラム（B2C・会員が友達を紹介する仕組み。でお要望2026-09-14。
+            上の「紹介報酬」はFineme→掲載者のB2B紹介で別物）。hacomonoのクチコプレミアム
+            連携相当機能をFineme内製で実装。特典の実際の付与は店舗の運用に委ねる。 */}
+        <div className="tab-pane" id="tab-member-referral">
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <h2 style={{ margin: '0', fontSize: '16px' }}>🎁 友達紹介プログラム</h2>
+            <p className="muted" style={{ fontSize: '13px', margin: '0', lineHeight: '1.7' }}>
+              オンにすると、お客様（Finemeログイン中の会員）が公開ページから個人紹介リンクを発行できるようになります。紹介経由の予約・来店を自動で記録し、双方にLINEで通知します。特典の内容・実際の付与は貴店の運用にお任せします（Financeは決済を仲介しません）。
+            </p>
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label>特典の説明文（お客様に表示されます）</label>
+              <input type="text" id="mref-reward-text" placeholder="例：紹介した方・された方どちらも次回500円引き" />
+            </div>
+            <button type="button" className="btn" id="mref-save-btn" style={{ width: 'fit-content' }}>保存する</button>
+            <p id="mref-msg" className="muted" style={{ fontSize: '12px', margin: 0 }}></p>
+
+            <div style={{ borderTop: '1px solid rgba(26,20,16,0.08)', paddingTop: '16px', marginTop: '4px' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: '700', margin: '0 0 10px' }}>紹介実績</h3>
+              <div id="mref-list"><p className="muted">読み込み中…</p></div>
             </div>
           </div>
         </div>
