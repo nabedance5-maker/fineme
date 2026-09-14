@@ -1733,6 +1733,50 @@ export default function ProviderDashboardPage() {
       const contractTitle = document.getElementById('lkr-contract-title');
       const contractForm = document.getElementById('lkr-contract-form');
       let selectedLockerId = null;
+      let selectedMemberUserId = null;
+
+      // Fineme会員検索（でお要望2026-09-14：「ロッカー管理のお客さんをFinemeの会員情報と
+      // 紐付けられるようにして」）。予約カレンダーの手動予約作成で使っているものと
+      // 同じ仕組み・同じAPIを、このタブ専用に軽量に再実装する。
+      const memberSearchInput = document.getElementById('lkr-member-search');
+      const memberResultsEl = document.getElementById('lkr-member-results');
+      const memberSearchWrap = document.getElementById('lkr-member-search-wrap');
+      const memberSelectedEl = document.getElementById('lkr-member-selected');
+      const memberSelectedNameEl = document.getElementById('lkr-member-selected-name');
+      function setSelectedMember(userId, name) {
+        selectedMemberUserId = userId || null;
+        if (memberSelectedEl) memberSelectedEl.style.display = userId ? 'flex' : 'none';
+        if (memberSearchWrap) memberSearchWrap.style.display = userId ? 'none' : '';
+        if (memberSelectedNameEl) memberSelectedNameEl.textContent = name || '';
+        if (userId && name && contractForm?.elements['contractor_name'] && !contractForm.elements['contractor_name'].value) {
+          contractForm.elements['contractor_name'].value = name;
+        }
+      }
+      let memberSearchTimer = null;
+      memberSearchInput?.addEventListener('input', () => {
+        clearTimeout(memberSearchTimer);
+        const q = memberSearchInput.value.trim();
+        if (q.length < 3) { if (memberResultsEl) memberResultsEl.innerHTML = ''; return; }
+        memberSearchTimer = setTimeout(async () => {
+          if (memberResultsEl) memberResultsEl.innerHTML = '<p class="muted" style="font-size:12px;margin:4px 0">検索中…</p>';
+          const res = await fetch(`/api/provider/customers/search-member?q=${encodeURIComponent(q)}`, { headers: authH() });
+          if (!res.ok) { if (memberResultsEl) memberResultsEl.innerHTML = ''; return; }
+          const rows = await res.json();
+          if (!memberResultsEl) return;
+          if (!rows.length) { memberResultsEl.innerHTML = '<p class="muted" style="font-size:12px;margin:4px 0">見つかりませんでした</p>'; return; }
+          memberResultsEl.innerHTML = rows.map(r => `
+            <div data-member-pick="${r.id}" data-member-name="${esc(r.name)}" style="padding:6px 8px;border:1px solid rgba(26,20,16,0.1);border-radius:6px;margin-top:4px;cursor:pointer;font-size:12.5px;display:flex;justify-content:space-between;gap:8px">
+              <span>${esc(r.name)}</span><span class="muted">${esc(r.maskedPhone || '')}</span>
+            </div>
+          `).join('');
+          memberResultsEl.querySelectorAll('[data-member-pick]').forEach(row => row.addEventListener('click', () => {
+            setSelectedMember(row.dataset.memberPick, row.dataset.memberName);
+            memberResultsEl.innerHTML = '';
+            memberSearchInput.value = '';
+          }));
+        }, 350);
+      });
+      document.getElementById('lkr-member-clear')?.addEventListener('click', () => setSelectedMember(null, ''));
 
       async function loadLockers() {
         if (!listEl) return;
@@ -1748,7 +1792,7 @@ export default function ProviderDashboardPage() {
               <strong style="font-size:14px">${esc(l.name)}</strong>
               <span class="muted" style="font-size:12px;margin-left:8px">月額${fmtYen(l.monthly_fee)}</span>
               ${c
-                ? `<div style="margin-top:4px;font-size:12.5px"><span style="font-weight:700;color:#16a34a">契約中</span>：${esc(c.contractor_name)}（月額${fmtYen(c.monthly_fee)}）</div>`
+                ? `<div style="margin-top:4px;font-size:12.5px"><span style="font-weight:700;color:#16a34a">契約中</span>：${esc(c.contractor_name)}（月額${fmtYen(c.monthly_fee)}）${c.user_id ? ' <span style="color:#2563eb;font-weight:700;cursor:pointer" data-lkr-open-cust="' + c.user_id + '" data-lkr-cust-name="' + esc(c.contractor_name) + '">👤会員</span>' : ''}</div>`
                 : '<div style="margin-top:4px;font-size:12.5px;color:#9ca3af">空き</div>'}
             </div>
             ${c
@@ -1758,10 +1802,15 @@ export default function ProviderDashboardPage() {
           </div>`;
         }).join('');
 
+        listEl.querySelectorAll('[data-lkr-open-cust]').forEach(el => el.addEventListener('click', () => {
+          if (!window.openCustomerModal) { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
+          window.openCustomerModal(el.dataset.lkrOpenCust, 'member', el.dataset.lkrCustName);
+        }));
         listEl.querySelectorAll('[data-lkr-contract]').forEach(btn => btn.addEventListener('click', () => {
           selectedLockerId = btn.dataset.lkrContract;
           contractTitle.textContent = `${btn.dataset.lkrName} を契約する`;
           contractForm.reset();
+          setSelectedMember(null, '');
           contractCard.style.display = 'block';
           contractCard.scrollIntoView({ behavior: 'smooth' });
         }));
@@ -1794,7 +1843,7 @@ export default function ProviderDashboardPage() {
         const fd = new FormData(contractForm);
         const res = await fetch(`/api/provider/lockers/${selectedLockerId}/contracts`, {
           method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() },
-          body: JSON.stringify({ contractor_name: fd.get('contractor_name'), monthly_fee: fd.get('monthly_fee'), note: fd.get('note') }),
+          body: JSON.stringify({ contractor_name: fd.get('contractor_name'), monthly_fee: fd.get('monthly_fee'), note: fd.get('note'), user_id: selectedMemberUserId }),
         });
         if (res.ok) { contractCard.style.display = 'none'; loadLockers(); showToast('契約しました'); }
         else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
@@ -8324,6 +8373,22 @@ export default function ProviderDashboardPage() {
             <h3 id="lkr-contract-title" style={{ margin: 0, fontSize: '15px' }}></h3>
             <form id="lkr-contract-form">
               <div className="form-field"><label>契約者名 *</label><input name="contractor_name" required /></div>
+
+              {/* Fineme会員と紐付ける（任意、でお要望2026-09-14：「ロッカー管理のお客さんを
+                  Finemeの会員情報と紐付けられるようにして」）。紐付けると来店履歴・カルテと
+                  同じお客様として扱える。 */}
+              <div className="form-field">
+                <label>Fineme会員と紐付ける（任意）</label>
+                <div id="lkr-member-selected" style={{ display: 'none', alignItems: 'center', gap: '8px', padding: '8px 10px', background: '#eff6ff', borderRadius: '8px', fontSize: '13px' }}>
+                  <span id="lkr-member-selected-name" style={{ fontWeight: 700, color: '#2563eb' }}></span>
+                  <button type="button" className="btn btn-ghost" id="lkr-member-clear" style={{ fontSize: '11px', padding: '3px 8px', marginLeft: 'auto' }}>解除</button>
+                </div>
+                <div id="lkr-member-search-wrap">
+                  <input type="text" id="lkr-member-search" placeholder="お名前または電話番号で検索（3文字以上）" />
+                  <div id="lkr-member-results" style={{ marginTop: '4px' }}></div>
+                </div>
+              </div>
+
               <div className="form-field"><label>月額（円）</label><input name="monthly_fee" type="number" min="0" placeholder="ロッカーの既定額を使う場合は空欄" /></div>
               <div className="form-field"><label>メモ</label><input name="note" placeholder="任意" /></div>
               <div style={{ display: 'flex', gap: '8px' }}>
