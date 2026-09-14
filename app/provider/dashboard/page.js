@@ -95,6 +95,12 @@ export default function ProviderDashboardPage() {
       .cal-time-label.is-first { transform: translateY(0); }
       .cal-staff-col { position: relative; border-right: 1px solid rgba(26,20,16,0.06); }
       .cal-staff-col:last-child { border-right: none; }
+      /* 合体ビュー（スタッフ×部屋）：部屋列をスタッフ列と見た目で区別し、境目に太い
+         区切り線を入れる（でお指摘2026-09-14：「部屋が軸の中に入ってきてない」→
+         部屋を独立した列として追加。見分けがつくよう色分け・区切りを付ける）。 */
+      .cal-staff-head.is-resource-head { background: #f0fdf4; }
+      .cal-staff-col.is-resource-col { background: rgba(5,150,105,0.03); }
+      .cal-staff-head.is-group-start, .cal-staff-col.is-group-start { border-left: 3px solid #c9a84c; }
       .cal-hour-line { position: absolute; left: 0; right: 0; border-top: 1px solid rgba(26,20,16,0.06); }
       .cal-hour-line.is-half { border-top-style: dashed; border-top-color: rgba(26,20,16,0.04); }
       .cal-block, .cal-block-h { background: rgba(201,168,76,0.16); border-left: 3px solid #c9a84c; border-radius: 5px; padding: 2px 5px; font-size: 10.5px; line-height: 1.3; overflow: hidden; cursor: pointer; }
@@ -119,6 +125,9 @@ export default function ProviderDashboardPage() {
       .cal-hour-label-h.is-first { transform: translateY(-50%); }
       .cal-row-name-h { position: sticky; left: 0; z-index: 2; background: rgba(250,248,243,0.97); display: flex; align-items: center; padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-right: 1px solid rgba(26,20,16,0.08); border-bottom: 1px solid rgba(26,20,16,0.06); }
       .cal-lane { position: relative; border-bottom: 1px solid rgba(26,20,16,0.06); }
+      .cal-row-name-h.is-resource-head { background: #f0fdf4; }
+      .cal-lane.is-resource-col { background: rgba(5,150,105,0.03); }
+      .cal-row-name-h.is-group-start, .cal-lane.is-group-start { border-top: 3px solid #c9a84c; }
       .cal-vline { position: absolute; top: 0; bottom: 0; border-left: 1px solid rgba(26,20,16,0.06); }
       .cal-vline.is-half { border-left-style: dashed; border-left-color: rgba(26,20,16,0.04); }
       .cal-block-h { position: absolute; top: 4px; bottom: 4px; white-space: nowrap; }
@@ -4686,34 +4695,26 @@ export default function ProviderDashboardPage() {
         return r.duration_minutes || DEFAULT_DURATION_MIN;
       }
 
-      // 「スタッフ×部屋」合体ビュー用：スタッフ列に、担当部屋があれば注記として添える
-      // （でお要望2026-09-14：「スタッフ別と部屋別を合体させたやつが欲しい」）。
-      function resourceTagOf(r) {
-        if (viewMode !== 'combined' || !resourceFeatureOn) return '';
-        // 部屋が割り当たっていない予約でも「未割当」と出す（でお指摘2026-09-14：
-        // 「部屋が割り振られてなくてもちゃんと表示させろ」。割当済みだけ表示していたため、
-        // 未割当の予約は部屋欄が何も出ず「合体ビューなのに部屋が出ない」ように見えていた）。
-        const res = r.resource_id ? resourceList.find(x => x.id === r.resource_id) : null;
-        return `<span class="cal-block-tag">${res ? esc(res.name) : '未割当'}</span>`;
-      }
-
+      // 「スタッフ×部屋」合体ビュー：部屋を単なる注記（タグ）にすると①文字が
+      // ボックスに収まらず見切れる②結局「部屋が軸として見えない」の両方で不評だった
+      // （でお指摘2026-09-14：「部屋が軸の中に入ってきてない」）。部屋をタグではなく
+      // スタッフ列と並ぶ独立した列（軸）として追加する構成に変更する。
       function staffColumns() {
-        return [...staffList.map(s => ({ key: s.id, id: s.id, name: s.name })), { key: 'unassigned', id: null, name: '指名なし' }];
+        return [...staffList.map(s => ({ key: 's_' + s.id, id: s.id, name: s.name, groupKey: 'staff_id' })), { key: 's_unassigned', id: null, name: '指名なし', groupKey: 'staff_id' }];
       }
       function resourceColumns() {
-        return [...resourceList.map(r => ({ key: r.id, id: r.id, name: r.name })), { key: 'unassigned', id: null, name: '未割当' }];
+        return [...resourceList.map(r => ({ key: 'r_' + r.id, id: r.id, name: r.name, groupKey: 'resource_id' })), { key: 'r_unassigned', id: null, name: '未割当', groupKey: 'resource_id' }];
       }
       function currentColumns() {
+        if (viewMode === 'combined') return [...staffColumns(), ...resourceColumns()];
         return viewMode === 'resource' ? resourceColumns() : staffColumns();
       }
-      function currentGroupKey() {
-        return viewMode === 'resource' ? 'resource_id' : 'staff_id';
-      }
 
-      // 時間×スタッフ（または部屋）のグリッドHTMLを組み立てる共通関数。groupKeyで
-      // reservationsのどのフィールドで列分けするかを切り替える（でお要望2026-09-12：
-      // スタッフ別/部屋別カレンダーの切り替え）。
-      function buildGridHtml(items, columns, groupKey) {
+      // 時間×スタッフ（または部屋、または合体）のグリッドHTMLを組み立てる共通関数。
+      // 各列が自分のgroupKey（'staff_id'|'resource_id'）を持ち、その列で予約を
+      // 絞り込む（でお要望2026-09-12：スタッフ別/部屋別カレンダーの切り替え／
+      // でお要望2026-09-14：両方を同時に列として並べる合体ビュー）。
+      function buildGridHtml(items, columns) {
         const totalMin = RANGE_END_MIN - RANGE_START_MIN;
         const rowH = 26; // 30分あたりの高さ(px)
         const totalHeight = (totalMin / 30) * rowH;
@@ -4725,10 +4726,13 @@ export default function ProviderDashboardPage() {
         }
         timeColHtml += `</div>`;
 
-        const headerCellsHtml = columns.map(c => `<div class="cal-staff-head">${esc(c.name)}</div>`).join('');
+        // 合体ビューでは、部屋列の先頭に太い区切り線を入れてスタッフ群と部屋群の
+        // 境目を視覚的にわかりやすくする。
+        const firstResourceIdx = columns.findIndex(c => c.groupKey === 'resource_id');
+        const headerCellsHtml = columns.map((c, i) => `<div class="cal-staff-head${c.groupKey === 'resource_id' ? ' is-resource-head' : ''}${i === firstResourceIdx ? ' is-group-start' : ''}">${esc(c.name)}</div>`).join('');
 
-        const bodyColsHtml = columns.map(col => {
-          const colItems = items.filter(r => (r[groupKey] || null) === col.id);
+        const bodyColsHtml = columns.map((col, i) => {
+          const colItems = items.filter(r => (r[col.groupKey] || null) === col.id);
           let hourLines = '';
           for (let m = RANGE_START_MIN; m <= RANGE_END_MIN; m += 30) {
             const top = ((m - RANGE_START_MIN) / totalMin) * totalHeight;
@@ -4741,14 +4745,12 @@ export default function ProviderDashboardPage() {
             const top = ((clampedStart - RANGE_START_MIN) / totalMin) * totalHeight;
             // スタッフ列で、お客様の指名ではなく店舗が後から割り当てた予約は色・表記を変える
             // （でお要望2026-09-12：指名予約と見分けたい）。実際の担当スタッフ列でのみ意味を持つ
-            // 区別のため、groupKeyがstaff_idかつ「指名なし」バケット以外の列でだけ適用する。
-            const isManualAssign = groupKey === 'staff_id' && col.id !== null && r.staff_manually_assigned;
+            // 区別のため、col.groupKeyがstaff_idかつ「指名なし」バケット以外の列でだけ適用する。
+            const isManualAssign = col.groupKey === 'staff_id' && col.id !== null && r.staff_manually_assigned;
             const isPending = r.status === 'pending' || r.status === 'counter_proposed';
-            const tagsHtml = `${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${resourceTagOf(r)}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}`;
-            // 合体ビューの🏠タグ追加等でタグの行数が増えたのに、枠の高さは所要時間の目安値
-            // だけで決めていたため、短い予約枠だと文字がボックスの下からはみ出て見えなく
-            // なっていた（でお報告2026-09-14・スクショで確認）。実際に入るタグの行数分だけ
-            // 最低高さを底上げする。
+            const tagsHtml = `${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}`;
+            // タグの行数が増えると所要時間だけで決めた高さに文字が収まらずボックスの下から
+            // 見切れることがあった（でお報告2026-09-14）。実際に入るタグ行数分だけ最低高さを底上げする。
             const tagCount = (tagsHtml.match(/cal-block-tag/g) || []).length;
             const minHeight = 16 + tagCount * 13;
             const height = Math.max(minHeight, (durationOf(r) / totalMin) * totalHeight);
@@ -4758,7 +4760,7 @@ export default function ProviderDashboardPage() {
               </div>
             `;
           }).join('');
-          return `<div class="cal-staff-col" style="height:${totalHeight}px" data-cal-col-id="${col.id || ''}" data-cal-col-name="${esc(col.name)}">${hourLines}${blocksHtml}</div>`;
+          return `<div class="cal-staff-col${col.groupKey === 'resource_id' ? ' is-resource-col' : ''}${i === firstResourceIdx ? ' is-group-start' : ''}" style="height:${totalHeight}px" data-cal-col-id="${col.id || ''}" data-cal-col-group="${col.groupKey}">${hourLines}${blocksHtml}</div>`;
         }).join('');
 
         // ヘッダー・本体を同じgrid-template-columnsを持つ1つのグリッドのセルとして並べる
@@ -4782,7 +4784,7 @@ export default function ProviderDashboardPage() {
       // 位置計算の考え方はbuildGridHtmlと同じ連続座標方式で、top/height→left/widthに
       // 置き換えただけ。ブロックの状態クラス（is-visited等）・タグ表示ロジックも共通。
       const HOUR_WIDTH_PX = 90;
-      function buildGridHtmlHorizontal(items, columns, groupKey) {
+      function buildGridHtmlHorizontal(items, columns) {
         const totalMin = RANGE_END_MIN - RANGE_START_MIN;
         const totalWidth = (totalMin / 60) * HOUR_WIDTH_PX;
         const rowH = 56; // 各行（スタッフ/部屋1人分）の高さ(px)
@@ -4795,8 +4797,9 @@ export default function ProviderDashboardPage() {
         }
         hourHeadHtml += `</div>`;
 
-        const rowsHtml = columns.map(col => {
-          const colItems = items.filter(r => (r[groupKey] || null) === col.id);
+        const firstResourceIdx = columns.findIndex(c => c.groupKey === 'resource_id');
+        const rowsHtml = columns.map((col, i) => {
+          const colItems = items.filter(r => (r[col.groupKey] || null) === col.id);
           let vLines = '';
           for (let m = RANGE_START_MIN; m <= RANGE_END_MIN; m += 30) {
             const left = ((m - RANGE_START_MIN) / totalMin) * totalWidth;
@@ -4808,17 +4811,17 @@ export default function ProviderDashboardPage() {
             const clampedStart = Math.max(RANGE_START_MIN, Math.min(RANGE_END_MIN, startMin));
             const left = ((clampedStart - RANGE_START_MIN) / totalMin) * totalWidth;
             const width = Math.max(64, (durationOf(r) / totalMin) * totalWidth);
-            const isManualAssign = groupKey === 'staff_id' && col.id !== null && r.staff_manually_assigned;
+            const isManualAssign = col.groupKey === 'staff_id' && col.id !== null && r.staff_manually_assigned;
             const isPending = r.status === 'pending' || r.status === 'counter_proposed';
             return `
               <div class="cal-block-h${r.status === 'visited' ? ' is-visited' : ''}${isManualAssign ? ' is-manual-assign' : ''}${isPending ? ' is-pending' : ''}" style="left:${left}px;width:${width}px" data-cal-open="${r.id}">
-                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${resourceTagOf(r)}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}
+                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}
               </div>
             `;
           }).join('');
           return `
-            <div class="cal-row-name-h" style="height:${rowH}px">${esc(col.name)}</div>
-            <div class="cal-lane" style="height:${rowH}px;width:${totalWidth}px" data-cal-col-id="${col.id || ''}" data-cal-col-name="${esc(col.name)}">${vLines}${blocksHtml}</div>
+            <div class="cal-row-name-h${col.groupKey === 'resource_id' ? ' is-resource-head' : ''}${i === firstResourceIdx ? ' is-group-start' : ''}" style="height:${rowH}px">${esc(col.name)}</div>
+            <div class="cal-lane${col.groupKey === 'resource_id' ? ' is-resource-col' : ''}${i === firstResourceIdx ? ' is-group-start' : ''}" style="height:${rowH}px;width:${totalWidth}px" data-cal-col-id="${col.id || ''}" data-cal-col-group="${col.groupKey}">${vLines}${blocksHtml}</div>
           `;
         }).join('');
 
@@ -4837,8 +4840,8 @@ export default function ProviderDashboardPage() {
         const horizontal = dashboardPrefs?.calendar_axis === 'time-x';
         gridWrapEl.className = horizontal ? 'cal-day-grid-h' : 'cal-day-grid';
         gridWrapEl.innerHTML = horizontal
-          ? buildGridHtmlHorizontal(items, currentColumns(), currentGroupKey())
-          : buildGridHtml(items, currentColumns(), currentGroupKey());
+          ? buildGridHtmlHorizontal(items, currentColumns())
+          : buildGridHtml(items, currentColumns());
         bindCalOpenHandlers(gridWrapEl);
         bindCalEmptyHandlers(gridWrapEl);
       }
@@ -5026,7 +5029,7 @@ export default function ProviderDashboardPage() {
       );
       document.getElementById('cal-manual-member-clear')?.addEventListener('click', () => setManualSelectedMember(null, ''));
 
-      function openManualCreate(date, min, colId) {
+      function openManualCreate(date, min, colId, colGroupKey) {
         const clamped = Math.max(RANGE_START_MIN, Math.min(RANGE_END_MIN - 30, roundToHalfHour(min)));
         const time = `${String(Math.floor(clamped / 60)).padStart(2, '0')}:${String(clamped % 60).padStart(2, '0')}`;
         manualCtx = { date, time, userId: null };
@@ -5036,13 +5039,14 @@ export default function ProviderDashboardPage() {
         if (manualNoteEl) manualNoteEl.value = '';
         if (manualMsgEl) manualMsgEl.textContent = '';
         setManualSelectedMember(null, '');
-        const groupKey = currentGroupKey();
+        // 合体ビューではスタッフ列・部屋列どちらをタップしたかでcolGroupKeyが変わるため、
+        // タップした列自身のgroupKeyでどちらのプルダウンを事前選択するか決める。
         if (manualStaffEl) {
-          manualStaffEl.innerHTML = '<option value="">指名なし</option>' + staffList.map(s => `<option value="${s.id}"${groupKey === 'staff_id' && s.id === colId ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
+          manualStaffEl.innerHTML = '<option value="">指名なし</option>' + staffList.map(s => `<option value="${s.id}"${colGroupKey === 'staff_id' && s.id === colId ? ' selected' : ''}>${esc(s.name)}</option>`).join('');
         }
         if (manualResourceFieldEl) manualResourceFieldEl.style.display = resourceFeatureOn ? '' : 'none';
         if (manualResourceEl) {
-          manualResourceEl.innerHTML = '<option value="">未割当</option>' + resourceList.map(r => `<option value="${r.id}"${groupKey === 'resource_id' && r.id === colId ? ' selected' : ''}>${esc(r.name)}</option>`).join('');
+          manualResourceEl.innerHTML = '<option value="">未割当</option>' + resourceList.map(r => `<option value="${r.id}"${colGroupKey === 'resource_id' && r.id === colId ? ' selected' : ''}>${esc(r.name)}</option>`).join('');
         }
         if (manualModalEl) manualModalEl.style.display = 'flex';
         setTimeout(() => manualNameEl?.focus(), 50);
@@ -5059,7 +5063,7 @@ export default function ProviderDashboardPage() {
               ? (e.clientX - rect.left) / (rect.width || 1)
               : (e.clientY - rect.top) / (rect.height || 1);
             const min = RANGE_START_MIN + Math.max(0, Math.min(1, ratio)) * totalMin;
-            openManualCreate(selectedDate, min, col.dataset.calColId || null);
+            openManualCreate(selectedDate, min, col.dataset.calColId || null, col.dataset.calColGroup);
           });
         });
       }
