@@ -209,6 +209,19 @@ export default function ProviderDashboardPage() {
     if (initialized.current) return;
     initialized.current = true;
 
+    // モバイル回線の瞬断・タブがバックグラウンドに回った時等にfetch()が中断されると、
+    // Safariは汎用的な「Load failed」というTypeErrorを返す。この画面には多数のfetch呼び
+    // 出しがあり、その中断は実害の無い一時的なものでも未処理のPromise rejectionとして
+    // そのままSentryに「エラー」として飛んでしまっていた（でお報告2026-09-15：Sentry
+    // 通知でTypeError「読み込みに失敗しました」/provider/dashboard）。ネットワーク由来と
+    // 判別できるメッセージだけを黙らせ、それ以外の本当の不具合は引き続き報告させる。
+    const onUnhandledRejection = (e) => {
+      const msg = String(e?.reason?.message || e?.reason || '');
+      if (/load failed|failed to fetch|networkerror|the network connection was lost/i.test(msg)) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('unhandledrejection', onUnhandledRejection);
 
     // ── Auth helpers (inlined from scripts/auth.js) ──────────────
     const PROVIDER_KEY = 'fineme:provider:current';
@@ -6619,6 +6632,7 @@ export default function ProviderDashboardPage() {
     return () => {
       clearInterval(sessionKeepAlive);
       document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('unhandledrejection', onUnhandledRejection);
       // Clean up window globals
       delete window.showToast;
       delete window.approveRequest;
