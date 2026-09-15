@@ -13,15 +13,12 @@ const _sb = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODM1MzIsImV4cCI6MjA4ODU1OTUzMn0.9mBlP8-0l9jotex_UkX7Ba8ZodYtailaxoK_RIy3Kq8'
 );
 
-export default function ProviderDashboardPage() {
-  const initialized = useRef(false);
-
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-
-    const style = document.createElement('style');
-    style.textContent = `
+// サイドバー・タブ・カード等の見た目CSS。以前はuseEffect内でdocument.createElement('style')
+// により動的にDOM注入していたが、useEffectはクライアント側の初回マウント後（=最初の描画の後）
+// にしか走らないため、ページ読み込み直後の一瞬だけCSS無しの生のHTMLが見えてしまっていた
+// （でお報告2026-09-15：「ログインやページ更新の度に、一瞬デザインされてない裸のページが出てくる」）。
+// JSXの<style>タグとしてサーバー側で描画されるようにし、初回HTMLの時点でCSSを含めて解消する。
+const DASHBOARD_CSS = `
       /* サイドバー型ナビ（2026-09 デザイン刷新。/business/dashboard-design-sample の
          方向性を本番に反映。switchTab()はグローバルな.tab-btn/.tab-paneセレクタで
          動くため、この見た目変更だけなら既存のJSロジックには影響しない） */
@@ -203,8 +200,15 @@ export default function ProviderDashboardPage() {
       .feature-off-badge { display: none; margin-left: 6px; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px; background: rgba(96,165,250,0.18); color: #60a5fa; vertical-align: middle; }
       .tab-btn.tab-feature-off .feature-off-badge { display: inline-block; }
       .feature-enable-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.35); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
-    `;
-    document.head.appendChild(style);
+`;
+
+export default function ProviderDashboardPage() {
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
 
     // ── Auth helpers (inlined from scripts/auth.js) ──────────────
     const PROVIDER_KEY = 'fineme:provider:current';
@@ -252,7 +256,14 @@ export default function ProviderDashboardPage() {
       if (pane) pane.classList.add('active');
     }
     document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => { switchTab(btn.dataset.tab); closeMobileNav(); });
+      btn.addEventListener('click', () => {
+        switchTab(btn.dataset.tab);
+        closeMobileNav();
+        // タブを切り替えるたびにURLの?tab=を更新しておくと、ページ更新時に同じ
+        // タブへ自動的に戻れる（既存の起動時タブ判定ロジック(tabParam)がそのまま
+        // 使える）。でお指摘2026-09-15：「更新するたびに1番上のページに戻ってしまう」。
+        try { history.replaceState(null, '', `?tab=${btn.dataset.tab}`); } catch {}
+      });
     });
 
     // ── モバイル用サイドバードロワー開閉 ──────────────────────────
@@ -413,7 +424,7 @@ export default function ProviderDashboardPage() {
     document.getElementById('pd-logout-btn')?.addEventListener('click', async () => {
       if (!confirm('ログアウトしますか？')) return;
       await _sb.auth.signOut().catch(() => {});
-      window.location.href = '/login';
+      window.location.href = '/login?type=provider';
     });
 
     // 上のgetSession()呼び出しでも直せない場合（リフレッシュトークン自体も失効等）に、
@@ -6530,7 +6541,6 @@ export default function ProviderDashboardPage() {
     })();
 
     return () => {
-      try { document.head.removeChild(style); } catch {}
       clearInterval(sessionKeepAlive);
       document.removeEventListener('visibilitychange', onVisible);
       // Clean up window globals
@@ -6550,6 +6560,7 @@ export default function ProviderDashboardPage() {
 
   return (
     <main className="section pd-page-root">
+      <style>{DASHBOARD_CSS}</style>
       <div className="pd-container">
 
         {/* モバイル用トップバー。よく使うタブへのショートカット（でお要望2026-09-14：
