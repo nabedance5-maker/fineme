@@ -409,6 +409,13 @@ export default function ProviderDashboardPage() {
     const onVisible = () => { if (document.visibilityState === 'visible') _sb.auth.getSession().catch(() => {}); };
     document.addEventListener('visibilitychange', onVisible);
 
+    // ログアウト（でお要望2026-09-15）
+    document.getElementById('pd-logout-btn')?.addEventListener('click', async () => {
+      if (!confirm('ログアウトしますか？')) return;
+      await _sb.auth.signOut().catch(() => {});
+      window.location.href = '/login';
+    });
+
     // 上のgetSession()呼び出しでも直せない場合（リフレッシュトークン自体も失効等）に、
     // 各タブの「取得エラー」を401の時だけ再ログイン導線付きに出し分けるための共通ヘルパー。
     function authErrorHtml(res) {
@@ -6628,6 +6635,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="billing">課金・プラン</button>
                   <button className="tab-btn" data-tab="features">機能設定</button>
                   <button className="tab-btn" data-tab="display-settings">表示設定</button>
+                  <button type="button" className="tab-btn" id="pd-logout-btn" style={{ color: '#ef4444' }}>ログアウト</button>
                 </div>
                 <div className="pd-panel-section" data-panel="tutorial" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="tutorial">チュートリアル</button>
