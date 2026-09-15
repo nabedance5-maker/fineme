@@ -1792,7 +1792,7 @@ export default function ProviderDashboardPage() {
               <strong style="font-size:14px">${esc(l.name)}</strong>
               <span class="muted" style="font-size:12px;margin-left:8px">月額${fmtYen(l.monthly_fee)}</span>
               ${c
-                ? `<div style="margin-top:4px;font-size:12.5px"><span style="font-weight:700;color:#16a34a">契約中</span>：${esc(c.contractor_name)}（月額${fmtYen(c.monthly_fee)}）${c.user_id ? ' <span style="color:#2563eb;font-weight:700;cursor:pointer" data-lkr-open-cust="' + c.user_id + '" data-lkr-cust-name="' + esc(c.contractor_name) + '">👤会員</span>' : ''}</div>`
+                ? `<div style="margin-top:4px;font-size:12.5px"><span style="font-weight:700;color:#16a34a">契約中</span>：${esc(c.contractor_name)}（月額${fmtYen(c.monthly_fee)}）${c.user_id ? ' <span style="color:#2563eb;font-weight:700;cursor:pointer" data-lkr-open-cust="' + c.user_id + '" data-lkr-cust-name="' + esc(c.contractor_name) + '">会員</span>' : ''}</div>`
                 : '<div style="margin-top:4px;font-size:12.5px;color:#9ca3af">空き</div>'}
             </div>
             ${c
