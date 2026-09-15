@@ -80,7 +80,10 @@ const DASHBOARD_CSS = `
          grid-template-columnsはインラインstyleで都度指定し、列の最小幅だけ
          --cal-col-min カスタムプロパティ経由でCSS側（メディアクエリ含む）から制御する。 */
       .cal-day-grid { border: 1px solid rgba(26,20,16,0.08); border-radius: 10px; overflow: auto; max-height: 560px; -webkit-overflow-scrolling: touch; --cal-col-min: 130px; }
-      .cal-grid-inner { display: grid; width: max-content; min-width: 100%; }
+      .cal-grid-inner { display: grid; width: max-content; min-width: 100%; position: relative; }
+      /* 現在時刻の線（でお要望2026-09-15）。左端の時刻列(40px)の右から右端まで。 */
+      .cal-now-line { position: absolute; left: 40px; right: 0; height: 0; border-top: 2px solid #ef4444; z-index: 6; pointer-events: none; }
+      .cal-now-line::before { content: ''; position: absolute; left: -5px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
       .cal-time-col-spacer { position: sticky; top: 0; left: 0; z-index: 4; background: #fff; border-bottom: 1px solid rgba(26,20,16,0.08); }
       .cal-staff-head { position: sticky; top: 0; z-index: 3; background: #fff; text-align: center; font-size: 11.5px; font-weight: 700; padding: 6px 4px; border-right: 1px solid rgba(26,20,16,0.06); border-bottom: 1px solid rgba(26,20,16,0.08); }
       .cal-staff-head:last-child { border-right: none; }
@@ -122,7 +125,9 @@ const DASHBOARD_CSS = `
          部屋別をメインにしたい、というニーズがあるため設定でどちらも選べるようにした。
          こちらは1時間あたりの幅を広めに取り、予約者名が途中で切れにくいようにする）。 */
       .cal-day-grid-h { border: 1px solid rgba(26,20,16,0.08); border-radius: 10px; overflow: auto; max-height: 560px; -webkit-overflow-scrolling: touch; }
-      .cal-grid-inner-h { display: grid; width: max-content; min-width: 100%; }
+      .cal-grid-inner-h { display: grid; width: max-content; min-width: 100%; position: relative; }
+      .cal-now-line-h { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid #ef4444; z-index: 6; pointer-events: none; }
+      .cal-now-line-h::before { content: ''; position: absolute; top: -5px; left: -4px; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
       .cal-hour-head-spacer { position: sticky; top: 0; left: 0; z-index: 4; background: #fff; border-bottom: 1px solid rgba(26,20,16,0.08); border-right: 1px solid rgba(26,20,16,0.08); }
       .cal-hour-head-track { position: sticky; top: 0; z-index: 3; background: #fff; height: 32px; border-bottom: 1px solid rgba(26,20,16,0.08); }
       .cal-hour-label-h { position: absolute; top: 50%; transform: translate(-6px,-50%); font-size: 11px; font-weight: 700; color: rgba(26,20,16,0.5); }
@@ -5338,6 +5343,18 @@ export default function ProviderDashboardPage() {
       // 各列が自分のgroupKey（'staff_id'|'resource_id'）を持ち、その列で予約を
       // 絞り込む（でお要望2026-09-12：スタッフ別/部屋別カレンダーの切り替え／
       // でお要望2026-09-14：両方を同時に列として並べる合体ビュー）。
+      // 現在時刻の線（でお要望2026-09-15：「今の時間のところに自動で動いてくれると
+      // ありがたい。今の時間は赤いラインとか出るとよりわかりやすい」）。表示中の日付が
+      // 今日の時だけ出す。
+      function nowMinutesLocal() {
+        const d = new Date();
+        return d.getHours() * 60 + d.getMinutes();
+      }
+      function isShowingNowLine() {
+        const nowMin = nowMinutesLocal();
+        return selectedDate === todayStr && nowMin >= RANGE_START_MIN && nowMin <= RANGE_END_MIN;
+      }
+
       function buildGridHtml(items, columns) {
         const totalMin = RANGE_END_MIN - RANGE_START_MIN;
         const rowH = 26; // 30分あたりの高さ(px)
@@ -5393,12 +5410,16 @@ export default function ProviderDashboardPage() {
         // grid-auto-flowの自動配置で1行目・2行目に収まる。列幅の計算は1回だけなので、
         // ヘッダーと本体で列幅がズレることが構造的に起こらない）。
         const gridTemplateColumns = `40px repeat(${columns.length}, minmax(var(--cal-col-min), 1fr))`;
+        const nowLineHtml = isShowingNowLine()
+          ? `<div class="cal-now-line" style="top:${((nowMinutesLocal() - RANGE_START_MIN) / totalMin) * totalHeight}px"></div>`
+          : '';
         return `
           <div class="cal-grid-inner" style="grid-template-columns:${gridTemplateColumns}">
             <div class="cal-time-col-spacer"></div>
             ${headerCellsHtml}
             ${timeColHtml}
             ${bodyColsHtml}
+            ${nowLineHtml}
           </div>
         `;
       }
@@ -5451,19 +5472,29 @@ export default function ProviderDashboardPage() {
           `;
         }).join('');
 
+        const nowLineHtmlH = isShowingNowLine()
+          ? `<div class="cal-now-line-h" style="left:${nameColWidth + ((nowMinutesLocal() - RANGE_START_MIN) / totalMin) * totalWidth}px"></div>`
+          : '';
         return `
           <div class="cal-grid-inner-h" style="grid-template-columns:${nameColWidth}px ${totalWidth}px">
             <div class="cal-hour-head-spacer"></div>
             ${hourHeadHtml}
             ${rowsHtml}
+            ${nowLineHtmlH}
           </div>
         `;
       }
 
-      function renderDesktopGrid() {
+      // でお要望2026-09-15：「今の時間のところに自動で動いてくれるとありがたい」。
+      // 表示中の日付が今日の時だけ、現在時刻が画面上部から1/3あたりに来るように
+      // スクロールする。60秒ごとの定期再描画（下のsetInterval）では、線の位置は
+      // 更新しつつユーザーが自分でスクロールした位置を奪わないよう据え置く。
+      function renderDesktopGrid(opts = {}) {
         if (!gridWrapEl) return;
         const items = byDate[selectedDate] || [];
         const horizontal = dashboardPrefs?.calendar_axis === 'time-x';
+        const prevScrollTop = gridWrapEl.scrollTop;
+        const prevScrollLeft = gridWrapEl.scrollLeft;
         gridWrapEl.className = horizontal ? 'cal-day-grid-h' : 'cal-day-grid';
         gridWrapEl.innerHTML = horizontal
           ? buildGridHtmlHorizontal(items, currentColumns())
@@ -5471,7 +5502,27 @@ export default function ProviderDashboardPage() {
         bindCalOpenHandlers(gridWrapEl);
         bindCalEmptyHandlers(gridWrapEl);
         bindGreyBandHandlers(gridWrapEl);
+
+        if (opts.preserveScroll) {
+          gridWrapEl.scrollTop = prevScrollTop;
+          gridWrapEl.scrollLeft = prevScrollLeft;
+        } else if (isShowingNowLine()) {
+          requestAnimationFrame(() => {
+            const line = gridWrapEl.querySelector('.cal-now-line, .cal-now-line-h');
+            if (!line) return;
+            if (horizontal) {
+              const left = parseFloat(line.style.left) || 0;
+              gridWrapEl.scrollLeft = Math.max(0, left - gridWrapEl.clientWidth / 3);
+            } else {
+              const top = parseFloat(line.style.top) || 0;
+              gridWrapEl.scrollTop = Math.max(0, top - gridWrapEl.clientHeight / 3);
+            }
+          });
+        }
       }
+      // 現在時刻の線を毎分更新する（データの再取得はせず表示中のキャッシュから
+      // 再描画するだけの軽い処理。ユーザーのスクロール位置は保つ）。
+      setInterval(() => { if (selectedDate === todayStr) renderDesktopGrid({ preserveScroll: true }); }, 60000);
 
       function renderViewToggle() {
         if (!viewToggleEl) return;
