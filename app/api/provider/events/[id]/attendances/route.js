@@ -69,12 +69,18 @@ export async function POST(request, { params }) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
   const whenText = `${event.event_date}${event.start_time ? ' ' + event.start_time : ''}`;
+  // 詳細・画像があれば案内文に含める（でお要望2026-09-15：「タイトルだけじゃなくて
+  // 詳細を書けるようにしたり画像を入れたりできるように」）。
+  const detailLines = [
+    event.memo ? `\n${event.memo}` : '',
+    event.image_url ? `\n${event.image_url}` : '',
+  ].filter(Boolean).join('');
   let sent = 0;
   for (const att of inserted) {
     await notifyCustomerLine(supabase, {
       userId: att.user_id,
       providerId: provider.id,
-      message: `【${provider.name}】イベントのご案内\n「${event.title}」（${whenText}）\nご参加いただけますか？`,
+      message: `【${provider.name}】イベントのご案内\n「${event.title}」（${whenText}）${detailLines}\nご参加いただけますか？`,
       quickReplyItems: [
         { label: '参加する', data: `action=attend_event&aid=${att.id}`, displayText: '参加します' },
         { label: '不参加', data: `action=decline_event&aid=${att.id}`, displayText: '今回は不参加です' },

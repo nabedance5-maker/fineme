@@ -20,7 +20,7 @@ export async function GET(request) {
 
   const { data: events, error } = await supabase
     .from('provider_events')
-    .select('id, title, event_date, start_time, memo, created_at')
+    .select('id, title, event_date, start_time, memo, image_url, created_at')
     .eq('provider_id', provider.id)
     .order('event_date', { ascending: false });
   if (error) return Response.json({ error: error.message }, { status: 500 });
@@ -47,12 +47,12 @@ export async function POST(request) {
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { title, event_date, start_time, memo } = await request.json().catch(() => ({}));
+  const { title, event_date, start_time, memo, image_url } = await request.json().catch(() => ({}));
   if (!title?.trim() || !event_date) return Response.json({ error: 'titleとevent_dateは必須です' }, { status: 400 });
 
   const { data, error } = await supabase
     .from('provider_events')
-    .insert({ provider_id: provider.id, title: title.trim(), event_date, start_time: start_time || null, memo: memo?.trim() || null })
+    .insert({ provider_id: provider.id, title: title.trim(), event_date, start_time: start_time || null, memo: memo?.trim() || null, image_url: image_url || null })
     .select()
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });

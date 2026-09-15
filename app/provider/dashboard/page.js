@@ -6386,20 +6386,29 @@ export default function ProviderDashboardPage() {
 
       let events = [];
       let currentEventId = null;
+      let uploadedEventImageUrl = null;
 
       function renderList() {
         if (!listEl) return;
         if (!events.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">まだイベントがありません。上のフォームから作成してください。</p>'; return; }
         listEl.innerHTML = events.map(e => `
           <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;">
+            ${e.image_url ? `<img src="${esc(e.image_url)}" alt="" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0" />` : ''}
             <div style="flex:1;min-width:0">
               <strong style="font-size:13px">${esc(e.title)}</strong>
               <span class="muted" style="font-size:12px;margin-left:8px">${e.event_date}${e.start_time ? ' ' + e.start_time : ''} ／ 参加${e.counts.attending}・不参加${e.counts.declined}・未回答${e.counts.invited}</span>
+              ${e.memo ? `<div class="muted" style="font-size:12px;margin-top:2px;white-space:pre-wrap">${esc(e.memo)}</div>` : ''}
             </div>
             <button class="btn btn-ghost" style="font-size:11px;padding:6px 12px" data-ev-open="${e.id}">出欠を確認する</button>
+            <button class="btn btn-ghost" style="font-size:11px;padding:6px 12px;color:#ef4444" data-ev-del="${e.id}">削除</button>
           </div>
         `).join('');
         listEl.querySelectorAll('[data-ev-open]').forEach(btn => btn.addEventListener('click', () => openInvite(btn.dataset.evOpen)));
+        listEl.querySelectorAll('[data-ev-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('このイベントを削除しますか？出欠回答も削除されます。')) return;
+          await fetch(`/api/provider/events/${btn.dataset.evDel}`, { method: 'DELETE', headers: authHeadersEv() });
+          loadEvents();
+        }));
       }
 
       async function loadEvents() {
@@ -6466,18 +6475,44 @@ export default function ProviderDashboardPage() {
         loadEvents();
       });
 
+      // イベント画像アップロード（でお要望2026-09-15）。選択した瞬間にアップロードして
+      // URLを確定させ、作成ボタンを押した時にそのURLを一緒に送る。
+      document.getElementById('ev-image-input')?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        const msgEl = document.getElementById('ev-image-msg');
+        const previewEl = document.getElementById('ev-image-preview');
+        if (!file) return;
+        if (msgEl) { msgEl.style.color = ''; msgEl.textContent = 'アップロード中…'; }
+        const fd = new FormData();
+        fd.append('image', file);
+        const res = await fetch('/api/provider/events/upload-image', {
+          method: 'POST', headers: { Authorization: `Bearer ${getSupabaseToken() || token}` }, body: fd,
+        });
+        if (!res.ok) { const err = await res.json().catch(() => ({})); if (msgEl) { msgEl.style.color = '#ef4444'; msgEl.textContent = 'エラー: ' + (err.error || '不明'); } return; }
+        const { url } = await res.json();
+        uploadedEventImageUrl = url;
+        if (previewEl) { previewEl.style.display = 'block'; previewEl.querySelector('img').src = url; }
+        if (msgEl) { msgEl.style.color = '#4ade80'; msgEl.textContent = '✓ アップロードしました'; }
+      });
+
       document.getElementById('ev-create-btn')?.addEventListener('click', async () => {
         const title = document.getElementById('ev-title')?.value.trim();
         const eventDate = document.getElementById('ev-date')?.value;
         const startTime = document.getElementById('ev-time')?.value;
+        const memo = document.getElementById('ev-memo')?.value.trim();
         if (!title || !eventDate) { showToast('イベント名と日付を入力してください'); return; }
         const res = await fetch('/api/provider/events', {
-          method: 'POST', headers: authHeadersEv(), body: JSON.stringify({ title, event_date: eventDate, start_time: startTime || null }),
+          method: 'POST', headers: authHeadersEv(), body: JSON.stringify({ title, event_date: eventDate, start_time: startTime || null, memo: memo || null, image_url: uploadedEventImageUrl }),
         });
         if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
         document.getElementById('ev-title').value = '';
         document.getElementById('ev-date').value = '';
         document.getElementById('ev-time').value = '';
+        document.getElementById('ev-memo').value = '';
+        document.getElementById('ev-image-input').value = '';
+        document.getElementById('ev-image-preview').style.display = 'none';
+        document.getElementById('ev-image-msg').textContent = '';
+        uploadedEventImageUrl = null;
         showToast('イベントを作成しました');
         loadEvents();
       });
@@ -8479,8 +8514,22 @@ export default function ProviderDashboardPage() {
                 <label>開始時刻（任意）</label>
                 <input id="ev-time" type="time" />
               </div>
-              <button className="btn" id="ev-create-btn" type="button">作成する</button>
             </div>
+            {/* 詳細・画像（でお要望2026-09-15：「タイトルだけじゃなくて、詳細を書けるように
+                したり画像を入れたりできるように」）。招待LINEの案内文にそのまま反映される。 */}
+            <div className="form-field">
+              <label>詳細（任意）</label>
+              <textarea id="ev-memo" style={{ width: '100%', minHeight: '70px', fontSize: '14px', padding: '10px', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="持ち物・参加費・場所など"></textarea>
+            </div>
+            <div className="form-field">
+              <label>画像（任意）</label>
+              <input id="ev-image-input" type="file" accept="image/png,image/jpeg,image/webp" />
+              <div id="ev-image-preview" style={{ display: 'none', marginTop: '8px' }}>
+                <img alt="" style={{ maxWidth: '160px', borderRadius: '8px', display: 'block' }} />
+              </div>
+              <span id="ev-image-msg" className="muted" style={{ fontSize: '12px' }}></span>
+            </div>
+            <button className="btn" id="ev-create-btn" type="button" style={{ width: 'fit-content' }}>作成する</button>
             <div id="ev-list"><p className="muted">読み込み中…</p></div>
           </div>
 
