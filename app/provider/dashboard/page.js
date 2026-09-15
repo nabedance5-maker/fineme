@@ -5483,11 +5483,12 @@ export default function ProviderDashboardPage() {
         // 画面上は何も無いように見えてしまう（でお報告2026-09-12：承認したのに
         // カレンダーに出ていないように見えた）。今日に予約が無く他の日にはある場合、
         // 手動選択前に限り直近の予約がある日へ自動フォーカスする。
+        // ただし対象は今日以降に限る——過去日（today未満）にしか予約が無い場合まで
+        // フォールバックしてしまうと、今日が9/15なのに過去の9/14が表示され続ける
+        // 不具合になっていた（でお報告2026-09-15：「予約カレンダーの日付がズレてる」）。
         if (!userPickedDate && !(byDate[selectedDate] || []).length) {
-          const withData = dates.map(fmtDate).filter(d => (byDate[d] || []).length);
-          if (withData.length) {
-            selectedDate = withData.find(d => d >= todayStr) || withData[0];
-          }
+          const withData = dates.map(fmtDate).filter(d => d >= todayStr && (byDate[d] || []).length);
+          if (withData.length) selectedDate = withData[0];
         }
         renderPills();
         renderDay();
