@@ -1955,71 +1955,112 @@ export default function ProviderDashboardPage() {
           selectedDate = btn.dataset.slotPill;
           userPickedSlotDate = true;
           renderPills();
-          renderSelectedDateList();
+          renderSlotGrid();
         }));
       }
 
-      function slotEditFormHtml(s) {
-        return `
-          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 0" data-slot-edit-row="${s.id}">
-            <input type="time" value="${s.start_time?.slice(0,5) || ''}" data-edit-start style="width:100px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px" />
-            <span class="muted">〜</span>
-            <input type="time" value="${s.end_time?.slice(0,5) || ''}" data-edit-end style="width:100px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px" />
-            <input type="number" min="1" value="${s.capacity}" data-edit-capacity style="width:60px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px" />
-            <button type="button" class="btn" style="font-size:11.5px;padding:4px 10px" data-slot-edit-save="${s.id}">保存</button>
-            <button type="button" class="btn btn-ghost" style="font-size:11.5px;padding:4px 10px" data-slot-edit-cancel="${s.id}">キャンセル</button>
-          </div>
-        `;
+      // 空き枠のカレンダー表示（でお指摘2026-09-15：「作った枠が何個も下に連なっていて
+      // スクロールめっちゃしなきゃいけないし死ぬほどだるい。カレンダー的な表示の仕方が
+      // 1番いいはず」）。1日分でも刻み幅を短くすると数十件になる（10分刻みなら1日39件等）
+      // ため、縦に積む一覧ではなく「時間×スタッフ（部屋）」の表で一望できるようにする。
+      // 予約カレンダー本体（連続座標の絶対配置）ほど厳密でなくてよいため、実際に枠がある
+      // 時刻だけを行にしたシンプルな表で組む。
+      function slotGridColumns() {
+        const ids = Object.keys(staffById);
+        if (!ids.length) return [{ id: '', name: '全体' }];
+        return [...ids.map(id => ({ id, name: staffById[id] })), { id: '', name: '指名なし' }];
       }
 
-      function renderSelectedDateList() {
+      function renderSlotEditor(s) {
+        const editorEl = document.getElementById('slot-grid-editor');
+        if (!editorEl) return;
+        editorEl.innerHTML = `
+          <div style="border:1px solid rgba(26,20,16,0.12);border-radius:10px;padding:14px;background:var(--color-bg)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <strong style="font-size:13px">${esc(s.staff_id ? (staffById[s.staff_id] || 'スタッフ') : '指名なし')}${s.resource_id ? ' ／ ' + esc(resourceById[s.resource_id] || '部屋') : ''}</strong>
+              <button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" id="slot-editor-close">閉じる</button>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+              <input type="time" value="${s.start_time?.slice(0,5) || ''}" data-edit-start style="padding:6px 8px;border:1px solid #e5e7eb;border-radius:6px" />
+              <span class="muted">〜</span>
+              <input type="time" value="${s.end_time?.slice(0,5) || ''}" data-edit-end style="padding:6px 8px;border:1px solid #e5e7eb;border-radius:6px" />
+              <span class="muted">定員</span>
+              <input type="number" min="1" value="${s.capacity}" data-edit-capacity style="width:60px;padding:6px 8px;border:1px solid #e5e7eb;border-radius:6px" />
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" class="btn" style="font-size:12px;padding:6px 14px" id="slot-editor-save">保存</button>
+              <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 14px" id="slot-editor-toggle">${s.is_open ? '締め切る' : '再開する'}</button>
+              <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 14px;color:#ef4444" id="slot-editor-del">削除</button>
+            </div>
+          </div>
+        `;
+        editorEl.querySelector('#slot-editor-close').addEventListener('click', () => { editorEl.innerHTML = ''; });
+        editorEl.querySelector('#slot-editor-save').addEventListener('click', async () => {
+          const start_time = editorEl.querySelector('[data-edit-start]').value;
+          const end_time = editorEl.querySelector('[data-edit-end]').value;
+          const capacity = Number(editorEl.querySelector('[data-edit-capacity]').value) || 1;
+          const res = await fetch(`/api/provider/slots/${s.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ start_time, end_time, capacity }) });
+          if (res.ok) { showToast('保存しました'); editorEl.innerHTML = ''; loadWindow(); }
+          else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
+        });
+        editorEl.querySelector('#slot-editor-toggle').addEventListener('click', async () => {
+          await fetch(`/api/provider/slots/${s.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ is_open: !s.is_open }) });
+          editorEl.innerHTML = '';
+          loadWindow();
+        });
+        editorEl.querySelector('#slot-editor-del').addEventListener('click', async () => {
+          if (!confirm('この枠を削除しますか？')) return;
+          await fetch(`/api/provider/slots/${s.id}`, { method: 'DELETE', headers: authH() });
+          editorEl.innerHTML = '';
+          loadWindow();
+        });
+        editorEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      function renderSlotGrid() {
         if (!listEl) return;
         if (selDateLabelEl) {
           const d = new Date(selectedDate + 'T00:00:00');
           selDateLabelEl.textContent = Number.isNaN(d.getTime()) ? selectedDate : `${selectedDate}（${WEEKDAY_JA_S[d.getDay()]}）`;
         }
-        const rows = filteredSlots(selectedDate).sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+        const rows = filteredSlots(selectedDate);
         if (!rows.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">この日の枠はありません。</p>'; return; }
-        listEl.innerHTML = rows.map(s => `
-          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6;flex-wrap:wrap" data-slot-row="${s.id}">
-            <span style="font-size:13px;font-weight:700">${esc(s.start_time?.slice(0,5))}〜${esc(s.end_time?.slice(0,5))}</span>
-            <span style="font-size:12px;color:#6b7280">定員${s.capacity}</span>
-            ${s.staff_id ? `<span style="font-size:11px;color:#2563eb">${esc(staffById[s.staff_id] || 'スタッフ')}</span>` : ''}
-            ${s.resource_id ? `<span style="font-size:11px;color:#059669">${esc(resourceById[s.resource_id] || '部屋')}</span>` : ''}
-            ${!s.is_open ? '<span style="font-size:10px;background:#fef2f2;color:#ef4444;padding:1px 6px;border-radius:99px">締切</span>' : ''}
-            <div style="display:flex;gap:6px;margin-left:auto">
-              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" data-slot-edit="${s.id}">編集</button>
-              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" data-slot-toggle="${s.id}" data-open="${s.is_open}">${s.is_open ? '締め切る' : '再開する'}</button>
-              <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px;color:#ef4444" data-slot-del="${s.id}">削除</button>
-            </div>
-          </div>`).join('');
 
-        listEl.querySelectorAll('[data-slot-toggle]').forEach(btn => btn.addEventListener('click', async () => {
-          const isOpen = btn.dataset.open === 'true';
-          await fetch(`/api/provider/slots/${btn.dataset.slotToggle}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ is_open: !isOpen }) });
-          loadWindow();
-        }));
-        listEl.querySelectorAll('[data-slot-del]').forEach(btn => btn.addEventListener('click', async () => {
-          if (!confirm('この枠を削除しますか？')) return;
-          await fetch(`/api/provider/slots/${btn.dataset.slotDel}`, { method: 'DELETE', headers: authH() });
-          loadWindow();
-        }));
-        listEl.querySelectorAll('[data-slot-edit]').forEach(btn => btn.addEventListener('click', () => {
-          const id = btn.dataset.slotEdit;
-          const row = listEl.querySelector(`[data-slot-row="${id}"]`);
-          const s = rows.find(x => x.id === id);
-          if (!row || !s) return;
-          row.outerHTML = slotEditFormHtml(s);
-          const editRow = listEl.querySelector(`[data-slot-edit-row="${id}"]`);
-          editRow.querySelector(`[data-slot-edit-save="${id}"]`).addEventListener('click', async () => {
-            const start_time = editRow.querySelector('[data-edit-start]').value;
-            const end_time = editRow.querySelector('[data-edit-end]').value;
-            const capacity = Number(editRow.querySelector('[data-edit-capacity]').value) || 1;
-            const res = await fetch(`/api/provider/slots/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ start_time, end_time, capacity }) });
-            if (res.ok) { showToast('保存しました'); loadWindow(); }
-            else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
-          });
-          editRow.querySelector(`[data-slot-edit-cancel="${id}"]`).addEventListener('click', () => renderSelectedDateList());
+        const columns = slotGridColumns();
+        const times = [...new Set(rows.map(s => s.start_time))].sort();
+        const cellMap = {};
+        rows.forEach(s => { cellMap[`${s.start_time}|${s.staff_id || ''}`] = s; });
+
+        const headerHtml = `<th style="text-align:left;padding:6px 8px;font-size:11px;color:#6b7280;position:sticky;left:0;background:#fff">時間</th>`
+          + columns.map(c => `<th style="padding:6px 8px;font-size:11px;color:#6b7280;font-weight:700;white-space:nowrap">${esc(c.name)}</th>`).join('');
+
+        const bodyHtml = times.map(t => {
+          const cells = columns.map(c => {
+            const s = cellMap[`${t}|${c.id}`];
+            if (!s) return '<td style="padding:3px 5px"></td>';
+            const bg = s.is_open ? 'rgba(201,168,76,0.16)' : 'rgba(26,20,16,0.05)';
+            const border = s.is_open ? '#c9a84c' : '#9ca3af';
+            return `<td style="padding:3px 5px">
+              <div data-slot-cell="${s.id}" style="cursor:pointer;border-left:3px solid ${border};background:${bg};border-radius:6px;padding:5px 8px;font-size:11.5px;white-space:nowrap">
+                定員${s.capacity}${!s.is_open ? '<div style="color:#ef4444;font-size:10px;font-weight:700">締切</div>' : ''}
+              </div>
+            </td>`;
+          }).join('');
+          return `<tr><td style="padding:5px 8px;font-size:12px;font-weight:700;white-space:nowrap;position:sticky;left:0;background:#fff">${esc(t.slice(0,5))}</td>${cells}</tr>`;
+        }).join('');
+
+        listEl.innerHTML = `
+          <div style="overflow-x:auto;border:1px solid rgba(26,20,16,0.08);border-radius:10px">
+            <table style="border-collapse:collapse;width:100%">
+              <thead><tr>${headerHtml}</tr></thead>
+              <tbody>${bodyHtml}</tbody>
+            </table>
+          </div>
+          <div id="slot-grid-editor" style="margin-top:12px"></div>
+        `;
+        listEl.querySelectorAll('[data-slot-cell]').forEach(el => el.addEventListener('click', () => {
+          const s = rows.find(x => x.id === el.dataset.slotCell);
+          if (s) renderSlotEditor(s);
         }));
       }
 
@@ -2035,11 +2076,11 @@ export default function ProviderDashboardPage() {
         slotsWindowCache = await res.json();
         if (!userPickedSlotDate) selectedDate = from;
         renderPills();
-        renderSelectedDateList();
+        renderSlotGrid();
       }
 
-      filterStaffEl?.addEventListener('change', () => { renderPills(); renderSelectedDateList(); });
-      filterResourceEl?.addEventListener('change', () => { renderPills(); renderSelectedDateList(); });
+      filterStaffEl?.addEventListener('change', () => { renderPills(); renderSlotGrid(); });
+      filterResourceEl?.addEventListener('change', () => { renderPills(); renderSlotGrid(); });
       document.getElementById('slot-nav-prev')?.addEventListener('click', () => { windowStart.setDate(windowStart.getDate() - 7); userPickedSlotDate = false; loadWindow(); });
       document.getElementById('slot-nav-next')?.addEventListener('click', () => { windowStart.setDate(windowStart.getDate() + 7); userPickedSlotDate = false; loadWindow(); });
       document.getElementById('slot-nav-today')?.addEventListener('click', () => { windowStart = new Date(); windowStart.setHours(0,0,0,0); userPickedSlotDate = false; loadWindow(); });
