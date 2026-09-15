@@ -93,6 +93,52 @@ export default function LoginPage() {
     if (params.get('type') === 'provider') setIsProvider(true);
   }, []);
 
+  // 掲載者向けログインは、遷移先の掲載者管理画面（白背景＋ネイビー/ゴールドの
+  // 業務ツールの見た目）と統一する（でお要望2026-09-15：「ビジュアルデザインを
+  // 掲載者管理画面と同じ感じにして」）。サイト全体の「深海に沈む羊皮紙」演出
+  // （body::before/::afterの固定背景レイヤー）はグローバルCSSのためinlineでは
+  // 打ち消せず、body にクラスを立てて上書きする。
+  useEffect(() => {
+    document.body.classList.toggle('provider-login-theme', isProvider);
+    return () => document.body.classList.remove('provider-login-theme');
+  }, [isProvider]);
+
+  // ログインフォーム・パスワード再設定フォームで繰り返し使う色をテーマ化。
+  // 一般ユーザー向けは既存の「深海ネイビーのガラスカード」のまま変更しない。
+  const T = isProvider ? {
+    cardBg: '#ffffff',
+    cardBorder: '1px solid rgba(26,20,16,0.08)',
+    cardBackdrop: 'none',
+    cardShadow: '0 1px 3px rgba(10,15,30,0.05)',
+    heading: '#1a1410',
+    muted: 'rgba(26,20,16,0.55)',
+    label: 'rgba(26,20,16,0.7)',
+    inputBorder: '1px solid rgba(26,20,16,0.15)',
+    inputBg: '#ffffff',
+    inputText: '#1a1410',
+    divider: 'rgba(26,20,16,0.12)',
+    dividerText: 'rgba(26,20,16,0.4)',
+    btnBg: '#c9a84c',
+    btnText: '#0a0f1e',
+    linkMuted: 'rgba(26,20,16,0.55)',
+  } : {
+    cardBg: 'rgba(10,15,30,0.65)',
+    cardBorder: '1px solid rgba(232,228,220,0.15)',
+    cardBackdrop: 'blur(8px)',
+    cardShadow: '0 4px 24px rgba(2,6,23,.06)',
+    heading: undefined,
+    muted: 'rgba(232,228,220,0.55)',
+    label: 'rgba(232,228,220,0.75)',
+    inputBorder: '1px solid rgba(232,228,220,0.15)',
+    inputBg: undefined,
+    inputText: undefined,
+    divider: '#e5e7eb',
+    dividerText: '#9ca3af',
+    btnBg: '#111',
+    btnText: '#fff',
+    linkMuted: '#6b7280',
+  };
+
   async function handleLogin(e) {
     e?.preventDefault();
     setLoginError('');
@@ -192,20 +238,36 @@ export default function LoginPage() {
 
   return (
     <div style={{ maxWidth: '420px', margin: '60px auto', padding: '0 20px' }}>
+      {/* サイト全体の「深海ネイビーに沈む羊皮紙」演出（body::before/::after）は
+          グローバルCSSで、inline styleでは打ち消せない。掲載者ログイン中だけ
+          掲載者管理画面と同じ明るい背景に切り替える。 */}
+      <style>{`
+        body.provider-login-theme::before { display: none; }
+        body.provider-login-theme::after { background: var(--color-bg); }
+        body.provider-login-theme { color: #1a1410; }
+      `}</style>
+      {/* 掲載者向けは、掲載者管理画面と同じ「fineme」ゴールドロゴ入りネイビーの
+          ヘッダー帯を上に添えて、遷移先と同じ製品に入る感覚を作る。 */}
+      {isProvider && (
+        <div style={{ background: '#0a0f1e', borderRadius: '14px 14px 0 0', padding: '18px 24px', textAlign: 'center' }}>
+          <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: '#c9a84c', letterSpacing: 1 }}>fineme</p>
+          <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.55)', letterSpacing: 1 }}>店舗様専用ログイン</p>
+        </div>
+      )}
       <div style={{
-        background: 'rgba(10,15,30,0.65)',
-        backdropFilter: 'blur(8px)',
-        border: '1px solid rgba(232,228,220,0.15)',
-        borderRadius: '18px',
+        background: T.cardBg,
+        backdropFilter: T.cardBackdrop,
+        border: T.cardBorder,
+        borderRadius: isProvider ? '0 0 14px 14px' : '18px',
         padding: '32px',
-        boxShadow: '0 4px 24px rgba(2,6,23,.06)',
+        boxShadow: T.cardShadow,
       }}>
 
         {/* ログインフォーム */}
         {view === 'login' && (
           <div>
-            <h1 style={{ fontSize: '22px', fontWeight: '800', margin: '0 0 6px' }}>ログイン</h1>
-            <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.55)', margin: '0 0 24px' }}>
+            <h1 style={{ fontSize: '22px', fontWeight: '800', margin: '0 0 6px', color: T.heading }}>ログイン</h1>
+            <p style={{ fontSize: '14px', color: T.muted, margin: '0 0 24px' }}>
               登録されたメールアドレスとパスワードを入力してください
             </p>
 
@@ -213,7 +275,7 @@ export default function LoginPage() {
                 には<form>のsubmitイベントが必須（でお報告2026-09-13、詳細は上部コメント）。 */}
             <form onSubmit={handleLogin}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)' }}>メールアドレス</label>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: T.label }}>メールアドレス</label>
                 <input
                   type="email"
                   name="email"
@@ -224,17 +286,19 @@ export default function LoginPage() {
                   autoComplete="username"
                   style={{
                     padding: '12px 14px',
-                    border: '1px solid rgba(232,228,220,0.15)',
+                    border: T.inputBorder,
                     borderRadius: '10px',
                     fontSize: '15px',
                     width: '100%',
                     boxSizing: 'border-box',
+                    background: T.inputBg,
+                    color: T.inputText,
                   }}
                 />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)' }}>パスワード</label>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: T.label }}>パスワード</label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -246,11 +310,13 @@ export default function LoginPage() {
                     autoComplete="current-password"
                     style={{
                       padding: '12px 44px 12px 14px',
-                      border: '1px solid rgba(232,228,220,0.15)',
+                      border: T.inputBorder,
                       borderRadius: '10px',
                       fontSize: '15px',
                       width: '100%',
                       boxSizing: 'border-box',
+                      background: T.inputBg,
+                      color: T.inputText,
                     }}
                   />
                   <button
@@ -274,8 +340,8 @@ export default function LoginPage() {
                 style={{
                   width: '100%',
                   padding: '14px',
-                  background: '#111',
-                  color: '#fff',
+                  background: T.btnBg,
+                  color: T.btnText,
                   border: 'none',
                   borderRadius: '12px',
                   fontSize: '16px',
@@ -293,9 +359,9 @@ export default function LoginPage() {
               <>
                 {/* 区切り線 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '16px 0 4px' }}>
-                  <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }} />
-                  <span style={{ fontSize: '12px', color: '#9ca3af', whiteSpace: 'nowrap' }}>または</span>
-                  <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }} />
+                  <div style={{ flex: 1, height: '1px', background: T.divider }} />
+                  <span style={{ fontSize: '12px', color: T.dividerText, whiteSpace: 'nowrap' }}>または</span>
+                  <div style={{ flex: 1, height: '1px', background: T.divider }} />
                 </div>
 
                 {/* LINE ログインボタン */}
@@ -342,7 +408,7 @@ export default function LoginPage() {
               )}
               <button
                 onClick={() => setView('forgot')}
-                style={{ fontSize: '13px', color: '#6b7280', cursor: 'pointer', textDecoration: 'underline', background: 'none', border: 'none' }}
+                style={{ fontSize: '13px', color: T.linkMuted, cursor: 'pointer', textDecoration: 'underline', background: 'none', border: 'none' }}
               >
                 パスワードを忘れた方
               </button>
@@ -460,14 +526,14 @@ export default function LoginPage() {
         {/* パスワード再設定フォーム */}
         {view === 'forgot' && (
           <div>
-            <h1 style={{ fontSize: '22px', fontWeight: '800', margin: '0 0 6px' }}>パスワードを忘れた方へ</h1>
-            <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 24px' }}>
+            <h1 style={{ fontSize: '22px', fontWeight: '800', margin: '0 0 6px', color: T.heading }}>パスワードを忘れた方へ</h1>
+            <p style={{ fontSize: '14px', color: T.muted, margin: '0 0 24px' }}>
               登録済みのメールアドレスを入力すると、パスワード再設定メールをお送りします。
             </p>
 
             <form onSubmit={handleReset}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '14px' }}>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: '#374151' }}>メールアドレス</label>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: T.label }}>メールアドレス</label>
                 <input
                   type="email"
                   name="email"
@@ -478,11 +544,13 @@ export default function LoginPage() {
                   autoComplete="username"
                   style={{
                     padding: '12px 14px',
-                    border: '1.5px solid #e5e7eb',
+                    border: T.inputBorder,
                     borderRadius: '10px',
                     fontSize: '15px',
                     width: '100%',
                     boxSizing: 'border-box',
+                    background: T.inputBg,
+                    color: T.inputText,
                   }}
                 />
               </div>
@@ -500,8 +568,8 @@ export default function LoginPage() {
                 style={{
                   width: '100%',
                   padding: '14px',
-                  background: '#111',
-                  color: '#fff',
+                  background: T.btnBg,
+                  color: T.btnText,
                   border: 'none',
                   borderRadius: '12px',
                   fontSize: '16px',
