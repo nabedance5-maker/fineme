@@ -340,7 +340,7 @@
 
 <!-- NOW BOARD -->
 <div class="now-board">
-  <div class="now-board-eyebrow">今ここ — 2026年9月14日</div>
+  <div class="now-board-eyebrow">今ここ — 2026年9月15日</div>
   <div class="now-board-title">現在の進捗と直近アクション</div>
 
   <div class="alert-banner">
@@ -430,6 +430,20 @@
 
     <div>
       <div class="now-col-label done">✅ 最近完了</div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
+          <span class="now-item-main">ダッシュボードUX不具合5点を修正（2026-09-15）</span>
+          <span class="now-item-sub">①ページ更新のたびにタブ位置が先頭に戻る不具合を修正（URLの?tab=を維持） ②ログアウト後の遷移先を掲載者向けテーマのログイン画面に変更 ③ページ読込直後に一瞬CSS無しの生HTMLが見える不具合（FOUC）を、動的DOM注入からJSXのSSR描画に変更して解消 ④出欠確認イベントに詳細文・画像を追加できるように ⑤空き枠タブを縦一覧からカレンダー的な「時間×スタッフ」の表表示に変更し、刻み幅を短くしても1画面で見渡せるように。</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
+          <span class="now-item-main">予約カレンダーの日付ズレ不具合を修正（2026-09-15）</span>
+          <span class="now-item-sub">「今日は9/15なのに14日が表示される」報告。原因は2つ：①カレンダーの自動フォーカス機能が本来「今日以降」限定のはずが過去日にもフォールバックしていた実装ミス ②空き枠自動生成・来店日記録が「今日」をサーバーのUTC時刻で判定しており、日本時間0:00〜9:00の実行時に前日扱いになっていた。両方修正。</span>
+        </div>
+      </div>
       <div class="now-item">
         <div class="now-item-dot done"></div>
         <div>
