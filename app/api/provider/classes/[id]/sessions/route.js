@@ -52,13 +52,13 @@ export async function POST(request, { params }) {
   if (!cls) return Response.json({ error: 'クラスが見つかりません' }, { status: 404 });
 
   const body = await request.json().catch(() => ({}));
-  const { date, start_time, end_time, capacity } = body;
+  const { date, start_time, end_time, capacity, staff_id, resource_id } = body;
   if (!date || !start_time || !end_time) return Response.json({ error: '日付・開始/終了時刻は必須です' }, { status: 400 });
 
   const cap = Number.isFinite(Number(capacity)) && capacity !== '' ? Number(capacity) : (cls.capacity || 1);
   const { data, error } = await supabase
     .from('provider_slots')
-    .insert({ provider_id: provider.id, class_id: id, date, start_time, end_time, capacity: cap, is_open: true })
+    .insert({ provider_id: provider.id, class_id: id, date, start_time, end_time, capacity: cap, is_open: true, staff_id: staff_id || null, resource_id: resource_id || null })
     .select()
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });

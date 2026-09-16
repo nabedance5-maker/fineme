@@ -33,27 +33,80 @@ export async function GET(request) {
   // POST /api/reservations の instant分岐でconfirmed_date/reserved_date両方に同じ値を設定済み）
   // の両方にまたがる可能性があるため、範囲を広めに1ヶ月分見てからJS側で絞り込む方が
   // シンプル・確実（OR条件でのANDレンジ絞り込みはSupabaseクエリビルダーで書きにくいため）。
-  const { data: rows, error } = await supabase
+  const { data: allRows, error } = await supabase
     .from('reservations')
-    .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, confirmed_date, confirmed_time, counter_date, counter_time, staff_id, staff_manually_assigned, resource_id, booking_mode, slot_id')
+    .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, confirmed_date, confirmed_time, counter_date, counter_time, staff_id, staff_manually_assigned, resource_id, booking_mode, slot_id, class_id')
     .eq('provider_id', provider.id)
     .in('status', ['pending', 'approved', 'visited', 'counter_proposed'])
     .gte('reserved_date', from)
     .lte('reserved_date', to);
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  const staffIds = [...new Set((rows || []).map(r => r.staff_id).filter(Boolean))];
+  // グループレッスンの開催回に紐づく予約は、1人ずつのブロックではなく開催回1件＝
+  // 「残り枠数」の集約ブロックとして表示する（でお要望2026-09-16）。個別の
+  // ブロックとしては表示しない（下でclass_idが付いたものを除外）。
+  const rows = (allRows || []).filter(r => !r.class_id);
+
+  // グループレッスンの開催回自体（provider_slots、class_id付き）を範囲内で取得。
+  const { data: classSlots } = await supabase
+    .from('provider_slots')
+    .select('id, date, start_time, end_time, capacity, is_open, class_id, staff_id, resource_id')
+    .eq('provider_id', provider.id)
+    .not('class_id', 'is', null)
+    .gte('date', from)
+    .lte('date', to);
+
+  const staffIds = [...new Set([...(rows || []).map(r => r.staff_id), ...(classSlots || []).map(s => s.staff_id)].filter(Boolean))];
   let staffMap = {};
   if (staffIds.length) {
     const { data: staffRows } = await supabase.from('provider_staff').select('id, name').in('id', staffIds);
     (staffRows || []).forEach(s => { staffMap[s.id] = s.name; });
   }
 
-  const resourceIds = [...new Set((rows || []).map(r => r.resource_id).filter(Boolean))];
+  const resourceIds = [...new Set([...(rows || []).map(r => r.resource_id), ...(classSlots || []).map(s => s.resource_id)].filter(Boolean))];
   let resourceMap = {};
   if (resourceIds.length) {
     const { data: resourceRows } = await supabase.from('provider_resources').select('id, name').in('id', resourceIds);
     (resourceRows || []).forEach(r => { resourceMap[r.id] = r.name; });
+  }
+
+  let classSessionItems = [];
+  if (classSlots?.length) {
+    const classIds = [...new Set(classSlots.map(s => s.class_id))];
+    const { data: classRows } = await supabase.from('provider_classes').select('id, name').in('id', classIds);
+    const classNameMap = {};
+    (classRows || []).forEach(c => { classNameMap[c.id] = c.name; });
+
+    const classSlotIds = classSlots.map(s => s.id);
+    const { data: bookedRows } = await supabase.from('reservations').select('slot_id').in('slot_id', classSlotIds).in('status', ['pending', 'approved', 'counter_proposed', 'visited']);
+    const bookedCountMap = {};
+    (bookedRows || []).forEach(b => { if (b.slot_id) bookedCountMap[b.slot_id] = (bookedCountMap[b.slot_id] || 0) + 1; });
+
+    classSessionItems = classSlots.map(s => {
+      const [sh, sm] = (s.start_time || '0:0').split(':').map(Number);
+      const [eh, em] = (s.end_time || '0:0').split(':').map(Number);
+      const booked = bookedCountMap[s.id] || 0;
+      return {
+        id: `csess:${s.id}`,
+        _isClassSession: true,
+        slot_id: s.id,
+        class_id: s.class_id,
+        class_name: classNameMap[s.class_id] || null,
+        date: s.date,
+        time: s.start_time,
+        end_time: s.end_time,
+        status: 'approved',
+        staff_id: s.staff_id || null,
+        staff_name: s.staff_id ? staffMap[s.staff_id] || null : null,
+        resource_id: s.resource_id || null,
+        resource_name: s.resource_id ? resourceMap[s.resource_id] || null : null,
+        capacity: s.capacity,
+        booked,
+        remaining: Math.max(0, s.capacity - booked),
+        is_open: s.is_open,
+        duration_minutes: (eh * 60 + em) - (sh * 60 + sm),
+      };
+    });
   }
 
   // 即時予約は紐づくprovider_slotsの実際の開始/終了時刻から所要時間を計算できる
@@ -88,6 +141,7 @@ export async function GET(request) {
       resource_name: r.resource_id ? resourceMap[r.resource_id] || null : null,
       duration_minutes: r.slot_id ? slotDurationMap[r.slot_id] || null : null,
     }))
+    .concat(classSessionItems)
     .filter(r => r.date >= from && r.date <= to)
     .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
 

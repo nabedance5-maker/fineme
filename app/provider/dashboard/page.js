@@ -110,6 +110,9 @@ const DASHBOARD_CSS = `
       .cal-block.is-pending:hover, .cal-block-h.is-pending:hover { background: rgba(245,158,11,0.28); }
       .cal-block.is-manual-assign, .cal-block-h.is-manual-assign { background: rgba(96,165,250,0.16); border-left-color: #60a5fa; }
       .cal-block.is-manual-assign:hover, .cal-block-h.is-manual-assign:hover { background: rgba(96,165,250,0.28); }
+      .cal-block.is-class-session, .cal-block-h.is-class-session { background: rgba(168,85,247,0.16); border-left-color: #a855f7; }
+      .cal-block.is-class-session:hover, .cal-block-h.is-class-session:hover { background: rgba(168,85,247,0.28); }
+      .cal-block.is-class-session.is-closed, .cal-block-h.is-class-session.is-closed { opacity: .55; border-left-style: dashed; }
       .cal-block-tag { display: block; font-size: 9.5px; color: #3b82f6; font-weight: 700; }
       /* スタッフの休憩・外出ブロック／シフト外時間のグレー帯（でお要望2026-09-14：
          「出勤してないスタッフの枠は予約が入らないように自動でブロックしてカレンダーでも
@@ -5442,6 +5445,7 @@ export default function ProviderDashboardPage() {
       let staffList = [];
       let resourceList = [];
       let classById = {};
+      let classList = [];
       let resourceFeatureOn = false;
       let shiftFeatureOn = false;
       // スタッフの休憩・外出ブロック（でお要望2026-09-14）と、シフト確定済みの勤務時間帯を
@@ -5483,7 +5487,7 @@ export default function ProviderDashboardPage() {
         ]);
         if (featRes.ok) { const { features } = await featRes.json(); resourceFeatureOn = !!features?.resource_management; shiftFeatureOn = !!features?.shift_management; }
         if (resRes.ok) { const rows = await resRes.json(); resourceList = (rows || []).filter(r => r.active !== false); }
-        if (clsRes.ok) { const rows = await clsRes.json(); (rows || []).forEach(c => { classById[c.id] = c.name; }); }
+        if (clsRes.ok) { classList = await clsRes.json(); (classList || []).forEach(c => { classById[c.id] = c.name; }); }
       }
 
       // スタッフの休憩・外出ブロック＋（シフト管理ONの店舗のみ）確定シフトの勤務時間帯を
@@ -5591,9 +5595,18 @@ export default function ProviderDashboardPage() {
       function resourceColumns() {
         return [...resourceList.map(r => ({ key: 'r_' + r.id, id: r.id, name: r.name, groupKey: 'resource_id' })), { key: 'r_unassigned', id: null, name: '未割当', groupKey: 'resource_id' }];
       }
+      // グループレッスン専用ビュー（でお要望2026-09-16：「予約カレンダーの中に
+      // 「グループレッスン」というタブを1個作ってほしい」）。列＝クラス、
+      // ブロック＝そのクラスの開催回（予約枠）。個別のお客様ごとではなく
+      // 1開催回＝1ブロックで、残り枠数を表示する。
+      function classColumns() {
+        return classList.map(c => ({ key: 'cls_' + c.id, id: c.id, name: c.name, groupKey: 'class_id' }));
+      }
       function currentColumns() {
         if (viewMode === 'combined') return [...staffColumns(), ...resourceColumns()];
-        return viewMode === 'resource' ? resourceColumns() : staffColumns();
+        if (viewMode === 'resource') return resourceColumns();
+        if (viewMode === 'class') return classColumns();
+        return staffColumns();
       }
 
       // 時間×スタッフ（または部屋、または合体）のグリッドHTMLを組み立てる共通関数。
@@ -5641,6 +5654,17 @@ export default function ProviderDashboardPage() {
             if (startMin === null) return '';
             const clampedStart = Math.max(RANGE_START_MIN, Math.min(RANGE_END_MIN, startMin));
             const top = ((clampedStart - RANGE_START_MIN) / totalMin) * totalHeight;
+            // グループレッスンの開催回は個別のお客様ではなく1開催回＝1ブロック。
+            // 残り枠数を表示する（でお要望2026-09-16：「カレンダー内のコマには
+            // 残りの枠数を表示させてほしい」）。
+            if (r._isClassSession) {
+              const csHeight = Math.max(30, (durationOf(r) / totalMin) * totalHeight);
+              return `
+                <div class="cal-block is-class-session${!r.is_open ? ' is-closed' : ''}" style="top:${top}px;height:${csHeight}px" data-cal-open="${r.id}">
+                  <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>🏫 ${esc(r.class_name || '')}<span class="cal-block-tag">残り${r.remaining}/${r.capacity}枠${!r.is_open ? '・締切中' : ''}</span>
+                </div>
+              `;
+            }
             // スタッフ列で、お客様の指名ではなく店舗が後から割り当てた予約は色・表記を変える
             // （でお要望2026-09-12：指名予約と見分けたい）。実際の担当スタッフ列でのみ意味を持つ
             // 区別のため、col.groupKeyがstaff_idかつ「指名なし」バケット以外の列でだけ適用する。
@@ -5715,6 +5739,13 @@ export default function ProviderDashboardPage() {
             const clampedStart = Math.max(RANGE_START_MIN, Math.min(RANGE_END_MIN, startMin));
             const left = ((clampedStart - RANGE_START_MIN) / totalMin) * totalWidth;
             const width = Math.max(64, (durationOf(r) / totalMin) * totalWidth);
+            if (r._isClassSession) {
+              return `
+                <div class="cal-block-h is-class-session${!r.is_open ? ' is-closed' : ''}" style="left:${left}px;width:${width}px" data-cal-open="${r.id}">
+                  <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>🏫 ${esc(r.class_name || '')}<span class="cal-block-tag">残り${r.remaining}/${r.capacity}枠${!r.is_open ? '・締切中' : ''}</span>
+                </div>
+              `;
+            }
             const isManualAssign = col.groupKey === 'staff_id' && col.id !== null && r.staff_manually_assigned;
             const isPending = r.status === 'pending' || r.status === 'counter_proposed';
             const classTagH = r.class_id && classById[r.class_id] ? `<span class="cal-block-tag">🏫 ${esc(classById[r.class_id])}</span>` : '';
@@ -5755,9 +5786,14 @@ export default function ProviderDashboardPage() {
         const prevScrollTop = gridWrapEl.scrollTop;
         const prevScrollLeft = gridWrapEl.scrollLeft;
         gridWrapEl.className = horizontal ? 'cal-day-grid-h' : 'cal-day-grid';
+        const columns = currentColumns();
+        if (viewMode === 'class' && columns.length === 0) {
+          gridWrapEl.innerHTML = '<p class="muted" style="font-size:13px;padding:20px">まだグループレッスンがありません。「クラス管理」タブでクラスを作成してください。</p>';
+          return;
+        }
         gridWrapEl.innerHTML = horizontal
-          ? buildGridHtmlHorizontal(items, currentColumns())
-          : buildGridHtml(items, currentColumns());
+          ? buildGridHtmlHorizontal(items, columns)
+          : buildGridHtml(items, columns);
         bindCalOpenHandlers(gridWrapEl);
         bindCalEmptyHandlers(gridWrapEl);
         bindGreyBandHandlers(gridWrapEl);
@@ -5785,12 +5821,16 @@ export default function ProviderDashboardPage() {
 
       function renderViewToggle() {
         if (!viewToggleEl) return;
-        if (!resourceFeatureOn) { viewToggleEl.style.display = 'none'; return; }
+        const hasClasses = classList.length > 0;
+        if (!resourceFeatureOn && !hasClasses) { viewToggleEl.style.display = 'none'; return; }
         viewToggleEl.style.display = 'flex';
         viewToggleEl.innerHTML = `
-          <button type="button" class="btn ${viewMode === 'combined' ? '' : 'btn-ghost'}" data-cal-view="combined" style="font-size:12px;padding:6px 12px">スタッフ×部屋</button>
-          <button type="button" class="btn ${viewMode === 'staff' ? '' : 'btn-ghost'}" data-cal-view="staff" style="font-size:12px;padding:6px 12px">スタッフ別</button>
-          <button type="button" class="btn ${viewMode === 'resource' ? '' : 'btn-ghost'}" data-cal-view="resource" style="font-size:12px;padding:6px 12px">部屋別</button>
+          ${resourceFeatureOn ? `
+            <button type="button" class="btn ${viewMode === 'combined' ? '' : 'btn-ghost'}" data-cal-view="combined" style="font-size:12px;padding:6px 12px">スタッフ×部屋</button>
+            <button type="button" class="btn ${viewMode === 'staff' ? '' : 'btn-ghost'}" data-cal-view="staff" style="font-size:12px;padding:6px 12px">スタッフ別</button>
+            <button type="button" class="btn ${viewMode === 'resource' ? '' : 'btn-ghost'}" data-cal-view="resource" style="font-size:12px;padding:6px 12px">部屋別</button>
+          ` : (hasClasses ? `<button type="button" class="btn ${viewMode !== 'class' ? '' : 'btn-ghost'}" data-cal-view="staff" style="font-size:12px;padding:6px 12px">予約カレンダー</button>` : '')}
+          ${hasClasses ? `<button type="button" class="btn ${viewMode === 'class' ? '' : 'btn-ghost'}" data-cal-view="class" style="font-size:12px;padding:6px 12px">グループレッスン</button>` : ''}
         `;
         viewToggleEl.querySelectorAll('[data-cal-view]').forEach(btn => btn.addEventListener('click', () => {
           viewMode = btn.dataset.calView;
@@ -5928,28 +5968,39 @@ export default function ProviderDashboardPage() {
       const manualMsgEl = document.getElementById('cal-manual-msg');
       const manualModeReservationBtn = document.getElementById('cal-manual-mode-reservation');
       const manualModeBlockBtn = document.getElementById('cal-manual-mode-block');
+      const manualModeClassBtn = document.getElementById('cal-manual-mode-class');
       const manualReservationFieldsEl = document.getElementById('cal-manual-reservation-fields');
       const manualReservationFields2El = document.getElementById('cal-manual-reservation-fields-2');
       const manualBlockFieldsEl = document.getElementById('cal-manual-block-fields');
       const manualBlockReasonEl = document.getElementById('cal-manual-block-reason');
       const manualBlockStartEl = document.getElementById('cal-manual-block-start');
       const manualBlockEndEl = document.getElementById('cal-manual-block-end');
-      let manualCtx = null; // { date, time, userId, mode: 'reservation'|'block' }
+      const manualClassFieldsEl = document.getElementById('cal-manual-class-fields');
+      const manualClassEl = document.getElementById('cal-manual-class');
+      const manualClassStartEl = document.getElementById('cal-manual-class-start');
+      const manualClassEndEl = document.getElementById('cal-manual-class-end');
+      const manualClassCapacityEl = document.getElementById('cal-manual-class-capacity');
+      let manualCtx = null; // { date, time, userId, mode: 'reservation'|'block'|'class' }
 
-      // 予約追加／休憩・外出ブロックのモード切替（でお要望2026-09-14）。
+      // 予約追加／休憩・外出ブロック／グループレッスン作成のモード切替
+      // （でお要望2026-09-14・2026-09-16）。
       function setManualMode(mode) {
         if (manualCtx) manualCtx.mode = mode;
         const isBlock = mode === 'block';
-        if (manualReservationFieldsEl) manualReservationFieldsEl.style.display = isBlock ? 'none' : '';
-        if (manualReservationFields2El) manualReservationFields2El.style.display = isBlock ? 'none' : '';
+        const isClass = mode === 'class';
+        if (manualReservationFieldsEl) manualReservationFieldsEl.style.display = (isBlock || isClass) ? 'none' : '';
+        if (manualReservationFields2El) manualReservationFields2El.style.display = (isBlock || isClass) ? 'none' : '';
         if (manualBlockFieldsEl) manualBlockFieldsEl.style.display = isBlock ? '' : 'none';
+        if (manualClassFieldsEl) manualClassFieldsEl.style.display = isClass ? '' : 'none';
         if (manualResourceFieldEl) manualResourceFieldEl.style.display = (!isBlock && resourceFeatureOn) ? '' : 'none';
-        if (manualModeReservationBtn) manualModeReservationBtn.className = `btn ${isBlock ? 'btn-ghost' : ''}`;
+        if (manualModeReservationBtn) manualModeReservationBtn.className = `btn ${mode === 'reservation' ? '' : 'btn-ghost'}`;
         if (manualModeBlockBtn) manualModeBlockBtn.className = `btn ${isBlock ? '' : 'btn-ghost'}`;
-        if (manualSaveBtn) manualSaveBtn.textContent = isBlock ? 'この時間をブロックする' : 'この内容で予約を追加';
+        if (manualModeClassBtn) manualModeClassBtn.className = `btn ${isClass ? '' : 'btn-ghost'}`;
+        if (manualSaveBtn) manualSaveBtn.textContent = isBlock ? 'この時間をブロックする' : isClass ? 'この内容でグループレッスンを作成' : 'この内容で予約を追加';
       }
       manualModeReservationBtn?.addEventListener('click', () => setManualMode('reservation'));
       manualModeBlockBtn?.addEventListener('click', () => setManualMode('block'));
+      manualModeClassBtn?.addEventListener('click', () => setManualMode('class'));
 
       function roundToHalfHour(min) {
         return Math.round(min / 30) * 30;
@@ -6025,12 +6076,30 @@ export default function ProviderDashboardPage() {
         if (manualResourceEl) {
           manualResourceEl.innerHTML = '<option value="">未割当</option>' + resourceList.map(r => `<option value="${r.id}"${colGroupKey === 'resource_id' && r.id === colId ? ' selected' : ''}>${esc(r.name)}</option>`).join('');
         }
+        // グループレッスン用のクラス選択肢。「グループレッスン」ビューの列をタップした場合は
+        // その列＝そのクラスなので事前選択する（でお要望2026-09-16）。
+        if (manualClassEl) {
+          manualClassEl.innerHTML = classList.length
+            ? classList.map(c => `<option value="${c.id}"${colGroupKey === 'class_id' && c.id === colId ? ' selected' : ''}>${esc(c.name)}</option>`).join('')
+            : '<option value="">クラスがありません</option>';
+        }
+        if (manualClassStartEl) manualClassStartEl.value = time;
+        if (manualClassEndEl) {
+          const endMin = Math.min(RANGE_END_MIN, clamped + 60);
+          manualClassEndEl.value = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
+        }
+        if (manualClassCapacityEl) manualClassCapacityEl.value = '';
+        const isClassColumn = colGroupKey === 'class_id';
         // 部屋列をタップして開いた場合は「休憩・外出ブロック」は意味を持たない
         // （ブロックはスタッフ単位のみ）ため、予約追加モード固定でボタン自体を隠す。
-        if (manualModeBlockBtn) manualModeBlockBtn.style.display = colGroupKey === 'resource_id' ? 'none' : '';
-        setManualMode('reservation');
+        // 「グループレッスン」ビューの列をタップした場合は、その場でクラスが確定している
+        // ためグループレッスン作成一択にし、他モードのボタンごと隠す。
+        if (manualModeBlockBtn) manualModeBlockBtn.style.display = (colGroupKey === 'resource_id' || isClassColumn) ? 'none' : '';
+        if (manualModeReservationBtn) manualModeReservationBtn.style.display = isClassColumn ? 'none' : '';
+        if (manualModeClassBtn) manualModeClassBtn.style.display = classList.length ? '' : 'none';
+        setManualMode(isClassColumn ? 'class' : 'reservation');
         if (manualModalEl) manualModalEl.style.display = 'flex';
-        setTimeout(() => manualNameEl?.focus(), 50);
+        setTimeout(() => { if (isClassColumn) manualClassEl?.focus(); else manualNameEl?.focus(); }, 50);
       }
 
       function bindCalEmptyHandlers(container) {
@@ -6053,6 +6122,39 @@ export default function ProviderDashboardPage() {
       document.getElementById('cal-manual-close')?.addEventListener('click', () => { if (manualModalEl) manualModalEl.style.display = 'none'; });
       manualModalEl?.addEventListener('click', (e) => { if (e.target === manualModalEl) manualModalEl.style.display = 'none'; });
 
+      // グループレッスンの開催回ブロックをタップした時の詳細（でお要望2026-09-16）。
+      // 個別のお客様モーダルではなく、締切/再開・削除だけのシンプルな管理モーダル。
+      const csModalEl = document.getElementById('cal-class-session-modal');
+      const csTitleEl = document.getElementById('cal-cs-title');
+      const csInfoEl = document.getElementById('cal-cs-info');
+      const csToggleBtn = document.getElementById('cal-cs-toggle');
+      const csDeleteBtn = document.getElementById('cal-cs-delete');
+      const csMsgEl = document.getElementById('cal-cs-msg');
+      let csCtx = null;
+      function openClassSessionModal(r) {
+        csCtx = r;
+        if (csTitleEl) csTitleEl.textContent = `🏫 ${r.class_name || ''}`;
+        if (csInfoEl) csInfoEl.textContent = `${r.date} ${r.time ? r.time.slice(0, 5) : ''}〜${r.end_time ? r.end_time.slice(0, 5) : ''}／予約 ${r.booked}/${r.capacity}名${!r.is_open ? '（締切中）' : ''}`;
+        if (csToggleBtn) csToggleBtn.textContent = r.is_open ? 'この回を締め切る' : 'この回を再開する';
+        if (csMsgEl) csMsgEl.textContent = '';
+        if (csModalEl) csModalEl.style.display = 'flex';
+      }
+      document.getElementById('cal-cs-close')?.addEventListener('click', () => { if (csModalEl) csModalEl.style.display = 'none'; });
+      csModalEl?.addEventListener('click', (e) => { if (e.target === csModalEl) csModalEl.style.display = 'none'; });
+      csToggleBtn?.addEventListener('click', async () => {
+        if (!csCtx) return;
+        const res = await fetch(`/api/provider/classes/${csCtx.class_id}/sessions/${csCtx.slot_id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersCal() }, body: JSON.stringify({ is_open: !csCtx.is_open }) });
+        if (res.ok) { if (csModalEl) csModalEl.style.display = 'none'; showToast('更新しました'); loadWeek(); }
+        else { const e = await res.json().catch(() => ({})); if (csMsgEl) { csMsgEl.style.color = '#ef4444'; csMsgEl.textContent = e.error || '更新に失敗しました'; } }
+      });
+      csDeleteBtn?.addEventListener('click', async () => {
+        if (!csCtx) return;
+        if (!confirm('この開催回を削除しますか？')) return;
+        const res = await fetch(`/api/provider/classes/${csCtx.class_id}/sessions/${csCtx.slot_id}`, { method: 'DELETE', headers: authHeadersCal() });
+        if (res.ok) { if (csModalEl) csModalEl.style.display = 'none'; showToast('削除しました'); loadWeek(); }
+        else { const e = await res.json().catch(() => ({})); if (csMsgEl) { csMsgEl.style.color = '#ef4444'; csMsgEl.textContent = e.error || '削除に失敗しました'; } }
+      });
+
       manualSaveBtn?.addEventListener('click', async () => {
         if (!manualCtx) return;
         if (manualCtx.mode === 'block') {
@@ -6074,6 +6176,31 @@ export default function ProviderDashboardPage() {
           showToast('ブロックを追加しました');
           await loadStaffBlocksAndShifts();
           renderDay();
+          return;
+        }
+        if (manualCtx.mode === 'class') {
+          const classId = manualClassEl?.value || '';
+          const start_time = manualClassStartEl?.value || '';
+          const end_time = manualClassEndEl?.value || '';
+          if (!classId) { if (manualMsgEl) { manualMsgEl.style.color = '#ef4444'; manualMsgEl.textContent = 'クラスを選んでください'; } return; }
+          if (!start_time || !end_time || start_time >= end_time) { if (manualMsgEl) { manualMsgEl.style.color = '#ef4444'; manualMsgEl.textContent = '開始・終了時刻を正しく入力してください'; } return; }
+          manualSaveBtn.disabled = true;
+          if (manualMsgEl) { manualMsgEl.style.color = ''; manualMsgEl.textContent = '保存中…'; }
+          const res = await fetch(`/api/provider/classes/${classId}/sessions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeadersCal() },
+            body: JSON.stringify({
+              date: manualCtx.date, start_time, end_time,
+              capacity: manualClassCapacityEl?.value || '',
+              staff_id: manualStaffEl?.value || null,
+              resource_id: resourceFeatureOn ? (manualResourceEl?.value || null) : null,
+            }),
+          });
+          manualSaveBtn.disabled = false;
+          if (!res.ok) { const e = await res.json().catch(() => ({})); if (manualMsgEl) { manualMsgEl.style.color = '#ef4444'; manualMsgEl.textContent = e.error || '保存に失敗しました'; } return; }
+          if (manualModalEl) manualModalEl.style.display = 'none';
+          showToast('グループレッスンを作成しました');
+          await loadWeek();
           return;
         }
         const user_name = manualNameEl?.value.trim();
@@ -6116,6 +6243,7 @@ export default function ProviderDashboardPage() {
         try {
           const r = byId[reservationId];
           if (!r) { showToast('この予約データが見つかりません（再読み込みしてください）'); return; }
+          if (r._isClassSession) { openClassSessionModal(r); return; }
           if (r.status === 'pending' || r.status === 'counter_proposed') {
             const res = await fetch(`/api/reservations/${reservationId}`, { headers: authHeadersCal() });
             if (!res.ok) {
@@ -7284,9 +7412,10 @@ export default function ProviderDashboardPage() {
             {/* 予約追加／休憩・外出ブロックのモード切替（でお要望2026-09-14：「スタッフが
                 休憩だったり外出でいない時をブロックできるようにしてほしい」）。空き枠タップから
                 開く同じモーダルの中で、目的別に入力項目を出し分ける。 */}
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
               <button type="button" className="btn" id="cal-manual-mode-reservation" style={{ fontSize: '12.5px', padding: '7px 12px', flex: 1 }}>予約を追加</button>
               <button type="button" className="btn btn-ghost" id="cal-manual-mode-block" style={{ fontSize: '12.5px', padding: '7px 12px', flex: 1 }}>休憩・外出をブロック</button>
+              <button type="button" className="btn btn-ghost" id="cal-manual-mode-class" style={{ fontSize: '12.5px', padding: '7px 12px', flex: 1 }}>グループレッスンを作成</button>
             </div>
 
             <div id="cal-manual-reservation-fields">
@@ -7339,8 +7468,39 @@ export default function ProviderDashboardPage() {
                 <input type="text" id="cal-manual-block-reason" placeholder="例：休憩／外出／早退" />
               </div>
             </div>
+
+            {/* グループレッスンの開催回をカレンダーから直接作成（でお要望2026-09-16：
+                「空いてるところをタップしたらイベントを作るみたいなのが出てきて、
+                そこでグループレッスンを選べるやつもつけてほしい」） */}
+            <div id="cal-manual-class-fields" style={{ display: 'none' }}>
+              <div className="form-field">
+                <label>クラス *</label>
+                <select id="cal-manual-class"></select>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div className="form-field" style={{ flex: '1 1 120px' }}><label>開始</label><input type="time" id="cal-manual-class-start" /></div>
+                <div className="form-field" style={{ flex: '1 1 120px' }}><label>終了</label><input type="time" id="cal-manual-class-end" /></div>
+                <div className="form-field" style={{ flex: '1 1 100px' }}><label>定員</label><input type="number" min="1" id="cal-manual-class-capacity" placeholder="クラス既定" /></div>
+              </div>
+            </div>
             <button type="button" className="btn" id="cal-manual-save" style={{ fontSize: '13px', padding: '9px 18px', width: '100%' }}>この内容で予約を追加</button>
             <p id="cal-manual-msg" className="muted" style={{ fontSize: '12px', margin: '8px 0 0' }}></p>
+          </div>
+        </div>
+
+        {/* グループレッスンの開催回ブロックをタップした時の詳細（でお要望2026-09-16） */}
+        <div id="cal-class-session-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
+          <div className="cal-modal-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h3 id="cal-cs-title" style={{ margin: 0, fontSize: '15px' }}></h3>
+              <button type="button" className="btn btn-ghost" id="cal-cs-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
+            </div>
+            <p id="cal-cs-info" className="muted" style={{ fontSize: '13px', margin: '0 0 14px' }}></p>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button type="button" className="btn btn-ghost" id="cal-cs-toggle" style={{ fontSize: '12.5px', padding: '7px 14px' }}></button>
+              <button type="button" className="btn btn-ghost" id="cal-cs-delete" style={{ fontSize: '12.5px', padding: '7px 14px', color: '#ef4444' }}>削除</button>
+            </div>
+            <p id="cal-cs-msg" className="muted" style={{ fontSize: '12px', margin: '8px 0 0' }}></p>
           </div>
         </div>
 
