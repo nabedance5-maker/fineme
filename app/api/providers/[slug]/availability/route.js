@@ -4,6 +4,8 @@
 // 出し分ける方針。このAPI自体はデータ取得に徹する）。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { hasFeature } from '@/lib/feature-flags';
+import { getShiftScheduleForRange, isOutsideShift } from '@/lib/shift-availability';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -19,7 +21,7 @@ export async function GET(request, { params }) {
 
   const { data: provider } = await supabase
     .from('providers')
-    .select('id')
+    .select('id, enabled_features')
     .eq('slug', slug)
     .eq('published', true)
     .eq('admin_hidden', false)
@@ -61,6 +63,15 @@ export async function GET(request, { params }) {
     });
   }
   if (!filtered.length) return Response.json([]);
+
+  // スタッフのシフト外（確定シフトはあるが、このスタッフの勤務予定が無い／時間外）の
+  // 枠も予約させない（でお報告2026-09-16：従来はカレンダーのグレー表示だけで、公開
+  // 予約枠には一切反映されていなかった）。shift_management機能を使っている店舗のみ。
+  if (hasFeature(provider, 'shift_management')) {
+    const schedule = await getShiftScheduleForRange(supabase, provider.id, dates[0], dates[dates.length - 1]);
+    filtered = filtered.filter(s => !isOutsideShift(schedule, s.staff_id, s.date, s.start_time, s.end_time));
+    if (!filtered.length) return Response.json([]);
+  }
 
   const slotIds = filtered.map(s => s.id);
   const { data: booked } = await supabase

@@ -5,6 +5,7 @@ import { sendReservationCreatedEmails } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
 import { notifyCustomerLine, attributeReferral } from '@/lib/reservation-notify';
 import { hasFeature } from '@/lib/feature-flags';
+import { getShiftScheduleForRange, isOutsideShift } from '@/lib/shift-availability';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -164,6 +165,15 @@ export async function POST(request) {
         .limit(1);
       if (blocking?.length) {
         return Response.json({ error: 'この枠は現在対応できません。別の枠をお選びください' }, { status: 409 });
+      }
+      // シフト外（確定シフトはあるがこのスタッフの勤務予定が無い／時間外）の枠も
+      // 予約させない（でお報告2026-09-16：従来はカレンダーの見た目だけで、実際の
+      // 予約作成時には一切チェックされていなかった）。
+      if (hasFeature(providerFeatureRow, 'shift_management')) {
+        const schedule = await getShiftScheduleForRange(supabase, provider_id, slotRow.date, slotRow.date);
+        if (isOutsideShift(schedule, slotRow.staff_id, slotRow.date, slotRow.start_time, slotRow.end_time)) {
+          return Response.json({ error: 'この枠は現在対応できません。別の枠をお選びください' }, { status: 409 });
+        }
       }
     }
     slot = slotRow;
