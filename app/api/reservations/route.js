@@ -169,6 +169,7 @@ export async function POST(request) {
     slot = slotRow;
     insertPayload.slot_id = slot_id;
     insertPayload.resource_id = slot.resource_id || null;
+    insertPayload.class_id = slot.class_id || null;
     insertPayload.reserved_date = slot.date;
     insertPayload.start_time = slot.start_time;
     insertPayload.confirmed_date = slot.date;
@@ -202,6 +203,11 @@ export async function POST(request) {
     .single();
 
   const whenText = isInstant ? `${slot.date} ${slot.start_time}` : `${preferred_date} ${preferred_time}`;
+  let className = null;
+  if (slot?.class_id) {
+    const { data: clsRow } = await supabase.from('provider_classes').select('name').eq('id', slot.class_id).single();
+    className = clsRow?.name || null;
+  }
 
   // 通知（失敗しても予約は成功扱い）
   try {
@@ -215,7 +221,7 @@ export async function POST(request) {
   // LINE通知（掲載者にline_user_idがある場合）
   if (provider?.line_user_id) {
     const lineMsg = [
-      isInstant ? '【Fineme】新規予約（即時確定）' : '【Fineme】新規予約リクエスト',
+      isInstant ? (className ? `【Fineme】クラス予約（${className}）` : '【Fineme】新規予約（即時確定）') : '【Fineme】新規予約リクエスト',
       `お客様: ${user_name}`,
       `${isInstant ? '確定日時' : '希望日'}: ${whenText}`,
       `連絡先: ${user_contact}`,
@@ -233,7 +239,9 @@ export async function POST(request) {
     userId: user_id,
     providerId: provider_id,
     message: isInstant
-      ? `【${provider?.name || '店舗'}】予約が確定しました✓\n日時: ${whenText}\n当日お待ちしております。`
+      ? (className
+        ? `【${provider?.name || '店舗'}】「${className}」の予約が確定しました✓\n日時: ${whenText}\n当日お待ちしております。`
+        : `【${provider?.name || '店舗'}】予約が確定しました✓\n日時: ${whenText}\n当日お待ちしております。`)
       : `【${provider?.name || '店舗'}】予約リクエストを受け付けました。\n希望日時: ${whenText}\n店舗からの返答をお待ちください。`,
   });
 

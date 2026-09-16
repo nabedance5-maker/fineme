@@ -54,6 +54,12 @@ const TABS = [
   { id: 'program', label: 'プログラム' },
   { id: 'consult', label: '相談する' },
 ];
+// クラス管理（スクール業態）がONの店舗だけ「クラス」タブを追加する
+// （でお指摘2026-09-16：クラス管理は名簿管理のみで、お客様が予約できる導線が無かった）
+function tabsFor(provider) {
+  if (!hasFeature(provider, 'class_management')) return TABS;
+  return [...TABS, { id: 'class', label: 'クラス' }];
+}
 const PAYMENT_METHOD_LABELS = {
   cash: '現金', credit: 'クレジットカード', paypay: 'PayPay',
   rakuten_pay: '楽天Pay', line_pay: 'LINE Pay', bank: '銀行振込', other: 'その他',
@@ -255,10 +261,10 @@ function StaffSection({ staff }) {
 }
 
 // ── TabBar ────────────────────────────────────────────────────────────────────
-function TabBar({ activeTab, onSelect }) {
+function TabBar({ activeTab, onSelect, tabs }) {
   return (
     <div style={{ display: 'flex', borderBottom: '2px solid rgba(232,228,220,0.15)', marginBottom: '28px', gap: '4px' }}>
-      {TABS.map(t => (
+      {(tabs || TABS).map(t => (
         <button key={t.id} onClick={() => onSelect(t.id)} style={{
           padding: '12px 20px', fontSize: '14px', fontWeight: activeTab === t.id ? '800' : '500',
           color: activeTab === t.id ? 'rgba(232,228,220,0.90)' : 'rgba(232,228,220,0.55)', background: 'none', border: 'none',
@@ -797,6 +803,131 @@ function ProgramTab({ services, onConsult, userPathType, provider, matchData }) 
 }
 
 // ── タブ③「相談する」────────────────────────────────────────────────────────
+// ── クラスタブ：スクール業態向け、クラスの開催回に直接予約する（でお指摘2026-09-16） ──
+const WEEKDAY_JA_CLASS = ['日', '月', '火', '水', '木', '金', '土'];
+function ClassTab({ provider }) {
+  const [classes, setClasses] = useState(null); // null=未取得
+  const [form, setForm] = useState({ name: '', email: '', phone: '' });
+  const [userId, setUserId] = useState('');
+  const [bookingSlotId, setBookingSlotId] = useState(null);
+  const [doneSlotIds, setDoneSlotIds] = useState([]);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!provider?.slug) return;
+    fetch(`/api/providers/${provider.slug}/classes`)
+      .then(r => r.ok ? r.json() : [])
+      .then(setClasses)
+      .catch(() => setClasses([]));
+  }, [provider?.slug]);
+
+  useEffect(() => {
+    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    if (!sbKey) return;
+    try {
+      const obj = JSON.parse(localStorage.getItem(sbKey));
+      const token = obj?.access_token;
+      if (!token) return;
+      fetch('/api/me/profile', { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json())
+        .then(data => {
+          if (!data || data.error) return;
+          if (data.id) setUserId(data.id);
+          const fullName = [data.last_name, data.first_name].filter(Boolean).join(' ');
+          const realEmail = (data.email || '').endsWith('@line.fineme.me') ? '' : (data.email || '');
+          setForm(prev => ({ ...prev, name: prev.name || fullName, email: prev.email || realEmail, phone: prev.phone || data.phone || '' }));
+        })
+        .catch(() => {});
+    } catch {}
+  }, []);
+
+  async function bookSession(slotId, className) {
+    setError('');
+    if (!form.name.trim()) { setError('お名前を入力してください'); return; }
+    if (!form.email.trim() && !form.phone.trim()) { setError('メールアドレスまたは電話番号のどちらかは必ず入力してください'); return; }
+    setBookingSlotId(slotId);
+    try {
+      const res = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider_id: provider.id,
+          user_id: userId || null,
+          user_name: form.name,
+          user_contact: [form.email, form.phone].filter(Boolean).join(' / '),
+          message: `【クラス予約】${className}`,
+          booking_mode: 'instant',
+          slot_id: slotId,
+        }),
+      });
+      if (res.ok) {
+        setDoneSlotIds(prev => [...prev, slotId]);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setError(err.error || '予約に失敗しました');
+      }
+    } catch { setError('通信エラーが発生しました'); }
+    finally { setBookingSlotId(null); }
+  }
+
+  if (classes === null) return <p style={{ color: 'rgba(232,228,220,0.55)' }}>読み込み中…</p>;
+  if (classes.length === 0) return <p style={{ color: 'rgba(232,228,220,0.55)' }}>現在予約可能なクラスの開催回がありません。</p>;
+
+  return (
+    <div style={{ maxWidth: '560px' }}>
+      <div style={{ background: 'rgba(10,15,30,0.50)', borderRadius: '16px', padding: '18px 20px', marginBottom: '20px', backdropFilter: 'blur(8px)', border: '1px solid rgba(232,228,220,0.10)' }}>
+        <div style={{ fontSize: '13px', fontWeight: '700', color: 'rgba(232,228,220,0.85)', marginBottom: '10px' }}>お名前・連絡先（開催回を選ぶとこの内容で予約されます）</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <input placeholder="お名前 *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={{ padding: '10px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid rgba(232,228,220,0.2)', background: 'rgba(255,255,255,0.06)', color: '#fff' }} />
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input placeholder="メールアドレス" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={{ flex: 1, padding: '10px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid rgba(232,228,220,0.2)', background: 'rgba(255,255,255,0.06)', color: '#fff' }} />
+            <input placeholder="電話番号" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} style={{ flex: 1, padding: '10px 12px', fontSize: '13px', borderRadius: '8px', border: '1px solid rgba(232,228,220,0.2)', background: 'rgba(255,255,255,0.06)', color: '#fff' }} />
+          </div>
+        </div>
+        {error && <p style={{ color: '#f87171', fontSize: '12.5px', margin: '8px 0 0' }}>{error}</p>}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {classes.map(c => (
+          <div key={c.id} style={{ border: '1px solid rgba(232,228,220,0.15)', borderRadius: '14px', padding: '18px 20px', background: 'rgba(10,15,30,0.65)' }}>
+            <p style={{ margin: '0 0 4px', fontSize: '15px', fontWeight: 800, color: 'rgba(232,228,220,0.92)' }}>{c.name}</p>
+            {c.description && <p style={{ margin: '0 0 12px', fontSize: '12.5px', color: 'rgba(232,228,220,0.6)', lineHeight: 1.6 }}>{c.description}</p>}
+            {c.sessions.length === 0 ? (
+              <p style={{ margin: 0, fontSize: '12.5px', color: 'rgba(232,228,220,0.4)' }}>現在予約可能な開催回がありません。</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {c.sessions.map(s => {
+                  const d = new Date(`${s.date}T00:00:00`);
+                  const isDone = doneSlotIds.includes(s.id);
+                  return (
+                    <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '10px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '10px' }}>
+                      <div>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.85)' }}>{s.date}（{WEEKDAY_JA_CLASS[d.getDay()]}）{s.start_time?.slice(0, 5)}〜{s.end_time?.slice(0, 5)}</span>
+                        <span style={{ fontSize: '11.5px', color: 'rgba(232,228,220,0.45)', marginLeft: '8px' }}>残り{s.remaining}枠</span>
+                      </div>
+                      {isDone ? (
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#34d399' }}>✓ 予約済み</span>
+                      ) : (
+                        <button
+                          onClick={() => bookSession(s.id, c.name)}
+                          disabled={bookingSlotId === s.id}
+                          style={{ padding: '8px 16px', background: 'rgba(232,228,220,0.9)', color: '#0a0f1e', border: 'none', borderRadius: '10px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', flexShrink: 0, opacity: bookingSlotId === s.id ? 0.6 : 1 }}
+                        >
+                          {bookingSlotId === s.id ? '予約中…' : '予約する'}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint }) {
   const today = new Date().toISOString().split('T')[0];
   const [formState, setFormState] = useState({ name: '', email: '', phone: '', date: '', time: '', date2: '', time2: '', date3: '', time3: '', message: '' });
@@ -1430,7 +1561,7 @@ function ProviderPageContent() {
       <QuickFactsStrip provider={provider} />
 
       {/* タブ */}
-      <TabBar activeTab={activeTab} onSelect={tab => { setActiveTab(tab); if (tab !== 'consult') setSelectedService(null); }} />
+      <TabBar activeTab={activeTab} tabs={tabsFor(provider)} onSelect={tab => { setActiveTab(tab); if (tab !== 'consult') setSelectedService(null); }} />
 
       {/* タブコンテンツ */}
       {activeTab === 'guide' && (
@@ -1460,6 +1591,7 @@ function ProviderPageContent() {
           menuNameHint={searchParams.get('menu_name') || ''}
         />
       )}
+      {activeTab === 'class' && <ClassTab provider={provider} />}
     </div>
   );
 }

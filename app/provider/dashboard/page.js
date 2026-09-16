@@ -1630,6 +1630,10 @@ export default function ProviderDashboardPage() {
       const rosterTitle = document.getElementById('cls-roster-title');
       const rosterListEl = document.getElementById('cls-roster-list');
       const enrollForm = document.getElementById('cls-enroll-form');
+      const sessionsCard = document.getElementById('cls-sessions-card');
+      const sessionsTitle = document.getElementById('cls-sessions-title');
+      const sessionListEl = document.getElementById('cls-session-list');
+      const sessionForm = document.getElementById('cls-session-form');
       let classesCache = [];
       let selectedClass = null;
 
@@ -1698,7 +1702,67 @@ export default function ProviderDashboardPage() {
         rosterCard.style.display = 'block';
         rosterCard.scrollIntoView({ behavior: 'smooth' });
         loadRoster();
+        if (sessionsCard) {
+          sessionsTitle.textContent = `${selectedClass.name} の開催回・予約枠`;
+          sessionsCard.style.display = 'block';
+          loadSessions();
+        }
       }
+
+      const WEEKDAY_JA_CLS = ['日', '月', '火', '水', '木', '金', '土'];
+      async function loadSessions() {
+        if (!selectedClass || !sessionListEl) return;
+        sessionListEl.innerHTML = '読み込み中…';
+        const res = await fetch(`/api/provider/classes/${selectedClass.id}/sessions`, { headers: authH() });
+        if (!res.ok) { sessionListEl.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        if (!rows.length) { sessionListEl.innerHTML = '<p class="muted" style="font-size:13px">まだ開催回がありません。上のフォームから追加してください。</p>'; return; }
+        const today = new Date().toISOString().slice(0, 10);
+        sessionListEl.innerHTML = rows.map(s => {
+          const d = new Date(`${s.date}T00:00:00`);
+          const isPast = s.date < today;
+          return `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--color-bg);border-radius:10px;flex-wrap:wrap;opacity:${isPast ? 0.55 : 1}">
+            <div style="flex:1;min-width:0">
+              <strong style="font-size:13.5px">${s.date}（${WEEKDAY_JA_CLS[d.getDay()]}）${s.start_time?.slice(0,5)}〜${s.end_time?.slice(0,5)}</strong>
+              <span class="muted" style="font-size:12px;margin-left:8px">${s.booked}/${s.capacity}名${!s.is_open ? '（締切中）' : ''}</span>
+            </div>
+            <button type="button" class="btn btn-ghost" style="font-size:11.5px;padding:4px 10px" data-sess-toggle="${s.id}" data-open="${s.is_open}">${s.is_open ? '締め切る' : '再開する'}</button>
+            <button type="button" class="btn btn-ghost" style="font-size:11.5px;padding:4px 10px;color:#ef4444" data-sess-del="${s.id}">削除</button>
+          </div>`;
+        }).join('');
+        sessionListEl.querySelectorAll('[data-sess-toggle]').forEach(btn => btn.addEventListener('click', async () => {
+          const res = await fetch(`/api/provider/classes/${selectedClass.id}/sessions/${btn.dataset.sessToggle}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ is_open: btn.dataset.open !== 'true' }) });
+          if (res.ok) loadSessions(); else showToast('更新に失敗しました');
+        }));
+        sessionListEl.querySelectorAll('[data-sess-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('この開催回を削除しますか？')) return;
+          const res = await fetch(`/api/provider/classes/${selectedClass.id}/sessions/${btn.dataset.sessDel}`, { method: 'DELETE', headers: authH() });
+          if (res.ok) loadSessions(); else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
+        }));
+      }
+
+      sessionForm?.addEventListener('submit', async e => {
+        e.preventDefault();
+        if (!selectedClass) return;
+        const fd = new FormData(sessionForm);
+        const baseDate = fd.get('date');
+        const repeatWeeks = Number(fd.get('repeat_weeks')) || 1;
+        const start_time = fd.get('start_time');
+        const end_time = fd.get('end_time');
+        const capacity = fd.get('capacity');
+        let okCount = 0;
+        for (let i = 0; i < repeatWeeks; i++) {
+          const d = new Date(`${baseDate}T00:00:00`);
+          d.setDate(d.getDate() + i * 7);
+          const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          const res = await fetch(`/api/provider/classes/${selectedClass.id}/sessions`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ date: dateStr, start_time, end_time, capacity }) });
+          if (res.ok) okCount++;
+        }
+        sessionForm.reset();
+        loadSessions();
+        showToast(`${okCount}件の開催回を追加しました`);
+      });
 
       async function loadRoster() {
         if (!selectedClass || !rosterListEl) return;
@@ -5368,6 +5432,7 @@ export default function ProviderDashboardPage() {
       let byId = {};
       let staffList = [];
       let resourceList = [];
+      let classById = {};
       let resourceFeatureOn = false;
       let shiftFeatureOn = false;
       // スタッフの休憩・外出ブロック（でお要望2026-09-14）と、シフト確定済みの勤務時間帯を
@@ -5402,12 +5467,14 @@ export default function ProviderDashboardPage() {
       }
 
       async function loadResourcesAndFeatures() {
-        const [featRes, resRes] = await Promise.all([
+        const [featRes, resRes, clsRes] = await Promise.all([
           fetch('/api/provider/features', { headers: authHeadersCal() }),
           fetch('/api/provider/resources', { headers: authHeadersCal() }),
+          fetch('/api/provider/classes', { headers: authHeadersCal() }),
         ]);
         if (featRes.ok) { const { features } = await featRes.json(); resourceFeatureOn = !!features?.resource_management; shiftFeatureOn = !!features?.shift_management; }
         if (resRes.ok) { const rows = await resRes.json(); resourceList = (rows || []).filter(r => r.active !== false); }
+        if (clsRes.ok) { const rows = await clsRes.json(); (rows || []).forEach(c => { classById[c.id] = c.name; }); }
       }
 
       // スタッフの休憩・外出ブロック＋（シフト管理ONの店舗のみ）確定シフトの勤務時間帯を
@@ -5570,7 +5637,8 @@ export default function ProviderDashboardPage() {
             // 区別のため、col.groupKeyがstaff_idかつ「指名なし」バケット以外の列でだけ適用する。
             const isManualAssign = col.groupKey === 'staff_id' && col.id !== null && r.staff_manually_assigned;
             const isPending = r.status === 'pending' || r.status === 'counter_proposed';
-            const tagsHtml = `${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}`;
+            const classTag = r.class_id && classById[r.class_id] ? `<span class="cal-block-tag">🏫 ${esc(classById[r.class_id])}</span>` : '';
+            const tagsHtml = `${classTag}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}`;
             // タグの行数が増えると所要時間だけで決めた高さに文字が収まらずボックスの下から
             // 見切れることがあった（でお報告2026-09-14）。実際に入るタグ行数分だけ最低高さを底上げする。
             const tagCount = (tagsHtml.match(/cal-block-tag/g) || []).length;
@@ -5640,9 +5708,10 @@ export default function ProviderDashboardPage() {
             const width = Math.max(64, (durationOf(r) / totalMin) * totalWidth);
             const isManualAssign = col.groupKey === 'staff_id' && col.id !== null && r.staff_manually_assigned;
             const isPending = r.status === 'pending' || r.status === 'counter_proposed';
+            const classTagH = r.class_id && classById[r.class_id] ? `<span class="cal-block-tag">🏫 ${esc(classById[r.class_id])}</span>` : '';
             return `
               <div class="cal-block-h${r.status === 'visited' ? ' is-visited' : ''}${isManualAssign ? ' is-manual-assign' : ''}${isPending ? ' is-pending' : ''}" style="left:${left}px;width:${width}px" data-cal-open="${r.id}">
-                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}
+                <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${classTagH}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}
               </div>
             `;
           }).join('');
@@ -6068,6 +6137,7 @@ export default function ProviderDashboardPage() {
             <strong>${esc(r.date)} ${r.time ? r.time.slice(0, 5) : ''}</strong>
             ／ <span class="muted">${STATUS_LABEL_CAL[r.status] || r.status}</span>
             ${r.staff_id && r.staff_manually_assigned ? '<span style="color:#3b82f6;font-weight:700;font-size:12px;margin-left:6px">（指名なし・店舗が割当）</span>' : ''}
+            ${r.class_id && classById[r.class_id] ? `<div style="margin-top:4px;font-size:12.5px;font-weight:700;color:#16a34a">🏫 ${esc(classById[r.class_id])}</div>` : ''}
             ${r.note ? `<p class="muted" style="margin:6px 0 0;font-size:12.5px">${esc(r.note)}</p>` : ''}
             ${r.user_id ? '<button type="button" class="btn btn-ghost" id="cal-modal-open-cust-btn" style="font-size:12px;padding:5px 12px;margin-top:8px">👤 顧客情報を見る（カルテ・回数券など）</button>' : `
               <div style="margin-top:8px;padding:8px 10px;background:var(--color-bg);border-radius:8px">
@@ -7678,6 +7748,34 @@ export default function ProviderDashboardPage() {
               <button type="submit" className="btn">＋ 生徒を追加</button>
             </form>
             <div id="cls-roster-list" className="stack" style={{ gap: '8px' }}></div>
+          </div>
+
+          {/* 選択中のクラスの開催回＝予約枠（でお指摘2026-09-16：「予約できる仕組みが
+              まだない。お客様側にはその店舗のページに予約枠が出てこないと無意味」）。
+              既存の即時予約基盤（provider_slots）を再利用し、class_idを付けて作成する。
+              お客様は店舗の公開ページ「クラス」タブから、ここで作った開催回に予約できる。 */}
+          <div id="cls-sessions-card" className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px', display: 'none' }}>
+            <h3 id="cls-sessions-title" style={{ margin: 0, fontSize: '15px' }}></h3>
+            <p className="muted" style={{ fontSize: '12.5px', margin: 0 }}>
+              ここで追加した開催回が、お客様が閲覧する店舗ページの「クラス」タブに予約枠として表示されます。
+            </p>
+            <form id="cls-session-form" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'end' }}>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>日付 *</label><input type="date" name="date" required /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>開始 *</label><input type="time" name="start_time" required /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>終了 *</label><input type="time" name="end_time" required /></div>
+              <div className="form-field" style={{ marginBottom: 0, width: '90px' }}><label>定員</label><input type="number" name="capacity" min="1" placeholder="クラス既定" /></div>
+              <div className="form-field" style={{ marginBottom: 0, width: '150px' }}>
+                <label>繰り返し</label>
+                <select name="repeat_weeks" defaultValue="1">
+                  <option value="1">1回のみ</option>
+                  <option value="4">毎週×4回</option>
+                  <option value="8">毎週×8回</option>
+                  <option value="12">毎週×12回</option>
+                </select>
+              </div>
+              <button type="submit" className="btn">＋ 開催回を追加</button>
+            </form>
+            <div id="cls-session-list" className="stack" style={{ gap: '8px' }}></div>
           </div>
         </div>
 
