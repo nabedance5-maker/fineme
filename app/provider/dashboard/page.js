@@ -5652,15 +5652,22 @@ export default function ProviderDashboardPage() {
         const dates = weekDates();
         const from = fmtDate(dates[0]);
         const to = fmtDate(dates[6]);
-        const requests = [fetch(`/api/provider/staff-blocks?from=${from}&to=${to}`, { headers: authHeadersCal() })];
-        if (shiftFeatureOn) requests.push(fetch(`/api/provider/shift-entries/for-range?from=${from}&to=${to}`, { headers: authHeadersCal() }));
-        const results = await Promise.all(requests);
-        staffBlocksCache = results[0].ok ? await results[0].json() : [];
+        // shiftFeatureOnの判定（/api/provider/features）を待たずに呼べるよう、常に両方
+        // 並列で取得しておき、使うかどうかだけ後段でshiftFeatureOnを見て決める
+        // （でお報告2026-09-16：「グループレッスンを入れる前から遅かった」。初回読み込みで
+        // 「機能設定を先に確認してからシフトを取れるか判断する」という直列待ちが不要な
+        // 通信のために全体を遅らせていた）。シフト管理未使用の店舗にも1回余分な問い合わせが
+        // 増えるが、対象テーブルが空でごく軽いため実害はない。
+        const [staffBlocksRes, shiftRes] = await Promise.all([
+          fetch(`/api/provider/staff-blocks?from=${from}&to=${to}`, { headers: authHeadersCal() }),
+          fetch(`/api/provider/shift-entries/for-range?from=${from}&to=${to}`, { headers: authHeadersCal() }),
+        ]);
+        staffBlocksCache = staffBlocksRes.ok ? await staffBlocksRes.json() : [];
 
         shiftWindowsByStaffDate = {};
         shiftCoveredDates = new Set();
-        if (shiftFeatureOn && results[1]?.ok) {
-          const { entries, coveredPeriods } = await results[1].json();
+        if (shiftFeatureOn && shiftRes?.ok) {
+          const { entries, coveredPeriods } = await shiftRes.json();
           (coveredPeriods || []).forEach(p => {
             let d = new Date(p.start + 'T00:00:00');
             const end = new Date(p.end + 'T00:00:00');
@@ -6015,14 +6022,21 @@ export default function ProviderDashboardPage() {
         renderDesktopGrid();
       }
 
-      async function loadWeek() {
+      // 予約データの取得のみ行い、描画はしない（でお報告2026-09-16：「グループレッスンを
+      // 入れる前から遅かった」。初回読み込みは元々「スタッフ/部屋/クラス/機能/営業時間の
+      // 設定データを全部待ってから、休憩ブロック取得→カレンダー本体取得の順に直列で
+      // 進む」という3段階の直列待ちになっていたのが体感速度の主要因だった。設定データと
+      // 週データを同時に取りにいけるよう、取得と描画を分離する）。戻り値はfalseで失敗。
+      async function loadWeekData() {
         const dates = weekDates();
         const from = fmtDate(dates[0]);
         const to = fmtDate(dates[6]);
         if (labelEl) labelEl.textContent = `${from} 〜 ${to}`;
-        await loadStaffBlocksAndShifts();
-        const res = await fetch(`/api/provider/calendar?from=${from}&to=${to}`, { headers: authHeadersCal() });
-        if (!res.ok) { if (gridWrapEl) gridWrapEl.innerHTML = authErrorHtml(res); return; }
+        const [, res] = await Promise.all([
+          loadStaffBlocksAndShifts(),
+          fetch(`/api/provider/calendar?from=${from}&to=${to}`, { headers: authHeadersCal() }),
+        ]);
+        if (!res.ok) { if (gridWrapEl) gridWrapEl.innerHTML = authErrorHtml(res); return false; }
         const rows = await res.json();
         byDate = {};
         byId = {};
@@ -6060,6 +6074,12 @@ export default function ProviderDashboardPage() {
           const withData = dates.map(fmtDate).filter(d => d >= todayStr && (byDate[d] || []).length);
           if (withData.length) selectedDate = withData[0];
         }
+        return true;
+      }
+
+      async function loadWeek() {
+        const ok = await loadWeekData();
+        if (ok === false) return;
         renderPills();
         renderDay();
       }
@@ -6564,9 +6584,13 @@ export default function ProviderDashboardPage() {
         if (!viewModePicked && ['combined', 'staff', 'resource'].includes(dashboardPrefs?.calendar_default_view)) {
           viewMode = dashboardPrefs.calendar_default_view;
         }
-        await Promise.all([loadStaff(), loadResourcesAndFeatures(), loadCalendarRange()]);
+        // 設定データ（スタッフ/部屋/クラス/機能/営業時間）と、その週の予約データは
+        // 互いに依存しないため同時に取得する（でお報告2026-09-16：「グループレッスンを
+        // 入れる前から遅かった」。従来は設定データを全部待ってから週データの取得を
+        // 始めていたため、直列2段階分の待ち時間がそのままカレンダー表示の遅さになっていた）。
+        const [weekOk] = await Promise.all([loadWeekData(), loadStaff(), loadResourcesAndFeatures(), loadCalendarRange()]);
         renderViewToggle();
-        await loadWeek();
+        if (weekOk !== false) { renderPills(); renderDay(); }
       }
       document.querySelectorAll('[data-tab="calendar"]').forEach(btn => btn.addEventListener('click', initAndLoad, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'calendar') initAndLoad();
