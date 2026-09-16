@@ -83,14 +83,19 @@ export async function POST(request) {
 
   const { data: pkg, error: pkgError } = await supabase
     .from('service_packages')
-    .select('id, name, total_sessions, validity_days, package_type, recurring_sessions')
+    .select('id, name, total_sessions, validity_days, expires_on, package_type, recurring_sessions')
     .eq('id', package_id)
     .eq('provider_id', provider.id)
     .single();
   if (pkgError || !pkg) return Response.json({ error: 'パッケージが見つかりません' }, { status: 404 });
 
   const purchasedAt = new Date();
-  const expiresAt = pkg.validity_days ? new Date(purchasedAt.getTime() + pkg.validity_days * 86400000) : null;
+  // カレンダーで絶対日付の有効期限を設定したパッケージは、購入日に関わらずその日で
+  // 揃って切れる（でお要望2026-09-16：季節キャンペーン券などに対応）。未設定なら
+  // 従来通り「購入日+日数」で計算する。
+  const expiresAt = pkg.expires_on
+    ? new Date(`${pkg.expires_on}T23:59:59`)
+    : (pkg.validity_days ? new Date(purchasedAt.getTime() + pkg.validity_days * 86400000) : null);
   const isSubscription = pkg.package_type === 'subscription';
   // 月額会員への自動チケット付与（でお要望2026-09-14）：契約時に初回分を付与し、
   // 以降は毎月のcron（/api/cron/grant-subscription-tickets）が自動付与する。

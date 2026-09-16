@@ -25,6 +25,7 @@ export async function PATCH(request, { params }) {
   if (typeof body.name === 'string' && body.name.trim()) update.name = body.name.trim();
   if (body.price !== undefined) update.price = Number.isFinite(parseInt(body.price, 10)) ? parseInt(body.price, 10) : null;
   if (body.validity_days !== undefined) update.validity_days = Number.isFinite(parseInt(body.validity_days, 10)) ? parseInt(body.validity_days, 10) : null;
+  if (body.expires_on !== undefined) update.expires_on = body.expires_on || null;
 
   // package_type変更時（hacomono/STORES網羅計画 Phase 2）：unlimitedはtotal_sessionsをNULLに、
   // それ以外はNOT NULL＋正の整数のDB制約があるため、type変更とtotal_sessions更新は必ずセットで扱う。

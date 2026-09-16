@@ -3712,7 +3712,7 @@ export default function ProviderDashboardPage() {
           <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;${d.active ? '' : 'opacity:.5'}">
             <div style="flex:1;min-width:0">
               <strong style="font-size:13px">${esc(d.name)}</strong>
-              <span class="muted" style="font-size:12px;margin-left:8px">${typeLabel}${d.price ? ` ／ ¥${Number(d.price).toLocaleString()}` : ''}${d.validity_days ? ` ／ 有効期限${d.validity_days}日` : ' ／ 無期限'}</span>
+              <span class="muted" style="font-size:12px;margin-left:8px">${typeLabel}${d.price ? ` ／ ¥${Number(d.price).toLocaleString()}` : ''}${d.expires_on ? ` ／ ${d.expires_on}まで有効` : d.validity_days ? ` ／ 有効期限${d.validity_days}日` : ' ／ 無期限'}</span>
             </div>
             <button class="btn btn-ghost" style="font-size:11px;padding:6px 12px" onclick="togglePackageActive('${d.id}', ${!d.active})">${d.active ? '停止する' : '再開する'}</button>
           </div>
@@ -3818,7 +3818,11 @@ export default function ProviderDashboardPage() {
       const recurringSessionsField = document.getElementById('pkg-recurring-sessions-field');
       function syncTypeFields() {
         const t = typeSel?.value || 'fixed_count';
-        if (sessionsField) sessionsField.style.display = t === 'unlimited' ? 'none' : '';
+        // comboは「回数」ではなく「付帯チケット回数」だけが実際に発行されるチケット数
+        // （でお指摘2026-09-16。両方出すと「回数と付帯チケット回数の違いは？」となり、
+        // かつ従来は「回数」の値がそのまま使われ「付帯チケット回数」は無視される
+        // バグがあった。comboでは「回数」欄自体を隠し、付帯チケット回数のみ入力させる）。
+        if (sessionsField) sessionsField.style.display = (t === 'unlimited' || t === 'combo') ? 'none' : '';
         if (sessionsLabel) sessionsLabel.textContent = t === 'subscription' ? '初回付与回数' : '回数';
         if (comboSessionsField) comboSessionsField.style.display = t === 'combo' ? '' : 'none';
         // 月額会員（でお要望2026-09-14：「月額契約で毎月チケットが自動付与される」仕組み）
@@ -3829,6 +3833,18 @@ export default function ProviderDashboardPage() {
       const activeOnlyCheckbox = document.getElementById('pkg-active-only');
       if (activeOnlyCheckbox) activeOnlyCheckbox.addEventListener('change', loadCustomerPackages);
 
+      // 有効期限の指定方法（でお要望2026-09-16：「有効期限はカレンダーから選択して
+      // いつまでって設定できるように」）。購入からの日数（従来）に加えて、季節
+      // キャンペーン券のように全員同じ日に切れる絶対日付も選べるようにする。
+      const validityModeSel = document.getElementById('pkg-validity-mode');
+      const validityDaysFieldEl = document.getElementById('pkg-validity-days-field');
+      const validityDateFieldEl = document.getElementById('pkg-validity-date-field');
+      validityModeSel?.addEventListener('change', () => {
+        const mode = validityModeSel.value;
+        if (validityDaysFieldEl) validityDaysFieldEl.style.display = mode === 'days' ? '' : 'none';
+        if (validityDateFieldEl) validityDateFieldEl.style.display = mode === 'date' ? '' : 'none';
+      });
+
       const createBtn = document.getElementById('pkg-create-btn');
       if (createBtn) {
         createBtn.addEventListener('click', async () => {
@@ -3838,10 +3854,14 @@ export default function ProviderDashboardPage() {
           const comboSessions = document.getElementById('pkg-combo-sessions')?.value;
           const recurringSessions = document.getElementById('pkg-recurring-sessions')?.value;
           const price = document.getElementById('pkg-price')?.value;
-          const validity = document.getElementById('pkg-validity')?.value;
+          const validityMode = validityModeSel?.value || 'none';
+          const validity = validityMode === 'days' ? document.getElementById('pkg-validity')?.value : null;
+          const expiresOn = validityMode === 'date' ? document.getElementById('pkg-expires-on')?.value : null;
           if (!name) { showToast('パッケージ名を入力してください'); return; }
-          if (package_type !== 'unlimited' && !sessions) { showToast('回数を入力してください'); return; }
+          if ((package_type === 'fixed_count' || package_type === 'subscription') && !sessions) { showToast('回数を入力してください'); return; }
+          if (package_type === 'combo' && !comboSessions) { showToast('付帯チケット回数を入力してください'); return; }
           if (package_type === 'subscription' && !recurringSessions) { showToast('毎月の付与回数を入力してください'); return; }
+          if (validityMode === 'date' && !expiresOn) { showToast('有効期限の日付を選んでください'); return; }
           createBtn.disabled = true;
           const res = await fetch('/api/provider/packages', {
             method: 'POST',
@@ -3850,7 +3870,7 @@ export default function ProviderDashboardPage() {
               name, package_type, total_sessions: sessions || null,
               combo_ticket_sessions: package_type === 'combo' ? comboSessions : null,
               recurring_sessions: package_type === 'subscription' ? recurringSessions : null,
-              price: price || null, validity_days: validity || null,
+              price: price || null, validity_days: validity || null, expires_on: expiresOn || null,
             }),
           });
           createBtn.disabled = false;
@@ -3861,6 +3881,10 @@ export default function ProviderDashboardPage() {
           document.getElementById('pkg-recurring-sessions').value = '';
           document.getElementById('pkg-price').value = '';
           document.getElementById('pkg-validity').value = '';
+          document.getElementById('pkg-expires-on').value = '';
+          if (validityModeSel) validityModeSel.value = 'none';
+          if (validityDaysFieldEl) validityDaysFieldEl.style.display = 'none';
+          if (validityDateFieldEl) validityDateFieldEl.style.display = 'none';
           showToast('パッケージを作成しました');
           loadDefs();
         });
@@ -8953,9 +8977,21 @@ export default function ProviderDashboardPage() {
                 <label>参考価格（任意）</label>
                 <input id="pkg-price" type="number" min="0" placeholder="80000" />
               </div>
-              <div className="form-field" style={{ minWidth: '120px' }}>
-                <label>有効期限・日数（任意）</label>
+              <div className="form-field" style={{ minWidth: '140px' }}>
+                <label>有効期限の指定方法</label>
+                <select id="pkg-validity-mode">
+                  <option value="none">無期限</option>
+                  <option value="days">購入から◯日</option>
+                  <option value="date">カレンダーで日付指定</option>
+                </select>
+              </div>
+              <div className="form-field" id="pkg-validity-days-field" style={{ minWidth: '110px', display: 'none' }}>
+                <label>日数</label>
                 <input id="pkg-validity" type="number" min="1" placeholder="180" />
+              </div>
+              <div className="form-field" id="pkg-validity-date-field" style={{ minWidth: '150px', display: 'none' }}>
+                <label>この日まで有効</label>
+                <input id="pkg-expires-on" type="date" />
               </div>
               <button className="btn" id="pkg-create-btn" type="button">作成する</button>
             </div>
