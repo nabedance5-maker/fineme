@@ -440,6 +440,13 @@
       <div class="now-item">
         <div class="now-item-dot done"></div>
         <div>
+          <span class="now-item-main">予約カレンダーの読み込み速度を修正（2026-09-16）</span>
+          <span class="now-item-sub">グループレッスン対応で増えた付随データ取得が直列awaitのまま積み上がり、1リクエストで最大7回のDB往復が発生していた（でお報告「めちゃくちゃ遅い」）。機能未使用店舗ではクラス関連クエリを丸ごとスキップ・残りは並列実行に変更。</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
           <span class="now-item-main">グループレッスン一覧タブ・講師写真・繰り返し開催に対応（2026-09-16）</span>
           <span class="now-item-sub">予約タブの中に新規「グループレッスン」タブを追加。講師の顔写真付きカード一覧＋「詳細を見る」で開催回・参加者名を確認できる（クラスに担当講師を紐付け可能に）。開催回の作成フォームに繰り返しパターン（1回のみ／毎週＝曜日複数選択／毎月＝同日付で終了日指定）を追加し、まとめて作成できるように。</span>
         </div>
