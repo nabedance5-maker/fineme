@@ -3675,6 +3675,12 @@ export default function ProviderDashboardPage() {
       document.querySelectorAll('[data-tab="customers"]').forEach(btn => btn.addEventListener('click', () => { loadFields(); loadMenus(); loadAll(); loadManualCustomers(); }, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'customers') { loadFields(); loadMenus(); loadAll(); loadManualCustomers(); }
 
+      // 一斉メール配信タブ（でお要望2026-09-16：顧客管理から独立させた）を直接開いた
+      // 場合でも、送信対象を計算できるよう顧客データを読み込んでおく。
+      async function loadForBroadcastTab() { if (!allItems.length) await loadAll(); updateBroadcastCount(); }
+      document.querySelectorAll('[data-tab="broadcast-email"]').forEach(btn => btn.addEventListener('click', loadForBroadcastTab, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'broadcast-email') loadForBroadcastTab();
+
       // 今日の業務・予約カレンダー・予約リクエスト等、他タブからもこのフルの顧客情報
       // ポップアップ（カルテ編集・回数券・声かけ・担当割当）を開けるようにする
       // （でお要望2026-09-13：「他の場所でもポップアップを出す時はちゃんと顧客情報
@@ -7409,6 +7415,7 @@ export default function ProviderDashboardPage() {
                 </div>
                 <div className="pd-panel-section" data-panel="customer" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="customers">顧客管理（New Me Log・カルテ）</button>
+                  <button className="tab-btn" data-tab="broadcast-email">📧 一斉メール配信</button>
                   <button className="tab-btn" data-tab="reviews">クチコミ</button>
                   <button className="tab-btn" data-tab="visit-settings">来店設定</button>
                   {/* 回数券は日々の売上集計ではなく「顧客ごとの発行・消化を管理する台帳」の
@@ -8800,27 +8807,6 @@ export default function ProviderDashboardPage() {
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
           </div>
 
-          {/* セグメント一斉メール配信（でお要望2026-09-14：hacomonoの「メンバータイプ毎の
-              一斉メール配信」相当機能）。上の「表示：」フィルター・検索の絞り込み結果に
-              そのまま送信する。凝った差し込み変数等は持たず、件名＋本文の自由記述のみ。 */}
-          <div className="card stack" style={{ padding: '24px', gap: 10, marginTop: '16px' }}>
-            <div>
-              <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>📧 一斉メール配信</h3>
-              <p className="muted" style={{ fontSize: '12.5px', margin: 0 }}>上の「表示：」の絞り込み結果に、Finemeに登録されたメールアドレスへ一斉送信します（メール未登録の方はスキップされます）。</p>
-            </div>
-            <p id="bc-recipient-count" className="muted" style={{ fontSize: '13px', fontWeight: 700, margin: 0 }}></p>
-            <div className="form-field" style={{ marginBottom: 0 }}>
-              <label>件名</label>
-              <input type="text" id="bc-subject" placeholder="例：秋の特別キャンペーンのご案内" />
-            </div>
-            <div className="form-field" style={{ marginBottom: 0 }}>
-              <label>本文</label>
-              <textarea id="bc-body" style={{ width: '100%', minHeight: '110px', fontSize: '14px', padding: '10px', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="お客様への案内文を入力してください"></textarea>
-            </div>
-            <button type="button" className="btn" id="bc-send-btn" style={{ width: 'fit-content' }}>この絞り込み結果に送信する</button>
-            <p id="bc-msg" className="muted" style={{ fontSize: '12px', margin: 0 }}></p>
-          </div>
-
           <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px', marginTop: '16px' }}>
             <div>
               <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>カルテ項目を設定</h2>
@@ -8928,6 +8914,31 @@ export default function ProviderDashboardPage() {
               <div id="cust-modal-manual-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
               <div id="cust-modal-manual-history" style={{ display: 'none', marginTop: '10px' }}></div>
             </div>
+          </div>
+        </div>
+
+        {/* 一斉メール配信（でお要望2026-09-16：「顧客管理の中に一斉メール配信があるけど、
+            これは独立したタブで別にするべき」を受けて分離）。送信対象は「顧客管理」タブの
+            絞り込み条件と連動するため、絞り込みは顧客管理タブ側で行ってからここで送信する。 */}
+        <div className="tab-pane" id="tab-broadcast-email">
+          <div className="card stack" style={{ padding: '24px', gap: 10 }}>
+            <div>
+              <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>📧 一斉メール配信</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                「顧客管理」タブの「表示：」フィルター・検索の絞り込み結果に、Finemeに登録されたメールアドレスへ一斉送信します（メール未登録の方はスキップされます）。送信対象を変えたい場合は先に顧客管理タブで絞り込みを調整してください。
+              </p>
+            </div>
+            <p id="bc-recipient-count" className="muted" style={{ fontSize: '13px', fontWeight: 700, margin: 0 }}></p>
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label>件名</label>
+              <input type="text" id="bc-subject" placeholder="例：秋の特別キャンペーンのご案内" />
+            </div>
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label>本文</label>
+              <textarea id="bc-body" style={{ width: '100%', minHeight: '110px', fontSize: '14px', padding: '10px', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="お客様への案内文を入力してください"></textarea>
+            </div>
+            <button type="button" className="btn" id="bc-send-btn" style={{ width: 'fit-content' }}>この絞り込み結果に送信する</button>
+            <p id="bc-msg" className="muted" style={{ fontSize: '12px', margin: 0 }}></p>
           </div>
         </div>
 
