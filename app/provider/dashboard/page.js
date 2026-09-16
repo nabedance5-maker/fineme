@@ -4212,36 +4212,73 @@ export default function ProviderDashboardPage() {
           const badge = el.querySelector('[data-feature-badge]');
           if (badge) badge.textContent = on ? '' : '未設定';
 
+          // OFFのタブは元のカテゴリーから「🗂 非表示」カテゴリーへ移動しておく
+          // （でお要望2026-09-16：「非表示にしたやつはまとめておくといい」）。元のカテゴリーを
+          // data属性で覚えておき、ONに戻したら元の場所へ戻す。ボタン自体（＝クリック
+          // リスナー）を移動するだけなので、各タブの読み込みロジックには影響しない。
+          if (!el.dataset.originalPanel) {
+            const originalSection = el.closest('.pd-panel-section');
+            if (originalSection) el.dataset.originalPanel = originalSection.dataset.panel;
+          }
+          if (el.dataset.originalPanel) {
+            const targetPanelKey = on ? el.dataset.originalPanel : 'hidden';
+            const targetSection = document.querySelector(`.pd-panel-section[data-panel="${targetPanelKey}"]`);
+            if (targetSection && el.parentElement !== targetSection) targetSection.appendChild(el);
+          }
+
           const tabId = el.dataset.tab;
           const pane = document.getElementById('tab-' + tabId);
           if (!pane) return;
           const existing = pane.querySelector(`[data-feature-banner="${key}"]`);
           if (on) {
             existing?.remove();
-          } else if (!existing) {
-            pane.insertAdjacentHTML('afterbegin', bannerHtml(key, tabId));
-            pane.querySelector(`[data-feature-enable="${key}"]`)?.addEventListener('click', async (e) => {
-              const btn = e.currentTarget;
-              btn.disabled = true;
-              btn.textContent = '設定中…';
-              try {
-                const res = await fetch('/api/provider/features', {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
-                  body: JSON.stringify({ [key]: true }),
-                });
-                if (!res.ok) { btn.disabled = false; btn.textContent = 'ONにする'; showToast('保存に失敗しました'); return; }
-                // ONにしたら、この機能の中身をすぐ使えるようリロードして表示する
-                // （各タブの読み込みはそれぞれ独立したIIFEのため、確実なのは再読み込み）
-                showToast(`✓ 「${defsCache[key]?.label || key}」をONにしました`);
-                location.href = location.pathname + '?tab=' + btn.dataset.featureTab;
-              } catch {
-                btn.disabled = false; btn.textContent = 'ONにする';
-                showToast('通信エラーが発生しました');
-              }
+            // OFFの間に隠していた中身を元に戻す（下のelse節で保存したdisplay値を復元）。
+            Array.from(pane.children).forEach(c => {
+              if (c.dataset.featureHiddenDisplay === undefined) return;
+              c.style.display = c.dataset.featureHiddenDisplay;
+              delete c.dataset.featureHiddenDisplay;
+            });
+          } else {
+            if (!existing) {
+              pane.insertAdjacentHTML('afterbegin', bannerHtml(key, tabId));
+              pane.querySelector(`[data-feature-enable="${key}"]`)?.addEventListener('click', async (e) => {
+                const btn = e.currentTarget;
+                btn.disabled = true;
+                btn.textContent = '設定中…';
+                try {
+                  const res = await fetch('/api/provider/features', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+                    body: JSON.stringify({ [key]: true }),
+                  });
+                  if (!res.ok) { btn.disabled = false; btn.textContent = 'ONにする'; showToast('保存に失敗しました'); return; }
+                  // ONにしたら、この機能の中身をすぐ使えるようリロードして表示する
+                  // （各タブの読み込みはそれぞれ独立したIIFEのため、確実なのは再読み込み）
+                  showToast(`✓ 「${defsCache[key]?.label || key}」をONにしました`);
+                  location.href = location.pathname + '?tab=' + btn.dataset.featureTab;
+                } catch {
+                  btn.disabled = false; btn.textContent = 'ONにする';
+                  showToast('通信エラーが発生しました');
+                }
+              });
+            }
+            // バナーを上に出すだけで、実際の中身はそのまま操作できてしまっていた
+            // （でお報告2026-09-16：「機能設定のチェックに関係なく全部出てる」）。
+            // バナー以外の子要素を全て隠し、ONにするまで実際に使えないようにする。
+            Array.from(pane.children).forEach(c => {
+              if (c.dataset.featureBanner !== undefined) return;
+              if (c.style.display === 'none') return;
+              c.dataset.featureHiddenDisplay = c.style.display || '';
+              c.style.display = 'none';
             });
           }
         });
+
+        const hiddenSection = document.querySelector('.pd-panel-section[data-panel="hidden"]');
+        const hiddenRailBtn = document.getElementById('pd-rail-hidden-btn');
+        if (hiddenSection && hiddenRailBtn) {
+          hiddenRailBtn.style.display = hiddenSection.children.length ? '' : 'none';
+        }
       }
 
       // 機能設定タブのチェックボックスをON/OFFした直後にも、リロードなしでサイドバー・
@@ -7302,6 +7339,9 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="pd-rail-btn" data-category="growth">集客</button>
                 <button type="button" className="pd-rail-btn" data-category="account">アカウント</button>
                 <button type="button" className="pd-rail-btn" data-category="tutorial">使い方</button>
+                {/* OFFにした機能のタブをまとめる場所（でお要望2026-09-16：「非表示にしたやつは
+                    非表示というタブを作ってまとめておくといい」）。中身が無い間はJS側で隠す。 */}
+                <button type="button" className="pd-rail-btn" data-category="hidden" id="pd-rail-hidden-btn" style={{ display: 'none' }}>🗂 非表示</button>
               </div>
               <div className="pd-rail-panel">
                 <div className="pd-panel-section" data-panel="home" style={{ display: 'none' }}>
@@ -7362,6 +7402,8 @@ export default function ProviderDashboardPage() {
                 <div className="pd-panel-section" data-panel="tutorial" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="tutorial">チュートリアル</button>
                 </div>
+                {/* OFFの機能タブはJS側（機能フラグ振り分け）がここへ移動してくる。空欄でOK。 */}
+                <div className="pd-panel-section" data-panel="hidden" style={{ display: 'none' }}></div>
               </div>
             </div>
           </div>
