@@ -27,10 +27,11 @@ export async function GET(request) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   if (!classes?.length) return Response.json([]);
 
-  const { data: enrollments } = await supabase
-    .from('provider_class_enrollments')
-    .select('class_id, status')
-    .in('class_id', classes.map(c => c.id));
+  const instructorIds = [...new Set(classes.map(c => c.instructor_staff_id).filter(Boolean))];
+  const [{ data: enrollments }, staffRowsRes] = await Promise.all([
+    supabase.from('provider_class_enrollments').select('class_id, status').in('class_id', classes.map(c => c.id)),
+    instructorIds.length ? supabase.from('provider_staff').select('id, name, photo_url').in('id', instructorIds) : Promise.resolve({ data: [] }),
+  ]);
   const counts = {};
   (enrollments || []).forEach(e => {
     counts[e.class_id] = counts[e.class_id] || { active: 0, waitlisted: 0 };
@@ -38,12 +39,8 @@ export async function GET(request) {
     if (e.status === 'waitlisted') counts[e.class_id].waitlisted++;
   });
 
-  const instructorIds = [...new Set(classes.map(c => c.instructor_staff_id).filter(Boolean))];
-  let instructorMap = {};
-  if (instructorIds.length) {
-    const { data: staffRows } = await supabase.from('provider_staff').select('id, name, photo_url').in('id', instructorIds);
-    (staffRows || []).forEach(s => { instructorMap[s.id] = s; });
-  }
+  const instructorMap = {};
+  (staffRowsRes.data || []).forEach(s => { instructorMap[s.id] = s; });
 
   return Response.json(classes.map(c => ({
     ...c,

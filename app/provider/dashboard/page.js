@@ -1882,9 +1882,12 @@ export default function ProviderDashboardPage() {
         else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
       });
 
-      loadStaffOptionsForClasses();
-      document.querySelectorAll('[data-tab="classes"]').forEach(btn => btn.addEventListener('click', loadClasses, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'classes') loadClasses();
+      // 講師選択肢の読み込みは、実際にクラス管理タブを開いた時だけでよい
+      // （でお報告2026-09-16：「カレンダーの読み込みが遅い」。全タブ共通のuseEffect内で
+      // 無条件に動くIIFEが増えるたびに、カレンダーを開くだけでも無関係な通信が
+      // 積み重なっていた。タブを開くまで発火しないように変更）。
+      document.querySelectorAll('[data-tab="classes"]').forEach(btn => btn.addEventListener('click', () => { loadStaffOptionsForClasses(); loadClasses(); }, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'classes') { loadStaffOptionsForClasses(); loadClasses(); }
     })();
 
     // ── グループレッスン一覧（でお要望2026-09-16） ─────
