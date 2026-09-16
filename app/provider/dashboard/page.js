@@ -1637,8 +1637,19 @@ export default function ProviderDashboardPage() {
       const sessionsTitle = document.getElementById('cls-sessions-title');
       const sessionListEl = document.getElementById('cls-session-list');
       const sessionForm = document.getElementById('cls-session-form');
+      const instructorSelectEl = editForm?.elements['instructor_staff_id'];
       let classesCache = [];
       let selectedClass = null;
+      let staffOptionsForClasses = [];
+
+      async function loadStaffOptionsForClasses() {
+        const res = await fetch('/api/provider/staff', { headers: authH() });
+        if (!res.ok) return;
+        staffOptionsForClasses = await res.json();
+        if (instructorSelectEl) {
+          instructorSelectEl.innerHTML = '<option value="">未設定</option>' + staffOptionsForClasses.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+        }
+      }
 
       async function loadClasses() {
         if (!listEl) return;
@@ -1665,6 +1676,7 @@ export default function ProviderDashboardPage() {
           editForm.elements['name'].value = c.name || '';
           editForm.elements['description'].value = c.description || '';
           editForm.elements['capacity'].value = c.capacity || '';
+          if (editForm.elements['instructor_staff_id']) editForm.elements['instructor_staff_id'].value = c.instructor_staff_id || '';
           editForm.elements['level_labels'].value = (c.level_labels || []).join(',');
           editCard.scrollIntoView({ behavior: 'smooth' });
         }));
@@ -1691,6 +1703,7 @@ export default function ProviderDashboardPage() {
           name: fd.get('name'),
           description: fd.get('description'),
           capacity: fd.get('capacity'),
+          instructor_staff_id: fd.get('instructor_staff_id') || null,
           level_labels: String(fd.get('level_labels') || '').split(',').map(s => s.trim()).filter(Boolean),
         };
         const url = id ? `/api/provider/classes/${id}` : '/api/provider/classes';
@@ -1754,24 +1767,66 @@ export default function ProviderDashboardPage() {
         }));
       }
 
+      const sessionRecurTypeEl = document.getElementById('cls-session-recur-type');
+      const sessionWeekdayFieldEl = document.getElementById('cls-session-weekday-field');
+      const sessionUntilFieldEl = document.getElementById('cls-session-until-field');
+      function updateSessionRecurFields() {
+        const type = sessionRecurTypeEl?.value || 'once';
+        if (sessionWeekdayFieldEl) sessionWeekdayFieldEl.style.display = type === 'weekly' ? '' : 'none';
+        if (sessionUntilFieldEl) sessionUntilFieldEl.style.display = type === 'once' ? 'none' : '';
+      }
+      sessionRecurTypeEl?.addEventListener('change', updateSessionRecurFields);
+      updateSessionRecurFields();
+
+      function fmtYMD(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+      // 「毎週」「毎月」の繰り返しから実際の開催日一覧を作る（でお要望2026-09-16：
+      // 「何曜日の何時から、何月何日何時からなど...毎週やるものや毎月やるものなども
+      // 選べるように」）。RRULEのような汎用エンジンは使わず、シンプルな日付列挙に留める。
+      function generateSessionDates({ recurType, baseDate, untilDate, weekdays }) {
+        if (recurType === 'once' || !untilDate) return [baseDate];
+        const start = new Date(`${baseDate}T00:00:00`);
+        const until = new Date(`${untilDate}T00:00:00`);
+        if (until < start) return [baseDate];
+        const MAX_OCC = 104; // 安全のための上限（週1なら約2年分）
+        const dates = [];
+        if (recurType === 'weekly') {
+          const wdSet = weekdays.length ? new Set(weekdays.map(Number)) : new Set([start.getDay()]);
+          const d = new Date(start);
+          while (d <= until && dates.length < MAX_OCC) {
+            if (wdSet.has(d.getDay())) dates.push(fmtYMD(d));
+            d.setDate(d.getDate() + 1);
+          }
+        } else if (recurType === 'monthly') {
+          const dayOfMonth = start.getDate();
+          const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+          while (cursor <= until && dates.length < MAX_OCC) {
+            const candidate = new Date(cursor.getFullYear(), cursor.getMonth(), dayOfMonth);
+            if (candidate.getMonth() === cursor.getMonth() && candidate >= start && candidate <= until) dates.push(fmtYMD(candidate));
+            cursor.setMonth(cursor.getMonth() + 1);
+          }
+        }
+        return dates.length ? dates : [baseDate];
+      }
+
       sessionForm?.addEventListener('submit', async e => {
         e.preventDefault();
         if (!selectedClass) return;
         const fd = new FormData(sessionForm);
         const baseDate = fd.get('date');
-        const repeatWeeks = Number(fd.get('repeat_weeks')) || 1;
+        const recurType = fd.get('recur_type') || 'once';
+        const untilDate = fd.get('until_date') || '';
+        const weekdays = fd.getAll('weekday');
         const start_time = fd.get('start_time');
         const end_time = fd.get('end_time');
         const capacity = fd.get('capacity');
+        const dates = generateSessionDates({ recurType, baseDate, untilDate, weekdays });
         let okCount = 0;
-        for (let i = 0; i < repeatWeeks; i++) {
-          const d = new Date(`${baseDate}T00:00:00`);
-          d.setDate(d.getDate() + i * 7);
-          const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        for (const dateStr of dates) {
           const res = await fetch(`/api/provider/classes/${selectedClass.id}/sessions`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ date: dateStr, start_time, end_time, capacity }) });
           if (res.ok) okCount++;
         }
         sessionForm.reset();
+        updateSessionRecurFields();
         loadSessions();
         showToast(`${okCount}件の開催回を追加しました`);
       });
@@ -1827,8 +1882,105 @@ export default function ProviderDashboardPage() {
         else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
       });
 
+      loadStaffOptionsForClasses();
       document.querySelectorAll('[data-tab="classes"]').forEach(btn => btn.addEventListener('click', loadClasses, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'classes') loadClasses();
+    })();
+
+    // ── グループレッスン一覧（でお要望2026-09-16） ─────
+    (function setupGroupLessons() {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      const listEl = document.getElementById('gl-list');
+      const detailCard = document.getElementById('gl-detail-card');
+      const detailTitleEl = document.getElementById('gl-detail-title');
+      const detailBodyEl = document.getElementById('gl-detail-body');
+      const sessionListEl = document.getElementById('gl-session-list');
+      let glClassesCache = [];
+      const WEEKDAY_JA_GL = ['日', '月', '火', '水', '木', '金', '土'];
+
+      async function loadList() {
+        if (!listEl) return;
+        const res = await fetch('/api/provider/classes', { headers: authH() });
+        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
+        glClassesCache = await res.json();
+        if (!glClassesCache.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">まだグループレッスンがありません。「クラス管理」タブから作成してください。</p>'; return; }
+        listEl.innerHTML = glClassesCache.map(c => `
+          <div style="border:1px solid rgba(26,20,16,0.1);border-radius:12px;padding:16px;background:var(--color-bg);display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              ${c.instructor_photo_url
+                ? `<img src="${esc(c.instructor_photo_url)}" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0" />`
+                : `<div style="width:48px;height:48px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏫</div>`}
+              <div style="min-width:0">
+                <strong style="font-size:14px;display:block">${esc(c.name)}</strong>
+                <span class="muted" style="font-size:12px">${c.instructor_name ? esc(c.instructor_name) + '講師' : '講師未設定'}</span>
+              </div>
+            </div>
+            <span class="muted" style="font-size:12px">${c.enrolledCount}名在籍${c.capacity ? `／定員${c.capacity}名` : ''}</span>
+            <button type="button" class="btn" style="font-size:12px;padding:6px 12px" data-gl-detail="${c.id}">詳細を見る</button>
+          </div>
+        `).join('');
+        listEl.querySelectorAll('[data-gl-detail]').forEach(btn => btn.addEventListener('click', () => openDetail(btn.dataset.glDetail)));
+      }
+
+      async function openDetail(classId) {
+        const c = glClassesCache.find(x => x.id === classId);
+        if (!c || !detailCard) return;
+        detailTitleEl.textContent = c.name;
+        detailCard.style.display = 'block';
+        detailCard.scrollIntoView({ behavior: 'smooth' });
+        detailBodyEl.innerHTML = `
+          ${c.instructor_name ? `<div>担当講師：${esc(c.instructor_name)}</div>` : ''}
+          ${c.description ? `<div class="muted">${esc(c.description)}</div>` : ''}
+          <div>在籍：${c.enrolledCount}名${c.capacity ? `／定員${c.capacity}名` : ''}${c.waitlistedCount ? `（待機${c.waitlistedCount}名）` : ''}</div>
+        `;
+        sessionListEl.innerHTML = '読み込み中…';
+        const res = await fetch(`/api/provider/classes/${classId}/sessions`, { headers: authH() });
+        if (!res.ok) { sessionListEl.innerHTML = authErrorHtml(res); return; }
+        const sessions = await res.json();
+        const today = new Date().toISOString().slice(0, 10);
+        const upcoming = sessions.filter(s => s.date >= today);
+        if (!upcoming.length) { sessionListEl.innerHTML = '<p class="muted" style="font-size:13px">今後の開催予定がありません。</p>'; return; }
+        sessionListEl.innerHTML = upcoming.map(s => {
+          const d = new Date(`${s.date}T00:00:00`);
+          return `
+          <div style="border:1px solid rgba(26,20,16,0.08);border-radius:10px;padding:10px 14px" data-gl-session-row="${s.id}">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+              <strong style="font-size:13px">${s.date}（${WEEKDAY_JA_GL[d.getDay()]}）${s.start_time?.slice(0,5)}〜${s.end_time?.slice(0,5)}</strong>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="muted" style="font-size:12px">${s.booked}/${s.capacity}名${!s.is_open ? '（締切中）' : ''}</span>
+                <button type="button" class="btn btn-ghost" style="font-size:11.5px;padding:4px 10px" data-gl-attendees="${s.id}">参加者を見る</button>
+              </div>
+            </div>
+            <div class="gl-attendees-box" data-gl-attendees-box="${s.id}" style="display:none;margin-top:8px"></div>
+          </div>`;
+        }).join('');
+        sessionListEl.querySelectorAll('[data-gl-attendees]').forEach(btn => btn.addEventListener('click', () => toggleAttendees(classId, btn.dataset.glAttendees, btn)));
+      }
+
+      async function toggleAttendees(classId, sessionId, btn) {
+        const box = sessionListEl.querySelector(`[data-gl-attendees-box="${sessionId}"]`);
+        if (!box) return;
+        if (box.style.display === 'block') { box.style.display = 'none'; return; }
+        box.style.display = 'block';
+        box.innerHTML = '読み込み中…';
+        const res = await fetch(`/api/provider/classes/${classId}/sessions/${sessionId}/attendees`, { headers: authH() });
+        if (!res.ok) { box.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        if (!rows.length) { box.innerHTML = '<p class="muted" style="font-size:12.5px;margin:0">まだ参加者がいません。</p>'; return; }
+        box.innerHTML = rows.map(r => `
+          <div style="display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:4px 0;border-top:1px solid #f3f4f6">
+            <span>${esc(r.user_name)}</span><span class="muted">${esc(r.user_contact || '')}</span>
+          </div>
+        `).join('');
+      }
+
+      document.getElementById('gl-detail-close')?.addEventListener('click', () => { detailCard.style.display = 'none'; });
+
+      document.querySelectorAll('[data-tab="group-lessons"]').forEach(btn => btn.addEventListener('click', loadList, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'group-lessons') loadList();
     })();
 
     // ── ロッカー月極管理（でお要望2026-09-14） ─────
@@ -7135,6 +7287,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="slots" data-feature="instant_booking">空き枠<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="checkin" data-feature="checkin_qr">チェックイン<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="events" data-feature="attendance_confirm">出欠確認<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="group-lessons" data-feature="class_management">グループレッスン<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="customer" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="customers">顧客管理（New Me Log・カルテ）</button>
@@ -7878,6 +8031,31 @@ export default function ProviderDashboardPage() {
           </div>
         </div>
 
+        {/* グループレッスン一覧（でお要望2026-09-16：「予約のタブの中に新しく
+            「グループレッスン」というタブを作って、そこにグループレッスンの一覧を
+            表示させてほしい。講師の顔写真と詳細を見るボタンをつけて」）。
+            クラス管理タブ（作成・名簿・開催回設定）とは別に、日々の運用で見る
+            一覧＋参加者確認に特化したビュー。 */}
+        <div className="tab-pane" id="tab-group-lessons">
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>グループレッスン</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0 }}>開講中のグループレッスンと、開催回ごとの参加者を確認できます。</p>
+            </div>
+            <div id="gl-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: '12px' }}>読み込み中…</div>
+          </div>
+
+          <div id="gl-detail-card" className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px', display: 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 id="gl-detail-title" style={{ margin: 0, fontSize: '15px' }}></h3>
+              <button type="button" className="btn btn-ghost" id="gl-detail-close" style={{ fontSize: '12px' }}>閉じる</button>
+            </div>
+            <div id="gl-detail-body" style={{ fontSize: '13px', lineHeight: '1.8' }}></div>
+            <h4 style={{ margin: '4px 0 0', fontSize: '13px' }}>開催回</h4>
+            <div id="gl-session-list" className="stack" style={{ gap: '8px' }}></div>
+          </div>
+        </div>
+
         {/* クラス管理（スクール業態特化、でお要望2026-09-14：hacomono機能比較で判明した
             不足機能。「在籍制・定員制クラスの管理や進級結果の管理」相当）。「機能設定」で
             ONにした店舗のみ表示。既存の予約カレンダーとは独立した名簿・進級記録機能。 */}
@@ -7898,6 +8076,7 @@ export default function ProviderDashboardPage() {
                 <div className="form-field"><label>クラス名 *</label><input name="name" required /></div>
                 <div className="form-field"><label>説明</label><input name="description" placeholder="任意" /></div>
                 <div className="form-field"><label>定員</label><input name="capacity" type="number" min="1" placeholder="任意（空欄なら無制限）" /></div>
+                <div className="form-field"><label>担当講師（任意）</label><select name="instructor_staff_id"><option value="">未設定</option></select></div>
                 <div className="form-field"><label>進級の段階（カンマ区切り。例：白帯,黄帯,緑帯,黒帯）</label><input name="level_labels" placeholder="任意" /></div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button type="submit" className="btn">保存する</button>
@@ -7929,18 +8108,35 @@ export default function ProviderDashboardPage() {
               ここで追加した開催回が、お客様が閲覧する店舗ページの「クラス」タブに予約枠として表示されます。
             </p>
             <form id="cls-session-form" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'end' }}>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>日付 *</label><input type="date" name="date" required /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>開始日 *</label><input type="date" name="date" required /></div>
               <div className="form-field" style={{ marginBottom: 0 }}><label>開始 *</label><input type="time" name="start_time" required /></div>
               <div className="form-field" style={{ marginBottom: 0 }}><label>終了 *</label><input type="time" name="end_time" required /></div>
               <div className="form-field" style={{ marginBottom: 0, width: '90px' }}><label>定員</label><input type="number" name="capacity" min="1" placeholder="クラス既定" /></div>
-              <div className="form-field" style={{ marginBottom: 0, width: '150px' }}>
+              <div className="form-field" style={{ marginBottom: 0, width: '110px' }}>
                 <label>繰り返し</label>
-                <select name="repeat_weeks" defaultValue="1">
-                  <option value="1">1回のみ</option>
-                  <option value="4">毎週×4回</option>
-                  <option value="8">毎週×8回</option>
-                  <option value="12">毎週×12回</option>
+                <select id="cls-session-recur-type" name="recur_type" defaultValue="once">
+                  <option value="once">1回のみ</option>
+                  <option value="weekly">毎週</option>
+                  <option value="monthly">毎月</option>
                 </select>
+              </div>
+              {/* 毎週の場合の曜日指定（でお要望2026-09-16：「何曜日の何時から...毎週やるもの
+                  なども選べるように」）。未選択なら開始日の曜日をそのまま使う。 */}
+              <div id="cls-session-weekday-field" className="form-field" style={{ marginBottom: 0, display: 'none' }}>
+                <label>曜日（複数可）</label>
+                <div style={{ display: 'flex', gap: '3px' }}>
+                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="0" />日</label>
+                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="1" />月</label>
+                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="2" />火</label>
+                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="3" />水</label>
+                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="4" />木</label>
+                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="5" />金</label>
+                  <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" name="weekday" value="6" />土</label>
+                </div>
+              </div>
+              <div id="cls-session-until-field" className="form-field" style={{ marginBottom: 0, display: 'none' }}>
+                <label>この日まで作成</label>
+                <input type="date" name="until_date" />
               </div>
               <button type="submit" className="btn">＋ 開催回を追加</button>
             </form>

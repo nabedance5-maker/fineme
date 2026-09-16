@@ -26,6 +26,7 @@ export async function PATCH(request, { params }) {
   if ('capacity' in body) update.capacity = Number.isFinite(Number(body.capacity)) && body.capacity !== '' ? Number(body.capacity) : null;
   if ('level_labels' in body) update.level_labels = Array.isArray(body.level_labels) ? body.level_labels : [];
   if ('active' in body) update.active = !!body.active;
+  if ('instructor_staff_id' in body) update.instructor_staff_id = body.instructor_staff_id || null;
 
   const { data, error } = await supabase.from('provider_classes').update(update).eq('id', id).eq('provider_id', provider.id).select().single();
   if (error || !data) return Response.json({ error: 'クラスが見つかりません' }, { status: 404 });

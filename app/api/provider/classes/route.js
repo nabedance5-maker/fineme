@@ -38,7 +38,20 @@ export async function GET(request) {
     if (e.status === 'waitlisted') counts[e.class_id].waitlisted++;
   });
 
-  return Response.json(classes.map(c => ({ ...c, enrolledCount: counts[c.id]?.active || 0, waitlistedCount: counts[c.id]?.waitlisted || 0 })));
+  const instructorIds = [...new Set(classes.map(c => c.instructor_staff_id).filter(Boolean))];
+  let instructorMap = {};
+  if (instructorIds.length) {
+    const { data: staffRows } = await supabase.from('provider_staff').select('id, name, photo_url').in('id', instructorIds);
+    (staffRows || []).forEach(s => { instructorMap[s.id] = s; });
+  }
+
+  return Response.json(classes.map(c => ({
+    ...c,
+    enrolledCount: counts[c.id]?.active || 0,
+    waitlistedCount: counts[c.id]?.waitlisted || 0,
+    instructor_name: c.instructor_staff_id ? instructorMap[c.instructor_staff_id]?.name || null : null,
+    instructor_photo_url: c.instructor_staff_id ? instructorMap[c.instructor_staff_id]?.photo_url || null : null,
+  })));
 }
 
 export async function POST(request) {
@@ -48,7 +61,7 @@ export async function POST(request) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
-  const { name, description, capacity, level_labels } = body;
+  const { name, description, capacity, level_labels, instructor_staff_id } = body;
   if (!name?.trim()) return Response.json({ error: 'クラス名は必須です' }, { status: 400 });
 
   const { data, error } = await supabase
@@ -59,6 +72,7 @@ export async function POST(request) {
       description: description || null,
       capacity: Number.isFinite(Number(capacity)) && capacity !== '' ? Number(capacity) : null,
       level_labels: Array.isArray(level_labels) ? level_labels : [],
+      instructor_staff_id: instructor_staff_id || null,
     })
     .select()
     .single();
