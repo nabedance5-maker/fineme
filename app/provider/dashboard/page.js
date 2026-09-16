@@ -1649,6 +1649,7 @@ export default function ProviderDashboardPage() {
               <strong style="font-size:14px">${esc(c.name)}</strong>
               <span class="muted" style="font-size:12px;margin-left:8px">${c.enrolledCount}名${c.capacity ? `／定員${c.capacity}名` : ''}${c.waitlistedCount ? `（待機${c.waitlistedCount}名）` : ''}</span>
             </div>
+            <button type="button" class="btn" style="font-size:12px;padding:5px 10px" data-cls-sessions="${c.id}">📅 予約枠を管理</button>
             <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-cls-roster="${c.id}">名簿・進級</button>
             <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-cls-edit="${c.id}">編集</button>
             <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-cls-del="${c.id}">削除</button>
@@ -1670,6 +1671,7 @@ export default function ProviderDashboardPage() {
           loadClasses();
         }));
         listEl.querySelectorAll('[data-cls-roster]').forEach(btn => btn.addEventListener('click', () => openRoster(btn.dataset.clsRoster)));
+        listEl.querySelectorAll('[data-cls-sessions]').forEach(btn => btn.addEventListener('click', () => openSessions(btn.dataset.clsSessions)));
       }
 
       document.getElementById('cls-add-btn')?.addEventListener('click', () => {
@@ -1702,11 +1704,18 @@ export default function ProviderDashboardPage() {
         rosterCard.style.display = 'block';
         rosterCard.scrollIntoView({ behavior: 'smooth' });
         loadRoster();
-        if (sessionsCard) {
-          sessionsTitle.textContent = `${selectedClass.name} の開催回・予約枠`;
-          sessionsCard.style.display = 'block';
-          loadSessions();
-        }
+      }
+
+      // 開催回（予約枠）管理を単独で開く（でお報告2026-09-16：「名簿・進級」ボタンの
+      // 裏に隠れていて予約枠を作る場所が見つからないという不具合。クラス一覧に
+      // 専用ボタンを出し、押したら直接この画面を開く）。
+      function openSessions(classId) {
+        selectedClass = classesCache.find(c => c.id === classId);
+        if (!selectedClass || !sessionsCard) return;
+        sessionsTitle.textContent = `${selectedClass.name} の開催回・予約枠`;
+        sessionsCard.style.display = 'block';
+        sessionsCard.scrollIntoView({ behavior: 'smooth' });
+        loadSessions();
       }
 
       const WEEKDAY_JA_CLS = ['日', '月', '火', '水', '木', '金', '土'];
