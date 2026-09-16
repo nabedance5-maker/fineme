@@ -4317,6 +4317,7 @@ export default function ProviderDashboardPage() {
             // バナー以外の子要素を全て隠し、ONにするまで実際に使えないようにする。
             Array.from(pane.children).forEach(c => {
               if (c.dataset.featureBanner !== undefined) return;
+              if (c.dataset.featureExempt !== undefined) return; // 機能に関わらず常に使える部分（例：営業時間）
               if (c.style.display === 'none') return;
               c.dataset.featureHiddenDisplay = c.style.display || '';
               c.style.display = 'none';
@@ -8349,8 +8350,12 @@ export default function ProviderDashboardPage() {
           </div>
 
           {/* 営業時間からの自動生成（でお要望2026-09-14：空き枠を1つずつ手動登録させる
-              フローは非効率。営業時間さえ分かれば自動で生成できるはず、との指摘）。 */}
-          <div className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px' }}>
+              フローは非効率。営業時間さえ分かれば自動で生成できるはず、との指摘）。
+              営業時間は即時予約に関わらず予約カレンダーの表示時間帯（何時から何時まで
+              表示するか）にも使われる全店舗共通の設定のため、即時予約がOFFの間も
+              このカードだけは隠さない（でお報告2026-09-16：「営業時間を設定できる
+              ようになってる？」＝OFFの間ここに辿り着けなかった）。 */}
+          <div className="card stack" data-feature-exempt="true" style={{ padding: '24px', gap: '14px', marginTop: '16px' }}>
             <div>
               <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>営業時間から自動生成</h3>
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
