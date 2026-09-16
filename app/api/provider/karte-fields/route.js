@@ -13,7 +13,8 @@ async function getProviderByToken(token) {
 }
 
 // カルテのカスタム性拡張（でお要望2026-09-12）：数値・日付・チェックボックスを追加
-const FIELD_TYPES = ['text', 'select', 'stars', 'number', 'date', 'checkbox'];
+// （2026-09-16追加：複数選択・リンク・時刻・10段階評価）
+const FIELD_TYPES = ['text', 'select', 'stars', 'number', 'date', 'checkbox', 'multiselect', 'url', 'time', 'rating10'];
 
 export async function GET(request) {
   const authHeader = request.headers.get('Authorization');
@@ -40,7 +41,7 @@ export async function POST(request) {
   const { label, field_type, options } = await request.json();
   if (!label?.trim()) return Response.json({ error: 'ラベルは必須です' }, { status: 400 });
   if (!FIELD_TYPES.includes(field_type)) return Response.json({ error: '種類が不正です' }, { status: 400 });
-  if (field_type === 'select' && !(Array.isArray(options) && options.length)) {
+  if ((field_type === 'select' || field_type === 'multiselect') && !(Array.isArray(options) && options.length)) {
     return Response.json({ error: '選択肢を1つ以上入力してください' }, { status: 400 });
   }
 
@@ -55,7 +56,7 @@ export async function POST(request) {
       provider_id: provider.id,
       label: label.trim(),
       field_type,
-      options: field_type === 'select' ? options : null,
+      options: (field_type === 'select' || field_type === 'multiselect') ? options : null,
       sort_order: count || 0,
     })
     .select()

@@ -2959,7 +2959,7 @@ export default function ProviderDashboardPage() {
       let providerMenus = [];
       // カルテのカスタム性を拡張（でお要望2026-09-12）：自由記述／選択肢／5段階評価に加え、
       // 数値／日付／チェックボックスを追加。
-      const FIELD_TYPE_LABEL = { text: '自由記述', select: '選択肢', stars: '5段階評価', number: '数値', date: '日付', checkbox: 'チェック' };
+      const FIELD_TYPE_LABEL = { text: '自由記述', select: '選択肢', multiselect: '複数選択', stars: '5段階評価', rating10: '10段階評価', number: '数値', date: '日付', time: '時刻', url: 'リンク', checkbox: 'チェック' };
 
       // サービス設定タブで登録済みの自店メニュー一覧を、来店記録の「利用メニュー」選択肢として流用する。
       // 予約データ(reservations)とメニュー(provider_experience_menus)がID単位で綺麗に紐づいていないため
@@ -2976,7 +2976,7 @@ export default function ProviderDashboardPage() {
         if (!karteFields.length) { kfListEl.innerHTML = '<p class="muted" style="font-size:13px;">まだ項目がありません。下のフォームから追加してください。</p>'; return; }
         kfListEl.innerHTML = karteFields.map((f, i) => `
           <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f3f4f6;">
-            <span style="flex:1;font-size:13px;">${esc(f.label)}${f.field_type === 'select' ? `<span class="muted" style="font-size:11px;"> (${(f.options || []).map(esc).join('・')})</span>` : ''}</span>
+            <span style="flex:1;font-size:13px;">${esc(f.label)}${(f.field_type === 'select' || f.field_type === 'multiselect') ? `<span class="muted" style="font-size:11px;"> (${(f.options || []).map(esc).join('・')})</span>` : ''}</span>
             <span style="font-size:11px;padding:2px 8px;background:#f3f4f6;border-radius:99px;">${FIELD_TYPE_LABEL[f.field_type] || f.field_type}</span>
             <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;" data-kf-up="${f.id}"${i === 0 ? ' disabled' : ''}>↑</button>
             <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;" data-kf-down="${f.id}"${i === karteFields.length - 1 ? ' disabled' : ''}>↓</button>
@@ -3018,7 +3018,7 @@ export default function ProviderDashboardPage() {
       }
 
       if (kfTypeSel) kfTypeSel.addEventListener('change', () => {
-        if (kfOptionsWrap) kfOptionsWrap.style.display = kfTypeSel.value === 'select' ? '' : 'none';
+        if (kfOptionsWrap) kfOptionsWrap.style.display = (kfTypeSel.value === 'select' || kfTypeSel.value === 'multiselect') ? '' : 'none';
       });
 
       if (kfAddBtn) kfAddBtn.addEventListener('click', async () => {
@@ -3026,7 +3026,7 @@ export default function ProviderDashboardPage() {
         const field_type = kfTypeSel?.value;
         if (!label) { showToast('項目名を入力してください'); return; }
         let options;
-        if (field_type === 'select') {
+        if (field_type === 'select' || field_type === 'multiselect') {
           options = (kfOptionsInput?.value || '').split(',').map(s => s.trim()).filter(Boolean);
           if (!options.length) { showToast('選択肢を入力してください'); return; }
         }
@@ -3049,8 +3049,16 @@ export default function ProviderDashboardPage() {
           const opts = (f.options || []).map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('');
           return `<div class="form-field"><label>${esc(f.label)}</label><select data-kv="${f.id}"><option value="">（未入力）</option>${opts}</select></div>`;
         }
+        if (f.field_type === 'multiselect') {
+          const opts = (f.options || []).map(o => `<label class="checkbox-item"><input type="checkbox" data-kv-multiselect="${f.id}" value="${esc(o)}" /> ${esc(o)}</label>`).join('');
+          return `<div class="form-field"><label>${esc(f.label)}</label><div>${opts}</div></div>`;
+        }
         if (f.field_type === 'stars') {
           const stars = [1, 2, 3, 4, 5].map(n => `<button type="button" class="karte-star" data-star="${n}" style="font-size:22px;background:none;border:none;cursor:pointer;color:#d1d5db;padding:2px;">★</button>`).join('');
+          return `<div class="form-field"><label>${esc(f.label)}</label><div data-kv-stars="${f.id}" data-kv-value="0">${stars}</div></div>`;
+        }
+        if (f.field_type === 'rating10') {
+          const stars = Array.from({ length: 10 }, (_, i) => i + 1).map(n => `<button type="button" class="karte-star" data-star="${n}" style="font-size:16px;background:none;border:none;cursor:pointer;color:#d1d5db;padding:1px;">★</button>`).join('');
           return `<div class="form-field"><label>${esc(f.label)}</label><div data-kv-stars="${f.id}" data-kv-value="0">${stars}</div></div>`;
         }
         if (f.field_type === 'number') {
@@ -3058,6 +3066,12 @@ export default function ProviderDashboardPage() {
         }
         if (f.field_type === 'date') {
           return `<div class="form-field"><label>${esc(f.label)}</label><input type="date" data-kv="${f.id}" /></div>`;
+        }
+        if (f.field_type === 'time') {
+          return `<div class="form-field"><label>${esc(f.label)}</label><input type="time" data-kv="${f.id}" /></div>`;
+        }
+        if (f.field_type === 'url') {
+          return `<div class="form-field"><label>${esc(f.label)}</label><input type="url" data-kv="${f.id}" placeholder="https://" /></div>`;
         }
         if (f.field_type === 'checkbox') {
           return `<label class="checkbox-item"><input type="checkbox" data-kv-checkbox="${f.id}" /> ${esc(f.label)}</label>`;
@@ -3093,6 +3107,12 @@ export default function ProviderDashboardPage() {
         container.querySelectorAll('[data-kv]').forEach(el => { if (el.value) values[el.dataset.kv] = el.value; });
         container.querySelectorAll('[data-kv-stars]').forEach(el => { if (Number(el.dataset.kvValue) > 0) values[el.dataset.kvStars] = Number(el.dataset.kvValue); });
         container.querySelectorAll('[data-kv-checkbox]').forEach(el => { if (el.checked) values[el.dataset.kvCheckbox] = true; });
+        const multiselectGroups = {};
+        container.querySelectorAll('[data-kv-multiselect]').forEach(el => {
+          if (!el.checked) return;
+          (multiselectGroups[el.dataset.kvMultiselect] = multiselectGroups[el.dataset.kvMultiselect] || []).push(el.value);
+        });
+        Object.entries(multiselectGroups).forEach(([fid, vals]) => { values[fid] = vals; });
         return values;
       }
 
@@ -3107,11 +3127,14 @@ export default function ProviderDashboardPage() {
         function fmtCustomValue(fid, val) {
           if (typeMap[fid] === 'checkbox') return val ? '✓' : '';
           if (typeMap[fid] === 'date' && val) return new Date(val).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
+          if (typeMap[fid] === 'multiselect' && Array.isArray(val)) return val.map(esc).join('・');
+          if (typeMap[fid] === 'url' && val) return `<a href="${esc(val)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb">${esc(val)}</a>`;
+          if ((typeMap[fid] === 'stars' || typeMap[fid] === 'rating10') && val) return '★'.repeat(Number(val));
           return esc(val);
         }
         return entries.map((e, i) => {
           const custom = Object.entries(e.custom_values || {})
-            .filter(([fid, val]) => !(typeMap[fid] === 'checkbox' && !val))
+            .filter(([fid, val]) => !(typeMap[fid] === 'checkbox' && !val) && !(Array.isArray(val) && !val.length))
             .map(([fid, val]) => `${esc(labelMap[fid] || fid)}: ${fmtCustomValue(fid, val)}`).join(' / ');
           const prev = entries[i + 1];
           const intervalLabel = prev
@@ -8781,10 +8804,14 @@ export default function ProviderDashboardPage() {
                 <label>種類</label>
                 <select id="kf-type">
                   <option value="text">自由記述</option>
-                  <option value="select">選択肢</option>
+                  <option value="select">選択肢（単一選択）</option>
+                  <option value="multiselect">選択肢（複数選択）</option>
                   <option value="stars">5段階評価</option>
+                  <option value="rating10">10段階評価</option>
                   <option value="number">数値</option>
                   <option value="date">日付</option>
+                  <option value="time">時刻</option>
+                  <option value="url">リンク（URL）</option>
                   <option value="checkbox">チェックボックス</option>
                 </select>
               </div>
