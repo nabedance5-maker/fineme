@@ -1889,6 +1889,187 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'lockers') loadLockers();
     })();
 
+    // ── 入会手続きタブ（でお要望2026-09-15〜16：オンライン入会・Stripe決済） ─────
+    (function setupMemberships() {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      function fmtYen(n) { return n || n === 0 ? `¥${Number(n).toLocaleString()}` : '未設定'; }
+      const STATUS_LABEL = { pending_approval: '承認待ち', active: '有効', rejected: '却下', cancelled: '解約' };
+      const STATUS_COLOR = { pending_approval: '#d97706', active: '#16a34a', rejected: '#ef4444', cancelled: '#9ca3af' };
+
+      const warningEl = document.getElementById('mbr-connect-warning');
+      const joinUrlEl = document.getElementById('mbr-join-url');
+      const planListEl = document.getElementById('mbr-plan-list');
+      const appListEl = document.getElementById('mbr-app-list');
+      const detailCard = document.getElementById('mbr-detail-card');
+      const detailBody = document.getElementById('mbr-detail-body');
+      const detailMsg = document.getElementById('mbr-detail-msg');
+      let currentDetailId = null;
+      let loaded = false;
+
+      async function checkConnectStatus() {
+        try {
+          const res = await fetch('/api/stripe/connect/status', { headers: authH() });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (warningEl) {
+            if (data.status !== 'active') {
+              warningEl.style.display = 'block';
+              warningEl.innerHTML = 'Stripe Connectの本人確認が完了していないため、承認・課金開始ができません。「課金・プラン」タブから設定を完了してください。';
+            } else {
+              warningEl.style.display = 'none';
+            }
+          }
+        } catch {}
+      }
+
+      async function loadPlans() {
+        if (!planListEl) return;
+        const res = await fetch('/api/provider/membership-plans', { headers: authH() });
+        if (!res.ok) { planListEl.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        if (!rows.length) { planListEl.innerHTML = '<p class="muted" style="font-size:13px">まだプランがありません。上のフォームから追加してください。</p>'; return; }
+        planListEl.innerHTML = rows.map(p => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--color-bg);border-radius:10px;flex-wrap:wrap">
+            <div style="flex:1;min-width:0">
+              <strong style="font-size:14px">${esc(p.name)}</strong>
+              <span class="muted" style="font-size:12px;margin-left:8px">月額${fmtYen(p.monthly_price)}</span>
+              ${p.description ? `<div class="muted" style="font-size:12px;margin-top:2px">${esc(p.description)}</div>` : ''}
+              ${!p.active ? '<div style="font-size:11px;color:#9ca3af;margin-top:2px">非公開</div>' : ''}
+            </div>
+            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-mbr-plan-toggle="${p.id}" data-active="${p.active}">${p.active ? '非公開にする' : '公開する'}</button>
+            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-mbr-plan-del="${p.id}">削除</button>
+          </div>
+        `).join('');
+        planListEl.querySelectorAll('[data-mbr-plan-toggle]').forEach(btn => btn.addEventListener('click', async () => {
+          const res = await fetch(`/api/provider/membership-plans/${btn.dataset.mbrPlanToggle}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ active: btn.dataset.active !== 'true' }) });
+          if (res.ok) loadPlans(); else showToast('更新に失敗しました');
+        }));
+        planListEl.querySelectorAll('[data-mbr-plan-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('このプランを削除しますか？')) return;
+          const res = await fetch(`/api/provider/membership-plans/${btn.dataset.mbrPlanDel}`, { method: 'DELETE', headers: authH() });
+          if (res.ok) loadPlans(); else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
+        }));
+      }
+
+      document.getElementById('mbr-plan-add-btn')?.addEventListener('click', async () => {
+        const nameEl = document.getElementById('mbr-plan-name');
+        const priceEl = document.getElementById('mbr-plan-price');
+        const descEl = document.getElementById('mbr-plan-desc');
+        const name = nameEl.value.trim();
+        const price = Number(priceEl.value);
+        if (!name || !price) { showToast('プラン名と月額を入力してください'); return; }
+        const res = await fetch('/api/provider/membership-plans', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ name, monthly_price: price, description: descEl.value.trim() }) });
+        if (res.ok) { nameEl.value = ''; priceEl.value = ''; descEl.value = ''; loadPlans(); showToast('プランを追加しました'); }
+        else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
+      });
+
+      async function loadSettings() {
+        const res = await fetch('/api/provider/membership-settings', { headers: authH() });
+        if (!res.ok) return;
+        const s = await res.json();
+        const prorateEl = document.getElementById('mbr-set-prorate');
+        const idreqEl = document.getElementById('mbr-set-idreq');
+        const termsEl = document.getElementById('mbr-set-terms');
+        if (prorateEl) prorateEl.checked = !!s.prorate_first_month;
+        if (idreqEl) idreqEl.checked = !!s.require_id_document;
+        if (termsEl) termsEl.value = s.terms_text || '';
+      }
+      document.getElementById('mbr-set-save-btn')?.addEventListener('click', async () => {
+        const msgEl = document.getElementById('mbr-set-msg');
+        const body = {
+          prorate_first_month: document.getElementById('mbr-set-prorate')?.checked,
+          require_id_document: document.getElementById('mbr-set-idreq')?.checked,
+          terms_text: document.getElementById('mbr-set-terms')?.value || '',
+        };
+        const res = await fetch('/api/provider/membership-settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify(body) });
+        if (msgEl) { msgEl.textContent = res.ok ? '保存しました' : '保存に失敗しました'; setTimeout(() => { msgEl.textContent = ''; }, 3000); }
+      });
+
+      async function loadApplications() {
+        if (!appListEl) return;
+        const res = await fetch('/api/provider/memberships', { headers: authH() });
+        if (!res.ok) { appListEl.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        if (!rows.length) { appListEl.innerHTML = '<p class="muted" style="font-size:13px">まだ入会申込がありません。</p>'; return; }
+        appListEl.innerHTML = rows.map(m => `
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--color-bg);border-radius:10px;flex-wrap:wrap;cursor:pointer" data-mbr-open="${m.id}">
+            <div style="flex:1;min-width:0">
+              <strong style="font-size:14px">${esc(m.last_name || '')} ${esc(m.first_name || '')}</strong>
+              <span style="font-size:11px;font-weight:700;color:${STATUS_COLOR[m.status] || '#6b7280'};margin-left:8px">${STATUS_LABEL[m.status] || m.status}</span>
+              <div class="muted" style="font-size:12px;margin-top:2px">${esc(m.plan_name || 'プラン未選択')} ／ 入会希望日：${esc(m.enrollment_date || '未設定')}</div>
+            </div>
+          </div>
+        `).join('');
+        appListEl.querySelectorAll('[data-mbr-open]').forEach(row => row.addEventListener('click', () => openDetail(row.dataset.mbrOpen)));
+      }
+
+      async function openDetail(id) {
+        currentDetailId = id;
+        if (!detailCard || !detailBody) return;
+        detailCard.style.display = 'block';
+        detailBody.innerHTML = '読み込み中…';
+        if (detailMsg) detailMsg.textContent = '';
+        detailCard.scrollIntoView({ behavior: 'smooth' });
+        const res = await fetch(`/api/provider/memberships/${id}`, { headers: authH() });
+        if (!res.ok) { detailBody.innerHTML = '読み込みに失敗しました'; return; }
+        const m = await res.json();
+        const approveBtn = document.getElementById('mbr-detail-approve-btn');
+        const rejectBtn = document.getElementById('mbr-detail-reject-btn');
+        if (approveBtn) approveBtn.style.display = m.status === 'pending_approval' ? '' : 'none';
+        if (rejectBtn) rejectBtn.style.display = m.status === 'pending_approval' ? '' : 'none';
+        detailBody.innerHTML = `
+          <div><strong>${esc(m.last_name || '')} ${esc(m.first_name || '')}</strong> <span style="font-size:11px;font-weight:700;color:${STATUS_COLOR[m.status] || '#6b7280'}">${STATUS_LABEL[m.status] || m.status}</span></div>
+          <div>生年月日：${esc(m.birthdate || '未入力')}</div>
+          <div>住所：〒${esc(m.postal_code || '')} ${esc(m.address || '')}</div>
+          <div>電話：${esc(m.phone || '未入力')}</div>
+          <div>プラン：${esc(m.plan_name || '未選択')}（月額${fmtYen(m.plan_price)}）</div>
+          <div>入会希望日：${esc(m.enrollment_date || '未設定')}${m.prorated_first_amount != null ? `（初回目安：${fmtYen(m.prorated_first_amount)}）` : ''}</div>
+          <div>ロッカー：${esc(m.locker_name || 'なし')}</div>
+          <div>緊急連絡先：${esc(m.emergency_contact_name || '未入力')}（${esc(m.emergency_contact_relation || '')}）${esc(m.emergency_contact_phone || '')}</div>
+          <div>本人確認書類：${m.id_document_url ? `<a href="${esc(m.id_document_url)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb">画像を確認する</a>` : '未提出'}</div>
+          <div>規約同意：${m.terms_agreed_at ? `同意済み（${esc(m.terms_agreed_at.slice(0, 10))}）` : '未同意'}</div>
+        `;
+      }
+      document.getElementById('mbr-detail-close')?.addEventListener('click', () => { detailCard.style.display = 'none'; currentDetailId = null; });
+      document.getElementById('mbr-detail-approve-btn')?.addEventListener('click', async () => {
+        if (!currentDetailId) return;
+        if (!confirm('承認して課金を開始しますか？')) return;
+        const res = await fetch(`/api/provider/memberships/${currentDetailId}/approve`, { method: 'POST', headers: authH() });
+        if (res.ok) { showToast('承認しました'); detailCard.style.display = 'none'; loadApplications(); }
+        else { const e = await res.json().catch(() => ({})); if (detailMsg) detailMsg.textContent = 'エラー: ' + (e.error || '不明'); }
+      });
+      document.getElementById('mbr-detail-reject-btn')?.addEventListener('click', async () => {
+        if (!currentDetailId) return;
+        const reason = prompt('却下理由（お客様には通知されません。店舗記録用）', '');
+        if (reason === null) return;
+        const res = await fetch(`/api/provider/memberships/${currentDetailId}/reject`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ reason }) });
+        if (res.ok) { showToast('却下しました'); detailCard.style.display = 'none'; loadApplications(); }
+        else { const e = await res.json().catch(() => ({})); if (detailMsg) detailMsg.textContent = 'エラー: ' + (e.error || '不明'); }
+      });
+
+      document.getElementById('mbr-copy-url-btn')?.addEventListener('click', () => {
+        const url = joinUrlEl?.textContent;
+        if (!url) return;
+        navigator.clipboard?.writeText(url).then(() => showToast('コピーしました')).catch(() => {});
+      });
+
+      function loadAll() {
+        if (loaded) return;
+        loaded = true;
+        const slug = provider?.slug || '';
+        if (joinUrlEl) joinUrlEl.textContent = slug ? `${location.origin}/provider/${slug}/join` : location.origin + '/provider/[店舗URL]/join';
+        checkConnectStatus();
+        loadPlans();
+        loadSettings();
+        loadApplications();
+      }
+      document.querySelectorAll('[data-tab="memberships"]').forEach(btn => btn.addEventListener('click', loadAll, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'memberships') loadAll();
+    })();
+
     // ── 空き枠タブ（即時予約モード用・hacomono/STORES網羅計画 Phase 1） ─────
     (function setupSlots() {
       const token = getSupabaseToken();
@@ -6759,6 +6940,7 @@ export default function ProviderDashboardPage() {
                       （でお指摘2026-09-14）。 */}
                   <button className="tab-btn" data-tab="packages">回数券</button>
                   <button className="tab-btn" data-tab="lockers" data-feature="locker_rental">ロッカー管理<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="memberships" data-feature="membership_enrollment">入会手続き<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="sales" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="sales">売上管理</button>
@@ -8557,6 +8739,77 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="btn btn-ghost" id="lkr-contract-cancel-btn">キャンセル</button>
               </div>
             </form>
+          </div>
+        </div>
+
+        {/* 入会手続き（でお要望2026-09-15〜16：「お客様がジムなどの店舗に入会する手続きも
+            Fineme上でできるようにしたい」）。決済はStripe実装（Connect送金・カードのみ、
+            口座振替は日本未対応のためV1では非対応）。公開ページ側（/provider/[slug]/join）で
+            お客様が入力〜カード登録まで完結し、ここで店舗が最終承認する。 */}
+        <div className="tab-pane" id="tab-memberships">
+          <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>入会手続き</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                お客様が公開ページから入会申込〜カード登録までを完結できます。ここで内容を確認して承認すると、初回のお支払いが開始されます（決済は
+                <a href="/provider/billing" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>「課金・プラン」タブのStripe Connect</a>
+                の設定完了が必要です）。
+              </p>
+            </div>
+            <div id="mbr-connect-warning" style={{ display: 'none', padding: '12px 14px', background: '#fef2f2', color: '#b91c1c', borderRadius: '10px', fontSize: '13px' }}></div>
+            <p className="muted" style={{ fontSize: '12.5px', margin: 0 }}>
+              入会ページのURL：<code id="mbr-join-url"></code>
+              <button type="button" className="btn btn-ghost" id="mbr-copy-url-btn" style={{ fontSize: '11px', padding: '3px 8px', marginLeft: '8px' }}>コピー</button>
+            </p>
+          </div>
+
+          {/* プラン管理 */}
+          <div className="card stack" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
+            <h3 style={{ margin: 0, fontSize: '15px' }}>会員プラン</h3>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div className="form-field" style={{ marginBottom: 0, minWidth: '160px' }}><label>プラン名</label><input id="mbr-plan-name" placeholder="例：月4回プラン" /></div>
+              <div className="form-field" style={{ marginBottom: 0, minWidth: '120px' }}><label>月額（円）</label><input id="mbr-plan-price" type="number" min="1" placeholder="8000" /></div>
+              <div className="form-field" style={{ marginBottom: 0, minWidth: '160px' }}><label>説明（任意）</label><input id="mbr-plan-desc" placeholder="任意" /></div>
+              <button type="button" className="btn" id="mbr-plan-add-btn">追加する</button>
+            </div>
+            <div id="mbr-plan-list" className="stack" style={{ gap: '8px' }}>読み込み中…</div>
+          </div>
+
+          {/* 入会手続き設定（でお要望：各項目は店舗ごとにカスタマイズ可能に） */}
+          <div className="card stack" style={{ padding: '24px', gap: '14px', marginBottom: '16px' }}>
+            <h3 style={{ margin: 0, fontSize: '15px' }}>入会手続きの設定</h3>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+              <input type="checkbox" id="mbr-set-prorate" />初月を日割りにする（OFFの場合は承認日から満額で開始）
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+              <input type="checkbox" id="mbr-set-idreq" />本人確認書類（免許証・保険証・パスポート）を必須にする
+            </label>
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label>利用規約・同意書の内容（入会ページとお客様のマイページに表示されます）</label>
+              <textarea id="mbr-set-terms" style={{ width: '100%', minHeight: '140px', fontSize: '13px', padding: '10px', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="規約・同意書の文面を入力してください"></textarea>
+            </div>
+            <button type="button" className="btn" id="mbr-set-save-btn" style={{ width: 'fit-content' }}>設定を保存する</button>
+            <span id="mbr-set-msg" className="muted" style={{ fontSize: '12px' }}></span>
+          </div>
+
+          {/* 申込一覧 */}
+          <div className="card stack" style={{ padding: '24px', gap: '14px' }}>
+            <h3 style={{ margin: 0, fontSize: '15px' }}>入会申込一覧</h3>
+            <div id="mbr-app-list" className="stack" style={{ gap: '10px' }}>読み込み中…</div>
+          </div>
+
+          {/* 申込詳細（一覧から開く） */}
+          <div id="mbr-detail-card" className="card stack" style={{ padding: '24px', gap: '12px', marginTop: '16px', display: 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '15px' }}>申込詳細</h3>
+              <button type="button" className="btn btn-ghost" id="mbr-detail-close" style={{ fontSize: '12px' }}>閉じる</button>
+            </div>
+            <div id="mbr-detail-body" style={{ fontSize: '13px', lineHeight: '1.8' }}></div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" className="btn" id="mbr-detail-approve-btn">承認する（課金開始）</button>
+              <button type="button" className="btn btn-ghost" id="mbr-detail-reject-btn" style={{ color: '#ef4444' }}>却下する</button>
+            </div>
+            <span id="mbr-detail-msg" className="muted" style={{ fontSize: '12px' }}></span>
           </div>
         </div>
 
