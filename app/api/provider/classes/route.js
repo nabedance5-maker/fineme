@@ -42,13 +42,17 @@ export async function GET(request) {
   const instructorMap = {};
   (staffRowsRes.data || []).forEach(s => { instructorMap[s.id] = s; });
 
-  return Response.json(classes.map(c => ({
-    ...c,
-    enrolledCount: counts[c.id]?.active || 0,
-    waitlistedCount: counts[c.id]?.waitlisted || 0,
-    instructor_name: c.instructor_staff_id ? instructorMap[c.instructor_staff_id]?.name || null : null,
-    instructor_photo_url: c.instructor_staff_id ? instructorMap[c.instructor_staff_id]?.photo_url || null : null,
-  })));
+  return Response.json(classes.map(c => {
+    const enrolledCount = counts[c.id]?.active || 0;
+    return {
+      ...c,
+      enrolledCount,
+      waitlistedCount: counts[c.id]?.waitlisted || 0,
+      remaining: c.capacity != null ? Math.max(0, c.capacity - enrolledCount) : null,
+      instructor_name: c.instructor_staff_id ? instructorMap[c.instructor_staff_id]?.name || null : null,
+      instructor_photo_url: c.instructor_staff_id ? instructorMap[c.instructor_staff_id]?.photo_url || null : null,
+    };
+  }));
 }
 
 export async function POST(request) {
@@ -58,7 +62,7 @@ export async function POST(request) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
-  const { name, description, capacity, level_labels, instructor_staff_id } = body;
+  const { name, description, capacity, level_labels, instructor_staff_id, price } = body;
   if (!name?.trim()) return Response.json({ error: 'クラス名は必須です' }, { status: 400 });
 
   const { data, error } = await supabase
@@ -70,6 +74,7 @@ export async function POST(request) {
       capacity: Number.isFinite(Number(capacity)) && capacity !== '' ? Number(capacity) : null,
       level_labels: Array.isArray(level_labels) ? level_labels : [],
       instructor_staff_id: instructor_staff_id || null,
+      price: Number.isFinite(Number(price)) && price !== '' ? Number(price) : null,
     })
     .select()
     .single();

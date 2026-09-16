@@ -1661,7 +1661,7 @@ export default function ProviderDashboardPage() {
           <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--color-bg);border-radius:10px;flex-wrap:wrap" data-cls-row="${c.id}">
             <div style="flex:1;min-width:0">
               <strong style="font-size:14px">${esc(c.name)}</strong>
-              <span class="muted" style="font-size:12px;margin-left:8px">${c.enrolledCount}名${c.capacity ? `／定員${c.capacity}名` : ''}${c.waitlistedCount ? `（待機${c.waitlistedCount}名）` : ''}</span>
+              <span class="muted" style="font-size:12px;margin-left:8px">${c.enrolledCount}名${c.capacity ? `／定員${c.capacity}名／残り${c.remaining}名` : ''}${c.waitlistedCount ? `（待機${c.waitlistedCount}名）` : ''}${c.price != null ? `／¥${Number(c.price).toLocaleString()}` : ''}</span>
             </div>
             <button type="button" class="btn" style="font-size:12px;padding:5px 10px" data-cls-sessions="${c.id}">📅 予約枠を管理</button>
             <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-cls-roster="${c.id}">名簿・進級</button>
@@ -1676,6 +1676,7 @@ export default function ProviderDashboardPage() {
           editForm.elements['name'].value = c.name || '';
           editForm.elements['description'].value = c.description || '';
           editForm.elements['capacity'].value = c.capacity || '';
+          editForm.elements['price'].value = c.price ?? '';
           if (editForm.elements['instructor_staff_id']) editForm.elements['instructor_staff_id'].value = c.instructor_staff_id || '';
           editForm.elements['level_labels'].value = (c.level_labels || []).join(',');
           editCard.scrollIntoView({ behavior: 'smooth' });
@@ -1703,6 +1704,7 @@ export default function ProviderDashboardPage() {
           name: fd.get('name'),
           description: fd.get('description'),
           capacity: fd.get('capacity'),
+          price: fd.get('price'),
           instructor_staff_id: fd.get('instructor_staff_id') || null,
           level_labels: String(fd.get('level_labels') || '').split(',').map(s => s.trim()).filter(Boolean),
         };
@@ -1921,7 +1923,7 @@ export default function ProviderDashboardPage() {
                 <span class="muted" style="font-size:12px">${c.instructor_name ? esc(c.instructor_name) + '講師' : '講師未設定'}</span>
               </div>
             </div>
-            <span class="muted" style="font-size:12px">${c.enrolledCount}名在籍${c.capacity ? `／定員${c.capacity}名` : ''}</span>
+            <span class="muted" style="font-size:12px">${c.enrolledCount}名在籍${c.capacity ? `／定員${c.capacity}名／残り${c.remaining}名` : ''}${c.price != null ? `／¥${Number(c.price).toLocaleString()}` : ''}</span>
             <button type="button" class="btn" style="font-size:12px;padding:6px 12px" data-gl-detail="${c.id}">詳細を見る</button>
           </div>
         `).join('');
@@ -1937,7 +1939,8 @@ export default function ProviderDashboardPage() {
         detailBodyEl.innerHTML = `
           ${c.instructor_name ? `<div>担当講師：${esc(c.instructor_name)}</div>` : ''}
           ${c.description ? `<div class="muted">${esc(c.description)}</div>` : ''}
-          <div>在籍：${c.enrolledCount}名${c.capacity ? `／定員${c.capacity}名` : ''}${c.waitlistedCount ? `（待機${c.waitlistedCount}名）` : ''}</div>
+          <div>在籍：${c.enrolledCount}名${c.capacity ? `／定員${c.capacity}名／残り${c.remaining}名` : ''}${c.waitlistedCount ? `（待機${c.waitlistedCount}名）` : ''}</div>
+          ${c.price != null ? `<div>金額：¥${Number(c.price).toLocaleString()}</div>` : ''}
         `;
         sessionListEl.innerHTML = '読み込み中…';
         const res = await fetch(`/api/provider/classes/${classId}/sessions`, { headers: authH() });
@@ -8168,6 +8171,7 @@ export default function ProviderDashboardPage() {
                 <div className="form-field"><label>クラス名 *</label><input name="name" required /></div>
                 <div className="form-field"><label>説明</label><input name="description" placeholder="任意" /></div>
                 <div className="form-field"><label>定員</label><input name="capacity" type="number" min="1" placeholder="任意（空欄なら無制限）" /></div>
+                <div className="form-field"><label>金額（円・任意）</label><input name="price" type="number" min="0" placeholder="例：3000" /></div>
                 <div className="form-field"><label>担当講師（任意）</label><select name="instructor_staff_id"><option value="">未設定</option></select></div>
                 <div className="form-field"><label>進級の段階（カンマ区切り。例：白帯,黄帯,緑帯,黒帯）</label><input name="level_labels" placeholder="任意" /></div>
                 <div style={{ display: 'flex', gap: '8px' }}>
