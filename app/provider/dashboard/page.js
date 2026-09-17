@@ -277,6 +277,12 @@ export default function ProviderDashboardPage() {
       if (pane) pane.classList.add('active');
     }
     document.querySelectorAll('.tab-btn').forEach(btn => {
+      // ログアウトボタンなど、実際のタブに対応しない.tab-btn（見た目を揃えるために
+      // 同じクラスを使っているだけ）はこの共通ハンドラの対象外にする（でお報告
+      // 2026-09-17：「ログアウト押したらprovider/dashboard?tab=undefinedに飛ぶ」。
+      // data-tab属性が無いボタンでswitchTab(undefined)が走り、URLが?tab=undefinedに
+      // 書き換わった上で全タブが非表示になっていたのが実際の原因）。
+      if (!btn.dataset.tab) return;
       btn.addEventListener('click', () => {
         switchTab(btn.dataset.tab);
         closeMobileNav();
@@ -442,15 +448,13 @@ export default function ProviderDashboardPage() {
     document.addEventListener('visibilitychange', onVisible);
 
     // ログアウト（でお要望2026-09-15：「ログアウトボタンを押したら、掲載者管理画面への
-    // ログイン画面に戻るようにして」）。signOut()はSupabaseへのネットワーク通信を伴い、
-    // モバイル回線が不安定だとawaitがなかなか返らず「ボタンを押しても何も起きない・
-    // 違う画面に飛ぶ」ように見えることがある（このダッシュボードは既知のネットワーク
-    // 瞬断問題を抱えている——Sentry誤検知抑制のコメント参照）。3秒でタイムアウトさせ、
-    // signOut自体が終わらなくても必ず掲載者向けログイン画面へ遷移させる。
+    // ログイン画面に戻るようにして」）。confirm()ダイアログは、環境によって黙って
+    // falseを返す・表示されないケースがあり（でお報告2026-09-17：ログアウトを押しても
+    // 画面が変わらずURLに?tab=undefinedが付くだけになる不具合の実際の原因の1つだった）、
+    // ログアウトはやり直しがきく操作なので確認ダイアログ自体を廃止する。signOut()は
+    // ネットワーク通信を伴い、回線が不安定だとawaitが長引くことがあるため3秒で
+    // タイムアウトし、signOut自体が終わらなくても必ず掲載者向けログイン画面へ遷移させる。
     document.getElementById('pd-logout-btn')?.addEventListener('click', async () => {
-      let confirmed = true;
-      try { confirmed = confirm('ログアウトしますか？'); } catch { confirmed = true; }
-      if (!confirmed) return;
       try {
         await Promise.race([
           _sb.auth.signOut(),
