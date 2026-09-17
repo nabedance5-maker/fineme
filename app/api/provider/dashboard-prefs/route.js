@@ -61,6 +61,12 @@ export async function PATCH(request) {
       shortcuts.every(k => HEADER_SHORTCUT_OPTIONS.some(o => o.key === k));
     if (valid) updates.header_shortcuts = shortcuts;
   }
+  if ('calendar_column_order' in body) {
+    const order = body.calendar_column_order;
+    const valid = Array.isArray(order) && order.length <= 200 &&
+      order.every(k => typeof k === 'string' && (k.startsWith('staff:') || k.startsWith('resource:')));
+    if (valid) updates.calendar_column_order = order;
+  }
 
   if (!Object.keys(updates).length) {
     return Response.json({ error: '更新する設定を指定してください' }, { status: 400 });

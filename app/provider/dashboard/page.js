@@ -5919,8 +5919,23 @@ export default function ProviderDashboardPage() {
       function classColumns() {
         return classList.map(c => ({ key: 'cls_' + c.id, id: c.id, name: c.name, groupKey: 'class_id' }));
       }
+      // 「スタッフ×部屋」合体ビューの列の並び順を自由に変更できるように（でお要望
+      // 2026-09-17：「まとまってるところの順番を自由に変えられるように。部屋が先に
+      // 表示できるとか」）。店舗ごとの並び順設定（dashboardPrefs.calendar_column_order、
+      // "staff:<id>"/"resource:<id>"のトークン配列）があればそれに従い、無い列は
+      // 元の並び（スタッフ→部屋）のまま末尾に追加する。
+      function columnToken(col) { return `${col.groupKey === 'staff_id' ? 'staff' : 'resource'}:${col.id || 'unassigned'}`; }
+      function applySavedColumnOrder(columns) {
+        const order = dashboardPrefs?.calendar_column_order;
+        if (!order || !order.length) return columns;
+        const rank = new Map(order.map((t, i) => [t, i]));
+        return columns
+          .map((col, i) => ({ col, r: rank.has(columnToken(col)) ? rank.get(columnToken(col)) : order.length + i }))
+          .sort((a, b) => a.r - b.r)
+          .map(x => x.col);
+      }
       function currentColumns() {
-        if (viewMode === 'combined') return [...staffColumns(), ...resourceColumns()];
+        if (viewMode === 'combined') return applySavedColumnOrder([...staffColumns(), ...resourceColumns()]);
         if (viewMode === 'resource') return resourceColumns();
         if (viewMode === 'class') return classColumns();
         return staffColumns();
@@ -6146,6 +6161,7 @@ export default function ProviderDashboardPage() {
             <button type="button" class="btn ${viewMode === 'combined' ? '' : 'btn-ghost'}" data-cal-view="combined" style="font-size:12px;padding:6px 12px">スタッフ×部屋</button>
             <button type="button" class="btn ${viewMode === 'staff' ? '' : 'btn-ghost'}" data-cal-view="staff" style="font-size:12px;padding:6px 12px">スタッフ別</button>
             <button type="button" class="btn ${viewMode === 'resource' ? '' : 'btn-ghost'}" data-cal-view="resource" style="font-size:12px;padding:6px 12px">部屋別</button>
+            <button type="button" class="btn btn-ghost" id="cal-column-order-btn" style="font-size:12px;padding:6px 12px">列の並び順</button>
           ` : (hasClasses ? `<button type="button" class="btn ${viewMode !== 'class' ? '' : 'btn-ghost'}" data-cal-view="staff" style="font-size:12px;padding:6px 12px">予約カレンダー</button>` : '')}
           ${hasClasses ? `<button type="button" class="btn ${viewMode === 'class' ? '' : 'btn-ghost'}" data-cal-view="class" style="font-size:12px;padding:6px 12px">グループレッスン</button>` : ''}
         `;
@@ -6155,7 +6171,55 @@ export default function ProviderDashboardPage() {
           renderViewToggle();
           renderDesktopGrid();
         }));
+        document.getElementById('cal-column-order-btn')?.addEventListener('click', openColumnOrderModal);
       }
+
+      // 「スタッフ×部屋」列の並び替え（でお要望2026-09-17）。その場で使う設定なので、
+      // カレンダー画面から直接開けるようにする（別タブに置いて遠回りさせない）。
+      const columnOrderModalEl = document.getElementById('cal-column-order-modal');
+      const columnOrderListEl = document.getElementById('cal-column-order-list');
+      let columnOrderDraft = [];
+      function renderColumnOrderList() {
+        if (!columnOrderListEl) return;
+        columnOrderListEl.innerHTML = columnOrderDraft.map((col, i) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--color-bg);border-radius:8px;margin-bottom:6px">
+            <span style="flex:1;font-size:13px;font-weight:600">${esc(col.name)}${col.groupKey === 'resource_id' ? '<span class="muted" style="font-size:11px;margin-left:6px">部屋</span>' : '<span class="muted" style="font-size:11px;margin-left:6px">スタッフ</span>'}</span>
+            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-col-up="${i}"${i === 0 ? ' disabled' : ''}>↑</button>
+            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-col-down="${i}"${i === columnOrderDraft.length - 1 ? ' disabled' : ''}>↓</button>
+          </div>
+        `).join('');
+        columnOrderListEl.querySelectorAll('[data-col-up]').forEach(btn => btn.addEventListener('click', () => {
+          const i = Number(btn.dataset.colUp);
+          [columnOrderDraft[i - 1], columnOrderDraft[i]] = [columnOrderDraft[i], columnOrderDraft[i - 1]];
+          renderColumnOrderList();
+        }));
+        columnOrderListEl.querySelectorAll('[data-col-down]').forEach(btn => btn.addEventListener('click', () => {
+          const i = Number(btn.dataset.colDown);
+          [columnOrderDraft[i + 1], columnOrderDraft[i]] = [columnOrderDraft[i], columnOrderDraft[i + 1]];
+          renderColumnOrderList();
+        }));
+      }
+      function openColumnOrderModal() {
+        if (!columnOrderModalEl) return;
+        columnOrderDraft = applySavedColumnOrder([...staffColumns(), ...resourceColumns()]);
+        renderColumnOrderList();
+        columnOrderModalEl.style.display = 'flex';
+      }
+      document.getElementById('cal-column-order-close')?.addEventListener('click', () => { if (columnOrderModalEl) columnOrderModalEl.style.display = 'none'; });
+      columnOrderModalEl?.addEventListener('click', (e) => { if (e.target === columnOrderModalEl) columnOrderModalEl.style.display = 'none'; });
+      document.getElementById('cal-column-order-save')?.addEventListener('click', async () => {
+        const order = columnOrderDraft.map(columnToken);
+        const res = await fetch('/api/provider/dashboard-prefs', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersCal() },
+          body: JSON.stringify({ calendar_column_order: order }),
+        });
+        if (!res.ok) { showToast('保存に失敗しました'); return; }
+        const { prefs } = await res.json();
+        dashboardPrefs = prefs;
+        if (columnOrderModalEl) columnOrderModalEl.style.display = 'none';
+        showToast('列の並び順を保存しました');
+        renderDay();
+      });
 
       function renderAgendaInto(container, items) {
         if (!items.length) { container.innerHTML = '<p class="muted" style="font-size:13px">この日の予約はありません。</p>'; return; }
@@ -7842,6 +7906,20 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn btn-ghost" id="cal-cs-delete" style={{ fontSize: '12.5px', padding: '7px 14px', color: '#ef4444' }}>削除</button>
             </div>
             <p id="cal-cs-msg" className="muted" style={{ fontSize: '12px', margin: '8px 0 0' }}></p>
+          </div>
+        </div>
+
+        {/* 「スタッフ×部屋」列の並び替え（でお要望2026-09-17：「まとまってるところの
+            順番を自由に変えられるように。部屋が先に表示できるとか」） */}
+        <div id="cal-column-order-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
+          <div className="cal-modal-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h3 style={{ margin: 0, fontSize: '15px' }}>列の並び順</h3>
+              <button type="button" className="btn btn-ghost" id="cal-column-order-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
+            </div>
+            <p className="muted" style={{ fontSize: '12.5px', margin: '0 0 12px' }}>「スタッフ×部屋」表示での列の並び順を変更できます。矢印で入れ替えてください。</p>
+            <div id="cal-column-order-list"></div>
+            <button type="button" className="btn" id="cal-column-order-save" style={{ marginTop: '10px' }}>この並び順で保存する</button>
           </div>
         </div>
 
