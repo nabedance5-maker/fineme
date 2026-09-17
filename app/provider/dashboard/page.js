@@ -3056,6 +3056,17 @@ export default function ProviderDashboardPage() {
           if (kfLabelInput) kfLabelInput.value = '';
           if (kfOptionsInput) kfOptionsInput.value = '';
           await loadFields();
+          // 開いたままの「カルテを書く」フォームに新しい項目をその場で反映する
+          // （でお要望2026-09-17：「カルテ内で追加ボタンをつけて使いたい時すぐ使えるように」。
+          // 一度モーダルを閉じ直さなくても、追加した項目がすぐ入力できるようにする）。
+          if (custModalAddForm) {
+            custModalAddForm.dataset.built = '';
+            if (custModalAddForm.style.display !== 'none' && currentCustUid) {
+              custModalAddForm.style.display = 'none';
+              custModalAddToggle?.click();
+            }
+          }
+          if (custModalManualAddForm?.dataset.built) custModalManualAddForm.dataset.built = '';
           showToast('項目を追加しました');
         } finally {
           kfAddBtn.disabled = false;
@@ -3299,6 +3310,14 @@ export default function ProviderDashboardPage() {
       const custModalAssignSel = document.getElementById('cust-modal-assign-select');
       const custModalNoteTa = document.getElementById('cust-modal-note-textarea');
       const custModalNoteSaveBtn = document.getElementById('cust-modal-note-save-btn');
+      const custModalKfManageToggle = document.getElementById('cust-modal-kf-manage-toggle');
+      const custModalKfManageEl = document.getElementById('cust-modal-kf-manage');
+      custModalKfManageToggle?.addEventListener('click', () => {
+        if (!custModalKfManageEl) return;
+        const show = custModalKfManageEl.style.display === 'none';
+        custModalKfManageEl.style.display = show ? 'block' : 'none';
+        if (show) renderFieldsPanel();
+      });
       const custModalAddToggle = document.getElementById('cust-modal-add-toggle');
       const custModalAddForm = document.getElementById('cust-modal-add-form');
       const custModalHistoryToggle = document.getElementById('cust-modal-history-toggle');
@@ -8823,42 +8842,6 @@ export default function ProviderDashboardPage() {
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
           </div>
 
-          <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px', marginTop: '16px' }}>
-            <div>
-              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>カルテ項目を設定</h2>
-              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-                自由記述・選択肢・5段階評価・数値・日付・チェックボックスから、貴店で欲しい項目（例：気をつける点・特徴・癖など）を自由に追加できます。項目は貴店だけに表示され、お客様には見えません。
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-              <div className="form-field" style={{ minWidth: '160px' }}>
-                <label>項目名</label>
-                <input id="kf-label" type="text" placeholder="例：癖・注意点" />
-              </div>
-              <div className="form-field" style={{ minWidth: '140px' }}>
-                <label>種類</label>
-                <select id="kf-type">
-                  <option value="text">自由記述</option>
-                  <option value="select">選択肢（単一選択）</option>
-                  <option value="multiselect">選択肢（複数選択）</option>
-                  <option value="stars">5段階評価</option>
-                  <option value="rating10">10段階評価</option>
-                  <option value="number">数値</option>
-                  <option value="date">日付</option>
-                  <option value="time">時刻</option>
-                  <option value="url">リンク（URL）</option>
-                  <option value="checkbox">チェックボックス</option>
-                </select>
-              </div>
-              <div className="form-field" id="kf-options-wrap" style={{ minWidth: '220px', display: 'none' }}>
-                <label>選択肢（カンマ区切り）</label>
-                <input id="kf-options" type="text" placeholder="例：右巻き,左巻き,直毛" />
-              </div>
-              <button className="btn" id="kf-add-btn" type="button">追加する</button>
-            </div>
-            <div id="kf-list"></div>
-          </div>
-
           <div className="card" style={{ padding: '24px' }}>
             <div style={{ marginBottom: '12px' }}>
               <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>非会員のお客様を追加</h2>
@@ -8893,6 +8876,45 @@ export default function ProviderDashboardPage() {
             <div id="cust-modal-badges" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '4px 0 8px' }}></div>
             <p id="cust-modal-info" className="muted" style={{ fontSize: '12px', margin: '0 0 10px' }}></p>
 
+            {/* カルテ項目の管理（でお指摘2026-09-17：「顧客情報の中にカルテ書くところ
+                ないやんけ！」「カルテ項目を設定っていう場所いる？各顧客のカルテ内に
+                追加ボタンをつけて使いたい時すぐ使えるようにしとけば良くない？」）。
+                項目の追加・並び替え・削除を、別タブではなくこのカルテを書く画面自体から
+                その場でできるようにする。項目定義は全顧客共通（店舗全体の設定）のため、
+                会員・非会員どちらのセクションからも同じ管理パネルを開ける。 */}
+            <div style={{ marginBottom: '10px' }}>
+              <button type="button" className="btn btn-ghost" id="cust-modal-kf-manage-toggle" style={{ fontSize: '11.5px', padding: '4px 10px' }}>カルテ項目を管理</button>
+              <div id="cust-modal-kf-manage" style={{ display: 'none', marginTop: '8px', padding: '12px', background: 'var(--color-bg)', borderRadius: '10px' }}>
+                <div id="kf-list"></div>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'flex-end', marginTop: '8px' }}>
+                  <div className="form-field" style={{ marginBottom: 0, minWidth: '130px' }}>
+                    <label style={{ fontSize: '11px' }}>項目名</label>
+                    <input id="kf-label" type="text" placeholder="例：癖・注意点" style={{ fontSize: '12.5px' }} />
+                  </div>
+                  <div className="form-field" style={{ marginBottom: 0, minWidth: '120px' }}>
+                    <label style={{ fontSize: '11px' }}>種類</label>
+                    <select id="kf-type" style={{ fontSize: '12.5px' }}>
+                      <option value="text">自由記述</option>
+                      <option value="select">選択肢（単一選択）</option>
+                      <option value="multiselect">選択肢（複数選択）</option>
+                      <option value="stars">5段階評価</option>
+                      <option value="rating10">10段階評価</option>
+                      <option value="number">数値</option>
+                      <option value="date">日付</option>
+                      <option value="time">時刻</option>
+                      <option value="url">リンク（URL）</option>
+                      <option value="checkbox">チェックボックス</option>
+                    </select>
+                  </div>
+                  <div className="form-field" id="kf-options-wrap" style={{ marginBottom: 0, minWidth: '160px', display: 'none' }}>
+                    <label style={{ fontSize: '11px' }}>選択肢（カンマ区切り）</label>
+                    <input id="kf-options" type="text" placeholder="例：右巻き,左巻き,直毛" style={{ fontSize: '12.5px' }} />
+                  </div>
+                  <button className="btn" id="kf-add-btn" type="button" style={{ fontSize: '12px', padding: '6px 12px' }}>＋ 項目を追加</button>
+                </div>
+              </div>
+            </div>
+
             {/* 会員（New Me Log紐づき）用セクション */}
             <div id="cust-modal-member-section">
               <div className="cluster" style={{ gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
@@ -8903,9 +8925,9 @@ export default function ProviderDashboardPage() {
               <textarea id="cust-modal-note-textarea" style={{ width: '100%', minHeight: '60px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="読み込み中…" disabled></textarea>
               <button type="button" className="btn" id="cust-modal-note-save-btn" style={{ fontSize: '12px', padding: '5px 10px', marginTop: '6px' }} disabled>保存する</button>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
-                <button type="button" className="btn btn-ghost" id="cust-modal-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>＋ 来店記録を追加</button>
-                <button type="button" className="btn btn-ghost" id="cust-modal-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>記録を見る</button>
-                <button type="button" className="btn btn-ghost" id="cust-modal-insight-btn" style={{ fontSize: '12px', padding: '5px 10px' }}>🤖 AIに傾向を聞く</button>
+                <button type="button" className="btn btn-ghost" id="cust-modal-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>＋ カルテを書く</button>
+                <button type="button" className="btn btn-ghost" id="cust-modal-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>カルテを見る</button>
+                <button type="button" className="btn btn-ghost" id="cust-modal-insight-btn" style={{ fontSize: '12px', padding: '5px 10px' }}>AIに傾向を聞く</button>
               </div>
               <div id="cust-modal-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
               <div id="cust-modal-history" style={{ display: 'none', marginTop: '10px' }}></div>
@@ -8924,8 +8946,8 @@ export default function ProviderDashboardPage() {
               <textarea id="cust-modal-manual-memo-textarea" style={{ width: '100%', minHeight: '60px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="要望・使った薬剤・注意点など"></textarea>
               <button type="button" className="btn" id="cust-modal-manual-save-btn" style={{ fontSize: '12px', padding: '5px 10px', marginTop: '6px' }}>保存する</button>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
-                <button type="button" className="btn btn-ghost" id="cust-modal-manual-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>＋ 来店記録を追加</button>
-                <button type="button" className="btn btn-ghost" id="cust-modal-manual-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>記録を見る</button>
+                <button type="button" className="btn btn-ghost" id="cust-modal-manual-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>＋ カルテを書く</button>
+                <button type="button" className="btn btn-ghost" id="cust-modal-manual-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>カルテを見る</button>
               </div>
               <div id="cust-modal-manual-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
               <div id="cust-modal-manual-history" style={{ display: 'none', marginTop: '10px' }}></div>
