@@ -2941,12 +2941,6 @@ export default function ProviderDashboardPage() {
       const filterSel = document.getElementById('customers-filter');
       const sortSel = document.getElementById('customers-sort');
       const searchInput = document.getElementById('karte-search');
-      const kfListEl = document.getElementById('kf-list');
-      const kfLabelInput = document.getElementById('kf-label');
-      const kfTypeSel = document.getElementById('kf-type');
-      const kfOptionsWrap = document.getElementById('kf-options-wrap');
-      const kfOptionsInput = document.getElementById('kf-options');
-      const kfAddBtn = document.getElementById('kf-add-btn');
       if (!listEl) return;
 
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -2995,27 +2989,13 @@ export default function ProviderDashboardPage() {
       }
 
       // ── カルテ項目（カスタムフィールド）の管理 ──
-      function renderFieldsPanel() {
-        if (!kfListEl) return;
-        if (!karteFields.length) { kfListEl.innerHTML = '<p class="muted" style="font-size:13px;">まだ項目がありません。下のフォームから追加してください。</p>'; return; }
-        kfListEl.innerHTML = karteFields.map((f, i) => `
-          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f3f4f6;">
-            <span style="flex:1;font-size:13px;">${esc(f.label)}${(f.field_type === 'select' || f.field_type === 'multiselect') ? `<span class="muted" style="font-size:11px;"> (${(f.options || []).map(esc).join('・')})</span>` : ''}</span>
-            <span style="font-size:11px;padding:2px 8px;background:#f3f4f6;border-radius:99px;">${FIELD_TYPE_LABEL[f.field_type] || f.field_type}</span>
-            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;" data-kf-up="${f.id}"${i === 0 ? ' disabled' : ''}>↑</button>
-            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;" data-kf-down="${f.id}"${i === karteFields.length - 1 ? ' disabled' : ''}>↓</button>
-            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;color:#ef4444;" data-kf-del="${f.id}">削除</button>
-          </div>`).join('');
-
-        kfListEl.querySelectorAll('[data-kf-del]').forEach(btn => btn.addEventListener('click', async () => {
-          if (!confirm('この項目を削除しますか？（過去の記録に入力済みの値は残ります）')) return;
-          await fetch(`/api/provider/karte-fields/${btn.dataset.kfDel}`, { method: 'DELETE', headers: authHeaders() });
-          await loadFields();
-        }));
-        kfListEl.querySelectorAll('[data-kf-up]').forEach(btn => btn.addEventListener('click', () => swapFieldOrder(btn.dataset.kfUp, -1)));
-        kfListEl.querySelectorAll('[data-kf-down]').forEach(btn => btn.addEventListener('click', () => swapFieldOrder(btn.dataset.kfDown, 1)));
-      }
-
+      // でお指摘2026-09-17：「カルテ項目を管理っていうやつのフローがクソだるい。カルテを
+      // 書くの中で、追加するボタンをつけてどの項目を追加するか選択したらそれがそこの
+      // カルテに出てくるっていうフローの方がシンプルでわかりやすいに決まってんだろ」。
+      // 以前は「項目を追加」専用の別パネルを別途開く2段階のフローだったが、それをやめ、
+      // カルテを書くフォームそのものの中に、各項目の並び替え・削除ボタンと「＋項目を追加」
+      // ボタンを直接埋め込む（下のrenderKarteFieldRow/renderAddFormHtml/
+      // bindKarteFieldControlsが実体）。項目定義自体は店舗全体で共有（1顧客専用ではない）。
       async function swapFieldOrder(id, dir) {
         const idx = karteFields.findIndex(f => f.id === id);
         const otherIdx = idx + dir;
@@ -3031,52 +3011,7 @@ export default function ProviderDashboardPage() {
       async function loadFields() {
         const res = await fetch('/api/provider/karte-fields', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
         karteFields = res.ok ? await res.json() : [];
-        renderFieldsPanel();
-        // 項目の追加・編集・削除のたびに呼ばれるため、既に開かれたお客様の「来店記録を追加」
-        // フォームは古い項目セットでキャッシュされたままになる。次に開いた時に最新の項目で
-        // 組み立て直させる（でお報告：項目を追加しても下のお客様側で使えるようにならなかった）。
-        listEl.querySelectorAll('.karte-add-form').forEach(box => {
-          box.dataset.built = '';
-          box.style.display = 'none';
-        });
       }
-
-      if (kfTypeSel) kfTypeSel.addEventListener('change', () => {
-        if (kfOptionsWrap) kfOptionsWrap.style.display = (kfTypeSel.value === 'select' || kfTypeSel.value === 'multiselect') ? '' : 'none';
-      });
-
-      if (kfAddBtn) kfAddBtn.addEventListener('click', async () => {
-        const label = kfLabelInput?.value.trim();
-        const field_type = kfTypeSel?.value;
-        if (!label) { showToast('項目名を入力してください'); return; }
-        let options;
-        if (field_type === 'select' || field_type === 'multiselect') {
-          options = (kfOptionsInput?.value || '').split(',').map(s => s.trim()).filter(Boolean);
-          if (!options.length) { showToast('選択肢を入力してください'); return; }
-        }
-        kfAddBtn.disabled = true;
-        try {
-          const res = await fetch('/api/provider/karte-fields', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ label, field_type, options }) });
-          if (!res.ok) { const d = await res.json().catch(() => ({})); showToast(d.error || '追加に失敗しました'); return; }
-          if (kfLabelInput) kfLabelInput.value = '';
-          if (kfOptionsInput) kfOptionsInput.value = '';
-          await loadFields();
-          // 開いたままの「カルテを書く」フォームに新しい項目をその場で反映する
-          // （でお要望2026-09-17：「カルテ内で追加ボタンをつけて使いたい時すぐ使えるように」。
-          // 一度モーダルを閉じ直さなくても、追加した項目がすぐ入力できるようにする）。
-          if (custModalAddForm) {
-            custModalAddForm.dataset.built = '';
-            if (custModalAddForm.style.display !== 'none' && currentCustUid) {
-              custModalAddForm.style.display = 'none';
-              custModalAddToggle?.click();
-            }
-          }
-          if (custModalManualAddForm?.dataset.built) custModalManualAddForm.dataset.built = '';
-          showToast('項目を追加しました');
-        } finally {
-          kfAddBtn.disabled = false;
-        }
-      });
 
       // ── 来店記録の追加フォーム（カスタム項目をtype別にレンダリング）──
       function renderFieldInputHtml(f) {
@@ -3114,8 +3049,35 @@ export default function ProviderDashboardPage() {
         return `<div class="form-field"><label>${esc(f.label)}</label><input type="text" data-kv="${f.id}" /></div>`;
       }
 
+      // 各項目の入力欄に、並び替え・削除の小さなコントロールを添えて1行にする。
+      function renderKarteFieldRow(f, idx, total) {
+        const widget = renderFieldInputHtml(f);
+        return `
+          <div style="display:flex;align-items:flex-start;gap:4px;margin-bottom:6px" data-kf-block="${f.id}">
+            <div style="flex:1;min-width:0">${widget}</div>
+            <div style="display:flex;gap:2px;flex-shrink:0;padding-top:4px">
+              <button type="button" class="btn btn-ghost" style="font-size:10px;padding:3px 6px" data-kf-block-up="${f.id}"${idx === 0 ? ' disabled' : ''}>↑</button>
+              <button type="button" class="btn btn-ghost" style="font-size:10px;padding:3px 6px" data-kf-block-down="${f.id}"${idx === total - 1 ? ' disabled' : ''}>↓</button>
+              <button type="button" class="btn btn-ghost" style="font-size:10px;padding:3px 6px;color:#ef4444" data-kf-block-del="${f.id}">×</button>
+            </div>
+          </div>`;
+      }
+
+      const KF_TYPE_OPTIONS_HTML = `
+        <option value="text">自由記述</option>
+        <option value="select">選択肢（単一選択）</option>
+        <option value="multiselect">選択肢（複数選択）</option>
+        <option value="stars">5段階評価</option>
+        <option value="rating10">10段階評価</option>
+        <option value="number">数値</option>
+        <option value="date">日付</option>
+        <option value="time">時刻</option>
+        <option value="url">リンク（URL）</option>
+        <option value="checkbox">チェックボックス</option>
+      `;
+
       function renderAddFormHtml(uid) {
-        const fieldsHtml = karteFields.map(renderFieldInputHtml).join('');
+        const fieldsHtml = karteFields.map((f, i) => renderKarteFieldRow(f, i, karteFields.length)).join('');
         const menuOptions = providerMenus.map(m => `<option value="${esc(m.name)}">${esc(m.name)}</option>`).join('');
         const menuHtml = providerMenus.length
           ? `<div class="form-field"><label>利用メニュー</label><select data-karte-entry-menu="${uid}"><option value="">（選択しない）</option>${menuOptions}</select></div>`
@@ -3123,10 +3085,68 @@ export default function ProviderDashboardPage() {
         return `
           <div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;background:#fafafa;">
             ${menuHtml}
-            ${fieldsHtml || '<p class="muted" style="font-size:12px;margin:0 0 8px;">カスタム項目は未設定です（上の「カルテ項目を設定」から追加できます）。</p>'}
+            <div data-kf-fields-wrap>${fieldsHtml || '<p class="muted" style="font-size:12px;margin:0 0 8px;">まだカルテ項目がありません。下の「＋ 項目を追加」から作成できます。</p>'}</div>
+            <div style="margin:4px 0 12px">
+              <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-kf-inline-add-toggle>＋ 項目を追加</button>
+              <div data-kf-inline-add-form style="display:none;margin-top:8px;padding:10px;background:#f3f4f6;border-radius:8px">
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
+                  <div class="form-field" style="margin-bottom:0;min-width:120px"><label style="font-size:11px">項目名</label><input type="text" data-kf-inline-label placeholder="例：癖・注意点" style="font-size:12.5px" /></div>
+                  <div class="form-field" style="margin-bottom:0;min-width:120px"><label style="font-size:11px">種類</label><select data-kf-inline-type style="font-size:12.5px">${KF_TYPE_OPTIONS_HTML}</select></div>
+                  <div class="form-field" data-kf-inline-options-wrap style="margin-bottom:0;min-width:150px;display:none"><label style="font-size:11px">選択肢（カンマ区切り）</label><input type="text" data-kf-inline-options placeholder="例：右巻き,左巻き,直毛" style="font-size:12.5px" /></div>
+                  <button type="button" class="btn" style="font-size:12px;padding:6px 12px" data-kf-inline-save>追加してこの記録にも使う</button>
+                </div>
+              </div>
+            </div>
             <div class="form-field"><label>メモ</label><textarea data-karte-entry-note="${uid}" style="min-height:70px;"></textarea></div>
             <button type="button" class="btn" style="font-size:12px;padding:6px 12px;" data-karte-entry-save="${uid}">記録を保存する</button>
           </div>`;
+      }
+
+      // renderAddFormHtmlで作ったフォームの、項目の並び替え・削除・新規追加の操作を配線する。
+      // 操作のたびに項目セットが変わるため、フォーム全体を作り直して呼び出し側に渡された
+      // rebuild関数で再構築する（入力途中の値は失われるが、項目管理自体が頻繁な操作では
+      // ないため許容する）。
+      function bindKarteFieldControls(container, rebuild) {
+        container.querySelectorAll('[data-kf-block-up]').forEach(btn => btn.addEventListener('click', async () => { await swapFieldOrder(btn.dataset.kfBlockUp, -1); rebuild(); }));
+        container.querySelectorAll('[data-kf-block-down]').forEach(btn => btn.addEventListener('click', async () => { await swapFieldOrder(btn.dataset.kfBlockDown, 1); rebuild(); }));
+        container.querySelectorAll('[data-kf-block-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('この項目を削除しますか？（過去の記録に入力済みの値は残ります）')) return;
+          await fetch(`/api/provider/karte-fields/${btn.dataset.kfBlockDel}`, { method: 'DELETE', headers: authHeaders() });
+          await loadFields();
+          rebuild();
+        }));
+        const addToggleBtn = container.querySelector('[data-kf-inline-add-toggle]');
+        const addFormEl = container.querySelector('[data-kf-inline-add-form]');
+        addToggleBtn?.addEventListener('click', () => {
+          if (!addFormEl) return;
+          addFormEl.style.display = addFormEl.style.display === 'none' ? 'block' : 'none';
+        });
+        const typeSel = container.querySelector('[data-kf-inline-type]');
+        const optionsWrap = container.querySelector('[data-kf-inline-options-wrap]');
+        typeSel?.addEventListener('change', () => {
+          if (optionsWrap) optionsWrap.style.display = (typeSel.value === 'select' || typeSel.value === 'multiselect') ? '' : 'none';
+        });
+        container.querySelector('[data-kf-inline-save]')?.addEventListener('click', async (e) => {
+          const saveBtn = e.currentTarget;
+          const label = container.querySelector('[data-kf-inline-label]')?.value.trim();
+          const field_type = typeSel?.value;
+          if (!label) { showToast('項目名を入力してください'); return; }
+          let options;
+          if (field_type === 'select' || field_type === 'multiselect') {
+            options = (container.querySelector('[data-kf-inline-options]')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+            if (!options.length) { showToast('選択肢を入力してください'); return; }
+          }
+          saveBtn.disabled = true;
+          try {
+            const res = await fetch('/api/provider/karte-fields', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ label, field_type, options }) });
+            if (!res.ok) { const d = await res.json().catch(() => ({})); showToast(d.error || '追加に失敗しました'); return; }
+            await loadFields();
+            rebuild();
+            showToast('項目を追加しました。すぐ下に入力欄が出ています');
+          } finally {
+            saveBtn.disabled = false;
+          }
+        });
       }
 
       function bindStarWidgets(container) {
@@ -3315,14 +3335,6 @@ export default function ProviderDashboardPage() {
       const custModalAssignSel = document.getElementById('cust-modal-assign-select');
       const custModalNoteTa = document.getElementById('cust-modal-note-textarea');
       const custModalNoteSaveBtn = document.getElementById('cust-modal-note-save-btn');
-      const custModalKfManageToggle = document.getElementById('cust-modal-kf-manage-toggle');
-      const custModalKfManageEl = document.getElementById('cust-modal-kf-manage');
-      custModalKfManageToggle?.addEventListener('click', () => {
-        if (!custModalKfManageEl) return;
-        const show = custModalKfManageEl.style.display === 'none';
-        custModalKfManageEl.style.display = show ? 'block' : 'none';
-        if (show) renderFieldsPanel();
-      });
       const custModalAddToggle = document.getElementById('cust-modal-add-toggle');
       const custModalAddForm = document.getElementById('cust-modal-add-form');
       const custModalHistoryToggle = document.getElementById('cust-modal-history-toggle');
@@ -3571,34 +3583,40 @@ export default function ProviderDashboardPage() {
         }
       });
 
+      // カルテを書くフォームの構築・配線一式。項目の追加・並び替え・削除の直後にも
+      // 同じ関数でその場で作り直せるようにする（でお要望2026-09-17：項目を追加したら
+      // すぐそのカルテに出てくるように。フォームを閉じ直させない）。
+      function buildKarteEntryForm() {
+        custModalAddForm.innerHTML = renderAddFormHtml(currentCustUid);
+        custModalAddForm.dataset.built = '1';
+        bindStarWidgets(custModalAddForm);
+        bindKarteFieldControls(custModalAddForm, buildKarteEntryForm);
+        custModalAddForm.querySelector(`[data-karte-entry-save="${currentCustUid}"]`)?.addEventListener('click', async (e) => {
+          const saveBtn = e.currentTarget;
+          const noteEl = custModalAddForm.querySelector(`[data-karte-entry-note="${currentCustUid}"]`);
+          const menuEl = custModalAddForm.querySelector(`[data-karte-entry-menu="${currentCustUid}"]`);
+          saveBtn.disabled = true;
+          try {
+            const res = await fetch(`/api/provider/customers/${currentCustUid}/karte-entries`, {
+              method: 'POST', headers: authHeaders(),
+              body: JSON.stringify({ note: noteEl?.value || '', custom_values: collectCustomValues(custModalAddForm), menu_name: menuEl?.value || null }),
+            });
+            if (!res.ok) { const d = await res.json().catch(() => ({})); showToast(d.error || '保存に失敗しました'); return; }
+            showToast('記録を保存しました');
+            custModalAddForm.style.display = 'none';
+            custModalAddForm.dataset.built = '';
+            custModalHistoryEl.dataset.built = ''; // 次に開いた時に最新の履歴を取り直す
+          } finally {
+            saveBtn.disabled = false;
+          }
+        });
+      }
+
       custModalAddToggle?.addEventListener('click', () => {
         if (!currentCustUid) return;
         const opening = custModalAddForm.style.display === 'none';
         custModalAddForm.style.display = opening ? 'block' : 'none';
-        if (opening && !custModalAddForm.dataset.built) {
-          custModalAddForm.innerHTML = renderAddFormHtml(currentCustUid);
-          custModalAddForm.dataset.built = '1';
-          bindStarWidgets(custModalAddForm);
-          custModalAddForm.querySelector(`[data-karte-entry-save="${currentCustUid}"]`)?.addEventListener('click', async (e) => {
-            const saveBtn = e.currentTarget;
-            const noteEl = custModalAddForm.querySelector(`[data-karte-entry-note="${currentCustUid}"]`);
-            const menuEl = custModalAddForm.querySelector(`[data-karte-entry-menu="${currentCustUid}"]`);
-            saveBtn.disabled = true;
-            try {
-              const res = await fetch(`/api/provider/customers/${currentCustUid}/karte-entries`, {
-                method: 'POST', headers: authHeaders(),
-                body: JSON.stringify({ note: noteEl?.value || '', custom_values: collectCustomValues(custModalAddForm), menu_name: menuEl?.value || null }),
-              });
-              if (!res.ok) { const d = await res.json().catch(() => ({})); showToast(d.error || '保存に失敗しました'); return; }
-              showToast('記録を保存しました');
-              custModalAddForm.style.display = 'none';
-              custModalAddForm.dataset.built = '';
-              custModalHistoryEl.dataset.built = ''; // 次に開いた時に最新の履歴を取り直す
-            } finally {
-              saveBtn.disabled = false;
-            }
-          });
-        }
+        if (opening && !custModalAddForm.dataset.built) buildKarteEntryForm();
       });
 
       custModalHistoryToggle?.addEventListener('click', async () => {
@@ -8880,45 +8898,6 @@ export default function ProviderDashboardPage() {
             </div>
             <div id="cust-modal-badges" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '4px 0 8px' }}></div>
             <p id="cust-modal-info" className="muted" style={{ fontSize: '12px', margin: '0 0 10px' }}></p>
-
-            {/* カルテ項目の管理（でお指摘2026-09-17：「顧客情報の中にカルテ書くところ
-                ないやんけ！」「カルテ項目を設定っていう場所いる？各顧客のカルテ内に
-                追加ボタンをつけて使いたい時すぐ使えるようにしとけば良くない？」）。
-                項目の追加・並び替え・削除を、別タブではなくこのカルテを書く画面自体から
-                その場でできるようにする。項目定義は全顧客共通（店舗全体の設定）のため、
-                会員・非会員どちらのセクションからも同じ管理パネルを開ける。 */}
-            <div style={{ marginBottom: '10px' }}>
-              <button type="button" className="btn btn-ghost" id="cust-modal-kf-manage-toggle" style={{ fontSize: '11.5px', padding: '4px 10px' }}>カルテ項目を管理</button>
-              <div id="cust-modal-kf-manage" style={{ display: 'none', marginTop: '8px', padding: '12px', background: 'var(--color-bg)', borderRadius: '10px' }}>
-                <div id="kf-list"></div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'flex-end', marginTop: '8px' }}>
-                  <div className="form-field" style={{ marginBottom: 0, minWidth: '130px' }}>
-                    <label style={{ fontSize: '11px' }}>項目名</label>
-                    <input id="kf-label" type="text" placeholder="例：癖・注意点" style={{ fontSize: '12.5px' }} />
-                  </div>
-                  <div className="form-field" style={{ marginBottom: 0, minWidth: '120px' }}>
-                    <label style={{ fontSize: '11px' }}>種類</label>
-                    <select id="kf-type" style={{ fontSize: '12.5px' }}>
-                      <option value="text">自由記述</option>
-                      <option value="select">選択肢（単一選択）</option>
-                      <option value="multiselect">選択肢（複数選択）</option>
-                      <option value="stars">5段階評価</option>
-                      <option value="rating10">10段階評価</option>
-                      <option value="number">数値</option>
-                      <option value="date">日付</option>
-                      <option value="time">時刻</option>
-                      <option value="url">リンク（URL）</option>
-                      <option value="checkbox">チェックボックス</option>
-                    </select>
-                  </div>
-                  <div className="form-field" id="kf-options-wrap" style={{ marginBottom: 0, minWidth: '160px', display: 'none' }}>
-                    <label style={{ fontSize: '11px' }}>選択肢（カンマ区切り）</label>
-                    <input id="kf-options" type="text" placeholder="例：右巻き,左巻き,直毛" style={{ fontSize: '12.5px' }} />
-                  </div>
-                  <button className="btn" id="kf-add-btn" type="button" style={{ fontSize: '12px', padding: '6px 12px' }}>＋ 項目を追加</button>
-                </div>
-              </div>
-            </div>
 
             {/* 会員（New Me Log紐づき）用セクション */}
             <div id="cust-modal-member-section">
