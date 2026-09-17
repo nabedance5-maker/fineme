@@ -441,11 +441,23 @@ export default function ProviderDashboardPage() {
     const onVisible = () => { if (document.visibilityState === 'visible') _sb.auth.getSession().catch(() => {}); };
     document.addEventListener('visibilitychange', onVisible);
 
-    // ログアウト（でお要望2026-09-15）
+    // ログアウト（でお要望2026-09-15：「ログアウトボタンを押したら、掲載者管理画面への
+    // ログイン画面に戻るようにして」）。signOut()はSupabaseへのネットワーク通信を伴い、
+    // モバイル回線が不安定だとawaitがなかなか返らず「ボタンを押しても何も起きない・
+    // 違う画面に飛ぶ」ように見えることがある（このダッシュボードは既知のネットワーク
+    // 瞬断問題を抱えている——Sentry誤検知抑制のコメント参照）。3秒でタイムアウトさせ、
+    // signOut自体が終わらなくても必ず掲載者向けログイン画面へ遷移させる。
     document.getElementById('pd-logout-btn')?.addEventListener('click', async () => {
-      if (!confirm('ログアウトしますか？')) return;
-      await _sb.auth.signOut().catch(() => {});
-      window.location.href = '/login?type=provider';
+      let confirmed = true;
+      try { confirmed = confirm('ログアウトしますか？'); } catch { confirmed = true; }
+      if (!confirmed) return;
+      try {
+        await Promise.race([
+          _sb.auth.signOut(),
+          new Promise(resolve => setTimeout(resolve, 3000)),
+        ]);
+      } catch {}
+      window.location.replace('/login?type=provider');
     });
 
     // 上のgetSession()呼び出しでも直せない場合（リフレッシュトークン自体も失効等）に、
@@ -7398,7 +7410,7 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="pd-rail-btn" data-category="tutorial">使い方</button>
                 {/* OFFにした機能のタブをまとめる場所（でお要望2026-09-16：「非表示にしたやつは
                     非表示というタブを作ってまとめておくといい」）。中身が無い間はJS側で隠す。 */}
-                <button type="button" className="pd-rail-btn" data-category="hidden" id="pd-rail-hidden-btn" style={{ display: 'none' }}>🗂 非表示</button>
+                <button type="button" className="pd-rail-btn" data-category="hidden" id="pd-rail-hidden-btn" style={{ display: 'none' }}>非表示</button>
               </div>
               <div className="pd-rail-panel">
                 <div className="pd-panel-section" data-panel="home" style={{ display: 'none' }}>
@@ -7415,7 +7427,7 @@ export default function ProviderDashboardPage() {
                 </div>
                 <div className="pd-panel-section" data-panel="customer" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="customers">顧客管理（New Me Log・カルテ）</button>
-                  <button className="tab-btn" data-tab="broadcast-email">📧 一斉メール配信</button>
+                  <button className="tab-btn" data-tab="broadcast-email">一斉メール配信</button>
                   <button className="tab-btn" data-tab="reviews">クチコミ</button>
                   <button className="tab-btn" data-tab="visit-settings">来店設定</button>
                   {/* 回数券は日々の売上集計ではなく「顧客ごとの発行・消化を管理する台帳」の
@@ -7436,7 +7448,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="service">サービス設定</button>
                   <button className="tab-btn" data-tab="staff">スタッフ</button>
                   <button className="tab-btn" data-tab="shift" data-feature="shift_management">シフト管理<span className="feature-off-badge" data-feature-badge></span></button>
-                  <button className="tab-btn" data-tab="classes" data-feature="class_management">🏫 クラス管理<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="classes" data-feature="class_management">クラス管理<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="resources" data-feature="resource_management">部屋・設備<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="stories">体験談</button>
                   <button className="tab-btn" data-tab="landing">LP設定</button>
@@ -7448,7 +7460,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="ltv-cac">LTV/CAC</button>
                   <button className="tab-btn" data-tab="referral">紹介報酬</button>
                   <button className="tab-btn" data-tab="qr">紹介QR</button>
-                  <button className="tab-btn" data-tab="member-referral" data-feature="referral_program">🎁 友達紹介<span className="feature-off-badge" data-feature-badge></span></button>
+                  <button className="tab-btn" data-tab="member-referral" data-feature="referral_program">友達紹介<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="account" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="line-channel">LINE連携</button>
