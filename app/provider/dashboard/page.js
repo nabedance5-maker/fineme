@@ -50,6 +50,11 @@ const DASHBOARD_CSS = `
       .pd-rail-btn { display: flex; align-items: center; justify-content: center; text-align: center; width: 100%; padding: 14px 4px; border: none; background: none; cursor: pointer; font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,0.55); line-height: 1.3; transition: background .15s, color .15s; }
       .pd-rail-btn:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.85); }
       .pd-rail-btn.active { background: rgba(201,168,76,0.16); color: #c9a84c; border-right: 2px solid #c9a84c; margin-right: -1px; }
+      /* 「非表示」カテゴリーは並び替え設定の対象外（表示設定の並び順リストにも出ない）
+         なので、常に一番下に固定する。指定しないとCSSのorderが他のボタンと衝突し、
+         2番目あたりに割り込んで見えることがあった（でお報告2026-09-17：「表示設定の
+         並び順が現状のメニューバーの項目とあってない」の一因）。 */
+      .pd-rail-btn[data-category="hidden"] { order: 999; }
       .pd-rail-panel { flex: 1; min-width: 0; padding: 4px 8px 12px; }
       .pd-panel-section { display: flex; flex-direction: column; gap: 2px; }
       .tab-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 12px; border: none; border-radius: 10px; background: none; cursor: pointer; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.88); text-align: left; white-space: normal; transition: background .15s, color .15s; }
