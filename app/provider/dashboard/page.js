@@ -87,7 +87,10 @@ const DASHBOARD_CSS = `
       .cal-day-grid { border: 1px solid rgba(26,20,16,0.08); border-radius: 10px; overflow: auto; max-height: 560px; -webkit-overflow-scrolling: touch; --cal-col-min: 130px; }
       .cal-grid-inner { display: grid; width: max-content; min-width: 100%; position: relative; }
       /* 現在時刻の線（でお要望2026-09-15）。左端の時刻列(40px)の右から右端まで。 */
-      .cal-now-line { position: absolute; left: 40px; right: 0; height: 0; border-top: 2px solid #ef4444; z-index: 6; pointer-events: none; }
+      /* z-indexを予約ブロック（1）より下にして、名前の文字に赤線が重なって見えなく
+         なる不具合を防ぐ（でお報告2026-09-17：「名前に赤い線が被らないようにして」）。
+         ブロックが無い時間帯だけ線が見え、ブロックがある部分は自然に隠れる。 */
+      .cal-now-line { position: absolute; left: 40px; right: 0; height: 0; border-top: 2px solid #ef4444; z-index: 0; pointer-events: none; }
       .cal-now-line::before { content: ''; position: absolute; left: -5px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
       .cal-time-col-spacer { position: sticky; top: 0; left: 0; z-index: 4; background: #fff; border-bottom: 1px solid rgba(26,20,16,0.08); }
       .cal-staff-head { position: sticky; top: 0; z-index: 3; background: #fff; text-align: center; font-size: 11.5px; font-weight: 700; padding: 6px 4px; border-right: 1px solid rgba(26,20,16,0.06); border-bottom: 1px solid rgba(26,20,16,0.08); }
@@ -134,7 +137,7 @@ const DASHBOARD_CSS = `
          こちらは1時間あたりの幅を広めに取り、予約者名が途中で切れにくいようにする）。 */
       .cal-day-grid-h { border: 1px solid rgba(26,20,16,0.08); border-radius: 10px; overflow: auto; max-height: 560px; -webkit-overflow-scrolling: touch; }
       .cal-grid-inner-h { display: grid; width: max-content; min-width: 100%; position: relative; }
-      .cal-now-line-h { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid #ef4444; z-index: 6; pointer-events: none; }
+      .cal-now-line-h { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid #ef4444; z-index: 0; pointer-events: none; }
       .cal-now-line-h::before { content: ''; position: absolute; top: -5px; left: -4px; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
       .cal-hour-head-spacer { position: sticky; top: 0; left: 0; z-index: 4; background: #fff; border-bottom: 1px solid rgba(26,20,16,0.08); border-right: 1px solid rgba(26,20,16,0.08); }
       .cal-hour-head-track { position: sticky; top: 0; z-index: 3; background: #fff; height: 32px; border-bottom: 1px solid rgba(26,20,16,0.08); }
