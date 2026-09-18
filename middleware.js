@@ -38,6 +38,12 @@ export function middleware(request) {
   return NextResponse.next()
 }
 
+// でお報告2026-09-18「掲載者管理画面全体的に読み込みがめっちゃ遅い」を受けてVercelの
+// 実際のランタイムログを確認したところ、ダッシュボード1回の読み込みで発生する
+// 11本前後のAPI呼び出しが、全てこのミドルウェアも経由していた（edge-middleware→
+// serverlessの2段階）。ここにあるルール（ホストリダイレクト・旧HTML/検索ページの
+// リダイレクト）はどれも/api/*やNext内部アセットには関係ないため、対象から除外して
+// 無駄な処理を減らす。
 export const config = {
-  matcher: '/:path*',
+  matcher: ['/((?!api/|_next/static|_next/image|favicon\\.ico).*)'],
 }

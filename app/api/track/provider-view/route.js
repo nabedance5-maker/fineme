@@ -60,13 +60,20 @@ export async function GET(request) {
 
   if (!provider_id) return Response.json({ error: 'provider_id required' }, { status: 400 });
 
+  // 「その月の末日」を"-31"で決め打ちしていたため、31日が無い月（9月なら'2026-09-31'）
+  // が不正な日付としてPostgresにエラーを返され、ダッシュボードを開くたびに毎回
+  // 500になっていた（Vercelログで確認：ほぼ全リクエストが失敗）。lte(月末日)ではなく
+  // 翌月1日未満（lt）にすることで、月の日数を気にせず正しく範囲指定できる。
+  const [y, m] = month.split('-').map(Number);
+  const nextMonth = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
+
   const sb = getSupabase();
   const { data, error } = await sb
     .from('provider_page_views')
     .select('count')
     .eq('provider_id', provider_id)
     .gte('date', `${month}-01`)
-    .lte('date', `${month}-31`);
+    .lt('date', `${nextMonth}-01`);
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 

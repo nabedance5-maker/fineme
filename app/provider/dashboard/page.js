@@ -7928,13 +7928,7 @@ export default function ProviderDashboardPage() {
             </div>
 
             {/* 部屋・設備管理をONにした店舗のみ、スタッフ別/部屋別カレンダーを切り替えられる（でお要望2026-09-12） */}
-            <div id="cal-view-toggle" style={{ display: 'none', gap: '6px', flexWrap: 'wrap', marginBottom: '6px' }}></div>
-            {/* 「列の並び順」は表示モードの選択肢と並べるとボタンの1つに見えてしまい紛らわしい
-                （でお報告2026-09-18：「列の順はここじゃない気がする。赤丸のボタンは下に
-                持っていくべきかな」）ため、表示モード切替とは別の行に分けて置く。 */}
-            <div id="cal-column-order-row" style={{ display: 'none', marginBottom: '10px' }}>
-              <button type="button" className="btn btn-ghost" id="cal-column-order-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>列の並び順を変更</button>
-            </div>
+            <div id="cal-view-toggle" style={{ display: 'none', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}></div>
 
             {/* 日付ピル：PC・スマホ共通で選んだ1日を切り替える */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -7947,6 +7941,14 @@ export default function ProviderDashboardPage() {
                 でお要望（2026-09-12）でスタッフ列を狭くし、画面内に3〜4人分見える形に調整。 */}
             <div id="cal-day-grid" className="cal-day-grid"></div>
             <p className="muted" style={{ fontSize: '11px', margin: '8px 0 0' }}>※ 所要時間はメニューごとの登録が無いため目安表示です（即時予約の枠はその枠の時間で正確に表示）</p>
+
+            {/* 「列の並び順」は表示モードの選択肢と並べるとボタンの1つに見えてしまい紛らわしい
+                （でお報告2026-09-18：「列の順はここじゃない気がする。赤丸のボタンは下に
+                持っていくべきかな」）ため別の行に分け、さらにカレンダー本体の下に移動した
+                （でお要望2026-09-18：「予約カレンダーの下に移動して」）。 */}
+            <div id="cal-column-order-row" style={{ display: 'none', marginTop: '14px' }}>
+              <button type="button" className="btn btn-ghost" id="cal-column-order-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>列の並び順を変更</button>
+            </div>
           </div>
         </div>
 
