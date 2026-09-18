@@ -125,10 +125,15 @@ const DASHBOARD_CSS = `
       /* スタッフの休憩・外出ブロック／シフト外時間のグレー帯（でお要望2026-09-14：
          「出勤してないスタッフの枠は予約が入らないように自動でブロックしてカレンダーでも
          グレーで帯をかけて」）。予約ブロックより手前（下）に描画し、クリックは通さない。 */
-      .cal-grey-band { position: absolute; background: repeating-linear-gradient(135deg, rgba(26,20,16,0.05), rgba(26,20,16,0.05) 6px, rgba(26,20,16,0.09) 6px, rgba(26,20,16,0.09) 12px); pointer-events: none; z-index: 0; }
+      /* でお報告2026-09-18：「ブロックしても表示されない（機能はあるがブロックされて
+         いるのか分からない）」。旧配色はrgba(26,20,16,0.05〜0.09)とほぼ透明で、実際は
+         描画されていても肉眼でほぼ判別できなかった。はっきり見えるグレーに変更し、
+         帯の中に「休憩」「勤務外」のラベルも出す。 */
+      .cal-grey-band { position: absolute; background: repeating-linear-gradient(135deg, rgba(107,114,128,0.28), rgba(107,114,128,0.28) 7px, rgba(107,114,128,0.42) 7px, rgba(107,114,128,0.42) 14px); pointer-events: none; z-index: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
       .cal-grey-band.is-deletable { pointer-events: auto; cursor: pointer; }
       .cal-grey-band-v { left: 0; right: 0; }
       .cal-grey-band-h { top: 0; bottom: 0; }
+      .cal-grey-band-label { font-size: 10px; font-weight: 700; color: #4b5563; white-space: nowrap; background: rgba(255,255,255,0.55); padding: 1px 5px; border-radius: 99px; pointer-events: none; }
       .cal-block, .cal-block-h { z-index: 1; }
       .cal-block strong, .cal-block-h strong { display: block; font-size: 10.5px; }
       .cal-block { position: absolute; left: 2px; right: 2px; }
@@ -3267,10 +3272,12 @@ export default function ProviderDashboardPage() {
 
       // 現在の絞り込み条件（フィルター・検索キーワード）に一致する会員行だけを返す。
       // 一覧の表示にも、一斉メール配信の「今の絞り込み結果全員に送る」にも使う共通ロジック
-      // （でお要望2026-09-14：hacomonoのメンバータイプ別一斉配信相当機能）。
-      function currentFilteredMemberRows() {
-        const filter = filterSel?.value || 'all';
-        const kw = (searchInput?.value || '').trim().toLowerCase();
+      // （でお要望2026-09-14：hacomonoのメンバータイプ別一斉配信相当機能）。引数を渡すと
+      // 顧客管理タブの絞り込みUIとは独立に判定できる（でお報告2026-09-18：「メールの
+      // ページ、対象者の絞り込み方が無い」。一斉メール配信タブ自身に絞り込みUIを追加した）。
+      function currentFilteredMemberRows(filterOverride, kwOverride) {
+        const filter = filterOverride !== undefined ? filterOverride : (filterSel?.value || 'all');
+        const kw = kwOverride !== undefined ? kwOverride : (searchInput?.value || '').trim().toLowerCase();
         return allItems.filter(c => {
           if (kw && !(c.customer_name || '').toLowerCase().includes(kw)) return false;
           if (filter === 'user-overdue') return typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0;
@@ -3321,15 +3328,24 @@ export default function ProviderDashboardPage() {
       const bcBodyEl = document.getElementById('bc-body');
       const bcSendBtn = document.getElementById('bc-send-btn');
       const bcMsgEl = document.getElementById('bc-msg');
+      const bcFilterSel = document.getElementById('bc-filter');
+      const bcSearchInput = document.getElementById('bc-search');
+      function bcCurrentFilterKw() {
+        return [bcFilterSel?.value || 'all', (bcSearchInput?.value || '').trim().toLowerCase()];
+      }
       function updateBroadcastCount() {
         if (!bcCountEl) return;
-        const n = currentFilteredMemberRows().length;
+        const [filter, kw] = bcCurrentFilterKw();
+        const n = currentFilteredMemberRows(filter, kw).length;
         bcCountEl.textContent = `今の絞り込み条件：${n}名に送信されます`;
       }
+      bcFilterSel?.addEventListener('change', updateBroadcastCount);
+      bcSearchInput?.addEventListener('input', updateBroadcastCount);
       bcSendBtn?.addEventListener('click', async () => {
         const subject = bcSubjectEl?.value.trim();
         const body_text = bcBodyEl?.value.trim();
-        const userIds = currentFilteredMemberRows().map(c => c.user_id).filter(Boolean);
+        const [filter, kw] = bcCurrentFilterKw();
+        const userIds = currentFilteredMemberRows(filter, kw).map(c => c.user_id).filter(Boolean);
         if (!subject || !body_text) { showToast('件名と本文を入力してください'); return; }
         if (!userIds.length) { showToast('送信対象がいません'); return; }
         if (!confirm(`${userIds.length}名に一斉メールを送信します。よろしいですか？（取り消せません）`)) return;
@@ -5916,7 +5932,9 @@ export default function ProviderDashboardPage() {
           const size = ((e - s) / totalMin) * totalSize;
           const isBlock = iv.kind === 'block';
           const label = isBlock ? 'タップで削除：休憩・外出ブロック' : 'シフト外（勤務予定なし）';
-          return `<div class="cal-grey-band${extraClass}${isBlock ? ' is-deletable' : ''}" style="${posKey}:${pos}px;${sizeKey}:${size}px" title="${esc(label)}"${isBlock ? ` data-staff-block-id="${iv.id}"` : ''}></div>`;
+          const shortLabel = isBlock ? '休憩・外出' : '勤務外';
+          const labelHtml = size >= 24 ? `<span class="cal-grey-band-label">${esc(shortLabel)}</span>` : '';
+          return `<div class="cal-grey-band${extraClass}${isBlock ? ' is-deletable' : ''}" style="${posKey}:${pos}px;${sizeKey}:${size}px" title="${esc(label)}"${isBlock ? ` data-staff-block-id="${iv.id}"` : ''}>${labelHtml}</div>`;
         }).join('');
       }
 
@@ -9079,15 +9097,26 @@ export default function ProviderDashboardPage() {
         </div>
 
         {/* 一斉メール配信（でお要望2026-09-16：「顧客管理の中に一斉メール配信があるけど、
-            これは独立したタブで別にするべき」を受けて分離）。送信対象は「顧客管理」タブの
-            絞り込み条件と連動するため、絞り込みは顧客管理タブ側で行ってからここで送信する。 */}
+            これは独立したタブで別にするべき」を受けて分離。でお報告2026-09-18：「メールの
+            ページ、対象者の絞り込み方が無い」を受けて、このタブ自身に絞り込みUIを追加
+            （顧客管理タブの絞り込みとは独立。他タブへ行き来させない）。 */}
         <div className="tab-pane" id="tab-broadcast-email">
           <div className="card stack" style={{ padding: '24px', gap: 10 }}>
             <div>
-              <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>📧 一斉メール配信</h2>
+              <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>一斉メール配信</h2>
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-                「顧客管理」タブの「表示：」フィルター・検索の絞り込み結果に、Finemeに登録されたメールアドレスへ一斉送信します（メール未登録の方はスキップされます）。送信対象を変えたい場合は先に顧客管理タブで絞り込みを調整してください。
+                下の絞り込み条件に一致する、Finemeに登録されたメールアドレスへ一斉送信します（メール未登録の方はスキップされます）。
               </p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <label className="muted" style={{ fontSize: '13px' }}>対象：</label>
+              <select id="bc-filter">
+                <option value="all">すべて</option>
+                <option value="user-overdue">ユーザー想定超過のみ</option>
+                <option value="store-overdue">店舗推奨超過のみ</option>
+                <option value="dormant">休眠のみ</option>
+              </select>
+              <input id="bc-search" type="text" placeholder="お客様の名前で絞り込み" style={{ padding: '8px 12px', border: '1.5px solid rgba(26,20,16,0.15)', borderRadius: '8px', minWidth: '180px' }} />
             </div>
             <p id="bc-recipient-count" className="muted" style={{ fontSize: '13px', fontWeight: 700, margin: 0 }}></p>
             <div className="form-field" style={{ marginBottom: 0 }}>
