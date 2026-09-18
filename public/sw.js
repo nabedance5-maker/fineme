@@ -5,7 +5,7 @@
  * - APIリクエスト (localhost:3001): Network First → 失敗時はキャッシュ
  * - 画像: Stale While Revalidate → 高速表示 + バックグラウンド更新
  */
-const CACHE_NAME = 'fineme-v6';
+const CACHE_NAME = 'fineme-v7';
 const SHELL_URLS = [
   '/',
   '/search',
@@ -59,8 +59,18 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // CSS/JS/fonts → Cache First
-  event.respondWith(cacheFirst(request));
+  // /_next/static/ 配下はコンテンツハッシュ付きファイル名（内容が変わればURLも変わる）
+  // なのでCache Firstで問題ない。それ以外（App RouterのRSCペイロード取得など、
+  // destinationが'document'でもハッシュ付きURLでもない中間fetch）を同じ扱いにすると、
+  // 一度キャッシュした古いページの中身がデプロイ後も永久に返り続けるバグになる
+  // （でお報告2026-09-18「更新しても直ってない」系の一部はこれが原因と判明）。
+  if (url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
+
+  // その他（CSS/JS/fonts含む、非ハッシュURL）→ Network First
+  event.respondWith(networkFirst(request));
 });
 
 // ---- Web Push受信 ----
