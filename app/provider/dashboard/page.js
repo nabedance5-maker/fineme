@@ -6214,9 +6214,9 @@ export default function ProviderDashboardPage() {
             <button type="button" class="btn ${viewMode === 'combined' ? '' : 'btn-ghost'}" data-cal-view="combined" style="font-size:12px;padding:6px 12px">スタッフ×部屋</button>
             <button type="button" class="btn ${viewMode === 'staff' ? '' : 'btn-ghost'}" data-cal-view="staff" style="font-size:12px;padding:6px 12px">スタッフ別</button>
             <button type="button" class="btn ${viewMode === 'resource' ? '' : 'btn-ghost'}" data-cal-view="resource" style="font-size:12px;padding:6px 12px">部屋別</button>
-            <button type="button" class="btn btn-ghost" id="cal-column-order-btn" style="font-size:12px;padding:6px 12px">列の並び順</button>
           ` : (hasClasses ? `<button type="button" class="btn ${viewMode !== 'class' ? '' : 'btn-ghost'}" data-cal-view="staff" style="font-size:12px;padding:6px 12px">予約カレンダー</button>` : '')}
           ${hasClasses ? `<button type="button" class="btn ${viewMode === 'class' ? '' : 'btn-ghost'}" data-cal-view="class" style="font-size:12px;padding:6px 12px">グループレッスン</button>` : ''}
+          ${resourceFeatureOn ? `<button type="button" class="btn btn-ghost" id="cal-column-order-btn" style="font-size:12px;padding:6px 12px;margin-left:auto;border-left:1px solid rgba(26,20,16,0.12);padding-left:12px">列の並び順</button>` : ''}
         `;
         viewToggleEl.querySelectorAll('[data-cal-view]').forEach(btn => btn.addEventListener('click', () => {
           viewMode = btn.dataset.calView;
