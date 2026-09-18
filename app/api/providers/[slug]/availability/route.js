@@ -21,7 +21,7 @@ export async function GET(request, { params }) {
 
   const { data: provider } = await supabase
     .from('providers')
-    .select('id, enabled_features')
+    .select('id, enabled_features, booking_cutoff_hours')
     .eq('slug', slug)
     .eq('published', true)
     .eq('admin_hidden', false)
@@ -45,6 +45,16 @@ export async function GET(request, { params }) {
   // service_id指定時は「そのサービス専用の枠」＋「全サービス共通の枠(service_id=NULL)」を両方残す
   let filtered = serviceId ? slots.filter(s => !s.service_id || s.service_id === serviceId) : slots;
   if (!filtered.length) return Response.json([]);
+
+  // 予約可能時間の締切（でお確認2026-09-18：「予約可能時間の設定どこ（前日21時まで
+  // 予約可能等）」）。開始時刻から起算した「◯時間前まで」というリードタイム方式。
+  if (provider.booking_cutoff_hours > 0) {
+    const cutoffMs = Date.now() + provider.booking_cutoff_hours * 3600000;
+    // start_timeは日本時間の壁時計表記（HH:MM）。サーバーはUTCで動くため、明示的に
+    // +09:00を付けないと9時間ズレて判定される（このセッションで既出のJST/UTC不具合と同種）。
+    filtered = filtered.filter(s => new Date(`${s.date}T${s.start_time}:00+09:00`).getTime() > cutoffMs);
+    if (!filtered.length) return Response.json([]);
+  }
 
   // スタッフの休憩・外出ブロック（でお要望2026-09-14）と重なる枠は、お客様には見せない。
   // 枠自体はauto-generate時点で除外済みのことが多いが、枠を生成した後にブロックが

@@ -2776,12 +2776,18 @@ export default function ProviderDashboardPage() {
         saveMsg: 'bh2-save-msg', generateNowBtn: null,
       });
 
-      // 同時に保持できる予約数の上限（でお要望2026-09-14）
+      // 同時に保持できる予約数の上限・予約可能時間の締切（でお要望2026-09-14／
+      // でお確認2026-09-18：「予約可能時間の設定どこ（前日21時まで予約可能等）」）
       async function loadBookingLimit() {
         const input = document.getElementById('booking-limit-input');
+        const cutoffInput = document.getElementById('booking-cutoff-input');
         if (!input) return;
         const res = await fetch('/api/provider/booking-limits', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
-        if (res.ok) { const d = await res.json(); input.value = d.max_active_reservations ?? 1; }
+        if (res.ok) {
+          const d = await res.json();
+          input.value = d.max_active_reservations ?? 1;
+          if (cutoffInput) cutoffInput.value = d.booking_cutoff_hours ?? 0;
+        }
       }
       document.getElementById('booking-limit-save-btn')?.addEventListener('click', async () => {
         const input = document.getElementById('booking-limit-input');
@@ -2791,6 +2797,17 @@ export default function ProviderDashboardPage() {
         const res = await fetch('/api/provider/booking-limits', {
           method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
           body: JSON.stringify({ max_active_reservations: n }),
+        });
+        if (msg) { msg.style.color = res.ok ? '#4ade80' : '#ef4444'; msg.textContent = res.ok ? '✓ 保存しました' : '保存に失敗しました'; }
+      });
+      document.getElementById('booking-cutoff-save-btn')?.addEventListener('click', async () => {
+        const cutoffInput = document.getElementById('booking-cutoff-input');
+        const msg = document.getElementById('booking-cutoff-msg');
+        const h = Number(cutoffInput?.value);
+        if (!Number.isInteger(h) || h < 0) { if (msg) { msg.style.color = '#ef4444'; msg.textContent = '0以上の整数を入力してください'; } return; }
+        const res = await fetch('/api/provider/booking-limits', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+          body: JSON.stringify({ booking_cutoff_hours: h }),
         });
         if (msg) { msg.style.color = res.ok ? '#4ade80' : '#ef4444'; msg.textContent = res.ok ? '✓ 保存しました' : '保存に失敗しました'; }
       });
@@ -8529,6 +8546,19 @@ export default function ProviderDashboardPage() {
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <button type="button" className="btn btn-ghost" id="booking-limit-save-btn" style={{ fontSize: '12px', padding: '6px 14px' }}>保存する</button>
               <span id="booking-limit-msg" className="muted" style={{ fontSize: '12px' }}></span>
+            </div>
+
+            {/* 予約可能時間の締切（でお確認2026-09-18：「予約可能時間の設定どこ
+                (ex.前日21時まで予約可能)」）。固定の時刻ではなく「開始の◯時間前まで」
+                というリードタイム方式（営業時間が曜日で変わる店舗にも対応しやすいため）。 */}
+            <div className="form-field" style={{ marginBottom: 0, maxWidth: '280px', marginTop: '16px' }}>
+              <label>予約可能時間の締切（開始の何時間前まで受付）</label>
+              <input type="number" id="booking-cutoff-input" min="0" style={{ width: '100px' }} />
+              <span className="muted" style={{ fontSize: '11.5px' }}>0で無制限（直前まで予約可）。例：12を入れると開始12時間前で受付終了</span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px' }}>
+              <button type="button" className="btn btn-ghost" id="booking-cutoff-save-btn" style={{ fontSize: '12px', padding: '6px 14px' }}>保存する</button>
+              <span id="booking-cutoff-msg" className="muted" style={{ fontSize: '12px' }}></span>
             </div>
           </div>
 
