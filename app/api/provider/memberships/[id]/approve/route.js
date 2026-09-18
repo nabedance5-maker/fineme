@@ -11,6 +11,11 @@
 //
 // 資金は店舗のStripe Connectアカウントへtransfer_data.destinationで送金する
 // （紹介報酬送金と同じConnect基盤を流用。Financeの取り分は設定していない＝全額店舗）。
+//
+// ロッカーを選んだお客様（でお要望2026-09-18：「ロッカー代を自動で一緒に課金したい」）は、
+// 同じサブスクリプションにロッカー代を2つ目の明細として追加する。ロッカーの金額は店舗が
+// いつでも変更できるため、Priceは都度price_dataでその場生成し古いPriceを参照しない
+// （Productだけprovider_lockers.stripe_product_idに使い回す）。
 export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
@@ -50,6 +55,14 @@ export async function POST(request, { params }) {
   const { data: plan } = await supabase.from('provider_membership_plans').select('stripe_price_id').eq('id', m.plan_id).single();
   if (!plan?.stripe_price_id) return Response.json({ error: 'プラン情報が見つかりません' }, { status: 409 });
 
+  let locker = null;
+  if (m.locker_id) {
+    const { data: lockerRow } = await supabase.from('provider_lockers').select('id, name, monthly_fee, stripe_product_id').eq('id', m.locker_id).eq('provider_id', provider.id).single();
+    if (!lockerRow) return Response.json({ error: '選択されたロッカーが見つかりません' }, { status: 409 });
+    if (!lockerRow.monthly_fee) return Response.json({ error: '選択されたロッカーに金額が設定されていません。ロッカー管理タブで金額を設定してください' }, { status: 409 });
+    locker = lockerRow;
+  }
+
   const { data: settings } = await supabase.from('provider_membership_settings').select('prorate_first_month').eq('provider_id', provider.id).maybeSingle();
   const prorateOn = settings?.prorate_first_month ?? true;
 
@@ -57,12 +70,25 @@ export async function POST(request, { params }) {
     // 保存済みのカードを今後の請求の既定支払い方法にする
     await stripe.customers.update(m.stripe_customer_id, { invoice_settings: { default_payment_method: m.stripe_payment_method_id } });
 
+    const items = [{ price: plan.stripe_price_id }];
+    if (locker) {
+      let productId = locker.stripe_product_id;
+      if (!productId) {
+        const product = await stripe.products.create({ name: `ロッカー：${locker.name}` });
+        productId = product.id;
+        await supabase.from('provider_lockers').update({ stripe_product_id: productId }).eq('id', locker.id);
+      }
+      items.push({
+        price_data: { currency: 'jpy', product: productId, unit_amount: locker.monthly_fee, recurring: { interval: 'month' } },
+      });
+    }
+
     const subParams = {
       customer: m.stripe_customer_id,
-      items: [{ price: plan.stripe_price_id }],
+      items,
       default_payment_method: m.stripe_payment_method_id,
       transfer_data: { destination: provider.stripe_connect_id },
-      metadata: { fineme_membership_id: m.id, fineme_provider_id: provider.id },
+      metadata: { fineme_membership_id: m.id, fineme_provider_id: provider.id, fineme_locker_id: locker?.id || '' },
     };
     if (prorateOn && m.enrollment_date) {
       const enrollTs = Math.floor(new Date(`${m.enrollment_date}T00:00:00+09:00`).getTime() / 1000);

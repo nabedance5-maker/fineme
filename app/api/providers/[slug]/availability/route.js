@@ -56,6 +56,19 @@ export async function GET(request, { params }) {
     if (!filtered.length) return Response.json([]);
   }
 
+  // 臨時休業日（でお要望2026-09-18）。枠自体は自動生成時に既に除外されているはずだが、
+  // 手動で作った枠や、枠を作った後に臨時休業に設定した場合に備えて念のため確認する。
+  const { data: closedDates } = await supabase
+    .from('provider_closed_dates')
+    .select('date')
+    .eq('provider_id', provider.id)
+    .in('date', dates);
+  if (closedDates?.length) {
+    const closedSet = new Set(closedDates.map(c => c.date));
+    filtered = filtered.filter(s => !closedSet.has(s.date));
+    if (!filtered.length) return Response.json([]);
+  }
+
   // スタッフの休憩・外出ブロック（でお要望2026-09-14）と重なる枠は、お客様には見せない。
   // 枠自体はauto-generate時点で除外済みのことが多いが、枠を生成した後にブロックが
   // 追加された場合に備えて、公開一覧の取得時にも都度除外する（二重の安全策）。

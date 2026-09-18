@@ -76,13 +76,17 @@ export async function POST(request) {
   const { data: existing } = await supabase.from('provider_memberships').select('id').eq('user_id', user.id).eq('provider_id', provider_id).in('status', ['pending_approval', 'active']).limit(1);
   if (existing?.length) return Response.json({ error: 'この店舗への入会申込は既にあります' }, { status: 409 });
 
-  const [{ data: plan }, { data: settings }] = await Promise.all([
+  const [{ data: plan }, { data: settings }, { data: locker }] = await Promise.all([
     supabase.from('provider_membership_plans').select('monthly_price').eq('id', plan_id).eq('provider_id', provider_id).single(),
     supabase.from('provider_membership_settings').select('prorate_first_month').eq('provider_id', provider_id).maybeSingle(),
+    locker_id ? supabase.from('provider_lockers').select('monthly_fee').eq('id', locker_id).eq('provider_id', provider_id).single() : Promise.resolve({ data: null }),
   ]);
   if (!plan) return Response.json({ error: 'プランが見つかりません' }, { status: 404 });
 
-  const proratedAmount = (settings?.prorate_first_month ?? true) ? estimateProratedAmount(enrollment_date, plan.monthly_price) : null;
+  // 初回目安額にはロッカー代も含める（でお要望2026-09-18：「ロッカー代を自動で一緒に
+  // 課金したい」。ロッカーも同じサブスクリプションの明細として日割り対象になるため）。
+  const monthlyTotal = plan.monthly_price + (locker?.monthly_fee || 0);
+  const proratedAmount = (settings?.prorate_first_month ?? true) ? estimateProratedAmount(enrollment_date, monthlyTotal) : null;
 
   const { data, error } = await supabase
     .from('provider_memberships')

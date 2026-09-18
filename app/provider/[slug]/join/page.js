@@ -109,9 +109,14 @@ export default function JoinMembershipPage() {
   }
 
   const selectedPlan = info?.plans.find(p => p.id === form.plan_id);
+  const selectedLocker = info?.lockers?.find(l => l.id === form.locker_id);
+  // ロッカーを選んだ場合は同じサブスクリプションの明細として一緒に課金されるため、
+  // 見積もりにもロッカー代を含める（でお要望2026-09-18：「ロッカー代を自動で一緒に
+  // 課金したい」）。
+  const monthlyTotal = (selectedPlan?.monthly_price || 0) + (selectedLocker?.monthly_fee || 0);
   const daysInMonth = form.enrollment_date ? new Date(new Date(form.enrollment_date).getFullYear(), new Date(form.enrollment_date).getMonth() + 1, 0).getDate() : null;
   const remainingDays = form.enrollment_date ? daysInMonth - new Date(form.enrollment_date).getDate() + 1 : null;
-  const estimatedFirstAmount = (info?.prorate_first_month && selectedPlan && remainingDays) ? Math.round((remainingDays / daysInMonth) * selectedPlan.monthly_price) : selectedPlan?.monthly_price;
+  const estimatedFirstAmount = (info?.prorate_first_month && selectedPlan && remainingDays) ? Math.round((remainingDays / daysInMonth) * monthlyTotal) : monthlyTotal;
 
   async function submitApplication() {
     setSubmitting(true); setError('');
@@ -187,7 +192,7 @@ export default function JoinMembershipPage() {
             )}
             {selectedPlan && form.enrollment_date && (
               <p style={{ fontSize: '12.5px', color: 'rgba(232,228,220,0.6)', margin: '0 0 16px' }}>
-                {info.prorate_first_month ? `初回のお支払い目安：約¥${estimatedFirstAmount?.toLocaleString()}（日割り。正式な金額は店舗承認時に確定します）` : `初回のお支払い：¥${selectedPlan.monthly_price.toLocaleString()}（承認日から満額開始）`}
+                {info.prorate_first_month ? `初回のお支払い目安：約¥${estimatedFirstAmount?.toLocaleString()}（日割り。正式な金額は店舗承認時に確定します）` : `初回のお支払い：¥${monthlyTotal.toLocaleString()}（承認日から満額開始）`}
               </p>
             )}
             <div style={{ display: 'flex', gap: '8px' }}>

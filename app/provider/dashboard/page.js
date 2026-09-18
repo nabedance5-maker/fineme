@@ -2763,17 +2763,59 @@ export default function ProviderDashboardPage() {
         }
         document.querySelectorAll(`[data-tab="${ids.tab}"]`).forEach(btn => btn.addEventListener('click', load, { once: false }));
         if (new URLSearchParams(location.search).get('tab') === ids.tab) load();
+
+        // 臨時休業日（でお要望2026-09-18：「特定の1日だけ臨時休業、みたいな例外日の
+        // 設定もできるようにしたい」）。曜日パターンだけでは表現できない不定休に対応。
+        if (ids.closedList) {
+          const WEEKDAY_JA_CD = ['日', '月', '火', '水', '木', '金', '土'];
+          async function loadClosedDates() {
+            const listEl2 = document.getElementById(ids.closedList);
+            if (!listEl2) return;
+            const res = await fetch('/api/provider/closed-dates', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+            const rows = res.ok ? await res.json() : [];
+            if (!rows.length) { listEl2.innerHTML = '<p class="muted" style="font-size:12.5px">今後の臨時休業日はありません。</p>'; return; }
+            listEl2.innerHTML = rows.map(r => {
+              const d = new Date(`${r.date}T00:00:00`);
+              return `
+                <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--color-bg);border-radius:8px;margin-bottom:4px">
+                  <span style="flex:1;font-size:13px">${r.date}（${WEEKDAY_JA_CD[d.getDay()]}）${r.reason ? `<span class="muted" style="margin-left:6px">${esc(r.reason)}</span>` : ''}</span>
+                  <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;color:#ef4444" data-closed-del="${r.date}">削除</button>
+                </div>`;
+            }).join('');
+            listEl2.querySelectorAll('[data-closed-del]').forEach(btn => btn.addEventListener('click', async () => {
+              await fetch(`/api/provider/closed-dates?date=${btn.dataset.closedDel}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+              loadClosedDates();
+            }));
+          }
+          document.getElementById(ids.closedAddBtn)?.addEventListener('click', async () => {
+            const dateInput = document.getElementById(ids.closedDateInput);
+            const reasonInput = document.getElementById(ids.closedReasonInput);
+            if (!dateInput?.value) { showToast('日付を選んでください'); return; }
+            const res = await fetch('/api/provider/closed-dates', {
+              method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+              body: JSON.stringify({ date: dateInput.value, reason: reasonInput?.value.trim() || null }),
+            });
+            if (!res.ok) { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); return; }
+            dateInput.value = ''; if (reasonInput) reasonInput.value = '';
+            showToast('臨時休業日を追加しました');
+            loadClosedDates();
+          });
+          document.querySelectorAll(`[data-tab="${ids.tab}"]`).forEach(btn => btn.addEventListener('click', loadClosedDates, { once: false }));
+          if (new URLSearchParams(location.search).get('tab') === ids.tab) loadClosedDates();
+        }
       }
 
       setupBusinessHoursEditor({
         tab: 'slots', editor: 'business-hours-editor', bulkOpen: 'bh-bulk-open', bulkClose: 'bh-bulk-close',
         bulkApplyBtn: 'bh-bulk-apply-btn', durationSelect: 'slot-duration-select', saveBtn: 'business-hours-save-btn',
         saveMsg: 'business-hours-save-msg', generateNowBtn: 'slots-generate-now-btn',
+        closedList: 'closed-dates-list', closedDateInput: 'closed-date-input', closedReasonInput: 'closed-date-reason', closedAddBtn: 'closed-date-add-btn',
       });
       setupBusinessHoursEditor({
         tab: 'business-hours', editor: 'bh2-editor', bulkOpen: 'bh2-bulk-open', bulkClose: 'bh2-bulk-close',
         bulkApplyBtn: 'bh2-bulk-apply-btn', durationSelect: 'bh2-duration-select', saveBtn: 'bh2-save-btn',
         saveMsg: 'bh2-save-msg', generateNowBtn: null,
+        closedList: 'bh2-closed-dates-list', closedDateInput: 'bh2-closed-date-input', closedReasonInput: 'bh2-closed-date-reason', closedAddBtn: 'bh2-closed-date-add-btn',
       });
 
       // 同時に保持できる予約数の上限・予約可能時間の締切（でお要望2026-09-14／
@@ -6216,7 +6258,6 @@ export default function ProviderDashboardPage() {
             <button type="button" class="btn ${viewMode === 'resource' ? '' : 'btn-ghost'}" data-cal-view="resource" style="font-size:12px;padding:6px 12px">部屋別</button>
           ` : (hasClasses ? `<button type="button" class="btn ${viewMode !== 'class' ? '' : 'btn-ghost'}" data-cal-view="staff" style="font-size:12px;padding:6px 12px">予約カレンダー</button>` : '')}
           ${hasClasses ? `<button type="button" class="btn ${viewMode === 'class' ? '' : 'btn-ghost'}" data-cal-view="class" style="font-size:12px;padding:6px 12px">グループレッスン</button>` : ''}
-          ${resourceFeatureOn ? `<button type="button" class="btn btn-ghost" id="cal-column-order-btn" style="font-size:12px;padding:6px 12px;margin-left:auto;border-left:1px solid rgba(26,20,16,0.12);padding-left:12px">列の並び順</button>` : ''}
         `;
         viewToggleEl.querySelectorAll('[data-cal-view]').forEach(btn => btn.addEventListener('click', () => {
           viewMode = btn.dataset.calView;
@@ -6224,7 +6265,10 @@ export default function ProviderDashboardPage() {
           renderViewToggle();
           renderDesktopGrid();
         }));
-        document.getElementById('cal-column-order-btn')?.addEventListener('click', openColumnOrderModal);
+        // 「列の並び順」は表示モード選択の1つに見えないよう、別の行に独立させている
+        // （でお報告2026-09-18）。
+        const columnOrderRowEl = document.getElementById('cal-column-order-row');
+        if (columnOrderRowEl) columnOrderRowEl.style.display = resourceFeatureOn ? 'block' : 'none';
       }
 
       // 「スタッフ×部屋」列の並び替え（でお要望2026-09-17）。その場で使う設定なので、
@@ -6258,6 +6302,7 @@ export default function ProviderDashboardPage() {
         renderColumnOrderList();
         columnOrderModalEl.style.display = 'flex';
       }
+      document.getElementById('cal-column-order-btn')?.addEventListener('click', openColumnOrderModal);
       document.getElementById('cal-column-order-close')?.addEventListener('click', () => { if (columnOrderModalEl) columnOrderModalEl.style.display = 'none'; });
       columnOrderModalEl?.addEventListener('click', (e) => { if (e.target === columnOrderModalEl) columnOrderModalEl.style.display = 'none'; });
       document.getElementById('cal-column-order-save')?.addEventListener('click', async () => {
@@ -7794,7 +7839,13 @@ export default function ProviderDashboardPage() {
             </div>
 
             {/* 部屋・設備管理をONにした店舗のみ、スタッフ別/部屋別カレンダーを切り替えられる（でお要望2026-09-12） */}
-            <div id="cal-view-toggle" style={{ display: 'none', gap: '6px', marginBottom: '10px' }}></div>
+            <div id="cal-view-toggle" style={{ display: 'none', gap: '6px', flexWrap: 'wrap', marginBottom: '6px' }}></div>
+            {/* 「列の並び順」は表示モードの選択肢と並べるとボタンの1つに見えてしまい紛らわしい
+                （でお報告2026-09-18：「列の順はここじゃない気がする。赤丸のボタンは下に
+                持っていくべきかな」）ため、表示モード切替とは別の行に分けて置く。 */}
+            <div id="cal-column-order-row" style={{ display: 'none', marginBottom: '10px' }}>
+              <button type="button" className="btn btn-ghost" id="cal-column-order-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>列の並び順を変更</button>
+            </div>
 
             {/* 日付ピル：PC・スマホ共通で選んだ1日を切り替える */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -8603,6 +8654,19 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn btn-ghost" id="slots-generate-now-btn">今すぐ枠を生成する（向こう2週間）</button>
               <span id="business-hours-save-msg" style={{ fontSize: '12px', alignSelf: 'center' }}></span>
             </div>
+
+            {/* 臨時休業日（でお要望2026-09-18：「特定の1日だけ臨時休業、みたいな
+                例外日の設定もできるようにしたい」）。曜日パターンでは表現できない不定休。 */}
+            <div style={{ marginTop: '10px', paddingTop: '14px', borderTop: '1px solid rgba(26,20,16,0.08)' }}>
+              <h4 style={{ margin: '0 0 4px', fontSize: '13px' }}>臨時休業日</h4>
+              <p className="muted" style={{ fontSize: '12px', margin: '0 0 8px' }}>特定の1日だけ休業する場合はここに追加してください。その日の予約枠は自動的に締め切られます。</p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '10px' }}>
+                <div className="form-field" style={{ marginBottom: 0 }}><label>日付</label><input type="date" id="closed-date-input" /></div>
+                <div className="form-field" style={{ marginBottom: 0, minWidth: '160px' }}><label>理由（任意）</label><input type="text" id="closed-date-reason" placeholder="例：臨時休業" /></div>
+                <button type="button" className="btn btn-ghost" id="closed-date-add-btn" style={{ fontSize: '12px', padding: '6px 14px' }}>追加</button>
+              </div>
+              <div id="closed-dates-list"></div>
+            </div>
           </div>
 
           {/* 空き枠の一覧・管理（でお指摘2026-09-14：「設定した空き枠が下にバーって出て
@@ -8689,6 +8753,18 @@ export default function ProviderDashboardPage() {
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button type="button" className="btn" id="bh2-save-btn">営業時間を保存</button>
               <span id="bh2-save-msg" style={{ fontSize: '12px', alignSelf: 'center' }}></span>
+            </div>
+
+            {/* 臨時休業日（でお要望2026-09-18） */}
+            <div style={{ marginTop: '10px', paddingTop: '14px', borderTop: '1px solid rgba(26,20,16,0.08)' }}>
+              <h4 style={{ margin: '0 0 4px', fontSize: '13px' }}>臨時休業日</h4>
+              <p className="muted" style={{ fontSize: '12px', margin: '0 0 8px' }}>特定の1日だけ休業する場合はここに追加してください。その日の予約枠は自動的に締め切られます。</p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '10px' }}>
+                <div className="form-field" style={{ marginBottom: 0 }}><label>日付</label><input type="date" id="bh2-closed-date-input" /></div>
+                <div className="form-field" style={{ marginBottom: 0, minWidth: '160px' }}><label>理由（任意）</label><input type="text" id="bh2-closed-date-reason" placeholder="例：臨時休業" /></div>
+                <button type="button" className="btn btn-ghost" id="bh2-closed-date-add-btn" style={{ fontSize: '12px', padding: '6px 14px' }}>追加</button>
+              </div>
+              <div id="bh2-closed-dates-list"></div>
             </div>
           </div>
         </div>

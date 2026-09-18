@@ -154,6 +154,11 @@ export async function POST(request) {
     if (cutoffHours > 0 && new Date(`${slotRow.date}T${slotRow.start_time}:00+09:00`).getTime() <= Date.now() + cutoffHours * 3600000) {
       return Response.json({ error: `この枠は予約受付を締め切りました（開始${cutoffHours}時間前まで）。別の枠をお選びください` }, { status: 409 });
     }
+    // 臨時休業日（でお要望2026-09-18）の最終確認。
+    const { data: closedRow } = await supabase.from('provider_closed_dates').select('date').eq('provider_id', provider_id).eq('date', slotRow.date).maybeSingle();
+    if (closedRow) {
+      return Response.json({ error: 'この日は臨時休業のため予約できません' }, { status: 409 });
+    }
     const { data: bookedRows } = await supabase.from('reservations').select('id').eq('slot_id', slot_id).in('status', OCCUPYING_STATUSES);
     if ((bookedRows?.length || 0) >= slotRow.capacity) {
       return Response.json({ error: 'この枠は満席になりました。別の枠をお選びください' }, { status: 409 });
