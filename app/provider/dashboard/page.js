@@ -134,6 +134,13 @@ const DASHBOARD_CSS = `
       .cal-grey-band-v { left: 0; right: 0; }
       .cal-grey-band-h { top: 0; bottom: 0; }
       .cal-grey-band-label { font-size: 10px; font-weight: 700; color: #4b5563; white-space: nowrap; background: rgba(255,255,255,0.55); padding: 1px 5px; border-radius: 99px; pointer-events: none; }
+      /* 営業時間外（表示範囲の前後1時間の余白）のグレー表示（でお要望2026-09-18：
+         「予約カレンダーは営業時間の前後1時間も表示させてくれてる。その営業時間外の
+         ところは色をグレーにするとかでわかりやすくして」）。全列にまたがる帯のため、
+         スタッフ列の中ではなくグリッド全体に重ねる（now-lineと同じ座標の取り方）。 */
+      .cal-outofhours-band { position: absolute; background: rgba(107,114,128,0.14); pointer-events: none; z-index: 0; }
+      .cal-outofhours-band-v { left: 40px; right: 0; }
+      .cal-outofhours-band-h { top: 0; bottom: 0; }
       .cal-block, .cal-block-h { z-index: 1; }
       .cal-block strong, .cal-block-h strong { display: block; font-size: 10.5px; }
       .cal-block { position: absolute; left: 2px; right: 2px; }
@@ -5817,12 +5824,15 @@ export default function ProviderDashboardPage() {
       // 24時間表示にフォールバックする。
       let RANGE_START_MIN = 0;
       let RANGE_END_MIN = 24 * 60;
+      let businessHoursData = {}; // {mon:{open,close,closed}, ...}。前後1時間の余白帯をグレー表示するために使う
+      const WEEKDAY_KEYS_BH = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
       async function loadCalendarRange() {
         const res = await fetch('/api/provider/business-hours', { headers: authHeadersCal() });
         if (!res.ok) return;
         const { business_hours } = await res.json();
+        businessHoursData = business_hours || {};
         const opens = [], closes = [];
-        Object.values(business_hours || {}).forEach(h => {
+        Object.values(businessHoursData).forEach(h => {
           if (h && !h.closed && h.open && h.close) {
             opens.push(timeToMinutes(h.open));
             closes.push(timeToMinutes(h.close));
@@ -5832,6 +5842,23 @@ export default function ProviderDashboardPage() {
           RANGE_START_MIN = Math.max(0, Math.min(...opens) - 60);
           RANGE_END_MIN = Math.min(24 * 60, Math.max(...closes) + 60);
         }
+      }
+
+      // 表示範囲は営業時間の前後1時間の余白を含む（でお好評：「ナイスアイデア」）。
+      // でお要望2026-09-18：その余白（＝営業時間外）をグレーにしてわかりやすくしたい。
+      // 表示中の日付の曜日の営業時間から、RANGE内で営業時間外にあたる区間を返す。
+      function outOfHoursIntervalsFor(dateStr) {
+        const d = new Date(`${dateStr}T00:00:00`);
+        const hours = businessHoursData[WEEKDAY_KEYS_BH[d.getDay()]];
+        if (!hours || hours.closed || !hours.open || !hours.close) {
+          return [{ start: RANGE_START_MIN, end: RANGE_END_MIN }]; // 休業日はRANGE全体が対象外
+        }
+        const openMin = timeToMinutes(hours.open);
+        const closeMin = timeToMinutes(hours.close);
+        const out = [];
+        if (openMin > RANGE_START_MIN) out.push({ start: RANGE_START_MIN, end: Math.min(openMin, RANGE_END_MIN) });
+        if (closeMin < RANGE_END_MIN) out.push({ start: Math.max(closeMin, RANGE_START_MIN), end: RANGE_END_MIN });
+        return out;
       }
       const DEFAULT_DURATION_MIN = 40; // 申請制はメニューの所要時間を保持していないため目安値
 
@@ -6134,11 +6161,17 @@ export default function ProviderDashboardPage() {
         const nowLineHtml = isShowingNowLine()
           ? `<div class="cal-now-line" style="top:${((nowMinutesLocal() - RANGE_START_MIN) / totalMin) * totalHeight}px"></div>`
           : '';
+        const outOfHoursHtml = outOfHoursIntervalsFor(selectedDate).map(iv => {
+          const top = ((iv.start - RANGE_START_MIN) / totalMin) * totalHeight;
+          const height = ((iv.end - iv.start) / totalMin) * totalHeight;
+          return `<div class="cal-outofhours-band cal-outofhours-band-v" style="top:${top}px;height:${height}px" title="営業時間外"></div>`;
+        }).join('');
         return `
           <div class="cal-grid-inner" style="grid-template-columns:${gridTemplateColumns}">
             <div class="cal-time-col-spacer"></div>
             ${headerCellsHtml}
             ${timeColHtml}
+            ${outOfHoursHtml}
             ${bodyColsHtml}
             ${nowLineHtml}
           </div>
@@ -6204,10 +6237,16 @@ export default function ProviderDashboardPage() {
         const nowLineHtmlH = isShowingNowLine()
           ? `<div class="cal-now-line-h" style="left:${nameColWidth + ((nowMinutesLocal() - RANGE_START_MIN) / totalMin) * totalWidth}px"></div>`
           : '';
+        const outOfHoursHtmlH = outOfHoursIntervalsFor(selectedDate).map(iv => {
+          const left = nameColWidth + ((iv.start - RANGE_START_MIN) / totalMin) * totalWidth;
+          const width = ((iv.end - iv.start) / totalMin) * totalWidth;
+          return `<div class="cal-outofhours-band cal-outofhours-band-h" style="left:${left}px;width:${width}px" title="営業時間外"></div>`;
+        }).join('');
         return `
           <div class="cal-grid-inner-h" style="grid-template-columns:${nameColWidth}px ${totalWidth}px">
             <div class="cal-hour-head-spacer"></div>
             ${hourHeadHtml}
+            ${outOfHoursHtmlH}
             ${rowsHtml}
             ${nowLineHtmlH}
           </div>
