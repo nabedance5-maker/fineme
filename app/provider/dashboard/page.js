@@ -3528,6 +3528,16 @@ export default function ProviderDashboardPage() {
           custModalNoteTa.placeholder = 'この店舗だけが見られるメモ（要望・使った薬剤・注意点など）。お客様には表示されません。';
           custModalNoteSaveBtn.disabled = false;
         }
+
+        // 契約中のロッカーがあればバッジで表示（でお質問2026-09-18：「ロッカーを契約したら
+        // 顧客情報に紐づいて表示されるようになってる？」）。
+        const lockerRes = await fetch(`/api/provider/customers/${uid}/locker`, { headers: authHeaders() });
+        if (lockerRes.ok) {
+          const lockerData = await lockerRes.json();
+          if (lockerData && custModalBadgesEl) {
+            custModalBadgesEl.insertAdjacentHTML('beforeend', `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#ecfdf5;color:#059669;border-radius:99px;">ロッカー契約中：${esc(lockerData.locker_name || '')}${lockerData.monthly_fee ? `（月額¥${Number(lockerData.monthly_fee).toLocaleString()}）` : ''}</span>`);
+          }
+        }
       }
 
       async function openManualModal(id) {

@@ -60,6 +60,11 @@ export async function POST(request, { params }) {
     const { data: lockerRow } = await supabase.from('provider_lockers').select('id, name, monthly_fee, stripe_product_id').eq('id', m.locker_id).eq('provider_id', provider.id).single();
     if (!lockerRow) return Response.json({ error: '選択されたロッカーが見つかりません' }, { status: 409 });
     if (!lockerRow.monthly_fee) return Response.json({ error: '選択されたロッカーに金額が設定されていません。ロッカー管理タブで金額を設定してください' }, { status: 409 });
+    // 二重契約防止（でお質問2026-09-18の調査で判明：入会フローのロッカー選択は
+    // 従来provider_locker_contractsに一切反映されず、空きロッカー判定をすり抜けて
+    // 同じロッカーが別のお客様と二重に契約されうる状態だった）。
+    const { data: existingContract } = await supabase.from('provider_locker_contracts').select('id').eq('locker_id', m.locker_id).eq('status', 'active').limit(1).maybeSingle();
+    if (existingContract) return Response.json({ error: 'このロッカーは既に別のお客様と契約中です。お客様に別のロッカーを選び直してもらうか、ロッカー管理タブで既存の契約を確認してください' }, { status: 409 });
     locker = lockerRow;
   }
 
@@ -105,6 +110,21 @@ export async function POST(request, { params }) {
       .select()
       .single();
     if (error) return Response.json({ error: error.message }, { status: 500 });
+
+    // ロッカー契約台帳（provider_locker_contracts）に実際の契約行を作る（でお質問
+    // 2026-09-18：「ロッカーを契約したら顧客情報に紐づいて表示されるようになってる？」。
+    // これが無いとロッカー管理タブの契約一覧にも顧客情報ポップアップにも出てこない）。
+    if (locker) {
+      await supabase.from('provider_locker_contracts').insert({
+        locker_id: locker.id,
+        provider_id: provider.id,
+        user_id: m.user_id,
+        contractor_name: `${m.last_name || ''} ${m.first_name || ''}`.trim() || '（入会手続きより）',
+        monthly_fee: locker.monthly_fee,
+        status: 'active',
+        membership_id: m.id,
+      });
+    }
 
     return Response.json(updated);
   } catch (e) {
