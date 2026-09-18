@@ -1687,15 +1687,17 @@ export default function ProviderDashboardPage() {
         classesCache = await res.json();
         if (!classesCache.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">まだクラスがありません。「＋ クラスを追加」から作成してください。</p>'; return; }
         listEl.innerHTML = classesCache.map(c => `
-          <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--color-bg);border-radius:10px;flex-wrap:wrap" data-cls-row="${c.id}">
-            <div style="flex:1;min-width:0">
+          <div style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;background:var(--color-bg);border-radius:10px" data-cls-row="${c.id}">
+            <div style="min-width:0">
               <strong style="font-size:14px">${esc(c.name)}</strong>
               <span class="muted" style="font-size:12px;margin-left:8px">${c.enrolledCount}名${c.capacity ? `／定員${c.capacity}名／残り${c.remaining}名` : ''}${c.waitlistedCount ? `（待機${c.waitlistedCount}名）` : ''}${c.price != null ? `／¥${Number(c.price).toLocaleString()}` : ''}</span>
             </div>
-            <button type="button" class="btn" style="font-size:12px;padding:5px 10px" data-cls-sessions="${c.id}">📅 予約枠を管理</button>
-            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-cls-roster="${c.id}">名簿・進級</button>
-            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-cls-edit="${c.id}">編集</button>
-            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-cls-del="${c.id}">削除</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" class="btn" style="font-size:12px;padding:5px 10px" data-cls-sessions="${c.id}">予約枠を管理</button>
+              <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-cls-roster="${c.id}">名簿・進級</button>
+              <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px" data-cls-edit="${c.id}">編集</button>
+              <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-cls-del="${c.id}">削除</button>
+            </div>
           </div>
         `).join('');
         listEl.querySelectorAll('[data-cls-edit]').forEach(btn => btn.addEventListener('click', () => {
