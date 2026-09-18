@@ -13,6 +13,15 @@ const _sb = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzZnB6bHZ1Y3F6bWpsZHNod3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODM1MzIsImV4cCI6MjA4ODU1OTUzMn0.9mBlP8-0l9jotex_UkX7Ba8ZodYtailaxoK_RIy3Kq8'
 );
 
+// 掲載者向けログイン画面へのURLは、必ずこの1箇所からだけ組み立てる（でお報告
+// 2026-09-18：「掲載者管理画面のログイン画面のデザインが前のものに戻っている」。
+// ログアウト導線は?type=provider付きで直していたが、セッション切れ時の再ログイン
+// リンク（401フォールバック）は別の場所にハードコードされていて直っていなかった。
+// この種の「直したはずなのに別の場所に同じ問題が残っている」を二度と起こさないため、
+// このファイル内で掲載者ログインへ遷移する箇所は全てこの定数を使うこと。新しく
+// ログインへの導線を足す時は絶対に'/login'を直書きしない）。
+const PROVIDER_LOGIN_URL = '/login?type=provider';
+
 // サイドバー・タブ・カード等の見た目CSS。以前はuseEffect内でdocument.createElement('style')
 // により動的にDOM注入していたが、useEffectはクライアント側の初回マウント後（=最初の描画の後）
 // にしか走らないため、ページ読み込み直後の一瞬だけCSS無しの生のHTMLが見えてしまっていた
@@ -481,14 +490,19 @@ export default function ProviderDashboardPage() {
           new Promise(resolve => setTimeout(resolve, 3000)),
         ]);
       } catch {}
-      window.location.replace('/login?type=provider');
+      window.location.replace(PROVIDER_LOGIN_URL);
     });
 
     // 上のgetSession()呼び出しでも直せない場合（リフレッシュトークン自体も失効等）に、
     // 各タブの「取得エラー」を401の時だけ再ログイン導線付きに出し分けるための共通ヘルパー。
+    // でお報告2026-09-18：「掲載者管理画面のログイン画面のデザインが前のものに戻っている」
+    // の原因はここ——type=providerを付け忘れていたため、セッション切れ時の再ログイン
+    // リンクだけ一般ユーザー向けの見た目に戻ってしまっていた（ログアウトボタン側は
+    // 別途type=provider付きで直し済みだったが、この401フォールバックは対象外だった）。
+    // ビルド時に検知できるよう、URLをハードコードせず唯一の定数から組み立てる。
     function authErrorHtml(res) {
       if (res?.status === 401) {
-        return '<p style="color:#ef4444" class="muted">セッションの有効期限が切れています。<a href="/login?redirect=%2Fprovider%2Fdashboard" style="color:inherit;text-decoration:underline;font-weight:700;">再ログインしてください</a></p>';
+        return `<p style="color:#ef4444" class="muted">セッションの有効期限が切れています。<a href="${PROVIDER_LOGIN_URL}&redirect=%2Fprovider%2Fdashboard" style="color:inherit;text-decoration:underline;font-weight:700;">再ログインしてください</a></p>`;
       }
       return '<p style="color:#ef4444" class="muted">取得エラー</p>';
     }
