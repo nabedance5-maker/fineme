@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { hasFeature } from '@/lib/feature-flags';
 import { getShiftScheduleForRange, isOutsideShift } from '@/lib/shift-availability';
+import { isPastBookingCutoff } from '@/lib/booking-cutoff';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -21,7 +22,7 @@ export async function GET(request, { params }) {
 
   const { data: provider } = await supabase
     .from('providers')
-    .select('id, enabled_features, booking_cutoff_hours')
+    .select('id, enabled_features, booking_cutoff_hours, booking_cutoff_mode, booking_cutoff_time')
     .eq('slug', slug)
     .eq('published', true)
     .eq('admin_hidden', false)
@@ -46,15 +47,16 @@ export async function GET(request, { params }) {
   let filtered = serviceId ? slots.filter(s => !s.service_id || s.service_id === serviceId) : slots;
   if (!filtered.length) return Response.json([]);
 
+  // dates（対象日付一覧）は以降の複数のチェック（締切・臨時休業・休憩ブロック・シフト）で
+  // 使うため、最初に1回だけ計算する（レビューで発覚：以前はこの下のスタッフ休憩ブロックの
+  // 箇所で初めて宣言していたため、それより前にある臨時休業日チェックが「宣言前のdatesを
+  // 参照」してReferenceErrorになり、即時予約の空き枠取得が丸ごと500エラーで落ちていた）。
+  const dates = [...new Set(filtered.map(s => s.date))];
+
   // 予約可能時間の締切（でお確認2026-09-18：「予約可能時間の設定どこ（前日21時まで
-  // 予約可能等）」）。開始時刻から起算した「◯時間前まで」というリードタイム方式。
-  if (provider.booking_cutoff_hours > 0) {
-    const cutoffMs = Date.now() + provider.booking_cutoff_hours * 3600000;
-    // start_timeは日本時間の壁時計表記（HH:MM）。サーバーはUTCで動くため、明示的に
-    // +09:00を付けないと9時間ズレて判定される（このセッションで既出のJST/UTC不具合と同種）。
-    filtered = filtered.filter(s => new Date(`${s.date}T${s.start_time}:00+09:00`).getTime() > cutoffMs);
-    if (!filtered.length) return Response.json([]);
-  }
+  // 予約可能等）」）。開始時刻から起算した「◯時間前まで」、または「前日◯時まで」。
+  filtered = filtered.filter(s => !isPastBookingCutoff(provider, s.date, s.start_time));
+  if (!filtered.length) return Response.json([]);
 
   // 臨時休業日（でお要望2026-09-18）。枠自体は自動生成時に既に除外されているはずだが、
   // 手動で作った枠や、枠を作った後に臨時休業に設定した場合に備えて念のため確認する。
@@ -72,7 +74,6 @@ export async function GET(request, { params }) {
   // スタッフの休憩・外出ブロック（でお要望2026-09-14）と重なる枠は、お客様には見せない。
   // 枠自体はauto-generate時点で除外済みのことが多いが、枠を生成した後にブロックが
   // 追加された場合に備えて、公開一覧の取得時にも都度除外する（二重の安全策）。
-  const dates = [...new Set(filtered.map(s => s.date))];
   const { data: blocks } = await supabase
     .from('provider_staff_blocks')
     .select('staff_id, date, start_time, end_time')

@@ -6,6 +6,7 @@ import { sendLinePush } from '@/lib/line-push';
 import { notifyCustomerLine, attributeReferral } from '@/lib/reservation-notify';
 import { hasFeature } from '@/lib/feature-flags';
 import { getShiftScheduleForRange, isOutsideShift } from '@/lib/shift-availability';
+import { isPastBookingCutoff, cutoffDescription } from '@/lib/booking-cutoff';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -94,8 +95,8 @@ export async function POST(request) {
   }
 
   // enabled_features（申請制ON/OFF判定用）とmax_active_reservations（同時保持できる
-  // 予約数の上限、店舗ごとに変更可）・booking_cutoff_hours（予約締切）をまとめて取得。
-  const { data: providerFeatureRow } = await supabase.from('providers').select('enabled_features, max_active_reservations, booking_cutoff_hours').eq('id', provider_id).single();
+  // 予約数の上限、店舗ごとに変更可）・予約締切設定をまとめて取得。
+  const { data: providerFeatureRow } = await supabase.from('providers').select('enabled_features, max_active_reservations, booking_cutoff_mode, booking_cutoff_hours, booking_cutoff_time').eq('id', provider_id).single();
 
   // 申請制（第1〜3希望→店舗が承認）は店舗ごとにON/OFFできる（でお要望2026-09-14：
   // 「即時予約と同じように、予約リクエストも受け付けるかどうか設定できるように」）。
@@ -150,9 +151,8 @@ export async function POST(request) {
     // 予約可能時間の締切（でお確認2026-09-18：「予約可能時間の設定どこ」）。
     // 公開一覧側でも除外しているが、表示を開いたままにしていた間に締切時刻を過ぎた
     // ケースに備えて予約作成時にも最終確認する。
-    const cutoffHours = providerFeatureRow?.booking_cutoff_hours || 0;
-    if (cutoffHours > 0 && new Date(`${slotRow.date}T${slotRow.start_time}:00+09:00`).getTime() <= Date.now() + cutoffHours * 3600000) {
-      return Response.json({ error: `この枠は予約受付を締め切りました（開始${cutoffHours}時間前まで）。別の枠をお選びください` }, { status: 409 });
+    if (isPastBookingCutoff(providerFeatureRow, slotRow.date, slotRow.start_time)) {
+      return Response.json({ error: `この枠は予約受付を締め切りました（${cutoffDescription(providerFeatureRow)}）。別の枠をお選びください` }, { status: 409 });
     }
     // 臨時休業日（でお要望2026-09-18）の最終確認。
     const { data: closedRow } = await supabase.from('provider_closed_dates').select('date').eq('provider_id', provider_id).eq('date', slotRow.date).maybeSingle();

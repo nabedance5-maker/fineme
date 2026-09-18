@@ -2845,13 +2845,18 @@ export default function ProviderDashboardPage() {
       // でお確認2026-09-18：「予約可能時間の設定どこ（前日21時まで予約可能等）」）
       async function loadBookingLimit() {
         const input = document.getElementById('booking-limit-input');
+        const cutoffModeSel = document.getElementById('booking-cutoff-mode');
         const cutoffInput = document.getElementById('booking-cutoff-input');
+        const cutoffTimeInput = document.getElementById('booking-cutoff-time-input');
         if (!input) return;
         const res = await fetch('/api/provider/booking-limits', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
         if (res.ok) {
           const d = await res.json();
           input.value = d.max_active_reservations ?? 1;
+          if (cutoffModeSel) cutoffModeSel.value = d.booking_cutoff_mode || 'hours';
           if (cutoffInput) cutoffInput.value = d.booking_cutoff_hours ?? 0;
+          if (cutoffTimeInput) cutoffTimeInput.value = d.booking_cutoff_time || '';
+          updateCutoffModeFields();
         }
       }
       document.getElementById('booking-limit-save-btn')?.addEventListener('click', async () => {
@@ -2865,14 +2870,33 @@ export default function ProviderDashboardPage() {
         });
         if (msg) { msg.style.color = res.ok ? '#4ade80' : '#ef4444'; msg.textContent = res.ok ? '✓ 保存しました' : '保存に失敗しました'; }
       });
+      // 予約締切の指定方法（でお要望2026-09-18：「前日の何時までというのと、何時間前
+      // までを選べるように」）。「開始◯時間前まで」と「前日◯時まで（固定時刻）」を切替。
+      function updateCutoffModeFields() {
+        const mode = document.getElementById('booking-cutoff-mode')?.value || 'hours';
+        const hoursField = document.getElementById('booking-cutoff-hours-field');
+        const timeField = document.getElementById('booking-cutoff-time-field');
+        if (hoursField) hoursField.style.display = mode === 'hours' ? '' : 'none';
+        if (timeField) timeField.style.display = mode === 'day_before_time' ? '' : 'none';
+      }
+      document.getElementById('booking-cutoff-mode')?.addEventListener('change', updateCutoffModeFields);
       document.getElementById('booking-cutoff-save-btn')?.addEventListener('click', async () => {
+        const mode = document.getElementById('booking-cutoff-mode')?.value || 'hours';
         const cutoffInput = document.getElementById('booking-cutoff-input');
+        const cutoffTimeInput = document.getElementById('booking-cutoff-time-input');
         const msg = document.getElementById('booking-cutoff-msg');
-        const h = Number(cutoffInput?.value);
-        if (!Number.isInteger(h) || h < 0) { if (msg) { msg.style.color = '#ef4444'; msg.textContent = '0以上の整数を入力してください'; } return; }
+        const body = { booking_cutoff_mode: mode };
+        if (mode === 'hours') {
+          const h = Number(cutoffInput?.value);
+          if (!Number.isInteger(h) || h < 0) { if (msg) { msg.style.color = '#ef4444'; msg.textContent = '0以上の整数を入力してください'; } return; }
+          body.booking_cutoff_hours = h;
+        } else {
+          if (!cutoffTimeInput?.value) { if (msg) { msg.style.color = '#ef4444'; msg.textContent = '時刻を選んでください'; } return; }
+          body.booking_cutoff_time = cutoffTimeInput.value;
+        }
         const res = await fetch('/api/provider/booking-limits', {
           method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
-          body: JSON.stringify({ booking_cutoff_hours: h }),
+          body: JSON.stringify(body),
         });
         if (msg) { msg.style.color = res.ok ? '#4ade80' : '#ef4444'; msg.textContent = res.ok ? '✓ 保存しました' : '保存に失敗しました'; }
       });
@@ -8665,12 +8689,24 @@ export default function ProviderDashboardPage() {
             </div>
 
             {/* 予約可能時間の締切（でお確認2026-09-18：「予約可能時間の設定どこ
-                (ex.前日21時まで予約可能)」）。固定の時刻ではなく「開始の◯時間前まで」
-                というリードタイム方式（営業時間が曜日で変わる店舗にも対応しやすいため）。 */}
+                (ex.前日21時まで予約可能)」／でお要望2026-09-18：「前日の何時までという
+                のと、何時間前までを選べるように」）。2つの指定方法から選べる。 */}
             <div className="form-field" style={{ marginBottom: 0, maxWidth: '280px', marginTop: '16px' }}>
-              <label>予約可能時間の締切（開始の何時間前まで受付）</label>
+              <label>予約可能時間の締切</label>
+              <select id="booking-cutoff-mode">
+                <option value="hours">開始の何時間前まで受付</option>
+                <option value="day_before_time">前日の何時まで受付</option>
+              </select>
+            </div>
+            <div className="form-field" id="booking-cutoff-hours-field" style={{ marginBottom: 0, maxWidth: '280px' }}>
+              <label>何時間前まで</label>
               <input type="number" id="booking-cutoff-input" min="0" style={{ width: '100px' }} />
               <span className="muted" style={{ fontSize: '11.5px' }}>0で無制限（直前まで予約可）。例：12を入れると開始12時間前で受付終了</span>
+            </div>
+            <div className="form-field" id="booking-cutoff-time-field" style={{ marginBottom: 0, maxWidth: '280px', display: 'none' }}>
+              <label>前日の何時まで</label>
+              <input type="time" id="booking-cutoff-time-input" />
+              <span className="muted" style={{ fontSize: '11.5px' }}>例：21:00にすると、予約日の前日21時で受付終了（予約時間帯に関わらず一律）</span>
             </div>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px' }}>
               <button type="button" className="btn btn-ghost" id="booking-cutoff-save-btn" style={{ fontSize: '12px', padding: '6px 14px' }}>保存する</button>
