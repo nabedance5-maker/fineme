@@ -62,12 +62,41 @@ export async function POST(request) {
       .single();
     if (error) return Response.json({ error: error.message }, { status: 500 });
 
+    // チェックインQRのスキャンと、予約リクエストタブの「来店確認」が別々の手作業に
+    // なっていた（でお指摘2026-09-23：QR1個で全部賄いたい）。当日の承認済み予約が
+    // あれば、このスキャンで予約側も自動で来店確認まで済ませる。副作用（LINE通知・
+    // 紹介プログラム確定・New Me Log同期等）はapp/api/reservations/[id]/route.jsに
+    // 既に実装済みのため、そちらへPATCHを1回投げて再利用する（二重実装しない）。
+    let matchedReservationId = null;
     if (provider.slug) {
-      // syncVisitToLogがlast_visitを更新する前に「久しぶりの来店か」を判定する必要がある
+      const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date());
+      const { data: candidates } = await supabase
+        .from('reservations')
+        .select('id, confirmed_date, reserved_date')
+        .eq('provider_id', provider.id)
+        .eq('user_id', profile.id)
+        .eq('status', 'approved');
+      const match = (candidates || []).find(r => (r.confirmed_date || r.reserved_date) === today);
+      if (match) {
+        try {
+          const origin = new URL(request.url).origin;
+          const patchRes = await fetch(`${origin}/api/reservations/${match.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+            body: JSON.stringify({ status: 'visited' }),
+          });
+          if (patchRes.ok) matchedReservationId = match.id;
+        } catch (e) { console.error('[checkin auto-visit]', e); }
+      }
+    }
+
+    if (provider.slug && !matchedReservationId) {
+      // 予約と自動連携できた場合は上のPATCHが同じ処理(New Me Log同期含む)を
+      // 行っているため、ここでの直接呼び出しは二重実行を避けてスキップする
       await notifyStoreIfAtRiskVisit(supabase, { userId: profile.id, providerId: provider.id, providerSlug: provider.slug, memberName: profile.display_name });
       await syncVisitToLog(supabase, { userId: profile.id, providerSlug: provider.slug });
     }
-    return Response.json({ ...row, customer_name: profile.display_name || '(名前未設定)' });
+    return Response.json({ ...row, customer_name: profile.display_name || '(名前未設定)', matched_reservation_id: matchedReservationId });
   }
 
   if (offline_member_name?.trim()) {

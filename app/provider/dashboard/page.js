@@ -5410,7 +5410,8 @@ export default function ProviderDashboardPage() {
         </div>`;
     }
 
-    window.showVisitModal = async function (id) {
+    window.showVisitModal = async function (id, opts) {
+      const alreadyVisited = !!opts?.alreadyVisited;
       const existing = document.getElementById('visit-modal-overlay'); if (existing) existing.remove();
       await loadSalesModalOptions();
       const r = _requestsById[id] || {};
@@ -5423,8 +5424,8 @@ export default function ProviderDashboardPage() {
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
       overlay.innerHTML = `
         <div style="background:#fff;border-radius:18px;padding:28px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto">
-          <h2 style="font-size:16px;font-weight:800;margin:0 0 6px">来店を確認</h2>
-          <p style="font-size:13px;color:#6b7280;margin:0 0 18px">実際にご利用いただいたメニュー・金額を確認してください。予約時の内容から自動で入っていますが、変更・追加できます。</p>
+          <h2 style="font-size:16px;font-weight:800;margin:0 0 6px">${alreadyVisited ? 'チェックイン済みです' : '来店を確認'}</h2>
+          <p style="font-size:13px;color:#6b7280;margin:0 0 18px">${alreadyVisited ? 'QRチェックインと同時に予約も来店確認済みです。実際にご利用いただいたメニュー・金額を記録してください。' : '実際にご利用いただいたメニュー・金額を確認してください。予約時の内容から自動で入っていますが、変更・追加できます。'}</p>
           <div id="visit-rows">${visitModalRowHtml(0, presetName)}</div>
           <button type="button" id="visit-add-row-btn" style="font-size:12px;padding:6px 12px;background:none;border:1px dashed #d1d5db;border-radius:8px;color:#6b7280;cursor:pointer;margin-bottom:14px;">＋ メニューを追加</button>
           <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px">担当スタッフ（任意）</label>
@@ -5437,10 +5438,10 @@ export default function ProviderDashboardPage() {
             <option value="LINE Pay">LINE Pay</option><option value="銀行振込">銀行振込</option><option value="その他">その他</option>
           </select>
           <div style="display:flex;gap:8px;margin-bottom:8px">
-            <button onclick="confirmVisit('${id}')" style="flex:1;padding:12px;background:#10b981;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">来店確認して売上を記録</button>
-            <button onclick="document.getElementById('visit-modal-overlay').remove()" style="padding:12px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:14px;cursor:pointer">キャンセル</button>
+            <button onclick="confirmVisit('${id}', false, ${alreadyVisited})" style="flex:1;padding:12px;background:#10b981;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">${alreadyVisited ? '売上を記録する' : '来店確認して売上を記録'}</button>
+            <button onclick="document.getElementById('visit-modal-overlay').remove()" style="padding:12px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:14px;cursor:pointer">${alreadyVisited ? '後で記録する' : 'キャンセル'}</button>
           </div>
-          <button onclick="confirmVisit('${id}', true)" style="width:100%;padding:8px;background:none;border:none;font-size:12px;color:#9ca3af;cursor:pointer;text-decoration:underline;">売上を入力せず来店確認だけする</button>
+          ${alreadyVisited ? '' : '<button onclick="confirmVisit(\'' + id + '\', true)" style="width:100%;padding:8px;background:none;border:none;font-size:12px;color:#9ca3af;cursor:pointer;text-decoration:underline;">売上を入力せず来店確認だけする</button>'}
         </div>
       `;
       document.body.appendChild(overlay);
@@ -5471,11 +5472,17 @@ export default function ProviderDashboardPage() {
       });
     }
 
-    window.confirmVisit = async function (id, skipSales) {
+    window.confirmVisit = async function (id, skipSales, skipStatusUpdate) {
       const _visitToken = getSupabaseToken();
       const headers = { 'Content-Type': 'application/json', ...(_visitToken ? { 'Authorization': `Bearer ${_visitToken}` } : {}) };
-      const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers, body: JSON.stringify({ status: 'visited' }) });
-      if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
+      // skipStatusUpdate: チェックインQRのスキャン時点で予約側は既に来店確認済み
+      // （app/api/provider/checkins/route.js側で自動処理済み）のため、ここで
+      // もう一度PATCHすると通知・紹介プログラム確定等の副作用が二重発火してしまう。
+      // このモーダルでは売上記録だけを行う。
+      if (!skipStatusUpdate) {
+        const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers, body: JSON.stringify({ status: 'visited' }) });
+        if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
+      }
 
       if (!skipSales) {
         const staffId = document.getElementById('visit-staff')?.value || null;
@@ -7376,7 +7383,12 @@ export default function ProviderDashboardPage() {
         const res = await fetch('/api/provider/checkins', { method: 'POST', headers: authHeadersCk(), body: JSON.stringify(body) });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) { showToast('エラー: ' + (data?.error || res.status)); return false; }
-        showToast(`✓ ${data.customer_name} をチェックインしました`);
+        if (data.matched_reservation_id) {
+          showToast(`✓ ${data.customer_name} をチェックイン（本日の予約も来店確認済み）`);
+          window.showVisitModal?.(data.matched_reservation_id, { alreadyVisited: true });
+        } else {
+          showToast(`✓ ${data.customer_name} をチェックインしました`);
+        }
         loadList();
         return true;
       }
