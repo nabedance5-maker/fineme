@@ -507,13 +507,26 @@ export default function ProviderDashboardPage() {
       return '<p style="color:#ef4444" class="muted">取得エラー</p>';
     }
 
+    // でお要望2026-09-24：「特定の掲載者管理画面を直接URLを開いた時に、タイムアウトに
+    // なっているならちゃんとログイン画面に戻るようにして」。以前はトークンが無い/
+    // 401が返ってもnullを返すだけで、呼び出し元(下のfetchAndCacheProviderData().then)は
+    // 「データが無い＝何もしない」としか扱っていなかった。localStorageに前回ログイン時の
+    // provider情報が残っていると、その古いキャッシュのままダッシュボードの見た目だけは
+    // 表示され、各タブを開いた時に個別に「セッション切れ」表示が出るだけでログイン画面
+    // には戻らなかった。未ログイン(トークン無し)・401(タイムアウト)は、ここで即座に
+    // ログイン画面へリダイレクトする。ネットワーク瞬断等それ以外のエラーは既存通り
+    // 静かにnullを返す（一時的な失敗でログアウトさせない）。
+    function redirectToProviderLogin() {
+      window.location.replace(`${PROVIDER_LOGIN_URL}&redirect=%2Fprovider%2Fdashboard`);
+    }
     async function fetchAndCacheProviderData() {
       const token = getSupabaseToken();
-      if (!token) return null;
+      if (!token) { redirectToProviderLogin(); return null; }
       try {
         const res = await fetch('/api/provider/me', {
           headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` }
         });
+        if (res.status === 401) { redirectToProviderLogin(); return null; }
         if (!res.ok) return null;
         const data = await res.json();
         localStorage.setItem(PROVIDER_KEY, JSON.stringify(data));
