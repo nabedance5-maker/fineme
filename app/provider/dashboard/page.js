@@ -522,6 +522,10 @@ export default function ProviderDashboardPage() {
       window.location.replace(`${PROVIDER_LOGIN_URL}&redirect=%2Fprovider%2Fdashboard`);
     }
     async function fetchAndCacheProviderData() {
+      // 401でリダイレクトする前に、まず失効トークンの裏側リフレッシュ（474行目、
+      // fire-and-forget）を待つ。待たずに読むと、リフレッシュ可能なだけの期限切れ
+      // トークンでも本当に無効と誤判定してログイン画面へ飛ばしてしまう。
+      await _sb.auth.getSession().catch(() => {});
       const token = getSupabaseToken();
       if (!token) return null;
       try {
