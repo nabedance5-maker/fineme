@@ -3522,7 +3522,9 @@ export default function ProviderDashboardPage() {
       // 誘導にならない）。実際の書き込みはAPI側（posture-entries route.js）でも同じ判定で
       // 二重に弾く。
       const postureOn = !!provider?.enabled_features?.posture_analysis;
-      const posturePlanEligible = provider?.plan === 'C' || provider?.plan === 'free';
+      // 本番実データでは特例無料の実際のplan値は'special'（'free'というキーは実在しない。
+      // lib/posture-analysis.jsのPOSTURE_ELIGIBLE_PLANSと必ず一致させること）。
+      const posturePlanEligible = provider?.plan === 'C' || provider?.plan === 'special';
       const postureUpsellHtml = `<p class="muted" style="font-size:12px;margin:0;">📐 AI姿勢分析はプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style="color:#c9a84c;font-weight:700;">プランをアップグレード</a>すると使えるようになります。</p>`;
       const custModalPostureSection = document.getElementById('cust-modal-posture-section');
       const custModalPostureAddToggle = document.getElementById('cust-modal-posture-add-toggle');
