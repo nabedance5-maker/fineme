@@ -190,6 +190,7 @@ const DASHBOARD_CSS = `
       .req-row-head { font-size: 11px; font-weight: 700; color: rgba(26,20,16,0.45); text-transform: uppercase; letter-spacing: .03em; border-bottom: 1px solid rgba(26,20,16,0.1); cursor: default; }
       .req-row-head:hover { background: none; }
       .req-row-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .req-unread-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ef4444; margin-right: 6px; vertical-align: middle; }
       .req-row-date { color: rgba(26,20,16,0.6); font-size: 12.5px; }
       @media (max-width: 640px) {
         .cal-day-grid { --cal-col-min: 90px; }
@@ -5219,29 +5220,52 @@ export default function ProviderDashboardPage() {
       if (!res.ok) { document.getElementById('requests-list').innerHTML = authErrorHtml(res); return; }
       const items = await res.json();
       _allRequests = items;
-      const pending = items.filter(r => r.status === 'pending').length;
+      // でお要望2026-09-25：「既読一覧見れるといいですね」。バッジは元々pending件数
+      // だったが、pendingでも一度確認済みなら店舗側は気にしなくていい。未読件数（＝
+      // viewed_atが無いもの）に変更し、既読/未読の区別自体は一覧側の未読ドットで見る。
+      const unread = items.filter(r => !r.viewed_at).length;
       const b = document.getElementById('requests-badge');
-      if (b) { b.textContent = pending || ''; b.style.display = pending > 0 ? 'inline' : 'none'; }
+      if (b) { b.textContent = unread || ''; b.style.display = unread > 0 ? 'inline' : 'none'; }
       applyRequestFilters();
     }
 
     function applyRequestFilters() {
       const statusFilter = document.getElementById('req-filter-status')?.value || '';
       const kwFilter = (document.getElementById('req-filter-kw')?.value || '').toLowerCase().trim();
+      const unreadOnly = !!document.getElementById('req-filter-unread')?.checked;
       let items = _allRequests;
       if (statusFilter) items = items.filter(r => r.status === statusFilter);
+      if (unreadOnly) items = items.filter(r => !r.viewed_at);
       if (kwFilter) items = items.filter(r => (r.user_name || '').toLowerCase().includes(kwFilter) || (r.note || '').toLowerCase().includes(kwFilter));
       const countEl = document.getElementById('req-filter-count');
       if (countEl) countEl.textContent = `${items.length}件`;
       renderRequests(items);
     }
 
+    // 予約リクエストを開いたら既読にする（でお要望2026-09-25）。1回だけAPIを叩けば
+    // 十分なので、ローカルにまだviewed_atが無い時だけ送る。
+    async function markRequestViewed(r) {
+      if (!r || r.viewed_at) return;
+      try {
+        const tk = getSupabaseToken();
+        if (!tk) return;
+        const res = await fetch(`/api/reservations/${r.id}/view`, { method: 'POST', headers: { 'Authorization': `Bearer ${tk}` } });
+        if (res.ok) {
+          const data = await res.json();
+          r.viewed_at = data.viewed_at;
+          applyRequestFilters();
+        }
+      } catch {}
+    }
+
     // 絞り込みコントロールのイベント登録
     document.getElementById('req-filter-status')?.addEventListener('change', applyRequestFilters);
     document.getElementById('req-filter-kw')?.addEventListener('input', applyRequestFilters);
+    document.getElementById('req-filter-unread')?.addEventListener('change', applyRequestFilters);
     document.getElementById('req-filter-reset')?.addEventListener('click', () => {
       const s = document.getElementById('req-filter-status'); if (s) s.value = '';
       const k = document.getElementById('req-filter-kw'); if (k) k.value = '';
+      const u = document.getElementById('req-filter-unread'); if (u) u.checked = false;
       applyRequestFilters();
     });
 
@@ -5317,6 +5341,7 @@ export default function ProviderDashboardPage() {
         return;
       }
       modal.style.display = 'flex';
+      markRequestViewed(r);
     }
     window.openRequestModal = function (id) {
       showRequestModal(_requestsById[id]);
@@ -5355,7 +5380,7 @@ export default function ProviderDashboardPage() {
         const statusLabel = STATUS_LABELS[r.status] || r.status;
         return `
           <div class="req-row" data-req-open="${r.id}">
-            <span class="req-row-name">${esc(r.user_name)}</span>
+            <span class="req-row-name">${!r.viewed_at ? '<span class="req-unread-dot" title="未読"></span>' : ''}${esc(r.user_name)}</span>
             <span class="req-row-date">${esc(dateLabel)}</span>
             <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${statusColor}20;color:${statusColor};white-space:nowrap">${statusLabel}</span>
           </div>
@@ -8178,6 +8203,10 @@ export default function ProviderDashboardPage() {
                 <option value="visited">来店確認済み</option>
                 <option value="rejected">お断り</option>
               </select>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '0 4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                <input id="req-filter-unread" type="checkbox" style={{ accentColor: '#c9a84c' }} />
+                未読のみ
+              </label>
               <button
                 id="req-filter-reset"
                 className="btn btn-ghost"
