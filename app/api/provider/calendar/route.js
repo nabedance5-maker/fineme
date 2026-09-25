@@ -46,7 +46,7 @@ export async function GET(request) {
   const [{ data: allRows, error }, { data: classSlots }] = await Promise.all([
     supabase
       .from('reservations')
-      .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, confirmed_date, confirmed_time, counter_date, counter_time, staff_id, staff_manually_assigned, resource_id, booking_mode, slot_id, class_id')
+      .select('id, user_id, user_name, user_contact, note, status, reserved_date, start_time, confirmed_date, confirmed_time, counter_date, counter_time, staff_id, staff_manually_assigned, resource_id, booking_mode, slot_id, class_id, service_id')
       .eq('provider_id', provider.id)
       .in('status', ['pending', 'approved', 'visited', 'counter_proposed'])
       .gte('reserved_date', from)
@@ -73,13 +73,19 @@ export async function GET(request) {
   const classIds = [...new Set((classSlots || []).map(s => s.class_id).filter(Boolean))];
   const classSlotIds = (classSlots || []).map(s => s.id);
   const instantSlotIds = [...new Set((rows || []).filter(r => r.booking_mode === 'instant' && r.slot_id).map(r => r.slot_id))];
+  // 申請制（request）の予約がメニューを選んでいれば、そのメニューの所要時間を
+  // カレンダーの表示幅に使う（でお要望2026-09-25：「自由記述式じゃなくて時間選択
+  // する方式で正確に時間の長さがカレンダーに反映されるように」）。即時予約は
+  // 枠自体の実時間を優先するため対象外。
+  const serviceIds = [...new Set((rows || []).filter(r => r.booking_mode !== 'instant' && r.service_id).map(r => r.service_id))];
 
-  const [staffRowsRes, resourceRowsRes, classRowsRes, bookedRowsRes, slotRowsRes] = await Promise.all([
+  const [staffRowsRes, resourceRowsRes, classRowsRes, bookedRowsRes, slotRowsRes, serviceRowsRes] = await Promise.all([
     staffIds.length ? supabase.from('provider_staff').select('id, name').in('id', staffIds) : Promise.resolve({ data: [] }),
     resourceIds.length ? supabase.from('provider_resources').select('id, name').in('id', resourceIds) : Promise.resolve({ data: [] }),
     classIds.length ? supabase.from('provider_classes').select('id, name').in('id', classIds) : Promise.resolve({ data: [] }),
     classSlotIds.length ? supabase.from('reservations').select('slot_id').in('slot_id', classSlotIds).in('status', OCCUPYING_STATUSES) : Promise.resolve({ data: [] }),
     instantSlotIds.length ? supabase.from('provider_slots').select('id, start_time, end_time').in('id', instantSlotIds) : Promise.resolve({ data: [] }),
+    serviceIds.length ? supabase.from('provider_services').select('id, duration_minutes').in('id', serviceIds) : Promise.resolve({ data: [] }),
   ]);
 
   const staffMap = {};
@@ -90,6 +96,8 @@ export async function GET(request) {
   (classRowsRes.data || []).forEach(c => { classNameMap[c.id] = c.name; });
   const bookedCountMap = {};
   (bookedRowsRes.data || []).forEach(b => { if (b.slot_id) bookedCountMap[b.slot_id] = (bookedCountMap[b.slot_id] || 0) + 1; });
+  const serviceDurationMap = {};
+  (serviceRowsRes.data || []).forEach(s => { if (s.duration_minutes) serviceDurationMap[s.id] = s.duration_minutes; });
   const slotDurationMap = {};
   (slotRowsRes.data || []).forEach(s => {
     if (!s.start_time || !s.end_time) return;
@@ -140,7 +148,7 @@ export async function GET(request) {
       staff_manually_assigned: !!r.staff_manually_assigned,
       resource_id: r.resource_id || null,
       resource_name: r.resource_id ? resourceMap[r.resource_id] || null : null,
-      duration_minutes: r.slot_id ? slotDurationMap[r.slot_id] || null : null,
+      duration_minutes: r.slot_id ? (slotDurationMap[r.slot_id] || null) : (r.service_id ? (serviceDurationMap[r.service_id] || null) : null),
     }))
     .concat(classSessionItems)
     .filter(r => r.date >= from && r.date <= to)

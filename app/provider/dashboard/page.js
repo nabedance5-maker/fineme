@@ -973,7 +973,7 @@ export default function ProviderDashboardPage() {
                 ${s.is_featured ? '<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:99px">看板</span>' : ''}
                 ${s.target_axis ? `<span style="font-size:11px;background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:99px">${AXIS_ICONS_D[s.target_axis]||''} ${AXIS_LABELS_D[s.target_axis]||s.target_axis}</span>` : ''}
               </div>
-              <div style="font-size:13px;color:#6b7280">¥${Number(s.price).toLocaleString()}${s.duration ? ' · ' + esc(s.duration) : ''}</div>
+              <div style="font-size:13px;color:#6b7280">¥${Number(s.price).toLocaleString()}${s.duration_minutes ? ' · ' + s.duration_minutes + '分' : (s.duration ? ' · ' + esc(s.duration) : '')}</div>
               ${s.transformation_promise ? `<div style="font-size:12px;color:#374151;margin-top:3px;font-style:italic">「${esc(s.transformation_promise)}」</div>` : ''}
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0">
@@ -986,7 +986,7 @@ export default function ProviderDashboardPage() {
           const s = items.find(x => x.id === btn.dataset.edit); if (!s) return;
           editTitle.textContent = 'サービスを編集'; editCard.style.display = 'block';
           editForm.elements['name'].value = s.name || ''; editForm.elements['price'].value = s.price || '';
-          editForm.elements['duration'].value = s.duration || '';
+          editForm.elements['duration_minutes'].value = s.duration_minutes || '';
           editForm.elements['is_featured'].checked = !!s.is_featured; editForm.elements['_service_id'].value = s.id;
           editForm.querySelectorAll('[name=suitable_path_types]').forEach(cb => { cb.checked = (s.suitable_path_types || []).includes(cb.value); });
           // 新フィールド
@@ -1044,7 +1044,7 @@ export default function ProviderDashboardPage() {
         const suitablePathTypes = [...editForm.querySelectorAll('[name=suitable_path_types]:checked')].map(el => el.value);
         const benefitListRaw = fd.get('benefit_list_text') || '';
         const benefitList = benefitListRaw.split('\n').map(s => s.replace(/^[・▶→✓\s]+/, '').trim()).filter(Boolean);
-        const body = { name: fd.get('name'), price: Number(fd.get('price')), duration: fd.get('duration') || null, is_featured: !!editForm.elements['is_featured'].checked, image_url: fd.get('image_url') || null, suitable_path_types: suitablePathTypes.length > 0 ? suitablePathTypes : null, target_axis: fd.get('target_axis') || null, transformation_promise: fd.get('transformation_promise') || null, before_text: fd.get('before_text') || null, after_text: fd.get('after_text') || null, before_image_url: fd.get('before_image_url') || null, after_image_url: fd.get('after_image_url') || null, benefit_list: benefitList.length > 0 ? benefitList : null, category: fd.get('category') || null };
+        const body = { name: fd.get('name'), price: Number(fd.get('price')), duration_minutes: fd.get('duration_minutes') ? Number(fd.get('duration_minutes')) : null, is_featured: !!editForm.elements['is_featured'].checked, image_url: fd.get('image_url') || null, suitable_path_types: suitablePathTypes.length > 0 ? suitablePathTypes : null, target_axis: fd.get('target_axis') || null, transformation_promise: fd.get('transformation_promise') || null, before_text: fd.get('before_text') || null, after_text: fd.get('after_text') || null, before_image_url: fd.get('before_image_url') || null, after_image_url: fd.get('after_image_url') || null, benefit_list: benefitList.length > 0 ? benefitList : null, category: fd.get('category') || null };
         const url = id ? `/api/provider/services/${id}` : '/api/provider/services';
         const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` }, body: JSON.stringify(body) });
         if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadServices(); showToast('保存しました'); }
@@ -4649,8 +4649,7 @@ export default function ProviderDashboardPage() {
           if (!s) return;
           document.getElementById('menu-name').value = s.name || '';
           document.getElementById('menu-price').value = s.price || '';
-          const durationMatch = String(s.duration || '').match(/\d+/);
-          document.getElementById('menu-duration').value = durationMatch ? durationMatch[0] : '';
+          document.getElementById('menu-duration').value = s.duration_minutes || '';
           const imgInput = document.getElementById('menu-image-url');
           const imgPreview = document.getElementById('menu-image-preview');
           if (imgInput) imgInput.value = s.image_url || '';
@@ -7971,7 +7970,7 @@ export default function ProviderDashboardPage() {
                 横スクロールでスタッフ列を、縦スクロールで時間帯を確認する。640px以下は
                 でお要望（2026-09-12）でスタッフ列を狭くし、画面内に3〜4人分見える形に調整。 */}
             <div id="cal-day-grid" className="cal-day-grid"></div>
-            <p className="muted" style={{ fontSize: '11px', margin: '8px 0 0' }}>※ 所要時間はメニューごとの登録が無いため目安表示です（即時予約の枠はその枠の時間で正確に表示）</p>
+            <p className="muted" style={{ fontSize: '11px', margin: '8px 0 0' }}>※ 所要時間は即時予約の枠・メニューを選択した予約は正確に表示、メニュー未選択の予約は目安表示です</p>
 
             {/* 「列の並び順」は表示モードの選択肢と並べるとボタンの1つに見えてしまい紛らわしい
                 （でお報告2026-09-18：「列の順はここじゃない気がする。赤丸のボタンは下に
@@ -8946,7 +8945,15 @@ export default function ProviderDashboardPage() {
               <div className="form-field"><label>サービス名 *</label><input name="name" required placeholder="例: 初回体験コース 60分" /></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div className="form-field"><label>価格（円）*</label><input name="price" type="number" required placeholder="5000" /></div>
-                <div className="form-field"><label>所要時間</label><input name="duration" placeholder="例: 60分" /></div>
+                <div className="form-field">
+                  <label>所要時間</label>
+                  <select name="duration_minutes" defaultValue="">
+                    <option value="">選択しない</option>
+                    {[15, 20, 30, 40, 45, 50, 60, 75, 90, 105, 120, 150, 180, 240].map(m => (
+                      <option key={m} value={m}>{m}分{m >= 60 ? `（${Math.floor(m / 60)}時間${m % 60 ? m % 60 + '分' : ''}）` : ''}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* サービスカテゴリ（L14） */}

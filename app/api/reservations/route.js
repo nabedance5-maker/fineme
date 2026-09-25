@@ -81,7 +81,7 @@ export async function POST(request) {
   // スタッフ指名予約・即時予約モード（hacomono/STORES網羅計画 Phase 1）。
   // staff_idは申請制・即時予約どちらでも受け付ける（指名だけして日程は店舗と相談、も可）。
   // booking_mode省略時は完全に従来通りの申請制コードパス（既存挙動の回帰防止）。
-  const { staff_id, booking_mode, slot_id, referral_code } = body;
+  const { staff_id, booking_mode, slot_id, referral_code, service_id } = body;
   const isInstant = booking_mode === 'instant';
 
   if (!provider_id || !user_name || !user_contact) {
@@ -136,6 +136,7 @@ export async function POST(request) {
     note: message || '',
     status: 'pending',
     staff_id: staff_id || null,
+    service_id: service_id || null,
     designation_fee: designationFee,
     booking_mode: isInstant ? 'instant' : 'request',
   };
@@ -198,6 +199,7 @@ export async function POST(request) {
     insertPayload.confirmed_time = slot.start_time;
     insertPayload.status = 'approved'; // 即時確定——hacomono/STORESと同じ「空き枠を選んだらその場で確定」
     if (!insertPayload.staff_id && slot.staff_id) insertPayload.staff_id = slot.staff_id; // 枠にスタッフが紐づいていれば継承
+    if (!insertPayload.service_id && slot.service_id) insertPayload.service_id = slot.service_id; // 枠にメニューが紐づいていれば継承
   } else {
     insertPayload.reserved_date = preferred_date;
     insertPayload.start_time = preferred_time;

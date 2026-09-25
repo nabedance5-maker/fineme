@@ -676,7 +676,7 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
         {/* 価格 */}
         <div style={{ marginBottom: '12px' }}>
           <span style={{ fontSize: '24px', fontWeight: '900', color: 'rgba(232,228,220,0.90)', lineHeight: 1 }}>¥{service.price.toLocaleString()}</span>
-          {service.duration && <span style={{ fontSize: '12px', color: 'rgba(232,228,220,0.40)', marginLeft: '6px' }}>/ {service.duration}</span>}
+          {(service.duration_minutes || service.duration) && <span style={{ fontSize: '12px', color: 'rgba(232,228,220,0.40)', marginLeft: '6px' }}>/ {service.duration_minutes ? `${service.duration_minutes}分` : service.duration}</span>}
         </div>
 
         {/* 「変容の旅を覗く」ボタン（常時表示・フル幅） */}
@@ -1078,6 +1078,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         user_contact,
         message: meScanNote + noteParts.join('\n'),
         staff_id: staffId || null,
+        service_id: selectedService?.id || null,
         referral_code,
         ...(useInstant
           ? { booking_mode: 'instant', slot_id: selectedSlotId }
@@ -1200,7 +1201,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
             {services.map(s => (
               <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', border: `1.5px solid ${selectedService?.id === s.id ? '#111' : '#e5e7eb'}`, borderRadius: '10px', cursor: 'pointer' }}>
                 <input type="radio" name="menu" checked={selectedService?.id === s.id} onChange={() => onServiceSelect(s)} style={{ accentColor: '#111' }} />
-                <span style={{ flex: 1, fontSize: '13px', color: 'rgba(232,228,220,0.75)' }}>{s.name}{s.duration ? ` (${s.duration})` : ''}</span>
+                <span style={{ flex: 1, fontSize: '13px', color: 'rgba(232,228,220,0.75)' }}>{s.name}{s.duration_minutes ? ` (${s.duration_minutes}分)` : (s.duration ? ` (${s.duration})` : '')}</span>
                 <span style={{ fontSize: '13px', fontWeight: '700', color: '#111', flexShrink: 0 }}>¥{s.price.toLocaleString()}</span>
               </label>
             ))}
