@@ -3514,6 +3514,21 @@ export default function ProviderDashboardPage() {
       const custModalManualAddForm = document.getElementById('cust-modal-manual-add-form');
       const custModalManualHistoryToggle = document.getElementById('cust-modal-manual-history-toggle');
       const custModalManualHistoryEl = document.getElementById('cust-modal-manual-history');
+      // AI姿勢分析（でお要望2026-09-25）。posture_analysis機能フラグの状態は開いている
+      // 顧客に関係なく固定なので、モーダルを開くたびではなくここで1回だけ判定してよい。
+      const postureOn = !!provider?.enabled_features?.posture_analysis;
+      const custModalPostureSection = document.getElementById('cust-modal-posture-section');
+      const custModalPostureAddToggle = document.getElementById('cust-modal-posture-add-toggle');
+      const custModalPostureAddForm = document.getElementById('cust-modal-posture-add-form');
+      const custModalPostureHistoryToggle = document.getElementById('cust-modal-posture-history-toggle');
+      const custModalPostureHistoryEl = document.getElementById('cust-modal-posture-history');
+      const custModalManualPostureSection = document.getElementById('cust-modal-manual-posture-section');
+      const custModalManualPostureAddToggle = document.getElementById('cust-modal-manual-posture-add-toggle');
+      const custModalManualPostureAddForm = document.getElementById('cust-modal-manual-posture-add-form');
+      const custModalManualPostureHistoryToggle = document.getElementById('cust-modal-manual-posture-history-toggle');
+      const custModalManualPostureHistoryEl = document.getElementById('cust-modal-manual-posture-history');
+      if (custModalPostureSection) custModalPostureSection.style.display = postureOn ? '' : 'none';
+      if (custModalManualPostureSection) custModalManualPostureSection.style.display = postureOn ? '' : 'none';
       let currentCustUid = null;
       let currentCustType = 'member';
 
@@ -3580,6 +3595,8 @@ export default function ProviderDashboardPage() {
         custModalAddForm.style.display = 'none'; custModalAddForm.innerHTML = ''; custModalAddForm.dataset.built = '';
         custModalHistoryEl.style.display = 'none'; custModalHistoryEl.innerHTML = ''; custModalHistoryEl.dataset.built = '';
         custModalInsightEl.style.display = 'none'; custModalInsightEl.innerHTML = '';
+        if (custModalPostureAddForm) { custModalPostureAddForm.style.display = 'none'; custModalPostureAddForm.innerHTML = ''; custModalPostureAddForm.dataset.built = ''; }
+        if (custModalPostureHistoryEl) { custModalPostureHistoryEl.style.display = 'none'; custModalPostureHistoryEl.innerHTML = ''; custModalPostureHistoryEl.dataset.built = ''; }
         custModalNoteTa.value = ''; custModalNoteTa.disabled = true; custModalNoteTa.placeholder = '読み込み中…';
         custModalNoteSaveBtn.disabled = true;
 
@@ -3622,6 +3639,8 @@ export default function ProviderDashboardPage() {
         custModalLinkSel.innerHTML = `<option value="">選択してください</option>${memberOptions}`;
         custModalManualAddForm.style.display = 'none'; custModalManualAddForm.innerHTML = ''; custModalManualAddForm.dataset.built = '';
         custModalManualHistoryEl.style.display = 'none'; custModalManualHistoryEl.innerHTML = ''; custModalManualHistoryEl.dataset.built = '';
+        if (custModalManualPostureAddForm) { custModalManualPostureAddForm.style.display = 'none'; custModalManualPostureAddForm.innerHTML = ''; custModalManualPostureAddForm.dataset.built = ''; }
+        if (custModalManualPostureHistoryEl) { custModalManualPostureHistoryEl.style.display = 'none'; custModalManualPostureHistoryEl.innerHTML = ''; custModalManualPostureHistoryEl.dataset.built = ''; }
         custModalEl.style.display = 'flex';
       }
 
@@ -3704,6 +3723,131 @@ export default function ProviderDashboardPage() {
             custModalManualHistoryEl.innerHTML = renderHistoryHtml(entries);
           } catch {
             custModalManualHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
+          }
+        }
+      });
+
+      // ── AI姿勢分析（でお要望2026-09-25。今野くんとのLINE「AI姿勢」より）─────────
+      // 来店時にスタッフが撮影した写真をClaude Visionで分析し、スコア・気になる癖・
+      // 凝っていそうな筋肉部位を記録する。posture_analysis機能フラグでON/OFF。
+      // 会員/非会員どちらもカルテと同じ二択エンドポイントで扱う。
+      function blobToBase64(blob) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      }
+
+      function renderPostureHistoryHtml(entries) {
+        if (!entries.length) return '<p class="muted" style="font-size:12px;">まだ記録がありません。</p>';
+        return entries.map(e => `
+          <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6;">
+            <img src="${esc(e.photo_url)}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;background:#f3f4f6;" />
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+                <span class="muted" style="font-size:11px;">${fmtDate(e.created_at)}</span>
+                ${Number.isFinite(e.score) ? `<span style="font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;background:#eff6ff;color:#2563eb;">スコア ${e.score}</span>` : ''}
+              </div>
+              ${(e.findings || []).length ? `<ul style="margin:0 0 4px;padding-left:16px;font-size:12.5px;color:#374151;">${e.findings.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+              ${e.note ? `<p style="margin:0;font-size:12px;color:#6b7280;">${esc(e.note)}</p>` : ''}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function buildPostureAddForm(container, endpointBase, onSaved) {
+        container.innerHTML = `
+          <input type="file" accept="image/*" capture="environment" id="posture-photo-input" style="display:block;margin-bottom:8px;font-size:12.5px;" />
+          <textarea id="posture-note-input" placeholder="メモ（任意）" style="width:100%;min-height:50px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;box-sizing:border-box;margin-bottom:8px;"></textarea>
+          <button type="button" class="btn" style="font-size:12px;padding:6px 14px;" id="posture-save-btn">写真を分析して記録</button>
+          <p class="muted" id="posture-save-msg" style="font-size:11px;margin:6px 0 0;"></p>
+        `;
+        container.dataset.built = '1';
+        const saveBtn = container.querySelector('#posture-save-btn');
+        const msgEl = container.querySelector('#posture-save-msg');
+        saveBtn?.addEventListener('click', async () => {
+          const fileInput = container.querySelector('#posture-photo-input');
+          const noteEl = container.querySelector('#posture-note-input');
+          const file = fileInput?.files?.[0];
+          if (!file) { showToast('写真を選択してください'); return; }
+          saveBtn.disabled = true;
+          msgEl.textContent = '圧縮中…';
+          try {
+            const compressed = await compressImage(file);
+            msgEl.textContent = 'AIが分析中…（数秒かかります）';
+            const photo_base64 = await blobToBase64(compressed);
+            const res = await fetch(endpointBase, {
+              method: 'POST', headers: authHeaders(),
+              body: JSON.stringify({ photo_base64, media_type: 'image/jpeg', note: noteEl?.value || '' }),
+            });
+            if (!res.ok) { const d = await res.json().catch(() => ({})); msgEl.textContent = ''; showToast(d.error || '分析に失敗しました'); return; }
+            showToast('姿勢分析を記録しました');
+            container.style.display = 'none';
+            container.dataset.built = '';
+            if (onSaved) onSaved();
+          } catch {
+            msgEl.textContent = '';
+            showToast('通信エラーが発生しました');
+          } finally {
+            saveBtn.disabled = false;
+          }
+        });
+      }
+
+      custModalPostureAddToggle?.addEventListener('click', () => {
+        if (!currentCustUid || !custModalPostureAddForm) return;
+        const opening = custModalPostureAddForm.style.display === 'none';
+        custModalPostureAddForm.style.display = opening ? 'block' : 'none';
+        if (opening && !custModalPostureAddForm.dataset.built) {
+          buildPostureAddForm(custModalPostureAddForm, `/api/provider/customers/${currentCustUid}/posture-entries`, () => {
+            if (custModalPostureHistoryEl) custModalPostureHistoryEl.dataset.built = '';
+          });
+        }
+      });
+
+      custModalPostureHistoryToggle?.addEventListener('click', async () => {
+        if (!currentCustUid || !custModalPostureHistoryEl) return;
+        const opening = custModalPostureHistoryEl.style.display === 'none';
+        custModalPostureHistoryEl.style.display = opening ? 'block' : 'none';
+        if (opening && !custModalPostureHistoryEl.dataset.built) {
+          custModalPostureHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込み中…</p>';
+          custModalPostureHistoryEl.dataset.built = '1';
+          try {
+            const res = await fetch(`/api/provider/customers/${currentCustUid}/posture-entries`, { headers: authHeaders() });
+            const entries = res.ok ? await res.json() : [];
+            custModalPostureHistoryEl.innerHTML = renderPostureHistoryHtml(entries);
+          } catch {
+            custModalPostureHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
+          }
+        }
+      });
+
+      custModalManualPostureAddToggle?.addEventListener('click', () => {
+        if (!currentCustUid || currentCustType !== 'manual' || !custModalManualPostureAddForm) return;
+        const opening = custModalManualPostureAddForm.style.display === 'none';
+        custModalManualPostureAddForm.style.display = opening ? 'block' : 'none';
+        if (opening && !custModalManualPostureAddForm.dataset.built) {
+          buildPostureAddForm(custModalManualPostureAddForm, `/api/provider/customers/manual/${currentCustUid}/posture-entries`, () => {
+            if (custModalManualPostureHistoryEl) custModalManualPostureHistoryEl.dataset.built = '';
+          });
+        }
+      });
+
+      custModalManualPostureHistoryToggle?.addEventListener('click', async () => {
+        if (!currentCustUid || currentCustType !== 'manual' || !custModalManualPostureHistoryEl) return;
+        const opening = custModalManualPostureHistoryEl.style.display === 'none';
+        custModalManualPostureHistoryEl.style.display = opening ? 'block' : 'none';
+        if (opening && !custModalManualPostureHistoryEl.dataset.built) {
+          custModalManualPostureHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込み中…</p>';
+          custModalManualPostureHistoryEl.dataset.built = '1';
+          try {
+            const res = await fetch(`/api/provider/customers/manual/${currentCustUid}/posture-entries`, { headers: authHeaders() });
+            const entries = res.ok ? await res.json() : [];
+            custModalManualPostureHistoryEl.innerHTML = renderPostureHistoryHtml(entries);
+          } catch {
+            custModalManualPostureHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
           }
         }
       });
@@ -9349,6 +9493,17 @@ export default function ProviderDashboardPage() {
               <div id="cust-modal-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
               <div id="cust-modal-history" style={{ display: 'none', marginTop: '10px' }}></div>
               <div id="cust-modal-insight" style={{ display: 'none', marginTop: '10px' }}></div>
+
+              {/* AI姿勢分析（でお要望2026-09-25・posture_analysis機能フラグでON/OFF）。
+                  カルテと同じ「開いたら既読フォームが下に開く」操作感で統一する。 */}
+              <div id="cust-modal-posture-section" style={{ display: 'none', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button type="button" className="btn btn-ghost" id="cust-modal-posture-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>📐 姿勢分析を記録</button>
+                  <button type="button" className="btn btn-ghost" id="cust-modal-posture-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>姿勢分析を見る</button>
+                </div>
+                <div id="cust-modal-posture-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
+                <div id="cust-modal-posture-history" style={{ display: 'none', marginTop: '10px' }}></div>
+              </div>
             </div>
 
             {/* 非会員（Fineme未登録）用セクション（でお要望2026-09-12：一覧を統合したため
@@ -9368,6 +9523,15 @@ export default function ProviderDashboardPage() {
               </div>
               <div id="cust-modal-manual-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
               <div id="cust-modal-manual-history" style={{ display: 'none', marginTop: '10px' }}></div>
+
+              <div id="cust-modal-manual-posture-section" style={{ display: 'none', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button type="button" className="btn btn-ghost" id="cust-modal-manual-posture-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>📐 姿勢分析を記録</button>
+                  <button type="button" className="btn btn-ghost" id="cust-modal-manual-posture-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>姿勢分析を見る</button>
+                </div>
+                <div id="cust-modal-manual-posture-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
+                <div id="cust-modal-manual-posture-history" style={{ display: 'none', marginTop: '10px' }}></div>
+              </div>
             </div>
           </div>
         </div>
