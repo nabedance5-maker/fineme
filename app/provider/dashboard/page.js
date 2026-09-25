@@ -6279,7 +6279,14 @@ export default function ProviderDashboardPage() {
           const label = isBlock ? 'タップで削除：休憩・外出ブロック' : 'シフト外（勤務予定なし）';
           const shortLabel = isBlock ? '休憩・外出' : '勤務外';
           const labelHtml = size >= 24 ? `<span class="cal-grey-band-label">${esc(shortLabel)}</span>` : '';
-          return `<div class="cal-grey-band${extraClass}${isBlock ? ' is-deletable' : ''}" style="${posKey}:${pos}px;${sizeKey}:${size}px" title="${esc(label)}"${isBlock ? ` data-staff-block-id="${iv.id}"` : ''}>${labelHtml}</div>`;
+          // でお報告2026-09-26で確定した重大バグの修正：extraClassの前にスペースが
+          // 無かったため、class="cal-grey-band-h"のように1つの単語に連結されてしまい、
+          // 本来別クラスであるはずの基底.cal-grey-band（position:absolute等を持つ）が
+          // 一切適用されていなかった。結果position:staticのまま描画され、left/top等の
+          // インラインstyleが完全に無視されて常にレーン先頭（左端/上端）に表示され、
+          // backgroundも透明で見えなくなっていた（休憩・外出ブロックが「左端に出る」
+          // 「消えない」問題の本当の原因）。
+          return `<div class="cal-grey-band cal-grey-band${extraClass}${isBlock ? ' is-deletable' : ''}" style="${posKey}:${pos}px;${sizeKey}:${size}px" title="${esc(label)}"${isBlock ? ` data-staff-block-id="${iv.id}"` : ''}>${labelHtml}</div>`;
         }).join('');
       }
 
