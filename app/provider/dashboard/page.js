@@ -3516,7 +3516,14 @@ export default function ProviderDashboardPage() {
       const custModalManualHistoryEl = document.getElementById('cust-modal-manual-history');
       // AI姿勢分析（でお要望2026-09-25）。posture_analysis機能フラグの状態は開いている
       // 顧客に関係なく固定なので、モーダルを開くたびではなくここで1回だけ判定してよい。
+      // でお要望2026-09-25「10000円のプランに入ってる人しか使えないように（特例無料は除く）」：
+      // プランで使えない場合は非表示にせず、あえてアップセル文言を出す（このAI姿勢分析は
+      // 10000円プランへ誘導するための差別化材料という位置づけのため、存在自体を隠すと
+      // 誘導にならない）。実際の書き込みはAPI側（posture-entries route.js）でも同じ判定で
+      // 二重に弾く。
       const postureOn = !!provider?.enabled_features?.posture_analysis;
+      const posturePlanEligible = provider?.plan === 'C' || provider?.plan === 'free';
+      const postureUpsellHtml = `<p class="muted" style="font-size:12px;margin:0;">📐 AI姿勢分析はプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style="color:#c9a84c;font-weight:700;">プランをアップグレード</a>すると使えるようになります。</p>`;
       const custModalPostureSection = document.getElementById('cust-modal-posture-section');
       const custModalPostureAddToggle = document.getElementById('cust-modal-posture-add-toggle');
       const custModalPostureAddForm = document.getElementById('cust-modal-posture-add-form');
@@ -3527,8 +3534,14 @@ export default function ProviderDashboardPage() {
       const custModalManualPostureAddForm = document.getElementById('cust-modal-manual-posture-add-form');
       const custModalManualPostureHistoryToggle = document.getElementById('cust-modal-manual-posture-history-toggle');
       const custModalManualPostureHistoryEl = document.getElementById('cust-modal-manual-posture-history');
-      if (custModalPostureSection) custModalPostureSection.style.display = postureOn ? '' : 'none';
-      if (custModalManualPostureSection) custModalManualPostureSection.style.display = postureOn ? '' : 'none';
+      if (custModalPostureSection) {
+        custModalPostureSection.style.display = postureOn ? '' : 'none';
+        if (postureOn && !posturePlanEligible) custModalPostureSection.innerHTML = postureUpsellHtml;
+      }
+      if (custModalManualPostureSection) {
+        custModalManualPostureSection.style.display = postureOn ? '' : 'none';
+        if (postureOn && !posturePlanEligible) custModalManualPostureSection.innerHTML = postureUpsellHtml;
+      }
       let currentCustUid = null;
       let currentCustType = 'member';
 

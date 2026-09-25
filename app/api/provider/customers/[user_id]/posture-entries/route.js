@@ -5,14 +5,14 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { hasFeature } from '@/lib/feature-flags';
-import { createPostureEntry } from '@/lib/posture-analysis';
+import { createPostureEntry, isPostureEligiblePlan } from '@/lib/posture-analysis';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id, slug, enabled_features').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, slug, plan, enabled_features').eq('email', user.email).single();
   return data || null;
 }
 
@@ -58,6 +58,7 @@ export async function POST(request, { params }) {
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   if (!hasFeature(provider, 'posture_analysis')) return Response.json({ error: 'この機能は現在OFFになっています' }, { status: 403 });
+  if (!isPostureEligiblePlan(provider.plan)) return Response.json({ error: 'この機能はプレミアムプラン（¥10,000/月）限定です' }, { status: 403 });
   if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: 'AI機能が現在利用できません' }, { status: 503 });
 
   const { photo_base64, media_type, note, staff_id } = await request.json();
