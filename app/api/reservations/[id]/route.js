@@ -6,6 +6,7 @@ import { sendLinePush } from '@/lib/line-push';
 import { notifyCustomerLine } from '@/lib/reservation-notify';
 import { syncVisitToLog } from '@/lib/sync-visit';
 import { notifyStoreIfAtRiskVisit } from '@/lib/at-risk-visit-notify';
+import { autoConsumePackageForVisit } from '@/lib/consume-package';
 
 export async function GET(request, context) {
   try {
@@ -43,7 +44,7 @@ export async function PATCH(request, context) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const id = context.params.id;
-    const { data: existing, error: existingError } = await db.from('reservations').select('provider_id, user_id').eq('id', id).single();
+    const { data: existing, error: existingError } = await db.from('reservations').select('provider_id, user_id, status').eq('id', id).single();
     if (existingError || !existing) return Response.json({ error: '予約が見つかりません' }, { status: 404 });
 
     const body = await request.json();
@@ -200,6 +201,19 @@ export async function PATCH(request, context) {
       }
     }
 
+    // 来店確認と同時にチケットを自動消化（でお要望2026-09-27：「来店確認したら
+    // 自動でチケット消費されるようにできる？」）。同じ予約に対してPATCHが
+    // 複数回飛んでも二重消化しないよう、visited以外→visitedへの遷移時だけに限る
+    // （既にvisited済みの予約への再PATCH＝売上記録の追記等では発火しない）。
+    let autoConsumedPackage = null;
+    if (newStatus === 'visited' && existing.status !== 'visited' && data.user_id) {
+      autoConsumedPackage = await autoConsumePackageForVisit(db, {
+        providerId: data.provider_id,
+        userId: data.user_id,
+        reservationId: id,
+      });
+    }
+
     // ユーザーがキャンセルした場合：掲載者に通知
     if (newStatus === 'cancelled') {
       if (provider?.email) {
@@ -227,7 +241,7 @@ export async function PATCH(request, context) {
       } catch (e) { console.error('[status line]', e); }
     }
 
-    return Response.json(data);
+    return Response.json({ ...data, auto_consumed_package: autoConsumedPackage });
   } catch (e) {
     console.error('[PATCH /api/reservations]', e);
     return Response.json({ error: e.message }, { status: 500 });

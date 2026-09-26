@@ -5683,9 +5683,12 @@ export default function ProviderDashboardPage() {
       // （app/api/provider/checkins/route.js側で自動処理済み）のため、ここで
       // もう一度PATCHすると通知・紹介プログラム確定等の副作用が二重発火してしまう。
       // このモーダルでは売上記録だけを行う。
+      let autoConsumedPackage = null;
       if (!skipStatusUpdate) {
         const res = await fetch(`/api/reservations/${id}`, { method: 'PATCH', headers, body: JSON.stringify({ status: 'visited' }) });
         if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); return; }
+        const resData = await res.json().catch(() => ({}));
+        autoConsumedPackage = resData?.auto_consumed_package || null;
       }
 
       if (!skipSales) {
@@ -5703,7 +5706,10 @@ export default function ProviderDashboardPage() {
         }
       }
       document.getElementById('visit-modal-overlay')?.remove();
-      await loadRequests(); showToast('来店を確認しました');
+      await loadRequests();
+      showToast(autoConsumedPackage
+        ? `来店を確認しました（🎫 ${autoConsumedPackage.packageName}を自動消化。誤りは「回数券」タブから取り消せます）`
+        : '来店を確認しました');
       window.__calReloadWeek?.();
     };
 
