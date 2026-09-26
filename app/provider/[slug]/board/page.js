@@ -122,8 +122,8 @@ export default function BookingBoardPage() {
           {!times.length ? (
             <p style={{ textAlign: 'center', color: '#999', fontSize: '15px', padding: '40px 0' }}>ご予約いただける空き枠がありません。</p>
           ) : (
-            <div style={{ overflowX: 'auto', border: '1.5px solid #e5e7eb', borderRadius: '14px' }}>
-              <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+            <div style={{ overflowX: 'auto', border: '1.5px solid #e5e7eb', borderRadius: '14px', background: '#fff' }}>
+              <table style={{ borderCollapse: 'collapse', width: '100%', background: '#fff' }}>
                 <thead>
                   <tr>
                     <th style={{ position: 'sticky', left: 0, background: '#fff', padding: '8px' }}></th>
@@ -131,7 +131,7 @@ export default function BookingBoardPage() {
                       const ds = fmtDate(d);
                       const wd = d.getDay();
                       return (
-                        <th key={ds} style={{ padding: '8px 6px', fontSize: '13px', fontWeight: '800', whiteSpace: 'nowrap', color: wd === 0 ? '#ef4444' : wd === 6 ? '#2563eb' : '#111' }}>
+                        <th key={ds} style={{ padding: '8px 6px', fontSize: '13px', fontWeight: '800', whiteSpace: 'nowrap', background: '#fff', color: wd === 0 ? '#ef4444' : wd === 6 ? '#2563eb' : '#111' }}>
                           {d.getMonth() + 1}/{d.getDate()}<br /><span style={{ fontSize: '11px', fontWeight: 400 }}>{WEEKDAY_JA[wd]}</span>
                         </th>
                       );
@@ -141,7 +141,7 @@ export default function BookingBoardPage() {
                 <tbody>
                   {times.map(t => (
                     <tr key={t}>
-                      <td style={{ position: 'sticky', left: 0, background: '#fff', padding: '8px', fontSize: '14px', fontWeight: '800', whiteSpace: 'nowrap' }}>{t.slice(0, 5)}</td>
+                      <td style={{ position: 'sticky', left: 0, background: '#fff', padding: '8px', fontSize: '14px', fontWeight: '800', color: '#111', whiteSpace: 'nowrap' }}>{t.slice(0, 5)}</td>
                       {dates.map(d => {
                         const ds = fmtDate(d);
                         const s = cellMap[`${ds}|${t}`];
