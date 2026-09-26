@@ -1751,6 +1751,7 @@ export default function ProviderDashboardPage() {
           editForm.elements['price'].value = c.price ?? '';
           if (editForm.elements['instructor_staff_id']) editForm.elements['instructor_staff_id'].value = c.instructor_staff_id || '';
           editForm.elements['level_labels'].value = (c.level_labels || []).join(',');
+          if (newSessionFieldsEl) newSessionFieldsEl.style.display = 'none';
           editCard.scrollIntoView({ behavior: 'smooth' });
         }));
         listEl.querySelectorAll('[data-cls-del]').forEach(btn => btn.addEventListener('click', async () => {
@@ -1762,9 +1763,22 @@ export default function ProviderDashboardPage() {
         listEl.querySelectorAll('[data-cls-sessions]').forEach(btn => btn.addEventListener('click', () => openSessions(btn.dataset.clsSessions)));
       }
 
+      const newSessionFieldsEl = document.getElementById('cls-new-session-fields');
+      const newSessionRecurTypeEl = document.getElementById('cls-new-session-recur-type');
+      const newSessionWeekdayFieldEl = document.getElementById('cls-new-session-weekday-field');
+      const newSessionUntilFieldEl = document.getElementById('cls-new-session-until-field');
+      function updateNewSessionRecurFields() {
+        const type = newSessionRecurTypeEl?.value || 'once';
+        if (newSessionWeekdayFieldEl) newSessionWeekdayFieldEl.style.display = type === 'weekly' ? '' : 'none';
+        if (newSessionUntilFieldEl) newSessionUntilFieldEl.style.display = type === 'once' ? 'none' : '';
+      }
+      newSessionRecurTypeEl?.addEventListener('change', updateNewSessionRecurFields);
+
       document.getElementById('cls-add-btn')?.addEventListener('click', () => {
         editTitle.textContent = 'クラスを追加'; editCard.style.display = 'block';
         editForm.reset(); editForm.elements['_class_id'].value = '';
+        if (newSessionFieldsEl) newSessionFieldsEl.style.display = '';
+        updateNewSessionRecurFields();
         editCard.scrollIntoView({ behavior: 'smooth' });
       });
       document.getElementById('cls-cancel-btn')?.addEventListener('click', () => { editCard.style.display = 'none'; editForm.reset(); });
@@ -1782,8 +1796,34 @@ export default function ProviderDashboardPage() {
         };
         const url = id ? `/api/provider/classes/${id}` : '/api/provider/classes';
         const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify(body) });
-        if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadClasses(); showToast('保存しました'); }
-        else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
+        if (!res.ok) { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); return; }
+        const savedClass = await res.json();
+
+        // 新規作成時のみ、「最初の開催日時」が入力されていれば同時に開催回も作る
+        // （でお要望2026-09-26：「クラスを追加を押して出てくる新規の設定画面の中に
+        // 日時を入れてほしい」）。編集時はこのフィールド自体を非表示にしているため対象外。
+        let sessionCount = 0;
+        if (!id) {
+          const baseDate = document.getElementById('cls-new-session-date')?.value || '';
+          if (baseDate) {
+            const start_time = document.getElementById('cls-new-session-start')?.value || '';
+            const end_time = document.getElementById('cls-new-session-end')?.value || '';
+            const capacity = document.getElementById('cls-new-session-capacity')?.value || '';
+            const recurType = document.getElementById('cls-new-session-recur-type')?.value || 'once';
+            const untilDate = document.getElementById('cls-new-session-until')?.value || '';
+            const weekdays = Array.from(document.querySelectorAll('.cls-new-session-weekday:checked')).map(el => el.value);
+            if (start_time && end_time) {
+              const dates = generateSessionDates({ recurType, baseDate, untilDate, weekdays });
+              for (const dateStr of dates) {
+                const sRes = await fetch(`/api/provider/classes/${savedClass.id}/sessions`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ date: dateStr, start_time, end_time, capacity }) });
+                if (sRes.ok) sessionCount++;
+              }
+            }
+          }
+        }
+
+        editCard.style.display = 'none'; editForm.reset(); loadClasses();
+        showToast(sessionCount ? `保存しました（開催回${sessionCount}件も追加）` : '保存しました');
       });
 
       const STATUS_LABEL_CLS = { active: '在籍中', waitlisted: '待機中', withdrawn: '退会' };
@@ -8793,7 +8833,47 @@ export default function ProviderDashboardPage() {
                 <div className="form-field"><label>金額（円・任意）</label><input name="price" type="number" min="0" placeholder="例：3000" /></div>
                 <div className="form-field"><label>担当講師（任意）</label><select name="instructor_staff_id"><option value="">未設定</option></select></div>
                 <div className="form-field"><label>進級の段階（カンマ区切り。例：白帯,黄帯,緑帯,黒帯）</label><input name="level_labels" placeholder="任意" /></div>
-                <div style={{ display: 'flex', gap: '8px' }}>
+
+                {/* でお要望2026-09-26：「クラスを追加を押して出てくる新規の設定画面の中に
+                    日時を入れてほしい」。クラス作成と同時に最初の開催回もまとめて作れる
+                    ようにする（空欄ならクラスだけ作成、従来通り「予約枠を管理」から後で
+                    追加も可能）。編集時は既存クラスの日時を書き換える機能ではないため
+                    非表示にする（JSでcls-add-btn/編集クリック時に出し分け）。 */}
+                <div id="cls-new-session-fields" style={{ borderTop: '1px solid rgba(26,20,16,0.1)', marginTop: '12px', paddingTop: '12px' }}>
+                  <p className="muted" style={{ fontSize: '12px', margin: '0 0 8px', fontWeight: 700 }}>最初の開催日時（任意・空欄ならクラスだけ作成されます）</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'end' }}>
+                    <div className="form-field" style={{ marginBottom: 0 }}><label>開始日</label><input type="date" id="cls-new-session-date" /></div>
+                    <div className="form-field" style={{ marginBottom: 0 }}><label>開始</label><input type="time" id="cls-new-session-start" /></div>
+                    <div className="form-field" style={{ marginBottom: 0 }}><label>終了</label><input type="time" id="cls-new-session-end" /></div>
+                    <div className="form-field" style={{ marginBottom: 0, width: '90px' }}><label>定員</label><input type="number" id="cls-new-session-capacity" min="1" placeholder="上の定員" /></div>
+                    <div className="form-field" style={{ marginBottom: 0, width: '110px' }}>
+                      <label>繰り返し</label>
+                      <select id="cls-new-session-recur-type" defaultValue="once">
+                        <option value="once">1回のみ</option>
+                        <option value="weekly">毎週</option>
+                        <option value="monthly">毎月</option>
+                      </select>
+                    </div>
+                    <div id="cls-new-session-weekday-field" className="form-field" style={{ marginBottom: 0, display: 'none' }}>
+                      <label>曜日（複数可）</label>
+                      <div style={{ display: 'flex', gap: '3px' }}>
+                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="0" />日</label>
+                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="1" />月</label>
+                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="2" />火</label>
+                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="3" />水</label>
+                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="4" />木</label>
+                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="5" />金</label>
+                        <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}><input type="checkbox" className="cls-new-session-weekday" value="6" />土</label>
+                      </div>
+                    </div>
+                    <div id="cls-new-session-until-field" className="form-field" style={{ marginBottom: 0, display: 'none' }}>
+                      <label>この日まで作成</label>
+                      <input type="date" id="cls-new-session-until" />
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                   <button type="submit" className="btn">保存する</button>
                   <button type="button" className="btn btn-ghost" id="cls-cancel-btn">キャンセル</button>
                 </div>
