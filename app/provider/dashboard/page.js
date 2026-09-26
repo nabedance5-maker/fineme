@@ -2057,6 +2057,15 @@ export default function ProviderDashboardPage() {
 
       document.getElementById('gl-detail-close')?.addEventListener('click', () => { detailCard.style.display = 'none'; });
 
+      // でお報告2026-09-26：「グループレッスンのページの中でグループレッスンを
+      // 作成するボタンがない」。このタブは開講中クラスの閲覧専用で、作成は
+      // 「クラス管理」タブに集約している。ネイティブクリックと同じ経路（.click()）で
+      // タブを切り替えてから、その先の追加ボタンも自動で開く。
+      document.getElementById('gl-goto-classes-btn')?.addEventListener('click', () => {
+        document.querySelector('[data-tab="classes"]')?.click();
+        setTimeout(() => document.getElementById('cls-add-btn')?.click(), 50);
+      });
+
       document.querySelectorAll('[data-tab="group-lessons"]').forEach(btn => btn.addEventListener('click', loadList, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'group-lessons') loadList();
     })();
@@ -8740,9 +8749,12 @@ export default function ProviderDashboardPage() {
             一覧＋参加者確認に特化したビュー。 */}
         <div className="tab-pane" id="tab-group-lessons">
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
-            <div>
-              <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>グループレッスン</h2>
-              <p className="muted" style={{ fontSize: '13px', margin: 0 }}>開講中のグループレッスンと、開催回ごとの参加者を確認できます。</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
+              <div>
+                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>グループレッスン</h2>
+                <p className="muted" style={{ fontSize: '13px', margin: 0 }}>開講中のグループレッスンと、開催回ごとの参加者を確認できます。クラス自体の作成・編集は「クラス管理」タブで行います。</p>
+              </div>
+              <button type="button" className="btn" id="gl-goto-classes-btn" style={{ fontSize: '12px', padding: '7px 14px', whiteSpace: 'nowrap' }}>＋ クラスを追加</button>
             </div>
             <div id="gl-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: '12px' }}>読み込み中…</div>
           </div>
