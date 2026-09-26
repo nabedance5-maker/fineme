@@ -2134,7 +2134,13 @@ export default function ProviderDashboardPage() {
               <strong style="font-size:14px">${esc(l.name)}</strong>
               <span class="muted" style="font-size:12px;margin-left:8px">月額${fmtYen(l.monthly_fee)}</span>
               ${c
-                ? `<div style="margin-top:4px;font-size:12.5px"><span style="font-weight:700;color:#16a34a">契約中</span>：${esc(c.contractor_name)}（月額${fmtYen(c.monthly_fee)}）${c.user_id ? ' <span style="color:#2563eb;font-weight:700;cursor:pointer" data-lkr-open-cust="' + c.user_id + '" data-lkr-cust-name="' + esc(c.contractor_name) + '">会員</span>' : ''}</div>`
+                ? `<div style="margin-top:4px;font-size:12.5px"><span style="font-weight:700;color:#16a34a">契約中</span>：${esc(c.contractor_name)}（月額${fmtYen(c.monthly_fee)}）${c.user_id ? ' <span style="color:#2563eb;font-weight:700;cursor:pointer" data-lkr-open-cust="' + c.user_id + '" data-lkr-cust-name="' + esc(c.contractor_name) + '">会員</span>' : ''}
+                    ${c.stripe_subscription_item_id
+                      ? ' <span style="font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;background:#ecfdf5;color:#059669;">自動課金中</span>'
+                      : c.payment_link_url
+                        ? ` <span style="font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;background:#fffbeb;color:#92400e;">支払いリンク未完了</span> <a href="${esc(c.payment_link_url)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:#2563eb;font-weight:700;">リンクを開く</a>`
+                        : ''}
+                  </div>`
                 : '<div style="margin-top:4px;font-size:12.5px;color:#9ca3af">空き</div>'}
             </div>
             ${c
@@ -2187,7 +2193,16 @@ export default function ProviderDashboardPage() {
           method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() },
           body: JSON.stringify({ contractor_name: fd.get('contractor_name'), monthly_fee: fd.get('monthly_fee'), note: fd.get('note'), user_id: selectedMemberUserId }),
         });
-        if (res.ok) { contractCard.style.display = 'none'; loadLockers(); showToast('契約しました'); }
+        if (res.ok) {
+          const d = await res.json();
+          contractCard.style.display = 'none';
+          loadLockers();
+          if (d.billing_mode === 'auto') showToast('契約しました（既存の月会費サブスクに自動課金を追加しました）');
+          else if (d.billing_mode === 'link') showToast('契約しました。カード未登録のため支払いリンクを発行しました。一覧の「リンクを開く」から確認し、お客様へ送ってください');
+          else if (d.billing_mode === 'error') showToast('契約は記録しましたが、自動課金の設定に失敗しました：' + (d.billing_error || '不明なエラー'));
+          else showToast('契約しました');
+          return;
+        }
         else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
       });
 
