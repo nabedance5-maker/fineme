@@ -21,7 +21,7 @@ export default function BookingBoardPage() {
   const [provider, setProvider] = useState(null);
   const [loading, setLoading] = useState(true);
   const [slots, setSlots] = useState([]);
-  const [selectedDate, setSelectedDate] = useState('');
+  const [staffFilter, setStaffFilter] = useState(''); // ''=指名なし（全スタッフ横断）
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [step, setStep] = useState('pick'); // 'pick' | 'form' | 'done'
   const [name, setName] = useState('');
@@ -42,7 +42,7 @@ export default function BookingBoardPage() {
     const to = fmtDate(dates[dates.length - 1]);
     fetch(`/api/providers/${slug}/availability?from=${from}&to=${to}`)
       .then(r => r.ok ? r.json() : [])
-      .then(rows => { setSlots(rows); if (!selectedDate && rows.length) setSelectedDate(rows[0].date); else if (!selectedDate) setSelectedDate(fmtDate(dates[0])); });
+      .then(rows => setSlots(rows));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider?.id, slug]);
 
@@ -61,9 +61,14 @@ export default function BookingBoardPage() {
     return <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>この店舗では店頭予約ボードをご利用いただけません。</div>;
   }
 
-  const slotsForDate = slots.filter(s => s.date === selectedDate);
-  const byStaff = {};
-  slotsForDate.forEach(s => { const key = s.staff_name || '指名なし'; (byStaff[key] = byStaff[key] || []).push(s); });
+  // 日付×時間の表（でお要望2026-09-27：ホットペッパーの「スタイリスト指名・日時選択」
+  // 画面と同じ構成。スタッフは表の軸ではなく上のタブで選ぶ）。
+  const staffOptions = [...new Map(slots.map(s => [s.staff_id || '_none', { id: s.staff_id, name: s.staff_name || '指名なし' }])).values()];
+  const hasNamedStaff = staffOptions.some(o => o.id);
+  const filteredSlots = staffFilter ? slots.filter(s => s.staff_id === staffFilter) : slots;
+  const times = [...new Set(filteredSlots.map(s => s.start_time))].sort();
+  const cellMap = {};
+  filteredSlots.forEach(s => { const key = `${s.date}|${s.start_time}`; if (!cellMap[key]) cellMap[key] = s; });
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -96,47 +101,72 @@ export default function BookingBoardPage() {
 
       {step === 'pick' && (
         <>
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '10px', marginBottom: '20px' }}>
-            {dates.map(d => {
-              const ds = fmtDate(d);
-              const count = slots.filter(s => s.date === ds).length;
-              return (
+          {hasNamedStaff && (
+            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '10px', marginBottom: '16px' }}>
+              {staffOptions.map(o => (
                 <button
-                  key={ds}
-                  onClick={() => setSelectedDate(ds)}
+                  key={o.id || '_none'}
+                  onClick={() => setStaffFilter(o.id || '')}
                   style={{
-                    flexShrink: 0, minWidth: '84px', padding: '14px 8px', borderRadius: '14px', textAlign: 'center', cursor: 'pointer',
-                    border: selectedDate === ds ? '2.5px solid #111' : '1.5px solid #e5e7eb',
-                    background: selectedDate === ds ? '#111' : '#fff', color: selectedDate === ds ? '#fff' : '#111',
+                    flexShrink: 0, padding: '10px 16px', borderRadius: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer',
+                    border: (o.id || '') === staffFilter ? '2.5px solid #111' : '1.5px solid #e5e7eb',
+                    background: (o.id || '') === staffFilter ? '#111' : '#fff', color: (o.id || '') === staffFilter ? '#fff' : '#111',
                   }}
                 >
-                  <div style={{ fontSize: '12px', fontWeight: '700' }}>{WEEKDAY_JA[d.getDay()]}</div>
-                  <div style={{ fontSize: '20px', fontWeight: '900' }}>{d.getDate()}</div>
-                  <div style={{ fontSize: '11px' }}>{count ? `${count}枠` : '満枠'}</div>
+                  {o.name}
                 </button>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
 
-          {!slotsForDate.length ? (
-            <p style={{ textAlign: 'center', color: '#999', fontSize: '15px', padding: '40px 0' }}>この日はご予約いただける空き枠がありません。</p>
+          {!times.length ? (
+            <p style={{ textAlign: 'center', color: '#999', fontSize: '15px', padding: '40px 0' }}>ご予約いただける空き枠がありません。</p>
           ) : (
-            Object.entries(byStaff).map(([staffName, rows]) => (
-              <div key={staffName} style={{ marginBottom: '20px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '800', color: '#666', marginBottom: '10px' }}>{staffName}</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(96px,1fr))', gap: '10px' }}>
-                  {rows.sort((a, b) => a.start_time.localeCompare(b.start_time)).map(s => (
-                    <button
-                      key={s.id}
-                      onClick={() => { setSelectedSlot(s); setStep('form'); }}
-                      style={{ padding: '16px 8px', borderRadius: '12px', border: '2px solid #111', background: '#fff', color: '#111', fontSize: '17px', fontWeight: '800', cursor: 'pointer' }}
-                    >
-                      {s.start_time}
-                    </button>
+            <div style={{ overflowX: 'auto', border: '1.5px solid #e5e7eb', borderRadius: '14px' }}>
+              <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                <thead>
+                  <tr>
+                    <th style={{ position: 'sticky', left: 0, background: '#fff', padding: '8px' }}></th>
+                    {dates.map(d => {
+                      const ds = fmtDate(d);
+                      const wd = d.getDay();
+                      return (
+                        <th key={ds} style={{ padding: '8px 6px', fontSize: '13px', fontWeight: '800', whiteSpace: 'nowrap', color: wd === 0 ? '#ef4444' : wd === 6 ? '#2563eb' : '#111' }}>
+                          {d.getMonth() + 1}/{d.getDate()}<br /><span style={{ fontSize: '11px', fontWeight: 400 }}>{WEEKDAY_JA[wd]}</span>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {times.map(t => (
+                    <tr key={t}>
+                      <td style={{ position: 'sticky', left: 0, background: '#fff', padding: '8px', fontSize: '14px', fontWeight: '800', whiteSpace: 'nowrap' }}>{t.slice(0, 5)}</td>
+                      {dates.map(d => {
+                        const ds = fmtDate(d);
+                        const s = cellMap[`${ds}|${t}`];
+                        const available = s && s.remaining > 0;
+                        return (
+                          <td key={ds} style={{ textAlign: 'center', padding: '4px', borderTop: '1px solid #f3f4f6' }}>
+                            {available ? (
+                              <button
+                                onClick={() => { setSelectedSlot(s); setStep('form'); }}
+                                aria-label={`${ds} ${t.slice(0, 5)} 予約可能`}
+                                style={{ width: '38px', height: '38px', borderRadius: '10px', border: '2px solid #111', background: '#fff', color: '#111', fontSize: '18px', fontWeight: '900', cursor: 'pointer' }}
+                              >
+                                ○
+                              </button>
+                            ) : (
+                              <span style={{ color: '#d1d5db', fontSize: '16px' }}>×</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
                   ))}
-                </div>
-              </div>
-            ))
+                </tbody>
+              </table>
+            </div>
           )}
         </>
       )}
