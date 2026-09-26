@@ -3498,36 +3498,52 @@ export default function ProviderDashboardPage() {
       const custModalManualAddForm = document.getElementById('cust-modal-manual-add-form');
       const custModalManualHistoryToggle = document.getElementById('cust-modal-manual-history-toggle');
       const custModalManualHistoryEl = document.getElementById('cust-modal-manual-history');
-      // AI姿勢分析（でお要望2026-09-25）。posture_analysis機能フラグの状態は開いている
-      // 顧客に関係なく固定なので、モーダルを開くたびではなくここで1回だけ判定してよい。
+      // AI姿勢分析（でお要望2026-09-25）。
+      // でお報告2026-09-27「機能設定でAI姿勢分析をオンにしたのにメニューの中に出てきてない」：
+      // 以前はprovider.enabled_features（localStorageキャッシュから読んだ、ページ読み込み時点の
+      // 1回きりのスナップショット）を見ていたため、機能設定タブでトグルしてもリロードするまで
+      // 反映されなかった。機能設定タブのトグルはwindow.__providerFeaturesをその場で更新する
+      // 仕組み（applyFeatureGating、4717行目付近）が既にあるので、そちらを毎回モーダルを
+      // 開くたびに読み直す形に変更し、リロード不要でその場反映されるようにする。
       // でお要望2026-09-25「10000円のプランに入ってる人しか使えないように（特例無料は除く）」：
       // プランで使えない場合は非表示にせず、あえてアップセル文言を出す（このAI姿勢分析は
       // 10000円プランへ誘導するための差別化材料という位置づけのため、存在自体を隠すと
       // 誘導にならない）。実際の書き込みはAPI側（posture-entries route.js）でも同じ判定で
       // 二重に弾く。
-      const postureOn = !!provider?.enabled_features?.posture_analysis;
-      // 本番実データでは特例無料の実際のplan値は'special'（'free'というキーは実在しない。
-      // lib/posture-analysis.jsのPOSTURE_ELIGIBLE_PLANSと必ず一致させること）。
-      const posturePlanEligible = provider?.plan === 'C' || provider?.plan === 'special';
-      const postureUpsellHtml = `<p class="muted" style="font-size:12px;margin:0;">📐 AI姿勢分析はプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style="color:#c9a84c;font-weight:700;">プランをアップグレード</a>すると使えるようになります。</p>`;
       const custModalPostureSection = document.getElementById('cust-modal-posture-section');
+      const custModalPostureControls = document.getElementById('cust-modal-posture-controls');
+      const custModalPostureUpsell = document.getElementById('cust-modal-posture-upsell');
       const custModalPostureAddToggle = document.getElementById('cust-modal-posture-add-toggle');
       const custModalPostureAddForm = document.getElementById('cust-modal-posture-add-form');
       const custModalPostureHistoryToggle = document.getElementById('cust-modal-posture-history-toggle');
       const custModalPostureHistoryEl = document.getElementById('cust-modal-posture-history');
       const custModalManualPostureSection = document.getElementById('cust-modal-manual-posture-section');
+      const custModalManualPostureControls = document.getElementById('cust-modal-manual-posture-controls');
+      const custModalManualPostureUpsell = document.getElementById('cust-modal-manual-posture-upsell');
       const custModalManualPostureAddToggle = document.getElementById('cust-modal-manual-posture-add-toggle');
       const custModalManualPostureAddForm = document.getElementById('cust-modal-manual-posture-add-form');
       const custModalManualPostureHistoryToggle = document.getElementById('cust-modal-manual-posture-history-toggle');
       const custModalManualPostureHistoryEl = document.getElementById('cust-modal-manual-posture-history');
-      if (custModalPostureSection) {
-        custModalPostureSection.style.display = postureOn ? '' : 'none';
-        if (postureOn && !posturePlanEligible) custModalPostureSection.innerHTML = postureUpsellHtml;
+
+      function applyPostureGating() {
+        // window.__providerFeaturesは機能設定タブが開かれて初めて populate されるため、
+        // 未取得の間はキャッシュ済みprovider.enabled_featuresへフォールバックする。
+        const liveFeatures = window.__providerFeatures;
+        const postureOn = liveFeatures ? !!liveFeatures.posture_analysis : !!provider?.enabled_features?.posture_analysis;
+        // 本番実データでは特例無料の実際のplan値は'special'（'free'というキーは実在しない。
+        // lib/posture-analysis.jsのPOSTURE_ELIGIBLE_PLANSと必ず一致させること）。
+        const posturePlanEligible = provider?.plan === 'C' || provider?.plan === 'special';
+        [
+          [custModalPostureSection, custModalPostureControls, custModalPostureUpsell],
+          [custModalManualPostureSection, custModalManualPostureControls, custModalManualPostureUpsell],
+        ].forEach(([section, controls, upsell]) => {
+          if (!section) return;
+          section.style.display = postureOn ? '' : 'none';
+          if (controls) controls.style.display = posturePlanEligible ? '' : 'none';
+          if (upsell) upsell.style.display = posturePlanEligible ? 'none' : '';
+        });
       }
-      if (custModalManualPostureSection) {
-        custModalManualPostureSection.style.display = postureOn ? '' : 'none';
-        if (postureOn && !posturePlanEligible) custModalManualPostureSection.innerHTML = postureUpsellHtml;
-      }
+      applyPostureGating();
       let currentCustUid = null;
       let currentCustType = 'member';
 
@@ -3560,6 +3576,7 @@ export default function ProviderDashboardPage() {
         if (!custModalEl) return;
         currentCustUid = uid;
         currentCustType = 'member';
+        applyPostureGating();
         custModalMemberSection.style.display = '';
         custModalManualSection.style.display = 'none';
 
@@ -3627,6 +3644,7 @@ export default function ProviderDashboardPage() {
         if (!m || !custModalEl) { showToast('顧客情報が見つかりませんでした'); return; }
         currentCustUid = id;
         currentCustType = 'manual';
+        applyPostureGating();
         custModalMemberSection.style.display = 'none';
         custModalManualSection.style.display = '';
         custModalNameEl.textContent = m.display_name;
@@ -9517,12 +9535,15 @@ export default function ProviderDashboardPage() {
               {/* AI姿勢分析（でお要望2026-09-25・posture_analysis機能フラグでON/OFF）。
                   カルテと同じ「開いたら既読フォームが下に開く」操作感で統一する。 */}
               <div id="cust-modal-posture-section" style={{ display: 'none', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <button type="button" className="btn btn-ghost" id="cust-modal-posture-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>📐 姿勢分析を記録</button>
-                  <button type="button" className="btn btn-ghost" id="cust-modal-posture-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>姿勢分析を見る</button>
+                <div id="cust-modal-posture-controls">
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button type="button" className="btn btn-ghost" id="cust-modal-posture-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>📐 姿勢分析を記録</button>
+                    <button type="button" className="btn btn-ghost" id="cust-modal-posture-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>姿勢分析を見る</button>
+                  </div>
+                  <div id="cust-modal-posture-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
+                  <div id="cust-modal-posture-history" style={{ display: 'none', marginTop: '10px' }}></div>
                 </div>
-                <div id="cust-modal-posture-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
-                <div id="cust-modal-posture-history" style={{ display: 'none', marginTop: '10px' }}></div>
+                <p id="cust-modal-posture-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>📐 AI姿勢分析はプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
               </div>
             </div>
 
@@ -9545,12 +9566,15 @@ export default function ProviderDashboardPage() {
               <div id="cust-modal-manual-history" style={{ display: 'none', marginTop: '10px' }}></div>
 
               <div id="cust-modal-manual-posture-section" style={{ display: 'none', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <button type="button" className="btn btn-ghost" id="cust-modal-manual-posture-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>📐 姿勢分析を記録</button>
-                  <button type="button" className="btn btn-ghost" id="cust-modal-manual-posture-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>姿勢分析を見る</button>
+                <div id="cust-modal-manual-posture-controls">
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button type="button" className="btn btn-ghost" id="cust-modal-manual-posture-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>📐 姿勢分析を記録</button>
+                    <button type="button" className="btn btn-ghost" id="cust-modal-manual-posture-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>姿勢分析を見る</button>
+                  </div>
+                  <div id="cust-modal-manual-posture-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
+                  <div id="cust-modal-manual-posture-history" style={{ display: 'none', marginTop: '10px' }}></div>
                 </div>
-                <div id="cust-modal-manual-posture-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
-                <div id="cust-modal-manual-posture-history" style={{ display: 'none', marginTop: '10px' }}></div>
+                <p id="cust-modal-manual-posture-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>📐 AI姿勢分析はプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
               </div>
             </div>
           </div>
