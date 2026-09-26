@@ -976,6 +976,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
 
   const [slots, setSlots] = useState(null); // null=未取得
   const [selectedSlotId, setSelectedSlotId] = useState('');
+  const [selectedGridDate, setSelectedGridDate] = useState('');
   const [lastWasInstant, setLastWasInstant] = useState(false);
 
   useEffect(() => {
@@ -992,6 +993,19 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   // 枠が1件も無い店舗は従来の3希望フォームにフォールバックする（機能ONにしただけで
   // 枠を登録していない店舗が予約を受け付けられなくなるのを防ぐ）
   const showInstantPicker = instantBookingOn && slots !== null && slots.length > 0;
+
+  // 時間×スタッフの表（でお要望2026-09-27：「ホットペッパーの予約カレンダーみたいな
+  // 時間とスタッフの軸の表示で◯や×」）。日付はピルで1日ずつ選び、その日の枠だけを
+  // 時間（行）×スタッフ（列）の表にする。掲載者ダッシュボード側の空き枠管理タブ
+  // （renderSlotGrid）と軸の構成を揃えている。
+  const gridDates = Object.keys(slotsByDate).sort();
+  const gridDate = gridDates.includes(selectedGridDate) ? selectedGridDate : (gridDates[0] || '');
+  const gridDaySlots = slotsByDate[gridDate] || [];
+  const gridStaffCols = [...new Map(gridDaySlots.map(s => [s.staff_id || '_none', { id: s.staff_id, name: s.staff_name || '指名なし' }])).values()];
+  const gridTimes = [...new Set(gridDaySlots.map(s => s.start_time))].sort();
+  const gridCellMap = {};
+  gridDaySlots.forEach(s => { gridCellMap[`${s.start_time}|${s.staff_id || '_none'}`] = s; });
+  const selectedSlotObj = (slots || []).find(s => s.id === selectedSlotId);
   // 即時予約の枠も予約リクエストも、どちらも受け付けられない状態（両方OFF、または
   // 即時予約ONだが枠が無い＆予約リクエストOFF）の時は、フォーム自体を出さない。
   const canBookAnything = showInstantPicker || bookingRequestOn;
@@ -1212,7 +1226,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       {/* スタッフ指名（hacomono/STORES網羅計画 Phase 1）。店舗の「機能設定」でONの時だけ表示。
           指名なし（お任せ）も選択肢として並べ、指名スタッフには指名料をその場で明示する
           （hacomonoの「指名無し＝無料／実名スタッフ＝+指名料」表示に合わせた設計）。 */}
-      {staffDesignationOn && bookableStaff.length > 0 && (
+      {staffDesignationOn && bookableStaff.length > 0 && !showInstantPicker && (
         <div style={{ marginBottom: '20px' }}>
           <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '8px' }}>スタッフの指名（任意）</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1271,35 +1285,85 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         </div>
         {showInstantPicker ? (
           // 即時予約モード（hacomono/STORES網羅計画 Phase 1）。空き枠を選んだ時点で
-          // その場で確定する——店舗の承認を待たない。枠が無い日は表示自体がない。
+          // その場で確定する——店舗の承認を待たない。
+          // でお要望2026-09-27：「ホットペッパーの予約カレンダーみたいな時間とスタッフの
+          // 軸の表示で◯や×の表示がされてるものにしてほしい」。日付ピルで1日を選び、
+          // その日を時間（行）×スタッフ（列）の表にして、空いているマスだけ◯で押せる。
           <div>
             <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '8px' }}>ご希望の日時 *（選ぶとその場で予約確定します）</label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '320px', overflowY: 'auto', padding: '2px' }}>
-              {Object.keys(slotsByDate).sort().map(date => (
-                <div key={date}>
-                  <p style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.9)', margin: '0 0 6px' }}>
-                    {new Date(date).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' })}
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(90px,1fr))', gap: '6px' }}>
-                    {slotsByDate[date].map(s => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => setSelectedSlotId(s.id)}
-                        style={{
-                          padding: '8px 6px', borderRadius: '8px', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer',
-                          border: selectedSlotId === s.id ? '1.5px solid #111' : '1px solid rgba(232,228,220,0.15)',
-                          background: selectedSlotId === s.id ? '#111' : 'transparent',
-                          color: selectedSlotId === s.id ? '#fff' : 'rgba(232,228,220,0.85)',
-                        }}
-                      >
-                        {s.start_time}{s.staff_name ? <><br /><span style={{ fontWeight: 400, fontSize: '10.5px' }}>{s.staff_name}</span></> : null}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+
+            <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '6px', marginBottom: '10px' }}>
+              {gridDates.map(date => {
+                const d = new Date(`${date}T00:00:00`);
+                const active = date === gridDate;
+                return (
+                  <button
+                    key={date}
+                    type="button"
+                    onClick={() => setSelectedGridDate(date)}
+                    style={{
+                      flexShrink: 0, padding: '8px 12px', borderRadius: '10px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                      border: active ? '1.5px solid #111' : '1px solid rgba(232,228,220,0.15)',
+                      background: active ? '#111' : 'transparent',
+                      color: active ? '#fff' : 'rgba(232,228,220,0.85)',
+                    }}
+                  >
+                    {d.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' })}
+                  </button>
+                );
+              })}
             </div>
+
+            <div style={{ overflowX: 'auto', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px' }}>
+              <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                <thead>
+                  <tr>
+                    <th style={{ position: 'sticky', left: 0, background: '#111', padding: '6px 10px', fontSize: '11px', color: 'rgba(232,228,220,0.6)', textAlign: 'left' }}>時間</th>
+                    {gridStaffCols.map(c => (
+                      <th key={c.id || '_none'} style={{ padding: '6px 10px', fontSize: '11px', color: 'rgba(232,228,220,0.85)', fontWeight: '700', whiteSpace: 'nowrap' }}>{c.name}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {gridTimes.map(t => (
+                    <tr key={t}>
+                      <td style={{ position: 'sticky', left: 0, background: '#111', padding: '6px 10px', fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.9)', whiteSpace: 'nowrap' }}>{t.slice(0, 5)}</td>
+                      {gridStaffCols.map(c => {
+                        const s = gridCellMap[`${t}|${c.id || '_none'}`];
+                        const available = s && s.remaining > 0;
+                        return (
+                          <td key={c.id || '_none'} style={{ textAlign: 'center', padding: '4px', borderTop: '1px solid rgba(232,228,220,0.08)' }}>
+                            {available ? (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedSlotId(s.id)}
+                                aria-label={`${t.slice(0, 5)} ${c.name} 予約可能`}
+                                style={{
+                                  width: '34px', height: '34px', borderRadius: '8px', fontSize: '15px', fontWeight: '700', cursor: 'pointer',
+                                  border: selectedSlotId === s.id ? '2px solid #111' : '1px solid rgba(74,222,128,0.4)',
+                                  background: selectedSlotId === s.id ? '#111' : 'rgba(74,222,128,0.12)',
+                                  color: selectedSlotId === s.id ? '#fff' : '#4ade80',
+                                }}
+                              >
+                                ○
+                              </button>
+                            ) : (
+                              <span style={{ color: 'rgba(232,228,220,0.25)', fontSize: '14px' }}>×</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {selectedSlotObj && (
+              <p style={{ fontSize: '12.5px', fontWeight: '700', color: '#4ade80', margin: '10px 0 0' }}>
+                選択中：{gridDate}（{new Date(`${gridDate}T00:00:00`).toLocaleDateString('ja-JP', { weekday: 'short' })}）{selectedSlotObj.start_time?.slice(0, 5)}〜{selectedSlotObj.staff_name ? `　担当：${selectedSlotObj.staff_name}` : ''}
+              </p>
+            )}
           </div>
         ) : (
           <>
