@@ -2826,9 +2826,14 @@ export default function ProviderDashboardPage() {
             const bg = isSelected ? 'rgba(37,99,235,0.14)' : ghost ? 'rgba(245,158,11,0.16)' : (isOpen ? 'rgba(201,168,76,0.16)' : 'rgba(26,20,16,0.04)');
             const color = isSelected ? '#2563eb' : ghost ? '#b45309' : (isOpen ? '#c9a84c' : '#9ca3af');
             const title = ghost
-              ? `定員${s.capacity}（シフト未確定のため実際にはご予約いただけません）`
+              ? `定員${s.capacity}（シフト未確定のため実質締切中。タップで設定上の開放も解除できます）`
               : `定員${s.capacity}${isOpen ? '（タップで締切）' : '（タップで再開）'}`;
-            const glyph = multiSelectMode ? (isSelected ? '✕' : '○') : (isOpen ? '○' : '×');
+            // シフト未確定の枠は、設定上はis_open=trueのままでも見た目は「×（締切）」として
+            // 表示する（でお確認2026-09-28：「シフトが入っていないなら空き枠一覧でも締め切りの
+            // 状態になるってことだよね？」）。実際にお客様は予約できないため、店舗側にも
+            // 「締切」と同じ見た目で伝えるのが正しい。ただし色はグレー（手動締切）と区別し、
+            // アンバーで「シフト未確定による締切」であることが分かるようにしている。
+            const glyph = multiSelectMode ? (isSelected ? '✕' : '○') : (ghost ? '×' : (isOpen ? '○' : '×'));
             return `<td style="padding:3px 5px;text-align:center">
               <button type="button" data-slot-toggle="${s.id}" title="${esc(title)}" style="width:34px;height:34px;border-radius:8px;border:1.5px solid ${border};background:${bg};color:${color};font-weight:800;font-size:15px;cursor:pointer">${glyph}</button>
               ${multiSelectMode ? '' : `<button type="button" data-slot-edit="${s.id}" style="display:block;margin:2px auto 0;font-size:9px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline">編集</button>`}
@@ -9875,7 +9880,7 @@ export default function ProviderDashboardPage() {
           <div className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px' }}>
             <div>
               <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>空き枠の一覧・管理</h3>
-              <p className="muted" style={{ fontSize: '12.5px', margin: 0 }}>お客様の予約画面と同じ、日付×時間の表で1週間分を一望できます。○/×をタップするだけで開放・締切を切り替えられます（スタッフを指名している場合は下のフィルタで絞り込んでください）。黄色は「開放中だがシフト未確定のためお客様は実際には予約できない」枠です。</p>
+              <p className="muted" style={{ fontSize: '12.5px', margin: 0 }}>お客様の予約画面と同じ、日付×時間の表で1週間分を一望できます。○/×をタップするだけで開放・締切を切り替えられます（スタッフを指名している場合は下のフィルタで絞り込んでください）。アンバー色の×は「設定上は開放しているが、シフトが未確定のため実際にはお客様が予約できない」枠です（シフト管理タブで確定すると開放されます）。</p>
             </div>
 
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
