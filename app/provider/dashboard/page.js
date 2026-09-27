@@ -6,7 +6,7 @@ import { TAB_TUTORIALS, TUTORIAL_GROUPS, TUTORIAL_MUTED_KEY, tutorialSeenKey } f
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
 import { CUSTOMER_SCRIPT_AXES } from '@/lib/customer-scripts';
-import { CATEGORY_DEFS, LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS } from '@/lib/dashboard-prefs';
+import { CATEGORY_DEFS, LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS, TAB_CATALOG, categoryOfTab } from '@/lib/dashboard-prefs';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -417,6 +417,34 @@ export default function ProviderDashboardPage() {
       }));
     }
 
+    // タブのカテゴリー所属・カテゴリー内並び順のカスタマイズ（でお要望2026-09-27：
+    // 「タブの並びやどのタブにどの項目を入れるかなどのカスタム性をもっと自由にできるといい」）。
+    // sidebar_orderの見た目順（CSS order）と違い、こちらは実際にDOMノードを移動する
+    // （機能フラグOFF時のhidden移動ロジックと同じ方式。openGroupFor()等がclosest()で
+    // 所属カテゴリーを判定しているため、見た目だけでなく実際の親を変える必要がある）。
+    // 機能フラグOFF中のタブ（hidden行き）はここでは動かさない——復帰先の判定は
+    // categoryOfTab()を使ってapplyFeatureGating側が都度計算するため、二重管理にならない。
+    window.__tabCategoryOverrides = {};
+    function applyTabLayout(prefs) {
+      window.__tabCategoryOverrides = prefs?.tab_category_overrides || {};
+      const orderOverrides = prefs?.tab_order_overrides || {};
+      TAB_CATALOG.forEach(t => {
+        const btn = document.querySelector(`.tab-btn[data-tab="${t.key}"]`);
+        if (!btn || btn.classList.contains('tab-feature-off')) return; // OFF中は現状維持（hidden側の管理に任せる）
+        const targetCategory = categoryOfTab(t.key, window.__tabCategoryOverrides);
+        const targetSection = document.querySelector(`.pd-panel-section[data-panel="${targetCategory}"]`);
+        if (targetSection && btn.parentElement !== targetSection) targetSection.appendChild(btn);
+      });
+      Object.entries(orderOverrides).forEach(([categoryKey, order]) => {
+        const section = document.querySelector(`.pd-panel-section[data-panel="${categoryKey}"]`);
+        if (!section) return;
+        order.forEach(tabKey => {
+          const btn = section.querySelector(`.tab-btn[data-tab="${tabKey}"]`);
+          if (btn) section.appendChild(btn);
+        });
+      });
+    }
+
     (async () => {
       const _prefsToken = getSupabaseToken();
       if (!_prefsToken) return;
@@ -425,6 +453,7 @@ export default function ProviderDashboardPage() {
       const { prefs } = await res.json();
       dashboardPrefs = prefs;
       renderHeaderShortcuts(prefs);
+      applyTabLayout(prefs);
 
       // サイドバーの並び順を適用（CSS flexのorderプロパティで見た目の順序だけ変える。
       // DOM構造・data-category自体は変えないので他のロジックへの影響がない）。
@@ -4694,6 +4723,9 @@ export default function ProviderDashboardPage() {
       const viewMsg = document.getElementById('ds-calendar-view-msg');
       const shortcutsEl = document.getElementById('ds-header-shortcuts');
       const shortcutsMsg = document.getElementById('ds-header-shortcuts-msg');
+      const tabLayoutEl = document.getElementById('ds-tab-layout');
+      const tabLayoutMsg = document.getElementById('ds-tab-layout-msg');
+      const tabLayoutResetBtn = document.getElementById('ds-tab-layout-reset');
 
       if (landingSel) landingSel.innerHTML = LANDING_TAB_OPTIONS.map(o => `<option value="${o.key}">${esc(o.label)}</option>`).join('');
 
@@ -4731,6 +4763,90 @@ export default function ProviderDashboardPage() {
         orderEl.querySelectorAll('[data-ds-up]').forEach(btn => btn.addEventListener('click', () => moveOrder(btn.dataset.dsUp, -1)));
         orderEl.querySelectorAll('[data-ds-down]').forEach(btn => btn.addEventListener('click', () => moveOrder(btn.dataset.dsDown, 1)));
       }
+
+      // タブのカテゴリー所属・カテゴリー内並び順のカスタマイズ（でお要望2026-09-27）
+      function effectiveTabsByCategory(prefs) {
+        const overrides = prefs.tab_category_overrides || {};
+        const orderOverrides = prefs.tab_order_overrides || {};
+        const byCategory = {};
+        CATEGORY_DEFS.forEach(c => { byCategory[c.key] = []; });
+        TAB_CATALOG.forEach(t => {
+          const cat = overrides[t.key] || t.category;
+          if (byCategory[cat]) byCategory[cat].push(t.key);
+        });
+        Object.keys(byCategory).forEach(cat => {
+          const explicit = orderOverrides[cat];
+          if (!explicit) return;
+          const known = byCategory[cat];
+          const ordered = explicit.filter(k => known.includes(k));
+          const rest = known.filter(k => !ordered.includes(k));
+          byCategory[cat] = [...ordered, ...rest];
+        });
+        return byCategory;
+      }
+
+      function labelOfTab(key) { return TAB_CATALOG.find(t => t.key === key)?.label || key; }
+
+      function renderTabLayout(prefs) {
+        if (!tabLayoutEl) return;
+        const byCategory = effectiveTabsByCategory(prefs);
+        tabLayoutEl.innerHTML = CATEGORY_DEFS.map(cat => {
+          const tabs = byCategory[cat.key] || [];
+          if (!tabs.length) return '';
+          return `
+            <div style="border:1px solid rgba(26,20,16,0.12);border-radius:10px;padding:10px 12px">
+              <p style="font-size:11px;font-weight:800;letter-spacing:.06em;color:rgba(201,168,76,.8);text-transform:uppercase;margin:0 0 8px">${esc(cat.label)}</p>
+              <div class="stack" style="gap:6px">
+                ${tabs.map((key, i) => `
+                  <div style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:rgba(26,20,16,0.03);border-radius:8px">
+                    <span style="flex:1;font-size:12.5px">${esc(labelOfTab(key))}</span>
+                    <button type="button" class="btn btn-ghost" style="font-size:10px;padding:2px 6px" data-tl-up="${key}" data-tl-cat="${cat.key}"${i === 0 ? ' disabled' : ''}>↑</button>
+                    <button type="button" class="btn btn-ghost" style="font-size:10px;padding:2px 6px" data-tl-down="${key}" data-tl-cat="${cat.key}"${i === tabs.length - 1 ? ' disabled' : ''}>↓</button>
+                    <select data-tl-move="${key}" style="font-size:11px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px">
+                      ${CATEGORY_DEFS.map(c2 => `<option value="${c2.key}"${c2.key === cat.key ? ' selected' : ''}>${esc(c2.label)}</option>`).join('')}
+                    </select>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        tabLayoutEl.querySelectorAll('[data-tl-up]').forEach(btn => btn.addEventListener('click', () => moveTabInCategory(btn.dataset.tlCat, btn.dataset.tlUp, -1)));
+        tabLayoutEl.querySelectorAll('[data-tl-down]').forEach(btn => btn.addEventListener('click', () => moveTabInCategory(btn.dataset.tlCat, btn.dataset.tlDown, 1)));
+        tabLayoutEl.querySelectorAll('[data-tl-move]').forEach(sel => sel.addEventListener('change', () => moveTabToCategory(sel.dataset.tlMove, sel.value)));
+      }
+
+      function moveTabInCategory(categoryKey, tabKey, dir) {
+        if (!dashboardPrefs) return;
+        const byCategory = effectiveTabsByCategory(dashboardPrefs);
+        const order = [...(byCategory[categoryKey] || [])];
+        const idx = order.indexOf(tabKey);
+        const swapIdx = idx + dir;
+        if (idx < 0 || swapIdx < 0 || swapIdx >= order.length) return;
+        [order[idx], order[swapIdx]] = [order[swapIdx], order[idx]];
+        const orderOverrides = { ...(dashboardPrefs.tab_order_overrides || {}), [categoryKey]: order };
+        save({ tab_order_overrides: orderOverrides }, tabLayoutMsg).then(ok => {
+          if (ok) { renderTabLayout(dashboardPrefs); applyTabLayout(dashboardPrefs); }
+        });
+      }
+
+      function moveTabToCategory(tabKey, newCategoryKey) {
+        if (!dashboardPrefs) return;
+        const defaultCategory = TAB_CATALOG.find(t => t.key === tabKey)?.category;
+        const overrides = { ...(dashboardPrefs.tab_category_overrides || {}) };
+        if (newCategoryKey === defaultCategory) delete overrides[tabKey];
+        else overrides[tabKey] = newCategoryKey;
+        save({ tab_category_overrides: overrides }, tabLayoutMsg).then(ok => {
+          if (ok) { renderTabLayout(dashboardPrefs); applyTabLayout(dashboardPrefs); }
+        });
+      }
+
+      tabLayoutResetBtn?.addEventListener('click', () => {
+        save({ tab_category_overrides: {}, tab_order_overrides: {} }, tabLayoutMsg).then(ok => {
+          if (ok) { renderTabLayout(dashboardPrefs); applyTabLayout(dashboardPrefs); }
+        });
+      });
 
       function renderRadioGroup(el, options, name, current) {
         if (!el) return;
@@ -4802,6 +4918,7 @@ export default function ProviderDashboardPage() {
         renderRadioGroup(axisEl, CALENDAR_AXIS_OPTIONS, 'ds-axis', prefs.calendar_axis);
         renderRadioGroup(viewEl, CALENDAR_DEFAULT_VIEW_OPTIONS, 'ds-view', prefs.calendar_default_view);
         renderShortcutsList(prefs.header_shortcuts || []);
+        renderTabLayout(prefs);
       }
 
       document.querySelectorAll('[data-tab="display-settings"]').forEach(btn => btn.addEventListener('click', loadDisplaySettings, { once: false }));
@@ -4842,16 +4959,13 @@ export default function ProviderDashboardPage() {
           const badge = el.querySelector('[data-feature-badge]');
           if (badge) badge.textContent = on ? '' : '未設定';
 
-          // OFFのタブは元のカテゴリーから「非表示」カテゴリーへ移動しておく
-          // （でお要望2026-09-16：「非表示にしたやつはまとめておくといい」）。元のカテゴリーを
-          // data属性で覚えておき、ONに戻したら元の場所へ戻す。ボタン自体（＝クリック
-          // リスナー）を移動するだけなので、各タブの読み込みロジックには影響しない。
-          if (!el.dataset.originalPanel) {
-            const originalSection = el.closest('.pd-panel-section');
-            if (originalSection) el.dataset.originalPanel = originalSection.dataset.panel;
-          }
-          if (el.dataset.originalPanel) {
-            const targetPanelKey = on ? el.dataset.originalPanel : 'hidden';
+          // OFFのタブは所属カテゴリーから「非表示」カテゴリーへ移動しておく
+          // （でお要望2026-09-16：「非表示にしたやつはまとめておくといい」）。ONに戻したら
+          // 元の場所へ戻す。所属カテゴリーはcategoryOfTab()でその都度計算する（でお要望
+          // 2026-09-27のタブ配置カスタマイズと二重管理にならないよう、dataset保存はしない）。
+          const homePanelKey = categoryOfTab(el.dataset.tab, window.__tabCategoryOverrides || {});
+          if (homePanelKey) {
+            const targetPanelKey = on ? homePanelKey : 'hidden';
             const targetSection = document.querySelector(`.pd-panel-section[data-panel="${targetPanelKey}"]`);
             if (targetSection && el.parentElement !== targetSection) targetSection.appendChild(el);
           }
@@ -10858,6 +10972,21 @@ export default function ProviderDashboardPage() {
               <div id="ds-calendar-view" className="stack" style={{ gap: '8px', maxWidth: '340px' }}></div>
               <span id="ds-calendar-view-msg" style={{ fontSize: '12px' }}></span>
               <p className="muted" style={{ fontSize: '12px', margin: '8px 0 0' }}>「部屋・設備の空き管理」がONの店舗のみ意味を持ちます（機能設定タブ）。</p>
+            </div>
+
+            {/* タブの配置カスタマイズ（でお要望2026-09-27：「クラス管理は、予約のタブ内の方が
+                しっくりくる気がした。ただ…店舗ごとの便宜の差があると思うので、タブの並びや
+                どのタブにどの項目を入れるかなどのカスタム性をもっと自由にできるといい。
+                デフォルトは今決めたやつでいいけど」）。カテゴリー内の並び替え・別カテゴリーへの
+                移動の両方に対応。上のサイドバー並び順とは別軸（あちらは8カテゴリー自体の順序）。 */}
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 4px' }}>タブの配置</p>
+              <p className="muted" style={{ fontSize: '12px', margin: '0 0 10px', lineHeight: '1.6' }}>
+                各タブをどのカテゴリーに入れるか・カテゴリー内でどの順に並べるかを自由に変更できます（未設定なら今の構成のまま）。
+              </p>
+              <div id="ds-tab-layout" className="stack" style={{ gap: '14px' }}>読み込み中…</div>
+              <button type="button" className="btn btn-ghost" id="ds-tab-layout-reset" style={{ fontSize: '12px', padding: '8px 14px', marginTop: '10px' }}>デフォルトの配置に戻す</button>
+              <span id="ds-tab-layout-msg" style={{ fontSize: '12px', marginLeft: '8px' }}></span>
             </div>
 
             {/* ヘッダーのショートカット（でお要望2026-09-14：「よく使うメニューを3つくらい

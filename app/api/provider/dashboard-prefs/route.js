@@ -11,6 +11,8 @@ import {
   DEFAULT_SIDEBAR_ORDER,
   HEADER_SHORTCUT_OPTIONS,
   MAX_HEADER_SHORTCUTS,
+  isValidTabCategoryOverrides,
+  isValidTabOrderOverrides,
 } from '@/lib/dashboard-prefs';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -66,6 +68,13 @@ export async function PATCH(request) {
     const valid = Array.isArray(order) && order.length <= 200 &&
       order.every(k => typeof k === 'string' && (k.startsWith('staff:') || k.startsWith('resource:')));
     if (valid) updates.calendar_column_order = order;
+  }
+  // タブのカテゴリー所属・カテゴリー内並び順のカスタマイズ（でお要望2026-09-27）
+  if ('tab_category_overrides' in body && isValidTabCategoryOverrides(body.tab_category_overrides)) {
+    updates.tab_category_overrides = body.tab_category_overrides;
+  }
+  if ('tab_order_overrides' in body && isValidTabOrderOverrides(body.tab_order_overrides)) {
+    updates.tab_order_overrides = body.tab_order_overrides;
   }
 
   if (!Object.keys(updates).length) {
