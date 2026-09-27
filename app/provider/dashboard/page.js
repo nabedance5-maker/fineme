@@ -2452,6 +2452,22 @@ export default function ProviderDashboardPage() {
         return slotsWindowCache.filter(s => s.date === dateStr && (!fs || s.staff_id === fs) && (!fr || s.resource_id === fr));
       }
 
+      // フィルタ（スタッフ/部屋）のみで絞った、表示期間全体の枠（でお要望2026-09-27：
+      // 「空き枠の一覧のところの表示もお客様が即時予約するページと同じ表の形式に」に
+      // 対応するため、1日分だけでなく期間全体を日付×時間の表で一望できるようにする）。
+      function filteredSlotsAll() {
+        const fs = filterStaffEl?.value || '';
+        const fr = filterResourceEl?.value || '';
+        return slotsWindowCache.filter(s => (!fs || s.staff_id === fs) && (!fr || s.resource_id === fr));
+      }
+
+      function updateSelDateLabel() {
+        if (!selDateLabelEl) return;
+        const d = new Date(selectedDate + 'T00:00:00');
+        const dateLabel = Number.isNaN(d.getTime()) ? selectedDate : `${selectedDate}（${WEEKDAY_JA_S[d.getDay()]}）`;
+        selDateLabelEl.textContent = `一括操作・新規追加の対象日：${dateLabel}`;
+      }
+
       function renderPills() {
         if (!pillsEl) return;
         const todayStr = fmtDate(new Date());
@@ -2467,11 +2483,11 @@ export default function ProviderDashboardPage() {
             </button>
           `;
         }).join('');
+        updateSelDateLabel();
         pillsEl.querySelectorAll('[data-slot-pill]').forEach(btn => btn.addEventListener('click', () => {
           selectedDate = btn.dataset.slotPill;
           userPickedSlotDate = true;
           renderPills();
-          renderSlotGrid();
         }));
       }
 
@@ -2481,12 +2497,6 @@ export default function ProviderDashboardPage() {
       // ため、縦に積む一覧ではなく「時間×スタッフ（部屋）」の表で一望できるようにする。
       // 予約カレンダー本体（連続座標の絶対配置）ほど厳密でなくてよいため、実際に枠がある
       // 時刻だけを行にしたシンプルな表で組む。
-      function slotGridColumns() {
-        const ids = Object.keys(staffById);
-        if (!ids.length) return [{ id: '', name: '全体' }];
-        return [...ids.map(id => ({ id, name: staffById[id] })), { id: '', name: '指名なし' }];
-      }
-
       function renderSlotEditor(s) {
         const editorEl = document.getElementById('slot-grid-editor');
         if (!editorEl) return;
@@ -2533,36 +2543,43 @@ export default function ProviderDashboardPage() {
         editorEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
 
+      // お客様の即時予約ページ（app/provider/[slug]/board/page.js）と同じ「日付×時間」の
+      // 表形式に統一（でお要望2026-09-27：「空き枠の一覧のところの表示もお客様が即時予約
+      // するページと同じ表の形式の表示にしてほしい」）。あわせて、セルの○/×を直接タップ
+      // するだけでその場で開放・締切できるようにした（でお要望「シフトを出してる出してなくても、
+      // 空き枠設定のところで簡単に枠を開放・閉鎖できるようにしてほしい」）。時間・定員の変更や
+      // 削除は「編集」リンクから従来のrenderSlotEditor()を開く。
       function renderSlotGrid() {
         if (!listEl) return;
-        if (selDateLabelEl) {
-          const d = new Date(selectedDate + 'T00:00:00');
-          selDateLabelEl.textContent = Number.isNaN(d.getTime()) ? selectedDate : `${selectedDate}（${WEEKDAY_JA_S[d.getDay()]}）`;
-        }
-        const rows = filteredSlots(selectedDate);
-        if (!rows.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">この日の枠はありません。</p>'; return; }
-
-        const columns = slotGridColumns();
+        const dates = windowDates();
+        const rows = filteredSlotsAll();
         const times = [...new Set(rows.map(s => s.start_time))].sort();
-        const cellMap = {};
-        rows.forEach(s => { cellMap[`${s.start_time}|${s.staff_id || ''}`] = s; });
+        if (!times.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">この期間の枠はありません。「営業時間から自動生成」または下の個別追加フォームから作成してください。</p><div id="slot-grid-editor"></div>'; return; }
 
-        const headerHtml = `<th style="text-align:left;padding:6px 8px;font-size:11px;color:#6b7280;position:sticky;left:0;background:#fff">時間</th>`
-          + columns.map(c => `<th style="padding:6px 8px;font-size:11px;color:#6b7280;font-weight:700;white-space:nowrap">${esc(c.name)}</th>`).join('');
+        const todayStr = fmtDate(new Date());
+        const cellMap = {};
+        rows.forEach(s => { const key = `${s.date}|${s.start_time}`; if (!cellMap[key]) cellMap[key] = s; });
+
+        const headerHtml = `<th style="text-align:left;padding:6px 8px;font-size:11px;color:#6b7280;position:sticky;left:0;background:#fff;z-index:1">時間</th>`
+          + dates.map(d => {
+            const ds = fmtDate(d);
+            const dow = d.getDay();
+            const color = dow === 0 ? '#ef4444' : dow === 6 ? '#3b82f6' : '#374151';
+            return `<th style="padding:6px 8px;font-size:11px;color:${color};font-weight:700;white-space:nowrap;background:#fff">${d.getMonth() + 1}/${d.getDate()}（${WEEKDAY_JA_S[dow]}）${ds === todayStr ? '<br/><span style="font-size:9px;color:#c9a84c;font-weight:800">今日</span>' : ''}</th>`;
+          }).join('');
 
         const bodyHtml = times.map(t => {
-          const cells = columns.map(c => {
-            const s = cellMap[`${t}|${c.id}`];
-            if (!s) return '<td style="padding:3px 5px"></td>';
-            const bg = s.is_open ? 'rgba(201,168,76,0.16)' : 'rgba(26,20,16,0.05)';
-            const border = s.is_open ? '#c9a84c' : '#9ca3af';
-            return `<td style="padding:3px 5px">
-              <div data-slot-cell="${s.id}" style="cursor:pointer;border-left:3px solid ${border};background:${bg};border-radius:6px;padding:5px 8px;font-size:11.5px;white-space:nowrap">
-                定員${s.capacity}${!s.is_open ? '<div style="color:#ef4444;font-size:10px;font-weight:700">締切</div>' : ''}
-              </div>
+          const cells = dates.map(d => {
+            const ds = fmtDate(d);
+            const s = cellMap[`${ds}|${t}`];
+            if (!s) return '<td style="padding:3px 5px;text-align:center;color:#d1d5db;font-size:12px">−</td>';
+            const isOpen = s.is_open;
+            return `<td style="padding:3px 5px;text-align:center">
+              <button type="button" data-slot-toggle="${s.id}" title="定員${s.capacity}${isOpen ? '（タップで締切）' : '（タップで再開）'}" style="width:34px;height:34px;border-radius:8px;border:1.5px solid ${isOpen ? '#c9a84c' : '#d1d5db'};background:${isOpen ? 'rgba(201,168,76,0.16)' : 'rgba(26,20,16,0.04)'};color:${isOpen ? '#c9a84c' : '#9ca3af'};font-weight:800;font-size:15px;cursor:pointer">${isOpen ? '○' : '×'}</button>
+              <button type="button" data-slot-edit="${s.id}" style="display:block;margin:2px auto 0;font-size:9px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline">編集</button>
             </td>`;
           }).join('');
-          return `<tr><td style="padding:5px 8px;font-size:12px;font-weight:700;white-space:nowrap;position:sticky;left:0;background:#fff">${esc(t.slice(0,5))}</td>${cells}</tr>`;
+          return `<tr><td style="padding:5px 8px;font-size:12px;font-weight:700;white-space:nowrap;position:sticky;left:0;background:#fff">${esc(t.slice(0, 5))}</td>${cells}</tr>`;
         }).join('');
 
         listEl.innerHTML = `
@@ -2574,8 +2591,16 @@ export default function ProviderDashboardPage() {
           </div>
           <div id="slot-grid-editor" style="margin-top:12px"></div>
         `;
-        listEl.querySelectorAll('[data-slot-cell]').forEach(el => el.addEventListener('click', () => {
-          const s = rows.find(x => x.id === el.dataset.slotCell);
+        listEl.querySelectorAll('[data-slot-toggle]').forEach(btn => btn.addEventListener('click', async () => {
+          const s = rows.find(x => x.id === btn.dataset.slotToggle);
+          if (!s) return;
+          btn.disabled = true;
+          const res = await fetch(`/api/provider/slots/${s.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ is_open: !s.is_open }) });
+          if (res.ok) { s.is_open = !s.is_open; renderSlotGrid(); }
+          else { btn.disabled = false; const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
+        }));
+        listEl.querySelectorAll('[data-slot-edit]').forEach(btn => btn.addEventListener('click', () => {
+          const s = rows.find(x => x.id === btn.dataset.slotEdit);
           if (s) renderSlotEditor(s);
         }));
       }
@@ -6584,6 +6609,14 @@ export default function ProviderDashboardPage() {
       function greyIntervalsFor(staffId, dateStr) {
         if (!staffId) return [];
         const out = [];
+        // シフト未確定日（このstoreがシフト管理を使っていて、かつこの日を確定シフト期間が
+        // 一件もカバーしていない）は、その日は誰も出勤予定が無い＝1日丸ごと予約不可
+        // （でお要望2026-09-27「シフトを出していないから予約できないようになってるのであれば
+        // 該当時間の予約カレンダーはグレーで表示して」。lib/shift-availability.jsの
+        // isOutsideShift()の「!coveredDates.has(date) → ブロック」と同じ判定をここでも揃える）。
+        if (shiftFeatureOn && !shiftCoveredDates.has(dateStr)) {
+          return [{ start: RANGE_START_MIN, end: RANGE_END_MIN, kind: 'offshift' }];
+        }
         staffBlocksCache.forEach(b => {
           if (b.staff_id === staffId && b.date === dateStr) out.push({ start: timeToMinutes(b.start_time), end: timeToMinutes(b.end_time), kind: 'block', id: b.id });
         });
@@ -9450,18 +9483,19 @@ export default function ProviderDashboardPage() {
 
           {/* 空き枠の一覧・管理（でお指摘2026-09-14：「設定した空き枠が下にバーって出て
               めっちゃスクロール必要だし、編集もできないし、スタッフや部屋ごとの絞り込みも
-              できない」への全面改修）。月まとめの全件リストではなく1日ずつナビゲートし、
-              スタッフ・部屋で絞り込み、日単位でまとめて締切/削除できるようにする。
-              個々の枠も時間・定員をその場で編集できる。 */}
+              できない」への全面改修）。さらにでお要望2026-09-27：「お客様が即時予約する
+              ページと同じ表の形式に」対応し、日付×時間の表（app/provider/[slug]/board/page.js
+              と同じ形式）に統一。○/×をタップするだけでその場で開放・締切できる。 */}
           <div className="card stack" style={{ padding: '24px', gap: '14px', marginTop: '16px' }}>
             <div>
               <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>空き枠の一覧・管理</h3>
-              <p className="muted" style={{ fontSize: '12.5px', margin: 0 }}>1日ずつ表示します。スタッフ・部屋で絞り込んだり、日ごとまとめて締切・削除できます。</p>
+              <p className="muted" style={{ fontSize: '12.5px', margin: 0 }}>お客様の予約画面と同じ、日付×時間の表で1週間分を一望できます。○/×をタップするだけで開放・締切を切り替えられます（スタッフを指名している場合は下のフィルタで絞り込んでください）。</p>
             </div>
 
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
               <select id="slot-filter-staff" style={{ fontSize: '12.5px', padding: '6px 8px', border: '1px solid #e5e7eb', borderRadius: '8px' }}><option value="">スタッフ：すべて</option></select>
               <select id="slot-filter-resource" style={{ fontSize: '12.5px', padding: '6px 8px', border: '1px solid #e5e7eb', borderRadius: '8px' }}><option value="">部屋・設備：すべて</option></select>
+              <span className="muted" style={{ fontSize: '11px' }}>「すべて」のままだと、同じ日時に複数のスタッフ・部屋の枠がある場合は代表1件だけ表示されます</span>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -9469,8 +9503,13 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn btn-ghost" id="slot-nav-today" style={{ fontSize: '12px', padding: '6px 10px' }}>今日</button>
               <button type="button" className="btn btn-ghost" id="slot-nav-next" style={{ fontSize: '12px', padding: '6px 10px' }}>次の7日 →</button>
             </div>
-            <div id="slot-date-pills" style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}></div>
 
+            <div id="slot-list">読み込み中…</div>
+
+            {/* 表全体は1週間分を一望する用途に切り替えたため、この日付ピル＋一括操作は
+                「まとめて開放/締切/削除したい特定の1日」を選ぶ専用UIとして下に残す
+                （でお要望2026-09-27の表形式化後も、丸ごと締切ニーズ自体は残るため）。 */}
+            <div id="slot-date-pills" style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', marginTop: '8px' }}></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', padding: '10px 12px', background: 'var(--color-bg)', borderRadius: '10px' }}>
               <strong id="slot-selected-date-label" style={{ fontSize: '13px' }}></strong>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -9479,8 +9518,6 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="btn btn-ghost" id="slot-bulk-delete" style={{ fontSize: '11.5px', padding: '5px 10px', color: '#ef4444' }}>この日を全て削除</button>
               </div>
             </div>
-
-            <div id="slot-list">読み込み中…</div>
 
             <details style={{ marginTop: '4px' }}>
               <summary style={{ cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>＋ 個別に1件だけ追加する（特別対応など）</summary>
