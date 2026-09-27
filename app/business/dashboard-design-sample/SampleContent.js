@@ -510,14 +510,14 @@ export default function DashboardDesignSample() {
 
       <div className="dds-topbar" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 40, alignItems: 'center', gap: 12, padding: '12px 16px', background: '#0a0f1e', borderBottom: '1px solid rgba(201,168,76,0.15)' }}>
         <button type="button" onClick={() => setNavOpen(v => !v)} aria-label="メニューを開く" style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(201,168,76,0.3)', background: 'transparent', color: GOLD, fontSize: 16, cursor: 'pointer' }}>☰</button>
-        <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 17, fontWeight: 700, color: GOLD }}>fineme</p>
+        <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 17, fontWeight: 700, color: GOLD }}>Fineme</p>
       </div>
 
       <div className={`dds-backdrop${navOpen ? ' dds-open' : ''}`} onClick={() => setNavOpen(false)} />
 
       <aside className={`dds-sidebar${navOpen ? ' dds-open' : ''}`} style={{ borderRight: '1px solid rgba(201,168,76,0.15)', padding: '24px 14px 40px' }}>
         <div style={{ padding: '0 10px', marginBottom: 18 }}>
-          <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 700, color: GOLD, letterSpacing: 1 }}>fineme</p>
+          <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 700, color: GOLD, letterSpacing: 1 }}>Fineme</p>
           <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(232,228,220,0.4)', letterSpacing: 1 }}>顧客管理システム</p>
         </div>
         {NAV_GROUPS.map((group, gi) => (

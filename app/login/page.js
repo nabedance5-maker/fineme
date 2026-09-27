@@ -250,7 +250,7 @@ export default function LoginPage() {
           ヘッダー帯を上に添えて、遷移先と同じ製品に入る感覚を作る。 */}
       {isProvider && (
         <div style={{ background: '#0a0f1e', borderRadius: '14px 14px 0 0', padding: '18px 24px', textAlign: 'center' }}>
-          <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: '#c9a84c', letterSpacing: 1 }}>fineme</p>
+          <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: '#c9a84c', letterSpacing: 1 }}>Fineme</p>
           <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.55)', letterSpacing: 1 }}>店舗様専用ログイン</p>
         </div>
       )}

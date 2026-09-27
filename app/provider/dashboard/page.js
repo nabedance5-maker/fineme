@@ -8120,7 +8120,7 @@ export default function ProviderDashboardPage() {
             カスタムできたらもっといい」）を店舗ごとにカスタマイズして表示する。 */}
         <div className="pd-topbar">
           <button type="button" id="pd-menu-btn" aria-label="メニューを開く" style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(201,168,76,0.3)', background: 'transparent', color: '#c9a84c', fontSize: 16, cursor: 'pointer', flexShrink: 0 }}>☰</button>
-          <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 17, fontWeight: 700, color: '#c9a84c', flexShrink: 0 }}>fineme</p>
+          <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 17, fontWeight: 700, color: '#c9a84c', flexShrink: 0 }}>Fineme</p>
           <div id="pd-topbar-shortcuts" style={{ display: 'flex', gap: 6, marginLeft: 'auto', overflowX: 'auto' }}></div>
         </div>
         <div id="pd-backdrop" className="pd-backdrop" />
@@ -8129,7 +8129,7 @@ export default function ProviderDashboardPage() {
           {/* サイドバー */}
           <div className="tab-nav" id="pd-sidebar">
             <div style={{ padding: '0 12px', marginBottom: 14 }}>
-              <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: '#c9a84c', letterSpacing: 1 }}>fineme</p>
+              <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: '#c9a84c', letterSpacing: 1 }}>Fineme</p>
               <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: 1 }}>顧客管理システム</p>
             </div>
 
