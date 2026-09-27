@@ -67,6 +67,10 @@ function tabsFor(provider) {
   if (hasFeature(provider, 'class_management')) {
     tabs = [...tabs, { id: 'class', label: 'クラス' }];
   }
+  // 回数券のオンライン購入（でお要望2026-09-27：決済機能Phase 6第一弾）。
+  // 購入可能な回数券が無い店舗でも「無い」ことが分かるよう常に表示する
+  // （プログラムタブと同じ扱い。空の時の表示はPackagesTab側で出す）。
+  tabs = [...tabs, { id: 'packages', label: '回数券' }];
   return tabs;
 }
 const PAYMENT_METHOD_LABELS = {
@@ -937,6 +941,122 @@ function ClassTab({ provider }) {
   );
 }
 
+// ── タブ「回数券」（でお要望2026-09-27：決済機能Phase 6第一弾。オンラインでの
+//    回数券・パッケージ購入）。Stripe Checkout(mode:'payment')の hosted page に
+//    遷移し、決済完了後にこのタブへ戻ってconfirmを叩いて確定する。 ──
+function PackagesTab({ provider }) {
+  const [packages, setPackages] = useState(null); // null=未取得
+  const [userId, setUserId] = useState('');
+  const [purchasingId, setPurchasingId] = useState(null);
+  const [confirmMsg, setConfirmMsg] = useState('');
+  const [error, setError] = useState('');
+
+  function getToken() {
+    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    if (!sbKey) return null;
+    try { return JSON.parse(localStorage.getItem(sbKey))?.access_token || null; } catch { return null; }
+  }
+
+  useEffect(() => {
+    if (!provider?.slug) return;
+    fetch(`/api/providers/${provider.slug}/packages`)
+      .then(r => r.ok ? r.json() : [])
+      .then(setPackages)
+      .catch(() => setPackages([]));
+  }, [provider?.slug]);
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+    fetch('/api/me/profile', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => { if (data?.id) setUserId(data.id); })
+      .catch(() => {});
+  }, []);
+
+  // Stripe Checkout(payment)から戻ってきた時（success_urlの?purchase=success&session_id=...）に確定する
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('purchase') !== 'success') return;
+    const sessionId = params.get('session_id');
+    if (!sessionId) return;
+    const token = getToken();
+    if (!token) return;
+    fetch('/api/me/customer-packages/confirm', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ session_id: sessionId }),
+    })
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        setConfirmMsg(ok ? `✓ 「${d.package_name}」の購入が完了しました。` : (d.error || '確認に失敗しました'));
+        const url = new URL(window.location.href);
+        url.searchParams.delete('purchase');
+        url.searchParams.delete('session_id');
+        window.history.replaceState({}, '', url.toString());
+      })
+      .catch(() => setConfirmMsg('確認に失敗しました'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handlePurchase(pkg) {
+    const token = getToken();
+    if (!token) { setError('購入にはログインが必要です。ページ上部からログインしてください。'); return; }
+    setError(''); setPurchasingId(pkg.id);
+    try {
+      const res = await fetch('/api/me/customer-packages/checkout', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ package_id: pkg.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || '購入手続きの開始に失敗しました'); setPurchasingId(null); return; }
+      window.location.href = data.url;
+    } catch {
+      setError('通信エラーが発生しました'); setPurchasingId(null);
+    }
+  }
+
+  if (packages === null) return <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(232,228,220,0.5)' }}>読み込み中…</div>;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingBottom: '60px' }}>
+      {confirmMsg && (
+        <div style={{ padding: '14px 16px', background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: '12px', color: '#4ade80', fontSize: '13.5px', fontWeight: '700' }}>
+          {confirmMsg}
+        </div>
+      )}
+      {error && (
+        <div style={{ padding: '12px 16px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', color: '#f87171', fontSize: '13px' }}>
+          {error}
+        </div>
+      )}
+      {!packages.length ? (
+        <p style={{ textAlign: 'center', color: 'rgba(232,228,220,0.5)', fontSize: '14px', padding: '40px 0' }}>現在オンラインで購入できる回数券はありません。</p>
+      ) : packages.map(pkg => (
+        <div key={pkg.id} style={{ border: '1px solid rgba(232,228,220,0.15)', borderRadius: '16px', padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          <div>
+            <p style={{ fontSize: '15px', fontWeight: '800', color: '#fff', margin: '0 0 4px' }}>{pkg.name}</p>
+            <p style={{ fontSize: '12.5px', color: 'rgba(232,228,220,0.65)', margin: 0 }}>
+              {pkg.package_type === 'unlimited' ? '通い放題' : `${pkg.total_sessions}回分`}
+              {pkg.package_type === 'combo' && pkg.combo_ticket_sessions ? `＋チケット${pkg.combo_ticket_sessions}回` : ''}
+              {pkg.validity_days ? `／有効期限${pkg.validity_days}日間` : ''}
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '18px', fontWeight: '900', color: '#fff' }}>¥{Number(pkg.price).toLocaleString()}</span>
+            <button
+              onClick={() => handlePurchase(pkg)}
+              disabled={purchasingId === pkg.id}
+              style={{ padding: '10px 20px', background: '#111', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: purchasingId === pkg.id ? 'not-allowed' : 'pointer', opacity: purchasingId === pkg.id ? 0.6 : 1 }}
+            >
+              {purchasingId === pkg.id ? '手続き中…' : '購入する'}
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint }) {
   const today = new Date().toISOString().split('T')[0];
   const [formState, setFormState] = useState({ name: '', email: '', phone: '', date: '', time: '', date2: '', time2: '', date3: '', time3: '', message: '' });
@@ -1747,6 +1867,7 @@ function ProviderPageContent() {
         />
       )}
       {activeTab === 'class' && <ClassTab provider={provider} />}
+      {activeTab === 'packages' && <PackagesTab provider={provider} />}
     </div>
   );
 }
