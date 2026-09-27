@@ -211,6 +211,7 @@ export async function PATCH(request, context) {
         providerId: data.provider_id,
         userId: data.user_id,
         reservationId: id,
+        preferredPackageId: data.package_id || null,
       });
     }
 

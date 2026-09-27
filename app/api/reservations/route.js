@@ -81,7 +81,7 @@ export async function POST(request) {
   // スタッフ指名予約・即時予約モード（hacomono/STORES網羅計画 Phase 1）。
   // staff_idは申請制・即時予約どちらでも受け付ける（指名だけして日程は店舗と相談、も可）。
   // booking_mode省略時は完全に従来通りの申請制コードパス（既存挙動の回帰防止）。
-  const { staff_id, booking_mode, slot_id, referral_code, service_id } = body;
+  const { staff_id, booking_mode, slot_id, referral_code, service_id, package_id } = body;
   const isInstant = booking_mode === 'instant';
 
   if (!provider_id || !user_name || !user_contact) {
@@ -89,6 +89,15 @@ export async function POST(request) {
   }
   if (isInstant && !slot_id) {
     return Response.json({ error: '空き枠を選んでください' }, { status: 400 });
+  }
+
+  // 予約時に選んだ使用チケット（でお要望2026-09-27）。本人（user_id）が実際に持っている
+  // このお店のチケットかを確認してからでないと信用しない（他人のpackage_idを勝手に
+  // 指定されるのを防ぐ）。無効なら黙ってnull扱いにする（必須項目ではないため）。
+  let verifiedPackageId = null;
+  if (package_id && user_id) {
+    const { data: pkg } = await supabase.from('customer_packages').select('id').eq('id', package_id).eq('user_id', user_id).eq('provider_id', provider_id).maybeSingle();
+    if (pkg) verifiedPackageId = pkg.id;
   }
   if (!isInstant && (!preferred_date || !preferred_time)) {
     return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
@@ -137,6 +146,7 @@ export async function POST(request) {
     status: 'pending',
     staff_id: staff_id || null,
     service_id: service_id || null,
+    package_id: verifiedPackageId,
     designation_fee: designationFee,
     booking_mode: isInstant ? 'instant' : 'request',
   };

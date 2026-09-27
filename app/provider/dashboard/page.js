@@ -5485,6 +5485,9 @@ export default function ProviderDashboardPage() {
             <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap" onclick="showVisitModal('${r.id}')">来店確認</button>
             ${(_activePackagesByUser[r.user_id] || []).map(p => `
             <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#7c3aed;border-color:#c4b5fd" onclick="consumePackage('${p.id}','${r.id}',this)">🎫 ${esc(p.package_name)}を消化（残${p.remaining_sessions}）</button>`).join('')}
+          </div>` : r.status === 'visited' && r.user_id ? `
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
+            <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#7c3aed;border-color:#c4b5fd" onclick="showChangePackageModal('${r.id}','${r.user_id}','${r.package_id || ''}')">🎫 使用チケットを変更</button>
           </div>` : ''}
         </div>
       `;
@@ -5731,6 +5734,64 @@ export default function ProviderDashboardPage() {
         showToast('通信エラーが発生しました');
         if (btn) btn.disabled = false;
       }
+    };
+
+    // 使用チケットの変更（でお要望2026-09-27：「実際行った時にその場で内容が変わる
+    // かもしれないから、店舗側で予約時の利用チケットを変更できるように」）。
+    // 来店確認済みの予約カードから開き、現在の紐付けを見ながら別のチケットに
+    // 付け替えたり「使用しない」に戻したりできる。
+    window.showChangePackageModal = async function (reservationId, userId, currentPackageId) {
+      const existing = document.getElementById('change-pkg-modal-overlay');
+      if (existing) existing.remove();
+      const _cpToken = getSupabaseToken();
+      const headers = { 'Content-Type': 'application/json', ...(_cpToken ? { 'Authorization': `Bearer ${_cpToken}` } : {}) };
+
+      const overlay = document.createElement('div');
+      overlay.id = 'change-pkg-modal-overlay';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
+      overlay.innerHTML = `
+        <div style="background:#fff;border-radius:18px;padding:28px;width:100%;max-width:400px;">
+          <h2 style="font-size:16px;font-weight:800;margin:0 0 6px">使用チケットを変更</h2>
+          <p style="font-size:13px;color:#6b7280;margin:0 0 14px">読み込み中…</p>
+          <div id="change-pkg-body"></div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+      const res = await fetch('/api/provider/customer-packages', { headers });
+      const bodyEl = document.getElementById('change-pkg-body');
+      const msgEl = overlay.querySelector('p');
+      if (!res.ok) { if (msgEl) msgEl.textContent = '読み込みに失敗しました'; return; }
+      const rows = await res.json();
+      const userPackages = rows.filter(p => p.user_id === userId);
+      if (msgEl) msgEl.textContent = '実際にご利用いただいたチケットを選んでください。';
+
+      const options = ['<option value="">使用しない</option>']
+        .concat(userPackages.map(p => `<option value="${p.id}"${p.id === currentPackageId ? ' selected' : ''}>${esc(p.package_name)}（${p.package_type === 'unlimited' ? '通い放題' : `残り${p.remaining_sessions}${p.expired ? '・期限切れ' : ''}`}）</option>`))
+        .join('');
+      bodyEl.innerHTML = `
+        <select id="change-pkg-select" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:16px">${options}</select>
+        <div style="display:flex;gap:8px">
+          <button id="change-pkg-save" style="flex:1;padding:12px;background:#10b981;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">保存する</button>
+          <button onclick="document.getElementById('change-pkg-modal-overlay').remove()" style="padding:12px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:10px;font-size:14px;cursor:pointer">キャンセル</button>
+        </div>
+      `;
+      document.getElementById('change-pkg-save').addEventListener('click', async () => {
+        const sel = document.getElementById('change-pkg-select');
+        const saveBtn = document.getElementById('change-pkg-save');
+        saveBtn.disabled = true; saveBtn.textContent = '保存中…';
+        try {
+          const r = await fetch(`/api/reservations/${reservationId}/change-package`, { method: 'POST', headers, body: JSON.stringify({ package_id: sel.value || null }) });
+          if (!r.ok) { const e = await r.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); saveBtn.disabled = false; saveBtn.textContent = '保存する'; return; }
+          overlay.remove();
+          showToast('使用チケットを変更しました');
+          await loadRequests();
+        } catch {
+          showToast('通信エラーが発生しました');
+          saveBtn.disabled = false; saveBtn.textContent = '保存する';
+        }
+      });
     };
 
     window.showCounterModal = function (id) {

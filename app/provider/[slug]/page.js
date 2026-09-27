@@ -989,6 +989,25 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   const [gridWeekOffset, setGridWeekOffset] = useState(0); // 表示中の週（0=今日から7日間、1=その次の7日間…）
   const [lastWasInstant, setLastWasInstant] = useState(false);
 
+  // 予約時に使用チケットを選べるように（でお要望2026-09-27：「予約時にどのチケットで
+  // 行くか選択できれば」）。ログイン中かつこの店舗の有効なチケットを持っている時だけ表示。
+  const [myPackages, setMyPackages] = useState([]);
+  const [selectedPackageId, setSelectedPackageId] = useState('');
+  useEffect(() => {
+    if (!userId || !provider?.id) { setMyPackages([]); return; }
+    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    if (!sbKey) return;
+    try {
+      const obj = JSON.parse(localStorage.getItem(sbKey));
+      const token = obj?.access_token;
+      if (!token) return;
+      fetch('/api/me/packages', { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : [])
+        .then(rows => setMyPackages((rows || []).filter(p => p.provider_slug === provider.slug && !p.expired && (p.package_type === 'unlimited' || p.remaining_sessions > 0))))
+        .catch(() => setMyPackages([]));
+    } catch { setMyPackages([]); }
+  }, [userId, provider?.slug]);
+
   useEffect(() => {
     if (!instantBookingOn || !provider?.slug) return;
     const params = new URLSearchParams({ from: today });
@@ -1113,6 +1132,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         message: meScanNote + noteParts.join('\n'),
         staff_id: staffId || null,
         service_id: selectedService?.id || null,
+        package_id: selectedPackageId || null,
         referral_code,
         ...(useInstant
           ? { booking_mode: 'instant', slot_id: selectedSlotId }
@@ -1303,6 +1323,29 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
           />
           <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.75)', margin: '4px 0 0' }}>メールアドレス・電話番号のどちらか一方は必須です。</p>
         </div>
+
+        {/* 使用チケット選択（でお要望2026-09-27：「予約時にどのチケットで行くか選択
+            できれば」）。この店舗の有効なチケットを持っている会員にだけ表示。選んだ
+            チケットは来店確認時に優先して自動消化される（複数持っている場合の
+            「どれを自動消化すべきか判断できない」問題を、ここでの選択で解消する）。 */}
+        {myPackages.length > 0 && (
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '6px' }}>使用するチケット（任意）</label>
+            <select
+              value={selectedPackageId}
+              onChange={e => setSelectedPackageId(e.target.value)}
+              style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', color: '#fff' }}
+            >
+              <option value="" style={{ color: '#000' }}>選択しない（通常のお支払い）</option>
+              {myPackages.map(p => (
+                <option key={p.id} value={p.id} style={{ color: '#000' }}>
+                  {p.package_name}（{p.package_type === 'unlimited' ? '通い放題' : `残り${p.remaining_sessions}回`}）
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {showInstantPicker ? (
           // 即時予約モード（hacomono/STORES網羅計画 Phase 1）。空き枠を選んだ時点で
           // その場で確定する——店舗の承認を待たない。
