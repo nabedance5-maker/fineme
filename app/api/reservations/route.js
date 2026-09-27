@@ -7,6 +7,7 @@ import { notifyCustomerLine, attributeReferral } from '@/lib/reservation-notify'
 import { hasFeature } from '@/lib/feature-flags';
 import { getShiftScheduleForRange, isOutsideShift } from '@/lib/shift-availability';
 import { isPastBookingCutoff, cutoffDescription } from '@/lib/booking-cutoff';
+import { createDepositCheckout } from '@/lib/reservation-deposit';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -105,7 +106,7 @@ export async function POST(request) {
 
   // enabled_features（申請制ON/OFF判定用）とmax_active_reservations（同時保持できる
   // 予約数の上限、店舗ごとに変更可）・予約締切設定をまとめて取得。
-  const { data: providerFeatureRow } = await supabase.from('providers').select('enabled_features, max_active_reservations, booking_cutoff_mode, booking_cutoff_hours, booking_cutoff_time').eq('id', provider_id).single();
+  const { data: providerFeatureRow } = await supabase.from('providers').select('enabled_features, max_active_reservations, booking_cutoff_mode, booking_cutoff_hours, booking_cutoff_time, deposit_amount, stripe_connect_id, stripe_connect_status').eq('id', provider_id).single();
 
   // 申請制（第1〜3希望→店舗が承認）は店舗ごとにON/OFFできる（でお要望2026-09-14：
   // 「即時予約と同じように、予約リクエストも受け付けるかどうか設定できるように」）。
@@ -224,6 +225,19 @@ export async function POST(request) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
+  // 予約デポジット（決済機能Phase6③・でお要望2026-09-27）。即時予約で確定した予約のみ対象
+  // （申請制は店舗の承認前に課金するのは順序として不自然なため対象外）。
+  // 失敗しても予約自体は成立させる（決済リンクが無い＝店舗が直接デポジットを案内する運用に倒れるだけ）。
+  let depositCheckoutUrl = null;
+  if (isInstant && hasFeature(providerFeatureRow, 'payment_mediation') && providerFeatureRow?.deposit_amount > 0) {
+    try {
+      depositCheckoutUrl = await createDepositCheckout(supabase, {
+        provider: { ...providerFeatureRow, id: provider_id },
+        reservation: data,
+      });
+    } catch (e) { console.error('[reservation deposit checkout]', e); }
+  }
+
   // 友達紹介プログラム（でお要望2026-09-14）：紹介コード付きの予約なら記録・通知
   if (referral_code) {
     await attributeReferral(supabase, { providerId: provider_id, referralCode: referral_code, referredUserId: user_id, referredName: user_name, reservationId: data.id });
@@ -282,5 +296,5 @@ export async function POST(request) {
   // 課金開始は「初回来店時」に行う（PATCH /api/reservations/[id] の visited 処理で実施）
   // 予約作成時点では billing_started を変更しない
 
-  return Response.json(data, { status: 201 });
+  return Response.json({ ...data, deposit_checkout_url: depositCheckoutUrl }, { status: 201 });
 }

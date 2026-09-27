@@ -4570,6 +4570,36 @@ export default function ProviderDashboardPage() {
       const token = getSupabaseToken();
       if (!token) return;
       const listEl = document.getElementById('features-list');
+      const depositBox = document.getElementById('deposit-settings-box');
+      const depositInput = document.getElementById('deposit-amount-input');
+      const depositSaveBtn = document.getElementById('deposit-amount-save');
+      const depositMsg = document.getElementById('deposit-amount-msg');
+      const depositWarn = document.getElementById('deposit-payment-warn');
+
+      async function loadDepositSettings() {
+        if (!depositInput) return;
+        const res = await fetch('/api/provider/deposit-settings', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+        if (!res.ok) return;
+        const d = await res.json();
+        depositInput.value = d.deposit_amount || '';
+        if (depositWarn) depositWarn.style.display = d.payment_ready ? 'none' : 'block';
+      }
+      if (depositSaveBtn) {
+        depositSaveBtn.addEventListener('click', async () => {
+          depositSaveBtn.disabled = true;
+          if (depositMsg) { depositMsg.style.color = ''; depositMsg.textContent = '保存中…'; }
+          try {
+            const res = await fetch('/api/provider/deposit-settings', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+              body: JSON.stringify({ deposit_amount: depositInput.value === '' ? null : depositInput.value }),
+            });
+            if (!res.ok) { const e = await res.json().catch(() => ({})); if (depositMsg) { depositMsg.style.color = '#ef4444'; depositMsg.textContent = e?.error || '保存に失敗しました'; } }
+            else if (depositMsg) { depositMsg.style.color = '#4ade80'; depositMsg.textContent = '✓ 保存しました'; setTimeout(() => { if (depositMsg) depositMsg.textContent = ''; }, 2500); }
+          } catch { if (depositMsg) { depositMsg.style.color = '#ef4444'; depositMsg.textContent = '通信エラーが発生しました'; } }
+          depositSaveBtn.disabled = false;
+        });
+      }
 
       async function loadFeatures() {
         if (!listEl) return;
@@ -4577,6 +4607,8 @@ export default function ProviderDashboardPage() {
         const res = await fetch('/api/provider/features', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
         if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
         const { features, defs } = await res.json();
+        if (depositBox) depositBox.style.display = features.payment_mediation ? 'block' : 'none';
+        if (features.payment_mediation) loadDepositSettings();
         const groups = {};
         Object.entries(defs).forEach(([key, def]) => {
           (groups[def.group] = groups[def.group] || []).push({ key, ...def });
@@ -4628,6 +4660,10 @@ export default function ProviderDashboardPage() {
           } else {
             if (statusEl) { statusEl.style.color = '#4ade80'; statusEl.textContent = '✓ 保存しました'; setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 2500); }
             window.applyFeatureGating?.(key, input.checked);
+            if (key === 'payment_mediation') {
+              if (depositBox) depositBox.style.display = input.checked ? 'block' : 'none';
+              if (input.checked) loadDepositSettings();
+            }
           }
         } catch {
           input.checked = !input.checked;
@@ -10772,6 +10808,17 @@ export default function ProviderDashboardPage() {
               </p>
             </div>
             <div id="features-list" className="stack" style={{ gap: '14px' }}>読み込み中…</div>
+            <div id="deposit-settings-box" style={{ display: 'none', padding: '14px 16px', background: 'rgba(26,20,16,0.03)', border: '1px solid rgba(26,20,16,0.12)', borderRadius: '10px' }}>
+              <p style={{ fontSize: '13.5px', fontWeight: 700, margin: '0 0 4px' }}>予約デポジット</p>
+              <p className="muted" style={{ fontSize: '12px', margin: '0 0 10px', lineHeight: '1.6' }}>金額を設定すると、即時予約で確定した予約にお客様の前払いデポジットを求められます。0円または空欄で無効になります。</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '13px' }}>¥</span>
+                <input type="number" id="deposit-amount-input" min="0" step="100" style={{ width: '120px', padding: '8px 10px', border: '1.5px solid #e5e7eb', borderRadius: '8px', fontSize: '13px' }} />
+                <button type="button" className="btn btn-ghost" id="deposit-amount-save" style={{ fontSize: '12px', padding: '8px 14px' }}>保存する</button>
+                <span id="deposit-amount-msg" style={{ fontSize: '12px' }}></span>
+              </div>
+              <p id="deposit-payment-warn" className="muted" style={{ fontSize: '12px', margin: '10px 0 0', display: 'none' }}>オンライン決済の受け入れ設定が完了していないため、デポジットを設定しても実際には請求されません。課金・プランタブから設定してください。</p>
+            </div>
           </div>
         </div>
 

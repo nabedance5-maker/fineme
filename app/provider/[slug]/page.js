@@ -874,6 +874,9 @@ function ClassTab({ provider }) {
         }),
       });
       if (res.ok) {
+        const resData = await res.json().catch(() => ({}));
+        // 予約デポジット（決済機能Phase6③）: 店舗がデポジットを設定していれば決済ページへ誘導する
+        if (resData?.deposit_checkout_url) { window.location.href = resData.deposit_checkout_url; return; }
         setDoneSlotIds(prev => [...prev, slotId]);
       } else {
         const err = await res.json().catch(() => ({}));
@@ -1259,7 +1262,12 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
           : { preferred_date: formState.date, preferred_time: formState.time }),
       };
       const res = await fetch('/api/reservations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (res.ok) { setLastWasInstant(useInstant); setSubmitted(true); }
+      if (res.ok) {
+        const resData = await res.json().catch(() => ({}));
+        // 予約デポジット（決済機能Phase6③）: 店舗がデポジットを設定していれば決済ページへ誘導する
+        if (resData?.deposit_checkout_url) { window.location.href = resData.deposit_checkout_url; return; }
+        setLastWasInstant(useInstant); setSubmitted(true);
+      }
       else { const err = await res.json(); setFormError(err.error || '送信に失敗しました'); }
     } catch { setFormError('通信エラーが発生しました'); }
     finally { setSubmitting(false); }

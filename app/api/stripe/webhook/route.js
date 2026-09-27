@@ -98,26 +98,36 @@ export async function POST(request) {
       case 'checkout.session.completed': {
         const session = event.data.object;
         const pendingId = session.metadata?.fineme_pos_pending_id;
-        if (!pendingId || session.payment_status !== 'paid') break;
+        const depositReservationId = session.metadata?.fineme_deposit_reservation_id;
+        if (session.payment_status !== 'paid') break;
 
-        const { data: pending } = await supabaseAdmin.from('provider_pos_pending_checkouts').select('*').eq('id', pendingId).single();
-        if (!pending || pending.status !== 'pending') break; // 二重webhook配信への対策
+        if (pendingId) {
+          const { data: pending } = await supabaseAdmin.from('provider_pos_pending_checkouts').select('*').eq('id', pendingId).single();
+          if (!pending || pending.status !== 'pending') break; // 二重webhook配信への対策
 
-        try {
-          const result = await recordPosTransaction(supabaseAdmin, {
-            providerId: pending.provider_id,
-            items: pending.items,
-            staffId: pending.staff_id,
-            paymentMethod: 'オンライン決済',
-            memo: pending.memo,
-            source: 'pos_online',
-          });
-          await supabaseAdmin.from('provider_pos_pending_checkouts')
-            .update({ status: 'paid', transaction_id: result.transaction.id })
-            .eq('id', pendingId);
-        } catch (e) {
-          console.error('[webhook] pos online-checkout record error:', e);
-          await supabaseAdmin.from('provider_pos_pending_checkouts').update({ status: 'failed' }).eq('id', pendingId);
+          try {
+            const result = await recordPosTransaction(supabaseAdmin, {
+              providerId: pending.provider_id,
+              items: pending.items,
+              staffId: pending.staff_id,
+              paymentMethod: 'オンライン決済',
+              memo: pending.memo,
+              source: 'pos_online',
+            });
+            await supabaseAdmin.from('provider_pos_pending_checkouts')
+              .update({ status: 'paid', transaction_id: result.transaction.id })
+              .eq('id', pendingId);
+          } catch (e) {
+            console.error('[webhook] pos online-checkout record error:', e);
+            await supabaseAdmin.from('provider_pos_pending_checkouts').update({ status: 'failed' }).eq('id', pendingId);
+          }
+        } else if (depositReservationId) {
+          // 予約デポジット確定（決済機能Phase6③・でお要望2026-09-27）
+          const { data: reservation } = await supabaseAdmin.from('reservations').select('id, deposit_status').eq('id', depositReservationId).single();
+          if (!reservation || reservation.deposit_status !== 'pending') break; // 二重webhook配信への対策
+          await supabaseAdmin.from('reservations')
+            .update({ deposit_status: 'paid', stripe_deposit_payment_intent_id: session.payment_intent })
+            .eq('id', depositReservationId);
         }
         break;
       }

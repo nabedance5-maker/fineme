@@ -28,6 +28,8 @@ export default function BookingBoardPage() {
   const [phone, setPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  const [depositUrl, setDepositUrl] = useState(null);
+  const [depositQr, setDepositQr] = useState(null);
 
   const dates = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() + i); return d; });
 
@@ -51,9 +53,10 @@ export default function BookingBoardPage() {
   // 予約完了後、次のお客様のために一定時間で自動的にトップへ戻す（キオスク画面の定石）
   useEffect(() => {
     if (step !== 'done') return;
-    const t = setTimeout(() => { setStep('pick'); setSelectedSlot(null); setName(''); setPhone(''); loadSlots(); }, 8000);
+    // デポジット決済のQRを出している間は、お客様が読み取る前に画面が切り替わらないよう長めに待つ
+    const t = setTimeout(() => { setStep('pick'); setSelectedSlot(null); setName(''); setPhone(''); setDepositUrl(null); setDepositQr(null); loadSlots(); }, depositUrl ? 90000 : 8000);
     return () => clearTimeout(t);
-  }, [step, loadSlots]);
+  }, [step, loadSlots, depositUrl]);
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>読み込み中…</div>;
   if (!provider) return <div style={{ padding: '40px', textAlign: 'center' }}>店舗が見つかりませんでした</div>;
@@ -88,7 +91,19 @@ export default function BookingBoardPage() {
           staff_id: selectedSlot.staff_id || null,
         }),
       });
-      if (res.ok) { setStep('done'); }
+      if (res.ok) {
+        const resData = await res.json().catch(() => ({}));
+        // 予約デポジット（決済機能Phase6③）: タブレット自体を占有し続けられないため、
+        // 決済ページへ遷移させず、その場でQRコードを表示してお客様自身のスマホで払ってもらう
+        if (resData?.deposit_checkout_url) {
+          setDepositUrl(resData.deposit_checkout_url);
+          try {
+            const QRCode = (await import('qrcode')).default || (await import('qrcode'));
+            setDepositQr(await QRCode.toDataURL(resData.deposit_checkout_url, { width: 200, margin: 1, color: { dark: '#0a0f1e', light: '#ffffff' } }));
+          } catch {}
+        }
+        setStep('done');
+      }
       else { const err = await res.json(); setFormError(err.error || '予約に失敗しました。スタッフにお声がけください。'); }
     } catch { setFormError('通信エラーが発生しました。スタッフにお声がけください。'); }
     finally { setSubmitting(false); }
@@ -201,7 +216,15 @@ export default function BookingBoardPage() {
           <div style={{ fontSize: '56px', marginBottom: '16px' }}>✓</div>
           <h2 style={{ fontSize: '24px', fontWeight: '900', margin: '0 0 10px' }}>ご予約ありがとうございます！</h2>
           <p style={{ fontSize: '17px', color: '#444', margin: '0 0 6px' }}>{selectedSlot.date} {selectedSlot.start_time} 〜</p>
-          <p style={{ fontSize: '14px', color: '#999', margin: '24px 0 0' }}>まもなく最初の画面に戻ります</p>
+          {depositUrl ? (
+            <div style={{ marginTop: '20px' }}>
+              <p style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: '0 0 10px' }}>デポジットのお支払いをお願いします</p>
+              {depositQr && <img src={depositQr} alt="デポジット決済QRコード" style={{ width: '160px', height: '160px', borderRadius: '10px', background: '#fff' }} />}
+              <p style={{ fontSize: '12px', color: '#999', margin: '10px 0 0' }}>お手持ちのスマホでこのQRを読み取ってお支払いください</p>
+            </div>
+          ) : (
+            <p style={{ fontSize: '14px', color: '#999', margin: '24px 0 0' }}>まもなく最初の画面に戻ります</p>
+          )}
         </div>
       )}
     </div>

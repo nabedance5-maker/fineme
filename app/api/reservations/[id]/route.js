@@ -7,6 +7,7 @@ import { notifyCustomerLine } from '@/lib/reservation-notify';
 import { syncVisitToLog } from '@/lib/sync-visit';
 import { notifyStoreIfAtRiskVisit } from '@/lib/at-risk-visit-notify';
 import { autoConsumePackageForVisit } from '@/lib/consume-package';
+import { refundDepositIfPaid } from '@/lib/reservation-deposit';
 
 export async function GET(request, context) {
   try {
@@ -213,6 +214,12 @@ export async function PATCH(request, context) {
         reservationId: id,
         preferredPackageId: data.package_id || null,
       });
+    }
+
+    // 予約デポジットの返金（決済機能Phase6③・でお要望2026-09-27）。
+    // キャンセル・お断りいずれも、支払い済みデポジットがあれば自動返金する。
+    if (['cancelled', 'rejected'].includes(newStatus)) {
+      await refundDepositIfPaid(db, data);
     }
 
     // ユーザーがキャンセルした場合：掲載者に通知
