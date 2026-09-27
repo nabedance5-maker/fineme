@@ -6747,6 +6747,8 @@ export default function ProviderDashboardPage() {
       }
 
       function renderPills() {
+        const dateJumpEl = document.getElementById('cal-date-jump');
+        if (dateJumpEl) dateJumpEl.value = selectedDate || '';
         const dates = weekDates();
         pillsEl.innerHTML = dates.map(d => {
           const dateStr = fmtDate(d);
@@ -7705,16 +7707,8 @@ export default function ProviderDashboardPage() {
       document.getElementById('cal-next-btn')?.addEventListener('click', () => { weekStart.setDate(weekStart.getDate() + 7); userPickedDate = false; loadWeek(); });
       document.getElementById('cal-today-btn')?.addEventListener('click', () => { weekStart = mondayOf(new Date()); selectedDate = todayStr; userPickedDate = false; loadWeek(); });
 
-      // 日付を直接選んで一気に飛ぶ（でお要望2026-09-28）。ネイティブの<input type="date">を
-      // 見えない位置に置き、ボタンクリックでその場で開く（showPicker未対応ブラウザは
-      // クリックにフォールバック）。
+      // 日付を直接選んで一気に飛ぶ（でお要望2026-09-28）。
       const dateJumpInput = document.getElementById('cal-date-jump');
-      document.getElementById('cal-date-jump-btn')?.addEventListener('click', () => {
-        if (!dateJumpInput) return;
-        dateJumpInput.value = selectedDate || todayStr;
-        if (typeof dateJumpInput.showPicker === 'function') dateJumpInput.showPicker();
-        else dateJumpInput.click();
-      });
       dateJumpInput?.addEventListener('change', (e) => {
         const v = e.target.value;
         if (!v) return;
@@ -8754,9 +8748,11 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="btn btn-ghost" id="cal-next-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>次週 →</button>
                 {/* 遠い日付へ一気に飛べるよう、ネイティブの日付ピッカーをその場で開く
                     （でお要望2026-09-28：「何月って書いてあるボタンとかで押したら、その次の
-                    カレンダーがポップアップで開いて違う日に飛べるボタンもあるといい」）。 */}
-                <button type="button" className="btn btn-ghost" id="cal-date-jump-btn" style={{ fontSize: '12px', padding: '6px 12px' }}>日付を選ぶ</button>
-                <input type="date" id="cal-date-jump" style={{ position: 'absolute', width: '1px', height: '1px', opacity: 0, pointerEvents: 'none' }} tabIndex={-1} />
+                    カレンダーがポップアップで開いて違う日に飛べるボタンもあるといい」）。
+                    隠し入力+showPicker()方式はAndroid Chromeで反応しないことがあった
+                    （でお報告2026-09-28）ため、input自体を小さく見せてタップ＝ピッカーが
+                    開くネイティブ挙動にそのまま乗る、より確実な方式に変更。 */}
+                <input type="date" id="cal-date-jump" style={{ fontSize: '12px', padding: '6px 8px', border: '1.5px solid #e5e7eb', borderRadius: '8px', background: '#fff', color: 'inherit' }} />
               </div>
             </div>
 
