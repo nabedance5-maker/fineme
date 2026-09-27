@@ -276,6 +276,25 @@ export default function ServiceLog({ withSideNav = false }) {
       .lnx-peek-axis .p1 { color: rgba(232,228,220,0.3); }
       .lnx-peek-quote { font-size: 11.5px; color: rgba(232,228,220,0.55); line-height: 1.8; margin: 11px 0 0; padding-left: 10px; border-left: 2px solid rgba(201,168,76,0.3); }
 
+      /* ── お店からの記録（でお要望2026-09-27：New Me Logへのデータ橋渡し） ── */
+      .lsr-section { margin: 24px 0; }
+      .lsr-section-title { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(201,168,76,0.6); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+      .lsr-section-title::after { content: ''; flex: 1; height: 1px; background: rgba(201,168,76,0.15); }
+      .lsr-section-desc { font-size: 12px; color: rgba(232,228,220,0.4); margin: 0 0 14px; }
+      .lsr-group { margin-bottom: 16px; }
+      .lsr-group-head { font-size: 13px; font-weight: 700; color: rgba(232,228,220,0.85); margin: 0 0 8px; }
+      .lsr-group-link { color: rgba(201,168,76,0.85); text-decoration: none; }
+      .lsr-group-link:hover { text-decoration: underline; }
+      .lsr-card { background: rgba(10,15,30,0.55); border: 1px solid rgba(232,228,220,0.1); border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; }
+      .lsr-card-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+      .lsr-card-type { font-size: 12.5px; font-weight: 700; color: #c9a84c; }
+      .lsr-card-date { font-size: 11px; color: rgba(232,228,220,0.35); flex-shrink: 0; }
+      .lsr-card-score { font-size: 12.5px; color: rgba(232,228,220,0.7); margin: 0 0 6px; }
+      .lsr-card-score b { color: #c9a84c; font-size: 15px; }
+      .lsr-card-findings { margin: 0 0 6px; padding-left: 18px; font-size: 12.5px; color: rgba(232,228,220,0.65); line-height: 1.8; }
+      .lsr-card-photo-link { font-size: 11.5px; color: rgba(201,168,76,0.7); text-decoration: none; }
+      .lsr-card-photo-link:hover { text-decoration: underline; }
+
       .log-chip-cost { border-color: rgba(201,168,76,0.35) !important; color: rgba(201,168,76,0.85) !important; }
 
       /* ── 種別（通う／買う） ── */
@@ -419,6 +438,20 @@ export default function ServiceLog({ withSideNav = false }) {
     const bookServicesCache = {}; // provider_slug -> 公開サービス一覧（予約リクエストのメニュー選択用。でお指摘2026-09-09：メニューが選べないと意味がない）
     let analysisGoal = 'both'; // 'save' | 'effect' | 'both'（「支出から見えること」の目的設定）
     try { analysisGoal = localStorage.getItem('fineme:log:goal') || 'both'; } catch {}
+
+    // 掲載店舗からの記録（AI姿勢分析・AI健診アドバイス）を橋渡しする「あなたの変化の記録」
+    // （でお要望2026-09-27：「今持ってるデータをNew Me Log側に橋渡しする1本の導線を作る」）。
+    // これまで店舗スタッフのみが見ていた記録を、本人にもそのまま見せる。
+    let providerRecords = [];
+    const HEALTH_AXIS_LABELS = { diet: '食事', exercise: '運動', lifestyle: '生活習慣', overall: '全般' };
+    async function fetchProviderRecords() {
+      if (!isLoggedIn()) { providerRecords = []; return; }
+      try {
+        const token = getAccessToken();
+        const r = await fetch('/api/me/provider-records', { headers: { Authorization: `Bearer ${token}` } });
+        providerRecords = r.ok ? await r.json() : [];
+      } catch { providerRecords = []; }
+    }
 
     // Me Scan / Mirror の結果を読む。
     // 軸IDが Log と共通なので、通っている軸と突き合わせられる。
@@ -693,6 +726,46 @@ export default function ServiceLog({ withSideNav = false }) {
             </div>
           </div>
           ${unknownNote}
+        </div>`;
+    }
+
+    // ── お店からの記録（あなたの変化の記録）──
+    // 掲載店舗が来店時に記録したAI姿勢分析・AI健診アドバイスを、店舗横断・時系列でまとめて見せる
+    // （でお要望2026-09-27）。ログの各行（軸ごと・通い先ごと）とは独立に、店舗と本人を直接
+    // 紐づけるデータのため、専用セクションとして一覧の下・分析セクションの上に置く。
+    const STORE_RECORD_TYPE_LABEL = { posture: '姿勢分析', health_advice: '健診アドバイス' };
+    function renderStoreRecordsSection() {
+      if (!providerRecords.length) return '';
+      const byProvider = {};
+      providerRecords.forEach(r => {
+        const key = r.provider_slug || r.provider_name;
+        (byProvider[key] = byProvider[key] || { name: r.provider_name, slug: r.provider_slug, records: [] }).records.push(r);
+      });
+      const groupsHtml = Object.values(byProvider).map(group => `
+        <div class="lsr-group">
+          <p class="lsr-group-head">
+            ${group.slug ? `<a href="/provider/${group.slug}" class="lsr-group-link">${esc(group.name)}</a>` : esc(group.name)}
+          </p>
+          ${group.records.map(r => {
+            const dateStr = new Date(r.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+            const subLabel = r.type === 'health_advice' && r.advice_axis ? `（${esc(HEALTH_AXIS_LABELS[r.advice_axis] || r.advice_axis)}）` : '';
+            return `
+              <div class="lsr-card">
+                <div class="lsr-card-top">
+                  <span class="lsr-card-type">${esc(STORE_RECORD_TYPE_LABEL[r.type] || r.type)}${subLabel}</span>
+                  <span class="lsr-card-date">${dateStr}</span>
+                </div>
+                ${r.type === 'posture' && r.score != null ? `<p class="lsr-card-score">姿勢スコア <b>${esc(String(r.score))}</b></p>` : ''}
+                ${r.findings?.length ? `<ul class="lsr-card-findings">${r.findings.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+                ${r.photo_url ? `<a class="lsr-card-photo-link" href="${esc(r.photo_url)}" target="_blank" rel="noopener">写真を見る</a>` : ''}
+              </div>`;
+          }).join('')}
+        </div>`).join('');
+      return `
+        <div class="lsr-section" id="log-store-records">
+          <p class="lsr-section-title">お店からの記録</p>
+          <p class="lsr-section-desc">通っているお店が記録してくれた、あなたの変化の記録です。</p>
+          ${groupsHtml}
         </div>`;
     }
 
@@ -985,7 +1058,8 @@ export default function ServiceLog({ withSideNav = false }) {
           <div class="log-empty">
             <div class="log-empty-icon">💇</div>
             <p class="log-empty-text">通っている場所でも、使っているものでもOKです。<br>前回の日を入れるだけで、<br>次の目安を自動で計算します。</p>
-          </div>`;
+          </div>
+          ${renderStoreRecordsSection()}`;
         bindEvents();
         return;
       }
@@ -1152,6 +1226,7 @@ export default function ServiceLog({ withSideNav = false }) {
         <button class="log-add-btn" id="log-open-add">＋ 追加する</button>
         ${axisTabsHtml}
         ${sectionsHtml}
+        ${renderStoreRecordsSection()}
         ${card ? '' : renderTrendCard()}
         ${renderAnalysisSection()}
         ${renderNextStep()}
@@ -1913,7 +1988,7 @@ export default function ServiceLog({ withSideNav = false }) {
     });
 
     root.innerHTML = `<div style="text-align:center;padding:60px 0;color:rgba(232,228,220,0.3);font-size:13px">読み込み中...</div>`;
-    fetchLogs().then(() => render());
+    Promise.all([fetchLogs(), fetchProviderRecords()]).then(() => render());
   }, []);
 
   return (
