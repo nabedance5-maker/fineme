@@ -232,19 +232,19 @@ export default function ProviderJoinPage({ searchParams }) {
             <p className="sec-lead sec-lead-light">新規集客より先に、今のお客様との関係で困っていることはありませんか。</p>
             <div className="problem-grid">
               <div className="problem-card">
-                <div className="problem-card-icon">🗒️</div>
+                <div className="problem-card-icon"></div>
                 <h3>顧客管理が属人的</h3>
                 <p>常連の来店タイミング・好み・注意点が、スタッフの頭の中にしかありません。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
-                <div className="problem-card-icon">📉</div>
+                <div className="problem-card-icon"></div>
                 <h3>気づいたら来なくなっている</h3>
                 <p>休眠したお客様を追いきれず、離れたことにすら気づけないまま時間が過ぎます。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
-                <div className="problem-card-icon">🏷️</div>
+                <div className="problem-card-icon"></div>
                 <h3>クーポン目当てのお客様ばかり</h3>
                 <p>値引き前提の比較は価値を削り、本来の魅力を伝え切れません。</p>
                 <div className="problem-card-bar"></div>
@@ -268,37 +268,37 @@ export default function ProviderJoinPage({ searchParams }) {
             <p className="sec-lead sec-lead-dark">掲載は「載せて終わり」ではありません。いま抱えているお客様との関係を強くする管理画面が、掲載と同時に使えます。</p>
             <div className="problem-grid tools-grid">
               <div className="problem-card">
-                <div className="problem-card-icon">📋</div>
+                <div className="problem-card-icon"></div>
                 <h3>顧客カルテ</h3>
                 <p>来店履歴・Me Scan受診有無・Mirrorスコア・担当スタッフを自動で一覧化。店舗ごとに自由な項目（自由記述・選択式・5段階評価）を追加でき、蓄積した記録からAIが傾向・注意点を提案します。店舗だけに見える非公開メモも残せます。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
-                <div className="problem-card-icon">📮</div>
+                <div className="problem-card-icon"></div>
                 <h3>予約のやり取りがLINEで完結</h3>
                 <p>お客様は普段のLINEトークから予約をリクエスト。店舗は承認・代替日時の提案・来店確認まで、全部その場のボタン操作で返せます。マイページを開かせる手間がありません。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
-                <div className="problem-card-icon">🔔</div>
+                <div className="problem-card-icon"></div>
                 <h3>リマインド一式</h3>
                 <p>予約前日の確認・来店間隔が空いたお客様の自動掘り起こし・誕生日メッセージ・クチコミ依頼まで自動配信。送り忘れを仕組みで防ぎます。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
-                <div className="problem-card-icon">💰</div>
+                <div className="problem-card-icon"></div>
                 <h3>売上管理</h3>
                 <p>来店確認時の確定額と手動記録を、メニュー別・スタッフ別・支払い方法別に自動集計。月次のCSV出力で、いま使っている会計ソフトにもそのまま渡せます。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
-                <div className="problem-card-icon">🎯</div>
+                <div className="problem-card-icon"></div>
                 <h3>スタッフの接客の引き出し</h3>
                 <p>スタッフごとの得意軸・接客スクリプトを登録。担当したお客様のリピート率・指名率も自動で見える化されます。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
-                <div className="problem-card-icon">📊</div>
+                <div className="problem-card-icon"></div>
                 <h3>LTV・CAC概算</h3>
                 <p>来店データから顧客生涯価値と広告費の回収状況を自動算出。感覚ではなく数字で、今の集客が割に合っているか確認できます。</p>
                 <div className="problem-card-bar"></div>
@@ -306,7 +306,7 @@ export default function ProviderJoinPage({ searchParams }) {
             </div>
             <div style={{marginTop:'16px', padding:'18px 22px', background:'rgba(201,168,76,.08)', borderRadius:'14px', border:'1px solid rgba(201,168,76,.3)'}}>
               <p style={{margin:0, fontSize:'14px', color:'#e8e2d4', lineHeight:'1.8', fontFamily:"'Noto Sans JP', sans-serif"}}>
-                <strong style={{color:'#fff'}}>💰 休眠客1人の呼び戻しで、ライトプラン（¥5,000/月）は元が取れます。</strong><br/>
+                <strong style={{color:'#fff'}}>休眠客1人の呼び戻しで、ライトプラン（¥5,000/月）は元が取れます。</strong><br/>
                 客単価¥10,000〜¥30,000なら、リマインド経由の再来店が月1件あるだけで回収完了です。
               </p>
             </div>
@@ -329,7 +329,7 @@ export default function ProviderJoinPage({ searchParams }) {
 
             <div className="scan-flow">
               <div className="scan-step">
-                <div className="scan-step-icon">🧬</div>
+                <div className="scan-step-icon"></div>
                 <div>
                   <div className="scan-step-label">STEP 1 — Me Scan</div>
                   <div className="scan-step-title">ユーザーは外見診断を受ける</div>
@@ -337,7 +337,7 @@ export default function ProviderJoinPage({ searchParams }) {
                 </div>
               </div>
               <div className="scan-step">
-                <div className="scan-step-icon">🗺️</div>
+                <div className="scan-step-icon">️</div>
                 <div>
                   <div className="scan-step-label">STEP 2 — New Me Navi</div>
                   <div className="scan-step-title">変容プロファイルが生成される</div>
@@ -345,7 +345,7 @@ export default function ProviderJoinPage({ searchParams }) {
                 </div>
               </div>
               <div className="scan-step">
-                <div className="scan-step-icon">🧭</div>
+                <div className="scan-step-icon"></div>
                 <div>
                   <div className="scan-step-label">STEP 3 — Fineme Compass</div>
                   <div className="scan-step-title">「最初の一手」が決まる</div>
@@ -353,7 +353,7 @@ export default function ProviderJoinPage({ searchParams }) {
                 </div>
               </div>
               <div className="scan-step">
-                <div className="scan-step-icon">🤝</div>
+                <div className="scan-step-icon"></div>
                 <div>
                   <div className="scan-step-label">STEP 4 — 総合マッチング</div>
                   <div className="scan-step-title">あなたのページ全体と照合される</div>
@@ -374,19 +374,19 @@ export default function ProviderJoinPage({ searchParams }) {
               <div className="score-block score-block-gold">
                 <div className="score-block-label score-block-label-gold">USER MATCH — ユーザーの診断データとの照合</div>
                 <div className="score-row">
-                  <span className="score-row-name">⚡ きっかけ一致（来店動機の共鳴）</span>
+                  <span className="score-row-name">きっかけ一致（来店動機の共鳴）</span>
                   <span className="score-row-pts">+8</span>
                 </div>
                 <div className="score-row">
-                  <span className="score-row-name">🔁 失敗パターン一致（過去の挫折への向き合い）</span>
+                  <span className="score-row-name">失敗パターン一致（過去の挫折への向き合い）</span>
                   <span className="score-row-pts">+8</span>
                 </div>
                 <div className="score-row">
-                  <span className="score-row-name">🧭 Compassの軸 × サービスカテゴリー一致</span>
+                  <span className="score-row-name">Compassの軸 × サービスカテゴリー一致</span>
                   <span className="score-row-pts">+12</span>
                 </div>
                 <div className="score-row">
-                  <span className="score-row-name">📊 ユーザーの優先変容軸 × サービス対象軸</span>
+                  <span className="score-row-name">ユーザーの優先変容軸 × サービス対象軸</span>
                   <span className="score-row-pts">最大+15</span>
                 </div>
               </div>
@@ -409,13 +409,13 @@ export default function ProviderJoinPage({ searchParams }) {
             <p style={{marginTop:'24px', fontSize:'11px', fontWeight:'800', letterSpacing:'.1em', color:'rgba(201,168,76,.6)', textTransform:'uppercase'}}>ユーザーが増えるほど効いてくる機能</p>
             <div className="tools-grid" style={{marginTop:'10px'}}>
               <div className="problem-card">
-                <div className="problem-card-icon">🌐</div>
+                <div className="problem-card-icon"></div>
                 <h3>診断起点LP自動生成</h3>
                 <p>Me Scanでタイプが判定されたお客様専用のランディングページを自動生成。体験メニュー・症例（Before/After）を登録するだけで、デザイン不要の専用入口ができます。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
-                <div className="problem-card-icon">🪞</div>
+                <div className="problem-card-icon"></div>
                 <h3>Mirrorマッチング</h3>
                 <p>写真分析（Mirror）で「改善余地が大きい軸」を特定し、その軸を得意とする店舗・メニューを自動提示。ミスマッチの少ない出会いを設計します。</p>
                 <div className="problem-card-bar"></div>
@@ -432,42 +432,42 @@ export default function ProviderJoinPage({ searchParams }) {
             <p className="sec-lead sec-lead-light" style={{marginBottom:'24px'}}>個人経営・フリーランス・小規模サロン、すべて歓迎です。</p>
             <div className="cat-grid">
               <div className="cat-item">
-                <div className="cat-item-icon">🏋️</div>
+                <div className="cat-item-icon"></div>
                 <div className="cat-item-name">パーソナルジム</div>
                 <p className="cat-item-desc">フリーランスPT・個人ジム</p>
               </div>
               <div className="cat-item">
-                <div className="cat-item-icon">✂️</div>
+                <div className="cat-item-icon"></div>
                 <div className="cat-item-name">眉毛サロン</div>
                 <p className="cat-item-desc">アイブロウスタイリスト</p>
               </div>
               <div className="cat-item">
-                <div className="cat-item-icon">💈</div>
+                <div className="cat-item-icon"></div>
                 <div className="cat-item-name">美容室・美容師</div>
                 <p className="cat-item-desc">フリーランス・個人サロン</p>
               </div>
               <div className="cat-item">
-                <div className="cat-item-icon">🪞</div>
+                <div className="cat-item-icon"></div>
                 <div className="cat-item-name">外見コンサル</div>
                 <p className="cat-item-desc">外見・印象改善コンサル</p>
               </div>
               <div className="cat-item">
-                <div className="cat-item-icon">👔</div>
+                <div className="cat-item-icon"></div>
                 <div className="cat-item-name">ファッション</div>
                 <p className="cat-item-desc">パーソナルスタイリスト</p>
               </div>
               <div className="cat-item">
-                <div className="cat-item-icon">✨</div>
+                <div className="cat-item-icon"></div>
                 <div className="cat-item-name">脱毛サロン</div>
                 <p className="cat-item-desc">メンズ脱毛・医療脱毛</p>
               </div>
               <div className="cat-item">
-                <div className="cat-item-icon">💊</div>
+                <div className="cat-item-icon"></div>
                 <div className="cat-item-name">AGAクリニック</div>
                 <p className="cat-item-desc">薄毛・AGA治療院</p>
               </div>
               <div className="cat-item">
-                <div className="cat-item-icon">📸</div>
+                <div className="cat-item-icon"></div>
                 <div className="cat-item-name">写真撮影・その他</div>
                 <p className="cat-item-desc">婚活・マッチングアプリ写真</p>
               </div>

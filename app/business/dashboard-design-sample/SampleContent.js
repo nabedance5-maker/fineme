@@ -327,7 +327,7 @@ function LineChannelView() {
   return (
     <div style={cardStyle}>
       <SectionTitle sub="お客様への通知を貴店のLINEから届ける">LINE連携</SectionTitle>
-      <p style={{ margin: '0 0 12px', fontSize: 13 }}>状態：<span style={{ color: '#4ade80', fontWeight: 700 }}>✅ 連携済み</span></p>
+      <p style={{ margin: '0 0 12px', fontSize: 13 }}>状態：<span style={{ color: '#4ade80', fontWeight: 700 }}>連携済み</span></p>
       <button type="button" style={btnGhost}>連携のやり方を見る ↗</button>
     </div>
   );
@@ -462,10 +462,10 @@ const VIEW_MAP = {
 // 「売上管理」は本番実装済み（lib/dashboard-tutorial.jsのTAB_TUTORIALS/
 // TUTORIAL_GROUPSに正式追加済み、2026-09-04）。サンプル側の特別扱いは不要になった。
 const NAV_GROUPS = [
-  { heading: null, items: [{ key: 'tutorial', icon: '📘', label: 'チュートリアル' }] },
+  { heading: null, items: [{ key: 'tutorial', icon: '', label: 'チュートリアル' }] },
   ...TUTORIAL_GROUPS.map(g => ({
     heading: g.heading,
-    items: g.keys.map(k => ({ key: k, icon: k === 'sales' ? '💰' : null, label: TAB_TUTORIALS[k]?.title || k })),
+    items: g.keys.map(k => ({ key: k, icon: k === 'sales' ? '' : null, label: TAB_TUTORIALS[k]?.title || k })),
   })),
 ];
 
@@ -534,7 +534,7 @@ export default function DashboardDesignSample() {
 
       <main className="dds-main" style={{ flex: 1, minWidth: 0, padding: '24px 32px 60px' }}>
         <div style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 10, padding: '10px 16px', fontSize: 12, color: GOLD, marginBottom: 20 }}>
-          🎨 これはビジュアルデザインのサンプルです（全20タブ反映）。実データ・実機能とは連動していません。本番の掲載者ダッシュボードはまだ変更していません。
+          これはビジュアルデザインのサンプルです（全20タブ反映）。実データ・実機能とは連動していません。本番の掲載者ダッシュボードはまだ変更していません。
         </div>
         <h1 style={{ fontFamily: 'var(--font-serif-ja)', fontSize: 22, margin: '0 0 20px', color: '#e8e4dc' }}>{activeLabel}</h1>
         <div className="dds-fade"><ActiveView /></div>

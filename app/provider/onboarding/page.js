@@ -16,7 +16,7 @@ const STEPS = [
     action: 'プロフィールを入力',
     href: '/provider/dashboard?tab=profile',
     check: (p) => !!(p.name && p.description && p.prefecture),
-    icon: '👤',
+    icon: '',
   },
   {
     id: 'service',
@@ -25,7 +25,7 @@ const STEPS = [
     action: 'サービスを設定',
     href: '/provider/dashboard?tab=service',
     check: (p) => !!(p.price_from),
-    icon: '🛠️',
+    icon: '',
   },
   {
     id: 'ai_profile',
@@ -34,7 +34,7 @@ const STEPS = [
     action: 'AIで分析する',
     href: '/provider/dashboard?tab=service',
     check: (p) => !!(p.ai_match_profile),
-    icon: '🤖',
+    icon: '',
   },
   {
     id: 'photo',
@@ -43,7 +43,7 @@ const STEPS = [
     action: '写真を追加',
     href: '/provider/dashboard?tab=photos',
     check: (p) => !!(p.photo_url || (p.facility_photos && p.facility_photos.length > 0)),
-    icon: '📷',
+    icon: '',
   },
   {
     id: 'story',
@@ -52,7 +52,7 @@ const STEPS = [
     action: '体験談ページを確認',
     href: '/provider/dashboard?tab=stories',
     check: (p) => !!(p._story_count > 0),
-    icon: '⭐',
+    icon: '',
   },
   {
     id: 'connect',
@@ -61,7 +61,7 @@ const STEPS = [
     action: '口座を設定する',
     href: '/provider/billing',
     check: (p) => p.stripe_connect_status === 'active',
-    icon: '🏦',
+    icon: '',
   },
 ];
 
@@ -123,7 +123,7 @@ export default function ProviderOnboardingPage() {
           </div>
           <div style={{ marginTop: '8px', fontSize: '13px', color: '#9ca3af', fontFamily: 'sans-serif' }}>
             {completedCount}/{STEPS.length} ステップ完了
-            {progress === 100 && <span style={{ color: '#10b981', marginLeft: '8px', fontWeight: 600 }}>🎉 すべて完了！</span>}
+            {progress === 100 && <span style={{ color: '#10b981', marginLeft: '8px', fontWeight: 600 }}>すべて完了！</span>}
           </div>
         </div>
 
@@ -199,7 +199,7 @@ export default function ProviderOnboardingPage() {
         {/* 完了後メッセージ */}
         {progress === 100 && (
           <div style={{ marginTop: '24px', padding: '24px', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '14px', textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', marginBottom: '8px' }}>🎉</div>
+            <div style={{ fontSize: '32px', marginBottom: '8px' }}></div>
             <div style={{ fontWeight: 700, fontSize: '18px', color: '#10b981', marginBottom: '8px' }}>すべてのステップが完了しました！</div>
             <p style={{ fontSize: '14px', color: '#9ca3af', fontFamily: 'sans-serif', marginBottom: '16px' }}>あなたのページは最高の状態でユーザーに表示されています。</p>
             <Link href="/provider/dashboard" style={{ display: 'inline-block', padding: '10px 24px', background: '#10b981', borderRadius: '8px', color: '#fff', fontWeight: 700, fontFamily: 'sans-serif', textDecoration: 'none' }}>

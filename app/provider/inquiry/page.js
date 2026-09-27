@@ -234,7 +234,7 @@ export default function ProviderInquiryPage() {
         submitBtn.textContent = '送信中…';
         try {
           await saveInquiry(data);
-          statusEl.textContent = '✅ 送信を受け付けました。担当よりご連絡します。';
+          statusEl.textContent = '送信を受け付けました。担当よりご連絡します。';
           statusEl.style.color = '#065f46';
           form.reset();
         } catch (err) {
@@ -311,23 +311,23 @@ export default function ProviderInquiryPage() {
                 <label className="inq-label" htmlFor="category">掲載カテゴリ（目安）</label>
                 <select className="inq-select" id="category" name="category">
                   <option value="">未選択</option>
-                  <option value="gym">💪 ジム・パーソナルトレーニング</option>
-                  <option value="makeup">💄 メイク・コスメ</option>
-                  <option value="hair">💇 ヘア・美容院</option>
-                  <option value="colordiagnosis">🎨 パーソナルカラー診断</option>
-                  <option value="bonediagnosis">🔍 骨格診断</option>
-                  <option value="diagnosis">📋 診断（総合・イメコン）</option>
-                  <option value="fashion">👔 ファッション・スタイリング</option>
-                  <option value="photo">📷 プロフィール写真・撮影</option>
-                  <option value="marriage">💍 婚活・マッチングサポート</option>
-                  <option value="eyebrow">✏️ 眉毛サロン</option>
-                  <option value="hairremoval">🪒 脱毛</option>
-                  <option value="esthetic">✨ エステ・フェイシャル</option>
-                  <option value="whitening">😁 歯のホワイトニング</option>
-                  <option value="orthodontics">🦷 歯列矯正</option>
-                  <option value="nail">💅 ネイル</option>
-                  <option value="aga">💊 AGA・薄毛治療</option>
-                  <option value="consulting">🗣 コンサルティング</option>
+                  <option value="gym">ジム・パーソナルトレーニング</option>
+                  <option value="makeup">メイク・コスメ</option>
+                  <option value="hair">ヘア・美容院</option>
+                  <option value="colordiagnosis">パーソナルカラー診断</option>
+                  <option value="bonediagnosis">骨格診断</option>
+                  <option value="diagnosis">診断（総合・イメコン）</option>
+                  <option value="fashion">ファッション・スタイリング</option>
+                  <option value="photo">プロフィール写真・撮影</option>
+                  <option value="marriage">婚活・マッチングサポート</option>
+                  <option value="eyebrow">眉毛サロン</option>
+                  <option value="hairremoval">脱毛</option>
+                  <option value="esthetic">エステ・フェイシャル</option>
+                  <option value="whitening">歯のホワイトニング</option>
+                  <option value="orthodontics">歯列矯正</option>
+                  <option value="nail">ネイル</option>
+                  <option value="aga">AGA・薄毛治療</option>
+                  <option value="consulting">コンサルティング</option>
                 </select>
               </div>
               <div className="inq-field">

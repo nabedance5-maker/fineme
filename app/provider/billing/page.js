@@ -205,9 +205,9 @@ export default function BillingPage() {
   const plan     = PLANS[currentPlan] || PLANS.A;
 
   const statusMap = {
-    active:   { icon: '✅', cls: 'badge-active', label: 'New Me Map 掲載中', heroClass: 'active',   title: 'ユーザーのロードマップに表示されています', desc: '毎月自動引き落とし。紹介報酬は自動的に差し引かれます。' },
-    free:     { icon: '🗺️', cls: 'badge-free',   label: '無料掲載中',       heroClass: 'free',     title: '掲載ページ公開中・検索には表示されています', desc: '有料プランに移行するとユーザーの New Me Map（行動ロードマップ）にも表示されます。' },
-    past_due: { icon: '⚠️', cls: 'badge-past_due', label: '支払い遅延',     heroClass: 'past_due', title: '支払いに問題が発生しています', desc: 'カード情報を更新してください。' },
+    active:   { icon: '', cls: 'badge-active', label: 'New Me Map 掲載中', heroClass: 'active',   title: 'ユーザーのロードマップに表示されています', desc: '毎月自動引き落とし。紹介報酬は自動的に差し引かれます。' },
+    free:     { icon: '️', cls: 'badge-free',   label: '無料掲載中',       heroClass: 'free',     title: '掲載ページ公開中・検索には表示されています', desc: '有料プランに移行するとユーザーの New Me Map（行動ロードマップ）にも表示されます。' },
+    past_due: { icon: '', cls: 'badge-past_due', label: '支払い遅延',     heroClass: 'past_due', title: '支払いに問題が発生しています', desc: 'カード情報を更新してください。' },
   };
   const st = statusMap[billingStatus] || statusMap.free;
 
@@ -234,7 +234,7 @@ export default function BillingPage() {
         {/* New Me Map 掲載バナー（無料ティアのみ表示） */}
         {isFree && (
           <div className="navi-lock-banner">
-            <div className="navi-lock-icon">🧭</div>
+            <div className="navi-lock-icon"></div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: '15px', marginBottom: '4px' }}>New Me Map への掲載で、ユーザーから選ばれる</div>
               <div className="muted" style={{ fontSize: '13px' }}>診断を受けたユーザーが「次に行くべきサービス」として選ぶのが New Me Map です。<br />有料プランに移行すると、あなたのサービスがユーザーのロードマップに表示されます。</div>
@@ -284,7 +284,7 @@ export default function BillingPage() {
                   <div className="plan-name" style={{ color: isCurrent ? p.color : '#e8e4dc' }}>{p.name}</div>
                   <div className="plan-amount">¥{p.amount.toLocaleString()}<span style={{ fontSize: '13px', fontWeight: 400, color: '#9ca3af' }}>/月</span></div>
                   <div className="plan-commission">予約手数料 {p.commission}%</div>
-                  <div className="plan-line-feature" style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>💬 {p.lineFeature}</div>
+                  <div className="plan-line-feature" style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>{p.lineFeature}</div>
                   <div className="plan-savings">
                     {key === 'B' && (!isActive || currentPlan === 'A') && `月30万円の予約で月額差額を回収`}
                     {key === 'C' && (!isActive || currentPlan !== 'C') && `最大手数料削減`}

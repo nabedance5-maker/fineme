@@ -322,10 +322,10 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(v => !v)}
-                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', color: '#6b7280', padding: '4px' }}
+                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '700', color: '#6b7280', padding: '4px' }}
                     aria-label={showPassword ? 'パスワードを隠す' : 'パスワードを表示'}
                   >
-                    {showPassword ? '🙈' : '👁️'}
+                    {showPassword ? '隠す' : '表示'}
                   </button>
                 </div>
               </div>

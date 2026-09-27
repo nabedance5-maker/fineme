@@ -26,12 +26,12 @@ const CAT_TO_AXIS = {
   nail:'nail',
 };
 const AXIS_LABELS = { body:'体型', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
-const AXIS_ICONS  = { body:'💪', eyebrow:'✏️', fashion:'👔', hair:'💇', skin:'✨', teeth:'😁', nail:'💅' };
+const AXIS_ICONS  = { body:'', eyebrow:'', fashion:'', hair:'', skin:'', teeth:'', nail:'' };
 const PATH_LABELS = { virgin:'初めて', quit:'続かなかった', blind:'非客観視', lapsed:'以前やっていた' };
 const PATH_COLORS = { virgin:'#10b981', quit:'#f59e0b', blind:'#6366f1', lapsed:'#3b82f6' };
 const PATH_PERSON = { virgin:'外見ケアが初めての方', quit:'続かなかった経験がある方', blind:'自己流でやってきたが客観評価がない方', lapsed:'以前やっていたが後回しにしている方' };
-const FAILURE_ICONS  = { lost_direction:'🔄', no_continuation:'💪', no_result:'👁️', cost:'💰', awkward:'🤝' };
-const TRIGGER_ICONS  = { matching_app:'📱', love:'❤️', career:'💼', word:'💬', vague:'⏳' };
+const FAILURE_ICONS  = { lost_direction:'', no_continuation:'', no_result:'️', cost:'', awkward:'' };
+const TRIGGER_ICONS  = { matching_app:'', love:'️', career:'', word:'', vague:'' };
 const TRIGGER_PERSON = { matching_app:'マッチングアプリの写真を良くしたい方', love:'恋愛・告白前に外見を整えたい方', career:'就職・転職前に印象を変えたい方', word:'誰かの一言が刺さって変わろうと思った方', vague:'ずっと気になっていたが踏み出せなかった方' };
 const FAILURE_PERSON = { lost_direction:'一度やめてしまったが、また変わりたい方', no_continuation:'始めても続かなかった経験がある方', no_result:'自己流でやっているが、客観的な視点がほしい方', cost:'コストが気になって踏み出せなかった方', awkward:'担当者との関係性に悩んだ経験がある方' };
 const STYLE_LABELS = {
@@ -181,12 +181,12 @@ function FacilityPhotosStrip({ provider }) {
 function QuickFactsStrip({ provider }) {
   const chips = [];
   const areaText = [provider.nearest_station, provider.area].filter(Boolean).join(' ／ ');
-  if (areaText) chips.push({ icon: '📍', label: areaText, highlight: false });
-  if (provider.online_available) chips.push({ icon: '🌐', label: 'オンライン対応', highlight: true });
-  if (provider.trial_available) chips.push({ icon: '🎁', label: 'お試し・無料相談あり', highlight: true });
-  if (provider.response_hours) chips.push({ icon: '⏰', label: `返信${provider.response_hours}時間以内`, highlight: false });
+  if (areaText) chips.push({ label: areaText, highlight: false });
+  if (provider.online_available) chips.push({ label: 'オンライン対応', highlight: true });
+  if (provider.trial_available) chips.push({ label: 'お試し・無料相談あり', highlight: true });
+  if (provider.response_hours) chips.push({ label: `返信${provider.response_hours}時間以内`, highlight: false });
   if (provider.payment_methods?.length > 0) {
-    chips.push({ icon: '💳', label: provider.payment_methods.map(m => PAYMENT_METHOD_LABELS[m] || m).join(' / '), highlight: false });
+    chips.push({ label: provider.payment_methods.map(m => PAYMENT_METHOD_LABELS[m] || m).join(' / '), highlight: false });
   }
   if (!chips.length) return null;
   return (
@@ -202,7 +202,7 @@ function QuickFactsStrip({ provider }) {
             borderRadius: '99px', fontSize: '13px', fontWeight: chip.highlight ? '700' : '500',
             whiteSpace: 'nowrap',
           }}>
-            <span>{chip.icon}</span><span>{chip.label}</span>
+            <span>{chip.label}</span>
           </span>
         ))}
       </div>
@@ -234,7 +234,7 @@ function StaffSection({ staff }) {
             <div style={{ flexShrink: 0 }}>
               {s.photo_url
                 ? <img src={s.photo_url} alt={s.name} style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', border: '2.5px solid rgba(232,228,220,0.25)', display: 'block' }} />
-                : <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'linear-gradient(135deg,#e5e7eb,#d1d5db)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>👤</div>
+                : <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'linear-gradient(135deg,#e5e7eb,#d1d5db)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}></div>
               }
             </div>
             {/* テキスト情報 */}
@@ -256,7 +256,7 @@ function StaffSection({ staff }) {
                   )}
                   {s.credentials && s.credentials.split('\n').filter(Boolean).slice(0, 2).map((cred, i) => (
                     <span key={i} style={{ fontSize: '12px', fontWeight: '600', padding: '3px 10px', background: '#eff6ff', color: '#1e40af', borderRadius: '99px' }}>
-                      📜 {cred.length > 20 ? cred.slice(0, 20) + '…' : cred}
+                      {cred.length > 20 ? cred.slice(0, 20) + '…' : cred}
                     </span>
                   ))}
                 </div>
@@ -313,7 +313,7 @@ function NewMeMapSection({ diagnosis, matchData }) {
       {/* スコアヘッダー */}
       <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #bfdbfe' }}>
         <div style={{ fontSize: '11px', fontWeight: '700', color: '#2563eb', letterSpacing: '.05em', marginBottom: '8px' }}>
-          {isNewStyle ? '🗺 New Me Navi との接点' : '🎯 あなたの診断との一致度'}
+          {isNewStyle ? 'New Me Navi との接点' : 'あなたの診断との一致度'}
         </div>
         {score !== null ? (
           <>
@@ -325,7 +325,7 @@ function NewMeMapSection({ diagnosis, matchData }) {
                 </div>
               </div>
               {detail?.isCompassProvider && (
-                <span style={{ fontSize: '12px', fontWeight: '700', padding: '4px 12px', background: '#1d4ed8', color: '#fff', borderRadius: '99px' }}>🧭 コンパス一致</span>
+                <span style={{ fontSize: '12px', fontWeight: '700', padding: '4px 12px', background: '#1d4ed8', color: '#fff', borderRadius: '99px' }}>コンパス一致</span>
               )}
             </div>
             <p style={{ fontSize: '11px', color: '#93c5fd', margin: '6px 0 0', lineHeight: '1.5' }}>※ Me Scan 8軸診断（変容ベクトル・来た道・ギャップ）との相性スコア</p>
@@ -436,7 +436,7 @@ function PhilosophySection({ provider }) {
       {provider.philosophy && (
         <div style={{ position: 'relative', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', borderRadius: '20px', padding: '40px 28px 32px', overflow: 'hidden' }}>
           {/* 装飾クオート */}
-          <div style={{ position: 'absolute', top: '8px', left: '18px', fontSize: '96px', color: 'rgba(255,255,255,0.05)', fontFamily: 'Georgia, serif', lineHeight: 1, userSelect: 'none', pointerEvents: 'none' }}>❝</div>
+          <div style={{ position: 'absolute', top: '8px', left: '18px', fontSize: '96px', color: 'rgba(255,255,255,0.05)', fontFamily: 'Georgia, serif', lineHeight: 1, userSelect: 'none', pointerEvents: 'none' }}></div>
           <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.4)', letterSpacing: '.12em', marginBottom: '18px', position: 'relative', textTransform: 'uppercase' }}>このガイドが大切にしていること</div>
           <p style={{ fontSize: '16px', color: '#fff', lineHeight: '1.95', margin: '0', whiteSpace: 'pre-wrap', fontWeight: '500', position: 'relative', zIndex: 1 }}>{provider.philosophy}</p>
           {provider.provider_style && (
@@ -502,7 +502,7 @@ function StoriesSection({ stories, provider }) {
       </div>
       {stories.length === 0 ? (
         <div style={{ background: '#fffbeb', border: '1px dashed #fde68a', borderRadius: '18px', padding: '32px', textAlign: 'center' }}>
-          <div style={{ fontSize: '36px', marginBottom: '12px' }}>✍️</div>
+          <div style={{ fontSize: '36px', marginBottom: '12px' }}>️</div>
           <p style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: '0 0 6px' }}>このガイドへの最初の証言を残す人になれます</p>
           <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', margin: '0 0 18px', lineHeight: '1.7' }}>相談・来店後に「変わる前」と「今」をありのままに残してください。あなたの声が次の誰かの地図になります。</p>
           {provider?.slug && (
@@ -548,7 +548,7 @@ function StoriesSection({ stories, provider }) {
                   <>
                     <div style={{ flex: 1, height: '1px', background: 'rgba(16,185,129,0.25)' }} />
                     <div style={{ padding: '6px 14px', background: 'rgba(10,15,30,0.65)', border: '1px solid #a7f3d0', borderRadius: '99px', fontSize: '12px', color: '#34d399', fontWeight: '700', whiteSpace: 'nowrap', boxShadow: '0 1px 6px rgba(5,150,105,.15)' }}>
-                      🏁 {s.milestone_reached}
+                      {s.milestone_reached}
                     </div>
                     <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.15)' }} />
                   </>
@@ -581,7 +581,7 @@ function GuideTab({ provider, diagnosis, matchData, stories, staff, onGoToConsul
             {provider.photo_url ? (
               <img src={provider.photo_url} alt={provider.name} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid rgba(201,168,76,0.3)' }} />
             ) : (
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(201,168,76,0.15)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>🧭</div>
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(201,168,76,0.15)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}></div>
             )}
             <div>
               <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(201,168,76,0.7)', letterSpacing: '.1em', marginBottom: '8px', textTransform: 'uppercase' }}>ガイドからのひと言</div>
@@ -645,7 +645,7 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
       {/* バナー */}
       {isCompassMatch && (
         <div style={{ background: 'linear-gradient(90deg,#1d4ed8,#4f46e5)', padding: '11px 18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '16px' }}>🧭</span>
+          <span style={{ fontSize: '16px' }}></span>
           <div>
             <div style={{ fontSize: '12px', fontWeight: '800', color: '#fff' }}>あなたのコンパス軸「{AXIS_LABELS[service.target_axis]}」の最初の一手</div>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,.75)', marginTop: '1px' }}>Me Scanで導き出された最優先プログラム</div>
@@ -654,7 +654,7 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
       )}
       {!isCompassMatch && isPathMatch && (
         <div style={{ background: '#2563eb', padding: '9px 18px' }}>
-          <span style={{ fontSize: '13px', fontWeight: '800', color: '#fff' }}>🎯 あなたの「来た道」に合っています</span>
+          <span style={{ fontSize: '13px', fontWeight: '800', color: '#fff' }}>あなたの「来た道」に合っています</span>
         </div>
       )}
 
@@ -754,7 +754,7 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
           onMouseOver={e => e.currentTarget.style.opacity = '.88'}
           onMouseOut={e => e.currentTarget.style.opacity = '1'}
         >
-          {isCompassMatch ? '🧭 この一歩を踏み出す →' : 'このガイドと一歩を踏み出す →'}
+          {isCompassMatch ? 'この一歩を踏み出す →' : 'このガイドと一歩を踏み出す →'}
         </button>
       </div>
     </div>
@@ -765,7 +765,7 @@ function ProgramTab({ services, onConsult, userPathType, provider, matchData }) 
   if (services === null) return <div style={{ textAlign: 'center', padding: '40px', color: 'rgba(232,228,220,0.40)' }}>読み込み中…</div>;
   if (!services.length) return (
     <div style={{ textAlign: 'center', padding: '60px 20px', color: 'rgba(232,228,220,0.55)', background: 'rgba(10,15,30,0.50)', borderRadius: '18px', border: '1px dashed rgba(232,228,220,0.20)' }}>
-      <div style={{ fontSize: '32px', marginBottom: '12px', opacity: 0.3 }}>📋</div>
+      <div style={{ fontSize: '32px', marginBottom: '12px', opacity: 0.3 }}></div>
       <p style={{ fontSize: '15px', margin: 0, fontWeight: '600' }}>プログラムはまだ登録されていません</p>
     </div>
   );
@@ -792,7 +792,7 @@ function ProgramTab({ services, onConsult, userPathType, provider, matchData }) 
       {/* Me Scan連携バナー */}
       {hasScan && (
         <div style={{ background: isCompassProvider ? 'rgba(29,78,216,0.15)' : 'rgba(10,15,30,0.50)', border: `1px solid ${isCompassProvider ? '#6366f1' : 'rgba(232,228,220,0.15)'}`, borderRadius: '14px', padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: '10px', backdropFilter: 'blur(8px)' }}>
-          <span style={{ fontSize: '20px', flexShrink: 0 }}>{isCompassProvider ? '🧭' : '🗺️'}</span>
+          <span style={{ fontSize: '20px', flexShrink: 0 }}>{isCompassProvider ? '' : '️'}</span>
           <div>
             <div style={{ fontSize: '12px', fontWeight: '800', color: isCompassProvider ? '#818cf8' : 'rgba(232,228,220,0.75)', marginBottom: '6px' }}>
               {isCompassProvider ? 'あなたのコンパス軸を専門とするガイドです' : 'あなたの変容軸をカバーするガイドです'}
@@ -1287,7 +1287,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       {/* 友達紹介プログラム（でお要望2026-09-14）：ログイン中かつ店舗が実施している場合のみ表示 */}
       {referralProgramOn && userId && referralLink && (
         <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '14px', padding: '16px 18px', marginBottom: '20px' }}>
-          <div style={{ fontSize: '13px', fontWeight: '800', color: '#b45309', marginBottom: '6px' }}>🎁 友達を紹介する</div>
+          <div style={{ fontSize: '13px', fontWeight: '800', color: '#b45309', marginBottom: '6px' }}>友達を紹介する</div>
           <p style={{ fontSize: '12.5px', color: 'rgba(232,228,220,0.75)', margin: '0 0 10px', lineHeight: '1.6' }}>
             {provider.name}を友達に紹介できます。{referralRewardText || 'このリンクから予約・来店すると特典があります（詳しくはお店にご確認ください）。'}
           </p>
@@ -1327,7 +1327,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       {/* ② お試し・無料相談がある場合の強調カード */}
       {provider.trial_available && (
         <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '14px', padding: '16px 18px', marginBottom: '20px' }}>
-          <div style={{ fontSize: '13px', fontWeight: '800', color: '#b45309', marginBottom: '4px' }}>🎁 まずお試しから始めることができます</div>
+          <div style={{ fontSize: '13px', fontWeight: '800', color: '#b45309', marginBottom: '4px' }}>まずお試しから始めることができます</div>
           <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', margin: 0, lineHeight: '1.6' }}>{provider.trial_desc || '初回お試し・無料相談を提供しています。まずは気軽にご連絡ください。'}</p>
         </div>
       )}
@@ -1344,7 +1344,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       {meScanSummary && (
         <div style={{ padding: '16px', background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '12px', marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '10px' }}>
-            <p style={{ fontSize: '12px', fontWeight: '700', color: '#2563eb', margin: 0 }}>📎 以下のMe Scanデータがこのガイドに送られます</p>
+            <p style={{ fontSize: '12px', fontWeight: '700', color: '#2563eb', margin: 0 }}>以下のMe Scanデータがこのガイドに送られます</p>
             <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', flexShrink: 0 }}>
               <input type="checkbox" checked={includeMeScan} onChange={e => setIncludeMeScan(e.target.checked)} style={{ accentColor: '#2563eb' }} />
               <span style={{ fontSize: '12px', color: 'rgba(232,228,220,0.75)' }}>送る</span>
@@ -1796,9 +1796,9 @@ function ProviderPageContent() {
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minHeight: '320px', padding: '28px 28px 32px' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
             <span style={{ fontSize: '12px', fontWeight: '700', padding: '4px 12px', background: 'rgba(255,255,255,0.2)', color: '#fff', borderRadius: '99px', backdropFilter: 'blur(4px)' }}>{catLabel}</span>
-            {provider.area && <span style={{ fontSize: '12px', padding: '4px 12px', background: 'rgba(255,255,255,0.15)', color: '#fff', borderRadius: '99px' }}>📍 {provider.area}</span>}
+            {provider.area && <span style={{ fontSize: '12px', padding: '4px 12px', background: 'rgba(255,255,255,0.15)', color: '#fff', borderRadius: '99px' }}>{provider.area}</span>}
             {matchData?.detail?.isCompassProvider && (
-              <span style={{ fontSize: '12px', fontWeight: '700', padding: '4px 12px', background: 'rgba(37,99,235,0.85)', color: '#fff', borderRadius: '99px', backdropFilter: 'blur(4px)' }}>🧭 あなたの最優先</span>
+              <span style={{ fontSize: '12px', fontWeight: '700', padding: '4px 12px', background: 'rgba(37,99,235,0.85)', color: '#fff', borderRadius: '99px', backdropFilter: 'blur(4px)' }}>あなたの最優先</span>
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '14px', marginBottom: '8px' }}>

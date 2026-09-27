@@ -226,7 +226,7 @@ export default function ProviderLandingPage({ params }) {
               <span className="lp-badge-shimmer" style={{ fontSize: 12, fontWeight: 700, padding: '5px 14px', color: 'var(--color-bg-dark)', borderRadius: 99, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                 <AxisIcon axis={axis} size={13} color="var(--color-bg-dark)" strokeWidth={2} />{axisLabel}向けのご提案
               </span>
-              {provider.area && <span style={{ fontSize: 12, padding: '5px 14px', background: 'rgba(255,255,255,0.12)', color: '#fff', borderRadius: 99, backdropFilter: 'blur(4px)' }}>📍 {provider.area}</span>}
+              {provider.area && <span style={{ fontSize: 12, padding: '5px 14px', background: 'rgba(255,255,255,0.12)', color: '#fff', borderRadius: 99, backdropFilter: 'blur(4px)' }}>{provider.area}</span>}
             </div>
             {Number.isFinite(mirrorScore) && (
               <p style={{ margin: '0 0 8px', fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>
@@ -345,7 +345,7 @@ export default function ProviderLandingPage({ params }) {
                             <strong style={{ color: 'var(--color-fg)', fontSize: 15 }}>{m.name}</strong>
                             <span className="muted" style={{ fontSize: 13, whiteSpace: 'nowrap' }}>¥{Number(m.price).toLocaleString()}／{m.duration_min}分</span>
                           </div>
-                          {hook && <p style={{ fontSize: 13, color: 'var(--color-gold)', fontWeight: 700, margin: '8px 0 0' }}>✨ {hook}</p>}
+                          {hook && <p style={{ fontSize: 13, color: 'var(--color-gold)', fontWeight: 700, margin: '8px 0 0' }}>{hook}</p>}
                           {m.description && <p className="muted" style={{ fontSize: 13, margin: '8px 0 0', lineHeight: 1.7 }}>{m.description}</p>}
                           <a href={menuCtaHref(m.name)} {...consultLinkProps} onClick={() => trackCta('menu_consult')} className="btn" style={{ fontSize: 13, padding: '8px 16px', marginTop: 12, display: 'inline-block' }}>
                             {menuCtaLabel}

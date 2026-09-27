@@ -338,8 +338,8 @@ export default function ProviderDashboardPage() {
     // 以前はタブを開くたびに（初回のみ）自動でこの案内を上部に出していたが、
     // 「使い始めは助かるが慣れたら邪魔・毎回一番上に出るのがわかりづらい」という
     // でお指摘（2026-09-12）を受けて自動表示は廃止。①初回ダッシュボード訪問時だけ
-    // 「📘 チュートリアル」タブ（全タブの案内をまとめて閲覧）に自動着地、②各タブの
-    // ヘッダーにあった「💡 使い方を見る」ボタンでその場に手動表示、の2経路にしていたが、
+    // 「チュートリアル」タブ（全タブの案内をまとめて閲覧）に自動着地、②各タブの
+    // ヘッダーにあった「使い方を見る」ボタンでその場に手動表示、の2経路にしていたが、
     // ②は全タブヘッダーに常時表示されノイズになっていた上、内容は「チュートリアル」
     // タブに既にまとまっているため重複していた（でお+奥様指摘2026-09-13：使い方
     // メニューにまとめるだけで十分）。②のボタンは廃止し、①のみに統一。
@@ -351,7 +351,7 @@ export default function ProviderDashboardPage() {
       if (!entry || localStorage.getItem(tutorialSeenKey(tabId))) { box.innerHTML = ''; return; }
       box.innerHTML = `
         <div style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.35);border-radius:12px;padding:16px 18px;margin-bottom:16px;">
-          <p style="margin:0 0 8px;font-weight:700;color:#c9a84c;font-size:13px;">💡 ${entry.title}タブの使い方</p>
+          <p style="margin:0 0 8px;font-weight:700;color:#c9a84c;font-size:13px;">${entry.title}タブの使い方</p>
           <ol style="margin:0 0 12px;padding-left:20px;font-size:13px;line-height:1.8;color:#1a1410;">
             ${entry.tips.map(t => `<li>${t}</li>`).join('')}
           </ol>
@@ -625,7 +625,7 @@ export default function ProviderDashboardPage() {
       if (provider.ai_match_profile) {
         const d = provider.ai_match_profile;
         const date = d.analyzed_at ? new Date(d.analyzed_at).toLocaleDateString('ja-JP') : '';
-        if (aiStatus) aiStatus.innerHTML = `<span style="color:#059669;font-weight:700">✅ AI分析済み（${date}）</span><br><span style="font-size:12px;color:rgba(26,20,16,0.6)">${d.summary || ''}</span>`;
+        if (aiStatus) aiStatus.innerHTML = `<span style="color:#059669;font-weight:700">AI分析済み（${date}）</span><br><span style="font-size:12px;color:rgba(26,20,16,0.6)">${d.summary || ''}</span>`;
         setAnalyzeButtonState(true);
       } else {
         if (aiStatus) aiStatus.textContent = '未分析 — プロフィールを入力後「AIで分析する」ボタンを押してください';
@@ -739,7 +739,6 @@ export default function ProviderDashboardPage() {
     if (provider) {
       const CAT_TO_AXIS = { gym:'body', eyebrow:'eyebrow', fashion:'fashion', hair:'hair', aga:'hair', makeup:'skin', hairremoval:'skin', esthetic:'skin', whitening:'teeth', orthodontics:'teeth', nail:'nail' };
       const AXIS_LABELS = { body:'体型', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
-      const AXIS_ICONS = { body:'💪', eyebrow:'✏️', fashion:'👔', hair:'💇', skin:'✨', teeth:'😁', nail:'💅' };
       const allCats = [provider.main_category, ...(provider.sub_categories || [])].filter(Boolean);
       const coveredAxes = [...new Set(allCats.map(c => CAT_TO_AXIS[c]).filter(Boolean))];
       const infoEl = document.getElementById('axis-coverage-info');
@@ -749,7 +748,7 @@ export default function ProviderDashboardPage() {
             <div style="padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px">
               <p style="font-size:12px;font-weight:700;color:#059669;margin:0 0 8px">✓ 自動検出されたカバー軸（8軸のうち）</p>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
-                ${coveredAxes.map(ax => `<span style="font-size:13px;font-weight:700;padding:4px 12px;background:#dcfce7;color:#15803d;border-radius:99px">${AXIS_ICONS[ax]} ${AXIS_LABELS[ax]}</span>`).join('')}
+                ${coveredAxes.map(ax => `<span style="font-size:13px;font-weight:700;padding:4px 12px;background:#dcfce7;color:#15803d;border-radius:99px">${AXIS_LABELS[ax]}</span>`).join('')}
               </div>
               <p style="font-size:12px;color:#6b7280;margin:8px 0 0">このサービスがカバーする軸のギャップが大きいユーザーほど一致度が高くなります。</p>
             </div>`;
@@ -893,7 +892,7 @@ export default function ProviderDashboardPage() {
         btn.disabled = false;
         btn.style.opacity = '1';
         btn.title = '';
-        if (status && !status.innerHTML.includes('✅')) {
+        if (status && !status.innerHTML.includes('')) {
           status.textContent = '未分析（ボタンを押すとマッチング精度が向上します）';
         }
       }
@@ -917,9 +916,9 @@ export default function ProviderDashboardPage() {
         if (!res.ok) throw new Error(json.error || '分析に失敗しました');
         const d = json.profile;
         if (status) {
-          status.innerHTML = `<span style="color:#059669;font-weight:700">✅ AI分析完了</span><br><span style="font-size:12px;color:#6b7280">${d.summary || ''}</span>`;
+          status.innerHTML = `<span style="color:#059669;font-weight:700">AI分析完了</span><br><span style="font-size:12px;color:#6b7280">${d.summary || ''}</span>`;
         }
-        showToast('✅ AI分析が完了しました。マッチングに反映されます。');
+        showToast('AI分析が完了しました。マッチングに反映されます。');
         setAnalyzeButtonState(true);
       } catch (err) {
         if (status) status.textContent = `エラー: ${err.message}`;
@@ -966,13 +965,12 @@ export default function ProviderDashboardPage() {
           const row = document.createElement('div');
           row.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;padding:12px 0;border-bottom:1px solid #f3f4f6;gap:10px';
           const AXIS_LABELS_D = { body:'体型', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', hairremoval:'脱毛', teeth:'歯', nail:'爪' };
-          const AXIS_ICONS_D  = { body:'💪', eyebrow:'✏️', fashion:'👔', hair:'💇', skin:'✨', hairremoval:'🪒', teeth:'😁', nail:'💅' };
           row.innerHTML = `
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
                 <span style="font-weight:700;font-size:14px">${esc(s.name)}</span>
                 ${s.is_featured ? '<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:99px">看板</span>' : ''}
-                ${s.target_axis ? `<span style="font-size:11px;background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:99px">${AXIS_ICONS_D[s.target_axis]||''} ${AXIS_LABELS_D[s.target_axis]||s.target_axis}</span>` : ''}
+                ${s.target_axis ? `<span style="font-size:11px;background:#eff6ff;color:#1d4ed8;padding:1px 7px;border-radius:99px">${AXIS_LABELS_D[s.target_axis]||s.target_axis}</span>` : ''}
               </div>
               <div style="font-size:13px;color:#6b7280">¥${Number(s.price).toLocaleString()}${s.duration_minutes ? ' · ' + s.duration_minutes + '分' : (s.duration ? ' · ' + esc(s.duration) : '')}</div>
               ${s.transformation_promise ? `<div style="font-size:12px;color:#374151;margin-top:3px;font-style:italic">「${esc(s.transformation_promise)}」</div>` : ''}
@@ -1082,7 +1080,7 @@ export default function ProviderDashboardPage() {
             <div style="flex-shrink:0">
               ${s.photo_url
                 ? `<img src="${esc(s.photo_url)}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #e5e7eb" />`
-                : `<div style="width:52px;height:52px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:22px">👤</div>`}
+                : `<div style="width:52px;height:52px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:22px"></div>`}
             </div>
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
@@ -1538,14 +1536,14 @@ export default function ProviderDashboardPage() {
         const btn = document.getElementById('shift-generate-btn');
         btn.disabled = true; btn.textContent = '作成中…';
         const res = await fetch(`/api/provider/shift-periods/${currentPeriodId}/generate`, { method: 'POST', headers: authHeadersShift() });
-        btn.disabled = false; btn.textContent = '⚙️ 自動作成';
+        btn.disabled = false; btn.textContent = '自動作成';
         if (!res.ok) { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); return; }
         const data = await res.json();
         const warnEl = document.getElementById('shift-generate-warnings');
         if (warnEl) {
           warnEl.innerHTML = data.warnings?.length
             ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#92400e">
-                ⚠️ 人員が足りない枠が${data.warnings.length}件あります：${data.warnings.map(w => `${esc(w.date)} ${esc(w.start_time)}〜${esc(w.end_time)}（必要${w.required}人・確保${w.filled}人）`).join('／')}
+                人員が足りない枠が${data.warnings.length}件あります：${data.warnings.map(w => `${esc(w.date)} ${esc(w.start_time)}〜${esc(w.end_time)}（必要${w.required}人・確保${w.filled}人）`).join('／')}
               </div>`
             : '';
         }
@@ -3334,7 +3332,7 @@ export default function ProviderDashboardPage() {
           return `
             <div style="padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:12.5px;">
               <div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">${fmtDateTime(e.created_at)} <span class="muted">${intervalLabel}</span></div>
-              ${e.menu_name ? `<div style="font-size:11.5px;color:#2563eb;">📋 ${esc(e.menu_name)}</div>` : ''}
+              ${e.menu_name ? `<div style="font-size:11.5px;color:#2563eb;">${esc(e.menu_name)}</div>` : ''}
               ${e.note ? `<div>${esc(e.note)}</div>` : ''}
               ${custom ? `<div class="muted">${custom}</div>` : ''}
             </div>`;
@@ -3420,9 +3418,9 @@ export default function ProviderDashboardPage() {
           const isManual = !c.user_id; // memberはuser_id、manualはid(provider_manual_customers)しか持たない
           return `
           <div class="cust-row" data-cust-open="${isManual ? c.id : c.user_id}" data-cust-type="${isManual ? 'manual' : 'member'}">
-            <span class="cust-row-name">${esc(isManual ? c.display_name : c.customer_name)}${!isManual && c.hasStoreNote ? ' 📝' : ''}</span>
+            <span class="cust-row-name">${esc(isManual ? c.display_name : c.customer_name)}${!isManual && c.hasStoreNote ? ' ' : ''}</span>
             <span class="cust-row-date">${isManual ? '—' : fmtDate(c.last_visit)}</span>
-            <span class="cust-row-date">${isManual ? '—' : `${fmtDate(c.next_visit)}${isOverdue(c) ? ' ⚠️' : ''}`}</span>
+            <span class="cust-row-date">${isManual ? '—' : `${fmtDate(c.next_visit)}${isOverdue(c) ? ' ' : ''}`}</span>
             <span>${isManual ? '<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:99px;">非会員</span>' : statusBadge(c.status)}</span>
           </div>
         `;
@@ -3613,7 +3611,7 @@ export default function ProviderDashboardPage() {
             ${statusBadge(c.status)}
             ${overdueBadge('ユーザー想定', c.userOverdueDays)}
             ${overdueBadge('店舗推奨', c.storeOverdueDays)}
-            ${c.meScanType?.fullName ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;" title="Me Scanタイプ">🧬 ${esc(c.meScanType.fullName)}</span>` : c.meScanDone ? '<span style="font-size:11px;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;">Me Scan済</span>' : ''}
+            ${c.meScanType?.fullName ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;" title="Me Scanタイプ">${esc(c.meScanType.fullName)}</span>` : c.meScanDone ? '<span style="font-size:11px;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;">Me Scan済</span>' : ''}
             ${c.mirror?.visualTier ? `<span style="font-size:11px;padding:2px 8px;background:#fff7ed;color:#c2410c;border-radius:99px;">Mirror: ${esc(c.mirror.visualTier)}</span>` : ''}
           `;
           custModalInfoEl.textContent = `前回：${fmtDate(c.last_visit)}／次回目安：${fmtDate(c.next_visit)}／頻度：${fmtFreq(c)}／来店回数：${c.visitCount ?? 0}回`;
@@ -4133,7 +4131,7 @@ export default function ProviderDashboardPage() {
           } else {
             custModalInsightEl.innerHTML = `
               <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px 12px;">
-                <p style="font-size:11px;font-weight:700;color:#6d28d9;margin:0 0 6px;">🤖 AIが気づいた傾向</p>
+                <p style="font-size:11px;font-weight:700;color:#6d28d9;margin:0 0 6px;">AIが気づいた傾向</p>
                 <ul style="margin:0;padding-left:18px;font-size:12.5px;color:#4c1d95;">
                   ${data.insights.map(i => `<li>${esc(i)}</li>`).join('')}
                 </ul>
@@ -4167,7 +4165,7 @@ export default function ProviderDashboardPage() {
             const visibleLimit = res.headers.get('X-Fineme-Visible-Limit');
             capBanner.innerHTML = totalConnected
               ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:13px;color:#92400e">
-                  🔒 現在ライトプランのため、New Me Log連携は先着${visibleLimit}人まで表示（実際の連携数：${totalConnected}人）。連携自体・お客様への通知は制限されません。プレミアムプランで無制限になります。
+                  現在ライトプランのため、New Me Log連携は先着${visibleLimit}人まで表示（実際の連携数：${totalConnected}人）。連携自体・お客様への通知は制限されません。プレミアムプランで無制限になります。
                 </div>`
               : '';
           }
@@ -4479,7 +4477,7 @@ export default function ProviderDashboardPage() {
         if (!res.ok) { statusEl.innerHTML = authErrorHtml(res); return; }
         const data = await res.json();
         if (data.connected) {
-          statusEl.innerHTML = `✅ 連携済み（${data.verified_at ? new Date(data.verified_at).toLocaleDateString('ja-JP') : ''}確認・${data.connected_by === 'staff' ? '運営代行設定' : '自己設定'}）`;
+          statusEl.innerHTML = `連携済み（${data.verified_at ? new Date(data.verified_at).toLocaleDateString('ja-JP') : ''}確認・${data.connected_by === 'staff' ? '運営代行設定' : '自己設定'}）`;
           const tokenInput = document.getElementById('lc-channel-token');
           if (tokenInput) tokenInput.placeholder = '変更する場合のみ入力（LIFF IDだけの追記なら空欄でOK）';
           const webhookBox = document.getElementById('lc-webhook-url-box');
@@ -4808,7 +4806,7 @@ export default function ProviderDashboardPage() {
           const badge = el.querySelector('[data-feature-badge]');
           if (badge) badge.textContent = on ? '' : '未設定';
 
-          // OFFのタブは元のカテゴリーから「🗂 非表示」カテゴリーへ移動しておく
+          // OFFのタブは元のカテゴリーから「非表示」カテゴリーへ移動しておく
           // （でお要望2026-09-16：「非表示にしたやつはまとめておくといい」）。元のカテゴリーを
           // data属性で覚えておき、ONに戻したら元の場所へ戻す。ボタン自体（＝クリック
           // リスナー）を移動するだけなので、各タブの読み込みロジックには影響しない。
@@ -5287,7 +5285,7 @@ export default function ProviderDashboardPage() {
                 return h ? h.value : '';
               }).filter(Boolean);
               const saved = await saveToLocal({ facility_photos: allPhotos });
-              msg.textContent = saved ? '✓ 写真を保存しました' : '⚠ アップロードはできましたが保存に失敗しました。「保存する」を押してください。';
+              msg.textContent = saved ? '✓ 写真を保存しました' : 'アップロードはできましたが保存に失敗しました。「保存する」を押してください。';
               msg.style.color = saved ? '#059669' : '#ef4444';
             } else {
               msg.textContent = 'エラー: ' + (data.error || '不明'); msg.style.color = '#ef4444';
@@ -5373,7 +5371,7 @@ export default function ProviderDashboardPage() {
             if (saved) {
               msg.textContent = '✓ カバー画像を保存しました（ページに反映されました）'; msg.style.color = '#059669';
             } else {
-              msg.textContent = '⚠ 画像はアップロードできましたが、DBへの保存に失敗しました。ページを再読み込みして再試行してください。'; msg.style.color = '#ef4444';
+              msg.textContent = '画像はアップロードできましたが、DBへの保存に失敗しました。ページを再読み込みして再試行してください。'; msg.style.color = '#ef4444';
             }
           } else { msg.textContent = 'エラー: ' + (data.error || '不明'); msg.style.color = '#ef4444'; }
         } catch { msg.textContent = '通信エラーが発生しました'; msg.style.color = '#ef4444'; }
@@ -5605,20 +5603,20 @@ export default function ProviderDashboardPage() {
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
             <strong style="font-size:16px">${esc(r.user_name)}</strong>
             <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${statusColor}20;color:${statusColor}">${statusLabel}</span>
-            ${r.user_id ? `<button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="window.openCustomerModal ? window.openCustomerModal('${r.user_id}','member','${nameForJs}') : showToast('読み込み中です。少し待ってから再度お試しください')">👤 顧客情報を見る</button>` : ''}
+            ${r.user_id ? `<button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="window.openCustomerModal ? window.openCustomerModal('${r.user_id}','member','${nameForJs}') : showToast('読み込み中です。少し待ってから再度お試しください')">顧客情報を見る</button>` : ''}
           </div>
           ${meMapNote ? `
           <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:10px">
-            <p style="font-size:11px;font-weight:700;color:#2563eb;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em">🗺 New Me Navi より</p>
+            <p style="font-size:11px;font-weight:700;color:#2563eb;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em">New Me Navi より</p>
             ${meMapNote.split('\n').map(line => `<p style="font-size:13px;color:#1e40af;margin:0 0 2px;font-weight:${line.startsWith('最優先') ? '700' : '400'}">${esc(line)}</p>`).join('')}
           </div>` : ''}
           ${(r.status === 'approved' || r.status === 'visited') ? `
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-bottom:10px">
             <p style="font-size:11px;font-weight:700;color:#15803d;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em">ユーザー情報</p>
-            <p style="font-size:13px;font-weight:700;color:#111;margin:0 0 2px">👤 ${esc(r.user_name)}</p>
-            <p style="font-size:13px;color:#374151;margin:0">📧 ${esc(r.user_contact)}</p>
+            <p style="font-size:13px;font-weight:700;color:#111;margin:0 0 2px">${esc(r.user_name)}</p>
+            <p style="font-size:13px;color:#374151;margin:0">${esc(r.user_contact)}</p>
           </div>` : `<p style="font-size:12px;color:#9ca3af;margin:0 0 10px">連絡先: ${esc(r.user_contact)}</p>`}
-          ${menuText ? `<p style="font-size:13px;color:#374151;margin:0 0 8px;font-weight:700">🎯 ${esc(menuText)}</p>` : ''}
+          ${menuText ? `<p style="font-size:13px;color:#374151;margin:0 0 8px;font-weight:700">${esc(menuText)}</p>` : ''}
           <div style="margin-bottom:8px">${choicesHtml}</div>
           ${userMsg ? `<div style="font-size:13px;color:#374151;padding:8px 12px;background:#f9fafb;border-radius:8px;margin-bottom:8px">${esc(userMsg)}</div>` : ''}
           ${r.provider_comment ? `<div style="font-size:13px;color:#6366f1;padding:8px 12px;background:#eef2ff;border-radius:8px">掲載者コメント: ${esc(r.provider_comment)}</div>` : ''}
@@ -5632,10 +5630,10 @@ export default function ProviderDashboardPage() {
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
             <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;white-space:nowrap" onclick="showVisitModal('${r.id}')">来店確認</button>
             ${(_activePackagesByUser[r.user_id] || []).map(p => `
-            <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#7c3aed;border-color:#c4b5fd" onclick="consumePackage('${p.id}','${r.id}',this)">🎫 ${esc(p.package_name)}を消化（残${p.remaining_sessions}）</button>`).join('')}
+            <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#7c3aed;border-color:#c4b5fd" onclick="consumePackage('${p.id}','${r.id}',this)">${esc(p.package_name)}を消化（残${p.remaining_sessions}）</button>`).join('')}
           </div>` : r.status === 'visited' && r.user_id ? `
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
-            <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#7c3aed;border-color:#c4b5fd" onclick="showChangePackageModal('${r.id}','${r.user_id}','${r.package_id || ''}')">🎫 使用チケットを変更</button>
+            <button class="btn btn-ghost" style="font-size:11px;padding:8px 14px;white-space:nowrap;color:#7c3aed;border-color:#c4b5fd" onclick="showChangePackageModal('${r.id}','${r.user_id}','${r.package_id || ''}')">使用チケットを変更</button>
           </div>` : ''}
         </div>
       `;
@@ -5859,7 +5857,7 @@ export default function ProviderDashboardPage() {
       document.getElementById('visit-modal-overlay')?.remove();
       await loadRequests();
       showToast(autoConsumedPackage
-        ? `来店を確認しました（🎫 ${autoConsumedPackage.packageName}を自動消化。誤りは「回数券」タブから取り消せます）`
+        ? `来店を確認しました（${autoConsumedPackage.packageName}を自動消化。誤りは「回数券」タブから取り消せます）`
         : '来店を確認しました');
       window.__calReloadWeek?.();
     };
@@ -6598,7 +6596,7 @@ export default function ProviderDashboardPage() {
               const csHeight = Math.max(30, (durationOf(r) / totalMin) * totalHeight);
               return `
                 <div class="cal-block is-class-session${!r.is_open ? ' is-closed' : ''}" style="top:${top}px;height:${csHeight}px" data-cal-open="${r.id}">
-                  <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>🏫 ${esc(r.class_name || '')}<span class="cal-block-tag">残り${r.remaining}/${r.capacity}枠${!r.is_open ? '・締切中' : ''}</span>
+                  <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.class_name || '')}<span class="cal-block-tag">残り${r.remaining}/${r.capacity}枠${!r.is_open ? '・締切中' : ''}</span>
                 </div>
               `;
             }
@@ -6607,7 +6605,7 @@ export default function ProviderDashboardPage() {
             // 区別のため、col.groupKeyがstaff_idかつ「指名なし」バケット以外の列でだけ適用する。
             const isManualAssign = col.groupKey === 'staff_id' && col.id !== null && r.staff_manually_assigned;
             const isPending = r.status === 'pending' || r.status === 'counter_proposed';
-            const classTag = r.class_id && classById[r.class_id] ? `<span class="cal-block-tag">🏫 ${esc(classById[r.class_id])}</span>` : '';
+            const classTag = r.class_id && classById[r.class_id] ? `<span class="cal-block-tag">${esc(classById[r.class_id])}</span>` : '';
             const tagsHtml = `${classTag}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}`;
             // タグの行数が増えると所要時間だけで決めた高さに文字が収まらずボックスの下から
             // 見切れることがあった（でお報告2026-09-14）。実際に入るタグ行数分だけ最低高さを底上げする。
@@ -6685,13 +6683,13 @@ export default function ProviderDashboardPage() {
             if (r._isClassSession) {
               return `
                 <div class="cal-block-h is-class-session${!r.is_open ? ' is-closed' : ''}" style="left:${left}px;width:${width}px" data-cal-open="${r.id}">
-                  <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>🏫 ${esc(r.class_name || '')}<span class="cal-block-tag">残り${r.remaining}/${r.capacity}枠${!r.is_open ? '・締切中' : ''}</span>
+                  <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.class_name || '')}<span class="cal-block-tag">残り${r.remaining}/${r.capacity}枠${!r.is_open ? '・締切中' : ''}</span>
                 </div>
               `;
             }
             const isManualAssign = col.groupKey === 'staff_id' && col.id !== null && r.staff_manually_assigned;
             const isPending = r.status === 'pending' || r.status === 'counter_proposed';
-            const classTagH = r.class_id && classById[r.class_id] ? `<span class="cal-block-tag">🏫 ${esc(classById[r.class_id])}</span>` : '';
+            const classTagH = r.class_id && classById[r.class_id] ? `<span class="cal-block-tag">${esc(classById[r.class_id])}</span>` : '';
             return `
               <div class="cal-block-h${r.status === 'visited' ? ' is-visited' : ''}${isManualAssign ? ' is-manual-assign' : ''}${isPending ? ' is-pending' : ''}" style="left:${left}px;width:${width}px" data-cal-open="${r.id}">
                 <strong>${r.time ? r.time.slice(0, 5) : ''}</strong>${esc(r.user_name || '')}${classTagH}${isManualAssign ? '<span class="cal-block-tag">（指名なし）</span>' : ''}${r._choiceLabel ? `<span class="cal-block-tag">（${r._choiceLabel}・返答待ち）</span>` : isPending ? '<span class="cal-block-tag">（返答待ち）</span>' : ''}
@@ -7147,7 +7145,7 @@ export default function ProviderDashboardPage() {
       let csCtx = null;
       function openClassSessionModal(r) {
         csCtx = r;
-        if (csTitleEl) csTitleEl.textContent = `🏫 ${r.class_name || ''}`;
+        if (csTitleEl) csTitleEl.textContent = `${r.class_name || ''}`;
         if (csInfoEl) csInfoEl.textContent = `${r.date} ${r.time ? r.time.slice(0, 5) : ''}〜${r.end_time ? r.end_time.slice(0, 5) : ''}／予約 ${r.booked}/${r.capacity}名${!r.is_open ? '（締切中）' : ''}`;
         if (csToggleBtn) csToggleBtn.textContent = r.is_open ? 'この回を締め切る' : 'この回を再開する';
         if (csMsgEl) csMsgEl.textContent = '';
@@ -7288,9 +7286,9 @@ export default function ProviderDashboardPage() {
             <strong>${esc(r.date)} ${r.time ? r.time.slice(0, 5) : ''}</strong>
             ／ <span class="muted">${STATUS_LABEL_CAL[r.status] || r.status}</span>
             ${r.staff_id && r.staff_manually_assigned ? '<span style="color:#3b82f6;font-weight:700;font-size:12px;margin-left:6px">（指名なし・店舗が割当）</span>' : ''}
-            ${r.class_id && classById[r.class_id] ? `<div style="margin-top:4px;font-size:12.5px;font-weight:700;color:#16a34a">🏫 ${esc(classById[r.class_id])}</div>` : ''}
+            ${r.class_id && classById[r.class_id] ? `<div style="margin-top:4px;font-size:12.5px;font-weight:700;color:#16a34a">${esc(classById[r.class_id])}</div>` : ''}
             ${r.note ? `<p class="muted" style="margin:6px 0 0;font-size:12.5px">${esc(r.note)}</p>` : ''}
-            ${r.user_id ? '<button type="button" class="btn btn-ghost" id="cal-modal-open-cust-btn" style="font-size:12px;padding:5px 12px;margin-top:8px">👤 顧客情報を見る（カルテ・回数券など）</button>' : `
+            ${r.user_id ? '<button type="button" class="btn btn-ghost" id="cal-modal-open-cust-btn" style="font-size:12px;padding:5px 12px;margin-top:8px">顧客情報を見る（カルテ・回数券など）</button>' : `
               <div style="margin-top:8px;padding:8px 10px;background:var(--color-bg);border-radius:8px">
                 <label style="display:block;font-size:11px;font-weight:700;margin-bottom:4px">Fineme会員と紐付ける（任意・電話予約等で後から分かった場合）</label>
                 <input type="text" id="cal-modal-member-search" placeholder="お名前または電話番号で検索（3文字以上）" style="width:100%;padding:6px 8px;font-size:12.5px;border:1px solid rgba(26,20,16,0.15);border-radius:6px;box-sizing:border-box" />
@@ -8053,7 +8051,7 @@ export default function ProviderDashboardPage() {
           const block = contentEl.querySelector(`[data-axis="${a.axis}"]`);
           if (!block) return;
           block.innerHTML = `
-            <h3 style="margin:0 0 8px;font-size:14px;">${escSc(a.label)} <span style="font-size:10px;font-weight:700;color:#c9a84c;">🏪 このお店専用</span></h3>
+            <h3 style="margin:0 0 8px;font-size:14px;">${escSc(a.label)} <span style="font-size:10px;font-weight:700;color:#c9a84c;">このお店専用</span></h3>
             <p class="muted" style="font-size:12px;margin:0 0 6px;font-weight:700;">声かけ例</p>
             <ul style="margin:0 0 10px;padding-left:18px;">
               ${a.openers.map(o => `<li style="font-size:13px;margin-bottom:4px;">${escSc(o)}</li>`).join('')}
@@ -8075,7 +8073,7 @@ export default function ProviderDashboardPage() {
           const data = await res.json();
           if (res.ok && Array.isArray(data.items) && data.items.length) {
             applyPersonalized(data.items);
-            statusEl.textContent = `🏪 一部の軸が貴店専用の内容に更新されています（最終更新: ${new Date(data.generatedAt).toLocaleDateString('ja-JP')}）`;
+            statusEl.textContent = `一部の軸が貴店専用の内容に更新されています（最終更新: ${new Date(data.generatedAt).toLocaleDateString('ja-JP')}）`;
             refreshBtn.style.display = 'inline-block';
           } else if (data.insufficientData) {
             statusEl.textContent = `まだ貴店専用の内容を作るには記録が足りません（現在${data.count}件・カルテ記録等が増えると自動で切り替わります）`;
@@ -8283,7 +8281,7 @@ export default function ProviderDashboardPage() {
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <a id="view-page-btn" href="#" target="_blank" className="btn btn-ghost" style={{ fontSize: '12px' }}>公開ページを確認 ↗</a>
-                <a href="/business/provider-guide" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '12px' }}>📖 PDFで見る ↗</a>
+                <a href="/business/provider-guide" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '12px' }}>PDFで見る ↗</a>
                 <button type="button" id="tutorial-unmute-btn" className="btn btn-ghost" style={{ fontSize: '12px' }}>各タブの案内を出し直す</button>
               </div>
             </div>
@@ -8330,7 +8328,7 @@ export default function ProviderDashboardPage() {
           {/* LINE通知設定カード */}
           <div className="card" style={{ padding: '20px', borderColor: '#06c755' }} id="line-connect-card">
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              <span style={{ fontSize: '22px' }}>💬</span>
+              <span style={{ fontSize: '22px' }}></span>
               <h3 style={{ margin: '0', fontSize: '15px' }}>LINE通知を設定する</h3>
             </div>
             <p className="muted" style={{ margin: '0 0 14px', fontSize: '13px', lineHeight: '1.6' }}>
@@ -8640,7 +8638,7 @@ export default function ProviderDashboardPage() {
                 <textarea name="philosophy" placeholder="あなたのサービスの考え方・信念・強みを自分の言葉で。ページ上では黒背景の引用文スタイルで表示されます。"></textarea>
               </div>
               <div className="form-field" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '12px', padding: '16px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🧭 <span>変容の旅を始めようとしている方への言葉</span></label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span>変容の旅を始めようとしている方への言葉</span></label>
                 <textarea name="guide_message" placeholder="ここから変わろうとしているあなたへ、ガイドとして一言あれば。&#10;例: 「外見を変えることは、自分の優先順位を自分で決めること」だと思っています。まず話を聞かせてください。" style={{ minHeight: '90px' }}></textarea>
                 <small className="muted">掲載者ページの最上部に「ガイドからのひと言」として表示されます。サービス説明ではなく、人としてのあなたが伝わる言葉を。</small>
               </div>
@@ -8650,7 +8648,7 @@ export default function ProviderDashboardPage() {
                   <img id="photo-preview" src="" alt="現在の写真" style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
                 </div>
                 <input type="file" id="photo-file-input" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} />
-                <button type="button" id="photo-upload-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>📷 写真を選択・変更（5MB以内・jpg/png/webp）</button>
+                <button type="button" id="photo-upload-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>写真を選択・変更（5MB以内・jpg/png/webp）</button>
                 <p id="photo-upload-msg" className="muted" style={{ fontSize: '12px', margin: '4px 0 0', display: 'none' }}></p>
                 <input type="hidden" name="photo_url" />
               </div>
@@ -8660,7 +8658,7 @@ export default function ProviderDashboardPage() {
                   <img id="cover-photo-preview" src="" alt="カバー画像" style={{ width: '100%', maxHeight: '130px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #e5e7eb' }} />
                 </div>
                 <input type="file" id="cover-photo-file-input" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} />
-                <button type="button" id="cover-photo-upload-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>🖼️ カバー画像を選択（横長比推奨・jpg/png/webp）</button>
+                <button type="button" id="cover-photo-upload-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>カバー画像を選択（横長比推奨・jpg/png/webp）</button>
                 <p id="cover-photo-upload-msg" className="muted" style={{ fontSize: '12px', margin: '4px 0 0', display: 'none' }}></p>
                 <small className="muted">ページ上部の大きな背景として使用されます。施設・スタジオの雰囲気が伝わる横長写真を推奨。未設定の場合は黒グラデーションになります。</small>
                 <input type="hidden" name="cover_image_url" />
@@ -8736,7 +8734,7 @@ export default function ProviderDashboardPage() {
                     <img id={`facility-photo-preview-${slot}`} src="" alt={`施設写真${slot}`} style={{ width: '160px', height: '110px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e5e7eb' }} />
                   </div>
                   <input type="file" id={`facility-img-input-${slot}`} accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} />
-                  <button type="button" id={`facility-img-btn-${slot}`} className="btn btn-ghost" style={{ fontSize: '13px' }}>📷 写真を選択（5MB以内・jpg/png/webp）</button>
+                  <button type="button" id={`facility-img-btn-${slot}`} className="btn btn-ghost" style={{ fontSize: '13px' }}>写真を選択（5MB以内・jpg/png/webp）</button>
                   <p id={`facility-img-msg-${slot}`} className="muted" style={{ fontSize: '12px', margin: '4px 0 0', display: 'none' }}></p>
                   <input type="hidden" name={`facility_photo_${slot}`} />
                 </div>
@@ -8775,7 +8773,7 @@ export default function ProviderDashboardPage() {
                   <img id="staff-photo-preview" src="" alt="スタッフ写真" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '50%', border: '2px solid #e5e7eb' }} />
                 </div>
                 <input type="file" id="staff-img-input" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} />
-                <button type="button" id="staff-img-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>📷 写真を選択（5MB以内）</button>
+                <button type="button" id="staff-img-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>写真を選択（5MB以内）</button>
                 <p id="staff-img-msg" className="muted" style={{ fontSize: '12px', margin: '4px 0 0', display: 'none' }}></p>
                 <input type="hidden" name="photo_url" id="staff-photo-url" />
               </div>
@@ -8899,7 +8897,7 @@ export default function ProviderDashboardPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
               <h3 style={{ margin: 0, fontSize: '14px' }} id="shift-detail-title">期間の詳細</h3>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <button type="button" className="btn btn-ghost" id="shift-generate-btn">⚙️ 自動作成</button>
+                <button type="button" className="btn btn-ghost" id="shift-generate-btn">自動作成</button>
                 <button type="button" className="btn" id="shift-confirm-btn">この期間を確定する</button>
               </div>
             </div>
@@ -8941,7 +8939,7 @@ export default function ProviderDashboardPage() {
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
               <div>
-                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>🏫 クラス管理</h2>
+                <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>クラス管理</h2>
                 <p className="muted" style={{ fontSize: '13px', margin: 0 }}>ダンス・スイミング等の定員制クラスの作成・名簿・進級・開催回スケジュール・参加者確認をここでまとめて管理します。</p>
               </div>
               <button type="button" className="btn" id="cls-add-btn">＋ クラスを追加</button>
@@ -9130,7 +9128,7 @@ export default function ProviderDashboardPage() {
                 機能設定タブでbooking_boardをONにすると、店内設置タブレットで開くURLが
                 ここに出る。即時予約もONでないと枠が出ないため両方必須。 */}
             <div id="slots-board-link-box" style={{ display: 'none', padding: '12px 16px', background: '#eff6ff', borderRadius: '10px', fontSize: '13px' }}>
-              📱 店頭タブレット予約ボード：<a id="slots-board-link" href="#" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}></a>
+              店頭タブレット予約ボード：<a id="slots-board-link" href="#" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}></a>
               <span className="muted" style={{ display: 'block', fontSize: '11.5px', marginTop: '4px' }}>店内のタブレットでこのURLを開いてブックマークすると、お客様がスタッフを介さず自分で予約できます。</span>
             </div>
 
@@ -9340,14 +9338,13 @@ export default function ProviderDashboardPage() {
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: '8px', marginBottom: '12px' }}>
               {[
-                { icon: '🧬', text: 'Me Scanで8軸をスキャン済み' },
-                { icon: '🧭', text: 'コンパス軸（最優先テーマ）が決まっている' },
-                { icon: '💬', text: '「来た道（タイプ）」が明確' },
-                { icon: '🎯', text: '対応軸が一致すれば優先表示' },
-              ].map(item => (
-                <div key={item.icon} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', background: 'rgba(26,20,16,0.04)', borderRadius: '10px', padding: '10px' }}>
-                  <span style={{ fontSize: '15px', flexShrink: 0 }}>{item.icon}</span>
-                  <span style={{ fontSize: '11px', color: '#374151', lineHeight: '1.5', fontWeight: '600' }}>{item.text}</span>
+                'Me Scanで8軸をスキャン済み',
+                'コンパス軸（最優先テーマ）が決まっている',
+                '「来た道（タイプ）」が明確',
+                '対応軸が一致すれば優先表示',
+              ].map(text => (
+                <div key={text} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', background: 'rgba(26,20,16,0.04)', borderRadius: '10px', padding: '10px' }}>
+                  <span style={{ fontSize: '11px', color: '#374151', lineHeight: '1.5', fontWeight: '600' }}>{text}</span>
                 </div>
               ))}
             </div>
@@ -9387,23 +9384,23 @@ export default function ProviderDashboardPage() {
                 <label>サービスカテゴリ</label>
                 <select name="category">
                   <option value="">選択しない</option>
-                  <option value="gym">💪 ジム・パーソナルトレーニング</option>
-                  <option value="makeup">💄 メイク・コスメ</option>
-                  <option value="hair">💇 ヘア・美容院</option>
-                  <option value="colordiagnosis">🎨 パーソナルカラー診断</option>
-                  <option value="bonediagnosis">🔍 骨格診断</option>
-                  <option value="diagnosis">📋 診断（総合・イメコン）</option>
-                  <option value="fashion">👔 ファッション・スタイリング</option>
-                  <option value="photo">📷 プロフィール写真・撮影</option>
-                  <option value="marriage">💍 婚活・マッチングサポート</option>
-                  <option value="eyebrow">✏️ 眉毛サロン</option>
-                  <option value="hairremoval">🪒 脱毛</option>
-                  <option value="esthetic">✨ エステ・フェイシャル</option>
-                  <option value="whitening">😁 歯のホワイトニング</option>
-                  <option value="orthodontics">🦷 歯列矯正</option>
-                  <option value="nail">💅 ネイル</option>
-                  <option value="aga">💊 AGA・薄毛治療</option>
-                  <option value="consulting">🗣 コンサルティング</option>
+                  <option value="gym">ジム・パーソナルトレーニング</option>
+                  <option value="makeup">メイク・コスメ</option>
+                  <option value="hair">ヘア・美容院</option>
+                  <option value="colordiagnosis">パーソナルカラー診断</option>
+                  <option value="bonediagnosis">骨格診断</option>
+                  <option value="diagnosis">診断（総合・イメコン）</option>
+                  <option value="fashion">ファッション・スタイリング</option>
+                  <option value="photo">プロフィール写真・撮影</option>
+                  <option value="marriage">婚活・マッチングサポート</option>
+                  <option value="eyebrow">眉毛サロン</option>
+                  <option value="hairremoval">脱毛</option>
+                  <option value="esthetic">エステ・フェイシャル</option>
+                  <option value="whitening">歯のホワイトニング</option>
+                  <option value="orthodontics">歯列矯正</option>
+                  <option value="nail">ネイル</option>
+                  <option value="aga">AGA・薄毛治療</option>
+                  <option value="consulting">コンサルティング</option>
                 </select>
                 <small className="muted">検索ページでのカテゴリ絞り込みに使われます</small>
               </div>
@@ -9413,14 +9410,14 @@ export default function ProviderDashboardPage() {
                 <label>対応軸（Me Scan 8軸）</label>
                 <select name="target_axis">
                   <option value="">選択しない</option>
-                  <option value="body">💪 体型・ボディ</option>
-                  <option value="eyebrow">✏️ 眉</option>
-                  <option value="fashion">👔 服・コーデ</option>
-                  <option value="hair">💇 髪・ヘア</option>
-                  <option value="skin">✨ 肌・エステ</option>
-                  <option value="hairremoval">🪒 脱毛・ムダ毛</option>
-                  <option value="teeth">😁 歯・口元</option>
-                  <option value="nail">💅 爪</option>
+                  <option value="body">体型・ボディ</option>
+                  <option value="eyebrow">眉</option>
+                  <option value="fashion">服・コーデ</option>
+                  <option value="hair">髪・ヘア</option>
+                  <option value="skin">肌・エステ</option>
+                  <option value="hairremoval">脱毛・ムダ毛</option>
+                  <option value="teeth">歯・口元</option>
+                  <option value="nail">爪</option>
                 </select>
                 <small className="muted">設定すると、その軸のコンパスを持つユーザーのプログラム一覧で最上位に表示されます</small>
               </div>
@@ -9452,7 +9449,7 @@ export default function ProviderDashboardPage() {
                     <img id="service-before-img-preview" src="" alt="Before" style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e5e7eb' }} />
                   </div>
                   <input type="file" id="service-before-img-input" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} />
-                  <button type="button" id="service-before-img-btn" className="btn btn-ghost" style={{ fontSize: '11px', padding: '5px 10px' }}>📷 画像追加</button>
+                  <button type="button" id="service-before-img-btn" className="btn btn-ghost" style={{ fontSize: '11px', padding: '5px 10px' }}>画像追加</button>
                   <p id="service-before-img-msg" className="muted" style={{ fontSize: '11px', margin: '3px 0 0', display: 'none' }}></p>
                   <input type="hidden" name="before_image_url" id="service-before-image-url" />
                 </div>
@@ -9462,7 +9459,7 @@ export default function ProviderDashboardPage() {
                     <img id="service-after-img-preview" src="" alt="After" style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e5e7eb' }} />
                   </div>
                   <input type="file" id="service-after-img-input" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} />
-                  <button type="button" id="service-after-img-btn" className="btn btn-ghost" style={{ fontSize: '11px', padding: '5px 10px' }}>📷 画像追加</button>
+                  <button type="button" id="service-after-img-btn" className="btn btn-ghost" style={{ fontSize: '11px', padding: '5px 10px' }}>画像追加</button>
                   <p id="service-after-img-msg" className="muted" style={{ fontSize: '11px', margin: '3px 0 0', display: 'none' }}></p>
                   <input type="hidden" name="after_image_url" id="service-after-image-url" />
                 </div>
@@ -9480,7 +9477,7 @@ export default function ProviderDashboardPage() {
                   <img id="service-img-preview" src="" alt="サービス画像" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #e5e7eb' }} />
                 </div>
                 <input type="file" id="service-img-input" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} />
-                <button type="button" id="service-img-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>📷 サービス画像を設定（任意）</button>
+                <button type="button" id="service-img-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>サービス画像を設定（任意）</button>
                 <p id="service-img-msg" className="muted" style={{ fontSize: '12px', margin: '4px 0 0', display: 'none' }}></p>
                 <input type="hidden" name="image_url" id="service-image-url" />
               </div>
@@ -9735,7 +9732,7 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="btn btn-ghost" id="cust-modal-nudge-btn" style={{ fontSize: '12px', padding: '5px 10px' }}>声かけメッセージを送る</button>
                 <select id="cust-modal-assign-select" style={{ fontSize: '12px', padding: '5px 8px', border: '1px solid #e5e7eb', borderRadius: '8px' }}></select>
               </div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6b7280', marginBottom: '4px' }}>📌 固定メモ</label>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6b7280', marginBottom: '4px' }}>固定メモ</label>
               <textarea id="cust-modal-note-textarea" style={{ width: '100%', minHeight: '60px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="読み込み中…" disabled></textarea>
               <button type="button" className="btn" id="cust-modal-note-save-btn" style={{ fontSize: '12px', padding: '5px 10px', marginTop: '6px' }} disabled>保存する</button>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
@@ -9752,13 +9749,13 @@ export default function ProviderDashboardPage() {
               <div id="cust-modal-posture-section" style={{ display: 'none', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
                 <div id="cust-modal-posture-controls">
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button type="button" className="btn btn-ghost" id="cust-modal-posture-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>📐 姿勢分析を記録</button>
+                    <button type="button" className="btn btn-ghost" id="cust-modal-posture-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>姿勢分析を記録</button>
                     <button type="button" className="btn btn-ghost" id="cust-modal-posture-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>姿勢分析を見る</button>
                   </div>
                   <div id="cust-modal-posture-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
                   <div id="cust-modal-posture-history" style={{ display: 'none', marginTop: '10px' }}></div>
                 </div>
-                <p id="cust-modal-posture-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>📐 AI姿勢分析はプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
+                <p id="cust-modal-posture-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AI姿勢分析はプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
               </div>
 
               {/* AI健診アドバイス（でお要望2026-09-27・今野くん発案。health_advice_analysis機能
@@ -9766,13 +9763,13 @@ export default function ProviderDashboardPage() {
               <div id="cust-modal-health-section" style={{ display: 'none', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
                 <div id="cust-modal-health-controls">
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button type="button" className="btn btn-ghost" id="cust-modal-health-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>🩺 健診アドバイスを記録</button>
+                    <button type="button" className="btn btn-ghost" id="cust-modal-health-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>健診アドバイスを記録</button>
                     <button type="button" className="btn btn-ghost" id="cust-modal-health-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>健診アドバイスを見る</button>
                   </div>
                   <div id="cust-modal-health-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
                   <div id="cust-modal-health-history" style={{ display: 'none', marginTop: '10px' }}></div>
                 </div>
-                <p id="cust-modal-health-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>🩺 AI健診アドバイスはプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
+                <p id="cust-modal-health-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AI健診アドバイスはプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
               </div>
             </div>
 
@@ -9784,7 +9781,7 @@ export default function ProviderDashboardPage() {
                 <select id="cust-modal-link-select" style={{ fontSize: '12px', padding: '5px 8px', border: '1px solid #e5e7eb', borderRadius: '8px' }}></select>
                 <button type="button" className="btn btn-ghost" id="cust-modal-manual-delete-btn" style={{ fontSize: '12px', padding: '5px 10px', color: '#ef4444', marginLeft: 'auto' }}>削除</button>
               </div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6b7280', marginBottom: '4px' }}>📌 メモ</label>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6b7280', marginBottom: '4px' }}>メモ</label>
               <textarea id="cust-modal-manual-memo-textarea" style={{ width: '100%', minHeight: '60px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="要望・使った薬剤・注意点など"></textarea>
               <button type="button" className="btn" id="cust-modal-manual-save-btn" style={{ fontSize: '12px', padding: '5px 10px', marginTop: '6px' }}>保存する</button>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
@@ -9797,25 +9794,25 @@ export default function ProviderDashboardPage() {
               <div id="cust-modal-manual-posture-section" style={{ display: 'none', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
                 <div id="cust-modal-manual-posture-controls">
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button type="button" className="btn btn-ghost" id="cust-modal-manual-posture-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>📐 姿勢分析を記録</button>
+                    <button type="button" className="btn btn-ghost" id="cust-modal-manual-posture-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>姿勢分析を記録</button>
                     <button type="button" className="btn btn-ghost" id="cust-modal-manual-posture-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>姿勢分析を見る</button>
                   </div>
                   <div id="cust-modal-manual-posture-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
                   <div id="cust-modal-manual-posture-history" style={{ display: 'none', marginTop: '10px' }}></div>
                 </div>
-                <p id="cust-modal-manual-posture-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>📐 AI姿勢分析はプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
+                <p id="cust-modal-manual-posture-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AI姿勢分析はプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
               </div>
 
               <div id="cust-modal-manual-health-section" style={{ display: 'none', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
                 <div id="cust-modal-manual-health-controls">
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button type="button" className="btn btn-ghost" id="cust-modal-manual-health-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>🩺 健診アドバイスを記録</button>
+                    <button type="button" className="btn btn-ghost" id="cust-modal-manual-health-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>健診アドバイスを記録</button>
                     <button type="button" className="btn btn-ghost" id="cust-modal-manual-health-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>健診アドバイスを見る</button>
                   </div>
                   <div id="cust-modal-manual-health-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
                   <div id="cust-modal-manual-health-history" style={{ display: 'none', marginTop: '10px' }}></div>
                 </div>
-                <p id="cust-modal-manual-health-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>🩺 AI健診アドバイスはプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
+                <p id="cust-modal-manual-health-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AI健診アドバイスはプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
               </div>
             </div>
           </div>
@@ -9993,7 +9990,7 @@ export default function ProviderDashboardPage() {
                   marginTop: '12px',
                 }}
               >
-                📖 連携のやり方を見る（設定ガイド） ↗
+                連携のやり方を見る（設定ガイド） ↗
               </a>
             </div>
             <div id="line-channel-status" className="muted" style={{ fontSize: '13px' }}>読み込み中…</div>
@@ -10355,7 +10352,7 @@ export default function ProviderDashboardPage() {
               </p>
             </div>
             <div>
-              <button type="button" id="checkin-camera-btn" className="btn">📷 カメラを起動する</button>
+              <button type="button" id="checkin-camera-btn" className="btn">カメラを起動する</button>
               <button type="button" id="checkin-camera-stop-btn" className="btn btn-ghost" style={{ display: 'none' }}>停止する</button>
             </div>
             <video id="checkin-video" playsInline muted style={{ width: '100%', maxWidth: '360px', borderRadius: '12px', display: 'none', background: '#000' }}></video>
@@ -10486,7 +10483,7 @@ export default function ProviderDashboardPage() {
                 <div className="checkbox-group" id="menu-axes">
                   {PROVIDER_AXES.map(a => (
                     <label className="checkbox-item" key={a.key}>
-                      <input type="checkbox" value={a.key} /> {a.icon} {a.label}
+                      <input type="checkbox" value={a.key} /> {a.label}
                     </label>
                   ))}
                 </div>
@@ -10518,7 +10515,7 @@ export default function ProviderDashboardPage() {
                   <label>軸</label>
                   <select id="case-axis">
                     {PROVIDER_AXES.map(a => (
-                      <option value={a.key} key={a.key}>{a.icon} {a.label}</option>
+                      <option value={a.key} key={a.key}>{a.label}</option>
                     ))}
                   </select>
                 </div>
@@ -10789,7 +10786,7 @@ export default function ProviderDashboardPage() {
             連携相当機能をFineme内製で実装。特典の実際の付与は店舗の運用に委ねる。 */}
         <div className="tab-pane" id="tab-member-referral">
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
-            <h2 style={{ margin: '0', fontSize: '16px' }}>🎁 友達紹介プログラム</h2>
+            <h2 style={{ margin: '0', fontSize: '16px' }}>友達紹介プログラム</h2>
             <p className="muted" style={{ fontSize: '13px', margin: '0', lineHeight: '1.7' }}>
               オンにすると、お客様（Finemeログイン中の会員）が公開ページから個人紹介リンクを発行できるようになります。紹介経由の予約・来店を自動で記録し、双方にLINEで通知します。特典の内容・実際の付与は貴店の運用にお任せします（Financeは決済を仲介しません）。
             </p>

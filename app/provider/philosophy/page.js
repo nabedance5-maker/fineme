@@ -146,21 +146,21 @@ export default function ProviderPhilosophyPage() {
         <div className="card phil-card">
           <h2>あなたは「出品者」ではなく「ガイド」です</h2>
           <div className="phil-item">
-            <span className="phil-icon">🧭</span>
+            <span className="phil-icon"></span>
             <div className="phil-body">
               <h3>ユーザーは答えを探しているのではない</h3>
               <p>診断を受けたユーザーはすでに「変わりたい理由」を言語化しています。あなたの役割はサービスを売ることではなく、その人の変容の旅に寄り添う「ガイド」として機能することです。</p>
             </div>
           </div>
           <div className="phil-item">
-            <span className="phil-icon">🗺️</span>
+            <span className="phil-icon">️</span>
             <div className="phil-body">
               <h3>体験談は「レビュー」ではなく「変容の記録」</h3>
               <p>Finemeの体験談機能は、ユーザーが「変わった証拠」を残す場所です。星評価より「あなたのどこがどう変わったか」という言葉が、次のユーザーの背中を押します。</p>
             </div>
           </div>
           <div className="phil-item">
-            <span className="phil-icon">🔄</span>
+            <span className="phil-icon"></span>
             <div className="phil-body">
               <h3>紹介した仲間の掲載が続く限り報酬が発生する</h3>
               <p>あなたのFN番号を他の事業者に共有し、その方がFinemeに掲載し続ける間、毎月¥500の紹介報酬が発生します。掲載料を紹介報酬で相殺・プラスにすることも可能です。</p>
