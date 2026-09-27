@@ -37,6 +37,11 @@ const DASHBOARD_CSS = `
          （深海ネイビー×羊皮紙）の世界観とは切り離し、日々数字とフォームを見る道具として
          可読性を優先する。 */
       .pd-page-root { background: var(--color-bg); min-height: 100vh; color: #1a1410; }
+      /* 初回読み込み中の待機表示（でお要望2026-09-28）。ページ全体を覆い、
+         データ取得が終わり次第JSで非表示にする。 */
+      .pd-global-loading { position: fixed; inset: 0; background: var(--color-bg); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+      .pd-spinner { width: 40px; height: 40px; border: 4px solid rgba(26,20,16,0.12); border-top-color: #c9a84c; border-radius: 50%; animation: pd-spin .8s linear infinite; }
+      @keyframes pd-spin { to { transform: rotate(360deg); } }
       /* <main>には共通クラス"section"（globals.cssでpadding:64px 0）も付いており、
          ダッシュボードではこれが上下に意図しない大きな余白を作っていた
          （でお指摘2026-09-14：「上部の空間は全然消えてない」の正体。今までの
@@ -260,6 +265,21 @@ export default function ProviderDashboardPage() {
       }
     };
     window.addEventListener('unhandledrejection', onUnhandledRejection);
+
+    // 初回読み込みが「画面に何も無いページ」に見えるというでお報告（2026-09-28）への対応。
+    // ページシェル自体はサーバー描画済みだが、掲載者データ・各タブの初回データ取得は
+    // クライアント側の非同期フェッチのため、それが終わるまでは目立つ待機表示が無かった。
+    // 中央にスピナーを出し、①プロフィール等の主要データ描画が終わった時点 ②window.load
+    // ③念のための最大6秒タイムアウト、のいずれか早い方で消す。
+    let pdGlobalLoadingHidden = false;
+    function hidePdGlobalLoading() {
+      if (pdGlobalLoadingHidden) return;
+      pdGlobalLoadingHidden = true;
+      const el = document.getElementById('pd-global-loading');
+      if (el) el.style.display = 'none';
+    }
+    window.addEventListener('load', hidePdGlobalLoading);
+    setTimeout(hidePdGlobalLoading, 6000);
 
     // ── Auth helpers (inlined from scripts/auth.js) ──────────────
     const PROVIDER_KEY = 'fineme:provider:current';
@@ -743,6 +763,7 @@ export default function ProviderDashboardPage() {
         </div>
       `;
     }
+    hidePdGlobalLoading();
 
     // 今月の統計を非同期で取得
     (async function loadDashboardStats() {
@@ -8498,6 +8519,13 @@ export default function ProviderDashboardPage() {
   return (
     <main className="section pd-page-root">
       <style>{DASHBOARD_CSS}</style>
+
+      {/* 初回読み込み中は画面が何も無いページのように見えるというでお報告（2026-09-28）
+          への対応。データ取得が終わり次第（またはタイムアウト時）JSでdisplay:noneにする。 */}
+      <div id="pd-global-loading" className="pd-global-loading">
+        <div className="pd-spinner" />
+      </div>
+
       <div className="pd-container">
 
         {/* モバイル用トップバー。よく使うタブへのショートカット（でお要望2026-09-14：
@@ -8751,8 +8779,12 @@ export default function ProviderDashboardPage() {
                     カレンダーがポップアップで開いて違う日に飛べるボタンもあるといい」）。
                     隠し入力+showPicker()方式はAndroid Chromeで反応しないことがあった
                     （でお報告2026-09-28）ため、input自体を小さく見せてタップ＝ピッカーが
-                    開くネイティブ挙動にそのまま乗る、より確実な方式に変更。 */}
-                <input type="date" id="cal-date-jump" style={{ fontSize: '12px', padding: '6px 8px', border: '1.5px solid #e5e7eb', borderRadius: '8px', background: '#fff', color: 'inherit' }} />
+                    開くネイティブ挙動にそのまま乗る、より確実な方式に変更。日付の数字だけ
+                    だと何のための欄か分からない（でお報告2026-09-28）ため、ラベルを添える。 */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'rgba(26,20,16,0.6)' }}>
+                  日付選択
+                  <input type="date" id="cal-date-jump" style={{ fontSize: '12px', padding: '6px 8px', border: '1.5px solid #e5e7eb', borderRadius: '8px', background: '#fff', color: 'inherit' }} />
+                </label>
               </div>
             </div>
 
