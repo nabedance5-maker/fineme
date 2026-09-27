@@ -6,7 +6,7 @@ import { TAB_TUTORIALS, TUTORIAL_GROUPS, TUTORIAL_MUTED_KEY, tutorialSeenKey } f
 import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
 import { CUSTOMER_SCRIPT_AXES } from '@/lib/customer-scripts';
-import { CATEGORY_DEFS, LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS, TAB_CATALOG, categoryOfTab } from '@/lib/dashboard-prefs';
+import { LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS, TAB_CATALOG, categoryOfTab, allCategoryDefs, generateCategoryKey, MAX_CUSTOM_CATEGORIES, MAX_CATEGORY_LABEL_LENGTH } from '@/lib/dashboard-prefs';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -425,7 +425,49 @@ export default function ProviderDashboardPage() {
     // 機能フラグOFF中のタブ（hidden行き）はここでは動かさない——復帰先の判定は
     // categoryOfTab()を使ってapplyFeatureGating側が都度計算するため、二重管理にならない。
     window.__tabCategoryOverrides = {};
+
+    // 店舗が任意の名前で追加した大カテゴリー（でお要望2026-09-27）を、実際のサイドバーの
+    // レール（.pd-rail）・パネル（.pd-panel-section）としてその場で生成/削除する。
+    // 標準8カテゴリーはJSXに静的に書かれているが、カスタムカテゴリーは店舗ごとに
+    // 増減するためDOM生成が必要——機能フラグOFF時にタブを'hidden'へ動かす既存の仕組み
+    // （.pd-panel-section[data-panel]間でDOMノードを移動するだけ）と同じ土台の上に乗せる。
+    function syncCustomCategoryRail(prefs) {
+      const rail = document.getElementById('pd-rail');
+      if (!rail) return;
+      const hiddenBtn = document.getElementById('pd-rail-hidden-btn');
+      const anyPanel = document.querySelector('.pd-panel-section');
+      const customCategories = prefs?.custom_categories || [];
+      customCategories.forEach(cat => {
+        let btn = rail.querySelector(`.pd-rail-btn[data-category="${cat.key}"]`);
+        if (!btn) {
+          btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'pd-rail-btn';
+          btn.dataset.category = cat.key;
+          btn.addEventListener('click', () => selectCategory(cat.key));
+          rail.insertBefore(btn, hiddenBtn || null);
+        }
+        btn.textContent = cat.label;
+        if (!document.querySelector(`.pd-panel-section[data-panel="${cat.key}"]`)) {
+          const panel = document.createElement('div');
+          panel.className = 'pd-panel-section';
+          panel.dataset.panel = cat.key;
+          panel.style.display = 'none';
+          anyPanel?.parentElement?.appendChild(panel);
+        }
+      });
+      // 削除されたカスタムカテゴリーに対応する要素は取り除く（標準8種・hiddenは対象外）
+      const validKeys = new Set(customCategories.map(c => c.key));
+      rail.querySelectorAll('.pd-rail-btn[data-category^="custom_"]').forEach(btn => {
+        if (!validKeys.has(btn.dataset.category)) btn.remove();
+      });
+      document.querySelectorAll('.pd-panel-section[data-panel^="custom_"]').forEach(panel => {
+        if (!validKeys.has(panel.dataset.panel)) panel.remove();
+      });
+    }
+
     function applyTabLayout(prefs) {
+      syncCustomCategoryRail(prefs);
       window.__tabCategoryOverrides = prefs?.tab_category_overrides || {};
       const orderOverrides = prefs?.tab_order_overrides || {};
       TAB_CATALOG.forEach(t => {
@@ -4740,17 +4782,16 @@ export default function ProviderDashboardPage() {
       if (!token) return;
       const landingSel = document.getElementById('ds-landing-tab');
       const landingMsg = document.getElementById('ds-landing-tab-msg');
-      const orderEl = document.getElementById('ds-sidebar-order');
-      const orderMsg = document.getElementById('ds-sidebar-order-msg');
       const axisEl = document.getElementById('ds-calendar-axis');
       const axisMsg = document.getElementById('ds-calendar-axis-msg');
       const viewEl = document.getElementById('ds-calendar-view');
       const viewMsg = document.getElementById('ds-calendar-view-msg');
       const shortcutsEl = document.getElementById('ds-header-shortcuts');
       const shortcutsMsg = document.getElementById('ds-header-shortcuts-msg');
-      const tabLayoutEl = document.getElementById('ds-tab-layout');
-      const tabLayoutMsg = document.getElementById('ds-tab-layout-msg');
-      const tabLayoutResetBtn = document.getElementById('ds-tab-layout-reset');
+      const layoutEl = document.getElementById('ds-layout');
+      const layoutMsg = document.getElementById('ds-layout-msg');
+      const newCategoryInput = document.getElementById('ds-new-category-input');
+      const newCategoryBtn = document.getElementById('ds-new-category-btn');
 
       if (landingSel) landingSel.innerHTML = LANDING_TAB_OPTIONS.map(o => `<option value="${o.key}">${esc(o.label)}</option>`).join('');
 
@@ -4775,26 +4816,16 @@ export default function ProviderDashboardPage() {
         }));
       }
 
-      function renderOrderList(order) {
-        if (!orderEl) return;
-        const labelOf = key => CATEGORY_DEFS.find(c => c.key === key)?.label || key;
-        orderEl.innerHTML = order.map((key, i) => `
-          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:8px">
-            <span style="flex:1;font-size:13px;font-weight:600">${esc(labelOf(key))}</span>
-            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-ds-up="${key}"${i === 0 ? ' disabled' : ''}>↑</button>
-            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-ds-down="${key}"${i === order.length - 1 ? ' disabled' : ''}>↓</button>
-          </div>
-        `).join('');
-        orderEl.querySelectorAll('[data-ds-up]').forEach(btn => btn.addEventListener('click', () => moveOrder(btn.dataset.dsUp, -1)));
-        orderEl.querySelectorAll('[data-ds-down]').forEach(btn => btn.addEventListener('click', () => moveOrder(btn.dataset.dsDown, 1)));
-      }
-
-      // タブのカテゴリー所属・カテゴリー内並び順のカスタマイズ（でお要望2026-09-27）
+      // メニューの並び順（カテゴリー自体の順序）とタブの配置（どのタブがどのカテゴリーに
+      // 属し、カテゴリー内でどう並ぶか）は元々別々のUIだったが、「統合するべき」という
+      // でお指摘（2026-09-27）を受け1つの編集画面にまとめた。カテゴリー自体の追加・削除・
+      // 名前変更（でお要望「『ホーム』や『予約』などの大きいタブも任意の名前で追加できる
+      // ようにしてほしい」）もここで行う。
       function effectiveTabsByCategory(prefs) {
         const overrides = prefs.tab_category_overrides || {};
         const orderOverrides = prefs.tab_order_overrides || {};
         const byCategory = {};
-        CATEGORY_DEFS.forEach(c => { byCategory[c.key] = []; });
+        (prefs.sidebar_order || []).forEach(key => { byCategory[key] = []; });
         TAB_CATALOG.forEach(t => {
           const cat = overrides[t.key] || t.category;
           if (byCategory[cat]) byCategory[cat].push(t.key);
@@ -4812,34 +4843,72 @@ export default function ProviderDashboardPage() {
 
       function labelOfTab(key) { return TAB_CATALOG.find(t => t.key === key)?.label || key; }
 
-      function renderTabLayout(prefs) {
-        if (!tabLayoutEl) return;
+      function renderLayout(prefs) {
+        if (!layoutEl) return;
+        const order = prefs.sidebar_order || [];
+        const defs = allCategoryDefs(prefs.custom_categories);
+        const labelOf = key => defs.find(c => c.key === key)?.label || key;
         const byCategory = effectiveTabsByCategory(prefs);
-        tabLayoutEl.innerHTML = CATEGORY_DEFS.map(cat => {
-          const tabs = byCategory[cat.key] || [];
-          if (!tabs.length) return '';
+
+        layoutEl.innerHTML = order.map((catKey, catIdx) => {
+          const isCustom = catKey.startsWith('custom_');
+          const tabs = byCategory[catKey] || [];
           return `
             <div style="border:1px solid rgba(26,20,16,0.12);border-radius:10px;padding:10px 12px">
-              <p style="font-size:11px;font-weight:800;letter-spacing:.06em;color:rgba(201,168,76,.8);text-transform:uppercase;margin:0 0 8px">${esc(cat.label)}</p>
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+                <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-cat-up="${catKey}"${catIdx === 0 ? ' disabled' : ''}>↑</button>
+                <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-cat-down="${catKey}"${catIdx === order.length - 1 ? ' disabled' : ''}>↓</button>
+                <strong style="flex:1;font-size:13px">${esc(labelOf(catKey))}</strong>
+                ${isCustom ? `
+                  <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-cat-rename="${catKey}">名前を変更</button>
+                  <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px;color:#ef4444" data-cat-delete="${catKey}">削除</button>
+                ` : ''}
+              </div>
               <div class="stack" style="gap:6px">
-                ${tabs.map((key, i) => `
+                ${tabs.length ? tabs.map((key, i) => `
                   <div style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:rgba(26,20,16,0.03);border-radius:8px">
                     <span style="flex:1;font-size:12.5px">${esc(labelOfTab(key))}</span>
-                    <button type="button" class="btn btn-ghost" style="font-size:10px;padding:2px 6px" data-tl-up="${key}" data-tl-cat="${cat.key}"${i === 0 ? ' disabled' : ''}>↑</button>
-                    <button type="button" class="btn btn-ghost" style="font-size:10px;padding:2px 6px" data-tl-down="${key}" data-tl-cat="${cat.key}"${i === tabs.length - 1 ? ' disabled' : ''}>↓</button>
+                    <button type="button" class="btn btn-ghost" style="font-size:10px;padding:2px 6px" data-tl-up="${key}" data-tl-cat="${catKey}"${i === 0 ? ' disabled' : ''}>↑</button>
+                    <button type="button" class="btn btn-ghost" style="font-size:10px;padding:2px 6px" data-tl-down="${key}" data-tl-cat="${catKey}"${i === tabs.length - 1 ? ' disabled' : ''}>↓</button>
                     <select data-tl-move="${key}" style="font-size:11px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px">
-                      ${CATEGORY_DEFS.map(c2 => `<option value="${c2.key}"${c2.key === cat.key ? ' selected' : ''}>${esc(c2.label)}</option>`).join('')}
+                      ${defs.map(c2 => `<option value="${c2.key}"${c2.key === catKey ? ' selected' : ''}>${esc(c2.label)}</option>`).join('')}
                     </select>
                   </div>
-                `).join('')}
+                `).join('') : `<p class="muted" style="font-size:11.5px;margin:0">タブがありません。他のカテゴリーのタブをここへ移動できます。</p>`}
               </div>
             </div>
           `;
         }).join('');
 
-        tabLayoutEl.querySelectorAll('[data-tl-up]').forEach(btn => btn.addEventListener('click', () => moveTabInCategory(btn.dataset.tlCat, btn.dataset.tlUp, -1)));
-        tabLayoutEl.querySelectorAll('[data-tl-down]').forEach(btn => btn.addEventListener('click', () => moveTabInCategory(btn.dataset.tlCat, btn.dataset.tlDown, 1)));
-        tabLayoutEl.querySelectorAll('[data-tl-move]').forEach(sel => sel.addEventListener('change', () => moveTabToCategory(sel.dataset.tlMove, sel.value)));
+        layoutEl.querySelectorAll('[data-cat-up]').forEach(btn => btn.addEventListener('click', () => moveCategory(btn.dataset.catUp, -1)));
+        layoutEl.querySelectorAll('[data-cat-down]').forEach(btn => btn.addEventListener('click', () => moveCategory(btn.dataset.catDown, 1)));
+        layoutEl.querySelectorAll('[data-cat-rename]').forEach(btn => btn.addEventListener('click', () => renameCategory(btn.dataset.catRename)));
+        layoutEl.querySelectorAll('[data-cat-delete]').forEach(btn => btn.addEventListener('click', () => deleteCategory(btn.dataset.catDelete)));
+        layoutEl.querySelectorAll('[data-tl-up]').forEach(btn => btn.addEventListener('click', () => moveTabInCategory(btn.dataset.tlCat, btn.dataset.tlUp, -1)));
+        layoutEl.querySelectorAll('[data-tl-down]').forEach(btn => btn.addEventListener('click', () => moveTabInCategory(btn.dataset.tlCat, btn.dataset.tlDown, 1)));
+        layoutEl.querySelectorAll('[data-tl-move]').forEach(sel => sel.addEventListener('change', () => moveTabToCategory(sel.dataset.tlMove, sel.value)));
+
+        if (newCategoryBtn) newCategoryBtn.disabled = (prefs.custom_categories || []).length >= MAX_CUSTOM_CATEGORIES;
+      }
+
+      function moveCategory(key, dir) {
+        if (!dashboardPrefs) return;
+        const order = [...dashboardPrefs.sidebar_order];
+        const idx = order.indexOf(key);
+        const swapIdx = idx + dir;
+        if (idx < 0 || swapIdx < 0 || swapIdx >= order.length) return;
+        [order[idx], order[swapIdx]] = [order[swapIdx], order[idx]];
+        save({ sidebar_order: order }, layoutMsg).then(ok => {
+          if (ok) {
+            renderLayout(dashboardPrefs);
+            applyTabLayout(dashboardPrefs);
+            // サイドバーの実際の並び順にもその場で反映する
+            order.forEach((k, i) => {
+              const btn = document.querySelector(`.pd-rail-btn[data-category="${k}"]`);
+              if (btn) btn.style.order = String(i);
+            });
+          }
+        });
       }
 
       function moveTabInCategory(categoryKey, tabKey, dir) {
@@ -4851,8 +4920,8 @@ export default function ProviderDashboardPage() {
         if (idx < 0 || swapIdx < 0 || swapIdx >= order.length) return;
         [order[idx], order[swapIdx]] = [order[swapIdx], order[idx]];
         const orderOverrides = { ...(dashboardPrefs.tab_order_overrides || {}), [categoryKey]: order };
-        save({ tab_order_overrides: orderOverrides }, tabLayoutMsg).then(ok => {
-          if (ok) { renderTabLayout(dashboardPrefs); applyTabLayout(dashboardPrefs); }
+        save({ tab_order_overrides: orderOverrides }, layoutMsg).then(ok => {
+          if (ok) { renderLayout(dashboardPrefs); applyTabLayout(dashboardPrefs); }
         });
       }
 
@@ -4862,16 +4931,61 @@ export default function ProviderDashboardPage() {
         const overrides = { ...(dashboardPrefs.tab_category_overrides || {}) };
         if (newCategoryKey === defaultCategory) delete overrides[tabKey];
         else overrides[tabKey] = newCategoryKey;
-        save({ tab_category_overrides: overrides }, tabLayoutMsg).then(ok => {
-          if (ok) { renderTabLayout(dashboardPrefs); applyTabLayout(dashboardPrefs); }
+        save({ tab_category_overrides: overrides }, layoutMsg).then(ok => {
+          if (ok) { renderLayout(dashboardPrefs); applyTabLayout(dashboardPrefs); }
         });
       }
 
-      tabLayoutResetBtn?.addEventListener('click', () => {
-        save({ tab_category_overrides: {}, tab_order_overrides: {} }, tabLayoutMsg).then(ok => {
-          if (ok) { renderTabLayout(dashboardPrefs); applyTabLayout(dashboardPrefs); }
+      // カテゴリーの追加・名前変更・削除（でお要望2026-09-27：「『ホーム』や『予約』などの
+      // 大きいタブも任意の名前で追加できるようにしてほしい」）。追加・削除時は
+      // sidebar_order/tab_category_overrides/tab_order_overridesの自己修復をサーバー側
+      // （app/api/provider/dashboard-prefs/route.js）に任せ、custom_categoriesだけ送る。
+      function addCategory() {
+        if (!dashboardPrefs || !newCategoryInput) return;
+        const label = newCategoryInput.value.trim();
+        if (!label) return;
+        if (label.length > MAX_CATEGORY_LABEL_LENGTH) { showToast(`カテゴリー名は${MAX_CATEGORY_LABEL_LENGTH}文字以内にしてください`); return; }
+        const existing = dashboardPrefs.custom_categories || [];
+        if (existing.length >= MAX_CUSTOM_CATEGORIES) { showToast(`カテゴリーは最大${MAX_CUSTOM_CATEGORIES}個までです`); return; }
+        const key = generateCategoryKey(existing);
+        save({ custom_categories: [...existing, { key, label }] }, layoutMsg).then(ok => {
+          if (ok) {
+            newCategoryInput.value = '';
+            renderLayout(dashboardPrefs);
+            applyTabLayout(dashboardPrefs);
+            dashboardPrefs.sidebar_order.forEach((k, i) => {
+              const btn = document.querySelector(`.pd-rail-btn[data-category="${k}"]`);
+              if (btn) btn.style.order = String(i);
+            });
+          }
         });
-      });
+      }
+      newCategoryBtn?.addEventListener('click', addCategory);
+      newCategoryInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addCategory(); } });
+
+      function renameCategory(key) {
+        if (!dashboardPrefs) return;
+        const current = (dashboardPrefs.custom_categories || []).find(c => c.key === key);
+        if (!current) return;
+        const label = prompt('新しいカテゴリー名を入力してください', current.label)?.trim();
+        if (!label || label === current.label) return;
+        if (label.length > MAX_CATEGORY_LABEL_LENGTH) { showToast(`カテゴリー名は${MAX_CATEGORY_LABEL_LENGTH}文字以内にしてください`); return; }
+        const updated = dashboardPrefs.custom_categories.map(c => c.key === key ? { ...c, label } : c);
+        save({ custom_categories: updated }, layoutMsg).then(ok => {
+          if (ok) { renderLayout(dashboardPrefs); applyTabLayout(dashboardPrefs); }
+        });
+      }
+
+      function deleteCategory(key) {
+        if (!dashboardPrefs) return;
+        const byCategory = effectiveTabsByCategory(dashboardPrefs);
+        if ((byCategory[key] || []).length) { showToast('先にこのカテゴリー内のタブを他へ移動してから削除してください'); return; }
+        if (!confirm('このカテゴリーを削除しますか？')) return;
+        const updated = (dashboardPrefs.custom_categories || []).filter(c => c.key !== key);
+        save({ custom_categories: updated }, layoutMsg).then(ok => {
+          if (ok) { renderLayout(dashboardPrefs); applyTabLayout(dashboardPrefs); }
+        });
+      }
 
       function renderRadioGroup(el, options, name, current) {
         if (!el) return;
@@ -4900,25 +5014,6 @@ export default function ProviderDashboardPage() {
         return res.ok;
       }
 
-      function moveOrder(key, dir) {
-        if (!dashboardPrefs) return;
-        const order = [...dashboardPrefs.sidebar_order];
-        const idx = order.indexOf(key);
-        const swapIdx = idx + dir;
-        if (idx < 0 || swapIdx < 0 || swapIdx >= order.length) return;
-        [order[idx], order[swapIdx]] = [order[swapIdx], order[idx]];
-        renderOrderList(order);
-        save({ sidebar_order: order }, orderMsg).then(ok => {
-          if (ok) {
-            // サイドバーの実際の並び順にもその場で反映する
-            order.forEach((k, i) => {
-              const btn = document.querySelector(`.pd-rail-btn[data-category="${k}"]`);
-              if (btn) btn.style.order = String(i);
-            });
-          }
-        });
-      }
-
       landingSel?.addEventListener('change', () => save({ landing_tab: landingSel.value }, landingMsg));
       axisEl?.addEventListener('change', (e) => {
         const input = e.target.closest('input[name="ds-axis"]');
@@ -4939,11 +5034,10 @@ export default function ProviderDashboardPage() {
         const { prefs } = await res.json();
         dashboardPrefs = prefs;
         if (landingSel) landingSel.value = prefs.landing_tab;
-        renderOrderList(prefs.sidebar_order);
         renderRadioGroup(axisEl, CALENDAR_AXIS_OPTIONS, 'ds-axis', prefs.calendar_axis);
         renderRadioGroup(viewEl, CALENDAR_DEFAULT_VIEW_OPTIONS, 'ds-view', prefs.calendar_default_view);
         renderShortcutsList(prefs.header_shortcuts || []);
-        renderTabLayout(prefs);
+        renderLayout(prefs);
       }
 
       document.querySelectorAll('[data-tab="display-settings"]').forEach(btn => btn.addEventListener('click', loadDisplaySettings, { once: false }));
@@ -10993,12 +11087,6 @@ export default function ProviderDashboardPage() {
             </div>
 
             <div>
-              <p style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px' }}>メニューの並び順</p>
-              <div id="ds-sidebar-order" className="stack" style={{ gap: '6px', maxWidth: '340px' }}>読み込み中…</div>
-              <span id="ds-sidebar-order-msg" style={{ fontSize: '12px' }}></span>
-            </div>
-
-            <div>
               <p style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px' }}>予約カレンダーの向き</p>
               <div id="ds-calendar-axis" className="stack" style={{ gap: '8px', maxWidth: '340px' }}></div>
               <span id="ds-calendar-axis-msg" style={{ fontSize: '12px' }}></span>
@@ -11011,19 +11099,21 @@ export default function ProviderDashboardPage() {
               <p className="muted" style={{ fontSize: '12px', margin: '8px 0 0' }}>「部屋・設備の空き管理」がONの店舗のみ意味を持ちます（機能設定タブ）。</p>
             </div>
 
-            {/* タブの配置カスタマイズ（でお要望2026-09-27：「クラス管理は、予約のタブ内の方が
-                しっくりくる気がした。ただ…店舗ごとの便宜の差があると思うので、タブの並びや
-                どのタブにどの項目を入れるかなどのカスタム性をもっと自由にできるといい。
-                デフォルトは今決めたやつでいいけど」）。カテゴリー内の並び替え・別カテゴリーへの
-                移動の両方に対応。上のサイドバー並び順とは別軸（あちらは8カテゴリー自体の順序）。 */}
+            {/* メニューの並び順（カテゴリー自体の順序）とタブの配置（どのタブがどのカテゴリーに
+                属し、カテゴリー内でどう並ぶか）を1つに統合（でお要望2026-09-27「統合するべき」）。
+                カテゴリー自体を任意の名前で追加できるようにもした（でお要望「『ホーム』や
+                『予約』などの大きいタブも任意の名前で追加できるようにしてほしい」）。 */}
             <div>
-              <p style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 4px' }}>タブの配置</p>
+              <p style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 4px' }}>メニューの並び順・タブの配置</p>
               <p className="muted" style={{ fontSize: '12px', margin: '0 0 10px', lineHeight: '1.6' }}>
-                各タブをどのカテゴリーに入れるか・カテゴリー内でどの順に並べるかを自由に変更できます（未設定なら今の構成のまま）。
+                カテゴリー自体の並び順・追加・名前変更・削除と、各タブをどのカテゴリーに入れるか・カテゴリー内でどの順に並べるかを、まとめて変更できます（未設定なら今の構成のまま）。
               </p>
-              <div id="ds-tab-layout" className="stack" style={{ gap: '14px' }}>読み込み中…</div>
-              <button type="button" className="btn btn-ghost" id="ds-tab-layout-reset" style={{ fontSize: '12px', padding: '8px 14px', marginTop: '10px' }}>デフォルトの配置に戻す</button>
-              <span id="ds-tab-layout-msg" style={{ fontSize: '12px', marginLeft: '8px' }}></span>
+              <div id="ds-layout" className="stack" style={{ gap: '14px' }}>読み込み中…</div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '12px' }}>
+                <input type="text" id="ds-new-category-input" placeholder="新しいカテゴリー名（例：スクール運営）" maxLength={MAX_CATEGORY_LABEL_LENGTH} style={{ flex: 1, maxWidth: '260px', padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13px' }} />
+                <button type="button" className="btn btn-ghost" id="ds-new-category-btn" style={{ fontSize: '12px', padding: '8px 14px' }}>＋ カテゴリーを追加</button>
+              </div>
+              <span id="ds-layout-msg" style={{ fontSize: '12px' }}></span>
             </div>
 
             {/* ヘッダーのショートカット（でお要望2026-09-14：「よく使うメニューを3つくらい
