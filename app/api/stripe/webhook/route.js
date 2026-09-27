@@ -5,6 +5,7 @@ import { getSupabase } from '@/lib/supabase';
 import Stripe from 'stripe';
 import { getPlanKeyByPriceId } from '@/lib/stripe-plans';
 import { sendReservationCreatedEmails } from '@/lib/email';
+import { recordPosTransaction } from '@/lib/pos-checkout';
 
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) return null;
@@ -88,6 +89,36 @@ export async function POST(request) {
         await supabaseAdmin.from('providers')
           .update({ billing_status: 'past_due' })
           .eq('id', providerId);
+        break;
+      }
+
+      // POSのオンライン決済（でお要望2026-09-27：決済機能Phase6②）。POSはFineme未登録の
+      // 来店客も対象になるため、ログイン中の本人がsuccess_urlに戻ってくる前提の確定方式が
+      // 使えない。Webhook駆動で確定し、支払いが取れて初めてrecordPosTransactionで記録する。
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        const pendingId = session.metadata?.fineme_pos_pending_id;
+        if (!pendingId || session.payment_status !== 'paid') break;
+
+        const { data: pending } = await supabaseAdmin.from('provider_pos_pending_checkouts').select('*').eq('id', pendingId).single();
+        if (!pending || pending.status !== 'pending') break; // 二重webhook配信への対策
+
+        try {
+          const result = await recordPosTransaction(supabaseAdmin, {
+            providerId: pending.provider_id,
+            items: pending.items,
+            staffId: pending.staff_id,
+            paymentMethod: 'オンライン決済',
+            memo: pending.memo,
+            source: 'pos_online',
+          });
+          await supabaseAdmin.from('provider_pos_pending_checkouts')
+            .update({ status: 'paid', transaction_id: result.transaction.id })
+            .eq('id', pendingId);
+        } catch (e) {
+          console.error('[webhook] pos online-checkout record error:', e);
+          await supabaseAdmin.from('provider_pos_pending_checkouts').update({ status: 'failed' }).eq('id', pendingId);
+        }
         break;
       }
     }

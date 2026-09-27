@@ -7595,6 +7595,8 @@ export default function ProviderDashboardPage() {
       const cartListEl = document.getElementById('pos-cart-list');
       const cartTotalEl = document.getElementById('pos-cart-total');
       const checkoutBtn = document.getElementById('pos-checkout-btn');
+      const onlineCheckoutBtn = document.getElementById('pos-online-checkout-btn');
+      const onlineCheckoutBox = document.getElementById('pos-online-checkout-box');
       const checkoutMsg = document.getElementById('pos-checkout-msg');
       const staffSel = document.getElementById('pos-staff');
       const prodListEl = document.getElementById('prod-list');
@@ -7623,6 +7625,7 @@ export default function ProviderDashboardPage() {
         const total = cart.reduce((sum, c) => sum + c.unit_price * c.qty, 0);
         if (cartTotalEl) cartTotalEl.textContent = total.toLocaleString();
         if (checkoutBtn) checkoutBtn.disabled = !cart.length;
+        if (onlineCheckoutBtn) onlineCheckoutBtn.disabled = !cart.length;
       }
 
       function renderGrid() {
@@ -7735,6 +7738,75 @@ export default function ProviderDashboardPage() {
           showToast('会計を記録しました');
           loadProducts();
           loadTransactions();
+        });
+      }
+
+      let onlineCheckoutPollId = null;
+      function stopOnlineCheckoutPoll() {
+        if (onlineCheckoutPollId) { clearTimeout(onlineCheckoutPollId); onlineCheckoutPollId = null; }
+      }
+
+      if (onlineCheckoutBtn) {
+        onlineCheckoutBtn.addEventListener('click', async () => {
+          if (!cart.length) return;
+          stopOnlineCheckoutPoll();
+          onlineCheckoutBtn.disabled = true;
+          if (checkoutMsg) checkoutMsg.textContent = '';
+          if (onlineCheckoutBox) { onlineCheckoutBox.style.display = 'block'; onlineCheckoutBox.innerHTML = '<p class="muted" style="font-size:13px;">決済リンクを発行中…</p>'; }
+          try {
+            const res = await fetch('/api/provider/pos/online-checkout', {
+              method: 'POST',
+              headers: authHeadersPos(),
+              body: JSON.stringify({
+                items: cart.map(c => ({ product_id: c.product_id, qty: c.qty })),
+                staff_id: staffSel?.value || null,
+                memo: document.getElementById('pos-payment')?.value || null,
+              }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              onlineCheckoutBtn.disabled = !cart.length;
+              if (onlineCheckoutBox) onlineCheckoutBox.innerHTML = `<p style="font-size:13px;color:#ef4444;">${esc(data?.error || 'オンライン決済リンクの発行に失敗しました')}</p>`;
+              return;
+            }
+            const QRCode = (await import('qrcode')).default || (await import('qrcode'));
+            const dataUrl = await QRCode.toDataURL(data.url, { width: 220, margin: 1, color: { dark: '#0a0f1e', light: '#ffffff' } });
+            if (onlineCheckoutBox) {
+              onlineCheckoutBox.innerHTML = `
+                <img src="${dataUrl}" alt="オンライン決済QRコード" style="width:180px;height:180px;border-radius:12px;background:#fff;padding:10px;" />
+                <p class="muted" style="font-size:12px;margin-top:8px;">お客様にこのQRを読み取っていただくか、リンクを共有してください。</p>
+                <p class="muted" style="font-size:12px;word-break:break-all;">${esc(data.url)}</p>
+                <p id="pos-online-checkout-status" style="font-size:13px;font-weight:700;margin-top:8px;">支払い待ちです…</p>
+              `;
+            }
+            const pendingId = data.pending_id;
+            const poll = async () => {
+              const r = await fetch(`/api/provider/pos/online-checkout/${pendingId}`, { headers: authHeadersPos() });
+              if (!r.ok) { onlineCheckoutPollId = setTimeout(poll, 3000); return; }
+              const p = await r.json();
+              const statusEl = document.getElementById('pos-online-checkout-status');
+              if (p.status === 'paid') {
+                if (statusEl) { statusEl.textContent = 'お支払いが完了しました'; statusEl.style.color = '#22c55e'; }
+                onlineCheckoutBtn.disabled = false;
+                cart = [];
+                renderCart();
+                showToast('オンライン決済が完了しました');
+                loadProducts();
+                loadTransactions();
+                return;
+              }
+              if (p.status === 'failed') {
+                if (statusEl) { statusEl.textContent = 'お支払いの確認でエラーが発生しました'; statusEl.style.color = '#ef4444'; }
+                onlineCheckoutBtn.disabled = !cart.length;
+                return;
+              }
+              onlineCheckoutPollId = setTimeout(poll, 3000);
+            };
+            poll();
+          } catch {
+            onlineCheckoutBtn.disabled = !cart.length;
+            if (onlineCheckoutBox) onlineCheckoutBox.innerHTML = '<p style="font-size:13px;color:#ef4444;">オンライン決済リンクの発行に失敗しました</p>';
+          }
         });
       }
 
@@ -10174,10 +10246,16 @@ export default function ProviderDashboardPage() {
                 </div>
                 <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
                   <p style={{ margin: '0 0 6px', fontSize: '20px', fontWeight: 900 }}>合計 ¥<span id="pos-cart-total">0</span></p>
-                  <button type="button" id="pos-checkout-btn" className="btn" disabled>会計を確定する</button>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <button type="button" id="pos-online-checkout-btn" className="btn btn-ghost" disabled>オンライン決済リンクを発行</button>
+                    <button type="button" id="pos-checkout-btn" className="btn" disabled>会計を確定する</button>
+                  </div>
                 </div>
               </div>
               <p id="pos-checkout-msg" className="muted" style={{ fontSize: '13px' }}></p>
+              {/* でお要望2026-09-27：決済機能Phase6②POSオンライン決済。QRを表示してお客様
+                  自身のスマホで支払ってもらい、Stripe Webhookでの確定をポーリングで待つ。 */}
+              <div id="pos-online-checkout-box" style={{ display: 'none', padding: '16px', background: '#f9fafb', borderRadius: '12px', textAlign: 'center' }}></div>
             </div>
           </div>
 
