@@ -7,6 +7,7 @@ import { getSupabase } from '@/lib/supabase';
 import { hasFeature } from '@/lib/feature-flags';
 import { getShiftScheduleForRange, isOutsideShift } from '@/lib/shift-availability';
 import { isPastBookingCutoff } from '@/lib/booking-cutoff';
+import { isClosedWeekday } from '@/lib/closed-weekday';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -22,7 +23,7 @@ export async function GET(request, { params }) {
 
   const { data: provider } = await supabase
     .from('providers')
-    .select('id, enabled_features, booking_cutoff_hours, booking_cutoff_mode, booking_cutoff_time')
+    .select('id, enabled_features, booking_cutoff_hours, booking_cutoff_mode, booking_cutoff_time, business_hours')
     .eq('slug', slug)
     .eq('published', true)
     .eq('admin_hidden', false)
@@ -70,6 +71,13 @@ export async function GET(request, { params }) {
     filtered = filtered.filter(s => !closedSet.has(s.date));
     if (!filtered.length) return Response.json([]);
   }
+
+  // 定休日（でお確認2026-09-28：「指名なしとか、トレーニングの枠って営業しない日なら
+  // 確実に入らないのかな?」）。枠自体は自動生成時に定休日を除外しているが、手動で
+  // 1件だけ追加した枠（POST /api/provider/slots）は生成ロジックを通らないため、
+  // その場合の抜け道を塞ぐ。staff_idの有無に関わらず一律に除外する。
+  filtered = filtered.filter(s => !isClosedWeekday(provider.business_hours, s.date));
+  if (!filtered.length) return Response.json([]);
 
   // スタッフの休憩・外出ブロック（でお要望2026-09-14）と重なる枠は、お客様には見せない。
   // 枠自体はauto-generate時点で除外済みのことが多いが、枠を生成した後にブロックが

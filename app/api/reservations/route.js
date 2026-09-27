@@ -8,6 +8,7 @@ import { hasFeature } from '@/lib/feature-flags';
 import { getShiftScheduleForRange, isOutsideShift } from '@/lib/shift-availability';
 import { isPastBookingCutoff, cutoffDescription } from '@/lib/booking-cutoff';
 import { createDepositCheckout } from '@/lib/reservation-deposit';
+import { isClosedWeekday } from '@/lib/closed-weekday';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -106,7 +107,7 @@ export async function POST(request) {
 
   // enabled_features（申請制ON/OFF判定用）とmax_active_reservations（同時保持できる
   // 予約数の上限、店舗ごとに変更可）・予約締切設定をまとめて取得。
-  const { data: providerFeatureRow } = await supabase.from('providers').select('enabled_features, max_active_reservations, booking_cutoff_mode, booking_cutoff_hours, booking_cutoff_time, deposit_amount, stripe_connect_id, stripe_connect_status').eq('id', provider_id).single();
+  const { data: providerFeatureRow } = await supabase.from('providers').select('enabled_features, max_active_reservations, booking_cutoff_mode, booking_cutoff_hours, booking_cutoff_time, deposit_amount, stripe_connect_id, stripe_connect_status, business_hours').eq('id', provider_id).single();
 
   // 申請制（第1〜3希望→店舗が承認）は店舗ごとにON/OFFできる（でお要望2026-09-14：
   // 「即時予約と同じように、予約リクエストも受け付けるかどうか設定できるように」）。
@@ -170,6 +171,13 @@ export async function POST(request) {
     const { data: closedRow } = await supabase.from('provider_closed_dates').select('date').eq('provider_id', provider_id).eq('date', slotRow.date).maybeSingle();
     if (closedRow) {
       return Response.json({ error: 'この日は臨時休業のため予約できません' }, { status: 409 });
+    }
+    // 定休日（でお確認2026-09-28：「指名なしとか、トレーニングの枠って営業しない日なら
+    // 確実に入らないのかな?」）。枠は自動生成時に定休日を除外しているが、手動で1件だけ
+    // 追加した枠（POST /api/provider/slots）は生成ロジックを通らないため、公開一覧
+    // （/api/providers/[slug]/availability）に加えてここでも最終確認する。
+    if (isClosedWeekday(providerFeatureRow.business_hours, slotRow.date)) {
+      return Response.json({ error: 'この日は定休日のため予約できません' }, { status: 409 });
     }
     const { data: bookedRows } = await supabase.from('reservations').select('id').eq('slot_id', slot_id).in('status', OCCUPYING_STATUSES);
     if ((bookedRows?.length || 0) >= slotRow.capacity) {

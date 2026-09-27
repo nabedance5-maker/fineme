@@ -6556,12 +6556,21 @@ export default function ProviderDashboardPage() {
       let RANGE_START_MIN = 0;
       let RANGE_END_MIN = 24 * 60;
       let businessHoursData = {}; // {mon:{open,close,closed}, ...}。前後1時間の余白帯をグレー表示するために使う
+      let closedDatesSet = new Set(); // 臨時休業日（YYYY-MM-DD）
       const WEEKDAY_KEYS_BH = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
       async function loadCalendarRange() {
-        const res = await fetch('/api/provider/business-hours', { headers: authHeadersCal() });
-        if (!res.ok) return;
-        const { business_hours } = await res.json();
-        businessHoursData = business_hours || {};
+        const [bhRes, closedRes] = await Promise.all([
+          fetch('/api/provider/business-hours', { headers: authHeadersCal() }),
+          fetch('/api/provider/closed-dates', { headers: authHeadersCal() }),
+        ]);
+        if (bhRes.ok) {
+          const { business_hours } = await bhRes.json();
+          businessHoursData = business_hours || {};
+        }
+        if (closedRes.ok) {
+          const rows = await closedRes.json();
+          closedDatesSet = new Set((rows || []).map(r => r.date));
+        }
         const opens = [], closes = [];
         Object.values(businessHoursData).forEach(h => {
           if (h && !h.closed && h.open && h.close) {
@@ -6573,6 +6582,16 @@ export default function ProviderDashboardPage() {
           RANGE_START_MIN = Math.max(0, Math.min(...opens) - 60);
           RANGE_END_MIN = Math.min(24 * 60, Math.max(...closes) + 60);
         }
+      }
+
+      // 定休日（毎週固定の曜日休み）または臨時休業日か（でお確認2026-09-28：
+      // 「指名なしとか、トレーニングの枠って営業しない日なら確実に入らないのかな?」に
+      // 対応する形で、カレンダー側も休業日をシンプルに「定休日です」と表示するようにした）。
+      function isDateClosed(dateStr) {
+        if (closedDatesSet.has(dateStr)) return true;
+        const d = new Date(`${dateStr}T00:00:00`);
+        const hours = businessHoursData[WEEKDAY_KEYS_BH[d.getDay()]];
+        return !hours || hours.closed || !hours.open || !hours.close;
       }
 
       // 表示範囲は営業時間の前後1時間の余白を含む（でお好評：「ナイスアイデア」）。
@@ -7010,6 +7029,12 @@ export default function ProviderDashboardPage() {
         const prevScrollTop = gridWrapEl.scrollTop;
         const prevScrollLeft = gridWrapEl.scrollLeft;
         gridWrapEl.className = horizontal ? 'cal-day-grid-h' : 'cal-day-grid';
+        // 定休日・臨時休業日はシンプルに「定休日です」とだけ出す（でお要望2026-09-28。
+        // hacomonoの表示にならい、既に予約が入っている日は通常のグリッドのまま見せる）。
+        if (!items.length && isDateClosed(selectedDate)) {
+          gridWrapEl.innerHTML = '<div style="padding:18px 20px;background:#eff6ff;border-radius:10px;color:#1d4ed8;font-size:13.5px;font-weight:700">定休日です。</div>';
+          return;
+        }
         const columns = currentColumns();
         if (viewMode === 'class' && columns.length === 0) {
           gridWrapEl.innerHTML = '<p class="muted" style="font-size:13px;padding:20px">まだグループレッスンがありません。「クラス管理」タブでクラスを作成してください。</p>';
