@@ -3525,23 +3525,47 @@ export default function ProviderDashboardPage() {
       const custModalManualPostureHistoryToggle = document.getElementById('cust-modal-manual-posture-history-toggle');
       const custModalManualPostureHistoryEl = document.getElementById('cust-modal-manual-posture-history');
 
-      function applyPostureGating() {
-        // window.__providerFeaturesは機能設定タブが開かれて初めて populate されるため、
-        // 未取得の間はキャッシュ済みprovider.enabled_featuresへフォールバックする。
+      // AI健診アドバイス（でお要望2026-09-27・今野くん発案）。姿勢分析と全く同じ
+      // ゲーティング方式（機能フラグ＋10000円プラン限定）を使い回す。
+      const custModalHealthSection = document.getElementById('cust-modal-health-section');
+      const custModalHealthControls = document.getElementById('cust-modal-health-controls');
+      const custModalHealthUpsell = document.getElementById('cust-modal-health-upsell');
+      const custModalHealthAddToggle = document.getElementById('cust-modal-health-add-toggle');
+      const custModalHealthAddForm = document.getElementById('cust-modal-health-add-form');
+      const custModalHealthHistoryToggle = document.getElementById('cust-modal-health-history-toggle');
+      const custModalHealthHistoryEl = document.getElementById('cust-modal-health-history');
+      const custModalManualHealthSection = document.getElementById('cust-modal-manual-health-section');
+      const custModalManualHealthControls = document.getElementById('cust-modal-manual-health-controls');
+      const custModalManualHealthUpsell = document.getElementById('cust-modal-manual-health-upsell');
+      const custModalManualHealthAddToggle = document.getElementById('cust-modal-manual-health-add-toggle');
+      const custModalManualHealthAddForm = document.getElementById('cust-modal-manual-health-add-form');
+      const custModalManualHealthHistoryToggle = document.getElementById('cust-modal-manual-health-history-toggle');
+      const custModalManualHealthHistoryEl = document.getElementById('cust-modal-manual-health-history');
+
+      // window.__providerFeaturesは機能設定タブが開かれて初めて populate されるため、
+      // 未取得の間はキャッシュ済みprovider.enabled_featuresへフォールバックする。
+      // 本番実データでは特例無料の実際のplan値は'special'（'free'というキーは実在しない。
+      // lib/posture-analysis.jsのPOSTURE_ELIGIBLE_PLANSと必ず一致させること）。
+      function applyPremiumFeatureGating(featureKey, pairs) {
         const liveFeatures = window.__providerFeatures;
-        const postureOn = liveFeatures ? !!liveFeatures.posture_analysis : !!provider?.enabled_features?.posture_analysis;
-        // 本番実データでは特例無料の実際のplan値は'special'（'free'というキーは実在しない。
-        // lib/posture-analysis.jsのPOSTURE_ELIGIBLE_PLANSと必ず一致させること）。
-        const posturePlanEligible = provider?.plan === 'C' || provider?.plan === 'special';
-        [
+        const on = liveFeatures ? !!liveFeatures[featureKey] : !!provider?.enabled_features?.[featureKey];
+        const planEligible = provider?.plan === 'C' || provider?.plan === 'special';
+        pairs.forEach(([section, controls, upsell]) => {
+          if (!section) return;
+          section.style.display = on ? '' : 'none';
+          if (controls) controls.style.display = planEligible ? '' : 'none';
+          if (upsell) upsell.style.display = planEligible ? 'none' : '';
+        });
+      }
+      function applyPostureGating() {
+        applyPremiumFeatureGating('posture_analysis', [
           [custModalPostureSection, custModalPostureControls, custModalPostureUpsell],
           [custModalManualPostureSection, custModalManualPostureControls, custModalManualPostureUpsell],
-        ].forEach(([section, controls, upsell]) => {
-          if (!section) return;
-          section.style.display = postureOn ? '' : 'none';
-          if (controls) controls.style.display = posturePlanEligible ? '' : 'none';
-          if (upsell) upsell.style.display = posturePlanEligible ? 'none' : '';
-        });
+        ]);
+        applyPremiumFeatureGating('health_advice_analysis', [
+          [custModalHealthSection, custModalHealthControls, custModalHealthUpsell],
+          [custModalManualHealthSection, custModalManualHealthControls, custModalManualHealthUpsell],
+        ]);
       }
       applyPostureGating();
       let currentCustUid = null;
@@ -3865,6 +3889,130 @@ export default function ProviderDashboardPage() {
             custModalManualPostureHistoryEl.innerHTML = renderPostureHistoryHtml(entries);
           } catch {
             custModalManualPostureHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
+          }
+        }
+      });
+
+      // ── AI健診アドバイス（でお要望2026-09-27・今野くん発案）───────────────
+      // v1は人間ドックのみ（lib/health-advice-categories.jsのHEALTH_ADVICE_CATEGORIESに
+      // 合わせてある。将来カテゴリが増えたらこのHTMLも合わせて増やす）。
+      const HEALTH_ADVICE_AXES = [
+        ['diet', '食事'], ['exercise', '運動'], ['lifestyle', '生活習慣'], ['overall', '全般'],
+      ];
+      function renderHealthHistoryHtml(entries) {
+        if (!entries.length) return '<p class="muted" style="font-size:12px;">まだ記録がありません。</p>';
+        return entries.map(e => `
+          <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6;">
+            <img src="${esc(e.photo_url)}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;background:#f3f4f6;" />
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+                <span class="muted" style="font-size:11px;">${fmtDate(e.created_at)}</span>
+                ${e.advice_axis ? `<span style="font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;background:#fef3c7;color:#92400e;">${esc((HEALTH_ADVICE_AXES.find(a => a[0] === e.advice_axis) || [,e.advice_axis])[1])}</span>` : ''}
+              </div>
+              ${(e.advice || []).length ? `<ul style="margin:0 0 4px;padding-left:16px;font-size:12.5px;color:#374151;">${e.advice.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}
+              ${e.input_text ? `<p style="margin:0 0 2px;font-size:11.5px;color:#9ca3af;">補足入力：${esc(e.input_text)}</p>` : ''}
+              ${e.note ? `<p style="margin:0;font-size:12px;color:#6b7280;">${esc(e.note)}</p>` : ''}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function buildHealthAddForm(container, endpointBase, onSaved) {
+        const axisOptions = ['<option value="">アドバイスの軸（任意）</option>'].concat(HEALTH_ADVICE_AXES.map(([id, label]) => `<option value="${id}">${label}</option>`)).join('');
+        container.innerHTML = `
+          <input type="file" accept="image/*" capture="environment" id="health-photo-input" style="display:block;margin-bottom:8px;font-size:12.5px;" />
+          <select id="health-axis-input" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:8px;">${axisOptions}</select>
+          <textarea id="health-input-text" placeholder="結果表の数値等の補足入力（任意・写真だけでは読み取りにくい場合に）" style="width:100%;min-height:50px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;box-sizing:border-box;margin-bottom:8px;"></textarea>
+          <textarea id="health-note-input" placeholder="メモ（任意）" style="width:100%;min-height:40px;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;box-sizing:border-box;margin-bottom:8px;"></textarea>
+          <button type="button" class="btn" style="font-size:12px;padding:6px 14px;" id="health-save-btn">写真を分析して記録</button>
+          <p class="muted" id="health-save-msg" style="font-size:11px;margin:6px 0 0;"></p>
+        `;
+        container.dataset.built = '1';
+        const saveBtn = container.querySelector('#health-save-btn');
+        const msgEl = container.querySelector('#health-save-msg');
+        saveBtn?.addEventListener('click', async () => {
+          const fileInput = container.querySelector('#health-photo-input');
+          const axisEl = container.querySelector('#health-axis-input');
+          const inputTextEl = container.querySelector('#health-input-text');
+          const noteEl = container.querySelector('#health-note-input');
+          const file = fileInput?.files?.[0];
+          if (!file) { showToast('写真を選択してください'); return; }
+          saveBtn.disabled = true;
+          msgEl.textContent = '圧縮中…';
+          try {
+            const compressed = await compressImage(file);
+            msgEl.textContent = 'AIが分析中…（数秒かかります）';
+            const photo_base64 = await blobToBase64(compressed);
+            const res = await fetch(endpointBase, {
+              method: 'POST', headers: authHeaders(),
+              body: JSON.stringify({ photo_base64, media_type: 'image/jpeg', category: 'medical_checkup', advice_axis: axisEl?.value || null, input_text: inputTextEl?.value || '', note: noteEl?.value || '' }),
+            });
+            if (!res.ok) { const d = await res.json().catch(() => ({})); msgEl.textContent = ''; showToast(d.error || '分析に失敗しました'); return; }
+            showToast('健診アドバイスを記録しました');
+            container.style.display = 'none';
+            container.dataset.built = '';
+            if (onSaved) onSaved();
+          } catch {
+            msgEl.textContent = '';
+            showToast('通信エラーが発生しました');
+          } finally {
+            saveBtn.disabled = false;
+          }
+        });
+      }
+
+      custModalHealthAddToggle?.addEventListener('click', () => {
+        if (!currentCustUid || !custModalHealthAddForm) return;
+        const opening = custModalHealthAddForm.style.display === 'none';
+        custModalHealthAddForm.style.display = opening ? 'block' : 'none';
+        if (opening && !custModalHealthAddForm.dataset.built) {
+          buildHealthAddForm(custModalHealthAddForm, `/api/provider/customers/${currentCustUid}/health-advice-entries`, () => {
+            if (custModalHealthHistoryEl) custModalHealthHistoryEl.dataset.built = '';
+          });
+        }
+      });
+
+      custModalHealthHistoryToggle?.addEventListener('click', async () => {
+        if (!currentCustUid || !custModalHealthHistoryEl) return;
+        const opening = custModalHealthHistoryEl.style.display === 'none';
+        custModalHealthHistoryEl.style.display = opening ? 'block' : 'none';
+        if (opening && !custModalHealthHistoryEl.dataset.built) {
+          custModalHealthHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込み中…</p>';
+          custModalHealthHistoryEl.dataset.built = '1';
+          try {
+            const res = await fetch(`/api/provider/customers/${currentCustUid}/health-advice-entries`, { headers: authHeaders() });
+            const entries = res.ok ? await res.json() : [];
+            custModalHealthHistoryEl.innerHTML = renderHealthHistoryHtml(entries);
+          } catch {
+            custModalHealthHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
+          }
+        }
+      });
+
+      custModalManualHealthAddToggle?.addEventListener('click', () => {
+        if (!currentCustUid || currentCustType !== 'manual' || !custModalManualHealthAddForm) return;
+        const opening = custModalManualHealthAddForm.style.display === 'none';
+        custModalManualHealthAddForm.style.display = opening ? 'block' : 'none';
+        if (opening && !custModalManualHealthAddForm.dataset.built) {
+          buildHealthAddForm(custModalManualHealthAddForm, `/api/provider/customers/manual/${currentCustUid}/health-advice-entries`, () => {
+            if (custModalManualHealthHistoryEl) custModalManualHealthHistoryEl.dataset.built = '';
+          });
+        }
+      });
+
+      custModalManualHealthHistoryToggle?.addEventListener('click', async () => {
+        if (!currentCustUid || currentCustType !== 'manual' || !custModalManualHealthHistoryEl) return;
+        const opening = custModalManualHealthHistoryEl.style.display === 'none';
+        custModalManualHealthHistoryEl.style.display = opening ? 'block' : 'none';
+        if (opening && !custModalManualHealthHistoryEl.dataset.built) {
+          custModalManualHealthHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込み中…</p>';
+          custModalManualHealthHistoryEl.dataset.built = '1';
+          try {
+            const res = await fetch(`/api/provider/customers/manual/${currentCustUid}/health-advice-entries`, { headers: authHeaders() });
+            const entries = res.ok ? await res.json() : [];
+            custModalManualHealthHistoryEl.innerHTML = renderHealthHistoryHtml(entries);
+          } catch {
+            custModalManualHealthHistoryEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込みに失敗しました</p>';
           }
         }
       });
@@ -9612,6 +9760,20 @@ export default function ProviderDashboardPage() {
                 </div>
                 <p id="cust-modal-posture-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>📐 AI姿勢分析はプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
               </div>
+
+              {/* AI健診アドバイス（でお要望2026-09-27・今野くん発案。health_advice_analysis機能
+                  フラグでON/OFF。姿勢分析と同じ操作感で統一する）。 */}
+              <div id="cust-modal-health-section" style={{ display: 'none', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
+                <div id="cust-modal-health-controls">
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button type="button" className="btn btn-ghost" id="cust-modal-health-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>🩺 健診アドバイスを記録</button>
+                    <button type="button" className="btn btn-ghost" id="cust-modal-health-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>健診アドバイスを見る</button>
+                  </div>
+                  <div id="cust-modal-health-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
+                  <div id="cust-modal-health-history" style={{ display: 'none', marginTop: '10px' }}></div>
+                </div>
+                <p id="cust-modal-health-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>🩺 AI健診アドバイスはプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
+              </div>
             </div>
 
             {/* 非会員（Fineme未登録）用セクション（でお要望2026-09-12：一覧を統合したため
@@ -9642,6 +9804,18 @@ export default function ProviderDashboardPage() {
                   <div id="cust-modal-manual-posture-history" style={{ display: 'none', marginTop: '10px' }}></div>
                 </div>
                 <p id="cust-modal-manual-posture-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>📐 AI姿勢分析はプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
+              </div>
+
+              <div id="cust-modal-manual-health-section" style={{ display: 'none', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
+                <div id="cust-modal-manual-health-controls">
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button type="button" className="btn btn-ghost" id="cust-modal-manual-health-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>🩺 健診アドバイスを記録</button>
+                    <button type="button" className="btn btn-ghost" id="cust-modal-manual-health-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>健診アドバイスを見る</button>
+                  </div>
+                  <div id="cust-modal-manual-health-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
+                  <div id="cust-modal-manual-health-history" style={{ display: 'none', marginTop: '10px' }}></div>
+                </div>
+                <p id="cust-modal-manual-health-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>🩺 AI健診アドバイスはプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
               </div>
             </div>
           </div>
