@@ -267,19 +267,26 @@ export default function ProviderDashboardPage() {
     window.addEventListener('unhandledrejection', onUnhandledRejection);
 
     // 初回読み込みが「画面に何も無いページ」に見えるというでお報告（2026-09-28）への対応。
-    // ページシェル自体はサーバー描画済みだが、掲載者データ・各タブの初回データ取得は
-    // クライアント側の非同期フェッチのため、それが終わるまでは目立つ待機表示が無かった。
-    // 中央にスピナーを出し、①プロフィール等の主要データ描画が終わった時点 ②window.load
-    // ③念のための最大6秒タイムアウト、のいずれか早い方で消す。
+    // 最初の実装ではプロフィール描画完了時点＋window.loadで消していたが、それらは
+    // 「予約カレンダーの枠組み（見出し・ナビ）」が描画された直後に発火してしまい、
+    // 実際にグリッドの中身（loadWeekData等の非同期フェッチ）が埋まるまでの本当に
+    // 「壊れて見える」時間帯はスピナー無しのままだった（でお報告2026-09-28：「枠組み
+    // だけ先に出てきて、実際のカレンダーが出てくるまで時差がある。その時間スピナーが
+    // ちゃんと出てほしい」）。起動時に開くタブ（landing_tab）が実際に決まった後、
+    // "そのタブ自身のデータ読み込みが完了した"タイミングでのみ消すようにする。
     let pdGlobalLoadingHidden = false;
+    let pdLandingTabKey = null; // 起動時に開くタブが確定したらセットする（'calendar'|'today'|'requests'|'customers'|'sales'|それ以外）
     function hidePdGlobalLoading() {
       if (pdGlobalLoadingHidden) return;
       pdGlobalLoadingHidden = true;
       const el = document.getElementById('pd-global-loading');
       if (el) el.style.display = 'none';
     }
-    window.addEventListener('load', hidePdGlobalLoading);
-    setTimeout(hidePdGlobalLoading, 6000);
+    // 各タブの読み込み完了処理から呼ぶ。「今まさに開いている（=起動時に開くタブとして
+    // 確定した）タブ」の完了だけを合図として使う——他タブのバックグラウンド更新
+    // （例：予約リクエストの件数バッジは常に裏で読み込まれる）で誤って消さないため。
+    window.__pdMarkTabReady = (key) => { if (pdLandingTabKey === key) hidePdGlobalLoading(); };
+    setTimeout(hidePdGlobalLoading, 6000); // 起動時タブの特定に失敗した場合等の保険
 
     // ── Auth helpers (inlined from scripts/auth.js) ──────────────
     const PROVIDER_KEY = 'fineme:provider:current';
@@ -394,14 +401,23 @@ export default function ProviderDashboardPage() {
       showToast('各タブの案内を出し直しました');
     });
 
+    // スピナーを消す合図として追跡している起動時タブの一覧（LANDING_TAB_OPTIONSと同じ5つ）。
+    // これ以外のタブへの直接リンク（?tab=billing 等）は追跡対象外——その場でスピナーを消す
+    // （そのタブ自体は元々の「読み込み中…」表示のままだが、追跡対象5タブほど頻繁な
+    // 起動時タブではないため許容する）。
+    const SPINNER_TRACKED_TABS = ['calendar', 'today', 'requests', 'customers', 'sales'];
+
     const tabParam = new URLSearchParams(location.search).get('tab');
     const DASHBOARD_VISITED_KEY = 'fineme:provider:dashboard-visited';
     let needsLandingTabApply = false;
     if (tabParam) {
       switchTab(tabParam);
+      if (SPINNER_TRACKED_TABS.includes(tabParam)) pdLandingTabKey = tabParam;
+      else hidePdGlobalLoading();
     } else if (!localStorage.getItem(DASHBOARD_VISITED_KEY)) {
-      // 初めてのダッシュボード訪問はチュートリアルタブから
+      // 初めてのダッシュボード訪問はチュートリアルタブから（重いデータ取得が無いため即消す）
       switchTab('tutorial');
+      hidePdGlobalLoading();
     } else {
       // URL指定も初回訪問でもない、通常のログイン時。店舗が「起動時に開くタブ」を
       // カスタマイズしていればそれを優先する（でお要望2026-09-13：予約カレンダーを
@@ -530,6 +546,8 @@ export default function ProviderDashboardPage() {
       // このタイミングは非同期フェッチ完了後のため、各タブのクリックリスナーは
       // 既に登録済みで安全に呼べる。
       if (needsLandingTabApply) {
+        if (SPINNER_TRACKED_TABS.includes(prefs.landing_tab)) pdLandingTabKey = prefs.landing_tab;
+        else hidePdGlobalLoading();
         document.querySelector(`[data-tab="${prefs.landing_tab}"]`)?.click();
       }
     })();
@@ -762,8 +780,10 @@ export default function ProviderDashboardPage() {
           <p style="font-size:13px;color:#6b7280">運営側より登録が完了次第、こちらに情報が表示されます。</p>
         </div>
       `;
+      // このケースは起動時タブの読み込み完了という合図が発生しえないため、ここで消す
+      // （プロフィール自体が取得できていない＝どのタブも正しく動かない状態のため）。
+      hidePdGlobalLoading();
     }
-    hidePdGlobalLoading();
 
     // 今月の統計を非同期で取得
     (async function loadDashboardStats() {
@@ -4327,8 +4347,12 @@ export default function ProviderDashboardPage() {
       if (searchInput) searchInput.addEventListener('input', render);
       if (filterSel) filterSel.addEventListener('change', render);
       if (sortSel) sortSel.addEventListener('change', render);
-      document.querySelectorAll('[data-tab="customers"]').forEach(btn => btn.addEventListener('click', () => { loadFields(); loadMenus(); loadAll(); loadManualCustomers(); }, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'customers') { loadFields(); loadMenus(); loadAll(); loadManualCustomers(); }
+      function loadCustomersTab() {
+        Promise.all([loadFields(), loadMenus(), loadAll(), loadManualCustomers()])
+          .then(() => window.__pdMarkTabReady?.('customers'));
+      }
+      document.querySelectorAll('[data-tab="customers"]').forEach(btn => btn.addEventListener('click', loadCustomersTab, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'customers') loadCustomersTab();
 
       // 一斉メール配信タブ（でお要望2026-09-16：顧客管理から独立させた）を直接開いた
       // 場合でも、送信対象を計算できるよう顧客データを読み込んでおく。
@@ -5824,6 +5848,7 @@ export default function ProviderDashboardPage() {
       const b = document.getElementById('requests-badge');
       if (b) { b.textContent = unread || ''; b.style.display = unread > 0 ? 'inline' : 'none'; }
       applyRequestFilters();
+      window.__pdMarkTabReady?.('requests');
     }
 
     function applyRequestFilters() {
@@ -6550,8 +6575,11 @@ export default function ProviderDashboardPage() {
       const dateInput = document.getElementById('sm-date');
       if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
-      document.querySelectorAll('[data-tab="sales"]').forEach(btn => btn.addEventListener('click', () => { loadSalesOptions(); loadSales(); }, { once: false }));
-      if (new URLSearchParams(location.search).get('tab') === 'sales') { loadSalesOptions(); loadSales(); }
+      function loadSalesTab() {
+        Promise.all([loadSalesOptions(), loadSales()]).then(() => window.__pdMarkTabReady?.('sales'));
+      }
+      document.querySelectorAll('[data-tab="sales"]').forEach(btn => btn.addEventListener('click', loadSalesTab, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'sales') loadSalesTab();
     })();
 
     // ── 予約カレンダータブ（2026-09-11〜12・でお要望、hacomono参考＋今野くんの実地
@@ -7764,6 +7792,7 @@ export default function ProviderDashboardPage() {
         const [weekOk] = await Promise.all([loadWeekData(), loadStaff(), loadResourcesAndFeatures(), loadCalendarRange()]);
         renderViewToggle();
         if (weekOk !== false) { renderPills(); renderDay(); }
+        window.__pdMarkTabReady?.('calendar');
       }
       document.querySelectorAll('[data-tab="calendar"]').forEach(btn => btn.addEventListener('click', initAndLoad, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'calendar') initAndLoad();
@@ -7907,10 +7936,8 @@ export default function ProviderDashboardPage() {
       }
 
       function loadToday() {
-        loadTodayReservations();
-        loadTodayRequests();
-        loadTodayCheckins();
-        loadTodaySales();
+        Promise.all([loadTodayReservations(), loadTodayRequests(), loadTodayCheckins(), loadTodaySales()])
+          .then(() => window.__pdMarkTabReady?.('today'));
       }
 
       document.querySelectorAll('[data-today-goto]').forEach(btn => btn.addEventListener('click', () => {
