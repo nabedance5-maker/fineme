@@ -56,9 +56,18 @@ const TABS = [
 ];
 // クラス管理（スクール業態）がONの店舗だけ「クラス」タブを追加する
 // （でお指摘2026-09-16：クラス管理は名簿管理のみで、お客様が予約できる導線が無かった）
+// でお要望2026-09-27：即時予約（ホットペッパー風の日付×時間の空き枠表）が使える店舗は、
+// このタブが実質「予約する」画面になるため、「相談する」という曖昧なラベルのままでは
+// お客様に予約導線だと伝わらない。即時予約ONの店舗だけラベルを差し替える。
 function tabsFor(provider) {
-  if (!hasFeature(provider, 'class_management')) return TABS;
-  return [...TABS, { id: 'class', label: 'クラス' }];
+  let tabs = TABS;
+  if (hasFeature(provider, 'instant_booking')) {
+    tabs = tabs.map(t => t.id === 'consult' ? { ...t, label: '予約する' } : t);
+  }
+  if (hasFeature(provider, 'class_management')) {
+    tabs = [...tabs, { id: 'class', label: 'クラス' }];
+  }
+  return tabs;
 }
 const PAYMENT_METHOD_LABELS = {
   cash: '現金', credit: 'クレジットカード', paypay: 'PayPay',
@@ -602,7 +611,7 @@ function GuideTab({ provider, diagnosis, matchData, stories, staff, onGoToConsul
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '10px 16px 24px', background: 'linear-gradient(to top, rgba(10,15,30,0.95) 70%, rgba(10,15,30,0))', zIndex: 50, pointerEvents: 'none' }}>
         <div style={{ maxWidth: '780px', margin: '0 auto', pointerEvents: 'all' }}>
           <button onClick={onGoToConsult} style={{ width: '100%', padding: '16px', background: '#111', color: '#fff', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 24px rgba(0,0,0,0.22)', letterSpacing: '.02em' }}>
-            このガイドに相談する →
+            {hasFeature(provider, 'instant_booking') ? '今すぐ予約する →' : 'このガイドに相談する →'}
           </button>
         </div>
       </div>
@@ -1645,7 +1654,7 @@ function ProviderPageContent() {
               </span>
             )}
             <button onClick={() => { setActiveTab('consult'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '12px 24px', background: 'rgba(232,228,220,0.9)', color: '#0a0f1e', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
-              このガイドに相談する
+              {hasFeature(provider, 'instant_booking') ? '今すぐ予約する' : 'このガイドに相談する'}
             </button>
             <button onClick={toggleFavorite} title={isFavorited ? 'お気に入りから削除' : 'お気に入りに追加'} style={{ padding: '12px 16px', background: isFavorited ? 'rgba(201,168,76,0.85)' : 'rgba(255,255,255,0.15)', color: '#fff', border: `1.5px solid ${isFavorited ? '#c9a84c' : 'rgba(255,255,255,0.4)'}`, borderRadius: '12px', fontSize: '18px', cursor: 'pointer', backdropFilter: 'blur(4px)', lineHeight: 1 }}>
               {isFavorited ? '★' : '☆'}
