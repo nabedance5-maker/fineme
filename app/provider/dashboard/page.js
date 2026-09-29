@@ -7001,28 +7001,33 @@ export default function ProviderDashboardPage() {
       // カレンダー最下部の「本日お休みのスタッフ」折りたたみ（でお要望2026-09-29：
       // 「急にシフトが変わったとか間違ってた時にカレンダーからすぐに変更ができる」ように、
       // 列を隠すだけでなくここから確認・シフト編集へすぐ飛べるようにする）。
-      function renderOffStaff(offStaff) {
+      // でお指摘2026-09-29「カレンダーのUIと同じものにしてほしい」を受け、独自デザインの
+      // 行リストではなく、実際のカレンダーと全く同じ列描画（buildGridHtml等）を
+      // そのまま流用する——見た目が完全に一致する（グレー帯の出方・列幅・ヘッダー等）。
+      function renderOffStaff(offStaffColumns, items) {
         const el = document.getElementById('cal-off-staff');
         if (!el) return;
-        if (!offStaff.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+        if (!offStaffColumns.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
         el.style.display = 'block';
+        const horizontal = dashboardPrefs?.calendar_axis === 'time-x';
+        const innerHtml = horizontal ? buildGridHtmlHorizontal(items, offStaffColumns) : buildGridHtml(items, offStaffColumns);
         el.innerHTML = `
           <details class="cal-off-staff-details">
-            <summary style="cursor:pointer;font-size:12.5px;font-weight:700;color:#6b7280;padding:8px 4px">本日お休みのスタッフ（${offStaff.length}名）</summary>
-            <div class="stack" style="gap:6px;padding:8px 4px 0">
-              ${offStaff.map(s => `
-                <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(26,20,16,0.02);border-radius:8px">
-                  <span style="font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:99px;background:rgba(26,20,16,0.05);color:#9ca3af;flex-shrink:0">${esc(s.name)}</span>
-                  <span style="flex:1;height:14px;border-radius:4px;background:repeating-linear-gradient(45deg,rgba(26,20,16,0.06),rgba(26,20,16,0.06) 4px,rgba(26,20,16,0.1) 4px,rgba(26,20,16,0.1) 8px)"></span>
-                  <button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px;flex-shrink:0" data-off-staff-edit="${s.id}">シフトを編集</button>
-                </div>
-              `).join('')}
-            </div>
+            <summary style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:12.5px;font-weight:700;color:#6b7280;padding:8px 4px">
+              <span>本日お休みのスタッフ（${offStaffColumns.length}名）</span>
+              <button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" id="cal-off-staff-edit-link">シフトを編集する</button>
+            </summary>
+            <div class="${horizontal ? 'cal-day-grid-h' : 'cal-day-grid'}" style="margin-top:8px">${innerHtml}</div>
           </details>
         `;
-        el.querySelectorAll('[data-off-staff-edit]').forEach(btn => btn.addEventListener('click', () => {
+        bindCalOpenHandlers(el);
+        bindCalEmptyHandlers(el);
+        bindGreyBandHandlers(el);
+        document.getElementById('cal-off-staff-edit-link')?.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation(); // <summary>内のボタンなので、開閉トグルへのクリック伝播を止める
           document.querySelector('.tab-btn[data-tab="shift"]')?.click();
-        }));
+        });
       }
 
       function renderPills() {
@@ -7314,20 +7319,20 @@ export default function ProviderDashboardPage() {
         // hacomonoの表示にならい、既に予約が入っている日は通常のグリッドのまま見せる）。
         if (!items.length && isDateClosed(selectedDate)) {
           gridWrapEl.innerHTML = '<div style="padding:18px 20px;background:#eff6ff;border-radius:10px;color:#1d4ed8;font-size:13.5px;font-weight:700">定休日です。</div>';
-          renderOffStaff([]);
+          renderOffStaff([], items);
           return;
         }
         // シフト未登録のスタッフは列を丸ごと隠し、代わりに下の折りたたみにまとめる
         // （でお指摘2026-09-29：「黒塗りっていうより、表示されてないと見やすい。
         // スタッフが増えると大変だと思う」）。指名なし列・部屋列はそのまま残す。
-        const offStaff = [];
+        const offStaffColumns = [];
         const columns = currentColumns().filter(col => {
           if (col.groupKey !== 'staff_id' || col.id == null) return true;
           if (!isStaffOffThisDay(col.id, selectedDate)) return true;
-          offStaff.push({ id: col.id, name: col.name });
+          offStaffColumns.push(col);
           return false;
         });
-        renderOffStaff(offStaff);
+        renderOffStaff(offStaffColumns, items);
         if (viewMode === 'class' && columns.length === 0) {
           gridWrapEl.innerHTML = '<p class="muted" style="font-size:13px;padding:20px">まだグループレッスンがありません。「クラス管理」タブでクラスを作成してください。</p>';
           return;
