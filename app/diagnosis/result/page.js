@@ -1149,7 +1149,7 @@ export default function DiagnosisResultPage() {
             <div class="result-card-title">✨ ${esc(title)}</div>
             <div class="result-card-subtitle">${esc(subtitle)}</div>
             ${top3.map((prov, i) => `
-              <a href="${landingHrefs[prov.slug] || (prov.entity_type === 'affiliate' ? '/affiliate' : '/provider') + '/' + esc(prov.slug)}" class="pmc-card${i===0&&hasMatch?' top':''}">
+              <a href="${landingHrefs[prov.slug] || (prov.entity_type === 'affiliate' ? '/affiliate/' + esc(prov.slug) : '/provider/' + esc(prov.slug) + '?tab=appeal')}" class="pmc-card${i===0&&hasMatch?' top':''}">
                 <div class="pmc-photo">${prov.photo_url ? `<img src="${esc(prov.photo_url)}" alt="${esc(prov.name)}" loading="lazy">` : '<span class="pmc-photo-icon">🧑</span>'}</div>
                 <div class="pmc-body">
                   <div class="pmc-name">${esc(prov.name)}</div>

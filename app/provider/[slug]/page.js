@@ -4,6 +4,8 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { hasFeature } from '@/lib/feature-flags';
+import { isClosedWeekday } from '@/lib/closed-weekday';
+import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
 
 const supabaseAnon = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -49,21 +51,20 @@ const FAILURE_LABELS = {
 };
 const TIME_OPTIONS = ['9:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
 
+// 公開ページの3タブ構成（でお要望2026-09-29：「基本情報」「予約」「アピール」を
+// タブとして明確に分ける）。元々「見た目を整えたい人向けのポータル」だった構想の
+// アピール要素（旧guide+program）は残しつつ、SaaS導入店舗の既存客が最短で
+// 予約・空き状況・住所にたどり着けるようにする。診断/Mirror経由の訪問者だけ
+// ?tab=appealで従来通りアピールタブに着地させる（呼び出し元は各リンク側で付与）。
 const TABS = [
-  { id: 'guide',   label: 'ガイドを知る' },
-  { id: 'program', label: 'プログラム' },
-  { id: 'consult', label: '相談する' },
+  { id: 'basic',   label: '基本情報' },
+  { id: 'consult', label: '予約' },
+  { id: 'appeal',  label: 'アピール' },
 ];
 // クラス管理（スクール業態）がONの店舗だけ「クラス」タブを追加する
 // （でお指摘2026-09-16：クラス管理は名簿管理のみで、お客様が予約できる導線が無かった）
-// でお要望2026-09-27：即時予約（ホットペッパー風の日付×時間の空き枠表）が使える店舗は、
-// このタブが実質「予約する」画面になるため、「相談する」という曖昧なラベルのままでは
-// お客様に予約導線だと伝わらない。即時予約ONの店舗だけラベルを差し替える。
 function tabsFor(provider) {
   let tabs = TABS;
-  if (hasFeature(provider, 'instant_booking')) {
-    tabs = tabs.map(t => t.id === 'consult' ? { ...t, label: '予約する' } : t);
-  }
   if (hasFeature(provider, 'class_management')) {
     tabs = [...tabs, { id: 'class', label: 'クラス' }];
   }
@@ -79,6 +80,33 @@ const PAYMENT_METHOD_LABELS = {
 };
 
 // ── ヘルパー関数 ──────────────────────────────────────────────────────────────
+
+const WEEKDAY_KEYS_BH = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+// 「この日のここは空いてる、と直感的にわかる」（でお要望2026-09-29）ための
+// 本日の営業状況テキスト。lib/closed-weekday.jsのisClosedWeekday()と同じ
+// 曜日判定基準（UTC基準の日付文字列）を使う。business_hoursが無い店舗はnull。
+function todayStatusText(provider) {
+  const hours = provider?.business_hours;
+  if (!hours) return null;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (isClosedWeekday(hours, todayStr)) return '本日は定休日';
+  const key = WEEKDAY_KEYS_BH[new Date(`${todayStr}T00:00:00Z`).getUTCDay()];
+  const today = hours[key];
+  if (!today?.open || !today?.close) return null;
+  return `本日 ${today.open}〜${today.close} 営業中`;
+}
+
+// 住所の地図検索リンク（でお要望2026-09-29：住所を公開表示し地図リンクも追加）。
+// 埋め込み地図は使わず、外部のGoogleマップ検索へのリンクのみ（実装コストを抑える）。
+function fullAddressOf(provider) {
+  return [provider?.prefecture, provider?.city, provider?.address].filter(Boolean).join('');
+}
+function mapsHrefFor(provider) {
+  const fullAddress = fullAddressOf(provider);
+  if (!fullAddress) return null;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${provider.name || ''} ${fullAddress}`)}`;
+}
 
 function calcMatch(provider, diagnosis) {
   if (!diagnosis?.transform_vectors) {
@@ -571,7 +599,11 @@ function StoriesSection({ stories, provider }) {
 }
 
 // ── タブ①「ガイドを知る」────────────────────────────────────────────────────
-function GuideTab({ provider, diagnosis, matchData, stories, staff, onGoToConsult }) {
+// アピールタブ（でお要望2026-09-29：公開ページ3タブ再編。旧「ガイドを知る」＋
+// 「プログラム」を1つに統合し、診断/Mirror経由の訪問者だけがこのタブに最初に
+// 着地する構成にした。中身（理念・スタッフ紹介・体験談・サービスカード）は
+// 従来のまま——タブの独立性だけをやめている）。
+function AppealTab({ provider, diagnosis, matchData, stories, staff, services, onConsult, userPathType, onGoToConsult }) {
   const mapSection = <NewMeMapSection diagnosis={diagnosis} matchData={matchData} />;
   return (
     <>
@@ -599,6 +631,12 @@ function GuideTab({ provider, diagnosis, matchData, stories, staff, onGoToConsul
         {/* Me Scan 済みなら最上部に、未スキャンは最下部に小さく */}
         {diagnosis && mapSection}
         <PhilosophySection provider={provider} />
+        {services && services.length > 0 && (
+          <div>
+            <p style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '.1em', color: 'rgba(232,228,220,0.4)', textTransform: 'uppercase', margin: '0 0 12px' }}>プログラム</p>
+            <ProgramTab services={services} onConsult={onConsult} userPathType={userPathType} provider={provider} matchData={matchData} />
+          </div>
+        )}
         {(provider.facility_photos || [])[1] && (
           <div style={{ margin: '-8px -16px', overflow: 'hidden' }}>
             <img src={provider.facility_photos[1]} alt="" style={{ width: '100%', display: 'block', maxHeight: '280px', objectFit: 'cover' }} loading="lazy" />
@@ -615,7 +653,7 @@ function GuideTab({ provider, diagnosis, matchData, stories, staff, onGoToConsul
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '10px 16px 24px', background: 'linear-gradient(to top, rgba(10,15,30,0.95) 70%, rgba(10,15,30,0))', zIndex: 50, pointerEvents: 'none' }}>
         <div style={{ maxWidth: '780px', margin: '0 auto', pointerEvents: 'all' }}>
           <button onClick={onGoToConsult} style={{ width: '100%', padding: '16px', background: '#111', color: '#fff', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 24px rgba(0,0,0,0.22)', letterSpacing: '.02em' }}>
-            {hasFeature(provider, 'instant_booking') ? '今すぐ予約する →' : 'このガイドに相談する →'}
+            予約する →
           </button>
         </div>
       </div>
@@ -815,7 +853,89 @@ function ProgramTab({ services, onConsult, userPathType, provider, matchData }) 
   );
 }
 
-// ── タブ③「相談する」────────────────────────────────────────────────────────
+// ── タブ「基本情報」（でお要望2026-09-29：公開ページ3タブ再編。住所・営業時間・
+//    支払い方法・オンライン対応・お試し情報等、事実情報だけをまとめる。予約タブが
+//    デフォルト表示になったため、こちらは「今日開いてるか」「どこにあるか」を
+//    確認しに来た人がすぐ見られる場所として独立させた）。 ──
+function InfoRow({ label, value }) {
+  if (!value) return null;
+  return (
+    <div style={{ display: 'flex', gap: '10px', padding: '10px 0', borderBottom: '1px solid rgba(232,228,220,0.08)' }}>
+      <span style={{ flexShrink: 0, width: '92px', fontSize: '12px', color: 'rgba(232,228,220,0.4)', fontWeight: '700' }}>{label}</span>
+      <span style={{ fontSize: '13.5px', color: 'rgba(232,228,220,0.85)', lineHeight: '1.6' }}>{value}</span>
+    </div>
+  );
+}
+function BasicInfoTab({ provider }) {
+  const fullAddress = fullAddressOf(provider);
+  const mapsHref = mapsHrefFor(provider);
+  const status = todayStatusText(provider);
+  const todayKey = WEEKDAY_KEYS_BH[new Date().getDay()];
+  const paymentText = provider.payment_methods?.length
+    ? provider.payment_methods.map(m => PAYMENT_METHOD_LABELS[m] || m).join('、')
+    : null;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '60px' }}>
+      {status && (
+        <div style={{
+          padding: '12px 16px', borderRadius: '12px', fontSize: '13.5px', fontWeight: '700',
+          background: status === '本日は定休日' ? 'rgba(107,114,128,0.15)' : 'rgba(5,150,105,0.15)',
+          color: status === '本日は定休日' ? 'rgba(232,228,220,0.6)' : '#10b981',
+          border: `1px solid ${status === '本日は定休日' ? 'rgba(232,228,220,0.15)' : 'rgba(5,150,105,0.3)'}`,
+        }}>
+          {status}
+        </div>
+      )}
+
+      <div style={{ background: 'rgba(10,15,30,0.50)', border: '1px solid rgba(232,228,220,0.10)', borderRadius: '16px', padding: '18px 20px' }}>
+        <p style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '.08em', color: 'rgba(201,168,76,0.7)', textTransform: 'uppercase', margin: '0 0 4px' }}>所在地・アクセス</p>
+        <InfoRow label="住所" value={fullAddress || null} />
+        <InfoRow label="最寄り駅" value={provider.nearest_station || null} />
+        {mapsHref && (
+          <a href={mapsHref} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '10px', fontSize: '13px', fontWeight: '700', color: '#c9a84c', textDecoration: 'none' }}>
+            地図で見る →
+          </a>
+        )}
+      </div>
+
+      {provider.business_hours && (
+        <div style={{ background: 'rgba(10,15,30,0.50)', border: '1px solid rgba(232,228,220,0.10)', borderRadius: '16px', padding: '18px 20px' }}>
+          <p style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '.08em', color: 'rgba(201,168,76,0.7)', textTransform: 'uppercase', margin: '0 0 4px' }}>営業時間</p>
+          {WEEKDAY_KEYS_BH.map(key => {
+            const h = provider.business_hours[key];
+            const isToday = key === todayKey;
+            const text = (!h || h.closed || !h.open || !h.close) ? '定休日' : `${h.open}〜${h.close}`;
+            return (
+              <div key={key} style={{ display: 'flex', gap: '10px', padding: '6px 0', fontWeight: isToday ? '800' : '500' }}>
+                <span style={{ flexShrink: 0, width: '28px', fontSize: '13px', color: isToday ? '#c9a84c' : 'rgba(232,228,220,0.5)' }}>{WEEKDAY_LABEL_BH[key]}</span>
+                <span style={{ fontSize: '13px', color: isToday ? '#e8e4dc' : 'rgba(232,228,220,0.65)' }}>{text}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div style={{ background: 'rgba(10,15,30,0.50)', border: '1px solid rgba(232,228,220,0.10)', borderRadius: '16px', padding: '18px 20px' }}>
+        <p style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '.08em', color: 'rgba(201,168,76,0.7)', textTransform: 'uppercase', margin: '0 0 4px' }}>料金・お支払い</p>
+        <InfoRow label="料金" value={provider.price_from ? `¥${provider.price_from.toLocaleString()}〜` : null} />
+        <InfoRow label="お支払い" value={paymentText} />
+        <InfoRow label="オンライン対応" value={provider.online_available ? 'あり' : null} />
+      </div>
+
+      {(provider.trial_available || provider.response_hours || provider.cancellation_policy || provider.first_session_desc) && (
+        <div style={{ background: 'rgba(10,15,30,0.50)', border: '1px solid rgba(232,228,220,0.10)', borderRadius: '16px', padding: '18px 20px' }}>
+          <p style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '.08em', color: 'rgba(201,168,76,0.7)', textTransform: 'uppercase', margin: '0 0 4px' }}>予約前に知っておきたいこと</p>
+          <InfoRow label="お試し" value={provider.trial_available ? (provider.trial_desc || 'あり') : null} />
+          <InfoRow label="返信目安" value={provider.response_hours ? `${provider.response_hours}時間以内` : null} />
+          <InfoRow label="初回について" value={provider.first_session_desc || null} />
+          <InfoRow label="キャンセル" value={provider.cancellation_policy || null} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── クラスタブ：スクール業態向け、クラスの開催回に直接予約する（でお指摘2026-09-16） ──
 const WEEKDAY_JA_CLASS = ['日', '月', '火', '水', '木', '金', '土'];
 function ClassTab({ provider }) {
@@ -1650,7 +1770,10 @@ function ProviderPageContent() {
   const [loading, setLoading] = useState(true);
   const [diagnosis, setDiagnosis] = useState(null);
   const [matchData, setMatchData] = useState(null);
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'guide');
+  // でお要望2026-09-29：直接訪問・ブックマーク・QR等（?tab=指定なし）は「予約」タブを
+  // 既定にする（元々通っている店舗の客が最短で予約できるように）。診断/Mirror経由の
+  // リンクだけ?tab=appealを付けて従来通りアピールタブに着地させる。
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'consult');
   const [selectedService, setSelectedService] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [stories, setStories] = useState([]);
@@ -1816,6 +1939,15 @@ function ProviderPageContent() {
             <div style={{ flex: 1 }}>
               <h1 style={{ fontSize: 'clamp(22px,4vw,30px)', fontWeight: '800', margin: '0 0 6px', lineHeight: '1.3', color: '#fff' }}>{provider.name}</h1>
               {provider.catchphrase && <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.88)', margin: '0', lineHeight: '1.6', fontWeight: '600' }}>{provider.catchphrase}</p>}
+              {/* 「お店で、どこにあって、予約できるのはここ、この日のここは空いてる、と
+                  直感的にわかることが重要」（でお要望2026-09-29）への対応：名前・
+                  キャッチコピー直下に場所と本日の営業状況を一行で出す。 */}
+              {(provider.nearest_station || todayStatusText(provider)) && (
+                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.7)', margin: '8px 0 0', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  {provider.nearest_station && <span>{provider.nearest_station}</span>}
+                  {todayStatusText(provider) && <span>{todayStatusText(provider)}</span>}
+                </p>
+              )}
             </div>
           </div>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginTop: '16px' }}>
@@ -1825,13 +1957,13 @@ function ProviderPageContent() {
               </span>
             )}
             <button onClick={() => { setActiveTab('consult'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '12px 24px', background: 'rgba(232,228,220,0.9)', color: '#0a0f1e', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
-              {hasFeature(provider, 'instant_booking') ? '今すぐ予約する' : 'このガイドに相談する'}
+              予約する
             </button>
             <button onClick={toggleFavorite} title={isFavorited ? 'お気に入りから削除' : 'お気に入りに追加'} style={{ padding: '12px 16px', background: isFavorited ? 'rgba(201,168,76,0.85)' : 'rgba(255,255,255,0.15)', color: '#fff', border: `1.5px solid ${isFavorited ? '#c9a84c' : 'rgba(255,255,255,0.4)'}`, borderRadius: '12px', fontSize: '18px', cursor: 'pointer', backdropFilter: 'blur(4px)', lineHeight: 1 }}>
               {isFavorited ? '★' : '☆'}
             </button>
             {services && services.length > 0 && (
-              <button onClick={() => setActiveTab('program')} style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.4)', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
+              <button onClick={() => setActiveTab('appeal')} style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.4)', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
                 プログラムを見る
               </button>
             )}
@@ -1847,18 +1979,19 @@ function ProviderPageContent() {
       <TabBar activeTab={activeTab} tabs={tabsFor(provider)} onSelect={tab => { setActiveTab(tab); if (tab !== 'consult') setSelectedService(null); }} />
 
       {/* タブコンテンツ */}
-      {activeTab === 'guide' && (
-        <GuideTab
+      {activeTab === 'basic' && <BasicInfoTab provider={provider} />}
+      {activeTab === 'appeal' && (
+        <AppealTab
           provider={provider}
           diagnosis={diagnosis}
           matchData={matchData}
           stories={stories}
           staff={staff}
+          services={services}
+          onConsult={handleConsultFromProgram}
+          userPathType={matchData?.detail?.coveredAxes?.[0]?.path_type || null}
           onGoToConsult={() => { setActiveTab('consult'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
         />
-      )}
-      {activeTab === 'program' && (
-        <ProgramTab services={services} onConsult={handleConsultFromProgram} userPathType={matchData?.detail?.coveredAxes?.[0]?.path_type || null} provider={provider} matchData={matchData} />
       )}
       {activeTab === 'consult' && (
         <ConsultTab

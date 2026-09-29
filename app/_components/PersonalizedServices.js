@@ -84,7 +84,7 @@ export function PersonalizedServices({ providers, firstCat }) {
         {sorted.map(p => (
           <Link
             key={p.id}
-            href={p.entity_type === 'affiliate' ? `/affiliate/${p.slug}` : `/provider/${p.slug}`}
+            href={p.entity_type === 'affiliate' ? `/affiliate/${p.slug}` : `/provider/${p.slug}${personalized ? '?tab=appeal' : ''}`}
             style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 'clamp(200px, 42vw, 240px)', scrollSnapAlign: 'start' }}
           >
             <div style={{ border: '1px solid rgba(201,168,76,0.2)', borderRadius: '14px', overflow: 'hidden', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(4px)', transition: 'border-color 0.2s' }}>

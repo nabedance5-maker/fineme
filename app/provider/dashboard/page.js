@@ -7,6 +7,7 @@ import { JAPAN_CITIES, PREFECTURES } from '@/app/_data/japan-cities';
 import { ALL_AXES } from '@/lib/log-axes';
 import { CUSTOMER_SCRIPT_AXES } from '@/lib/customer-scripts';
 import { LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS, TAB_CATALOG, categoryOfTab, allCategoryDefs, generateCategoryKey, MAX_CUSTOM_CATEGORIES, MAX_CATEGORY_LABEL_LENGTH } from '@/lib/dashboard-prefs';
+import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -3031,7 +3032,6 @@ export default function ProviderDashboardPage() {
       // 同じものが必要」。空き枠タブ（即時予約の枠生成と一体）に加えて、店舗設定タブにも
       // 同じ営業時間エディタを置きたいため、ids差し替えで複数箇所に同じUIを組み立てられる
       // ファクトリ関数にしておく。
-      const WEEKDAY_LABEL_BH = { mon: '月', tue: '火', wed: '水', thu: '木', fri: '金', sat: '土', sun: '日' };
       function setupBusinessHoursEditor(ids) {
         function applyBulk() {
           const el = document.getElementById(ids.editor);

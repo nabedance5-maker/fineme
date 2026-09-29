@@ -62,7 +62,7 @@ export default function MirrorMatchPage() {
         {results.map(r => (
           <a
             key={r.providerId}
-            href={r.bestAxis ? `/provider/${r.slug}/for/${r.bestAxis}${Number.isFinite(r.axisScore) ? `?score=${Math.round(r.axisScore)}` : ''}` : `/provider/${r.slug}`}
+            href={r.bestAxis ? `/provider/${r.slug}/for/${r.bestAxis}${Number.isFinite(r.axisScore) ? `?score=${Math.round(r.axisScore)}` : ''}` : `/provider/${r.slug}?tab=appeal`}
             className="card"
             style={{ display: 'flex', gap: 14, padding: 16, textDecoration: 'none', color: 'inherit', alignItems: 'center' }}
             onClick={() => { if (typeof window.gtag === 'function') window.gtag('event', 'mirror_match_click', { provider_slug: r.slug, match_score: r.matchScore }); }}

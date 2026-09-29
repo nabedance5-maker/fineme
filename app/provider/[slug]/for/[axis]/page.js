@@ -161,7 +161,7 @@ export default function ProviderLandingPage({ params }) {
       <main className="section">
         <div className="container stack">
           <p>ページが見つかりませんでした。</p>
-          <p><a href={`/provider/${slug}`}>店舗ページへ戻る</a></p>
+          <p><a href={`/provider/${slug}?tab=appeal`}>店舗ページへ戻る</a></p>
         </div>
       </main>
     );
@@ -469,7 +469,7 @@ export default function ProviderLandingPage({ params }) {
               <a className="btn btn--primary lp-cta-pulse" href={consultHref} {...consultLinkProps} onClick={() => trackCta('final_consult')} style={{ fontSize: 15, padding: '13px 28px' }}>
                 {ctaLabel}
               </a>
-              <a href={`/provider/${slug}`} onClick={() => trackCta('view_profile')} style={{ fontSize: 12, color: 'var(--color-muted)' }}>
+              <a href={`/provider/${slug}?tab=appeal`} onClick={() => trackCta('view_profile')} style={{ fontSize: 12, color: 'var(--color-muted)' }}>
                 店舗の詳細プロフィールを見る
               </a>
             </section>
