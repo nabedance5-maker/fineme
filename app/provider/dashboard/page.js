@@ -253,14 +253,21 @@ export default function ProviderDashboardPage() {
     initialized.current = true;
 
     // モバイル回線の瞬断・タブがバックグラウンドに回った時等にfetch()が中断されると、
-    // Safariは汎用的な「Load failed」というTypeErrorを返す。この画面には多数のfetch呼び
-    // 出しがあり、その中断は実害の無い一時的なものでも未処理のPromise rejectionとして
-    // そのままSentryに「エラー」として飛んでしまっていた（でお報告2026-09-15：Sentry
-    // 通知でTypeError「読み込みに失敗しました」/provider/dashboard）。ネットワーク由来と
-    // 判別できるメッセージだけを黙らせ、それ以外の本当の不具合は引き続き報告させる。
+    // Safari/WebKit系ブラウザは汎用的な「Load failed」というTypeErrorを返す。この画面
+    // には多数のfetch呼び出しがあり、その中断は実害の無い一時的なものでも未処理の
+    // Promise rejectionとしてそのままSentryに「エラー」として飛んでしまっていた
+    // （でお報告2026-09-15：Sentry通知でTypeError「読み込みに失敗しました」/provider/dashboard）。
+    // ネットワーク由来と判別できるメッセージだけを黙らせ、それ以外の本当の不具合は
+    // 引き続き報告させる。
+    //
+    // でお報告2026-09-29：同じ種類のSentry通知が再発（iPhone・iOS 26.6.1・Chrome）。
+    // 原因はメッセージが英語「Load failed」ではなく、端末が日本語ロケールだと
+    // WebKit（SafariもChrome for iOSも中身はWebKit）がエラーメッセージ自体を
+    // 「ロードに失敗しました」と日本語化して返していたこと——正規表現が英語文言
+    // しか見ておらず素通りしていた。日本語パターンも追加する。
     const onUnhandledRejection = (e) => {
       const msg = String(e?.reason?.message || e?.reason || '');
-      if (/load failed|failed to fetch|networkerror|the network connection was lost/i.test(msg)) {
+      if (/load failed|failed to fetch|networkerror|the network connection was lost|ロードに失敗|読み込みに失敗|ネットワーク接続が失われ/i.test(msg)) {
         e.preventDefault();
       }
     };
