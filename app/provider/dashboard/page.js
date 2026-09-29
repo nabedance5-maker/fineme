@@ -706,6 +706,14 @@ export default function ProviderDashboardPage() {
         document.getElementById('view-page-btn').href = `/provider/${slug}`;
         const lpPreviewBtn = document.getElementById('lp-preview-btn');
         if (lpPreviewBtn) lpPreviewBtn.href = `/provider/${slug}/for/eyebrow`;
+        // でお要望2026-09-29：プロフィール・アピール設定タブの上部からも公開ページを
+        // すぐ確認できるように（編集内容がどう見えるかその場で確認したい場面が多いため）。
+        const profileViewBtn = document.getElementById('profile-view-page-btn');
+        if (profileViewBtn) profileViewBtn.href = `/provider/${slug}?tab=basic`;
+        const appealViewBtn = document.getElementById('appeal-view-page-btn');
+        if (appealViewBtn) appealViewBtn.href = `/provider/${slug}?tab=appeal`;
+        const publishViewBtn = document.getElementById('publish-view-page-btn');
+        if (publishViewBtn) publishViewBtn.href = `/provider/${slug}`;
       }
       document.getElementById('billing-plan').textContent = PLAN_LABELS[provider.plan || 'A'] || 'プランA';
       if (provider.plan === 'free') {
@@ -9351,6 +9359,10 @@ export default function ProviderDashboardPage() {
 
         {/* タブ③：プロフィール */}
         <div className="tab-pane" id="tab-profile">
+          {/* でお要望2026-09-29：編集画面から公開ページ（お客様が見る画面）をすぐ確認できるように */}
+          <div style={{ marginBottom: '16px' }}>
+            <a id="profile-view-page-btn" href="#" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '12px' }}>公開ページを確認 ↗</a>
+          </div>
           {/* ページ完成度スコア */}
           <div className="card" style={{ padding: '18px 22px', marginBottom: '16px' }}>
             <div id="page-score-bar">
@@ -9466,6 +9478,9 @@ export default function ProviderDashboardPage() {
             個別メニューのBefore/After等はメニュー単位の情報のため、サービス設定タブの
             メニュー編集フォームに残したまま移動していない）。 */}
         <div className="tab-pane" id="tab-appeal-settings">
+          <div style={{ marginBottom: '16px' }}>
+            <a id="appeal-view-page-btn" href="#" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '12px' }}>公開ページを確認 ↗</a>
+          </div>
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
             <div>
               <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>アピール設定</h2>
@@ -11417,6 +11432,9 @@ export default function ProviderDashboardPage() {
 
         {/* タブ⑥：公開設定 */}
         <div className="tab-pane" id="tab-publish">
+          <div style={{ marginBottom: '16px' }}>
+            <a id="publish-view-page-btn" href="#" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '12px' }}>公開ページを確認 ↗</a>
+          </div>
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
             <h2 style={{ margin: '0', fontSize: '16px' }}>公開設定</h2>
             <div className="publish-toggle">
