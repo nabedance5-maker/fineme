@@ -718,8 +718,7 @@ export default function ProviderDashboardPage() {
       document.getElementById('referral-code').textContent = fnCode || slug || '—';
       document.getElementById('publish-toggle-input').checked = !!provider.published;
       document.getElementById('publish-label').textContent = provider.published ? '公開中' : '非公開';
-      ['name', 'catchphrase', 'target_desc', 'philosophy', 'guide_message', 'photo_url',
-       'unique_strengths', 'nearest_station', 'prefecture', 'address',
+      ['name', 'photo_url', 'nearest_station', 'prefecture', 'address',
        'price_from',
       ].forEach(k => {
         const el = document.getElementById('profile-form').elements[k];
@@ -732,9 +731,14 @@ export default function ProviderDashboardPage() {
         populateCitySelect(cityEl, provider.prefecture);
         cityEl.value = provider.city || '';
       }
-      // service-form内のAIフィールド読み込み
+      // アピール設定タブのフィールド読み込み（でお要望2026-09-29：profile-form/
+      // service-formから分離した文言フィールド）
+      ['catchphrase', 'target_desc', 'philosophy', 'guide_message', 'unique_strengths'].forEach(k => {
+        const el = document.getElementById('appeal-profile-form')?.elements[k];
+        if (el) el.value = provider[k] || '';
+      });
       ['ideal_client_desc', 'client_before_state', 'transformation_pattern', 'best_fit_desc'].forEach(k => {
-        const el = document.getElementById('service-form')?.elements[k];
+        const el = document.getElementById('appeal-matching-form')?.elements[k];
         if (el) el.value = provider[k] || '';
       });
       // AI分析ステータス表示 & ボタン制御
@@ -1055,10 +1059,26 @@ export default function ProviderDashboardPage() {
       e.preventDefault();
       const fd = new FormData(e.target);
       const data = Object.fromEntries(fd);
-      data.suitable_triggers = [...e.target.querySelectorAll('[name=suitable_triggers]:checked')].map(el => el.value);
-      data.handles_failure_patterns = [...e.target.querySelectorAll('[name=handles_failure_patterns]:checked')].map(el => el.value);
       data.trial_available = !!e.target.querySelector('[name=trial_available]')?.checked;
       data.response_hours = data.response_hours ? Number(data.response_hours) : null;
+      saveToLocal(data);
+    });
+
+    // アピール設定タブ（でお要望2026-09-29：公開ページ3タブ再編に合わせ、キャッチコピー・
+    // 理念・AIマッチング用の物語的説明など「アピール」文言だけをまとめた新タブ）。
+    // PATCH /api/provider/profile は部分更新のため、フォームを分けても保存は独立して安全。
+    document.getElementById('appeal-profile-form')?.addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const data = Object.fromEntries(fd);
+      saveToLocal(data);
+    });
+    document.getElementById('appeal-matching-form')?.addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const data = Object.fromEntries(fd);
+      data.suitable_triggers = [...e.target.querySelectorAll('[name=suitable_triggers]:checked')].map(el => el.value);
+      data.handles_failure_patterns = [...e.target.querySelectorAll('[name=handles_failure_patterns]:checked')].map(el => el.value);
       saveToLocal(data);
     });
 
@@ -8879,6 +8899,7 @@ export default function ProviderDashboardPage() {
                 </div>
                 <div className="pd-panel-section" data-panel="store" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="profile">プロフィール</button>
+                  <button className="tab-btn" data-tab="appeal-settings">アピール設定</button>
                   <button className="tab-btn" data-tab="business-hours">営業時間</button>
                   <button className="tab-btn" data-tab="service">サービス設定</button>
                   <button className="tab-btn" data-tab="staff">スタッフ</button>
@@ -9338,27 +9359,9 @@ export default function ProviderDashboardPage() {
           </div>
           <div className="card" style={{ padding: '24px' }}>
             <h2 style={{ margin: '0 0 16px', fontSize: '16px' }}>基本情報</h2>
+            <p className="muted" style={{ fontSize: '12.5px', margin: '0 0 16px' }}>キャッチコピーや理念などのアピール文言は「アピール設定」タブへ移動しました。ここは住所・営業時間・料金など事実情報のみです。</p>
             <form id="profile-form">
               <div className="form-field"><label>掲載名 *</label><input name="name" required /></div>
-              <div className="form-field">
-                <label>キャッチコピー（ページ冒頭に大きく表示されます）</label>
-                <input name="catchphrase" placeholder="例: マッチングアプリで勝てる顔をつくる、3ヶ月の変容プログラム" />
-                <small className="muted">短く・強く・誰に向けているかが一目でわかる一文が効果的です</small>
-              </div>
-              <div className="form-field">
-                <label>こんな方に向いています（1行ずつ書くと番号リストで表示されます）</label>
-                <textarea name="target_desc" placeholder={"マッチングアプリの写真を改善したい\n何度も挫折したが今度こそ変わりたい\n自分が何をすべきかわからない"} style={{ minHeight: '100px' }}></textarea>
-                <small className="muted">改行で区切ると①②③のカードとして掲載者ページに表示されます</small>
-              </div>
-              <div className="form-field">
-                <label>このサービスが大切にしていること（引用文として大きく表示されます）</label>
-                <textarea name="philosophy" placeholder="あなたのサービスの考え方・信念・強みを自分の言葉で。ページ上では黒背景の引用文スタイルで表示されます。"></textarea>
-              </div>
-              <div className="form-field" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '12px', padding: '16px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span>変容の旅を始めようとしている方への言葉</span></label>
-                <textarea name="guide_message" placeholder="ここから変わろうとしているあなたへ、ガイドとして一言あれば。&#10;例: 「外見を変えることは、自分の優先順位を自分で決めること」だと思っています。まず話を聞かせてください。" style={{ minHeight: '90px' }}></textarea>
-                <small className="muted">掲載者ページの最上部に「ガイドからのひと言」として表示されます。サービス説明ではなく、人としてのあなたが伝わる言葉を。</small>
-              </div>
               <div className="form-field">
                 <label>プロフィール写真（ヒーロー内に円形アバターとして表示）</label>
                 <div id="photo-preview-wrap" style={{ marginBottom: '8px', display: 'none' }}>
@@ -9386,7 +9389,7 @@ export default function ProviderDashboardPage() {
               {/* ── 所在地 ── */}
               <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(26,20,16,0.12)' }}>所在地・アクセス</h3>
               <small className="muted" style={{ display: 'block', marginBottom: '14px', fontSize: '12px', lineHeight: '1.6' }}>
-                入力した住所はAIマッチングの距離計算に使用されます。番地まで入力するほど精度が上がります。ユーザーには最寄り駅のみ表示されます。
+                入力した住所は公開ページの「基本情報」タブに表示され、地図リンクも自動生成されます。AIマッチングの距離計算にも使われるため、番地まで入力するほど精度が上がります。
               </small>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div className="form-field">
@@ -9408,7 +9411,7 @@ export default function ProviderDashboardPage() {
               <div className="form-field">
                 <label>番地以下（住所詳細）</label>
                 <input name="address" placeholder="例: 渋谷区渋谷1-2-3 ○○ビル401号室" />
-                <small className="muted">公開ページには表示されません。距離マッチング精度向上のみに使用します。</small>
+                <small className="muted">都道府県・市区町村とあわせて公開ページに表示され、地図リンクが自動生成されます。</small>
               </div>
               <div className="form-field">
                 <label>最寄り駅・アクセス（公開される情報）</label>
@@ -9439,11 +9442,6 @@ export default function ProviderDashboardPage() {
                 </div>
               </div>
 
-              <div className="form-field">
-                <label>他サービスとの違い・このガイドだけの強み（最上部にゴールドで表示）</label>
-                <textarea name="unique_strengths" placeholder={"例: マッチングアプリの写真撮影と外見コーチングをセットで提供できる唯一のサービスです。\n撮影から約1週間でプロフィール改善の結果を実感できます。"}></textarea>
-                <small className="muted">同カテゴリで比較されたとき最初に目に入る場所です。「なぜここを選ぶか」を一言で書いてください。</small>
-              </div>
               {[1, 2, 3].map(slot => (
                 <div key={slot} className="form-field">
                   <label>施設・スタジオ写真 {['①','②','③'][slot-1]}</label>
@@ -9457,6 +9455,109 @@ export default function ProviderDashboardPage() {
                 </div>
               ))}
 
+              <button type="submit" className="btn" style={{ marginTop: '8px' }}>保存する</button>
+            </form>
+          </div>
+        </div>
+
+        {/* アピール設定タブ（でお要望2026-09-29：公開ページ3タブ再編に合わせ、
+            プロフィールタブ・サービス設定タブに混在していたキャッチコピー・理念・
+            AIマッチング用の物語的説明など「アピール」文言だけをここに集約した。
+            個別メニューのBefore/After等はメニュー単位の情報のため、サービス設定タブの
+            メニュー編集フォームに残したまま移動していない）。 */}
+        <div className="tab-pane" id="tab-appeal-settings">
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>アピール設定</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+                公開ページの「アピール」タブに表示される文言です。住所・営業時間・料金などの事実情報は「プロフィール」タブで設定してください。
+              </p>
+            </div>
+            <form id="appeal-profile-form">
+              <div className="form-field">
+                <label>キャッチコピー（ページ冒頭に大きく表示されます）</label>
+                <input name="catchphrase" placeholder="例: マッチングアプリで勝てる顔をつくる、3ヶ月の変容プログラム" />
+                <small className="muted">短く・強く・誰に向けているかが一目でわかる一文が効果的です</small>
+              </div>
+              <div className="form-field">
+                <label>こんな方に向いています（1行ずつ書くと番号リストで表示されます）</label>
+                <textarea name="target_desc" placeholder={"マッチングアプリの写真を改善したい\n何度も挫折したが今度こそ変わりたい\n自分が何をすべきかわからない"} style={{ minHeight: '100px' }}></textarea>
+                <small className="muted">改行で区切ると①②③のカードとして掲載者ページに表示されます</small>
+              </div>
+              <div className="form-field">
+                <label>このサービスが大切にしていること（引用文として大きく表示されます）</label>
+                <textarea name="philosophy" placeholder="あなたのサービスの考え方・信念・強みを自分の言葉で。ページ上では黒背景の引用文スタイルで表示されます。"></textarea>
+              </div>
+              <div className="form-field" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '12px', padding: '16px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span>変容の旅を始めようとしている方への言葉</span></label>
+                <textarea name="guide_message" placeholder="ここから変わろうとしているあなたへ、ガイドとして一言あれば。&#10;例: 「外見を変えることは、自分の優先順位を自分で決めること」だと思っています。まず話を聞かせてください。" style={{ minHeight: '90px' }}></textarea>
+                <small className="muted">掲載者ページの最上部に「ガイドからのひと言」として表示されます。サービス説明ではなく、人としてのあなたが伝わる言葉を。</small>
+              </div>
+              <div className="form-field">
+                <label>他サービスとの違い・このガイドだけの強み（最上部にゴールドで表示）</label>
+                <textarea name="unique_strengths" placeholder={"例: マッチングアプリの写真撮影と外見コーチングをセットで提供できる唯一のサービスです。\n撮影から約1週間でプロフィール改善の結果を実感できます。"}></textarea>
+                <small className="muted">同カテゴリで比較されたとき最初に目に入る場所です。「なぜここを選ぶか」を一言で書いてください。</small>
+              </div>
+              <button type="submit" className="btn" style={{ marginTop: '8px' }}>保存する</button>
+            </form>
+          </div>
+
+          <div className="card" style={{ padding: '24px', marginTop: '16px' }}>
+            <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>AIマッチングプロフィール</h2>
+            <p className="muted" style={{ fontSize: '13px', margin: '0 0 12px', lineHeight: '1.6' }}>
+              ここに書いた内容をAIが読み取り、あなたのサービスにどんなユーザーが合うかを自動判定します。チェックボックスより精度の高いマッチングが実現します。書くほど効果的です。
+            </p>
+            <form id="appeal-matching-form">
+              <div className="form-field">
+                <label>よく来るお客様の状況・背景</label>
+                <textarea name="ideal_client_desc" rows={3} placeholder="例: マッチングアプリを始めたばかりで、写真の撮り方もわからない30代のサラリーマンが多い。自信がなく、何から始めればいいかわからない方が多い。" />
+              </div>
+              <div className="form-field">
+                <label>来る前の典型的な状態</label>
+                <textarea name="client_before_state" rows={3} placeholder="例: 外見に無頓着で、ジムや美容院に何年も行っていない。服は量販店で適当に買っていて、自分に似合うものがわからない。" />
+              </div>
+              <div className="form-field">
+                <label>よく起きる変化のパターン</label>
+                <textarea name="transformation_pattern" rows={3} placeholder="例: 3回通うと姿勢と歩き方が変わり、周囲から「変わった？」と言われ始める。6ヶ月で体重10kg減・マッチング率が上がったという声が多い。" />
+              </div>
+              <div className="form-field">
+                <label>特に向いている人・状況</label>
+                <textarea name="best_fit_desc" rows={3} placeholder="例: 「何かを変えなければ」と焦りを感じている人。過去に挫折したが今回こそはと思っている人。一人ではモチベーションが続かない人に特に向いている。" />
+              </div>
+
+              {/* AI分析ボタン */}
+              <div style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#a5b4fc', marginBottom: '6px' }}>AIプロフィール分析</div>
+                <p style={{ fontSize: '12px', color: 'rgba(26,20,16,0.75)', margin: '0 0 12px', lineHeight: '1.6' }}>
+                  上の4つのフィールドを保存した後、「AIで分析する」をクリックするとClaudeがプロフィール全体を読み取り、マッチング精度を向上させます。
+                </p>
+                <div id="ai-match-status" style={{ fontSize: '12px', color: 'rgba(26,20,16,0.6)', marginBottom: '10px' }}></div>
+                <button type="button" id="ai-analyze-btn" className="btn" style={{ background: '#4f46e5', color: '#fff', fontSize: '13px', padding: '8px 18px' }}>
+                  AIで分析する
+                </button>
+              </div>
+
+              <div className="form-field">
+                <label>得意なきっかけ（複数選択可）</label>
+                <div className="checkbox-group">
+                  <label className="checkbox-item"><input type="checkbox" name="suitable_triggers" value="matching_app" />マッチングアプリ</label>
+                  <label className="checkbox-item"><input type="checkbox" name="suitable_triggers" value="love" />恋愛・告白前</label>
+                  <label className="checkbox-item"><input type="checkbox" name="suitable_triggers" value="career" />就職・転職前</label>
+                  <label className="checkbox-item"><input type="checkbox" name="suitable_triggers" value="word" />一言が刺さった</label>
+                  <label className="checkbox-item"><input type="checkbox" name="suitable_triggers" value="vague" />ずっと気になっていた</label>
+                </div>
+              </div>
+              <div className="form-field">
+                <label>得意な「来た道」の類型（複数選択可）</label>
+                <small className="muted" style={{ display: 'block', marginBottom: '8px' }}>New Me Naviの「来た道スコア」と照合されます。該当する方にとって一致度が高くなります。</small>
+                <div className="checkbox-group">
+                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="lost_direction" />以前やっていたが疎かになった方（再開タイプ）</label>
+                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_continuation" />始めたが続かなかった方（継続タイプ）</label>
+                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_result" />やっているが客観的評価がない方（非客観視タイプ）</label>
+                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="cost" />コストで断念した経験がある方</label>
+                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="awkward" />プロとの関係性で悩んだ方</label>
+                </div>
+              </div>
               <button type="submit" className="btn" style={{ marginTop: '8px' }}>保存する</button>
             </form>
           </div>
@@ -10251,62 +10352,7 @@ export default function ProviderDashboardPage() {
                 <small className="muted">ユーザーのMe Scan回答のスタイル傾向と照合されます</small>
               </div>
 
-              {/* ── AIマッチングプロフィール ── */}
-              <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(26,20,16,0.12)' }}>AIマッチングプロフィール</h3>
-              <p className="muted" style={{ fontSize: '12px', margin: '0 0 14px', lineHeight: '1.6' }}>
-                ここに書いた内容をAIが読み取り、あなたのサービスにどんなユーザーが合うかを自動判定します。<br />
-                チェックボックスより精度の高いマッチングが実現します。書くほど効果的です。
-              </p>
-              <div className="form-field">
-                <label>よく来るお客様の状況・背景</label>
-                <textarea name="ideal_client_desc" rows={3} placeholder="例: マッチングアプリを始めたばかりで、写真の撮り方もわからない30代のサラリーマンが多い。自信がなく、何から始めればいいかわからない方が多い。" />
-              </div>
-              <div className="form-field">
-                <label>来る前の典型的な状態</label>
-                <textarea name="client_before_state" rows={3} placeholder="例: 外見に無頓着で、ジムや美容院に何年も行っていない。服は量販店で適当に買っていて、自分に似合うものがわからない。" />
-              </div>
-              <div className="form-field">
-                <label>よく起きる変化のパターン</label>
-                <textarea name="transformation_pattern" rows={3} placeholder="例: 3回通うと姿勢と歩き方が変わり、周囲から「変わった？」と言われ始める。6ヶ月で体重10kg減・マッチング率が上がったという声が多い。" />
-              </div>
-              <div className="form-field">
-                <label>特に向いている人・状況</label>
-                <textarea name="best_fit_desc" rows={3} placeholder="例: 「何かを変えなければ」と焦りを感じている人。過去に挫折したが今回こそはと思っている人。一人ではモチベーションが続かない人に特に向いている。" />
-              </div>
-
-              {/* AI分析ボタン */}
-              <div style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#a5b4fc', marginBottom: '6px' }}>AIプロフィール分析</div>
-                <p style={{ fontSize: '12px', color: 'rgba(26,20,16,0.75)', margin: '0 0 12px', lineHeight: '1.6' }}>
-                  上の4つのフィールドを保存した後、「AIで分析する」をクリックするとClaudeがプロフィール全体を読み取り、マッチング精度を向上させます。
-                </p>
-                <div id="ai-match-status" style={{ fontSize: '12px', color: 'rgba(26,20,16,0.6)', marginBottom: '10px' }}></div>
-                <button type="button" id="ai-analyze-btn" className="btn" style={{ background: '#4f46e5', color: '#fff', fontSize: '13px', padding: '8px 18px' }}>
-                  AIで分析する
-                </button>
-              </div>
-
-              <div className="form-field">
-                <label>得意なきっかけ（複数選択可）</label>
-                <div className="checkbox-group">
-                  <label className="checkbox-item"><input type="checkbox" name="suitable_triggers" value="matching_app" />マッチングアプリ</label>
-                  <label className="checkbox-item"><input type="checkbox" name="suitable_triggers" value="love" />恋愛・告白前</label>
-                  <label className="checkbox-item"><input type="checkbox" name="suitable_triggers" value="career" />就職・転職前</label>
-                  <label className="checkbox-item"><input type="checkbox" name="suitable_triggers" value="word" />一言が刺さった</label>
-                  <label className="checkbox-item"><input type="checkbox" name="suitable_triggers" value="vague" />ずっと気になっていた</label>
-                </div>
-              </div>
-              <div className="form-field">
-                <label>得意な「来た道」の類型（複数選択可）</label>
-                <small className="muted" style={{ display: 'block', marginBottom: '8px' }}>New Me Naviの「来た道スコア」と照合されます。該当する方にとって一致度が高くなります。</small>
-                <div className="checkbox-group">
-                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="lost_direction" />以前やっていたが疎かになった方（再開タイプ）</label>
-                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_continuation" />始めたが続かなかった方（継続タイプ）</label>
-                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="no_result" />やっているが客観的評価がない方（非客観視タイプ）</label>
-                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="cost" />コストで断念した経験がある方</label>
-                  <label className="checkbox-item"><input type="checkbox" name="handles_failure_patterns" value="awkward" />プロとの関係性で悩んだ方</label>
-                </div>
-              </div>
+              <p className="muted" style={{ fontSize: '12px', margin: '0 0 4px' }}>AIマッチングプロフィール（お客様像・変化のパターン等）は「アピール設定」タブへ移動しました。</p>
               {/* ── 予約・比較情報 ── */}
               <h3 style={{ fontSize: '14px', fontWeight: '800', margin: '20px 0 10px', paddingTop: '16px', borderTop: '1px solid rgba(26,20,16,0.12)' }}>予約・比較情報</h3>
               <small className="muted" style={{ display: 'block', marginBottom: '14px', fontSize: '12px', lineHeight: '1.6' }}>相談フォームや比較時に表示される情報です。設定するほどユーザーの「踏み出せない理由」を減らせます。</small>
