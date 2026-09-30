@@ -35,7 +35,7 @@ export default function AuthGate({ children, pageName = 'このページ' }) {
             max-width: 480px;
             width: 100%;
             background: #fff;
-            border: 1px solid rgba(201,168,76,0.25);
+            border: 1px solid rgba(236,232,223,0.138);
             border-radius: 18px;
             padding: 40px 32px;
             text-align: center;
@@ -48,10 +48,10 @@ export default function AuthGate({ children, pageName = 'このページ' }) {
             margin: 0 0 16px;
           }
           .auth-gate-title {
-            font-family: 'Noto Serif JP', Georgia, serif;
+            font-family: 'Shippori Mincho', Georgia, serif;
             font-size: 18px;
             font-weight: 700;
-            color: #0a0f1e;
+            color: #0d1117;
             margin: 0 0 12px;
             line-height: 1.6;
           }
@@ -65,8 +65,8 @@ export default function AuthGate({ children, pageName = 'このページ' }) {
             display: block;
             width: 100%;
             padding: 15px 24px;
-            background: #c9a84c;
-            color: #0a0f1e;
+            background: #c8a45a;
+            color: #0d1117;
             font-size: 15px;
             font-weight: 700;
             border-radius: 6px;
@@ -84,7 +84,7 @@ export default function AuthGate({ children, pageName = 'このページ' }) {
             padding-bottom: 2px;
             transition: color .15s;
           }
-          .auth-gate-login-link:hover { color: #0a0f1e; }
+          .auth-gate-login-link:hover { color: #0d1117; }
         `}</style>
         <div className="auth-gate-wrap">
           <div className="auth-gate-card">

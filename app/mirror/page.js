@@ -39,7 +39,7 @@ function parseCompassAction(text) {
 }
 
 const POTENTIAL_COLORS = {
-  '高': { bg: 'rgba(201,168,76,0.12)', border: 'rgba(201,168,76,0.5)', text: '#c9a84c', label: '変容余地 高' },
+  '高': { bg: 'rgba(200,164,90,0.12)', border: 'rgba(236,232,223,0.275)', text: '#c8a45a', label: '変容余地 高' },
   '中': { bg: 'rgba(100,160,255,0.10)', border: 'rgba(100,160,255,0.4)', text: '#7aadff', label: '変容余地 中' },
   '低': { bg: 'rgba(80,200,140,0.10)', border: 'rgba(80,200,140,0.4)', text: '#50c88c', label: 'すでに整っている' },
 };
@@ -506,63 +506,63 @@ export default function MirrorPage() {
   };
 
   return (
-    <main style={{ minHeight: '100vh', background: 'rgba(10,15,30,0.97)', paddingBottom: '80px' }}>
+    <main style={{ minHeight: '100vh', background: '#151b24', paddingBottom: '80px' }}>
       <Suspense fallback={null}><PixelPurchase /></Suspense>
       <style>{`
         .mirror-hero { padding: 64px 20px 40px; text-align: center; }
-        .mirror-badge { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .18em; color: rgba(201,168,76,0.7); text-transform: uppercase; margin-bottom: 16px; }
-        .mirror-title { font-family: 'Playfair Display', Georgia, serif; font-size: clamp(32px, 7vw, 52px); font-weight: 900; color: #e8e4dc; line-height: 1.1; margin: 0 0 16px; }
+        .mirror-badge { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .18em; color: rgba(200,164,90,0.7); text-transform: uppercase; margin-bottom: 16px; }
+        .mirror-title { font-family: Georgia, serif; font-size: clamp(32px, 7vw, 52px); font-weight: 900; color: #e8e4dc; line-height: 1.1; margin: 0 0 16px; }
         .mirror-subtitle { font-size: clamp(14px, 2.5vw, 16px); color: rgba(232,228,220,0.55); line-height: 1.8; max-width: 520px; margin: 0 auto 12px; }
         .privacy-note { font-size: 11px; color: rgba(232,228,220,0.35); max-width: 480px; margin: 0 auto; line-height: 1.6; }
         .upload-area { max-width: 560px; margin: 0 auto 32px; padding: 0 20px; }
-        .drop-zone { border: 2px dashed rgba(201,168,76,0.35); border-radius: 16px; padding: 48px 20px; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; background: rgba(201,168,76,0.03); }
-        .drop-zone:hover, .drop-zone.dragover { border-color: rgba(201,168,76,0.7); background: rgba(201,168,76,0.06); }
+        .drop-zone { border: 2px dashed rgba(200,164,90,0.35); border-radius: 16px; padding: 48px 20px; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; background: rgba(200,164,90,0.03); }
+        .drop-zone:hover, .drop-zone.dragover { border-color: rgba(236,232,223,0.385); background: rgba(200,164,90,0.06); }
         .drop-icon { font-size: 48px; margin-bottom: 16px; }
         .drop-text { font-size: 15px; color: rgba(232,228,220,0.6); margin-bottom: 8px; }
         .drop-sub { font-size: 12px; color: rgba(232,228,220,0.35); }
         .preview-img { width: 100%; max-height: 280px; object-fit: contain; border-radius: 12px; margin-top: 16px; }
-        .analyze-btn { display: block; width: 100%; padding: 16px; background: linear-gradient(135deg,#c9a84c,#e8c97a); border: none; border-radius: 12px; font-size: 16px; font-weight: 800; color: #0a0f1e; cursor: pointer; margin-top: 16px; transition: opacity .2s; }
+        .analyze-btn { display: block; width: 100%; padding: 16px; background: linear-gradient(135deg,#c8a45a,#e8c97a); border: none; border-radius: 12px; font-size: 16px; font-weight: 800; color: #0d1117; cursor: pointer; margin-top: 16px; transition: opacity .2s; }
         .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .error-msg { color: #f87171; font-size: 13px; text-align: center; margin-top: 10px; }
         .analyzing-wrap { max-width: 400px; margin: 60px auto; text-align: center; padding: 0 20px; }
-        .analyzing-spinner { width: 56px; height: 56px; border: 3px solid rgba(201,168,76,0.2); border-top-color: #c9a84c; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 24px; }
+        .analyzing-spinner { width: 56px; height: 56px; border: 3px solid rgba(200,164,90,0.2); border-top-color: rgba(236,232,223,0.3); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 24px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .report-loading-wrap { max-width: 480px; margin: 24px auto; text-align: center; padding: 28px 24px; background: rgba(201,168,76,0.05); border: 1px solid rgba(201,168,76,0.2); border-radius: 16px; }
-        .report-loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(201,168,76,0.2); border-top-color: #c9a84c; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 14px; }
+        .report-loading-wrap { max-width: 480px; margin: 24px auto; text-align: center; padding: 28px 24px; background: rgba(200,164,90,0.05); border: 1px solid rgba(236,232,223,0.11); border-radius: 16px; }
+        .report-loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(200,164,90,0.2); border-top-color: rgba(236,232,223,0.3); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 14px; }
         .report-progress-track { width: 100%; height: 6px; border-radius: 99px; background: rgba(232,228,220,0.08); overflow: hidden; margin-top: 16px; }
-        .report-progress-bar { width: 35%; height: 100%; border-radius: 99px; background: linear-gradient(90deg, transparent, #c9a84c, transparent); animation: reportProgress 1.7s ease-in-out infinite; }
+        .report-progress-bar { width: 35%; height: 100%; border-radius: 99px; background: linear-gradient(90deg, transparent, #c8a45a, transparent); animation: reportProgress 1.7s ease-in-out infinite; }
         @keyframes reportProgress { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
         .results-wrap { max-width: 680px; margin: 0 auto; padding: 0 20px; }
-        .first-impression { background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.2); border-radius: 16px; padding: 24px; margin-bottom: 32px; font-size: 15px; color: rgba(232,228,220,0.85); line-height: 1.8; }
-        .axis-card { background: rgba(10,15,30,0.6); border-radius: 14px; padding: 20px; margin-bottom: 16px; position: relative; overflow: hidden; }
+        .first-impression { background: rgba(200,164,90,0.06); border: 1px solid rgba(236,232,223,0.11); border-radius: 16px; padding: 24px; margin-bottom: 32px; font-size: 15px; color: rgba(232,228,220,0.85); line-height: 1.8; }
+        .axis-card { background: #151b24; border-radius: 14px; padding: 20px; margin-bottom: 16px; position: relative; overflow: hidden; }
         .axis-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
         .axis-icon { font-size: 24px; }
         .axis-name { font-size: 15px; font-weight: 800; color: #e8e4dc; flex: 1; }
         .axis-badge { font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 20px; letter-spacing: .06em; white-space: nowrap; }
         .axis-summary { font-size: 14px; color: rgba(232,228,220,0.7); line-height: 1.75; margin-bottom: 14px; }
         .axis-detail { font-size: 14px; color: rgba(232,228,220,0.7); line-height: 1.75; margin-bottom: 14px; }
-        .curated-post-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.12); border-radius: 10px; text-decoration: none; margin-bottom: 14px; }
-        .curated-post-card:hover { border-color: rgba(201,168,76,0.3); }
+        .curated-post-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #151b24; border: 1px solid rgba(232,228,220,0.12); border-radius: 10px; text-decoration: none; margin-bottom: 14px; }
+        .curated-post-card:hover { border-color: rgba(236,232,223,0.165); }
         .curated-post-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
         .curated-post-body { flex: 1; min-width: 0; }
         .curated-post-label { font-size: 10px; color: rgba(232,228,220,0.40); margin: 0 0 2px; }
         .curated-post-caption { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.75); margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .axis-hints { list-style: none; padding: 0; margin: 0 0 14px; display: flex; flex-direction: column; gap: 6px; }
         .axis-hints li { font-size: 13px; color: rgba(232,228,220,0.65); padding-left: 18px; position: relative; line-height: 1.6; }
-        .axis-hints li::before { content: '→'; position: absolute; left: 0; color: #c9a84c; font-weight: 700; }
-        .compass-action { background: rgba(201,168,76,0.07); border-left: 3px solid rgba(201,168,76,0.5); padding: 10px 14px; border-radius: 0 8px 8px 0; font-size: 13px; color: rgba(232,228,220,0.75); line-height: 1.6; transition: background .15s; }
-        a:hover .compass-action { background: rgba(201,168,76,0.14); }
-        .compass-action-label { font-size: 10px; font-weight: 800; color: rgba(201,168,76,0.6); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 4px; }
+        .axis-hints li::before { content: '→'; position: absolute; left: 0; color: #c8a45a; font-weight: 700; }
+        .compass-action { background: rgba(200,164,90,0.07); border-left: 3px solid rgba(200,164,90,0.5); padding: 10px 14px; border-radius: 0 8px 8px 0; font-size: 13px; color: rgba(232,228,220,0.75); line-height: 1.6; transition: background .15s; }
+        a:hover .compass-action { background: rgba(200,164,90,0.14); }
+        .compass-action-label { font-size: 10px; font-weight: 800; color: rgba(200,164,90,0.6); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 4px; }
         .paywall-overlay { position: relative; margin-top: -8px; }
         .paywall-blur { filter: blur(5px); user-select: none; pointer-events: none; opacity: 0.5; max-height: 120px; overflow: hidden; }
-        .paywall-cta { background: linear-gradient(to bottom, transparent, rgba(10,15,30,0.97) 40%); padding: 40px 24px 24px; text-align: center; }
-        .paywall-title { font-family: 'Playfair Display', Georgia, serif; font-size: 18px; font-weight: 800; color: #e8e4dc; margin-bottom: 8px; }
+        .paywall-cta { background: linear-gradient(to bottom, transparent, rgba(13,17,23,0.97) 40%); padding: 40px 24px 24px; text-align: center; }
+        .paywall-title { font-family: Georgia, serif; font-size: 18px; font-weight: 800; color: #e8e4dc; margin-bottom: 8px; }
         .paywall-desc { font-size: 13px; color: rgba(232,228,220,0.55); margin-bottom: 20px; line-height: 1.7; }
-        .purchase-btn { display: inline-flex; align-items: center; gap: 8px; padding: 15px 32px; background: linear-gradient(135deg,#c9a84c,#e8c97a); border: none; border-radius: 12px; font-size: 15px; font-weight: 800; color: #0a0f1e; cursor: pointer; transition: opacity .2s; box-shadow: 0 0 32px rgba(201,168,76,0.3); }
+        .purchase-btn { display: inline-flex; align-items: center; gap: 8px; padding: 15px 32px; background: linear-gradient(135deg,#c8a45a,#e8c97a); border: none; border-radius: 12px; font-size: 15px; font-weight: 800; color: #0d1117; cursor: pointer; transition: opacity .2s; box-shadow: 0 0 32px rgba(0,0,0,0.36); }
         .purchase-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .purchase-note { font-size: 11px; color: rgba(232,228,220,0.35); margin-top: 10px; }
-        .full-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); border-radius: 20px; padding: 6px 16px; font-size: 12px; color: #c9a84c; font-weight: 700; margin-bottom: 24px; }
-        .overall-msg { background: rgba(201,168,76,0.05); border: 1px solid rgba(201,168,76,0.15); border-radius: 14px; padding: 24px; text-align: center; margin-top: 32px; font-family: 'Noto Serif JP', Georgia, serif; font-size: 16px; color: rgba(232,228,220,0.85); line-height: 1.8; }
+        .full-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(200,164,90,0.1); border: 1px solid rgba(236,232,223,0.165); border-radius: 20px; padding: 6px 16px; font-size: 12px; color: #c8a45a; font-weight: 700; margin-bottom: 24px; }
+        .overall-msg { background: rgba(200,164,90,0.05); border: 1px solid rgba(236,232,223,0.083); border-radius: 14px; padding: 24px; text-align: center; margin-top: 32px; font-family: 'Shippori Mincho', Georgia, serif; font-size: 16px; color: rgba(232,228,220,0.85); line-height: 1.8; }
         .retry-btn { display: block; margin: 24px auto 0; padding: 12px 28px; background: transparent; border: 1px solid rgba(232,228,220,0.2); border-radius: 10px; color: rgba(232,228,220,0.5); font-size: 13px; cursor: pointer; }
         .retry-btn:hover { border-color: rgba(232,228,220,0.4); color: rgba(232,228,220,0.7); }
       `}</style>
@@ -613,9 +613,9 @@ export default function MirrorPage() {
                 style={{
                   padding: '9px 16px', borderRadius: '99px', fontSize: '13px', fontWeight: 700,
                   cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s',
-                  border: `1px solid ${photoType === val ? 'rgba(201,168,76,0.6)' : 'rgba(232,228,220,0.15)'}`,
-                  background: photoType === val ? 'rgba(201,168,76,0.14)' : 'rgba(255,255,255,0.02)',
-                  color: photoType === val ? '#c9a84c' : 'rgba(232,228,220,0.55)',
+                  border: `1px solid ${photoType === val ? 'rgba(200,164,90,0.6)' : 'rgba(232,228,220,0.15)'}`,
+                  background: photoType === val ? 'rgba(200,164,90,0.14)' : 'rgba(255,255,255,0.02)',
+                  color: photoType === val ? '#c8a45a' : 'rgba(232,228,220,0.55)',
                 }}
               >
                 {label}
@@ -662,9 +662,9 @@ export default function MirrorPage() {
               ) : (
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  background: 'rgba(201,168,76,0.10)', border: '1px solid rgba(201,168,76,0.4)',
+                  background: 'rgba(200,164,90,0.10)', border: '1px solid rgba(236,232,223,0.22)',
                   borderRadius: '20px', padding: '5px 14px',
-                  fontSize: '12px', fontWeight: '800', color: '#c9a84c',
+                  fontSize: '12px', fontWeight: '800', color: '#c8a45a',
                 }}>
                   🎁 今月はまだ無料でまるごと試せます
                 </span>
@@ -711,7 +711,7 @@ export default function MirrorPage() {
                 style={{ marginTop: '3px', flexShrink: 0 }}
               />
               <span>
-                <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#c9a84c', textDecoration: 'underline' }}>プライバシーポリシー</a>
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#c8a45a', textDecoration: 'underline' }}>プライバシーポリシー</a>
                 に同意します（写真はAI分析に使用され、購入・お試し解放後は保存されます）
               </span>
             </label>
@@ -767,7 +767,7 @@ export default function MirrorPage() {
                   }}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    width: '100%', background: 'rgba(10,15,30,0.6)',
+                    width: '100%', background: '#151b24',
                     border: '1px solid rgba(232,228,220,0.1)', borderRadius: '10px',
                     padding: '12px 16px', marginBottom: '8px', cursor: 'pointer', textAlign: 'left',
                   }}
@@ -782,9 +782,9 @@ export default function MirrorPage() {
                     </p>
                   </div>
                   <span style={{ fontSize: '11px', fontWeight: '800', marginLeft: '12px', flexShrink: 0,
-                    color: s.paid ? '#50c88c' : 'rgba(201,168,76,0.6)',
-                    background: s.paid ? 'rgba(80,200,140,0.1)' : 'rgba(201,168,76,0.08)',
-                    border: `1px solid ${s.paid ? 'rgba(80,200,140,0.3)' : 'rgba(201,168,76,0.2)'}`,
+                    color: s.paid ? '#50c88c' : 'rgba(200,164,90,0.6)',
+                    background: s.paid ? 'rgba(80,200,140,0.1)' : 'rgba(200,164,90,0.08)',
+                    border: `1px solid ${s.paid ? 'rgba(80,200,140,0.3)' : 'rgba(200,164,90,0.2)'}`,
                     borderRadius: '20px', padding: '3px 10px' }}>
                     {s.paid ? '購入済み' : '無料版'}
                   </span>
@@ -856,14 +856,14 @@ export default function MirrorPage() {
                   <img
                     src={previewFile}
                     alt="分析した写真"
-                    style={{ width: '96px', height: '96px', objectFit: 'cover', objectPosition: 'center top', borderRadius: '50%', border: '2px solid rgba(201,168,76,0.4)', display: 'block' }}
+                    style={{ width: '96px', height: '96px', objectFit: 'cover', objectPosition: 'center top', borderRadius: '50%', border: '2px solid rgba(200,164,90,0.4)', display: 'block' }}
                   />
                   <span style={{ position: 'absolute', bottom: 0, right: 0, fontSize: '16px', lineHeight: 1 }}>🪞</span>
                 </div>
               )}
 
               <div className="first-impression">
-                <p style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(201,168,76,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '10px' }}>First Impression</p>
+                <p style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(200,164,90,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '10px' }}>First Impression</p>
                 {analysis.first_impression}
               </div>
 
@@ -949,7 +949,7 @@ export default function MirrorPage() {
             const teaserAxis = lockedAxes.find(a => a.potential_level === '高') || lockedAxes[0];
             const teaserText = teaserAxis?.summary ? teaserAxis.summary.slice(0, 44) : '';
             return (
-              <div style={{ background: 'rgba(10,15,30,0.97)', borderRadius: '20px', border: '1px solid rgba(201,168,76,0.18)', marginTop: '8px', overflow: 'hidden' }}>
+              <div style={{ background: '#151b24', borderRadius: '20px', border: '1px solid rgba(236,232,223,0.099)', marginTop: '8px', overflow: 'hidden' }}>
 
                 {/* Section 1: フック（価格なし） */}
                 <div style={{ padding: '28px 24px 24px', textAlign: 'center' }}>
@@ -978,7 +978,7 @@ export default function MirrorPage() {
 
                   {/* 見出し */}
                   <p style={{
-                    fontFamily: "'Noto Serif JP', Georgia, serif",
+                    fontFamily: "'Shippori Mincho', Georgia, serif",
                     fontSize: 'clamp(18px,3.5vw,22px)',
                     fontWeight: 700,
                     color: 'rgba(232,228,220,0.92)',
@@ -991,7 +991,7 @@ export default function MirrorPage() {
                   {/* ティーザー：最高potential軸のsummaryをフェードアウト */}
                   {teaserText && (
                     <div style={{ maxWidth: '400px', margin: '0 auto 8px', textAlign: 'left' }}>
-                      <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.1em', color: 'rgba(201,168,76,0.5)', textTransform: 'uppercase', margin: '0 0 6px' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.1em', color: 'rgba(200,164,90,0.5)', textTransform: 'uppercase', margin: '0 0 6px' }}>
                         {teaserAxis?.icon} {teaserAxis?.name} — AIの観察
                       </p>
                       <div style={{ position: 'relative', maxHeight: '2.8em', overflow: 'hidden' }}>
@@ -1000,7 +1000,7 @@ export default function MirrorPage() {
                         </p>
                         <div style={{
                           position: 'absolute', bottom: 0, left: 0, right: 0, height: '1.8em',
-                          background: 'linear-gradient(transparent, rgba(10,15,30,0.97))',
+                          background: 'linear-gradient(transparent, rgba(13,17,23,0.97))',
                           pointerEvents: 'none',
                         }} />
                       </div>
@@ -1009,7 +1009,7 @@ export default function MirrorPage() {
                 </div>
 
                 {/* 区切り */}
-                <div style={{ height: '1px', background: 'rgba(201,168,76,0.12)', margin: '0 24px' }} />
+                <div style={{ height: '1px', background: 'rgba(200,164,90,0.12)', margin: '0 24px' }} />
 
                 {/* Section 2: 価格提示 */}
                 <div style={{ padding: '24px', textAlign: 'center' }}>
@@ -1041,7 +1041,7 @@ export default function MirrorPage() {
                       disabled={purchasing}
                       style={{
                         background: 'none', border: 'none', cursor: purchasing ? 'not-allowed' : 'pointer',
-                        fontSize: '13px', color: 'rgba(201,168,76,0.6)', fontFamily: 'inherit',
+                        fontSize: '13px', color: 'rgba(200,164,90,0.6)', fontFamily: 'inherit',
                         padding: '4px 0', textDecoration: 'underline', textUnderlineOffset: '3px',
                       }}
                     >
@@ -1074,7 +1074,7 @@ export default function MirrorPage() {
                 <button onClick={shareLINE} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'rgba(6,199,85,0.12)', border: '1px solid rgba(6,199,85,0.4)', borderRadius: '10px', color: '#06c755', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>
                   LINEで送る
                 </button>
-                <button onClick={copyShareLink} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: '10px', color: '#c9a84c', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>
+                <button onClick={copyShareLink} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'rgba(200,164,90,0.08)', border: '1px solid rgba(236,232,223,0.193)', borderRadius: '10px', color: '#c8a45a', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>
                   {linkCopied ? '✓ コピーしました' : '🔗 リンクをコピー'}
                 </button>
               </div>
@@ -1083,11 +1083,11 @@ export default function MirrorPage() {
 
           {/* New Me Map 生成CTA（fullのみ） */}
           {state === 'full' && (
-            <div style={{ marginTop: '24px', background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '16px', padding: '28px 24px', textAlign: 'center' }}>
-              <p style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(201,168,76,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '12px' }}>
+            <div style={{ marginTop: '24px', background: 'rgba(200,164,90,0.05)', border: '1px solid rgba(236,232,223,0.11)', borderRadius: '16px', padding: '28px 24px', textAlign: 'center' }}>
+              <p style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(200,164,90,0.6)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '12px' }}>
                 次のステップ
               </p>
-              <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '17px', fontWeight: '800', color: '#e8e4dc', marginBottom: '8px' }}>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: '17px', fontWeight: '800', color: '#e8e4dc', marginBottom: '8px' }}>
                 このデータで New Me Map を生成する
               </p>
               <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.5)', marginBottom: '20px', lineHeight: '1.7' }}>
@@ -1102,7 +1102,7 @@ export default function MirrorPage() {
                   } catch {}
                   window.location.href = loggedIn ? '/mypage/navi?from=mirror' : '/login?redirect=/mypage/navi?from=mirror';
                 }}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '15px 32px', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '800', color: '#0a0f1e', cursor: 'pointer', boxShadow: '0 0 24px rgba(201,168,76,0.25)' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '15px 32px', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '800', color: '#0d1117', cursor: 'pointer', boxShadow: '0 0 24px rgba(0,0,0,0.3)' }}
               >
                 🗺️ New Me Map を生成する →
               </button>
@@ -1131,7 +1131,7 @@ export default function MirrorPage() {
               <button
                 onClick={handleSubscribeCheckout}
                 disabled={subscribing}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: subscribing ? 'rgba(80,200,140,0.3)' : 'linear-gradient(135deg,#50c88c,#3aaa78)', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 800, color: '#0a0f1e', cursor: subscribing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: subscribing ? 'rgba(80,200,140,0.3)' : 'linear-gradient(135deg,#50c88c,#3aaa78)', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 800, color: '#0d1117', cursor: subscribing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
               >
                 {subscribing ? '処理中…' : '♾️ ¥780/月 のサブスクに切り替える'}
               </button>
@@ -1167,7 +1167,7 @@ export default function MirrorPage() {
                           <button
                             key={n}
                             onClick={() => setter(n)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: 0, color: n <= val ? '#c9a84c' : 'rgba(232,228,220,0.2)' }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: 0, color: n <= val ? '#c8a45a' : 'rgba(232,228,220,0.2)' }}
                             aria-label={`${label} ${n}`}
                           >
                             ★
@@ -1182,12 +1182,12 @@ export default function MirrorPage() {
                     placeholder="一番の気づきは？（例：清潔感がない理由が肌だと初めて分かった）"
                     maxLength={300}
                     rows={2}
-                    style={{ width: '100%', boxSizing: 'border-box', marginTop: '8px', background: 'rgba(10,15,30,0.6)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', padding: '10px 12px', fontSize: '13px', color: 'rgba(232,228,220,0.88)', fontFamily: 'inherit', resize: 'vertical', outline: 'none' }}
+                    style={{ width: '100%', boxSizing: 'border-box', marginTop: '8px', background: '#151b24', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', padding: '10px 12px', fontSize: '13px', color: 'rgba(232,228,220,0.88)', fontFamily: 'inherit', resize: 'vertical', outline: 'none' }}
                   />
                   <button
                     onClick={submitFeedback}
                     disabled={!fbAccuracy && !fbRevisit && !fbComment.trim()}
-                    style={{ display: 'block', width: '100%', marginTop: '12px', padding: '11px', background: (!fbAccuracy && !fbRevisit && !fbComment.trim()) ? 'rgba(201,168,76,0.15)' : 'rgba(201,168,76,0.9)', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '800', color: (!fbAccuracy && !fbRevisit && !fbComment.trim()) ? 'rgba(232,228,220,0.4)' : '#0a0f1e', cursor: (!fbAccuracy && !fbRevisit && !fbComment.trim()) ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+                    style={{ display: 'block', width: '100%', marginTop: '12px', padding: '11px', background: (!fbAccuracy && !fbRevisit && !fbComment.trim()) ? 'rgba(200,164,90,0.15)' : 'rgba(200,164,90,0.9)', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '800', color: (!fbAccuracy && !fbRevisit && !fbComment.trim()) ? 'rgba(232,228,220,0.4)' : '#0d1117', cursor: (!fbAccuracy && !fbRevisit && !fbComment.trim()) ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
                   >
                     フィードバックを送る
                   </button>
@@ -1198,7 +1198,7 @@ export default function MirrorPage() {
 
           {/* 友達紹介（ログイン済み・fullのみ） */}
           {state === 'full' && myUserId && (
-            <div style={{ marginTop: '20px', background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: '14px', padding: '22px 20px', textAlign: 'center' }}>
+            <div style={{ marginTop: '20px', background: 'rgba(200,164,90,0.06)', border: '1px solid rgba(236,232,223,0.138)', borderRadius: '14px', padding: '22px 20px', textAlign: 'center' }}>
               <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎟️</div>
               <p style={{ fontSize: '14px', fontWeight: '800', color: '#e8e4dc', margin: '0 0 6px' }}>
                 友達を招待して、おたがい1回無料
@@ -1208,7 +1208,7 @@ export default function MirrorPage() {
               </p>
               <button
                 onClick={copyInvite}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 28px', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '800', color: '#0a0f1e', cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 28px', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '800', color: '#0d1117', cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 {inviteCopied ? '✓ 招待リンクをコピーしました' : '🔗 招待リンクをコピー'}
               </button>
@@ -1217,11 +1217,11 @@ export default function MirrorPage() {
 
           {/* アカウント保存CTA（未ログイン・fullのみ） */}
           {state === 'full' && !myUserId && sessionId && (
-            <div style={{ marginTop: '20px', background: 'linear-gradient(160deg, rgba(12,18,38,0.98), rgba(8,12,26,0.98))', border: '1px solid rgba(201,168,76,0.28)', borderRadius: '18px', padding: '28px 24px', textAlign: 'center', boxShadow: '0 0 40px rgba(201,168,76,0.06)' }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: '20px' }}>
+            <div style={{ marginTop: '20px', background: 'linear-gradient(160deg, rgba(12,18,38,0.98), rgba(8,12,26,0.98))', border: '1px solid rgba(236,232,223,0.154)', borderRadius: '18px', padding: '28px 24px', textAlign: 'center', boxShadow: '0 0 40px rgba(0,0,0,0.072)' }}>
+              <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(200,164,90,0.1)', border: '1px solid rgba(236,232,223,0.165)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: '20px' }}>
                 🗺️
               </div>
-              <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '16px', fontWeight: '800', color: '#e8e4dc', margin: '0 0 8px', lineHeight: 1.4 }}>
+              <p style={{ fontFamily: "Georgia, serif", fontSize: '16px', fontWeight: '800', color: '#e8e4dc', margin: '0 0 8px', lineHeight: 1.4 }}>
                 この地図を保存して、変化を続ける
               </p>
               <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.45)', margin: '0 0 20px', lineHeight: 1.75 }}>
@@ -1229,7 +1229,7 @@ export default function MirrorPage() {
               </p>
               <button
                 onClick={() => { window.location.href = '/login?redirect=' + encodeURIComponent('/mirror?session_id=' + sessionId + '&from=map_save'); }}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: '800', color: '#0a0f1e', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 0 28px rgba(201,168,76,0.22)', marginBottom: '10px' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: '800', color: '#0d1117', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 0 28px rgba(0,0,0,0.264)', marginBottom: '10px' }}
               >
                 無料アカウントを作る →
               </button>

@@ -31,14 +31,14 @@ export default function LogEntryPage() {
       <div className="container" style={{ maxWidth: '720px' }}>
         <ServiceLog />
 
-        <div style={{ marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(201,168,76,0.15)', textAlign: 'center' }}>
+        <div style={{ marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(236,232,223,0.083)', textAlign: 'center' }}>
           <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.4)', margin: '0 0 12px', lineHeight: 1.8 }}>
             New Me Log は Fineme の機能のひとつです。<br />
             外見を起点に自信を再設計するための、地図と羅針盤を渡しています。
           </p>
           <Link
             href="/about"
-            style={{ fontSize: '12px', color: 'rgba(201,168,76,0.75)', textDecoration: 'none', fontWeight: 700 }}
+            style={{ fontSize: '12px', color: 'rgba(200,164,90,0.75)', textDecoration: 'none', fontWeight: 700 }}
           >
             Fineme について →
           </Link>

@@ -22,38 +22,38 @@ export default function DiagnosisResultPage() {
       #result-root .product-carousel { max-width: none; overflow-x: auto; }
 
       /* ── Hero ── */
-      .map-hero { padding: 44px 28px 40px; background: linear-gradient(rgba(10,15,30,0.78), rgba(10,15,30,0.88)), url('/assets/images/hero-bg.webp') center / cover no-repeat; border-radius: 14px; margin-bottom: 24px; position: relative; overflow: hidden; border: 1px solid rgba(201,168,76,0.2); }
-      .map-hero::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(201,168,76,.1) 0%, transparent 70%); border-radius: 50%; }
-      .map-hero::after { content: ''; position: absolute; bottom: -40px; left: -40px; width: 160px; height: 160px; background: radial-gradient(circle, rgba(201,168,76,.07) 0%, transparent 70%); border-radius: 50%; }
-      .map-hero-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .18em; color: rgba(201,168,76,0.55); margin: 0 0 12px; position: relative; z-index: 1; text-transform: uppercase; }
-      .map-hero-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 5px 14px; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); color: #c9a84c; border-radius: 3px; margin-bottom: 18px; letter-spacing: .08em; position: relative; z-index: 1; }
-      .map-hero h1 { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(18px,4.5vw,24px); font-weight: 700; margin: 0 0 14px; line-height: 1.6; color: #fff; letter-spacing: -.01em; position: relative; z-index: 1; }
-      .map-hero h1 em { font-style: normal; color: #c9a84c; }
-      .map-hero-divider { width: 40px; height: 1px; background: linear-gradient(90deg, #c9a84c, transparent); margin: 16px 0; position: relative; z-index: 1; }
-      .map-hero-sub { font-family: 'Noto Serif JP', Georgia, serif; font-size: 14px; color: rgba(255,255,255,.72); margin: 0; line-height: 1.9; position: relative; z-index: 1; }
+      .map-hero { padding: 44px 28px 40px; background: #151b24; border-radius: 14px; margin-bottom: 24px; position: relative; overflow: hidden; border: 1px solid rgba(236,232,223,0.11); }
+      .map-hero::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(200,164,90,.1) 0%, transparent 70%); border-radius: 50%; }
+      .map-hero::after { content: ''; position: absolute; bottom: -40px; left: -40px; width: 160px; height: 160px; background: radial-gradient(circle, rgba(200,164,90,.07) 0%, transparent 70%); border-radius: 50%; }
+      .map-hero-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .18em; color: rgba(200,164,90,0.55); margin: 0 0 12px; position: relative; z-index: 1; text-transform: uppercase; }
+      .map-hero-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 5px 14px; background: rgba(200,164,90,0.1); border: 1px solid rgba(236,232,223,0.165); color: #c8a45a; border-radius: 3px; margin-bottom: 18px; letter-spacing: .08em; position: relative; z-index: 1; }
+      .map-hero h1 { font-family: 'Shippori Mincho', Georgia, serif; font-size: clamp(18px,4.5vw,24px); font-weight: 700; margin: 0 0 14px; line-height: 1.6; color: #fff; letter-spacing: -.01em; position: relative; z-index: 1; }
+      .map-hero h1 em { font-style: normal; color: #c8a45a; }
+      .map-hero-divider { width: 40px; height: 1px; background: linear-gradient(90deg, #c8a45a, transparent); margin: 16px 0; position: relative; z-index: 1; }
+      .map-hero-sub { font-family: 'Shippori Mincho', Georgia, serif; font-size: 14px; color: rgba(255,255,255,.72); margin: 0; line-height: 1.9; position: relative; z-index: 1; }
       .map-hero-sub strong { color: rgba(255,255,255,.92); font-weight: 500; }
 
       /* ── Section label ── */
-      .sec-label { display: flex; align-items: center; gap: 10px; font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(201,168,76,0.7); margin: 28px 0 16px; padding-left: 0; }
-      .sec-label::before { content: ''; width: 18px; height: 1.5px; background: #c9a84c; border-radius: 1px; flex-shrink: 0; }
-      .sec-label::after { content: ''; flex: 1; height: 1px; background: repeating-linear-gradient(90deg, rgba(201,168,76,0.45) 0, rgba(201,168,76,0.45) 5px, transparent 5px, transparent 11px); }
+      .sec-label { display: flex; align-items: center; gap: 10px; font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(200,164,90,0.7); margin: 28px 0 16px; padding-left: 0; }
+      .sec-label::before { content: ''; width: 18px; height: 1.5px; background: #c8a45a; border-radius: 1px; flex-shrink: 0; }
+      .sec-label::after { content: ''; flex: 1; height: 1px; background: repeating-linear-gradient(90deg, rgba(200,164,90,0.45) 0, rgba(200,164,90,0.45) 5px, transparent 5px, transparent 11px); }
 
       /* ── Compass (最初の一手) ── */
-      .compass-card { background: var(--color-bg-dark, #0a0f1e); border: 1.5px solid rgba(201,168,76,0.4); border-radius: 14px; padding: 36px 24px 24px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(201,168,76,.12), 0 1px 4px rgba(0,0,0,.2); position: relative; overflow: visible; }
-      .compass-card::before { content: '🧭'; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 32px; filter: drop-shadow(0 2px 8px rgba(201,168,76,.4)); }
-      .compass-eyebrow { font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.7); letter-spacing: .1em; margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
-      .compass-eyebrow::before { content: ''; display: inline-block; width: 6px; height: 6px; background: #c9a84c; border-radius: 50%; }
+      .compass-card { background: var(--color-bg-dark, #0d1117); border: 1.5px solid rgba(236,232,223,0.22); border-radius: 14px; padding: 36px 24px 24px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.144), 0 1px 4px rgba(0,0,0,.2); position: relative; overflow: visible; }
+      .compass-card::before { content: '🧭'; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 32px; filter: drop-shadow(0 2px 8px rgba(200,164,90,.4)); }
+      .compass-eyebrow { font-size: 11px; font-weight: 700; color: rgba(200,164,90,0.7); letter-spacing: .1em; margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
+      .compass-eyebrow::before { content: ''; display: inline-block; width: 6px; height: 6px; background: #c8a45a; border-radius: 50%; }
       .compass-main { font-size: 24px; font-weight: 900; color: #fff; margin: 0 0 12px; display: flex; align-items: center; gap: 10px; }
       .compass-reason { font-size: 14px; color: rgba(255,255,255,.75); line-height: 1.85; margin: 0; }
-      .compass-cta { display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; padding: 10px 20px; border: 1.5px solid #c9a84c; color: #c9a84c; background: transparent; border-radius: 6px; font-size: 13px; font-weight: 700; text-decoration: none; transition: background .18s, color .18s; }
-      .compass-cta:hover { background: #c9a84c; color: #0a0f1e; }
-      .compass-override-chip { padding: 7px 14px; border-radius: 99px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1.5px solid rgba(201,168,76,0.3); background: rgba(201,168,76,0.08); color: rgba(255,255,255,0.75); transition: all .15s; }
-      .compass-override-chip:hover { background: rgba(201,168,76,0.2); border-color: rgba(201,168,76,0.65); color: #fff; transform: translateY(-1px); }
-      .compass-override-chip.active { background: #c9a84c; color: #0a0f1e; border-color: #c9a84c; box-shadow: 0 2px 10px rgba(201,168,76,0.4); }
+      .compass-cta { display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; padding: 10px 20px; border: 1.5px solid rgba(236,232,223,0.3); color: #c8a45a; background: transparent; border-radius: 6px; font-size: 13px; font-weight: 700; text-decoration: none; transition: background .18s, color .18s; }
+      .compass-cta:hover { background: #c8a45a; color: #0d1117; }
+      .compass-override-chip { padding: 7px 14px; border-radius: 99px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1.5px solid rgba(236,232,223,0.165); background: rgba(200,164,90,0.08); color: rgba(255,255,255,0.75); transition: all .15s; }
+      .compass-override-chip:hover { background: rgba(200,164,90,0.2); border-color: rgba(236,232,223,0.358); color: #fff; transform: translateY(-1px); }
+      .compass-override-chip.active { background: #c8a45a; color: #0d1117; border-color: rgba(236,232,223,0.3); box-shadow: 0 2px 10px rgba(0,0,0,0.48); }
 
       /* ── Radar chart card ── */
-      .radar-card { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.3); border-radius: 14px; padding: 24px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.4); }
-      .radar-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: 16px; font-weight: 700; color: var(--color-fg, #0a0f1e); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+      .radar-card { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.165); border-radius: 14px; padding: 24px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.4); }
+      .radar-title { font-family: 'Shippori Mincho', Georgia, serif; font-size: 16px; font-weight: 700; color: var(--color-fg, #0d1117); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
       .radar-subtitle { font-size: 12px; color: var(--color-muted, #7a6e65); margin: 0 0 20px; }
       .radar-legend { display: flex; align-items: center; gap: 20px; justify-content: center; margin-top: 16px; }
       .radar-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-muted, #7a6e65); }
@@ -61,15 +61,15 @@ export default function DiagnosisResultPage() {
 
       /* ── Vector cards (priority categories) ── */
       .vector-list { display: flex; flex-direction: column; gap: 12px; }
-      .vector-item { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.25); border-radius: 12px; padding: 16px 18px; }
-      .vector-item.priority-1 { border-color: rgba(201,168,76,0.5); background: var(--color-bg-dark, #0a0f1e); }
+      .vector-item { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.138); border-radius: 12px; padding: 16px 18px; }
+      .vector-item.priority-1 { border-color: rgba(236,232,223,0.275); background: var(--color-bg-dark, #0d1117); }
       .vector-item.priority-1 .vector-item-name { color: #fff; }
       .vector-item.priority-1 .vector-bar-label { color: rgba(255,255,255,.5); }
       .vector-item.priority-1 .vector-bar-labels { color: rgba(255,255,255,.4); }
       .vector-item-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-      .vector-item-name { font-size: 15px; font-weight: 800; color: var(--color-fg, #0a0f1e); display: flex; align-items: center; gap: 8px; }
+      .vector-item-name { font-size: 15px; font-weight: 800; color: var(--color-fg, #0d1117); display: flex; align-items: center; gap: 8px; }
       .vector-tier-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
-      .tier-1 { background: rgba(201,168,76,0.15); color: #c9a84c; border: 1px solid rgba(201,168,76,.3); }
+      .tier-1 { background: rgba(200,164,90,0.15); color: #c8a45a; border: 1px solid rgba(236,232,223,0.165); }
       .tier-2 { background: #d1fae5; color: #065f46; }
       .tier-3 { background: #fef3c7; color: #92400e; }
       .tier-4 { background: rgba(232,228,220,0.10); color: rgba(232,228,220,0.60); }
@@ -77,98 +77,98 @@ export default function DiagnosisResultPage() {
       .vector-bar-label { font-size: 11px; color: var(--color-muted, #7a6e65); width: 36px; text-align: right; flex-shrink: 0; }
       .vector-bar-track { flex: 1; height: 8px; background: rgba(232,228,220,0.12); border-radius: 99px; overflow: hidden; position: relative; }
       .vector-bar-current { height: 100%; border-radius: 99px; background: rgba(96,165,250,0.75); transition: width 1s cubic-bezier(.4,0,.2,1) .3s; }
-      .vector-bar-ideal-marker { position: absolute; top: 0; height: 100%; width: 3px; background: #c9a84c; border-radius: 1px; transform: translateX(-50%); }
+      .vector-bar-ideal-marker { position: absolute; top: 0; height: 100%; width: 3px; background: #c8a45a; border-radius: 1px; transform: translateX(-50%); }
       .vector-bar-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--color-muted, #7a6e65); margin-top: 4px; }
-      .vector-gap-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: rgba(201,168,76,0.15); color: #c9a84c; border: 1px solid rgba(201,168,76,.3); flex-shrink: 0; }
+      .vector-gap-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: rgba(200,164,90,0.15); color: #c8a45a; border: 1px solid rgba(236,232,223,0.165); flex-shrink: 0; }
       .vector-gap-badge.small { background: #fef3c7; color: #92400e; border: none; }
       .vector-gap-badge.none { background: #d1fae5; color: #065f46; border: none; }
 
       /* ── Goal card ── */
-      .goal-card { background: var(--color-bg-dark, #0a0f1e); border: 1.5px solid rgba(201,168,76,0.25); border-radius: 14px; padding: 24px; margin-bottom: 16px; }
-      .goal-card-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: 15px; font-weight: 700; color: #c9a84c; margin: 0 0 16px; }
+      .goal-card { background: var(--color-bg-dark, #0d1117); border: 1.5px solid rgba(236,232,223,0.138); border-radius: 14px; padding: 24px; margin-bottom: 16px; }
+      .goal-card-title { font-family: 'Shippori Mincho', Georgia, serif; font-size: 15px; font-weight: 700; color: #c8a45a; margin: 0 0 16px; }
       .goal-layers { display: flex; flex-direction: column; gap: 10px; }
-      .goal-layer { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; border: 1px solid rgba(201,168,76,0.15); }
-      .goal-layer-icon { width: 36px; height: 36px; background: rgba(201,168,76,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+      .goal-layer { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; border: 1px solid rgba(236,232,223,0.083); }
+      .goal-layer-icon { width: 36px; height: 36px; background: rgba(200,164,90,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
       .goal-layer-body { flex: 1; }
-      .goal-layer-label { font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.7); margin: 0 0 3px; letter-spacing: .06em; }
+      .goal-layer-label { font-size: 11px; font-weight: 700; color: rgba(200,164,90,0.7); margin: 0 0 3px; letter-spacing: .06em; }
       .goal-layer-text { font-size: 14px; font-weight: 700; color: rgba(255,255,255,.88); margin: 0; line-height: 1.5; }
 
       /* ── Barrier card ── */
-      .result-card { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.25); border-radius: 14px; padding: 24px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.4); }
-      .result-card-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: 16px; font-weight: 700; color: var(--color-fg, #0a0f1e); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+      .result-card { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.138); border-radius: 14px; padding: 24px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.4); }
+      .result-card-title { font-family: 'Shippori Mincho', Georgia, serif; font-size: 16px; font-weight: 700; color: var(--color-fg, #0d1117); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
       .result-card-subtitle { font-size: 12px; color: var(--color-muted, #7a6e65); margin: 0 0 18px; line-height: 1.5; }
       .insight-list { display: flex; flex-direction: column; gap: 12px; }
-      .insight-item { padding: 16px 18px; border-radius: 10px; border-left: 4px solid #c9a84c; background: rgba(201,168,76,0.05); }
-      .insight-label { font-size: 10px; font-weight: 800; color: #c9a84c; margin: 0 0 5px; text-transform: uppercase; letter-spacing: .1em; }
-      .insight-text { font-size: 14px; font-weight: 800; color: var(--color-fg, #0a0f1e); margin: 0 0 4px; line-height: 1.5; }
+      .insight-item { padding: 16px 18px; border-radius: 10px; border-left: 4px solid #c8a45a; background: rgba(200,164,90,0.05); }
+      .insight-label { font-size: 10px; font-weight: 800; color: #c8a45a; margin: 0 0 5px; text-transform: uppercase; letter-spacing: .1em; }
+      .insight-text { font-size: 14px; font-weight: 800; color: var(--color-fg, #0d1117); margin: 0 0 4px; line-height: 1.5; }
       .insight-sub { font-size: 13px; color: var(--color-muted, #7a6e65); margin: 0; line-height: 1.7; }
       .trait-list { display: flex; flex-direction: column; gap: 10px; }
       .trait-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: #e8e4dc; line-height: 1.55; padding: 12px 14px; background: rgba(232,228,220,0.06); border-radius: 10px; }
-      .trait-check { width: 20px; height: 20px; background: rgba(201,168,76,0.2); color: #c9a84c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; flex-shrink: 0; margin-top: 1px; }
+      .trait-check { width: 20px; height: 20px; background: rgba(200,164,90,0.2); color: #c8a45a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; flex-shrink: 0; margin-top: 1px; }
 
       /* ── Provider match ── */
-      .pmc-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1.5px solid rgba(201,168,76,0.25); border-radius: 12px; margin-bottom: 10px; text-decoration: none; color: inherit; transition: border-color .12s, box-shadow .12s; }
-      .pmc-card:hover { border-color: #c9a84c; box-shadow: 0 2px 12px rgba(201,168,76,.15); }
-      .pmc-card.top { border-color: rgba(201,168,76,0.5); background: rgba(201,168,76,0.04); }
+      .pmc-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1.5px solid rgba(236,232,223,0.138); border-radius: 12px; margin-bottom: 10px; text-decoration: none; color: inherit; transition: border-color .12s, box-shadow .12s; }
+      .pmc-card:hover { border-color: rgba(236,232,223,0.3); box-shadow: 0 2px 12px rgba(0,0,0,0.18); }
+      .pmc-card.top { border-color: rgba(236,232,223,0.275); background: rgba(200,164,90,0.04); }
       .pmc-photo { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: rgba(232,228,220,0.10); display: flex; align-items: center; justify-content: center; }
       .pmc-photo img { width: 100%; height: 100%; object-fit: cover; }
       .pmc-photo-icon { font-size: 24px; }
       .pmc-body { flex: 1; min-width: 0; }
-      .pmc-name { font-size: 15px; font-weight: 700; color: var(--color-fg, #0a0f1e); margin: 0 0 2px; }
+      .pmc-name { font-size: 15px; font-weight: 700; color: var(--color-fg, #0d1117); margin: 0 0 2px; }
       .pmc-catch { font-size: 12px; color: var(--color-muted, #7a6e65); margin: 0 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .pmc-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 5px; }
-      .pmc-tag { font-size: 10px; font-weight: 700; padding: 2px 8px; background: rgba(201,168,76,0.12); color: #c9a84c; border-radius: 99px; border: 1px solid rgba(201,168,76,.25); }
+      .pmc-tag { font-size: 10px; font-weight: 700; padding: 2px 8px; background: rgba(200,164,90,0.12); color: #c8a45a; border-radius: 99px; border: 1px solid rgba(236,232,223,0.138); }
       .pmc-meta { font-size: 11px; color: var(--color-muted, #7a6e65); }
       .pmc-arrow { font-size: 14px; color: var(--color-muted, #7a6e65); flex-shrink: 0; }
 
       /* ── Next step section ── */
-      .navi-section { margin: 32px 0; padding: 28px 24px; background: var(--color-bg-dark, #0a0f1e); border-radius: 14px; border: 1px solid rgba(201,168,76,0.2); }
-      .navi-section-label { font-size: 12px; font-weight: 700; color: rgba(201,168,76,0.6); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 16px; }
+      .navi-section { margin: 32px 0; padding: 28px 24px; background: var(--color-bg-dark, #0d1117); border-radius: 14px; border: 1px solid rgba(236,232,223,0.11); }
+      .navi-section-label { font-size: 12px; font-weight: 700; color: rgba(200,164,90,0.6); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 16px; }
       .navi-btn { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 10px; text-decoration: none; transition: opacity .15s; margin-bottom: 12px; }
       .navi-btn:last-child { margin-bottom: 0; }
       .navi-btn:hover { opacity: .9; }
-      .navi-btn-primary { background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.35); }
+      .navi-btn-primary { background: rgba(200,164,90,0.12); border: 1px solid rgba(236,232,223,0.193); }
       .navi-btn-secondary { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); }
       .navi-btn-icon { font-size: 24px; flex-shrink: 0; }
       .navi-btn-body { flex: 1; }
       .navi-btn-title { display: block; font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 3px; }
       .navi-btn-desc { display: block; font-size: 12px; color: rgba(255,255,255,.55); line-height: 1.5; }
-      .navi-btn-arrow { font-size: 18px; color: rgba(201,168,76,0.5); flex-shrink: 0; }
+      .navi-btn-arrow { font-size: 18px; color: rgba(200,164,90,0.5); flex-shrink: 0; }
 
       /* ── Bottom CTA ── */
-      .cta-block { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 24px; margin-top: 8px; box-shadow: 0 4px 24px rgba(0,0,0,.4); }
+      .cta-block { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 24px; margin-top: 8px; box-shadow: 0 4px 24px rgba(0,0,0,.4); }
       .cta-section { display: flex; flex-direction: column; gap: 10px; }
-      .cta-btn-secondary { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; background: rgba(10,15,30,0.50); color: #e8e4dc; font-size: 15px; font-weight: 700; border: 1.5px solid rgba(201,168,76,0.3); border-radius: 10px; text-decoration: none; transition: border-color .12s; cursor: pointer; }
-      .cta-btn-secondary:hover { border-color: #c9a84c; }
-      .cta-divider { height: 1px; background: rgba(201,168,76,0.1); margin: 4px 0; }
+      .cta-btn-secondary { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; background: #151b24; color: #e8e4dc; font-size: 15px; font-weight: 700; border: 1.5px solid rgba(236,232,223,0.165); border-radius: 10px; text-decoration: none; transition: border-color .12s; cursor: pointer; }
+      .cta-btn-secondary:hover { border-color: rgba(236,232,223,0.3); }
+      .cta-divider { height: 1px; background: rgba(200,164,90,0.1); margin: 4px 0; }
       .cta-btn-ghost { display: block; text-align: center; padding: 10px 20px; color: var(--color-muted, #7a6e65); font-size: 13px; text-decoration: none; }
-      .cta-btn-ghost:hover { color: var(--color-fg, #0a0f1e); }
+      .cta-btn-ghost:hover { color: var(--color-fg, #0d1117); }
 
       /* ── Save map CTA (non-logged-in) ── */
-      .save-map-cta { display: flex; gap: 16px; align-items: flex-start; padding: 22px 24px; background: linear-gradient(135deg, rgba(201,168,76,0.08) 0%, rgba(79,70,229,0.06) 100%); border: 1.5px solid rgba(201,168,76,0.35); border-radius: 14px; margin: 0 0 16px; }
+      .save-map-cta { display: flex; gap: 16px; align-items: flex-start; padding: 22px 24px; background: linear-gradient(135deg, rgba(200,164,90,0.08) 0%, rgba(79,70,229,0.06) 100%); border: 1.5px solid rgba(236,232,223,0.193); border-radius: 14px; margin: 0 0 16px; }
       .save-map-cta-icon { font-size: 36px; flex-shrink: 0; }
-      .save-map-cta-title { font-size: 16px; font-weight: 800; color: var(--color-fg, #0a0f1e); margin: 0 0 6px; }
+      .save-map-cta-title { font-size: 16px; font-weight: 800; color: var(--color-fg, #0d1117); margin: 0 0 6px; }
       .save-map-cta-desc { font-size: 13px; color: var(--color-muted, #7a6e65); line-height: 1.8; margin: 0 0 14px; }
-      .save-map-cta-btn { display: inline-flex; align-items: center; gap: 6px; padding: 11px 22px; background: #c9a84c; color: #0a0f1e; font-size: 14px; font-weight: 800; border-radius: 6px; text-decoration: none; transition: opacity .15s; }
+      .save-map-cta-btn { display: inline-flex; align-items: center; gap: 6px; padding: 11px 22px; background: #c8a45a; color: #0d1117; font-size: 14px; font-weight: 800; border-radius: 6px; text-decoration: none; transition: opacity .15s; }
       .save-map-cta-btn:hover { opacity: .88; }
       .save-map-cta-note { font-size: 11px; color: var(--color-muted, #7a6e65); margin: 10px 0 0; line-height: 1.7; }
       /* ── ヒーロー直下 登録促進バナー ── */
-      .auth-hero-banner { margin: 0 0 20px; padding: 18px 20px; background: linear-gradient(135deg, rgba(201,168,76,0.13) 0%, rgba(10,15,30,0.6) 100%); border: 1.5px solid rgba(201,168,76,0.5); border-radius: 14px; animation: abpulse 3s ease-in-out infinite; }
-      @keyframes abpulse { 0%,100%{ border-color:rgba(201,168,76,0.5); } 50%{ border-color:rgba(201,168,76,0.85); } }
+      .auth-hero-banner { margin: 0 0 20px; padding: 18px 20px; background: linear-gradient(135deg, rgba(200,164,90,0.13) 0%, rgba(13,17,23,0.6) 100%); border: 1.5px solid rgba(236,232,223,0.275); border-radius: 14px; animation: abpulse 3s ease-in-out infinite; }
+      @keyframes abpulse { 0%,100%{ border-color:rgba(236,232,223,0.275); } 50%{ border-color:rgba(236,232,223,0.468); } }
       .auth-hero-banner-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
       .auth-hero-banner-icon { font-size: 22px; flex-shrink: 0; }
-      .auth-hero-banner-title { font-size: 14px; font-weight: 900; color: #c9a84c; line-height: 1.4; }
+      .auth-hero-banner-title { font-size: 14px; font-weight: 900; color: #c8a45a; line-height: 1.4; }
       .auth-hero-banner-body { font-size: 12px; color: rgba(232,228,220,0.7); line-height: 1.75; margin: 0 0 14px; }
       .auth-hero-banner-btns { display: flex; gap: 10px; flex-wrap: wrap; }
-      .auth-hero-banner-btn-primary { flex: 1; min-width: 140px; display: block; text-align: center; padding: 11px 16px; background: #c9a84c; color: #0a0f1e; font-size: 13px; font-weight: 800; border-radius: 8px; text-decoration: none; transition: opacity .15s; }
+      .auth-hero-banner-btn-primary { flex: 1; min-width: 140px; display: block; text-align: center; padding: 11px 16px; background: #c8a45a; color: #0d1117; font-size: 13px; font-weight: 800; border-radius: 8px; text-decoration: none; transition: opacity .15s; }
       .auth-hero-banner-btn-primary:hover { opacity: .88; }
-      .auth-hero-banner-btn-secondary { flex: 1; min-width: 100px; display: block; text-align: center; padding: 11px 16px; background: transparent; color: rgba(201,168,76,0.85); font-size: 13px; font-weight: 700; border-radius: 8px; border: 1px solid rgba(201,168,76,0.4); text-decoration: none; transition: background .15s; }
-      .auth-hero-banner-btn-secondary:hover { background: rgba(201,168,76,0.08); }
+      .auth-hero-banner-btn-secondary { flex: 1; min-width: 100px; display: block; text-align: center; padding: 11px 16px; background: transparent; color: rgba(200,164,90,0.85); font-size: 13px; font-weight: 700; border-radius: 8px; border: 1px solid rgba(236,232,223,0.22); text-decoration: none; transition: background .15s; }
+      .auth-hero-banner-btn-secondary:hover { background: rgba(200,164,90,0.08); }
 
       /* ── Voyage route connector ── */
       .v-route { display: flex; flex-direction: column; align-items: center; height: 28px; margin: -4px auto 0; width: 16px; }
-      .v-route-line { flex: 1; width: 1px; background: repeating-linear-gradient(to bottom, rgba(201,168,76,0.55) 0, rgba(201,168,76,0.55) 4px, transparent 4px, transparent 9px); }
-      .v-route-dot { width: 7px; height: 7px; background: rgba(201,168,76,0.7); border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(201,168,76,0.4); }
+      .v-route-line { flex: 1; width: 1px; background: repeating-linear-gradient(to bottom, rgba(200,164,90,0.55) 0, rgba(200,164,90,0.55) 4px, transparent 4px, transparent 9px); }
+      .v-route-dot { width: 7px; height: 7px; background: rgba(200,164,90,0.7); border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(236,232,223,0.22); }
 
       /* ── 商品カルーセル ── */
       .product-carousel-section { margin: 28px 0; overflow: hidden; }
@@ -178,8 +178,8 @@ export default function DiagnosisResultPage() {
       .product-carousel::-webkit-scrollbar { display: none; }
       .product-card { flex-shrink: 0; width: 160px; scroll-snap-align: start; background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.18); border-radius: 12px; padding: 14px 12px; display: flex; flex-direction: column; gap: 8px; transition: border-color .15s; text-decoration: none; }
       .product-card:hover { border-color: rgba(16,185,129,0.45); }
-      .product-card-matched { border-color: rgba(201,168,76,0.45); background: rgba(201,168,76,0.06); }
-      .product-card-matched:hover { border-color: #c9a84c; }
+      .product-card-matched { border-color: rgba(236,232,223,0.248); background: rgba(200,164,90,0.06); }
+      .product-card-matched:hover { border-color: rgba(236,232,223,0.3); }
       .product-card-axis { font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(16,185,129,0.55); }
       .product-card-name { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.85); line-height: 1.45; flex: 1; }
       .product-card-cta { font-size: 11px; font-weight: 700; color: rgba(16,185,129,0.75); display: flex; align-items: center; gap: 3px; }
@@ -190,11 +190,11 @@ export default function DiagnosisResultPage() {
       .type-hero-code { font-size: clamp(36px,10vw,52px); font-weight: 900; letter-spacing: .14em; margin: 0 0 24px; line-height: 1; }
       .type-hero-img-wrap { width: min(240px,68vw); height: min(320px,90vw); margin: 0 auto 20px; border-radius: 18px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
       .type-hero-img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; border-radius: 18px; }
-      .type-hero-name { font-family: 'Noto Serif JP',Georgia,serif; font-size: clamp(20px,6vw,30px); font-weight: 900; color: #fff; margin: 0 0 6px; line-height: 1.3; }
+      .type-hero-name { font-family: 'Shippori Mincho',Georgia,serif; font-size: clamp(20px,6vw,30px); font-weight: 900; color: #fff; margin: 0 0 6px; line-height: 1.3; }
       .type-hero-axis { font-size: 13px; color: rgba(232,228,220,0.45); margin: 0 0 20px; letter-spacing: .06em; }
       .type-hero-tagline { font-size: 13px; color: rgba(232,228,220,0.5); line-height: 1.85; max-width: 280px; margin: 0 auto 20px; text-align: left; }
       .type-hero-share-btn { padding: 9px 20px; background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.15); border-radius: 8px; color: rgba(232,228,220,0.65); font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-      .type-hero-divider { height: 1px; background: linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent); margin: 24px 0 0; }
+      .type-hero-divider { height: 1px; background: linear-gradient(90deg,transparent,rgba(200,164,90,0.3),transparent); margin: 24px 0 0; }
     `;
     document.head.appendChild(style);
 
@@ -262,7 +262,7 @@ export default function DiagnosisResultPage() {
               const concerns = p.target_concerns || [];
               const matched = userConcerns.size > 0 && concerns.some(c => userConcerns.has(c));
               const matchBadge = matched
-                ? `<span style="font-size:9px;font-weight:800;background:rgba(201,168,76,0.2);color:#c9a84c;border:1px solid rgba(201,168,76,.35);border-radius:99px;padding:2px 7px;letter-spacing:.04em">あなた向け</span>`
+                ? `<span style="font-size:9px;font-weight:800;background:rgba(200,164,90,0.2);color:#c8a45a;border:1px solid rgba(236,232,223,0.193);border-radius:99px;padding:2px 7px;letter-spacing:.04em">あなた向け</span>`
                 : '';
               return `<a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer" class="product-card${matched ? ' product-card-matched' : ''}">
                 <span class="product-card-axis">${esc(axisLabel[id] || id)}</span>
@@ -540,7 +540,7 @@ export default function DiagnosisResultPage() {
       AV:'構えの', AQ:'迷い',   AK:'本能の', AL:'羽休めの', AD:'燃える',
       PQ:'引きの', PK:'無自覚の', PL:'休みの', PD:'聖なる',
     };
-    const PATH_COLORS = { virgin:'rgba(201,168,76,0.12):#c9a84c', quit:'#fee2e2:#b91c1c', blind:'#f5f0e8:#7a6e65', lapsed:'#d1fae5:#065f46' };
+    const PATH_COLORS = { virgin:'rgba(200,164,90,0.12):#c8a45a', quit:'#fee2e2:#b91c1c', blind:'#f5f0e8:#7a6e65', lapsed:'#d1fae5:#065f46' };
     const VIEW_ALERTS = {
       worse:   '⚠️ 他者評価が自己評価より低い可能性',
       unknown: '💡 客観的フィードバックを得たことがない',
@@ -709,14 +709,14 @@ export default function DiagnosisResultPage() {
           const r = (lv/5)*R;
           return `${(cx+r*Math.cos(a)).toFixed(1)},${(cy+r*Math.sin(a)).toFixed(1)}`;
         }).join(' ');
-        grid += `<polygon points="${pts}" fill="none" stroke="rgba(201,168,76,0.15)" stroke-width="${lv===5?1.5:1}"/>`;
+        grid += `<polygon points="${pts}" fill="none" stroke="rgba(200,164,90,0.15)" stroke-width="${lv===5?1.5:1}"/>`;
       }
 
       // Axis lines
       let axes = '';
       areas.forEach((_, i) => {
         const a = -Math.PI/2 + (2*Math.PI*i/7);
-        axes += `<line x1="${cx}" y1="${cy}" x2="${(cx+R*Math.cos(a)).toFixed(1)}" y2="${(cy+R*Math.sin(a)).toFixed(1)}" stroke="rgba(201,168,76,0.12)" stroke-width="1"/>`;
+        axes += `<line x1="${cx}" y1="${cy}" x2="${(cx+R*Math.cos(a)).toFixed(1)}" y2="${(cy+R*Math.sin(a)).toFixed(1)}" stroke="rgba(200,164,90,0.12)" stroke-width="1"/>`;
       });
 
       // Ideal polygon (dashed gold)。理想が現在地を下回って見えることのないよう、
@@ -750,14 +750,14 @@ export default function DiagnosisResultPage() {
       return `
         <svg viewBox="0 0 300 300" width="100%" style="max-width:300px;display:block;margin:0 auto">
           ${grid}${axes}
-          <polygon points="${idealPts}" fill="rgba(201,168,76,0.08)" stroke="#c9a84c" stroke-width="1.5" stroke-dasharray="4,3"/>
+          <polygon points="${idealPts}" fill="rgba(200,164,90,0.08)" stroke="#c8a45a" stroke-width="1.5" stroke-dasharray="4,3"/>
           <polygon points="${currentPts}" fill="rgba(96,165,250,0.10)" stroke="rgba(96,165,250,0.85)" stroke-width="2"/>
           ${labelsSvg}
-          <circle cx="${cx}" cy="${cy}" r="4" fill="#c9a84c"/>
+          <circle cx="${cx}" cy="${cy}" r="4" fill="#c8a45a"/>
         </svg>
         <div class="radar-legend">
           <div class="radar-legend-item"><div class="radar-legend-dot" style="background:rgba(96,165,250,0.85)"></div>現在地</div>
-          <div class="radar-legend-item"><div class="radar-legend-dot" style="background:#c9a84c;opacity:.8"></div>理想</div>
+          <div class="radar-legend-item"><div class="radar-legend-dot" style="background:#c8a45a;opacity:.8"></div>理想</div>
         </div>
       `;
     }
@@ -797,10 +797,10 @@ export default function DiagnosisResultPage() {
       if (!typeIdentity) return '';
       const { axisCode, creature, typeCode, displayCode, fullName } = typeIdentity;
       const desc      = TYPE_DESCRIPTION[typeCode] || '';
-      const color     = AXIS_ACCENT_COLOR[axisCode] || '#c9a84c';
+      const color     = AXIS_ACCENT_COLOR[axisCode] || '#c8a45a';
       const axisLabel = AREA_DEFS[identityAxis]?.label || '';
       return `
-        <div class="type-hero" style="background:linear-gradient(180deg,${color}1a 0%,rgba(10,15,30,0) 100%)">
+        <div class="type-hero" style="background:linear-gradient(180deg,${color}1a 0%,rgba(13,17,23,0) 100%)">
           <p class="type-hero-lead">あなたのタイプは →</p>
           <p class="type-hero-code" style="color:${color}">${esc(displayCode)}</p>
           <div class="type-hero-img-wrap" style="border:2px solid ${color}44;box-shadow:0 0 36px ${color}22">
@@ -848,13 +848,13 @@ export default function DiagnosisResultPage() {
         blind:  '→ 客観的なフィードバックを得ることから始める',
         lapsed: '→ 再開のハードルを最小化する',
       };
-      const pathActionNote = pathType ? `<br><span style="font-size:12px;color:#c9a84c;font-weight:700">${PATH_ACTION[pathType]||''}</span>` : '';
+      const pathActionNote = pathType ? `<br><span style="font-size:12px;color:#c8a45a;font-weight:700">${PATH_ACTION[pathType]||''}</span>` : '';
       const overrideChips = Object.entries(AREA_DEFS).map(([id, d]) => {
         const isActive = id === compassFirst;
         return `<button class="compass-override-chip${isActive ? ' active' : ''}" data-axis="${id}">${esc(d.icon)} ${esc(d.label)}</button>`;
       }).join('');
       const overrideNote = isOverrideActive
-        ? `<p style="font-size:11px;color:#c9a84c;font-weight:700;margin:4px 0 0">🧭 あなたが選んだ方角 — <button id="compass-reset-btn" style="background:none;border:none;color:#c9a84c;font-size:11px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline">診断の推奨に戻す</button></p>`
+        ? `<p style="font-size:11px;color:#c8a45a;font-weight:700;margin:4px 0 0">🧭 あなたが選んだ方角 — <button id="compass-reset-btn" style="background:none;border:none;color:#c8a45a;font-size:11px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline">診断の推奨に戻す</button></p>`
         : `<p style="font-size:11px;color:#6b7280;margin:4px 0 0">診断が算出した最初の一手</p>`;
       // TOP2, TOP3
       const top2Id = isOverrideActive ? (priorityOrder.filter(id => id !== compassFirst)[0] || null) : (priorityOrder.filter(id => id !== compassFirst)[0] || null);
@@ -865,12 +865,12 @@ export default function DiagnosisResultPage() {
         const d = AREA_DEFS[id];
         if (!d) return '';
         const pathT = tv[id]?.path_type;
-        const pathNote = pathT ? `<span style="font-size:10px;color:#c9a84c;font-weight:700;display:block;margin-top:3px">${(PATH_ACTION[pathT]||'').replace('→ ','')}</span>` : '';
+        const pathNote = pathT ? `<span style="font-size:10px;color:#c8a45a;font-weight:700;display:block;margin-top:3px">${(PATH_ACTION[pathT]||'').replace('→ ','')}</span>` : '';
         return `
-          <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.12);border-radius:10px;flex:1;min-width:0">
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(236,232,223,0.066);border-radius:10px;flex:1;min-width:0">
             <span style="font-size:18px;flex-shrink:0;line-height:1.4">${esc(d.icon)}</span>
             <div style="min-width:0">
-              <span style="font-size:10px;color:rgba(201,168,76,0.6);font-weight:700;letter-spacing:.06em">第${si+2}候補</span>
+              <span style="font-size:10px;color:rgba(200,164,90,0.6);font-weight:700;letter-spacing:.06em">第${si+2}候補</span>
               <div style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9)">${esc(d.label)}</div>
               ${pathNote}
             </div>
@@ -885,16 +885,16 @@ export default function DiagnosisResultPage() {
           ${overrideNote}
           <div class="compass-reason" style="margin-top:12px">${COMPASS_REASONS[compassFirst] || ''}${urgencyNote}${pathActionNote}</div>
           <a href="/mypage/navi" class="compass-cta">変容ロードマップを見る →</a>
-          <a href="/search?category=${esc(def.catLink)}&diag=1" style="display:inline-block;margin-top:8px;font-size:12px;color:#6b7280;text-decoration:none;" onmouseover="this.style.color='#c9a84c'" onmouseout="this.style.color='#6b7280'">このカテゴリのプロを探すなら →</a>
+          <a href="/search?category=${esc(def.catLink)}&diag=1" style="display:inline-block;margin-top:8px;font-size:12px;color:#6b7280;text-decoration:none;" onmouseover="this.style.color='#c8a45a'" onmouseout="this.style.color='#6b7280'">このカテゴリのプロを探すなら →</a>
 
           ${subCompasses ? `
-          <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(201,168,76,0.15)">
-            <p style="font-size:11px;font-weight:700;color:rgba(201,168,76,0.6);margin:0 0 8px;letter-spacing:.06em">第2・第3候補</p>
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(236,232,223,0.083)">
+            <p style="font-size:11px;font-weight:700;color:rgba(200,164,90,0.6);margin:0 0 8px;letter-spacing:.06em">第2・第3候補</p>
             <div style="display:flex;gap:8px;flex-wrap:wrap">${subCompasses}</div>
           </div>` : ''}
 
-          <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(201,168,76,0.2);">
-            <p style="font-size:12px;font-weight:800;color:rgba(201,168,76,0.8);margin:0 0 10px;letter-spacing:.06em;display:flex;align-items:center;gap:6px"><span>🔄</span> 最初の一手を自分で選ぶ</p>
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(236,232,223,0.11);">
+            <p style="font-size:12px;font-weight:800;color:rgba(200,164,90,0.8);margin:0 0 10px;letter-spacing:.06em;display:flex;align-items:center;gap:6px"><span>🔄</span> 最初の一手を自分で選ぶ</p>
             <div style="display:flex;flex-wrap:wrap;gap:8px">${overrideChips}</div>
           </div>
         </div>
@@ -936,11 +936,11 @@ export default function DiagnosisResultPage() {
           ? '地図はすべて描けました。写真1枚で、自分では見えていない今の現在地がわかります。'
           : '地図が変わったなら、現在地も変わっています。同じ場所から、もう一度測ってみましょう。';
         return `
-          <div style="margin:16px 0 20px;padding:20px 18px;background:rgba(10,15,30,0.7);border:1px solid rgba(201,168,76,0.3);border-radius:14px;text-align:center">
-            <p style="font-size:10px;font-weight:800;letter-spacing:.16em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin:0 0 8px">Map ✓ Complete</p>
+          <div style="margin:16px 0 20px;padding:20px 18px;background:#151b24;border:1px solid rgba(236,232,223,0.165);border-radius:14px;text-align:center">
+            <p style="font-size:10px;font-weight:800;letter-spacing:.16em;color:rgba(200,164,90,0.6);text-transform:uppercase;margin:0 0 8px">Map ✓ Complete</p>
             <p style="font-size:15px;font-weight:800;color:#e8e4dc;margin:0 0 6px;line-height:1.5">${esc(title)}</p>
             <p style="font-size:12px;color:rgba(232,228,220,0.5);margin:0 0 16px;line-height:1.75">${esc(body)}</p>
-            <a href="/mirror" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#c9a84c,#e8c86a);color:#0a0f1e;font-size:14px;font-weight:800;border-radius:10px;text-decoration:none">🪞 現在地を測る →</a>
+            <a href="/mirror" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#c8a45a,#e8c86a);color:#0d1117;font-size:14px;font-weight:800;border-radius:10px;text-decoration:none">🪞 現在地を測る →</a>
           </div>`;
       }
 
@@ -950,11 +950,11 @@ export default function DiagnosisResultPage() {
       // 来た道はQ3で既に回答済みなので、deepenで残っているのは自己視点(+恋愛への影響)のみ
       const qCount = NO_LOVE_AXES.has(nextId) ? 1 : 2;
       return `
-        <div style="margin:16px 0 20px;padding:20px 18px;background:rgba(10,15,30,0.7);border:1px solid rgba(201,168,76,0.28);border-radius:14px;text-align:center">
-          <p style="font-size:10px;font-weight:800;letter-spacing:.16em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin:0 0 10px">Map ${drawn} / ${total}</p>
+        <div style="margin:16px 0 20px;padding:20px 18px;background:#151b24;border:1px solid rgba(236,232,223,0.154);border-radius:14px;text-align:center">
+          <p style="font-size:10px;font-weight:800;letter-spacing:.16em;color:rgba(200,164,90,0.6);text-transform:uppercase;margin:0 0 10px">Map ${drawn} / ${total}</p>
           <p style="font-size:13px;color:rgba(232,228,220,0.55);margin:0 0 4px">地図はまだ骨格の状態です</p>
           <p style="font-size:17px;font-weight:800;color:#e8e4dc;margin:0 0 16px;line-height:1.4">次に描き込むのは —— ${esc(def.icon)} ${esc(def.label)}</p>
-          <a href="/diagnosis?deepen=${esc(nextId)}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#c9a84c,#e8c86a);color:#0a0f1e;font-size:14px;font-weight:800;border-radius:10px;text-decoration:none">${esc(def.label)}の地図を描き込む（${qCount}問・30秒）→</a>
+          <a href="/diagnosis?deepen=${esc(nextId)}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#c8a45a,#e8c86a);color:#0d1117;font-size:14px;font-weight:800;border-radius:10px;text-decoration:none">${esc(def.label)}の地図を描き込む（${qCount}問・30秒）→</a>
           <p style="font-size:11px;color:rgba(232,228,220,0.32);margin:12px 0 0;line-height:1.6">描き込むほど、New Me Navi のステップが具体的になります</p>
         </div>`;
     }
@@ -997,7 +997,7 @@ export default function DiagnosisResultPage() {
             </div>`;
           }).join('');
           return `<div style="margin-top:12px">
-            <div style="font-size:10px;font-weight:700;color:rgba(201,168,76,0.6);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">基礎の一手 <span style="color:rgba(201,168,76,0.45);font-weight:400">${doneCount}/${baseSteps.length}</span></div>
+            <div style="font-size:10px;font-weight:700;color:rgba(200,164,90,0.6);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">基礎の一手 <span style="color:rgba(200,164,90,0.45);font-weight:400">${doneCount}/${baseSteps.length}</span></div>
             <div class="bl-scroll-row">${cards}</div>
           </div>`;
         })();
@@ -1064,7 +1064,7 @@ export default function DiagnosisResultPage() {
             </div>
             ${b.condition ? `<div class="insight-item" style="border-left-color:#059669;background:#f0fdf4">
               <div class="insight-label" style="color:#059669">今回優先するプロの条件</div>
-              <div class="insight-text" style="color:#0a0f1e">${esc(b.condition)}</div>
+              <div class="insight-text" style="color:#0d1117">${esc(b.condition)}</div>
             </div>` : ''}
           </div>
         </div>
@@ -1174,8 +1174,8 @@ export default function DiagnosisResultPage() {
         const storyList = await storyRes.json();
         const story = Array.isArray(storyList) ? storyList[0] : null;
         if (story?.change_after) {
-          matchedStoryHtml = `<div style="margin:12px 0 20px;padding:16px 18px;background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.28);border-radius:12px">
-            <p style="font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin:0 0 8px">同じ軸で悩んでいた、先輩の声</p>
+          matchedStoryHtml = `<div style="margin:12px 0 20px;padding:16px 18px;background:#151b24;border:1px solid rgba(236,232,223,0.154);border-radius:12px">
+            <p style="font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(200,164,90,0.6);text-transform:uppercase;margin:0 0 8px">同じ軸で悩んでいた、先輩の声</p>
             ${story.concern_before ? `<p style="font-size:12px;color:rgba(232,228,220,0.5);margin:0 0 4px">${esc(story.concern_before)}</p>` : ''}
             <p style="font-size:14px;font-weight:700;color:rgba(232,228,220,0.92);line-height:1.7;margin:0">${esc(story.change_after)}</p>
           </div>`;
@@ -1208,13 +1208,13 @@ export default function DiagnosisResultPage() {
 
       ${buildNextDrawBlock()}
 
-      ${compassFirstDef.label ? `<div style="margin:12px 0 20px;padding:16px 18px;background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.28);border-radius:12px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(8px)">
+      ${compassFirstDef.label ? `<div style="margin:12px 0 20px;padding:16px 18px;background:#151b24;border:1px solid rgba(236,232,223,0.154);border-radius:12px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(8px)">
         <span style="font-size:26px;flex-shrink:0">🪞</span>
         <div style="flex:1;min-width:0">
           <p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px;line-height:1.55">地図では ${esc(compassFirstDef.icon||'')} ${esc(compassFirstDef.label)} が最初の一手。<br>実際の現在地は、写真1枚で測れます。</p>
           <p style="font-size:11px;color:rgba(232,228,220,0.4);margin:0">写真は保存しません</p>
         </div>
-        <a href="/mirror" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(201,168,76,0.1);border:1.5px solid #c9a84c;color:#c9a84c;border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">現在地を<br>測る</a>
+        <a href="/mirror" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(200,164,90,0.1);border:1.5px solid rgba(236,232,223,0.3);color:#c8a45a;border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">現在地を<br>測る</a>
       </div>` : ''}
 
       ${matchedStoryHtml}
@@ -1279,14 +1279,14 @@ export default function DiagnosisResultPage() {
         const _mt = priorityOrder.slice(0, 3).map(id => AREA_DEFS[id]?.label).filter(Boolean);
         const _title = _mt.length >= 2 ? _mt.join('・') + 'の現在地を写真で測る' : '写真1枚で、今の現在地を測る';
         return `<a href="/lp/mirror" style="display:block;text-decoration:none;margin-bottom:20px">
-        <div style="display:flex;align-items:center;gap:16px;padding:18px 20px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.35);border-radius:14px;transition:border-color 0.2s">
+        <div style="display:flex;align-items:center;gap:16px;padding:18px 20px;background:rgba(200,164,90,0.08);border:1px solid rgba(236,232,223,0.193);border-radius:14px;transition:border-color 0.2s">
           <span style="font-size:28px;flex-shrink:0">🪞</span>
           <div style="flex:1">
-            <p style="font-size:10px;font-weight:800;letter-spacing:.14em;color:#c9a84c;text-transform:uppercase;margin:0 0 4px">Fineme Mirror — ¥780/月</p>
+            <p style="font-size:10px;font-weight:800;letter-spacing:.14em;color:#c8a45a;text-transform:uppercase;margin:0 0 4px">Fineme Mirror — ¥780/月</p>
             <p style="font-size:14px;font-weight:700;color:rgba(232,228,220,0.95);margin:0 0 3px">${esc(_title)}</p>
             <p style="font-size:12px;color:rgba(232,228,220,0.55);margin:0;line-height:1.5">地図を描くのがMe Scan、現在地を測るのがMirror。毎月測り直すと、地図に変化の軌跡が残ります。<span style="color:rgba(232,228,220,0.35)">（1回だけなら ¥500）</span></p>
           </div>
-          <span style="font-size:11px;font-weight:800;color:#0a0f1e;background:linear-gradient(135deg,#c9a84c,#e8c97a);border-radius:20px;padding:5px 14px;flex-shrink:0;white-space:nowrap">詳しく見る →</span>
+          <span style="font-size:11px;font-weight:800;color:#0d1117;background:linear-gradient(135deg,#c8a45a,#e8c97a);border-radius:20px;padding:5px 14px;flex-shrink:0;white-space:nowrap">詳しく見る →</span>
         </div>
       </a>`;
       })()}
@@ -1308,8 +1308,8 @@ export default function DiagnosisResultPage() {
       ` : ''}
 
       ${!localStorage.getItem('fineme:feedback:diagnosis_result') ? `
-      <div id="feedback-widget" style="background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.18);border-radius:16px;padding:24px 20px;margin-bottom:24px">
-        <div style="font-size:13px;font-weight:700;color:rgba(201,168,76,0.9);letter-spacing:.06em;margin-bottom:4px">FEEDBACK</div>
+      <div id="feedback-widget" style="background:#151b24;border:1px solid rgba(236,232,223,0.099);border-radius:16px;padding:24px 20px;margin-bottom:24px">
+        <div style="font-size:13px;font-weight:700;color:rgba(200,164,90,0.9);letter-spacing:.06em;margin-bottom:4px">FEEDBACK</div>
         <div style="font-size:16px;font-weight:700;color:#e8e4dc;margin-bottom:20px">この診断はどうでしたか？</div>
         <div style="display:flex;flex-direction:column;gap:16px">
           ${['accuracy','usability','revisit'].map((k,i) => {
@@ -1323,7 +1323,7 @@ export default function DiagnosisResultPage() {
           }).join('')}
           <textarea id="fb-comment" placeholder="ひとこと（任意）" rows="2" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#e8e4dc;font-size:13px;padding:10px 12px;resize:vertical;width:100%;box-sizing:border-box;margin-top:4px"></textarea>
           <div id="fb-error" style="display:none;font-size:12px;color:#f87171;text-align:right;margin-top:-8px"></div>
-          <button id="fb-submit" type="button" style="background:rgba(201,168,76,0.18);border:1px solid rgba(201,168,76,0.35);border-radius:8px;color:#c9a84c;font-size:13px;font-weight:700;padding:10px 24px;cursor:pointer;letter-spacing:.04em;transition:background .15s;align-self:flex-end">送信する</button>
+          <button id="fb-submit" type="button" style="background:rgba(200,164,90,0.18);border:1px solid rgba(236,232,223,0.193);border-radius:8px;color:#c8a45a;font-size:13px;font-weight:700;padding:10px 24px;cursor:pointer;letter-spacing:.04em;transition:background .15s;align-self:flex-end">送信する</button>
         </div>
       </div>
       ` : ''}
@@ -1373,18 +1373,18 @@ export default function DiagnosisResultPage() {
         group.querySelectorAll('.fb-star').forEach(star => {
           star.addEventListener('mouseenter', () => {
             group.querySelectorAll('.fb-star').forEach(s => {
-              s.style.color = parseInt(s.dataset.val) <= parseInt(star.dataset.val) ? '#c9a84c' : 'rgba(255,255,255,0.2)';
+              s.style.color = parseInt(s.dataset.val) <= parseInt(star.dataset.val) ? '#c8a45a' : 'rgba(255,255,255,0.2)';
             });
           });
           star.addEventListener('mouseleave', () => {
             group.querySelectorAll('.fb-star').forEach(s => {
-              s.style.color = parseInt(s.dataset.val) <= ratings[key] ? '#c9a84c' : 'rgba(255,255,255,0.2)';
+              s.style.color = parseInt(s.dataset.val) <= ratings[key] ? '#c8a45a' : 'rgba(255,255,255,0.2)';
             });
           });
           star.addEventListener('click', () => {
             ratings[key] = parseInt(star.dataset.val);
             group.querySelectorAll('.fb-star').forEach(s => {
-              s.style.color = parseInt(s.dataset.val) <= ratings[key] ? '#c9a84c' : 'rgba(255,255,255,0.2)';
+              s.style.color = parseInt(s.dataset.val) <= ratings[key] ? '#c8a45a' : 'rgba(255,255,255,0.2)';
             });
           });
         });
@@ -1419,7 +1419,7 @@ export default function DiagnosisResultPage() {
           return;
         }
         localStorage.setItem('fineme:feedback:diagnosis_result', '1');
-        fbWidget.innerHTML = '<div style="padding:16px 0;text-align:center;color:rgba(201,168,76,0.9);font-size:14px;font-weight:700">フィードバックを送りました。ありがとうございます 🙏</div>';
+        fbWidget.innerHTML = '<div style="padding:16px 0;text-align:center;color:rgba(200,164,90,0.9);font-size:14px;font-weight:700">フィードバックを送りました。ありがとうございます 🙏</div>';
       });
     }
 
@@ -1459,7 +1459,7 @@ export default function DiagnosisResultPage() {
           ctx.scale(S, S);
 
           // 背景
-          ctx.fillStyle = '#0a0f1e';
+          ctx.fillStyle = '#0d1117';
           ctx.fillRect(0, 0, W, H);
 
           // 上部グロー
@@ -1643,10 +1643,10 @@ export default function DiagnosisResultPage() {
            持つため冗長だった上、直接子孫を選ぶ記号を使うとJSXのstyleタグ内では
            SSR時にエンティティへ変換されてしまいhydrationミスマッチを起こしていた
            （でお報告2026-08-27の原因。stackタグ内では記号そのものを書かないこと） */
-        .result-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; min-width: 0; }
+        .result-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; min-width: 0; }
         .result-sidenav .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .result-sidenav .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
-        .result-sidenav .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
+        .result-sidenav .sidenav-link:hover { background: rgba(200,164,90,0.1); color: #0d1117; }
+        .result-sidenav .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #0d1117; border-left: 3px solid #c8a45a; padding-left: 9px; }
         @media (max-width: 640px) {
           .result-layout { grid-template-columns: 1fr; padding: 16px 16px 60px; overflow-x: hidden; }
           .result-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
@@ -1661,15 +1661,15 @@ export default function DiagnosisResultPage() {
         .bl-axis-group.bl-axis-done { opacity: 0.5; }
         .bl-axis-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 0 2px; }
         .bl-axis-label { font-size: 12px; font-weight: 800; color: rgba(232,228,220,0.75); }
-        .bl-axis-count { font-size: 11px; color: rgba(201,168,76,0.7); font-weight: 700; }
+        .bl-axis-count { font-size: 11px; color: rgba(200,164,90,0.7); font-weight: 700; }
         .bl-scroll-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
         .bl-scroll-row::-webkit-scrollbar { height: 3px; }
         .bl-scroll-row::-webkit-scrollbar-track { background: transparent; }
-        .bl-scroll-row::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 2px; }
-        .bl-card { flex: 0 0 200px; scroll-snap-align: start; background: rgba(10,15,30,0.55); border: 1px solid rgba(232,228,220,0.12); border-radius: 12px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; transition: border-color .15s; }
-        .bl-card:hover { border-color: rgba(201,168,76,0.35); }
+        .bl-scroll-row::-webkit-scrollbar-thumb { background: rgba(200,164,90,0.3); border-radius: 2px; }
+        .bl-card { flex: 0 0 200px; scroll-snap-align: start; background: #151b24; border: 1px solid rgba(232,228,220,0.12); border-radius: 12px; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; transition: border-color .15s; }
+        .bl-card:hover { border-color: rgba(236,232,223,0.193); }
         .bl-card-done { background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.25); }
-        .bl-card-check { width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid rgba(232,228,220,0.25); background: rgba(10,15,30,0.65); display: flex; align-items: center; justify-content: center; font-size: 11px; color: #10b981; flex-shrink: 0; transition: all .15s; cursor: pointer; }
+        .bl-card-check { width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid rgba(232,228,220,0.25); background: #151b24; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #10b981; flex-shrink: 0; transition: all .15s; cursor: pointer; }
         .bl-card-check.checked { background: #10b981; border-color: #10b981; color: #fff; }
         .bl-card-text { font-size: 12px; color: rgba(232,228,220,0.75); line-height: 1.55; flex: 1; }
         .bl-card-done .bl-card-text { text-decoration: line-through; color: #9ca3af; }

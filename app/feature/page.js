@@ -99,14 +99,14 @@ export default async function FeatureListPage({ searchParams }) {
         <div style={{
           marginTop: '64px',
           padding: 'clamp(32px, 6vw, 52px) clamp(20px, 5vw, 48px)',
-          background: 'linear-gradient(135deg, rgba(10,15,30,0.9) 0%, rgba(6,12,26,0.95) 100%)',
-          border: '1px solid rgba(201,168,76,0.2)',
+          background: 'linear-gradient(135deg, rgba(13,17,23,0.9) 0%, rgba(6,12,26,0.95) 100%)',
+          border: '1px solid rgba(236,232,223,0.11)',
           borderRadius: '20px',
           textAlign: 'center',
           position: 'relative',
           overflow: 'hidden',
         }}>
-          <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '160px', height: '160px', background: 'radial-gradient(circle, rgba(201,168,76,0.07) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '160px', height: '160px', background: 'radial-gradient(circle, rgba(200,164,90,0.07) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
           <div style={{ position: 'relative', zIndex: 1 }}>
             <div style={{ fontSize: '28px', marginBottom: '10px' }}>🧭</div>
             <h2 style={{ fontSize: 'clamp(17px, 2.8vw, 22px)', fontWeight: 800, color: '#f0ece4', marginBottom: '10px', lineHeight: 1.4, fontFamily: 'var(--font-serif)' }}>
@@ -117,10 +117,10 @@ export default async function FeatureListPage({ searchParams }) {
             </p>
             <Link href="/diagnosis" style={{
               display: 'inline-block', padding: '13px 32px',
-              background: 'linear-gradient(135deg, #c9a84c, #e8c97a)',
-              borderRadius: '8px', color: '#0a0f1e', fontWeight: 800,
+              background: 'linear-gradient(135deg, #c8a45a, #e8c97a)',
+              borderRadius: '8px', color: '#0d1117', fontWeight: 800,
               fontSize: '15px', textDecoration: 'none', fontFamily: 'var(--font-sans)',
-              boxShadow: '0 4px 18px rgba(201,168,76,0.3)',
+              boxShadow: '0 4px 18px rgba(0,0,0,0.36)',
             }}>
               無料で診断する（3分）→
             </Link>
@@ -144,7 +144,7 @@ function ArticleCard({ article }) {
     <Link href={`/feature/${article.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
       <article className="feature-card" style={{
         background: 'rgba(255,255,255,0.52)',
-        border: '1px solid rgba(201,168,76,0.2)',
+        border: '1px solid rgba(236,232,223,0.11)',
         borderRadius: '16px',
         overflow: 'hidden',
         transition: 'transform 0.2s ease, box-shadow 0.2s ease',

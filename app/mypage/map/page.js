@@ -53,7 +53,7 @@ function FbStarRow({ label, onChange }) {
       <div style={{display:'flex',gap:4}}>
         {[1,2,3,4,5].map(n => (
           <button key={n}
-            style={{background:'none',border:'none',cursor:'pointer',fontSize:22,color:n<=(hover||val)?'#c9a84c':'rgba(255,255,255,.2)',padding:2,transition:'color .15s'}}
+            style={{background:'none',border:'none',cursor:'pointer',fontSize:22,color:n<=(hover||val)?'#c8a45a':'rgba(255,255,255,.2)',padding:2,transition:'color .15s'}}
             onMouseEnter={() => setHover(n)}
             onMouseLeave={() => setHover(0)}
             onClick={() => { setVal(n); onChange(n); }}
@@ -214,28 +214,28 @@ export default function MapPage() {
         .tg:hover .fog-partial { filter:none; opacity:.9; }
         .cpulse { animation:cp 2.5s ease-in-out infinite; }
         @keyframes cp { 0%,100%{opacity:.14} 55%{opacity:.38} }
-        .dp { margin:12px 16px; background:rgba(6,10,26,.94); border:1px solid rgba(201,168,76,.28); border-radius:18px; padding:18px; animation:su .22s ease; }
+        .dp { margin:12px 16px; background:rgba(6,10,26,.94); border:1px solid rgba(236,232,223,0.154); border-radius:18px; padding:18px; animation:su .22s ease; }
         @keyframes su { from{transform:translateY(8px);opacity:0} to{transform:translateY(0);opacity:1} }
-        .dp-cta { display:block; text-align:center; padding:11px; background:rgba(201,168,76,.09); border:1px solid rgba(201,168,76,.32); border-radius:99px; color:#c9a84c; text-decoration:none; font-size:13px; font-weight:700; margin-top:14px; transition:background .15s; }
-        .dp-cta:hover { background:rgba(201,168,76,.18); }
-        .mtoggle { display:inline-flex; background:rgba(255,255,255,0.04); border:1px solid rgba(201,168,76,.2); border-radius:99px; padding:3px; }
+        .dp-cta { display:block; text-align:center; padding:11px; background:rgba(200,164,90,.09); border:1px solid rgba(236,232,223,0.176); border-radius:99px; color:#c8a45a; text-decoration:none; font-size:13px; font-weight:700; margin-top:14px; transition:background .15s; }
+        .dp-cta:hover { background:rgba(200,164,90,.18); }
+        .mtoggle { display:inline-flex; background:rgba(255,255,255,0.04); border:1px solid rgba(236,232,223,0.11); border-radius:99px; padding:3px; }
         .mtoggle button { font-family:inherit; font-size:11.5px; font-weight:700; padding:7px 16px; border-radius:99px; border:none; background:transparent; color:rgba(232,228,220,.45); cursor:pointer; transition:all .2s; }
-        .mtoggle button.active { background:rgba(201,168,76,.16); color:#e3c26e; }
+        .mtoggle button.active { background:rgba(200,164,90,.16); color:#e3c26e; }
         .mpill { font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:99px; border:1px solid rgba(52,211,153,.4); color:#34d399; background:rgba(52,211,153,.08); display:inline-block; }
-        .mpill.stable { border-color:rgba(201,168,76,.35); color:#e3c26e; background:rgba(201,168,76,.06); }
+        .mpill.stable { border-color:rgba(236,232,223,0.193); color:#e3c26e; background:rgba(200,164,90,.06); }
       `}</style>
 
       <div className="map-pg">
         {/* Header */}
         <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',padding:'22px 20px 4px'}}>
           <div>
-            <div style={{fontSize:9,fontWeight:800,letterSpacing:'.16em',color:'rgba(201,168,76,.5)',textTransform:'uppercase',marginBottom:2}}>New Me</div>
+            <div style={{fontSize:9,fontWeight:800,letterSpacing:'.16em',color:'rgba(200,164,90,.5)',textTransform:'uppercase',marginBottom:2}}>New Me</div>
             <div style={{fontSize:26,fontWeight:900,letterSpacing:'.02em',lineHeight:1}}>Map</div>
             <div style={{fontSize:11,color:'rgba(232,228,220,.3)',marginTop:4}}>
               {viewMonth === 'now' ? '7つの領域を同時に探索する' : `${monthLabel(viewMonth)}時点の記録`}
             </div>
           </div>
-          <Link href="/mypage/navi" style={{fontSize:12,color:'rgba(201,168,76,.7)',textDecoration:'none',border:'1px solid rgba(201,168,76,.22)',padding:'7px 14px',borderRadius:99,marginTop:6,display:'inline-block',whiteSpace:'nowrap'}}>Navi →</Link>
+          <Link href="/mypage/navi" style={{fontSize:12,color:'rgba(200,164,90,.7)',textDecoration:'none',border:'1px solid rgba(236,232,223,0.121)',padding:'7px 14px',borderRadius:99,marginTop:6,display:'inline-block',whiteSpace:'nowrap'}}>Navi →</Link>
         </div>
 
         {/* フェーズ1: 月次トグル（過去のスナップショットがある時だけ表示） */}
@@ -254,7 +254,7 @@ export default function MapPage() {
 
         {/* フェーズ2: Mirrorで確認された変化のサマリー */}
         {summary && (
-          <div style={{margin:'14px 16px 0',background: improvedCount > 0 ? 'rgba(52,211,153,0.06)' : 'rgba(201,168,76,0.05)', border: `1px solid ${improvedCount > 0 ? 'rgba(52,211,153,0.24)' : 'rgba(201,168,76,.18)'}`, borderRadius:14, padding:'13px 16px', display:'flex', alignItems:'center', gap:11}}>
+          <div style={{margin:'14px 16px 0',background: improvedCount > 0 ? 'rgba(52,211,153,0.06)' : 'rgba(200,164,90,0.05)', border: `1px solid ${improvedCount > 0 ? 'rgba(52,211,153,0.24)' : 'rgba(200,164,90,.18)'}`, borderRadius:14, padding:'13px 16px', display:'flex', alignItems:'center', gap:11}}>
             <span style={{fontSize:20}}>{summary.icon}</span>
             <span style={{fontSize:12.5,color:'rgba(232,228,220,.85)',lineHeight:1.55}}>{summary.text}</span>
           </div>
@@ -312,15 +312,15 @@ export default function MapPage() {
               const circ = +(2 * Math.PI * arcR).toFixed(2);
               const offset = +(circ * (1 - pct / 100)).toFixed(2);
               const mStatus = mirrorStatusFor(id);
-              const arcColor = mStatus === 'improved' ? '#34d399' : (isC ? '#c9a84c' : 'rgba(96,165,250,.6)');
+              const arcColor = mStatus === 'improved' ? '#34d399' : (isC ? '#c8a45a' : 'rgba(96,165,250,.6)');
 
               return (
                 <g key={id} className="tg" onClick={() => setSel(isSel ? null : id)}>
 
                   {/* Compass pulse ring */}
                   {isC && <>
-                    <circle cx={t.x} cy={t.y} r={t.r + 26} className="cpulse" fill="rgba(201,168,76,.06)"/>
-                    <circle cx={t.x} cy={t.y} r={t.r + 15} fill="none" stroke="rgba(201,168,76,.2)" strokeWidth="1.5" strokeDasharray="3 3"/>
+                    <circle cx={t.x} cy={t.y} r={t.r + 26} className="cpulse" fill="rgba(200,164,90,.06)"/>
+                    <circle cx={t.x} cy={t.y} r={t.r + 15} fill="none" stroke="rgba(200,164,90,.2)" strokeWidth="1.5" strokeDasharray="3 3"/>
                   </>}
 
                   {/* Island blobs (organic shape via 3 stacked circles) */}
@@ -329,7 +329,7 @@ export default function MapPage() {
                     <circle cx={t.x - t.r * .28} cy={t.y + t.r * .18} r={t.r * .38} fill={`url(#gmap-${id})`}/>
                     <circle cx={t.x} cy={t.y} r={t.r}
                       fill={`url(#gmap-${id})`}
-                      stroke={isC ? 'rgba(201,168,76,.6)' : isSel ? 'rgba(232,228,220,.42)' : 'rgba(232,228,220,.09)'}
+                      stroke={isC ? 'rgba(200,164,90,.6)' : isSel ? 'rgba(232,228,220,.42)' : 'rgba(232,228,220,.09)'}
                       strokeWidth={isC ? 2 : 1.5}/>
                     {/* Interior highlight */}
                     <ellipse cx={t.x - t.r*.16} cy={t.y - t.r*.2} rx={t.r*.42} ry={t.r*.3} fill="rgba(255,255,255,.05)"/>
@@ -356,7 +356,7 @@ export default function MapPage() {
                     textAnchor="middle"
                     fontSize="10.5"
                     fontWeight={isC ? '900' : '700'}
-                    fill={isC ? '#c9a84c' : fog === 'full' ? 'rgba(232,228,220,.25)' : 'rgba(232,228,220,.82)'}>
+                    fill={isC ? '#c8a45a' : fog === 'full' ? 'rgba(232,228,220,.25)' : 'rgba(232,228,220,.82)'}>
                     {t.label}
                   </text>
 
@@ -364,7 +364,7 @@ export default function MapPage() {
                   {isC && (
                     <text x={t.x} y={t.y - t.r - 10}
                       textAnchor="middle" fontSize="9"
-                      fill="rgba(201,168,76,.78)">
+                      fill="rgba(200,164,90,.78)">
                       🧭 今ここ
                     </text>
                   )}
@@ -383,8 +383,8 @@ export default function MapPage() {
 
             {/* Compass rose */}
             <g transform="translate(326,456)">
-              <circle r="14" fill="rgba(5,8,22,.95)" stroke="rgba(201,168,76,.25)" strokeWidth="1"/>
-              <text x="0" y="5" textAnchor="middle" fontSize="12" fill="rgba(201,168,76,.5)">✦</text>
+              <circle r="14" fill="rgba(5,8,22,.95)" stroke="rgba(200,164,90,.25)" strokeWidth="1"/>
+              <text x="0" y="5" textAnchor="middle" fontSize="12" fill="rgba(200,164,90,.5)">✦</text>
             </g>
 
             {/* Watermark */}
@@ -394,8 +394,8 @@ export default function MapPage() {
 
         {/* Feedback widget */}
         {!fbDone && !fbSent && (
-          <div style={{margin:'16px 16px 0',background:'rgba(10,15,30,0.65)',border:'1px solid rgba(201,168,76,.18)',borderRadius:16,padding:'20px 16px'}}>
-            <div style={{fontSize:11,fontWeight:700,color:'rgba(201,168,76,.9)',letterSpacing:'.06em',marginBottom:3}}>FEEDBACK</div>
+          <div style={{margin:'16px 16px 0',background:'#151b24',border:'1px solid rgba(236,232,223,0.099)',borderRadius:16,padding:'20px 16px'}}>
+            <div style={{fontSize:11,fontWeight:700,color:'rgba(200,164,90,.9)',letterSpacing:'.06em',marginBottom:3}}>FEEDBACK</div>
             <div style={{fontSize:14,fontWeight:700,color:'#e8e4dc',marginBottom:16}}>このマップはどうでしたか？</div>
             {[['accuracy','結果の的確さ'],['usability','使いやすさ'],['revisit','また使いたいか']].map(([key,label]) => (
               <FbStarRow key={key} label={label} onChange={v => { fbRatings.current[key] = v; }}/>
@@ -407,7 +407,7 @@ export default function MapPage() {
               style={{background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.12)',borderRadius:8,color:'#e8e4dc',fontSize:13,padding:'10px 12px',resize:'vertical',width:'100%',boxSizing:'border-box',marginTop:8,marginBottom:12}}
             />
             <button
-              style={{background:'rgba(201,168,76,.18)',border:'1px solid rgba(201,168,76,.35)',borderRadius:8,color:'#c9a84c',fontSize:13,fontWeight:700,padding:'9px 22px',cursor:'pointer',letterSpacing:'.04em'}}
+              style={{background:'rgba(200,164,90,.18)',border:'1px solid rgba(236,232,223,0.193)',borderRadius:8,color:'#c8a45a',fontSize:13,fontWeight:700,padding:'9px 22px',cursor:'pointer',letterSpacing:'.04em'}}
               onClick={async (e) => {
                 const btn = e.currentTarget;
                 btn.disabled = true; btn.textContent = '送信中...';
@@ -432,7 +432,7 @@ export default function MapPage() {
           </div>
         )}
         {fbSent && (
-          <div style={{margin:'16px 16px 0',padding:'16px',textAlign:'center',color:'rgba(201,168,76,.9)',fontSize:14,fontWeight:700,background:'rgba(10,15,30,.65)',border:'1px solid rgba(201,168,76,.18)',borderRadius:16}}>
+          <div style={{margin:'16px 16px 0',padding:'16px',textAlign:'center',color:'rgba(200,164,90,.9)',fontSize:14,fontWeight:700,background:'#151b24',border:'1px solid rgba(236,232,223,0.099)',borderRadius:16}}>
             フィードバックを送りました。ありがとうございます 🙏
           </div>
         )}
@@ -471,7 +471,7 @@ export default function MapPage() {
         ) : (
           <div style={{margin:'12px 16px',textAlign:'center'}}>
             <div style={{fontSize:11,color:'rgba(232,228,220,.28)',marginBottom:10}}>領域をタップして詳細を確認</div>
-            <Link href="/mypage/navi" style={{display:'inline-block',padding:'11px 28px',background:'rgba(201,168,76,.09)',border:'1px solid rgba(201,168,76,.28)',borderRadius:99,color:'#c9a84c',textDecoration:'none',fontSize:13,fontWeight:700}}>
+            <Link href="/mypage/navi" style={{display:'inline-block',padding:'11px 28px',background:'rgba(200,164,90,.09)',border:'1px solid rgba(236,232,223,0.154)',borderRadius:99,color:'#c8a45a',textDecoration:'none',fontSize:13,fontWeight:700}}>
               Naviで次のステップへ →
             </Link>
           </div>

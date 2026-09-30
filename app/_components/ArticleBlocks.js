@@ -32,15 +32,15 @@ const STYLES = `
 
   /* ── CTAボタン：ゴールドシマー ── */
   .ab-cta-btn {
-    background: linear-gradient(90deg,#c9a84c 0%,#f0d984 38%,#c9a84c 55%,#f0d984 100%) !important;
+    background: linear-gradient(90deg,#c8a45a 0%,#f0d984 38%,#c8a45a 55%,#f0d984 100%) !important;
     background-size: 200% auto !important;
     animation: abShimmer 2.8s linear infinite !important;
-    color: #0a0f1e !important;
+    color: #0d1117 !important;
   }
 
   /* ── 引用テキスト：ゴールドグラデーション ── */
   .ab-quote-text {
-    background: linear-gradient(135deg, #ffffff 0%, #f0e4b0 52%, #c9a84c 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f0e4b0 52%, #c8a45a 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -53,7 +53,7 @@ const STYLES = `
     transition: box-shadow 0.35s ease;
   }
   .ab-img-wrap:hover {
-    box-shadow: 0 0 0 2px rgba(201,168,76,0.5), 0 14px 44px rgba(10,15,30,0.55) !important;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.6), 0 14px 44px rgba(13,17,23,0.55) !important;
   }
   .ab-img-wrap img {
     transition: transform 0.45s ease;
@@ -105,8 +105,8 @@ function Block({ block }) {
 ───────────────────────────────────────────── */
 function LeadBlock({ text }) {
   return (
-    <div style={{ marginBottom: '48px', paddingBottom: '32px', borderBottom: '1px solid rgba(201,168,76,0.2)', position: 'relative' }}>
-      <div style={{ position: 'absolute', left: 0, top: '4px', bottom: '32px', width: '3px', background: 'linear-gradient(to bottom, #c9a84c, rgba(201,168,76,0))', borderRadius: '2px' }} />
+    <div style={{ marginBottom: '48px', paddingBottom: '32px', borderBottom: '1px solid rgba(236,232,223,0.11)', position: 'relative' }}>
+      <div style={{ position: 'absolute', left: 0, top: '4px', bottom: '32px', width: '3px', background: 'linear-gradient(to bottom, #c8a45a, rgba(200,164,90,0))', borderRadius: '2px' }} />
       <p style={{
         fontSize: 'clamp(16px, 2.5vw, 18px)',
         lineHeight: 2.1,
@@ -129,11 +129,11 @@ function H2Block({ text }) {
   return (
     <div style={{ marginTop: '60px', marginBottom: '20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-        <div style={{ width: '20px', height: '1.5px', background: '#c9a84c', flexShrink: 0 }} />
-        <span style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.65)', fontFamily: 'var(--font-sans)' }}>
+        <div style={{ width: '20px', height: '1.5px', background: '#c8a45a', flexShrink: 0 }} />
+        <span style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(200,164,90,0.65)', fontFamily: 'var(--font-sans)' }}>
           Section
         </span>
-        <div style={{ flex: 1, height: '1px', background: 'repeating-linear-gradient(90deg,rgba(201,168,76,0.25) 0,rgba(201,168,76,0.25) 4px,transparent 4px,transparent 9px)' }} />
+        <div style={{ flex: 1, height: '1px', background: 'repeating-linear-gradient(90deg,rgba(200,164,90,0.25) 0,rgba(200,164,90,0.25) 4px,transparent 4px,transparent 9px)' }} />
       </div>
       <h2 style={{
         fontSize: 'clamp(19px, 3.5vw, 24px)',
@@ -143,7 +143,7 @@ function H2Block({ text }) {
         margin: 0,
         lineHeight: 1.5,
         paddingLeft: '16px',
-        borderLeft: '4px solid #c9a84c',
+        borderLeft: '4px solid #c8a45a',
       }}>
         {text}
       </h2>
@@ -167,7 +167,7 @@ function H3Block({ text }) {
       alignItems: 'center',
       gap: '8px',
     }}>
-      <span style={{ color: 'rgba(201,168,76,0.5)', fontSize: '14px' }}>▸</span>
+      <span style={{ color: 'rgba(200,164,90,0.5)', fontSize: '14px' }}>▸</span>
       {text}
     </h3>
   );
@@ -198,14 +198,14 @@ function TipBlock({ label = 'POINT', text }) {
       position: 'relative',
       margin: '36px 0',
       padding: '22px 24px 22px 20px',
-      background: 'rgba(201,168,76,0.06)',
-      border: '1px solid rgba(201,168,76,0.3)',
+      background: 'rgba(200,164,90,0.06)',
+      border: '1px solid rgba(236,232,223,0.165)',
       borderRadius: '14px',
       overflow: 'hidden',
     }}>
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: 'linear-gradient(to bottom, #c9a84c 0%, rgba(201,168,76,0.3) 100%)', borderRadius: '14px 0 0 14px' }} />
-      <div style={{ position: 'absolute', top: '-16px', right: '-16px', width: '80px', height: '80px', background: 'radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%)', borderRadius: '50%' }} />
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '10px', fontWeight: 800, letterSpacing: '0.14em', color: '#c9a84c', fontFamily: 'var(--font-sans)', textTransform: 'uppercase', background: 'rgba(201,168,76,0.12)', padding: '3px 10px', borderRadius: '99px', marginBottom: '12px', border: '1px solid rgba(201,168,76,0.25)' }}>
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: 'linear-gradient(to bottom, #c8a45a 0%, rgba(200,164,90,0.3) 100%)', borderRadius: '14px 0 0 14px' }} />
+      <div style={{ position: 'absolute', top: '-16px', right: '-16px', width: '80px', height: '80px', background: 'radial-gradient(circle, rgba(200,164,90,0.08) 0%, transparent 70%)', borderRadius: '50%' }} />
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '10px', fontWeight: 800, letterSpacing: '0.14em', color: '#c8a45a', fontFamily: 'var(--font-sans)', textTransform: 'uppercase', background: 'rgba(200,164,90,0.12)', padding: '3px 10px', borderRadius: '99px', marginBottom: '12px', border: '1px solid rgba(236,232,223,0.138)' }}>
         ✦ {label}
       </div>
       <p style={{ fontSize: '15px', lineHeight: 1.9, color: 'rgba(240,236,228,0.9)', margin: 0, fontWeight: 500 }}>
@@ -224,13 +224,13 @@ function CalloutBlock({ text }) {
       position: 'relative',
       margin: '36px 0',
       padding: '28px 32px',
-      background: 'rgba(10,15,30,0.6)',
+      background: '#151b24',
       border: '1px solid rgba(255,255,255,0.08)',
       borderRadius: '16px',
       overflow: 'hidden',
     }}>
-      <div style={{ position: 'absolute', top: '-24px', right: '-24px', width: '120px', height: '120px', background: 'radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)', borderRadius: '50%' }} />
-      <div style={{ position: 'absolute', bottom: '-16px', left: '-16px', width: '80px', height: '80px', background: 'radial-gradient(circle, rgba(201,168,76,0.04) 0%, transparent 70%)', borderRadius: '50%' }} />
+      <div style={{ position: 'absolute', top: '-24px', right: '-24px', width: '120px', height: '120px', background: 'radial-gradient(circle, rgba(200,164,90,0.06) 0%, transparent 70%)', borderRadius: '50%' }} />
+      <div style={{ position: 'absolute', bottom: '-16px', left: '-16px', width: '80px', height: '80px', background: 'radial-gradient(circle, rgba(200,164,90,0.04) 0%, transparent 70%)', borderRadius: '50%' }} />
       <div style={{ fontSize: '20px', marginBottom: '10px', opacity: 0.7 }}>💡</div>
       <p style={{ fontSize: '15px', lineHeight: 1.9, color: 'rgba(240,236,228,0.88)', margin: 0, position: 'relative', fontFamily: 'var(--font-serif-ja)' }}>
         {text}
@@ -250,10 +250,10 @@ function QuoteBlock({ text }) {
       position: 'relative',
       background: 'transparent',
     }}>
-      <div style={{ position: 'absolute', top: 0, left: 0, right: '30%', height: '2px', background: 'linear-gradient(to right, #c9a84c, rgba(201,168,76,0))' }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: '30%', height: '2px', background: 'linear-gradient(to right, #c8a45a, rgba(200,164,90,0))' }} />
       <span style={{
         position: 'absolute', top: '8px', left: '16px',
-        fontSize: '72px', color: 'rgba(201,168,76,0.3)',
+        fontSize: '72px', color: 'rgba(200,164,90,0.3)',
         fontFamily: 'Georgia, "Times New Roman", serif',
         lineHeight: 1, userSelect: 'none',
       }}>
@@ -272,7 +272,7 @@ function QuoteBlock({ text }) {
       }}>
         {text}
       </p>
-      <div style={{ position: 'absolute', bottom: 0, right: 0, left: '30%', height: '1px', background: 'linear-gradient(to left, rgba(201,168,76,0.5), rgba(201,168,76,0))' }} />
+      <div style={{ position: 'absolute', bottom: 0, right: 0, left: '30%', height: '1px', background: 'linear-gradient(to left, rgba(200,164,90,0.5), rgba(200,164,90,0))' }} />
     </blockquote>
   );
 }
@@ -283,14 +283,14 @@ function QuoteBlock({ text }) {
 function ChecklistBlock({ title, items }) {
   return (
     <div style={{
-      border: '1px solid rgba(201,168,76,0.25)',
+      border: '1px solid rgba(236,232,223,0.138)',
       borderRadius: '16px',
       padding: '24px 28px',
       margin: '36px 0',
-      background: 'rgba(201,168,76,0.03)',
+      background: 'rgba(200,164,90,0.03)',
     }}>
       {title && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid rgba(201,168,76,0.12)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid rgba(236,232,223,0.066)' }}>
           <span style={{ fontSize: '18px' }}>☑️</span>
           <p style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.9)', margin: 0, fontFamily: 'var(--font-sans)' }}>
             {title}
@@ -307,10 +307,10 @@ function ChecklistBlock({ title, items }) {
           }}>
             <span style={{
               width: '18px', height: '18px', borderRadius: '4px', flexShrink: 0,
-              border: '1.5px solid rgba(201,168,76,0.45)',
-              background: 'rgba(201,168,76,0.08)',
+              border: '1.5px solid rgba(236,232,223,0.248)',
+              background: 'rgba(200,164,90,0.08)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginTop: '2px', color: '#c9a84c', fontSize: '11px', fontWeight: 800,
+              marginTop: '2px', color: '#c8a45a', fontSize: '11px', fontWeight: 800,
             }}>✓</span>
             {item}
           </li>
@@ -335,12 +335,12 @@ function StepsBlock({ items }) {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '52px', flexShrink: 0 }}>
               <div style={{
                 width: '40px', height: '40px',
-                background: i === 0 ? '#c9a84c' : 'rgba(201,168,76,0.12)',
+                background: i === 0 ? '#c8a45a' : 'rgba(200,164,90,0.12)',
                 borderRadius: '50%',
-                border: `2px solid ${i === 0 ? '#c9a84c' : 'rgba(201,168,76,0.35)'}`,
+                border: `2px solid ${i === 0 ? '#c8a45a' : 'rgba(200,164,90,0.35)'}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '14px', fontWeight: 800,
-                color: i === 0 ? '#0a0f1e' : '#c9a84c',
+                color: i === 0 ? '#0d1117' : '#c8a45a',
                 fontFamily: 'var(--font-sans)',
                 flexShrink: 0,
               }}>
@@ -348,7 +348,7 @@ function StepsBlock({ items }) {
               </div>
               {!isLast && (
                 <div style={{ width: '2px', flex: 1, minHeight: '28px', marginTop: '4px',
-                  background: 'repeating-linear-gradient(to bottom, rgba(201,168,76,0.4) 0, rgba(201,168,76,0.4) 5px, transparent 5px, transparent 10px)'
+                  background: 'repeating-linear-gradient(to bottom, rgba(200,164,90,0.4) 0, rgba(200,164,90,0.4) 5px, transparent 5px, transparent 10px)'
                 }} />
               )}
             </div>
@@ -357,7 +357,7 @@ function StepsBlock({ items }) {
               paddingBottom: isLast ? 0 : '28px',
               paddingTop: '7px',
             }}>
-              <p style={{ fontWeight: 800, fontSize: '15px', color: i === 0 ? '#c9a84c' : 'rgba(255,255,255,0.95)', margin: text ? '0 0 8px' : 0, lineHeight: 1.5 }}>
+              <p style={{ fontWeight: 800, fontSize: '15px', color: i === 0 ? '#c8a45a' : 'rgba(255,255,255,0.95)', margin: text ? '0 0 8px' : 0, lineHeight: 1.5 }}>
                 {title}
               </p>
               {text && (
@@ -380,18 +380,18 @@ function CtaBlock({ text, buttonLabel, buttonHref }) {
   return (
     <div style={{
       position: 'relative',
-      background: 'linear-gradient(135deg, rgba(10,15,30,0.9) 0%, rgba(20,28,56,0.9) 100%)',
+      background: 'linear-gradient(135deg, rgba(13,17,23,0.9) 0%, rgba(20,28,56,0.9) 100%)',
       borderRadius: '20px',
       padding: 'clamp(28px, 4vw, 44px) clamp(24px, 4vw, 40px)',
       margin: '56px 0 40px',
       textAlign: 'center',
-      border: '1px solid rgba(201,168,76,0.3)',
-      boxShadow: '0 12px 48px rgba(10,15,30,0.4), inset 0 1px 0 rgba(201,168,76,0.1)',
+      border: '1px solid rgba(236,232,223,0.165)',
+      boxShadow: '0 12px 48px rgba(13,17,23,0.4), inset 0 1px 0 rgba(0,0,0,0.12)',
       overflow: 'hidden',
     }}>
-      <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%)', borderRadius: '50%' }} />
-      <div style={{ position: 'absolute', bottom: '-40px', left: '-40px', width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(201,168,76,0.05) 0%, transparent 70%)', borderRadius: '50%' }} />
-      <div style={{ position: 'absolute', top: 0, left: '20%', right: '20%', height: '1px', background: 'linear-gradient(to right, transparent, rgba(201,168,76,0.5), transparent)' }} />
+      <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(200,164,90,0.08) 0%, transparent 70%)', borderRadius: '50%' }} />
+      <div style={{ position: 'absolute', bottom: '-40px', left: '-40px', width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(200,164,90,0.05) 0%, transparent 70%)', borderRadius: '50%' }} />
+      <div style={{ position: 'absolute', top: 0, left: '20%', right: '20%', height: '1px', background: 'linear-gradient(to right, transparent, rgba(200,164,90,0.5), transparent)' }} />
       <p style={{
         fontSize: 'clamp(14px, 2vw, 16px)', lineHeight: 1.9,
         color: 'rgba(240,236,228,0.88)', marginBottom: '28px',
@@ -403,7 +403,7 @@ function CtaBlock({ text, buttonLabel, buttonHref }) {
         display: 'inline-block',
         fontWeight: 800, fontSize: '15px', padding: '14px 40px',
         borderRadius: '10px', textDecoration: 'none', letterSpacing: '0.05em',
-        fontFamily: 'var(--font-sans)', boxShadow: '0 4px 24px rgba(201,168,76,0.45)',
+        fontFamily: 'var(--font-sans)', boxShadow: '0 4px 24px rgba(0,0,0,0.54)',
         position: 'relative',
       }}>
         {buttonLabel} →
@@ -419,7 +419,7 @@ function ImageBlock({ src, alt, caption }) {
   if (!src) return null;
   return (
     <figure style={{ margin: '40px 0' }}>
-      <div className="ab-img-wrap" style={{ boxShadow: '0 8px 32px rgba(10,15,30,0.3)' }}>
+      <div className="ab-img-wrap" style={{ boxShadow: '0 8px 32px rgba(13,17,23,0.3)' }}>
         <img src={src} alt={alt || ''} style={{ width: '100%', display: 'block' }} />
       </div>
       {caption && (
@@ -446,8 +446,8 @@ function CardsBlock({ items }) {
     }}>
       {items.map((item, i) => (
         <div key={i} style={{
-          background: 'rgba(201,168,76,0.05)',
-          border: '1px solid rgba(201,168,76,0.22)',
+          background: 'rgba(200,164,90,0.05)',
+          border: '1px solid rgba(236,232,223,0.121)',
           borderRadius: '14px',
           padding: '20px 16px',
           display: 'flex',
@@ -483,8 +483,8 @@ function ProductBlock({ name, url, reason }) {
       display: 'flex', alignItems: 'center', gap: '14px',
       margin: '20px 0 28px',
       padding: '14px 18px',
-      background: 'rgba(201,168,76,0.05)',
-      border: '1px solid rgba(201,168,76,0.22)',
+      background: 'rgba(200,164,90,0.05)',
+      border: '1px solid rgba(236,232,223,0.121)',
       borderRadius: '12px',
       textDecoration: 'none',
       transition: 'border-color .15s, background .15s',
@@ -492,7 +492,7 @@ function ProductBlock({ name, url, reason }) {
       <span style={{ fontSize: '20px', flexShrink: 0 }}>🛒</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         {reason && (
-          <p style={{ fontSize: '11px', color: 'rgba(201,168,76,0.7)', margin: '0 0 3px', fontWeight: 700, fontFamily: 'var(--font-sans)' }}>
+          <p style={{ fontSize: '11px', color: 'rgba(200,164,90,0.7)', margin: '0 0 3px', fontWeight: 700, fontFamily: 'var(--font-sans)' }}>
             {reason}
           </p>
         )}
@@ -518,13 +518,13 @@ function StatBlock({ items }) {
     }}>
       {items.map((item, i) => (
         <div key={i} style={{
-          background: 'rgba(201,168,76,0.05)',
-          border: '1px solid rgba(201,168,76,0.2)',
+          background: 'rgba(200,164,90,0.05)',
+          border: '1px solid rgba(236,232,223,0.11)',
           borderRadius: '14px',
           padding: '20px 16px',
           textAlign: 'center',
         }}>
-          <div style={{ fontSize: 'clamp(28px, 5vw, 36px)', fontWeight: 900, color: '#c9a84c', fontFamily: 'var(--font-sans)', lineHeight: 1, marginBottom: '8px' }}>
+          <div style={{ fontSize: 'clamp(28px, 5vw, 36px)', fontWeight: 900, color: '#c8a45a', fontFamily: 'var(--font-sans)', lineHeight: 1, marginBottom: '8px' }}>
             <StatNumber value={item.value} />
           </div>
           <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>

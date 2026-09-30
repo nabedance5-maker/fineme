@@ -155,7 +155,7 @@ export default function BellePage() {
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         textAlign: 'center', padding: 'clamp(80px,14vw,120px) 20px clamp(60px,10vw,90px)',
         position: 'relative', overflow: 'hidden',
-        background: 'linear-gradient(rgba(10,6,16,0.68) 0%, rgba(12,8,16,0.82) 100%), url(/assets/images/belle-lp-hero-bg.jpg) center/cover no-repeat',
+        background: '#1a1216',
       }}>
         <div className="b-orb" style={{
           position: 'absolute', top: '-15%', left: '50%', transform: 'translateX(-50%)',
@@ -169,7 +169,7 @@ export default function BellePage() {
             Fineme Belle
           </p>
           <h1 className="b-fade b-fade-d1" style={{
-            fontFamily: '"Noto Serif JP", Georgia, serif',
+            fontFamily: '"Shippori Mincho", Georgia, serif',
             fontSize: 'clamp(26px, 6vw, 50px)',
             fontWeight: 700, lineHeight: 1.45, color: '#f5e0ea', margin: '0 0 28px',
           }}>
@@ -215,7 +215,7 @@ export default function BellePage() {
           <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.16em', color: 'rgba(210,140,170,0.7)', textTransform: 'uppercase', margin: '0 0 12px', textAlign: 'center' }}>
             こんな気持ち、ありませんか
           </p>
-          <h2 style={{ fontFamily: '"Noto Serif JP", Georgia, serif', fontSize: 'clamp(19px,3.5vw,26px)', fontWeight: 700, color: '#f5e0ea', textAlign: 'center', margin: '0 0 36px', lineHeight: 1.5 }}>
+          <h2 style={{ fontFamily: '"Shippori Mincho", Georgia, serif', fontSize: 'clamp(19px,3.5vw,26px)', fontWeight: 700, color: '#f5e0ea', textAlign: 'center', margin: '0 0 36px', lineHeight: 1.5 }}>
             外見を変えたいと、ずっと思っていた。<br />でも、手が出なかった。
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -230,7 +230,7 @@ export default function BellePage() {
               </div>
             ))}
           </div>
-          <p style={{ fontSize: 15, fontWeight: 700, color: '#f5e0ea', textAlign: 'center', margin: '36px 0 0', lineHeight: 1.7, fontFamily: '"Noto Serif JP", Georgia, serif' }}>
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#f5e0ea', textAlign: 'center', margin: '36px 0 0', lineHeight: 1.7, fontFamily: '"Shippori Mincho", Georgia, serif' }}>
             「どこから」がわかれば、今日から動ける。<br />
             <span style={{ color: 'rgba(220,140,175,0.9)' }}>Belleはその「どこから」を、正確に見つける。</span>
           </p>
@@ -243,7 +243,7 @@ export default function BellePage() {
           <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.16em', color: 'rgba(210,140,170,0.7)', textTransform: 'uppercase', margin: '0 0 12px', textAlign: 'center' }}>
             How it works
           </p>
-          <h2 style={{ fontFamily: '"Noto Serif JP", Georgia, serif', fontSize: 'clamp(19px,3.5vw,26px)', fontWeight: 700, color: '#f5e0ea', textAlign: 'center', margin: '0 0 40px', lineHeight: 1.5 }}>
+          <h2 style={{ fontFamily: '"Shippori Mincho", Georgia, serif', fontSize: 'clamp(19px,3.5vw,26px)', fontWeight: 700, color: '#f5e0ea', textAlign: 'center', margin: '0 0 40px', lineHeight: 1.5 }}>
             3つの道具で、変容の地図が手に入る。
           </h2>
           <p style={{ fontSize: 13, color: inkMuted, textAlign: 'center', lineHeight: 1.9, margin: '-24px 0 32px' }}>
@@ -257,7 +257,7 @@ export default function BellePage() {
                   <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.12em', color: 'rgba(200,100,140,0.6)' }}>STEP {s.num}</span>
                   <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(200,100,140,0.7)', border: '1px solid rgba(200,100,140,0.3)', borderRadius: 20, padding: '2px 9px' }}>{s.badge}</span>
                 </div>
-                <p style={{ fontSize: 18, fontWeight: 800, color: '#f5e0ea', margin: '0 0 12px', fontFamily: '"Noto Serif JP", Georgia, serif' }}>{s.name}</p>
+                <p style={{ fontSize: 18, fontWeight: 800, color: '#f5e0ea', margin: '0 0 12px', fontFamily: '"Shippori Mincho", Georgia, serif' }}>{s.name}</p>
                 <p style={{ fontSize: 13, color: inkMuted, lineHeight: 1.75, margin: '0 0 20px' }}>{s.desc}</p>
                 <Link href={s.href} style={{ fontSize: 13, color: 'rgba(220,140,175,0.85)', textDecoration: 'none', fontWeight: 700 }}>
                   {s.cta} →
@@ -272,7 +272,7 @@ export default function BellePage() {
       <section style={{ padding: 'clamp(56px,8vw,80px) 20px', background: 'rgba(15,8,14,0.8)' }}>
         <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
           <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.16em', color: 'rgba(210,140,170,0.7)', textTransform: 'uppercase', margin: '0 0 12px' }}>Mirror</p>
-          <h2 style={{ fontFamily: '"Noto Serif JP", Georgia, serif', fontSize: 'clamp(19px,3.5vw,26px)', fontWeight: 700, color: '#f5e0ea', margin: '0 0 16px', lineHeight: 1.5 }}>
+          <h2 style={{ fontFamily: '"Shippori Mincho", Georgia, serif', fontSize: 'clamp(19px,3.5vw,26px)', fontWeight: 700, color: '#f5e0ea', margin: '0 0 16px', lineHeight: 1.5 }}>
             「他人の目に自分がどう見えているか」を<br />初めて正確に知る。
           </h2>
           <p style={{ fontSize: 14, color: inkMuted, lineHeight: 1.85, margin: '0 0 36px' }}>
@@ -307,7 +307,7 @@ export default function BellePage() {
       {/* ── ⑤ 最終CTA ── */}
       <section style={{ padding: 'clamp(64px,10vw,96px) 20px', textAlign: 'center' }}>
         <div style={{ maxWidth: 560, margin: '0 auto' }}>
-          <h2 style={{ fontFamily: '"Noto Serif JP", Georgia, serif', fontSize: 'clamp(20px,4vw,30px)', fontWeight: 700, color: '#f5e0ea', margin: '0 0 16px', lineHeight: 1.5 }}>
+          <h2 style={{ fontFamily: '"Shippori Mincho", Georgia, serif', fontSize: 'clamp(20px,4vw,30px)', fontWeight: 700, color: '#f5e0ea', margin: '0 0 16px', lineHeight: 1.5 }}>
             自分のために磨くと決めた日が、<br />
             <span style={{ color: 'rgba(220,140,175,0.95)' }}>変わり始める最初の日になる。</span>
           </h2>
@@ -328,7 +328,7 @@ export default function BellePage() {
       <section style={{ padding: 'clamp(48px,7vw,72px) 20px 80px', background: 'rgba(15,8,14,0.6)' }}>
         <div style={{ maxWidth: 680, margin: '0 auto' }}>
           <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.16em', color: 'rgba(210,140,170,0.7)', textTransform: 'uppercase', margin: '0 0 8px', textAlign: 'center' }}>FAQ</p>
-          <h2 style={{ fontFamily: '"Noto Serif JP", Georgia, serif', fontSize: 'clamp(17px,2.5vw,21px)', fontWeight: 700, color: '#f5e0ea', textAlign: 'center', margin: '0 0 32px' }}>よくある質問</h2>
+          <h2 style={{ fontFamily: '"Shippori Mincho", Georgia, serif', fontSize: 'clamp(17px,2.5vw,21px)', fontWeight: 700, color: '#f5e0ea', textAlign: 'center', margin: '0 0 32px' }}>よくある質問</h2>
           {BELLE_FAQ.map((item, i) => (
             <div key={i} className="b-faq-item">
               <button className="b-faq-q" onClick={() => setOpenFaq(openFaq === i ? null : i)}>

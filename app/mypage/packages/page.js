@@ -50,7 +50,7 @@ export default function MypagePackagesPage() {
                   key={p.id}
                   style={{
                     border: '1px solid rgba(232,228,220,0.15)', borderRadius: '14px', padding: '18px 20px',
-                    background: 'rgba(10,15,30,0.65)', opacity: p.expired ? 0.55 : 1,
+                    background: '#151b24', opacity: p.expired ? 0.55 : 1,
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
@@ -59,7 +59,7 @@ export default function MypagePackagesPage() {
                       <p style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>🎫 {p.package_name}</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: p.expired ? '#9ca3af' : '#c9a84c' }}>
+                      <p style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: p.expired ? '#9ca3af' : '#c8a45a' }}>
                         {p.package_type === 'unlimited' ? (
                           '通い放題'
                         ) : (
@@ -74,7 +74,7 @@ export default function MypagePackagesPage() {
                     {p.expires_at && ` ／ 有効期限：${new Date(p.expires_at).toLocaleDateString('ja-JP')}`}
                   </p>
                   {p.package_type === 'subscription' && (
-                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: p.subscription_status === 'cancelled' ? '#9ca3af' : '#c9a84c' }}>
+                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: p.subscription_status === 'cancelled' ? '#9ca3af' : '#c8a45a' }}>
                       {p.subscription_status === 'cancelled' ? '月額会員：解約済み' : `月額会員：次回${p.next_grant_at ? new Date(p.next_grant_at).toLocaleDateString('ja-JP') : '未定'}に自動付与`}
                     </p>
                   )}
@@ -88,11 +88,11 @@ export default function MypagePackagesPage() {
       <style>{`
         .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
         .mypage-sidenav, .mypage-content { min-width: 0; }
-        .mypage-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        .mypage-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
         @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; min-width: 0; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav .sidenav-link { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
         .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
-        .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
+        .sidenav-link:hover { background: rgba(200,164,90,0.1); color: #0d1117; }
+        .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #0d1117; border-left: 3px solid #c8a45a; padding-left: 9px; }
       `}</style>
     </main>
   );

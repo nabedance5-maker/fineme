@@ -81,54 +81,54 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-wrap { max-width: 100%; padding: 0 0 100px; }
 
       /* ── Header ── */
-      .log-header { background: linear-gradient(rgba(10,15,30,0.82), rgba(10,15,30,0.92)), url('/assets/images/hero-bg.webp') center/cover no-repeat; border-radius: 14px; padding: 22px 22px 18px; margin-bottom: 24px; border: 1px solid rgba(201,168,76,0.2); position: relative; overflow: hidden; }
-      .log-header-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .18em; color: rgba(201,168,76,0.55); margin: 0 0 8px; text-transform: uppercase; }
-      .log-header h1 { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(18px,4vw,24px); font-weight: 700; color: #fff; margin: 0 0 6px; }
-      .log-header h1 em { font-style: normal; color: #c9a84c; }
+      .log-header { background: #151b24; border-radius: 14px; padding: 22px 22px 18px; margin-bottom: 24px; border: 1px solid rgba(236,232,223,0.11); position: relative; overflow: hidden; }
+      .log-header-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .18em; color: rgba(200,164,90,0.55); margin: 0 0 8px; text-transform: uppercase; }
+      .log-header h1 { font-family: 'Shippori Mincho', Georgia, serif; font-size: clamp(18px,4vw,24px); font-weight: 700; color: #fff; margin: 0 0 6px; }
+      .log-header h1 em { font-style: normal; color: #c8a45a; }
       .log-header-sub { font-size: 12px; color: rgba(232,228,220,0.45); margin: 0; line-height: 1.6; }
-      .log-partner-banner { margin-top: 14px; padding: 14px; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.35); border-radius: 10px; font-size: 12.5px; color: #e8e4dc; line-height: 1.6; }
+      .log-partner-banner { margin-top: 14px; padding: 14px; background: rgba(200,164,90,0.12); border: 1px solid rgba(236,232,223,0.193); border-radius: 10px; font-size: 12.5px; color: #e8e4dc; line-height: 1.6; }
       .log-partner-banner-btns { display: flex; gap: 8px; }
       .log-partner-btn-yes, .log-partner-btn-no { flex: 1; padding: 10px 12px; border-radius: 9px; font-size: 12.5px; font-weight: 800; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; }
-      .log-partner-btn-yes { background: #c9a84c; border: none; color: #0a0f1e; }
+      .log-partner-btn-yes { background: #c8a45a; border: none; color: #0d1117; }
       .log-partner-btn-yes:hover { opacity: .88; }
       .log-partner-btn-yes:disabled, .log-partner-btn-no:disabled { opacity: .5; cursor: default; }
       .log-partner-btn-no { background: transparent; border: 1px solid rgba(232,228,220,0.2); color: rgba(232,228,220,0.55); }
 
       /* ── Add button ── */
-      .log-add-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: rgba(201,168,76,0.08); border: 1.5px dashed rgba(201,168,76,0.4); border-radius: 12px; color: #c9a84c; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; margin-bottom: 24px; }
-      .log-add-btn:hover { background: rgba(201,168,76,0.14); border-color: #c9a84c; }
+      .log-add-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: rgba(200,164,90,0.08); border: 1.5px dashed rgba(236,232,223,0.22); border-radius: 12px; color: #c8a45a; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; margin-bottom: 24px; }
+      .log-add-btn:hover { background: rgba(200,164,90,0.14); border-color: rgba(236,232,223,0.3); }
 
       /* ── カテゴリータブ（でお要望 2026-08-07） ── */
       .log-axis-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin: 0 0 20px; scrollbar-width: none; -ms-overflow-style: none; }
       .log-axis-tabs::-webkit-scrollbar { display: none; }
-      .log-axis-tab { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; padding: 8px 14px; border-radius: 99px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); transition: all .12s; white-space: nowrap; }
-      .log-axis-tab:hover { border-color: rgba(201,168,76,0.5); color: rgba(232,228,220,0.9); }
-      .log-axis-tab.selected { border-color: #c9a84c; background: rgba(201,168,76,0.14); color: #c9a84c; }
+      .log-axis-tab { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; padding: 8px 14px; border-radius: 99px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; background: #151b24; border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); transition: all .12s; white-space: nowrap; }
+      .log-axis-tab:hover { border-color: rgba(236,232,223,0.275); color: rgba(232,228,220,0.9); }
+      .log-axis-tab.selected { border-color: rgba(236,232,223,0.3); background: rgba(200,164,90,0.14); color: #c8a45a; }
       .log-axis-tab-count { font-size: 10.5px; opacity: .6; }
 
       /* ── Service card ── */
       .log-axis-section { margin-bottom: 24px; }
-      .log-axis-label { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(201,168,76,0.6); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
-      .log-axis-label::after { content: ''; flex: 1; height: 1px; background: rgba(201,168,76,0.15); }
-      .log-card { background: rgba(10,15,30,0.65); border: 1px solid rgba(232,228,220,0.12); border-radius: 14px; padding: 16px 18px; backdrop-filter: blur(8px); box-shadow: 0 4px 20px rgba(0,0,0,.35); transition: border-color .2s; }
+      .log-axis-label { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(200,164,90,0.6); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+      .log-axis-label::after { content: ''; flex: 1; height: 1px; background: rgba(200,164,90,0.15); }
+      .log-card { background: #151b24; border: 1px solid rgba(232,228,220,0.12); border-radius: 14px; padding: 16px 18px; backdrop-filter: blur(8px); box-shadow: 0 4px 20px rgba(0,0,0,.35); transition: border-color .2s; }
       .log-card:not(:last-child) { margin-bottom: 10px; }
       .log-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
       .log-card-name { font-size: 16px; font-weight: 800; color: rgba(232,228,220,0.92); margin: 0 0 4px; }
-      .log-card-provider-link { font-size: 11px; color: rgba(201,168,76,0.7); text-decoration: none; display: inline-flex; align-items: center; gap: 3px; }
-      .log-card-provider-link:hover { color: #c9a84c; text-decoration: underline; }
+      .log-card-provider-link { font-size: 11px; color: rgba(200,164,90,0.7); text-decoration: none; display: inline-flex; align-items: center; gap: 3px; }
+      .log-card-provider-link:hover { color: #c8a45a; text-decoration: underline; }
       .log-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
       .log-card-edit-btn, .log-card-del-btn { font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 7px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; border: 1px solid; }
       .log-card-edit-btn { color: rgba(232,228,220,0.6); border-color: rgba(232,228,220,0.15); background: transparent; }
-      .log-card-edit-btn:hover { border-color: #c9a84c; color: #c9a84c; }
+      .log-card-edit-btn:hover { border-color: rgba(236,232,223,0.3); color: #c8a45a; }
       .log-card-del-btn { color: rgba(239,68,68,0.6); border-color: rgba(239,68,68,0.15); background: transparent; }
       .log-card-del-btn:hover { border-color: #ef4444; color: #ef4444; }
       .log-card-schedule { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-      .log-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.12); color: rgba(232,228,220,0.65); white-space: nowrap; }
+      .log-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: #151b24; border: 1px solid rgba(232,228,220,0.12); color: rgba(232,228,220,0.65); white-space: nowrap; }
       .log-chip.chip-next-soon { border-color: rgba(52,211,153,0.4); color: rgba(52,211,153,0.9); background: rgba(52,211,153,0.06); }
-      .log-chip.chip-next-today { border-color: #c9a84c; color: #c9a84c; background: rgba(201,168,76,0.08); }
+      .log-chip.chip-next-today { border-color: rgba(236,232,223,0.3); color: #c8a45a; background: rgba(200,164,90,0.08); }
       .log-chip.chip-next-overdue { border-color: rgba(239,68,68,0.4); color: rgba(239,68,68,0.8); background: rgba(239,68,68,0.06); }
       .log-card-memo { font-size: 11px; color: rgba(232,228,220,0.38); margin: 8px 0 0; line-height: 1.55; }
-      .log-card-ideal { font-size: 10px; color: rgba(201,168,76,0.5); margin: 6px 0 0; }
+      .log-card-ideal { font-size: 10px; color: rgba(200,164,90,0.5); margin: 6px 0 0; }
 
       /* ── Empty state ── */
       .log-empty { text-align: center; padding: 48px 20px; color: rgba(232,228,220,0.35); }
@@ -141,25 +141,25 @@ export default function ServiceLog({ withSideNav = false }) {
       .log-modal { background: #0e1528; border-radius: 20px 20px 0 0; width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; padding: 24px 20px 40px; }
       .log-modal-title { font-size: 16px; font-weight: 800; color: rgba(232,228,220,0.9); margin: 0 0 20px; }
       .log-field { margin-bottom: 16px; }
-      .log-field label { display: block; font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.7); letter-spacing: .08em; margin-bottom: 6px; text-transform: uppercase; }
-      .log-field input, .log-field select, .log-field textarea { width: 100%; background: rgba(10,15,30,0.6); border: 1px solid rgba(232,228,220,0.15); border-radius: 9px; padding: 11px 13px; font-size: 14px; color: rgba(232,228,220,0.88); font-family: 'Noto Sans JP', sans-serif; outline: none; box-sizing: border-box; transition: border-color .15s; }
-      .log-field input:focus, .log-field select:focus, .log-field textarea:focus { border-color: rgba(201,168,76,0.5); }
+      .log-field label { display: block; font-size: 11px; font-weight: 700; color: rgba(200,164,90,0.7); letter-spacing: .08em; margin-bottom: 6px; text-transform: uppercase; }
+      .log-field input, .log-field select, .log-field textarea { width: 100%; background: #151b24; border: 1px solid rgba(232,228,220,0.15); border-radius: 9px; padding: 11px 13px; font-size: 14px; color: rgba(232,228,220,0.88); font-family: 'Noto Sans JP', sans-serif; outline: none; box-sizing: border-box; transition: border-color .15s; }
+      .log-field input:focus, .log-field select:focus, .log-field textarea:focus { border-color: rgba(236,232,223,0.275); }
       .log-field textarea { resize: vertical; min-height: 64px; }
       .log-field select option { background: #0e1528; }
       .log-field-hint { font-size: 10px; color: rgba(232,228,220,0.3); margin: 4px 0 0; line-height: 1.5; }
       .log-modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
       .log-provider-search { display: flex; gap: 8px; align-items: center; }
       .log-provider-search input { flex: 1; }
-      .log-provider-search-btn { flex-shrink: 0; padding: 11px 14px; background: rgba(201,168,76,0.14); border: 1px solid rgba(201,168,76,0.4); border-radius: 9px; color: #c9a84c; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; white-space: nowrap; transition: all .12s; }
-      .log-provider-search-btn:hover { background: rgba(201,168,76,0.22); }
+      .log-provider-search-btn { flex-shrink: 0; padding: 11px 14px; background: rgba(200,164,90,0.14); border: 1px solid rgba(236,232,223,0.22); border-radius: 9px; color: #c8a45a; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; white-space: nowrap; transition: all .12s; }
+      .log-provider-search-btn:hover { background: rgba(200,164,90,0.22); }
       .log-provider-search-btn:disabled { opacity: .6; cursor: default; }
       .log-provider-clear { font-size: 11px; color: rgba(239,68,68,0.7); background: none; border: none; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; padding: 0; white-space: nowrap; }
       .log-provider-result { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
-      .log-provider-item { padding: 8px 12px; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.1); border-radius: 8px; cursor: pointer; font-size: 12px; color: rgba(232,228,220,0.75); transition: all .12s; }
-      .log-provider-item:hover, .log-provider-item.selected { border-color: rgba(201,168,76,0.4); color: #c9a84c; background: rgba(201,168,76,0.06); }
+      .log-provider-item { padding: 8px 12px; background: #151b24; border: 1px solid rgba(232,228,220,0.1); border-radius: 8px; cursor: pointer; font-size: 12px; color: rgba(232,228,220,0.75); transition: all .12s; }
+      .log-provider-item:hover, .log-provider-item.selected { border-color: rgba(236,232,223,0.22); color: #c8a45a; background: rgba(200,164,90,0.06); }
       .log-provider-hint { font-size: 11px; color: rgba(232,228,220,0.4); margin: 6px 0 0; line-height: 1.6; }
       .log-modal-btns { display: flex; gap: 10px; margin-top: 24px; }
-      .log-modal-save { flex: 1; padding: 14px; background: #c9a84c; border: none; border-radius: 11px; font-size: 15px; font-weight: 800; color: #0a0f1e; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: opacity .15s; }
+      .log-modal-save { flex: 1; padding: 14px; background: #c8a45a; border: none; border-radius: 11px; font-size: 15px; font-weight: 800; color: #0d1117; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: opacity .15s; }
       .log-modal-save:hover { opacity: .88; }
       .log-modal-cancel { padding: 14px 20px; background: transparent; border: 1px solid rgba(232,228,220,0.15); border-radius: 11px; font-size: 14px; font-weight: 700; color: rgba(232,228,220,0.5); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; }
 
@@ -184,7 +184,7 @@ export default function ServiceLog({ withSideNav = false }) {
       .lfv-carousel-dots { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
       .lfv-carousel-dot { width: 7px; height: 7px; border-radius: 50%; border: none; padding: 0;
         background: rgba(232,228,220,0.22); cursor: pointer; transition: background .15s, transform .15s; }
-      .lfv-carousel-dot.is-active { background: #c9a84c; transform: scale(1.3); }
+      .lfv-carousel-dot.is-active { background: #c8a45a; transform: scale(1.3); }
       .lfv-carousel-hint { text-align: center; font-size: 10.5px; color: rgba(232,228,220,0.3); margin: 8px 0 0; letter-spacing: .04em; }
       .lfv-card {
         width: 100%; max-width: 400px; margin: 0 auto;
@@ -198,23 +198,23 @@ export default function ServiceLog({ withSideNav = false }) {
       .lfv-abs { position: absolute; left: 0; right: 0; text-align: center; }
 
       .lfv-brand { top: 13.67%; transform: translateY(-100%); padding-bottom: 1cqw; font-size: 4.2cqw; letter-spacing: .12em; color: #473020;
-                   font-family: 'Noto Serif JP', Georgia, serif; }
+                   font-family: 'Shippori Mincho', Georgia, serif; }
       .lfv-date  { top: 13.67%; transform: translateY(-100%); padding-bottom: 1.2cqw; font-size: 3.1cqw; letter-spacing: .06em; color: rgba(71,48,32,.75);
                    font-variant-numeric: tabular-nums; }
 
       .lfv-label { top: 21.5%; font-size: 3.1cqw; letter-spacing: .3em; color: rgba(71,48,32,.8);
-                   font-family: 'Noto Serif JP', serif; }
+                   font-family: 'Shippori Mincho', serif; }
       .lfv-month { top: 25.5%; font-size: 13.4cqw; line-height: 1; color: #472000;
-                   font-family: 'Noto Serif JP', Georgia, serif; font-weight: 500;
+                   font-family: 'Shippori Mincho', Georgia, serif; font-weight: 500;
                    font-variant-numeric: tabular-nums; }
       .lfv-month-unit { top: 39.5%; font-size: 3.7cqw; letter-spacing: .08em; color: #473020;
-                        font-family: 'Noto Serif JP', serif; }
+                        font-family: 'Shippori Mincho', serif; }
       .lfv-year  { top: 45.2%; font-size: 3.1cqw; letter-spacing: .04em; color: rgba(71,48,32,.72);
                    font-variant-numeric: tabular-nums; }
       .lfv-year b { font-weight: 600; color: #472000; }
 
       .lfv-bd-head { top: 54.5%; font-size: 2.5cqw; letter-spacing: .28em; color: rgba(71,48,32,.8);
-                     font-family: 'Noto Serif JP', serif; }
+                     font-family: 'Shippori Mincho', serif; }
 
       /* 内訳は件数が可変（6件以上もある）。背景から罫線を消したので、
          エリア内に flex で流し、リーダー線は CSS で描く。 */
@@ -225,13 +225,13 @@ export default function ServiceLog({ withSideNav = false }) {
       .lfv-row-name { flex-shrink: 0; color: rgba(71,48,32,.9); white-space: nowrap;
                       overflow: hidden; text-overflow: ellipsis; max-width: 46%; }
       .lfv-row-lead { flex: 1; border-bottom: 1px dotted rgba(71,48,32,.45); transform: translateY(-0.35cqw); }
-      .lfv-row-val  { flex-shrink: 0; color: #472000; font-family: 'Noto Serif JP', Georgia, serif;
+      .lfv-row-val  { flex-shrink: 0; color: #472000; font-family: 'Shippori Mincho', Georgia, serif;
                       font-variant-numeric: tabular-nums; }
       .lfv-more { text-align: center; font-size: 2.3cqw; color: rgba(71,48,32,.6); margin-top: .4cqw; }
 
       .lfv-foot { position: absolute; left: 12%; right: 12%; top: 90.5%;
                   display: flex; justify-content: space-between; align-items: baseline; }
-      .lfv-ports { font-family: 'Noto Serif JP', serif; font-size: 2.9cqw; color: rgba(71,48,32,.8); }
+      .lfv-ports { font-family: 'Shippori Mincho', serif; font-size: 2.9cqw; color: rgba(71,48,32,.8); }
       .lfv-site  { font-size: 2.4cqw; letter-spacing: .18em; color: rgba(71,48,32,.7); }
 
       /* 羊皮紙カード内から「支出から見えること」へ飛ぶリンク。
@@ -254,63 +254,63 @@ export default function ServiceLog({ withSideNav = false }) {
       .lfv-budget { color: rgba(232,228,220,.5); }
 
       /* ── 一番下の「次の一歩」── */
-      .lnx { background: rgba(10,15,30,0.6); border: 1px solid rgba(201,168,76,0.26); border-radius: 14px; padding: 22px 22px 20px; margin: 28px 0 18px; }
-      .lnx-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: 16px; font-weight: 700; color: rgba(232,228,220,0.94); line-height: 1.6; margin: 0 0 12px; }
+      .lnx { background: #151b24; border: 1px solid rgba(236,232,223,0.143); border-radius: 14px; padding: 22px 22px 20px; margin: 28px 0 18px; }
+      .lnx-title { font-family: 'Shippori Mincho', Georgia, serif; font-size: 16px; font-weight: 700; color: rgba(232,228,220,0.94); line-height: 1.6; margin: 0 0 12px; }
       .lnx-desc { font-size: 12.5px; color: rgba(232,228,220,0.5); line-height: 1.95; margin: 0 0 18px; }
-      .lnx-cta { display: inline-block; padding: 12px 26px; background: linear-gradient(135deg,#c9a84c,#e8c86a); color: #0a0f1e; font-size: 13.5px; font-weight: 800; border-radius: 10px; text-decoration: none; }
+      .lnx-cta { display: inline-block; padding: 12px 26px; background: linear-gradient(135deg,#c8a45a,#e8c86a); color: #0d1117; font-size: 13.5px; font-weight: 800; border-radius: 10px; text-decoration: none; }
       .lnx-note { font-size: 11px; color: rgba(232,228,220,0.32); margin: 10px 0 0; }
-      .lnx-peek { background: rgba(201,168,76,0.05); border: 1px solid rgba(201,168,76,0.2); border-radius: 11px; padding: 15px 16px; margin: 0 0 18px; }
-      .lnx-peek-head { font-size: 9.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(201,168,76,0.65); margin: 0 0 11px; }
+      .lnx-peek { background: rgba(200,164,90,0.05); border: 1px solid rgba(236,232,223,0.11); border-radius: 11px; padding: 15px 16px; margin: 0 0 18px; }
+      .lnx-peek-head { font-size: 9.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(200,164,90,0.65); margin: 0 0 11px; }
       .lnx-peek-type { text-align: center; margin-bottom: 11px; }
-      .lnx-peek-code { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .22em; color: rgba(201,168,76,0.7); margin-bottom: 3px; }
-      .lnx-peek-name { display: block; font-family: 'Noto Serif JP', Georgia, serif; font-size: 19px; font-weight: 700; color: #e8e4dc; margin-bottom: 3px; }
+      .lnx-peek-code { display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .22em; color: rgba(200,164,90,0.7); margin-bottom: 3px; }
+      .lnx-peek-name { display: block; font-family: 'Shippori Mincho', Georgia, serif; font-size: 19px; font-weight: 700; color: #e8e4dc; margin-bottom: 3px; }
       .lnx-peek-sub { display: block; font-size: 10px; color: rgba(232,228,220,0.35); }
-      .lnx-peek-line { height: 1px; background: linear-gradient(90deg,transparent,rgba(201,168,76,0.22),transparent); margin-bottom: 11px; }
+      .lnx-peek-line { height: 1px; background: linear-gradient(90deg,transparent,rgba(200,164,90,0.22),transparent); margin-bottom: 11px; }
       .lnx-peek-first { font-size: 12px; color: rgba(232,228,220,0.8); margin: 0; line-height: 1.7; text-align: center; }
-      .lnx-peek-first b { color: #c9a84c; }
+      .lnx-peek-first b { color: #c8a45a; }
       .lnx-peek-first span { font-size: 11px; color: rgba(232,228,220,0.42); }
       .lnx-peek-axis { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: rgba(232,228,220,0.75); padding: 5px 0; border-bottom: 1px solid rgba(232,228,220,0.06); }
       .lnx-peek-axis b { font-size: 11px; font-weight: 700; }
-      .lnx-peek-axis .p3 { color: #c9a84c; }
-      .lnx-peek-axis .p2 { color: rgba(201,168,76,0.6); }
+      .lnx-peek-axis .p3 { color: #c8a45a; }
+      .lnx-peek-axis .p2 { color: rgba(200,164,90,0.6); }
       .lnx-peek-axis .p1 { color: rgba(232,228,220,0.3); }
-      .lnx-peek-quote { font-size: 11.5px; color: rgba(232,228,220,0.55); line-height: 1.8; margin: 11px 0 0; padding-left: 10px; border-left: 2px solid rgba(201,168,76,0.3); }
+      .lnx-peek-quote { font-size: 11.5px; color: rgba(232,228,220,0.55); line-height: 1.8; margin: 11px 0 0; padding-left: 10px; border-left: 2px solid rgba(200,164,90,0.3); }
 
       /* ── お店からの記録（でお要望2026-09-27：New Me Logへのデータ橋渡し） ── */
       .lsr-section { margin: 24px 0; }
-      .lsr-section-title { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(201,168,76,0.6); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
-      .lsr-section-title::after { content: ''; flex: 1; height: 1px; background: rgba(201,168,76,0.15); }
+      .lsr-section-title { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(200,164,90,0.6); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+      .lsr-section-title::after { content: ''; flex: 1; height: 1px; background: rgba(200,164,90,0.15); }
       .lsr-section-desc { font-size: 12px; color: rgba(232,228,220,0.4); margin: 0 0 14px; }
       .lsr-group { margin-bottom: 16px; }
       .lsr-group-head { font-size: 13px; font-weight: 700; color: rgba(232,228,220,0.85); margin: 0 0 8px; }
-      .lsr-group-link { color: rgba(201,168,76,0.85); text-decoration: none; }
+      .lsr-group-link { color: rgba(200,164,90,0.85); text-decoration: none; }
       .lsr-group-link:hover { text-decoration: underline; }
-      .lsr-card { background: rgba(10,15,30,0.55); border: 1px solid rgba(232,228,220,0.1); border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; }
+      .lsr-card { background: #151b24; border: 1px solid rgba(232,228,220,0.1); border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; }
       .lsr-card-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; }
-      .lsr-card-type { font-size: 12.5px; font-weight: 700; color: #c9a84c; }
+      .lsr-card-type { font-size: 12.5px; font-weight: 700; color: #c8a45a; }
       .lsr-card-date { font-size: 11px; color: rgba(232,228,220,0.35); flex-shrink: 0; }
       .lsr-card-score { font-size: 12.5px; color: rgba(232,228,220,0.7); margin: 0 0 6px; }
-      .lsr-card-score b { color: #c9a84c; font-size: 15px; }
+      .lsr-card-score b { color: #c8a45a; font-size: 15px; }
       .lsr-card-findings { margin: 0 0 6px; padding-left: 18px; font-size: 12.5px; color: rgba(232,228,220,0.65); line-height: 1.8; }
-      .lsr-card-photo-link { font-size: 11.5px; color: rgba(201,168,76,0.7); text-decoration: none; }
+      .lsr-card-photo-link { font-size: 11.5px; color: rgba(200,164,90,0.7); text-decoration: none; }
       .lsr-card-photo-link:hover { text-decoration: underline; }
 
-      .log-chip-cost { border-color: rgba(201,168,76,0.35) !important; color: rgba(201,168,76,0.85) !important; }
+      .log-chip-cost { border-color: rgba(236,232,223,0.193) !important; color: rgba(200,164,90,0.85) !important; }
 
       /* ── 種別（通う／買う） ── */
       .log-type-toggle { display: flex; gap: 8px; }
-      .log-type-chip { flex: 1; text-align: center; font-size: 13px; font-weight: 700; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); transition: all .12s; }
-      .log-type-chip:hover { border-color: rgba(201,168,76,0.5); color: rgba(232,228,220,0.9); }
-      .log-type-chip.selected { border-color: #c9a84c; background: rgba(201,168,76,0.14); color: #c9a84c; }
+      .log-type-chip { flex: 1; text-align: center; font-size: 13px; font-weight: 700; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; background: #151b24; border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); transition: all .12s; }
+      .log-type-chip:hover { border-color: rgba(236,232,223,0.275); color: rgba(232,228,220,0.9); }
+      .log-type-chip.selected { border-color: rgba(236,232,223,0.3); background: rgba(200,164,90,0.14); color: #c8a45a; }
 
       /* ── 頻度（数値＋単位／プリセット） ── */
       .log-freq-row { display: flex; gap: 8px; }
       .log-freq-row input { flex: 1; }
       .log-freq-row select { flex: 0 0 108px; }
       .log-freq-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-      .log-freq-chip { font-size: 11.5px; font-weight: 700; padding: 6px 12px; border-radius: 99px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); transition: all .12s; }
-      .log-freq-chip:hover { border-color: rgba(201,168,76,0.5); color: rgba(232,228,220,0.9); }
-      .log-freq-chip.selected { border-color: #c9a84c; background: rgba(201,168,76,0.14); color: #c9a84c; }
+      .log-freq-chip { font-size: 11.5px; font-weight: 700; padding: 6px 12px; border-radius: 99px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; background: #151b24; border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); transition: all .12s; }
+      .log-freq-chip:hover { border-color: rgba(236,232,223,0.275); color: rgba(232,228,220,0.9); }
+      .log-freq-chip.selected { border-color: rgba(236,232,223,0.3); background: rgba(200,164,90,0.14); color: #c8a45a; }
 
       /* ── 「行った」の記録（1タップ） ──
          「日付を選ぶ」はJSでshowPicker()を呼ぶ方式だとiOS Safariで完全に無反応になる
@@ -320,10 +320,10 @@ export default function ServiceLog({ withSideNav = false }) {
          直接処理させる方式に変更（Chrome/iOS Safariとも標準のネイティブ挙動）。 */
       .log-card-visit { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(232,228,220,0.07); }
       .log-visit-today, .log-visit-pick-wrap { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; box-sizing: border-box; position: relative; }
-      .log-visit-today { background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.4); color: #c9a84c; }
-      .log-visit-today:hover { background: rgba(201,168,76,0.2); }
+      .log-visit-today { background: rgba(200,164,90,0.12); border: 1px solid rgba(236,232,223,0.22); color: #c8a45a; }
+      .log-visit-today:hover { background: rgba(200,164,90,0.2); }
       .log-visit-pick-wrap { background: rgba(232,228,220,0.04); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); }
-      .log-visit-pick-wrap:hover { border-color: rgba(201,168,76,0.4); color: rgba(232,228,220,0.85); }
+      .log-visit-pick-wrap:hover { border-color: rgba(236,232,223,0.22); color: rgba(232,228,220,0.85); }
       .log-visit-pick-label { pointer-events: none; } /* 見た目だけ。タップは下のinputが直接受ける */
       /* ボタンと同じ大きさで重ねた、実体のinput。opacity:0で見た目は消すが
          サイズはボタンいっぱいのまま＝どこをタップしても本物のinputへの
@@ -350,33 +350,33 @@ export default function ServiceLog({ withSideNav = false }) {
 
       /* 記録できたことを目に見える形で返す */
       .log-toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(18px);
-        background: linear-gradient(135deg,#c9a84c,#e8c86a); color: #0a0f1e; padding: 12px 24px; border-radius: 99px;
+        background: linear-gradient(135deg,#c8a45a,#e8c86a); color: #0d1117; padding: 12px 24px; border-radius: 99px;
         font-size: 13.5px; font-weight: 800; font-family: 'Noto Sans JP', sans-serif; white-space: nowrap;
         opacity: 0; pointer-events: none; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,.45);
         transition: opacity .22s ease, transform .22s ease; }
       .log-toast.is-on { opacity: 1; transform: translateX(-50%) translateY(0); }
       .log-card.is-flash { animation: logCardFlash 1.5s ease-out; }
       @keyframes logCardFlash {
-        0%   { border-color: #c9a84c; background: rgba(201,168,76,0.20); }
-        60%  { border-color: rgba(201,168,76,0.5); background: rgba(201,168,76,0.08); }
-        100% { border-color: rgba(232,228,220,0.12); background: rgba(10,15,30,0.65); }
+        0%   { border-color: rgba(236,232,223,0.3); background: rgba(200,164,90,0.20); }
+        60%  { border-color: rgba(236,232,223,0.275); background: rgba(200,164,90,0.08); }
+        100% { border-color: rgba(232,228,220,0.12); background: #151b24; }
       }
       @media (prefers-reduced-motion: reduce) {
         .log-toast { transition: none; }
-        .log-card.is-flash { animation: none; box-shadow: 0 0 0 2px rgba(201,168,76,.6); }
+        .log-card.is-flash { animation: none; box-shadow: 0 0 0 2px rgba(0,0,0,0.72); }
       }
 
       /* ── カスタム軸のアイコン選択 ── */
       .log-icon-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-      .log-icon-choice { width: 38px; height: 38px; font-size: 18px; line-height: 1; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.12); border-radius: 10px; cursor: pointer; transition: all .12s; }
-      .log-icon-choice:hover { border-color: rgba(201,168,76,0.5); }
-      .log-icon-choice.selected { border-color: #c9a84c; background: rgba(201,168,76,0.14); }
+      .log-icon-choice { width: 38px; height: 38px; font-size: 18px; line-height: 1; background: #151b24; border: 1px solid rgba(232,228,220,0.12); border-radius: 10px; cursor: pointer; transition: all .12s; }
+      .log-icon-choice:hover { border-color: rgba(236,232,223,0.275); }
+      .log-icon-choice.selected { border-color: rgba(236,232,223,0.3); background: rgba(200,164,90,0.14); }
 
       /* ── 未ログイン向けの保存導線 ── */
-      .log-guest-cta { margin-top: 28px; background: linear-gradient(160deg, rgba(12,18,38,0.98), rgba(8,12,26,0.98)); border: 1px solid rgba(201,168,76,0.28); border-radius: 16px; padding: 24px 22px; text-align: center; }
+      .log-guest-cta { margin-top: 28px; background: linear-gradient(160deg, rgba(12,18,38,0.98), rgba(8,12,26,0.98)); border: 1px solid rgba(236,232,223,0.154); border-radius: 16px; padding: 24px 22px; text-align: center; }
       .log-guest-cta-title { font-size: 15px; font-weight: 800; color: #e8e4dc; margin: 0 0 8px; }
       .log-guest-cta-desc { font-size: 12px; color: rgba(232,228,220,0.5); margin: 0 0 18px; line-height: 1.8; }
-      .log-guest-cta-btn { display: inline-block; padding: 13px 30px; background: linear-gradient(135deg,#c9a84c,#e8c86a); color: #0a0f1e; font-size: 14px; font-weight: 800; border-radius: 11px; text-decoration: none; }
+      .log-guest-cta-btn { display: inline-block; padding: 13px 30px; background: linear-gradient(135deg,#c8a45a,#e8c86a); color: #0d1117; font-size: 14px; font-weight: 800; border-radius: 11px; text-decoration: none; }
       .log-guest-cta-note { font-size: 10px; color: rgba(232,228,220,0.25); margin: 10px 0 0; letter-spacing: .04em; }
 
       /* ── 支出の推移（羊皮紙カード内。.ltp- = Log Trend Parchment） ──
@@ -397,14 +397,14 @@ export default function ServiceLog({ withSideNav = false }) {
       .ltp-empty-text { font-size: 2.6cqw; color: rgba(71,48,32,.55); line-height: 1.8; margin: 0; }
 
       /* ── 支出から見えること（.lan- = Log ANalysis） ── */
-      .lan-wrap { background: rgba(10,15,30,0.6); border: 1px solid rgba(201,168,76,0.26); border-radius: 14px; padding: 22px 20px 20px; margin: 20px 0; }
-      .lan-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: 15px; font-weight: 700; color: rgba(232,228,220,0.92); margin: 0 0 14px; }
+      .lan-wrap { background: #151b24; border: 1px solid rgba(236,232,223,0.143); border-radius: 14px; padding: 22px 20px 20px; margin: 20px 0; }
+      .lan-title { font-family: 'Shippori Mincho', Georgia, serif; font-size: 15px; font-weight: 700; color: rgba(232,228,220,0.92); margin: 0 0 14px; }
       .lan-goal-toggle { display: flex; gap: 8px; margin: 0 0 16px; }
-      .lan-goal-chip { flex: 1; text-align: center; font-size: 12px; font-weight: 700; padding: 9px 8px; border-radius: 10px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); transition: all .12s; }
-      .lan-goal-chip:hover { border-color: rgba(201,168,76,0.5); color: rgba(232,228,220,0.9); }
-      .lan-goal-chip.selected { border-color: #c9a84c; background: rgba(201,168,76,0.14); color: #c9a84c; }
+      .lan-goal-chip { flex: 1; text-align: center; font-size: 12px; font-weight: 700; padding: 9px 8px; border-radius: 10px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; background: #151b24; border: 1px solid rgba(232,228,220,0.14); color: rgba(232,228,220,0.6); transition: all .12s; }
+      .lan-goal-chip:hover { border-color: rgba(236,232,223,0.275); color: rgba(232,228,220,0.9); }
+      .lan-goal-chip.selected { border-color: rgba(236,232,223,0.3); background: rgba(200,164,90,0.14); color: #c8a45a; }
       .lan-list { display: flex; flex-direction: column; gap: 10px; }
-      .lan-item { padding: 12px 13px; background: rgba(201,168,76,0.06); border-radius: 9px; }
+      .lan-item { padding: 12px 13px; background: rgba(200,164,90,0.06); border-radius: 9px; }
       .lan-item-text { font-size: 12.5px; color: rgba(232,228,220,0.75); line-height: 1.7; margin: 0; }
       .lan-item-suggestion { font-size: 11.5px; color: rgba(232,228,220,0.45); line-height: 1.7; margin: 6px 0 0; padding-top: 6px; border-top: 1px solid rgba(232,228,220,0.08); }
       .lan-empty { font-size: 11.5px; color: rgba(232,228,220,0.32); margin: 0; }
@@ -1683,7 +1683,7 @@ export default function ServiceLog({ withSideNav = false }) {
       const bg = await loadImageEl('/assets/images/log-parchment-v2.webp');
       ctx.drawImage(bg, 0, 0, W, H);
 
-      const SERIF = "'Noto Serif JP', Georgia, serif";
+      const SERIF = "'Shippori Mincho', Georgia, serif";
       const SANS = "'Noto Sans JP', sans-serif";
       const INK_DARK = '#472000';
       const INK_BRAND = '#473020';

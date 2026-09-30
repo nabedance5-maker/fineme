@@ -99,7 +99,7 @@ export default function BelleTypesPage() {
                   <div
                     key={t.code}
                     style={{
-                      background: 'rgba(10,15,30,0.65)',
+                      background: '#151b24',
                       border: `1px solid ${color}33`,
                       borderRadius: '14px',
                       overflow: 'hidden',
@@ -136,7 +136,7 @@ export default function BelleTypesPage() {
         })}
 
         {/* フッターCTA */}
-        <div style={{ textAlign: 'center', marginTop: '16px', padding: '32px', background: 'rgba(10,15,30,0.65)', borderRadius: '20px', border: '1px solid rgba(200,100,140,0.3)', backdropFilter: 'blur(8px)' }}>
+        <div style={{ textAlign: 'center', marginTop: '16px', padding: '32px', background: '#151b24', borderRadius: '20px', border: '1px solid rgba(200,100,140,0.3)', backdropFilter: 'blur(8px)' }}>
           <p style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(200,100,140,0.8)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '.08em' }}>あなたはどの花？</p>
           <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'rgba(232,228,220,0.90)', margin: '0 0 10px' }}>Me Scanを受けて確認しよう</h2>
           <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.55)', lineHeight: 1.7, margin: '0 0 20px' }}>

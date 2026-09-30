@@ -191,13 +191,13 @@ function AffiliatePageInner() {
         {/* ── 期間限定キャンペーン（バナー＋注釈。期間内のみ自動表示） ───── */}
         {campaignActive && (
           <div style={{
-            background: 'rgba(201,168,76,0.08)',
-            border: '1.5px solid rgba(201,168,76,0.55)', borderRadius: '18px',
+            background: 'rgba(200,164,90,0.08)',
+            border: '1.5px solid rgba(236,232,223,0.303)', borderRadius: '18px',
             padding: '20px 22px', marginBottom: '20px',
           }}>
             <div style={{
-              display: 'inline-block', fontSize: '11px', fontWeight: '800', color: '#0a0f1e',
-              background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', borderRadius: '99px',
+              display: 'inline-block', fontSize: '11px', fontWeight: '800', color: '#0d1117',
+              background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', borderRadius: '99px',
               padding: '4px 12px', letterSpacing: '.06em', marginBottom: '14px',
             }}>
               {campaign.label || '期間限定キャンペーン'}
@@ -221,7 +221,7 @@ function AffiliatePageInner() {
             {(campaign.disclaimers || []).length > 0 && (
               <ul style={{
                 listStyle: 'none', margin: 0, padding: '12px 0 0',
-                borderTop: '1px solid rgba(201,168,76,0.25)',
+                borderTop: '1px solid rgba(236,232,223,0.138)',
               }}>
                 {campaign.disclaimers.map((d, i) => (
                   <li key={i} style={{
@@ -239,11 +239,11 @@ function AffiliatePageInner() {
         {/* ── ガイドからのひと言 ────────────────────────────────────── */}
         {affiliate.guide_message && (
           <div style={{
-            background: 'rgba(10,15,30,0.65)',
-            border: '1px solid rgba(201,168,76,0.25)', borderRadius: '18px',
+            background: '#151b24',
+            border: '1px solid rgba(236,232,223,0.138)', borderRadius: '18px',
             padding: '22px 24px', marginBottom: '20px', backdropFilter: 'blur(8px)',
           }}>
-            <div style={{ fontSize: '10px', fontWeight: '800', color: '#c9a84c', letterSpacing: '.12em', marginBottom: '10px', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '10px', fontWeight: '800', color: '#c8a45a', letterSpacing: '.12em', marginBottom: '10px', textTransform: 'uppercase' }}>
               ガイドからのひと言
             </div>
             <p style={{ fontSize: '15px', color: 'rgba(232,228,220,0.90)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap', fontStyle: 'italic' }}>
@@ -255,10 +255,10 @@ function AffiliatePageInner() {
         {/* ── このガイドにしかできないこと ─────────────────────────── */}
         {affiliate.unique_strengths && (
           <div style={{
-            background: 'rgba(10,15,30,0.65)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: '18px',
+            background: '#151b24', border: '1px solid rgba(236,232,223,0.138)', borderRadius: '18px',
             padding: '22px 24px', marginBottom: '20px', backdropFilter: 'blur(8px)',
           }}>
-            <div style={{ fontSize: '10px', fontWeight: '800', color: '#c9a84c', letterSpacing: '.12em', marginBottom: '12px', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '10px', fontWeight: '800', color: '#c8a45a', letterSpacing: '.12em', marginBottom: '12px', textTransform: 'uppercase' }}>
               このガイドにしかできないこと
             </div>
             <p style={{ fontSize: '15px', color: 'rgba(232,228,220,0.90)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap', fontWeight: '500' }}>

@@ -9,7 +9,7 @@ import { useState, useEffect, useRef } from 'react';
 const MENU_GROUPS = [
   {
     label: '男性向け',
-    accent: '#c9a84c',
+    accent: '#c8a45a',
     links: [
       { href: '/feature',        label: 'Journal' },
       { href: '/diagnosis',      label: 'Me Scan' },
@@ -94,18 +94,18 @@ export default function Navbar() {
         .nav-link:hover { color: #fff; }
         .menu-toggle {
           display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; white-space: nowrap;
-          background: none; border: 1px solid rgba(201,168,76,0.35); color: #e8e4dc;
+          background: none; border: 1px solid rgba(236,232,223,0.193); color: #e8e4dc;
           cursor: pointer; padding: 8px 14px; border-radius: 8px; font-size: 14px; font-weight: 600;
         }
-        .menu-toggle:hover { border-color: rgba(201,168,76,0.7); color: #fff; }
+        .menu-toggle:hover { border-color: rgba(236,232,223,0.385); color: #fff; }
         .menu-toggle .bars { display: inline-flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
         .menu-toggle .bars span { display: block; width: 16px; height: 2px; background: currentColor; border-radius: 2px; }
         .menu-caret { font-size: 10px; opacity: .8; }
         .nav-link, .nav-right .btn { flex-shrink: 0; white-space: nowrap; }
         .menu-panel {
           position: absolute; top: 100%; right: 0; margin-top: 8px;
-          min-width: 320px; background: rgba(10,15,30,0.98);
-          border: 1px solid rgba(201,168,76,0.25); border-radius: 12px;
+          min-width: 320px; background: #151b24;
+          border: 1px solid rgba(236,232,223,0.138); border-radius: 12px;
           box-shadow: 0 12px 32px rgba(0,0,0,0.5); padding: 14px; z-index: 200;
           display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px;
         }

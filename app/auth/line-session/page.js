@@ -72,7 +72,7 @@ export default function LineSessionPage() {
       <div style={{
         width: '40px',
         height: '40px',
-        border: '3px solid #c9a84c',
+        border: '3px solid #c8a45a',
         borderTop: '3px solid transparent',
         borderRadius: '50%',
         animation: 'spin 0.8s linear infinite',

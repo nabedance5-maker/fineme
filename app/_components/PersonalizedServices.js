@@ -57,19 +57,19 @@ export function PersonalizedServices({ providers, firstCat }) {
   if (!sorted.length) return null;
 
   return (
-    <div style={{ marginTop: '60px', paddingTop: '48px', borderTop: '1px solid rgba(201,168,76,0.15)' }}>
+    <div style={{ marginTop: '60px', paddingTop: '48px', borderTop: '1px solid rgba(236,232,223,0.083)' }}>
       {/* sec-label */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-        <div style={{ width: '24px', height: '1.5px', background: '#c9a84c', borderRadius: '1px', flexShrink: 0 }} />
-        <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.8)', margin: 0 }}>
+        <div style={{ width: '24px', height: '1.5px', background: '#c8a45a', borderRadius: '1px', flexShrink: 0 }} />
+        <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(200,164,90,0.8)', margin: 0 }}>
           この記事に関連するサービス
         </p>
-        <div style={{ flex: 1, height: '1px', background: 'repeating-linear-gradient(90deg,rgba(201,168,76,0.3) 0,rgba(201,168,76,0.3) 4px,transparent 4px,transparent 9px)' }} />
+        <div style={{ flex: 1, height: '1px', background: 'repeating-linear-gradient(90deg,rgba(200,164,90,0.3) 0,rgba(200,164,90,0.3) 4px,transparent 4px,transparent 9px)' }} />
       </div>
 
       {/* パーソナライズ表示バッジ */}
       {personalized ? (
-        <p style={{ fontSize: '12px', color: 'rgba(201,168,76,0.75)', margin: '0 0 20px', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <p style={{ fontSize: '12px', color: 'rgba(200,164,90,0.75)', margin: '0 0 20px', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ fontSize: '10px' }}>✦</span>
           あなたのNew Me Naviに合わせて表示しています
         </p>
@@ -87,16 +87,16 @@ export function PersonalizedServices({ providers, firstCat }) {
             href={p.entity_type === 'affiliate' ? `/affiliate/${p.slug}` : `/provider/${p.slug}${personalized ? '?tab=appeal' : ''}`}
             style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 'clamp(200px, 42vw, 240px)', scrollSnapAlign: 'start' }}
           >
-            <div style={{ border: '1px solid rgba(201,168,76,0.2)', borderRadius: '14px', overflow: 'hidden', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(4px)', transition: 'border-color 0.2s' }}>
+            <div style={{ border: '1px solid rgba(236,232,223,0.11)', borderRadius: '14px', overflow: 'hidden', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(4px)', transition: 'border-color 0.2s' }}>
               {p.thumbnail ? (
                 <img src={p.thumbnail} alt={p.name} style={{ width: '100%', height: '130px', objectFit: 'cover', display: 'block' }} />
               ) : (
-                <div style={{ height: '130px', background: 'linear-gradient(135deg, #0a0f1e, #1e2b54)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ height: '130px', background: 'linear-gradient(135deg, #0d1117, #1e2b54)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <span style={{ fontSize: '28px' }}>✨</span>
                 </div>
               )}
               <div style={{ padding: '12px' }}>
-                <p style={{ fontSize: '10px', color: '#c9a84c', fontWeight: 800, letterSpacing: '0.08em', margin: '0 0 5px', textTransform: 'uppercase' }}>
+                <p style={{ fontSize: '10px', color: '#c8a45a', fontWeight: 800, letterSpacing: '0.08em', margin: '0 0 5px', textTransform: 'uppercase' }}>
                   {CAT_LABEL[p.main_category] || p.main_category}
                 </p>
                 <p style={{ fontSize: '14px', fontWeight: 700, color: '#fff', margin: '0 0 5px', lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
@@ -115,7 +115,7 @@ export function PersonalizedServices({ providers, firstCat }) {
 
       <div style={{ textAlign: 'right', marginTop: '10px' }}>
         <Link href={`/search?category=${firstCat || ''}`}
-          style={{ fontSize: '12px', color: '#c9a84c', fontWeight: 700, textDecoration: 'none' }}>
+          style={{ fontSize: '12px', color: '#c8a45a', fontWeight: 700, textDecoration: 'none' }}>
           関連サービスをもっと見る →
         </Link>
       </div>

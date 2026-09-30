@@ -102,7 +102,7 @@ export default async function BelleArticlePage({ params }) {
             </div>
 
             <h1 style={{
-              fontFamily: "'Noto Serif JP', Georgia, serif",
+              fontFamily: "'Shippori Mincho', Georgia, serif",
               fontSize: 'clamp(22px,4.5vw,36px)',
               fontWeight: 700,
               color: '#fff',
@@ -144,8 +144,8 @@ export default async function BelleArticlePage({ params }) {
         {dbArticle && (
           <style>{`
             .belle-article-html { color: rgba(240,216,224,0.85); font-size: 16px; line-height: 2; }
-            .belle-article-html h1 { font-family: 'Noto Serif JP',Georgia,serif; font-size: clamp(22px,4vw,28px); font-weight: 700; color: rgba(240,216,224,0.95); margin: 56px 0 20px; border-left: 4px solid #c8648c; padding-left: 16px; }
-            .belle-article-html h2 { font-family: 'Noto Serif JP',Georgia,serif; font-size: clamp(18px,3.5vw,22px); font-weight: 700; color: rgba(240,216,224,0.95); margin: 52px 0 16px; border-left: 4px solid #c8648c; padding-left: 14px; }
+            .belle-article-html h1 { font-family: 'Shippori Mincho',Georgia,serif; font-size: clamp(22px,4vw,28px); font-weight: 700; color: rgba(240,216,224,0.95); margin: 56px 0 20px; border-left: 4px solid #c8648c; padding-left: 16px; }
+            .belle-article-html h2 { font-family: 'Shippori Mincho',Georgia,serif; font-size: clamp(18px,3.5vw,22px); font-weight: 700; color: rgba(240,216,224,0.95); margin: 52px 0 16px; border-left: 4px solid #c8648c; padding-left: 14px; }
             .belle-article-html h3 { font-size: 16px; font-weight: 700; color: rgba(240,216,224,0.88); margin: 32px 0 12px; display: flex; align-items: center; gap: 8px; }
             .belle-article-html h3::before { content: '▸'; color: rgba(200,100,140,0.6); font-size: 13px; flex-shrink: 0; }
             .belle-article-html p { margin: 0 0 20px; }
@@ -171,7 +171,7 @@ export default async function BelleArticlePage({ params }) {
               Belle Me Scan
             </p>
             <p style={{
-              fontFamily: "'Noto Serif JP', Georgia, serif",
+              fontFamily: "'Shippori Mincho', Georgia, serif",
               fontSize: 'clamp(16px,2.5vw,20px)',
               fontWeight: 700,
               color: 'rgba(240,216,224,0.90)',
@@ -218,7 +218,7 @@ export default async function BelleArticlePage({ params }) {
                 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{
-                      fontFamily: "'Noto Serif JP', Georgia, serif",
+                      fontFamily: "'Shippori Mincho', Georgia, serif",
                       fontSize: 14, fontWeight: 700,
                       color: 'rgba(240,216,224,0.85)',
                       margin: '0 0 2px', lineHeight: 1.4,

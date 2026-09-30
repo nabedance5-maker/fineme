@@ -115,7 +115,7 @@ async function renderShareCardImage(reportContent, photoUrl, accentHex, tierComp
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
 
-  const SERIF = "'Noto Serif JP', Georgia, serif";
+  const SERIF = "'Shippori Mincho', Georgia, serif";
   const SANS = "'Noto Sans JP', sans-serif";
 
   // document.fonts.ready だけだと、そのページでまだ一度も使われていない
@@ -296,9 +296,9 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
 
   if (!reportContent) return null;
 
-  const accent = gender === 'female' ? '#E0A6C4' : '#C9A84C';
-  const accentSoft = gender === 'female' ? 'rgba(224,166,196,0.12)' : 'rgba(201,168,76,0.12)';
-  const accentBorder = gender === 'female' ? 'rgba(224,166,196,0.4)' : 'rgba(201,168,76,0.4)';
+  const accent = gender === 'female' ? '#E0A6C4' : '#c8a45a';
+  const accentSoft = gender === 'female' ? 'rgba(224,166,196,0.12)' : 'rgba(200,164,90,0.12)';
+  const accentBorder = gender === 'female' ? 'rgba(224,166,196,0.4)' : 'rgba(200,164,90,0.4)';
 
   async function handleSaveImage() {
     setSaving(true);
@@ -366,7 +366,7 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
             <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '.2em', color: 'rgba(232,228,220,0.35)', textTransform: 'uppercase', margin: '0 0 6px' }}>
               現在の変容ステージ
             </p>
-            <p style={{ fontFamily: "'Noto Serif JP', Georgia, serif", fontSize: '40px', fontWeight: 800, color: accent, margin: 0, lineHeight: 1.2 }}>
+            <p style={{ fontFamily: "'Shippori Mincho', Georgia, serif", fontSize: '40px', fontWeight: 800, color: accent, margin: 0, lineHeight: 1.2 }}>
               {reportContent.visual_tier}
             </p>
           </div>
@@ -688,7 +688,7 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
       <div style={{ margin: '0 22px 22px', textAlign: 'center' }}>
         <a
           href="/mirror/match"
-          style={{ display: 'inline-block', padding: '12px 24px', borderRadius: '999px', background: accent, color: '#0a0f1e', fontWeight: 800, fontSize: '13px', textDecoration: 'none' }}
+          style={{ display: 'inline-block', padding: '12px 24px', borderRadius: '999px', background: accent, color: '#0d1117', fontWeight: 800, fontSize: '13px', textDecoration: 'none' }}
         >
           このスコアを改善できるメニューを探す
         </a>

@@ -21,14 +21,14 @@ export default function AttributeStep({ mode = 'register', currentAgeBand = null
     <>
       <style>{`
         .attr-step-wrap { min-height: 40vh; display: flex; align-items: center; justify-content: center; padding: 32px 20px; }
-        .attr-step-card { max-width: 440px; width: 100%; background: #fff; border: 1px solid rgba(201,168,76,0.25); border-radius: 18px; padding: 36px 28px; text-align: center; box-shadow: 0 4px 32px rgba(0,0,0,0.06); color: #1a1410; }
-        .attr-step-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: 17px; font-weight: 700; color: #0a0f1e; margin: 0 0 10px; line-height: 1.6; }
+        .attr-step-card { max-width: 440px; width: 100%; background: #fff; border: 1px solid rgba(236,232,223,0.138); border-radius: 18px; padding: 36px 28px; text-align: center; box-shadow: 0 4px 32px rgba(0,0,0,0.06); color: #1a1410; }
+        .attr-step-title { font-family: 'Shippori Mincho', Georgia, serif; font-size: 17px; font-weight: 700; color: #0d1117; margin: 0 0 10px; line-height: 1.6; }
         .attr-step-desc { font-size: 13px; color: #6b7280; line-height: 1.85; margin: 0 0 22px; }
         .attr-step-value { color: #6366f1; }
         .attr-step-opts { display: flex; flex-direction: column; gap: 8px; }
         .attr-step-opt { padding: 13px 18px; background: #fff; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14px; font-weight: 700; color: #374151; cursor: pointer; transition: all .12s; }
-        .attr-step-opt:hover { border-color: #c9a84c; background: #fffdf5; }
-        .attr-step-primary { display: block; width: 100%; padding: 14px 20px; background: #c9a84c; color: #0a0f1e; font-size: 14px; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; margin-bottom: 10px; }
+        .attr-step-opt:hover { border-color: rgba(236,232,223,0.3); background: #fffdf5; }
+        .attr-step-primary { display: block; width: 100%; padding: 14px 20px; background: #c8a45a; color: #0d1117; font-size: 14px; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; margin-bottom: 10px; }
         .attr-step-edit { font-size: 12px; color: #9ca3af; background: none; border: none; text-decoration: underline; cursor: pointer; }
       `}</style>
       <div className="attr-step-wrap">

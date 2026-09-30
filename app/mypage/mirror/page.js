@@ -7,7 +7,7 @@ import MypageSideNav from '../_components/MypageSideNav';
 
 const DIR_ICON  = { improved: '↑', stable: '→' };
 const DIR_COLOR = { improved: '#50c88c', stable: 'rgba(232,228,220,0.35)' };
-const POT_COLOR_COMP = { '高': '#c9a84c', '中': '#7aadff', '低': '#50c88c' };
+const POT_COLOR_COMP = { '高': '#c8a45a', '中': '#7aadff', '低': '#50c88c' };
 
 function ComparisonCard({ data }) {
   if (!data?.has_comparison) return null;
@@ -17,9 +17,9 @@ function ComparisonCard({ data }) {
   const hasBigImprovement = data.changes.some(c => c.from === '高' && c.to === '低');
 
   return (
-    <div style={{ background: improved > 0 ? 'rgba(10,30,20,0.7)' : 'rgba(10,15,30,0.6)', border: `1px solid ${improved > 0 ? 'rgba(80,200,140,0.35)' : 'rgba(201,168,76,0.22)'}`, borderRadius: '14px', padding: '18px', marginBottom: '24px' }}>
+    <div style={{ background: improved > 0 ? 'rgba(10,30,20,0.7)' : 'rgba(13,17,23,0.6)', border: `1px solid ${improved > 0 ? 'rgba(80,200,140,0.35)' : 'rgba(200,164,90,0.22)'}`, borderRadius: '14px', padding: '18px', marginBottom: '24px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-        <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.12em', color: improved > 0 ? 'rgba(80,200,140,0.6)' : 'rgba(201,168,76,0.55)', textTransform: 'uppercase', margin: 0 }}>変容の軌跡</p>
+        <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.12em', color: improved > 0 ? 'rgba(80,200,140,0.6)' : 'rgba(200,164,90,0.55)', textTransform: 'uppercase', margin: 0 }}>変容の軌跡</p>
         <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.35)', margin: 0 }}>{data.prev_month} → {data.new_month}</p>
       </div>
 
@@ -142,17 +142,17 @@ export default function MirrorHistoryPage() {
         {SIDENAV}
 
         <section className="mypage-content">
-          <div style={{ background: 'linear-gradient(rgba(10,15,30,0.82), rgba(10,15,30,0.92)), url(/assets/images/hero-bg.webp) center/cover no-repeat', borderRadius: '14px', padding: '22px', marginBottom: '24px', border: '1px solid rgba(201,168,76,0.2)' }}>
-            <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.18em', color: 'rgba(201,168,76,0.55)', margin: '0 0 6px', textTransform: 'uppercase' }}>Fineme Mirror</p>
-            <h1 style={{ fontFamily: "'Noto Serif JP', Georgia, serif", fontSize: 'clamp(18px,4vw,24px)', fontWeight: 700, color: '#fff', margin: '0 0 6px' }}>
-              Mirror <span style={{ color: '#c9a84c' }}>分析履歴</span>
+          <div style={{ background: '#151b24', borderRadius: '14px', padding: '22px', marginBottom: '24px', border: '1px solid rgba(236,232,223,0.11)' }}>
+            <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.18em', color: 'rgba(200,164,90,0.55)', margin: '0 0 6px', textTransform: 'uppercase' }}>Fineme Mirror</p>
+            <h1 style={{ fontFamily: "'Shippori Mincho', Georgia, serif", fontSize: 'clamp(18px,4vw,24px)', fontWeight: 700, color: '#fff', margin: '0 0 6px' }}>
+              Mirror <span style={{ color: '#c8a45a' }}>分析履歴</span>
             </h1>
             <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.45)', margin: 0, lineHeight: 1.6 }}>
               購入済みの分析はいつでも見返せます。
             </p>
           </div>
 
-          <Link href={track.mirror} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', background: 'rgba(201,168,76,0.08)', border: '1.5px dashed rgba(201,168,76,0.4)', borderRadius: '12px', color: '#c9a84c', fontSize: '14px', fontWeight: 700, textDecoration: 'none', marginBottom: '24px', transition: 'all .15s' }}>
+          <Link href={track.mirror} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', background: 'rgba(200,164,90,0.08)', border: '1.5px dashed rgba(236,232,223,0.22)', borderRadius: '12px', color: '#c8a45a', fontSize: '14px', fontWeight: 700, textDecoration: 'none', marginBottom: '24px', transition: 'all .15s' }}>
             🪞 新しい写真を分析する
           </Link>
 
@@ -174,14 +174,14 @@ export default function MirrorHistoryPage() {
             <div>
               {/* 非会員: 5件超えた分はCTAで隠す */}
               {!isSubscriber && sessions.length > FREE_LIMIT && (
-                <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: '14px', padding: '20px 24px', marginBottom: '16px', textAlign: 'center' }}>
+                <div style={{ background: 'rgba(200,164,90,0.06)', border: '1px solid rgba(236,232,223,0.138)', borderRadius: '14px', padding: '20px 24px', marginBottom: '16px', textAlign: 'center' }}>
                   <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.7)', margin: '0 0 4px', lineHeight: 1.7 }}>
                     {sessions.length}件の分析履歴があります。
                   </p>
                   <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.5)', margin: '0 0 16px', lineHeight: 1.7 }}>
                     サブスク会員になると全件いつでも見返せます。
                   </p>
-                  <Link href="/mypage/subscription" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 24px', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', borderRadius: '10px', fontSize: '13px', fontWeight: 800, color: '#0a0f1e', textDecoration: 'none' }}>
+                  <Link href="/mypage/subscription" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 24px', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', borderRadius: '10px', fontSize: '13px', fontWeight: 800, color: '#0d1117', textDecoration: 'none' }}>
                     月額780円で無制限に →
                   </Link>
                 </div>
@@ -191,7 +191,7 @@ export default function MirrorHistoryPage() {
                 const isExpanded = expandedId === s.id;
 
                 return (
-                  <div key={s.id} style={{ background: 'rgba(10,15,30,0.65)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '14px', marginBottom: '12px', overflow: 'hidden', transition: 'border-color .2s', ...(isExpanded ? { borderColor: 'rgba(201,168,76,0.35)' } : {}) }}>
+                  <div key={s.id} style={{ background: '#151b24', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '14px', marginBottom: '12px', overflow: 'hidden', transition: 'border-color .2s', ...(isExpanded ? { borderColor: 'rgba(236,232,223,0.193)' } : {}) }}>
                     <button
                       onClick={() => toggleSession(s)}
                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', padding: '16px 18px', cursor: 'pointer', textAlign: 'left', gap: '12px' }}
@@ -209,9 +209,9 @@ export default function MirrorHistoryPage() {
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                         <span style={{ fontSize: '11px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px',
-                          color: s.paid ? '#50c88c' : 'rgba(201,168,76,0.6)',
-                          background: s.paid ? 'rgba(80,200,140,0.1)' : 'rgba(201,168,76,0.08)',
-                          border: `1px solid ${s.paid ? 'rgba(80,200,140,0.3)' : 'rgba(201,168,76,0.2)'}` }}>
+                          color: s.paid ? '#50c88c' : 'rgba(200,164,90,0.6)',
+                          background: s.paid ? 'rgba(80,200,140,0.1)' : 'rgba(200,164,90,0.08)',
+                          border: `1px solid ${s.paid ? 'rgba(80,200,140,0.3)' : 'rgba(200,164,90,0.2)'}` }}>
                           {s.paid ? '購入済み' : '無料版'}
                         </span>
                         <span style={{ color: 'rgba(232,228,220,0.4)', fontSize: '12px' }}>
@@ -250,11 +250,11 @@ export default function MirrorHistoryPage() {
                               この分析は無料プレビュー版です。<br />
                               詳細な地図を見るには購入が必要です。
                             </p>
-                            <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '10px', padding: '14px', marginBottom: '16px', fontSize: '13px', color: 'rgba(232,228,220,0.75)', lineHeight: 1.75, textAlign: 'left' }}>
-                              <p style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(201,168,76,0.6)', letterSpacing: '.1em', textTransform: 'uppercase', margin: '0 0 6px' }}>First Impression</p>
+                            <div style={{ background: 'rgba(200,164,90,0.06)', border: '1px solid rgba(236,232,223,0.11)', borderRadius: '10px', padding: '14px', marginBottom: '16px', fontSize: '13px', color: 'rgba(232,228,220,0.75)', lineHeight: 1.75, textAlign: 'left' }}>
+                              <p style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(200,164,90,0.6)', letterSpacing: '.1em', textTransform: 'uppercase', margin: '0 0 6px' }}>First Impression</p>
                               {s.first_impression}
                             </div>
-                            <Link href={track.mirror} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', borderRadius: '10px', fontSize: '14px', fontWeight: 800, color: '#0a0f1e', textDecoration: 'none' }}>
+                            <Link href={track.mirror} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', borderRadius: '10px', fontSize: '14px', fontWeight: 800, color: '#0d1117', textDecoration: 'none' }}>
                               🪞 Mirrorページで購入する
                             </Link>
                           </div>
@@ -272,16 +272,16 @@ export default function MirrorHistoryPage() {
       <style>{`
         .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
         .mypage-sidenav, .mypage-content { min-width: 0; }
-        .mypage-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        .mypage-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
         @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; min-width: 0; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav .sidenav-link { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
         .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: rgba(201,168,76,0.1); }
-        .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #c9a84c; border-left: 3px solid #c9a84c; padding-left: 9px; }
-        .report-loading-wrap { max-width: 480px; text-align: center; padding: 28px 24px; background: rgba(201,168,76,0.05); border: 1px solid rgba(201,168,76,0.2); border-radius: 16px; }
-        .report-loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(201,168,76,0.2); border-top-color: #c9a84c; border-radius: 50%; animation: mirrorSpin 1s linear infinite; margin: 0 auto 14px; }
+        .sidenav-link:hover { background: rgba(200,164,90,0.1); }
+        .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #c8a45a; border-left: 3px solid #c8a45a; padding-left: 9px; }
+        .report-loading-wrap { max-width: 480px; text-align: center; padding: 28px 24px; background: rgba(200,164,90,0.05); border: 1px solid rgba(236,232,223,0.11); border-radius: 16px; }
+        .report-loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(200,164,90,0.2); border-top-color: rgba(236,232,223,0.3); border-radius: 50%; animation: mirrorSpin 1s linear infinite; margin: 0 auto 14px; }
         @keyframes mirrorSpin { to { transform: rotate(360deg); } }
         .report-progress-track { width: 100%; height: 6px; border-radius: 99px; background: rgba(232,228,220,0.08); overflow: hidden; margin-top: 16px; }
-        .report-progress-bar { width: 35%; height: 100%; border-radius: 99px; background: linear-gradient(90deg, transparent, #c9a84c, transparent); animation: mirrorProgress 1.7s ease-in-out infinite; }
+        .report-progress-bar { width: 35%; height: 100%; border-radius: 99px; background: linear-gradient(90deg, transparent, #c8a45a, transparent); animation: mirrorProgress 1.7s ease-in-out infinite; }
         @keyframes mirrorProgress { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
       `}</style>
     </main>

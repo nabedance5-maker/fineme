@@ -51,13 +51,13 @@ function FeedbackForm() {
         <div style={{ fontSize: '40px', marginBottom: '16px' }}>🪞</div>
         <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#fff', marginBottom: '12px', lineHeight: 1.4 }}>
           ありがとうございます。<br />
-          <span style={{ color: '#c9a84c' }}>声が届きました。</span>
+          <span style={{ color: '#c8a45a' }}>声が届きました。</span>
         </h2>
         <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.55)', lineHeight: 1.85, marginBottom: '28px' }}>
           いただいた言葉は、でおが確認のうえ、<br />
           同じ悩みを持つ誰かの背中を押すために使わせていただきます。
         </p>
-        <Link href="/mypage/navi" style={{ fontSize: '14px', color: 'rgba(201,168,76,0.8)', textDecoration: 'none', fontWeight: 700 }}>
+        <Link href="/mypage/navi" style={{ fontSize: '14px', color: 'rgba(200,164,90,0.8)', textDecoration: 'none', fontWeight: 700 }}>
           New Me Map を確認する →
         </Link>
       </div>
@@ -68,7 +68,7 @@ function FeedbackForm() {
     <form onSubmit={handleSubmit}>
       <label style={{ display: 'block', fontSize: '13px', color: 'rgba(232,228,220,0.55)', marginBottom: '10px', lineHeight: 1.7 }}>
         Mirrorを使ってみて、気づいたことや感じたことを聞かせてください。<br />
-        <span style={{ color: 'rgba(201,168,76,0.7)' }}>1〜2文でOKです。</span>
+        <span style={{ color: 'rgba(200,164,90,0.7)' }}>1〜2文でOKです。</span>
       </label>
       <textarea
         value={text}
@@ -78,7 +78,7 @@ function FeedbackForm() {
         rows={5}
         style={{
           width: '100%', boxSizing: 'border-box',
-          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(201,168,76,0.25)',
+          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(236,232,223,0.138)',
           borderRadius: '10px', padding: '14px 16px',
           color: 'rgba(232,228,220,0.88)', fontSize: '14px', lineHeight: 1.75,
           resize: 'vertical', outline: 'none', marginBottom: '16px',
@@ -94,8 +94,8 @@ function FeedbackForm() {
           type="submit"
           disabled={status === 'sending' || !text.trim()}
           style={{
-            background: 'linear-gradient(135deg,#c9a84c,#e8c97a)',
-            color: '#0a0f1e', fontWeight: 900, fontSize: '14px',
+            background: 'linear-gradient(135deg,#c8a45a,#e8c97a)',
+            color: '#0d1117', fontWeight: 900, fontSize: '14px',
             padding: '12px 32px', borderRadius: '10px', border: 'none',
             cursor: status === 'sending' ? 'not-allowed' : 'pointer',
             opacity: (!text.trim() || status === 'sending') ? 0.55 : 1,
@@ -117,14 +117,14 @@ export default function MirrorFeedbackPage() {
   return (
     <main style={{ background: '#080d1a', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
       <div style={{ maxWidth: '520px', width: '100%' }}>
-        <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '.14em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '14px', textAlign: 'center' }}>
+        <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '.14em', color: '#c8a45a', textTransform: 'uppercase', marginBottom: '14px', textAlign: 'center' }}>
           🪞 Fineme Mirror
         </p>
         <h1 style={{ fontSize: 'clamp(20px,5vw,26px)', fontWeight: 900, fontFamily: 'Georgia, serif', color: '#fff', marginBottom: '24px', lineHeight: 1.4, textAlign: 'center' }}>
           分析から1日。<br />
-          <span style={{ color: '#c9a84c' }}>気づきを聞かせてください。</span>
+          <span style={{ color: '#c8a45a' }}>気づきを聞かせてください。</span>
         </h1>
-        <div style={{ background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: '14px', padding: 'clamp(24px,5vw,36px)' }}>
+        <div style={{ background: 'rgba(200,164,90,0.05)', border: '1px solid rgba(236,232,223,0.099)', borderRadius: '14px', padding: 'clamp(24px,5vw,36px)' }}>
           <Suspense fallback={<p style={{ color: 'rgba(232,228,220,0.4)', fontSize: '14px' }}>読み込み中…</p>}>
             <FeedbackForm />
           </Suspense>

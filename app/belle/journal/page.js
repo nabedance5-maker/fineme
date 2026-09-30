@@ -81,7 +81,7 @@ export default async function BelleJournalPage() {
           Belle Journal
         </p>
         <h1 style={{
-          fontFamily: "'Noto Serif JP', Georgia, serif",
+          fontFamily: "'Shippori Mincho', Georgia, serif",
           fontSize: 'clamp(24px,5vw,36px)',
           fontWeight: 700,
           color: 'rgba(240,216,224,0.92)',
@@ -177,7 +177,7 @@ export default async function BelleJournalPage() {
                   </div>
 
                   <h2 style={{
-                    fontFamily: "'Noto Serif JP', Georgia, serif",
+                    fontFamily: "'Shippori Mincho', Georgia, serif",
                     fontSize: 'clamp(15px,2.5vw,17px)',
                     fontWeight: 700,
                     color: 'rgba(240,216,224,0.90)',

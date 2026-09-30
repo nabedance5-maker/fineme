@@ -104,8 +104,8 @@ export function LocationPrompt({ accessToken }) {
   return (
     <div style={{
       margin: '24px 0 8px',
-      background: 'rgba(201,168,76,0.06)',
-      border: '1.5px solid rgba(201,168,76,0.25)',
+      background: 'rgba(200,164,90,0.06)',
+      border: '1.5px solid rgba(236,232,223,0.138)',
       borderRadius: '14px',
       padding: '20px',
     }}>
@@ -115,10 +115,10 @@ export function LocationPrompt({ accessToken }) {
         </p>
       ) : step === 'top' ? (
         <>
-          <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: 'rgba(201,168,76,0.8)', textTransform: 'uppercase' }}>
+          <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: 'rgba(200,164,90,0.8)', textTransform: 'uppercase' }}>
             📍 エリア設定（任意）
           </p>
-          <p style={{ margin: '0 0 10px', fontSize: '14px', fontWeight: 700, color: '#0a0f1e', lineHeight: 1.6 }}>
+          <p style={{ margin: '0 0 10px', fontSize: '14px', fontWeight: 700, color: '#0d1117', lineHeight: 1.6 }}>
             近くのサービスを優先表示しますか？
           </p>
           <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'rgba(232,228,220,0.55)', lineHeight: 1.65 }}>
@@ -129,15 +129,15 @@ export function LocationPrompt({ accessToken }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <button onClick={handleGeo} disabled={detecting} style={{
               padding: '12px 20px', borderRadius: '10px', border: 'none',
-              background: detecting ? '#e5e7eb' : '#c9a84c',
-              color: detecting ? '#9ca3af' : '#0a0f1e',
+              background: detecting ? '#e5e7eb' : '#c8a45a',
+              color: detecting ? '#9ca3af' : '#0d1117',
               fontWeight: 800, fontSize: '14px', cursor: detecting ? 'not-allowed' : 'pointer',
             }}>
               {detecting ? '取得中…' : '📍 現在地から自動設定'}
             </button>
             <button onClick={() => setStep('manual')} style={{
               padding: '11px 20px', borderRadius: '10px',
-              border: '1px solid rgba(232,228,220,0.15)', background: 'rgba(10,15,30,0.65)',
+              border: '1px solid rgba(232,228,220,0.15)', background: '#151b24',
               fontWeight: 700, fontSize: '14px', cursor: 'pointer', color: 'rgba(232,228,220,0.75)',
             }}>
               🗾 都道府県・市区町村を選ぶ
@@ -152,14 +152,14 @@ export function LocationPrompt({ accessToken }) {
           <p style={{ margin: '0 0 14px', fontSize: '14px', fontWeight: 700, color: 'rgba(232,228,220,0.88)' }}>エリアを選択</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <select value={selPref} onChange={e => { setSelPref(e.target.value); setSelCity(''); }} style={{
-              padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', background: 'rgba(10,15,30,0.65)', color: 'rgba(232,228,220,0.88)',
+              padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', background: '#151b24', color: 'rgba(232,228,220,0.88)',
             }}>
               <option value="">都道府県を選ぶ</option>
               {PREFECTURES.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
             {selPref && (
               <select value={selCity} onChange={e => setSelCity(e.target.value)} style={{
-                padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', background: 'rgba(10,15,30,0.65)', color: 'rgba(232,228,220,0.88)',
+                padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(232,228,220,0.15)', fontSize: '14px', background: '#151b24', color: 'rgba(232,228,220,0.88)',
               }}>
                 <option value="">市区町村を選ぶ（任意）</option>
                 {cityOptions.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
@@ -168,15 +168,15 @@ export function LocationPrompt({ accessToken }) {
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={handleManualSave} disabled={!selPref} style={{
                 flex: 1, padding: '11px', borderRadius: '8px', border: 'none',
-                background: selPref ? '#c9a84c' : 'rgba(10,15,30,0.45)',
-                color: selPref ? '#0a0f1e' : 'rgba(232,228,220,0.40)',
+                background: selPref ? '#c8a45a' : 'rgba(13,17,23,0.45)',
+                color: selPref ? '#0d1117' : 'rgba(232,228,220,0.40)',
                 fontWeight: 700, fontSize: '14px', cursor: selPref ? 'pointer' : 'not-allowed',
               }}>
                 設定する
               </button>
               <button onClick={() => setStep('top')} style={{
                 padding: '11px 16px', borderRadius: '8px', border: '1px solid rgba(232,228,220,0.15)',
-                background: 'rgba(10,15,30,0.65)', color: 'rgba(232,228,220,0.55)', fontSize: '14px', cursor: 'pointer',
+                background: '#151b24', color: 'rgba(232,228,220,0.55)', fontSize: '14px', cursor: 'pointer',
               }}>
                 戻る
               </button>

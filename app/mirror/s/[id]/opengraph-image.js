@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-const LEVEL_COLOR = { '高': '#c9a84c', '中': '#7aadff', '低': '#50c88c' };
+const LEVEL_COLOR = { '高': '#c8a45a', '中': '#7aadff', '低': '#50c88c' };
 
 export default async function Image({ params }) {
   let analysis = null;
@@ -38,12 +38,12 @@ export default async function Image({ params }) {
         <div style={{
           position: 'absolute', top: '-100px', left: '50%', transform: 'translateX(-50%)',
           width: '600px', height: '600px',
-          background: 'radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 65%)',
+          background: 'radial-gradient(circle, rgba(200,164,90,0.12) 0%, transparent 65%)',
           borderRadius: '50%',
         }} />
 
         <div style={{
-          fontSize: '18px', fontWeight: 800, color: '#c9a84c',
+          fontSize: '18px', fontWeight: 800, color: '#c8a45a',
           letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '24px',
           display: 'flex',
         }}>
@@ -77,8 +77,8 @@ export default async function Image({ params }) {
 
         <div style={{
           padding: '14px 36px',
-          background: 'linear-gradient(135deg, #c9a84c, #e8c97a)',
-          borderRadius: '8px', color: '#0a0f1e', fontWeight: 800, fontSize: '18px',
+          background: 'linear-gradient(135deg, #c8a45a, #e8c97a)',
+          borderRadius: '8px', color: '#0d1117', fontWeight: 800, fontSize: '18px',
           display: 'flex',
         }}>
           あなたも無料で試す → fineme.me/mirror

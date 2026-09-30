@@ -152,7 +152,7 @@ export default function AuthCallbackPage() {
   return (
     <div style={{ maxWidth: '440px', margin: '80px auto', padding: '0 20px' }}>
       <div style={{
-        background: 'rgba(10,15,30,0.65)',
+        background: '#151b24',
         border: '1px solid rgba(232,228,220,0.15)',
         borderRadius: '18px',
         padding: '32px',

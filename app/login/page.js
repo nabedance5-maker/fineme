@@ -109,7 +109,7 @@ export default function LoginPage() {
     cardBg: '#ffffff',
     cardBorder: '1px solid rgba(26,20,16,0.08)',
     cardBackdrop: 'none',
-    cardShadow: '0 1px 3px rgba(10,15,30,0.05)',
+    cardShadow: '0 1px 3px rgba(13,17,23,0.05)',
     heading: '#1a1410',
     muted: 'rgba(26,20,16,0.55)',
     label: 'rgba(26,20,16,0.7)',
@@ -118,11 +118,11 @@ export default function LoginPage() {
     inputText: '#1a1410',
     divider: 'rgba(26,20,16,0.12)',
     dividerText: 'rgba(26,20,16,0.4)',
-    btnBg: '#c9a84c',
-    btnText: '#0a0f1e',
+    btnBg: '#c8a45a',
+    btnText: '#0d1117',
     linkMuted: 'rgba(26,20,16,0.55)',
   } : {
-    cardBg: 'rgba(10,15,30,0.65)',
+    cardBg: 'rgba(13,17,23,0.65)',
     cardBorder: '1px solid rgba(232,228,220,0.15)',
     cardBackdrop: 'blur(8px)',
     cardShadow: '0 4px 24px rgba(2,6,23,.06)',
@@ -249,8 +249,8 @@ export default function LoginPage() {
       {/* 掲載者向けは、掲載者管理画面と同じ「fineme」ゴールドロゴ入りネイビーの
           ヘッダー帯を上に添えて、遷移先と同じ製品に入る感覚を作る。 */}
       {isProvider && (
-        <div style={{ background: '#0a0f1e', borderRadius: '14px 14px 0 0', padding: '18px 24px', textAlign: 'center' }}>
-          <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: '#c9a84c', letterSpacing: 1 }}>Fineme</p>
+        <div style={{ background: '#0d1117', borderRadius: '14px 14px 0 0', padding: '18px 24px', textAlign: 'center' }}>
+          <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 700, color: '#c8a45a', letterSpacing: 1 }}>Fineme</p>
           <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.55)', letterSpacing: 1 }}>店舗様専用ログイン</p>
         </div>
       )}
@@ -473,7 +473,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={signupLoading}
-                style={{ width: '100%', padding: '14px', background: '#c9a84c', color: '#0a0f1e', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: signupLoading ? 'not-allowed' : 'pointer', opacity: signupLoading ? 0.4 : 1, marginTop: '4px' }}
+                style={{ width: '100%', padding: '14px', background: '#c8a45a', color: '#0d1117', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: signupLoading ? 'not-allowed' : 'pointer', opacity: signupLoading ? 0.4 : 1, marginTop: '4px' }}
               >
                 {signupLoading ? '登録中…' : '無料登録する'}
               </button>

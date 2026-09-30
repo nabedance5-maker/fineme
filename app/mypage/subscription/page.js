@@ -83,10 +83,10 @@ export default function SubscriptionPage() {
 
         <section className="mypage-content">
           {/* ヘッダー */}
-          <div style={{ background: 'linear-gradient(135deg, rgba(201,168,76,0.12), rgba(10,15,30,0.9))', border: '1px solid rgba(201,168,76,0.3)', borderRadius: '16px', padding: '28px 24px', marginBottom: '24px' }}>
-            <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.18em', color: 'rgba(201,168,76,0.6)', margin: '0 0 8px', textTransform: 'uppercase' }}>Fineme Membership</p>
-            <h1 style={{ fontFamily: "'Noto Serif JP', Georgia, serif", fontSize: 'clamp(20px,4vw,28px)', fontWeight: 700, color: '#e8e4dc', margin: '0 0 6px' }}>
-              変容の旅を、<span style={{ color: '#c9a84c' }}>もっと深く。</span>
+          <div style={{ background: 'linear-gradient(135deg, rgba(200,164,90,0.12), rgba(13,17,23,0.9))', border: '1px solid rgba(236,232,223,0.165)', borderRadius: '16px', padding: '28px 24px', marginBottom: '24px' }}>
+            <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.18em', color: 'rgba(200,164,90,0.6)', margin: '0 0 8px', textTransform: 'uppercase' }}>Fineme Membership</p>
+            <h1 style={{ fontFamily: "'Shippori Mincho', Georgia, serif", fontSize: 'clamp(20px,4vw,28px)', fontWeight: 700, color: '#e8e4dc', margin: '0 0 6px' }}>
+              変容の旅を、<span style={{ color: '#c8a45a' }}>もっと深く。</span>
             </h1>
             <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.5)', margin: 0, lineHeight: 1.7 }}>
               月額780円で、Mirrorの力を最大限に活用できます。
@@ -104,8 +104,8 @@ export default function SubscriptionPage() {
           )}
 
           {/* 特典リスト */}
-          <div style={{ background: 'rgba(10,15,30,0.6)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '14px', padding: '20px 24px', marginBottom: '20px' }}>
-            <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '.12em', color: 'rgba(201,168,76,0.6)', textTransform: 'uppercase', margin: '0 0 16px' }}>月額780円の特典</p>
+          <div style={{ background: '#151b24', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '14px', padding: '20px 24px', marginBottom: '20px' }}>
+            <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '.12em', color: 'rgba(200,164,90,0.6)', textTransform: 'uppercase', margin: '0 0 16px' }}>月額780円の特典</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {[
                 { icon: '🪞', title: 'Mirror 月3回無料', desc: '毎月3回まで、写真分析（通常¥500/回）が無料で使えます。' },
@@ -137,11 +137,11 @@ export default function SubscriptionPage() {
                   次回更新日: {periodEnd}
                 </p>
               )}
-              <div style={{ background: 'rgba(201,168,76,0.07)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px' }}>
-                <p style={{ fontSize: '12px', fontWeight: 700, color: '#c9a84c', margin: '0 0 8px' }}>今月のMirror無料枠</p>
+              <div style={{ background: 'rgba(200,164,90,0.07)', border: '1px solid rgba(236,232,223,0.11)', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px' }}>
+                <p style={{ fontSize: '12px', fontWeight: 700, color: '#c8a45a', margin: '0 0 8px' }}>今月のMirror無料枠</p>
                 <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
                   {[0,1,2].map(i => (
-                    <div key={i} style={{ flex: 1, height: '6px', borderRadius: '99px', background: i < freeRemaining ? '#c9a84c' : 'rgba(201,168,76,0.15)' }} />
+                    <div key={i} style={{ flex: 1, height: '6px', borderRadius: '99px', background: i < freeRemaining ? '#c8a45a' : 'rgba(200,164,90,0.15)' }} />
                   ))}
                 </div>
                 <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.8)', margin: 0 }}>
@@ -164,12 +164,12 @@ export default function SubscriptionPage() {
               <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.5)', marginBottom: '8px', lineHeight: 1.7 }}>
                 {subData?.status === 'canceled' ? '解約済みです。再加入はいつでもできます。' : '現在サブスクには加入していません。'}
               </p>
-              <p style={{ fontSize: '22px', fontWeight: 900, color: '#c9a84c', margin: '0 0 4px' }}>¥780 <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(232,228,220,0.4)' }}>/ 月（税込）</span></p>
+              <p style={{ fontSize: '22px', fontWeight: 900, color: '#c8a45a', margin: '0 0 4px' }}>¥780 <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(232,228,220,0.4)' }}>/ 月（税込）</span></p>
               <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.3)', marginBottom: '20px' }}>いつでも解約可能</p>
               <button
                 onClick={handleSubscribe}
                 disabled={subscribing}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '15px 40px', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: 800, color: '#0a0f1e', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 0 32px rgba(201,168,76,0.25)' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '15px 40px', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: 800, color: '#0d1117', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 0 32px rgba(0,0,0,0.3)' }}
               >
                 {subscribing ? '移動中...' : '🪞 今すぐ加入する'}
               </button>
@@ -181,11 +181,11 @@ export default function SubscriptionPage() {
       <style>{`
         .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
         .mypage-sidenav, .mypage-content { min-width: 0; }
-        .mypage-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        .mypage-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
         @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; min-width: 0; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav .sidenav-link { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
         .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: rgba(201,168,76,0.1); }
-        .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #c9a84c; border-left: 3px solid #c9a84c; padding-left: 9px; }
+        .sidenav-link:hover { background: rgba(200,164,90,0.1); }
+        .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #c8a45a; border-left: 3px solid #c8a45a; padding-left: 9px; }
       `}</style>
     </main>
   );

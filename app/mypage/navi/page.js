@@ -41,85 +41,85 @@ export default function NewMeNaviPage() {
       #navi-root * { max-width: 100%; box-sizing: border-box; }
 
       /* ── Navi Header ── */
-      .navi-header { padding: 24px 24px 20px; background: linear-gradient(rgba(10,15,30,0.78), rgba(10,15,30,0.88)), url('/assets/images/hero-bg.webp') center / cover no-repeat; border-radius: 14px; margin-bottom: 24px; position: relative; overflow: hidden; border: 1px solid rgba(201,168,76,0.2); }
-      .navi-header::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(201,168,76,.1) 0%, transparent 70%); border-radius: 50%; }
-      .navi-header-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .18em; color: rgba(201,168,76,0.55); margin: 0 0 10px; text-transform: uppercase; position: relative; z-index: 1; }
+      .navi-header { padding: 24px 24px 20px; background: #151b24; border-radius: 14px; margin-bottom: 24px; position: relative; overflow: hidden; border: 1px solid rgba(236,232,223,0.11); }
+      .navi-header::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(200,164,90,.1) 0%, transparent 70%); border-radius: 50%; }
+      .navi-header-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .18em; color: rgba(200,164,90,0.55); margin: 0 0 10px; text-transform: uppercase; position: relative; z-index: 1; }
       .navi-header-badge { display: none; }
-      .navi-header h1 { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(16px,4vw,22px); font-weight: 700; color: #fff; margin: 0 0 10px; line-height: 1.55; position: relative; z-index: 1; }
-      .navi-header h1 em { font-style: normal; color: #c9a84c; }
+      .navi-header h1 { font-family: 'Shippori Mincho', Georgia, serif; font-size: clamp(16px,4vw,22px); font-weight: 700; color: #fff; margin: 0 0 10px; line-height: 1.55; position: relative; z-index: 1; }
+      .navi-header h1 em { font-style: normal; color: #c8a45a; }
       .navi-header-sub { display: none; }
 
       /* ── Progress bar ── */
       .progress-bar-wrap { margin-top: 18px; position: relative; z-index: 1; }
       .progress-bar-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-      .progress-bar-label-text { font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.8); letter-spacing: .08em; text-transform: uppercase; }
-      .progress-bar-pct { font-size: 13px; font-weight: 900; color: #c9a84c; }
+      .progress-bar-label-text { font-size: 11px; font-weight: 700; color: rgba(200,164,90,0.8); letter-spacing: .08em; text-transform: uppercase; }
+      .progress-bar-pct { font-size: 13px; font-weight: 900; color: #c8a45a; }
       .progress-bar-track { height: 6px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; }
-      .progress-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, rgba(201,168,76,0.7), #c9a84c); transition: width 1s cubic-bezier(.4,0,.2,1) .5s; }
+      .progress-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, rgba(200,164,90,0.7), #c8a45a); transition: width 1s cubic-bezier(.4,0,.2,1) .5s; }
       .progress-bar-sub { font-size: 11px; color: rgba(255,255,255,.35); margin: 5px 0 0; }
       .step-hint { font-size: 11px; color: rgba(232,228,220,0.45); margin: 4px 0 0; line-height: 1.6; padding-left: 2px; }
-      .step-hint::before { content: '→ '; color: rgba(201,168,76,0.5); font-weight: 700; }
+      .step-hint::before { content: '→ '; color: rgba(200,164,90,0.5); font-weight: 700; }
 
       /* ── Compass strip ── */
-      .compass-strip { background: rgba(201,168,76,0.06); border: 1.5px solid rgba(201,168,76,0.3); border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; }
+      .compass-strip { background: rgba(200,164,90,0.06); border: 1.5px solid rgba(236,232,223,0.165); border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; }
       .compass-strip-icon { font-size: 28px; flex-shrink: 0; }
       .compass-strip-body { flex: 1; }
-      .compass-strip-label { font-size: 10px; font-weight: 800; color: rgba(201,168,76,0.7); letter-spacing: .1em; margin: 0 0 3px; text-transform: uppercase; }
+      .compass-strip-label { font-size: 10px; font-weight: 800; color: rgba(200,164,90,0.7); letter-spacing: .1em; margin: 0 0 3px; text-transform: uppercase; }
       .compass-strip-text  { font-size: 15px; font-weight: 900; color: rgba(232,228,220,0.90); margin: 0; }
-      .compass-strip-cta { font-size: 12px; font-weight: 700; padding: 7px 14px; border: 1.5px solid #c9a84c; color: #c9a84c; background: transparent; border-radius: 8px; text-decoration: none; white-space: nowrap; flex-shrink: 0; transition: all .15s; }
-      .compass-strip-cta:hover { background: #c9a84c; color: #0a0f1e; }
+      .compass-strip-cta { font-size: 12px; font-weight: 700; padding: 7px 14px; border: 1.5px solid rgba(236,232,223,0.3); color: #c8a45a; background: transparent; border-radius: 8px; text-decoration: none; white-space: nowrap; flex-shrink: 0; transition: all .15s; }
+      .compass-strip-cta:hover { background: #c8a45a; color: #0d1117; }
 
       /* ── Section label ── */
-      .sec-label { display: flex; align-items: center; gap: 10px; font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(201,168,76,0.7); margin: 0 0 14px; padding-left: 0; }
-      .sec-label::before { content: ''; width: 18px; height: 1.5px; background: #c9a84c; border-radius: 1px; flex-shrink: 0; }
-      .sec-label::after { content: ''; flex: 1; height: 1px; background: repeating-linear-gradient(90deg, rgba(201,168,76,0.45) 0, rgba(201,168,76,0.45) 5px, transparent 5px, transparent 11px); }
+      .sec-label { display: flex; align-items: center; gap: 10px; font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(200,164,90,0.7); margin: 0 0 14px; padding-left: 0; }
+      .sec-label::before { content: ''; width: 18px; height: 1.5px; background: #c8a45a; border-radius: 1px; flex-shrink: 0; }
+      .sec-label::after { content: ''; flex: 1; height: 1px; background: repeating-linear-gradient(90deg, rgba(200,164,90,0.45) 0, rgba(200,164,90,0.45) 5px, transparent 5px, transparent 11px); }
 
       /* ── Track card ── */
       .track-list { display: flex; flex-direction: column; gap: 16px; }
-      .track-card { background: rgba(10,15,30,0.65); border: 1px solid rgba(232,228,220,0.15); border-radius: 14px; padding: 22px; box-shadow: 0 4px 24px rgba(0,0,0,0.4); backdrop-filter: blur(8px); }
-      .track-card.tier-1 { border-color: rgba(201,168,76,0.45); }
+      .track-card { background: #151b24; border: 1px solid rgba(232,228,220,0.15); border-radius: 14px; padding: 22px; box-shadow: 0 4px 24px rgba(0,0,0,0.4); backdrop-filter: blur(8px); }
+      .track-card.tier-1 { border-color: rgba(236,232,223,0.248); }
       .track-card.tier-2 { border-color: #a7f3d0; }
       .track-card.tier-3 { border-color: #fde68a; }
       .track-card.tier-4 { opacity: .42; filter: grayscale(.7); transition: opacity .3s, filter .3s; }
       .track-card.tier-4.tier-revealed { opacity: 1; filter: none; }
-      .tier-reveal-banner { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(10,15,30,0.50); border: 1px dashed rgba(232,228,220,0.20); border-radius: 8px; margin-bottom: 14px; font-size: 12px; color: rgba(232,228,220,0.40); }
-      .tier-reveal-btn { font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.55); background: rgba(10,15,30,0.65); border: 1px solid rgba(232,228,220,0.15); border-radius: 6px; padding: 4px 10px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; }
-      .tier-reveal-btn:hover { border-color: #c9a84c; color: #c9a84c; }
+      .tier-reveal-banner { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #151b24; border: 1px dashed rgba(232,228,220,0.20); border-radius: 8px; margin-bottom: 14px; font-size: 12px; color: rgba(232,228,220,0.40); }
+      .tier-reveal-btn { font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.55); background: #151b24; border: 1px solid rgba(232,228,220,0.15); border-radius: 6px; padding: 4px 10px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; }
+      .tier-reveal-btn:hover { border-color: rgba(236,232,223,0.3); color: #c8a45a; }
       .track-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
       .track-name { font-size: 17px; font-weight: 900; color: rgba(232,228,220,0.90); display: flex; align-items: center; gap: 8px; }
       .track-tier-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 99px; }
-      .tb-1 { background: rgba(201,168,76,0.15); color: #c9a84c; border: 1px solid rgba(201,168,76,.3); }
+      .tb-1 { background: rgba(200,164,90,0.15); color: #c8a45a; border: 1px solid rgba(236,232,223,0.165); }
       .tb-2 { background: #d1fae5; color: #065f46; }
       .tb-3 { background: #fef3c7; color: #92400e; }
       .tb-4 { background: rgba(232,228,220,0.10); color: rgba(232,228,220,0.55); }
-      .track-care-badge { font-size: 11px; color: rgba(232,228,220,0.55); padding: 3px 9px; background: rgba(10,15,30,0.50); border: 1px solid rgba(232,228,220,0.15); border-radius: 99px; }
+      .track-care-badge { font-size: 11px; color: rgba(232,228,220,0.55); padding: 3px 9px; background: #151b24; border: 1px solid rgba(232,228,220,0.15); border-radius: 99px; }
 
       /* Progress bar */
       .track-progress { margin-bottom: 16px; }
       .track-progress-labels { display: flex; justify-content: space-between; font-size: 11px; color: rgba(232,228,220,0.40); margin-bottom: 5px; }
       .track-progress-track { height: 8px; background: rgba(232,228,220,0.12); border-radius: 99px; overflow: hidden; position: relative; }
       .track-progress-current { height: 100%; border-radius: 99px; background: rgba(96,165,250,0.75); transition: width 1s cubic-bezier(.4,0,.2,1) .4s; }
-      .track-progress-ideal { position: absolute; top: 0; height: 100%; width: 3px; background: #c9a84c; transform: translateX(-50%); border-radius: 1px; }
+      .track-progress-ideal { position: absolute; top: 0; height: 100%; width: 3px; background: #c8a45a; transform: translateX(-50%); border-radius: 1px; }
 
       /* Milestones */
       .milestone-list { display: flex; flex-direction: column; gap: 0; }
-      .milestone-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(201,168,76,0.08); }
+      .milestone-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(236,232,223,0.044); }
       .milestone-item:last-child { border-bottom: none; padding-bottom: 0; }
       .milestone-dot-wrap { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 20px; margin-top: 2px; }
       .milestone-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-      .milestone-dot.current { background: #0a0f1e; box-shadow: 0 0 0 3px rgba(10,15,30,.15); }
+      .milestone-dot.current { background: #0d1117; box-shadow: 0 0 0 3px rgba(13,17,23,.15); }
       .milestone-dot.future  { background: rgba(232,228,220,0.15); border: 2px solid rgba(232,228,220,0.25); }
-      .milestone-dot.goal    { background: #c9a84c; box-shadow: 0 0 0 3px rgba(201,168,76,.25); }
-      .milestone-connector { width: 2px; flex: 1; min-height: 14px; background: repeating-linear-gradient(to bottom, rgba(201,168,76,0.6) 0, rgba(201,168,76,0.6) 4px, transparent 4px, transparent 9px); margin: 2px 0; }
+      .milestone-dot.goal    { background: #c8a45a; box-shadow: 0 0 0 3px rgba(0,0,0,0.3); }
+      .milestone-connector { width: 2px; flex: 1; min-height: 14px; background: repeating-linear-gradient(to bottom, rgba(200,164,90,0.6) 0, rgba(200,164,90,0.6) 4px, transparent 4px, transparent 9px); margin: 2px 0; }
       .milestone-label { font-size: 10px; font-weight: 700; margin: 0 0 2px; }
       .milestone-text { font-size: 13px; color: rgba(232,228,220,0.75); line-height: 1.55; margin: 0; }
       .milestone-current-tag { display: inline-block; font-size: 10px; font-weight: 700; color: rgba(232,228,220,0.90); background: rgba(96,165,250,0.12); padding: 1px 7px; border-radius: 99px; margin-bottom: 3px; border: 1px solid rgba(96,165,250,0.30); }
-      .milestone-goal-tag { display: inline-block; font-size: 10px; font-weight: 700; color: #c9a84c; background: rgba(201,168,76,0.12); padding: 1px 7px; border-radius: 99px; margin-bottom: 3px; border: 1px solid rgba(201,168,76,.3); }
+      .milestone-goal-tag { display: inline-block; font-size: 10px; font-weight: 700; color: #c8a45a; background: rgba(200,164,90,0.12); padding: 1px 7px; border-radius: 99px; margin-bottom: 3px; border: 1px solid rgba(236,232,223,0.165); }
       .milestone-dot.past { background: #d1fae5; border: 2px solid #6ee7b7; }
 
       /* ── ステップ完了チェック ── */
       .milestone-item { position: relative; }
-      .step-check-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(232,228,220,0.15); background: rgba(10,15,30,0.65); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; color: rgba(232,228,220,0.25); transition: all .15s; flex-shrink: 0; font-family: 'Noto Sans JP', sans-serif; }
+      .step-check-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(232,228,220,0.15); background: #151b24; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; color: rgba(232,228,220,0.25); transition: all .15s; flex-shrink: 0; font-family: 'Noto Sans JP', sans-serif; }
       .step-check-btn:hover { border-color: #10b981; color: #10b981; background: #f0fdf4; }
       .step-check-btn.checked { border-color: #10b981; background: #10b981; color: #fff; }
       .milestone-item.step-done .milestone-text { text-decoration: line-through; color: #9ca3af; }
@@ -127,12 +127,12 @@ export default function NewMeNaviPage() {
 
       /* ── ガイド推奨度 ── */
       .guide-badge { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 5px; padding: 6px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; line-height: 1.4; }
-      .guide-high { background: rgba(201,168,76,0.09); border: 1px solid rgba(201,168,76,0.28); color: rgba(253,230,138,0.9); }
+      .guide-high { background: rgba(200,164,90,0.09); border: 1px solid rgba(236,232,223,0.154); color: rgba(253,230,138,0.9); }
       .guide-mid { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.22); color: rgba(147,197,253,0.85); }
       .guide-low { display: inline-flex; background: none; border: none; font-size: 11px; color: #9ca3af; padding: 2px 0; }
       .guide-find-btn { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 99px; text-decoration: none; white-space: nowrap; letter-spacing: .04em; transition: all .15s; }
-      .guide-high .guide-find-btn { background: rgba(201,168,76,0.18); border: 1px solid rgba(201,168,76,0.45); color: #c9a84c; }
-      .guide-high .guide-find-btn:hover { background: rgba(201,168,76,0.32); }
+      .guide-high .guide-find-btn { background: rgba(200,164,90,0.18); border: 1px solid rgba(236,232,223,0.248); color: #c8a45a; }
+      .guide-high .guide-find-btn:hover { background: rgba(200,164,90,0.32); }
       .guide-mid .guide-find-btn { background: rgba(59,130,246,0.14); border: 1px solid rgba(59,130,246,0.38); color: #93c5fd; }
       .guide-mid .guide-find-btn:hover { background: rgba(59,130,246,0.25); }
       .milestone-note { font-size: 11px; color: #92400e; background: #fef3c7; border: 1px solid #fde68a; border-radius: 4px; padding: 4px 8px; margin-top: 4px; }
@@ -144,64 +144,64 @@ export default function NewMeNaviPage() {
       .product-check-btn { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; padding: 4px 10px; background: transparent; border: 1px solid rgba(232,228,220,0.15); border-radius: 99px; color: rgba(232,228,220,0.30); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; white-space: nowrap; }
       .product-check-btn:hover { border-color: #10b981; color: #10b981; }
       .product-check-btn.checked { background: rgba(16,185,129,0.10); border-color: #10b981; color: #10b981; }
-      .subtab-header-note { font-size: 11px; color: rgba(232,228,220,0.55); background: rgba(10,15,30,0.50); border: 1px solid rgba(232,228,220,0.15); border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; }
+      .subtab-header-note { font-size: 11px; color: rgba(232,228,220,0.55); background: #151b24; border: 1px solid rgba(232,228,220,0.15); border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; }
 
       /* CTA inside track */
-      .track-article-link { display: inline-flex; align-items: center; gap: 6px; margin: 12px 0 4px; font-size: 12px; font-weight: 600; color: rgba(201,168,76,0.7); text-decoration: none; transition: color .15s; }
-      .track-article-link:hover { color: #c9a84c; }
-      .track-action { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(201,168,76,0.1); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-      .track-action-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #c9a84c; text-decoration: none; padding: 6px 12px; background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,.2); border-radius: 8px; transition: background .12s; }
-      .track-action-link:hover { background: rgba(201,168,76,0.16); }
+      .track-article-link { display: inline-flex; align-items: center; gap: 6px; margin: 12px 0 4px; font-size: 12px; font-weight: 600; color: rgba(200,164,90,0.7); text-decoration: none; transition: color .15s; }
+      .track-article-link:hover { color: #c8a45a; }
+      .track-action { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(236,232,223,0.055); display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+      .track-action-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #c8a45a; text-decoration: none; padding: 6px 12px; background: rgba(200,164,90,0.08); border: 1px solid rgba(236,232,223,0.11); border-radius: 8px; transition: background .12s; }
+      .track-action-link:hover { background: rgba(200,164,90,0.16); }
 
       /* ── 進捗ステータスボタン ── */
       .track-status-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 5px 11px; border-radius: 99px; cursor: pointer; border: 1.5px solid; transition: all .15s; background: transparent; font-family: 'Noto Sans JP', sans-serif; }
       .track-status-btn[data-status=""] { color: #9ca3af; border-color: #e5e7eb; }
-      .track-status-btn[data-status=""] :hover { border-color: #c9a84c; color: #c9a84c; }
+      .track-status-btn[data-status=""] :hover { border-color: rgba(236,232,223,0.3); color: #c8a45a; }
       .track-status-btn[data-status="active"] { color: #1d4ed8; border-color: #93c5fd; background: #eff6ff; }
       .track-status-btn[data-status="done"]   { color: #065f46; border-color: #6ee7b7; background: #ecfdf5; }
 
       /* ── Compassが指している軸のバッジ ── */
-      .compass-pointing-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; color: #c9a84c; background: rgba(201,168,76,.12); border: 1px solid rgba(201,168,76,.3); padding: 2px 9px; border-radius: 99px; margin-left: 6px; vertical-align: middle; }
+      .compass-pointing-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; color: #c8a45a; background: rgba(200,164,90,.12); border: 1px solid rgba(236,232,223,0.165); padding: 2px 9px; border-radius: 99px; margin-left: 6px; vertical-align: middle; }
 
       /* ── Done状態のトラック ── */
       .track-card.status-done { opacity: 0.55; }
-      .track-card.status-done .track-name { text-decoration: line-through; text-decoration-color: rgba(201,168,76,.4); }
+      .track-card.status-done .track-name { text-decoration: line-through; text-decoration-color: rgba(200,164,90,.4); }
 
       /* ── 折りたたみ ── */
       .milestone-list.collapsed .milestone-item:not(:first-child) { display: none; }
-      .milestone-expand-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #c9a84c; background: none; border: none; cursor: pointer; padding: 6px 0 0; font-family: 'Noto Sans JP', sans-serif; }
+      .milestone-expand-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #c8a45a; background: none; border: none; cursor: pointer; padding: 6px 0 0; font-family: 'Noto Sans JP', sans-serif; }
       .milestone-expand-btn:hover { opacity: .75; }
 
       /* ── サブトラックタブ ── */
       .subtab-wrap { display: flex; gap: 6px; margin-bottom: 14px; }
-      .subtab-btn { flex: 1; padding: 7px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1.5px solid rgba(201,168,76,0.3); background: transparent; color: #9ca3af; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
-      .subtab-btn.active { background: rgba(201,168,76,0.12); border-color: #c9a84c; color: rgba(232,228,220,0.90); }
+      .subtab-btn { flex: 1; padding: 7px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1.5px solid rgba(236,232,223,0.165); background: transparent; color: #9ca3af; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
+      .subtab-btn.active { background: rgba(200,164,90,0.12); border-color: rgba(236,232,223,0.3); color: rgba(232,228,220,0.90); }
       .subtab-note { font-size: 11px; color: #f59e0b; background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; }
 
       /* ── 出発前チェック ── */
-      .prereq-section { background: rgba(10,15,30,0.50); border: 1px dashed rgba(232,228,220,0.20); border-radius: 10px; padding: 12px 14px 10px; margin-bottom: 14px; }
+      .prereq-section { background: #151b24; border: 1px dashed rgba(232,228,220,0.20); border-radius: 10px; padding: 12px 14px 10px; margin-bottom: 14px; }
       .prereq-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; flex-wrap: wrap; gap: 6px; }
       .prereq-title { font-size: 11px; font-weight: 800; color: rgba(232,228,220,0.55); letter-spacing: .08em; text-transform: uppercase; }
       .prereq-note { font-size: 11px; color: rgba(232,228,220,0.40); line-height: 1.5; margin: 0 0 10px; }
       .prereq-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(232,228,220,0.08); position: relative; }
       .prereq-item:last-child { border-bottom: none; padding-bottom: 0; }
-      .prereq-box { width: 16px; height: 16px; border-radius: 3px; border: 1px solid rgba(232,228,220,0.25); background: rgba(10,15,30,0.65); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #10b981; transition: all .15s; cursor: pointer; }
+      .prereq-box { width: 16px; height: 16px; border-radius: 3px; border: 1px solid rgba(232,228,220,0.25); background: #151b24; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #10b981; transition: all .15s; cursor: pointer; }
       .prereq-box.checked { background: #10b981; border-color: #10b981; color: #fff; }
       .prereq-text { font-size: 13px; color: rgba(232,228,220,0.75); line-height: 1.5; flex: 1; padding-right: 4px; }
       .prereq-item.step-done .prereq-text { text-decoration: line-through; color: #9ca3af; }
 
       /* ── 出発前チェックバナー ── */
-      .prereq-banner { background: rgba(201,168,76,0.07); border: 1.5px solid rgba(201,168,76,0.28); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; }
+      .prereq-banner { background: rgba(200,164,90,0.07); border: 1.5px solid rgba(236,232,223,0.154); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; }
       .prereq-banner-icon { font-size: 22px; flex-shrink: 0; }
       .prereq-banner-body { flex: 1; }
       .prereq-banner-title { font-size: 13px; font-weight: 800; color: rgba(232,228,220,0.90); margin: 0 0 2px; }
       .prereq-banner-desc { font-size: 11px; color: rgba(232,228,220,0.55); line-height: 1.5; margin: 0; }
-      .prereq-banner-count { font-weight: 700; color: #c9a84c; }
+      .prereq-banner-count { font-weight: 700; color: #c8a45a; }
 
       /* ── 継続フェーズ区切り ── */
       .layer2-divider { display: flex; align-items: center; gap: 8px; margin: 16px 0 8px; }
-      .layer2-divider-line { flex: 1; height: 1px; background: repeating-linear-gradient(90deg, rgba(201,168,76,0.25) 0, rgba(201,168,76,0.25) 4px, transparent 4px, transparent 9px); }
-      .layer2-divider-label { font-size: 9px; font-weight: 800; letter-spacing: .12em; color: rgba(201,168,76,0.45); white-space: nowrap; text-transform: uppercase; }
+      .layer2-divider-line { flex: 1; height: 1px; background: repeating-linear-gradient(90deg, rgba(200,164,90,0.25) 0, rgba(200,164,90,0.25) 4px, transparent 4px, transparent 9px); }
+      .layer2-divider-label { font-size: 9px; font-weight: 800; letter-spacing: .12em; color: rgba(200,164,90,0.45); white-space: nowrap; text-transform: uppercase; }
 
       /* ── 毎日の習慣 ── */
       .habit-section { margin-top: 20px; padding: 14px 16px 4px; background: rgba(16,185,129,0.04); border: 1px solid rgba(16,185,129,0.18); border-radius: 12px; }
@@ -224,26 +224,26 @@ export default function NewMeNaviPage() {
       .confetti-piece { position: fixed; top: -10px; z-index: 9998; border-radius: 2px; animation: confetti-fall linear forwards; pointer-events: none; }
 
       /* ── New Me Log Widget ── */
-      .sl-widget { background: rgba(10,15,30,0.65); border: 1px solid rgba(201,168,76,0.18); border-radius: 14px; padding: 14px 16px; margin-bottom: 20px; backdrop-filter: blur(8px); }
+      .sl-widget { background: #151b24; border: 1px solid rgba(236,232,223,0.099); border-radius: 14px; padding: 14px 16px; margin-bottom: 20px; backdrop-filter: blur(8px); }
       .sl-widget-empty { border-style: dashed; border-color: rgba(232,228,220,0.10); }
       .sl-widget-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-      .sl-widget-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(201,168,76,0.65); }
-      .sl-widget-link { font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.7); text-decoration: none; }
-      .sl-widget-link:hover { color: #c9a84c; }
+      .sl-widget-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(200,164,90,0.65); }
+      .sl-widget-link { font-size: 11px; font-weight: 700; color: rgba(200,164,90,0.7); text-decoration: none; }
+      .sl-widget-link:hover { color: #c8a45a; }
       .sl-widget-empty-text { font-size: 12px; color: rgba(232,228,220,0.38); line-height: 1.65; margin: 0; }
       .sl-items { display: flex; flex-direction: column; gap: 8px; }
       .sl-item { display: flex; align-items: center; gap: 10px; }
       .sl-item-icon { font-size: 20px; flex-shrink: 0; width: 28px; text-align: center; }
       .sl-item-body { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
       .sl-item-name { font-size: 13px; font-weight: 700; color: rgba(232,228,220,0.80); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .sl-next-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.12); color: rgba(232,228,220,0.45); }
+      .sl-next-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; background: #151b24; border: 1px solid rgba(232,228,220,0.12); color: rgba(232,228,220,0.45); }
       .sl-next-badge.sl-next-soon { border-color: rgba(52,211,153,0.35); color: rgba(52,211,153,0.85); background: rgba(52,211,153,0.06); }
-      .sl-next-badge.sl-next-today { border-color: #c9a84c; color: #c9a84c; background: rgba(201,168,76,0.08); }
+      .sl-next-badge.sl-next-today { border-color: rgba(236,232,223,0.3); color: #c8a45a; background: rgba(200,164,90,0.08); }
       .sl-next-badge.sl-next-overdue { border-color: rgba(239,68,68,0.35); color: rgba(239,68,68,0.80); background: rgba(239,68,68,0.06); }
       .sl-next-badge.sl-next-none { opacity: .4; }
       /* ── ongoingステップのログバッジ ── */
-      .step-log-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 8px; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.12); color: rgba(232,228,220,0.55); margin-top: 8px; width: 100%; box-sizing: border-box; text-decoration: none; }
-      .step-log-badge.slb-linked { border-color: rgba(201,168,76,0.3); color: rgba(201,168,76,0.85); background: rgba(201,168,76,0.06); }
+      .step-log-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 8px; background: #151b24; border: 1px solid rgba(232,228,220,0.12); color: rgba(232,228,220,0.55); margin-top: 8px; width: 100%; box-sizing: border-box; text-decoration: none; }
+      .step-log-badge.slb-linked { border-color: rgba(236,232,223,0.165); color: rgba(200,164,90,0.85); background: rgba(200,164,90,0.06); }
       .step-log-badge.slb-soon { border-color: rgba(52,211,153,0.3); color: rgba(52,211,153,0.85); background: rgba(52,211,153,0.06); }
       .step-log-badge.slb-overdue { border-color: rgba(239,68,68,0.3); color: rgba(239,68,68,0.80); background: rgba(239,68,68,0.06); }
 
@@ -251,8 +251,8 @@ export default function NewMeNaviPage() {
       .navi-footer { margin-top: 32px; display: flex; flex-direction: column; gap: 10px; }
       .navi-footer-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; border-radius: 14px; font-size: 14px; font-weight: 700; text-decoration: none; transition: opacity .15s; }
       .navi-footer-btn:hover { opacity: .85; }
-      .nfb-primary   { background: #0a0f1e; color: #fff; }
-      .nfb-secondary { background: rgba(10,15,30,0.65); color: rgba(232,228,220,0.90); border: 1.5px solid rgba(201,168,76,0.35); backdrop-filter: blur(8px); }
+      .nfb-primary   { background: #0d1117; color: #fff; }
+      .nfb-secondary { background: #151b24; color: rgba(232,228,220,0.90); border: 1.5px solid rgba(236,232,223,0.193); backdrop-filter: blur(8px); }
       .nfb-ghost     { color: #9ca3af; font-size: 13px; padding: 10px; text-align: center; }
 
       /* ── No data ── */
@@ -263,9 +263,9 @@ export default function NewMeNaviPage() {
 
       /* ── Route pattern selector ── */
       .route-pattern-bar { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
-      .rpb { flex: 1; padding: 8px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1.5px solid rgba(201,168,76,0.25); background: transparent; color: rgba(232,228,220,0.55); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
-      .rpb.active { background: #0a0f1e; border-color: #0a0f1e; color: #c9a84c; }
-      .rpb:not(.active):hover { border-color: #c9a84c; color: rgba(232,228,220,0.90); }
+      .rpb { flex: 1; padding: 8px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1.5px solid rgba(236,232,223,0.138); background: transparent; color: rgba(232,228,220,0.55); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
+      .rpb.active { background: #0d1117; border-color: #0d1117; color: #c8a45a; }
+      .rpb:not(.active):hover { border-color: rgba(236,232,223,0.3); color: rgba(232,228,220,0.90); }
       .route-pattern-desc { font-size: 11px; color: rgba(232,228,220,0.40); margin: 0 0 20px; }
 
       /* ── Route 1本道 ── */
@@ -273,7 +273,7 @@ export default function NewMeNaviPage() {
       .route-start-node, .route-goal-node { display: flex; align-items: flex-start; }
       .route-start-icon, .rg-star { font-size: 18px; width: 28px; text-align: center; flex-shrink: 0; }
       .rg-body { flex: 1; padding: 4px 0 8px 12px; }
-      .rg-label { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(201,168,76,0.7); margin: 0 0 2px; }
+      .rg-label { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(200,164,90,0.7); margin: 0 0 2px; }
       .rg-text { font-size: 13px; font-weight: 700; color: rgba(232,228,220,0.90); margin: 0; }
 
       /* ── Station ── */
@@ -281,12 +281,12 @@ export default function NewMeNaviPage() {
       .station-collapsed { align-items: center; }
       .station-expanded { align-items: flex-start; }
       .station-spine { display: flex; flex-direction: column; align-items: center; width: 28px; flex-shrink: 0; }
-      .station-line-seg { width: 2px; height: 16px; background: rgba(201,168,76,0.35); flex-shrink: 0; }
-      .station-line-flex { width: 2px; flex: 1; min-height: 24px; background: rgba(201,168,76,0.35); }
-      .station-node { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(201,168,76,0.5); background: rgba(10,15,30,0.65); transition: all .2s; }
-      .station-node.sn-current { width: 20px; height: 20px; background: #0a0f1e; border-color: #0a0f1e; box-shadow: 0 0 0 4px rgba(10,15,30,0.1); }
-      .station-node.sn-done { background: #c9a84c; border-color: #c9a84c; }
-      .station-node.sn-future { background: rgba(10,15,30,0.50); border-color: rgba(232,228,220,0.20); }
+      .station-line-seg { width: 2px; height: 16px; background: rgba(200,164,90,0.35); flex-shrink: 0; }
+      .station-line-flex { width: 2px; flex: 1; min-height: 24px; background: rgba(200,164,90,0.35); }
+      .station-node { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(200,164,90,0.5); background: #151b24; transition: all .2s; }
+      .station-node.sn-current { width: 20px; height: 20px; background: #0d1117; border-color: #0d1117; box-shadow: 0 0 0 4px rgba(13,17,23,0.1); }
+      .station-node.sn-done { background: #c8a45a; border-color: rgba(236,232,223,0.3); }
+      .station-node.sn-future { background: #151b24; border-color: rgba(232,228,220,0.20); }
 
       /* Collapsed station body */
       .station-body { flex: 1; }
@@ -294,9 +294,9 @@ export default function NewMeNaviPage() {
       .station-row { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow: hidden; }
       .station-icon-sm { font-size: 15px; flex-shrink: 0; }
       .station-name-sm { font-size: 14px; font-weight: 800; color: rgba(232,228,220,0.90); flex-shrink: 0; }
-      .station-expand-btn { margin-left: auto; font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.40); background: rgba(10,15,30,0.50); border: 1px solid rgba(232,228,220,0.15); border-radius: 6px; padding: 3px 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; white-space: nowrap; flex-shrink: 0; }
-      .station-expand-btn:hover { border-color: #c9a84c; color: #c9a84c; }
-      .station-done-row .station-name-sm { text-decoration: line-through; text-decoration-color: rgba(201,168,76,.4); color: #9ca3af; }
+      .station-expand-btn { margin-left: auto; font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.40); background: #151b24; border: 1px solid rgba(232,228,220,0.15); border-radius: 6px; padding: 3px 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; white-space: nowrap; flex-shrink: 0; }
+      .station-expand-btn:hover { border-color: rgba(236,232,223,0.3); color: #c8a45a; }
+      .station-done-row .station-name-sm { text-decoration: line-through; text-decoration-color: rgba(200,164,90,.4); color: #9ca3af; }
       .station-mini-progress { display: flex; gap: 3px; padding-left: 2px; margin-top: 5px; flex-wrap: wrap; }
       .smp-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(232,228,220,0.20); flex-shrink: 0; }
       .smp-dot.done { background: #10b981; }
@@ -304,24 +304,24 @@ export default function NewMeNaviPage() {
 
       /* Expanded station */
       .station-expanded .station-body { padding: 0; }
-      .station-card { background: rgba(10,15,30,0.65); border: 1px solid rgba(232,228,220,0.15); border-radius: 14px; padding: 18px 18px 14px; box-shadow: 0 4px 24px rgba(0,0,0,0.4); margin: 6px 0 8px 12px; backdrop-filter: blur(8px); }
+      .station-card { background: #151b24; border: 1px solid rgba(232,228,220,0.15); border-radius: 14px; padding: 18px 18px 14px; box-shadow: 0 4px 24px rgba(0,0,0,0.4); margin: 6px 0 8px 12px; backdrop-filter: blur(8px); }
       .station-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; gap: 8px; flex-wrap: wrap; }
       .station-title { font-size: 17px; font-weight: 900; color: rgba(232,228,220,0.90); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-      .station-collapse-btn { font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.40); background: rgba(10,15,30,0.50); border: 1px solid rgba(232,228,220,0.15); border-radius: 6px; padding: 3px 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; white-space: nowrap; }
-      .station-collapse-btn:hover { border-color: #c9a84c; color: #c9a84c; }
+      .station-collapse-btn { font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.40); background: #151b24; border: 1px solid rgba(232,228,220,0.15); border-radius: 6px; padding: 3px 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; white-space: nowrap; }
+      .station-collapse-btn:hover { border-color: rgba(236,232,223,0.3); color: #c8a45a; }
 
       /* ── Zigzag positioning ── */
       .station-card { margin: 0; } /* スパイン時代の left margin をリセット */
-      .station-mini-card { background: rgba(10,15,30,0.65); border: 1px solid rgba(232,228,220,0.15); border-radius: 12px; padding: 10px 14px; backdrop-filter: blur(8px); }
+      .station-mini-card { background: #151b24; border: 1px solid rgba(232,228,220,0.15); border-radius: 12px; padding: 10px 14px; backdrop-filter: blur(8px); }
       .station-left .station-card,
       .station-left .station-mini-card { max-width: 72%; }
       .station-right .station-card,
       .station-right .station-mini-card { max-width: 72%; margin-left: 28%; }
-      .station-compass .station-card { width: 100%; max-width: 100%; border-color: rgba(201,168,76,0.5); box-shadow: 0 6px 32px rgba(0,0,0,.1); }
+      .station-compass .station-card { width: 100%; max-width: 100%; border-color: rgba(236,232,223,0.275); box-shadow: 0 6px 32px rgba(0,0,0,.1); }
       .sic-wrap { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
       .sic-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-      .sic-current { background: #0a0f1e; box-shadow: 0 0 0 3px rgba(10,15,30,.12); }
-      .sic-done { background: #c9a84c; }
+      .sic-current { background: #0d1117; box-shadow: 0 0 0 3px rgba(13,17,23,.12); }
+      .sic-done { background: #c8a45a; }
       .sic-active { background: #3b82f6; }
       .sic-future { background: rgba(232,228,220,0.15); border: 1.5px solid rgba(232,228,220,0.25); }
       .sic-label { font-size: 10px; font-weight: 700; color: rgba(232,228,220,0.40); }
@@ -336,9 +336,9 @@ export default function NewMeNaviPage() {
         transform: translateX(-50%);
         width: 9px; height: 9px;
         border-radius: 50%;
-        background: rgba(201,168,76,0.55);
-        border: 2px solid rgba(10,15,30,0.8);
-        box-shadow: 0 0 0 1.5px rgba(201,168,76,0.3);
+        background: rgba(200,164,90,0.55);
+        border: 2px solid rgba(13,17,23,0.8);
+        box-shadow: 0 0 0 1.5px rgba(0,0,0,0.36);
         z-index: 2;
       }
       .station-mini-card::before, .station-card::before { top: -5px; }
@@ -350,89 +350,89 @@ export default function NewMeNaviPage() {
       .station:last-child .station-card::after { display: none; }
 
       /* ── セクションタブバー ── */
-      .section-tab-bar { display: flex; gap: 0; background: rgba(10,15,30,0.75); border: 1px solid rgba(201,168,76,0.22); border-radius: 10px; overflow: hidden; margin-bottom: 20px; backdrop-filter: blur(8px); position: sticky; top: 64px; z-index: 10; }
-      .section-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.45); background: transparent; border: none; border-right: 1px solid rgba(201,168,76,0.15); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; text-decoration: none; }
+      .section-tab-bar { display: flex; gap: 0; background: #151b24; border: 1px solid rgba(236,232,223,0.121); border-radius: 10px; overflow: hidden; margin-bottom: 20px; backdrop-filter: blur(8px); position: sticky; top: 64px; z-index: 10; }
+      .section-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.45); background: transparent; border: none; border-right: 1px solid rgba(236,232,223,0.083); cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; text-decoration: none; }
       .section-tab:last-child { border-right: none; }
-      .section-tab:hover { background: rgba(201,168,76,0.06); color: rgba(232,228,220,0.75); }
-      .section-tab.active { background: rgba(201,168,76,0.12); color: rgba(232,228,220,0.92); }
+      .section-tab:hover { background: rgba(200,164,90,0.06); color: rgba(232,228,220,0.75); }
+      .section-tab.active { background: rgba(200,164,90,0.12); color: rgba(232,228,220,0.92); }
       .section-tab-icon { font-size: 16px; }
-      .section-tab-progress { font-size: 10px; font-weight: 800; color: rgba(201,168,76,0.65); }
+      .section-tab-progress { font-size: 10px; font-weight: 800; color: rgba(200,164,90,0.65); }
 
       /* ── 背景マップグリッド ── */
-      .navi-wrap { background-image: repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(201,168,76,.028) 39px,rgba(201,168,76,.028) 40px), repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(201,168,76,.028) 39px,rgba(201,168,76,.028) 40px); }
+      .navi-wrap { background-image: repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(200,164,90,.028) 39px,rgba(200,164,90,.028) 40px), repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(200,164,90,.028) 39px,rgba(200,164,90,.028) 40px); }
 
       /* ── 旅路トレイル ── */
       .trail-container { position: relative; padding-left: 26px; overflow: visible; }
-      .trail-container::before { content:''; position:absolute; left:7px; top:22px; bottom:24px; width:2px; background:repeating-linear-gradient(to bottom,rgba(201,168,76,.5) 0,rgba(201,168,76,.5) 6px,transparent 6px,transparent 11px); border-radius:1px; pointer-events:none; }
+      .trail-container::before { content:''; position:absolute; left:7px; top:22px; bottom:24px; width:2px; background:repeating-linear-gradient(to bottom,rgba(200,164,90,.5) 0,rgba(200,164,90,.5) 6px,transparent 6px,transparent 11px); border-radius:1px; pointer-events:none; }
       .trail-stop { position:absolute; left:-18px; width:14px; height:14px; border-radius:50%; flex-shrink:0; pointer-events:none; }
-      .trail-stop.ts-done { background:#c9a84c; border:2px solid #c9a84c; box-shadow:0 0 0 3px rgba(201,168,76,.18),0 0 6px rgba(201,168,76,.3); }
-      .trail-stop.ts-current { background:#0a0f1e; border:2px solid #c9a84c; animation:trail-pulse 2.2s ease-in-out infinite; }
-      .trail-stop.ts-future { background:rgba(10,15,30,.65); border:2px solid rgba(232,228,220,.2); }
-      @keyframes trail-pulse { 0%,100% { box-shadow:0 0 0 3px rgba(201,168,76,.12),0 0 8px rgba(201,168,76,.2); } 50% { box-shadow:0 0 0 6px rgba(201,168,76,.22),0 0 16px rgba(201,168,76,.32); } }
+      .trail-stop.ts-done { background:#c8a45a; border:2px solid #c8a45a; box-shadow:0 0 0 3px rgba(0,0,0,0.216),0 0 6px rgba(0,0,0,0.36); }
+      .trail-stop.ts-current { background:#0d1117; border:2px solid #c8a45a; animation:trail-pulse 2.2s ease-in-out infinite; }
+      .trail-stop.ts-future { background:#151b24; border:2px solid rgba(232,228,220,.2); }
+      @keyframes trail-pulse { 0%,100% { box-shadow:0 0 0 3px rgba(0,0,0,0.144),0 0 8px rgba(0,0,0,0.24); } 50% { box-shadow:0 0 0 6px rgba(0,0,0,0.264),0 0 16px rgba(0,0,0,0.384); } }
 
       /* ── アクションセクション（新構造） ── */
       .action-section { margin-bottom: 28px; scroll-margin-top: 120px; position: relative; }
-      .action-sec-header { display: flex; align-items: center; gap: 12px; padding: 12px 0 10px; border-bottom: 1.5px solid rgba(201,168,76,0.18); margin-bottom: 12px; }
+      .action-sec-header { display: flex; align-items: center; gap: 12px; padding: 12px 0 10px; border-bottom: 1.5px solid rgba(236,232,223,0.099); margin-bottom: 12px; }
       .action-sec-icon { font-size: 22px; flex-shrink: 0; }
       .action-sec-body { flex: 1; }
-      .action-sec-label { font-size: 15px; font-weight: 900; color: rgba(232,228,220,0.92); margin: 0 0 2px; font-family: 'Noto Serif JP', Georgia, serif; }
+      .action-sec-label { font-size: 15px; font-weight: 900; color: rgba(232,228,220,0.92); margin: 0 0 2px; font-family: 'Shippori Mincho', Georgia, serif; }
       .action-sec-desc { font-size: 11px; color: rgba(232,228,220,0.45); margin: 0; }
-      .action-sec-progress { font-size: 12px; font-weight: 800; color: rgba(201,168,76,0.75); background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2); border-radius: 20px; padding: 3px 10px; white-space: nowrap; flex-shrink: 0; }
+      .action-sec-progress { font-size: 12px; font-weight: 800; color: rgba(200,164,90,0.75); background: rgba(200,164,90,0.08); border: 1px solid rgba(236,232,223,0.11); border-radius: 20px; padding: 3px 10px; white-space: nowrap; flex-shrink: 0; }
 
       /* ── ステップカード ── */
-      .step-card { display: flex; align-items: flex-start; gap: 12px; padding: 14px 12px; border-bottom: 1px solid rgba(201,168,76,0.07); position: relative; transition: background .12s; }
+      .step-card { display: flex; align-items: flex-start; gap: 12px; padding: 14px 12px; border-bottom: 1px solid rgba(236,232,223,0.039); position: relative; transition: background .12s; }
       .step-card:last-child { border-bottom: none; }
-      .step-card.step-compass { background: rgba(201,168,76,0.04); border-radius: 10px; border-bottom: none; margin-bottom: 3px; }
+      .step-card.step-compass { background: rgba(200,164,90,0.04); border-radius: 10px; border-bottom: none; margin-bottom: 3px; }
       .step-card.step-done .step-text { text-decoration: line-through; color: #9ca3af; }
-      .step-card.guide-high { border-left: 3px solid rgba(201,168,76,0.55); background: rgba(201,168,76,0.03); border-radius: 10px; border-bottom: none; margin-bottom: 3px; padding-left: 14px; }
+      .step-card.guide-high { border-left: 3px solid rgba(200,164,90,0.55); background: rgba(200,164,90,0.03); border-radius: 10px; border-bottom: none; margin-bottom: 3px; padding-left: 14px; }
       .step-card.guide-mid  { border-left: 2px solid rgba(59,130,246,0.45); background: rgba(59,130,246,0.03); border-radius: 10px; border-bottom: none; margin-bottom: 3px; padding-left: 14px; }
       .step-card-body { flex: 1; min-width: 0; padding-right: 4px; }
       .step-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 5px; }
       .phase-badge { font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 99px; letter-spacing: .04em; white-space: nowrap; flex-shrink: 0; }
       .phase-badge-week1   { background: rgba(52,211,153,.12); color: rgba(52,211,153,.85); border: 1px solid rgba(52,211,153,.22); }
       .phase-badge-week1_2 { background: rgba(59,130,246,.12); color: rgba(147,197,253,.9); border: 1px solid rgba(59,130,246,.22); }
-      .phase-badge-month1  { background: rgba(201,168,76,.12); color: rgba(253,230,138,.9); border: 1px solid rgba(201,168,76,.25); }
+      .phase-badge-month1  { background: rgba(200,164,90,.12); color: rgba(253,230,138,.9); border: 1px solid rgba(236,232,223,0.138); }
       .phase-badge-month2_3{ background: rgba(168,85,247,.12);  color: rgba(216,180,254,.9); border: 1px solid rgba(168,85,247,.22); }
       .step-axis-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; border: 1px solid; }
       .step-text { font-size: 14px; color: rgba(232,228,220,0.82); line-height: 1.65; margin: 0; }
       .step-check-btn-wrap { flex-shrink: 0; padding-top: 2px; }
 
       /* ── 答えを見るパネル ── */
-      .step-detail-toggle { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.75); background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.22); border-radius: 6px; padding: 4px 10px; cursor: pointer; margin-top: 7px; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
-      .step-detail-toggle:hover { background: rgba(201,168,76,0.14); color: #c9a84c; }
-      .step-detail-toggle.open { background: rgba(201,168,76,0.14); color: #c9a84c; }
-      .step-detail-panel { display: none; margin-top: 8px; padding: 12px 14px; background: rgba(201,168,76,0.05); border: 1px solid rgba(201,168,76,0.2); border-radius: 10px; font-size: 12px; color: rgba(232,228,220,0.82); line-height: 1.8; }
+      .step-detail-toggle { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: rgba(200,164,90,0.75); background: rgba(200,164,90,0.08); border: 1px solid rgba(236,232,223,0.121); border-radius: 6px; padding: 4px 10px; cursor: pointer; margin-top: 7px; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
+      .step-detail-toggle:hover { background: rgba(200,164,90,0.14); color: #c8a45a; }
+      .step-detail-toggle.open { background: rgba(200,164,90,0.14); color: #c8a45a; }
+      .step-detail-panel { display: none; margin-top: 8px; padding: 12px 14px; background: rgba(200,164,90,0.05); border: 1px solid rgba(236,232,223,0.11); border-radius: 10px; font-size: 12px; color: rgba(232,228,220,0.82); line-height: 1.8; }
       .step-detail-panel.open { display: block; }
 
       /* ── インラインサービスカード ── */
       .inline-service-card { display: none; text-decoration: none; }
       .inline-service-card.loaded { display: block; }
-      .isc-inner { display: flex; align-items: flex-start; gap: 12px; padding: 11px 14px; background: rgba(10,15,30,0.65); border: 1px solid rgba(201,168,76,0.25); border-radius: 10px; text-decoration: none; transition: border-color .15s; }
-      .isc-inner:hover { border-color: rgba(201,168,76,0.5); }
+      .isc-inner { display: flex; align-items: flex-start; gap: 12px; padding: 11px 14px; background: #151b24; border: 1px solid rgba(236,232,223,0.138); border-radius: 10px; text-decoration: none; transition: border-color .15s; }
+      .isc-inner:hover { border-color: rgba(236,232,223,0.275); }
       .isc-icon { font-size: 22px; flex-shrink: 0; }
       .isc-body { flex: 1; min-width: 0; }
-      .isc-label { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(201,168,76,0.55); margin: 0 0 3px; }
+      .isc-label { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(200,164,90,0.55); margin: 0 0 3px; }
       .isc-name { font-size: 13px; font-weight: 700; color: rgba(232,228,220,0.88); margin: 0 0 3px; line-height: 1.4; }
       .isc-desc { font-size: 11px; color: rgba(232,228,220,0.50); margin: 0; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-      .isc-cta { font-size: 11px; font-weight: 700; color: #c9a84c; flex-shrink: 0; align-self: center; }
+      .isc-cta { font-size: 11px; font-weight: 700; color: #c8a45a; flex-shrink: 0; align-self: center; }
 
       /* ── Today's Quest ── */
-      .todayquest-card { background: linear-gradient(135deg, rgba(201,168,76,0.12), rgba(10,15,30,0.40)); border: 1.5px solid rgba(201,168,76,0.4); border-radius: 16px; padding: 20px 22px; margin-bottom: 20px; position: relative; overflow: hidden; }
-      .todayquest-card::before { content: ''; position: absolute; top: -40px; right: -40px; width: 140px; height: 140px; background: radial-gradient(circle, rgba(201,168,76,0.10) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
-      .tq-eyebrow { font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(201,168,76,0.65); margin: 0 0 10px; }
-      .tq-axis-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.32); color: #c9a84c; margin-bottom: 10px; }
-      .tq-text { font-size: 15px; font-weight: 800; color: rgba(232,228,220,0.92); line-height: 1.6; margin: 0 0 10px; font-family: 'Noto Serif JP', Georgia, serif; }
+      .todayquest-card { background: linear-gradient(135deg, rgba(200,164,90,0.12), rgba(13,17,23,0.40)); border: 1.5px solid rgba(236,232,223,0.22); border-radius: 16px; padding: 20px 22px; margin-bottom: 20px; position: relative; overflow: hidden; }
+      .todayquest-card::before { content: ''; position: absolute; top: -40px; right: -40px; width: 140px; height: 140px; background: radial-gradient(circle, rgba(200,164,90,0.10) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
+      .tq-eyebrow { font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: rgba(200,164,90,0.65); margin: 0 0 10px; }
+      .tq-axis-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: rgba(200,164,90,0.12); border: 1px solid rgba(236,232,223,0.176); color: #c8a45a; margin-bottom: 10px; }
+      .tq-text { font-size: 15px; font-weight: 800; color: rgba(232,228,220,0.92); line-height: 1.6; margin: 0 0 10px; font-family: 'Shippori Mincho', Georgia, serif; }
       .tq-guide { font-size: 12px; color: rgba(232,228,220,0.50); margin: 0 0 14px; }
       .tq-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-      .tq-check-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; padding: 10px 20px; background: rgba(201,168,76,0.15); border: 1.5px solid rgba(201,168,76,0.5); border-radius: 9px; color: #c9a84c; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
-      .tq-check-btn:hover { background: rgba(201,168,76,0.26); }
+      .tq-check-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; padding: 10px 20px; background: rgba(200,164,90,0.15); border: 1.5px solid rgba(236,232,223,0.275); border-radius: 9px; color: #c8a45a; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; }
+      .tq-check-btn:hover { background: rgba(200,164,90,0.26); }
       .tq-check-btn.done { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.45); color: #4ade80; }
       .tq-skip-link { font-size: 12px; color: rgba(232,228,220,0.35); text-decoration: none; transition: color .12s; }
       .tq-skip-link:hover { color: rgba(232,228,220,0.65); }
-      .tq-item { padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid rgba(201,168,76,0.12); }
+      .tq-item { padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid rgba(236,232,223,0.066); }
       .tq-item:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
       .tq-item-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
-      .tq-item-axis { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; color: rgba(201,168,76,0.7); letter-spacing: .04em; }
+      .tq-item-axis { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; color: rgba(200,164,90,0.7); letter-spacing: .04em; }
 
       /* ── 旅路ビジュアル ── */
       .journey-section { margin-bottom: 20px; }
@@ -440,133 +440,133 @@ export default function NewMeNaviPage() {
       /* ── 軸ステータスグリッド ── */
       .axis-status-section { margin-bottom: 20px; }
       .axis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-      .agc { background: rgba(10,15,30,0.65); border: 1px solid rgba(232,228,220,0.10); border-radius: 14px; padding: 14px 14px 12px; cursor: pointer; transition: border-color .15s, transform .15s; position: relative; overflow: hidden; }
-      .agc:hover { border-color: rgba(201,168,76,0.3); transform: translateY(-1px); }
-      .agc.agc-compass { border-color: rgba(201,168,76,0.45); background: rgba(201,168,76,0.05); }
+      .agc { background: #151b24; border: 1px solid rgba(232,228,220,0.10); border-radius: 14px; padding: 14px 14px 12px; cursor: pointer; transition: border-color .15s, transform .15s; position: relative; overflow: hidden; }
+      .agc:hover { border-color: rgba(236,232,223,0.165); transform: translateY(-1px); }
+      .agc.agc-compass { border-color: rgba(236,232,223,0.248); background: rgba(200,164,90,0.05); }
       .agc.agc-done { opacity: 0.48; }
       .agc.agc-active { border-color: rgba(59,130,246,0.28); }
-      .agc.agc-selected { border-color: #c9a84c !important; box-shadow: 0 0 0 1px rgba(201,168,76,0.25); }
+      .agc.agc-selected { border-color: rgba(236,232,223,0.3) !important; box-shadow: 0 0 0 1px rgba(0,0,0,0.3); }
       .agc-top { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
       .agc-icon { font-size: 18px; flex-shrink: 0; }
       .agc-name { font-size: 12px; font-weight: 800; color: rgba(232,228,220,0.85); flex: 1; min-width: 0; }
       .agc-badge { font-size: 8px; font-weight: 800; padding: 2px 6px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; letter-spacing: .04em; }
-      .agc-badge-compass { background: rgba(201,168,76,0.12); color: #c9a84c; border: 1px solid rgba(201,168,76,0.3); }
+      .agc-badge-compass { background: rgba(200,164,90,0.12); color: #c8a45a; border: 1px solid rgba(236,232,223,0.165); }
       .agc-badge-done { background: rgba(16,185,129,0.10); color: rgba(52,211,153,0.8); border: 1px solid rgba(16,185,129,0.2); }
       .agc-badge-active { background: rgba(59,130,246,0.10); color: rgba(147,197,253,0.85); border: 1px solid rgba(59,130,246,0.2); }
       .agc-badge-none { background: transparent; color: rgba(232,228,220,0.22); border: 1px solid rgba(232,228,220,0.08); }
       .agc-bar-labels { display: flex; justify-content: space-between; font-size: 9px; color: rgba(232,228,220,0.22); margin-bottom: 4px; }
       .agc-bar { height: 3px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
       .agc-bar-fill { height: 100%; border-radius: 99px; transition: width 1.2s cubic-bezier(.4,0,.2,1) .3s; }
-      .agc-bar-fill.bfill-compass { background: linear-gradient(90deg, rgba(201,168,76,0.5), #c9a84c); }
+      .agc-bar-fill.bfill-compass { background: linear-gradient(90deg, rgba(200,164,90,0.5), #c8a45a); }
       .agc-bar-fill.bfill-active { background: rgba(96,165,250,0.65); }
       .agc-bar-fill.bfill-done { background: rgba(52,211,153,0.65); }
       .agc-bar-fill.bfill-none { background: rgba(232,228,220,0.10); }
       .agc-step { font-size: 11px; color: rgba(232,228,220,0.42); line-height: 1.5; margin: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-      .agc.agc-compass .agc-step { color: rgba(201,168,76,0.58); }
+      .agc.agc-compass .agc-step { color: rgba(200,164,90,0.58); }
       .agc-compass-mark { position: absolute; top: 8px; right: 10px; font-size: 11px; opacity: 0.55; }
 
       /* ── 旅の途中の読み物ノード ── */
-      .trail-article-node { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px; padding: 10px 14px; background: rgba(10,15,30,0.45); border: 1px solid rgba(201,168,76,0.18); border-left: 3px solid rgba(201,168,76,0.5); border-radius: 8px; text-decoration: none; transition: background .15s; }
-      .trail-article-node:hover { background: rgba(201,168,76,0.07); }
+      .trail-article-node { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px; padding: 10px 14px; background: #151b24; border: 1px solid rgba(236,232,223,0.099); border-left: 3px solid rgba(200,164,90,0.5); border-radius: 8px; text-decoration: none; transition: background .15s; }
+      .trail-article-node:hover { background: rgba(200,164,90,0.07); }
       .trail-article-icon { font-size: 16px; flex-shrink: 0; }
       .trail-article-body { flex: 1; min-width: 0; }
-      .trail-article-label { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(201,168,76,0.6); margin: 0 0 2px; }
+      .trail-article-label { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(200,164,90,0.6); margin: 0 0 2px; }
       .trail-article-title { font-size: 13px; font-weight: 700; color: rgba(232,228,220,0.85); margin: 0; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .trail-article-arrow { font-size: 14px; color: rgba(201,168,76,0.5); flex-shrink: 0; }
+      .trail-article-arrow { font-size: 14px; color: rgba(200,164,90,0.5); flex-shrink: 0; }
 
       /* ── 軸フィルターバー ── */
       .axis-filter-bar { display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; margin-bottom: 18px; padding-bottom: 6px; scrollbar-width: none; -ms-overflow-style: none; }
       .axis-filter-bar::-webkit-scrollbar { display: none; }
       .axis-filter-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 6px 14px; border-radius: 99px; border: 1px solid rgba(232,228,220,0.18); color: rgba(232,228,220,0.40); background: transparent; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .15s; white-space: nowrap; flex-shrink: 0; scroll-snap-align: start; }
-      .axis-filter-chip:hover { border-color: rgba(201,168,76,0.4); color: rgba(232,228,220,0.75); }
-      .axis-filter-chip.active { border-color: #c9a84c; color: #c9a84c; background: rgba(201,168,76,0.10); }
+      .axis-filter-chip:hover { border-color: rgba(236,232,223,0.22); color: rgba(232,228,220,0.75); }
+      .axis-filter-chip.active { border-color: rgba(236,232,223,0.3); color: #c8a45a; background: rgba(200,164,90,0.10); }
 
       /* ── 現状把握ステップ（目立たせ） ── */
-      .step-card.step-selfcheck { border-left: 3px solid rgba(201,168,76,0.7) !important; background: rgba(201,168,76,0.05); border-radius: 10px; border-bottom: none !important; margin-bottom: 4px; }
-      .selfcheck-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 800; color: #c9a84c; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.3); border-radius: 3px; padding: 1px 6px; letter-spacing: .06em; text-transform: uppercase; }
+      .step-card.step-selfcheck { border-left: 3px solid rgba(200,164,90,0.7) !important; background: rgba(200,164,90,0.05); border-radius: 10px; border-bottom: none !important; margin-bottom: 4px; }
+      .selfcheck-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 800; color: #c8a45a; background: rgba(200,164,90,0.12); border: 1px solid rgba(236,232,223,0.165); border-radius: 3px; padding: 1px 6px; letter-spacing: .06em; text-transform: uppercase; }
       .selfcheck-badge::before { content: '📍'; font-size: 9px; }
-      .selfcheck-value { font-size: 11px; font-weight: 700; color: #c9a84c; background: rgba(201,168,76,0.10); border: 1px solid rgba(201,168,76,0.25); border-radius: 4px; padding: 2px 7px; margin-top: 4px; display: inline-block; }
+      .selfcheck-value { font-size: 11px; font-weight: 700; color: #c8a45a; background: rgba(200,164,90,0.10); border: 1px solid rgba(236,232,223,0.138); border-radius: 4px; padding: 2px 7px; margin-top: 4px; display: inline-block; }
 
       /* ── 現状把握バナー ── */
-      .selfcheck-intro-section { background: rgba(201,168,76,0.06); border: 1.5px solid rgba(201,168,76,0.35); border-radius: 14px; padding: 16px 18px 14px; margin-bottom: 20px; }
+      .selfcheck-intro-section { background: rgba(200,164,90,0.06); border: 1.5px solid rgba(236,232,223,0.193); border-radius: 14px; padding: 16px 18px 14px; margin-bottom: 20px; }
       .selfcheck-intro-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
       .selfcheck-intro-icon { font-size: 22px; flex-shrink: 0; }
       .selfcheck-intro-title { font-size: 13px; font-weight: 800; color: rgba(232,228,220,0.92); margin: 0 0 2px; }
       .selfcheck-intro-desc { font-size: 11px; color: rgba(232,228,220,0.55); margin: 0; line-height: 1.5; }
       .selfcheck-chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
-      .selfcheck-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(201,168,76,0.35); color: rgba(201,168,76,0.85); background: transparent; line-height: 1.3; }
+      .selfcheck-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(236,232,223,0.193); color: rgba(200,164,90,0.85); background: transparent; line-height: 1.3; }
       .selfcheck-chip.done { color: rgba(16,185,129,0.9); border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.06); }
 
       /* ── 現状把握モーダル ── */
       #body-data-modal { position: fixed; inset: 0; background: rgba(5,8,20,0.88); z-index: 99998; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
       #body-data-modal.hidden { display: none; }
       .bdm-multi-note.hidden { display: none; }
-      .bdm-card { background: rgba(10,15,30,0.97); border: 1.5px solid rgba(201,168,76,0.5); border-radius: 18px; padding: 26px 22px 20px; max-width: 400px; width: 100%; box-shadow: 0 24px 64px rgba(0,0,0,0.65); }
-      .bdm-eyebrow { font-size: 9px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(201,168,76,0.65); margin: 0 0 8px; }
-      .bdm-title { font-size: 15px; font-weight: 800; color: rgba(232,228,220,0.95); margin: 0 0 6px; line-height: 1.5; font-family: 'Noto Serif JP', Georgia, serif; }
+      .bdm-card { background: #151b24; border: 1.5px solid rgba(236,232,223,0.275); border-radius: 18px; padding: 26px 22px 20px; max-width: 400px; width: 100%; box-shadow: 0 24px 64px rgba(0,0,0,0.65); }
+      .bdm-eyebrow { font-size: 9px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(200,164,90,0.65); margin: 0 0 8px; }
+      .bdm-title { font-size: 15px; font-weight: 800; color: rgba(232,228,220,0.95); margin: 0 0 6px; line-height: 1.5; font-family: 'Shippori Mincho', Georgia, serif; }
       .bdm-step-text { font-size: 12px; color: rgba(232,228,220,0.50); margin: 0 0 18px; line-height: 1.6; }
       .bdm-options { display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
       .bdm-option { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 9px; border: 1px solid rgba(232,228,220,0.16); cursor: pointer; transition: all .12s; }
-      .bdm-option:hover { border-color: rgba(201,168,76,0.45); background: rgba(201,168,76,0.06); }
-      .bdm-option.selected { border-color: #c9a84c; background: rgba(201,168,76,0.12); }
-      .bdm-option input[type="radio"] { width: 14px; height: 14px; accent-color: #c9a84c; flex-shrink: 0; cursor: pointer; }
-      .bdm-option input[type="checkbox"] { width: 14px; height: 14px; accent-color: #c9a84c; flex-shrink: 0; cursor: pointer; }
+      .bdm-option:hover { border-color: rgba(236,232,223,0.248); background: rgba(200,164,90,0.06); }
+      .bdm-option.selected { border-color: rgba(236,232,223,0.3); background: rgba(200,164,90,0.12); }
+      .bdm-option input[type="radio"] { width: 14px; height: 14px; accent-color: #c8a45a; flex-shrink: 0; cursor: pointer; }
+      .bdm-option input[type="checkbox"] { width: 14px; height: 14px; accent-color: #c8a45a; flex-shrink: 0; cursor: pointer; }
       .bdm-option-label { font-size: 13px; font-weight: 600; color: rgba(232,228,220,0.85); cursor: pointer; }
       .bdm-multi-note { font-size: 11px; color: rgba(232,228,220,0.40); margin: 0 0 10px; }
       .bdm-actions { display: flex; gap: 8px; }
-      .bdm-submit { flex: 1; padding: 12px 20px; background: #c9a84c; color: #0a0f1e; font-size: 14px; font-weight: 800; border: none; border-radius: 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: opacity .15s; }
+      .bdm-submit { flex: 1; padding: 12px 20px; background: #c8a45a; color: #0d1117; font-size: 14px; font-weight: 800; border: none; border-radius: 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: opacity .15s; }
       .bdm-submit:hover { opacity: .85; }
       .bdm-skip { padding: 12px 14px; background: transparent; color: rgba(232,228,220,0.40); font-size: 13px; font-weight: 600; border: 1px solid rgba(232,228,220,0.15); border-radius: 9px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all .12s; }
       .bdm-skip:hover { color: rgba(232,228,220,0.65); border-color: rgba(232,228,220,0.3); }
 
       /* ── Journey Overview (変容の旅 全体図) ── */
       .jov-section { margin-bottom: 24px; }
-      .jov-hero { background: rgba(10,15,30,0.65); border: 1.5px solid rgba(201,168,76,0.4); border-radius: 16px; padding: 18px 16px 16px; margin-bottom: 14px; }
+      .jov-hero { background: #151b24; border: 1.5px solid rgba(236,232,223,0.22); border-radius: 16px; padding: 18px 16px 16px; margin-bottom: 14px; }
       .jov-hero-axis { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
       .jov-hero-icon { font-size: 20px; flex-shrink: 0; }
-      .jov-hero-sub { font-size: 9px; font-weight: 800; letter-spacing:.1em; color: rgba(201,168,76,0.6); text-transform: uppercase; margin: 0 0 2px; }
+      .jov-hero-sub { font-size: 9px; font-weight: 800; letter-spacing:.1em; color: rgba(200,164,90,0.6); text-transform: uppercase; margin: 0 0 2px; }
       .jov-hero-title { font-size: 14px; font-weight: 900; color: rgba(232,228,220,0.90); margin: 0; }
       .jov-track-row { display: flex; align-items: center; gap: 0; margin: 0 0 6px; }
       .jov-wp-node { flex: 0 0 auto; }
-      .jov-wp-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(232,228,220,0.2); background: rgba(10,15,30,0.65); flex-shrink: 0; display: block; }
-      .jov-wp-dot.jov-done { background: #c9a84c; border-color: #c9a84c; }
-      .jov-wp-dot.jov-current { background: #0a0f1e; border-color: #c9a84c; box-shadow: 0 0 0 4px rgba(201,168,76,0.18); animation: jov-pulse 2.2s ease-in-out infinite; }
+      .jov-wp-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(232,228,220,0.2); background: #151b24; flex-shrink: 0; display: block; }
+      .jov-wp-dot.jov-done { background: #c8a45a; border-color: rgba(236,232,223,0.3); }
+      .jov-wp-dot.jov-current { background: #0d1117; border-color: rgba(236,232,223,0.3); box-shadow: 0 0 0 4px rgba(0,0,0,0.216); animation: jov-pulse 2.2s ease-in-out infinite; }
       .jov-wp-dot.jov-goal { width: 14px; height: 14px; }
       .jov-wp-dot.jov-goal.jov-done { background: rgba(52,211,153,0.9); border-color: rgba(52,211,153,0.9); }
-      @keyframes jov-pulse { 0%,100% { box-shadow: 0 0 0 3px rgba(201,168,76,.12),0 0 6px rgba(201,168,76,.18); } 50% { box-shadow: 0 0 0 6px rgba(201,168,76,.22),0 0 14px rgba(201,168,76,.28); } }
+      @keyframes jov-pulse { 0%,100% { box-shadow: 0 0 0 3px rgba(0,0,0,0.144),0 0 6px rgba(0,0,0,0.216); } 50% { box-shadow: 0 0 0 6px rgba(0,0,0,0.264),0 0 14px rgba(0,0,0,0.336); } }
       .jov-track-conn { flex: 1; height: 2px; background: rgba(232,228,220,0.1); border-radius: 1px; align-self: center; margin-bottom: 0; }
-      .jov-track-conn.jov-done { background: #c9a84c; }
+      .jov-track-conn.jov-done { background: #c8a45a; }
       .jov-labels-row { display: flex; align-items: flex-start; gap: 0; margin-top: 5px; }
       .jov-wp-label-wrap { flex: 0 0 auto; text-align: center; width: 0; overflow: visible; }
       .jov-conn-spacer { flex: 1; }
       .jov-wp-label { font-size: 9px; font-weight: 700; color: rgba(232,228,220,0.38); line-height: 1.3; white-space: nowrap; transform: translateX(-50%); display: inline-block; }
-      .jov-wp-label.jov-done { color: rgba(201,168,76,0.75); }
+      .jov-wp-label.jov-done { color: rgba(200,164,90,0.75); }
       .jov-wp-label.jov-next { color: rgba(232,228,220,0.75); font-weight: 800; }
-      .jov-next-target { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.2); border-radius: 8px; margin-top: 14px; }
+      .jov-next-target { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(200,164,90,0.06); border: 1px solid rgba(236,232,223,0.11); border-radius: 8px; margin-top: 14px; }
       .jov-next-target-text { flex: 1; min-width: 0; }
-      .jov-next-target-eyebrow { font-size: 9px; font-weight: 800; letter-spacing:.08em; text-transform: uppercase; color: rgba(201,168,76,0.55); margin: 0 0 2px; }
+      .jov-next-target-eyebrow { font-size: 9px; font-weight: 800; letter-spacing:.08em; text-transform: uppercase; color: rgba(200,164,90,0.55); margin: 0 0 2px; }
       .jov-next-target-label { font-size: 13px; font-weight: 800; color: rgba(232,228,220,0.88); margin: 0 0 2px; }
       .jov-next-target-desc { font-size: 11px; color: rgba(232,228,220,0.50); margin: 0; line-height: 1.5; }
       .jov-next-steps { text-align: center; flex-shrink: 0; }
-      .jov-next-steps-num { font-size: 24px; font-weight: 900; color: #c9a84c; line-height: 1; display: block; }
-      .jov-next-steps-unit { font-size: 10px; color: rgba(201,168,76,0.65); display: block; }
+      .jov-next-steps-num { font-size: 24px; font-weight: 900; color: #c8a45a; line-height: 1; display: block; }
+      .jov-next-steps-unit { font-size: 10px; color: rgba(200,164,90,0.65); display: block; }
       .jov-other-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-      .jov-other-chip { background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.1); border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: border-color .15s; }
-      .jov-other-chip:hover { border-color: rgba(201,168,76,0.3); }
+      .jov-other-chip { background: #151b24; border: 1px solid rgba(232,228,220,0.1); border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: border-color .15s; }
+      .jov-other-chip:hover { border-color: rgba(236,232,223,0.165); }
       .jov-other-chip-head { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
       .jov-other-chip-icon { font-size: 14px; }
       .jov-other-chip-name { font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.75); flex: 1; }
       .jov-stage-dots { display: flex; gap: 3px; margin-bottom: 4px; }
       .jov-sd { flex: 1; height: 3px; border-radius: 99px; background: rgba(232,228,220,0.1); }
-      .jov-sd.jov-done { background: #c9a84c; }
+      .jov-sd.jov-done { background: #c8a45a; }
       .jov-sd.jov-goal-done { background: rgba(52,211,153,0.7); }
       .jov-stage-label { font-size: 9px; font-weight: 700; color: rgba(232,228,220,0.28); }
-      .jov-stage-label.s1 { color: rgba(201,168,76,0.65); }
-      .jov-stage-label.s2 { color: rgba(201,168,76,0.80); }
+      .jov-stage-label.s1 { color: rgba(200,164,90,0.65); }
+      .jov-stage-label.s2 { color: rgba(200,164,90,0.80); }
       .jov-stage-label.s3 { color: rgba(52,211,153,0.75); }
       /* ── 軸完了ボタン ── */
-      .jov-complete-btn { width:100%;margin-top:14px;padding:14px 20px;background:linear-gradient(135deg,rgba(201,168,76,0.18),rgba(201,168,76,0.10));border:1.5px solid rgba(201,168,76,0.5);border-radius:12px;color:#c9a84c;font-size:15px;font-weight:800;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.04em; }
-      .jov-complete-btn:hover { background:linear-gradient(135deg,rgba(201,168,76,0.28),rgba(201,168,76,0.18));border-color:#c9a84c;transform:translateY(-1px);box-shadow:0 4px 16px rgba(201,168,76,0.2); }
+      .jov-complete-btn { width:100%;margin-top:14px;padding:14px 20px;background:linear-gradient(135deg,rgba(200,164,90,0.18),rgba(200,164,90,0.10));border:1.5px solid rgba(236,232,223,0.275);border-radius:12px;color:#c8a45a;font-size:15px;font-weight:800;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.04em; }
+      .jov-complete-btn:hover { background:linear-gradient(135deg,rgba(200,164,90,0.28),rgba(200,164,90,0.18));border-color:rgba(236,232,223,0.3);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,0.24); }
       .jov-complete-btn:active { transform:translateY(0); }
       .jov-complete-btn:disabled { opacity:.5;cursor:default;transform:none; }
 
@@ -576,21 +576,21 @@ export default function NewMeNaviPage() {
       .navi-product-carousel::-webkit-scrollbar { display: none; }
       .navi-product-card { flex-shrink: 0; width: 158px; scroll-snap-align: start; background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.18); border-radius: 12px; padding: 13px 12px; display: flex; flex-direction: column; gap: 7px; text-decoration: none; transition: border-color .15s; }
       .navi-product-card:hover { border-color: rgba(16,185,129,0.45); }
-      .navi-product-card.matched { border-color: rgba(201,168,76,0.45); background: rgba(201,168,76,0.06); }
-      .navi-product-card.matched:hover { border-color: #c9a84c; }
+      .navi-product-card.matched { border-color: rgba(236,232,223,0.248); background: rgba(200,164,90,0.06); }
+      .navi-product-card.matched:hover { border-color: rgba(236,232,223,0.3); }
       .navi-product-axis { font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(16,185,129,0.55); }
       .navi-product-name { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.85); line-height: 1.45; flex: 1; }
       .navi-product-cta { font-size: 11px; font-weight: 700; color: rgba(16,185,129,0.75); }
-      .navi-product-match-badge { font-size: 9px; font-weight: 800; background: rgba(201,168,76,0.18); color: #c9a84c; border: 1px solid rgba(201,168,76,.3); border-radius: 99px; padding: 2px 7px; width: fit-content; letter-spacing: .04em; }
+      .navi-product-match-badge { font-size: 9px; font-weight: 800; background: rgba(200,164,90,0.18); color: #c8a45a; border: 1px solid rgba(236,232,223,0.165); border-radius: 99px; padding: 2px 7px; width: fit-content; letter-spacing: .04em; }
 
       /* ── Game Map Path ── */
       .path-wrap { position: relative; padding: 0 4px; }
-      .path-phase-banner { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: rgba(10,15,30,0.55); border: 1px solid rgba(201,168,76,0.22); border-radius: 12px; margin: 24px 0 8px; }
+      .path-phase-banner { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: #151b24; border: 1px solid rgba(236,232,223,0.121); border-radius: 12px; margin: 24px 0 8px; }
       .path-phase-banner-icon { font-size: 22px; flex-shrink: 0; }
       .path-phase-banner-body { flex: 1; min-width: 0; }
-      .path-phase-banner-label { font-size: 14px; font-weight: 900; color: rgba(232,228,220,0.88); margin: 0 0 2px; font-family: 'Noto Serif JP', Georgia, serif; }
+      .path-phase-banner-label { font-size: 14px; font-weight: 900; color: rgba(232,228,220,0.88); margin: 0 0 2px; font-family: 'Shippori Mincho', Georgia, serif; }
       .path-phase-banner-desc { font-size: 11px; color: rgba(232,228,220,0.42); margin: 0; }
-      .path-phase-banner-count { font-size: 11px; font-weight: 800; color: rgba(201,168,76,0.7); background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2); border-radius: 99px; padding: 3px 10px; white-space: nowrap; flex-shrink: 0; }
+      .path-phase-banner-count { font-size: 11px; font-weight: 800; color: rgba(200,164,90,0.7); background: rgba(200,164,90,0.08); border: 1px solid rgba(236,232,223,0.11); border-radius: 99px; padding: 3px 10px; white-space: nowrap; flex-shrink: 0; }
       .gmap-node-row { display: flex; padding: 4px 8px; }
       .gmap-node-row.gnr-left { justify-content: flex-start; padding-left: 20px; }
       .gmap-node-row.gnr-right { justify-content: flex-end; padding-right: 20px; }
@@ -598,28 +598,28 @@ export default function NewMeNaviPage() {
       .gmap-node { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 96px; cursor: pointer; }
       .gm-circle { width: 62px; height: 62px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 3px solid; transition: all .25s; position: relative; flex-shrink: 0; z-index: 1; }
       .gmap-node-row { position: relative; z-index: 1; }
-      .gm-c-future { border-color: rgba(232,228,220,0.18); background: rgba(10,15,30,0.5); box-shadow: 0 3px 12px rgba(0,0,0,.3); }
-      .gm-c-active { border-color: rgba(201,168,76,0.45); background: rgba(201,168,76,0.07); box-shadow: 0 4px 16px rgba(201,168,76,.1); }
-      .gm-c-done { border-color: #c9a84c; background: rgba(201,168,76,0.15); box-shadow: 0 4px 14px rgba(201,168,76,.2); }
+      .gm-c-future { border-color: rgba(232,228,220,0.18); background: #151b24; box-shadow: 0 3px 12px rgba(0,0,0,.3); }
+      .gm-c-active { border-color: rgba(236,232,223,0.248); background: rgba(200,164,90,0.07); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+      .gm-c-done { border-color: rgba(236,232,223,0.3); background: rgba(200,164,90,0.15); box-shadow: 0 4px 14px rgba(0,0,0,0.24); }
       .gm-c-done::after { content: '✓'; position: absolute; top: -4px; right: -4px; width: 22px; height: 22px; border-radius: 50%; background: #10b981; color: #fff; font-size: 13px; font-weight: 900; line-height: 22px; text-align: center; display: block; }
-      .gm-c-compass { border-color: #c9a84c; background: rgba(201,168,76,0.12); box-shadow: 0 0 0 8px rgba(201,168,76,.08), 0 6px 20px rgba(201,168,76,.25); animation: gmap-pulse 2.2s ease-in-out infinite; width: 70px; height: 70px; font-size: 32px; }
-      @keyframes gmap-pulse { 0%,100% { box-shadow: 0 0 0 6px rgba(201,168,76,.08), 0 6px 20px rgba(201,168,76,.2); } 50% { box-shadow: 0 0 0 14px rgba(201,168,76,.14), 0 8px 28px rgba(201,168,76,.35); } }
+      .gm-c-compass { border-color: rgba(236,232,223,0.3); background: rgba(200,164,90,0.12); box-shadow: 0 0 0 8px rgba(0,0,0,0.096), 0 6px 20px rgba(0,0,0,0.3); animation: gmap-pulse 2.2s ease-in-out infinite; width: 70px; height: 70px; font-size: 32px; }
+      @keyframes gmap-pulse { 0%,100% { box-shadow: 0 0 0 6px rgba(0,0,0,0.096), 0 6px 20px rgba(0,0,0,0.24); } 50% { box-shadow: 0 0 0 14px rgba(0,0,0,0.168), 0 8px 28px rgba(0,0,0,0.42); } }
       .gmap-node-label { text-align: center; width: 100%; }
-      .gmap-node-axis-name { font-size: 10px; font-weight: 800; color: rgba(201,168,76,0.75); letter-spacing: .05em; display: block; margin-bottom: 3px; }
+      .gmap-node-axis-name { font-size: 10px; font-weight: 800; color: rgba(200,164,90,0.75); letter-spacing: .05em; display: block; margin-bottom: 3px; }
       .gmap-node-text { font-size: 11px; color: rgba(232,228,220,0.72); line-height: 1.45; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
       .path-node.pn-done .gmap-node-text { text-decoration: line-through; color: #6b7280; }
       .path-node.pn-done .gmap-node-axis-name { opacity: 0.45; }
-      .gmap-now-badge { display: inline-flex; align-items: center; gap: 2px; font-size: 9px; font-weight: 800; color: #c9a84c; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.32); border-radius: 99px; padding: 1px 6px; white-space: nowrap; margin-bottom: 2px; }
+      .gmap-now-badge { display: inline-flex; align-items: center; gap: 2px; font-size: 9px; font-weight: 800; color: #c8a45a; background: rgba(200,164,90,0.12); border: 1px solid rgba(236,232,223,0.176); border-radius: 99px; padding: 1px 6px; white-space: nowrap; margin-bottom: 2px; }
       .gmap-baseline-chip { font-size: 8px; font-weight: 800; color: rgba(52,211,153,0.9); background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.28); border-radius: 99px; padding: 1px 5px; margin-left: 2px; vertical-align: middle; }
-      .gmap-habit-chip { font-size: 8px; font-weight: 800; color: rgba(201,168,76,0.9); background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); border-radius: 99px; padding: 1px 5px; margin-left: 2px; vertical-align: middle; }
+      .gmap-habit-chip { font-size: 8px; font-weight: 800; color: rgba(200,164,90,0.9); background: rgba(200,164,90,0.1); border: 1px solid rgba(236,232,223,0.165); border-radius: 99px; padding: 1px 5px; margin-left: 2px; vertical-align: middle; }
       .gmap-selfcheck-badge { font-size: 9px; font-weight: 700; color: rgba(52,211,153,0.85); background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); border-radius: 99px; padding: 1px 6px; display: inline-block; margin-bottom: 2px; }
       .path-node-detail { display: none; margin: 4px 0 8px; }
       .path-node-detail.pnd-open { display: block; }
       .gmap-detail-card { background: rgba(8,12,26,0.92); border: 1px solid rgba(232,228,220,0.12); border-radius: 12px; padding: 16px; margin: 0 4px; display: flex; flex-direction: column; gap: 10px; }
-      .path-node.pn-compass .gmap-detail-card { border-color: rgba(201,168,76,0.3); }
+      .path-node.pn-compass .gmap-detail-card { border-color: rgba(236,232,223,0.165); }
       .gmap-detail-title { font-size: 14px; font-weight: 700; color: rgba(232,228,220,0.90); line-height: 1.6; margin: 0; }
-      .curated-post-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.12); border-radius: 10px; text-decoration: none; }
-      .curated-post-card:hover { border-color: rgba(201,168,76,0.3); }
+      .curated-post-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #151b24; border: 1px solid rgba(232,228,220,0.12); border-radius: 10px; text-decoration: none; }
+      .curated-post-card:hover { border-color: rgba(236,232,223,0.165); }
       .curated-post-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
       .curated-post-body { flex: 1; min-width: 0; }
       .curated-post-label { font-size: 10px; color: rgba(232,228,220,0.40); margin: 0 0 2px; }
@@ -635,18 +635,18 @@ export default function NewMeNaviPage() {
       .confirmed-insights-chips { display: flex; flex-wrap: wrap; gap: 6px; }
       .confirmed-insight-chip { font-size: 11.5px; color: rgba(232,228,220,0.75); background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 99px; padding: 4px 10px; }
       .gmap-article-row { display: flex; justify-content: center; padding: 2px 8px; }
-      .gmap-article-node { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(10,15,30,0.45); border: 1px solid rgba(232,228,220,0.12); border-radius: 10px; text-decoration: none; width: 100%; max-width: 310px; }
-      .gmap-article-node:hover { border-color: rgba(201,168,76,0.3); }
+      .gmap-article-node { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #151b24; border: 1px solid rgba(232,228,220,0.12); border-radius: 10px; text-decoration: none; width: 100%; max-width: 310px; }
+      .gmap-article-node:hover { border-color: rgba(236,232,223,0.165); }
       .gmap-article-icon { font-size: 18px; flex-shrink: 0; }
       .gmap-article-body { flex: 1; min-width: 0; }
       .gmap-article-label { font-size: 10px; color: rgba(232,228,220,0.40); margin: 0 0 2px; }
       .gmap-article-title { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.75); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       /* === チャンク設計（ゴール勾配効果。2026-08-10）：次チャンクの要約カード === */
-      .navi-next-chunk-card { background: rgba(201,168,76,.06); border: 1px solid rgba(201,168,76,.18); border-radius: 12px; padding: 16px 18px; margin: 12px 0 4px; text-align: center; }
-      .navi-next-chunk-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .12em; color: rgba(201,168,76,0.55); text-transform: uppercase; margin: 0 0 6px; }
+      .navi-next-chunk-card { background: rgba(200,164,90,.06); border: 1px solid rgba(236,232,223,0.099); border-radius: 12px; padding: 16px 18px; margin: 12px 0 4px; text-align: center; }
+      .navi-next-chunk-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .12em; color: rgba(200,164,90,0.55); text-transform: uppercase; margin: 0 0 6px; }
       .navi-next-chunk-text { font-size: 14px; font-weight: 700; color: rgba(232,228,220,0.85); margin: 0 0 6px; }
       .navi-next-chunk-sub { font-size: 12px; color: #6b7280; line-height: 1.6; margin: 0; }
-      .navi-next-chunk-link { display: inline-block; margin-top: 10px; font-size: 12px; font-weight: 700; color: #c9a84c; text-decoration: none; }
+      .navi-next-chunk-link { display: inline-block; margin-top: 10px; font-size: 12px; font-weight: 700; color: #c8a45a; text-decoration: none; }
       .mirror-promo-strip { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(100,160,255,0.05); border: 1px solid rgba(100,160,255,0.2); border-radius: 10px; font-size: 12px; color: rgba(232,228,220,0.55); margin-bottom: 14px; }
       .mirror-promo-strip a { color: rgba(100,160,255,0.85); font-weight: 700; text-decoration: none; margin-left: auto; white-space: nowrap; }
       .navi-done-toggle { font-size: 12px; color: #9ca3af; background: none; border: none; cursor: pointer; padding: 0 0 10px; display: block; width: 100%; text-align: left; }
@@ -662,27 +662,27 @@ export default function NewMeNaviPage() {
 .mb-axis-name { font-weight: 700; color: rgba(232,228,220,0.8); min-width: 42px; }
 .mb-axis-level { font-weight: 600; min-width: 82px; }
 .mb-axis-placement { color: rgba(232,228,220,0.4); }
-.voyage-log { background: rgba(10,15,30,0.5); border: 1px solid rgba(201,168,76,0.2); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+.voyage-log { background: #151b24; border: 1px solid rgba(236,232,223,0.11); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
 .voyage-log-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.voyage-log-title { font-size: 10px; font-weight: 800; letter-spacing: .1em; color: rgba(201,168,76,0.55); text-transform: uppercase; margin: 0; }
+.voyage-log-title { font-size: 10px; font-weight: 800; letter-spacing: .1em; color: rgba(200,164,90,0.55); text-transform: uppercase; margin: 0; }
 .voyage-log-mirror { font-size: 10px; color: rgba(100,160,255,0.7); }
 .voyage-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
 .voyage-stat { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px 8px; text-align: center; }
-.voyage-stat-num { font-size: 24px; font-weight: 800; color: rgba(201,168,76,0.9); line-height: 1; display: block; margin-bottom: 3px; }
+.voyage-stat-num { font-size: 24px; font-weight: 800; color: rgba(200,164,90,0.9); line-height: 1; display: block; margin-bottom: 3px; }
 .voyage-stat-label { font-size: 9px; color: rgba(232,228,220,0.4); letter-spacing: .05em; }
 .voyage-recent-title { font-size: 10px; color: rgba(232,228,220,0.35); margin: 0 0 6px; }
 .voyage-recent-item { font-size: 11px; color: rgba(232,228,220,0.65); display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; line-height: 1.5; }
-.voyage-recent-check { color: rgba(201,168,76,0.7); flex-shrink: 0; font-size: 10px; }
+.voyage-recent-check { color: rgba(200,164,90,0.7); flex-shrink: 0; font-size: 10px; }
 
       /* ── 週次チェックイン ── */
-      .wcw { background: rgba(10,15,30,0.65); border: 1px solid rgba(201,168,76,0.22); border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; backdrop-filter: blur(8px); }
+      .wcw { background: #151b24; border: 1px solid rgba(236,232,223,0.121); border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; backdrop-filter: blur(8px); }
       .wcw.wcw-done { border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.04); }
-      .wcw-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(201,168,76,0.65); margin: 0 0 12px; }
-      .wcw-prev { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.08); border-radius: 8px; margin-bottom: 6px; }
+      .wcw-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(200,164,90,0.65); margin: 0 0 12px; }
+      .wcw-prev { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #151b24; border: 1px solid rgba(232,228,220,0.08); border-radius: 8px; margin-bottom: 6px; }
       .wcw-prev-label { font-size: 9px; font-weight: 800; letter-spacing: .08em; color: rgba(232,228,220,0.35); white-space: nowrap; text-transform: uppercase; }
       .wcw-prev-text { flex: 1; font-size: 11px; color: rgba(232,228,220,0.45); line-height: 1.4; }
       .wcw-prev-done { color: rgba(16,185,129,0.7); font-weight: 700; flex-shrink: 0; font-size: 12px; }
-      .wcw-prev-arrow { font-size: 11px; color: rgba(201,168,76,0.4); margin-bottom: 6px; }
+      .wcw-prev-arrow { font-size: 11px; color: rgba(200,164,90,0.4); margin-bottom: 6px; }
       .wcw-current { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
       .wcw-axis-icon { font-size: 24px; flex-shrink: 0; }
       .wcw-body { flex: 1; }
@@ -691,20 +691,20 @@ export default function NewMeNaviPage() {
       .wcw-check { font-size: 18px; color: #10b981; flex-shrink: 0; padding-top: 2px; }
       .wcw-note { font-size: 11px; color: rgba(232,228,220,0.35); margin: 0 0 10px; line-height: 1.5; }
       .wcw-done-msg { font-size: 12px; color: rgba(16,185,129,0.75); font-weight: 700; padding: 6px 0 0; margin: 0; }
-      .wcw-btn { display: block; width: 100%; padding: 10px; background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.3); border-radius: 8px; font-size: 13px; font-weight: 700; color: #c9a84c; cursor: pointer; font-family: inherit; transition: background .12s; }
-      .wcw-btn:hover { background: rgba(201,168,76,0.14); }
+      .wcw-btn { display: block; width: 100%; padding: 10px; background: rgba(200,164,90,0.08); border: 1px solid rgba(236,232,223,0.165); border-radius: 8px; font-size: 13px; font-weight: 700; color: #c8a45a; cursor: pointer; font-family: inherit; transition: background .12s; }
+      .wcw-btn:hover { background: rgba(200,164,90,0.14); }
       .wcw-continuity { margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(232,228,220,0.12); }
       .wcw-continuity-q { font-size: 12px; color: rgba(232,228,220,0.6); margin: 0 0 8px; line-height: 1.5; }
       .wcw-continuity-opts { display: flex; flex-wrap: wrap; gap: 6px; }
-      .wcw-continuity-opt { padding: 7px 10px; background: rgba(10,15,30,0.5); border: 1px solid rgba(232,228,220,0.15); border-radius: 8px; font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.65); cursor: pointer; font-family: inherit; transition: border-color .12s; }
-      .wcw-continuity-opt:hover { border-color: rgba(201,168,76,0.4); color: #c9a84c; }
-      .wcw-continuity-ack { font-size: 11px; color: rgba(201,168,76,0.7); margin: 12px 0 0; padding-top: 12px; border-top: 1px dashed rgba(232,228,220,0.12); line-height: 1.5; }
-      .axis-habit-banner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.22); border-radius: 10px; margin-bottom: 16px; }
+      .wcw-continuity-opt { padding: 7px 10px; background: #151b24; border: 1px solid rgba(232,228,220,0.15); border-radius: 8px; font-size: 11px; font-weight: 700; color: rgba(232,228,220,0.65); cursor: pointer; font-family: inherit; transition: border-color .12s; }
+      .wcw-continuity-opt:hover { border-color: rgba(236,232,223,0.22); color: #c8a45a; }
+      .wcw-continuity-ack { font-size: 11px; color: rgba(200,164,90,0.7); margin: 12px 0 0; padding-top: 12px; border-top: 1px dashed rgba(232,228,220,0.12); line-height: 1.5; }
+      .axis-habit-banner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: rgba(200,164,90,0.06); border: 1px solid rgba(236,232,223,0.121); border-radius: 10px; margin-bottom: 16px; }
       .axis-habit-banner-icon { font-size: 20px; flex-shrink: 0; }
       .axis-habit-banner-body { flex: 1; min-width: 0; }
       .axis-habit-banner-title { font-size: 12px; font-weight: 700; color: rgba(232,228,220,0.85); margin: 0 0 2px; line-height: 1.5; }
       .axis-habit-banner-desc { font-size: 10px; color: rgba(232,228,220,0.4); margin: 0; }
-      .axis-habit-banner-btn { font-size: 11px; font-weight: 700; padding: 7px 12px; background: rgba(201,168,76,0.1); border: 1px solid #c9a84c; color: #c9a84c; border-radius: 8px; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
+      .axis-habit-banner-btn { font-size: 11px; font-weight: 700; padding: 7px 12px; background: rgba(200,164,90,0.1); border: 1px solid rgba(236,232,223,0.3); color: #c8a45a; border-radius: 8px; text-decoration: none; white-space: nowrap; flex-shrink: 0; }
     `;
     document.head.appendChild(style);
 
@@ -728,9 +728,9 @@ export default function NewMeNaviPage() {
         const hasDiagData = !!(localStorage.getItem('fineme:diagnosis:latest') || localStorage.getItem('fineme:diagnosis:belle'));
         root.innerHTML = `
           <div style="min-height:50vh;display:flex;align-items:center;justify-content:center;padding:48px 20px">
-            <div style="max-width:480px;width:100%;background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.25);border-radius:18px;padding:40px 32px;text-align:center;box-shadow:0 4px 32px rgba(0,0,0,0.4);backdrop-filter:blur(8px)">
+            <div style="max-width:480px;width:100%;background:#151b24;border:1px solid rgba(236,232,223,0.138);border-radius:18px;padding:40px 32px;text-align:center;box-shadow:0 4px 32px rgba(0,0,0,0.4);backdrop-filter:blur(8px)">
               <div style="font-size:40px;margin:0 0 16px">🗺️</div>
-              <h2 style="font-family:'Noto Serif JP',Georgia,serif;font-size:18px;font-weight:700;color:rgba(232,228,220,0.90);margin:0 0 12px;line-height:1.6">
+              <h2 style="font-family:'Shippori Mincho',Georgia,serif;font-size:18px;font-weight:700;color:rgba(232,228,220,0.90);margin:0 0 12px;line-height:1.6">
                 New Me Mapはログイン後に表示されます
               </h2>
               ${hasDiagData
@@ -741,7 +741,7 @@ export default function NewMeNaviPage() {
                     8軸の現在地と変容ロードマップ（Fineme Compass）が<br>ここに届きます。まずログイン / 新規登録してください。
                   </p>`
               }
-              <a href="/login" style="display:block;width:100%;padding:15px 24px;background:#c9a84c;color:#0a0f1e;font-size:15px;font-weight:700;border-radius:6px;text-decoration:none;letter-spacing:.05em;margin-bottom:12px;box-sizing:border-box">
+              <a href="/login" style="display:block;width:100%;padding:15px 24px;background:#c8a45a;color:#0d1117;font-size:15px;font-weight:700;border-radius:6px;text-decoration:none;letter-spacing:.05em;margin-bottom:12px;box-sizing:border-box">
                 ログイン / 新規登録
               </a>
               <a href="${TRACK.diagnosis}" style="font-size:13px;color:rgba(232,228,220,0.40);text-decoration:none;border-bottom:1px solid rgba(232,228,220,0.15);padding-bottom:2px">
@@ -1028,9 +1028,9 @@ export default function NewMeNaviPage() {
           <div class="no-data-icon">📸</div>
           <h2 class="no-data-title">Mirrorのデータがあります</h2>
           <p class="no-data-text">Mirror分析の変容余地データから、<br>あなた専用の New Me Map を生成できます。</p>
-          <button id="mirror-map-gen-btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px;background:linear-gradient(135deg,#c9a84c,#e8c97a);border:none;border-radius:10px;color:#0a0f1e;cursor:pointer;font-family:inherit;box-shadow:0 6px 24px rgba(201,168,76,0.3)">📸 Mirrorデータでマップを生成 →</button>
+          <button id="mirror-map-gen-btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px;background:linear-gradient(135deg,#c8a45a,#e8c97a);border:none;border-radius:10px;color:#0d1117;cursor:pointer;font-family:inherit;box-shadow:0 6px 24px rgba(0,0,0,0.36)">📸 Mirrorデータでマップを生成 →</button>
           <p style="margin-top:14px;font-size:11px;color:rgba(232,228,220,0.3)">Me Scan（無料診断）を受けるとさらに精度が上がります</p>
-          <a href="${TRACK.diagnosis}" style="display:block;margin-top:8px;font-size:12px;color:rgba(201,168,76,0.55);text-decoration:none">Me Scanも受ける（推奨）→</a>
+          <a href="${TRACK.diagnosis}" style="display:block;margin-top:8px;font-size:12px;color:rgba(200,164,90,0.55);text-decoration:none">Me Scanも受ける（推奨）→</a>
         </div>`;
         document.getElementById('mirror-map-gen-btn')?.addEventListener('click', async (e) => {
           const btn = e.currentTarget;
@@ -1053,7 +1053,7 @@ export default function NewMeNaviPage() {
           <p class="no-data-text">Me Scanを受けるか、Mirrorで写真を分析すると、<br>あなただけの変容マップが生成されます。</p>
           <div style="display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:4px">
             <a href="${TRACK.diagnosis}" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px">Me Scanを受ける（無料）</a>
-            <a href="${TRACK.mirror}" style="font-size:13px;color:rgba(201,168,76,0.7);text-decoration:none">写真でMirror分析 →</a>
+            <a href="${TRACK.mirror}" style="font-size:13px;color:rgba(200,164,90,0.7);text-decoration:none">写真でMirror分析 →</a>
           </div>
         </div>`;
       }
@@ -1503,9 +1503,9 @@ export default function NewMeNaviPage() {
       const selfCheckValue = (step.isSelfCheck && bodyData[step.bodyDataKey])
         ? `<span class="selfcheck-value">✓ ${esc(Array.isArray(bodyData[step.bodyDataKey]) ? bodyData[step.bodyDataKey].join('・') : bodyData[step.bodyDataKey])}</span>`
         : '';
-      const badgeBg    = isCompassStep ? 'rgba(201,168,76,0.15)' : 'rgba(10,15,30,0.50)';
-      const badgeBorder = isCompassStep ? 'rgba(201,168,76,0.35)' : 'rgba(232,228,220,0.18)';
-      const badgeColor  = isCompassStep ? '#c9a84c' : 'rgba(232,228,220,0.55)';
+      const badgeBg    = isCompassStep ? 'rgba(200,164,90,0.15)' : 'rgba(13,17,23,0.50)';
+      const badgeBorder = isCompassStep ? 'rgba(200,164,90,0.35)' : 'rgba(232,228,220,0.18)';
+      const badgeColor  = isCompassStep ? '#c8a45a' : 'rgba(232,228,220,0.55)';
       const guideClass  = step.guide === 'HIGH' ? ' guide-high' : step.guide === 'MID' ? ' guide-mid' : '';
       return `
         <div class="step-card${isDone?' step-done':''}${isCompassStep?' step-compass':''}${step.isSelfCheck?' step-selfcheck':''}${guideClass}">
@@ -1785,13 +1785,13 @@ export default function NewMeNaviPage() {
       const nodesHtml = completedSection + activeHtml + nextChunkSection;
 
       const regenBtn = token ? `
-        <button id="navi-regen-btn" style="display:block;width:100%;padding:10px;background:rgba(10,15,30,0.5);border:1px solid rgba(232,228,220,0.12);border-radius:8px;color:rgba(232,228,220,0.4);font-size:11px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-top:24px;letter-spacing:.05em">
+        <button id="navi-regen-btn" style="display:block;width:100%;padding:10px;background:#151b24;border:1px solid rgba(232,228,220,0.12);border-radius:8px;color:rgba(232,228,220,0.4);font-size:11px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-top:24px;letter-spacing:.05em">
           ↻ 旅を再生成する
         </button>` : '';
 
       const AXIS_JA_MAP = { eyebrow:'眉', skin:'肌', hair:'髪', body:'体型', fashion:'服', hairremoval:'脱毛', teeth:'歯', nail:'爪', posture:'姿勢', color:'カラー', expression:'表情' };
       const PLACEMENT_MAP = { '高':'序盤に優先配置', '中':'中盤に配置', '低':'維持ステップのみ' };
-      const LEVEL_COLOR   = { '高':'#c9a84c', '中':'#60a5fa', '低':'#34d399' };
+      const LEVEL_COLOR   = { '高':'#c8a45a', '中':'#60a5fa', '低':'#34d399' };
       const mirrorBasisHtml = mirrorAnalysisAxes?.length
         ? (() => {
             const dateLabel = mirrorSessionDate
@@ -1883,16 +1883,16 @@ export default function NewMeNaviPage() {
         ${mirrorPromoBanner}
         <div style="margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-            <span style="font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(201,168,76,0.55);text-transform:uppercase">あなただけの変容の道</span>
+            <span style="font-size:10px;font-weight:800;letter-spacing:.1em;color:rgba(200,164,90,0.55);text-transform:uppercase">あなただけの変容の道</span>
             ${genDate ? `<span style="font-size:9px;color:rgba(232,228,220,0.25)">${genDate}生成</span>` : ''}
           </div>
-          <div style="background:rgba(10,15,30,0.4);border:1px solid rgba(201,168,76,0.12);border-radius:10px;padding:12px 14px">
+          <div style="background:#151b24;border:1px solid rgba(236,232,223,0.066);border-radius:10px;padding:12px 14px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
               <span style="font-size:11px;color:rgba(232,228,220,0.50)">今の一手：${totalDone} / ${activeChunkAllSteps.length}</span>
-              <span style="font-size:12px;font-weight:800;color:rgba(201,168,76,0.8)">${pct}%</span>
+              <span style="font-size:12px;font-weight:800;color:rgba(200,164,90,0.8)">${pct}%</span>
             </div>
             <div style="height:3px;background:rgba(232,228,220,0.08);border-radius:2px;overflow:hidden">
-              <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#c9a84c,#f5d78e);border-radius:2px;transition:width .4s"></div>
+              <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#c8a45a,#f5d78e);border-radius:2px;transition:width .4s"></div>
             </div>
           </div>
         </div>
@@ -1937,16 +1937,16 @@ export default function NewMeNaviPage() {
       const doneCount = Object.values(stepDone).filter(Boolean).length;
       const isReady       = doneCount >= 20;
       const isApproaching = doneCount >= 10;
-      const cardBg     = isApproaching ? 'linear-gradient(135deg,rgba(201,168,76,0.10),rgba(10,15,30,0.30))' : 'rgba(10,15,30,0.35)';
-      const cardBorder = isApproaching ? 'rgba(201,168,76,0.3)' : 'rgba(232,228,220,0.12)';
+      const cardBg     = isApproaching ? 'linear-gradient(135deg,rgba(200,164,90,0.10),rgba(13,17,23,0.30))' : 'rgba(13,17,23,0.35)';
+      const cardBorder = isApproaching ? 'rgba(200,164,90,0.3)' : 'rgba(232,228,220,0.12)';
       const stageReadinessHtml = isReady ? `
         <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:8px;margin-bottom:18px">
           <span style="font-size:16px">🎉</span><span style="font-size:12px;font-weight:700;color:rgba(52,211,153,0.95)">このステージへ進む準備ができています！</span>
         </div>` : isApproaching ? `
-        <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.22);border-radius:8px;margin-bottom:18px">
-          <span style="font-size:14px">🧭</span><span style="font-size:12px;font-weight:700;color:rgba(201,168,76,0.95)">変容が着実に進んでいます。もう少しで発揮のステージへ。</span>
+        <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(200,164,90,0.07);border:1px solid rgba(236,232,223,0.121);border-radius:8px;margin-bottom:18px">
+          <span style="font-size:14px">🧭</span><span style="font-size:12px;font-weight:700;color:rgba(200,164,90,0.95)">変容が着実に進んでいます。もう少しで発揮のステージへ。</span>
         </div>` : `
-        <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(10,15,30,0.40);border:1px dashed rgba(232,228,220,0.18);border-radius:8px;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:#151b24;border:1px dashed rgba(232,228,220,0.18);border-radius:8px;margin-bottom:18px">
           <span style="font-size:14px">🔒</span><span style="font-size:12px;color:rgba(232,228,220,0.50);line-height:1.6">まずは変容ルートを歩もう。変化が積み重なるほど、このステージが近づいてくる。</span>
         </div>`;
 
@@ -2030,27 +2030,27 @@ export default function NewMeNaviPage() {
       // Next Stage
       html += `
         <svg viewBox="0 0 100 32" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:32px;display:block;margin-top:16px">
-          <line x1="50" y1="0" x2="50" y2="32" stroke="rgba(201,168,76,0.45)" stroke-width="2" stroke-dasharray="5 4"/>
+          <line x1="50" y1="0" x2="50" y2="32" stroke="rgba(200,164,90,0.45)" stroke-width="2" stroke-dasharray="5 4"/>
         </svg>
         <div style="padding:16px 0 8px">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-            <div style="width:18px;height:1.5px;background:#c9a84c;flex-shrink:0;border-radius:1px"></div>
-            <span style="font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(201,168,76,0.7)">Next Stage</span>
-            <div style="flex:1;height:1px;background:repeating-linear-gradient(90deg,rgba(201,168,76,0.25) 0,rgba(201,168,76,0.25) 4px,transparent 4px,transparent 9px)"></div>
+            <div style="width:18px;height:1.5px;background:#c8a45a;flex-shrink:0;border-radius:1px"></div>
+            <span style="font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(200,164,90,0.7)">Next Stage</span>
+            <div style="flex:1;height:1px;background:repeating-linear-gradient(90deg,rgba(200,164,90,0.25) 0,rgba(200,164,90,0.25) 4px,transparent 4px,transparent 9px)"></div>
           </div>
-          <p style="font-family:'Noto Serif JP',Georgia,serif;font-size:16px;font-weight:800;color:rgba(232,228,220,0.95);margin:0 0 6px;line-height:1.5">変わった自分を、世界へ発揮するステージ</p>
+          <p style="font-family:'Shippori Mincho',Georgia,serif;font-size:16px;font-weight:800;color:rgba(232,228,220,0.95);margin:0 0 6px;line-height:1.5">変わった自分を、世界へ発揮するステージ</p>
           <p style="font-size:12px;color:rgba(232,228,220,0.60);line-height:1.7;margin:0 0 16px">変容は発揮することで初めて完成する。外見の変化を最大限に活かすステージへ。</p>
           ${stageReadinessHtml}
           <div style="display:flex;flex-direction:column;gap:12px">
             <a href="/search?category=photo" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none">
               <span style="font-size:26px;flex-shrink:0">📸</span>
-              <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Noto Serif JP',Georgia,serif">プロフィール写真撮影</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">変わった自分を、最高の一枚に。マッチングアプリの第一印象を決定的に変える。</p></div>
-              <span style="color:rgba(201,168,76,0.6);font-size:16px;flex-shrink:0">→</span>
+              <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Shippori Mincho',Georgia,serif">プロフィール写真撮影</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">変わった自分を、最高の一枚に。マッチングアプリの第一印象を決定的に変える。</p></div>
+              <span style="color:rgba(200,164,90,0.6);font-size:16px;flex-shrink:0">→</span>
             </a>
             <a href="/search?category=marriage" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none">
               <span style="font-size:26px;flex-shrink:0">💍</span>
-              <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Noto Serif JP',Georgia,serif">婚活サポート</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">自信がついた今が、出会いを本気にするタイミング。変容の先にある、本当の出会いへ。</p></div>
-              <span style="color:rgba(201,168,76,0.6);font-size:16px;flex-shrink:0">→</span>
+              <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Shippori Mincho',Georgia,serif">婚活サポート</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">自信がついた今が、出会いを本気にするタイミング。変容の先にある、本当の出会いへ。</p></div>
+              <span style="color:rgba(200,164,90,0.6);font-size:16px;flex-shrink:0">→</span>
             </a>
           </div>
         </div>`;
@@ -2061,7 +2061,7 @@ export default function NewMeNaviPage() {
     function connectorSvg(fromClass, toClass, done) {
       const POS = { 'gnr-left': 19, 'gnr-center': 50, 'gnr-right': 81 };
       const x1 = POS[fromClass] ?? 50, x2 = POS[toClass] ?? 50;
-      const color = done ? '#c9a84c' : 'rgba(201,168,76,0.30)';
+      const color = done ? '#c8a45a' : 'rgba(200,164,90,0.30)';
       const w = done ? '3' : '2';
       const dash = done ? '' : 'stroke-dasharray="7 5"';
       return `<svg viewBox="0 0 100 52" preserveAspectRatio="none" style="width:100%;height:52px;display:block;overflow:visible;margin:-2px 0"><path d="M${x1} 0 C${x1} 30 ${x2} 57 ${x2} 87" stroke="${color}" stroke-width="${w}" fill="none" ${dash} stroke-linecap="round"/></svg>`;
@@ -2100,7 +2100,7 @@ export default function NewMeNaviPage() {
         const x2 = r2.left + r2.width / 2 - containerRect.left;
         const y2 = r2.top + r2.height / 2 - containerRect.top;
         const isDone = circles[i].dataset.done === 'true';
-        const color = isDone ? '#c9a84c' : 'rgba(201,168,76,0.30)';
+        const color = isDone ? '#c8a45a' : 'rgba(200,164,90,0.30)';
         const w = isDone ? '3' : '2';
         const dash = isDone ? '' : 'stroke-dasharray="7 5"';
         // S字曲線: 中間y点で水平方向に曲げてDuolingo風の滑らかな道に
@@ -2191,10 +2191,10 @@ export default function NewMeNaviPage() {
 
       // ── フォールバック表示 + 生成CTAバナー ──
       const genCtaBanner = token ? `
-        <div id="navi-gen-banner" style="margin-bottom:20px;padding:16px 18px;background:linear-gradient(135deg,rgba(201,168,76,0.10),rgba(10,15,30,0.30));border:1px solid rgba(201,168,76,0.30);border-radius:14px">
-          <p style="font-size:12px;font-weight:800;color:rgba(201,168,76,0.85);margin:0 0 4px;letter-spacing:.04em">✨ あなただけの変容の道を生成できます</p>
+        <div id="navi-gen-banner" style="margin-bottom:20px;padding:16px 18px;background:linear-gradient(135deg,rgba(200,164,90,0.10),rgba(13,17,23,0.30));border:1px solid rgba(236,232,223,0.165);border-radius:14px">
+          <p style="font-size:12px;font-weight:800;color:rgba(200,164,90,0.85);margin:0 0 4px;letter-spacing:.04em">✨ あなただけの変容の道を生成できます</p>
           <p style="font-size:11px;color:rgba(232,228,220,0.55);margin:0 0 12px;line-height:1.6">Me Scanの診断データをAIが読み取り、この人だけの順番と内容でステップを生成します。</p>
-          <button id="navi-regen-btn" style="display:block;width:100%;padding:11px;background:rgba(201,168,76,0.18);border:1px solid rgba(201,168,76,0.45);border-radius:8px;color:#c9a84c;font-size:13px;font-weight:800;cursor:pointer;font-family:'Noto Sans JP',sans-serif;letter-spacing:.05em">
+          <button id="navi-regen-btn" style="display:block;width:100%;padding:11px;background:rgba(200,164,90,0.18);border:1px solid rgba(236,232,223,0.248);border-radius:8px;color:#c8a45a;font-size:13px;font-weight:800;cursor:pointer;font-family:'Noto Sans JP',sans-serif;letter-spacing:.05em">
             🧭 変容の道を生成する
           </button>
         </div>` : '';
@@ -2262,7 +2262,7 @@ export default function NewMeNaviPage() {
                   <p class="gmap-article-label">この一歩を踏み出す前に読む</p>
                   <p class="gmap-article-title">${esc(art.title)}</p>
                 </div>
-                <span style="color:rgba(201,168,76,0.6);font-size:14px;flex-shrink:0">→</span>
+                <span style="color:rgba(200,164,90,0.6);font-size:14px;flex-shrink:0">→</span>
               </a>
             </div>`;
           }
@@ -2280,33 +2280,33 @@ export default function NewMeNaviPage() {
       const doneCount = Object.values(stepDone).filter(Boolean).length;
       const isReady = doneCount >= 20;
       const isApproaching = doneCount >= 10;
-      const cardBg = isApproaching ? 'linear-gradient(135deg,rgba(201,168,76,0.10),rgba(10,15,30,0.30))' : 'rgba(10,15,30,0.35)';
-      const cardBorder = isApproaching ? 'rgba(201,168,76,0.3)' : 'rgba(232,228,220,0.12)';
+      const cardBg = isApproaching ? 'linear-gradient(135deg,rgba(200,164,90,0.10),rgba(13,17,23,0.30))' : 'rgba(13,17,23,0.35)';
+      const cardBorder = isApproaching ? 'rgba(200,164,90,0.3)' : 'rgba(232,228,220,0.12)';
       const stageReadinessHtml = isReady
         ? `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:8px;margin-bottom:18px"><span style="font-size:16px">🎉</span><span style="font-size:12px;font-weight:700;color:rgba(52,211,153,0.95)">このステージへ進む準備ができています！</span></div>`
         : isApproaching
-        ? `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.22);border-radius:8px;margin-bottom:18px"><span style="font-size:14px">🧭</span><span style="font-size:12px;font-weight:700;color:rgba(201,168,76,0.95)">変容が着実に進んでいます。もう少しで発揮のステージへ。</span></div>`
-        : `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(10,15,30,0.40);border:1px dashed rgba(232,228,220,0.18);border-radius:8px;margin-bottom:18px"><span style="font-size:14px">🔒</span><span style="font-size:12px;color:rgba(232,228,220,0.50);line-height:1.6">まずは変容ルートを歩もう。変化が積み重なるほど、このステージが近づいてくる。</span></div>`;
-      html += `<svg viewBox="0 0 100 32" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:32px;display:block;margin-top:8px"><line x1="50" y1="0" x2="50" y2="32" stroke="rgba(201,168,76,0.45)" stroke-width="2" stroke-dasharray="5 4"/></svg>
+        ? `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(200,164,90,0.07);border:1px solid rgba(236,232,223,0.121);border-radius:8px;margin-bottom:18px"><span style="font-size:14px">🧭</span><span style="font-size:12px;font-weight:700;color:rgba(200,164,90,0.95)">変容が着実に進んでいます。もう少しで発揮のステージへ。</span></div>`
+        : `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:#151b24;border:1px dashed rgba(232,228,220,0.18);border-radius:8px;margin-bottom:18px"><span style="font-size:14px">🔒</span><span style="font-size:12px;color:rgba(232,228,220,0.50);line-height:1.6">まずは変容ルートを歩もう。変化が積み重なるほど、このステージが近づいてくる。</span></div>`;
+      html += `<svg viewBox="0 0 100 32" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:32px;display:block;margin-top:8px"><line x1="50" y1="0" x2="50" y2="32" stroke="rgba(200,164,90,0.45)" stroke-width="2" stroke-dasharray="5 4"/></svg>
         <div style="padding:16px 0 8px">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-            <div style="width:18px;height:1.5px;background:#c9a84c;flex-shrink:0;border-radius:1px"></div>
-            <span style="font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(201,168,76,0.7)">Next Stage</span>
-            <div style="flex:1;height:1px;background:repeating-linear-gradient(90deg,rgba(201,168,76,0.25) 0,rgba(201,168,76,0.25) 4px,transparent 4px,transparent 9px)"></div>
+            <div style="width:18px;height:1.5px;background:#c8a45a;flex-shrink:0;border-radius:1px"></div>
+            <span style="font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(200,164,90,0.7)">Next Stage</span>
+            <div style="flex:1;height:1px;background:repeating-linear-gradient(90deg,rgba(200,164,90,0.25) 0,rgba(200,164,90,0.25) 4px,transparent 4px,transparent 9px)"></div>
           </div>
-          <p style="font-family:'Noto Serif JP',Georgia,serif;font-size:16px;font-weight:800;color:rgba(232,228,220,0.95);margin:0 0 6px;line-height:1.5">変わった自分を、世界へ発揮するステージ</p>
+          <p style="font-family:'Shippori Mincho',Georgia,serif;font-size:16px;font-weight:800;color:rgba(232,228,220,0.95);margin:0 0 6px;line-height:1.5">変わった自分を、世界へ発揮するステージ</p>
           <p style="font-size:12px;color:rgba(232,228,220,0.60);line-height:1.7;margin:0 0 16px">変容は発揮することで初めて完成する。外見の変化を最大限に活かすステージへ。</p>
           ${stageReadinessHtml}
           <div style="display:flex;flex-direction:column;gap:12px">
             <a href="/search?category=photo" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none">
               <span style="font-size:26px;flex-shrink:0">📸</span>
-              <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Noto Serif JP',Georgia,serif">プロフィール写真撮影</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">変わった自分を、最高の一枚に。マッチングアプリの第一印象を決定的に変える。</p></div>
-              <span style="color:rgba(201,168,76,0.6);font-size:16px;flex-shrink:0">→</span>
+              <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Shippori Mincho',Georgia,serif">プロフィール写真撮影</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">変わった自分を、最高の一枚に。マッチングアプリの第一印象を決定的に変える。</p></div>
+              <span style="color:rgba(200,164,90,0.6);font-size:16px;flex-shrink:0">→</span>
             </a>
             <a href="/search?category=marriage" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none">
               <span style="font-size:26px;flex-shrink:0">💍</span>
-              <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Noto Serif JP',Georgia,serif">婚活サポート</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">自信がついた今が、出会いを本気にするタイミング。変容の先にある、本当の出会いへ。</p></div>
-              <span style="color:rgba(201,168,76,0.6);font-size:16px;flex-shrink:0">→</span>
+              <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Shippori Mincho',Georgia,serif">婚活サポート</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">自信がついた今が、出会いを本気にするタイミング。変容の先にある、本当の出会いへ。</p></div>
+              <span style="color:rgba(200,164,90,0.6);font-size:16px;flex-shrink:0">→</span>
             </a>
           </div>
         </div>`;
@@ -2546,11 +2546,11 @@ export default function NewMeNaviPage() {
         .filter(v => GOAL_SCENE_LABELS[v])
         .map(v => {
           const g = GOAL_SCENE_LABELS[v];
-          return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:rgba(201,168,76,0.09);border:1px solid rgba(201,168,76,0.22);color:rgba(232,228,220,0.80);white-space:nowrap">${esc(g.icon)} ${esc(g.label)}</span>`;
+          return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:rgba(200,164,90,0.09);border:1px solid rgba(236,232,223,0.121);color:rgba(232,228,220,0.80);white-space:nowrap">${esc(g.icon)} ${esc(g.label)}</span>`;
         }).join('');
       if (!pills) return '';
-      return `<div style="margin:0 0 16px;padding:10px 14px;background:rgba(10,15,30,0.5);border:1px solid rgba(201,168,76,0.15);border-radius:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:10px;font-weight:800;letter-spacing:.08em;color:rgba(201,168,76,0.55);white-space:nowrap;text-transform:uppercase">変容ゴール</span>
+      return `<div style="margin:0 0 16px;padding:10px 14px;background:#151b24;border:1px solid rgba(236,232,223,0.083);border-radius:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:10px;font-weight:800;letter-spacing:.08em;color:rgba(200,164,90,0.55);white-space:nowrap;text-transform:uppercase">変容ゴール</span>
         <div style="display:flex;flex-wrap:wrap;gap:6px">${pills}</div>
       </div>`;
     }
@@ -2657,7 +2657,7 @@ export default function NewMeNaviPage() {
         <div class="compass-strip-body">
           <p class="compass-strip-label">Fineme Compass — 次の一手</p>
           <p class="compass-strip-text">${esc(shortText)}</p>
-          <p style="font-size:11px;color:rgba(201,168,76,0.55);margin:3px 0 0">${esc(nextDef.icon)} ${esc(nextDef.label)}</p>
+          <p style="font-size:11px;color:rgba(200,164,90,0.55);margin:3px 0 0">${esc(nextDef.icon)} ${esc(nextDef.label)}</p>
         </div>
         <a href="#sections-container" class="compass-strip-cta" onclick="event.preventDefault();document.getElementById('sections-container')?.scrollIntoView({behavior:'smooth'})">見る</a>
       </div>`;
@@ -3118,7 +3118,7 @@ export default function NewMeNaviPage() {
                 </div>
                 <div style="padding-top:12px">
                   <span class="milestone-goal-tag">ゴール</span>
-                  <p class="milestone-text" style="font-weight:700;color:#c9a84c">${esc(idealGoalText)}</p>
+                  <p class="milestone-text" style="font-weight:700;color:#c8a45a">${esc(idealGoalText)}</p>
                 </div>
               </div>
             </div>
@@ -3157,7 +3157,7 @@ export default function NewMeNaviPage() {
         const x1 = getNodeX(fromIdx);
         const x2 = getNodeX(toIdx);
         return `<div style="margin:-2px 0;overflow:visible"><svg viewBox="0 0 100 36" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:36px;display:block;overflow:visible">
-          <line x1="${x1}" y1="0" x2="${x2}" y2="36" stroke="rgba(201,168,76,0.65)" stroke-width="2" stroke-dasharray="5 4"/>
+          <line x1="${x1}" y1="0" x2="${x2}" y2="36" stroke="rgba(200,164,90,0.65)" stroke-width="2" stroke-dasharray="5 4"/>
         </svg></div>`;
       }
 
@@ -3166,11 +3166,11 @@ export default function NewMeNaviPage() {
       const startHtml = `
         <div style="position:relative;height:64px">
           <svg viewBox="0 0 100 64" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%">
-            <line x1="${firstX}" y1="40" x2="${firstX}" y2="64" stroke="rgba(201,168,76,0.55)" stroke-width="2" stroke-dasharray="5 4"/>
+            <line x1="${firstX}" y1="40" x2="${firstX}" y2="64" stroke="rgba(200,164,90,0.55)" stroke-width="2" stroke-dasharray="5 4"/>
           </svg>
           <div style="position:absolute;top:4px;left:${firstX}%;transform:translateX(-50%);text-align:center;line-height:1.2;pointer-events:none">
             <div style="font-size:24px">🏁</div>
-            <div style="font-size:9px;font-weight:800;letter-spacing:.1em;color:rgba(201,168,76,0.7);text-transform:uppercase;margin-top:2px">出発点</div>
+            <div style="font-size:9px;font-weight:800;letter-spacing:.1em;color:rgba(200,164,90,0.7);text-transform:uppercase;margin-top:2px">出発点</div>
           </div>
         </div>
       `;
@@ -3186,11 +3186,11 @@ export default function NewMeNaviPage() {
       const lastX = routeOrder.length > 0 ? getNodeX(routeOrder.length - 1) : 50;
       html += `
         <svg viewBox="0 0 100 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:40px;display:block;margin-top:-2px">
-          <line x1="${lastX}" y1="0" x2="50" y2="38" stroke="rgba(201,168,76,0.55)" stroke-width="2" stroke-dasharray="5 4"/>
+          <line x1="${lastX}" y1="0" x2="50" y2="38" stroke="rgba(200,164,90,0.55)" stroke-width="2" stroke-dasharray="5 4"/>
         </svg>
         <div style="text-align:center;padding:4px 0 28px">
           <div style="font-size:24px;margin-bottom:4px">⭐</div>
-          <p style="font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(201,168,76,0.7);margin:0 0 4px">ゴール</p>
+          <p style="font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(200,164,90,0.7);margin:0 0 4px">ゴール</p>
           <p style="font-size:14px;font-weight:700;color:rgba(232,228,220,0.90);margin:0">${esc(overallGoal)}</p>
         </div>
       `;
@@ -3206,34 +3206,34 @@ export default function NewMeNaviPage() {
           <span style="font-size:12px;font-weight:700;color:rgba(52,211,153,0.95)">このステージへ進む準備ができています！</span>
         </div>
       ` : isApproaching ? `
-        <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.22);border-radius:8px;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(200,164,90,0.07);border:1px solid rgba(236,232,223,0.121);border-radius:8px;margin-bottom:18px">
           <span style="font-size:14px">🧭</span>
-          <span style="font-size:12px;font-weight:700;color:rgba(201,168,76,0.95)">変容が着実に進んでいます。もう少しで発揮のステージへ。</span>
+          <span style="font-size:12px;font-weight:700;color:rgba(200,164,90,0.95)">変容が着実に進んでいます。もう少しで発揮のステージへ。</span>
         </div>
       ` : `
-        <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(10,15,30,0.40);border:1px dashed rgba(232,228,220,0.18);border-radius:8px;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:#151b24;border:1px dashed rgba(232,228,220,0.18);border-radius:8px;margin-bottom:18px">
           <span style="font-size:14px">🔒</span>
           <span style="font-size:12px;color:rgba(232,228,220,0.50);line-height:1.6">まずは上の変容ルートを歩もう。変化が積み重なるほど、このステージが近づいてくる。</span>
         </div>
       `;
 
-      const cardBg    = isApproaching ? 'linear-gradient(135deg,rgba(201,168,76,0.10),rgba(10,15,30,0.30))' : 'rgba(10,15,30,0.35)';
-      const cardBorder = isApproaching ? 'rgba(201,168,76,0.3)' : 'rgba(232,228,220,0.12)';
+      const cardBg    = isApproaching ? 'linear-gradient(135deg,rgba(200,164,90,0.10),rgba(13,17,23,0.30))' : 'rgba(13,17,23,0.35)';
+      const cardBorder = isApproaching ? 'rgba(200,164,90,0.3)' : 'rgba(232,228,220,0.12)';
 
       html += `
         <svg viewBox="0 0 100 32" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:32px;display:block">
-          <line x1="50" y1="0" x2="50" y2="32" stroke="rgba(201,168,76,0.45)" stroke-width="2" stroke-dasharray="5 4"/>
+          <line x1="50" y1="0" x2="50" y2="32" stroke="rgba(200,164,90,0.45)" stroke-width="2" stroke-dasharray="5 4"/>
         </svg>
 
         <div style="padding:20px 0 8px">
           <!-- sec-label -->
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-            <div style="width:18px;height:1.5px;background:#c9a84c;flex-shrink:0;border-radius:1px"></div>
-            <span style="font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(201,168,76,0.7)">Next Stage</span>
-            <div style="flex:1;height:1px;background:repeating-linear-gradient(90deg,rgba(201,168,76,0.25) 0,rgba(201,168,76,0.25) 4px,transparent 4px,transparent 9px)"></div>
+            <div style="width:18px;height:1.5px;background:#c8a45a;flex-shrink:0;border-radius:1px"></div>
+            <span style="font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(200,164,90,0.7)">Next Stage</span>
+            <div style="flex:1;height:1px;background:repeating-linear-gradient(90deg,rgba(200,164,90,0.25) 0,rgba(200,164,90,0.25) 4px,transparent 4px,transparent 9px)"></div>
           </div>
 
-          <p style="font-family:'Noto Serif JP',Georgia,serif;font-size:16px;font-weight:800;color:rgba(232,228,220,0.95);margin:0 0 6px;line-height:1.5">変わった自分を、世界へ発揮するステージ</p>
+          <p style="font-family:'Shippori Mincho',Georgia,serif;font-size:16px;font-weight:800;color:rgba(232,228,220,0.95);margin:0 0 6px;line-height:1.5">変わった自分を、世界へ発揮するステージ</p>
           <p style="font-size:12px;color:rgba(232,228,220,0.60);line-height:1.7;margin:0 0 16px">変容は発揮することで初めて完成する。外見の変化を最大限に活かすステージへ。</p>
 
           ${stageReadinessHtml}
@@ -3242,18 +3242,18 @@ export default function NewMeNaviPage() {
             <a href="/search?category=photo" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none;transition:border-color .2s">
               <span style="font-size:26px;flex-shrink:0">📸</span>
               <div style="flex:1">
-                <p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Noto Serif JP',Georgia,serif">プロフィール写真撮影</p>
+                <p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Shippori Mincho',Georgia,serif">プロフィール写真撮影</p>
                 <p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">変わった自分を、最高の一枚に。マッチングアプリの第一印象を決定的に変える。</p>
               </div>
-              <span style="color:rgba(201,168,76,0.6);font-size:16px;flex-shrink:0">→</span>
+              <span style="color:rgba(200,164,90,0.6);font-size:16px;flex-shrink:0">→</span>
             </a>
             <a href="/search?category=marriage" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none;transition:border-color .2s">
               <span style="font-size:26px;flex-shrink:0">💍</span>
               <div style="flex:1">
-                <p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Noto Serif JP',Georgia,serif">婚活サポート</p>
+                <p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Shippori Mincho',Georgia,serif">婚活サポート</p>
                 <p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">自信がついた今が、出会いを本気にするタイミング。変容の先にある、本当の出会いへ。</p>
               </div>
-              <span style="color:rgba(201,168,76,0.6);font-size:16px;flex-shrink:0">→</span>
+              <span style="color:rgba(200,164,90,0.6);font-size:16px;flex-shrink:0">→</span>
             </a>
           </div>
         </div>
@@ -3310,7 +3310,7 @@ export default function NewMeNaviPage() {
             <a href="/mypage/log" class="sl-widget-link">管理する →</a>
           </div>
           <p class="sl-widget-empty-text">📖 通っているサービスをまだ登録していません。<br>
-            <a href="/mypage/log" style="color:#c9a84c;text-decoration:underline">登録して変容の旅を一元管理しよう</a>
+            <a href="/mypage/log" style="color:#c8a45a;text-decoration:underline">登録して変容の旅を一元管理しよう</a>
           </p>
         </div>`;
       }
@@ -3463,16 +3463,16 @@ export default function NewMeNaviPage() {
         const isDone   = status === 'done';
         const isActive = status === 'active';
 
-        const fillColor  = isCompass || isDone ? '#c9a84c' : isActive ? '#3b82f6' : null;
-        const nodeStroke = isCompass ? '#c9a84c' : isDone ? 'rgba(201,168,76,0.45)' : isActive ? 'rgba(59,130,246,0.4)' : 'rgba(232,228,220,0.14)';
-        const nodeFill   = isCompass ? 'rgba(201,168,76,0.13)' : isDone ? 'rgba(201,168,76,0.06)' : isActive ? 'rgba(59,130,246,0.07)' : 'rgba(10,15,30,0.5)';
+        const fillColor  = isCompass || isDone ? '#c8a45a' : isActive ? '#3b82f6' : null;
+        const nodeStroke = isCompass ? '#c8a45a' : isDone ? 'rgba(200,164,90,0.45)' : isActive ? 'rgba(59,130,246,0.4)' : 'rgba(232,228,220,0.14)';
+        const nodeFill   = isCompass ? 'rgba(200,164,90,0.13)' : isDone ? 'rgba(200,164,90,0.06)' : isActive ? 'rgba(59,130,246,0.07)' : 'rgba(13,17,23,0.5)';
         const nodeR      = isCompass ? 17 : 13;
-        const labelFill  = isCompass ? '#c9a84c' : isDone ? 'rgba(52,211,153,0.75)' : 'rgba(232,228,220,0.55)';
+        const labelFill  = isCompass ? '#c8a45a' : isDone ? 'rgba(52,211,153,0.75)' : 'rgba(232,228,220,0.55)';
         const labelWt    = isCompass ? '800' : '600';
 
         const bgSpoke  = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(232,228,220,0.10)" stroke-width="2" stroke-dasharray="3 3"/>`;
         const fillSpoke = fillColor && pct > 0 ? `<line x1="${x1}" y1="${y1}" x2="${xf}" y2="${yf}" stroke="${fillColor}" stroke-width="${isCompass ? 3.5 : 2.5}" stroke-linecap="round"/>` : '';
-        const glowRing  = isCompass ? `<circle cx="${x2}" cy="${y2}" r="${nodeR + 7}" fill="none" stroke="rgba(201,168,76,0.18)" stroke-width="1.5" stroke-dasharray="3 2"/>` : '';
+        const glowRing  = isCompass ? `<circle cx="${x2}" cy="${y2}" r="${nodeR + 7}" fill="none" stroke="rgba(200,164,90,0.18)" stroke-width="1.5" stroke-dasharray="3 2"/>` : '';
         const iconOrCheck = isDone
           ? `<text x="${x2}" y="${(parseFloat(y2)+4).toFixed(1)}" text-anchor="middle" font-size="11" fill="rgba(52,211,153,0.75)">✓</text>`
           : `<text x="${x2}" y="${(parseFloat(y2)+5).toFixed(1)}" text-anchor="middle" font-size="${isCompass ? 15 : 13}">${def.icon}</text>`;
@@ -3502,9 +3502,9 @@ export default function NewMeNaviPage() {
         <div class="journey-map-wrap">
           <svg viewBox="0 0 300 300" class="journey-map-svg">
             ${spokes}
-            <circle cx="${cx}" cy="${cy}" r="24" fill="rgba(201,168,76,0.07)" stroke="rgba(201,168,76,0.35)" stroke-width="1.5"/>
+            <circle cx="${cx}" cy="${cy}" r="24" fill="rgba(200,164,90,0.07)" stroke="rgba(200,164,90,0.35)" stroke-width="1.5"/>
             <text x="${cx}" y="${cy - 5}" text-anchor="middle" font-size="8" fill="rgba(232,228,220,0.4)">変容中</text>
-            <text x="${cx}" y="${cy + 9}" text-anchor="middle" font-size="11" fill="rgba(201,168,76,0.9)" font-weight="700">${overallPct}%</text>
+            <text x="${cx}" y="${cy + 9}" text-anchor="middle" font-size="11" fill="rgba(200,164,90,0.9)" font-weight="700">${overallPct}%</text>
           </svg>
         </div>`;
     }
@@ -3659,8 +3659,8 @@ export default function NewMeNaviPage() {
         <p class="wcw-eyebrow">ふと、聞かせてください</p>
         <p style="font-size:13px;color:rgba(232,228,220,0.75);line-height:1.7;margin:0 0 12px">最近、誰かに少しでも優しくできた瞬間はありましたか？</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="kindness-checkin-btn" data-answer="yes" style="flex:1;min-width:100px;padding:10px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:8px;font-size:13px;font-weight:700;color:#c9a84c;cursor:pointer;font-family:inherit">あった</button>
-          <button class="kindness-checkin-btn" data-answer="no" style="flex:1;min-width:100px;padding:10px;background:rgba(10,15,30,0.5);border:1px solid rgba(232,228,220,0.15);border-radius:8px;font-size:13px;font-weight:700;color:rgba(232,228,220,0.6);cursor:pointer;font-family:inherit">特に無かった</button>
+          <button class="kindness-checkin-btn" data-answer="yes" style="flex:1;min-width:100px;padding:10px;background:rgba(200,164,90,0.08);border:1px solid rgba(236,232,223,0.165);border-radius:8px;font-size:13px;font-weight:700;color:#c8a45a;cursor:pointer;font-family:inherit">あった</button>
+          <button class="kindness-checkin-btn" data-answer="no" style="flex:1;min-width:100px;padding:10px;background:#151b24;border:1px solid rgba(232,228,220,0.15);border-radius:8px;font-size:13px;font-weight:700;color:rgba(232,228,220,0.6);cursor:pointer;font-family:inherit">特に無かった</button>
         </div>
         <button id="kindness-checkin-skip" style="display:block;width:100%;text-align:center;margin-top:8px;font-size:11px;color:rgba(232,228,220,0.3);background:none;border:none;cursor:pointer;font-family:inherit">今は答えない</button>
       </div>`;
@@ -3669,13 +3669,13 @@ export default function NewMeNaviPage() {
     const html = `
       <div class="navi-wrap">
       <div class="navi-header">
-        <p class="navi-header-eyebrow">New Me Navi &nbsp;<a href="/mypage/map" style="font-size:9px;font-weight:700;color:rgba(201,168,76,0.6);text-decoration:none;border:1px solid rgba(201,168,76,0.22);padding:2px 8px;border-radius:99px;vertical-align:middle;letter-spacing:.06em">🧭 部位マップ</a></p>
+        <p class="navi-header-eyebrow">New Me Navi &nbsp;<a href="/mypage/map" style="font-size:9px;font-weight:700;color:rgba(200,164,90,0.6);text-decoration:none;border:1px solid rgba(236,232,223,0.121);padding:2px 8px;border-radius:99px;vertical-align:middle;letter-spacing:.06em">🧭 部位マップ</a></p>
         <div class="navi-header-badge">🧭 ${naviStepsData ? 'あなただけの変容ロードマップ' : '行動タイプ別ロードマップ'}</div>
         <h1>ゴール：<em>${esc(overallGoal)}</em></h1>
         <p class="navi-header-sub">${naviStepsData ? 'Me Scanをもとに生成された、あなただけの変容の道。' : '「今すぐ動ける」から始めよう。<br>Compassが指す軸のステップが最優先で表示される。'}</p>
         ${(() => { let _done, _total; if (naviStepsData?.steps?.length) { _total = naviStepsData.steps.length; _done = naviStepsData.steps.filter(s => stepDone[s.id]).length; } else { const _all = flattenAllSteps(); _done = _all.filter(s=>s.isDone).length; _total = _all.length; } const _pct = _total > 0 ? Math.round(_done/_total*100) : 0; return `<div class="progress-bar-wrap"><div class="progress-bar-label"><span class="progress-bar-label-text">変容の進捗</span><span class="progress-bar-pct">${_pct}%</span></div><div class="progress-bar-track"><div class="progress-bar-fill" style="width:${_pct}%"></div></div><p class="progress-bar-sub">${_done} / ${_total} ステップ完了</p></div>`; })()}
-        <svg viewBox="0 0 80 80" width="68" height="68" style="position:absolute;top:14px;right:14px;z-index:1;opacity:0.17" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="37" fill="none" stroke="#c9a84c" stroke-width="0.8"/><circle cx="40" cy="40" r="28" fill="none" stroke="#c9a84c" stroke-width="0.4"/><line x1="40" y1="3" x2="40" y2="77" stroke="#c9a84c" stroke-width="0.8"/><line x1="3" y1="40" x2="77" y2="40" stroke="#c9a84c" stroke-width="0.8"/><line x1="14" y1="14" x2="66" y2="66" stroke="#c9a84c" stroke-width="0.5"/><line x1="66" y1="14" x2="14" y2="66" stroke="#c9a84c" stroke-width="0.5"/><polygon points="40,4 37,23 40,19 43,23" fill="#c9a84c"/><polygon points="40,76 37,57 40,61 43,57" fill="#c9a84c" opacity="0.4"/><polygon points="76,40 57,37 61,40 57,43" fill="#c9a84c" opacity="0.4"/><polygon points="4,40 23,37 19,40 23,43" fill="#c9a84c" opacity="0.4"/><circle cx="40" cy="40" r="5" fill="none" stroke="#c9a84c" stroke-width="1.2"/><circle cx="40" cy="40" r="2" fill="#c9a84c"/></svg>
-        <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(201,168,76,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
+        <svg viewBox="0 0 80 80" width="68" height="68" style="position:absolute;top:14px;right:14px;z-index:1;opacity:0.17" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="37" fill="none" stroke="#c8a45a" stroke-width="0.8"/><circle cx="40" cy="40" r="28" fill="none" stroke="#c8a45a" stroke-width="0.4"/><line x1="40" y1="3" x2="40" y2="77" stroke="#c8a45a" stroke-width="0.8"/><line x1="3" y1="40" x2="77" y2="40" stroke="#c8a45a" stroke-width="0.8"/><line x1="14" y1="14" x2="66" y2="66" stroke="#c8a45a" stroke-width="0.5"/><line x1="66" y1="14" x2="14" y2="66" stroke="#c8a45a" stroke-width="0.5"/><polygon points="40,4 37,23 40,19 43,23" fill="#c8a45a"/><polygon points="40,76 37,57 40,61 43,57" fill="#c8a45a" opacity="0.4"/><polygon points="76,40 57,37 61,40 57,43" fill="#c8a45a" opacity="0.4"/><polygon points="4,40 23,37 19,40 23,43" fill="#c8a45a" opacity="0.4"/><circle cx="40" cy="40" r="5" fill="none" stroke="#c8a45a" stroke-width="1.2"/><circle cx="40" cy="40" r="2" fill="#c8a45a"/></svg>
+        <div style="position:absolute;bottom:14px;right:18px;font-size:8px;font-family:'Courier New',monospace;color:rgba(200,164,90,0.42);letter-spacing:.07em;z-index:1">N 35°40′ / E 139°46′</div>
       </div>
 
       <div id="service-log-widget">
@@ -3692,7 +3692,7 @@ export default function NewMeNaviPage() {
 
       ${buildKindnessCheckinHtml()}
 
-      ${(() => { const _mDef = AREA_DEFS[compassFirst] || {}; if (!_mDef.label) return ''; return `<div style="margin:0 0 16px;padding:16px 18px;background:rgba(10,15,30,0.65);border:1px solid rgba(201,168,76,0.28);border-radius:12px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(8px)"><span style="font-size:26px;flex-shrink:0">🪞</span><div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px;line-height:1.55">${esc(_mDef.icon||'')} ${esc(_mDef.label)}が、あなたの最初の一手。<br>今の${esc(_mDef.label)}、写真1枚で確かめてみる？</p><p style="font-size:11px;color:rgba(232,228,220,0.4);margin:0">写真は保存しません</p></div><a href="${TRACK.mirror}" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(201,168,76,0.1);border:1.5px solid #c9a84c;color:#c9a84c;border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">Mirror<br><span style="font-size:10px;font-weight:600">¥500</span></a></div>`; })()}
+      ${(() => { const _mDef = AREA_DEFS[compassFirst] || {}; if (!_mDef.label) return ''; return `<div style="margin:0 0 16px;padding:16px 18px;background:#151b24;border:1px solid rgba(236,232,223,0.154);border-radius:12px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(8px)"><span style="font-size:26px;flex-shrink:0">🪞</span><div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px;line-height:1.55">${esc(_mDef.icon||'')} ${esc(_mDef.label)}が、あなたの最初の一手。<br>今の${esc(_mDef.label)}、写真1枚で確かめてみる？</p><p style="font-size:11px;color:rgba(232,228,220,0.4);margin:0">写真は保存しません</p></div><a href="${TRACK.mirror}" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(200,164,90,0.1);border:1.5px solid rgba(236,232,223,0.3);color:#c8a45a;border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">Mirror<br><span style="font-size:10px;font-weight:600">¥500</span></a></div>`; })()}
 
       ${(() => {
         if (!mirrorOnePoint?.axisId) return '';
@@ -3700,10 +3700,10 @@ export default function NewMeNaviPage() {
         const _isActive = mirrorOnePoint.status === 'active';
         const _axIcon = esc(mirrorOnePoint.axisIcon || '');
         const _axName = esc(mirrorOnePoint.axisName || '');
-        const _bg    = _isDone ? 'rgba(16,185,129,0.06)' : 'rgba(201,168,76,0.05)';
-        const _bd    = _isDone ? 'rgba(16,185,129,0.3)'  : 'rgba(201,168,76,0.22)';
-        const _lbClr = _isDone ? 'rgba(16,185,129,0.7)'  : 'rgba(201,168,76,0.6)';
-        const _btnHtml = _isDone ? '' : `<button id="mirror-one-point-btn" data-curstat="${_isActive ? 'active' : ''}" style="display:block;width:100%;padding:10px;margin-top:12px;background:${_isActive ? 'rgba(16,185,129,0.12)' : 'rgba(201,168,76,0.08)'};border:1px solid ${_isActive ? 'rgba(16,185,129,0.35)' : 'rgba(201,168,76,0.3)'};border-radius:8px;font-size:13px;font-weight:700;color:${_isActive ? '#10b981' : '#c9a84c'};cursor:pointer;font-family:inherit">${_isActive ? 'やった！（完了を記録）' : '今月やってみる →'}</button>`;
+        const _bg    = _isDone ? 'rgba(16,185,129,0.06)' : 'rgba(200,164,90,0.05)';
+        const _bd    = _isDone ? 'rgba(16,185,129,0.3)'  : 'rgba(200,164,90,0.22)';
+        const _lbClr = _isDone ? 'rgba(16,185,129,0.7)'  : 'rgba(200,164,90,0.6)';
+        const _btnHtml = _isDone ? '' : `<button id="mirror-one-point-btn" data-curstat="${_isActive ? 'active' : ''}" style="display:block;width:100%;padding:10px;margin-top:12px;background:${_isActive ? 'rgba(16,185,129,0.12)' : 'rgba(200,164,90,0.08)'};border:1px solid ${_isActive ? 'rgba(16,185,129,0.35)' : 'rgba(200,164,90,0.3)'};border-radius:8px;font-size:13px;font-weight:700;color:${_isActive ? '#10b981' : '#c8a45a'};cursor:pointer;font-family:inherit">${_isActive ? 'やった！（完了を記録）' : '今月やってみる →'}</button>`;
         const _checkMark = _isDone ? `<span style="font-size:18px;color:#10b981;flex-shrink:0">✓</span>` : '';
         return `<div id="mirror-one-point-widget" style="margin:0 0 16px;padding:16px 18px;background:${_bg};border:1px solid ${_bd};border-radius:12px"><p style="font-size:10px;font-weight:800;color:${_lbClr};letter-spacing:.12em;text-transform:uppercase;margin:0 0 10px">Mirror — この30日で動かす1点</p><div style="display:flex;align-items:center;gap:12px"><span style="font-size:24px;flex-shrink:0">${_axIcon}</span><div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.9);margin:0 0 2px">${_axName}</p><p style="font-size:11px;color:rgba(232,228,220,0.5);margin:0">この1点だけ、今月やってみよう</p></div>${_checkMark}</div>${_btnHtml}</div>`;
       })()}
@@ -3719,15 +3719,15 @@ export default function NewMeNaviPage() {
       ${buildMatchedProductsHtml()}
 
       ${(serviceLogs.length >= 1 && Object.values(stepDone).filter(Boolean).length >= 3) ? `
-      <div style="margin-top:28px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.25);border-radius:16px;padding:24px 22px;text-align:center">
+      <div style="margin-top:28px;background:rgba(200,164,90,0.06);border:1px solid rgba(236,232,223,0.138);border-radius:16px;padding:24px 22px;text-align:center">
         <div style="font-size:28px;margin-bottom:8px">✍️</div>
         <p style="font-size:15px;font-weight:800;color:rgba(240,236,228,0.9);margin:0 0 8px;line-height:1.6">変化を感じ始めたら、あなたの物語を残しませんか？</p>
         <p style="font-size:12px;color:rgba(240,236,228,0.5);margin:0 0 18px;line-height:1.75">あなたの一歩は、同じ悩みを抱える誰かの地図になります。<br>かかった期間・変わったこと——リアルな記録が誰かの背中を押します。</p>
-        <a href="/mypage/story-submit" style="display:inline-block;font-size:14px;font-weight:800;padding:12px 28px;background:linear-gradient(135deg,#c9a84c,#e8c97a);border-radius:10px;color:#0a0f1e;text-decoration:none;box-shadow:0 4px 18px rgba(201,168,76,0.25)">体験談を書く →</a>
+        <a href="/mypage/story-submit" style="display:inline-block;font-size:14px;font-weight:800;padding:12px 28px;background:linear-gradient(135deg,#c8a45a,#e8c97a);border-radius:10px;color:#0d1117;text-decoration:none;box-shadow:0 4px 18px rgba(0,0,0,0.3)">体験談を書く →</a>
       </div>` : ''}
 
       <div class="navi-footer">
-        <a href="/mypage/log" class="navi-footer-btn nfb-secondary" style="border-color:rgba(201,168,76,0.45)">📖 New Me Log — サービスを管理する</a>
+        <a href="/mypage/log" class="navi-footer-btn nfb-secondary" style="border-color:rgba(236,232,223,0.248)">📖 New Me Log — サービスを管理する</a>
         <a href="${TRACK.diagnosisResult}" class="navi-footer-btn nfb-secondary">📋 診断結果を見る</a>
         <a href="${TRACK.diagnosis}" class="navi-footer-btn nfb-ghost">Me Scanを再スキャンする</a>
       </div>
@@ -3797,7 +3797,7 @@ export default function NewMeNaviPage() {
           }).catch(() => {});
         }
         const widget = document.getElementById('kindness-checkin-widget');
-        if (widget) widget.outerHTML = `<div class="wcw"><p style="font-size:12px;color:rgba(201,168,76,0.7);margin:0;line-height:1.6">教えてくれてありがとう。その小さな一つが、ちゃんと積み重なっています。</p></div>`;
+        if (widget) widget.outerHTML = `<div class="wcw"><p style="font-size:12px;color:rgba(200,164,90,0.7);margin:0;line-height:1.6">教えてくれてありがとう。その小さな一つが、ちゃんと積み重なっています。</p></div>`;
       });
     });
     document.getElementById('kindness-checkin-skip')?.addEventListener('click', () => {
@@ -3878,7 +3878,7 @@ export default function NewMeNaviPage() {
         // label非使用（ラベルclickとinputchangeの二重発火を防ぐ）
         return `<div class="bdm-option${isChecked ? ' selected' : ''}" data-val="${esc(opt)}">
           <span class="bdm-option-label">${esc(opt)}</span>
-          ${isChecked ? '<span style="margin-left:auto;color:#c9a84c;font-weight:700;font-size:14px">✓</span>' : ''}
+          ${isChecked ? '<span style="margin-left:auto;color:#c8a45a;font-weight:700;font-size:14px">✓</span>' : ''}
         </div>`;
       }).join('');
       // オプションクリック（ラベルなしdivなので二重発火なし）
@@ -3891,7 +3891,7 @@ export default function NewMeNaviPage() {
           // ✓マークの表示更新
           const check = el.querySelector('span[style]');
           if (el.classList.contains('selected')) {
-            if (!check) el.insertAdjacentHTML('beforeend', '<span style="margin-left:auto;color:#c9a84c;font-weight:700;font-size:14px">✓</span>');
+            if (!check) el.insertAdjacentHTML('beforeend', '<span style="margin-left:auto;color:#c8a45a;font-weight:700;font-size:14px">✓</span>');
           } else {
             if (check) check.remove();
           }
@@ -3959,7 +3959,7 @@ export default function NewMeNaviPage() {
       }
       requestAnimationFrame(() => toast.classList.add('show'));
       setTimeout(() => toast.classList.remove('show'), 4200);
-      const colors = ['#c9a84c','#10b981','#3b82f6','#f59e0b','#ec4899','#8b5cf6'];
+      const colors = ['#c8a45a','#10b981','#3b82f6','#f59e0b','#ec4899','#8b5cf6'];
       for (let i = 0; i < 48; i++) {
         const el = document.createElement('div');
         el.className = 'confetti-piece';
@@ -3991,14 +3991,14 @@ export default function NewMeNaviPage() {
       if (!toast) {
         toast = document.createElement('div');
         toast.id = 'axis-complete-toast';
-        toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(120px);background:linear-gradient(135deg,#c9a84c 0%,#a0832b 100%);color:#0a0f1e;border-radius:18px;padding:18px 24px;display:flex;align-items:center;gap:14px;box-shadow:0 8px 36px rgba(201,168,76,.4);transition:transform .45s cubic-bezier(.34,1.56,.64,1);z-index:9999;pointer-events:none;width:min(360px,calc(100vw - 40px))';
+        toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(120px);background:linear-gradient(135deg,#c8a45a 0%,#a0832b 100%);color:#0d1117;border-radius:18px;padding:18px 24px;display:flex;align-items:center;gap:14px;box-shadow:0 8px 36px rgba(0,0,0,0.48);transition:transform .45s cubic-bezier(.34,1.56,.64,1);z-index:9999;pointer-events:none;width:min(360px,calc(100vw - 40px))';
         document.body.appendChild(toast);
       }
       const nextMsg = nextDef ? `次は ${nextDef.icon} ${nextDef.label}軸へ` : 'すべての軸が前進中！';
       toast.innerHTML = `<div style="font-size:28px;flex-shrink:0">🏁</div><div><p style="font-size:15px;font-weight:800;margin:0 0 3px">${esc(def.icon)} ${esc(def.label)}軸 — ひと段落！</p><p style="font-size:12px;opacity:.85;margin:0">${nextMsg}</p></div>`;
       requestAnimationFrame(() => { toast.style.transform = 'translateX(-50%) translateY(0)'; });
       setTimeout(() => { toast.style.transform = 'translateX(-50%) translateY(120px)'; }, 4500);
-      const colors = ['#c9a84c','#10b981','#3b82f6','#f59e0b','#ec4899','#8b5cf6'];
+      const colors = ['#c8a45a','#10b981','#3b82f6','#f59e0b','#ec4899','#8b5cf6'];
       for (let i = 0; i < 36; i++) {
         const el = document.createElement('div');
         el.className = 'confetti-piece';
@@ -4403,10 +4403,10 @@ export default function NewMeNaviPage() {
            直接子孫を選ぶ記号を使うとJSXのstyleタグ内ではSSR時にエンティティへ
            変換されhydrationミスマッチを起こしていた（でお報告2026-08-27の原因。
            styleタグ内では記号そのものを書かないこと） */
-        .navi-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; min-width: 0; }
+        .navi-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; min-width: 0; }
         .navi-sidenav .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .navi-sidenav .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
-        .navi-sidenav .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
+        .navi-sidenav .sidenav-link:hover { background: rgba(200,164,90,0.1); color: #0d1117; }
+        .navi-sidenav .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #0d1117; border-left: 3px solid #c8a45a; padding-left: 9px; }
         @media (max-width: 640px) {
           .navi-layout { grid-template-columns: 1fr; padding: 16px 16px 60px; overflow-x: hidden; }
           .navi-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
@@ -4454,7 +4454,7 @@ export default function NewMeNaviPage() {
                           {a.category && (
                             <span style={{ fontSize: '10px', fontWeight: 800, color: track.accent, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{a.category}</span>
                           )}
-                          <p style={{ fontSize: '14px', fontWeight: 700, margin: '4px 0 4px', lineHeight: 1.45, fontFamily: 'var(--font-serif)', color: '#0a0f1e' }}>{a.title}</p>
+                          <p style={{ fontSize: '14px', fontWeight: 700, margin: '4px 0 4px', lineHeight: 1.45, fontFamily: 'var(--font-serif)', color: '#0d1117' }}>{a.title}</p>
                           <span style={{ fontSize: '11px', color: '#9ca3af' }}>{a.reading_time || 5}分で読める</span>
                         </div>
                         <span style={{ fontSize: '16px', color: `rgba(${track.accentRgb},0.6)`, flexShrink: 0 }}>→</span>

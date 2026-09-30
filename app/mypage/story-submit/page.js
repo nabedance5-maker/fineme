@@ -167,7 +167,7 @@ export default function StorySubmitPage() {
               </p>
 
               {reservations.length === 0 ? (
-                <div style={{ background: 'rgba(10,15,30,0.50)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '14px', padding: '32px 24px', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
+                <div style={{ background: '#151b24', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '14px', padding: '32px 24px', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
                   <p style={{ fontSize: '32px', margin: '0 0 12px' }}>📅</p>
                   <p style={{ fontSize: '15px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', marginBottom: '8px' }}>
                     まだ承認済みの予約がありません
@@ -194,11 +194,11 @@ export default function StorySubmitPage() {
                         onClick={() => selectReservation(res)}
                         style={{
                           display: 'flex', alignItems: 'center', gap: '16px',
-                          padding: '16px 20px', background: 'rgba(10,15,30,0.65)',
+                          padding: '16px 20px', background: '#151b24',
                           border: '1px solid rgba(232,228,220,0.15)', borderRadius: '14px',
                           cursor: 'pointer', textAlign: 'left', transition: 'border-color .15s, box-shadow .15s',
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#c9a84c'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(201,168,76,.12)'; }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#c8a45a'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(200,164,90,.12)'; }}
                         onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(232,228,220,0.15)'; e.currentTarget.style.boxShadow = 'none'; }}
                       >
                         <div style={{ fontSize: '28px', flexShrink: 0 }}>🗓</div>
@@ -206,7 +206,7 @@ export default function StorySubmitPage() {
                           <p style={{ fontSize: '15px', fontWeight: 700, color: 'rgba(232,228,220,0.90)', margin: '0 0 4px' }}>{name}</p>
                           <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', margin: 0 }}>{dateStr}</p>
                         </div>
-                        <div style={{ fontSize: '18px', color: '#c9a84c', flexShrink: 0 }}>→</div>
+                        <div style={{ fontSize: '18px', color: '#c8a45a', flexShrink: 0 }}>→</div>
                       </button>
                     );
                   })}
@@ -218,7 +218,7 @@ export default function StorySubmitPage() {
             <form onSubmit={handleSubmit} className="stack" style={{ gap: '20px' }}>
 
               {/* 選択中の予約表示 */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'rgba(201,168,76,0.06)', border: '1.5px solid rgba(201,168,76,0.3)', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'rgba(200,164,90,0.06)', border: '1.5px solid rgba(236,232,223,0.165)', borderRadius: '12px' }}>
                 <span style={{ fontSize: '20px' }}>🗓</span>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.90)', margin: 0 }}>
@@ -264,7 +264,7 @@ export default function StorySubmitPage() {
                       onClick={() => setAxisId(id)}
                       style={{
                         padding: '7px 14px', borderRadius: '99px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                        background: axisId === id ? '#6366f1' : 'rgba(10,15,30,0.45)',
+                        background: axisId === id ? '#6366f1' : 'rgba(13,17,23,0.45)',
                         color: axisId === id ? '#fff' : 'rgba(232,228,220,0.75)',
                         border: axisId === id ? '1.5px solid #6366f1' : '1px solid rgba(232,228,220,0.15)',
                         transition: 'all .15s',
@@ -278,7 +278,7 @@ export default function StorySubmitPage() {
                     onClick={() => setAxisId('')}
                     style={{
                       padding: '7px 14px', borderRadius: '99px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-                      background: axisId === '' ? '#6366f1' : 'rgba(10,15,30,0.45)',
+                      background: axisId === '' ? '#6366f1' : 'rgba(13,17,23,0.45)',
                       color: axisId === '' ? '#fff' : 'rgba(232,228,220,0.75)',
                       border: axisId === '' ? '1.5px solid #6366f1' : '1px solid rgba(232,228,220,0.15)',
                     }}
@@ -300,7 +300,7 @@ export default function StorySubmitPage() {
                         onClick={() => setPathType(pathType === val ? '' : val)}
                         style={{
                           padding: '6px 14px', borderRadius: '99px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                          background: pathType === val ? '#e0e7ff' : 'rgba(10,15,30,0.45)',
+                          background: pathType === val ? '#e0e7ff' : 'rgba(13,17,23,0.45)',
                           color: pathType === val ? '#4f46e5' : 'rgba(232,228,220,0.55)',
                           border: pathType === val ? '1.5px solid #c7d2fe' : '1px solid rgba(232,228,220,0.15)',
                         }}
@@ -423,17 +423,17 @@ export default function StorySubmitPage() {
       <style>{`
         .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
         .mypage-sidenav, .mypage-content { min-width: 0; }
-        .mypage-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        .mypage-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
         @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; min-width: 0; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav .sidenav-link { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
         .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
-        .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
+        .sidenav-link:hover { background: rgba(200,164,90,0.1); color: #0d1117; }
+        .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #0d1117; border-left: 3px solid #c8a45a; padding-left: 9px; }
         .form-block { display: flex; flex-direction: column; gap: 4px; }
         .form-label { font-size: 14px; font-weight: 700; color: rgba(232,228,220,0.90); display: flex; align-items: center; gap: 8px; }
         .form-hint { font-size: 12px; color: rgba(232,228,220,0.40); margin: 0; line-height: 1.5; }
         .q-badge { display: inline-block; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 99px; letter-spacing: .04em; }
         .q-badge.required { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
-        .q-badge.optional { background: rgba(10,15,30,0.45); color: rgba(232,228,220,0.40); border: 1px solid rgba(232,228,220,0.15); }
+        .q-badge.optional { background: #151b24; color: rgba(232,228,220,0.40); border: 1px solid rgba(232,228,220,0.15); }
         textarea:focus, input:focus { border-color: #6366f1 !important; box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
       `}</style>
     </main>

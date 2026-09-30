@@ -68,27 +68,26 @@ export default function AboutPage() {
           position: relative;
           padding: 100px 24px 88px;
           background:
-            linear-gradient(rgba(10,15,30,0.72), rgba(10,15,30,0.82)),
-            url('/assets/images/hero-bg.webp') center / cover no-repeat;
+            #0d1117;
           text-align: center;
           overflow: hidden;
         }
         .af-hero-eyebrow {
           font-size: 11px; font-weight: 800; letter-spacing: .18em;
-          color: rgba(201,168,76,0.55); text-transform: uppercase;
+          color: rgba(200,164,90,0.55); text-transform: uppercase;
           margin: 0 0 20px; position: relative; z-index: 1;
         }
         .af-hero h1 {
-          font-family: 'Noto Serif JP', Georgia, serif;
+          font-family: 'Shippori Mincho', Georgia, serif;
           font-size: clamp(26px, 5.5vw, 44px); font-weight: 700;
           color: #fff; margin: 0 0 20px; line-height: 1.5; letter-spacing: -.01em;
           position: relative; z-index: 1;
         }
         .af-hero h1 em {
-          font-style: normal; color: #c9a84c;
+          font-style: normal; color: #c8a45a;
         }
         .af-hero-sub {
-          font-family: 'Noto Serif JP', Georgia, serif;
+          font-family: 'Shippori Mincho', Georgia, serif;
           font-size: clamp(14px, 2.2vw, 17px); color: rgba(255,255,255,.65);
           line-height: 2; max-width: 520px; margin: 0 auto 36px;
           position: relative; z-index: 1;
@@ -96,23 +95,23 @@ export default function AboutPage() {
         .af-hero-sub strong { color: rgba(255,255,255,.88); font-weight: 500; }
         .af-cta-btn {
           display: inline-flex; align-items: center; gap: 8px;
-          padding: 14px 32px; border: 1.5px solid #c9a84c; color: #c9a84c;
+          padding: 14px 32px; border: 1.5px solid rgba(236,232,223,0.3); color: #c8a45a;
           background: transparent; border-radius: 3px; font-size: 15px; font-weight: 700;
           text-decoration: none; letter-spacing: .06em;
           transition: background .2s, color .2s, box-shadow .2s;
           position: relative; z-index: 1;
         }
-        .af-cta-btn:hover { background: #c9a84c; color: #0a0f1e; box-shadow: 0 0 28px rgba(201,168,76,.35); }
+        .af-cta-btn:hover { background: #c8a45a; color: #0d1117; box-shadow: 0 0 28px rgba(0,0,0,0.42); }
 
         /* ── Wrap & Sections ── */
         .af-wrap { max-width: 860px; margin: 0 auto; padding: 0 20px 80px; }
         .af-sec { margin: 64px 0 0; }
         .af-sec-label {
           font-size: 11px; font-weight: 800; letter-spacing: .14em;
-          text-transform: uppercase; color: var(--color-gold, #c9a84c); margin: 0 0 12px;
+          text-transform: uppercase; color: var(--color-gold, #c8a45a); margin: 0 0 12px;
         }
         .af-sec h2 {
-          font-family: 'Noto Serif JP', Georgia, serif;
+          font-family: 'Shippori Mincho', Georgia, serif;
           font-size: clamp(22px, 4vw, 30px); font-weight: 700;
           color: rgba(232,228,220,0.90); margin: 0 0 10px;
         }
@@ -124,23 +123,23 @@ export default function AboutPage() {
           display: grid; grid-template-columns: 64px 1fr;
           gap: 0; align-items: stretch;
           border-radius: 10px;
-          border: 1px solid var(--color-border-gold, rgba(201,168,76,0.28));
-          overflow: hidden; background: rgba(10,15,30,0.65); backdrop-filter: blur(8px);
+          border: 1px solid var(--color-border-gold, rgba(236,232,223,0.154));
+          overflow: hidden; background: #151b24; backdrop-filter: blur(8px);
           box-shadow: var(--shadow-sm); transition: transform .15s, box-shadow .15s;
         }
         .af-journey-step:hover { transform: translateX(4px); box-shadow: var(--shadow-gold); }
         .af-step-left {
-          background: var(--color-bg-dark, #0a0f1e);
+          background: var(--color-bg-dark, #0d1117);
           display: flex; flex-direction: column; align-items: center; justify-content: center;
           padding: 16px 8px; gap: 6px;
         }
         .af-step-num {
-          font-size: 10px; font-weight: 800; letter-spacing: .1em; color: rgba(201,168,76,0.5);
+          font-size: 10px; font-weight: 800; letter-spacing: .1em; color: rgba(200,164,90,0.5);
         }
         .af-step-icon { font-size: 26px; line-height: 1; }
         .af-step-right { padding: 18px 20px; }
         .af-step-label { font-size: 17px; font-weight: 800; color: rgba(232,228,220,0.90); margin: 0 0 2px; }
-        .af-step-sublabel { font-size: 11px; color: var(--color-gold, #c9a84c); font-weight: 700; margin: 0 0 8px; letter-spacing: .06em; }
+        .af-step-sublabel { font-size: 11px; color: var(--color-gold, #c8a45a); font-weight: 700; margin: 0 0 8px; letter-spacing: .06em; }
         .af-step-desc { font-size: 14px; color: rgba(232,228,220,0.55); line-height: 1.7; margin: 0; }
 
         /* ── 7 axis grid ── */
@@ -150,7 +149,7 @@ export default function AboutPage() {
           gap: 12px;
         }
         .af-axis-card {
-          background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid var(--color-border-gold, rgba(201,168,76,0.28));
+          background: #151b24; backdrop-filter: blur(8px); border: 1px solid var(--color-border-gold, rgba(236,232,223,0.154));
           border-radius: 12px; padding: 16px 18px;
           display: flex; gap: 12px; align-items: flex-start;
           box-shadow: var(--shadow-sm);
@@ -163,7 +162,7 @@ export default function AboutPage() {
           font-size: 10px; font-weight: 700; padding: 2px 8px;
           border-radius: 99px; display: inline-block; margin: 0 0 6px;
         }
-        .tier-1 { background: rgba(201,168,76,0.15); color: var(--color-gold, #c9a84c); border: 1px solid rgba(201,168,76,.3); }
+        .tier-1 { background: rgba(200,164,90,0.15); color: var(--color-gold, #c8a45a); border: 1px solid rgba(236,232,223,0.165); }
         .tier-2 { background: #d1fae5; color: #065f46; }
         .tier-3 { background: #fef3c7; color: #92400e; }
         .tier-4 { background: #f3f4f6; color: #374151; }
@@ -171,27 +170,27 @@ export default function AboutPage() {
 
         /* ── Philosophy ── */
         .af-philosophy {
-          background: var(--color-bg-dark, #0a0f1e);
+          background: var(--color-bg-dark, #0d1117);
           border-radius: 12px; padding: 44px 36px;
-          border: 1px solid rgba(201,168,76,0.2);
+          border: 1px solid rgba(236,232,223,0.11);
         }
         .af-philosophy-poem { margin: 0; }
         .af-philosophy-poem p {
-          font-family: 'Noto Serif JP', Georgia, serif;
+          font-family: 'Shippori Mincho', Georgia, serif;
           font-size: clamp(16px, 3vw, 20px); color: rgba(255,255,255,.88);
           line-height: 2.2; margin: 0 0 14px;
         }
         .af-philosophy-poem p:last-child { margin: 0; }
         .af-philosophy-poem em {
-          font-style: normal; color: #c9a84c; font-weight: 700;
+          font-style: normal; color: #c8a45a; font-weight: 700;
         }
         .af-mvcard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
         .af-mvcard {
           padding: 20px; border-radius: 10px;
-          border: 1px solid var(--color-border-gold, rgba(201,168,76,0.28));
-          background: rgba(10,15,30,0.65); backdrop-filter: blur(8px);
+          border: 1px solid var(--color-border-gold, rgba(236,232,223,0.154));
+          background: #151b24; backdrop-filter: blur(8px);
         }
-        .af-mvcard-label { font-size: 10px; font-weight: 800; color: var(--color-gold, #c9a84c); margin: 0 0 8px; letter-spacing: .12em; }
+        .af-mvcard-label { font-size: 10px; font-weight: 800; color: var(--color-gold, #c8a45a); margin: 0 0 8px; letter-spacing: .12em; }
         .af-mvcard p { font-size: 15px; font-weight: 700; color: rgba(232,228,220,0.90); margin: 0; line-height: 1.6; }
 
         /* ── Difference ── */
@@ -206,12 +205,12 @@ export default function AboutPage() {
         /* ── Bottom CTA ── */
         .af-bottom-cta {
           text-align: center; padding: 52px 28px;
-          background: var(--color-bg-dark, #0a0f1e);
-          border-radius: 12px; border: 1px solid rgba(201,168,76,0.2); margin-top: 64px;
+          background: var(--color-bg-dark, #0d1117);
+          border-radius: 12px; border: 1px solid rgba(236,232,223,0.11); margin-top: 64px;
         }
-        .af-bottom-cta-eyebrow { font-size: 11px; font-weight: 800; color: rgba(201,168,76,0.5); letter-spacing: .14em; text-transform: uppercase; margin: 0 0 14px; }
+        .af-bottom-cta-eyebrow { font-size: 11px; font-weight: 800; color: rgba(200,164,90,0.5); letter-spacing: .14em; text-transform: uppercase; margin: 0 0 14px; }
         .af-bottom-cta h2 {
-          font-family: 'Noto Serif JP', Georgia, serif;
+          font-family: 'Shippori Mincho', Georgia, serif;
           font-size: clamp(20px, 4vw, 28px); font-weight: 700; color: #fff; margin: 0 0 12px;
         }
         .af-bottom-cta p { font-size: 15px; color: rgba(255,255,255,.6); margin: 0 0 28px; line-height: 1.8; }
@@ -253,11 +252,11 @@ export default function AboutPage() {
             旅のパートナーとなるガイドと繋ぐ——変容のためのインフラです。
           </p>
           <div style={{
-            border: '1px solid rgba(201,168,76,0.28)', borderRadius: 10,
-            background: 'rgba(10,15,30,0.55)', padding: '18px 20px', margin: '0 0 20px',
+            border: '1px solid rgba(236,232,223,0.154)', borderRadius: 10,
+            background: '#151b24', padding: '18px 20px', margin: '0 0 20px',
           }}>
             <p style={{ fontSize: 13, color: 'rgba(232,228,220,0.75)', lineHeight: 1.9, margin: 0 }}>
-              <strong style={{ color: '#c9a84c' }}>Me Scan と Mirror に順番はありません。</strong><br />
+              <strong style={{ color: '#c8a45a' }}>Me Scan と Mirror に順番はありません。</strong><br />
               地図を描くのが Me Scan、今の現在地を測るのが Mirror。<br />
               描いて、測って、また描き足す——この循環が New Me Map を育てていきます。
             </p>
@@ -310,7 +309,7 @@ export default function AboutPage() {
             一般の美容・健康サービス検索と、Finemeが根本的に異なる点があります。
           </p>
           <div className="af-diff-grid">
-            <div className="af-diff-card" style={{ background: 'rgba(10,15,30,0.40)', borderColor: 'rgba(232,228,220,0.15)' }}>
+            <div className="af-diff-card" style={{ background: '#151b24', borderColor: 'rgba(232,228,220,0.15)' }}>
               <div className="af-diff-label" style={{ color: 'rgba(232,228,220,0.40)' }}>一般の検索サイト</div>
               <div className="af-diff-title" style={{ color: 'rgba(232,228,220,0.70)' }}>「どこがいいか」を探す</div>
               <ul className="af-diff-list" style={{ color: 'rgba(232,228,220,0.60)' }}>
@@ -320,8 +319,8 @@ export default function AboutPage() {
                 <li data-icon="❌">再来店の動機が「割引」だけ</li>
               </ul>
             </div>
-            <div className="af-diff-card" style={{ background: 'var(--color-bg-dark, #0a0f1e)', borderColor: 'rgba(201,168,76,0.35)' }}>
-              <div className="af-diff-label" style={{ color: 'rgba(201,168,76,0.6)' }}>Fineme</div>
+            <div className="af-diff-card" style={{ background: 'var(--color-bg-dark, #0d1117)', borderColor: 'rgba(236,232,223,0.193)' }}>
+              <div className="af-diff-label" style={{ color: 'rgba(200,164,90,0.6)' }}>Fineme</div>
               <div className="af-diff-title" style={{ color: '#fff' }}>「今の自分に合う一手」を知る</div>
               <ul className="af-diff-list" style={{ color: 'rgba(255,255,255,.75)' }}>
                 <li data-icon="✅">8軸で現在地・理想・ギャップを可視化</li>
@@ -343,13 +342,13 @@ export default function AboutPage() {
             <strong style={{ color: 'rgba(232,228,220,0.8)', fontWeight: 500 }}>2つのトラック</strong>に分けて設計しています。
           </p>
           <div className="af-diff-grid">
-            <div className="af-diff-card" style={{ background: 'var(--color-bg-dark, #0a0f1e)', borderColor: 'rgba(201,168,76,0.35)' }}>
-              <div className="af-diff-label" style={{ color: 'rgba(201,168,76,0.6)' }}>男性向け</div>
+            <div className="af-diff-card" style={{ background: 'var(--color-bg-dark, #0d1117)', borderColor: 'rgba(236,232,223,0.193)' }}>
+              <div className="af-diff-label" style={{ color: 'rgba(200,164,90,0.6)' }}>男性向け</div>
               <div className="af-diff-title" style={{ color: '#fff' }}>Fineme</div>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,.7)', lineHeight: 1.8, margin: '0 0 14px' }}>
                 8軸・136タイプ・Compass・New Me Map。<br />タイプは136種の「生き物」で表されます。
               </p>
-              <Link href="/diagnosis" style={{ fontSize: 13, color: '#c9a84c', textDecoration: 'none', fontWeight: 700, display: 'block', marginBottom: 6 }}>
+              <Link href="/diagnosis" style={{ fontSize: 13, color: '#c8a45a', textDecoration: 'none', fontWeight: 700, display: 'block', marginBottom: 6 }}>
                 Me Scanを受ける（無料）→
               </Link>
               <Link href="/" style={{ fontSize: 12, color: 'rgba(255,255,255,.45)', textDecoration: 'none' }}>
@@ -386,12 +385,12 @@ export default function AboutPage() {
               人に優しくなれる余白をつくり、<br />
               その優しさが連鎖することで、<br />
               世界は少しずつ<em>愛で満たされていく</em>。</p>
-              <p style={{ color: 'rgba(255,255,255,.5)', fontSize: '15px', marginTop: '20px', fontFamily: "'Noto Serif JP', Georgia, serif", lineHeight: '2' }}>
+              <p style={{ color: 'rgba(255,255,255,.5)', fontSize: '15px', marginTop: '20px', fontFamily: "'Shippori Mincho', Georgia, serif", lineHeight: '2' }}>
                 見た目を整えることは、誰かに勝つためでも取り繕うためでもない。<br />
                 鏡の前で、自分を嫌いにならずに済むこと。ほんの少し背筋が伸びること。<br />
                 その小さな変化が、心に余裕を生み、人との関係や選択を、静かに変えていく。
               </p>
-              <p style={{ color: 'rgba(201,168,76,0.45)', fontSize: '14px', marginTop: '18px', fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>
+              <p style={{ color: 'rgba(200,164,90,0.45)', fontSize: '14px', marginTop: '18px', fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>
                 外見は目的ではなく、きっかけ。
               </p>
             </blockquote>

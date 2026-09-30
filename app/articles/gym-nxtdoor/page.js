@@ -12,7 +12,7 @@ export default function NxtdoorArticlePage() {
       <style>{`
         /* ─── Base ─── */
         .art {
-          background: #0a0f1e;
+          background: #0d1117;
           color: #e8e4dc;
           font-family: 'Noto Sans JP', ui-sans-serif, system-ui, sans-serif;
           line-height: 1.9;
@@ -33,7 +33,7 @@ export default function NxtdoorArticlePage() {
         .art-hero__overlay {
           position: absolute;
           inset: 0;
-          background: linear-gradient(to bottom, rgba(10,15,30,0.25) 0%, rgba(10,15,30,0.85) 100%);
+          background: linear-gradient(to bottom, rgba(13,17,23,0.25) 0%, rgba(13,17,23,0.85) 100%);
         }
         .art-hero__content {
           position: absolute;
@@ -46,15 +46,15 @@ export default function NxtdoorArticlePage() {
           display: inline-block;
           font-size: 11px;
           letter-spacing: 0.2em;
-          color: #c9a84c;
+          color: #c8a45a;
           text-transform: uppercase;
-          border: 1px solid rgba(201,168,76,0.4);
+          border: 1px solid rgba(236,232,223,0.22);
           border-radius: 4px;
           padding: 4px 12px;
           margin-bottom: 20px;
         }
         .art-hero__title {
-          font-family: 'Playfair Display', 'Noto Serif JP', Georgia, serif;
+          font-family: 'Shippori Mincho', Georgia, serif;
           font-size: clamp(22px, 4.5vw, 44px);
           line-height: 1.3;
           color: #faf8f3;
@@ -78,7 +78,7 @@ export default function NxtdoorArticlePage() {
         .art-lead {
           font-size: clamp(15px, 2vw, 17px);
           color: rgba(232,228,220,0.85);
-          border-left: 3px solid #c9a84c;
+          border-left: 3px solid #c8a45a;
           padding-left: 20px;
           margin-bottom: 64px;
         }
@@ -90,12 +90,12 @@ export default function NxtdoorArticlePage() {
         .art-section__num {
           font-size: 11px;
           letter-spacing: 0.2em;
-          color: #c9a84c;
+          color: #c8a45a;
           display: block;
           margin-bottom: 12px;
         }
         .art-section__heading {
-          font-family: 'Playfair Display', 'Noto Serif JP', Georgia, serif;
+          font-family: 'Shippori Mincho', Georgia, serif;
           font-size: clamp(20px, 3.5vw, 28px);
           color: #faf8f3;
           margin: 0 0 28px;
@@ -118,12 +118,12 @@ export default function NxtdoorArticlePage() {
         .art-divider__line {
           flex: 1;
           height: 1px;
-          background: linear-gradient(to right, transparent, rgba(201,168,76,0.4), transparent);
+          background: linear-gradient(to right, transparent, rgba(200,164,90,0.4), transparent);
         }
         .art-divider__diamond {
           width: 8px;
           height: 8px;
-          background: #c9a84c;
+          background: #c8a45a;
           transform: rotate(45deg);
           flex-shrink: 0;
         }
@@ -131,24 +131,24 @@ export default function NxtdoorArticlePage() {
         /* ─── Pull quote ─── */
         .art-quote {
           position: relative;
-          background: rgba(201,168,76,0.06);
-          border-left: 3px solid #c9a84c;
+          background: rgba(200,164,90,0.06);
+          border-left: 3px solid #c8a45a;
           border-radius: 0 12px 12px 0;
           padding: 28px 32px;
           margin: 40px 0;
         }
         .art-quote::before {
           content: '"';
-          font-family: 'Playfair Display', Georgia, serif;
+          font-family: Georgia, serif;
           font-size: 72px;
-          color: rgba(201,168,76,0.2);
+          color: rgba(200,164,90,0.2);
           position: absolute;
           top: -8px;
           left: 16px;
           line-height: 1;
         }
         .art-quote__text {
-          font-family: 'Playfair Display', 'Noto Serif JP', Georgia, serif;
+          font-family: 'Shippori Mincho', Georgia, serif;
           font-size: clamp(16px, 2.5vw, 20px);
           color: #faf8f3;
           line-height: 1.7;
@@ -242,7 +242,7 @@ export default function NxtdoorArticlePage() {
         /* ─── Highlight band ─── */
         .art-highlight {
           background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(201,168,76,0.15);
+          border: 1px solid rgba(236,232,223,0.083);
           border-radius: 12px;
           padding: 32px;
           margin: 40px 0;
@@ -250,7 +250,7 @@ export default function NxtdoorArticlePage() {
         .art-highlight__label {
           font-size: 11px;
           letter-spacing: 0.15em;
-          color: #c9a84c;
+          color: #c8a45a;
           text-transform: uppercase;
           display: block;
           margin-bottom: 12px;
@@ -263,15 +263,15 @@ export default function NxtdoorArticlePage() {
 
         /* ─── Closing card ─── */
         .art-card {
-          background: rgba(201,168,76,0.07);
-          border: 1px solid rgba(201,168,76,0.3);
+          background: rgba(200,164,90,0.07);
+          border: 1px solid rgba(236,232,223,0.165);
           border-radius: 16px;
           padding: clamp(28px, 5vw, 48px);
           margin-top: 80px;
           text-align: center;
         }
         .art-card__title {
-          font-family: 'Playfair Display', Georgia, serif;
+          font-family: Georgia, serif;
           font-size: clamp(20px, 3vw, 26px);
           color: #faf8f3;
           margin: 0 0 8px;
@@ -295,14 +295,14 @@ export default function NxtdoorArticlePage() {
           color: rgba(232,228,220,0.75);
         }
         .art-card__item span {
-          color: #c9a84c;
+          color: #c8a45a;
           margin-right: 8px;
         }
         .art-card__link {
           display: inline-block;
           padding: 14px 36px;
-          background: #c9a84c;
-          color: #0a0f1e;
+          background: #c8a45a;
+          color: #0d1117;
           border-radius: 8px;
           font-weight: 700;
           font-size: 14px;
@@ -704,8 +704,8 @@ export default function NxtdoorArticlePage() {
                     sizes="(max-width:600px) 100vw, 380px"
                   />
                 </div>
-                <div className="art-img-grid__item" style={{ background: 'rgba(201,168,76,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
-                  <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 'clamp(16px,2.5vw,22px)', color: '#faf8f3', lineHeight: 1.7, margin: 0, textAlign: 'center' }}>
+                <div className="art-img-grid__item" style={{ background: 'rgba(200,164,90,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
+                  <p style={{ fontFamily: "Georgia, serif", fontSize: 'clamp(16px,2.5vw,22px)', color: '#faf8f3', lineHeight: 1.7, margin: 0, textAlign: 'center' }}>
                     「習慣が変わって、<br />環境が変わって、<br />人生が変わっていく。<br /><br />その先に、じわじわと<br />自信がついてくる」
                   </p>
                 </div>

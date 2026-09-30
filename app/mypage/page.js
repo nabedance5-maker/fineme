@@ -203,7 +203,7 @@ export default function MypagePage() {
                   const progress = Math.max(5, ((4 - (v.tier || 4)) / 4) * 100);
                   const isCompass = v.id === compass;
                   return (
-                    <div key={v.id} style={{ padding: '14px 16px', background: isCompass ? 'rgba(37,99,235,0.15)' : 'rgba(10,15,30,0.50)', borderRadius: '14px', border: isCompass ? '1.5px solid rgba(59,130,246,0.40)' : '1px solid rgba(232,228,220,0.12)' }}>
+                    <div key={v.id} style={{ padding: '14px 16px', background: isCompass ? 'rgba(37,99,235,0.15)' : 'rgba(13,17,23,0.50)', borderRadius: '14px', border: isCompass ? '1.5px solid rgba(59,130,246,0.40)' : '1px solid rgba(232,228,220,0.12)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '18px' }}>{AXIS_ICONS[v.id]}</span>
@@ -232,14 +232,14 @@ export default function MypagePage() {
 
           {/* ── Fineme Mirror CTA ── */}
           <a href={track.lpMirror} style={{ display: 'block', textDecoration: 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(200,164,90,0.08)', border: '1px solid rgba(236,232,223,0.193)', borderRadius: '16px' }}>
               <span style={{ fontSize: '32px', flexShrink: 0 }}>🪞</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: '10px', fontWeight: 800, color: '#c9a84c', margin: '0 0 3px', letterSpacing: '.08em', textTransform: 'uppercase' }}>Fineme Mirror — ¥500</p>
+                <p style={{ fontSize: '10px', fontWeight: 800, color: '#c8a45a', margin: '0 0 3px', letterSpacing: '.08em', textTransform: 'uppercase' }}>Fineme Mirror — ¥500</p>
                 <p style={{ fontSize: '15px', fontWeight: 800, color: 'rgba(232,228,220,0.95)', margin: '0 0 4px' }}>写真1枚で変容余地を可視化する</p>
                 <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: 0, lineHeight: 1.5 }}>AIが7軸を分析。あなたの「最初に変えるべき場所」が地図になります。</p>
               </div>
-              <span style={{ fontSize: '11px', fontWeight: 800, color: '#0a0f1e', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', borderRadius: '20px', padding: '5px 14px', flexShrink: 0, whiteSpace: 'nowrap' }}>詳しく見る →</span>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: '#0d1117', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', borderRadius: '20px', padding: '5px 14px', flexShrink: 0, whiteSpace: 'nowrap' }}>詳しく見る →</span>
             </div>
           </a>
 
@@ -296,15 +296,15 @@ export default function MypagePage() {
       <style>{`
         .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
         .mypage-sidenav, .mypage-content { min-width: 0; }
-        .mypage-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        .mypage-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
         @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; min-width: 0; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; overflow-y: visible; gap: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav .sidenav-link { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
         .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
-        .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
+        .sidenav-link:hover { background: rgba(200,164,90,0.1); color: #0d1117; }
+        .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #0d1117; border-left: 3px solid #c8a45a; padding-left: 9px; }
 
         /* New Me Navi card */
         .map-card { background: linear-gradient(145deg, #0f172a, #1e1b4b); border-radius: 20px; padding: 22px; color: #fff; }
-        .map-card--empty { background: rgba(10,15,30,0.50); border: 1.5px dashed rgba(232,228,220,0.20); }
+        .map-card--empty { background: #151b24; border: 1.5px dashed rgba(232,228,220,0.20); }
         .map-card--empty .map-eyebrow { color: #9ca3af !important; }
         .map-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; gap: 12px; }
         .map-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .08em; color: rgba(255,255,255,.5); margin: 0 0 4px; text-transform: uppercase; }

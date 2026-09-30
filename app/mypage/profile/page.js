@@ -307,7 +307,7 @@ export default function MypageProfilePage() {
                   type="email"
                   value={email}
                   readOnly
-                  style={{ background: 'rgba(10,15,30,0.50)', color: 'rgba(232,228,220,0.55)' }}
+                  style={{ background: '#151b24', color: 'rgba(232,228,220,0.55)' }}
                 />
               </label>
 
@@ -319,7 +319,7 @@ export default function MypageProfilePage() {
                   <select
                     value={area}
                     onChange={e => { setArea(e.target.value); setCity(''); }}
-                    style={{ padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', fontSize: '14px', width: '140px', boxSizing: 'border-box', background: 'rgba(10,15,30,0.65)'}}
+                    style={{ padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', fontSize: '14px', width: '140px', boxSizing: 'border-box', background: '#151b24'}}
                   >
                     <option value="">都道府県</option>
                     {PREFECTURES.map(p => (
@@ -330,7 +330,7 @@ export default function MypageProfilePage() {
                     value={city}
                     onChange={e => setCity(e.target.value)}
                     disabled={!area}
-                    style={{ padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', fontSize: '14px', flex: 1, minWidth: '140px', boxSizing: 'border-box', background: 'rgba(10,15,30,0.65)'}}
+                    style={{ padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '8px', fontSize: '14px', flex: 1, minWidth: '140px', boxSizing: 'border-box', background: '#151b24'}}
                   >
                     <option value="">{area ? '市区町村を選ぶ（任意）' : '都道府県を先に選択'}</option>
                     {cityOptions.map(c => (
@@ -488,14 +488,14 @@ export default function MypageProfilePage() {
                       <button
                         type="button"
                         onClick={installApp}
-                        style={{ padding: '10px 20px', background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.5)', borderRadius: '10px', fontWeight: 700, fontSize: '14px', color: '#c9a84c', cursor: 'pointer', fontFamily: 'inherit' }}
+                        style={{ padding: '10px 20px', background: 'rgba(200,164,90,0.15)', border: '1px solid rgba(236,232,223,0.275)', borderRadius: '10px', fontWeight: 700, fontSize: '14px', color: '#c8a45a', cursor: 'pointer', fontFamily: 'inherit' }}
                       >
                         📲 ホーム画面に追加
                       </button>
                     </>
                   ) : (
                     <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: 0 }}>
-                      Safariの共有ボタン（<span style={{ color: '#c9a84c' }}>□↑</span>）→「ホーム画面に追加」でアプリのように使えます。
+                      Safariの共有ボタン（<span style={{ color: '#c8a45a' }}>□↑</span>）→「ホーム画面に追加」でアプリのように使えます。
                     </p>
                   )}
                 </div>
@@ -528,7 +528,7 @@ export default function MypageProfilePage() {
                       type="button"
                       onClick={subscribeWebPush}
                       disabled={pushBusy}
-                      style={{ padding: '10px 20px', background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.5)', borderRadius: '10px', fontWeight: 700, fontSize: '14px', color: '#c9a84c', cursor: pushBusy ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+                      style={{ padding: '10px 20px', background: 'rgba(200,164,90,0.15)', border: '1px solid rgba(236,232,223,0.275)', borderRadius: '10px', fontWeight: 700, fontSize: '14px', color: '#c8a45a', cursor: pushBusy ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
                     >
                       🔔 ブラウザ通知を有効にする
                     </button>
@@ -559,19 +559,19 @@ export default function MypageProfilePage() {
                         onClick={() => saveLogPrefs({ voice: v.id })}
                         style={{
                           textAlign: 'left', cursor: 'pointer', padding: '12px 14px', borderRadius: '11px', fontFamily: 'inherit',
-                          background: isActive ? 'rgba(201,168,76,0.1)' : 'rgba(255,255,255,0.03)',
+                          background: isActive ? 'rgba(200,164,90,0.1)' : 'rgba(255,255,255,0.03)',
                           border: `1.5px solid rgba(201,168,76,${isActive ? 0.5 : 0.15})`,
                         }}
                       >
                         <span style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
-                          <span style={{ width: '12px', height: '12px', borderRadius: '50%', flexShrink: 0, border: '1.5px solid rgba(201,168,76,0.7)', background: isActive ? '#c9a84c' : 'transparent' }} />
+                          <span style={{ width: '12px', height: '12px', borderRadius: '50%', flexShrink: 0, border: '1.5px solid rgba(236,232,223,0.385)', background: isActive ? '#c8a45a' : 'transparent' }} />
                           <span style={{ fontSize: '13px', fontWeight: 800, color: 'rgba(232,228,220,0.9)' }}>{v.label}</span>
                           {!logVoice && isActive && (
                             <span style={{ fontSize: '10px', color: 'rgba(232,228,220,0.35)' }}>（既定）</span>
                           )}
                         </span>
                         <span style={{ display: 'block', fontSize: '11px', color: 'rgba(232,228,220,0.45)', paddingLeft: '20px', marginBottom: '4px' }}>{v.description}</span>
-                        <span style={{ display: 'block', fontSize: '12px', color: 'rgba(201,168,76,0.75)', paddingLeft: '20px' }}>{v.sample}</span>
+                        <span style={{ display: 'block', fontSize: '12px', color: 'rgba(200,164,90,0.75)', paddingLeft: '20px' }}>{v.sample}</span>
                       </button>
                     );
                   })}
@@ -591,8 +591,8 @@ export default function MypageProfilePage() {
                         title={lv.description}
                         style={{
                           flex: '1 1 108px', textAlign: 'center', cursor: 'pointer', padding: '10px 8px', borderRadius: '10px', fontFamily: 'inherit',
-                          background: isActive ? (isOff ? 'rgba(239,68,68,0.1)' : 'rgba(201,168,76,0.12)') : 'rgba(255,255,255,0.03)',
-                          border: `1.5px solid ${isActive ? (isOff ? 'rgba(239,68,68,0.45)' : 'rgba(201,168,76,0.5)') : 'rgba(232,228,220,0.14)'}`,
+                          background: isActive ? (isOff ? 'rgba(239,68,68,0.1)' : 'rgba(200,164,90,0.12)') : 'rgba(255,255,255,0.03)',
+                          border: `1.5px solid ${isActive ? (isOff ? 'rgba(239,68,68,0.45)' : 'rgba(200,164,90,0.5)') : 'rgba(232,228,220,0.14)'}`,
                         }}
                       >
                         <span style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: isActive && isOff ? '#f87171' : 'rgba(232,228,220,0.9)', marginBottom: '2px' }}>
@@ -649,11 +649,11 @@ export default function MypageProfilePage() {
       <style>{`
         .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
         .mypage-sidenav, .mypage-content { min-width: 0; }
-        .mypage-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        .mypage-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
         @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; min-width: 0; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav .sidenav-link { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
         .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
-        .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
+        .sidenav-link:hover { background: rgba(200,164,90,0.1); color: #0d1117; }
+        .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #0d1117; border-left: 3px solid #c8a45a; padding-left: 9px; }
         .profile-label { display: grid; grid-template-columns: 160px 1fr; align-items: center; gap: 12px; }
         .profile-label input { grid-column: 2; width: 100%; min-width: 0; }
         .display-name-note { font-size: 11px; color: #9ca3af; margin: 6px 0 0 172px; }

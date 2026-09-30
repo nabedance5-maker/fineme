@@ -11,24 +11,24 @@ export default function LpPage() {
     <>
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.4); } 50% { box-shadow: 0 0 0 12px rgba(201,168,76,0); } }
+        @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(0,0,0,0.48); } 50% { box-shadow: 0 0 0 12px rgba(0,0,0,0.0); } }
         .lp-cta-btn { animation: pulse 2.4s ease-in-out infinite; }
         .lp-fade { animation: fadeUp 0.6s ease both; }
         .lp-fade-d1 { animation-delay: 0.1s; }
         .lp-fade-d2 { animation-delay: 0.25s; }
         .lp-fade-d3 { animation-delay: 0.4s; }
         .lp-fade-d4 { animation-delay: 0.55s; }
-        .step-item { display: flex; gap: 14px; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid rgba(201,168,76,0.1); }
+        .step-item { display: flex; gap: 14px; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid rgba(236,232,223,0.055); }
         .step-item:last-child { border-bottom: none; }
-        .step-num { width: 28px; height: 28px; border-radius: 50%; background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.4); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #c9a84c; flex-shrink: 0; margin-top: 2px; }
-        .voice-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(201,168,76,0.15); border-radius: 14px; padding: 18px; }
+        .step-num { width: 28px; height: 28px; border-radius: 50%; background: rgba(200,164,90,0.15); border: 1px solid rgba(236,232,223,0.22); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #c8a45a; flex-shrink: 0; margin-top: 2px; }
+        .voice-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(236,232,223,0.083); border-radius: 14px; padding: 18px; }
         .voice-text { font-size: 14px; color: rgba(240,236,228,0.85); line-height: 1.9; }
         .voice-meta { font-size: 11px; color: rgba(240,236,228,0.4); margin-top: 8px; }
         .axis-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
-        .axis-item { background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.2); border-radius: 10px; padding: 12px 8px; text-align: center; }
+        .axis-item { background: rgba(200,164,90,0.06); border: 1px solid rgba(236,232,223,0.11); border-radius: 10px; padding: 12px 8px; text-align: center; }
         .axis-icon { font-size: 22px; margin-bottom: 6px; }
         .axis-label { font-size: 11px; font-weight: 700; color: rgba(240,236,228,0.75); }
-        .faq-item { border-bottom: 1px solid rgba(201,168,76,0.1); padding: 16px 0; }
+        .faq-item { border-bottom: 1px solid rgba(236,232,223,0.055); padding: 16px 0; }
         .faq-q { font-size: 14px; font-weight: 700; color: rgba(240,236,228,0.88); margin-bottom: 8px; }
         .faq-a { font-size: 13px; color: rgba(240,236,228,0.55); line-height: 1.8; }
       ` }} />
@@ -37,14 +37,14 @@ export default function LpPage() {
 
         {/* ── ヒーロー ── */}
         <section style={{ background: 'linear-gradient(160deg, #080d1a 0%, #0d1528 60%, #080d1a 100%)', padding: 'clamp(48px,10vw,80px) 20px clamp(40px,8vw,64px)', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(201,168,76,0.07) 0%, transparent 65%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(200,164,90,0.07) 0%, transparent 65%)', pointerEvents: 'none' }} />
           <div style={{ position: 'relative', zIndex: 1, maxWidth: '640px', margin: '0 auto' }}>
-            <div className="lp-fade" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '16px' }}>
+            <div className="lp-fade" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.16em', color: '#c8a45a', textTransform: 'uppercase', marginBottom: '16px' }}>
               Fineme — 外見変容診断
             </div>
             <h1 className="lp-fade lp-fade-d1" style={{ fontSize: 'clamp(24px,6vw,42px)', fontWeight: 800, fontFamily: 'Georgia, serif', lineHeight: 1.35, color: '#fff', marginBottom: '20px' }}>
               「何から変えればいい？」<br />
-              <span style={{ color: '#c9a84c' }}>8軸で分析</span>して、<br />
+              <span style={{ color: '#c8a45a' }}>8軸で分析</span>して、<br />
               最初の一手を教えます。
             </h1>
             <p className="lp-fade lp-fade-d2" style={{ fontSize: 'clamp(14px,2.5vw,16px)', color: 'rgba(240,236,228,0.65)', lineHeight: 1.9, marginBottom: '32px' }}>
@@ -54,10 +54,10 @@ export default function LpPage() {
             <div className="lp-fade lp-fade-d3">
               <Link href="/diagnosis" className="lp-cta-btn" style={{
                 display: 'inline-block', padding: 'clamp(14px,3vw,18px) clamp(32px,6vw,52px)',
-                background: 'linear-gradient(135deg, #c9a84c, #e8c97a)',
-                borderRadius: '10px', color: '#0a0f1e', fontWeight: 800,
+                background: 'linear-gradient(135deg, #c8a45a, #e8c97a)',
+                borderRadius: '10px', color: '#0d1117', fontWeight: 800,
                 fontSize: 'clamp(15px,2.5vw,18px)', textDecoration: 'none',
-                boxShadow: '0 6px 24px rgba(201,168,76,0.35)',
+                boxShadow: '0 6px 24px rgba(0,0,0,0.42)',
               }}>
                 無料で診断する（3分）→
               </Link>
@@ -70,7 +70,7 @@ export default function LpPage() {
 
         {/* ── 共感セクション ── */}
         <section style={{ padding: 'clamp(40px,8vw,64px) 20px', maxWidth: '680px', margin: '0 auto' }}>
-          <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '16px', textAlign: 'center' }}>こんな悩みはありませんか？</p>
+          <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#c8a45a', textTransform: 'uppercase', marginBottom: '16px', textAlign: 'center' }}>こんな悩みはありませんか？</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {[
               '「外見を変えたい」と思っているけど、何から始めるか分からない',
@@ -78,7 +78,7 @@ export default function LpPage() {
               'ジム・眉毛サロン・美容院…どれが今の自分に必要なのか判断できない',
               '「清潔感を上げろ」と言われるが、具体的に何をすればいいかわからない',
             ].map((t, i) => (
-              <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,168,76,0.12)', borderRadius: '10px' }}>
+              <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(236,232,223,0.066)', borderRadius: '10px' }}>
                 <span style={{ fontSize: '16px', flexShrink: 0 }}>😔</span>
                 <span style={{ fontSize: '14px', color: 'rgba(240,236,228,0.75)', lineHeight: 1.7 }}>{t}</span>
               </div>
@@ -87,9 +87,9 @@ export default function LpPage() {
         </section>
 
         {/* ── 解決策 ── */}
-        <section style={{ padding: 'clamp(40px,8vw,64px) 20px', background: 'rgba(10,15,30,0.6)', borderTop: '1px solid rgba(201,168,76,0.1)', borderBottom: '1px solid rgba(201,168,76,0.1)' }}>
+        <section style={{ padding: 'clamp(40px,8vw,64px) 20px', background: '#151b24', borderTop: '1px solid rgba(236,232,223,0.055)', borderBottom: '1px solid rgba(236,232,223,0.055)' }}>
           <div style={{ maxWidth: '680px', margin: '0 auto', textAlign: 'center' }}>
-            <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '16px' }}>解決策</p>
+            <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#c8a45a', textTransform: 'uppercase', marginBottom: '16px' }}>解決策</p>
             <h2 style={{ fontSize: 'clamp(20px,4vw,28px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', marginBottom: '16px', lineHeight: 1.4 }}>
               「最初の一手」を間違えなければ、<br />外見は必ず変わる。
             </h2>
@@ -110,7 +110,7 @@ export default function LpPage() {
 
         {/* ── 使い方ステップ ── */}
         <section style={{ padding: 'clamp(40px,8vw,64px) 20px', maxWidth: '680px', margin: '0 auto' }}>
-          <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '20px', textAlign: 'center' }}>3ステップで始まる変容の旅</p>
+          <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#c8a45a', textTransform: 'uppercase', marginBottom: '20px', textAlign: 'center' }}>3ステップで始まる変容の旅</p>
           {[
             ['🔍', 'Me Scan を受ける（3分）', '8軸の設問に答えると、今の自分の「変容地図」が生成されます。無料・登録不要。'],
             ['🧭', 'Compass（最初の一手）を確認する', '今向くべき軸と、最初に取り組むべきサービスが提示されます。'],
@@ -127,9 +127,9 @@ export default function LpPage() {
         </section>
 
         {/* ── 体験談 ── */}
-        <section style={{ padding: 'clamp(40px,8vw,64px) 20px', background: 'rgba(10,15,30,0.5)', borderTop: '1px solid rgba(201,168,76,0.1)', borderBottom: '1px solid rgba(201,168,76,0.1)' }}>
+        <section style={{ padding: 'clamp(40px,8vw,64px) 20px', background: '#151b24', borderTop: '1px solid rgba(236,232,223,0.055)', borderBottom: '1px solid rgba(236,232,223,0.055)' }}>
           <div style={{ maxWidth: '680px', margin: '0 auto' }}>
-            <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '20px', textAlign: 'center' }}>変容の声</p>
+            <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#c8a45a', textTransform: 'uppercase', marginBottom: '20px', textAlign: 'center' }}>変容の声</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
               {[
                 ['「眉毛から始めるべきと診断されて、半信半疑でサロンへ。1ヶ月で「清潔感が増した」と言われるようになりました。」', '20代 会社員'],
@@ -148,7 +148,7 @@ export default function LpPage() {
 
         {/* ── FAQ ── */}
         <section style={{ padding: 'clamp(40px,8vw,64px) 20px', maxWidth: '680px', margin: '0 auto' }}>
-          <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '20px', textAlign: 'center' }}>よくある質問</p>
+          <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#c8a45a', textTransform: 'uppercase', marginBottom: '20px', textAlign: 'center' }}>よくある質問</p>
           {[
             ['本当に無料ですか？', '診断・地図生成・ロードマップ表示はすべて無料です。専門家への予約時のみ料金が発生します。'],
             ['登録は必要ですか？', '診断は登録不要で受けられます。結果を保存・同期したい場合は無料アカウントの作成をおすすめします。'],
@@ -163,7 +163,7 @@ export default function LpPage() {
         </section>
 
         {/* ── 最終CTA ── */}
-        <section style={{ padding: 'clamp(48px,10vw,80px) 20px', textAlign: 'center', background: 'linear-gradient(160deg, #0a0f1e 0%, #060c1a 100%)' }}>
+        <section style={{ padding: 'clamp(48px,10vw,80px) 20px', textAlign: 'center', background: 'linear-gradient(160deg, #0d1117 0%, #060c1a 100%)' }}>
           <div style={{ maxWidth: '560px', margin: '0 auto' }}>
             <div style={{ fontSize: '32px', marginBottom: '14px' }}>🧭</div>
             <h2 style={{ fontSize: 'clamp(20px,4vw,28px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', marginBottom: '14px', lineHeight: 1.4 }}>
@@ -174,10 +174,10 @@ export default function LpPage() {
             </p>
             <Link href="/diagnosis" className="lp-cta-btn" style={{
               display: 'inline-block', padding: '16px 48px',
-              background: 'linear-gradient(135deg, #c9a84c, #e8c97a)',
-              borderRadius: '10px', color: '#0a0f1e', fontWeight: 800,
+              background: 'linear-gradient(135deg, #c8a45a, #e8c97a)',
+              borderRadius: '10px', color: '#0d1117', fontWeight: 800,
               fontSize: '16px', textDecoration: 'none',
-              boxShadow: '0 6px 24px rgba(201,168,76,0.35)',
+              boxShadow: '0 6px 24px rgba(0,0,0,0.42)',
             }}>
               無料で診断する（3分）→
             </Link>
@@ -188,7 +188,7 @@ export default function LpPage() {
         </section>
 
         {/* ── フッター（最小限） ── */}
-        <footer style={{ padding: '20px', textAlign: 'center', borderTop: '1px solid rgba(201,168,76,0.1)', background: 'rgba(10,15,30,0.9)' }}>
+        <footer style={{ padding: '20px', textAlign: 'center', borderTop: '1px solid rgba(236,232,223,0.055)', background: '#151b24' }}>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', marginBottom: '12px' }}>
             <Link href="/privacy" style={{ fontSize: '12px', color: 'rgba(240,236,228,0.35)', textDecoration: 'none' }}>プライバシーポリシー</Link>
             <Link href="/terms" style={{ fontSize: '12px', color: 'rgba(240,236,228,0.35)', textDecoration: 'none' }}>利用規約</Link>

@@ -108,7 +108,7 @@ const AXES = [
 ];
 
 const TIER_INFO = {
-  1: { label: 'Tier 1 — 今すぐ着手', color: '#c9a84c', bg: 'rgba(201,168,76,0.12)', border: 'rgba(201,168,76,0.3)', desc: '即効性が高く、コスト・時間ともに参入しやすい軸。変化の実感を得やすい。' },
+  1: { label: 'Tier 1 — 今すぐ着手', color: '#c8a45a', bg: 'rgba(200,164,90,0.12)', border: 'rgba(236,232,223,0.165)', desc: '即効性が高く、コスト・時間ともに参入しやすい軸。変化の実感を得やすい。' },
   2: { label: 'Tier 2 — 早めに着手',  color: '#065f46', bg: '#d1fae5', border: '#86efac', desc: '継続が必要だが確実に変わる軸。Tier 1と並走で取り組むと効果的。' },
   3: { label: 'Tier 3 — 中期計画',   color: '#92400e', bg: '#fef3c7', border: '#fcd34d', desc: '投資額・時間ともに大きいが、変化の質と永続性が高い軸。' },
   4: { label: 'Tier 4 — 長期・細部', color: '#374151', bg: '#f3f4f6', border: '#d1d5db', desc: '完成度を上げる仕上げの軸。Tier 1〜3が整ってから取り組む。' },
@@ -121,21 +121,20 @@ export default function GuidePage() {
         .guide-hero {
           position: relative; padding: 96px 24px 80px;
           background:
-            linear-gradient(rgba(10,15,30,0.72), rgba(10,15,30,0.82)),
-            url('/assets/images/hero-bg.webp') center / cover no-repeat;
+            #0d1117;
           text-align: center; overflow: hidden;
         }
         .guide-hero-eyebrow {
           font-size: 11px; font-weight: 800; letter-spacing: .18em;
-          color: rgba(201,168,76,0.55); text-transform: uppercase; margin: 0 0 18px;
+          color: rgba(200,164,90,0.55); text-transform: uppercase; margin: 0 0 18px;
         }
         .guide-hero h1 {
-          font-family: 'Noto Serif JP', Georgia, serif;
+          font-family: 'Shippori Mincho', Georgia, serif;
           font-size: clamp(26px, 5.5vw, 42px); font-weight: 700;
           margin: 0 0 14px; color: #fff; letter-spacing: -.01em; line-height: 1.4;
         }
         .guide-hero p {
-          font-family: 'Noto Serif JP', Georgia, serif;
+          font-family: 'Shippori Mincho', Georgia, serif;
           font-size: clamp(14px, 2.2vw, 17px); color: rgba(255,255,255,.65);
           margin: 0 auto; line-height: 2; max-width: 500px;
         }
@@ -143,37 +142,37 @@ export default function GuidePage() {
         .guide-sec { margin: 48px 0 0; }
         .guide-sec-label {
           font-size: 11px; font-weight: 800; letter-spacing: .14em;
-          text-transform: uppercase; color: var(--color-gold, #c9a84c); margin: 0 0 10px;
+          text-transform: uppercase; color: var(--color-gold, #c8a45a); margin: 0 0 10px;
         }
         .guide-sec h2 {
-          font-family: 'Noto Serif JP', Georgia, serif;
+          font-family: 'Shippori Mincho', Georgia, serif;
           font-size: clamp(20px, 4vw, 28px); font-weight: 700;
           color: rgba(232,228,220,0.90); margin: 0 0 8px;
         }
         .guide-sec-lead { font-size: 15px; color: rgba(232,228,220,0.55); line-height: 1.9; margin: 0 0 24px; }
         .compass-banner {
-          background: rgba(201,168,76,0.06); border: 1.5px solid rgba(201,168,76,0.3);
+          background: rgba(200,164,90,0.06); border: 1.5px solid rgba(236,232,223,0.165);
           border-radius: 10px; padding: 20px 22px; margin-bottom: 24px;
           display: flex; gap: 14px; align-items: flex-start;
         }
         .compass-banner-icon { font-size: 32px; flex-shrink: 0; }
         .compass-banner-title { font-size: 16px; font-weight: 800; color: rgba(232,228,220,0.90); margin: 0 0 4px; }
-        .compass-banner-desc { font-size: 13px; color: var(--color-gold, #c9a84c); margin: 0; line-height: 1.7; }
+        .compass-banner-desc { font-size: 13px; color: var(--color-gold, #c8a45a); margin: 0; line-height: 1.7; }
         .no-diag-banner {
-          background: rgba(10,15,30,0.65); backdrop-filter: blur(8px);
-          border: 1.5px solid rgba(201,168,76,0.45);
+          background: #151b24; backdrop-filter: blur(8px);
+          border: 1.5px solid rgba(236,232,223,0.248);
           border-radius: 10px; padding: 22px; text-align: center; margin-bottom: 24px;
         }
         .tier-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
         .guide-axis-card {
-          background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid var(--color-border-gold, rgba(201,168,76,0.28));
+          background: #151b24; backdrop-filter: blur(8px); border: 1px solid var(--color-border-gold, rgba(236,232,223,0.154));
           border-radius: 12px; overflow: hidden; margin-bottom: 14px;
           box-shadow: var(--shadow-sm); transition: box-shadow .15s, transform .12s;
         }
         .guide-axis-card:hover { box-shadow: var(--shadow-gold); transform: translateY(-2px); }
         .guide-axis-card.is-compass {
-          border-color: rgba(201,168,76,0.55);
-          box-shadow: 0 4px 20px rgba(201,168,76,0.18);
+          border-color: rgba(236,232,223,0.303);
+          box-shadow: 0 4px 20px rgba(0,0,0,0.216);
         }
         .guide-axis-header { display: flex; align-items: center; gap: 14px; padding: 18px 20px; }
         .guide-axis-icon { font-size: 28px; flex-shrink: 0; }
@@ -189,45 +188,45 @@ export default function GuidePage() {
           font-size: 12px; padding: 4px 12px; border-radius: 99px;
           background: rgba(232,228,220,0.08);
           color: rgba(232,228,220,0.65);
-          border: 1px solid var(--color-border-gold, rgba(201,168,76,0.25));
+          border: 1px solid var(--color-border-gold, rgba(236,232,223,0.138));
           display: flex; align-items: center; gap: 5px;
         }
         .guide-axis-path {
-          background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.2);
+          background: rgba(200,164,90,0.06); border: 1px solid rgba(236,232,223,0.11);
           border-radius: 10px; padding: 12px 16px; margin: 0 0 14px;
           font-size: 13px; color: rgba(232,228,220,0.80); line-height: 1.8;
         }
-        .guide-axis-path-label { font-size: 10px; font-weight: 800; color: var(--color-gold, #c9a84c); margin: 0 0 4px; letter-spacing: .08em; }
+        .guide-axis-path-label { font-size: 10px; font-weight: 800; color: var(--color-gold, #c8a45a); margin: 0 0 4px; letter-spacing: .08em; }
         .guide-axis-cta {
           display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px;
-          border: 1.5px solid var(--color-gold, #c9a84c); color: var(--color-gold, #c9a84c);
+          border: 1.5px solid var(--color-gold, rgba(236,232,223,0.3)); color: var(--color-gold, #c8a45a);
           background: transparent; border-radius: 6px; font-size: 13px; font-weight: 700;
           text-decoration: none; transition: background .18s, color .18s;
         }
-        .guide-axis-cta:hover { background: var(--color-gold, #c9a84c); color: #0a0f1e; }
+        .guide-axis-cta:hover { background: var(--color-gold, #c8a45a); color: #0d1117; }
         .compass-crown {
-          font-size: 10px; font-weight: 700; color: var(--color-gold, #c9a84c);
-          background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,.3);
+          font-size: 10px; font-weight: 700; color: var(--color-gold, #c8a45a);
+          background: rgba(200,164,90,0.1); border: 1px solid rgba(236,232,223,0.165);
           padding: 2px 10px; border-radius: 99px;
           display: inline-flex; align-items: center; gap: 4px;
         }
         .guide-scan-cta {
-          background: var(--color-bg-dark, #0a0f1e); border-radius: 12px;
+          background: var(--color-bg-dark, #0d1117); border-radius: 12px;
           padding: 44px 28px; text-align: center; margin-top: 56px;
-          border: 1px solid rgba(201,168,76,0.2);
+          border: 1px solid rgba(236,232,223,0.11);
         }
         .guide-scan-cta h2 {
-          font-family: 'Noto Serif JP', Georgia, serif;
+          font-family: 'Shippori Mincho', Georgia, serif;
           font-size: clamp(20px,4vw,26px); font-weight: 700; color: #fff; margin: 0 0 12px;
         }
         .guide-scan-cta p { font-size: 14px; color: rgba(255,255,255,.6); margin: 0 0 28px; line-height: 1.8; }
         .guide-scan-btn {
           display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px;
-          border: 1.5px solid #c9a84c; color: #c9a84c; background: transparent;
+          border: 1.5px solid rgba(236,232,223,0.3); color: #c8a45a; background: transparent;
           border-radius: 3px; font-size: 15px; font-weight: 700; text-decoration: none;
           letter-spacing: .06em; transition: background .2s, color .2s, box-shadow .2s;
         }
-        .guide-scan-btn:hover { background: #c9a84c; color: #0a0f1e; box-shadow: 0 0 28px rgba(201,168,76,.35); }
+        .guide-scan-btn:hover { background: #c8a45a; color: #0d1117; box-shadow: 0 0 28px rgba(0,0,0,0.42); }
         @media (max-width: 600px) { .guide-wrap { padding: 0 14px 60px; } }
       `}</style>
 

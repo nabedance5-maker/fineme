@@ -139,8 +139,7 @@ export default function HomePage() {
           position: relative;
           padding: 120px 20px 100px;
           background:
-            linear-gradient(rgba(5,10,24,0.65) 0%, rgba(5,10,24,0.80) 100%),
-            url('/assets/images/hero-bg-c3.jpg') center / cover no-repeat;
+            #0d1117;
           overflow: hidden;
           text-align: center;
           display: flex;
@@ -156,7 +155,7 @@ export default function HomePage() {
           transform: translate(-50%, -55%);
           width: 700px;
           height: 700px;
-          background: radial-gradient(circle, rgba(10,15,30,0.45) 0%, transparent 65%);
+          background: radial-gradient(circle, rgba(13,17,23,0.45) 0%, transparent 65%);
           pointer-events: none;
         }
         .hero-nav-inner { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; }
@@ -164,7 +163,7 @@ export default function HomePage() {
           font-size: 11px;
           font-weight: 800;
           letter-spacing: .22em;
-          color: rgba(201,168,76,0.45);
+          color: rgba(200,164,90,0.45);
           text-transform: uppercase;
           margin: 0 0 16px;
         }
@@ -177,17 +176,17 @@ export default function HomePage() {
           height: auto;
           display: block;
           margin: 0 auto;
-          filter: drop-shadow(0 2px 24px rgba(201,168,76,0.45));
+          filter: drop-shadow(0 2px 24px rgba(200,164,90,0.45));
         }
         .hero-nav-guide {
-          font-family: 'Noto Serif JP', 'Noto Serif', Georgia, serif;
+          font-family: 'Shippori Mincho', 'Noto Serif', Georgia, serif;
           font-size: clamp(14px, 2vw, 17px);
           color: rgba(232,228,220,0.70);
           line-height: 1.8;
           margin: 0 0 32px;
         }
         .hero-nav-resolve {
-          font-family: 'Noto Serif JP', 'Noto Serif', Georgia, serif;
+          font-family: 'Shippori Mincho', 'Noto Serif', Georgia, serif;
           font-size: clamp(13px, 1.8vw, 15px);
           color: rgba(232,228,220,0.55);
           line-height: 1.85;
@@ -198,7 +197,7 @@ export default function HomePage() {
           font-weight: 700;
         }
         .hero-nav-catchcopy {
-          font-family: 'Noto Serif JP', 'Noto Serif', Georgia, serif;
+          font-family: 'Shippori Mincho', 'Noto Serif', Georgia, serif;
           font-size: clamp(18px, 3vw, 24px);
           font-weight: 700;
           color: rgba(232,228,220,0.90);
@@ -222,7 +221,7 @@ export default function HomePage() {
           border-radius: 12px;
           padding: 16px 14px 14px;
         }
-        .hero-gender-col--male { border-color: rgba(201,168,76,0.25); }
+        .hero-gender-col--male { border-color: rgba(236,232,223,0.138); }
         .hero-gender-col--female { border-color: rgba(200,100,140,0.25); }
         .hero-gender-label {
           font-size: 11px;
@@ -232,7 +231,7 @@ export default function HomePage() {
           margin: 0 0 10px;
           text-align: center;
         }
-        .hero-gender-col--male .hero-gender-label { color: rgba(201,168,76,0.7); }
+        .hero-gender-col--male .hero-gender-label { color: rgba(200,164,90,0.7); }
         .hero-gender-col--female .hero-gender-label { color: rgba(200,100,140,0.8); }
         .hero-gender-btns { display: flex; flex-direction: column; gap: 6px; }
         .hero-nav-cta {
@@ -247,14 +246,14 @@ export default function HomePage() {
         }
         .hero-nav-cta:hover { opacity: .82; }
         .hero-nav-cta--scan-m {
-          background: #c9a84c;
-          color: #0a0f1e;
-          border: 1.5px solid #c9a84c;
+          background: #c8a45a;
+          color: #0d1117;
+          border: 1.5px solid rgba(236,232,223,0.3);
         }
         .hero-nav-cta--mirror-m {
           background: transparent;
-          border: 1.5px solid rgba(201,168,76,0.4);
-          color: rgba(201,168,76,0.9);
+          border: 1.5px solid rgba(236,232,223,0.22);
+          color: rgba(200,164,90,0.9);
         }
         .hero-nav-cta--scan-f {
           background: rgba(200,100,140,0.85);
@@ -279,74 +278,74 @@ export default function HomePage() {
           font-size: 11px;
           font-weight: 600;
           padding: 4px 12px;
-          border: 1px solid rgba(201,168,76,0.2);
-          color: rgba(201,168,76,0.55);
+          border: 1px solid rgba(236,232,223,0.11);
+          color: rgba(200,164,90,0.55);
           border-radius: 2px;
           letter-spacing: .06em;
         }
         /* ── Compass banner (diagnosed) ── */
-        .compass-banner { max-width: 580px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 14px 20px; background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.25); border-radius: 4px; text-decoration: none; transition: background .15s; margin-top: 32px; }
-        .compass-banner:hover { background: rgba(201,168,76,0.12); }
+        .compass-banner { max-width: 580px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 14px 20px; background: rgba(200,164,90,0.06); border: 1px solid rgba(236,232,223,0.138); border-radius: 4px; text-decoration: none; transition: background .15s; margin-top: 32px; }
+        .compass-banner:hover { background: rgba(200,164,90,0.12); }
         .compass-banner-body { flex: 1; text-align: left; }
-        .compass-banner-label { font-size: 10px; font-weight: 800; color: rgba(201,168,76,0.5); letter-spacing: .12em; text-transform: uppercase; margin: 0 0 3px; }
+        .compass-banner-label { font-size: 10px; font-weight: 800; color: rgba(200,164,90,0.5); letter-spacing: .12em; text-transform: uppercase; margin: 0 0 3px; }
         .compass-banner-main { font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.85); margin: 0; }
-        .compass-banner-arrow { font-size: 14px; color: rgba(201,168,76,0.5); }
+        .compass-banner-arrow { font-size: 14px; color: rgba(200,164,90,0.5); }
 
         /* ── Steps section ── */
-        .steps-section { padding: 72px 20px; background: rgba(10,15,30,0.50); }
+        .steps-section { padding: 72px 20px; background: #151b24; }
         .steps-inner { max-width: 800px; margin: 0 auto; }
-        .steps-eyebrow { font-size: 11px; font-weight: 800; color: var(--color-gold, #c9a84c); letter-spacing: .1em; text-transform: uppercase; margin: 0 0 10px; text-align: center; }
-        .steps-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(20px, 3.5vw, 26px); font-weight: 700; color: var(--color-fg, #0a0f1e); text-align: center; margin: 0 0 8px; }
+        .steps-eyebrow { font-size: 11px; font-weight: 800; color: var(--color-gold, #c8a45a); letter-spacing: .1em; text-transform: uppercase; margin: 0 0 10px; text-align: center; }
+        .steps-title { font-family: 'Shippori Mincho', Georgia, serif; font-size: clamp(20px, 3.5vw, 26px); font-weight: 700; color: var(--color-fg, #0d1117); text-align: center; margin: 0 0 8px; }
         .steps-sub { font-size: 14px; color: var(--color-muted, #7a6e65); text-align: center; margin: 0 0 48px; line-height: 1.7; }
         .steps-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
         @media (max-width: 640px) { .steps-grid { grid-template-columns: 1fr; gap: 16px; } }
-        .step-card { position: relative; padding: 28px 22px 22px; border-radius: 12px; border: 1.5px solid var(--color-border-gold, rgba(201,168,76,0.28)); background: rgba(10,15,30,0.65); box-shadow: 0 4px 24px rgba(0,0,0,0.4); backdrop-filter: blur(8px); }
-        .step-card:nth-child(2) { background: var(--color-bg-dark, #0a0f1e); border-color: rgba(201,168,76,0.35); }
+        .step-card { position: relative; padding: 28px 22px 22px; border-radius: 12px; border: 1.5px solid var(--color-border-gold, rgba(236,232,223,0.154)); background: #151b24; box-shadow: 0 4px 24px rgba(0,0,0,0.4); backdrop-filter: blur(8px); }
+        .step-card:nth-child(2) { background: var(--color-bg-dark, #0d1117); border-color: rgba(236,232,223,0.193); }
         .step-card:nth-child(2) .step-name { color: #fff; }
         .step-card:nth-child(2) .step-desc { color: rgba(255,255,255,0.6); }
-        .step-num { position: absolute; top: -14px; left: 20px; width: 28px; height: 28px; background: var(--color-gold, #c9a84c); color: var(--color-bg-dark, #0a0f1e); border-radius: 50%; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
-        .step-card:nth-child(2) .step-num { background: var(--color-gold, #c9a84c); color: var(--color-bg-dark, #0a0f1e); }
+        .step-num { position: absolute; top: -14px; left: 20px; width: 28px; height: 28px; background: var(--color-gold, #c8a45a); color: var(--color-bg-dark, #0d1117); border-radius: 50%; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+        .step-card:nth-child(2) .step-num { background: var(--color-gold, #c8a45a); color: var(--color-bg-dark, #0d1117); }
         .step-icon { font-size: 32px; margin: 0 0 12px; }
         .step-name { font-size: 15px; font-weight: 800; color: rgba(232,228,220,0.90); margin: 0 0 8px; }
         .step-desc { font-size: 13px; color: rgba(232,228,220,0.55); line-height: 1.65; margin: 0; }
         .steps-cta-wrap { text-align: center; margin-top: 40px; }
 
         /* ── Sample output ── */
-        .sample-section { padding: 64px 20px; background: rgba(10,15,30,0.86); }
+        .sample-section { padding: 64px 20px; background: #151b24; }
         .sample-inner { max-width: 720px; margin: 0 auto; }
-        .sample-eyebrow { font-size: 11px; font-weight: 800; color: rgba(201,168,76,0.6); letter-spacing: .1em; text-transform: uppercase; margin: 0 0 10px; text-align: center; }
-        .sample-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(18px,3vw,24px); font-weight: 700; color: #fff; text-align: center; margin: 0 0 32px; }
+        .sample-eyebrow { font-size: 11px; font-weight: 800; color: rgba(200,164,90,0.6); letter-spacing: .1em; text-transform: uppercase; margin: 0 0 10px; text-align: center; }
+        .sample-title { font-family: 'Shippori Mincho', Georgia, serif; font-size: clamp(18px,3vw,24px); font-weight: 700; color: #fff; text-align: center; margin: 0 0 32px; }
         .sample-mockup { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 20px; padding: 24px; }
-        .sample-compass { display: flex; align-items: flex-start; gap: 14px; background: rgba(255,255,255,.08); border-radius: 14px; padding: 16px 18px; margin-bottom: 16px; border: 1px solid rgba(201,168,76,0.25); }
+        .sample-compass { display: flex; align-items: flex-start; gap: 14px; background: rgba(255,255,255,.08); border-radius: 14px; padding: 16px 18px; margin-bottom: 16px; border: 1px solid rgba(236,232,223,0.138); }
         .sample-vectors { display: flex; flex-direction: column; gap: 8px; }
         .sample-vec { display: flex; align-items: center; gap: 10px; }
         .sample-vec-bar-track { flex: 1; height: 6px; background: rgba(255,255,255,.1); border-radius: 99px; overflow: hidden; }
         .sample-vec-bar-fill { height: 100%; border-radius: 99px; }
         .sample-vec-label { font-size: 12px; color: rgba(255,255,255,.6); width: 72px; flex-shrink: 0; }
-        .sample-vec-gap { font-size: 11px; font-weight: 700; color: rgba(201,168,76,0.8); width: 32px; text-align: right; flex-shrink: 0; }
+        .sample-vec-gap { font-size: 11px; font-weight: 700; color: rgba(200,164,90,0.8); width: 32px; text-align: right; flex-shrink: 0; }
 
         /* ── Stories ── */
-        .stories-section { padding: 64px 20px; background: rgba(10,15,30,0.50); }
+        .stories-section { padding: 64px 20px; background: #151b24; }
         .stories-inner { max-width: 880px; margin: 0 auto; }
-        .stories-eyebrow { font-size: 11px; font-weight: 800; color: var(--color-gold, #c9a84c); letter-spacing: .1em; text-transform: uppercase; margin: 0 0 10px; text-align: center; }
-        .stories-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(18px,3vw,24px); font-weight: 700; color: var(--color-fg, #0a0f1e); text-align: center; margin: 0 0 32px; }
+        .stories-eyebrow { font-size: 11px; font-weight: 800; color: var(--color-gold, #c8a45a); letter-spacing: .1em; text-transform: uppercase; margin: 0 0 10px; text-align: center; }
+        .stories-title { font-family: 'Shippori Mincho', Georgia, serif; font-size: clamp(18px,3vw,24px); font-weight: 700; color: var(--color-fg, #0d1117); text-align: center; margin: 0 0 32px; }
         .stories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 16px; }
-        .story-card { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border-radius: 12px; padding: 20px; border: 1px solid rgba(232,228,220,0.15); box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
-        .story-axis { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 10px; background: rgba(201,168,76,0.1); color: var(--color-gold, #c9a84c); border-radius: 99px; margin-bottom: 12px; border: 1px solid rgba(201,168,76,0.25); }
+        .story-card { background: #151b24; backdrop-filter: blur(8px); border-radius: 12px; padding: 20px; border: 1px solid rgba(232,228,220,0.15); box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+        .story-axis { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 10px; background: rgba(200,164,90,0.1); color: var(--color-gold, #c8a45a); border-radius: 99px; margin-bottom: 12px; border: 1px solid rgba(236,232,223,0.138); }
         .story-before { font-size: 12px; color: var(--color-muted, #7a6e65); margin: 0 0 6px; }
         .story-after { font-size: 14px; font-weight: 700; color: rgba(232,228,220,0.90); line-height: 1.6; margin: 0; }
-        .story-milestone { margin-top: 10px; font-size: 12px; font-weight: 600; color: #c9a84c; background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.3); padding: 4px 10px; border-radius: 8px; display: inline-block; }
+        .story-milestone { margin-top: 10px; font-size: 12px; font-weight: 600; color: #c8a45a; background: rgba(200,164,90,0.15); border: 1px solid rgba(236,232,223,0.165); padding: 4px 10px; border-radius: 8px; display: inline-block; }
 
         /* ── Categories ── */
-        .categories-section { padding: 64px 20px 48px; background: rgba(10,15,30,0.50); }
+        .categories-section { padding: 64px 20px 48px; background: #151b24; }
         .categories-inner { max-width: 960px; margin: 0 auto; }
         .categories-eyebrow { font-size: 11px; font-weight: 800; color: var(--color-muted, #7a6e65); letter-spacing: .1em; text-transform: uppercase; margin: 0 0 8px; text-align: center; }
-        .categories-title { font-family: 'Noto Serif JP', Georgia, serif; font-size: clamp(16px,2.5vw,20px); font-weight: 700; color: var(--color-fg, #0a0f1e); text-align: center; margin: 0 0 28px; }
+        .categories-title { font-family: 'Shippori Mincho', Georgia, serif; font-size: clamp(16px,2.5vw,20px); font-weight: 700; color: var(--color-fg, #0d1117); text-align: center; margin: 0 0 28px; }
         .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-        .cat-card { display: flex; flex-direction: column; align-items: center; padding: 16px 8px; border: 1px solid rgba(232,228,220,0.15); border-radius: 12px; background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); text-decoration: none; color: inherit; transition: background .15s, border-color .15s, box-shadow .15s, transform .12s; gap: 6px; }
-        .cat-card:hover { background: rgba(245,240,232,0.92); border-color: var(--color-gold, #c9a84c); box-shadow: var(--shadow-gold); transform: translateY(-2px); }
+        .cat-card { display: flex; flex-direction: column; align-items: center; padding: 16px 8px; border: 1px solid rgba(232,228,220,0.15); border-radius: 12px; background: #151b24; backdrop-filter: blur(8px); text-decoration: none; color: inherit; transition: background .15s, border-color .15s, box-shadow .15s, transform .12s; gap: 6px; }
+        .cat-card:hover { background: rgba(245,240,232,0.92); border-color: var(--color-gold, rgba(236,232,223,0.3)); box-shadow: var(--shadow-gold); transform: translateY(-2px); }
         .cat-icon { font-size: 24px; }
-        .cat-label { font-size: 12px; font-weight: 700; color: var(--color-fg, #0a0f1e); text-align: center; line-height: 1.3; }
+        .cat-label { font-size: 12px; font-weight: 700; color: var(--color-fg, #0d1117); text-align: center; line-height: 1.3; }
         .cat-sub { font-size: 10px; color: var(--color-muted, #7a6e65); text-align: center; line-height: 1.4; }
       `}</style>
 
@@ -381,7 +380,7 @@ export default function HomePage() {
                     <span className="hero-nav-cta-sub">8軸で外見を自己診断</span>
                   </Link>
                 </div>
-                <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.30)', margin: '10px 0 0', textAlign: 'center' }}>Fineme</p>
+                <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(200,164,90,0.30)', margin: '10px 0 0', textAlign: 'center' }}>Fineme</p>
               </div>
               {/* 女性 */}
               <div className="hero-gender-col hero-gender-col--female">
@@ -403,7 +402,7 @@ export default function HomePage() {
             {/* 診断済みユーザー向けバナー（ログイン済みのみ） */}
             {loggedIn && compass && (
               <Link href={diagnosisType === 'belle' ? '/belle/diagnosis/result' : '/diagnosis/result'} className="compass-banner">
-                <span style={{ fontSize: '22px', color: '#c9a84c' }}>◎</span>
+                <span style={{ fontSize: '22px', color: '#c8a45a' }}>◎</span>
                 <div className="compass-banner-body">
                   <p className="compass-banner-label">あなたのFineme Compass</p>
                   <p className="compass-banner-main">
@@ -420,7 +419,7 @@ export default function HomePage() {
         {/* ── 3ステップ or 診断済みパネル ── */}
         {diagnosis && loggedIn ? (
           /* 診断済み：Map / Navi へのナビゲーション */
-          <section className="steps-section" style={{ background: 'rgba(10,15,30,0.55)' }}>
+          <section className="steps-section" style={{ background: '#151b24' }}>
             <div className="steps-inner">
               <p className="steps-eyebrow">あなたの変容の旅、進行中</p>
               <h2 className="steps-title">New Me Naviが生成されています</h2>
@@ -456,13 +455,13 @@ export default function HomePage() {
                   <div className="step-num">1</div>
                   <div className="step-icon">📸</div>
                   <p className="step-name">Mirror</p>
-                  <p className="step-desc">写真を撮るだけで、他人の目線での外見分析が届く。<strong style={{color:'#c9a84c'}}>「今どう見えているか」の事実</strong>を、正確に把握するところから始める。</p>
+                  <p className="step-desc">写真を撮るだけで、他人の目線での外見分析が届く。<strong style={{color:'#c8a45a'}}>「今どう見えているか」の事実</strong>を、正確に把握するところから始める。</p>
                 </div>
                 <div className="step-card">
                   <div className="step-num">2</div>
                   <div className="step-icon">🧬</div>
                   <p className="step-name">Me Scan</p>
-                  <p className="step-desc">8軸の自己診断でゴールと現在地を地図化。Mirrorと照合して<strong style={{color:'#c9a84c'}}>「何を・どの順で変えるか」</strong>を決める。Fineme Compass が最初の一手を指す。</p>
+                  <p className="step-desc">8軸の自己診断でゴールと現在地を地図化。Mirrorと照合して<strong style={{color:'#c8a45a'}}>「何を・どの順で変えるか」</strong>を決める。Fineme Compass が最初の一手を指す。</p>
                 </div>
                 <div className="step-card">
                   <div className="step-num">3</div>
@@ -476,7 +475,7 @@ export default function HomePage() {
                   📸 まずMirrorを試す
                 </Link>
                 <p style={{ marginTop: '10px' }}>
-                  <Link href={knownTrack ? TRACKS[knownTrack].diagnosis : '/choose-track?dest=diagnosis'} style={{ fontSize: '13px', color: 'rgba(201,168,76,0.7)', textDecoration: 'none' }}>
+                  <Link href={knownTrack ? TRACKS[knownTrack].diagnosis : '/choose-track?dest=diagnosis'} style={{ fontSize: '13px', color: 'rgba(200,164,90,0.7)', textDecoration: 'none' }}>
                     Me Scanから始める（無料・約3分）→
                   </Link>
                 </p>
@@ -580,12 +579,12 @@ export default function HomePage() {
         </section>
 
         {/* ── 継続価値：Map の中身を見せる ── */}
-        <section style={{ padding: 'clamp(56px,8vw,80px) 20px', background: 'rgba(10,15,30,0.78)' }}>
+        <section style={{ padding: 'clamp(56px,8vw,80px) 20px', background: '#151b24' }}>
           <div style={{ maxWidth: 800, margin: '0 auto' }}>
-            <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.18em', color: 'rgba(201,168,76,0.6)', textTransform: 'uppercase', textAlign: 'center', margin: '0 0 10px' }}>
+            <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.18em', color: 'rgba(200,164,90,0.6)', textTransform: 'uppercase', textAlign: 'center', margin: '0 0 10px' }}>
               続けると何が起きるか
             </p>
-            <h2 style={{ fontFamily: "'Noto Serif JP', Georgia, serif", fontSize: 'clamp(20px,3.5vw,26px)', fontWeight: 700, color: '#fff', textAlign: 'center', margin: '0 0 8px', lineHeight: 1.5 }}>
+            <h2 style={{ fontFamily: "'Shippori Mincho', Georgia, serif", fontSize: 'clamp(20px,3.5vw,26px)', fontWeight: 700, color: '#fff', textAlign: 'center', margin: '0 0 8px', lineHeight: 1.5 }}>
               Finemeは「診断で終わる」サービスじゃない。
             </h2>
             <p style={{ fontSize: 14, color: 'rgba(232,228,220,0.55)', textAlign: 'center', margin: '0 0 44px', lineHeight: 1.8 }}>
@@ -597,10 +596,10 @@ export default function HomePage() {
                 { icon: '📅', title: '週次チェックイン', sub: '7日ごとの振り返り', desc: '先週やれたこと・やれなかったことを確認。できなかったステップは翌週に最適化される。習慣が育まれる。' },
                 { icon: '📊', title: '月次変化レポート', sub: 'Mirrorで変化を確認', desc: '1ヶ月前のMirrorと今のMirrorを比較。外見の変化が数値と言葉で記録される。「変わっている」が見える。' },
               ].map((item, i) => (
-                <div key={i} style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 14, padding: 'clamp(18px,3vw,24px)' }}>
+                <div key={i} style={{ background: 'rgba(200,164,90,0.04)', border: '1px solid rgba(236,232,223,0.11)', borderRadius: 14, padding: 'clamp(18px,3vw,24px)' }}>
                   <div style={{ fontSize: 28, marginBottom: 10 }}>{item.icon}</div>
                   <p style={{ fontSize: 14, fontWeight: 800, color: '#fff', margin: '0 0 4px' }}>{item.title}</p>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(201,168,76,0.7)', margin: '0 0 10px', letterSpacing: '0.05em' }}>{item.sub}</p>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,164,90,0.7)', margin: '0 0 10px', letterSpacing: '0.05em' }}>{item.sub}</p>
                   <p style={{ fontSize: 13, color: 'rgba(232,228,220,0.55)', lineHeight: 1.7, margin: 0 }}>{item.desc}</p>
                 </div>
               ))}
@@ -629,15 +628,15 @@ export default function HomePage() {
             <div style={{
               marginTop: '56px',
               paddingTop: '48px',
-              borderTop: '1px solid rgba(201,168,76,0.2)',
+              borderTop: '1px solid rgba(236,232,223,0.11)',
             }}>
               {/* sec-label */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                <div style={{ width: '20px', height: '1.5px', background: '#c9a84c', borderRadius: '1px', flexShrink: 0 }} />
-                <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.75)', margin: 0, fontFamily: 'var(--font-sans)' }}>
+                <div style={{ width: '20px', height: '1.5px', background: '#c8a45a', borderRadius: '1px', flexShrink: 0 }} />
+                <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(200,164,90,0.75)', margin: 0, fontFamily: 'var(--font-sans)' }}>
                   Next Stage
                 </p>
-                <div style={{ flex: 1, height: '1px', background: 'repeating-linear-gradient(90deg,rgba(201,168,76,0.25) 0,rgba(201,168,76,0.25) 4px,transparent 4px,transparent 9px)' }} />
+                <div style={{ flex: 1, height: '1px', background: 'repeating-linear-gradient(90deg,rgba(200,164,90,0.25) 0,rgba(200,164,90,0.25) 4px,transparent 4px,transparent 9px)' }} />
               </div>
               <h3 style={{ fontSize: 'clamp(17px, 3vw, 22px)', fontWeight: 800, fontFamily: 'var(--font-serif)', color: 'var(--color-fg)', marginBottom: '6px' }}>
                 自信がついてきたら、発揮するステージへ
@@ -651,20 +650,20 @@ export default function HomePage() {
                     <div style={{
                       display: 'flex', gap: '18px', alignItems: 'flex-start',
                       padding: '22px 24px',
-                      background: 'linear-gradient(135deg, rgba(201,168,76,0.06) 0%, rgba(10,15,30,0.4) 100%)',
-                      border: '1px solid rgba(201,168,76,0.3)',
+                      background: 'linear-gradient(135deg, rgba(200,164,90,0.06) 0%, rgba(13,17,23,0.4) 100%)',
+                      border: '1px solid rgba(236,232,223,0.165)',
                       borderRadius: '16px',
                       transition: 'border-color 0.2s, transform 0.2s',
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.7)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.3)'; e.currentTarget.style.transform = ''; }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(200,164,90,0.7)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(200,164,90,0.3)'; e.currentTarget.style.transform = ''; }}
                     >
                       <span style={{ fontSize: '28px', flexShrink: 0, marginTop: '2px' }}>{icon}</span>
                       <div>
                         <p style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-fg)', margin: '0 0 6px', fontFamily: 'var(--font-serif)' }}>{label}</p>
                         <p style={{ fontSize: '12px', color: 'var(--color-muted)', margin: 0, lineHeight: 1.7 }}>{sub}</p>
                       </div>
-                      <span style={{ marginLeft: 'auto', color: 'rgba(201,168,76,0.6)', fontSize: '16px', alignSelf: 'center', flexShrink: 0 }}>→</span>
+                      <span style={{ marginLeft: 'auto', color: 'rgba(200,164,90,0.6)', fontSize: '16px', alignSelf: 'center', flexShrink: 0 }}>→</span>
                     </div>
                   </Link>
                 ))}
@@ -675,9 +674,9 @@ export default function HomePage() {
         </section>
         ) : (
         /* 未診断：Me Scan への強い誘導 */
-        <section style={{ padding: '72px 20px', background: 'rgba(10,15,30,0.70)', textAlign: 'center' }}>
+        <section style={{ padding: '72px 20px', background: '#151b24', textAlign: 'center' }}>
           <div style={{ maxWidth: '640px', margin: '0 auto' }}>
-            <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '.16em', color: 'rgba(201,168,76,0.6)', textTransform: 'uppercase', margin: '0 0 16px', fontFamily: 'var(--font-sans)' }}>地図なき旅は迷う</p>
+            <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '.16em', color: 'rgba(200,164,90,0.6)', textTransform: 'uppercase', margin: '0 0 16px', fontFamily: 'var(--font-sans)' }}>地図なき旅は迷う</p>
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(20px,3.5vw,28px)', fontWeight: 700, color: '#f0ece4', margin: '0 0 16px', lineHeight: 1.5 }}>
               「何を変えるか」を決める前に、<br />あなたの「変容地図」を描く。
             </h2>
@@ -697,7 +696,7 @@ export default function HomePage() {
                     {icon} {label}
                   </Link>
                 ))}
-                <Link href="/search" style={{ fontSize: '12px', padding: '6px 14px', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '8px', color: 'rgba(201,168,76,0.5)', textDecoration: 'none' }}>
+                <Link href="/search" style={{ fontSize: '12px', padding: '6px 14px', border: '1px solid rgba(236,232,223,0.11)', borderRadius: '8px', color: 'rgba(200,164,90,0.5)', textDecoration: 'none' }}>
                   全カテゴリ →
                 </Link>
               </div>
@@ -745,9 +744,9 @@ export default function HomePage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
                 {featuredArticles.map(a => (
                   <Link key={a.id} href={a._track === 'belle' ? `/belle/journal/${a.slug}` : `/feature/${a.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(201,168,76,0.15)', background: 'rgba(255,255,255,0.03)', transition: 'border-color 0.2s' }}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)'}
-                      onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)'}
+                    <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(236,232,223,0.083)', background: 'rgba(255,255,255,0.03)', transition: 'border-color 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(200,164,90,0.4)'}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(200,164,90,0.15)'}
                     >
                       {a.thumbnail && (
                         <img src={a.thumbnail} alt={a.title} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
@@ -768,9 +767,9 @@ export default function HomePage() {
         )}
 
         {/* FAQ Section */}
-        <section style={{ padding: '80px 24px', background: 'linear-gradient(rgba(10,15,30,0.82), rgba(10,15,30,0.82)), url(/assets/images/hero-bg-c3.jpg) center / cover no-repeat', borderTop: '1px solid rgba(201,168,76,0.12)' }}>
+        <section style={{ padding: '80px 24px', background: '#11161e', borderTop: '1px solid rgba(236,232,223,0.066)' }}>
           <div style={{ maxWidth: '720px', margin: '0 auto' }}>
-            <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.18em', color: 'rgba(201,168,76,0.7)', textTransform: 'uppercase', margin: '0 0 12px', textAlign: 'center' }}>FAQ</p>
+            <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.18em', color: 'rgba(200,164,90,0.7)', textTransform: 'uppercase', margin: '0 0 12px', textAlign: 'center' }}>FAQ</p>
             <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 700, color: 'var(--color-heading)', textAlign: 'center', margin: '0 0 48px', lineHeight: 1.4 }}>よくある質問</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {[
@@ -785,7 +784,7 @@ export default function HomePage() {
                 { q: '外見改善にかかる費用はどのくらいですか？', a: '眉サロン（初回¥3,000〜）から始めれば最低限の費用で大きな変化が得られます。全体的には月¥10,000〜¥30,000程度の継続投資でかなりの変化が期待できます。' },
                 { q: '外見と自己肯定感の関係は？', a: '外見改善は自己肯定感を高める有効な手段の一つです。鏡を見るたびに「なんか違う」という感覚が消えることで、行動の自信につながります。見た目を変えることは「自分が変われる」という体験を積むことでもあります。' },
               ].map(({ q, a }, i) => (
-                <details key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,168,76,0.15)', borderRadius: '10px', overflow: 'hidden' }}>
+                <details key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(236,232,223,0.083)', borderRadius: '10px', overflow: 'hidden' }}>
                   <summary style={{ padding: '18px 20px', fontWeight: 700, fontSize: '15px', color: 'var(--color-heading)', cursor: 'pointer', listStyle: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
                     <span>{q}</span>
                     <span style={{ fontSize: '18px', color: 'var(--color-gold)', flexShrink: 0, lineHeight: 1 }}>+</span>

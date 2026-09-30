@@ -218,8 +218,8 @@ export default function MypageDiagnosisPage() {
               {(() => {
                 const isReady      = stageDoneCount >= 5;
                 const isApproaching = stageDoneCount >= 2;
-                const cardBg     = isApproaching ? 'linear-gradient(135deg,rgba(201,168,76,0.07),rgba(10,15,30,0.03))' : '#f9fafb';
-                const cardBorder = isApproaching ? '1.5px solid rgba(201,168,76,0.3)' : '1.5px solid #e5e7eb';
+                const cardBg     = isApproaching ? 'linear-gradient(135deg,rgba(200,164,90,0.07),rgba(13,17,23,0.03))' : '#f9fafb';
+                const cardBorder = isApproaching ? '1.5px solid rgba(200,164,90,0.3)' : '1.5px solid #e5e7eb';
                 const stageStages = [
                   { icon: '📸', title: '写真撮影', sub: 'マッチングアプリ・プロフィール写真', href: '/search?category=photo' },
                   { icon: '💍', title: '婚活サポート', sub: '自信を持った自分で、真剣な出会いへ', href: '/search?category=marriage' },
@@ -227,7 +227,7 @@ export default function MypageDiagnosisPage() {
                 return (
                   <div className="card" style={{ padding: '20px', background: cardBg, border: cardBorder }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: 'rgba(201,168,76,0.8)', textTransform: 'uppercase' }}>Next Stage</span>
+                      <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: 'rgba(200,164,90,0.8)', textTransform: 'uppercase' }}>Next Stage</span>
                     </div>
                     <h2 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 6px', color: '#111' }}>変わった自分を、世界へ発揮するステージ</h2>
                     {isReady ? (
@@ -235,7 +235,7 @@ export default function MypageDiagnosisPage() {
                         ✦ 準備が整いました。次のステージへ進みましょう。
                       </p>
                     ) : isApproaching ? (
-                      <p style={{ fontSize: '13px', color: 'rgba(201,168,76,0.85)', fontWeight: 700, margin: '0 0 16px' }}>
+                      <p style={{ fontSize: '13px', color: 'rgba(200,164,90,0.85)', fontWeight: 700, margin: '0 0 16px' }}>
                         ◎ もうすぐ発揮のタイミング。あと少しで解放されます。
                       </p>
                     ) : (
@@ -246,13 +246,13 @@ export default function MypageDiagnosisPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                       {stageStages.map(({ icon, title, sub, href }) => (
                         isApproaching ? (
-                          <Link key={title} href={href} style={{ display: 'block', textDecoration: 'none', padding: '14px', borderRadius: '12px', background: 'rgba(10,15,30,0.65)', backdropFilter: 'blur(8px)', border: '1.5px solid rgba(201,168,76,0.25)', transition: 'box-shadow .15s' }}>
+                          <Link key={title} href={href} style={{ display: 'block', textDecoration: 'none', padding: '14px', borderRadius: '12px', background: '#151b24', backdropFilter: 'blur(8px)', border: '1.5px solid rgba(236,232,223,0.138)', transition: 'box-shadow .15s' }}>
                             <div style={{ fontSize: '22px', marginBottom: '6px' }}>{icon}</div>
                             <div style={{ fontSize: '14px', fontWeight: 800, color: '#e8e4dc', marginBottom: '3px' }}>{title}</div>
                             <div style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', lineHeight: 1.5 }}>{sub}</div>
                           </Link>
                         ) : (
-                          <div key={title} style={{ padding: '14px', borderRadius: '12px', background: 'rgba(10,15,30,0.45)', border: '1px solid rgba(232,228,220,0.15)', opacity: 0.6 }}>
+                          <div key={title} style={{ padding: '14px', borderRadius: '12px', background: '#151b24', border: '1px solid rgba(232,228,220,0.15)', opacity: 0.6 }}>
                             <div style={{ fontSize: '22px', marginBottom: '6px', filter: 'grayscale(1)' }}>{icon}</div>
                             <div style={{ fontSize: '14px', fontWeight: 800, color: 'rgba(232,228,220,0.40)', marginBottom: '3px' }}>{title}</div>
                             <div style={{ fontSize: '12px', color: 'rgba(232,228,220,0.25)', lineHeight: 1.5 }}>{sub}</div>
@@ -297,14 +297,14 @@ export default function MypageDiagnosisPage() {
 
         {/* Fineme Mirror CTA */}
         <a href={track.lpMirror} style={{ display: 'block', textDecoration: 'none', marginTop: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(200,164,90,0.08)', border: '1px solid rgba(236,232,223,0.193)', borderRadius: '14px' }}>
             <span style={{ fontSize: '28px', flexShrink: 0 }}>🪞</span>
             <div style={{ flex: 1 }}>
-              <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: '#c9a84c', textTransform: 'uppercase', margin: '0 0 4px' }}>Fineme Mirror — ¥500</p>
+              <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: '#c8a45a', textTransform: 'uppercase', margin: '0 0 4px' }}>Fineme Mirror — ¥500</p>
               <p style={{ fontSize: '14px', fontWeight: 700, color: 'rgba(232,228,220,0.95)', margin: '0 0 3px' }}>写真1枚で変容余地を可視化する</p>
               <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: 0, lineHeight: '1.5' }}>AIが7軸を分析。あなたの「最初に変えるべき場所」が地図になります。</p>
             </div>
-            <span style={{ fontSize: '11px', fontWeight: 800, color: '#0a0f1e', background: 'linear-gradient(135deg,#c9a84c,#e8c97a)', borderRadius: '20px', padding: '5px 14px', flexShrink: 0, whiteSpace: 'nowrap' }}>詳しく見る →</span>
+            <span style={{ fontSize: '11px', fontWeight: 800, color: '#0d1117', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', borderRadius: '20px', padding: '5px 14px', flexShrink: 0, whiteSpace: 'nowrap' }}>詳しく見る →</span>
           </div>
         </a>
       </div>
@@ -313,8 +313,8 @@ export default function MypageDiagnosisPage() {
         .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
         @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; margin-bottom: 8px; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; } }
         .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: rgba(10,15,30,0.45); }
-        .sidenav-link--active { background: rgba(10,15,30,0.45); font-weight: 700; color: #e8e4dc; }
+        .sidenav-link:hover { background: #151b24; }
+        .sidenav-link--active { background: #151b24; font-weight: 700; color: #e8e4dc; }
         .result-hero { padding: 24px; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); border-radius: 16px; margin-bottom: 16px; }
         .result-hero h2 { font-size: 18px; font-weight: 800; color: #fff !important; margin: 0 0 6px; line-height: 1.4; }
         .result-hero p { font-size: 13px; color: rgba(255,255,255,.75) !important; margin: 0; line-height: 1.6; }
@@ -326,7 +326,7 @@ export default function MypageDiagnosisPage() {
         .analysis-text { font-size: 14px; font-weight: 700; color: #e8e4dc; margin: 0 0 2px; line-height: 1.5; }
         .concern-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
         .concern-bar-label { font-size: 12px; width: 70px; flex-shrink: 0; color: rgba(232,228,220,0.75); }
-        .concern-bar-track { flex: 1; height: 6px; background: rgba(10,15,30,0.45); border-radius: 99px; overflow: hidden; }
+        .concern-bar-track { flex: 1; height: 6px; background: #151b24; border-radius: 99px; overflow: hidden; }
         .concern-bar-fill { height: 100%; border-radius: 99px; }
         .concern-bar-value { font-size: 11px; font-weight: 700; width: 40px; text-align: right; flex-shrink: 0; }
         .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(232,228,220,0.1); gap: 8px; }
@@ -338,7 +338,7 @@ export default function MypageDiagnosisPage() {
         .action-btn { display: block; text-align: center; padding: 13px 16px; border-radius: 12px; font-size: 14px; font-weight: 700; text-decoration: none; transition: opacity .15s; }
         .action-btn:hover { opacity: .85; }
         .action-btn-primary { background: #111; color: #fff !important; }
-        .action-btn-secondary { background: rgba(10,15,30,0.65); color: #e8e4dc !important; border: 1px solid rgba(232,228,220,0.15); }
+        .action-btn-secondary { background: #151b24; color: #e8e4dc !important; border: 1px solid rgba(232,228,220,0.15); }
       `}</style>
     </main>
   );

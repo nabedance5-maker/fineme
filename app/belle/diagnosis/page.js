@@ -30,62 +30,62 @@ export default function BelleDiagnosisPage() {
         background: transparent;
       }
       .diag-progress { width: 100%; max-width: var(--diag-max); margin-bottom: 24px; }
-      .diag-progress-bar { height: 4px; background: rgba(201,168,76,0.2); border-radius: 2px; overflow: hidden; }
-      .diag-progress-fill { height: 100%; background: linear-gradient(90deg, #c9a84c, #e8c86a); border-radius: 2px; transition: width .4s ease; }
+      .diag-progress-bar { height: 4px; background: rgba(200,164,90,0.2); border-radius: 2px; overflow: hidden; }
+      .diag-progress-fill { height: 100%; background: linear-gradient(90deg, #c8a45a, #e8c86a); border-radius: 2px; transition: width .4s ease; }
       .diag-progress-text { font-size: 12px; color: #7a6e65; margin-top: 6px; text-align: right; font-weight: 600; }
       .diag-screen { display: none; width: 100%; max-width: var(--diag-max); animation: fadeUp .25s ease; }
       .diag-screen.is-active { display: block; }
       @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
       .diag-back-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: #7a6e65; padding: 0 0 16px; display: flex; align-items: center; gap: 4px; font-weight: 600; }
-      .diag-back-btn:hover { color: #0a0f1e; }
-      .diag-card { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(201,168,76,0.25); border-radius: 18px; padding: 28px 24px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(10,15,30,.06); }
+      .diag-back-btn:hover { color: #0d1117; }
+      .diag-card { background: rgba(255,255,255,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(236,232,223,0.138); border-radius: 18px; padding: 28px 24px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(13,17,23,.06); }
       .diag-step-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: #8a6a1a; text-transform: uppercase; margin: 0 0 8px; }
-      .diag-q { font-size: clamp(17px, 4vw, 20px); font-weight: 800; line-height: 1.4; margin: 0 0 6px; color: #0a0f1e; }
+      .diag-q { font-size: clamp(17px, 4vw, 20px); font-weight: 800; line-height: 1.4; margin: 0 0 6px; color: #0d1117; }
       .diag-hint { font-size: 13px; color: #5a4e45; margin: 0 0 20px; line-height: 1.6; }
       .diag-options { display: flex; flex-direction: column; gap: 10px; }
-      .diag-option { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border: 2px solid rgba(201,168,76,0.2); border-radius: 12px; cursor: pointer; transition: border-color .12s, background .12s; text-align: left; background: rgba(255,255,255,0.72); width: 100%; }
-      .diag-option:hover { border-color: rgba(201,168,76,0.55); background: rgba(245,240,232,0.85); }
-      .diag-option.selected { border-color: #c9a84c; background: rgba(201,168,76,0.08); }
+      .diag-option { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border: 2px solid rgba(200,164,90,0.2); border-radius: 12px; cursor: pointer; transition: border-color .12s, background .12s; text-align: left; background: rgba(255,255,255,0.72); width: 100%; }
+      .diag-option:hover { border-color: rgba(236,232,223,0.303); background: rgba(245,240,232,0.85); }
+      .diag-option.selected { border-color: rgba(236,232,223,0.3); background: rgba(200,164,90,0.08); }
       .diag-option-icon { font-size: 20px; flex-shrink: 0; line-height: 1.3; }
       .diag-option-body { flex: 1; }
-      .diag-option-title { font-size: 15px; font-weight: 700; color: #0a0f1e; line-height: 1.4; display: block; }
+      .diag-option-title { font-size: 15px; font-weight: 700; color: #0d1117; line-height: 1.4; display: block; }
       .diag-option-desc { display: none; }
-      .diag-option.multi .diag-check { width: 18px; height: 18px; border: 2px solid rgba(201,168,76,0.3); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all .12s; color: transparent; }
-      .diag-option.multi.selected .diag-check { background: #c9a84c; border-color: #c9a84c; color: #0a0f1e; font-size: 11px; font-weight: 900; }
-      .care-level-item { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(201,168,76,0.12); }
+      .diag-option.multi .diag-check { width: 18px; height: 18px; border: 2px solid rgba(200,164,90,0.3); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all .12s; color: transparent; }
+      .diag-option.multi.selected .diag-check { background: #c8a45a; border-color: rgba(236,232,223,0.3); color: #0d1117; font-size: 11px; font-weight: 900; }
+      .care-level-item { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(236,232,223,0.066); }
       .care-level-item:last-child { border-bottom: none; margin-bottom: 0; }
-      .care-overall-wrap { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 14px 16px; border: 2px solid rgba(201,168,76,0.2); border-radius: 12px; transition: border-color .12s, background .12s; background: rgba(255,255,255,0.72); }
-      .care-overall-wrap:hover { border-color: rgba(201,168,76,0.55); background: rgba(245,240,232,0.85); }
-      .care-overall-wrap.selected { border-color: #c9a84c; background: rgba(201,168,76,0.08); }
+      .care-overall-wrap { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 14px 16px; border: 2px solid rgba(200,164,90,0.2); border-radius: 12px; transition: border-color .12s, background .12s; background: rgba(255,255,255,0.72); }
+      .care-overall-wrap:hover { border-color: rgba(236,232,223,0.303); background: rgba(245,240,232,0.85); }
+      .care-overall-wrap.selected { border-color: rgba(236,232,223,0.3); background: rgba(200,164,90,0.08); }
       .care-overall-text { display: flex; align-items: center; gap: 10px; flex: 1; }
-      .care-level-label { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: #0a0f1e; margin-bottom: 10px; }
+      .care-level-label { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: #0d1117; margin-bottom: 10px; }
       .care-level-icon { font-size: 18px; }
       .care-level-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-      .care-level-opt { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border: 2px solid rgba(201,168,76,0.2); border-radius: 10px; cursor: pointer; transition: border-color .12s, background .12s; background: rgba(255,255,255,0.72); user-select: none; }
-      .care-level-opt:hover { border-color: rgba(201,168,76,0.55); background: rgba(245,240,232,0.85); }
-      .care-level-opt.selected { border-color: #c9a84c; background: rgba(201,168,76,0.08); }
+      .care-level-opt { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border: 2px solid rgba(200,164,90,0.2); border-radius: 10px; cursor: pointer; transition: border-color .12s, background .12s; background: rgba(255,255,255,0.72); user-select: none; }
+      .care-level-opt:hover { border-color: rgba(236,232,223,0.303); background: rgba(245,240,232,0.85); }
+      .care-level-opt.selected { border-color: rgba(236,232,223,0.3); background: rgba(200,164,90,0.08); }
       .care-level-opt input[type="radio"] { display: none; }
       .care-level-opt-text { font-size: 12px; font-weight: 600; color: #374151; line-height: 1.4; }
       @media (max-width: 480px) { .care-level-opts { grid-template-columns: 1fr; } }
       .diag-nav { display: flex; gap: 10px; align-items: center; max-width: var(--diag-max); width: 100%; }
-      .diag-nav-next { flex: 1; padding: 14px 20px; background: #0a0f1e; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity .15s, background .15s; }
+      .diag-nav-next { flex: 1; padding: 14px 20px; background: #0d1117; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity .15s, background .15s; }
       .diag-nav-next:disabled { opacity: .35; cursor: not-allowed; }
-      .diag-nav-next:not(:disabled):hover { background: #c9a84c; color: #0a0f1e; }
+      .diag-nav-next:not(:disabled):hover { background: #c8a45a; color: #0d1117; }
       .diag-landing { text-align: center; padding: 16px 0 4px; }
-      .diag-landing h1 { font-size: clamp(22px, 5vw, 28px); font-weight: 800; line-height: 1.3; margin: 0 0 12px; color: #0a0f1e; }
+      .diag-landing h1 { font-size: clamp(22px, 5vw, 28px); font-weight: 800; line-height: 1.3; margin: 0 0 12px; color: #0d1117; }
       .diag-landing p { font-size: 15px; color: #5a4e45; line-height: 1.7; margin: 0 0 6px; }
       .diag-badges { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 16px 0 24px; }
-      .diag-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; background: rgba(201,168,76,0.1); padding: 6px 12px; border-radius: 99px; color: #7a6e65; border: 1px solid rgba(201,168,76,0.25); }
+      .diag-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; background: rgba(200,164,90,0.1); padding: 6px 12px; border-radius: 99px; color: #7a6e65; border: 1px solid rgba(236,232,223,0.138); }
       /* Goal framing banner */
-      .goal-frame-banner { background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.25); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; }
+      .goal-frame-banner { background: rgba(200,164,90,0.06); border: 1px solid rgba(236,232,223,0.138); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; }
       /* Instant tryout screens (D-20260713-2) */
-      .tryout-option { display:flex; align-items:center; gap:14px; padding:14px 16px; border:2px solid rgba(201,168,76,0.2); border-radius:12px; cursor:pointer; transition:border-color .12s, background .12s; text-align:left; background:rgba(255,255,255,0.72); width:100%; margin-bottom:10px; }
-      .tryout-option:hover { border-color:rgba(201,168,76,0.55); background:rgba(245,240,232,0.85); }
+      .tryout-option { display:flex; align-items:center; gap:14px; padding:14px 16px; border:2px solid rgba(200,164,90,0.2); border-radius:12px; cursor:pointer; transition:border-color .12s, background .12s; text-align:left; background:rgba(255,255,255,0.72); width:100%; margin-bottom:10px; }
+      .tryout-option:hover { border-color:rgba(236,232,223,0.303); background:rgba(245,240,232,0.85); }
       .tryout-option-icon { font-size:22px; flex-shrink:0; }
-      .tryout-option-title { font-size:15px; font-weight:700; color:#0a0f1e; line-height:1.4; }
-      .tryout-result-axis { background:rgba(201,168,76,0.08); border:1.5px solid rgba(201,168,76,0.35); border-radius:14px; padding:24px 20px; margin:12px 0; text-align:center; }
+      .tryout-option-title { font-size:15px; font-weight:700; color:#0d1117; line-height:1.4; }
+      .tryout-result-axis { background:rgba(200,164,90,0.08); border:1.5px solid rgba(236,232,223,0.193); border-radius:14px; padding:24px 20px; margin:12px 0; text-align:center; }
       .tryout-result-axis-icon { font-size:40px; display:block; margin-bottom:10px; }
-      .tryout-result-axis-name { font-size:26px; font-weight:900; color:#0a0f1e; margin:0 0 8px; }
+      .tryout-result-axis-name { font-size:26px; font-weight:900; color:#0d1117; margin:0 0 8px; }
       .tryout-result-axis-desc { font-size:14px; color:#5a4e45; line-height:1.6; margin:0; }
       .tryout-framing { font-size:12px; color:#9ca3af; margin:14px 0 0; line-height:1.7; text-align:center; }
     `;
@@ -718,7 +718,7 @@ export default function BelleDiagnosisPage() {
       input.id = id;
       input.placeholder = placeholder;
       if (current != null) input.value = current;
-      input.style.cssText = 'width:100%;padding:12px 14px;border:2px solid rgba(201,168,76,0.2);border-radius:10px;font-size:15px;background:rgba(255,255,255,0.72);margin-bottom:10px;';
+      input.style.cssText = 'width:100%;padding:12px 14px;border:2px solid rgba(200,164,90,0.2);border-radius:10px;font-size:15px;background:rgba(255,255,255,0.72);margin-bottom:10px;';
       input.addEventListener('input', function () { onInput(this.value ? Number(this.value) : null); });
       return input;
     }
@@ -801,7 +801,7 @@ export default function BelleDiagnosisPage() {
         const otherTextBox = document.createElement('textarea');
         otherTextBox.placeholder = '具体的に教えてください';
         otherTextBox.value = habits.other_note || '';
-        otherTextBox.style.cssText = 'width:100%;padding:12px 14px;border:2px solid rgba(201,168,76,0.2);border-radius:10px;font-size:14px;margin-top:8px;min-height:64px;font-family:inherit;background:rgba(255,255,255,0.72);display:' + (habits.items.includes('other') ? 'block' : 'none') + ';';
+        otherTextBox.style.cssText = 'width:100%;padding:12px 14px;border:2px solid rgba(200,164,90,0.2);border-radius:10px;font-size:14px;margin-top:8px;min-height:64px;font-family:inherit;background:rgba(255,255,255,0.72);display:' + (habits.items.includes('other') ? 'block' : 'none') + ';';
         otherTextBox.addEventListener('input', function () { habits.other_note = this.value; });
         wrap.appendChild(buildMultiSelectList([{ v:'other', t:'その他（自由記述）' }], habits.items, function (arr) {
           otherTextBox.style.display = arr.includes('other') ? 'block' : 'none';
@@ -1068,7 +1068,7 @@ export default function BelleDiagnosisPage() {
               <p>今のあなたを丁寧にスキャンして、<br />あなただけの変容ナビを生成します。</p>
               <p style={{fontSize:'13px',color:'#9ca3af'}}>外見より先に、「あなたの状況」を聞きます。<br />だから答えが、本物になる。</p>
               <div className="diag-badges">
-                <span className="diag-badge" style={{fontWeight:'800',background:'rgba(201,168,76,0.15)',color:'#a07830',border:'1px solid rgba(201,168,76,0.4)',fontSize:'13px',padding:'7px 14px'}}>🐉 136タイプからあなたのタイプを判定</span>
+                <span className="diag-badge" style={{fontWeight:'800',background:'rgba(200,164,90,0.15)',color:'#a07830',border:'1px solid rgba(236,232,223,0.22)',fontSize:'13px',padding:'7px 14px'}}>🐉 136タイプからあなたのタイプを判定</span>
                 <span className="diag-badge">⏱️ 約4分</span>
                 <span className="diag-badge">🕶️ 登録不要</span>
               </div>
@@ -1079,12 +1079,12 @@ export default function BelleDiagnosisPage() {
 
         {/* Sample result preview（landing cardの直下に表示） */}
         <div id="sample-preview-block" style={{width:'100%',maxWidth:'600px',marginTop:'24px',position:'relative'}}>
-          <p style={{textAlign:'center',fontSize:'10px',fontWeight:'800',letterSpacing:'.18em',color:'rgba(201,168,76,0.5)',textTransform:'uppercase',margin:'0 0 14px'}}>— スキャン結果のサンプル —</p>
+          <p style={{textAlign:'center',fontSize:'10px',fontWeight:'800',letterSpacing:'.18em',color:'rgba(200,164,90,0.5)',textTransform:'uppercase',margin:'0 0 14px'}}>— スキャン結果のサンプル —</p>
 
           {/* TYPE HERO（全幅・Naviと同じレイアウト） */}
-          <div style={{width:'100%',background:'linear-gradient(180deg,rgba(200,100,140,0.18) 0%,rgba(10,15,30,0) 100%)',textAlign:'center',padding:'32px 20px 24px',borderRadius:'18px',marginBottom:'10px',position:'relative',overflow:'hidden'}}>
+          <div style={{width:'100%',background:'linear-gradient(180deg,rgba(200,100,140,0.18) 0%,rgba(13,17,23,0) 100%)',textAlign:'center',padding:'32px 20px 24px',borderRadius:'18px',marginBottom:'10px',position:'relative',overflow:'hidden'}}>
             <p style={{fontSize:'10px',fontWeight:'800',letterSpacing:'.18em',color:'rgba(200,100,140,0.8)',textTransform:'uppercase',margin:'0 0 12px'}}>TYPE-ECV · 眉軸</p>
-            <h2 style={{fontFamily:"'Noto Serif JP',Georgia,serif",fontSize:'clamp(22px,6vw,34px)',fontWeight:'900',color:'#fff',margin:'0 0 20px',lineHeight:1.2}}>眉の凍れる蕾</h2>
+            <h2 style={{fontFamily:"'Shippori Mincho',Georgia,serif",fontSize:'clamp(22px,6vw,34px)',fontWeight:'900',color:'#fff',margin:'0 0 20px',lineHeight:1.2}}>眉の凍れる蕾</h2>
             <div style={{width:'min(200px,60vw)',height:'min(268px,80vw)',margin:'0 auto 18px',borderRadius:'16px',overflow:'hidden',border:'2px solid rgba(200,100,140,0.4)',boxShadow:'0 0 28px rgba(200,100,140,0.18)',position:'relative',display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(200,100,140,0.08)'}}>
               <img src="/images/types/belle/TYPE-ECV.webp" alt="凍れる蕾" style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,borderRadius:'14px'}} onError={(e)=>{e.currentTarget.style.display='none';const s=e.currentTarget.nextElementSibling;if(s)s.style.visibility='visible';}} />
               <span style={{fontSize:'56px',position:'relative',zIndex:0,visibility:'hidden'}}>🌸</span>
@@ -1093,7 +1093,7 @@ export default function BelleDiagnosisPage() {
           </div>
 
           {/* Compass strip */}
-          <div style={{background:'rgba(10,15,30,0.75)',border:'1.5px solid rgba(200,100,140,0.3)',borderRadius:'14px',padding:'14px 16px',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',gap:'14px',marginBottom:'10px'}}>
+          <div style={{background:'#151b24',border:'1.5px solid rgba(200,100,140,0.3)',borderRadius:'14px',padding:'14px 16px',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',gap:'14px',marginBottom:'10px'}}>
             <span style={{fontSize:'26px',flexShrink:0}}>🧭</span>
             <div style={{flex:1}}>
               <div style={{fontSize:'10px',fontWeight:'700',color:'rgba(200,100,140,0.65)',letterSpacing:'.08em',margin:'0 0 2px'}}>Belle Compass — 今向くべき方角</div>
@@ -1104,7 +1104,7 @@ export default function BelleDiagnosisPage() {
 
           {/* フェードアウト＋CTA */}
           <div style={{position:'relative'}}>
-            <div style={{height:'60px',background:'linear-gradient(to bottom,rgba(10,15,30,0),rgba(10,15,30,0.85))',borderRadius:'0 0 12px 12px',pointerEvents:'none'}} />
+            <div style={{height:'60px',background:'linear-gradient(to bottom,rgba(13,17,23,0),rgba(13,17,23,0.85))',borderRadius:'0 0 12px 12px',pointerEvents:'none'}} />
             <div style={{textAlign:'center',paddingTop:'4px'}}>
               <p style={{fontSize:'12px',color:'rgba(200,100,140,0.6)',margin:'0 0 10px',lineHeight:1.6}}>136タイプの中のあなたのタイプが生成されます</p>
               <button id="btn-start-from-preview" style={{background:'linear-gradient(135deg,#c8648c,#e8789e)',border:'none',cursor:'pointer',color:'#fff',fontSize:'14px',fontWeight:'800',padding:'12px 28px',borderRadius:'10px',letterSpacing:'.04em'}}>あなたのタイプを診断する →</button>

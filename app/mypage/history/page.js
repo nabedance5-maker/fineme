@@ -107,11 +107,11 @@ export default function MypageHistoryPage() {
                   <div
                     key={f.href}
                     onClick={() => { window.location.href = f.href; }}
-                    style={{ border: '1px solid rgba(232,228,220,0.15)', borderRadius: '16px', overflow: 'hidden', background: 'rgba(10,15,30,0.65)', backdropFilter: 'blur(8px)', cursor: 'pointer', display: 'flex', flexDirection: 'column', transition: 'box-shadow .15s' }}
+                    style={{ border: '1px solid rgba(232,228,220,0.15)', borderRadius: '16px', overflow: 'hidden', background: '#151b24', backdropFilter: 'blur(8px)', cursor: 'pointer', display: 'flex', flexDirection: 'column', transition: 'box-shadow .15s' }}
                     onMouseEnter={e => e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,.10)'}
                     onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
                   >
-                    <div style={{ height: '200px', overflow: 'hidden', background: 'rgba(10,15,30,0.45)', flexShrink: 0 }}>
+                    <div style={{ height: '200px', overflow: 'hidden', background: '#151b24', flexShrink: 0 }}>
                       {img && <img src={img} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                     </div>
                     <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -138,11 +138,11 @@ export default function MypageHistoryPage() {
       <style>{`
         .mypage-layout { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start; }
         .mypage-sidenav, .mypage-content { min-width: 0; }
-        .mypage-sidenav { background: rgba(10,15,30,0.65); backdrop-filter: blur(8px); border: 1px solid rgba(201,168,76,0.28); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
+        .mypage-sidenav { background: #151b24; backdrop-filter: blur(8px); border: 1px solid rgba(236,232,223,0.154); border-radius: 14px; padding: 12px; position: sticky; top: 80px; }
         @media (max-width: 640px) { .mypage-layout { grid-template-columns: 1fr; } .mypage-sidenav { position: static; padding: 8px; border-radius: 12px; margin-bottom: 8px; overflow: hidden; min-width: 0; } .mypage-sidenav nav { display: flex; flex-direction: row; overflow-x: auto; gap: 4px; scrollbar-width: none; } .mypage-sidenav nav::-webkit-scrollbar { display: none; } .mypage-sidenav nav .sidenav-link { margin-top: 0 !important; } .sidenav-link { white-space: nowrap; padding: 6px 14px; font-size: 13px; flex-shrink: 0; } }
         .sidenav-link { display: block; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; color: rgba(232,228,220,0.75); text-decoration: none; transition: background .15s; }
-        .sidenav-link:hover { background: rgba(201,168,76,0.1); color: #0a0f1e; }
-        .sidenav-link--active { background: rgba(201,168,76,0.14); font-weight: 700; color: #0a0f1e; border-left: 3px solid #c9a84c; padding-left: 9px; }
+        .sidenav-link:hover { background: rgba(200,164,90,0.1); color: #0d1117; }
+        .sidenav-link--active { background: rgba(200,164,90,0.14); font-weight: 700; color: #0d1117; border-left: 3px solid #c8a45a; padding-left: 9px; }
       `}</style>
     </main>
   );

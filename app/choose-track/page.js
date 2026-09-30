@@ -50,7 +50,7 @@ function ChooseTrackInner() {
   return (
     <main style={{ maxWidth: '440px', margin: '80px auto', padding: '0 20px' }}>
       <div style={{
-        background: 'rgba(10,15,30,0.6)', border: '1px solid rgba(232,228,220,0.12)',
+        background: '#151b24', border: '1px solid rgba(232,228,220,0.12)',
         borderRadius: '16px', padding: '32px 26px', textAlign: 'center',
       }}>
         <h1 style={{

@@ -97,11 +97,11 @@ function ArticleProductBlock({ products }) {
     <div style={{
       margin: '40px 0',
       padding: '22px 24px',
-      background: 'rgba(201,168,76,0.04)',
-      border: '1px solid rgba(201,168,76,0.18)',
+      background: 'rgba(200,164,90,0.04)',
+      border: '1px solid rgba(236,232,223,0.099)',
       borderRadius: '14px',
     }}>
-      <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.7)', margin: '0 0 6px' }}>
+      <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(200,164,90,0.7)', margin: '0 0 6px' }}>
         🛒 関連商品
       </p>
       <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.45)', margin: '0 0 14px', lineHeight: 1.6 }}>
@@ -117,8 +117,8 @@ function ArticleProductBlock({ products }) {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '5px',
               fontSize: '12px', padding: '7px 14px',
-              background: 'rgba(201,168,76,0.07)',
-              border: '1px solid rgba(201,168,76,0.22)',
+              background: 'rgba(200,164,90,0.07)',
+              border: '1px solid rgba(236,232,223,0.121)',
               borderRadius: '8px',
               color: 'rgba(240,228,180,0.85)',
               textDecoration: 'none',
@@ -182,26 +182,26 @@ export default async function ArticlePage({ params }) {
 
         {/* ── ヒーロー：フルブリード画像 + タイトルオーバーレイ ── */}
         <style dangerouslySetInnerHTML={{ __html: `@keyframes compassSpin { to { transform: rotate(360deg); } }` }} />
-        <div style={{ position: 'relative', height: 'clamp(360px, 52vw, 520px)', overflow: 'hidden', background: '#0a0f1e' }}>
+        <div style={{ position: 'relative', height: 'clamp(360px, 52vw, 520px)', overflow: 'hidden', background: '#0d1117' }}>
           {article.thumbnail && <ParallaxImg src={article.thumbnail} alt={article.title} />}
           {/* グラデーション：上薄く→下濃く */}
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'linear-gradient(to bottom, rgba(10,15,30,0.05) 0%, rgba(10,15,30,0.35) 40%, rgba(10,15,30,0.88) 78%, rgba(10,15,30,0.97) 100%)',
+            background: 'linear-gradient(to bottom, rgba(13,17,23,0.05) 0%, rgba(13,17,23,0.35) 40%, rgba(13,17,23,0.88) 78%, rgba(13,17,23,0.97) 100%)',
           }} />
           {/* コンパスローズ装飾 */}
           <div style={{ position: 'absolute', right: '28px', bottom: '96px', opacity: 0.14, pointerEvents: 'none', zIndex: 2 }}>
             <svg width="84" height="84" viewBox="0 0 88 88" style={{ animation: 'compassSpin 48s linear infinite' }}>
-              <polygon points="44,4 49,40 44,44 39,40" fill="#c9a84c"/>
-              <polygon points="44,84 49,48 44,44 39,48" fill="rgba(201,168,76,0.55)"/>
-              <polygon points="84,44 48,39 44,44 48,49" fill="rgba(201,168,76,0.55)"/>
-              <polygon points="4,44 40,39 44,44 40,49" fill="rgba(201,168,76,0.55)"/>
-              <circle cx="44" cy="44" r="5" fill="#c9a84c" opacity="0.85"/>
-              <circle cx="44" cy="44" r="18" fill="none" stroke="rgba(201,168,76,0.3)" strokeWidth="1"/>
-              <circle cx="44" cy="44" r="32" fill="none" stroke="rgba(201,168,76,0.15)" strokeWidth="1"/>
+              <polygon points="44,4 49,40 44,44 39,40" fill="#c8a45a"/>
+              <polygon points="44,84 49,48 44,44 39,48" fill="rgba(200,164,90,0.55)"/>
+              <polygon points="84,44 48,39 44,44 48,49" fill="rgba(200,164,90,0.55)"/>
+              <polygon points="4,44 40,39 44,44 40,49" fill="rgba(200,164,90,0.55)"/>
+              <circle cx="44" cy="44" r="5" fill="#c8a45a" opacity="0.85"/>
+              <circle cx="44" cy="44" r="18" fill="none" stroke="rgba(200,164,90,0.3)" strokeWidth="1"/>
+              <circle cx="44" cy="44" r="32" fill="none" stroke="rgba(200,164,90,0.15)" strokeWidth="1"/>
               {[0,45,90,135,180,225,270,315].map(deg => {
                 const r = deg * Math.PI / 180;
-                return <line key={deg} x1={44 + 28*Math.sin(r)} y1={44 - 28*Math.cos(r)} x2={44 + 34*Math.sin(r)} y2={44 - 34*Math.cos(r)} stroke="rgba(201,168,76,0.4)" strokeWidth="1"/>;
+                return <line key={deg} x1={44 + 28*Math.sin(r)} y1={44 - 28*Math.cos(r)} x2={44 + 34*Math.sin(r)} y2={44 - 34*Math.cos(r)} stroke="rgba(200,164,90,0.4)" strokeWidth="1"/>;
               })}
             </svg>
           </div>
@@ -220,7 +220,7 @@ export default async function ArticlePage({ params }) {
 
               {article.category && (
                 <div style={{
-                  display: 'inline-block', background: '#c9a84c', color: '#0a0f1e',
+                  display: 'inline-block', background: '#c8a45a', color: '#0d1117',
                   fontSize: '10px', fontWeight: 800, padding: '4px 12px',
                   borderRadius: '99px', letterSpacing: '0.12em', marginBottom: '14px',
                   fontFamily: 'var(--font-sans)', textTransform: 'uppercase',
@@ -254,12 +254,12 @@ export default async function ArticlePage({ params }) {
 
         {/* ── 半透明ネイビーカード：地図が透けて見える本文エリア ── */}
         <div style={{
-          background: 'rgba(10,15,30,0.78)',
+          background: '#151b24',
           borderRadius: '24px 24px 0 0',
           marginTop: '-24px',
           position: 'relative',
           zIndex: 1,
-          boxShadow: '0 -4px 32px rgba(10,15,30,0.3)',
+          boxShadow: '0 -4px 32px rgba(13,17,23,0.3)',
           backdropFilter: 'blur(2px)',
         }}>
           <div style={{
@@ -282,20 +282,20 @@ export default async function ArticlePage({ params }) {
             {!hasBlocks && hasBody && (
               <>
                 <style>{`
-                  .article-html-body h2{font-size:clamp(18px,3.5vw,22px);font-weight:800;font-family:var(--font-serif);padding-left:14px;border-left:4px solid #c9a84c;margin:52px 0 16px;line-height:1.55;color:#fff}
+                  .article-html-body h2{font-size:clamp(18px,3.5vw,22px);font-weight:800;font-family:var(--font-serif);padding-left:14px;border-left:4px solid #c8a45a;margin:52px 0 16px;line-height:1.55;color:#fff}
                   .article-html-body h3{font-size:17px;font-weight:700;margin:32px 0 10px;color:rgba(255,255,255,0.9)}
                   .article-html-body p{font-size:16px;line-height:2;margin-bottom:20px;color:rgba(240,236,228,0.85)}
-                  .article-html-body blockquote{background:rgba(201,168,76,0.07);border-left:4px solid #c9a84c;border-radius:0 12px 12px 0;padding:16px 22px;margin:28px 0;color:rgba(240,236,228,0.88)}
+                  .article-html-body blockquote{background:rgba(200,164,90,0.07);border-left:4px solid #c8a45a;border-radius:0 12px 12px 0;padding:16px 22px;margin:28px 0;color:rgba(240,236,228,0.88)}
                   .article-html-body img{max-width:100%;border-radius:12px;display:block;margin:24px auto}
                   .article-html-body ul,.article-html-body ol{padding-left:24px;margin-bottom:20px}
                   .article-html-body li{font-size:15px;line-height:1.85;color:rgba(240,236,228,0.82);margin-bottom:6px}
-                  .article-html-body a{color:#c9a84c;text-decoration:underline}
+                  .article-html-body a{color:#c8a45a;text-decoration:underline}
                   .article-html-body strong{color:#fff;font-weight:800}
-                  .article-html-body .fb-block{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:16px;color:rgba(240,236,228,0.88)}
-                  .article-html-body .fb-card{background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.22);border-radius:14px;padding:18px 16px;color:rgba(240,236,228,0.88)}
+                  .article-html-body .fb-block{background:rgba(200,164,90,.06);border:1px solid rgba(236,232,223,0.11);border-radius:12px;padding:16px;color:rgba(240,236,228,0.88)}
+                  .article-html-body .fb-card{background:rgba(200,164,90,.05);border:1px solid rgba(236,232,223,0.121);border-radius:14px;padding:18px 16px;color:rgba(240,236,228,0.88)}
                   .article-html-body .fb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:28px 0}
                   .article-html-body .fb-slider{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;margin:28px 0;scrollbar-width:thin}
-                  .article-html-body .fb-slide{flex-shrink:0;width:240px;background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:16px}
+                  .article-html-body .fb-slide{flex-shrink:0;width:240px;background:rgba(200,164,90,.05);border:1px solid rgba(236,232,223,0.11);border-radius:12px;padding:16px}
                   .article-html-body .fb-text{font-size:15px;color:rgba(240,236,228,0.85);line-height:1.9}
                   .article-html-body .fb-heading{font-weight:800;font-size:clamp(16px,2.5vw,20px);font-family:var(--font-serif);color:#fff;margin:0 0 8px}
                   /* 記事本文に埋まった旧インライン黒文字(color:#111等)をダークテーマ用に強制上書き（既存記事の可読性修復） */
@@ -305,7 +305,7 @@ export default async function ArticlePage({ params }) {
                   .article-html-body p{color:rgba(240,236,228,0.88) !important}
                   .article-html-body li{color:rgba(240,236,228,0.85) !important}
                   .article-html-body em{color:rgba(240,236,228,0.85) !important}
-                  .article-html-body a{color:#c9a84c !important}
+                  .article-html-body a{color:#c8a45a !important}
                   .article-html-body strong{color:#fff !important}
                 `}</style>
                 <div className="article-html-body" dangerouslySetInnerHTML={{ __html: article.body }} />
@@ -331,14 +331,14 @@ export default async function ArticlePage({ params }) {
           <div style={{
             margin: '0 0 0',
             padding: 'clamp(36px, 7vw, 64px) 20px',
-            background: 'linear-gradient(135deg, rgba(10,15,30,0.9) 0%, rgba(6,12,26,0.95) 100%)',
-            borderTop: '1px solid rgba(201,168,76,0.15)',
+            background: 'linear-gradient(135deg, rgba(13,17,23,0.9) 0%, rgba(6,12,26,0.95) 100%)',
+            borderTop: '1px solid rgba(236,232,223,0.083)',
             textAlign: 'center',
             position: 'relative',
             overflow: 'hidden',
           }}>
             {/* 背景装飾 */}
-            <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(200,164,90,0.06) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
             <div style={{ position: 'relative', zIndex: 1, maxWidth: '560px', margin: '0 auto' }}>
               <div style={{ fontSize: '32px', marginBottom: '12px' }}>🧭</div>
               <h3 style={{ fontSize: 'clamp(18px, 3vw, 22px)', fontWeight: 800, color: '#f0ece4', marginBottom: '12px', lineHeight: 1.4, fontFamily: 'var(--font-serif)' }}>
@@ -349,10 +349,10 @@ export default async function ArticlePage({ params }) {
               </p>
               <Link href="/diagnosis" style={{
                 display: 'inline-block', padding: '14px 36px',
-                background: 'linear-gradient(135deg, #c9a84c, #e8c97a)',
-                borderRadius: '8px', color: '#0a0f1e', fontWeight: 800,
+                background: 'linear-gradient(135deg, #c8a45a, #e8c97a)',
+                borderRadius: '8px', color: '#0d1117', fontWeight: 800,
                 fontSize: '15px', textDecoration: 'none', fontFamily: 'var(--font-sans)',
-                boxShadow: '0 4px 20px rgba(201,168,76,0.3)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.36)',
               }}>
                 無料で診断する（3分）→
               </Link>
@@ -366,7 +366,7 @@ export default async function ArticlePage({ params }) {
           <div style={{
             padding: 'clamp(28px,5vw,48px) 20px',
             background: 'rgba(4,8,26,0.98)',
-            borderTop: '1px solid rgba(201,168,76,0.12)',
+            borderTop: '1px solid rgba(236,232,223,0.066)',
             textAlign: 'center',
           }}>
             <div style={{ maxWidth: '540px', margin: '0 auto' }}>
@@ -380,10 +380,10 @@ export default async function ArticlePage({ params }) {
               </p>
               <Link href="/lp/mirror" style={{
                 display: 'inline-block', padding: '13px 32px',
-                border: '1px solid rgba(201,168,76,0.55)',
-                borderRadius: '8px', color: '#c9a84c', fontWeight: 800,
+                border: '1px solid rgba(236,232,223,0.303)',
+                borderRadius: '8px', color: '#c8a45a', fontWeight: 800,
                 fontSize: '14px', textDecoration: 'none', fontFamily: 'var(--font-sans)',
-                background: 'rgba(201,168,76,0.06)',
+                background: 'rgba(200,164,90,0.06)',
               }}>
                 Fineme Mirror を見る →
               </Link>
@@ -396,14 +396,14 @@ export default async function ArticlePage({ params }) {
           {/* ── 関連記事 ── */}
           {relatedArticles.length > 0 && (
             <div style={{
-              borderTop: '1px solid rgba(201,168,76,0.12)',
+              borderTop: '1px solid rgba(236,232,223,0.066)',
               padding: 'clamp(28px, 5vw, 48px) 20px',
-              background: 'rgba(10,15,30,0.3)',
+              background: '#151b24',
             }}>
               <div style={{ maxWidth: '740px', margin: '0 auto' }}>
                 <p style={{
                   fontSize: '10px', fontWeight: 800, letterSpacing: '.16em',
-                  textTransform: 'uppercase', color: 'rgba(201,168,76,0.6)',
+                  textTransform: 'uppercase', color: 'rgba(200,164,90,0.6)',
                   margin: '0 0 18px', fontFamily: 'var(--font-sans)',
                 }}>
                   関連記事
@@ -416,8 +416,8 @@ export default async function ArticlePage({ params }) {
                   {relatedArticles.map(a => (
                     <Link key={a.slug} href={`/feature/${a.slug}`} style={{ textDecoration: 'none' }}>
                       <div style={{
-                        background: 'rgba(10,15,30,0.6)',
-                        border: '1px solid rgba(201,168,76,0.14)',
+                        background: '#151b24',
+                        border: '1px solid rgba(236,232,223,0.077)',
                         borderRadius: '12px',
                         overflow: 'hidden',
                         transition: 'border-color .2s',
@@ -425,7 +425,7 @@ export default async function ArticlePage({ params }) {
                         {a.thumbnail && (
                           <div style={{
                             height: '110px', overflow: 'hidden',
-                            background: '#0a0f1e',
+                            background: '#0d1117',
                           }}>
                             <img
                               src={a.thumbnail}
@@ -438,7 +438,7 @@ export default async function ArticlePage({ params }) {
                           {a.category && (
                             <span style={{
                               fontSize: '9px', fontWeight: 800, letterSpacing: '.1em',
-                              textTransform: 'uppercase', color: 'rgba(201,168,76,0.6)',
+                              textTransform: 'uppercase', color: 'rgba(200,164,90,0.6)',
                               fontFamily: 'var(--font-sans)',
                             }}>
                               {a.category}
@@ -470,18 +470,18 @@ export default async function ArticlePage({ params }) {
 
           {/* ── 記事フッター ── */}
           <div style={{
-            borderTop: '1px solid rgba(201,168,76,0.12)',
+            borderTop: '1px solid rgba(236,232,223,0.066)',
             padding: 'clamp(24px, 4vw, 40px) 20px',
             textAlign: 'center',
-            background: 'rgba(10,15,30,0.4)',
+            background: '#151b24',
           }}>
             <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', marginBottom: '16px' }}>
               Fineme Journal の他の記事も読んでみませんか？
             </p>
             <Link href="/feature" style={{
               display: 'inline-block', padding: '10px 28px',
-              background: 'transparent', border: '1px solid rgba(201,168,76,0.5)',
-              borderRadius: '8px', color: '#c9a84c', fontWeight: 700,
+              background: 'transparent', border: '1px solid rgba(236,232,223,0.275)',
+              borderRadius: '8px', color: '#c8a45a', fontWeight: 700,
               fontSize: '14px', textDecoration: 'none', fontFamily: 'var(--font-sans)',
             }}>
               Fineme Journal を見る

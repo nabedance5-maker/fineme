@@ -75,7 +75,7 @@ export default function MirrorMatchPage() {
               {r.catchphrase && <div className="muted" style={{ fontSize: 13 }}>{r.catchphrase}</div>}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
                 {r.matchedAxes.map(a => (
-                  <span key={a} style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: 'rgba(201,168,76,.12)', color: '#c9a84c' }}>
+                  <span key={a} style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: 'rgba(200,164,90,.12)', color: '#c8a45a' }}>
                     {AXIS_LABEL[a] || a}
                   </span>
                 ))}

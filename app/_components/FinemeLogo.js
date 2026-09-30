@@ -25,7 +25,7 @@ export default function FinemeLogo({ height = 32 }) {
         <radialGradient id="fg-glow" cx="50%" cy="50%" r="50%">
           <stop offset="0%"   stopColor="#fffbe8"/>
           <stop offset="50%"  stopColor="#f5e090" stopOpacity="0.7"/>
-          <stop offset="100%" stopColor="#c9a84c" stopOpacity="0"/>
+          <stop offset="100%" stopColor="#c8a45a" stopOpacity="0"/>
         </radialGradient>
 
         {/* ── 微細ノイズフィルター：古い金属刻印感 ── */}
@@ -42,7 +42,7 @@ export default function FinemeLogo({ height = 32 }) {
       {/* ── ワードマーク本体 ── */}
       <text
         x="4" y="30"
-        fontFamily="'Playfair Display', Georgia, serif"
+        fontFamily="Georgia, serif"
         fontWeight="900"
         fontSize="30"
         fill="url(#fg-gold)"

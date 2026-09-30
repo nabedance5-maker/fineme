@@ -17,7 +17,7 @@ export default function TypesPage() {
       .code-legend-title { font-size: 11px; font-weight: 800; letter-spacing: .12em; color: rgba(232,228,220,0.4); margin: 0 0 14px; text-transform: uppercase; }
       .code-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
       .code-row:last-child { margin-bottom: 0; }
-      .code-pos { width: 22px; height: 22px; border-radius: 6px; background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.4); color: #c9a84c; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+      .code-pos { width: 22px; height: 22px; border-radius: 6px; background: rgba(200,164,90,0.15); border: 1px solid rgba(236,232,223,0.22); color: #c8a45a; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
       .code-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
       .code-chip { padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; border: 1px solid; }
       .code-dim-label { font-size: 11px; color: rgba(232,228,220,0.5); }
@@ -27,12 +27,12 @@ export default function TypesPage() {
       .type-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
       .type-card { background: rgba(255,255,255,0.03); border: 1.5px solid rgba(255,255,255,0.08); border-radius: 14px; overflow: hidden; cursor: pointer; transition: border-color .15s, transform .1s; }
       .type-card:hover { transform: translateY(-2px); }
-      .type-card.my-type { box-shadow: 0 0 0 2px #c9a84c; border-color: #c9a84c; }
+      .type-card.my-type { box-shadow: 0 0 0 2px #c8a45a; border-color: rgba(236,232,223,0.3); }
       .type-card-img { width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; background: rgba(255,255,255,0.04); }
       .type-card-body { padding: 10px 10px 12px; }
       .type-card-code { font-size: 18px; font-weight: 900; letter-spacing: .08em; line-height: 1; margin-bottom: 5px; }
       .type-card-name { font-size: 11px; color: rgba(232,228,220,0.7); line-height: 1.4; margin-bottom: 6px; }
-      .type-card-badge { font-size: 9px; font-weight: 800; background: rgba(201,168,76,0.2); color: #c9a84c; border: 1px solid rgba(201,168,76,0.4); border-radius: 99px; padding: 2px 7px; display: inline-block; }
+      .type-card-badge { font-size: 9px; font-weight: 800; background: rgba(200,164,90,0.2); color: #c8a45a; border: 1px solid rgba(236,232,223,0.22); border-radius: 99px; padding: 2px 7px; display: inline-block; }
       .type-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: flex-end; justify-content: center; }
       @media(min-width:600px){ .type-modal-overlay { align-items: center; padding: 24px; } }
       .type-modal { background: #0e1422; border: 1px solid rgba(255,255,255,0.12); border-radius: 20px 20px 0 0; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; padding: 28px 24px 40px; }
@@ -42,8 +42,8 @@ export default function TypesPage() {
       .type-modal-name { font-size: 20px; font-weight: 900; color: #fff; margin: 0 0 16px; }
       .type-modal-img { width: 160px; height: 213px; object-fit: cover; border-radius: 14px; margin: 0 auto 20px; display: block; }
       .type-modal-desc { font-size: 14px; color: rgba(232,228,220,0.65); line-height: 1.9; }
-      .type-modal-cta { display: block; margin: 24px auto 0; padding: 13px 28px; background: #c9a84c; color: #0a0f1e; font-size: 14px; font-weight: 800; border-radius: 8px; text-align: center; text-decoration: none; }
-      .my-type-banner { background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: rgba(201,168,76,0.9); line-height: 1.6; }
+      .type-modal-cta { display: block; margin: 24px auto 0; padding: 13px 28px; background: #c8a45a; color: #0d1117; font-size: 14px; font-weight: 800; border-radius: 8px; text-align: center; text-decoration: none; }
+      .my-type-banner { background: rgba(200,164,90,0.1); border: 1px solid rgba(236,232,223,0.165); border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: rgba(200,164,90,0.9); line-height: 1.6; }
     `;
     document.head.appendChild(style);
 
@@ -267,13 +267,13 @@ export default function TypesPage() {
     function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     function careChip(code) {
-      const colors = { N:'rgba(201,168,76,0.12)|#c9a84c66|#c9a84c', C:'rgba(239,68,68,0.1)|#ef444466|#ef4444', A:'rgba(59,130,246,0.1)|#3b82f666|#3b82f6', P:'rgba(16,185,129,0.1)|#10b98166|#10b981' };
+      const colors = { N:'rgba(200,164,90,0.12)|#c8a45a66|#c8a45a', C:'rgba(239,68,68,0.1)|#ef444466|#ef4444', A:'rgba(59,130,246,0.1)|#3b82f666|#3b82f6', P:'rgba(16,185,129,0.1)|#10b98166|#10b981' };
       const [bg, border, color] = colors[code].split('|');
       const [lbl] = CARE_LABELS[code];
       return '<span class="code-chip" style="background:' + bg + ';border-color:' + border + ';color:' + color + '">' + code + ' ' + lbl + '</span>';
     }
     function pathChip(code) {
-      const colors = { V:'rgba(201,168,76,0.08)|#c9a84c44|#c9a84caa', Q:'rgba(239,68,68,0.08)|#ef444444|#ef4444aa', K:'rgba(139,92,246,0.08)|#8b5cf644|#8b5cf6aa', L:'rgba(245,158,11,0.08)|#f59e0b44|#f59e0baa', D:'rgba(16,185,129,0.08)|#10b98144|#10b981aa' };
+      const colors = { V:'rgba(200,164,90,0.08)|#c8a45a44|#c8a45aaa', Q:'rgba(239,68,68,0.08)|#ef444444|#ef4444aa', K:'rgba(139,92,246,0.08)|#8b5cf644|#8b5cf6aa', L:'rgba(245,158,11,0.08)|#f59e0b44|#f59e0baa', D:'rgba(16,185,129,0.08)|#10b98144|#10b981aa' };
       const [bg, border, color] = colors[code].split('|');
       const [lbl] = PATH_LABELS[code];
       return '<span class="code-chip" style="background:' + bg + ';border-color:' + border + ';color:' + color + '">' + code + ' ' + lbl + '</span>';
@@ -306,7 +306,7 @@ export default function TypesPage() {
     const tabsHtml = AXES.map((a, i) => {
       const isDefault = a.code === defaultAxis;
       return '<button class="axis-tab' + (isDefault ? ' active' : '') + '" data-axis="' + a.code + '"'
-        + ' style="border-color:' + a.color + ';color:' + (isDefault ? '#0a0f1e' : a.color) + ';background:' + (isDefault ? a.color : 'transparent') + '"'
+        + ' style="border-color:' + a.color + ';color:' + (isDefault ? '#0d1117' : a.color) + ';background:' + (isDefault ? a.color : 'transparent') + '"'
         + ' onclick="switchTypeAxis(\'' + a.code + '\', this)">'
         + a.label + '</button>';
     }).join('');
@@ -332,7 +332,7 @@ export default function TypesPage() {
       + '</div>'
       + '<div class="axis-tabs">' + tabsHtml + '</div>'
       + '<div id="type-grid" class="type-grid">' + buildGrid(defaultAxis) + '</div>'
-      + '<div style="text-align:center;margin-top:36px"><a href="/diagnosis" style="display:inline-block;padding:14px 32px;background:#c9a84c;color:#0a0f1e;font-size:14px;font-weight:800;border-radius:8px;text-decoration:none">自分のタイプを診断する →</a></div>'
+      + '<div style="text-align:center;margin-top:36px"><a href="/diagnosis" style="display:inline-block;padding:14px 32px;background:#c8a45a;color:#0d1117;font-size:14px;font-weight:800;border-radius:8px;text-decoration:none">自分のタイプを診断する →</a></div>'
       + '</div>'
       + '<div id="type-modal-overlay" class="type-modal-overlay" style="display:none" onclick="if(event.target===this)closeTypeModal()">'
       + '<div class="type-modal" id="type-modal-content"></div>'
@@ -348,7 +348,7 @@ export default function TypesPage() {
       });
       btn.classList.add('active');
       const ax = AXES.find(a => a.code === axisCode);
-      btn.style.color = '#0a0f1e';
+      btn.style.color = '#0d1117';
       btn.style.background = ax.color;
       document.getElementById('type-grid').innerHTML = buildGrid(axisCode);
     };
@@ -368,7 +368,7 @@ export default function TypesPage() {
         + '<div style="clear:both"></div>'
         + '<div class="type-modal-code" style="color:' + ax.color + '">' + toDisplayCode(typeCode) + '</div>'
         + '<div class="type-modal-name">～ ' + esc(fullName) + ' ～</div>'
-        + (isMyType ? '<div style="font-size:11px;font-weight:800;color:#c9a84c;margin-bottom:12px">★ あなたの現在のタイプ</div>' : '')
+        + (isMyType ? '<div style="font-size:11px;font-weight:800;color:#c8a45a;margin-bottom:12px">★ あなたの現在のタイプ</div>' : '')
         + '<img class="type-modal-img" src="/images/types/TYPE-' + typeCode + '.webp" alt="' + esc(creature) + '" style="border:2px solid ' + ax.color + '44" />'
         + '<p class="type-modal-desc">' + esc(desc) + '</p>'
         + '<a href="/diagnosis" class="type-modal-cta">このタイプか確かめる →</a>';

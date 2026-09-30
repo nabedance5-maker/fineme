@@ -25,7 +25,7 @@ export default function TrackBadge() {
     }}>
       <span style={{
         display: 'inline-flex', alignItems: 'baseline', gap: 6,
-        fontFamily: "'Noto Serif JP', Georgia, serif", letterSpacing: '.04em',
+        fontFamily: "'Shippori Mincho', Georgia, serif", letterSpacing: '.04em',
       }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: '#f0d8e0' }}>{t.label}</span>
         <span style={{ fontSize: 11, color: 'rgba(240,216,224,0.6)' }}>・ {t.subLabel}</span>
