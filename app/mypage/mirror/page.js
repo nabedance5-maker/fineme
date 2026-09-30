@@ -143,7 +143,7 @@ export default function MirrorHistoryPage() {
         {SIDENAV}
 
         <section className="mypage-content">
-          <div style={{ background: '#151b24', borderRadius: '14px', padding: '22px', marginBottom: '24px', border: '1px solid rgba(236,232,223,0.11)' }}>
+          <div className="fm-contour--card" style={{ background: '#151b24', borderRadius: '14px', padding: '22px', marginBottom: '24px', border: '1px solid rgba(236,232,223,0.11)' }}>
             <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.18em', color: 'rgba(200,164,90,0.55)', margin: '0 0 6px', textTransform: 'uppercase' }}>Fineme Mirror</p>
             <h1 style={{ fontFamily: "'Shippori Mincho', Georgia, serif", fontSize: 'clamp(18px,4vw,24px)', fontWeight: 700, color: '#fff', margin: '0 0 6px' }}>
               Mirror <span style={{ color: '#c8a45a' }}>分析履歴</span>

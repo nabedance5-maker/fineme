@@ -225,7 +225,7 @@ export default function AboutPage() {
       `}</style>
 
       {/* Hero */}
-      <section className="af-hero">
+      <section className="af-hero fm-contour">
         <p className="af-hero-eyebrow">About Fineme</p>
         <h1>
           外見を変えたいあなたに、<br />

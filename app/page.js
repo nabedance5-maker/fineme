@@ -351,7 +351,7 @@ export default function HomePage() {
 
       <main>
         {/* ── Nautical Hero ── */}
-        <section className="hero-nav">
+        <section className="hero-nav fm-contour">
           <div className="hero-nav-inner">
             <h1 className="hero-nav-h1">
               <img
@@ -597,7 +597,7 @@ export default function HomePage() {
                 { icon: '', title: '月次変化レポート', sub: 'Mirrorで変化を確認', desc: '1ヶ月前のMirrorと今のMirrorを比較。外見の変化が数値と言葉で記録される。「変わっている」が見える。' },
               ].map((item, i) => (
                 <div key={i} style={{ background: 'rgba(200,164,90,0.04)', border: '1px solid rgba(236,232,223,0.11)', borderRadius: 14, padding: 'clamp(18px,3vw,24px)' }}>
-                  <div style={{ fontSize: 28, marginBottom: 10 }}>{item.icon}</div>
+                  <div className="fm-seal" style={{ fontSize: 28, marginBottom: 10 }}>{item.icon}</div>
                   <p style={{ fontSize: 14, fontWeight: 800, color: '#fff', margin: '0 0 4px' }}>{item.title}</p>
                   <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,164,90,0.7)', margin: '0 0 10px', letterSpacing: '0.05em' }}>{item.sub}</p>
                   <p style={{ fontSize: 13, color: 'rgba(232,228,220,0.55)', lineHeight: 1.7, margin: 0 }}>{item.desc}</p>

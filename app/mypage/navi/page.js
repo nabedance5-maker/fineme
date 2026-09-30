@@ -42,7 +42,6 @@ export default function NewMeNaviPage() {
 
       /* ── Navi Header ── */
       .navi-header { padding: 24px 24px 20px; background: #151b24; border-radius: 14px; margin-bottom: 24px; position: relative; overflow: hidden; border: 1px solid rgba(236,232,223,0.11); }
-      .navi-header::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(200,164,90,.1) 0%, transparent 70%); border-radius: 50%; }
       .navi-header-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .18em; color: rgba(200,164,90,0.55); margin: 0 0 10px; text-transform: uppercase; position: relative; z-index: 1; }
       .navi-header-badge { display: none; }
       .navi-header h1 { font-family: 'Shippori Mincho', Georgia, serif; font-size: clamp(16px,4vw,22px); font-weight: 700; color: #fff; margin: 0 0 10px; line-height: 1.55; position: relative; z-index: 1; }
@@ -3668,7 +3667,7 @@ export default function NewMeNaviPage() {
 
     const html = `
       <div class="navi-wrap">
-      <div class="navi-header">
+      <div class="navi-header fm-contour--card fm-compass-mark">
         <p class="navi-header-eyebrow">New Me Navi &nbsp;<a href="/mypage/map" style="font-size:9px;font-weight:700;color:rgba(200,164,90,0.6);text-decoration:none;border:1px solid rgba(236,232,223,0.121);padding:2px 8px;border-radius:99px;vertical-align:middle;letter-spacing:.06em">部位マップ</a></p>
         <div class="navi-header-badge">${naviStepsData ? 'あなただけの変容ロードマップ' : '行動タイプ別ロードマップ'}</div>
         <h1>ゴール：<em>${esc(overallGoal)}</em></h1>

@@ -230,7 +230,7 @@ export default function GuidePage() {
         @media (max-width: 600px) { .guide-wrap { padding: 0 14px 60px; } }
       `}</style>
 
-      <section className="guide-hero">
+      <section className="guide-hero fm-contour">
         <p className="guide-hero-eyebrow">7-Axis Transformation Guide</p>
         <h1>8軸 変容ガイド</h1>
         <p>

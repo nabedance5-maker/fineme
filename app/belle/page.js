@@ -150,7 +150,7 @@ export default function BellePage() {
       `}</style>
 
       {/* ── ① ヒーロー ── */}
-      <section style={{
+      <section className="fm-contour--belle" style={{
         minHeight: 'min(90vh, 720px)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         textAlign: 'center', padding: 'clamp(80px,14vw,120px) 20px clamp(60px,10vw,90px)',

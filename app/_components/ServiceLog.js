@@ -1026,7 +1026,7 @@ export default function ServiceLog({ withSideNav = false }) {
       partnerBanner += lineConnectBanner;
 
       const header = `
-        <div class="log-header">
+        <div class="log-header fm-contour--card">
           <p class="log-header-eyebrow">New Me Log</p>
           <h1><em>「前いつ行ったっけ？」を、なくす</em></h1>
           <p class="log-header-sub">美容室・エステ・ジムから、スキンケアやプロテインなどの購入まで。登録しておくと、そろそろの時期にLINEで知らせます。月の美容代がまるごと分かります。</p>
