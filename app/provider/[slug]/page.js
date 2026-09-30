@@ -599,15 +599,63 @@ function StoriesSection({ stories, provider }) {
 }
 
 // ── タブ①「ガイドを知る」────────────────────────────────────────────────────
+// アピールタブのブロック単位カスタム編集（でお要望2026-09-30：「公開ページ自体を
+// もっと掲載者が自由に作り込めるようにしたらいいんじゃない？」）。位置・サイズ・
+// 回転まで完全自由なビルダーは崩れたページを量産するリスクが高いため、見出し・
+// 本文・画像・ボタン・引用の5種を上から順に並べる形に絞った（ダッシュボードの
+// 「アピール設定」タブで追加・並び替え・削除できる）。ブロックが1件も無い店舗には
+// 何も表示しない。
+function AppealBlocksSection({ blocks }) {
+  if (!blocks?.length) return null;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {blocks.map(b => {
+        const c = b.content || {};
+        if (b.block_type === 'heading') {
+          return <h2 key={b.id} style={{ fontSize: '20px', fontWeight: '800', margin: 0, color: 'rgba(232,228,220,0.92)', textAlign: c.align === 'center' ? 'center' : 'left' }}>{c.text}</h2>;
+        }
+        if (b.block_type === 'paragraph') {
+          return <p key={b.id} style={{ fontSize: '14px', lineHeight: '1.8', margin: 0, color: 'rgba(232,228,220,0.75)', whiteSpace: 'pre-wrap', textAlign: c.align === 'center' ? 'center' : 'left' }}>{c.text}</p>;
+        }
+        if (b.block_type === 'image' && c.url) {
+          return (
+            <figure key={b.id} style={{ margin: 0, maxWidth: c.size === 'full' ? '100%' : '360px', marginLeft: c.size === 'full' ? 0 : 'auto', marginRight: c.size === 'full' ? 0 : 'auto' }}>
+              <img src={c.url} alt={c.caption || ''} style={{ width: '100%', borderRadius: '14px', display: 'block' }} />
+              {c.caption && <figcaption style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', textAlign: 'center', marginTop: '6px' }}>{c.caption}</figcaption>}
+            </figure>
+          );
+        }
+        if (b.block_type === 'button' && c.label && c.url) {
+          return (
+            <a key={b.id} href={c.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', alignSelf: 'flex-start', padding: '12px 24px', background: '#c9a84c', color: '#0a0f1e', borderRadius: '10px', fontSize: '14px', fontWeight: '700', textDecoration: 'none' }}>
+              {c.label}
+            </a>
+          );
+        }
+        if (b.block_type === 'quote' && c.text) {
+          return (
+            <blockquote key={b.id} style={{ margin: 0, padding: '16px 20px', borderLeft: '3px solid #c9a84c', background: 'rgba(10,15,30,0.50)', borderRadius: '0 12px 12px 0' }}>
+              <p style={{ fontSize: '15px', fontStyle: 'italic', color: 'rgba(232,228,220,0.85)', margin: 0, lineHeight: '1.8' }}>「{c.text}」</p>
+              {c.attribution && <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.5)', margin: '8px 0 0' }}>— {c.attribution}</p>}
+            </blockquote>
+          );
+        }
+        return null;
+      })}
+    </div>
+  );
+}
+
 // アピールタブ（でお要望2026-09-29：公開ページ3タブ再編。旧「ガイドを知る」＋
 // 「プログラム」を1つに統合し、診断/Mirror経由の訪問者だけがこのタブに最初に
 // 着地する構成にした。中身（理念・スタッフ紹介・体験談・サービスカード）は
 // 従来のまま——タブの独立性だけをやめている）。
-function AppealTab({ provider, diagnosis, matchData, stories, staff, services, onConsult, userPathType, onGoToConsult }) {
+function AppealTab({ provider, diagnosis, matchData, stories, staff, services, appealBlocks, onConsult, userPathType, onGoToConsult }) {
   const mapSection = <NewMeMapSection diagnosis={diagnosis} matchData={matchData} />;
   return (
     <>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '100px' }}>
+        <AppealBlocksSection blocks={appealBlocks} />
         {provider.guide_message && (
           <div style={{ background: 'linear-gradient(135deg, rgba(201,168,76,0.07) 0%, rgba(79,70,229,0.04) 100%)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: '16px', padding: '22px 24px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
             {provider.photo_url ? (
@@ -1810,6 +1858,7 @@ function ProviderPageContent() {
   const [submitted, setSubmitted] = useState(false);
   const [stories, setStories] = useState([]);
   const [staff, setStaff] = useState([]);
+  const [appealBlocks, setAppealBlocks] = useState([]);
   const [isFavorited, setIsFavorited] = useState(false);
 
   // お気に入り確認
@@ -1881,10 +1930,12 @@ function ProviderPageContent() {
       fetch(`/api/providers/${slug}`).then(r => r.ok ? r.json() : null),
       fetch(`/api/providers/${slug}/services`).then(r => r.ok ? r.json() : []),
       fetch(`/api/providers/${slug}/staff`).then(r => r.ok ? r.json() : []),
-    ]).then(([prov, svcs, stf]) => {
+      fetch(`/api/providers/${slug}/appeal-blocks`).then(r => r.ok ? r.json() : []),
+    ]).then(([prov, svcs, stf, blocks]) => {
       setProvider(prov);
       setServices(Array.isArray(svcs) ? svcs : []);
       setStaff(Array.isArray(stf) ? stf : []);
+      setAppealBlocks(Array.isArray(blocks) ? blocks : []);
       setLoading(false);
     }).catch(() => setLoading(false));
 
@@ -2020,6 +2071,7 @@ function ProviderPageContent() {
           stories={stories}
           staff={staff}
           services={services}
+          appealBlocks={appealBlocks}
           onConsult={handleConsultFromProgram}
           userPathType={matchData?.detail?.coveredAxes?.[0]?.path_type || null}
           onGoToConsult={() => { setActiveTab('consult'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}

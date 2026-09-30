@@ -1894,6 +1894,192 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'member-referral') loadAll();
     })();
 
+    // ── アピールブロック（公開ページ「アピール」タブのカスタムブロック編集、でお要望2026-09-30） ─────
+    (function setupAppealBlocks() {
+      const token = getSupabaseToken();
+      if (!token) return;
+      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      const listEl = document.getElementById('ablk-list');
+      if (!listEl) return;
+      const addToggleBtn = document.getElementById('ablk-add-toggle');
+      const addFormEl = document.getElementById('ablk-add-form');
+      const addTypeEl = document.getElementById('ablk-add-type');
+      const addFieldsEl = document.getElementById('ablk-add-fields');
+      const addSaveBtn = document.getElementById('ablk-add-save');
+      const msgEl = document.getElementById('ablk-msg');
+      let blocks = [];
+
+      const TYPE_LABEL = { heading: '見出し', paragraph: '本文', image: '画像', button: 'ボタン', quote: '引用' };
+
+      function fieldsHtml(type, c) {
+        c = c || {};
+        if (type === 'heading' || type === 'paragraph') {
+          return `
+            <textarea data-ablk-field="text" rows="${type === 'heading' ? 2 : 4}" style="width:100%;margin-bottom:8px" placeholder="${type === 'heading' ? '見出しテキスト' : '本文テキスト'}">${esc(c.text || '')}</textarea>
+            <select data-ablk-field="align" style="margin-bottom:8px">
+              <option value="left"${c.align !== 'center' ? ' selected' : ''}>左揃え</option>
+              <option value="center"${c.align === 'center' ? ' selected' : ''}>中央揃え</option>
+            </select>`;
+        }
+        if (type === 'image') {
+          return `
+            <div data-ablk-image-preview-wrap style="display:${c.url ? 'block' : 'none'};margin-bottom:8px">
+              <img data-ablk-image-preview src="${esc(c.url || '')}" style="max-width:240px;border-radius:8px;display:block" />
+            </div>
+            <input type="hidden" data-ablk-field="url" value="${esc(c.url || '')}" />
+            <button type="button" class="btn btn-ghost" data-ablk-image-upload-btn style="font-size:12px;margin-bottom:8px">画像を選択</button>
+            <input type="file" accept="image/*" data-ablk-image-file-input style="display:none" />
+            <div data-ablk-image-upload-msg class="muted" style="font-size:12px;margin-bottom:8px"></div>
+            <input type="text" data-ablk-field="caption" value="${esc(c.caption || '')}" placeholder="キャプション（任意）" style="width:100%;margin-bottom:8px" />
+            <select data-ablk-field="size" style="margin-bottom:8px">
+              <option value="medium"${c.size !== 'full' ? ' selected' : ''}>標準サイズ</option>
+              <option value="full"${c.size === 'full' ? ' selected' : ''}>大きめ（横幅いっぱい）</option>
+            </select>`;
+        }
+        if (type === 'button') {
+          return `
+            <input type="text" data-ablk-field="label" value="${esc(c.label || '')}" placeholder="ボタンの文字（例: 公式LINEで相談する）" style="width:100%;margin-bottom:8px" />
+            <input type="text" data-ablk-field="url" value="${esc(c.url || '')}" placeholder="https://... （リンク先URL）" style="width:100%;margin-bottom:8px" />`;
+        }
+        if (type === 'quote') {
+          return `
+            <textarea data-ablk-field="text" rows="3" style="width:100%;margin-bottom:8px" placeholder="引用文">${esc(c.text || '')}</textarea>
+            <input type="text" data-ablk-field="attribution" value="${esc(c.attribution || '')}" placeholder="引用元（任意）" style="width:100%;margin-bottom:8px" />`;
+        }
+        return '';
+      }
+
+      function readFields(scopeEl) {
+        const out = {};
+        scopeEl?.querySelectorAll('[data-ablk-field]').forEach(el => { out[el.dataset.ablkField] = el.value; });
+        return out;
+      }
+
+      function bindImageUpload(scopeEl) {
+        const btn = scopeEl?.querySelector('[data-ablk-image-upload-btn]');
+        const input = scopeEl?.querySelector('[data-ablk-image-file-input]');
+        const msg = scopeEl?.querySelector('[data-ablk-image-upload-msg]');
+        const urlField = scopeEl?.querySelector('[data-ablk-field="url"]');
+        const previewWrap = scopeEl?.querySelector('[data-ablk-image-preview-wrap]');
+        const preview = scopeEl?.querySelector('[data-ablk-image-preview]');
+        if (!btn || !input) return;
+        btn.addEventListener('click', () => input.click());
+        input.addEventListener('change', async () => {
+          const file = input.files?.[0]; if (!file) return;
+          const uploadToken = getSupabaseToken();
+          if (!uploadToken) { showToast('ログインが必要です'); return; }
+          if (msg) msg.textContent = '圧縮中…';
+          btn.disabled = true;
+          const compressed = await compressImage(file, 1600);
+          if (msg) msg.textContent = 'アップロード中…';
+          const fd = new FormData(); fd.append('photo', compressed, 'photo.jpg');
+          try {
+            const res = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${getSupabaseToken() || uploadToken}` }, body: fd });
+            let data; try { data = await res.json(); } catch { data = {}; }
+            if (res.ok && data.url) {
+              if (urlField) urlField.value = data.url;
+              if (preview) preview.src = data.url;
+              if (previewWrap) previewWrap.style.display = 'block';
+              if (msg) msg.textContent = '✓ 画像を選択しました（保存ボタンを押してください）';
+            } else if (msg) { msg.textContent = 'エラー: ' + (data.error || '不明'); }
+          } catch { if (msg) msg.textContent = '通信エラーが発生しました'; }
+          btn.disabled = false;
+        });
+      }
+
+      function renderRow(b, idx, total) {
+        return `
+          <div data-ablk-row="${b.id}" style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:10px;background:#fff">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#f3f4f6;color:#374151">${TYPE_LABEL[b.block_type] || b.block_type}</span>
+              <div style="display:flex;gap:2px">
+                <button type="button" class="btn btn-ghost" style="font-size:10px;padding:3px 6px" data-ablk-up="${b.id}"${idx === 0 ? ' disabled' : ''}>↑</button>
+                <button type="button" class="btn btn-ghost" style="font-size:10px;padding:3px 6px" data-ablk-down="${b.id}"${idx === total - 1 ? ' disabled' : ''}>↓</button>
+                <button type="button" class="btn btn-ghost" style="font-size:10px;padding:3px 6px;color:#ef4444" data-ablk-del="${b.id}">削除</button>
+              </div>
+            </div>
+            ${fieldsHtml(b.block_type, b.content)}
+            <button type="button" class="btn" style="font-size:12px;padding:5px 12px" data-ablk-save="${b.id}">この内容を保存</button>
+            <span data-ablk-row-msg style="font-size:11px;margin-left:8px"></span>
+          </div>`;
+      }
+
+      function renderList() {
+        listEl.innerHTML = blocks.length
+          ? blocks.map((b, i) => renderRow(b, i, blocks.length)).join('')
+          : '<p class="muted" style="font-size:13px">まだブロックがありません。「＋ ブロックを追加」から作成してください。</p>';
+
+        listEl.querySelectorAll('[data-ablk-row]').forEach(rowEl => bindImageUpload(rowEl));
+
+        listEl.querySelectorAll('[data-ablk-up]').forEach(btn => btn.addEventListener('click', async () => { await swapBlockOrder(btn.dataset.ablkUp, -1); await loadBlocks(); renderList(); }));
+        listEl.querySelectorAll('[data-ablk-down]').forEach(btn => btn.addEventListener('click', async () => { await swapBlockOrder(btn.dataset.ablkDown, 1); await loadBlocks(); renderList(); }));
+        listEl.querySelectorAll('[data-ablk-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('このブロックを削除しますか？')) return;
+          await fetch(`/api/provider/appeal-blocks/${btn.dataset.ablkDel}`, { method: 'DELETE', headers: authH() });
+          await loadBlocks(); renderList();
+        }));
+        listEl.querySelectorAll('[data-ablk-save]').forEach(btn => btn.addEventListener('click', async () => {
+          const id = btn.dataset.ablkSave;
+          const rowEl = listEl.querySelector(`[data-ablk-row="${id}"]`);
+          const msgSpan = rowEl?.querySelector('[data-ablk-row-msg]');
+          const content = readFields(rowEl);
+          btn.disabled = true;
+          const res = await fetch(`/api/provider/appeal-blocks/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ content }) });
+          btn.disabled = false;
+          if (msgSpan) { msgSpan.style.color = res.ok ? '#059669' : '#ef4444'; msgSpan.textContent = res.ok ? '✓ 保存しました' : '保存に失敗しました'; }
+          if (res.ok) await loadBlocks();
+        }));
+      }
+
+      async function swapBlockOrder(id, dir) {
+        const idx = blocks.findIndex(b => b.id === id);
+        const otherIdx = idx + dir;
+        if (idx < 0 || otherIdx < 0 || otherIdx >= blocks.length) return;
+        const a = blocks[idx], b = blocks[otherIdx];
+        await Promise.all([
+          fetch(`/api/provider/appeal-blocks/${a.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ sort_order: b.sort_order }) }),
+          fetch(`/api/provider/appeal-blocks/${b.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ sort_order: a.sort_order }) }),
+        ]);
+      }
+
+      async function loadBlocks() {
+        const res = await fetch('/api/provider/appeal-blocks', { headers: authH() });
+        blocks = res.ok ? await res.json() : [];
+      }
+
+      addToggleBtn?.addEventListener('click', () => {
+        if (!addFormEl) return;
+        const show = addFormEl.style.display === 'none';
+        addFormEl.style.display = show ? 'block' : 'none';
+        if (show && addFieldsEl && addTypeEl) {
+          addFieldsEl.innerHTML = fieldsHtml(addTypeEl.value, {});
+          bindImageUpload(addFormEl);
+        }
+      });
+      addTypeEl?.addEventListener('change', () => {
+        if (addFieldsEl) addFieldsEl.innerHTML = fieldsHtml(addTypeEl.value, {});
+        bindImageUpload(addFormEl);
+      });
+      addSaveBtn?.addEventListener('click', async () => {
+        const block_type = addTypeEl?.value;
+        const content = readFields(addFieldsEl);
+        addSaveBtn.disabled = true;
+        const res = await fetch('/api/provider/appeal-blocks', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ block_type, content }) });
+        addSaveBtn.disabled = false;
+        if (res.ok) {
+          if (addFormEl) addFormEl.style.display = 'none';
+          if (addFieldsEl) addFieldsEl.innerHTML = '';
+          if (msgEl) msgEl.textContent = '';
+          await loadBlocks(); renderList();
+        } else if (msgEl) { msgEl.style.color = '#ef4444'; msgEl.textContent = '追加に失敗しました'; }
+      });
+
+      async function loadAll() { await loadBlocks(); renderList(); }
+      document.querySelectorAll('[data-tab="appeal-settings"]').forEach(btn => btn.addEventListener('click', loadAll, { once: false }));
+      if (new URLSearchParams(location.search).get('tab') === 'appeal-settings') loadAll();
+    })();
+
     // ── クラス管理（スクール業態特化、でお要望2026-09-14） ─────
     (function setupClasses() {
       const token = getSupabaseToken();
@@ -9634,6 +9820,32 @@ export default function ProviderDashboardPage() {
               </div>
               <button type="submit" className="btn" style={{ marginTop: '8px' }}>保存する</button>
             </form>
+          </div>
+
+          <div className="card" style={{ padding: '24px', marginTop: '16px' }}>
+            <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>ページ構成ブロック</h2>
+            <p className="muted" style={{ fontSize: '13px', margin: '0 0 16px', lineHeight: '1.6' }}>
+              公開ページの「アピール」タブの一番上に、見出し・本文・画像・ボタン・引用を自由に追加できます。上から順に表示されます。
+            </p>
+            <div id="ablk-list"></div>
+            <div style={{ marginTop: '12px' }}>
+              <button type="button" className="btn btn-ghost" id="ablk-add-toggle">＋ ブロックを追加</button>
+              <div id="ablk-add-form" style={{ display: 'none', marginTop: '10px', padding: '14px', background: '#f9fafb', borderRadius: '10px' }}>
+                <div className="form-field">
+                  <label>種類</label>
+                  <select id="ablk-add-type">
+                    <option value="heading">見出し</option>
+                    <option value="paragraph">本文</option>
+                    <option value="image">画像</option>
+                    <option value="button">ボタン</option>
+                    <option value="quote">引用</option>
+                  </select>
+                </div>
+                <div id="ablk-add-fields"></div>
+                <button type="button" className="btn" id="ablk-add-save" style={{ marginTop: '8px' }}>追加する</button>
+              </div>
+            </div>
+            <div id="ablk-msg" style={{ fontSize: '12px', marginTop: '8px' }}></div>
           </div>
         </div>
 
