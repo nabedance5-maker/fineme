@@ -359,7 +359,7 @@ function NewMeMapSection({ diagnosis, matchData }) {
             <p style={{ fontSize: '11px', color: '#93c5fd', margin: '6px 0 0', lineHeight: '1.5' }}>※ Me Scan 8軸診断（変容ベクトル・来た道・ギャップ）との相性スコア</p>
           </>
         ) : (
-          <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', margin: 0 }}>診断結果と照らし合わせています。</p>
+          <p style={{ fontSize: '13px', color: '#111', margin: 0 }}>診断結果と照らし合わせています。</p>
         )}
       </div>
 
@@ -385,7 +385,7 @@ function NewMeMapSection({ diagnosis, matchData }) {
                   {ax.gap > 0 && (
                     <div style={{ position: 'relative', height: '6px', background: '#dbeafe', borderRadius: '99px', overflow: 'visible' }}>
                       <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', background: '#2563eb', borderRadius: '99px', width: `${Math.max(10, (10 - ax.gap) / 10 * 100)}%` }} />
-                      <span style={{ position: 'absolute', right: 0, top: '-14px', fontSize: '10px', fontWeight: '700', color: 'rgba(232,228,220,0.55)' }}>理想</span>
+                      <span style={{ position: 'absolute', right: 0, top: '-14px', fontSize: '10px', fontWeight: '700', color: '#111' }}>理想</span>
                     </div>
                   )}
                 </div>
@@ -532,7 +532,7 @@ function StoriesSection({ stories, provider }) {
         <div style={{ background: '#fffbeb', border: '1px dashed #fde68a', borderRadius: '18px', padding: '32px', textAlign: 'center' }}>
           <div style={{ fontSize: '36px', marginBottom: '12px' }}>️</div>
           <p style={{ fontSize: '15px', fontWeight: '700', color: '#111', margin: '0 0 6px' }}>このガイドへの最初の証言を残す人になれます</p>
-          <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', margin: '0 0 18px', lineHeight: '1.7' }}>相談・来店後に「変わる前」と「今」をありのままに残してください。あなたの声が次の誰かの地図になります。</p>
+          <p style={{ fontSize: '13px', color: '#111', margin: '0 0 18px', lineHeight: '1.7' }}>相談・来店後に「変わる前」と「今」をありのままに残してください。あなたの声が次の誰かの地図になります。</p>
           {provider?.slug && (
             <a href={`/story-submit?providerId=${provider.id || ''}`} style={{ display: 'inline-block', padding: '10px 22px', background: '#111', color: '#fff', borderRadius: '10px', fontSize: '13px', fontWeight: '700', textDecoration: 'none' }}>
               体験談を書く（無料）
@@ -581,7 +581,7 @@ function StoriesSection({ stories, provider }) {
                     <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.15)' }} />
                   </>
                 ) : (
-                  <div style={{ fontSize: '13px', color: 'rgba(232,228,220,0.45)', fontWeight: '600', letterSpacing: '.05em' }}>出会う前</div>
+                  <div style={{ padding: '6px 14px', background: 'rgba(10,15,30,0.65)', borderRadius: '99px', fontSize: '13px', color: '#fff', fontWeight: '600', letterSpacing: '.05em', whiteSpace: 'nowrap' }}>出会う前</div>
                 )}
               </div>
 
@@ -1416,7 +1416,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       {referralProgramOn && userId && referralLink && (
         <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '14px', padding: '16px 18px', marginBottom: '20px' }}>
           <div style={{ fontSize: '13px', fontWeight: '800', color: '#b45309', marginBottom: '6px' }}>友達を紹介する</div>
-          <p style={{ fontSize: '12.5px', color: 'rgba(232,228,220,0.75)', margin: '0 0 10px', lineHeight: '1.6' }}>
+          <p style={{ fontSize: '12.5px', color: '#111', margin: '0 0 10px', lineHeight: '1.6' }}>
             {provider.name}を友達に紹介できます。{referralRewardText || 'このリンクから予約・来店すると特典があります（詳しくはお店にご確認ください）。'}
           </p>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -1456,7 +1456,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       {provider.trial_available && (
         <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '14px', padding: '16px 18px', marginBottom: '20px' }}>
           <div style={{ fontSize: '13px', fontWeight: '800', color: '#b45309', marginBottom: '4px' }}>まずお試しから始めることができます</div>
-          <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', margin: 0, lineHeight: '1.6' }}>{provider.trial_desc || '初回お試し・無料相談を提供しています。まずは気軽にご連絡ください。'}</p>
+          <p style={{ fontSize: '13px', color: '#111', margin: 0, lineHeight: '1.6' }}>{provider.trial_desc || '初回お試し・無料相談を提供しています。まずは気軽にご連絡ください。'}</p>
         </div>
       )}
 
@@ -1475,13 +1475,13 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
             <p style={{ fontSize: '12px', fontWeight: '700', color: '#2563eb', margin: 0 }}>以下のMe Scanデータがこのガイドに送られます</p>
             <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', flexShrink: 0 }}>
               <input type="checkbox" checked={includeMeScan} onChange={e => setIncludeMeScan(e.target.checked)} style={{ accentColor: '#2563eb' }} />
-              <span style={{ fontSize: '12px', color: 'rgba(232,228,220,0.75)' }}>送る</span>
+              <span style={{ fontSize: '12px', color: '#111' }}>送る</span>
             </label>
           </div>
           {meScanSummary.map((line, i) => (
             <p key={i} style={{ fontSize: '13px', color: '#1e40af', margin: i < meScanSummary.length - 1 ? '0 0 4px' : '0', fontWeight: i === 0 ? '700' : '400' }}>{line}</p>
           ))}
-          {!includeMeScan && <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.40)', margin: '8px 0 0' }}>チェックを外したためデータは送られません。</p>}
+          {!includeMeScan && <p style={{ fontSize: '12px', color: '#111', margin: '8px 0 0' }}>チェックを外したためデータは送られません。</p>}
         </div>
       )}
 
@@ -1504,7 +1504,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
               <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', border: `1.5px solid ${selectedService?.id === s.id ? '#111' : '#e5e7eb'}`, borderRadius: '10px', cursor: 'pointer' }}>
                 <input type="radio" name="menu" checked={selectedService?.id === s.id} onChange={() => onServiceSelect(s)} style={{ accentColor: '#111' }} />
                 <span style={{ flex: 1, fontSize: '13px', color: 'rgba(232,228,220,0.75)' }}>{s.name}{s.duration_minutes ? ` (${s.duration_minutes}分)` : (s.duration ? ` (${s.duration})` : '')}</span>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: '#111', flexShrink: 0 }}>¥{s.price.toLocaleString()}</span>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: '#fff', flexShrink: 0 }}>¥{s.price.toLocaleString()}</span>
               </label>
             ))}
           </div>
@@ -1544,7 +1544,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div>
           <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '4px' }}>お名前（姓名） *</label>
-          <input value={formState.name} onChange={e => setFormState(p => ({ ...p, name: e.target.value }))} placeholder="山田 太郎" style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} required />
+          <input value={formState.name} onChange={e => setFormState(p => ({ ...p, name: e.target.value }))} placeholder="山田 太郎" style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', color: '#fff' }} required />
         </div>
         <div>
           <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '4px' }}>
@@ -1555,7 +1555,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
             value={formState.email}
             onChange={e => setFormState(p => ({ ...p, email: e.target.value }))}
             placeholder="example@email.com"
-            style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', color: '#fff' }}
           />
         </div>
         <div>
@@ -1567,7 +1567,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
             value={formState.phone}
             onChange={e => setFormState(p => ({ ...p, phone: e.target.value }))}
             placeholder="090-0000-0000"
-            style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', color: '#fff' }}
           />
           <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.75)', margin: '4px 0 0' }}>メールアドレス・電話番号のどちらか一方は必須です。</p>
         </div>
@@ -1708,8 +1708,8 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         <div>
           <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '6px' }}>希望日時（第1希望）*</label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <input type="date" value={formState.date} min={today} onChange={e => setFormState(p => ({ ...p, date: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #111', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} required />
-            <select value={formState.time} onChange={e => setFormState(p => ({ ...p, time: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #111', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} required>
+            <input type="date" value={formState.date} min={today} onChange={e => setFormState(p => ({ ...p, date: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #111', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', background: '#fff', color: '#111' }} required />
+            <select value={formState.time} onChange={e => setFormState(p => ({ ...p, time: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #111', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', background: '#fff', color: '#111' }} required>
               <option value="">時間を選択</option>
               {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -1718,8 +1718,8 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         <div>
           <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '6px' }}>希望日時（第2希望）<span style={{ fontWeight: '400', color: 'rgba(232,228,220,0.75)' }}>任意</span></label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <input type="date" value={formState.date2} min={today} onChange={e => setFormState(p => ({ ...p, date2: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} />
-            <select value={formState.time2} onChange={e => setFormState(p => ({ ...p, time2: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}>
+            <input type="date" value={formState.date2} min={today} onChange={e => setFormState(p => ({ ...p, date2: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', color: '#fff' }} />
+            <select value={formState.time2} onChange={e => setFormState(p => ({ ...p, time2: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
               <option value="">時間を選択</option>
               {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -1728,8 +1728,8 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         <div>
           <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '6px' }}>希望日時（第3希望）<span style={{ fontWeight: '400', color: 'rgba(232,228,220,0.75)' }}>任意</span></label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <input type="date" value={formState.date3} min={today} onChange={e => setFormState(p => ({ ...p, date3: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }} />
-            <select value={formState.time3} onChange={e => setFormState(p => ({ ...p, time3: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box' }}>
+            <input type="date" value={formState.date3} min={today} onChange={e => setFormState(p => ({ ...p, date3: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', color: '#fff' }} />
+            <select value={formState.time3} onChange={e => setFormState(p => ({ ...p, time3: e.target.value }))} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', color: '#fff' }}>
               <option value="">時間を選択</option>
               {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -1739,7 +1739,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         )}
         <div>
           <label style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(232,228,220,0.75)', display: 'block', marginBottom: '4px' }}>このガイドに一番聞きたいこと（任意）</label>
-          <textarea value={formState.message} onChange={e => setFormState(p => ({ ...p, message: e.target.value }))} placeholder="今の状況や悩み、気になることがあれば教えてください" rows={3} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', resize: 'vertical' }} />
+          <textarea value={formState.message} onChange={e => setFormState(p => ({ ...p, message: e.target.value }))} placeholder="今の状況や悩み、気になることがあれば教えてください" rows={3} style={{ width: '100%', padding: '10px 12px', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', resize: 'vertical', background: 'rgba(255,255,255,0.06)', color: '#fff' }} />
         </div>
         {formError && <p style={{ fontSize: '13px', color: '#ef4444', margin: 0 }}>{formError}</p>}
         <button type="submit" disabled={submitting} style={{ padding: '14px', background: submitting ? '#9ca3af' : '#111', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: submitting ? 'not-allowed' : 'pointer' }}>
