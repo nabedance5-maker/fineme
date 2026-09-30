@@ -1798,21 +1798,80 @@ export default function ProviderDashboardPage() {
       const authH = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
       const rewardEl = document.getElementById('mref-reward-text');
+      const messageEl = document.getElementById('mref-message-text');
+      const buttonLabelEl = document.getElementById('mref-button-label');
+      const buttonUrlEl = document.getElementById('mref-button-url');
+      const imagePreview = document.getElementById('mref-image-preview');
+      const imagePreviewWrap = document.getElementById('mref-image-preview-wrap');
+      let mrefImageUrl = '';
       const saveBtn = document.getElementById('mref-save-btn');
       const msgEl = document.getElementById('mref-msg');
       const listEl = document.getElementById('mref-list');
 
       async function loadSettings() {
         const res = await fetch('/api/provider/referral-settings', { headers: authH() });
-        if (res.ok) { const d = await res.json(); if (rewardEl) rewardEl.value = d.reward_text || ''; }
+        if (!res.ok) return;
+        const d = await res.json();
+        if (rewardEl) rewardEl.value = d.reward_text || '';
+        if (messageEl) messageEl.value = d.message_text || '';
+        if (buttonLabelEl) buttonLabelEl.value = d.button_label || '';
+        if (buttonUrlEl) buttonUrlEl.value = d.button_url || '';
+        mrefImageUrl = d.image_url || '';
+        if (mrefImageUrl && imagePreview && imagePreviewWrap) {
+          imagePreview.src = mrefImageUrl;
+          imagePreviewWrap.style.display = 'block';
+        }
       }
-      saveBtn?.addEventListener('click', async () => {
+      async function saveReferralSettings() {
         saveBtn.disabled = true;
         if (msgEl) { msgEl.style.color = ''; msgEl.textContent = '保存中…'; }
-        const res = await fetch('/api/provider/referral-settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ reward_text: rewardEl?.value.trim() || '' }) });
+        const res = await fetch('/api/provider/referral-settings', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() },
+          body: JSON.stringify({
+            reward_text: rewardEl?.value.trim() || '',
+            message_text: messageEl?.value.trim() || '',
+            image_url: mrefImageUrl || '',
+            button_label: buttonLabelEl?.value.trim() || '',
+            button_url: buttonUrlEl?.value.trim() || '',
+          }),
+        });
         saveBtn.disabled = false;
         if (msgEl) { msgEl.style.color = res.ok ? '#4ade80' : '#ef4444'; msgEl.textContent = res.ok ? '✓ 保存しました' : '保存に失敗しました'; }
-      });
+        return res.ok;
+      }
+      saveBtn?.addEventListener('click', saveReferralSettings);
+
+      // 紹介バナー画像アップロード（既存のカバー画像アップロードと同じパターン）
+      (function setupReferralImageUpload() {
+        const btn = document.getElementById('mref-image-upload-btn');
+        const input = document.getElementById('mref-image-file-input');
+        const msg = document.getElementById('mref-image-upload-msg');
+        if (btn) btn.addEventListener('click', () => input?.click());
+        if (!input) return;
+        input.addEventListener('change', async () => {
+          const file = input.files?.[0]; if (!file) return;
+          const uploadToken = getSupabaseToken();
+          if (!uploadToken) { showToast('ログインが必要です'); return; }
+          msg.textContent = '圧縮中…'; msg.style.display = 'block'; btn.disabled = true;
+          const compressed = await compressImage(file, 1600);
+          msg.textContent = 'アップロード中…';
+          const fd = new FormData(); fd.append('photo', compressed, 'photo.jpg');
+          try {
+            const res = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${getSupabaseToken() || uploadToken}` }, body: fd });
+            let data; try { data = await res.json(); } catch { data = {}; }
+            if (res.ok && data.url) {
+              mrefImageUrl = data.url;
+              if (imagePreview) imagePreview.src = data.url;
+              if (imagePreviewWrap) imagePreviewWrap.style.display = 'block';
+              msg.textContent = '保存中…'; msg.style.color = '#9ca3af';
+              const saved = await saveReferralSettings();
+              msg.textContent = saved ? '✓ 画像を保存しました' : '画像はアップロードできましたが、保存に失敗しました';
+              msg.style.color = saved ? '#059669' : '#ef4444';
+            } else { msg.textContent = 'エラー: ' + (data.error || '不明'); msg.style.color = '#ef4444'; }
+          } catch { msg.textContent = '通信エラーが発生しました'; msg.style.color = '#ef4444'; }
+          btn.disabled = false;
+        });
+      })();
 
       const STATUS_LABEL_MREF = { pending: '来店待ち', completed: '来店済み・特典対象' };
       async function loadList() {
@@ -11613,9 +11672,33 @@ export default function ProviderDashboardPage() {
             <p className="muted" style={{ fontSize: '13px', margin: '0', lineHeight: '1.7' }}>
               オンにすると、お客様（Finemeログイン中の会員）が公開ページから個人紹介リンクを発行できるようになります。紹介経由の予約・来店を自動で記録し、双方にLINEで通知します。特典の内容・実際の付与は貴店の運用にお任せします（Financeは決済を仲介しません）。
             </p>
+            {/* でお要望2026-09-30：紹介ボックスの文言・特典・画像・任意ボタンを自由に編集できるように */}
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label>紹介文言（お客様に表示される本文。未入力なら「（店舗名）を友達に紹介できます。」）</label>
+              <textarea id="mref-message-text" placeholder="例：いつもご利用ありがとうございます。ぜひお友達にもこのお店をご紹介ください！" style={{ minHeight: '70px' }}></textarea>
+            </div>
             <div className="form-field" style={{ marginBottom: 0 }}>
               <label>特典の説明文（お客様に表示されます）</label>
               <input type="text" id="mref-reward-text" placeholder="例：紹介した方・された方どちらも次回500円引き" />
+            </div>
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label>バナー画像（任意）</label>
+              <div id="mref-image-preview-wrap" style={{ marginBottom: '8px', display: 'none' }}>
+                <img id="mref-image-preview" src="" alt="紹介バナー画像" style={{ width: '100%', maxWidth: '320px', maxHeight: '140px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e5e7eb' }} />
+              </div>
+              <input type="file" id="mref-image-file-input" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} />
+              <button type="button" id="mref-image-upload-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>画像を選択（5MB以内・jpg/png/webp）</button>
+              <p id="mref-image-upload-msg" className="muted" style={{ fontSize: '12px', margin: '4px 0 0', display: 'none' }}></p>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
+              <div className="form-field" style={{ marginBottom: 0 }}>
+                <label>任意ボタンの文字（任意）</label>
+                <input type="text" id="mref-button-label" placeholder="例：キャンペーン詳細" />
+              </div>
+              <div className="form-field" style={{ marginBottom: 0 }}>
+                <label>ボタンのリンク先URL（http(s)のみ有効）</label>
+                <input type="text" id="mref-button-url" placeholder="https://..." />
+              </div>
             </div>
             <button type="button" className="btn" id="mref-save-btn" style={{ width: 'fit-content' }}>保存する</button>
             <p id="mref-msg" className="muted" style={{ fontSize: '12px', margin: 0 }}></p>

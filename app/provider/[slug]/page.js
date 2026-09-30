@@ -1206,6 +1206,12 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   const referralProgramOn = hasFeature(provider, 'referral_program');
   const [referralCode, setReferralCode] = useState('');
   const [referralRewardText, setReferralRewardText] = useState('');
+  // でお要望2026-09-30：「友達を紹介する」ボックスの文言・画像・ボタンを店舗が
+  // 自由に編集できるように（元は文言が固定文＋特典文言のみだった）。
+  const [referralMessageText, setReferralMessageText] = useState('');
+  const [referralImageUrl, setReferralImageUrl] = useState('');
+  const [referralButtonLabel, setReferralButtonLabel] = useState('');
+  const [referralButtonUrl, setReferralButtonUrl] = useState('');
   const [referralCopied, setReferralCopied] = useState(false);
   useEffect(() => {
     if (!referralProgramOn || !userId || !provider?.slug) return;
@@ -1217,7 +1223,15 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       if (!token) return;
       fetch(`/api/me/referral-code?provider_slug=${provider.slug}`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d?.code) setReferralCode(d.code); if (d?.reward_text) setReferralRewardText(d.reward_text); })
+        .then(d => {
+          if (!d) return;
+          if (d.code) setReferralCode(d.code);
+          if (d.reward_text) setReferralRewardText(d.reward_text);
+          if (d.message_text) setReferralMessageText(d.message_text);
+          if (d.image_url) setReferralImageUrl(d.image_url);
+          if (d.button_label) setReferralButtonLabel(d.button_label);
+          if (d.button_url) setReferralButtonUrl(d.button_url);
+        })
         .catch(() => {});
     } catch {}
   }, [referralProgramOn, userId, provider?.slug]);
@@ -1412,22 +1426,40 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
 
   return (
     <div style={{ maxWidth: '520px' }}>
-      {/* 友達紹介プログラム（でお要望2026-09-14）：ログイン中かつ店舗が実施している場合のみ表示 */}
+      {/* 友達紹介プログラム（でお要望2026-09-14）：ログイン中かつ店舗が実施している場合のみ表示。
+          文言・画像・任意ボタンは店舗のダッシュボード（友達紹介タブ）で自由に編集できる
+          （でお要望2026-09-30：「ここに書く内容も編集できるように、特典も設定できるように。
+          画像を入れられたりボタンをつけたりも自由に編集できるように」）。 */}
       {referralProgramOn && userId && referralLink && (
-        <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '14px', padding: '16px 18px', marginBottom: '20px' }}>
-          <div style={{ fontSize: '13px', fontWeight: '800', color: '#b45309', marginBottom: '6px' }}>友達を紹介する</div>
-          <p style={{ fontSize: '12.5px', color: '#111', margin: '0 0 10px', lineHeight: '1.6' }}>
-            {provider.name}を友達に紹介できます。{referralRewardText || 'このリンクから予約・来店すると特典があります（詳しくはお店にご確認ください）。'}
-          </p>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <input readOnly value={referralLink} onFocus={e => e.target.select()} style={{ flex: 1, padding: '8px 10px', fontSize: '12px', border: '1px solid #fde68a', borderRadius: '8px', background: '#fff', color: '#111', boxSizing: 'border-box' }} />
-            <button
-              type="button"
-              onClick={() => { navigator.clipboard?.writeText(referralLink); setReferralCopied(true); setTimeout(() => setReferralCopied(false), 2000); }}
-              style={{ padding: '8px 14px', background: '#b45309', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', flexShrink: 0 }}
-            >
-              {referralCopied ? 'コピー済み' : 'コピー'}
-            </button>
+        <div style={{ background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: '14px', overflow: 'hidden', marginBottom: '20px' }}>
+          {referralImageUrl && (
+            <img src={referralImageUrl} alt="" style={{ width: '100%', maxHeight: '160px', objectFit: 'cover', display: 'block' }} />
+          )}
+          <div style={{ padding: '16px 18px' }}>
+            <div style={{ fontSize: '13px', fontWeight: '800', color: '#b45309', marginBottom: '6px' }}>友達を紹介する</div>
+            <p style={{ fontSize: '12.5px', color: '#111', margin: '0 0 6px', lineHeight: '1.6' }}>
+              {referralMessageText || `${provider.name}を友達に紹介できます。`}
+            </p>
+            {referralRewardText && (
+              <p style={{ fontSize: '12.5px', fontWeight: '700', color: '#b45309', margin: '0 0 10px', lineHeight: '1.6' }}>
+                特典：{referralRewardText}
+              </p>
+            )}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input readOnly value={referralLink} onFocus={e => e.target.select()} style={{ flex: 1, padding: '8px 10px', fontSize: '12px', border: '1px solid #fde68a', borderRadius: '8px', background: '#fff', color: '#111', boxSizing: 'border-box' }} />
+              <button
+                type="button"
+                onClick={() => { navigator.clipboard?.writeText(referralLink); setReferralCopied(true); setTimeout(() => setReferralCopied(false), 2000); }}
+                style={{ padding: '8px 14px', background: '#b45309', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', flexShrink: 0 }}
+              >
+                {referralCopied ? 'コピー済み' : 'コピー'}
+              </button>
+            </div>
+            {referralButtonLabel && /^https?:\/\//i.test(referralButtonUrl || '') && (
+              <a href={referralButtonUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textAlign: 'center', marginTop: '10px', padding: '10px 14px', background: '#111', color: '#fff', borderRadius: '8px', fontSize: '12.5px', fontWeight: '700', textDecoration: 'none' }}>
+                {referralButtonLabel}
+              </a>
+            )}
           </div>
         </div>
       )}

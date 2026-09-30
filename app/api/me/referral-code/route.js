@@ -21,8 +21,15 @@ export async function GET(request) {
     return Response.json({ error: 'この店舗は友達紹介プログラムを実施していません' }, { status: 404 });
   }
 
-  const { data: settings } = await supabase.from('provider_referral_settings').select('reward_text').eq('provider_id', provider.id).maybeSingle();
+  const { data: settings } = await supabase.from('provider_referral_settings').select('reward_text, message_text, image_url, button_label, button_url').eq('provider_id', provider.id).maybeSingle();
   const reward_text = settings?.reward_text || '';
+  const display = {
+    reward_text,
+    message_text: settings?.message_text || '',
+    image_url: settings?.image_url || '',
+    button_label: settings?.button_label || '',
+    button_url: settings?.button_url || '',
+  };
 
   const { data: existing } = await supabase
     .from('provider_referral_codes')
@@ -30,7 +37,7 @@ export async function GET(request) {
     .eq('user_id', user.id)
     .eq('provider_id', provider.id)
     .maybeSingle();
-  if (existing?.code) return Response.json({ code: existing.code, reward_text });
+  if (existing?.code) return Response.json({ code: existing.code, ...display });
 
   const code = crypto.randomBytes(5).toString('hex');
   const { data: inserted, error: insertError } = await supabase
@@ -39,5 +46,5 @@ export async function GET(request) {
     .select('code')
     .single();
   if (insertError) return Response.json({ error: insertError.message }, { status: 500 });
-  return Response.json({ code: inserted.code, reward_text });
+  return Response.json({ code: inserted.code, ...display });
 }
