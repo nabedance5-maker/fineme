@@ -530,7 +530,7 @@ export default function ServiceLog({ withSideNav = false }) {
       }
       el.innerHTML = providerSearchResults.map(p => {
         const isSelected = selectedProvider?.slug === p.slug;
-        return `<div class="log-provider-item${isSelected ? ' selected' : ''}" data-slug="${p.slug}" data-type="${p.entity_type || 'provider'}" data-name="${encodeURIComponent(p.name || '')}">${p.entity_type === 'affiliate' ? '🔗 ' : '🏥 '}${esc(p.name)}</div>`;
+        return `<div class="log-provider-item${isSelected ? ' selected' : ''}" data-slug="${p.slug}" data-type="${p.entity_type || 'provider'}" data-name="${encodeURIComponent(p.name || '')}">${p.entity_type === 'affiliate' ? '' : ''}${esc(p.name)}</div>`;
       }).join('');
     }
 
@@ -599,7 +599,7 @@ export default function ServiceLog({ withSideNav = false }) {
             </div>
             <div class="lfv-abs lfv-jump">
               <a class="lfv-jump-btn" href="#log-analysis-section" data-jump="analysis">支出から見えること →</a>
-              <button type="button" class="lfv-jump-btn" data-share-fv="1">📤 シェア/保存</button>
+              <button type="button" class="lfv-jump-btn" data-share-fv="1">シェア/保存</button>
             </div>
           </div>
           ${budgetLine}
@@ -635,7 +635,7 @@ export default function ServiceLog({ withSideNav = false }) {
               <div class="lfv-abs lfv-date" style="left:auto;right:12%;text-align:right">${esc(periodLabel)}</div>
               <div class="lfv-abs lfv-label">支出の推移</div>
               <div class="ltp-empty">
-                <div class="ltp-empty-icon">📈</div>
+                <div class="ltp-empty-icon"></div>
                 <p class="ltp-empty-text">「✓ 今日行った/買った」を記録していくと、<br>ここに月ごとの推移が表示されます。</p>
               </div>
               <div class="lfv-foot">
@@ -697,7 +697,7 @@ export default function ServiceLog({ withSideNav = false }) {
           ${legendItems.map(a => `
             <span class="ltp-legend-item">
               <span class="ltp-legend-dot" style="background:${a.color}"></span>
-              ${a.icon} ${esc(a.label)}
+              ${esc(a.label)}
             </span>`).join('')}
         </div>` : '';
 
@@ -810,7 +810,7 @@ export default function ServiceLog({ withSideNav = false }) {
           <div class="lan-list">
             ${items.map(it => `
               <div class="lan-item">
-                <p class="lan-item-text">${it.icon} ${esc(it.text)}</p>
+                <p class="lan-item-text">${esc(it.text)}</p>
                 ${it.suggestion ? `<p class="lan-item-suggestion">${esc(it.suggestion)}</p>` : ''}
               </div>`).join('')}
           </div>
@@ -893,7 +893,7 @@ export default function ServiceLog({ withSideNav = false }) {
             <div class="lnx-peek">
               <p class="lnx-peek-head">答えると、こういうものが出ます</p>
               ${typeExample}
-              <p class="lnx-peek-first">最初の一手 — <b>💇 髪・ヘア</b><br>
+              <p class="lnx-peek-first">最初の一手 — <b>髪・ヘア</b><br>
                 <span>髪型は第一印象の3割。美容院1回で変化を体感できる</span></p>
             </div>
 
@@ -918,9 +918,9 @@ export default function ServiceLog({ withSideNav = false }) {
 
             <div class="lnx-peek">
               <p class="lnx-peek-head">写真1枚で、こう返ってきます</p>
-              <div class="lnx-peek-axis"><span>💇 髪・ヘア</span><b class="p3">変わる余地 ★★★</b></div>
-              <div class="lnx-peek-axis"><span>✂️ 眉</span><b class="p2">★★☆</b></div>
-              <div class="lnx-peek-axis"><span>✨ 肌</span><b class="p1">★☆☆</b></div>
+              <div class="lnx-peek-axis"><span>髪・ヘア</span><b class="p3">変わる余地 ★★★</b></div>
+              <div class="lnx-peek-axis"><span>眉</span><b class="p2">★★☆</b></div>
+              <div class="lnx-peek-axis"><span>肌</span><b class="p1">★☆☆</b></div>
               <p class="lnx-peek-quote">「毛先の重さが顔の輪郭を覆っていて、
                 縦のラインが出ていません。長さを変えずに量を落とすだけで印象が変わります」</p>
             </div>
@@ -958,7 +958,7 @@ export default function ServiceLog({ withSideNav = false }) {
       if (isLoggedIn() || !logs.length) return '';
       return `
         <div class="log-guest-cta">
-          <p class="log-guest-cta-title">🔔「そろそろ眉、予約したら？」をLINEで受け取る</p>
+          <p class="log-guest-cta-title">「そろそろ眉、予約したら？」をLINEで受け取る</p>
           <p class="log-guest-cta-desc">
             いまはこの端末に保存されています。アカウントを作ると、
             前回から目安の時期が近づいた時にLINEで届き、どの端末からでも同じ記録を開けます。
@@ -989,7 +989,7 @@ export default function ServiceLog({ withSideNav = false }) {
         const yesLabel = partnerConfirmBusy ? (existing ? '記録中…' : '追加中…') : (existing ? 'はい、記録する' : 'はい、追加する');
         partnerBanner = `
           <div class="log-partner-banner">
-            <p style="margin:0 0 10px;">🏬 ${partnerName}${existing ? 'に登録済みです。' : 'からのご案内です。'}${question}</p>
+            <p style="margin:0 0 10px;">${partnerName}${existing ? 'に登録済みです。' : 'からのご案内です。'}${question}</p>
             <div class="log-partner-banner-btns">
               ${alreadyToday ? '' : `<button type="button" class="log-partner-btn-yes" id="log-partner-yes"${partnerConfirmBusy ? ' disabled' : ''}>${yesLabel}</button>`}
               <button type="button" class="log-partner-btn-no" id="log-partner-no"${partnerConfirmBusy ? ' disabled' : ''}>${alreadyToday ? '閉じる' : 'あとで'}</button>
@@ -1010,13 +1010,13 @@ export default function ServiceLog({ withSideNav = false }) {
       let lineConnectBanner = '';
       if (defaultProviderFromSrc?.liffId) {
         if (lineConnectState === 'checking') {
-          lineConnectBanner = `<div class="log-partner-banner">📲 ${partnerName}の公式LINE連携を確認中…</div>`;
+          lineConnectBanner = `<div class="log-partner-banner">${partnerName}の公式LINE連携を確認中…</div>`;
         } else if (lineConnectState === 'done') {
           lineConnectBanner = `<div class="log-partner-banner">✓ ${partnerName}の公式LINEと連携しています。次回のお知らせはこちらから届きます。</div>`;
         } else if (lineConnectState === 'error') {
           lineConnectBanner = `
             <div class="log-partner-banner">
-              <p style="margin:0 0 10px;">⚠️ ${partnerName}の公式LINE連携の確認に失敗しました（${esc(lineConnectMsg)}）。</p>
+              <p style="margin:0 0 10px;">${partnerName}の公式LINE連携の確認に失敗しました（${esc(lineConnectMsg)}）。</p>
               <button type="button" class="log-partner-btn-yes" id="log-line-retry">もう一度試す</button>
             </div>`;
         } else if (partnerConfirmState === 'done' && !isLoggedIn()) {
@@ -1037,7 +1037,7 @@ export default function ServiceLog({ withSideNav = false }) {
           ${header}
           ${partnerBanner}
           <div class="log-empty">
-            <div class="log-empty-icon">⚠️</div>
+            <div class="log-empty-icon"></div>
             <p class="log-empty-text">${loadError === 'expired_session'
               ? 'ログインの有効期限が切れているようです。<br>再ログインすると、登録済みの記録が表示されます。'
               : '記録の読み込みに失敗しました。<br>時間をおいて再度お試しください。'}</p>
@@ -1056,7 +1056,7 @@ export default function ServiceLog({ withSideNav = false }) {
           ${partnerBanner}
           <button class="log-add-btn" id="log-open-add">＋ まず1つ登録してみる</button>
           <div class="log-empty">
-            <div class="log-empty-icon">💇</div>
+            <div class="log-empty-icon"></div>
             <p class="log-empty-text">通っている場所でも、使っているものでもOKです。<br>前回の日を入れるだけで、<br>次の目安を自動で計算します。</p>
           </div>
           ${renderStoreRecordsSection()}`;
@@ -1080,7 +1080,7 @@ export default function ServiceLog({ withSideNav = false }) {
           <button type="button" class="log-axis-tab${activeAxisFilter === 'all' ? ' selected' : ''}" data-axis-tab="all">すべて <span class="log-axis-tab-count">${logs.length}</span></button>
           ${axisKeys.map(axisId => {
             const def = resolveAxis(axisId, grouped[axisId][0]?.custom_icon);
-            return `<button type="button" class="log-axis-tab${activeAxisFilter === axisId ? ' selected' : ''}" data-axis-tab="${axisId}">${def.icon} ${esc(def.label)} <span class="log-axis-tab-count">${grouped[axisId].length}</span></button>`;
+            return `<button type="button" class="log-axis-tab${activeAxisFilter === axisId ? ' selected' : ''}" data-axis-tab="${axisId}">${esc(def.label)} <span class="log-axis-tab-count">${grouped[axisId].length}</span></button>`;
           }).join('')}
         </div>` : '';
 
@@ -1125,9 +1125,9 @@ export default function ServiceLog({ withSideNav = false }) {
           // 1枚のカードにバッジを2つ出さない。
           let markHtml = '';
           if (compassAxis && log.axis === compassAxis) {
-            markHtml = '<span class="log-card-mark lcm-compass">🧭 Compass の最初の一手</span>';
+            markHtml = '<span class="log-card-mark lcm-compass">Compass の最初の一手</span>';
           } else if (mirrorAxis && log.axis === mirrorAxis) {
-            markHtml = '<span class="log-card-mark lcm-mirror">🪞 Mirror が指した1点</span>';
+            markHtml = '<span class="log-card-mark lcm-mirror">Mirror が指した1点</span>';
           }
 
           return `
@@ -1136,7 +1136,7 @@ export default function ServiceLog({ withSideNav = false }) {
                 <div>
                   <p class="log-card-name">${esc(log.name)}</p>
                   ${markHtml}
-                  ${providerHref ? `<a class="log-card-provider-link" href="${providerHref}">🔗 Finemeに掲載中</a>` : ''}
+                  ${providerHref ? `<a class="log-card-provider-link" href="${providerHref}">Finemeに掲載中</a>` : ''}
                 </div>
                 <div class="log-card-actions">
                   <button class="log-card-edit-btn" data-edit="${log.id}">編集</button>
@@ -1146,17 +1146,17 @@ export default function ServiceLog({ withSideNav = false }) {
               <div class="log-card-schedule">
                 ${log.last_visit ? `<span class="log-chip">前回 ${log.last_visit}${since !== null ? `（${since}週前）` : ''}</span>` : '<span class="log-chip" style="opacity:.45">前回未記録</span>'}
                 ${log.next_visit ? `<span class="log-chip ${chipClass}">次回 ${log.next_visit}${nextDays ? `（${nextDays}）` : ''}</span>` : dueChip}
-                ${freq ? `<span class="log-chip">🔄 ${esc(formatFreq(freq))}${freq.estimated ? '（目安）' : ''}</span>` : ''}
+                ${freq ? `<span class="log-chip">${esc(formatFreq(freq))}${freq.estimated ? '（目安）' : ''}</span>` : ''}
                 ${log.cost ? `<span class="log-chip log-chip-cost">1回 ${formatYen(log.cost)}${m !== null ? ` · 月 ${costIsEstimated ? '約' : ''}${formatYen(m)}` : ''}</span>` : ''}
               </div>
-              ${log.memo ? `<p class="log-card-memo">📝 ${esc(log.memo)}</p>` : ''}
+              ${log.memo ? `<p class="log-card-memo">${esc(log.memo)}</p>` : ''}
               <div class="log-card-visit">
                 <button class="log-visit-today" data-visit-today="${log.id}">${esc(etDef.recordDoneLabel)}</button>
                 <label class="log-visit-pick-wrap">
-                  <span class="log-visit-pick-label" data-visit-pick-label="${log.id}">📅 日付を選ぶ</span>
+                  <span class="log-visit-pick-label" data-visit-pick-label="${log.id}">日付を選ぶ</span>
                   <input type="date" class="log-visit-pick-input" data-visit-date="${log.id}" max="${todayStr}" />
                 </label>
-                ${canBookRequest && bookFormOpenId !== log.id ? `<button class="log-book-request-btn" data-book-request="${log.id}">📮 予約をリクエスト</button>` : ''}
+                ${canBookRequest && bookFormOpenId !== log.id ? `<button class="log-book-request-btn" data-book-request="${log.id}">予約をリクエスト</button>` : ''}
               </div>
               ${canBookRequest && bookFormOpenId === log.id ? (() => {
                 const svc = bookServicesCache[log.provider_slug];
@@ -1193,7 +1193,7 @@ export default function ServiceLog({ withSideNav = false }) {
             </div>`;
         }).join('');
         return `<div class="log-axis-section">
-          <p class="log-axis-label">${def.icon} ${esc(def.label)}</p>
+          <p class="log-axis-label">${esc(def.label)}</p>
           ${cards}
         </div>`;
       }).join('');
@@ -1259,7 +1259,7 @@ export default function ServiceLog({ withSideNav = false }) {
       const wantAxis = log?.axis || presetAxis;
 
       const axisOptions = choices.map(c =>
-        `<option value="${c.id}"${wantAxis === c.id ? ' selected' : ''}>${c.icon} ${esc(c.label)}</option>`
+        `<option value="${c.id}"${wantAxis === c.id ? ' selected' : ''}>${esc(c.label)}</option>`
       ).join('') + `<option value="${CUSTOM_AXIS}"${isCustom ? ' selected' : ''}>${DEFAULT_CUSTOM_ICON} その他（自分で決める）</option>`;
 
       document.getElementById('log-modal-title').textContent = log ? '記録を編集' : '新しく登録する';
@@ -2026,7 +2026,7 @@ export default function ServiceLog({ withSideNav = false }) {
             <label>Finemeサービスと紐づける（任意）</label>
             <div className="log-provider-search">
               <input id="log-provider-search-input" type="text" placeholder="サービス名で検索..." />
-              <button type="button" className="log-provider-search-btn" id="log-provider-search-btn">🔍 検索</button>
+              <button type="button" className="log-provider-search-btn" id="log-provider-search-btn">検索</button>
               <button className="log-provider-clear" id="log-provider-clear">解除</button>
             </div>
             <div id="log-provider-results" className="log-provider-result" />

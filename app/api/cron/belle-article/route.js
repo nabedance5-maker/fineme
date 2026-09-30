@@ -180,6 +180,7 @@ async function generateBelleArticle(theme, existing = [], linkPool = []) {
 Google検索で上位表示し、読者がBelle Me Scan（${BASE_URL}/belle/diagnosis）またはBelle Mirror（${BASE_URL}/belle/mirror）に進む導線を自然に作る。
 
 【文体】
+- 絵文字は使わない（サイト全体で絵文字を使わない方針）
 - 共感から入る（読者の気持ちを受け止めてから情報提供）
 - 断定的・具体的・数字を使う
 - 上から目線にならない・押しつけない（「〜してみてください」より「〜してみると変わった人が多い」）

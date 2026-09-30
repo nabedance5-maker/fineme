@@ -40,7 +40,7 @@ export default function BelleDiagnosisResultPage() {
 
       /* ── Compass (最初の一手) ── */
       .compass-card { background: var(--color-bg-dark, #0d1117); border: 1.5px solid rgba(236,232,223,0.22); border-radius: 14px; padding: 36px 24px 24px; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.144), 0 1px 4px rgba(0,0,0,.2); position: relative; overflow: visible; }
-      .compass-card::before { content: '🧭'; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 32px; filter: drop-shadow(0 2px 8px rgba(200,164,90,.4)); }
+      .compass-card::before { content: ''; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 32px; filter: drop-shadow(0 2px 8px rgba(200,164,90,.4)); }
       .compass-eyebrow { font-size: 11px; font-weight: 700; color: rgba(200,164,90,0.7); letter-spacing: .1em; margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
       .compass-eyebrow::before { content: ''; display: inline-block; width: 6px; height: 6px; background: #c8a45a; border-radius: 50%; }
       .compass-main { font-size: 24px; font-weight: 900; color: #fff; margin: 0 0 12px; display: flex; align-items: center; gap: 10px; }
@@ -279,7 +279,7 @@ export default function BelleDiagnosisResultPage() {
       const hasMatch = userConcerns.size > 0 && cards.includes('product-card-matched');
       return `
         <div class="product-carousel-section">
-          <p class="product-carousel-label">🛒 旅に役立つグッズ <span style="font-size:10px;font-weight:600;opacity:0.55;margin-left:6px">${lvLabel}向け</span></p>
+          <p class="product-carousel-label">旅に役立つグッズ <span style="font-size:10px;font-weight:600;opacity:0.55;margin-left:6px">${lvLabel}向け</span></p>
           <p class="product-carousel-note">${hasMatch ? 'あなたのプロフィールに合うアイテムが見つかりました ✦' : 'あなたの診断結果に関連するアイテムです'} ← スワイプで全部見る</p>
           <div class="product-carousel">${cards}</div>
         </div>`;
@@ -343,7 +343,7 @@ export default function BelleDiagnosisResultPage() {
     // 旧フォーマット検出（transform_vectorsがない場合）
     if (!p.transform_vectors) {
       root.innerHTML = `<div style="text-align:center;padding:60px 20px">
-        <p style="font-size:32px;margin-bottom:16px">🗺️</p>
+        <p style="font-size:32px;margin-bottom:16px"></p>
         <h2 style="font-size:20px;font-weight:800;margin:0 0 10px">新しいMe Scanで地図を生成しよう</h2>
         <p style="color:#6b7280;font-size:14px;line-height:1.75;margin:0 0 24px">診断をアップデートしました。<br>新しいMe Scanで、あなただけの変容ナビを作成します。</p>
         <a href="/belle/diagnosis" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px">Me Scanを受ける（新版）</a>
@@ -353,14 +353,14 @@ export default function BelleDiagnosisResultPage() {
 
     // ─── 定数・マッピング ───
     const AREA_DEFS = {
-      body:    { icon:'💪', label:'体型', catLink:'gym',          tier:1 },
-      eyebrow: { icon:'✂️', label:'眉',   catLink:'eyebrow',     tier:1 },
-      fashion: { icon:'👗', label:'服',   catLink:'fashion',      tier:1 },
-      hair:    { icon:'💇', label:'髪',   catLink:'hair',         tier:1 },
-      skin:        { icon:'✨', label:'肌',   catLink:'esthetic',     tier:2 },
-      hairremoval: { icon:'🪒', label:'脱毛', catLink:'hairremoval',  tier:2 },
-      teeth:       { icon:'🦷', label:'歯',   catLink:'whitening',    tier:3 },
-      nail:        { icon:'💅', label:'爪',   catLink:'nail',         tier:4 },
+      body:    { icon:'体', label:'体型', catLink:'gym',          tier:1 },
+      eyebrow: { icon:'眉', label:'眉',   catLink:'eyebrow',     tier:1 },
+      fashion: { icon:'服', label:'服',   catLink:'fashion',      tier:1 },
+      hair:    { icon:'髪', label:'髪',   catLink:'hair',         tier:1 },
+      skin:        { icon:'肌', label:'肌',   catLink:'esthetic',     tier:2 },
+      hairremoval: { icon:'毛', label:'脱毛', catLink:'hairremoval',  tier:2 },
+      teeth:       { icon:'歯', label:'歯',   catLink:'whitening',    tier:3 },
+      nail:        { icon:'爪', label:'爪',   catLink:'nail',         tier:4 },
     };
     const TIER_LABELS = { 1:'基盤', 2:'深化', 3:'補完', 4:'磨き込み' };
     const PATH_LABELS = { virgin:'未経験', quit:'試したが続かない', blind:'非客観視', lapsed:'以前やっていた' };
@@ -541,8 +541,8 @@ export default function BelleDiagnosisResultPage() {
     };
     const PATH_COLORS = { virgin:'rgba(200,164,90,0.12):#c8a45a', quit:'#fee2e2:#b91c1c', blind:'#f5f0e8:#7a6e65', lapsed:'#d1fae5:#065f46' };
     const VIEW_ALERTS = {
-      worse:   '⚠️ 他者評価が自己評価より低い可能性',
-      unknown: '💡 客観的フィードバックを得たことがない',
+      worse:   '他者評価が自己評価より低い可能性',
+      unknown: '客観的フィードバックを得たことがない',
     };
 
     const tv = p.transform_vectors || {};
@@ -664,16 +664,16 @@ export default function BelleDiagnosisResultPage() {
       };
       const layers = [];
       if (p.goal_scene && SCENE_MAP[p.goal_scene])
-        layers.push({ icon:'🎬', label:'Layer 2 — 場面・行動のゴール', text: SCENE_MAP[p.goal_scene] });
+        layers.push({ icon:'', label:'Layer 2 — 場面・行動のゴール', text: SCENE_MAP[p.goal_scene] });
       if (p.goal_change && CHANGE_MAP[p.goal_change])
-        layers.push({ icon:'🔥', label:'Layer 3 — 感情・状態のゴール', text: CHANGE_MAP[p.goal_change] });
+        layers.push({ icon:'', label:'Layer 3 — 感情・状態のゴール', text: CHANGE_MAP[p.goal_change] });
       if (p.goal_vision && VISION_MAP[p.goal_vision])
-        layers.push({ icon:'🌱', label:'Layer 4 — あり方のゴール（変容の先）', text: VISION_MAP[p.goal_vision] });
+        layers.push({ icon:'', label:'Layer 4 — あり方のゴール（変容の先）', text: VISION_MAP[p.goal_vision] });
       if (!layers.length) return '';
       return `
         <p class="sec-label" style="margin-top:28px">Your Goal</p>
         <div class="goal-card">
-          <div class="goal-card-title">🎯 あなたが目指す場所</div>
+          <div class="goal-card-title">あなたが目指す場所</div>
           <div class="goal-layers">
             ${layers.map(l => `
               <div class="goal-layer">
@@ -693,7 +693,7 @@ export default function BelleDiagnosisResultPage() {
     function buildRadarChart() {
       const areas = ['body','eyebrow','fashion','hair','skin','teeth','nail'];
       const labels = { body:'体型', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
-      const icons  = { body:'💪', eyebrow:'✂️', fashion:'👗', hair:'💇', skin:'✨', teeth:'🦷', nail:'💅' };
+      const icons  = { body:'体', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
       const cx = 150, cy = 150, R = 90;
 
       // Grid
@@ -811,7 +811,7 @@ export default function BelleDiagnosisResultPage() {
               data-creature="${esc(fullName)}"
               data-color="${esc(color)}"
               data-tagline="${esc(desc)}">
-              📷 カードを画像保存
+              カードを画像保存
             </button>
             <a href="/belle/diagnosis/types" class="type-hero-share-btn" style="text-decoration:none">全136タイプを見る →</a>
           </div>
@@ -846,10 +846,10 @@ export default function BelleDiagnosisResultPage() {
       const pathActionNote = pathType ? `<br><span style="font-size:12px;color:#c8a45a;font-weight:700">${PATH_ACTION[pathType]||''}</span>` : '';
       const overrideChips = Object.entries(AREA_DEFS).map(([id, d]) => {
         const isActive = id === compassFirst;
-        return `<button class="compass-override-chip${isActive ? ' active' : ''}" data-axis="${id}">${esc(d.icon)} ${esc(d.label)}</button>`;
+        return `<button class="compass-override-chip${isActive ? ' active' : ''}" data-axis="${id}">${esc(d.label)}</button>`;
       }).join('');
       const overrideNote = isOverrideActive
-        ? `<p style="font-size:11px;color:#c8a45a;font-weight:700;margin:4px 0 0">🧭 あなたが選んだ方角 — <button id="compass-reset-btn" style="background:none;border:none;color:#c8a45a;font-size:11px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline">診断の推奨に戻す</button></p>`
+        ? `<p style="font-size:11px;color:#c8a45a;font-weight:700;margin:4px 0 0">あなたが選んだ方角 — <button id="compass-reset-btn" style="background:none;border:none;color:#c8a45a;font-size:11px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline">診断の推奨に戻す</button></p>`
         : `<p style="font-size:11px;color:#6b7280;margin:4px 0 0">診断が算出した最初の一手</p>`;
       // TOP2, TOP3
       const top2Id = isOverrideActive ? (priorityOrder.filter(id => id !== compassFirst)[0] || null) : (priorityOrder.filter(id => id !== compassFirst)[0] || null);
@@ -876,7 +876,7 @@ export default function BelleDiagnosisResultPage() {
         <p class="sec-label" style="margin-top:28px">Fineme Compass</p>
         <div class="compass-card">
           <div class="compass-eyebrow">今向くべき方角 — 第1候補</div>
-          <div class="compass-main">${esc(def.icon)} ${esc(def.label)}</div>
+          <div class="compass-main">${esc(def.label)}</div>
           ${overrideNote}
           <div class="compass-reason" style="margin-top:12px">${COMPASS_REASONS[compassFirst] || ''}${urgencyNote}${pathActionNote}</div>
           <a href="/mypage/navi" class="compass-cta">変容ロードマップを見る →</a>
@@ -889,7 +889,7 @@ export default function BelleDiagnosisResultPage() {
           </div>` : ''}
 
           <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(236,232,223,0.11);">
-            <p style="font-size:12px;font-weight:800;color:rgba(200,164,90,0.8);margin:0 0 10px;letter-spacing:.06em;display:flex;align-items:center;gap:6px"><span>🔄</span> 最初の一手を自分で選ぶ</p>
+            <p style="font-size:12px;font-weight:800;color:rgba(200,164,90,0.8);margin:0 0 10px;letter-spacing:.06em;display:flex;align-items:center;gap:6px"><span></span> 最初の一手を自分で選ぶ</p>
             <div style="display:flex;flex-wrap:wrap;gap:8px">${overrideChips}</div>
           </div>
         </div>
@@ -935,7 +935,7 @@ export default function BelleDiagnosisResultPage() {
             <p style="font-size:10px;font-weight:800;letter-spacing:.16em;color:rgba(200,100,140,0.6);text-transform:uppercase;margin:0 0 8px">Map ✓ Complete</p>
             <p style="font-size:15px;font-weight:800;color:#f0d8e0;margin:0 0 6px;line-height:1.5">${esc(title)}</p>
             <p style="font-size:12px;color:rgba(240,216,224,0.5);margin:0 0 16px;line-height:1.75">${esc(body)}</p>
-            <a href="/belle/mirror" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,rgba(220,130,160,1),rgba(200,100,140,0.85));color:#fff;font-size:14px;font-weight:800;border-radius:10px;text-decoration:none">🪞 現在地を測る →</a>
+            <a href="/belle/mirror" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,rgba(220,130,160,1),rgba(200,100,140,0.85));color:#fff;font-size:14px;font-weight:800;border-radius:10px;text-decoration:none">現在地を測る →</a>
           </div>`;
       }
 
@@ -948,7 +948,7 @@ export default function BelleDiagnosisResultPage() {
         <div style="margin:16px 0 20px;padding:20px 18px;background:rgba(18,10,18,0.7);border:1px solid rgba(200,100,140,0.28);border-radius:14px;text-align:center">
           <p style="font-size:10px;font-weight:800;letter-spacing:.16em;color:rgba(200,100,140,0.6);text-transform:uppercase;margin:0 0 10px">Map ${drawn} / ${total}</p>
           <p style="font-size:13px;color:rgba(240,216,224,0.55);margin:0 0 4px">地図はまだ骨格の状態です</p>
-          <p style="font-size:17px;font-weight:800;color:#f0d8e0;margin:0 0 16px;line-height:1.4">次に描き込むのは —— ${esc(def.icon)} ${esc(def.label)}</p>
+          <p style="font-size:17px;font-weight:800;color:#f0d8e0;margin:0 0 16px;line-height:1.4">次に描き込むのは —— ${esc(def.label)}</p>
           <a href="/belle/diagnosis?deepen=${esc(nextId)}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,rgba(220,130,160,1),rgba(200,100,140,0.85));color:#fff;font-size:14px;font-weight:800;border-radius:10px;text-decoration:none">${esc(def.label)}の地図を描き込む（${qCount}問・30秒）→</a>
           <p style="font-size:11px;color:rgba(240,216,224,0.32);margin:12px 0 0;line-height:1.6">描き込むほど、New Me Navi のステップが具体的になります</p>
         </div>`;
@@ -1000,7 +1000,7 @@ export default function BelleDiagnosisResultPage() {
         return `
           <div class="vector-item${idx === 0 ? ' priority-1' : ''}">
             <div class="vector-item-header">
-              <div class="vector-item-name">${esc(def.icon)} ${esc(def.label)}</div>
+              <div class="vector-item-name">${esc(def.label)}</div>
               <div style="display:flex;align-items:center;gap:6px">
                 <span class="vector-tier-badge tier-${def.tier}">${tierLabel}</span>
                 <span class="vector-gap-badge${gapClass}">${esc(gapLabel)}</span>
@@ -1025,7 +1025,7 @@ export default function BelleDiagnosisResultPage() {
       return `
         <p class="sec-label" style="margin-top:28px">Transform Vector</p>
         <div class="result-card">
-          <div class="result-card-title">📐 変容ベクトル</div>
+          <div class="result-card-title">変容ベクトル</div>
           <div class="result-card-subtitle">現在地と理想のギャップ。ギャップが大きいほど変化の余地が大きい</div>
           <div class="vector-list">${rows}</div>
         </div>
@@ -1049,7 +1049,7 @@ export default function BelleDiagnosisResultPage() {
       return `
         <p class="sec-label" style="margin-top:28px">Your Road</p>
         <div class="result-card">
-          <div class="result-card-title">🪨 これまでの道にあった障壁</div>
+          <div class="result-card-title">これまでの道にあった障壁</div>
           <div class="result-card-subtitle">過去のパターンを知ることが、次に勝つための準備になる</div>
           <div class="insight-list">
             <div class="insight-item">
@@ -1087,7 +1087,7 @@ export default function BelleDiagnosisResultPage() {
       return `
         <p class="sec-label" style="margin-top:28px">あなたに合う変容環境</p>
         <div class="result-card">
-          <div class="result-card-title">🌱 あなたが変わりやすい環境の条件</div>
+          <div class="result-card-title">あなたが変わりやすい環境の条件</div>
           <div class="result-card-subtitle">旅を通じて見えてきた、あなたに合う変容環境の条件。プロと組むときも、独学で進めるときも、この軸で選ぶと続きやすい</div>
           <div class="trait-list">
             ${unique.map(t => `<div class="trait-item"><div class="trait-check">✓</div><span>${esc(t)}</span></div>`).join('')}
@@ -1126,11 +1126,11 @@ export default function BelleDiagnosisResultPage() {
         slot.innerHTML = `
           <p class="sec-label" style="margin-top:28px">Pro Match</p>
           <div class="result-card">
-            <div class="result-card-title">✨ ${esc(title)}</div>
+            <div class="result-card-title">${esc(title)}</div>
             <div class="result-card-subtitle">${esc(subtitle)}</div>
             ${top3.map((prov, i) => `
               <a href="${prov.entity_type === 'affiliate' ? '/affiliate' : '/provider'}/${esc(prov.slug)}" class="pmc-card${i===0&&hasMatch?' top':''}">
-                <div class="pmc-photo">${prov.photo_url ? `<img src="${esc(prov.photo_url)}" alt="${esc(prov.name)}" loading="lazy">` : '<span class="pmc-photo-icon">🧑</span>'}</div>
+                <div class="pmc-photo">${prov.photo_url ? `<img src="${esc(prov.photo_url)}" alt="${esc(prov.name)}" loading="lazy">` : '<span class="pmc-photo-icon"></span>'}</div>
                 <div class="pmc-body">
                   <div class="pmc-name">${esc(prov.name)}</div>
                   ${prov.catchphrase ? `<div class="pmc-catch">${esc(prov.catchphrase)}</div>` : ''}
@@ -1173,7 +1173,7 @@ export default function BelleDiagnosisResultPage() {
       ${!isLoggedIn ? `
       <div class="auth-hero-banner">
         <div class="auth-hero-banner-top">
-          <span class="auth-hero-banner-icon">⚠️</span>
+          <span class="auth-hero-banner-icon"></span>
           <div class="auth-hero-banner-title">この地図は、この端末に保存されています</div>
         </div>
         <p class="auth-hero-banner-body">アカウントを作ると、スマホ・PCどこからでも同じ地図を開けます。<br>描き込んだ内容も、Mirror の記録も、まとめて引き継がれます。</p>
@@ -1189,9 +1189,9 @@ export default function BelleDiagnosisResultPage() {
       ${buildNextDrawBlock()}
 
       ${compassFirstDef.label ? `<div style="margin:12px 0 20px;padding:16px 18px;background:#151b24;border:1px solid rgba(236,232,223,0.154);border-radius:12px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(8px)">
-        <span style="font-size:26px;flex-shrink:0">🪞</span>
+        <span style="font-size:26px;flex-shrink:0"></span>
         <div style="flex:1;min-width:0">
-          <p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px;line-height:1.55">地図では ${esc(compassFirstDef.icon||'')} ${esc(compassFirstDef.label)} が最初の一手。<br>実際の現在地は、写真1枚で測れます。</p>
+          <p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px;line-height:1.55">地図では ${esc(compassFirstDef.label)} が最初の一手。<br>実際の現在地は、写真1枚で測れます。</p>
           <p style="font-size:11px;color:rgba(232,228,220,0.4);margin:0">写真は保存しません</p>
         </div>
         <a href="/belle/mirror" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(200,100,140,0.1);border:1.5px solid rgba(200,100,140,0.7);color:rgba(200,100,140,0.9);border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">現在地を<br>測る</a>
@@ -1201,7 +1201,7 @@ export default function BelleDiagnosisResultPage() {
 
       <p class="sec-label" style="margin-top:28px">Radar Map</p>
       <div class="radar-card">
-        <div class="radar-title">📡 8軸変容レーダー</div>
+        <div class="radar-title">8軸変容レーダー</div>
         <div class="radar-subtitle">現在地（紺）と理想（金点線）。面積の差が変容の余白</div>
         ${buildRadarChart()}
       </div>
@@ -1213,7 +1213,7 @@ export default function BelleDiagnosisResultPage() {
 
       ${!isLoggedIn ? `
       <div class="save-map-cta">
-        <div class="save-map-cta-icon">🧬</div>
+        <div class="save-map-cta-icon"></div>
         <div class="save-map-cta-body">
           <div class="save-map-cta-title">この地図を、どの端末からでも開けるようにする</div>
           <div class="save-map-cta-desc">今はこの端末にだけ保存されています。<br>アカウントを作ると、続きをどこからでも描き込めます。</div>
@@ -1224,9 +1224,9 @@ export default function BelleDiagnosisResultPage() {
       ` : ''}
 
       <div class="navi-section">
-        <div class="navi-section-label">🗺️ 次の行き先</div>
+        <div class="navi-section-label">次の行き先</div>
         <a href="/mypage/navi" class="navi-btn navi-btn-primary">
-          <span class="navi-btn-icon">🧭</span>
+          <span class="navi-btn-icon"></span>
           <span class="navi-btn-body">
             <span class="navi-btn-title">New Me Mapを開く</span>
             <span class="navi-btn-desc">出発前チェック・8軸変容トラック・今向くべき方角が一画面で見える</span>
@@ -1234,7 +1234,7 @@ export default function BelleDiagnosisResultPage() {
           <span class="navi-btn-arrow">→</span>
         </a>
         <a href="/guide" class="navi-btn navi-btn-secondary">
-          <span class="navi-btn-icon">🗺️</span>
+          <span class="navi-btn-icon"></span>
           <span class="navi-btn-body">
             <span class="navi-btn-title">8軸変容ガイドを読む</span>
             <span class="navi-btn-desc">各軸の意味・始め方・来た道別アドバイス</span>
@@ -1242,7 +1242,7 @@ export default function BelleDiagnosisResultPage() {
           <span class="navi-btn-arrow">→</span>
         </a>
         <a href="/feature" class="navi-btn navi-btn-secondary">
-          <span class="navi-btn-icon">📖</span>
+          <span class="navi-btn-icon"></span>
           <span class="navi-btn-body">
             <span class="navi-btn-title">Fineme Journal を読む</span>
             <span class="navi-btn-desc">清潔感・写真・変容の思想——変容の旅を後押しするコンテンツ</span>
@@ -1260,7 +1260,7 @@ export default function BelleDiagnosisResultPage() {
         const _title = _mt.length >= 2 ? _mt.join('・') + 'の現在地を写真で測る' : '写真1枚で、今の現在地を測る';
         return `<a href="/belle/lp/mirror" style="display:block;text-decoration:none;margin-bottom:20px">
         <div style="display:flex;align-items:center;gap:16px;padding:18px 20px;background:rgba(200,164,90,0.08);border:1px solid rgba(236,232,223,0.193);border-radius:14px;transition:border-color 0.2s">
-          <span style="font-size:28px;flex-shrink:0">🪞</span>
+          <span style="font-size:28px;flex-shrink:0"></span>
           <div style="flex:1">
             <p style="font-size:10px;font-weight:800;letter-spacing:.14em;color:#c8a45a;text-transform:uppercase;margin:0 0 4px">Fineme Mirror — ¥780/月</p>
             <p style="font-size:14px;font-weight:700;color:rgba(232,228,220,0.95);margin:0 0 3px">${esc(_title)}</p>
@@ -1277,7 +1277,7 @@ export default function BelleDiagnosisResultPage() {
 
       ${!isLoggedIn ? `
       <div class="save-map-cta" style="margin-bottom:24px">
-        <div class="save-map-cta-icon">🔑</div>
+        <div class="save-map-cta-icon"></div>
         <div class="save-map-cta-body">
           <div class="save-map-cta-title">この地図を New Me Map に引き継ぐ</div>
           <div class="save-map-cta-desc">アカウントを作ると、描き込んだ内容がそのまま<br>New Me Map に反映され、月ごとの変化も追えます。</div>
@@ -1399,7 +1399,7 @@ export default function BelleDiagnosisResultPage() {
           return;
         }
         localStorage.setItem('fineme:feedback:diagnosis_result', '1');
-        fbWidget.innerHTML = '<div style="padding:16px 0;text-align:center;color:rgba(200,164,90,0.9);font-size:14px;font-weight:700">フィードバックを送りました。ありがとうございます 🙏</div>';
+        fbWidget.innerHTML = '<div style="padding:16px 0;text-align:center;color:rgba(200,164,90,0.9);font-size:14px;font-weight:700">フィードバックを送りました。ありがとうございます </div>';
       });
     }
 
@@ -1524,7 +1524,7 @@ export default function BelleDiagnosisResultPage() {
           link.click();
         } catch (e) { console.error('share card error:', e); }
 
-        shareTypeCardBtn.innerHTML = '📷 カードを画像保存';
+        shareTypeCardBtn.innerHTML = 'カードを画像保存';
         shareTypeCardBtn.disabled = false;
       });
     }
@@ -1535,8 +1535,8 @@ export default function BelleDiagnosisResultPage() {
       const ogUrl = `https://www.fineme.me/api/og/diagnosis?compass=${encodeURIComponent(identityAxis)}&type=${encodeURIComponent(typeIdentity?.displayCode||'')}&name=${encodeURIComponent(typeIdentity?.fullName||'')}&goal=${encodeURIComponent(p.goal_change||'')}&trigger=${encodeURIComponent(p.trigger||'')}`;
       const axisLabel = AREA_DEFS[compassFirst]?.label || '外見';
       const shareText = typeIdentity
-        ? `Me Scan を受けた。\n私は「${typeIdentity.fullName}」だった。\n最初の一手は「${axisLabel}」から。\n\n136タイプ、あなたはどれ？👇\n#Fineme`
-        : `Me Scan を受けた。\n今の私に一番効くのは「${axisLabel}」からだった。\n\nあなたも試してみて👇\n#Fineme`;
+        ? `Me Scan を受けた。\n私は「${typeIdentity.fullName}」だった。\n最初の一手は「${axisLabel}」から。\n\n136タイプ、あなたはどれ？\n#Fineme`
+        : `Me Scan を受けた。\n今の私に一番効くのは「${axisLabel}」からだった。\n\nあなたも試してみて\n#Fineme`;
       const shareUrl = `https://www.fineme.me/belle/diagnosis`;
       const twitterHref = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
       shareBlock.innerHTML = `

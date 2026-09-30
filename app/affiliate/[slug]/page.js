@@ -149,7 +149,7 @@ function AffiliatePageInner() {
             background: 'rgba(99,102,241,0.85)', borderRadius: '10px', padding: '10px 14px',
             marginBottom: '20px', fontSize: '12px', fontWeight: '700',
           }}>
-            🧭 あなたのFinemeコンパス（{AXIS_LABELS[compassAxis]}）と一致するガイドです
+            あなたのFinemeコンパス（{AXIS_LABELS[compassAxis]}）と一致するガイドです
           </div>
         )}
 
@@ -418,7 +418,7 @@ function AffiliatePageInner() {
               ))}
               {affiliate.provider_style && STYLE_LABELS[affiliate.provider_style] && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px' }}>
-                  <span style={{ color: '#2563eb', fontWeight: '800', fontSize: '13px' }}>🎯</span>
+                  <span style={{ color: '#2563eb', fontWeight: '800', fontSize: '13px' }}></span>
                   <span style={{ fontSize: '13px', color: '#1e40af', fontWeight: '600' }}>{STYLE_LABELS[affiliate.provider_style]}</span>
                 </div>
               )}

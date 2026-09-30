@@ -21,7 +21,7 @@ const TYPE_MODIFIER = {
 };
 const AXIS_LABEL = { B:'ボディ', E:'眉', F:'ファッション', H:'ヘア', S:'肌', R:'脱毛', T:'歯・笑顔', W:'爪・手元' };
 const AXIS_COLOR = { B:'#ef4444', E:'#8b5cf6', F:'#10b981', H:'#3b82f6', S:'#f59e0b', R:'#06b6d4', T:'#eab308', W:'#14b8a6' };
-const AXIS_EMOJI = { B:'💪', E:'✂️', F:'👗', H:'💇', S:'✨', R:'🪒', T:'😁', W:'💅' };
+const AXIS_EMOJI = { B:'体', E:'眉', F:'服', H:'髪', S:'肌', R:'毛', T:'歯', W:'爪' };
 
 const AXES   = ['B','E','F','H','S','R','T','W'];
 const COMBOS = ['NV','NK','ND','CV','CQ','CK','CL','CD','AV','AQ','AK','AL','AD','PQ','PK','PL','PD'];

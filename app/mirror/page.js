@@ -5,6 +5,7 @@ import { setTrackOnce, syncTrackWithServer } from '@/lib/track';
 import { getLocalAttributes, hasRequiredAttributes, syncAttributesWithServer } from '@/lib/attributes';
 import AttributeStep from '@/app/_components/AttributeStep';
 import MirrorReportCard from '@/app/_components/MirrorReportCard';
+import { axisGlyph } from '@/lib/axis-glyph';
 
 const LS_SESSIONS_KEY = 'fineme:mirror:sessions'; // ['session_id1', 'session_id2', ...]
 const LS_TRIAL_MONTH_KEY = 'fineme:mirror:freeTrialMonth';
@@ -493,7 +494,7 @@ export default function MirrorPage() {
   };
 
   const shareUrl = () => `${window.location.origin}/mirror/s/${sessionId}`;
-  const SHARE_TEXT = '写真1枚で、AIが「変われる余白」を地図にしてくれた。あなたの変容余地マップも見てみて🪞';
+  const SHARE_TEXT = '写真1枚で、AIが「変われる余白」を地図にしてくれた。あなたの変容余地マップも見てみて';
   const shareX = () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}&url=${encodeURIComponent(shareUrl())}`, '_blank', 'noopener');
   const shareLINE = () => window.open(`https://line.me/R/msg/text/?${encodeURIComponent(SHARE_TEXT + '\n' + shareUrl())}`, '_blank', 'noopener');
   const copyShareLink = async () => {
@@ -536,7 +537,7 @@ export default function MirrorPage() {
         .first-impression { background: rgba(200,164,90,0.06); border: 1px solid rgba(236,232,223,0.11); border-radius: 16px; padding: 24px; margin-bottom: 32px; font-size: 15px; color: rgba(232,228,220,0.85); line-height: 1.8; }
         .axis-card { background: #151b24; border-radius: 14px; padding: 20px; margin-bottom: 16px; position: relative; overflow: hidden; }
         .axis-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-        .axis-icon { font-size: 24px; }
+        .axis-icon { font-size: 24px; font-family: var(--font-serif); }
         .axis-name { font-size: 15px; font-weight: 800; color: #e8e4dc; flex: 1; }
         .axis-badge { font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 20px; letter-spacing: .06em; white-space: nowrap; }
         .axis-summary { font-size: 14px; color: rgba(232,228,220,0.7); line-height: 1.75; margin-bottom: 14px; }
@@ -576,18 +577,18 @@ export default function MirrorPage() {
             AIがあなたの伸びしろを、遠慮なく言葉にする。
           </p>
           <p className="privacy-note" style={{ marginBottom: '10px' }}>
-            🪞 誰にでも平等に厳しい鏡です。だからこそ最後は、ちゃんと未来まで見せます。
+            誰にでも平等に厳しい鏡です。だからこそ最後は、ちゃんと未来まで見せます。
           </p>
           <p className="privacy-note" style={{ marginBottom: '10px' }}>
-            ⚠️ この分析はAIが写真から視覚的に読み取った内容です。写真の角度・光・表情などによって結果がぶれたり、実際の印象と異なる場合があります。
+            この分析はAIが写真から視覚的に読み取った内容です。写真の角度・光・表情などによって結果がぶれたり、実際の印象と異なる場合があります。
           </p>
           {state === 'idle' && (
             <>
               <p className="privacy-note" style={{ marginBottom: '10px' }}>
-                🎁 月1回は無料でまるごと見られます。まずは試して、気に入ったら続けてください。
+                月1回は無料でまるごと見られます。まずは試して、気に入ったら続けてください。
               </p>
               <p className="privacy-note">
-                📷 写真はAI分析・ビジュアルレポート生成に使用されます。<br />
+                写真はAI分析・ビジュアルレポート生成に使用されます。<br />
                 無料プレビューのみの場合は数日以内に自動削除、購入・お試し解放後の分析は写真ごとレポートとして保存されます。
               </p>
             </>
@@ -605,7 +606,7 @@ export default function MirrorPage() {
         <div className="upload-area">
           {/* 顔写真 / 全身写真の選択（軸のブレを防ぐため事前申告） */}
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '14px' }}>
-            {[['face', '📷 顔写真で見る'], ['body', '🧍 全身写真で見る']].map(([val, label]) => (
+            {[['face', '顔写真で見る'], ['body', '全身写真で見る']].map(([val, label]) => (
               <button
                 key={val}
                 type="button"
@@ -634,7 +635,7 @@ export default function MirrorPage() {
               <img src={previewFile} alt="プレビュー" className="preview-img" />
             ) : (
               <>
-                <div className="drop-icon">🪞</div>
+                <div className="drop-icon"></div>
                 <p className="drop-text">写真をドラッグ＆ドロップ<br />またはタップして選択</p>
                 <p className="drop-sub">顔写真 or 全身写真（JPEG/PNG/WebP）</p>
               </>
@@ -666,7 +667,7 @@ export default function MirrorPage() {
                   borderRadius: '20px', padding: '5px 14px',
                   fontSize: '12px', fontWeight: '800', color: '#c8a45a',
                 }}>
-                  🎁 今月はまだ無料でまるごと試せます
+                  今月はまだ無料でまるごと試せます
                 </span>
               )}
             </div>
@@ -722,7 +723,7 @@ export default function MirrorPage() {
             onClick={handleAnalyze}
             disabled={!previewFile || compressing || !mirrorConsent}
           >
-            {compressing ? '📐 画像を最適化中…' : '🔍 変容余地を分析する'}
+            {compressing ? '画像を最適化中…' : '変容余地を分析する'}
           </button>
           {error && <p className="error-msg">{error}</p>}
 
@@ -836,14 +837,14 @@ export default function MirrorPage() {
           )}
           {state === 'full' && reportContent && (
             <p className="privacy-note" style={{ margin: '10px auto 0' }}>
-              ⚠️ この分析はAIが写真から視覚的に読み取った内容です。写真の角度・光・表情などによって結果がぶれたり、実際の印象と異なる場合があります。
+              この分析はAIが写真から視覚的に読み取った内容です。写真の角度・光・表情などによって結果がぶれたり、実際の印象と異なる場合があります。
             </p>
           )}
 
           {state === 'full' && (
             <div style={{ textAlign: 'center', margin: '20px 0 8px' }}>
               <span className="full-badge">
-                {trialApplied ? '🎁 今月の無料お試し — 全軸の詳細分析' : '✨ フル版 — 全軸の詳細分析'}
+                {trialApplied ? '今月の無料お試し — 全軸の詳細分析' : 'フル版 — 全軸の詳細分析'}
               </span>
             </div>
           )}
@@ -858,7 +859,7 @@ export default function MirrorPage() {
                     alt="分析した写真"
                     style={{ width: '96px', height: '96px', objectFit: 'cover', objectPosition: 'center top', borderRadius: '50%', border: '2px solid rgba(200,164,90,0.4)', display: 'block' }}
                   />
-                  <span style={{ position: 'absolute', bottom: 0, right: 0, fontSize: '16px', lineHeight: 1 }}>🪞</span>
+                  <span style={{ position: 'absolute', bottom: 0, right: 0, fontSize: '16px', lineHeight: 1 }}></span>
                 </div>
               )}
 
@@ -878,7 +879,7 @@ export default function MirrorPage() {
                     style={{ border: `1px solid ${pot.border}` }}
                   >
                     <div className="axis-header">
-                      <span className="axis-icon">{axis.icon}</span>
+                      <span className="axis-icon">{axisGlyph(axis.id)}</span>
                       <span className="axis-name">{axis.name}</span>
                       <span
                         className="axis-badge"
@@ -904,7 +905,7 @@ export default function MirrorPage() {
                         {axis.detail && <p className="axis-detail">{axis.detail}</p>}
                         {axis.related_post_id && curatedPosts[axis.related_post_id] && (() => {
                           const cp = curatedPosts[axis.related_post_id];
-                          const platformIcon = cp.platform === 'tiktok' ? '🎵' : '📷';
+                          const platformIcon = cp.platform === 'tiktok' ? '' : '';
                           const platformLabel = cp.platform === 'tiktok' ? 'TikTok' : 'Instagram';
                           return (
                             <a href={cp.post_url} target="_blank" rel="noopener noreferrer" className="curated-post-card">
@@ -927,7 +928,7 @@ export default function MirrorPage() {
                           const { cleanText, url } = parseCompassAction(axis.compass_action);
                           const inner = (
                             <div className="compass-action" style={url ? { cursor: 'pointer' } : {}}>
-                              <p className="compass-action-label">🧭 Compass アクション {url && '→'}</p>
+                              <p className="compass-action-label">Compass アクション {url && '→'}</p>
                               {cleanText}
                             </div>
                           );
@@ -968,7 +969,6 @@ export default function MirrorPage() {
                           color: col.text,
                           filter: 'blur(0px)',
                         }}>
-                          <span>{ax.icon}</span>
                           <span>{ax.name}</span>
                           <span style={{ fontSize: '10px', opacity: 0.7 }}>· {col.label}</span>
                         </div>
@@ -992,7 +992,7 @@ export default function MirrorPage() {
                   {teaserText && (
                     <div style={{ maxWidth: '400px', margin: '0 auto 8px', textAlign: 'left' }}>
                       <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.1em', color: 'rgba(200,164,90,0.5)', textTransform: 'uppercase', margin: '0 0 6px' }}>
-                        {teaserAxis?.icon} {teaserAxis?.name} — AIの観察
+                        {teaserAxis?.name} — AIの観察
                       </p>
                       <div style={{ position: 'relative', maxHeight: '2.8em', overflow: 'hidden' }}>
                         <p style={{ fontSize: '14px', color: 'rgba(232,228,220,0.75)', lineHeight: 1.8, margin: 0 }}>
@@ -1031,7 +1031,7 @@ export default function MirrorPage() {
                         disabled={subscribing}
                         style={{ width: '100%', maxWidth: '340px' }}
                       >
-                        {subscribing ? '処理中…' : '♾️ ¥780/月 — 地図を完成させる（月3回）'}
+                        {subscribing ? '処理中…' : '¥780/月 — 地図を完成させる（月3回）'}
                       </button>
                     )}
 
@@ -1075,7 +1075,7 @@ export default function MirrorPage() {
                   LINEで送る
                 </button>
                 <button onClick={copyShareLink} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: 'rgba(200,164,90,0.08)', border: '1px solid rgba(236,232,223,0.193)', borderRadius: '10px', color: '#c8a45a', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  {linkCopied ? '✓ コピーしました' : '🔗 リンクをコピー'}
+                  {linkCopied ? '✓ コピーしました' : 'リンクをコピー'}
                 </button>
               </div>
             </div>
@@ -1104,7 +1104,7 @@ export default function MirrorPage() {
                 }}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '15px 32px', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '800', color: '#0d1117', cursor: 'pointer', boxShadow: '0 0 24px rgba(0,0,0,0.3)' }}
               >
-                🗺️ New Me Map を生成する →
+                New Me Map を生成する →
               </button>
             </div>
           )}
@@ -1133,7 +1133,7 @@ export default function MirrorPage() {
                 disabled={subscribing}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: subscribing ? 'rgba(80,200,140,0.3)' : 'linear-gradient(135deg,#50c88c,#3aaa78)', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 800, color: '#0d1117', cursor: subscribing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
               >
-                {subscribing ? '処理中…' : '♾️ ¥780/月 のサブスクに切り替える'}
+                {subscribing ? '処理中…' : '¥780/月 のサブスクに切り替える'}
               </button>
               <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.35)', margin: '12px 0 0' }}>
                 ¥780/月 ・ いつでも解約 ・ 写真はレポート表示のため保存 ・ Stripe で安全決済
@@ -1146,7 +1146,7 @@ export default function MirrorPage() {
             <div style={{ marginTop: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(232,228,220,0.1)', borderRadius: '14px', padding: '22px 20px' }}>
               {fbSent ? (
                 <p style={{ textAlign: 'center', fontSize: '13px', color: 'rgba(80,200,140,0.85)', margin: 0 }}>
-                  🙏 フィードバックありがとうございました。
+                  フィードバックありがとうございました。
                 </p>
               ) : (
                 <>
@@ -1199,7 +1199,7 @@ export default function MirrorPage() {
           {/* 友達紹介（ログイン済み・fullのみ） */}
           {state === 'full' && myUserId && (
             <div style={{ marginTop: '20px', background: 'rgba(200,164,90,0.06)', border: '1px solid rgba(236,232,223,0.138)', borderRadius: '14px', padding: '22px 20px', textAlign: 'center' }}>
-              <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎟️</div>
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}></div>
               <p style={{ fontSize: '14px', fontWeight: '800', color: '#e8e4dc', margin: '0 0 6px' }}>
                 友達を招待して、おたがい1回無料
               </p>
@@ -1210,7 +1210,7 @@ export default function MirrorPage() {
                 onClick={copyInvite}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 28px', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '800', color: '#0d1117', cursor: 'pointer', fontFamily: 'inherit' }}
               >
-                {inviteCopied ? '✓ 招待リンクをコピーしました' : '🔗 招待リンクをコピー'}
+                {inviteCopied ? '✓ 招待リンクをコピーしました' : '招待リンクをコピー'}
               </button>
             </div>
           )}
@@ -1219,7 +1219,7 @@ export default function MirrorPage() {
           {state === 'full' && !myUserId && sessionId && (
             <div style={{ marginTop: '20px', background: 'linear-gradient(160deg, rgba(12,18,38,0.98), rgba(8,12,26,0.98))', border: '1px solid rgba(236,232,223,0.154)', borderRadius: '18px', padding: '28px 24px', textAlign: 'center', boxShadow: '0 0 40px rgba(0,0,0,0.072)' }}>
               <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'rgba(200,164,90,0.1)', border: '1px solid rgba(236,232,223,0.165)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: '20px' }}>
-                🗺️
+                
               </div>
               <p style={{ fontFamily: "Georgia, serif", fontSize: '16px', fontWeight: '800', color: '#e8e4dc', margin: '0 0 8px', lineHeight: 1.4 }}>
                 この地図を保存して、変化を続ける

@@ -193,13 +193,13 @@ export default function BellePage() {
               <p style={{ fontSize: 15, fontWeight: 700, color: '#f5e0ea', margin: '0 0 18px' }}>続きから始める</p>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
                 <Link href="/belle/diagnosis/result" className="b-btn-primary">New Me Naviを見る</Link>
-                <Link href="/belle/mirror" className="b-btn-ghost">📸 Mirrorで写真分析</Link>
+                <Link href="/belle/mirror" className="b-btn-ghost">Mirrorで写真分析</Link>
               </div>
             </div>
           ) : (
             <div className="b-fade b-fade-d3" style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link href="/belle/diagnosis" className="b-btn-primary">🧬 Me Scanを始める（無料）</Link>
-              <Link href="/belle/mirror" className="b-btn-ghost">📸 Mirrorで写真分析</Link>
+              <Link href="/belle/diagnosis" className="b-btn-primary">Me Scanを始める（無料）</Link>
+              <Link href="/belle/mirror" className="b-btn-ghost">Mirrorで写真分析</Link>
             </div>
           )}
 
@@ -299,7 +299,7 @@ export default function BellePage() {
               </div>
             ))}
           </div>
-          <Link href="/belle/mirror" className="b-btn-primary">📸 Mirrorで写真分析する</Link>
+          <Link href="/belle/mirror" className="b-btn-primary">Mirrorで写真分析する</Link>
           <p style={{ fontSize: 12, color: 'rgba(240,216,224,0.3)', margin: '12px 0 0' }}>無料プレビューあり · 詳細分析は¥500（任意）· 写真は保存しません</p>
         </div>
       </section>
@@ -315,8 +315,8 @@ export default function BellePage() {
             まず、外見の現在地を知ることから始める。<br />3分の診断が、最初の一手を教えてくれる。
           </p>
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/belle/diagnosis" className="b-btn-primary">🧬 Me Scanを始める（無料）</Link>
-            <Link href="/belle/mirror" className="b-btn-ghost">📸 Mirrorで写真分析</Link>
+            <Link href="/belle/diagnosis" className="b-btn-primary">Me Scanを始める（無料）</Link>
+            <Link href="/belle/mirror" className="b-btn-ghost">Mirrorで写真分析</Link>
           </div>
           <p style={{ fontSize: 12, color: 'rgba(240,216,224,0.28)', margin: '16px 0 0' }}>
             Me Scan：コア約3分 · 無料 · 登録不要

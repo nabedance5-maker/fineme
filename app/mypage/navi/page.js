@@ -484,7 +484,7 @@ export default function NewMeNaviPage() {
       /* ── 現状把握ステップ（目立たせ） ── */
       .step-card.step-selfcheck { border-left: 3px solid rgba(200,164,90,0.7) !important; background: rgba(200,164,90,0.05); border-radius: 10px; border-bottom: none !important; margin-bottom: 4px; }
       .selfcheck-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 800; color: #c8a45a; background: rgba(200,164,90,0.12); border: 1px solid rgba(236,232,223,0.165); border-radius: 3px; padding: 1px 6px; letter-spacing: .06em; text-transform: uppercase; }
-      .selfcheck-badge::before { content: '📍'; font-size: 9px; }
+      .selfcheck-badge::before { content: ''; font-size: 9px; }
       .selfcheck-value { font-size: 11px; font-weight: 700; color: #c8a45a; background: rgba(200,164,90,0.10); border: 1px solid rgba(236,232,223,0.138); border-radius: 4px; padding: 2px 7px; margin-top: 4px; display: inline-block; }
 
       /* ── 現状把握バナー ── */
@@ -729,13 +729,13 @@ export default function NewMeNaviPage() {
         root.innerHTML = `
           <div style="min-height:50vh;display:flex;align-items:center;justify-content:center;padding:48px 20px">
             <div style="max-width:480px;width:100%;background:#151b24;border:1px solid rgba(236,232,223,0.138);border-radius:18px;padding:40px 32px;text-align:center;box-shadow:0 4px 32px rgba(0,0,0,0.4);backdrop-filter:blur(8px)">
-              <div style="font-size:40px;margin:0 0 16px">🗺️</div>
+              <div style="font-size:40px;margin:0 0 16px"></div>
               <h2 style="font-family:'Shippori Mincho',Georgia,serif;font-size:18px;font-weight:700;color:rgba(232,228,220,0.90);margin:0 0 12px;line-height:1.6">
                 New Me Mapはログイン後に表示されます
               </h2>
               ${hasDiagData
                 ? `<p style="font-size:13px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);border-radius:8px;padding:10px 14px;color:rgba(52,211,153,0.9);margin:0 0 20px;line-height:1.7">
-                    ✅ Me Scanのデータは保存されています。<br>ログインまたは登録してマップに反映させましょう。
+                    Me Scanのデータは保存されています。<br>ログインまたは登録してマップに反映させましょう。
                   </p>`
                 : `<p style="font-size:14px;color:rgba(232,228,220,0.55);line-height:1.85;margin:0 0 20px">
                     8軸の現在地と変容ロードマップ（Fineme Compass）が<br>ここに届きます。まずログイン / 新規登録してください。
@@ -881,7 +881,7 @@ export default function NewMeNaviPage() {
     if (fromMirror && token) {
       try {
         root.innerHTML = `<div style="min-height:40vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:48px 20px;text-align:center">
-          <div style="font-size:36px">🪞</div>
+          <div style="font-size:36px"></div>
           <p style="font-size:15px;font-weight:700;color:rgba(232,228,220,0.85)">Mirrorデータを反映してMapを更新しています…</p>
           <p style="font-size:12px;color:rgba(232,228,220,0.4)">20〜40秒ほどかかります。そのままお待ちください。</p>
         </div>`;
@@ -1025,10 +1025,10 @@ export default function NewMeNaviPage() {
 
       if (hasMirrorData) {
         root.innerHTML = `<div class="no-data">
-          <div class="no-data-icon">📸</div>
+          <div class="no-data-icon"></div>
           <h2 class="no-data-title">Mirrorのデータがあります</h2>
           <p class="no-data-text">Mirror分析の変容余地データから、<br>あなた専用の New Me Map を生成できます。</p>
-          <button id="mirror-map-gen-btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px;background:linear-gradient(135deg,#c8a45a,#e8c97a);border:none;border-radius:10px;color:#0d1117;cursor:pointer;font-family:inherit;box-shadow:0 6px 24px rgba(0,0,0,0.36)">📸 Mirrorデータでマップを生成 →</button>
+          <button id="mirror-map-gen-btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px;background:linear-gradient(135deg,#c8a45a,#e8c97a);border:none;border-radius:10px;color:#0d1117;cursor:pointer;font-family:inherit;box-shadow:0 6px 24px rgba(0,0,0,0.36)">Mirrorデータでマップを生成 →</button>
           <p style="margin-top:14px;font-size:11px;color:rgba(232,228,220,0.3)">Me Scan（無料診断）を受けるとさらに精度が上がります</p>
           <a href="${TRACK.diagnosis}" style="display:block;margin-top:8px;font-size:12px;color:rgba(200,164,90,0.55);text-decoration:none">Me Scanも受ける（推奨）→</a>
         </div>`;
@@ -1048,7 +1048,7 @@ export default function NewMeNaviPage() {
         });
       } else {
         root.innerHTML = `<div class="no-data">
-          <div class="no-data-icon">🧭</div>
+          <div class="no-data-icon"></div>
           <h2 class="no-data-title">まだ地図がありません</h2>
           <p class="no-data-text">Me Scanを受けるか、Mirrorで写真を分析すると、<br>あなただけの変容マップが生成されます。</p>
           <div style="display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:4px">
@@ -1066,7 +1066,7 @@ export default function NewMeNaviPage() {
     }
     if (!p.transform_vectors) {
       root.innerHTML = `<div class="no-data">
-        <div class="no-data-icon">🗺️</div>
+        <div class="no-data-icon"></div>
         <h2 class="no-data-title">新しいMe Scanが必要です</h2>
         <p class="no-data-text">診断をアップデートしました。<br>新しいMe Scanで変容マップを生成します。</p>
         <a href="${TRACK.diagnosis}" class="btn" style="display:inline-block;font-size:15px;font-weight:700;padding:14px 28px">Me Scanを受ける（新版）</a>
@@ -1081,7 +1081,7 @@ export default function NewMeNaviPage() {
       if (diagAt > mapAt) {
         const isFirstTime = !naviStepsData;
         root.innerHTML = `<div style="min-height:40vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:48px 20px;text-align:center">
-          <div style="font-size:36px">🧭</div>
+          <div style="font-size:36px"></div>
           <p style="font-size:15px;font-weight:700;color:rgba(232,228,220,0.85)">${isFirstTime ? 'あなた専用のMapを生成しています…' : '新しいMe Scanを反映してMapを更新しています…'}</p>
           <p style="font-size:12px;color:rgba(232,228,220,0.4)">20〜40秒ほどかかります。そのままお待ちください。</p>
         </div>`;
@@ -1117,14 +1117,14 @@ export default function NewMeNaviPage() {
 
     // ── 定数 ──
     const AREA_DEFS = {
-      body:    { icon:'💪', label:'体型',  catLink:'gym',       tier:1, articleQ:'垢抜け' },
-      eyebrow: { icon:'✂️', label:'眉',    catLink:'eyebrow',  tier:1, articleQ:'清潔感' },
-      fashion: { icon:'👔', label:'服',    catLink:'fashion',   tier:1, articleQ:'垢抜け' },
-      hair:    { icon:'💇', label:'髪',    catLink:'hair',      tier:1, articleQ:'清潔感' },
-      skin:        { icon:'✨', label:'肌',   catLink:'esthetic',    tier:2, articleQ:'清潔感' },
-      hairremoval: { icon:'🪒', label:'脱毛', catLink:'hairremoval', tier:2, articleQ:'清潔感' },
-      teeth:       { icon:'🦷', label:'歯',   catLink:'whitening',   tier:3, articleQ:'清潔感' },
-      nail:        { icon:'💅', label:'爪',   catLink:'nail',        tier:4, articleQ:'垢抜け' },
+      body:    { icon:'体', label:'体型',  catLink:'gym',       tier:1, articleQ:'垢抜け' },
+      eyebrow: { icon:'眉', label:'眉',    catLink:'eyebrow',  tier:1, articleQ:'清潔感' },
+      fashion: { icon:'服', label:'服',    catLink:'fashion',   tier:1, articleQ:'垢抜け' },
+      hair:    { icon:'髪', label:'髪',    catLink:'hair',      tier:1, articleQ:'清潔感' },
+      skin:        { icon:'肌', label:'肌',   catLink:'esthetic',    tier:2, articleQ:'清潔感' },
+      hairremoval: { icon:'毛', label:'脱毛', catLink:'hairremoval', tier:2, articleQ:'清潔感' },
+      teeth:       { icon:'歯', label:'歯',   catLink:'whitening',   tier:3, articleQ:'清潔感' },
+      nail:        { icon:'爪', label:'爪',   catLink:'nail',        tier:4, articleQ:'垢抜け' },
     };
 
     // ── 軸ごとの変容中継地点定義 ──
@@ -1332,7 +1332,7 @@ export default function NewMeNaviPage() {
         ],
       },
       teeth_ortho: {
-        note: '⚠️ 矯正は長期・高額の意思決定です。他のステップより時間軸が長くなります。',
+        note: '矯正は長期・高額の意思決定です。他のステップより時間軸が長くなります。',
         steps: [
           { text: '自分の歯並びで気になる部分を言語化できている', guide: 'none', isCurrentFor: 'none' },
           { text: '矯正の種類を調べてみる（ワイヤー・マウスピース・裏側など）', guide: 'none', hint: '3種類あるとだけ知っておけばOK。詳細は無料カウンセリングで確認できる',
@@ -1457,17 +1457,17 @@ export default function NewMeNaviPage() {
       const isGlobalCurrent = doneKey === compassFirstUndoneKey;
       let guideHtml = '';
       if (step.guide === 'HIGH') {
-        const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
-        guideHtml = `<div class="guide-badge guide-high"><span>🏥 ここはプロに任せると確実に変わる</span>${btn}</div>`;
+        const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">サービスを探す</a>` : '';
+        guideHtml = `<div class="guide-badge guide-high"><span>ここはプロに任せると確実に変わる</span>${btn}</div>`;
       } else if (step.guide === 'MID') {
-        const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
-        guideHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${btn}</div>`;
+        const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">サービスを探す</a>` : '';
+        guideHtml = `<div class="guide-badge guide-mid"><span>プロと進めると精度が上がる</span>${btn}</div>`;
       }
-      const noteHtml = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
+      const noteHtml = step.note ? `<div class="milestone-note">${esc(step.note)}</div>` : '';
       const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
       const detailId = `detail-${axisKey}-${idx}`;
       const detailHtml = step.detail ? `
-        <button class="step-detail-toggle" onclick="(function(btn){const panel=document.getElementById('${detailId}');panel.classList.toggle('open');btn.classList.toggle('open');btn.textContent=panel.classList.contains('open')?'▲ 閉じる':'📖 答えを見る';})(this)">📖 答えを見る</button>
+        <button class="step-detail-toggle" onclick="(function(btn){const panel=document.getElementById('${detailId}');panel.classList.toggle('open');btn.classList.toggle('open');btn.textContent=panel.classList.contains('open')?'▲ 閉じる':'答えを見る';})(this)">答えを見る</button>
         <div class="step-detail-panel" id="${detailId}">${esc(step.detail)}</div>` : '';
       const svcCardId = (step.guide === 'HIGH' || step.guide === 'MID') && def.catLink ? `svc-${axisKey}-${idx}` : null;
       const svcCardHtml = svcCardId ? `<div id="${esc(svcCardId)}" class="inline-service-card" data-svc-cat="${esc(def.catLink)}"></div>` : '';
@@ -1486,17 +1486,17 @@ export default function NewMeNaviPage() {
           .map((prod, pi) => {
             const prodKey = `prod-${axisKey}-${idx}-${pi}`;
             const isProdDone = !!stepDone[prodKey];
-            return `<a href="${esc(prod.url)}" target="_blank" rel="noopener noreferrer" class="product-chip">🛒 ${esc(prod.name)}</a><button class="product-check-btn${isProdDone?' checked':''}" data-done-key="${esc(prodKey)}">${isProdDone?'✓ 使用中':'使ってる？'}</button>`;
+            return `<a href="${esc(prod.url)}" target="_blank" rel="noopener noreferrer" class="product-chip">${esc(prod.name)}</a><button class="product-check-btn${isProdDone?' checked':''}" data-done-key="${esc(prodKey)}">${isProdDone?'✓ 使用中':'使ってる？'}</button>`;
           }).join('');
         if (chips) productsHtml = `<div class="product-suggestions">${chips}</div>`;
       }
-      const compassTag = isGlobalCurrent ? `<span class="compass-pointing-badge">🧭 今ここ</span>` : '';
+      const compassTag = isGlobalCurrent ? `<span class="compass-pointing-badge">今ここ</span>` : '';
       const selfCheckBadge = step.isSelfCheck ? `<span class="selfcheck-badge"> 現状確認</span>` : '';
       const phaseMap = {
-        none: { cls: 'phase-badge-week1',   label: '🌱 Week 1' },
-        LOW:  { cls: 'phase-badge-week1_2', label: '🚀 Week 1-2' },
-        HIGH: { cls: 'phase-badge-month1',  label: '📈 Month 1' },
-        MID:  { cls: 'phase-badge-month2_3',label: '💎 Month 2-3' },
+        none: { cls: 'phase-badge-week1',   label: 'Week 1' },
+        LOW:  { cls: 'phase-badge-week1_2', label: 'Week 1-2' },
+        HIGH: { cls: 'phase-badge-month1',  label: 'Month 1' },
+        MID:  { cls: 'phase-badge-month2_3',label: 'Month 2-3' },
       };
       const phaseInfo = phaseMap[step.guide] || phaseMap['none'];
       const phaseBadge = `<span class="phase-badge ${phaseInfo.cls}">${phaseInfo.label}</span>`;
@@ -1514,7 +1514,7 @@ export default function NewMeNaviPage() {
           </div>
           <div class="step-card-body">
             <div class="step-meta">
-              <span class="step-axis-badge" style="background:${badgeBg};border-color:${badgeBorder};color:${badgeColor}">${esc(def.icon)} ${esc(def.label)}</span>
+              <span class="step-axis-badge" style="background:${badgeBg};border-color:${badgeBorder};color:${badgeColor}">${esc(def.label)}</span>
               ${phaseBadge}${compassTag}${selfCheckBadge}
             </div>
             <p class="step-text">${esc(step.text)}</p>
@@ -1526,20 +1526,20 @@ export default function NewMeNaviPage() {
 
     // ── 現状把握バナー生成 ──
     const SELF_CHECK_ITEMS = [
-      { key: 'body_concern',    label: '体型の気になる部分',   icon: '💪' },
-      { key: 'body_goal',       label: '体型目標',             icon: '🎯' },
-      { key: 'hair_type',       label: '髪質',                icon: '💇' },
-      { key: 'hair_additional', label: '髪・頭皮の悩み',       icon: '🌿' },
-      { key: 'face_shape',      label: '顔型',                icon: '🪞' },
-      { key: 'face_type',       label: '顔タイプ',             icon: '🎭' },
-      { key: 'skeletal_type',   label: '骨格タイプ',           icon: '🦴' },
-      { key: 'fashion_self',    label: '目指すスタイル',        icon: '👔' },
-      { key: 'skin_type',       label: '肌タイプ',             icon: '✨' },
-      { key: 'skin_concerns',   label: '肌悩み',               icon: '🔬' },
-      { key: 'beard_density',   label: 'ひげの濃さ',           icon: '🪒' },
-      { key: 'teeth_concern',   label: '歯の黄ばみ原因',       icon: '🦷' },
-      { key: 'eyebrow_concerns',label: '眉の悩み',             icon: '✂️' },
-      { key: 'nail_concerns',   label: '爪の悩み',             icon: '💅' },
+      { key: 'body_concern',    label: '体型の気になる部分',   icon: '' },
+      { key: 'body_goal',       label: '体型目標',             icon: '' },
+      { key: 'hair_type',       label: '髪質',                icon: '' },
+      { key: 'hair_additional', label: '髪・頭皮の悩み',       icon: '' },
+      { key: 'face_shape',      label: '顔型',                icon: '' },
+      { key: 'face_type',       label: '顔タイプ',             icon: '' },
+      { key: 'skeletal_type',   label: '骨格タイプ',           icon: '' },
+      { key: 'fashion_self',    label: '目指すスタイル',        icon: '' },
+      { key: 'skin_type',       label: '肌タイプ',             icon: '' },
+      { key: 'skin_concerns',   label: '肌悩み',               icon: '' },
+      { key: 'beard_density',   label: 'ひげの濃さ',           icon: '' },
+      { key: 'teeth_concern',   label: '歯の黄ばみ原因',       icon: '' },
+      { key: 'eyebrow_concerns',label: '眉の悩み',             icon: '' },
+      { key: 'nail_concerns',   label: '爪の悩み',             icon: '' },
     ];
     function buildSelfCheckIntroHtml() {
       const undoneCount = SELF_CHECK_ITEMS.filter(item => !bodyData[item.key]).length;
@@ -1548,10 +1548,10 @@ export default function NewMeNaviPage() {
       if (undoneCount === SELF_CHECK_ITEMS.length) return `
         <div class="selfcheck-intro-section" id="selfcheck-intro">
           <div class="selfcheck-intro-header">
-            <span class="selfcheck-intro-icon">📍</span>
+            <span class="selfcheck-intro-icon"></span>
             <div style="flex:1">
               <p class="selfcheck-intro-title">まず自分の現状を把握しておこう</p>
-              <p class="selfcheck-intro-desc">「📍 現状確認」バッジのステップをチェックするとMapが自分専用に最適化されます。</p>
+              <p class="selfcheck-intro-desc">「現状確認」バッジのステップをチェックするとMapが自分専用に最適化されます。</p>
             </div>
           </div>
         </div>`;
@@ -1559,13 +1559,13 @@ export default function NewMeNaviPage() {
         const val = bodyData[item.key];
         const isDone = !!val;
         const valText = isDone ? (Array.isArray(val) ? val.join('・') : val) : '未確認';
-        return `<span class="selfcheck-chip${isDone ? ' done' : ''}">${esc(item.icon)} ${esc(item.label)}${isDone ? '：' + esc(valText) : ''}</span>`;
+        return `<span class="selfcheck-chip${isDone ? ' done' : ''}">${esc(item.label)}${isDone ? '：' + esc(valText) : ''}</span>`;
       }).join('');
       if (undoneCount === 0) {
         return `
           <div class="selfcheck-intro-section" id="selfcheck-intro" style="background:rgba(16,185,129,0.05);border-color:rgba(16,185,129,0.3)">
             <div class="selfcheck-intro-header">
-              <span class="selfcheck-intro-icon">✅</span>
+              <span class="selfcheck-intro-icon"></span>
               <div style="flex:1">
                 <p class="selfcheck-intro-title" style="color:rgba(52,211,153,0.9)">現状把握データ — 登録完了</p>
                 <p class="selfcheck-intro-desc">このデータをもとにMapが最適化されています。タップで再選択できます。</p>
@@ -1577,10 +1577,10 @@ export default function NewMeNaviPage() {
       return `
         <div class="selfcheck-intro-section" id="selfcheck-intro">
           <div class="selfcheck-intro-header">
-            <span class="selfcheck-intro-icon">📍</span>
+            <span class="selfcheck-intro-icon"></span>
             <div style="flex:1">
               <p class="selfcheck-intro-title">現状把握データ（残り${undoneCount}項目）</p>
-              <p class="selfcheck-intro-desc">「📍 現状確認」バッジのステップをチェックするとMapが自分専用に最適化されます。</p>
+              <p class="selfcheck-intro-desc">「現状確認」バッジのステップをチェックするとMapが自分専用に最適化されます。</p>
             </div>
           </div>
           <div class="selfcheck-chip-list">${chips}</div>
@@ -1593,10 +1593,10 @@ export default function NewMeNaviPage() {
       if (!axisIds.length) return '';
       const chips = axisIds.map(id => {
         const def = AREA_DEFS[id] || {};
-        return `<span class="confirmed-insight-chip">${esc(def.icon || '')} ${esc(def.label || id)} — ${confirmedByAxis[id]}件の変化を確認</span>`;
+        return `<span class="confirmed-insight-chip">${esc(def.label || id)} — ${confirmedByAxis[id]}件の変化を確認</span>`;
       }).join('');
       return `<div class="confirmed-insights-widget">
-        <p class="confirmed-insights-label">🪞 あなたについて分かってきたこと</p>
+        <p class="confirmed-insights-label">あなたについて分かってきたこと</p>
         <div class="confirmed-insights-chips">${chips}</div>
       </div>`;
     }
@@ -1672,7 +1672,7 @@ export default function NewMeNaviPage() {
         const def = AREA_DEFS[step.axis] || {};
         const isDone        = isStepDone(step);
         const isCurrentStep = step.id === currentStepId;   // 「今ここ」バッジ
-        const isCompassNext = step.id === compassNextId;    // gnr-center + 🧭強調
+        const isCompassNext = step.id === compassNextId;    // gnr-center + 強調
 
         const posClass = isCompassNext ? 'gnr-center' : POS_CYCLE[posIdx % 2];
         if (!isCompassNext) posIdx++;
@@ -1684,21 +1684,21 @@ export default function NewMeNaviPage() {
         const nodeClasses = ['path-node', isDone ? 'pn-done' : '', isCompassNext ? 'pn-compass' : ''].filter(Boolean).join(' ');
 
         let nowBadge = '';
-        if (isCurrentStep && isCompassNext) nowBadge = `<span class="gmap-now-badge">🧭 今ここ</span><br>`;
-        else if (isCurrentStep)             nowBadge = `<span class="gmap-now-badge">📍 今ここ</span><br>`;
-        else if (isCompassNext)             nowBadge = `<span class="gmap-now-badge">🧭 重点</span><br>`;
+        if (isCurrentStep && isCompassNext) nowBadge = `<span class="gmap-now-badge">今ここ</span><br>`;
+        else if (isCurrentStep)             nowBadge = `<span class="gmap-now-badge">今ここ</span><br>`;
+        else if (isCompassNext)             nowBadge = `<span class="gmap-now-badge">重点</span><br>`;
 
-        const actionLabel = { quick:'⚡', habit:'🔄', ongoing:'🌊' }[step.action_type] || '';
+        const actionLabel = { quick:'', habit:'', ongoing:'' }[step.action_type] || '';
         const baselineChip = step._isBaseline ? ' <span class="gmap-baseline-chip">基礎</span>' : '';
         const habitStatusChip = step._isHabitStatus ? ' <span class="gmap-habit-chip">あなたの回答</span>' : '';
 
         let guideBadgeHtml = '';
         if (step.guide === 'HIGH') {
-          const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
-          guideBadgeHtml = `<div class="guide-badge guide-high"><span>🏥 ここはプロに任せると確実に変わる</span>${btn}</div>`;
+          const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">サービスを探す</a>` : '';
+          guideBadgeHtml = `<div class="guide-badge guide-high"><span>ここはプロに任せると確実に変わる</span>${btn}</div>`;
         } else if (step.guide === 'MID') {
-          const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
-          guideBadgeHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${btn}</div>`;
+          const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">サービスを探す</a>` : '';
+          guideBadgeHtml = `<div class="guide-badge guide-mid"><span>プロと進めると精度が上がる</span>${btn}</div>`;
         }
         const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
         const mirrorConfirmedHtml = isDone && mirrorConfirmedIds.has(step.id)
@@ -1712,7 +1712,7 @@ export default function NewMeNaviPage() {
             const diff = linkedLog.next_visit ? Math.round((new Date(linkedLog.next_visit) - new Date()) / 86400000) : null;
             let nextLabel = diff === null ? '次回未設定' : diff < 0 ? `${-diff}日前（要予約）` : diff === 0 ? '今日！' : `${diff}日後`;
             const cls = diff === null ? '' : diff < 0 ? 'slb-overdue' : diff <= 7 ? 'slb-soon' : 'slb-linked';
-            logBadgeHtml = `<a href="/mypage/log" class="step-log-badge ${cls}">📖 ${esc(linkedLog.name)} — 次回 ${esc(nextLabel)}</a>`;
+            logBadgeHtml = `<a href="/mypage/log" class="step-log-badge ${cls}">${esc(linkedLog.name)} — 次回 ${esc(nextLabel)}</a>`;
           } else {
             logBadgeHtml = `<a href="/mypage/log" class="step-log-badge">＋ 通っているサービスをLogに登録する</a>`;
           }
@@ -1724,7 +1724,7 @@ export default function NewMeNaviPage() {
         let curatedPostHtml = '';
         const relatedPost = step.related_post_id ? curatedPostsById[step.related_post_id] : null;
         if (relatedPost) {
-          const platformIcon = relatedPost.platform === 'tiktok' ? '🎵' : '📷';
+          const platformIcon = relatedPost.platform === 'tiktok' ? '' : '';
           const platformLabel = relatedPost.platform === 'tiktok' ? 'TikTok' : 'Instagram';
           const thumbHtml = relatedPost.permission_confirmed && relatedPost.thumbnail_url
             ? `<img src="${esc(relatedPost.thumbnail_url)}" alt="" class="curated-post-thumb" />` : '';
@@ -1813,7 +1813,7 @@ export default function NewMeNaviPage() {
               }).join('');
             return `<div class="mirror-basis-card">
               <div class="mb-header">
-                <span class="mb-icon">📸</span>
+                <span class="mb-icon"></span>
                 <div>
                   <p class="mb-title">${dateLabel ? `${esc(dateLabel)}のMirror分析がこのMapに反映されています` : 'Mirror分析がこのMapに反映されています'}</p>
                   <p class="mb-sub">以下の変容余地データをもとに優先順位を決定しました</p>
@@ -1841,7 +1841,7 @@ export default function NewMeNaviPage() {
               </div>`;
             }).join('');
             const mirrorBadge = mirrorAnalysisAxes?.length
-              ? `<span class="voyage-log-mirror">📸 Mirror分析済み</span>`
+              ? `<span class="voyage-log-mirror">Mirror分析済み</span>`
               : '';
             return `<div class="voyage-log">
               <div class="voyage-log-header">
@@ -1865,12 +1865,12 @@ export default function NewMeNaviPage() {
         : '';
 
       const mirrorPromoBanner = (!hasMirrorData && naviStepsData.source === 'diagnosis_only')
-        ? `<div class="mirror-promo-strip"><span>📸</span><span>Mirrorで写真を分析すると、この地図の精度が上がります</span><a href="/mypage/mirror">試す（まずは無料）→</a></div>`
+        ? `<div class="mirror-promo-strip"><span></span><span>Mirrorで写真を分析すると、この地図の精度が上がります</span><a href="/mypage/mirror">試す（まずは無料）→</a></div>`
         : '';
 
       const mirrorOnlyBanner = naviStepsData.source === 'mirror_only' ? `
         <div style="margin-bottom:16px;padding:12px 16px;background:rgba(100,160,255,0.07);border:1px solid rgba(100,160,255,0.25);border-radius:12px;display:flex;align-items:center;gap:12px">
-          <span style="font-size:22px;flex-shrink:0">📸</span>
+          <span style="font-size:22px;flex-shrink:0"></span>
           <div style="flex:1">
             <p style="font-size:11px;font-weight:800;color:rgba(100,160,255,0.8);margin:0 0 3px;letter-spacing:.06em">MIRROR データから生成</p>
             <p style="font-size:12px;color:rgba(232,228,220,0.55);margin:0;line-height:1.6">Me Scan（無料診断）を受けるとさらに精度の高いマップに更新されます</p>
@@ -1907,9 +1907,9 @@ export default function NewMeNaviPage() {
       const compassAxis = calcDynamicCompass();
       const allSteps = flattenAllSteps();
       const SECTIONS = [
-        { type: 'quick',   icon: '⚡', label: '今すぐ動ける一手',         tabLabel: '今すぐ', desc: '今日中に完了できる。まずここから動こう' },
-        { type: 'habit',   icon: '🔄', label: '毎日・毎週の習慣にする',   tabLabel: '毎日習慣', desc: '継続が変容を積み上げる。少しずつでOK' },
-        { type: 'ongoing', icon: '🌊', label: 'じっくり取り組むプログラム', tabLabel: 'じっくり', desc: '数週間〜数ヶ月スパン。覚悟して始めると変わる' },
+        { type: 'quick',   icon: '', label: '今すぐ動ける一手',         tabLabel: '今すぐ', desc: '今日中に完了できる。まずここから動こう' },
+        { type: 'habit',   icon: '', label: '毎日・毎週の習慣にする',   tabLabel: '毎日習慣', desc: '継続が変容を積み上げる。少しずつでOK' },
+        { type: 'ongoing', icon: '', label: 'じっくり取り組むプログラム', tabLabel: 'じっくり', desc: '数週間〜数ヶ月スパン。覚悟して始めると変わる' },
       ];
 
       // Compass軸の最初の未完了ステップのdoneKeyを特定（今ここバッジは全体で1個だけ）
@@ -1941,13 +1941,13 @@ export default function NewMeNaviPage() {
       const cardBorder = isApproaching ? 'rgba(200,164,90,0.3)' : 'rgba(232,228,220,0.12)';
       const stageReadinessHtml = isReady ? `
         <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:8px;margin-bottom:18px">
-          <span style="font-size:16px">🎉</span><span style="font-size:12px;font-weight:700;color:rgba(52,211,153,0.95)">このステージへ進む準備ができています！</span>
+          <span style="font-size:16px"></span><span style="font-size:12px;font-weight:700;color:rgba(52,211,153,0.95)">このステージへ進む準備ができています！</span>
         </div>` : isApproaching ? `
         <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(200,164,90,0.07);border:1px solid rgba(236,232,223,0.121);border-radius:8px;margin-bottom:18px">
-          <span style="font-size:14px">🧭</span><span style="font-size:12px;font-weight:700;color:rgba(200,164,90,0.95)">変容が着実に進んでいます。もう少しで発揮のステージへ。</span>
+          <span style="font-size:14px"></span><span style="font-size:12px;font-weight:700;color:rgba(200,164,90,0.95)">変容が着実に進んでいます。もう少しで発揮のステージへ。</span>
         </div>` : `
         <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:#151b24;border:1px dashed rgba(232,228,220,0.18);border-radius:8px;margin-bottom:18px">
-          <span style="font-size:14px">🔒</span><span style="font-size:12px;color:rgba(232,228,220,0.50);line-height:1.6">まずは変容ルートを歩もう。変化が積み重なるほど、このステージが近づいてくる。</span>
+          <span style="font-size:14px"></span><span style="font-size:12px;color:rgba(232,228,220,0.50);line-height:1.6">まずは変容ルートを歩もう。変化が積み重なるほど、このステージが近づいてくる。</span>
         </div>`;
 
       let html = buildSelfCheckIntroHtml() + tabBarHtml;
@@ -1999,7 +1999,7 @@ export default function NewMeNaviPage() {
           const art = insertBefore.get(i);
           const artHtml = art ? `
             <a href="${esc(TRACK.articlePath(art.slug))}" class="trail-article-node" target="_blank">
-              <span class="trail-article-icon">📖</span>
+              <span class="trail-article-icon"></span>
               <div class="trail-article-body">
                 <p class="trail-article-label">この一歩を踏み出す前に読む</p>
                 <p class="trail-article-title">${esc(art.title)}</p>
@@ -2043,12 +2043,12 @@ export default function NewMeNaviPage() {
           ${stageReadinessHtml}
           <div style="display:flex;flex-direction:column;gap:12px">
             <a href="/search?category=photo" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none">
-              <span style="font-size:26px;flex-shrink:0">📸</span>
+              <span style="font-size:26px;flex-shrink:0"></span>
               <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Shippori Mincho',Georgia,serif">プロフィール写真撮影</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">変わった自分を、最高の一枚に。マッチングアプリの第一印象を決定的に変える。</p></div>
               <span style="color:rgba(200,164,90,0.6);font-size:16px;flex-shrink:0">→</span>
             </a>
             <a href="/search?category=marriage" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none">
-              <span style="font-size:26px;flex-shrink:0">💍</span>
+              <span style="font-size:26px;flex-shrink:0"></span>
               <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Shippori Mincho',Georgia,serif">婚活サポート</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">自信がついた今が、出会いを本気にするタイミング。変容の先にある、本当の出会いへ。</p></div>
               <span style="color:rgba(200,164,90,0.6);font-size:16px;flex-shrink:0">→</span>
             </a>
@@ -2122,22 +2122,22 @@ export default function NewMeNaviPage() {
         : (isHigh || isMid) ? 'gm-c-active'
         : 'gm-c-future';
       const nodeClasses = ['path-node', isDone ? 'pn-done' : '', isCompassStep && !isDone ? 'pn-compass' : ''].filter(Boolean).join(' ');
-      const nowBadge = isGlobalCurrent ? `<span class="gmap-now-badge">🧭 今ここ</span><br>` : '';
-      const selfCheckBadge = step.isSelfCheck ? `<span class="gmap-selfcheck-badge">📋 現状確認</span><br>` : '';
+      const nowBadge = isGlobalCurrent ? `<span class="gmap-now-badge">今ここ</span><br>` : '';
+      const selfCheckBadge = step.isSelfCheck ? `<span class="gmap-selfcheck-badge">現状確認</span><br>` : '';
       const selfCheckValue = (step.isSelfCheck && bodyData[step.bodyDataKey])
         ? `<span class="selfcheck-value">✓ ${esc(Array.isArray(bodyData[step.bodyDataKey]) ? bodyData[step.bodyDataKey].join('・') : bodyData[step.bodyDataKey])}</span>` : '';
       let guideBadgeHtml = '';
       if (isHigh) {
-        const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
-        guideBadgeHtml = `<div class="guide-badge guide-high"><span>🏥 ここはプロに任せると確実に変わる</span>${btn}</div>`;
+        const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">サービスを探す</a>` : '';
+        guideBadgeHtml = `<div class="guide-badge guide-high"><span>ここはプロに任せると確実に変わる</span>${btn}</div>`;
       } else if (isMid) {
-        const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
-        guideBadgeHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${btn}</div>`;
+        const btn = def.catLink ? `<a href="/search?category=${esc(def.catLink)}&diag=1" class="guide-find-btn">サービスを探す</a>` : '';
+        guideBadgeHtml = `<div class="guide-badge guide-mid"><span>プロと進めると精度が上がる</span>${btn}</div>`;
       }
       const hintHtml   = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
-      const noteHtml   = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
+      const noteHtml   = step.note ? `<div class="milestone-note">${esc(step.note)}</div>` : '';
       const detailId   = `detail-${axisKey}-${idx}`;
-      const detailHtml = step.detail ? `<button class="step-detail-toggle" onclick="(function(btn){const panel=document.getElementById('${detailId}');panel.classList.toggle('open');btn.classList.toggle('open');btn.textContent=panel.classList.contains('open')?'▲ 閉じる':'📖 答えを見る';})(this)">📖 答えを見る</button><div class="step-detail-panel" id="${detailId}">${esc(step.detail)}</div>` : '';
+      const detailHtml = step.detail ? `<button class="step-detail-toggle" onclick="(function(btn){const panel=document.getElementById('${detailId}');panel.classList.toggle('open');btn.classList.toggle('open');btn.textContent=panel.classList.contains('open')?'▲ 閉じる':'答えを見る';})(this)">答えを見る</button><div class="step-detail-panel" id="${detailId}">${esc(step.detail)}</div>` : '';
       const svcCardId  = (isHigh || isMid) && def.catLink ? `svc-${axisKey}-${idx}` : null;
       const svcCardHtml = svcCardId ? `<div id="${esc(svcCardId)}" class="inline-service-card" data-svc-cat="${esc(def.catLink)}"></div>` : '';
       let productsHtml = '';
@@ -2155,7 +2155,7 @@ export default function NewMeNaviPage() {
           .map((prod, pi) => {
             const prodKey = `prod-${axisKey}-${idx}-${pi}`;
             const isProdDone = !!stepDone[prodKey];
-            return `<a href="${esc(prod.url)}" target="_blank" rel="noopener noreferrer" class="product-chip">🛒 ${esc(prod.name)}</a><button class="product-check-btn${isProdDone?' checked':''}" data-done-key="${esc(prodKey)}">${isProdDone?'✓ 使用中':'使ってる？'}</button>`;
+            return `<a href="${esc(prod.url)}" target="_blank" rel="noopener noreferrer" class="product-chip">${esc(prod.name)}</a><button class="product-check-btn${isProdDone?' checked':''}" data-done-key="${esc(prodKey)}">${isProdDone?'✓ 使用中':'使ってる？'}</button>`;
           }).join('');
         if (chips) productsHtml = `<div class="product-suggestions">${chips}</div>`;
       }
@@ -2192,18 +2192,18 @@ export default function NewMeNaviPage() {
       // ── フォールバック表示 + 生成CTAバナー ──
       const genCtaBanner = token ? `
         <div id="navi-gen-banner" style="margin-bottom:20px;padding:16px 18px;background:linear-gradient(135deg,rgba(200,164,90,0.10),rgba(13,17,23,0.30));border:1px solid rgba(236,232,223,0.165);border-radius:14px">
-          <p style="font-size:12px;font-weight:800;color:rgba(200,164,90,0.85);margin:0 0 4px;letter-spacing:.04em">✨ あなただけの変容の道を生成できます</p>
+          <p style="font-size:12px;font-weight:800;color:rgba(200,164,90,0.85);margin:0 0 4px;letter-spacing:.04em">あなただけの変容の道を生成できます</p>
           <p style="font-size:11px;color:rgba(232,228,220,0.55);margin:0 0 12px;line-height:1.6">Me Scanの診断データをAIが読み取り、この人だけの順番と内容でステップを生成します。</p>
           <button id="navi-regen-btn" style="display:block;width:100%;padding:11px;background:rgba(200,164,90,0.18);border:1px solid rgba(236,232,223,0.248);border-radius:8px;color:#c8a45a;font-size:13px;font-weight:800;cursor:pointer;font-family:'Noto Sans JP',sans-serif;letter-spacing:.05em">
-            🧭 変容の道を生成する
+            変容の道を生成する
           </button>
         </div>` : '';
 
       const allSteps = flattenAllSteps();
       const SECTIONS = [
-        { type: 'quick',   icon: '⚡', tabLabel: '今すぐ',   label: '今すぐ動ける一手',           desc: '今日中に完了できる。まずここから動こう' },
-        { type: 'habit',   icon: '🔄', tabLabel: '毎日習慣', label: '毎日・毎週の習慣にする',     desc: '継続が変容を積み上げる。少しずつでOK' },
-        { type: 'ongoing', icon: '🌊', tabLabel: 'じっくり', label: 'じっくり取り組むプログラム', desc: '数週間〜数ヶ月スパン。覚悟して始めると変わる' },
+        { type: 'quick',   icon: '', tabLabel: '今すぐ',   label: '今すぐ動ける一手',           desc: '今日中に完了できる。まずここから動こう' },
+        { type: 'habit',   icon: '', tabLabel: '毎日習慣', label: '毎日・毎週の習慣にする',     desc: '継続が変容を積み上げる。少しずつでOK' },
+        { type: 'ongoing', icon: '', tabLabel: 'じっくり', label: 'じっくり取り組むプログラム', desc: '数週間〜数ヶ月スパン。覚悟して始めると変わる' },
       ];
       const POS_CYCLE = ['gnr-left', 'gnr-right'];
       const compassFirstUndoneKey = getNextUndoneSteps(1)[0]?.doneKey ?? null;
@@ -2257,7 +2257,7 @@ export default function NewMeNaviPage() {
           if (art) {
             html += `<div class="gmap-article-row">
               <a href="${esc(TRACK.articlePath(art.slug))}" class="gmap-article-node" target="_blank">
-                <span class="gmap-article-icon">📖</span>
+                <span class="gmap-article-icon"></span>
                 <div class="gmap-article-body">
                   <p class="gmap-article-label">この一歩を踏み出す前に読む</p>
                   <p class="gmap-article-title">${esc(art.title)}</p>
@@ -2283,10 +2283,10 @@ export default function NewMeNaviPage() {
       const cardBg = isApproaching ? 'linear-gradient(135deg,rgba(200,164,90,0.10),rgba(13,17,23,0.30))' : 'rgba(13,17,23,0.35)';
       const cardBorder = isApproaching ? 'rgba(200,164,90,0.3)' : 'rgba(232,228,220,0.12)';
       const stageReadinessHtml = isReady
-        ? `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:8px;margin-bottom:18px"><span style="font-size:16px">🎉</span><span style="font-size:12px;font-weight:700;color:rgba(52,211,153,0.95)">このステージへ進む準備ができています！</span></div>`
+        ? `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:8px;margin-bottom:18px"><span style="font-size:16px"></span><span style="font-size:12px;font-weight:700;color:rgba(52,211,153,0.95)">このステージへ進む準備ができています！</span></div>`
         : isApproaching
-        ? `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(200,164,90,0.07);border:1px solid rgba(236,232,223,0.121);border-radius:8px;margin-bottom:18px"><span style="font-size:14px">🧭</span><span style="font-size:12px;font-weight:700;color:rgba(200,164,90,0.95)">変容が着実に進んでいます。もう少しで発揮のステージへ。</span></div>`
-        : `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:#151b24;border:1px dashed rgba(232,228,220,0.18);border-radius:8px;margin-bottom:18px"><span style="font-size:14px">🔒</span><span style="font-size:12px;color:rgba(232,228,220,0.50);line-height:1.6">まずは変容ルートを歩もう。変化が積み重なるほど、このステージが近づいてくる。</span></div>`;
+        ? `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(200,164,90,0.07);border:1px solid rgba(236,232,223,0.121);border-radius:8px;margin-bottom:18px"><span style="font-size:14px"></span><span style="font-size:12px;font-weight:700;color:rgba(200,164,90,0.95)">変容が着実に進んでいます。もう少しで発揮のステージへ。</span></div>`
+        : `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:#151b24;border:1px dashed rgba(232,228,220,0.18);border-radius:8px;margin-bottom:18px"><span style="font-size:14px"></span><span style="font-size:12px;color:rgba(232,228,220,0.50);line-height:1.6">まずは変容ルートを歩もう。変化が積み重なるほど、このステージが近づいてくる。</span></div>`;
       html += `<svg viewBox="0 0 100 32" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:32px;display:block;margin-top:8px"><line x1="50" y1="0" x2="50" y2="32" stroke="rgba(200,164,90,0.45)" stroke-width="2" stroke-dasharray="5 4"/></svg>
         <div style="padding:16px 0 8px">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
@@ -2299,12 +2299,12 @@ export default function NewMeNaviPage() {
           ${stageReadinessHtml}
           <div style="display:flex;flex-direction:column;gap:12px">
             <a href="/search?category=photo" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none">
-              <span style="font-size:26px;flex-shrink:0">📸</span>
+              <span style="font-size:26px;flex-shrink:0"></span>
               <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Shippori Mincho',Georgia,serif">プロフィール写真撮影</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">変わった自分を、最高の一枚に。マッチングアプリの第一印象を決定的に変える。</p></div>
               <span style="color:rgba(200,164,90,0.6);font-size:16px;flex-shrink:0">→</span>
             </a>
             <a href="/search?category=marriage" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none">
-              <span style="font-size:26px;flex-shrink:0">💍</span>
+              <span style="font-size:26px;flex-shrink:0"></span>
               <div style="flex:1"><p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Shippori Mincho',Georgia,serif">婚活サポート</p><p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">自信がついた今が、出会いを本気にするタイミング。変容の先にある、本当の出会いへ。</p></div>
               <span style="color:rgba(200,164,90,0.6);font-size:16px;flex-shrink:0">→</span>
             </a>
@@ -2478,7 +2478,7 @@ export default function NewMeNaviPage() {
           const done = selected.includes(key);
           items.push({
             id: `habit-${axisId}-${key}`, axis: axisId,
-            text: `${done ? '✓' : '☐'} ${label}`,
+            text: `${done ? '✓' : ''} ${label}`,
             action_type: 'quick', guide: 'none',
             _isHabitStatus: true, _autoDone: done,
           });
@@ -2529,11 +2529,11 @@ export default function NewMeNaviPage() {
 
     // ── goal_scene（複数選択対応・後方互換） ──
     const GOAL_SCENE_LABELS = {
-      first_impression: { icon:'🫀', label:'初対面' },
-      date_confidence:  { icon:'💫', label:'デート' },
-      photo_self:       { icon:'📸', label:'写真映え' },
-      morning_mirror:   { icon:'🌅', label:'朝の鏡' },
-      approach:         { icon:'🚀', label:'積極行動' },
+      first_impression: { icon:'', label:'初対面' },
+      date_confidence:  { icon:'', label:'デート' },
+      photo_self:       { icon:'', label:'写真映え' },
+      morning_mirror:   { icon:'', label:'朝の鏡' },
+      approach:         { icon:'', label:'積極行動' },
     };
     const rawGoalScene = p.goal_scene;
     const goalScenes = Array.isArray(rawGoalScene)
@@ -2546,7 +2546,7 @@ export default function NewMeNaviPage() {
         .filter(v => GOAL_SCENE_LABELS[v])
         .map(v => {
           const g = GOAL_SCENE_LABELS[v];
-          return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:rgba(200,164,90,0.09);border:1px solid rgba(236,232,223,0.121);color:rgba(232,228,220,0.80);white-space:nowrap">${esc(g.icon)} ${esc(g.label)}</span>`;
+          return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:rgba(200,164,90,0.09);border:1px solid rgba(236,232,223,0.121);color:rgba(232,228,220,0.80);white-space:nowrap">${esc(g.label)}</span>`;
         }).join('');
       if (!pills) return '';
       return `<div style="margin:0 0 16px;padding:10px 14px;background:#151b24;border:1px solid rgba(236,232,223,0.083);border-radius:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -2562,9 +2562,9 @@ export default function NewMeNaviPage() {
       ease:      ['eyebrow','skin','hair','teeth','fashion','nail','body'],
     };
     const PATTERN_LABELS = {
-      recommend: '📍 推奨ルート',
-      impact:    '👁 印象インパクト',
-      ease:      '🚶 取り組みやすさ',
+      recommend: '推奨ルート',
+      impact:    '印象インパクト',
+      ease:      '取り組みやすさ',
     };
     const PATTERN_DESCS = {
       recommend: 'Me Scanの診断結果に基づく推奨順',
@@ -2628,7 +2628,7 @@ export default function NewMeNaviPage() {
           || naviStepsData.steps.find(s => !stepDone[s.id]);
         if (!aiNext) {
           return `<div class="compass-strip" id="compass-strip">
-            <div class="compass-strip-icon">🎉</div>
+            <div class="compass-strip-icon"></div>
             <div class="compass-strip-body">
               <p class="compass-strip-label">Fineme Compass</p>
               <p class="compass-strip-text">すべてのステップが完了しています</p>
@@ -2641,7 +2641,7 @@ export default function NewMeNaviPage() {
         const steps = getNextUndoneSteps(1);
         if (!steps.length) {
           return `<div class="compass-strip" id="compass-strip">
-            <div class="compass-strip-icon">🎉</div>
+            <div class="compass-strip-icon"></div>
             <div class="compass-strip-body">
               <p class="compass-strip-label">Fineme Compass</p>
               <p class="compass-strip-text">すべてのステップが完了しています</p>
@@ -2653,11 +2653,11 @@ export default function NewMeNaviPage() {
       }
       const shortText = nextText.length > 30 ? nextText.slice(0, 30) + '…' : nextText;
       return `<div class="compass-strip" id="compass-strip">
-        <div class="compass-strip-icon">🧭</div>
+        <div class="compass-strip-icon"></div>
         <div class="compass-strip-body">
           <p class="compass-strip-label">Fineme Compass — 次の一手</p>
           <p class="compass-strip-text">${esc(shortText)}</p>
-          <p style="font-size:11px;color:rgba(200,164,90,0.55);margin:3px 0 0">${esc(nextDef.icon)} ${esc(nextDef.label)}</p>
+          <p style="font-size:11px;color:rgba(200,164,90,0.55);margin:3px 0 0">${esc(nextDef.label)}</p>
         </div>
         <a href="#sections-container" class="compass-strip-cta" onclick="event.preventDefault();document.getElementById('sections-container')?.scrollIntoView({behavior:'smooth'})">見る</a>
       </div>`;
@@ -2721,10 +2721,10 @@ export default function NewMeNaviPage() {
         const nextAxisId = priorityOrder.find(id => axisProgress[id] !== 'done' && id !== compassAxis);
         const nextDef = nextAxisId ? AREA_DEFS[nextAxisId] : null;
         nextTargetHtml = `<div class="jov-next-target" style="border-color:rgba(52,211,153,0.3);background:rgba(16,185,129,0.06)">
-            <span style="font-size:18px">✅</span>
+            <span style="font-size:18px"></span>
             <div class="jov-next-target-text">
               <p class="jov-next-target-label" style="color:rgba(52,211,153,0.9)">この軸の旅は完了しました</p>
-              <p class="jov-next-target-desc">${nextDef ? `次は ${esc(nextDef.icon)} ${esc(nextDef.label)}軸へ進みましょう` : esc(wp.goal)}</p>
+              <p class="jov-next-target-desc">${nextDef ? `次は ${esc(nextDef.label)}軸へ進みましょう` : esc(wp.goal)}</p>
             </div>
           </div>`;
       } else {
@@ -2733,10 +2733,10 @@ export default function NewMeNaviPage() {
         const nextDef2 = nextAxisId2 ? AREA_DEFS[nextAxisId2] : null;
         nextTargetHtml = `
           <div class="jov-next-target" style="border-color:rgba(52,211,153,0.3);background:rgba(16,185,129,0.06)">
-            <span style="font-size:18px">🎉</span>
+            <span style="font-size:18px"></span>
             <div class="jov-next-target-text">
               <p class="jov-next-target-label" style="color:rgba(52,211,153,0.9)">ゴール達成！</p>
-              <p class="jov-next-target-desc">${nextDef2 ? `次は ${esc(nextDef2.icon)} ${esc(nextDef2.label)}軸へ進みましょう` : 'すべての軸の旅が完成しました 🎊'}</p>
+              <p class="jov-next-target-desc">${nextDef2 ? `次は ${esc(nextDef2.label)}軸へ進みましょう` : 'すべての軸の旅が完成しました '}</p>
             </div>
           </div>`;
       }
@@ -2763,10 +2763,10 @@ export default function NewMeNaviPage() {
 
       return `
         <div class="jov-section" id="jov-section">
-          <div class="sec-label">🗺️ 変容の旅 — 全体図</div>
+          <div class="sec-label">変容の旅 — 全体図</div>
           <div class="jov-hero">
             <div class="jov-hero-axis">
-              <span class="jov-hero-icon">${esc(compassDef.icon||'🧭')}</span>
+              <span class="jov-hero-icon">${esc(compassDef.icon||'')}</span>
               <div>
                 <p class="jov-hero-sub">Compass — 今向くべき方角</p>
                 <p class="jov-hero-title">${esc(compassDef.label||'')}軸の変容ロードマップ</p>
@@ -2812,7 +2812,7 @@ export default function NewMeNaviPage() {
       if (allDone) return '';
       return `
         <div class="prereq-banner" id="prereq-banner">
-          <div class="prereq-banner-icon">📋</div>
+          <div class="prereq-banner-icon"></div>
           <div class="prereq-banner-body">
             <p class="prereq-banner-title">まず「出発前チェック」から始めよう</p>
             <p class="prereq-banner-desc">各停留所を展開すると出発前チェックが確認できます ·
@@ -2870,19 +2870,19 @@ export default function NewMeNaviPage() {
         const labelHtml = isCurrentPosition ? '<span class="milestone-current-tag">★ 現在地</span>' : '';
         let guideHtml = '';
         if (step.guide === 'HIGH') {
-          const btn = catLink ? `<a href="/search?category=${esc(catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
-          guideHtml = `<div class="guide-badge guide-high"><span>🏥 ここはプロに任せると確実に変わる</span>${btn}</div>`;
+          const btn = catLink ? `<a href="/search?category=${esc(catLink)}&diag=1" class="guide-find-btn">サービスを探す</a>` : '';
+          guideHtml = `<div class="guide-badge guide-high"><span>ここはプロに任せると確実に変わる</span>${btn}</div>`;
         } else if (step.guide === 'MID') {
-          const btn = catLink ? `<a href="/search?category=${esc(catLink)}&diag=1" class="guide-find-btn">🔍 サービスを探す</a>` : '';
-          guideHtml = `<div class="guide-badge guide-mid"><span>📋 プロと進めると精度が上がる</span>${btn}</div>`;
+          const btn = catLink ? `<a href="/search?category=${esc(catLink)}&diag=1" class="guide-find-btn">サービスを探す</a>` : '';
+          guideHtml = `<div class="guide-badge guide-mid"><span>プロと進めると精度が上がる</span>${btn}</div>`;
         } else if (step.guide === 'LOW') {
-          guideHtml = `<span class="guide-badge guide-low">🏥</span>`;
+          guideHtml = `<span class="guide-badge guide-low"></span>`;
         }
-        const noteHtml = step.note ? `<div class="milestone-note">💡 ${esc(step.note)}</div>` : '';
+        const noteHtml = step.note ? `<div class="milestone-note">${esc(step.note)}</div>` : '';
         const hintHtml = step.hint ? `<p class="step-hint">${esc(step.hint)}</p>` : '';
         const mDetailId = `detail-${axisKey}-${step._oi}`;
         const mDetailHtml = step.detail ? `
-          <button class="step-detail-toggle" onclick="(function(btn){const panel=document.getElementById('${mDetailId}');panel.classList.toggle('open');btn.classList.toggle('open');btn.textContent=panel.classList.contains('open')?'▲ 閉じる':'📖 答えを見る';})(this)">📖 答えを見る</button>
+          <button class="step-detail-toggle" onclick="(function(btn){const panel=document.getElementById('${mDetailId}');panel.classList.toggle('open');btn.classList.toggle('open');btn.textContent=panel.classList.contains('open')?'▲ 閉じる':'答えを見る';})(this)">答えを見る</button>
           <div class="step-detail-panel" id="${mDetailId}">${esc(step.detail)}</div>` : '';
         const mSvcId = (step.guide === 'HIGH' || step.guide === 'MID') && catLink ? `svc-${axisKey}-${step._oi}` : null;
         const mSvcHtml = mSvcId ? `<div id="${esc(mSvcId)}" class="inline-service-card" data-svc-cat="${esc(catLink)}"></div>` : '';
@@ -2907,7 +2907,7 @@ export default function NewMeNaviPage() {
             .map(({ prod, pi }) => {
               const prodKey = `prod-${axisKey}-${step._oi}-${pi}`;
               const isProdDone = !!stepDone[prodKey];
-              return `<a href="${esc(prod.url)}" target="_blank" rel="noopener noreferrer" class="product-chip">🛒 ${esc(prod.name)}</a><button class="product-check-btn${isProdDone?' checked':''}" data-done-key="${esc(prodKey)}" title="${isProdDone?'使用中を取り消す':'使っている・試した'}">${isProdDone?'✓ 使用中':'使ってる？'}</button>`;
+              return `<a href="${esc(prod.url)}" target="_blank" rel="noopener noreferrer" class="product-chip">${esc(prod.name)}</a><button class="product-check-btn${isProdDone?' checked':''}" data-done-key="${esc(prodKey)}" title="${isProdDone?'使用中を取り消す':'使っている・試した'}">${isProdDone?'✓ 使用中':'使ってる？'}</button>`;
             }).join('');
           if (chips) productsHtml = `<div class="product-suggestions">${chips}</div>`;
         }
@@ -2988,7 +2988,7 @@ export default function NewMeNaviPage() {
           }
         } catch {}
         const streakHtml = streakCount > 0
-          ? '<span class="habit-streak">🔥 ' + streakCount + '日</span>'
+          ? '<span class="habit-streak">' + streakCount + '日</span>'
           : '<span class="habit-streak" style="opacity:.2">—</span>';
         return '<div class="habit-item">'
           + '<span class="habit-item-text">' + esc(step.text) + '</span>'
@@ -3024,7 +3024,7 @@ export default function NewMeNaviPage() {
 
       // 状態インジケーター
       const dotClass = isDoneAxis ? 'sic-done' : isCompass ? 'sic-current' : statusVal === 'active' ? 'sic-active' : 'sic-future';
-      const stateLabel = isDoneAxis ? 'ひと段落 ✅' : isCompass ? '今ここ 🧭' : statusVal === 'active' ? '取り組み中 🔵' : getCareLabel(careType);
+      const stateLabel = isDoneAxis ? 'ひと段落 ' : isCompass ? '今ここ ' : statusVal === 'active' ? '取り組み中 ' : getCareLabel(careType);
 
       if (!isExpanded) {
         // ── 折りたたみミニカード ──
@@ -3058,8 +3058,8 @@ export default function NewMeNaviPage() {
         const headerNoteHtml = subData.headerNote ? `<p class="subtab-header-note">ℹ️ ${esc(subData.headerNote)}</p>` : '';
         milestoneHtml = `
           <div class="subtab-wrap">
-            <button class="subtab-btn${skinFocus==='care'?' active':''}" data-subtab="skin" data-val="care">✨ スキンケア</button>
-            ${trackId === 'fineme' ? `<button class="subtab-btn${skinFocus==='hige'?' active':''}" data-subtab="skin" data-val="hige">🪒 ひげケア</button>` : ''}
+            <button class="subtab-btn${skinFocus==='care'?' active':''}" data-subtab="skin" data-val="care">スキンケア</button>
+            ${trackId === 'fineme' ? `<button class="subtab-btn${skinFocus==='hige'?' active':''}" data-subtab="skin" data-val="hige">ひげケア</button>` : ''}
           </div>
           ${headerNoteHtml}
           ${buildMilestoneItems(steps, careType, true, def.catLink, subKey)}
@@ -3071,8 +3071,8 @@ export default function NewMeNaviPage() {
         const orthoNote = subData.note ? `<p class="subtab-note">${esc(subData.note)}</p>` : '';
         milestoneHtml = `
           <div class="subtab-wrap">
-            <button class="subtab-btn${teethFocus==='white'?' active':''}" data-subtab="teeth" data-val="white">🦷 ホワイトニング</button>
-            <button class="subtab-btn${teethFocus==='ortho'?' active':''}" data-subtab="teeth" data-val="ortho">😬 歯並び（矯正）</button>
+            <button class="subtab-btn${teethFocus==='white'?' active':''}" data-subtab="teeth" data-val="white">ホワイトニング</button>
+            <button class="subtab-btn${teethFocus==='ortho'?' active':''}" data-subtab="teeth" data-val="ortho">歯並び（矯正）</button>
           </div>
           ${orthoNote}
           ${buildMilestoneItems(steps, careType, true, def.catLink, subKey)}
@@ -3082,13 +3082,13 @@ export default function NewMeNaviPage() {
         milestoneHtml = buildMilestoneItems(steps, careType, true, def.catLink, id);
       }
 
-      const compassBadge = isCompass ? '<span class="compass-pointing-badge">🧭 今ここ</span>' : '';
-      const STATUS_BTN_LABELS = { '': '○ 未着手', 'active': '🔵 取り組み中', 'done': '✅ ひと段落' };
+      const compassBadge = isCompass ? '<span class="compass-pointing-badge">今ここ</span>' : '';
+      const STATUS_BTN_LABELS = { '': '○ 未着手', 'active': '取り組み中', 'done': 'ひと段落' };
       return `
         <div class="station ${posClass}" id="station-${id}">
           <div class="station-card">
             <div class="station-card-header">
-              <div class="station-title">${esc(def.icon)} ${esc(def.label)}${compassBadge}</div>
+              <div class="station-title">${esc(def.label)}${compassBadge}</div>
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
                 <span class="track-tier-badge tb-${def.tier}">${esc(TIER_LABELS[def.tier]||'')}</span>
                 <span class="track-care-badge">${esc(getCareLabel(careType))}</span>
@@ -3125,12 +3125,12 @@ export default function NewMeNaviPage() {
 
             ${def.articleQ ? `
             <a href="${esc(TRACK.articlesSearch(def.articleQ))}" class="track-article-link">
-              📖 この軸に関連する読み物を見る →
+              この軸に関連する読み物を見る →
             </a>` : ''}
 
             <div class="track-action">
               <a href="/search?category=${esc(def.catLink)}&diag=1" class="track-action-link">
-                ${esc(def.icon)} ${esc(def.label)}のプロを探す →
+                ${esc(def.label)}のプロを探す →
               </a>
               <button class="track-status-btn" data-axis="${esc(id)}" data-status="${esc(statusVal)}">
                 ${esc(STATUS_BTN_LABELS[statusVal] || '○ 未着手')}
@@ -3169,7 +3169,7 @@ export default function NewMeNaviPage() {
             <line x1="${firstX}" y1="40" x2="${firstX}" y2="64" stroke="rgba(200,164,90,0.55)" stroke-width="2" stroke-dasharray="5 4"/>
           </svg>
           <div style="position:absolute;top:4px;left:${firstX}%;transform:translateX(-50%);text-align:center;line-height:1.2;pointer-events:none">
-            <div style="font-size:24px">🏁</div>
+            <div style="font-size:24px"></div>
             <div style="font-size:9px;font-weight:800;letter-spacing:.1em;color:rgba(200,164,90,0.7);text-transform:uppercase;margin-top:2px">出発点</div>
           </div>
         </div>
@@ -3189,7 +3189,7 @@ export default function NewMeNaviPage() {
           <line x1="${lastX}" y1="0" x2="50" y2="38" stroke="rgba(200,164,90,0.55)" stroke-width="2" stroke-dasharray="5 4"/>
         </svg>
         <div style="text-align:center;padding:4px 0 28px">
-          <div style="font-size:24px;margin-bottom:4px">⭐</div>
+          <div style="font-size:24px;margin-bottom:4px"></div>
           <p style="font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(200,164,90,0.7);margin:0 0 4px">ゴール</p>
           <p style="font-size:14px;font-weight:700;color:rgba(232,228,220,0.90);margin:0">${esc(overallGoal)}</p>
         </div>
@@ -3202,17 +3202,17 @@ export default function NewMeNaviPage() {
 
       const stageReadinessHtml = isReady ? `
         <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:8px;margin-bottom:18px">
-          <span style="font-size:16px">🎉</span>
+          <span style="font-size:16px"></span>
           <span style="font-size:12px;font-weight:700;color:rgba(52,211,153,0.95)">このステージへ進む準備ができています！</span>
         </div>
       ` : isApproaching ? `
         <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(200,164,90,0.07);border:1px solid rgba(236,232,223,0.121);border-radius:8px;margin-bottom:18px">
-          <span style="font-size:14px">🧭</span>
+          <span style="font-size:14px"></span>
           <span style="font-size:12px;font-weight:700;color:rgba(200,164,90,0.95)">変容が着実に進んでいます。もう少しで発揮のステージへ。</span>
         </div>
       ` : `
         <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:#151b24;border:1px dashed rgba(232,228,220,0.18);border-radius:8px;margin-bottom:18px">
-          <span style="font-size:14px">🔒</span>
+          <span style="font-size:14px"></span>
           <span style="font-size:12px;color:rgba(232,228,220,0.50);line-height:1.6">まずは上の変容ルートを歩もう。変化が積み重なるほど、このステージが近づいてくる。</span>
         </div>
       `;
@@ -3240,7 +3240,7 @@ export default function NewMeNaviPage() {
 
           <div style="display:flex;flex-direction:column;gap:12px">
             <a href="/search?category=photo" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none;transition:border-color .2s">
-              <span style="font-size:26px;flex-shrink:0">📸</span>
+              <span style="font-size:26px;flex-shrink:0"></span>
               <div style="flex:1">
                 <p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Shippori Mincho',Georgia,serif">プロフィール写真撮影</p>
                 <p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">変わった自分を、最高の一枚に。マッチングアプリの第一印象を決定的に変える。</p>
@@ -3248,7 +3248,7 @@ export default function NewMeNaviPage() {
               <span style="color:rgba(200,164,90,0.6);font-size:16px;flex-shrink:0">→</span>
             </a>
             <a href="/search?category=marriage" style="display:flex;align-items:center;gap:16px;padding:16px 18px;background:${cardBg};border:1px solid ${cardBorder};border-radius:14px;text-decoration:none;transition:border-color .2s">
-              <span style="font-size:26px;flex-shrink:0">💍</span>
+              <span style="font-size:26px;flex-shrink:0"></span>
               <div style="flex:1">
                 <p style="font-size:14px;font-weight:800;color:rgba(232,228,220,0.90);margin:0 0 4px;font-family:'Shippori Mincho',Georgia,serif">婚活サポート</p>
                 <p style="font-size:12px;color:rgba(232,228,220,0.60);margin:0;line-height:1.6">自信がついた今が、出会いを本気にするタイミング。変容の先にある、本当の出会いへ。</p>
@@ -3295,7 +3295,7 @@ export default function NewMeNaviPage() {
       if (!cards) return '';
       const hasMatch = userConcerns.size > 0 && naviProducts.some(p => (p.target_concerns||[]).some(c => userConcerns.has(c)));
       return `<div class="navi-products-section">
-        <p class="sec-label">🛒 旅に役立つアイテム</p>
+        <p class="sec-label">旅に役立つアイテム</p>
         <p style="font-size:11px;color:rgba(232,228,220,0.35);margin:0 0 10px;line-height:1.5">${hasMatch ? 'あなたのプロフィールに合うアイテムが見つかりました ✦' : 'あなたのCompass軸に関連するアイテム'} ← スワイプで全部見る</p>
         <div class="navi-product-carousel">${cards}</div>
       </div>`;
@@ -3309,7 +3309,7 @@ export default function NewMeNaviPage() {
             <span class="sl-widget-eyebrow">New Me Log</span>
             <a href="/mypage/log" class="sl-widget-link">管理する →</a>
           </div>
-          <p class="sl-widget-empty-text">📖 通っているサービスをまだ登録していません。<br>
+          <p class="sl-widget-empty-text">通っているサービスをまだ登録していません。<br>
             <a href="/mypage/log" style="color:#c8a45a;text-decoration:underline">登録して変容の旅を一元管理しよう</a>
           </p>
         </div>`;
@@ -3334,7 +3334,7 @@ export default function NewMeNaviPage() {
         else if (diff <= 7)     { nextLabel = `${diff}日後`; nextCls = 'sl-next-soon'; }
         else                    { nextLabel = `${diff}日後`; nextCls = ''; }
         return `<div class="sl-item">
-          <span class="sl-item-icon">${esc(def.icon || '🏥')}</span>
+          <span class="sl-item-icon">${esc(def.icon || '')}</span>
           <div class="sl-item-body">
             <p class="sl-item-name">${esc(log.name)}</p>
             <span class="sl-next-badge ${nextCls}">次回 ${esc(nextLabel)}</span>
@@ -3344,7 +3344,7 @@ export default function NewMeNaviPage() {
 
       return `<div class="sl-widget">
         <div class="sl-widget-head">
-          <span class="sl-widget-eyebrow">📖 New Me Log</span>
+          <span class="sl-widget-eyebrow">New Me Log</span>
           <a href="/mypage/log" class="sl-widget-link">すべて見る →</a>
         </div>
         <div class="sl-items">${items}</div>
@@ -3353,7 +3353,7 @@ export default function NewMeNaviPage() {
 
     // ── Today's Quest ──
     function buildTodayQuestHtml() {
-      if (naviStepsData?.steps?.length) return ''; // AI Mapでは地図上の🧭バッジで代替
+      if (naviStepsData?.steps?.length) return ''; // AI Mapでは地図上のバッジで代替
       const steps = getNextUndoneSteps(3);
       if (!steps.length) return '';
       const itemsHtml = steps.map((s, i) => {
@@ -3362,14 +3362,14 @@ export default function NewMeNaviPage() {
         const fontSize = i === 0 ? '' : ' style="font-size:13px;font-weight:700"';
         return `<div class="tq-item">
           <div class="tq-item-head">
-            <span class="tq-item-axis">${esc(def.icon)} ${esc(def.label)}</span>
+            <span class="tq-item-axis">${esc(def.label)}</span>
             <button class="tq-check-btn${isDone?' done':''}" data-done-key="${esc(doneKey)}">${isDone ? '✓ 完了！' : '✓ やった！'}</button>
           </div>
           <p class="tq-text"${fontSize}>${esc(step.text)}</p>
         </div>`;
       }).join('');
       return `<div class="todayquest-card">
-        <p class="tq-eyebrow">🎯 次の一手 — マップから</p>
+        <p class="tq-eyebrow">次の一手 — マップから</p>
         ${itemsHtml}
         <div class="tq-actions">
           <a href="#sections-container" class="tq-skip-link" onclick="event.preventDefault();document.getElementById('sections-container')?.scrollIntoView({behavior:'smooth'})">マップ全体を見る →</a>
@@ -3397,7 +3397,7 @@ export default function NewMeNaviPage() {
         if (!prov) continue;
         const provHref = prov.entity_type === 'affiliate' ? `/affiliate/${esc(prov.slug||'')}` : `/provider/${esc(prov.slug||'')}?tab=appeal`;
         const html = `<a href="${provHref}" class="isc-inner" target="_self">
-          <span class="isc-icon">${esc(AREA_DEFS[Object.keys(AREA_DEFS).find(k=>AREA_DEFS[k].catLink===cat)]?.icon||'🏥')}</span>
+          <span class="isc-icon">${esc(AREA_DEFS[Object.keys(AREA_DEFS).find(k=>AREA_DEFS[k].catLink===cat)]?.icon||'')}</span>
           <div class="isc-body">
             <p class="isc-label">Fineme おすすめ</p>
             <p class="isc-name">${esc(prov.name||'')}</p>
@@ -3498,7 +3498,7 @@ export default function NewMeNaviPage() {
       const overallPct = totalCount > 0 ? Math.round(doneCount / totalCount * 100) : 0;
 
       return `
-        <div class="sec-label">🗺️ 変容マップ — 8軸同時進行</div>
+        <div class="sec-label">変容マップ — 8軸同時進行</div>
         <div class="journey-map-wrap">
           <svg viewBox="0 0 300 300" class="journey-map-svg">
             ${spokes}
@@ -3516,7 +3516,7 @@ export default function NewMeNaviPage() {
         const isCompass = status === 'compass';
         const isDone = status === 'done';
         const isActive = status === 'active';
-        const badgeText = isCompass ? '🧭 今ここ' : isDone ? '✓ 完了' : isActive ? '進行中' : '未着手';
+        const badgeText = isCompass ? '今ここ' : isDone ? '✓ 完了' : isActive ? '進行中' : '未着手';
         const badgeClass = isCompass ? 'agc-badge-compass' : isDone ? 'agc-badge-done' : isActive ? 'agc-badge-active' : 'agc-badge-none';
         const cardClass = isCompass ? ' agc-compass' : isDone ? ' agc-done' : isActive ? ' agc-active' : '';
         const fillClass = isCompass ? 'bfill-compass' : isDone ? 'bfill-done' : isActive ? 'bfill-active' : 'bfill-none';
@@ -3526,7 +3526,7 @@ export default function NewMeNaviPage() {
           : isDone ? 'ゴール達成！' : '';
         return `
           <div class="agc${cardClass}${isSelected ? ' agc-selected' : ''}" data-axis-jump="${esc(axisId)}">
-            ${isCompass ? '<span class="agc-compass-mark">🧭</span>' : ''}
+            ${isCompass ? '<span class="agc-compass-mark"></span>' : ''}
             <div class="agc-top">
               <span class="agc-icon">${esc(def.icon)}</span>
               <span class="agc-name">${esc(def.label)}</span>
@@ -3542,7 +3542,7 @@ export default function NewMeNaviPage() {
           </div>`;
       }).join('');
       return `
-        <div class="sec-label">📊 変容ステータス</div>
+        <div class="sec-label">変容ステータス</div>
         <div class="axis-grid" id="axis-grid">
           ${cards}
         </div>`;
@@ -3552,7 +3552,7 @@ export default function NewMeNaviPage() {
       return `<div class="axis-filter-bar" id="axis-filter-bar">` +
         `<button class="axis-filter-chip${!activeAxisFilter ? ' active' : ''}" data-axis-filter="">全て</button>` +
         Object.entries(AREA_DEFS).map(([id, def]) =>
-          `<button class="axis-filter-chip${activeAxisFilter === id ? ' active' : ''}" data-axis-filter="${esc(id)}">${esc(def.icon)} ${esc(def.label)}</button>`
+          `<button class="axis-filter-chip${activeAxisFilter === id ? ' active' : ''}" data-axis-filter="${esc(id)}">${esc(def.label)}</button>`
         ).join('') +
       `</div>`;
     }
@@ -3669,8 +3669,8 @@ export default function NewMeNaviPage() {
     const html = `
       <div class="navi-wrap">
       <div class="navi-header">
-        <p class="navi-header-eyebrow">New Me Navi &nbsp;<a href="/mypage/map" style="font-size:9px;font-weight:700;color:rgba(200,164,90,0.6);text-decoration:none;border:1px solid rgba(236,232,223,0.121);padding:2px 8px;border-radius:99px;vertical-align:middle;letter-spacing:.06em">🧭 部位マップ</a></p>
-        <div class="navi-header-badge">🧭 ${naviStepsData ? 'あなただけの変容ロードマップ' : '行動タイプ別ロードマップ'}</div>
+        <p class="navi-header-eyebrow">New Me Navi &nbsp;<a href="/mypage/map" style="font-size:9px;font-weight:700;color:rgba(200,164,90,0.6);text-decoration:none;border:1px solid rgba(236,232,223,0.121);padding:2px 8px;border-radius:99px;vertical-align:middle;letter-spacing:.06em">部位マップ</a></p>
+        <div class="navi-header-badge">${naviStepsData ? 'あなただけの変容ロードマップ' : '行動タイプ別ロードマップ'}</div>
         <h1>ゴール：<em>${esc(overallGoal)}</em></h1>
         <p class="navi-header-sub">${naviStepsData ? 'Me Scanをもとに生成された、あなただけの変容の道。' : '「今すぐ動ける」から始めよう。<br>Compassが指す軸のステップが最優先で表示される。'}</p>
         ${(() => { let _done, _total; if (naviStepsData?.steps?.length) { _total = naviStepsData.steps.length; _done = naviStepsData.steps.filter(s => stepDone[s.id]).length; } else { const _all = flattenAllSteps(); _done = _all.filter(s=>s.isDone).length; _total = _all.length; } const _pct = _total > 0 ? Math.round(_done/_total*100) : 0; return `<div class="progress-bar-wrap"><div class="progress-bar-label"><span class="progress-bar-label-text">変容の進捗</span><span class="progress-bar-pct">${_pct}%</span></div><div class="progress-bar-track"><div class="progress-bar-fill" style="width:${_pct}%"></div></div><p class="progress-bar-sub">${_done} / ${_total} ステップ完了</p></div>`; })()}
@@ -3692,7 +3692,7 @@ export default function NewMeNaviPage() {
 
       ${buildKindnessCheckinHtml()}
 
-      ${(() => { const _mDef = AREA_DEFS[compassFirst] || {}; if (!_mDef.label) return ''; return `<div style="margin:0 0 16px;padding:16px 18px;background:#151b24;border:1px solid rgba(236,232,223,0.154);border-radius:12px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(8px)"><span style="font-size:26px;flex-shrink:0">🪞</span><div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px;line-height:1.55">${esc(_mDef.icon||'')} ${esc(_mDef.label)}が、あなたの最初の一手。<br>今の${esc(_mDef.label)}、写真1枚で確かめてみる？</p><p style="font-size:11px;color:rgba(232,228,220,0.4);margin:0">写真は保存しません</p></div><a href="${TRACK.mirror}" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(200,164,90,0.1);border:1.5px solid rgba(236,232,223,0.3);color:#c8a45a;border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">Mirror<br><span style="font-size:10px;font-weight:600">¥500</span></a></div>`; })()}
+      ${(() => { const _mDef = AREA_DEFS[compassFirst] || {}; if (!_mDef.label) return ''; return `<div style="margin:0 0 16px;padding:16px 18px;background:#151b24;border:1px solid rgba(236,232,223,0.154);border-radius:12px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(8px)"><span style="font-size:26px;flex-shrink:0"></span><div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:700;color:rgba(232,228,220,0.9);margin:0 0 2px;line-height:1.55">${esc(_mDef.label)}が、あなたの最初の一手。<br>今の${esc(_mDef.label)}、写真1枚で確かめてみる？</p><p style="font-size:11px;color:rgba(232,228,220,0.4);margin:0">写真は保存しません</p></div><a href="${TRACK.mirror}" style="font-size:12px;font-weight:800;padding:10px 14px;background:rgba(200,164,90,0.1);border:1.5px solid rgba(236,232,223,0.3);color:#c8a45a;border-radius:8px;text-decoration:none;white-space:nowrap;flex-shrink:0;text-align:center;line-height:1.4">Mirror<br><span style="font-size:10px;font-weight:600">¥500</span></a></div>`; })()}
 
       ${(() => {
         if (!mirrorOnePoint?.axisId) return '';
@@ -3720,15 +3720,15 @@ export default function NewMeNaviPage() {
 
       ${(serviceLogs.length >= 1 && Object.values(stepDone).filter(Boolean).length >= 3) ? `
       <div style="margin-top:28px;background:rgba(200,164,90,0.06);border:1px solid rgba(236,232,223,0.138);border-radius:16px;padding:24px 22px;text-align:center">
-        <div style="font-size:28px;margin-bottom:8px">✍️</div>
+        <div style="font-size:28px;margin-bottom:8px"></div>
         <p style="font-size:15px;font-weight:800;color:rgba(240,236,228,0.9);margin:0 0 8px;line-height:1.6">変化を感じ始めたら、あなたの物語を残しませんか？</p>
         <p style="font-size:12px;color:rgba(240,236,228,0.5);margin:0 0 18px;line-height:1.75">あなたの一歩は、同じ悩みを抱える誰かの地図になります。<br>かかった期間・変わったこと——リアルな記録が誰かの背中を押します。</p>
         <a href="/mypage/story-submit" style="display:inline-block;font-size:14px;font-weight:800;padding:12px 28px;background:linear-gradient(135deg,#c8a45a,#e8c97a);border-radius:10px;color:#0d1117;text-decoration:none;box-shadow:0 4px 18px rgba(0,0,0,0.3)">体験談を書く →</a>
       </div>` : ''}
 
       <div class="navi-footer">
-        <a href="/mypage/log" class="navi-footer-btn nfb-secondary" style="border-color:rgba(236,232,223,0.248)">📖 New Me Log — サービスを管理する</a>
-        <a href="${TRACK.diagnosisResult}" class="navi-footer-btn nfb-secondary">📋 診断結果を見る</a>
+        <a href="/mypage/log" class="navi-footer-btn nfb-secondary" style="border-color:rgba(236,232,223,0.248)">New Me Log — サービスを管理する</a>
+        <a href="${TRACK.diagnosisResult}" class="navi-footer-btn nfb-secondary">診断結果を見る</a>
         <a href="${TRACK.diagnosis}" class="navi-footer-btn nfb-ghost">Me Scanを再スキャンする</a>
       </div>
       </div>
@@ -3954,7 +3954,7 @@ export default function NewMeNaviPage() {
       if (!toast) {
         toast = document.createElement('div');
         toast.id = 'prereq-complete-toast';
-        toast.innerHTML = '<div class="prereq-toast-icon">🎉</div><div><p class="prereq-toast-title">出発前チェック完了！</p><p class="prereq-toast-sub">旅の準備が整いました。さあ、出発しよう。</p></div>';
+        toast.innerHTML = '<div class="prereq-toast-icon"></div><div><p class="prereq-toast-title">出発前チェック完了！</p><p class="prereq-toast-sub">旅の準備が整いました。さあ、出発しよう。</p></div>';
         document.body.appendChild(toast);
       }
       requestAnimationFrame(() => toast.classList.add('show'));
@@ -3994,8 +3994,8 @@ export default function NewMeNaviPage() {
         toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(120px);background:linear-gradient(135deg,#c8a45a 0%,#a0832b 100%);color:#0d1117;border-radius:18px;padding:18px 24px;display:flex;align-items:center;gap:14px;box-shadow:0 8px 36px rgba(0,0,0,0.48);transition:transform .45s cubic-bezier(.34,1.56,.64,1);z-index:9999;pointer-events:none;width:min(360px,calc(100vw - 40px))';
         document.body.appendChild(toast);
       }
-      const nextMsg = nextDef ? `次は ${nextDef.icon} ${nextDef.label}軸へ` : 'すべての軸が前進中！';
-      toast.innerHTML = `<div style="font-size:28px;flex-shrink:0">🏁</div><div><p style="font-size:15px;font-weight:800;margin:0 0 3px">${esc(def.icon)} ${esc(def.label)}軸 — ひと段落！</p><p style="font-size:12px;opacity:.85;margin:0">${nextMsg}</p></div>`;
+      const nextMsg = nextDef ? `次は ${nextDef.label}軸へ` : 'すべての軸が前進中！';
+      toast.innerHTML = `<div style="font-size:28px;flex-shrink:0"></div><div><p style="font-size:15px;font-weight:800;margin:0 0 3px">${esc(def.label)}軸 — ひと段落！</p><p style="font-size:12px;opacity:.85;margin:0">${nextMsg}</p></div>`;
       requestAnimationFrame(() => { toast.style.transform = 'translateX(-50%) translateY(0)'; });
       setTimeout(() => { toast.style.transform = 'translateX(-50%) translateY(120px)'; }, 4500);
       const colors = ['#c8a45a','#10b981','#3b82f6','#f59e0b','#ec4899','#8b5cf6'];
@@ -4278,7 +4278,7 @@ export default function NewMeNaviPage() {
           d.lastDate = todayStr;
           localStorage.setItem(streakKey, JSON.stringify(d));
           const streakEl = btn.closest('.habit-item') && btn.closest('.habit-item').querySelector('.habit-streak');
-          if (streakEl) { streakEl.textContent = '🔥 ' + d.count + '日'; streakEl.style.opacity = '1'; }
+          if (streakEl) { streakEl.textContent = '' + d.count + '日'; streakEl.style.opacity = '1'; }
         } catch {}
       } else {
         localStorage.removeItem(storageKey);
@@ -4347,7 +4347,7 @@ export default function NewMeNaviPage() {
       // エラーが発生した場合、読み込み中のまま固まらないようにする
       try {
         root.innerHTML = `<div class="no-data">
-          <div class="no-data-icon">⚠️</div>
+          <div class="no-data-icon"></div>
           <h2 class="no-data-title">読み込みエラー</h2>
           <p class="no-data-text">データの読み込みに失敗しました。<br>ページを再読み込みするか、Me Scanを受け直してください。</p>
           <p style="font-size:11px;color:#9ca3af;margin-bottom:20px">${err.message || ''}</p>

@@ -5,30 +5,30 @@ import { TRACKS, getKnownTrackId } from '@/lib/track';
 
 
 const AXIS_LABELS = { body:'体型・ボディ', eyebrow:'眉毛', fashion:'服・コーデ', hair:'髪・ヘア', skin:'肌・エステ', teeth:'歯・口元', nail:'爪' };
-const AXIS_ICONS  = { body:'💪', eyebrow:'✂️', fashion:'👔', hair:'💇', skin:'✨', teeth:'🦷', nail:'💅' };
+const AXIS_ICONS  = { body:'体', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
 
 const CATEGORIES = [
-  {cat:'gym',      icon:'🏋️',  label:'パーソナルジム',     sub:'体型・姿勢を変える'},
-  {cat:'eyebrow',  icon:'✂️',  label:'眉毛サロン',         sub:'顔の印象を即日変える'},
-  {cat:'fashion',  icon:'👔',  label:'ファッション',       sub:'似合う服で自信をつくる'},
-  {cat:'hair',     icon:'💇',  label:'ヘア',               sub:'毎朝の自信を変える'},
-  {cat:'esthetic', icon:'💆',  label:'肌・エステ',         sub:'清潔感を底上げする'},
-  {cat:'colordiagnosis',icon:'🎨', label:'パーソナルカラー診断', sub:'似合う色で印象が変わる'},
-  {cat:'bonediagnosis', icon:'🔍', label:'骨格診断',           sub:'自分の基準を知る'},
-  {cat:'diagnosis',     icon:'📋', label:'診断（総合）',        sub:'複合診断・イメコン'},
-  {cat:'consulting',icon:'🗣', label:'外見トータルサポート', sub:'変容の全体地図を描く'},
-  {cat:'whitening',icon:'✨',  label:'歯のホワイトニング', sub:'笑顔への自信をつくる'},
-  {cat:'makeup',   icon:'💄',  label:'メイクアップ',       sub:'清潔感を意図的に演出する'},
-  {cat:'hairremoval',icon:'🪒',label:'脱毛',               sub:'なめらかさで印象を変える'},
-  {cat:'aga',      icon:'💊',  label:'AGA・薄毛治療',      sub:'髪の悩みと向き合う'},
-  {cat:'orthodontics',icon:'🦷',label:'歯科矯正',          sub:'笑顔の質を長期で変える'},
-  {cat:'nail',     icon:'💅',  label:'ネイル',             sub:'細部まで気を配る人になる'},
+  {cat:'gym',      icon:'体',  label:'パーソナルジム',     sub:'体型・姿勢を変える'},
+  {cat:'eyebrow',  icon:'眉',  label:'眉毛サロン',         sub:'顔の印象を即日変える'},
+  {cat:'fashion',  icon:'服',  label:'ファッション',       sub:'似合う服で自信をつくる'},
+  {cat:'hair',     icon:'髪',  label:'ヘア',               sub:'毎朝の自信を変える'},
+  {cat:'esthetic', icon:'肌',  label:'肌・エステ',         sub:'清潔感を底上げする'},
+  {cat:'colordiagnosis',icon:'色', label:'パーソナルカラー診断', sub:'似合う色で印象が変わる'},
+  {cat:'bonediagnosis', icon:'骨', label:'骨格診断',           sub:'自分の基準を知る'},
+  {cat:'diagnosis',     icon:'診', label:'診断（総合）',        sub:'複合診断・イメコン'},
+  {cat:'consulting',icon:'談', label:'外見トータルサポート', sub:'変容の全体地図を描く'},
+  {cat:'whitening',icon:'歯',  label:'歯のホワイトニング', sub:'笑顔への自信をつくる'},
+  {cat:'makeup',   icon:'粧',  label:'メイクアップ',       sub:'清潔感を意図的に演出する'},
+  {cat:'hairremoval',icon:'毛',label:'脱毛',               sub:'なめらかさで印象を変える'},
+  {cat:'aga',      icon:'髪',  label:'AGA・薄毛治療',      sub:'髪の悩みと向き合う'},
+  {cat:'orthodontics',icon:'歯',label:'歯科矯正',          sub:'笑顔の質を長期で変える'},
+  {cat:'nail',     icon:'爪',  label:'ネイル',             sub:'細部まで気を配る人になる'},
 ];
 
 // 発揮カテゴリ（出口）：変わった自分を世界に見せる
 const STAGE2_CATEGORIES = [
-  {cat:'photo',    icon:'📸', label:'プロフィール写真撮影', sub:'変わった自分を、最高の一枚に。マッチングアプリの第一印象を決定的に変える。'},
-  {cat:'marriage', icon:'💍', label:'婚活サポート',         sub:'自信がついた今が、出会いを本気にするタイミング。変容の先にある、本当の出会いへ。'},
+  {cat:'photo',    icon:'写', label:'プロフィール写真撮影', sub:'変わった自分を、最高の一枚に。マッチングアプリの第一印象を決定的に変える。'},
+  {cat:'marriage', icon:'婚', label:'婚活サポート',         sub:'自信がついた今が、出会いを本気にするタイミング。変容の先にある、本当の出会いへ。'},
 ];
 
 export default function HomePage() {
@@ -372,11 +372,11 @@ export default function HomePage() {
                 <p className="hero-gender-label">男性の外見を変える</p>
                 <div className="hero-gender-btns">
                   <Link href="/mirror" className="hero-nav-cta hero-nav-cta--mirror-m">
-                    <span className="hero-nav-cta-main">📸 Mirror</span>
+                    <span className="hero-nav-cta-main">Mirror</span>
                     <span className="hero-nav-cta-sub">写真から他者目線を分析</span>
                   </Link>
                   <Link href="/diagnosis" className="hero-nav-cta hero-nav-cta--scan-m">
-                    <span className="hero-nav-cta-main">🧬 Me Scan</span>
+                    <span className="hero-nav-cta-main">Me Scan</span>
                     <span className="hero-nav-cta-sub">8軸で外見を自己診断</span>
                   </Link>
                 </div>
@@ -387,11 +387,11 @@ export default function HomePage() {
                 <p className="hero-gender-label">女性の外見を変える</p>
                 <div className="hero-gender-btns">
                   <Link href="/belle/mirror" className="hero-nav-cta hero-nav-cta--mirror-f">
-                    <span className="hero-nav-cta-main">📸 Mirror</span>
+                    <span className="hero-nav-cta-main">Mirror</span>
                     <span className="hero-nav-cta-sub">写真から他者目線を分析</span>
                   </Link>
                   <Link href="/belle/diagnosis" className="hero-nav-cta hero-nav-cta--scan-f">
-                    <span className="hero-nav-cta-main">🧬 Me Scan</span>
+                    <span className="hero-nav-cta-main">Me Scan</span>
                     <span className="hero-nav-cta-sub">女性向け外見診断</span>
                   </Link>
                 </div>
@@ -406,7 +406,7 @@ export default function HomePage() {
                 <div className="compass-banner-body">
                   <p className="compass-banner-label">あなたのFineme Compass</p>
                   <p className="compass-banner-main">
-                    最初の一手：{AXIS_ICONS[compass]} {AXIS_LABELS[compass]} — New Me Naviを見る →
+                    最初の一手：{AXIS_LABELS[compass]} — New Me Naviを見る →
                   </p>
                 </div>
                 <span className="compass-banner-arrow">→</span>
@@ -426,12 +426,12 @@ export default function HomePage() {
               <p className="steps-sub">変容プロファイルを確認して、次の一手へ進みましょう。</p>
               <div className="steps-grid" style={{ gridTemplateColumns: '1fr 1fr', maxWidth: '520px', margin: '0 auto' }}>
                 <Link href={diagnosisType === 'belle' ? '/belle/diagnosis/result' : '/diagnosis/result'} className="step-card" style={{ textDecoration: 'none', cursor: 'pointer' }}>
-                  <div className="step-icon">🧭</div>
+                  <div className="step-icon"></div>
                   <p className="step-name">New Me Navi</p>
                   <p className="step-desc">8軸変容プロファイルとFineme Compassを確認する</p>
                 </Link>
                 <Link href="/mypage/navi" className="step-card" style={{ textDecoration: 'none', cursor: 'pointer' }}>
-                  <div className="step-icon">🗺️</div>
+                  <div className="step-icon"></div>
                   <p className="step-name">New Me Map</p>
                   <p className="step-desc">軸ごとの変容ロードマップと中継地点を確認する</p>
                 </Link>
@@ -453,26 +453,26 @@ export default function HomePage() {
               <div className="steps-grid">
                 <div className="step-card">
                   <div className="step-num">1</div>
-                  <div className="step-icon">📸</div>
+                  <div className="step-icon"></div>
                   <p className="step-name">Mirror</p>
                   <p className="step-desc">写真を撮るだけで、他人の目線での外見分析が届く。<strong style={{color:'#c8a45a'}}>「今どう見えているか」の事実</strong>を、正確に把握するところから始める。</p>
                 </div>
                 <div className="step-card">
                   <div className="step-num">2</div>
-                  <div className="step-icon">🧬</div>
+                  <div className="step-icon"></div>
                   <p className="step-name">Me Scan</p>
                   <p className="step-desc">8軸の自己診断でゴールと現在地を地図化。Mirrorと照合して<strong style={{color:'#c8a45a'}}>「何を・どの順で変えるか」</strong>を決める。Fineme Compass が最初の一手を指す。</p>
                 </div>
                 <div className="step-card">
                   <div className="step-num">3</div>
-                  <div className="step-icon">🗺️</div>
+                  <div className="step-icon"></div>
                   <p className="step-name">New Me Map</p>
                   <p className="step-desc">「今日から一人でできること」から積み上げる変容ロードマップ。自走できる習慣と行動の設計図が、軸ごとに整理されて届く。</p>
                 </div>
               </div>
               <div className="steps-cta-wrap">
                 <Link href={knownTrack ? TRACKS[knownTrack].mirror : '/choose-track?dest=mirror'} className="btn" style={{ fontSize: '15px', padding: '12px 28px' }}>
-                  📸 まずMirrorを試す
+                  まずMirrorを試す
                 </Link>
                 <p style={{ marginTop: '10px' }}>
                   <Link href={knownTrack ? TRACKS[knownTrack].diagnosis : '/choose-track?dest=diagnosis'} style={{ fontSize: '13px', color: 'rgba(200,164,90,0.7)', textDecoration: 'none' }}>
@@ -492,10 +492,10 @@ export default function HomePage() {
             <div className="sample-mockup">
               {/* Compass */}
               <div className="sample-compass">
-                <span style={{ fontSize: '28px', flexShrink: 0 }}>🧭</span>
+                <span style={{ fontSize: '28px', flexShrink: 0 }}></span>
                 <div>
                   <p style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(255,255,255,.4)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '.08em' }}>Fineme Compass — 最初の一手</p>
-                  <p style={{ fontSize: '18px', fontWeight: 900, color: '#fff', margin: '0 0 4px' }}>💇 ヘア・髪型</p>
+                  <p style={{ fontSize: '18px', fontWeight: 900, color: '#fff', margin: '0 0 4px' }}>ヘア・髪型</p>
                   <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.55)', margin: 0 }}>→ 客観的なフィードバックを得ることから始める</p>
                 </div>
               </div>
@@ -510,7 +510,7 @@ export default function HomePage() {
                   { id: 'skin',    pct: 60, gap: '+2', color: '#6b7280' },
                 ].map(v => (
                   <div key={v.id} className="sample-vec">
-                    <span className="sample-vec-label">{AXIS_ICONS[v.id]} {AXIS_LABELS[v.id]}</span>
+                    <span className="sample-vec-label">{AXIS_LABELS[v.id]}</span>
                     <div className="sample-vec-bar-track">
                       <div className="sample-vec-bar-fill" style={{ width: `${v.pct}%`, background: v.color }} />
                     </div>
@@ -537,7 +537,7 @@ export default function HomePage() {
                   <div key={s.id} className="story-card">
                     {s.axis_id && (
                       <span className="story-axis">
-                        {AXIS_ICONS[s.axis_id]} {AXIS_LABELS[s.axis_id]}
+                        {AXIS_LABELS[s.axis_id]}
                       </span>
                     )}
                     {s.concern_before && (
@@ -551,7 +551,7 @@ export default function HomePage() {
                       </p>
                     )}
                     {s.milestone_reached && (
-                      <span className="story-milestone">🎯 {s.milestone_reached.slice(0, 40)}</span>
+                      <span className="story-milestone">{s.milestone_reached.slice(0, 40)}</span>
                     )}
                   </div>
                 ))}
@@ -564,10 +564,10 @@ export default function HomePage() {
                   { axis: 'fashion', before: '服を買っても似合わない気がして、ずっと同じ服を着ていた', after: '体型が変わると、選べる服の幅が広がった。それだけで外出が楽しくなった。', milestone: '3ヶ月継続達成' },
                 ].map((s, i) => (
                   <div key={i} className="story-card">
-                    <span className="story-axis">{AXIS_ICONS[s.axis]} {AXIS_LABELS[s.axis]}</span>
+                    <span className="story-axis">{AXIS_LABELS[s.axis]}</span>
                     <p className="story-before">「{s.before}」</p>
                     <p className="story-after">{s.after}</p>
-                    <span className="story-milestone">🎯 {s.milestone}</span>
+                    <span className="story-milestone">{s.milestone}</span>
                   </div>
                 ))}
               </div>
@@ -592,9 +592,9 @@ export default function HomePage() {
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
               {[
-                { icon: '🗺️', title: 'New Me Map', sub: '毎日の自走ロードマップ', desc: '「今日家でできること」から積み上げる25〜35ステップ。一人でコツコツ続けられる行動設計図が届く。' },
-                { icon: '📅', title: '週次チェックイン', sub: '7日ごとの振り返り', desc: '先週やれたこと・やれなかったことを確認。できなかったステップは翌週に最適化される。習慣が育まれる。' },
-                { icon: '📊', title: '月次変化レポート', sub: 'Mirrorで変化を確認', desc: '1ヶ月前のMirrorと今のMirrorを比較。外見の変化が数値と言葉で記録される。「変わっている」が見える。' },
+                { icon: '', title: 'New Me Map', sub: '毎日の自走ロードマップ', desc: '「今日家でできること」から積み上げる25〜35ステップ。一人でコツコツ続けられる行動設計図が届く。' },
+                { icon: '', title: '週次チェックイン', sub: '7日ごとの振り返り', desc: '先週やれたこと・やれなかったことを確認。できなかったステップは翌週に最適化される。習慣が育まれる。' },
+                { icon: '', title: '月次変化レポート', sub: 'Mirrorで変化を確認', desc: '1ヶ月前のMirrorと今のMirrorを比較。外見の変化が数値と言葉で記録される。「変わっている」が見える。' },
               ].map((item, i) => (
                 <div key={i} style={{ background: 'rgba(200,164,90,0.04)', border: '1px solid rgba(236,232,223,0.11)', borderRadius: 14, padding: 'clamp(18px,3vw,24px)' }}>
                   <div style={{ fontSize: 28, marginBottom: 10 }}>{item.icon}</div>
@@ -685,7 +685,7 @@ export default function HomePage() {
               Me Scanが、8軸の中で「今のあなたに効く順番」を教えてくれる。
             </p>
             <Link href={knownTrack ? TRACKS[knownTrack].diagnosis : '/choose-track?dest=diagnosis'} className="hero-nav-cta">
-              🧬 Me Scanで地図を描く
+              Me Scanで地図を描く
             </Link>
             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.25)', margin: '16px 0 0' }}>約3分 · 匿名 · 登録不要</p>
             <div style={{ marginTop: '36px', paddingTop: '28px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>

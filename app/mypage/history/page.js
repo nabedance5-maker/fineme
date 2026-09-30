@@ -124,7 +124,7 @@ export default function MypageHistoryPage() {
                         >✕</button>
                       </div>
                       {f.category && <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', background: '#111', color: '#fff', borderRadius: '99px', alignSelf: 'flex-start' }}>{labelCategory(f.category)}</span>}
-                      {f.region && <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: 0 }}>📍 {labelRegion(f.region)}</p>}
+                      {f.region && <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: 0 }}>{labelRegion(f.region)}</p>}
                       {when && <p style={{ fontSize: '11px', color: 'rgba(232,228,220,0.40)', margin: 0, marginTop: 'auto' }}>閲覧: {when}</p>}
                     </div>
                   </div>

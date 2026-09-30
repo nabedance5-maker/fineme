@@ -517,6 +517,8 @@ ${curatedPostsPrompt}
 ${BRAND_PHILOSOPHY}
 ※上記の思想はステップ文（text）の言葉選び・温度にのみ効かせる。最優先ルール（提供データ外の身体的特性に言及しない）と生成ルール・並び順・JSON構造は一切変えない。
 
+※ステップ文（text）を含むすべての文字列で絵文字を使わない。
+
 ## 出力形式（JSONのみ・コードブロック不要）
 {"steps":[{"id":"eyebrow-001","axis":"eyebrow","eval_type":"both","text":"...","action_type":"quick","guide":"none","hint":"...","related_post_id":null},{"id":"hair-001","axis":"hair","eval_type":"action","text":"...","action_type":"quick","guide":"none","related_post_id":"（本当に合う投稿があればそのid、無ければnullまたは省略）"},...]}'`;
 

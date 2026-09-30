@@ -219,7 +219,7 @@ async function renderShareCardImage(reportContent, photoUrl, accentHex, tierComp
   }
 
   if (tierComparison?.promoted) {
-    const text = `🎉 前回の「${tierComparison.previous_tier}」から「${reportContent.visual_tier}」へ変容が進みました`;
+    const text = `前回の「${tierComparison.previous_tier}」から「${reportContent.visual_tier}」へ変容が進みました`;
     ctx.fillStyle = accentHex;
     ctx.font = `700 24px ${SANS}`;
     ctx.textAlign = 'center';
@@ -402,7 +402,7 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
         {tierComparison?.promoted && (
           <div style={{ margin: '16px 0 0', padding: '10px 14px', borderRadius: '12px', background: accentSoft, border: `1px solid ${accentBorder}` }}>
             <p style={{ fontSize: '11px', fontWeight: 800, color: accent, margin: 0, lineHeight: 1.6 }}>
-              🎉 前回の「{tierComparison.previous_tier}」から「{reportContent.visual_tier}」へ変容が進みました
+              前回の「{tierComparison.previous_tier}」から「{reportContent.visual_tier}」へ変容が進みました
             </p>
           </div>
         )}
@@ -416,7 +416,7 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
           disabled={saving}
           style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 20px', background: 'none', border: `1px solid ${accentBorder}`, borderRadius: '99px', color: accent, fontSize: '12px', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
         >
-          {saving ? '作成中…' : '📸 この結果を画像で保存'}
+          {saving ? '作成中…' : 'この結果を画像で保存'}
         </button>
       </div>
 
@@ -429,7 +429,7 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
 
       <div style={{ margin: '20px 22px 8px' }}>
         {face && (
-          <Section icon="👤" title="顔・頭部" accent={accent}>
+          <Section icon="" title="顔・頭部" accent={accent}>
             <Rows accent={accent} items={[
               ['顔型', face.face_shape], ['縦横比', face.aspect_ratio], ['顔の余白', face.margin],
               ['輪郭', face.contour], ['額', face.forehead], ['頬', face.cheeks], ['頬骨', face.cheekbones],
@@ -489,7 +489,7 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
         )}
 
         {hair && (
-          <Section icon="💇" title="髪型・ヘアスタイル" accent={accent}>
+          <Section icon="髪" title="髪型・ヘアスタイル" accent={accent}>
             <Rows accent={accent} items={[
               ['長さ', hair.length], ['前髪', hair.bangs], ['毛量', hair.volume], ['シルエット', hair.silhouette],
               ['顔型との相性', hair.face_shape_compatibility], ['髪型の効果', hair.styling_effect],
@@ -502,7 +502,7 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
         )}
 
         {skin && (
-          <Section icon="✨" title="肌・清潔感" accent={accent}>
+          <Section icon="肌" title="肌・清潔感" accent={accent}>
             <Rows accent={accent} items={[
               ['肌の見え方', skin.appearance], ['質感', skin.texture], ['ツヤ', skin.glow],
               ['乾燥部分', skin.dry_areas], ['肌色', skin.skin_tone], ['髭', skin.facial_hair],
@@ -513,7 +513,7 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
         )}
 
         {neckShoulders && (
-          <Section icon="📐" title="首・肩・上半身" accent={accent}>
+          <Section icon="" title="首・肩・上半身" accent={accent}>
             <Rows accent={accent} items={[
               ['首の見え方', neckShoulders.neck_appearance], ['首と顔のバランス', neckShoulders.neck_face_balance],
               ['肩幅', neckShoulders.shoulder_width], ['肩の傾き', neckShoulders.shoulder_tilt],
@@ -524,7 +524,7 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
         )}
 
         {body && (
-          <Section icon="🧍" title="体型・全身バランス" accent={accent}>
+          <Section icon="姿" title="体型・全身バランス" accent={accent}>
             <Rows accent={accent} items={[
               ['全体のシルエット', body.overall_silhouette], ['肩幅と腰のバランス', body.shoulder_hip_balance],
               ['上半身と下半身のバランス', body.upper_lower_balance], ['脚の見え方', body.legs], ['腕の見え方', body.arms],
@@ -536,7 +536,7 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
         )}
 
         {posture && (
-          <Section icon="🧘" title="姿勢・ポージング" accent={accent}>
+          <Section icon="姿" title="姿勢・ポージング" accent={accent}>
             <Rows accent={accent} items={[
               ['頭の位置', posture.head_position], ['首の角度', posture.neck_angle], ['肩の位置', posture.shoulder_position],
               ['背中', posture.back], ['骨盤', posture.pelvis], ['脚の位置', posture.leg_position], ['腕の位置', posture.arm_position],
@@ -557,7 +557,7 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
         )}
 
         {fashion && (
-          <Section icon="👔" title="服装・ファッション" accent={accent}>
+          <Section icon="服" title="服装・ファッション" accent={accent}>
             <Rows accent={accent} items={[
               ['服の種類', fashion.clothing_type], ['色', fashion.color], ['素材感', fashion.material_texture],
               ['シルエット', fashion.silhouette], ['サイズ感', fashion.size_fit], ['丈', fashion.length],
@@ -579,7 +579,7 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
         )}
 
         {cohesion && (
-          <Section icon="🎨" title="全体の統一感" accent={accent}>
+          <Section icon="" title="全体の統一感" accent={accent}>
             <Rows accent={accent} items={[
               ['顔と髪型', cohesion.face_hair], ['顔と服', cohesion.face_fashion], ['体型と服', cohesion.body_fashion],
               ['髪型と服', cohesion.hair_fashion], ['色の統一感', cohesion.color_cohesion],
@@ -590,7 +590,7 @@ export default function MirrorReportCard({ reportContent, photoUrl, gender, tier
         )}
 
         {photoQuality && (
-          <Section icon="📷" title="写真写り" accent={accent}>
+          <Section icon="" title="写真写り" accent={accent}>
             <Rows accent={accent} items={[
               ['カメラアングル', photoQuality.camera_angle], ['顔の角度', photoQuality.face_angle],
               ['身体の角度', photoQuality.body_angle], ['カメラとの距離', photoQuality.camera_distance],

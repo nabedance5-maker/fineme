@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const AXIS_LABELS = { body:'体型・ボディ', eyebrow:'眉毛', fashion:'服・コーデ', hair:'髪・ヘア', skin:'肌・エステ', teeth:'歯・口元', nail:'爪' };
-const AXIS_ICONS  = { body:'💪', eyebrow:'✂️', fashion:'👔', hair:'💇', skin:'✨', teeth:'🦷', nail:'💅' };
+const AXIS_ICONS  = { body:'体', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
 
 const CATEGORY_LABELS = {
   consulting: '外見トータルサポート',
@@ -132,7 +132,7 @@ function ProviderCard({ provider }) {
             )}
             {provider.area && (
               <span style={{ fontSize: '11px', padding: '3px 10px', background: '#151b24', color: 'rgba(232,228,220,0.75)', borderRadius: '99px' }}>
-                📍 {provider.area}
+                {provider.area}
               </span>
             )}
           </div>
@@ -313,11 +313,11 @@ function SearchContent() {
           style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'linear-gradient(135deg,#eff6ff,#f5f3ff)', border: '1.5px solid #bfdbfe', borderRadius: '14px', marginBottom: '20px', cursor: 'pointer', flexWrap: 'wrap' }}
           onClick={() => toggleAxis(compassAxis)}
         >
-          <span style={{ fontSize: '20px' }}>🧭</span>
+          <span style={{ fontSize: '20px' }}></span>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: '11px', fontWeight: 800, color: '#2563eb', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '.06em' }}>Fineme Compass</p>
             <p style={{ fontSize: '14px', fontWeight: 700, color: '#111', margin: 0 }}>
-              最初の一手は {AXIS_ICONS[compassAxis]} {AXIS_LABELS[compassAxis]} — この軸で絞り込む →
+              最初の一手は {AXIS_LABELS[compassAxis]} — この軸で絞り込む →
             </p>
           </div>
         </div>
@@ -384,8 +384,8 @@ function SearchContent() {
                   outline: isActive ? 'none' : isCompass ? '1.5px solid #bfdbfe' : 'none',
                 }}
               >
-                {AXIS_ICONS[id]} {label}
-                {isCompass && !isActive && <span style={{ marginLeft: '5px', fontSize: '10px' }}>🧭</span>}
+                {label}
+                {isCompass && !isActive && <span style={{ marginLeft: '5px', fontSize: '10px' }}></span>}
               </button>
             );
           })}
@@ -403,7 +403,7 @@ function SearchContent() {
       {/* 件数 */}
       <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', margin: '0 0 12px' }}>
         {loading ? '読み込み中…' : `${filtered.length}件のサービスが見つかりました`}
-        {axis && !loading && <span style={{ marginLeft: '8px', fontSize: '12px', fontWeight: 700, color: '#4f46e5' }}>（{AXIS_ICONS[axis]} {AXIS_LABELS[axis]}で絞り込み中）</span>}
+        {axis && !loading && <span style={{ marginLeft: '8px', fontSize: '12px', fontWeight: 700, color: '#4f46e5' }}>（{AXIS_LABELS[axis]}で絞り込み中）</span>}
       </p>
 
       {/* 透明性注釈（アフィリエイトが含まれる場合のみ） */}
@@ -423,7 +423,7 @@ function SearchContent() {
         </div>
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '80px 20px', color: 'rgba(232,228,220,0.55)' }}>
-          <p style={{ fontSize: '40px', margin: '0 0 12px' }}>🔍</p>
+          <p style={{ fontSize: '40px', margin: '0 0 12px' }}></p>
           <p style={{ fontSize: '16px', fontWeight: '700', marginBottom: '8px', color: 'rgba(232,228,220,0.75)' }}>見つかりませんでした</p>
           <p style={{ fontSize: '14px', marginBottom: '20px' }}>条件を変えて再度お試しください。</p>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
@@ -434,7 +434,7 @@ function SearchContent() {
               条件をリセット
             </button>
             <Link href="/feature" style={{ fontSize: '13px', color: '#c8a45a', textDecoration: 'none' }}>
-              📖 Fineme Journal — 変容の旅のヒントを読む →
+              Fineme Journal — 変容の旅のヒントを読む →
             </Link>
           </div>
         </div>

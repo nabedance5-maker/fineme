@@ -4,7 +4,7 @@ import Link from 'next/link';
 import MypageSideNav from '../_components/MypageSideNav';
 
 const AXIS_LABELS = { body:'体型・ボディ', eyebrow:'眉毛', fashion:'服・コーデ', hair:'髪・ヘア', skin:'肌・エステ', teeth:'歯・口元', nail:'爪' };
-const AXIS_ICONS  = { body:'💪', eyebrow:'✂️', fashion:'👔', hair:'💇', skin:'✨', teeth:'🦷', nail:'💅' };
+const AXIS_ICONS  = { body:'体', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
 const PATH_LABELS = { virgin:'初挑戦タイプ', quit:'リスタートタイプ', blind:'客観化タイプ', lapsed:'再開タイプ' };
 
 export default function StorySubmitPage() {
@@ -131,7 +131,7 @@ export default function StorySubmitPage() {
     return (
       <main className="section">
         <div className="container" style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center', padding: '60px 20px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎉</div>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}></div>
           <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'rgba(232,228,220,0.90)', marginBottom: '10px' }}>体験談を投稿しました</h1>
           <p style={{ color: 'rgba(232,228,220,0.55)', fontSize: '14px', lineHeight: 1.7, marginBottom: '28px' }}>
             あなたの変容ストーリーは、同じ悩みを持つ誰かの「最初の一歩」になります。<br />
@@ -168,7 +168,7 @@ export default function StorySubmitPage() {
 
               {reservations.length === 0 ? (
                 <div style={{ background: '#151b24', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '14px', padding: '32px 24px', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
-                  <p style={{ fontSize: '32px', margin: '0 0 12px' }}>📅</p>
+                  <p style={{ fontSize: '32px', margin: '0 0 12px' }}></p>
                   <p style={{ fontSize: '15px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', marginBottom: '8px' }}>
                     まだ承認済みの予約がありません
                   </p>
@@ -201,7 +201,7 @@ export default function StorySubmitPage() {
                         onMouseEnter={e => { e.currentTarget.style.borderColor = '#c8a45a'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(200,164,90,.12)'; }}
                         onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(232,228,220,0.15)'; e.currentTarget.style.boxShadow = 'none'; }}
                       >
-                        <div style={{ fontSize: '28px', flexShrink: 0 }}>🗓</div>
+                        <div style={{ fontSize: '28px', flexShrink: 0 }}></div>
                         <div style={{ flex: 1 }}>
                           <p style={{ fontSize: '15px', fontWeight: 700, color: 'rgba(232,228,220,0.90)', margin: '0 0 4px' }}>{name}</p>
                           <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.55)', margin: 0 }}>{dateStr}</p>
@@ -219,7 +219,7 @@ export default function StorySubmitPage() {
 
               {/* 選択中の予約表示 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'rgba(200,164,90,0.06)', border: '1.5px solid rgba(236,232,223,0.165)', borderRadius: '12px' }}>
-                <span style={{ fontSize: '20px' }}>🗓</span>
+                <span style={{ fontSize: '20px' }}></span>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.90)', margin: 0 }}>
                     {providerName || '掲載者名を入力してください'}
@@ -270,7 +270,7 @@ export default function StorySubmitPage() {
                         transition: 'all .15s',
                       }}
                     >
-                      {AXIS_ICONS[id]} {AXIS_LABELS[id]}
+                      {AXIS_LABELS[id]}
                     </button>
                   ))}
                   <button

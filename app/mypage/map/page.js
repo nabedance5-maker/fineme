@@ -3,14 +3,14 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 
 const T = {
-  body:        { icon:'💪', label:'体型',  x:180, y:95,  r:52, c:'#1c3826', desc:'筋トレ・食事・体型管理' },
-  eyebrow:     { icon:'✂️', label:'眉',    x:74,  y:194, r:35, c:'#2c1e0e', desc:'眉の形・清潔感の基盤' },
-  fashion:     { icon:'👔', label:'服',    x:286, y:194, r:41, c:'#1c1636', desc:'サイズ感・服の選び方' },
-  hair:        { icon:'💇', label:'髪',    x:60,  y:318, r:38, c:'#0e2030', desc:'ヘアスタイル・質感' },
-  skin:        { icon:'✨', label:'肌',    x:282, y:318, r:30, c:'#2c1c0e', desc:'スキンケア・清潔感' },
-  hairremoval: { icon:'🪒', label:'脱毛',  x:334, y:360, r:24, c:'#0e1c2c', desc:'脱毛・ムダ毛ケア' },
-  teeth:       { icon:'🦷', label:'歯',    x:140, y:408, r:33, c:'#1c2236', desc:'歯並び・ホワイトニング' },
-  nail:        { icon:'💅', label:'爪',    x:248, y:408, r:28, c:'#2c0e1c', desc:'ネイルケア・指先' },
+  body:        { icon:'体', label:'体型',  x:180, y:95,  r:52, c:'#1c3826', desc:'筋トレ・食事・体型管理' },
+  eyebrow:     { icon:'眉', label:'眉',    x:74,  y:194, r:35, c:'#2c1e0e', desc:'眉の形・清潔感の基盤' },
+  fashion:     { icon:'服', label:'服',    x:286, y:194, r:41, c:'#1c1636', desc:'サイズ感・服の選び方' },
+  hair:        { icon:'髪', label:'髪',    x:60,  y:318, r:38, c:'#0e2030', desc:'ヘアスタイル・質感' },
+  skin:        { icon:'肌', label:'肌',    x:282, y:318, r:30, c:'#2c1c0e', desc:'スキンケア・清潔感' },
+  hairremoval: { icon:'毛', label:'脱毛',  x:334, y:360, r:24, c:'#0e1c2c', desc:'脱毛・ムダ毛ケア' },
+  teeth:       { icon:'歯', label:'歯',    x:140, y:408, r:33, c:'#1c2236', desc:'歯並び・ホワイトニング' },
+  nail:        { icon:'爪', label:'爪',    x:248, y:408, r:28, c:'#2c0e1c', desc:'ネイルケア・指先' },
 };
 
 const AXIS_TOTALS = { body:12, eyebrow:8, fashion:10, hair:10, skin:8, hairremoval:7, teeth:6, nail:6 };
@@ -198,8 +198,8 @@ export default function MapPage() {
   const improvedCount = mirrorComp?.improved_count ?? 0;
   const summary = viewMonth === 'now' && mirrorComp
     ? (improvedCount > 0
-        ? { icon: '✨', text: `${mirrorComp.prev_month}から${mirrorComp.new_month}にかけて、Mirrorが ${improvedCount} 軸で変化を確認しました。` }
-        : { icon: '🧭', text: `${mirrorComp.prev_month}から変化はまだ確認できていません。行動は積み上がっています。` })
+        ? { icon: '肌', text: `${mirrorComp.prev_month}から${mirrorComp.new_month}にかけて、Mirrorが ${improvedCount} 軸で変化を確認しました。` }
+        : { icon: '', text: `${mirrorComp.prev_month}から変化はまだ確認できていません。行動は積み上がっています。` })
     : null;
 
   return (
@@ -263,11 +263,11 @@ export default function MapPage() {
         {/* Phase 1-A: あなたについて分かってきたこと（旅の記録） */}
         {viewMonth === 'now' && confirmedAxisIds.length > 0 && (
           <div style={{margin:'10px 16px 0',background:'rgba(100,160,255,0.05)',border:'1px solid rgba(100,160,255,0.18)',borderRadius:14,padding:'13px 16px'}}>
-            <div style={{fontSize:11,fontWeight:800,color:'rgba(100,160,255,0.85)',marginBottom:8}}>🪞 あなたについて分かってきたこと</div>
+            <div style={{fontSize:11,fontWeight:800,color:'rgba(100,160,255,0.85)',marginBottom:8}}>あなたについて分かってきたこと</div>
             <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
               {confirmedAxisIds.map(id => (
                 <span key={id} style={{fontSize:11.5,color:'rgba(232,228,220,.75)',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:99,padding:'4px 10px'}}>
-                  {T[id]?.icon} {T[id]?.label} — {confirmedByAxis[id]}件の変化を確認
+                  {T[id]?.label} — {confirmedByAxis[id]}件の変化を確認
                 </span>
               ))}
             </div>
@@ -365,7 +365,7 @@ export default function MapPage() {
                     <text x={t.x} y={t.y - t.r - 10}
                       textAnchor="middle" fontSize="9"
                       fill="rgba(200,164,90,.78)">
-                      🧭 今ここ
+                      今ここ
                     </text>
                   )}
 
@@ -433,7 +433,7 @@ export default function MapPage() {
         )}
         {fbSent && (
           <div style={{margin:'16px 16px 0',padding:'16px',textAlign:'center',color:'rgba(200,164,90,.9)',fontSize:14,fontWeight:700,background:'#151b24',border:'1px solid rgba(236,232,223,0.099)',borderRadius:16}}>
-            フィードバックを送りました。ありがとうございます 🙏
+            フィードバックを送りました。ありがとうございます 
           </div>
         )}
 
@@ -452,7 +452,7 @@ export default function MapPage() {
                 ? '✓ この領域の探索は完了'
                 : (selData.done ?? 0) > 0
                 ? `${selData.done}ステップ踏破済み`
-                : '⚡ まだ足を踏み入れていない領域'}
+                : 'まだ足を踏み入れていない領域'}
             </div>
             {/* フェーズ2: Mirrorで確認された変化かどうかを正直に区別する */}
             {viewMonth === 'now' && MIRROR_COMMON_AXES.has(selData.id) && (

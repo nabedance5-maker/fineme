@@ -111,12 +111,12 @@ export function LocationPrompt({ accessToken }) {
     }}>
       {done ? (
         <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#059669', textAlign: 'center' }}>
-          ✅ エリアを設定しました。近くのサービスが優先表示されます。
+          エリアを設定しました。近くのサービスが優先表示されます。
         </p>
       ) : step === 'top' ? (
         <>
           <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: 'rgba(200,164,90,0.8)', textTransform: 'uppercase' }}>
-            📍 エリア設定（任意）
+            エリア設定（任意）
           </p>
           <p style={{ margin: '0 0 10px', fontSize: '14px', fontWeight: 700, color: '#0d1117', lineHeight: 1.6 }}>
             近くのサービスを優先表示しますか？
@@ -133,14 +133,14 @@ export function LocationPrompt({ accessToken }) {
               color: detecting ? '#9ca3af' : '#0d1117',
               fontWeight: 800, fontSize: '14px', cursor: detecting ? 'not-allowed' : 'pointer',
             }}>
-              {detecting ? '取得中…' : '📍 現在地から自動設定'}
+              {detecting ? '取得中…' : '現在地から自動設定'}
             </button>
             <button onClick={() => setStep('manual')} style={{
               padding: '11px 20px', borderRadius: '10px',
               border: '1px solid rgba(232,228,220,0.15)', background: '#151b24',
               fontWeight: 700, fontSize: '14px', cursor: 'pointer', color: 'rgba(232,228,220,0.75)',
             }}>
-              🗾 都道府県・市区町村を選ぶ
+              都道府県・市区町村を選ぶ
             </button>
             <button onClick={handleSkip} style={{ background: 'none', border: 'none', color: 'rgba(232,228,220,0.40)', fontSize: '12px', cursor: 'pointer', textAlign: 'left', padding: '4px 0' }}>
               あとで設定する →

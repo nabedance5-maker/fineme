@@ -95,7 +95,7 @@ export default function SubscriptionPage() {
 
           {justSubscribed && (
             <div style={{ background: 'rgba(80,200,140,0.1)', border: '1px solid rgba(80,200,140,0.35)', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px', fontSize: '14px', color: 'rgba(80,200,140,0.9)' }}>
-              🎉 サブスクへの加入が完了しました。ありがとうございます！
+              サブスクへの加入が完了しました。ありがとうございます！
             </div>
           )}
 
@@ -108,8 +108,8 @@ export default function SubscriptionPage() {
             <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '.12em', color: 'rgba(200,164,90,0.6)', textTransform: 'uppercase', margin: '0 0 16px' }}>月額780円の特典</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {[
-                { icon: '🪞', title: 'Mirror 月3回無料', desc: '毎月3回まで、写真分析（通常¥500/回）が無料で使えます。' },
-                { icon: '📚', title: 'Mirror履歴 無期限保存', desc: '過去の分析結果をいつまでも見返せます。非会員は直近5件のみ。' },
+                { icon: '', title: 'Mirror 月3回無料', desc: '毎月3回まで、写真分析（通常¥500/回）が無料で使えます。' },
+                { icon: '', title: 'Mirror履歴 無期限保存', desc: '過去の分析結果をいつまでも見返せます。非会員は直近5件のみ。' },
               ].map(item => (
                 <div key={item.title} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
                   <span style={{ fontSize: '22px', flexShrink: 0, marginTop: '2px' }}>{item.icon}</span>
@@ -129,7 +129,7 @@ export default function SubscriptionPage() {
             /* アクティブ会員 */
             <div style={{ background: 'rgba(80,200,140,0.07)', border: '1px solid rgba(80,200,140,0.25)', borderRadius: '14px', padding: '20px 24px', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                <span style={{ fontSize: '18px' }}>✅</span>
+                <span style={{ fontSize: '18px' }}></span>
                 <p style={{ fontSize: '15px', fontWeight: 800, color: 'rgba(80,200,140,0.9)', margin: 0 }}>サブスク会員（アクティブ）</p>
               </div>
               {periodEnd && (
@@ -146,7 +146,7 @@ export default function SubscriptionPage() {
                 </div>
                 <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.8)', margin: 0 }}>
                   {freeRemaining > 0
-                    ? `✨ あと ${freeRemaining} 回使えます`
+                    ? `あと ${freeRemaining} 回使えます`
                     : '今月分は使い切りました（来月1日に3回分復活）'}
                 </p>
               </div>
@@ -171,7 +171,7 @@ export default function SubscriptionPage() {
                 disabled={subscribing}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '15px 40px', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: 800, color: '#0d1117', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 0 32px rgba(0,0,0,0.3)' }}
               >
-                {subscribing ? '移動中...' : '🪞 今すぐ加入する'}
+                {subscribing ? '移動中...' : '今すぐ加入する'}
               </button>
             </div>
           )}

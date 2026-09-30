@@ -92,7 +92,7 @@ export function PersonalizedServices({ providers, firstCat }) {
                 <img src={p.thumbnail} alt={p.name} style={{ width: '100%', height: '130px', objectFit: 'cover', display: 'block' }} />
               ) : (
                 <div style={{ height: '130px', background: 'linear-gradient(135deg, #0d1117, #1e2b54)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '28px' }}>✨</span>
+                  <span style={{ fontSize: '28px' }}></span>
                 </div>
               )}
               <div style={{ padding: '12px' }}>

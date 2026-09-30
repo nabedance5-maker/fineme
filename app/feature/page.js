@@ -108,7 +108,7 @@ export default async function FeatureListPage({ searchParams }) {
         }}>
           <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '160px', height: '160px', background: 'radial-gradient(circle, rgba(200,164,90,0.07) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
           <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ fontSize: '28px', marginBottom: '10px' }}>🧭</div>
+            <div style={{ fontSize: '28px', marginBottom: '10px' }}></div>
             <h2 style={{ fontSize: 'clamp(17px, 2.8vw, 22px)', fontWeight: 800, color: '#f0ece4', marginBottom: '10px', lineHeight: 1.4, fontFamily: 'var(--font-serif)' }}>
               記事を読んだら、次は診断で「最初の一手」を見つけよう
             </h2>

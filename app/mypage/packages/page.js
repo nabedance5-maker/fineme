@@ -56,7 +56,7 @@ export default function MypagePackagesPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
                     <div>
                       <p style={{ margin: '0 0 4px', fontSize: '11px', color: 'rgba(232,228,220,0.5)' }}>{p.provider_name}</p>
-                      <p style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>🎫 {p.package_name}</p>
+                      <p style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>{p.package_name}</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <p style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: p.expired ? '#9ca3af' : '#c8a45a' }}>

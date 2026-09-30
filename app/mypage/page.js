@@ -11,7 +11,7 @@ const supabaseAnon = createClient(
 );
 
 const AXIS_LABELS = { body:'体型・ボディ', eyebrow:'眉毛', fashion:'服・コーデ', hair:'髪・ヘア', skin:'肌・エステ', teeth:'歯・口元', nail:'爪' };
-const AXIS_ICONS  = { body:'💪', eyebrow:'✂️', fashion:'👔', hair:'💇', skin:'✨', teeth:'🦷', nail:'💅' };
+const AXIS_ICONS  = { body:'体', eyebrow:'眉', fashion:'服', hair:'髪', skin:'肌', teeth:'歯', nail:'爪' };
 const PATH_LABELS = { virgin:'初挑戦タイプ', quit:'リスタートタイプ', blind:'客観化タイプ', lapsed:'再開タイプ' };
 const PATH_DESC   = { virgin:'このカテゴリは初めてです', quit:'続けられる仕組みから始めます', blind:'客観的な視点を取り入れます', lapsed:'ハードルを下げて再スタートします' };
 const AXIS_TO_CATEGORY = { body:'gym', eyebrow:'eyebrow', fashion:'fashion', hair:'hair', skin:'esthetic', teeth:'whitening', nail:'nail' };
@@ -112,7 +112,7 @@ export default function MypagePage() {
             <div className="map-card">
               <div className="map-card-top">
                 <div>
-                  <p className="map-eyebrow">🗺 New Me Navi</p>
+                  <p className="map-eyebrow">New Me Navi</p>
                   <p className="map-scan-date">スキャン済み {scanDate && `· ${scanDate}`}</p>
                 </div>
                 <Link href={track.diagnosisResult} className="map-cta-btn">マップを見る →</Link>
@@ -133,11 +133,11 @@ export default function MypagePage() {
               {/* Fineme Compass — アクション付き */}
               {compass && (
                 <div className="compass-row">
-                  <span className="compass-icon">🧭</span>
+                  <span className="compass-icon"></span>
                   <div className="compass-body">
                     <p className="compass-label">Fineme Compass — 最初の一手</p>
                     <p className="compass-axis">
-                      {AXIS_ICONS[compass]}&nbsp;{AXIS_LABELS[compass]}
+                      {AXIS_LABELS[compass]}
                       {compassVec?.path_type && (
                         <span className="compass-path">{PATH_LABELS[compassVec.path_type]}</span>
                       )}
@@ -164,7 +164,7 @@ export default function MypagePage() {
                   <div className="gap-axes-row">
                     {gapAxes.slice(0, 5).map(v => (
                       <div key={v.id} className={`gap-axis-chip${v.id === compass ? ' gap-axis-chip--compass' : ''}`}>
-                        {AXIS_ICONS[v.id]}&nbsp;{AXIS_LABELS[v.id]}
+                        {AXIS_LABELS[v.id]}
                         <span className="gap-chip-gap">+{v.gap}</span>
                       </div>
                     ))}
@@ -180,7 +180,7 @@ export default function MypagePage() {
             </div>
           ) : (
             <div className="map-card map-card--empty">
-              <p className="map-eyebrow" style={{ color: '#9ca3af' }}>🗺 New Me Navi</p>
+              <p className="map-eyebrow" style={{ color: '#9ca3af' }}>New Me Navi</p>
               <h2 style={{ fontSize: '18px', fontWeight: 800, margin: '8px 0 6px', color: '#111' }}>まだスキャンが<br />完了していません</h2>
               <p className="muted" style={{ fontSize: '14px', margin: '0 0 16px', lineHeight: 1.6 }}>Me Scanを受けると、あなたの変容ナビと<br />最初の一手が生成されます。</p>
               <Link href={track.diagnosis} className="btn" style={{ fontSize: '14px', padding: '10px 20px' }}>Me Scanをはじめる →</Link>
@@ -209,7 +209,7 @@ export default function MypagePage() {
                           <span style={{ fontSize: '18px' }}>{AXIS_ICONS[v.id]}</span>
                           <div>
                             <span style={{ fontSize: '14px', fontWeight: 800, color: 'rgba(232,228,220,0.90)' }}>{AXIS_LABELS[v.id]}</span>
-                            {isCompass && <span style={{ marginLeft: '6px', fontSize: '10px', fontWeight: 700, padding: '2px 7px', background: '#2563eb', color: '#fff', borderRadius: '99px' }}>🧭 最優先</span>}
+                            {isCompass && <span style={{ marginLeft: '6px', fontSize: '10px', fontWeight: 700, padding: '2px 7px', background: '#2563eb', color: '#fff', borderRadius: '99px' }}>最優先</span>}
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
@@ -233,7 +233,7 @@ export default function MypagePage() {
           {/* ── Fineme Mirror CTA ── */}
           <a href={track.lpMirror} style={{ display: 'block', textDecoration: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(200,164,90,0.08)', border: '1px solid rgba(236,232,223,0.193)', borderRadius: '16px' }}>
-              <span style={{ fontSize: '32px', flexShrink: 0 }}>🪞</span>
+              <span style={{ fontSize: '32px', flexShrink: 0 }}></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: '10px', fontWeight: 800, color: '#c8a45a', margin: '0 0 3px', letterSpacing: '.08em', textTransform: 'uppercase' }}>Fineme Mirror — ¥500</p>
                 <p style={{ fontSize: '15px', fontWeight: 800, color: 'rgba(232,228,220,0.95)', margin: '0 0 4px' }}>写真1枚で変容余地を可視化する</p>
@@ -269,7 +269,7 @@ export default function MypagePage() {
                 <p className="muted" style={{ fontSize: '13px', margin: 0 }}>まだ予約はありません</p>
                 {compass && AXIS_TO_CATEGORY[compass] && (
                   <Link href={`/search?category=${AXIS_TO_CATEGORY[compass]}`} className="btn" style={{ fontSize: '12px', padding: '6px 14px' }}>
-                    {AXIS_ICONS[compass]} {AXIS_LABELS[compass]}のガイドを探す
+                    {AXIS_LABELS[compass]}のガイドを探す
                   </Link>
                 )}
                 {!compass && (
@@ -280,7 +280,7 @@ export default function MypagePage() {
             {resvSummary?.total > 0 && (
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
                 <span style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)' }}>合計 <strong>{resvSummary.total}件</strong></span>
-                {resvSummary.counter > 0 && <span style={{ fontSize: '12px', color: '#6366f1', fontWeight: 700 }}>代替提案 {resvSummary.counter}件 ⚠</span>}
+                {resvSummary.counter > 0 && <span style={{ fontSize: '12px', color: '#6366f1', fontWeight: 700 }}>代替提案 {resvSummary.counter}件 </span>}
                 {resvSummary.pending > 0 && <span style={{ fontSize: '12px', color: '#f59e0b' }}>返答待ち {resvSummary.pending}件</span>}
                 {resvSummary.approved > 0 && <span style={{ fontSize: '12px', color: '#10b981' }}>承認済み {resvSummary.approved}件</span>}
               </div>

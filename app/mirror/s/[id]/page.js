@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getSupabase } from '@/lib/supabase';
+import { axisGlyph } from '@/lib/axis-glyph';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,7 +48,7 @@ export default async function MirrorSharePage({ params }) {
     return (
       <main style={{ minHeight: '100vh', background: '#151b24', color: 'rgba(232,228,220,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', textAlign: 'center' }}>
         <div>
-          <div style={{ fontSize: '40px', marginBottom: '16px' }}>🪞</div>
+          <div style={{ fontSize: '40px', marginBottom: '16px' }}></div>
           <p style={{ marginBottom: '24px' }}>この分析結果は見つかりませんでした。</p>
           <Link href="/mirror" style={{ display: 'inline-block', padding: '14px 32px', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', borderRadius: '12px', color: '#0d1117', fontWeight: 800, textDecoration: 'none' }}>
             あなたも無料で試す →
@@ -64,7 +65,7 @@ export default async function MirrorSharePage({ params }) {
     <main style={{ minHeight: '100vh', background: '#151b24', color: 'rgba(232,228,220,0.88)', paddingBottom: '80px' }}>
       <div style={{ maxWidth: '680px', margin: '0 auto', padding: '56px 20px 0', textAlign: 'center' }}>
         <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.18em', color: 'rgba(200,164,90,0.7)', textTransform: 'uppercase', marginBottom: '14px' }}>
-          🪞 Fineme Mirror
+          Fineme Mirror
         </p>
         <h1 style={{ fontFamily: "Georgia, serif", fontSize: 'clamp(24px,5vw,36px)', fontWeight: 900, color: '#fff', lineHeight: 1.25, margin: '0 0 24px' }}>
           わたしの<span style={{ color: '#c8a45a' }}>変容余地マップ</span>
@@ -84,7 +85,7 @@ export default async function MirrorSharePage({ params }) {
           return (
             <div key={axis.id || i} style={{ background: '#151b24', border: `1px solid ${pot.border}`, borderRadius: '14px', padding: '18px 20px', marginBottom: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                <span style={{ fontSize: '22px' }}>{axis.icon}</span>
+                <span style={{ fontSize: '22px', fontFamily: 'var(--font-serif)' }}>{axisGlyph(axis.id)}</span>
                 <span style={{ fontSize: '15px', fontWeight: 800, color: '#e8e4dc', flex: 1 }}>{axis.name}</span>
                 <span style={{ fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '20px', background: pot.bg, border: `1px solid ${pot.border}`, color: pot.text, whiteSpace: 'nowrap' }}>
                   {pot.label}

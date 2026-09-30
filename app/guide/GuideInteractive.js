@@ -31,7 +31,7 @@ export default function GuideInteractive({ axes, tierInfo }) {
     <section className="guide-sec" style={{ marginTop: '36px' }}>
       {hasDiagnosis && compassAxis ? (
         <div className="compass-banner">
-          <div className="compass-banner-icon">🧭</div>
+          <div className="compass-banner-icon"></div>
           <div>
             <div className="compass-banner-title">
               あなたのFinemeコンパス: {axes.find(a => a.id === compassAxis)?.icon} {axes.find(a => a.id === compassAxis)?.label}
@@ -44,13 +44,13 @@ export default function GuideInteractive({ axes, tierInfo }) {
       ) : (
         <div className="no-diag-banner">
           <p style={{ fontSize: '15px', fontWeight: '700', color: 'rgba(232,228,220,0.90)', margin: '0 0 8px' }}>
-            🧬 Me Scanを受けると、あなた専用の優先順位が生成されます
+            Me Scanを受けると、あなた専用の優先順位が生成されます
           </p>
           <p style={{ fontSize: '13px', color: 'rgba(232,228,220,0.60)', margin: '0 0 16px', lineHeight: '1.8' }}>
             今は一般的な順番（Tier順）で表示しています。<br />
             あなたの現在地・来た道・ゴールに合わせた地図が欲しい方は無料のMe Scanを。
           </p>
-          <Link href="/diagnosis" className="guide-axis-cta">🧬 Me Scanを受ける（無料・約3分）</Link>
+          <Link href="/diagnosis" className="guide-axis-cta">Me Scanを受ける（無料・約3分）</Link>
         </div>
       )}
 
@@ -74,7 +74,7 @@ export default function GuideInteractive({ axes, tierInfo }) {
                 <div className="guide-axis-icon">{axis.icon}</div>
                 <div className="guide-axis-label">
                   {axis.label}
-                  {isCompass && <span className="compass-crown" style={{ marginLeft: '8px' }}>🧭 あなたの最優先</span>}
+                  {isCompass && <span className="compass-crown" style={{ marginLeft: '8px' }}>あなたの最優先</span>}
                 </div>
                 <span className="guide-axis-tier-badge" style={{ background: info.bg, color: info.color, border: `1px solid ${info.border}` }}>
                   Tier {axis.tier}
@@ -83,8 +83,8 @@ export default function GuideInteractive({ axes, tierInfo }) {
               <div className="guide-axis-body">
                 <p className="guide-axis-quick">{axis.quick_win}</p>
                 <div className="guide-axis-meta">
-                  <span className="guide-axis-chip">🎯 {axis.start}</span>
-                  <span className="guide-axis-chip">✨ {axis.effect}</span>
+                  <span className="guide-axis-chip">{axis.start}</span>
+                  <span className="guide-axis-chip">{axis.effect}</span>
                 </div>
                 {pathMsg && (
                   <div className="guide-axis-path">
@@ -106,7 +106,7 @@ export default function GuideInteractive({ axes, tierInfo }) {
           Me Scanを受けると、あなたの現在地・ギャップ・来た道に合わせた<br />
           8軸の変容ナビ（New Me Navi）と変容マップ（New Me Map）が生成されます。
         </p>
-        <Link href="/diagnosis" className="guide-scan-btn">🧬 Me Scanを受ける（無料）</Link>
+        <Link href="/diagnosis" className="guide-scan-btn">Me Scanを受ける（無料）</Link>
       </div>
     </section>
   );

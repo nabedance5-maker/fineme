@@ -47,7 +47,7 @@ export default async function Image({ params }) {
           letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '24px',
           display: 'flex',
         }}>
-          🪞 FINEME MIRROR — 変容余地マップ
+          FINEME MIRROR — 変容余地マップ
         </div>
 
         <div style={{
@@ -66,7 +66,7 @@ export default async function Image({ params }) {
               background: 'rgba(255,255,255,0.04)',
               border: `2px solid ${LEVEL_COLOR[a.potential_level] || '#7aadff'}`,
             }}>
-              <span style={{ fontSize: '22px' }}>{a.icon || '•'}</span>
+              <span style={{ fontSize: '22px' }}>•</span>
               <span style={{ fontSize: '20px', color: '#fff', fontWeight: 700 }}>{a.name}</span>
               <span style={{ fontSize: '18px', color: LEVEL_COLOR[a.potential_level] || '#7aadff', fontWeight: 800 }}>
                 {a.potential_level || ''}

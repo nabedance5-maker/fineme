@@ -95,14 +95,14 @@ export default function DiagnosisPage() {
     const STORAGE_KEY = 'fineme:diagnosis:latest';
 
     const CONCERN_AREAS = [
-      { id:'body',         icon:'💪',  label:'体型・ボディ',        tier:1 },
-      { id:'eyebrow',      icon:'✂️', label:'眉毛',                tier:1 },
-      { id:'fashion',      icon:'👔',  label:'服・コーデ',           tier:1 },
-      { id:'hair',         icon:'💇‍♂️', label:'髪・ヘア',        tier:1, hasAga:true },
-      { id:'skin',         icon:'✨',   label:'肌・ニキビ・エステ',  tier:2 },
-      { id:'hairremoval',  icon:'🪒',   label:'脱毛・ムダ毛',        tier:2 },
-      { id:'teeth',        icon:'🦷',  label:'歯・口元',            tier:3 },
-      { id:'nail',         icon:'💅',  label:'爪',                  tier:4 },
+      { id:'body',         icon:'体',  label:'体型・ボディ',        tier:1 },
+      { id:'eyebrow',      icon:'眉', label:'眉毛',                tier:1 },
+      { id:'fashion',      icon:'服',  label:'服・コーデ',           tier:1 },
+      { id:'hair',         icon:'髪', label:'髪・ヘア',        tier:1, hasAga:true },
+      { id:'skin',         icon:'肌',   label:'肌・ニキビ・エステ',  tier:2 },
+      { id:'hairremoval',  icon:'毛',   label:'脱毛・ムダ毛',        tier:2 },
+      { id:'teeth',        icon:'歯',  label:'歯・口元',            tier:3 },
+      { id:'nail',         icon:'爪',  label:'爪',                  tier:4 },
     ];
 
     const STYLE_MAP = {
@@ -115,7 +115,7 @@ export default function DiagnosisPage() {
     // 来た道の自己申告（path_q/path_opts）は廃止。view_q/love_qはdeepen（結果画面から
     // 1軸ずつ導く客観視・恋愛への影響）でのみ使う
     const CATEGORY_PHASE3 = [
-      { id:'body',    icon:'💪', label:'体型・ボディ',
+      { id:'body',    icon:'体', label:'体型・ボディ',
         view_q:'他の人から見た自分の体型、実際どう見えていると思う？',
         view_opts:[
           {v:'better',   t:'自分が思っているより良く見えていると思う'},
@@ -129,7 +129,7 @@ export default function DiagnosisPage() {
           {v:'sometimes',t:'たまにある'},
           {v:'rarely',   t:'あまりない'},
         ], has_love:true },
-      { id:'eyebrow', icon:'✂️', label:'眉毛',
+      { id:'eyebrow', icon:'眉', label:'眉毛',
         view_q:'自分の眉って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'整って見えていると思う'},
@@ -143,7 +143,7 @@ export default function DiagnosisPage() {
           {v:'sometimes',t:'たまにある'},
           {v:'rarely',   t:'あまりない'},
         ], has_love:true },
-      { id:'fashion', icon:'👔', label:'服・コーデ',
+      { id:'fashion', icon:'服', label:'服・コーデ',
         view_q:'自分の着こなしって、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'整って見えていると思う'},
@@ -157,7 +157,7 @@ export default function DiagnosisPage() {
           {v:'sometimes',t:'たまにある'},
           {v:'rarely',   t:'あまりない'},
         ], has_love:true },
-      { id:'hair', icon:'💇', label:'髪・ヘア',
+      { id:'hair', icon:'髪', label:'髪・ヘア',
         view_q:'自分の髪型って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'整って見えていると思う'},
@@ -171,7 +171,7 @@ export default function DiagnosisPage() {
           {v:'sometimes',t:'たまにある'},
           {v:'rarely',   t:'あまりない'},
         ], has_love:true },
-      { id:'skin', icon:'✨', label:'肌・ニキビ・エステ',
+      { id:'skin', icon:'肌', label:'肌・ニキビ・エステ',
         view_q:'自分の肌って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'清潔感があると思われていると思う'},
@@ -185,7 +185,7 @@ export default function DiagnosisPage() {
           {v:'sometimes',t:'たまにある'},
           {v:'rarely',   t:'あまりない'},
         ], has_love:true },
-      { id:'hairremoval', icon:'🪒', label:'脱毛・ムダ毛',
+      { id:'hairremoval', icon:'毛', label:'脱毛・ムダ毛',
         view_q:'自分のムダ毛って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'気になるレベルではないと思う'},
@@ -194,7 +194,7 @@ export default function DiagnosisPage() {
           {v:'unknown',  t:'まったくわからない'},
         ],
         has_love:false },
-      { id:'teeth', icon:'🦷', label:'歯・口元',
+      { id:'teeth', icon:'歯', label:'歯・口元',
         view_q:'自分の歯・口元って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'清潔感があると思われていると思う'},
@@ -208,7 +208,7 @@ export default function DiagnosisPage() {
           {v:'sometimes',t:'たまにある'},
           {v:'rarely',   t:'あまりない'},
         ], has_love:true },
-      { id:'nail', icon:'💅', label:'爪',
+      { id:'nail', icon:'爪', label:'爪',
         view_q:'自分の爪・手元って、他の人から見てどう見えていると思う？',
         view_opts:[
           {v:'better',   t:'整って見えていると思う'},
@@ -1040,7 +1040,7 @@ export default function DiagnosisPage() {
       const labelEl = document.getElementById('deepen-label');
       const headEl  = document.getElementById('deepen-heading');
       if (labelEl) labelEl.textContent = `地図を描き込む｜${cat.label}`;
-      if (headEl) headEl.innerHTML = `${cat.icon} ${cat.label}のことを、<br>もう少しだけ聞かせてください`;
+      if (headEl) headEl.innerHTML = `${cat.label}のことを、<br>もう少しだけ聞かせてください`;
 
       container.innerHTML = QUESTIONS.map((qq, qi) => `
         <div class="diag-card" style="margin-bottom:12px">
@@ -1124,9 +1124,9 @@ export default function DiagnosisPage() {
               <p>今のあなたを丁寧にスキャンして、<br />あなただけの変容ナビを生成します。</p>
               <p style={{fontSize:'13px',color:'#9ca3af'}}>外見より先に、「あなたの状況」を聞きます。<br />だから答えが、本物になる。</p>
               <div className="diag-badges">
-                <span className="diag-badge" style={{fontWeight:'800',background:'rgba(200,164,90,0.15)',color:'#a07830',border:'1px solid rgba(236,232,223,0.22)',fontSize:'13px',padding:'7px 14px'}}>🐉 136タイプからあなたのタイプを判定</span>
-                <span className="diag-badge">⏱️ 約4分</span>
-                <span className="diag-badge">🕶️ 登録不要</span>
+                <span className="diag-badge" style={{fontWeight:'800',background:'rgba(200,164,90,0.15)',color:'#a07830',border:'1px solid rgba(236,232,223,0.22)',fontSize:'13px',padding:'7px 14px'}}>136タイプからあなたのタイプを判定</span>
+                <span className="diag-badge">約4分</span>
+                <span className="diag-badge">登録不要</span>
               </div>
               <button className="diag-nav-next" id="btn-start" style={{width:'100%',fontSize:'18px',padding:'16px'}}>Me Scanをはじめる</button>
             </div>
@@ -1143,17 +1143,17 @@ export default function DiagnosisPage() {
             <h2 style={{fontFamily:"'Shippori Mincho',Georgia,serif",fontSize:'clamp(22px,6vw,34px)',fontWeight:'900',color:'#fff',margin:'0 0 20px',lineHeight:1.2}}>黒髪の臥す伏竜</h2>
             <div style={{width:'min(200px,60vw)',height:'min(268px,80vw)',margin:'0 auto 18px',borderRadius:'16px',overflow:'hidden',border:'2px solid rgba(59,130,246,0.4)',boxShadow:'0 0 28px rgba(59,130,246,0.18)',position:'relative',display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(59,130,246,0.08)'}}>
               <img src="/images/types/TYPE-HND.webp" alt="伏竜" style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,borderRadius:'14px'}} onError={(e)=>{e.currentTarget.style.display='none';const s=e.currentTarget.nextElementSibling;if(s)s.style.visibility='visible';}} />
-              <span style={{fontSize:'56px',position:'relative',zIndex:0,visibility:'hidden'}}>🐉</span>
+              <span style={{fontSize:'56px',position:'relative',zIndex:0,visibility:'hidden'}}></span>
             </div>
             <p style={{fontSize:'13px',color:'rgba(232,228,220,0.5)',lineHeight:1.85,maxWidth:'260px',margin:'0 auto'}}>深き影に潜む竜。その才、まだ誰も知らない。</p>
           </div>
 
           {/* Compass strip */}
           <div style={{background:'#151b24',border:'1.5px solid rgba(236,232,223,0.165)',borderRadius:'14px',padding:'14px 16px',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',gap:'14px',marginBottom:'10px'}}>
-            <span style={{fontSize:'26px',flexShrink:0}}>🧭</span>
+            <span style={{fontSize:'26px',flexShrink:0}}></span>
             <div style={{flex:1}}>
               <div style={{fontSize:'10px',fontWeight:'700',color:'rgba(200,164,90,0.65)',letterSpacing:'.08em',margin:'0 0 2px'}}>Fineme Compass — 今向くべき方角</div>
-              <div style={{fontSize:'16px',fontWeight:'900',color:'#fff',margin:'0 0 3px'}}>💇 髪 が最初の一手</div>
+              <div style={{fontSize:'16px',fontWeight:'900',color:'#fff',margin:'0 0 3px'}}>髪 が最初の一手</div>
               <div style={{fontSize:'12px',color:'rgba(232,228,220,0.5)',lineHeight:1.6}}>髪型は第一印象の30%。美容院1回で「なんかいい感じ」が体感できる。</div>
             </div>
           </div>
@@ -1235,7 +1235,7 @@ export default function DiagnosisPage() {
               <label className="care-overall-wrap" id="care-overall-wrap">
                 <input type="checkbox" id="care-overall-check" style={{width:'20px',height:'20px',accentColor:'#6366f1',flexShrink:'0',cursor:'pointer'}} />
                 <span className="care-overall-text">
-                  <span style={{fontSize:'18px'}}>🪞</span>
+                  <span style={{fontSize:'18px'}}></span>
                   <span>
                     <strong style={{display:'block',fontSize:'14px',color:'#111'}}>上記の複数をまとめてトータルで整えたい</strong>
                     <span style={{fontSize:'12px',color:'#6b7280'}}>スタイル・外見全体を一緒に考えてほしい</span>

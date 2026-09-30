@@ -15,16 +15,16 @@ export const metadata = {
 };
 
 const CATEGORY_EMOJI = {
-  eyebrow: '✂️', skincare: '✨', hair: '💇', fashion: '👗',
-  nail: '💅', hairremoval: '🌿', teeth: '😁', body: '💪',
-  philosophy: '🌸', guide: '🔮',
-  '眉毛': '✂️', 'スキンケア': '✨', 'ヘア': '💇', 'ファッション': '👗',
-  'ネイル': '💅', '脱毛': '🌿', '歯・笑顔': '😁', '歯': '😁', 'ボディ': '💪',
-  '考え方': '🌸', '垢抜け': '💫',
+  eyebrow: '眉', skincare: '肌', hair: '髪', fashion: '服',
+  nail: '爪', hairremoval: '毛', teeth: '歯', body: '体',
+  philosophy: '', guide: '',
+  '眉毛': '眉', 'スキンケア': '肌', 'ヘア': '髪', 'ファッション': '服',
+  'ネイル': '爪', '脱毛': '毛', '歯・笑顔': '歯', '歯': '歯', 'ボディ': '体',
+  '考え方': '', '垢抜け': '',
 };
 
 function categoryEmoji(cat) {
-  return CATEGORY_EMOJI[cat] ?? '🌸';
+  return CATEGORY_EMOJI[cat] ?? '';
 }
 
 // Supabase記事 → カード表示用に正規化

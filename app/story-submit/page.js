@@ -16,20 +16,20 @@ const TAG_OPTIONS = [
 ];
 
 const AXIS_OPTIONS = [
-  { id: 'body',    icon: '💪', label: '体型' },
-  { id: 'eyebrow', icon: '✂️', label: '眉毛' },
-  { id: 'fashion', icon: '👔', label: '服・コーデ' },
-  { id: 'hair',    icon: '💇', label: '髪・ヘア' },
-  { id: 'skin',    icon: '✨', label: '肌' },
-  { id: 'teeth',   icon: '🦷', label: '歯・口元' },
-  { id: 'nail',    icon: '💅', label: '爪' },
+  { id: 'body',    icon: '体', label: '体型' },
+  { id: 'eyebrow', icon: '眉', label: '眉毛' },
+  { id: 'fashion', icon: '服', label: '服・コーデ' },
+  { id: 'hair',    icon: '髪', label: '髪・ヘア' },
+  { id: 'skin',    icon: '肌', label: '肌' },
+  { id: 'teeth',   icon: '歯', label: '歯・口元' },
+  { id: 'nail',    icon: '爪', label: '爪' },
 ];
 
 const PATH_OPTIONS = [
-  { id: 'virgin', label: '🌱 初挑戦' },
-  { id: 'quit',   label: '🔄 リスタート' },
-  { id: 'blind',  label: '🤔 客観化' },
-  { id: 'lapsed', label: '😴 再開' },
+  { id: 'virgin', label: '初挑戦' },
+  { id: 'quit',   label: 'リスタート' },
+  { id: 'blind',  label: '客観化' },
+  { id: 'lapsed', label: '再開' },
 ];
 
 const MAX_STEP = 5;
@@ -166,7 +166,7 @@ export default function StorySubmitPage() {
         </section>
         <div className="container story-form">
           <div className="done-screen card" style={{ padding: '48px', textAlign: 'center' }}>
-            <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
+            <div style={{ fontSize: '64px', marginBottom: '16px' }}></div>
             <h2 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '8px' }}>投稿ありがとうございます</h2>
             <p style={{ color: '#6b7280', marginBottom: '24px' }}>
               あなたのストーリーは運営が確認後、Finemeのストーリーページに掲載されます。<br />
@@ -255,7 +255,7 @@ export default function StorySubmitPage() {
                   )}
                   {/* 変容トラック（任意・New Me Navi連動） */}
                   <div style={{ marginTop: '20px', padding: '14px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '12px' }}>
-                    <p style={{ fontSize: '12px', fontWeight: 700, color: '#0369a1', margin: '0 0 10px' }}>🗺 変容トラック（任意）— New Me Navi 連動</p>
+                    <p style={{ fontSize: '12px', fontWeight: 700, color: '#0369a1', margin: '0 0 10px' }}>変容トラック（任意）— New Me Navi 連動</p>
                     <div style={{ marginBottom: '10px' }}>
                       <p style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', margin: '0 0 6px' }}>この変容は主にどの軸でしたか？</p>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -264,7 +264,7 @@ export default function StorySubmitPage() {
                             key={a.id}
                             onClick={() => setAxisId(prev => prev === a.id ? '' : a.id)}
                             style={{ padding: '5px 12px', borderRadius: '99px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', border: '1.5px solid', borderColor: axisId === a.id ? '#0ea5e9' : '#e5e7eb', background: axisId === a.id ? '#e0f2fe' : '#fff', color: axisId === a.id ? '#0c4a6e' : '#374151' }}
-                          >{a.icon} {a.label}</div>
+                          >{a.label}</div>
                         ))}
                       </div>
                     </div>
@@ -331,7 +331,7 @@ export default function StorySubmitPage() {
                     {axisId && <span style={{ padding: '3px 10px', borderRadius: '99px', fontSize: '12px', background: '#dbeafe', color: '#1e40af', fontWeight: 700 }}>{AXIS_OPTIONS.find(a => a.id === axisId)?.icon} {AXIS_OPTIONS.find(a => a.id === axisId)?.label}</span>}
                     {pathType && <span style={{ padding: '3px 10px', borderRadius: '99px', fontSize: '12px', background: '#f0fdf4', color: '#166534', fontWeight: 600 }}>{PATH_OPTIONS.find(p => p.id === pathType)?.label}</span>}
                   </div>
-                  {milestoneReached && <div style={{ fontSize: '13px', marginTop: '6px', color: '#6366f1' }}>🏆 {milestoneReached}</div>}
+                  {milestoneReached && <div style={{ fontSize: '13px', marginTop: '6px', color: '#6366f1' }}>{milestoneReached}</div>}
                 </div>
               )}
             </div>

@@ -231,7 +231,7 @@ function CalloutBlock({ text }) {
     }}>
       <div style={{ position: 'absolute', top: '-24px', right: '-24px', width: '120px', height: '120px', background: 'radial-gradient(circle, rgba(200,164,90,0.06) 0%, transparent 70%)', borderRadius: '50%' }} />
       <div style={{ position: 'absolute', bottom: '-16px', left: '-16px', width: '80px', height: '80px', background: 'radial-gradient(circle, rgba(200,164,90,0.04) 0%, transparent 70%)', borderRadius: '50%' }} />
-      <div style={{ fontSize: '20px', marginBottom: '10px', opacity: 0.7 }}>💡</div>
+      <div style={{ fontSize: '20px', marginBottom: '10px', opacity: 0.7 }}></div>
       <p style={{ fontSize: '15px', lineHeight: 1.9, color: 'rgba(240,236,228,0.88)', margin: 0, position: 'relative', fontFamily: 'var(--font-serif-ja)' }}>
         {text}
       </p>
@@ -291,7 +291,7 @@ function ChecklistBlock({ title, items }) {
     }}>
       {title && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid rgba(236,232,223,0.066)' }}>
-          <span style={{ fontSize: '18px' }}>☑️</span>
+          <span style={{ fontSize: '18px' }}></span>
           <p style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.9)', margin: 0, fontFamily: 'var(--font-sans)' }}>
             {title}
           </p>
@@ -489,7 +489,7 @@ function ProductBlock({ name, url, reason }) {
       textDecoration: 'none',
       transition: 'border-color .15s, background .15s',
     }}>
-      <span style={{ fontSize: '20px', flexShrink: 0 }}>🛒</span>
+      <span style={{ fontSize: '20px', flexShrink: 0 }}></span>
       <div style={{ flex: 1, minWidth: 0 }}>
         {reason && (
           <p style={{ fontSize: '11px', color: 'rgba(200,164,90,0.7)', margin: '0 0 3px', fontWeight: 700, fontFamily: 'var(--font-sans)' }}>

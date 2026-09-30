@@ -6,9 +6,9 @@ import MypageSideNav from '../_components/MypageSideNav';
 
 const LEVEL_TEXT = ['全然', '少し', 'そこそこ', 'かなり', 'すごく'];
 const CONCERN_ICONS = {
-  hair: '💇‍♂️', skin: '✨', eyebrow: '✂️', body: '💪', fashion: '👔',
-  beard: '💈', teeth_whitening: '🦷', teeth_alignment: '😬', teeth_odor: '💨',
-  posture: '🚶', overall: '🪞',
+  hair: '髪', skin: '肌', eyebrow: '眉', body: '体', fashion: '服',
+  beard: '', teeth_whitening: '歯', teeth_alignment: '', teeth_odor: '',
+  posture: '姿', overall: '全',
 };
 const CONCERN_NAMES = {
   hair: '髪型・髪', skin: '肌・ニキビ', eyebrow: '眉毛', body: '体型・体', fashion: '服・コーデ',
@@ -181,7 +181,7 @@ export default function MypageDiagnosisPage() {
                   <h2 style={{ margin: '0 0 14px' }}>気になり度マップ</h2>
                   {concernSorted.map(([id, level]) => (
                     <div key={id} className="concern-bar-row">
-                      <div className="concern-bar-label">{CONCERN_ICONS[id] || ''} {CONCERN_NAMES[id] || id}</div>
+                      <div className="concern-bar-label">{CONCERN_NAMES[id] || id}</div>
                       <div className="concern-bar-track">
                         <div className="concern-bar-fill" style={{ width: `${Math.round((level / 4) * 100)}%`, background: levelColor(level) }} />
                       </div>
@@ -221,8 +221,8 @@ export default function MypageDiagnosisPage() {
                 const cardBg     = isApproaching ? 'linear-gradient(135deg,rgba(200,164,90,0.07),rgba(13,17,23,0.03))' : '#f9fafb';
                 const cardBorder = isApproaching ? '1.5px solid rgba(200,164,90,0.3)' : '1.5px solid #e5e7eb';
                 const stageStages = [
-                  { icon: '📸', title: '写真撮影', sub: 'マッチングアプリ・プロフィール写真', href: '/search?category=photo' },
-                  { icon: '💍', title: '婚活サポート', sub: '自信を持った自分で、真剣な出会いへ', href: '/search?category=marriage' },
+                  { icon: '', title: '写真撮影', sub: 'マッチングアプリ・プロフィール写真', href: '/search?category=photo' },
+                  { icon: '', title: '婚活サポート', sub: '自信を持った自分で、真剣な出会いへ', href: '/search?category=marriage' },
                 ];
                 return (
                   <div className="card" style={{ padding: '20px', background: cardBg, border: cardBorder }}>
@@ -240,7 +240,7 @@ export default function MypageDiagnosisPage() {
                       </p>
                     ) : (
                       <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 16px' }}>
-                        🔒 New Me Mapのステップを進めると、このステージが開放されます。
+                        New Me Mapのステップを進めると、このステージが開放されます。
                       </p>
                     )}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -298,7 +298,7 @@ export default function MypageDiagnosisPage() {
         {/* Fineme Mirror CTA */}
         <a href={track.lpMirror} style={{ display: 'block', textDecoration: 'none', marginTop: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '18px 20px', background: 'rgba(200,164,90,0.08)', border: '1px solid rgba(236,232,223,0.193)', borderRadius: '14px' }}>
-            <span style={{ fontSize: '28px', flexShrink: 0 }}>🪞</span>
+            <span style={{ fontSize: '28px', flexShrink: 0 }}></span>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', color: '#c8a45a', textTransform: 'uppercase', margin: '0 0 4px' }}>Fineme Mirror — ¥500</p>
               <p style={{ fontSize: '14px', fontWeight: 700, color: 'rgba(232,228,220,0.95)', margin: '0 0 3px' }}>写真1枚で変容余地を可視化する</p>

@@ -48,6 +48,9 @@ body {
   background: #0d1117;
 }
 img { max-width: 100%; display: block; }
+/* 2026-09-30: サイト全体で絵文字を使わない方針。旧絵文字アイコン枠には軸の漢字一字
+   （lib/axis-glyph.js）を置くので、アイコン枠は明朝で表示する */
+[class*="-icon"], [class*="-ico"], .gm-circle { font-family: var(--font-serif); }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; }
 

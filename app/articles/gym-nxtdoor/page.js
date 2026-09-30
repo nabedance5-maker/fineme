@@ -736,10 +736,10 @@ export default function NxtdoorArticlePage() {
               <p className="art-card__sub">パーソナルジム</p>
               <ul className="art-card__items">
                 <li className="art-card__item">
-                  <span>📍</span>東京都杉並区｜JR高円寺駅 徒歩7分
+                  <span></span>東京都杉並区｜JR高円寺駅 徒歩7分
                 </li>
                 <li className="art-card__item">
-                  <span>👤</span>トレーナー：後藤 海（GOTO KAI）
+                  <span></span>トレーナー：後藤 海（GOTO KAI）
                 </li>
               </ul>
               <a

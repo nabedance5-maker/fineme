@@ -79,7 +79,7 @@ export default function LpPage() {
               '「清潔感を上げろ」と言われるが、具体的に何をすればいいかわからない',
             ].map((t, i) => (
               <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', padding: '14px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(236,232,223,0.066)', borderRadius: '10px' }}>
-                <span style={{ fontSize: '16px', flexShrink: 0 }}>😔</span>
+                <span style={{ fontSize: '16px', flexShrink: 0 }}></span>
                 <span style={{ fontSize: '14px', color: 'rgba(240,236,228,0.75)', lineHeight: 1.7 }}>{t}</span>
               </div>
             ))}
@@ -98,7 +98,7 @@ export default function LpPage() {
               Fineme の診断は、8軸の分析で「今の自分に最も効く一手」を特定します。
             </p>
             <div className="axis-grid">
-              {[['💪','体型'],['✂️','眉毛'],['💈','ヘア'],['🌿','肌'],['👔','服'],['🪒','脱毛'],['🦷','歯'],['💅','爪']].map(([icon, label]) => (
+              {[['体','体型'],['眉','眉毛'],['','ヘア'],['毛','肌'],['服','服'],['毛','脱毛'],['歯','歯'],['爪','爪']].map(([icon, label]) => (
                 <div className="axis-item" key={label}>
                   <div className="axis-icon">{icon}</div>
                   <div className="axis-label">{label}</div>
@@ -112,9 +112,9 @@ export default function LpPage() {
         <section style={{ padding: 'clamp(40px,8vw,64px) 20px', maxWidth: '680px', margin: '0 auto' }}>
           <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', color: '#c8a45a', textTransform: 'uppercase', marginBottom: '20px', textAlign: 'center' }}>3ステップで始まる変容の旅</p>
           {[
-            ['🔍', 'Me Scan を受ける（3分）', '8軸の設問に答えると、今の自分の「変容地図」が生成されます。無料・登録不要。'],
-            ['🧭', 'Compass（最初の一手）を確認する', '今向くべき軸と、最初に取り組むべきサービスが提示されます。'],
-            ['🏆', '専門家に繋がる', '診断結果と相性の高いパーソナルジム・眉毛サロン・美容院などが表示されます。'],
+            ['', 'Me Scan を受ける（3分）', '8軸の設問に答えると、今の自分の「変容地図」が生成されます。無料・登録不要。'],
+            ['', 'Compass（最初の一手）を確認する', '今向くべき軸と、最初に取り組むべきサービスが提示されます。'],
+            ['', '専門家に繋がる', '診断結果と相性の高いパーソナルジム・眉毛サロン・美容院などが表示されます。'],
           ].map(([icon, title, desc], i) => (
             <div className="step-item" key={i}>
               <div className="step-num">{i + 1}</div>
@@ -137,7 +137,7 @@ export default function LpPage() {
                 ['「アプリの写真を撮り直す前に、まず外見を整えるべきだと気づかせてくれた。診断は必須です。」', '20代 大学院生'],
               ].map(([text, meta], i) => (
                 <div className="voice-card" key={i}>
-                  <div style={{ fontSize: '18px', marginBottom: '8px' }}>⭐⭐⭐⭐⭐</div>
+                  <div style={{ fontSize: '18px', marginBottom: '8px' }}></div>
                   <div className="voice-text">「{text}」</div>
                   <div className="voice-meta">— {meta}</div>
                 </div>
@@ -165,7 +165,7 @@ export default function LpPage() {
         {/* ── 最終CTA ── */}
         <section style={{ padding: 'clamp(48px,10vw,80px) 20px', textAlign: 'center', background: 'linear-gradient(160deg, #0d1117 0%, #060c1a 100%)' }}>
           <div style={{ maxWidth: '560px', margin: '0 auto' }}>
-            <div style={{ fontSize: '32px', marginBottom: '14px' }}>🧭</div>
+            <div style={{ fontSize: '32px', marginBottom: '14px' }}></div>
             <h2 style={{ fontSize: 'clamp(20px,4vw,28px)', fontWeight: 800, fontFamily: 'Georgia, serif', color: '#fff', marginBottom: '14px', lineHeight: 1.4 }}>
               変わりたいと思った今が、<br />最高のスタートです。
             </h2>

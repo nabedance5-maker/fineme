@@ -48,7 +48,7 @@ function FeedbackForm() {
   if (status === 'done') {
     return (
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '40px', marginBottom: '16px' }}>🪞</div>
+        <div style={{ fontSize: '40px', marginBottom: '16px' }}></div>
         <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#fff', marginBottom: '12px', lineHeight: 1.4 }}>
           ありがとうございます。<br />
           <span style={{ color: '#c8a45a' }}>声が届きました。</span>
@@ -118,7 +118,7 @@ export default function MirrorFeedbackPage() {
     <main style={{ background: '#080d1a', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
       <div style={{ maxWidth: '520px', width: '100%' }}>
         <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '.14em', color: '#c8a45a', textTransform: 'uppercase', marginBottom: '14px', textAlign: 'center' }}>
-          🪞 Fineme Mirror
+          Fineme Mirror
         </p>
         <h1 style={{ fontSize: 'clamp(20px,5vw,26px)', fontWeight: 900, fontFamily: 'Georgia, serif', color: '#fff', marginBottom: '24px', lineHeight: 1.4, textAlign: 'center' }}>
           分析から1日。<br />

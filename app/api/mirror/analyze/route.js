@@ -68,6 +68,7 @@ ${checklistSection}
 - hints[2]：1ヶ月続けると出る変化・次のフェーズ
 外部サービスへの誘導・URLは禁止
 
+※すべての文字列フィールドで絵文字を使わない。
 以下のJSON形式のみで出力してください（コードブロックなし、JSONだけ）:
 {
   "photo_type": "face" または "fullbody" または "both",
@@ -76,7 +77,6 @@ ${checklistSection}
     {
       "id": "eyebrow",
       "name": "眉・目元",
-      "icon": "🎯",
       "potential_level": "高" または "中" または "低",
       "potential_reason": "変容余地レベルの根拠を一言で（チェックリストの観察から導いた理由）",
       "summary": "【上記summaryルール厳守】観察事実1文＋変容後イメージ1文。2文のみ。",

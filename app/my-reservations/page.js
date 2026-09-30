@@ -84,11 +84,11 @@ function ReservationCard({ r, onRefresh, accessToken }) {
 
       {/* 希望日時 */}
       <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '8px' }}>
-        📅 第1希望: {r.reserved_date || '—'} {r.start_time || ''}
+        第1希望: {r.reserved_date || '—'} {r.start_time || ''}
       </div>
 
       {/* メニュー */}
-      {menuText && <p style={{ fontSize: '13px', fontWeight: '700', color: '#374151', margin: '0 0 8px' }}>🎯 {menuText}</p>}
+      {menuText && <p style={{ fontSize: '13px', fontWeight: '700', color: '#374151', margin: '0 0 8px' }}>{menuText}</p>}
 
       {/* ユーザーメッセージ */}
       {userMsg && <div style={{ fontSize: '13px', color: 'rgba(232,228,220,0.75)', padding: '8px 12px', background: '#151b24', borderRadius: '8px', marginBottom: '10px' }}>{userMsg}</div>}
@@ -104,7 +104,7 @@ function ReservationCard({ r, onRefresh, accessToken }) {
       {/* 代替提案 */}
       {r.status === 'counter_proposed' && (
         <div style={{ padding: '14px 16px', background: '#eef2ff', border: '1.5px solid #818cf8', borderRadius: '10px', marginBottom: '12px' }}>
-          <p style={{ fontSize: '12px', fontWeight: '700', color: '#4f46e5', margin: '0 0 6px' }}>📋 掲載者から代替日時の提案があります</p>
+          <p style={{ fontSize: '12px', fontWeight: '700', color: '#4f46e5', margin: '0 0 6px' }}>掲載者から代替日時の提案があります</p>
           <p style={{ fontSize: '16px', fontWeight: '800', color: '#4f46e5', margin: '0 0 8px' }}>
             {fmtDate(r.counter_date)} {r.counter_time}
           </p>
@@ -116,10 +116,10 @@ function ReservationCard({ r, onRefresh, accessToken }) {
               const m = Math.floor((diff % 3600000) / 60000);
               const txt = diff <= 0 ? '期限切れ' : h >= 1 ? `残り${h}時間${m > 0 ? m + '分' : ''}` : `残り${m}分`;
               const urgent = diff > 0 && diff < 3 * 3600000;
-              return <p style={{ fontSize: '12px', fontWeight: '700', color: urgent ? '#ef4444' : '#6b7280', margin: '0 0 12px' }}>⏰ {txt}に自動キャンセル</p>;
+              return <p style={{ fontSize: '12px', fontWeight: '700', color: urgent ? '#ef4444' : '#6b7280', margin: '0 0 12px' }}>{txt}に自動キャンセル</p>;
             })()
           ) : (
-            <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 12px' }}>⏰ お早めにご返答ください（24時間以内推奨）</p>
+            <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 12px' }}>お早めにご返答ください（24時間以内推奨）</p>
           )}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
@@ -241,7 +241,7 @@ function MyReservationsContent() {
         <p style={{ color: '#9ca3af', textAlign: 'center', padding: '40px' }}>読み込み中…</p>
       ) : !searched ? null : reservations.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', background: '#151b24', borderRadius: '16px', border: '1px dashed rgba(232,228,220,0.20)' }}>
-          <p style={{ fontSize: '32px', margin: '0 0 12px' }}>📭</p>
+          <p style={{ fontSize: '32px', margin: '0 0 12px' }}></p>
           <p style={{ fontSize: '15px', fontWeight: '700', color: '#374151', margin: '0 0 6px' }}>予約履歴が見つかりません</p>
           <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>予約時に使用したメールアドレスで検索してください</p>
         </div>
@@ -250,7 +250,7 @@ function MyReservationsContent() {
           {/* 代替提案バナー */}
           {reservations.some(r => r.status === 'counter_proposed') && (
             <div style={{ padding: '14px 18px', background: '#eef2ff', border: '1.5px solid #818cf8', borderRadius: '12px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '20px' }}>📋</span>
+              <span style={{ fontSize: '20px' }}></span>
               <p style={{ fontSize: '14px', fontWeight: '700', color: '#4f46e5', margin: 0 }}>
                 代替日時の提案が届いています。下記から確認・承認してください。
               </p>

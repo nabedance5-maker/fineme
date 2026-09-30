@@ -55,73 +55,73 @@ export default function DiagnosisStage2Page() {
 
     // ─── メインロジック ───
     const AREA_DEFS = {
-      hair:    { icon: '💇‍♂️', label: '髪型・髪' },
-      skin:    { icon: '✨',   label: '肌・ニキビ' },
-      eyebrow: { icon: '✂️',  label: '眉毛' },
-      body:    { icon: '💪',  label: '体型・体' },
-      fashion: { icon: '👔',  label: '服・コーデ' },
-      photo:   { icon: '📸',  label: '写真写り' },
-      overall: { icon: '🪞',  label: '全体の雰囲気' },
-      beard:   { icon: '💈',  label: 'ひげ' },
-      teeth:   { icon: '😁',  label: '歯・口元' },
-      posture: { icon: '🚶',  label: '姿勢' }
+      hair:    { icon: '髪', label: '髪型・髪' },
+      skin:    { icon: '肌',   label: '肌・ニキビ' },
+      eyebrow: { icon: '眉',  label: '眉毛' },
+      body:    { icon: '体',  label: '体型・体' },
+      fashion: { icon: '服',  label: '服・コーデ' },
+      photo:   { icon: '',  label: '写真写り' },
+      overall: { icon: '',  label: '全体の雰囲気' },
+      beard:   { icon: '',  label: 'ひげ' },
+      teeth:   { icon: '歯',  label: '歯・口元' },
+      posture: { icon: '',  label: '姿勢' }
     };
 
     const CONCERN_AREA_KEYS = ['hair','skin','eyebrow','body','fashion','photo','overall','beard','teeth','posture'];
 
     const ASPIRATION_OPTS = [
-      { value: 'date_romance',    icon: '❤️',  title: '好きな人との時間・デート' },
-      { value: 'photo_profile',   icon: '📸',  title: '写真・SNS・プロフィール画像' },
-      { value: 'daily_mirror',    icon: '🪞',  title: '毎日鏡を見る時間が楽しみになる' },
-      { value: 'confidence',      icon: '✨',  title: '自分に自信を持てる感覚全般' },
-      { value: 'first_impression',icon: '🤝',  title: '初対面・仕事の場面での印象' }
+      { value: 'date_romance',    icon: '',  title: '好きな人との時間・デート' },
+      { value: 'photo_profile',   icon: '',  title: '写真・SNS・プロフィール画像' },
+      { value: 'daily_mirror',    icon: '',  title: '毎日鏡を見る時間が楽しみになる' },
+      { value: 'confidence',      icon: '肌',  title: '自分に自信を持てる感覚全般' },
+      { value: 'first_impression',icon: '',  title: '初対面・仕事の場面での印象' }
     ];
 
     const FREQUENCY_OPTS = [
-      { value: 'daily',            icon: '🔥', title: '毎日' },
-      { value: 'few_times_week',   icon: '📅', title: '週2〜3回' },
-      { value: 'weekly',           icon: '🗓️', title: '週1回程度' },
-      { value: 'few_times_month',  icon: '📆', title: '月2〜3回' },
-      { value: 'monthly',          icon: '🌙', title: '月1回程度' },
-      { value: 'irregular',        icon: '🌀', title: '気が向いたとき（不定期）' }
+      { value: 'daily',            icon: '', title: '毎日' },
+      { value: 'few_times_week',   icon: '', title: '週2〜3回' },
+      { value: 'weekly',           icon: '', title: '週1回程度' },
+      { value: 'few_times_month',  icon: '', title: '月2〜3回' },
+      { value: 'monthly',          icon: '', title: '月1回程度' },
+      { value: 'irregular',        icon: '', title: '気が向いたとき（不定期）' }
     ];
 
     const SELF_WHAT_OPTS = {
       hair: [
-        { value: 'barbershop_monthly',  icon: '✂️',  title: '美容院・理容室に月1回以上通っている' },
-        { value: 'barbershop_irregular',icon: '🪒',  title: '美容院には行くが間隔がバラバラ' },
-        { value: 'self_styling',        icon: '💈',  title: '自分でセットしている（ワックス・アイロンなど）' },
-        { value: 'shampoo_care',        icon: '🧴',  title: 'シャンプーやトリートメントにこだわっている' },
-        { value: 'other_hair',          icon: '➕',  title: 'その他' }
+        { value: 'barbershop_monthly',  icon: '眉',  title: '美容院・理容室に月1回以上通っている' },
+        { value: 'barbershop_irregular',icon: '毛',  title: '美容院には行くが間隔がバラバラ' },
+        { value: 'self_styling',        icon: '',  title: '自分でセットしている（ワックス・アイロンなど）' },
+        { value: 'shampoo_care',        icon: '',  title: 'シャンプーやトリートメントにこだわっている' },
+        { value: 'other_hair',          icon: '',  title: 'その他' }
       ],
       skin: [
-        { value: 'basic_skincare',  icon: '💧', title: '洗顔＋化粧水などの基本ケアをしている' },
-        { value: 'skincare_full',   icon: '✨', title: '美容液・乳液など複数ステップのケアをしている' },
-        { value: 'acne_care',       icon: '🌿', title: 'ニキビ・肌荒れ専用のケアをしている' },
-        { value: 'natural_only',    icon: '🚿', title: '特別なことはせず、洗顔程度' }
+        { value: 'basic_skincare',  icon: '', title: '洗顔＋化粧水などの基本ケアをしている' },
+        { value: 'skincare_full',   icon: '肌', title: '美容液・乳液など複数ステップのケアをしている' },
+        { value: 'acne_care',       icon: '毛', title: 'ニキビ・肌荒れ専用のケアをしている' },
+        { value: 'natural_only',    icon: '', title: '特別なことはせず、洗顔程度' }
       ],
       eyebrow: [
-        { value: 'self_shave',   icon: '🪒', title: 'カミソリや眉用ハサミで自分で整えている' },
-        { value: 'self_tweeze',  icon: '✂️', title: 'ピンセットで自分で整えている' },
-        { value: 'combined',     icon: '🔀', title: '複数の方法を組み合わせている' }
+        { value: 'self_shave',   icon: '毛', title: 'カミソリや眉用ハサミで自分で整えている' },
+        { value: 'self_tweeze',  icon: '眉', title: 'ピンセットで自分で整えている' },
+        { value: 'combined',     icon: '', title: '複数の方法を組み合わせている' }
       ],
       body: [
-        { value: 'gym_training',   icon: '🏋️', title: 'ジムでトレーニングしている' },
-        { value: 'home_training',  icon: '🏠', title: '自宅でトレーニングしている' },
-        { value: 'diet_control',   icon: '🥗', title: '食事を意識している・管理している' },
-        { value: 'sports',         icon: '⚽', title: 'スポーツや運動を定期的にしている' },
-        { value: 'walking',        icon: '🚶', title: 'ウォーキングや軽い運動をしている' }
+        { value: 'gym_training',   icon: '', title: 'ジムでトレーニングしている' },
+        { value: 'home_training',  icon: '', title: '自宅でトレーニングしている' },
+        { value: 'diet_control',   icon: '', title: '食事を意識している・管理している' },
+        { value: 'sports',         icon: '', title: 'スポーツや運動を定期的にしている' },
+        { value: 'walking',        icon: '', title: 'ウォーキングや軽い運動をしている' }
       ],
       fashion: [
-        { value: 'conscious_buying',icon: '🛍️', title: '服を選ぶとき見た目を意識して買っている' },
-        { value: 'reference_sns',   icon: '📱', title: 'SNSやメディアでコーデを参考にしている' },
-        { value: 'coordinate',      icon: '👔', title: '着回しやコーデを考えてから着ている' },
-        { value: 'basic_clean',     icon: '🧺', title: '清潔感を意識している（アイロン・手入れなど）' }
+        { value: 'conscious_buying',icon: '', title: '服を選ぶとき見た目を意識して買っている' },
+        { value: 'reference_sns',   icon: '', title: 'SNSやメディアでコーデを参考にしている' },
+        { value: 'coordinate',      icon: '服', title: '着回しやコーデを考えてから着ている' },
+        { value: 'basic_clean',     icon: '', title: '清潔感を意識している（アイロン・手入れなど）' }
       ],
       _default: [
-        { value: 'light_care',     icon: '🌱', title: '軽く気にかけている程度' },
-        { value: 'regular_care',   icon: '📅', title: '定期的にケアしている' },
-        { value: 'intensive_care', icon: '💪', title: 'かなり意識してケアしている' }
+        { value: 'light_care',     icon: '', title: '軽く気にかけている程度' },
+        { value: 'regular_care',   icon: '', title: '定期的にケアしている' },
+        { value: 'intensive_care', icon: '体', title: 'かなり意識してケアしている' }
       ]
     };
 
@@ -136,22 +136,22 @@ export default function DiagnosisStage2Page() {
                : areaKey === 'skin' ? '肌・ニキビのケアを始めていない一番の理由は何ですか？'
                : `${area.label}のケアを始めていない一番の理由は何ですか？`,
           opts: [
-            { value: 'dont_know',    icon: '🗺️', title: 'どこから始めればいいかわからない' },
-            { value: 'cost_worry',   icon: '💰', title: 'お金がかかりそうで踏み出せない' },
-            { value: 'no_time',      icon: '⏰', title: '時間を作れていない' },
-            { value: 'fear_fail',    icon: '😟', title: '変わらなかったらどうしようという不安がある' },
-            { value: 'past_bad',     icon: '⚡', title: '以前に試してうまくいかなかった経験がある' },
-            { value: 'not_priority', icon: '📋', title: '他にやることがあって後回しにしている' }
+            { value: 'dont_know',    icon: '', title: 'どこから始めればいいかわからない' },
+            { value: 'cost_worry',   icon: '', title: 'お金がかかりそうで踏み出せない' },
+            { value: 'no_time',      icon: '', title: '時間を作れていない' },
+            { value: 'fear_fail',    icon: '', title: '変わらなかったらどうしようという不安がある' },
+            { value: 'past_bad',     icon: '', title: '以前に試してうまくいかなかった経験がある' },
+            { value: 'not_priority', icon: '', title: '他にやることがあって後回しにしている' }
           ]
         });
         questions.push({
           key: 'since',
           text: `${area.label}が気になり始めたのはいつ頃ですか？`,
           opts: [
-            { value: 'recently',  icon: '⚡', title: '最近（3ヶ月以内）ふと気になった' },
-            { value: 'half_year', icon: '📅', title: '半年〜1年くらい前から' },
-            { value: 'years',     icon: '🗓️', title: '1〜3年ほど前から' },
-            { value: 'always',    icon: '🌀', title: 'ずっと前から、でもそのままにしていた' }
+            { value: 'recently',  icon: '', title: '最近（3ヶ月以内）ふと気になった' },
+            { value: 'half_year', icon: '', title: '半年〜1年くらい前から' },
+            { value: 'years',     icon: '', title: '1〜3年ほど前から' },
+            { value: 'always',    icon: '', title: 'ずっと前から、でもそのままにしていた' }
           ]
         });
         questions.push({ key: 'aspiration', text: `${area.label}が改善されたら、どんな場面で一番変化を感じたいですか？`, opts: ASPIRATION_OPTS });
@@ -167,11 +167,11 @@ export default function DiagnosisStage2Page() {
           key: 'struggle',
           text: '自分でやってみて、一番困っていることは何ですか？',
           opts: [
-            { value: 'no_result',       icon: '📉', title: 'やっているが変化が感じられない' },
-            { value: 'inconsistent',    icon: '🔄', title: '続けられない・サボってしまう' },
-            { value: 'dont_know_right', icon: '❓', title: '自分のやり方が正しいか自信がない' },
-            { value: 'reached_limit',   icon: '🧱', title: '自分でできることに限界を感じている' },
-            { value: 'no_feedback',     icon: '👁️', title: '客観的な意見をもらえる人がいない' }
+            { value: 'no_result',       icon: '', title: 'やっているが変化が感じられない' },
+            { value: 'inconsistent',    icon: '', title: '続けられない・サボってしまう' },
+            { value: 'dont_know_right', icon: '', title: '自分のやり方が正しいか自信がない' },
+            { value: 'reached_limit',   icon: '', title: '自分でできることに限界を感じている' },
+            { value: 'no_feedback',     icon: '睫', title: '客観的な意見をもらえる人がいない' }
           ]
         });
         questions.push({ key: 'aspiration', text: `${area.label}が改善されたら、どんな場面で一番変化を感じたいですか？`, opts: ASPIRATION_OPTS });
@@ -180,11 +180,11 @@ export default function DiagnosisStage2Page() {
           key: 'dissatisfaction',
           text: 'プロに任せていて、今一番満足できていないことは何ですか？',
           opts: [
-            { value: 'not_changing',        icon: '📉', title: '思ったほど変化が感じられない' },
-            { value: 'no_advice',           icon: '💬', title: 'アドバイスが少ない・提案が一方的' },
-            { value: 'high_cost',           icon: '💰', title: 'コストが高く続けることが不安' },
-            { value: 'relationship',        icon: '🤝', title: '担当の人との関係がしっくりこない' },
-            { value: 'satisfied_want_more', icon: '🚀', title: '今は満足しているがもっと良くしたい' }
+            { value: 'not_changing',        icon: '', title: '思ったほど変化が感じられない' },
+            { value: 'no_advice',           icon: '', title: 'アドバイスが少ない・提案が一方的' },
+            { value: 'high_cost',           icon: '', title: 'コストが高く続けることが不安' },
+            { value: 'relationship',        icon: '', title: '担当の人との関係がしっくりこない' },
+            { value: 'satisfied_want_more', icon: '', title: '今は満足しているがもっと良くしたい' }
           ]
         });
         questions.push({ key: 'frequency', text: '通っている頻度を教えてください', opts: FREQUENCY_OPTS });
@@ -387,8 +387,8 @@ export default function DiagnosisStage2Page() {
               <p>Stage 1で「気になっている」「取り組んでいる」と答えたエリアについて、もう少し詳しく教えてください。</p>
               <p style={{fontSize:'13px',color:'#9ca3af'}}>あなただけの変容ロードマップが、さらに精度を増します。</p>
               <div className="diag-badges">
-                <span className="diag-badge">⏱️ 約3〜5分</span>
-                <span className="diag-badge">🗺️ ロードマップ強化</span>
+                <span className="diag-badge">約3〜5分</span>
+                <span className="diag-badge">ロードマップ強化</span>
               </div>
               <div className="s2-area-tags" id="landing-area-tags"></div>
               <button className="diag-nav-next" id="btn-start" style={{width:'100%',fontSize:'18px',padding:'16px'}}>詳細診断をはじめる</button>
@@ -403,7 +403,7 @@ export default function DiagnosisStage2Page() {
         <div className="diag-screen" id="screen-complete">
           <div className="diag-card">
             <div className="s2-complete">
-              <div className="s2-complete-icon">🗺️</div>
+              <div className="s2-complete-icon"></div>
               <h2>地図が完成しました</h2>
               <p>あなたの変容プロファイルが<br />より詳細になりました。<br />ロードマップを更新しています…</p>
             </div>

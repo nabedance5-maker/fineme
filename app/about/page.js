@@ -25,35 +25,35 @@ const personJsonLd = {
 };
 
 const AXES = [
-  { icon: '💪', label: '体型・ボディ',       tier: 1, desc: '姿勢・体型・ボディメイク。第一印象の土台。' },
-  { icon: '✂️', label: '眉毛',               tier: 1, desc: '顔の輪郭を決める最も即効性の高いパーツ。' },
-  { icon: '👔', label: '服・コーデ',         tier: 1, desc: 'シルエットと色で全体の印象を設計する。' },
-  { icon: '💇', label: '髪・ヘア',           tier: 1, desc: '毎日目に入る。変化の実感が最も得やすい軸。' },
-  { icon: '✨', label: '肌・ニキビ・エステ', tier: 2, desc: '清潔感の底上げ。継続で確実に変わる。' },
-  { icon: '🪒', label: '脱毛・ムダ毛',       tier: 2, desc: 'ひげ・体毛の処理。整えるだけで印象が静かに変わる。' },
-  { icon: '🦷', label: '歯・口元',           tier: 3, desc: '笑顔の自信は人間関係の質を変える。' },
-  { icon: '💅', label: '爪',                 tier: 4, desc: '細部への気遣いが「丁寧な人」の印象をつくる。' },
+  { icon: '体', label: '体型・ボディ',       tier: 1, desc: '姿勢・体型・ボディメイク。第一印象の土台。' },
+  { icon: '眉', label: '眉毛',               tier: 1, desc: '顔の輪郭を決める最も即効性の高いパーツ。' },
+  { icon: '服', label: '服・コーデ',         tier: 1, desc: 'シルエットと色で全体の印象を設計する。' },
+  { icon: '髪', label: '髪・ヘア',           tier: 1, desc: '毎日目に入る。変化の実感が最も得やすい軸。' },
+  { icon: '肌', label: '肌・ニキビ・エステ', tier: 2, desc: '清潔感の底上げ。継続で確実に変わる。' },
+  { icon: '毛', label: '脱毛・ムダ毛',       tier: 2, desc: 'ひげ・体毛の処理。整えるだけで印象が静かに変わる。' },
+  { icon: '歯', label: '歯・口元',           tier: 3, desc: '笑顔の自信は人間関係の質を変える。' },
+  { icon: '爪', label: '爪',                 tier: 4, desc: '細部への気遣いが「丁寧な人」の印象をつくる。' },
 ];
 
 const JOURNEY = [
   {
-    step: '01', label: 'Me Scan', sublabel: '地図を描く・無料', icon: '🧬',
+    step: '01', label: 'Me Scan', sublabel: '地図を描く・無料', icon: '',
     desc: 'あなたの現在地・理想・来た道を8つの軸でスキャン。コア約3分で地図の骨格ができ、136タイプの中のあなたと「最初の一手」が確定する。そのあとは1軸ずつ描き込んで、地図を育てていける。',
   },
   {
-    step: '02', label: 'Mirror', sublabel: '現在地を測る', icon: '📸',
+    step: '02', label: 'Mirror', sublabel: '現在地を測る', icon: '',
     desc: '写真を1枚送ると、AIが「他人の目に自分がどう見えているか」を分析し、今いちばん変わりやすい場所を教える。写真は保存しない。無料プレビューあり、詳細分析は¥500。',
   },
   {
-    step: '03', label: 'New Me Navi', sublabel: '変容ナビ', icon: '🧭',
+    step: '03', label: 'New Me Navi', sublabel: '変容ナビ', icon: '',
     desc: 'ギャップを可視化したレーダーチャートと、あなた専用の「Fineme Compass（最優先の一手）」が生成される。迷いを一点に絞るための羅針盤。',
   },
   {
-    step: '04', label: 'New Me Map', sublabel: '変容マップ', icon: '🗺️',
+    step: '04', label: 'New Me Map', sublabel: '変容マップ', icon: '',
     desc: '8軸それぞれのロードマップ。どの順で、どんな中継地点を経て変わっていくかを可視化した航海図。描き込むほど、測るほど精度が上がる。',
   },
   {
-    step: '05', label: 'ガイドと出会う', sublabel: 'マッチング', icon: '🤝',
+    step: '05', label: 'ガイドと出会う', sublabel: 'マッチング', icon: '',
     desc: 'あなたの変容ベクトルと「来た道」に合ったガイドを一致度で表示。偶然ではなく、必然の出会いへ。',
   },
 ];
@@ -236,7 +236,7 @@ export default function AboutPage() {
           <strong>「変わりたい」という意志を、現実の変化に変えるためのインフラ</strong>です。
         </p>
         <Link href="/diagnosis" className="af-cta-btn">
-          🧬 Me Scanを受ける（無料）
+          Me Scanを受ける（無料）
         </Link>
       </section>
 
@@ -313,20 +313,20 @@ export default function AboutPage() {
               <div className="af-diff-label" style={{ color: 'rgba(232,228,220,0.40)' }}>一般の検索サイト</div>
               <div className="af-diff-title" style={{ color: 'rgba(232,228,220,0.70)' }}>「どこがいいか」を探す</div>
               <ul className="af-diff-list" style={{ color: 'rgba(232,228,220,0.60)' }}>
-                <li data-icon="❌">ユーザーの現在地・ゴールを知らない</li>
-                <li data-icon="❌">「来た道」（なぜ続かなかったか）を問わない</li>
-                <li data-icon="❌">予約して終わり。変容の旅は始まらない</li>
-                <li data-icon="❌">再来店の動機が「割引」だけ</li>
+                <li data-icon="">ユーザーの現在地・ゴールを知らない</li>
+                <li data-icon="">「来た道」（なぜ続かなかったか）を問わない</li>
+                <li data-icon="">予約して終わり。変容の旅は始まらない</li>
+                <li data-icon="">再来店の動機が「割引」だけ</li>
               </ul>
             </div>
             <div className="af-diff-card" style={{ background: 'var(--color-bg-dark, #0d1117)', borderColor: 'rgba(236,232,223,0.193)' }}>
               <div className="af-diff-label" style={{ color: 'rgba(200,164,90,0.6)' }}>Fineme</div>
               <div className="af-diff-title" style={{ color: '#fff' }}>「今の自分に合う一手」を知る</div>
               <ul className="af-diff-list" style={{ color: 'rgba(255,255,255,.75)' }}>
-                <li data-icon="✅">8軸で現在地・理想・ギャップを可視化</li>
-                <li data-icon="✅">「来た道」を元に最適なガイドをマッチング</li>
-                <li data-icon="✅">変容ロードマップで旅を継続させる</li>
-                <li data-icon="✅">再来店の動機が「続きの旅」</li>
+                <li data-icon="">8軸で現在地・理想・ギャップを可視化</li>
+                <li data-icon="">「来た道」を元に最適なガイドをマッチング</li>
+                <li data-icon="">変容ロードマップで旅を継続させる</li>
+                <li data-icon="">再来店の動機が「続きの旅」</li>
               </ul>
             </div>
           </div>
@@ -417,10 +417,10 @@ export default function AboutPage() {
           </p>
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/diagnosis" className="af-cta-btn" style={{ fontSize: '16px', padding: '16px 36px' }}>
-              🧬 Me Scanを受ける（無料）
+              Me Scanを受ける（無料）
             </Link>
             <Link href="/lp/mirror" className="af-cta-btn" style={{ fontSize: '16px', padding: '16px 36px' }}>
-              📸 Mirrorで現在地を測る
+              Mirrorで現在地を測る
             </Link>
           </div>
           <p className="af-bottom-note">

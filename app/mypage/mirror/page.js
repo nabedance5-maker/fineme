@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import MirrorReportCard from '@/app/_components/MirrorReportCard';
 import MypageSideNav from '../_components/MypageSideNav';
+import { axisGlyph } from '@/lib/axis-glyph';
 
 const DIR_ICON  = { improved: '↑', stable: '→' };
 const DIR_COLOR = { improved: '#50c88c', stable: 'rgba(232,228,220,0.35)' };
@@ -26,7 +27,7 @@ function ComparisonCard({ data }) {
       {improved > 0 ? (
         <div style={{ background: 'rgba(80,200,140,0.1)', border: '1px solid rgba(80,200,140,0.25)', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <p style={{ fontSize: '14px', color: '#50c88c', margin: 0, fontWeight: 800 }}>
-            🎉 {total}軸中{improved}軸が整いました
+            {total}軸中{improved}軸が整いました
           </p>
           <span style={{ fontSize: '12px', color: '#50c88c', fontWeight: 700, opacity: 0.8 }}>{rate}%</span>
         </div>
@@ -39,9 +40,9 @@ function ComparisonCard({ data }) {
           const isBig = c.from === '高' && c.to === '低';
           return (
             <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-              <span style={{ width: '20px', textAlign: 'center' }}>{c.icon}</span>
+              <span style={{ width: '20px', textAlign: 'center', fontFamily: 'var(--font-serif)' }}>{axisGlyph(c.id)}</span>
               <span style={{ flex: 1, color: 'rgba(232,228,220,0.75)', fontWeight: 600 }}>{c.name}</span>
-              {isBig && <span style={{ fontSize: '11px' }}>✨</span>}
+              {isBig && <span style={{ fontSize: '11px' }}></span>}
               <span style={{ color: POT_COLOR_COMP[c.from], fontSize: '12px', fontWeight: 700, minWidth: '20px' }}>{c.from}</span>
               <span style={{ color: 'rgba(232,228,220,0.25)', fontSize: '11px' }}>━▶</span>
               <span style={{ color: POT_COLOR_COMP[c.to], fontSize: '12px', fontWeight: 700, minWidth: '20px' }}>{c.to}</span>
@@ -153,7 +154,7 @@ export default function MirrorHistoryPage() {
           </div>
 
           <Link href={track.mirror} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', background: 'rgba(200,164,90,0.08)', border: '1.5px dashed rgba(236,232,223,0.22)', borderRadius: '12px', color: '#c8a45a', fontSize: '14px', fontWeight: 700, textDecoration: 'none', marginBottom: '24px', transition: 'all .15s' }}>
-            🪞 新しい写真を分析する
+            新しい写真を分析する
           </Link>
 
           <ComparisonCard data={comparison} />
@@ -164,7 +165,7 @@ export default function MirrorHistoryPage() {
             <p style={{ color: 'rgba(232,228,220,0.35)', fontSize: '13px', textAlign: 'center', padding: '40px 0' }}>読み込み中...</p>
           ) : sessions.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: 'rgba(232,228,220,0.35)' }}>
-              <p style={{ fontSize: '40px', marginBottom: '12px' }}>🪞</p>
+              <p style={{ fontSize: '40px', marginBottom: '12px' }}></p>
               <p style={{ fontSize: '13px', lineHeight: 1.7 }}>
                 まだ分析履歴がありません。<br />
                 写真をアップロードして、変容余地を確認しましょう。
@@ -255,7 +256,7 @@ export default function MirrorHistoryPage() {
                               {s.first_impression}
                             </div>
                             <Link href={track.mirror} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', background: 'linear-gradient(135deg,#c8a45a,#e8c97a)', borderRadius: '10px', fontSize: '14px', fontWeight: 800, color: '#0d1117', textDecoration: 'none' }}>
-                              🪞 Mirrorページで購入する
+                              Mirrorページで購入する
                             </Link>
                           </div>
                         )}

@@ -102,7 +102,7 @@ function ArticleProductBlock({ products }) {
       borderRadius: '14px',
     }}>
       <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(200,164,90,0.7)', margin: '0 0 6px' }}>
-        🛒 関連商品
+        関連商品
       </p>
       <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.45)', margin: '0 0 14px', lineHeight: 1.6 }}>
         変容の旅に役立つグッズ。気になるものを試してみてください。
@@ -245,7 +245,7 @@ export default async function ArticlePage({ params }) {
                 display: 'flex', alignItems: 'center', gap: '10px',
                 fontSize: '12px', color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-sans)',
               }}>
-                <span>📖 {article.reading_time || 5}分で読める</span>
+                <span>{article.reading_time || 5}分で読める</span>
                 {publishedDate && <><span>·</span><span>{publishedDate}</span></>}
               </div>
             </div>
@@ -340,7 +340,7 @@ export default async function ArticlePage({ params }) {
             {/* 背景装飾 */}
             <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(200,164,90,0.06) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
             <div style={{ position: 'relative', zIndex: 1, maxWidth: '560px', margin: '0 auto' }}>
-              <div style={{ fontSize: '32px', marginBottom: '12px' }}>🧭</div>
+              <div style={{ fontSize: '32px', marginBottom: '12px' }}></div>
               <h3 style={{ fontSize: 'clamp(18px, 3vw, 22px)', fontWeight: 800, color: '#f0ece4', marginBottom: '12px', lineHeight: 1.4, fontFamily: 'var(--font-serif)' }}>
                 あなたに合う変容ルートを<br />診断で見つけてみませんか？
               </h3>
@@ -370,7 +370,7 @@ export default async function ArticlePage({ params }) {
             textAlign: 'center',
           }}>
             <div style={{ maxWidth: '540px', margin: '0 auto' }}>
-              <div style={{ fontSize: '28px', marginBottom: '10px' }}>🪞</div>
+              <div style={{ fontSize: '28px', marginBottom: '10px' }}></div>
               <h3 style={{ fontSize: 'clamp(16px,2.8vw,20px)', fontWeight: 800, color: '#f0ece4', marginBottom: '10px', lineHeight: 1.45, fontFamily: 'var(--font-serif)' }}>
                 写真1枚で、「変えるべき場所」の地図が手に入る
               </h3>
@@ -457,7 +457,7 @@ export default async function ArticlePage({ params }) {
                             fontSize: '10px', color: 'rgba(255,255,255,0.3)',
                             margin: '6px 0 0', fontFamily: 'var(--font-sans)',
                           }}>
-                            📖 {a.reading_time || 5}分
+                            {a.reading_time || 5}分
                           </p>
                         </div>
                       </div>

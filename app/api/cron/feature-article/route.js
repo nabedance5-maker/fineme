@@ -231,6 +231,7 @@ async function generateArticle(theme, existing = [], linkPool = []) {
 Google検索で上位表示し、読者がFineme Mirror（${BASE_URL}/lp/mirror）またはMe Scan（${BASE_URL}/diagnosis）に進む導線を自然に作る。
 
 【文体】
+- 絵文字は使わない（サイト全体で絵文字を使わない方針）
 - 情報提供スタイル（専門知識を持つ仲間が教える感じ）
 - 断定的・具体的・数字を使う（「〜な傾向があります」ではなく「〜です」）
 - でおの体験談を1〜2箇所引用（「でおも最初は〜だった」「実際に試してみると〜だった」）

@@ -113,7 +113,7 @@ export default async function BelleMirrorLpPage() {
           <div className="m-hero-mirror-ring" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'clamp(320px,55vw,560px)', height: 'clamp(320px,55vw,560px)', borderRadius: '50%', border: '1px dashed rgba(236,232,223,0.11)', pointerEvents: 'none', zIndex: 1 }} />
           <div style={{ position: 'relative', zIndex: 2, maxWidth: '660px', margin: '0 auto', width: '100%' }}>
             <div className="m-fade" style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.18em', color: '#c8a45a', textTransform: 'uppercase', marginBottom: '20px' }}>
-              🪞 Fineme Mirror
+              Fineme Mirror
             </div>
             <h1 className="m-fade m-fade-d1" style={{ fontSize: 'clamp(26px,6.5vw,48px)', fontWeight: 900, fontFamily: 'Georgia, serif', lineHeight: 1.3, color: '#fff', marginBottom: '22px' }}>
               「清潔感がない」と言われた。<br />
@@ -152,19 +152,19 @@ export default async function BelleMirrorLpPage() {
           <div className="m-tag">こんな経験はありませんか？</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
             <div className="m-pain-item">
-              <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>🤔</span>
+              <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}></span>
               <span style={{ fontSize: '14px', color: 'rgba(240,236,228,0.75)', lineHeight: 1.75 }}>
                 外見を変えたいと思っている。でも何から始めればいいかわからない。
               </span>
             </div>
             <div className="m-pain-item" style={{ borderColor: 'rgba(236,232,223,0.11)' }}>
-              <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>📸</span>
+              <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}></span>
               <span style={{ fontSize: '14px', color: 'rgba(240,236,228,0.80)', lineHeight: 1.75 }}>
                 マッチングアプリで「なぜかマッチしない」。原因は写真のどこかにあるのに、<strong style={{ color: 'rgba(240,236,228,0.9)' }}>「どこが」問題なのか言語化できない。</strong>
               </span>
             </div>
             <div className="m-pain-item" style={{ borderColor: 'rgba(180,60,60,0.35)', background: 'rgba(180,60,60,0.04)' }}>
-              <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>📅</span>
+              <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}></span>
               <span style={{ fontSize: '14px', color: 'rgba(240,236,228,0.85)', lineHeight: 1.75 }}>
                 「来年こそ本気で外見を変える」——そう思い続けて、<strong style={{ color: 'rgba(240,236,228,0.95)' }}>もう何年も経っている。</strong>
               </span>
@@ -176,9 +176,9 @@ export default async function BelleMirrorLpPage() {
           </p>
           <div style={{ background: 'rgba(6,4,12,0.5)', border: '1px solid rgba(232,228,220,0.06)', borderRadius: '16px', padding: '4px 20px', marginBottom: '28px' }}>
             {[
-              ['📱', '初対面の3秒で、人はあなたへの印象を決めている。その3秒をコントロールする方法を知らないまま、今日も誰かと会っている。'],
-              ['👤', 'ジム・眉毛サロン・美容院——お金をかけても「効果があったのか」確信が持てない。順番がわからないまま投資し続けるコスト。'],
-              ['⏳', '情報はある。時間もある。なのに動けないのは、最初の一手が見えていないから。'],
+              ['', '初対面の3秒で、人はあなたへの印象を決めている。その3秒をコントロールする方法を知らないまま、今日も誰かと会っている。'],
+              ['', 'ジム・眉毛サロン・美容院——お金をかけても「効果があったのか」確信が持てない。順番がわからないまま投資し続けるコスト。'],
+              ['', '情報はある。時間もある。なのに動けないのは、最初の一手が見えていないから。'],
             ].map(([emoji, text], i, arr) => (
               <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', padding: '18px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(232,228,220,0.06)' : 'none' }}>
                 <span style={{ fontSize: '20px', flexShrink: 0, marginTop: '2px', opacity: 0.5 }}>{emoji}</span>
@@ -269,13 +269,13 @@ export default async function BelleMirrorLpPage() {
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '12px', marginBottom: '32px' }}>
             {[
-              ['✂️', '眉毛', '印象の8割'],
-              ['🌿', '肌', '清潔感の土台'],
-              ['💈', 'ヘア', '第一印象'],
-              ['🧍', '姿勢', '見た目の若さ'],
-              ['💪', '体型', '全体シルエット'],
-              ['👔', '服装', 'センスの可視化'],
-              ['😊', '表情・雰囲気', '醸し出す空気感'],
+              ['眉', '眉毛', '印象の8割'],
+              ['毛', '肌', '清潔感の土台'],
+              ['', 'ヘア', '第一印象'],
+              ['姿', '姿勢', '見た目の若さ'],
+              ['体', '体型', '全体シルエット'],
+              ['服', '服装', 'センスの可視化'],
+              ['', '表情・雰囲気', '醸し出す空気感'],
             ].map(([icon, label, sub]) => (
               <div key={label} className="m-axis-card">
                 <div style={{ fontSize: '24px', marginBottom: '6px' }}>{icon}</div>
@@ -421,7 +421,7 @@ export default async function BelleMirrorLpPage() {
 
             {/* Fineme Mirror */}
             <div style={{ flex: '1 1 240px', background: 'rgba(200,164,90,0.06)', border: '1px solid rgba(236,232,223,0.193)', borderRadius: '16px', padding: '20px', boxShadow: '0 0 28px rgba(0,0,0,0.084)' }}>
-              <p style={{ fontSize: '12px', fontWeight: 800, color: '#c8a45a', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '16px' }}>🪞 Fineme Mirror</p>
+              <p style={{ fontSize: '12px', fontWeight: 800, color: '#c8a45a', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '16px' }}>Fineme Mirror</p>
               {[
                 '外見磨きに特化した7軸フレームワーク＋独自ロジックで高精度判定',
                 '変容余地の優先順位と根拠・費用感つきアクションが自動で出る',
@@ -438,7 +438,7 @@ export default async function BelleMirrorLpPage() {
 
           {/* New Me Map 説明 */}
           <div style={{ marginTop: '20px', padding: '18px 20px', background: 'rgba(200,164,90,0.04)', border: '1px solid rgba(236,232,223,0.083)', borderRadius: '14px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '22px', flexShrink: 0 }}>🗺️</span>
+            <span style={{ fontSize: '22px', flexShrink: 0 }}></span>
             <div>
               <p style={{ fontSize: '13px', fontWeight: 800, color: 'rgba(240,236,228,0.85)', marginBottom: '6px' }}>New Me Map とは？</p>
               <p style={{ fontSize: '13px', color: 'rgba(240,236,228,0.5)', lineHeight: 1.8, margin: 0 }}>
@@ -521,7 +521,7 @@ export default async function BelleMirrorLpPage() {
               </div>
               {/* Fineme Mirror */}
               <div style={{ flex: '1 1 240px', background: 'rgba(200,164,90,0.06)', border: '1px solid rgba(236,232,223,0.193)', borderRadius: '16px', padding: '22px 20px', boxShadow: '0 0 28px rgba(0,0,0,0.084)' }}>
-                <p style={{ fontSize: '12px', fontWeight: 800, color: '#c8a45a', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '16px' }}>🪞 Fineme Mirror</p>
+                <p style={{ fontSize: '12px', fontWeight: 800, color: '#c8a45a', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: '16px' }}>Fineme Mirror</p>
                 {[
                   '写真1枚・20〜40秒で「どこから変えるか」がわかる',
                   '7軸の優先順位と、最初の一手が明示される',
@@ -558,9 +558,9 @@ export default async function BelleMirrorLpPage() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
             {[
-              ['📸', 'Mirrorで写真を分析', '7軸の変容余地が可視化される'],
-              ['🗺️', 'New Me Mapが自動生成', '変容余地の高い軸から行動ステップが並ぶ'],
-              ['✅', 'ステップを1つずつ完了する', '記録が積み重なり、変容の旅が進む'],
+              ['', 'Mirrorで写真を分析', '7軸の変容余地が可視化される'],
+              ['', 'New Me Mapが自動生成', '変容余地の高い軸から行動ステップが並ぶ'],
+              ['', 'ステップを1つずつ完了する', '記録が積み重なり、変容の旅が進む'],
             ].map(([icon, title, desc], i) => (
               <div key={i} style={{ display: 'flex', gap: '14px', alignItems: 'center', padding: '16px 20px', background: i === 1 ? 'rgba(200,164,90,0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${i === 1 ? 'rgba(200,164,90,0.3)' : 'rgba(200,164,90,0.1)'}`, borderRadius: '12px' }}>
                 <span style={{ fontSize: '24px', flexShrink: 0 }}>{icon}</span>
@@ -615,7 +615,7 @@ export default async function BelleMirrorLpPage() {
                 <div key={i} style={{ position: 'relative', marginBottom: i < 2 ? '16px' : 0 }}>
                   <div style={{ position: 'absolute', left: '-27px', top: '18px', width: '12px', height: '12px', borderRadius: '50%', background: item.color, boxShadow: `0 0 10px ${item.color}80` }} />
                   <div style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.025)', border: `1px solid rgba(${item.rgb},0.22)`, borderRadius: '12px' }}>
-                    <div style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.12em', color: item.color, marginBottom: '5px', textTransform: 'uppercase' }}>📸 {item.label}</div>
+                    <div style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '.12em', color: item.color, marginBottom: '5px', textTransform: 'uppercase' }}>{item.label}</div>
                     <div style={{ fontSize: '14px', fontWeight: 800, color: 'rgba(240,236,228,0.9)', marginBottom: '3px' }}>{item.title}</div>
                     <div style={{ fontSize: '12px', color: 'rgba(240,236,228,0.45)', lineHeight: 1.7 }}>{item.desc}</div>
                   </div>
@@ -646,9 +646,9 @@ export default async function BelleMirrorLpPage() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
             {[
-              { icon: '🪞', title: '毎月3回、変わった自分をスキャンできる', sub: '単発¥500を3回ぶん、月¥780に含む', featured: true },
-              { icon: '🗺️', title: 'Mirror分析がNew Me Mapを常に最新化する', sub: '毎月の変容余地データで行動ロードマップが更新される', featured: false },
-              { icon: '📚', title: '分析結果（テキスト）の全履歴が無期限保存', sub: '3ヶ月前の自分と今を、いつでも比べられる', featured: false },
+              { icon: '', title: '毎月3回、変わった自分をスキャンできる', sub: '単発¥500を3回ぶん、月¥780に含む', featured: true },
+              { icon: '', title: 'Mirror分析がNew Me Mapを常に最新化する', sub: '毎月の変容余地データで行動ロードマップが更新される', featured: false },
+              { icon: '', title: '分析結果（テキスト）の全履歴が無期限保存', sub: '3ヶ月前の自分と今を、いつでも比べられる', featured: false },
             ].map((item, i) => (
               <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'center', padding: '18px 20px', background: item.featured ? 'rgba(200,164,90,0.08)' : 'rgba(255,255,255,0.025)', border: `1px solid ${item.featured ? 'rgba(200,164,90,0.4)' : 'rgba(200,164,90,0.12)'}`, borderRadius: '14px' }}>
                 <span style={{ fontSize: '26px', flexShrink: 0 }}>{item.icon}</span>
@@ -689,10 +689,10 @@ export default async function BelleMirrorLpPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {[
-                ['📤', 'アップロードした写真はHTTPS通信でAIに送信されます', 'ブラウザとAIサーバー間の通信は暗号化されています。'],
-                ['🔍', 'AI（Claude Vision）が写真を分析します', '写真データはAnthropicのAPIを経由して分析されます。'],
-                ['💾', '保存されるのは「分析結果テキスト」だけ', '過去の分析を後から見返せるよう、テキスト結果のみを保存します。写真そのものはFinemeのデータベースには一切保存されません。'],
-                ['🗑️', '写真データは分析完了後に削除されます', '分析が終わった瞬間から、写真データへのアクセスはなくなります。残るのはテキストの分析結果だけです。'],
+                ['', 'アップロードした写真はHTTPS通信でAIに送信されます', 'ブラウザとAIサーバー間の通信は暗号化されています。'],
+                ['', 'AI（Claude Vision）が写真を分析します', '写真データはAnthropicのAPIを経由して分析されます。'],
+                ['', '保存されるのは「分析結果テキスト」だけ', '過去の分析を後から見返せるよう、テキスト結果のみを保存します。写真そのものはFinemeのデータベースには一切保存されません。'],
+                ['', '写真データは分析完了後に削除されます', '分析が終わった瞬間から、写真データへのアクセスはなくなります。残るのはテキストの分析結果だけです。'],
               ].map(([icon, title, desc], i) => (
                 <div key={i} style={{ display: 'flex', gap: '16px', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(236,232,223,0.055)', borderRadius: '12px' }}>
                   <span style={{ fontSize: '22px', flexShrink: 0 }}>{icon}</span>
@@ -731,7 +731,7 @@ export default async function BelleMirrorLpPage() {
         <section style={{ padding: 'clamp(56px,12vw,96px) 20px', textAlign: 'center', background: 'linear-gradient(160deg, #0d1117 0%, #070c1a 100%)', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(200,164,90,0.08) 0%, transparent 60%)', pointerEvents: 'none' }} />
           <div style={{ position: 'relative', zIndex: 1, maxWidth: '580px', margin: '0 auto' }}>
-            <div style={{ fontSize: '40px', marginBottom: '18px' }}>🪞</div>
+            <div style={{ fontSize: '40px', marginBottom: '18px' }}></div>
             <h2 style={{ fontSize: 'clamp(22px,5vw,34px)', fontWeight: 900, fontFamily: 'Georgia, serif', color: '#fff', marginBottom: '16px', lineHeight: 1.35 }}>
               変われないと思っている<br />
               <span style={{ color: '#c8a45a' }}>あなたへ。</span>

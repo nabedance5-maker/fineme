@@ -88,7 +88,7 @@ export default function AuthGate({ children, pageName = 'このページ' }) {
         `}</style>
         <div className="auth-gate-wrap">
           <div className="auth-gate-card">
-            <div className="auth-gate-icon">🗺️</div>
+            <div className="auth-gate-icon"></div>
             <h2 className="auth-gate-title">
               ここはあなただけの<br />{pageName}が届く場所です。
             </h2>
@@ -98,7 +98,7 @@ export default function AuthGate({ children, pageName = 'このページ' }) {
               診断はアカウントなしで受けられます。
             </p>
             <Link href="/diagnosis" className="auth-gate-cta-primary">
-              🧬 Me Scanを受ける（無料・約15分）
+              Me Scanを受ける（無料・約15分）
             </Link>
             <Link href="/login" className="auth-gate-login-link">
               すでにアカウントをお持ちの方はログイン

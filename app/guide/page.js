@@ -2,7 +2,7 @@ import GuideInteractive from './GuideInteractive';
 
 const AXES = [
   {
-    id: 'eyebrow', icon: '✂️', label: '眉毛', tier: 1,
+    id: 'eyebrow', icon: '眉', label: '眉毛', tier: 1,
     quick_win: '1〜2回のサロンで劇的に変わる。コスパ最高の即効軸。',
     start: '眉サロン 1回（¥3,000〜）',
     effect: '顔の印象・清潔感が即日アップ',
@@ -15,7 +15,7 @@ const AXES = [
     },
   },
   {
-    id: 'hair', icon: '💇', label: '髪・ヘア', tier: 1,
+    id: 'hair', icon: '髪', label: '髪・ヘア', tier: 1,
     quick_win: '毎日目に入る。スタイリング習慣が変われば毎朝の自信が変わる。',
     start: '信頼できる美容師との出会い',
     effect: '第一印象・清潔感・毎朝の気分',
@@ -28,7 +28,7 @@ const AXES = [
     },
   },
   {
-    id: 'body', icon: '💪', label: '体型・ボディ', tier: 1,
+    id: 'body', icon: '体', label: '体型・ボディ', tier: 1,
     quick_win: '姿勢だけで今日から印象が変わる。継続で確実に積み上がる軸。',
     start: 'まず姿勢チェック＆体脂肪率把握',
     effect: '見た目・健康・自信の土台',
@@ -41,7 +41,7 @@ const AXES = [
     },
   },
   {
-    id: 'fashion', icon: '👔', label: '服・コーデ', tier: 1,
+    id: 'fashion', icon: '服', label: '服・コーデ', tier: 1,
     quick_win: '「似合う色×体型に合うシルエット」2軸を押さえれば全体が変わる。',
     start: '骨格診断 or パーソナルカラー診断',
     effect: '全体の調和・おしゃれな印象',
@@ -54,7 +54,7 @@ const AXES = [
     },
   },
   {
-    id: 'skin', icon: '✨', label: '肌・エステ', tier: 2,
+    id: 'skin', icon: '肌', label: '肌・エステ', tier: 2,
     quick_win: '毎日の洗顔・保湿から。プロの施術で確実に底上げできる軸。',
     start: 'スキンケア習慣の見直し',
     effect: '清潔感・健康的な印象',
@@ -67,7 +67,7 @@ const AXES = [
     },
   },
   {
-    id: 'hairremoval', icon: '🪒', label: '脱毛・ムダ毛', tier: 2,
+    id: 'hairremoval', icon: '毛', label: '脱毛・ムダ毛', tier: 2,
     quick_win: 'ひげ・体毛を整えるだけで、清潔感の底が一段上がる軸。',
     start: 'ひげ脱毛の無料カウンセリング',
     effect: '肌の印象・毎朝の手間が減る',
@@ -80,7 +80,7 @@ const AXES = [
     },
   },
   {
-    id: 'teeth', icon: '🦷', label: '歯・口元', tier: 3,
+    id: 'teeth', icon: '歯', label: '歯・口元', tier: 3,
     quick_win: '笑顔への自信が変わる。投資対効果が高い中期プロジェクト。',
     start: 'ホワイトニング or 歯科相談',
     effect: '笑顔の自信・口元の印象',
@@ -93,7 +93,7 @@ const AXES = [
     },
   },
   {
-    id: 'nail', icon: '💅', label: '爪', tier: 4,
+    id: 'nail', icon: '爪', label: '爪', tier: 4,
     quick_win: '整えるだけ。汚れ・長さ・形。それだけで「細部まで気を使う人」になる。',
     start: '長さを整える＋甘皮ケア',
     effect: '細部の清潔感・手元の印象',

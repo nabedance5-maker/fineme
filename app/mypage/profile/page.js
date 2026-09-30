@@ -313,7 +313,7 @@ export default function MypageProfilePage() {
 
               {/* エリア設定 */}
               <div style={{ borderTop: '1px solid rgba(232,228,220,0.15)', paddingTop: '20px', marginTop: '4px' }}>
-                <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 4px' }}>📍 お住まいのエリア</p>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(232,228,220,0.75)', margin: '0 0 4px' }}>お住まいのエリア</p>
                 <p style={{ fontSize: '12px', color: 'rgba(232,228,220,0.55)', margin: '0 0 12px' }}>設定すると、検索結果や診断結果で近くのサービスが優先表示されます。引越し時などはここから変更できます。</p>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <select
@@ -439,7 +439,7 @@ export default function MypageProfilePage() {
                 {lineUserId ? (
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(6,200,99,0.07)', border: '1px solid rgba(6,200,99,0.3)', borderRadius: '10px', padding: '10px 14px' }}>
-                      <span style={{ fontSize: '18px' }}>✅</span>
+                      <span style={{ fontSize: '18px' }}></span>
                       <div>
                         <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#059669' }}>LINE連携済み</p>
                         <p style={{ margin: 0, fontSize: '11px', color: 'rgba(232,228,220,0.55)' }}>New Me Log の通知は、下のボタンで実物を確認できます</p>
@@ -452,7 +452,7 @@ export default function MypageProfilePage() {
                         disabled={lineTesting}
                         style={{ padding: '9px 18px', background: 'rgba(6,200,99,0.1)', border: '1px solid rgba(6,200,99,0.4)', borderRadius: '9px', fontSize: '13px', fontWeight: 700, color: '#059669', cursor: lineTesting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
                       >
-                        {lineTesting ? '送信中…' : '📡 Logの通知を試し送りする'}
+                        {lineTesting ? '送信中…' : 'Logの通知を試し送りする'}
                       </button>
                       <a
                         href={`/api/me/line-connect?user_id=${userId || ''}`}
@@ -490,7 +490,7 @@ export default function MypageProfilePage() {
                         onClick={installApp}
                         style={{ padding: '10px 20px', background: 'rgba(200,164,90,0.15)', border: '1px solid rgba(236,232,223,0.275)', borderRadius: '10px', fontWeight: 700, fontSize: '14px', color: '#c8a45a', cursor: 'pointer', fontFamily: 'inherit' }}
                       >
-                        📲 ホーム画面に追加
+                        ホーム画面に追加
                       </button>
                     </>
                   ) : (
@@ -511,7 +511,7 @@ export default function MypageProfilePage() {
                   {pushSubscribed ? (
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(6,200,99,0.07)', border: '1px solid rgba(6,200,99,0.3)', borderRadius: '10px', padding: '10px 14px' }}>
-                        <span style={{ fontSize: '18px' }}>✅</span>
+                        <span style={{ fontSize: '18px' }}></span>
                         <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#059669' }}>ブラウザ通知：有効</p>
                       </div>
                       <button
@@ -530,7 +530,7 @@ export default function MypageProfilePage() {
                       disabled={pushBusy}
                       style={{ padding: '10px 20px', background: 'rgba(200,164,90,0.15)', border: '1px solid rgba(236,232,223,0.275)', borderRadius: '10px', fontWeight: 700, fontSize: '14px', color: '#c8a45a', cursor: pushBusy ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
                     >
-                      🔔 ブラウザ通知を有効にする
+                      ブラウザ通知を有効にする
                     </button>
                   )}
                   {pushMsg && (
