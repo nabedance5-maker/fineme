@@ -8,6 +8,7 @@ import { ALL_AXES } from '@/lib/log-axes';
 import { CUSTOMER_SCRIPT_AXES } from '@/lib/customer-scripts';
 import { LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS, TAB_CATALOG, categoryOfTab, allCategoryDefs, generateCategoryKey, MAX_CUSTOM_CATEGORIES, MAX_CATEGORY_LABEL_LENGTH } from '@/lib/dashboard-prefs';
 import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
+import PageDesignSettings from './PageDesignSettings';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -740,8 +741,9 @@ export default function ProviderDashboardPage() {
         cityEl.value = provider.city || '';
       }
       // アピール設定タブのフィールド読み込み（でお要望2026-09-29：profile-form/
-      // service-formから分離した文言フィールド）
-      ['catchphrase', 'target_desc', 'philosophy', 'guide_message', 'unique_strengths'].forEach(k => {
+      // service-formから分離した文言フィールド。philosophy/guide_message/unique_strengthsは
+      // でお要望2026-10-01でページ構成ブロック一覧側の直接編集に一本化したためここでは読まない）
+      ['catchphrase', 'target_desc'].forEach(k => {
         const el = document.getElementById('appeal-profile-form')?.elements[k];
         if (el) el.value = provider[k] || '';
       });
@@ -1911,6 +1913,30 @@ export default function ProviderDashboardPage() {
       let blocks = [];
 
       const TYPE_LABEL = { heading: '見出し', paragraph: '本文', image: '画像', button: 'ボタン', quote: '引用' };
+      // デフォルトセクション（でお要望2026-10-01：「デフォルトで表示されているものも
+      // 自由に並び替えたり内容編集したりできるように」）。本文がguide_message/
+      // unique_strengths/philosophyの単純な1フィールドのものはこの一覧内で直接編集でき、
+      // データ量が多いもの（スタッフ・体験談・サービス）は専用タブへのリンクのみ、
+      // New Me Mapは診断結果連動の自動表示のため編集項目自体が無い。
+      const BUILTIN_LABEL = {
+        builtin_guide_message: 'ガイドからのひと言',
+        builtin_unique_strengths: 'このガイドにしかできないこと（強み）',
+        builtin_staff: 'スタッフ紹介',
+        builtin_newme_map: 'New Me Map（診断との接点）',
+        builtin_philosophy: '大切にしていること（理念）',
+        builtin_stories: '体験談',
+        builtin_program: 'プログラム一覧',
+      };
+      const BUILTIN_PROFILE_FIELD = {
+        builtin_guide_message: 'guide_message',
+        builtin_unique_strengths: 'unique_strengths',
+        builtin_philosophy: 'philosophy',
+      };
+      const BUILTIN_EDIT_LINK = {
+        builtin_staff: { tab: 'staff', label: 'スタッフタブで編集する' },
+        builtin_stories: { tab: 'stories', label: '体験談タブで編集する' },
+        builtin_program: { tab: 'service', label: 'サービス設定タブで編集する' },
+      };
 
       function fieldsHtml(type, c) {
         c = c || {};
@@ -1989,18 +2015,37 @@ export default function ProviderDashboardPage() {
       }
 
       function renderRow(b, idx, total) {
+        const isBuiltin = b.block_type.startsWith('builtin_');
+        const label = isBuiltin ? (BUILTIN_LABEL[b.block_type] || b.block_type) : (TYPE_LABEL[b.block_type] || b.block_type);
+        const profileField = BUILTIN_PROFILE_FIELD[b.block_type];
+        const editLink = BUILTIN_EDIT_LINK[b.block_type];
+        let body;
+        if (profileField) {
+          body = `<textarea data-ablk-builtin-field="${profileField}" rows="4" style="width:100%;margin-bottom:8px" placeholder="未入力">${esc(provider[profileField] || '')}</textarea>`;
+        } else if (editLink) {
+          body = `<p class="muted" style="font-size:12px;margin:0 0 8px">内容はこの一覧では編集できません。専用タブから編集してください。</p>
+                  <button type="button" class="btn btn-ghost" style="font-size:12px" data-ablk-goto-tab="${editLink.tab}">${editLink.label} →</button>`;
+        } else if (isBuiltin) {
+          body = `<p class="muted" style="font-size:12px;margin:0">お客様のMe Scan診断結果に連動して自動表示されるセクションです。編集項目はありません。</p>`;
+        } else {
+          body = fieldsHtml(b.block_type, b.content);
+        }
+        const showSaveBtn = !!profileField || !isBuiltin;
         return `
-          <div data-ablk-row="${b.id}" style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:10px;background:#fff">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-              <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#f3f4f6;color:#374151">${TYPE_LABEL[b.block_type] || b.block_type}</span>
-              <div style="display:flex;gap:2px">
+          <div data-ablk-row="${b.id}" style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:10px;background:${b.hidden ? '#f9fafb' : '#fff'};opacity:${b.hidden ? '0.6' : '1'}">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+              <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${isBuiltin ? '#eef2ff' : '#f3f4f6'};color:${isBuiltin ? '#4338ca' : '#374151'}">${isBuiltin ? 'デフォルト・' : ''}${esc(label)}</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#6b7280;cursor:pointer">
+                  <input type="checkbox" data-ablk-hidden="${b.id}"${b.hidden ? ' checked' : ''} /> 非表示
+                </label>
                 <button type="button" class="btn btn-ghost" style="font-size:10px;padding:3px 6px" data-ablk-up="${b.id}"${idx === 0 ? ' disabled' : ''}>↑</button>
                 <button type="button" class="btn btn-ghost" style="font-size:10px;padding:3px 6px" data-ablk-down="${b.id}"${idx === total - 1 ? ' disabled' : ''}>↓</button>
-                <button type="button" class="btn btn-ghost" style="font-size:10px;padding:3px 6px;color:#ef4444" data-ablk-del="${b.id}">削除</button>
+                ${isBuiltin ? '' : `<button type="button" class="btn btn-ghost" style="font-size:10px;padding:3px 6px;color:#ef4444" data-ablk-del="${b.id}">削除</button>`}
               </div>
             </div>
-            ${fieldsHtml(b.block_type, b.content)}
-            <button type="button" class="btn" style="font-size:12px;padding:5px 12px" data-ablk-save="${b.id}">この内容を保存</button>
+            ${body}
+            ${showSaveBtn ? `<button type="button" class="btn" style="font-size:12px;padding:5px 12px" data-ablk-save="${b.id}">この内容を保存</button>` : ''}
             <span data-ablk-row-msg style="font-size:11px;margin-left:8px"></span>
           </div>`;
       }
@@ -2019,16 +2064,38 @@ export default function ProviderDashboardPage() {
           await fetch(`/api/provider/appeal-blocks/${btn.dataset.ablkDel}`, { method: 'DELETE', headers: authH() });
           await loadBlocks(); renderList();
         }));
+        listEl.querySelectorAll('[data-ablk-hidden]').forEach(cb => cb.addEventListener('change', async () => {
+          await fetch(`/api/provider/appeal-blocks/${cb.dataset.ablkHidden}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ hidden: cb.checked }) });
+          await loadBlocks(); renderList();
+        }));
+        listEl.querySelectorAll('[data-ablk-goto-tab]').forEach(btn => btn.addEventListener('click', () => {
+          document.querySelector(`.tab-btn[data-tab="${btn.dataset.ablkGotoTab}"]`)?.click();
+        }));
         listEl.querySelectorAll('[data-ablk-save]').forEach(btn => btn.addEventListener('click', async () => {
           const id = btn.dataset.ablkSave;
           const rowEl = listEl.querySelector(`[data-ablk-row="${id}"]`);
           const msgSpan = rowEl?.querySelector('[data-ablk-row-msg]');
-          const content = readFields(rowEl);
+          const builtinFieldEl = rowEl?.querySelector('[data-ablk-builtin-field]');
           btn.disabled = true;
-          const res = await fetch(`/api/provider/appeal-blocks/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ content }) });
+          let ok;
+          if (builtinFieldEl) {
+            // デフォルトセクションの本文（guide_message/unique_strengths/philosophy）は
+            // providers側のカラムが正——AIマッチング分析・掲載順スコアリング等が既に
+            // そちらを読んでいるため、保存先はこれまでと同じ/api/provider/profile経由のまま
+            // （でお要望2026-10-01：この一覧内で直接編集できるようにはするが、二重管理は避ける）。
+            // saveToLocal()は他の設定フォームと同じ保存関数（PATCH＋ローカルキャッシュ更新）。
+            const fieldName = builtinFieldEl.dataset.ablkBuiltinField;
+            const value = builtinFieldEl.value;
+            ok = await saveToLocal({ [fieldName]: value });
+            if (ok) provider[fieldName] = value;
+          } else {
+            const content = readFields(rowEl);
+            const res = await fetch(`/api/provider/appeal-blocks/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ content }) });
+            ok = res.ok;
+            if (ok) await loadBlocks();
+          }
           btn.disabled = false;
-          if (msgSpan) { msgSpan.style.color = res.ok ? '#059669' : '#ef4444'; msgSpan.textContent = res.ok ? '✓ 保存しました' : '保存に失敗しました'; }
-          if (res.ok) await loadBlocks();
+          if (msgSpan) { msgSpan.style.color = ok ? '#059669' : '#ef4444'; msgSpan.textContent = ok ? '✓ 保存しました' : '保存に失敗しました'; }
         }));
       }
 
@@ -9153,6 +9220,7 @@ export default function ProviderDashboardPage() {
                 <div className="pd-panel-section" data-panel="store" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="profile">プロフィール</button>
                   <button className="tab-btn" data-tab="appeal-settings">アピール設定</button>
+                  <button className="tab-btn" data-tab="page-design">ページデザイン</button>
                   <button className="tab-btn" data-tab="business-hours">営業時間</button>
                   <button className="tab-btn" data-tab="service">サービス設定</button>
                   <button className="tab-btn" data-tab="staff">スタッフ</button>
@@ -9744,22 +9812,12 @@ export default function ProviderDashboardPage() {
                 <textarea name="target_desc" placeholder={"マッチングアプリの写真を改善したい\n何度も挫折したが今度こそ変わりたい\n自分が何をすべきかわからない"} style={{ minHeight: '100px' }}></textarea>
                 <small className="muted">改行で区切ると①②③のカードとして掲載者ページに表示されます</small>
               </div>
-              <div className="form-field">
-                <label>このサービスが大切にしていること（引用文として大きく表示されます）</label>
-                <textarea name="philosophy" placeholder="あなたのサービスの考え方・信念・強みを自分の言葉で。ページ上では黒背景の引用文スタイルで表示されます。"></textarea>
-              </div>
-              <div className="form-field" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: '12px', padding: '16px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span>変容の旅を始めようとしている方への言葉</span></label>
-                <textarea name="guide_message" placeholder="ここから変わろうとしているあなたへ、ガイドとして一言あれば。&#10;例: 「外見を変えることは、自分の優先順位を自分で決めること」だと思っています。まず話を聞かせてください。" style={{ minHeight: '90px' }}></textarea>
-                <small className="muted">掲載者ページの最上部に「ガイドからのひと言」として表示されます。サービス説明ではなく、人としてのあなたが伝わる言葉を。</small>
-              </div>
-              <div className="form-field">
-                <label>他サービスとの違い・このガイドだけの強み（最上部にゴールドで表示）</label>
-                <textarea name="unique_strengths" placeholder={"例: マッチングアプリの写真撮影と外見コーチングをセットで提供できる唯一のサービスです。\n撮影から約1週間でプロフィール改善の結果を実感できます。"}></textarea>
-                <small className="muted">同カテゴリで比較されたとき最初に目に入る場所です。「なぜここを選ぶか」を一言で書いてください。</small>
-              </div>
               <button type="submit" className="btn" style={{ marginTop: '8px' }}>保存する</button>
             </form>
+            {/* でお要望2026-10-01：「デフォルトで表示されているものも自由に並び替えたり
+                内容編集したりできるように」。ガイドからのひと言・強み・理念（引用文）は、
+                下の「ページ構成ブロック」一覧の該当行で直接編集する一本化に変更
+                （このフォームからは重複するため削除）。 */}
           </div>
 
           <div className="card" style={{ padding: '24px', marginTop: '16px' }}>
@@ -9825,7 +9883,7 @@ export default function ProviderDashboardPage() {
           <div className="card" style={{ padding: '24px', marginTop: '16px' }}>
             <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>ページ構成ブロック</h2>
             <p className="muted" style={{ fontSize: '13px', margin: '0 0 16px', lineHeight: '1.6' }}>
-              公開ページの「アピール」タブの一番上に、見出し・本文・画像・ボタン・引用を自由に追加できます。上から順に表示されます。
+              公開ページ「アピール」タブの中身を、この一覧で上から順に並び替えできます。デフォルトで表示されている「ガイドからのひと言」「強み」「スタッフ紹介」「New Me Map」「理念」「体験談」「プログラム一覧」も含め、並び替え・非表示に切り替え・（テキスト項目は）内容編集ができます。見出し・本文・画像・ボタン・引用は「＋ ブロックを追加」から新しく追加できます。
             </p>
             <div id="ablk-list"></div>
             <div style={{ marginTop: '12px' }}>
@@ -11699,6 +11757,11 @@ export default function ProviderDashboardPage() {
               <p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p>
             </div>
           </div>
+        </div>
+
+        {/* ページデザイン：公開ページの色・書体・文字の大きさを店舗が選ぶ（でお要望2026-10-01） */}
+        <div className="tab-pane" id="tab-page-design">
+          <PageDesignSettings />
         </div>
 
         {/* タブ⑥：公開設定 */}

@@ -34,20 +34,50 @@ function sanitizeContent(block_type, content) {
   return {};
 }
 
+// デフォルトセクション（ガイドの一言・強み・スタッフ紹介・New Me Map・理念・体験談・
+// サービス一覧）も、カスタムブロックと同じ一覧で並び替え・表示/非表示できるように
+// （でお要望2026-10-01）。この一覧をまだ一度も開いていない店舗はbuiltin_*行が無いため、
+// 最初のGETで現在の固定表示順と同じ順序でシードする（本文は保存せず、常に{}——
+// guide_message等の実データはproviders側のカラムのまま。並び順・表示/非表示だけがこの
+// テーブルの責務）。公開ページ側はbuiltin_*行が無い店舗には従来の固定順レンダリングを
+// 使うため（app/provider/[slug]/page.js側でフォールバック済み）、既存店舗には影響しない。
+const BUILTIN_ORDER = [
+  'builtin_guide_message', 'builtin_unique_strengths', 'builtin_staff',
+  'builtin_newme_map', 'builtin_philosophy', 'builtin_stories', 'builtin_program',
+];
+
 export async function GET(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('provider_appeal_blocks')
-    .select('id, block_type, content, sort_order')
+    .select('id, block_type, content, sort_order, hidden')
     .eq('provider_id', provider.id)
     .order('sort_order', { ascending: true });
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json(data || []);
+  data = data || [];
+
+  if (!data.some(b => b.block_type.startsWith('builtin_'))) {
+    const startOrder = data.length ? Math.max(...data.map(b => b.sort_order)) + 1 : 0;
+    const seedRows = BUILTIN_ORDER.map((block_type, i) => ({
+      provider_id: provider.id, block_type, content: {}, sort_order: startOrder + i, hidden: false,
+    }));
+    const { error: seedError } = await supabase.from('provider_appeal_blocks').insert(seedRows);
+    if (!seedError) {
+      const { data: data2 } = await supabase
+        .from('provider_appeal_blocks')
+        .select('id, block_type, content, sort_order, hidden')
+        .eq('provider_id', provider.id)
+        .order('sort_order', { ascending: true });
+      data = data2 || data;
+    }
+  }
+
+  return Response.json(data);
 }
 
 export async function POST(request) {

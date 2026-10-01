@@ -40,11 +40,16 @@ export async function PUT(request, { params }) {
   const body = await request.json().catch(() => ({}));
   const update = {};
   if (body.sort_order !== undefined) update.sort_order = Number(body.sort_order);
+  if (body.hidden !== undefined) update.hidden = !!body.hidden;
   if (body.content !== undefined) {
     // sanitizeにはblock_typeが要るため、更新対象の現在のblock_typeを引く
     const { data: existing } = await supabase.from('provider_appeal_blocks').select('block_type').eq('id', id).eq('provider_id', provider.id).maybeSingle();
     if (!existing) return Response.json({ error: '見つかりません' }, { status: 404 });
-    update.content = sanitizeContent(existing.block_type, body.content);
+    // デフォルトセクション（builtin_*）はcontentを持たない——本文はproviders側の
+    // 対応カラムが正（でお要望2026-10-01）。ここに来たcontentは無視する。
+    if (!existing.block_type.startsWith('builtin_')) {
+      update.content = sanitizeContent(existing.block_type, body.content);
+    }
   }
   if (!Object.keys(update).length) return Response.json({ error: '更新する項目がありません' }, { status: 400 });
   update.updated_at = new Date().toISOString();
@@ -66,6 +71,11 @@ export async function DELETE(request, { params }) {
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
+
+  // デフォルトセクション（builtin_*）は削除不可——非表示にするだけ（PUT { hidden: true }）
+  const { data: existing } = await supabase.from('provider_appeal_blocks').select('block_type').eq('id', id).eq('provider_id', provider.id).maybeSingle();
+  if (!existing) return Response.json({ error: '見つかりません' }, { status: 404 });
+  if (existing.block_type.startsWith('builtin_')) return Response.json({ error: 'デフォルトセクションは削除できません。非表示にできます。' }, { status: 400 });
 
   const { error } = await supabase
     .from('provider_appeal_blocks')
