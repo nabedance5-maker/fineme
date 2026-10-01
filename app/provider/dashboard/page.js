@@ -8505,14 +8505,8 @@ export default function ProviderDashboardPage() {
       }
 
       async function loadTodayCheckins() {
-        const card = document.getElementById('today-checkin-card');
         const el = document.getElementById('today-checkin-list');
-        if (!card || !el) return;
-        const featRes = await fetch('/api/provider/features', { headers: authHeadersToday() });
-        if (!featRes.ok) return;
-        const { features } = await featRes.json();
-        if (!features?.checkin_qr) { card.style.display = 'none'; return; }
-        card.style.display = '';
+        if (!el) return;
         const res = await fetch('/api/provider/checkins', { headers: authHeadersToday() });
         if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
         const rows = await res.json();
@@ -8532,14 +8526,193 @@ export default function ProviderDashboardPage() {
         el.textContent = `¥${Number(data.total || 0).toLocaleString()}`;
       }
 
-      function loadToday() {
-        Promise.all([loadTodayReservations(), loadTodayRequests(), loadTodayCheckins(), loadTodaySales()])
-          .then(() => window.__pdMarkTabReady?.('today'));
+      // ── 「今日の業務」カードのカスタム編集（でお要望2026-10-01：「店舗側で何を表示
+      // させるかの選択や並び替え、メモを入れるブロックやポップアップで表示させる選択とか
+      // 自由度を高めたやつ」）。provider_appeal_blocksと同じ「provider所有・sort_order付き
+      // CRUDリスト」の設計を踏襲。公開ページ向けではない（掲載者本人しか見ない）ため
+      // 公開read APIは作らず、このダッシュボードの認証済みAPIのみ。
+      let todayBlocks = [];
+      let todayEditMode = false;
+      let todayFeaturesCache = null;
+
+      const BUILTIN_TODAY_DEFS = {
+        builtin_reservations: { title: '今日の予約', gotoTab: 'calendar', gotoLabel: 'カレンダーを開く', mountId: 'today-reservations-list' },
+        builtin_requests: { title: '未対応の予約リクエスト', gotoTab: 'requests', gotoLabel: '予約リクエストを開く', mountId: 'today-requests-list' },
+        builtin_checkin: { title: '今日のチェックイン', gotoTab: 'checkin', gotoLabel: 'チェックインを開く', mountId: 'today-checkin-list', featureGate: 'checkin_qr' },
+        builtin_sales: { title: '今日の売上', gotoTab: 'sales', gotoLabel: '売上管理を開く' },
+      };
+
+      async function loadTodayFeatures() {
+        if (todayFeaturesCache) return todayFeaturesCache;
+        const res = await fetch('/api/provider/features', { headers: authHeadersToday() });
+        if (!res.ok) return {};
+        const { features } = await res.json();
+        todayFeaturesCache = features || {};
+        return todayFeaturesCache;
       }
 
-      document.querySelectorAll('[data-today-goto]').forEach(btn => btn.addEventListener('click', () => {
-        document.querySelector(`.tab-btn[data-tab="${btn.dataset.todayGoto}"]`)?.click();
-      }));
+      async function loadTodayBlocks() {
+        const res = await fetch('/api/provider/today-blocks', { headers: authHeadersToday() });
+        todayBlocks = res.ok ? await res.json() : [];
+      }
+
+      function todayControlsHtml(b, idx, total) {
+        if (!todayEditMode) return '';
+        return `
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed #e5e7eb;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#6b7280;cursor:pointer">
+              <input type="checkbox" data-today-hidden="${b.id}"${b.hidden ? ' checked' : ''} /> 非表示
+            </label>
+            <select data-today-display="${b.id}" style="font-size:11px;padding:2px 4px;border-radius:6px">
+              <option value="inline"${b.display_mode !== 'popup' ? ' selected' : ''}>通常表示</option>
+              <option value="popup"${b.display_mode === 'popup' ? ' selected' : ''}>ポップアップ表示</option>
+            </select>
+            <button type="button" class="btn btn-ghost" style="font-size:10px;padding:2px 6px" data-today-up="${b.id}"${idx === 0 ? ' disabled' : ''}>↑</button>
+            <button type="button" class="btn btn-ghost" style="font-size:10px;padding:2px 6px" data-today-down="${b.id}"${idx === total - 1 ? ' disabled' : ''}>↓</button>
+            ${b.block_type === 'memo' ? `<button type="button" class="btn btn-ghost" style="font-size:10px;padding:2px 6px;color:#ef4444" data-today-del="${b.id}">削除</button>` : ''}
+          </div>`;
+      }
+
+      function todayCardShellHtml(b, idx, total) {
+        if (b.block_type === 'memo') {
+          return `
+            <div class="card" style="padding:20px" data-today-block="${b.id}">
+              <h3 style="margin:0 0 10px;font-size:15px">📝 メモ</h3>
+              <textarea data-today-memo-text="${b.id}" rows="4" style="width:100%;box-sizing:border-box" placeholder="今日気をつけること・引き継ぎ事項など">${esc(b.content?.text || '')}</textarea>
+              <button type="button" class="btn" style="font-size:12px;margin-top:8px" data-today-memo-save="${b.id}">保存</button>
+              <span data-today-memo-msg style="font-size:11px;margin-left:8px"></span>
+              ${todayControlsHtml(b, idx, total)}
+            </div>`;
+        }
+        const def = BUILTIN_TODAY_DEFS[b.block_type];
+        if (!def) return '';
+        const bodyHtml = b.block_type === 'builtin_sales'
+          ? `<div class="stat-card" style="display:inline-block;min-width:160px"><div class="stat-value" id="today-sales-total">—</div><div class="stat-label">本日の確定売上</div></div>`
+          : `<div id="${def.mountId}"><p class="muted" style="font-size:13px">読み込み中…</p></div>`;
+        return `
+          <div class="card" style="padding:20px" data-today-block="${b.id}">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <h3 style="margin:0;font-size:15px">${def.title}</h3>
+              <button type="button" class="btn btn-ghost" data-today-goto="${def.gotoTab}" style="font-size:12px;padding:5px 10px">${def.gotoLabel}</button>
+            </div>
+            ${bodyHtml}
+            ${todayControlsHtml(b, idx, total)}
+          </div>`;
+      }
+
+      async function swapTodayOrder(id, dir) {
+        const idx = todayBlocks.findIndex(b => b.id === id);
+        const otherIdx = idx + dir;
+        if (idx < 0 || otherIdx < 0 || otherIdx >= todayBlocks.length) return;
+        const a = todayBlocks[idx], b = todayBlocks[otherIdx];
+        await Promise.all([
+          fetch(`/api/provider/today-blocks/${a.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authHeadersToday() }, body: JSON.stringify({ sort_order: b.sort_order }) }),
+          fetch(`/api/provider/today-blocks/${b.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authHeadersToday() }, body: JSON.stringify({ sort_order: a.sort_order }) }),
+        ]);
+      }
+
+      function bindTodayShellControls(root) {
+        root.querySelectorAll('[data-today-goto]').forEach(btn => btn.addEventListener('click', () => {
+          document.querySelector(`.tab-btn[data-tab="${btn.dataset.todayGoto}"]`)?.click();
+        }));
+        root.querySelectorAll('[data-today-hidden]').forEach(cb => cb.addEventListener('change', async () => {
+          await fetch(`/api/provider/today-blocks/${cb.dataset.todayHidden}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authHeadersToday() }, body: JSON.stringify({ hidden: cb.checked }) });
+          await loadTodayBlocks(); renderToday();
+        }));
+        root.querySelectorAll('[data-today-display]').forEach(sel => sel.addEventListener('change', async () => {
+          await fetch(`/api/provider/today-blocks/${sel.dataset.todayDisplay}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authHeadersToday() }, body: JSON.stringify({ display_mode: sel.value }) });
+          await loadTodayBlocks(); renderToday();
+        }));
+        root.querySelectorAll('[data-today-up]').forEach(btn => btn.addEventListener('click', async () => { await swapTodayOrder(btn.dataset.todayUp, -1); await loadTodayBlocks(); renderToday(); }));
+        root.querySelectorAll('[data-today-down]').forEach(btn => btn.addEventListener('click', async () => { await swapTodayOrder(btn.dataset.todayDown, 1); await loadTodayBlocks(); renderToday(); }));
+        root.querySelectorAll('[data-today-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('このメモを削除しますか？')) return;
+          await fetch(`/api/provider/today-blocks/${btn.dataset.todayDel}`, { method: 'DELETE', headers: authHeadersToday() });
+          await loadTodayBlocks(); renderToday();
+        }));
+        root.querySelectorAll('[data-today-memo-save]').forEach(btn => btn.addEventListener('click', async () => {
+          const id = btn.dataset.todayMemoSave;
+          const textarea = root.querySelector(`[data-today-memo-text="${id}"]`);
+          const msgSpan = root.querySelector(`[data-today-block="${id}"] [data-today-memo-msg]`);
+          btn.disabled = true;
+          const res = await fetch(`/api/provider/today-blocks/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', ...authHeadersToday() }, body: JSON.stringify({ content: { text: textarea?.value || '' } }) });
+          btn.disabled = false;
+          if (msgSpan) { msgSpan.style.color = res.ok ? '#059669' : '#ef4444'; msgSpan.textContent = res.ok ? '✓ 保存しました' : '保存に失敗しました'; }
+          if (res.ok) await loadTodayBlocks();
+        }));
+      }
+
+      function showTodayPopup(popupBlocks) {
+        const existing = document.getElementById('today-popup-overlay');
+        if (existing) existing.remove();
+        const overlay = document.createElement('div');
+        overlay.id = 'today-popup-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
+        overlay.innerHTML = `
+          <div style="background:#fff;border-radius:18px;padding:24px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+              <h2 style="font-size:16px;font-weight:800;margin:0">本日のお知らせ</h2>
+              <button type="button" id="today-popup-close-btn" style="background:none;border:none;font-size:20px;cursor:pointer;color:#9ca3af">×</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              ${popupBlocks.map((b, i) => todayCardShellHtml(b, i, popupBlocks.length)).join('')}
+            </div>
+          </div>`;
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+        overlay.querySelector('#today-popup-close-btn')?.addEventListener('click', () => overlay.remove());
+        bindTodayShellControls(overlay);
+      }
+
+      async function renderToday() {
+        const listEl = document.getElementById('today-blocks-list');
+        if (!listEl) return;
+        const features = await loadTodayFeatures();
+        const visible = todayBlocks.filter(b => {
+          const def = BUILTIN_TODAY_DEFS[b.block_type];
+          return !(def?.featureGate && !features[def.featureGate]);
+        });
+        const activeInline = visible.filter(b => !b.hidden && b.display_mode !== 'popup');
+        const activePopup = visible.filter(b => !b.hidden && b.display_mode === 'popup');
+        // 編集モード中は非表示・ポップアップ設定のブロックも薄く表示する
+        // （「どこで戻すか分からない」状態を避けるため）
+        const listed = todayEditMode ? visible : activeInline;
+        listEl.innerHTML = listed.length
+          ? listed.map((b, i) => {
+              const dimmed = todayEditMode && (b.hidden || b.display_mode === 'popup');
+              return `<div style="${dimmed ? 'opacity:0.55' : ''}">${todayCardShellHtml(b, i, listed.length)}</div>`;
+            }).join('')
+          : '<p class="muted" style="font-size:13px">表示するカードがありません。「⚙ このページをカスタマイズ」から表示を戻せます。</p>';
+        bindTodayShellControls(listEl);
+
+        const loaders = [];
+        visible.filter(b => !b.hidden).forEach(b => {
+          if (b.block_type === 'builtin_reservations') loaders.push(loadTodayReservations());
+          if (b.block_type === 'builtin_requests') loaders.push(loadTodayRequests());
+          if (b.block_type === 'builtin_checkin') loaders.push(loadTodayCheckins());
+          if (b.block_type === 'builtin_sales') loaders.push(loadTodaySales());
+        });
+        await Promise.all(loaders);
+
+        if (activePopup.length && !todayEditMode) showTodayPopup(activePopup);
+      }
+
+      document.getElementById('today-customize-toggle')?.addEventListener('click', () => {
+        todayEditMode = !todayEditMode;
+        const toggleBtn = document.getElementById('today-customize-toggle');
+        if (toggleBtn) toggleBtn.textContent = todayEditMode ? '✓ 完了' : '⚙ このページをカスタマイズ';
+        const addWrap = document.getElementById('today-add-memo-wrap');
+        if (addWrap) addWrap.style.display = todayEditMode ? 'block' : 'none';
+        renderToday();
+      });
+      document.getElementById('today-add-memo-btn')?.addEventListener('click', async () => {
+        const res = await fetch('/api/provider/today-blocks', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersToday() }, body: JSON.stringify({ block_type: 'memo', content: { text: '' } }) });
+        if (res.ok) { await loadTodayBlocks(); renderToday(); } else showToast('メモの追加に失敗しました');
+      });
+
+      function loadToday() {
+        loadTodayBlocks().then(renderToday).then(() => window.__pdMarkTabReady?.('today'));
+      }
 
       document.querySelectorAll('[data-tab="today"]').forEach(btn => btn.addEventListener('click', loadToday, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'today' || document.getElementById('tab-today')?.classList.contains('active')) loadToday();
@@ -9273,39 +9446,19 @@ export default function ProviderDashboardPage() {
             対応するタブへワンクリックで移動できる。 */}
         <div className="tab-pane" id="tab-today">
           <div className="stack" style={{ gap: '16px' }}>
-            <div className="card" style={{ padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h3 style={{ margin: 0, fontSize: '15px' }}>今日の予約</h3>
-                <button type="button" className="btn btn-ghost" data-today-goto="calendar" style={{ fontSize: '12px', padding: '5px 10px' }}>カレンダーを開く</button>
-              </div>
-              <div id="today-reservations-list"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
+            {/* でお要望2026-10-01：「何を表示させるかの選択や並び替え、メモを入れるブロックや
+                ポップアップで表示させる選択とか自由度を高めたやつ」。カード自体はJS側で
+                today-blocks-listの中に動的に構築する（並び替え・非表示・表示方法の設定は
+                provider_today_blocksで管理）。日常使いの邪魔にならないよう、並び替え等の
+                操作UIは「⚙ このページをカスタマイズ」を押した時だけ表示する。 */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-ghost" id="today-customize-toggle" style={{ fontSize: '12px' }}>⚙ このページをカスタマイズ</button>
             </div>
-
-            <div className="card" style={{ padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h3 style={{ margin: 0, fontSize: '15px' }}>未対応の予約リクエスト</h3>
-                <button type="button" className="btn btn-ghost" data-today-goto="requests" style={{ fontSize: '12px', padding: '5px 10px' }}>予約リクエストを開く</button>
-              </div>
-              <div id="today-requests-list"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
+            <div id="today-blocks-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p>
             </div>
-
-            <div className="card" id="today-checkin-card" style={{ padding: '20px', display: 'none' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h3 style={{ margin: 0, fontSize: '15px' }}>今日のチェックイン</h3>
-                <button type="button" className="btn btn-ghost" data-today-goto="checkin" style={{ fontSize: '12px', padding: '5px 10px' }}>チェックインを開く</button>
-              </div>
-              <div id="today-checkin-list"><p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p></div>
-            </div>
-
-            <div className="card" style={{ padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h3 style={{ margin: 0, fontSize: '15px' }}>今日の売上</h3>
-                <button type="button" className="btn btn-ghost" data-today-goto="sales" style={{ fontSize: '12px', padding: '5px 10px' }}>売上管理を開く</button>
-              </div>
-              <div className="stat-card" style={{ display: 'inline-block', minWidth: '160px' }}>
-                <div className="stat-value" id="today-sales-total">—</div>
-                <div className="stat-label">本日の確定売上</div>
-              </div>
+            <div id="today-add-memo-wrap" style={{ display: 'none' }}>
+              <button type="button" className="btn btn-ghost" id="today-add-memo-btn" style={{ fontSize: '13px' }}>＋ メモを追加</button>
             </div>
           </div>
         </div>
