@@ -271,7 +271,7 @@ function StaffSection({ staff }) {
   if (!staff || staff.length === 0) return null;
   return (
     <div>
-      <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)', letterSpacing: '.12em', marginBottom: '16px', textTransform: 'uppercase' }}>担当スタッフ紹介</div>
+      <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.12em', marginBottom: '16px', textTransform: 'uppercase' }}>担当スタッフ紹介</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {staff.map(s => (
           <div key={s.id} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', padding: '20px', background: 'var(--pv-surface)', borderRadius: '18px', border: '1.5px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', backdropFilter: 'blur(8px)' }}>
@@ -289,7 +289,7 @@ function StaffSection({ staff }) {
                 {s.is_featured && (
                   <span style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', padding: '2px 8px', background: '#fef3c7', color: '#92400e', borderRadius: '99px' }}>担当</span>
                 )}
-                {s.role && <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 55%, transparent)', fontWeight: '500' }}>{s.role}</span>}
+                {s.role && <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', fontWeight: '500' }}>{s.role}</span>}
               </div>
               {/* 経験・資格チップ */}
               {(s.experience_years || s.credentials) && (
@@ -330,7 +330,7 @@ function TabBar({ activeTab, onSelect, tabs }) {
         <button key={t.id} onClick={() => onSelect(t.id)} style={{
           flexShrink: 0, whiteSpace: 'nowrap',
           padding: '12px 20px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: activeTab === t.id ? '800' : '500',
-          color: activeTab === t.id ? 'color-mix(in srgb, var(--pv-text) 90%, transparent)' : 'color-mix(in srgb, var(--pv-text) 55%, transparent)', background: 'none', border: 'none',
+          color: activeTab === t.id ? 'color-mix(in srgb, var(--pv-text) 90%, transparent)' : 'color-mix(in srgb, var(--pv-text) 62%, transparent)', background: 'none', border: 'none',
           borderBottom: activeTab === t.id ? '2px solid var(--pv-accent)' : '2px solid transparent',
           marginBottom: '-2px', cursor: 'pointer', transition: 'all .15s',
         }}>{t.label}</button>
@@ -348,7 +348,7 @@ function NewMeMapSection({ diagnosis, matchData }) {
     return (
       <div style={{ padding: '24px', borderRadius: '16px', border: '1.5px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', background: 'var(--pv-surface)', backdropFilter: 'blur(8px)' }}>
         <p style={{ fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 90%, transparent)', margin: '0 0 6px' }}>Me Scanを受けると、このガイドとの接点がわかります</p>
-        <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 55%, transparent)', margin: '0 0 16px', lineHeight: '1.7' }}>あなたの変容プロファイル（最優先トラック・来た道・ゴール）とこのガイドが合っているかを、8軸で確認できます。</p>
+        <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', margin: '0 0 16px', lineHeight: '1.7' }}>あなたの変容プロファイル（最優先トラック・来た道・ゴール）とこのガイドが合っているかを、8軸で確認できます。</p>
         <a href="/diagnosis" style={{ display: 'inline-block', padding: '10px 22px', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', textDecoration: 'none' }}>
           無料でMe Scanを受ける（約12〜18分）
         </a>
@@ -454,7 +454,7 @@ function PhilosophySection({ provider }) {
       {/* ━━ Block 1: こんな方へ ━━ */}
       {hasTargetBlock && (
         <div style={{ background: 'var(--pv-surface)', borderRadius: '20px', padding: '28px 24px', backdropFilter: 'blur(8px)', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)' }}>
-          <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)', letterSpacing: '.12em', marginBottom: '18px', textTransform: 'uppercase' }}>このガイドが伴走できる人</div>
+          <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.12em', marginBottom: '18px', textTransform: 'uppercase' }}>このガイドが伴走できる人</div>
 
           {/* target_desc 行リスト */}
           {targetLines.length > 0 && (
@@ -484,11 +484,11 @@ function PhilosophySection({ provider }) {
 
       {/* ━━ Block 2: 哲学 pull-quote ━━ */}
       {provider.philosophy && (
-        <div style={{ position: 'relative', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', borderRadius: '20px', padding: '40px 28px 32px', overflow: 'hidden' }}>
+        <div style={{ position: 'relative', background: 'color-mix(in srgb, var(--pv-accent) 16%, #0d1117)', borderRadius: '20px', padding: '40px 28px 32px', overflow: 'hidden' }}>
           {/* 装飾クオート */}
           <div style={{ position: 'absolute', top: '8px', left: '18px', fontSize: 'calc(96px * var(--pv-fs))', color: 'rgba(255,255,255,0.05)', fontFamily: 'Georgia, serif', lineHeight: 1, userSelect: 'none', pointerEvents: 'none' }}></div>
           <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'rgba(255,255,255,0.4)', letterSpacing: '.12em', marginBottom: '18px', position: 'relative', textTransform: 'uppercase' }}>このガイドが大切にしていること</div>
-          <p style={{ fontSize: 'calc(16px * var(--pv-fs))', color: 'var(--pv-text)', lineHeight: '1.95', margin: '0', whiteSpace: 'pre-wrap', fontWeight: '500', position: 'relative', zIndex: 1 }}>{provider.philosophy}</p>
+          <p style={{ fontSize: 'calc(16px * var(--pv-fs))', color: 'rgba(255,255,255,0.92)', lineHeight: '1.95', margin: '0', whiteSpace: 'pre-wrap', fontWeight: '500', position: 'relative', zIndex: 1 }}>{provider.philosophy}</p>
           {provider.provider_style && (
             <div style={{ marginTop: '22px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'rgba(255,255,255,0.4)', letterSpacing: '.05em', textTransform: 'uppercase' }}>スタイル</span>
@@ -501,7 +501,7 @@ function PhilosophySection({ provider }) {
       {/* ━━ Block 2.5: 変容ストーリー（AIマッチング用テキストフィールド） ━━ */}
       {(provider.ideal_client_desc || provider.client_before_state || provider.transformation_pattern || provider.best_fit_desc) && (
         <div style={{ border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '18px', padding: '22px', background: 'var(--pv-surface)', backdropFilter: 'blur(8px)' }}>
-          <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)', letterSpacing: '.12em', marginBottom: '18px', textTransform: 'uppercase' }}>来る方のリアルなストーリー</div>
+          <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.12em', marginBottom: '18px', textTransform: 'uppercase' }}>来る方のリアルなストーリー</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             {provider.ideal_client_desc && (
               <div>
@@ -534,7 +534,7 @@ function PhilosophySection({ provider }) {
       {/* ━━ Block 3: サービス詳細 ━━ */}
       {provider.description && (
         <div style={{ border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '18px', padding: '22px', background: 'var(--pv-surface)', backdropFilter: 'blur(8px)' }}>
-          <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)', letterSpacing: '.12em', marginBottom: '12px', textTransform: 'uppercase' }}>この一手でできること</div>
+          <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.12em', marginBottom: '12px', textTransform: 'uppercase' }}>この一手でできること</div>
           <p style={{ fontSize: 'calc(14px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap' }}>{provider.description}</p>
         </div>
       )}
@@ -548,7 +548,7 @@ function StoriesSection({ stories, provider }) {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
         <h2 style={{ fontSize: 'calc(16px * var(--pv-hs))', fontWeight: '800', margin: '0' }}>変容の証言</h2>
-        {stories.length > 0 && <span style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)', fontWeight: '600', background: 'var(--pv-surface)', padding: '2px 10px', borderRadius: '99px' }}>{stories.length}件</span>}
+        {stories.length > 0 && <span style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', fontWeight: '600', background: 'var(--pv-surface)', padding: '2px 10px', borderRadius: '99px' }}>{stories.length}件</span>}
       </div>
       {stories.length === 0 ? (
         <div style={{ background: '#fffbeb', border: '1px dashed #fde68a', borderRadius: '18px', padding: '32px', textAlign: 'center' }}>
@@ -642,13 +642,13 @@ function renderCustomBlockElement(b) {
     return (
       <figure key={b.id} style={{ margin: 0, maxWidth: c.size === 'full' ? '100%' : '360px', marginLeft: c.size === 'full' ? 0 : 'auto', marginRight: c.size === 'full' ? 0 : 'auto' }}>
         <img src={c.url} alt={c.caption || ''} style={{ width: '100%', borderRadius: '14px', display: 'block' }} />
-        {c.caption && <figcaption style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 50%, transparent)', textAlign: 'center', marginTop: '6px' }}>{c.caption}</figcaption>}
+        {c.caption && <figcaption style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', textAlign: 'center', marginTop: '6px' }}>{c.caption}</figcaption>}
       </figure>
     );
   }
   if (b.block_type === 'button' && c.label && c.url) {
     return (
-      <a key={b.id} href={c.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', alignSelf: 'flex-start', padding: '12px 24px', background: '#c9a84c', color: '#0a0f1e', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', textDecoration: 'none' }}>
+      <a key={b.id} href={c.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', alignSelf: 'flex-start', padding: '12px 24px', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', borderRadius: '10px', fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', textDecoration: 'none' }}>
         {c.label}
       </a>
     );
@@ -657,7 +657,7 @@ function renderCustomBlockElement(b) {
     return (
       <blockquote key={b.id} style={{ margin: 0, padding: '16px 20px', borderLeft: '3px solid #c9a84c', background: 'var(--pv-surface)', borderRadius: '0 12px 12px 0' }}>
         <p style={{ fontSize: 'calc(15px * var(--pv-fs))', fontStyle: 'italic', color: 'color-mix(in srgb, var(--pv-text) 85%, transparent)', margin: 0, lineHeight: '1.8' }}>「{c.text}」</p>
-        {c.attribution && <p style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 50%, transparent)', margin: '8px 0 0' }}>— {c.attribution}</p>}
+        {c.attribution && <p style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', margin: '8px 0 0' }}>— {c.attribution}</p>}
       </blockquote>
     );
   }
@@ -687,7 +687,7 @@ function GuideMessageCard({ provider }) {
       )}
       <div>
         <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-accent) 70%, transparent)', letterSpacing: '.1em', marginBottom: '8px', textTransform: 'uppercase' }}>ガイドからのひと言</div>
-        <p style={{ fontSize: 'calc(14px * var(--pv-fs))', color: '#e8e4dc', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap', fontWeight: '500' }}>{provider.guide_message}</p>
+        <p style={{ fontSize: 'calc(14px * var(--pv-fs))', color: 'var(--pv-text)', lineHeight: '1.85', margin: 0, whiteSpace: 'pre-wrap', fontWeight: '500' }}>{provider.guide_message}</p>
       </div>
     </div>
   );
@@ -698,7 +698,7 @@ function ProgramSection({ services, onConsult, userPathType, provider, matchData
   if (!services || services.length === 0) return null;
   return (
     <div>
-      <p style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', letterSpacing: '.1em', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)', textTransform: 'uppercase', margin: '0 0 12px' }}>プログラム</p>
+      <p style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '800', letterSpacing: '.1em', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', textTransform: 'uppercase', margin: '0 0 12px' }}>プログラム</p>
       <ProgramTab services={services} onConsult={onConsult} userPathType={userPathType} provider={provider} matchData={matchData} />
     </div>
   );
@@ -846,7 +846,7 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
         {/* 価格 */}
         <div style={{ marginBottom: '12px' }}>
           <span style={{ fontSize: 'calc(24px * var(--pv-fs))', fontWeight: '900', color: 'color-mix(in srgb, var(--pv-text) 90%, transparent)', lineHeight: 1 }}>¥{service.price.toLocaleString()}</span>
-          {(service.duration_minutes || service.duration) && <span style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)', marginLeft: '6px' }}>/ {service.duration_minutes ? `${service.duration_minutes}分` : service.duration}</span>}
+          {(service.duration_minutes || service.duration) && <span style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', marginLeft: '6px' }}>/ {service.duration_minutes ? `${service.duration_minutes}分` : service.duration}</span>}
         </div>
 
         {/* 「変容の旅を覗く」ボタン（常時表示・フル幅） */}
@@ -865,9 +865,9 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
             {(service.before_text || service.before_image_url || service.after_text || service.after_image_url) && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
                 <div style={{ background: 'var(--pv-surface)', borderRadius: '10px', overflow: 'hidden', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)' }}>
-                  <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)', letterSpacing: '.1em', padding: service.before_image_url ? '8px 12px 4px' : '12px 12px 4px', textTransform: 'uppercase' }}>BEFORE</div>
+                  <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.1em', padding: service.before_image_url ? '8px 12px 4px' : '12px 12px 4px', textTransform: 'uppercase' }}>BEFORE</div>
                   {service.before_image_url && <img src={service.before_image_url} alt="Before" style={{ width: '100%', height: '110px', objectFit: 'cover', display: 'block' }} />}
-                  {service.before_text && <p style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 55%, transparent)', margin: 0, lineHeight: '1.6', padding: service.before_image_url ? '8px 12px 12px' : '0 12px 12px' }}>{service.before_text}</p>}
+                  {service.before_text && <p style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', margin: 0, lineHeight: '1.6', padding: service.before_image_url ? '8px 12px 12px' : '0 12px 12px' }}>{service.before_text}</p>}
                 </div>
                 <div style={{ background: '#f0fdf4', borderRadius: '10px', overflow: 'hidden', border: '1px solid #bbf7d0' }}>
                   <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: '#059669', letterSpacing: '.1em', padding: service.after_image_url ? '8px 12px 4px' : '12px 12px 4px', textTransform: 'uppercase' }}>AFTER</div>
@@ -891,7 +891,7 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
             )}
             {suitablePaths.length > 0 && (
               <div style={{ padding: '10px 14px', background: 'var(--pv-surface)', borderRadius: '10px', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)' }}>
-                <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)', letterSpacing: '.1em', marginBottom: '7px', textTransform: 'uppercase' }}>こんな方に向いています</div>
+                <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.1em', marginBottom: '7px', textTransform: 'uppercase' }}>こんな方に向いています</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                   {suitablePaths.map(p => (
                     <span key={p} style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', padding: '3px 10px', background: (PATH_COLORS[p] || '#6b7280') + '18', color: PATH_COLORS[p] || '#6b7280', borderRadius: '99px' }}>
@@ -907,7 +907,7 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
         {/* CTA */}
         <button
           onClick={() => onConsult(service)}
-          style={{ width: '100%', padding: '15px', background: isCompassMatch ? 'linear-gradient(90deg,#1d4ed8,#4f46e5)' : '#0f172a', color: 'var(--pv-text)', border: 'none', borderRadius: '14px', fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '800', cursor: 'pointer', letterSpacing: '.02em', transition: 'opacity .15s' }}
+          style={{ width: '100%', padding: '15px', background: isCompassMatch ? 'linear-gradient(90deg,#1d4ed8,#4f46e5)' : 'var(--pv-accent)', color: isCompassMatch ? '#fff' : 'var(--pv-on-accent)', border: 'none', borderRadius: '14px', fontSize: 'calc(15px * var(--pv-fs))', fontWeight: '800', cursor: 'pointer', letterSpacing: '.02em', transition: 'opacity .15s' }}
           onMouseOver={e => e.currentTarget.style.opacity = '.88'}
           onMouseOut={e => e.currentTarget.style.opacity = '1'}
         >
@@ -919,9 +919,9 @@ function ProgramCard({ service, onConsult, userPathType, compassAxis }) {
 }
 
 function ProgramTab({ services, onConsult, userPathType, provider, matchData }) {
-  if (services === null) return <div style={{ textAlign: 'center', padding: '40px', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)' }}>読み込み中…</div>;
+  if (services === null) return <div style={{ textAlign: 'center', padding: '40px', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>読み込み中…</div>;
   if (!services.length) return (
-    <div style={{ textAlign: 'center', padding: '60px 20px', color: 'color-mix(in srgb, var(--pv-text) 55%, transparent)', background: 'var(--pv-surface)', borderRadius: '18px', border: '1px dashed color-mix(in srgb, var(--pv-text) 20%, transparent)' }}>
+    <div style={{ textAlign: 'center', padding: '60px 20px', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', background: 'var(--pv-surface)', borderRadius: '18px', border: '1px dashed color-mix(in srgb, var(--pv-text) 20%, transparent)' }}>
       <div style={{ fontSize: 'calc(32px * var(--pv-fs))', marginBottom: '12px', opacity: 0.3 }}></div>
       <p style={{ fontSize: 'calc(15px * var(--pv-fs))', margin: 0, fontWeight: '600' }}>プログラムはまだ登録されていません</p>
     </div>
@@ -980,7 +980,7 @@ function InfoRow({ label, value }) {
   if (!value) return null;
   return (
     <div style={{ display: 'flex', gap: '10px', padding: '10px 0', borderBottom: '1px solid color-mix(in srgb, var(--pv-text) 8%, transparent)' }}>
-      <span style={{ flexShrink: 0, width: '92px', fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)', fontWeight: '700' }}>{label}</span>
+      <span style={{ flexShrink: 0, width: '92px', fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', fontWeight: '700' }}>{label}</span>
       <span style={{ fontSize: 'calc(13.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 85%, transparent)', lineHeight: '1.6' }}>{value}</span>
     </div>
   );
@@ -1000,7 +1000,7 @@ function BasicInfoTab({ provider }) {
         <div style={{
           padding: '12px 16px', borderRadius: '12px', fontSize: 'calc(13.5px * var(--pv-fs))', fontWeight: '700',
           background: status === '本日は定休日' ? 'rgba(107,114,128,0.15)' : 'rgba(5,150,105,0.15)',
-          color: status === '本日は定休日' ? 'color-mix(in srgb, var(--pv-text) 60%, transparent)' : '#10b981',
+          color: status === '本日は定休日' ? 'color-mix(in srgb, var(--pv-text) 62%, transparent)' : '#10b981',
           border: `1px solid ${status === '本日は定休日' ? 'color-mix(in srgb, var(--pv-text) 15%, transparent)' : 'rgba(5,150,105,0.3)'}`,
         }}>
           {status}
@@ -1027,8 +1027,8 @@ function BasicInfoTab({ provider }) {
             const text = (!h || h.closed || !h.open || !h.close) ? '定休日' : `${h.open}〜${h.close}`;
             return (
               <div key={key} style={{ display: 'flex', gap: '10px', padding: '6px 0', fontWeight: isToday ? '800' : '500' }}>
-                <span style={{ flexShrink: 0, width: '28px', fontSize: 'calc(13px * var(--pv-fs))', color: isToday ? '#c9a84c' : 'color-mix(in srgb, var(--pv-text) 50%, transparent)' }}>{WEEKDAY_LABEL_BH[key]}</span>
-                <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: isToday ? '#e8e4dc' : 'color-mix(in srgb, var(--pv-text) 65%, transparent)' }}>{text}</span>
+                <span style={{ flexShrink: 0, width: '28px', fontSize: 'calc(13px * var(--pv-fs))', color: isToday ? 'var(--pv-accent)' : 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>{WEEKDAY_LABEL_BH[key]}</span>
+                <span style={{ fontSize: 'calc(13px * var(--pv-fs))', color: isToday ? 'var(--pv-text)' : 'color-mix(in srgb, var(--pv-text) 65%, transparent)' }}>{text}</span>
               </div>
             );
           })}
@@ -1125,8 +1125,8 @@ function ClassTab({ provider }) {
     finally { setBookingSlotId(null); }
   }
 
-  if (classes === null) return <p style={{ color: 'color-mix(in srgb, var(--pv-text) 55%, transparent)' }}>読み込み中…</p>;
-  if (classes.length === 0) return <p style={{ color: 'color-mix(in srgb, var(--pv-text) 55%, transparent)' }}>現在予約可能なクラスの開催回がありません。</p>;
+  if (classes === null) return <p style={{ color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>読み込み中…</p>;
+  if (classes.length === 0) return <p style={{ color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>現在予約可能なクラスの開催回がありません。</p>;
 
   return (
     <div style={{ maxWidth: '560px' }}>
@@ -1146,9 +1146,9 @@ function ClassTab({ provider }) {
         {classes.map(c => (
           <div key={c.id} style={{ border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '14px', padding: '18px 20px', background: 'var(--pv-surface)' }}>
             <p style={{ margin: '0 0 4px', fontSize: 'calc(15px * var(--pv-fs))', fontWeight: 800, color: 'color-mix(in srgb, var(--pv-text) 92%, transparent)' }}>{c.name}</p>
-            {c.description && <p style={{ margin: '0 0 12px', fontSize: 'calc(12.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 60%, transparent)', lineHeight: 1.6 }}>{c.description}</p>}
+            {c.description && <p style={{ margin: '0 0 12px', fontSize: 'calc(12.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', lineHeight: 1.6 }}>{c.description}</p>}
             {c.sessions.length === 0 ? (
-              <p style={{ margin: 0, fontSize: 'calc(12.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)' }}>現在予約可能な開催回がありません。</p>
+              <p style={{ margin: 0, fontSize: 'calc(12.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>現在予約可能な開催回がありません。</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {c.sessions.map(s => {
@@ -1158,7 +1158,7 @@ function ClassTab({ provider }) {
                     <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '10px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: '10px' }}>
                       <div>
                         <span style={{ fontSize: 'calc(13px * var(--pv-fs))', fontWeight: 700, color: 'color-mix(in srgb, var(--pv-text) 85%, transparent)' }}>{s.date}（{WEEKDAY_JA_CLASS[d.getDay()]}）{s.start_time?.slice(0, 5)}〜{s.end_time?.slice(0, 5)}</span>
-                        <span style={{ fontSize: 'calc(11.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 45%, transparent)', marginLeft: '8px' }}>残り{s.remaining}枠</span>
+                        <span style={{ fontSize: 'calc(11.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', marginLeft: '8px' }}>残り{s.remaining}枠</span>
                       </div>
                       {isDone ? (
                         <span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: 700, color: '#34d399' }}>✓ 予約済み</span>
@@ -1257,7 +1257,7 @@ function PackagesTab({ provider }) {
     }
   }
 
-  if (packages === null) return <div style={{ padding: '40px', textAlign: 'center', color: 'color-mix(in srgb, var(--pv-text) 50%, transparent)' }}>読み込み中…</div>;
+  if (packages === null) return <div style={{ padding: '40px', textAlign: 'center', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>読み込み中…</div>;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingBottom: '60px' }}>
@@ -1272,7 +1272,7 @@ function PackagesTab({ provider }) {
         </div>
       )}
       {!packages.length ? (
-        <p style={{ textAlign: 'center', color: 'color-mix(in srgb, var(--pv-text) 50%, transparent)', fontSize: 'calc(14px * var(--pv-fs))', padding: '40px 0' }}>現在オンラインで購入できる回数券はありません。</p>
+        <p style={{ textAlign: 'center', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', fontSize: 'calc(14px * var(--pv-fs))', padding: '40px 0' }}>現在オンラインで購入できる回数券はありません。</p>
       ) : packages.map(pkg => (
         <div key={pkg.id} style={{ border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '16px', padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
           <div>
@@ -1582,7 +1582,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
 
       {/* ① 相談の流れ 3ステップ */}
       <div style={{ background: 'var(--pv-surface)', borderRadius: '16px', padding: '20px', marginBottom: '20px', backdropFilter: 'blur(8px)', border: '1px solid color-mix(in srgb, var(--pv-text) 10%, transparent)' }}>
-        <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)', letterSpacing: '.12em', marginBottom: '14px', textTransform: 'uppercase' }}>相談の流れ</div>
+        <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.12em', marginBottom: '14px', textTransform: 'uppercase' }}>相談の流れ</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {(showInstantPicker ? [
             { n: '1', label: '空き枠を選ぶ', desc: '表から空いている日時をタップします' },
@@ -1597,7 +1597,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
               <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--pv-accent)', color: 'var(--pv-on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '800', flexShrink: 0, marginTop: '1px' }}>{step.n}</span>
               <div>
                 <div style={{ fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 90%, transparent)', marginBottom: '2px' }}>{step.label}</div>
-                <div style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 55%, transparent)', lineHeight: '1.5' }}>{step.desc}</div>
+                <div style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', lineHeight: '1.5' }}>{step.desc}</div>
               </div>
             </div>
           ))}
@@ -1615,7 +1615,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       {/* ③ 初回セッション説明 */}
       {provider.first_session_desc && (
         <div style={{ border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '14px', padding: '16px 18px', marginBottom: '20px', background: 'var(--pv-surface)', backdropFilter: 'blur(8px)' }}>
-          <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)', letterSpacing: '.1em', marginBottom: '8px', textTransform: 'uppercase' }}>初回はこんな内容です</div>
+          <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.1em', marginBottom: '8px', textTransform: 'uppercase' }}>初回はこんな内容です</div>
           <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', margin: 0, lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{provider.first_session_desc}</p>
         </div>
       )}
@@ -1678,7 +1678,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
               <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', border: `1.5px solid ${staffId === s.id ? '#111' : '#e5e7eb'}`, borderRadius: '10px', cursor: 'pointer' }}>
                 <input type="radio" name="staff" checked={staffId === s.id} onChange={() => setStaffId(s.id)} style={{ accentColor: '#111' }} />
                 <span style={{ flex: 1, fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)' }}>{s.name}{s.role ? `（${s.role}）` : ''}</span>
-                <span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: s.booking_fee > 0 ? '#c9a84c' : 'color-mix(in srgb, var(--pv-text) 40%, transparent)', flexShrink: 0 }}>
+                <span style={{ fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: s.booking_fee > 0 ? '#c9a84c' : 'color-mix(in srgb, var(--pv-text) 62%, transparent)', flexShrink: 0 }}>
                   {s.booking_fee > 0 ? `指名料 ¥${Number(s.booking_fee).toLocaleString()}` : '無料'}
                 </span>
               </label>
@@ -1690,7 +1690,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       {!canBookAnything ? (
         <div style={{ padding: '20px', background: 'var(--pv-surface)', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '14px', textAlign: 'center' }}>
           <p style={{ fontSize: 'calc(14px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 90%, transparent)', margin: '0 0 6px' }}>現在オンラインでのご予約受付を停止しています</p>
-          <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 60%, transparent)', margin: 0, lineHeight: '1.7' }}>お手数ですが、店舗へ直接お問い合わせください。</p>
+          <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', margin: 0, lineHeight: '1.7' }}>お手数ですが、店舗へ直接お問い合わせください。</p>
         </div>
       ) : (
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -1783,7 +1783,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
                 type="button"
                 onClick={() => setGridWeekOffset(w => Math.max(0, w - 1))}
                 disabled={gridWeekOffset === 0}
-                style={{ background: 'none', border: 'none', color: gridWeekOffset === 0 ? 'color-mix(in srgb, var(--pv-text) 25%, transparent)' : 'color-mix(in srgb, var(--pv-text) 75%, transparent)', fontSize: 'calc(12px * var(--pv-fs))', cursor: gridWeekOffset === 0 ? 'default' : 'pointer', padding: '4px' }}
+                style={{ background: 'none', border: 'none', color: gridWeekOffset === 0 ? 'color-mix(in srgb, var(--pv-text) 62%, transparent)' : 'color-mix(in srgb, var(--pv-text) 75%, transparent)', fontSize: 'calc(12px * var(--pv-fs))', cursor: gridWeekOffset === 0 ? 'default' : 'pointer', padding: '4px' }}
               >
                 ＜ 前の週へ
               </button>
@@ -1800,7 +1800,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
               <table style={{ borderCollapse: 'collapse', width: '100%' }}>
                 <thead>
                   <tr>
-                    <th style={{ position: 'sticky', left: 0, background: 'var(--pv-accent)', padding: '6px 8px', fontSize: 'calc(11px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 60%, transparent)', textAlign: 'left' }}></th>
+                    <th style={{ position: 'sticky', left: 0, background: 'var(--pv-accent)', padding: '6px 8px', fontSize: 'calc(11px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', textAlign: 'left' }}></th>
                     {gridWeekDates.map(date => {
                       const d = new Date(`${date}T00:00:00`);
                       const wd = d.getDay();
@@ -1814,7 +1814,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
                 </thead>
                 <tbody>
                   {gridTimes.length === 0 ? (
-                    <tr><td colSpan={8} style={{ padding: '16px', textAlign: 'center', fontSize: 'calc(12.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 50%, transparent)' }}>この条件の空き枠がありません</td></tr>
+                    <tr><td colSpan={8} style={{ padding: '16px', textAlign: 'center', fontSize: 'calc(12.5px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>この条件の空き枠がありません</td></tr>
                   ) : gridTimes.map(t => (
                     <tr key={t}>
                       <td style={{ position: 'sticky', left: 0, background: 'var(--pv-accent)', padding: '6px 8px', fontSize: 'calc(12px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 90%, transparent)', whiteSpace: 'nowrap' }}>{t.slice(0, 5)}</td>
@@ -1838,7 +1838,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
                                 ○
                               </button>
                             ) : (
-                              <span style={{ color: 'color-mix(in srgb, var(--pv-text) 25%, transparent)', fontSize: 'calc(14px * var(--pv-fs))' }}>×</span>
+                              <span style={{ color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', fontSize: 'calc(14px * var(--pv-fs))' }}>×</span>
                             )}
                           </td>
                         );
@@ -1903,8 +1903,8 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       {/* キャンセルポリシー */}
       {provider.cancellation_policy && (
         <div style={{ marginTop: '20px', padding: '14px 16px', background: 'var(--pv-surface)', border: '1px solid color-mix(in srgb, var(--pv-text) 15%, transparent)', borderRadius: '12px', backdropFilter: 'blur(8px)' }}>
-          <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)', letterSpacing: '.1em', marginBottom: '6px', textTransform: 'uppercase' }}>キャンセルポリシー</div>
-          <p style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 55%, transparent)', margin: 0, lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{provider.cancellation_policy}</p>
+          <div style={{ fontSize: 'calc(10px * var(--pv-fs))', fontWeight: '800', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', letterSpacing: '.1em', marginBottom: '6px', textTransform: 'uppercase' }}>キャンセルポリシー</div>
+          <p style={{ fontSize: 'calc(12px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', margin: 0, lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{provider.cancellation_policy}</p>
         </div>
       )}
     </div>
@@ -2071,7 +2071,7 @@ function ProviderPageContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [provider]);
 
-  if (loading) return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)' }}>読み込み中…</p></div>;
+  if (loading) return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>読み込み中…</p></div>;
   if (!provider) return (
     <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
       <p style={{ color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', fontWeight: '700' }}>掲載者が見つかりませんでした。</p>
@@ -2208,7 +2208,7 @@ function ProviderPageContent() {
 
 export default function ProviderPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'color-mix(in srgb, var(--pv-text) 40%, transparent)' }}>読み込み中…</div>}>
+    <Suspense fallback={<div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)' }}>読み込み中…</div>}>
       <ProviderPageContent />
     </Suspense>
   );
