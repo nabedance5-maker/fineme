@@ -8526,6 +8526,71 @@ export default function ProviderDashboardPage() {
         el.textContent = `¥${Number(data.total || 0).toLocaleString()}`;
       }
 
+      // 以下4つは任意追加カード（でお要望2026-10-01「他にもいろんなカードを追加できる
+      // ように」）。いずれも既存タブのAPIをそのまま再利用するだけで新規エンドポイントは
+      // 増やしていない。
+      const STATUS_LABEL_TODAY_REF = { pending: '来店待ち', completed: '来店済み・特典対象' };
+      async function loadTodayReferrals() {
+        const el = document.getElementById('today-referrals-list');
+        if (!el) return;
+        const res = await fetch('/api/provider/referrals', { headers: authHeadersToday() });
+        if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        if (!rows.length) { el.innerHTML = '<p class="muted" style="font-size:13px">まだ紹介実績はありません。</p>'; return; }
+        const pendingCount = rows.filter(r => r.status === 'pending').length;
+        el.innerHTML = `<p style="margin:0 0 8px;font-size:20px;font-weight:800">${pendingCount}件<span style="font-size:12px;font-weight:400;color:#6b7280">来店待ち</span></p>` +
+          rows.slice(0, 5).map(r => `
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
+              <span style="flex:1"><strong>${esc(r.referrer_name)}</strong>さん → ${esc(r.referred_name || '(お名前不明)')}</span>
+              <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:${r.status === 'completed' ? '#f0fdf4' : '#fffbeb'};color:${r.status === 'completed' ? '#16a34a' : '#d97706'}">${STATUS_LABEL_TODAY_REF[r.status] || r.status}</span>
+            </div>
+          `).join('');
+      }
+
+      async function loadTodayEvents() {
+        const el = document.getElementById('today-events-list');
+        if (!el) return;
+        const res = await fetch('/api/provider/events', { headers: authHeadersToday() });
+        if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        const upcoming = rows.filter(r => r.event_date >= todayStr).sort((a, b) => a.event_date.localeCompare(b.event_date));
+        if (!upcoming.length) { el.innerHTML = '<p class="muted" style="font-size:13px">予定されているイベントはありません。</p>'; return; }
+        el.innerHTML = upcoming.slice(0, 3).map(e => `
+          <div style="padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
+            <div><strong>${esc(e.title)}</strong><span class="muted" style="font-size:12px;margin-left:6px">${esc(e.event_date)}${e.start_time ? ' ' + esc(e.start_time.slice(0, 5)) : ''}</span></div>
+            <div class="muted" style="font-size:12px;margin-top:2px">出席 ${e.counts.attending}／招待 ${e.counts.invited}／欠席 ${e.counts.declined}</div>
+          </div>
+        `).join('');
+      }
+
+      async function loadTodayDormant() {
+        const el = document.getElementById('today-dormant-list');
+        if (!el) return;
+        const res = await fetch('/api/provider/customers', { headers: authHeadersToday() });
+        if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        const dormant = rows.filter(r => r.status === 'dormant');
+        if (!dormant.length) { el.innerHTML = '<p class="muted" style="font-size:13px">休眠中のお客様はいません。</p>'; return; }
+        el.innerHTML = `<p style="margin:0 0 8px;font-size:20px;font-weight:800">${dormant.length}名</p>` +
+          dormant.slice(0, 5).map(c => `<div style="padding:4px 0;font-size:13px">${esc(c.customer_name)}</div>`).join('') +
+          (dormant.length > 5 ? `<p class="muted" style="font-size:12px;margin-top:4px">他${dormant.length - 5}名</p>` : '');
+      }
+
+      async function loadTodayClasses() {
+        const el = document.getElementById('today-classes-list');
+        if (!el) return;
+        const res = await fetch('/api/provider/classes', { headers: authHeadersToday() });
+        if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
+        const rows = await res.json();
+        if (!rows.length) { el.innerHTML = '<p class="muted" style="font-size:13px">まだクラスがありません。</p>'; return; }
+        el.innerHTML = rows.map(c => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
+            <span>${esc(c.name)}</span>
+            <span class="muted" style="font-size:12px">${c.enrolledCount}名${c.capacity ? `／定員${c.capacity}名` : ''}${c.waitlistedCount ? `（待機${c.waitlistedCount}名）` : ''}</span>
+          </div>
+        `).join('');
+      }
+
       // ── 「今日の業務」カードのカスタム編集（でお要望2026-10-01：「店舗側で何を表示
       // させるかの選択や並び替え、メモを入れるブロックやポップアップで表示させる選択とか
       // 自由度を高めたやつ」）。provider_appeal_blocksと同じ「provider所有・sort_order付き
@@ -8540,7 +8605,19 @@ export default function ProviderDashboardPage() {
         builtin_requests: { title: '未対応の予約リクエスト', gotoTab: 'requests', gotoLabel: '予約リクエストを開く', mountId: 'today-requests-list' },
         builtin_checkin: { title: '今日のチェックイン', gotoTab: 'checkin', gotoLabel: 'チェックインを開く', mountId: 'today-checkin-list', featureGate: 'checkin_qr' },
         builtin_sales: { title: '今日の売上', gotoTab: 'sales', gotoLabel: '売上管理を開く' },
+        // 任意追加カード（でお要望2026-10-01）
+        builtin_referrals: { title: '紹介実績', gotoTab: 'member-referral', gotoLabel: '友達紹介タブを開く', mountId: 'today-referrals-list' },
+        builtin_events: { title: 'イベント出欠', gotoTab: 'events', gotoLabel: '出欠確認タブを開く', mountId: 'today-events-list', featureGate: 'attendance_confirm' },
+        builtin_dormant: { title: '休眠顧客アラート', gotoTab: 'customers', gotoLabel: '顧客管理タブを開く', mountId: 'today-dormant-list' },
+        builtin_classes: { title: 'クラスの状況', gotoTab: 'classes', gotoLabel: 'クラス管理タブを開く', mountId: 'today-classes-list', featureGate: 'class_management' },
       };
+      // 「＋カードを追加」で選べる任意カード一覧（1枚まで・削除可）。常設4カードは含めない。
+      const ADDABLE_TODAY_TYPES = [
+        { type: 'builtin_referrals', label: '紹介実績' },
+        { type: 'builtin_events', label: 'イベント出欠', featureGate: 'attendance_confirm' },
+        { type: 'builtin_dormant', label: '休眠顧客アラート' },
+        { type: 'builtin_classes', label: 'クラスの状況', featureGate: 'class_management' },
+      ];
 
       async function loadTodayFeatures() {
         if (todayFeaturesCache) return todayFeaturesCache;
@@ -8685,16 +8762,40 @@ export default function ProviderDashboardPage() {
           : '<p class="muted" style="font-size:13px">表示するカードがありません。「⚙ このページをカスタマイズ」から表示を戻せます。</p>';
         bindTodayShellControls(listEl);
 
-        const loaders = [];
-        visible.filter(b => !b.hidden).forEach(b => {
-          if (b.block_type === 'builtin_reservations') loaders.push(loadTodayReservations());
-          if (b.block_type === 'builtin_requests') loaders.push(loadTodayRequests());
-          if (b.block_type === 'builtin_checkin') loaders.push(loadTodayCheckins());
-          if (b.block_type === 'builtin_sales') loaders.push(loadTodaySales());
-        });
+        const LOADER_BY_TYPE = {
+          builtin_reservations: loadTodayReservations, builtin_requests: loadTodayRequests,
+          builtin_checkin: loadTodayCheckins, builtin_sales: loadTodaySales,
+          builtin_referrals: loadTodayReferrals, builtin_events: loadTodayEvents,
+          builtin_dormant: loadTodayDormant, builtin_classes: loadTodayClasses,
+        };
+        const loaders = visible.filter(b => !b.hidden).map(b => LOADER_BY_TYPE[b.block_type]?.()).filter(Boolean);
         await Promise.all(loaders);
 
         if (activePopup.length && !todayEditMode) showTodayPopup(activePopup);
+        renderAddCardMenu(features);
+      }
+
+      // 「＋カードを追加」メニュー（でお要望2026-10-01「他にもいろんなカードを追加できる
+      // ように」）。メモは何枚でも追加可、ADDABLE_TODAY_TYPESの任意カードは既に追加済み・
+      // 機能OFFのものをボタン一覧から除外する。
+      function renderAddCardMenu(features) {
+        const wrap = document.getElementById('today-add-memo-wrap');
+        if (!wrap) return;
+        const existingTypes = new Set(todayBlocks.map(b => b.block_type));
+        const available = ADDABLE_TODAY_TYPES.filter(t => !existingTypes.has(t.type) && !(t.featureGate && !features[t.featureGate]));
+        wrap.innerHTML = `
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="btn btn-ghost" id="today-add-memo-btn" style="font-size:13px">＋ メモを追加</button>
+            ${available.map(t => `<button type="button" class="btn btn-ghost" style="font-size:13px" data-today-add-type="${t.type}">＋ ${esc(t.label)}</button>`).join('')}
+          </div>`;
+        document.getElementById('today-add-memo-btn')?.addEventListener('click', async () => {
+          const res = await fetch('/api/provider/today-blocks', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersToday() }, body: JSON.stringify({ block_type: 'memo', content: { text: '' } }) });
+          if (res.ok) { await loadTodayBlocks(); renderToday(); } else showToast('メモの追加に失敗しました');
+        });
+        wrap.querySelectorAll('[data-today-add-type]').forEach(btn => btn.addEventListener('click', async () => {
+          const res = await fetch('/api/provider/today-blocks', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersToday() }, body: JSON.stringify({ block_type: btn.dataset.todayAddType }) });
+          if (res.ok) { await loadTodayBlocks(); renderToday(); } else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '追加に失敗しました')); }
+        }));
       }
 
       document.getElementById('today-customize-toggle')?.addEventListener('click', () => {
@@ -8705,11 +8806,6 @@ export default function ProviderDashboardPage() {
         if (addWrap) addWrap.style.display = todayEditMode ? 'block' : 'none';
         renderToday();
       });
-      document.getElementById('today-add-memo-btn')?.addEventListener('click', async () => {
-        const res = await fetch('/api/provider/today-blocks', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersToday() }, body: JSON.stringify({ block_type: 'memo', content: { text: '' } }) });
-        if (res.ok) { await loadTodayBlocks(); renderToday(); } else showToast('メモの追加に失敗しました');
-      });
-
       function loadToday() {
         loadTodayBlocks().then(renderToday).then(() => window.__pdMarkTabReady?.('today'));
       }
@@ -9457,9 +9553,7 @@ export default function ProviderDashboardPage() {
             <div id="today-blocks-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p>
             </div>
-            <div id="today-add-memo-wrap" style={{ display: 'none' }}>
-              <button type="button" className="btn btn-ghost" id="today-add-memo-btn" style={{ fontSize: '13px' }}>＋ メモを追加</button>
-            </div>
+            <div id="today-add-memo-wrap" style={{ display: 'none' }}></div>
           </div>
         </div>
 

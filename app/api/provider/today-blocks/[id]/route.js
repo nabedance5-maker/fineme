@@ -5,6 +5,10 @@ import { getSupabase } from '@/lib/supabase';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
+// この4つは常設カード（削除不可・非表示切替のみ）。それ以外のbuiltin_*（referrals/
+// events/dormant/classes）はユーザーが任意追加したものなので削除可能（でお要望2026-10-01）。
+const CORE_BUILTIN_TYPES = ['builtin_reservations', 'builtin_requests', 'builtin_checkin', 'builtin_sales'];
+
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
@@ -54,7 +58,7 @@ export async function DELETE(request, { params }) {
 
   const { data: existing } = await supabase.from('provider_today_blocks').select('block_type').eq('id', id).eq('provider_id', provider.id).maybeSingle();
   if (!existing) return Response.json({ error: '見つかりません' }, { status: 404 });
-  if (existing.block_type.startsWith('builtin_')) return Response.json({ error: 'デフォルトのカードは削除できません。非表示にできます。' }, { status: 400 });
+  if (CORE_BUILTIN_TYPES.includes(existing.block_type)) return Response.json({ error: 'デフォルトのカードは削除できません。非表示にできます。' }, { status: 400 });
 
   const { error } = await supabase
     .from('provider_today_blocks')

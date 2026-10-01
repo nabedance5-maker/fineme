@@ -16,6 +16,11 @@ async function getProviderByToken(token) {
 // チェックイン・売上）。初回GET時にこの順でシードする（でお要望2026-10-01）。
 const BUILTIN_ORDER = ['builtin_reservations', 'builtin_requests', 'builtin_checkin', 'builtin_sales'];
 
+// 追加で選べる任意カード（でお要望2026-10-01「他にもいろんなカードを追加できるように」）。
+// いずれも既存APIをそのまま再利用する一覧表示のみで新規データは持たないため、
+// 1店舗につき1枚までの単発追加（重複追加は弾く）。削除可能（4つの常設カードとは異なる）。
+const OPTIONAL_BUILTIN_TYPES = ['builtin_referrals', 'builtin_events', 'builtin_dormant', 'builtin_classes'];
+
 export async function GET(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -56,19 +61,26 @@ export async function POST(request) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { block_type, content, display_mode } = await request.json().catch(() => ({}));
-  if (block_type !== 'memo') return Response.json({ error: '追加できるのはメモのみです' }, { status: 400 });
+  if (block_type !== 'memo' && !OPTIONAL_BUILTIN_TYPES.includes(block_type)) {
+    return Response.json({ error: '追加できないカードの種類です' }, { status: 400 });
+  }
 
-  const { count } = await supabase
+  const { data: existingRows, count } = await supabase
     .from('provider_today_blocks')
-    .select('id', { count: 'exact', head: true })
+    .select('block_type', { count: 'exact' })
     .eq('provider_id', provider.id);
+
+  // 任意カード（referrals/events/dormant/classes）は1店舗1枚まで——既に追加済みなら弾く
+  if (block_type !== 'memo' && (existingRows || []).some(r => r.block_type === block_type)) {
+    return Response.json({ error: 'このカードは既に追加されています' }, { status: 400 });
+  }
 
   const { data, error } = await supabase
     .from('provider_today_blocks')
     .insert({
       provider_id: provider.id,
-      block_type: 'memo',
-      content: { text: String(content?.text || '').trim() },
+      block_type,
+      content: block_type === 'memo' ? { text: String(content?.text || '').trim() } : {},
       sort_order: count || 0,
       display_mode: display_mode === 'popup' ? 'popup' : 'inline',
     })
