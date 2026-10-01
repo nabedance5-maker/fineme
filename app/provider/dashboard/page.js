@@ -1354,6 +1354,102 @@ export default function ProviderDashboardPage() {
       let currentDayPatterns = {}; // 選択中の期間の date -> pattern_id
       let currentPeriodStart = null;
       let currentPeriodEnd = null;
+      let currentEntries = []; // loadEntries()が最後に取得した確定シフト一覧（セル編集時の参照用）
+
+      // でお指摘2026-10-01：「提出されたシフトを見るのがわかりづらい、編集も全部縦に
+      // 1人ずつ出てきてみづらい。もっとカレンダーにまとめてほしい」。希望一覧・確定シフト
+      // 一覧のどちらも「スタッフ×日付」の表にまとめ、縦の1行ずつの羅列をやめる。
+      const SHIFT_WEEKDAY_JA = ['日', '月', '火', '水', '木', '金', '土'];
+      function renderStaffDateGrid(dates, cellFn) {
+        const header = dates.map(d => {
+          const day = Number(d.slice(-2));
+          const wd = new Date(d + 'T00:00:00Z').getUTCDay();
+          return `<th style="padding:4px 6px;font-size:10px;font-weight:700;color:${wd === 0 ? '#dc2626' : wd === 6 ? '#2563eb' : '#6b7280'};white-space:nowrap;border-bottom:1px solid #e5e7eb">${day}<br>${SHIFT_WEEKDAY_JA[wd]}</th>`;
+        }).join('');
+        const rows = shiftStaffList.map(s => `
+          <tr>
+            <td style="position:sticky;left:0;background:#fff;padding:4px 10px;font-size:12px;font-weight:700;white-space:nowrap;border-right:1px solid #e5e7eb;border-bottom:1px solid #f3f4f6">${esc(s.name)}</td>
+            ${dates.map(d => cellFn(s, d)).join('')}
+          </tr>`).join('');
+        return `<div style="overflow-x:auto;border:1px solid #e5e7eb;border-radius:8px;max-width:100%">
+          <table style="border-collapse:collapse;width:max-content;min-width:100%">
+            <thead><tr><th style="position:sticky;left:0;background:#fff;border-right:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb"></th>${header}</tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+      }
+      function renderShiftRequestsGrid(dates, requests) {
+        const reqMap = {};
+        requests.forEach(r => { (reqMap[r.staff_id] = reqMap[r.staff_id] || {})[r.date] = r; });
+        const cell = (s, d) => {
+          const r = reqMap[s.id]?.[d];
+          if (!r) return `<td style="padding:4px 6px;text-align:center;font-size:11px;color:#d1d5db;border-bottom:1px solid #f3f4f6">—</td>`;
+          if (r.type === 'work') return `<td style="padding:4px 6px;text-align:center;font-size:11px;color:#2563eb;font-weight:700;white-space:nowrap;border-bottom:1px solid #f3f4f6">${esc((r.start_time || '').slice(0, 5))}〜${esc((r.end_time || '').slice(0, 5))}</td>`;
+          return `<td style="padding:4px 6px;text-align:center;font-size:12px;color:#dc2626;font-weight:700;border-bottom:1px solid #f3f4f6">休</td>`;
+        };
+        return renderStaffDateGrid(dates, cell) + '<p class="muted" style="font-size:11px;margin-top:6px">青=出勤希望時間／赤「休」=休み希望／グレー「—」=未提出</p>';
+      }
+      function renderShiftEntriesGrid(dates, entries) {
+        const map = {};
+        entries.forEach(e => { ((map[e.staff_id] = map[e.staff_id] || {})[e.date] = map[e.staff_id][e.date] || []).push(e); });
+        const cell = (s, d) => {
+          const list = map[s.id]?.[d] || [];
+          const inner = list.length
+            ? list.map(e => `${esc((e.start_time || '').slice(0, 5))}〜${esc((e.end_time || '').slice(0, 5))}${e.source === 'auto' ? '<span style="color:#9ca3af">・自動</span>' : ''}`).join('<br>')
+            : '<span style="color:#d1d5db">—</span>';
+          return `<td style="padding:4px 6px;text-align:center;font-size:11px;white-space:nowrap;border-bottom:1px solid #f3f4f6;cursor:pointer" data-shift-cell-staff="${s.id}" data-shift-cell-date="${d}">${inner}</td>`;
+        };
+        return renderStaffDateGrid(dates, cell);
+      }
+      // セルをタップしてその日のシフトを追加・削除する（縦の手動追加フォームまで
+      // スクロールしなくても、その場で編集できるように）。
+      function showShiftCellEditor(staffId, date) {
+        document.getElementById('shift-cell-modal-overlay')?.remove();
+        const nameOf = id => shiftStaffList.find(s => s.id === id)?.name || '(不明)';
+        const list = currentEntries.filter(e => e.staff_id === staffId && e.date === date);
+        const overlay = document.createElement('div');
+        overlay.id = 'shift-cell-modal-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
+        overlay.innerHTML = `
+          <div style="background:#fff;border-radius:16px;padding:24px;width:100%;max-width:360px">
+            <h3 style="margin:0 0 4px;font-size:15px;font-weight:800">${esc(nameOf(staffId))}・${esc(date)}</h3>
+            <p class="muted" style="font-size:12px;margin:0 0 14px">この日のシフトを編集します</p>
+            <div style="margin-bottom:12px">
+              ${list.length ? list.map(e => `
+                <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
+                  <span style="flex:1">${esc((e.start_time || '').slice(0, 5))}〜${esc((e.end_time || '').slice(0, 5))}${e.source === 'auto' ? '<span class="muted" style="font-size:11px"> ・自動</span>' : ''}</span>
+                  <button type="button" data-shift-cell-del="${e.id}" style="font-size:11px;padding:3px 8px;border:1px solid #fca5a5;color:#ef4444;background:none;border-radius:6px;cursor:pointer">削除</button>
+                </div>
+              `).join('') : '<p class="muted" style="font-size:12px;margin:0">まだシフトがありません。</p>'}
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px">
+              <input type="time" id="shift-cell-start" style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px">
+              <span style="color:#9ca3af">〜</span>
+              <input type="time" id="shift-cell-end" style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px">
+            </div>
+            <div style="display:flex;gap:8px">
+              <button type="button" id="shift-cell-add-btn" style="flex:1;padding:10px;background:#111;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">追加</button>
+              <button type="button" id="shift-cell-close-btn" style="padding:10px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:13px;cursor:pointer">閉じる</button>
+            </div>
+          </div>`;
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+        overlay.querySelector('#shift-cell-close-btn')?.addEventListener('click', () => overlay.remove());
+        overlay.querySelectorAll('[data-shift-cell-del]').forEach(btn => btn.addEventListener('click', async () => {
+          const res = await fetch(`/api/provider/shift-entries/${btn.dataset.shiftCellDel}`, { method: 'DELETE', headers: authHeadersShift() });
+          if (res.ok) { overlay.remove(); loadEntries(); } else showToast('削除に失敗しました');
+        }));
+        overlay.querySelector('#shift-cell-add-btn')?.addEventListener('click', async () => {
+          const start_time = document.getElementById('shift-cell-start')?.value;
+          const end_time = document.getElementById('shift-cell-end')?.value;
+          if (!start_time || !end_time) { showToast('開始・終了時刻を入力してください'); return; }
+          const res = await fetch('/api/provider/shift-entries', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
+            body: JSON.stringify({ period_id: currentPeriodId, staff_id: staffId, date, start_time, end_time }),
+          });
+          if (res.ok) { overlay.remove(); loadEntries(); } else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
+        });
+      }
 
       async function loadStaffLinks() {
         const el = document.getElementById('shift-staff-links');
@@ -1639,11 +1735,16 @@ export default function ProviderDashboardPage() {
           : '';
 
         if (!requests.length) { el.innerHTML = statusHtml + '<p class="muted" style="font-size:13px">まだ希望が提出されていません。</p>'; return; }
-        el.innerHTML = statusHtml + requests.map(r => `
-          <div style="font-size:12.5px;padding:4px 0;border-bottom:1px solid rgba(26,20,16,0.06)">
-            ${esc(nameOf(r.staff_id))}　${esc(r.date)}　${r.type === 'work' ? `<span style="color:#2563eb">出勤希望 ${esc(r.start_time || '')}〜${esc(r.end_time || '')}</span>` : '<span style="color:#dc2626">休み希望</span>'}${r.note ? `　<span class="muted">${esc(r.note)}</span>` : ''}
-          </div>
-        `).join('');
+        if (!shiftStaffList.length || !currentPeriodStart || !currentPeriodEnd) { el.innerHTML = statusHtml; return; }
+        el.innerHTML = statusHtml + renderShiftRequestsGrid(datesInRange(currentPeriodStart, currentPeriodEnd), requests);
+        // noteがある希望は表には出さないため、別途一覧で補足する（でお要望の主眼は
+        // 「表でまとめて見たい」であり、備考の文章までは表のセルに収まらないため）
+        const withNote = requests.filter(r => r.note);
+        if (withNote.length) {
+          el.innerHTML += `<div style="margin-top:10px">${withNote.map(r => `
+            <p class="muted" style="font-size:12px;margin:2px 0">${esc(nameOf(r.staff_id))}・${esc(r.date)}：${esc(r.note)}</p>
+          `).join('')}</div>`;
+        }
       }
 
       async function loadEntries() {
@@ -1652,19 +1753,13 @@ export default function ProviderDashboardPage() {
         el.innerHTML = '読み込み中…';
         const res = await fetch(`/api/provider/shift-entries?periodId=${currentPeriodId}`, { headers: authHeadersShift() });
         if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
-        const entries = await res.json();
-        if (!entries.length) { el.innerHTML = '<p class="muted" style="font-size:13px">まだシフトがありません。「自動作成」を押すか、下のフォームから手動で追加してください。</p>'; return; }
-        const nameOf = id => shiftStaffList.find(s => s.id === id)?.name || '(不明)';
-        el.innerHTML = entries.map(e => `
-          <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:8px;font-size:12.5px">
-            <span style="flex:1">${esc(e.date)}　${esc(nameOf(e.staff_id))}　${esc(e.start_time)}〜${esc(e.end_time)}${e.source === 'auto' ? '<span class="muted"> ・自動</span>' : ''}</span>
-            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" data-entry-del="${e.id}">削除</button>
-          </div>
-        `).join('');
-        el.querySelectorAll('[data-entry-del]').forEach(btn => btn.addEventListener('click', async () => {
-          const res2 = await fetch(`/api/provider/shift-entries/${btn.dataset.entryDel}`, { method: 'DELETE', headers: authHeadersShift() });
-          if (res2.ok) loadEntries(); else showToast('削除に失敗しました');
-        }));
+        currentEntries = await res.json();
+        if (!shiftStaffList.length) { el.innerHTML = '<p class="muted" style="font-size:13px">スタッフが登録されていません。</p>'; return; }
+        if (!currentPeriodStart || !currentPeriodEnd) return;
+        const dates = datesInRange(currentPeriodStart, currentPeriodEnd);
+        el.innerHTML = renderShiftEntriesGrid(dates, currentEntries) +
+          '<p class="muted" style="font-size:11px;margin-top:8px">セルをタップするとその日のシフトを追加・削除できます。</p>';
+        el.querySelectorAll('[data-shift-cell-staff]').forEach(td => td.addEventListener('click', () => showShiftCellEditor(td.dataset.shiftCellStaff, td.dataset.shiftCellDate)));
       }
 
       document.getElementById('shift-entry-add-btn')?.addEventListener('click', async () => {
