@@ -8,9 +8,7 @@ import { ALL_AXES } from '@/lib/log-axes';
 import { CUSTOMER_SCRIPT_AXES } from '@/lib/customer-scripts';
 import { LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS, TAB_CATALOG, categoryOfTab, allCategoryDefs, generateCategoryKey, MAX_CUSTOM_CATEGORIES, MAX_CATEGORY_LABEL_LENGTH } from '@/lib/dashboard-prefs';
 import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
-// 「ページデザイン」タブ（PageDesignSettings）は実装途中にセッション間の作業競合で
-// 未コミットのまま失われた（2026-10-01・daily/2026-10-01.md参照）。タブ自体を
-// 一時的に撤去してビルドを復旧している。再実装時にここへ import を戻す。
+import PageDesignSettings from './PageDesignSettings';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -9222,6 +9220,7 @@ export default function ProviderDashboardPage() {
                 <div className="pd-panel-section" data-panel="store" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="profile">プロフィール</button>
                   <button className="tab-btn" data-tab="appeal-settings">アピール設定</button>
+                  <button className="tab-btn" data-tab="page-design">ページデザイン</button>
                   <button className="tab-btn" data-tab="business-hours">営業時間</button>
                   <button className="tab-btn" data-tab="service">サービス設定</button>
                   <button className="tab-btn" data-tab="staff">スタッフ</button>
@@ -11758,6 +11757,11 @@ export default function ProviderDashboardPage() {
               <p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p>
             </div>
           </div>
+        </div>
+
+        {/* ページデザイン：公開ページの色・書体・文字の大きさを店舗が選ぶ（でお要望2026-10-01） */}
+        <div className="tab-pane" id="tab-page-design">
+          <PageDesignSettings />
         </div>
 
         {/* タブ⑥：公開設定 */}
