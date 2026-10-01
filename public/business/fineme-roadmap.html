@@ -440,6 +440,27 @@
       <div class="now-item">
         <div class="now-item-dot done"></div>
         <div>
+          <span class="now-item-main">店舗公開ページのデザインを店舗ごとにカスタム可能に（2026-10-01）</span>
+          <span class="now-item-sub">でお要望：店舗ページの見た目は店舗側である程度カスタム可能に、デフォルトはFinemeが決める。ダッシュボードに「ページデザイン」タブ（プレビュー付き）を追加。テーマ色6色・ライト/ダーク・見出しの書体/大きさ/太字/斜体/文字色・本文の大きさ/文字色を選べる。読めない文字色はコントラスト比4.5未満で保存不可。デフォルトはライト地・真鍮・明朝。providers.page_theme（本番適用済み）。</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
+          <span class="now-item-main">一般ユーザー向けページのグラフィック刷新（2026-09-30〜10-01）</span>
+          <span class="now-item-sub">でお指摘「素人感とAI感がある」への対応。配置・文言は据え置きで見た目だけ差し替え。AI生成の背景画像（羊皮紙・古地図、Gemini透かし入り）を撤去し墨色の地に。金の多用を解消し見出しを明朝に。サイトから絵文字を撤去（恒久ルール化）。写真の代わりに自作の視覚言語「海図」（等高線・羅針盤・経緯線・軸の漢字一字の印）を導入。136タイプ画像・ロゴは当面現状維持。</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
+          <span class="now-item-main">店舗公開APIからログイン用メール等の露出を修正（2026-10-01）</span>
+          <span class="now-item-sub">/api/providers/[slug] が店舗の全カラムを返しており、ログイン用メールアドレスを誰でも取得できた（本番で確認）。メール・LINEユーザーID・Stripe各IDを除外。</span>
+        </div>
+      </div>
+      <div class="now-item">
+        <div class="now-item-dot done"></div>
+        <div>
           <span class="now-item-main">AI検索でのBelle（女性向け）認知対策（2026-10-01）</span>
           <span class="now-item-sub">Google AIがFinemeを要約した際、Belleにほぼ触れず男性向け前提の分析になっていた件への対策。①public/llms.txtを全面書き換え（男女2トラック対等表記・8軸・136タイプ・New Me Map・名称注意事項）②layout.jsのJSON-LDにOrganizationのalternateName/brand（Fineme/Fineme Belle）追加③トップページのJournalセクションを「Fineme Journal」「Belle Journal」の2ブロックに分離し、記事取得の成否に関わらず見出し＋一覧リンクを常に描画するよう修正（旧実装はクローラーに何も見えていなかった）④sitemap.jsにtrackフィルタが無くBelle記事が誤ったURLで登録されるバグ・Belle静的ページがサイトマップに1件も無い不備を発見・修正。</span>
         </div>
