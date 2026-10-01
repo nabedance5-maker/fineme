@@ -31,6 +31,43 @@ const STAGE2_CATEGORIES = [
   {cat:'marriage', icon:'婚', label:'婚活サポート',         sub:'自信がついた今が、出会いを本気にするタイミング。変容の先にある、本当の出会いへ。'},
 ];
 
+// Fineme/Belle Journalの各ブロック。記事の取得有無に関わらず見出し＋「一覧を見る」は
+// 常に描画する（JS実行前のクローラーにもリンクが見えるようにするため・2026-10-01）。
+// カード一覧は記事が取得できた時だけ表示する。
+function JournalBlock({ label, listHref, articles }) {
+  return (
+    <div className="stack" style={{ marginBottom: '32px' }}>
+      <div className="cluster space-between">
+        <h2 className="section-title">{label}</h2>
+        <Link className="btn btn-ghost" href={listHref}>一覧を見る</Link>
+      </div>
+      {articles.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+          {articles.map(a => (
+            <Link key={a.id} href={a._track === 'belle' ? `/belle/journal/${a.slug}` : `/feature/${a.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(236,232,223,0.083)', background: 'rgba(255,255,255,0.03)', transition: 'border-color 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(200,164,90,0.4)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(200,164,90,0.15)'}
+              >
+                {a.thumbnail && (
+                  <img src={a.thumbnail} alt={a.title} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
+                )}
+                <div style={{ padding: '16px' }}>
+                  {a.category && (
+                    <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--color-gold)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{a.category}</span>
+                  )}
+                  <p style={{ fontSize: '15px', fontWeight: 700, lineHeight: 1.5, margin: '8px 0 6px', fontFamily: 'var(--font-serif)' }}>{a.title}</p>
+                  <p style={{ fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.6, margin: 0 }}>{a.description || a.summary}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function HomePage() {
   const [diagnosis, setDiagnosis] = useState(null);
   const [diagnosisType, setDiagnosisType] = useState(null); // 'male' | 'belle'
@@ -39,7 +76,10 @@ export default function HomePage() {
   const [knownTrack, setKnownTrack] = useState(null);
   const [loggedIn, setLoggedIn] = useState(false);
   const [stories, setStories] = useState([]);
-  const [featuredArticles, setFeaturedArticles] = useState([]);
+  // Fineme/Belleで別配列にする（以前は1本のfeaturedArticlesに混在させていたため、
+  // クローラーにJournalセクション自体が「男女どちらか不明な1本」にしか見えなかった）
+  const [finemeArticles, setFinemeArticles] = useState([]);
+  const [belleArticles, setBelleArticles] = useState([]);
   const [isLateNight, setIsLateNight] = useState(false);
 
   // 深夜帯（22時〜3時JST）だけ迎える言葉を変える。
@@ -51,30 +91,23 @@ export default function HomePage() {
 
   // 特集記事取得（Supabase経由）。トラック未確定の訪問者（大半の初回訪問者）に
   // 男性向け記事だけを見せていた不具合を修正（でお指摘 2026-09-02）。
-  // トラックが分かっている場合はそのトラックの記事、未確定の場合は両トラックを
-  // 混在させて出す（トップはデュアルCTAで男女を対等に扱う設計のため）。
+  // トラックが分かっている場合はそのトラックの記事のみ、未確定の場合は両トラックを
+  // 別々に取得する（Fineme Journal / Belle Journalの2ブロックを常に出す設計のため・
+  // Google AIがBelleをほぼ認知していなかった件の対策 2026-10-01）。
   useEffect(() => {
     const kt = getKnownTrackId();
-    if (kt === 'belle' || kt === 'fineme') {
-      fetch(`/api/features?track=${kt}`)
+    if (kt === 'fineme' || !kt) {
+      fetch('/api/features?track=fineme')
         .then(r => r.ok ? r.json() : [])
-        .then(data => { if (Array.isArray(data) && data.length) setFeaturedArticles(data.slice(0, 3).map(a => ({ ...a, _track: kt }))); })
+        .then(data => { if (Array.isArray(data) && data.length) setFinemeArticles(data.slice(0, 3).map(a => ({ ...a, _track: 'fineme' }))); })
         .catch(() => {});
-      return;
     }
-    Promise.all([
-      fetch('/api/features?track=fineme').then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch('/api/features?track=belle').then(r => r.ok ? r.json() : []).catch(() => []),
-    ]).then(([fineme, belle]) => {
-      const f = Array.isArray(fineme) ? fineme : [];
-      const b = Array.isArray(belle) ? belle : [];
-      const mixed = [];
-      for (let i = 0; i < 2; i++) {
-        if (f[i]) mixed.push({ ...f[i], _track: 'fineme' });
-        if (b[i]) mixed.push({ ...b[i], _track: 'belle' });
-      }
-      if (mixed.length) setFeaturedArticles(mixed);
-    });
+    if (kt === 'belle' || !kt) {
+      fetch('/api/features?track=belle')
+        .then(r => r.ok ? r.json() : [])
+        .then(data => { if (Array.isArray(data) && data.length) setBelleArticles(data.slice(0, 3).map(a => ({ ...a, _track: 'belle' }))); })
+        .catch(() => {});
+    }
   }, []);
 
   // スクリプト（おすすめ・最近閲覧）
@@ -731,40 +764,18 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── 特集 ── */}
-        {featuredArticles.length > 0 && (
-          <section className="section">
-            <div className="container stack">
-              <div className="cluster space-between">
-                <h2 className="section-title">{knownTrack === 'belle' ? 'Belle Journal' : knownTrack === 'fineme' ? 'Fineme Journal' : 'Journal'}</h2>
-                {knownTrack && (
-                  <Link className="btn btn-ghost" href={knownTrack === 'belle' ? '/belle/journal' : '/feature'}>一覧を見る</Link>
-                )}
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-                {featuredArticles.map(a => (
-                  <Link key={a.id} href={a._track === 'belle' ? `/belle/journal/${a.slug}` : `/feature/${a.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(236,232,223,0.083)', background: 'rgba(255,255,255,0.03)', transition: 'border-color 0.2s' }}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(200,164,90,0.4)'}
-                      onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(200,164,90,0.15)'}
-                    >
-                      {a.thumbnail && (
-                        <img src={a.thumbnail} alt={a.title} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
-                      )}
-                      <div style={{ padding: '16px' }}>
-                        {a.category && (
-                          <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--color-gold)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{a.category}</span>
-                        )}
-                        <p style={{ fontSize: '15px', fontWeight: 700, lineHeight: 1.5, margin: '8px 0 6px', fontFamily: 'var(--font-serif)' }}>{a.title}</p>
-                        <p style={{ fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.6, margin: 0 }}>{a.description || a.summary}</p>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
+        {/* ── 特集（Fineme Journal / Belle Journal） ── */}
+        {/* トラック未確定・取得前でも見出し＋一覧リンクは必ず描画する（クローラー対策） */}
+        <section className="section">
+          <div className="container stack">
+            {(!knownTrack || knownTrack === 'fineme') && (
+              <JournalBlock label="Fineme Journal" listHref="/feature" articles={finemeArticles} />
+            )}
+            {(!knownTrack || knownTrack === 'belle') && (
+              <JournalBlock label="Belle Journal" listHref="/belle/journal" articles={belleArticles} />
+            )}
+          </div>
+        </section>
 
         {/* FAQ Section */}
         <section style={{ padding: '80px 24px', background: '#11161e', borderTop: '1px solid rgba(236,232,223,0.066)' }}>

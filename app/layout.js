@@ -3,7 +3,7 @@ export const metadata = {
     default: 'Fineme | そのまま進むのが怖くなった夜に。',
     template: '%s | Fineme',
   },
-  description: 'そのまま進むのが怖くなった夜に。自信を再設計する、地図と羅針盤。外見を起点に自信を再設計するプラットフォーム。自分だけの変容ロードマップを手に入れる。',
+  description: 'そのまま進むのが怖くなった夜に。自信を再設計する、地図と羅針盤。外見を起点に自信を再設計するプラットフォーム。男性向けFinemeと女性向けFineme Belleの2トラックで、自分だけの変容ロードマップを手に入れる。',
   metadataBase: new URL('https://www.fineme.me'),
   alternates: {
     canonical: 'https://www.fineme.me',
@@ -80,6 +80,7 @@ export default function RootLayout({ children }) {
                 '@type': 'Organization',
                 '@id': 'https://www.fineme.me/#organization',
                 name: 'Fineme',
+                alternateName: ['ファインミ', 'Fineme Belle'],
                 url: 'https://www.fineme.me',
                 description: '外見を起点に自信を再設計するためのプラットフォーム。男性向けFinemeと女性向けBelleで構成される。',
                 logo: {
@@ -87,6 +88,11 @@ export default function RootLayout({ children }) {
                   url: 'https://www.fineme.me/assets/images/fineme-logo.png',
                 },
                 founder: { '@type': 'Person', '@id': 'https://www.fineme.me/about#deo' },
+                brand: [
+                  { '@type': 'Brand', name: 'Fineme', description: '男性向けトラック（20〜30代男性）', url: 'https://www.fineme.me' },
+                  { '@type': 'Brand', name: 'Fineme Belle', description: '女性向けトラック', url: 'https://www.fineme.me/belle' },
+                ],
+                sameAs: ['https://twitter.com/deo_fineme'],
               },
               {
                 '@type': 'Person',
@@ -94,7 +100,7 @@ export default function RootLayout({ children }) {
                 name: '渡邉英雄（でお）',
                 alternateName: 'でお',
                 jobTitle: '外見改善アドバイザー / Fineme代表',
-                description: '元・非モテから現役モデルへ。男性向け外見改善プラットフォームFineme代表。外見を起点に自信を再設計する方法を発信している。',
+                description: '元・非モテから現役モデルへ。外見改善プラットフォームFineme（男性向けFineme・女性向けBelle）代表。外見を起点に自信を再設計する方法を発信している。',
                 url: 'https://www.fineme.me/about',
                 worksFor: { '@type': 'Organization', '@id': 'https://www.fineme.me/#organization' },
                 sameAs: ['https://twitter.com/deo_fineme'],
