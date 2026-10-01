@@ -61,18 +61,34 @@ const TABS = [
   { id: 'consult', label: '予約' },
   { id: 'appeal',  label: 'アピール' },
 ];
+// 予約タブを「予約（即時予約）」と「リクエスト」に分離（でお指摘2026-10-01：
+// 「予約タブの中身がリクエストになっていて、即時予約のタブが無い」。即時予約
+// （instant_booking）がONの店舗だけ別タブ'instant'を持ち、予約リクエスト
+// （booking_request、デフォルトON）は従来のid'consult'のまま中身はリクエスト
+// フォーム・ラベルだけ「リクエスト」に変える。両方OFFの店舗だけ'consult'を
+// 「予約」ラベルの受付停止メッセージとして残す（下のConsultTabのmode分岐で判定）。
 // クラス管理（スクール業態）がONの店舗だけ「クラス」タブを追加する
 // （でお指摘2026-09-16：クラス管理は名簿管理のみで、お客様が予約できる導線が無かった）
 function tabsFor(provider) {
-  let tabs = TABS;
+  const instantOn = hasFeature(provider, 'instant_booking');
+  const requestOn = hasFeature(provider, 'booking_request');
+  let tabs = [{ id: 'basic', label: '基本情報' }];
+  if (instantOn) tabs.push({ id: 'instant', label: '予約' });
+  if (requestOn) tabs.push({ id: 'consult', label: 'リクエスト' });
+  if (!instantOn && !requestOn) tabs.push({ id: 'consult', label: '予約' });
+  tabs.push({ id: 'appeal', label: 'アピール' });
   if (hasFeature(provider, 'class_management')) {
-    tabs = [...tabs, { id: 'class', label: 'クラス' }];
+    tabs.push({ id: 'class', label: 'クラス' });
   }
   // 回数券のオンライン購入（でお要望2026-09-27：決済機能Phase 6第一弾）。
   // 購入可能な回数券が無い店舗でも「無い」ことが分かるよう常に表示する
   // （プログラムタブと同じ扱い。空の時の表示はPackagesTab側で出す）。
-  tabs = [...tabs, { id: 'packages', label: '回数券' }];
+  tabs.push({ id: 'packages', label: '回数券' });
   return tabs;
+}
+// 「今すぐ予約する」系CTAの着地先（即時予約があればそちら、無ければリクエスト/受付停止タブ）
+function primaryBookingTabId(provider) {
+  return hasFeature(provider, 'instant_booking') ? 'instant' : 'consult';
 }
 const PAYMENT_METHOD_LABELS = {
   cash: '現金', credit: 'クレジットカード', paypay: 'PayPay',
@@ -302,11 +318,16 @@ function StaffSection({ staff }) {
 }
 
 // ── TabBar ────────────────────────────────────────────────────────────────────
+// でお指摘2026-10-01：タブが増える店舗（即時予約＋リクエスト＋クラス等）で
+// 横幅に収まらず、日本語テキストが折り返されて縦書き風・2行になっていた
+// （flexがボタンを押し縮め、white-space指定が無いため文字単位で折り返されていた）。
+// 各ボタンをflexShrink:0+whiteSpace:nowrapで固定幅化し、外側を横スクロールに。
 function TabBar({ activeTab, onSelect, tabs }) {
   return (
-    <div style={{ display: 'flex', borderBottom: '2px solid rgba(232,228,220,0.15)', marginBottom: '28px', gap: '4px' }}>
+    <div style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderBottom: '2px solid rgba(232,228,220,0.15)', marginBottom: '28px', gap: '4px' }}>
       {(tabs || TABS).map(t => (
         <button key={t.id} onClick={() => onSelect(t.id)} style={{
+          flexShrink: 0, whiteSpace: 'nowrap',
           padding: '12px 20px', fontSize: '14px', fontWeight: activeTab === t.id ? '800' : '500',
           color: activeTab === t.id ? 'rgba(232,228,220,0.90)' : 'rgba(232,228,220,0.55)', background: 'none', border: 'none',
           borderBottom: activeTab === t.id ? '2px solid rgba(232,228,220,0.75)' : '2px solid transparent',
@@ -1228,7 +1249,7 @@ function PackagesTab({ provider }) {
   );
 }
 
-function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint }) {
+function ConsultTab({ provider, services, staff, selectedService, onServiceSelect, submitted, setSubmitted, diagnosis, matchData, menuNameHint, mode }) {
   const today = new Date().toISOString().split('T')[0];
   const [formState, setFormState] = useState({ name: '', email: '', phone: '', date: '', time: '', date2: '', time2: '', date3: '', time3: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -1243,11 +1264,12 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   // スタッフ指名予約・即時予約（hacomono/STORES網羅計画 Phase 1）。
   // どちらも店舗が「機能設定」タブでON/OFFできる。OFFなら従来通りの3希望日時フォームのまま。
   const staffDesignationOn = hasFeature(provider, 'staff_designation');
-  const instantBookingOn = hasFeature(provider, 'instant_booking');
-  // 予約リクエスト（第1〜3希望を送って店舗が承認/代替提案する従来方式）自体を
-  // 受け付けるかどうかの店舗ごとの設定（でお要望2026-09-14：「即時予約と同じように、
-  // 予約リクエストも受け付けるかどうか設定できるようにしたい」）。デフォルトON。
-  const bookingRequestOn = hasFeature(provider, 'booking_request');
+  // でお指摘2026-10-01：「予約」タブの中身がリクエスト（第1〜3希望）になっていて
+  // 即時予約のタブが無いのはおかしい、予約＝即時予約・リクエスト＝リクエストで
+  // タブを分けるべき。親（ProviderPageContent）がtabsFor()で'instant'/'consult'の
+  // 2タブに分け、どちらのモードで開かれたかをmode propで渡してくる
+  // （'instant'=即時予約タブ、'request'=リクエストタブ、'closed'=両方OFFで受付停止）。
+  const showInstantPicker = mode === 'instant';
 
   // 友達紹介プログラム（でお要望2026-09-14）：ログイン中のお客様に、この店舗向けの
   // 個人紹介リンクを発行して見せる。
@@ -1314,19 +1336,16 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   }, [userId, provider?.slug]);
 
   useEffect(() => {
-    if (!instantBookingOn || !provider?.slug) return;
+    if (!showInstantPicker || !provider?.slug) return;
     const params = new URLSearchParams({ from: today });
     if (selectedService?.id) params.set('service_id', selectedService.id);
     fetch(`/api/providers/${provider.slug}/availability?${params}`)
       .then(r => r.ok ? r.json() : [])
       .then(data => { setSlots(data); setSelectedSlotId(''); })
       .catch(() => setSlots([]));
-  }, [instantBookingOn, provider?.slug, selectedService?.id, today]);
+  }, [showInstantPicker, provider?.slug, selectedService?.id, today]);
 
   const slotsByDate = (slots || []).reduce((acc, s) => { (acc[s.date] = acc[s.date] || []).push(s); return acc; }, {});
-  // 枠が1件も無い店舗は従来の3希望フォームにフォールバックする（機能ONにしただけで
-  // 枠を登録していない店舗が予約を受け付けられなくなるのを防ぐ）
-  const showInstantPicker = instantBookingOn && slots !== null && slots.length > 0;
 
   // 予約カレンダー風の表（でお要望2026-09-27：ホットペッパーの「スタイリスト指名・
   // 日時選択」画面と同じ構成——上でスタッフをタブ選択し、その下に日付（列）×時間（行）の
@@ -1350,9 +1369,8 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
   });
   const selectedSlotObj = (slots || []).find(s => s.id === selectedSlotId);
   const WEEKDAY_JA_SLUG = ['日', '月', '火', '水', '木', '金', '土'];
-  // 即時予約の枠も予約リクエストも、どちらも受け付けられない状態（両方OFF、または
-  // 即時予約ONだが枠が無い＆予約リクエストOFF）の時は、フォーム自体を出さない。
-  const canBookAnything = showInstantPicker || bookingRequestOn;
+  // mode==='closed'（即時予約・予約リクエストどちらも店舗側でOFF）の時だけフォーム自体を出さない。
+  const canBookAnything = mode !== 'closed';
 
   const meScanSummary = buildMeScanSummary(diagnosis, matchData);
 
@@ -1394,7 +1412,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const useInstant = showInstantPicker;
+    const useInstant = mode === 'instant';
     if (!formState.name) {
       setFormError('お名前は必須です');
       return;
@@ -1466,7 +1484,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
             : <>このガイドからの返答をお待ちください。<br />連絡先にご連絡が届きます。</>}
         </p>
         <button onClick={() => setSubmitted(false)} style={{ padding: '10px 24px', background: 'rgba(10,15,30,0.45)', color: 'rgba(232,228,220,0.75)', border: '1px solid rgba(232,228,220,0.15)', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}>
-          別のリクエストを送る
+          {lastWasInstant ? '別の日時でもう一件予約する' : '別のリクエストを送る'}
         </button>
       </div>
     );
@@ -1516,11 +1534,15 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
       <div style={{ background: 'rgba(10,15,30,0.50)', borderRadius: '16px', padding: '20px', marginBottom: '20px', backdropFilter: 'blur(8px)', border: '1px solid rgba(232,228,220,0.10)' }}>
         <div style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(232,228,220,0.40)', letterSpacing: '.12em', marginBottom: '14px', textTransform: 'uppercase' }}>相談の流れ</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {[
+          {(showInstantPicker ? [
+            { n: '1', label: '空き枠を選ぶ', desc: '表から空いている日時をタップします' },
+            { n: '2', label: 'その場で予約確定', desc: '店舗の承認を待たず、選んだ時点で予約が確定します' },
+            { n: '3', label: '当日 → 変容の旅スタート', desc: '準備ができたら当日を迎えましょう。まず話を聞くだけでも大丈夫です' },
+          ] : [
             { n: '1', label: 'リクエストを送る', desc: 'このフォームで希望日時と連絡先を送信します' },
             { n: '2', label: 'ガイドから返信が届く', desc: `通常${provider.response_hours ? provider.response_hours + '時間以内' : '2〜3日以内'}に、ご連絡先へ返信が届きます` },
             { n: '3', label: '日程確定 → 変容の旅スタート', desc: '準備ができたら当日を迎えましょう。まず話を聞くだけでも大丈夫です' },
-          ].map(step => (
+          ]).map(step => (
             <div key={step.n} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
               <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#111', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', flexShrink: 0, marginTop: '1px' }}>{step.n}</span>
               <div>
@@ -1823,7 +1845,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         </div>
         {formError && <p style={{ fontSize: '13px', color: '#ef4444', margin: 0 }}>{formError}</p>}
         <button type="submit" disabled={submitting} style={{ padding: '14px', background: submitting ? '#9ca3af' : '#111', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: submitting ? 'not-allowed' : 'pointer' }}>
-          {submitting ? '送信中…' : '相談リクエストを送る'}
+          {submitting ? '送信中…' : (showInstantPicker ? 'この日時で予約を確定する' : '相談リクエストを送る')}
         </button>
       </form>
       )}
@@ -1937,6 +1959,13 @@ function ProviderPageContent() {
       setStaff(Array.isArray(stf) ? stf : []);
       setAppealBlocks(Array.isArray(blocks) ? blocks : []);
       setLoading(false);
+      // ?tab=consultでの直接着地・ブックマーク等で、その店舗には実在しないタブIDを
+      // 指していた場合のフォールバック（例：即時予約のみでリクエストOFFの店舗に
+      // ?tab=consultで来た場合は'instant'へ寄せる）
+      if (prov) {
+        const validIds = tabsFor(prov).map(t => t.id);
+        setActiveTab(current => validIds.includes(current) ? current : (validIds[0] || 'basic'));
+      }
     }).catch(() => setLoading(false));
 
     (async () => {
@@ -1988,9 +2017,9 @@ function ProviderPageContent() {
   // プログラムカードから相談タブへ
   const handleConsultFromProgram = useCallback((service) => {
     setSelectedService(service);
-    setActiveTab('consult');
+    setActiveTab(primaryBookingTabId(provider));
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }, [provider]);
 
   if (loading) return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: 'rgba(232,228,220,0.40)' }}>読み込み中…</p></div>;
   if (!provider) return (
@@ -2039,7 +2068,7 @@ function ProviderPageContent() {
                 ¥{provider.price_from.toLocaleString()}〜
               </span>
             )}
-            <button onClick={() => { setActiveTab('consult'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '12px 24px', background: 'rgba(232,228,220,0.9)', color: '#0a0f1e', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
+            <button onClick={() => { setActiveTab(primaryBookingTabId(provider)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '12px 24px', background: 'rgba(232,228,220,0.9)', color: '#0a0f1e', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
               予約する
             </button>
             <button onClick={toggleFavorite} title={isFavorited ? 'お気に入りから削除' : 'お気に入りに追加'} style={{ padding: '12px 16px', background: isFavorited ? 'rgba(201,168,76,0.85)' : 'rgba(255,255,255,0.15)', color: '#fff', border: `1.5px solid ${isFavorited ? '#c9a84c' : 'rgba(255,255,255,0.4)'}`, borderRadius: '12px', fontSize: '18px', cursor: 'pointer', backdropFilter: 'blur(4px)', lineHeight: 1 }}>
@@ -2059,7 +2088,7 @@ function ProviderPageContent() {
       <QuickFactsStrip provider={provider} />
 
       {/* タブ */}
-      <TabBar activeTab={activeTab} tabs={tabsFor(provider)} onSelect={tab => { setActiveTab(tab); if (tab !== 'consult') setSelectedService(null); }} />
+      <TabBar activeTab={activeTab} tabs={tabsFor(provider)} onSelect={tab => { setActiveTab(tab); if (tab !== 'consult' && tab !== 'instant') setSelectedService(null); }} />
 
       {/* タブコンテンツ */}
       {activeTab === 'basic' && <BasicInfoTab provider={provider} />}
@@ -2074,7 +2103,22 @@ function ProviderPageContent() {
           appealBlocks={appealBlocks}
           onConsult={handleConsultFromProgram}
           userPathType={matchData?.detail?.coveredAxes?.[0]?.path_type || null}
-          onGoToConsult={() => { setActiveTab('consult'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          onGoToConsult={() => { setActiveTab(primaryBookingTabId(provider)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+        />
+      )}
+      {activeTab === 'instant' && (
+        <ConsultTab
+          provider={provider}
+          services={services}
+          staff={staff}
+          selectedService={selectedService}
+          onServiceSelect={setSelectedService}
+          submitted={submitted}
+          setSubmitted={setSubmitted}
+          diagnosis={diagnosis}
+          matchData={matchData}
+          menuNameHint={searchParams.get('menu_name') || ''}
+          mode="instant"
         />
       )}
       {activeTab === 'consult' && (
@@ -2089,6 +2133,7 @@ function ProviderPageContent() {
           diagnosis={diagnosis}
           matchData={matchData}
           menuNameHint={searchParams.get('menu_name') || ''}
+          mode={hasFeature(provider, 'booking_request') ? 'request' : 'closed'}
         />
       )}
       {activeTab === 'class' && <ClassTab provider={provider} />}
