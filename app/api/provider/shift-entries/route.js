@@ -1,4 +1,5 @@
 // GET  /api/provider/shift-entries?periodId=X → 指定期間の確定シフト一覧
+//      /api/provider/shift-entries?from=YYYY-MM-DD&to=YYYY-MM-DD → 期間をまたいだ日付範囲の一覧（月カレンダー用）
 // POST /api/provider/shift-entries → 1コマ手動追加
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
@@ -25,7 +26,30 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url);
   const periodId = searchParams.get('periodId');
-  if (!periodId) return Response.json({ error: 'periodIdは必須です' }, { status: 400 });
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
+
+  if (!periodId && from && to) {
+    const { data: periods } = await supabase
+      .from('provider_shift_periods')
+      .select('id')
+      .eq('provider_id', provider.id)
+      .lte('period_start', to)
+      .gte('period_end', from);
+    const ids = (periods || []).map(p => p.id);
+    if (!ids.length) return Response.json([]);
+    const { data, error } = await supabase
+      .from('provider_shift_entries')
+      .select('*')
+      .in('period_id', ids)
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: true });
+    if (error) return Response.json({ error: error.message }, { status: 500 });
+    return Response.json(data || []);
+  }
+
+  if (!periodId) return Response.json({ error: 'periodId、またはfrom/toは必須です' }, { status: 400 });
   if (!(await assertOwnPeriod(provider.id, periodId))) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
 
   const { data, error } = await supabase

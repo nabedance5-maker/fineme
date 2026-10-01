@@ -1437,7 +1437,7 @@ export default function ProviderDashboardPage() {
         overlay.querySelector('#shift-cell-close-btn')?.addEventListener('click', () => overlay.remove());
         overlay.querySelectorAll('[data-shift-cell-del]').forEach(btn => btn.addEventListener('click', async () => {
           const res = await fetch(`/api/provider/shift-entries/${btn.dataset.shiftCellDel}`, { method: 'DELETE', headers: authHeadersShift() });
-          if (res.ok) { overlay.remove(); loadEntries(); } else showToast('削除に失敗しました');
+          if (res.ok) { overlay.remove(); loadEntries(); loadCalendar(); } else showToast('削除に失敗しました');
         }));
         overlay.querySelector('#shift-cell-add-btn')?.addEventListener('click', async () => {
           const start_time = document.getElementById('shift-cell-start')?.value;
@@ -1447,7 +1447,7 @@ export default function ProviderDashboardPage() {
             method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
             body: JSON.stringify({ period_id: currentPeriodId, staff_id: staffId, date, start_time, end_time }),
           });
-          if (res.ok) { overlay.remove(); loadEntries(); } else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
+          if (res.ok) { overlay.remove(); loadEntries(); loadCalendar(); } else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
         });
       }
 
@@ -1612,13 +1612,28 @@ export default function ProviderDashboardPage() {
       const PERIOD_STATUS_LABEL = { collecting: '希望募集中', draft: '下書き（調整中）', confirmed: '確定済み' };
       const PERIOD_STATUS_COLOR = { collecting: '#f59e0b', draft: '#6366f1', confirmed: '#10b981' };
 
+      let shiftPeriods = [];
+      function highlightPeriodRows() {
+        document.querySelectorAll('#shift-period-list [data-period-open]').forEach(row => {
+          const on = row.dataset.periodOpen === currentPeriodId;
+          row.style.borderColor = on ? '#c9a84c' : 'rgba(26,20,16,0.12)';
+          row.style.background = on ? 'rgba(201,168,76,0.10)' : 'rgba(26,20,16,0.03)';
+        });
+      }
       async function loadPeriods() {
         const el = document.getElementById('shift-period-list');
         if (!el) return;
         const res = await fetch('/api/provider/shift-periods', { headers: authHeadersShift() });
         if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
         const periods = await res.json();
-        if (!periods.length) { el.innerHTML = '<p class="muted" style="font-size:13px">まだ期間がありません。上のフォームから作成してください。</p>'; return; }
+        shiftPeriods = periods;
+        if (!periods.length) {
+          el.innerHTML = '<p class="muted" style="font-size:13px">まだ期間がありません。下の「設定」の「期間を作成」から追加してください。</p>';
+          currentPeriodId = null;
+          const section = document.getElementById('shift-detail-section');
+          if (section) section.style.display = 'none';
+          return;
+        }
         el.innerHTML = periods.map(p => `
           <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:8px;cursor:pointer" data-period-open="${p.id}" data-period-status="${p.status}" data-period-start="${p.period_start}" data-period-end="${p.period_end}">
             <span style="flex:1;font-size:13px">${esc(p.period_start)} 〜 ${esc(p.period_end)}${p.request_deadline ? `（締切: ${esc(p.request_deadline)}）` : ''}</span>
@@ -1626,6 +1641,14 @@ export default function ProviderDashboardPage() {
           </div>
         `).join('');
         el.querySelectorAll('[data-period-open]').forEach(row => row.addEventListener('click', () => selectPeriod(row.dataset.periodOpen, row.dataset.periodStatus, row.dataset.periodStart, row.dataset.periodEnd)));
+        // 選択中の期間が無い／消えた場合は、今日を含む期間（無ければ開始日が最新の期間）を自動で開く
+        let target = periods.find(p => p.id === currentPeriodId);
+        if (!target) {
+          const todayStr = shiftTodayStr();
+          target = periods.find(p => p.period_start <= todayStr && todayStr <= p.period_end)
+            || [...periods].sort((a, b) => (a.period_start < b.period_start ? 1 : -1))[0];
+        }
+        if (target) await selectPeriod(target.id, target.status, target.period_start, target.period_end);
       }
       document.getElementById('shift-period-add-btn')?.addEventListener('click', async () => {
         const period_start = document.getElementById('shift-period-start')?.value;
@@ -1636,7 +1659,7 @@ export default function ProviderDashboardPage() {
           method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
           body: JSON.stringify({ period_start, period_end, request_deadline }),
         });
-        if (res.ok) { showToast('期間を作成しました'); loadPeriods(); }
+        if (res.ok) { showToast('期間を作成しました'); await loadPeriods(); loadCalendar(); }
         else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
       });
 
@@ -1653,6 +1676,7 @@ export default function ProviderDashboardPage() {
         const confirmBtn = document.getElementById('shift-confirm-btn');
         if (confirmBtn) confirmBtn.disabled = status === 'confirmed';
         document.getElementById('shift-generate-warnings').innerHTML = '';
+        highlightPeriodRows();
         await Promise.all([loadRequestsSummary(), loadEntries(), loadDayPatterns()]);
       }
 
@@ -1773,7 +1797,7 @@ export default function ProviderDashboardPage() {
           method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
           body: JSON.stringify({ period_id: currentPeriodId, staff_id, date, start_time, end_time }),
         });
-        if (res.ok) { showToast('追加しました'); loadEntries(); } else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
+        if (res.ok) { showToast('追加しました'); loadEntries(); loadCalendar(); } else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
       });
 
       document.getElementById('shift-generate-btn')?.addEventListener('click', async () => {
@@ -1794,6 +1818,7 @@ export default function ProviderDashboardPage() {
         }
         showToast(`${data.createdCount}件のシフトを作成しました`);
         loadEntries();
+        loadCalendar();
       });
 
       document.getElementById('shift-confirm-btn')?.addEventListener('click', async () => {
@@ -1803,13 +1828,166 @@ export default function ProviderDashboardPage() {
           method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
           body: JSON.stringify({ status: 'confirmed' }),
         });
-        if (res.ok) { showToast('確定しました'); loadPeriods(); }
+        if (res.ok) { showToast('確定しました'); await loadPeriods(); loadCalendar(); }
         else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
       });
+
+      // ── シフトカレンダー（でお指摘2026-10-02：最初にカレンダー、日付タップでその日のシフト表、前月・次月へ移動） ──
+      function shiftTodayStr() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
+      const calNow = new Date();
+      let calYear = calNow.getFullYear();
+      let calMonth = calNow.getMonth(); // 0-11
+      let calEntries = [];
+      let calRequests = [];
+      const pad2 = n => String(n).padStart(2, '0');
+      const periodForDate = date => shiftPeriods.find(p => p.period_start <= date && date <= p.period_end) || null;
+
+      async function loadCalendar() {
+        const grid = document.getElementById('shift-cal-grid');
+        const title = document.getElementById('shift-cal-title');
+        if (!grid) return;
+        if (title) title.textContent = `${calYear}年${calMonth + 1}月`;
+        const last = new Date(calYear, calMonth + 1, 0).getDate();
+        const from = `${calYear}-${pad2(calMonth + 1)}-01`;
+        const to = `${calYear}-${pad2(calMonth + 1)}-${pad2(last)}`;
+        const [eRes, rRes] = await Promise.all([
+          fetch(`/api/provider/shift-entries?from=${from}&to=${to}`, { headers: authHeadersShift() }),
+          fetch(`/api/provider/shift-requests?from=${from}&to=${to}`, { headers: authHeadersShift() }),
+        ]);
+        if (!eRes.ok) { grid.innerHTML = authErrorHtml(eRes); return; }
+        calEntries = await eRes.json();
+        calRequests = rRes.ok ? await rRes.json() : [];
+        renderCalendar();
+      }
+
+      function renderCalendar() {
+        const grid = document.getElementById('shift-cal-grid');
+        if (!grid) return;
+        const firstWd = new Date(calYear, calMonth, 1).getDay();
+        const last = new Date(calYear, calMonth + 1, 0).getDate();
+        const todayStr = shiftTodayStr();
+        const entryStaff = {};
+        calEntries.forEach(e => { (entryStaff[e.date] = entryStaff[e.date] || new Set()).add(e.staff_id); });
+        const reqStaff = {};
+        calRequests.filter(r => r.type === 'work').forEach(r => { (reqStaff[r.date] = reqStaff[r.date] || new Set()).add(r.staff_id); });
+        const head = SHIFT_WEEKDAY_JA.map((w, i) => `<div style="text-align:center;font-size:11px;font-weight:700;padding:4px 0;color:${i === 0 ? '#dc2626' : i === 6 ? '#2563eb' : '#6b7280'}">${w}</div>`).join('');
+        let cells = '';
+        for (let i = 0; i < firstWd; i++) cells += '<div></div>';
+        for (let day = 1; day <= last; day++) {
+          const date = `${calYear}-${pad2(calMonth + 1)}-${pad2(day)}`;
+          const wd = (firstWd + day - 1) % 7;
+          const confirmed = entryStaff[date]?.size || 0;
+          const wishing = [...(reqStaff[date] || [])].filter(id => !entryStaff[date]?.has(id)).length;
+          const isToday = date === todayStr;
+          cells += `<div data-cal-date="${date}" style="min-height:58px;padding:4px 5px;border:1px solid ${isToday ? '#c9a84c' : '#e5e7eb'};border-radius:8px;cursor:pointer;background:${isToday ? 'rgba(201,168,76,0.08)' : '#fff'};display:flex;flex-direction:column;gap:2px;overflow:hidden">
+            <span style="font-size:12px;font-weight:700;color:${wd === 0 ? '#dc2626' : wd === 6 ? '#2563eb' : '#374151'}">${day}</span>
+            ${confirmed ? `<span style="font-size:10.5px;font-weight:700;color:#059669;white-space:nowrap">確定${confirmed}人</span>` : ''}
+            ${wishing ? `<span style="font-size:10.5px;font-weight:700;color:#2563eb;white-space:nowrap">希望${wishing}人</span>` : ''}
+          </div>`;
+        }
+        grid.innerHTML = `<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px">${head}${cells}</div>`;
+        grid.querySelectorAll('[data-cal-date]').forEach(c => c.addEventListener('click', () => showDayModal(c.dataset.calDate)));
+      }
+
+      function moveCalMonth(delta) {
+        const d = new Date(calYear, calMonth + delta, 1);
+        calYear = d.getFullYear(); calMonth = d.getMonth();
+        loadCalendar();
+      }
+      document.getElementById('shift-cal-prev')?.addEventListener('click', () => moveCalMonth(-1));
+      document.getElementById('shift-cal-next')?.addEventListener('click', () => moveCalMonth(1));
+      document.getElementById('shift-cal-today')?.addEventListener('click', () => {
+        const n = new Date(); calYear = n.getFullYear(); calMonth = n.getMonth(); loadCalendar();
+      });
+
+      // その日のスタッフ別「希望」と「確定シフト」を1枚のポップアップで確認・編集する
+      function showDayModal(date) {
+        document.getElementById('shift-day-modal-overlay')?.remove();
+        const period = periodForDate(date);
+        const wd = new Date(date + 'T00:00:00Z').getUTCDay();
+        const overlay = document.createElement('div');
+        overlay.id = 'shift-day-modal-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px';
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+        const refresh = async () => { await loadCalendar(); if (period && period.id === currentPeriodId) { loadEntries(); loadRequestsSummary(); } draw(); };
+        const post = async (payload) => {
+          const res = await fetch('/api/provider/shift-entries', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
+            body: JSON.stringify({ period_id: period.id, date, ...payload }),
+          });
+          if (res.ok) { await refresh(); } else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
+        };
+
+        function draw() {
+          const dayEntries = calEntries.filter(e => e.date === date);
+          const dayReqs = calRequests.filter(r => r.date === date);
+          const rows = shiftStaffList.map(s => {
+            const req = dayReqs.find(r => r.staff_id === s.id && r.type === 'work') || dayReqs.find(r => r.staff_id === s.id);
+            const mine = dayEntries.filter(e => e.staff_id === s.id);
+            const reqHtml = !req ? '<span style="color:#9ca3af">未提出</span>'
+              : req.type === 'off' ? '<span style="color:#dc2626;font-weight:700">休み希望</span>'
+              : `<span style="color:#2563eb;font-weight:700">${esc((req.start_time || '').slice(0, 5))}〜${esc((req.end_time || '').slice(0, 5))}</span>`;
+            const adopt = req && req.type === 'work' && !mine.length && period
+              ? `<button type="button" data-day-adopt="${s.id}" data-start="${esc((req.start_time || '').slice(0, 5))}" data-end="${esc((req.end_time || '').slice(0, 5))}" style="font-size:11px;padding:3px 8px;border:1px solid #93c5fd;color:#2563eb;background:none;border-radius:6px;cursor:pointer;white-space:nowrap">希望を採用</button>` : '';
+            const mineHtml = mine.length ? mine.map(e => `
+              <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+                <span style="font-size:12px;font-weight:700;color:#059669">${esc((e.start_time || '').slice(0, 5))}〜${esc((e.end_time || '').slice(0, 5))}${e.source === 'auto' ? '<span style="color:#9ca3af;font-weight:400">・自動</span>' : ''}</span>
+                <button type="button" data-day-del="${e.id}" style="font-size:11px;padding:2px 7px;border:1px solid #fca5a5;color:#ef4444;background:none;border-radius:6px;cursor:pointer">削除</button>
+              </div>`).join('') : '';
+            return `<div style="padding:8px 0;border-bottom:1px solid #f3f4f6">
+              <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+                <strong style="font-size:13px">${esc(s.name)}</strong>${adopt}
+              </div>
+              <div style="font-size:12px;margin-top:2px">希望：${reqHtml}</div>
+              ${mineHtml ? `<div style="font-size:12px;margin-top:2px">確定：${mineHtml}</div>` : ''}
+            </div>`;
+          }).join('');
+          overlay.innerHTML = `
+            <div style="background:#fff;border-radius:16px;padding:22px;width:100%;max-width:420px;max-height:88vh;overflow-y:auto">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:2px">
+                <h3 style="margin:0;font-size:16px;font-weight:800">${esc(date)}（${SHIFT_WEEKDAY_JA[wd]}）のシフト</h3>
+                <button type="button" id="shift-day-close" style="background:none;border:none;font-size:20px;line-height:1;cursor:pointer;color:#6b7280" aria-label="閉じる">×</button>
+              </div>
+              <p class="muted" style="font-size:12px;margin:0 0 8px">${period ? `期間：${esc(period.period_start)}〜${esc(period.period_end)}（${esc(PERIOD_STATUS_LABEL[period.status] || period.status)}）` : 'この日を含む期間がありません。下の「設定」の「期間を作成」から追加すると、シフトを入れられます。'}</p>
+              ${shiftStaffList.length ? rows : '<p class="muted" style="font-size:13px">スタッフが登録されていません（「スタッフ」タブから登録してください）。</p>'}
+              ${period && shiftStaffList.length ? `
+              <div style="margin-top:14px">
+                <div style="font-size:12px;font-weight:700;margin-bottom:6px">シフトを追加</div>
+                <select id="shift-day-staff" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;margin-bottom:6px">${shiftStaffList.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select>
+                <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+                  <input type="time" id="shift-day-start" style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px">
+                  <span style="color:#9ca3af">〜</span>
+                  <input type="time" id="shift-day-end" style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px">
+                </div>
+                <button type="button" id="shift-day-add" style="width:100%;padding:10px;background:#111;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">追加</button>
+              </div>` : ''}
+            </div>`;
+          overlay.querySelector('#shift-day-close')?.addEventListener('click', () => overlay.remove());
+          overlay.querySelectorAll('[data-day-del]').forEach(btn => btn.addEventListener('click', async () => {
+            const res = await fetch(`/api/provider/shift-entries/${btn.dataset.dayDel}`, { method: 'DELETE', headers: authHeadersShift() });
+            if (res.ok) await refresh(); else showToast('削除に失敗しました');
+          }));
+          overlay.querySelectorAll('[data-day-adopt]').forEach(btn => btn.addEventListener('click', () => post({ staff_id: btn.dataset.dayAdopt, start_time: btn.dataset.start, end_time: btn.dataset.end })));
+          overlay.querySelector('#shift-day-add')?.addEventListener('click', () => {
+            const staff_id = overlay.querySelector('#shift-day-staff')?.value;
+            const start_time = overlay.querySelector('#shift-day-start')?.value;
+            const end_time = overlay.querySelector('#shift-day-end')?.value;
+            if (!staff_id || !start_time || !end_time) { showToast('スタッフと開始・終了時刻を入力してください'); return; }
+            post({ staff_id, start_time, end_time });
+          });
+        }
+        draw();
+      }
 
       async function loadShiftTab() {
         await loadStaffLinks();
         await Promise.all([loadRuleSettings(), loadPatterns(), loadPriorities(), loadPeriods()]);
+        loadCalendar();
       }
       document.querySelectorAll('[data-tab="shift"]').forEach(btn => btn.addEventListener('click', loadShiftTab, { once: false }));
       if (new URLSearchParams(location.search).get('tab') === 'shift') loadShiftTab();
@@ -10329,72 +10507,30 @@ export default function ProviderDashboardPage() {
             沿って優先度で調整するか）は店舗ごとに変更できる。「機能設定」タブでONにした
             店舗のみ表示。 */}
         <div className="tab-pane" id="tab-shift">
-          <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
-            <div>
-              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>シフト管理</h2>
-              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-                スタッフが各自のスマホから次の期間の出勤・休み希望を提出できます。提出用のリンクは下の「スタッフごとの提出用リンク」からコピーして、LINE等で個別に送ってください。
-              </p>
-            </div>
-
-            <div id="shift-staff-links" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
-          </div>
-
-          <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
-            <h3 style={{ margin: 0, fontSize: '14px' }}>期間を作成</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: '10px', alignItems: 'end' }}>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>開始日 *</label><input type="date" id="shift-period-start" /></div>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>終了日 *</label><input type="date" id="shift-period-end" /></div>
-              <div className="form-field" style={{ marginBottom: 0 }}><label>希望の提出締切（任意）</label><input type="date" id="shift-period-deadline" /></div>
-              <button type="button" className="btn" id="shift-period-add-btn">この期間を作成</button>
-            </div>
-            <div id="shift-period-list" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
-          </div>
-
-          <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
-            <h3 style={{ margin: 0, fontSize: '14px' }}>シフト作成ルール</h3>
-            <div className="form-field" style={{ marginBottom: 0 }}>
-              <label>作り方</label>
-              <select id="shift-rule-type-select">
-                <option value="as_requested">出勤希望をそのまま全部入れる</option>
-                <option value="staffing_target">時間帯パターンの必要人数に沿って優先度で調整する</option>
-              </select>
-            </div>
-            <div>
-              <button type="button" className="btn" id="shift-rule-save-btn">ルールを保存</button>
-              <span id="shift-rule-save-msg" style={{ fontSize: '12px', marginLeft: '8px' }}></span>
-            </div>
-          </div>
-
-          {/* 時間帯パターン（でお要望2026-09-14：曜日ごとに1個ずつ作るのは大変。
-              時間帯×必要人数のセットを「パターン」として先に作っておき、期間内の
-              各日付にまとめて一括で割り当てる方式に変更）。 */}
-          <div id="shift-patterns-wrap" className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px', display: 'none' }}>
-            <h3 style={{ margin: 0, fontSize: '14px' }}>時間帯パターン</h3>
-            <p className="muted" style={{ fontSize: '12px', margin: 0 }}>時間帯×必要人数の組み合わせをパターンとして登録します。パターンを作ったら、上で作成した期間の一覧から期間を開き、その中の「日付ごとの必要人数パターン」でカレンダーの日付にまとめて割り当ててください。</p>
-            <div id="shift-patterns-list" className="stack" style={{ gap: '10px' }}>読み込み中…</div>
-            <div style={{ borderTop: '1px solid rgba(26,20,16,0.1)', paddingTop: '14px' }}>
-              <div className="form-field" style={{ marginBottom: '10px' }}><label>パターン名</label><input type="text" id="shift-pattern-name" placeholder="例：平日パターン" /></div>
-              <div id="shift-pattern-slot-rows" className="stack" style={{ gap: '8px', marginBottom: '10px' }}></div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(100px,1fr))', gap: '8px', alignItems: 'end', marginBottom: '10px' }}>
-                <div className="form-field" style={{ marginBottom: 0 }}><label>開始</label><input type="time" id="shift-pattern-slot-start" /></div>
-                <div className="form-field" style={{ marginBottom: 0 }}><label>終了</label><input type="time" id="shift-pattern-slot-end" /></div>
-                <div className="form-field" style={{ marginBottom: 0 }}><label>必要人数</label><input type="number" id="shift-pattern-slot-required" min="1" defaultValue="1" /></div>
-                <button type="button" className="btn btn-ghost" id="shift-pattern-slot-add-btn">＋時間帯を追加</button>
+          {/* でお指摘2026-10-02：「シフト管理の中の並び順が意味不明。最初にカレンダーを出して、
+              日付をタップするとその日のシフト表がポップアップ、前月・次月にも移動できるように」。
+              ①月カレンダー（日付タップでその日のシフト編集ポップアップ）→②期間ごとの管理
+              （希望一覧・シフト表・自動作成・確定）→③設定（提出リンク・期間作成・ルール・
+              時間帯パターン・優先度）の順に並べ替え、初期設定系は折りたたみにした。 */}
+          <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+              <h2 style={{ margin: 0, fontSize: '16px' }}>シフトカレンダー</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button type="button" className="btn btn-ghost" id="shift-cal-prev" style={{ padding: '4px 12px' }} aria-label="前の月">‹</button>
+                <strong id="shift-cal-title" style={{ minWidth: '92px', textAlign: 'center', fontSize: '14px' }}></strong>
+                <button type="button" className="btn btn-ghost" id="shift-cal-next" style={{ padding: '4px 12px' }} aria-label="次の月">›</button>
+                <button type="button" className="btn btn-ghost" id="shift-cal-today" style={{ padding: '4px 10px', fontSize: '12px' }}>今月</button>
               </div>
-              <button type="button" className="btn" id="shift-pattern-save-btn">このパターンを保存</button>
-              <span id="shift-pattern-save-msg" style={{ fontSize: '12px', marginLeft: '8px' }}></span>
             </div>
+            <p className="muted" style={{ fontSize: '12px', margin: 0, lineHeight: '1.6' }}>日付をタップすると、その日のスタッフ別の希望と確定シフトを確認・編集できます。</p>
+            <div id="shift-cal-grid">読み込み中…</div>
+            <p className="muted" style={{ fontSize: '11px', margin: 0 }}><span style={{ color: '#059669', fontWeight: 700 }}>■</span> 確定シフトの人数　<span style={{ color: '#2563eb', fontWeight: 700 }}>■</span> 出勤希望の人数（確定前）</p>
           </div>
 
-          <div className="card stack" style={{ padding: '24px', gap: '16px', marginBottom: '16px' }}>
-            <h3 style={{ margin: 0, fontSize: '14px' }}>スタッフの優先度</h3>
-            <p className="muted" style={{ fontSize: '12px', margin: 0 }}>お店を回す上での人員配置の方針をそのまま反映します（店長・社員を高く、アルバイトは低め、等）。各時間帯の必要人数に対して希望者が多い場合、ポイントが高い人から優先的にその枠へ採用されます。</p>
-            <div id="shift-priorities-list" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
-            <div>
-              <button type="button" className="btn btn-ghost" id="shift-priorities-save-btn">優先度を保存</button>
-              <span id="shift-priorities-save-msg" style={{ fontSize: '12px', marginLeft: '8px' }}></span>
-            </div>
+          <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
+            <h3 style={{ margin: 0, fontSize: '14px' }}>期間</h3>
+            <p className="muted" style={{ fontSize: '12px', margin: 0 }}>期間を選ぶと、下に提出された希望・シフト表・自動作成・確定が表示されます。新しい期間は一番下の「期間を作成」から追加できます。</p>
+            <div id="shift-period-list" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
           </div>
 
           <div className="card stack" style={{ padding: '24px', gap: '16px', display: 'none' }} id="shift-detail-section">
@@ -10434,6 +10570,77 @@ export default function ProviderDashboardPage() {
             </div>
             <div id="shift-entries-list" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
           </div>
+
+          <h3 style={{ margin: '24px 0 10px', fontSize: '14px' }}>設定</h3>
+          <details className="card" style={{ padding: '16px 24px', marginBottom: '10px' }}>
+            <summary style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: '2px 0' }}>スタッフの提出用リンク</summary>
+            <div className="stack" style={{ gap: '16px', marginTop: '14px' }}>
+              <p className="muted" style={{ fontSize: '12px', margin: 0, lineHeight: '1.6' }}>スタッフが各自のスマホから出勤・休み希望を提出できます。リンクをコピーして、LINE等で個別に送ってください。</p>
+              <div id="shift-staff-links" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
+            </div>
+          </details>
+
+          <details className="card" style={{ padding: '16px 24px', marginBottom: '10px' }}>
+            <summary style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: '2px 0' }}>期間を作成</summary>
+            <div className="stack" style={{ gap: '16px', marginTop: '14px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: '10px', alignItems: 'end' }}>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>開始日 *</label><input type="date" id="shift-period-start" /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>終了日 *</label><input type="date" id="shift-period-end" /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>希望の提出締切（任意）</label><input type="date" id="shift-period-deadline" /></div>
+              <button type="button" className="btn" id="shift-period-add-btn">この期間を作成</button>
+            </div>
+            </div>
+          </details>
+
+          <details className="card" style={{ padding: '16px 24px', marginBottom: '10px' }}>
+            <summary style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: '2px 0' }}>シフト作成ルール</summary>
+            <div className="stack" style={{ gap: '16px', marginTop: '14px' }}>
+                        <div className="form-field" style={{ marginBottom: 0 }}>
+              <label>作り方</label>
+              <select id="shift-rule-type-select">
+                <option value="as_requested">出勤希望をそのまま全部入れる</option>
+                <option value="staffing_target">時間帯パターンの必要人数に沿って優先度で調整する</option>
+              </select>
+            </div>
+            <div>
+              <button type="button" className="btn" id="shift-rule-save-btn">ルールを保存</button>
+              <span id="shift-rule-save-msg" style={{ fontSize: '12px', marginLeft: '8px' }}></span>
+            </div>
+            </div>
+          </details>
+
+          <details id="shift-patterns-wrap" className="card" style={{ padding: '16px 24px', marginBottom: '10px', display: 'none' }}>
+            <summary style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: '2px 0' }}>時間帯パターン</summary>
+            <div className="stack" style={{ gap: '16px', marginTop: '14px' }}>
+                        <p className="muted" style={{ fontSize: '12px', margin: 0 }}>時間帯×必要人数の組み合わせをパターンとして登録します。パターンを作ったら、上で作成した期間の一覧から期間を開き、その中の「日付ごとの必要人数パターン」でカレンダーの日付にまとめて割り当ててください。</p>
+            <div id="shift-patterns-list" className="stack" style={{ gap: '10px' }}>読み込み中…</div>
+            <div style={{ borderTop: '1px solid rgba(26,20,16,0.1)', paddingTop: '14px' }}>
+              <div className="form-field" style={{ marginBottom: '10px' }}><label>パターン名</label><input type="text" id="shift-pattern-name" placeholder="例：平日パターン" /></div>
+              <div id="shift-pattern-slot-rows" className="stack" style={{ gap: '8px', marginBottom: '10px' }}></div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(100px,1fr))', gap: '8px', alignItems: 'end', marginBottom: '10px' }}>
+                <div className="form-field" style={{ marginBottom: 0 }}><label>開始</label><input type="time" id="shift-pattern-slot-start" /></div>
+                <div className="form-field" style={{ marginBottom: 0 }}><label>終了</label><input type="time" id="shift-pattern-slot-end" /></div>
+                <div className="form-field" style={{ marginBottom: 0 }}><label>必要人数</label><input type="number" id="shift-pattern-slot-required" min="1" defaultValue="1" /></div>
+                <button type="button" className="btn btn-ghost" id="shift-pattern-slot-add-btn">＋時間帯を追加</button>
+              </div>
+              <button type="button" className="btn" id="shift-pattern-save-btn">このパターンを保存</button>
+              <span id="shift-pattern-save-msg" style={{ fontSize: '12px', marginLeft: '8px' }}></span>
+            </div>
+            </div>
+          </details>
+
+          <details className="card" style={{ padding: '16px 24px', marginBottom: '10px' }}>
+            <summary style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: '2px 0' }}>スタッフの優先度</summary>
+            <div className="stack" style={{ gap: '16px', marginTop: '14px' }}>
+                        <p className="muted" style={{ fontSize: '12px', margin: 0 }}>お店を回す上での人員配置の方針をそのまま反映します（店長・社員を高く、アルバイトは低め、等）。各時間帯の必要人数に対して希望者が多い場合、ポイントが高い人から優先的にその枠へ採用されます。</p>
+            <div id="shift-priorities-list" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
+            <div>
+              <button type="button" className="btn btn-ghost" id="shift-priorities-save-btn">優先度を保存</button>
+              <span id="shift-priorities-save-msg" style={{ fontSize: '12px', marginLeft: '8px' }}></span>
+            </div>
+            </div>
+          </details>
+
         </div>
 
         {/* クラス管理（スクール業態特化、でお要望2026-09-14：hacomono機能比較で判明した

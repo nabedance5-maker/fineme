@@ -2,6 +2,9 @@
 // POST   /api/staff-shift/[token] → 希望を1件、選んだ瞬間に自動保存（type='work'|'off'）
 // DELETE /api/staff-shift/[token] → 保存済みの希望を1件取り消す
 //
+// でお要望2026-10-02：「1日ずつ全部入れるのが大変。複数日付を選んで同じ時間帯を一気に提出したい」
+// → POSTは`dates`配列、DELETEは`dates`（カンマ区切り）でまとめて処理できる。
+//
 // スタッフはFinemeの認証アカウントを持たないため、provider_staff.shift_access_token
 // （推測不可能なUUID）を本人確認の代わりに使う認証不要の公開エンドポイント
 // （予約確認Webhook等、既存の同種の設計と同じ方針）。
@@ -67,37 +70,46 @@ export async function POST(request, { params }) {
 
   const body = await request.json().catch(() => ({}));
   const { period_id, date, type, start_time, end_time, note } = body;
-  if (!period_id || !date || !['work', 'off'].includes(type)) {
+  const isBulk = Array.isArray(body.dates);
+  const dates = isBulk ? [...new Set(body.dates)] : (date ? [date] : []);
+  if (!period_id || !dates.length || !['work', 'off'].includes(type)) {
     return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
+  }
+  if (dates.length > 93 || dates.some(d => typeof d !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(d))) {
+    return Response.json({ error: '日付の指定が不正です' }, { status: 400 });
   }
   if (type === 'work' && (!start_time || !end_time)) {
     return Response.json({ error: '出勤希望には開始・終了時刻が必要です' }, { status: 400 });
   }
 
   // この期間が本当に自分の店舗のものか確認（他店舗の期間IDを渡された場合に書き込ませない）
-  const { data: period } = await supabase.from('provider_shift_periods').select('id, provider_id, status').eq('id', period_id).single();
+  const { data: period } = await supabase.from('provider_shift_periods').select('id, provider_id, status, period_start, period_end').eq('id', period_id).single();
   if (!period || period.provider_id !== staff.provider_id) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
   if (period.status !== 'collecting') return Response.json({ error: 'この期間は希望の募集を締め切っています' }, { status: 400 });
+  if (dates.some(d => d < period.period_start || d > period.period_end)) {
+    return Response.json({ error: '募集期間外の日付が含まれています' }, { status: 400 });
+  }
 
   // 同じ日にwork/off両方が残るのはおかしいため、逆typeの既存希望があれば消してから保存する
   // （カレンダーで日付をタップして出勤/休みを選び直す新UIでは、両方残ると混乱するため）
   const otherType = type === 'work' ? 'off' : 'work';
-  await supabase.from('provider_shift_requests').delete().eq('period_id', period_id).eq('staff_id', staff.id).eq('date', date).eq('type', otherType);
+  await supabase.from('provider_shift_requests').delete().eq('period_id', period_id).eq('staff_id', staff.id).in('date', dates).eq('type', otherType);
 
+  const now = new Date().toISOString();
+  const rows = dates.map(d => ({
+    period_id, staff_id: staff.id, date: d, type,
+    start_time: type === 'work' ? start_time : null,
+    end_time: type === 'work' ? end_time : null,
+    note: note || null,
+    updated_at: now,
+  }));
   const { data, error } = await supabase
     .from('provider_shift_requests')
-    .upsert({
-      period_id, staff_id: staff.id, date, type,
-      start_time: type === 'work' ? start_time : null,
-      end_time: type === 'work' ? end_time : null,
-      note: note || null,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'period_id,staff_id,date,type' })
-    .select()
-    .single();
+    .upsert(rows, { onConflict: 'period_id,staff_id,date,type' })
+    .select();
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  return Response.json(data);
+  return Response.json(isBulk ? data : data[0]);
 }
 
 export async function DELETE(request, { params }) {
@@ -108,15 +120,17 @@ export async function DELETE(request, { params }) {
   const period_id = searchParams.get('period_id');
   const date = searchParams.get('date');
   const type = searchParams.get('type');
-  if (!period_id || !date || !type) return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
+  const bulkDates = (searchParams.get('dates') || '').split(',').filter(Boolean);
 
-  const { error } = await supabase
-    .from('provider_shift_requests')
-    .delete()
-    .eq('period_id', period_id)
-    .eq('staff_id', staff.id)
-    .eq('date', date)
-    .eq('type', type);
+  let query = supabase.from('provider_shift_requests').delete().eq('period_id', period_id).eq('staff_id', staff.id);
+  if (bulkDates.length) {
+    if (!period_id) return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
+    query = query.in('date', bulkDates);
+  } else {
+    if (!period_id || !date || !type) return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
+    query = query.eq('date', date).eq('type', type);
+  }
+  const { error } = await query;
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
   return Response.json({ ok: true });
