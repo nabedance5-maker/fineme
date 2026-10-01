@@ -11,5 +11,9 @@ export async function GET(request, { params }) {
   const { data, error } = await supabase.rpc('get_provider_by_slug', { p_slug: slug });
 
   if (error || !data) return Response.json({ error: 'Not found' }, { status: 404 });
-  return Response.json(data, { headers: { 'Cache-Control': 'no-store' } });
+  // get_provider_by_slug は row_to_json(p)（全カラム）を返すため、公開してはいけない
+  // 項目（ログイン用メール・LINEユーザーID・Stripe各ID）をここで除く（2026-10-01）。
+  // 公開ページ側でこれらを参照している箇所は無い。
+  const { email, line_user_id, stripe_customer_id, stripe_subscription_id, stripe_connect_id, stripe_connect_status, ...publicData } = data;
+  return Response.json(publicData, { headers: { 'Cache-Control': 'no-store' } });
 }
