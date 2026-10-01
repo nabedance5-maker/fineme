@@ -17,6 +17,11 @@ const STATIC_PAGES = [
   { url: '/terms', priority: 0.4, changeFrequency: 'monthly' },
   { url: '/privacy', priority: 0.4, changeFrequency: 'monthly' },
   { url: '/tokusho', priority: 0.4, changeFrequency: 'monthly' },
+  // Belle（女性向けトラック）。旧サイトマップに1件も含まれていなかった（2026-10-01発見・修正）
+  { url: '/belle', priority: 1.0, changeFrequency: 'daily' },
+  { url: '/belle/diagnosis', priority: 0.9, changeFrequency: 'weekly' },
+  { url: '/belle/lp/mirror', priority: 0.9, changeFrequency: 'weekly' },
+  { url: '/belle/journal', priority: 0.8, changeFrequency: 'daily' },
 ];
 
 export default async function sitemap() {
@@ -25,7 +30,9 @@ export default async function sitemap() {
   const [providersRes, affiliatesRes, featuresRes] = await Promise.all([
     supabase.from('providers').select('slug, updated_at').eq('status', 'active'),
     supabase.from('affiliates').select('slug, updated_at').eq('is_active', true),
-    supabase.from('features').select('slug, updated_at').eq('status', 'published'),
+    // track を含めて取得する（含めないと女性向けBelle記事が/feature/配下の
+    // 誤ったURLでサイトマップに登録されてしまう・2026-10-01発見・修正）
+    supabase.from('features').select('slug, updated_at, track').eq('status', 'published'),
   ]);
 
   const providerUrls = (providersRes.data || []).map(p => ({
@@ -43,7 +50,7 @@ export default async function sitemap() {
   }));
 
   const featureUrls = (featuresRes.data || []).map(f => ({
-    url: `${BASE_URL}/feature/${f.slug}`,
+    url: f.track === 'belle' ? `${BASE_URL}/belle/journal/${f.slug}` : `${BASE_URL}/feature/${f.slug}`,
     lastModified: f.updated_at ? new Date(f.updated_at) : new Date(),
     priority: 0.75,
     changeFrequency: 'monthly',
