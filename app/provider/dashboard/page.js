@@ -3441,6 +3441,7 @@ export default function ProviderDashboardPage() {
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px" data-lkr-fill>まとめて作成（列ごとの段数）</button>
             <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px" data-lkr-bank-edit>この配置図の設定（名前・段数・横の数）</button>
+            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px;color:#ef4444" data-lkr-bank-del-main>この配置図を削除</button>
           </div>`;
 
         layoutEl.querySelectorAll('[data-lkr-bank-pick]').forEach(btn => btn.addEventListener('click', () => { selectedBankId = btn.dataset.lkrBankPick; renderLayout(); }));
@@ -3448,6 +3449,13 @@ export default function ProviderDashboardPage() {
         layoutEl.querySelectorAll('[data-lkr-cell]').forEach(btn => btn.addEventListener('click', () => { const l = lockers.find(x => x.id === btn.dataset.lkrCell); if (l) openLockerModal(l); }));
         layoutEl.querySelector('[data-lkr-fill]')?.addEventListener('click', () => openFillModal(bank));
         layoutEl.querySelector('[data-lkr-bank-edit]')?.addEventListener('click', () => openBankEditModal(bank));
+        layoutEl.querySelector('[data-lkr-bank-del-main]')?.addEventListener('click', async () => {
+          if (!confirm(`「${bank.name}」と、その中のロッカー${list.length}個をすべて削除します。よろしいですか？`)) return;
+          const r = await apiJson(`/api/provider/locker-banks/${bank.id}`, 'DELETE');
+          if (!r.ok) { showToast('エラー: ' + (r.data.error || '不明')); return; }
+          showToast('削除しました');
+          loadLockers();
+        });
       }
 
       function openBankModal() {
