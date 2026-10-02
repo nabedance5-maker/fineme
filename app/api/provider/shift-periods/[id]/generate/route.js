@@ -1,10 +1,12 @@
 // POST /api/provider/shift-periods/[id]/generate → 自動作成ボタン。
 // 既存の自動生成分(source='auto')を作り直し、手動追加分(source='manual')はそのまま残す。
+// 労働条件(法定の目安含む)を超える配置は採用せずskippedとして理由付きで返す。
 // ステータスをdraftに進め、未充足の枠があればwarningsとして返す（保存はしない・
 // レスポンスのみ。店舗側はここを見ながら手動で調整する）。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { generateShift } from '@/lib/shift-generator';
+import { loadConditions, loadNeighborEntries } from '@/lib/shift-labor-db';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -37,13 +39,21 @@ export async function POST(request, { params }) {
   const patternsById = {};
   (patternRows || []).forEach(p => { patternsById[p.id] = p; });
 
-  const { entries, warnings } = generateShift({
+  const [conditions, neighborEntries, { data: manualEntries }] = await Promise.all([
+    loadConditions(supabase, provider.id),
+    loadNeighborEntries(supabase, provider.id, period),
+    supabase.from('provider_shift_entries').select('staff_id, date, start_time, end_time').eq('period_id', period.id).eq('source', 'manual'),
+  ]);
+
+  const { entries, warnings, skipped } = generateShift({
     period,
     requests: requests || [],
     ruleType: settings?.rule_type || 'as_requested',
     dayPatterns,
     patternsById,
     priorities: priorities || [],
+    conditions,
+    existingEntries: [...neighborEntries, ...(manualEntries || [])],
   });
 
   // 既存の自動生成分だけ作り直す（手動で個別追加・調整したコマ(source='manual')は残す）
@@ -58,5 +68,5 @@ export async function POST(request, { params }) {
 
   await supabase.from('provider_shift_periods').update({ status: 'draft' }).eq('id', period.id);
 
-  return Response.json({ ok: true, createdCount: entries.length, warnings });
+  return Response.json({ ok: true, createdCount: entries.length, warnings, skipped });
 }

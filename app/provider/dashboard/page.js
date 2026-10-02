@@ -1355,6 +1355,8 @@ export default function ProviderDashboardPage() {
       let currentPeriodStart = null;
       let currentPeriodEnd = null;
       let currentEntries = []; // loadEntries()が最後に取得した確定シフト一覧（セル編集時の参照用）
+      let shiftConditions = {}; // staff_id → 労働条件（雇用形態・上限・休日確保）
+      let laborResult = { violations: [], stats: {} }; // 選択中の期間の労働条件チェック結果
 
       // でお指摘2026-10-01：「提出されたシフトを見るのがわかりづらい、編集も全部縦に
       // 1人ずつ出てきてみづらい。もっとカレンダーにまとめてほしい」。希望一覧・確定シフト
@@ -1608,6 +1610,113 @@ export default function ProviderDashboardPage() {
         }
       });
 
+      // ── スタッフの労働条件（でお指摘2026-10-02：雇用形態・上限・休日確保が人によって違うので、
+      //    見ながら作れて、自動作成にも反映されないと労基違反になる） ──
+      const SHIFT_EMP_LABEL = { fulltime: '正社員', parttime: 'パート', arbeit: 'アルバイト', contractor: '業務委託', other: 'その他' };
+      const COND_LEGAL = { max_hours_per_day: 8, max_hours_per_week: 40, min_days_off_per_week: 1, max_consecutive_days: 6 };
+      const COND_FIELDS = [
+        ['max_hours_per_day', '1日の上限（時間）'],
+        ['max_hours_per_week', '週の上限（時間）'],
+        ['max_hours_per_month', '月の上限（時間）'],
+        ['max_days_per_week', '週の最大勤務日数'],
+        ['min_days_off_per_week', '週の最低休日数'],
+        ['max_days_per_month', '月の最大勤務日数'],
+        ['max_consecutive_days', '連続勤務の上限（日）'],
+      ];
+      const condPlaceholder = (emp, key) => (emp !== 'contractor' && COND_LEGAL[key] != null ? `法定 ${COND_LEGAL[key]}` : 'なし');
+      const empOf = id => shiftConditions[id]?.employment_type || null;
+      const empBadge = id => (empOf(id) ? `<span style="font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:99px;background:#eef2ff;color:#4f46e5;margin-left:6px">${esc(SHIFT_EMP_LABEL[empOf(id)] || '')}</span>` : '');
+
+      async function loadConditions() {
+        const el = document.getElementById('shift-conditions-list');
+        if (!el) return;
+        if (!shiftStaffList.length) await loadStaffLinks();
+        const res = await fetch('/api/provider/shift-staff-conditions', { headers: authHeadersShift() });
+        const rows = res.ok ? await res.json() : [];
+        shiftConditions = {};
+        rows.forEach(r => { shiftConditions[r.staff_id] = r; });
+        if (!shiftStaffList.length) { el.innerHTML = '<p class="muted" style="font-size:12px">スタッフが登録されていません。</p>'; return; }
+        el.innerHTML = shiftStaffList.map(st => {
+          const c = shiftConditions[st.id] || {};
+          const emp = c.employment_type || 'fulltime';
+          return `
+          <div data-cond-card="${st.id}" style="padding:10px 12px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:8px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <strong style="flex:1;font-size:13px">${esc(st.name)}</strong>
+              <select data-cond-staff="${st.id}" data-cond-field="employment_type" style="padding:4px 8px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px">
+                ${Object.entries(SHIFT_EMP_LABEL).map(([k, v]) => `<option value="${k}"${k === emp ? ' selected' : ''}>${v}</option>`).join('')}
+              </select>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px">
+              ${COND_FIELDS.map(([key, label]) => `
+                <label style="display:flex;flex-direction:column;gap:2px;font-size:11px;color:#6b7280">${label}
+                  <input type="number" min="0" step="0.5" data-cond-staff="${st.id}" data-cond-field="${key}" value="${c[key] ?? ''}" placeholder="${condPlaceholder(emp, key)}" style="padding:4px 8px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;color:#111" />
+                </label>`).join('')}
+            </div>
+          </div>`;
+        }).join('');
+        el.querySelectorAll('select[data-cond-field="employment_type"]').forEach(sel => sel.addEventListener('change', () => {
+          el.querySelectorAll(`input[data-cond-staff="${sel.dataset.condStaff}"]`).forEach(inp => { inp.placeholder = condPlaceholder(sel.value, inp.dataset.condField); });
+        }));
+        renderLaborPanel();
+      }
+      document.getElementById('shift-conditions-save-btn')?.addEventListener('click', async () => {
+        const msg = document.getElementById('shift-conditions-save-msg');
+        const byStaff = {};
+        document.querySelectorAll('[data-cond-staff]').forEach(inp => {
+          (byStaff[inp.dataset.condStaff] = byStaff[inp.dataset.condStaff] || { staff_id: inp.dataset.condStaff })[inp.dataset.condField] = inp.value;
+        });
+        const items = Object.values(byStaff);
+        if (!items.length) return;
+        if (msg) { msg.style.color = ''; msg.textContent = '保存中…'; }
+        const res = await fetch('/api/provider/shift-staff-conditions', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
+          body: JSON.stringify({ items }),
+        });
+        if (res.ok) {
+          if (msg) { msg.style.color = '#4ade80'; msg.textContent = '✓ 保存しました'; setTimeout(() => { if (msg) msg.textContent = ''; }, 2500); }
+          await loadConditions();
+          loadLaborCheck();
+        } else if (msg) { msg.style.color = '#ef4444'; msg.textContent = '保存に失敗しました'; }
+      });
+
+      async function fetchLabor(periodId) {
+        const res = await fetch(`/api/provider/shift-periods/${periodId}/labor-check`, { headers: authHeadersShift() });
+        return res.ok ? await res.json() : { violations: [], stats: {} };
+      }
+      const stripName = msg => String(msg || '').replace(/^[^：]*：/, '');
+      function renderLaborPanel() {
+        const el = document.getElementById('shift-labor-panel');
+        if (!el || !currentPeriodId) return;
+        const { violations = [], stats = {} } = laborResult;
+        const unset = shiftStaffList.filter(st => !shiftConditions[st.id]);
+        const vioHtml = violations.length
+          ? `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#991b1b">
+              <strong>労働条件を超えている箇所が${violations.length}件あります。確定する前に調整してください。</strong>
+              <ul style="margin:6px 0 0;padding-left:18px">${violations.map(v => `<li>${esc(v.message)}</li>`).join('')}</ul>
+            </div>`
+          : '<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:8px 14px;font-size:12.5px;color:#065f46">✓ 労働条件（上限・休日確保）の超過はありません</div>';
+        const rows = shiftStaffList.map(st => {
+          const sx = stats[st.id] || { days: 0, hours: 0 };
+          const bad = violations.some(v => v.staff_id === st.id);
+          return `<tr${bad ? ' style="background:#fef2f2"' : ''}>
+            <td style="padding:4px 8px;white-space:nowrap">${esc(st.name)}${empBadge(st.id)}</td>
+            <td style="padding:4px 8px;text-align:right;white-space:nowrap">${sx.days}日</td>
+            <td style="padding:4px 8px;text-align:right;white-space:nowrap">${sx.hours}時間</td>
+          </tr>`;
+        }).join('');
+        el.innerHTML = vioHtml
+          + (shiftStaffList.length ? `<div style="overflow-x:auto;margin-top:8px"><table style="font-size:12px;border-collapse:collapse;min-width:220px"><thead><tr style="color:#6b7280"><th style="padding:4px 8px;text-align:left;font-weight:600">スタッフ（この期間）</th><th style="padding:4px 8px;text-align:right;font-weight:600">勤務日数</th><th style="padding:4px 8px;text-align:right;font-weight:600">合計</th></tr></thead><tbody>${rows}</tbody></table></div>` : '')
+          + (unset.length ? `<p class="muted" style="font-size:11.5px;margin:8px 0 0;line-height:1.6">労働条件が未設定のスタッフ（${unset.map(x => esc(x.name)).join('、')}）は、正社員扱いの法定の目安（1日8時間・週40時間・週1日以上の休み・連続6日まで）で判定しています。下の「設定」の「スタッフの労働条件」で設定できます。</p>` : '')
+          + '<p class="muted" style="font-size:11px;margin:6px 0 0;line-height:1.6">時間は拘束時間から法定の最低休憩（6時間超45分・8時間超60分）を引いた実働で数えています。休憩は実際に確保してください。</p>';
+      }
+      async function loadLaborCheck() {
+        const el = document.getElementById('shift-labor-panel');
+        if (!el || !currentPeriodId) return;
+        laborResult = await fetchLabor(currentPeriodId);
+        renderLaborPanel();
+      }
+
       // ── 期間 ──
       const PERIOD_STATUS_LABEL = { collecting: '希望募集中', draft: '下書き（調整中）', confirmed: '確定済み' };
       const PERIOD_STATUS_COLOR = { collecting: '#f59e0b', draft: '#6366f1', confirmed: '#10b981' };
@@ -1676,6 +1785,8 @@ export default function ProviderDashboardPage() {
         const confirmBtn = document.getElementById('shift-confirm-btn');
         if (confirmBtn) confirmBtn.disabled = status === 'confirmed';
         document.getElementById('shift-generate-warnings').innerHTML = '';
+        const laborEl = document.getElementById('shift-labor-panel');
+        if (laborEl) laborEl.innerHTML = '';
         highlightPeriodRows();
         await Promise.all([loadRequestsSummary(), loadEntries(), loadDayPatterns()]);
       }
@@ -1778,6 +1889,7 @@ export default function ProviderDashboardPage() {
         const res = await fetch(`/api/provider/shift-entries?periodId=${currentPeriodId}`, { headers: authHeadersShift() });
         if (!res.ok) { el.innerHTML = authErrorHtml(res); return; }
         currentEntries = await res.json();
+        loadLaborCheck();
         if (!shiftStaffList.length) { el.innerHTML = '<p class="muted" style="font-size:13px">スタッフが登録されていません。</p>'; return; }
         if (!currentPeriodStart || !currentPeriodEnd) return;
         const dates = datesInRange(currentPeriodStart, currentPeriodEnd);
@@ -1810,11 +1922,19 @@ export default function ProviderDashboardPage() {
         const data = await res.json();
         const warnEl = document.getElementById('shift-generate-warnings');
         if (warnEl) {
-          warnEl.innerHTML = data.warnings?.length
+          const nameOf = id => shiftStaffList.find(x => x.id === id)?.name || '(不明)';
+          const shortHtml = data.warnings?.length
             ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#92400e">
                 人員が足りない枠が${data.warnings.length}件あります：${data.warnings.map(w => `${esc(w.date)} ${esc(w.start_time)}〜${esc(w.end_time)}（必要${w.required}人・確保${w.filled}人）`).join('／')}
               </div>`
             : '';
+          const skipHtml = data.skipped?.length
+            ? `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#9a3412;margin-top:${shortHtml ? '8px' : '0'}">
+                <strong>労働条件を超えるため、採用しなかった希望が${data.skipped.length}件あります（労基法違反を避けるため自動では入れていません）</strong>
+                <ul style="margin:6px 0 0;padding-left:18px">${data.skipped.map(k => `<li>${esc(nameOf(k.staff_id))}・${esc(k.date)} ${esc(String(k.start_time).slice(0, 5))}〜${esc(String(k.end_time).slice(0, 5))}：${esc(k.reason)}</li>`).join('')}</ul>
+              </div>`
+            : '';
+          warnEl.innerHTML = shortHtml + skipHtml;
         }
         showToast(`${data.createdCount}件のシフトを作成しました`);
         loadEntries();
@@ -1823,7 +1943,12 @@ export default function ProviderDashboardPage() {
 
       document.getElementById('shift-confirm-btn')?.addEventListener('click', async () => {
         if (!currentPeriodId) return;
-        if (!confirm('この期間のシフトを確定しますか？')) return;
+        const labor = await fetchLabor(currentPeriodId);
+        const vios = labor.violations || [];
+        const ask = vios.length
+          ? `労働条件を超えている箇所が${vios.length}件あります。\n\n${vios.slice(0, 5).map(v => '・' + v.message).join('\n')}${vios.length > 5 ? `\n…ほか${vios.length - 5}件` : ''}\n\nこのまま確定すると労基法違反になる可能性があります。それでも確定しますか？`
+          : 'この期間のシフトを確定しますか？';
+        if (!confirm(ask)) return;
         const res = await fetch(`/api/provider/shift-periods/${currentPeriodId}`, {
           method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
           body: JSON.stringify({ status: 'confirmed' }),
@@ -1914,7 +2039,8 @@ export default function ProviderDashboardPage() {
         document.body.appendChild(overlay);
         overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 
-        const refresh = async () => { await loadCalendar(); if (period && period.id === currentPeriodId) { loadEntries(); loadRequestsSummary(); } draw(); };
+        let dayLabor = { violations: [] };
+        const refresh = async () => { await loadCalendar(); if (period && period.id === currentPeriodId) { loadEntries(); loadRequestsSummary(); } if (period) dayLabor = await fetchLabor(period.id); draw(); };
         const post = async (payload) => {
           const res = await fetch('/api/provider/shift-entries', {
             method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
@@ -1939,12 +2065,15 @@ export default function ProviderDashboardPage() {
                 <span style="font-size:12px;font-weight:700;color:#059669">${esc((e.start_time || '').slice(0, 5))}〜${esc((e.end_time || '').slice(0, 5))}${e.source === 'auto' ? '<span style="color:#9ca3af;font-weight:400">・自動</span>' : ''}</span>
                 <button type="button" data-day-del="${e.id}" style="font-size:11px;padding:2px 7px;border:1px solid #fca5a5;color:#ef4444;background:none;border-radius:6px;cursor:pointer">削除</button>
               </div>`).join('') : '';
+            const vios = (dayLabor.violations || []).filter(v => v.staff_id === s.id && v.dates.includes(date));
+            const vioHtml = vios.map(v => `<div style="font-size:11.5px;color:#dc2626;margin-top:3px;line-height:1.5">⚠ ${esc(stripName(v.message))}</div>`).join('');
             return `<div style="padding:8px 0;border-bottom:1px solid #f3f4f6">
               <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-                <strong style="font-size:13px">${esc(s.name)}</strong>${adopt}
+                <span><strong style="font-size:13px">${esc(s.name)}</strong>${empBadge(s.id)}</span>${adopt}
               </div>
               <div style="font-size:12px;margin-top:2px">希望：${reqHtml}</div>
               ${mineHtml ? `<div style="font-size:12px;margin-top:2px">確定：${mineHtml}</div>` : ''}
+              ${vioHtml}
             </div>`;
           }).join('');
           overlay.innerHTML = `
@@ -1982,11 +2111,12 @@ export default function ProviderDashboardPage() {
           });
         }
         draw();
+        if (period) fetchLabor(period.id).then(r => { dayLabor = r; draw(); });
       }
 
       async function loadShiftTab() {
         await loadStaffLinks();
-        await Promise.all([loadRuleSettings(), loadPatterns(), loadPriorities(), loadPeriods()]);
+        await Promise.all([loadRuleSettings(), loadPatterns(), loadPriorities(), loadConditions(), loadPeriods()]);
         loadCalendar();
       }
       document.querySelectorAll('[data-tab="shift"]').forEach(btn => btn.addEventListener('click', loadShiftTab, { once: false }));
@@ -10541,6 +10671,9 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="btn" id="shift-confirm-btn">この期間を確定する</button>
               </div>
             </div>
+            <p className="muted" style={{ fontSize: '12px', margin: 0, lineHeight: '1.7' }}>
+              流れ：①提出された希望を確認 → ②「自動作成」（スタッフごとの労働条件・法定の上限を守って自動で割り振ります）→ ③下の労働条件チェックとシフト表を見ながら調整 → ④問題がなければ「この期間を確定する」。条件を超える希望は自動では入れず、理由を表示します。
+            </p>
             <div id="shift-generate-warnings"></div>
 
             {/* 日付ごとのパターン割当（でお要望2026-09-14：1日ずつ作るのは大変なので、
@@ -10559,6 +10692,9 @@ export default function ProviderDashboardPage() {
 
             <h4 style={{ margin: '8px 0 0', fontSize: '13px' }}>提出された希望</h4>
             <div id="shift-requests-summary" className="stack" style={{ gap: '4px' }}>読み込み中…</div>
+
+            <h4 style={{ margin: '8px 0 0', fontSize: '13px' }}>労働条件チェック</h4>
+            <div id="shift-labor-panel"></div>
 
             <h4 style={{ margin: '8px 0 0', fontSize: '13px' }}>シフト表</h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: '8px', alignItems: 'end' }}>
@@ -10626,6 +10762,18 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn" id="shift-pattern-save-btn">このパターンを保存</button>
               <span id="shift-pattern-save-msg" style={{ fontSize: '12px', marginLeft: '8px' }}></span>
             </div>
+            </div>
+          </details>
+
+          <details className="card" style={{ padding: '16px 24px', marginBottom: '10px' }}>
+            <summary style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: '2px 0' }}>スタッフの労働条件</summary>
+            <div className="stack" style={{ gap: '16px', marginTop: '14px' }}>
+              <p className="muted" style={{ fontSize: '12px', margin: 0, lineHeight: '1.7' }}>雇用形態ごとの働ける上限・休日の確保を登録します。自動作成はこの条件を超えない範囲でだけシフトを入れ、確定前のチェックでも超過を知らせます。空欄は既定値です：業務委託以外は法定の目安（1日8時間・週40時間・週1日以上の休み・連続6日まで）、業務委託は上限なし（入力した項目のみ適用）。週は月曜始まり、月は暦月で数えます。</p>
+              <div id="shift-conditions-list" className="stack" style={{ gap: '8px' }}>読み込み中…</div>
+              <div>
+                <button type="button" className="btn btn-ghost" id="shift-conditions-save-btn">労働条件を保存</button>
+                <span id="shift-conditions-save-msg" style={{ fontSize: '12px', marginLeft: '8px' }}></span>
+              </div>
             </div>
           </details>
 
