@@ -3440,7 +3440,7 @@ export default function ProviderDashboardPage() {
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px" data-lkr-fill>まとめて作成（列ごとの段数）</button>
-            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px" data-lkr-bank-edit>この配置図の設定（名前・段数・横の数）</button>
+            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px" data-lkr-bank-edit>この配置図の設定（名前・列の追加削除）</button>
             <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px;color:#ef4444" data-lkr-bank-del-main>この配置図を削除</button>
           </div>`;
 
@@ -3503,21 +3503,57 @@ export default function ProviderDashboardPage() {
       }
 
       function openBankEditModal(bank) {
+        const colOpts = Array.from({ length: bank.grid_cols }, (_, k) => `<option value="${k + 1}">${k + 1}列目</option>`).join('');
+        const insOpts = Array.from({ length: bank.grid_cols }, (_, k) => `<option value="${k + 1}">${k + 1}列目の前（左）に追加</option>`).join('') + `<option value="${bank.grid_cols + 1}" selected>いちばん右に追加</option>`;
         const root = openModal('配置図の設定', `
           <form data-lkr-form>
             ${field('名前', `<input name="name" value="${esc(bank.name)}" required style="${inputCss}">`)}
-            <div style="display:flex;gap:10px">
-              <div style="flex:1">${field('段数（縦）', `<input name="grid_rows" type="number" min="1" max="60" value="${bank.grid_rows}" required style="${inputCss}">`)}</div>
-              <div style="flex:1">${field('横の数', `<input name="grid_cols" type="number" min="1" max="60" value="${bank.grid_cols}" required style="${inputCss}">`)}</div>
-            </div>
-            <p style="font-size:11.5px;color:#6b7280;margin:0 0 12px">縮小すると、範囲外になる空きロッカーは削除されます。契約中のロッカーが範囲外になる縮小はできません。</p>
-            <button type="submit" class="btn" style="width:100%">保存する</button>
+            ${field('縦の分割数', `<input name="grid_rows" type="number" min="1" max="60" value="${bank.grid_rows}" required style="${inputCss}">`, '列ごとの段数の最小公倍数です。通常は触らず、まとめて作成で段数を指定してください')}
+            <button type="submit" class="btn" style="width:100%">名前・縦の分割数を保存</button>
           </form>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(26,20,16,0.1)">
+            <div style="font-size:12px;font-weight:700;margin-bottom:8px">列の追加・削除（現在${bank.grid_cols}列）</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+              <select data-lkr-col-ins-at style="${inputCss}flex:1">${insOpts}</select>
+              <button type="button" class="btn" style="white-space:nowrap" data-lkr-col-ins>列を追加</button>
+            </div>
+            <div style="display:flex;gap:8px">
+              <select data-lkr-col-del-at style="${inputCss}flex:1">${colOpts}</select>
+              <button type="button" class="btn btn-ghost" style="white-space:nowrap;color:#ef4444" data-lkr-col-del>列を削除</button>
+            </div>
+            <p style="font-size:11.5px;color:#6b7280;margin:8px 0 0">追加した列は空で、続けてロッカーをまとめて作れます。削除した列の右側は左に詰まります。契約中のロッカーがある列は削除できません。</p>
+          </div>
           <button type="button" data-lkr-bank-del style="margin-top:12px;width:100%;background:none;border:none;color:#ef4444;font-size:12.5px;cursor:pointer">この配置図を削除</button>`);
+        async function shiftCol(op, at) {
+          const body = { shift: { axis: 'col', op, at } };
+          let r = await apiJson(`/api/provider/locker-banks/${bank.id}`, 'PATCH', body);
+          if (!r.ok && r.data.needs_confirm) {
+            if (!confirm(r.data.error + '。よろしいですか？')) return null;
+            r = await apiJson(`/api/provider/locker-banks/${bank.id}`, 'PATCH', { ...body, confirm_remove: true });
+          }
+          if (!r.ok) { showToast('エラー: ' + (r.data.error || '不明')); return null; }
+          return r.data;
+        }
+        root?.querySelector('[data-lkr-col-ins]')?.addEventListener('click', async () => {
+          const updated = await shiftCol('insert', Number(root.querySelector('[data-lkr-col-ins-at]').value));
+          if (!updated) return;
+          closeModal();
+          await loadLockers();
+          const b = banks.find(x => x.id === bank.id);
+          showToast('列を追加しました');
+          if (b) openFillModal(b);
+        });
+        root?.querySelector('[data-lkr-col-del]')?.addEventListener('click', async () => {
+          const updated = await shiftCol('remove', Number(root.querySelector('[data-lkr-col-del-at]').value));
+          if (!updated) return;
+          closeModal();
+          loadLockers();
+          showToast('列を削除しました');
+        });
         root?.querySelector('[data-lkr-form]')?.addEventListener('submit', async e => {
           e.preventDefault();
           const fd = new FormData(e.target);
-          const body = { name: fd.get('name'), grid_rows: fd.get('grid_rows'), grid_cols: fd.get('grid_cols') };
+          const body = { name: fd.get('name'), grid_rows: fd.get('grid_rows') };
           let r = await apiJson(`/api/provider/locker-banks/${bank.id}`, 'PATCH', body);
           if (!r.ok && r.data.needs_confirm) {
             if (!confirm(r.data.error + '。よろしいですか？')) return;
