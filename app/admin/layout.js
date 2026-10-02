@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 const NAV = [
   { href: '/admin',              label: 'ダッシュボード',      icon: '📊' },
   { href: '/admin/providers',    label: '掲載者管理',          icon: '🏢' },
+  { href: '/admin/customers',    label: '顧客管理',            icon: '👥' },
   { href: '/admin/affiliates',   label: 'アフィリエイト管理',  icon: '🔗' },
   { href: '/admin/products',     label: '商品アフィリエイト',  icon: '🛒' },
   { href: '/admin/curated-posts', label: '投稿キュレーション', icon: '📱' },

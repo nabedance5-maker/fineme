@@ -4772,11 +4772,21 @@ export default function ProviderDashboardPage() {
       // （でお要望2026-09-14：hacomonoのメンバータイプ別一斉配信相当機能）。引数を渡すと
       // 顧客管理タブの絞り込みUIとは独立に判定できる（でお報告2026-09-18：「メールの
       // ページ、対象者の絞り込み方が無い」。一斉メール配信タブ自身に絞り込みUIを追加した）。
+      // 会員番号（店舗内連番）。表示は0埋め4桁、検索は「12」「0012」「No.12」「#12」のどれでも当たる。
+      function fmtNo(n) { return n == null ? '' : 'No.' + String(n).padStart(4, '0'); }
+      function matchesCustomer(kw, name, no) {
+        if (!kw) return true;
+        if ((name || '').toLowerCase().includes(kw)) return true;
+        if (no == null) return false;
+        const digits = kw.replace(/^(no\.?|#|会員番号)\s*/i, '').replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+        return /^\d+$/.test(digits) && String(no).padStart(4, '0').includes(digits);
+      }
+
       function currentFilteredMemberRows(filterOverride, kwOverride) {
         const filter = filterOverride !== undefined ? filterOverride : (filterSel?.value || 'all');
         const kw = kwOverride !== undefined ? kwOverride : (searchInput?.value || '').trim().toLowerCase();
         return allItems.filter(c => {
-          if (kw && !(c.customer_name || '').toLowerCase().includes(kw)) return false;
+          if (kw && !matchesCustomer(kw, c.customer_name, c.member_number)) return false;
           if (filter === 'user-overdue') return typeof c.userOverdueDays === 'number' && c.userOverdueDays < 0;
           if (filter === 'store-overdue') return typeof c.storeOverdueDays === 'number' && c.storeOverdueDays < 0;
           if (filter === 'dormant') return c.status === 'dormant' || c.status === 'churned';
@@ -4793,7 +4803,7 @@ export default function ProviderDashboardPage() {
         // 休眠・超過フィルターは非会員には概念自体が無いため、絞り込み中は一覧から外す
         // （「全て」の時だけ非会員も並べる）
         const manualRows = filter === 'all'
-          ? manualItems.filter(m => !m.linked_user_id && (!kw || (m.display_name || '').toLowerCase().includes(kw)))
+          ? manualItems.filter(m => !m.linked_user_id && matchesCustomer(kw, m.display_name, m.member_number))
           : [];
         const items = [...applySortOrder(memberRows), ...manualRows];
         updateBroadcastCount();
@@ -4807,7 +4817,7 @@ export default function ProviderDashboardPage() {
           const isManual = !c.user_id; // memberはuser_id、manualはid(provider_manual_customers)しか持たない
           return `
           <div class="cust-row" data-cust-open="${isManual ? c.id : c.user_id}" data-cust-type="${isManual ? 'manual' : 'member'}">
-            <span class="cust-row-name">${esc(isManual ? c.display_name : c.customer_name)}${!isManual && c.hasStoreNote ? ' ' : ''}</span>
+            <span class="cust-row-name">${c.member_number != null ? `<span style="font-size:11px;font-weight:600;color:#9a8f85;margin-right:6px;">${fmtNo(c.member_number)}</span>` : ''}${esc(isManual ? c.display_name : c.customer_name)}${!isManual && c.hasStoreNote ? ' ' : ''}</span>
             <span class="cust-row-date">${isManual ? '—' : fmtDate(c.last_visit)}</span>
             <span class="cust-row-date">${isManual ? '—' : `${fmtDate(c.next_visit)}${isOverdue(c) ? ' ' : ''}`}</span>
             <span>${isManual ? '<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:99px;">非会員</span>' : statusBadge(c.status)}</span>
@@ -4877,7 +4887,8 @@ export default function ProviderDashboardPage() {
       const custModalInsightEl = document.getElementById('cust-modal-insight');
       const custModalMemberSection = document.getElementById('cust-modal-member-section');
       const custModalManualSection = document.getElementById('cust-modal-manual-section');
-      const custModalLinkSel = document.getElementById('cust-modal-link-select');
+      const custModalLinkSearch = document.getElementById('cust-modal-link-search');
+      const custModalLinkResults = document.getElementById('cust-modal-link-results');
       const custModalManualDeleteBtn = document.getElementById('cust-modal-manual-delete-btn');
       const custModalManualMemoTa = document.getElementById('cust-modal-manual-memo-textarea');
       const custModalManualSaveBtn = document.getElementById('cust-modal-manual-save-btn');
@@ -4996,6 +5007,7 @@ export default function ProviderDashboardPage() {
           const axisLabel = def ? `${def.icon} ${esc(def.label)}` : esc(c.axis);
           custModalNameEl.textContent = c.customer_name;
           custModalBadgesEl.innerHTML = `
+            ${c.member_number != null ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#f3f4f6;color:#374151;border-radius:99px;">会員番号 ${String(c.member_number).padStart(4, '0')}</span>` : ''}
             <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
             ${statusBadge(c.status)}
             ${overdueBadge('ユーザー想定', c.userOverdueDays)}
@@ -5059,12 +5071,11 @@ export default function ProviderDashboardPage() {
         custModalMemberSection.style.display = 'none';
         custModalManualSection.style.display = '';
         custModalNameEl.textContent = m.display_name;
-        custModalBadgesEl.innerHTML = '<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:99px;">非会員</span>';
+        custModalBadgesEl.innerHTML = (m.member_number != null ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#f3f4f6;color:#374151;border-radius:99px;">会員番号 ${String(m.member_number).padStart(4, '0')}</span> ` : '') + '<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:99px;">非会員</span>';
         custModalInfoEl.textContent = 'Finemeに登録していないお客様のカルテです。会員だと分かった場合は下の「会員と紐付ける」で紐付けると、記録が引き継がれます。';
         custModalManualMemoTa.value = m.memo || '';
-        const memberOptions = [...new Map(allItems.map(c => [c.user_id, c.customer_name])).entries()]
-          .map(([uid, name]) => `<option value="${uid}">${esc(name)}</option>`).join('');
-        custModalLinkSel.innerHTML = `<option value="">選択してください</option>${memberOptions}`;
+        custModalLinkSearch.value = '';
+        renderLinkResults();
         custModalManualAddForm.style.display = 'none'; custModalManualAddForm.innerHTML = ''; custModalManualAddForm.dataset.built = '';
         custModalManualHistoryEl.style.display = 'none'; custModalManualHistoryEl.innerHTML = ''; custModalManualHistoryEl.dataset.built = '';
         if (custModalManualPostureAddForm) { custModalManualPostureAddForm.style.display = 'none'; custModalManualPostureAddForm.innerHTML = ''; custModalManualPostureAddForm.dataset.built = ''; }
@@ -5072,18 +5083,39 @@ export default function ProviderDashboardPage() {
         custModalEl.style.display = 'flex';
       }
 
-      custModalLinkSel?.addEventListener('change', async () => {
-        if (!currentCustUid || currentCustType !== 'manual' || !custModalLinkSel.value) return;
-        if (!confirm('選択した会員と紐付けます。よろしいですか？（後から取り消せません）')) { custModalLinkSel.value = ''; return; }
-        const res = await fetch(`/api/provider/customers/manual/${currentCustUid}/link`, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ user_id: custModalLinkSel.value }) });
+      // 会員の紐付け候補。全会員を並べず、名前または会員番号を入力した分だけ絞って出す。
+      function renderLinkResults() {
+        if (!custModalLinkResults) return;
+        const kw = (custModalLinkSearch?.value || '').trim().toLowerCase();
+        if (!kw) { custModalLinkResults.innerHTML = '<p class="muted" style="font-size:12px;margin:0;">名前または会員番号を入力すると、該当する会員が表示されます。</p>'; return; }
+        const members = [...new Map(allItems.map(c => [c.user_id, c])).values()].filter(c => matchesCustomer(kw, c.customer_name, c.member_number));
+        if (!members.length) { custModalLinkResults.innerHTML = '<p class="muted" style="font-size:12px;margin:0;">該当する会員はいません。</p>'; return; }
+        const shown = members.slice(0, 8);
+        custModalLinkResults.innerHTML = shown.map(c => `
+          <button type="button" data-link-uid="${esc(c.user_id)}" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;color:#1a1410;font-size:13px;margin-bottom:6px;cursor:pointer;">
+            <span style="font-size:11px;color:#9a8f85;min-width:56px;">${c.member_number != null ? fmtNo(c.member_number) : ''}</span>
+            <span style="flex:1;font-weight:700;">${esc(c.customer_name)}</span>
+            <span style="font-size:11px;color:#2563eb;font-weight:700;">紐付ける</span>
+          </button>`).join('') + (members.length > shown.length ? `<p class="muted" style="font-size:12px;margin:0;">他${members.length - shown.length}名。さらに絞り込んでください。</p>` : '');
+        custModalLinkResults.querySelectorAll('[data-link-uid]').forEach(btn => {
+          btn.addEventListener('click', () => linkManualToMember(btn.dataset.linkUid, members.find(c => c.user_id === btn.dataset.linkUid)?.customer_name));
+        });
+      }
+      custModalLinkSearch?.addEventListener('input', renderLinkResults);
+
+      async function linkManualToMember(userId, name) {
+        if (!currentCustUid || currentCustType !== 'manual' || !userId) return;
+        if (!confirm(`「${name || 'この会員'}」と紐付けます。よろしいですか？（後から取り消せません）`)) return;
+        const res = await fetch(`/api/provider/customers/manual/${currentCustUid}/link`, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ user_id: userId }) });
         if (res.ok) {
           showToast('紐付けました。以降このお客様のカルテに記録が引き継がれます');
           custModalEl.style.display = 'none';
           await loadManualCustomers();
+          await loadAll();
         } else {
-          const d = await res.json(); showToast('エラー: ' + (d.error || '不明')); custModalLinkSel.value = '';
+          const d = await res.json().catch(() => ({})); showToast('エラー: ' + (d.error || '不明'));
         }
-      });
+      }
 
       custModalManualDeleteBtn?.addEventListener('click', async () => {
         if (!currentCustUid || currentCustType !== 'manual') return;
@@ -11887,7 +11919,7 @@ export default function ProviderDashboardPage() {
                 <option value="last_visit_old">最終来店が古い順</option>
                 <option value="name">名前順</option>
               </select>
-              <input id="karte-search" type="text" placeholder="お客様の名前で絞り込み" style={{ flex: '1 1 200px', maxWidth: '260px', padding: '8px 12px', border: '1.5px solid rgba(26,20,16,0.15)', borderRadius: '8px' }} />
+              <input id="karte-search" type="text" placeholder="お客様の名前・会員番号で絞り込み" style={{ flex: '1 1 200px', maxWidth: '260px', padding: '8px 12px', border: '1.5px solid rgba(26,20,16,0.15)', borderRadius: '8px' }} />
             </div>
             <div id="customers-list"><p className="muted">読み込み中…</p></div>
           </div>
@@ -11896,7 +11928,7 @@ export default function ProviderDashboardPage() {
             <div style={{ marginBottom: '12px' }}>
               <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>非会員のお客様を追加</h2>
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-                Finemeに登録していないお客様も、上の一覧に「非会員」として並びます。後から会員だと分かった場合は一覧から「会員と紐付ける」を選ぶと、記録がそのお客様に引き継がれます。
+                Finemeに登録していないお客様も、上の一覧に「非会員」として並びます。後から会員だと分かった場合は、そのお客様を開いて「会員と紐付ける」で名前か会員番号から検索して選ぶと、記録がそのお客様に引き継がれます。
               </p>
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -11978,9 +12010,10 @@ export default function ProviderDashboardPage() {
             <div id="cust-modal-manual-section" style={{ display: 'none' }}>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '12px' }}>
                 <label className="muted" style={{ fontSize: '12px' }}>会員と紐付ける：</label>
-                <select id="cust-modal-link-select" style={{ fontSize: '12px', padding: '5px 8px', border: '1px solid #e5e7eb', borderRadius: '8px' }}></select>
+                <input id="cust-modal-link-search" type="text" placeholder="会員の名前・会員番号で検索" autoComplete="off" style={{ flex: '1 1 160px', fontSize: '13px', padding: '6px 10px', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
                 <button type="button" className="btn btn-ghost" id="cust-modal-manual-delete-btn" style={{ fontSize: '12px', padding: '5px 10px', color: '#ef4444', marginLeft: 'auto' }}>削除</button>
               </div>
+              <div id="cust-modal-link-results" style={{ marginBottom: '12px' }}></div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6b7280', marginBottom: '4px' }}>メモ</label>
               <textarea id="cust-modal-manual-memo-textarea" style={{ width: '100%', minHeight: '60px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="要望・使った薬剤・注意点など"></textarea>
               <button type="button" className="btn" id="cust-modal-manual-save-btn" style={{ fontSize: '12px', padding: '5px 10px', marginTop: '6px' }}>保存する</button>

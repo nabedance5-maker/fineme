@@ -2,6 +2,7 @@
 // POST /api/provider/customers/manual → 非会員のお客様を新規作成（認証済み）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { ensureCustomerNumbers } from '@/lib/customer-numbers';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -25,7 +26,12 @@ export async function GET(request) {
     .order('created_at', { ascending: false });
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json(data || []);
+  const rows = data || [];
+  // 紐付け済みの非会員は番号を会員側へ引き継いでいるので、未紐付けのものだけ採番する（古い順に小さい番号）
+  const manualIds = rows.filter(r => !r.linked_user_id).map(r => r.id).reverse();
+  let numbers = {};
+  try { numbers = (await ensureCustomerNumbers(supabase, provider.id, { manualIds })).manual; } catch { /* 番号が振れなくても一覧は返す */ }
+  return Response.json(rows.map(r => ({ ...r, member_number: numbers[r.id] ?? null })));
 }
 
 export async function POST(request) {
@@ -44,5 +50,7 @@ export async function POST(request) {
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json(data);
+  let memberNumber = null;
+  try { memberNumber = (await ensureCustomerNumbers(supabase, provider.id, { manualIds: [data.id] })).manual[data.id] ?? null; } catch { /* 次回の一覧取得で採番される */ }
+  return Response.json({ ...data, member_number: memberNumber });
 }

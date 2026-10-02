@@ -5,6 +5,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { idealNextDate, daysUntilIdeal } from '@/lib/log-axes';
+import { ensureCustomerNumbers } from '@/lib/customer-numbers';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -62,7 +63,14 @@ export async function GET(request) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   if (!logs?.length) return Response.json([]);
 
-  const userIds = [...new Set(logs.map(l => l.user_id).filter(Boolean))];
+  // 会員番号は連携した順（最初のログ作成日）に採番する
+  const firstSeen = {};
+  logs.forEach(l => {
+    if (!l.user_id) return;
+    const t = new Date(l.created_at).getTime();
+    if (firstSeen[l.user_id] === undefined || t < firstSeen[l.user_id]) firstSeen[l.user_id] = t;
+  });
+  const userIds = Object.keys(firstSeen).sort((a, b) => firstSeen[a] - firstSeen[b]);
   const logIds = logs.map(l => l.id);
 
   const [
@@ -89,6 +97,9 @@ export async function GET(request) {
       .not('report_content', 'is', null)
       .order('created_at', { ascending: false }),
   ]);
+
+  let numberMap = {};
+  try { numberMap = (await ensureCustomerNumbers(supabase, provider.id, { userIds })).user; } catch { /* 番号が振れなくても一覧は返す */ }
 
   const nameMap = {};
   (profiles || []).forEach(p => { nameMap[p.id] = p.display_name; });
@@ -126,6 +137,7 @@ export async function GET(request) {
     return {
       ...l,
       customer_name: nameMap[l.user_id] || '(名前未設定)',
+      member_number: numberMap[l.user_id] ?? null,
       userOverdueDays: daysUntilIdeal(l),
       storeOverdueDays: storeDaysUntilIdeal(l, recommended),
       hasStoreNote: !!noteMap[l.user_id],

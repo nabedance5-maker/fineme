@@ -7,6 +7,7 @@
 // （app/api/provider/customers/[user_id]/karte-entries/route.js参照）。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { transferManualNumberToUser } from '@/lib/customer-numbers';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -46,5 +47,6 @@ export async function POST(request, { params }) {
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
+  try { await transferManualNumberToUser(supabase, provider.id, params.id, user_id); } catch { /* 番号の引き継ぎ失敗でも紐付け自体は成立させる */ }
   return Response.json(data);
 }
