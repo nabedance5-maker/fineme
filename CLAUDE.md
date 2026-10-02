@@ -174,7 +174,12 @@ Vercel（Next.js との親和性が高い）。`server/` は別途 Railway や F
 
 新しい `supabase-*.sql` ファイルを作成・変更したら：
 
-1. Supabaseダッシュボード → SQL Editor で**即座に実行する**
+1. **Claude Code 自身が即座に本番へ実行する。でおに「SQL Editorで実行してください」と頼まない**（でお指摘2回・2026-10-02）。`.env.local` の `SUPABASE_DB_URL`（Session pooler・Claude Code のマイグレーション実行用に設定済み）と Node の `pg` を使う（`psql` は未インストール）：
+   ```bash
+   set -a; source .env.local; set +a
+   node -e "const {Client}=require('pg');const fs=require('fs');const c=new Client({connectionString:process.env.SUPABASE_DB_URL});(async()=>{await c.connect();await c.query(fs.readFileSync('supabase-xxx.sql','utf8'));/* 検証クエリ */await c.end()})().catch(e=>{console.error(e.message);process.exit(1)})"
+   ```
+   接続文字列は出力しない。実行後に information_schema 等で反映を検証する。
 2. 実行後、そのSQLファイルの先頭に以下を追記する：
 
 ```sql
