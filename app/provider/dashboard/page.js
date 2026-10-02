@@ -3324,6 +3324,65 @@ export default function ProviderDashboardPage() {
         renderLayout();
       }
 
+      const gcdN = (a, b) => (b ? gcdN(b, a % b) : a);
+      const lcmN = (a, b) => (a / gcdN(a, b)) * b;
+      const tierRows = (tiers, base) => tiers.reduce((a, t) => (t > 0 ? lcmN(a, t) : a), base || 1);
+
+      // 列ごとの段数エディタ（例：1列目=2段、2〜4列目=3段）。fixed=true なら列の増減不可
+      function bindTierEditor(box, initial, opts) {
+        const tiers = initial.slice();
+        const baseRows = opts.baseRows || 1;
+        function refresh() {
+          const rows = tierRows(tiers, baseRows);
+          const prev = box.querySelector('[data-tier-preview]');
+          const sum = box.querySelector('[data-tier-summary]');
+          if (prev) {
+            prev.innerHTML = tiers.map(t => t > 0
+              ? `<div style="display:flex;flex-direction:column;gap:3px;width:30px;height:100%">${Array.from({ length: Math.min(t, 60) }, () => '<div style="flex:1;min-height:2px;border-radius:3px;background:#d1fae5;border:1px solid #6ee7b7"></div>').join('')}</div>`
+              : '<div style="width:30px;height:100%;border:1.5px dashed #d1d5db;border-radius:3px"></div>').join('');
+          }
+          if (sum) {
+            const bad = rows > 60;
+            sum.style.color = bad ? '#dc2626' : '#6b7280';
+            sum.textContent = bad
+              ? `段数の組み合わせだと縦が${rows}分割になり、上限60を超えます。段数を揃えるか減らしてください`
+              : `${tiers.length}列。縦は${rows}マスに分割して配置します（大きいロッカーは複数マス分の高さになります）`;
+          }
+          opts.onChange?.(tiers, rows);
+        }
+        function render() {
+          box.innerHTML = `
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px">
+              ${tiers.map((t, i) => `<div style="width:62px;text-align:center">
+                <div style="font-size:11px;color:#6b7280;margin-bottom:3px">${i + 1}列目</div>
+                <input data-tier="${i}" type="number" min="0" max="60" value="${t}" style="${inputCss}text-align:center;padding:6px 2px">
+                ${opts.fixed ? '' : `<button type="button" data-tier-del="${i}" style="margin-top:3px;background:none;border:none;color:#9ca3af;font-size:11px;cursor:pointer">削除</button>`}
+              </div>`).join('')}
+              ${opts.fixed || tiers.length >= 60 ? '' : '<button type="button" data-tier-add class="btn btn-ghost" style="font-size:12px;padding:6px 10px;margin-bottom:' + (opts.fixed ? 0 : 22) + 'px">＋列を追加</button>'}
+            </div>
+            <div style="font-size:11px;color:#6b7280;margin-bottom:4px">各列に縦に並ぶロッカーの数（段数）を入れます。0 にするとその列は作りません。</div>
+            <div data-tier-preview style="display:flex;gap:6px;height:110px;padding:8px;background:var(--color-bg);border-radius:8px;overflow-x:auto;margin-bottom:6px"></div>
+            <div data-tier-summary style="font-size:11.5px"></div>`;
+          box.querySelectorAll('[data-tier]').forEach(inp => inp.addEventListener('input', () => {
+            const v = Math.floor(Number(inp.value));
+            tiers[Number(inp.dataset.tier)] = Number.isFinite(v) && v > 0 ? Math.min(v, 60) : 0;
+            refresh();
+          }));
+          box.querySelectorAll('[data-tier-del]').forEach(b => b.addEventListener('click', () => {
+            if (tiers.length <= 1) return;
+            tiers.splice(Number(b.dataset.tierDel), 1);
+            render();
+          }));
+          box.querySelector('[data-tier-add]')?.addEventListener('click', () => {
+            tiers.push(tiers.length ? tiers[tiers.length - 1] : 3);
+            render();
+          });
+          refresh();
+        }
+        render();
+        return { get tiers() { return tiers; }, get rows() { return tierRows(tiers, baseRows); } };
+      }
+
       function renderLayout() {
         if (!layoutEl) return;
         if (!banks.length) {
@@ -3344,6 +3403,7 @@ export default function ProviderDashboardPage() {
         const occupied = new Set();
         list.forEach(l => { const r = lockerRect(l); for (let y = r.r1; y <= r.r2; y++) for (let x = r.c1; x <= r.c2; x++) occupied.add(`${y},${x}`); });
 
+        const unit = Math.max(22, Math.min(64, Math.round(300 / bank.grid_rows)));
         let cellsHtml = '';
         for (let y = 1; y <= bank.grid_rows; y++) {
           for (let x = 1; x <= bank.grid_cols; x++) {
@@ -3355,9 +3415,11 @@ export default function ProviderDashboardPage() {
           const st = lockerState(l);
           const c = l.activeContract;
           const sub = st === 'taken' ? esc(c.contractor_name) : st === 'off' ? '使用不可' : '空き';
-          cellsHtml += `<button type="button" data-lkr-cell="${l.id}" style="grid-row:${l.grid_row} / span ${l.row_span};grid-column:${l.grid_col} / span ${l.col_span};${STATE_STYLE[st]}border-radius:8px;padding:4px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;overflow:hidden;text-align:center">
-            <span style="font-size:14px;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.name)}</span>
-            <span style="font-size:10.5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.85">${sub}</span>
+          const cellH = l.row_span * unit + (l.row_span - 1) * 6;
+          const compact = cellH < 44;
+          cellsHtml += `<button type="button" data-lkr-cell="${l.id}" style="grid-row:${l.grid_row} / span ${l.row_span};grid-column:${l.grid_col} / span ${l.col_span};${STATE_STYLE[st]}border-radius:8px;padding:${compact ? '0 4px' : '4px 6px'};cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;overflow:hidden;text-align:center">
+            <span style="font-size:${compact ? 11 : 14}px;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.name)}</span>
+            ${compact ? '' : `<span style="font-size:10.5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.85">${sub}</span>`}
           </button>`;
         });
 
@@ -3374,10 +3436,10 @@ export default function ProviderDashboardPage() {
           </div>
           <div style="display:flex;gap:14px;flex-wrap:wrap">${legend('free', '空き')}${legend('taken', '契約中')}${legend('off', '使用不可')}<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px"><span style="display:inline-block;width:16px;height:16px;border-radius:4px;border:1.5px dashed #d1d5db"></span>未配置（タップで追加）</span></div>
           <div style="overflow-x:auto;padding:2px">
-            <div style="display:grid;grid-template-columns:repeat(${bank.grid_cols},minmax(68px,1fr));grid-auto-rows:64px;gap:6px;min-width:${bank.grid_cols * 68 + (bank.grid_cols - 1) * 6}px">${cellsHtml}</div>
+            <div style="display:grid;grid-template-columns:repeat(${bank.grid_cols},minmax(68px,1fr));grid-auto-rows:${unit}px;gap:6px;min-width:${bank.grid_cols * 68 + (bank.grid_cols - 1) * 6}px">${cellsHtml}</div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px" data-lkr-fill>空きマスにまとめて作成</button>
+            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px" data-lkr-fill>まとめて作成（列ごとの段数）</button>
             <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px" data-lkr-bank-edit>この配置図の設定（名前・段数・横の数）</button>
           </div>`;
 
@@ -3392,22 +3454,43 @@ export default function ProviderDashboardPage() {
         const root = openModal('ロッカー群を追加', `
           <form data-lkr-form>
             ${field('名前', `<input name="name" value="${banks.length ? '' : 'ロッカー'}" placeholder="例：男子更衣室" required style="${inputCss}">`)}
-            <div style="display:flex;gap:10px">
-              <div style="flex:1">${field('段数（縦）', `<input name="grid_rows" type="number" min="1" max="60" value="3" required style="${inputCss}">`)}</div>
-              <div style="flex:1">${field('横の数', `<input name="grid_cols" type="number" min="1" max="60" value="4" required style="${inputCss}">`)}</div>
+            <div style="font-size:12px;font-weight:700;margin-bottom:6px">列ごとの段数</div>
+            <div data-lkr-tiers style="margin-bottom:12px"></div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;margin-bottom:8px"><input type="checkbox" name="make" checked> この形でロッカーも一緒に作る</label>
+            <div data-lkr-make>
+              <div style="display:flex;gap:10px">
+                <div style="flex:1">${field('頭の文字', `<input name="prefix" placeholder="例：A-" style="${inputCss}">`)}</div>
+                <div style="flex:1">${field('開始番号', `<input name="start" type="number" min="0" value="1" required style="${inputCss}">`)}</div>
+                <div style="flex:1">${field('桁数', `<input name="digits" type="number" min="0" max="10" value="0" style="${inputCss}">`, '0=そのまま')}</div>
+              </div>
+              ${field('番号の振り方', `<select name="order" style="${inputCss}"><option value="column">列ごとに上から下へ（1列目の上から順）</option><option value="row">段ごとに左から右へ</option></select>`)}
+              ${field('月額（円）', `<input name="monthly_fee" type="number" min="0" placeholder="任意（全部に同じ額）" style="${inputCss}">`)}
             </div>
-            <p style="font-size:11.5px;color:#6b7280;margin:0 0 12px">あとから変更できます。作成後、空きマスにロッカーを置けます。</p>
+            <p style="font-size:11.5px;color:#6b7280;margin:0 0 12px">例：1列目を2段の大きいロッカー、2〜4列目を3段の小さいロッカーにする場合は「2, 3, 3, 3」。あとから大きさ・個数は個別に変更できます。</p>
             <button type="submit" class="btn" style="width:100%">作成する</button>
           </form>`);
-        root?.querySelector('[data-lkr-form]')?.addEventListener('submit', async e => {
+        if (!root) return;
+        const editor = bindTierEditor(root.querySelector('[data-lkr-tiers]'), [3, 3, 3, 3], { baseRows: 1 });
+        const makeBox = root.querySelector('[data-lkr-make]');
+        root.querySelector('input[name="make"]').addEventListener('change', e => { makeBox.style.display = e.target.checked ? '' : 'none'; });
+        root.querySelector('[data-lkr-form]').addEventListener('submit', async e => {
           e.preventDefault();
           const fd = new FormData(e.target);
-          const r = await apiJson('/api/provider/locker-banks', 'POST', { name: fd.get('name'), grid_rows: fd.get('grid_rows'), grid_cols: fd.get('grid_cols') });
+          const tiers = editor.tiers.slice();
+          if (!tiers.some(t => t > 0)) { showToast('段数を入れた列がありません'); return; }
+          const rows = editor.rows;
+          if (rows > 60) { showToast('段数の組み合わせが大きすぎます（縦の分割が60を超えます）'); return; }
+          const r = await apiJson('/api/provider/locker-banks', 'POST', { name: fd.get('name'), grid_rows: rows, grid_cols: tiers.length });
           if (!r.ok) { showToast('エラー: ' + (r.data.error || '不明')); return; }
           selectedBankId = r.data.id;
+          let msg = '配置図を作りました。マスをタップしてロッカーを置けます';
+          if (fd.get('make')) {
+            const f = await apiJson(`/api/provider/locker-banks/${r.data.id}/fill`, 'POST', { column_tiers: tiers, order: fd.get('order'), prefix: fd.get('prefix'), start: fd.get('start'), digits: fd.get('digits'), monthly_fee: fd.get('monthly_fee') });
+            msg = f.ok ? `${f.data.created}個のロッカーを作りました` : '配置図は作りましたが、ロッカーの作成に失敗しました: ' + (f.data.error || '不明');
+          }
           closeModal();
           await loadLockers();
-          showToast('配置図を作りました。マスをタップしてロッカーを置けます');
+          showToast(msg);
         });
       }
 
@@ -3489,25 +3572,51 @@ export default function ProviderDashboardPage() {
         others.forEach(l => { const rc = lockerRect(l); for (let y = rc.r1; y <= rc.r2; y++) for (let x = rc.c1; x <= rc.c2; x++) taken.add(`${y},${x}`); });
         const emptyCount = bank.grid_rows * bank.grid_cols - taken.size;
         if (emptyCount <= 0) { showToast('空いているマスがありません'); return; }
-        const root = openModal(`空きマス${emptyCount}個にまとめて作成`, `
+        const colEmpty = Array.from({ length: bank.grid_cols }, (_, i) => !others.some(l => { const rc = lockerRect(l); return i + 1 >= rc.c1 && i + 1 <= rc.c2; }));
+        const initial = colEmpty.map(e => (e ? 3 : 0));
+        const root = openModal('ロッカーをまとめて作成', `
           <form data-lkr-form>
-            <p style="font-size:12.5px;margin:0 0 10px">左上から右へ、段ごとに連番を振ってロッカーを作ります。大きさは全部1マスです（あとから個別に変更できます）。</p>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;font-size:13px">
+              <label style="display:flex;align-items:center;gap:6px"><input type="radio" name="mode" value="tiers" checked> 列ごとの段数を指定</label>
+              <label style="display:flex;align-items:center;gap:6px"><input type="radio" name="mode" value="cells"> 空きマス${emptyCount}個に1マスずつ</label>
+            </div>
+            <div data-lkr-tiers style="margin-bottom:10px"></div>
+            <p data-lkr-cells-note style="display:none;font-size:12.5px;margin:0 0 10px">左上から右へ、段ごとに連番を振って、空きマスすべてに1マスのロッカーを作ります。</p>
             <div style="display:flex;gap:10px">
               <div style="flex:1">${field('頭の文字', `<input name="prefix" placeholder="例：A-" style="${inputCss}">`)}</div>
-              <div style="flex:1">${field('開始番号', `<input name="start" type="number" min="0" value="1" required style="${inputCss}">`)}</div>
+              <div style="flex:1">${field('開始番号', `<input name="start" type="number" min="0" value="${nextLockerName(others).replace(/\D+/g, '') || 1}" required style="${inputCss}">`)}</div>
               <div style="flex:1">${field('桁数', `<input name="digits" type="number" min="0" max="10" value="0" style="${inputCss}">`, '0=そのまま')}</div>
             </div>
+            <div data-lkr-order>${field('番号の振り方', `<select name="order" style="${inputCss}"><option value="column">列ごとに上から下へ</option><option value="row">段ごとに左から右へ</option></select>`)}</div>
             ${field('月額（円）', `<input name="monthly_fee" type="number" min="0" placeholder="任意（全部に同じ額）" style="${inputCss}">`)}
             <button type="submit" class="btn" style="width:100%">作成する</button>
           </form>`);
-        root?.querySelector('[data-lkr-form]')?.addEventListener('submit', async e => {
+        if (!root) return;
+        const tiersBox = root.querySelector('[data-lkr-tiers]');
+        const editor = bindTierEditor(tiersBox, initial, { fixed: true, baseRows: bank.grid_rows });
+        const cellsNote = root.querySelector('[data-lkr-cells-note]');
+        const orderBox = root.querySelector('[data-lkr-order]');
+        root.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', () => {
+          const tiersMode = root.querySelector('input[name="mode"]:checked').value === 'tiers';
+          tiersBox.style.display = tiersMode ? '' : 'none';
+          orderBox.style.display = tiersMode ? '' : 'none';
+          cellsNote.style.display = tiersMode ? 'none' : '';
+        }));
+        root.querySelector('[data-lkr-form]').addEventListener('submit', async e => {
           e.preventDefault();
           const fd = new FormData(e.target);
-          const r = await apiJson(`/api/provider/locker-banks/${bank.id}/fill`, 'POST', { prefix: fd.get('prefix'), start: fd.get('start'), digits: fd.get('digits'), monthly_fee: fd.get('monthly_fee') });
+          const body = { prefix: fd.get('prefix'), start: fd.get('start'), digits: fd.get('digits'), monthly_fee: fd.get('monthly_fee') };
+          if (fd.get('mode') === 'tiers') {
+            if (!editor.tiers.some(t => t > 0)) { showToast('段数を入れた列がありません'); return; }
+            if (editor.rows > 60) { showToast('段数の組み合わせが大きすぎます（縦の分割が60を超えます）'); return; }
+            body.column_tiers = editor.tiers.slice();
+            body.order = fd.get('order');
+          }
+          const r = await apiJson(`/api/provider/locker-banks/${bank.id}/fill`, 'POST', body);
           if (!r.ok) { showToast('エラー: ' + (r.data.error || '不明')); return; }
           closeModal();
           await loadLockers();
-          showToast(`${r.data.created}個のロッカーを作りました`);
+          showToast(`${r.data.created}個のロッカーを作りました${r.data.skipped ? `（置けなかった${r.data.skipped}個はスキップ）` : ''}`);
         });
       }
 
