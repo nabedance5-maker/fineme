@@ -5,7 +5,7 @@
  * - APIリクエスト (localhost:3001): Network First → 失敗時はキャッシュ
  * - 画像: Stale While Revalidate → 高速表示 + バックグラウンド更新
  */
-const CACHE_NAME = 'fineme-v7';
+const CACHE_NAME = 'fineme-v8';
 const SHELL_URLS = [
   '/',
   '/search',
@@ -40,6 +40,12 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
+
+  // POST等はCache APIに入れられず（cache.putがTypeError）、catchでオフライン用503に化ける。
+  // Supabaseのログイン・トークン更新（別オリジンへのPOST）もここを通るため、成功しているのに
+  // 「ログインエラー: {}」になっていた。GET以外・他オリジンの画像以外は一切触らない。
+  if (request.method !== 'GET') return;
+  if (url.origin !== self.location.origin && request.destination !== 'image') return;
 
   // APIリクエスト → Network First
   if (url.hostname === 'localhost' || url.pathname.startsWith('/api/')) {
@@ -111,7 +117,7 @@ async function cacheFirst(request) {
     const response = await fetch(request);
     if (response.ok) {
       const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
+      cache.put(request, response.clone()).catch(() => {});
     }
     return response;
   } catch {
@@ -132,7 +138,7 @@ async function networkFirst(request) {
     const response = await fetch(request);
     if (response.ok) {
       const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
+      cache.put(request, response.clone()).catch(() => {});
     }
     return response;
   } catch {
@@ -148,7 +154,7 @@ async function staleWhileRevalidate(request) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(request);
   const networkFetch = fetch(request).then(response => {
-    if (response.ok) cache.put(request, response.clone());
+    if (response.ok) cache.put(request, response.clone()).catch(() => {});
     return response;
   }).catch(() => null);
   return cached || networkFetch;
