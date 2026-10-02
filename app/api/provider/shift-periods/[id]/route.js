@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 
+import { parseNotifyDays } from '@/lib/shift-deadline';
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
@@ -22,6 +23,8 @@ export async function PATCH(request, { params }) {
   const update = {};
   if (body.status && ['collecting', 'draft', 'confirmed'].includes(body.status)) update.status = body.status;
   if (body.request_deadline !== undefined) update.request_deadline = body.request_deadline || null;
+  const notifyDays = parseNotifyDays(body.notify_days_before);
+  if (notifyDays) update.notify_days_before = notifyDays;
   if (!Object.keys(update).length) return Response.json({ error: '更新項目がありません' }, { status: 400 });
 
   const { data, error } = await supabase

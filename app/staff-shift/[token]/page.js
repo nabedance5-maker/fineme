@@ -230,7 +230,7 @@ export default function StaffShiftPage({ params }) {
       body: JSON.stringify({ period_id: data.period.id }),
     });
     setSubmittingAll(false);
-    if (res.ok) { setData(prev => ({ ...prev, submitted: true })); alert('提出が完了しました。ありがとうございました！'); }
+    if (res.ok) { setData(prev => ({ ...prev, submitted: true, period: { ...prev.period, locked: !!prev.period.pastDeadline } })); alert('提出が完了しました。ありがとうございました！'); }
     else alert('送信に失敗しました');
   }
 
@@ -261,16 +261,22 @@ export default function StaffShiftPage({ params }) {
             <p style={{ margin: 0, fontSize: '13px' }}>対象期間：{data.period.period_start} 〜 {data.period.period_end}</p>
             {data.period.request_deadline && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#c9a84c', fontWeight: '700' }}>提出締切：{data.period.request_deadline}</p>}
             <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'rgba(232,228,220,0.6)' }}>日付をタップして、出勤・休みの希望を選んでください（1日ずつ選ぶ場合はその場で自動保存）。「まとめて選ぶ」なら複数日に同じ内容を一括で入力できます。<span style={{ color: '#60a5fa' }}>■</span> 出勤希望　<span style={{ color: '#f87171' }}>■</span> 休み希望</p>
-            {data.submitted && <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#4ade80', fontWeight: '700' }}>✓ 提出完了しています（内容はいつでも変更できます）</p>}
+            {data.submitted && <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#4ade80', fontWeight: '700' }}>✓ 提出完了しています{data.period.locked ? '' : '（締切までは内容を変更できます）'}</p>}
           </div>
 
-          {data.period.closed && (
-            <div style={{ ...cardStyle, marginBottom: '16px', border: '1px solid #f87171' }}>
-              <p style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#f87171' }}>提出締切を過ぎました</p>
-              <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'rgba(232,228,220,0.7)', lineHeight: 1.6 }}>これ以上、希望の提出・変更はできません。変更したい場合は店舗に直接連絡してください。下は提出済みの内容です。</p>
+          {data.period.pastDeadline && !data.period.locked && (
+            <div style={{ ...cardStyle, marginBottom: '16px', border: '1px solid #c9a84c' }}>
+              <p style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#c9a84c' }}>提出締切を過ぎています</p>
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'rgba(232,228,220,0.7)', lineHeight: 1.6 }}>遅れての提出になります。「提出する」を押すと、以降は希望の変更ができなくなります。</p>
             </div>
           )}
-          <div style={data.period.closed ? { pointerEvents: 'none', opacity: 0.5 } : undefined}>
+          {data.period.locked && (
+            <div style={{ ...cardStyle, marginBottom: '16px', border: '1px solid #f87171' }}>
+              <p style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#f87171' }}>提出締切を過ぎ、提出済みのため変更できません</p>
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'rgba(232,228,220,0.7)', lineHeight: 1.6 }}>希望の変更はできません。変更したい場合は店舗に直接連絡してください。下は提出済みの内容です。</p>
+            </div>
+          )}
+          <div style={data.period.locked ? { pointerEvents: 'none', opacity: 0.5 } : undefined}>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
             <button type="button" onClick={leaveMulti} style={{ flex: 1, padding: '11px', borderRadius: '10px', border: 'none', fontWeight: '700', fontSize: '13px', cursor: 'pointer', background: !multiMode ? '#c9a84c' : 'rgba(232,228,220,0.1)', color: !multiMode ? '#0a0f1e' : '#e8e4dc' }}>1日ずつ選ぶ</button>
             <button type="button" onClick={enterMulti} style={{ flex: 1, padding: '11px', borderRadius: '10px', border: 'none', fontWeight: '700', fontSize: '13px', cursor: 'pointer', background: multiMode ? '#c9a84c' : 'rgba(232,228,220,0.1)', color: multiMode ? '#0a0f1e' : '#e8e4dc' }}>まとめて選ぶ（複数日）</button>

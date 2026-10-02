@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 
-import { isDeadlinePassed, DEADLINE_CLOSED_MESSAGE } from '@/lib/shift-deadline';
+import { isDeadlinePassed, LOCKED_MESSAGE } from '@/lib/shift-deadline';
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getStaffByToken(token) {
@@ -27,7 +27,10 @@ export async function POST(request, { params }) {
   const { data: period } = await supabase.from('provider_shift_periods').select('id, provider_id, status, request_deadline').eq('id', period_id).single();
   if (!period || period.provider_id !== staff.provider_id) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
   if (period.status !== 'collecting') return Response.json({ error: 'この期間は希望の募集を締め切っています' }, { status: 400 });
-  if (isDeadlinePassed(period)) return Response.json({ error: DEADLINE_CLOSED_MESSAGE }, { status: 400 });
+  if (isDeadlinePassed(period)) {
+    const { data: already } = await supabase.from('provider_shift_submissions').select('staff_id').eq('period_id', period_id).eq('staff_id', staff.id).maybeSingle();
+    if (already) return Response.json({ error: LOCKED_MESSAGE }, { status: 400 });
+  }
 
   const { error } = await supabase
     .from('provider_shift_submissions')

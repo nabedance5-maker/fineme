@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 
+import { parseNotifyDays } from '@/lib/shift-deadline';
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
@@ -36,13 +37,14 @@ export async function POST(request) {
 
   const body = await request.json().catch(() => ({}));
   const { period_start, period_end, request_deadline } = body;
+  const notifyDays = parseNotifyDays(body.notify_days_before);
   if (!period_start || !period_end) {
     return Response.json({ error: '対象期間（開始日・終了日）は必須です' }, { status: 400 });
   }
 
   const { data, error } = await supabase
     .from('provider_shift_periods')
-    .insert({ provider_id: provider.id, period_start, period_end, request_deadline: request_deadline || null })
+    .insert({ provider_id: provider.id, period_start, period_end, request_deadline: request_deadline || null, ...(notifyDays ? { notify_days_before: notifyDays } : {}) })
     .select()
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });

@@ -1800,7 +1800,12 @@ export default function ProviderDashboardPage() {
         const meta = document.getElementById('shift-period-meta');
         if (meta && p) {
           const over = p.status === 'collecting' && p.request_deadline && p.request_deadline < shiftTodayStr();
-          meta.textContent = p.request_deadline ? `希望の提出締切：${p.request_deadline}${over ? '（締切超過・まもなく自動で募集を終了します）' : p.status === 'collecting' ? '（締切後は自動で募集を終了し、LINEでお知らせします）' : ''}` : '';
+          meta.textContent = p.request_deadline ? `希望の提出締切：${p.request_deadline}${p.status === 'collecting' ? (over ? '（締切超過・未提出のスタッフは遅れて提出できます。提出済みのスタッフは変更できません）' : '（締切後は提出済みのスタッフが変更できなくなります）') : ''}` : '';
+        }
+        const nd = document.getElementById('shift-period-notify-days');
+        if (nd && p) {
+          nd.value = (p.notify_days_before || [1, 0]).join(',');
+          document.getElementById('shift-period-notify-wrap').style.display = p.status === 'collecting' && p.request_deadline ? '' : 'none';
         }
       }
       async function loadPeriods() {
@@ -1824,7 +1829,25 @@ export default function ProviderDashboardPage() {
             </select>
             <span id="shift-period-badge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px"></span>
           </div>
-          <div id="shift-period-meta" class="muted" style="font-size:12px;margin-top:4px"></div>`;
+          <div id="shift-period-meta" class="muted" style="font-size:12px;margin-top:4px"></div>
+          <div id="shift-period-notify-wrap" style="margin-top:8px;display:none">
+            <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">締切の何日前にLINEで通知するか（カンマ区切り・0は締切当日）</label>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input id="shift-period-notify-days" type="text" placeholder="3,1,0" style="width:140px;padding:7px 10px;font-size:14px;border:1px solid #d1d5db;border-radius:8px" />
+              <button type="button" class="btn btn-ghost" id="shift-period-notify-save" style="font-size:12px;padding:6px 12px">保存</button>
+            </div>
+          </div>`;
+        el.querySelector('#shift-period-notify-save').addEventListener('click', async () => {
+          if (!currentPeriodId) return;
+          const raw = document.getElementById('shift-period-notify-days').value;
+          if (!/^\s*\d+(\s*[,、，]\s*\d+)*\s*$/.test(raw)) { showToast('数字をカンマで区切って入力してください（例：3,1,0）'); return; }
+          const res = await fetch('/api/provider/shift-periods/' + currentPeriodId, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
+            body: JSON.stringify({ notify_days_before: raw.replace(/[、，]/g, ',') }),
+          });
+          if (res.ok) { showToast('通知日を保存しました'); await loadPeriods(); }
+          else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
+        });
         el.querySelector('#shift-period-select').addEventListener('change', e => {
           const p = shiftPeriods.find(x => x.id === e.target.value);
           if (p) selectPeriod(p.id, p.status, p.period_start, p.period_end);
@@ -1842,10 +1865,11 @@ export default function ProviderDashboardPage() {
         const period_start = document.getElementById('shift-period-start')?.value;
         const period_end = document.getElementById('shift-period-end')?.value;
         const request_deadline = document.getElementById('shift-period-deadline')?.value || null;
+        const notify_days_before = document.getElementById('shift-period-notify-new')?.value || '1,0';
         if (!period_start || !period_end) { showToast('開始日・終了日を入力してください'); return; }
         const res = await fetch('/api/provider/shift-periods', {
           method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeadersShift() },
-          body: JSON.stringify({ period_start, period_end, request_deadline }),
+          body: JSON.stringify({ period_start, period_end, request_deadline, notify_days_before }),
         });
         if (res.ok) { showToast('期間を作成しました'); await loadPeriods(); loadCalendar(); }
         else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
@@ -11030,6 +11054,7 @@ export default function ProviderDashboardPage() {
               <div className="form-field" style={{ marginBottom: 0 }}><label>開始日 *</label><input type="date" id="shift-period-start" /></div>
               <div className="form-field" style={{ marginBottom: 0 }}><label>終了日 *</label><input type="date" id="shift-period-end" /></div>
               <div className="form-field" style={{ marginBottom: 0 }}><label>希望の提出締切（任意）</label><input type="date" id="shift-period-deadline" /></div>
+              <div className="form-field" style={{ marginBottom: 0 }}><label>締切の何日前に通知（0=当日）</label><input type="text" id="shift-period-notify-new" defaultValue="1,0" placeholder="3,1,0" /></div>
               <button type="button" className="btn" id="shift-period-add-btn">この期間を作成</button>
             </div>
             </div>
