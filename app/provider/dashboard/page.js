@@ -1783,12 +1783,22 @@ export default function ProviderDashboardPage() {
       const PERIOD_STATUS_COLOR = { collecting: '#f59e0b', draft: '#6366f1', confirmed: '#10b981' };
 
       let shiftPeriods = [];
+      function setDetailBody(show) {
+        const body = document.getElementById('shift-detail-body');
+        if (body) body.style.display = show ? '' : 'none';
+      }
       function highlightPeriodRows() {
-        document.querySelectorAll('#shift-period-list [data-period-open]').forEach(row => {
-          const on = row.dataset.periodOpen === currentPeriodId;
-          row.style.borderColor = on ? '#c9a84c' : 'rgba(26,20,16,0.12)';
-          row.style.background = on ? 'rgba(201,168,76,0.10)' : 'rgba(26,20,16,0.03)';
-        });
+        const sel = document.getElementById('shift-period-select');
+        if (sel && currentPeriodId) sel.value = currentPeriodId;
+        const p = shiftPeriods.find(x => x.id === currentPeriodId);
+        const badge = document.getElementById('shift-period-badge');
+        if (badge && p) {
+          badge.textContent = PERIOD_STATUS_LABEL[p.status] || p.status;
+          badge.style.background = `${PERIOD_STATUS_COLOR[p.status]}20`;
+          badge.style.color = PERIOD_STATUS_COLOR[p.status];
+        }
+        const meta = document.getElementById('shift-period-meta');
+        if (meta && p) meta.textContent = p.request_deadline ? `希望の提出締切：${p.request_deadline}` : '';
       }
       async function loadPeriods() {
         const el = document.getElementById('shift-period-list');
@@ -1798,19 +1808,24 @@ export default function ProviderDashboardPage() {
         const periods = await res.json();
         shiftPeriods = periods;
         if (!periods.length) {
-          el.innerHTML = '<p class="muted" style="font-size:13px">まだ期間がありません。下の「設定」の「期間を作成」から追加してください。</p>';
+          el.innerHTML = '<p class="muted" style="font-size:13px;margin:0">まだ期間がありません。下の「設定」の「期間を作成」から追加してください。</p>';
           currentPeriodId = null;
-          const section = document.getElementById('shift-detail-section');
-          if (section) section.style.display = 'none';
+          setDetailBody(false);
           return;
         }
-        el.innerHTML = periods.map(p => `
-          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:8px;cursor:pointer" data-period-open="${p.id}" data-period-status="${p.status}" data-period-start="${p.period_start}" data-period-end="${p.period_end}">
-            <span style="flex:1;font-size:13px">${esc(p.period_start)} 〜 ${esc(p.period_end)}${p.request_deadline ? `（締切: ${esc(p.request_deadline)}）` : ''}</span>
-            <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;background:${PERIOD_STATUS_COLOR[p.status]}20;color:${PERIOD_STATUS_COLOR[p.status]}">${PERIOD_STATUS_LABEL[p.status] || p.status}</span>
+        el.innerHTML = `
+          <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">対象の期間</label>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <select id="shift-period-select" style="flex:1;min-width:200px;padding:9px 10px;font-size:14px;border:1.5px solid #c9a84c;border-radius:8px;background:#fff;color:#111827">
+              ${periods.map(p => `<option value="${p.id}">${esc(p.period_start)} 〜 ${esc(p.period_end)}</option>`).join('')}
+            </select>
+            <span id="shift-period-badge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px"></span>
           </div>
-        `).join('');
-        el.querySelectorAll('[data-period-open]').forEach(row => row.addEventListener('click', () => selectPeriod(row.dataset.periodOpen, row.dataset.periodStatus, row.dataset.periodStart, row.dataset.periodEnd)));
+          <div id="shift-period-meta" class="muted" style="font-size:12px;margin-top:4px"></div>`;
+        el.querySelector('#shift-period-select').addEventListener('change', e => {
+          const p = shiftPeriods.find(x => x.id === e.target.value);
+          if (p) selectPeriod(p.id, p.status, p.period_start, p.period_end);
+        });
         // 選択中の期間が無い／消えた場合は、今日を含む期間（無ければ開始日が最新の期間）を自動で開く
         let target = periods.find(p => p.id === currentPeriodId);
         if (!target) {
@@ -1839,10 +1854,7 @@ export default function ProviderDashboardPage() {
         currentPeriodStatus = status;
         currentPeriodStart = periodStart;
         currentPeriodEnd = periodEnd;
-        const section = document.getElementById('shift-detail-section');
-        if (section) section.style.display = '';
-        const title = document.getElementById('shift-detail-title');
-        if (title) title.textContent = `期間の詳細（${PERIOD_STATUS_LABEL[status] || status}）`;
+        setDetailBody(true);
         const confirmBtn = document.getElementById('shift-confirm-btn');
         if (confirmBtn) confirmBtn.disabled = status === 'confirmed';
         document.getElementById('shift-generate-warnings').innerHTML = '';
@@ -10952,19 +10964,13 @@ export default function ProviderDashboardPage() {
             <p className="muted" style={{ fontSize: '11px', margin: 0 }}><span style={{ color: '#059669', fontWeight: 700 }}>■</span> 確定シフトの人数　<span style={{ color: '#2563eb', fontWeight: 700 }}>■</span> 出勤希望の人数（確定前）</p>
           </div>
 
-          <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '16px' }}>
-            <h3 style={{ margin: 0, fontSize: '14px' }}>期間</h3>
-            <p className="muted" style={{ fontSize: '12px', margin: 0 }}>期間を選ぶと、下に提出された希望・シフト表・自動作成・確定が表示されます。新しい期間は一番下の「期間を作成」から追加できます。</p>
-            <div id="shift-period-list" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
-          </div>
-
-          <div className="card stack" style={{ padding: '24px', gap: '16px', display: 'none' }} id="shift-detail-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-              <h3 style={{ margin: 0, fontSize: '14px' }} id="shift-detail-title">期間の詳細</h3>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <button type="button" className="btn btn-ghost" id="shift-generate-btn">自動作成</button>
-                <button type="button" className="btn" id="shift-confirm-btn">この期間を確定する</button>
-              </div>
+          <div className="card stack" style={{ padding: '24px', gap: '16px' }} id="shift-detail-section">
+            <h3 style={{ margin: 0, fontSize: '15px' }}>期間ごとのシフト作成</h3>
+            <div id="shift-period-list">読み込み中…</div>
+            <div id="shift-detail-body" className="stack" style={{ gap: '16px', display: 'none' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button type="button" className="btn btn-ghost" id="shift-generate-btn">自動作成</button>
+              <button type="button" className="btn" id="shift-confirm-btn">この期間を確定する</button>
             </div>
             <p className="muted" style={{ fontSize: '12px', margin: 0, lineHeight: '1.7' }}>
               流れ：①提出された希望を確認 → ②「自動作成」（スタッフごとの労働条件・法定の上限を守って自動で割り振ります）→ ③下の労働条件チェックとシフト表を見ながら調整 → ④問題がなければ「この期間を確定する」。条件を超える希望は自動では入れず、理由を表示します。
@@ -11000,6 +11006,7 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn btn-ghost" id="shift-entry-add-btn">＋手動で追加</button>
             </div>
             <div id="shift-entries-list" className="stack" style={{ gap: '6px' }}>読み込み中…</div>
+            </div>
           </div>
 
           <h3 style={{ margin: '24px 0 10px', fontSize: '14px' }}>設定</h3>
