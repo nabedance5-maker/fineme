@@ -20,10 +20,15 @@ create table if not exists sales_partners (
   referral_code text not null unique,  -- 紹介URL・報酬トラッキングで使う本人のコード
   provider_id   uuid references providers(id) on delete set null, -- 掲載者でもある場合のみ設定。NULL＝掲載していない営業パートナー
   status        text not null default 'active' check (status in ('active', 'inactive')),
+  -- 営業パートナー専用の管理画面（/partner/[access_token]）へのログイン代わり。
+  -- Finemeの認証アカウントを持たない営業パートナーも多いため、推測不可能なUUIDを
+  -- 本人確認の代わりに使う（provider_staff.shift_access_tokenと同じ既存方針）。
+  access_token  uuid not null default gen_random_uuid() unique,
   created_at    timestamptz not null default now()
 );
 create index if not exists idx_sales_partners_provider on sales_partners(provider_id);
 create index if not exists idx_sales_partners_code on sales_partners(referral_code);
+create index if not exists idx_sales_partners_token on sales_partners(access_token);
 
 alter table sales_partners enable row level security;
 -- service_role（APIルート）からのみ操作するため public ポリシー不要（他のproviders系運用テーブルと同方針）

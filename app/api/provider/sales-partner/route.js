@@ -35,7 +35,7 @@ export async function GET(request) {
 
   const { data: partner } = await supabase
     .from('sales_partners')
-    .select('id, referral_code, status')
+    .select('id, referral_code, status, access_token')
     .eq('provider_id', provider.id)
     .maybeSingle();
 
@@ -50,7 +50,7 @@ export async function POST(request) {
 
   const { data: existing } = await supabase
     .from('sales_partners')
-    .select('id, referral_code, status')
+    .select('id, referral_code, status, access_token')
     .eq('provider_id', provider.id)
     .maybeSingle();
 
@@ -66,7 +66,7 @@ export async function POST(request) {
   const { data: created, error } = await supabase
     .from('sales_partners')
     .insert({ name: provider.name, email: provider.email, referral_code, provider_id: provider.id, status: 'active' })
-    .select('id, referral_code, status')
+    .select('id, referral_code, status, access_token')
     .single();
 
   if (error) return Response.json({ error: '営業パートナー登録に失敗しました' }, { status: 500 });

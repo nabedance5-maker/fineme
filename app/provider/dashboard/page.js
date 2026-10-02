@@ -7547,6 +7547,8 @@ export default function ProviderDashboardPage() {
           if (data.registered) {
             fnCode = data.partner?.referral_code || '';
             if (codeEl) codeEl.textContent = fnCode || '—';
+            const portalLink = document.getElementById('referral-portal-link');
+            if (portalLink && data.partner?.access_token) portalLink.href = `/partner/${data.partner.access_token}`;
             if (promptEl) promptEl.style.display = 'none';
             if (contentEl) contentEl.style.display = '';
             loadReferrals();
@@ -12930,6 +12932,7 @@ export default function ProviderDashboardPage() {
                 <button className="btn btn-ghost" style={{ fontSize: '13px', flex: '1' }} id="copy-referral-code-btn">コードをコピー</button>
                 <button className="btn btn-ghost" style={{ fontSize: '13px', flex: '1' }} id="copy-referral-url-btn">紹介URLをコピー</button>
               </div>
+              <a id="referral-portal-link" href="#" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '10px', fontSize: '12px', color: '#6366f1' }}>専用の営業パートナー管理画面を開く ↗</a>
             </div>
 
             {/* サマリーカード */}

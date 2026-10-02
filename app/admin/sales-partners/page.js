@@ -72,6 +72,7 @@ export default function AdminSalesPartnersPage() {
           const badge = p.status === 'active'
             ? '<span class="badge badge-green">有効</span>'
             : '<span class="badge badge-gray">停止中</span>';
+          const portalUrl = `${location.origin}/partner/${p.access_token}`;
           return `
             <div class="sp-row" data-id="${p.id}">
               <div style="flex:1;min-width:160px;">
@@ -79,10 +80,21 @@ export default function AdminSalesPartnersPage() {
                 <div style="margin-top:2px;">${providerLabel}${p.email ? ` <span class="sp-meta">・${esc(p.email)}</span>` : ''}</div>
               </div>
               ${badge}
+              <button class="sp-btn-ghost" data-copy-portal="${portalUrl}">管理画面URLをコピー</button>
               <button class="sp-btn-ghost" data-toggle="${p.id}" data-status="${p.status}">${p.status === 'active' ? '停止する' : '再開する'}</button>
             </div>
           `;
         }).join('');
+
+        listEl.querySelectorAll('[data-copy-portal]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            navigator.clipboard.writeText(btn.dataset.copyPortal).then(() => {
+              const orig = btn.textContent;
+              btn.textContent = 'コピーしました';
+              setTimeout(() => { btn.textContent = orig; }, 1500);
+            }).catch(() => {});
+          });
+        });
 
         listEl.querySelectorAll('[data-toggle]').forEach(btn => {
           btn.addEventListener('click', async () => {

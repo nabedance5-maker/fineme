@@ -29,7 +29,7 @@ export async function GET(request) {
 
   const { data, error } = await supabase
     .from('sales_partners')
-    .select('id, name, email, referral_code, provider_id, status, created_at, providers(name, slug)')
+    .select('id, name, email, referral_code, provider_id, status, created_at, access_token, providers(name, slug)')
     .order('created_at', { ascending: false });
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
@@ -48,7 +48,7 @@ export async function POST(request) {
   const { data, error } = await supabase
     .from('sales_partners')
     .insert({ name, email: email || null, referral_code, provider_id: provider_id || null, status: 'active' })
-    .select('id, name, email, referral_code, provider_id, status, created_at')
+    .select('id, name, email, referral_code, provider_id, status, created_at, access_token')
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
@@ -73,7 +73,7 @@ export async function PATCH(request) {
     .from('sales_partners')
     .update(patch)
     .eq('id', id)
-    .select('id, name, email, referral_code, provider_id, status, created_at')
+    .select('id, name, email, referral_code, provider_id, status, created_at, access_token')
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
