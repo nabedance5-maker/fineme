@@ -15,6 +15,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 
+import { isDeadlinePassed, DEADLINE_CLOSED_MESSAGE } from '@/lib/shift-deadline';
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getStaffByToken(token) {
@@ -58,7 +59,7 @@ export async function GET(request, { params }) {
   return Response.json({
     staff: { id: staff.id, name: staff.name },
     provider: { name: staff.providers?.name || '' },
-    period: period || null,
+    period: period ? { ...period, closed: isDeadlinePassed(period) } : null,
     requests,
     submitted,
   });
@@ -83,9 +84,10 @@ export async function POST(request, { params }) {
   }
 
   // この期間が本当に自分の店舗のものか確認（他店舗の期間IDを渡された場合に書き込ませない）
-  const { data: period } = await supabase.from('provider_shift_periods').select('id, provider_id, status, period_start, period_end').eq('id', period_id).single();
+  const { data: period } = await supabase.from('provider_shift_periods').select('id, provider_id, status, period_start, period_end, request_deadline').eq('id', period_id).single();
   if (!period || period.provider_id !== staff.provider_id) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
   if (period.status !== 'collecting') return Response.json({ error: 'この期間は希望の募集を締め切っています' }, { status: 400 });
+  if (isDeadlinePassed(period)) return Response.json({ error: DEADLINE_CLOSED_MESSAGE }, { status: 400 });
   if (dates.some(d => d < period.period_start || d > period.period_end)) {
     return Response.json({ error: '募集期間外の日付が含まれています' }, { status: 400 });
   }
@@ -121,6 +123,12 @@ export async function DELETE(request, { params }) {
   const date = searchParams.get('date');
   const type = searchParams.get('type');
   const bulkDates = (searchParams.get('dates') || '').split(',').filter(Boolean);
+
+  if (!period_id) return Response.json({ error: '必須項目が不足しています' }, { status: 400 });
+  const { data: period } = await supabase.from('provider_shift_periods').select('id, provider_id, status, request_deadline').eq('id', period_id).single();
+  if (!period || period.provider_id !== staff.provider_id) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
+  if (period.status !== 'collecting') return Response.json({ error: 'この期間は希望の募集を締め切っています' }, { status: 400 });
+  if (isDeadlinePassed(period)) return Response.json({ error: DEADLINE_CLOSED_MESSAGE }, { status: 400 });
 
   let query = supabase.from('provider_shift_requests').delete().eq('period_id', period_id).eq('staff_id', staff.id);
   if (bulkDates.length) {

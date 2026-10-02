@@ -264,6 +264,13 @@ export default function StaffShiftPage({ params }) {
             {data.submitted && <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#4ade80', fontWeight: '700' }}>✓ 提出完了しています（内容はいつでも変更できます）</p>}
           </div>
 
+          {data.period.closed && (
+            <div style={{ ...cardStyle, marginBottom: '16px', border: '1px solid #f87171' }}>
+              <p style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#f87171' }}>提出締切を過ぎました</p>
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: 'rgba(232,228,220,0.7)', lineHeight: 1.6 }}>これ以上、希望の提出・変更はできません。変更したい場合は店舗に直接連絡してください。下は提出済みの内容です。</p>
+            </div>
+          )}
+          <div style={data.period.closed ? { pointerEvents: 'none', opacity: 0.5 } : undefined}>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
             <button type="button" onClick={leaveMulti} style={{ flex: 1, padding: '11px', borderRadius: '10px', border: 'none', fontWeight: '700', fontSize: '13px', cursor: 'pointer', background: !multiMode ? '#c9a84c' : 'rgba(232,228,220,0.1)', color: !multiMode ? '#0a0f1e' : '#e8e4dc' }}>1日ずつ選ぶ</button>
             <button type="button" onClick={enterMulti} style={{ flex: 1, padding: '11px', borderRadius: '10px', border: 'none', fontWeight: '700', fontSize: '13px', cursor: 'pointer', background: multiMode ? '#c9a84c' : 'rgba(232,228,220,0.1)', color: multiMode ? '#0a0f1e' : '#e8e4dc' }}>まとめて選ぶ（複数日）</button>
@@ -424,6 +431,7 @@ export default function StaffShiftPage({ params }) {
           <button type="button" disabled={submittingAll} onClick={submitAll} style={{ width: '100%', padding: '14px', borderRadius: '12px', border: 'none', background: '#111', color: '#fff', fontWeight: '700', fontSize: '15px', cursor: submittingAll ? 'not-allowed' : 'pointer', opacity: submittingAll ? 0.5 : 1 }}>
             {submittingAll ? '送信中…' : data.submitted ? 'この内容で提出し直す' : 'ここまでの内容で提出を完了する'}
           </button>
+          </div>
         </>
       )}
     </div>

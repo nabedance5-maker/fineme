@@ -1798,7 +1798,10 @@ export default function ProviderDashboardPage() {
           badge.style.color = PERIOD_STATUS_COLOR[p.status];
         }
         const meta = document.getElementById('shift-period-meta');
-        if (meta && p) meta.textContent = p.request_deadline ? `希望の提出締切：${p.request_deadline}` : '';
+        if (meta && p) {
+          const over = p.status === 'collecting' && p.request_deadline && p.request_deadline < shiftTodayStr();
+          meta.textContent = p.request_deadline ? `希望の提出締切：${p.request_deadline}${over ? '（締切超過・まもなく自動で募集を終了します）' : p.status === 'collecting' ? '（締切後は自動で募集を終了し、LINEでお知らせします）' : ''}` : '';
+        }
       }
       async function loadPeriods() {
         const el = document.getElementById('shift-period-list');
