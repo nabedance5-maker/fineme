@@ -2,6 +2,7 @@
 //     /api/provider/shift-requests?from=&to= → 期間をまたいだ日付範囲の希望一覧（月カレンダー用）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { loadImpliedRequests } from '@/lib/shift-implied-requests';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -46,7 +47,7 @@ export async function GET(request) {
   if (!periodId) return Response.json({ error: 'periodId、またはfrom/toは必須です' }, { status: 400 });
 
   // この期間が自店舗のものか確認してから返す（他店舗の期間IDを渡された場合に漏れないように）
-  const { data: period } = await supabase.from('provider_shift_periods').select('id').eq('id', periodId).eq('provider_id', provider.id).single();
+  const { data: period } = await supabase.from('provider_shift_periods').select('id, period_start, period_end').eq('id', periodId).eq('provider_id', provider.id).single();
   if (!period) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
 
   const { data, error } = await supabase
@@ -56,5 +57,10 @@ export async function GET(request) {
     .order('date', { ascending: true });
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
+  // implied=1：休み希望のみで提出したスタッフの「休み以外は出勤可」分を implied:true で補って返す
+  if (searchParams.get('implied') === '1') {
+    const implied = await loadImpliedRequests(supabase, provider.id, period, data || []);
+    return Response.json([...(data || []), ...implied]);
+  }
   return Response.json(data || []);
 }

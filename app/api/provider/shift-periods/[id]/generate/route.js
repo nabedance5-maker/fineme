@@ -6,6 +6,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { generateShift } from '@/lib/shift-generator';
+import { loadImpliedRequests } from '@/lib/shift-implied-requests';
 import { loadConditions, loadNeighborEntries } from '@/lib/shift-labor-db';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -45,9 +46,10 @@ export async function POST(request, { params }) {
     supabase.from('provider_shift_entries').select('staff_id, date, start_time, end_time').eq('period_id', period.id).eq('source', 'manual'),
   ]);
 
+  const impliedRequests = await loadImpliedRequests(supabase, provider.id, period, requests || []);
   const { entries, warnings, skipped } = generateShift({
     period,
-    requests: requests || [],
+    requests: [...(requests || []), ...impliedRequests],
     ruleType: settings?.rule_type || 'as_requested',
     dayPatterns,
     patternsById,

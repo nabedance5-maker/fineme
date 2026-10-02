@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { createLoadTracker, effectiveLimits, toMinutes, workingHours } from '@/lib/shift-labor';
 import { loadConditions, loadNeighborEntries } from '@/lib/shift-labor-db';
+import { loadImpliedRequests } from '@/lib/shift-implied-requests';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -38,8 +39,9 @@ export async function POST(request, { params }) {
     loadNeighborEntries(supabase, provider.id, period),
   ]);
 
+  const allRequests = [...(requests || []), ...(await loadImpliedRequests(supabase, provider.id, period, requests || []))];
   const offSet = new Set((requests || []).filter(r => r.type === 'off').map(r => `${r.staff_id}|${r.date}`));
-  const targets = (requests || [])
+  const targets = allRequests
     .filter(r => r.type === 'work' && wanted.has(`${r.staff_id}|${r.date}`) && !offSet.has(`${r.staff_id}|${r.date}`))
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 

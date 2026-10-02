@@ -1998,14 +1998,16 @@ export default function ProviderDashboardPage() {
         el.innerHTML = '読み込み中…';
         const nameOf = id => shiftStaffList.find(s => s.id === id)?.name || '(不明)';
         const [reqRes, subRes, entRes] = await Promise.all([
-          fetch(`/api/provider/shift-requests?periodId=${currentPeriodId}`, { headers: authHeadersShift() }),
+          fetch(`/api/provider/shift-requests?periodId=${currentPeriodId}&implied=1`, { headers: authHeadersShift() }),
           fetch(`/api/provider/shift-submissions?periodId=${currentPeriodId}`, { headers: authHeadersShift() }),
           fetch(`/api/provider/shift-entries?periodId=${currentPeriodId}`, { headers: authHeadersShift() }),
           closedInfoLoaded ? null : loadClosedInfo(),
         ]);
         const applyEntries = entRes.ok ? await entRes.json() : [];
         if (!reqRes.ok) { el.innerHTML = authErrorHtml(reqRes); return; }
-        const requests = await reqRes.json();
+        const allRequests = await reqRes.json();
+        // implied:true は休み希望のみで提出した人の「休み以外は出勤可」分（一括適用パネル専用・表には出さない）
+        const requests = allRequests.filter(r => !r.implied);
         const submissions = subRes.ok ? await subRes.json() : [];
         const submittedIds = new Set(submissions.map(s => s.staff_id));
 
@@ -2017,9 +2019,9 @@ export default function ProviderDashboardPage() {
             `).join('')}</div>`
           : '';
 
-        if (!requests.length) { el.innerHTML = statusHtml + '<p class="muted" style="font-size:13px">まだ希望が提出されていません。</p>'; return; }
+        if (!allRequests.length) { el.innerHTML = statusHtml + '<p class="muted" style="font-size:13px">まだ希望が提出されていません。</p>'; return; }
         if (!shiftStaffList.length || !currentPeriodStart || !currentPeriodEnd) { el.innerHTML = statusHtml; return; }
-        el.innerHTML = statusHtml + renderShiftRequestsGrid(datesInRange(currentPeriodStart, currentPeriodEnd), requests) + renderApplyPanel(requests, applyEntries);
+        el.innerHTML = statusHtml + renderShiftRequestsGrid(datesInRange(currentPeriodStart, currentPeriodEnd), requests) + renderApplyPanel(allRequests, applyEntries);
         bindApplyPanel(el);
         // noteがある希望は表には出さないため、別途一覧で補足する（でお要望の主眼は
         // 「表でまとめて見たい」であり、備考の文章までは表のセルに収まらないため）
@@ -2050,18 +2052,19 @@ export default function ProviderDashboardPage() {
           const mine = applyData.works.filter(r => r.staff_id === st.id);
           if (!mine.length) return '';
           const free = mine.filter(r => applyStatus(r) === 'free').length;
+          const impliedOnly = mine.every(r => r.implied);
           return `<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #f3f4f6">
             <input type="checkbox" data-apply-staff="${st.id}" ${free ? '' : 'disabled'} style="margin:0;width:18px;height:18px;flex:none" />
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(st.name)}</div>
-              <div class="muted" style="font-size:11.5px">希望${mine.length}日・未適用${free}日・<span data-apply-count="${st.id}">選択0日</span></div>
+              <div class="muted" style="font-size:11.5px">${impliedOnly ? `休み希望のみ・休み以外の${mine.length}日が出勤可` : `希望${mine.length}日`}・未適用${free}日・<span data-apply-count="${st.id}">選択0日</span></div>
             </div>
             <button type="button" class="btn btn-ghost" data-apply-open="${st.id}" style="font-size:12px;padding:5px 10px;flex:none" ${mine.length ? '' : 'disabled'}>日付を選ぶ</button>
           </div>`;
         }).join('');
         return `<div style="margin-top:14px;padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px">
           <div style="font-size:13px;font-weight:800;margin-bottom:2px">提出された希望をまとめてシフトに適用</div>
-          <p class="muted" style="font-size:11.5px;margin:0 0 4px">名前にチェックでその人の希望を全部選択。除きたい日は「日付を選ぶ」で外せます。労働条件を超える日は自動で除外し、理由を表示します。</p>
+          <p class="muted" style="font-size:11.5px;margin:0 0 4px">名前にチェックでその人の希望を全部選択。除きたい日は「日付を選ぶ」で外せます。労働条件を超える日は自動で除外し、理由を表示します。休み希望だけ提出した人は、定休日と休み希望日以外を営業時間どおりの出勤可として扱います。</p>
           ${rows}
           <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px">
             <button type="button" class="btn btn-ghost" id="shift-apply-all-btn" style="font-size:12px;padding:5px 10px">全員を選択</button>
@@ -2110,7 +2113,7 @@ export default function ProviderDashboardPage() {
           }).join('');
           const n = freeDates().filter(d => selectedApply.has(`${staffId}|${d}`)).length;
           box.innerHTML = `<div style="padding:14px 16px 8px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:8px">
-              <div style="flex:1;font-size:14px;font-weight:800">${esc(st?.name || '')}の希望日</div>
+              <div style="flex:1;font-size:14px;font-weight:800">${esc(st?.name || '')}の${mine.length && mine.every(r => r.implied) ? '出勤可能日（休み希望以外）' : '希望日'}</div>
               <button type="button" class="btn btn-ghost" data-m="all" style="font-size:12px;padding:4px 8px">全て選択</button>
               <button type="button" class="btn btn-ghost" data-m="none" style="font-size:12px;padding:4px 8px">解除</button>
             </div>
