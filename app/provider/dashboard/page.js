@@ -595,6 +595,48 @@ export default function ProviderDashboardPage() {
     const onVisible = () => { if (document.visibilityState === 'visible') _sb.auth.getSession().catch(() => {}); };
     document.addEventListener('visibilitychange', onVisible);
 
+    // でお報告2026-10-02：「タイムアウトで再ログインが必要になる回数が多すぎる」。
+    // auth.refresh_tokens/sessions を調べると、再ログインの直前までセッションは失効しておらず
+    // （最後のリフレッシュトークンが revoked でない）、スマホ復帰直後など回線が不安定な瞬間の
+    // リフレッシュ失敗→アクセストークン期限切れ→/api が401→即ログイン画面、という経路で
+    // 生きているセッションを捨てていた。401を受けたら、まずリフレッシュを数回リトライして
+    // 成功すればそのまま再実行する。ログイン画面へ飛ばすのは、リフレッシュトークン自体が
+    // 無効（fatal）と確定した時だけにする。通信不良（network）の間は何もしない。
+    let refreshInflight = null;
+    let lastRefreshResult = null;
+    function refreshSessionWithRetry() {
+      if (refreshInflight) return refreshInflight;
+      refreshInflight = (async () => {
+        for (let i = 0; i < 4; i++) {
+          try {
+            const { data, error } = await _sb.auth.refreshSession();
+            if (!error && data?.session) return 'ok';
+            if (error && !(error.name === 'AuthRetryableFetchError' || error.status >= 500)) return 'fatal';
+          } catch {}
+          await new Promise(r => setTimeout(r, 1500 * (i + 1)));
+        }
+        return 'network';
+      })().then(r => { lastRefreshResult = r; return r; }).finally(() => { refreshInflight = null; });
+      return refreshInflight;
+    }
+    const rawFetch = window.fetch;
+    window.fetch = async function (input, init) {
+      const res = await rawFetch.call(this, input, init);
+      if (res.status !== 401) return res;
+      const url = typeof input === 'string' ? input : input?.url || '';
+      const auth = init?.headers && (init.headers.Authorization || init.headers.authorization);
+      if (!url.startsWith('/api/') || !auth || !String(auth).startsWith('Bearer ')) return res;
+      if ((await refreshSessionWithRetry()) !== 'ok') return res;
+      const fresh = getSupabaseToken();
+      if (!fresh) return res;
+      const headers = { ...init.headers };
+      delete headers.authorization;
+      headers.Authorization = `Bearer ${fresh}`;
+      return rawFetch.call(this, input, { ...init, headers });
+    };
+    const onOnline = () => { _sb.auth.getSession().catch(() => {}); };
+    window.addEventListener('online', onOnline);
+
     // ログアウト（でお要望2026-09-15：「ログアウトボタンを押したら、掲載者管理画面への
     // ログイン画面に戻るようにして」）。confirm()ダイアログは、環境によって黙って
     // falseを返す・表示されないケースがあり（でお報告2026-09-17：ログアウトを押しても
@@ -651,7 +693,10 @@ export default function ProviderDashboardPage() {
         const res = await fetch('/api/provider/me', {
           headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` }
         });
-        if (res.status === 401) { redirectToProviderLogin(); return null; }
+        if (res.status === 401) {
+          if (lastRefreshResult !== 'network') redirectToProviderLogin();
+          return null;
+        }
         if (!res.ok) return null;
         const data = await res.json();
         localStorage.setItem(PROVIDER_KEY, JSON.stringify(data));
@@ -10102,6 +10147,8 @@ export default function ProviderDashboardPage() {
 
     return () => {
       clearInterval(sessionKeepAlive);
+      window.fetch = rawFetch;
+      window.removeEventListener('online', onOnline);
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('unhandledrejection', onUnhandledRejection);
       // Clean up window globals
