@@ -1215,12 +1215,35 @@ export default function ProviderDashboardPage() {
 
       function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
       const STAFF_AXIS_LABEL = { eyebrow: '眉', skin: '肌', hair: 'ヘア', expression: '表情', posture: '姿勢', body: '体型', fashion: 'ファッション' };
+      const STAFF_EMP_LABEL = { fulltime: '正社員', parttime: 'パート', arbeit: 'アルバイト', contractor: '業務委託', other: 'その他' };
+      const STAFF_COND_LEGAL = { max_hours_per_day: 8, max_hours_per_week: 40, min_days_off_per_week: 1, max_consecutive_days: 6 };
+      const STAFF_COND_KEYS = ['max_hours_per_day', 'max_hours_per_week', 'max_hours_per_month', 'max_days_per_week', 'min_days_off_per_week', 'max_days_per_month', 'max_consecutive_days'];
+      let staffConds = {};
+
+      function applyCondPlaceholders() {
+        const emp = editForm.elements['cond_employment_type'].value;
+        STAFF_COND_KEYS.forEach(k => {
+          editForm.elements['cond_' + k].placeholder = emp !== 'contractor' && STAFF_COND_LEGAL[k] != null ? `法定 ${STAFF_COND_LEGAL[k]}` : 'なし';
+        });
+      }
+      function fillCondFields(c) {
+        editForm.elements['cond_employment_type'].value = c?.employment_type || 'fulltime';
+        STAFF_COND_KEYS.forEach(k => { editForm.elements['cond_' + k].value = c?.[k] ?? ''; });
+        applyCondPlaceholders();
+      }
+      editForm?.elements['cond_employment_type']?.addEventListener('change', applyCondPlaceholders);
 
       async function loadStaff() {
         if (!listEl) return;
-        const res = await fetch('/api/provider/staff', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const authH = { 'Authorization': `Bearer ${getSupabaseToken() || token}` };
+        const [res, condRes] = await Promise.all([
+          fetch('/api/provider/staff', { headers: authH }),
+          fetch('/api/provider/shift-staff-conditions', { headers: authH }).catch(() => null),
+        ]);
         if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
         const items = await res.json();
+        staffConds = {};
+        if (condRes && condRes.ok) (await condRes.json()).forEach(r => { staffConds[r.staff_id] = r; });
         if (!items.length) { listEl.innerHTML = '<p class="muted">まだスタッフが登録されていません。「＋ 追加」から登録してください。</p>'; return; }
         listEl.innerHTML = '';
         items.forEach(s => {
@@ -1237,6 +1260,7 @@ export default function ProviderDashboardPage() {
                 <strong style="font-size:14px">${esc(s.name)}</strong>
                 ${s.is_featured ? '<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:99px">担当</span>' : ''}
                 ${s.role ? `<span style="font-size:12px;color:#6b7280">${esc(s.role)}</span>` : ''}
+                ${staffConds[s.id] ? `<span style="font-size:10px;background:#eef2ff;color:#4f46e5;padding:1px 6px;border-radius:99px">${esc(STAFF_EMP_LABEL[staffConds[s.id].employment_type] || '')}</span>` : ''}
                 ${s.bookable === false ? '<span style="font-size:10px;background:#f3f4f6;color:#9ca3af;padding:1px 6px;border-radius:99px">指名候補に出さない</span>' : s.booking_fee > 0 ? `<span style="font-size:10px;background:#eef2ff;color:#4338ca;padding:1px 6px;border-radius:99px">指名料¥${Number(s.booking_fee).toLocaleString()}</span>` : ''}
               </div>
               ${s.experience_years ? `<span style="font-size:11px;color:#059669">経験${s.experience_years}年</span>` : ''}
@@ -1264,6 +1288,7 @@ export default function ProviderDashboardPage() {
           editForm.elements['booking_fee'].value  = s.booking_fee || '';
           editForm.elements['_staff_id'].value    = s.id;
           editForm.elements['strong_types_text'].value = (s.strong_types || []).join(', ');
+          fillCondFields(staffConds[s.id]);
           document.querySelectorAll('#staff-strong-axes input').forEach(cb => { cb.checked = (s.strong_axes || []).includes(cb.value); });
           const prev = document.getElementById('staff-photo-preview');
           const prevWrap = document.getElementById('staff-photo-preview-wrap');
@@ -1282,6 +1307,7 @@ export default function ProviderDashboardPage() {
       document.getElementById('btn-add-staff')?.addEventListener('click', () => {
         editTitle.textContent = 'スタッフを追加'; editCard.style.display = 'block';
         editForm.reset(); editForm.elements['_staff_id'].value = '';
+        fillCondFields(null);
         document.getElementById('staff-photo-preview-wrap').style.display = 'none';
         document.getElementById('staff-photo-url').value = '';
         editCard.scrollIntoView({ behavior: 'smooth' });
@@ -1308,7 +1334,19 @@ export default function ProviderDashboardPage() {
         };
         const url = id ? `/api/provider/staff/${id}` : '/api/provider/staff';
         const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` }, body: JSON.stringify(body) });
-        if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadStaff(); showToast('保存しました'); }
+        if (res.ok) {
+          const saved = await res.json().catch(() => ({}));
+          const staffId = id || saved.id;
+          let condOk = true;
+          if (staffId) {
+            const cond = { staff_id: staffId, employment_type: fd.get('cond_employment_type') };
+            STAFF_COND_KEYS.forEach(k => { cond[k] = fd.get('cond_' + k); });
+            const cres = await fetch('/api/provider/shift-staff-conditions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` }, body: JSON.stringify({ items: [cond] }) }).catch(() => null);
+            condOk = !!cres && cres.ok;
+          }
+          editCard.style.display = 'none'; editForm.reset(); loadStaff();
+          showToast(condOk ? '保存しました' : 'スタッフは保存しましたが、労働条件の保存に失敗しました。もう一度編集して保存してください');
+        }
         else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
       });
 
@@ -10622,6 +10660,35 @@ export default function ProviderDashboardPage() {
                 <label htmlFor="staff-bookable" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>予約時の指名候補に出す</label>
               </div>
               <div className="form-field"><label>指名料（円・任意）</label><input name="booking_fee" type="number" min="0" placeholder="0（無料）" /></div>
+              {/* シフトの労働条件（でお要望2026-10-02：シフト管理タブと同じ条件をスタッフ登録時にも入力できるように）。
+                  空欄＝正社員・パート等は法定の既定値、業務委託は制限なし。保存先はシフト管理タブと共通。 */}
+              <div style={{ margin: '4px 0 16px', padding: '12px 14px', background: 'rgba(26,20,16,0.03)', border: '1px solid rgba(26,20,16,0.12)', borderRadius: '8px' }}>
+                <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '2px' }}>シフトの労働条件</div>
+                <p className="muted" style={{ fontSize: '11.5px', margin: '0 0 10px' }}>シフトの自動作成・確定前チェックで使います。空欄は法定の既定値（業務委託は制限なし）。時間は実働（休憩を除く）で数えます。</p>
+                <div className="form-field">
+                  <label>雇用形態</label>
+                  <select name="cond_employment_type" id="staff-cond-emp" defaultValue="fulltime">
+                    <option value="fulltime">正社員</option>
+                    <option value="parttime">パート</option>
+                    <option value="arbeit">アルバイト</option>
+                    <option value="contractor">業務委託</option>
+                    <option value="other">その他</option>
+                  </select>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '8px' }}>
+                  {[
+                    ['max_hours_per_day', '1日の上限（時間）'],
+                    ['max_hours_per_week', '週の上限（時間）'],
+                    ['max_hours_per_month', '月の上限（時間）'],
+                    ['max_days_per_week', '週の最大勤務日数'],
+                    ['min_days_off_per_week', '週の最低休日数'],
+                    ['max_days_per_month', '月の最大勤務日数'],
+                    ['max_consecutive_days', '連続勤務の上限（日）'],
+                  ].map(([key, label]) => (
+                    <div className="form-field" key={key} style={{ margin: 0 }}><label style={{ fontSize: '11.5px' }}>{label}</label><input name={`cond_${key}`} type="number" min="0" step="0.5" /></div>
+                  ))}
+                </div>
+              </div>
               <input type="hidden" name="_staff_id" />
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button type="submit" className="btn">保存</button>
