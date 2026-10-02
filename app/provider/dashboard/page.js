@@ -3205,11 +3205,8 @@ export default function ProviderDashboardPage() {
       const token = getSupabaseToken();
       if (!token) return;
       const authH = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
-      function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
       function fmtYen(n) { return n || n === 0 ? `¥${Number(n).toLocaleString()}` : '未設定'; }
-      const listEl = document.getElementById('lkr-list');
-      const editCard = document.getElementById('lkr-edit-card');
-      const editForm = document.getElementById('lkr-edit-form');
       const contractCard = document.getElementById('lkr-contract-card');
       const contractTitle = document.getElementById('lkr-contract-title');
       const contractForm = document.getElementById('lkr-contract-form');
@@ -3259,69 +3256,343 @@ export default function ProviderDashboardPage() {
       });
       document.getElementById('lkr-member-clear')?.addEventListener('click', () => setSelectedMember(null, ''));
 
-      async function loadLockers() {
-        if (!listEl) return;
-        const res = await fetch('/api/provider/lockers', { headers: authH() });
-        if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
-        const rows = await res.json();
-        if (!rows.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px">まだロッカーがありません。「＋ ロッカーを追加」から作成してください。</p>'; return; }
-        listEl.innerHTML = rows.map(l => {
-          const c = l.activeContract;
-          return `
-          <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--color-bg);border-radius:10px;flex-wrap:wrap">
-            <div style="flex:1;min-width:0">
-              <strong style="font-size:14px">${esc(l.name)}</strong>
-              <span class="muted" style="font-size:12px;margin-left:8px">月額${fmtYen(l.monthly_fee)}</span>
-              ${c
-                ? `<div style="margin-top:4px;font-size:12.5px"><span style="font-weight:700;color:#16a34a">契約中</span>：${esc(c.contractor_name)}（月額${fmtYen(c.monthly_fee)}）${c.user_id ? ' <span style="color:#2563eb;font-weight:700;cursor:pointer" data-lkr-open-cust="' + c.user_id + '" data-lkr-cust-name="' + esc(c.contractor_name) + '">会員</span>' : ''}
-                    ${c.stripe_subscription_item_id
-                      ? ' <span style="font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;background:#ecfdf5;color:#059669;">自動課金中</span>'
-                      : c.payment_link_url
-                        ? ` <span style="font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;background:#fffbeb;color:#92400e;">支払いリンク未完了</span> <a href="${esc(c.payment_link_url)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:#2563eb;font-weight:700;">リンクを開く</a>`
-                        : ''}
-                  </div>`
-                : '<div style="margin-top:4px;font-size:12.5px;color:#9ca3af">空き</div>'}
-            </div>
-            ${c
-              ? `<button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-lkr-cancel-contract="${c.id}" data-lkr-locker-id="${l.id}">解約</button>`
-              : `<button type="button" class="btn" style="font-size:12px;padding:5px 10px" data-lkr-contract="${l.id}" data-lkr-name="${esc(l.name)}">契約する</button>`}
-            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444" data-lkr-del="${l.id}">削除</button>
-          </div>`;
-        }).join('');
+      // ── ロッカー配置図（でお要望2026-10-02：hacomonoのように店舗ごとに段数・横の数・大きさを
+      // 設定して、どこが空き／契約中／使用不可かを図で見られるようにする） ─────
+      const layoutEl = document.getElementById('lkr-layout');
+      const modalRoot = document.getElementById('lkr-modal-root');
+      let banks = [];
+      let lockers = [];
+      let selectedBankId = null;
 
-        listEl.querySelectorAll('[data-lkr-open-cust]').forEach(el => el.addEventListener('click', () => {
+      const STATE_STYLE = {
+        free: 'background:#ffffff;border:1.5px solid #cbd5e1;color:#1e293b;',
+        taken: 'background:#dcfce7;border:1.5px solid #16a34a;color:#14532d;',
+        off: 'background:repeating-linear-gradient(135deg,#e5e7eb,#e5e7eb 6px,#f3f4f6 6px,#f3f4f6 12px);border:1.5px solid #cbd5e1;color:#6b7280;',
+      };
+      const inputCss = 'width:100%;padding:8px 10px;border:1px solid rgba(26,20,16,0.2);border-radius:8px;font-size:14px;box-sizing:border-box;';
+
+      function lockerRect(l) { return { r1: l.grid_row, c1: l.grid_col, r2: l.grid_row + (l.row_span || 1) - 1, c2: l.grid_col + (l.col_span || 1) - 1 }; }
+      function rectsOverlap(a, b) { return a.r1 <= b.r2 && b.r1 <= a.r2 && a.c1 <= b.c2 && b.c1 <= a.c2; }
+      function placementError(bank, others, cand) {
+        const rect = { r1: cand.grid_row, c1: cand.grid_col, r2: cand.grid_row + cand.row_span - 1, c2: cand.grid_col + cand.col_span - 1 };
+        if (rect.r2 > bank.grid_rows || rect.c2 > bank.grid_cols) return '配置図の範囲を超えています';
+        if (others.some(o => rectsOverlap(rect, lockerRect(o)))) return '他のロッカーと重なっています';
+        return null;
+      }
+      function lockerState(l) { return !l.active ? 'off' : (l.activeContract ? 'taken' : 'free'); }
+      function currentBank() { return banks.find(b => b.id === selectedBankId) || null; }
+      function bankLockers(bankId) { return lockers.filter(l => l.bank_id === bankId); }
+
+      async function apiJson(url, method, body) {
+        const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json', ...authH() }, body: body ? JSON.stringify(body) : undefined });
+        const data = await res.json().catch(() => ({}));
+        return { ok: res.ok, status: res.status, data };
+      }
+
+      function closeModal() { if (modalRoot) modalRoot.innerHTML = ''; }
+      function openModal(title, bodyHtml) {
+        if (!modalRoot) return null;
+        modalRoot.innerHTML = `
+          <div data-lkr-overlay style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px">
+            <div style="background:#fff;color:#1a1410;border-radius:16px;padding:20px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;box-sizing:border-box">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <h3 style="margin:0;font-size:16px">${esc(title)}</h3>
+                <button type="button" data-lkr-modal-close style="background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280;line-height:1">×</button>
+              </div>
+              ${bodyHtml}
+            </div>
+          </div>`;
+        modalRoot.querySelector('[data-lkr-modal-close]')?.addEventListener('click', closeModal);
+        modalRoot.querySelector('[data-lkr-overlay]')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+        return modalRoot;
+      }
+      function field(label, inner, hint) {
+        return `<div style="margin-bottom:10px"><label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">${label}</label>${inner}${hint ? `<div style="font-size:11px;color:#6b7280;margin-top:3px">${hint}</div>` : ''}</div>`;
+      }
+
+      async function loadLockers() {
+        if (!layoutEl) return;
+        const [bRes, lRes] = await Promise.all([
+          fetch('/api/provider/locker-banks', { headers: authH() }),
+          fetch('/api/provider/lockers', { headers: authH() }),
+        ]);
+        if (!bRes.ok) { layoutEl.innerHTML = authErrorHtml(bRes); return; }
+        if (!lRes.ok) { layoutEl.innerHTML = authErrorHtml(lRes); return; }
+        banks = await bRes.json();
+        lockers = await lRes.json();
+        if (!banks.some(b => b.id === selectedBankId)) selectedBankId = banks[0]?.id || null;
+        renderLayout();
+      }
+
+      function renderLayout() {
+        if (!layoutEl) return;
+        if (!banks.length) {
+          layoutEl.innerHTML = `
+            <div style="text-align:center;padding:28px 12px;background:var(--color-bg);border-radius:12px">
+              <p style="margin:0 0 6px;font-weight:700;font-size:14px">ロッカーの配置図を作りましょう</p>
+              <p class="muted" style="margin:0 0 14px;font-size:12.5px">段数・横の数を決めるとマス目ができ、そこにロッカーを置けます。更衣室ごとなど、複数作れます。</p>
+              <button type="button" class="btn" data-lkr-bank-new>ロッカー群を作成</button>
+            </div>`;
+          layoutEl.querySelector('[data-lkr-bank-new]')?.addEventListener('click', openBankModal);
+          return;
+        }
+        const bank = currentBank();
+        const list = bankLockers(bank.id);
+        const counts = { all: list.length, taken: 0, free: 0, off: 0 };
+        list.forEach(l => { counts[lockerState(l)]++; });
+
+        const occupied = new Set();
+        list.forEach(l => { const r = lockerRect(l); for (let y = r.r1; y <= r.r2; y++) for (let x = r.c1; x <= r.c2; x++) occupied.add(`${y},${x}`); });
+
+        let cellsHtml = '';
+        for (let y = 1; y <= bank.grid_rows; y++) {
+          for (let x = 1; x <= bank.grid_cols; x++) {
+            if (occupied.has(`${y},${x}`)) continue;
+            cellsHtml += `<button type="button" data-lkr-empty data-r="${y}" data-c="${x}" aria-label="${y}段目${x}列目にロッカーを追加" style="grid-row:${y};grid-column:${x};border:1.5px dashed #d1d5db;border-radius:8px;background:transparent;color:#9ca3af;font-size:18px;cursor:pointer;padding:0">＋</button>`;
+          }
+        }
+        list.forEach(l => {
+          const st = lockerState(l);
+          const c = l.activeContract;
+          const sub = st === 'taken' ? esc(c.contractor_name) : st === 'off' ? '使用不可' : '空き';
+          cellsHtml += `<button type="button" data-lkr-cell="${l.id}" style="grid-row:${l.grid_row} / span ${l.row_span};grid-column:${l.grid_col} / span ${l.col_span};${STATE_STYLE[st]}border-radius:8px;padding:4px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;overflow:hidden;text-align:center">
+            <span style="font-size:14px;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.name)}</span>
+            <span style="font-size:10.5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.85">${sub}</span>
+          </button>`;
+        });
+
+        const legend = (st, label) => `<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px"><span style="display:inline-block;width:16px;height:16px;border-radius:4px;${STATE_STYLE[st]}"></span>${label}</span>`;
+        const chips = banks.map(b => `<button type="button" data-lkr-bank-pick="${b.id}" style="padding:6px 14px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid ${b.id === bank.id ? '#1a1410' : '#d1d5db'};background:${b.id === bank.id ? '#1a1410' : '#fff'};color:${b.id === bank.id ? '#fff' : '#374151'}">${esc(b.name)}</button>`).join('');
+
+        layoutEl.innerHTML = `
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${chips}</div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:13px">
+            <span>全${counts.all}</span>
+            <span style="color:#16a34a;font-weight:700">契約中 ${counts.taken}</span>
+            <span style="font-weight:700">空き ${counts.free}</span>
+            <span style="color:#6b7280">使用不可 ${counts.off}</span>
+          </div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap">${legend('free', '空き')}${legend('taken', '契約中')}${legend('off', '使用不可')}<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px"><span style="display:inline-block;width:16px;height:16px;border-radius:4px;border:1.5px dashed #d1d5db"></span>未配置（タップで追加）</span></div>
+          <div style="overflow-x:auto;padding:2px">
+            <div style="display:grid;grid-template-columns:repeat(${bank.grid_cols},minmax(68px,1fr));grid-auto-rows:64px;gap:6px;min-width:${bank.grid_cols * 68 + (bank.grid_cols - 1) * 6}px">${cellsHtml}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px" data-lkr-fill>空きマスにまとめて作成</button>
+            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px" data-lkr-bank-edit>この配置図の設定（名前・段数・横の数）</button>
+          </div>`;
+
+        layoutEl.querySelectorAll('[data-lkr-bank-pick]').forEach(btn => btn.addEventListener('click', () => { selectedBankId = btn.dataset.lkrBankPick; renderLayout(); }));
+        layoutEl.querySelectorAll('[data-lkr-empty]').forEach(btn => btn.addEventListener('click', () => openNewLockerModal(bank, Number(btn.dataset.r), Number(btn.dataset.c))));
+        layoutEl.querySelectorAll('[data-lkr-cell]').forEach(btn => btn.addEventListener('click', () => { const l = lockers.find(x => x.id === btn.dataset.lkrCell); if (l) openLockerModal(l); }));
+        layoutEl.querySelector('[data-lkr-fill]')?.addEventListener('click', () => openFillModal(bank));
+        layoutEl.querySelector('[data-lkr-bank-edit]')?.addEventListener('click', () => openBankEditModal(bank));
+      }
+
+      function openBankModal() {
+        const root = openModal('ロッカー群を追加', `
+          <form data-lkr-form>
+            ${field('名前', `<input name="name" value="${banks.length ? '' : 'ロッカー'}" placeholder="例：男子更衣室" required style="${inputCss}">`)}
+            <div style="display:flex;gap:10px">
+              <div style="flex:1">${field('段数（縦）', `<input name="grid_rows" type="number" min="1" max="60" value="3" required style="${inputCss}">`)}</div>
+              <div style="flex:1">${field('横の数', `<input name="grid_cols" type="number" min="1" max="60" value="4" required style="${inputCss}">`)}</div>
+            </div>
+            <p style="font-size:11.5px;color:#6b7280;margin:0 0 12px">あとから変更できます。作成後、空きマスにロッカーを置けます。</p>
+            <button type="submit" class="btn" style="width:100%">作成する</button>
+          </form>`);
+        root?.querySelector('[data-lkr-form]')?.addEventListener('submit', async e => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const r = await apiJson('/api/provider/locker-banks', 'POST', { name: fd.get('name'), grid_rows: fd.get('grid_rows'), grid_cols: fd.get('grid_cols') });
+          if (!r.ok) { showToast('エラー: ' + (r.data.error || '不明')); return; }
+          selectedBankId = r.data.id;
+          closeModal();
+          await loadLockers();
+          showToast('配置図を作りました。マスをタップしてロッカーを置けます');
+        });
+      }
+
+      function openBankEditModal(bank) {
+        const root = openModal('配置図の設定', `
+          <form data-lkr-form>
+            ${field('名前', `<input name="name" value="${esc(bank.name)}" required style="${inputCss}">`)}
+            <div style="display:flex;gap:10px">
+              <div style="flex:1">${field('段数（縦）', `<input name="grid_rows" type="number" min="1" max="60" value="${bank.grid_rows}" required style="${inputCss}">`)}</div>
+              <div style="flex:1">${field('横の数', `<input name="grid_cols" type="number" min="1" max="60" value="${bank.grid_cols}" required style="${inputCss}">`)}</div>
+            </div>
+            <p style="font-size:11.5px;color:#6b7280;margin:0 0 12px">縮小すると、範囲外になる空きロッカーは削除されます。契約中のロッカーが範囲外になる縮小はできません。</p>
+            <button type="submit" class="btn" style="width:100%">保存する</button>
+          </form>
+          <button type="button" data-lkr-bank-del style="margin-top:12px;width:100%;background:none;border:none;color:#ef4444;font-size:12.5px;cursor:pointer">この配置図を削除</button>`);
+        root?.querySelector('[data-lkr-form]')?.addEventListener('submit', async e => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const body = { name: fd.get('name'), grid_rows: fd.get('grid_rows'), grid_cols: fd.get('grid_cols') };
+          let r = await apiJson(`/api/provider/locker-banks/${bank.id}`, 'PATCH', body);
+          if (!r.ok && r.data.needs_confirm) {
+            if (!confirm(r.data.error + '。よろしいですか？')) return;
+            r = await apiJson(`/api/provider/locker-banks/${bank.id}`, 'PATCH', { ...body, confirm_remove: true });
+          }
+          if (!r.ok) { showToast('エラー: ' + (r.data.error || '不明')); return; }
+          closeModal();
+          loadLockers();
+          showToast('保存しました');
+        });
+        root?.querySelector('[data-lkr-bank-del]')?.addEventListener('click', async () => {
+          if (!confirm(`「${bank.name}」と、その中のロッカーをすべて削除します。よろしいですか？`)) return;
+          const r = await apiJson(`/api/provider/locker-banks/${bank.id}`, 'DELETE');
+          if (!r.ok) { showToast('エラー: ' + (r.data.error || '不明')); return; }
+          closeModal();
+          loadLockers();
+        });
+      }
+
+      function nextLockerName(list) {
+        let best = null;
+        list.forEach(l => {
+          const m = String(l.name).match(/^(.*?)(\d+)$/);
+          if (m && (!best || Number(m[2]) >= best.num)) best = { prefix: m[1], num: Number(m[2]), width: m[2].length, padded: m[2].startsWith('0') };
+        });
+        if (!best) return '';
+        const n = String(best.num + 1);
+        return best.prefix + (best.padded ? n.padStart(best.width, '0') : n);
+      }
+
+      function openNewLockerModal(bank, r, c) {
+        const others = bankLockers(bank.id);
+        const root = openModal(`${r}段目・${c}列目にロッカーを置く`, `
+          <form data-lkr-form>
+            ${field('ロッカー名・番号', `<input name="name" value="${esc(nextLockerName(others))}" placeholder="例：12" required style="${inputCss}">`)}
+            ${field('月額（円）', `<input name="monthly_fee" type="number" min="0" placeholder="任意" style="${inputCss}">`)}
+            <div style="display:flex;gap:10px">
+              <div style="flex:1">${field('縦の大きさ（段）', `<input name="row_span" type="number" min="1" value="1" required style="${inputCss}">`)}</div>
+              <div style="flex:1">${field('横の大きさ（列）', `<input name="col_span" type="number" min="1" value="1" required style="${inputCss}">`)}</div>
+            </div>
+            <p style="font-size:11.5px;color:#6b7280;margin:0 0 12px">大きいロッカーは、縦・横の数字を増やすとその分のマスを使います。</p>
+            <button type="submit" class="btn" style="width:100%">置く</button>
+          </form>`);
+        root?.querySelector('[data-lkr-form]')?.addEventListener('submit', async e => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const body = { bank_id: bank.id, grid_row: r, grid_col: c, row_span: Number(fd.get('row_span')), col_span: Number(fd.get('col_span')), name: fd.get('name'), monthly_fee: fd.get('monthly_fee') };
+          const perr = placementError(bank, others, body);
+          if (perr) { showToast(perr); return; }
+          const res = await apiJson('/api/provider/lockers', 'POST', body);
+          if (!res.ok) { showToast('エラー: ' + (res.data.error || '不明')); return; }
+          closeModal();
+          loadLockers();
+        });
+      }
+
+      function openFillModal(bank) {
+        const others = bankLockers(bank.id);
+        const taken = new Set();
+        others.forEach(l => { const rc = lockerRect(l); for (let y = rc.r1; y <= rc.r2; y++) for (let x = rc.c1; x <= rc.c2; x++) taken.add(`${y},${x}`); });
+        const emptyCount = bank.grid_rows * bank.grid_cols - taken.size;
+        if (emptyCount <= 0) { showToast('空いているマスがありません'); return; }
+        const root = openModal(`空きマス${emptyCount}個にまとめて作成`, `
+          <form data-lkr-form>
+            <p style="font-size:12.5px;margin:0 0 10px">左上から右へ、段ごとに連番を振ってロッカーを作ります。大きさは全部1マスです（あとから個別に変更できます）。</p>
+            <div style="display:flex;gap:10px">
+              <div style="flex:1">${field('頭の文字', `<input name="prefix" placeholder="例：A-" style="${inputCss}">`)}</div>
+              <div style="flex:1">${field('開始番号', `<input name="start" type="number" min="0" value="1" required style="${inputCss}">`)}</div>
+              <div style="flex:1">${field('桁数', `<input name="digits" type="number" min="0" max="10" value="0" style="${inputCss}">`, '0=そのまま')}</div>
+            </div>
+            ${field('月額（円）', `<input name="monthly_fee" type="number" min="0" placeholder="任意（全部に同じ額）" style="${inputCss}">`)}
+            <button type="submit" class="btn" style="width:100%">作成する</button>
+          </form>`);
+        root?.querySelector('[data-lkr-form]')?.addEventListener('submit', async e => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const r = await apiJson(`/api/provider/locker-banks/${bank.id}/fill`, 'POST', { prefix: fd.get('prefix'), start: fd.get('start'), digits: fd.get('digits'), monthly_fee: fd.get('monthly_fee') });
+          if (!r.ok) { showToast('エラー: ' + (r.data.error || '不明')); return; }
+          closeModal();
+          await loadLockers();
+          showToast(`${r.data.created}個のロッカーを作りました`);
+        });
+      }
+
+      function openLockerModal(l) {
+        const bank = banks.find(b => b.id === l.bank_id);
+        const c = l.activeContract;
+        const st = lockerState(l);
+        const locked = !!c;
+        const dis = locked ? 'disabled' : '';
+        const stateLabel = st === 'taken' ? '<span style="font-weight:700;color:#16a34a">契約中</span>' : st === 'off' ? '<span style="font-weight:700;color:#6b7280">使用不可</span>' : '<span style="font-weight:700">空き</span>';
+        const contractHtml = c ? `
+          <div style="background:#f0fdf4;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:12px">
+            <div><strong>${esc(c.contractor_name)}</strong>（月額${fmtYen(c.monthly_fee)}）${c.user_id ? ' <span style="color:#2563eb;font-weight:700;cursor:pointer" data-lkr-open-cust>会員</span>' : ''}</div>
+            <div style="margin-top:4px;font-size:12px">${c.stripe_subscription_item_id
+              ? '<span style="font-weight:700;padding:1px 8px;border-radius:99px;background:#ecfdf5;color:#059669">自動課金中</span>'
+              : c.payment_link_url
+                ? `<span style="font-weight:700;padding:1px 8px;border-radius:99px;background:#fffbeb;color:#92400e">支払いリンク未完了</span> <a href="${esc(c.payment_link_url)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;font-weight:700">リンクを開く</a>`
+                : '<span style="color:#6b7280">手動管理</span>'}</div>
+          </div>` : '';
+        const root = openModal(`${l.name}（${stateLabel.replace(/<[^>]+>/g, '')}）`, `
+          ${contractHtml}
+          <form data-lkr-form>
+            ${field('ロッカー名・番号', `<input name="name" value="${esc(l.name)}" required style="${inputCss}">`)}
+            ${field('月額（円）', `<input name="monthly_fee" type="number" min="0" value="${l.monthly_fee ?? ''}" placeholder="未設定" style="${inputCss}">`)}
+            <div style="display:flex;gap:10px">
+              <div style="flex:1">${field('縦の大きさ（段）', `<input name="row_span" type="number" min="1" value="${l.row_span}" ${dis} style="${inputCss}">`)}</div>
+              <div style="flex:1">${field('横の大きさ（列）', `<input name="col_span" type="number" min="1" value="${l.col_span}" ${dis} style="${inputCss}">`)}</div>
+            </div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px"><input type="checkbox" name="unusable" ${l.active ? '' : 'checked'} ${dis}> 使用不可にする（入会ページにも出しません）</label>
+            ${locked ? '<p style="font-size:11.5px;color:#6b7280;margin:0 0 10px">契約中は大きさの変更・使用不可にはできません。名前と月額は変更できます。</p>' : ''}
+            <button type="submit" class="btn" style="width:100%;margin-bottom:8px">変更を保存</button>
+          </form>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${c
+              ? '<button type="button" class="btn btn-ghost" style="flex:1;color:#ef4444" data-lkr-cancel-contract>解約する</button>'
+              : (l.active ? '<button type="button" class="btn" style="flex:1" data-lkr-start-contract>契約する</button>' : '')}
+            <button type="button" class="btn btn-ghost" style="color:#ef4444" data-lkr-del>削除</button>
+          </div>`);
+        root?.querySelector('[data-lkr-open-cust]')?.addEventListener('click', () => {
           if (!window.openCustomerModal) { showToast('読み込み中です。少し待ってから再度お試しください'); return; }
-          window.openCustomerModal(el.dataset.lkrOpenCust, 'member', el.dataset.lkrCustName);
-        }));
-        listEl.querySelectorAll('[data-lkr-contract]').forEach(btn => btn.addEventListener('click', () => {
-          selectedLockerId = btn.dataset.lkrContract;
-          contractTitle.textContent = `${btn.dataset.lkrName} を契約する`;
+          closeModal();
+          window.openCustomerModal(c.user_id, 'member', c.contractor_name);
+        });
+        root?.querySelector('[data-lkr-form]')?.addEventListener('submit', async e => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const body = { name: fd.get('name'), monthly_fee: fd.get('monthly_fee') };
+          if (!locked) {
+            const rs = Number(fd.get('row_span')), cs = Number(fd.get('col_span'));
+            body.active = !fd.get('unusable');
+            if (rs !== l.row_span || cs !== l.col_span) {
+              const cand = { grid_row: l.grid_row, grid_col: l.grid_col, row_span: rs, col_span: cs };
+              const perr = placementError(bank, bankLockers(bank.id).filter(o => o.id !== l.id), cand);
+              if (perr) { showToast(perr); return; }
+              body.row_span = rs; body.col_span = cs;
+            }
+          }
+          const r = await apiJson(`/api/provider/lockers/${l.id}`, 'PATCH', body);
+          if (!r.ok) { showToast('エラー: ' + (r.data.error || '不明')); return; }
+          closeModal();
+          loadLockers();
+          showToast('保存しました');
+        });
+        root?.querySelector('[data-lkr-start-contract]')?.addEventListener('click', () => {
+          selectedLockerId = l.id;
+          closeModal();
+          contractTitle.textContent = `${l.name} を契約する`;
           contractForm.reset();
           setSelectedMember(null, '');
           contractCard.style.display = 'block';
           contractCard.scrollIntoView({ behavior: 'smooth' });
-        }));
-        listEl.querySelectorAll('[data-lkr-cancel-contract]').forEach(btn => btn.addEventListener('click', async () => {
+        });
+        root?.querySelector('[data-lkr-cancel-contract]')?.addEventListener('click', async () => {
           if (!confirm('この契約を解約しますか？')) return;
-          const res = await fetch(`/api/provider/lockers/${btn.dataset.lkrLockerId}/contracts/${btn.dataset.lkrCancelContract}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ status: 'cancelled' }) });
-          if (res.ok) { showToast('解約しました'); loadLockers(); } else showToast('解約に失敗しました');
-        }));
-        listEl.querySelectorAll('[data-lkr-del]').forEach(btn => btn.addEventListener('click', async () => {
+          const r = await apiJson(`/api/provider/lockers/${l.id}/contracts/${c.id}`, 'PATCH', { status: 'cancelled' });
+          if (r.ok) { closeModal(); showToast('解約しました'); loadLockers(); } else showToast('解約に失敗しました');
+        });
+        root?.querySelector('[data-lkr-del]')?.addEventListener('click', async () => {
           if (!confirm('このロッカーを削除しますか？')) return;
-          const res = await fetch(`/api/provider/lockers/${btn.dataset.lkrDel}`, { method: 'DELETE', headers: authH() });
-          if (res.ok) loadLockers(); else { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); }
-        }));
+          const r = await apiJson(`/api/provider/lockers/${l.id}`, 'DELETE');
+          if (r.ok) { closeModal(); loadLockers(); } else showToast('エラー: ' + (r.data.error || '不明'));
+        });
       }
 
-      document.getElementById('lkr-add-btn')?.addEventListener('click', () => { editForm.reset(); editCard.style.display = 'block'; editCard.scrollIntoView({ behavior: 'smooth' }); });
-      document.getElementById('lkr-cancel-btn')?.addEventListener('click', () => { editCard.style.display = 'none'; });
-      editForm?.addEventListener('submit', async e => {
-        e.preventDefault();
-        const fd = new FormData(editForm);
-        const res = await fetch('/api/provider/lockers', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authH() }, body: JSON.stringify({ name: fd.get('name'), monthly_fee: fd.get('monthly_fee') }) });
-        if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadLockers(); showToast('保存しました'); }
-        else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
-      });
+      document.getElementById('lkr-bank-add-btn')?.addEventListener('click', openBankModal);
 
       document.getElementById('lkr-contract-cancel-btn')?.addEventListener('click', () => { contractCard.style.display = 'none'; });
       contractForm?.addEventListener('submit', async e => {
@@ -4773,13 +5044,13 @@ export default function ProviderDashboardPage() {
       // 顧客管理タブの絞り込みUIとは独立に判定できる（でお報告2026-09-18：「メールの
       // ページ、対象者の絞り込み方が無い」。一斉メール配信タブ自身に絞り込みUIを追加した）。
       // 会員番号（店舗内連番）。表示は0埋め4桁、検索は「12」「0012」「No.12」「#12」のどれでも当たる。
-      function fmtNo(n) { return n == null ? '' : 'No.' + String(n).padStart(4, '0'); }
+      function fmtNo(n) { return n == null ? '' : 'No.' + String(n); }
       function matchesCustomer(kw, name, no) {
         if (!kw) return true;
         if ((name || '').toLowerCase().includes(kw)) return true;
         if (no == null) return false;
         const digits = kw.replace(/^(no\.?|#|会員番号)\s*/i, '').replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
-        return /^\d+$/.test(digits) && String(no).padStart(4, '0').includes(digits);
+        return /^\d+$/.test(digits) && String(no).includes(digits.replace(/^0+(?=\d)/, ''));
       }
 
       function currentFilteredMemberRows(filterOverride, kwOverride) {
@@ -5007,7 +5278,7 @@ export default function ProviderDashboardPage() {
           const axisLabel = def ? `${def.icon} ${esc(def.label)}` : esc(c.axis);
           custModalNameEl.textContent = c.customer_name;
           custModalBadgesEl.innerHTML = `
-            ${c.member_number != null ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#f3f4f6;color:#374151;border-radius:99px;">会員番号 ${String(c.member_number).padStart(4, '0')}</span>` : ''}
+            ${c.member_number != null ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#f3f4f6;color:#374151;border-radius:99px;">会員番号 ${c.member_number}</span>` : ''}
             <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
             ${statusBadge(c.status)}
             ${overdueBadge('ユーザー想定', c.userOverdueDays)}
@@ -5071,7 +5342,7 @@ export default function ProviderDashboardPage() {
         custModalMemberSection.style.display = 'none';
         custModalManualSection.style.display = '';
         custModalNameEl.textContent = m.display_name;
-        custModalBadgesEl.innerHTML = (m.member_number != null ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#f3f4f6;color:#374151;border-radius:99px;">会員番号 ${String(m.member_number).padStart(4, '0')}</span> ` : '') + '<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:99px;">非会員</span>';
+        custModalBadgesEl.innerHTML = (m.member_number != null ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#f3f4f6;color:#374151;border-radius:99px;">会員番号 ${m.member_number}</span> ` : '') + '<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:99px;">非会員</span>';
         custModalInfoEl.textContent = 'Finemeに登録していないお客様のカルテです。会員だと分かった場合は下の「会員と紐付ける」で紐付けると、記録が引き継がれます。';
         custModalManualMemoTa.value = m.memo || '';
         custModalLinkSearch.value = '';
@@ -12457,24 +12728,12 @@ export default function ProviderDashboardPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
               <div>
                 <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>ロッカー管理</h2>
-                <p className="muted" style={{ fontSize: '13px', margin: 0 }}>お客様の月極ロッカー契約を記録・管理します。</p>
+                <p className="muted" style={{ fontSize: '13px', margin: 0 }}>ロッカーの配置図を店舗に合わせて作り、空き・契約中を図で確認します。マスをタップして契約・設定できます。</p>
               </div>
-              <button type="button" className="btn" id="lkr-add-btn">＋ ロッカーを追加</button>
+              <button type="button" className="btn" id="lkr-bank-add-btn">＋ ロッカー群を追加</button>
             </div>
 
-            <div id="lkr-edit-card" style={{ display: 'none', background: 'var(--color-bg)', borderRadius: '12px', padding: '16px' }}>
-              <h3 style={{ margin: '0 0 10px', fontSize: '14px' }}>ロッカーを追加</h3>
-              <form id="lkr-edit-form">
-                <div className="form-field"><label>ロッカー名・番号 *</label><input name="name" placeholder="例：ロッカー12番" required /></div>
-                <div className="form-field"><label>月額（円）</label><input name="monthly_fee" type="number" min="0" placeholder="任意" /></div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button type="submit" className="btn">保存する</button>
-                  <button type="button" className="btn btn-ghost" id="lkr-cancel-btn">キャンセル</button>
-                </div>
-              </form>
-            </div>
-
-            <div id="lkr-list" className="stack" style={{ gap: '10px' }}>読み込み中…</div>
+            <div id="lkr-layout" className="stack" style={{ gap: '14px' }}>読み込み中…</div>
           </div>
 
           {/* 契約フォーム（空きロッカーの「契約する」から開く） */}
@@ -12506,6 +12765,7 @@ export default function ProviderDashboardPage() {
               </div>
             </form>
           </div>
+          <div id="lkr-modal-root"></div>
         </div>
 
         {/* 入会手続き（でお要望2026-09-15〜16：「お客様がジムなどの店舗に入会する手続きも

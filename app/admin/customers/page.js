@@ -10,7 +10,7 @@ function getAdminKey() {
   return key;
 }
 
-const fmtNo = n => (n == null ? '—' : String(n).padStart(4, '0'));
+const fmtNo = n => (n == null ? '—' : String(n));
 const fmtDate = d => (d ? new Date(d).toLocaleDateString('ja-JP', { year: 'numeric', month: 'numeric', day: 'numeric' }) : '—');
 
 function matchesKw(kw, name, no) {
@@ -18,7 +18,7 @@ function matchesKw(kw, name, no) {
   if ((name || '').toLowerCase().includes(kw)) return true;
   if (no == null) return false;
   const digits = kw.replace(/^(no\.?|#|会員番号)\s*/i, '').replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
-  return /^\d+$/.test(digits) && String(no).padStart(4, '0').includes(digits);
+  return /^\d+$/.test(digits) && String(no).includes(digits.replace(/^0+(?=\d)/, ''));
 }
 
 const card = { background: '#fff', color: '#111', border: '1px solid #e5e7eb', borderRadius: 12, textShadow: 'none' };

@@ -19,7 +19,7 @@ function matches(kw, name, no, providerName) {
   if ((name || '').toLowerCase().includes(kw) || (providerName || '').toLowerCase().includes(kw)) return true;
   if (no == null) return false;
   const digits = kw.replace(/^(no\.?|#|会員番号)\s*/i, '').replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
-  return /^\d+$/.test(digits) && String(no).padStart(4, '0').includes(digits);
+  return /^\d+$/.test(digits) && String(no).includes(digits.replace(/^0+(?=\d)/, ''));
 }
 
 export async function GET(request) {

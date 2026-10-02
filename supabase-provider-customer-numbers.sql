@@ -17,3 +17,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS provider_customer_numbers_user_uq ON provider_
 CREATE UNIQUE INDEX IF NOT EXISTS provider_customer_numbers_manual_uq ON provider_customer_numbers (provider_id, manual_customer_id) WHERE manual_customer_id IS NOT NULL;
 ALTER TABLE provider_customer_numbers ENABLE ROW LEVEL SECURITY;
 -- 公開読み取りは許可しない。service_role（APIルート）のみ。
+
+-- 会員番号は店舗内連番。1億人規模でも溢れないよう BIGINT に拡張（何度流しても無害）
+ALTER TABLE provider_customer_numbers ALTER COLUMN member_number TYPE BIGINT;
