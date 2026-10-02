@@ -7529,7 +7529,7 @@ export default function ProviderDashboardPage() {
         const promptEl = document.getElementById('referral-optin-prompt');
         const contentEl = document.getElementById('referral-registered-content');
         try {
-          const res = await fetch('/api/provider/sales-partner', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+          const res = await fetch('/api/provider/sales-partner', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
           if (!res.ok) { if (promptEl) promptEl.style.display = ''; return; }
           const data = await res.json();
           if (data.registered) {
@@ -7554,7 +7554,7 @@ export default function ProviderDashboardPage() {
         try {
           const res = await fetch('/api/provider/sales-partner', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+            headers: { 'Authorization': `Bearer ${getSupabaseToken()}` },
           });
           if (!res.ok) { showToast('登録に失敗しました'); btn.disabled = false; btn.textContent = '営業パートナーとして登録する'; return; }
           showToast('営業パートナーに登録しました');

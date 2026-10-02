@@ -3,11 +3,17 @@ import { getSupabase } from '@/lib/supabase';
 /**
  * GET /api/billing/referrals?provider_id=xxx
  *
- * provider_id を指定した場合: その掲載者が紹介した一覧（掲載者ダッシュボード用）
- * provider_id を省略した場合: 全掲載者の紹介関係（管理者向け）
+ * provider_id を指定した場合: その掲載者が「営業パートナーとして」紹介した一覧
+ *   （掲載者ダッシュボード用。掲載者自身がsales_partnersに登録済みの場合のみ結果を返す。
+ *   未登録の場合は not_registered:true を返すので、呼び出し側は登録導線を出す）
+ * provider_id を省略した場合: 全営業パートナーの紹介関係（管理者向け）
  *
- * providers テーブルの referred_by（紹介者の referral_code）を使って
- * 紹介関係を取得する。referral_rewards テーブルがあれば過去の支払い実績も返す。
+ * 紹介者の身元は sales_partners（掲載者から独立した営業パートナーの登録単位）。
+ * providers.referred_by（紹介された側に入っている、紹介者のreferral_code）と
+ * sales_partners.referral_code を突き合わせて紹介関係を取得する
+ * （でお方針2026-10-02：「掲載者＝営業パートナー」の自動一体化を廃止・
+ *  掲載者も希望すれば別途sales_partnersへ登録する方式に変更。報酬率・計算ロジックは不変）。
+ * referral_rewards テーブルがあれば過去の支払い実績も返す。
  */
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -15,22 +21,27 @@ export async function GET(request) {
 
   const sb = getSupabase();
 
-  // ── 対象の紹介者情報を取得 ────────────────────────────────────
+  // ── 対象の紹介者（営業パートナー）情報を取得 ────────────────────
   let referrerReferralCode = null;
-  let referrerId = null;
+  let referrerId = null; // sales_partners.id（referral_rewards.referrer_idと対応）
 
   if (providerId) {
-    const { data: referrer, error: refErr } = await sb
-      .from('providers')
-      .select('id, referral_code')
-      .eq('id', providerId)
-      .single();
+    const { data: partner, error: refErr } = await sb
+      .from('sales_partners')
+      .select('id, referral_code, status')
+      .eq('provider_id', providerId)
+      .eq('status', 'active')
+      .maybeSingle();
 
-    if (refErr || !referrer) {
-      return Response.json({ error: '掲載者が見つかりません' }, { status: 404 });
+    if (refErr) {
+      return Response.json({ error: '紹介情報の取得に失敗しました' }, { status: 500 });
     }
-    referrerReferralCode = referrer.referral_code;
-    referrerId = referrer.id;
+    if (!partner) {
+      // この掲載者はまだ営業パートナーとして登録していない
+      return Response.json({ not_registered: true, referrals: [], summary: null });
+    }
+    referrerReferralCode = partner.referral_code;
+    referrerId = partner.id;
   }
 
   // ── 紹介された掲載者一覧を取得 ────────────────────────────────
@@ -123,6 +134,7 @@ export async function GET(request) {
     total_earned_all_time: totalEarnedAllTime,
     pending_this_month: pendingThisMonth,
     current_month: currentMonth,
+    referral_code: referrerReferralCode || null,
   };
 
   return Response.json({ referrals, summary });
