@@ -3439,15 +3439,13 @@ export default function ProviderDashboardPage() {
             <div style="display:grid;grid-template-columns:repeat(${bank.grid_cols},minmax(68px,1fr));grid-auto-rows:${unit}px;gap:6px;min-width:${bank.grid_cols * 68 + (bank.grid_cols - 1) * 6}px">${cellsHtml}</div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px" data-lkr-fill>まとめて作成（列ごとの段数）</button>
-            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px" data-lkr-bank-edit>この配置図の設定（名前・列の追加削除）</button>
+            <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px" data-lkr-bank-edit>編集</button>
             <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px;color:#ef4444" data-lkr-bank-del-main>この配置図を削除</button>
           </div>`;
 
         layoutEl.querySelectorAll('[data-lkr-bank-pick]').forEach(btn => btn.addEventListener('click', () => { selectedBankId = btn.dataset.lkrBankPick; renderLayout(); }));
         layoutEl.querySelectorAll('[data-lkr-empty]').forEach(btn => btn.addEventListener('click', () => openNewLockerModal(bank, Number(btn.dataset.r), Number(btn.dataset.c))));
         layoutEl.querySelectorAll('[data-lkr-cell]').forEach(btn => btn.addEventListener('click', () => { const l = lockers.find(x => x.id === btn.dataset.lkrCell); if (l) openLockerModal(l); }));
-        layoutEl.querySelector('[data-lkr-fill]')?.addEventListener('click', () => openFillModal(bank));
         layoutEl.querySelector('[data-lkr-bank-edit]')?.addEventListener('click', () => openBankEditModal(bank));
         layoutEl.querySelector('[data-lkr-bank-del-main]')?.addEventListener('click', async () => {
           if (!confirm(`「${bank.name}」と、その中のロッカー${list.length}個をすべて削除します。よろしいですか？`)) return;
@@ -3505,13 +3503,15 @@ export default function ProviderDashboardPage() {
       function openBankEditModal(bank) {
         const colOpts = Array.from({ length: bank.grid_cols }, (_, k) => `<option value="${k + 1}">${k + 1}列目</option>`).join('');
         const insOpts = Array.from({ length: bank.grid_cols }, (_, k) => `<option value="${k + 1}">${k + 1}列目の前（左）に追加</option>`).join('') + `<option value="${bank.grid_cols + 1}" selected>いちばん右に追加</option>`;
-        const root = openModal('配置図の設定', `
+        const sec = 'margin-top:14px;padding-top:12px;border-top:1px solid rgba(26,20,16,0.1)';
+        const root = openModal('配置図を編集', `
           <form data-lkr-form>
-            ${field('名前', `<input name="name" value="${esc(bank.name)}" required style="${inputCss}">`)}
-            ${field('縦の分割数', `<input name="grid_rows" type="number" min="1" max="60" value="${bank.grid_rows}" required style="${inputCss}">`, '列ごとの段数の最小公倍数です。通常は触らず、まとめて作成で段数を指定してください')}
-            <button type="submit" class="btn" style="width:100%">名前・縦の分割数を保存</button>
+            <div style="display:flex;gap:8px;align-items:flex-end">
+              <div style="flex:1">${field('名前', `<input name="name" value="${esc(bank.name)}" required style="${inputCss}">`)}</div>
+              <button type="submit" class="btn" style="white-space:nowrap;margin-bottom:10px">名前を保存</button>
+            </div>
           </form>
-          <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(26,20,16,0.1)">
+          <div style="${sec}">
             <div style="font-size:12px;font-weight:700;margin-bottom:8px">列の追加・削除（現在${bank.grid_cols}列）</div>
             <div style="display:flex;gap:8px;margin-bottom:8px">
               <select data-lkr-col-ins-at style="${inputCss}flex:1">${insOpts}</select>
@@ -3521,9 +3521,15 @@ export default function ProviderDashboardPage() {
               <select data-lkr-col-del-at style="${inputCss}flex:1">${colOpts}</select>
               <button type="button" class="btn btn-ghost" style="white-space:nowrap;color:#ef4444" data-lkr-col-del>列を削除</button>
             </div>
-            <p style="font-size:11.5px;color:#6b7280;margin:8px 0 0">追加した列は空で、続けてロッカーをまとめて作れます。削除した列の右側は左に詰まります。契約中のロッカーがある列は削除できません。</p>
+            <p style="font-size:11.5px;color:#6b7280;margin:8px 0 0">削除した列の右側は左に詰まります。契約中のロッカーがある列は削除できません。</p>
           </div>
-          <button type="button" data-lkr-bank-del style="margin-top:12px;width:100%;background:none;border:none;color:#ef4444;font-size:12.5px;cursor:pointer">この配置図を削除</button>`);
+          <div style="${sec}">
+            <div style="font-size:12px;font-weight:700;margin-bottom:8px">ロッカーを作成</div>
+            <div data-lkr-fill-host></div>
+          </div>
+          <button type="button" data-lkr-bank-del style="margin-top:14px;width:100%;background:none;border:none;color:#ef4444;font-size:12.5px;cursor:pointer">この配置図を削除</button>`);
+        if (!root) return;
+        renderFillSection(root.querySelector('[data-lkr-fill-host]'), bank, async msg => { closeModal(); await loadLockers(); showToast(msg); });
         async function shiftCol(op, at) {
           const body = { shift: { axis: 'col', op, at } };
           let r = await apiJson(`/api/provider/locker-banks/${bank.id}`, 'PATCH', body);
@@ -3534,37 +3540,32 @@ export default function ProviderDashboardPage() {
           if (!r.ok) { showToast('エラー: ' + (r.data.error || '不明')); return null; }
           return r.data;
         }
-        root?.querySelector('[data-lkr-col-ins]')?.addEventListener('click', async () => {
-          const updated = await shiftCol('insert', Number(root.querySelector('[data-lkr-col-ins-at]').value));
-          if (!updated) return;
+        root.querySelector('[data-lkr-col-ins]')?.addEventListener('click', async () => {
+          if (!(await shiftCol('insert', Number(root.querySelector('[data-lkr-col-ins-at]').value)))) return;
           closeModal();
           await loadLockers();
           const b = banks.find(x => x.id === bank.id);
-          showToast('列を追加しました');
-          if (b) openFillModal(b);
+          showToast('列を追加しました。続けてロッカーを作成できます');
+          if (b) openBankEditModal(b);
         });
-        root?.querySelector('[data-lkr-col-del]')?.addEventListener('click', async () => {
-          const updated = await shiftCol('remove', Number(root.querySelector('[data-lkr-col-del-at]').value));
-          if (!updated) return;
+        root.querySelector('[data-lkr-col-del]')?.addEventListener('click', async () => {
+          if (!(await shiftCol('remove', Number(root.querySelector('[data-lkr-col-del-at]').value)))) return;
           closeModal();
-          loadLockers();
+          await loadLockers();
+          const b = banks.find(x => x.id === bank.id);
           showToast('列を削除しました');
+          if (b) openBankEditModal(b);
         });
-        root?.querySelector('[data-lkr-form]')?.addEventListener('submit', async e => {
+        root.querySelector('[data-lkr-form]')?.addEventListener('submit', async e => {
           e.preventDefault();
           const fd = new FormData(e.target);
-          const body = { name: fd.get('name'), grid_rows: fd.get('grid_rows') };
-          let r = await apiJson(`/api/provider/locker-banks/${bank.id}`, 'PATCH', body);
-          if (!r.ok && r.data.needs_confirm) {
-            if (!confirm(r.data.error + '。よろしいですか？')) return;
-            r = await apiJson(`/api/provider/locker-banks/${bank.id}`, 'PATCH', { ...body, confirm_remove: true });
-          }
+          const r = await apiJson(`/api/provider/locker-banks/${bank.id}`, 'PATCH', { name: fd.get('name') });
           if (!r.ok) { showToast('エラー: ' + (r.data.error || '不明')); return; }
           closeModal();
           loadLockers();
           showToast('保存しました');
         });
-        root?.querySelector('[data-lkr-bank-del]')?.addEventListener('click', async () => {
+        root.querySelector('[data-lkr-bank-del]')?.addEventListener('click', async () => {
           if (!confirm(`「${bank.name}」と、その中のロッカーをすべて削除します。よろしいですか？`)) return;
           const r = await apiJson(`/api/provider/locker-banks/${bank.id}`, 'DELETE');
           if (!r.ok) { showToast('エラー: ' + (r.data.error || '不明')); return; }
@@ -3610,16 +3611,23 @@ export default function ProviderDashboardPage() {
         });
       }
 
-      function openFillModal(bank) {
+      function fillSectionHtml(bank) {
         const others = bankLockers(bank.id);
         const taken = new Set();
         others.forEach(l => { const rc = lockerRect(l); for (let y = rc.r1; y <= rc.r2; y++) for (let x = rc.c1; x <= rc.c2; x++) taken.add(`${y},${x}`); });
         const emptyCount = bank.grid_rows * bank.grid_cols - taken.size;
-        if (emptyCount <= 0) { showToast('空いているマスがありません'); return; }
+        if (emptyCount <= 0) return null;
+        return { others, emptyCount };
+      }
+
+      function renderFillSection(host, bank, onDone) {
+        const info = fillSectionHtml(bank);
+        if (!info) { host.innerHTML = '<p style="font-size:12.5px;color:#6b7280;margin:0">空いているマスがありません。列を追加すると、そこにロッカーを作れます。</p>'; return; }
+        const { others, emptyCount } = info;
         const colEmpty = Array.from({ length: bank.grid_cols }, (_, i) => !others.some(l => { const rc = lockerRect(l); return i + 1 >= rc.c1 && i + 1 <= rc.c2; }));
         const initial = colEmpty.map(e => (e ? 3 : 0));
-        const root = openModal('ロッカーをまとめて作成', `
-          <form data-lkr-form>
+        host.innerHTML = `
+          <form data-lkr-fill-form>
             <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;font-size:13px">
               <label style="display:flex;align-items:center;gap:6px"><input type="radio" name="mode" value="tiers" checked> 列ごとの段数を指定</label>
               <label style="display:flex;align-items:center;gap:6px"><input type="radio" name="mode" value="cells"> 空きマス${emptyCount}個に1マスずつ</label>
@@ -3633,34 +3641,31 @@ export default function ProviderDashboardPage() {
             </div>
             <div data-lkr-order>${field('番号の振り方', `<select name="order" style="${inputCss}"><option value="column">列ごとに上から下へ</option><option value="row">段ごとに左から右へ</option></select>`)}</div>
             ${field('月額（円）', `<input name="monthly_fee" type="number" min="0" placeholder="任意（全部に同じ額）" style="${inputCss}">`)}
-            <button type="submit" class="btn" style="width:100%">作成する</button>
-          </form>`);
-        if (!root) return;
-        const tiersBox = root.querySelector('[data-lkr-tiers]');
+            <button type="submit" class="btn" style="width:100%">ロッカーを作成する</button>
+          </form>`;
+        const tiersBox = host.querySelector('[data-lkr-tiers]');
         const editor = bindTierEditor(tiersBox, initial, { fixed: true, baseRows: bank.grid_rows });
-        const cellsNote = root.querySelector('[data-lkr-cells-note]');
-        const orderBox = root.querySelector('[data-lkr-order]');
-        root.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', () => {
-          const tiersMode = root.querySelector('input[name="mode"]:checked').value === 'tiers';
+        const cellsNote = host.querySelector('[data-lkr-cells-note]');
+        const orderBox = host.querySelector('[data-lkr-order]');
+        host.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', () => {
+          const tiersMode = host.querySelector('input[name="mode"]:checked').value === 'tiers';
           tiersBox.style.display = tiersMode ? '' : 'none';
           orderBox.style.display = tiersMode ? '' : 'none';
           cellsNote.style.display = tiersMode ? 'none' : '';
         }));
-        root.querySelector('[data-lkr-form]').addEventListener('submit', async e => {
+        host.querySelector('[data-lkr-fill-form]').addEventListener('submit', async e => {
           e.preventDefault();
           const fd = new FormData(e.target);
           const body = { prefix: fd.get('prefix'), start: fd.get('start'), digits: fd.get('digits'), monthly_fee: fd.get('monthly_fee') };
           if (fd.get('mode') === 'tiers') {
             if (!editor.tiers.some(t => t > 0)) { showToast('段数を入れた列がありません'); return; }
-            if (editor.rows > 60) { showToast('段数の組み合わせが大きすぎます（縦の分割が60を超えます）'); return; }
+            if (editor.rows > 60) { showToast('段数の組み合わせが大きすぎます'); return; }
             body.column_tiers = editor.tiers.slice();
             body.order = fd.get('order');
           }
           const r = await apiJson(`/api/provider/locker-banks/${bank.id}/fill`, 'POST', body);
           if (!r.ok) { showToast('エラー: ' + (r.data.error || '不明')); return; }
-          closeModal();
-          await loadLockers();
-          showToast(`${r.data.created}個のロッカーを作りました${r.data.skipped ? `（置けなかった${r.data.skipped}個はスキップ）` : ''}`);
+          onDone(`${r.data.created}個のロッカーを作りました${r.data.skipped ? `（置けなかった${r.data.skipped}個はスキップ）` : ''}`);
         });
       }
 
