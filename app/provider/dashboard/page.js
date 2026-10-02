@@ -1948,69 +1948,134 @@ export default function ProviderDashboardPage() {
       }
 
       // ── 提出された希望をスタッフごとに選んで一括適用（でお要望2026-10-02） ──
-      // 全員／一部のスタッフ／スタッフ内の一部日付を除外、のどれも「チェックの付いた日付だけ適用」で表現する。
-      function renderApplyPanel(requests, entries) {
-        const works = requests.filter(r => r.type === 'work');
-        if (!works.length) return '';
-        const offSet = new Set(requests.filter(r => r.type === 'off').map(r => `${r.staff_id}|${r.date}`));
+      // 選択状態は selectedApply（"staffId|date"）で持つ。スタッフ名チェック＝その人の全日、
+      // 日付個別の調整はポップアップのミニカレンダーで行う（スマホで縦に長くならないように）。
+      let applyData = { works: [], offSet: new Set(), entries: [] };
+      const selectedApply = new Set();
+      function applyStatus(r) {
         const toMin = t => { const [h, m] = String(t || '').split(':').map(Number); return h * 60 + m; };
-        const covered = r => entries.some(e => e.staff_id === r.staff_id && e.date === r.date && toMin(e.start_time) < toMin(r.end_time) && toMin(e.end_time) > toMin(r.start_time));
-        const blocks = shiftStaffList.map(st => {
-          const mine = works.filter(r => r.staff_id === st.id).sort((a, b) => (a.date < b.date ? -1 : 1));
+        if (applyData.entries.some(e => e.staff_id === r.staff_id && e.date === r.date && toMin(e.start_time) < toMin(r.end_time) && toMin(e.end_time) > toMin(r.start_time))) return 'done';
+        if (applyData.offSet.has(`${r.staff_id}|${r.date}`)) return 'off';
+        return 'free';
+      }
+      function renderApplyPanel(requests, entries) {
+        applyData = { works: requests.filter(r => r.type === 'work'), offSet: new Set(requests.filter(r => r.type === 'off').map(r => `${r.staff_id}|${r.date}`)), entries };
+        selectedApply.clear();
+        if (!applyData.works.length) return '';
+        const rows = shiftStaffList.map(st => {
+          const mine = applyData.works.filter(r => r.staff_id === st.id);
           if (!mine.length) return '';
-          const chips = mine.map(r => {
-            const done = covered(r), off = offSet.has(`${r.staff_id}|${r.date}`);
-            const dis = done || off;
-            const md = `${Number(r.date.slice(5, 7))}/${Number(r.date.slice(8, 10))}`;
-            const tag = done ? '適用済み' : off ? '休み希望あり' : isShiftClosed(r.date) ? '定休日' : '';
-            return `<label style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid ${dis ? '#e5e7eb' : '#d1d5db'};border-radius:99px;font-size:11.5px;background:${dis ? '#f3f4f6' : '#fff'};color:${dis ? '#9ca3af' : '#374151'};cursor:${dis ? 'default' : 'pointer'};white-space:nowrap">
-              <input type="checkbox" data-apply-chip="${st.id}" data-apply-date="${r.date}" ${dis ? 'disabled' : ''} style="margin:0" />
-              ${md}（${SHIFT_WEEKDAY_JA[new Date(r.date + 'T00:00:00Z').getUTCDay()]}）${esc(String(r.start_time).slice(0, 5))}〜${esc(String(r.end_time).slice(0, 5))}${tag ? `<span style="font-size:10px">・${tag}</span>` : ''}
-            </label>`;
-          }).join('');
-          const free = mine.filter(r => !covered(r) && !offSet.has(`${r.staff_id}|${r.date}`)).length;
-          return `<div style="padding:8px 0;border-bottom:1px solid #f3f4f6">
-            <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;margin-bottom:6px;cursor:pointer">
-              <input type="checkbox" data-apply-staff="${st.id}" ${free ? '' : 'disabled'} style="margin:0" />
-              ${esc(st.name)}<span class="muted" style="font-weight:400;font-size:11.5px">出勤希望${mine.length}日（未適用${free}日）</span>
-            </label>
-            <div style="display:flex;flex-wrap:wrap;gap:5px">${chips}</div>
+          const free = mine.filter(r => applyStatus(r) === 'free').length;
+          return `<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #f3f4f6">
+            <input type="checkbox" data-apply-staff="${st.id}" ${free ? '' : 'disabled'} style="margin:0;width:18px;height:18px;flex:none" />
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(st.name)}</div>
+              <div class="muted" style="font-size:11.5px">希望${mine.length}日・未適用${free}日・<span data-apply-count="${st.id}">選択0日</span></div>
+            </div>
+            <button type="button" class="btn btn-ghost" data-apply-open="${st.id}" style="font-size:12px;padding:5px 10px;flex:none" ${mine.length ? '' : 'disabled'}>日付を選ぶ</button>
           </div>`;
         }).join('');
         return `<div style="margin-top:14px;padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px">
           <div style="font-size:13px;font-weight:800;margin-bottom:2px">提出された希望をまとめてシフトに適用</div>
-          <p class="muted" style="font-size:11.5px;margin:0 0 6px">スタッフ名にチェックでその人の希望を全部選択。外したい日はチェックを外してください。労働条件を超える日は自動で除外し、理由を表示します。</p>
-          ${blocks}
+          <p class="muted" style="font-size:11.5px;margin:0 0 4px">名前にチェックでその人の希望を全部選択。除きたい日は「日付を選ぶ」で外せます。労働条件を超える日は自動で除外し、理由を表示します。</p>
+          ${rows}
           <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px">
-            <button type="button" class="btn btn-ghost" id="shift-apply-all-btn" style="font-size:12px;padding:4px 10px">全員を選択</button>
-            <button type="button" class="btn btn-ghost" id="shift-apply-none-btn" style="font-size:12px;padding:4px 10px">選択を解除</button>
+            <button type="button" class="btn btn-ghost" id="shift-apply-all-btn" style="font-size:12px;padding:5px 10px">全員を選択</button>
+            <button type="button" class="btn btn-ghost" id="shift-apply-none-btn" style="font-size:12px;padding:5px 10px">選択を解除</button>
             <button type="button" class="btn" id="shift-apply-btn" style="font-size:13px">選んだ希望を適用</button>
-            <span id="shift-apply-count" class="muted" style="font-size:12px"></span>
+            <span id="shift-apply-total" class="muted" style="font-size:12px"></span>
           </div>
         </div>`;
       }
+      function openApplyModal(staffId, onClose) {
+        const st = shiftStaffList.find(x => x.id === staffId);
+        const mine = applyData.works.filter(r => r.staff_id === staffId);
+        const byDate = {}; mine.forEach(r => { byDate[r.date] = r; });
+        const months = [...new Set(mine.map(r => r.date.slice(0, 7)))].sort();
+        const ov = document.createElement('div');
+        ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+        const box = document.createElement('div');
+        box.style.cssText = 'background:#fff;width:100%;max-width:460px;max-height:88vh;display:flex;flex-direction:column;border-radius:14px 14px 0 0;color:#111827';
+        ov.appendChild(box);
+        const freeDates = () => mine.filter(r => applyStatus(r) === 'free').map(r => r.date);
+        function draw() {
+          const calHtml = months.map(m => {
+            const [y, mo] = m.split('-').map(Number);
+            const first = new Date(Date.UTC(y, mo - 1, 1)).getUTCDay();
+            const days = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+            let cells = '';
+            for (let i = 0; i < first; i++) cells += '<div></div>';
+            for (let d = 1; d <= days; d++) {
+              const date = `${m}-${String(d).padStart(2, '0')}`;
+              const r = byDate[date];
+              const closed = isShiftClosed(date);
+              if (!r) { cells += `<div style="min-height:46px;border-radius:6px;background:${closed ? '#e5e7eb' : 'transparent'};color:#d1d5db;font-size:11px;padding:3px 4px">${d}</div>`; continue; }
+              const stt = applyStatus(r);
+              const sel = selectedApply.has(`${staffId}|${date}`);
+              const dis = stt !== 'free';
+              const bg = dis ? '#f3f4f6' : sel ? '#111827' : '#fff';
+              const col = dis ? '#9ca3af' : sel ? '#fff' : '#111827';
+              const sub = stt === 'done' ? '適用済' : stt === 'off' ? '休希望' : `${String(r.start_time).slice(0, 5).replace(/^0/, '')}-${String(r.end_time).slice(0, 5).replace(/^0/, '')}`;
+              cells += `<button type="button" data-d="${date}" ${dis ? 'disabled' : ''} style="min-height:46px;border-radius:6px;border:1px solid ${sel ? '#111827' : '#d1d5db'};background:${bg};color:${col};padding:2px 0;line-height:1.25;cursor:${dis ? 'default' : 'pointer'}">
+                <div style="font-size:13px;font-weight:700">${d}</div><div style="font-size:9.5px">${esc(sub)}</div>${closed && !dis ? `<div style="font-size:9px;opacity:.75">定休日</div>` : ''}</button>`;
+            }
+            return `<div style="margin-bottom:12px"><div style="font-size:12.5px;font-weight:700;margin-bottom:4px">${y}年${mo}月</div>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center">
+                ${SHIFT_WEEKDAY_JA.map((w, i) => `<div style="font-size:10.5px;color:${i === 0 ? '#dc2626' : i === 6 ? '#2563eb' : '#6b7280'}">${w}</div>`).join('')}${cells}
+              </div></div>`;
+          }).join('');
+          const n = freeDates().filter(d => selectedApply.has(`${staffId}|${d}`)).length;
+          box.innerHTML = `<div style="padding:14px 16px 8px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:8px">
+              <div style="flex:1;font-size:14px;font-weight:800">${esc(st?.name || '')}の希望日</div>
+              <button type="button" class="btn btn-ghost" data-m="all" style="font-size:12px;padding:4px 8px">全て選択</button>
+              <button type="button" class="btn btn-ghost" data-m="none" style="font-size:12px;padding:4px 8px">解除</button>
+            </div>
+            <div style="padding:12px 16px;overflow-y:auto;flex:1">${calHtml}</div>
+            <div style="padding:10px 16px calc(10px + env(safe-area-inset-bottom));border-top:1px solid #e5e7eb;display:flex;align-items:center;gap:10px">
+              <span style="flex:1;font-size:12.5px">${n}日を選択中</span>
+              <button type="button" class="btn" data-m="close" style="font-size:13px">完了</button>
+            </div>`;
+          box.querySelectorAll('[data-d]').forEach(b => b.addEventListener('click', () => {
+            const k = `${staffId}|${b.dataset.d}`;
+            selectedApply.has(k) ? selectedApply.delete(k) : selectedApply.add(k);
+            const sc = box.querySelector('div[style*="overflow-y"]').scrollTop; draw(); box.querySelector('div[style*="overflow-y"]').scrollTop = sc;
+          }));
+          box.querySelector('[data-m="all"]').addEventListener('click', () => { freeDates().forEach(d => selectedApply.add(`${staffId}|${d}`)); draw(); });
+          box.querySelector('[data-m="none"]').addEventListener('click', () => { freeDates().forEach(d => selectedApply.delete(`${staffId}|${d}`)); draw(); });
+          box.querySelector('[data-m="close"]').addEventListener('click', close);
+        }
+        function close() { ov.remove(); onClose(); }
+        ov.addEventListener('click', e => { if (e.target === ov) close(); });
+        document.body.appendChild(ov);
+        draw();
+      }
       function bindApplyPanel(root) {
-        const chips = () => [...root.querySelectorAll('[data-apply-chip]:not(:disabled)')];
+        const freeOf = id => applyData.works.filter(r => r.staff_id === id && applyStatus(r) === 'free');
         const sync = () => {
           root.querySelectorAll('[data-apply-staff]').forEach(sc => {
-            const mine = chips().filter(c => c.dataset.applyChip === sc.dataset.applyStaff);
-            const n = mine.filter(c => c.checked).length;
-            sc.checked = mine.length > 0 && n === mine.length;
-            sc.indeterminate = n > 0 && n < mine.length;
+            const id = sc.dataset.applyStaff;
+            const free = freeOf(id);
+            const n = free.filter(r => selectedApply.has(`${id}|${r.date}`)).length;
+            sc.checked = free.length > 0 && n === free.length;
+            sc.indeterminate = n > 0 && n < free.length;
+            const c = root.querySelector(`[data-apply-count="${id}"]`);
+            if (c) c.textContent = `選択${n}日`;
           });
-          const total = chips().filter(c => c.checked).length;
-          const cnt = root.querySelector('#shift-apply-count');
-          if (cnt) cnt.textContent = total ? `${total}日分を選択中` : '';
+          let total = 0;
+          shiftStaffList.forEach(st => { total += freeOf(st.id).filter(r => selectedApply.has(`${st.id}|${r.date}`)).length; });
+          const t = root.querySelector('#shift-apply-total');
+          if (t) t.textContent = total ? `計${total}日分を選択中` : '';
         };
         root.querySelectorAll('[data-apply-staff]').forEach(sc => sc.addEventListener('change', () => {
-          chips().filter(c => c.dataset.applyChip === sc.dataset.applyStaff).forEach(c => { c.checked = sc.checked; });
+          const id = sc.dataset.applyStaff;
+          freeOf(id).forEach(r => { sc.checked ? selectedApply.add(`${id}|${r.date}`) : selectedApply.delete(`${id}|${r.date}`); });
           sync();
         }));
-        root.querySelectorAll('[data-apply-chip]').forEach(c => c.addEventListener('change', sync));
-        root.querySelector('#shift-apply-all-btn')?.addEventListener('click', () => { chips().forEach(c => { c.checked = true; }); sync(); });
-        root.querySelector('#shift-apply-none-btn')?.addEventListener('click', () => { chips().forEach(c => { c.checked = false; }); sync(); });
+        root.querySelectorAll('[data-apply-open]').forEach(b => b.addEventListener('click', () => openApplyModal(b.dataset.applyOpen, sync)));
+        root.querySelector('#shift-apply-all-btn')?.addEventListener('click', () => { shiftStaffList.forEach(st => freeOf(st.id).forEach(r => selectedApply.add(`${st.id}|${r.date}`))); sync(); });
+        root.querySelector('#shift-apply-none-btn')?.addEventListener('click', () => { selectedApply.clear(); sync(); });
         root.querySelector('#shift-apply-btn')?.addEventListener('click', async () => {
-          const items = chips().filter(c => c.checked).map(c => ({ staff_id: c.dataset.applyChip, date: c.dataset.applyDate }));
+          const items = [...selectedApply].map(k => { const [staff_id, date] = k.split('|'); return { staff_id, date }; });
           if (!items.length) { showToast('適用する希望を選んでください'); return; }
           const btn = root.querySelector('#shift-apply-btn');
           btn.disabled = true; btn.textContent = '適用中…';
@@ -7444,9 +7509,8 @@ export default function ProviderDashboardPage() {
     (function setupReferralTab() {
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
-      const fnCode = provider?.referral_code || '';
+      let fnCode = '';
       const codeEl = document.getElementById('referral-code-tab');
-      if (codeEl) codeEl.textContent = fnCode || '—';
 
       document.getElementById('copy-referral-code-btn')?.addEventListener('click', () => {
         if (!fnCode) { showToast('紹介コードが設定されていません'); return; }
@@ -7459,6 +7523,49 @@ export default function ProviderDashboardPage() {
         navigator.clipboard.writeText(url).then(() => showToast('紹介URLをコピーしました')).catch(() => {});
       });
 
+      // 営業パートナー登録のopt-in状態を見て、未登録なら登録導線だけを出す
+      // （でお方針2026-10-02：掲載者＝営業パートランの自動一体化を廃止）
+      async function checkRegistrationAndLoad() {
+        const promptEl = document.getElementById('referral-optin-prompt');
+        const contentEl = document.getElementById('referral-registered-content');
+        try {
+          const res = await fetch('/api/provider/sales-partner', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+          if (!res.ok) { if (promptEl) promptEl.style.display = ''; return; }
+          const data = await res.json();
+          if (data.registered) {
+            fnCode = data.partner?.referral_code || '';
+            if (codeEl) codeEl.textContent = fnCode || '—';
+            if (promptEl) promptEl.style.display = 'none';
+            if (contentEl) contentEl.style.display = '';
+            loadReferrals();
+          } else {
+            if (promptEl) promptEl.style.display = '';
+            if (contentEl) contentEl.style.display = 'none';
+          }
+        } catch {
+          if (promptEl) promptEl.style.display = '';
+        }
+      }
+
+      document.getElementById('referral-optin-btn')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        btn.textContent = '登録中…';
+        try {
+          const res = await fetch('/api/provider/sales-partner', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+          });
+          if (!res.ok) { showToast('登録に失敗しました'); btn.disabled = false; btn.textContent = '営業パートナーとして登録する'; return; }
+          showToast('営業パートナーに登録しました');
+          checkRegistrationAndLoad();
+        } catch {
+          showToast('通信エラーが発生しました');
+          btn.disabled = false;
+          btn.textContent = '営業パートナーとして登録する';
+        }
+      });
+
       async function loadReferrals() {
         const pid = provider?.id || loadProviderData()?.id;
         const listEl = document.getElementById('referral-list');
@@ -7468,7 +7575,9 @@ export default function ProviderDashboardPage() {
           const res = await fetch(`/api/billing/referrals?provider_id=${encodeURIComponent(pid)}`);
           if (!res.ok) { if (listEl) listEl.innerHTML = authErrorHtml(res); return; }
           const data = await res.json();
+          if (data.not_registered) { if (listEl) listEl.innerHTML = '<p class="muted">営業パートナー登録が必要です。</p>'; return; }
           const { referrals, summary } = data;
+          if (summary?.referral_code) { fnCode = summary.referral_code; if (codeEl) codeEl.textContent = fnCode; }
 
           const el = (id) => document.getElementById(id);
           if (el('ref-total-referred')) el('ref-total-referred').textContent = summary.total_referred;
@@ -7512,9 +7621,9 @@ export default function ProviderDashboardPage() {
       }
 
       document.querySelectorAll('[data-tab="referral"]').forEach(btn => {
-        btn.addEventListener('click', loadReferrals, { once: false });
+        btn.addEventListener('click', checkRegistrationAndLoad, { once: false });
       });
-      if (new URLSearchParams(location.search).get('tab') === 'referral') loadReferrals();
+      if (new URLSearchParams(location.search).get('tab') === 'referral') checkRegistrationAndLoad();
     })();
 
     // ── パスワード変更 ────────────────────────────────────────────
@@ -12787,9 +12896,20 @@ export default function ProviderDashboardPage() {
           </div>
         </div>
 
-        {/* タブ⑦：紹介報酬 */}
+        {/* タブ⑦：紹介報酬（でお方針2026-10-02：掲載者＝営業パートナーの自動一体化を廃止。
+            掲載者も「希望すれば」別途sales_partnersへ登録するopt-in方式に変更。
+            登録していない掲載者には紹介コードを出さず、登録導線のみ出す） */}
         <div className="tab-pane" id="tab-referral">
-          <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
+          <div id="referral-optin-prompt" className="card stack" style={{ padding: '24px', gap: '14px', display: 'none' }}>
+            <h2 style={{ margin: '0', fontSize: '16px' }}>紹介報酬（営業パートナー）</h2>
+            <p className="muted" style={{ fontSize: '13px', margin: '0', lineHeight: '1.7' }}>
+              Finemeを他の店舗・事業者にご紹介いただくと、直接ご紹介いただいた掲載者が月額課金を継続している間、継続的な紹介報酬が発生します。
+              これは掲載契約とは別の、任意の登録です。登録しなくても掲載のご利用に影響はありません。
+            </p>
+            <button className="btn" style={{ alignSelf: 'flex-start' }} id="referral-optin-btn">営業パートナーとして登録する</button>
+          </div>
+
+          <div id="referral-registered-content" className="card stack" style={{ padding: '24px', gap: '16px', display: 'none' }}>
             <h2 style={{ margin: '0', fontSize: '16px' }}>紹介報酬</h2>
             <p className="muted" style={{ fontSize: '13px', margin: '0', lineHeight: '1.7' }}>
               あなたの紹介コードを使ってFinemeに登録した掲載者が月額課金を継続している間、毎月¥500の報酬が発生します。
