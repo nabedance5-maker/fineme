@@ -1397,7 +1397,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
 
   const slotsByDate = (slots || []).reduce((acc, s) => { (acc[s.date] = acc[s.date] || []).push(s); return acc; }, {});
 
-  // 予約カレンダー風の表（でお要望2026-09-27：ホットペッパーの「スタイリスト指名・
+  // 予約カレンダー風の表（でお要望2026-09-27：一般的な予約サイトの「スタイリスト指名・
   // 日時選択」画面と同じ構成——上でスタッフをタブ選択し、その下に日付（列）×時間（行）の
   // 表を出して◯/×で空きを示す）。スタッフは軸ではなくタブ側で絞り込む。
   function addDaysStr(dateStr, n) {
@@ -1749,7 +1749,7 @@ function ConsultTab({ provider, services, staff, selectedService, onServiceSelec
         {showInstantPicker ? (
           // 即時予約モード（hacomono/STORES網羅計画 Phase 1）。空き枠を選んだ時点で
           // その場で確定する——店舗の承認を待たない。
-          // でお要望2026-09-27（ホットペッパーの「スタイリスト指名・日時選択」画面の
+          // でお要望2026-09-27（一般的な予約サイトの「スタイリスト指名・日時選択」画面の
           // スクショ添付）：スタッフはタブで選び、その下に日付（列）×時間（行）の表を出して
           // 空きマスだけ◯で選べるようにする。
           <div>

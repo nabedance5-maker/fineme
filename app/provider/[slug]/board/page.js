@@ -64,7 +64,7 @@ export default function BookingBoardPage() {
     return <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>この店舗では店頭予約ボードをご利用いただけません。</div>;
   }
 
-  // 日付×時間の表（でお要望2026-09-27：ホットペッパーの「スタイリスト指名・日時選択」
+  // 日付×時間の表（でお要望2026-09-27：一般的な予約サイトの「スタイリスト指名・日時選択」
   // 画面と同じ構成。スタッフは表の軸ではなく上のタブで選ぶ）。
   const staffOptions = [...new Map(slots.map(s => [s.staff_id || '_none', { id: s.staff_id, name: s.staff_name || '指名なし' }])).values()];
   const hasNamedStaff = staffOptions.some(o => o.id);
