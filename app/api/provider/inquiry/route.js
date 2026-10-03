@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { NextResponse } from 'next/server';
+import { withAudit } from '@/lib/activity-log';
 
 function getSupabaseClient() {
   return createClient(
@@ -18,7 +19,7 @@ const CATEGORY_LABEL = {
   aga: 'AGA・薄毛治療', consulting: 'コンサルティング',
 };
 
-export async function POST(request) {
+async function __POST(request) {
   const supabase = getSupabaseClient();
   try {
     const body = await request.json();
@@ -118,3 +119,5 @@ export async function POST(request) {
     return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 });
   }
 }
+
+export const POST = withAudit(__POST);

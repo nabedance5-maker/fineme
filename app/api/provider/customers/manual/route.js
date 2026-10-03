@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { ensureCustomerNumbers } from '@/lib/customer-numbers';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -34,7 +35,7 @@ export async function GET(request) {
   return Response.json(rows.map(r => ({ ...r, member_number: numbers[r.id] ?? null })));
 }
 
-export async function POST(request) {
+async function __POST(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -54,3 +55,5 @@ export async function POST(request) {
   try { memberNumber = (await ensureCustomerNumbers(supabase, provider.id, { manualIds: [data.id] })).manual[data.id] ?? null; } catch { /* 次回の一覧取得で採番される */ }
   return Response.json({ ...data, member_number: memberNumber });
 }
+
+export const POST = withAudit(__POST);

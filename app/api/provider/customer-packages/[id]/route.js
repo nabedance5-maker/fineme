@@ -2,6 +2,7 @@
 // でお要望2026-09-14：月額会員への自動チケット付与機能。解約後は次回以降の自動付与を止める。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -12,7 +13,7 @@ async function getProviderByToken(token) {
   return data || null;
 }
 
-export async function PATCH(request, { params }) {
+async function __PATCH(request, { params }) {
   const { id } = await params;
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -33,3 +34,5 @@ export async function PATCH(request, { params }) {
   if (error || !data) return Response.json({ error: '見つかりません' }, { status: 404 });
   return Response.json(data);
 }
+
+export const PATCH = withAudit(__PATCH);

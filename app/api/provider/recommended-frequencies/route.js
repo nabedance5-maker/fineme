@@ -2,6 +2,7 @@
 // POST /api/provider/recommended-frequencies → 軸ごとの推奨周期を保存/削除（認証済み・セルフサービス）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -27,7 +28,7 @@ export async function GET(request) {
 }
 
 // body: { axis, frequency_weeks, frequency_months } どちらか一方。両方nullなら削除。
-export async function POST(request) {
+async function __POST(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -59,3 +60,5 @@ export async function POST(request) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });
 }
+
+export const POST = withAudit(__POST);

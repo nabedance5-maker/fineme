@@ -4,6 +4,7 @@
 // （でお要望2026-09-12）。ステータスは変更しない。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -14,7 +15,7 @@ async function getProviderByToken(token) {
   return data || null;
 }
 
-export async function PATCH(request, { params }) {
+async function __PATCH(request, { params }) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -52,3 +53,5 @@ export async function PATCH(request, { params }) {
   if (error) return Response.json({ error: '予約が見つかりません' }, { status: 404 });
   return Response.json(data);
 }
+
+export const PATCH = withAudit(__PATCH);

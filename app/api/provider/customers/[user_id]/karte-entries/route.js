@@ -2,6 +2,7 @@
 // POST /api/provider/customers/[user_id]/karte-entries → 来店記録を1件追加（認証済み）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -65,7 +66,7 @@ export async function GET(request, { params }) {
   return Response.json(merged);
 }
 
-export async function POST(request, { params }) {
+async function __POST(request, { params }) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -96,3 +97,5 @@ export async function POST(request, { params }) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json(data);
 }
+
+export const POST = withAudit(__POST);

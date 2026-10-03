@@ -1,6 +1,7 @@
 // PATCH /api/provider/services/[id] - サービス更新
 // DELETE /api/provider/services/[id] - サービス削除
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -11,7 +12,7 @@ async function getProviderFromToken(token) {
   return data;
 }
 
-export async function PATCH(request, { params }) {
+async function __PATCH(request, { params }) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   if (!token) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderFromToken(token);
@@ -34,7 +35,7 @@ export async function PATCH(request, { params }) {
   return Response.json(data);
 }
 
-export async function DELETE(request, { params }) {
+async function __DELETE(request, { params }) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   if (!token) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderFromToken(token);
@@ -48,3 +49,6 @@ export async function DELETE(request, { params }) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ success: true });
 }
+
+export const PATCH = withAudit(__PATCH);
+export const DELETE = withAudit(__DELETE);

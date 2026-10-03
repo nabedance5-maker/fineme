@@ -6,6 +6,7 @@ import { getSupabase } from '@/lib/supabase';
 import { hasFeature } from '@/lib/feature-flags';
 import { createHealthAdviceEntry } from '@/lib/health-advice-analysis';
 import { isPostureEligiblePlan } from '@/lib/posture-analysis';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -38,7 +39,7 @@ export async function GET(request, { params }) {
   return Response.json(data || []);
 }
 
-export async function POST(request, { params }) {
+async function __POST(request, { params }) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -77,3 +78,5 @@ export async function POST(request, { params }) {
     return Response.json({ error: e.message || '分析に失敗しました' }, { status: 502 });
   }
 }
+
+export const POST = withAudit(__POST);

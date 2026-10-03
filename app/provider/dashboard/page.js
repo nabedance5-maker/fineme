@@ -11,6 +11,8 @@ import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
 import PageDesignSettings from './PageDesignSettings';
 import ConsultantWidget from './ConsultantWidget';
 import ConsultantPanel from './ConsultantPanel';
+import ActivityLogPanel from './ActivityLogPanel';
+import { withOperator } from './operator';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -623,6 +625,7 @@ export default function ProviderDashboardPage() {
     }
     const rawFetch = window.fetch;
     window.fetch = async function (input, init) {
+      init = withOperator(input, init);
       const res = await rawFetch.call(this, input, init);
       if (res.status !== 401) return res;
       const url = typeof input === 'string' ? input : input?.url || '';
@@ -10639,6 +10642,7 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="line-channel">LINE連携</button>
                   <button className="tab-btn" data-tab="billing">課金・プラン</button>
                   <button className="tab-btn" data-tab="features">機能設定</button>
+                  <button className="tab-btn" data-tab="activity-log">操作ログ</button>
                   <button className="tab-btn" data-tab="display-settings">表示設定</button>
                   <button type="button" className="tab-btn" id="pd-logout-btn" style={{ color: '#ef4444' }}>ログアウト</button>
                 </div>
@@ -13256,6 +13260,11 @@ export default function ProviderDashboardPage() {
             <p id="pw-change-msg" style={{ fontSize: '13px', margin: '0', display: 'none' }}></p>
             <button className="btn" id="pw-change-btn" style={{ alignSelf: 'flex-start' }}>パスワードを変更する</button>
           </div>
+        </div>
+
+        {/* 操作ログ：いつ・誰が・何を操作したかの記録（でお要望2026-10-03）。トラブル確認とAIコンサルの学習に使う */}
+        <div className="tab-pane" id="tab-activity-log">
+          <ActivityLogPanel />
         </div>
 
         {/* 機能設定：店舗ごとに使う機能を選べるようにする（Phase 0・でお要望2026-09-11）。

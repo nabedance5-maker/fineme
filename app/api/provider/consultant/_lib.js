@@ -3,6 +3,7 @@ import { gatherContext, computeJourney, GOAL_OPTIONS, GOAL_KEYS, PREMISE } from 
 import { gatherInsight, periodKeys, jstNow } from '@/lib/consultant-insight';
 import { hasFeature } from '@/lib/feature-flags';
 import { loadMemory } from '@/lib/consultant-memory';
+import { activityInsight } from '@/lib/activity-log';
 
 export { GOAL_KEYS };
 
@@ -45,7 +46,7 @@ export function taskBucket(task, now = jstNow()) {
 }
 
 export async function loadState(provider) {
-  const [ctx, stepRes, bnRes, settingsRes, planRes, taskRes, memory] = await Promise.all([
+  const [ctx, stepRes, bnRes, settingsRes, planRes, taskRes, memory, activity] = await Promise.all([
     gatherContext(supabase, provider),
     supabase.from('provider_consultant_step_state').select('step_key, status, until').eq('provider_id', provider.id),
     supabase.from('provider_consultant_bottlenecks').select('id, category, label, minutes_per_week, source, status, created_at').eq('provider_id', provider.id).order('created_at', { ascending: false }).limit(30),
@@ -54,6 +55,7 @@ export async function loadState(provider) {
     supabase.from('provider_consultant_tasks').select('id, title, why, cadence, due_date, period_key, tab, source, status, done_at, created_at')
       .eq('provider_id', provider.id).order('created_at', { ascending: false }).limit(120),
     loadMemory(supabase, provider.id),
+    activityInsight(supabase, provider.id).catch(() => ''),
   ]);
   const insight = await gatherInsight(supabase, provider, ctx);
   const bottlenecks = bnRes.data || [];
@@ -75,6 +77,7 @@ export async function loadState(provider) {
     summarizedUntil: settingsRes.data?.summarized_until || null,
     goalHistory: memory.goalHistory,
     planHistory: memory.planHistory,
+    activity,
     plan,
     stale,
     tasks,

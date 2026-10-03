@@ -19,6 +19,7 @@
 export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -33,7 +34,7 @@ async function getProviderByToken(token) {
   return data || null;
 }
 
-export async function POST(request, { params }) {
+async function __POST(request, { params }) {
   const { id } = await params;
   const stripe = getStripe();
   if (!stripe) return Response.json({ error: 'Stripeが未設定です' }, { status: 503 });
@@ -132,3 +133,5 @@ export async function POST(request, { params }) {
     return Response.json({ error: 'Stripeでの課金開始に失敗しました: ' + e.message }, { status: 500 });
   }
 }
+
+export const POST = withAudit(__POST);

@@ -2,6 +2,7 @@
 // PATCH /api/provider/deposit-settings → デポジット金額を更新（0/nullで無効化）
 // 決済機能Phase6③（でお要望2026-09-27）。即時予約（instant_booking）で確定した予約のみ対象。
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -23,7 +24,7 @@ export async function GET(request) {
   });
 }
 
-export async function PATCH(request) {
+async function __PATCH(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -41,3 +42,5 @@ export async function PATCH(request) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });
 }
+
+export const PATCH = withAudit(__PATCH);

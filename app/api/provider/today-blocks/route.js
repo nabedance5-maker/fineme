@@ -2,6 +2,7 @@
 // POST /api/provider/today-blocks → メモブロックを新規追加（認証済み。builtin_*は追加不可・自動シードのみ）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -54,7 +55,7 @@ export async function GET(request) {
   return Response.json(data);
 }
 
-export async function POST(request) {
+async function __POST(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -90,3 +91,5 @@ export async function POST(request) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json(data);
 }
+
+export const POST = withAudit(__POST);

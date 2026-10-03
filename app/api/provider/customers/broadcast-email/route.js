@@ -6,6 +6,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { sendProviderBroadcastEmail } from '@/lib/email';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -19,7 +20,7 @@ async function getProviderByToken(token) {
 // 一度に送りすぎて事故らないための上限（Fineme店舗規模を踏まえた保守的な値）
 const MAX_RECIPIENTS = 500;
 
-export async function POST(request) {
+async function __POST(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -70,3 +71,5 @@ export async function POST(request) {
 
   return Response.json({ ok: true, sent, skipped, requested: user_ids.length });
 }
+
+export const POST = withAudit(__POST);

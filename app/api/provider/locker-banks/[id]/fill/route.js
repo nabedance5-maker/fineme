@@ -5,12 +5,13 @@
 // body: { prefix?, start?, digits?, monthly_fee?, column_tiers?: number[], order?: 'column'|'row' }
 export const dynamic = 'force-dynamic';
 import { supabase, getProviderFromRequest, toInt, rectOf, overlaps } from '@/lib/locker-layout';
+import { withAudit } from '@/lib/activity-log';
 
 const MAX_ROWS = 60;
 const gcd = (a, b) => (b ? gcd(b, a % b) : a);
 const lcm = (a, b) => (a / gcd(a, b)) * b;
 
-export async function POST(request, { params }) {
+async function __POST(request, { params }) {
   const { id } = await params;
   const provider = await getProviderFromRequest(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -101,3 +102,5 @@ export async function POST(request, { params }) {
   }
   return Response.json({ created: inserts.length }, { status: 201 });
 }
+
+export const POST = withAudit(__POST);

@@ -2,6 +2,7 @@
 // POST /api/provider/locker-banks → ロッカー群を追加（名前・段数・横の数）
 export const dynamic = 'force-dynamic';
 import { supabase, getProviderFromRequest, toInt } from '@/lib/locker-layout';
+import { withAudit } from '@/lib/activity-log';
 
 export async function GET(request) {
   const provider = await getProviderFromRequest(request);
@@ -16,7 +17,7 @@ export async function GET(request) {
   return Response.json(data || []);
 }
 
-export async function POST(request) {
+async function __POST(request) {
   const provider = await getProviderFromRequest(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await request.json().catch(() => ({}));
@@ -35,3 +36,5 @@ export async function POST(request) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json(data, { status: 201 });
 }
+
+export const POST = withAudit(__POST);

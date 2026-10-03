@@ -8,6 +8,7 @@ import { syncVisitToLog } from '@/lib/sync-visit';
 import { notifyStoreIfAtRiskVisit } from '@/lib/at-risk-visit-notify';
 import { autoConsumePackageForVisit } from '@/lib/consume-package';
 import { refundDepositIfPaid } from '@/lib/reservation-deposit';
+import { withAudit } from '@/lib/activity-log';
 
 export async function GET(request, context) {
   try {
@@ -36,7 +37,7 @@ export async function GET(request, context) {
   }
 }
 
-export async function PATCH(request, context) {
+async function __PATCH(request, context) {
   try {
     const token = request.headers.get('Authorization')?.replace('Bearer ', '');
     if (!token) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -255,3 +256,5 @@ export async function PATCH(request, context) {
     return Response.json({ error: e.message }, { status: 500 });
   }
 }
+
+export const PATCH = withAudit(__PATCH);

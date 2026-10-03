@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { validateLineChannelToken } from '@/lib/line-channel';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -34,7 +35,7 @@ export async function GET(request) {
   });
 }
 
-export async function POST(request) {
+async function __POST(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -87,3 +88,5 @@ export async function POST(request) {
 
   return Response.json({ ok: true, botDisplayName: check.displayName, basicId: check.basicId });
 }
+
+export const POST = withAudit(__POST);

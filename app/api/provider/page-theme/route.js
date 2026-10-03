@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { normalizeTheme, colorProblem, DEFAULT_THEME } from '@/lib/provider-theme';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -30,7 +31,7 @@ export async function GET(request) {
   });
 }
 
-export async function PUT(request) {
+async function __PUT(request) {
   const provider = await auth(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await request.json().catch(() => ({}));
@@ -56,3 +57,5 @@ export async function PUT(request) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ theme, isDefault: false });
 }
+
+export const PUT = withAudit(__PUT);

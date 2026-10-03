@@ -3,6 +3,7 @@
 // Phase 0（機能ON/OFF基盤）: lib/feature-flags.js の FEATURE_DEFS が唯一の定義元。
 import { getSupabase } from '@/lib/supabase';
 import { FEATURE_DEFS, resolveFeatures } from '@/lib/feature-flags';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -22,7 +23,7 @@ export async function GET(request) {
   return Response.json({ features: resolveFeatures(provider), defs: FEATURE_DEFS });
 }
 
-export async function PATCH(request) {
+async function __PATCH(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -48,3 +49,5 @@ export async function PATCH(request) {
 
   return Response.json({ ok: true, features: merged });
 }
+
+export const PATCH = withAudit(__PATCH);

@@ -1,6 +1,7 @@
 // GET /api/provider/services - 自分のサービス一覧
 // POST /api/provider/services - サービス追加
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -26,7 +27,7 @@ export async function GET(request) {
   return Response.json(data || []);
 }
 
-export async function POST(request) {
+async function __POST(request) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   if (!token) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderFromToken(token);
@@ -43,3 +44,5 @@ export async function POST(request) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json(data, { status: 201 });
 }
+
+export const POST = withAudit(__POST);

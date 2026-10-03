@@ -1,5 +1,6 @@
 // PATCH /api/provider/profile - 掲載者が自分のプロフィールを更新
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -28,7 +29,7 @@ const BOOLEAN_FIELDS  = new Set(['online_available', 'trial_available', 'publish
 const NUMBER_FIELDS   = new Set(['price_from', 'experience_years', 'response_hours']);
 const ARRAY_FIELDS    = new Set(['suitable_triggers', 'handles_failure_patterns', 'payment_methods', 'facility_photos']);
 
-export async function PATCH(request) {
+async function __PATCH(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -101,3 +102,5 @@ export async function PATCH(request) {
 
   return Response.json(data);
 }
+
+export const PATCH = withAudit(__PATCH);

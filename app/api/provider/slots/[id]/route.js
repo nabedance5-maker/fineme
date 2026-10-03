@@ -1,6 +1,7 @@
 // PATCH  /api/provider/slots/[id] → スロット更新（is_open の切り替え等）
 // DELETE /api/provider/slots/[id] → スロット削除
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -11,7 +12,7 @@ async function getProviderByToken(token) {
   return data || null;
 }
 
-export async function PATCH(request, { params }) {
+async function __PATCH(request, { params }) {
   const { id } = await params;
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   if (!token) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -40,7 +41,7 @@ export async function PATCH(request, { params }) {
   return Response.json(data);
 }
 
-export async function DELETE(request, { params }) {
+async function __DELETE(request, { params }) {
   const { id } = await params;
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   if (!token) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -56,3 +57,6 @@ export async function DELETE(request, { params }) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });
 }
+
+export const PATCH = withAudit(__PATCH);
+export const DELETE = withAudit(__DELETE);

@@ -2,6 +2,7 @@
 // POST /api/provider/classes/[id]/sessions → 開催回を追加（provider_slotsにclass_id付きで作成）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const OCCUPYING_STATUSES = ['pending', 'approved', 'counter_proposed', 'visited'];
@@ -41,7 +42,7 @@ export async function GET(request, { params }) {
   return Response.json(sessions.map(s => ({ ...s, booked: bookedCount[s.id] || 0 })));
 }
 
-export async function POST(request, { params }) {
+async function __POST(request, { params }) {
   const { id } = await params;
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -64,3 +65,5 @@ export async function POST(request, { params }) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json(data, { status: 201 });
 }
+
+export const POST = withAudit(__POST);

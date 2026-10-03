@@ -5,6 +5,7 @@
 // （でお要望2026-09-14：曜日ごとに1個ずつ作るのは大変、パターンを日付へ一括割当したい）。
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -33,7 +34,7 @@ export async function GET(request) {
   return Response.json(data || DEFAULT_SETTINGS);
 }
 
-export async function PATCH(request) {
+async function __PATCH(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -53,3 +54,5 @@ export async function PATCH(request) {
 
   return Response.json(data);
 }
+
+export const PATCH = withAudit(__PATCH);

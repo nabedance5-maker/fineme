@@ -3,6 +3,7 @@
 // ユーザー本人には見せない前提のメモ（簡易カルテ）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -33,7 +34,7 @@ export async function GET(request, { params }) {
   });
 }
 
-export async function PUT(request, { params }) {
+async function __PUT(request, { params }) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -55,3 +56,5 @@ export async function PUT(request, { params }) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });
 }
+
+export const PUT = withAudit(__PUT);

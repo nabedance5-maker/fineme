@@ -2,13 +2,14 @@
 // DELETE /api/provider/locker-banks/[id] → ロッカー群ごと削除（契約中のロッカーがあれば拒否）
 export const dynamic = 'force-dynamic';
 import { supabase, getProviderFromRequest, toInt, rectOf, loadActiveContractMap } from '@/lib/locker-layout';
+import { withAudit } from '@/lib/activity-log';
 
 async function loadBank(id, providerId) {
   const { data } = await supabase.from('provider_locker_banks').select('*').eq('id', id).eq('provider_id', providerId).single();
   return data || null;
 }
 
-export async function PATCH(request, { params }) {
+async function __PATCH(request, { params }) {
   const { id } = await params;
   const provider = await getProviderFromRequest(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -110,7 +111,7 @@ export async function PATCH(request, { params }) {
   return Response.json(data);
 }
 
-export async function DELETE(request, { params }) {
+async function __DELETE(request, { params }) {
   const { id } = await params;
   const provider = await getProviderFromRequest(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -125,3 +126,6 @@ export async function DELETE(request, { params }) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });
 }
+
+export const PATCH = withAudit(__PATCH);
+export const DELETE = withAudit(__DELETE);

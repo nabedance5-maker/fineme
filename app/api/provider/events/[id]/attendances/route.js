@@ -5,6 +5,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { notifyCustomerLine } from '@/lib/reservation-notify';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -44,7 +45,7 @@ export async function GET(request, { params }) {
   return Response.json(rows.map(r => ({ ...r, customer_name: nameMap[r.user_id] || '(名前未設定)' })));
 }
 
-export async function POST(request, { params }) {
+async function __POST(request, { params }) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -91,3 +92,5 @@ export async function POST(request, { params }) {
 
   return Response.json({ sent });
 }
+
+export const POST = withAudit(__POST);

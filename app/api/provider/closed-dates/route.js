@@ -3,6 +3,7 @@
 // DELETE /api/provider/closed-dates?date=YYYY-MM-DD → 臨時休業日を削除
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -30,7 +31,7 @@ export async function GET(request) {
   return Response.json(data || []);
 }
 
-export async function POST(request) {
+async function __POST(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -49,7 +50,7 @@ export async function POST(request) {
   return Response.json({ ok: true });
 }
 
-export async function DELETE(request) {
+async function __DELETE(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -63,3 +64,6 @@ export async function DELETE(request) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });
 }
+
+export const POST = withAudit(__POST);
+export const DELETE = withAudit(__DELETE);

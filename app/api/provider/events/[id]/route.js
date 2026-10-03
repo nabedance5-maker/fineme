@@ -2,6 +2,7 @@
 // DELETE /api/provider/events/[id] → イベント削除
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -12,7 +13,7 @@ async function getProviderByToken(token) {
   return data || null;
 }
 
-export async function PATCH(request, { params }) {
+async function __PATCH(request, { params }) {
   const { id } = await params;
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -33,7 +34,7 @@ export async function PATCH(request, { params }) {
   return Response.json(data);
 }
 
-export async function DELETE(request, { params }) {
+async function __DELETE(request, { params }) {
   const { id } = await params;
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -44,3 +45,6 @@ export async function DELETE(request, { params }) {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });
 }
+
+export const PATCH = withAudit(__PATCH);
+export const DELETE = withAudit(__DELETE);

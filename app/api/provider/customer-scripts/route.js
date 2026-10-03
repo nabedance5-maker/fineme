@@ -13,6 +13,7 @@ export const dynamic = 'force-dynamic';
 import { createHash } from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '@/lib/supabase';
+import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const MIN_SIGNAL = 5; // カルテ記録+施術事例+体験談の合計件数がこれ未満なら生成しない
@@ -24,7 +25,7 @@ async function getProviderByToken(token) {
   return data || null;
 }
 
-export async function POST(request) {
+async function __POST(request) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
@@ -116,3 +117,5 @@ ${storyText || '（記録なし）'}
 
   return Response.json({ items, generatedAt });
 }
+
+export const POST = withAudit(__POST);
