@@ -121,7 +121,7 @@ export default function ConsultantPanel() {
               {GOAL_EXAMPLES.map(g => <button key={g} type="button" className="cp-choice" onClick={() => setDraftGoal(prev => (prev ? `${prev}\n${g}` : g).slice(0, 600))}>{g}</button>)}
             </div>
             <div className="cp-actions">
-              <button type="button" className="cp-primary" disabled={busy || planning || !draftGoal.trim()} onClick={submitGoal}>この内容で考えてもらう</button>
+              <button type="button" className="cp-primary" disabled={busy || !draftGoal.trim()} onClick={submitGoal}>この内容で考えてもらう</button>
               {!needsGoal && <button type="button" className="cp-secondary" onClick={() => setEditingGoal(false)}>やめる</button>}
             </div>
             {needsGoal && <p className="muted" style={{ margin: 0, fontSize: '12.5px' }}>あとで書いても大丈夫です。書かなくても、Finemeの機能はすべて今まで通り使えます。</p>}

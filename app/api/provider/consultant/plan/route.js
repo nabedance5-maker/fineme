@@ -160,7 +160,8 @@ export async function POST(request) {
     if (planErr) return Response.json({ error: planErr.message }, { status: 500 });
 
     return Response.json({ ok: true, added: rows.length });
-  } catch {
-    return Response.json({ error: '見立ての生成に失敗しました' }, { status: 502 });
+  } catch (e) {
+    console.error('consultant plan failed:', e?.status, e?.message);
+    return Response.json({ error: '見立ての生成に失敗しました。少し待ってもう一度お試しください' }, { status: 502 });
   }
 }

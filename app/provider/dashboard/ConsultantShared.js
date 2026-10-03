@@ -6,10 +6,14 @@ import { CHANGED_EVENT, consultantApi as api, goToTab, notifyChanged } from './c
 // 同じ画面に2つのコンポーネントがあっても、見立ての作り直しは同時に1回だけにする
 let planInFlight = null;
 function requestPlan(force) {
-  if (!planInFlight) {
-    planInFlight = api('/plan', { method: 'POST', body: JSON.stringify({ force: !!force }) }).finally(() => { planInFlight = null; });
-  }
-  return planInFlight;
+  const start = () => {
+    const p = api('/plan', { method: 'POST', body: JSON.stringify({ force: !!force }) }).finally(() => { if (planInFlight === p) planInFlight = null; });
+    planInFlight = p;
+    return p;
+  };
+  if (!planInFlight) return start();
+  // 強制の作り直しは、進行中の分が古いゴールで作られている可能性があるので、終わるのを待ってもう一度作る
+  return force ? planInFlight.catch(() => {}).then(start) : planInFlight;
 }
 
 export function useConsultant() {
@@ -34,9 +38,9 @@ export function useConsultant() {
     setPlanning(true);
     try {
       await requestPlan(force);
-      await load();
-      notifyChanged();
     } catch (e) { setError(e.message); }
+    await load();
+    notifyChanged();
     setPlanning(false);
   }, [load]);
 
@@ -77,9 +81,11 @@ export function useConsultant() {
     try {
       await api('/goals', { method: 'PUT', body: JSON.stringify({ note }) });
       setError('');
-      await replan(true);
-    } catch (e) { setError(e.message); }
+      await load();
+      notifyChanged();
+    } catch (e) { setError(e.message); setBusy(false); return; }
     setBusy(false);
+    replan(true);
   };
 
   const sendChat = async text => {

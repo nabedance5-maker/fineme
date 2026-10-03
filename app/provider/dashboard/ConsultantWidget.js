@@ -83,7 +83,7 @@ export default function ConsultantWidget() {
               <textarea className="cw-goal-input" rows={3} maxLength={600} value={goalDraft} onChange={e => setGoalDraft(e.target.value)}
                 placeholder="例：新しく来たお客様に2回目も来てもらえるようにしたい" aria-label="お店のゴール" />
               <div className="cw-actions">
-                <button type="button" className="cw-primary" disabled={busy || planning || !goalDraft.trim()} onClick={() => saveGoal(goalDraft)}>この内容で考えてもらう</button>
+                <button type="button" className="cw-primary" disabled={busy || !goalDraft.trim()} onClick={() => saveGoal(goalDraft)}>この内容で考えてもらう</button>
                 <button type="button" className="cw-secondary" onClick={() => goToTab('consultant')}>詳しく書く</button>
               </div>
             </section>
