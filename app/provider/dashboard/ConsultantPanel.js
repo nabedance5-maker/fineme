@@ -26,6 +26,9 @@ export default function ConsultantPanel() {
   const [editingGoal, setEditingGoal] = useState(false);
   const [draftGoal, setDraftGoal] = useState('');
   const [chatInput, setChatInput] = useState('');
+  const [qOpen, setQOpen] = useState('');
+  const [qText, setQText] = useState('');
+  const [qSent, setQSent] = useState(null);
   const [taskInput, setTaskInput] = useState('');
   const [taskCadence, setTaskCadence] = useState('once');
   const [openStage, setOpenStage] = useState('');
@@ -158,7 +161,29 @@ export default function ConsultantPanel() {
           {questions?.length > 0 && (
             <div className="cp-questions">
               <div className="cp-label">もっと精度を上げるために、教えてください</div>
-              {questions.map(q => <button key={q} type="button" className="cp-choice cp-question" onClick={() => setChatInput(`${q}\n`)}>{q}</button>)}
+              {questions.map(q => {
+                const open = qOpen === q;
+                const sent = qSent?.q === q ? qSent : null;
+                const reply = sent ? chatLog[sent.startLen + 1] : null;
+                return (
+                  <div key={q} className="cp-qa">
+                    <button type="button" className={`cp-choice cp-question${open ? ' is-active' : ''}`} aria-expanded={open} onClick={() => { setQOpen(open ? '' : q); setQText(''); }}>{q}</button>
+                    {open && !sent && (
+                      <form className="cp-qa-form" onSubmit={e => { e.preventDefault(); const t = qText.trim(); if (!t) return; setQSent({ q, startLen: chatLog.length }); sendChat(`質問「${q}」への回答：${t}`); }}>
+                        <textarea className="cp-input" rows={3} maxLength={600} value={qText} onChange={e => setQText(e.target.value)} placeholder="わかる範囲で書いてください" aria-label={`${q} への回答`} />
+                        <button type="submit" className="cp-primary" disabled={busy || !qText.trim()}>この内容を伝える</button>
+                      </form>
+                    )}
+                    {sent && (
+                      <div className="cp-qa-result" aria-live="polite">
+                        <div className="cp-qa-you">{sent.startLen != null && chatLog[sent.startLen]?.content?.replace(/^質問「.*?」への回答：/, '')}</div>
+                        <div className="cp-qa-ai">{reply ? reply.content : '考えています…'}</div>
+                        {reply && <button type="button" className="cc-link" onClick={() => { setQSent(null); setQOpen(''); }}>とじる</button>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
@@ -376,7 +401,12 @@ const PANEL_CSS = `
   .cp-prose { margin: 0; font-size: 14px; line-height: 1.85; color: #1a1410; white-space: pre-wrap; }
   .cp-focus { border-left: 3px solid var(--color-gold, #c8a45c); padding: 4px 0 4px 14px; display: flex; flex-direction: column; gap: 4px; }
   .cp-questions { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
-  .cp-question { text-align: left; border-radius: 10px; line-height: 1.55; }
+  .cp-qa { display: flex; flex-direction: column; gap: 8px; align-items: stretch; width: 100%; }
+  .cp-qa-form { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; padding: 10px 12px; border-left: 3px solid var(--color-gold, #c8a45c); background: rgba(26,20,16,0.04); border-radius: 0 10px 10px 0; }
+  .cp-qa-result { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; padding: 10px 12px; border-left: 3px solid var(--color-gold, #c8a45c); background: rgba(26,20,16,0.04); border-radius: 0 10px 10px 0; }
+  .cp-qa-you { font-size: 13px; color: rgba(26,20,16,0.62); white-space: pre-wrap; }
+  .cp-qa-ai { font-size: 13.5px; line-height: 1.8; color: #1a1410; white-space: pre-wrap; }
+  .cp-question { align-self: flex-start; text-align: left; border-radius: 10px; line-height: 1.55; }
   .cp-task-form { display: flex; gap: 8px; align-items: center; }
   .cp-task-form .cp-input { flex: 1; }
   .cp-task-form .cp-select { flex: 0 0 auto; width: auto; }
