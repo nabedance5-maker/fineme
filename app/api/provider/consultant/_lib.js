@@ -2,6 +2,7 @@ import { getSupabase } from '@/lib/supabase';
 import { gatherContext, computeJourney, GOAL_OPTIONS, GOAL_KEYS, PREMISE } from '@/lib/consultant-journey';
 import { gatherInsight, periodKeys, jstNow } from '@/lib/consultant-insight';
 import { hasFeature } from '@/lib/feature-flags';
+import { loadMemory } from '@/lib/consultant-memory';
 
 export { GOAL_KEYS };
 
@@ -44,14 +45,15 @@ export function taskBucket(task, now = jstNow()) {
 }
 
 export async function loadState(provider) {
-  const [ctx, stepRes, bnRes, settingsRes, planRes, taskRes] = await Promise.all([
+  const [ctx, stepRes, bnRes, settingsRes, planRes, taskRes, memory] = await Promise.all([
     gatherContext(supabase, provider),
     supabase.from('provider_consultant_step_state').select('step_key, status, until').eq('provider_id', provider.id),
     supabase.from('provider_consultant_bottlenecks').select('id, category, label, minutes_per_week, source, status, created_at').eq('provider_id', provider.id).order('created_at', { ascending: false }).limit(30),
-    supabase.from('provider_consultant_settings').select('interview_done_at, goals, goal_note, facts').eq('provider_id', provider.id).maybeSingle(),
+    supabase.from('provider_consultant_settings').select('interview_done_at, goals, goal_note, facts, memory_summary, summarized_until').eq('provider_id', provider.id).maybeSingle(),
     supabase.from('provider_consultant_plans').select('goal_text, diagnosis, strategy, generated_at').eq('provider_id', provider.id).maybeSingle(),
     supabase.from('provider_consultant_tasks').select('id, title, why, cadence, due_date, period_key, tab, source, status, done_at, created_at')
       .eq('provider_id', provider.id).order('created_at', { ascending: false }).limit(120),
+    loadMemory(supabase, provider.id),
   ]);
   const insight = await gatherInsight(supabase, provider, ctx);
   const bottlenecks = bnRes.data || [];
@@ -69,6 +71,10 @@ export async function loadState(provider) {
     goalOptions: GOAL_OPTIONS,
     goalText,
     facts: settingsRes.data?.facts || [],
+    memorySummary: settingsRes.data?.memory_summary || '',
+    summarizedUntil: settingsRes.data?.summarized_until || null,
+    goalHistory: memory.goalHistory,
+    planHistory: memory.planHistory,
     plan,
     stale,
     tasks,

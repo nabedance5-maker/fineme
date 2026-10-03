@@ -1,6 +1,7 @@
 // PUT /api/provider/consultant/goals { note: string } → 店舗が自分の言葉で書いたゴールを保存
 export const dynamic = 'force-dynamic';
 import { authProvider, supabase } from '../_lib';
+import { recordGoal } from '@/lib/consultant-memory';
 
 export async function PUT(request) {
   const provider = await authProvider(request);
@@ -14,5 +15,6 @@ export async function PUT(request) {
     { onConflict: 'provider_id' }
   );
   if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (note) await recordGoal(supabase, provider.id, note, 'user');
   return Response.json({ ok: true, note });
 }

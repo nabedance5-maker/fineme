@@ -21,6 +21,59 @@ function formatWhen(iso) {
   return `${d.getMonth() + 1}月${d.getDate()}日 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+const fmtDay = iso => new Date(new Date(iso).getTime() + 9 * 3600 * 1000).toISOString().slice(0, 10).replace(/-/g, '/');
+
+function HistorySection({ refreshKey }) {
+  const [open, setOpen] = useState(false);
+  const [hist, setHist] = useState(null);
+  const [err, setErr] = useState('');
+  const [tab, setTab] = useState('learned');
+
+  useEffect(() => {
+    if (!open) return;
+    let alive = true;
+    api('/history').then(d => { if (alive) { setHist(d); setErr(''); } }).catch(e => { if (alive) setErr(e.message || '読み込めませんでした'); });
+    return () => { alive = false; };
+  }, [open, refreshKey]);
+
+  const tabs = [['learned', 'AIが学んだこと'], ['goals', 'ゴールの変遷'], ['plans', '見立ての履歴'], ['chat', '相談の記録']];
+  return (
+    <section className="card stack" style={{ padding: '24px', gap: '12px' }}>
+      <details className="cp-details" onToggle={e => setOpen(e.currentTarget.open)}>
+        <summary>これまでの記録（ゴール・見立て・相談、AIが学んだこと）</summary>
+        <div className="stack" style={{ gap: '12px', marginTop: '12px' }}>
+          <p className="muted" style={{ margin: 0, fontSize: '13px', lineHeight: 1.7 }}>
+            ゴールの設定、AIの見立て、相談の内容は記録されています。AIはこれらを読み返して、お店に合う提案へ少しずつ寄せていきます。
+          </p>
+          <div className="cp-hist-tabs" role="tablist">
+            {tabs.map(([k, label]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={`cp-hist-tab${tab === k ? ' is-on' : ''}`} onClick={() => setTab(k)}>{label}</button>)}
+          </div>
+          {err && <p className="cc-muted" role="alert">{err}</p>}
+          {!hist && !err && <p className="cc-muted">読み込み中…</p>}
+          {hist && tab === 'learned' && (
+            <div className="stack" style={{ gap: '10px' }}>
+              {hist.learned ? <div className="cp-learned">{hist.learned}</div> : <p className="cc-muted">まだ要約はありません。相談が重なると、お店について分かったことをここにまとめます。</p>}
+              {hist.facts.length > 0 && (<>
+                <p className="cc-muted" style={{ margin: 0 }}>相談の中で覚えたこと</p>
+                <ul className="cp-done">{hist.facts.map(f => <li key={f}>{f}</li>)}</ul>
+              </>)}
+            </div>
+          )}
+          {hist && tab === 'goals' && (hist.goals.length
+            ? <ul className="cp-timeline">{hist.goals.map((g, i) => <li key={i}><span className="cp-hist-date">{fmtDay(g.set_at)}{g.source === 'chat' ? '（相談で更新）' : ''}</span>{g.goal_text}</li>)}</ul>
+            : <p className="cc-muted">ゴールの記録はまだありません。</p>)}
+          {hist && tab === 'plans' && (hist.plans.length
+            ? <ul className="cp-timeline">{hist.plans.map((p, i) => <li key={i}><span className="cp-hist-date">{fmtDay(p.generated_at)}</span>{p.diagnosis}{p.focus && <span className="cp-hist-focus">焦点：{p.focus}</span>}</li>)}</ul>
+            : <p className="cc-muted">見立ての記録はまだありません。</p>)}
+          {hist && tab === 'chat' && (hist.messages.length
+            ? <div className="cp-chat-log" style={{ maxHeight: '360px' }}>{[...hist.messages].reverse().map((m, i) => <div key={i} className={`cp-msg is-${m.role}`}><span className="cp-hist-date">{fmtDay(m.created_at)}</span>{m.content}</div>)}</div>
+            : <p className="cc-muted">相談の記録はまだありません。</p>)}
+        </div>
+      </details>
+    </section>
+  );
+}
+
 export default function ConsultantPanel() {
   const { data, error, setError, planning, busy, chatLog, load, replan, run, setTaskStatus, addTask, saveGoal, sendChat } = useConsultant();
   const [editingGoal, setEditingGoal] = useState(false);
@@ -282,6 +335,8 @@ export default function ConsultantPanel() {
         </form>
       </section>
 
+      <HistorySection refreshKey={chatLog.length} />
+
       <section className="card stack" style={{ padding: '24px', gap: '12px' }}>
         <h3 style={{ margin: 0, fontSize: '16px' }}>時間を取られている作業</h3>
         <p className="muted" style={{ margin: 0, fontSize: '13px', lineHeight: 1.7 }}>
@@ -411,6 +466,14 @@ const PANEL_CSS = `
   .cp-task-form .cp-input { flex: 1; }
   .cp-task-form .cp-select { flex: 0 0 auto; width: auto; }
   .cp-details summary { cursor: pointer; font-size: 13.5px; font-weight: 700; color: #1a1410; }
+  .cp-hist-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cp-hist-tab { border: 1px solid rgba(26,20,16,0.18); background: #fff; border-radius: 999px; padding: 6px 12px; font-size: 12.5px; cursor: pointer; color: #1a1410; }
+  .cp-hist-tab.is-on { background: #1a1410; color: #fff; border-color: #1a1410; }
+  .cp-hist-tab:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
+  .cp-timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; font-size: 13.5px; line-height: 1.7; }
+  .cp-hist-date { display: block; font-size: 11.5px; color: rgba(26,20,16,0.5); margin-bottom: 2px; }
+  .cp-hist-focus { display: block; margin-top: 4px; color: rgba(26,20,16,0.65); font-size: 13px; }
+  .cp-learned { white-space: pre-wrap; font-size: 13.5px; line-height: 1.8; background: rgba(26,20,16,0.04); border-radius: 10px; padding: 12px 14px; }
   .cp-done { margin: 8px 0 0; padding-left: 20px; font-size: 13px; line-height: 1.8; color: rgba(26,20,16,0.7); }
   .cp-stages { display: flex; flex-direction: column; gap: 8px; }
   .cp-stage { border: 1px solid rgba(26,20,16,0.14); border-radius: 12px; overflow: hidden; background: #fff; }

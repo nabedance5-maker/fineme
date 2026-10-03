@@ -78,7 +78,7 @@ export async function POST(request) {
 
   const context = buildContext({ ...state, tasks: state.tasks.filter(t => t.bucket !== 'missed') }, provider);
   const missedLines = missed.length ? `\n\n【期間内にできなかったタスク（今回閉じた）】\n${missed.slice(0, 12).map(t => `- ${t.title}`).join('\n')}\n同じ内容を繰り返すより、なぜ続かなかったかを考えて、小さくする・担当を変える・やめる判断も含めて組み立て直してください。` : '';
-  const prevPlan = state.plan?.diagnosis ? `\n\n【前回の見立て】\n${state.plan.diagnosis}\n前回から状況がどう動いたか（段階の人数・売上・予約・時期の変化）を踏まえて、見立てを更新してください。` : '';
+  const prevPlan = state.plan?.diagnosis ? `\n\n【前回の見立て】\n${state.plan.diagnosis}\n前回から状況がどう動いたか（段階の人数・売上・予約・時期の変化）を踏まえて、見立てを更新してください。これまでの見立て・ゴールの変遷・タスクの実績・学んだことも踏まえ、店舗に合うやり方へ寄せていってください。` : '';
 
   const system = `${CONSULTANT_ROLE}
 
@@ -158,6 +158,9 @@ export async function POST(request) {
       generated_at: new Date().toISOString(),
     }, { onConflict: 'provider_id' });
     if (planErr) return Response.json({ error: planErr.message }, { status: 500 });
+    await supabase.from('provider_consultant_plan_history').insert({
+      provider_id: provider.id, goal_text: state.goalText, diagnosis: clean(out.diagnosis, 1200), focus: clean(out.focus, 600),
+    });
 
     return Response.json({ ok: true, added: rows.length });
   } catch (e) {

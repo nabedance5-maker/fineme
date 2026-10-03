@@ -6,6 +6,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { authProvider, loadState, supabase, consultantEnabled } from '../_lib';
 import { CONSULTANT_ROLE, buildContext, tabGuide } from '@/lib/consultant-prompt';
 import { VALID_TABS, periodKeys, jstNow } from '@/lib/consultant-insight';
+import { recordGoal, maybeSummarize } from '@/lib/consultant-memory';
 
 const HISTORY_LIMIT = 14;
 const MODEL = 'claude-sonnet-4-6';
@@ -70,6 +71,7 @@ async function runTool(name, input, ctx) {
     const now = new Date().toISOString();
     await supabase.from('provider_consultant_settings').upsert(
       { provider_id: provider.id, goal_note: goal, goals_set_at: now, updated_at: now }, { onConflict: 'provider_id' });
+    await recordGoal(supabase, provider.id, goal, 'chat');
     ctx.changed = true;
     ctx.goalChanged = true;
     return 'ゴールを更新しました。見立てと今日のタスクは次に画面を開いた時に作り直されます';
@@ -109,7 +111,7 @@ export async function POST(request) {
 
 今回は店舗との会話です。店舗の質問や状況の変化に、上の原則にそって答えます。
 - ゴールが未記入なら、無理に提案せず「お店としてどうなりたいか」を聞く。
-- 店舗が何かをやると決めたら add_task で記録する。やった・やらないと言われたら complete_task / skip_task（id は未完了タスクの一覧から選ぶ）。目指すことが変わったら save_goal。今後の提案に効く新しい事実が出たら remember_fact。操作した時は、それを一言添えて伝える。
+- 店舗が何かをやると決めたら add_task で記録する。やった・やらないと言われたら complete_task / skip_task（id は未完了タスクの一覧から選ぶ）。目指すことが変わったら save_goal。今後の提案に効く新しい事実が出たら remember_fact（店舗が質問に答えた時、方針・こだわり・できない理由・やってみた結果が語られた時は特に記録する）。操作した時は、それを一言添えて伝える。
 - 無い機能を「ある」と言わない。画面を案内する時は次の名前で言う：${tabGuide()}
 - 返答は短く、実務的に。3〜8文程度。必要なら箇条書きも可。
 
@@ -138,6 +140,7 @@ ${buildContext(state, provider)}${diagnosis}`;
       { provider_id: provider.id, role: 'user', content: text },
       { provider_id: provider.id, role: 'assistant', content: reply },
     ]);
+    try { await maybeSummarize(supabase, provider, state); } catch (e) { console.error('consultant summarize failed:', e?.message); }
     return Response.json({ reply, changed: ctx.changed, goalChanged: ctx.goalChanged });
   } catch {
     return Response.json({ error: '返答の生成に失敗しました' }, { status: 502 });
