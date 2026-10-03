@@ -29,7 +29,9 @@ export async function consultantApi(path, options = {}) {
 }
 
 export function goToTab(tab) {
-  document.querySelector(`[data-tab="${tab}"]`)?.click();
+  const btn = document.querySelector(`[data-tab="${tab}"]`);
+  if (btn) btn.click();
+  else window.location.href = `/provider/dashboard?tab=${encodeURIComponent(tab)}`;
 }
 
 export function notifyChanged() {
