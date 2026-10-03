@@ -5,6 +5,7 @@
 export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
+import { logCustomerActivity } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -64,6 +65,12 @@ export async function POST(request) {
       }
       return Response.json({ error: error.message }, { status: 500 });
     }
+    const { data: buyer } = await supabase.from('profiles').select('display_name').eq('id', user.id).maybeSingle();
+    await logCustomerActivity({
+      providerId, userId: user.id, name: buyer?.display_name,
+      label: 'お客様が回数券を購入', category: '顧客', targetId: created.id,
+      detail: { package_name: pkg.name, total_sessions: pkg.total_sessions },
+    });
     return Response.json(created, { status: 201 });
   } catch (e) {
     console.error('[customer-packages confirm]', e);

@@ -21,6 +21,7 @@ export default function ActivityLogPanel() {
   const [hasMore, setHasMore] = useState(false);
   const [categories, setCategories] = useState([]);
   const [operators, setOperators] = useState([]);
+  const [actor, setActor] = useState('');
   const [category, setCategory] = useState('');
   const [operator, setOp] = useState('');
   const [from, setFrom] = useState('');
@@ -36,6 +37,7 @@ export default function ActivityLogPanel() {
 
   const fetchPage = useCallback(async (before) => {
     const p = new URLSearchParams();
+    if (actor) p.set('actor', actor);
     if (category) p.set('category', category);
     if (operator) p.set('operator', operator);
     if (from) p.set('from', from);
@@ -45,7 +47,7 @@ export default function ActivityLogPanel() {
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.error || '取得に失敗しました');
     return body;
-  }, [category, operator, from, to]);
+  }, [actor, category, operator, from, to]);
 
   const reload = useCallback(async () => {
     setLoading(true); setError('');
@@ -106,7 +108,7 @@ export default function ActivityLogPanel() {
           <div className="al-kicker">操作ログ</div>
           <h2 style={{ margin: '2px 0 6px', fontSize: '18px' }}>いつ・誰が・何を操作したかの記録</h2>
           <p className="muted" style={{ margin: 0, fontSize: '13px', lineHeight: 1.7 }}>
-            予約の承認、顧客情報の変更、設定の変更など、このダッシュボードで行った追加・変更・削除を残します。「予約が消えた」「設定が変わっている」といったときに、いつ誰が操作したかを確認できます。AI専属コンサルも、この記録から忙しい時間帯や繰り返し作業を読み取って、提案に生かします。
+            予約の承認、顧客情報の変更、設定の変更など、このダッシュボードで行った追加・変更・削除と、お客様が店舗に対して行った操作（予約リクエスト、代替日時の承認、キャンセル、回数券の購入など）を残します。「予約が消えた」「設定が変わっている」といったときに、いつ誰が操作したかを確認できます。AI専属コンサルも、この記録から忙しい時間帯や繰り返し作業を読み取って、提案に生かします。
           </p>
         </div>
 
@@ -125,11 +127,16 @@ export default function ActivityLogPanel() {
 
       <section className="card stack" style={{ padding: '24px', gap: '14px' }}>
         <div className="al-filters">
+          <select className="al-input" value={actor} onChange={e => { setActor(e.target.value); if (e.target.value === 'customer') setOp(''); }} aria-label="店舗とお客様で絞り込む">
+            <option value="">店舗とお客様の操作</option>
+            <option value="store">店舗の操作のみ</option>
+            <option value="customer">お客様の操作のみ</option>
+          </select>
           <select className="al-input" value={category} onChange={e => setCategory(e.target.value)} aria-label="分野で絞り込む">
             <option value="">すべての分野</option>
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select className="al-input" value={operator} onChange={e => setOp(e.target.value)} aria-label="操作した人で絞り込む">
+          <select className="al-input" value={operator} disabled={actor === 'customer'} onChange={e => setOp(e.target.value)} aria-label="操作した人で絞り込む">
             <option value="">すべての人</option>
             {operators.map(o => <option key={o} value={o}>{o}</option>)}
             <option value="__none__">名前なし</option>
@@ -153,7 +160,7 @@ export default function ActivityLogPanel() {
                     <span className="al-time">{timeLabel(l.occurred_at)}</span>
                     <span className="al-cat">{l.category}</span>
                     <span className="al-sum">{l.summary || l.action_label}</span>
-                    <span className="al-who">{l.operator_name || '名前なし'}</span>
+                    <span className={l.actor === 'customer' ? 'al-who al-who-c' : 'al-who'}>{l.actor === 'customer' ? `お客様${l.customer_name ? `：${l.customer_name}` : ''}` : (l.operator_name || '名前なし')}</span>
                   </button>
                   {openId === l.id && (
                     <div className="al-detail">
@@ -219,6 +226,7 @@ const CSS = `
   .al-cat { font-size: 11.5px; color: rgba(26,20,16,0.65); background: rgba(26,20,16,0.06); border-radius: 999px; padding: 2px 8px; text-align: center; white-space: nowrap; }
   .al-sum { overflow-wrap: anywhere; }
   .al-who { font-size: 12.5px; color: rgba(26,20,16,0.55); white-space: nowrap; }
+  .al-who-c { color: #8a4b1f; font-weight: 600; }
   .al-detail { padding: 4px 4px 12px 54px; font-size: 12.5px; line-height: 1.7; }
   .al-detail dl { margin: 0; display: flex; flex-direction: column; gap: 2px; }
   .al-detail dl > div { display: flex; gap: 10px; }

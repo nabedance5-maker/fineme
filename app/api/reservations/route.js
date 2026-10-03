@@ -9,6 +9,7 @@ import { getShiftScheduleForRange, isOutsideShift } from '@/lib/shift-availabili
 import { isPastBookingCutoff, cutoffDescription } from '@/lib/booking-cutoff';
 import { createDepositCheckout } from '@/lib/reservation-deposit';
 import { isClosedWeekday } from '@/lib/closed-weekday';
+import { logCustomerActivity } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -232,6 +233,18 @@ export async function POST(request) {
     .single();
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  let usedPackageName = null;
+  if (verifiedPackageId) {
+    const { data: usedPkg } = await supabase.from('customer_packages').select('package_name').eq('id', verifiedPackageId).maybeSingle();
+    usedPackageName = usedPkg?.package_name || null;
+  }
+  await logCustomerActivity({
+    providerId: provider_id, userId: user_id, name: user_name,
+    label: isInstant ? 'お客様が空き枠で予約を確定' : 'お客様が予約をリクエスト',
+    targetId: data.id,
+    detail: { reserved_date: data.reserved_date, start_time: data.start_time, package_name: usedPackageName },
+  });
 
   // 予約デポジット（決済機能Phase6③・でお要望2026-09-27）。即時予約で確定した予約のみ対象
   // （申請制は店舗の承認前に課金するのは順序として不自然なため対象外）。

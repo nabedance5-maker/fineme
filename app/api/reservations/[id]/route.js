@@ -8,7 +8,7 @@ import { syncVisitToLog } from '@/lib/sync-visit';
 import { notifyStoreIfAtRiskVisit } from '@/lib/at-risk-visit-notify';
 import { autoConsumePackageForVisit } from '@/lib/consume-package';
 import { refundDepositIfPaid } from '@/lib/reservation-deposit';
-import { withAudit } from '@/lib/activity-log';
+import { withAudit, logCustomerActivity } from '@/lib/activity-log';
 
 export async function GET(request, context) {
   try {
@@ -74,6 +74,7 @@ async function __PATCH(request, context) {
       if (!['approved', 'cancelled'].includes(newStatus)) {
         return Response.json({ error: '無効な操作です' }, { status: 400 });
       }
+      context.auditSkip = true; // お客様の操作は店舗の操作として記録せず、下で「お客様の操作」として残す
     } else {
       return Response.json({ error: 'この予約を操作する権限がありません' }, { status: 403 });
     }
@@ -101,6 +102,17 @@ async function __PATCH(request, context) {
       .from('reservations').update(updates).eq('id', id).select().single();
 
     if (error) return Response.json({ error: error.message, hint: error.hint }, { status: 500 });
+
+    if (!isOwnerProvider && isOwnerCustomer) {
+      await logCustomerActivity({
+        providerId: data.provider_id, userId: data.user_id, name: data.user_name,
+        label: newStatus === 'cancelled' ? 'お客様が予約をキャンセル' : 'お客様が代替日時を承認',
+        targetId: id,
+        detail: newStatus === 'cancelled'
+          ? { reserved_date: data.confirmed_date || data.reserved_date, start_time: data.confirmed_time || data.start_time, previous_status: existing.status }
+          : { counter_date: data.counter_date, counter_time: data.counter_time },
+      });
+    }
 
     const { data: provider } = await db
       .from('providers').select('name, email, line_user_id').eq('id', data.provider_id).single();

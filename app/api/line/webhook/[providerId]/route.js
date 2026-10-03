@@ -8,6 +8,7 @@ import { sendLineReply, sendLinePush } from '@/lib/line-push';
 import { verifyLineSignature } from '@/lib/line-channel';
 import { idealNextDate } from '@/lib/log-axes';
 import { sendLineBookingRequestEmail, sendCancelledByUserEmail } from '@/lib/email';
+import { logCustomerActivity } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -173,6 +174,11 @@ async function createLineBookingRequest(logId, channelProviderId, lineUserId, pr
     console.error('[line/webhook] book_request insert error', insertError);
     return 'リクエストの送信に失敗しました。New Me Logから直接お問い合わせください。';
   }
+  await logCustomerActivity({
+    providerId: provider.id, userId: log.user_id, name: userName,
+    label: 'お客様が予約をリクエスト（LINE）',
+    detail: { reserved_date: preferredDate, start_time: preferredTime },
+  });
 
   try {
     await sendLineBookingRequestEmail({
@@ -216,6 +222,12 @@ async function acceptCounterProposal(rid, channelProviderId, lineUserId) {
     return '承認に失敗しました。マイページから直接お試しください。';
   }
 
+  await logCustomerActivity({
+    providerId: r.provider_id, userId: r.user_id, name: r.user_name,
+    label: 'お客様が代替日時を承認（LINE）', targetId: rid,
+    detail: { counter_date: r.counter_date, counter_time: r.counter_time },
+  });
+
   // 店舗への通知（でお報告2026-09-12：「代替案を承認するボタンを押したのに反映
   // されない」の原因。cancelReservationFromLineは店舗へLINE通知しているのに、
   // こちらだけ抜けていた——お客様がLINEで承諾しても店舗はダッシュボードを
@@ -249,6 +261,12 @@ async function cancelReservationFromLine(rid, channelProviderId, lineUserId) {
     console.error('[line/webhook] cancel_reservation update error', updateError);
     return 'キャンセルに失敗しました。マイページから直接お試しください。';
   }
+
+  await logCustomerActivity({
+    providerId: r.provider_id, userId: r.user_id, name: r.user_name,
+    label: 'お客様が予約をキャンセル（LINE）', targetId: rid,
+    detail: { reserved_date: r.confirmed_date || r.reserved_date, start_time: r.confirmed_time || r.start_time, previous_status: r.status },
+  });
 
   const { data: provider } = await supabase.from('providers').select('name, email, line_user_id').eq('id', r.provider_id).single();
   try {
@@ -284,6 +302,14 @@ async function respondToEvent(attendanceId, status, channelProviderId, lineUserI
     console.error('[line/webhook] respond_event update error', updateError);
     return '回答の記録に失敗しました。恐れ入りますが店舗まで直接ご連絡ください。';
   }
+  const { data: ev } = await supabase.from('provider_events').select('provider_id, title').eq('id', att.event_id).maybeSingle();
+  if (ev?.provider_id) {
+    await logCustomerActivity({
+      providerId: ev.provider_id, userId: att.user_id,
+      label: status === 'attending' ? 'お客様がイベントへの参加を回答' : 'お客様がイベントへの不参加を回答',
+      category: '予約', targetId: att.event_id, detail: { title: ev.title },
+    });
+  }
   return status === 'attending' ? '✓ 参加でご回答いただきました。ありがとうございます！' : '✓ 不参加でご回答いただきました。かしこまりました。';
 }
 
@@ -311,7 +337,14 @@ export async function POST(request, { params }) {
       const rid = data.get('rid');
       if (!rid) continue;
       if (action === 'confirm') {
-        await supabase.from('reservations').update({ confirmed_by_customer: true }).eq('id', rid);
+        const { data: cr } = await supabase.from('reservations').update({ confirmed_by_customer: true }).eq('id', rid).select('provider_id, user_id, user_name, reserved_date, start_time, confirmed_date, confirmed_time').maybeSingle();
+        if (cr) {
+          await logCustomerActivity({
+            providerId: cr.provider_id, userId: cr.user_id, name: cr.user_name,
+            label: 'お客様が前日の来店確認に回答（行きます）', targetId: rid,
+            detail: { reserved_date: cr.confirmed_date || cr.reserved_date, start_time: cr.confirmed_time || cr.start_time },
+          });
+        }
         if (event.replyToken) await sendLineReply(event.replyToken, 'ご確認ありがとうございます。当日お待ちしております。', token);
       } else {
         if (event.replyToken) await sendLineReply(event.replyToken, 'かしこまりました。恐れ入りますが、変更・キャンセルは店舗まで直接ご連絡をお願いいたします。', token);

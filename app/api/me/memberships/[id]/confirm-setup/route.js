@@ -5,6 +5,7 @@
 export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
+import { logCustomerActivity } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -41,6 +42,11 @@ export async function POST(request, { params }) {
       .select()
       .single();
     if (error) return Response.json({ error: error.message }, { status: 500 });
+    await logCustomerActivity({
+      providerId: updated.provider_id, userId: user.id,
+      name: [m.last_name, m.first_name].filter(Boolean).join(' '),
+      label: 'お客様が入会を申し込み', category: '顧客', targetId: id,
+    });
     return Response.json(updated);
   } catch (e) {
     console.error('[memberships confirm-setup]', e);

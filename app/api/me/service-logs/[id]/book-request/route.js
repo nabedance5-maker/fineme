@@ -12,6 +12,7 @@
 import { getSupabase } from '@/lib/supabase';
 import { sendLineBookingRequestEmail } from '@/lib/email';
 import { sendLinePush } from '@/lib/line-push';
+import { logCustomerActivity } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -114,5 +115,10 @@ export async function POST(request, { params }) {
     } catch (e) { console.error('[book-request] provider push', e); }
   }
 
+  await logCustomerActivity({
+    providerId: provider.id, userId: user.id, name: profile?.display_name,
+    label: 'お客様がNew Me Logから予約をリクエスト', targetId: reservation?.id,
+    detail: { reserved_date: preferredDate, start_time: preferredTime },
+  });
   return Response.json({ ok: true, reservation, providerName: provider.name });
 }
