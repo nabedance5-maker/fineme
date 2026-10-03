@@ -1,5 +1,12 @@
 import { getSupabase } from '@/lib/supabase';
-import { gatherContext, computeJourney, GOAL } from '@/lib/consultant-journey';
+import { gatherContext, computeJourney, GOAL_OPTIONS, GOAL_KEYS, PREMISE } from '@/lib/consultant-journey';
+import { hasFeature } from '@/lib/feature-flags';
+
+export { GOAL_KEYS };
+
+export function consultantEnabled(provider) {
+  return hasFeature(provider, 'ai_consultant');
+}
 
 export const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -22,12 +29,16 @@ export async function loadState(provider) {
     gatherContext(supabase, provider),
     supabase.from('provider_consultant_step_state').select('step_key, status, until').eq('provider_id', provider.id),
     supabase.from('provider_consultant_bottlenecks').select('id, category, label, minutes_per_week, source, status, created_at').eq('provider_id', provider.id).order('created_at', { ascending: false }).limit(30),
-    supabase.from('provider_consultant_settings').select('interview_done_at').eq('provider_id', provider.id).maybeSingle(),
+    supabase.from('provider_consultant_settings').select('interview_done_at, goals, goal_note').eq('provider_id', provider.id).maybeSingle(),
   ]);
   const bottlenecks = bnRes.data || [];
-  const journey = computeJourney(ctx, { stepStates: stepRes.data || [], bottlenecks });
+  const goals = (settingsRes.data?.goals || []).filter(g => GOAL_KEYS.includes(g));
+  const journey = computeJourney(ctx, { stepStates: stepRes.data || [], bottlenecks, goals });
   return {
-    goal: GOAL,
+    premise: PREMISE,
+    goalOptions: GOAL_OPTIONS,
+    goals,
+    goalNote: settingsRes.data?.goal_note || '',
     ctx,
     bottlenecks,
     interviewDone: !!settingsRes.data?.interview_done_at,

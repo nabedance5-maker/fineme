@@ -1,41 +1,13 @@
 'use client';
 // 掲載者ダッシュボード右下の常駐「AI専属コンサル」（でお要望 2026-10-03）。
-// どのタブにいても1本の道筋（ゴール→道筋→今の一手）を出す。タブごとに別提案はしない。
+// どのタブにいても1本の道筋（店舗が選んだゴール→道筋→今の一手）を出す。タブごとに別提案はしない。
+// ゴール未設定でもシステムは普通に使える。未設定のときは設定への案内だけを出す。
 // 最初は開いて表示、閉じると右端に小さく収まる。
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BOTTLENECK_CATEGORIES } from '@/lib/consultant-journey';
+import { CHANGED_EVENT, STATUS_LABEL, consultantApi as api, goToTab, notifyChanged } from './consultant-api';
 
 const COLLAPSE_KEY = 'fineme:consultant:collapsed';
-const MINUTE_CHOICES = [
-  { v: 30, label: '30分' },
-  { v: 60, label: '1時間' },
-  { v: 120, label: '2時間' },
-  { v: 240, label: '4時間以上' },
-];
-
-function getToken() {
-  try {
-    const key = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-    return key ? JSON.parse(localStorage.getItem(key))?.access_token || null : null;
-  } catch { return null; }
-}
-
-async function api(path, options = {}) {
-  const token = getToken();
-  const res = await fetch(`/api/provider/consultant${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...(options.headers || {}) },
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error || '通信に失敗しました');
-  return body;
-}
-
-function goToTab(tab) {
-  document.querySelector(`[data-tab="${tab}"]`)?.click();
-}
-
-const STATUS_LABEL = { done: '完了', todo: '未着手', snoozed: '保留中', skipped: '見送り' };
 
 export default function ConsultantWidget() {
   const [data, setData] = useState(null);
@@ -45,9 +17,6 @@ export default function ConsultantWidget() {
   const [busy, setBusy] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [chatLog, setChatLog] = useState([]);
-  const [bnCategory, setBnCategory] = useState('');
-  const [bnMinutes, setBnMinutes] = useState(60);
-  const [bnLabel, setBnLabel] = useState('');
   const logRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -65,7 +34,9 @@ export default function ConsultantWidget() {
     try { setCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch { /* 初期表示のままにする */ }
     // ダッシュボード本体の認証・トークン更新が済んでから取得する
     const t = setTimeout(load, 1500);
-    return () => clearTimeout(t);
+    const onChanged = () => load();
+    window.addEventListener(CHANGED_EVENT, onChanged);
+    return () => { clearTimeout(t); window.removeEventListener(CHANGED_EVENT, onChanged); };
   }, [load]);
 
   useEffect(() => {
@@ -82,6 +53,7 @@ export default function ConsultantWidget() {
     try {
       await api('/step-state', { method: 'POST', body: JSON.stringify({ step_key: stepKey, action }) });
       await load();
+      notifyChanged();
     } catch (e) { setError(e.message); }
     setBusy(false);
   }
@@ -101,42 +73,22 @@ export default function ConsultantWidget() {
     setBusy(false);
   }
 
-  async function submitInterview() {
-    if (!bnCategory) return;
-    setBusy(true);
-    try {
-      await api('/bottleneck', { method: 'POST', body: JSON.stringify({ category: bnCategory, label: bnLabel, minutes_per_week: bnMinutes }) });
-      setBnCategory(''); setBnLabel(''); setBnMinutes(60);
-      await load();
-      setView('now');
-    } catch (e) { setError(e.message); }
-    setBusy(false);
-  }
-
-  async function skipInterview() {
-    setBusy(true);
-    try {
-      await api('/bottleneck', { method: 'POST', body: JSON.stringify({ skip: true }) });
-      await load();
-      setView('now');
-    } catch (e) { setError(e.message); }
-    setBusy(false);
-  }
-
   async function setBottleneckStatus(id, status) {
     setBusy(true);
     try {
       await api('/bottleneck', { method: 'PATCH', body: JSON.stringify({ id, status }) });
       await load();
+      notifyChanged();
     } catch (e) { setError(e.message); }
     setBusy(false);
   }
 
-  if (!data) return null;
+  if (!data || data.enabled === false) return null;
 
-  const { current, progress, steps, bottlenecks, interviewDone, savedMinutesPerWeek, goal } = data;
+  const { current, progress, steps, bottlenecks, interviewDone, savedMinutesPerWeek, needsGoals, goals, goalOptions } = data;
   const openBottlenecks = bottlenecks.filter(b => b.status === 'open');
   const catLabel = key => BOTTLENECK_CATEGORIES.find(c => c.key === key)?.label || key;
+  const goalSummary = needsGoals ? 'お店のゴールは未設定です' : goalOptions.filter(g => goals.includes(g.key)).map(g => g.label).join('／');
 
   if (collapsed) {
     return (
@@ -144,7 +96,7 @@ export default function ConsultantWidget() {
         <style>{WIDGET_CSS}</style>
         <button type="button" className="cw-tab" onClick={() => setCollapsedPersist(false)} aria-label="AI専属コンサルを開く">
           <span className="cw-tab-label">AIコンサル</span>
-          {current && <span className="cw-dot" aria-hidden="true" />}
+          {(current || needsGoals) && <span className="cw-dot" aria-hidden="true" />}
         </button>
       </>
     );
@@ -157,7 +109,7 @@ export default function ConsultantWidget() {
         <header className="cw-head">
           <div>
             <div className="cw-kicker">AI専属コンサル</div>
-            <div className="cw-goal">ゴール：{goal.label}</div>
+            <div className="cw-goal" title={goalSummary}>{needsGoals ? goalSummary : `ゴール：${goalSummary}`}</div>
           </div>
           <button type="button" className="cw-icon-btn" onClick={() => setCollapsedPersist(true)} aria-label="折りたたむ">閉じる</button>
         </header>
@@ -171,7 +123,18 @@ export default function ConsultantWidget() {
         <div className="cw-body">
           {error && <p className="cw-error">{error}</p>}
 
-          {view === 'now' && (
+          {needsGoals && view !== 'chat' && (
+            <section className="cw-now">
+              <h3 className="cw-now-title">お店がどうしたいかを、まず教えてください</h3>
+              <p className="cw-why">リピートしてくれるお客様を増やすために、何を目指すかはお店ごとに違います。選んでもらうと、お店に合った道筋を作ります。設定しなくても、他の機能はこのまま使えます。</p>
+              <div className="cw-actions">
+                <button type="button" className="cw-primary" onClick={() => goToTab('consultant')}>目標を設定する</button>
+                <button type="button" className="cw-secondary" onClick={() => setView('chat')}>先に相談する</button>
+              </div>
+            </section>
+          )}
+
+          {!needsGoals && view === 'now' && (
             <>
               <div className="cw-progress">
                 <div className="cw-progress-bar"><span style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }} /></div>
@@ -192,24 +155,24 @@ export default function ConsultantWidget() {
                 </section>
               ) : (
                 <section className="cw-now">
-                  <h3 className="cw-now-title">今の道筋はすべて進んでいます</h3>
-                  <p className="cw-why">リピート率の変化を見ながら、次に取り組むことを一緒に考えます。</p>
+                  <h3 className="cw-now-title">選んだゴールの道筋はすべて進んでいます</h3>
+                  <p className="cw-why">変化を見ながら、次に取り組むことを一緒に考えます。</p>
                   <div className="cw-actions">
-                    <button type="button" className="cw-primary" onClick={() => { setView('chat'); sendChat('次に何を優先すればリピート率が上がりますか？'); }}>次の一手を相談する</button>
+                    <button type="button" className="cw-primary" onClick={() => { setView('chat'); sendChat('次に何を優先すれば、リピートしてくれるお客様が増えますか？'); }}>次の一手を相談する</button>
                   </div>
                 </section>
               )}
 
-              {!interviewDone && (
+              {!interviewDone && !needsGoals && (
                 <section className="cw-interview-prompt">
                   <p>お店ごとに、時間を取られている作業は違います。いちばん手間のかかる作業を教えてもらえますか？</p>
-                  <button type="button" className="cw-link" onClick={() => setView('interview')}>答える</button>
+                  <button type="button" className="cw-link" onClick={() => goToTab('consultant')}>AIコンサルのページで答える</button>
                 </section>
               )}
             </>
           )}
 
-          {view === 'path' && (
+          {!needsGoals && view === 'path' && (
             <>
               <ol className="cw-steps">
                 {steps.map(s => (
@@ -243,7 +206,7 @@ export default function ConsultantWidget() {
                     <button type="button" className="cw-link" disabled={busy} onClick={() => setBottleneckStatus(b.id, 'resolved')}>解消した</button>
                   </div>
                 ))}
-                <button type="button" className="cw-link" onClick={() => setView('interview')}>作業を追加する</button>
+                <button type="button" className="cw-link" onClick={() => goToTab('consultant')}>作業を追加する</button>
               </section>
             </>
           )}
@@ -251,7 +214,7 @@ export default function ConsultantWidget() {
           {view === 'chat' && (
             <div className="cw-chat">
               <div className="cw-chat-log" ref={logRef}>
-                {chatLog.length === 0 && <p className="cw-muted">お店のことを何でも相談してください。たとえば「休眠のお客様にどう声をかければいい？」「シフト作りに時間がかかる」など。</p>}
+                {chatLog.length === 0 && <p className="cw-muted">お店のことを何でも相談してください。たとえば「しばらく来ていないお客様にどう声をかければいい？」「シフト作りに時間がかかる」など。</p>}
                 {chatLog.map((m, i) => (
                   <div key={i} className={`cw-msg is-${m.role}`}>{m.content}</div>
                 ))}
@@ -264,33 +227,6 @@ export default function ConsultantWidget() {
             </div>
           )}
 
-          {view === 'interview' && (
-            <section className="cw-form">
-              <h3 className="cw-now-title">いま、いちばん時間を取られている作業は？</h3>
-              <p className="cw-why">スタッフ全員が、お客様のために使える時間を増やすための質問です。紙や口頭でやっている作業も含めて教えてください。</p>
-              <div className="cw-choices" role="radiogroup" aria-label="作業の種類">
-                {BOTTLENECK_CATEGORIES.map(c => (
-                  <button key={c.key} type="button" role="radio" aria-checked={bnCategory === c.key} className={`cw-choice${bnCategory === c.key ? ' is-active' : ''}`} onClick={() => setBnCategory(c.key)}>{c.label}</button>
-                ))}
-              </div>
-              {bnCategory && (
-                <>
-                  <label className="cw-label">週にどのくらいかかっていますか</label>
-                  <div className="cw-choices" role="radiogroup" aria-label="週あたりの時間">
-                    {MINUTE_CHOICES.map(m => (
-                      <button key={m.v} type="button" role="radio" aria-checked={bnMinutes === m.v} className={`cw-choice${bnMinutes === m.v ? ' is-active' : ''}`} onClick={() => setBnMinutes(m.v)}>{m.label}</button>
-                    ))}
-                  </div>
-                  <label className="cw-label" htmlFor="cw-bn-label">具体的に（任意）</label>
-                  <input id="cw-bn-label" className="cw-input" value={bnLabel} onChange={e => setBnLabel(e.target.value)} maxLength={200} placeholder="例：全員の希望を聞いてシフト表を作る" />
-                </>
-              )}
-              <div className="cw-actions">
-                <button type="button" className="cw-primary" disabled={busy || !bnCategory} onClick={submitInterview}>これを教える</button>
-                <button type="button" className="cw-secondary" disabled={busy} onClick={skipInterview}>あとで答える</button>
-              </div>
-            </section>
-          )}
         </div>
       </aside>
     </>
@@ -350,12 +286,6 @@ const WIDGET_CSS = `
   .cw-typing { color: rgba(26,20,16,0.55); }
   .cw-chat-form { display: flex; gap: 8px; align-items: flex-end; }
   .cw-chat-form textarea { flex: 1; resize: none; border: 1.5px solid rgba(26,20,16,0.2); border-radius: 9px; padding: 8px 10px; font-size: 13.5px; font-family: inherit; color: #1a1410; background: #fff; }
-  .cw-form { display: flex; flex-direction: column; gap: 10px; }
-  .cw-label { font-size: 12.5px; font-weight: 700; }
-  .cw-choices { display: flex; flex-wrap: wrap; gap: 6px; }
-  .cw-choice { background: #fff; color: #1a1410; border: 1.5px solid rgba(26,20,16,0.2); border-radius: 99px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
-  .cw-choice.is-active { background: #0a0f1e; color: #fff; border-color: #0a0f1e; }
-  .cw-input { border: 1.5px solid rgba(26,20,16,0.2); border-radius: 9px; padding: 8px 10px; font-size: 13.5px; font-family: inherit; color: #1a1410; background: #fff; }
   .cw-tab { position: fixed; right: 0; bottom: 96px; z-index: 180; display: flex; align-items: center; gap: 6px; background: #0a0f1e; color: #fff; border: none; border-radius: 12px 0 0 12px; padding: 12px 10px; box-shadow: -4px 4px 16px rgba(10,15,30,0.25); cursor: pointer; }
   .cw-tab-label { writing-mode: vertical-rl; font-size: 12.5px; font-weight: 700; letter-spacing: .1em; }
   .cw-dot { width: 9px; height: 9px; border-radius: 99px; background: var(--color-gold, #c8a45c); }

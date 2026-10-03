@@ -10,6 +10,7 @@ import { LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIO
 import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
 import PageDesignSettings from './PageDesignSettings';
 import ConsultantWidget from './ConsultantWidget';
+import ConsultantPanel from './ConsultantPanel';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -10585,6 +10586,7 @@ export default function ProviderDashboardPage() {
                 <div className="pd-panel-section" data-panel="home" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="today">今日の業務</button>
                   <button className="tab-btn" data-tab="stats">概況</button>
+                  <button className="tab-btn" data-tab="consultant" data-feature="ai_consultant">AIコンサル<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="reservation">
                   <button className="tab-btn active" data-tab="calendar">予約カレンダー</button>
@@ -13191,6 +13193,11 @@ export default function ProviderDashboardPage() {
               <p className="muted" style={{ fontSize: '13px' }}>読み込み中…</p>
             </div>
           </div>
+        </div>
+
+        {/* AIコンサル：店舗が選んだゴールから道筋を作る専用ページ（でお要望2026-10-03）。未設定でも他機能は使える */}
+        <div className="tab-pane" id="tab-consultant">
+          <ConsultantPanel />
         </div>
 
         {/* ページデザイン：公開ページの色・書体・文字の大きさを店舗が選ぶ（でお要望2026-10-01） */}
