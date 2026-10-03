@@ -1,66 +1,43 @@
 'use client';
 // 掲載者ダッシュボード「AIコンサル」タブ（でお要望 2026-10-03）。
-// 大前提は「リピートしてくれるお客様を増やす」。具体的なゴールは店舗が選ぶ・書く。道筋はそこから組み立てる。
-// ゴール未設定でも、システムの他の機能は全て普通に使える。
-import { useCallback, useEffect, useRef, useState } from 'react';
+// 固定のチェックリストではなく、店舗が自分の言葉で書いたゴール×実データ×今日の時期から、
+// AIが見立て・段階別の打ち手・日々のタスクを考える。Fineme の導入チェックは「準備状況」に格下げ。
+import { useEffect, useRef, useState } from 'react';
 import { BOTTLENECK_CATEGORIES } from '@/lib/consultant-journey';
-import { CHANGED_EVENT, MINUTE_CHOICES, STATUS_LABEL, consultantApi as api, goToTab, notifyChanged } from './consultant-api';
+import { MINUTE_CHOICES, STATUS_LABEL, consultantApi as api, goToTab, notifyChanged } from './consultant-api';
+import { SHARED_CSS, TaskList, useConsultant } from './ConsultantShared';
+
+const GOAL_EXAMPLES = [
+  '初めて来たお客様に、2回目も来てもらえるようにしたい',
+  'しばらく来ていないお客様に、また戻ってきてほしい',
+  '通ってくれているお客様に、もっと定期的に来てほしい',
+  'お客様のことをもっと把握して、接客の質を上げたい',
+  'スタッフの時間に余裕を作って、お客様一人一人に向き合いたい',
+];
+
+function formatWhen(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
 
 export default function ConsultantPanel() {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [editingGoals, setEditingGoals] = useState(false);
-  const [draftGoals, setDraftGoals] = useState([]);
-  const [draftNote, setDraftNote] = useState('');
+  const { data, error, setError, planning, busy, chatLog, load, replan, run, setTaskStatus, addTask, saveGoal, sendChat } = useConsultant();
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [draftGoal, setDraftGoal] = useState('');
   const [chatInput, setChatInput] = useState('');
-  const [chatLog, setChatLog] = useState([]);
+  const [taskInput, setTaskInput] = useState('');
+  const [taskCadence, setTaskCadence] = useState('once');
+  const [openStage, setOpenStage] = useState('');
+  const [copied, setCopied] = useState('');
   const [bnCategory, setBnCategory] = useState('');
   const [bnMinutes, setBnMinutes] = useState(60);
   const [bnLabel, setBnLabel] = useState('');
   const logRef = useRef(null);
 
-  const load = useCallback(async () => {
-    try {
-      const d = await api('');
-      setData(d);
-      setChatLog(prev => (prev.length ? prev : d.messages || []));
-      setError('');
-    } catch (e) { setError(e.message); }
-  }, []);
-
-  useEffect(() => {
-    // ダッシュボード本体の認証・トークン更新が済んでから取得する
-    const t = setTimeout(load, 1500);
-    const onChanged = () => load();
-    window.addEventListener(CHANGED_EVENT, onChanged);
-    return () => { clearTimeout(t); window.removeEventListener(CHANGED_EVENT, onChanged); };
-  }, [load]);
-
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [chatLog, busy]);
-
-  async function run(fn) {
-    setBusy(true);
-    try { await fn(); setError(''); } catch (e) { setError(e.message); }
-    setBusy(false);
-  }
-
-  function startEditGoals() {
-    setDraftGoals(data.goals);
-    setDraftNote(data.goalNote);
-    setEditingGoals(true);
-  }
-
-  const toggleDraft = key => setDraftGoals(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
-
-  const saveGoals = () => run(async () => {
-    await api('/goals', { method: 'PUT', body: JSON.stringify({ goals: draftGoals, note: draftNote }) });
-    setEditingGoals(false);
-    await load();
-    notifyChanged();
-  });
 
   const stepAction = (stepKey, action) => run(async () => {
     await api('/step-state', { method: 'POST', body: JSON.stringify({ step_key: stepKey, action }) });
@@ -81,19 +58,10 @@ export default function ConsultantPanel() {
     notifyChanged();
   });
 
-  async function sendChat(text) {
-    const msg = (text ?? chatInput).trim();
-    if (!msg || busy) return;
-    setChatInput('');
-    setChatLog(prev => [...prev, { role: 'user', content: msg }]);
-    setBusy(true);
-    try {
-      const { reply } = await api('/chat', { method: 'POST', body: JSON.stringify({ message: msg }) });
-      setChatLog(prev => [...prev, { role: 'assistant', content: reply }]);
-    } catch (e) {
-      setChatLog(prev => [...prev, { role: 'assistant', content: `うまく返答できませんでした（${e.message}）。もう一度お試しください。` }]);
-    }
-    setBusy(false);
+  async function copyDraft(draft, name, key) {
+    const text = draft.replace(/\{name\}/g, name);
+    try { await navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(''), 2000); }
+    catch { setError('コピーできませんでした。文面を選択してコピーしてください。'); }
   }
 
   if (!data) {
@@ -114,117 +82,185 @@ export default function ConsultantPanel() {
     );
   }
 
-  const { goals, goalNote, goalOptions, needsGoals, steps, current, progress, bottlenecks, savedMinutesPerWeek, premise } = data;
+  const { goalText, needsGoal, diagnosis, focus, questions, stageActions, generatedAt, tasks, tabLabels, stages, timeText, kpis, readiness, bottlenecks, savedMinutesPerWeek, facts, premise } = data;
+  const showGoalEditor = editingGoal || needsGoal;
   const openBottlenecks = bottlenecks.filter(b => b.status === 'open');
   const catLabel = key => BOTTLENECK_CATEGORIES.find(c => c.key === key)?.label || key;
-  const showGoalEditor = editingGoals || needsGoals;
+  const openTasks = tasks.filter(t => t.status === 'open');
+  const doneTasks = tasks.filter(t => t.status === 'done').slice(0, 8);
+  const actionByStage = Object.fromEntries((stageActions || []).map(a => [a.stage, a]));
+  const visibleStages = stages.filter(s => s.count > 0);
+  const salesDelta = kpis.salesPrev30.total ? Math.round(((kpis.sales30.total - kpis.salesPrev30.total) / kpis.salesPrev30.total) * 100) : null;
+
+  const submitGoal = async () => {
+    await saveGoal(draftGoal);
+    setEditingGoal(false);
+  };
 
   return (
     <div className="stack" style={{ gap: '20px' }}>
-      <style>{PANEL_CSS}</style>
+      <style>{SHARED_CSS}{PANEL_CSS}</style>
 
       <section className="card stack" style={{ padding: '24px', gap: '14px' }}>
         <div>
           <div className="cp-kicker">AI専属コンサル</div>
-          <h2 style={{ margin: '2px 0 6px', fontSize: '18px' }}>{premise}ために、お店に合った道筋を一緒に作ります</h2>
+          <h2 style={{ margin: '2px 0 6px', fontSize: '18px' }}>{premise}ために、お店のデータから毎日の動きまで一緒に考えます</h2>
           <p className="muted" style={{ margin: 0, fontSize: '13px', lineHeight: 1.7 }}>
-            何を目指すかはお店ごとに違います。まず、お店としてどうしたいかを教えてください。設定しなくても、Finemeの機能はすべて今まで通り使えます。
+            お店がどうなりたいかを、自分の言葉で書いてください。来店・売上・予約の実データと、今日の日付や時期を見て、見立てと日々の作業を考えます。時間が経ってお客様の状況が変わると、毎日考え直します。
           </p>
         </div>
         {error && <p className="cp-error">{error}</p>}
 
         {showGoalEditor ? (
-          <div className="stack" style={{ gap: '12px' }}>
-            <div className="cp-label">お店として、いま目指したいことは？（いくつでも）</div>
-            <div className="cp-options">
-              {goalOptions.map(g => {
-                const checked = (editingGoals ? draftGoals : []).includes(g.key);
-                return (
-                  <label key={g.key} className={`cp-option${checked ? ' is-on' : ''}`}>
-                    <input type="checkbox" checked={checked} onChange={() => {
-                      if (!editingGoals) { setDraftGoals([g.key]); setDraftNote(goalNote); setEditingGoals(true); } else toggleDraft(g.key);
-                    }} />
-                    <span>{g.label}</span>
-                  </label>
-                );
-              })}
+          <div className="stack" style={{ gap: '10px' }}>
+            <label className="cp-label" htmlFor="cp-goal">お店として、これからどうなりたいですか？</label>
+            <textarea id="cp-goal" className="cp-input" rows={4} maxLength={600} value={draftGoal} onChange={e => setDraftGoal(e.target.value)}
+              placeholder="例：常連のお客様は多いが、新しく来てくれた方が2回目に来てくれない。3か月で、初回のお客様の半分が2回目に来てくれるようにしたい" />
+            <div className="cp-label" style={{ fontWeight: 600, fontSize: '12.5px' }}>書きづらいときは、近いものを押すと入ります</div>
+            <div className="cp-choices">
+              {GOAL_EXAMPLES.map(g => <button key={g} type="button" className="cp-choice" onClick={() => setDraftGoal(prev => (prev ? `${prev}\n${g}` : g).slice(0, 600))}>{g}</button>)}
             </div>
-            <label className="cp-label" htmlFor="cp-note">ほかに目指していること、お店の状況（自由に・任意）</label>
-            <textarea id="cp-note" className="cp-input" rows={3} maxLength={500}
-              value={editingGoals ? draftNote : goalNote}
-              onChange={e => { if (!editingGoals) { setDraftGoals([]); setEditingGoals(true); } setDraftNote(e.target.value); }}
-              placeholder="例：常連のお客様は多いが、新しく来てくれた方が2回目に来てくれない" />
             <div className="cp-actions">
-              <button type="button" className="cp-primary" disabled={busy || (editingGoals && draftGoals.length === 0)} onClick={saveGoals}>この内容で道筋を作る</button>
-              {!needsGoals && <button type="button" className="cp-secondary" onClick={() => setEditingGoals(false)}>やめる</button>}
+              <button type="button" className="cp-primary" disabled={busy || planning || !draftGoal.trim()} onClick={submitGoal}>この内容で考えてもらう</button>
+              {!needsGoal && <button type="button" className="cp-secondary" onClick={() => setEditingGoal(false)}>やめる</button>}
             </div>
-            {needsGoals && <p className="muted" style={{ margin: 0, fontSize: '12.5px' }}>あとで決めても大丈夫です。右下のAIには、いつでも相談できます。</p>}
+            {needsGoal && <p className="muted" style={{ margin: 0, fontSize: '12.5px' }}>あとで書いても大丈夫です。書かなくても、Finemeの機能はすべて今まで通り使えます。</p>}
           </div>
         ) : (
           <div className="cp-goals">
             <div className="cp-label">お店のゴール</div>
-            <ul>
-              {goalOptions.filter(g => goals.includes(g.key)).map(g => <li key={g.key}>{g.label}</li>)}
-            </ul>
-            {goalNote && <p className="cp-note">{goalNote}</p>}
-            <button type="button" className="cp-link" onClick={startEditGoals}>ゴールを変える</button>
+            <p className="cp-note cp-goal-text">{goalText}</p>
+            <div className="cp-actions">
+              <button type="button" className="cp-link" onClick={() => { setDraftGoal(goalText); setEditingGoal(true); }}>ゴールを書き直す</button>
+              <button type="button" className="cp-link" disabled={planning || busy} onClick={() => replan(true)}>今の状況で考え直してもらう</button>
+            </div>
+            <p className="cc-muted">{timeText}{generatedAt ? ` / 最後に考えたのは ${formatWhen(generatedAt)}` : ''}</p>
           </div>
         )}
       </section>
 
-      {!needsGoals && (
-        <section className="card stack" style={{ padding: '24px', gap: '14px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap' }}>
-            <h3 style={{ margin: 0, fontSize: '16px' }}>今の一手</h3>
-            <span className="cp-progress-text">{progress.done} / {progress.total} ステップ</span>
-          </div>
-          <div className="cp-progress-bar"><span style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }} /></div>
+      {planning && (
+        <section className="card" style={{ padding: '20px 24px' }}>
+          <p className="muted" style={{ margin: 0, fontSize: '13.5px' }}>お店のデータと今日の日付を見て、見立てと今日の作業を考えています。30秒ほどかかります。</p>
+        </section>
+      )}
 
-          {current ? (
-            <div className="cp-now">
-              <div className="cp-kicker">{current.layer === 'customer' ? 'お客様への一手' : 'スタッフの時間を作る一手'}</div>
-              <h4>{current.title}</h4>
-              <p>{current.why}</p>
-              {current.progress && <p className="cp-prog">{current.progress}</p>}
-              <div className="cp-actions">
-                <button type="button" className="cp-primary" onClick={() => goToTab(current.tab)}>{current.actionLabel}</button>
-                <button type="button" className="cp-secondary" disabled={busy} onClick={() => stepAction(current.key, 'snooze')}>別の案を見る</button>
-                <button type="button" className="cp-secondary" onClick={() => sendChat(`「${current.title}」について、うちの店ではどう進めればいいですか？`)}>AIに相談する</button>
-              </div>
+      {!needsGoal && diagnosis && (
+        <section className="card stack" style={{ padding: '24px', gap: '12px' }}>
+          <h3 style={{ margin: 0, fontSize: '16px' }}>いまの見立て</h3>
+          <p className="cp-prose">{diagnosis}</p>
+          {focus && (
+            <div className="cp-focus">
+              <div className="cp-kicker">この時期の焦点</div>
+              <p className="cp-prose" style={{ margin: 0 }}>{focus}</p>
             </div>
-          ) : (
-            <p className="muted" style={{ margin: 0, fontSize: '13px' }}>選んだゴールの道筋はすべて進んでいます。次に取り組むことは、下の相談欄で一緒に考えます。</p>
           )}
+          {questions?.length > 0 && (
+            <div className="cp-questions">
+              <div className="cp-label">もっと精度を上げるために、教えてください</div>
+              {questions.map(q => <button key={q} type="button" className="cp-choice cp-question" onClick={() => setChatInput(`${q}\n`)}>{q}</button>)}
+            </div>
+          )}
+        </section>
+      )}
 
-          <h3 style={{ margin: '8px 0 0', fontSize: '16px' }}>道筋のすべて</h3>
-          <ol className="cp-steps">
-            {steps.map(s => (
-              <li key={s.key} className={`cp-step is-${s.status}`}>
-                <div className="cp-step-main">
-                  <span className="cp-step-title">{s.title}</span>
-                  <span className={`cp-badge is-${s.status}`}>{s.ongoing && s.status === 'todo' ? '継続' : STATUS_LABEL[s.status]}</span>
+      {!needsGoal && (
+        <section className="card stack" style={{ padding: '24px', gap: '14px' }}>
+          <h3 style={{ margin: 0, fontSize: '16px' }}>やること</h3>
+          <TaskList tasks={openTasks} tabLabels={tabLabels} busy={busy} onStatus={setTaskStatus} />
+          <form className="cp-task-form" onSubmit={e => { e.preventDefault(); const t = taskInput.trim(); if (t) { addTask(t, taskCadence); setTaskInput(''); } }}>
+            <input className="cp-input" value={taskInput} onChange={e => setTaskInput(e.target.value)} maxLength={120} placeholder="自分でやることを足す" aria-label="追加するタスク" />
+            <select className="cp-input cp-select" value={taskCadence} onChange={e => setTaskCadence(e.target.value)} aria-label="頻度">
+              <option value="once">単発</option><option value="daily">毎日</option><option value="weekly">毎週</option><option value="monthly">毎月</option>
+            </select>
+            <button type="submit" className="cp-secondary" disabled={busy || !taskInput.trim()}>追加</button>
+          </form>
+          {doneTasks.length > 0 && (
+            <details className="cp-details">
+              <summary>最近できたこと（{doneTasks.length}）</summary>
+              <ul className="cp-done">{doneTasks.map(t => <li key={t.id}>{t.title} <button type="button" className="cc-link cc-link-quiet" disabled={busy} onClick={() => setTaskStatus(t.id, 'open')}>戻す</button></li>)}</ul>
+            </details>
+          )}
+        </section>
+      )}
+
+      {!needsGoal && visibleStages.length > 0 && (
+        <section className="card stack" style={{ padding: '24px', gap: '12px' }}>
+          <h3 style={{ margin: 0, fontSize: '16px' }}>お客様の段階</h3>
+          <p className="muted" style={{ margin: 0, fontSize: '13px', lineHeight: 1.7 }}>Fineme上の来店記録をもとにした段階です。日がたつと、お客様は次の段階に移ります。段階ごとに、打ち手と声かけの文案を出します。</p>
+          <div className="cp-stages">
+            {visibleStages.map(s => {
+              const act = actionByStage[s.key];
+              const open = openStage === s.key;
+              return (
+                <div key={s.key} className={`cp-stage${open ? ' is-open' : ''}`}>
+                  <button type="button" className="cp-stage-head" aria-expanded={open} onClick={() => setOpenStage(open ? '' : s.key)}>
+                    <span className="cp-stage-count">{s.count}<small>人</small></span>
+                    <span className="cp-stage-label">{s.label}<small>{s.hint}</small></span>
+                  </button>
+                  {open && (
+                    <div className="cp-stage-body">
+                      {act?.action ? <p className="cp-prose" style={{ margin: 0 }}>{act.action}</p> : <p className="cc-muted">この段階の打ち手は、次に考え直す時に出ます。</p>}
+                      {act?.message_draft && (
+                        <div className="cp-draft">
+                          <div className="cp-kicker">声かけの文案（名前は自動で入れ替えます）</div>
+                          <p>{act.message_draft}</p>
+                        </div>
+                      )}
+                      <ul className="cp-people">
+                        {s.samples.map(c => (
+                          <li key={c.user_id}>
+                            <span>{c.name}<small>{c.axisLabel ? `${c.axisLabel} / ` : ''}来店{c.visits}回 / 最後から{c.daysSince}日</small></span>
+                            {act?.message_draft && <button type="button" className="cc-link" onClick={() => copyDraft(act.message_draft, c.name, `${s.key}-${c.user_id}`)}>{copied === `${s.key}-${c.user_id}` ? 'コピーしました' : '文案をコピー'}</button>}
+                          </li>
+                        ))}
+                      </ul>
+                      {s.count > s.samples.length && <p className="cc-muted">ほか{s.count - s.samples.length}人。全員は顧客管理で見られます。</p>}
+                      <button type="button" className="cc-link" onClick={() => goToTab('customers')}>顧客管理を開く</button>
+                    </div>
+                  )}
                 </div>
-                <div className="cp-step-meta">
-                  <span>{s.layer === 'customer' ? 'お客様' : '業務効率'}</span>
-                  {s.progress && <span>{s.progress}</span>}
-                </div>
-                {s.status !== 'done' && (
-                  <div className="cp-step-actions">
-                    <button type="button" className="cp-link" onClick={() => goToTab(s.tab)}>{s.actionLabel}</button>
-                    {s.status === 'todo' && !s.ongoing && <button type="button" className="cp-link" disabled={busy} onClick={() => stepAction(s.key, 'skip')}>見送る</button>}
-                    {(s.status === 'skipped' || s.status === 'snoozed') && <button type="button" className="cp-link" disabled={busy} onClick={() => stepAction(s.key, 'reset')}>戻す</button>}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ol>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {!needsGoal && (
+        <section className="card stack" style={{ padding: '24px', gap: '8px' }}>
+          <h3 style={{ margin: 0, fontSize: '16px' }}>直近の動き</h3>
+          <ul className="cp-kpis">
+            <li>売上の記録（30日）：{kpis.sales30.count}件 / {kpis.sales30.total.toLocaleString()}円{salesDelta != null ? `（その前の30日より${salesDelta >= 0 ? '+' : ''}${salesDelta}%）` : ''}</li>
+            <li>予約リクエスト（30日）：{kpis.reservations30}件（その前の30日は{kpis.reservationsPrev30}件）、キャンセル{kpis.cancelled30}件</li>
+          </ul>
+          <p className="cc-muted">Fineme上に記録されている分だけの数字です。記録が少ないと、実際のお店の動きとは差が出ます。</p>
         </section>
       )}
 
       <section className="card stack" style={{ padding: '24px', gap: '12px' }}>
+        <h3 style={{ margin: 0, fontSize: '16px' }}>AIに相談する</h3>
+        {facts?.length > 0 && (
+          <details className="cp-details">
+            <summary>AIが覚えているお店のこと（{facts.length}）</summary>
+            <ul className="cp-done">{facts.map(f => <li key={f}>{f}</li>)}</ul>
+          </details>
+        )}
+        <div className="cp-chat-log" ref={logRef}>
+          {chatLog.length === 0 && <p className="muted" style={{ margin: 0, fontSize: '13px' }}>お店のことを何でも相談してください。「今月は何に力を入れるべき？」「このスタッフに何を任せればいい？」「やってみたけどうまくいかなかった」など。決めたことはやることに記録します。</p>}
+          {chatLog.map((m, i) => <div key={i} className={`cp-msg is-${m.role}`}>{m.content}</div>)}
+          {busy && <div className="cp-msg is-assistant">考えています…</div>}
+        </div>
+        <form className="cp-chat-form" onSubmit={e => { e.preventDefault(); const t = chatInput; setChatInput(''); sendChat(t); }}>
+          <textarea className="cp-input" value={chatInput} onChange={e => setChatInput(e.target.value)} rows={2} maxLength={1000} placeholder="相談したいことを入力" aria-label="相談内容"
+            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); const t = chatInput; setChatInput(''); sendChat(t); } }} />
+          <button type="submit" className="cp-primary" disabled={busy || !chatInput.trim()}>送る</button>
+        </form>
+      </section>
+
+      <section className="card stack" style={{ padding: '24px', gap: '12px' }}>
         <h3 style={{ margin: 0, fontSize: '16px' }}>時間を取られている作業</h3>
         <p className="muted" style={{ margin: 0, fontSize: '13px', lineHeight: 1.7 }}>
-          スタッフ全員がお客様のために使える時間を増やすための記録です。教えてもらった作業は、道筋の中で優先して取り上げます。
+          スタッフ全員がお客様のために使える時間を増やすための記録です。教えてもらった作業は、タスクの組み立てで優先して取り上げます。
         </p>
         {savedMinutesPerWeek > 0 && <p className="cp-saved">解消済みで週{savedMinutesPerWeek}分の時間を作れました。</p>}
         {openBottlenecks.length === 0 && <p className="muted" style={{ margin: 0, fontSize: '13px' }}>まだ記録がありません。</p>}
@@ -258,18 +294,29 @@ export default function ConsultantPanel() {
         </div>
       </section>
 
-      <section className="card stack" style={{ padding: '24px', gap: '12px' }}>
-        <h3 style={{ margin: 0, fontSize: '16px' }}>AIに相談する</h3>
-        <div className="cp-chat-log" ref={logRef}>
-          {chatLog.length === 0 && <p className="muted" style={{ margin: 0, fontSize: '13px' }}>お店のことを何でも相談してください。たとえば「しばらく来ていないお客様にどう声をかければいい？」「シフト作りに時間がかかる」など。</p>}
-          {chatLog.map((m, i) => <div key={i} className={`cp-msg is-${m.role}`}>{m.content}</div>)}
-          {busy && <div className="cp-msg is-assistant">考えています…</div>}
-        </div>
-        <form className="cp-chat-form" onSubmit={e => { e.preventDefault(); sendChat(); }}>
-          <textarea className="cp-input" value={chatInput} onChange={e => setChatInput(e.target.value)} rows={2} maxLength={1000} placeholder="相談したいことを入力" aria-label="相談内容"
-            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendChat(); } }} />
-          <button type="submit" className="cp-primary" disabled={busy || !chatInput.trim()}>送る</button>
-        </form>
+      <section className="card stack" style={{ padding: '24px', gap: '10px' }}>
+        <details className="cp-details">
+          <summary>Finemeの準備状況（{readiness.progress.done} / {readiness.progress.total}）</summary>
+          <p className="cc-muted" style={{ margin: '8px 0 10px' }}>これはゴールそのものではなく、Finemeの機能をどこまで使っているかの事実です。必要だと思ったものだけ整えてください。使わなくても、他の機能は問題なく動きます。</p>
+          <ol className="cp-steps">
+            {readiness.steps.map(s => (
+              <li key={s.key} className={`cp-step is-${s.status}`}>
+                <div className="cp-step-main">
+                  <span className="cp-step-title">{s.title}</span>
+                  <span className={`cp-badge is-${s.status}`}>{s.ongoing && s.status === 'todo' ? '継続' : STATUS_LABEL[s.status]}</span>
+                </div>
+                {s.progress && <div className="cp-step-meta"><span>{s.progress}</span></div>}
+                {s.status !== 'done' && (
+                  <div className="cp-step-actions">
+                    <button type="button" className="cp-link" onClick={() => goToTab(s.tab)}>{s.actionLabel}</button>
+                    {s.status === 'todo' && !s.ongoing && <button type="button" className="cp-link" disabled={busy} onClick={() => stepAction(s.key, 'skip')}>使わない</button>}
+                    {(s.status === 'skipped' || s.status === 'snoozed') && <button type="button" className="cp-link" disabled={busy} onClick={() => stepAction(s.key, 'reset')}>戻す</button>}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ol>
+        </details>
       </section>
     </div>
   );
@@ -324,4 +371,30 @@ const PANEL_CSS = `
   .cp-chat-form { display: flex; gap: 8px; align-items: flex-end; }
   .cp-chat-form textarea { flex: 1; resize: none; }
   .cp-primary:focus-visible, .cp-secondary:focus-visible, .cp-link:focus-visible, .cp-choice:focus-visible, .cp-input:focus-visible, .cp-option:focus-within { outline: 2px solid #1d4ed8; outline-offset: 2px; }
+
+  .cp-goal-text { font-size: 15px; line-height: 1.8; color: #1a1410; }
+  .cp-prose { margin: 0; font-size: 14px; line-height: 1.85; color: #1a1410; white-space: pre-wrap; }
+  .cp-focus { border-left: 3px solid var(--color-gold, #c8a45c); padding: 4px 0 4px 14px; display: flex; flex-direction: column; gap: 4px; }
+  .cp-questions { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+  .cp-question { text-align: left; border-radius: 10px; line-height: 1.55; }
+  .cp-task-form { display: flex; gap: 8px; align-items: center; }
+  .cp-task-form .cp-input { flex: 1; }
+  .cp-task-form .cp-select { flex: 0 0 auto; width: auto; }
+  .cp-details summary { cursor: pointer; font-size: 13.5px; font-weight: 700; color: #1a1410; }
+  .cp-done { margin: 8px 0 0; padding-left: 20px; font-size: 13px; line-height: 1.8; color: rgba(26,20,16,0.7); }
+  .cp-stages { display: flex; flex-direction: column; gap: 8px; }
+  .cp-stage { border: 1px solid rgba(26,20,16,0.14); border-radius: 12px; overflow: hidden; background: #fff; }
+  .cp-stage-head { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 14px; background: none; border: none; cursor: pointer; text-align: left; font: inherit; color: #1a1410; }
+  .cp-stage-count { flex: 0 0 56px; font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+  .cp-stage-count small { font-size: 12px; font-weight: 600; margin-left: 2px; color: rgba(26,20,16,0.6); }
+  .cp-stage-label { display: flex; flex-direction: column; gap: 2px; font-weight: 700; font-size: 14px; }
+  .cp-stage-label small { font-weight: 500; font-size: 12px; color: rgba(26,20,16,0.58); }
+  .cp-stage-body { display: flex; flex-direction: column; gap: 12px; padding: 4px 14px 14px; border-top: 1px dashed rgba(26,20,16,0.16); padding-top: 12px; }
+  .cp-draft { background: rgba(26,20,16,0.05); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+  .cp-draft p { margin: 0; font-size: 13.5px; line-height: 1.8; white-space: pre-wrap; }
+  .cp-people { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .cp-people li { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; font-size: 13.5px; }
+  .cp-people small { display: block; font-size: 12px; color: rgba(26,20,16,0.58); }
+  .cp-kpis { margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.9; color: #1a1410; font-variant-numeric: tabular-nums; }
+  .cp-stage-head:focus-visible, .cp-details summary:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
 `;

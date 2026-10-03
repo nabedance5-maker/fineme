@@ -1,43 +1,24 @@
 'use client';
 // 掲載者ダッシュボード右下の常駐「AI専属コンサル」（でお要望 2026-10-03）。
-// どのタブにいても1本の道筋（店舗が選んだゴール→道筋→今の一手）を出す。タブごとに別提案はしない。
-// ゴール未設定でもシステムは普通に使える。未設定のときは設定への案内だけを出す。
-// 最初は開いて表示、閉じると右端に小さく収まる。
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { BOTTLENECK_CATEGORIES } from '@/lib/consultant-journey';
-import { CHANGED_EVENT, STATUS_LABEL, consultantApi as api, goToTab, notifyChanged } from './consultant-api';
+// どのタブにいても、店舗のゴール・実データ・今日の時期から考えた「今やること」を出す。
+// 最初は開いて表示、閉じると右端に小さく収まる。ゴール未設定でもシステムは普通に使える。
+import { useEffect, useRef, useState } from 'react';
+import { goToTab } from './consultant-api';
+import { SHARED_CSS, TaskList, useConsultant } from './ConsultantShared';
 
 const COLLAPSE_KEY = 'fineme:consultant:collapsed';
 
 export default function ConsultantWidget() {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState('');
+  const { data, error, planning, busy, chatLog, replan, setTaskStatus, saveGoal, sendChat } = useConsultant();
   const [collapsed, setCollapsed] = useState(false);
   const [view, setView] = useState('now');
-  const [busy, setBusy] = useState(false);
   const [chatInput, setChatInput] = useState('');
-  const [chatLog, setChatLog] = useState([]);
+  const [goalDraft, setGoalDraft] = useState('');
   const logRef = useRef(null);
-
-  const load = useCallback(async () => {
-    try {
-      const d = await api('');
-      setData(d);
-      setChatLog(prev => (prev.length ? prev : d.messages || []));
-      setError('');
-    } catch (e) {
-      setError(e.message);
-    }
-  }, []);
 
   useEffect(() => {
     try { setCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch { /* 初期表示のままにする */ }
-    // ダッシュボード本体の認証・トークン更新が済んでから取得する
-    const t = setTimeout(load, 1500);
-    const onChanged = () => load();
-    window.addEventListener(CHANGED_EVENT, onChanged);
-    return () => { clearTimeout(t); window.removeEventListener(CHANGED_EVENT, onChanged); };
-  }, [load]);
+  }, []);
 
   useEffect(() => {
     if (view === 'chat' && logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
@@ -48,47 +29,19 @@ export default function ConsultantWidget() {
     try { localStorage.setItem(COLLAPSE_KEY, v ? '1' : '0'); } catch { /* 保存できなくても動作する */ }
   }
 
-  async function stepAction(stepKey, action) {
-    setBusy(true);
-    try {
-      await api('/step-state', { method: 'POST', body: JSON.stringify({ step_key: stepKey, action }) });
-      await load();
-      notifyChanged();
-    } catch (e) { setError(e.message); }
-    setBusy(false);
-  }
-
-  async function sendChat(text) {
-    const msg = (text ?? chatInput).trim();
-    if (!msg || busy) return;
+  function submitChat() {
+    const t = chatInput;
     setChatInput('');
-    setChatLog(prev => [...prev, { role: 'user', content: msg }]);
-    setBusy(true);
-    try {
-      const { reply } = await api('/chat', { method: 'POST', body: JSON.stringify({ message: msg }) });
-      setChatLog(prev => [...prev, { role: 'assistant', content: reply }]);
-    } catch (e) {
-      setChatLog(prev => [...prev, { role: 'assistant', content: `うまく返答できませんでした（${e.message}）。もう一度お試しください。` }]);
-    }
-    setBusy(false);
-  }
-
-  async function setBottleneckStatus(id, status) {
-    setBusy(true);
-    try {
-      await api('/bottleneck', { method: 'PATCH', body: JSON.stringify({ id, status }) });
-      await load();
-      notifyChanged();
-    } catch (e) { setError(e.message); }
-    setBusy(false);
+    sendChat(t);
   }
 
   if (!data || data.enabled === false) return null;
 
-  const { current, progress, steps, bottlenecks, interviewDone, savedMinutesPerWeek, needsGoals, goals, goalOptions } = data;
-  const openBottlenecks = bottlenecks.filter(b => b.status === 'open');
-  const catLabel = key => BOTTLENECK_CATEGORIES.find(c => c.key === key)?.label || key;
-  const goalSummary = needsGoals ? 'お店のゴールは未設定です' : goalOptions.filter(g => goals.includes(g.key)).map(g => g.label).join('／');
+  const { goalText, needsGoal, diagnosis, tasks, tabLabels } = data;
+  const openTasks = (tasks || []).filter(t => t.status === 'open');
+  const urgent = openTasks.filter(t => t.bucket === 'today' || t.bucket === 'missed');
+  const shown = (urgent.length ? urgent : openTasks).slice(0, 4);
+  const hiddenCount = openTasks.length - shown.length;
 
   if (collapsed) {
     return (
@@ -96,7 +49,7 @@ export default function ConsultantWidget() {
         <style>{WIDGET_CSS}</style>
         <button type="button" className="cw-tab" onClick={() => setCollapsedPersist(false)} aria-label="AI専属コンサルを開く">
           <span className="cw-tab-label">AIコンサル</span>
-          {(current || needsGoals) && <span className="cw-dot" aria-hidden="true" />}
+          {(needsGoal || urgent.length > 0) && <span className="cw-dot" aria-hidden="true" />}
         </button>
       </>
     );
@@ -104,18 +57,18 @@ export default function ConsultantWidget() {
 
   return (
     <>
-      <style>{WIDGET_CSS}</style>
+      <style>{SHARED_CSS}{WIDGET_CSS}</style>
       <aside className="cw-panel" aria-label="AI専属コンサル">
         <header className="cw-head">
-          <div>
+          <div className="cw-head-text">
             <div className="cw-kicker">AI専属コンサル</div>
-            <div className="cw-goal" title={goalSummary}>{needsGoals ? goalSummary : `ゴール：${goalSummary}`}</div>
+            <div className="cw-goal" title={goalText || ''}>{needsGoal ? 'お店のゴールは未設定です' : `ゴール：${goalText}`}</div>
           </div>
           <button type="button" className="cw-icon-btn" onClick={() => setCollapsedPersist(true)} aria-label="折りたたむ">閉じる</button>
         </header>
 
         <nav className="cw-nav" aria-label="表示切り替え">
-          {[['now', '今の一手'], ['path', '道筋'], ['chat', '相談']].map(([k, l]) => (
+          {[['now', '今日やること'], ['chat', '相談']].map(([k, l]) => (
             <button key={k} type="button" className={`cw-nav-btn${view === k ? ' is-active' : ''}`} onClick={() => setView(k)}>{l}</button>
           ))}
         </nav>
@@ -123,110 +76,49 @@ export default function ConsultantWidget() {
         <div className="cw-body">
           {error && <p className="cw-error">{error}</p>}
 
-          {needsGoals && view !== 'chat' && (
+          {view === 'now' && needsGoal && (
             <section className="cw-now">
-              <h3 className="cw-now-title">お店がどうしたいかを、まず教えてください</h3>
-              <p className="cw-why">リピートしてくれるお客様を増やすために、何を目指すかはお店ごとに違います。選んでもらうと、お店に合った道筋を作ります。設定しなくても、他の機能はこのまま使えます。</p>
+              <h3 className="cw-now-title">お店がどうなりたいか、教えてください</h3>
+              <p className="cw-why">ゴールと実際のデータ、今日の時期から、お店専用の見立てと毎日の作業を考えます。書かなくても、他の機能はこのまま使えます。</p>
+              <textarea className="cw-goal-input" rows={3} maxLength={600} value={goalDraft} onChange={e => setGoalDraft(e.target.value)}
+                placeholder="例：新しく来たお客様に2回目も来てもらえるようにしたい" aria-label="お店のゴール" />
               <div className="cw-actions">
-                <button type="button" className="cw-primary" onClick={() => goToTab('consultant')}>目標を設定する</button>
-                <button type="button" className="cw-secondary" onClick={() => setView('chat')}>先に相談する</button>
+                <button type="button" className="cw-primary" disabled={busy || planning || !goalDraft.trim()} onClick={() => saveGoal(goalDraft)}>この内容で考えてもらう</button>
+                <button type="button" className="cw-secondary" onClick={() => goToTab('consultant')}>詳しく書く</button>
               </div>
             </section>
           )}
 
-          {!needsGoals && view === 'now' && (
+          {view === 'now' && !needsGoal && (
             <>
-              <div className="cw-progress">
-                <div className="cw-progress-bar"><span style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }} /></div>
-                <span className="cw-progress-text">{progress.done} / {progress.total} ステップ</span>
+              {planning && <p className="cw-why">お店のデータと今日の日付を見て、今日やることを考えています…</p>}
+              {!planning && diagnosis && <p className="cw-diagnosis">{diagnosis.length > 120 ? `${diagnosis.slice(0, 120)}…` : diagnosis}</p>}
+              {!planning && shown.length > 0 && <TaskList tasks={shown} tabLabels={tabLabels} busy={busy} onStatus={setTaskStatus} compact />}
+              {!planning && shown.length === 0 && <p className="cc-muted">いまのタスクはありません。「考え直す」で、今日の状況から作り直せます。</p>}
+              {hiddenCount > 0 && <p className="cc-muted">ほか{hiddenCount}件あります。</p>}
+              <div className="cw-actions">
+                <button type="button" className="cw-secondary" onClick={() => goToTab('consultant')}>見立てと全タスクを見る</button>
+                <button type="button" className="cw-secondary" disabled={planning || busy} onClick={() => replan(true)}>考え直す</button>
               </div>
-
-              {current ? (
-                <section className="cw-now">
-                  <div className="cw-layer">{current.layer === 'customer' ? 'お客様への一手' : 'スタッフの時間を作る一手'}</div>
-                  <h3 className="cw-now-title">{current.title}</h3>
-                  <p className="cw-why">{current.why}</p>
-                  {current.progress && <p className="cw-prog">{current.progress}</p>}
-                  <div className="cw-actions">
-                    <button type="button" className="cw-primary" onClick={() => goToTab(current.tab)}>{current.actionLabel}</button>
-                    <button type="button" className="cw-secondary" disabled={busy} onClick={() => stepAction(current.key, 'snooze')}>別の案を見る</button>
-                    <button type="button" className="cw-secondary" onClick={() => { setView('chat'); sendChat(`「${current.title}」について、うちの店ではどう進めればいいですか？`); }}>相談する</button>
-                  </div>
-                </section>
-              ) : (
-                <section className="cw-now">
-                  <h3 className="cw-now-title">選んだゴールの道筋はすべて進んでいます</h3>
-                  <p className="cw-why">変化を見ながら、次に取り組むことを一緒に考えます。</p>
-                  <div className="cw-actions">
-                    <button type="button" className="cw-primary" onClick={() => { setView('chat'); sendChat('次に何を優先すれば、リピートしてくれるお客様が増えますか？'); }}>次の一手を相談する</button>
-                  </div>
-                </section>
-              )}
-
-              {!interviewDone && !needsGoals && (
-                <section className="cw-interview-prompt">
-                  <p>お店ごとに、時間を取られている作業は違います。いちばん手間のかかる作業を教えてもらえますか？</p>
-                  <button type="button" className="cw-link" onClick={() => goToTab('consultant')}>AIコンサルのページで答える</button>
-                </section>
-              )}
-            </>
-          )}
-
-          {!needsGoals && view === 'path' && (
-            <>
-              <ol className="cw-steps">
-                {steps.map(s => (
-                  <li key={s.key} className={`cw-step is-${s.status}`}>
-                    <div className="cw-step-main">
-                      <span className="cw-step-title">{s.title}</span>
-                      <span className={`cw-badge is-${s.status}`}>{s.ongoing && s.status === 'todo' ? '継続' : STATUS_LABEL[s.status]}</span>
-                    </div>
-                    <div className="cw-step-meta">
-                      <span>{s.layer === 'customer' ? 'お客様' : '業務効率'}</span>
-                      {s.progress && <span>{s.progress}</span>}
-                    </div>
-                    {s.status !== 'done' && (
-                      <div className="cw-step-actions">
-                        <button type="button" className="cw-link" onClick={() => goToTab(s.tab)}>{s.actionLabel}</button>
-                        {s.status === 'todo' && !s.ongoing && <button type="button" className="cw-link" disabled={busy} onClick={() => stepAction(s.key, 'skip')}>見送る</button>}
-                        {(s.status === 'skipped' || s.status === 'snoozed') && <button type="button" className="cw-link" disabled={busy} onClick={() => stepAction(s.key, 'reset')}>戻す</button>}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ol>
-
-              <section className="cw-bn">
-                <h4>時間を取られている作業</h4>
-                {savedMinutesPerWeek > 0 && <p className="cw-saved">解消済みで週{savedMinutesPerWeek}分の時間を作れました。</p>}
-                {openBottlenecks.length === 0 && <p className="cw-muted">まだ記録がありません。</p>}
-                {openBottlenecks.map(b => (
-                  <div key={b.id} className="cw-bn-row">
-                    <span>{catLabel(b.category)}{b.label && b.label !== catLabel(b.category) ? `：${b.label}` : ''}{b.minutes_per_week ? `（週${b.minutes_per_week}分）` : ''}</span>
-                    <button type="button" className="cw-link" disabled={busy} onClick={() => setBottleneckStatus(b.id, 'resolved')}>解消した</button>
-                  </div>
-                ))}
-                <button type="button" className="cw-link" onClick={() => goToTab('consultant')}>作業を追加する</button>
-              </section>
             </>
           )}
 
           {view === 'chat' && (
             <div className="cw-chat">
               <div className="cw-chat-log" ref={logRef}>
-                {chatLog.length === 0 && <p className="cw-muted">お店のことを何でも相談してください。たとえば「しばらく来ていないお客様にどう声をかければいい？」「シフト作りに時間がかかる」など。</p>}
+                {chatLog.length === 0 && <p className="cw-muted">お店のことを何でも相談してください。たとえば「今月は何に力を入れる？」「このスタッフに何を任せればいい？」「やってみたけどうまくいかなかった」など。</p>}
                 {chatLog.map((m, i) => (
                   <div key={i} className={`cw-msg is-${m.role}`}>{m.content}</div>
                 ))}
                 {busy && <div className="cw-msg is-assistant cw-typing">考えています…</div>}
               </div>
-              <form className="cw-chat-form" onSubmit={e => { e.preventDefault(); sendChat(); }}>
-                <textarea value={chatInput} onChange={e => setChatInput(e.target.value)} rows={2} maxLength={1000} placeholder="相談したいことを入力" onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendChat(); } }} />
+              <form className="cw-chat-form" onSubmit={e => { e.preventDefault(); submitChat(); }}>
+                <textarea value={chatInput} onChange={e => setChatInput(e.target.value)} rows={2} maxLength={1000} placeholder="相談したいことを入力" aria-label="相談内容"
+                  onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitChat(); } }} />
                 <button type="submit" className="cw-primary" disabled={busy || !chatInput.trim()}>送る</button>
               </form>
             </div>
           )}
-
         </div>
       </aside>
     </>
@@ -291,4 +183,7 @@ const WIDGET_CSS = `
   .cw-dot { width: 9px; height: 9px; border-radius: 99px; background: var(--color-gold, #c8a45c); }
   .cw-panel button:focus-visible, .cw-tab:focus-visible, .cw-panel textarea:focus-visible, .cw-panel input:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
   @media (max-width: 640px) { .cw-panel { right: 8px; bottom: 8px; width: calc(100vw - 16px); max-height: 70vh; } }
+  .cw-head-text { min-width: 0; }
+  .cw-goal-input { width: 100%; box-sizing: border-box; resize: vertical; border: 1.5px solid rgba(26,20,16,0.2); border-radius: 9px; padding: 8px 10px; font-size: 13.5px; font-family: inherit; color: #1a1410; background: #fff; }
+  .cw-diagnosis { margin: 0; font-size: 13px; line-height: 1.75; color: rgba(26,20,16,0.82); padding-bottom: 10px; border-bottom: 1px dashed rgba(26,20,16,0.2); }
 `;
