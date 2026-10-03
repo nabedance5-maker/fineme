@@ -28,6 +28,7 @@ export default function ActivityLogPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [openId, setOpenId] = useState('');
+  const [archive, setArchive] = useState(null);
   const [me, setMe] = useState('');
   const [meSaved, setMeSaved] = useState(false);
 
@@ -71,6 +72,20 @@ export default function ActivityLogPanel() {
       setLogs(prev => [...prev, ...b.logs]); setHasMore(b.hasMore);
     } catch (e) { setError(e.message); }
     setLoading(false);
+  };
+
+  const loadArchive = async () => {
+    try {
+      const res = await fetch('/api/provider/activity-log/archive', { headers: { Authorization: `Bearer ${getToken()}` } });
+      const b = await res.json().catch(() => ({}));
+      setArchive(res.ok ? b.files : []);
+    } catch { setArchive([]); }
+  };
+
+  const downloadArchive = async (path) => {
+    const res = await fetch(`/api/provider/activity-log/archive?file=${encodeURIComponent(path)}`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    const b = await res.json().catch(() => ({}));
+    if (res.ok && b.url) window.location.href = b.url; else setError(b.error || 'ダウンロードに失敗しました');
   };
 
   const saveMe = () => { setOperator(me); setMeSaved(true); setTimeout(() => setMeSaved(false), 2000); };
@@ -159,6 +174,27 @@ export default function ActivityLogPanel() {
 
         {loading && <p className="muted" style={{ fontSize: '13px', margin: 0 }}>読み込み中...</p>}
         {hasMore && !loading && <button type="button" className="al-btn" onClick={more}>さらに表示</button>}
+      </section>
+
+      <section className="card stack" style={{ padding: '24px', gap: '10px' }}>
+        <h3 style={{ margin: 0, fontSize: '15px' }}>30日より前の記録</h3>
+        <p className="muted" style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.7 }}>
+          この画面に出るのは直近30日です。それより前の記録は、1日ごとのテキストファイルとして保管しています。必要な日のファイルをダウンロードして確認できます。
+        </p>
+        {archive === null && <button type="button" className="al-btn" onClick={loadArchive}>保管ファイルを見る</button>}
+        {archive && !archive.length && <p className="muted" style={{ margin: 0, fontSize: '13px' }}>保管されたファイルはまだありません。</p>}
+        {archive && archive.length > 0 && (
+          <ul className="al-list">
+            {archive.map(f => (
+              <li key={f.path} className="al-item">
+                <button type="button" className="al-row" style={{ gridTemplateColumns: '1fr auto' }} onClick={() => downloadArchive(f.path)}>
+                  <span>{f.name.replace('.jsonl', '')}</span>
+                  <span className="al-who">ダウンロード</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );
