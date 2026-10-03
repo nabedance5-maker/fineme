@@ -9,6 +9,7 @@ import { CUSTOMER_SCRIPT_AXES } from '@/lib/customer-scripts';
 import { LANDING_TAB_OPTIONS, CALENDAR_AXIS_OPTIONS, CALENDAR_DEFAULT_VIEW_OPTIONS, HEADER_SHORTCUT_OPTIONS, MAX_HEADER_SHORTCUTS, TAB_CATALOG, categoryOfTab, allCategoryDefs, generateCategoryKey, MAX_CUSTOM_CATEGORIES, MAX_CATEGORY_LABEL_LENGTH } from '@/lib/dashboard-prefs';
 import { WEEKDAY_LABEL_BH } from '@/lib/business-hours-labels';
 import PageDesignSettings from './PageDesignSettings';
+import ConsultantWidget from './ConsultantWidget';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -13433,6 +13434,7 @@ export default function ProviderDashboardPage() {
           </div>
         </div>
       </div>
+      <ConsultantWidget />
     </main>
   );
 }
