@@ -3,6 +3,7 @@
 // どのタブにいても、店舗のゴール・実データ・今日の時期から考えた「今やること」を出す。
 // 最初は開いて表示、閉じると右端に小さく収まる。ゴール未設定でもシステムは普通に使える。
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { goToTab } from './consultant-api';
 import { SHARED_CSS, TaskList, useConsultant } from './ConsultantShared';
 
@@ -44,14 +45,15 @@ export default function ConsultantWidget() {
   const hiddenCount = openTasks.length - shown.length;
 
   if (collapsed) {
-    return (
+    return createPortal(
       <>
         <style>{WIDGET_CSS}</style>
         <button type="button" className="cw-tab" onClick={() => setCollapsedPersist(false)} aria-label="AI専属コンサルを開く">
           <span className="cw-tab-label">AIコンサル</span>
           {(needsGoal || urgent.length > 0) && <span className="cw-dot" aria-hidden="true" />}
         </button>
-      </>
+      </>,
+      document.body,
     );
   }
 
@@ -178,7 +180,7 @@ const WIDGET_CSS = `
   .cw-typing { color: rgba(26,20,16,0.55); }
   .cw-chat-form { display: flex; gap: 8px; align-items: flex-end; }
   .cw-chat-form textarea { flex: 1; resize: none; border: 1.5px solid rgba(26,20,16,0.2); border-radius: 9px; padding: 8px 10px; font-size: 13.5px; font-family: inherit; color: #1a1410; background: #fff; }
-  .cw-tab { position: fixed; right: 0; bottom: 96px; z-index: 180; display: flex; align-items: center; gap: 6px; background: #0a0f1e; color: #fff; border: none; border-radius: 12px 0 0 12px; padding: 12px 10px; box-shadow: -4px 4px 16px rgba(10,15,30,0.25); cursor: pointer; }
+  .cw-tab { position: fixed; right: 0; top: calc(100vh - 168px); top: calc(100svh - 168px); z-index: 180; display: flex; align-items: center; gap: 6px; background: #0a0f1e; color: #fff; border: none; border-radius: 12px 0 0 12px; padding: 12px 10px; box-shadow: -4px 4px 16px rgba(10,15,30,0.25); cursor: pointer; }
   .cw-tab-label { writing-mode: vertical-rl; font-size: 12.5px; font-weight: 700; letter-spacing: .1em; }
   .cw-dot { width: 9px; height: 9px; border-radius: 99px; background: var(--color-gold, #c8a45c); }
   .cw-panel button:focus-visible, .cw-tab:focus-visible, .cw-panel textarea:focus-visible, .cw-panel input:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
