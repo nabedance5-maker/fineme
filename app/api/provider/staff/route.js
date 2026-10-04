@@ -80,7 +80,7 @@ async function __POST(request) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json();
-  const { name, role, bio, photo_url, experience_years, credentials, is_featured, sort_order, strong_types, strong_axes, bookable, booking_fee } = body;
+  const { name, role, bio, photo_url, experience_years, credentials, is_featured, sort_order, strong_types, strong_axes, bookable, booking_fee, is_public } = body;
   if (!name?.trim()) return Response.json({ error: '名前は必須です' }, { status: 400 });
 
   const { data, error } = await supabase
@@ -101,6 +101,7 @@ async function __POST(request) {
       // 公開予約フォームの指名候補に出さない（裏方スタッフ等）。booking_feeは指名料（円）。
       bookable: bookable === undefined ? true : !!bookable,
       booking_fee: booking_fee ? Math.max(0, Number(booking_fee)) : 0,
+      is_public: is_public === undefined ? true : !!is_public,
     })
     .select()
     .single();

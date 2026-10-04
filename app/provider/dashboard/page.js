@@ -1309,6 +1309,7 @@ export default function ProviderDashboardPage() {
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
                 <strong style="font-size:14px">${esc(s.name)}</strong>
                 ${s.is_featured ? '<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:99px">担当</span>' : ''}
+                ${s.is_public === false ? '<span style="font-size:10px;background:#f3f4f6;color:#6b7280;padding:1px 6px;border-radius:99px;border:1px solid #d1d5db">非公開</span>' : ''}
                 ${s.role ? `<span style="font-size:12px;color:#6b7280">${esc(s.role)}</span>` : ''}
                 ${staffConds[s.id] ? `<span style="font-size:10px;background:#eef2ff;color:#4f46e5;padding:1px 6px;border-radius:99px">${esc(STAFF_EMP_LABEL[staffConds[s.id].employment_type] || '')}</span>` : ''}
                 ${s.bookable === false ? '<span style="font-size:10px;background:#f3f4f6;color:#9ca3af;padding:1px 6px;border-radius:99px">指名候補に出さない</span>' : s.booking_fee > 0 ? `<span style="font-size:10px;background:#eef2ff;color:#4338ca;padding:1px 6px;border-radius:99px">指名料¥${Number(s.booking_fee).toLocaleString()}</span>` : ''}
@@ -1335,8 +1336,10 @@ export default function ProviderDashboardPage() {
           editForm.elements['is_featured'].checked = !!s.is_featured;
           editForm.elements['sort_order'].value   = s.sort_order ?? 0;
           editForm.elements['bookable'].checked   = s.bookable !== false;
+          editForm.elements['is_public'].checked  = s.is_public !== false;
           editForm.elements['booking_fee'].value  = s.booking_fee || '';
           editForm.elements['_staff_id'].value    = s.id;
+          showGallery(s.id);
           editForm.elements['strong_types_text'].value = (s.strong_types || []).join(', ');
           fillCondFields(staffConds[s.id]);
           document.querySelectorAll('#staff-strong-axes input').forEach(cb => { cb.checked = (s.strong_axes || []).includes(cb.value); });
@@ -1357,6 +1360,7 @@ export default function ProviderDashboardPage() {
       document.getElementById('btn-add-staff')?.addEventListener('click', () => {
         editTitle.textContent = 'スタッフを追加'; editCard.style.display = 'block';
         editForm.reset(); editForm.elements['_staff_id'].value = '';
+        showGallery('');
         fillCondFields(null);
         document.getElementById('staff-photo-preview-wrap').style.display = 'none';
         document.getElementById('staff-photo-url').value = '';
@@ -1378,6 +1382,7 @@ export default function ProviderDashboardPage() {
           is_featured: !!editForm.elements['is_featured'].checked,
           sort_order: Number(fd.get('sort_order')) || 0,
           bookable: !!editForm.elements['bookable'].checked,
+          is_public: !!editForm.elements['is_public'].checked,
           booking_fee: fd.get('booking_fee') ? Number(fd.get('booking_fee')) : 0,
           strong_axes: Array.from(document.querySelectorAll('#staff-strong-axes input:checked')).map(i => i.value),
           strong_types: String(fd.get('strong_types_text') || '').split(',').map(s => s.trim()).filter(Boolean),
@@ -1422,6 +1427,76 @@ export default function ProviderDashboardPage() {
           } else { staffImgMsg.textContent = 'エラー: ' + (data.error || '不明'); staffImgMsg.style.color = '#ef4444'; }
         } catch { staffImgMsg.textContent = '通信エラー'; staffImgMsg.style.color = '#ef4444'; }
         staffImgBtn.disabled = false; staffImgInput.value = '';
+      });
+
+      // スタッフごとの実績写真ギャラリー（1人12枚まで。サービス画像と同じアップロードAPIを流用）
+      const galGrid  = document.getElementById('staff-gallery-grid');
+      const galHint  = document.getElementById('staff-gallery-hint');
+      const galBtn   = document.getElementById('staff-gallery-btn');
+      const galInput = document.getElementById('staff-gallery-input');
+      const galMsg   = document.getElementById('staff-gallery-msg');
+      let galStaffId = '';
+      const galAuth = () => ({ 'Authorization': `Bearer ${getSupabaseToken() || token}` });
+
+      function renderGallery(photos) {
+        galGrid.innerHTML = '';
+        photos.forEach(ph => {
+          const cell = document.createElement('div');
+          cell.style.cssText = 'width:110px;display:flex;flex-direction:column;gap:4px';
+          const img = document.createElement('img');
+          img.src = ph.image_url; img.alt = ph.caption || '実績写真';
+          img.style.cssText = 'width:110px;height:110px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb';
+          const cap = document.createElement('input');
+          cap.type = 'text'; cap.maxLength = 80; cap.placeholder = '説明（任意）'; cap.value = ph.caption || '';
+          cap.style.cssText = 'font-size:11px;padding:4px 6px;width:100%';
+          cap.addEventListener('change', async () => {
+            const r = await fetch(`/api/provider/staff/${galStaffId}/gallery/${ph.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...galAuth() }, body: JSON.stringify({ caption: cap.value }) });
+            if (!r.ok) showToast('説明の保存に失敗しました');
+          });
+          const del = document.createElement('button');
+          del.type = 'button'; del.className = 'btn btn-ghost'; del.textContent = '削除';
+          del.style.cssText = 'font-size:11px;padding:2px 8px;color:#ef4444';
+          del.addEventListener('click', async () => {
+            if (!confirm('この写真を削除しますか？')) return;
+            const r = await fetch(`/api/provider/staff/${galStaffId}/gallery/${ph.id}`, { method: 'DELETE', headers: galAuth() });
+            if (r.ok) loadGallery(); else showToast('削除に失敗しました');
+          });
+          cell.append(img, cap, del);
+          galGrid.appendChild(cell);
+        });
+      }
+      async function loadGallery() {
+        if (!galStaffId) return;
+        const r = await fetch(`/api/provider/staff/${galStaffId}/gallery`, { headers: galAuth() });
+        renderGallery(r.ok ? await r.json() : []);
+      }
+      function showGallery(staffId) {
+        galStaffId = staffId;
+        galGrid.innerHTML = ''; galMsg.textContent = '';
+        galBtn.style.display = staffId ? '' : 'none';
+        galHint.style.display = staffId ? 'none' : 'block';
+        if (staffId) loadGallery();
+      }
+      galBtn?.addEventListener('click', () => galInput?.click());
+      galInput?.addEventListener('change', async () => {
+        const files = Array.from(galInput.files || []); if (!files.length || !galStaffId) return;
+        galBtn.disabled = true;
+        let ok = 0, lastErr = '';
+        for (const [i, file] of files.entries()) {
+          galMsg.textContent = `アップロード中… (${i + 1}/${files.length})`; galMsg.style.color = '';
+          try {
+            const fd = new FormData(); fd.append('photo', file);
+            const up = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: galAuth(), body: fd });
+            const upData = await up.json();
+            if (!up.ok || !upData.url) { lastErr = upData.error || 'アップロードに失敗しました'; continue; }
+            const add = await fetch(`/api/provider/staff/${galStaffId}/gallery`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...galAuth() }, body: JSON.stringify({ image_url: upData.url }) });
+            if (add.ok) ok++; else { lastErr = (await add.json().catch(() => ({}))).error || '追加に失敗しました'; break; }
+          } catch { lastErr = '通信エラー'; }
+        }
+        galMsg.textContent = lastErr ? `${ok}枚追加しました。${lastErr}` : `${ok}枚追加しました`;
+        galMsg.style.color = lastErr ? '#ef4444' : '#059669';
+        galBtn.disabled = false; galInput.value = '';
+        loadGallery();
       });
 
       document.querySelectorAll('[data-tab="staff"]').forEach(btn => btn.addEventListener('click', loadStaff, { once: false }));
@@ -11317,6 +11392,15 @@ export default function ProviderDashboardPage() {
                 <p id="staff-img-msg" className="muted" style={{ fontSize: '12px', margin: '4px 0 0', display: 'none' }}></p>
                 <input type="hidden" name="photo_url" id="staff-photo-url" />
               </div>
+              <div className="form-field">
+                <label>実績写真ギャラリー（1人12枚まで）</label>
+                <p className="muted" style={{ fontSize: '12px', margin: '0 0 8px' }}>施術・指導の仕上がりなど、このスタッフの実績が伝わる写真。公開ページのスタッフ紹介に並びます。</p>
+                <div id="staff-gallery-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '8px' }}></div>
+                <input type="file" id="staff-gallery-input" accept="image/jpeg,image/png,image/webp" multiple style={{ display: 'none' }} />
+                <button type="button" id="staff-gallery-btn" className="btn btn-ghost" style={{ fontSize: '13px', display: 'none' }}>写真を追加（1枚5MB以内・複数選択可）</button>
+                <p id="staff-gallery-hint" className="muted" style={{ fontSize: '12px', margin: 0 }}>スタッフを一度保存すると、写真を追加できます。</p>
+                <p id="staff-gallery-msg" className="muted" style={{ fontSize: '12px', margin: '4px 0 0' }}></p>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div className="form-field"><label>経験年数</label><input name="experience_years" type="number" min="0" placeholder="例: 5" /></div>
                 <div className="form-field"><label>表示順（小さい順）</label><input name="sort_order" type="number" min="0" defaultValue="0" /></div>
@@ -11339,6 +11423,11 @@ export default function ProviderDashboardPage() {
                 <label>得意タイプ（任意・カンマ区切り）</label>
                 <input name="strong_types_text" placeholder="例: 知的クール, 信頼アクティブ" />
               </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <input type="checkbox" name="is_public" id="staff-is-public" defaultChecked />
+                <label htmlFor="staff-is-public" style={{ margin: '0', fontSize: '13px', fontWeight: '600' }}>公開ページに表示する</label>
+              </div>
+              <p className="muted" style={{ fontSize: '11.5px', margin: '0 0 14px' }}>オフにすると、公開ページのスタッフ紹介と予約時の指名候補に出ません（管理画面・シフト・カルテでは今までどおり使えます）。</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                 <input type="checkbox" name="is_featured" id="staff-is-featured" />
                 <label htmlFor="staff-is-featured" style={{ margin: '0', fontSize: '13px', fontWeight: '400' }}>担当スタッフとして優先表示する</label>

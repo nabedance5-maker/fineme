@@ -32,6 +32,7 @@ async function __PATCH(request, { params }) {
   if (body.strong_types !== undefined)     updates.strong_types     = Array.isArray(body.strong_types) ? body.strong_types : [];
   if (body.strong_axes !== undefined)      updates.strong_axes      = Array.isArray(body.strong_axes) ? body.strong_axes : [];
   if (body.bookable !== undefined)         updates.bookable         = !!body.bookable;
+  if (body.is_public !== undefined)        updates.is_public        = !!body.is_public;
   if (body.booking_fee !== undefined)      updates.booking_fee      = Math.max(0, Number(body.booking_fee) || 0);
 
   const { data, error } = await supabase

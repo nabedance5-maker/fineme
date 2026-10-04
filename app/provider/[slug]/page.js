@@ -268,6 +268,7 @@ function UniqueStrengthsSection({ provider }) {
 
 // ── スタッフ紹介 ──────────────────────────────────────────────────────────────
 function StaffSection({ staff }) {
+  const [lightbox, setLightbox] = useState(null);
   if (!staff || staff.length === 0) return null;
   return (
     <div>
@@ -310,10 +311,29 @@ function StaffSection({ staff }) {
               {s.bio && (
                 <p style={{ fontSize: 'calc(13px * var(--pv-fs))', color: 'color-mix(in srgb, var(--pv-text) 75%, transparent)', lineHeight: '1.7', margin: 0, fontStyle: 'italic' }}>「{s.bio}」</p>
               )}
+              {s.gallery?.length > 0 && (
+                <div style={{ marginTop: '14px' }}>
+                  <div style={{ fontSize: 'calc(11px * var(--pv-fs))', fontWeight: '700', color: 'color-mix(in srgb, var(--pv-text) 62%, transparent)', marginBottom: '8px' }}>実績</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(84px, 1fr))', gap: '8px' }}>
+                    {s.gallery.map(ph => (
+                      <button key={ph.id} type="button" onClick={() => setLightbox(ph)} aria-label={`${s.name}の実績写真を拡大${ph.caption ? `：${ph.caption}` : ''}`} style={{ padding: 0, border: 'none', background: 'none', cursor: 'zoom-in', borderRadius: '10px', overflow: 'hidden', aspectRatio: '1 / 1' }}>
+                        <img src={ph.image_url} alt={ph.caption || `${s.name}の実績写真`} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ))}
       </div>
+      {lightbox && (
+        <div onClick={() => setLightbox(null)} role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.86)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '20px', cursor: 'zoom-out' }}>
+          <img src={lightbox.image_url} alt={lightbox.caption || '実績写真'} style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain', borderRadius: '8px' }} />
+          {lightbox.caption && <div style={{ color: '#fff', fontSize: '14px', textAlign: 'center' }}>{lightbox.caption}</div>}
+          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>タップで閉じる</div>
+        </div>
+      )}
     </div>
   );
 }

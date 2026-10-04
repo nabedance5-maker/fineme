@@ -226,6 +226,7 @@ export async function GET(request) {
     supabase
       .from('provider_staff')
       .select('provider_id')
+      .eq('is_public', true)
       .in('provider_id', providerIds),
   ]);
 

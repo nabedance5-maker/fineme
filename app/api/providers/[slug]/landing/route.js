@@ -115,7 +115,7 @@ export async function GET(request, { params }) {
   const [{ data: menus }, { data: cases }, { data: staff }, { data: lineChannel }, { data: stories }] = await Promise.all([
     supabase.from('provider_experience_menus').select('*').eq('provider_id', provider.id).eq('is_active', true).order('sort_order', { ascending: true }),
     supabase.from('provider_cases').select('id, user_type, axis, before_score, after_score, image_url, published_at').eq('provider_id', provider.id).eq('approved_by_user', true).order('published_at', { ascending: false }),
-    supabase.from('provider_staff').select('id, name, role, bio, photo_url, is_featured').eq('provider_id', provider.id),
+    supabase.from('provider_staff').select('id, name, role, bio, photo_url, is_featured').eq('provider_id', provider.id).eq('is_public', true),
     supabase.from('provider_line_channels').select('liff_id, verified_at').eq('provider_id', provider.id).single(),
     supabase.from('stories').select('id, concern_before, change_after, tags').eq('provider_id', provider.id).eq('status', 'approved').order('created_at', { ascending: false }).limit(6),
   ]);
