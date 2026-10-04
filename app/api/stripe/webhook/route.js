@@ -6,6 +6,7 @@ import Stripe from 'stripe';
 import { getPlanKeyByPriceId } from '@/lib/stripe-plans';
 import { sendReservationCreatedEmails } from '@/lib/email';
 import { recordPosTransaction } from '@/lib/pos-checkout';
+import { markInvoicePaid } from '@/lib/invoices';
 
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) return null;
@@ -99,7 +100,14 @@ export async function POST(request) {
         const session = event.data.object;
         const pendingId = session.metadata?.fineme_pos_pending_id;
         const depositReservationId = session.metadata?.fineme_deposit_reservation_id;
+        const invoiceId = session.metadata?.fineme_invoice_id;
         if (session.payment_status !== 'paid') break;
+
+        if (invoiceId) {
+          // 請求（店舗がお客様に送ったお支払いリンク）の入金確定。二重配信は markInvoicePaid 側で1回に絞る
+          await markInvoicePaid(supabaseAdmin, invoiceId, { method: 'online', paymentIntentId: session.payment_intent });
+          break;
+        }
 
         if (pendingId) {
           const { data: pending } = await supabaseAdmin.from('provider_pos_pending_checkouts').select('*').eq('id', pendingId).single();

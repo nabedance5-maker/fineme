@@ -8451,6 +8451,122 @@ export default function ProviderDashboardPage() {
       if (new URLSearchParams(location.search).get('tab') === 'sales') loadSalesTab();
     })();
 
+    // ── 請求（お客様へのお支払いのお願い） ────────────────────────
+    (() => {
+      const form = document.getElementById('inv-form');
+      if (!form) return;
+      const listEl = document.getElementById('inv-list');
+      const msgEl = document.getElementById('inv-msg');
+      const targetEl = document.getElementById('inv-target');
+      const clearTargetBtn = document.getElementById('inv-clear-target');
+      const filterUnpaidBtn = document.getElementById('inv-filter-unpaid');
+      const filterAllBtn = document.getElementById('inv-filter-all');
+      let target = null; // { type: 'member'|'manual', id, name }
+      let showAll = false;
+      let invoices = [];
+      const headers = () => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` });
+      const yen = n => '¥' + Number(n).toLocaleString();
+      const todayStr = () => new Date().toISOString().split('T')[0];
+
+      function setTarget(t) {
+        target = t;
+        targetEl.style.display = t ? 'block' : 'none';
+        clearTargetBtn.style.display = t ? 'inline-block' : 'none';
+        if (t) {
+          targetEl.textContent = `請求先：${t.name}（${t.type === 'member' ? '会員のお客様。LINEでもお知らせします' : '非会員のお客様。お支払いリンクを共有してください'}）`;
+          document.getElementById('inv-name').value = t.name;
+        }
+      }
+      clearTargetBtn.addEventListener('click', () => setTarget(null));
+
+      document.getElementById('cust-modal-invoice-btn')?.addEventListener('click', () => {
+        if (!currentCustUid) return;
+        setTarget({ type: currentCustType === 'manual' ? 'manual' : 'member', id: currentCustUid, name: (document.getElementById('cust-modal-name')?.textContent || '').trim() });
+        document.getElementById('customer-detail-modal').style.display = 'none';
+        document.querySelector('[data-tab="invoices"]')?.click();
+      });
+
+      function render() {
+        const unpaid = invoices.filter(i => i.status === 'unpaid');
+        document.getElementById('inv-unpaid-total').textContent = yen(unpaid.reduce((a, i) => a + i.amount, 0));
+        const month = new Date().toISOString().slice(0, 7);
+        document.getElementById('inv-paid-month').textContent = yen(invoices.filter(i => i.status === 'paid' && (i.paid_at || '').slice(0, 7) === month).reduce((a, i) => a + i.amount, 0));
+        const rows = showAll ? invoices : unpaid;
+        if (!rows.length) { listEl.innerHTML = `<p class="muted" style="font-size:13px;">${showAll ? '請求はまだありません。' : '未払いの請求はありません。'}</p>`; return; }
+        const badge = i => {
+          if (i.status === 'paid') return `<span style="padding:1px 8px;border-radius:99px;background:#ecfdf5;color:#059669;">${i.paid_method === 'online' ? 'カードで入金済み' : '入金済み（店舗で確認）'}</span>`;
+          if (i.status === 'canceled') return '<span style="padding:1px 8px;border-radius:99px;background:#f3f4f6;color:#6b7280;">取り消し</span>';
+          if (i.due_date && i.due_date < todayStr()) return '<span style="padding:1px 8px;border-radius:99px;background:#fef2f2;color:#dc2626;">期限切れ・未払い</span>';
+          return '<span style="padding:1px 8px;border-radius:99px;background:#fffbeb;color:#b45309;">未払い</span>';
+        };
+        listEl.innerHTML = rows.map(i => `
+          <div style="padding:12px 0;border-bottom:1px solid #f3f4f6;font-size:12px;">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <span style="font-weight:700;font-size:14px;">${esc(i.title)}</span>
+              <span style="font-weight:800;font-size:14px;">${yen(i.amount)}</span>
+              ${badge(i)}
+            </div>
+            <div class="muted" style="margin-top:2px;">${i.customer_name ? esc(i.customer_name) + ' ・ ' : ''}${esc(i.created_at.slice(0, 10))}作成${i.due_date ? ` ・ 期限 ${esc(i.due_date)}` : ''}${i.note ? ` ・ ${esc(i.note)}` : ''}</div>
+            ${i.status === 'unpaid' ? `<div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
+              <button type="button" class="btn btn-ghost" data-inv-copy="${esc(i.pay_url)}" style="font-size:12px;padding:4px 10px;">お支払いリンクをコピー</button>
+              <button type="button" class="btn btn-ghost" data-inv-paid="${esc(i.id)}" style="font-size:12px;padding:4px 10px;">入金済みにする</button>
+              <button type="button" class="btn btn-ghost" data-inv-cancel="${esc(i.id)}" style="font-size:12px;padding:4px 10px;color:#ef4444;">取り消す</button>
+            </div>` : ''}
+          </div>`).join('');
+        listEl.querySelectorAll('[data-inv-copy]').forEach(b => b.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(b.dataset.invCopy); showToast('リンクをコピーしました'); } catch { prompt('このリンクをコピーしてください', b.dataset.invCopy); }
+        }));
+        listEl.querySelectorAll('[data-inv-paid]').forEach(b => b.addEventListener('click', () => act(b.dataset.invPaid, 'mark_paid', '現金などで受け取った入金として記録します（売上管理にも反映されます）。よろしいですか？')));
+        listEl.querySelectorAll('[data-inv-cancel]').forEach(b => b.addEventListener('click', () => act(b.dataset.invCancel, 'cancel', 'この請求を取り消しますか？お支払いリンクも使えなくなります。')));
+      }
+
+      async function act(id, action, confirmText) {
+        if (!confirm(confirmText)) return;
+        const res = await fetch(`/api/provider/invoices/${id}`, { method: 'PATCH', headers: headers(), body: JSON.stringify({ action }) });
+        if (res.ok) { showToast('更新しました'); load(); }
+        else { const d = await res.json().catch(() => ({})); showToast('エラー: ' + (d.error || '不明')); }
+      }
+
+      async function load() {
+        try {
+          const res = await fetch('/api/provider/invoices', { headers: headers() });
+          if (!res.ok) { listEl.innerHTML = '<p class="muted" style="font-size:13px;">取得に失敗しました</p>'; return; }
+          const d = await res.json();
+          invoices = d.invoices || [];
+          document.getElementById('inv-not-ready').style.display = d.online_ready ? 'none' : 'block';
+          render();
+        } catch { listEl.innerHTML = '<p class="muted" style="font-size:13px;">取得に失敗しました</p>'; }
+      }
+
+      filterUnpaidBtn.addEventListener('click', () => { showAll = false; filterUnpaidBtn.className = 'btn'; filterAllBtn.className = 'btn btn-ghost'; render(); });
+      filterAllBtn.addEventListener('click', () => { showAll = true; filterAllBtn.className = 'btn'; filterUnpaidBtn.className = 'btn btn-ghost'; render(); });
+
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        msgEl.style.color = '#6b7280'; msgEl.textContent = '作成中…';
+        const body = {
+          title: document.getElementById('inv-title').value,
+          amount: document.getElementById('inv-amount').value,
+          due_date: document.getElementById('inv-due').value || null,
+          note: document.getElementById('inv-note').value || null,
+          customer_name: document.getElementById('inv-name').value || null,
+        };
+        if (target) body[target.type === 'member' ? 'user_id' : 'manual_customer_id'] = target.id;
+        const res = await fetch('/api/provider/invoices', { method: 'POST', headers: headers(), body: JSON.stringify(body) });
+        const d = await res.json().catch(() => ({}));
+        if (res.ok) {
+          msgEl.style.color = '#059669';
+          msgEl.textContent = d.notified ? '請求を作り、お客様にLINEでお知らせしました' : '請求を作りました。リンクをコピーしてお客様に送ってください';
+          form.reset(); setTarget(null);
+          if (!d.notified) { try { await navigator.clipboard.writeText(d.pay_url); } catch { /* コピーできなくても一覧から取得できる */ } }
+          load();
+        } else { msgEl.style.color = '#ef4444'; msgEl.textContent = d.error || '作成に失敗しました'; }
+      });
+
+      document.querySelectorAll('[data-tab="invoices"]').forEach(btn => btn.addEventListener('click', load));
+      if (new URLSearchParams(location.search).get('tab') === 'invoices') load();
+    })();
+
     // ── 予約カレンダータブ（2026-09-11〜12・でお要望、hacomono参考＋今野くんの実地
     //    フィードバックでモバイルは横縦二重スクロールにならない専用UIに） ──────
     (() => {
@@ -10816,6 +10932,7 @@ export default function ProviderDashboardPage() {
                 </div>
                 <div className="pd-panel-section" data-panel="sales" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="sales">売上管理</button>
+                  <button className="tab-btn" data-tab="invoices">請求</button>
                   <button className="tab-btn" data-tab="pos" data-feature="pos">POS・在庫<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="store" style={{ display: 'none' }}>
@@ -12609,6 +12726,7 @@ export default function ProviderDashboardPage() {
                 回数券・会員プラン・入会手続きなど種類を問わず使える。 */}
             <div id="cust-modal-contracts-section" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
               <button type="button" className="btn btn-ghost" id="cust-modal-contracts-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>契約書</button>
+              <button type="button" className="btn btn-ghost" id="cust-modal-invoice-btn" style={{ fontSize: '12px', padding: '5px 10px', marginLeft: '6px' }}>請求する</button>
               <div id="cust-modal-contracts" style={{ display: 'none', marginTop: '10px' }}></div>
             </div>
           </div>
@@ -12849,6 +12967,47 @@ export default function ProviderDashboardPage() {
               <button type="submit" className="btn" id="rv-submit-btn">保存する</button>
               <p id="rv-msg" className="muted" style={{ fontSize: '13px' }}></p>
             </form>
+          </div>
+        </div>
+
+        {/* 請求：店舗がお客様にFineme経由でお支払いをお願いする（でお要望2026-10-04）。
+            お支払いリンクを発行し、会員にはLINEでも送る。カード決済は店舗のStripe Connectへ入金、
+            現金などで受け取った場合は「入金済みにする」。入金は売上管理にも1行記録される。 */}
+        <div className="tab-pane" id="tab-invoices">
+          <div className="card stack" style={{ padding: '24px', gap: '14px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>請求</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: 1.7 }}>
+                お客様へのお支払いのお願いを作り、お支払いリンクを送れます。お客様はリンクからカードで支払い、代金は貴店のStripeアカウントへ入金されます。会員のお客様にはLINEでも届きます。
+              </p>
+            </div>
+            <p id="inv-not-ready" style={{ display: 'none', fontSize: '12px', margin: 0, padding: '10px 12px', borderRadius: '8px', background: '#fffbeb', color: '#92400e', lineHeight: 1.7 }}>
+              カード決済の受け入れ準備がまだ完了していません。「Fineme利用契約」タブからStripe連携を設定するまで、お客様はリンクからお支払いできません（現金で受け取った分は「入金済みにする」で記録できます）。
+            </p>
+            <form id="inv-form" className="stack" style={{ gap: '10px', padding: '14px', border: '1px solid #e5e7eb', borderRadius: '10px' }}>
+              <p id="inv-target" style={{ margin: 0, fontSize: '12px', color: '#374151', display: 'none' }}></p>
+              <div className="form-field"><label>宛名（お客様のお名前）</label><input type="text" id="inv-name" maxLength={60} placeholder="例：山田 太郎" /></div>
+              <div className="form-field"><label>請求の内容</label><input type="text" id="inv-title" maxLength={80} required placeholder="例：パーソナル10回券" /></div>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <div className="form-field" style={{ minWidth: '150px' }}><label>金額（円・税込）</label><input type="number" id="inv-amount" min="1" max="1000000" required /></div>
+                <div className="form-field" style={{ minWidth: '150px' }}><label>お支払い期限（任意）</label><input type="date" id="inv-due" /></div>
+              </div>
+              <div className="form-field"><label>メモ（任意・お客様にも表示されます）</label><input type="text" id="inv-note" maxLength={200} /></div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <button type="submit" className="btn" style={{ fontSize: '13px' }}>請求を作る</button>
+                <button type="button" className="btn btn-ghost" id="inv-clear-target" style={{ fontSize: '12px', display: 'none' }}>お客様の指定を外す</button>
+                <span id="inv-msg" style={{ fontSize: '12px' }}></span>
+              </div>
+            </form>
+            <div id="inv-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: '12px' }}>
+              <div className="stat-card"><div className="stat-value" id="inv-unpaid-total" style={{ color: '#b45309' }}>—</div><div className="stat-label">未払いの合計</div></div>
+              <div className="stat-card"><div className="stat-value" id="inv-paid-month">—</div><div className="stat-label">今月入金</div></div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" className="btn" id="inv-filter-unpaid" style={{ fontSize: '12px', padding: '7px 16px' }}>未払い</button>
+              <button type="button" className="btn btn-ghost" id="inv-filter-all" style={{ fontSize: '12px', padding: '7px 16px' }}>すべて</button>
+            </div>
+            <div id="inv-list"></div>
           </div>
         </div>
 
