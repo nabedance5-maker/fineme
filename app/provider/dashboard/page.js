@@ -3789,7 +3789,7 @@ export default function ProviderDashboardPage() {
           if (warningEl) {
             if (data.status !== 'active') {
               warningEl.style.display = 'block';
-              warningEl.innerHTML = 'Stripe Connectの本人確認が完了していないため、承認・課金開始ができません。「課金・プラン」タブから設定を完了してください。';
+              warningEl.innerHTML = 'Stripe Connectの本人確認が完了していないため、承認・課金開始ができません。「Fineme利用契約」タブから設定を完了してください。';
             } else {
               warningEl.style.display = 'none';
             }
@@ -10715,10 +10715,10 @@ export default function ProviderDashboardPage() {
                 </div>
                 <div className="pd-panel-section" data-panel="account" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="line-channel">LINE連携</button>
-                  <button className="tab-btn" data-tab="billing">課金・プラン</button>
                   <button className="tab-btn" data-tab="features">機能設定</button>
                   <button className="tab-btn" data-tab="activity-log">操作ログ</button>
                   <button className="tab-btn" data-tab="display-settings">表示設定</button>
+                  <button className="tab-btn" data-tab="billing" style={{ borderLeft: '3px solid #2f4f8f' }}>Fineme利用契約</button>
                   <button type="button" className="tab-btn" id="pd-logout-btn" style={{ color: '#ef4444' }}>ログアウト</button>
                 </div>
                 <div className="pd-panel-section" data-panel="tutorial" style={{ display: 'none' }}>
@@ -12935,7 +12935,7 @@ export default function ProviderDashboardPage() {
               <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>入会手続き</h2>
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
                 お客様が公開ページから入会申込〜カード登録までを完結できます。ここで内容を確認して承認すると、初回のお支払いが開始されます（決済は
-                <a href="/provider/billing" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>「課金・プラン」タブのStripe Connect</a>
+                <a href="/provider/billing" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>「Fineme利用契約」タブのStripe Connect</a>
                 の設定完了が必要です）。
               </p>
             </div>
@@ -13315,16 +13315,20 @@ export default function ProviderDashboardPage() {
                 <p className="muted" style={{ margin: '2px 0 0', fontSize: '13px' }}>非公開中はサイトに表示されませんが、月額費用は継続します。サービス内容の変更中や一時的に受付を止めたい場合にご利用ください。</p>
               </div>
             </div>
-            <p className="muted" style={{ fontSize: '12px', margin: '0' }}>※ 掲載を完全に停止（解約）したい場合は「課金・プラン」タブからお手続きください。</p>
+            <p className="muted" style={{ fontSize: '12px', margin: '0' }}>※ 掲載を完全に停止（解約）したい場合は「Fineme利用契約」タブからお手続きください。</p>
           </div>
         </div>
 
         {/* タブ⑥：課金・プラン */}
         <div className="tab-pane" id="tab-billing">
+          <div style={{ background: '#2f4f8f', color: '#fff', borderRadius: '12px', padding: '14px 18px', marginBottom: '14px' }}>
+            <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, letterSpacing: '0.5px' }}>Finemeとのご契約</p>
+            <p style={{ margin: '4px 0 0', fontSize: '12.5px', lineHeight: 1.7, opacity: 0.92 }}>このページは、貴店とFinemeの間のご契約とお支払い（Finemeへのお支払い）です。お客様から貴店へのお支払い（回数券・会員プラン等）とは別のものです。</p>
+          </div>
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
-            <h2 style={{ margin: '0', fontSize: '16px' }}>課金・プラン</h2>
+            <h2 style={{ margin: '0', fontSize: '16px' }}>Fineme利用契約・プラン</h2>
             <div style={{ background: 'rgba(26,20,16,0.04)', border: '1px solid rgba(26,20,16,0.15)', borderRadius: '12px', padding: '16px' }}>
-              <div style={{ fontSize: '12px', color: 'rgba(26,20,16,0.6)', marginBottom: '4px' }}>現在のプラン</div>
+              <div style={{ fontSize: '12px', color: 'rgba(26,20,16,0.6)', marginBottom: '4px' }}>Finemeのご利用プラン</div>
               <div style={{ fontSize: '22px', fontWeight: '800', color: '#1a1410' }} id="billing-plan">読み込み中…</div>
               <div style={{ fontSize: '13px', color: 'rgba(26,20,16,0.6)', marginTop: '4px' }} id="billing-status"></div>
             </div>
@@ -13340,7 +13344,15 @@ export default function ProviderDashboardPage() {
               <a href="mailto:contact@fineme.me?subject=プラン変更・解約申請" className="btn btn-ghost" style={{ marginTop: '12px', display: 'inline-block', fontSize: '13px' }}>contact@fineme.me に連絡する</a>
             </div>
             {/* billing-portal-btn: referenced in JS for Stripe customer portal */}
-            <button id="billing-portal-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>カスタマーポータルを開く</button>
+            <button id="billing-portal-btn" className="btn btn-ghost" style={{ fontSize: '13px' }}>Finemeへのお支払い情報を管理する（カスタマーポータル）</button>
+          </div>
+          <div className="card stack" style={{ padding: '24px', gap: '12px' }}>
+            <h2 style={{ margin: '0', fontSize: '16px' }}>ご契約書類</h2>
+            <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: 1.7 }}>貴店とFinemeの契約内容を、いつでもここから確認できます。</p>
+            <a href="/terms-provider" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>掲載者向け利用規約（ご契約の内容）</a>
+            <a href="/tokusho" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>特定商取引法に基づく表記</a>
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>プライバシーポリシー</a>
+            <a href="/provider/billing" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>プラン比較・変更（Stripe連携の設定もこちら）</a>
           </div>
           <div className="card stack" style={{ padding: '24px', gap: '14px' }}>
             <h2 style={{ margin: '0', fontSize: '16px' }}>パスワード変更</h2>
@@ -13377,7 +13389,7 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="btn btn-ghost" id="deposit-amount-save" style={{ fontSize: '12px', padding: '8px 14px' }}>保存する</button>
                 <span id="deposit-amount-msg" style={{ fontSize: '12px' }}></span>
               </div>
-              <p id="deposit-payment-warn" className="muted" style={{ fontSize: '12px', margin: '10px 0 0', display: 'none' }}>オンライン決済の受け入れ設定が完了していないため、デポジットを設定しても実際には請求されません。課金・プランタブから設定してください。</p>
+              <p id="deposit-payment-warn" className="muted" style={{ fontSize: '12px', margin: '10px 0 0', display: 'none' }}>オンライン決済の受け入れ設定が完了していないため、デポジットを設定しても実際には請求されません。「Fineme利用契約」タブから設定してください。</p>
             </div>
           </div>
         </div>

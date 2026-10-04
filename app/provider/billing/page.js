@@ -214,7 +214,11 @@ export default function BillingPage() {
   return (
     <main className="section">
       <div className="container stack">
-        <h1 className="section-title">掲載プラン・課金</h1>
+        <div style={{ background: '#2f4f8f', color: '#fff', borderRadius: 12, padding: '14px 18px' }}>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, letterSpacing: 0.5 }}>Finemeとのご契約</p>
+          <p style={{ margin: '4px 0 0', fontSize: 12.5, lineHeight: 1.7, opacity: 0.92 }}>このページは、貴店とFinemeの間のご契約とお支払い（Finemeへのお支払い）です。お客様から貴店へのお支払い（回数券・会員プラン等）とは別のものです。</p>
+        </div>
+        <h1 className="section-title">Fineme利用契約・プラン</h1>
 
         {/* ステータス */}
         <div className={`status-hero ${st.heroClass}`}>
@@ -223,7 +227,7 @@ export default function BillingPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
               <span className={`badge ${st.cls}`}>{st.label}</span>
               {isActive && (
-                <span className="muted" style={{ fontSize: '13px' }}>現在のプラン: <strong style={{ color: plan.color }}>{plan.name} ¥{plan.amount.toLocaleString()}/月</strong></span>
+                <span className="muted" style={{ fontSize: '13px' }}>Finemeのご利用プラン: <strong style={{ color: plan.color }}>{plan.name} ¥{plan.amount.toLocaleString()}/月</strong></span>
               )}
             </div>
             <div style={{ fontWeight: 700, fontSize: '17px' }}>{st.title}</div>

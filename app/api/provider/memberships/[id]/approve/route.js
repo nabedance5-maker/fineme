@@ -45,7 +45,7 @@ async function __POST(request, { params }) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   if (!provider.stripe_connect_id || provider.stripe_connect_status !== 'active') {
-    return Response.json({ error: '入金先のStripe Connect設定が完了していません。「課金・プラン」タブから設定してください' }, { status: 409 });
+    return Response.json({ error: '入金先のStripe Connect設定が完了していません。「Fineme利用契約」タブから設定してください' }, { status: 409 });
   }
 
   const { data: m } = await supabase.from('provider_memberships').select('*').eq('id', id).eq('provider_id', provider.id).single();

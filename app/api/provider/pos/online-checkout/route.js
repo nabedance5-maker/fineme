@@ -33,7 +33,7 @@ async function __POST(request) {
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   if (!provider.stripe_connect_id || provider.stripe_connect_status !== 'active') {
-    return Response.json({ error: 'オンライン決済の受け入れ準備が完了していません（課金・プランタブから設定してください）' }, { status: 409 });
+    return Response.json({ error: 'オンライン決済の受け入れ準備が完了していません（「Fineme利用契約」タブから設定してください）' }, { status: 409 });
   }
 
   const { items, staff_id, memo } = await request.json().catch(() => ({}));

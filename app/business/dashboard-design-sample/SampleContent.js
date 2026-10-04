@@ -336,7 +336,7 @@ function LineChannelView() {
 function BillingView() {
   return (
     <div style={cardStyle}>
-      <SectionTitle sub="現在のプラン・お支払い状況">課金・プラン</SectionTitle>
+      <SectionTitle sub="現在のプラン・お支払い状況">Fineme利用契約</SectionTitle>
       <p style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 800, color: GOLD }}>プランB（スタンダード）</p>
       <p style={{ margin: 0, fontSize: 12, color: 'rgba(232,228,220,0.55)' }}>次回請求日：2026/10/1</p>
     </div>
