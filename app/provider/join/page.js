@@ -141,6 +141,18 @@ export default function ProviderJoinPage({ searchParams }) {
         .cat-item-icon { display: flex; justify-content: center; margin-bottom: 10px; }
         .problem-card h3 { font-size: 15px; font-weight: 800; color: #f3efe6; margin: 0 0 8px; }
         .problem-card p { font-size: 13px; color: rgba(255,255,255,.82); line-height: 1.7; margin: 0; font-family: 'Noto Sans JP', sans-serif; }
+        .grp-head { display: flex; align-items: center; gap: 12px; margin: 34px 0 6px; }
+        .grp-head:first-of-type { margin-top: 8px; }
+        .grp-num { font-family: 'Noto Sans JP', sans-serif; font-size: 11px; font-weight: 800; letter-spacing: .14em; color: #0a0f1e; background: #e0c46a; border-radius: 999px; padding: 4px 11px; flex-shrink: 0; }
+        .grp-title { font-size: clamp(17px, 3.4vw, 21px); font-weight: 700; color: #fff; margin: 0; line-height: 1.4; }
+        .grp-lead { font-size: 13px; color: rgba(255,255,255,.84); line-height: 1.8; margin: 0 0 16px; font-family: 'Noto Sans JP', sans-serif; }
+        .ba { display: flex; align-items: stretch; gap: 8px; margin: 0 0 12px; font-family: 'Noto Sans JP', sans-serif; font-size: 12px; line-height: 1.5; }
+        .ba-before { flex: 1; padding: 7px 10px; border-radius: 8px; background: rgba(255,255,255,.06); color: rgba(255,255,255,.72); text-decoration: line-through; text-decoration-color: rgba(255,255,255,.35); }
+        .ba-arrow { align-self: center; color: #e0c46a; font-weight: 800; }
+        .ba-after { flex: 1.2; padding: 7px 10px; border-radius: 8px; background: rgba(201,168,76,.16); color: #f3efe6; font-weight: 700; }
+        .time-callout { margin-top: 18px; padding: 20px 24px; border-radius: 14px; border: 1px solid rgba(201,168,76,.4); background: rgba(201,168,76,.1); font-family: 'Noto Sans JP', sans-serif; }
+        .time-callout p { margin: 0; font-size: 14px; line-height: 1.85; color: #f3efe6; }
+        .time-callout strong { color: #fff; }
         .problem-card-bar { height: 2px; border-radius: 999px; background: #c9a84c; opacity: .3; margin-top: 14px; }
 
         /* ─── Scan flow ─── */
@@ -289,8 +301,8 @@ export default function ProviderJoinPage({ searchParams }) {
           <div className="join-container">
             <div className="sec-eyebrow">Problem</div>
             <h2 className="sec-h2 sec-h2-light">こんな悩み、抱えていませんか？</h2>
-            <p className="sec-lead sec-lead-light">新規集客より先に、今のお客様との関係で困っていることはありませんか。</p>
-            <div className="problem-grid">
+            <p className="sec-lead sec-lead-light">新規集客より先に、今のお客様との関係と、毎日の業務で困っていることはありませんか。</p>
+            <div className="problem-grid tools-grid">
               <div className="problem-card">
                 <div className="problem-card-icon"><div className="glyph">人</div></div>
                 <h3>顧客管理が属人的</h3>
@@ -304,6 +316,12 @@ export default function ProviderJoinPage({ searchParams }) {
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
+                <div className="problem-card-icon"><div className="glyph">時</div></div>
+                <h3>予約・連絡・請求に追われて、手が回らない</h3>
+                <p>日程調整、前日の確認連絡、請求と入金確認、売上の転記。事務に時間を取られて、お客様と向き合う時間とリピートのための施策に手が回りません。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+              <div className="problem-card">
                 <div className="problem-card-icon"><div className="glyph">割</div></div>
                 <h3>クーポン目当てのお客様ばかり</h3>
                 <p>値引き前提の比較は価値を削り、本来の魅力を伝え切れません。</p>
@@ -313,42 +331,27 @@ export default function ProviderJoinPage({ searchParams }) {
             <div style={{marginTop:'16px', padding:'18px 22px', background:'#0a0f1e', borderRadius:'14px', border:'1px solid rgba(201,168,76,.2)'}}>
               <p style={{margin:0, fontSize:'15px', fontWeight:'700', color:'#fff', lineHeight:'1.7', fontFamily:"'Noto Sans JP', sans-serif"}}>
                 それは接客の問題ではありません。
-                <span style={{color:'#c9a84c'}}> 仕組みの問題です。</span><br/>
-                <span style={{fontSize:'13px', fontWeight:'400', color:'rgba(255,255,255,.8)'}}>Finemeは「今いるお客様との関係」から仕組み化します。</span>
+                <span style={{color:'#e8cf7e'}}> 仕組みの問題です。</span><br/>
+                <span style={{fontSize:'13px', fontWeight:'400', color:'rgba(255,255,255,.8)'}}>Finemeは「日々の業務を自動で回す」ことで時間を生み、その時間とAIの提案を「今いるお客様のリピート」に使える状態をつくります。</span>
               </p>
             </div>
           </div>
         </section>
 
-        {/* ③.5 掲載後すぐ使える店舗運営ツール */}
+        {/* ③.5 解決策：リピート定着（AI）＋業務効率化（リソース確保） */}
         <section className="join-section-dark" id="tools">
           <div className="join-container">
-            <div className="sec-eyebrow">Store Management Tools</div>
-            <h2 className="sec-h2 sec-h2-dark">予約から決済、リピートまで。ひとつの画面で</h2>
-            <p className="sec-lead sec-lead-dark">新しいお客様がいなくても、いま抱えているお客様との関係を強くする機能が、契約したその日から使えます。使わない機能は店舗ごとにON/OFFでき、必要なものだけが画面に並びます。</p>
+            <div className="sec-eyebrow">Solution</div>
+            <h2 className="sec-h2 sec-h2-dark">お客様が戻ってくる仕組みと、そのための時間を、同時につくる</h2>
+            <p className="sec-lead sec-lead-dark" style={{marginBottom:'8px'}}>新しいお客様がいなくても、契約したその日から使えます。使わない機能は店舗ごとにON/OFFでき、必要なものだけが画面に並びます。</p>
+
+            <div className="grp-head"><span className="grp-num">1</span><h3 className="grp-title">AIと仕組みで、リピーターを定着させる</h3></div>
+            <p className="grp-lead">「誰に・いつ・何を伝えるか」をAIが店舗の実データから考え、声かけ・記録・継続の仕組みまで用意します。</p>
             <div className="problem-grid tools-grid">
               <div className="problem-card">
                 <div className="problem-card-icon"><div className="glyph">談</div></div>
                 <h3>AI専属コンサル</h3>
-                <p>予約・売上・来店間隔などの店舗データをAIが読み、「いま誰に声をかけるべきか」「どのメニューが伸びているか」を吹き出し形式で提案。相談したいことは、そのままチャットで聞けます。全プランで使えます。</p>
-                <div className="problem-card-bar"></div>
-              </div>
-              <div className="problem-card">
-                <div className="problem-card-icon"><div className="glyph">予</div></div>
-                <h3>予約のやり取りがLINEで完結</h3>
-                <p>お客様は普段のLINEトークから予約。店舗は承認・代替日時の提案・来店確認まで、その場のボタン操作で返せます。空き枠から即確定する方式と、希望日時を受けて承認する方式を店舗ごとに選べます。</p>
-                <div className="problem-card-bar"></div>
-              </div>
-              <div className="problem-card">
-                <div className="problem-card-icon"><div className="glyph">決</div></div>
-                <h3>オンライン決済・請求</h3>
-                <p>予約デポジット、請求書のカード決済までFinemeの中で完結。代金は店舗の口座へ直接入金され、集計は売上管理に自動で反映されます。決済手数料は一律4.5%で、予約そのものの手数料はありません。</p>
-                <div className="problem-card-bar"></div>
-              </div>
-              <div className="problem-card">
-                <div className="problem-card-icon"><div className="glyph">記</div></div>
-                <h3>顧客カルテ</h3>
-                <p>来店履歴・担当スタッフ・Me Scan受診有無を自動で一覧化。店舗ごとに自由な項目（自由記述・選択式・5段階評価）を足せます。Plan Cでは蓄積した記録からAIが傾向・注意点を提案します。</p>
+                <p>予約・売上・来店間隔などの店舗データをAIが読み、「いま誰に声をかけるべきか」「どのメニューが伸びているか」を吹き出し形式で提案。声かけ文案の作成や、相談したいことのチャットにも対応します。全プランで使えます。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
@@ -358,29 +361,59 @@ export default function ProviderJoinPage({ searchParams }) {
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
+                <div className="problem-card-icon"><div className="glyph">記</div></div>
+                <h3>顧客カルテ</h3>
+                <p>来店履歴・担当スタッフ・Me Scan受診有無を自動で一覧化。店舗ごとに自由な項目（自由記述・選択式・5段階評価）を足せます。Plan Cでは蓄積した記録からAIが傾向・注意点を提案します。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+              <div className="problem-card">
                 <div className="problem-card-icon"><div className="glyph">会</div></div>
                 <h3>回数券・会員プラン・クラス</h3>
                 <p>回数券、月額会員プラン、通い放題の組み合わせをオンラインで販売。クラス予約、QRチェックイン、出欠確認、友達紹介プログラムまで、通い続けてもらう仕組みが揃います（Plan B以上）。</p>
                 <div className="problem-card-bar"></div>
               </div>
+            </div>
+            <div style={{marginTop:'16px', padding:'18px 22px', background:'rgba(201,168,76,.08)', borderRadius:'14px', border:'1px solid rgba(201,168,76,.3)'}}>
+              <p style={{margin:0, fontSize:'14px', color:'#f3efe6', lineHeight:'1.8', fontFamily:"'Noto Sans JP', sans-serif"}}>
+                <strong style={{color:'#fff'}}>休眠客1人の呼び戻しで、月額¥5,000は元が取れます。</strong><br/>
+                客単価¥10,000〜¥30,000なら、リマインド経由の再来店が月1件あるだけで回収完了です。
+              </p>
+            </div>
+
+            <div className="grp-head"><span className="grp-num">2</span><h3 className="grp-title">日常業務を自動で回して、時間を取り戻す</h3></div>
+            <p className="grp-lead">手作業だった連絡・請求・集計を仕組みに任せて、空いた時間を接客とリピート施策に使えます。</p>
+            <div className="problem-grid tools-grid">
+              <div className="problem-card">
+                <div className="problem-card-icon"><div className="glyph">予</div></div>
+                <h3>予約のやり取りがLINEで完結</h3>
+                <div className="ba"><span className="ba-before">電話・DMで日程を往復調整</span><span className="ba-arrow">&gt;</span><span className="ba-after">LINEのボタンで承認・提案</span></div>
+                <p>お客様は普段のLINEトークから予約。店舗は承認・代替日時の提案・来店確認まで、その場のボタン操作で返せます。空き枠から即確定する方式と、希望日時を受けて承認する方式を店舗ごとに選べます。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+              <div className="problem-card">
+                <div className="problem-card-icon"><div className="glyph">決</div></div>
+                <h3>オンライン決済・請求</h3>
+                <div className="ba"><span className="ba-before">請求書作成と入金の確認</span><span className="ba-arrow">&gt;</span><span className="ba-after">リンクを送れば入金も自動記録</span></div>
+                <p>予約デポジット、請求書のカード決済までFinemeの中で完結。代金は店舗の口座へ直接入金され、集計は売上管理に自動で反映されます。決済手数料は一律4.5%で、予約そのものの手数料はありません。</p>
+                <div className="problem-card-bar"></div>
+              </div>
               <div className="problem-card">
                 <div className="problem-card-icon"><div className="glyph">指</div></div>
                 <h3>スタッフ指名・シフト管理</h3>
+                <div className="ba"><span className="ba-before">シフトの取りまとめと二重予約の確認</span><span className="ba-arrow">&gt;</span><span className="ba-after">提出と空き管理を自動で反映</span></div>
                 <p>指名予約と指名料、シフト表の作成と提出、部屋・設備の空き管理に対応。担当したお客様のリピート率・指名率も自動で見える化されます（Plan B以上）。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
                 <div className="problem-card-icon"><div className="glyph">売</div></div>
                 <h3>売上管理・POS・在庫</h3>
+                <div className="ba"><span className="ba-before">売上の手入力・転記・集計</span><span className="ba-arrow">&gt;</span><span className="ba-after">予約・決済から自動で集計</span></div>
                 <p>メニュー別・スタッフ別・支払い方法別の自動集計とCSV出力、LTV・CAC概算を全プランで。物販のレジ会計と在庫管理、操作ログはPlan Cで使えます。</p>
                 <div className="problem-card-bar"></div>
               </div>
             </div>
-            <div style={{marginTop:'16px', padding:'18px 22px', background:'rgba(201,168,76,.08)', borderRadius:'14px', border:'1px solid rgba(201,168,76,.3)'}}>
-              <p style={{margin:0, fontSize:'14px', color:'#e8e2d4', lineHeight:'1.8', fontFamily:"'Noto Sans JP', sans-serif"}}>
-                <strong style={{color:'#fff'}}>休眠客1人の呼び戻しで、月額¥5,000は元が取れます。</strong><br/>
-                客単価¥10,000〜¥30,000なら、リマインド経由の再来店が月1件あるだけで回収完了です。
-              </p>
+            <div className="time-callout">
+              <p><strong>空いた時間は、お客様と向き合う時間に。</strong><br/>前日の確認連絡、請求、売上の集計といった「毎回やる作業」を任せて、AI専属コンサルが示す「いま声をかけるべき人」への一言に時間を使えます。</p>
             </div>
             <p style={{marginTop:'14px', fontSize:'13px', color:'rgba(255,255,255,.78)', lineHeight:'1.7', fontFamily:"'Noto Sans JP', sans-serif"}}>
               エリア需要の可視化なども開発中です。画面イメージ・導入フローなど詳しい機能一覧は<a href="/business/store-saas-pitch-deck.html" style={{color:'#e0c46a', textDecoration:'underline'}}>店舗SaaS営業資料</a>をご覧ください。
@@ -394,7 +427,7 @@ export default function ProviderJoinPage({ searchParams }) {
             <div className="sec-eyebrow">Fineme Matching（今後の伸びしろ）</div>
             <h2 className="sec-h2 sec-h2-dark">掲載しておけば、新しい出会いも増えていく</h2>
             <p className="sec-lead sec-lead-dark">
-              正直にお伝えすると、Finemeはまだユーザー基盤を育てている段階です。<br/>
+              ここまでが、いま抱えているお客様のための機能です。そのうえでFinemeには、もうひとつの伸びしろがあります。<br/>正直にお伝えすると、Finemeはまだユーザー基盤を育てている段階です。<br/>
               それでも今のうちに掲載しておく理由は、この仕組みが「検索して探す」のではなく「診断を受けてから届く」設計だから——<br/>
               ユーザーが増えるほど、この価値もそのまま伸びていきます。
             </p>
