@@ -22,6 +22,7 @@ export default function MypageSideNav({ asideClassName = 'mypage-sidenav' }) {
     { href: '/mypage/log', label: 'New Me Log', active: pathname.startsWith('/mypage/log') },
     { href: '/mypage/packages', label: 'パッケージ・回数券', active: pathname.startsWith('/mypage/packages') },
     { href: '/mypage/memberships', label: '入会手続き', active: pathname.startsWith('/mypage/memberships') },
+    { href: '/mypage/contracts', label: '契約書', active: pathname.startsWith('/mypage/contracts') },
     { href: '/mypage/checkin', label: 'チェックインQR', active: pathname.startsWith('/mypage/checkin') },
     { href: '/mypage/subscription', label: 'サブスク設定', active: pathname.startsWith('/mypage/subscription') },
     { href: '/mypage/favorites', label: 'お気に入り', active: pathname.startsWith('/mypage/favorites') },

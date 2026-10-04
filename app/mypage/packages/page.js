@@ -34,7 +34,7 @@ export default function MypagePackagesPage() {
         <section className="stack mypage-content">
           <h1 className="section-title">あなたのパッケージ・回数券</h1>
           <p className="muted" style={{ fontSize: '13px', marginTop: '-8px' }}>
-            決済はFinemeを経由せず、店舗が直接記録したものです。残り回数はここで確認できます。
+            店舗が記録した回数券と、Fineme上でご購入いただいた回数券の残り回数をここで確認できます。
           </p>
 
           {loading ? (

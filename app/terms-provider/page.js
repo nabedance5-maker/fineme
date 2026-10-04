@@ -1,3 +1,5 @@
+import { PROVIDER_TERMS_VERSION } from '@/lib/terms-version';
+
 export const metadata = {
   title: '掲載者向け利用規約 | Fineme',
   robots: 'index,follow',
@@ -119,7 +121,7 @@ export default function TermsProviderPage() {
           <p>本規約は日本法に準拠します。当サービスに関する紛争は、運営者の所在地を管轄する裁判所を第一審の専属的合意管轄裁判所とします。</p>
         </section>
 
-        <p className="muted" style={{ textAlign: 'right', fontSize: 13 }}>制定日: 2026-03-09</p>
+        <p className="muted" style={{ textAlign: 'right', fontSize: 13 }}>制定日: 2026-03-09　／　版: {PROVIDER_TERMS_VERSION}</p>
       </div>
     </main>
   );

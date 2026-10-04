@@ -696,7 +696,7 @@ export default function ProviderDashboardPage() {
       if (!token) return null;
       try {
         const res = await fetch('/api/provider/me', {
-          headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` }
+          headers: { 'Authorization': `Bearer ${getSupabaseToken()}` }
         });
         if (res.status === 401) {
           if (lastRefreshResult !== 'network') redirectToProviderLogin();
@@ -961,7 +961,7 @@ export default function ProviderDashboardPage() {
         try {
           const res = await fetch('/api/provider/profile', {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
             body: JSON.stringify(updates)
           });
           if (res.ok) {
@@ -1094,7 +1094,7 @@ export default function ProviderDashboardPage() {
       try {
         const res = await fetch('/api/provider/analyze', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+          headers: { 'Authorization': `Bearer ${getSupabaseToken()}` },
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || '分析に失敗しました');
@@ -1155,7 +1155,7 @@ export default function ProviderDashboardPage() {
 
       async function loadServices() {
         if (!listEl) return;
-        const res = await fetch('/api/provider/services', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/services', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
         const items = await res.json();
         renderPageScore(provider, items);
@@ -1210,7 +1210,7 @@ export default function ProviderDashboardPage() {
         }));
         listEl.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', async () => {
           if (!confirm('このサービスを削除しますか？')) return;
-          await fetch(`/api/provider/services/${btn.dataset.del}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+          await fetch(`/api/provider/services/${btn.dataset.del}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
           loadServices();
         }));
       }
@@ -1245,7 +1245,7 @@ export default function ProviderDashboardPage() {
         const benefitList = benefitListRaw.split('\n').map(s => s.replace(/^[・▶→✓\s]+/, '').trim()).filter(Boolean);
         const body = { name: fd.get('name'), price: Number(fd.get('price')), duration_minutes: fd.get('duration_minutes') ? Number(fd.get('duration_minutes')) : null, is_featured: !!editForm.elements['is_featured'].checked, image_url: fd.get('image_url') || null, suitable_path_types: suitablePathTypes.length > 0 ? suitablePathTypes : null, target_axis: fd.get('target_axis') || null, transformation_promise: fd.get('transformation_promise') || null, before_text: fd.get('before_text') || null, after_text: fd.get('after_text') || null, before_image_url: fd.get('before_image_url') || null, after_image_url: fd.get('after_image_url') || null, benefit_list: benefitList.length > 0 ? benefitList : null, category: fd.get('category') || null };
         const url = id ? `/api/provider/services/${id}` : '/api/provider/services';
-        const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` }, body: JSON.stringify(body) });
+        const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` }, body: JSON.stringify(body) });
         if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadServices(); showToast('保存しました'); }
         else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
       });
@@ -1285,7 +1285,7 @@ export default function ProviderDashboardPage() {
 
       async function loadStaff() {
         if (!listEl) return;
-        const authH = { 'Authorization': `Bearer ${getSupabaseToken() || token}` };
+        const authH = { 'Authorization': `Bearer ${getSupabaseToken()}` };
         const [res, condRes] = await Promise.all([
           fetch('/api/provider/staff', { headers: authH }),
           fetch('/api/provider/shift-staff-conditions', { headers: authH }).catch(() => null),
@@ -1352,7 +1352,7 @@ export default function ProviderDashboardPage() {
         }));
         listEl.querySelectorAll('[data-staff-del]').forEach(btn => btn.addEventListener('click', async () => {
           if (!confirm('このスタッフを削除しますか？')) return;
-          await fetch(`/api/provider/staff/${btn.dataset.staffDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+          await fetch(`/api/provider/staff/${btn.dataset.staffDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
           loadStaff();
         }));
       }
@@ -1388,7 +1388,7 @@ export default function ProviderDashboardPage() {
           strong_types: String(fd.get('strong_types_text') || '').split(',').map(s => s.trim()).filter(Boolean),
         };
         const url = id ? `/api/provider/staff/${id}` : '/api/provider/staff';
-        const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` }, body: JSON.stringify(body) });
+        const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` }, body: JSON.stringify(body) });
         if (res.ok) {
           const saved = await res.json().catch(() => ({}));
           const staffId = id || saved.id;
@@ -1396,7 +1396,7 @@ export default function ProviderDashboardPage() {
           if (staffId) {
             const cond = { staff_id: staffId, employment_type: fd.get('cond_employment_type') };
             STAFF_COND_KEYS.forEach(k => { cond[k] = fd.get('cond_' + k); });
-            const cres = await fetch('/api/provider/shift-staff-conditions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` }, body: JSON.stringify({ items: [cond] }) }).catch(() => null);
+            const cres = await fetch('/api/provider/shift-staff-conditions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` }, body: JSON.stringify({ items: [cond] }) }).catch(() => null);
             condOk = !!cres && cres.ok;
           }
           editCard.style.display = 'none'; editForm.reset(); loadStaff();
@@ -1418,7 +1418,7 @@ export default function ProviderDashboardPage() {
         staffImgMsg.textContent = 'アップロード中…'; staffImgMsg.style.display = 'block'; staffImgBtn.disabled = true;
         const fd = new FormData(); fd.append('photo', file);
         try {
-          const res  = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` }, body: fd });
+          const res  = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${getSupabaseToken()}` }, body: fd });
           const data = await res.json();
           if (res.ok && data.url) {
             staffImgPrev.src = data.url; staffImgPrevW.style.display = 'block';
@@ -1436,7 +1436,7 @@ export default function ProviderDashboardPage() {
       const galInput = document.getElementById('staff-gallery-input');
       const galMsg   = document.getElementById('staff-gallery-msg');
       let galStaffId = '';
-      const galAuth = () => ({ 'Authorization': `Bearer ${getSupabaseToken() || token}` });
+      const galAuth = () => ({ 'Authorization': `Bearer ${getSupabaseToken()}` });
 
       function renderGallery(photos) {
         galGrid.innerHTML = '';
@@ -1507,7 +1507,7 @@ export default function ProviderDashboardPage() {
     (function setupShift() {
       const token = getSupabaseToken();
       if (!token) return;
-      const authHeadersShift = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      const authHeadersShift = () => ({ Authorization: `Bearer ${getSupabaseToken()}` });
 
       let shiftStaffList = [];
       let currentPeriodId = null;
@@ -2525,7 +2525,7 @@ export default function ProviderDashboardPage() {
 
       async function loadResources() {
         if (!listEl) return;
-        const res = await fetch('/api/provider/resources', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/resources', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
         const items = await res.json();
         if (!items.length) { listEl.innerHTML = '<p class="muted">まだ登録されていません。「＋ 追加」から登録してください。</p>'; return; }
@@ -2556,7 +2556,7 @@ export default function ProviderDashboardPage() {
         }));
         listEl.querySelectorAll('[data-resource-del]').forEach(btn => btn.addEventListener('click', async () => {
           if (!confirm('削除しますか？')) return;
-          await fetch(`/api/provider/resources/${btn.dataset.resourceDel}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+          await fetch(`/api/provider/resources/${btn.dataset.resourceDel}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
           loadResources();
         }));
       }
@@ -2576,7 +2576,7 @@ export default function ProviderDashboardPage() {
         const id = fd.get('_resource_id');
         const body = { name: fd.get('name'), type: fd.get('type'), active: !!editForm.elements['active'].checked };
         const url = id ? `/api/provider/resources/${id}` : '/api/provider/resources';
-        const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` }, body: JSON.stringify(body) });
+        const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` }, body: JSON.stringify(body) });
         if (res.ok) { editCard.style.display = 'none'; editForm.reset(); loadResources(); showToast('保存しました'); }
         else { const err = await res.json(); showToast('エラー: ' + (err.error || '不明')); }
       });
@@ -2589,7 +2589,7 @@ export default function ProviderDashboardPage() {
     (function setupMemberReferral() {
       const token = getSupabaseToken();
       if (!token) return;
-      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken()}` });
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
       const rewardEl = document.getElementById('mref-reward-text');
       const messageEl = document.getElementById('mref-message-text');
@@ -2692,7 +2692,7 @@ export default function ProviderDashboardPage() {
     (function setupAppealBlocks() {
       const token = getSupabaseToken();
       if (!token) return;
-      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken()}` });
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
       const listEl = document.getElementById('ablk-list');
       if (!listEl) return;
@@ -2943,7 +2943,7 @@ export default function ProviderDashboardPage() {
     (function setupClasses() {
       const token = getSupabaseToken();
       if (!token) return;
-      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken()}` });
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
       const listEl = document.getElementById('cls-list');
       const editCard = document.getElementById('cls-edit-card');
@@ -3284,7 +3284,7 @@ export default function ProviderDashboardPage() {
     (function setupLockers() {
       const token = getSupabaseToken();
       if (!token) return;
-      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken()}` });
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
       function fmtYen(n) { return n || n === 0 ? `¥${Number(n).toLocaleString()}` : '未設定'; }
       const contractCard = document.getElementById('lkr-contract-card');
@@ -3765,7 +3765,7 @@ export default function ProviderDashboardPage() {
     (function setupMemberships() {
       const token = getSupabaseToken();
       if (!token) return;
-      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken()}` });
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
       function fmtYen(n) { return n || n === 0 ? `¥${Number(n).toLocaleString()}` : '未設定'; }
       const STATUS_LABEL = { pending_approval: '承認待ち', active: '有効', rejected: '却下', cancelled: '解約' };
@@ -3946,7 +3946,7 @@ export default function ProviderDashboardPage() {
     (function setupSlots() {
       const token = getSupabaseToken();
       if (!token) return;
-      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      const authH = () => ({ Authorization: `Bearer ${getSupabaseToken()}` });
       const listEl  = document.getElementById('slot-list');
       const form    = document.getElementById('slot-add-form');
       const addDateEl = document.getElementById('slot-add-date');
@@ -4423,7 +4423,7 @@ export default function ProviderDashboardPage() {
       const requestToggle = document.getElementById('slots-request-toggle');
       const requestToggleStatus = document.getElementById('slots-request-toggle-status');
       async function loadInstantToggleState() {
-        const res = await fetch('/api/provider/features', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/features', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) return;
         const { features } = await res.json();
         if (instantToggle) instantToggle.checked = !!features?.instant_booking;
@@ -4447,7 +4447,7 @@ export default function ProviderDashboardPage() {
         if (requestToggleStatus) { requestToggleStatus.style.color = ''; requestToggleStatus.textContent = '保存中…'; }
         const res = await fetch('/api/provider/features', {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` },
           body: JSON.stringify({ booking_request: requestToggle.checked }),
         });
         requestToggle.disabled = false;
@@ -4463,7 +4463,7 @@ export default function ProviderDashboardPage() {
         if (instantToggleStatus) { instantToggleStatus.style.color = ''; instantToggleStatus.textContent = '保存中…'; }
         const res = await fetch('/api/provider/features', {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` },
           body: JSON.stringify({ instant_booking: instantToggle.checked }),
         });
         instantToggle.disabled = false;
@@ -4474,7 +4474,7 @@ export default function ProviderDashboardPage() {
           // （でお要望2026-09-14：手動で1つずつ登録させるフローを無くす）。
           if (instantToggle.checked) {
             const genRes = await fetch('/api/provider/slots/auto-generate', {
-              method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+              method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` },
               body: JSON.stringify({ days: 14 }),
             });
             if (genRes.ok) {
@@ -4540,7 +4540,7 @@ export default function ProviderDashboardPage() {
           }));
         }
         async function load() {
-          const res = await fetch('/api/provider/business-hours', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+          const res = await fetch('/api/provider/business-hours', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
           if (!res.ok) return;
           const data = await res.json();
           render(data.business_hours || {});
@@ -4560,7 +4560,7 @@ export default function ProviderDashboardPage() {
           const slot_duration_minutes = Number(document.getElementById(ids.durationSelect)?.value) || 60;
           if (msg) { msg.style.color = ''; msg.textContent = '保存中…'; }
           const res = await fetch('/api/provider/business-hours', {
-            method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+            method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` },
             body: JSON.stringify({ business_hours, slot_duration_minutes }),
           });
           if (msg) {
@@ -4573,7 +4573,7 @@ export default function ProviderDashboardPage() {
             const btn = document.getElementById(ids.generateNowBtn);
             btn.disabled = true; const origText = btn.textContent; btn.textContent = '生成中…';
             const res = await fetch('/api/provider/slots/auto-generate', {
-              method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+              method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` },
               body: JSON.stringify({ days: 14 }),
             });
             btn.disabled = false; btn.textContent = origText;
@@ -4597,7 +4597,7 @@ export default function ProviderDashboardPage() {
           async function loadClosedDates() {
             const listEl2 = document.getElementById(ids.closedList);
             if (!listEl2) return;
-            const res = await fetch('/api/provider/closed-dates', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+            const res = await fetch('/api/provider/closed-dates', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
             const rows = res.ok ? await res.json() : [];
             if (!rows.length) { listEl2.innerHTML = '<p class="muted" style="font-size:12.5px">今後の臨時休業日はありません。</p>'; return; }
             listEl2.innerHTML = rows.map(r => {
@@ -4609,7 +4609,7 @@ export default function ProviderDashboardPage() {
                 </div>`;
             }).join('');
             listEl2.querySelectorAll('[data-closed-del]').forEach(btn => btn.addEventListener('click', async () => {
-              await fetch(`/api/provider/closed-dates?date=${btn.dataset.closedDel}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+              await fetch(`/api/provider/closed-dates?date=${btn.dataset.closedDel}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
               loadClosedDates();
             }));
           }
@@ -4618,7 +4618,7 @@ export default function ProviderDashboardPage() {
             const reasonInput = document.getElementById(ids.closedReasonInput);
             if (!dateInput?.value) { showToast('日付を選んでください'); return; }
             const res = await fetch('/api/provider/closed-dates', {
-              method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+              method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` },
               body: JSON.stringify({ date: dateInput.value, reason: reasonInput?.value.trim() || null }),
             });
             if (!res.ok) { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); return; }
@@ -4652,7 +4652,7 @@ export default function ProviderDashboardPage() {
         const cutoffInput = document.getElementById('booking-cutoff-input');
         const cutoffTimeInput = document.getElementById('booking-cutoff-time-input');
         if (!input) return;
-        const res = await fetch('/api/provider/booking-limits', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/booking-limits', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
         if (res.ok) {
           const d = await res.json();
           input.value = d.max_active_reservations ?? 1;
@@ -4668,7 +4668,7 @@ export default function ProviderDashboardPage() {
         const n = Number(input?.value);
         if (!Number.isInteger(n) || n < 1) { if (msg) { msg.style.color = '#ef4444'; msg.textContent = '1以上の整数を入力してください'; } return; }
         const res = await fetch('/api/provider/booking-limits', {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+          method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` },
           body: JSON.stringify({ max_active_reservations: n }),
         });
         if (msg) { msg.style.color = res.ok ? '#4ade80' : '#ef4444'; msg.textContent = res.ok ? '✓ 保存しました' : '保存に失敗しました'; }
@@ -4698,7 +4698,7 @@ export default function ProviderDashboardPage() {
           body.booking_cutoff_time = cutoffTimeInput.value;
         }
         const res = await fetch('/api/provider/booking-limits', {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+          method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` },
           body: JSON.stringify(body),
         });
         if (msg) { msg.style.color = res.ok ? '#4ade80' : '#ef4444'; msg.textContent = res.ok ? '✓ 保存しました' : '保存に失敗しました'; }
@@ -4718,7 +4718,7 @@ export default function ProviderDashboardPage() {
       async function loadStories() {
         if (!listEl) return;
         listEl.innerHTML = '<p class="muted">読み込み中…</p>';
-        const res = await fetch('/api/provider/stories', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/stories', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
         const items = await res.json();
         if (!items.length) { listEl.innerHTML = '<p class="muted">まだ体験談はありません。</p>'; return; }
@@ -4758,7 +4758,7 @@ export default function ProviderDashboardPage() {
             btn.disabled = true; btn.textContent = '更新中…';
             const res = await fetch(`/api/provider/stories/${id}`, {
               method: 'PATCH',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
               body: JSON.stringify({ provider_hidden: !nowHidden }),
             });
             if (res.ok) { loadStories(); showToast(nowHidden ? '体験談を表示しました' : '体験談を非表示にしました'); }
@@ -4783,7 +4783,7 @@ export default function ProviderDashboardPage() {
 
       async function loadRecommended() {
         listEl.textContent = '読み込み中…';
-        const res = await fetch('/api/provider/recommended-frequencies', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/recommended-frequencies', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
         const items = await res.json();
         if (!items.length) { listEl.innerHTML = '<p class="muted" style="font-size:13px;margin:4px 0 0">まだ設定していません。</p>'; return; }
@@ -4799,7 +4799,7 @@ export default function ProviderDashboardPage() {
         }).join('');
         listEl.querySelectorAll('[data-rf-del]').forEach(btn => btn.addEventListener('click', async () => {
           await fetch('/api/provider/recommended-frequencies', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
             body: JSON.stringify({ axis: btn.dataset.rfDel, frequency_weeks: null, frequency_months: null }),
           });
           loadRecommended();
@@ -4813,7 +4813,7 @@ export default function ProviderDashboardPage() {
         if (!value || value < 1) { showToast('周期を入力してください'); return; }
         saveBtn.disabled = true;
         await fetch('/api/provider/recommended-frequencies', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
           body: JSON.stringify({
             axis: axisSel.value,
             frequency_weeks: unit === 'week' ? value : null,
@@ -4839,7 +4839,7 @@ export default function ProviderDashboardPage() {
       if (!daysInput || !saveBtn) return;
 
       async function loadDormantSettings() {
-        const res = await fetch('/api/provider/dormant-settings', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/dormant-settings', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) return;
         const data = await res.json();
         daysInput.value = data.no_visit_days;
@@ -4850,7 +4850,7 @@ export default function ProviderDashboardPage() {
         if (!days || days < 1) { msgEl.textContent = '1以上の日数を入力してください'; msgEl.style.color = '#ef4444'; return; }
         saveBtn.disabled = true;
         const res = await fetch('/api/provider/dormant-settings', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
           body: JSON.stringify({ no_visit_days: days }),
         });
         if (res.ok) { msgEl.style.color = '#059669'; msgEl.textContent = '✓ 保存しました'; }
@@ -4904,7 +4904,7 @@ export default function ProviderDashboardPage() {
         const s = STATUS_LABEL[status] || STATUS_LABEL.active;
         return `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:${s.bg};color:${s.fg};border-radius:99px;">${s.label}</span>`;
       }
-      function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` }; }
+      function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` }; }
 
       let allItems = [];
       let staffList = [];
@@ -4918,7 +4918,7 @@ export default function ProviderDashboardPage() {
       // 予約データ(reservations)とメニュー(provider_experience_menus)がID単位で綺麗に紐づいていないため
       // 自動検出はできず、記録追加時に店舗側が選ぶ方式にした（でお相談・2026-09合意）。
       async function loadMenus() {
-        const res = await fetch('/api/provider/experience-menus', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/experience-menus', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         const all = res.ok ? await res.json() : [];
         providerMenus = all.filter(m => m.is_active !== false);
       }
@@ -4944,7 +4944,7 @@ export default function ProviderDashboardPage() {
       }
 
       async function loadFields() {
-        const res = await fetch('/api/provider/karte-fields', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/karte-fields', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         karteFields = res.ok ? await res.json() : [];
       }
 
@@ -5410,6 +5410,7 @@ export default function ProviderDashboardPage() {
         if (!custModalEl) return;
         currentCustUid = uid;
         currentCustType = 'member';
+        resetContracts();
         applyPostureGating();
         custModalMemberSection.style.display = '';
         custModalManualSection.style.display = 'none';
@@ -5479,6 +5480,7 @@ export default function ProviderDashboardPage() {
         if (!m || !custModalEl) { showToast('顧客情報が見つかりませんでした'); return; }
         currentCustUid = id;
         currentCustType = 'manual';
+        resetContracts();
         applyPostureGating();
         custModalMemberSection.style.display = 'none';
         custModalManualSection.style.display = '';
@@ -5579,6 +5581,104 @@ export default function ProviderDashboardPage() {
               custModalManualHistoryEl.dataset.built = ''; // 次に開いた時に最新の履歴を取り直す
             } else { const d = await res.json(); showToast('エラー: ' + (d.error || '不明')); }
           });
+        }
+      });
+
+      // 契約書（店舗とお客様が交わした契約書のアップロード・保管）
+      const custModalContractsToggle = document.getElementById('cust-modal-contracts-toggle');
+      const custModalContractsEl = document.getElementById('cust-modal-contracts');
+      const CONTRACT_KINDS = { package: '回数券', membership: '会員プラン', other: 'その他' };
+      const contractHeaders = () => ({ Authorization: `Bearer ${getSupabaseToken()}` });
+      const contractQuery = () => (currentCustType === 'manual' ? `manual_customer_id=${encodeURIComponent(currentCustUid)}` : `user_id=${encodeURIComponent(currentCustUid)}`);
+      function resetContracts() {
+        if (!custModalContractsEl) return;
+        custModalContractsEl.style.display = 'none';
+        custModalContractsEl.dataset.built = '';
+        custModalContractsEl.innerHTML = '';
+      }
+      async function renderContracts() {
+        const isManual = currentCustType === 'manual';
+        custModalContractsEl.innerHTML = '<p class="muted" style="font-size:12px;">読み込み中…</p>';
+        let docs = [];
+        try {
+          const res = await fetch(`/api/provider/contract-documents?${contractQuery()}`, { headers: contractHeaders() });
+          docs = res.ok ? await res.json() : [];
+        } catch { /* 一覧が空のまま表示される */ }
+        const rows = docs.length ? docs.map(d => `
+          <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;font-size:12px;">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <span style="font-weight:700;font-size:13px;">${esc(d.title)}</span>
+              <span style="padding:1px 8px;border-radius:99px;background:#f3f4f6;color:#374151;">${esc(CONTRACT_KINDS[d.contract_kind] || 'その他')}</span>
+              ${d.customer_acknowledged_at ? `<span style="padding:1px 8px;border-radius:99px;background:#ecfdf5;color:#059669;">お客様確認済み（${esc(d.customer_acknowledged_at.slice(0, 10))}）</span>` : (d.visible_to_customer ? '<span style="padding:1px 8px;border-radius:99px;background:#fffbeb;color:#b45309;">お客様未確認</span>' : '<span style="padding:1px 8px;border-radius:99px;background:#f3f4f6;color:#6b7280;">お客様には非表示</span>')}
+            </div>
+            <div class="muted" style="margin-top:2px;">${d.contract_date ? `契約日 ${esc(d.contract_date)} ・ ` : ''}${esc(d.file_name)}${d.note ? ` ・ ${esc(d.note)}` : ''}</div>
+            <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
+              <button type="button" class="btn btn-ghost" data-contract-open="${esc(d.id)}" style="font-size:12px;padding:4px 10px;">開く</button>
+              ${!isManual ? `<button type="button" class="btn btn-ghost" data-contract-vis="${esc(d.id)}" data-vis="${d.visible_to_customer ? '1' : '0'}" style="font-size:12px;padding:4px 10px;">${d.visible_to_customer ? 'お客様に見せない' : 'お客様に見せる'}</button>` : ''}
+              <button type="button" class="btn btn-ghost" data-contract-del="${esc(d.id)}" style="font-size:12px;padding:4px 10px;color:#ef4444;">削除</button>
+            </div>
+          </div>`).join('') : '<p class="muted" style="font-size:12px;margin:0 0 8px;">保管している契約書はまだありません。</p>';
+        custModalContractsEl.innerHTML = `
+          ${rows}
+          <div style="margin-top:12px;padding:12px;border:1px dashed #d1d5db;border-radius:10px;">
+            <p style="font-size:12px;font-weight:700;margin:0 0 8px;">契約書をアップロード</p>
+            <p class="muted" style="font-size:11px;margin:0 0 8px;line-height:1.6;">お客様と交わした契約書（署名済みの紙をスキャン・撮影したものや、PDF）を保管できます。電子署名ではなく、契約を交わした記録として使います。</p>
+            <input type="text" id="cust-contract-title" maxlength="80" placeholder="契約書の名前（例：パーソナル10回券 契約書）" style="width:100%;box-sizing:border-box;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:6px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+              <select id="cust-contract-kind" style="font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;">
+                <option value="package">回数券</option><option value="membership">会員プラン</option><option value="other">その他</option>
+              </select>
+              <input type="date" id="cust-contract-date" style="font-size:13px;padding:7px;border:1px solid #e5e7eb;border-radius:8px;">
+            </div>
+            <input type="text" id="cust-contract-note" maxlength="200" placeholder="メモ（任意）" style="width:100%;box-sizing:border-box;font-size:13px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:6px;">
+            <input type="file" id="cust-contract-file" accept="application/pdf,image/jpeg,image/png,image/webp" style="font-size:12px;margin-bottom:6px;">
+            ${isManual ? '<p class="muted" style="font-size:11px;margin:0 0 6px;">会員と紐付けていないお客様のため、お客様側には表示されません。紐付けた後に「お客様に見せる」にできます。</p>' : '<label style="display:flex;gap:6px;align-items:center;font-size:12px;margin-bottom:6px;"><input type="checkbox" id="cust-contract-visible" checked> お客様のマイページにも表示する</label>'}
+            <button type="button" class="btn" id="cust-contract-upload" style="font-size:12px;padding:6px 14px;">アップロード</button>
+          </div>`;
+        custModalContractsEl.querySelectorAll('[data-contract-open]').forEach(btn => btn.addEventListener('click', async () => {
+          const res = await fetch(`/api/provider/contract-documents/${btn.dataset.contractOpen}`, { headers: contractHeaders() });
+          const d = await res.json().catch(() => ({}));
+          if (res.ok && d.url) window.open(d.url, '_blank', 'noopener'); else showToast('開けませんでした：' + (d.error || '不明なエラー'));
+        }));
+        custModalContractsEl.querySelectorAll('[data-contract-vis]').forEach(btn => btn.addEventListener('click', async () => {
+          const res = await fetch(`/api/provider/contract-documents/${btn.dataset.contractVis}`, {
+            method: 'PATCH', headers: { ...contractHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ visible_to_customer: btn.dataset.vis !== '1' }),
+          });
+          if (res.ok) renderContracts(); else { const d = await res.json().catch(() => ({})); showToast('エラー: ' + (d.error || '不明')); }
+        }));
+        custModalContractsEl.querySelectorAll('[data-contract-del]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('この契約書を削除しますか？（ファイルも削除され、元に戻せません）')) return;
+          const res = await fetch(`/api/provider/contract-documents/${btn.dataset.contractDel}`, { method: 'DELETE', headers: contractHeaders() });
+          if (res.ok) { showToast('削除しました'); renderContracts(); } else { const d = await res.json().catch(() => ({})); showToast('エラー: ' + (d.error || '不明')); }
+        }));
+        document.getElementById('cust-contract-upload')?.addEventListener('click', async () => {
+          const title = document.getElementById('cust-contract-title').value.trim();
+          const file = document.getElementById('cust-contract-file').files?.[0];
+          if (!title) { showToast('契約書の名前を入力してください'); return; }
+          if (!file) { showToast('ファイルを選んでください'); return; }
+          const fd = new FormData();
+          fd.append('file', file);
+          fd.append('title', title);
+          fd.append('contract_kind', document.getElementById('cust-contract-kind').value);
+          fd.append('contract_date', document.getElementById('cust-contract-date').value);
+          fd.append('note', document.getElementById('cust-contract-note').value);
+          fd.append(isManual ? 'manual_customer_id' : 'user_id', currentCustUid);
+          if (!isManual) fd.append('visible_to_customer', document.getElementById('cust-contract-visible').checked ? 'true' : 'false');
+          const btn = document.getElementById('cust-contract-upload');
+          btn.disabled = true;
+          const res = await fetch('/api/provider/contract-documents', { method: 'POST', headers: contractHeaders(), body: fd });
+          if (res.ok) { showToast('契約書を保管しました'); renderContracts(); }
+          else { const d = await res.json().catch(() => ({})); showToast('エラー: ' + (d.error || '不明')); btn.disabled = false; }
+        });
+      }
+      custModalContractsToggle?.addEventListener('click', async () => {
+        if (!currentCustUid) return;
+        const opening = custModalContractsEl.style.display === 'none';
+        custModalContractsEl.style.display = opening ? 'block' : 'none';
+        if (opening && !custModalContractsEl.dataset.built) {
+          custModalContractsEl.dataset.built = '1';
+          await renderContracts();
         }
       });
 
@@ -5984,8 +6084,8 @@ export default function ProviderDashboardPage() {
         listEl.innerHTML = '<p class="muted">読み込み中…</p>';
         try {
           const [res, staffRes] = await Promise.all([
-            fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } }),
-            fetch('/api/provider/staff', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } }),
+            fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } }),
+            fetch('/api/provider/staff', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } }),
           ]);
           if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
           staffList = staffRes.ok ? await staffRes.json() : [];
@@ -6020,7 +6120,7 @@ export default function ProviderDashboardPage() {
 
       async function loadManualCustomers() {
         try {
-          const res = await fetch('/api/provider/customers/manual', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+          const res = await fetch('/api/provider/customers/manual', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
           manualItems = res.ok ? await res.json() : [];
           render();
         } catch {}
@@ -6074,7 +6174,7 @@ export default function ProviderDashboardPage() {
       let defs = [];
 
       async function loadDefs() {
-        const res = await fetch('/api/provider/packages', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/packages', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) { if (defListEl) defListEl.innerHTML = authErrorHtml(res); return; }
         defs = await res.json();
         renderDefs();
@@ -6112,7 +6212,7 @@ export default function ProviderDashboardPage() {
       async function loadUsersForSelect() {
         if (!userSel) return;
         // パッケージ機能はライトプランの表示上限(30人)の対象外（でお決定 2026-08-28）
-        const res = await fetch('/api/provider/customers?scope=all', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/customers?scope=all', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) return;
         const rows = await res.json();
         const seen = new Set();
@@ -6131,7 +6231,7 @@ export default function ProviderDashboardPage() {
         // 今野くんの実地メモ：有効な会員のみ表示・使用済みチケットは後ろに回したい（Phase 2）
         const activeOnly = !!document.getElementById('pkg-active-only')?.checked;
         const qs = activeOnly ? '?activeOnly=true' : '';
-        const res = await fetch(`/api/provider/customer-packages${qs}`, { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch(`/api/provider/customer-packages${qs}`, { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) { customerListEl.innerHTML = authErrorHtml(res); return; }
         const rows = await res.json();
         if (!rows.length) { customerListEl.innerHTML = '<p class="muted">まだ購入記録がありません。</p>'; return; }
@@ -6163,7 +6263,7 @@ export default function ProviderDashboardPage() {
         if (btn) btn.disabled = true;
         const res = await fetch(`/api/provider/customer-packages/${customerPackageId}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
           body: JSON.stringify({ subscription_status: 'cancelled' }),
         });
         if (!res.ok) { const e = await res.json().catch(() => ({})); showToast('エラー: ' + (e.error || '不明')); if (btn) btn.disabled = false; return; }
@@ -6174,7 +6274,7 @@ export default function ProviderDashboardPage() {
       window.togglePackageActive = async function (id, active) {
         await fetch(`/api/provider/packages/${id}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
           body: JSON.stringify({ active }),
         });
         loadDefs();
@@ -6185,7 +6285,7 @@ export default function ProviderDashboardPage() {
         if (btn) btn.disabled = true;
         const res = await fetch(`/api/provider/customer-packages/${customerPackageId}/usages`, {
           method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+          headers: { 'Authorization': `Bearer ${getSupabaseToken()}` },
         });
         if (!res.ok) { const e = await res.json().catch(() => {}); showToast('エラー: ' + (e?.error || res.status)); if (btn) btn.disabled = false; return; }
         showToast('取り消しました');
@@ -6246,7 +6346,7 @@ export default function ProviderDashboardPage() {
           createBtn.disabled = true;
           const res = await fetch('/api/provider/packages', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
             body: JSON.stringify({
               name, package_type, total_sessions: sessions || null,
               combo_ticket_sessions: package_type === 'combo' ? comboSessions : null,
@@ -6281,7 +6381,7 @@ export default function ProviderDashboardPage() {
           assignBtn.disabled = true;
           const res = await fetch('/api/provider/customer-packages', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
             body: JSON.stringify({ user_id, package_id }),
           });
           assignBtn.disabled = false;
@@ -6310,7 +6410,7 @@ export default function ProviderDashboardPage() {
       async function loadStatus() {
         if (!statusEl) return;
         statusEl.textContent = '読み込み中…';
-        const res = await fetch('/api/provider/line-channel', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/line-channel', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) { statusEl.innerHTML = authErrorHtml(res); return; }
         const data = await res.json();
         if (data.connected) {
@@ -6347,7 +6447,7 @@ export default function ProviderDashboardPage() {
           try {
             const res = await fetch('/api/provider/line-channel', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
               body: JSON.stringify({
                 channel_id: document.getElementById('lc-channel-id').value.trim(),
                 channel_secret: document.getElementById('lc-channel-secret').value.trim(),
@@ -6382,7 +6482,7 @@ export default function ProviderDashboardPage() {
           try {
             const res = await fetch('/api/provider/line-channel/test-send', {
               method: 'POST',
-              headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+              headers: { 'Authorization': `Bearer ${getSupabaseToken()}` },
             });
             const data = await res.json().catch(() => ({}));
             if (res.ok) {
@@ -6415,7 +6515,7 @@ export default function ProviderDashboardPage() {
 
       async function loadDepositSettings() {
         if (!depositInput) return;
-        const res = await fetch('/api/provider/deposit-settings', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/deposit-settings', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) return;
         const d = await res.json();
         depositInput.value = d.deposit_amount || '';
@@ -6428,7 +6528,7 @@ export default function ProviderDashboardPage() {
           try {
             const res = await fetch('/api/provider/deposit-settings', {
               method: 'PATCH',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` },
               body: JSON.stringify({ deposit_amount: depositInput.value === '' ? null : depositInput.value }),
             });
             if (!res.ok) { const e = await res.json().catch(() => ({})); if (depositMsg) { depositMsg.style.color = '#ef4444'; depositMsg.textContent = e?.error || '保存に失敗しました'; } }
@@ -6441,7 +6541,7 @@ export default function ProviderDashboardPage() {
       async function loadFeatures() {
         if (!listEl) return;
         listEl.textContent = '読み込み中…';
-        const res = await fetch('/api/provider/features', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/features', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
         const { features, defs } = await res.json();
         if (depositBox) depositBox.style.display = features.payment_mediation ? 'block' : 'none';
@@ -6488,7 +6588,7 @@ export default function ProviderDashboardPage() {
         try {
           const res = await fetch('/api/provider/features', {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` },
             body: JSON.stringify({ [key]: input.checked }),
           });
           if (!res.ok) {
@@ -6742,7 +6842,7 @@ export default function ProviderDashboardPage() {
         if (msgEl) { msgEl.style.color = ''; msgEl.textContent = '保存中…'; }
         const res = await fetch('/api/provider/dashboard-prefs', {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` },
           body: JSON.stringify(patch),
         });
         if (res.ok) {
@@ -6770,7 +6870,7 @@ export default function ProviderDashboardPage() {
       });
 
       async function loadDisplaySettings() {
-        const res = await fetch('/api/provider/dashboard-prefs', { headers: { Authorization: `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/dashboard-prefs', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) return;
         const { prefs } = await res.json();
         dashboardPrefs = prefs;
@@ -6852,7 +6952,7 @@ export default function ProviderDashboardPage() {
                 try {
                   const res = await fetch('/api/provider/features', {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken() || token}` },
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getSupabaseToken()}` },
                     body: JSON.stringify({ [key]: true }),
                   });
                   if (!res.ok) { btn.disabled = false; btn.textContent = 'ONにする'; showToast('保存に失敗しました'); return; }
@@ -6923,7 +7023,7 @@ export default function ProviderDashboardPage() {
         try {
           const res = await fetch('/api/provider/profile', {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
             body: JSON.stringify({ google_review_url: urlInput.value.trim() }),
           });
           if (res.ok) {
@@ -6958,7 +7058,7 @@ export default function ProviderDashboardPage() {
 
       async function loadServiceOptions() {
         if (!menuFromService) return;
-        const res = await fetch('/api/provider/services', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/services', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         const items = res.ok ? await res.json() : [];
         menuFromService.innerHTML = '<option value="">－ 選択するとメニュー名・価格を自動入力 －</option>'
           + items.map(s => `<option value="${s.id}">${escLp(s.name)}（¥${Number(s.price).toLocaleString()}）</option>`).join('');
@@ -6981,7 +7081,7 @@ export default function ProviderDashboardPage() {
       async function loadMenus() {
         if (!menuList) return;
         menuList.innerHTML = '<p class="muted" style="font-size:13px;">読み込み中…</p>';
-        const res = await fetch('/api/provider/experience-menus', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/experience-menus', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         const items = res.ok ? await res.json() : [];
         if (!items.length) { menuList.innerHTML = '<p class="muted" style="font-size:13px;">まだメニューがありません。</p>'; return; }
         menuList.innerHTML = items.map(m => `
@@ -6999,7 +7099,7 @@ export default function ProviderDashboardPage() {
         `).join('');
         menuList.querySelectorAll('[data-menu-del]').forEach(btn => btn.addEventListener('click', async () => {
           if (!confirm('このメニューを削除しますか？')) return;
-          await fetch(`/api/provider/experience-menus/${btn.dataset.menuDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+          await fetch(`/api/provider/experience-menus/${btn.dataset.menuDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
           loadMenus();
         }));
       }
@@ -7012,7 +7112,7 @@ export default function ProviderDashboardPage() {
           const axes = Array.from(document.querySelectorAll('#menu-axes input:checked')).map(i => i.value);
           const imageUrl = document.getElementById('menu-image-url')?.value || '';
           const res = await fetch('/api/provider/experience-menus', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
             body: JSON.stringify({
               name: document.getElementById('menu-name').value,
               price: document.getElementById('menu-price').value,
@@ -7043,7 +7143,7 @@ export default function ProviderDashboardPage() {
 
       async function loadCaseCustomers() {
         if (!caseUserSel) return;
-        const res = await fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/customers', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         const items = res.ok ? await res.json() : [];
         const seen = new Set();
         const opts = ['<option value="">お客様を選択</option>'];
@@ -7058,7 +7158,7 @@ export default function ProviderDashboardPage() {
       async function loadCases() {
         if (!caseList) return;
         caseList.innerHTML = '<p class="muted" style="font-size:13px;">読み込み中…</p>';
-        const res = await fetch('/api/provider/cases', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/cases', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         const items = res.ok ? await res.json() : [];
         if (!items.length) { caseList.innerHTML = '<p class="muted" style="font-size:13px;">まだ事例がありません。</p>'; return; }
         caseList.innerHTML = items.map(c => `
@@ -7072,7 +7172,7 @@ export default function ProviderDashboardPage() {
         `).join('');
         caseList.querySelectorAll('[data-case-del]').forEach(btn => btn.addEventListener('click', async () => {
           if (!confirm('この事例を削除しますか？')) return;
-          await fetch(`/api/provider/cases/${btn.dataset.caseDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+          await fetch(`/api/provider/cases/${btn.dataset.caseDel}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
           loadCases();
         }));
       }
@@ -7084,7 +7184,7 @@ export default function ProviderDashboardPage() {
           if (!caseUserSel.value) { caseMsg.style.color = '#ef4444'; caseMsg.textContent = 'お客様を選択してください'; return; }
           submitBtn.disabled = true; caseMsg.textContent = '';
           const res = await fetch('/api/provider/cases', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
             body: JSON.stringify({
               user_id: caseUserSel.value,
               axis: document.getElementById('case-axis').value,
@@ -7119,7 +7219,7 @@ export default function ProviderDashboardPage() {
 
       async function loadAreaDemand() {
         contentEl.innerHTML = '<p class="muted" style="font-size:13px;">読み込み中…</p>';
-        const res = await fetch('/api/provider/area-demand', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/area-demand', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) { contentEl.innerHTML = authErrorHtml(res); return; }
         const data = await res.json();
         if (data.note) { contentEl.innerHTML = `<p class="muted" style="font-size:13px;">${data.note}</p>`; return; }
@@ -7152,7 +7252,7 @@ export default function ProviderDashboardPage() {
       if (!contentEl) return;
 
       async function loadSettings() {
-        const res = await fetch('/api/provider/ltv-cac-settings', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/ltv-cac-settings', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) return;
         const data = await res.json();
         adCostInput.value = data.monthly_ad_cost;
@@ -7161,7 +7261,7 @@ export default function ProviderDashboardPage() {
 
       async function loadContent() {
         contentEl.innerHTML = '<p class="muted" style="font-size:13px;">読み込み中…</p>';
-        const res = await fetch('/api/provider/ltv-cac', { headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` } });
+        const res = await fetch('/api/provider/ltv-cac', { headers: { 'Authorization': `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) { contentEl.innerHTML = authErrorHtml(res); return; }
         const d = await res.json();
         if (!d.hasData) { contentEl.innerHTML = '<p class="muted" style="font-size:13px;">まだ来店済みの予約データがありません。</p>'; return; }
@@ -7180,7 +7280,7 @@ export default function ProviderDashboardPage() {
       if (settingsSaveBtn) settingsSaveBtn.addEventListener('click', async () => {
         settingsSaveBtn.disabled = true; settingsMsg.textContent = '';
         const res = await fetch('/api/provider/ltv-cac-settings', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
           body: JSON.stringify({ monthly_ad_cost: adCostInput.value, gross_margin_pct: marginInput.value }),
         });
         if (res.ok) { settingsMsg.style.color = '#059669'; settingsMsg.textContent = '✓ 保存しました'; loadContent(); }
@@ -7281,7 +7381,7 @@ export default function ProviderDashboardPage() {
           try {
             const res = await fetch('/api/provider/upload-facility-photo', {
               method: 'POST',
-              headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+              headers: { 'Authorization': `Bearer ${getSupabaseToken()}` },
               body: fd,
             });
             let data; try { data = await res.json(); } catch { data = {}; }
@@ -7334,7 +7434,7 @@ export default function ProviderDashboardPage() {
         try {
           const res = await fetch('/api/provider/upload-photo', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+            headers: { 'Authorization': `Bearer ${getSupabaseToken()}` },
             body: fd
           });
           const data = await res.json();
@@ -7371,7 +7471,7 @@ export default function ProviderDashboardPage() {
         msg.textContent = 'アップロード中…';
         const fd = new FormData(); fd.append('photo', compressedCover, 'photo.jpg');
         try {
-          const res = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` }, body: fd });
+          const res = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${getSupabaseToken()}` }, body: fd });
           let data; try { data = await res.json(); } catch { data = {}; }
           if (res.ok && data.url) {
             preview.src = data.url; previewWrap.style.display = 'block';
@@ -7416,7 +7516,7 @@ export default function ProviderDashboardPage() {
         try {
           const res = await fetch('/api/provider/upload-service-image', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+            headers: { 'Authorization': `Bearer ${getSupabaseToken()}` },
             body: fd
           });
           let data; try { data = await res.json(); } catch { data = {}; }
@@ -7455,7 +7555,7 @@ export default function ProviderDashboardPage() {
           if (msg) msg.textContent = 'アップロード中…';
           const fd = new FormData(); fd.append('photo', compressed, 'photo.jpg');
           try {
-            const res = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${getSupabaseToken() || token}` }, body: fd });
+            const res = await fetch('/api/provider/upload-service-image', { method: 'POST', headers: { 'Authorization': `Bearer ${getSupabaseToken()}` }, body: fd });
             let data; try { data = await res.json(); } catch { data = {}; }
             if (res.ok && data.url) {
               if (preview) preview.src = data.url;
@@ -8180,6 +8280,33 @@ export default function ProviderDashboardPage() {
       } catch (e) { msg.textContent = 'エラーが発生しました'; msg.style.color = '#ef4444'; msg.style.display = 'block'; }
     });
 
+    // ── 掲載者向け利用規約への同意状況（版と同意日時を記録） ──────────
+    async function loadTermsAgreement() {
+      const textEl = document.getElementById('terms-agreement-text');
+      const btnEl = document.getElementById('terms-agreement-btn');
+      if (!textEl || !btnEl) return;
+      try {
+        const res = await fetch('/api/provider/terms-agreement', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
+        if (!res.ok) { textEl.textContent = '同意状況を取得できませんでした'; return; }
+        const d = await res.json();
+        const fmt = iso => new Date(iso).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        if (d.agreedCurrent) {
+          const cur = (d.history || []).find(h => h.terms_version === d.currentVersion);
+          textEl.innerHTML = `利用規約（${esc(d.currentVersion)}版）に同意済み${cur ? `（${esc(fmt(cur.agreed_at))}）` : ''}`;
+          btnEl.style.display = 'none';
+        } else {
+          textEl.textContent = `最新の利用規約（${d.currentVersion}版）には、まだ同意が記録されていません。内容をご確認のうえ、同意してください。`;
+          btnEl.style.display = 'inline-block';
+        }
+      } catch { textEl.textContent = '同意状況を取得できませんでした'; }
+    }
+    document.getElementById('terms-agreement-btn')?.addEventListener('click', async () => {
+      const res = await fetch('/api/provider/terms-agreement', { method: 'POST', headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
+      if (res.ok) { showToast('同意を記録しました'); loadTermsAgreement(); }
+      else { const d = await res.json().catch(() => ({})); showToast('エラー: ' + (d.error || '不明')); }
+    });
+    document.querySelectorAll('[data-tab="billing"]').forEach(btn => btn.addEventListener('click', loadTermsAgreement));
+
     // ── カスタマーポータル ────────────────────────────────────────
     document.getElementById('billing-portal-btn').addEventListener('click', async e => {
       e.preventDefault();
@@ -8189,7 +8316,7 @@ export default function ProviderDashboardPage() {
         if (!token) { showToast('ログインが必要です'); return; }
         const res = await fetch('/api/billing/portal-session', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` },
           body: JSON.stringify({}),
         });
         const data = await res.json();
@@ -8329,7 +8456,7 @@ export default function ProviderDashboardPage() {
     (() => {
       const token = getSupabaseToken();
       if (!token) return;
-      const authHeadersCal = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      const authHeadersCal = () => ({ Authorization: `Bearer ${getSupabaseToken()}` });
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
       const labelEl = document.getElementById('cal-week-label');
@@ -9609,7 +9736,7 @@ export default function ProviderDashboardPage() {
     (() => {
       const token = getSupabaseToken();
       if (!token) return;
-      const authHeadersToday = () => ({ Authorization: `Bearer ${getSupabaseToken() || token}` });
+      const authHeadersToday = () => ({ Authorization: `Bearer ${getSupabaseToken()}` });
       function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
       const todayStr = new Date().toISOString().split('T')[0];
 
@@ -10020,7 +10147,7 @@ export default function ProviderDashboardPage() {
     (() => {
       const token = getSupabaseToken();
       if (!token) return;
-      const authHeadersPos = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` });
+      const authHeadersPos = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` });
 
       const gridEl = document.getElementById('pos-product-grid');
       const cartListEl = document.getElementById('pos-cart-list');
@@ -10276,7 +10403,7 @@ export default function ProviderDashboardPage() {
     (() => {
       const token = getSupabaseToken();
       if (!token) return;
-      const authHeadersCk = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` });
+      const authHeadersCk = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` });
 
       const cameraBtn = document.getElementById('checkin-camera-btn');
       const cameraStopBtn = document.getElementById('checkin-camera-stop-btn');
@@ -10392,7 +10519,7 @@ export default function ProviderDashboardPage() {
     (() => {
       const token = getSupabaseToken();
       if (!token) return;
-      const authHeadersEv = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken() || token}` });
+      const authHeadersEv = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getSupabaseToken()}` });
 
       const listEl = document.getElementById('ev-list');
       const inviteCard = document.getElementById('ev-invite-card');
@@ -10503,7 +10630,7 @@ export default function ProviderDashboardPage() {
         const fd = new FormData();
         fd.append('image', file);
         const res = await fetch('/api/provider/events/upload-image', {
-          method: 'POST', headers: { Authorization: `Bearer ${getSupabaseToken() || token}` }, body: fd,
+          method: 'POST', headers: { Authorization: `Bearer ${getSupabaseToken()}` }, body: fd,
         });
         if (!res.ok) { const err = await res.json().catch(() => ({})); if (msgEl) { msgEl.style.color = '#ef4444'; msgEl.textContent = 'エラー: ' + (err.error || '不明'); } return; }
         const { url } = await res.json();
@@ -12476,6 +12603,14 @@ export default function ProviderDashboardPage() {
                 <p id="cust-modal-manual-health-upsell" className="muted" style={{ display: 'none', fontSize: '12px', margin: '0' }}>AI健診アドバイスはプレミアムプラン（¥10,000/月）限定の機能です。<a href="/provider/billing" style={{ color: '#c9a84c', fontWeight: '700' }}>プランをアップグレード</a>すると使えるようになります。</p>
               </div>
             </div>
+
+            {/* 契約書（でお要望2026-10-04）：店舗とお客様が交わした契約書（紙・PDF等）をアップロードして
+                保管し、会員にはマイページから見せる。電子署名はせず「同意の記録」に留める。
+                回数券・会員プラン・入会手続きなど種類を問わず使える。 */}
+            <div id="cust-modal-contracts-section" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
+              <button type="button" className="btn btn-ghost" id="cust-modal-contracts-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>契約書</button>
+              <div id="cust-modal-contracts" style={{ display: 'none', marginTop: '10px' }}></div>
+            </div>
           </div>
         </div>
 
@@ -12529,12 +12664,12 @@ export default function ProviderDashboardPage() {
           </div>
         </div>
 
-        {/* 回数券・パッケージ：決済はFinemeが仲介せず記録のみ。店舗・顧客双方が残り回数を確認できる */}
+        {/* 回数券・パッケージ：店舗が記録して発行、またはお客様がオンライン購入（Stripe Connect）。店舗・顧客双方が残り回数を確認できる */}
         <div className="tab-pane" id="tab-packages">
           <div className="card stack" style={{ padding: '24px', gap: 12, marginBottom: '16px' }}>
             <h2 style={{ margin: 0, fontSize: '16px' }}>パッケージを作る</h2>
             <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-              決済はFineme上では行いません（お店で直接徴収してください）。ここでは「何回分・いくらで売ったか」を記録し、店舗と購入した顧客の両方がFinemeで残り回数を確認できるようにするだけです。
+              ここでは「何回分・いくらで売ったか」を記録し、店舗と購入した顧客の両方がFinemeで残り回数を確認できるようにします。お店で直接代金を受け取った場合はこの画面で記録し、お客様がFineme上で購入する場合は、Stripe連携（Fineme利用契約タブ）の設定が必要です。
             </p>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div className="form-field" style={{ minWidth: '180px' }}>
@@ -13349,6 +13484,10 @@ export default function ProviderDashboardPage() {
           <div className="card stack" style={{ padding: '24px', gap: '12px' }}>
             <h2 style={{ margin: '0', fontSize: '16px' }}>ご契約書類</h2>
             <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: 1.7 }}>貴店とFinemeの契約内容を、いつでもここから確認できます。</p>
+            <div id="terms-agreement-box" style={{ padding: '12px 14px', borderRadius: '10px', background: '#f9fafb', fontSize: '13px', lineHeight: 1.7 }}>
+              <span id="terms-agreement-text" className="muted">利用規約への同意状況を確認中…</span>
+              <button type="button" className="btn" id="terms-agreement-btn" style={{ display: 'none', marginTop: '8px', fontSize: '13px', padding: '6px 14px' }}>最新の利用規約に同意する</button>
+            </div>
             <a href="/terms-provider" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>掲載者向け利用規約（ご契約の内容）</a>
             <a href="/tokusho" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>特定商取引法に基づく表記</a>
             <a href="/privacy" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>プライバシーポリシー</a>
@@ -13508,7 +13647,7 @@ export default function ProviderDashboardPage() {
           <div className="card stack" style={{ padding: '24px', gap: '16px' }}>
             <h2 style={{ margin: '0', fontSize: '16px' }}>友達紹介プログラム</h2>
             <p className="muted" style={{ fontSize: '13px', margin: '0', lineHeight: '1.7' }}>
-              オンにすると、お客様（Finemeログイン中の会員）が公開ページから個人紹介リンクを発行できるようになります。紹介経由の予約・来店を自動で記録し、双方にLINEで通知します。特典の内容・実際の付与は貴店の運用にお任せします（Financeは決済を仲介しません）。
+              オンにすると、お客様（Finemeログイン中の会員）が公開ページから個人紹介リンクを発行できるようになります。紹介経由の予約・来店を自動で記録し、双方にLINEで通知します。特典の内容・実際の付与は貴店の運用にお任せします（特典のやり取りはFinemeを通りません）。
             </p>
             {/* でお要望2026-09-30：紹介ボックスの文言・特典・画像・任意ボタンを自由に編集できるように */}
             <div className="form-field" style={{ marginBottom: 0 }}>
