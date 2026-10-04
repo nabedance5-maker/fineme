@@ -7,6 +7,7 @@ import { getSupabase } from '@/lib/supabase';
 import { idealNextDate, daysUntilIdeal } from '@/lib/log-axes';
 import { ensureCustomerNumbers } from '@/lib/customer-numbers';
 import { withPlanPreview } from '@/lib/feature-flags';
+import { isOwnerTestEmail } from '@/lib/is-owner-email';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -14,7 +15,7 @@ async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
   const { data } = await supabase.from('providers').select('id, slug, plan').eq('email', user.email).single();
-  return data || null;
+  return data ? { ...data, isOwner: isOwnerTestEmail(user.email) } : null;
 }
 
 // ライトプラン（A）はNew Me Log連携の「表示」を先着30人までに制限する

@@ -625,7 +625,7 @@ export default function ProviderDashboardPage() {
       })().then(r => { lastRefreshResult = r; return r; }).finally(() => { refreshInflight = null; });
       return refreshInflight;
     }
-    // 特例無料アカウントの「プランプレビュー」。見え方の確認用で、サーバーはspecialの店舗だけ
+    // 運営本人アカウントの「プランプレビュー」。見え方の確認用で、サーバーは運営本人のspecial店舗だけ
     // このヘッダーを見て表示用のプランを差し替える（契約・課金・APIの実際の権限は変わらない）。
     function getPlanPreview() {
       try { const v = sessionStorage.getItem('fineme:planPreview'); return ['A', 'B', 'C'].includes(v) ? v : ''; } catch { return ''; }
@@ -7077,7 +7077,7 @@ export default function ProviderDashboardPage() {
         `;
       }
 
-      // 特例無料アカウント専用：A/B/Cの店舗からどう見えるかを切り替えて確認する。
+      // 運営（でお）本人のアカウント専用：A/B/Cの店舗からどう見えるかを切り替えて確認する。他の特例店舗には出さない。
       function mountPlanPreviewControl(active) {
         if (document.getElementById('plan-preview-ctl')) return;
         const names = { A: 'A ライト', B: 'B スタンダード', C: 'C プレミアム' };
@@ -7204,12 +7204,12 @@ export default function ProviderDashboardPage() {
         try {
           const res = await fetch('/api/provider/features', { headers: { Authorization: `Bearer ${token}` } });
           if (!res.ok) return;
-          const { features, defs, locks, plan, preview } = await res.json();
+          const { features, defs, locks, can_preview, preview } = await res.json();
           defsCache = defs || {};
           window.__providerLocks = locks || {};
           window.__providerFeatureDefs = defs || {};
           window.__providerFeatures = features || {};
-          if (plan === 'special') mountPlanPreviewControl(preview);
+          if (can_preview) mountPlanPreviewControl(preview);
           window.dispatchEvent(new Event('fineme:locks'));
           applyGating(features);
         } catch {}
