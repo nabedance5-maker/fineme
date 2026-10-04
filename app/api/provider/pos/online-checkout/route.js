@@ -36,7 +36,7 @@ async function __POST(request) {
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   { const locked = planLockedResponse(provider, 'pos'); if (locked) return locked; }
   if (!provider.stripe_connect_id || provider.stripe_connect_status !== 'active') {
-    return Response.json({ error: 'オンライン決済の受け入れ準備が完了していません（「Fineme利用契約」タブから設定してください）' }, { status: 409 });
+    return Response.json({ error: 'カード決済の受け取り設定が完了していません（「Fineme利用契約」タブ上部の「カード決済の受け取り設定」から設定できます）' }, { status: 409 });
   }
 
   const { items, staff_id, memo } = await request.json().catch(() => ({}));

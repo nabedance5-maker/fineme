@@ -28,7 +28,7 @@ export async function POST(request) {
   const { data: provider, error: provErr } = await supabase
     .from('providers')
     .select('id, plan, stripe_subscription_id, billing_status')
-    .eq('user_id', user.id)
+    .eq('email', user.email)
     .single();
 
   if (provErr || !provider) return Response.json({ error: '掲載者情報が見つかりません' }, { status: 404 });

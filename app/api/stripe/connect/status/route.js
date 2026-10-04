@@ -22,12 +22,12 @@ export async function GET(request) {
 
   const { data: provider } = await supabase
     .from('providers')
-    .select('stripe_connect_id, stripe_connect_status')
-    .eq('user_id', user.id)
+    .select('id, stripe_connect_id, stripe_connect_status')
+    .eq('email', user.email)
     .single();
 
   if (!provider?.stripe_connect_id) {
-    return Response.json({ connected: false, status: null });
+    return Response.json({ connected: false, status: null, has_account: false });
   }
 
   try {
@@ -40,12 +40,13 @@ export async function GET(request) {
       await supabase
         .from('providers')
         .update({ stripe_connect_status: status })
-        .eq('user_id', user.id);
+        .eq('id', provider.id);
     }
 
     return Response.json({
       connected,
       status,
+      has_account: true,
       details_submitted: account.details_submitted,
       payouts_enabled: account.payouts_enabled,
     });

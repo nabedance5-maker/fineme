@@ -334,8 +334,8 @@ export default function BillingPage() {
         <div className={`connect-card${connectStatus?.connected ? ' connect-active' : ''}`}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <h2 style={{ margin: '0 0 4px' }}>振込口座の設定</h2>
-              <p className="muted" style={{ fontSize: '13px', margin: 0 }}>オンライン決済の売上（決済手数料を差し引いた額）を振り込むために必要です。</p>
+              <h2 style={{ margin: '0 0 4px' }}>カード決済の受け取り設定</h2>
+              <p className="muted" style={{ fontSize: '13px', margin: 0 }}>お客様のカード決済の売上（決済手数料を差し引いた額）を受け取るために必要です。Stripeの画面で本人確認と振込先口座を登録します。</p>
             </div>
             {connectStatus?.connected
               ? <span className="badge badge-active">✓ 振込設定済み</span>
@@ -344,7 +344,7 @@ export default function BillingPage() {
           </div>
           {!connectStatus?.connected && (
             <button className="btn btn-primary" style={{ marginTop: '16px' }} onClick={handleConnectOnboard}>
-              振込口座を設定する（Stripe）
+              カード決済の受け取りを設定する（Stripe）
             </button>
           )}
           {connectStatus?.connected && (

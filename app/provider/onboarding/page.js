@@ -56,10 +56,10 @@ const STEPS = [
   },
   {
     id: 'connect',
-    title: '振込口座を設定する',
+    title: 'カード決済の受け取りを設定する',
     desc: 'オンライン決済の売上をお振り込みするために必要です。Stripe Connectで安全に設定できます。',
-    action: '口座を設定する',
-    href: '/provider/billing',
+    action: '設定する',
+    href: '/provider/dashboard?tab=billing',
     check: (p) => p.stripe_connect_status === 'active',
     icon: '',
   },

@@ -3905,7 +3905,7 @@ export default function ProviderDashboardPage() {
           if (warningEl) {
             if (data.status !== 'active') {
               warningEl.style.display = 'block';
-              warningEl.innerHTML = 'Stripe Connectの本人確認が完了していないため、承認・課金開始ができません。「Fineme利用契約」タブから設定を完了してください。';
+              warningEl.innerHTML = 'カード決済の受け取り設定（Stripeの本人確認・口座登録）が完了していないため、承認・課金開始ができません。<button type="button" class="btn" data-stripe-connect-start style="display:block;margin-top:8px;font-size:12px;padding:6px 14px">カード決済の受け取りを設定する（Stripe）</button>';
             } else {
               warningEl.style.display = 'none';
             }
@@ -8517,6 +8517,62 @@ export default function ProviderDashboardPage() {
       else { const d = await res.json().catch(() => ({})); showToast('エラー: ' + (d.error || '不明')); }
     });
     document.querySelectorAll('[data-tab="billing"]').forEach(btn => btn.addEventListener('click', loadTermsAgreement));
+
+    // ── カード決済の受け取り設定（Stripe Connect）：管理画面内のどこからでも開始できる ──
+    document.addEventListener('click', async (e) => {
+      const trigger = e.target.closest('[data-stripe-connect-start]');
+      if (!trigger) return;
+      e.preventDefault();
+      const original = trigger.textContent;
+      if (trigger.tagName === 'BUTTON') trigger.disabled = true;
+      trigger.textContent = 'Stripeの画面へ移動中…';
+      try {
+        const res = await fetch('/api/stripe/connect/onboard', { method: 'POST', headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
+        const d = await res.json().catch(() => ({}));
+        if (d.url) { location.href = d.url; return; }
+        showToast('設定を開始できませんでした: ' + (d.error || '不明なエラー'));
+      } catch (err) {
+        showToast('通信エラーが発生しました。もう一度お試しください');
+      }
+      trigger.textContent = original;
+      if (trigger.tagName === 'BUTTON') trigger.disabled = false;
+    });
+    async function loadConnectCard() {
+      const badge = document.getElementById('connect-card-badge');
+      const text = document.getElementById('connect-card-text');
+      const btn = document.getElementById('connect-card-btn');
+      if (!badge || !text || !btn) return;
+      try {
+        const res = await fetch('/api/stripe/connect/status', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) { text.textContent = '設定状況を取得できませんでした。時間をおいてもう一度お試しください。'; return; }
+        const set = (label, bg, fg) => { badge.textContent = label; badge.style.background = bg; badge.style.color = fg; };
+        if (d.connected) {
+          set('設定済み', '#dcfce7', '#166534');
+          text.textContent = 'お客様のカード決済を受け取れる状態です。売上は決済手数料4.5%を差し引いて、登録した口座へ自動で振り込まれます。';
+          btn.style.display = 'none';
+        } else if (d.has_account) {
+          set('入力の途中', '#fef3c7', '#92400e');
+          text.textContent = 'Stripeでの本人確認・口座登録がまだ終わっていません。続きから再開できます。';
+          btn.textContent = 'Stripeで設定を再開する';
+          btn.style.display = '';
+        } else {
+          set('未設定', '#fef3c7', '#92400e');
+          text.textContent = 'お客様がカードで支払った売上（請求・回数券・会員プラン・予約デポジット・POS）を受け取るための設定です。Stripeの画面で本人確認と振込先口座を登録します（5分ほど・完了後はこの画面に戻ります）。';
+          btn.textContent = 'カード決済の受け取りを設定する（Stripe）';
+          btn.style.display = '';
+        }
+      } catch { text.textContent = '設定状況を取得できませんでした。'; }
+    }
+    document.querySelectorAll('[data-tab="billing"]').forEach(btn => btn.addEventListener('click', loadConnectCard));
+    {
+      const q = new URLSearchParams(location.search);
+      if (q.get('tab') === 'billing') {
+        loadConnectCard();
+        if (q.get('connect') === 'success') showToast('Stripeの設定を確認しています');
+        if (q.get('connect') === 'refresh') showToast('Stripeの画面の有効期限が切れました。もう一度「設定する」を押してください');
+      }
+    }
 
     // ── カスタマーポータル ────────────────────────────────────────
     document.getElementById('billing-portal-btn').addEventListener('click', async e => {
@@ -13194,7 +13250,8 @@ export default function ProviderDashboardPage() {
               </p>
             </div>
             <p id="inv-not-ready" style={{ display: 'none', fontSize: '12px', margin: 0, padding: '10px 12px', borderRadius: '8px', background: '#fffbeb', color: '#92400e', lineHeight: 1.7 }}>
-              カード決済の受け入れ準備がまだ完了していません。「Fineme利用契約」タブからStripe連携を設定するまで、お客様はリンクからお支払いできません（現金で受け取った分は「入金済みにする」で記録できます）。
+              カード決済を受け取る準備がまだ完了していません。設定が済むまで、お客様はリンクからお支払いできません（現金で受け取った分は「入金済みにする」で記録できます）。
+              <button type="button" className="btn" data-stripe-connect-start style={{ display: 'block', marginTop: '8px', fontSize: '12px', padding: '6px 14px' }}>カード決済の受け取りを設定する（Stripe）</button>
             </p>
             <form id="inv-form" className="stack" style={{ gap: '10px', padding: '14px', border: '1px solid #e5e7eb', borderRadius: '10px' }}>
               <p id="inv-target" style={{ margin: 0, fontSize: '12px', color: '#374151', display: 'none' }}></p>
@@ -13441,8 +13498,8 @@ export default function ProviderDashboardPage() {
               <h2 style={{ margin: '0 0 4px', fontSize: '16px' }}>入会手続き</h2>
               <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
                 お客様が公開ページから入会申込〜カード登録までを完結できます。ここで内容を確認して承認すると、初回のお支払いが開始されます（決済は
-                <a href="/provider/billing" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>「Fineme利用契約」タブのStripe Connect</a>
-                の設定完了が必要です）。
+                <a href="#" data-stripe-connect-start style={{ color: '#2563eb' }}>カード決済の受け取り設定（Stripe）</a>
+                が完了している必要があります）。
               </p>
             </div>
             <div id="mbr-connect-warning" style={{ display: 'none', padding: '12px 14px', background: '#fef2f2', color: '#b91c1c', borderRadius: '10px', fontSize: '13px' }}></div>
@@ -13827,6 +13884,14 @@ export default function ProviderDashboardPage() {
 
         {/* タブ⑥：課金・プラン */}
         <div className="tab-pane" id="tab-billing">
+          <div className="card stack" style={{ padding: '24px', gap: '12px', marginBottom: '14px' }} id="connect-card">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+              <h2 style={{ margin: 0, fontSize: '16px' }}>お客様からのカード決済の受け取り設定</h2>
+              <span id="connect-card-badge" style={{ padding: '3px 10px', borderRadius: '99px', fontSize: '12px', fontWeight: 600, background: '#f3f4f6', color: '#6b7280' }}>確認中…</span>
+            </div>
+            <p id="connect-card-text" className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: 1.8 }}>設定状況を確認しています…</p>
+            <button type="button" className="btn" id="connect-card-btn" data-stripe-connect-start style={{ alignSelf: 'flex-start', fontSize: '13px', display: 'none' }}>カード決済の受け取りを設定する（Stripe）</button>
+          </div>
           <div style={{ background: '#2f4f8f', color: '#fff', borderRadius: '12px', padding: '14px 18px', marginBottom: '14px' }}>
             <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, letterSpacing: '0.5px' }}>Finemeとのご契約</p>
             <p style={{ margin: '4px 0 0', fontSize: '12.5px', lineHeight: 1.7, opacity: 0.92 }}>このページは、貴店とFinemeの間のご契約とお支払い（Finemeへのお支払い）です。お客様から貴店へのお支払い（回数券・会員プラン等）とは別のものです。</p>
@@ -13862,7 +13927,7 @@ export default function ProviderDashboardPage() {
             <a href="/terms-provider" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>掲載者向け利用規約（ご契約の内容）</a>
             <a href="/tokusho" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>特定商取引法に基づく表記</a>
             <a href="/privacy" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>プライバシーポリシー</a>
-            <a href="/provider/billing" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>プラン比較・変更（Stripe連携の設定もこちら）</a>
+            <a href="/provider/billing" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: '13px', textAlign: 'left' }}>プラン比較・変更</a>
           </div>
           <div className="card stack" style={{ padding: '24px', gap: '14px' }}>
             <h2 style={{ margin: '0', fontSize: '16px' }}>パスワード変更</h2>
@@ -13899,7 +13964,7 @@ export default function ProviderDashboardPage() {
                 <button type="button" className="btn btn-ghost" id="deposit-amount-save" style={{ fontSize: '12px', padding: '8px 14px' }}>保存する</button>
                 <span id="deposit-amount-msg" style={{ fontSize: '12px' }}></span>
               </div>
-              <p id="deposit-payment-warn" className="muted" style={{ fontSize: '12px', margin: '10px 0 0', display: 'none' }}>オンライン決済の受け入れ設定が完了していないため、デポジットを設定しても実際には請求されません。「Fineme利用契約」タブから設定してください。</p>
+              <p id="deposit-payment-warn" className="muted" style={{ fontSize: '12px', margin: '10px 0 0', display: 'none' }}>オンライン決済の受け入れ設定が完了していないため、デポジットを設定しても実際には請求されません。<a href="#" data-stripe-connect-start style={{ color: '#2563eb' }}>カード決済の受け取りを設定する（Stripe）</a></p>
             </div>
           </div>
         </div>

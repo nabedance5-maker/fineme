@@ -23,7 +23,7 @@ export async function POST(request) {
   const { data: provider, error: provErr } = await supabase
     .from('providers')
     .select('id, email, name, stripe_connect_id')
-    .eq('user_id', user.id)
+    .eq('email', user.email)
     .single();
 
   if (provErr || !provider) return Response.json({ error: '掲載者情報が見つかりません' }, { status: 404 });
@@ -53,8 +53,8 @@ export async function POST(request) {
     // オンボーディングリンクを生成
     const accountLink = await stripe.accountLinks.create({
       account: connectId,
-      refresh_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fineme.me'}/provider/billing?connect=refresh`,
-      return_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fineme.me'}/provider/billing?connect=success`,
+      refresh_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fineme.me'}/provider/dashboard?tab=billing&connect=refresh`,
+      return_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fineme.me'}/provider/dashboard?tab=billing&connect=success`,
       type: 'account_onboarding',
     });
 
