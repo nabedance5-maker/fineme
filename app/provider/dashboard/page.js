@@ -522,7 +522,8 @@ export default function ProviderDashboardPage() {
       const orderOverrides = prefs?.tab_order_overrides || {};
       TAB_CATALOG.forEach(t => {
         const btn = document.querySelector(`.tab-btn[data-tab="${t.key}"]`);
-        if (!btn || btn.classList.contains('tab-feature-off')) return; // OFF中は現状維持（hidden側の管理に任せる）
+        // 機能OFF中は現状維持（hidden側の管理に任せる）。プランロック中は元の場所に置くので対象に含める
+        if (!btn || (btn.classList.contains('tab-feature-off') && !(window.__providerLocks || {})[btn.dataset.feature])) return;
         const targetCategory = categoryOfTab(t.key, window.__tabCategoryOverrides);
         const targetSection = document.querySelector(`.pd-panel-section[data-panel="${targetCategory}"]`);
         if (targetSection && btn.parentElement !== targetSection) targetSection.appendChild(btn);
@@ -7070,9 +7071,11 @@ export default function ProviderDashboardPage() {
           // （でお要望2026-09-16：「非表示にしたやつはまとめておくといい」）。ONに戻したら
           // 元の場所へ戻す。所属カテゴリーはcategoryOfTab()でその都度計算する（でお要望
           // 2026-09-27のタブ配置カスタマイズと二重管理にならないよう、dataset保存はしない）。
+          // プラン不足でロック中のタブは「非表示」へ入れず元の場所に残す（アップセル導線として
+          // 普段のサイドバーに見えている必要があるため。でお指摘2026-10-04）。
           const homePanelKey = categoryOfTab(el.dataset.tab, window.__tabCategoryOverrides || {});
           if (homePanelKey) {
-            const targetPanelKey = on ? homePanelKey : 'hidden';
+            const targetPanelKey = (on || lockPlan) ? homePanelKey : 'hidden';
             const targetSection = document.querySelector(`.pd-panel-section[data-panel="${targetPanelKey}"]`);
             if (targetSection && el.parentElement !== targetSection) targetSection.appendChild(el);
           }
