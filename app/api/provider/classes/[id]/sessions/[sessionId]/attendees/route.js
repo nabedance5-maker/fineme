@@ -1,6 +1,7 @@
 // GET /api/provider/classes/[id]/sessions/[sessionId]/attendees → その開催回の予約者一覧
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const OCCUPYING_STATUSES = ['pending', 'approved', 'counter_proposed', 'visited'];
@@ -8,7 +9,7 @@ const OCCUPYING_STATUSES = ['pending', 'approved', 'counter_proposed', 'visited'
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -18,6 +19,7 @@ export async function GET(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'class_management'); if (locked) return locked; }
 
   const { data: slot } = await supabase.from('provider_slots').select('id').eq('id', sessionId).eq('provider_id', provider.id).eq('class_id', id).single();
   if (!slot) return Response.json({ error: '開催回が見つかりません' }, { status: 404 });

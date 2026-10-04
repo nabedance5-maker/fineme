@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -14,7 +15,7 @@ function getStripe() {
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id, name').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, name, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -23,6 +24,7 @@ export async function GET(request) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'membership_enrollment'); if (locked) return locked; }
 
   const { data, error } = await supabase
     .from('provider_membership_plans')
@@ -42,6 +44,7 @@ async function __POST(request) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'membership_enrollment'); if (locked) return locked; }
 
   const { name, monthly_price, description } = await request.json().catch(() => ({}));
   const price = parseInt(monthly_price, 10);

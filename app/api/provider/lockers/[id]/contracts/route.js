@@ -11,6 +11,8 @@ export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { PAYMENT_FEE_PERCENT } from '@/lib/payment-fee';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -21,7 +23,7 @@ function getStripe() {
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id, slug, stripe_connect_id, stripe_connect_status').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, slug, stripe_connect_id, stripe_connect_status, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -38,6 +40,7 @@ async function __POST(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'locker_rental'); if (locked) return locked; }
 
   const { data: locker } = await supabase.from('provider_lockers').select('*').eq('id', id).eq('provider_id', provider.id).single();
   if (!locker) return Response.json({ error: 'ロッカーが見つかりません' }, { status: 404 });
@@ -95,7 +98,7 @@ async function __POST(request, { params }) {
         const session = await stripe.checkout.sessions.create({
           mode: 'subscription',
           line_items: [{ price_data: { currency: 'jpy', product: productId, unit_amount: fee, recurring: { interval: 'month' } }, quantity: 1 }],
-          subscription_data: { transfer_data: { destination: provider.stripe_connect_id } },
+          subscription_data: { transfer_data: { destination: provider.stripe_connect_id }, application_fee_percent: PAYMENT_FEE_PERCENT },
           success_url: `https://fineme.me/provider/${provider.slug || ''}?locker_payment=success`,
           cancel_url: `https://fineme.me/provider/${provider.slug || ''}?locker_payment=cancelled`,
         });

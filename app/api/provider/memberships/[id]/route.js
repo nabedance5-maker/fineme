@@ -1,13 +1,14 @@
 // GET /api/provider/memberships/[id] → 申込詳細（本人確認書類は署名付きURLを都度発行）
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -17,6 +18,7 @@ export async function GET(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'membership_enrollment'); if (locked) return locked; }
 
   const { data: m } = await supabase.from('provider_memberships').select('*').eq('id', id).eq('provider_id', provider.id).single();
   if (!m) return Response.json({ error: '見つかりません' }, { status: 404 });

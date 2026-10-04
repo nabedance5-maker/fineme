@@ -9,6 +9,8 @@ export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { applicationFeeAmount } from '@/lib/payment-fee';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -20,7 +22,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fineme.me';
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id, name, stripe_connect_id, stripe_connect_status').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, name, stripe_connect_id, stripe_connect_status, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -32,6 +34,7 @@ async function __POST(request) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'pos'); if (locked) return locked; }
   if (!provider.stripe_connect_id || provider.stripe_connect_status !== 'active') {
     return Response.json({ error: 'オンライン決済の受け入れ準備が完了していません（「Fineme利用契約」タブから設定してください）' }, { status: 409 });
   }
@@ -76,6 +79,7 @@ async function __POST(request) {
       line_items: lineItemsForStripe,
       payment_intent_data: {
         transfer_data: { destination: provider.stripe_connect_id },
+        application_fee_amount: applicationFeeAmount(totalAmount),
         metadata: { fineme_provider_id: provider.id, fineme_pos_pending_id: pending.id },
       },
       metadata: { fineme_provider_id: provider.id, fineme_pos_pending_id: pending.id },

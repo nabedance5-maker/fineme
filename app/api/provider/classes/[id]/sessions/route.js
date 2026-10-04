@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const OCCUPYING_STATUSES = ['pending', 'approved', 'counter_proposed', 'visited'];
@@ -10,7 +11,7 @@ const OCCUPYING_STATUSES = ['pending', 'approved', 'counter_proposed', 'visited'
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -20,6 +21,7 @@ export async function GET(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'class_management'); if (locked) return locked; }
 
   const { data: cls } = await supabase.from('provider_classes').select('id').eq('id', id).eq('provider_id', provider.id).single();
   if (!cls) return Response.json({ error: 'クラスが見つかりません' }, { status: 404 });
@@ -48,6 +50,7 @@ async function __POST(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'class_management'); if (locked) return locked; }
 
   const { data: cls } = await supabase.from('provider_classes').select('id, capacity').eq('id', id).eq('provider_id', provider.id).single();
   if (!cls) return Response.json({ error: 'クラスが見つかりません' }, { status: 404 });

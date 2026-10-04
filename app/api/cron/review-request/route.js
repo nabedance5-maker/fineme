@@ -5,6 +5,7 @@
 import { getSupabase } from '@/lib/supabase';
 import { sendLinePush } from '@/lib/line-push';
 import { resolveLineTarget } from '@/lib/line-channel';
+import { hasFeature } from '@/lib/feature-flags';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +34,7 @@ export async function GET(request) {
   if (!reservations?.length) return Response.json({ sent: 0 });
 
   const providerIds = [...new Set(reservations.map(r => r.provider_id).filter(Boolean))];
-  const { data: providers } = await db.from('providers').select('id, name, google_review_url').in('id', providerIds);
+  const { data: providers } = await db.from('providers').select('id, name, google_review_url, plan, enabled_features').in('id', providerIds);
   const providerMap = {};
   (providers || []).forEach(p => { providerMap[p.id] = p; });
 
@@ -48,6 +49,7 @@ export async function GET(request) {
 
   for (const r of reservations) {
     const provider = providerMap[r.provider_id];
+    if (!hasFeature(provider, 'review_request')) continue;
     if (!provider?.google_review_url) continue; // 未設定店舗はスキップ（URLを設定すれば翌日以降の対象で拾われる）
     if (!r.user_id) continue;
 

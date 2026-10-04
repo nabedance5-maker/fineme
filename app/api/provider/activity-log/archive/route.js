@@ -2,12 +2,14 @@
 // GET /api/provider/activity-log/archive?file=2026-09/2026-09-01.jsonl → 1ファイルのダウンロード用URL（5分有効）
 export const dynamic = 'force-dynamic';
 import { authProvider, supabase } from '../../consultant/_lib';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const BUCKET = 'activity-log-archive';
 
 export async function GET(request) {
   const provider = await authProvider(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'activity_log'); if (locked) return locked; }
   const store = supabase.storage.from(BUCKET);
 
   const file = new URL(request.url).searchParams.get('file');

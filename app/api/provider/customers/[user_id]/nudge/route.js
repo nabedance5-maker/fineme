@@ -5,13 +5,14 @@ import { getSupabase } from '@/lib/supabase';
 import { sendLinePush } from '@/lib/line-push';
 import { resolveLineTarget } from '@/lib/line-channel';
 import { withAudit } from '@/lib/activity-log';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id, slug').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, slug, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -20,6 +21,7 @@ async function __POST(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider?.slug) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'dormant_outreach'); if (locked) return locked; }
 
   const { message } = await request.json();
   if (!message?.trim()) return Response.json({ error: 'message は必須です' }, { status: 400 });

@@ -4,6 +4,7 @@
 export const dynamic = 'force-dynamic';
 import { supabase, getProviderFromRequest, toInt, rectOf, loadActiveContractMap } from '@/lib/locker-layout';
 import { withAudit } from '@/lib/activity-log';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const MAX = 60;
 const gcd = (a, b) => (b ? gcd(b, a % b) : a);
@@ -13,6 +14,7 @@ async function __POST(request, { params }) {
   const { id } = await params;
   const provider = await getProviderFromRequest(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'locker_rental'); if (locked) return locked; }
   const { data: bank } = await supabase.from('provider_locker_banks').select('*').eq('id', id).eq('provider_id', provider.id).single();
   if (!bank) return Response.json({ error: '見つかりません' }, { status: 404 });
 

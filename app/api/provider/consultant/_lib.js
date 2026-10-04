@@ -21,7 +21,7 @@ export async function authProvider(request) {
   if (error || !user) return null;
   const { data } = await supabase
     .from('providers')
-    .select('id, slug, name, main_category, enabled_features')
+    .select('id, slug, name, main_category, enabled_features, plan')
     .eq('email', user.email)
     .single();
   return data || null;

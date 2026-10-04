@@ -57,7 +57,7 @@ const STEPS = [
   {
     id: 'connect',
     title: '振込口座を設定する',
-    desc: '予約手数料をお振り込みするために必要です。Stripe Connectで安全に設定できます。',
+    desc: 'オンライン決済の売上をお振り込みするために必要です。Stripe Connectで安全に設定できます。',
     action: '口座を設定する',
     href: '/provider/billing',
     check: (p) => p.stripe_connect_status === 'active',

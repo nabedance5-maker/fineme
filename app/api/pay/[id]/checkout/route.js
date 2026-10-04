@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 import { BASE_URL } from '@/lib/invoices';
+import { applicationFeeAmount } from '@/lib/payment-fee';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -27,6 +28,7 @@ export async function POST(request, { params }) {
       line_items: [{ price_data: { currency: 'jpy', product_data: { name: `${provider.name}：${inv.title}` }, unit_amount: inv.amount }, quantity: 1 }],
       payment_intent_data: {
         transfer_data: { destination: provider.stripe_connect_id },
+        application_fee_amount: applicationFeeAmount(inv.amount),
         metadata: { fineme_provider_id: inv.provider_id, fineme_invoice_id: inv.id },
       },
       metadata: { fineme_provider_id: inv.provider_id, fineme_invoice_id: inv.id },

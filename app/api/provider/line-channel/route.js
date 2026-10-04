@@ -4,13 +4,14 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { validateLineChannelToken } from '@/lib/line-channel';
 import { withAudit } from '@/lib/activity-log';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id, slug').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, slug, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -19,6 +20,7 @@ export async function GET(request) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'line_channel'); if (locked) return locked; }
 
   const { data } = await supabase
     .from('provider_line_channels')
@@ -40,6 +42,7 @@ async function __POST(request) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'line_channel'); if (locked) return locked; }
 
   const { channel_id, channel_secret, channel_access_token, liff_id } = await request.json();
 

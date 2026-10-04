@@ -3,13 +3,14 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -24,6 +25,7 @@ export async function GET(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'class_management'); if (locked) return locked; }
   if (!(await getOwnClass(provider.id, id))) return Response.json({ error: 'クラスが見つかりません' }, { status: 404 });
 
   const { data, error } = await supabase
@@ -41,6 +43,7 @@ async function __POST(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'class_management'); if (locked) return locked; }
   const cls = await getOwnClass(provider.id, id);
   if (!cls) return Response.json({ error: 'クラスが見つかりません' }, { status: 404 });
 

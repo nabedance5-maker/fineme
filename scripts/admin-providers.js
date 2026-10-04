@@ -9,9 +9,9 @@ function resolvePrefix(){ return location.pathname.includes('/pages/') ? '..' : 
 
 // Plan options metadata
 const PLAN_OPTIONS = {
-  p5000: { id:'p5000', price:5000, feeRate:0.08, label:'5,000円プラン（予約手数料8％）' },
-  p7000: { id:'p7000', price:7000, feeRate:0.07, label:'7,000円プラン（予約手数料7％）' },
-  p10000:{ id:'p10000', price:10000, feeRate:0.06, label:'10,000円プラン（予約手数料6％）' }
+  p5000: { id:'p5000', price:5000, feeRate:0.08, label:'5,000円プラン（ライト）' },
+  p7000: { id:'p7000', price:7000, feeRate:0.07, label:'7,000円プラン（スタンダード）' },
+  p10000:{ id:'p10000', price:10000, feeRate:0.06, label:'10,000円プラン（プレミアム）' }
 };
 function planLabel(p){ try{ if(!p) return ''; const meta = PLAN_OPTIONS[p.id] || PLAN_OPTIONS[p]; return meta ? meta.label : ''; }catch{ return ''; } }
 

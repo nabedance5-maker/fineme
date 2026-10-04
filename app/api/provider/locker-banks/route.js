@@ -3,10 +3,12 @@
 export const dynamic = 'force-dynamic';
 import { supabase, getProviderFromRequest, toInt } from '@/lib/locker-layout';
 import { withAudit } from '@/lib/activity-log';
+import { planLockedResponse } from '@/lib/plan-features';
 
 export async function GET(request) {
   const provider = await getProviderFromRequest(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'locker_rental'); if (locked) return locked; }
   const { data, error } = await supabase
     .from('provider_locker_banks')
     .select('*')
@@ -20,6 +22,7 @@ export async function GET(request) {
 async function __POST(request) {
   const provider = await getProviderFromRequest(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'locker_rental'); if (locked) return locked; }
   const body = await request.json().catch(() => ({}));
   const name = String(body.name || '').trim();
   const rows = toInt(body.grid_rows);

@@ -8,17 +8,29 @@ const _sb = createClient(
 );
 
 const PLANS = {
-  A: { name: 'ライト',      amount: 5000,  commission: 8.3, color: '#3b82f6', lineFeature: 'Fineme公式LINEでリマインド' },
-  B: { name: 'スタンダード', amount: 7000,  commission: 7.0, color: '#8b5cf6', lineFeature: 'Fineme公式LINEでリマインド' },
-  C: { name: 'プレミアム',   amount: 10000, commission: 5.5, color: '#f59e0b', lineFeature: '店舗の公式LINEでリマインド可' },
+  A: {
+    name: 'ライト', amount: 5000, color: '#3b82f6',
+    summary: 'はじめの一歩に必要な機能',
+    features: ['予約・オンライン決済', '基本カルテ・売上管理・請求', 'AI専属コンサル', 'Fineme公式LINEでリマインド', '顧客の登録は30人まで'],
+  },
+  B: {
+    name: 'スタンダード', amount: 7000, color: '#8b5cf6',
+    summary: 'ライトの全機能に加えて',
+    features: ['顧客数 無制限', '休眠顧客の掘り起こし', 'クチコミ依頼の自動化', 'スタッフ指名・シフト管理', 'クラス・回数券・会員プラン'],
+  },
+  C: {
+    name: 'プレミアム', amount: 10000, color: '#f59e0b',
+    summary: 'スタンダードの全機能に加えて',
+    features: ['店舗の公式LINEから送信', 'カルテAI分析', '姿勢・健康アドバイスAI', 'POS・在庫管理', '操作ログ'],
+  },
 };
+const PAYMENT_FEE_PERCENT = 4.5;
 
 export default function BillingPage() {
   const initialized = useRef(false);
   const [currentPlan, setCurrentPlan] = useState('A');
   const [billingStatus, setBillingStatus] = useState('free');
   const [connectStatus, setConnectStatus] = useState(null);
-  const [calcMonthly, setCalcMonthly] = useState(150000);
   const [subscribing, setSubscribing] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
 
@@ -35,7 +47,8 @@ export default function BillingPage() {
       .plan-card.recommended::after{content:'おすすめ';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#8b5cf6;color:#fff;font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px}
       .plan-name{font-weight:700;font-size:16px;margin-bottom:4px}
       .plan-amount{font-size:24px;font-weight:800}
-      .plan-commission{font-size:13px;color:#9ca3af;margin-top:4px}
+      .plan-summary{font-size:12px;color:#9ca3af;margin-top:4px}
+      .plan-feature-list{list-style:none;padding:0;margin:12px 0 0;display:flex;flex-direction:column;gap:6px;font-size:12px;color:#d1d5db}
       .plan-savings{font-size:12px;color:#10b981;font-weight:600;margin-top:6px;min-height:18px}
       .plan-btn{width:100%;padding:8px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;margin-top:12px;transition:opacity .15s}
       .plan-btn.current-btn{background:rgba(232,228,220,0.1);color:#9ca3af;cursor:default}
@@ -46,13 +59,6 @@ export default function BillingPage() {
       .kpi-label{color:#6b7280;font-size:12px;margin-bottom:4px}
       .kpi-value{font-weight:800;font-size:26px}
       .kpi-sub{font-size:11px;color:#9ca3af;margin-top:2px}
-      .calc-input{width:100%;padding:10px 14px;background:rgba(10,15,30,0.5);border:1px solid rgba(232,228,220,0.15);border-radius:8px;color:#e8e4dc;font-size:16px;font-weight:700}
-      .calc-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
-      .calc-plan{padding:14px;border-radius:10px;background:rgba(10,15,30,0.5);border:1px solid rgba(232,228,220,0.1);text-align:center}
-      .calc-plan-name{font-size:12px;color:#9ca3af;margin-bottom:4px}
-      .calc-plan-fee{font-size:13px;margin-bottom:2px}
-      .calc-plan-total{font-size:18px;font-weight:800}
-      .calc-plan-save{font-size:11px;color:#10b981;font-weight:600;margin-top:4px}
       .connect-card{padding:20px;border:1px solid rgba(232,228,220,0.15);border-radius:14px;background:rgba(10,15,30,0.65)}
       .connect-active{border-color:#10b981}
       .status-hero{padding:20px;border-radius:14px;display:flex;align-items:center;gap:16px}
@@ -77,7 +83,7 @@ export default function BillingPage() {
       @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,228,220,.3)}50%{box-shadow:0 0 0 6px rgba(232,228,220,0)}}
       .navi-lock-banner{background:rgba(201,168,76,0.07);border:1.5px solid rgba(201,168,76,0.25);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:14px}
       .navi-lock-icon{font-size:28px;flex-shrink:0}
-      @media(max-width:720px){.plan-cards{grid-template-columns:1fr}.calc-row{grid-template-columns:1fr}.kpi-row{grid-template-columns:1fr 1fr}}
+      @media(max-width:720px){.plan-cards{grid-template-columns:1fr}.kpi-row{grid-template-columns:1fr 1fr}}
       @media(max-width:480px){.kpi-row{grid-template-columns:1fr}}
     `;
     document.head.appendChild(style);
@@ -121,11 +127,6 @@ export default function BillingPage() {
     })();
   }, []);
 
-  function calcSavings(plan, monthlyRevenue) {
-    const { amount, commission } = PLANS[plan];
-    return amount + monthlyRevenue * (commission / 100);
-  }
-
   // 無料→有料：Stripe Checkoutにリダイレクト
   async function handleSubscribe(plan) {
     if (subscribing) return;
@@ -153,7 +154,7 @@ export default function BillingPage() {
   // 有料→別プランへ変更（既存サブスク更新）
   async function handleUpgrade(newPlan) {
     if (upgrading || newPlan === currentPlan) return;
-    if (!confirm(`プランを${PLANS[newPlan].name}（¥${PLANS[newPlan].amount.toLocaleString()}/月・手数料${PLANS[newPlan].commission}%）に変更しますか？`)) return;
+    if (!confirm(`プランを${PLANS[newPlan].name}（¥${PLANS[newPlan].amount.toLocaleString()}/月）に変更しますか？`)) return;
     setUpgrading(true);
     try {
       const { data: { session } } = await _sb.auth.getSession();
@@ -254,9 +255,9 @@ export default function BillingPage() {
             <div className="kpi-sub">{isFree ? '無料掲載中' : `¥${plan.amount.toLocaleString()}/月`}</div>
           </div>
           <div className="kpi-card">
-            <div className="kpi-label">予約手数料率</div>
-            <div className="kpi-value">{isActive ? `${plan.commission}%` : '—'}</div>
-            <div className="kpi-sub">{isActive ? `予約成立額の${plan.commission}%` : '有料プランで設定されます'}</div>
+            <div className="kpi-label">決済手数料率</div>
+            <div className="kpi-value">{PAYMENT_FEE_PERCENT}%</div>
+            <div className="kpi-sub">Fineme経由のオンライン決済のみ・全プラン共通</div>
           </div>
           <div className="kpi-card">
             <div className="kpi-label">紹介報酬（今月）</div>
@@ -270,10 +271,8 @@ export default function BillingPage() {
           <h2 style={{ margin: '0 0 6px' }}>{isFree ? 'New Me Map 掲載プランを選ぶ' : '掲載プラン'}</h2>
           <p className="muted" style={{ fontSize: '13px', marginBottom: '16px' }}>
             {isFree
-              ? '月額が上がるほど予約手数料率が下がります。プランはいつでも変更できます。'
-              : '月額が上がるほど予約手数料率が下がります。予約が増えるほど上位プランがお得です。'}
-            <br />プレミアムプランは、New Me Log（来店サイクル管理）のリマインドを店舗の公式LINEから送れます（設定は「LINE連携」タブから）。
-            <br />ライトプランはNew Me Log連携の顧客表示が先着30人までです（連携自体・お客様への通知は制限されません）。プレミアムは無制限です。
+              ? '予約の手数料はありません。プランの違いは使える機能です。プランはいつでも変更できます。'
+              : '予約の手数料はありません。プランの違いは使える機能です。上位プランへはいつでも変更できます。'}
           </p>
           <div className="plan-cards">
             {Object.entries(PLANS).map(([key, p]) => {
@@ -287,12 +286,10 @@ export default function BillingPage() {
                 >
                   <div className="plan-name" style={{ color: isCurrent ? p.color : '#e8e4dc' }}>{p.name}</div>
                   <div className="plan-amount">¥{p.amount.toLocaleString()}<span style={{ fontSize: '13px', fontWeight: 400, color: '#9ca3af' }}>/月</span></div>
-                  <div className="plan-commission">予約手数料 {p.commission}%</div>
-                  <div className="plan-line-feature" style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>{p.lineFeature}</div>
-                  <div className="plan-savings">
-                    {key === 'B' && (!isActive || currentPlan === 'A') && `月30万円の予約で月額差額を回収`}
-                    {key === 'C' && (!isActive || currentPlan !== 'C') && `最大手数料削減`}
-                  </div>
+                  <div className="plan-summary">{p.summary}</div>
+                  <ul className="plan-feature-list">
+                    {p.features.map(f => <li key={f}>{f}</li>)}
+                  </ul>
 
                   {/* 無料ティア：全プランに「掲載を始める」ボタン */}
                   {isFree && (
@@ -323,37 +320,14 @@ export default function BillingPage() {
           </div>
         </div>
 
-        {/* 月次コスト試算 */}
+        {/* 決済手数料の説明 */}
         <div className="card" style={{ padding: '24px' }}>
-          <h2 style={{ margin: '0 0 6px' }}>月次コスト試算</h2>
-          <p className="muted" style={{ fontSize: '13px', marginBottom: '12px' }}>Fineme経由の月間予約売上を入力すると、各プランのコストを比較できます。</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <label style={{ fontSize: '14px', color: '#9ca3af', flexShrink: 0 }}>月間予約売上</label>
-            <input
-              type="number"
-              className="calc-input"
-              style={{ maxWidth: '200px' }}
-              value={calcMonthly}
-              onChange={e => setCalcMonthly(Number(e.target.value) || 0)}
-              step="10000"
-            />
-            <span style={{ fontSize: '14px', color: '#9ca3af' }}>円</span>
-          </div>
-          <div className="calc-row">
-            {Object.entries(PLANS).map(([key, p]) => {
-              const total = calcSavings(key, calcMonthly);
-              const vsA   = key !== 'A' ? calcSavings('A', calcMonthly) - total : 0;
-              return (
-                <div key={key} className="calc-plan" style={{ borderColor: (isActive && key === currentPlan) ? p.color : 'rgba(232,228,220,0.1)' }}>
-                  <div className="calc-plan-name" style={{ color: (isActive && key === currentPlan) ? p.color : '#9ca3af' }}>{p.name}{isActive && key === currentPlan ? ' ★' : ''}</div>
-                  <div className="calc-plan-fee" style={{ fontSize: '12px', color: '#6b7280' }}>月額 ¥{p.amount.toLocaleString()} + 手数料 ¥{Math.round(calcMonthly * p.commission / 100).toLocaleString()}</div>
-                  <div className="calc-plan-total">¥{Math.round(total).toLocaleString()}</div>
-                  {vsA > 0 && <div className="calc-plan-save">ライトより ¥{Math.round(vsA).toLocaleString()} お得</div>}
-                  {vsA <= 0 && key !== 'A' && <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>予約売上が増えるほどお得</div>}
-                </div>
-              );
-            })}
-          </div>
+          <h2 style={{ margin: '0 0 6px' }}>決済手数料について</h2>
+          <p className="muted" style={{ fontSize: '13px', margin: 0, lineHeight: 1.8 }}>
+            Fineme経由でお客様がオンライン決済（請求・回数券・会員プラン・予約デポジット・POS）した金額から、決済手数料{PAYMENT_FEE_PERCENT}%を差し引いた額が振込口座へ入金されます。
+            カード会社の手数料も{PAYMENT_FEE_PERCENT}%に含まれており、別途のご負担はありません。例：¥10,000のお支払いなら¥9,550が入金されます。
+            全プラン共通です。現金など、Fineme経由でないお支払いには手数料はかかりません。
+          </p>
         </div>
 
         {/* Stripe Connect（振込設定） */}
@@ -361,7 +335,7 @@ export default function BillingPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
             <div>
               <h2 style={{ margin: '0 0 4px' }}>振込口座の設定</h2>
-              <p className="muted" style={{ fontSize: '13px', margin: 0 }}>予約手数料を差し引いた売上をFinemeからお振り込みするために必要です。</p>
+              <p className="muted" style={{ fontSize: '13px', margin: 0 }}>オンライン決済の売上（決済手数料を差し引いた額）を振り込むために必要です。</p>
             </div>
             {connectStatus?.connected
               ? <span className="badge badge-active">✓ 振込設定済み</span>
@@ -374,7 +348,7 @@ export default function BillingPage() {
             </button>
           )}
           {connectStatus?.connected && (
-            <p style={{ marginTop: '12px', fontSize: '13px', color: '#10b981' }}>✓ 口座設定が完了しています。予約手数料は翌月末に自動振込されます。</p>
+            <p style={{ marginTop: '12px', fontSize: '13px', color: '#10b981' }}>✓ 口座設定が完了しています。オンライン決済の売上は決済手数料を差し引いて自動で入金されます。</p>
           )}
         </div>
 

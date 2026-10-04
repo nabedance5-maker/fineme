@@ -480,33 +480,45 @@ export default function ProviderJoinPage({ searchParams }) {
           <div className="join-container" style={{textAlign:'center'}}>
             <div className="sec-eyebrow" style={{justifyContent:'center'}}>Plan</div>
             <h2 className="sec-h2 sec-h2-light">掲載プラン</h2>
-            <p className="sec-lead sec-lead-light">登録料 ¥1,100（初回のみ）＋ 月額プラン2段階。広告費を積み上げるモデルではなく、「合う人に届く仕組み」への投資です。</p>
+            <p className="sec-lead sec-lead-light">登録料 ¥1,100（初回のみ）＋ 月額プラン3段階。予約の手数料はありません。プランの違いは使える機能です。広告費を積み上げるモデルではなく、「合う人に届く仕組み」への投資です。</p>
 
-            <div className="plan-grid" style={{gridTemplateColumns:'1fr 1fr', maxWidth:'620px', margin:'0 auto'}}>
+            <div className="plan-grid" style={{maxWidth:'960px', margin:'0 auto'}}>
               <div className="plan-card">
-                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', color:'rgba(201,168,76,.7)', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif"}}>LIGHT</div>
+                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif", color:'rgba(201,168,76,.7)'}}>LIGHT</div>
                 <div className="plan-price">¥5,000<small> / 月</small></div>
                 <ul className="plan-list">
                   <li>プロフィールページ（無制限）</li>
-                  <li>サービスメニュー登録（複数対応）</li>
-                  <li>スタッフ紹介・Before/After掲載</li>
-                  <li>Me Scanマッチング（総合スコア順）</li>
-                  <li>顧客カルテ・リマインド・売上管理一式（New Me Log連携表示は先着30人まで）</li>
-                  <li>予約のやり取り・LINE通知はFineme公式LINEから</li>
-                  <li>紹介報酬プログラム参加資格</li>
+                  <li>予約・オンライン決済・請求</li>
+                  <li>基本カルテ・売上管理</li>
+                  <li>AI専属コンサル</li>
+                  <li>リマインドはFineme公式LINEから</li>
+                  <li>顧客の登録は30人まで</li>
+                </ul>
+              </div>
+              <div className="plan-card">
+                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif", color:'rgba(201,168,76,.8)'}}>STANDARD</div>
+                <div className="plan-price">¥7,000<small> / 月</small></div>
+                <ul className="plan-list">
+                  <li>ライトの内容すべて</li>
+                  <li>顧客数が無制限</li>
+                  <li>休眠顧客の掘り起こし・クチコミ依頼の自動化</li>
+                  <li>スタッフ指名・シフト管理</li>
+                  <li>クラス・回数券・会員プラン</li>
                 </ul>
               </div>
               <div className="plan-card highlight">
-                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', color:'rgba(201,168,76,.9)', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif"}}>PREMIUM</div>
+                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif", color:'rgba(201,168,76,.9)'}}>PREMIUM</div>
                 <div className="plan-price">¥10,000<small> / 月</small></div>
                 <ul className="plan-list">
-                  <li>ライトの内容すべて</li>
-                  <li>予約手数料率の優遇</li>
-                  <li>New Me Log連携表示が無制限</li>
-                  <li>予約・リマインドの全通知が店舗独自の公式LINEから届く</li>
+                  <li>スタンダードの内容すべて</li>
+                  <li>予約・リマインドが店舗独自の公式LINEから届く</li>
+                  <li>カルテAI分析・姿勢/健康アドバイスAI</li>
+                  <li>POS・在庫管理</li>
+                  <li>操作ログ</li>
                 </ul>
               </div>
             </div>
+            <p style={{fontSize:'12px', color:'rgba(255,255,255,.7)', marginTop:'16px', fontFamily:"'Noto Sans JP', sans-serif"}}>Fineme経由のオンライン決済には、全プラン共通で決済手数料4.5%（カード会社の手数料込み）がかかります。入金額から差し引かれ、別途のご負担はありません。</p>
             <p style={{fontSize:'12px', color:'rgba(201,168,76,.8)', marginTop:'20px', fontFamily:"'Noto Sans JP', sans-serif"}}>草創期限定プランです。今後の価格変更は事前告知します。管理機能の詳しい画面イメージは<a href="/business/store-saas-pitch-deck.html" style={{color:'#c9a84c'}}>店舗SaaS営業資料</a>をご覧ください。</p>
           </div>
         </section>

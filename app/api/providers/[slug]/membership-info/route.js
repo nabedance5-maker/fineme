@@ -11,7 +11,7 @@ export async function GET(request, { params }) {
   const { slug } = await params;
   const { data: provider } = await supabase
     .from('providers')
-    .select('id, name, enabled_features, stripe_connect_id, stripe_connect_status')
+    .select('id, name, plan, enabled_features, stripe_connect_id, stripe_connect_status')
     .eq('slug', slug)
     .eq('published', true)
     .single();

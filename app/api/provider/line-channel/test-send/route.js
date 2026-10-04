@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { sendLinePush } from '@/lib/line-push';
 import { withAudit } from '@/lib/activity-log';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -16,8 +17,9 @@ async function __POST(request) {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data: provider } = await supabase.from('providers').select('id, name').eq('email', user.email).single();
+  const { data: provider } = await supabase.from('providers').select('id, name, plan').eq('email', user.email).single();
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'line_channel'); if (locked) return locked; }
 
   const { data: channel } = await supabase
     .from('provider_line_channels')

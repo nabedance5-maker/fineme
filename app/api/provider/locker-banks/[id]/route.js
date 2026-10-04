@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 import { supabase, getProviderFromRequest, toInt, rectOf, loadActiveContractMap } from '@/lib/locker-layout';
 import { withAudit } from '@/lib/activity-log';
+import { planLockedResponse } from '@/lib/plan-features';
 
 async function loadBank(id, providerId) {
   const { data } = await supabase.from('provider_locker_banks').select('*').eq('id', id).eq('provider_id', providerId).single();
@@ -13,6 +14,7 @@ async function __PATCH(request, { params }) {
   const { id } = await params;
   const provider = await getProviderFromRequest(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'locker_rental'); if (locked) return locked; }
   const bank = await loadBank(id, provider.id);
   if (!bank) return Response.json({ error: '見つかりません' }, { status: 404 });
 
@@ -115,6 +117,7 @@ async function __DELETE(request, { params }) {
   const { id } = await params;
   const provider = await getProviderFromRequest(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'locker_rental'); if (locked) return locked; }
   const bank = await loadBank(id, provider.id);
   if (!bank) return Response.json({ error: '見つかりません' }, { status: 404 });
 

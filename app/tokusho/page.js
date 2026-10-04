@@ -74,6 +74,9 @@ export default function TokushoPage() {
                       </tr>
                     </tbody>
                   </table>
+                  <span style={{ display: 'block', marginTop: 8, fontSize: 13, color: 'rgba(232,228,220,0.55)' }}>プランにより使える機能が異なります。予約の成立に伴う手数料はありません。</span>
+                  <br />
+                  <strong>オンライン決済手数料：</strong>Fineme経由で行われるお客様のオンライン決済（請求・回数券・会員プラン・予約デポジット・POS）の決済額の4.5%（カード会社の手数料を含む・全プラン共通）。決済代金から差し引いて店舗へ入金されます。
                 </td>
               </tr>
               <tr style={{ borderBottom: '1px solid rgba(232,228,220,0.15)' }}>

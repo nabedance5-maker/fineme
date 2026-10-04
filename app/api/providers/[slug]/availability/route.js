@@ -23,7 +23,7 @@ export async function GET(request, { params }) {
 
   const { data: provider } = await supabase
     .from('providers')
-    .select('id, enabled_features, booking_cutoff_hours, booking_cutoff_mode, booking_cutoff_time, business_hours')
+    .select('id, plan, enabled_features, booking_cutoff_hours, booking_cutoff_mode, booking_cutoff_time, business_hours')
     .eq('slug', slug)
     .eq('published', true)
     .eq('admin_hidden', false)

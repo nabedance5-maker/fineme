@@ -4,13 +4,14 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -19,6 +20,7 @@ export async function GET(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'shift_management'); if (locked) return locked; }
 
   const { data: period } = await supabase.from('provider_shift_periods').select('id').eq('id', params.id).eq('provider_id', provider.id).single();
   if (!period) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
@@ -37,6 +39,7 @@ async function __POST(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'shift_management'); if (locked) return locked; }
 
   const { data: period } = await supabase.from('provider_shift_periods').select('id').eq('id', params.id).eq('provider_id', provider.id).single();
   if (!period) return Response.json({ error: '期間が見つかりません' }, { status: 404 });
@@ -66,6 +69,7 @@ async function __DELETE(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'shift_management'); if (locked) return locked; }
 
   const { data: period } = await supabase.from('provider_shift_periods').select('id').eq('id', params.id).eq('provider_id', provider.id).single();
   if (!period) return Response.json({ error: '期間が見つかりません' }, { status: 404 });

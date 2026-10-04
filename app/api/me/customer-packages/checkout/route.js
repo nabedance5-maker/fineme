@@ -6,6 +6,7 @@
 export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
+import { applicationFeeAmount } from '@/lib/payment-fee';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -47,6 +48,7 @@ export async function POST(request) {
       }],
       payment_intent_data: {
         transfer_data: { destination: provider.stripe_connect_id },
+        application_fee_amount: applicationFeeAmount(pkg.price),
         metadata: { fineme_user_id: user.id, fineme_provider_id: provider.id, fineme_package_id: pkg.id },
       },
       metadata: { fineme_user_id: user.id, fineme_provider_id: provider.id, fineme_package_id: pkg.id },

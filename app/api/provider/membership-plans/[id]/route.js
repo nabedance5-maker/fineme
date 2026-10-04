@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -16,7 +17,7 @@ function getStripe() {
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -26,6 +27,7 @@ async function __PATCH(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'membership_enrollment'); if (locked) return locked; }
 
   const { data: plan } = await supabase.from('provider_membership_plans').select('*').eq('id', id).eq('provider_id', provider.id).single();
   if (!plan) return Response.json({ error: 'プランが見つかりません' }, { status: 404 });
@@ -68,6 +70,7 @@ async function __DELETE(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'membership_enrollment'); if (locked) return locked; }
 
   const { count } = await supabase.from('provider_memberships').select('id', { count: 'exact', head: true }).eq('plan_id', id).in('status', ['pending_approval', 'active']);
   if ((count || 0) > 0) return Response.json({ error: 'このプランを利用中の申込があるため削除できません。非表示（停止）にしてください' }, { status: 409 });

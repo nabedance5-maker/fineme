@@ -108,7 +108,7 @@ export async function POST(request) {
 
   // enabled_features（申請制ON/OFF判定用）とmax_active_reservations（同時保持できる
   // 予約数の上限、店舗ごとに変更可）・予約締切設定をまとめて取得。
-  const { data: providerFeatureRow } = await supabase.from('providers').select('enabled_features, max_active_reservations, booking_cutoff_mode, booking_cutoff_hours, booking_cutoff_time, deposit_amount, stripe_connect_id, stripe_connect_status, business_hours').eq('id', provider_id).single();
+  const { data: providerFeatureRow } = await supabase.from('providers').select('plan, enabled_features, max_active_reservations, booking_cutoff_mode, booking_cutoff_hours, booking_cutoff_time, deposit_amount, stripe_connect_id, stripe_connect_status, business_hours').eq('id', provider_id).single();
 
   // 申請制（第1〜3希望→店舗が承認）は店舗ごとにON/OFFできる（でお要望2026-09-14：
   // 「即時予約と同じように、予約リクエストも受け付けるかどうか設定できるように」）。

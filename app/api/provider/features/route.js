@@ -2,7 +2,7 @@
 // PATCH /api/provider/features → 部分更新（渡したキーだけ上書き）
 // Phase 0（機能ON/OFF基盤）: lib/feature-flags.js の FEATURE_DEFS が唯一の定義元。
 import { getSupabase } from '@/lib/supabase';
-import { FEATURE_DEFS, resolveFeatures } from '@/lib/feature-flags';
+import { FEATURE_DEFS, resolveFeatures, featureLocks } from '@/lib/feature-flags';
 import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -10,7 +10,7 @@ const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id, enabled_features').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, plan, enabled_features').eq('email', user.email).single();
   return data || null;
 }
 
@@ -20,7 +20,7 @@ export async function GET(request) {
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  return Response.json({ features: resolveFeatures(provider), defs: FEATURE_DEFS });
+  return Response.json({ features: resolveFeatures(provider), defs: FEATURE_DEFS, locks: featureLocks(provider), plan: provider.plan || 'A' });
 }
 
 async function __PATCH(request) {

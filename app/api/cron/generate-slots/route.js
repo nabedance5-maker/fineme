@@ -14,7 +14,7 @@ export async function GET(request) {
   }
 
   const db = getSupabase();
-  const { data: providers, error } = await db.from('providers').select('id, enabled_features');
+  const { data: providers, error } = await db.from('providers').select('id, plan, enabled_features');
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
   const targets = (providers || []).filter(p => hasFeature(p, 'instant_booking'));

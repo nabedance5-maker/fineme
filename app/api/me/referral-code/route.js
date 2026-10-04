@@ -16,7 +16,7 @@ export async function GET(request) {
   const slug = new URL(request.url).searchParams.get('provider_slug');
   if (!slug) return Response.json({ error: 'provider_slugは必須です' }, { status: 400 });
 
-  const { data: provider } = await supabase.from('providers').select('id, enabled_features').eq('slug', slug).single();
+  const { data: provider } = await supabase.from('providers').select('id, plan, enabled_features').eq('slug', slug).single();
   if (!provider || !hasFeature(provider, 'referral_program')) {
     return Response.json({ error: 'この店舗は友達紹介プログラムを実施していません' }, { status: 404 });
   }

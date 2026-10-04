@@ -22,7 +22,7 @@ const OCCUPYING_STATUSES = ['pending', 'approved', 'counter_proposed', 'visited'
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id, enabled_features').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, plan, enabled_features').eq('email', user.email).single();
   return data || null;
 }
 

@@ -6,13 +6,14 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { notifyCustomerLine } from '@/lib/reservation-notify';
 import { withAudit } from '@/lib/activity-log';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id, name').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, name, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -26,6 +27,7 @@ export async function GET(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'attendance_confirm'); if (locked) return locked; }
 
   const event = await getOwnedEvent(provider.id, params.id);
   if (!event) return Response.json({ error: 'イベントが見つかりません' }, { status: 404 });
@@ -50,6 +52,7 @@ async function __POST(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'attendance_confirm'); if (locked) return locked; }
 
   const event = await getOwnedEvent(provider.id, params.id);
   if (!event) return Response.json({ error: 'イベントが見つかりません' }, { status: 404 });

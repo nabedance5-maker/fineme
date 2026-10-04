@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 const OCCUPYING_STATUSES = ['pending', 'approved', 'counter_proposed', 'visited'];
@@ -10,7 +11,7 @@ const OCCUPYING_STATUSES = ['pending', 'approved', 'counter_proposed', 'visited'
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -20,6 +21,7 @@ async function __PATCH(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'class_management'); if (locked) return locked; }
 
   const body = await request.json().catch(() => ({}));
   const update = {};
@@ -46,6 +48,7 @@ async function __DELETE(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'class_management'); if (locked) return locked; }
 
   const { data: booked } = await supabase.from('reservations').select('id').eq('slot_id', sessionId).in('status', OCCUPYING_STATUSES).limit(1);
   if (booked?.length) return Response.json({ error: '予約中のお客様がいるため削除できません。先に予約側をキャンセルしてください' }, { status: 409 });

@@ -20,6 +20,8 @@ export const dynamic = 'force-dynamic';
 import Stripe from 'stripe';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { PAYMENT_FEE_PERCENT } from '@/lib/payment-fee';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 function getStripe() {
@@ -30,7 +32,7 @@ function getStripe() {
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id, stripe_connect_id, stripe_connect_status').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, stripe_connect_id, stripe_connect_status, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -43,6 +45,7 @@ async function __POST(request, { params }) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'membership_enrollment'); if (locked) return locked; }
 
   if (!provider.stripe_connect_id || provider.stripe_connect_status !== 'active') {
     return Response.json({ error: '入金先のStripe Connect設定が完了していません。「Fineme利用契約」タブから設定してください' }, { status: 409 });
@@ -94,6 +97,7 @@ async function __POST(request, { params }) {
       items,
       default_payment_method: m.stripe_payment_method_id,
       transfer_data: { destination: provider.stripe_connect_id },
+      application_fee_percent: PAYMENT_FEE_PERCENT,
       metadata: { fineme_membership_id: m.id, fineme_provider_id: provider.id, fineme_locker_id: locker?.id || '' },
     };
     if (prorateOn && m.enrollment_date) {

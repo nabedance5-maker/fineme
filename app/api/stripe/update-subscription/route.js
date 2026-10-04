@@ -57,7 +57,6 @@ export async function POST(request) {
       success: true,
       plan: newPlan,
       amount: PLANS[newPlan].amount,
-      commission_rate: PLANS[newPlan].commission_rate,
       status: updated.status,
     });
   } catch (err) {

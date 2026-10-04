@@ -6543,7 +6543,7 @@ export default function ProviderDashboardPage() {
         listEl.textContent = '読み込み中…';
         const res = await fetch('/api/provider/features', { headers: { Authorization: `Bearer ${getSupabaseToken()}` } });
         if (!res.ok) { listEl.innerHTML = authErrorHtml(res); return; }
-        const { features, defs } = await res.json();
+        const { features, defs, locks = {} } = await res.json();
         if (depositBox) depositBox.style.display = features.payment_mediation ? 'block' : 'none';
         if (features.payment_mediation) loadDepositSettings();
         const groups = {};
@@ -6555,10 +6555,10 @@ export default function ProviderDashboardPage() {
             <p style="font-size:11px;font-weight:800;letter-spacing:.08em;color:rgba(201,168,76,.7);text-transform:uppercase;margin:0 0 8px">${esc(groupName)}</p>
             <div class="stack" style="gap:10px">
               ${items.map(item => `
-                <label style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:10px;cursor:pointer">
-                  <input type="checkbox" data-feature-key="${item.key}" ${features[item.key] ? 'checked' : ''} style="margin-top:3px" />
+                <label style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:rgba(26,20,16,0.03);border:1px solid rgba(26,20,16,0.12);border-radius:10px;cursor:${locks[item.key] ? 'default' : 'pointer'};${locks[item.key] ? 'opacity:.6;' : ''}">
+                  <input type="checkbox" data-feature-key="${item.key}" ${features[item.key] && !locks[item.key] ? 'checked' : ''} ${locks[item.key] ? 'disabled' : ''} style="margin-top:3px" />
                   <span>
-                    <span style="display:block;font-weight:700;font-size:13.5px;color:rgba(26,20,16,0.9)">${esc(item.label)}</span>
+                    <span style="display:block;font-weight:700;font-size:13.5px;color:rgba(26,20,16,0.9)">${esc(item.label)}${locks[item.key] ? `<span style="margin-left:8px;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:99px;background:rgba(96,165,250,0.18);color:#2f4f8f">${esc(locks[item.key])}プラン以上</span>` : ''}</span>
                     <span style="display:block;font-size:12px;color:rgba(26,20,16,0.5);margin-top:2px">${esc(item.help)}</span>
                   </span>
                 </label>
@@ -6900,6 +6900,18 @@ export default function ProviderDashboardPage() {
         const def = defsCache[key];
         const label = def?.label || key;
         const help = def?.help || '';
+        const lockPlan = (window.__providerLocks || {})[key];
+        if (lockPlan) {
+          return `
+          <div class="feature-enable-banner" data-feature-banner="${key}">
+            <div>
+              <strong style="font-size:13.5px;color:#1a1410">「${esc(label)}」は${esc(lockPlan)}プラン以上でご利用いただけます</strong>
+              <p class="muted" style="font-size:12px;margin:4px 0 0">${esc(help)}</p>
+            </div>
+            <button type="button" class="btn" style="font-size:12px;padding:8px 16px;flex-shrink:0" data-plan-upgrade="${key}">プランを見る</button>
+          </div>
+        `;
+        }
         return `
           <div class="feature-enable-banner" data-feature-banner="${key}">
             <div>
@@ -6914,10 +6926,11 @@ export default function ProviderDashboardPage() {
       function applyGating(features) {
         gatedEls.forEach(el => {
           const key = el.dataset.feature;
-          const on = !!features?.[key];
+          const lockPlan = (window.__providerLocks || {})[key];
+          const on = !!features?.[key] && !lockPlan;
           el.classList.toggle('tab-feature-off', !on);
           const badge = el.querySelector('[data-feature-badge]');
-          if (badge) badge.textContent = on ? '' : '未設定';
+          if (badge) badge.textContent = on ? '' : (lockPlan ? lockPlan + 'プラン〜' : '未設定');
 
           // OFFのタブは所属カテゴリーから「非表示」カテゴリーへ移動しておく
           // （でお要望2026-09-16：「非表示にしたやつはまとめておくといい」）。ONに戻したら
@@ -6934,6 +6947,7 @@ export default function ProviderDashboardPage() {
           const pane = document.getElementById('tab-' + tabId);
           if (!pane) return;
           const existing = pane.querySelector(`[data-feature-banner="${key}"]`);
+          if (existing && !!lockPlan !== (existing.querySelector('[data-plan-upgrade]') !== null)) existing.remove();
           if (on) {
             existing?.remove();
             // OFFの間に隠していた中身を元に戻す（下のelse節で保存したdisplay値を復元）。
@@ -6943,8 +6957,11 @@ export default function ProviderDashboardPage() {
               delete c.dataset.featureHiddenDisplay;
             });
           } else {
-            if (!existing) {
+            if (!pane.querySelector(`[data-feature-banner="${key}"]`)) {
               pane.insertAdjacentHTML('afterbegin', bannerHtml(key, tabId));
+              pane.querySelector(`[data-plan-upgrade="${key}"]`)?.addEventListener('click', () => {
+                document.querySelector('[data-tab="billing"]')?.click();
+              });
               pane.querySelector(`[data-feature-enable="${key}"]`)?.addEventListener('click', async (e) => {
                 const btn = e.currentTarget;
                 btn.disabled = true;
@@ -6997,8 +7014,9 @@ export default function ProviderDashboardPage() {
         try {
           const res = await fetch('/api/provider/features', { headers: { Authorization: `Bearer ${token}` } });
           if (!res.ok) return;
-          const { features, defs } = await res.json();
+          const { features, defs, locks } = await res.json();
           defsCache = defs || {};
+          window.__providerLocks = locks || {};
           window.__providerFeatures = features || {};
           applyGating(features);
         } catch {}
@@ -10919,14 +10937,14 @@ export default function ProviderDashboardPage() {
                 <div className="pd-panel-section" data-panel="customer" style={{ display: 'none' }}>
                   <button className="tab-btn" data-tab="customers">顧客管理（New Me Log・カルテ）</button>
                   <button className="tab-btn" data-tab="broadcast-email">一斉メール配信</button>
-                  <button className="tab-btn" data-tab="reviews">クチコミ</button>
+                  <button className="tab-btn" data-tab="reviews" data-feature="review_request">クチコミ<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="visit-settings">来店設定</button>
                   {/* 回数券は日々の売上集計ではなく「顧客ごとの発行・消化を管理する台帳」の
                       性質が強いため、売上カテゴリーから顧客管理カテゴリーへ移動
                       （でお指摘2026-09-13：「本当に売上タブ内が適切か？」）。
                       ロッカーも同じ理由（顧客ごとの契約管理台帳）で顧客管理に置く
                       （でお指摘2026-09-14）。 */}
-                  <button className="tab-btn" data-tab="packages">回数券</button>
+                  <button className="tab-btn" data-tab="packages" data-feature="customer_packages">回数券<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="lockers" data-feature="locker_rental">ロッカー管理<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="memberships" data-feature="membership_enrollment">入会手続き<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
@@ -10958,9 +10976,9 @@ export default function ProviderDashboardPage() {
                   <button className="tab-btn" data-tab="member-referral" data-feature="referral_program">友達紹介<span className="feature-off-badge" data-feature-badge></span></button>
                 </div>
                 <div className="pd-panel-section" data-panel="account" style={{ display: 'none' }}>
-                  <button className="tab-btn" data-tab="line-channel">LINE連携</button>
+                  <button className="tab-btn" data-tab="line-channel" data-feature="line_channel">LINE連携<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="features">機能設定</button>
-                  <button className="tab-btn" data-tab="activity-log">操作ログ</button>
+                  <button className="tab-btn" data-tab="activity-log" data-feature="activity_log">操作ログ<span className="feature-off-badge" data-feature-badge></span></button>
                   <button className="tab-btn" data-tab="display-settings">表示設定</button>
                   <button className="tab-btn" data-tab="billing" style={{ borderLeft: '3px solid #2f4f8f' }}>Fineme利用契約</button>
                   <button type="button" className="tab-btn" id="pd-logout-btn" style={{ color: '#ef4444' }}>ログアウト</button>

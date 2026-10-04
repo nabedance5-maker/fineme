@@ -1,12 +1,14 @@
 // GET /api/provider/activity-log?actor=&category=&operator=&from=&to=&before= → 店舗の操作ログ（認証済み・自店舗分のみ）
 export const dynamic = 'force-dynamic';
 import { authProvider, supabase } from '../consultant/_lib';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const PAGE = 50;
 
 export async function GET(request) {
   const provider = await authProvider(request);
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'activity_log'); if (locked) return locked; }
 
   const sp = new URL(request.url).searchParams;
   const actor = sp.get('actor');

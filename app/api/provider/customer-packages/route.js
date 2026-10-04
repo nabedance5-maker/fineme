@@ -3,13 +3,14 @@
 export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { withAudit } from '@/lib/activity-log';
+import { planLockedResponse } from '@/lib/plan-features';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
 async function getProviderByToken(token) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return null;
-  const { data } = await supabase.from('providers').select('id, slug').eq('email', user.email).single();
+  const { data } = await supabase.from('providers').select('id, slug, plan').eq('email', user.email).single();
   return data || null;
 }
 
@@ -18,6 +19,7 @@ export async function GET(request) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'customer_packages'); if (locked) return locked; }
 
   const { data: rows, error } = await supabase
     .from('customer_packages')
@@ -78,6 +80,7 @@ async function __POST(request) {
   if (!authHeader?.startsWith('Bearer ')) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  { const locked = planLockedResponse(provider, 'customer_packages'); if (locked) return locked; }
 
   const { user_id, package_id } = await request.json().catch(() => ({}));
   if (!user_id || !package_id) return Response.json({ error: 'user_id と package_id は必須です' }, { status: 400 });
