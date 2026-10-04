@@ -246,6 +246,7 @@ const DASHBOARD_CSS = `
       /* 機能OFFのタブ：完全に隠すと「そもそも存在しない機能」に見えてしまい発見できないという
          でお指摘（2026-09-11）を受け、常に一覧には出しつつ視覚的に区別する方式に変更。 */
       .tab-btn.tab-feature-off { opacity: .45; }
+      .plan-lock-chip { margin-left: 6px; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px; background: rgba(96,165,250,0.18); color: #2f4f8f; vertical-align: middle; }
       .feature-off-badge { display: none; margin-left: 6px; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px; background: rgba(96,165,250,0.18); color: #60a5fa; vertical-align: middle; }
       .tab-btn.tab-feature-off .feature-off-badge { display: inline-block; }
       .feature-enable-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.35); border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
@@ -993,6 +994,101 @@ export default function ProviderDashboardPage() {
     // 動的HTML内のinline onclick属性はグローバルスコープで実行されるため、そこから
     // 呼べるようwindowにも公開する（approveRequest等の既存グローバル関数と同じ理由）。
     window.showToast = showToast;
+
+    // プラン不足の機能に触れたとき「不具合」ではなく「上のプランで使える機能」と伝えるための案内。
+    // 機能ごとに「使うと何が変わるか」を示し、Fineme利用契約タブ（プラン変更）へ誘導する。
+    const PLAN_INFO = { A: { name: 'ライト', price: 5000 }, B: { name: 'スタンダード', price: 7000 }, C: { name: 'プレミアム', price: 10000 } };
+    const PLAN_UPSELL = {
+      dormant_outreach: {
+        title: '休眠中のお客様へ、一人ずつ声をかけられます',
+        points: ['休眠中のお客様を一覧で把握し、その場でLINEの声かけメッセージを送れます', '「何日来ていないと休眠か」の基準をお店に合わせて設定できます', '一度来てくださったお客様に声をかけるのは、新しいお客様を探すより手間がかかりません'],
+      },
+      karte_ai: {
+        title: 'カルテの記録から、AIが傾向と次回の提案を出します',
+        points: ['来店ごとのカルテ記録を読み、気づきにくい傾向や注意点をまとめます', '次回の接客で何を話すか、何に気をつけるかの提案が出ます', 'カルテを書くほど精度が上がる、お店だけの記録が資産になります'],
+      },
+      review_request: {
+        title: '来店後のクチコミ依頼を自動で送れます',
+        points: ['来店が確定した翌日に、クチコミのお願いが自動でLINEに届きます', '声をかけ忘れがなくなり、クチコミが自然に増えます'],
+      },
+      customer_packages: {
+        title: '回数券を発行・管理できます',
+        points: ['回数券の発行、残り回数の管理、お客様のオンライン購入に対応します', '通い放題と回数券の組み合わせも1契約で扱えます'],
+      },
+    };
+    function showPlanUpsell(key, ctx) {
+      try {
+        const defs = window.__providerFeatureDefs || {};
+        const minPlan = (ctx && ctx.minPlan) || (window.__providerLocks || {})[key] || (defs[key] && defs[key].minPlan) || 'B';
+        const info = PLAN_INFO[minPlan] || PLAN_INFO.B;
+        const up = PLAN_UPSELL[key] || {};
+        const label = (defs[key] && defs[key].label) || '';
+        const title = up.title || (label ? `「${label}」が使えるようになります` : 'より多くの機能が使えるようになります');
+        const points = up.points || (defs[key] && defs[key].help ? [defs[key].help] : []);
+        document.getElementById('plan-upsell-modal')?.remove();
+        const overlay = document.createElement('div');
+        overlay.id = 'plan-upsell-modal';
+        overlay.className = 'cal-modal-overlay';
+        const card = document.createElement('div');
+        card.className = 'cal-modal-card';
+        card.style.maxWidth = '420px';
+        const tag = document.createElement('p');
+        tag.style.cssText = 'margin:0 0 6px;font-size:11px;font-weight:800;letter-spacing:.06em;color:#2f4f8f';
+        tag.textContent = `${info.name}プラン（月額¥${info.price.toLocaleString()}）の機能`;
+        const h = document.createElement('h3');
+        h.style.cssText = 'margin:0 0 10px;font-size:16px;line-height:1.5';
+        h.textContent = title;
+        card.append(tag, h);
+        if (ctx && ctx.lead) {
+          const lead = document.createElement('p');
+          lead.style.cssText = 'margin:0 0 10px;font-size:13px;font-weight:700;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 10px';
+          lead.textContent = ctx.lead;
+          card.append(lead);
+        }
+        if (points.length) {
+          const ul = document.createElement('ul');
+          ul.style.cssText = 'margin:0 0 12px;padding-left:18px;font-size:13px;line-height:1.7';
+          points.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.append(li); });
+          card.append(ul);
+        }
+        const note = document.createElement('p');
+        note.className = 'muted';
+        note.style.cssText = 'margin:0 0 12px;font-size:12px';
+        note.textContent = 'プランはいつでも「Fineme利用契約」から変更できます。';
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:8px';
+        const go = document.createElement('button');
+        go.type = 'button'; go.className = 'btn'; go.textContent = 'プランを見る';
+        go.addEventListener('click', () => { overlay.remove(); document.querySelector('[data-tab="billing"]')?.click(); });
+        const close = document.createElement('button');
+        close.type = 'button'; close.className = 'btn btn-ghost'; close.textContent = '閉じる';
+        close.addEventListener('click', () => overlay.remove());
+        row.append(go, close);
+        card.append(note, row);
+        overlay.append(card);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+        document.body.appendChild(overlay);
+      } catch {}
+    }
+    window.showPlanUpsell = showPlanUpsell;
+    // 保存・送信などの操作でプラン不足の403が返ったときの保険。画面ごとの個別対応から漏れても、
+    // エラー文だけで終わらず案内が出る。読み込み（GET）は画面が黙って縮退するため対象外。
+    (() => {
+      if (window.__planFetchPatched) return;
+      window.__planFetchPatched = true;
+      const orig = window.fetch.bind(window);
+      window.fetch = async (input, init) => {
+        const res = await orig(input, init);
+        try {
+          const method = String((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+          if (res.status === 403 && method !== 'GET') {
+            const data = await res.clone().json().catch(() => null);
+            if (data && data.code === 'plan_locked') showPlanUpsell(data.feature, { minPlan: data.min_plan });
+          }
+        } catch {}
+        return res;
+      };
+    })();
 
     // 一覧の行タップで開くポップアップ等、複数箇所で必要になる共通のタップ判定。
     // iOS Safariは指のわずかな動きをスクロールジェスチャーと誤判定し、合成click
@@ -5954,6 +6050,11 @@ export default function ProviderDashboardPage() {
 
       custModalNudgeBtn?.addEventListener('click', () => {
         if (!currentCustUid || !nudgeModalEl) return;
+        if ((window.__providerLocks || {}).dormant_outreach) {
+          const n = allItems.filter(c => c.status === 'dormant' || c.status === 'churned').length;
+          showPlanUpsell('dormant_outreach', { lead: n ? `いま休眠中のお客様が${n}名います` : '' });
+          return;
+        }
         nudgeTextareaEl.value = '';
         nudgeModalEl.style.display = 'flex';
         nudgeTextareaEl.focus();
@@ -6051,6 +6152,7 @@ export default function ProviderDashboardPage() {
 
       custModalInsightBtn?.addEventListener('click', async () => {
         if (!currentCustUid) return;
+        if ((window.__providerLocks || {}).karte_ai) { showPlanUpsell('karte_ai'); return; }
         custModalInsightEl.style.display = 'block';
         custModalInsightEl.innerHTML = '<p class="muted" style="font-size:12px;">分析中…</p>';
         custModalInsightBtn.disabled = true;
@@ -6080,6 +6182,34 @@ export default function ProviderDashboardPage() {
       document.getElementById('cust-modal-close')?.addEventListener('click', () => { custModalEl.style.display = 'none'; });
       custModalEl?.addEventListener('click', (e) => { if (e.target === custModalEl) custModalEl.style.display = 'none'; });
 
+      // 休眠中のお客様がいるのに声かけ機能が使えないプランのとき、「いま何名いるか」を見せて案内する
+      function renderDormantUpsell() {
+        const box = document.getElementById('customers-dormant-upsell');
+        if (!box) return;
+        const locked = (window.__providerLocks || {}).dormant_outreach;
+        const n = allItems.filter(c => c.status === 'dormant' || c.status === 'churned').length;
+        if (!locked || !n) { box.innerHTML = ''; return; }
+        box.innerHTML = `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:13px;color:#1e3a8a">
+          <p style="margin:0 0 8px;font-weight:700">休眠中のお客様が${n}名います</p>
+          <p style="margin:0 0 8px">スタンダードプラン（月額¥7,000）なら、お客様を選んでLINEで声かけメッセージを送り、再来店のきっかけを作れます。</p>
+          <button type="button" class="btn" style="font-size:12px;padding:6px 14px" data-dormant-upsell>詳しく見る</button>
+        </div>`;
+        box.querySelector('[data-dormant-upsell]')?.addEventListener('click', () => showPlanUpsell('dormant_outreach', { lead: `いま休眠中のお客様が${n}名います` }));
+      }
+      window.addEventListener('fineme:locks', () => { renderDormantUpsell(); markLockedButtons(); });
+      function markLockedButtons() {
+        const locks = window.__providerLocks || {};
+        [[custModalNudgeBtn, 'dormant_outreach'], [custModalInsightBtn, 'karte_ai']].forEach(([btn, key]) => {
+          if (!btn) return;
+          btn.querySelector('.plan-lock-chip')?.remove();
+          if (!locks[key]) return;
+          const chip = document.createElement('span');
+          chip.className = 'plan-lock-chip';
+          chip.textContent = locks[key] + 'プラン〜';
+          btn.append(chip);
+        });
+      }
+
       async function loadAll() {
         listEl.innerHTML = '<p class="muted">読み込み中…</p>';
         try {
@@ -6092,15 +6222,19 @@ export default function ProviderDashboardPage() {
           allItems = await res.json();
           updateFilterCounts();
 
+          renderDormantUpsell();
           const capBanner = document.getElementById('customers-cap-banner');
           if (capBanner) {
             const totalConnected = res.headers.get('X-Fineme-Total-Connected');
             const visibleLimit = res.headers.get('X-Fineme-Visible-Limit');
             capBanner.innerHTML = totalConnected
               ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:13px;color:#92400e">
-                  現在ライトプランのため、New Me Log連携は先着${visibleLimit}人まで表示（実際の連携数：${totalConnected}人）。連携自体・お客様への通知は制限されません。プレミアムプランで無制限になります。
+                  <p style="margin:0 0 8px">現在ライトプランのため、New Me Log連携は先着${visibleLimit}人まで表示されます（実際の連携数：${totalConnected}人）。連携自体・お客様への通知は制限されません。</p>
+                  <p style="margin:0 0 8px;font-weight:700">スタンダードプラン（月額¥7,000）なら、${Math.max(Number(totalConnected) - Number(visibleLimit), 0)}人の非表示分も含めて無制限に表示されます。</p>
+                  <button type="button" class="btn" style="font-size:12px;padding:6px 14px" data-plan-go>プランを見る</button>
                 </div>`
               : '';
+            capBanner.querySelector('[data-plan-go]')?.addEventListener('click', () => document.querySelector('[data-tab="billing"]')?.click());
           }
 
           render(); // render()自体が「該当なし」の空表示も面倒を見る（会員・非会員の統合リスト）
@@ -7017,7 +7151,9 @@ export default function ProviderDashboardPage() {
           const { features, defs, locks } = await res.json();
           defsCache = defs || {};
           window.__providerLocks = locks || {};
+          window.__providerFeatureDefs = defs || {};
           window.__providerFeatures = features || {};
+          window.dispatchEvent(new Event('fineme:locks'));
           applyGating(features);
         } catch {}
       })();
@@ -8729,7 +8865,7 @@ export default function ProviderDashboardPage() {
           fetch('/api/provider/resources', { headers: authHeadersCal() }),
           fetch('/api/provider/classes', { headers: authHeadersCal() }),
         ]);
-        if (featRes.ok) { const { features } = await featRes.json(); resourceFeatureOn = !!features?.resource_management; shiftFeatureOn = !!features?.shift_management; }
+        if (featRes.ok) { const { features, locks } = await featRes.json(); resourceFeatureOn = !!features?.resource_management && !locks?.resource_management; shiftFeatureOn = !!features?.shift_management && !locks?.shift_management; }
         if (resRes.ok) { const rows = await resRes.json(); resourceList = (rows || []).filter(r => r.active !== false); }
         if (clsRes.ok) { classList = await clsRes.json(); (classList || []).forEach(c => { classById[c.id] = c.name; }); }
       }
@@ -12595,6 +12731,7 @@ export default function ProviderDashboardPage() {
         <div className="tab-pane" id="tab-customers">
           <div className="card" style={{ padding: '24px' }}>
             <div id="customers-cap-banner"></div>
+            <div id="customers-dormant-upsell"></div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '8px' }}>
               <label className="muted" style={{ fontSize: '13px' }}>表示：</label>
               <select id="customers-filter">
