@@ -625,9 +625,28 @@ export default function ProviderDashboardPage() {
       })().then(r => { lastRefreshResult = r; return r; }).finally(() => { refreshInflight = null; });
       return refreshInflight;
     }
+    // 特例無料アカウントの「プランプレビュー」。見え方の確認用で、サーバーはspecialの店舗だけ
+    // このヘッダーを見て表示用のプランを差し替える（契約・課金・APIの実際の権限は変わらない）。
+    function getPlanPreview() {
+      try { const v = sessionStorage.getItem('fineme:planPreview'); return ['A', 'B', 'C'].includes(v) ? v : ''; } catch { return ''; }
+    }
+    function withPlanPreviewHeader(input, init) {
+      try {
+        const preview = getPlanPreview();
+        if (!preview) return init;
+        const url = typeof input === 'string' ? input : input?.url || '';
+        if (!(url.startsWith('/api/provider/features') || url.startsWith('/api/provider/customers'))) return init;
+        const h = init?.headers;
+        if (h && typeof h.append === 'function') return init;
+        const headers = Array.isArray(h) ? Object.fromEntries(h) : { ...(h || {}) };
+        headers['x-plan-preview'] = preview;
+        return { ...init, headers };
+      } catch { return init; }
+    }
     const rawFetch = window.fetch;
     window.fetch = async function (input, init) {
       init = withOperator(input, init);
+      init = withPlanPreviewHeader(input, init);
       const res = await rawFetch.call(this, input, init);
       if (res.status !== 401) return res;
       const url = typeof input === 'string' ? input : input?.url || '';
@@ -5456,7 +5475,7 @@ export default function ProviderDashboardPage() {
       function applyPremiumFeatureGating(featureKey, pairs) {
         const liveFeatures = window.__providerFeatures;
         const on = liveFeatures ? !!liveFeatures[featureKey] : !!provider?.enabled_features?.[featureKey];
-        const planEligible = provider?.plan === 'C' || provider?.plan === 'special';
+        const planEligible = window.__providerLocks ? !window.__providerLocks[featureKey] : (provider?.plan === 'C' || provider?.plan === 'special');
         pairs.forEach(([section, controls, upsell]) => {
           if (!section) return;
           section.style.display = on ? '' : 'none';
@@ -7058,6 +7077,40 @@ export default function ProviderDashboardPage() {
         `;
       }
 
+      // 特例無料アカウント専用：A/B/Cの店舗からどう見えるかを切り替えて確認する。
+      function mountPlanPreviewControl(active) {
+        if (document.getElementById('plan-preview-ctl')) return;
+        const names = { A: 'A ライト', B: 'B スタンダード', C: 'C プレミアム' };
+        const box = document.createElement('div');
+        box.id = 'plan-preview-ctl';
+        box.style.cssText = 'position:fixed;left:260px;bottom:16px;z-index:60;display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.18);'
+          + (active ? 'background:#fffbeb;border:1px solid #f59e0b;color:#92400e;' : 'background:#fff;border:1px solid rgba(26,20,16,.15);color:#1a1410;');
+        const label = document.createElement('label');
+        label.htmlFor = 'plan-preview-select';
+        label.textContent = active ? names[active] + 'で表示中' : 'プランの見え方';
+        const select = document.createElement('select');
+        select.id = 'plan-preview-select';
+        select.style.cssText = 'font-size:12px;padding:4px 6px;border-radius:6px;border:1px solid rgba(26,20,16,.2);background:#fff;color:#1a1410;';
+        [['', '実際（特例・全機能）'], ['A', names.A], ['B', names.B], ['C', names.C]].forEach(([v, t]) => {
+          const o = document.createElement('option');
+          o.value = v; o.textContent = t; if ((active || '') === v) o.selected = true;
+          select.append(o);
+        });
+        select.addEventListener('change', () => {
+          try { if (select.value) sessionStorage.setItem('fineme:planPreview', select.value); else sessionStorage.removeItem('fineme:planPreview'); } catch {}
+          location.reload();
+        });
+        box.append(label, select);
+        if (active) {
+          const note = document.createElement('span');
+          note.style.cssText = 'font-weight:500;font-size:11px;';
+          note.textContent = '見た目の確認用。契約は変わりません';
+          box.append(note);
+        }
+        if (window.matchMedia('(max-width: 900px)').matches) { box.style.left = '12px'; box.style.bottom = '76px'; }
+        document.body.appendChild(box);
+      }
+
       function applyGating(features) {
         gatedEls.forEach(el => {
           const key = el.dataset.feature;
@@ -7151,11 +7204,12 @@ export default function ProviderDashboardPage() {
         try {
           const res = await fetch('/api/provider/features', { headers: { Authorization: `Bearer ${token}` } });
           if (!res.ok) return;
-          const { features, defs, locks } = await res.json();
+          const { features, defs, locks, plan, preview } = await res.json();
           defsCache = defs || {};
           window.__providerLocks = locks || {};
           window.__providerFeatureDefs = defs || {};
           window.__providerFeatures = features || {};
+          if (plan === 'special') mountPlanPreviewControl(preview);
           window.dispatchEvent(new Event('fineme:locks'));
           applyGating(features);
         } catch {}

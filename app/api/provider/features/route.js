@@ -2,7 +2,7 @@
 // PATCH /api/provider/features → 部分更新（渡したキーだけ上書き）
 // Phase 0（機能ON/OFF基盤）: lib/feature-flags.js の FEATURE_DEFS が唯一の定義元。
 import { getSupabase } from '@/lib/supabase';
-import { FEATURE_DEFS, resolveFeatures, featureLocks } from '@/lib/feature-flags';
+import { FEATURE_DEFS, resolveFeatures, featureLocks, withPlanPreview } from '@/lib/feature-flags';
 import { withAudit } from '@/lib/activity-log';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
@@ -20,7 +20,14 @@ export async function GET(request) {
   const provider = await getProviderByToken(authHeader.replace('Bearer ', ''));
   if (!provider) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  return Response.json({ features: resolveFeatures(provider), defs: FEATURE_DEFS, locks: featureLocks(provider), plan: provider.plan || 'A' });
+  const shown = withPlanPreview(provider, request.headers.get('x-plan-preview'));
+  return Response.json({
+    features: resolveFeatures(provider),
+    defs: FEATURE_DEFS,
+    locks: featureLocks(shown),
+    plan: provider.plan || 'A',
+    preview: shown !== provider ? shown.plan : null,
+  });
 }
 
 async function __PATCH(request) {

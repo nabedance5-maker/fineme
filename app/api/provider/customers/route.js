@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 import { getSupabase } from '@/lib/supabase';
 import { idealNextDate, daysUntilIdeal } from '@/lib/log-axes';
 import { ensureCustomerNumbers } from '@/lib/customer-numbers';
+import { withPlanPreview } from '@/lib/feature-flags';
 
 const supabase = new Proxy({}, { get(_, p) { return getSupabase()[p]; } });
 
@@ -154,7 +155,8 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const bypassCap = searchParams.get('scope') === 'all';
 
-  if (provider.plan === 'A' && !bypassCap) {
+  const effectivePlan = withPlanPreview(provider, request.headers.get('x-plan-preview')).plan;
+  if (effectivePlan === 'A' && !bypassCap) {
     // 先着30人（連携＝最初のログ作成日time順）までを表示対象にする。
     // 連携自体・本人への通知は制限しない。表示のみプランで絞る。
     const firstSeenByUser = {};
