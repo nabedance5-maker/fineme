@@ -1,10 +1,10 @@
 export const metadata = {
   title: 'いま抱えているお客様を、逃さない：Fineme 店舗向け掲載のご案内',
-  description: '顧客カルテ（カスタム項目・AI傾向分析）・予約のやり取りがLINEで完結・リマインド自動化・売上管理まで、掲載すれば今日から使える店舗運営SaaS。パーソナルジム・眉毛サロン・美容師・外見コンサルなど、個人・フリーランス向け。新規集客の有無に関わらず、いま抱えているお客様との関係を強くします。',
-  keywords: ['店舗 顧客管理 SaaS', 'リピート対策 サロン', '休眠顧客 掘り起こし', 'パーソナルジム 顧客管理', '美容室 予約リマインド 自動化', '個人事業主 集客', '店舗公式LINE 予約管理'],
+  description: 'AI専属コンサル・LINEで完結する予約・オンライン決済・回数券と会員プラン・顧客カルテ・休眠顧客の掘り起こしまで、お客様のリピートを作る店舗運営SaaS。月額¥5,000から、予約の手数料なし。パーソナルジム・眉毛サロン・美容師・外見コンサルなど、個人・フリーランス向け。',
+  keywords: ['店舗 顧客管理 SaaS', '予約 決済 一体 サロン', 'AI 店舗コンサル', 'リピート対策 サロン', '休眠顧客 掘り起こし', 'パーソナルジム 顧客管理', '美容室 予約リマインド 自動化', '個人事業主 集客', '店舗公式LINE 予約管理'],
   openGraph: {
     title: 'いま抱えているお客様を、逃さない | Fineme 店舗向け掲載のご案内',
-    description: '顧客カルテ・リマインド自動化・休眠顧客の掘り起こし。掲載すれば今日から使える店舗運営SaaSです。',
+    description: 'AI専属コンサル・LINE予約・オンライン決済・顧客カルテ・休眠顧客の掘り起こし。月額¥5,000から使えるリピート特化の店舗運営SaaSです。',
   },
 };
 
@@ -204,8 +204,8 @@ export default function ProviderJoinPage({ searchParams }) {
           <div className="join-container">
             <div className="join-hero-chips">
               <span className="join-chip">顧客管理・リピートSaaS</span>
-              <span className="join-chip">既存のお客様に今日から使える</span>
-              <span className="join-chip">新規の出会いは伸びしろとして追加</span>
+              <span className="join-chip">AI専属コンサル付き</span>
+              <span className="join-chip">予約の手数料なし・月額¥5,000から</span>
             </div>
             <h1>
               新規集客の前に、<br/>
@@ -213,13 +213,13 @@ export default function ProviderJoinPage({ searchParams }) {
             </h1>
             <p className="join-hero-lead">
               予約の取りこぼし、いつの間にか来なくなった常連、スタッフの頭の中にしかない顧客情報——<br/>
-              Finemeは、いま抱えているお客様との関係を強くする店舗運営SaaSです。<br/>
-              顧客カルテ・リマインド・休眠顧客の掘り起こしは、新しいお客様がまだいなくても今日から動きます。
+              Finemeは、お客様のリピートを作ることに特化した店舗運営SaaSです。<br/>
+              AI専属コンサルが店舗の数字を見て次の一手を提案。予約・決済・カルテ・リマインドまで、ひとつの管理画面で完結します。
             </p>
             <p className="join-hero-note">掲載すれば、診断を経て「本気で変わりたい」お客様との新しい出会いも、伸びしろとして加わります。</p>
             <div className="join-cta-row">
               <a className="btn-gold" href={inquiryHref}>掲載について相談する</a>
-              <a className="btn-ghost-white" href="#tools">SaaS機能を見る</a>
+              <a className="btn-ghost-white" href="#tools">できることを見る</a>
             </div>
           </div>
         </section>
@@ -264,49 +264,61 @@ export default function ProviderJoinPage({ searchParams }) {
         <section className="join-section-dark" id="tools">
           <div className="join-container">
             <div className="sec-eyebrow">Store Management Tools</div>
-            <h2 className="sec-h2 sec-h2-dark">新しいお客様がいなくても、今日から使えます</h2>
-            <p className="sec-lead sec-lead-dark">掲載は「載せて終わり」ではありません。いま抱えているお客様との関係を強くする管理画面が、掲載と同時に使えます。</p>
+            <h2 className="sec-h2 sec-h2-dark">予約から決済、リピートまで。ひとつの画面で</h2>
+            <p className="sec-lead sec-lead-dark">新しいお客様がいなくても、いま抱えているお客様との関係を強くする機能が、契約したその日から使えます。使わない機能は店舗ごとにON/OFFでき、必要なものだけが画面に並びます。</p>
             <div className="problem-grid tools-grid">
               <div className="problem-card">
                 <div className="problem-card-icon"></div>
-                <h3>顧客カルテ</h3>
-                <p>来店履歴・Me Scan受診有無・Mirrorスコア・担当スタッフを自動で一覧化。店舗ごとに自由な項目（自由記述・選択式・5段階評価）を追加でき、蓄積した記録からAIが傾向・注意点を提案します。店舗だけに見える非公開メモも残せます。</p>
+                <h3>AI専属コンサル</h3>
+                <p>予約・売上・来店間隔などの店舗データをAIが読み、「いま誰に声をかけるべきか」「どのメニューが伸びているか」を吹き出し形式で提案。相談したいことは、そのままチャットで聞けます。全プランで使えます。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
                 <div className="problem-card-icon"></div>
                 <h3>予約のやり取りがLINEで完結</h3>
-                <p>お客様は普段のLINEトークから予約をリクエスト。店舗は承認・代替日時の提案・来店確認まで、全部その場のボタン操作で返せます。マイページを開かせる手間がありません。</p>
+                <p>お客様は普段のLINEトークから予約。店舗は承認・代替日時の提案・来店確認まで、その場のボタン操作で返せます。空き枠から即確定する方式と、希望日時を受けて承認する方式を店舗ごとに選べます。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
                 <div className="problem-card-icon"></div>
-                <h3>リマインド一式</h3>
-                <p>予約前日の確認・来店間隔が空いたお客様の自動掘り起こし・誕生日メッセージ・クチコミ依頼まで自動配信。送り忘れを仕組みで防ぎます。</p>
+                <h3>オンライン決済・請求</h3>
+                <p>予約デポジット、請求書のカード決済までFinemeの中で完結。代金は店舗の口座へ直接入金され、集計は売上管理に自動で反映されます。決済手数料は一律4.5%で、予約そのものの手数料はありません。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
                 <div className="problem-card-icon"></div>
-                <h3>売上管理</h3>
-                <p>来店確認時の確定額と手動記録を、メニュー別・スタッフ別・支払い方法別に自動集計。月次のCSV出力で、いま使っている会計ソフトにもそのまま渡せます。</p>
+                <h3>顧客カルテ</h3>
+                <p>来店履歴・担当スタッフ・Me Scan受診有無を自動で一覧化。店舗ごとに自由な項目（自由記述・選択式・5段階評価）を足せます。Plan Cでは蓄積した記録からAIが傾向・注意点を提案します。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
                 <div className="problem-card-icon"></div>
-                <h3>スタッフの接客の引き出し</h3>
-                <p>スタッフごとの得意軸・接客スクリプトを登録。担当したお客様のリピート率・指名率も自動で見える化されます。</p>
+                <h3>リマインド・休眠掘り起こし</h3>
+                <p>予約前日の確認・誕生日メッセージは全プランで自動配信。Plan B以上では、来店間隔が空いたお客様の一覧化と声かけ、来店後のクチコミ依頼まで仕組みで回せます。</p>
                 <div className="problem-card-bar"></div>
               </div>
               <div className="problem-card">
                 <div className="problem-card-icon"></div>
-                <h3>LTV・CAC概算</h3>
-                <p>来店データから顧客生涯価値と広告費の回収状況を自動算出。感覚ではなく数字で、今の集客が割に合っているか確認できます。</p>
+                <h3>回数券・会員プラン・クラス</h3>
+                <p>回数券、月額会員プラン、通い放題の組み合わせをオンラインで販売。クラス予約、QRチェックイン、出欠確認、友達紹介プログラムまで、通い続けてもらう仕組みが揃います（Plan B以上）。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+              <div className="problem-card">
+                <div className="problem-card-icon"></div>
+                <h3>スタッフ指名・シフト管理</h3>
+                <p>指名予約と指名料、シフト表の作成と提出、部屋・設備の空き管理に対応。担当したお客様のリピート率・指名率も自動で見える化されます（Plan B以上）。</p>
+                <div className="problem-card-bar"></div>
+              </div>
+              <div className="problem-card">
+                <div className="problem-card-icon"></div>
+                <h3>売上管理・POS・在庫</h3>
+                <p>メニュー別・スタッフ別・支払い方法別の自動集計とCSV出力、LTV・CAC概算を全プランで。物販のレジ会計と在庫管理、操作ログはPlan Cで使えます。</p>
                 <div className="problem-card-bar"></div>
               </div>
             </div>
             <div style={{marginTop:'16px', padding:'18px 22px', background:'rgba(201,168,76,.08)', borderRadius:'14px', border:'1px solid rgba(201,168,76,.3)'}}>
               <p style={{margin:0, fontSize:'14px', color:'#e8e2d4', lineHeight:'1.8', fontFamily:"'Noto Sans JP', sans-serif"}}>
-                <strong style={{color:'#fff'}}>休眠客1人の呼び戻しで、ライトプラン（¥5,000/月）は元が取れます。</strong><br/>
+                <strong style={{color:'#fff'}}>休眠客1人の呼び戻しで、月額¥5,000は元が取れます。</strong><br/>
                 客単価¥10,000〜¥30,000なら、リマインド経由の再来店が月1件あるだけで回収完了です。
               </p>
             </div>
@@ -480,46 +492,49 @@ export default function ProviderJoinPage({ searchParams }) {
           <div className="join-container" style={{textAlign:'center'}}>
             <div className="sec-eyebrow" style={{justifyContent:'center'}}>Plan</div>
             <h2 className="sec-h2 sec-h2-light">掲載プラン</h2>
-            <p className="sec-lead sec-lead-light">登録料 ¥1,100（初回のみ）＋ 月額プラン3段階。予約の手数料はありません。プランの違いは使える機能です。広告費を積み上げるモデルではなく、「合う人に届く仕組み」への投資です。</p>
+            <p className="sec-lead sec-lead-light">登録料 ¥1,100（初回のみ）＋ 月額プラン3段階。予約の手数料はありません。プランの違いは使える機能だけです。必要な機能に合わせて、いつでも切り替えられます。</p>
 
             <div className="plan-grid" style={{maxWidth:'960px', margin:'0 auto'}}>
               <div className="plan-card">
-                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif", color:'rgba(201,168,76,.7)'}}>LIGHT</div>
+                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif", color:'rgba(201,168,76,.7)'}}>PLAN A</div>
                 <div className="plan-price">¥5,000<small> / 月</small></div>
                 <ul className="plan-list">
-                  <li>プロフィールページ（無制限）</li>
-                  <li>予約・オンライン決済・請求</li>
-                  <li>基本カルテ・売上管理</li>
+                  <li>公開プロフィールページ</li>
+                  <li>予約受付（LINE完結・即時予約・店頭予約ボード）</li>
+                  <li>オンライン決済・請求書・予約デポジット</li>
+                  <li>基本カルテ・売上管理・LTV/CAC概算</li>
                   <li>AI専属コンサル</li>
-                  <li>リマインドはFineme公式LINEから</li>
-                  <li>顧客の登録は30人まで</li>
+                  <li>リマインド・誕生日メッセージ（Fineme公式LINEから）</li>
+                  <li>お客様の登録は30人まで</li>
                 </ul>
               </div>
               <div className="plan-card">
-                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif", color:'rgba(201,168,76,.8)'}}>STANDARD</div>
+                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif", color:'rgba(201,168,76,.8)'}}>PLAN B</div>
                 <div className="plan-price">¥7,000<small> / 月</small></div>
                 <ul className="plan-list">
-                  <li>ライトの内容すべて</li>
-                  <li>顧客数が無制限</li>
+                  <li>Plan Aの内容すべて</li>
+                  <li>お客様の登録が無制限</li>
                   <li>休眠顧客の掘り起こし・クチコミ依頼の自動化</li>
-                  <li>スタッフ指名・シフト管理</li>
-                  <li>クラス・回数券・会員プラン</li>
+                  <li>スタッフ指名・シフト管理・部屋と設備の管理</li>
+                  <li>回数券・会員プラン・入会手続き・クラス管理</li>
+                  <li>QRチェックイン・出欠確認・友達紹介</li>
                 </ul>
               </div>
               <div className="plan-card highlight">
-                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif", color:'rgba(201,168,76,.9)'}}>PREMIUM</div>
+                <div style={{fontSize:'12px', fontWeight:'800', letterSpacing:'.12em', marginBottom:'10px', fontFamily:"'Noto Sans JP', sans-serif", color:'rgba(201,168,76,.9)'}}>PLAN C</div>
                 <div className="plan-price">¥10,000<small> / 月</small></div>
                 <ul className="plan-list">
-                  <li>スタンダードの内容すべて</li>
+                  <li>Plan Bの内容すべて</li>
                   <li>予約・リマインドが店舗独自の公式LINEから届く</li>
-                  <li>カルテAI分析・姿勢/健康アドバイスAI</li>
-                  <li>POS・在庫管理</li>
+                  <li>カルテAI分析・姿勢分析・健診アドバイス</li>
+                  <li>POS・物販・在庫管理</li>
+                  <li>ロッカー月極管理</li>
                   <li>操作ログ</li>
                 </ul>
               </div>
             </div>
-            <p style={{fontSize:'12px', color:'rgba(255,255,255,.7)', marginTop:'16px', fontFamily:"'Noto Sans JP', sans-serif"}}>Fineme経由のオンライン決済には、全プラン共通で決済手数料4.5%（カード会社の手数料込み）がかかります。入金額から差し引かれ、別途のご負担はありません。</p>
-            <p style={{fontSize:'12px', color:'rgba(201,168,76,.8)', marginTop:'20px', fontFamily:"'Noto Sans JP', sans-serif"}}>草創期限定プランです。今後の価格変更は事前告知します。管理機能の詳しい画面イメージは<a href="/business/store-saas-pitch-deck.html" style={{color:'#c9a84c'}}>店舗SaaS営業資料</a>をご覧ください。</p>
+            <p style={{fontSize:'12px', color:'rgba(255,255,255,.7)', marginTop:'16px', fontFamily:"'Noto Sans JP', sans-serif"}}>Fineme経由のオンライン決済には、全プラン共通で決済手数料4.5%（カード会社の手数料込み）がかかります。入金額から差し引かれ、別途のご負担はありません。（例：¥10,000の決済で手数料¥450、店舗への入金は¥9,550）<br/>月額料金は、Fineme経由で初めて予約・問い合わせが発生した月から。それまでは無料で掲載・管理画面をお使いいただけます。</p>
+            <p style={{fontSize:'12px', color:'rgba(201,168,76,.8)', marginTop:'20px', fontFamily:"'Noto Sans JP', sans-serif"}}>今後の価格変更は事前に告知します。管理機能の詳しい画面イメージは<a href="/business/store-saas-pitch-deck.html" style={{color:'#c9a84c'}}>店舗SaaS営業資料</a>をご覧ください。</p>
           </div>
         </section>
 
@@ -569,7 +584,7 @@ export default function ProviderJoinPage({ searchParams }) {
                   <li><span className="fit-icon-no">✕</span>数だけを追いたい</li>
                   <li><span className="fit-icon-no">✕</span>プロフィールを埋める気がない</li>
                   <li><span className="fit-icon-no">✕</span>仕組みを理解せず使いたい</li>
-                  <li><span className="fit-icon-no">✕</span>HOT PEPPERの代替を探している</li>
+                  <li><span className="fit-icon-no">✕</span>新規のお客様の送客だけを期待している</li>
                 </ul>
               </div>
             </div>
@@ -583,7 +598,7 @@ export default function ProviderJoinPage({ searchParams }) {
             <p>
               Finemeは、「新規客が来るのを待つ場所」ではありません。<br/>
               今いるお客様との関係を強くしながら、新しい出会いも育てていく場所です。<br/>
-              顧客管理・リマインドに悩みがあるなら——あなたは、Finemeに向いています。
+              リピートを仕組みにしたいなら——あなたは、Finemeに向いています。
             </p>
             <div className="join-cta-row" style={{justifyContent:'center'}}>
               <a className="btn-gold" href={inquiryHref}>まずは話を聞いてみる</a>
