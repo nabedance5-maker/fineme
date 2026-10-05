@@ -314,8 +314,5 @@ export async function POST(request) {
       : `【${provider?.name || '店舗'}】予約リクエストを受け付けました。\n希望日時: ${whenText}\n店舗からの返答をお待ちください。`,
   });
 
-  // 課金開始は「初回来店時」に行う（PATCH /api/reservations/[id] の visited 処理で実施）
-  // 予約作成時点では billing_started を変更しない
-
   return Response.json({ ...data, deposit_checkout_url: depositCheckoutUrl }, { status: 201 });
 }

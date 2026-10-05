@@ -1,11 +1,9 @@
 // GET /api/cron/auto-visited
-// 予約時間から24時間以上経過した approved 予約を自動的に visited に変更し、
-// 初回来店であれば課金を開始する（不正防止: 来店ボタン未押下対策）
+// 予約時間から24時間以上経過した approved 予約を自動的に visited に変更する（来店ボタン未押下対策）
 // Schedule: "0 */2 * * *"（2時間おきに実行）
 import { getSupabase } from '@/lib/supabase';
 
 const INTERNAL_KEY = process.env.CRON_SECRET || process.env.INTERNAL_API_KEY;
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fineme.me';
 
 export async function GET(request) {
   const key = request.headers.get('x-internal-key') || new URL(request.url).searchParams.get('key');
@@ -47,7 +45,6 @@ export async function GET(request) {
   }
 
   let processed = 0;
-  let billingStarted = 0;
   const errors = [];
 
   for (const reservation of targets) {
@@ -65,40 +62,6 @@ export async function GET(request) {
 
       console.log(`[auto-visited] reservation ${reservation.id} → visited (provider: ${reservation.provider_id})`);
       processed++;
-
-      // 掲載者の課金状態を確認
-      const { data: provider } = await db
-        .from('providers')
-        .select('stripe_subscription_id, billing_started, plan, name')
-        .eq('id', reservation.provider_id)
-        .single();
-
-      if (!provider) continue;
-      if (provider.billing_started || provider.plan === 'free') continue;
-
-      // 初回来店 → 課金開始
-      if (provider.stripe_subscription_id) {
-        const activateRes = await fetch(`${BASE_URL}/api/stripe/activate-billing`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            stripeSubscriptionId: provider.stripe_subscription_id,
-            providerId: reservation.provider_id,
-          }),
-        });
-        if (!activateRes.ok) {
-          const err = await activateRes.json();
-          console.error(`[auto-visited] activate-billing failed for provider ${reservation.provider_id}:`, err);
-        }
-      }
-
-      await db
-        .from('providers')
-        .update({ billing_started: new Date().toISOString() })
-        .eq('id', reservation.provider_id);
-
-      console.log(`[auto-visited] billing started for provider ${reservation.provider_id} (${provider.name})`);
-      billingStarted++;
     } catch (e) {
       console.error(`[auto-visited] error for reservation ${reservation.id}:`, e);
       errors.push({ id: reservation.id, error: e.message });
@@ -107,7 +70,6 @@ export async function GET(request) {
 
   return Response.json({
     processed,
-    billing_started: billingStarted,
     errors: errors.length > 0 ? errors : undefined,
   });
 }

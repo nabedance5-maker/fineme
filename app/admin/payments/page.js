@@ -69,7 +69,7 @@ export default function AdminPaymentsPage() {
     }
 
     function statusBadge(status) {
-      const map = { active: ['badge-active', '課金中'], trialing: ['badge-trialing', '予約待ち'], pending: ['badge-pending', '未設定'], past_due: ['badge-past_due', '支払い遅延'], cancelled: ['badge-cancelled', '解約済み'] };
+      const map = { active: ['badge-active', '課金中'], trialing: ['badge-trialing', '未課金'], pending: ['badge-pending', '未設定'], past_due: ['badge-past_due', '支払い遅延'], cancelled: ['badge-cancelled', '解約済み'] };
       const [cls, label] = map[status] || ['badge-pending', status || '不明'];
       return `<span class="badge ${cls}">${label}</span>`;
     }
@@ -209,7 +209,7 @@ export default function AdminPaymentsPage() {
           <div className="kpi-grid">
             <div className="kpi-card"><div className="kpi-label">MRR（月次収益）</div><div id="kpi-mrr" className="kpi-value">¥0</div><div className="kpi-sub">アクティブ掲載者合計</div></div>
             <div className="kpi-card"><div className="kpi-label">アクティブ掲載者</div><div id="kpi-active" className="kpi-value">0</div><div className="kpi-sub">課金中</div></div>
-            <div className="kpi-card"><div className="kpi-label">初回予約待ち</div><div id="kpi-trialing" className="kpi-value">0</div><div className="kpi-sub">登録済・未課金</div></div>
+            <div className="kpi-card"><div className="kpi-label">未課金</div><div id="kpi-trialing" className="kpi-value">0</div><div className="kpi-sub">登録済・プラン未申込</div></div>
             <div className="kpi-card"><div className="kpi-label">掲載者合計</div><div id="kpi-total" className="kpi-value">0</div><div className="kpi-sub">全ステータス</div></div>
             <div className="kpi-card"><div className="kpi-label">未払い紹介報酬</div><div id="kpi-referral-pending" className="kpi-value">¥0</div><div className="kpi-sub">当月以前の未払い分</div></div>
           </div>
@@ -227,7 +227,7 @@ export default function AdminPaymentsPage() {
                 <select id="sub-status-filter">
                   <option value="">全ステータス</option>
                   <option value="active">アクティブ（課金中）</option>
-                  <option value="trialing">初回予約待ち</option>
+                  <option value="trialing">未課金</option>
                   <option value="pending">未登録</option>
                   <option value="past_due">支払い遅延</option>
                   <option value="cancelled">解約済み</option>

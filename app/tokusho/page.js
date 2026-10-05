@@ -90,7 +90,7 @@ export default function TokushoPage() {
                 <th style={{ textAlign: 'left', padding: '14px 20px', color: 'rgba(232,228,220,0.75)', fontWeight: 700, background: '#151b24', whiteSpace: 'nowrap', verticalAlign: 'top' }}>支払時期</th>
                 <td style={{ padding: '14px 20px' }}>
                   <strong>登録手数料：</strong>掲載登録申込時に即時決済<br />
-                  <strong>月額掲載料：</strong>Fineme経由で初めて予約・問い合わせが発生した月から課金開始。以降は毎月同日に自動更新。
+                  <strong>月額掲載料：</strong>プランのお申し込み時に初回分を決済。以降は毎月同日に自動更新。
                 </td>
               </tr>
               <tr style={{ borderBottom: '1px solid rgba(232,228,220,0.15)' }}>

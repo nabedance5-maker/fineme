@@ -793,7 +793,7 @@ export default function ProviderDashboardPage() {
         const billingStatusEl = document.getElementById('billing-status');
         if (billingStatusEl) billingStatusEl.style.display = 'none';
       } else {
-        document.getElementById('billing-status').textContent = provider.billing_started ? '課金中' : '課金はまだ始まっていません（初回予約発生後に開始）';
+        document.getElementById('billing-status').textContent = provider.billing_status === 'active' ? '課金中' : 'まだプランのお申し込みがありません';
       }
       document.getElementById('referral-code').textContent = fnCode || slug || '—';
       document.getElementById('publish-toggle-input').checked = !!provider.published;

@@ -74,6 +74,10 @@ export async function POST(request) {
         await supabaseAdmin.from('providers')
           .update({ billing_status: 'active' })
           .eq('id', providerId);
+        await supabaseAdmin.from('providers')
+          .update({ billing_started: new Date().toISOString() })
+          .eq('id', providerId)
+          .is('billing_started', null);
 
         // 紹介報酬を計算・記録（月次）
         const yearMonth = new Date().toISOString().slice(0, 7);
