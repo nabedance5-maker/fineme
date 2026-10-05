@@ -7,19 +7,13 @@ import { createPortal } from 'react-dom';
 import { goToTab } from './consultant-api';
 import { SHARED_CSS, TaskList, useConsultant } from './ConsultantShared';
 
-const COLLAPSE_KEY = 'fineme:consultant:collapsed';
-
 export default function ConsultantWidget() {
   const { data, error, planning, busy, chatLog, replan, setTaskStatus, saveGoal, sendChat } = useConsultant();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [view, setView] = useState('now');
   const [chatInput, setChatInput] = useState('');
   const [goalDraft, setGoalDraft] = useState('');
   const logRef = useRef(null);
-
-  useEffect(() => {
-    try { setCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1'); } catch { /* 初期表示のままにする */ }
-  }, []);
 
   useEffect(() => {
     if (view === 'chat' && logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
@@ -27,7 +21,6 @@ export default function ConsultantWidget() {
 
   function setCollapsedPersist(v) {
     setCollapsed(v);
-    try { localStorage.setItem(COLLAPSE_KEY, v ? '1' : '0'); } catch { /* 保存できなくても動作する */ }
   }
 
   function submitChat() {
