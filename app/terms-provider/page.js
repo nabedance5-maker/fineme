@@ -23,9 +23,9 @@ export default function TermsProviderPage() {
         <section className="card stack" style={{ padding: 20, gap: 12 }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>第2条（掲載登録と審査）</h2>
           <ul className="stack" style={{ gap: 6 }}>
-            <li>掲載登録時に登録手数料（¥1,100税込）をお支払いいただきます。</li>
+            <li>掲載登録に登録手数料はかかりません（当面の間、無料）。</li>
             <li>当サービスは登録申請を審査し、掲載の可否を判断する権利を有します。</li>
-            <li>審査基準を満たさない場合、登録をお断りすることがあります（その場合、登録手数料は返金します）。</li>
+            <li>審査基準を満たさない場合、登録をお断りすることがあります。</li>
           </ul>
         </section>
 

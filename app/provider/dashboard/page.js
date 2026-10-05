@@ -5350,7 +5350,7 @@ export default function ProviderDashboardPage() {
           listEl.innerHTML = '<p class="muted">該当するお客様はいません。</p>';
           return;
         }
-        listEl.innerHTML = items.map(c => custRowHtml(c, !c.user_id)).join(''); // memberはuser_id、manualはid(provider_manual_customers)しか持たない
+        listEl.innerHTML = `<div class="fx-list-head"><span>お客様 ${items.length}名</span><span>行を押すとカルテが開きます</span></div>` + items.map(c => custRowHtml(c, !c.user_id)).join(''); // memberはuser_id、manualはid(provider_manual_customers)しか持たない
         bindCustRows(listEl);
       }
 
@@ -5385,8 +5385,10 @@ export default function ProviderDashboardPage() {
               <span class="fx-cust-name">${c.member_number != null ? `<span class="fx-cust-no">${fmtNo(c.member_number)}</span>` : ''}${esc(name)}</span>
               <span class="fx-cust-sub">${esc(sub)}</span>
             </span>
-            <span class="fx-chip-slot">${isManual ? '<span class="fx-chip fx-chip-quiet">非会員</span>' : custChipHtml(c)}</span>
-            <span class="fx-cust-act">${!isManual && needsNudge(c) ? `<button type="button" class="fx-pill-gold" data-cust-nudge="${c.user_id}">声かけ</button>` : ''}</span>
+            <span class="fx-cust-right">
+              ${isManual ? '<span class="fx-chip fx-chip-quiet">非会員</span>' : custChipHtml(c)}
+              ${isManual ? '' : `<button type="button" class="${needsNudge(c) ? 'fx-pill-gold' : 'fx-pill'}" data-cust-nudge="${c.user_id}">声かけ</button>`}
+            </span>
           </div>`;
       }
       function bindCustRows(root) {
@@ -5558,6 +5560,22 @@ export default function ProviderDashboardPage() {
       let currentCustUid = null;
       let currentCustType = 'member';
 
+      // 開いた時点で最新のカルテを1件、見本と同じカードで見せる（以前は「カルテを見る」を押すまで何も出なかった）
+      async function loadLatestKarte(uid) {
+        const box = document.getElementById('cust-modal-latest');
+        if (!box) return;
+        box.innerHTML = '<div class="fx-latest-label">最新のカルテ</div><p class="muted" style="font-size:12px;margin:0">読み込み中…</p>';
+        try {
+          const res = await fetch(`/api/provider/customers/${uid}/karte-entries`, { headers: authHeaders() });
+          const entries = res.ok ? await res.json() : [];
+          if (currentCustUid !== uid) return;
+          box.innerHTML = '<div class="fx-latest-label">最新のカルテ</div>' + (entries.length
+            ? (() => { const t = document.createElement('div'); t.innerHTML = renderHistoryHtml(entries.slice(0, 2)); return t.querySelector('.fx-karte-entry')?.outerHTML || ''; })()
+            : '<p class="muted" style="font-size:12.5px;margin:0">まだカルテがありません。「＋ カルテを書く」から、来店ごとの記録を残せます。</p>');
+        } catch {
+          box.innerHTML = '';
+        }
+      }
       function setCustHead(name, sub) {
         const av = document.getElementById('cust-modal-avatar');
         const sb = document.getElementById('cust-modal-sub');
@@ -5604,15 +5622,18 @@ export default function ProviderDashboardPage() {
           custModalNameEl.textContent = `${c.customer_name} 様`;
           setCustHead(c.customer_name, [`来店 ${c.visitCount ?? 0}回`, staffList.find(s => s.id === c.assignedStaffId)?.name ? `担当 ${staffList.find(s => s.id === c.assignedStaffId).name}` : ''].filter(Boolean).join('｜'));
           custModalBadgesEl.innerHTML = `
-            ${c.member_number != null ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#f3f4f6;color:#374151;border-radius:99px;">会員番号 ${c.member_number}</span>` : ''}
-            <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
-            ${statusBadge(c.status)}
-            ${overdueBadge('ユーザー想定', c.userOverdueDays)}
-            ${overdueBadge('店舗推奨', c.storeOverdueDays)}
-            ${c.meScanType?.fullName ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;" title="Me Scanタイプ">${esc(c.meScanType.fullName)}</span>` : c.meScanDone ? '<span style="font-size:11px;padding:2px 8px;background:#faf5ff;color:#9333ea;border-radius:99px;">Me Scan済</span>' : ''}
-            ${c.mirror?.visualTier ? `<span style="font-size:11px;padding:2px 8px;background:#fff7ed;color:#c2410c;border-radius:99px;">Mirror: ${esc(c.mirror.visualTier)}</span>` : ''}
+            ${custChipHtml(c)}
+            ${c.member_number != null ? `<span class="fx-chip fx-chip-quiet">会員番号 ${c.member_number}</span>` : ''}
+            <span class="fx-chip fx-chip-quiet">${axisLabel}</span>
+            ${c.meScanType?.fullName ? `<span class="fx-chip fx-chip-quiet" title="Me Scanタイプ">${esc(c.meScanType.fullName)}</span>` : c.meScanDone ? '<span class="fx-chip fx-chip-quiet">Me Scan済</span>' : ''}
+            ${c.mirror?.visualTier ? `<span class="fx-chip fx-chip-quiet">Mirror：${esc(c.mirror.visualTier)}</span>` : ''}
           `;
-          custModalInfoEl.textContent = `前回：${fmtDate(c.last_visit)}／次回目安：${fmtDate(c.next_visit)}／頻度：${fmtFreq(c)}／来店回数：${c.visitCount ?? 0}回`;
+          custModalInfoEl.innerHTML = `<div class="fx-stats">
+            <div><span>前回来店</span><b>${esc(fmtDate(c.last_visit))}</b></div>
+            <div><span>次回目安</span><b>${esc(fmtDate(c.next_visit))}</b></div>
+            <div><span>頻度</span><b>${esc(fmtFreq(c))}</b></div>
+            <div><span>来店回数</span><b>${c.visitCount ?? 0}回</b></div>
+          </div>`;
           const staffOptions = ['<option value="">担当未割当</option>']
             .concat(staffList.map(s => `<option value="${s.id}"${c.assignedStaffId === s.id ? ' selected' : ''}>${esc(s.name)}</option>`))
             .join('');
@@ -5624,7 +5645,7 @@ export default function ProviderDashboardPage() {
           // 使えるため、簡易表示でモーダル自体は開く。
           custModalNameEl.textContent = fallbackName ? `${fallbackName} 様` : '(お名前不明)';
           setCustHead(fallbackName || '', '');
-          custModalBadgesEl.innerHTML = '<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#f3f4f6;color:#6b7280;border-radius:99px;">New Me Log未連携</span>';
+          custModalBadgesEl.innerHTML = '<span class="fx-chip fx-chip-quiet">New Me Log未連携</span>';
           custModalInfoEl.textContent = 'このお客様はNew Me Log（無料の来店サイクル管理ツール）を貴店に連携していないため、来店サイクルの情報は表示できません。固定メモ・カルテの記録は通常どおり行えます。';
           custModalAssignSel.innerHTML = ['<option value="">担当未割当</option>'].concat(staffList.map(s => `<option value="${s.id}">${esc(s.name)}</option>`)).join('');
         }
@@ -5638,6 +5659,7 @@ export default function ProviderDashboardPage() {
         custModalNoteSaveBtn.disabled = true;
 
         custModalEl.style.display = 'flex';
+        loadLatestKarte(uid);
 
         const noteRes = await fetch(`/api/provider/customers/${uid}/note`, { headers: authHeaders() });
         if (noteRes.ok) {
@@ -13003,21 +13025,22 @@ export default function ProviderDashboardPage() {
               <button type="button" className="btn btn-ghost" id="cust-modal-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
             </div>
             <div id="cust-modal-badges" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '4px 0 8px' }}></div>
-            <p id="cust-modal-info" className="muted" style={{ fontSize: '12px', margin: '0 0 10px' }}></p>
+            <div id="cust-modal-info" className="muted" style={{ fontSize: '12px', margin: '0 0 12px' }}></div>
 
             {/* 会員（New Me Log紐づき）用セクション */}
             <div id="cust-modal-member-section">
               <div className="cluster" style={{ gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
-                <button type="button" className="btn btn-ghost" id="cust-modal-nudge-btn" style={{ fontSize: '12px', padding: '5px 10px' }}>声かけメッセージを送る</button>
+                <button type="button" className="fx-pill-gold" id="cust-modal-nudge-btn">声かけメッセージを送る</button>
                 <select id="cust-modal-assign-select" style={{ fontSize: '12px', padding: '5px 8px', border: '1px solid #e5e7eb', borderRadius: '8px' }}></select>
               </div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6b7280', marginBottom: '4px' }}>固定メモ</label>
               <textarea id="cust-modal-note-textarea" style={{ width: '100%', minHeight: '60px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="読み込み中…" disabled></textarea>
               <button type="button" className="btn" id="cust-modal-note-save-btn" style={{ fontSize: '12px', padding: '5px 10px', marginTop: '6px' }} disabled>保存する</button>
+              <div id="cust-modal-latest" className="fx-latest"></div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
-                <button type="button" className="btn btn-ghost" id="cust-modal-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>＋ カルテを書く</button>
-                <button type="button" className="btn btn-ghost" id="cust-modal-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>カルテを見る</button>
-                <button type="button" className="btn btn-ghost" id="cust-modal-insight-btn" style={{ fontSize: '12px', padding: '5px 10px' }}>AIに傾向を聞く</button>
+                <button type="button" className="fx-pill-gold" id="cust-modal-add-toggle">＋ カルテを書く</button>
+                <button type="button" className="fx-pill" id="cust-modal-history-toggle">これまでのカルテ</button>
+                <button type="button" className="fx-pill" id="cust-modal-insight-btn">AIに傾向を聞く</button>
               </div>
               <div id="cust-modal-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
               <div id="cust-modal-history" style={{ display: 'none', marginTop: '10px' }}></div>
@@ -13028,8 +13051,8 @@ export default function ProviderDashboardPage() {
               <div id="cust-modal-posture-section" style={{ display: 'none', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
                 <div id="cust-modal-posture-controls">
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button type="button" className="btn btn-ghost" id="cust-modal-posture-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>姿勢分析を記録</button>
-                    <button type="button" className="btn btn-ghost" id="cust-modal-posture-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>姿勢分析を見る</button>
+                    <button type="button" className="fx-pill" id="cust-modal-posture-add-toggle">姿勢分析を記録</button>
+                    <button type="button" className="fx-pill" id="cust-modal-posture-history-toggle">姿勢分析を見る</button>
                   </div>
                   <div id="cust-modal-posture-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
                   <div id="cust-modal-posture-history" style={{ display: 'none', marginTop: '10px' }}></div>
@@ -13042,8 +13065,8 @@ export default function ProviderDashboardPage() {
               <div id="cust-modal-health-section" style={{ display: 'none', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
                 <div id="cust-modal-health-controls">
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button type="button" className="btn btn-ghost" id="cust-modal-health-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>健診アドバイスを記録</button>
-                    <button type="button" className="btn btn-ghost" id="cust-modal-health-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>健診アドバイスを見る</button>
+                    <button type="button" className="fx-pill" id="cust-modal-health-add-toggle">健診アドバイスを記録</button>
+                    <button type="button" className="fx-pill" id="cust-modal-health-history-toggle">健診アドバイスを見る</button>
                   </div>
                   <div id="cust-modal-health-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
                   <div id="cust-modal-health-history" style={{ display: 'none', marginTop: '10px' }}></div>
@@ -13065,8 +13088,8 @@ export default function ProviderDashboardPage() {
               <textarea id="cust-modal-manual-memo-textarea" style={{ width: '100%', minHeight: '60px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="要望・使った薬剤・注意点など"></textarea>
               <button type="button" className="btn" id="cust-modal-manual-save-btn" style={{ fontSize: '12px', padding: '5px 10px', marginTop: '6px' }}>保存する</button>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
-                <button type="button" className="btn btn-ghost" id="cust-modal-manual-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>＋ カルテを書く</button>
-                <button type="button" className="btn btn-ghost" id="cust-modal-manual-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>カルテを見る</button>
+                <button type="button" className="fx-pill-gold" id="cust-modal-manual-add-toggle">＋ カルテを書く</button>
+                <button type="button" className="fx-pill" id="cust-modal-manual-history-toggle">これまでのカルテ</button>
               </div>
               <div id="cust-modal-manual-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
               <div id="cust-modal-manual-history" style={{ display: 'none', marginTop: '10px' }}></div>
@@ -13074,8 +13097,8 @@ export default function ProviderDashboardPage() {
               <div id="cust-modal-manual-posture-section" style={{ display: 'none', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
                 <div id="cust-modal-manual-posture-controls">
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button type="button" className="btn btn-ghost" id="cust-modal-manual-posture-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>姿勢分析を記録</button>
-                    <button type="button" className="btn btn-ghost" id="cust-modal-manual-posture-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>姿勢分析を見る</button>
+                    <button type="button" className="fx-pill" id="cust-modal-manual-posture-add-toggle">姿勢分析を記録</button>
+                    <button type="button" className="fx-pill" id="cust-modal-manual-posture-history-toggle">姿勢分析を見る</button>
                   </div>
                   <div id="cust-modal-manual-posture-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
                   <div id="cust-modal-manual-posture-history" style={{ display: 'none', marginTop: '10px' }}></div>
@@ -13086,8 +13109,8 @@ export default function ProviderDashboardPage() {
               <div id="cust-modal-manual-health-section" style={{ display: 'none', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
                 <div id="cust-modal-manual-health-controls">
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button type="button" className="btn btn-ghost" id="cust-modal-manual-health-add-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>健診アドバイスを記録</button>
-                    <button type="button" className="btn btn-ghost" id="cust-modal-manual-health-history-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>健診アドバイスを見る</button>
+                    <button type="button" className="fx-pill" id="cust-modal-manual-health-add-toggle">健診アドバイスを記録</button>
+                    <button type="button" className="fx-pill" id="cust-modal-manual-health-history-toggle">健診アドバイスを見る</button>
                   </div>
                   <div id="cust-modal-manual-health-add-form" style={{ display: 'none', marginTop: '10px' }}></div>
                   <div id="cust-modal-manual-health-history" style={{ display: 'none', marginTop: '10px' }}></div>
@@ -13100,8 +13123,8 @@ export default function ProviderDashboardPage() {
                 保管し、会員にはマイページから見せる。電子署名はせず「同意の記録」に留める。
                 回数券・会員プラン・入会手続きなど種類を問わず使える。 */}
             <div id="cust-modal-contracts-section" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
-              <button type="button" className="btn btn-ghost" id="cust-modal-contracts-toggle" style={{ fontSize: '12px', padding: '5px 10px' }}>契約書</button>
-              <button type="button" className="btn btn-ghost" id="cust-modal-invoice-btn" style={{ fontSize: '12px', padding: '5px 10px', marginLeft: '6px' }}>請求する</button>
+              <button type="button" className="fx-pill" id="cust-modal-contracts-toggle">契約書</button>
+              <button type="button" className="fx-pill" id="cust-modal-invoice-btn" style={{ marginLeft: '6px' }}>請求する</button>
               <div id="cust-modal-contracts" style={{ display: 'none', marginTop: '10px' }}></div>
             </div>
           </div>

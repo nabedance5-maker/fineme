@@ -80,7 +80,7 @@ const PLANS = [
 ];
 
 const FAQ = [
-  ['初期費用はかかりますか？', '登録料¥1,100（税込・初回のみ）だけです。審査の結果、掲載をお断りする場合は返金します。'],
+  ['初期費用はかかりますか？', 'かかりません。登録料は当面の間無料で、お支払いは月額プランの料金だけです。'],
   ['月額料金はいつから発生しますか？', 'プランをお申し込みいただいた日からです。Finemeは新規予約を取ってくる広告ではなく、予約・決済・顧客管理・リピートのための店舗運営ツールなので、お使いいただく期間に応じて月額をいただいています。'],
   ['決済手数料はどんなときにかかりますか？', 'お客様がFineme経由でオンライン決済したときだけ、決済額の4.5%（カード会社の手数料込み）がかかり、入金額から差し引かれます。予約そのものの手数料はありません。'],
   ['店舗の公式LINEを持っていなくても使えますか？', '使えます。Plan A・Bでは予約やリマインドがFineme公式LINEから届きます。Plan Cでは店舗独自の公式LINEから送れます。'],
@@ -129,7 +129,7 @@ export default function ProviderJoinPage({ searchParams }) {
               <a className="pj-btn pj-btn-ghost pj-btn-lg" href="#tools">できることを見る</a>
             </div>
             <ul className="pj-trust pj-rise" style={{ '--d': '480ms' }}>
-              <li>登録料 ¥1,100のみ</li>
+              <li>登録料 0円（当面無料）</li>
               <li>予約の手数料 0円</li>
               <li>プランはいつでも切り替え可</li>
             </ul>
@@ -450,7 +450,7 @@ export default function ProviderJoinPage({ searchParams }) {
         <div className="pj-container">
           <div className="pj-eyebrow pj-center" data-reveal>Plan</div>
           <h2 className="pj-h2 pj-center" data-reveal>掲載プラン</h2>
-          <p className="pj-sec-lead pj-center pj-narrow" data-reveal>登録料 ¥1,100（初回のみ）＋ 月額プラン3段階。予約の手数料はありません。プランの違いは使える機能だけです。必要な機能に合わせて、いつでも切り替えられます。</p>
+          <p className="pj-sec-lead pj-center pj-narrow" data-reveal>登録料は当面無料。月額プラン3段階からお選びいただけます。予約の手数料はありません。プランの違いは使える機能だけです。必要な機能に合わせて、いつでも切り替えられます。</p>
           <div className="pj-plan-grid">
             {PLANS.map((pl, i) => (
               <div key={pl.name} className={`pj-plan ${pl.highlight ? 'pj-plan-hi' : ''}`} data-reveal style={{ '--d': `${i * 100}ms` }}>

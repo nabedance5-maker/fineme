@@ -50,7 +50,7 @@ export default function TokushoPage() {
               <tr style={{ borderBottom: '1px solid rgba(232,228,220,0.15)' }}>
                 <th style={{ textAlign: 'left', padding: '14px 20px', color: 'rgba(232,228,220,0.75)', fontWeight: 700, background: '#151b24', whiteSpace: 'nowrap', verticalAlign: 'top' }}>販売価格</th>
                 <td style={{ padding: '14px 20px' }}>
-                  <strong>掲載登録手数料（初回のみ）：</strong>¥1,100（税込）<br /><br />
+                  <strong>掲載登録手数料：</strong>無料（当面の間）<br /><br />
                   <strong>月額掲載料（3プランから選択）：</strong>
                   <table style={{ marginTop: 8, borderCollapse: 'collapse', fontSize: 14 }}>
                     <thead>
@@ -89,8 +89,7 @@ export default function TokushoPage() {
               <tr style={{ borderBottom: '1px solid rgba(232,228,220,0.15)' }}>
                 <th style={{ textAlign: 'left', padding: '14px 20px', color: 'rgba(232,228,220,0.75)', fontWeight: 700, background: '#151b24', whiteSpace: 'nowrap', verticalAlign: 'top' }}>支払時期</th>
                 <td style={{ padding: '14px 20px' }}>
-                  <strong>登録手数料：</strong>掲載登録申込時に即時決済<br />
-                  <strong>月額掲載料：</strong>プランのお申し込み時に初回分を決済。以降は毎月同日に自動更新。
+                                    <strong>月額掲載料：</strong>プランのお申し込み時に初回分を決済。以降は毎月同日に自動更新。
                 </td>
               </tr>
               <tr style={{ borderBottom: '1px solid rgba(232,228,220,0.15)' }}>
@@ -102,8 +101,7 @@ export default function TokushoPage() {
                 <td style={{ padding: '14px 20px' }}>
                   解約またはプラン変更をご希望の場合は、<a href="mailto:contact@fineme.me">contact@fineme.me</a> までメールにてご連絡ください。月末までにご連絡いただいた場合、翌月から課金が停止します。<br />
                   当月分の月額掲載料は原則返金いたしません。<br />
-                  ただし、当社の都合によりサービス提供が不可能となった場合は、未提供期間に応じた返金対応を行います。<br />
-                  登録手数料（初回）は返金対象外です。
+                  ただし、当社の都合によりサービス提供が不可能となった場合は、未提供期間に応じた返金対応を行います。
                 </td>
               </tr>
               <tr>
