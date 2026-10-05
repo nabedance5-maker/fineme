@@ -15,6 +15,31 @@ const GOAL_EXAMPLES = [
   'スタッフの時間に余裕を作って、お客様一人一人に向き合いたい',
 ];
 
+// 週ごとの会計件数の棒グラフ（店舗向けLPの「今週の見立て」と同じ作り）
+function WeeklyChart({ weeks }) {
+  const max = Math.max(...weeks.map(w => w.count), 1);
+  const recent = weeks.slice(-3).reduce((s, w) => s + w.count, 0);
+  const before = weeks.slice(-6, -3).reduce((s, w) => s + w.count, 0);
+  const trend = before ? Math.round(((recent - before) / before) * 100) : null;
+  const md = d => `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}`;
+  return (
+    <div>
+      <div className="fx-chart" aria-label="直近8週の週ごとの会計件数">
+        {weeks.map((w, i) => (
+          <div key={w.start} className={`fx-chart-bar${i >= weeks.length - 3 && trend != null && trend < 0 ? ' is-down' : ''}`} style={{ height: `${Math.max(3, (w.count / max) * 100)}%` }}>
+            <b>{w.count}</b>
+          </div>
+        ))}
+      </div>
+      <div className="fx-chart-x">{weeks.map(w => <span key={w.start}>{md(w.start)}〜</span>)}</div>
+      <div className="fx-chart-cap">
+        <span>週ごとの会計件数（売上管理の記録）</span>
+        {trend != null && <span className={trend < 0 ? 'is-down' : 'is-up'}>直近3週は前の3週より{trend < 0 ? `${-trend}%減` : trend > 0 ? `${trend}%増` : '横ばい'}</span>}
+      </div>
+    </div>
+  );
+}
+
 function formatWhen(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -146,6 +171,7 @@ export default function ConsultantPanel() {
   const doneTasks = tasks.filter(t => t.status === 'done').slice(0, 8);
   const actionByStage = Object.fromEntries((stageActions || []).map(a => [a.stage, a]));
   const visibleStages = stages.filter(s => s.count > 0);
+  const hasWeekly = (kpis.weeklyVisits || []).some(w => w.count > 0);
   const salesDelta = kpis.salesPrev30.total ? Math.round(((kpis.sales30.total - kpis.salesPrev30.total) / kpis.salesPrev30.total) * 100) : null;
 
   const submitGoal = async () => {
@@ -201,10 +227,24 @@ export default function ConsultantPanel() {
         </section>
       )}
 
-      {!needsGoal && diagnosis && (
+      {(hasWeekly || (!needsGoal && diagnosis)) && (
         <section className="card stack" style={{ padding: '24px', gap: '12px' }}>
           <h3 style={{ margin: 0, fontSize: '16px' }}>いまの見立て</h3>
-          <p className="cp-prose">{diagnosis}</p>
+          {hasWeekly && <WeeklyChart weeks={kpis.weeklyVisits} />}
+          {!needsGoal && diagnosis ? (
+            <div className="fx-ai-bubble">
+              <span className="fx-seal">談</span>
+              <p>{diagnosis}</p>
+            </div>
+          ) : (
+            <p className="muted" style={{ margin: 0, fontSize: '13px' }}>お店のゴールを書くと、AIがこの数字とお客様の来店間隔から見立てを出します。</p>
+          )}
+          {!needsGoal && diagnosis && (
+            <div className="fx-actions">
+              {visibleStages.length > 0 && <button type="button" className="fx-pill-gold" onClick={() => document.getElementById('cp-stages')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>段階ごとの声かけ文案を見る</button>}
+              <button type="button" className="fx-pill" onClick={() => goToTab('customers')}>顧客管理を開く</button>
+            </div>
+          )}
           {focus && (
             <div className="cp-focus">
               <div className="cp-kicker">この時期の焦点</div>
@@ -263,7 +303,7 @@ export default function ConsultantPanel() {
       )}
 
       {!needsGoal && visibleStages.length > 0 && (
-        <section className="card stack" style={{ padding: '24px', gap: '12px' }}>
+        <section id="cp-stages" className="card stack" style={{ padding: '24px', gap: '12px' }}>
           <h3 style={{ margin: 0, fontSize: '16px' }}>お客様の段階</h3>
           <p className="muted" style={{ margin: 0, fontSize: '13px', lineHeight: 1.7 }}>Fineme上の来店記録をもとにした段階です。日がたつと、お客様は次の段階に移ります。段階ごとに、打ち手と声かけの文案を出します。</p>
           <div className="cp-stages">

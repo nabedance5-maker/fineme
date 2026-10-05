@@ -13,6 +13,7 @@ import ConsultantWidget from './ConsultantWidget';
 import ConsultantPanel from './ConsultantPanel';
 import ActivityLogPanel from './ActivityLogPanel';
 import { withOperator } from './operator';
+import './fx.css';
 
 const _sb = createClient(
   'https://qsfpzlvucqzmjldshwwd.supabase.co',
@@ -5203,7 +5204,7 @@ export default function ProviderDashboardPage() {
       function bindStarWidgets(container) {
         container.querySelectorAll('[data-kv-stars]').forEach(wrap => {
           const stars = wrap.querySelectorAll('.karte-star');
-          function paint(n) { stars.forEach(s => { s.style.color = Number(s.dataset.star) <= n ? '#f59e0b' : '#d1d5db'; }); }
+          function paint(n) { stars.forEach(s => { s.style.color = Number(s.dataset.star) <= n ? '#c9a84c' : '#ddd6c8'; }); }
           stars.forEach(s => s.addEventListener('click', () => { wrap.dataset.kvValue = s.dataset.star; paint(Number(s.dataset.star)); }));
         });
       }
@@ -5235,23 +5236,33 @@ export default function ProviderDashboardPage() {
           if (typeMap[fid] === 'date' && val) return new Date(val).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
           if (typeMap[fid] === 'multiselect' && Array.isArray(val)) return val.map(esc).join('・');
           if (typeMap[fid] === 'url' && val) return `<a href="${esc(val)}" target="_blank" rel="noopener noreferrer" style="color:#2563eb">${esc(val)}</a>`;
-          if ((typeMap[fid] === 'stars' || typeMap[fid] === 'rating10') && val) return '★'.repeat(Number(val));
+          if ((typeMap[fid] === 'stars' || typeMap[fid] === 'rating10') && val) {
+            const max = typeMap[fid] === 'rating10' ? 10 : 5;
+            const n = Math.max(0, Math.min(max, Number(val)));
+            return `<span class="fx-stars" aria-label="${max}段階中${n}">${'★'.repeat(n)}<span>${'★'.repeat(max - n)}</span></span>`;
+          }
+          if ((typeMap[fid] === 'select') && val) return `<span class="fx-opt">${esc(val)}</span>`;
+          if (typeMap[fid] === 'multiselect' && Array.isArray(val)) return val.map(v => `<span class="fx-opt">${esc(v)}</span>`).join('');
           return esc(val);
         }
         return entries.map((e, i) => {
-          const custom = Object.entries(e.custom_values || {})
+          const rows = Object.entries(e.custom_values || {})
             .filter(([fid, val]) => !(typeMap[fid] === 'checkbox' && !val) && !(Array.isArray(val) && !val.length))
-            .map(([fid, val]) => `${esc(labelMap[fid] || fid)}: ${fmtCustomValue(fid, val)}`).join(' / ');
+            .map(([fid, val]) => `<div><dt>${esc(labelMap[fid] || '（削除した項目）')}</dt><dd>${fmtCustomValue(fid, val)}</dd></div>`).join('');
           const prev = entries[i + 1];
           const intervalLabel = prev
-            ? `・前回から${Math.round((new Date(e.created_at) - new Date(prev.created_at)) / 86400000)}日`
-            : '・初回の記録';
+            ? `前回から${Math.round((new Date(e.created_at) - new Date(prev.created_at)) / 86400000)}日`
+            : '初回の記録';
           return `
-            <div style="padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:12.5px;">
-              <div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">${fmtDateTime(e.created_at)} <span class="muted">${intervalLabel}</span></div>
-              ${e.menu_name ? `<div style="font-size:11.5px;color:#2563eb;">${esc(e.menu_name)}</div>` : ''}
-              ${e.note ? `<div>${esc(e.note)}</div>` : ''}
-              ${custom ? `<div class="muted">${custom}</div>` : ''}
+            <div class="fx-karte-entry">
+              <div class="fx-karte-entry-top">
+                <span class="fx-karte-date">${fmtDateTime(e.created_at)}<span class="fx-karte-interval">${intervalLabel}</span></span>
+                ${e.menu_name ? `<span class="fx-karte-menu">${esc(e.menu_name)}</span>` : ''}
+              </div>
+              <dl class="fx-karte-fields">
+                ${e.note ? `<div><dt>メモ</dt><dd>${esc(e.note)}</dd></div>` : ''}
+                ${rows}
+              </dl>
             </div>`;
         }).join('');
       }
@@ -5339,20 +5350,70 @@ export default function ProviderDashboardPage() {
           listEl.innerHTML = '<p class="muted">該当するお客様はいません。</p>';
           return;
         }
-        listEl.innerHTML = `
-          <div class="cust-row cust-row-head"><span>お客様</span><span>前回来店</span><span>次回目安</span><span></span></div>
-        ` + items.map(c => {
-          const isManual = !c.user_id; // memberはuser_id、manualはid(provider_manual_customers)しか持たない
-          return `
-          <div class="cust-row" data-cust-open="${isManual ? c.id : c.user_id}" data-cust-type="${isManual ? 'manual' : 'member'}">
-            <span class="cust-row-name">${c.member_number != null ? `<span style="font-size:11px;font-weight:600;color:#9a8f85;margin-right:6px;">${fmtNo(c.member_number)}</span>` : ''}${esc(isManual ? c.display_name : c.customer_name)}${!isManual && c.hasStoreNote ? ' ' : ''}</span>
-            <span class="cust-row-date">${isManual ? '—' : fmtDate(c.last_visit)}</span>
-            <span class="cust-row-date">${isManual ? '—' : `${fmtDate(c.next_visit)}${isOverdue(c) ? ' ' : ''}`}</span>
-            <span>${isManual ? '<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:99px;">非会員</span>' : statusBadge(c.status)}</span>
-          </div>
-        `;
-        }).join('');
-        listEl.querySelectorAll('[data-cust-open]').forEach(row => bindTapHandler(row, () => openCustomerModal(row.dataset.custOpen, row.dataset.custType)));
+        listEl.innerHTML = items.map(c => custRowHtml(c, !c.user_id)).join(''); // memberはuser_id、manualはid(provider_manual_customers)しか持たない
+        bindCustRows(listEl);
+      }
+
+      // お客様1行（店舗向けLPの見本と同じ作り：頭文字・最終来店・目安との差・声かけ）
+      function daysSince(d) { return d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : null; }
+      function overdueDays(c) {
+        const v = [c.userOverdueDays, c.storeOverdueDays].filter(x => typeof x === 'number');
+        return v.length ? Math.min(...v) : null;
+      }
+      function custChipHtml(c) {
+        const od = overdueDays(c);
+        if (od != null && od < 0) return `<span class="fx-chip fx-chip-over">目安を${-od}日超過</span>`;
+        if (od != null && od <= 7) return `<span class="fx-chip fx-chip-soon">${od === 0 ? '今日が目安' : `あと${od}日で目安`}</span>`;
+        if (c.status === 'dormant') return '<span class="fx-chip fx-chip-dormant">休眠</span>';
+        if (c.status === 'churned') return '<span class="fx-chip fx-chip-quiet">離脱</span>';
+        return '<span class="fx-chip fx-chip-ok">来店サイクル内</span>';
+      }
+      function needsNudge(c) {
+        const od = overdueDays(c);
+        return (od != null && od < 0) || c.status === 'dormant' || c.status === 'churned';
+      }
+      function custRowHtml(c, isManual) {
+        const name = isManual ? c.display_name : c.customer_name;
+        const ds = isManual ? null : daysSince(c.last_visit);
+        const sub = isManual
+          ? '非会員（Fineme未登録）'
+          : [ds != null ? `最終来店 ${ds}日前` : '来店記録なし', c.next_visit ? `次回目安 ${fmtDate(c.next_visit)}` : ''].filter(Boolean).join('・');
+        return `
+          <div class="fx-cust-row" data-cust-open="${isManual ? c.id : c.user_id}" data-cust-type="${isManual ? 'manual' : 'member'}">
+            <span class="fx-avatar">${esc((name || '客').trim().charAt(0))}</span>
+            <span class="fx-cust-main">
+              <span class="fx-cust-name">${c.member_number != null ? `<span class="fx-cust-no">${fmtNo(c.member_number)}</span>` : ''}${esc(name)}</span>
+              <span class="fx-cust-sub">${esc(sub)}</span>
+            </span>
+            <span class="fx-chip-slot">${isManual ? '<span class="fx-chip fx-chip-quiet">非会員</span>' : custChipHtml(c)}</span>
+            <span class="fx-cust-act">${!isManual && needsNudge(c) ? `<button type="button" class="fx-pill-gold" data-cust-nudge="${c.user_id}">声かけ</button>` : ''}</span>
+          </div>`;
+      }
+      function bindCustRows(root) {
+        // 行のタップ処理（bindTapHandler）がtouchendでpreventDefaultするため、行内の声かけボタンも行側で受ける
+        root.querySelectorAll('[data-cust-open]').forEach(row => bindTapHandler(row, (e) => {
+          const nudgeBtn = e?.target?.closest?.('[data-cust-nudge]');
+          if (nudgeBtn) { openNudgeFor(nudgeBtn.dataset.custNudge); return; }
+          openCustomerModal(row.dataset.custOpen, row.dataset.custType);
+        }));
+      }
+
+      // 顧客管理タブ上部：来店の目安を過ぎたお客様（超過が大きい順に最大5名）
+      function renderOverduePanel() {
+        const box = document.getElementById('customers-overdue-panel');
+        if (!box) return;
+        const list = allItems.filter(c => { const od = overdueDays(c); return od != null && od < 0; })
+          .sort((a, b) => overdueDays(a) - overdueDays(b));
+        if (!list.length) { box.innerHTML = ''; return; }
+        box.innerHTML = `
+          <div class="fx-overdue">
+            <div class="fx-overdue-head">
+              <p class="fx-overdue-title">来店の目安を過ぎたお客様 ${list.length}名</p>
+              <p class="fx-overdue-note">目安を大きく過ぎた順。声かけはLINEで届きます</p>
+            </div>
+            ${list.slice(0, 5).map(c => custRowHtml(c, false)).join('')}
+          </div>`;
+        bindCustRows(box);
       }
 
       // ── セグメント一斉メール配信（でお要望2026-09-14：hacomonoのメンバータイプ別
@@ -5497,6 +5558,12 @@ export default function ProviderDashboardPage() {
       let currentCustUid = null;
       let currentCustType = 'member';
 
+      function setCustHead(name, sub) {
+        const av = document.getElementById('cust-modal-avatar');
+        const sb = document.getElementById('cust-modal-sub');
+        if (av) av.textContent = (name || '客').trim().charAt(0) || '客';
+        if (sb) sb.textContent = sub || '';
+      }
       function openCustomerModal(uidOrId, type, fallbackName) {
         if (type === 'manual') return openManualModal(uidOrId);
         return openMemberModal(uidOrId, fallbackName);
@@ -5534,7 +5601,8 @@ export default function ProviderDashboardPage() {
         if (c) {
           const def = ALL_AXES[c.axis];
           const axisLabel = def ? `${def.icon} ${esc(def.label)}` : esc(c.axis);
-          custModalNameEl.textContent = c.customer_name;
+          custModalNameEl.textContent = `${c.customer_name} 様`;
+          setCustHead(c.customer_name, [`来店 ${c.visitCount ?? 0}回`, staffList.find(s => s.id === c.assignedStaffId)?.name ? `担当 ${staffList.find(s => s.id === c.assignedStaffId).name}` : ''].filter(Boolean).join('｜'));
           custModalBadgesEl.innerHTML = `
             ${c.member_number != null ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#f3f4f6;color:#374151;border-radius:99px;">会員番号 ${c.member_number}</span>` : ''}
             <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;">${axisLabel}</span>
@@ -5554,7 +5622,8 @@ export default function ProviderDashboardPage() {
           // 予約はしたがNew Me Logは未連携、という会員（でお報告2026-09-13：「会員なのに
           // 開かない」の原因）でも、固定メモ・カルテはuser_idベースで連携有無と無関係に
           // 使えるため、簡易表示でモーダル自体は開く。
-          custModalNameEl.textContent = fallbackName || '(お名前不明)';
+          custModalNameEl.textContent = fallbackName ? `${fallbackName} 様` : '(お名前不明)';
+          setCustHead(fallbackName || '', '');
           custModalBadgesEl.innerHTML = '<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#f3f4f6;color:#6b7280;border-radius:99px;">New Me Log未連携</span>';
           custModalInfoEl.textContent = 'このお客様はNew Me Log（無料の来店サイクル管理ツール）を貴店に連携していないため、来店サイクルの情報は表示できません。固定メモ・カルテの記録は通常どおり行えます。';
           custModalAssignSel.innerHTML = ['<option value="">担当未割当</option>'].concat(staffList.map(s => `<option value="${s.id}">${esc(s.name)}</option>`)).join('');
@@ -6068,17 +6137,31 @@ export default function ProviderDashboardPage() {
       const nudgeTextareaEl = document.getElementById('nudge-message-textarea');
       const nudgeSendBtn = document.getElementById('nudge-send-btn');
 
-      custModalNudgeBtn?.addEventListener('click', () => {
+      const nudgePreviewEl = document.getElementById('nudge-preview-body');
+      const nudgeToEl = document.getElementById('nudge-to');
+      function syncNudgePreview() { if (nudgePreviewEl) nudgePreviewEl.textContent = nudgeTextareaEl.value; }
+      nudgeTextareaEl?.addEventListener('input', syncNudgePreview);
+      function openNudge() {
         if (!currentCustUid || !nudgeModalEl) return;
         if ((window.__providerLocks || {}).dormant_outreach) {
           const n = allItems.filter(c => c.status === 'dormant' || c.status === 'churned').length;
           showPlanUpsell('dormant_outreach', { lead: n ? `いま休眠中のお客様が${n}名います` : '' });
           return;
         }
-        nudgeTextareaEl.value = '';
+        const c = allItems.find(x => x.user_id === currentCustUid);
+        const name = c?.customer_name || '';
+        if (nudgeToEl) nudgeToEl.textContent = name ? `${name} 様へ` : '';
+        nudgeTextareaEl.value = name ? `${name}様、前回のご来店から少し間が空きましたね。その後お変わりありませんか？\nご都合のよいときに、またお待ちしております。` : '';
+        syncNudgePreview();
         nudgeModalEl.style.display = 'flex';
         nudgeTextareaEl.focus();
-      });
+      }
+      function openNudgeFor(uid) {
+        currentCustUid = uid;
+        currentCustType = 'member';
+        openNudge();
+      }
+      custModalNudgeBtn?.addEventListener('click', openNudge);
       document.getElementById('nudge-cancel-btn')?.addEventListener('click', () => { nudgeModalEl.style.display = 'none'; });
       nudgeModalEl?.addEventListener('click', (e) => { if (e.target === nudgeModalEl) nudgeModalEl.style.display = 'none'; });
       nudgeSendBtn?.addEventListener('click', async () => {
@@ -6185,9 +6268,9 @@ export default function ProviderDashboardPage() {
             custModalInsightEl.innerHTML = `<p class="muted" style="font-size:12px;">まだ記録が少なく（${data.count}件）、傾向を出すには早いです。3件以上たまると分析できます。</p>`;
           } else {
             custModalInsightEl.innerHTML = `
-              <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px 12px;">
-                <p style="font-size:11px;font-weight:700;color:#6d28d9;margin:0 0 6px;">AIが気づいた傾向</p>
-                <ul style="margin:0;padding-left:18px;font-size:12.5px;color:#4c1d95;">
+              <div class="fx-ai-box">
+                <span class="fx-ai-tag">AI分析</span>
+                <ul>
                   ${data.insights.map(i => `<li>${esc(i)}</li>`).join('')}
                 </ul>
               </div>`;
@@ -6243,6 +6326,7 @@ export default function ProviderDashboardPage() {
           updateFilterCounts();
 
           renderDormantUpsell();
+          renderOverduePanel();
           const capBanner = document.getElementById('customers-cap-banner');
           if (capBanner) {
             const totalConnected = res.headers.get('X-Fineme-Total-Connected');
@@ -6391,22 +6475,38 @@ export default function ProviderDashboardPage() {
         if (!rows.length) { customerListEl.innerHTML = '<p class="muted">まだ購入記録がありません。</p>'; return; }
         const sorted = [...rows].sort((a, b) => (a.used_up || a.expired ? 1 : 0) - (b.used_up || b.expired ? 1 : 0));
         customerListEl.innerHTML = sorted.map(r => {
-          const countLabel = r.package_type === 'unlimited' ? '通い放題' : `残り${r.remaining_sessions}/${r.total_sessions}回${r.used_up ? '（使用済み）' : ''}`;
-          // 月額会員（でお要望2026-09-14）：次回自動付与日・解約ボタンを表示
+          // 券の形で表示（店舗向けLPの見本と同じ作り）。消化済みは穴が埋まる。
           const isSub = r.package_type === 'subscription';
-          const subInfo = isSub
-            ? r.subscription_status === 'cancelled'
-              ? '<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#f3f4f6;color:#6b7280;border-radius:99px;margin-left:6px">解約済み</span>'
-              : `<span style="font-size:11px;font-weight:700;padding:2px 8px;background:#eff6ff;color:#2563eb;border-radius:99px;margin-left:6px">月額会員・次回付与${esc(r.next_grant_at || '未定')}</span>`
-            : '';
+          const isUnlimited = r.package_type === 'unlimited';
+          const kind = isUnlimited ? '通い放題' : r.package_type === 'combo' ? '通い放題＋チケット' : isSub ? '月額会員' : '回数券';
+          const done = r.expired || r.used_up;
+          const total = Number(r.total_sessions) || 0;
+          const used = Number(r.used_sessions) || 0;
+          const punches = !isUnlimited && total > 0 && total <= 20
+            ? `<div class="fx-punches" aria-label="${total}回中${used}回利用">${Array.from({ length: total }, (_, i) => `<span class="${i < used ? 'used' : ''}"></span>`).join('')}</div>`
+            : !isUnlimited && total > 0 ? `<div class="fx-punches-more">${used}回利用 / 全${total}回</div>` : '';
+          const sub = [
+            r.expires_at ? `有効期限 ${new Date(r.expires_at).toLocaleDateString('ja-JP')}` : '無期限',
+            isSub ? (r.subscription_status === 'cancelled' ? '解約済み' : `次回付与 ${esc(r.next_grant_at || '未定')}`) : '',
+            r.expired ? '期限切れ' : r.used_up ? '使用済み' : '',
+          ].filter(Boolean).join('｜');
+          const stub = isUnlimited
+            ? '<span>ご利用</span><b class="fx-ticket-word">通い放題</b>'
+            : `<span>残り</span><b>${Math.max(0, r.remaining_sessions ?? 0)}</b><span>回</span>`;
+          const actions = [
+            isSub && r.subscription_status !== 'cancelled' ? `<button class="fx-pill" style="color:#b42318" onclick="cancelSubscription('${r.id}', this)">解約する</button>` : '',
+            r.last_usage_id ? `<button class="fx-pill" onclick="undoPackageUsage('${r.id}', this)">直近1回を取り消す</button>` : '',
+          ].join('');
           return `
-          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:6px;${r.expired || r.used_up ? 'opacity:.5' : ''}">
-            <div style="flex:1;min-width:0">
-              <strong style="font-size:13px">${esc(r.customer_name)}</strong>
-              <span class="muted" style="font-size:12px;margin-left:8px">${esc(r.package_name)}｜${countLabel}${r.expired ? '（期限切れ）' : ''}</span>${subInfo}
+          <div class="fx-ticket${done ? ' is-done' : ''}">
+            <div class="fx-ticket-main">
+              <span class="fx-ticket-kicker">${kind}<span class="fx-ticket-who">${esc(r.customer_name)} 様</span></span>
+              <span class="fx-ticket-name">${esc(r.package_name)}</span>
+              ${punches}
+              <span class="fx-ticket-sub">${sub}</span>
+              ${actions ? `<div class="fx-ticket-actions">${actions}</div>` : ''}
             </div>
-            ${isSub && r.subscription_status !== 'cancelled' ? `<button class="btn btn-ghost" style="font-size:11px;padding:6px 12px;color:#ef4444" onclick="cancelSubscription('${r.id}', this)">解約する</button>` : ''}
-            ${r.last_usage_id ? `<button class="btn btn-ghost" style="font-size:11px;padding:6px 12px;color:#ef4444" onclick="undoPackageUsage('${r.id}', this)">直近1回を取り消す</button>` : ''}
+            <div class="fx-ticket-stub">${stub}</div>
           </div>
         `;
         }).join('');
@@ -12845,6 +12945,7 @@ export default function ProviderDashboardPage() {
           <div className="card" style={{ padding: '24px' }}>
             <div id="customers-cap-banner"></div>
             <div id="customers-dormant-upsell"></div>
+            <div id="customers-overdue-panel"></div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '8px' }}>
               <label className="muted" style={{ fontSize: '13px' }}>表示：</label>
               <select id="customers-filter">
@@ -12892,7 +12993,13 @@ export default function ProviderDashboardPage() {
         <div id="customer-detail-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
           <div className="cal-modal-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-              <h3 style={{ margin: '0 0 4px', fontSize: '16px' }} id="cust-modal-name"></h3>
+              <div className="fx-karte-head">
+                <span className="fx-avatar fx-avatar-lg" id="cust-modal-avatar"></span>
+                <div className="fx-karte-head-main">
+                  <h3 style={{ margin: 0, fontSize: '17px' }} id="cust-modal-name"></h3>
+                  <span className="fx-karte-head-sub" id="cust-modal-sub"></span>
+                </div>
+              </div>
               <button type="button" className="btn btn-ghost" id="cust-modal-close" style={{ fontSize: '12px', padding: '5px 10px' }}>閉じる</button>
             </div>
             <div id="cust-modal-badges" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '4px 0 8px' }}></div>
@@ -13040,9 +13147,14 @@ export default function ProviderDashboardPage() {
             事故のもと。テキストエリア＋明示的な送信ボタンに変更しEnterでは送信されないようにした） */}
         <div id="nudge-modal" className="cal-modal-overlay" style={{ display: 'none' }}>
           <div className="cal-modal-card" style={{ maxWidth: '380px' }}>
-            <h3 style={{ margin: '0 0 8px', fontSize: '15px' }}>声かけメッセージを送る</h3>
+            <h3 style={{ margin: '0 0 2px', fontSize: '15px' }}>声かけメッセージを送る</h3>
+            <p id="nudge-to" style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 700, color: '#84651a' }}></p>
             <p className="muted" style={{ fontSize: '12px', margin: '0 0 10px' }}>店舗の公式LINE連携済みならそちらから、未連携ならFineme公式LINEから届きます。</p>
             <textarea id="nudge-message-textarea" style={{ width: '100%', minHeight: '90px', fontSize: '13px', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '8px', boxSizing: 'border-box' }} placeholder="メッセージを入力してください"></textarea>
+            <div className="fx-line-preview">
+              <div className="fx-line-preview-head">LINEで届く内容</div>
+              <div className="fx-line-preview-body" id="nudge-preview-body"></div>
+            </div>
             <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
               <button type="button" className="btn" id="nudge-send-btn">送信する</button>
               <button type="button" className="btn btn-ghost" id="nudge-cancel-btn">キャンセル</button>
