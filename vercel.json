@@ -12,6 +12,7 @@
     { "path": "/api/cron/index-submit", "schedule": "0 2 * * *" },
     { "path": "/api/cron/seo-bulk-submit", "schedule": "0 1 * * 0" },
     { "path": "/api/cron/expire-counters", "schedule": "0 * * * *" },
+    { "path": "/api/cron/warm-dashboard", "schedule": "*/5 * * * *" },
     { "path": "/api/cron/seo-report", "schedule": "0 0 * * 1" },
     { "path": "/api/cron/seo-improve", "schedule": "30 0 * * *" },
     { "path": "/api/cron/pdca-daily", "schedule": "0 22 * * *" },
